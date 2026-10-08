@@ -18,6 +18,9 @@ REQUIRED = {
     "??_Ec_main_menu_screen@@UAAPAXI@Z",
     "?function_16b790@@YAXPAUs_record_pool@@@Z",
     "?data_last_index@@YAJPAUs_record_pool@@@Z",
+    "?player_slot_count_active@@YAFXZ",
+    "?player_slot_find_controller@@YAJJ@Z",
+    "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?unicode_string_copy@@YAXPAGPBGJ@Z",
     "?g_4e3b44@@3PAUs_tag_instance@@A",
@@ -97,6 +100,8 @@ def main():
         )
     if "?function_16c2b0@@YAJXZ" in defined:
         raise RuntimeError("function extraction retained an unrelated object query")
+    if "?function_18f58c@@YAXJ@Z" in defined:
+        raise RuntimeError("function extraction retained unrelated player-slot behavior")
     stale_aliases = sorted(symbol for symbol in defined if symbol.startswith("_??_E"))
     if stale_aliases:
         raise RuntimeError(f"Darwin-decorated aliases leaked into ELF: {stale_aliases}")
