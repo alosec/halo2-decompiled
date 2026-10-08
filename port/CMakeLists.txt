@@ -169,6 +169,58 @@ add_custom_command(
 add_custom_target(h2-main-menu-closure-report ALL
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}")
 
+set(H2_MAIN_MENU_ELF_OBJECTS)
+foreach(source IN LISTS H2_MS_ABI_SOURCES)
+    get_filename_component(unit "${source}" NAME_WE)
+    set(object "${H2_GUEST_OBJECT_DIR}/elf/${unit}.o")
+    add_custom_command(
+        OUTPUT "${object}"
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py
+                --llvm ${H2_LLVM_ROOT}/bin
+                --plugin $<TARGET_FILE:h2_guest_rebase>
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
+                --include ${PROJECT_SOURCE_DIR}/include
+                --ms-abi --output "${object}" "${source}"
+        DEPENDS "${source}" ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py h2_guest_rebase
+        VERBATIM
+    )
+    list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${object}")
+endforeach()
+set(H2_GUEST_CRT_ELF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_CRT_ELF_OBJECT}"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
+            --include ${PROJECT_SOURCE_DIR}/include
+            --output "${H2_GUEST_CRT_ELF_OBJECT}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c
+            ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py h2_guest_rebase
+    VERBATIM
+)
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_GUEST_CRT_ELF_OBJECT}")
+set(H2_MAIN_MENU_PARTIAL_ELF "${CMAKE_BINARY_DIR}/port/main-menu-core.partial.o")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_PARTIAL_ELF}"
+    COMMAND ${H2_LLD} -r -o "${H2_MAIN_MENU_PARTIAL_ELF}"
+            ${H2_MAIN_MENU_ELF_OBJECTS}
+    DEPENDS ${H2_MAIN_MENU_ELF_OBJECTS}
+    VERBATIM
+)
+add_custom_target(h2-main-menu-elf ALL DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}")
+
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
     src/retail_data.cpp
@@ -230,6 +282,19 @@ add_test(
             --format text
             --expect-unresolved 175
             ${H2_MAIN_MENU_GUEST_OBJECTS}
+)
+add_test(
+    NAME main-menu-elf-core
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main_menu_elf.py
+            --nm ${H2_LLVM_NM}
+            --image ${H2_MAIN_MENU_PARTIAL_ELF}
+            --closure ${H2_MAIN_MENU_CLOSURE_REPORT}
+)
+add_test(
+    NAME guest-asm-elf
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_asm_elf.py
+            --converter ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
+            --llvm ${H2_LLVM_ROOT}/bin
 )
 add_test(
     NAME guest-elf-image

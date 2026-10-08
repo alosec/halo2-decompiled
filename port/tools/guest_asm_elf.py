@@ -166,7 +166,7 @@ class Converter:
                 self.convert_line(rest)
             return
         # symbol assignment (aliases)
-        m = re.match(r'^([A-Za-z_.$][\w.$]*)\s*=\s*(.+)$', stripped)
+        m = re.match(r'^([A-Za-z_.$][\w.$]*|"[^"]*")\s*=\s*(.+)$', stripped)
         if m:
             if not self.in_dropped_section:
                 self.emit(f"\t.set {self.sym(m.group(1))}, {self.operands(m.group(2))}")

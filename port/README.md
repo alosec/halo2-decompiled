@@ -36,6 +36,8 @@ python3 port/tools/compile_census.py --root . \
 
 A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current sixteen recovered units plus CRT support have 175 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
 
+The same selected core is independently compiled through the Darwin-assembly-to-AArch64-ELF pipeline and cross-linked into `build/native/port/main-menu-core.partial.o`. This relocatable image proves that the real Microsoft-ABI UI units coexist with correct weak aliases and exactly the same unresolved set as the Mach-O closure report. It is not the final executable guest image and cannot run until those remaining services and fixed-address bindings are supplied.
+
 ## Architecture
 
 The port uses two cooperating layers:
@@ -64,6 +66,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Load the authentic `mainmenu.map` tag index through recovered cache code on a guest stack: 118 groups, 1,364 instances, scenario `0xe1780003` at `0x80121c44`, globals `0xe1740000` at `0x800e5000`.
 - [x] Compile the recovered main-menu screen/list implementation and its vtables to ARM ILP32 with Microsoft-compatible C++ layout and symbols.
 - [x] Link, map, and execute a Microsoft-ABI ARM guest ELF with 32-bit vtable relocations and verified virtual dispatch.
+- [x] Cross-link the selected recovered main-menu core into one relocatable AArch64 ELF object with exact symbol-closure parity.
 - [ ] Link the recovered main-menu unit and its dependency closure into the executable guest image.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.
