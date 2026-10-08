@@ -26,6 +26,14 @@ build/native/port/halo2-port --data-root orig/game
 
 `H2_DATA_ROOT` may be used instead of `--data-root`. The graphical command currently opens only a diagnostic host window. It is not a recreation of the menu and must not be presented as one.
 
+To refresh the native-portability census without generating or linking game code:
+
+```sh
+python3 port/tools/compile_census.py --root . \
+  --llvm /opt/homebrew/opt/llvm@22/bin \
+  --output build/native/compile-census.json
+```
+
 ## Architecture
 
 The port uses two cooperating layers:
