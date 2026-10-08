@@ -41,6 +41,7 @@ set(H2_GUEST_UI_HEAP_FREE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a4826.o")
 set(H2_GUEST_LOOP_ALLOCATOR_OBJECT "${H2_GUEST_OBJECT_DIR}/loop_allocator.o")
 set(H2_GUEST_NAME_BUFFER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_08cc20.o")
 set(H2_GUEST_UNICODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fa70.o")
+set(H2_GUEST_MS_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_ms_runtime.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
 set(H2_MS_ABI_SOURCES
@@ -60,6 +61,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/loop_allocator.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_08cc20.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_ms_runtime.cpp"
 )
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
@@ -82,7 +84,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_UI_HEAP_FREE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a4826.cpp"
         "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}|${PROJECT_SOURCE_DIR}/src/loop_allocator.cpp"
         "${H2_GUEST_NAME_BUFFER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_08cc20.cpp"
-        "${H2_GUEST_UNICODE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp")
+        "${H2_GUEST_UNICODE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp"
+        "${H2_GUEST_MS_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_ms_runtime.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -119,7 +122,7 @@ set_source_files_properties(
     "${H2_GUEST_GAME_STATE_OBJECT}" "${H2_GUEST_RECORD_POOL_OBJECT}"
     "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}" "${H2_GUEST_UI_HEAP_FREE_OBJECT}"
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}" "${H2_GUEST_NAME_BUFFER_OBJECT}"
-    "${H2_GUEST_UNICODE_OBJECT}"
+    "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -148,6 +151,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}"
     "${H2_GUEST_NAME_BUFFER_OBJECT}"
     "${H2_GUEST_UNICODE_OBJECT}"
+    "${H2_GUEST_MS_RUNTIME_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
@@ -297,7 +301,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 155
+            --expect-unresolved 154
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
