@@ -13,6 +13,12 @@
 #include "unknown_075870.h"
 #include "unknown_059ad0.h"
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(x, result) ((result) = (long)((x) + 0.5f))
+#else
+#define REAL_TO_LONG(x, result) __asm { fld x } __asm { fistp result }
+#endif
+
 struct s_68a90_entry
 {
 	byte unknown00[8];
@@ -71,11 +77,7 @@ bool function_68a90(s_68a90_entry *entry, long *quality)
 		}
 		real scaled = (real)(g_network_configuration.valuecdc - 1) * fraction;
 		long rounded;
-		__asm
-		{
-			fld scaled
-			fistp rounded
-		}
+		REAL_TO_LONG(scaled, rounded);
 		long level = rounded + 1;
 		if (minimum > level)
 			minimum = level;
@@ -122,13 +124,11 @@ bool function_68800(c_simulation_view *view, long *delay, long *rate, long *rece
 		*delay = measured_delay;
 		real scaled = measured_rate * 10.0f;
 		long rounded;
-		__asm { fld scaled }
-		__asm { fistp rounded }
+		REAL_TO_LONG(scaled, rounded);
 		*rate = rounded;
 		*received_rate = measured_received * 10 / 1024;
 		scaled = (real)measured_loss;
-		__asm { fld scaled }
-		__asm { fistp rounded }
+		REAL_TO_LONG(scaled, rounded);
 		*loss_percent = rounded;
 		result = true;
 	}
