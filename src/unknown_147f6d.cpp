@@ -1651,8 +1651,12 @@ void function_147af1(long index, long fallback_index, c_render_window *window)
                     fade_time = 1000;
                 real fade = (1.f - (real)fade_time * 0.001f) * 255.f;
                 long alpha;
+#ifdef H2_NATIVE_PORT
+                alpha = (long)(fade + 0.5f);
+#else
                 __asm { fld fade }
                 __asm { fistp alpha }
+#endif
                 color = (dword)alpha << 24;
             }
             else

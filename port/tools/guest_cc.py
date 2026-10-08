@@ -35,7 +35,7 @@ def main():
         language_flags = ["-fno-exceptions", "-fno-rtti"] if compiler.name == "clang++" else []
         include_flags = [f"-I{directory}" for directory in args.include]
         frontend_target = "thumbv7-pc-windows-msvc" if args.ms_abi else "arm64_32-apple-watchos"
-        abi_flags = ["-DH2_MS_ABI_FRONTEND=1"] if args.ms_abi else []
+        abi_flags = ["-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar"] if args.ms_abi else []
         run(compiler, f"--target={frontend_target}", "-O2", "-ffreestanding",
             "-DH2_NATIVE_PORT=1", "-fms-extensions", "-Wno-ignored-attributes",
             *abi_flags, *language_flags, *include_flags,

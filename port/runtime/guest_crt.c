@@ -1,4 +1,5 @@
 #include <string.h>
+#include <wchar.h>
 
 void* memchr(const void* data, int value, size_t size) {
     const unsigned char* bytes = (const unsigned char*)data;
@@ -124,4 +125,47 @@ char* strstr(const char* text, const char* pattern) {
         if (!*b) return (char*)text;
     }
     return 0;
+}
+
+wchar_t* wcschr(const wchar_t* text, wchar_t character) {
+    do {
+        if (*text == character) return (wchar_t*)text;
+    } while (*text++);
+    return 0;
+}
+
+int wcscmp(const wchar_t* first, const wchar_t* second) {
+    while (*first && *first == *second) { ++first; ++second; }
+    return (int)*first - (int)*second;
+}
+
+size_t wcslen(const wchar_t* text) {
+    const wchar_t* end = text;
+    while (*end) ++end;
+    return (size_t)(end - text);
+}
+
+int wcsncmp(const wchar_t* first, const wchar_t* second, size_t size) {
+    while (size && *first && *first == *second) {
+        ++first; ++second; --size;
+    }
+    return size ? (int)*first - (int)*second : 0;
+}
+
+wchar_t* wcsncpy(wchar_t* destination, const wchar_t* source, size_t size) {
+    wchar_t* result = destination;
+    while (size && *source) { *destination++ = *source++; --size; }
+    while (size--) *destination++ = 0;
+    return result;
+}
+
+static wchar_t guest_lower(wchar_t value) {
+    return value >= L'A' && value <= L'Z' ? value + (L'a' - L'A') : value;
+}
+
+int _wcsicmp(const wchar_t* first, const wchar_t* second) {
+    while (*first && guest_lower(*first) == guest_lower(*second)) {
+        ++first; ++second;
+    }
+    return (int)guest_lower(*first) - (int)guest_lower(*second);
 }

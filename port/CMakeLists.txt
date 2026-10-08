@@ -25,20 +25,36 @@ set(H2_GUEST_CACHE_TAG_OBJECT "${H2_GUEST_OBJECT_DIR}/cache_tag_instances.o")
 set(H2_GUEST_CRT_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_crt.o")
 set(H2_GUEST_MAP_LOADER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_122870.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
+set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
+set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
+set(H2_GUEST_UI_HEAP_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a4742.o")
+set(H2_GUEST_UI_MANAGER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_147f6d.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+set(H2_MS_ABI_SOURCES
+    "${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_1a4742.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_147f6d.cpp"
+)
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
         "${H2_GUEST_GLOBALS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07a9a0_2.cpp"
         "${H2_GUEST_CACHE_TAG_OBJECT}|${PROJECT_SOURCE_DIR}/src/cache_tag_instances.cpp"
         "${H2_GUEST_CRT_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c"
         "${H2_GUEST_MAP_LOADER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp"
-        "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp")
+        "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
+        "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
+        "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
+        "${H2_GUEST_UI_HEAP_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a4742.cpp"
+        "${H2_GUEST_UI_MANAGER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_147f6d.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
     set(guest_abi_args)
-    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp")
+    list(FIND H2_MS_ABI_SOURCES "${source}" ms_abi_index)
+    if(NOT ms_abi_index EQUAL -1)
         list(APPEND guest_abi_args --ms-abi)
     endif()
     add_custom_command(
@@ -62,6 +78,8 @@ set_source_files_properties(
     "${H2_GUEST_RANDOM_OBJECT}" "${H2_GUEST_GLOBALS_OBJECT}"
     "${H2_GUEST_CACHE_TAG_OBJECT}" "${H2_GUEST_CRT_OBJECT}"
     "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_MAIN_MENU_OBJECT}"
+    "${H2_GUEST_WIDGET_BASE_OBJECT}" "${H2_GUEST_SCREEN_BASE_OBJECT}"
+    "${H2_GUEST_UI_HEAP_OBJECT}" "${H2_GUEST_UI_MANAGER_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -72,7 +90,13 @@ add_library(h2_recovered_guest STATIC
 )
 set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 
-add_library(h2_main_menu_guest STATIC "${H2_GUEST_MAIN_MENU_OBJECT}")
+add_library(h2_main_menu_guest STATIC
+    "${H2_GUEST_MAIN_MENU_OBJECT}"
+    "${H2_GUEST_WIDGET_BASE_OBJECT}"
+    "${H2_GUEST_SCREEN_BASE_OBJECT}"
+    "${H2_GUEST_UI_HEAP_OBJECT}"
+    "${H2_GUEST_UI_MANAGER_OBJECT}"
+)
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
 
 add_library(h2_port_support STATIC
