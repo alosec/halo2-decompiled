@@ -13,6 +13,12 @@ time globals */
 
 vector3f g_4417f0[1026];
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(x, result) ((result) = (long)((x) + 0.5f))
+#else
+#define REAL_TO_LONG(x, result) __asm { fld x } __asm { fistp result }
+#endif
+
 // @retail 0x146240
 void random_initialize(void)
 {
@@ -140,11 +146,7 @@ static inline long game_time_speed_to_ticks(s_game_options_view *options, real s
 	real ticks = (real)options->field_2_3 / speed;
 	long result;
 
-	__asm
-	{
-		fld ticks
-		fistp result
-	}
+	REAL_TO_LONG(ticks, result);
 	return result;
 }
 
@@ -233,11 +235,7 @@ void function_146660(real seconds, real *elapsed, long *ticks_due)
 					scale = 5.0f;
 				}
 				limit = scale * 2.0f;
-				__asm
-				{
-					fld limit
-					fistp limit_ticks
-				}
+				REAL_TO_LONG(limit, limit_ticks);
 				if (maximum_ticks > limit_ticks)
 				{
 					maximum_ticks = limit_ticks;

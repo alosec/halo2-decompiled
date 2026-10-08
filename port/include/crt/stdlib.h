@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 int abs(int value);
+int rand(void);
 void qsort(void* base, size_t count, size_t size,
            int (__cdecl* compare)(const void*, const void*));
 
