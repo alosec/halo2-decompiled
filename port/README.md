@@ -34,9 +34,9 @@ python3 port/tools/compile_census.py --root . \
   --output build/native/compile-census.json
 ```
 
-A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current sixteen recovered units plus CRT support have 175 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
+A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current sixteen recovered units plus CRT support have 155 unresolved symbols after 20 encoded-address retail globals are bound to the guest arena. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
 
-The same selected core is independently compiled through the Darwin-assembly-to-AArch64-ELF pipeline and cross-linked into `build/native/port/main-menu-core.partial.o`. This relocatable image proves that the real Microsoft-ABI UI units coexist with correct weak aliases and exactly the same unresolved set as the Mach-O closure report. It is not the final executable guest image and cannot run until those remaining services and fixed-address bindings are supplied.
+The same selected core is independently compiled through the Darwin-assembly-to-AArch64-ELF pipeline and cross-linked into `build/native/port/main-menu-core.partial.o`. `runtime/main_menu_bindings.json` supplies only guest addresses already encoded in recovered global names, and the host initializes those locations from the user's mapped XBE sections. The relocatable image proves that the real Microsoft-ABI UI units coexist with correct weak aliases and exactly the same unresolved set as the closure report. It is not the final executable guest image and cannot run until the remaining engine and host services are supplied.
 
 ## Architecture
 

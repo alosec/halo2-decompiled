@@ -8,6 +8,10 @@ import subprocess
 import sys
 
 
+def normalize_symbol(name: str) -> str:
+    return name[1:] if name.startswith("_") else name
+
+
 def read_symbols(nm: Path, obj: Path) -> list[tuple[str, str]]:
     result = subprocess.run(
         [str(nm), "--format=posix", str(obj)],
@@ -20,14 +24,14 @@ def read_symbols(nm: Path, obj: Path) -> list[tuple[str, str]]:
         fields = line.rsplit(maxsplit=3)
         if len(fields) < 2:
             continue
-        name, kind = fields[0], fields[1]
+        name, kind = normalize_symbol(fields[0]), fields[1]
         if len(kind) != 1:
             continue
         symbols.append((name, kind))
     return symbols
 
 
-def build_report(nm: Path, objects: list[Path]) -> dict:
+def build_report(nm: Path, objects: list[Path], bindings: dict[str, int]) -> dict:
     definitions: dict[str, list[str]] = {}
     references: dict[str, list[str]] = {}
 
@@ -39,8 +43,9 @@ def build_report(nm: Path, objects: list[Path]) -> dict:
             table = references if kind.upper() == "U" else definitions
             table.setdefault(name, []).append(owner)
 
-    unresolved = sorted(set(references) - set(definitions))
+    unresolved = sorted(set(references) - set(definitions) - set(bindings))
     resolved = sorted(set(references) & set(definitions))
+    resolved_external = sorted((set(references) - set(definitions)) & set(bindings))
     duplicate_definitions = sorted(
         name for name, owners in definitions.items() if len(set(owners)) > 1
     )
@@ -51,12 +56,21 @@ def build_report(nm: Path, objects: list[Path]) -> dict:
             "defined": len(definitions),
             "referenced": len(references),
             "resolved_in_set": len(resolved),
+            "resolved_external": len(resolved_external),
             "unresolved": len(unresolved),
             "duplicate_definitions": len(duplicate_definitions),
         },
         "unresolved": [
             {"symbol": name, "referenced_by": sorted(set(references[name]))}
             for name in unresolved
+        ],
+        "resolved_external": [
+            {
+                "symbol": name,
+                "address": f"0x{bindings[name]:08x}",
+                "referenced_by": sorted(set(references[name])),
+            }
+            for name in resolved_external
         ],
         "resolved_in_set": [
             {
@@ -81,6 +95,7 @@ def render_text(report: dict) -> str:
         f"defined: {counts['defined']}",
         f"referenced: {counts['referenced']}",
         f"resolved in set: {counts['resolved_in_set']}",
+        f"resolved externally: {counts['resolved_external']}",
         f"unresolved: {counts['unresolved']}",
         f"duplicate definitions: {counts['duplicate_definitions']}",
         "",
@@ -91,16 +106,36 @@ def render_text(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def load_bindings(path: Path | None) -> dict[str, int]:
+    if path is None:
+        return {}
+    document = json.loads(path.read_text())
+    if document.get("format") != 1 or not isinstance(document.get("symbols"), list):
+        raise ValueError("unsupported guest binding manifest")
+    result: dict[str, int] = {}
+    for entry in document["symbols"]:
+        name = normalize_symbol(entry["symbol"])
+        address = int(entry["address"], 0)
+        if name in result:
+            raise ValueError(f"duplicate guest binding: {name}")
+        if not 0 <= address <= 0xFFFFFFFF:
+            raise ValueError(f"guest binding is outside ILP32: {name}")
+        result[name] = address
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--nm", type=Path, required=True, help="llvm-nm executable")
     parser.add_argument("--output", type=Path, help="write the report instead of stdout")
+    parser.add_argument("--bindings", type=Path,
+                        help="fixed-address guest symbol manifest")
     parser.add_argument("--format", choices=("json", "text"), default="text")
     parser.add_argument("--expect-unresolved", type=int)
     parser.add_argument("objects", type=Path, nargs="+")
     args = parser.parse_args()
 
-    report = build_report(args.nm, args.objects)
+    report = build_report(args.nm, args.objects, load_bindings(args.bindings))
     if args.format == "json":
         rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     else:

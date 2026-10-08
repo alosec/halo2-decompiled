@@ -7,6 +7,11 @@ from pathlib import Path
 import subprocess
 
 
+EXPECTED_BINDINGS = {
+    "?g_4e3b44@@3PAUs_tag_instance@@A": 0x004E3B44,
+    "?g_54e8e0@@3PAUs_player_slot@@A": 0x0054E8E0,
+}
+
 REQUIRED = {
     "??0c_main_menu_screen@@QAA@JJG@Z",
     "??0c_window_channel@@QAA@XZ",
@@ -14,6 +19,8 @@ REQUIRED = {
     "?function_16b790@@YAXPAUs_record_pool@@@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?unicode_string_copy@@YAXPAGPBGJ@Z",
+    "?g_4e3b44@@3PAUs_tag_instance@@A",
+    "?g_54e8e0@@3PAUs_player_slot@@A",
 }
 
 
@@ -26,6 +33,18 @@ def nm_symbols(nm: Path, image: Path, option: str) -> set[str]:
         for line in output.splitlines()
         if line.strip()
     }
+
+
+def nm_values(nm: Path, image: Path) -> dict[str, int]:
+    output = subprocess.check_output(
+        [str(nm), "--defined-only", "--format=posix", str(image)], text=True
+    )
+    values: dict[str, int] = {}
+    for line in output.splitlines():
+        fields = line.rsplit(maxsplit=3)
+        if len(fields) >= 3:
+            values[fields[0]] = int(fields[2], 16)
+    return values
 
 
 def main():
@@ -63,6 +82,12 @@ def main():
     stale_aliases = sorted(symbol for symbol in defined if symbol.startswith("_??_E"))
     if stale_aliases:
         raise RuntimeError(f"Darwin-decorated aliases leaked into ELF: {stale_aliases}")
+    values = nm_values(args.nm, args.image)
+    for symbol, expected in EXPECTED_BINDINGS.items():
+        if values.get(symbol) != expected:
+            raise RuntimeError(
+                f"fixed binding {symbol} is {values.get(symbol)!r}, expected {expected:#x}"
+            )
 
     print(
         f"cross-linked AArch64 main-menu ELF passed: "

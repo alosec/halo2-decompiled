@@ -152,6 +152,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
 
+set(H2_MAIN_MENU_BINDINGS
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_bindings.json")
 set(H2_MAIN_MENU_CLOSURE_REPORT
     "${CMAKE_BINARY_DIR}/port/main-menu-symbol-closure.json")
 add_custom_command(
@@ -159,10 +161,11 @@ add_custom_command(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
             --nm ${H2_LLVM_NM}
+            --bindings ${H2_MAIN_MENU_BINDINGS}
             --format json
             --output "${H2_MAIN_MENU_CLOSURE_REPORT}"
             ${H2_MAIN_MENU_GUEST_OBJECTS}
-    DEPENDS ${H2_MAIN_MENU_GUEST_OBJECTS}
+    DEPENDS ${H2_MAIN_MENU_GUEST_OBJECTS} ${H2_MAIN_MENU_BINDINGS}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
     VERBATIM
 )
@@ -211,6 +214,19 @@ add_custom_command(
     VERBATIM
 )
 list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_GUEST_CRT_ELF_OBJECT}")
+set(H2_MAIN_MENU_BINDINGS_ASM "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.s")
+set(H2_MAIN_MENU_BINDINGS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_BINDINGS_OBJECT}"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_bindings.py
+            --output "${H2_MAIN_MENU_BINDINGS_ASM}" ${H2_MAIN_MENU_BINDINGS}
+    COMMAND ${H2_LLVM_ROOT}/bin/llvm-mc -triple=aarch64-linux-gnu -filetype=obj
+            "${H2_MAIN_MENU_BINDINGS_ASM}" -o "${H2_MAIN_MENU_BINDINGS_OBJECT}"
+    DEPENDS ${H2_MAIN_MENU_BINDINGS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_bindings.py
+    VERBATIM
+)
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_MAIN_MENU_BINDINGS_OBJECT}")
 set(H2_MAIN_MENU_PARTIAL_ELF "${CMAKE_BINARY_DIR}/port/main-menu-core.partial.o")
 add_custom_command(
     OUTPUT "${H2_MAIN_MENU_PARTIAL_ELF}"
@@ -279,8 +295,9 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
             --nm ${H2_LLVM_NM}
+            --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 175
+            --expect-unresolved 155
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(

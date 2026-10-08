@@ -1,0 +1,26 @@
+{
+  "format": 1,
+  "description": "Retail guest virtual addresses encoded by the recovered global names. The host initializes these addresses from the user's XBE sections; this file contains no retail data.",
+  "symbols": [
+    {"symbol": "?g_4686dc@@3PAUcolor4f@@A", "address": "0x004686dc"},
+    {"symbol": "?g_468720@@3PATpoint3f@@A", "address": "0x00468720"},
+    {"symbol": "?g_468758@@3PAVc_data_allocator@@A", "address": "0x00468758"},
+    {"symbol": "?g_485a8a@@3Ushort_rect_pair@@A", "address": "0x00485a8a"},
+    {"symbol": "?g_4e0350@@3PAUs_palette_source_globals@@A", "address": "0x004e0350"},
+    {"symbol": "?g_4e3b44@@3PAUs_tag_instance@@A", "address": "0x004e3b44"},
+    {"symbol": "?g_4e6948@@3PAUs_game_options_view@@A", "address": "0x004e6948"},
+    {"symbol": "?g_4e73a0@@3Us_draw_string_globals@@A", "address": "0x004e73a0"},
+    {"symbol": "?g_4ee4c4@@3Us_peer_list_globals@@A", "address": "0x004ee4c4"},
+    {"symbol": "?g_510c54@@3PAUs_game_time_globals@@A", "address": "0x00510c54"},
+    {"symbol": "?g_54d5a0@@3_NA", "address": "0x0054d5a0"},
+    {"symbol": "?g_54d5b8@@3KA", "address": "0x0054d5b8"},
+    {"symbol": "?g_54d5bc@@3KA", "address": "0x0054d5bc"},
+    {"symbol": "?g_54e49c@@3JA", "address": "0x0054e49c"},
+    {"symbol": "?g_54e7c0@@3JA", "address": "0x0054e7c0"},
+    {"symbol": "?g_54e7c4@@3JA", "address": "0x0054e7c4"},
+    {"symbol": "?g_54e7cc@@3_NA", "address": "0x0054e7cc"},
+    {"symbol": "?g_54e7f8@@3_NA", "address": "0x0054e7f8"},
+    {"symbol": "?g_54e8e0@@3PAUs_player_slot@@A", "address": "0x0054e8e0"},
+    {"symbol": "?g_55c154@@3JA", "address": "0x0055c154"}
+  ]
+}
