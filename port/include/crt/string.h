@@ -6,6 +6,23 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
+#ifdef H2_NATIVE_PORT
+#define memchr h2_guest_memchr
+#define memcmp h2_guest_memcmp
+#define memcpy h2_guest_memcpy
+#define memmove h2_guest_memmove
+#define memset h2_guest_memset
+#define strchr h2_guest_strchr
+#define strcmp h2_guest_strcmp
+#define strcpy h2_guest_strcpy
+#define strlen h2_guest_strlen
+#define strncmp h2_guest_strncmp
+#define strncpy h2_guest_strncpy
+#define strrchr h2_guest_strrchr
+#define strspn h2_guest_strspn
+#define strstr h2_guest_strstr
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

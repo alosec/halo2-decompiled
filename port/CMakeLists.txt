@@ -21,11 +21,15 @@ set(H2_GUEST_OBJECT_DIR "${CMAKE_BINARY_DIR}/port/guest")
 set(H2_GUEST_RANDOM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0259a0.o")
 set(H2_GUEST_GLOBALS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07a9a0_2.o")
 set(H2_GUEST_CACHE_TAG_OBJECT "${H2_GUEST_OBJECT_DIR}/cache_tag_instances.o")
+set(H2_GUEST_CRT_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_crt.o")
+set(H2_GUEST_MAP_LOADER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_122870.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
         "${H2_GUEST_GLOBALS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07a9a0_2.cpp"
-        "${H2_GUEST_CACHE_TAG_OBJECT}|${PROJECT_SOURCE_DIR}/src/cache_tag_instances.cpp")
+        "${H2_GUEST_CACHE_TAG_OBJECT}|${PROJECT_SOURCE_DIR}/src/cache_tag_instances.cpp"
+        "${H2_GUEST_CRT_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c"
+        "${H2_GUEST_MAP_LOADER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -49,13 +53,15 @@ foreach(pair IN ITEMS
 endforeach()
 set_source_files_properties(
     "${H2_GUEST_RANDOM_OBJECT}" "${H2_GUEST_GLOBALS_OBJECT}"
-    "${H2_GUEST_CACHE_TAG_OBJECT}"
+    "${H2_GUEST_CACHE_TAG_OBJECT}" "${H2_GUEST_CRT_OBJECT}"
+    "${H2_GUEST_MAP_LOADER_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
     "${H2_GUEST_RANDOM_OBJECT}"
     "${H2_GUEST_GLOBALS_OBJECT}"
     "${H2_GUEST_CACHE_TAG_OBJECT}"
+    "${H2_GUEST_CRT_OBJECT}"
 )
 set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 
@@ -98,6 +104,16 @@ target_compile_features(h2-recovered-guest-tests PRIVATE cxx_std_20)
 target_compile_options(h2-recovered-guest-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-recovered-guest-tests PRIVATE h2_recovered_guest)
 add_test(NAME recovered-guest-archive COMMAND h2-recovered-guest-tests)
+
+add_executable(h2-recovered-cache-header-tests
+    tests/recovered_cache_header_tests.cpp
+    "${H2_GUEST_MAP_LOADER_OBJECT}"
+)
+target_compile_features(h2-recovered-cache-header-tests PRIVATE cxx_std_20)
+target_compile_options(h2-recovered-cache-header-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_options(h2-recovered-cache-header-tests PRIVATE -Wl,-dead_strip -Wl,-undefined,dynamic_lookup)
+target_link_libraries(h2-recovered-cache-header-tests PRIVATE h2_recovered_guest)
+add_test(NAME recovered-cache-header COMMAND h2-recovered-cache-header-tests)
 
 add_test(
     NAME guest-rebase-compiler
