@@ -47,6 +47,7 @@ set(H2_GUEST_UI_LAYOUT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1482e8.o")
 set(H2_GUEST_VARIANT_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_216ab0.o")
 set(H2_GUEST_VARIANT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19d220.o")
 set(H2_GUEST_VARIANT_FIELDS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236ae6.o")
+set(H2_GUEST_ONLINE_AVAILABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_08d7c0.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
 set(H2_MS_ABI_SOURCES
@@ -72,6 +73,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19d220.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236ae6.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_08d7c0.cpp"
 )
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
@@ -100,7 +102,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_UI_LAYOUT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1482e8.cpp"
         "${H2_GUEST_VARIANT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
         "${H2_GUEST_VARIANT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19d220.cpp"
-        "${H2_GUEST_VARIANT_FIELDS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236ae6.cpp")
+        "${H2_GUEST_VARIANT_FIELDS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236ae6.cpp"
+        "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_08d7c0.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -140,7 +143,7 @@ set_source_files_properties(
     "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}" "${H2_GUEST_UI_LAYOUT_OBJECT}"
     "${H2_GUEST_VARIANT_INDEX_OBJECT}" "${H2_GUEST_VARIANT_OBJECT}"
-    "${H2_GUEST_VARIANT_FIELDS_OBJECT}"
+    "${H2_GUEST_VARIANT_FIELDS_OBJECT}" "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -175,6 +178,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_VARIANT_INDEX_OBJECT}"
     "${H2_GUEST_VARIANT_OBJECT}"
     "${H2_GUEST_VARIANT_FIELDS_OBJECT}"
+    "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
@@ -324,7 +328,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 150
+            --expect-unresolved 149
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
