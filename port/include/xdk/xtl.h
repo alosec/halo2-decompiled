@@ -74,6 +74,7 @@ extern "C" {
 int __cdecl abs(int value);
 LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
+DWORD __stdcall GetTickCount(void);
 void __stdcall Sleep(DWORD milliseconds);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
