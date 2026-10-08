@@ -58,6 +58,8 @@ set(H2_GUEST_PROFILE_UPDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18fcc4.o")
 set(H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18f576.o")
 set(H2_GUEST_PLAYER_SLOT_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_190262.o")
 set(H2_GUEST_PLAYER_SLOT_GET_OBJECT "${H2_GUEST_OBJECT_DIR}/player_slot_get.o")
+set(H2_GUEST_PLAYER_SESSION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_190001.o")
+set(H2_GUEST_MENU_ACTION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_250155.o")
 set(H2_GUEST_UI_GEOMETRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13c050.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
@@ -96,6 +98,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
     "${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13c050.cpp"
 )
 foreach(pair IN ITEMS
@@ -137,6 +141,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
         "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
         "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}|${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
+        "${H2_GUEST_PLAYER_SESSION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
+        "${H2_GUEST_MENU_ACTION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
         "${H2_GUEST_UI_GEOMETRY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13c050.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
@@ -156,6 +162,22 @@ foreach(pair IN ITEMS
             --extract-symbol "?player_slot_count_active@@YAFXZ"
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PLAYER_SESSION_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1900a5@@YA_NJ@Z"
+            --extract-symbol "?function_1900be@@YAFXZ"
+            --extract-symbol "?function_1900ff@@YAFJ@Z"
+            --extract-symbol "?function_1901fc@@YAGXZ"
+            --extract-symbol "?function_19022f@@YAGXZ"
+            --extract-symbol "?function_19028d@@YA_NXZ"
+            --extract-symbol "?function_1906b4@@YAXXZ"
+            --extract-symbol "?function_1906da@@YA_NJ@Z"
+            --extract-symbol "?function_1910b8@@YAJJ@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_MENU_ACTION_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2523b7@@YA_NJ@Z")
     endif()
     add_custom_command(
         OUTPUT "${object}"
@@ -196,7 +218,8 @@ set_source_files_properties(
     "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
     "${H2_GUEST_SESSION_QUERY_OBJECT}" "${H2_GUEST_PROFILE_UPDATE_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}" "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}"
-    "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_UI_GEOMETRY_OBJECT}"
+    "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_PLAYER_SESSION_OBJECT}"
+    "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_UI_GEOMETRY_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -242,6 +265,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}"
+    "${H2_GUEST_PLAYER_SESSION_OBJECT}"
+    "${H2_GUEST_MENU_ACTION_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
@@ -275,7 +300,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 138
+            --expect-unresolved 132
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -298,6 +323,22 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?player_slot_count_active@@YAFXZ"
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1900a5@@YA_NJ@Z"
+            --extract-symbol "?function_1900be@@YAFXZ"
+            --extract-symbol "?function_1900ff@@YAFJ@Z"
+            --extract-symbol "?function_1901fc@@YAGXZ"
+            --extract-symbol "?function_19022f@@YAGXZ"
+            --extract-symbol "?function_19028d@@YA_NXZ"
+            --extract-symbol "?function_1906b4@@YAXXZ"
+            --extract-symbol "?function_1906da@@YA_NJ@Z"
+            --extract-symbol "?function_1910b8@@YAJJ@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2523b7@@YA_NJ@Z")
     endif()
     add_custom_command(
         OUTPUT "${object}"
@@ -437,7 +478,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 138
+            --expect-unresolved 132
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -445,7 +486,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 138
+            --expect-unresolved 132
 )
 add_test(
     NAME main-menu-elf-core
