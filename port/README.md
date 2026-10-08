@@ -2,7 +2,7 @@
 
 This directory is the clean, open-source host/runtime track for running the recovered Halo 2 code on modern systems. It is separate from the byte-matching Xbox build. It never embeds or installs game data, an XBE, an Xbox SDK, or other proprietary material.
 
-The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint is deliberately smaller: a native ARM64 SDL3 host that strictly validates the executable and two map files required for that milestone. It does **not** boot the game yet.
+The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint is deliberately smaller: a native ARM64 SDL3 host that strictly validates the retail data, plus a tested ARM ILP32 pipeline that executes the first recovered function against rebased guest memory. It does **not** boot the game yet.
 
 ## Local build
 
@@ -43,7 +43,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Native ARM64 build system, SDL host process, tests, and strict retail-data preflight.
 - [x] Extract and validate the complete retail data set under ignored local storage.
 - [x] Adapt and test the CC0 ILP32 guest compiler/rebase pass for Halo 2.
-- [x] Compile the first recovered Halo 2 translation unit for ARM ILP32 without proprietary headers or libraries (`unknown_0259a0.cpp`).
+- [x] Compile and execute the first recovered Halo 2 translation unit on ARM64 without proprietary headers or libraries (`unknown_0259a0.cpp`), preserving its 32-bit guest memory semantics.
 - [ ] Map recovered globals and establish a versioned guest/host import table.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.

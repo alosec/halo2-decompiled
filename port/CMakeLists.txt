@@ -53,4 +53,5 @@ add_test(
             --llvm ${H2_LLVM_ROOT}/bin
             --plugin $<TARGET_FILE:h2_guest_rebase>
             --root ${PROJECT_SOURCE_DIR}
+            --host-cxx ${CMAKE_CXX_COMPILER}
 )
