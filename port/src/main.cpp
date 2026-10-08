@@ -1,3 +1,4 @@
+#include "h2/guest_arena.hpp"
 #include "h2/retail_data.hpp"
 
 #include <cstdlib>
@@ -96,8 +97,23 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::string arena_error;
+    auto arena = h2::port::GuestArena::create(arena_error);
+    if (!arena) {
+        std::cerr << "error: " << arena_error << '\n';
+        return 1;
+    }
+    h2::port::XbeLoadReport image;
+    if (!arena->load_xbe(options.data_root / "default.xbe", image, arena_error)) {
+        std::cerr << "error: " << arena_error << '\n';
+        return 1;
+    }
+
     std::cout << "Supported retail Halo 2 data verified at " << options.data_root << '\n'
               << "default.xbe sha256 " << report.xbe_sha256 << '\n'
+              << "Initialized " << image.sections.size()
+              << " XBE sections in non-executable guest memory at 0x" << std::hex
+              << h2::port::kGuestBias << std::dec << '\n'
               << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless ? 0 : run_window();
 }

@@ -17,6 +17,7 @@ set_target_properties(h2_guest_rebase PROPERTIES
 )
 
 add_library(h2_port_support STATIC
+    src/guest_arena.cpp
     src/retail_data.cpp
 )
 target_include_directories(h2_port_support PUBLIC include)
@@ -39,6 +40,12 @@ target_compile_features(h2-retail-data-tests PRIVATE cxx_std_20)
 target_compile_options(h2-retail-data-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-retail-data-tests PRIVATE h2_port_support)
 add_test(NAME retail-data-errors COMMAND h2-retail-data-tests)
+
+add_executable(h2-guest-arena-tests tests/guest_arena_tests.cpp)
+target_compile_features(h2-guest-arena-tests PRIVATE cxx_std_20)
+target_compile_options(h2-guest-arena-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-guest-arena-tests PRIVATE h2_port_support)
+add_test(NAME guest-arena-xbe-loader COMMAND h2-guest-arena-tests)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(

@@ -46,6 +46,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Compile and execute the first recovered Halo 2 translation unit on ARM64 without proprietary headers or libraries (`unknown_0259a0.cpp`), preserving its 32-bit guest memory semantics.
 - [x] Bind recovered globals to their original guest virtual addresses and execute a recovered state mutation.
 - [x] Establish and execute the versioned guest-to-host import ABI, including guest-pointer rebasing.
+- [x] Reserve the 4 GB guest address space and initialize all 33 retail XBE sections, including zero-filled virtual tails, in non-executable memory.
 - [ ] Build a multi-unit guest image and implement the host services needed by startup.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
