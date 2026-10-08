@@ -38,6 +38,7 @@ set(H2_GUEST_WINDOW_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_235276.o")
 set(H2_GUEST_GAME_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_138800_2.o")
 set(H2_GUEST_RECORD_POOL_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16b570.o")
 set(H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16bcc0.o")
+set(H2_GUEST_RECORD_POOL_LAST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16bc40.o")
 set(H2_GUEST_UI_HEAP_GLOBALS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a474c.o")
 set(H2_GUEST_UI_HEAP_FREE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a4826.o")
 set(H2_GUEST_LOOP_ALLOCATOR_OBJECT "${H2_GUEST_OBJECT_DIR}/loop_allocator.o")
@@ -72,6 +73,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_16bcc0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1a474c.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1a4826.cpp"
     "${PROJECT_SOURCE_DIR}/src/loop_allocator.cpp"
@@ -109,6 +111,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_GAME_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
         "${H2_GUEST_RECORD_POOL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
         "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16bcc0.cpp"
+        "${H2_GUEST_RECORD_POOL_LAST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp"
         "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a474c.cpp"
         "${H2_GUEST_UI_HEAP_FREE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a4826.cpp"
         "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}|${PROJECT_SOURCE_DIR}/src/loop_allocator.cpp"
@@ -130,9 +133,14 @@ foreach(pair IN ITEMS
     list(GET fields 0 object)
     list(GET fields 1 source)
     set(guest_abi_args)
+    set(guest_extract_args)
     list(FIND H2_MS_ABI_SOURCES "${source}" ms_abi_index)
     if(NOT ms_abi_index EQUAL -1)
         list(APPEND guest_abi_args --ms-abi)
+    endif()
+    if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?data_last_index@@YAJPAUs_record_pool@@@Z")
     endif()
     add_custom_command(
         OUTPUT "${object}"
@@ -144,6 +152,7 @@ foreach(pair IN ITEMS
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
                 --include ${PROJECT_SOURCE_DIR}/include
                 ${guest_abi_args}
+                ${guest_extract_args}
                 --output "${object}"
                 "${source}"
         DEPENDS "${source}" ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
@@ -161,7 +170,7 @@ set_source_files_properties(
     "${H2_GUEST_DIALOG_CALLBACK_OBJECT}" "${H2_GUEST_WINDOW_CHANNEL_OBJECT}"
     "${H2_GUEST_WINDOW_QUERY_OBJECT}"
     "${H2_GUEST_GAME_STATE_OBJECT}" "${H2_GUEST_RECORD_POOL_OBJECT}"
-    "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}"
+    "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}" "${H2_GUEST_RECORD_POOL_LAST_OBJECT}"
     "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}" "${H2_GUEST_UI_HEAP_FREE_OBJECT}"
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}" "${H2_GUEST_NAME_BUFFER_OBJECT}"
     "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
@@ -197,6 +206,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_GAME_STATE_OBJECT}"
     "${H2_GUEST_RECORD_POOL_OBJECT}"
     "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}"
+    "${H2_GUEST_RECORD_POOL_LAST_OBJECT}"
     "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}"
     "${H2_GUEST_UI_HEAP_FREE_OBJECT}"
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}"
@@ -246,7 +256,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 142
+            --expect-unresolved 141
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -259,6 +269,11 @@ set(H2_MAIN_MENU_ELF_OBJECTS)
 foreach(source IN LISTS H2_MS_ABI_SOURCES)
     get_filename_component(unit "${source}" NAME_WE)
     set(object "${H2_GUEST_OBJECT_DIR}/elf/${unit}.o")
+    set(guest_extract_args)
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?data_last_index@@YAJPAUs_record_pool@@@Z")
+    endif()
     add_custom_command(
         OUTPUT "${object}"
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py
@@ -268,7 +283,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
                 --include ${PROJECT_SOURCE_DIR}/include
-                --ms-abi --output "${object}" "${source}"
+                --ms-abi ${guest_extract_args}
+                --output "${object}" "${source}"
         DEPENDS "${source}" ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
                 ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
@@ -396,7 +412,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 142
+            --expect-unresolved 141
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -404,7 +420,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 142
+            --expect-unresolved 141
 )
 add_test(
     NAME main-menu-elf-core

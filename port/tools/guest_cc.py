@@ -22,6 +22,8 @@ def main():
                         help="lower C++ with the 32-bit Microsoft ABI before ARM64 retargeting")
     parser.add_argument("--emit-assembly", action="store_true",
                         help="write arm64_32 Darwin assembly instead of a Mach-O object")
+    parser.add_argument("--extract-symbol", action="append", default=[],
+                        help="retain only this IR function and its transitive callees")
     parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
@@ -56,6 +58,13 @@ def main():
             text = re.sub(r' "target-cpu"="[^"]*"', '', text)
             text = re.sub(r' "target-features"="[^"]*"', '', text)
             ir.write_text(text)
+        if args.extract_symbol:
+            extracted = root / "unit.extracted.ll"
+            extract_args = [value for symbol in args.extract_symbol
+                            for value in ("--func", symbol)]
+            run(args.llvm / "llvm-extract", "--recursive", *extract_args,
+                "-S", ir, "-o", extracted)
+            ir = extracted
         run(args.llvm / "opt", f"-load-pass-plugin={args.plugin}",
             "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
         run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",

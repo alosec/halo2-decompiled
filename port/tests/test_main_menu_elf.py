@@ -17,6 +17,7 @@ REQUIRED = {
     "??0c_window_channel@@QAA@XZ",
     "??_Ec_main_menu_screen@@UAAPAXI@Z",
     "?function_16b790@@YAXPAUs_record_pool@@@Z",
+    "?data_last_index@@YAJPAUs_record_pool@@@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?unicode_string_copy@@YAXPAGPBGJ@Z",
     "?g_4e3b44@@3PAUs_tag_instance@@A",
@@ -94,6 +95,8 @@ def main():
         raise RuntimeError(
             f"main-menu ELF is missing host import trampolines: {sorted(missing_imports)}"
         )
+    if "?function_16c2b0@@YAJXZ" in defined:
+        raise RuntimeError("function extraction retained an unrelated object query")
     stale_aliases = sorted(symbol for symbol in defined if symbol.startswith("_??_E"))
     if stale_aliases:
         raise RuntimeError(f"Darwin-decorated aliases leaked into ELF: {stale_aliases}")
