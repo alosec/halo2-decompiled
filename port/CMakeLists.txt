@@ -47,3 +47,10 @@ add_test(
             --llvm ${H2_LLVM_ROOT}/bin
             --plugin $<TARGET_FILE:h2_guest_rebase>
 )
+add_test(
+    NAME recovered-guest-unit
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_recovered_guest_unit.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --root ${PROJECT_SOURCE_DIR}
+)

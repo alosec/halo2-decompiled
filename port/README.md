@@ -43,7 +43,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Native ARM64 build system, SDL host process, tests, and strict retail-data preflight.
 - [x] Extract and validate the complete retail data set under ignored local storage.
 - [x] Adapt and test the CC0 ILP32 guest compiler/rebase pass for Halo 2.
-- [ ] Compile the first recovered Halo 2 translation units natively without proprietary headers or libraries.
+- [x] Compile the first recovered Halo 2 translation unit for ARM ILP32 without proprietary headers or libraries (`unknown_0259a0.cpp`).
 - [ ] Map recovered globals and establish a versioned guest/host import table.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
