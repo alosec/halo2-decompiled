@@ -2,7 +2,7 @@
 
 This directory is the clean, open-source host/runtime track for running the recovered Halo 2 code on modern systems. It is separate from the byte-matching Xbox build. It never embeds or installs game data, an XBE, an Xbox SDK, or other proprietary material.
 
-The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint loads the authentic main-menu tag index through recovered cache code and builds a twenty-three-unit Microsoft-ABI UI core with freestanding CRT support, but the UI dependency graph is not closed and the game does **not** boot yet.
+The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint loads the authentic main-menu tag index through recovered cache code and builds a twenty-four-unit Microsoft-ABI UI core with freestanding CRT support, but the UI dependency graph is not closed and the game does **not** boot yet.
 
 ## Local build
 
@@ -34,7 +34,7 @@ python3 port/tools/compile_census.py --root . \
   --output build/native/compile-census.json
 ```
 
-A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current twenty-three recovered units plus C/C++ runtime support have 148 unresolved symbols after 23 recovered-address retail globals are bound to the guest arena. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
+A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current twenty-four recovered units plus C/C++ runtime support have 147 unresolved symbols after 23 recovered-address retail globals are bound to the guest arena. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
 
 The same selected core is independently compiled through the Darwin-assembly-to-AArch64-ELF pipeline and cross-linked into `build/native/port/main-menu-core.partial.o`. `runtime/main_menu_bindings.json` supplies only guest addresses already encoded in recovered global names, and the host initializes those locations from the user's mapped XBE sections. The relocatable image proves that the real Microsoft-ABI UI units coexist with correct weak aliases and exactly the same unresolved set as the closure report. It is not the final executable guest image and cannot run until the remaining engine and host services are supplied.
 
