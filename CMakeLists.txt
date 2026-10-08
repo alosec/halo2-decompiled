@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(halo2_native_port LANGUAGES C CXX)
+project(halo2_native_port LANGUAGES C CXX ASM)
 
 include(CTest)
 
