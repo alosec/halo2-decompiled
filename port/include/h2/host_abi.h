@@ -12,6 +12,8 @@ extern "C" {
  * host implementation receives them. Keep this interface versioned and small. */
 unsigned int host_h2_abi_version(void);
 void host_h2_log(const char* message);
+void* host_h2_physical_memory_malloc_low(int size, unsigned int protection);
+int host_h2_cache_read(unsigned int offset, int size, void* buffer);
 
 #ifdef __cplusplus
 }

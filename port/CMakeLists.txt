@@ -38,6 +38,7 @@ foreach(pair IN ITEMS
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
                 --llvm ${H2_LLVM_ROOT}/bin
                 --plugin $<TARGET_FILE:h2_guest_rebase>
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
                 --include ${PROJECT_SOURCE_DIR}/include
@@ -114,6 +115,18 @@ target_compile_options(h2-recovered-cache-header-tests PRIVATE -Wall -Wextra -Wp
 target_link_options(h2-recovered-cache-header-tests PRIVATE -Wl,-dead_strip -Wl,-undefined,dynamic_lookup)
 target_link_libraries(h2-recovered-cache-header-tests PRIVATE h2_recovered_guest)
 add_test(NAME recovered-cache-header COMMAND h2-recovered-cache-header-tests)
+
+add_executable(h2-mainmenu-tag-probe
+    tests/mainmenu_tag_probe.cpp
+    runtime/guest_stack.s
+    runtime/map_loader_symbols.s
+    "${H2_GUEST_MAP_LOADER_OBJECT}"
+)
+target_include_directories(h2-mainmenu-tag-probe PRIVATE include)
+target_compile_features(h2-mainmenu-tag-probe PRIVATE cxx_std_20)
+target_compile_options(h2-mainmenu-tag-probe PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_options(h2-mainmenu-tag-probe PRIVATE -Wl,-dead_strip -Wl,-undefined,dynamic_lookup)
+target_link_libraries(h2-mainmenu-tag-probe PRIVATE h2_recovered_guest)
 
 add_test(
     NAME guest-rebase-compiler

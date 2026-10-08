@@ -211,7 +211,7 @@ struct RebasePass : PassInfoMixin<RebasePass> {
                     // using its original ILP32 arguments instead.
                     Type *pointer = PointerType::get(module.getContext(), 0);
                     auto callee = module.getOrInsertFunction(
-                        isa<MemMoveInst>(transfer) ? "memmove" : "memcpy",
+                        isa<MemMoveInst>(transfer) ? "h2_guest_memmove" : "h2_guest_memcpy",
                         FunctionType::get(pointer, {pointer, pointer, builder.getInt32Ty()},
                                           false));
                     builder.CreateCall(callee, {transfer->getRawDest(), transfer->getRawSource(),
@@ -221,7 +221,7 @@ struct RebasePass : PassInfoMixin<RebasePass> {
                 } else if (auto *set = dyn_cast<MemSetInst>(instruction)) {
                     Type *pointer = PointerType::get(module.getContext(), 0);
                     auto callee = module.getOrInsertFunction(
-                        "memset",
+                        "h2_guest_memset",
                         FunctionType::get(
                             pointer, {pointer, builder.getInt32Ty(), builder.getInt32Ty()}, false));
                     builder.CreateCall(

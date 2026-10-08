@@ -9,6 +9,9 @@
 #include "unknown_122870.h"
 #include <xtl.h>
 #include <string.h>
+#ifdef H2_NATIVE_PORT
+#include "h2/host_abi.h"
+#endif
 
 struct s_cache_tag_instance
 {
@@ -51,7 +54,11 @@ long cache_file_get_maximum_size(long type);
 
 extern long g_55aca8;
 
+#ifdef H2_NATIVE_PORT
+extern s_cache_file_globals cache_file_globals;
+#else
 s_cache_file_globals cache_file_globals;
+#endif
 
 #define CACHE_TAG_INSTANCES ((s_cache_tag_instance *)g_4e3b44)
 
@@ -90,7 +97,11 @@ bool function_122d60(s_cache_file_location location, long size, void *buffer);
 bool __stdcall version_is_compatible(char const *version);
 
 /* set when a map fails to load (the main loop shows the error) */
+#ifdef H2_NATIVE_PORT
+extern long g_510a08;
+#else
 long g_510a08;
+#endif
 extern bool g_510819;
 
 /* the scenario tag of the loaded map */
@@ -100,6 +111,9 @@ extern long g_4686c0;
    current physical memory stage; NULL when it is full */
 static __forceinline void *physical_memory_malloc_low(long size, dword protect)
 {
+#ifdef H2_NATIVE_PORT
+	return host_h2_physical_memory_malloc_low(size, protect);
+#else
 	void *result = NULL;
 	long stage = g_global_f9ae07.field_0;
 	long *bottom = &g_global_f9ae07.field_c_6[stage];
@@ -119,6 +133,7 @@ static __forceinline void *physical_memory_malloc_low(long size, dword protect)
 		}
 	}
 	return result;
+#endif
 }
 
 static inline long cache_file_sector_align(long size)
@@ -341,7 +356,9 @@ s_cache_tag_group *cache_tag_group_get(long group_tag)
 // @retail 0x122d60
 bool function_122d60(s_cache_file_location location, long size, void *buffer)
 {
-
+#ifdef H2_NATIVE_PORT
+	return host_h2_cache_read(location.offset, size, buffer) != 0;
+#else
 	bool result = false;
 	dword bytes_read;
 	function_213760(location.offset, size, buffer, &bytes_read, (bool *)&location.offset, 2, 6);
@@ -349,6 +366,7 @@ bool function_122d60(s_cache_file_location location, long size, void *buffer)
 	if (bytes_read == size)
 		result = true;
 	return result;
+#endif
 }
 
 long map_location_get(char const *map_name);

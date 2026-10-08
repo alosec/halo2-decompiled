@@ -59,7 +59,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [ ] Implement the host services and clean compatibility declarations needed by startup.
 - [x] Validate the authentic `mainmenu.map` and `shared.map` cache headers, build, types, and identities.
 - [x] Execute recovered `cache_header_verify` against the authentic local `mainmenu.map` header.
-- [ ] Mount retail paths and load the `mainmenu.map` tag index through recovered cache code.
+- [x] Load the authentic `mainmenu.map` tag index through recovered cache code on a guest stack: 118 groups, 1,364 instances, scenario `0xe1780003` at `0x80121c44`, globals `0xe1740000` at `0x800e5000`.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.
 - [ ] Load a campaign map, enter gameplay, save/reload, and validate sustained play.

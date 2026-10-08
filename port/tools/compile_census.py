@@ -39,7 +39,8 @@ def main():
             str(args.llvm / "clang++"), "--target=arm64_32-apple-watchos", "-O0",
             "-ffreestanding", "-fsyntax-only", "-ferror-limit=1", "-fms-extensions",
             "-DH2_NATIVE_PORT=1", "-Wno-ignored-attributes", "-Wno-microsoft-anon-tag",
-            f"-I{args.root / 'port/include/crt'}", f"-I{args.root / 'port/include/xdk'}",
+            f"-I{args.root / 'port/include'}", f"-I{args.root / 'port/include/crt'}",
+            f"-I{args.root / 'port/include/xdk'}",
             f"-I{args.root / 'include'}", str(source),
         ]
         try:
