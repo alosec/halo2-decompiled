@@ -314,7 +314,7 @@ add_executable(h2-guest-crt-tests
 )
 target_include_directories(h2-guest-crt-tests PRIVATE include/crt)
 target_compile_options(h2-guest-crt-tests PRIVATE
-    -fno-builtin -Wall -Wextra -Wpedantic -Werror)
+    -fshort-wchar -fno-builtin -Wall -Wextra -Wpedantic -Werror)
 add_test(NAME guest-crt-services COMMAND h2-guest-crt-tests)
 
 add_executable(h2-recovered-guest-tests
@@ -337,7 +337,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 147
+            --expect-unresolved 146
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(

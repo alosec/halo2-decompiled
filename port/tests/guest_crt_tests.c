@@ -1,5 +1,7 @@
 #include <stddef.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <wchar.h>
 
 struct h2_guest_filetime {
     unsigned long low;
@@ -12,6 +14,17 @@ extern long CompareFileTime(const struct h2_guest_filetime* first,
                             const struct h2_guest_filetime* second);
 extern void h2_guest_qsort(void* base, size_t count, size_t size,
                            h2_guest_compare_fn compare);
+extern int h2_guest_vsnwprintf(wchar_t* destination, size_t size,
+                               const wchar_t* format, va_list arguments);
+
+static int guest_swprintf(wchar_t* destination, size_t size,
+                          const wchar_t* format, ...) {
+    va_list arguments;
+    va_start(arguments, format);
+    int result = h2_guest_vsnwprintf(destination, size, format, arguments);
+    va_end(arguments);
+    return result;
+}
 
 static int compare_ints(const void* first, const void* second) {
     const int a = *(const int*)first;
@@ -41,6 +54,21 @@ int main(void) {
         fputs("guest file-time comparison failed\n", stderr);
         return 1;
     }
-    puts("guest CRT sort and file-time services passed");
+    wchar_t formatted[32];
+    static const wchar_t expected_text[] = L"Halo 0042 BEEF ok";
+    int formatted_size = guest_swprintf(formatted, 32, L"%s %04d %X %S",
+                                        L"Halo", 42, 0xbeef, "ok");
+    if (formatted_size != 17 || wcscmp(formatted, expected_text)) {
+        fputs("guest wide formatting failed\n", stderr);
+        return 1;
+    }
+    wchar_t truncated[4] = {L'x', L'x', L'x', L'x'};
+    if (guest_swprintf(truncated, 4, L"hello") != -1 ||
+        truncated[0] != L'h' || truncated[3] != L'l') {
+        fputs("guest wide formatting truncation failed\n", stderr);
+        return 1;
+    }
+
+    puts("guest CRT sort, file-time, and wide-format services passed");
     return 0;
 }
