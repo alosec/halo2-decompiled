@@ -5,6 +5,7 @@ set(H2_LLVM_ROOT "/opt/homebrew/opt/llvm@22" CACHE PATH "LLVM used for the ARM I
 list(APPEND CMAKE_PREFIX_PATH "${H2_LLVM_ROOT}/lib/cmake/llvm")
 find_package(LLVM CONFIG REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_program(H2_LLD NAMES ld.lld REQUIRED)
 
 add_library(h2_guest_rebase MODULE compiler/guest_rebase.cpp)
 target_include_directories(h2_guest_rebase SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
@@ -117,6 +118,14 @@ add_test(
     NAME main-menu-ms-abi
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main_menu_ms_abi.py
             --object ${H2_GUEST_MAIN_MENU_OBJECT}
+)
+add_test(
+    NAME guest-elf-image
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_elf_image.py
+            --root ${PROJECT_SOURCE_DIR}
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --lld ${H2_LLD}
 )
 
 add_executable(h2-recovered-cache-header-tests

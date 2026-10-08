@@ -20,6 +20,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--ms-abi", action="store_true",
                         help="lower C++ with the 32-bit Microsoft ABI before ARM64 retargeting")
+    parser.add_argument("--emit-assembly", action="store_true",
+                        help="write arm64_32 Darwin assembly instead of a Mach-O object")
     parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
@@ -57,6 +59,9 @@ def main():
             "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
         run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",
             rebased, "-o", assembly)
+        if args.emit_assembly:
+            args.output.write_text(assembly.read_text())
+            return
         # arm64_32 encodes a GOT pointer load as a 32-bit LDR because its
         # native pointer is 32 bits. The object is linked into a normal ARM64
         # Mach-O host, whose GOT slots and relocation require an x-register.

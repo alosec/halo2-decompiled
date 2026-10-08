@@ -61,7 +61,8 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Execute recovered `cache_header_verify` against the authentic local `mainmenu.map` header.
 - [x] Load the authentic `mainmenu.map` tag index through recovered cache code on a guest stack: 118 groups, 1,364 instances, scenario `0xe1780003` at `0x80121c44`, globals `0xe1740000` at `0x800e5000`.
 - [x] Compile the recovered main-menu screen/list implementation and its vtables to ARM ILP32 with Microsoft-compatible C++ layout and symbols.
-- [ ] Link and load the Microsoft-ABI guest code image with 32-bit vtable/function relocations.
+- [x] Link, map, and execute a Microsoft-ABI ARM guest ELF with 32-bit vtable relocations and verified virtual dispatch.
+- [ ] Link the recovered main-menu unit and its dependency closure into the executable guest image.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.
 - [ ] Load a campaign map, enter gameplay, save/reload, and validate sustained play.
