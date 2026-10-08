@@ -16,6 +16,9 @@ struct XUID {
     DWORD dwUserFlags;
 };
 
+struct XONLINE_TEAM;
+struct XONLINE_TEAM_MEMBER;
+
 struct XONLINE_USER {
     XUID xuid;
     char szGamertag[XONLINE_GAMERTAG_SIZE];
