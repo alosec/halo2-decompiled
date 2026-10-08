@@ -406,6 +406,14 @@ add_test(
             --llvm ${H2_LLVM_ROOT}/bin
 )
 add_test(
+    NAME guest-host-import-trampoline
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_host_imports.py
+            --tool ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_host_imports.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --lld ${H2_LLD}
+)
+add_test(
     NAME guest-elf-image
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_elf_image.py
             --root ${PROJECT_SOURCE_DIR}
