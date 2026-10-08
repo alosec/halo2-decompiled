@@ -50,6 +50,7 @@ set(H2_GUEST_UI_LAYOUT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1482e8.o")
 set(H2_GUEST_VARIANT_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_216ab0.o")
 set(H2_GUEST_VARIANT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19d220.o")
 set(H2_GUEST_VARIANT_FIELDS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236ae6.o")
+set(H2_GUEST_CONTROLLER_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a2c81.o")
 set(H2_GUEST_ONLINE_AVAILABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_08d7c0.o")
 set(H2_GUEST_SESSION_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_059670.o")
 set(H2_GUEST_PROFILE_UPDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18fcc4.o")
@@ -83,6 +84,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19d220.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236ae6.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_1a2c81.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_08d7c0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_059670.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_18fcc4.cpp"
@@ -119,6 +121,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_VARIANT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
         "${H2_GUEST_VARIANT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19d220.cpp"
         "${H2_GUEST_VARIANT_FIELDS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236ae6.cpp"
+        "${H2_GUEST_CONTROLLER_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a2c81.cpp"
         "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_08d7c0.cpp"
         "${H2_GUEST_SESSION_QUERY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_059670.cpp"
         "${H2_GUEST_PROFILE_UPDATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18fcc4.cpp"
@@ -165,7 +168,8 @@ set_source_files_properties(
     "${H2_GUEST_HOST_RUNTIME_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}" "${H2_GUEST_UI_LAYOUT_OBJECT}"
     "${H2_GUEST_VARIANT_INDEX_OBJECT}" "${H2_GUEST_VARIANT_OBJECT}"
-    "${H2_GUEST_VARIANT_FIELDS_OBJECT}" "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
+    "${H2_GUEST_VARIANT_FIELDS_OBJECT}" "${H2_GUEST_CONTROLLER_INDEX_OBJECT}"
+    "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
     "${H2_GUEST_SESSION_QUERY_OBJECT}" "${H2_GUEST_PROFILE_UPDATE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
@@ -205,6 +209,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_VARIANT_INDEX_OBJECT}"
     "${H2_GUEST_VARIANT_OBJECT}"
     "${H2_GUEST_VARIANT_FIELDS_OBJECT}"
+    "${H2_GUEST_CONTROLLER_INDEX_OBJECT}"
     "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
     "${H2_GUEST_SESSION_QUERY_OBJECT}"
     "${H2_GUEST_PROFILE_UPDATE_OBJECT}"
@@ -241,7 +246,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 143
+            --expect-unresolved 142
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -391,7 +396,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 143
+            --expect-unresolved 142
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -399,7 +404,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 143
+            --expect-unresolved 142
 )
 add_test(
     NAME main-menu-elf-core

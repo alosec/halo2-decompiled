@@ -7,7 +7,10 @@
 /* inline (kept out of line): retail's callers treat ecx and edx as
    clobbered across the call (0x23296e) */
 // @retail 0x1a2c81
-inline long c_class_1a2c81::get_controller_index()
+#ifndef H2_NATIVE_PORT
+inline
+#endif
+long c_class_1a2c81::get_controller_index()
 {
 	word flags = user_flags;
 
