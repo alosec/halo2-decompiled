@@ -15,6 +15,8 @@ struct RetailFile {
 struct RetailDataReport {
     bool ready = false;
     std::string xbe_sha256;
+    std::string cache_build;
+    std::string main_menu_name;
     std::vector<std::string> errors;
 };
 

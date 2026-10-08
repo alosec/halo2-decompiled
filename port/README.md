@@ -57,6 +57,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Reserve the 4 GB guest address space and initialize all 33 retail XBE sections, including zero-filled virtual tails, in non-executable memory.
 - [x] Build and execute the first reusable multi-unit recovered guest archive.
 - [ ] Implement the host services and clean compatibility declarations needed by startup.
+- [x] Validate the authentic `mainmenu.map` and `shared.map` cache headers, build, types, and identities.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.

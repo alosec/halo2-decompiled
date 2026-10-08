@@ -111,6 +111,8 @@ int main(int argc, char** argv) {
 
     std::cout << "Supported retail Halo 2 data verified at " << options.data_root << '\n'
               << "default.xbe sha256 " << report.xbe_sha256 << '\n'
+              << "cache build " << report.cache_build << ", map "
+              << report.main_menu_name << '\n'
               << "Initialized " << image.sections.size()
               << " XBE sections in non-executable guest memory at 0x" << std::hex
               << h2::port::kGuestBias << std::dec << '\n'
