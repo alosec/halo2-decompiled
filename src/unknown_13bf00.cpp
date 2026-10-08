@@ -27,6 +27,12 @@ struct s_unknown_13bf00
 
 s_unknown_13bf00 *g_510c50;
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(x, result) ((result) = (long)((x) + 0.5f))
+#else
+#define REAL_TO_LONG(x, result) __asm { fld x } __asm { fistp result }
+#endif
+
 PRIVATE __forceinline void ids_clear(s_unknown_ids *ids)
 {
 	memset(ids, 0xff, sizeof(*ids));
@@ -112,11 +118,7 @@ void __stdcall function_13c1e0(short title_index, real seconds)
 		data->titles[i].index = title_index;
 		real ticks = g_510c54->field_2_3 * seconds;
 		long rounded;
-		__asm
-		{
-			fld ticks
-			fistp rounded
-		}
+		REAL_TO_LONG(ticks, rounded);
 		data->titles[i].ticks = (short)-rounded;
 	}
 }
@@ -239,11 +241,7 @@ static __forceinline short real_to_short(real value)
 {
 	long result;
 
-	__asm
-	{
-		fld value
-		fistp result
-	}
+	REAL_TO_LONG(value, result);
 	return (short)result;
 }
 

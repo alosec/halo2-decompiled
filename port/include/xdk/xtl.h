@@ -76,6 +76,7 @@ LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetTickCount(void);
 void __stdcall Sleep(DWORD milliseconds);
+DWORD __stdcall XGetLanguage(void);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
 #ifdef __cplusplus
