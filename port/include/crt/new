@@ -1,0 +1,17 @@
+#ifndef H2_PORT_CRT_NEW
+#define H2_PORT_CRT_NEW
+
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef __SIZE_TYPE__ size_t;
+#endif
+
+inline void* operator new(size_t, void* address) noexcept {
+    return address;
+}
+
+inline void* operator new[](size_t, void* address) noexcept {
+    return address;
+}
+
+#endif

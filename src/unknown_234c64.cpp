@@ -41,7 +41,11 @@ void function_234dd1(c_window_channel *channel);
 bool function_235246(c_window_channel *channel);
 void function_2353a5(c_class_1473c9 *screen, long window);
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(x, result) ((result) = (long)((x) + 0.5f))
+#else
 #define REAL_TO_LONG(x, result) __asm { fld x } __asm { fistp result }
+#endif
 
 /* ---- the base channel ---- */
 

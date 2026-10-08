@@ -9,6 +9,7 @@ typedef int BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
+typedef long LONG;
 typedef long HRESULT;
 
 #ifdef H2_MS_ABI_FRONTEND
@@ -61,6 +62,7 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 
 #define FALSE 0
 #define TRUE 1
+#define SUCCEEDED(result) ((HRESULT)(result) >= 0)
 #define PAGE_READONLY 0x02
 #define PAGE_READWRITE 0x04
 #define PAGE_WRITECOMBINE 0x400
@@ -70,6 +72,7 @@ extern "C" {
 #endif
 
 int __cdecl abs(int value);
+LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 void __stdcall Sleep(DWORD milliseconds);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
