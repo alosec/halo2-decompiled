@@ -28,6 +28,7 @@ extern "C" {
 #endif
 
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
+void __stdcall Sleep(DWORD milliseconds);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
 #ifdef __cplusplus
