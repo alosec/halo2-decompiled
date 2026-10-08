@@ -20,9 +20,12 @@ set_target_properties(h2_guest_rebase PROPERTIES
 set(H2_GUEST_OBJECT_DIR "${CMAKE_BINARY_DIR}/port/guest")
 set(H2_GUEST_RANDOM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0259a0.o")
 set(H2_GUEST_GLOBALS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07a9a0_2.o")
+set(H2_GUEST_CACHE_TAG_OBJECT "${H2_GUEST_OBJECT_DIR}/cache_tag_instances.o")
+file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
-        "${H2_GUEST_GLOBALS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07a9a0_2.cpp")
+        "${H2_GUEST_GLOBALS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07a9a0_2.cpp"
+        "${H2_GUEST_CACHE_TAG_OBJECT}|${PROJECT_SOURCE_DIR}/src/cache_tag_instances.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -31,21 +34,26 @@ foreach(pair IN ITEMS
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
                 --llvm ${H2_LLVM_ROOT}/bin
                 --plugin $<TARGET_FILE:h2_guest_rebase>
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
                 --include ${PROJECT_SOURCE_DIR}/include
                 --output "${object}"
                 "${source}"
-        DEPENDS "${source}" ${PROJECT_SOURCE_DIR}/include/unknown_11c920.h
+        DEPENDS "${source}" ${H2_GUEST_HEADERS}
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/crt/math.h
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/crt/string.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py h2_guest_rebase
         VERBATIM
     )
 endforeach()
 set_source_files_properties(
     "${H2_GUEST_RANDOM_OBJECT}" "${H2_GUEST_GLOBALS_OBJECT}"
+    "${H2_GUEST_CACHE_TAG_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
     "${H2_GUEST_RANDOM_OBJECT}"
     "${H2_GUEST_GLOBALS_OBJECT}"
+    "${H2_GUEST_CACHE_TAG_OBJECT}"
 )
 set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 

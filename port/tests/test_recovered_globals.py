@@ -4,6 +4,7 @@
 import argparse
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 
@@ -22,20 +23,15 @@ def main():
     source = args.root / "src/unknown_07a9a0_2.cpp"
     with tempfile.TemporaryDirectory(prefix="h2-recovered-globals-") as temporary:
         root = Path(temporary)
-        ir = root / "globals.ll"
-        rebased = root / "globals.rebased.ll"
-        assembly = root / "globals.s"
+        guest_object = root / "globals.o"
         symbols = root / "symbols.s"
         executable = root / "globals-host"
 
-        run(args.llvm / "clang++", "--target=arm64_32-apple-watchos", "-O2",
-            "-ffreestanding", "-fno-exceptions", "-fno-rtti",
-            f"-I{args.root / 'include'}", "-S", "-emit-llvm", source, "-o", ir)
-        run(args.llvm / "opt", f"-load-pass-plugin={args.plugin}",
-            "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
-        run(args.llvm / "llc", "-O2", "-mtriple=arm64-apple-macosx",
-            rebased, "-o", assembly)
-
+        run(sys.executable, args.root / "port/tools/guest_cc.py",
+            "--llvm", args.llvm, "--plugin", args.plugin,
+            "--include", args.root / "port/include/crt",
+            "--include", args.root / "include",
+            "--output", guest_object, source)
         symbols.write_text("""
 .globl _g_4cf791
 .set _g_4cf791, 0x4cf791
@@ -43,7 +39,7 @@ def main():
 .set _g_4cf792, 0x4cf792
 """)
         run(args.host_cxx, "-std=c++20", "-arch", "arm64",
-            args.root / "port/tests/recovered_globals_host.cpp", assembly, symbols,
+            args.root / "port/tests/recovered_globals_host.cpp", guest_object, symbols,
             "-o", executable)
         run(executable)
 

@@ -32,7 +32,7 @@ def main():
             f"-I{args.root / 'include'}", "-S", "-emit-llvm", source, "-o", ir)
         run(args.llvm / "opt", f"-load-pass-plugin={args.plugin}",
             "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
-        run(args.llvm / "llc", "-O2", "-mtriple=arm64-apple-macosx",
+        run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",
             rebased, "-o", assembly)
 
         transformed = rebased.read_text()

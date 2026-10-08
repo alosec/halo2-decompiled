@@ -38,8 +38,8 @@ def main():
         command = [
             str(args.llvm / "clang++"), "--target=arm64_32-apple-watchos", "-O0",
             "-ffreestanding", "-fsyntax-only", "-ferror-limit=1", "-fms-extensions",
-            "-Wno-ignored-attributes", "-Wno-microsoft-anon-tag",
-            f"-I{args.root / 'include'}", str(source),
+            "-DH2_NATIVE_PORT=1", "-Wno-ignored-attributes", "-Wno-microsoft-anon-tag",
+            f"-I{args.root / 'port/include/crt'}", f"-I{args.root / 'include'}", str(source),
         ]
         try:
             completed = subprocess.run(command, text=True, capture_output=True,

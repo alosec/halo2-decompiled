@@ -55,7 +55,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Bind recovered globals to their original guest virtual addresses and execute a recovered state mutation.
 - [x] Establish and execute the versioned guest-to-host import ABI, including guest-pointer rebasing.
 - [x] Reserve the 4 GB guest address space and initialize all 33 retail XBE sections, including zero-filled virtual tails, in non-executable memory.
-- [x] Build and execute the first reusable multi-unit recovered guest archive.
+- [x] Build and execute a reusable three-unit recovered guest archive, including a real cache-tag instance lookup with verified ILP32 structure layout.
 - [ ] Implement the host services and clean compatibility declarations needed by startup.
 - [x] Validate the authentic `mainmenu.map` and `shared.map` cache headers, build, types, and identities.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.

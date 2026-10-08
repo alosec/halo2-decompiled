@@ -72,11 +72,17 @@ struct plane3f
 /* a float to integer truncation (cvttss2si), as retail's inlined casts */
 __forceinline long real_truncate(real x)
 {
+#ifdef H2_NATIVE_PORT
+	/* ARM's floating-to-signed conversion has the truncation semantics this
+	   helper needs. The matching Xbox build retains its original instruction. */
+	return (long)x;
+#else
 	__asm
 	{
 		movss xmm0, x
 		cvttss2si eax, xmm0
 	}
+#endif
 }
 
 /* a copy of function_30bf0 (normalize) for files where retail inlines it;

@@ -3,6 +3,7 @@
 
 import argparse
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
@@ -30,12 +31,23 @@ def main():
         language_flags = ["-fno-exceptions", "-fno-rtti"] if compiler.name == "clang++" else []
         include_flags = [f"-I{directory}" for directory in args.include]
         run(compiler, "--target=arm64_32-apple-watchos", "-O2", "-ffreestanding",
-            "-Wno-ignored-attributes", *language_flags, *include_flags,
+            "-DH2_NATIVE_PORT=1", "-fms-extensions", "-Wno-ignored-attributes",
+            *language_flags, *include_flags,
             "-S", "-emit-llvm", args.source, "-o", ir)
         run(args.llvm / "opt", f"-load-pass-plugin={args.plugin}",
             "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
-        run(args.llvm / "llc", "-O2", "-mtriple=arm64-apple-macosx",
+        run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",
             rebased, "-o", assembly)
+        # arm64_32 encodes a GOT pointer load as a 32-bit LDR because its
+        # native pointer is 32 bits. The object is linked into a normal ARM64
+        # Mach-O host, whose GOT slots and relocation require an x-register.
+        # Load the complete host symbol address; the following generated
+        # truncation keeps the guest value ILP32 before the rebase pass uses it.
+        text = assembly.read_text()
+        text = re.sub(
+            r"(^\s*ldr\s+)w(\d+)(\s*,\s*\[x\d+\s*,\s*[^\]]+@GOTPAGEOFF[^\]]*\])",
+            r"\1x\2\3", text, flags=re.MULTILINE)
+        assembly.write_text(text)
         run("clang", "-arch", "arm64", "-c", assembly, "-o", args.output)
 
 

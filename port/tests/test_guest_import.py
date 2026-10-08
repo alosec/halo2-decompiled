@@ -36,7 +36,7 @@ def main():
         assert "@host_h2_log(ptr addrspace(272)" in transformed
         assert "@host_h2_abi_version()" in transformed
 
-        run(args.llvm / "llc", "-O2", "-mtriple=arm64-apple-macosx",
+        run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",
             rebased, "-o", assembly)
         run(args.host_cxx, "-std=c++20", "-arch", "arm64", f"-I{include}",
             args.root / "port/tests/guest_import_host.cpp", assembly,
