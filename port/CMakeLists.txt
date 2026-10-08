@@ -61,6 +61,7 @@ set(H2_GUEST_PLAYER_SLOT_GET_OBJECT "${H2_GUEST_OBJECT_DIR}/player_slot_get.o")
 set(H2_GUEST_PLAYER_SESSION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_190001.o")
 set(H2_GUEST_MENU_ACTION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_250155.o")
 set(H2_GUEST_SESSION_PRESENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19987f.o")
+set(H2_GUEST_MUSIC_SILENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_235b46.o")
 set(H2_GUEST_SESSION_USER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_054fe0.o")
 set(H2_GUEST_STORAGE_HANDLE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2172a0.o")
 set(H2_GUEST_UI_GEOMETRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13c050.o")
@@ -104,6 +105,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_054fe0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2172a0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13c050.cpp"
@@ -150,6 +152,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_PLAYER_SESSION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
         "${H2_GUEST_MENU_ACTION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
         "${H2_GUEST_SESSION_PRESENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
+        "${H2_GUEST_MUSIC_SILENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp"
         "${H2_GUEST_SESSION_USER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_054fe0.cpp"
         "${H2_GUEST_STORAGE_HANDLE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2172a0.cpp"
         "${H2_GUEST_UI_GEOMETRY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13c050.cpp")
@@ -191,6 +194,10 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_SESSION_PRESENCE_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_1999d7@@YA_NXZ")
+    endif()
+    if(object STREQUAL H2_GUEST_MUSIC_SILENCE_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?main_menu_music_silence_done@@YA_NPAUs_main_menu_music@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_SESSION_USER_OBJECT)
         list(APPEND guest_extract_args
@@ -240,6 +247,7 @@ set_source_files_properties(
     "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}" "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
+    "${H2_GUEST_MUSIC_SILENCE_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
@@ -290,6 +298,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}"
     "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
+    "${H2_GUEST_MUSIC_SILENCE_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}"
     "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}"
@@ -325,7 +334,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 130
+            --expect-unresolved 129
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -368,6 +377,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_1999d7@@YA_NXZ")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?main_menu_music_silence_done@@YA_NPAUs_main_menu_music@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_054fe0.cpp")
         list(APPEND guest_extract_args
@@ -514,7 +527,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 130
+            --expect-unresolved 129
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -522,7 +535,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 130
+            --expect-unresolved 129
 )
 add_test(
     NAME main-menu-elf-core
