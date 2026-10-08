@@ -35,12 +35,14 @@ The port uses two cooperating layers:
 
 Port-only substitutions must be selected by build flags or adapter interfaces. They must not alter the source used by the Xbox byte-matching build.
 
+The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal` commit `fd205407a6ac85937d963fd5e2d6ca8deeb26476`. It contains compiler/runtime engineering only. Halo CE compatibility headers derived from debug information are intentionally not imported because this project's provenance rules are stricter.
+
 ## Milestones
 
 - [x] Isolated port worktree and branch.
 - [x] Native ARM64 build system, SDL host process, tests, and strict retail-data preflight.
-- [ ] Extract and validate the menu data set under ignored local storage.
-- [ ] Generalize and test the ILP32 guest compiler/rebase pass for Halo 2.
+- [x] Extract and validate the complete retail data set under ignored local storage.
+- [x] Adapt and test the CC0 ILP32 guest compiler/rebase pass for Halo 2.
 - [ ] Compile the first recovered Halo 2 translation units natively without proprietary headers or libraries.
 - [ ] Map recovered globals and establish a versioned guest/host import table.
 - [ ] Mount retail paths and parse `mainmenu.map` through recovered cache/tag code.
