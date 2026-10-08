@@ -42,6 +42,9 @@ struct XONLINE_USER {
 static_assert(sizeof(XUID) == 0x0c, "retail XUID layout");
 static_assert(sizeof(XONLINE_USER) == 0x70, "retail XONLINE_USER layout");
 
+BOOL __stdcall XOnlineAreUsersIdentical(const XUID* first, const XUID* second);
+DWORD __stdcall XOnlineUserGuestNumber(DWORD user_flags);
+
 inline BOOL XOnlineIsUserGuest(DWORD user_flags) {
     return (user_flags & 3) != 0;
 }
