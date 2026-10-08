@@ -295,6 +295,22 @@ add_custom_command(
     VERBATIM
 )
 list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_MAIN_MENU_BINDINGS_OBJECT}")
+set(H2_MAIN_MENU_HOST_IMPORTS_ASM "${H2_GUEST_OBJECT_DIR}/elf/host_imports.s")
+set(H2_MAIN_MENU_HOST_IMPORTS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/host_imports.o")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_HOST_IMPORTS_OBJECT}"
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_host_imports.py
+            --output "${H2_MAIN_MENU_HOST_IMPORTS_ASM}"
+            "${H2_MAIN_MENU_IMPORT_PLAN}"
+    COMMAND ${H2_LLVM_ROOT}/bin/llvm-mc -triple=aarch64-linux-gnu -filetype=obj
+            "${H2_MAIN_MENU_HOST_IMPORTS_ASM}"
+            -o "${H2_MAIN_MENU_HOST_IMPORTS_OBJECT}"
+    DEPENDS "${H2_MAIN_MENU_IMPORT_PLAN}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_host_imports.py
+    VERBATIM
+)
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_MAIN_MENU_HOST_IMPORTS_OBJECT}")
 set(H2_MAIN_MENU_PARTIAL_ELF "${CMAKE_BINARY_DIR}/port/main-menu-core.partial.o")
 add_custom_command(
     OUTPUT "${H2_MAIN_MENU_PARTIAL_ELF}"
@@ -381,6 +397,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --image ${H2_MAIN_MENU_PARTIAL_ELF}
             --closure ${H2_MAIN_MENU_CLOSURE_REPORT}
+            --import-plan ${H2_MAIN_MENU_IMPORT_PLAN}
 )
 add_test(
     NAME guest-asm-elf

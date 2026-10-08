@@ -52,6 +52,7 @@ def main():
     parser.add_argument("--nm", type=Path, required=True)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--closure", type=Path, required=True)
+    parser.add_argument("--import-plan", type=Path, required=True)
     args = parser.parse_args()
 
     data = args.image.read_bytes()
@@ -67,6 +68,12 @@ def main():
         entry["symbol"][1:] if entry["symbol"].startswith("_") else entry["symbol"]
         for entry in report["unresolved"]
     }
+    plan = json.loads(args.import_plan.read_text())
+    host_imports = {
+        entry["symbol"] for entry in plan["imports"]
+        if entry["category"] == "host_abi"
+    }
+    expected_undefined -= host_imports
     actual_undefined = nm_symbols(args.nm, args.image, "--undefined-only")
     if actual_undefined != expected_undefined:
         raise RuntimeError(
@@ -79,6 +86,14 @@ def main():
     missing = REQUIRED - defined
     if missing:
         raise RuntimeError(f"main-menu ELF is missing required definitions: {sorted(missing)}")
+    missing_imports = {
+        symbol for symbol in host_imports
+        if symbol not in defined or f"h2_host_slot_{symbol}" not in defined
+    }
+    if missing_imports:
+        raise RuntimeError(
+            f"main-menu ELF is missing host import trampolines: {sorted(missing_imports)}"
+        )
     stale_aliases = sorted(symbol for symbol in defined if symbol.startswith("_??_E"))
     if stale_aliases:
         raise RuntimeError(f"Darwin-decorated aliases leaked into ELF: {stale_aliases}")
