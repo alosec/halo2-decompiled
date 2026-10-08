@@ -106,6 +106,7 @@ add_library(h2_recovered_guest STATIC
 set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 
 set(H2_MAIN_MENU_GUEST_OBJECTS
+    "${H2_GUEST_CRT_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -186,7 +187,7 @@ add_test(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
             --nm ${H2_LLVM_NM}
             --format text
-            --expect-unresolved 191
+            --expect-unresolved 188
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
