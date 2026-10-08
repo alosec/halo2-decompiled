@@ -495,9 +495,13 @@ public:
 	virtual bool v16();
 
 	/* the widgets are allocated from the user interface heap */
+#if defined(H2_NATIVE_PORT) && !defined(H2_MS_ABI_FRONTEND)
+	static void *operator new(unsigned long size)
+#else
 	static void *operator new(unsigned int size)
+#endif
 	{
-		return function_1a47fd(size);
+		return function_1a47fd((unsigned int)size);
 	}
 
 	/* unknown_22e27b.cpp */

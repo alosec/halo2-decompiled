@@ -38,7 +38,7 @@ python3 port/tools/compile_census.py --root . \
 
 The port uses two cooperating layers:
 
-1. **Guest engine image.** Recovered Halo 2 source retains the original 32-bit layouts, globals, and pointer representation. On Apple Silicon it will compile as an ARM ILP32 guest image, with an LLVM transform rebasing original low virtual addresses into a reserved 4 GB host arena. This follows the proven CC0 approach in `bnunu/halo-ce-universal`, generalized for Halo 2 rather than executing original x86 code.
+1. **Guest engine image.** Recovered Halo 2 source retains the original 32-bit layouts, globals, pointer representation, and Microsoft C++ object ABI. C++-heavy units use Clang's 32-bit ARM Microsoft frontend before their LLVM IR is retargeted to ARM ILP32; an LLVM transform then rebases original low virtual addresses into a reserved 4 GB host arena. This follows the proven CC0 address-rebasing approach in `bnunu/halo-ce-universal`, generalized for Halo 2 rather than executing original x86 code.
 2. **Native host.** A normal ARM64 process owns SDL3, the window, Metal-backed rendering, audio, input, Darwin files and networking, memory mapping, threads, timing, and calls into the guest image through a versioned ABI.
 
 Port-only substitutions must be selected by build flags or adapter interfaces. They must not alter the source used by the Xbox byte-matching build.
@@ -60,6 +60,8 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Validate the authentic `mainmenu.map` and `shared.map` cache headers, build, types, and identities.
 - [x] Execute recovered `cache_header_verify` against the authentic local `mainmenu.map` header.
 - [x] Load the authentic `mainmenu.map` tag index through recovered cache code on a guest stack: 118 groups, 1,364 instances, scenario `0xe1780003` at `0x80121c44`, globals `0xe1740000` at `0x800e5000`.
+- [x] Compile the recovered main-menu screen/list implementation and its vtables to ARM ILP32 with Microsoft-compatible C++ layout and symbols.
+- [ ] Link and load the Microsoft-ABI guest code image with 32-bit vtable/function relocations.
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.
 - [ ] Load a campaign map, enter gameplay, save/reload, and validate sustained play.

@@ -18,6 +18,8 @@ def main():
     parser.add_argument("--plugin", type=Path, required=True)
     parser.add_argument("--include", type=Path, action="append", default=[])
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ms-abi", action="store_true",
+                        help="lower C++ with the 32-bit Microsoft ABI before ARM64 retargeting")
     parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
@@ -30,10 +32,27 @@ def main():
         assembly = root / "unit.s"
         language_flags = ["-fno-exceptions", "-fno-rtti"] if compiler.name == "clang++" else []
         include_flags = [f"-I{directory}" for directory in args.include]
-        run(compiler, "--target=arm64_32-apple-watchos", "-O2", "-ffreestanding",
+        frontend_target = "thumbv7-pc-windows-msvc" if args.ms_abi else "arm64_32-apple-watchos"
+        abi_flags = ["-DH2_MS_ABI_FRONTEND=1"] if args.ms_abi else []
+        run(compiler, f"--target={frontend_target}", "-O2", "-ffreestanding",
             "-DH2_NATIVE_PORT=1", "-fms-extensions", "-Wno-ignored-attributes",
-            *language_flags, *include_flags,
+            *abi_flags, *language_flags, *include_flags,
             "-S", "-emit-llvm", args.source, "-o", ir)
+        if args.ms_abi:
+            text = ir.read_text()
+            text = re.sub(r'^target datalayout = ".*"$',
+                          'target datalayout = "e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32"',
+                          text, flags=re.MULTILINE)
+            text = re.sub(r'^target triple = ".*"$',
+                          'target triple = "arm64_32-apple-watchos2.0.0"',
+                          text, flags=re.MULTILINE)
+            text = text.replace("arm_aapcs_vfpcc ", "")
+            text = re.sub(r'^\$.* = comdat .*\n', '', text, flags=re.MULTILINE)
+            text = re.sub(r',\s*comdat(?:\(\$[^\)]+\))?', '', text)
+            text = re.sub(r'\s+comdat(?:\(\$[^\)]+\))?', '', text)
+            text = re.sub(r' "target-cpu"="[^"]*"', '', text)
+            text = re.sub(r' "target-features"="[^"]*"', '', text)
+            ir.write_text(text)
         run(args.llvm / "opt", f"-load-pass-plugin={args.plugin}",
             "-passes=h2-rebase,verify", "-S", ir, "-o", rebased)
         run(args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos",

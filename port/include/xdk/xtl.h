@@ -6,7 +6,10 @@
 
 typedef void* HANDLE;
 typedef int BOOL;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
 typedef unsigned long DWORD;
+typedef long HRESULT;
 
 struct _FILETIME {
     DWORD dwLowDateTime;
