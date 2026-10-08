@@ -29,6 +29,7 @@ def build_plan(closure, source_root):
     counts = {
         "recovered_provider": 0,
         "stubbed_external": 0,
+        "host_abi": 0,
         "platform_runtime": 0,
         "named_engine_service": 0,
         "unrecovered_address": 0,
@@ -37,7 +38,9 @@ def build_plan(closure, source_root):
         symbol = entry["symbol"]
         address_match = ADDRESS_SYMBOL.match(symbol)
         item = {"symbol": symbol, "referenced_by": entry["referenced_by"]}
-        if symbol in PLATFORM_SERVICES:
+        if symbol.startswith("host_h2_"):
+            category = "host_abi"
+        elif symbol in PLATFORM_SERVICES:
             category = "platform_runtime"
         elif address_match:
             address = address_match.group(1).lower().lstrip("0") or "0"
