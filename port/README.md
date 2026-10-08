@@ -2,7 +2,7 @@
 
 This directory is the clean, open-source host/runtime track for running the recovered Halo 2 code on modern systems. It is separate from the byte-matching Xbox build. It never embeds or installs game data, an XBE, an Xbox SDK, or other proprietary material.
 
-The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint loads the authentic main-menu tag index through recovered cache code and builds a fourteen-unit Microsoft-ABI UI core with freestanding CRT support, but the UI dependency graph is not closed and the game does **not** boot yet.
+The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint loads the authentic main-menu tag index through recovered cache code and builds a sixteen-unit Microsoft-ABI UI core with freestanding CRT support, but the UI dependency graph is not closed and the game does **not** boot yet.
 
 ## Local build
 
@@ -34,7 +34,7 @@ python3 port/tools/compile_census.py --root . \
   --output build/native/compile-census.json
 ```
 
-A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current fourteen recovered units plus CRT support have 178 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
+A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current sixteen recovered units plus CRT support have 175 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
 
 ## Architecture
 
