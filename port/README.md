@@ -43,7 +43,7 @@ The port uses two cooperating layers:
 
 Port-only substitutions must be selected by build flags or adapter interfaces. They must not alter the source used by the Xbox byte-matching build.
 
-The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal` commit `fd205407a6ac85937d963fd5e2d6ca8deeb26476`. It contains compiler/runtime engineering only. Halo CE compatibility headers derived from debug information are intentionally not imported because this project's provenance rules are stricter.
+The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal` commit `fd205407a6ac85937d963fd5e2d6ca8deeb26476`. It contains compiler/runtime engineering only. Halo CE compatibility headers derived from debug information are intentionally not imported because this project's provenance rules are stricter. Native compatibility declarations here are written only from public platform facts and the visible needs of recovered Halo 2 source.
 
 ## Milestones
 

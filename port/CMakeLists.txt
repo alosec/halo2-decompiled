@@ -35,12 +35,14 @@ foreach(pair IN ITEMS
                 --llvm ${H2_LLVM_ROOT}/bin
                 --plugin $<TARGET_FILE:h2_guest_rebase>
                 --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
+                --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
                 --include ${PROJECT_SOURCE_DIR}/include
                 --output "${object}"
                 "${source}"
         DEPENDS "${source}" ${H2_GUEST_HEADERS}
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/crt/math.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/crt/string.h
+                ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk/xtl.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py h2_guest_rebase
         VERBATIM
     )
