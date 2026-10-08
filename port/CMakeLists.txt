@@ -34,6 +34,8 @@ set(H2_GUEST_UI_MESSAGE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1490ec.o")
 set(H2_GUEST_LIST_WIDGET_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24c177.o")
 set(H2_GUEST_DIALOG_CALLBACK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_23690b.o")
 set(H2_GUEST_WINDOW_CHANNEL_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_234c64.o")
+set(H2_GUEST_GAME_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_138800_2.o")
+set(H2_GUEST_RECORD_POOL_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16b570.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
 set(H2_MS_ABI_SOURCES
@@ -46,6 +48,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_24c177.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_23690b.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_234c64.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
 )
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
@@ -61,7 +65,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_UI_MESSAGE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1490ec.cpp"
         "${H2_GUEST_LIST_WIDGET_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24c177.cpp"
         "${H2_GUEST_DIALOG_CALLBACK_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_23690b.cpp"
-        "${H2_GUEST_WINDOW_CHANNEL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_234c64.cpp")
+        "${H2_GUEST_WINDOW_CHANNEL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_234c64.cpp"
+        "${H2_GUEST_GAME_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
+        "${H2_GUEST_RECORD_POOL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -95,6 +101,7 @@ set_source_files_properties(
     "${H2_GUEST_UI_HEAP_OBJECT}" "${H2_GUEST_UI_MANAGER_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_OBJECT}" "${H2_GUEST_LIST_WIDGET_OBJECT}"
     "${H2_GUEST_DIALOG_CALLBACK_OBJECT}" "${H2_GUEST_WINDOW_CHANNEL_OBJECT}"
+    "${H2_GUEST_GAME_STATE_OBJECT}" "${H2_GUEST_RECORD_POOL_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -116,6 +123,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_LIST_WIDGET_OBJECT}"
     "${H2_GUEST_DIALOG_CALLBACK_OBJECT}"
     "${H2_GUEST_WINDOW_CHANNEL_OBJECT}"
+    "${H2_GUEST_GAME_STATE_OBJECT}"
+    "${H2_GUEST_RECORD_POOL_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
@@ -196,7 +205,7 @@ add_test(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
             --nm ${H2_LLVM_NM}
             --format text
-            --expect-unresolved 186
+            --expect-unresolved 180
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
