@@ -6,6 +6,7 @@ list(APPEND CMAKE_PREFIX_PATH "${H2_LLVM_ROOT}/lib/cmake/llvm")
 find_package(LLVM CONFIG REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_program(H2_LLD NAMES ld.lld REQUIRED)
+find_program(H2_LLVM_NM NAMES llvm-nm HINTS "${H2_LLVM_ROOT}/bin" REQUIRED)
 
 add_library(h2_guest_rebase MODULE compiler/guest_rebase.cpp)
 target_include_directories(h2_guest_rebase SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
@@ -94,7 +95,7 @@ add_library(h2_recovered_guest STATIC
 )
 set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 
-add_library(h2_main_menu_guest STATIC
+set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -102,7 +103,25 @@ add_library(h2_main_menu_guest STATIC
     "${H2_GUEST_UI_MANAGER_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_OBJECT}"
 )
+add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
+
+set(H2_MAIN_MENU_CLOSURE_REPORT
+    "${CMAKE_BINARY_DIR}/port/main-menu-symbol-closure.json")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_CLOSURE_REPORT}"
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
+            --nm ${H2_LLVM_NM}
+            --format json
+            --output "${H2_MAIN_MENU_CLOSURE_REPORT}"
+            ${H2_MAIN_MENU_GUEST_OBJECTS}
+    DEPENDS ${H2_MAIN_MENU_GUEST_OBJECTS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
+    VERBATIM
+)
+add_custom_target(h2-main-menu-closure-report ALL
+    DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}")
 
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
@@ -147,6 +166,15 @@ add_test(
     NAME main-menu-ms-abi
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main_menu_ms_abi.py
             --object ${H2_GUEST_MAIN_MENU_OBJECT}
+)
+add_test(
+    NAME main-menu-symbol-closure
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
+            --nm ${H2_LLVM_NM}
+            --format text
+            --expect-unresolved 220
+            ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
     NAME guest-elf-image
