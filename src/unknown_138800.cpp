@@ -15,6 +15,12 @@ enum
 
 bool g_4f55e7;
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(x, result) ((result) = (long)((x) + 0.5f))
+#else
+#define REAL_TO_LONG(x, result) __asm { fld x } __asm { fistp result }
+#endif
+
 void function_123ed0();
 
 /* 0x138800 (unknown_138800_2.cpp): whether a game is in progress */
@@ -86,11 +92,7 @@ void function_138960(bool start)
 			g_4e6948->flag1121 = true;
 			real seconds = g_510c54->field_2_3 * 5.0f;
 			long ticks;
-			__asm
-			{
-				fld seconds
-				fistp ticks
-			}
+			REAL_TO_LONG(seconds, ticks);
 			g_4e6948->ticks1124 = ticks;
 			function_123ed0();
 		}
@@ -110,11 +112,7 @@ void function_1389c0()
 		options->flag1128 = true;
 		real seconds = g_510c54->field_2_3 * 7.0f;
 		long ticks;
-		__asm
-		{
-			fld seconds
-			fistp ticks
-		}
+		REAL_TO_LONG(seconds, ticks);
 		options->ticks112c = ticks;
 		options->flag1129 = false;
 	}

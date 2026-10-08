@@ -36,6 +36,7 @@ set(H2_GUEST_DIALOG_CALLBACK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_23690b.o")
 set(H2_GUEST_WINDOW_CHANNEL_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_234c64.o")
 set(H2_GUEST_WINDOW_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_235276.o")
 set(H2_GUEST_GAME_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_138800_2.o")
+set(H2_GUEST_CAMPAIGN_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_138800.o")
 set(H2_GUEST_RECORD_POOL_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16b570.o")
 set(H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16bcc0.o")
 set(H2_GUEST_RECORD_POOL_LAST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_16bc40.o")
@@ -80,6 +81,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_234c64.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_235276.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_138800.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_16bcc0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp"
@@ -127,6 +129,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_WINDOW_CHANNEL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_234c64.cpp"
         "${H2_GUEST_WINDOW_QUERY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_235276.cpp"
         "${H2_GUEST_GAME_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_138800_2.cpp"
+        "${H2_GUEST_CAMPAIGN_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_138800.cpp"
         "${H2_GUEST_RECORD_POOL_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
         "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16bcc0.cpp"
         "${H2_GUEST_RECORD_POOL_LAST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp"
@@ -191,6 +194,10 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args --extract-symbol
             "?function_2523b7@@YA_NJ@Z")
     endif()
+    if(object STREQUAL H2_GUEST_CAMPAIGN_STATE_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_138820@@YA_NXZ")
+    endif()
     if(object STREQUAL H2_GUEST_SESSION_PRESENCE_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_1999d7@@YA_NXZ")
@@ -233,7 +240,8 @@ set_source_files_properties(
     "${H2_GUEST_UI_MESSAGE_OBJECT}" "${H2_GUEST_LIST_WIDGET_OBJECT}"
     "${H2_GUEST_DIALOG_CALLBACK_OBJECT}" "${H2_GUEST_WINDOW_CHANNEL_OBJECT}"
     "${H2_GUEST_WINDOW_QUERY_OBJECT}"
-    "${H2_GUEST_GAME_STATE_OBJECT}" "${H2_GUEST_RECORD_POOL_OBJECT}"
+    "${H2_GUEST_GAME_STATE_OBJECT}" "${H2_GUEST_CAMPAIGN_STATE_OBJECT}"
+    "${H2_GUEST_RECORD_POOL_OBJECT}"
     "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}" "${H2_GUEST_RECORD_POOL_LAST_OBJECT}"
     "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}" "${H2_GUEST_UI_HEAP_FREE_OBJECT}"
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}" "${H2_GUEST_NAME_BUFFER_OBJECT}"
@@ -273,6 +281,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_WINDOW_CHANNEL_OBJECT}"
     "${H2_GUEST_WINDOW_QUERY_OBJECT}"
     "${H2_GUEST_GAME_STATE_OBJECT}"
+    "${H2_GUEST_CAMPAIGN_STATE_OBJECT}"
     "${H2_GUEST_RECORD_POOL_OBJECT}"
     "${H2_GUEST_RECORD_POOL_PREVIOUS_OBJECT}"
     "${H2_GUEST_RECORD_POOL_LAST_OBJECT}"
@@ -334,7 +343,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 129
+            --expect-unresolved 128
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -373,6 +382,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_2523b7@@YA_NJ@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_138800.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_138820@@YA_NXZ")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -527,7 +540,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 129
+            --expect-unresolved 128
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -535,7 +548,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 129
+            --expect-unresolved 128
 )
 add_test(
     NAME main-menu-elf-core

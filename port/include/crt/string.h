@@ -39,6 +39,7 @@ size_t strlen(const char* text);
 int strncmp(const char* first, const char* second, size_t size);
 char* strncpy(char* destination, const char* source, size_t size);
 char* strrchr(const char* text, int character);
+char* strpbrk(const char* text, const char* accepted);
 size_t strspn(const char* text, const char* accepted);
 char* strstr(const char* text, const char* pattern);
 
