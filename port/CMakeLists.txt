@@ -55,3 +55,11 @@ add_test(
             --root ${PROJECT_SOURCE_DIR}
             --host-cxx ${CMAKE_CXX_COMPILER}
 )
+add_test(
+    NAME recovered-guest-globals
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_recovered_globals.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --root ${PROJECT_SOURCE_DIR}
+            --host-cxx ${CMAKE_CXX_COMPILER}
+)
