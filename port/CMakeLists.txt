@@ -52,6 +52,7 @@ set(H2_GUEST_SESSION_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_059670.o")
 set(H2_GUEST_PROFILE_UPDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18fcc4.o")
 set(H2_GUEST_UI_GEOMETRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13c050.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
+file(GLOB H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
 set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
@@ -217,6 +218,23 @@ add_custom_command(
 add_custom_target(h2-main-menu-closure-report ALL
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}")
 
+set(H2_MAIN_MENU_IMPORT_PLAN
+    "${CMAKE_BINARY_DIR}/port/main-menu-import-plan.json")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_IMPORT_PLAN}"
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
+            --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
+            --source-root "${PROJECT_SOURCE_DIR}/src"
+            --expect-unresolved 146
+            --output "${H2_MAIN_MENU_IMPORT_PLAN}"
+    DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
+    VERBATIM
+)
+add_custom_target(h2-main-menu-import-plan ALL
+    DEPENDS "${H2_MAIN_MENU_IMPORT_PLAN}")
+
 set(H2_MAIN_MENU_ELF_OBJECTS)
 foreach(source IN LISTS H2_MS_ABI_SOURCES)
     get_filename_component(unit "${source}" NAME_WE)
@@ -344,6 +362,13 @@ add_test(
             --format text
             --expect-unresolved 146
             ${H2_MAIN_MENU_GUEST_OBJECTS}
+)
+add_test(
+    NAME main-menu-import-plan
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
+            --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
+            --expect-unresolved 146
 )
 add_test(
     NAME main-menu-elf-core
