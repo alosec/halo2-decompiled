@@ -2,6 +2,13 @@
 
 // @flags /O1 /arch:SSE /Gr
 
+#ifdef H2_NATIVE_PORT
+#define REAL_TO_LONG(value, result) \
+	((result) = (long)((value) >= 0.0f ? (value) + 0.5f : (value) - 0.5f))
+#else
+#define REAL_TO_LONG(value, result) __asm { fld value } __asm { fistp result }
+#endif
+
 union field_param
 {
 	long i;
@@ -614,11 +621,7 @@ void function_2373be(long index, void *base, long value)
 		{
 			long r;
 			real v = 1.0f / param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			value *= r;
 			*(byte *)((byte *)base + offset) = (byte)value;
 			break;
@@ -627,11 +630,7 @@ void function_2373be(long index, void *base, long value)
 		{
 			long r;
 			real v = 1.0f / param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			value *= r;
 			*(word *)((byte *)base + offset) = (word)value;
 			break;
@@ -640,11 +639,7 @@ void function_2373be(long index, void *base, long value)
 		{
 			long r;
 			real v = 1.0f / param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			value *= r;
 			*(long *)((byte *)base + offset) = value;
 			break;
@@ -686,11 +681,7 @@ long function_2374f0(void *base, long index)
 		{
 			long r;
 			real v = (real)*(byte *)((byte *)base + offset) * param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			result = r;
 			break;
 		}
@@ -698,11 +689,7 @@ long function_2374f0(void *base, long index)
 		{
 			long r;
 			real v = (real)*(short *)((byte *)base + offset) * param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			result = r;
 			break;
 		}
@@ -710,11 +697,7 @@ long function_2374f0(void *base, long index)
 		{
 			long r;
 			real v = (real)*(long *)((byte *)base + offset) * param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			result = r;
 			break;
 		}
@@ -722,11 +705,7 @@ long function_2374f0(void *base, long index)
 		{
 			long r;
 			real v = *(real *)((byte *)base + offset) * param.r;
-			__asm
-			{
-				fld v
-				fistp r
-			}
+			REAL_TO_LONG(v, r);
 			result = r;
 			break;
 		}
