@@ -1,4 +1,6 @@
 #include "h2/host_abi.h"
+#include <math.h>
+#include <xtl.h>
 
 /* Keep Microsoft-mangled recovered entry points inside the ILP32 guest image.
  * The C host ABI receives rebased native pointers through the guest compiler
@@ -14,4 +16,19 @@ void __stdcall function_18f1c0(long command)
 void function_52040(void const *request, void const *vertices)
 {
     host_h2_render_request(request, vertices);
+}
+
+extern "C" DWORD __stdcall GetTickCount(void)
+{
+    return host_h2_get_milliseconds();
+}
+
+extern "C" void __stdcall Sleep(DWORD milliseconds)
+{
+    host_h2_sleep(milliseconds);
+}
+
+extern "C" double cos(double value)
+{
+    return host_h2_cos(value);
 }

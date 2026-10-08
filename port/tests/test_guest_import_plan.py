@@ -18,7 +18,9 @@ def main():
     assert sum(plan["counts"].values()) == args.expect_unresolved
     imports = {entry["symbol"]: entry for entry in plan["imports"]}
     for symbol in ("GetTickCount", "Sleep", "cos"):
-        assert imports[symbol]["category"] == "platform_runtime"
+        assert symbol not in imports
+    for symbol in ("host_h2_get_milliseconds", "host_h2_sleep", "host_h2_cos"):
+        assert imports[symbol]["category"] == "host_abi"
     text_renderer = imports["?function_13e9c0@@YAXPBGPBUshort_rectangle2d@@PAU1@2M@Z"]
     assert text_renderer["category"] == "recovered_provider"
     assert "unknown_13e8a0.cpp" in text_renderer["providers"]
