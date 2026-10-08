@@ -1,6 +1,42 @@
 #include <string.h>
 #include <wchar.h>
 
+struct h2_guest_filetime {
+    unsigned long low;
+    unsigned long high;
+};
+
+long CompareFileTime(const struct h2_guest_filetime* first,
+                     const struct h2_guest_filetime* second) {
+    if (first->high != second->high)
+        return first->high < second->high ? -1 : 1;
+    if (first->low != second->low)
+        return first->low < second->low ? -1 : 1;
+    return 0;
+}
+
+typedef int (*h2_guest_compare_fn)(const void*, const void*);
+
+void h2_guest_qsort(void* base, size_t count, size_t size,
+                    h2_guest_compare_fn compare) {
+    unsigned char* bytes = (unsigned char*)base;
+    if (!size) return;
+    for (size_t index = 1; index < count; ++index) {
+        size_t current = index;
+        while (current && compare(bytes + (current - 1) * size,
+                                  bytes + current * size) > 0) {
+            unsigned char* left = bytes + (current - 1) * size;
+            unsigned char* right = bytes + current * size;
+            for (size_t byte = 0; byte < size; ++byte) {
+                unsigned char temporary = left[byte];
+                left[byte] = right[byte];
+                right[byte] = temporary;
+            }
+            --current;
+        }
+    }
+}
+
 void* memchr(const void* data, int value, size_t size) {
     const unsigned char* bytes = (const unsigned char*)data;
     for (size_t index = 0; index < size; ++index)

@@ -34,7 +34,7 @@ python3 port/tools/compile_census.py --root . \
   --output build/native/compile-census.json
 ```
 
-A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current nine recovered units plus CRT support have 188 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
+A normal build also writes `build/native/port/main-menu-symbol-closure.json`. This deterministic report records which references the selected UI objects resolve among themselves and which symbols still need another recovered unit or a host service. The current nine recovered units plus CRT support have 186 unresolved symbols. CTest intentionally ratchets that number, so update the expected count only after reviewing a deliberate dependency-set change.
 
 ## Architecture
 

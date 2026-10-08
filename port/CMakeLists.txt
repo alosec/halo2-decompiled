@@ -168,6 +168,15 @@ target_compile_options(h2-guest-arena-tests PRIVATE -Wall -Wextra -Wpedantic -We
 target_link_libraries(h2-guest-arena-tests PRIVATE h2_port_support)
 add_test(NAME guest-arena-xbe-loader COMMAND h2-guest-arena-tests)
 
+add_executable(h2-guest-crt-tests
+    tests/guest_crt_tests.c
+    runtime/guest_crt.c
+)
+target_include_directories(h2-guest-crt-tests PRIVATE include/crt)
+target_compile_options(h2-guest-crt-tests PRIVATE
+    -fno-builtin -Wall -Wextra -Wpedantic -Werror)
+add_test(NAME guest-crt-services COMMAND h2-guest-crt-tests)
+
 add_executable(h2-recovered-guest-tests
     tests/recovered_guest_archive_tests.cpp
     runtime/guest_symbols.s
@@ -187,7 +196,7 @@ add_test(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
             --nm ${H2_LLVM_NM}
             --format text
-            --expect-unresolved 188
+            --expect-unresolved 186
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
