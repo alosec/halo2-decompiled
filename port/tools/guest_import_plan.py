@@ -8,24 +8,27 @@ import re
 
 ADDRESS_SYMBOL = re.compile(r"^\?function_([0-9a-f]+)@@")
 RETAIL_MARKER = re.compile(r"@retail 0x([0-9a-f]+)\b", re.IGNORECASE)
+STUB_MARKER = re.compile(r"@stub 0x([0-9a-f]+)\b", re.IGNORECASE)
 PLATFORM_SERVICES = {"GetTickCount", "Sleep", "cos"}
 
 
-def recovered_addresses(source_root):
+def address_providers(source_root, marker):
     providers = {}
-    for path in sorted(source_root.glob("*.cpp")):
+    for path in sorted(source_root.rglob("*.cpp")):
         text = path.read_text(errors="replace")
-        for match in RETAIL_MARKER.finditer(text):
+        for match in marker.finditer(text):
             address = match.group(1).lower().lstrip("0") or "0"
-            providers.setdefault(address, []).append(path.name)
+            providers.setdefault(address, []).append(str(path.relative_to(source_root)))
     return providers
 
 
 def build_plan(closure, source_root):
-    providers = recovered_addresses(source_root)
+    providers = address_providers(source_root, RETAIL_MARKER)
+    stubs = address_providers(source_root, STUB_MARKER)
     imports = []
     counts = {
         "recovered_provider": 0,
+        "stubbed_external": 0,
         "platform_runtime": 0,
         "named_engine_service": 0,
         "unrecovered_address": 0,
@@ -40,7 +43,11 @@ def build_plan(closure, source_root):
             address = address_match.group(1).lower().lstrip("0") or "0"
             item["retail_address"] = f"0x{int(address, 16):x}"
             item["providers"] = providers.get(address, [])
-            category = "recovered_provider" if item["providers"] else "unrecovered_address"
+            if item["providers"]:
+                category = "recovered_provider"
+            else:
+                item["providers"] = stubs.get(address, [])
+                category = "stubbed_external" if item["providers"] else "unrecovered_address"
         else:
             category = "named_engine_service"
         item["category"] = category

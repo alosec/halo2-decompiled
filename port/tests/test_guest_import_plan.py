@@ -22,7 +22,12 @@ def main():
     text_renderer = imports["?function_13e9c0@@YAXPBGPBUshort_rectangle2d@@PAU1@2M@Z"]
     assert text_renderer["category"] == "recovered_provider"
     assert "unknown_13e8a0.cpp" in text_renderer["providers"]
-    assert imports["?function_18f1c0@@YAXJ@Z"]["category"] == "unrecovered_address"
+    video_bridge = imports["?function_18f1c0@@YAXJ@Z"]
+    assert video_bridge["category"] == "stubbed_external"
+    assert "stubs/bink.cpp" in video_bridge["providers"]
+    renderer_bridge = imports["?function_52040@@YAXPBX0@Z"]
+    assert renderer_bridge["category"] == "stubbed_external"
+    assert "stubs/lane_p.cpp" in renderer_bridge["providers"]
     assert imports["?online_task_poll@@YAJJ@Z"]["category"] == "named_engine_service"
     print("main-menu import plan classification passed")
 
