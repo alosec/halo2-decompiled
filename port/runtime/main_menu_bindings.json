@@ -13,6 +13,7 @@
     {"symbol": "?g_4e034c@@3PAUs_tag_header_globals@@A", "address": "0x004e034c"},
     {"symbol": "?g_4e0350@@3PAUs_palette_source_globals@@A", "address": "0x004e0350"},
     {"symbol": "?g_4e3b44@@3PAUs_tag_instance@@A", "address": "0x004e3b44"},
+    {"symbol": "?g_4e61c0@@3Us_saved_game_drive@@A", "address": "0x004e61c0"},
     {"symbol": "?g_4e6948@@3PAUs_game_options_view@@A", "address": "0x004e6948"},
     {"symbol": "?g_4e73a0@@3Us_draw_string_globals@@A", "address": "0x004e73a0"},
     {"symbol": "?g_4ee4c4@@3Us_peer_list_globals@@A", "address": "0x004ee4c4"},

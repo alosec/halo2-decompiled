@@ -23,6 +23,13 @@ extern "C" DWORD __stdcall GetTickCount(void)
     return host_h2_get_milliseconds();
 }
 
+extern "C" DWORD __stdcall XGetDiskClusterSize(const char *)
+{
+    /* Halo 2 accounts saved-game storage in 16 KiB blocks.  The native port's
+     * virtual saved-game drive uses one cluster per accounting block. */
+    return 0x4000;
+}
+
 extern "C" void __stdcall Sleep(DWORD milliseconds)
 {
     host_h2_sleep(milliseconds);

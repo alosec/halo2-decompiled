@@ -48,7 +48,29 @@ static inline void saved_game_drive_root(char *root, long maximum_count)
 
 	if (TEST_FIELD_BIT(g_4e61c0.utility_drive))
 	{
+#ifdef H2_NATIVE_PORT
+		/* The native virtual drive has the same one-letter root syntax.  Avoid
+		   retaining the full recovered printf engine for this fixed string. */
+		if (maximum_count > 0)
+			root[0] = 0;
+		if (maximum_count > 1)
+		{
+			root[0] = letter;
+			root[1] = 0;
+		}
+		if (maximum_count > 2)
+		{
+			root[1] = ':';
+			root[2] = 0;
+		}
+		if (maximum_count > 3)
+		{
+			root[2] = '\\';
+			root[3] = 0;
+		}
+#else
 		function_11c9c0(root, maximum_count, "%c:\\", letter);
+#endif
 	}
 	else
 	{

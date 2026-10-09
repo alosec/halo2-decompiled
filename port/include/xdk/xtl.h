@@ -22,6 +22,14 @@ struct _FILETIME {
 };
 typedef struct _FILETIME FILETIME;
 
+typedef union _ULARGE_INTEGER {
+    struct {
+        DWORD LowPart;
+        DWORD HighPart;
+    };
+    unsigned long long QuadPart;
+} ULARGE_INTEGER;
+
 /* Independently recovered from the exact field offsets and record strides used
  * by the networking and preferences code. */
 #pragma pack(push, 4)
@@ -51,6 +59,7 @@ struct XNADDR {
 #pragma pack(pop)
 
 #ifdef __cplusplus
+static_assert(sizeof(ULARGE_INTEGER) == 8, "public Win32 integer layout");
 static_assert(sizeof(XCALCSIG_SIGNATURE) == 0x14, "retail signature layout");
 static_assert(sizeof(XNKID) == 0x08, "retail key identifier layout");
 static_assert(sizeof(XNKEY) == 0x10, "retail key layout");
@@ -73,9 +82,12 @@ extern "C" {
 
 int __cdecl abs(int value);
 LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
+BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,
+                                   ULARGE_INTEGER* total, ULARGE_INTEGER* free_bytes);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetTickCount(void);
 void __stdcall Sleep(DWORD milliseconds);
+DWORD __stdcall XGetDiskClusterSize(const char* root);
 DWORD __stdcall XGetLanguage(void);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
