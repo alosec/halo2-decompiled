@@ -11,6 +11,7 @@ typedef XONLINETASK_HANDLE* PXONLINETASK_HANDLE;
 
 #define XONLINE_GAMERTAG_SIZE 16
 #define XONLINE_MAX_LOGON_USERS 4
+#define MAX_FRIENDS 100
 #define MAX_MUTELISTUSERS 250
 #define XONLINE_USER_OPTION_REQUIRE_PASSCODE 1
 
@@ -38,6 +39,22 @@ struct XONLINE_MUTELISTUSER {
     DWORD reserved;
 };
 
+/* Recovered from retail friend conversion at 0x1a3555: the destination is
+ * cleared as 0x56 bytes, then fields are written at these exact offsets. */
+#pragma pack(push, 1)
+struct XONLINE_FRIEND {
+    XUID xuid;
+    char szGamertag[XONLINE_GAMERTAG_SIZE];
+    DWORD dwFriendState;
+    FILETIME gameinviteTime;
+    XNKID sessionID;
+    DWORD dwTitleID;
+    BYTE StateDataSize;
+    BYTE StateData[32];
+    BYTE reserved55;
+};
+#pragma pack(pop)
+
 struct XONLINE_TEAM;
 struct XONLINE_TEAM_MEMBER;
 
@@ -54,6 +71,19 @@ static_assert(sizeof(XUID) == 0x0c, "retail XUID layout");
 static_assert(sizeof(XONLINE_MUTELISTUSER) == 0x10, "retail mute-list user layout");
 static_assert(sizeof(XONLINE_MUTELISTUSER) * MAX_MUTELISTUSERS == 0xfa0,
               "retail per-controller mute-list size");
+static_assert(sizeof(XONLINE_FRIEND) == 0x56, "retail XONLINE_FRIEND layout");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, dwFriendState) == 0x1c,
+              "retail friend-state offset");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, gameinviteTime) == 0x20,
+              "retail invite-time offset");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, sessionID) == 0x28,
+              "retail friend-session offset");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, dwTitleID) == 0x30,
+              "retail friend-title offset");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, StateDataSize) == 0x34,
+              "retail friend-state-data size offset");
+static_assert(__builtin_offsetof(XONLINE_FRIEND, StateData) == 0x35,
+              "retail friend-state-data offset");
 static_assert(sizeof(XONLINE_USER) == 0x70, "retail XONLINE_USER layout");
 
 BOOL __stdcall XOnlineAreUsersIdentical(const XUID* first, const XUID* second);
