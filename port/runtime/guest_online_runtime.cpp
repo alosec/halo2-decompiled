@@ -1,9 +1,25 @@
 #include "online_tasks.h"
+#include <string.h>
+#include <xonline.h>
 #include <xtl.h>
 
 /* Native offline compatibility for the recovered task-screen core.  The
  * selected UI path still owns and looks up its retail-format task records,
  * while Xbox Live task handles cannot exist in the native port yet. */
+
+// @retail 0x6ced0, native offline boundary
+void online_get_logon_users(XONLINE_USER *users)
+{
+    /* The native port has no Xbox Live identity provider. */
+    memset(users, 0, sizeof(XONLINE_USER) * XONLINE_MAX_LOGON_USERS);
+}
+
+// @retail 0x6c7c0, native offline boundary
+bool online_get_logon_status(long *status)
+{
+    *status = 0;
+    return false;
+}
 
 // @retail 0x6b5d0
 long online_task_poll(long task_index)

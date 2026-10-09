@@ -40,6 +40,8 @@ REQUIRED = {
     "?function_2523bc@@YAXPAVc_online_task_screen@@@Z",
     "?function_6b640@@YAXJ@Z",
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
+    "?online_get_logon_status@@YA_NPAJ@Z",
+    "?online_get_logon_users@@YAXPAUXONLINE_USER@@@Z",
     "?online_task_continue@@YAJPAUs_type_9df9da@@@Z",
     "?online_task_poll@@YAJJ@Z",
     "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z",

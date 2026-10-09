@@ -29,7 +29,8 @@ def main():
     assert "?function_18f1c0@@YAXJ@Z" not in imports
     assert "?function_52040@@YAXPBX0@Z" not in imports
     assert "?online_task_poll@@YAJJ@Z" not in imports
-    assert imports["?online_get_logon_status@@YA_NPAJ@Z"]["category"] == "named_engine_service"
+    assert "?online_get_logon_status@@YA_NPAJ@Z" not in imports
+    assert imports["?online_team_get_details@@YAXJPBUXUID@@PAUXONLINE_TEAM@@@Z"]["category"] == "named_engine_service"
     print("main-menu import plan classification passed")
 
 
