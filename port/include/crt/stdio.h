@@ -17,6 +17,7 @@ FILE *fopen(const char *path, const char *mode);
 int fclose(FILE *stream);
 int fprintf(FILE *stream, const char *format, ...);
 int printf(const char *format, ...);
+int sprintf(char *destination, const char *format, ...);
 int _vsnprintf(char *destination, __SIZE_TYPE__ size, const char *format, va_list arguments);
 int fscanf(FILE *stream, const char *format, ...);
 int fputs(const char *text, FILE *stream);

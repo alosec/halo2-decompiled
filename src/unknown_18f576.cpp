@@ -76,9 +76,13 @@ struct s_player_slot_view : s_player_slot_data, XONLINE_USER
 	s_player_slot_blockb82 blockb82;
 	long valuec14;
 	long valuec18;
-	byte unknownc1c[0xc70 - 0xc1c];
+	word name[32];
+	byte unknownc5c[0xc70 - 0xc5c];
 
 };
+#if defined(H2_NATIVE_PORT)
+static_assert(sizeof(s_player_slot_view) == 0xc70, "player slot layout");
+#endif
 #define k_player_slot_count 4
 
 extern dword g_4e61cc[k_player_slot_count];
@@ -382,10 +386,12 @@ void __stdcall function_18fb34(long index, s_player_profile_settings *settings, 
 	s_player_slot_view *slot = &player_slots()[index];
 #if defined(H2_NATIVE_PORT)
 	/* Native offline activation owns no machine identity, voice graph, or
-	   save-task queue. Preserve the recovered local slot state exactly. */
+	   save-task queue. Preserve the local profile and the display-name effect
+	   that retail function_190eb3 applies after installation. */
 	slot->profile = *(s_player_profile *)settings;
 	slot->flags |= 0x10;
 	slot->profile_index = profile_index;
+	memcpy(slot->name, settings->name, sizeof(slot->name));
 #else
 	bool changed = !(slot->flags & 0x10) || slot->profile_index != profile_index;
 

@@ -426,6 +426,25 @@ extern "C" int h2_main_menu_guest_map_location_probe()
         map_location_progress_get(main_menu) == 0 ? 0 : 5;
 }
 
+struct s_native_machine_address
+{
+    unsigned char bytes[6];
+};
+
+struct s_native_local_player_entry
+{
+    bool valid;
+    unsigned char unknown01;
+    short value02;
+    long index;
+    s_native_machine_address address;
+    unsigned char xuid[0x1c - 0xe];
+    unsigned char record[0xe4 - 0x1c];
+};
+static_assert(sizeof(s_native_local_player_entry) == 0xe4,
+              "local player entry layout");
+void function_23654b(void *entries, void *address, void *count);
+
 extern "C" int h2_main_menu_guest_load_selected_campaign()
 {
     c_window_channel *channels[] = {
@@ -446,6 +465,18 @@ extern "C" int h2_main_menu_guest_load_selected_campaign()
     char *const map_name = function_148d73();
     if (!map_name)
         return 3;
+    s_native_local_player_entry players[16];
+    s_native_machine_address address;
+    long player_count = 0;
+    function_23654b(players, &address, &player_count);
+    if (player_count != 1)
+        return 6;
+    if (!players[0].valid)
+        return 7;
+    if (players[0].index != 0)
+        return 8;
+    if (players[0].record[0] == 0 && players[0].record[1] == 0)
+        return 9;
     if (!host_h2_map_select(map_name))
         return 4;
     return h2_native_load_campaign_map(map_name) ? 0 : 5;

@@ -22,6 +22,7 @@
     {"symbol": "?g_4cf772@@3EA", "address": "0x004cf772"},
     {"symbol": "?g_4cf77c@@3PAUs_simulation_world@@A", "address": "0x004cf77c"},
     {"symbol": "?g_4cf78c@@3PAUs_record_pool@@A", "address": "0x004cf78c"},
+    {"symbol": "?g_4cf7cc@@3PAEA", "address": "0x004cf7cc"},
     {"symbol": "?g_4e0300@@3PAUs_record_pool@@A", "address": "0x004e0300"},
     {"symbol": "?g_4e034c@@3PAUs_tag_header_globals@@A", "address": "0x004e034c"},
     {"symbol": "?g_4e0350@@3PAUs_palette_source_globals@@A", "address": "0x004e0350"},

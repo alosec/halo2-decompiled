@@ -30,6 +30,7 @@ set(H2_GUEST_MAP_LOCATION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_213d20.o")
 set(H2_GUEST_MAP_PROGRESS_OBJECT "${H2_GUEST_OBJECT_DIR}/loading.o")
 set(H2_GUEST_RANDOM_ID_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07ad80.o")
 set(H2_GUEST_GAME_OPTIONS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_137dd0.o")
+set(H2_GUEST_PROFILE_RECORD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_153750.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
 set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
 set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
@@ -170,6 +171,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/loading.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
@@ -248,6 +250,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_MAP_PROGRESS_OBJECT}|${PROJECT_SOURCE_DIR}/src/loading.cpp"
         "${H2_GUEST_RANDOM_ID_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
         "${H2_GUEST_GAME_OPTIONS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
+        "${H2_GUEST_PROFILE_RECORD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
         "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
         "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
         "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
@@ -378,6 +381,10 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args --extract-symbol
             "?function_138110@@YAXPAUs_game_options@@@Z")
     endif()
+    if(object STREQUAL H2_GUEST_PROFILE_RECORD_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_1537f0@@YAXPAUs_profile_record@@@Z")
+    endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?data_last_index@@YAJPAUs_record_pool@@@Z")
@@ -476,6 +483,7 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_1904cb@@YA_NJ@Z"
             --extract-symbol "?function_19052c@@YAXJPAJ0@Z"
             --extract-symbol "?function_190565@@YAJXZ"
+            --extract-symbol "?function_18fd94@@YAXJPAKPAUs_profile_record@@@Z"
             --extract-symbol "?function_190001@@YAXJPBD@Z"
             --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
@@ -780,7 +788,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_23625d@@YAXJ@Z"
-            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z"
+            --extract-symbol "?function_23654b@@YAXPAX00@Z")
     endif()
     if(object STREQUAL H2_GUEST_QUIT_CALLBACK_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -797,7 +806,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?network_session_interface_get_value_49a4@@YAJXZ"
             --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z"
             --extract-symbol "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z"
-            --extract-symbol "?network_session_interface_get_data_4db0@@YAPAEXZ")
+            --extract-symbol "?network_session_interface_get_data_4db0@@YAPAEXZ"
+            --extract-symbol "?network_session_interface_get_user_properties@@YA_NJPAJPAE0@Z")
     endif()
     if(object STREQUAL H2_GUEST_STORAGE_SIZE_OBJECT)
         list(APPEND guest_extract_args
@@ -888,6 +898,7 @@ set_source_files_properties(
     "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
     "${H2_GUEST_MAP_LOCATION_OBJECT}" "${H2_GUEST_MAP_PROGRESS_OBJECT}"
     "${H2_GUEST_RANDOM_ID_OBJECT}" "${H2_GUEST_GAME_OPTIONS_OBJECT}"
+    "${H2_GUEST_PROFILE_RECORD_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}" "${H2_GUEST_SCREEN_BASE_OBJECT}"
     "${H2_GUEST_UI_HEAP_OBJECT}" "${H2_GUEST_UI_MANAGER_OBJECT}"
@@ -964,6 +975,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_MAP_PROGRESS_OBJECT}"
     "${H2_GUEST_RANDOM_ID_OBJECT}"
     "${H2_GUEST_GAME_OPTIONS_OBJECT}"
+    "${H2_GUEST_PROFILE_RECORD_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -1206,6 +1218,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_1904cb@@YA_NJ@Z"
             --extract-symbol "?function_19052c@@YAXJPAJ0@Z"
             --extract-symbol "?function_190565@@YAJXZ"
+            --extract-symbol "?function_18fd94@@YAXJPAKPAUs_profile_record@@@Z"
             --extract-symbol "?function_190001@@YAXJPBD@Z"
             --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
@@ -1559,7 +1572,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_23625d@@YAXJ@Z"
-            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z"
+            --extract-symbol "?function_23654b@@YAXPAX00@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -1578,6 +1592,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
         list(APPEND guest_extract_args --extract-symbol
             "?function_138110@@YAXPAUs_game_options@@@Z")
     endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_1537f0@@YAXPAUs_profile_record@@@Z")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_2323ab@@YA_NJ@Z")
@@ -1593,7 +1611,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?network_session_interface_get_value_49a4@@YAJXZ"
             --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z"
             --extract-symbol "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z"
-            --extract-symbol "?network_session_interface_get_data_4db0@@YAPAEXZ")
+            --extract-symbol "?network_session_interface_get_data_4db0@@YAPAEXZ"
+            --extract-symbol "?network_session_interface_get_user_properties@@YA_NJPAJPAE0@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_216a50.cpp")
         list(APPEND guest_extract_args
