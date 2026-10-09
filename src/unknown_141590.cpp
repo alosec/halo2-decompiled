@@ -22,6 +22,7 @@ __inline void real_point3d_set(point3f *point, real x, real y, real z)
 	point->z = z;
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x141590
 void function_141590(
 	transform4x3f const *in,
@@ -61,6 +62,7 @@ void function_141590(
 		memset(out, 0, sizeof(transform4x3f));
 	}
 }
+#endif
 
 // @retail 0x1416c0
 void function_1416c0(

@@ -187,6 +187,10 @@
     {"symbol": "?g_502418@@3PAUs_record_pool@@A", "address": "0x00502418"},
     {"symbol": "?g_50241c@@3PAUs_record_pool@@A", "address": "0x0050241c"},
     {"symbol": "?g_51eca4@@3PAUs_record_pool@@A", "address": "0x0051eca4"},
-    {"symbol": "?g_557c6c@@3PAUs_game_proc_table_557c6c@@A", "address": "0x00557c6c"}
+    {"symbol": "?g_557c6c@@3PAUs_game_proc_table_557c6c@@A", "address": "0x00557c6c"},
+    {"symbol": "?g_4e7c18@@3_NA", "address": "0x004e7c18"},
+    {"symbol": "?g_4e7c1c@@3JA", "address": "0x004e7c1c"},
+    {"symbol": "?g_4e7c20@@3PAJA", "address": "0x004e7c20"},
+    {"symbol": "?g_4ed280@@3PAEA", "address": "0x004ed280"}
   ]
 }

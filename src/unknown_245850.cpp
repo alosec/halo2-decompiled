@@ -84,7 +84,8 @@ void function_245aa0(s_245aa0 const *arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
 	long arg_5, long arg_6, s_collection_245270 *arg_7)
 {
-	for (long local_0 = 0; local_0 < arg_0->field_808; ++local_0)
+	long local_0;
+	for (local_0 = 0; local_0 < arg_0->field_808; ++local_0)
 		function_245400(arg_0->field_80c[local_0], arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, (s_line_list *)arg_7);
 	for (local_0 = 0; local_0 < arg_0->field_404; ++local_0)
 		function_245540(arg_0->field_408[local_0], arg_1, arg_2, arg_3, arg_4, arg_5, arg_6, arg_7);

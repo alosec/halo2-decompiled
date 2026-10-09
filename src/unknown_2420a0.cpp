@@ -124,6 +124,15 @@ static inline void ctf_globals_changed(dword mask)
 /* rounds as the x87 does */
 static __forceinline long ctf_real_to_long(real value)
 {
+#ifdef H2_NATIVE_PORT
+	long result = (long)value;
+	real fraction = value - (real)result;
+	if (fraction > 0.5f || (fraction == 0.5f && (result & 1)))
+		result++;
+	else if (fraction < -0.5f || (fraction == -0.5f && (result & 1)))
+		result--;
+	return result;
+#else
 	long result;
 
 	__asm
@@ -132,6 +141,7 @@ static __forceinline long ctf_real_to_long(real value)
 		fistp result
 	}
 	return result;
+#endif
 }
 
 struct s_team_entry

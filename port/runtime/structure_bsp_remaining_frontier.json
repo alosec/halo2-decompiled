@@ -9,7 +9,6 @@
     {"symbol": "?function_146b80@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "scratch allocator requires the same complete fixed allocator table"},
     {"symbol": "?function_146bf0@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "memory-pressure recovery traverses world cleanup and scratch allocator ownership"},
     {"symbol": "?function_14e0f0@@YAXJJPBTpoint3f@@0@Z", "subsystem": "object_placement", "blocker": "player relocation requires genuine function_14e200 and vehicle-exit request routing"},
-    {"symbol": "?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z", "subsystem": "geometry_query", "blocker": "collision correction exposes shape collection, line-list, and raycast ownership"},
     {"symbol": "?function_1c2910@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world construction requires native world, monitor, listener, and allocator state"},
     {"symbol": "?function_1c2a10@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "object census and world insertion depend on complete Havok startup"},
     {"symbol": "?function_1c2d40@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world configuration is a broad Havok library closure"},
