@@ -330,6 +330,23 @@ def main():
             if f"_{symbol}" not in physics_model_accessor_defined:
                 raise RuntimeError(f"physics-model compact accessor was not retained: {symbol}")
 
+        physics_model_aabb_output = Path(temporary) / "physics-model-collection-aabb.o"
+        physics_model_aabb_command = command[:]
+        physics_model_aabb_symbol = (
+            "?function_2fc120@c_physics_shape_collection@@QAAXPAX0PAUs_physics_aabb@@@Z"
+        )
+        physics_model_aabb_command[physics_model_aabb_command.index("h2_extract_selected")] = physics_model_aabb_symbol
+        physics_model_aabb_command[physics_model_aabb_command.index("--extract-global"):physics_model_aabb_command.index("--output")] = []
+        physics_model_aabb_command[physics_model_aabb_command.index(output)] = physics_model_aabb_output
+        physics_model_aabb_command[-1] = args.root / "src/unknown_2fc120.cpp"
+        subprocess.run([str(value) for value in physics_model_aabb_command], check=True)
+        physics_model_aabb_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_aabb_output],
+            text=True,
+        )
+        if f"_{physics_model_aabb_symbol}" not in physics_model_aabb_defined:
+            raise RuntimeError("physics-model collection AABB method was not retained")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
