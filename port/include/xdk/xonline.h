@@ -53,6 +53,17 @@ struct XONLINE_FRIEND {
     BYTE StateData[32];
     BYTE reserved55;
 };
+
+/* Retail presence processing advances 0x3d bytes per result, reads state at
+ * 0x0c and title at 0x18, matching the recovered fields below. */
+struct XONLINE_PRESENCE {
+    XUID xuid;
+    DWORD dwUserState;
+    XNKID SessionID;
+    DWORD dwTitleID;
+    BYTE StateDataSize;
+    BYTE StateData[32];
+};
 #pragma pack(pop)
 
 struct XONLINE_TEAM;
@@ -84,6 +95,17 @@ static_assert(__builtin_offsetof(XONLINE_FRIEND, StateDataSize) == 0x34,
               "retail friend-state-data size offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, StateData) == 0x35,
               "retail friend-state-data offset");
+static_assert(sizeof(XONLINE_PRESENCE) == 0x3d, "retail XONLINE_PRESENCE layout");
+static_assert(__builtin_offsetof(XONLINE_PRESENCE, dwUserState) == 0x0c,
+              "retail presence-state offset");
+static_assert(__builtin_offsetof(XONLINE_PRESENCE, SessionID) == 0x10,
+              "retail presence-session offset");
+static_assert(__builtin_offsetof(XONLINE_PRESENCE, dwTitleID) == 0x18,
+              "retail presence-title offset");
+static_assert(__builtin_offsetof(XONLINE_PRESENCE, StateDataSize) == 0x1c,
+              "retail presence-state-data size offset");
+static_assert(__builtin_offsetof(XONLINE_PRESENCE, StateData) == 0x1d,
+              "retail presence-state-data offset");
 static_assert(sizeof(XONLINE_USER) == 0x70, "retail XONLINE_USER layout");
 
 BOOL __stdcall XOnlineAreUsersIdentical(const XUID* first, const XUID* second);
