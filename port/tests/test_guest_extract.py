@@ -332,6 +332,9 @@ def main():
             "?function_2fd230@c_physics_shape_456008@@QAAXPAJ@Z",
             "?function_2fe330@c_physics_shape_455ef0@@QAAXPAUs_physics_shape_marker@@@Z",
             "?function_2fe410@c_physics_shape_455ef0@@QAAXPAM@Z",
+            "?function_2fe450@c_physics_shape_455ef0@@QAAXPBMPAM@Z",
+            "?function_2fe490@c_physics_shape_455ef0@@QAAXPBGJPAM@Z",
+            "?function_2fe4f0@c_physics_shape_455ef0@@QAAXPAM@Z",
         )
         physics_model_accessor_command = command[:]
         physics_model_accessor_command[physics_model_accessor_command.index("h2_extract_selected")] = physics_model_accessor_symbols[0]
