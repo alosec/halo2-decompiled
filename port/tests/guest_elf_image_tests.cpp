@@ -66,9 +66,11 @@ int main(int argc, char** argv) {
     ok &= check(patched == kTarget, "host import target was not patched");
 
     ok &= check(h2::port::patch_standard_host_imports(*image, *arena, error), error);
-    for (const char* symbol : {"host_h2_video_control", "host_h2_render_request",
-                               "host_h2_text_request", "host_h2_get_milliseconds",
-                               "host_h2_sleep", "host_h2_cos"}) {
+    for (const char* symbol : {"host_h2_physical_memory_malloc_low",
+                               "host_h2_cache_read", "host_h2_video_control",
+                               "host_h2_render_request", "host_h2_text_request",
+                               "host_h2_get_milliseconds", "host_h2_sleep",
+                               "host_h2_cos"}) {
         const auto standard_slot = image->symbol_address(
             std::string("h2_host_slot_") + symbol);
         std::uintptr_t standard_target = 0;

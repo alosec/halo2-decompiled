@@ -22,7 +22,15 @@ h2_main_menu_guest_bootstrap:
     b .Lrun_initializers
 
 .Linitializers_done:
+    mov x0, xzr
+    bl _Z20cache_files_load_mapPKc
+    cbz w0, .Lmap_load_failed
     bl h2_main_menu_guest_open_press_start
+    b .Lreturn
+
+.Lmap_load_failed:
+    mov w0, #3
+.Lreturn:
     ldp x19, x20, [sp, #16]
     ldp x29, x30, [sp], #32
     ret

@@ -6,9 +6,12 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 namespace {
 
@@ -29,6 +32,24 @@ struct DispatchState {
 
 DispatchState& dispatch_state() {
     static DispatchState state;
+    return state;
+}
+
+constexpr std::uint32_t kCacheHeaderAddress = 0x00557c94u;
+constexpr std::uint32_t kPhysicalRegionAddress = 0x80060000u;
+constexpr std::uint32_t kPhysicalRegionSize = 0x001d4000u;
+constexpr std::uint32_t kPhysicalAllocationBase = 0x80061000u;
+constexpr std::uint32_t kCacheHeaderSize = 0x800u;
+
+struct CacheState {
+    std::mutex mutex;
+    h2::port::GuestArena* arena = nullptr;
+    std::vector<unsigned char> bytes;
+    std::uint32_t next_address = kPhysicalAllocationBase;
+};
+
+CacheState& cache_state() {
+    static CacheState state;
     return state;
 }
 
@@ -81,6 +102,41 @@ void reset_host_service_stats() {
     state.text_calls.store(0, std::memory_order_relaxed);
 }
 
+bool configure_cache_services(GuestArena& arena, const std::filesystem::path& map_path,
+                              std::string& error) {
+    std::ifstream input(map_path, std::ios::binary);
+    if (!input) {
+        error = "could not open cache map: " + map_path.string();
+        return false;
+    }
+    std::vector<unsigned char> bytes(std::istreambuf_iterator<char>(input), {});
+    if (input.bad() || bytes.size() < kCacheHeaderSize) {
+        error = "could not read a complete cache header: " + map_path.string();
+        return false;
+    }
+    if (!arena.protect(kCacheHeaderAddress, kCacheHeaderSize,
+                       GuestMemoryProtection::read_write, error) ||
+        !arena.protect(kPhysicalRegionAddress, kPhysicalRegionSize,
+                       GuestMemoryProtection::read_write, error)) {
+        return false;
+    }
+    std::memcpy(arena.pointer(kCacheHeaderAddress), bytes.data(), kCacheHeaderSize);
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    state.arena = &arena;
+    state.bytes = std::move(bytes);
+    state.next_address = kPhysicalAllocationBase;
+    return true;
+}
+
+void reset_cache_services() {
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    state.arena = nullptr;
+    state.bytes.clear();
+    state.next_address = kPhysicalAllocationBase;
+}
+
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error) {
     struct Import {
@@ -88,6 +144,9 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         std::uintptr_t target;
     };
     const Import imports[] = {
+        {"host_h2_physical_memory_malloc_low",
+         function_address(&host_h2_physical_memory_malloc_low)},
+        {"host_h2_cache_read", function_address(&host_h2_cache_read)},
         {"host_h2_video_control", function_address(&host_h2_video_control)},
         {"host_h2_render_request", function_address(&host_h2_render_request)},
         {"host_h2_text_request", function_address(&host_h2_text_request)},
@@ -113,6 +172,47 @@ extern "C" void host_h2_log(const char* message) {
     if (message) {
         std::cerr << "guest: " << message << '\n';
     }
+}
+
+extern "C" void* host_h2_physical_memory_malloc_low(int size, unsigned int) {
+    if (size <= 0) {
+        return nullptr;
+    }
+    const std::uint64_t aligned =
+        (static_cast<std::uint64_t>(static_cast<unsigned int>(size)) + 0xfffu) &
+        ~std::uint64_t{0xfff};
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    const std::uint64_t end = static_cast<std::uint64_t>(state.next_address) + aligned;
+    const std::uint64_t limit =
+        static_cast<std::uint64_t>(kPhysicalRegionAddress) + kPhysicalRegionSize;
+    if (!state.arena || end > limit) {
+        return nullptr;
+    }
+    const std::uint32_t result = state.next_address;
+    state.next_address = static_cast<std::uint32_t>(end);
+    return reinterpret_cast<void*>(static_cast<std::uintptr_t>(result));
+}
+
+extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
+    if (size < 0 || !buffer) {
+        return 0;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    const std::size_t count = static_cast<std::size_t>(size);
+    if (!state.arena || offset > state.bytes.size() ||
+        count > state.bytes.size() - offset) {
+        return 0;
+    }
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(buffer);
+    const std::uintptr_t guest_start = h2::port::kGuestBias;
+    const std::uintptr_t guest_end = guest_start + h2::port::kGuestAddressSpaceSize;
+    if (start < guest_start || start > guest_end || count > guest_end - start) {
+        return 0;
+    }
+    std::memcpy(buffer, state.bytes.data() + offset, count);
+    return 1;
 }
 
 extern "C" void host_h2_video_control(int command) {

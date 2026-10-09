@@ -2,6 +2,7 @@
 #define H2_PORT_HOST_SERVICES_HPP
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 
 namespace h2::port {
@@ -28,6 +29,9 @@ void set_render_request_handler(RenderRequestHandler handler, void* context = nu
 void set_text_request_handler(TextRequestHandler handler, void* context = nullptr);
 HostServiceStats host_service_stats();
 void reset_host_service_stats();
+bool configure_cache_services(GuestArena& arena, const std::filesystem::path& map_path,
+                              std::string& error);
+void reset_cache_services();
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error);
 

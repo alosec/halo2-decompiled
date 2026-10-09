@@ -133,6 +133,11 @@ int main(int argc, char** argv) {
 
     std::optional<h2::port::GuestElfImage> guest_image;
     if (!options.guest_image.empty()) {
+        if (!h2::port::configure_cache_services(
+                *arena, options.data_root / "maps" / "mainmenu.map", arena_error)) {
+            std::cerr << "error: " << arena_error << '\n';
+            return 1;
+        }
         guest_image = h2::port::GuestElfImage::load(options.guest_image, *arena,
                                                     arena_error);
         if (!guest_image || !h2::port::patch_standard_host_imports(

@@ -25,6 +25,7 @@ set(H2_GUEST_GLOBALS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07a9a0_2.o")
 set(H2_GUEST_CACHE_TAG_OBJECT "${H2_GUEST_OBJECT_DIR}/cache_tag_instances.o")
 set(H2_GUEST_CRT_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_crt.o")
 set(H2_GUEST_MAP_LOADER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_122870.o")
+set(H2_GUEST_CACHE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_cache_runtime.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
 set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
 set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
@@ -212,6 +213,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_CACHE_TAG_OBJECT}|${PROJECT_SOURCE_DIR}/src/cache_tag_instances.cpp"
         "${H2_GUEST_CRT_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c"
         "${H2_GUEST_MAP_LOADER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp"
+        "${H2_GUEST_CACHE_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_cache_runtime.cpp"
         "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
         "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
         "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
@@ -308,6 +310,11 @@ foreach(pair IN ITEMS
     list(FIND H2_MS_ABI_SOURCES "${source}" ms_abi_index)
     if(NOT ms_abi_index EQUAL -1)
         list(APPEND guest_abi_args --ms-abi)
+    endif()
+    if(object STREQUAL H2_GUEST_MAP_LOADER_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "_Z19cache_header_verifyPK14s_cache_header"
+            --extract-symbol "_Z20cache_files_load_mapPKc")
     endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -645,7 +652,8 @@ endforeach()
 set_source_files_properties(
     "${H2_GUEST_RANDOM_OBJECT}" "${H2_GUEST_GLOBALS_OBJECT}"
     "${H2_GUEST_CACHE_TAG_OBJECT}" "${H2_GUEST_CRT_OBJECT}"
-    "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_MAIN_MENU_OBJECT}"
+    "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
+    "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}" "${H2_GUEST_SCREEN_BASE_OBJECT}"
     "${H2_GUEST_UI_HEAP_OBJECT}" "${H2_GUEST_UI_MANAGER_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_OBJECT}" "${H2_GUEST_LIST_WIDGET_OBJECT}"
@@ -706,6 +714,8 @@ set_target_properties(h2_recovered_guest PROPERTIES LINKER_LANGUAGE CXX)
 
 set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_CRT_OBJECT}"
+    "${H2_GUEST_MAP_LOADER_OBJECT}"
+    "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -825,7 +835,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 6
+            --expect-unresolved 8
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -1173,6 +1183,50 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     )
     list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${object}")
 endforeach()
+set(H2_GUEST_MAP_LOADER_ELF_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/unknown_122870.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_MAP_LOADER_ELF_OBJECT}"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
+            --include ${PROJECT_SOURCE_DIR}/include
+            --extract-symbol "_Z19cache_header_verifyPK14s_cache_header"
+            --extract-symbol "_Z20cache_files_load_mapPKc"
+            --output "${H2_GUEST_MAP_LOADER_ELF_OBJECT}"
+            ${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp
+            ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py h2_guest_rebase
+    VERBATIM
+)
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_GUEST_MAP_LOADER_ELF_OBJECT}")
+set(H2_GUEST_CACHE_RUNTIME_ELF_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_cache_runtime.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_CACHE_RUNTIME_ELF_OBJECT}"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/crt
+            --include ${CMAKE_CURRENT_SOURCE_DIR}/include/xdk
+            --include ${PROJECT_SOURCE_DIR}/include
+            --output "${H2_GUEST_CACHE_RUNTIME_ELF_OBJECT}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_cache_runtime.cpp
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_cache_runtime.cpp
+            ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_asm_elf.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py h2_guest_rebase
+    VERBATIM
+)
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_GUEST_CACHE_RUNTIME_ELF_OBJECT}")
 set(H2_GUEST_CRT_ELF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_CRT_ELF_OBJECT}"
@@ -1363,7 +1417,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 6
+            --expect-unresolved 8
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -1371,7 +1425,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 6
+            --expect-unresolved 8
 )
 add_test(
     NAME main-menu-elf-core

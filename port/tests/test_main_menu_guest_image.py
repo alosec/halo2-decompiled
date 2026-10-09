@@ -63,6 +63,16 @@ def main() -> None:
         [str(args.nm), "--defined-only", "--format=posix", str(args.image)],
         text=True,
     )
+    symbol_lines = {line.split(maxsplit=1)[0]: line for line in symbols.splitlines()}
+    required_symbols = {
+        "_Z20cache_files_load_mapPKc",
+        "h2_main_menu_guest_bootstrap",
+        "host_h2_cache_read",
+        "host_h2_physical_memory_malloc_low",
+    }
+    missing = required_symbols - symbol_lines.keys()
+    if missing:
+        raise RuntimeError(f"guest image is missing required map bootstrap symbols: {sorted(missing)}")
     entry_lines = [line for line in symbols.splitlines()
                    if line.startswith("h2_main_menu_guest_bootstrap ")]
     if len(entry_lines) != 1:

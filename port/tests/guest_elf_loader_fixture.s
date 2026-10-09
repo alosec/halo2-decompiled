@@ -15,6 +15,12 @@ h2_host_slot_host_h2_probe:
     .xword 0
 .size h2_host_slot_host_h2_probe, 8
 
+.globl h2_host_slot_host_h2_physical_memory_malloc_low
+h2_host_slot_host_h2_physical_memory_malloc_low:
+    .xword 0
+.globl h2_host_slot_host_h2_cache_read
+h2_host_slot_host_h2_cache_read:
+    .xword 0
 .globl h2_host_slot_host_h2_video_control
 h2_host_slot_host_h2_video_control:
     .xword 0

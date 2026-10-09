@@ -60,6 +60,15 @@
     {"symbol": "?g_55c164@@3PAUs_55c164@@A", "address": "0x0055c164"},
     {"symbol": "?g_transport_globals@@3Us_transport_globals@@A", "address": "0x004d8b18"},
     {"symbol": "?g_4d8ba0@@3_NA", "address": "0x004d8ba0"},
-    {"symbol": "?g_4de2d0@@3PAJA", "address": "0x004de2d0"}
+    {"symbol": "?g_4de2d0@@3PAJA", "address": "0x004de2d0"},
+    {"symbol": "g_4686c0", "address": "0x004686c0"},
+    {"symbol": "g_4e034c", "address": "0x004e034c"},
+    {"symbol": "g_4e0350", "address": "0x004e0350"},
+    {"symbol": "g_4e3b44", "address": "0x004e3b44"},
+    {"symbol": "g_510819", "address": "0x00510819"},
+    {"symbol": "g_510a08", "address": "0x00510a08"},
+    {"symbol": "cache_file_globals", "address": "0x005476f8"},
+    {"symbol": "g_55aca8", "address": "0x0055aca8"},
+    {"symbol": "g_557c90", "address": "0x00557c90"}
   ]
 }

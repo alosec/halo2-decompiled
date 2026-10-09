@@ -1,3 +1,4 @@
+#include "h2/guest_arena.hpp"
 #include "h2/host_abi.h"
 #include "h2/host_services.hpp"
 #include "h2/render_protocol.h"
@@ -5,9 +6,14 @@
 struct color4f { float alpha, red, green, blue; };
 struct short_rectangle2d { short top, left, bottom, right; };
 
+#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 
 extern "C" void D3DDevice_Begin(unsigned int primitive_type);
 extern "C" void D3DDevice_End();
@@ -104,6 +110,45 @@ int main() {
     host_h2_sleep(2);
     const unsigned int after = host_h2_get_milliseconds();
     ok &= check(after - before >= 1, "host monotonic clock did not advance");
+
+    std::string arena_error;
+    auto arena = h2::port::GuestArena::create(arena_error);
+    ok &= check(arena != nullptr, "could not create guest arena for cache services");
+    if (arena) {
+        std::vector<unsigned char> cache_bytes(0x1000);
+        for (std::size_t i = 0; i < cache_bytes.size(); ++i) {
+            cache_bytes[i] = static_cast<unsigned char>((i * 29u + 7u) & 0xffu);
+        }
+        const auto unique = std::chrono::steady_clock::now().time_since_epoch().count();
+        const auto cache_path = std::filesystem::temp_directory_path() /
+            ("h2-host-cache-" + std::to_string(unique) + ".map");
+        {
+            std::ofstream output(cache_path, std::ios::binary);
+            output.write(reinterpret_cast<const char*>(cache_bytes.data()),
+                         static_cast<std::streamsize>(cache_bytes.size()));
+        }
+        const bool configured =
+            h2::port::configure_cache_services(*arena, cache_path, arena_error);
+        ok &= check(configured, "could not configure native cache services");
+        if (configured) {
+            ok &= check(*static_cast<const unsigned char*>(
+                            arena->pointer_const(0x00557c94u)) == cache_bytes[0],
+                        "cache header was not staged at the recovered guest address");
+            void* const allocation = host_h2_physical_memory_malloc_low(0x1000, 0);
+            ok &= check(reinterpret_cast<std::uintptr_t>(allocation) == 0x80061000u,
+                        "physical cache allocation did not return the expected guest address");
+            void* const native_buffer = arena->pointer(0x80061000u);
+            ok &= check(host_h2_cache_read(0x800u, 16, native_buffer) == 1,
+                        "native cache read rejected a valid guest destination");
+            ok &= check(*static_cast<const unsigned char*>(native_buffer) ==
+                            cache_bytes[0x800],
+                        "native cache read copied incorrect data");
+            ok &= check(host_h2_cache_read(0xff8u, 16, native_buffer) == 0,
+                        "native cache read accepted an out-of-range request");
+            h2::port::reset_cache_services();
+        }
+        std::filesystem::remove(cache_path);
+    }
 
     CallbackCapture capture;
     h2::port::reset_host_service_stats();
