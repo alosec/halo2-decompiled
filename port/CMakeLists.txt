@@ -519,6 +519,7 @@ add_custom_target(h2-main-menu-elf ALL DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}")
 
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
+    src/guest_elf_image.cpp
     src/host_services.cpp
     src/retail_data.cpp
 )
@@ -537,6 +538,30 @@ if(APPLE)
 endif()
 
 enable_testing()
+set(H2_GUEST_ELF_LOADER_FIXTURE_OBJECT
+    "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.o")
+set(H2_GUEST_ELF_LOADER_FIXTURE
+    "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.elf")
+add_custom_command(
+    OUTPUT "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+    COMMAND ${H2_LLVM_ROOT}/bin/llvm-mc -triple=aarch64-linux-gnu -filetype=obj
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.s
+            -o "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.s
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_ELF_LOADER_FIXTURE}"
+    COMMAND ${H2_LLD} -static
+            -T ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.ld
+            -z max-page-size=0x4000
+            -o "${H2_GUEST_ELF_LOADER_FIXTURE}"
+            "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+    DEPENDS "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.ld
+    VERBATIM
+)
+
 add_executable(h2-retail-data-tests tests/retail_data_tests.cpp)
 target_compile_features(h2-retail-data-tests PRIVATE cxx_std_20)
 target_compile_options(h2-retail-data-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -548,6 +573,16 @@ target_compile_features(h2-guest-arena-tests PRIVATE cxx_std_20)
 target_compile_options(h2-guest-arena-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-guest-arena-tests PRIVATE h2_port_support)
 add_test(NAME guest-arena-xbe-loader COMMAND h2-guest-arena-tests)
+
+add_executable(h2-guest-elf-image-tests
+    tests/guest_elf_image_tests.cpp
+    "${H2_GUEST_ELF_LOADER_FIXTURE}"
+)
+target_compile_features(h2-guest-elf-image-tests PRIVATE cxx_std_20)
+target_compile_options(h2-guest-elf-image-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-guest-elf-image-tests PRIVATE h2_port_support)
+add_test(NAME native-guest-elf-image
+         COMMAND h2-guest-elf-image-tests "${H2_GUEST_ELF_LOADER_FIXTURE}")
 
 add_executable(h2-host-services-tests tests/host_services_tests.cpp)
 target_compile_features(h2-host-services-tests PRIVATE cxx_std_20)

@@ -1,9 +1,11 @@
 #include "h2/host_abi.h"
+#include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
 
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -28,6 +30,14 @@ DispatchState& dispatch_state() {
 }
 
 const Clock::time_point kClockStart = Clock::now();
+
+template <typename Function>
+std::uintptr_t function_address(Function function) {
+    static_assert(sizeof(function) == sizeof(std::uintptr_t));
+    std::uintptr_t address = 0;
+    std::memcpy(&address, &function, sizeof(address));
+    return address;
+}
 
 }  // namespace
 
@@ -57,6 +67,27 @@ void reset_host_service_stats() {
     auto& state = dispatch_state();
     state.video_calls.store(0, std::memory_order_relaxed);
     state.render_calls.store(0, std::memory_order_relaxed);
+}
+
+bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
+                                 std::string& error) {
+    struct Import {
+        const char* symbol;
+        std::uintptr_t target;
+    };
+    const Import imports[] = {
+        {"host_h2_video_control", function_address(&host_h2_video_control)},
+        {"host_h2_render_request", function_address(&host_h2_render_request)},
+        {"host_h2_get_milliseconds", function_address(&host_h2_get_milliseconds)},
+        {"host_h2_sleep", function_address(&host_h2_sleep)},
+        {"host_h2_cos", function_address(&host_h2_cos)},
+    };
+    for (const auto& import : imports) {
+        if (!image.patch_host_import(arena, import.symbol, import.target, error)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace h2::port

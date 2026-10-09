@@ -83,8 +83,8 @@ std::unique_ptr<GuestArena> GuestArena::create(std::string& error) {
         return nullptr;
     }
     auto arena = std::unique_ptr<GuestArena>(new GuestArena(reservation));
-    if (!arena->page_size_) {
-        error = "could not determine the host page size";
+    if (!arena->page_size_ || (arena->page_size_ & (arena->page_size_ - 1)) != 0) {
+        error = "could not determine a valid host page size";
         return nullptr;
     }
     return arena;
@@ -98,25 +98,44 @@ const void* GuestArena::pointer_const(std::uint32_t guest_address) const {
     return reinterpret_cast<const void*>(kGuestBias + guest_address);
 }
 
-bool GuestArena::make_writable(std::uint32_t address, std::uint32_t size,
-                               std::string& error) {
+bool GuestArena::protect(std::uint32_t address, std::uint32_t size,
+                         GuestMemoryProtection protection, std::string& error) {
     if (!size) {
         return true;
     }
     const std::uint64_t end = static_cast<std::uint64_t>(address) + size;
     if (end > kGuestAddressSpaceSize) {
-        error = "XBE section extends beyond the 32-bit guest address space";
+        error = "guest range extends beyond the 32-bit address space";
         return false;
+    }
+    int native_protection = PROT_NONE;
+    switch (protection) {
+    case GuestMemoryProtection::none:
+        break;
+    case GuestMemoryProtection::read_only:
+        native_protection = PROT_READ;
+        break;
+    case GuestMemoryProtection::read_write:
+        native_protection = PROT_READ | PROT_WRITE;
+        break;
+    case GuestMemoryProtection::read_execute:
+        native_protection = PROT_READ | PROT_EXEC;
+        break;
     }
     const std::uint64_t mask = page_size_ - 1;
     const std::uint64_t first = static_cast<std::uint64_t>(address) & ~mask;
     const std::uint64_t last = (end + mask) & ~mask;
     if (mprotect(reinterpret_cast<void*>(kGuestBias + first),
-                 static_cast<std::size_t>(last - first), PROT_READ | PROT_WRITE) != 0) {
-        error = "could not commit guest memory: " + std::string(std::strerror(errno));
+                 static_cast<std::size_t>(last - first), native_protection) != 0) {
+        error = "could not protect guest memory: " + std::string(std::strerror(errno));
         return false;
     }
     return true;
+}
+
+bool GuestArena::make_writable(std::uint32_t address, std::uint32_t size,
+                               std::string& error) {
+    return protect(address, size, GuestMemoryProtection::read_write, error);
 }
 
 bool GuestArena::load_xbe(const std::filesystem::path& path, XbeLoadReport& report,

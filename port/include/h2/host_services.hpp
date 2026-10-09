@@ -2,8 +2,12 @@
 #define H2_PORT_HOST_SERVICES_HPP
 
 #include <cstdint>
+#include <string>
 
 namespace h2::port {
+
+class GuestArena;
+class GuestElfImage;
 
 using VideoControlHandler = void (*)(int command, void* context);
 using RenderRequestHandler = void (*)(const void* request, const void* vertices,
@@ -18,6 +22,8 @@ void set_video_control_handler(VideoControlHandler handler, void* context = null
 void set_render_request_handler(RenderRequestHandler handler, void* context = nullptr);
 HostServiceStats host_service_stats();
 void reset_host_service_stats();
+bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
+                                 std::string& error);
 
 }  // namespace h2::port
 

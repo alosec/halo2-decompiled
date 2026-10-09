@@ -21,6 +21,13 @@ struct XbeSection {
     std::uint32_t flags = 0;
 };
 
+enum class GuestMemoryProtection {
+    none,
+    read_only,
+    read_write,
+    read_execute,
+};
+
 struct XbeLoadReport {
     std::uint32_t image_base = 0;
     std::uint32_t encoded_entry = 0;
@@ -37,9 +44,12 @@ public:
 
     bool load_xbe(const std::filesystem::path& path, XbeLoadReport& report,
                   std::string& error);
+    bool protect(std::uint32_t address, std::uint32_t size,
+                 GuestMemoryProtection protection, std::string& error);
 
     void* pointer(std::uint32_t guest_address) const;
     const void* pointer_const(std::uint32_t guest_address) const;
+    std::size_t page_size() const { return page_size_; }
 
 private:
     explicit GuestArena(void* reservation);
