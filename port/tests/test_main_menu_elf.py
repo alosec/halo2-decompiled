@@ -75,6 +75,7 @@ REQUIRED = {
     "?voice_start_engine@@YAXXZ",
     "?function_2523bc@@YAXPAVc_online_task_screen@@@Z",
     "?function_6b640@@YAXJ@Z",
+    "?function_abc70@@YAJJPBU_XUID@@@Z",
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
     "?function_6c7e0@@YA_NXZ",
     "?function_6d080@@YA_NJPAUs_channel_message@@@Z",

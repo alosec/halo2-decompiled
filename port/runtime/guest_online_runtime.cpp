@@ -45,6 +45,14 @@ void online_team_get_details(long, XUID const *, XONLINE_TEAM *team)
     memset(team, 0, sizeof(*team));
 }
 
+struct _XUID;
+
+// @retail 0xabc70, native offline boundary
+long function_abc70(long, _XUID const *)
+{
+    return NONE;
+}
+
 long online_team_members_enumerate(long, XUID const *)
 {
     return NONE;
