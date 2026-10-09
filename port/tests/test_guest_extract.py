@@ -168,6 +168,20 @@ def main():
         if "_?get_item_count@c_campaign_level_handles_list@@UAAJXZ" not in campaign_levels_defined:
             raise RuntimeError("campaign-level list source was not selectively compilable")
 
+        level_screen_output = Path(temporary) / "campaign-level-screen.o"
+        level_screen_command = command[:]
+        level_screen_command[level_screen_command.index("h2_extract_selected")] = "?v18@c_level_select_screen@@UAAXPAX@Z"
+        level_screen_command[level_screen_command.index("--extract-global"):level_screen_command.index("--output")] = []
+        level_screen_command[level_screen_command.index(output)] = level_screen_output
+        level_screen_command[-1] = args.root / "src/unknown_2b116a.cpp"
+        subprocess.run([str(value) for value in level_screen_command], check=True)
+        level_screen_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", level_screen_output],
+            text=True,
+        )
+        if "_?v18@c_level_select_screen@@UAAXPAX@Z" not in level_screen_defined:
+            raise RuntimeError("campaign-level screen lifecycle was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

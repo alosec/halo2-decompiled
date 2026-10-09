@@ -5507,6 +5507,13 @@ void function_28980(long index);
 // @retail 0x2c5224
 void c_level_select_screen::v18(void *parameters)
 {
+#if defined(H2_NATIVE_PORT)
+    /* Retail hands this list screen to an Xbox transition subsystem after
+     * deleting its first widget tree. The native port does not own that
+     * subsystem yet, so use the recovered list-screen lifecycle directly and
+     * retain the real level list as the screen's pane. */
+    c_screen_with_menu::v18(parameters);
+#else
     volatile long definition_index = function_1480ff(screen_id);
     s_screen_layout layout = { 0, 1, { { 0, 0, 0, 0 } } };
     build(&layout);
@@ -5517,6 +5524,7 @@ void c_level_select_screen::v18(void *parameters)
     g_509338 = GetTickCount();
     function_28980((long)&g_509334);
     c_class_1a2c81::v1();
+#endif
 }
 
 // @retail 0x2b1942
