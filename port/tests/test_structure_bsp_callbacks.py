@@ -452,6 +452,33 @@ def main() -> int:
             len(actual_listener_production) != 20):
         raise RuntimeError("complete primary Havok listener production score changed")
 
+    listener_frontier_path = (
+        args.root / "port/runtime/havok_primary_listener_remaining_frontier.json"
+    )
+    listener_frontier = json.loads(listener_frontier_path.read_text())
+    if listener_frontier.get("version") != 1:
+        raise RuntimeError("unsupported primary Havok listener frontier manifest")
+    listener_frontier_entries = listener_frontier.get("imports")
+    if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 5:
+        raise RuntimeError("primary Havok listener frontier inventory changed")
+    allowed_listener_subsystems = {
+        "contact_removal", "contact_impulse", "impact_creation",
+        "contact_processing", "rigid_body_activation",
+    }
+    listener_frontier_symbols = set()
+    for entry in listener_frontier_entries:
+        if (not isinstance(entry, dict) or not isinstance(entry.get("symbol"), str) or
+                entry.get("subsystem") not in allowed_listener_subsystems or
+                not isinstance(entry.get("blocker"), str) or
+                not entry["blocker"].strip()):
+            raise RuntimeError("invalid primary Havok listener frontier entry")
+        if "stub" in entry["blocker"].lower():
+            raise RuntimeError("primary Havok listener frontier must describe real ownership")
+        listener_frontier_symbols.add(entry["symbol"])
+    if (len(listener_frontier_symbols) != len(listener_frontier_entries) or
+            listener_frontier_symbols != listener_additional_imports):
+        raise RuntimeError("primary Havok listener frontier differs from scored imports")
+
     expected_symbols = ({entry["symbol"] for entry in providers} |
                         closure_symbols | retained_globals)
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")

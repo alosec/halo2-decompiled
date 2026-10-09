@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "imports": [
+    {
+      "symbol": "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
+      "subsystem": "contact_removal",
+      "blocker": "Requires coherent contact removal, impact release, Havok entity-property mutation, and rigid-body surface-state ownership."
+    },
+    {
+      "symbol": "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+      "subsystem": "contact_impulse",
+      "blocker": "Requires exact point-impulse application with rigid-body activation plus owned game-time, tag, and contact event state."
+    },
+    {
+      "symbol": "?function_226a60@@YAXJ@Z",
+      "subsystem": "impact_creation",
+      "blocker": "Requires physics-model material/shape traversal, impact synthesis and allocation, player-distance policy, and impact-pool lifetime ownership."
+    },
+    {
+      "symbol": "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
+      "subsystem": "contact_processing",
+      "blocker": "Requires complete contact creation, impact deduplication/allocation, component room policy, shape-key/material extraction, and callback ownership."
+    },
+    {
+      "symbol": "?function_b7360@@YAXJ@Z",
+      "subsystem": "rigid_body_activation",
+      "blocker": "Requires truthful object-to-Havok component activation across owned object, rigid-body, and world lifecycle state."
+    }
+  ]
+}
