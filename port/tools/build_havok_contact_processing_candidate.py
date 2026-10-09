@@ -66,6 +66,8 @@ def main() -> int:
         looping_sound_state = temporary / "looping-sound-state.o"
         contact_creation = temporary / "contact-creation.o"
         motion_basis = temporary / "motion-basis.o"
+        active_body = temporary / "active-body.o"
+        contact_removal = temporary / "contact-removal.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -107,7 +109,8 @@ def main() -> int:
             ["?impact_new@@YAJPBUs_impact_data@@J@Z",
              "?impact_component_b_is_faster@@YA_NJJ@Z",
              "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z",
-             "?function_2266a0@@YAXJ@Z"])
+             "?function_2266a0@@YAXJ@Z",
+             "?function_226a60@@YAXJ@Z"])
         compile_slice(args, args.root / "src/unknown_146240.cpp", game_time,
                       ["?function_146650@@YAJXZ"])
         compile_slice(args, args.root / "src/unknown_11fc80.cpp", vector_normalize,
@@ -140,12 +143,18 @@ def main() -> int:
             args, args.root / "src/havok_motion_basis_native.cpp", motion_basis,
             ["?function_181db0@@YA_NJPATvector3f@@@Z",
              "?function_355e0@@YA_NJJPAM0@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1cec30.cpp", active_body,
+            ["?havok_component_any_rigid_body_active@@YA_NPAUs_havok_component@@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1cec30.cpp", contact_removal,
+            ["?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
              rigid_body_matrix, structure_location, effect_state,
              effect_distance, effect_selection, looping_sound_state,
-             contact_creation, motion_basis])
+             contact_creation, motion_basis, active_body, contact_removal])
     return 0
 
 
