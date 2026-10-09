@@ -154,6 +154,34 @@ def main():
         if "_?function_238c21@@YAXJJPAGJ@Z" not in keyboard_defined:
             raise RuntimeError("virtual-keyboard source was not selectively compilable")
 
+        part_init_output = Path(temporary) / "campaign-part-init.o"
+        part_init_command = command[:]
+        part_init_command[part_init_command.index("h2_extract_selected")] = "?function_1c2390@s_part_table@@QAAXXZ"
+        part_init_command[part_init_command.index("--extract-global"):part_init_command.index("--output")] = []
+        part_init_command[part_init_command.index(output)] = part_init_output
+        part_init_command[-1] = args.root / "src/unknown_1c22c0.cpp"
+        subprocess.run([str(value) for value in part_init_command], check=True)
+        part_init_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", part_init_output],
+            text=True,
+        )
+        if "_?function_1c2390@s_part_table@@QAAXXZ" not in part_init_defined:
+            raise RuntimeError("Campaign part-table initializer was not selectively compilable")
+
+        vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
+        vehicle_init_command = command[:]
+        vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
+        vehicle_init_command[vehicle_init_command.index("--extract-global"):vehicle_init_command.index("--output")] = []
+        vehicle_init_command[vehicle_init_command.index(output)] = vehicle_init_output
+        vehicle_init_command[-1] = args.root / "src/unknown_205550.cpp"
+        subprocess.run([str(value) for value in vehicle_init_command], check=True)
+        vehicle_init_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", vehicle_init_output],
+            text=True,
+        )
+        if "_?function_205550@@YAXPAX@Z" not in vehicle_init_defined:
+            raise RuntimeError("Campaign vehicle initializer was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
