@@ -266,6 +266,23 @@ def main():
             if f"_{symbol}" not in physics_model_count_defined:
                 raise RuntimeError(f"physics-model runtime accessor was not retained: {symbol}")
 
+        physics_model_kind_output = Path(temporary) / "physics-model-runtime-kinds.o"
+        physics_model_kind_command = command[:]
+        physics_model_kind_command[physics_model_kind_command.index("h2_extract_selected")] = "?function_2de7a0@@YAJXZ"
+        physics_model_kind_command[physics_model_kind_command.index("--extract-global"):physics_model_kind_command.index("--output")] = [
+            "--extract-symbol", "?function_2fe190@@YAJXZ",
+        ]
+        physics_model_kind_command[physics_model_kind_command.index(output)] = physics_model_kind_output
+        physics_model_kind_command[-1] = args.root / "src/unknown_2de7a0.cpp"
+        subprocess.run([str(value) for value in physics_model_kind_command], check=True)
+        physics_model_kind_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_kind_output],
+            text=True,
+        )
+        for symbol in ("?function_2de7a0@@YAJXZ", "?function_2fe190@@YAJXZ"):
+            if f"_{symbol}" not in physics_model_kind_defined:
+                raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
