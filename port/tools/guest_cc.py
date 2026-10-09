@@ -24,6 +24,8 @@ def main():
                         help="write arm64_32 Darwin assembly instead of a Mach-O object")
     parser.add_argument("--extract-symbol", action="append", default=[],
                         help="retain only this IR function and its transitive callees")
+    parser.add_argument("--extract-global", action="append", default=[],
+                        help="retain this named IR global and its initializer")
     parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
@@ -58,10 +60,12 @@ def main():
             text = re.sub(r' "target-cpu"="[^"]*"', '', text)
             text = re.sub(r' "target-features"="[^"]*"', '', text)
             ir.write_text(text)
-        if args.extract_symbol:
+        if args.extract_symbol or args.extract_global:
             extracted = root / "unit.extracted.ll"
             extract_args = [value for symbol in args.extract_symbol
                             for value in ("--func", symbol)]
+            extract_args.extend(value for symbol in args.extract_global
+                                for value in ("--glob", symbol))
             run(args.llvm / "llvm-extract", "--recursive", *extract_args,
                 "-S", ir, "-o", extracted)
             ir = extracted

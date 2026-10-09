@@ -808,6 +808,13 @@ add_test(
             --plugin $<TARGET_FILE:h2_guest_rebase>
 )
 add_test(
+    NAME guest-function-extraction
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_extract.py
+            --root ${PROJECT_SOURCE_DIR}
+            --llvm ${H2_LLVM_ROOT}/bin
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+)
+add_test(
     NAME recovered-guest-unit
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_recovered_guest_unit.py
             --llvm ${H2_LLVM_ROOT}/bin

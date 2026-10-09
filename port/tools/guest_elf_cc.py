@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--ms-abi", action="store_true")
     parser.add_argument("--extract-symbol", action="append", default=[])
+    parser.add_argument("--extract-global", action="append", default=[])
     parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
@@ -40,6 +41,8 @@ def main():
             command.append("--ms-abi")
         for symbol in args.extract_symbol:
             command.extend(("--extract-symbol", symbol))
+        for symbol in args.extract_global:
+            command.extend(("--extract-global", symbol))
         command.extend(("--emit-assembly", "--output", darwin, args.source))
         run(*command)
         run(sys.executable, tools / "guest_asm_elf.py", darwin, elf)
