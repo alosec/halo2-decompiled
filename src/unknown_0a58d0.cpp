@@ -728,6 +728,7 @@ void function_a77c0()
  }
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0xa8e90
 void function_a8e90(long slot)
 {
@@ -743,6 +744,7 @@ void function_a8e90(long slot)
   }
  }
 }
+#endif
 
 struct s_effect_owner;
 void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner);

@@ -11,7 +11,8 @@
     "g_480118_owned_havok_allocator",
     "g_461f08_owned_havok_state_flag",
     "g_51e9cc_owned_scenery_index_table",
-    "g_51e9d0_owned_shape_owner"
+    "g_51e9d0_owned_shape_owner",
+    "native_offline_simulation_entity_creation_disabled"
   ],
   "providers": [
     {"method": "0x00123d20", "symbol": "?arena_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_123c20.cpp", "portable": true},
@@ -95,6 +96,7 @@
     {"source": "src/unknown_2e90a0.cpp", "symbols": ["?function_2e90a0@@YAXUs_184251@@@Z"]},
     {"source": "src/scenery_bsp_native.cpp", "symbols": ["?function_10a250@@YAXJ@Z"]},
     {"source": "src/sound_looping_paths_native.cpp", "symbols": ["?function_18bb80@@YAXM@Z"]},
-    {"source": "src/first_person_marker_native.cpp", "symbols": ["?first_person_weapon_get_marker@@YA_NJJPATpoint3f@@PATvector3f@@1@Z"]}
+    {"source": "src/first_person_marker_native.cpp", "symbols": ["?first_person_weapon_get_marker@@YA_NJJPATpoint3f@@PATvector3f@@1@Z"]},
+    {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z"]}
   ]
 }
