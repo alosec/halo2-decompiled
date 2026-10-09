@@ -161,6 +161,23 @@ int main() {
                     20, 8, decoded),
                 "linear DXT5 decoder accepted a truncated padded surface");
 
+    std::vector<std::uint8_t> swizzled_argb(64, 0);
+    const std::size_t swizzled_offset = 6 * 4;
+    swizzled_argb[swizzled_offset] = 3;
+    swizzled_argb[swizzled_offset + 1] = 2;
+    swizzled_argb[swizzled_offset + 2] = 1;
+    swizzled_argb[swizzled_offset + 3] = 4;
+    ok &= check(h2::port::decode_argb8_swizzled(swizzled_argb, 4, 4, decoded) &&
+                    decoded[24] == 1 && decoded[25] == 2 &&
+                    decoded[26] == 3 && decoded[27] == 4,
+                "swizzled ARGB8 decoder did not restore Morton-order BGRA pixels");
+    ok &= check(!h2::port::decode_argb8_swizzled(
+                    std::span<const std::uint8_t>(swizzled_argb.data(), 63),
+                    4, 4, decoded),
+                "swizzled ARGB8 decoder accepted a truncated surface");
+    ok &= check(!h2::port::decode_argb8_swizzled(swizzled_argb, 3, 4, decoded),
+                "swizzled ARGB8 decoder accepted a non-power-of-two surface");
+
     std::vector<std::uint8_t> font_file(0x40411, 0);
     std::fill(font_file.begin() + 0x400, font_file.begin() + 0x40400, 0xff);
     font_file[0x200] = 1;

@@ -115,4 +115,42 @@ bool decode_dxt5_linear(std::span<const std::uint8_t> source, int width, int hei
     return decode_dxt5(compact, width, height, output);
 }
 
+bool decode_argb8_swizzled(std::span<const std::uint8_t> source, int width, int height,
+                           std::vector<std::uint8_t>& output) {
+    if (width <= 0 || height <= 0 || (width & (width - 1)) != 0 ||
+        (height & (height - 1)) != 0) {
+        return false;
+    }
+    const std::size_t pixel_count = static_cast<std::size_t>(width) * height;
+    if (pixel_count > source.size() / 4u) {
+        return false;
+    }
+    output.assign(pixel_count * 4u, 0);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            std::size_t swizzled = 0;
+            unsigned int output_bit = 0;
+            for (unsigned int bit = 0;
+                 (1u << bit) < static_cast<unsigned int>(width) ||
+                 (1u << bit) < static_cast<unsigned int>(height);
+                 ++bit) {
+                if ((1u << bit) < static_cast<unsigned int>(width)) {
+                    swizzled |= static_cast<std::size_t>((x >> bit) & 1) << output_bit++;
+                }
+                if ((1u << bit) < static_cast<unsigned int>(height)) {
+                    swizzled |= static_cast<std::size_t>((y >> bit) & 1) << output_bit++;
+                }
+            }
+            const std::size_t source_offset = swizzled * 4u;
+            const std::size_t destination =
+                (static_cast<std::size_t>(y) * width + x) * 4u;
+            output[destination] = source[source_offset + 2];
+            output[destination + 1] = source[source_offset + 1];
+            output[destination + 2] = source[source_offset];
+            output[destination + 3] = source[source_offset + 3];
+        }
+    }
+    return true;
+}
+
 }  // namespace h2::port

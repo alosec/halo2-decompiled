@@ -90,20 +90,29 @@ SDL_Texture* get_interface_texture(NativeRenderContext& context,
             context.arena->pointer_const(guest_address));
         const int width = read_u16(descriptor + 4);
         const int height = read_u16(descriptor + 6);
-        const unsigned int format = descriptor[0x17];
+        const unsigned int source_format = read_u16(descriptor + 0x0c);
+        const unsigned int cache_format = descriptor[0x17];
         const std::uint32_t data_offset = read_u32(descriptor + 0x1c);
         const std::uint32_t data_size = read_u32(descriptor + 0x34);
         const std::uint16_t flags = read_u16(descriptor + 0x0e);
-        if (format == 16 && width > 0 && height > 0 && width <= 4096 &&
+        const bool supported = cache_format == 16 ||
+            (cache_format == 19 && source_format == 10 && !(flags & 0x10u));
+        if (supported && width > 0 && height > 0 && width <= 4096 &&
             height <= 4096 && data_offset != 0xffffffffu && data_size != 0 &&
             data_size <= 64u * 1024u * 1024u) {
-            std::vector<unsigned char> compressed(data_size);
+            std::vector<unsigned char> encoded(data_size);
             std::vector<unsigned char> pixels;
             const bool copied = h2::port::copy_cache_bytes(
-                data_offset, compressed.data(), compressed.size());
-            const bool decoded = copied && ((flags & 0x10u)
-                ? h2::port::decode_dxt5_linear(compressed, width, height, pixels)
-                : h2::port::decode_dxt5(compressed, width, height, pixels));
+                data_offset, encoded.data(), encoded.size());
+            bool decoded = false;
+            if (copied && cache_format == 16) {
+                decoded = (flags & 0x10u)
+                    ? h2::port::decode_dxt5_linear(encoded, width, height, pixels)
+                    : h2::port::decode_dxt5(encoded, width, height, pixels);
+            } else if (copied) {
+                decoded = h2::port::decode_argb8_swizzled(
+                    encoded, width, height, pixels);
+            }
             if (decoded) {
                 texture = SDL_CreateTexture(context.renderer, SDL_PIXELFORMAT_RGBA32,
                                             SDL_TEXTUREACCESS_STATIC, width, height);
