@@ -21,6 +21,11 @@ bool online_get_logon_status(long *status)
     return false;
 }
 
+void online_team_get_details(long, XUID const *, XONLINE_TEAM *team)
+{
+    memset(team, 0, sizeof(*team));
+}
+
 long online_team_members_enumerate(long, XUID const *)
 {
     return NONE;

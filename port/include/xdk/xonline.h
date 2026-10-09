@@ -66,7 +66,11 @@ struct XONLINE_PRESENCE {
 };
 #pragma pack(pop)
 
-struct XONLINE_TEAM;
+/* Retail team-detail code at 0xabdb0 clears exactly 0x6a2 bytes.  Named
+ * fields remain intentionally unrecovered until their offsets are needed. */
+struct XONLINE_TEAM {
+    BYTE data[0x6a2];
+};
 
 /* Retail team-member detail code clears 0x92 bytes and reads privileges at
  * offset 0x1c; list code treats the same record as the recovered 0x92-byte
@@ -111,6 +115,7 @@ static_assert(__builtin_offsetof(XONLINE_FRIEND, StateDataSize) == 0x34,
               "retail friend-state-data size offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, StateData) == 0x35,
               "retail friend-state-data offset");
+static_assert(sizeof(XONLINE_TEAM) == 0x6a2, "retail team-detail layout");
 static_assert(sizeof(XONLINE_TEAM_MEMBER_PROPERTIES) == 0x76,
               "retail team-member properties layout");
 static_assert(sizeof(XONLINE_TEAM_MEMBER) == 0x92, "retail team-member layout");

@@ -45,6 +45,7 @@ REQUIRED = {
     "?online_task_continue@@YAJPAUs_type_9df9da@@@Z",
     "?online_task_poll@@YAJJ@Z",
     "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z",
+    "?online_team_get_details@@YAXJPBUXUID@@PAUXONLINE_TEAM@@@Z",
     "?online_team_member_get_details@@YAXJPBUXUID@@PAUXONLINE_TEAM_MEMBER@@@Z",
     "?online_team_members_enumerate@@YAJJPBUXUID@@@Z",
     "?online_team_members_enumerate_get_results@@YAXJPAKPAUXUID@@@Z",
