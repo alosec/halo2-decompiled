@@ -24,7 +24,7 @@
     {"source": "src/unknown_0bef30.cpp", "symbols": ["?function_bef30@@YAXJJJJJ@Z"]},
     {"source": "src/unknown_0b8540.cpp", "symbols": ["?function_b8540@@YAXJ@Z"]},
     {"source": "src/unknown_0b8b70.cpp", "symbols": ["?function_b8b70@@YAXJ@Z", "?function_c3220@@YAXJ@Z"]},
-    {"source": "src/unknown_0bffa0.cpp", "symbols": ["?function_c1720@@YAXJ_N0@Z"]},
+    {"source": "src/unknown_0bffa0.cpp", "symbols": ["?function_c1720@@YAXJ_N0@Z", "?function_c2d00@@YAXJ@Z"]},
     {"source": "src/unknown_1cabc0.cpp", "symbols": ["?function_1cae40@@YAXPAUs_cluster_partition@@JPAJ@Z"]}
   ]
 }

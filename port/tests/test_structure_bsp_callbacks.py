@@ -103,8 +103,12 @@ def main() -> int:
         if not (args.root / source).is_file():
             raise RuntimeError(f"missing structure-BSP closure source: {source}")
         closure_symbols.update(entry_symbols)
-    if "?function_c1720@@YAXJ_N0@Z" not in closure_symbols:
-        raise RuntimeError("object-attached light traversal left outside BSP closure")
+    required_light_symbols = {
+        "?function_c1720@@YAXJ_N0@Z",
+        "?function_c2d00@@YAXJ@Z",
+    }
+    if not required_light_symbols.issubset(closure_symbols):
+        raise RuntimeError("object-attached light refresh left outside BSP closure")
 
     symbols = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],

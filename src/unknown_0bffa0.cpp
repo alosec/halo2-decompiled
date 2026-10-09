@@ -1,5 +1,6 @@
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "object_queries.h"
 #include <string.h>
 #include <math.h>
 
@@ -61,6 +62,9 @@ void function_c0040()
 void __stdcall function_c2d00(long light_index);
 void __stdcall function_c3260(long light_index, bool clear_object_flag);
 void function_1cae40(void *partition, long data_index, long *first_cluster_reference);
+void function_1cac60(dword const *bits, void *partition, long data_index,
+	long *first_cluster_reference, point3f const *point, real radius,
+	s_location const *location, long payload_size, void const *payload, bool *overflow);
 
 // @retail 0xc00a0
 void function_c00a0()
@@ -865,6 +869,109 @@ void function_c28b0(long light_index)
         *(point3f *)((byte *)light + 0x38) = *centre;
     }
     function_c2c50(light_index);
+}
+
+bool first_person_weapon_get_marker(long object_index, long marker_name,
+    point3f *position, vector3f *forward, vector3f *up);
+point3f *transform4x3f_apply_point(transform4x3f const *matrix,
+    point3f const *point, point3f *out);
+bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
+    long ignore_object, long ignore_parent, point3f *out, real *out_radius);
+void object_get_root_location(long object_index, s_location *location);
+void function_11bed0(s_location *location, point3f const *point);
+extern real g_45dbd8;
+
+// @retail 0xc2d00
+void __stdcall function_c2d00(long light_index)
+{
+    byte *light = g_4e030c->data + (light_index & 0xffff) * 0x110;
+    byte *definition = g_4e3b44[*(long *)(light + 4) & 0xffff].bytes;
+    if (!(light[2] & 2))
+        return;
+
+    if (light[2] & 4)
+        function_c0840((point3f *)(light + 0x84), (point3f *)(light + 0x90),
+            (point3f *)(light + 0xa0), (real *)(light + 0x9c));
+
+    if (*(short *)(light + 0x54) != NONE)
+    {
+        long object_index = *(long *)(light + 0x4c);
+        long marker_name = function_b8c40(object_index, *(short *)(light + 0x54));
+        bool first_person = false;
+        if (*(dword *)definition & 0x20)
+            first_person = first_person_weapon_get_marker(object_index, marker_name,
+                (point3f *)(light + 0x84), (vector3f *)(light + 0xac),
+                (vector3f *)(light + 0xb8));
+        if (!first_person)
+        {
+            s_object_marker markers[2];
+            function_b8d30(object_index, marker_name, markers, 2, false);
+            *(point3f *)(light + 0x84) = markers[0].matrix.position;
+            *(vector3f *)(light + 0xac) = markers[0].matrix.forward;
+            *(vector3f *)(light + 0xb8) = markers[0].matrix.up;
+        }
+        point3f *position = (point3f *)(light + 0x84);
+        vector3f *forward = (vector3f *)(light + 0xac);
+        point3f *endpoint = (point3f *)(light + 0x90);
+        endpoint->x = position->x + forward->i;
+        endpoint->y = position->y + forward->j;
+        endpoint->z = position->z + forward->k;
+    }
+    else if (*(long *)(light + 0x58) != NONE)
+    {
+        long object_index = *(long *)(light + 0x58);
+        byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+        transform4x3f *matrix = (transform4x3f *)(object + *(short *)(object + 0x116)) +
+            *(short *)(light + 0x5c);
+        transform4x3f_apply_point(matrix, (point3f *)(light + 0x60),
+            (point3f *)(light + 0x84));
+        vector3f local_forward = *(vector3f *)(light + 0x6c);
+        vector3f local_up = *(vector3f *)(light + 0x78);
+        vector3f *forward = (vector3f *)(light + 0xac);
+        vector3f *up = (vector3f *)(light + 0xb8);
+        forward->i = matrix->forward.i * local_forward.i + matrix->left.i * local_forward.j + matrix->up.i * local_forward.k;
+        forward->j = matrix->forward.j * local_forward.i + matrix->left.j * local_forward.j + matrix->up.j * local_forward.k;
+        forward->k = matrix->forward.k * local_forward.i + matrix->left.k * local_forward.j + matrix->up.k * local_forward.k;
+        up->i = matrix->forward.i * local_up.i + matrix->left.i * local_up.j + matrix->up.i * local_up.k;
+        up->j = matrix->forward.j * local_up.i + matrix->left.j * local_up.j + matrix->up.j * local_up.k;
+        up->k = matrix->forward.k * local_up.i + matrix->left.k * local_up.j + matrix->up.k * local_up.k;
+        point3f *position = (point3f *)(light + 0x84);
+        point3f *endpoint = (point3f *)(light + 0x90);
+        endpoint->x = position->x + forward->i;
+        endpoint->y = position->y + forward->j;
+        endpoint->z = position->z + forward->k;
+    }
+
+    function_c28b0(light_index);
+    if (!(light[2] & 8) && *(short *)(light + 0x48) == NONE &&
+        (*(dword *)definition & 0x8000) && *(real *)(light + 0x24) > g_45dbd8)
+    {
+        function_16a8e0(0x0d800001, (point3f *)(light + 0x18), *(real *)(light + 0x24),
+            light_index, NONE, (point3f *)(light + 0x18), (real *)(light + 0x24));
+        *(point3f *)(light + 0x38) = *(point3f *)(light + 0x18);
+    }
+
+    s_location *location = (s_location *)(light + 0x44);
+    function_11bed0(location, (point3f *)(light + 0x38));
+    if (location->leaf_index == NONE)
+    {
+        if (!((light[2] & 1) && !(*(dword *)definition & 8)))
+        {
+            long object_index = *(long *)(light + 0x4c);
+            if (object_index == NONE)
+                object_index = *(long *)(light + 0x58);
+            if (object_index != NONE)
+                object_get_root_location(object_index, location);
+            else
+                function_11bed0(location, (point3f *)(light + 0x18));
+        }
+    }
+
+    bool overflow = false;
+    function_1cac60(NULL, g_4e0310, light_index,
+        (long *)(light + 0x10), (point3f *)(light + 0x18), *(real *)(light + 0x24),
+        location, 0, NULL, &overflow);
+    light[2] |= 8;
 }
 
 
