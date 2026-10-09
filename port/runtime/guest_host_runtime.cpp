@@ -111,6 +111,31 @@ extern "C" BOOL __stdcall GetDiskFreeSpaceExA(const char *, ULARGE_INTEGER *avai
     return TRUE;
 }
 
+void function_2157c0(long)
+{
+    /* No asynchronous native save operation can complete yet. */
+}
+
+void __stdcall function_215e60(long)
+{
+    /* The native virtual save list is empty. */
+}
+
+bool __stdcall function_215f40(long, unsigned char *buffer)
+{
+    if (buffer)
+    {
+        buffer[0] = 0;
+        buffer[1] = 0;
+    }
+    return false;
+}
+
+void function_2238f4(long, unsigned long, unsigned long, unsigned long)
+{
+    /* Native builds cannot launch the Xbox dashboard. */
+}
+
 extern "C" DWORD __stdcall XGetDiskClusterSize(const char *)
 {
     /* Halo 2 accounts saved-game storage in 16 KiB blocks.  The native port's
