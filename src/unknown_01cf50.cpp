@@ -1998,6 +1998,7 @@ struct s_cache_source_entries
     s_cache_lookup_key *entries;
 };
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x1e1c0
 void function_1e1c0(void)
 {
@@ -2011,6 +2012,7 @@ void function_1e1c0(void)
         }
     }
 }
+#endif
 
 struct s_shader_transform_row
 {

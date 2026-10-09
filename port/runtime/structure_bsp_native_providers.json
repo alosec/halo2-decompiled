@@ -1,5 +1,10 @@
 {
   "version": 1,
+  "execution_preconditions": [
+    "g_51f400_owned_hash_table",
+    "g_51f400_native_hash_callback",
+    "g_4f55f8_native_ai_text_callbacks"
+  ],
   "providers": [
     {"method": "0x00123d20", "symbol": "?arena_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_123c20.cpp", "portable": true},
     {"method": "0x00175f40", "symbol": "h2_native_structure_bsp_idle", "source": "native", "portable": true},
@@ -70,6 +75,8 @@
     {"source": "src/unknown_1e4290.cpp", "symbols": ["?function_1e13f0@@YA_NJ@Z"]},
     {"source": "src/unknown_0df5f0_native.cpp", "symbols": ["?function_df5f0@@YAXJPATpoint3f@@PAM1@Z"]},
     {"source": "src/unknown_1e9700.cpp", "symbols": ["?function_1e9650@@YAXXZ", "?function_1e95d0@@YAXPBD@Z"]},
-    {"source": "src/unknown_015b70_native.cpp", "symbols": ["?function_015b70@@YAXXZ"]}
+    {"source": "src/unknown_015b70_native.cpp", "symbols": ["?function_015b70@@YAXXZ"]},
+    {"source": "src/unknown_01cf50_native.cpp", "symbols": ["?function_1e1c0@@YAXXZ"]},
+    {"source": "src/unknown_13e210_native.cpp", "symbols": ["?function_13e270@@YA_NPAUhash_table@@PAXPBX@Z"]}
   ]
 }

@@ -65,6 +65,7 @@ hash_table *function_13e1a0(const char *name, long data_size, long bucket_count,
 	return table;
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x13e270
 bool function_13e270(hash_table *table, void *key, const void *data)
 {
@@ -84,6 +85,7 @@ bool function_13e270(hash_table *table, void *key, const void *data)
 	}
 	return result;
 }
+#endif
 
 // @retail 0x13e2d0
 hash_node *function_13e2d0(hash_table *table, void *key)
