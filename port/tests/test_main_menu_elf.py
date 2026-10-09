@@ -111,6 +111,7 @@ REQUIRED = {
     "?v3@c_widget_45adf0@@UAAXXZ",
     "?v4@c_widget_45adf0@@UAAXJ@Z",
     "?v1@c_widget_45ad18@@UAAXXZ",
+    "?function_2afeae@@YAXPAUs_widget_item@@PAVc_class_1a2c81@@@Z",
     "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z",
     "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z",
     "?function_2b72e6@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",

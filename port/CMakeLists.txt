@@ -112,6 +112,7 @@ set(H2_GUEST_SIGNIN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2523e3.o")
 set(H2_GUEST_WIDGET_ITEM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b0149.o")
 set(H2_GUEST_LOCALIZED_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a0120.o")
 set(H2_GUEST_UTF8_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fd90.o")
+set(H2_GUEST_COLOR_SPACE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1317a0.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
@@ -203,6 +204,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp"
 )
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
@@ -296,7 +298,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SIGNIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2523e3.cpp"
         "${H2_GUEST_WIDGET_ITEM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp"
         "${H2_GUEST_LOCALIZED_TEXT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp"
-        "${H2_GUEST_UTF8_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp")
+        "${H2_GUEST_UTF8_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp"
+        "${H2_GUEST_COLOR_SPACE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -367,7 +370,8 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_COLORS_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
-            "?function_7f790@@YAXF_NPBUs_player_appearance@@PAUcolor3f@@@Z")
+            "?function_7f790@@YAXF_NPBUs_player_appearance@@PAUcolor3f@@@Z"
+            --extract-symbol "?function_7f720@@YAPAUcolor3f@@PAU1@F@Z")
     endif()
     if(object STREQUAL H2_GUEST_PACK_COLOR_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -457,6 +461,14 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b10a3@@YAXPBKPAVc_class_2b0b5e@@J@Z"
+            --extract-symbol "?function_2b014f@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b015b@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b016d@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b0180@@YA_NPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b0191@@YA_NPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b01c7@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b01da@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b12ca@@YAXPAUs_widget_view_2b0a@@FFPBX@Z"
             --extract-symbol "?v4@c_class_2b01eb@@UAAXJ@Z"
             --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
             --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
@@ -471,6 +483,7 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_SCREEN_WIDGETS_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "??0c_class_2b01eb@@QAA@PAUs_bitmap_block@@@Z"
+            --extract-symbol "?function_2afeae@@YAXPAUs_widget_item@@PAVc_class_1a2c81@@@Z"
             --extract-symbol "??0c_class_2b0b5e@@QAA@PAUs_model_block@@@Z"
             --extract-symbol "??0c_widget_45ad18@@QAA@JPAUs_widget_block_18@@@Z"
             --extract-symbol "?function_2baf38@@YAPAVc_widget_45adf0@@PAVc_class_1a2c81@@PAUs_widget_block_24@@@Z"
@@ -606,6 +619,11 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_UTF8_OBJECT)
         list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")
     endif()
+    if(object STREQUAL H2_GUEST_COLOR_SPACE_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1318d0@@YAPAUhsv3f@@PBUcolor3f@@PAU1@@Z"
+            --extract-symbol "?function_131a00@@YAPAUcolor3f@@PBUhsv3f@@PAU1@@Z")
+    endif()
     add_custom_command(
         OUTPUT "${object}"
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
@@ -675,6 +693,7 @@ set_source_files_properties(
     "${H2_GUEST_UI_GEOMETRY_OBJECT}" "${H2_GUEST_PREVIEW_RENDER_OBJECT}"
     "${H2_GUEST_PRESS_START_OBJECT}" "${H2_GUEST_SIGNIN_OBJECT}" "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}" "${H2_GUEST_UTF8_OBJECT}"
+    "${H2_GUEST_COLOR_SPACE_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -773,6 +792,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}"
     "${H2_GUEST_UTF8_OBJECT}"
+    "${H2_GUEST_COLOR_SPACE_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
@@ -805,7 +825,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 14
+            --expect-unresolved 13
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -880,7 +900,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_07f720.cpp")
         list(APPEND guest_extract_args --extract-symbol
-            "?function_7f790@@YAXF_NPBUs_player_appearance@@PAUcolor3f@@@Z")
+            "?function_7f790@@YAXF_NPBUs_player_appearance@@PAUcolor3f@@@Z"
+            --extract-symbol "?function_7f720@@YAPAUcolor3f@@PAU1@F@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_131e50.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -970,6 +991,14 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b10a3@@YAXPBKPAVc_class_2b0b5e@@J@Z"
+            --extract-symbol "?function_2b014f@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b015b@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b016d@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b0180@@YA_NPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b0191@@YA_NPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b01c7@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b01da@@YAJPAUs_widget_item@@@Z"
+            --extract-symbol "?function_2b12ca@@YAXPAUs_widget_view_2b0a@@FFPBX@Z"
             --extract-symbol "?v4@c_class_2b01eb@@UAAXJ@Z"
             --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
             --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
@@ -1023,9 +1052,15 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp")
         list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")
     endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1318d0@@YAPAUhsv3f@@PBUcolor3f@@PAU1@@Z"
+            --extract-symbol "?function_131a00@@YAPAUcolor3f@@PBUhsv3f@@PAU1@@Z")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "??0c_class_2b01eb@@QAA@PAUs_bitmap_block@@@Z"
+            --extract-symbol "?function_2afeae@@YAXPAUs_widget_item@@PAVc_class_1a2c81@@@Z"
             --extract-symbol "??0c_class_2b0b5e@@QAA@PAUs_model_block@@@Z"
             --extract-symbol "??0c_widget_45ad18@@QAA@JPAUs_widget_block_18@@@Z"
             --extract-symbol "?function_2baf38@@YAPAVc_widget_45adf0@@PAVc_class_1a2c81@@PAUs_widget_block_24@@@Z"
@@ -1302,7 +1337,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 14
+            --expect-unresolved 13
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -1310,7 +1345,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 14
+            --expect-unresolved 13
 )
 add_test(
     NAME main-menu-elf-core
