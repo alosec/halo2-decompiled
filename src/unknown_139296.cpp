@@ -7,6 +7,9 @@
 #include "unknown_07f720.h"
 #include <string.h>
 #include <math.h>
+#ifdef H2_NATIVE_PORT
+#include <wchar.h>
+#endif
 
 struct s_player_view
 {

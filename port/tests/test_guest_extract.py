@@ -70,7 +70,21 @@ def main():
         if "_?function_13ed90@@YAXJ@Z" not in text_defined:
             raise RuntimeError("recovered text renderer source was not selectively compilable")
 
-    print("guest function extraction retained constants and parsed recovered text rendering")
+        appearance_output = Path(temporary) / "player-appearance.o"
+        appearance_command = command[:]
+        appearance_command[appearance_command.index("h2_extract_selected")] = "?function_1392f8@@YAXPBUs_player_appearance@@@Z"
+        appearance_command[appearance_command.index("--extract-global"):appearance_command.index("--output")] = []
+        appearance_command[appearance_command.index(output)] = appearance_output
+        appearance_command[-1] = args.root / "src/unknown_139296.cpp"
+        subprocess.run([str(value) for value in appearance_command], check=True)
+        appearance_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", appearance_output],
+            text=True,
+        )
+        if "_?function_1392f8@@YAXPBUs_player_appearance@@@Z" not in appearance_defined:
+            raise RuntimeError("recovered appearance source was not selectively compilable")
+
+    print("guest extraction retained constants and parsed recovered rendering sources")
 
 
 if __name__ == "__main__":
