@@ -2276,6 +2276,11 @@ add_test(
             --provider-cluster-object ${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}
 )
 add_test(
+    NAME structure-bsp-switch-callbacks
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_structure_bsp_callbacks.py
+            --root ${PROJECT_SOURCE_DIR}
+)
+add_test(
     NAME recovered-guest-unit
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_recovered_guest_unit.py
             --llvm ${H2_LLVM_ROOT}/bin
