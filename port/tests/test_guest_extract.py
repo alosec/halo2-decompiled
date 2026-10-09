@@ -962,6 +962,27 @@ def main():
         if "_?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z" not in bsp_collision_defined:
             raise RuntimeError("structure-BSP collision correction was not selectively compilable")
 
+        object_relocation_output = Path(temporary) / "object-relocation.o"
+        object_relocation_command = command[:]
+        object_relocation_command[object_relocation_command.index("h2_extract_selected")] = "?function_b7430@@YA_NJPBTpoint3f@@PBTvector3f@@1PBUs_location@@_N333@Z"
+        object_relocation_command[object_relocation_command.index("--extract-global"):object_relocation_command.index("--output")] = []
+        object_relocation_command[object_relocation_command.index("--output"):object_relocation_command.index("--output")] = [
+            "--extract-symbol", "?function_b87b0@@YAXJ@Z",
+        ]
+        object_relocation_command[object_relocation_command.index(output)] = object_relocation_output
+        object_relocation_command[-1] = args.root / "src/unknown_0b7430.cpp"
+        subprocess.run([str(value) for value in object_relocation_command], check=True)
+        object_relocation_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", object_relocation_output],
+            text=True,
+        )
+        for symbol in (
+            "_?function_b7430@@YA_NJPBTpoint3f@@PBTvector3f@@1PBUs_location@@_N333@Z",
+            "_?function_b87b0@@YAXJ@Z",
+        ):
+            if symbol not in object_relocation_defined:
+                raise RuntimeError(f"recovered object relocation method was not retained: {symbol}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

@@ -34,11 +34,6 @@ void function_b6c50() { }
 
 
 
-struct s_location;
-// @stub 0xb7430
-bool __stdcall function_b7430(long object_index, point3f const *position, vector3f const *forward, vector3f const *up,
-    s_location const *location, bool a, bool b, bool c, bool d) { return false; }
-
 // @stub 0xb98e0
 void __stdcall function_b98e0(long object_index, transform4x3f const *matrix) { }
 
