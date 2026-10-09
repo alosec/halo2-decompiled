@@ -29,6 +29,8 @@ h2_main_menu_guest_bootstrap:
     cbnz w0, .Lreturn
     bl h2_main_menu_guest_open_press_start
     cbnz w0, .Lreturn
+    bl h2_main_menu_guest_load_campaign_metadata
+    cbnz w0, .Lreturn
     bl h2_main_menu_guest_frame
     b .Lreturn
 

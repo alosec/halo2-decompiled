@@ -495,7 +495,11 @@ void function_19c190(void)
 {
 	data_make_valid_inlined(g_4ee4e8);
 	data_make_valid_inlined(g_4ee4e4);
+#ifndef H2_NATIVE_PORT
 	function_19c120();
+#endif
 	function_19c6d0(g_4ee4e8, 1);
+#ifndef H2_NATIVE_PORT
 	function_19c7e0(g_4ee4e4);
+#endif
 }

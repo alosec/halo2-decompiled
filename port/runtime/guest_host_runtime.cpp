@@ -143,6 +143,25 @@ alignas(16) static unsigned char g_native_ui_heap[0x100050];
 
 struct s_string_table;
 bool string_table_load(s_string_table *table);
+void level_handle_tables_initialize();
+void function_19c190();
+extern "C" c_data_allocator *h2_native_user_interface_allocator();
+
+extern "C" int h2_main_menu_guest_load_campaign_metadata()
+{
+    /* The retail startup normally assigns the engine allocator before this
+     * module initializes. The native UI allocator is backed by the owned guest
+     * loop heap and provides the same c_data_allocator contract. */
+    g_468758 = h2_native_user_interface_allocator();
+    level_handle_tables_initialize();
+    if (!g_4ee4e8 || !g_4ee4e4)
+        return 1;
+    function_19c190();
+    if (!g_4ee4e8->valid || g_4ee4e8->actual_count <= 0 ||
+        g_4ee4e8->actual_count > g_4ee4e8->maximum_count)
+        return 2;
+    return 0;
+}
 
 extern "C" int h2_main_menu_guest_load_strings()
 {

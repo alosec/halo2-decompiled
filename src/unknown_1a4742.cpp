@@ -17,6 +17,13 @@ public:
 
 c_user_interface_allocator g_47d92c;
 
+#ifdef H2_NATIVE_PORT
+extern "C" c_data_allocator *h2_native_user_interface_allocator()
+{
+	return &g_47d92c;
+}
+#endif
+
 extern s_loop_allocator *g_51e998;
 bool loop_allocate(s_loop_allocator *loop, void **pointer, long size, char const *file, long line);
 void function_147ebe(void);

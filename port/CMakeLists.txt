@@ -63,6 +63,8 @@ set(H2_GUEST_ONLINE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_online_runtime.
 set(H2_GUEST_AUDIO_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_audio_runtime.o")
 set(H2_GUEST_RENDER_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_render_runtime.o")
 set(H2_GUEST_CAMPAIGN_ENTRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19c1d0.o")
+set(H2_GUEST_LEVEL_TABLES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19bd50.o")
+set(H2_GUEST_SORT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13dcd0.o")
 set(H2_GUEST_MOVIE_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_155f60.o")
 set(H2_GUEST_TEXT_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13eb20.o")
 set(H2_GUEST_UI_MESSAGE_BUILD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_149f49.o")
@@ -161,6 +163,8 @@ set(H2_MS_ABI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_19bd50.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_13dcd0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_155f60.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13eb20.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_149f49.cpp"
@@ -263,6 +267,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_AUDIO_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
         "${H2_GUEST_RENDER_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
         "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
+        "${H2_GUEST_LEVEL_TABLES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19bd50.cpp"
+        "${H2_GUEST_SORT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13dcd0.cpp"
         "${H2_GUEST_MOVIE_QUERY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_155f60.cpp"
         "${H2_GUEST_TEXT_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13eb20.cpp"
         "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_149f49.cpp"
@@ -645,7 +651,20 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_CAMPAIGN_ENTRY_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_19c1f0@@YAPAUs_entry_b@@J@Z"
-            --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
+            --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z"
+            --extract-symbol "?function_19c6d0@@YAXPAUs_record_pool@@J@Z"
+            --extract-symbol "?function_19c7c0@@YA_NJJPBX@Z"
+            --extract-symbol "?function_19c190@@YAXXZ")
+    endif()
+    if(object STREQUAL H2_GUEST_LEVEL_TABLES_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?level_handle_tables_initialize@@YAXXZ"
+            --extract-global "??_C@_0O@HDBDKBPP@level?5handles?$AA@"
+            --extract-global "??_C@_0BK@FEMBNBNK@multiplayer?5level?5handles?$AA@")
+    endif()
+    if(object STREQUAL H2_GUEST_SORT_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?sort_4byte@@YAXPAJKPAXP6A_NJJPBX@Z2@Z")
     endif()
     if(object STREQUAL H2_GUEST_TEXT_PARSER_OBJECT)
         list(APPEND guest_extract_args
@@ -797,6 +816,8 @@ set_source_files_properties(
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
     "${H2_GUEST_RENDER_RUNTIME_OBJECT}"
     "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
+    "${H2_GUEST_LEVEL_TABLES_OBJECT}"
+    "${H2_GUEST_SORT_OBJECT}"
     "${H2_GUEST_MOVIE_QUERY_OBJECT}"
     "${H2_GUEST_TEXT_STATE_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}" "${H2_GUEST_UI_LAYOUT_OBJECT}"
@@ -878,6 +899,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
     "${H2_GUEST_RENDER_RUNTIME_OBJECT}"
     "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
+    "${H2_GUEST_LEVEL_TABLES_OBJECT}"
+    "${H2_GUEST_SORT_OBJECT}"
     "${H2_GUEST_MOVIE_QUERY_OBJECT}"
     "${H2_GUEST_TEXT_STATE_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}"
@@ -1341,7 +1364,20 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_19c1f0@@YAPAUs_entry_b@@J@Z"
-            --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
+            --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z"
+            --extract-symbol "?function_19c6d0@@YAXPAUs_record_pool@@J@Z"
+            --extract-symbol "?function_19c7c0@@YA_NJJPBX@Z"
+            --extract-symbol "?function_19c190@@YAXXZ")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19bd50.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?level_handle_tables_initialize@@YAXXZ"
+            --extract-global "??_C@_0O@HDBDKBPP@level?5handles?$AA@"
+            --extract-global "??_C@_0BK@FEMBNBNK@multiplayer?5level?5handles?$AA@")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_13dcd0.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?sort_4byte@@YAXPAJKPAXP6A_NJJPBX@Z2@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/user_interface_text_parser.cpp")
         list(APPEND guest_extract_args
