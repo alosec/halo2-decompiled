@@ -32,6 +32,9 @@ def main():
     assert "?function_18f62b@@YAXXZ" not in imports
     assert "?function_6cb60@@YAXXZ" not in imports
     assert "?function_215790@@YAXXZ" not in imports
+    assert "?set_profile_index@s_player_slot_profile@@QAAXJ@Z" not in imports
+    assert "?show_dialog@s_player_slot_profile@@QAAXP6AXJ_N@ZJ@Z" not in imports
+    assert "?sign_out@s_player_slot_profile@@QAAXXZ" not in imports
     assert "?function_2133a1@@YAXXZ" not in imports
     assert "?function_213484@@YAXXZ" not in imports
     assert "?function_52040@@YAXPBX0@Z" not in imports

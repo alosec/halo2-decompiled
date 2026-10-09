@@ -1,4 +1,5 @@
 #include "online_tasks.h"
+#include "unknown_24b5bc.h"
 #include <string.h>
 #include <xonline.h>
 #include <xtl.h>
@@ -136,6 +137,27 @@ c_class_1473c9 *__stdcall function_253185(s_screen_parameters *)
 {
     /* The network squad browser has no native-offline screen. */
     return 0;
+}
+
+void s_player_slot_profile::set_profile_index(long)
+{
+    /* The native virtual save list is empty until persistence exists. */
+    profile_index = NONE;
+}
+
+void s_player_slot_profile::show_dialog(player_sign_in_callback next, long)
+{
+    /* There is no native controller source to answer profile dialogs yet. */
+    callback = next;
+}
+
+void s_player_slot_profile::sign_out()
+{
+    /* Native bootstrap cannot have a Live or local profile signed in. */
+    profile_index = NONE;
+    task_type = 0;
+    if (callback)
+        callback(player, true);
 }
 
 void function_199893()
