@@ -593,7 +593,6 @@ def main() -> int:
     impact_allocation_new_imports = {
         "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
         "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z",
-        "?function_1201a0@@YAMPATvector3f@@PBT1@@Z",
         "?function_177260@@YAXJ_N@Z",
         "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z",
         "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
@@ -624,7 +623,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 32):
+            len(actual_impact_allocation_score) != 31):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
@@ -638,7 +637,8 @@ def main() -> int:
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
     )
     if (impact_allocation_symbol not in impact_defined or
-            "?function_146650@@YAJXZ" not in impact_defined):
+            "?function_146650@@YAJXZ" not in impact_defined or
+            "?function_1201a0@@YAMPATvector3f@@PBT1@@Z" not in impact_defined):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")
     impact_frontier = json.loads((
         args.root / "port/runtime/havok_impact_allocation_remaining_frontier.json"

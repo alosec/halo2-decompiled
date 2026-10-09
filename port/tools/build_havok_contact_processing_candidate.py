@@ -55,6 +55,7 @@ def main() -> int:
         impact_tolerance = temporary / "impact-tolerance.o"
         impact_allocation = temporary / "impact-allocation.o"
         game_time = temporary / "game-time.o"
+        vector_normalize = temporary / "vector-normalize.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -98,8 +99,11 @@ def main() -> int:
              "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z"])
         compile_slice(args, args.root / "src/unknown_146240.cpp", game_time,
                       ["?function_146650@@YAJXZ"])
+        compile_slice(args, args.root / "src/unknown_11fc80.cpp", vector_normalize,
+                      ["?function_1201a0@@YAMPATvector3f@@PBT1@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
-             args.impact_output, args.output, impact_allocation, game_time])
+             args.impact_output, args.output, impact_allocation, game_time,
+             vector_normalize])
     return 0
 
 

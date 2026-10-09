@@ -13,11 +13,6 @@
       "blocker": "Requires bounded active-BSP location ownership for impact effect placement."
     },
     {
-      "symbol": "?function_1201a0@@YAMPATvector3f@@PBT1@@Z",
-      "subsystem": "impact_math",
-      "blocker": "Requires the exact recovered vector normalization and fallback semantics."
-    },
-    {
       "symbol": "?function_177260@@YAXJ_N@Z",
       "subsystem": "effects",
       "blocker": "Requires complete native effect deletion and reference ownership."
