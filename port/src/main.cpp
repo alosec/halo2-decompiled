@@ -63,6 +63,18 @@ std::uint32_t read_u32(const unsigned char* data) {
     return value;
 }
 
+bool get_interface_texture_size(const NativeRenderContext& context,
+                                std::uint32_t guest_address, int& width, int& height) {
+    if (!context.arena || guest_address < 0x80060000u || guest_address > 0x80233f8cu) {
+        return false;
+    }
+    const auto* descriptor = static_cast<const unsigned char*>(
+        context.arena->pointer_const(guest_address));
+    width = read_u16(descriptor + 4);
+    height = read_u16(descriptor + 6);
+    return width > 0 && height > 0 && width <= 4096 && height <= 4096;
+}
+
 SDL_Texture* get_interface_texture(NativeRenderContext& context,
                                    std::uint32_t guest_address) {
     if (!guest_address) {
@@ -81,14 +93,18 @@ SDL_Texture* get_interface_texture(NativeRenderContext& context,
         const unsigned int format = descriptor[0x17];
         const std::uint32_t data_offset = read_u32(descriptor + 0x1c);
         const std::uint32_t data_size = read_u32(descriptor + 0x34);
+        const std::uint16_t flags = read_u16(descriptor + 0x0e);
         if (format == 16 && width > 0 && height > 0 && width <= 4096 &&
             height <= 4096 && data_offset != 0xffffffffu && data_size != 0 &&
             data_size <= 64u * 1024u * 1024u) {
             std::vector<unsigned char> compressed(data_size);
             std::vector<unsigned char> pixels;
-            if (h2::port::copy_cache_bytes(data_offset, compressed.data(),
-                                            compressed.size()) &&
-                h2::port::decode_dxt5(compressed, width, height, pixels)) {
+            const bool copied = h2::port::copy_cache_bytes(
+                data_offset, compressed.data(), compressed.size());
+            const bool decoded = copied && ((flags & 0x10u)
+                ? h2::port::decode_dxt5_linear(compressed, width, height, pixels)
+                : h2::port::decode_dxt5(compressed, width, height, pixels));
+            if (decoded) {
                 texture = SDL_CreateTexture(context.renderer, SDL_PIXELFORMAT_RGBA32,
                                             SDL_TEXTUREACCESS_STATIC, width, height);
                 if (texture &&
@@ -288,21 +304,34 @@ void draw_guest_request(const void* request_pointer, const void* vertices_pointe
     }
     const auto* source =
         static_cast<const h2_render_immediate_vertex*>(vertices_pointer);
+    SDL_Texture* texture = nullptr;
+    int texture_width = 1;
+    int texture_height = 1;
+    bool pixel_coordinates = false;
+    if (request.kind == H2_RENDER_REQUEST_INTERFACE_QUAD &&
+        request.texture_tag != -1) {
+        const auto texture_address = static_cast<std::uint32_t>(request.texture_tag);
+        texture = get_interface_texture(context, texture_address);
+        if (texture && get_interface_texture_size(
+                           context, texture_address, texture_width, texture_height)) {
+            for (unsigned int i = 0; i < request.vertex_count; ++i) {
+                pixel_coordinates |= source[i].texture_x < -1.0f ||
+                    source[i].texture_x > 1.0f || source[i].texture_y < -1.0f ||
+                    source[i].texture_y > 1.0f;
+            }
+        }
+    }
     SDL_Vertex vertices[H2_RENDER_IMMEDIATE_MAX_VERTICES]{};
     const SDL_FColor color = unpack_color(request.color);
     for (unsigned int i = 0; i < request.vertex_count; ++i) {
         vertices[i].position = {source[i].x, source[i].y};
         vertices[i].color = color;
-        vertices[i].tex_coord = {source[i].texture_x, source[i].texture_y};
+        vertices[i].tex_coord = {
+            pixel_coordinates ? source[i].texture_x / texture_width : source[i].texture_x,
+            pixel_coordinates ? source[i].texture_y / texture_height : source[i].texture_y};
     }
     static constexpr int indices[] = {0, 1, 2, 0, 2, 3};
     const int index_count = request.vertex_count == 3 ? 3 : 6;
-    SDL_Texture* texture = nullptr;
-    if (request.kind == H2_RENDER_REQUEST_INTERFACE_QUAD &&
-        request.texture_tag != -1) {
-        texture = get_interface_texture(
-            context, static_cast<std::uint32_t>(request.texture_tag));
-    }
     if (!SDL_RenderGeometry(context.renderer, texture, vertices,
                             static_cast<int>(request.vertex_count), indices,
                             index_count)) {

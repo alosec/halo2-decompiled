@@ -140,6 +140,26 @@ int main() {
     ok &= check(!h2::port::decode_dxt5(
                     std::span<const std::uint8_t>(red_dxt5.data(), 15), 4, 4, decoded),
                 "DXT5 decoder accepted a truncated block");
+    std::vector<std::uint8_t> linear_dxt5(2 * 128);
+    for (std::size_t row = 0; row < 2; ++row) {
+        for (std::size_t block = 0; block < 5; ++block) {
+            std::copy(red_dxt5.begin(), red_dxt5.end(),
+                      linear_dxt5.begin() + static_cast<std::ptrdiff_t>(
+                          row * 128 + block * 16));
+        }
+    }
+    std::vector<std::uint8_t> blue_dxt5 = red_dxt5;
+    blue_dxt5[8] = 0x1f;
+    blue_dxt5[9] = 0x00;
+    std::copy(blue_dxt5.begin(), blue_dxt5.end(), linear_dxt5.begin() + 128);
+    ok &= check(h2::port::decode_dxt5_linear(linear_dxt5, 20, 8, decoded) &&
+                    decoded[(4 * 20) * 4] == 0 && decoded[(4 * 20) * 4 + 2] == 255 &&
+                    decoded[(16 * 4)] == 255 && decoded[(16 * 4) + 2] == 0,
+                "linear DXT5 decoder did not remove 64-byte row padding");
+    ok &= check(!h2::port::decode_dxt5_linear(
+                    std::span<const std::uint8_t>(linear_dxt5.data(), 255),
+                    20, 8, decoded),
+                "linear DXT5 decoder accepted a truncated padded surface");
 
     std::vector<std::uint8_t> font_file(0x40411, 0);
     std::fill(font_file.begin() + 0x400, font_file.begin() + 0x40400, 0xff);

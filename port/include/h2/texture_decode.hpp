@@ -9,6 +9,8 @@ namespace h2::port {
 
 bool decode_dxt5(std::span<const std::uint8_t> source, int width, int height,
                  std::vector<std::uint8_t>& output);
+bool decode_dxt5_linear(std::span<const std::uint8_t> source, int width, int height,
+                        std::vector<std::uint8_t>& output);
 
 }  // namespace h2::port
 

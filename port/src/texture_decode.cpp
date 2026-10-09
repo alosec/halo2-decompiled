@@ -95,4 +95,24 @@ bool decode_dxt5(std::span<const std::uint8_t> source, int width, int height,
     return true;
 }
 
+bool decode_dxt5_linear(std::span<const std::uint8_t> source, int width, int height,
+                        std::vector<std::uint8_t>& output) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+    const std::size_t blocks_wide = static_cast<std::size_t>((width + 3) / 4);
+    const std::size_t blocks_high = static_cast<std::size_t>((height + 3) / 4);
+    const std::size_t row_bytes = blocks_wide * 16u;
+    const std::size_t pitch = (row_bytes + 63u) & ~std::size_t{63u};
+    if (blocks_high > source.size() / pitch) {
+        return false;
+    }
+    std::vector<std::uint8_t> compact(row_bytes * blocks_high);
+    for (std::size_t row = 0; row < blocks_high; ++row) {
+        std::memcpy(compact.data() + row * row_bytes,
+                    source.data() + row * pitch, row_bytes);
+    }
+    return decode_dxt5(compact, width, height, output);
+}
+
 }  // namespace h2::port
