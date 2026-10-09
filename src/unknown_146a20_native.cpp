@@ -15,6 +15,7 @@ extern hkMemory *g_479898;
 extern long g_4798b4;
 extern "C" c_havok_fixed_memory *h2_native_havok_fixed_memory_construct(
     void *storage, void *buffer, long size);
+extern "C" hkPoolMemory *h2_native_havok_pool_memory_construct(void *storage);
 
 // Portable construction of the exact recovered allocator objects at 0x146a20.
 void function_146a20(void)
@@ -22,8 +23,9 @@ void function_146a20(void)
     g_479884 = NONE;
     g_479890 = 1;
     g_479880 = true;
-    g_479894 = new (g_479888) c_havok_fixed_memory((byte *)g_479888 + 0x30, 0x15000);
-    g_479898 = new ((byte *)g_479888 + 0x15040) hkPoolMemory;
+    g_479894 = h2_native_havok_fixed_memory_construct(
+        g_479888, (byte *)g_479888 + 0x30, 0x15000);
+    g_479898 = h2_native_havok_pool_memory_construct((byte *)g_479888 + 0x15040);
     g_4798b4++;
 }
 

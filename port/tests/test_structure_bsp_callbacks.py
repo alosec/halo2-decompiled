@@ -128,6 +128,7 @@ def main() -> int:
         "g_4e7c20_owned_collision_scratch",
         "g_4ed280_owned_bsp_bit_vectors",
         "g_479888_owned_havok_allocator_block",
+        "g_479898_owned_havok_pool_allocator",
         "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
@@ -157,6 +158,7 @@ def main() -> int:
     if retained_globals != {
         "??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@",
         "g_h2_native_fixed_vtable",
+        "g_h2_native_pool_vtable",
     }:
         raise RuntimeError("structure-BSP retained data globals changed")
     required_light_symbols = {
@@ -188,8 +190,12 @@ def main() -> int:
     if not required_geometry_symbols.issubset(closure_symbols):
         raise RuntimeError("collision correction left outside BSP closure")
     required_fixed_allocator_symbols = {
+        "?function_146a20@@YAXXZ",
         "?function_146b80@@YAXXZ",
         "h2_native_havok_fixed_memory_construct",
+        "h2_native_havok_pool_memory_construct",
+        "h2_native_pool_allocate_aligned",
+        "h2_native_pool_deallocate_aligned",
         "?allocate_aligned@c_havok_fixed_memory@@UAAPAXJJJ@Z",
         "?h2_native_fixed_allocate_aligned@@YAPAXPAVc_havok_fixed_memory@@JJJ@Z",
         "?h2_native_fixed_deallocate_aligned@@YAXPAVc_havok_fixed_memory@@PAX@Z",
@@ -207,8 +213,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 25:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 25")
+    if len(undefined) != 24:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 24")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -244,16 +250,16 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 19:
+    if len(production_undefined) != 18:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 19")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 18")
 
     frontier_path = args.root / "port/runtime/structure_bsp_remaining_frontier.json"
     frontier_manifest = json.loads(frontier_path.read_text())
     if frontier_manifest.get("version") != 1:
         raise RuntimeError("unsupported structure-BSP frontier manifest")
     frontier_entries = frontier_manifest.get("imports")
-    if not isinstance(frontier_entries, list) or len(frontier_entries) != 19:
+    if not isinstance(frontier_entries, list) or len(frontier_entries) != 18:
         raise RuntimeError("structure-BSP frontier inventory changed")
     frontier_symbols = set()
     allowed_subsystems = {"ai", "geometry_query", "havok_lifecycle", "object_placement"}
@@ -296,10 +302,18 @@ def main() -> int:
         raise RuntimeError("structure-BSP callback table must retain exactly 21 providers")
     if sum("h2_native_structure_bsp_idle" in line for line in callback_lines) != 5:
         raise RuntimeError("structure-BSP callback table must retain five idle leaves")
-    if len(allocator_lines) != 11:
+    fixed_allocator_lines = [line for line in allocator_lines
+                             if "h2_native_fixed_" in line]
+    pool_allocator_lines = [line for line in allocator_lines
+                            if "h2_native_pool_" in line]
+    if len(fixed_allocator_lines) != 11:
         raise RuntimeError("native fixed allocator table must retain exactly 11 methods")
-    if sum("h2_native_fixed_idle" in line for line in allocator_lines) != 4:
+    if sum("h2_native_fixed_idle" in line for line in fixed_allocator_lines) != 4:
         raise RuntimeError("native fixed allocator table must retain four idle methods")
+    if len(pool_allocator_lines) != 11:
+        raise RuntimeError("native pool allocator table must retain exactly 11 methods")
+    if sum("h2_native_pool_idle" in line for line in pool_allocator_lines) != 4:
+        raise RuntimeError("native pool allocator table must retain four idle methods")
     return 0
 
 
