@@ -75,6 +75,16 @@ def main() -> None:
         "h2_native_controller_connect",
         "host_h2_cache_read",
         "host_h2_physical_memory_malloc_low",
+        "host_h2_profile_list",
+        "host_h2_profile_create",
+        "host_h2_profile_read",
+        "host_h2_profile_write",
+        "host_h2_profile_delete",
+        "h2_native_profile_list",
+        "h2_native_profile_create",
+        "h2_native_profile_read",
+        "h2_native_profile_write",
+        "h2_native_profile_delete",
     }
     missing = required_symbols - symbol_lines.keys()
     if missing:

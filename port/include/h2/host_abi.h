@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 6u
+#define H2_HOST_ABI_VERSION 7u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the
@@ -22,6 +22,12 @@ void host_h2_text_request(const unsigned int* text, const void* bounds,
 unsigned int host_h2_get_milliseconds(void);
 void host_h2_sleep(unsigned int milliseconds);
 double host_h2_cos(double value);
+int host_h2_profile_list(unsigned int* identifiers, unsigned int capacity);
+int host_h2_profile_create(const void* record, unsigned int size);
+int host_h2_profile_read(unsigned int identifier, void* record, unsigned int size);
+int host_h2_profile_write(unsigned int identifier, const void* record,
+                          unsigned int size);
+int host_h2_profile_delete(unsigned int identifier);
 
 #ifdef __cplusplus
 }

@@ -24,6 +24,11 @@ def main():
     assert imports["host_h2_video_control"]["category"] == "host_abi"
     assert imports["host_h2_render_request"]["category"] == "host_abi"
     assert imports["host_h2_text_request"]["category"] == "host_abi"
+    for symbol in (
+        "host_h2_profile_list", "host_h2_profile_create", "host_h2_profile_read",
+        "host_h2_profile_write", "host_h2_profile_delete",
+    ):
+        assert imports[symbol]["category"] == "host_abi"
     assert "?function_18f1c0@@YAXJ@Z" not in imports
     assert "?function_18f5e3@@YAXXZ" not in imports
     assert "?function_18f62b@@YAXXZ" not in imports

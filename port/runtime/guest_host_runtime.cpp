@@ -47,6 +47,33 @@ extern "C" int h2_main_menu_guest_entry()
     return 0;
 }
 
+extern "C" int h2_native_profile_list(unsigned int *identifiers, unsigned int capacity)
+{
+    return host_h2_profile_list(identifiers, capacity);
+}
+
+extern "C" int h2_native_profile_create(const void *record, unsigned int size)
+{
+    return host_h2_profile_create(record, size);
+}
+
+extern "C" int h2_native_profile_read(unsigned int identifier, void *record,
+                                        unsigned int size)
+{
+    return host_h2_profile_read(identifier, record, size);
+}
+
+extern "C" int h2_native_profile_write(unsigned int identifier, const void *record,
+                                         unsigned int size)
+{
+    return host_h2_profile_write(identifier, record, size);
+}
+
+extern "C" int h2_native_profile_delete(unsigned int identifier)
+{
+    return host_h2_profile_delete(identifier);
+}
+
 struct s_loop_allocator;
 class c_memory_source;
 extern s_loop_allocator *g_51e998;

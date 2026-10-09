@@ -70,7 +70,9 @@ int main(int argc, char** argv) {
                                "host_h2_cache_read", "host_h2_video_control",
                                "host_h2_render_request", "host_h2_text_request",
                                "host_h2_get_milliseconds", "host_h2_sleep",
-                               "host_h2_cos"}) {
+                               "host_h2_cos", "host_h2_profile_list",
+                               "host_h2_profile_create", "host_h2_profile_read",
+                               "host_h2_profile_write", "host_h2_profile_delete"}) {
         const auto standard_slot = image->symbol_address(
             std::string("h2_host_slot_") + symbol);
         std::uintptr_t standard_target = 0;

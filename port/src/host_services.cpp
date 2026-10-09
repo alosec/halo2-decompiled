@@ -241,6 +241,11 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         {"host_h2_get_milliseconds", function_address(&host_h2_get_milliseconds)},
         {"host_h2_sleep", function_address(&host_h2_sleep)},
         {"host_h2_cos", function_address(&host_h2_cos)},
+        {"host_h2_profile_list", function_address(&host_h2_profile_list)},
+        {"host_h2_profile_create", function_address(&host_h2_profile_create)},
+        {"host_h2_profile_read", function_address(&host_h2_profile_read)},
+        {"host_h2_profile_write", function_address(&host_h2_profile_write)},
+        {"host_h2_profile_delete", function_address(&host_h2_profile_delete)},
     };
     for (const auto& import : imports) {
         if (!image.patch_host_import(arena, import.symbol, import.target, error)) {
@@ -363,4 +368,60 @@ extern "C" void host_h2_sleep(unsigned int milliseconds) {
 
 extern "C" double host_h2_cos(double value) {
     return std::cos(value);
+}
+
+extern "C" int host_h2_profile_list(unsigned int* identifiers,
+                                      unsigned int capacity) {
+    if ((!identifiers && capacity) || capacity > 4096) {
+        return -1;
+    }
+    std::vector<std::uint32_t> ids;
+    std::string error;
+    if (!h2::port::list_native_profiles(ids, error)) {
+        return -1;
+    }
+    const std::size_t copied = std::min<std::size_t>(ids.size(), capacity);
+    if (copied) {
+        std::copy_n(ids.begin(), copied, identifiers);
+    }
+    return static_cast<int>(ids.size());
+}
+
+extern "C" int host_h2_profile_create(const void* record, unsigned int size) {
+    if (!record || size != h2::port::kNativeProfileRecordSize) {
+        return -1;
+    }
+    std::uint32_t id = 0;
+    std::string error;
+    const auto bytes = std::span(
+        static_cast<const std::byte*>(record), h2::port::kNativeProfileRecordSize);
+    return h2::port::create_native_profile(bytes, id, error) ?
+        static_cast<int>(id) : -1;
+}
+
+extern "C" int host_h2_profile_read(unsigned int identifier, void* record,
+                                      unsigned int size) {
+    if (!record || size != h2::port::kNativeProfileRecordSize) {
+        return 0;
+    }
+    std::string error;
+    const auto bytes = std::span(
+        static_cast<std::byte*>(record), h2::port::kNativeProfileRecordSize);
+    return h2::port::read_native_profile(identifier, bytes, error) ? 1 : 0;
+}
+
+extern "C" int host_h2_profile_write(unsigned int identifier,
+                                       const void* record, unsigned int size) {
+    if (!record || size != h2::port::kNativeProfileRecordSize) {
+        return 0;
+    }
+    std::string error;
+    const auto bytes = std::span(
+        static_cast<const std::byte*>(record), h2::port::kNativeProfileRecordSize);
+    return h2::port::write_native_profile(identifier, bytes, error) ? 1 : 0;
+}
+
+extern "C" int host_h2_profile_delete(unsigned int identifier) {
+    std::string error;
+    return h2::port::erase_native_profile(identifier, error) ? 1 : 0;
 }

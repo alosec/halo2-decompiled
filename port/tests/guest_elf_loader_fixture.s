@@ -39,6 +39,21 @@ h2_host_slot_host_h2_sleep:
 .globl h2_host_slot_host_h2_cos
 h2_host_slot_host_h2_cos:
     .xword 0
+.globl h2_host_slot_host_h2_profile_list
+h2_host_slot_host_h2_profile_list:
+    .xword 0
+.globl h2_host_slot_host_h2_profile_create
+h2_host_slot_host_h2_profile_create:
+    .xword 0
+.globl h2_host_slot_host_h2_profile_read
+h2_host_slot_host_h2_profile_read:
+    .xword 0
+.globl h2_host_slot_host_h2_profile_write
+h2_host_slot_host_h2_profile_write:
+    .xword 0
+.globl h2_host_slot_host_h2_profile_delete
+h2_host_slot_host_h2_profile_delete:
+    .xword 0
 
 .globl h2_loader_data
 .type h2_loader_data, @object

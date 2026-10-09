@@ -1,3 +1,4 @@
+#include "h2/host_abi.h"
 #include "h2/host_services.hpp"
 #include "h2/profile_store.hpp"
 
@@ -123,8 +124,24 @@ int main() {
                     list_native_profiles(ids, error) &&
                     ids == std::vector<std::uint32_t>({0}),
                 "profile host service did not update/list a record");
-    ok &= check(erase_native_profile(service_id, error),
-                "profile host service did not erase a record");
+    unsigned int abi_ids[2] = {99, 99};
+    ok &= check(host_h2_abi_version() == H2_HOST_ABI_VERSION &&
+                    host_h2_profile_list(nullptr, 0) == 1 &&
+                    host_h2_profile_list(abi_ids, 2) == 1 && abi_ids[0] == 0,
+                "profile host ABI did not enumerate records");
+    loaded.fill(std::byte{0});
+    ok &= check(host_h2_profile_read(service_id, loaded.data(), loaded.size()) == 1 &&
+                    loaded == first &&
+                    host_h2_profile_read(service_id, loaded.data(), loaded.size() - 1) == 0,
+                "profile host ABI did not enforce bounded reads");
+    first[0x21] = std::byte{0x6c};
+    ok &= check(host_h2_profile_write(service_id, first.data(), first.size()) == 1 &&
+                    host_h2_profile_delete(service_id) == 1,
+                "profile host ABI did not update/delete a record");
+    const int abi_id = host_h2_profile_create(first.data(), first.size());
+    ok &= check(abi_id == 0 && host_h2_profile_create(first.data(), first.size() - 1) == -1 &&
+                    host_h2_profile_delete(static_cast<unsigned int>(abi_id)) == 1,
+                "profile host ABI did not create a bounded record");
     reset_profile_services();
     ok &= check(!list_native_profiles(ids, error),
                 "reset profile host service accepted enumeration");
