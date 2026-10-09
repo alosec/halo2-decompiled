@@ -12506,8 +12506,8 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0030bb50,49,third:havok,speed,a16 pad,,,00312800,,todo
 0030bb90,115,third:havok,speed,a16 pad,,,00315950,,todo
 0030bc10,40,third:havok,speed,a16 pad,,,0030bb90,,todo
-0030bc40,29,third:havok,speed,a16 pad,,,,,todo
-0030bc60,43,third:havok,speed,a16 pad,,,0030c560 0030ccd0,,todo
+0030bc40,29,third:havok,speed,a16 pad,,,,,done
+0030bc60,43,third:havok,speed,a16 pad,,,0030c560 0030ccd0,,done
 0030bc90,34,third:havok,speed,a16 pad,,,0030cc20,,todo
 0030bcc0,75,third:havok,speed,a16 pad,,,0030cd50,,todo
 0030bd10,63,third:havok,speed,a16 pad,,,,,todo
@@ -12538,7 +12538,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0030c4b0,23,third:havok,speed,a16 pad,,,,,todo
 0030c4d0,37,third:havok,speed,a16 pad,,,,,todo
 0030c500,89,third:havok,speed,a16 pad,,,0030c420,,todo
-0030c560,171,third:havok,speed,a16 pad,,,00279740,,todo
+0030c560,171,third:havok,speed,a16 pad,,,00279740,,done
 0030c610,37,third:havok,speed,a16 pad,,,0030c640,,todo
 0030c640,7,third:havok,speed,a16 pad,,,,,todo
 0030c650,199,third:havok,speed,a16 pad,,,002d9160,,todo
@@ -12554,7 +12554,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0030cb70,164,third:havok,speed,a16 pad,,,002d91d0 0030c4b0,,todo
 0030cc20,59,third:havok,speed,a16 pad,,,002d91d0,,todo
 0030cc60,105,third:havok,speed,a16 pad,,,002d91d0 00318620,,todo
-0030ccd0,118,third:havok,speed,a16 pad,,,002d91d0 00318540,,todo
+0030ccd0,118,third:havok,speed,a16 pad,,,002d91d0 00318540,,done
 0030cd50,65,third:havok,speed,a16 pad,,,002d91d0,,todo
 0030cda0,125,third:havok,speed,a16 pad,,,00279740 0030ca30,,todo
 0030ce20,122,third:havok,speed,a16 pad,,,00279740 0030cc60,,todo
@@ -12838,7 +12838,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 003183b0,130,third:havok,speed,a16 pad,,,,,todo
 00318440,130,third:havok,speed,a16 pad,,,,,todo
 003184d0,106,third:havok,speed,a16 pad,,,,,todo
-00318540,218,third:havok,speed,a16 pad,,,,,todo
+00318540,218,third:havok,speed,a16 pad,,,,,done
 00318620,218,third:havok,speed,a16 pad,,,,,todo
 00318700,149,third:havok,speed,a16 pad,,,0030c180,,todo
 003187a0,129,third:havok,speed,a16 pad,,,,,todo

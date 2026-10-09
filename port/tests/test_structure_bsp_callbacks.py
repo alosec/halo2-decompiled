@@ -167,7 +167,6 @@ def main() -> int:
         raise RuntimeError("dormant primary listener tables entered production")
     expected_primary_cluster_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
-        "?activate@hkRigidBody@@QAAXXZ",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?cache_file_globals@@3Us_cache_file_globals@@A",
@@ -180,8 +179,6 @@ def main() -> int:
         "?g_510c54@@3PAUs_game_time_globals@@A",
         "?g_51e9b8@@3PAUs_record_pool@@A",
         "?g_4687a4@@3PATvector3f@@A",
-        "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
-        "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
         "h2_guest_memcpy",
         "sqrtf",
     }
@@ -203,9 +200,12 @@ def main() -> int:
                     "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
                     "?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z",
                     "?isActive@hkRigidBody@@QBA?AVhkBool@@XZ",
+                    "?activate@hkRigidBody@@QAAXXZ",
                     "?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
                     "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z",
-                    "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z"}):
+                    "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
+                    "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
+                    "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z"}):
         if symbol not in primary_cluster_defined:
             raise RuntimeError(f"primary Havok listener cluster lacks {symbol}")
 
@@ -442,7 +442,6 @@ def main() -> int:
 
     listener_additional_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
-        "?activate@hkRigidBody@@QAAXXZ",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
     }
@@ -464,7 +463,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 19):
+            len(actual_listener_production) != 18):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     listener_frontier_path = (
@@ -474,11 +473,10 @@ def main() -> int:
     if listener_frontier.get("version") != 1:
         raise RuntimeError("unsupported primary Havok listener frontier manifest")
     listener_frontier_entries = listener_frontier.get("imports")
-    if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 4:
+    if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 3:
         raise RuntimeError("primary Havok listener frontier inventory changed")
     allowed_listener_subsystems = {
-        "contact_removal", "rigid_body_activation", "impact_creation",
-        "contact_processing",
+        "contact_removal", "impact_creation", "contact_processing",
     }
     listener_frontier_symbols = set()
     for entry in listener_frontier_entries:

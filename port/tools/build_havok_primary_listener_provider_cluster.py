@@ -109,11 +109,14 @@ def main() -> int:
         compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_wake,
                       ["?function_b7360@@YAXJ@Z"])
         compile_slice(args, args.root / "src/unknown_1cec30.cpp", contact_impulse,
-                      ["?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z"])
+                      ["?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+                       "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
+                       "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z"])
         compile_slice(args, args.root / "src/unknown_1d8dd0.cpp", point_impulse,
                       ["?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z"])
         compile_slice(args, args.root / "src/unknown_30bc40_native.cpp", rigid_body_active,
-                      ["?isActive@hkRigidBody@@QBA?AVhkBool@@XZ"])
+                      ["?isActive@hkRigidBody@@QBA?AVhkBool@@XZ",
+                       "?activate@hkRigidBody@@QAAXXZ"])
         compile_slice(args, args.root / "src/unknown_3123a0_native.cpp", entity_properties,
                       ["?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
                        "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z"])

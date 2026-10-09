@@ -7,11 +7,6 @@
       "blocker": "Requires coherent motion-basis surface-state recomputation and impact-release lifetime ownership; exact Havok entity-property mutation is already owned."
     },
     {
-      "symbol": "?activate@hkRigidBody@@QAAXXZ",
-      "subsystem": "rigid_body_activation",
-      "blocker": "Requires exact Havok world/island activation ownership before inactive rigid bodies may accept impulses."
-    },
-    {
       "symbol": "?function_226a60@@YAXJ@Z",
       "subsystem": "impact_creation",
       "blocker": "Requires physics-model material/shape traversal, impact synthesis and allocation, player-distance policy, and impact-pool lifetime ownership."
