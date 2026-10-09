@@ -116,6 +116,26 @@ extern "C" int h2_native_campaign_load_first_bsp()
         cache_file_globals.bsp != reference->address ||
         !reference->address || reference->address->signature != 'sbsp')
         return 0;
+    if (reference->size < (long)sizeof(s_structure_bsp_header))
+        return 0;
+    const unsigned long payload_begin =
+        reinterpret_cast<unsigned long>(reference->address);
+    const unsigned long payload_end = payload_begin + (unsigned long)reference->size;
+    const unsigned long structure =
+        reinterpret_cast<unsigned long>(reference->address->bsp_address);
+    const unsigned long lightmap =
+        reinterpret_cast<unsigned long>(reference->address->lightmap_address);
+    if (payload_end < payload_begin || structure < payload_begin ||
+        structure > payload_end - sizeof(void *))
+        return 0;
+    if (reference->lightmap_tag_index != NONE &&
+        (lightmap < payload_begin || lightmap > payload_end - sizeof(void *)))
+        return 0;
+    void *const collision_root = *reinterpret_cast<void *const *>(
+        reinterpret_cast<unsigned char *>(reference->address->bsp_address) + 0x18);
+    const unsigned long collision = reinterpret_cast<unsigned long>(collision_root);
+    if (collision < payload_begin || collision > payload_end - sizeof(void *))
+        return 0;
     s_native_cache_tag_instance const *const instances =
         reinterpret_cast<s_native_cache_tag_instance const *>(g_4e3b44);
     if (instances[(short)reference->bsp_tag_index].address !=
