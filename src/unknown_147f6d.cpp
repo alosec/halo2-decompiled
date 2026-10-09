@@ -188,7 +188,10 @@ c_window_channel *function_148262(long channel, long index)
 
 /* whether a window has a screen or one coming */
 // @retail 0x1473b6
-inline bool function_1473b6(c_window_channel *window)
+#ifndef H2_NATIVE_PORT
+inline
+#endif
+bool function_1473b6(c_window_channel *window)
 {
 	return window->current != 0 || window->next != 0;
 }

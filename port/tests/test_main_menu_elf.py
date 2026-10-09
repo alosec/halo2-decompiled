@@ -18,6 +18,7 @@ REQUIRED = {
     "??0c_main_menu_screen@@QAA@JJG@Z",
     "??0c_window_channel@@QAA@XZ",
     "??_Ec_main_menu_screen@@UAAPAXI@Z",
+    "?function_1473b6@@YA_NPAVc_window_channel@@@Z",
     "?function_16b790@@YAXPAUs_record_pool@@@Z",
     "?data_last_index@@YAJPAUs_record_pool@@@Z",
     "?player_slot_count_active@@YAFXZ",
