@@ -283,6 +283,27 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_transform_output = Path(temporary) / "physics-model-transform.o"
+        physics_model_transform_symbols = (
+            "?function_2da450@s_physics_affine_matrix@@QAAXPBU1@0@Z",
+            "?function_2de850@c_physics_transformed_shape@@QAAXPBUs_physics_affine_matrix@@PAX1@Z",
+        )
+        physics_model_transform_command = command[:]
+        physics_model_transform_command[physics_model_transform_command.index("h2_extract_selected")] = physics_model_transform_symbols[0]
+        physics_model_transform_command[physics_model_transform_command.index("--extract-global"):physics_model_transform_command.index("--output")] = [
+            "--extract-symbol", physics_model_transform_symbols[1],
+        ]
+        physics_model_transform_command[physics_model_transform_command.index(output)] = physics_model_transform_output
+        physics_model_transform_command[-1] = args.root / "src/unknown_2de850.cpp"
+        subprocess.run([str(value) for value in physics_model_transform_command], check=True)
+        physics_model_transform_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_transform_output],
+            text=True,
+        )
+        for symbol in physics_model_transform_symbols:
+            if f"_{symbol}" not in physics_model_transform_defined:
+                raise RuntimeError(f"physics-model transform method was not retained: {symbol}")
+
         physics_model_base_output = Path(temporary) / "physics-model-runtime-base.o"
         physics_model_base_symbols = (
             "?function_2d7210@c_physics_runtime_base@@QAAJJJ@Z",
