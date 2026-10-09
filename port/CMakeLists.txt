@@ -345,8 +345,9 @@ foreach(pair IN ITEMS
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
     if(object STREQUAL H2_GUEST_DIALOG_EVENT_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_24c7c1@@YAXPAUs_item_list@@J@Z"
+            --extract-symbol "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
@@ -363,6 +364,7 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
             --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
+            --extract-symbol "?function_23625d@@YAXJ@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
     if(object STREQUAL H2_GUEST_QUIT_CALLBACK_OBJECT)
@@ -547,7 +549,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 80
+            --expect-unresolved 78
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -678,8 +680,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_24c7c1@@YAXPAUs_item_list@@J@Z"
+            --extract-symbol "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args
@@ -696,6 +699,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
             --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
+            --extract-symbol "?function_23625d@@YAXJ@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp")
@@ -902,7 +906,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 80
+            --expect-unresolved 78
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -910,7 +914,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 80
+            --expect-unresolved 78
 )
 add_test(
     NAME main-menu-elf-core
