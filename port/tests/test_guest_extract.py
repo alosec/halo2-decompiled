@@ -29,6 +29,7 @@ def main():
             "--ms-abi",
             "--extract-symbol", "h2_extract_selected",
             "--extract-global", "h2_extract_constant",
+            "--extract-alias", "h2_extract_alias",
             "--output", output,
             args.root / "port/tests/guest_extract_probe.cpp",
         ))
@@ -46,6 +47,8 @@ def main():
             raise RuntimeError("selected guest function was not retained")
         if "_h2_extract_constant" not in defined:
             raise RuntimeError("selected guest constant was not retained")
+        if "_h2_extract_alias" not in defined:
+            raise RuntimeError("selected guest alias was not retained")
         if "_h2_extract_unrelated" in defined:
             raise RuntimeError("unrelated guest function was retained")
         if undefined.strip():
