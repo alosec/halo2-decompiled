@@ -9,11 +9,13 @@ typedef int BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
+typedef unsigned long long ULONGLONG;
 typedef long LONG;
 typedef long HRESULT;
 
 #ifdef H2_MS_ABI_FRONTEND
 typedef unsigned short wchar_t;
+typedef wchar_t WCHAR;
 #endif
 
 struct _FILETIME {
@@ -71,7 +73,10 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 
 #define FALSE 0
 #define TRUE 1
+#define S_OK ((HRESULT)0)
+#define E_FAIL ((HRESULT)0x80004005L)
 #define SUCCEEDED(result) ((HRESULT)(result) >= 0)
+#define FAILED(result) ((HRESULT)(result) < 0)
 #define PAGE_READONLY 0x02
 #define PAGE_READWRITE 0x04
 #define PAGE_WRITECOMBINE 0x400
