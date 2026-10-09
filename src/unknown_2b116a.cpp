@@ -5819,6 +5819,12 @@ void c_widget_45adf0::v4(long frame)
 {
     if (definition && (!(*(dword *)definition & 2) || *(short *)unknown86 != NONE))
     {
+#if defined(H2_NATIVE_PORT)
+        /* The native renderer does not own the Xbox preview-state object yet.
+           Keep the rest of the recovered menu alive without fabricating it. */
+        if (!g_510c4c)
+            return;
+#endif
         real scale = animation.scale;
         s_float_rect coordinates;
         coordinates.x0 = coordinates.y0 = 0.0f;

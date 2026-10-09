@@ -383,6 +383,7 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_VIRTUAL_KEYBOARD_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_238c21@@YAXJJPAGJ@Z"
+            --extract-symbol "h2_native_virtual_keyboard_accept"
             --extract-symbol "?function_23784f@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
             --extract-symbol "?v10@c_keyboard_key_widget@@UAA_NPAUs_widget_event@@@Z"
             --extract-symbol "?v17@c_keyboard_key_widget@@UAAJXZ"
@@ -403,6 +404,7 @@ foreach(pair IN ITEMS
             --extract-global g_44a840
             --extract-global g_44a900
             --extract-global g_44a9bc
+            --extract-global g_native_virtual_keyboard
             --extract-alias "??_Ec_keyboard_key_widget@@UAAPAXI@Z"
             --extract-alias "??_Ec_virtual_keyboard_screen@@UAAPAXI@Z")
     endif()
@@ -996,6 +998,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_23760b.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_238c21@@YAXJJPAGJ@Z"
+            --extract-symbol "h2_native_virtual_keyboard_accept"
             --extract-symbol "?function_23784f@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
             --extract-symbol "?v10@c_keyboard_key_widget@@UAA_NPAUs_widget_event@@@Z"
             --extract-symbol "?v17@c_keyboard_key_widget@@UAAJXZ"
@@ -1016,6 +1019,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-global g_44a840
             --extract-global g_44a900
             --extract-global g_44a9bc
+            --extract-global g_native_virtual_keyboard
             --extract-alias "??_Ec_keyboard_key_widget@@UAAPAXI@Z"
             --extract-alias "??_Ec_virtual_keyboard_screen@@UAAPAXI@Z")
     endif()

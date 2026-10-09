@@ -89,6 +89,7 @@ def main() -> None:
         "?function_238c21",
         "?function_216120",
         "??_7c_virtual_keyboard_screen",
+        "h2_native_virtual_keyboard_accept",
     }
     missing = required_symbols - symbol_lines.keys()
     if missing:

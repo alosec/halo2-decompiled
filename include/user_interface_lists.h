@@ -505,6 +505,8 @@ class c_main_menu_list : public c_class_1474e8
 public:
 	c_main_menu_list(word user_flags);
 
+	virtual void *get_item_data();
+	virtual long get_item_count();
 	virtual void v20(c_class_1a2c81 *widget, long index);
 
 	void handle_item(s_controller_reference **controller, long *item);

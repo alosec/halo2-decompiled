@@ -270,6 +270,10 @@ void virtual_keyboard_set_string(c_virtual_keyboard_screen *keyboard, word *stri
 
 /* opens the keyboard on a string */
 // @retail 0x238c21
+#if defined(H2_NATIVE_PORT)
+static c_virtual_keyboard_screen *g_native_virtual_keyboard;
+#endif
+
 void function_238c21(long controller, long type, word *name, long maximum_count)
 {
 	s_screen_parameters parameters;
@@ -280,7 +284,25 @@ void function_238c21(long controller, long type, word *name, long maximum_count)
 	keyboard = (c_virtual_keyboard_screen *)parameters.load(&parameters);
 	keyboard->type = type;
 	virtual_keyboard_set_string(keyboard, name, (short)maximum_count);
+#if defined(H2_NATIVE_PORT)
+	g_native_virtual_keyboard = type == 1 ? keyboard : 0;
+#endif
 }
+
+#if defined(H2_NATIVE_PORT)
+extern "C" int h2_native_virtual_keyboard_accept()
+{
+	if (!g_native_virtual_keyboard || g_native_virtual_keyboard->type != 1 ||
+		!g_native_virtual_keyboard->string)
+		return 2;
+	if (g_native_virtual_keyboard->check_string())
+		return 3;
+	c_virtual_keyboard_screen *keyboard = g_native_virtual_keyboard;
+	g_native_virtual_keyboard = 0;
+	keyboard->press_key(_keyboard_key_done);
+	return 0;
+}
+#endif
 
 /* the same, with a second value */
 // @retail 0x238c69

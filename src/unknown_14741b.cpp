@@ -218,6 +218,18 @@ bool c_legalese_screen::v10(s_widget_event *event)
 	return result;
 }
 
+// @retail 0x19b516
+void *c_main_menu_list::get_item_data()
+{
+	return (byte *)this + 0x88;
+}
+
+// @retail 0x230612
+long c_main_menu_list::get_item_count()
+{
+	return 5;
+}
+
 // @retail 0x2307c8
 void c_main_menu_list::v20(c_class_1a2c81 *widget, long index)
 {

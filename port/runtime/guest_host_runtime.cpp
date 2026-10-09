@@ -200,10 +200,14 @@ extern "C" int h2_main_menu_guest_press_start()
 }
 
 bool __stdcall function_252a32(long controller);
+extern "C" int h2_native_virtual_keyboard_accept();
 static long g_native_profile_name_reads;
 
 extern "C" int h2_main_menu_guest_accept()
 {
+    const int keyboard_result = h2_native_virtual_keyboard_accept();
+    if (keyboard_result != 2)
+        return keyboard_result;
     c_window_channel *channels[] = {
         &g_54d598.window_0,
         &g_54d598.windows_1[4],
@@ -237,7 +241,7 @@ extern "C" int h2_main_menu_guest_accept()
             return 0;
         }
     }
-    return 2;
+    return h2_native_virtual_keyboard_accept();
 }
 
 extern "C" int h2_main_menu_guest_cancel()

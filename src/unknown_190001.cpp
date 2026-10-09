@@ -771,6 +771,9 @@ short player_slot_count_active(void);
 bool function_1a0540(s_player_profile_settings *settings, long file_index);
 void function_120df0(long index, wchar_t const *name);
 c_class_1473c9 *__stdcall function_24b4a9(s_screen_parameters *parameters);
+#if defined(H2_NATIVE_PORT)
+void __stdcall function_1483c3(long users);
+#endif
 
 /* signs the controller in with a saved profile; when online, or when no
    player slot is active yet, opens the gamertag selection screen instead */
@@ -789,6 +792,7 @@ void function_19060a(long controller, long profile_index)
 	slot->set_profile_index(profile_index);
 	function_120df0(controller, (wchar_t const *)settings.name);
 	slot->sign_in(NULL);
+	function_1483c3(1);
 	return;
 #else
 	if (function_6c7e0() || (function_8d7c0() && !player_slot_count_active()))
