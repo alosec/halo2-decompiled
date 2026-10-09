@@ -151,6 +151,9 @@
     {"symbol": "?g_4e7418@@3PAJA", "address": "0x004e7418"},
     {"symbol": "?g_502114@@3PAUs_record_pool@@A", "address": "0x00502114"},
     {"symbol": "?g_440570@@3PAUs_object_gc_entry_ab@@A", "address": "0x00440570"},
-    {"symbol": "?g_4e031c@@3PAUs_record_pool@@A", "address": "0x004e031c"}
+    {"symbol": "?g_4e031c@@3PAUs_record_pool@@A", "address": "0x004e031c"},
+    {"symbol": "?g_51ec8c@@3PAUs_record_pool@@A", "address": "0x0051ec8c"},
+    {"symbol": "?g_51ec84@@3PAUs_record_pool@@A", "address": "0x0051ec84"},
+    {"symbol": "?g_51ec88@@3PAUs_record_pool@@A", "address": "0x0051ec88"}
   ]
 }

@@ -51,6 +51,9 @@
     {"source": "src/unknown_030290.cpp", "symbols": ["?function_30bf0@@YAMPATvector3f@@@Z"]},
     {"source": "src/unknown_0c40f0.cpp", "symbols": ["?function_c40f0@@YAXJJM@Z"]},
     {"source": "src/unknown_141e10_native.cpp", "symbols": ["?function_141e10@@YAPAUmatrix3x3@@PAU1@PBTquaternionf@@@Z"]},
-    {"source": "src/unknown_142a60_native.cpp", "symbols": ["?function_142a60@@YAHPBUtransform4x3f@@0PAU1@@Z"]}
+    {"source": "src/unknown_142a60_native.cpp", "symbols": ["?function_142a60@@YAHPBUtransform4x3f@@0PAU1@@Z"]},
+    {"source": "src/unknown_173b90.cpp", "symbols": ["?particle_systems_update_locations@@YAXXZ", "?particle_system_unlink@@YAXPAUs_particle_system_datum@@PAJ1@Z", "?set_location@s_particle_system_datum@@QAAXPBUs_location@@@Z", "?function_174180@@YAXJ@Z"]},
+    {"source": "src/unknown_175bd0.cpp", "symbols": ["?effect_remove_event_slot@@YAXJJ@Z"]},
+    {"source": "src/unknown_2483f0.cpp", "symbols": ["?function_2486e0@@YAXJ@Z"]}
   ]
 }

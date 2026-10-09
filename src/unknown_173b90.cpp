@@ -405,11 +405,15 @@ void __stdcall function_173ba0(dword mask, void *a, void *b, void const *c, real
 	long index = 0;
 	while (mask)
 	{
+#ifdef H2_NATIVE_PORT
+		index = __builtin_ctz(mask);
+#else
 		__asm
 		{
 			bsf ecx, mask
 			mov index, ecx
 		}
+#endif
 		mask &= ~(1 << index);
 		values[index] = function_248df0(index, a, b, c);
 	}

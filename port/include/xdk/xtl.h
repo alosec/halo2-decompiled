@@ -118,6 +118,7 @@ DWORD __stdcall D3DResource_Release(D3DResource *resource);
 void __stdcall D3DDevice_Begin(DWORD primitive_type);
 void __stdcall D3DDevice_End(void);
 void __stdcall D3DDevice_SetVertexData2f(DWORD vertex_register, float x, float y);
+void __stdcall D3DDevice_SetVertexShaderConstant(int register_index, void const *constant_data, DWORD constant_count);
 void __stdcall D3DDevice_SetVertexData4f(DWORD vertex_register, float x, float y,
                                          float z, float w);
 void __stdcall D3DDevice_SetVertexDataColor(DWORD vertex_register, DWORD color);
