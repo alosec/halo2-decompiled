@@ -184,11 +184,15 @@ void c_class_19b8b1::v4(long screen_rect_address)
         s_sprite_element *element = (s_sprite_element *)(*(byte **)(tag + 0x48) + frame * 0x74);
         real fade = alpha * 255.0f;
         long opacity;
+#ifdef H2_NATIVE_PORT
+        opacity = (long)(fade + 0.5f);
+#else
         __asm
         {
             fld fade
             fistp opacity
         }
+#endif
         s_float_rect from, to;
         real width = element->width;
         real height = element->height;

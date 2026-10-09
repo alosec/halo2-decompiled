@@ -5,6 +5,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef H2_NATIVE_PORT
+#include <wchar.h>
+#endif
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_19b516.h"

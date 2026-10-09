@@ -74,6 +74,9 @@ set(H2_GUEST_SESSION_MODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0592d0.o")
 set(H2_GUEST_SESSION_VALUES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_05b040.o")
 set(H2_GUEST_SAVED_GAME_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_215b40.o")
 set(H2_GUEST_SCREEN_SETTERS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b116a.o")
+set(H2_GUEST_DIALOG_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19b510.o")
+set(H2_GUEST_DIALOG_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_253c8b.o")
+set(H2_GUEST_DIALOG_EVENT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24c7c1.o")
 set(H2_GUEST_MUTELIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_058cb0.o")
 set(H2_GUEST_SESSION_LEAVE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_199e2e.o")
 set(H2_GUEST_UI_RECT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236299.o")
@@ -136,6 +139,9 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_253c8b.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -201,6 +207,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SESSION_VALUES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
         "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
         "${H2_GUEST_SCREEN_SETTERS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
+        "${H2_GUEST_DIALOG_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
+        "${H2_GUEST_DIALOG_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_253c8b.cpp"
+        "${H2_GUEST_DIALOG_EVENT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
         "${H2_GUEST_MUTELIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
         "${H2_GUEST_SESSION_LEAVE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
         "${H2_GUEST_UI_RECT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -335,6 +344,10 @@ foreach(pair IN ITEMS
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
+    if(object STREQUAL H2_GUEST_DIALOG_EVENT_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
+    endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?online_mutelist_reset@@YAXJ@Z"
@@ -346,7 +359,9 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_UI_RECT_OBJECT)
         list(APPEND guest_extract_args
+            --extract-symbol "?function_235e5e@@YAXPAUs_sprite_element@@PAUs_float_rect@@1KJJ@Z"
             --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
+            --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
@@ -423,6 +438,7 @@ set_source_files_properties(
     "${H2_GUEST_TASK_SCREEN_OBJECT}" "${H2_GUEST_TASK_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_MODE_OBJECT}" "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}" "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
+    "${H2_GUEST_DIALOG_OBJECT}" "${H2_GUEST_DIALOG_BASE_OBJECT}" "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}" "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}" "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
@@ -488,6 +504,9 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}"
     "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
+    "${H2_GUEST_DIALOG_OBJECT}"
+    "${H2_GUEST_DIALOG_BASE_OBJECT}"
+    "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}"
     "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
@@ -528,7 +547,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 82
+            --expect-unresolved 80
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -658,6 +677,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?online_mutelist_reset@@YAXJ@Z"
@@ -669,7 +692,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp")
         list(APPEND guest_extract_args
+            --extract-symbol "?function_235e5e@@YAXPAUs_sprite_element@@PAUs_float_rect@@1KJJ@Z"
             --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
+            --extract-symbol "?function_23661f@@YAXPAUs_dialog_definition@@J@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
@@ -877,7 +902,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 82
+            --expect-unresolved 80
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -885,7 +910,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 82
+            --expect-unresolved 80
 )
 add_test(
     NAME main-menu-elf-core

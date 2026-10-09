@@ -4,6 +4,7 @@
   "symbols": [
     {"symbol": "?g_4686dc@@3PAUcolor4f@@A", "address": "0x004686dc"},
     {"symbol": "?g_468720@@3PATpoint3f@@A", "address": "0x00468720"},
+    {"symbol": "?g_468724@@3PAUcolor3f@@A", "address": "0x00468724"},
     {"symbol": "?g_468758@@3PAVc_data_allocator@@A", "address": "0x00468758"},
     {"symbol": "?g_485a8a@@3Ushort_rect_pair@@A", "address": "0x00485a8a"},
     {"symbol": "?g_4c99c0@@3Us_online_mutelist_globals@@A", "address": "0x004c99c0"},
