@@ -158,6 +158,7 @@
     {"symbol": "?g_502110@@3PAXA", "address": "0x00502110"},
     {"symbol": "?g_5107f4@@3PAXA", "address": "0x005107f4"},
     {"symbol": "?g_5044c8@@3PAUs_record_pool@@A", "address": "0x005044c8"},
-    {"symbol": "?g_4f55f8@@3Us_text_callback_state@@A", "address": "0x004f55f8"}
+    {"symbol": "?g_4f55f8@@3Us_text_callback_state@@A", "address": "0x004f55f8"},
+    {"symbol": "?game_state_globals@@3Us_game_state_globals@@A", "address": "0x004e3b60"}
   ]
 }
