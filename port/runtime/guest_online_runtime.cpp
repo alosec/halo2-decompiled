@@ -21,6 +21,26 @@ bool online_get_logon_status(long *status)
     return false;
 }
 
+long online_team_members_enumerate(long, XUID const *)
+{
+    return NONE;
+}
+
+void online_team_member_get_details(long, XUID const *, XONLINE_TEAM_MEMBER *member)
+{
+    memset(member, 0, sizeof(*member));
+}
+
+void online_team_members_enumerate_get_results(long, DWORD *count, XUID *)
+{
+    *count = 0;
+}
+
+void online_teams_enumerate_get_results(long, DWORD *count, XUID *)
+{
+    *count = 0;
+}
+
 // @retail 0x6b5d0
 long online_task_poll(long task_index)
 {
