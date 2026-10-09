@@ -347,6 +347,7 @@ struct Options {
     int frame_count = 0;
     int press_start_frame = 0;
     int accept_frame = 0;
+    int select_frame = 0;
     int cancel_frame = 0;
     bool headless = false;
 };
@@ -355,7 +356,8 @@ void usage(const char* program) {
     std::cerr << "Usage: " << program
               << " [--headless] [--data-root PATH] [--guest-image PATH]"
                  " [--guest-entry SYMBOL] [--frames COUNT] [--press-start-frame COUNT]"
-                 " [--accept-frame COUNT] [--cancel-frame COUNT] [--screenshot BMP]\n";
+                 " [--accept-frame COUNT] [--select-frame COUNT] [--cancel-frame COUNT]"
+                 " [--screenshot BMP]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -396,6 +398,14 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.accept_frame <= 0) {
                 return false;
             }
+        } else if (argument == "--select-frame" && i + 1 < argc) {
+            const std::string_view value(argv[++i]);
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
+                                                options.select_frame);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+                options.select_frame <= 0) {
+                return false;
+            }
         } else if (argument == "--cancel-frame" && i + 1 < argc) {
             const std::string_view value(argv[++i]);
             const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
@@ -418,6 +428,10 @@ bool parse_options(int argc, char** argv, Options& options) {
          (options.press_start_frame > 0 &&
           options.accept_frame > options.press_start_frame &&
           options.frame_count >= options.accept_frame && !options.headless)) &&
+        (options.select_frame == 0 ||
+         (options.accept_frame > 0 &&
+          options.select_frame > options.accept_frame &&
+          options.frame_count >= options.select_frame && !options.headless)) &&
         (options.cancel_frame == 0 ||
          (options.press_start_frame > 0 &&
           options.cancel_frame > options.press_start_frame &&
@@ -426,7 +440,8 @@ bool parse_options(int argc, char** argv, Options& options) {
 
 int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
                GuestEntry guest_accept, GuestEntry guest_cancel, void* guest_stack_top,
-               int frame_count, int press_start_frame, int accept_frame, int cancel_frame,
+               int frame_count, int press_start_frame, int accept_frame, int select_frame,
+               int cancel_frame,
                const std::filesystem::path& screenshot,
                const h2::port::GuestArena* arena,
                const std::filesystem::path& data_root) {
@@ -519,6 +534,9 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
             dispatch_press_start();
         }
         if (accept_frame > 0 && rendered_frames + 1 == accept_frame) {
+            dispatch_accept();
+        }
+        if (select_frame > 0 && rendered_frames + 1 == select_frame) {
             dispatch_accept();
         }
         if (cancel_frame > 0 && rendered_frames + 1 == cancel_frame) {
@@ -785,6 +803,7 @@ int main(int argc, char** argv) {
         ? 0
         : run_window(guest_frame, guest_press_start, guest_accept, guest_cancel,
                      guest_stack_top, options.frame_count, options.press_start_frame,
-                     options.accept_frame, options.cancel_frame, options.screenshot,
+                     options.accept_frame, options.select_frame, options.cancel_frame,
+                     options.screenshot,
                      arena.get(), options.data_root);
 }

@@ -353,6 +353,7 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_PROFILE_LIST_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "h2_profile_list_construct"
+            --extract-symbol "h2_profile_list_select_create"
             --extract-symbol "??_Gc_list_24a64d@@UAAPAXI@Z"
             --extract-symbol "?v1@c_list_24a64d@@UAAXXZ"
             --extract-symbol "?v2@c_list_24a64d@@UAAXXZ"
@@ -923,6 +924,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "h2_profile_list_construct"
+            --extract-symbol "h2_profile_list_select_create"
             --extract-symbol "??_Gc_list_24a64d@@UAAPAXI@Z"
             --extract-symbol "?v1@c_list_24a64d@@UAAXXZ"
             --extract-symbol "?v2@c_list_24a64d@@UAAXXZ"

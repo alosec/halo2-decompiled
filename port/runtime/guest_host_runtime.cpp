@@ -116,6 +116,8 @@ extern "C" int h2_main_menu_guest_press_start()
 }
 
 bool __stdcall function_252a32(long controller);
+extern "C" bool h2_profile_list_select_create(void *storage, long controller);
+static long g_native_profile_name_reads;
 
 extern "C" int h2_main_menu_guest_accept()
 {
@@ -134,6 +136,21 @@ extern "C" int h2_main_menu_guest_accept()
         {
             s_widget_event event = { 5, 0, 0 };
             return channels[index]->current->v10(&event) ? 0 : 3;
+        }
+        if (channels[index]->current && channels[index]->current->screen_id == 0xa)
+        {
+            c_class_1473c9 *const screen = channels[index]->current;
+            void *const list = reinterpret_cast<c_screen_with_menu *>(screen)->list;
+            const long reads = g_native_profile_name_reads;
+            if (!h2_profile_list_select_create(list, 0))
+                return 4;
+            /* Empty native persistence must reach the recovered create-profile
+             * path, fail its real name read, and remain on this selector. */
+            if (g_native_profile_name_reads != reads + 1)
+                return 5;
+            if (channels[index]->current != screen || channels[index]->next)
+                return 6;
+            return 0;
         }
     }
     return 2;
@@ -375,6 +392,7 @@ void __stdcall function_215e60(long)
 
 bool __stdcall function_215f40(long, unsigned char *buffer)
 {
+    ++g_native_profile_name_reads;
     if (buffer)
     {
         buffer[0] = 0;

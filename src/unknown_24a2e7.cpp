@@ -413,6 +413,21 @@ extern "C" void h2_profile_list_construct(void *storage, word user_flags)
 	}
 }
 
+extern "C" bool h2_profile_list_select_create(void *storage, long controller)
+{
+	c_list_24a64d *list = (c_list_24a64d *)storage;
+	if (!list || list->count_filled_items() != 1 || !list->child)
+		return false;
+	long datum = ((c_class_14750b *)list->child)->value70;
+	if (datum == NONE)
+		return false;
+	s_controller_reference controller_reference = {};
+	controller_reference.controller_index = controller;
+	s_controller_reference *controller_pointer = &controller_reference;
+	list->function_24a30e(&controller_pointer, &datum);
+	return true;
+}
+
 void function_24c166(c_class_1474e8 *arg_0);
 void __stdcall function_215900(long arg_0, long arg_1, word *arg_2, long *arg_3, long arg_4);
 bool player_slot_profile_in_use(long arg_0);
