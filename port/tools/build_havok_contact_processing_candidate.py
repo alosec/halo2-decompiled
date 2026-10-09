@@ -64,6 +64,7 @@ def main() -> int:
         effect_distance = temporary / "effect-distance.o"
         effect_selection = temporary / "effect-selection.o"
         looping_sound_state = temporary / "looping-sound-state.o"
+        contact_creation = temporary / "contact-creation.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -131,11 +132,15 @@ def main() -> int:
             args, args.root / "src/unknown_18a2f0.cpp", looping_sound_state,
             ["?function_18a5e0@@YAPAGJ@Z", "?function_18a6c0@@YAJJJ@Z",
              "?function_18a720@@YAXJ_N@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1cec30.cpp", contact_creation,
+            ["?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
              rigid_body_matrix, structure_location, effect_state,
-             effect_distance, effect_selection, looping_sound_state])
+             effect_distance, effect_selection, looping_sound_state,
+             contact_creation])
     return 0
 
 

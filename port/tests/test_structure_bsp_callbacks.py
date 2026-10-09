@@ -170,7 +170,8 @@ def main() -> int:
     if "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z" in production_defined_for_listener:
         raise RuntimeError("dormant contact-processing candidate entered production")
     if ("?impact_new@@YAJPBUs_impact_data@@J@Z" in production_defined_for_listener or
-            "?function_2266a0@@YAXJ@Z" in production_defined_for_listener):
+            "?function_2266a0@@YAXJ@Z" in production_defined_for_listener or
+            "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z" in production_defined_for_listener):
         raise RuntimeError("dormant impact lifetime candidate entered production")
     expected_primary_cluster_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
@@ -594,14 +595,17 @@ def main() -> int:
 
     impact_allocation_symbol = "?impact_new@@YAJPBUs_impact_data@@J@Z"
     impact_eviction_symbol = "?function_2266a0@@YAXJ@Z"
+    impact_contact_creation_symbol = "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z"
     impact_allocation_new_imports = {
         "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
+        "?function_181db0@@YA_NJPATvector3f@@@Z",
         "?function_177260@@YAXJ_N@Z",
         "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
     }
     expected_impact_allocation_score = (
         expected_contact_processing_score - {
-            impact_allocation_symbol, impact_eviction_symbol
+            impact_allocation_symbol, impact_eviction_symbol,
+            impact_contact_creation_symbol
         }
     ) | impact_allocation_new_imports
     with tempfile.TemporaryDirectory(prefix="h2-impact-allocation-score-") as temporary:
@@ -628,7 +632,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.impact_allocation_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(impact_undefined) != 42:
+    if len(impact_undefined) != 47:
         raise RuntimeError("Havok impact-allocation raw closure changed")
     impact_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
@@ -646,6 +650,7 @@ def main() -> int:
             any(symbol not in impact_defined for symbol in (
                 "?function_18a5e0@@YAPAGJ@Z", "?function_18a6c0@@YAJJJ@Z",
                 "?function_18a720@@YAXJ_N@Z", "?function_2266a0@@YAXJ@Z",
+                "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
                 "?impact_release@@YAXJPAUs_impact@@@Z"))):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")
     impact_frontier = json.loads((
