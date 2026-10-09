@@ -6,6 +6,26 @@
  * The C host ABI receives rebased native pointers through the guest compiler
  * adapter, so the LP64 host never needs to decode a Microsoft C++ call. */
 
+extern "C" DWORD __stdcall XGetLanguage()
+{
+    return 1; /* English */
+}
+
+long function_11ca80(long value)
+{
+    switch (value)
+    {
+    case 2: return 1;
+    case 3: return 2;
+    case 4: return 3;
+    case 5: return 4;
+    case 6: return 5;
+    case 7: return 6;
+    case 8: return 7;
+    default: return 0;
+    }
+}
+
 /* The native host has no attract-movie decoder yet. */
 bool function_223976()
 {

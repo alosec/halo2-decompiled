@@ -53,6 +53,7 @@ def main():
     assert "?function_125a90@@YAXJ@Z" not in imports
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
     assert "?function_1bbd0@@YAXXZ" not in imports
+    assert "?function_1a0180@@YAXJJPAG@Z" not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
     for symbol in (
         "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",

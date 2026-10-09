@@ -110,6 +110,8 @@ set(H2_GUEST_PREVIEW_RENDER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22a664.o")
 set(H2_GUEST_PRESS_START_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22f118.o")
 set(H2_GUEST_SIGNIN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2523e3.o")
 set(H2_GUEST_WIDGET_ITEM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b0149.o")
+set(H2_GUEST_LOCALIZED_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a0120.o")
+set(H2_GUEST_UTF8_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fd90.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
@@ -199,6 +201,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_22f118.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2523e3.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp"
 )
 foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
@@ -290,7 +294,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_PREVIEW_RENDER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22a664.cpp"
         "${H2_GUEST_PRESS_START_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22f118.cpp"
         "${H2_GUEST_SIGNIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2523e3.cpp"
-        "${H2_GUEST_WIDGET_ITEM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp")
+        "${H2_GUEST_WIDGET_ITEM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp"
+        "${H2_GUEST_LOCALIZED_TEXT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp"
+        "${H2_GUEST_UTF8_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -594,6 +600,12 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_WIDGET_ITEM_OBJECT)
         list(APPEND guest_extract_args --extract-symbol "??0s_widget_item@@QAA@XZ")
     endif()
+    if(object STREQUAL H2_GUEST_LOCALIZED_TEXT_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol "?function_1a0180@@YAXJJPAG@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_UTF8_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")
+    endif()
     add_custom_command(
         OUTPUT "${object}"
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_cc.py
@@ -662,6 +674,7 @@ set_source_files_properties(
     "${H2_GUEST_STORAGE_SIZE_OBJECT}" "${H2_GUEST_PROFILE_STORAGE_UPDATE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}" "${H2_GUEST_PREVIEW_RENDER_OBJECT}"
     "${H2_GUEST_PRESS_START_OBJECT}" "${H2_GUEST_SIGNIN_OBJECT}" "${H2_GUEST_WIDGET_ITEM_OBJECT}"
+    "${H2_GUEST_LOCALIZED_TEXT_OBJECT}" "${H2_GUEST_UTF8_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
 add_library(h2_recovered_guest STATIC
@@ -758,6 +771,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_PRESS_START_OBJECT}"
     "${H2_GUEST_SIGNIN_OBJECT}"
     "${H2_GUEST_WIDGET_ITEM_OBJECT}"
+    "${H2_GUEST_LOCALIZED_TEXT_OBJECT}"
+    "${H2_GUEST_UTF8_OBJECT}"
 )
 add_library(h2_main_menu_guest STATIC ${H2_MAIN_MENU_GUEST_OBJECTS})
 set_target_properties(h2_main_menu_guest PROPERTIES LINKER_LANGUAGE CXX)
@@ -790,7 +805,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 15
+            --expect-unresolved 14
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -1001,6 +1016,12 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp")
         list(APPEND guest_extract_args --extract-symbol "??0s_widget_item@@QAA@XZ")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp")
+        list(APPEND guest_extract_args --extract-symbol "?function_1a0180@@YAXJJPAG@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp")
+        list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp")
         list(APPEND guest_extract_args
@@ -1281,7 +1302,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 15
+            --expect-unresolved 14
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -1289,7 +1310,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 15
+            --expect-unresolved 14
 )
 add_test(
     NAME main-menu-elf-core
