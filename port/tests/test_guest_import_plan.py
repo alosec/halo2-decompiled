@@ -65,6 +65,21 @@ def main():
         assert symbol not in imports
     assert "?function_223976@@YA_NXZ" not in imports
     assert "?function_223a21@@YAXXZ" not in imports
+    for symbol in (
+        "?function_230616@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_230691@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_2310b7@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_231995@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_231db5@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_2320c4@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_2323c3@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_23246a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_23252e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_2325fb@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_23334f@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_24b4a9@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+    ):
+        assert symbol not in imports
     assert "?function_199893@@YAXXZ" not in imports
     assert "?function_199b08@@YAXXZ" not in imports
     for symbol in (

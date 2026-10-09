@@ -112,6 +112,28 @@ extern "C" BOOL __stdcall GetDiskFreeSpaceExA(const char *, ULARGE_INTEGER *avai
 }
 
 struct s_player_profile_settings;
+struct s_screen_parameters;
+class c_class_1473c9;
+
+#define H2_NATIVE_UNAVAILABLE_SCREEN(name) \
+    c_class_1473c9 *__stdcall name(s_screen_parameters *) { return 0; }
+
+/* These secondary screen families are not part of the static native menu
+ * bootstrap yet. Their recovered callers remain intact, while an attempted
+ * transition fails closed instead of constructing a partial object/vtable. */
+H2_NATIVE_UNAVAILABLE_SCREEN(function_230616)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_230691)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_2310b7)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_231995)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_231db5)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_2320c4)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_2323c3)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_23246a)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_23252e)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_2325fb)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_23334f)
+H2_NATIVE_UNAVAILABLE_SCREEN(function_24b4a9)
+#undef H2_NATIVE_UNAVAILABLE_SCREEN
 
 void function_18fb34(long, s_player_profile_settings *, long)
 {
