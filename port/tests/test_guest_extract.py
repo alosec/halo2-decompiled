@@ -283,6 +283,27 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_base_output = Path(temporary) / "physics-model-runtime-base.o"
+        physics_model_base_symbols = (
+            "?function_2d7210@c_physics_runtime_base@@QAAJJJ@Z",
+            "?function_2d7240@c_physics_runtime_base@@QAAX_N@Z",
+        )
+        physics_model_base_command = command[:]
+        physics_model_base_command[physics_model_base_command.index("h2_extract_selected")] = physics_model_base_symbols[0]
+        physics_model_base_command[physics_model_base_command.index("--extract-global"):physics_model_base_command.index("--output")] = [
+            "--extract-symbol", physics_model_base_symbols[1],
+        ]
+        physics_model_base_command[physics_model_base_command.index(output)] = physics_model_base_output
+        physics_model_base_command[-1] = args.root / "src/unknown_2d7210.cpp"
+        subprocess.run([str(value) for value in physics_model_base_command], check=True)
+        physics_model_base_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_base_output],
+            text=True,
+        )
+        for symbol in physics_model_base_symbols:
+            if f"_{symbol}" not in physics_model_base_defined:
+                raise RuntimeError(f"physics-model base method was not retained: {symbol}")
+
         physics_model_marker_output = Path(temporary) / "physics-model-shape-marker.o"
         physics_model_marker_symbols = (
             "?function_2ddca0@c_physics_shape_455500@@QAAXPAUs_physics_shape_marker_455500@@@Z",

@@ -11559,8 +11559,8 @@ va,size,owner,style,evidence,name,object,calls,source,status
 002d7100,26,other:library,speed,a16 pad,,,,,todo
 002d7120,87,other:library,speed,a16 pad,,,002d8d60 002d8d80 002d9260 002d92d0 002d9370,,todo
 002d7180,139,other:library,speed,a16 pad,,,002d8e10 002d9260 002d9280 002d92d0 002d92f0 002d9370 002d93b0,,todo
-002d7210,36,other:library,speed,a16 pad,,,002d7120,,todo
-002d7240,43,other:library,speed,a16 pad,,,002d7180,,todo
+002d7210,36,other:library,speed,a16 pad,,,002d7120,src/unknown_2d7210.cpp,todo
+002d7240,43,other:library,speed,a16 pad,,,002d7180,src/unknown_2d7210.cpp,todo
 002d7270,75,other:library,speed,a16 pad,,,002d9470,,todo
 002d72c0,40,other:library,speed,a16 pad,,,002d72f0,,todo
 002d72f0,167,other:library,speed,a16 pad,,,002d9240 002d9260 002d92a0 002d92d0 002d94b0,,todo
