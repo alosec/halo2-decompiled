@@ -416,6 +416,7 @@ struct Options {
     int menu_accept_frame = 0;
     int campaign_accept_frame = 0;
     int level_accept_frame = 0;
+    int campaign_load_frame = 0;
     int down_frame = 0;
     int up_frame = 0;
     int cancel_frame = 0;
@@ -429,7 +430,7 @@ void usage(const char* program) {
                  " [--press-start-frame COUNT]"
                  " [--accept-frame COUNT] [--select-frame COUNT] [--finish-frame COUNT]"
                  " [--menu-accept-frame COUNT] [--campaign-accept-frame COUNT] [--level-accept-frame COUNT]"
-                 " [--down-frame COUNT] [--up-frame COUNT] [--cancel-frame COUNT]"
+                 " [--campaign-load-frame COUNT] [--down-frame COUNT] [--up-frame COUNT] [--cancel-frame COUNT]"
                  " [--screenshot BMP]\n";
 }
 
@@ -513,6 +514,14 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.level_accept_frame <= 0) {
                 return false;
             }
+        } else if (argument == "--campaign-load-frame" && i + 1 < argc) {
+            const std::string_view value(argv[++i]);
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
+                                                options.campaign_load_frame);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+                options.campaign_load_frame <= 0) {
+                return false;
+            }
         } else if (argument == "--down-frame" && i + 1 < argc) {
             const std::string_view value(argv[++i]);
             const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
@@ -574,6 +583,10 @@ bool parse_options(int argc, char** argv, Options& options) {
          (options.campaign_accept_frame > 0 &&
           options.level_accept_frame > options.campaign_accept_frame &&
           options.frame_count >= options.level_accept_frame && !options.headless)) &&
+        (options.campaign_load_frame == 0 ||
+         (options.level_accept_frame > 0 &&
+          options.campaign_load_frame > options.level_accept_frame &&
+          options.frame_count >= options.campaign_load_frame && !options.headless)) &&
         (options.down_frame == 0 ||
          (options.finish_frame > 0 &&
           options.down_frame > options.finish_frame &&
@@ -589,11 +602,13 @@ bool parse_options(int argc, char** argv, Options& options) {
 }
 
 int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
-               GuestEntry guest_accept, GuestEntry guest_up, GuestEntry guest_down,
+               GuestEntry guest_accept, GuestEntry guest_campaign_load,
+               GuestEntry guest_up, GuestEntry guest_down,
                GuestEntry guest_cancel, void* guest_stack_top,
                int frame_count, int press_start_frame, int accept_frame, int select_frame,
                int finish_frame, int menu_accept_frame, int campaign_accept_frame,
-               int level_accept_frame, int down_frame, int up_frame,
+               int level_accept_frame, int campaign_load_frame,
+               int down_frame, int up_frame,
                int cancel_frame,
                const std::filesystem::path& screenshot,
                const h2::port::GuestArena* arena,
@@ -666,6 +681,25 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
         }
         return true;
     };
+    const auto dispatch_campaign_load = [&]() {
+        if (!guest_campaign_load) {
+            std::cerr << "guest Campaign cache-load entry is unavailable\n";
+            result = 1;
+            running = false;
+            return false;
+        }
+        const int load_result = h2_call_guest_int_0(guest_campaign_load, guest_stack_top);
+        if (load_result != 0) {
+            std::cerr << "guest Campaign cache load failed with result "
+                      << load_result << '\n';
+            result = 1;
+        } else {
+            std::cout << "Recovered loader accepted the selected Campaign cache; "
+                         "ending menu frames before tag ownership changes.\n";
+        }
+        running = false;
+        return load_result == 0;
+    };
     const auto dispatch_move = [&](GuestEntry entry, const char* direction,
                                    bool require_movement = false) {
         if (!entry) {
@@ -723,6 +757,10 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
         }
         if (level_accept_frame > 0 && rendered_frames + 1 == level_accept_frame) {
             dispatch_accept();
+        }
+        if (campaign_load_frame > 0 && rendered_frames + 1 == campaign_load_frame) {
+            dispatch_campaign_load();
+            break;
         }
         if (down_frame > 0 && rendered_frames + 1 == down_frame) {
             dispatch_move(guest_down, "down", true);
@@ -893,6 +931,7 @@ int main(int argc, char** argv) {
     GuestEntry guest_frame = nullptr;
     GuestEntry guest_press_start = nullptr;
     GuestEntry guest_accept = nullptr;
+    GuestEntry guest_campaign_load = nullptr;
     GuestEntry guest_up = nullptr;
     GuestEntry guest_down = nullptr;
     GuestEntry guest_cancel = nullptr;
@@ -964,6 +1003,12 @@ int main(int argc, char** argv) {
                     std::cerr << "error: main-menu accept entry is missing\n";
                     return 1;
                 }
+                const auto campaign_load_address =
+                    guest_image->symbol_address("h2_main_menu_guest_load_selected_campaign");
+                if (!campaign_load_address) {
+                    std::cerr << "error: selected Campaign cache-load entry is missing\n";
+                    return 1;
+                }
                 const auto up_address =
                     guest_image->symbol_address("h2_main_menu_guest_up");
                 const auto down_address =
@@ -984,6 +1029,8 @@ int main(int argc, char** argv) {
                     arena->pointer(*press_start_address));
                 guest_accept = reinterpret_cast<GuestEntry>(
                     arena->pointer(*accept_address));
+                guest_campaign_load = reinterpret_cast<GuestEntry>(
+                    arena->pointer(*campaign_load_address));
                 guest_up = reinterpret_cast<GuestEntry>(
                     arena->pointer(*up_address));
                 guest_down = reinterpret_cast<GuestEntry>(
@@ -1019,12 +1066,14 @@ int main(int argc, char** argv) {
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless
         ? 0
-        : run_window(guest_frame, guest_press_start, guest_accept, guest_up, guest_down,
-                     guest_cancel, guest_stack_top, options.frame_count,
+        : run_window(guest_frame, guest_press_start, guest_accept, guest_campaign_load,
+                     guest_up, guest_down, guest_cancel, guest_stack_top,
+                     options.frame_count,
                      options.press_start_frame, options.accept_frame, options.select_frame,
                      options.finish_frame, options.menu_accept_frame,
                      options.campaign_accept_frame, options.level_accept_frame,
-                     options.down_frame, options.up_frame, options.cancel_frame,
+                     options.campaign_load_frame, options.down_frame,
+                     options.up_frame, options.cancel_frame,
                      options.screenshot,
                      arena.get(), options.data_root);
 }

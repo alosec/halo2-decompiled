@@ -93,9 +93,10 @@ std::string fixed_string(const std::array<unsigned char, kCacheHeaderSize>& data
     return std::string(reinterpret_cast<const char*>(data.data() + offset), length);
 }
 
-bool preflight_campaign_cache(const std::filesystem::path& map_directory,
-                              const std::string& map_name) {
-    const auto path = map_directory / (map_name + ".map");
+bool locate_campaign_cache(const std::filesystem::path& map_directory,
+                           const std::string& map_name,
+                           std::filesystem::path& path) {
+    path = map_directory / (map_name + ".map");
     std::error_code error;
     const auto status = std::filesystem::symlink_status(path, error);
     if (error || status.type() != std::filesystem::file_type::regular) {
@@ -116,6 +117,39 @@ bool preflight_campaign_cache(const std::filesystem::path& map_directory,
            read_u32(header, 0x7fc) == 0x666f6f74u &&
            fixed_string(header, 0x120, 0x20) == "02.09.27.09809" &&
            fixed_string(header, 0x198, 0x20) == map_name;
+}
+
+bool guest_campaign_cache_name(const CacheState& state, const char* map_name,
+                               std::string& cache_name) {
+    if (!map_name || !state.arena) {
+        return false;
+    }
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(map_name);
+    const std::uintptr_t guest_start = h2::port::kGuestBias;
+    const std::uintptr_t guest_end = guest_start + h2::port::kGuestAddressSpaceSize;
+    if (start < guest_start || start >= guest_end || guest_end - start < 0x100) {
+        return false;
+    }
+    std::string name;
+    for (std::size_t index = 0; index < 0x100; ++index) {
+        const unsigned char value = static_cast<unsigned char>(map_name[index]);
+        if (!value) {
+            const auto separator = name.find_last_of('\\');
+            cache_name = separator == std::string::npos
+                ? name
+                : name.substr(separator + 1);
+            return !cache_name.empty();
+        }
+        const bool safe = (value >= 'a' && value <= 'z') ||
+                          (value >= 'A' && value <= 'Z') ||
+                          (value >= '0' && value <= '9') || value == '_' || value == '-' ||
+                          value == '\\';
+        if (!safe) {
+            return false;
+        }
+        name.push_back(static_cast<char>(value));
+    }
+    return false;
 }
 
 }  // namespace
@@ -281,6 +315,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
          function_address(&host_h2_physical_memory_malloc_low)},
         {"host_h2_cache_read", function_address(&host_h2_cache_read)},
         {"host_h2_map_preflight", function_address(&host_h2_map_preflight)},
+        {"host_h2_map_select", function_address(&host_h2_map_select)},
         {"host_h2_video_control", function_address(&host_h2_video_control)},
         {"host_h2_render_request", function_address(&host_h2_render_request)},
         {"host_h2_text_request", function_address(&host_h2_text_request)},
@@ -355,39 +390,38 @@ extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
 }
 
 extern "C" int host_h2_map_preflight(const char* map_name) {
-    if (!map_name) {
-        return 0;
-    }
     auto& state = cache_state();
     const std::lock_guard lock(state.mutex);
-    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(map_name);
-    const std::uintptr_t guest_start = h2::port::kGuestBias;
-    const std::uintptr_t guest_end = guest_start + h2::port::kGuestAddressSpaceSize;
-    if (!state.arena || start < guest_start || start >= guest_end ||
-        guest_end - start < 0x100) {
+    std::string cache_name;
+    std::filesystem::path path;
+    return guest_campaign_cache_name(state, map_name, cache_name) &&
+           locate_campaign_cache(state.map_directory, cache_name, path);
+}
+
+extern "C" int host_h2_map_select(const char* map_name) {
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    std::string cache_name;
+    std::filesystem::path path;
+    if (!guest_campaign_cache_name(state, map_name, cache_name) ||
+        !locate_campaign_cache(state.map_directory, cache_name, path)) {
         return 0;
     }
-    std::string name;
-    for (std::size_t index = 0; index < 0x100; ++index) {
-        const unsigned char value = static_cast<unsigned char>(map_name[index]);
-        if (!value) {
-            const auto separator = name.find_last_of('\\');
-            const std::string cache_name = separator == std::string::npos
-                ? name
-                : name.substr(separator + 1);
-            return !cache_name.empty() &&
-                   preflight_campaign_cache(state.map_directory, cache_name);
-        }
-        const bool safe = (value >= 'a' && value <= 'z') ||
-                          (value >= 'A' && value <= 'Z') ||
-                          (value >= '0' && value <= '9') || value == '_' || value == '-' ||
-                          value == '\\';
-        if (!safe) {
-            return 0;
-        }
-        name.push_back(static_cast<char>(value));
+    std::ifstream input(path, std::ios::binary);
+    std::vector<unsigned char> bytes(std::istreambuf_iterator<char>(input), {});
+    if (input.bad() || bytes.size() < kCacheHeaderSize) {
+        return 0;
     }
-    return 0;
+    const std::uint32_t declared_size = static_cast<std::uint32_t>(bytes[8]) |
+        (static_cast<std::uint32_t>(bytes[9]) << 8) |
+        (static_cast<std::uint32_t>(bytes[10]) << 16) |
+        (static_cast<std::uint32_t>(bytes[11]) << 24);
+    if (bytes.size() != declared_size) {
+        return 0;
+    }
+    std::memcpy(state.arena->pointer(kCacheHeaderAddress), bytes.data(), kCacheHeaderSize);
+    state.bytes = std::move(bytes);
+    return 1;
 }
 
 extern "C" void host_h2_video_control(int command) {

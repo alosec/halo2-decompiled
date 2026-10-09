@@ -315,6 +315,14 @@ int main() {
                         "scenarios\\solo\\00a_introduction\\00a_introduction");
             ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 1,
                         "campaign cache preflight rejected a valid recovered path");
+            ok &= check(host_h2_map_select(static_cast<char*>(native_buffer)) == 1,
+                        "campaign cache selection rejected a valid recovered path");
+            const auto* selected_header = static_cast<const unsigned char*>(
+                arena->pointer_const(0x00557c94u));
+            ok &= check(selected_header[0x198] == '0' &&
+                            selected_header[0x199] == '0' &&
+                            selected_header[0x19a] == 'a',
+                        "campaign cache selection did not stage its header");
             write_u32(0x140, 1u);
             {
                 std::ofstream output(campaign_path, std::ios::binary | std::ios::trunc);
@@ -323,6 +331,8 @@ int main() {
             }
             ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
                         "campaign cache preflight accepted a non-Campaign header");
+            ok &= check(host_h2_map_select(static_cast<char*>(native_buffer)) == 0,
+                        "campaign cache selection accepted a non-Campaign header");
             std::strcpy(static_cast<char*>(native_buffer), "../00a_introduction");
             ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
                         "campaign cache preflight accepted path traversal");

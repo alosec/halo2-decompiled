@@ -353,6 +353,40 @@ static int h2_native_main_menu_move(long event_type)
     return before != NONE && after != NONE && before != after ? 0 : 4;
 }
 
+struct s_entry_a;
+s_entry_a *function_19c270(long campaign_id, long map_id);
+extern long g_54e7c0;
+extern long g_54e7c4;
+extern "C" int h2_native_load_campaign_map(char const *map_name);
+
+extern "C" int h2_main_menu_guest_load_selected_campaign()
+{
+    c_window_channel *channels[] = {
+        &g_54d598.window_0,
+        &g_54d598.windows_1[4],
+        &g_54d598.window_2,
+        &g_54d598.windows_3[4],
+        &g_54d598.window_4,
+        &g_54d598.windows_5[4],
+        &g_54d598.default_window,
+    };
+    bool difficulty_open = false;
+    for (long index = 0; index < 7; ++index)
+        difficulty_open = difficulty_open ||
+            (channels[index]->current && channels[index]->current->screen_id == 0xc);
+    if (!difficulty_open)
+        return 2;
+    s_entry_a *const selection = function_19c270(g_54e7c0, g_54e7c4);
+    char *const map_name = selection
+        ? reinterpret_cast<char *>(selection) + 8
+        : 0;
+    if (!map_name || !*map_name)
+        return 3;
+    if (!host_h2_map_select(map_name))
+        return 4;
+    return h2_native_load_campaign_map(map_name) ? 0 : 5;
+}
+
 extern "C" int h2_main_menu_guest_up()
 {
     return h2_native_main_menu_move(1);
