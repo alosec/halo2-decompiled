@@ -23,6 +23,7 @@ REQUIRED = {
     "?player_slot_count_active@@YAFXZ",
     "?player_slot_find_controller@@YAJJ@Z",
     "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z",
+    "?initialize@s_player_slot_profile@@QAAXJ@Z",
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
     "?function_2523b7@@YA_NJ@Z",

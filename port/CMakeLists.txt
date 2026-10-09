@@ -62,6 +62,7 @@ set(H2_GUEST_PROFILE_UPDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18fcc4.o")
 set(H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18f576.o")
 set(H2_GUEST_PLAYER_SLOT_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_190262.o")
 set(H2_GUEST_PLAYER_SLOT_GET_OBJECT "${H2_GUEST_OBJECT_DIR}/player_slot_get.o")
+set(H2_GUEST_PLAYER_PROFILE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24b5bc.o")
 set(H2_GUEST_PLAYER_SESSION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_190001.o")
 set(H2_GUEST_MENU_ACTION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_250155.o")
 set(H2_GUEST_SESSION_PRESENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19987f.o")
@@ -115,6 +116,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
     "${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
@@ -171,6 +173,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
         "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
         "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}|${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
+        "${H2_GUEST_PLAYER_PROFILE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
         "${H2_GUEST_PLAYER_SESSION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp"
         "${H2_GUEST_MENU_ACTION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_250155.cpp"
         "${H2_GUEST_SESSION_PRESENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
@@ -195,6 +198,10 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?data_last_index@@YAJPAUs_record_pool@@@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PLAYER_PROFILE_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?initialize@s_player_slot_profile@@QAAXJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT)
         list(APPEND guest_extract_args
@@ -320,7 +327,8 @@ set_source_files_properties(
     "${H2_GUEST_ONLINE_AVAILABLE_OBJECT}"
     "${H2_GUEST_SESSION_QUERY_OBJECT}" "${H2_GUEST_PROFILE_UPDATE_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}" "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}"
-    "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_PLAYER_SESSION_OBJECT}"
+    "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_PLAYER_PROFILE_OBJECT}"
+    "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
     "${H2_GUEST_SESSION_MANAGER_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}" "${H2_GUEST_SESSION_LEAVE_OBJECT}"
@@ -375,6 +383,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}"
     "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}"
+    "${H2_GUEST_PLAYER_PROFILE_OBJECT}"
     "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}"
     "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
@@ -419,7 +428,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 112
+            --expect-unresolved 111
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -436,6 +445,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?data_last_index@@YAJPAUs_record_pool@@@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?initialize@s_player_slot_profile@@QAAXJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp")
         list(APPEND guest_extract_args
@@ -699,7 +712,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 112
+            --expect-unresolved 111
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -707,7 +720,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 112
+            --expect-unresolved 111
 )
 add_test(
     NAME main-menu-elf-core
