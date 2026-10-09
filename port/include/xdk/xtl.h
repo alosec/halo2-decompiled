@@ -92,6 +92,11 @@ BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetTickCount(void);
 void __stdcall Sleep(DWORD milliseconds);
+BOOL __stdcall SwitchToThread(void);
+DWORD __stdcall XCreateSaveGame(const char* root, const wchar_t* name,
+                                DWORD disposition, DWORD flags,
+                                char* directory, DWORD directory_size);
+DWORD __stdcall XDeleteSaveGame(const char* root, const wchar_t* name);
 DWORD __stdcall XGetDiskClusterSize(const char* root);
 DWORD __stdcall XGetLanguage(void);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);

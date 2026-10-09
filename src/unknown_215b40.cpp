@@ -1,6 +1,9 @@
 #include "unknown_11c920.h"
 #include "unknown_19d220.h"
 #include <string.h>
+#ifdef H2_NATIVE_PORT
+#include <wchar.h>
+#endif
 
 // @flags /O2 /Ob1 /Gr
 
