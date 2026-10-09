@@ -71,6 +71,7 @@ set(H2_GUEST_SESSION_MANAGER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_058ee0.o")
 set(H2_GUEST_TASK_SCREEN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a2ca7.o")
 set(H2_GUEST_TASK_CALLBACK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2521f2.o")
 set(H2_GUEST_SESSION_MODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0592d0.o")
+set(H2_GUEST_SESSION_VALUES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_05b040.o")
 set(H2_GUEST_MUTELIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_058cb0.o")
 set(H2_GUEST_SESSION_LEAVE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_199e2e.o")
 set(H2_GUEST_UI_RECT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236299.o")
@@ -130,6 +131,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_1a2ca7.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2521f2.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_0592d0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -192,6 +194,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_TASK_SCREEN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a2ca7.cpp"
         "${H2_GUEST_TASK_CALLBACK_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2521f2.cpp"
         "${H2_GUEST_SESSION_MODE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0592d0.cpp"
+        "${H2_GUEST_SESSION_VALUES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
         "${H2_GUEST_MUTELIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
         "${H2_GUEST_SESSION_LEAVE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
         "${H2_GUEST_UI_RECT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -291,6 +294,10 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args --extract-symbol
             "?function_0592d0@@YAKXZ")
     endif()
+    if(object STREQUAL H2_GUEST_SESSION_VALUES_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z")
+    endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?online_mutelist_reset@@YAXJ@Z"
@@ -375,7 +382,7 @@ set_source_files_properties(
     "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
     "${H2_GUEST_SESSION_MANAGER_OBJECT}" "${H2_GUEST_MUTELIST_OBJECT}"
     "${H2_GUEST_TASK_SCREEN_OBJECT}" "${H2_GUEST_TASK_CALLBACK_OBJECT}"
-    "${H2_GUEST_SESSION_MODE_OBJECT}"
+    "${H2_GUEST_SESSION_MODE_OBJECT}" "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}" "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}" "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
@@ -438,6 +445,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_TASK_SCREEN_OBJECT}"
     "${H2_GUEST_TASK_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_MODE_OBJECT}"
+    "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}"
     "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
@@ -478,7 +486,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 95
+            --expect-unresolved 94
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -572,6 +580,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_0592d0.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_0592d0@@YAKXZ")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args
@@ -790,7 +802,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 95
+            --expect-unresolved 94
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -798,7 +810,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 95
+            --expect-unresolved 94
 )
 add_test(
     NAME main-menu-elf-core

@@ -35,6 +35,7 @@ REQUIRED = {
     "?function_199ebc@@YAJXZ",
     "?function_199f34@@YAJXZ",
     "?function_0592d0@@YAKXZ",
+    "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z",
     "?function_199e3c@@YAXJ@Z",
     "?function_199f6d@@YAJXZ",
     "?function_2523bc@@YAXPAVc_online_task_screen@@@Z",
