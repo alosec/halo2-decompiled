@@ -46,6 +46,7 @@ def main() -> int:
     parser.add_argument("--table-object", type=Path)
     parser.add_argument("--leaf-object", type=Path)
     parser.add_argument("--initialize-object", type=Path)
+    parser.add_argument("--provider-cluster-object", type=Path)
     args = parser.parse_args()
 
     manifest_path = args.root / "port/runtime/physics_model_vtables.json"
@@ -160,7 +161,8 @@ def main() -> int:
             raise RuntimeError(f"generated native table has wrong extent: {address:#x}")
 
     object_arguments = (
-        args.llvm_readelf, args.table_object, args.leaf_object, args.initialize_object
+        args.llvm_readelf, args.table_object, args.leaf_object,
+        args.initialize_object, args.provider_cluster_object,
     )
     if any(object_arguments) and not all(object_arguments):
         raise RuntimeError("all native table object arguments must be supplied together")
@@ -196,6 +198,24 @@ def main() -> int:
             symbol = f"h2_native_physics_model_vtable_{address:08x}"
             if f"{symbol} " not in initialize_undefined:
                 raise RuntimeError(f"initializer does not reference complete table: {address:#x}")
+        cluster_undefined = subprocess.check_output(
+            [llvm_nm, "--undefined-only", "--format=posix", args.provider_cluster_object],
+            text=True,
+        )
+        if cluster_undefined.strip():
+            raise RuntimeError("native physics provider cluster must have zero imports")
+        cluster_symbols = subprocess.check_output(
+            [llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
+            text=True,
+        )
+        for provider in providers.values():
+            symbol = provider["symbol"]
+            if f"{symbol} " not in cluster_symbols and f"_{symbol} " not in cluster_symbols:
+                raise RuntimeError(f"linked native provider is absent: {symbol}")
+        for address in EXPECTED_TABLES:
+            symbol = f"h2_native_physics_model_vtable_{address:08x}"
+            if f"{symbol} " not in cluster_symbols:
+                raise RuntimeError(f"linked native table is absent: {address:#x}")
     return 0
 
 

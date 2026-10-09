@@ -14,8 +14,12 @@ struct c_1ea960 : c_a
 // @retail 0x1ea960
 c_1ea960::~c_1ea960()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_1ea970 : c_a
@@ -27,8 +31,12 @@ struct c_1ea970 : c_a
 // @retail 0x1ea970
 c_1ea970::~c_1ea970()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_1ea980 : c_a
@@ -40,8 +48,12 @@ struct c_1ea980 : c_a
 // @retail 0x1ea980
 c_1ea980::~c_1ea980()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_1ea990 : c_a
@@ -53,8 +65,12 @@ struct c_1ea990 : c_a
 // @retail 0x1ea990
 c_1ea990::~c_1ea990()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_1ea9a0 : c_a
@@ -66,8 +82,12 @@ struct c_1ea9a0 : c_a
 // @retail 0x1ea9a0
 c_1ea9a0::~c_1ea9a0()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_1ea9b0 : c_a
@@ -79,8 +99,12 @@ struct c_1ea9b0 : c_a
 // @retail 0x1ea9b0
 c_1ea9b0::~c_1ea9b0()
 {
+#if H2_NATIVE_PORT
+	__builtin_trap();
+#else
 	__asm int 3
 	__assume(0);
+#endif
 }
 
 struct c_shape_adapter_a : c_shape_library_base_a {};
@@ -238,7 +262,11 @@ s_globals_element *function_188640(long key);
 long function_1eb020(long tag_index, long body_index, short *material_index)
 {
  (void)&material_index;
+#if H2_NATIVE_PORT
+ __declspec(align(16)) byte buffer[0x100];
+#else
  __m128 buffer[16];
+#endif
  byte *definition = g_4e3b44[tag_index & 0xffff].bytes;
  byte *body = *(byte **)(definition + 0x3c) + body_index * 0x90;
  c_material_shape *shape = *(c_material_shape **)(body + 0x38);

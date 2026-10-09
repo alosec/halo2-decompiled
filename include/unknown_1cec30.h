@@ -7,7 +7,14 @@
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#if H2_NATIVE_PORT
+struct __declspec(align(16)) h2_native_vector4_storage
+{
+	real m128_f32[4];
+};
+#else
 #include <xmmintrin.h>
+#endif
 
 class hkPropertyValue
 {
@@ -63,7 +70,11 @@ inline long havok_entity_property_get(hkEntity const *entity, dword key)
 /* Havok's vector: four reals, 16 byte aligned */
 struct hkVector4
 {
+#if H2_NATIVE_PORT
+	h2_native_vector4_storage m_quad;
+#else
 	__m128 m_quad;
+#endif
 
 	void operator=(hkVector4 const &v) { m_quad = v.m_quad; }
 	real const &operator()(long i) const { return m_quad.m128_f32[i]; }

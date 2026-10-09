@@ -1,5 +1,24 @@
 {
   "version": 1,
+  "source_globals": {
+    "src/unknown_2fd210.cpp": ["k_physics_box_vertex_signs"]
+  },
+  "closure": [
+    {
+      "source": "src/unknown_1cec30.cpp",
+      "symbols": [
+        "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
+        "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
+        "?function_1d1d00@@YA_NJJJ@Z",
+        "?function_1d2070@@YAXPBVhkEntity@@PAUs_havok_component@@JJJ@Z",
+        "?function_1d1e40@@YAXPBVhkEntity@@PAUs_havok_component@@JJJ@Z"
+      ]
+    },
+    {
+      "source": "src/unknown_2d91d0.cpp",
+      "symbols": ["?function_2d91d0@@YAXPAXJ@Z"]
+    }
+  ],
   "providers": {
     "0x00072c70": {"kind": "native", "symbol": "h2_native_physics_idle"},
     "0x00099810": {"kind": "native", "symbol": "h2_native_physics_zero"},

@@ -145,6 +145,7 @@ set(H2_GUEST_PHYSICS_MODEL_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/physics_model_v
 set(H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.o")
 set(H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_runtime.o")
 set(H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_initialize.o")
+set(H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_provider_cluster.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_physics_model_vtables.py"
@@ -205,10 +206,37 @@ add_custom_command(
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
 )
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_physics_model_provider_cluster.py"
+            --root "${PROJECT_SOURCE_DIR}"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --lld "${H2_LLD}"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --tables "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
+            --leaves "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+            --crt "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o"
+            --bindings "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+            --output "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_physics_model_provider_cluster.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/physics_model_native_providers.json"
+        "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
+        "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+        "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o"
+        "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+        ${H2_RECOVERED_SOURCES}
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
 add_custom_target(h2_physics_model_table_objects ALL DEPENDS
     "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
 )
 
 set(H2_MS_ABI_SOURCES
@@ -2216,6 +2244,7 @@ add_test(
             --table-object ${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}
             --leaf-object ${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}
             --initialize-object ${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}
+            --provider-cluster-object ${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit
