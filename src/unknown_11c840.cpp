@@ -34,6 +34,7 @@ void function_1ea9c0(long arg_0, long arg_1);
 
 #ifdef H2_NATIVE_PORT
 extern "C" long h2_native_cache_tag_count();
+extern "C" void h2_native_physics_runtime_reset();
 
 struct s_native_tag_instance_view
 {
@@ -72,6 +73,7 @@ void function_11c840()
 #ifdef H2_NATIVE_PORT
     g_native_initialized_tags = 0;
     g_native_deferred_tags = 0;
+    h2_native_physics_runtime_reset();
     long native_next_index = 0;
     long local_1 = h2_native_next_tag(&native_next_index);
 #else
@@ -91,11 +93,9 @@ void function_11c840()
 #endif
             break;
         case 0x636f6c6c:
-/* Native does not yet own function_246c60's three polymorphic physics objects. */
-#ifndef H2_NATIVE_PORT
             function_2122b0(local_1);
-#else
-            g_native_deferred_tags++;
+#ifdef H2_NATIVE_PORT
+            g_native_initialized_tags++;
 #endif
             break;
         case 0x63726561:

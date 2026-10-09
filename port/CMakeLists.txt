@@ -34,6 +34,9 @@ set(H2_GUEST_PROFILE_RECORD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_153750.o")
 set(H2_GUEST_TAG_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_11c840.o")
 set(H2_GUEST_PART_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1c22c0.o")
 set(H2_GUEST_VEHICLE_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_205550.o")
+set(H2_GUEST_PHYSICS_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_246c60.o")
+set(H2_GUEST_PHYSICS_TYPE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2fbb30.o")
+set(H2_GUEST_COLLISION_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2122b0.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
 set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
 set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
@@ -178,6 +181,9 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_11c840.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_205550.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_246c60.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2fbb30.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2122b0.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
@@ -260,6 +266,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_TAG_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_11c840.cpp"
         "${H2_GUEST_PART_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp"
         "${H2_GUEST_VEHICLE_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_205550.cpp"
+        "${H2_GUEST_PHYSICS_RUNTIME_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_246c60.cpp"
+        "${H2_GUEST_PHYSICS_TYPE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2fbb30.cpp"
+        "${H2_GUEST_COLLISION_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2122b0.cpp"
         "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
         "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
         "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
@@ -424,6 +433,32 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_205553@c_205558@@UAAXXZ"
             --extract-global "??_7c_205550@@6B@"
             --extract-global "??_7c_205554@@6B@")
+    endif()
+    if(object STREQUAL H2_GUEST_PHYSICS_RUNTIME_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_246c60@@YAXPAXJ@Z"
+            --extract-symbol "h2_native_physics_runtime_vtable"
+            --extract-symbol "h2_native_physics_runtime_reset"
+            --extract-symbol "h2_native_physics_runtime_object_count"
+            --extract-symbol "?h2_native_physics_delete@@YAPAXPAXK@Z"
+            --extract-symbol "?h2_native_physics_query@@YAJPAXJJ@Z"
+            --extract-symbol "?h2_native_physics_enable@@YAXPAX_N@Z"
+            --extract-symbol "?h2_native_physics_root_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_nested_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_wrapper_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_idle@@YAXPAX@Z"
+            --extract-global "g_native_physics_runtime_vtables"
+            --extract-global "g_native_physics_runtime_object_count")
+    endif()
+    if(object STREQUAL H2_GUEST_PHYSICS_TYPE_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_2fbb30@@YAPAXXZ"
+            --extract-symbol "?function_2fdfe0@@YAPAXXZ"
+            --extract-symbol "?function_2fbfe0@@YAPAXXZ")
+    endif()
+    if(object STREQUAL H2_GUEST_COLLISION_INITIALIZE_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2122b0@@YAXJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -1020,6 +1055,9 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_TAG_INITIALIZE_OBJECT}"
     "${H2_GUEST_PART_INITIALIZE_OBJECT}"
     "${H2_GUEST_VEHICLE_INITIALIZE_OBJECT}"
+    "${H2_GUEST_PHYSICS_RUNTIME_OBJECT}"
+    "${H2_GUEST_PHYSICS_TYPE_OBJECT}"
+    "${H2_GUEST_COLLISION_INITIALIZE_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -1193,6 +1231,32 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_205553@c_205558@@UAAXXZ"
             --extract-global "??_7c_205550@@6B@"
             --extract-global "??_7c_205554@@6B@")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_246c60.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_246c60@@YAXPAXJ@Z"
+            --extract-symbol "h2_native_physics_runtime_vtable"
+            --extract-symbol "h2_native_physics_runtime_reset"
+            --extract-symbol "h2_native_physics_runtime_object_count"
+            --extract-symbol "?h2_native_physics_delete@@YAPAXPAXK@Z"
+            --extract-symbol "?h2_native_physics_query@@YAJPAXJJ@Z"
+            --extract-symbol "?h2_native_physics_enable@@YAXPAX_N@Z"
+            --extract-symbol "?h2_native_physics_root_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_nested_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_wrapper_type@@YAPAXPAX@Z"
+            --extract-symbol "?h2_native_physics_idle@@YAXPAX@Z"
+            --extract-global "g_native_physics_runtime_vtables"
+            --extract-global "g_native_physics_runtime_object_count")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2fbb30.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_2fbb30@@YAPAXXZ"
+            --extract-symbol "?function_2fdfe0@@YAPAXXZ"
+            --extract-symbol "?function_2fbfe0@@YAPAXXZ")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2122b0.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2122b0@@YAXJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp")
         list(APPEND guest_extract_args --extract-symbol

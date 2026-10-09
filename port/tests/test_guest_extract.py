@@ -172,6 +172,13 @@ def main():
         physics_runtime_command = command[:]
         physics_runtime_command[physics_runtime_command.index("h2_extract_selected")] = "?function_246c60@@YAXPAXJ@Z"
         physics_runtime_command[physics_runtime_command.index("--extract-global"):physics_runtime_command.index("--output")] = []
+        physics_runtime_command[physics_runtime_command.index("--output"):physics_runtime_command.index("--output")] = [
+            "--extract-symbol", "h2_native_physics_runtime_vtable",
+            "--extract-symbol", "h2_native_physics_runtime_reset",
+            "--extract-symbol", "h2_native_physics_runtime_object_count",
+            "--extract-global", "g_native_physics_runtime_vtables",
+            "--extract-global", "g_native_physics_runtime_object_count",
+        ]
         physics_runtime_command[physics_runtime_command.index(output)] = physics_runtime_output
         physics_runtime_command[-1] = args.root / "src/unknown_246c60.cpp"
         subprocess.run([str(value) for value in physics_runtime_command], check=True)
@@ -179,14 +186,15 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_runtime_output],
             text=True,
         )
-        physics_runtime_undefined = subprocess.check_output(
-            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", physics_runtime_output],
-            text=True,
-        )
         if "_?function_246c60@@YAXPAXJ@Z" not in physics_runtime_defined:
             raise RuntimeError("physics runtime-object constructor was not selectively compilable")
-        if "_h2_native_physics_runtime_vtable" not in physics_runtime_undefined:
-            raise RuntimeError("native physics constructor did not retain its explicit vtable-owner boundary")
+        for symbol in (
+            "_h2_native_physics_runtime_vtable",
+            "_h2_native_physics_runtime_reset",
+            "_h2_native_physics_runtime_object_count",
+        ):
+            if symbol not in physics_runtime_defined:
+                raise RuntimeError(f"native physics constructor lost owned runtime support: {symbol}")
 
         physics_type_output = Path(temporary) / "physics-runtime-type.o"
         physics_type_command = command[:]
