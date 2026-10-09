@@ -219,6 +219,30 @@ def main():
             if symbol not in physics_type_defined:
                 raise RuntimeError(f"physics runtime type-descriptor method was not retained: {symbol}")
 
+        physics_model_type_output = Path(temporary) / "physics-model-runtime-types.o"
+        physics_model_type_command = command[:]
+        physics_model_type_command[physics_model_type_command.index("h2_extract_selected")] = "?function_2df310@@YAPAXXZ"
+        physics_model_type_command[physics_model_type_command.index("--extract-global"):physics_model_type_command.index("--output")] = []
+        extra_physics_model_types = (
+            "?function_2fe260@@YAPAXXZ", "?function_2df4b0@@YAPAXXZ",
+            "?function_2fd0a0@@YAPAXXZ", "?function_2fde30@@YAPAXXZ",
+            "?function_2fe0b0@@YAPAXXZ", "?function_2fdfa0@@YAPAXXZ",
+        )
+        insert_at = physics_model_type_command.index("--output")
+        for symbol in extra_physics_model_types:
+            physics_model_type_command[insert_at:insert_at] = ["--extract-symbol", symbol]
+            insert_at += 2
+        physics_model_type_command[physics_model_type_command.index(output)] = physics_model_type_output
+        physics_model_type_command[-1] = args.root / "src/unknown_2df310.cpp"
+        subprocess.run([str(value) for value in physics_model_type_command], check=True)
+        physics_model_type_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_type_output],
+            text=True,
+        )
+        for symbol in ("?function_2df310@@YAPAXXZ",) + extra_physics_model_types:
+            if f"_{symbol}" not in physics_model_type_defined:
+                raise RuntimeError(f"physics-model runtime type method was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
