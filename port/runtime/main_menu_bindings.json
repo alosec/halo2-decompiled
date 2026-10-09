@@ -154,6 +154,7 @@
     {"symbol": "?g_4e031c@@3PAUs_record_pool@@A", "address": "0x004e031c"},
     {"symbol": "?g_51ec8c@@3PAUs_record_pool@@A", "address": "0x0051ec8c"},
     {"symbol": "?g_51ec84@@3PAUs_record_pool@@A", "address": "0x0051ec84"},
-    {"symbol": "?g_51ec88@@3PAUs_record_pool@@A", "address": "0x0051ec88"}
+    {"symbol": "?g_51ec88@@3PAUs_record_pool@@A", "address": "0x0051ec88"},
+    {"symbol": "?g_502110@@3PAXA", "address": "0x00502110"}
   ]
 }

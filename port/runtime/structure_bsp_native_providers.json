@@ -54,6 +54,7 @@
     {"source": "src/unknown_142a60_native.cpp", "symbols": ["?function_142a60@@YAHPBUtransform4x3f@@0PAU1@@Z"]},
     {"source": "src/unknown_173b90.cpp", "symbols": ["?particle_systems_update_locations@@YAXXZ", "?particle_system_unlink@@YAXPAUs_particle_system_datum@@PAJ1@Z", "?set_location@s_particle_system_datum@@QAAXPBUs_location@@@Z", "?function_174180@@YAXJ@Z"]},
     {"source": "src/unknown_175bd0.cpp", "symbols": ["?effect_remove_event_slot@@YAXJJ@Z"]},
-    {"source": "src/unknown_2483f0.cpp", "symbols": ["?function_2486e0@@YAXJ@Z"]}
+    {"source": "src/unknown_2483f0.cpp", "symbols": ["?function_2486e0@@YAXJ@Z"]},
+    {"source": "src/unknown_21a100_native.cpp", "symbols": ["?looping_sound_update_locations@@YAXXZ"]}
   ]
 }
