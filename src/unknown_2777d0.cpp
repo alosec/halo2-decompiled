@@ -192,6 +192,15 @@ c_callback_277820::~c_callback_277820()
 {
 }
 
+#ifdef H2_NATIVE_PORT
+extern "C" void *h2_native_primary_listener_embedded_delete(
+	c_callback_277820 *callback, unsigned long)
+{
+	// The callback is embedded in fixed listener storage and owns no payload.
+	return callback;
+}
+#endif
+
 // @retail 0x277820
 hkBool c_callback_277820::test(void *first, void *second)
 {
@@ -229,6 +238,23 @@ c_interface_277890::c_interface_277890()
 	active = false;
 	function_278300((s_278300_references *)this);
 }
+
+#ifdef H2_NATIVE_PORT
+extern "C" void *h2_native_primary_listener_delete(
+	c_interface_277890 *listener, unsigned long)
+{
+	// The primary listener itself is fixed storage. Retail destruction releases
+	// only this dynamic buffer before optionally freeing the outer allocation.
+	// Native never frees that outer fixed block.
+	if (listener->buffer.capacity >= 0)
+		g_480118->allocate((long)listener->buffer.data,
+			(listener->buffer.capacity & 0x7fffffff) * sizeof(long), 0x12);
+	listener->buffer.data = NULL;
+	listener->buffer.count = 0;
+	listener->buffer.capacity = 0x80000000;
+	return listener;
+}
+#endif
 
 void function_b7360(long object_index);
 void function_226a60(long component_index);
@@ -359,6 +385,22 @@ c_callback_2789b0::~c_callback_2789b0()
 }
 
 #ifdef H2_NATIVE_PORT
+extern "C" void *h2_native_primary_listener_callback_delete(
+	c_callback_2789b0 *callback, unsigned long flags)
+{
+	callback->~c_callback_2789b0();
+	if (flags & 1)
+		c_callback_2789b0::operator delete(callback);
+	return callback;
+}
+
+extern "C" void *h2_native_primary_listener_callback_adjusted_delete(
+	void *secondary, unsigned long flags)
+{
+	return h2_native_primary_listener_callback_delete(
+		(c_callback_2789b0 *)((byte *)secondary - 8), flags);
+}
+
 // Keeps the compiler-generated Microsoft deleting destructor available to
 // the native table assembler without installing or invoking the table.
 void h2_native_primary_listener_callback_destroy(c_callback_2789b0 *callback)

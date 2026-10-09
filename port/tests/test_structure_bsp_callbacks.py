@@ -41,6 +41,7 @@ def main() -> int:
     parser.add_argument("--provider-cluster-object", type=Path, required=True)
     parser.add_argument("--production-object", type=Path, required=True)
     parser.add_argument("--primary-listener-table-object", type=Path, required=True)
+    parser.add_argument("--primary-listener-provider-cluster-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -81,12 +82,12 @@ def main() -> int:
     primary = json.loads(primary_path.read_text())
     expected_primary_tables = [
         ("embedded_reference_callback", 0x1c, 0x0045A738,
-         "??_7c_callback_277820@@6B@", [0x000A9EF0, 0x00277820]),
+         "h2_native_havok_primary_listener_embedded_table", [0x000A9EF0, 0x00277820]),
         ("contact_events", 0x04, 0x0045A74C,
-         "??_7c_interface_277890@@6Bc_interface_277840@@@",
+         "h2_native_havok_primary_listener_contact_table",
          [0x00277A00, 0x00278030, 0x00278100]),
         ("entity_listener", 0x00, 0x0045A758,
-         "??_7c_interface_277890@@6Bc_interface_2777d0@@@",
+         "h2_native_havok_primary_listener_entity_table",
          [0x00277890, 0x002778E0, 0x00277990, 0x00278200,
           0x002789F0, 0x00278A70, 0x00278B30, 0x00278AE0,
           0x002789B0]),
@@ -120,20 +121,20 @@ def main() -> int:
     primary_provider_path = args.root / "port/runtime/havok_primary_listener_native_providers.json"
     primary_provider_manifest = json.loads(primary_provider_path.read_text())
     expected_primary_providers = {
-        "0x000a9ef0": "??_Ec_callback_277820@@UAAPAXI@Z",
+        "0x000a9ef0": "h2_native_primary_listener_embedded_delete",
         "0x00277820": "?test@c_callback_277820@@UAA?AVhkBool@@PAX0@Z",
         "0x00277a00": "?event0@c_interface_277890@@UAAXPAX@Z",
         "0x00278030": "?event1@c_interface_277890@@UAAXPAX@Z",
         "0x00278100": "?event2@c_interface_277890@@UAAXPAX@Z",
-        "0x00277890": "??_Ec_interface_277890@@UAAPAXI@Z",
+        "0x00277890": "h2_native_primary_listener_delete",
         "0x002778e0": "?slot1@c_interface_277890@@UAAXPAVhkEntity@@@Z",
         "0x00277990": "?slot2@c_interface_277890@@UAAXPAVhkEntity@@@Z",
         "0x00278200": "?test@c_interface_277890@@UAA_NPAUs_278a70_body@@0@Z",
         "0x002789f0": "?function_2789f0@c_2789f0@@UAAXPAUs_2789f1@@@Z",
         "0x00278a70": "?slot2@c_callback_2789b0@@UAAXPAUs_278a70_event@@@Z",
-        "0x00278b30": "??_Ec_callback_2789b0@@W7AAPAXI@Z",
+        "0x00278b30": "h2_native_primary_listener_callback_adjusted_delete",
         "0x00278ae0": "?slot4@c_callback_2789b0@@UAAXPAX@Z",
-        "0x002789b0": "??_Ec_callback_2789b0@@UAAPAXI@Z",
+        "0x002789b0": "h2_native_primary_listener_callback_delete",
     }
     if (primary_provider_manifest.get("version") != 1 or
             primary_provider_manifest.get("providers") != expected_primary_providers):
@@ -164,6 +165,45 @@ def main() -> int:
     if ("h2_native_havok_primary_listener_vtables" in production_defined_for_listener or
             any(table[3] in production_defined_for_listener for table in expected_primary_tables)):
         raise RuntimeError("dormant primary listener tables entered production")
+    expected_primary_cluster_imports = {
+        "?detach@c_library_30c470@@QAAXPAX@Z",
+        "?function_181e90@@YA_NMM@Z",
+        "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
+        "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
+        "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+        "?function_226a60@@YAXJ@Z",
+        "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
+        "?function_279740@@YA_NJ@Z",
+        "?function_2d91d0@@YAXPAXJ@Z",
+        "?function_315340@@YAXPAXPAVhkEntity@@1MM@Z",
+        "?function_a7670@@YA_NJ@Z",
+        "?function_b7360@@YAXJ@Z",
+        "?function_b8540@@YAXJ@Z",
+        "?g_480118@@3PAVc_allocator@@A",
+        "?g_4e0300@@3PAUs_record_pool@@A",
+        "?g_51e9b8@@3PAUs_record_pool@@A",
+        "?get_inverse_scale@s_scale_owner@@QBAMXZ",
+        "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
+        "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
+        "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
+    }
+    primary_cluster_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.primary_listener_provider_cluster_object],
+            text=True).splitlines() if line.strip()
+    }
+    if primary_cluster_undefined != expected_primary_cluster_imports:
+        raise RuntimeError("primary Havok listener provider closure changed")
+    primary_cluster_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix",
+         args.primary_listener_provider_cluster_object], text=True)
+    for symbol in (set(expected_primary_providers.values()) |
+                   {table[3] for table in expected_primary_tables} |
+                   {"h2_native_havok_primary_listener_vtables",
+                    "??0c_interface_277890@@QAA@XZ"}):
+        if symbol not in primary_cluster_defined:
+            raise RuntimeError(f"primary Havok listener cluster lacks {symbol}")
 
     providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"
     providers_manifest = json.loads(providers_path.read_text())
@@ -384,6 +424,41 @@ def main() -> int:
     if frontier_symbols != production_undefined:
         raise RuntimeError("structure-BSP frontier manifest differs from production imports: " +
                            ", ".join(sorted(frontier_symbols ^ production_undefined)))
+
+    listener_additional_imports = {
+        "?detach@c_library_30c470@@QAAXPAX@Z",
+        "?function_181e90@@YA_NMM@Z",
+        "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
+        "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
+        "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+        "?function_226a60@@YAXJ@Z",
+        "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
+        "?function_279740@@YA_NJ@Z",
+        "?function_315340@@YAXPAXPAVhkEntity@@1MM@Z",
+        "?function_b7360@@YAXJ@Z",
+        "?get_inverse_scale@s_scale_owner@@QBAMXZ",
+        "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
+    }
+    expected_listener_production = (
+        frontier_symbols - {"??0c_interface_277890@@QAA@XZ"}
+    ) | listener_additional_imports
+    with tempfile.TemporaryDirectory(prefix="h2-primary-listener-score-") as temporary:
+        scored = Path(temporary) / "primary-listener-production.o"
+        subprocess.run([
+            args.lld, "-r", "--allow-multiple-definition", "-o", scored,
+            args.primary_listener_provider_cluster_object,
+            args.provider_cluster_object,
+            args.production_object,
+        ], check=True)
+        actual_listener_production = {
+            line.strip().split()[-1]
+            for line in subprocess.check_output(
+                [args.llvm_nm, "--undefined-only", scored], text=True
+            ).splitlines() if line.strip()
+        }
+    if (actual_listener_production != expected_listener_production or
+            len(actual_listener_production) != 27):
+        raise RuntimeError("complete primary Havok listener production score changed")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |
                         closure_symbols | retained_globals)

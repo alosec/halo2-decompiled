@@ -1058,6 +1058,21 @@ def main():
             if f"_{symbol}" not in component_rebuild_defined:
                 raise RuntimeError(f"Havok component rebuild source was not retained: {symbol}")
 
+        primary_constructor_output = Path(temporary) / "havok-primary-listener-constructor.o"
+        primary_constructor_symbol = "??0c_interface_277890@@QAA@XZ"
+        primary_constructor_command = command[:]
+        primary_constructor_command[primary_constructor_command.index("h2_extract_selected")] = primary_constructor_symbol
+        primary_constructor_command[primary_constructor_command.index("--extract-global"):primary_constructor_command.index("--output")] = []
+        primary_constructor_command[primary_constructor_command.index(output)] = primary_constructor_output
+        primary_constructor_command[-1] = args.root / "src/havok_primary_listener_construct_native.cpp"
+        subprocess.run([str(value) for value in primary_constructor_command], check=True)
+        primary_constructor_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", primary_constructor_output],
+            text=True,
+        )
+        if f"_{primary_constructor_symbol}" not in primary_constructor_defined:
+            raise RuntimeError("native primary Havok listener constructor was not retained")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

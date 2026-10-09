@@ -1,19 +1,19 @@
 {
   "version": 1,
   "providers": {
-    "0x000a9ef0": "??_Ec_callback_277820@@UAAPAXI@Z",
+    "0x000a9ef0": "h2_native_primary_listener_embedded_delete",
     "0x00277820": "?test@c_callback_277820@@UAA?AVhkBool@@PAX0@Z",
     "0x00277a00": "?event0@c_interface_277890@@UAAXPAX@Z",
     "0x00278030": "?event1@c_interface_277890@@UAAXPAX@Z",
     "0x00278100": "?event2@c_interface_277890@@UAAXPAX@Z",
-    "0x00277890": "??_Ec_interface_277890@@UAAPAXI@Z",
+    "0x00277890": "h2_native_primary_listener_delete",
     "0x002778e0": "?slot1@c_interface_277890@@UAAXPAVhkEntity@@@Z",
     "0x00277990": "?slot2@c_interface_277890@@UAAXPAVhkEntity@@@Z",
     "0x00278200": "?test@c_interface_277890@@UAA_NPAUs_278a70_body@@0@Z",
     "0x002789f0": "?function_2789f0@c_2789f0@@UAAXPAUs_2789f1@@@Z",
     "0x00278a70": "?slot2@c_callback_2789b0@@UAAXPAUs_278a70_event@@@Z",
-    "0x00278b30": "??_Ec_callback_2789b0@@W7AAPAXI@Z",
+    "0x00278b30": "h2_native_primary_listener_callback_adjusted_delete",
     "0x00278ae0": "?slot4@c_callback_2789b0@@UAAXPAX@Z",
-    "0x002789b0": "??_Ec_callback_2789b0@@UAAPAXI@Z"
+    "0x002789b0": "h2_native_primary_listener_callback_delete"
   }
 }

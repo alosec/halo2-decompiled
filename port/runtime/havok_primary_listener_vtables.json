@@ -6,7 +6,7 @@
       "name": "embedded_reference_callback",
       "object_offset": "0x1c",
       "retail_address": "0x0045a738",
-      "native_symbol": "??_7c_callback_277820@@6B@",
+      "native_symbol": "h2_native_havok_primary_listener_embedded_table",
       "methods": [
         "0x000a9ef0",
         "0x00277820"
@@ -16,7 +16,7 @@
       "name": "contact_events",
       "object_offset": "0x04",
       "retail_address": "0x0045a74c",
-      "native_symbol": "??_7c_interface_277890@@6Bc_interface_277840@@@",
+      "native_symbol": "h2_native_havok_primary_listener_contact_table",
       "methods": [
         "0x00277a00",
         "0x00278030",
@@ -27,7 +27,7 @@
       "name": "entity_listener",
       "object_offset": "0x00",
       "retail_address": "0x0045a758",
-      "native_symbol": "??_7c_interface_277890@@6Bc_interface_2777d0@@@",
+      "native_symbol": "h2_native_havok_primary_listener_entity_table",
       "methods": [
         "0x00277890",
         "0x002778e0",
