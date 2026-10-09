@@ -115,6 +115,37 @@ extern "C" int h2_main_menu_guest_press_start()
     return 2;
 }
 
+bool __stdcall function_252a32(long controller);
+
+extern "C" int h2_main_menu_guest_cancel()
+{
+    c_window_channel *channels[] = {
+        &g_54d598.window_0,
+        &g_54d598.windows_1[4],
+        &g_54d598.window_2,
+        &g_54d598.windows_3[4],
+        &g_54d598.window_4,
+        &g_54d598.windows_5[4],
+        &g_54d598.default_window,
+    };
+    for (long index = 0; index < 7; ++index)
+    {
+        if (channels[index]->current && channels[index]->current->screen_id == 0x1e)
+        {
+            /* The current native-offline fallback uses the retail mode-4 chooser,
+             * whose B prompt is invite-specific. Return through its recovered
+             * press-start callback instead of presenting that irrelevant prompt. */
+            return function_252a32(0) ? 0 : 3;
+        }
+        if (channels[index]->current && channels[index]->current->screen_id != 9)
+        {
+            s_widget_event event = { 5, 0, 1 };
+            return channels[index]->current->v10(&event) ? 0 : 3;
+        }
+    }
+    return 2;
+}
+
 extern "C" int h2_main_menu_guest_open_press_start()
 {
     if (h2_main_menu_guest_entry() != 0)
