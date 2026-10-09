@@ -119,6 +119,37 @@ bool function_19a76d(short)
     return false;
 }
 
+void function_199a03(long)
+{
+    /* No native network session exists to receive a mode change. */
+}
+
+void function_199a57()
+{
+    /* Session variant initialization is unreachable without session hosting. */
+}
+
+long function_199d7c()
+{
+    return 0;
+}
+
+bool function_199df9(bool, bool)
+{
+    return false;
+}
+
+bool function_19a0c5()
+{
+    return false;
+}
+
+bool function_19a1bd()
+{
+    /* There is no native network session to mark ready. */
+    return false;
+}
+
 void function_121100(long *value)
 {
     /* Native bootstrap has no persisted preferred session mode yet. */

@@ -60,6 +60,15 @@ def main():
     assert "?function_223a21@@YAXXZ" not in imports
     assert "?function_199893@@YAXXZ" not in imports
     assert "?function_199b08@@YAXXZ" not in imports
+    for symbol in (
+        "?function_199a03@@YAXJ@Z",
+        "?function_199a57@@YAXXZ",
+        "?function_199d7c@@YAJXZ",
+        "?function_199df9@@YA_N_N0@Z",
+        "?function_19a0c5@@YA_NXZ",
+        "?function_19a1bd@@YA_NXZ",
+    ):
+        assert symbol not in imports
     assert "?network_session_manager_leave_session_a@@YAX_N@Z" not in imports
     assert "?network_session_manager_leave_session_b@@YAX_N@Z" not in imports
     for symbol in (
