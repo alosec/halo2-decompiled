@@ -99,9 +99,18 @@ void function_18f62b()
     /* No native controller-event or online-team task source exists yet. */
 }
 
-bool controller_is_connected(short)
+static bool g_native_controller_connected[4];
+
+extern "C" void h2_native_controller_connect(long controller)
 {
-    return false;
+    if (controller >= 0 && controller < 4)
+        g_native_controller_connected[controller] = true;
+}
+
+bool controller_is_connected(short controller)
+{
+    return controller >= 0 && controller < 4 &&
+        g_native_controller_connected[controller];
 }
 
 long function_1249d0(short)

@@ -69,6 +69,8 @@ extern "C" int h2_main_menu_guest_load_strings()
     return string_table_load(english) ? 0 : 2;
 }
 
+extern "C" void h2_native_controller_connect(long controller);
+
 class c_press_start_screen
 {
 public:
@@ -90,6 +92,7 @@ extern "C" int h2_main_menu_guest_press_start()
     {
         if (channels[index]->current && channels[index]->current->screen_id == 9)
         {
+            h2_native_controller_connect(0);
             s_controller_reference controller{};
             controller.controller_index = 0;
             s_controller_reference *controller_pointer = &controller;
