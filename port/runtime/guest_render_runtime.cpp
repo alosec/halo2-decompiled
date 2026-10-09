@@ -7,6 +7,11 @@
  * Actual resource ownership remains at the explicit host rendering boundary. */
 struct s_predicted_resource_block;
 
+/* The native immediate protocol carries all per-draw state explicitly. */
+void function_1bbd0()
+{
+}
+
 /* The Xbox loading-screen image buffer has no native owner yet. */
 void function_2133a1()
 {

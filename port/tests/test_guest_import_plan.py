@@ -42,6 +42,7 @@ def main():
     assert "?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z" not in imports
     assert "?function_125a90@@YAXJ@Z" not in imports
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
+    assert "?function_1bbd0@@YAXXZ" not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
     assert "?function_223976@@YA_NXZ" not in imports
     assert "?function_223a21@@YAXXZ" not in imports
