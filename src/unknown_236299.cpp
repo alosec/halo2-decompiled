@@ -419,6 +419,9 @@ long map_location_progress_get(char const *map_name);
 void function_138110(s_game_options *options);
 dword function_1462b0(void);
 void function_18e790(s_game_options const *options);
+#ifdef H2_NATIVE_PORT
+extern "C" void h2_native_campaign_options_ready(s_game_options const *options);
+#endif
 extern long g_54e7c0;
 extern long g_54e7c4;
 extern long g_54e7c8;
@@ -455,7 +458,14 @@ void function_23643f(void)
 		options.host_address = address;
 		options.split_screen = count > 1;
 		options.single_player = !options.split_screen;
+#ifdef H2_NATIVE_PORT
+		/* Native currently owns cache selection and complete launch options, but
+		 * not game-state submission. Hand the recovered options to a validating
+		 * boundary without entering function_18e790. */
+		h2_native_campaign_options_ready(&options);
+#else
 		function_18e790(&options);
+#endif
 	}
 }
 /* the user interface globals' dialogs: groups of dialogs that share their

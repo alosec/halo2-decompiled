@@ -35,6 +35,7 @@ EXPECTED_BINDINGS = {
     "?main_globals@@3Us_main_globals@@A": 0x00547F28,
     "?g_54d598@@3Vc_window_manager@@A": 0x0054D598,
     "?g_54d59f@@3_NA": 0x0054D59F,
+    "?g_54e7c8@@3JA": 0x0054E7C8,
     "?g_54e8e0@@3PAUs_player_slot@@A": 0x0054E8E0,
     "?g_54eae8@@3PAY0MHA@EA": 0x0054EAE8,
     "?g_47ff38@@3JA": 0x0047FF38,

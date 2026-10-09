@@ -789,6 +789,7 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_23625d@@YAXJ@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z"
+            --extract-symbol "?function_23643f@@YAXXZ"
             --extract-symbol "?function_23654b@@YAXPAX00@Z")
     endif()
     if(object STREQUAL H2_GUEST_QUIT_CALLBACK_OBJECT)
@@ -1573,6 +1574,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_23625d@@YAXJ@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z"
+            --extract-symbol "?function_23643f@@YAXXZ"
             --extract-symbol "?function_23654b@@YAXPAX00@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp")

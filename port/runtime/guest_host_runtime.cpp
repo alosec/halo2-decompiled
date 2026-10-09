@@ -443,7 +443,47 @@ struct s_native_local_player_entry
 };
 static_assert(sizeof(s_native_local_player_entry) == 0xe4,
               "local player entry layout");
+void function_23643f();
 void function_23654b(void *entries, void *address, void *count);
+extern long g_54e7c0;
+extern long g_54e7c4;
+extern long g_54e7c8;
+
+static char const *g_native_expected_campaign_map;
+static long g_native_campaign_options_status = NONE;
+
+extern "C" void h2_native_campaign_options_ready(s_game_options const *options)
+{
+    g_native_campaign_options_status = 1;
+    if (!options || !g_native_expected_campaign_map)
+        return;
+    unsigned char const *const bytes =
+        reinterpret_cast<unsigned char const *>(options);
+    char const *const map_name = reinterpret_cast<char const *>(bytes + 0x1c);
+    long character = 0;
+    for (; character < 0x104 && map_name[character] &&
+           map_name[character] == g_native_expected_campaign_map[character];
+         ++character)
+    {
+    }
+    if (character == 0x104 || map_name[character] != 0 ||
+        g_native_expected_campaign_map[character] != 0)
+        return;
+    if (*reinterpret_cast<long const *>(bytes) != 1 ||
+        *reinterpret_cast<long const *>(bytes + 0x14) != g_54e7c0 ||
+        *reinterpret_cast<long const *>(bytes + 0x18) != g_54e7c4 ||
+        *reinterpret_cast<short const *>(bytes + 0x12a) != (short)g_54e7c8 ||
+        bytes[0x12c] || !bytes[0x12d] ||
+        *reinterpret_cast<long const *>(bytes + 0x268) != 1 ||
+        !bytes[0x2cc])
+        return;
+    s_native_local_player_entry const *const players =
+        reinterpret_cast<s_native_local_player_entry const *>(bytes + 0x2d4);
+    if (!players[0].valid || players[0].index != 0 ||
+        (players[0].record[0] == 0 && players[0].record[1] == 0))
+        return;
+    g_native_campaign_options_status = 0;
+}
 
 extern "C" int h2_main_menu_guest_load_selected_campaign()
 {
@@ -479,6 +519,12 @@ extern "C" int h2_main_menu_guest_load_selected_campaign()
         return 9;
     if (!host_h2_map_select(map_name))
         return 4;
+    g_native_expected_campaign_map = map_name;
+    g_native_campaign_options_status = NONE;
+    function_23643f();
+    g_native_expected_campaign_map = 0;
+    if (g_native_campaign_options_status != 0)
+        return 10;
     return h2_native_load_campaign_map(map_name) ? 0 : 5;
 }
 
