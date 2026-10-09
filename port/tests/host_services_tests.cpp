@@ -1,3 +1,4 @@
+#include "h2/font_decode.hpp"
 #include "h2/guest_arena.hpp"
 #include "h2/host_abi.h"
 #include "h2/host_services.hpp"
@@ -7,6 +8,7 @@
 struct color4f { float alpha, red, green, blue; };
 struct short_rectangle2d { short top, left, bottom, right; };
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -67,6 +69,7 @@ struct CallbackCapture {
     int line_gap = 0;
     float scale = 0.0f;
     std::uint32_t color = 0;
+    const void* text_metadata = nullptr;
     int video_calls = 0;
     int render_calls = 0;
     int text_calls = 0;
@@ -98,13 +101,14 @@ void capture_render(const void* request, const void* vertices, void* context) {
 
 void capture_text(const std::uint32_t* text, const void* bounds, const void*,
                   const void*, int line_gap, float scale, std::uint32_t color,
-                  const void*, void* context) {
+                  const void* metadata, void* context) {
     auto& capture = *static_cast<CallbackCapture*>(context);
     capture.text = text;
     capture.bounds = bounds;
     capture.line_gap = line_gap;
     capture.scale = scale;
     capture.color = color;
+    capture.text_metadata = metadata;
     ++capture.text_calls;
 }
 
@@ -136,6 +140,54 @@ int main() {
     ok &= check(!h2::port::decode_dxt5(
                     std::span<const std::uint8_t>(red_dxt5.data(), 15), 4, 4, decoded),
                 "DXT5 decoder accepted a truncated block");
+
+    std::vector<std::uint8_t> font_file(0x40411, 0);
+    std::fill(font_file.begin() + 0x400, font_file.begin() + 0x40400, 0xff);
+    font_file[0x200] = 1;
+    font_file[0x203] = 0xf0;
+    font_file[0x204] = 9;
+    font_file[0x206] = 3;
+    font_file[0x208] = 1;
+    const std::size_t a_offset = 0x400 + static_cast<std::size_t>('A') * 4;
+    font_file[a_offset + 0] = 0;
+    font_file[a_offset + 1] = 0;
+    font_file[a_offset + 2] = 0;
+    font_file[a_offset + 3] = 0;
+    font_file[0x40400] = 3;
+    font_file[0x40402] = 1;
+    font_file[0x40404] = 2;
+    font_file[0x40406] = 2;
+    font_file[0x40408] = 1;
+    font_file[0x4040a] = 2;
+    font_file[0x4040c] = 0x10;
+    font_file[0x4040d] = 0x04;
+    font_file[0x4040e] = 0x04;
+    font_file[0x40410] = 0x44;
+    h2::port::FontMetrics font_metrics;
+    h2::port::FontGlyph font_glyph;
+    std::string font_error;
+    ok &= check(h2::port::decode_font_metrics(font_file, font_metrics, font_error) &&
+                    font_metrics.ascending_height == 9 &&
+                    font_metrics.descending_height == 3 && font_metrics.leading_height == 1,
+                "retail font metrics decoder mismatch");
+    ok &= check(h2::port::decode_font_glyph(font_file, 'A', font_glyph, font_error) &&
+                    font_glyph.advance == 3 && font_glyph.width == 2 &&
+                    font_glyph.height == 2 && font_glyph.x_offset == 1 &&
+                    font_glyph.y_offset == 2 && font_glyph.rgba.size() == 16 &&
+                    font_glyph.rgba[0] == 255 && font_glyph.rgba[3] == 255,
+                "retail font glyph decoder mismatch");
+    font_error.clear();
+    ok &= check(!h2::port::decode_font_glyph(font_file, 'B', font_glyph, font_error),
+                "retail font decoder accepted an absent glyph");
+    font_file[0x200] = 2;
+    font_error.clear();
+    ok &= check(!h2::port::decode_font_metrics(font_file, font_metrics, font_error),
+                "retail font decoder accepted an unsupported header version");
+    font_file[0x200] = 1;
+    font_file[0x40410] = 0x45;
+    font_error.clear();
+    ok &= check(!h2::port::decode_font_glyph(font_file, 'A', font_glyph, font_error),
+                "retail font decoder accepted an overflowing RLE run");
 
     const unsigned int before = host_h2_get_milliseconds();
     host_h2_sleep(2);
@@ -195,9 +247,12 @@ int main() {
     const auto* vertices = reinterpret_cast<const void*>(static_cast<std::uintptr_t>(0x5678));
     const std::uint32_t text[] = {'H', '2', 0};
     const auto* bounds = reinterpret_cast<const void*>(static_cast<std::uintptr_t>(0x9abc));
+    const h2_text_request_metadata text_metadata{
+        H2_TEXT_PROTOCOL_VERSION, 2, 1, 2, 3, 0x80112233u};
     host_h2_video_control(7);
     host_h2_render_request(request, vertices);
-    host_h2_text_request(text, bounds, nullptr, nullptr, 3, 1.5f, 0xff00ff00u, nullptr);
+    host_h2_text_request(text, bounds, nullptr, nullptr, 3, 1.5f, 0xff00ff00u,
+                         &text_metadata);
     const auto stats = h2::port::host_service_stats();
     ok &= check(capture.command == 7 && capture.video_calls == 1,
                 "video-control callback did not receive the guest command");
@@ -206,7 +261,8 @@ int main() {
                 "render callback did not receive the guest pointers");
     ok &= check(capture.text == text && capture.bounds == bounds &&
                     capture.line_gap == 3 && capture.scale == 1.5f &&
-                    capture.color == 0xff00ff00u && capture.text_calls == 1,
+                    capture.color == 0xff00ff00u &&
+                    capture.text_metadata == &text_metadata && capture.text_calls == 1,
                 "text callback did not receive the guest text request");
     ok &= check(stats.video_control_calls == 1 && stats.render_request_calls == 1 &&
                     stats.text_request_calls == 1,

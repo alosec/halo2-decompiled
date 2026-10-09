@@ -6,6 +6,7 @@
 #define H2_RENDER_REQUEST_INTERFACE_QUAD 3u
 #define H2_RENDER_PROTOCOL_VERSION 1u
 #define H2_RENDER_IMMEDIATE_MAX_VERTICES 4u
+#define H2_TEXT_PROTOCOL_VERSION 1u
 
 struct h2_render_immediate_request {
     unsigned int kind;
@@ -27,11 +28,22 @@ struct h2_render_immediate_vertex {
     float w;
 };
 
+struct h2_text_request_metadata {
+    unsigned int version;
+    int font;
+    int style;
+    int justification;
+    unsigned int flags;
+    unsigned int shadow_color;
+};
+
 #ifdef __cplusplus
 static_assert(sizeof(h2_render_immediate_request) == 32,
               "immediate render request layout");
 static_assert(sizeof(h2_render_immediate_vertex) == 24,
               "immediate render vertex layout");
+static_assert(sizeof(h2_text_request_metadata) == 24,
+              "text request metadata layout");
 #endif
 
 #endif

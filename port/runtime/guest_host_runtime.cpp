@@ -1,4 +1,5 @@
 #include "h2/host_abi.h"
+#include "h2/render_protocol.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_122870.h"
@@ -176,13 +177,21 @@ void c_1fa50::function_1fa50(short_rectangle2d const *bounds, void const *clip,
             value = 1.0f;
         return static_cast<unsigned int>(value * 255.0f + 0.5f);
     };
-    const unsigned int packed_color =
-        (channel(g_4e73a0.color.alpha) << 24) |
-        (channel(g_4e73a0.color.red) << 16) |
-        (channel(g_4e73a0.color.green) << 8) |
-        channel(g_4e73a0.color.blue);
+    auto pack = [&](const color4f& value) -> unsigned int {
+        return (channel(value.alpha) << 24) |
+               (channel(value.red) << 16) |
+               (channel(value.green) << 8) |
+               channel(value.blue);
+    };
+    h2_text_request_metadata metadata{};
+    metadata.version = H2_TEXT_PROTOCOL_VERSION;
+    metadata.font = g_4e73a0.font;
+    metadata.style = g_4e73a0.style;
+    metadata.justification = g_4e73a0.justification;
+    metadata.flags = g_4e73a0.flags;
+    metadata.shadow_color = g_4e73a0.shadow ? pack(g_4e73a0.field_24) : 0;
     host_h2_text_request(text, bounds, clip, position, static_cast<int>(line_gap),
-                         scale, packed_color, shadow);
+                         scale, pack(g_4e73a0.color), &metadata);
 }
 
 extern "C" DWORD __stdcall GetTickCount(void)

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 5u
+#define H2_HOST_ABI_VERSION 6u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the

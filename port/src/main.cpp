@@ -1,3 +1,4 @@
+#include "h2/font_decode.hpp"
 #include "h2/guest_arena.hpp"
 #include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
@@ -5,11 +6,13 @@
 #include "h2/retail_data.hpp"
 #include "h2/texture_decode.hpp"
 
+#include <array>
 #include <charconv>
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <string_view>
@@ -27,10 +30,24 @@ constexpr std::uint32_t kGuestStackSize = 0x00100000u;
 
 using GuestEntry = int (*)();
 
+struct CachedFontGlyph {
+    h2::port::FontGlyph metrics;
+    SDL_Texture* texture = nullptr;
+};
+
+struct CachedFont {
+    bool attempted = false;
+    std::vector<std::uint8_t> file;
+    h2::port::FontMetrics metrics;
+    std::unordered_map<std::uint32_t, CachedFontGlyph> glyphs;
+};
+
 struct NativeRenderContext {
     SDL_Renderer* renderer = nullptr;
     const h2::port::GuestArena* arena = nullptr;
+    std::filesystem::path font_root;
     std::unordered_map<std::uint32_t, SDL_Texture*> textures;
+    std::array<CachedFont, 11> fonts;
     bool failed = false;
 };
 
@@ -104,36 +121,149 @@ struct GuestRectangle {
     short right;
 };
 
+CachedFont* get_font(NativeRenderContext& context, int index) {
+    static constexpr std::array<std::string_view, 11> names = {
+        "fixedsys-9", "conduit-12", "handel_gothic-11", "handel_gothic-24",
+        "conduit-13", "conduit-12", "conduit-13", "conduit-12", "MSLCD-14",
+        "conduit-16", "handel_gothic-13"};
+    if (index < 0 || index >= static_cast<int>(names.size())) {
+        return nullptr;
+    }
+    CachedFont& font = context.fonts[static_cast<std::size_t>(index)];
+    if (!font.attempted) {
+        font.attempted = true;
+        const auto path = context.font_root / names[static_cast<std::size_t>(index)];
+        std::ifstream input(path, std::ios::binary | std::ios::ate);
+        if (input) {
+            const std::streamsize size = input.tellg();
+            if (size > 0) {
+                font.file.resize(static_cast<std::size_t>(size));
+                input.seekg(0);
+                input.read(reinterpret_cast<char*>(font.file.data()), size);
+                std::string error;
+                if (!input || !h2::port::decode_font_metrics(font.file, font.metrics, error)) {
+                    font.file.clear();
+                }
+            }
+        }
+    }
+    return font.file.empty() ? nullptr : &font;
+}
+
+CachedFontGlyph* get_font_glyph(NativeRenderContext& context, CachedFont& font,
+                                std::uint32_t character) {
+    if (const auto found = font.glyphs.find(character); found != font.glyphs.end()) {
+        return found->second.texture ? &found->second : nullptr;
+    }
+    CachedFontGlyph cached;
+    std::string error;
+    if (h2::port::decode_font_glyph(font.file, character, cached.metrics, error) &&
+        cached.metrics.width > 0 && cached.metrics.height > 0) {
+        cached.texture = SDL_CreateTexture(context.renderer, SDL_PIXELFORMAT_RGBA32,
+                                           SDL_TEXTUREACCESS_STATIC,
+                                           cached.metrics.width, cached.metrics.height);
+        if (cached.texture &&
+            (!SDL_UpdateTexture(cached.texture, nullptr, cached.metrics.rgba.data(),
+                                cached.metrics.width * 4) ||
+             !SDL_SetTextureBlendMode(cached.texture, SDL_BLENDMODE_BLEND))) {
+            SDL_DestroyTexture(cached.texture);
+            cached.texture = nullptr;
+        }
+    }
+    auto [entry, inserted] = font.glyphs.emplace(character, std::move(cached));
+    (void)inserted;
+    return entry->second.texture ? &entry->second : nullptr;
+}
+
+bool draw_retail_text(NativeRenderContext& context, const std::uint32_t* text,
+                      const GuestRectangle& bounds, float scale, std::uint32_t color,
+                      const h2_text_request_metadata& metadata) {
+    CachedFont* font = get_font(context, metadata.font);
+    if (!font) {
+        return false;
+    }
+    const float glyph_scale = scale > 0.0f ? scale : 1.0f;
+    std::size_t count = 0;
+    float width = 0.0f;
+    while (count < 2048 && text[count] && text[count] != '\r') {
+        CachedFontGlyph* glyph = get_font_glyph(context, *font, text[count]);
+        if (!glyph) {
+            return false;
+        }
+        width += glyph->metrics.advance * glyph_scale;
+        ++count;
+    }
+    float x = static_cast<float>(bounds.left) + font->metrics.initial_offset * glyph_scale;
+    if (metadata.justification == 1) {
+        x = static_cast<float>(bounds.right) - width -
+            font->metrics.initial_offset * glyph_scale;
+    } else if (metadata.justification == 2) {
+        x = (static_cast<float>(bounds.left) + bounds.right - width) * 0.5f;
+    }
+    const float baseline = bounds.top + font->metrics.ascending_height * glyph_scale;
+    const auto draw_pass = [&](std::uint32_t pass_color, float offset) {
+        const SDL_FColor modulation = unpack_color(pass_color);
+        float cursor = x;
+        for (std::size_t i = 0; i < count; ++i) {
+            CachedFontGlyph* glyph = get_font_glyph(context, *font, text[i]);
+            SDL_FRect destination{
+                cursor + glyph->metrics.x_offset * glyph_scale + offset,
+                baseline - glyph->metrics.y_offset * glyph_scale + offset,
+                glyph->metrics.width * glyph_scale,
+                glyph->metrics.height * glyph_scale};
+            if (!SDL_SetTextureColorModFloat(glyph->texture, modulation.r,
+                                             modulation.g, modulation.b) ||
+                !SDL_SetTextureAlphaModFloat(glyph->texture, modulation.a) ||
+                !SDL_RenderTexture(context.renderer, glyph->texture, nullptr,
+                                   &destination)) {
+                return false;
+            }
+            cursor += glyph->metrics.advance * glyph_scale;
+        }
+        return true;
+    };
+    if (metadata.shadow_color && !draw_pass(metadata.shadow_color, glyph_scale)) {
+        context.failed = true;
+        return true;
+    }
+    if (!draw_pass(color, 0.0f)) {
+        context.failed = true;
+    }
+    return true;
+}
+
 void draw_guest_text(const std::uint32_t* text, const void* bounds_pointer,
                      const void*, const void*, int, float scale,
-                     std::uint32_t color, const void*, void* context_pointer) {
+                     std::uint32_t color, const void* metadata_pointer,
+                     void* context_pointer) {
     auto& context = *static_cast<NativeRenderContext*>(context_pointer);
     if (!text || !bounds_pointer || context.failed) {
         return;
     }
-    std::string utf8;
-    for (std::size_t i = 0; i < 2048 && text[i]; ++i) {
-        const std::uint32_t character = text[i];
-        if (character >= 0x20 && character <= 0x7e) {
-            utf8.push_back(static_cast<char>(character));
-        } else {
-            utf8.push_back('?');
+    const auto& bounds = *static_cast<const GuestRectangle*>(bounds_pointer);
+    if (metadata_pointer) {
+        const auto& metadata =
+            *static_cast<const h2_text_request_metadata*>(metadata_pointer);
+        if (metadata.version == H2_TEXT_PROTOCOL_VERSION &&
+            draw_retail_text(context, text, bounds, scale, color, metadata)) {
+            return;
         }
     }
-    if (utf8.empty()) {
-        return;
+    std::string fallback;
+    for (std::size_t i = 0; i < 2048 && text[i]; ++i) {
+        fallback.push_back(text[i] >= 0x20 && text[i] <= 0x7e
+                               ? static_cast<char>(text[i])
+                               : '?');
     }
-    const auto& bounds = *static_cast<const GuestRectangle*>(bounds_pointer);
-    const float glyph_scale = scale > 0.0f ? scale : 1.0f;
-    const float width = static_cast<float>(utf8.size()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE *
-                        glyph_scale;
-    const float height = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * glyph_scale;
+    const float width = static_cast<float>(fallback.size()) *
+                        SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE;
     const float x = (static_cast<float>(bounds.left) + bounds.right - width) * 0.5f;
-    const float y = (static_cast<float>(bounds.top) + bounds.bottom - height) * 0.5f;
+    const float y = (static_cast<float>(bounds.top) + bounds.bottom -
+                     SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) * 0.5f;
     const SDL_FColor unpacked = unpack_color(color);
     if (!SDL_SetRenderDrawColorFloat(context.renderer, unpacked.r, unpacked.g,
                                      unpacked.b, unpacked.a) ||
-        !SDL_RenderDebugText(context.renderer, x, y, utf8.c_str())) {
+        !SDL_RenderDebugText(context.renderer, x, y, fallback.c_str())) {
         context.failed = true;
     }
 }
@@ -229,7 +359,8 @@ bool parse_options(int argc, char** argv, Options& options) {
 
 int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
                const std::filesystem::path& screenshot,
-               const h2::port::GuestArena* arena) {
+               const h2::port::GuestArena* arena,
+               const std::filesystem::path& data_root) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         std::cerr << "SDL initialization failed: " << SDL_GetError() << '\n';
         return 1;
@@ -261,7 +392,10 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
         return 1;
     }
 
-    NativeRenderContext render_context{renderer, arena, {}, false};
+    NativeRenderContext render_context;
+    render_context.renderer = renderer;
+    render_context.arena = arena;
+    render_context.font_root = data_root / "maps" / "fonts";
     h2::port::set_render_request_handler(draw_guest_request, &render_context);
     h2::port::set_text_request_handler(draw_guest_text, &render_context);
     bool running = true;
@@ -323,15 +457,31 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
             (void)address;
             decoded_textures += texture != nullptr;
         }
+        std::size_t decoded_glyphs = 0;
+        for (const auto& font : render_context.fonts) {
+            for (const auto& [character, glyph] : font.glyphs) {
+                (void)character;
+                decoded_glyphs += glyph.texture != nullptr;
+            }
+        }
         std::cout << "Rendered " << rendered_frames << " host frames; guest requests: render "
                   << stats.render_request_calls << ", text " << stats.text_request_calls
                   << ", video " << stats.video_control_calls << "; decoded textures "
-                  << decoded_textures << '/' << render_context.textures.size() << '\n';
+                  << decoded_textures << '/' << render_context.textures.size()
+                  << ", retail glyphs " << decoded_glyphs << '\n';
     }
     for (const auto& [address, texture] : render_context.textures) {
         (void)address;
         if (texture) {
             SDL_DestroyTexture(texture);
+        }
+    }
+    for (const auto& font : render_context.fonts) {
+        for (const auto& [character, glyph] : font.glyphs) {
+            (void)character;
+            if (glyph.texture) {
+                SDL_DestroyTexture(glyph.texture);
+            }
         }
     }
     SDL_DestroyRenderer(renderer);
@@ -464,5 +614,5 @@ int main(int argc, char** argv) {
     return options.headless
         ? 0
         : run_window(guest_frame, guest_stack_top, options.frame_count,
-                     options.screenshot, arena.get());
+                     options.screenshot, arena.get(), options.data_root);
 }
