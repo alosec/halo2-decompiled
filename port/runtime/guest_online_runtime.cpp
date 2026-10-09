@@ -156,6 +156,21 @@ void function_121100(long *value)
     *value = 0;
 }
 
+void __stdcall function_238c21(long, long, unsigned short *, long)
+{
+    /* Native text entry has no controller/keyboard screen yet. */
+}
+
+void __stdcall function_238ea7(long)
+{
+    /* No Xbox Live friend selection exists offline. */
+}
+
+void __stdcall function_238eb5(long, long)
+{
+    /* No Xbox Live friend selection exists offline. */
+}
+
 void __stdcall function_238f3f(long, void *, unsigned __int64)
 {
     /* Xbox Live invitation dispatch is unavailable offline. */

@@ -82,6 +82,10 @@ def main():
         assert symbol not in imports
     assert "?function_199893@@YAXXZ" not in imports
     assert "?function_199b08@@YAXXZ" not in imports
+    assert "?function_236299@@YAXJ@Z" not in imports
+    assert "?function_238c21@@YAXJJPAGJ@Z" not in imports
+    assert "?function_238ea7@@YAXJ@Z" not in imports
+    assert "?function_238eb5@@YAXJJ@Z" not in imports
     for symbol in (
         "?function_199a03@@YAXJ@Z",
         "?function_199a57@@YAXXZ",

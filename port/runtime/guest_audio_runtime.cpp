@@ -14,6 +14,11 @@ struct s_main_menu_music
 static_assert(sizeof(s_main_menu_music) == 0x18, "recovered menu music layout");
 
 /* Native audio has no voices or impulse buffers to pause yet. */
+void function_236299(long)
+{
+    /* Native menu audio remains explicitly silent. */
+}
+
 void function_125a90(long)
 {
 }
