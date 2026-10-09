@@ -204,15 +204,14 @@ def main() -> int:
         "?g_4e3b44@@3PAUs_tag_instance@@A",
         "?g_51e9b8@@3PAUs_record_pool@@A",
         "?g_51ebfc@@3PAUs_record_pool@@A",
+        "?g_51ec00@@3PAUs_record_pool@@A",
         "?g_54e898@@3FA",
         "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
-        "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
         "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
         "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
-        "?impact_components_valid@@YA_NJJ@Z",
-        "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
+        "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
         "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
         "h2_guest_memcpy",
@@ -255,6 +254,9 @@ def main() -> int:
             "?function_182b90@@YAXPAVc_material_shape@@PBVhkEntity@@PAM2PAF@Z",
             "?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z",
             "?function_ba1d0@@YAXJPATvector3f@@0@Z",
+            "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
+            "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
+            "?impact_components_valid@@YA_NJJ@Z",
             "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
             "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
         if symbol not in contact_candidate_defined:
@@ -325,6 +327,8 @@ def main() -> int:
         "native_havok_entity_property_arrays_owned",
         "native_havok_contact_shape_tree_owned",
         "native_havok_material_response_state_owned",
+        "g_51ebfc_owned_impact_pool",
+        "g_51ec00_owned_component_impact_lists",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -523,11 +527,8 @@ def main() -> int:
     )
     contact_processing_new_imports = {
         "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
-        "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
         "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
         "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
-        "?impact_components_valid@@YA_NJJ@Z",
-        "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
         "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
     }
@@ -550,7 +551,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_contact_processing_score != expected_contact_processing_score or
-            len(actual_contact_processing_score) != 25):
+            len(actual_contact_processing_score) != 22):
         raise RuntimeError("Havok contact-processing candidate score changed")
 
     listener_frontier_path = (

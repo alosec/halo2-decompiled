@@ -45,6 +45,8 @@
     "native_havok_entity_property_arrays_owned",
     "native_havok_contact_shape_tree_owned",
     "native_havok_material_response_state_owned",
+    "g_51ebfc_owned_impact_pool",
+    "g_51ec00_owned_component_impact_lists",
     "native_havok_rigid_body_island_state_owned",
     "native_havok_motion_point_impulse_owned",
     "native_havok_world_activation_owned",

@@ -44,6 +44,8 @@ def main() -> int:
         velocity = temporary / "velocity.o"
         rigid_velocity = temporary / "rigid-velocity.o"
         combine = temporary / "combine.o"
+        impact_data = temporary / "impact-data.o"
+        impact_validity = temporary / "impact-validity.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -58,10 +60,17 @@ def main() -> int:
         compile_slice(args, args.root / "src/unknown_277ec0.cpp", combine,
                       ["?function_277ec0@@YAXPAM0PAF1PAUs_277ec0@@2JJ@Z"])
         compile_slice(
+            args, args.root / "src/unknown_2055f0.cpp", impact_data,
+            ["?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
+             "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z"])
+        compile_slice(args, args.root / "src/impacts.cpp", impact_validity,
+                      ["?impact_components_valid@@YA_NJJ@Z"])
+        compile_slice(
             args, args.root / "src/unknown_277b80.cpp", candidate,
             ["?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
-             lookup, properties, velocity, rigid_velocity, combine, candidate])
+             lookup, properties, velocity, rigid_velocity, combine, impact_data,
+             impact_validity, candidate])
     return 0
 
 

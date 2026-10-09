@@ -320,8 +320,10 @@ add_custom_command(
         h2_guest_rebase
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0b8bd0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_182020.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_2055f0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_1cec30.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_1ee410_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_277ec0.cpp"
