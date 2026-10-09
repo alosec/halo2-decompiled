@@ -61,6 +61,8 @@ def main() -> int:
         rigid_body_matrix = temporary / "rigid-body-matrix.o"
         structure_location = temporary / "structure-location.o"
         effect_state = temporary / "effect-state.o"
+        effect_distance = temporary / "effect-distance.o"
+        effect_selection = temporary / "effect-selection.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -116,10 +118,18 @@ def main() -> int:
                       ["?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z"])
         compile_slice(args, args.root / "src/unknown_175bd0.cpp", effect_state,
                       ["?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z"])
+        compile_slice(args, args.root / "src/unknown_170d70.cpp", effect_distance,
+                      ["?function_172750@@YA_NJPBTpoint3f@@M@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_187ec0.cpp", effect_selection,
+            ["?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z"],
+            ["switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
+             "switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z.2"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
-             rigid_body_matrix, structure_location, effect_state])
+             rigid_body_matrix, structure_location, effect_state,
+             effect_distance, effect_selection])
     return 0
 
 

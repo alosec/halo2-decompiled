@@ -12,6 +12,7 @@ double acos(double value);
 double asin(double value);
 double atan2(double y, double x);
 double ceil(double value);
+double atan(double value);
 double cos(double value);
 double exp(double value);
 double fabs(double value);

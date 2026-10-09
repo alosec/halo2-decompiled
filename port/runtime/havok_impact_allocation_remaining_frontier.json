@@ -13,11 +13,6 @@
       "blocker": "Requires complete native effect deletion and reference ownership."
     },
     {
-      "symbol": "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete impact effect submission and output-handle ownership."
-    },
-    {
       "symbol": "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
       "subsystem": "audio",
       "blocker": "Requires a native positional sound provider rather than fabricated playback."

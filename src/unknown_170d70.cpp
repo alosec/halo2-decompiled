@@ -485,6 +485,10 @@ static inline long local_player_next(long index)
 // @retail 0x172750
 bool function_172750(long mode, point3f const *point, real radius)
 {
+#ifdef H2_NATIVE_PORT
+	if (!g_4e8c20 || g_4686c4 == NONE)
+		return false;
+#endif
 	real limit = radius * radius;
 
 	for (long i = local_player_next(NONE); i != NONE; i = local_player_next(i))

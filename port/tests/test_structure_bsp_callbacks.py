@@ -594,7 +594,6 @@ def main() -> int:
     impact_allocation_new_imports = {
         "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
         "?function_177260@@YAXJ_N@Z",
-        "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
         "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
         "?function_18a5e0@@YAPAGJ@Z",
         "?function_18a6c0@@YAJJJ@Z",
@@ -619,7 +618,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 26):
+            len(actual_impact_allocation_score) != 25):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
@@ -627,7 +626,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.impact_allocation_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(impact_undefined) != 43:
+    if len(impact_undefined) != 44:
         raise RuntimeError("Havok impact-allocation raw closure changed")
     impact_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
@@ -639,7 +638,9 @@ def main() -> int:
             "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z" not in impact_defined or
             "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z" not in impact_defined or
             "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z" not in impact_defined or
-            "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z" not in impact_defined):
+            "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z" not in impact_defined or
+            "?function_172750@@YA_NJPBTpoint3f@@M@Z" not in impact_defined or
+            "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z" not in impact_defined):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")
     impact_frontier = json.loads((
         args.root / "port/runtime/havok_impact_allocation_remaining_frontier.json"
