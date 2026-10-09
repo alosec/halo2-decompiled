@@ -793,6 +793,36 @@ def main():
             if f"_{placement_symbol}" not in placement_defined:
                 raise RuntimeError(f"placement dependency was not selectively compilable: {placement_symbol}")
 
+        decals_output = Path(temporary) / "structure-bsp-decals.o"
+        decals_symbol = "?decals_update_locations@@YAXXZ"
+        decals_command = command[:]
+        decals_command[decals_command.index("h2_extract_selected")] = decals_symbol
+        decals_command[decals_command.index("--extract-global"):decals_command.index("--output")] = []
+        decals_command[decals_command.index(output)] = decals_output
+        decals_command[-1] = args.root / "src/unknown_17d2a0.cpp"
+        subprocess.run([str(value) for value in decals_command], check=True)
+        decals_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", decals_output],
+            text=True,
+        )
+        if f"_{decals_symbol}" not in decals_defined:
+            raise RuntimeError("structure-BSP decal update was not selectively compilable")
+
+        looping_sound_output = Path(temporary) / "structure-bsp-looping-sound.o"
+        looping_sound_symbol = "?object_looping_sounds_initialize_for_new_structure_bsp@@YAXXZ"
+        looping_sound_command = command[:]
+        looping_sound_command[looping_sound_command.index("h2_extract_selected")] = looping_sound_symbol
+        looping_sound_command[looping_sound_command.index("--extract-global"):looping_sound_command.index("--output")] = []
+        looping_sound_command[looping_sound_command.index(output)] = looping_sound_output
+        looping_sound_command[-1] = args.root / "src/unknown_1887d0.cpp"
+        subprocess.run([str(value) for value in looping_sound_command], check=True)
+        looping_sound_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", looping_sound_output],
+            text=True,
+        )
+        if f"_{looping_sound_symbol}" not in looping_sound_defined:
+            raise RuntimeError("structure-BSP looping-sound reset was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"

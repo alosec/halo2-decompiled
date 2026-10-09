@@ -67,6 +67,25 @@ def main() -> int:
     recovered = {method for method in unique if functions[method]["source"]}
     if recovered != unique:
         raise RuntimeError("all structure-BSP callbacks must remain source-owned")
+
+    providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"
+    providers_manifest = json.loads(providers_path.read_text())
+    if providers_manifest.get("version") != 1:
+        raise RuntimeError("unsupported structure-BSP provider manifest")
+    providers = providers_manifest.get("providers")
+    if not isinstance(providers, list) or len(providers) != 17:
+        raise RuntimeError("structure-BSP provider inventory changed")
+    provider_methods = {int(entry["method"], 0) for entry in providers}
+    if provider_methods != unique:
+        raise RuntimeError("structure-BSP providers do not cover every unique callback")
+    if sum(bool(entry.get("portable")) for entry in providers) != 12:
+        raise RuntimeError("structure-BSP portable-provider ratchet regressed")
+    blocked = {int(entry["method"], 0) for entry in providers if not entry.get("portable")}
+    if blocked != {0x000226A0, 0x0003F2B0, 0x00125920, 0x001C7BB0, 0x00210DF0}:
+        raise RuntimeError("structure-BSP portability frontier changed")
+    for entry in providers:
+        if entry["source"] != "native" and not (args.root / entry["source"]).is_file():
+            raise RuntimeError(f"missing structure-BSP provider source: {entry['source']}")
     return 0
 
 

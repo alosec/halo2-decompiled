@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "providers": [
+    {"method": "0x00123d20", "symbol": "?arena_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_123c20.cpp", "portable": true},
+    {"method": "0x00175f40", "symbol": "h2_native_structure_bsp_idle", "source": "native", "portable": true},
+    {"method": "0x000b6bb0", "symbol": "?function_b6bb0@@YAXXZ", "source": "src/unknown_0b6bb0.cpp", "portable": true},
+    {"method": "0x000226a0", "symbol": "?function_226a0@@YAXXZ", "source": "src/unknown_020560.cpp", "portable": false},
+    {"method": "0x00183ee0", "symbol": "?function_183ee0@@YAXXZ", "source": "src/unknown_183ee0.cpp", "portable": true},
+    {"method": "0x0016f120", "symbol": "?function_16f120@@YAXXZ", "source": "src/unknown_16e290.cpp", "portable": true},
+    {"method": "0x0017d350", "symbol": "?decals_update_locations@@YAXXZ", "source": "src/unknown_17d2a0.cpp", "portable": true},
+    {"method": "0x0017b940", "symbol": "?contrails_update_locations@@YAXXZ", "source": "src/unknown_17b850.cpp", "portable": true},
+    {"method": "0x00175d70", "symbol": "?function_175d70@@YAXXZ", "source": "src/unknown_175bd0.cpp", "portable": true},
+    {"method": "0x0003f2b0", "symbol": "?function_03f2b0@@YAXXZ", "source": "src/unknown_03f2b0.cpp", "portable": false},
+    {"method": "0x00125920", "symbol": "?sound_update_locations@@YAXXZ", "source": "src/unknown_124f90.cpp", "portable": false},
+    {"method": "0x00188980", "symbol": "?object_looping_sounds_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_1887d0.cpp", "portable": true},
+    {"method": "0x000d4e30", "symbol": "?function_d4e30@@YAXXZ", "source": "src/unknown_0b7300.cpp", "portable": true},
+    {"method": "0x001c7bb0", "symbol": "?function_1c7bb0@@YAXXZ", "source": "src/unknown_1c7bb0.cpp", "portable": false},
+    {"method": "0x001c2690", "symbol": "?function_1c2690@@YAXXZ", "source": "src/unknown_1c2690.cpp", "portable": true},
+    {"method": "0x0014b6a0", "symbol": "?function_14b6a0@@YAXXZ", "source": "src/unknown_14b6a0.cpp", "portable": true},
+    {"method": "0x00210df0", "symbol": "?function_210df0@@YAXXZ", "source": "src/unknown_20fe20.cpp", "portable": false}
+  ]
+}

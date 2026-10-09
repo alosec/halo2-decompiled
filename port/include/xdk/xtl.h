@@ -112,6 +112,9 @@ extern "C" {
 
 int __cdecl abs(int value);
 #ifdef H2_NATIVE_PORT
+typedef struct D3DResource D3DResource;
+DWORD __stdcall D3DResource_Release(D3DResource *resource);
+
 void __stdcall D3DDevice_Begin(DWORD primitive_type);
 void __stdcall D3DDevice_End(void);
 void __stdcall D3DDevice_SetVertexData2f(DWORD vertex_register, float x, float y);
