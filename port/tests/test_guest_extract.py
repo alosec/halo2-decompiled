@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_capsule_output = Path(temporary) / "physics-model-capsule.o"
+        physics_model_capsule_symbol = (
+            "?function_2de1b0@c_physics_capsule_shape@@UAAPA_NPA_NPBUs_physics_capsule_segment@@PAUs_physics_capsule_hit@@@Z"
+        )
+        physics_model_capsule_command = command[:]
+        physics_model_capsule_command[physics_model_capsule_command.index("h2_extract_selected")] = physics_model_capsule_symbol
+        physics_model_capsule_command[physics_model_capsule_command.index("--extract-global"):physics_model_capsule_command.index("--output")] = []
+        physics_model_capsule_command[physics_model_capsule_command.index(output)] = physics_model_capsule_output
+        physics_model_capsule_command[-1] = args.root / "src/unknown_2de1b0.cpp"
+        subprocess.run([str(value) for value in physics_model_capsule_command], check=True)
+        physics_model_capsule_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_capsule_output],
+            text=True,
+        )
+        if f"_{physics_model_capsule_symbol}" not in physics_model_capsule_defined:
+            raise RuntimeError("physics-model capsule intersection method was not retained")
+
         physics_model_offset_box_output = Path(temporary) / "physics-model-offset-box.o"
         physics_model_offset_box_symbol = (
             "?function_2fd8a0@c_physics_offset_box_shape@@UAAXPBUs_physics_offset_box_matrix@@MPAUs_physics_offset_box_bounds@@@Z"
