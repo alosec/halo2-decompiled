@@ -14,7 +14,7 @@
     {
       "symbol": "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
       "subsystem": "contact_processing",
-      "blocker": "Requires complete contact creation, impact deduplication/allocation, component room policy, shape-key/material extraction, and callback ownership."
+      "blocker": "Requires complete contact creation, impact deduplication/allocation, component room policy, and impact callback ownership; exact shape-key and material-response extraction are already owned."
     }
   ]
 }

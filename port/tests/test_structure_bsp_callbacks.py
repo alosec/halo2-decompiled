@@ -42,6 +42,7 @@ def main() -> int:
     parser.add_argument("--production-object", type=Path, required=True)
     parser.add_argument("--primary-listener-table-object", type=Path, required=True)
     parser.add_argument("--primary-listener-provider-cluster-object", type=Path, required=True)
+    parser.add_argument("--contact-processing-candidate-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -165,6 +166,8 @@ def main() -> int:
     if ("h2_native_havok_primary_listener_vtables" in production_defined_for_listener or
             any(table[3] in production_defined_for_listener for table in expected_primary_tables)):
         raise RuntimeError("dormant primary listener tables entered production")
+    if "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z" in production_defined_for_listener:
+        raise RuntimeError("dormant contact-processing candidate entered production")
     expected_primary_cluster_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
         "?function_226a60@@YAXJ@Z",
@@ -190,6 +193,40 @@ def main() -> int:
     }
     if primary_cluster_undefined != expected_primary_cluster_imports:
         raise RuntimeError("primary Havok listener provider closure changed")
+
+    expected_contact_candidate_imports = {
+        "?function_1cf520@@YAXPAUs_1cf520@@PAVc_1cf520@@_N2JJ@Z",
+        "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
+        "?g_4687a4@@3PATvector3f@@A",
+        "?g_4e0300@@3PAUs_record_pool@@A",
+        "?g_4e0348@@3PAUs_match_globals@@A",
+        "?g_4e034c@@3PAUs_tag_header_globals@@A",
+        "?g_4e3b44@@3PAUs_tag_instance@@A",
+        "?g_51e9b8@@3PAUs_record_pool@@A",
+        "?g_51ebfc@@3PAUs_record_pool@@A",
+        "?g_54e898@@3FA",
+        "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
+        "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
+        "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
+        "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
+        "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
+        "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
+        "?impact_components_valid@@YA_NJJ@Z",
+        "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
+        "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
+        "?impact_new@@YAJPBUs_impact_data@@J@Z",
+        "h2_guest_memcpy",
+        "sqrt",
+    }
+    contact_candidate_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.contact_processing_candidate_object],
+            text=True).splitlines() if line.strip()
+    }
+    if contact_candidate_undefined != expected_contact_candidate_imports:
+        raise RuntimeError("Havok contact-processing candidate closure changed")
+
     primary_cluster_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix",
          args.primary_listener_provider_cluster_object], text=True)
@@ -208,6 +245,20 @@ def main() -> int:
                     "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z"}):
         if symbol not in primary_cluster_defined:
             raise RuntimeError(f"primary Havok listener cluster lacks {symbol}")
+
+    contact_candidate_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix",
+         args.contact_processing_candidate_object], text=True)
+    for symbol in {
+            "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
+            "?function_277ec0@@YAXPAM0PAF1PAUs_277ec0@@2JJ@Z",
+            "?function_182b90@@YAXPAVc_material_shape@@PBVhkEntity@@PAM2PAF@Z",
+            "?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z",
+            "?function_ba1d0@@YAXJPATvector3f@@0@Z",
+            "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
+            "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
+        if symbol not in contact_candidate_defined:
+            raise RuntimeError(f"contact-processing candidate lacks {symbol}")
 
     providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"
     providers_manifest = json.loads(providers_path.read_text())
@@ -273,6 +324,7 @@ def main() -> int:
         "native_havok_listener_cache_attachment_owned",
         "native_havok_entity_property_arrays_owned",
         "native_havok_contact_shape_tree_owned",
+        "native_havok_material_response_state_owned",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -465,6 +517,41 @@ def main() -> int:
     if (actual_listener_production != expected_listener_production or
             len(actual_listener_production) != 18):
         raise RuntimeError("complete primary Havok listener production score changed")
+
+    contact_processing_symbol = (
+        "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z"
+    )
+    contact_processing_new_imports = {
+        "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
+        "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
+        "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
+        "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
+        "?impact_components_valid@@YA_NJJ@Z",
+        "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
+        "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
+        "?impact_new@@YAJPBUs_impact_data@@J@Z",
+    }
+    expected_contact_processing_score = (
+        expected_listener_production - {contact_processing_symbol}
+    ) | contact_processing_new_imports
+    with tempfile.TemporaryDirectory(prefix="h2-contact-processing-score-") as temporary:
+        scored = Path(temporary) / "contact-processing-production.o"
+        subprocess.run([
+            args.lld, "-r", "--allow-multiple-definition", "-o", scored,
+            args.contact_processing_candidate_object,
+            args.primary_listener_provider_cluster_object,
+            args.provider_cluster_object,
+            args.production_object,
+        ], check=True)
+        actual_contact_processing_score = {
+            line.strip().split()[-1]
+            for line in subprocess.check_output(
+                [args.llvm_nm, "--undefined-only", scored], text=True
+            ).splitlines() if line.strip()
+        }
+    if (actual_contact_processing_score != expected_contact_processing_score or
+            len(actual_contact_processing_score) != 25):
+        raise RuntimeError("Havok contact-processing candidate score changed")
 
     listener_frontier_path = (
         args.root / "port/runtime/havok_primary_listener_remaining_frontier.json"

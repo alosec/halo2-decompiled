@@ -2681,7 +2681,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 000b9ef0,200,game,speed,a16 pad,,,000b9dd0,src/unknown_0cafc0.cpp,todo
 000b9fc0,403,game,speed,a16 pad,,,,src/unknown_0b8ca0.cpp,matched
 000ba160,103,game,speed,a16 pad,,,001420f0 00142a60,src/unknown_0b7740.cpp,matched
-000ba1d0,296,game,speed,a16 pad,,,001d09d0 001d0ad0,src/unknown_0b8bd0.cpp,todo
+000ba1d0,296,game,speed,a16 pad,,,001d09d0 001d0ad0,src/unknown_0b8bd0.cpp,done
 000ba300,72,game,speed,a16 pad,,,,src/unknown_0b8bd0.cpp,todo
 000ba350,123,game,speed,a16 pad,,,000b7360 001cb5f0,src/unknown_0b8ca0.cpp,todo
 000ba3d0,50,game,speed,a16 pad,,,000b7360,src/unknown_0bad50.cpp,matched
@@ -5339,7 +5339,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 00182800,426,game,speed,a16 pad ebp,,,0030b130 003212c5 003212d6,src/unknown_181a10.cpp,todo
 001829b0,233,game,speed,a16 pad,,,00183da0 001cf280,src/unknown_181a10.cpp,todo
 00182aa0,230,game,speed,a16 pad ebp,,,00182d90,src/unknown_182d90.cpp,matched
-00182b90,503,game,speed,a16 pad,,,001cf280 001ee410,src/unknown_182020.cpp,todo
+00182b90,503,game,speed,a16 pad,,,001cf280 001ee410,src/unknown_182020.cpp,done
 00182d90,2265,game,speed,a16 pad ebp,,,00182d90 002da450,src/unknown_182d90.cpp,todo
 00183670,667,game,speed,a16 pad ebp,,,00053f50 003212c5 003212d6,src/unknown_181a10.cpp,todo
 00183910,838,third:havok,speed,a16 pad ebp,,,002d7240 002def90 0030b6a0 0030bb50 0030bb90 003212c5 003212d6,,todo
@@ -7144,7 +7144,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 001ee340,14,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,matched
 001ee350,123,game,speed,a16 pad ebp,,,,src/unknown_1ee340.cpp,matched
 001ee3d0,62,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,matched
-001ee410,95,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,todo
+001ee410,95,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,done
 001ee470,24,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,todo
 001ee490,16,game,speed,a16 pad,,,,src/unknown_1ee340.cpp,matched
 001ee4a0,34,game,unknown,a16,,,,src/unknown_1ee340.cpp,matched

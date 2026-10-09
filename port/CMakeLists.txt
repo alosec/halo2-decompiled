@@ -306,6 +306,34 @@ add_custom_target(h2_havok_primary_listener_table_object ALL DEPENDS
     "${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}"
 )
 
+set(H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_contact_processing_candidate.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
+            --root "${PROJECT_SOURCE_DIR}"
+            --python "${Python3_EXECUTABLE}"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --lld "${H2_LLD}"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --output "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/unknown_0b8bd0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_182020.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_1cec30.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_1ee410_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_277ec0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_277b80.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2_havok_contact_processing_candidate ALL DEPENDS
+    "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
+)
+
 set(H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_callbacks.o")
 set(H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_providers.o")
 set(H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_provider_cluster.o")
@@ -2407,6 +2435,7 @@ add_test(
             --production-object ${H2_MAIN_MENU_PARTIAL_ELF}
             --primary-listener-table-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}
             --primary-listener-provider-cluster-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}
+            --contact-processing-candidate-object ${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit
