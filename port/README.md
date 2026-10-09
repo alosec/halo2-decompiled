@@ -72,6 +72,7 @@ The initial LLVM rebase pass is adapted under CC0 from `bnunu/halo-ce-universal`
 - [x] Cross-link the selected recovered main-menu core into one relocatable AArch64 ELF object with exact symbol-closure parity.
 - [x] Add the production native ELF loader, segment protections, symbol lookup, and standard host-slot patching.
 - [x] Link the recovered main-menu unit, cache loader, and dependency closure into the executable guest image.
+- [x] Execute recovered UI frames and display a real retail-textured, localized press-start scene through SDL (diagnostic glyphs; not interactive yet).
 - [ ] Bring up the renderer through the reusable CC0 GLES-to-ANGLE/Metal backend.
 - [ ] Initialize input, UI, fonts, and sound; display and operate the authentic main menu.
 - [ ] Load a campaign map, enter gameplay, save/reload, and validate sustained play.
