@@ -172,6 +172,7 @@ def main() -> int:
     if ("?impact_new@@YAJPBUs_impact_data@@J@Z" in production_defined_for_listener or
             "?function_2266a0@@YAXJ@Z" in production_defined_for_listener or
             "?function_226a60@@YAXJ@Z" in production_defined_for_listener or
+            "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z" in production_defined_for_listener or
             "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z" in production_defined_for_listener or
             "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z" in production_defined_for_listener):
         raise RuntimeError("dormant impact lifetime candidate entered production")
@@ -605,7 +606,6 @@ def main() -> int:
     impact_allocation_new_imports = {
         "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
         "?function_177260@@YAXJ_N@Z",
-        "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
     }
     expected_impact_allocation_score = (
         expected_contact_processing_score - {
@@ -630,7 +630,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 18):
+            len(actual_impact_allocation_score) != 17):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
@@ -638,7 +638,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.impact_allocation_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(impact_undefined) != 50:
+    if len(impact_undefined) != 49:
         raise RuntimeError("Havok impact-allocation raw closure changed")
     impact_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
@@ -661,6 +661,7 @@ def main() -> int:
                 "?function_355e0@@YA_NJJPAM0@Z",
                 "?function_226a60@@YAXJ@Z",
                 "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
+                "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
                 "?havok_component_any_rigid_body_active@@YA_NPAUs_havok_component@@@Z",
                 "?impact_release@@YAXJPAUs_impact@@@Z"))):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")

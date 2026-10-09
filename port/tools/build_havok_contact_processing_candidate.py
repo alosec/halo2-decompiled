@@ -68,6 +68,7 @@ def main() -> int:
         motion_basis = temporary / "motion-basis.o"
         active_body = temporary / "active-body.o"
         contact_removal = temporary / "contact-removal.o"
+        audio_boundary = temporary / "audio-boundary.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -149,12 +150,16 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_1cec30.cpp", contact_removal,
             ["?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z"])
+        compile_slice(
+            args, args.root / "src/impact_audio_boundary_native.cpp", audio_boundary,
+            ["?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
              rigid_body_matrix, structure_location, effect_state,
              effect_distance, effect_selection, looping_sound_state,
-             contact_creation, motion_basis, active_body, contact_removal])
+             contact_creation, motion_basis, active_body, contact_removal,
+             audio_boundary])
     return 0
 
 
