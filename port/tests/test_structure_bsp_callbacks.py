@@ -121,8 +121,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 56:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 56")
+    if len(undefined) != 53:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 53")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
