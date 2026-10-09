@@ -1232,6 +1232,16 @@ add_custom_command(
 )
 add_custom_target(h2-main-menu-elf ALL DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}")
 
+set(H2_MAIN_MENU_GUEST_START_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/main_menu_guest_start.o")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_GUEST_START_OBJECT}"
+    COMMAND ${H2_LLVM_ROOT}/bin/llvm-mc -triple=aarch64-linux-gnu -filetype=obj
+            ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest_start.s
+            -o "${H2_MAIN_MENU_GUEST_START_OBJECT}"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest_start.s
+    VERBATIM
+)
 set(H2_MAIN_MENU_GUEST_IMAGE "${CMAKE_BINARY_DIR}/port/main-menu-core.elf")
 add_custom_command(
     OUTPUT "${H2_MAIN_MENU_GUEST_IMAGE}"
@@ -1240,7 +1250,9 @@ add_custom_command(
             -z max-page-size=0x4000
             -o "${H2_MAIN_MENU_GUEST_IMAGE}"
             "${H2_MAIN_MENU_PARTIAL_ELF}"
+            "${H2_MAIN_MENU_GUEST_START_OBJECT}"
     DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}"
+            "${H2_MAIN_MENU_GUEST_START_OBJECT}"
             ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
     VERBATIM
 )
@@ -1257,7 +1269,7 @@ target_compile_features(h2_port_support PUBLIC cxx_std_20)
 target_compile_options(h2_port_support PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2_port_support PUBLIC OpenSSL::Crypto)
 
-add_executable(halo2-port src/main.cpp)
+add_executable(halo2-port src/main.cpp runtime/guest_stack.s)
 target_compile_features(halo2-port PRIVATE cxx_std_20)
 target_compile_options(halo2-port PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(halo2-port PRIVATE h2_port_support SDL3::SDL3)

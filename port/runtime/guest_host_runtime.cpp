@@ -31,11 +31,36 @@ void function_215790();
 
 extern "C" int h2_main_menu_guest_entry()
 {
-    /* Phase one owns only deterministic offline profile/save bootstrap. UI
-     * manager construction and screen enqueueing remain deliberate later phases. */
+    /* Phase one owns only deterministic offline profile/save bootstrap. */
     function_18f5e3();
     function_215790();
     return 0;
+}
+
+struct s_loop_allocator;
+class c_memory_source;
+extern s_loop_allocator *g_51e998;
+void function_18e250(s_loop_allocator *, long, char const *, c_memory_source *);
+void function_1476c7();
+bool function_147d13();
+void __stdcall function_1483c3(long);
+
+alignas(16) static unsigned char g_native_ui_heap[0x100050];
+
+extern "C" int h2_main_menu_guest_open_press_start()
+{
+    if (h2_main_menu_guest_entry() != 0)
+        return 1;
+    if (!g_51e998) {
+        g_51e998 = reinterpret_cast<s_loop_allocator *>(g_native_ui_heap);
+        function_18e250(g_51e998, 0x100000, "ui memory pool", 0);
+        /* Recovered function_1a474c enables ownerless looping allocation. */
+        g_native_ui_heap[0x3c] = 1;
+        g_native_ui_heap[0x3d] = 1;
+    }
+    function_1476c7();
+    function_1483c3(0);
+    return function_147d13() ? 0 : 2;
 }
 
 /* The native host has no attract-movie decoder yet. */

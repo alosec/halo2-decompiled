@@ -64,7 +64,7 @@ def main() -> None:
         text=True,
     )
     entry_lines = [line for line in symbols.splitlines()
-                   if line.startswith("h2_main_menu_guest_entry ")]
+                   if line.startswith("h2_main_menu_guest_bootstrap ")]
     if len(entry_lines) != 1:
         raise RuntimeError("guest startup entry symbol is missing or duplicated")
     symbol_value = int(entry_lines[0].rsplit(maxsplit=3)[2], 16)

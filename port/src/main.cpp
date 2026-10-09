@@ -4,6 +4,7 @@
 #include "h2/retail_data.hpp"
 
 #include <cstdlib>
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -11,7 +12,12 @@
 
 #include <SDL3/SDL.h>
 
+extern "C" int h2_call_guest_int_0(int (*function)(), void* stack_top);
+
 namespace {
+
+constexpr std::uint32_t kGuestStackAddress = 0x20000000u;
+constexpr std::uint32_t kGuestStackSize = 0x00100000u;
 
 struct Options {
     std::filesystem::path data_root;
@@ -141,9 +147,18 @@ int main(int argc, char** argv) {
                           << options.guest_entry << '\n';
                 return 1;
             }
+            if (!arena->protect(kGuestStackAddress, kGuestStackSize,
+                                h2::port::GuestMemoryProtection::read_write,
+                                arena_error)) {
+                std::cerr << "error: could not prepare guest stack: "
+                          << arena_error << '\n';
+                return 1;
+            }
             using GuestEntry = int (*)();
             const auto entry = reinterpret_cast<GuestEntry>(arena->pointer(*address));
-            const int result = entry();
+            void* const stack_top = arena->pointer(
+                kGuestStackAddress + kGuestStackSize - 16);
+            const int result = h2_call_guest_int_0(entry, stack_top);
             if (result != 0) {
                 std::cerr << "error: guest entry returned " << result << '\n';
                 return 1;

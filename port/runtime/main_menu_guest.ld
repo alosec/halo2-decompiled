@@ -1,4 +1,4 @@
-ENTRY(h2_main_menu_guest_entry)
+ENTRY(h2_main_menu_guest_bootstrap)
 
 PHDRS
 {
@@ -27,6 +27,13 @@ SECTIONS
     {
         *(.data .data.*)
         *(.got .got.*)
+    } :data
+
+    .guest_init : ALIGN(4)
+    {
+        __guest_init_start = .;
+        KEEP(*(.guest_init))
+        __guest_init_end = .;
     } :data
 
     .bss (NOLOAD) : ALIGN(16)
