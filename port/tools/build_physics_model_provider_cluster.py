@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--leaves", type=Path, required=True)
     parser.add_argument("--crt", type=Path, required=True)
     parser.add_argument("--bindings", type=Path, required=True)
+    parser.add_argument("--providers-output", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -54,6 +55,7 @@ def main() -> int:
 
     source_globals = manifest.get("source_globals", {})
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.providers_output.parent.mkdir(parents=True, exist_ok=True)
     tool = args.root / "port/tools/guest_elf_cc.py"
     includes = [
         args.root / "port/include",
@@ -83,8 +85,12 @@ def main() -> int:
             objects.append(output)
 
         run([
+            args.lld, "-r", "-o", args.providers_output,
+            args.tables, args.leaves, *objects,
+        ])
+        run([
             args.lld, "-r", "-o", args.output,
-            args.tables, args.leaves, args.crt, args.bindings, *objects,
+            args.providers_output, args.crt, args.bindings,
         ])
     return 0
 

@@ -145,6 +145,7 @@ set(H2_GUEST_PHYSICS_MODEL_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/physics_model_v
 set(H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.o")
 set(H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_runtime.o")
 set(H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_initialize.o")
+set(H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_providers.o")
 set(H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_provider_cluster.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
@@ -207,7 +208,9 @@ add_custom_command(
     VERBATIM
 )
 add_custom_command(
-    OUTPUT "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
+    OUTPUT
+        "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
+        "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_physics_model_provider_cluster.py"
             --root "${PROJECT_SOURCE_DIR}"
             --llvm "${H2_LLVM_ROOT}/bin"
@@ -217,6 +220,7 @@ add_custom_command(
             --leaves "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
             --crt "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o"
             --bindings "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+            --providers-output "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
             --output "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
     DEPENDS
         h2_guest_rebase
@@ -236,6 +240,7 @@ add_custom_target(h2_physics_model_table_objects ALL DEPENDS
     "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
 )
 
@@ -1987,6 +1992,10 @@ add_custom_command(
     VERBATIM
 )
 list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_MAIN_MENU_BINDINGS_OBJECT}")
+list(APPEND H2_MAIN_MENU_ELF_OBJECTS
+    "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+)
 set(H2_MAIN_MENU_HOST_IMPORTS_ASM "${H2_GUEST_OBJECT_DIR}/elf/host_imports.s")
 set(H2_MAIN_MENU_HOST_IMPORTS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/host_imports.o")
 add_custom_command(
