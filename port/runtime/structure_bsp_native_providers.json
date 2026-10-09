@@ -26,7 +26,7 @@
     {"method": "0x0003f2b0", "symbol": "?function_03f2b0@@YAXXZ", "source": "src/unknown_03f2b0_native.cpp", "portable": true},
     {"method": "0x00125920", "symbol": "?sound_update_locations@@YAXXZ", "source": "src/unknown_125920.cpp", "portable": true},
     {"method": "0x00188980", "symbol": "?object_looping_sounds_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_1887d0.cpp", "portable": true},
-    {"method": "0x000d4e30", "symbol": "?function_d4e30@@YAXXZ", "source": "src/unknown_0b7300.cpp", "portable": true},
+    {"method": "0x000d4e30", "symbol": "?function_d4e30@@YAXXZ", "source": "src/unknown_0b7300.cpp", "portable": true, "globals": ["??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@"]},
     {"method": "0x001c7bb0", "symbol": "?function_1c7bb0@@YAXXZ", "source": "src/unknown_1c7bb0.cpp", "portable": true},
     {"method": "0x001c2690", "symbol": "?function_1c2690@@YAXXZ", "source": "src/unknown_1c2690.cpp", "portable": true},
     {"method": "0x0014b6a0", "symbol": "?function_14b6a0@@YAXXZ", "source": "src/unknown_14b6a0.cpp", "portable": true},

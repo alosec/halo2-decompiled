@@ -114,15 +114,26 @@ def main() -> int:
     closure = providers_manifest.get("closure")
     if not isinstance(closure, list) or not closure:
         raise RuntimeError("structure-BSP transitive closure inventory is missing")
+    retained_globals = set()
+    for provider in providers:
+        entry_globals = provider.get("globals", [])
+        if not isinstance(entry_globals, list):
+            raise RuntimeError("invalid structure-BSP provider globals")
+        retained_globals.update(entry_globals)
     closure_symbols = set()
     for entry in closure:
         source = entry.get("source")
         entry_symbols = entry.get("symbols")
-        if not source or not isinstance(entry_symbols, list) or not entry_symbols:
+        entry_globals = entry.get("globals", [])
+        if (not source or not isinstance(entry_symbols, list) or not entry_symbols or
+                not isinstance(entry_globals, list)):
             raise RuntimeError("invalid structure-BSP transitive closure entry")
         if not (args.root / source).is_file():
             raise RuntimeError(f"missing structure-BSP closure source: {source}")
         closure_symbols.update(entry_symbols)
+        retained_globals.update(entry_globals)
+    if retained_globals != {"??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@"}:
+        raise RuntimeError("structure-BSP retained data globals changed")
     required_light_symbols = {
         "?function_c1720@@YAXJ_N0@Z",
         "?function_c2d00@@YAXJ@Z",
@@ -140,8 +151,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 37:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 37")
+    if len(undefined) != 36:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 36")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -177,11 +188,12 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 31:
+    if len(production_undefined) != 30:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 31")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 30")
 
-    expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
+    expected_symbols = ({entry["symbol"] for entry in providers} |
+                        closure_symbols | retained_globals)
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
     missing_symbols = sorted(expected_symbols - definitions)
     if missing_symbols:

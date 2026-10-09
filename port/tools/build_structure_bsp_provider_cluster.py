@@ -34,6 +34,7 @@ def main() -> int:
         raise RuntimeError("native structure-BSP provider list is missing")
 
     units = defaultdict(list)
+    unit_globals = defaultdict(list)
     native_symbols = set()
     methods = set()
     for provider in providers:
@@ -47,13 +48,20 @@ def main() -> int:
             native_symbols.add(symbol)
         else:
             units[source].append(symbol)
+            globals_ = provider.get("globals", [])
+            if not isinstance(globals_, list):
+                raise RuntimeError("invalid native structure-BSP provider globals")
+            unit_globals[source].extend(globals_)
 
     for closure in manifest.get("closure", []):
         source = closure.get("source")
         symbols = closure.get("symbols")
-        if not source or not isinstance(symbols, list) or not symbols:
+        globals_ = closure.get("globals", [])
+        if (not source or not isinstance(symbols, list) or not symbols or
+                not isinstance(globals_, list)):
             raise RuntimeError("invalid native structure-BSP closure entry")
         units[source].extend(symbols)
+        unit_globals[source].extend(globals_)
 
     if native_symbols != {"h2_native_structure_bsp_idle"}:
         raise RuntimeError("unexpected native structure-BSP provider set")
@@ -90,6 +98,8 @@ def main() -> int:
             command.extend(("--ms-abi", "--output", output))
             for symbol in dict.fromkeys(symbols):
                 command.extend(("--extract-symbol", symbol))
+            for symbol in dict.fromkeys(unit_globals[source]):
+                command.extend(("--extract-global", symbol))
             command.append(source_path)
             run(command)
             objects.append(output)
