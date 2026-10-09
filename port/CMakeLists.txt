@@ -412,10 +412,14 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_11c840@@YAXXZ"
             --extract-symbol "h2_native_tag_initialization_status"
             --extract-symbol "h2_native_physics_model_census"
+            --extract-symbol "h2_native_physics_model_plan_status"
             --extract-global "g_native_initialized_tags"
             --extract-global "g_native_deferred_tags"
             --extract-global "g_native_physics_model_nonzero_mask"
-            --extract-global "g_native_physics_model_entry_count")
+            --extract-global "g_native_physics_model_entry_count"
+            --extract-global "g_native_physics_model_planned_objects"
+            --extract-global "g_native_physics_model_planned_resolutions"
+            --extract-global "g_native_physics_model_plan_valid")
     endif()
     if(object STREQUAL H2_GUEST_PART_INITIALIZE_OBJECT)
         list(APPEND guest_extract_args
@@ -1218,10 +1222,14 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_11c840@@YAXXZ"
             --extract-symbol "h2_native_tag_initialization_status"
             --extract-symbol "h2_native_physics_model_census"
+            --extract-symbol "h2_native_physics_model_plan_status"
             --extract-global "g_native_initialized_tags"
             --extract-global "g_native_deferred_tags"
             --extract-global "g_native_physics_model_nonzero_mask"
-            --extract-global "g_native_physics_model_entry_count")
+            --extract-global "g_native_physics_model_entry_count"
+            --extract-global "g_native_physics_model_planned_objects"
+            --extract-global "g_native_physics_model_planned_resolutions"
+            --extract-global "g_native_physics_model_plan_valid")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp")
         list(APPEND guest_extract_args
