@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_hit_forward_output = Path(temporary) / "physics-model-hit-forward.o"
+        physics_model_hit_forward_symbol = (
+            "?function_2df110@c_physics_convex_shape@@UAAXPBXPAUs_physics_shape_query_transform@@PAVc_physics_shape_hit_collector@@@Z"
+        )
+        physics_model_hit_forward_command = command[:]
+        physics_model_hit_forward_command[physics_model_hit_forward_command.index("h2_extract_selected")] = physics_model_hit_forward_symbol
+        physics_model_hit_forward_command[physics_model_hit_forward_command.index("--extract-global"):physics_model_hit_forward_command.index("--output")] = []
+        physics_model_hit_forward_command[physics_model_hit_forward_command.index(output)] = physics_model_hit_forward_output
+        physics_model_hit_forward_command[-1] = args.root / "src/unknown_2df110.cpp"
+        subprocess.run([str(value) for value in physics_model_hit_forward_command], check=True)
+        physics_model_hit_forward_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_hit_forward_output],
+            text=True,
+        )
+        if f"_{physics_model_hit_forward_symbol}" not in physics_model_hit_forward_defined:
+            raise RuntimeError("physics-model transformed hit forwarder was not retained")
+
         physics_model_box_bounds_output = Path(temporary) / "physics-model-box-bounds.o"
         physics_model_box_bounds_symbols = (
             "?function_2fe350@@YAXPBUs_physics_bounds_matrix@@PBMMPAUs_physics_bounds@@@Z",
