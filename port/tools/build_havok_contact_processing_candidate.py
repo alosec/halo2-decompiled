@@ -56,6 +56,7 @@ def main() -> int:
         impact_allocation = temporary / "impact-allocation.o"
         game_time = temporary / "game-time.o"
         vector_normalize = temporary / "vector-normalize.o"
+        vector_compress = temporary / "vector-compress.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -101,9 +102,11 @@ def main() -> int:
                       ["?function_146650@@YAJXZ"])
         compile_slice(args, args.root / "src/unknown_11fc80.cpp", vector_normalize,
                       ["?function_1201a0@@YAMPATvector3f@@PBT1@@Z"])
+        compile_slice(args, args.root / "src/unknown_188dd0.cpp", vector_compress,
+                      ["?vector3d_compress@@YAKPBTvector3f@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
-             vector_normalize])
+             vector_normalize, vector_compress])
     return 0
 
 

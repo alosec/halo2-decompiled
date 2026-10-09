@@ -56,11 +56,6 @@
       "symbol": "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z",
       "subsystem": "havok_motion",
       "blocker": "Requires exact rigid-body transform extraction over initialized component state."
-    },
-    {
-      "symbol": "?vector3d_compress@@YAKPBTvector3f@@@Z",
-      "subsystem": "impact_math",
-      "blocker": "Requires exact recovered packed-vector encoding semantics."
     }
   ]
 }
