@@ -16,6 +16,7 @@
 void function_210e20(void);
 void function_210f00(void);
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x210df0
 void function_210df0(void)
 {
@@ -23,6 +24,7 @@ void function_210df0(void)
 	function_210f00();
 	function_210e20();
 }
+#endif
 
 struct s_audio_priority_record
 {

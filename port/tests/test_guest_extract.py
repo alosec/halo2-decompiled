@@ -823,6 +823,36 @@ def main():
         if f"_{looping_sound_symbol}" not in looping_sound_defined:
             raise RuntimeError("structure-BSP looping-sound reset was not selectively compilable")
 
+        ai_bsp_output = Path(temporary) / "structure-bsp-ai.o"
+        ai_bsp_symbol = "?function_1c7bb0@@YAXXZ"
+        ai_bsp_command = command[:]
+        ai_bsp_command[ai_bsp_command.index("h2_extract_selected")] = ai_bsp_symbol
+        ai_bsp_command[ai_bsp_command.index("--extract-global"):ai_bsp_command.index("--output")] = []
+        ai_bsp_command[ai_bsp_command.index(output)] = ai_bsp_output
+        ai_bsp_command[-1] = args.root / "src/unknown_1c7bb0.cpp"
+        subprocess.run([str(value) for value in ai_bsp_command], check=True)
+        ai_bsp_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", ai_bsp_output],
+            text=True,
+        )
+        if f"_{ai_bsp_symbol}" not in ai_bsp_defined:
+            raise RuntimeError("structure-BSP AI update was not selectively compilable")
+
+        audio_bsp_output = Path(temporary) / "structure-bsp-audio-state.o"
+        audio_bsp_symbol = "?function_210df0@@YAXXZ"
+        audio_bsp_command = command[:]
+        audio_bsp_command[audio_bsp_command.index("h2_extract_selected")] = audio_bsp_symbol
+        audio_bsp_command[audio_bsp_command.index("--extract-global"):audio_bsp_command.index("--output")] = []
+        audio_bsp_command[audio_bsp_command.index(output)] = audio_bsp_output
+        audio_bsp_command[-1] = args.root / "src/unknown_210df0.cpp"
+        subprocess.run([str(value) for value in audio_bsp_command], check=True)
+        audio_bsp_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", audio_bsp_output],
+            text=True,
+        )
+        if f"_{audio_bsp_symbol}" not in audio_bsp_defined:
+            raise RuntimeError("structure-BSP audio-state reset was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"

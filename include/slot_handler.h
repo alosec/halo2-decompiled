@@ -131,11 +131,15 @@ static inline long real_to_long(real value)
 {
 	long result;
 
+#ifdef H2_NATIVE_PORT
+	result = (long)(value >= 0.0f ? value + 0.5f : value - 0.5f);
+#else
 	__asm
 	{
 		fld value
 		fistp result
 	}
+#endif
 	return result;
 }
 
