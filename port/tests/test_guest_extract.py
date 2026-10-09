@@ -283,6 +283,29 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_vertex_cloud_output = Path(temporary) / "physics-model-vertex-cloud.o"
+        physics_model_vertex_cloud_symbols = (
+            "?function_2fd260@c_physics_vertex_cloud_shape@@UAAXPBMPAM@Z",
+            "?function_2fd430@c_physics_vertex_cloud_shape@@UAAXPBGPAMJ@Z",
+            "?function_2fd730@c_physics_vertex_cloud_shape@@UAAPAMPAM@Z",
+        )
+        physics_model_vertex_cloud_command = command[:]
+        physics_model_vertex_cloud_command[physics_model_vertex_cloud_command.index("h2_extract_selected")] = physics_model_vertex_cloud_symbols[0]
+        physics_model_vertex_cloud_command[physics_model_vertex_cloud_command.index("--extract-global"):physics_model_vertex_cloud_command.index("--output")] = []
+        for symbol in physics_model_vertex_cloud_symbols[1:]:
+            insertion = physics_model_vertex_cloud_command.index("--output")
+            physics_model_vertex_cloud_command[insertion:insertion] = ["--extract-symbol", symbol]
+        physics_model_vertex_cloud_command[physics_model_vertex_cloud_command.index(output)] = physics_model_vertex_cloud_output
+        physics_model_vertex_cloud_command[-1] = args.root / "src/unknown_2fd260.cpp"
+        subprocess.run([str(value) for value in physics_model_vertex_cloud_command], check=True)
+        physics_model_vertex_cloud_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_vertex_cloud_output],
+            text=True,
+        )
+        for symbol in physics_model_vertex_cloud_symbols:
+            if f"_{symbol}" not in physics_model_vertex_cloud_defined:
+                raise RuntimeError(f"physics-model vertex-cloud method was not retained: {symbol}")
+
         physics_model_two_vertex_bounds_output = Path(temporary) / "physics-model-two-vertex-bounds.o"
         physics_model_two_vertex_bounds_symbol = (
             "?function_2de0f0@c_physics_two_vertex_shape@@UAAXPBUs_physics_two_vertex_matrix@@MPAUs_physics_two_vertex_bounds@@@Z"

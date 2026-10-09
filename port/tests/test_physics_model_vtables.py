@@ -63,8 +63,8 @@ def main() -> int:
         raise RuntimeError("vtable methods absent from functions.csv: " + ", ".join(hex(v) for v in absent))
 
     recovered = {method for method in unique_methods if functions[method]["source"]}
-    if len(recovered) < 63:
-        raise RuntimeError(f"recovered-method ratchet regressed: {len(recovered)} < 63")
+    if len(recovered) < 66:
+        raise RuntimeError(f"recovered-method ratchet regressed: {len(recovered)} < 66")
     complete_tables = {
         int(table["retail_address"], 0)
         for table in tables
