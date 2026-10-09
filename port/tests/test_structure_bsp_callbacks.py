@@ -3,6 +3,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import re
 import subprocess
 
 EXPECTED = {
@@ -123,6 +124,11 @@ def main() -> int:
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
+    encoded_globals = sorted(symbol for symbol in undefined
+                             if re.match(r"\?g_[0-9a-fA-F]+@@", symbol))
+    if encoded_globals:
+        raise RuntimeError("structure-BSP bound cluster left encoded globals unbound: " +
+                           ", ".join(encoded_globals))
     expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
     missing_symbols = sorted(expected_symbols - definitions)
