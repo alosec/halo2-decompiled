@@ -79,6 +79,8 @@ set(H2_GUEST_SESSION_MODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0592d0.o")
 set(H2_GUEST_SESSION_VALUES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_05b040.o")
 set(H2_GUEST_SAVED_GAME_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_215b40.o")
 set(H2_GUEST_SCREEN_SETTERS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b116a.o")
+set(H2_GUEST_SCREEN_WIDGETS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2afd97.o")
+set(H2_GUEST_WIDGET18_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2afea0.o")
 set(H2_GUEST_DIALOG_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19b510.o")
 set(H2_GUEST_DIALOG_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_253c8b.o")
 set(H2_GUEST_DIALOG_EVENT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24c7c1.o")
@@ -153,6 +155,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2afea0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_253c8b.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
@@ -230,6 +234,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SESSION_VALUES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
         "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
         "${H2_GUEST_SCREEN_SETTERS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
+        "${H2_GUEST_SCREEN_WIDGETS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp"
+        "${H2_GUEST_WIDGET18_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2afea0.cpp"
         "${H2_GUEST_DIALOG_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
         "${H2_GUEST_DIALOG_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_253c8b.cpp"
         "${H2_GUEST_DIALOG_EVENT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
@@ -373,6 +379,13 @@ foreach(pair IN ITEMS
             --extract-symbol "?v3@c_screen_45bd40@@UAAXXZ"
             --extract-symbol "?v18@c_screen_45bc60@@UAAXPAX@Z"
             --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
+            --extract-symbol "?function_2b0a48@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?v4@c_class_2b01eb@@UAAXJ@Z"
+            --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
+            --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
+            --extract-symbol "?v4@c_widget_45adf0@@UAAXJ@Z"
             --extract-global "??_7c_screen_45bc60@@6B@"
             --extract-global "??_7c_screen_45bcd0@@6B@"
             --extract-global "??_7c_screen_45bd40@@6B@"
@@ -380,14 +393,40 @@ foreach(pair IN ITEMS
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
+    if(object STREQUAL H2_GUEST_SCREEN_WIDGETS_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "??0c_class_2b01eb@@QAA@PAUs_bitmap_block@@@Z"
+            --extract-symbol "??0c_class_2b0b5e@@QAA@PAUs_model_block@@@Z"
+            --extract-symbol "??0c_widget_45ad18@@QAA@JPAUs_widget_block_18@@@Z"
+            --extract-symbol "?function_2baf38@@YAPAVc_widget_45adf0@@PAVc_class_1a2c81@@PAUs_widget_block_24@@@Z"
+            --extract-symbol "?place@c_widget_45ad18@@QAAXPAUs_widget_point@@@Z"
+            --extract-symbol "??_Gc_class_2b01eb@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_class_2b0b5e@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_widget_45ad18@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_widget_45adf0@@UAAPAXI@Z"
+            --extract-global "??_7c_class_2b01eb@@6B@"
+            --extract-global "??_7c_class_2b0b5e@@6B@"
+            --extract-global "??_7c_widget_45ad18@@6B@"
+            --extract-global "??_7c_widget_45adf0@@6B@"
+            --extract-global "??_C@_11LOCGONAA@?$AA?$AA@"
+            --extract-alias "??_Ec_class_2b01eb@@UAAPAXI@Z"
+            --extract-alias "??_Ec_class_2b0b5e@@UAAPAXI@Z"
+            --extract-alias "??_Ec_widget_45ad18@@UAAPAXI@Z"
+            --extract-alias "??_Ec_widget_45adf0@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_WIDGET18_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?v1@c_widget_45ad18@@UAAXXZ")
+    endif()
     if(object STREQUAL H2_GUEST_DIALOG_EVENT_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_24c7c1@@YAXPAUs_item_list@@J@Z"
             --extract-symbol "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_SCREEN_CLEANUP_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_22fba9@@YAXPAVc_class_1473c9@@@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_22fba9@@YAXPAVc_class_1473c9@@@Z"
+            --extract-symbol "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_CAMPAIGN_ENTRY_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -492,6 +531,7 @@ set_source_files_properties(
     "${H2_GUEST_TASK_SCREEN_OBJECT}" "${H2_GUEST_TASK_TEXT_OBJECT}" "${H2_GUEST_TASK_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_MODE_OBJECT}" "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}" "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
+    "${H2_GUEST_SCREEN_WIDGETS_OBJECT}" "${H2_GUEST_WIDGET18_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}" "${H2_GUEST_DIALOG_BASE_OBJECT}" "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_SCREEN_CLEANUP_OBJECT}" "${H2_GUEST_ACTIVE_SESSION_OBJECT}"
     "${H2_GUEST_PREFERENCES_UPDATE_OBJECT}" "${H2_GUEST_TEXT_PARSER_OBJECT}"
@@ -565,6 +605,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}"
     "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
+    "${H2_GUEST_SCREEN_WIDGETS_OBJECT}"
+    "${H2_GUEST_WIDGET18_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}"
     "${H2_GUEST_DIALOG_BASE_OBJECT}"
     "${H2_GUEST_DIALOG_EVENT_OBJECT}"
@@ -612,7 +654,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 66
+            --expect-unresolved 72
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -744,6 +786,13 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?v3@c_screen_45bd40@@UAAXXZ"
             --extract-symbol "?v18@c_screen_45bc60@@UAAXPAX@Z"
             --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
+            --extract-symbol "?function_2b0a48@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?v4@c_class_2b01eb@@UAAXJ@Z"
+            --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
+            --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
+            --extract-symbol "?v4@c_widget_45adf0@@UAAXJ@Z"
             --extract-global "??_7c_screen_45bc60@@6B@"
             --extract-global "??_7c_screen_45bcd0@@6B@"
             --extract-global "??_7c_screen_45bd40@@6B@"
@@ -751,14 +800,40 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "??0c_class_2b01eb@@QAA@PAUs_bitmap_block@@@Z"
+            --extract-symbol "??0c_class_2b0b5e@@QAA@PAUs_model_block@@@Z"
+            --extract-symbol "??0c_widget_45ad18@@QAA@JPAUs_widget_block_18@@@Z"
+            --extract-symbol "?function_2baf38@@YAPAVc_widget_45adf0@@PAVc_class_1a2c81@@PAUs_widget_block_24@@@Z"
+            --extract-symbol "?place@c_widget_45ad18@@QAAXPAUs_widget_point@@@Z"
+            --extract-symbol "??_Gc_class_2b01eb@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_class_2b0b5e@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_widget_45ad18@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_widget_45adf0@@UAAPAXI@Z"
+            --extract-global "??_7c_class_2b01eb@@6B@"
+            --extract-global "??_7c_class_2b0b5e@@6B@"
+            --extract-global "??_7c_widget_45ad18@@6B@"
+            --extract-global "??_7c_widget_45adf0@@6B@"
+            --extract-global "??_C@_11LOCGONAA@?$AA?$AA@"
+            --extract-alias "??_Ec_class_2b01eb@@UAAPAXI@Z"
+            --extract-alias "??_Ec_class_2b0b5e@@UAAPAXI@Z"
+            --extract-alias "??_Ec_widget_45ad18@@UAAPAXI@Z"
+            --extract-alias "??_Ec_widget_45adf0@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2afea0.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?v1@c_widget_45ad18@@UAAXXZ")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_24c7c1@@YAXPAUs_item_list@@J@Z"
             --extract-symbol "?function_24c7e4@@YAXPAXPAPAUs_event@@PAJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_22f6ca.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_22fba9@@YAXPAVc_class_1473c9@@@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_22fba9@@YAXPAVc_class_1473c9@@@Z"
+            --extract-symbol "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -990,7 +1065,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 66
+            --expect-unresolved 72
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -998,7 +1073,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 66
+            --expect-unresolved 72
 )
 add_test(
     NAME main-menu-elf-core

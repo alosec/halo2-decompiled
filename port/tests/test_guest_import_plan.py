@@ -34,6 +34,8 @@ def main():
     assert "?online_team_get_details@@YAXJPBUXUID@@PAUXONLINE_TEAM@@@Z" not in imports
     assert "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in imports
     assert "?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z" not in imports
+    assert "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z" not in imports
+    assert imports["?function_235f31@@YAXPAUs_sprite_element@@PBUs_float_rect@@PBUpoint2f@@KF@Z"]["category"] == "recovered_provider"
     print("main-menu import plan classification passed")
 
 
