@@ -144,6 +144,7 @@ file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURC
 set(H2_GUEST_PHYSICS_MODEL_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.s")
 set(H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.o")
 set(H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_runtime.o")
+set(H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_initialize.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_physics_model_vtables.py"
@@ -184,9 +185,30 @@ add_custom_command(
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
 )
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --output "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_physics_model_initialize.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_physics_model_initialize.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
 add_custom_target(h2_physics_model_table_objects ALL DEPENDS
     "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
 )
 
 set(H2_MS_ABI_SOURCES
@@ -2193,6 +2215,7 @@ add_test(
             --llvm-readelf ${H2_LLVM_ROOT}/bin/llvm-readelf
             --table-object ${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}
             --leaf-object ${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}
+            --initialize-object ${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit

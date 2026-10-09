@@ -45,6 +45,7 @@ def main() -> int:
     parser.add_argument("--llvm-readelf", type=Path)
     parser.add_argument("--table-object", type=Path)
     parser.add_argument("--leaf-object", type=Path)
+    parser.add_argument("--initialize-object", type=Path)
     args = parser.parse_args()
 
     manifest_path = args.root / "port/runtime/physics_model_vtables.json"
@@ -158,7 +159,9 @@ def main() -> int:
         if body.count("  .long ") != slot_count:
             raise RuntimeError(f"generated native table has wrong extent: {address:#x}")
 
-    object_arguments = (args.llvm_readelf, args.table_object, args.leaf_object)
+    object_arguments = (
+        args.llvm_readelf, args.table_object, args.leaf_object, args.initialize_object
+    )
     if any(object_arguments) and not all(object_arguments):
         raise RuntimeError("all native table object arguments must be supplied together")
     if all(object_arguments):
@@ -174,6 +177,25 @@ def main() -> int:
         for symbol in set(EXPECTED_NATIVE_PROVIDERS.values()):
             if f"{symbol} " not in leaf_symbols and f"_{symbol} " not in leaf_symbols:
                 raise RuntimeError(f"compiled native leaf provider is absent: {symbol}")
+        initialize_symbols = subprocess.check_output(
+            [llvm_nm, "--defined-only", "--format=posix", args.initialize_object],
+            text=True,
+        )
+        for symbol in (
+            "h2_native_physics_model_initialize",
+            "h2_native_physics_model_write_reset",
+            "h2_native_physics_model_write_status",
+        ):
+            if f"{symbol} " not in initialize_symbols:
+                raise RuntimeError(f"compiled active-family initializer is absent: {symbol}")
+        initialize_undefined = subprocess.check_output(
+            [llvm_nm, "--undefined-only", "--format=posix", args.initialize_object],
+            text=True,
+        )
+        for address in EXPECTED_TABLES:
+            symbol = f"h2_native_physics_model_vtable_{address:08x}"
+            if f"{symbol} " not in initialize_undefined:
+                raise RuntimeError(f"initializer does not reference complete table: {address:#x}")
     return 0
 
 
