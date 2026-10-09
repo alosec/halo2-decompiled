@@ -2,7 +2,9 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 
 struct s_bsp3d;
 
@@ -344,6 +346,12 @@ PRIVATE __forceinline void function_1de2c5(s_1de2c2 *arg_0, long arg_1)
 
 PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *arg_1)
 {
+#ifdef H2_NATIVE_PORT
+ real const dx = arg_0->x - arg_1->x;
+ real const dy = arg_0->y - arg_1->y;
+ real const dz = arg_0->z - arg_1->z;
+ return dx * dx + dz * dz + dy * dy;
+#else
  real local_0;
  real *local_1 = &local_0;
  __asm
@@ -365,6 +373,7 @@ PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *
   movss dword ptr [eax], xmm2
  }
  return local_0;
+#endif
 }
 
 // @retail 0x1de2c0
@@ -492,6 +501,15 @@ PRIVATE __forceinline bool function_1ddea1(s_1de2c0 const *arg_0, long arg_1)
  return false;
 }
 
+PRIVATE __forceinline void function_1ddda0_prefetch(void const *address)
+{
+#ifdef H2_NATIVE_PORT
+ __builtin_prefetch(address, 0, 0);
+#else
+ _mm_prefetch((char const *)address, _MM_HINT_NTA);
+#endif
+}
+
 // @retail 0x1ddea0
 void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
 {
@@ -502,10 +520,10 @@ void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
   s_1de6d1 const *local_1 = &local_0->field_4[arg_1];
   long local_2 = *(long const *)&local_1->field_2[-1] >> 8;
   long local_3 = *(long const *)&local_1->field_2[2] >> 8;
-  if (!(local_2 & 0x800000)) _mm_prefetch((char const *)&local_0->field_4[local_2], _MM_HINT_NTA);
-  else if (local_2 != NONE) _mm_prefetch((char const *)&local_0->field_14[local_2 & 0x7fffff], _MM_HINT_NTA);
-  if (!(local_3 & 0x800000)) _mm_prefetch((char const *)&local_0->field_4[local_3], _MM_HINT_NTA);
-  else if (local_3 != NONE) _mm_prefetch((char const *)&local_0->field_14[local_3 & 0x7fffff], _MM_HINT_NTA);
+  if (!(local_2 & 0x800000)) function_1ddda0_prefetch(&local_0->field_4[local_2]);
+  else if (local_2 != NONE) function_1ddda0_prefetch(&local_0->field_14[local_2 & 0x7fffff]);
+  if (!(local_3 & 0x800000)) function_1ddda0_prefetch(&local_0->field_4[local_3]);
+  else if (local_3 != NONE) function_1ddda0_prefetch(&local_0->field_14[local_3 & 0x7fffff]);
   long local_4 = local_1->field_0;
   plane3f const *local_5 = &local_0->field_c[local_4];
   real local_6 = local_5->k * arg_0->field_c->z + local_5->j * arg_0->field_c->y + local_5->i * arg_0->field_c->x - local_5->d;
