@@ -69,6 +69,7 @@ public:
 	virtual void v2();
 	/* continues the saved game once it has been read */
 	virtual void v3();
+	virtual void *get_item_data() { return items; }
 	virtual long get_item_count();
 	virtual void v20(c_class_1a2c81 *widget, long index);
 

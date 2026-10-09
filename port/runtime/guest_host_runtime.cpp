@@ -240,6 +240,22 @@ extern "C" int h2_main_menu_guest_accept()
                 return 5;
             return 0;
         }
+        if (channels[index]->current && channels[index]->current->screen_id == 6)
+        {
+            c_class_1474e8 *const list = reinterpret_cast<c_class_1474e8 *>(
+                reinterpret_cast<c_screen_with_menu *>(channels[index]->current)->list);
+            c_class_1a2c81 *const item = list->get_focused_item();
+            s_widget_event event = { 5, 0, 0 };
+            if (!item || !item->v10(&event))
+                return 6;
+            for (long destination = 0; destination < 7; ++destination)
+            {
+                if (channels[destination]->next &&
+                    channels[destination]->next->screen_id == 0xda)
+                    return 0;
+            }
+            return 7;
+        }
     }
     return h2_native_virtual_keyboard_accept();
 }
@@ -471,7 +487,6 @@ class c_class_1473c9;
 /* These secondary screen families are not part of the static native menu
  * bootstrap yet. Their recovered callers remain intact, while an attempted
  * transition fails closed instead of constructing a partial object/vtable. */
-H2_NATIVE_UNAVAILABLE_SCREEN(function_230616)
 H2_NATIVE_UNAVAILABLE_SCREEN(function_230691)
 H2_NATIVE_UNAVAILABLE_SCREEN(function_2310b7)
 H2_NATIVE_UNAVAILABLE_SCREEN(function_231995)

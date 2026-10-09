@@ -759,6 +759,13 @@ void c_campaign_options_list::handle_item(s_controller_reference **controller, l
 {
 	short *datum = (short *)record_pool_lookup(data, *item);
 
+#if defined(H2_NATIVE_PORT)
+	/* The first native Campaign milestone owns the recovered menu but not yet
+	 * the saved-game reader or the level/difficulty destinations.  Keep A on
+	 * these rows honest and inert rather than fabricating either state. */
+	(void)controller;
+	(void)datum;
+#else
 	if (datum)
 	{
 		s_screen_parameters parameters;
@@ -805,6 +812,7 @@ void c_campaign_options_list::handle_item(s_controller_reference **controller, l
 			goto animate;
 		}
 	}
+#endif
 animate:
 	get_screen()->start_animation(3);
 }
@@ -812,17 +820,24 @@ animate:
 // @retail 0x2b1845
 void c_campaign_options_list::v2()
 {
+#if defined(H2_NATIVE_PORT)
+	c_class_1474e8::v2();
+#else
 	((c_widget *)this)->c_widget::v10();
 	if (reading)
 	{
 		read.cancel = true;
 		function_120d50(&read.done, true);
 	}
+#endif
 }
 
 // @retail 0x2b178e
 void c_campaign_options_list::v3()
 {
+#if defined(H2_NATIVE_PORT)
+	c_class_1474e8::v3();
+#else
 	((c_widget *)this)->c_widget::v11();
 	if (reading && read.done)
 	{
@@ -847,6 +862,7 @@ void c_campaign_options_list::v3()
 			dialog_ok_show(1, 0x81, 4, user_flags, 0, 0);
 		}
 	}
+#endif
 }
 
 /* the progress of the saved game read, for the progress dialog */
