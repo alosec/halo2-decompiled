@@ -201,6 +201,29 @@ def main() -> int:
         raise RuntimeError(
             f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 23")
 
+    frontier_path = args.root / "port/runtime/structure_bsp_remaining_frontier.json"
+    frontier_manifest = json.loads(frontier_path.read_text())
+    if frontier_manifest.get("version") != 1:
+        raise RuntimeError("unsupported structure-BSP frontier manifest")
+    frontier_entries = frontier_manifest.get("imports")
+    if not isinstance(frontier_entries, list) or len(frontier_entries) != 23:
+        raise RuntimeError("structure-BSP frontier inventory changed")
+    frontier_symbols = set()
+    allowed_subsystems = {"ai", "geometry_query", "havok_lifecycle", "object_placement"}
+    for entry in frontier_entries:
+        if (not isinstance(entry, dict) or not isinstance(entry.get("symbol"), str) or
+                entry.get("subsystem") not in allowed_subsystems or
+                not isinstance(entry.get("blocker"), str) or not entry["blocker"].strip()):
+            raise RuntimeError("invalid structure-BSP frontier entry")
+        if "stub" in entry["blocker"].lower():
+            raise RuntimeError("structure-BSP frontier must describe real ownership, not stubs")
+        frontier_symbols.add(entry["symbol"])
+    if len(frontier_symbols) != len(frontier_entries):
+        raise RuntimeError("structure-BSP frontier contains duplicate symbols")
+    if frontier_symbols != production_undefined:
+        raise RuntimeError("structure-BSP frontier manifest differs from production imports: " +
+                           ", ".join(sorted(frontier_symbols ^ production_undefined)))
+
     expected_symbols = ({entry["symbol"] for entry in providers} |
                         closure_symbols | retained_globals)
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")

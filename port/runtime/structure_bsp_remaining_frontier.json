@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "imports": [
+    {"symbol": "??0c_interface_277890@@QAA@XZ", "subsystem": "havok_lifecycle", "blocker": "constructor and deleting lifecycle require a complete native contact-listener object"},
+    {"symbol": "??2@YAPAXI@Z", "subsystem": "havok_lifecycle", "blocker": "scalar allocation has no general gameplay heap owner"},
+    {"symbol": "??_7c_278370@@6B@", "subsystem": "havok_lifecycle", "blocker": "listener table requires complete native callback methods and cache-owned destruction"},
+    {"symbol": "?function_109400@@YAXJ@Z", "subsystem": "object_placement", "blocker": "attached-object teardown reaches rigid-body activation and biped ragdoll reset"},
+    {"symbol": "?function_146a20@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "allocator bootstrap requires complete fixed and pool allocator tables"},
+    {"symbol": "?function_146b80@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "scratch allocator requires the same complete fixed allocator table"},
+    {"symbol": "?function_146bf0@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "memory-pressure recovery traverses world cleanup and scratch allocator ownership"},
+    {"symbol": "?function_14e0f0@@YAXJJPBTpoint3f@@0@Z", "subsystem": "object_placement", "blocker": "player relocation requires genuine function_14e200 and vehicle-exit request routing"},
+    {"symbol": "?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z", "subsystem": "geometry_query", "blocker": "collision correction exposes shape collection, line-list, and raycast ownership"},
+    {"symbol": "?function_1c2910@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world construction requires native world, monitor, listener, and allocator state"},
+    {"symbol": "?function_1c2a10@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "object census and world insertion depend on complete Havok startup"},
+    {"symbol": "?function_1c2d40@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world configuration is a broad Havok library closure"},
+    {"symbol": "?function_1c36f0@@YAXJJ@Z", "subsystem": "havok_lifecycle", "blocker": "component insertion reaches world and allocator lifecycle"},
+    {"symbol": "?function_1c3850@@YAXJ@Z", "subsystem": "havok_lifecycle", "blocker": "component flag rebuild removes and reinserts rigid bodies"},
+    {"symbol": "?function_1c38a0@@YAXJ@Z", "subsystem": "havok_lifecycle", "blocker": "biped physics transition shares the component flag rebuild closure"},
+    {"symbol": "?function_1c39c0@@YAXPAXJ@Z", "subsystem": "havok_lifecycle", "blocker": "listener installation requires native world and entity callback ownership"},
+    {"symbol": "?function_1c5710@@YAXJ@Z", "subsystem": "havok_lifecycle", "blocker": "contact wakeup requires world queries, rigid-body activation, and contact constructors"},
+    {"symbol": "?function_1c7e70@@YAXJF@Z", "subsystem": "ai", "blocker": "rider notification dispatches genuine vehicle-exit request type 0x1e"},
+    {"symbol": "?function_1e1500@@YA_NJ@Z", "subsystem": "ai", "blocker": "actor validity query exposes perception, prop, reference, and slot-handler state"},
+    {"symbol": "?function_1e22d0@@YAXJ_N@Z", "subsystem": "ai", "blocker": "actor reference refresh exposes perception and prop traversal"},
+    {"symbol": "?function_278f00@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world step and teardown depend on complete Havok object lifecycle"},
+    {"symbol": "?function_b75a0@@YAXJPBTpoint3f@@PBTvector3f@@1PBUs_location@@_N@Z", "subsystem": "object_placement", "blocker": "relocation always reaches broad recursive function_bd020 physics updates"},
+    {"symbol": "?function_bf0f0@@YAXPBUs_type_4f0dcc@@JJPAUs_scenario_block@@_N2@Z", "subsystem": "object_placement", "blocker": "scenario placement requires the real object constructor and placement builder"}
+  ]
+}
