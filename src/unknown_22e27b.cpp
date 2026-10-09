@@ -433,6 +433,19 @@ bool c_class_1a2c81::has_screen()
 	return get_screen() != 0;
 }
 
+// @retail 0x22ec90
+long c_class_1a2c81::v11()
+{
+	return get_screen()->v20();
+}
+
+// @retail 0x22ec9e
+long c_class_1a2c81::v12()
+{
+	c_class_1473c9 *screen = get_screen();
+	return screen ? screen->v21() : 4;
+}
+
 c_class_1473c9 *function_148d91(long channel, long index);
 
 /* whether this widget is in the screen its window shows */

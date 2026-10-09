@@ -486,8 +486,8 @@ public:
 	virtual void v9() {}
 	/* passes the event up to the parent */
 	virtual bool v10(s_widget_event *event);
-	virtual long v11() { return 0; }
-	virtual long v12() { return 0; }
+	virtual long v11();
+	virtual long v12();
 	virtual void v13() {}
 	virtual void v14() {}
 	virtual c_class_22cc8e *function_22f52e() { return 0; }

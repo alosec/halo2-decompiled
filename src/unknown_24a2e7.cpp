@@ -74,6 +74,15 @@ void c_list_24a64d::v1()
 #endif
 	c_class_1a2c81::v1();
 	function_24c0c4((c_widget *)this);
+#if defined(H2_NATIVE_PORT)
+	/* This split list view does not yet carry the list-family v7 override.
+	   Use the now-recovered widget focus primitive for its sole honest item. */
+	if (child)
+	{
+		child->function_22ecb4_2(true);
+		function_24c610(child, (c_widget *)this);
+	}
+#endif
 	function_249fcc((c_unknown_249fa3 *)this);
 }
 
