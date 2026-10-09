@@ -136,7 +136,9 @@ public:
 };
 
 // @stub 0x30c470
+#ifndef H2_NATIVE_PORT
 void c_library_30c470::detach(void *callback) { }
+#endif
 
 class c_278da0_kind;
 class c_library_311690

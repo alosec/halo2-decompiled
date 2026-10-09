@@ -84,6 +84,7 @@
     {"symbol": "g_510819", "address": "0x00510819"},
     {"symbol": "g_510a08", "address": "0x00510a08"},
     {"symbol": "cache_file_globals", "address": "0x005476f8"},
+    {"symbol": "?cache_file_globals@@3Us_cache_file_globals@@A", "address": "0x005476f8"},
     {"symbol": "g_55aca8", "address": "0x0055aca8"},
     {"symbol": "g_557c90", "address": "0x00557c90"},
     {"symbol": "?g_44074c@@3PAJA", "address": "0x0044074c"},

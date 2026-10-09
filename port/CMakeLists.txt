@@ -287,6 +287,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_2777d0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_181e90_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2789f0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_279740.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_30c470_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_315340_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}

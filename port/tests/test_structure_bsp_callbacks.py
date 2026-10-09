@@ -166,12 +166,11 @@ def main() -> int:
             any(table[3] in production_defined_for_listener for table in expected_primary_tables)):
         raise RuntimeError("dormant primary listener tables entered production")
     expected_primary_cluster_imports = {
-        "?detach@c_library_30c470@@QAAXPAX@Z",
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
         "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
-        "?function_279740@@YA_NJ@Z",
+        "?cache_file_globals@@3Us_cache_file_globals@@A",
         "?function_2d91d0@@YAXPAXJ@Z",
         "?function_a7670@@YA_NJ@Z",
         "?function_b7360@@YAXJ@Z",
@@ -258,6 +257,7 @@ def main() -> int:
         "g_51ecac_owned_secondary_listener",
         "native_havok_transition_tables_and_callback_owned",
         "native_havok_contact_transition_tables_and_callback_owned",
+        "native_havok_listener_cache_attachment_owned",
         "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
@@ -423,12 +423,10 @@ def main() -> int:
                            ", ".join(sorted(frontier_symbols ^ production_undefined)))
 
     listener_additional_imports = {
-        "?detach@c_library_30c470@@QAAXPAX@Z",
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
         "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
-        "?function_279740@@YA_NJ@Z",
         "?function_b7360@@YAXJ@Z",
         "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
     }
@@ -450,7 +448,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 23):
+            len(actual_listener_production) != 21):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |

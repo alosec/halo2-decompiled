@@ -68,6 +68,8 @@ def main() -> int:
         constructor = temporary / "constructor.o"
         transition = temporary / "transition.o"
         scale = temporary / "scale.o"
+        pointer_owner = temporary / "pointer-owner.o"
+        cache_detach = temporary / "cache-detach.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -86,8 +88,14 @@ def main() -> int:
             "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
             "?get_inverse_scale@s_scale_owner@@QBAMXZ",
         ], globals=["?g_54e870@@3MA"])
+        compile_slice(args, args.root / "src/unknown_279740.cpp", pointer_owner,
+                      ["?function_279740@@YA_NJ@Z"])
+        compile_slice(args, args.root / "src/unknown_30c470_native.cpp",
+                      cache_detach,
+                      ["?detach@c_library_30c470@@QAAXPAX@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
-             args.tables, primary, secondary, constructor, transition, scale])
+             args.tables, primary, secondary, constructor, transition, scale,
+             pointer_owner, cache_detach])
     return 0
 
 
