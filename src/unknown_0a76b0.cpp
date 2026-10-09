@@ -1897,6 +1897,15 @@ s_object *function_bae20(long object_index, dword type_mask);
 /* a float rounded to an integer (fld, fistp) */
 __forceinline long unit_action_round_long(real value)
 {
+#ifdef H2_NATIVE_PORT
+	long result = (long)value;
+	real fraction = value - (real)result;
+	if (fraction > 0.5f || (fraction == 0.5f && (result & 1)))
+		result++;
+	else if (fraction < -0.5f || (fraction == -0.5f && (result & 1)))
+		result--;
+	return result;
+#else
 	long result;
 
 	__asm
@@ -1905,6 +1914,7 @@ __forceinline long unit_action_round_long(real value)
 		fistp result
 	}
 	return result;
+#endif
 }
 
 __forceinline char unit_action_round(real value)

@@ -997,6 +997,21 @@ def main():
         if "_?function_bf0f0@@YAXPBUs_type_4f0dcc@@JJPAUs_scenario_block@@_N2@Z" not in scenario_placement_defined:
             raise RuntimeError("scenario object placement primitive was not selectively compilable")
 
+        vehicle_exit_output = Path(temporary) / "vehicle-exit.o"
+        vehicle_exit_symbol = "?function_ea8e0@@YAXJ_N@Z"
+        vehicle_exit_command = command[:]
+        vehicle_exit_command[vehicle_exit_command.index("h2_extract_selected")] = vehicle_exit_symbol
+        vehicle_exit_command[vehicle_exit_command.index("--extract-global"):vehicle_exit_command.index("--output")] = []
+        vehicle_exit_command[vehicle_exit_command.index(output)] = vehicle_exit_output
+        vehicle_exit_command[-1] = args.root / "src/unknown_0a76b0.cpp"
+        subprocess.run([str(value) for value in vehicle_exit_command], check=True)
+        vehicle_exit_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", vehicle_exit_output],
+            text=True,
+        )
+        if f"_{vehicle_exit_symbol}" not in vehicle_exit_defined:
+            raise RuntimeError("immediate vehicle-exit implementation was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
