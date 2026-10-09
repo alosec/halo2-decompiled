@@ -43,6 +43,7 @@ REQUIRED = {
     "?function_199f6d@@YAJXZ",
     "?function_217080@@YAXPBUs_game_variant@@@Z",
     "?function_217300@@YAJJJ@Z",
+    "?function_22fba9@@YAXPAVc_class_1473c9@@@Z",
     "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z",
     "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z",
     "?function_2b72e6@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",

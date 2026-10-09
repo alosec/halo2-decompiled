@@ -5,6 +5,9 @@
 
 #include "unknown_11c920.h"
 #include <string.h>
+#ifdef H2_NATIVE_PORT
+#include <wchar.h>
+#endif
 #include "screen_widgets.h"
 #include "unknown_19b516.h"
 #include "unknown_234c64.h"
