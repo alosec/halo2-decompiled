@@ -38,6 +38,7 @@ REQUIRED = {
     "?function_199e3c@@YAXJ@Z",
     "?function_199f6d@@YAJXZ",
     "?function_2523bc@@YAXPAVc_online_task_screen@@@Z",
+    "?function_6b640@@YAXJ@Z",
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
     "?online_task_continue@@YAJPAUs_type_9df9da@@@Z",
     "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z",
