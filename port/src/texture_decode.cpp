@@ -115,6 +115,30 @@ bool decode_dxt5_linear(std::span<const std::uint8_t> source, int width, int hei
     return decode_dxt5(compact, width, height, output);
 }
 
+bool decode_argb8_linear(std::span<const std::uint8_t> source, int width, int height,
+                         bool has_alpha, std::vector<std::uint8_t>& output) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+    const std::size_t row_bytes = static_cast<std::size_t>(width) * 4u;
+    const std::size_t pitch = (row_bytes + 63u) & ~std::size_t{63u};
+    if (static_cast<std::size_t>(height) > source.size() / pitch) {
+        return false;
+    }
+    output.assign(row_bytes * static_cast<std::size_t>(height), 0);
+    for (int y = 0; y < height; ++y) {
+        const std::uint8_t* row = source.data() + static_cast<std::size_t>(y) * pitch;
+        std::uint8_t* destination = output.data() + static_cast<std::size_t>(y) * row_bytes;
+        for (int x = 0; x < width; ++x) {
+            destination[x * 4] = row[x * 4 + 2];
+            destination[x * 4 + 1] = row[x * 4 + 1];
+            destination[x * 4 + 2] = row[x * 4];
+            destination[x * 4 + 3] = has_alpha ? row[x * 4 + 3] : 255;
+        }
+    }
+    return true;
+}
+
 bool decode_argb8_swizzled(std::span<const std::uint8_t> source, int width, int height,
                            std::vector<std::uint8_t>& output) {
     if (width <= 0 || height <= 0 || (width & (width - 1)) != 0 ||

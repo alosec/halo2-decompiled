@@ -161,6 +161,23 @@ int main() {
                     20, 8, decoded),
                 "linear DXT5 decoder accepted a truncated padded surface");
 
+    std::vector<std::uint8_t> linear_argb(128, 0);
+    linear_argb[64] = 3;
+    linear_argb[65] = 2;
+    linear_argb[66] = 1;
+    linear_argb[67] = 4;
+    ok &= check(h2::port::decode_argb8_linear(linear_argb, 3, 2, true, decoded) &&
+                    decoded[12] == 1 && decoded[13] == 2 &&
+                    decoded[14] == 3 && decoded[15] == 4,
+                "linear ARGB8 decoder did not remove 64-byte BGRA row padding");
+    ok &= check(h2::port::decode_argb8_linear(linear_argb, 3, 2, false, decoded) &&
+                    decoded[15] == 255,
+                "linear XRGB8 decoder did not force opaque alpha");
+    ok &= check(!h2::port::decode_argb8_linear(
+                    std::span<const std::uint8_t>(linear_argb.data(), 127),
+                    3, 2, true, decoded),
+                "linear ARGB8 decoder accepted a truncated padded surface");
+
     std::vector<std::uint8_t> swizzled_argb(64, 0);
     const std::size_t swizzled_offset = 6 * 4;
     swizzled_argb[swizzled_offset] = 3;

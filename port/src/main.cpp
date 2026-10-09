@@ -95,7 +95,9 @@ SDL_Texture* get_interface_texture(NativeRenderContext& context,
         const std::uint32_t data_offset = read_u32(descriptor + 0x1c);
         const std::uint32_t data_size = read_u32(descriptor + 0x34);
         const std::uint16_t flags = read_u16(descriptor + 0x0e);
-        const bool supported = cache_format == 16 ||
+        const bool linear_argb = (flags & 0x10u) &&
+            (source_format == 10 || source_format == 11);
+        const bool supported = linear_argb || cache_format == 16 ||
             (cache_format == 19 && source_format == 10 && !(flags & 0x10u));
         if (supported && width > 0 && height > 0 && width <= 4096 &&
             height <= 4096 && data_offset != 0xffffffffu && data_size != 0 &&
@@ -105,10 +107,11 @@ SDL_Texture* get_interface_texture(NativeRenderContext& context,
             const bool copied = h2::port::copy_cache_bytes(
                 data_offset, encoded.data(), encoded.size());
             bool decoded = false;
-            if (copied && cache_format == 16) {
-                decoded = (flags & 0x10u)
-                    ? h2::port::decode_dxt5_linear(encoded, width, height, pixels)
-                    : h2::port::decode_dxt5(encoded, width, height, pixels);
+            if (copied && linear_argb) {
+                decoded = h2::port::decode_argb8_linear(
+                    encoded, width, height, source_format == 11, pixels);
+            } else if (copied && cache_format == 16) {
+                decoded = h2::port::decode_dxt5(encoded, width, height, pixels);
             } else if (copied) {
                 decoded = h2::port::decode_argb8_swizzled(
                     encoded, width, height, pixels);
