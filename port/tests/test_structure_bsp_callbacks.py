@@ -202,12 +202,14 @@ def main() -> int:
         "?g_4e0348@@3PAUs_match_globals@@A",
         "?g_4e034c@@3PAUs_tag_header_globals@@A",
         "?g_4e3b44@@3PAUs_tag_instance@@A",
+        "?g_502138@@3JA",
+        "?g_50213c@@3PAJA",
         "?g_51e9b8@@3PAUs_record_pool@@A",
         "?g_51ebfc@@3PAUs_record_pool@@A",
         "?g_51ec00@@3PAUs_record_pool@@A",
         "?g_54e898@@3FA",
         "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
-        "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
+        "?function_2266a0@@YAXJ@Z",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
         "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
@@ -263,6 +265,8 @@ def main() -> int:
             "?impact_components_valid@@YA_NJJ@Z",
             "?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z",
             "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
+            "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
+            "?impacts_last_sorted@@YAJXZ",
             "?g_55c2d0@@3MA",
             "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
             "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
@@ -336,6 +340,7 @@ def main() -> int:
         "native_havok_material_response_state_owned",
         "g_51ebfc_owned_impact_pool",
         "g_51ec00_owned_component_impact_lists",
+        "g_502138_owned_impact_sort_state",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -534,7 +539,7 @@ def main() -> int:
     )
     contact_processing_new_imports = {
         "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
-        "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
+        "?function_2266a0@@YAXJ@Z",
         "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
     }
@@ -559,6 +564,24 @@ def main() -> int:
     if (actual_contact_processing_score != expected_contact_processing_score or
             len(actual_contact_processing_score) != 21):
         raise RuntimeError("Havok contact-processing candidate score changed")
+
+    contact_frontier_path = (
+        args.root / "port/runtime/havok_contact_processing_remaining_frontier.json"
+    )
+    contact_frontier = json.loads(contact_frontier_path.read_text())
+    if contact_frontier.get("version") != 1:
+        raise RuntimeError("unsupported Havok contact-processing frontier manifest")
+    contact_frontier_entries = contact_frontier.get("imports")
+    if not isinstance(contact_frontier_entries, list):
+        raise RuntimeError("Havok contact-processing frontier imports must be a list")
+    contact_frontier_symbols = [entry.get("symbol") for entry in contact_frontier_entries]
+    if len(contact_frontier_symbols) != len(set(contact_frontier_symbols)):
+        raise RuntimeError("duplicate Havok contact-processing frontier symbol")
+    if set(contact_frontier_symbols) != contact_processing_new_imports:
+        raise RuntimeError("Havok contact-processing frontier manifest is stale")
+    for entry in contact_frontier_entries:
+        if not entry.get("subsystem") or not entry.get("blocker"):
+            raise RuntimeError("incomplete Havok contact-processing frontier entry")
 
     listener_frontier_path = (
         args.root / "port/runtime/havok_primary_listener_remaining_frontier.json"

@@ -14,7 +14,7 @@
     {
       "symbol": "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
       "subsystem": "contact_processing",
-      "blocker": "Requires complete contact creation, component room policy, impact allocation/player-distance policy, and impact callback ownership; exact shape-key, material-response, impact-data, list-registration, and deduplication behavior are already owned."
+      "blocker": "Requires complete contact creation, impact eviction/release, impact allocation/player-distance policy, and impact callback ownership; exact shape-key, material-response, impact-data, list-registration, deduplication, and room-selection behavior are already owned."
     }
   ]
 }

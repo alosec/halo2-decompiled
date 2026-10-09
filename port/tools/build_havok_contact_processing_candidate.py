@@ -71,10 +71,12 @@ def main() -> int:
         compile_slice(args, args.root / "src/impacts.cpp", impact_validity,
                       ["?impact_components_valid@@YA_NJJ@Z"])
         compile_slice(args, args.root / "src/impacts.cpp", impact_match,
-                      ["?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z"])
+                      ["?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z",
+                       "?impacts_last_sorted@@YAJXZ"])
         compile_slice(
             args, args.root / "src/unknown_1d5460.cpp", impact_find,
-            ["?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z"])
+            ["?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
+             "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z"])
         compile_slice(args, args.root / "src/impact_match_tolerance_native.cpp",
                       impact_tolerance, [], ["?g_55c2d0@@3MA"])
         compile_slice(

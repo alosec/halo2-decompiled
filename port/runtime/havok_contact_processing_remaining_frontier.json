@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "description": "Exact production-linked imports added only by the dormant Havok contact-processing candidate after current production, BSP, and primary-listener ownership is applied. This inventory does not authorize production linking or execution.",
+  "imports": [
+    {
+      "symbol": "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
+      "subsystem": "contact_creation",
+      "blocker": "Requires complete bounded contact-state construction, replacement policy, and contact lifetime ownership."
+    },
+    {
+      "symbol": "?function_2266a0@@YAXJ@Z",
+      "subsystem": "impact_eviction",
+      "blocker": "Eviction stops sounds, releases references, clears component contact or constraint links, and can enter broad impact effect, audio, and rigid-body teardown."
+    },
+    {
+      "symbol": "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
+      "subsystem": "impact_priority",
+      "blocker": "Requires truthful active-player iteration and player-object position ownership rather than a fabricated distance policy."
+    },
+    {
+      "symbol": "?impact_new@@YAJPBUs_impact_data@@J@Z",
+      "subsystem": "impact_allocation",
+      "blocker": "Requires complete impact-pool allocation, component definitions, player-distance priority, and initialized impact lifetime state."
+    }
+  ]
+}
