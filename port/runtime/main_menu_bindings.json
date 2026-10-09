@@ -100,6 +100,7 @@
     {"symbol": "?g_47f058@@3_NA", "address": "0x0047f058"},
     {"symbol": "?g_4de2d4@@3PAXA", "address": "0x004de2d4"},
     {"symbol": "?g_4de2e0@@3PAXA", "address": "0x004de2e0"},
+    {"symbol": "?g_4de2e4@@3PAXA", "address": "0x004de2e4"},
     {"symbol": "?g_4de2ec@@3PAUs_data_header_40@@A", "address": "0x004de2ec"},
     {"symbol": "?g_4de2f4@@3PAUs_object_list@@A", "address": "0x004de2f4"},
     {"symbol": "?g_4de2f8@@3_NA", "address": "0x004de2f8"},

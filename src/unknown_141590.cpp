@@ -528,6 +528,7 @@ vector3f *function_142640(
 	return out;
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0x142700
 point3f *function_142700(
 	transform4x3f const *matrix,
@@ -558,6 +559,7 @@ point3f *function_142700(
 	}
 	return out;
 }
+#endif
 
 // @retail 0x1427f0
 vector3f *function_1427f0(

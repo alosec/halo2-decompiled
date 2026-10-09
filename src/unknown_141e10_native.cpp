@@ -34,3 +34,33 @@ matrix3x3 *function_141e10(matrix3x3 *out, quaternionf const *quaternion)
     out->up.k = 1.0f - (xx + yy);
     return out;
 }
+
+// Native scalar split of the recovered inverse point transform. The matching
+// Xbox definition remains in unknown_141590.cpp.
+// @retail 0x142700
+point3f *function_142700(transform4x3f const *matrix, point3f const *point, point3f *out)
+{
+    if (matrix->scale != 0.0f)
+    {
+        real x = point->x - matrix->position.x;
+        real y = point->y - matrix->position.y;
+        real z = point->z - matrix->position.z;
+        if (matrix->scale != 1.0f)
+        {
+            real inverse = 1.0f / matrix->scale;
+            x *= inverse;
+            y *= inverse;
+            z *= inverse;
+        }
+        out->x = matrix->rotation.forward.k * z + matrix->rotation.forward.j * y + matrix->rotation.forward.i * x;
+        out->y = matrix->rotation.left.k * z + matrix->rotation.left.j * y + matrix->rotation.left.i * x;
+        out->z = matrix->rotation.up.k * z + matrix->rotation.up.j * y + matrix->rotation.up.i * x;
+    }
+    else
+    {
+        out->x = 0.0f;
+        out->y = 0.0f;
+        out->z = 0.0f;
+    }
+    return out;
+}

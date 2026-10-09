@@ -64,7 +64,7 @@
     {"source": "src/unknown_1df080_native.cpp", "symbols": ["?function_1df080@@YAXPBTpoint3f@@JPAT1@PAM@Z"]},
     {"source": "src/unknown_030290.cpp", "symbols": ["?function_30bf0@@YAMPATvector3f@@@Z"]},
     {"source": "src/unknown_0c40f0.cpp", "symbols": ["?function_c40f0@@YAXJJM@Z"]},
-    {"source": "src/unknown_141e10_native.cpp", "symbols": ["?function_141e10@@YAPAUmatrix3x3@@PAU1@PBTquaternionf@@@Z"]},
+    {"source": "src/unknown_141e10_native.cpp", "symbols": ["?function_141e10@@YAPAUmatrix3x3@@PAU1@PBTquaternionf@@@Z", "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z"]},
     {"source": "src/unknown_142a60_native.cpp", "symbols": ["?function_142a60@@YAHPBUtransform4x3f@@0PAU1@@Z"]},
     {"source": "src/unknown_173b90.cpp", "symbols": ["?particle_systems_update_locations@@YAXXZ", "?particle_system_unlink@@YAXPAUs_particle_system_datum@@PAJ1@Z", "?set_location@s_particle_system_datum@@QAAXPBUs_location@@@Z", "?function_174180@@YAXJ@Z"]},
     {"source": "src/unknown_175bd0.cpp", "symbols": ["?effect_remove_event_slot@@YAXJJ@Z"]},
@@ -97,6 +97,9 @@
     {"source": "src/scenery_bsp_native.cpp", "symbols": ["?function_10a250@@YAXJ@Z"]},
     {"source": "src/sound_looping_paths_native.cpp", "symbols": ["?function_18bb80@@YAXM@Z"]},
     {"source": "src/first_person_marker_native.cpp", "symbols": ["?first_person_weapon_get_marker@@YA_NJJPATpoint3f@@PATvector3f@@1@Z"]},
+    {"source": "src/unknown_1689b0.cpp", "symbols": ["?function_168f40@@YA_NJPBUs_vehicle_ray@@JJ@Z"]},
+    {"source": "src/unknown_0b7740.cpp", "symbols": ["?function_b8940@@YAJFPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z", "?function_b89b0@@YAJPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z"]},
+    {"source": "src/unknown_1efac0.cpp", "symbols": ["?initialize@s_lookup@@QAA_NJ@Z", "?function_1efdc0@@YA_NPAUs_lookup@@PBTpoint3f@@@Z"]},
     {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z", "?function_a7a60@@YAXJ@Z"]}
   ]
 }

@@ -1348,7 +1348,9 @@ struct s_shape_counts
     short count[3];
 };
 
+#if !H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 extern void *g_4de2e0;
 extern void *g_4de2e4;
 
@@ -1360,7 +1362,14 @@ PRIVATE __forceinline long shape_cluster_next(long *next)
         byte *entry = pool->data + pool->size * (*next & 0xffff);
         *next = *(long *)(entry + 8);
         if (*next != NONE)
-            _mm_prefetch((char const *)(pool->data + pool->size * (*next & 0xffff)), _MM_HINT_T0);
+        {
+            char const *next_entry = (char const *)(pool->data + pool->size * (*next & 0xffff));
+#if H2_NATIVE_PORT
+            __builtin_prefetch(next_entry);
+#else
+            _mm_prefetch(next_entry, _MM_HINT_T0);
+#endif
+        }
         return *(long *)(entry + 4);
     }
     return NONE;

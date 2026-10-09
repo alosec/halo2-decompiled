@@ -948,6 +948,20 @@ def main():
         if "_?v18@c_level_select_screen@@UAAXPAX@Z" not in level_screen_defined:
             raise RuntimeError("campaign-level screen lifecycle was not selectively compilable")
 
+        bsp_collision_output = Path(temporary) / "structure-bsp-collision-correction.o"
+        bsp_collision_command = command[:]
+        bsp_collision_command[bsp_collision_command.index("h2_extract_selected")] = "?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z"
+        bsp_collision_command[bsp_collision_command.index("--extract-global"):bsp_collision_command.index("--output")] = []
+        bsp_collision_command[bsp_collision_command.index(output)] = bsp_collision_output
+        bsp_collision_command[-1] = args.root / "src/unknown_1689b0.cpp"
+        subprocess.run([str(value) for value in bsp_collision_command], check=True)
+        bsp_collision_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", bsp_collision_output],
+            text=True,
+        )
+        if "_?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z" not in bsp_collision_defined:
+            raise RuntimeError("structure-BSP collision correction was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

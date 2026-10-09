@@ -3,7 +3,9 @@
 #include "unknown_0259d0.h"
 #include "effects.h"
 #include <string.h>
+#if !H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
@@ -192,7 +194,14 @@ short function_b8b20(s_object_link_iterator *iterator)
 		s_object_link_entry *entry = (s_object_link_entry *)(data + (iterator->index & 0xffff) * size);
 		long next = entry->next;
 		if (next != NONE)
-			_mm_prefetch((char const *)(data + (next & 0xffff) * size), _MM_HINT_T0);
+		{
+			char const *next_entry = (char const *)(data + (next & 0xffff) * size);
+#if H2_NATIVE_PORT
+			__builtin_prefetch(next_entry);
+#else
+			_mm_prefetch(next_entry, _MM_HINT_T0);
+#endif
+		}
 		iterator->index = next;
 		result = entry->value;
 	}
@@ -283,7 +292,14 @@ static __forceinline long object_cluster_next_ab(s_record_pool *array, s_object_
 		long next = link->next;
 		*record = (s_object_cluster_reference *)&link->record;
 		if (next != NONE)
-			_mm_prefetch((char const *)(*data + (next & 0xffff) * *size), _MM_HINT_T0);
+		{
+			char const *next_entry = (char const *)(*data + (next & 0xffff) * *size);
+#if H2_NATIVE_PORT
+			__builtin_prefetch(next_entry);
+#else
+			_mm_prefetch(next_entry, _MM_HINT_T0);
+#endif
+		}
 		iterator->next = next;
 		result = link->object_index;
 	}
