@@ -76,6 +76,47 @@ def main() -> int:
     if recovered != unique:
         raise RuntimeError("all structure-BSP callbacks must remain source-owned")
 
+    primary_path = args.root / "port/runtime/havok_primary_listener_vtables.json"
+    primary = json.loads(primary_path.read_text())
+    expected_primary_tables = [
+        ("embedded_reference_callback", 0x1c, 0x0045A738,
+         "??_7c_callback_277820@@6B@", [0x000A9EF0, 0x00277820]),
+        ("contact_events", 0x04, 0x0045A74C,
+         "??_7c_interface_277890@@6Bc_interface_277840@@@",
+         [0x00277A00, 0x00278030, 0x00278100]),
+        ("entity_listener", 0x00, 0x0045A758,
+         "??_7c_interface_277890@@6Bc_interface_2777d0@@@",
+         [0x00277890, 0x002778E0, 0x00277990, 0x00278200,
+          0x002789F0, 0x00278A70, 0x00278B30, 0x00278AE0,
+          0x002789B0, 0x00277800, 0x0032131E, 0x0032131E,
+          0x0032131E]),
+    ]
+    actual_primary_tables = [
+        (entry.get("name"), int(entry.get("object_offset", "-1"), 0),
+         int(entry.get("retail_address", "0"), 0), entry.get("native_symbol"),
+         [int(method, 0) for method in entry.get("methods", [])])
+        for entry in primary.get("tables", [])
+    ]
+    if (primary.get("version") != 1 or
+            int(primary.get("object_size", "0"), 0) != 0x28 or
+            actual_primary_tables != expected_primary_tables):
+        raise RuntimeError("primary Havok listener table inventory changed")
+    primary_methods = [method for table in actual_primary_tables for method in table[4]]
+    if len(primary_methods) != 18 or len(set(primary_methods)) != 16:
+        raise RuntimeError("primary Havok listener method coverage changed")
+    primary_unique = set(primary_methods)
+    if primary_unique - functions.keys():
+        raise RuntimeError("primary Havok listener method is absent from functions.csv")
+    primary_source_owned = {
+        method for method in primary_unique if functions[method]["source"]
+    }
+    if len(primary_source_owned) != 12:
+        raise RuntimeError("primary Havok listener source coverage changed")
+    excluded_primary = primary.get("excluded_adjacent_tables")
+    if ([int(entry.get("retail_address", "0"), 0) for entry in excluded_primary]
+            != [0x0045A740, 0x0045A78C]):
+        raise RuntimeError("primary Havok listener table boundaries changed")
+
     providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"
     providers_manifest = json.loads(providers_path.read_text())
     if providers_manifest.get("version") != 1:
