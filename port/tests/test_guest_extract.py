@@ -56,7 +56,21 @@ def main():
         if b"retained recovered constant" not in output.read_bytes():
             raise RuntimeError("referenced guest constant initializer was discarded")
 
-    print("guest function extraction retained referenced constants")
+        text_output = Path(temporary) / "text-font.o"
+        text_command = command[:]
+        text_command[text_command.index("h2_extract_selected")] = "?function_13ed90@@YAXJ@Z"
+        text_command[text_command.index("--extract-global"):text_command.index("--output")] = []
+        text_command[text_command.index(output)] = text_output
+        text_command[-1] = args.root / "src/unknown_13e8a0.cpp"
+        subprocess.run([str(value) for value in text_command], check=True)
+        text_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", text_output],
+            text=True,
+        )
+        if "_?function_13ed90@@YAXJ@Z" not in text_defined:
+            raise RuntimeError("recovered text renderer source was not selectively compilable")
+
+    print("guest function extraction retained constants and parsed recovered text rendering")
 
 
 if __name__ == "__main__":

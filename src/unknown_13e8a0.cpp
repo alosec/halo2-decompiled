@@ -73,6 +73,7 @@ void function_13ea60(short_rectangle2d const *bounds, short_rectangle2d *ink_bou
 }
 
 void function_13eb60(color4f const *color);
+void function_13ec70(color4f const *color);
 
 /* the brightest colour text is drawn in: a colour with every channel above
    this is scaled down to it */
@@ -320,8 +321,13 @@ void function_13f5a0(s_text_iterator *iterator)
 		default:
 			if (iterator->check_breaks)
 			{
+#ifdef H2_NATIVE_PORT
+				utf32 previous = { (long)iterator->character };
+				utf32 next = { (long)character };
+#else
 				utf32 previous = { iterator->character };
 				utf32 next = { character };
+#endif
 				iterator->can_break = function_13fd20(previous, next);
 			}
 			else
@@ -359,7 +365,11 @@ bool function_13eeb0(dword const *string, long font)
 			function_13f5a0(&iterator);
 			if (iterator.token == _text_token_character)
 			{
+#ifdef H2_NATIVE_PORT
+				s_13eeb1 local_1 = { (long)iterator.character };
+#else
 				s_13eeb1 local_1 = { iterator.character };
+#endif
 				s_13eeb1 local_2 = { font };
 				if (!font_cache_predict_character(local_2, local_1))
 				{
@@ -635,7 +645,11 @@ void function_13f700(box2f const *bounds, box2f const *clip, short first,
 						if (width > 0.0f && height > 0.0f)
 						{
 							dword pixel = color;
+#ifdef H2_NATIVE_PORT
+							utf32 codepoint = { (long)iterator.character };
+#else
 							utf32 codepoint = { iterator.character };
+#endif
 							if (function_13f660(codepoint)) pixel |= 0xffffff;
 							callback((long)&iterator, iterator.font, iterator.character, pixel, shadow,
 								x, y, source_x, source_y, width, height, scale,
