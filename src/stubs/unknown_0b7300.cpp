@@ -10,8 +10,6 @@ void __stdcall function_b8600(long object_index, long unknown) { }
 // @stub 0xb87b0
 void __stdcall function_b87b0(long object_index) { }
 /* makes an object from a scenario object */
-// @stub 0xbf0f0
-void function_bf0f0(s_type_4f0dcc const *datum, long type, long index, s_scenario_block *palette, bool a, bool b) { }
 
 
 // @stub 0xc2d00

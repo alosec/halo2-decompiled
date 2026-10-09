@@ -983,6 +983,20 @@ def main():
             if symbol not in object_relocation_defined:
                 raise RuntimeError(f"recovered object relocation method was not retained: {symbol}")
 
+        scenario_placement_output = Path(temporary) / "scenario-object-placement.o"
+        scenario_placement_command = command[:]
+        scenario_placement_command[scenario_placement_command.index("h2_extract_selected")] = "?function_bf0f0@@YAXPBUs_type_4f0dcc@@JJPAUs_scenario_block@@_N2@Z"
+        scenario_placement_command[scenario_placement_command.index("--extract-global"):scenario_placement_command.index("--output")] = []
+        scenario_placement_command[scenario_placement_command.index(output)] = scenario_placement_output
+        scenario_placement_command[-1] = args.root / "src/unknown_0bf0f0.cpp"
+        subprocess.run([str(value) for value in scenario_placement_command], check=True)
+        scenario_placement_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", scenario_placement_output],
+            text=True,
+        )
+        if "_?function_bf0f0@@YAXPBUs_type_4f0dcc@@JJPAUs_scenario_block@@_N2@Z" not in scenario_placement_defined:
+            raise RuntimeError("scenario object placement primitive was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
