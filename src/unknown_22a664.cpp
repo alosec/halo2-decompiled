@@ -22,6 +22,10 @@ void function_1bbf0(long, long, long, long, long, real);
 void function_1cf50(void);
 dword function_1cc30(long);
 void function_1cd90(void);
+#ifdef H2_NATIVE_PORT
+extern "C" void h2_render_preview_quad(long bitmap_tag, long bitmap_index,
+                                         long layer, void const *vertices);
+#endif
 
 struct s_22a664
 {
@@ -47,8 +51,13 @@ void function_22a664(s_widget_quad_2b11 const *arg_0, s_float_rect const *arg_1,
 	s_22a664 local_0[4];
 	(void)&arg_2; (void)&arg_3; (void)&arg_4;
 	byte *local_1 = *(byte **)(g_4e3b44[arg_2 & 0xffff].bytes + 0x48) + arg_3 * 0x74;
+#ifndef H2_NATIVE_PORT
 	D3DTexture *local_8 = function_3bcb0((s_bitmap_data *)local_1);
 	if (local_8)
+#else
+	/* The native host owns texture lookup from the retail tag/index pair. */
+	if (true)
+#endif
 	{
 		real local_2 = function_22a665(local_1, 4);
 		real local_3 = function_22a665(local_1, 6);
@@ -70,6 +79,9 @@ void function_22a664(s_widget_quad_2b11 const *arg_0, s_float_rect const *arg_1,
 		local_0[2].field_14 = local_0[3].field_14 = local_4[3] * local_3;
 		local_0[3].field_10 = local_0[0].field_10;
 		local_0[0].field_18 = local_0[1].field_18 = local_0[2].field_18 = local_0[3].field_18 = 0xffffffff;
+#ifdef H2_NATIVE_PORT
+		h2_render_preview_quad(arg_2, arg_3, arg_4, local_0);
+#else
 		g_4e6950.field_28 = arg_2;
 		g_4e6950.field_2c = arg_3;
 		function_1be50();
@@ -88,5 +100,6 @@ void function_22a664(s_widget_quad_2b11 const *arg_0, s_float_rect const *arg_1,
 				local_0[local_6].field_4, local_0[local_6].field_8, local_0[local_6].field_c);
 		}
 		D3DDevice_End();
+#endif
 	}
 }

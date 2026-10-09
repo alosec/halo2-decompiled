@@ -13,8 +13,21 @@ extern "C" void D3DDevice_SetVertexData4f(unsigned int vertex_register, float x,
                                             float z, float w);
 extern "C" void D3DDevice_SetVertexDataColor(unsigned int vertex_register,
                                                unsigned int color);
+extern "C" void h2_render_preview_quad(long bitmap_tag, long bitmap_index,
+                                         long layer, const void* vertices);
 
 namespace {
+
+struct PreviewVertex {
+    float x;
+    float y;
+    float z;
+    float w;
+    float texture_x;
+    float texture_y;
+    unsigned int color;
+};
+static_assert(sizeof(PreviewVertex) == 28);
 
 struct CallbackCapture {
     int command = 0;
@@ -139,6 +152,29 @@ int main() {
                 "immediate render vertices are incorrect");
     ok &= check(capture.render_calls == 2 && immediate_stats.render_request_calls == 2,
                 "immediate render request did not cross the host boundary once");
+
+    const PreviewVertex preview[] = {
+        {-2.0f, -1.0f, 7.0f, 1.0f, 0.0f, 0.0f, 0xffffffffu},
+        { 2.0f, -1.0f, 7.0f, 1.0f, 1.0f, 0.0f, 0xffffffffu},
+        { 2.0f,  1.0f, 7.0f, 1.0f, 1.0f, 1.0f, 0xffffffffu},
+        {-2.0f,  1.0f, 7.0f, 1.0f, 0.0f, 1.0f, 0xffffffffu},
+    };
+    h2_render_preview_quad(0x1234, 3, 20, preview);
+    const auto preview_stats = h2::port::host_service_stats();
+    ok &= check(capture.immediate.kind == H2_RENDER_REQUEST_PREVIEW_QUAD &&
+                    capture.immediate.primitive_type == 7 &&
+                    capture.immediate.vertex_count == 4 &&
+                    capture.immediate.texture_tag == 0x1234 &&
+                    capture.immediate.texture_index == 3 &&
+                    capture.immediate.layer == 20,
+                "preview render request metadata is incorrect");
+    ok &= check(capture.immediate_vertices[0].x == -2.0f &&
+                    capture.immediate_vertices[0].texture_x == 0.0f &&
+                    capture.immediate_vertices[2].y == 1.0f &&
+                    capture.immediate_vertices[2].texture_y == 1.0f,
+                "preview render vertices are incorrect");
+    ok &= check(capture.render_calls == 3 && preview_stats.render_request_calls == 3,
+                "preview render request did not cross the host boundary once");
 
     h2::port::set_video_control_handler(nullptr);
     h2::port::set_render_request_handler(nullptr);
