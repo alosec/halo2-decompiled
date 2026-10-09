@@ -78,6 +78,7 @@ void function_13eb60(color4f const *color);
    this is scaled down to it */
 #define k_maximum_text_brightness 0.68f
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x13ec70
 void function_13ec70(color4f const *color)
 {
@@ -101,6 +102,7 @@ void function_13ec70(color4f const *color)
 	}
 	function_13eb60(&c);
 }
+#endif
 
 // @retail 0x13e8a0
 void function_13e8a0()
@@ -115,6 +117,7 @@ void function_13e8a0()
 	function_13ec70(g_4686cc);
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x13eb20
 void function_13eb20(short count, short const *tab_stops)
 {
@@ -124,7 +127,9 @@ void function_13eb20(short count, short const *tab_stops)
 		memcpy(g_4e73a0.tab_stops, tab_stops, g_4e73a0.tab_stop_count * sizeof(short));
 	}
 }
+#endif
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x13eb60
 void function_13eb60(color4f const *color)
 {
@@ -169,6 +174,7 @@ void function_13ed50(color4f const *field_24)
 		g_4e73a0.shadow = false;
 	}
 }
+#endif
 
 // @retail 0x13ed90
 void function_13ed90(long font)
