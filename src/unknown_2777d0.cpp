@@ -5,7 +5,15 @@
 #include "unknown_1cec30.h"
 #include "object_list.h"
 #include "slot_handler.h"
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#else
+struct alignas(16) h2_native_m128
+{
+	real values[4];
+};
+#define __m128 h2_native_m128
+#endif
 #include <math.h>
 
 /* Interfaces whose destructors restore their retail virtual tables. */
@@ -537,11 +545,12 @@ bool function_2792c0(s_2792c0_context *context)
 	{
 		s_2792c0_contact *contact = first ? context->first : context->second;
 		s_2792c0_vertices *vertices = (s_2792c0_vertices *)contact->shape;
+		c_transformed_point normal;
+#ifndef H2_NATIVE_PORT
 		__m128 edge0 = _mm_sub_ps(vertices->points[1], vertices->points[0]);
 		__m128 edge1 = _mm_sub_ps(vertices->points[2], vertices->points[0]);
 		__m128 right = _mm_mul_ps(_mm_shuffle_ps(edge0, edge0, 0xd2), _mm_shuffle_ps(edge1, edge1, 0xc9));
 		__m128 left = _mm_mul_ps(_mm_shuffle_ps(edge0, edge0, 0xc9), _mm_shuffle_ps(edge1, edge1, 0xd2));
-		c_transformed_point normal;
 		normal.value = _mm_sub_ps(left, right);
 		normal.transform(contact->transform + 0x20, &normal.value);
 		__m128 squares = _mm_mul_ps(normal.value, normal.value);
@@ -554,6 +563,43 @@ bool function_2792c0(s_2792c0_context *context)
 		__m128 dot = _mm_add_ss(_mm_shuffle_ps(product, product, 0xaa), _mm_add_ss(_mm_shuffle_ps(product, product, 0x55), product));
 		real value;
 		_mm_store_ss(&value, dot);
+#else
+		real edge0[3] = {
+			vertices->points[1].values[0] - vertices->points[0].values[0],
+			vertices->points[1].values[1] - vertices->points[0].values[1],
+			vertices->points[1].values[2] - vertices->points[0].values[2]};
+		real edge1[3] = {
+			vertices->points[2].values[0] - vertices->points[0].values[0],
+			vertices->points[2].values[1] - vertices->points[0].values[1],
+			vertices->points[2].values[2] - vertices->points[0].values[2]};
+		for (long i = 0; i < 3; ++i)
+		{
+			normal.value.values[i] = edge0[(i + 1) % 3] * edge1[(i + 2) % 3] -
+				edge0[(i + 2) % 3] * edge1[(i + 1) % 3];
+		}
+		normal.value.values[3] = 0.0f;
+		normal.transform(contact->transform + 0x20, &normal.value);
+		real length_squared = normal.value.values[0] * normal.value.values[0] +
+			normal.value.values[1] * normal.value.values[1] +
+			normal.value.values[2] * normal.value.values[2];
+		real value;
+		if (length_squared > 0.0f)
+		{
+			real scale = (real)(1.0 / sqrt((double)length_squared));
+			for (long i = 0; i < 4; ++i)
+				normal.value.values[i] *= scale;
+			value = normal.value.values[0] * context->plane[1].values[0] +
+				normal.value.values[1] * context->plane[1].values[1] +
+				normal.value.values[2] * context->plane[1].values[2];
+		}
+		else
+		{
+			// Retail reciprocal-square-root normalization produces an unordered
+			// result for a zero normal, so preserve the comparison outcome.
+			union { dword bits; real value; } unordered = { 0x7fc00000 };
+			value = unordered.value;
+		}
+#endif
 		if (0.577 > fabs(value))
 			result = false;
 		else

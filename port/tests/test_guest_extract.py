@@ -1012,6 +1012,25 @@ def main():
         if f"_{vehicle_exit_symbol}" not in vehicle_exit_defined:
             raise RuntimeError("immediate vehicle-exit implementation was not selectively compilable")
 
+        contact_listener_output = Path(temporary) / "havok-contact-listener.o"
+        contact_listener_symbol = "??0c_interface_277890@@QAA@XZ"
+        contact_filter_symbol = "?function_2792c0@@YA_NPAUs_2792c0_context@@@Z"
+        contact_listener_command = command[:]
+        contact_listener_command[contact_listener_command.index("h2_extract_selected")] = contact_listener_symbol
+        contact_listener_command[contact_listener_command.index("--extract-global"):contact_listener_command.index("--output")] = [
+            "--extract-symbol", contact_filter_symbol,
+        ]
+        contact_listener_command[contact_listener_command.index(output)] = contact_listener_output
+        contact_listener_command[-1] = args.root / "src/unknown_2777d0.cpp"
+        subprocess.run([str(value) for value in contact_listener_command], check=True)
+        contact_listener_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", contact_listener_output],
+            text=True,
+        )
+        for symbol in (contact_listener_symbol, contact_filter_symbol):
+            if f"_{symbol}" not in contact_listener_defined:
+                raise RuntimeError(f"Havok contact listener source was not retained: {symbol}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
