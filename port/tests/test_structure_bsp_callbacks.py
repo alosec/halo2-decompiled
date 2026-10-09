@@ -105,6 +105,9 @@ def main() -> int:
         "g_4f93a0_owned_output_table",
         "g_47f048_owned_havok_listener",
         "g_480118_owned_havok_allocator",
+        "g_461f08_owned_havok_state_flag",
+        "g_51e9cc_owned_scenery_index_table",
+        "g_51e9d0_owned_shape_owner",
     ]:
         raise RuntimeError("structure-BSP callback execution preconditions changed")
 

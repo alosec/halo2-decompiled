@@ -3,6 +3,7 @@
   "description": "Retail guest virtual addresses established from recovered names or exact accesses in the user's XBE. The host initializes these addresses from the user's XBE sections; this file contains no retail data.",
   "symbols": [
     {"symbol": "g_44a3f0", "address": "0x0044a3f0"},
+    {"symbol": "?g_461f08@@3_NA", "address": "0x00461f08"},
     {"symbol": "g_4686c4", "address": "0x004686c4"},
     {"symbol": "?g_4686dc@@3PAUcolor4f@@A", "address": "0x004686dc"},
     {"symbol": "?g_4686f8@@3PBUcolor4f@@B", "address": "0x004686f8"},
@@ -139,6 +140,8 @@
     {"symbol": "?g_5107e8@@3PAUs_5107e8@@A", "address": "0x005107e8"},
     {"symbol": "?g_510c58@@3EA", "address": "0x00510c58"},
     {"symbol": "?g_510c74@@3PAUs_record_pool@@A", "address": "0x00510c74"},
+    {"symbol": "?g_51e9cc@@3PAJA", "address": "0x0051e9cc"},
+    {"symbol": "?g_51e9d0@@3PAVc_shape_global_owner@@A", "address": "0x0051e9d0"},
     {"symbol": "?g_51e9d8@@3PAUs_record_pool@@A", "address": "0x0051e9d8"},
     {"symbol": "?g_51ebfc@@3PAUs_record_pool@@A", "address": "0x0051ebfc"},
     {"symbol": "?g_51ec00@@3PAUs_record_pool@@A", "address": "0x0051ec00"},

@@ -349,6 +349,7 @@ bool __stdcall function_10a1b0(long scenery_index, void *placement, bool *result
 	return true;
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0x10a250
 void __stdcall function_10a250(long scenery_index)
 {
@@ -372,6 +373,7 @@ void __stdcall function_10a250(long scenery_index)
         scenery->flags |= 2;
     }
 }
+#endif
 
 // @retail 0x10a2f0
 bool __stdcall function_10a2f0(long scenery_index)
