@@ -1017,6 +1017,7 @@ struct s_597d0_object
 	long field_741c;
 };
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x597d0
 bool function_597d0(s_597d0_object **out)
 {
@@ -1063,6 +1064,7 @@ bool function_597d0(s_597d0_object **out)
 	}
 	return result;
 }
+#endif
 
 
 struct s_shader_entry
