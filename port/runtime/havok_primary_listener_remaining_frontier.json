@@ -4,7 +4,7 @@
     {
       "symbol": "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
       "subsystem": "contact_removal",
-      "blocker": "Requires coherent contact removal, impact release, Havok entity-property mutation, and rigid-body surface-state ownership."
+      "blocker": "Requires coherent motion-basis surface-state recomputation and impact-release lifetime ownership; exact Havok entity-property mutation is already owned."
     },
     {
       "symbol": "?activate@hkRigidBody@@QAAXXZ",

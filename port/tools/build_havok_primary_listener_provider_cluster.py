@@ -76,6 +76,7 @@ def main() -> int:
         contact_impulse = temporary / "contact-impulse.o"
         point_impulse = temporary / "point-impulse.o"
         rigid_body_active = temporary / "rigid-body-active.o"
+        entity_properties = temporary / "entity-properties.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -112,10 +113,13 @@ def main() -> int:
                       ["?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z"])
         compile_slice(args, args.root / "src/unknown_30bc40_native.cpp", rigid_body_active,
                       ["?isActive@hkRigidBody@@QBA?AVhkBool@@XZ"])
+        compile_slice(args, args.root / "src/unknown_3123a0_native.cpp", entity_properties,
+                      ["?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
+                       "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
              args.tables, primary, secondary, constructor, transition, scale,
              pointer_owner, cache_detach, rigid_state, transform, object_wake,
-             contact_impulse, point_impulse, rigid_body_active])
+             contact_impulse, point_impulse, rigid_body_active, entity_properties])
     return 0
 
 

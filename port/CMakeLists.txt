@@ -293,6 +293,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_279740.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_30bc40_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_30c470_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_3123a0_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2da5d0_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_315340_native.cpp"
         ${H2_GUEST_HEADERS}

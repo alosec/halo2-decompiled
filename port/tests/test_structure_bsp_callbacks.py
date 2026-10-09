@@ -202,7 +202,9 @@ def main() -> int:
                     "??0c_interface_277890@@QAA@XZ",
                     "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
                     "?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z",
-                    "?isActive@hkRigidBody@@QBA?AVhkBool@@XZ"}):
+                    "?isActive@hkRigidBody@@QBA?AVhkBool@@XZ",
+                    "?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
+                    "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z"}):
         if symbol not in primary_cluster_defined:
             raise RuntimeError(f"primary Havok listener cluster lacks {symbol}")
 
@@ -268,6 +270,7 @@ def main() -> int:
         "native_havok_transition_tables_and_callback_owned",
         "native_havok_contact_transition_tables_and_callback_owned",
         "native_havok_listener_cache_attachment_owned",
+        "native_havok_entity_property_arrays_owned",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
