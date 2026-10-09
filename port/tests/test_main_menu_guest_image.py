@@ -66,6 +66,7 @@ def main() -> None:
     symbol_lines = {line.split(maxsplit=1)[0]: line for line in symbols.splitlines()}
     required_symbols = {
         "_Z20cache_files_load_mapPKc",
+        "_Z30cache_files_load_structure_bspP25s_structure_bsp_reference",
         "h2_main_menu_guest_bootstrap",
         "h2_main_menu_guest_frame",
         "h2_main_menu_guest_load_strings",
@@ -83,6 +84,7 @@ def main() -> None:
         "?function_23654b",
         "h2_native_campaign_options_ready",
         "h2_native_campaign_bsp_metadata",
+        "h2_native_campaign_load_first_bsp",
         "?network_session_interface_get_user_properties",
         "?map_location_get",
         "?map_location_progress_get",

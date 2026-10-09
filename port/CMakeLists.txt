@@ -362,7 +362,8 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_MAP_LOADER_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "_Z19cache_header_verifyPK14s_cache_header"
-            --extract-symbol "_Z20cache_files_load_mapPKc")
+            --extract-symbol "_Z20cache_files_load_mapPKc"
+            --extract-symbol "_Z30cache_files_load_structure_bspP25s_structure_bsp_reference")
     endif()
     if(object STREQUAL H2_GUEST_MAP_LOCATION_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -1664,6 +1665,7 @@ add_custom_command(
             --include ${PROJECT_SOURCE_DIR}/include
             --extract-symbol "_Z19cache_header_verifyPK14s_cache_header"
             --extract-symbol "_Z20cache_files_load_mapPKc"
+            --extract-symbol "_Z30cache_files_load_structure_bspP25s_structure_bsp_reference"
             --output "${H2_GUEST_MAP_LOADER_ELF_OBJECT}"
             ${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp

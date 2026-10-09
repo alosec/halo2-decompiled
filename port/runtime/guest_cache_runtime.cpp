@@ -88,6 +88,46 @@ extern "C" int h2_native_campaign_bsp_metadata()
     return count;
 }
 
+struct s_structure_bsp_reference
+{
+    unsigned long offset;
+    long size;
+    s_structure_bsp_header *address;
+    unsigned char unknown0c[8];
+    long bsp_tag_index;
+    unsigned char unknown18[4];
+    long lightmap_tag_index;
+};
+static_assert(sizeof(s_structure_bsp_reference) == 0x20,
+              "structure BSP reference layout");
+
+bool cache_files_load_structure_bsp(s_structure_bsp_reference *reference);
+
+extern "C" int h2_native_campaign_load_first_bsp()
+{
+    if (h2_native_campaign_bsp_metadata() <= 0)
+        return 0;
+    unsigned char const *const scenario =
+        reinterpret_cast<unsigned char const *>(g_4e0350);
+    s_structure_bsp_reference *const references =
+        *reinterpret_cast<s_structure_bsp_reference *const *>(scenario + 0x214);
+    s_structure_bsp_reference *const reference = &references[0];
+    if (!cache_files_load_structure_bsp(reference) ||
+        cache_file_globals.bsp != reference->address ||
+        !reference->address || reference->address->signature != 'sbsp')
+        return 0;
+    s_native_cache_tag_instance const *const instances =
+        reinterpret_cast<s_native_cache_tag_instance const *>(g_4e3b44);
+    if (instances[(short)reference->bsp_tag_index].address !=
+        reference->address->bsp_address)
+        return 0;
+    if (reference->lightmap_tag_index != NONE &&
+        instances[(short)reference->lightmap_tag_index].address !=
+            reference->address->lightmap_address)
+        return 0;
+    return 1;
+}
+
 extern "C" int h2_native_load_campaign_map(char const *map_name)
 {
     if (!map_name || cache_file_find(map_name) == NONE ||
