@@ -661,6 +661,7 @@ bool function_a7640(s_effect_object_placement *data)
  return true;
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0xa7a60
 void function_a7a60(long index)
 {
@@ -675,6 +676,7 @@ void function_a7a60(long index)
   object->field_d8 = 0;
  }
 }
+#endif
 
 // @retail 0xa7970
 void __stdcall function_a7970(long index, bool flag, long maximum, long *count, long *types, long *objects)
