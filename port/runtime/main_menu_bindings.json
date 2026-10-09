@@ -167,6 +167,7 @@
     {"symbol": "?g_4670fc@@3MA", "address": "0x004670fc"},
     {"symbol": "?g_467100@@3MA", "address": "0x00467100"},
     {"symbol": "?g_4e7408@@3PAUs_random_globals@@A", "address": "0x004e7408"},
+    {"symbol": "?g_4f93a0@@3PAUs_output_entry@@A", "address": "0x004f93a0"},
     {"symbol": "?g_50941c@@3MA", "address": "0x0050941c"},
     {"symbol": "?g_509420@@3JA", "address": "0x00509420"},
     {"symbol": "?g_509424@@3JA", "address": "0x00509424"},

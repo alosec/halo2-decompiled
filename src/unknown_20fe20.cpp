@@ -1507,6 +1507,7 @@ void function_210c90(s_type_c3b527 const *a, point3f const *b, vector3f *out)
 struct s_2960e0_counts;
 long function_2960e0(s_2960e0_counts *counts, long *objects, long maximum_count);
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x210280
 void function_210280(void)
 {
@@ -1528,6 +1529,7 @@ void function_210280(void)
         }
     }
 }
+#endif
 
 
 point3f *function_b9dd0(long object_index, point3f *result);
