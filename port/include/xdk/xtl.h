@@ -24,6 +24,17 @@ struct _FILETIME {
 };
 typedef struct _FILETIME FILETIME;
 
+typedef struct _SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+} SYSTEMTIME;
+
 typedef union _ULARGE_INTEGER {
     struct {
         DWORD LowPart;
@@ -62,6 +73,7 @@ struct XNADDR {
 
 #ifdef __cplusplus
 static_assert(sizeof(ULARGE_INTEGER) == 8, "public Win32 integer layout");
+static_assert(sizeof(SYSTEMTIME) == 16, "public Win32 system-time layout");
 static_assert(sizeof(XCALCSIG_SIGNATURE) == 0x14, "retail signature layout");
 static_assert(sizeof(XNKID) == 0x08, "retail key identifier layout");
 static_assert(sizeof(XNKEY) == 0x10, "retail key layout");

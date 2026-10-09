@@ -8,7 +8,9 @@ import subprocess
 
 
 EXPECTED_BINDINGS = {
+    "g_44a3f0": 0x0044A3F0,
     "?g_468724@@3PAUcolor3f@@A": 0x00468724,
+    "?g_470200@@3PAUs_text_parse_entry@@A": 0x00470200,
     "?g_4e3b44@@3PAUs_tag_instance@@A": 0x004E3B44,
     "?g_4c99c0@@3Us_online_mutelist_globals@@A": 0x004C99C0,
     "?g_4cf78c@@3PAUs_record_pool@@A": 0x004CF78C,
@@ -48,6 +50,7 @@ REQUIRED = {
     "?function_199f6d@@YAJXZ",
     "?function_217080@@YAXPBUs_game_variant@@@Z",
     "?function_217300@@YAJJJ@Z",
+    "?function_22d2ee@@YAXPAGJ@Z",
     "?function_22fba9@@YAXPAVc_class_1473c9@@@Z",
     "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z",
     "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z",
