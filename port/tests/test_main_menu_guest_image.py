@@ -82,6 +82,7 @@ def main() -> None:
         "?function_23643f",
         "?function_23654b",
         "h2_native_campaign_options_ready",
+        "h2_native_campaign_bsp_metadata",
         "?network_session_interface_get_user_properties",
         "?map_location_get",
         "?map_location_progress_get",
