@@ -41,6 +41,7 @@ REQUIRED = {
     "?function_6b640@@YAXJ@Z",
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
     "?online_task_continue@@YAJPAUs_type_9df9da@@@Z",
+    "?online_task_poll@@YAJJ@Z",
     "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z",
     "?set_description@c_online_task_screen@@QAAXJ@Z",
     "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z",

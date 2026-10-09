@@ -5,6 +5,19 @@
  * selected UI path still owns and looks up its retail-format task records,
  * while Xbox Live task handles cannot exist in the native port yet. */
 
+// @retail 0x6b5d0
+long online_task_poll(long task_index)
+{
+    s_type_9df9da *task = online_task_try_get(task_index);
+    if (!task)
+        return 5;
+    if (task->flag_bits.finished)
+        return task->flag_bits.failed ? 3 : 2;
+    if (task->flag_bits.running)
+        return 1;
+    return task->flag_bits.started ? 0 : 4;
+}
+
 // @retail 0x6b910
 s_type_9df9da *function_6b910(long task_index)
 {

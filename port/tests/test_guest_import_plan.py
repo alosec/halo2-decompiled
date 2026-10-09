@@ -28,7 +28,8 @@ def main():
     assert imports["host_h2_render_request"]["category"] == "host_abi"
     assert "?function_18f1c0@@YAXJ@Z" not in imports
     assert "?function_52040@@YAXPBX0@Z" not in imports
-    assert imports["?online_task_poll@@YAJJ@Z"]["category"] == "named_engine_service"
+    assert "?online_task_poll@@YAJJ@Z" not in imports
+    assert imports["?online_get_logon_status@@YA_NPAJ@Z"]["category"] == "named_engine_service"
     print("main-menu import plan classification passed")
 
 
