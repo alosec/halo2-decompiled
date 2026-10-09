@@ -111,6 +111,23 @@ extern "C" BOOL __stdcall GetDiskFreeSpaceExA(const char *, ULARGE_INTEGER *avai
     return TRUE;
 }
 
+struct s_player_profile_settings;
+
+void function_18fb34(long, s_player_profile_settings *, long)
+{
+    /* No persisted profile can be applied during empty native bootstrap. */
+}
+
+void function_215367(long, long, void *, long)
+{
+    /* Native saved-game task storage is not implemented yet. */
+}
+
+void function_2153dd(long, long, s_player_profile_settings *, long)
+{
+    /* Native profile persistence is not implemented yet. */
+}
+
 void function_2157c0(long)
 {
     /* No asynchronous native save operation can complete yet. */
