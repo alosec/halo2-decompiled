@@ -757,6 +757,21 @@ def main():
         if f"_{bsp_switch_symbol}" not in bsp_switch_defined:
             raise RuntimeError("structure-BSP switch callback was not selectively compilable")
 
+        object_relocation_output = Path(temporary) / "object-placement-relocation.o"
+        object_relocation_command = command[:]
+        object_relocation_symbol = "?function_b8600@@YAXJJ@Z"
+        object_relocation_command[object_relocation_command.index("h2_extract_selected")] = object_relocation_symbol
+        object_relocation_command[object_relocation_command.index("--extract-global"):object_relocation_command.index("--output")] = []
+        object_relocation_command[object_relocation_command.index(output)] = object_relocation_output
+        object_relocation_command[-1] = args.root / "src/unknown_0b8600.cpp"
+        subprocess.run([str(value) for value in object_relocation_command], check=True)
+        object_relocation_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", object_relocation_output],
+            text=True,
+        )
+        if f"_{object_relocation_symbol}" not in object_relocation_defined:
+            raise RuntimeError("object placement relocation was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
