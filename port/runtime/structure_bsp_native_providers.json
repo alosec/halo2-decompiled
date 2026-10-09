@@ -43,7 +43,7 @@
     {"source": "src/unknown_108a90.cpp", "symbols": ["?function_108d30@@YA_NJJJ@Z"]},
     {"source": "src/unknown_2962e0_native.cpp", "symbols": ["?function_2962e0@@YAXPAUs_record_pool@@PAJJJPBX@Z"]},
     {"source": "src/unknown_1d8f00.cpp", "symbols": ["?function_1d8f00@@YAJJJ@Z", "?function_1d8f50@@YAJJJPBEPBJPBUtransform4x3f@@_NPAUs_object_marker@@J@Z"]},
-    {"source": "src/unknown_0b58c0.cpp", "symbols": ["?function_b9dd0@@YAPATpoint3f@@JPAT1@@Z"]},
+    {"source": "src/unknown_0b58c0.cpp", "symbols": ["?function_b9dd0@@YAPATpoint3f@@JPAT1@@Z", "?function_b5920@@YAXJ@Z"]},
     {"source": "src/unknown_0bb760.cpp", "symbols": ["?function_bb950@@YAXJ_NJ@Z"]},
     {"source": "src/unknown_0bbf40.cpp", "symbols": ["?function_bf090@@YAXJ@Z", "?function_bf380@@YAXXZ", "?function_bf510@@YA_NJPAUs_location@@@Z"]},
     {"source": "src/unknown_0bfd20.cpp", "symbols": ["?function_bfcc0@@YAXXZ"]},
@@ -55,6 +55,9 @@
     {"source": "src/unknown_173b90.cpp", "symbols": ["?particle_systems_update_locations@@YAXXZ", "?particle_system_unlink@@YAXPAUs_particle_system_datum@@PAJ1@Z", "?set_location@s_particle_system_datum@@QAAXPBUs_location@@@Z", "?function_174180@@YAXJ@Z"]},
     {"source": "src/unknown_175bd0.cpp", "symbols": ["?effect_remove_event_slot@@YAXJJ@Z"]},
     {"source": "src/unknown_2483f0.cpp", "symbols": ["?function_2486e0@@YAXJ@Z"]},
-    {"source": "src/unknown_21a100_native.cpp", "symbols": ["?looping_sound_update_locations@@YAXXZ"]}
+    {"source": "src/unknown_21a100_native.cpp", "symbols": ["?looping_sound_update_locations@@YAXXZ"]},
+    {"source": "src/replication_entity_table.cpp", "symbols": ["?replication_table_update@@YAXPAUs_handle_peers@@J@Z", "?replication_table_update_chain@@YAXPAUs_handle_peers@@J@Z"]},
+    {"source": "src/unknown_096ed0.cpp", "symbols": ["?function_995c0@@YAXPAVc_handle_table_450cd0@@J@Z"]},
+    {"source": "src/unknown_099690.cpp", "symbols": ["?function_99690@@YAPAVc_handle_table_450cd0@@PAV1@JJ@Z"]}
   ]
 }
