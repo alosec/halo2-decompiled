@@ -11775,8 +11775,8 @@ va,size,owner,style,evidence,name,object,calls,source,status
 002ddcc0,6,third:havok,speed,a16 pad,,,,src/unknown_2ddca0.cpp,todo
 002ddcd0,35,third:havok,speed,a16 pad,,,002fc4e0,,todo
 002ddd00,47,third:havok,speed,a16 pad,,,002df200,,todo
-002ddd30,123,third:havok,speed,a16 pad ebp,,,,,todo
-002dddb0,57,third:havok,speed,a16 pad,,,,,todo
+002ddd30,123,third:havok,speed,a16 pad ebp,,,,src/unknown_2ddca0.cpp,todo
+002dddb0,57,third:havok,speed,a16 pad,,,,src/unknown_2ddca0.cpp,todo
 002dddf0,459,third:havok,speed,a16 pad ebp,,,,,todo
 002ddfc0,216,third:havok,speed,a16 pad ebp,,,,,todo
 002de0a0,65,third:havok,speed,a16 pad,,,,,todo

@@ -287,12 +287,16 @@ def main():
         physics_model_marker_symbols = (
             "?function_2ddca0@c_physics_shape_455500@@QAAXPAUs_physics_shape_marker_455500@@@Z",
             "?function_2ddcc0@c_physics_shape_455500@@QAAPAXJ@Z",
+            "?function_2ddd30@c_physics_shape_455500@@QAAXPBMPAM@Z",
+            "?function_2dddb0@c_physics_shape_455500@@QAAXPBGJPAM@Z",
         )
         physics_model_marker_command = command[:]
         physics_model_marker_command[physics_model_marker_command.index("h2_extract_selected")] = physics_model_marker_symbols[0]
-        physics_model_marker_command[physics_model_marker_command.index("--extract-global"):physics_model_marker_command.index("--output")] = [
-            "--extract-symbol", physics_model_marker_symbols[1],
-        ]
+        physics_model_marker_command[physics_model_marker_command.index("--extract-global"):physics_model_marker_command.index("--output")] = []
+        insert_at = physics_model_marker_command.index("--output")
+        for symbol in physics_model_marker_symbols[1:]:
+            physics_model_marker_command[insert_at:insert_at] = ["--extract-symbol", symbol]
+            insert_at += 2
         physics_model_marker_command[physics_model_marker_command.index(output)] = physics_model_marker_output
         physics_model_marker_command[-1] = args.root / "src/unknown_2ddca0.cpp"
         subprocess.run([str(value) for value in physics_model_marker_command], check=True)
