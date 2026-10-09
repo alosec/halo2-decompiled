@@ -325,6 +325,7 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
+        "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_match_tolerance_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0b8bd0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0dc3a0.cpp"

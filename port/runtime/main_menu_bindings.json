@@ -95,6 +95,8 @@
     {"symbol": "?g_4686c4@@3FA", "address": "0x004686c4"},
     {"symbol": "?g_468774@@3PAUpoint2f@@A", "address": "0x00468774"},
     {"symbol": "?g_468788@@3PATpoint3f@@A", "address": "0x00468788"},
+    {"symbol": "?g_468d48@@3QAY0EAA@$$CBEA", "address": "0x00468d48"},
+    {"symbol": "?g_46bd48@@3PAY0EAA@EA", "address": "0x0046bd48"},
     {"symbol": "?g_479890@@3JA", "address": "0x00479890"},
     {"symbol": "?g_47989c@@3PAVc_havok_fixed_memory@@A", "address": "0x0047989c"},
     {"symbol": "?g_47f048@@3PAUs_47f048_object@@A", "address": "0x0047f048"},
