@@ -140,6 +140,55 @@ set(H2_GUEST_COLOR_SPACE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1317a0.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
+
+set(H2_GUEST_PHYSICS_MODEL_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.s")
+set(H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.o")
+set(H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_runtime.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_physics_model_vtables.py"
+            --tables "${CMAKE_CURRENT_SOURCE_DIR}/runtime/physics_model_vtables.json"
+            --providers "${CMAKE_CURRENT_SOURCE_DIR}/runtime/physics_model_native_providers.json"
+            --output "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_physics_model_vtables.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/physics_model_vtables.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/physics_model_native_providers.json"
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
+    COMMAND "${H2_LLVM_ROOT}/bin/clang" --target=aarch64-linux-gnu -c
+            "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
+            -o "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
+    DEPENDS "${H2_GUEST_PHYSICS_MODEL_TABLE_ASM}"
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --output "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_physics_model_runtime.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_physics_model_runtime.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2_physics_model_table_objects ALL DEPENDS
+    "${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}"
+)
+
 set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
@@ -2141,6 +2190,9 @@ add_test(
     NAME physics-model-vtables
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_physics_model_vtables.py
             --root ${PROJECT_SOURCE_DIR}
+            --llvm-readelf ${H2_LLVM_ROOT}/bin/llvm-readelf
+            --table-object ${H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT}
+            --leaf-object ${H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit

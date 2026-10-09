@@ -2,6 +2,9 @@
 import argparse
 import csv
 import json
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 EXPECTED_TABLES = {
@@ -39,6 +42,9 @@ EXPECTED_NATIVE_PROVIDERS = {
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--llvm-readelf", type=Path)
+    parser.add_argument("--table-object", type=Path)
+    parser.add_argument("--leaf-object", type=Path)
     args = parser.parse_args()
 
     manifest_path = args.root / "port/runtime/physics_model_vtables.json"
@@ -126,6 +132,48 @@ def main() -> int:
             raise RuntimeError("active table does not use cache-owned deleting semantics")
         if providers[slots[4]]["symbol"] != "h2_native_physics_idle":
             raise RuntimeError("active table does not use the recovered idle slot")
+
+    native_source = (args.root / "port/runtime/guest_physics_model_runtime.cpp").read_text()
+    for symbol in EXPECTED_NATIVE_PROVIDERS.values():
+        if symbol not in native_source:
+            raise RuntimeError(f"native leaf provider is not defined: {symbol}")
+
+    with tempfile.TemporaryDirectory() as temporary:
+        assembly_path = Path(temporary) / "physics-model-vtables.s"
+        subprocess.run([
+            sys.executable,
+            args.root / "port/tools/generate_physics_model_vtables.py",
+            "--tables", manifest_path,
+            "--providers", provider_path,
+            "--output", assembly_path,
+        ], check=True)
+        assembly = assembly_path.read_text()
+    if assembly.count("  .long ") != 104:
+        raise RuntimeError("generated tables must contain 97 slots and seven lookup entries")
+    for address, (_, slot_count, _) in EXPECTED_TABLES.items():
+        label = f"h2_native_physics_model_vtable_{address:08x}:"
+        if assembly.count(label) != 1:
+            raise RuntimeError(f"generated native table is missing: {address:#x}")
+        body = assembly.split(label, 1)[1].split(".size", 1)[0]
+        if body.count("  .long ") != slot_count:
+            raise RuntimeError(f"generated native table has wrong extent: {address:#x}")
+
+    object_arguments = (args.llvm_readelf, args.table_object, args.leaf_object)
+    if any(object_arguments) and not all(object_arguments):
+        raise RuntimeError("all native table object arguments must be supplied together")
+    if all(object_arguments):
+        relocations = subprocess.check_output(
+            [args.llvm_readelf, "-r", args.table_object], text=True
+        )
+        if relocations.count("R_AARCH64_ABS32") != 104:
+            raise RuntimeError("native table object must contain exactly 104 ABS32 relocations")
+        llvm_nm = args.llvm_readelf.with_name("llvm-nm")
+        leaf_symbols = subprocess.check_output(
+            [llvm_nm, "--defined-only", "--format=posix", args.leaf_object], text=True
+        )
+        for symbol in set(EXPECTED_NATIVE_PROVIDERS.values()):
+            if f"{symbol} " not in leaf_symbols and f"_{symbol} " not in leaf_symbols:
+                raise RuntimeError(f"compiled native leaf provider is absent: {symbol}")
     return 0
 
 
