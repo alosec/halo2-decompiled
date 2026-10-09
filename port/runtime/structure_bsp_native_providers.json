@@ -58,6 +58,9 @@
     {"source": "src/unknown_21a100_native.cpp", "symbols": ["?looping_sound_update_locations@@YAXXZ"]},
     {"source": "src/replication_entity_table.cpp", "symbols": ["?replication_table_update@@YAXPAUs_handle_peers@@J@Z", "?replication_table_update_chain@@YAXPAUs_handle_peers@@J@Z"]},
     {"source": "src/unknown_096ed0.cpp", "symbols": ["?function_995c0@@YAXPAVc_handle_table_450cd0@@J@Z"]},
-    {"source": "src/unknown_099690.cpp", "symbols": ["?function_99690@@YAPAVc_handle_table_450cd0@@PAV1@JJ@Z"]}
+    {"source": "src/unknown_099690.cpp", "symbols": ["?function_99690@@YAPAVc_handle_table_450cd0@@PAV1@JJ@Z"]},
+    {"source": "src/unknown_10ace0_native.cpp", "symbols": ["?function_10ace0@@YAXJ@Z"]},
+    {"source": "src/unknown_10cf50_native.cpp", "symbols": ["?function_10cf50@@YA_NJ@Z"]},
+    {"source": "src/unknown_152340_native.cpp", "symbols": ["?function_152340@@YAXXZ"]}
   ]
 }
