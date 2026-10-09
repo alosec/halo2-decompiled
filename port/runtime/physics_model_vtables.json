@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "retail_address": "0x00455500",
+      "family_offset": "0x58",
+      "slots": [
+        "0x001c2360", "0x002d7210", "0x002d7240", "0x002df310",
+        "0x00072c70", "0x0009b910", "0x002de0f0", "0x002df0b0",
+        "0x002de1b0", "0x002df110", "0x002ddca0", "0x002ddcc0",
+        "0x002ddd30", "0x002dddb0", "0x001ee340", "0x0009bec0"
+      ]
+    },
+    {
+      "retail_address": "0x00455ef0",
+      "family_offset": "0x60-child",
+      "slots": [
+        "0x001ea970", "0x002d7210", "0x002d7240", "0x002fe260",
+        "0x00072c70", "0x0009ac70", "0x002fe420", "0x002df0b0",
+        "0x002fe550", "0x002df110", "0x002fe330", "0x002fe4f0",
+        "0x002fe450", "0x002fe490", "0x002fe410", "0x00224240"
+      ]
+    },
+    {
+      "retail_address": "0x00455498",
+      "family_offset": "0x60-parent",
+      "slots": [
+        "0x001c2380", "0x002d7210", "0x002d7240", "0x002df4b0",
+        "0x00072c70", "0x002de7a0", "0x002de850", "0x002de8e0",
+        "0x002de9e0", "0x002deb20"
+      ]
+    },
+    {
+      "retail_address": "0x00456008",
+      "family_offset": "0x70",
+      "slots": [
+        "0x001ea990", "0x002d7210", "0x002d7240", "0x002fd0a0",
+        "0x00072c70", "0x0009cd70", "0x002fd8a0", "0x002df0b0",
+        "0x002fd5c0", "0x002df110", "0x002fd210", "0x002fd730",
+        "0x002fd260", "0x002fd430", "0x002fd230", "0x00224240"
+      ]
+    },
+    {
+      "retail_address": "0x00455fc0",
+      "family_offset": "0x90",
+      "slots": [
+        "0x001ea9a0", "0x002d7210", "0x002d7240", "0x002fde30",
+        "0x00072c70", "0x000a0250", "0x002fc120", "0x002fbdc0",
+        "0x002fbb70", "0x002fbe90", "0x002fc1a0", "0x00099810",
+        "0x002fc1b0", "0x002fc1d0", "0x002fc1e0", "0x002fc1f0",
+        "0x00072c70"
+      ]
+    },
+    {
+      "retail_address": "0x00455f30",
+      "family_offset": "0x108-parent",
+      "slots": [
+        "0x001ea930", "0x002d7210", "0x002d7240", "0x002fe0b0",
+        "0x00072c70", "0x002fe190", "0x002df5d0", "0x002df220",
+        "0x002fe1a0", "0x002fe1c0"
+      ]
+    },
+    {
+      "retail_address": "0x00455f8c",
+      "family_offset": "0x108-child",
+      "slots": [
+        "0x00244930", "0x002d7210", "0x002d7240", "0x002fdfa0",
+        "0x00072c70", "0x0009a5e0", "0x002fdfb0", "0x002df220",
+        "0x001efae0", "0x002dae30", "0x001eb220", "0x001eb2a0"
+      ]
+    }
+  ]
+}
