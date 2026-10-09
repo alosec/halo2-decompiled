@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_two_vertex_bounds_output = Path(temporary) / "physics-model-two-vertex-bounds.o"
+        physics_model_two_vertex_bounds_symbol = (
+            "?function_2de0f0@c_physics_two_vertex_shape@@UAAXPBUs_physics_two_vertex_matrix@@MPAUs_physics_two_vertex_bounds@@@Z"
+        )
+        physics_model_two_vertex_bounds_command = command[:]
+        physics_model_two_vertex_bounds_command[physics_model_two_vertex_bounds_command.index("h2_extract_selected")] = physics_model_two_vertex_bounds_symbol
+        physics_model_two_vertex_bounds_command[physics_model_two_vertex_bounds_command.index("--extract-global"):physics_model_two_vertex_bounds_command.index("--output")] = []
+        physics_model_two_vertex_bounds_command[physics_model_two_vertex_bounds_command.index(output)] = physics_model_two_vertex_bounds_output
+        physics_model_two_vertex_bounds_command[-1] = args.root / "src/unknown_2de0f0.cpp"
+        subprocess.run([str(value) for value in physics_model_two_vertex_bounds_command], check=True)
+        physics_model_two_vertex_bounds_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_two_vertex_bounds_output],
+            text=True,
+        )
+        if f"_{physics_model_two_vertex_bounds_symbol}" not in physics_model_two_vertex_bounds_defined:
+            raise RuntimeError("physics-model two-vertex bounds method was not retained")
+
         physics_model_transformed_forward_output = Path(temporary) / "physics-model-transformed-forward.o"
         physics_model_transformed_forward_symbol = (
             "?function_2deb20@c_physics_transformed_forward_shape@@UAAXPBUs_physics_forward_segment@@PAUs_physics_query_context@@PAX@Z"
