@@ -137,6 +137,7 @@
     {"symbol": "?g_4f93a4@@3PAUs_unknown_210db0@@A", "address": "0x004f93a4"},
     {"symbol": "?g_502138@@3JA", "address": "0x00502138"},
     {"symbol": "?g_5021bc@@3Us_impact_component_iterator@@A", "address": "0x005021bc"},
+    {"symbol": "?g_502420@@3PAUs_record_pool@@A", "address": "0x00502420"},
     {"symbol": "?g_509438@@3PAXA", "address": "0x00509438"},
     {"symbol": "?g_5107e8@@3PAUs_5107e8@@A", "address": "0x005107e8"},
     {"symbol": "?g_510c58@@3EA", "address": "0x00510c58"},

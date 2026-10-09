@@ -15,6 +15,11 @@
     "g_468630_owned_object_type_definitions",
     "g_4e0350_owned_scenario",
     "g_4de2e0_owned_object_partition",
+    "g_4f55d0_owned_ai_globals",
+    "g_4f55f0_owned_actor_pool",
+    "g_51e9d8_owned_squad_pool",
+    "g_5044c8_owned_perception_pool",
+    "g_502420_owned_clump_pool",
     "native_offline_replication_unavailable"
   ],
   "providers": [
@@ -84,7 +89,7 @@
     {"source": "src/unknown_210e20_native.cpp", "symbols": ["?function_210e20@@YAXXZ", "?function_210f00@@YAXXZ"]},
     {"source": "src/unknown_15b220_native.cpp", "symbols": ["?function_15b220@@YAXJJ@Z"]},
     {"source": "src/unknown_203ed0_native.cpp", "symbols": ["?function_203cc0@@YAXJ@Z", "?function_203ed0@@YAXJ_N@Z", "?function_203fb0@@YAXJ@Z", "?function_204390@@YA_NJ@Z"]},
-    {"source": "src/unknown_1e4290.cpp", "symbols": ["?function_1e13f0@@YA_NJ@Z"]},
+    {"source": "src/unknown_1e4290.cpp", "symbols": ["?function_1e11b0@@YA_NJ_N@Z", "?function_1e13f0@@YA_NJ@Z"]},
     {"source": "src/unknown_0df5f0_native.cpp", "symbols": ["?function_df5f0@@YAXJPATpoint3f@@PAM1@Z"]},
     {"source": "src/unknown_1e9700.cpp", "symbols": ["?function_1e9650@@YAXXZ", "?function_1e95d0@@YAXPBD@Z"]},
     {"source": "src/unknown_015b70_native.cpp", "symbols": ["?function_015b70@@YAXXZ"]},
@@ -104,6 +109,11 @@
     {"source": "src/unknown_0b7740.cpp", "symbols": ["?function_b7a40@@YAPAXPBUs_scenario_identifier_ab@@PAJ@Z", "?function_b8940@@YAJFPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z", "?function_b89b0@@YAJPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z"]},
     {"source": "src/unknown_1efac0.cpp", "symbols": ["?initialize@s_lookup@@QAA_NJ@Z", "?function_1efdc0@@YA_NPAUs_lookup@@PBTpoint3f@@@Z"]},
     {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z", "?function_a7a60@@YAXJ@Z"]},
-    {"source": "src/unknown_295e60_native.cpp", "symbols": ["?function_295e60@@YAXJ@Z", "?function_10a040@@YAFJPAUs_scenery_placement@@@Z"]}
+    {"source": "src/unknown_295e60_native.cpp", "symbols": ["?function_295e60@@YAXJ@Z", "?function_10a040@@YAFJPAUs_scenery_placement@@@Z"]},
+    {"source": "src/actor_squad_bsp_native.cpp", "symbols": ["?function_203bf0@@YA_NJ@Z", "?function_203d70@@YAXJF_N@Z", "?function_203f60@@YAXJ@Z"]},
+    {"source": "src/unknown_1e1f20.cpp", "symbols": ["?function_1e1150@@YAXJF@Z"]},
+    {"source": "src/unknown_290c80.cpp", "symbols": ["?function_290bf0@@YAXJF@Z"]},
+    {"source": "src/unknown_26b230.cpp", "symbols": ["?function_268810@@YAXJ@Z"]},
+    {"source": "src/squads.cpp", "symbols": ["?function_204d30@@YAXPAUs_squad_actor_iterator@@J@Z"]}
   ]
 }

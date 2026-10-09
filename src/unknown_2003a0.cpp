@@ -960,6 +960,7 @@ void function_203ed0(long actor_index, bool keep_count)
 
 void function_1e22d0(long actor_index, bool conditional);
 
+#if !H2_NATIVE_PORT
 // @retail 0x203f60
 void function_203f60(long actor_index)
 {
@@ -973,6 +974,7 @@ void function_203f60(long actor_index)
 		function_1e22d0(actor_index, false);
 	}
 }
+#endif
 
 bool function_1e12b0(long actor_index, dword const *clusters);
 
@@ -1716,6 +1718,7 @@ void function_204450(long definition_index, long squad_index)
 
 bool function_1e11b0(long actor_index, bool active);
 
+#if !H2_NATIVE_PORT
 #pragma inline_depth(0)
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
@@ -1747,6 +1750,7 @@ bool function_203bf0(long squad_index)
     return (bool)(((dword)((byte *)squad)[2] & 0x80) >> 7);
 }
 #pragma inline_depth(255)
+#endif
 
 
 extern s_record_pool *g_5044c8;
@@ -1839,6 +1843,7 @@ void function_203360(long squad_index)
 
 void function_1e1150(long actor_index, short team);
 
+#if !H2_NATIVE_PORT
 // @retail 0x203d70
 void function_203d70(long actor_index, short squad_index, bool keep_team)
 {
@@ -1881,6 +1886,7 @@ void function_203d70(long actor_index, short squad_index, bool keep_team)
         ((byte *)squad)[3] |= 1;
     }
 }
+#endif
 
 
 #include "object_queries.h"

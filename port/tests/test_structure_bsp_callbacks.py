@@ -111,6 +111,11 @@ def main() -> int:
         "g_468630_owned_object_type_definitions",
         "g_4e0350_owned_scenario",
         "g_4de2e0_owned_object_partition",
+        "g_4f55d0_owned_ai_globals",
+        "g_4f55f0_owned_actor_pool",
+        "g_51e9d8_owned_squad_pool",
+        "g_5044c8_owned_perception_pool",
+        "g_502420_owned_clump_pool",
         "native_offline_replication_unavailable",
     ]:
         raise RuntimeError("structure-BSP callback execution preconditions changed")
@@ -155,8 +160,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 30:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 30")
+    if len(undefined) != 29:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 29")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -192,9 +197,9 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 24:
+    if len(production_undefined) != 23:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 24")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 23")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |
                         closure_symbols | retained_globals)
