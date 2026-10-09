@@ -80,6 +80,7 @@ set(H2_GUEST_DIALOG_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_253c8b.o")
 set(H2_GUEST_DIALOG_EVENT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24c7c1.o")
 set(H2_GUEST_SCREEN_CLEANUP_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22f6ca.o")
 set(H2_GUEST_ACTIVE_SESSION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0597d0.o")
+set(H2_GUEST_PREFERENCES_UPDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_121040.o")
 set(H2_GUEST_MUTELIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_058cb0.o")
 set(H2_GUEST_SESSION_LEAVE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_199e2e.o")
 set(H2_GUEST_UI_RECT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236299.o")
@@ -148,6 +149,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_22f6ca.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_0597d0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_121040.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -219,6 +221,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_DIALOG_EVENT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24c7c1.cpp"
         "${H2_GUEST_SCREEN_CLEANUP_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22f6ca.cpp"
         "${H2_GUEST_ACTIVE_SESSION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0597d0.cpp"
+        "${H2_GUEST_PREFERENCES_UPDATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_121040.cpp"
         "${H2_GUEST_MUTELIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp"
         "${H2_GUEST_SESSION_LEAVE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
         "${H2_GUEST_UI_RECT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
@@ -464,6 +467,7 @@ set_source_files_properties(
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}" "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}" "${H2_GUEST_DIALOG_BASE_OBJECT}" "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_SCREEN_CLEANUP_OBJECT}" "${H2_GUEST_ACTIVE_SESSION_OBJECT}"
+    "${H2_GUEST_PREFERENCES_UPDATE_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}" "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}" "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
@@ -535,6 +539,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_SCREEN_CLEANUP_OBJECT}"
     "${H2_GUEST_ACTIVE_SESSION_OBJECT}"
+    "${H2_GUEST_PREFERENCES_UPDATE_OBJECT}"
     "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}"
     "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
@@ -575,7 +580,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 75
+            --expect-unresolved 74
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -945,7 +950,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 75
+            --expect-unresolved 74
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -953,7 +958,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 75
+            --expect-unresolved 74
 )
 add_test(
     NAME main-menu-elf-core

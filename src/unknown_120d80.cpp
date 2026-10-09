@@ -134,6 +134,7 @@ void function_120e40(wchar_t const *name)
 	global_preferences_globals.dirty = true;
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x121040
 void function_121040(long value)
 {
@@ -143,6 +144,7 @@ void function_121040(long value)
 		global_preferences_globals.dirty = true;
 	}
 }
+#endif
 
 // @retail 0x121060
 void function_121060(long value)
