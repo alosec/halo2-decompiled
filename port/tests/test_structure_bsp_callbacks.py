@@ -65,8 +65,8 @@ def main() -> int:
         raise RuntimeError("callbacks absent from functions.csv: " +
                            ", ".join(hex(value) for value in absent))
     recovered = {method for method in unique if functions[method]["source"]}
-    if len(recovered) != 16 or unique - recovered != {0x000B6BB0}:
-        raise RuntimeError("structure-BSP callback source frontier changed")
+    if recovered != unique:
+        raise RuntimeError("all structure-BSP callbacks must remain source-owned")
     return 0
 
 

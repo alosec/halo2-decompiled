@@ -742,6 +742,21 @@ def main():
         if "_?function_205550@@YAXPAX@Z" not in vehicle_init_defined:
             raise RuntimeError("Campaign vehicle initializer was not selectively compilable")
 
+        bsp_switch_output = Path(temporary) / "structure-bsp-switch.o"
+        bsp_switch_command = command[:]
+        bsp_switch_symbol = "?function_b6bb0@@YAXXZ"
+        bsp_switch_command[bsp_switch_command.index("h2_extract_selected")] = bsp_switch_symbol
+        bsp_switch_command[bsp_switch_command.index("--extract-global"):bsp_switch_command.index("--output")] = []
+        bsp_switch_command[bsp_switch_command.index(output)] = bsp_switch_output
+        bsp_switch_command[-1] = args.root / "src/unknown_0b6bb0.cpp"
+        subprocess.run([str(value) for value in bsp_switch_command], check=True)
+        bsp_switch_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", bsp_switch_output],
+            text=True,
+        )
+        if f"_{bsp_switch_symbol}" not in bsp_switch_defined:
+            raise RuntimeError("structure-BSP switch callback was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
