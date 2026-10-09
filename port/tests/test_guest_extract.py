@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_transformed_forward_output = Path(temporary) / "physics-model-transformed-forward.o"
+        physics_model_transformed_forward_symbol = (
+            "?function_2deb20@c_physics_transformed_forward_shape@@UAAXPBUs_physics_forward_segment@@PAUs_physics_query_context@@PAX@Z"
+        )
+        physics_model_transformed_forward_command = command[:]
+        physics_model_transformed_forward_command[physics_model_transformed_forward_command.index("h2_extract_selected")] = physics_model_transformed_forward_symbol
+        physics_model_transformed_forward_command[physics_model_transformed_forward_command.index("--extract-global"):physics_model_transformed_forward_command.index("--output")] = []
+        physics_model_transformed_forward_command[physics_model_transformed_forward_command.index(output)] = physics_model_transformed_forward_output
+        physics_model_transformed_forward_command[-1] = args.root / "src/unknown_2deb20.cpp"
+        subprocess.run([str(value) for value in physics_model_transformed_forward_command], check=True)
+        physics_model_transformed_forward_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_transformed_forward_output],
+            text=True,
+        )
+        if f"_{physics_model_transformed_forward_symbol}" not in physics_model_transformed_forward_defined:
+            raise RuntimeError("physics-model transformed query forwarder was not retained")
+
         physics_model_transformed_hit_output = Path(temporary) / "physics-model-transformed-hit.o"
         physics_model_transformed_hit_symbols = (
             "?function_2da6e0@s_physics_direction@@QAAXPBUs_physics_transform_matrix@@PBM@Z",
