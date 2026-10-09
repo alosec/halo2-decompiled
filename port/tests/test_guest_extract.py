@@ -84,6 +84,20 @@ def main():
         if "_?function_1392f8@@YAXPBUs_player_appearance@@@Z" not in appearance_defined:
             raise RuntimeError("recovered appearance source was not selectively compilable")
 
+        predicted_output = Path(temporary) / "predicted-resources.o"
+        predicted_command = command[:]
+        predicted_command[predicted_command.index("h2_extract_selected")] = "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z"
+        predicted_command[predicted_command.index("--extract-global"):predicted_command.index("--output")] = []
+        predicted_command[predicted_command.index(output)] = predicted_output
+        predicted_command[-1] = args.root / "src/unknown_16e290.cpp"
+        subprocess.run([str(value) for value in predicted_command], check=True)
+        predicted_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", predicted_output],
+            text=True,
+        )
+        if "_?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in predicted_defined:
+            raise RuntimeError("predicted-resource source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered rendering sources")
 
 

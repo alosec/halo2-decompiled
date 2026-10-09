@@ -7,7 +7,9 @@
 #define UNKNOWN_03BCB0_H
 
 #include "unknown_11c920.h"
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 
 struct s_bitmap_data;
 struct D3DTexture;
@@ -42,11 +44,19 @@ static __forceinline void bitmap_predict_inline(s_bitmap_predict_view *bitmap, d
 	}
 	if (!texture)
 	{
+#ifdef H2_NATIVE_PORT
+		__builtin_prefetch((char const *)&bitmap->flags, 0, 3);
+		__builtin_prefetch((char const *)&bitmap->data_offset, 0, 3);
+		__builtin_prefetch((char const *)&bitmap->data_offset1, 0, 3);
+		__builtin_prefetch((char const *)&bitmap->data_offset2, 0, 3);
+		__builtin_prefetch((char const *)bitmap->texture, 0, 3);
+#else
 		_mm_prefetch((char const *)&bitmap->flags, _MM_HINT_T0);
 		_mm_prefetch((char const *)&bitmap->data_offset, _MM_HINT_T0);
 		_mm_prefetch((char const *)&bitmap->data_offset1, _MM_HINT_T0);
 		_mm_prefetch((char const *)&bitmap->data_offset2, _MM_HINT_T0);
 		_mm_prefetch((char const *)bitmap->texture, _MM_HINT_T0);
+#endif
 		if (!texture_cache_bitmap_get_texture((s_bitmap_data *)bitmap, flags, 0.0f))
 		{
 			function_12ce00((s_bitmap_data *)bitmap, flags, 0.0f);
