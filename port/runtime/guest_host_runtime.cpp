@@ -145,6 +145,8 @@ struct s_string_table;
 bool string_table_load(s_string_table *table);
 void level_handle_tables_initialize();
 void function_19c190();
+struct s_entry_b;
+s_entry_b *function_19c1f0(long map_id);
 extern "C" c_data_allocator *h2_native_user_interface_allocator();
 
 extern "C" int h2_main_menu_guest_load_campaign_metadata()
@@ -163,7 +165,31 @@ extern "C" int h2_main_menu_guest_load_campaign_metadata()
     if (!g_4ee4e8->valid || g_4ee4e8->actual_count != 15 ||
         g_4ee4e8->maximum_count != 20)
         return 2;
-    return 0;
+    struct s_level_handle_datum
+    {
+        short salt;
+        unsigned char downloaded;
+        unsigned char reserved;
+        long map_id;
+    };
+    long map_ids[15] = {};
+    long count = 0;
+    for (long index = 0; index < g_4ee4e8->high_water_index; ++index)
+    {
+        if (!(g_4ee4e8->bitmap[index >> 5] & (1u << (index & 31))))
+            continue;
+        const long map_id = reinterpret_cast<s_level_handle_datum *>(
+            g_4ee4e8->data + index * g_4ee4e8->size)->map_id;
+        if (!function_19c1f0(map_id))
+            return 3;
+        for (long previous = 0; previous < count; ++previous)
+            if (map_ids[previous] == map_id)
+                return 4;
+        if (count >= 15)
+            return 5;
+        map_ids[count++] = map_id;
+    }
+    return count == 15 ? 0 : 6;
 }
 
 extern "C" int h2_main_menu_guest_load_strings()
