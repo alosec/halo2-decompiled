@@ -302,8 +302,9 @@ foreach(pair IN ITEMS
             "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z")
     endif()
     if(object STREQUAL H2_GUEST_SAVED_GAME_INDEX_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_217300@@YAJJJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_217080@@YAXPBUs_game_variant@@@Z"
+            --extract-symbol "?function_217300@@YAJJJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
@@ -340,7 +341,9 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_STORAGE_SIZE_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?saved_game_file_size_in_blocks@@YAJJ@Z"
-            --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z")
+            --extract-symbol "?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z"
+            --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z"
+            --extract-global "switch.table.?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z")
     endif()
     add_custom_command(
         OUTPUT "${object}"
@@ -495,7 +498,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 91
+            --expect-unresolved 90
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -595,8 +598,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_217300@@YAJJJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_217080@@YAXPBUs_game_variant@@@Z"
+            --extract-symbol "?function_217300@@YAJJJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args
@@ -633,7 +637,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_216a50.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?saved_game_file_size_in_blocks@@YAJJ@Z"
-            --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z")
+            --extract-symbol "?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z"
+            --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z"
+            --extract-global "switch.table.?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z")
     endif()
     add_custom_command(
         OUTPUT "${object}"
@@ -815,7 +821,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 91
+            --expect-unresolved 90
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -823,7 +829,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 91
+            --expect-unresolved 90
 )
 add_test(
     NAME main-menu-elf-core
