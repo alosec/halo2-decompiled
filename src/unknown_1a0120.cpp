@@ -9,6 +9,9 @@
 #include "globals.h"
 #include "unknown_12b400.h"
 #include "unknown_122870.h"
+#ifdef H2_NATIVE_PORT
+#include "h2/host_abi.h"
+#endif
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
@@ -156,7 +159,11 @@ bool string_table_load(s_string_table *table)
 	s_cache_file_location location;
 	long size;
 
+#ifdef H2_NATIVE_PORT
+	table->references = (s_string_reference *)host_h2_physical_memory_malloc_low(table->count * sizeof(s_string_reference), PAGE_READWRITE);
+#else
 	table->references = (s_string_reference *)physical_memory_malloc_fixed(table->count * sizeof(s_string_reference), PAGE_READWRITE);
+#endif
 	size = table->count * sizeof(s_string_reference);
 	if (size & 0x1ff)
 		size = (size | 0x1ff) + 1;
@@ -164,7 +171,11 @@ bool string_table_load(s_string_table *table)
 	location.offset = table->references_offset;
 	function_122d60(location, size, table->references);
 
+#ifdef H2_NATIVE_PORT
+	table->data = (char *)host_h2_physical_memory_malloc_low(table->data_size, PAGE_READWRITE);
+#else
 	table->data = (char *)physical_memory_malloc_fixed(table->data_size, PAGE_READWRITE);
+#endif
 	size = table->data_size;
 	if (size & 0x1ff)
 		size = (size | 0x1ff) + 1;

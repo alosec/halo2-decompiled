@@ -37,7 +37,7 @@ DispatchState& dispatch_state() {
 
 constexpr std::uint32_t kCacheHeaderAddress = 0x00557c94u;
 constexpr std::uint32_t kPhysicalRegionAddress = 0x80060000u;
-constexpr std::uint32_t kPhysicalRegionSize = 0x001d4000u;
+constexpr std::uint32_t kPhysicalRegionSize = 0x02000000u;
 constexpr std::uint32_t kPhysicalAllocationBase = 0x80061000u;
 constexpr std::uint32_t kCacheHeaderSize = 0x800u;
 

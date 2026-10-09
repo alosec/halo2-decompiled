@@ -621,7 +621,9 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args --extract-symbol "??0s_widget_item@@QAA@XZ")
     endif()
     if(object STREQUAL H2_GUEST_LOCALIZED_TEXT_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol "?function_1a0180@@YAXJJPAG@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1a0180@@YAXJJPAG@Z"
+            --extract-symbol "?string_table_load@@YA_NPAUs_string_table@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_UTF8_OBJECT)
         list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")
@@ -1057,7 +1059,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
         list(APPEND guest_extract_args --extract-symbol "??0s_widget_item@@QAA@XZ")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp")
-        list(APPEND guest_extract_args --extract-symbol "?function_1a0180@@YAXJJPAG@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1a0180@@YAXJJPAG@Z"
+            --extract-symbol "?string_table_load@@YA_NPAUs_string_table@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp")
         list(APPEND guest_extract_args --extract-symbol "?utf8_string_to_utf16_string@@YAXPBDPAGJ@Z")

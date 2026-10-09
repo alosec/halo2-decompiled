@@ -1,4 +1,7 @@
 #include "h2/host_abi.h"
+#include "unknown_11c920.h"
+#include "globals.h"
+#include "unknown_122870.h"
 #include <math.h>
 #include <xtl.h>
 
@@ -9,6 +12,11 @@
 extern "C" DWORD __stdcall XGetLanguage()
 {
     return 1; /* English */
+}
+
+bool function_122d60(s_cache_file_location location, long size, void *buffer)
+{
+    return host_h2_cache_read(location.offset, size, buffer) != 0;
 }
 
 long function_11ca80(long value)
@@ -46,6 +54,18 @@ bool function_147d13();
 void __stdcall function_1483c3(long);
 
 alignas(16) static unsigned char g_native_ui_heap[0x100050];
+
+struct s_string_table;
+bool string_table_load(s_string_table *table);
+
+extern "C" int h2_main_menu_guest_load_strings()
+{
+    if (!g_4e034c)
+        return 1;
+    s_string_table *english = reinterpret_cast<s_string_table *>(
+        reinterpret_cast<unsigned char *>(g_4e034c) + 0x188);
+    return string_table_load(english) ? 0 : 2;
+}
 
 extern "C" int h2_main_menu_guest_open_press_start()
 {
@@ -148,8 +168,21 @@ void c_1fa50::function_1fa50(short_rectangle2d const *bounds, void const *clip,
         --remaining;
     } while (remaining > 0);
 
+    (void)color;
+    auto channel = [](float value) -> unsigned int {
+        if (value < 0.0f)
+            value = 0.0f;
+        else if (value > 1.0f)
+            value = 1.0f;
+        return static_cast<unsigned int>(value * 255.0f + 0.5f);
+    };
+    const unsigned int packed_color =
+        (channel(g_4e73a0.color.alpha) << 24) |
+        (channel(g_4e73a0.color.red) << 16) |
+        (channel(g_4e73a0.color.green) << 8) |
+        channel(g_4e73a0.color.blue);
     host_h2_text_request(text, bounds, clip, position, static_cast<int>(line_gap),
-                         scale, static_cast<unsigned int>(color), shadow);
+                         scale, packed_color, shadow);
 }
 
 extern "C" DWORD __stdcall GetTickCount(void)

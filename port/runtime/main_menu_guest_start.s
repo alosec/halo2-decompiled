@@ -25,6 +25,8 @@ h2_main_menu_guest_bootstrap:
     mov x0, xzr
     bl _Z20cache_files_load_mapPKc
     cbz w0, .Lmap_load_failed
+    bl h2_main_menu_guest_load_strings
+    cbnz w0, .Lreturn
     bl h2_main_menu_guest_open_press_start
     cbnz w0, .Lreturn
     bl h2_main_menu_guest_frame

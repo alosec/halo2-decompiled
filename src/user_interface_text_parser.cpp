@@ -1457,6 +1457,25 @@ s_text_parse_entry g_470200[] =
 // @retail 0x22d2ee
 void function_22d2ee(word *string, long maximum_length)
 {
+#ifdef H2_NATIVE_PORT
+	/* Retail parser tables contain Xbox code pointers.  Until every dynamic
+	   token callback is selected natively, preserve text and controller glyphs
+	   but remove the build-number token used by the press-start screen. */
+	word *source = string;
+	word *destination = string;
+	long remaining = maximum_length;
+	while (remaining > 1 && *source)
+	{
+		if (*source != 0xe415)
+		{
+			*destination++ = *source;
+			remaining--;
+		}
+		source++;
+	}
+	*destination = 0;
+	return;
+#endif
 	word *character = string;
 	long length = wcslen(string);
 

@@ -97,6 +97,47 @@ SDL_FColor unpack_color(std::uint32_t color) {
     };
 }
 
+struct GuestRectangle {
+    short top;
+    short left;
+    short bottom;
+    short right;
+};
+
+void draw_guest_text(const std::uint32_t* text, const void* bounds_pointer,
+                     const void*, const void*, int, float scale,
+                     std::uint32_t color, const void*, void* context_pointer) {
+    auto& context = *static_cast<NativeRenderContext*>(context_pointer);
+    if (!text || !bounds_pointer || context.failed) {
+        return;
+    }
+    std::string utf8;
+    for (std::size_t i = 0; i < 2048 && text[i]; ++i) {
+        const std::uint32_t character = text[i];
+        if (character >= 0x20 && character <= 0x7e) {
+            utf8.push_back(static_cast<char>(character));
+        } else {
+            utf8.push_back('?');
+        }
+    }
+    if (utf8.empty()) {
+        return;
+    }
+    const auto& bounds = *static_cast<const GuestRectangle*>(bounds_pointer);
+    const float glyph_scale = scale > 0.0f ? scale : 1.0f;
+    const float width = static_cast<float>(utf8.size()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE *
+                        glyph_scale;
+    const float height = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * glyph_scale;
+    const float x = (static_cast<float>(bounds.left) + bounds.right - width) * 0.5f;
+    const float y = (static_cast<float>(bounds.top) + bounds.bottom - height) * 0.5f;
+    const SDL_FColor unpacked = unpack_color(color);
+    if (!SDL_SetRenderDrawColorFloat(context.renderer, unpacked.r, unpacked.g,
+                                     unpacked.b, unpacked.a) ||
+        !SDL_RenderDebugText(context.renderer, x, y, utf8.c_str())) {
+        context.failed = true;
+    }
+}
+
 void draw_guest_request(const void* request_pointer, const void* vertices_pointer,
                         void* context_pointer) {
     auto& context = *static_cast<NativeRenderContext*>(context_pointer);
@@ -222,6 +263,7 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
 
     NativeRenderContext render_context{renderer, arena, {}, false};
     h2::port::set_render_request_handler(draw_guest_request, &render_context);
+    h2::port::set_text_request_handler(draw_guest_text, &render_context);
     bool running = true;
     int result = 0;
     int rendered_frames = 0;
@@ -273,6 +315,7 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
     }
 
     h2::port::set_render_request_handler(nullptr);
+    h2::port::set_text_request_handler(nullptr);
     if (guest_frame) {
         const auto stats = h2::port::host_service_stats();
         std::size_t decoded_textures = 0;
@@ -375,6 +418,11 @@ int main(int argc, char** argv) {
             if (options.guest_entry == "h2_main_menu_guest_bootstrap" &&
                 guest_service_stats->render_request_calls == 0) {
                 std::cerr << "error: main-menu bootstrap produced no render requests\n";
+                return 1;
+            }
+            if (options.guest_entry == "h2_main_menu_guest_bootstrap" &&
+                guest_service_stats->text_request_calls == 0) {
+                std::cerr << "error: main-menu bootstrap produced no localized text requests\n";
                 return 1;
             }
             if (options.guest_entry == "h2_main_menu_guest_bootstrap") {
