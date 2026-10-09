@@ -32,6 +32,8 @@ REQUIRED = {
     "?function_1906b4@@YAXXZ",
     "?function_199ebc@@YAJXZ",
     "?function_199f34@@YAJXZ",
+    "?function_199f6d@@YAJXZ",
+    "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z",
     "?online_mutelist_reset@@YAXJ@Z",
     "?function_2523b7@@YA_NJ@Z",
     "?function_2323ab@@YA_NJ@Z",

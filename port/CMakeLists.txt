@@ -255,7 +255,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_1999b3@@YA_NXZ"
             --extract-symbol "?function_1999f9@@YA_NXZ"
             --extract-symbol "?function_199ebc@@YAJXZ"
-            --extract-symbol "?function_199f34@@YAJXZ")
+            --extract-symbol "?function_199f34@@YAJXZ"
+            --extract-symbol "?function_199f6d@@YAJXZ")
     endif()
     if(object STREQUAL H2_GUEST_SESSION_MANAGER_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -290,7 +291,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?network_session_interface_clear_user@@YAXJ@Z"
             --extract-symbol "?network_session_interface_get_value_18@@YAJXZ"
             --extract-symbol "?network_session_interface_get_value_49a4@@YAJXZ"
-            --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z")
+            --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z"
+            --extract-symbol "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_STORAGE_SIZE_OBJECT)
         list(APPEND guest_extract_args
@@ -441,7 +443,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 107
+            --expect-unresolved 106
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -512,7 +514,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_1999b3@@YA_NXZ"
             --extract-symbol "?function_1999f9@@YA_NXZ"
             --extract-symbol "?function_199ebc@@YAJXZ"
-            --extract-symbol "?function_199f34@@YAJXZ")
+            --extract-symbol "?function_199f34@@YAJXZ"
+            --extract-symbol "?function_199f6d@@YAJXZ")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058ee0.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -547,7 +550,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?network_session_interface_clear_user@@YAXJ@Z"
             --extract-symbol "?network_session_interface_get_value_18@@YAJXZ"
             --extract-symbol "?network_session_interface_get_value_49a4@@YAJXZ"
-            --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z")
+            --extract-symbol "?network_session_interface_get_values_4d08@@YA_NPAJ0PAPAE@Z"
+            --extract-symbol "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_216a50.cpp")
         list(APPEND guest_extract_args
@@ -734,7 +738,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 107
+            --expect-unresolved 106
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -742,7 +746,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 107
+            --expect-unresolved 106
 )
 add_test(
     NAME main-menu-elf-core
