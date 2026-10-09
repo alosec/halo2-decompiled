@@ -146,6 +146,8 @@
     {"symbol": "?g_51ecac@@3PAXA", "address": "0x0051ecac"},
     {"symbol": "?g_55e4d0@@3PAPAVc_engine_peer@@A", "address": "0x0055e4d0"},
     {"symbol": "?g_4e7411@@3_NA", "address": "0x004e7411"},
-    {"symbol": "?g_4e7414@@3JA", "address": "0x004e7414"}
+    {"symbol": "?g_4e7414@@3JA", "address": "0x004e7414"},
+    {"symbol": "?g_440b94@@3QAY02$$CBFA", "address": "0x00440b94"},
+    {"symbol": "?g_4e7418@@3PAJA", "address": "0x004e7418"}
   ]
 }
