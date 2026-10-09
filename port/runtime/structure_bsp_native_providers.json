@@ -36,6 +36,7 @@
     "g_51eca8_owned_primary_listener_storage",
     "g_51ecac_owned_secondary_listener",
     "native_havok_transition_tables_and_callback_owned",
+    "native_havok_contact_transition_tables_and_callback_owned",
     "g_510c44_owned_ai_scratch_buffer",
     "native_offline_replication_unavailable"
   ],

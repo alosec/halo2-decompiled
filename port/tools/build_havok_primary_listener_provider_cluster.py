@@ -28,7 +28,7 @@ def run(command):
     subprocess.run([str(value) for value in command], check=True)
 
 
-def compile_slice(args, source, output, symbols, aliases=()):
+def compile_slice(args, source, output, symbols, aliases=(), globals=()):
     command = [
         args.python, args.root / "port/tools/guest_elf_cc.py",
         "--llvm", args.llvm,
@@ -43,6 +43,8 @@ def compile_slice(args, source, output, symbols, aliases=()):
         command.extend(("--extract-symbol", symbol))
     for alias in aliases:
         command.extend(("--extract-alias", alias))
+    for global_name in globals:
+        command.extend(("--extract-global", global_name))
     command.extend(("--output", output, source))
     run(command)
 
@@ -64,6 +66,7 @@ def main() -> int:
         primary = temporary / "primary.o"
         secondary = temporary / "secondary.o"
         constructor = temporary / "constructor.o"
+        transition = temporary / "transition.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -71,8 +74,14 @@ def main() -> int:
         compile_slice(args,
                       args.root / "src/havok_primary_listener_construct_native.cpp",
                       constructor, ["??0c_interface_277890@@QAA@XZ"])
+        compile_slice(
+            args, args.root / "src/unknown_315340_native.cpp", transition,
+            ["?function_315340@@YAXPAXPAVhkEntity@@1MM@Z"], globals=[
+                "g_h2_native_contact_transition_pending_table",
+                "g_h2_native_contact_transition_complete_table",
+            ])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
-             args.tables, primary, secondary, constructor])
+             args.tables, primary, secondary, constructor, transition])
     return 0
 
 

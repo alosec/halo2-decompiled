@@ -175,7 +175,6 @@ def main() -> int:
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?function_279740@@YA_NJ@Z",
         "?function_2d91d0@@YAXPAXJ@Z",
-        "?function_315340@@YAXPAXPAVhkEntity@@1MM@Z",
         "?function_a7670@@YA_NJ@Z",
         "?function_b7360@@YAXJ@Z",
         "?function_b8540@@YAXJ@Z",
@@ -261,6 +260,7 @@ def main() -> int:
         "g_51eca8_owned_primary_listener_storage",
         "g_51ecac_owned_secondary_listener",
         "native_havok_transition_tables_and_callback_owned",
+        "native_havok_contact_transition_tables_and_callback_owned",
         "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
@@ -434,7 +434,6 @@ def main() -> int:
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?function_279740@@YA_NJ@Z",
-        "?function_315340@@YAXPAXPAVhkEntity@@1MM@Z",
         "?function_b7360@@YAXJ@Z",
         "?get_inverse_scale@s_scale_owner@@QBAMXZ",
         "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
@@ -457,7 +456,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 27):
+            len(actual_listener_production) != 26):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |

@@ -21,7 +21,9 @@ void c_2784c5::function_315910(void *arg_0) {}
 class hkEntity;
 
 // @stub 0x315340
+#ifndef H2_NATIVE_PORT
 void __cdecl function_315340(void *arg_0, hkEntity *arg_1, hkEntity *arg_2, real arg_3, real arg_4) {}
+#endif
 
 // @stub 0x3153c0
 void __cdecl function_3153c0(void *arg_0, void *arg_1, void const *arg_2)
