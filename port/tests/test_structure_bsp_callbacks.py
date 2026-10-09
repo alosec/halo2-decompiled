@@ -115,6 +115,14 @@ def main() -> int:
         text=True,
     )
     definitions = {line.split()[0] for line in symbols.splitlines() if line.strip()}
+    undefined_text = subprocess.check_output(
+        [args.llvm_nm, "--undefined-only", "--format=posix", args.provider_cluster_object],
+        text=True,
+    )
+    undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
+    leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
+    if leaked_runtime:
+        raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
     expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
     missing_symbols = sorted(expected_symbols - definitions)

@@ -19,6 +19,9 @@ def main() -> int:
     parser.add_argument("--lld", type=Path, required=True)
     parser.add_argument("--plugin", type=Path, required=True)
     parser.add_argument("--table", type=Path, required=True)
+    parser.add_argument("--crt", type=Path)
+    parser.add_argument("--bindings", type=Path)
+    parser.add_argument("--providers-output", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -55,7 +58,13 @@ def main() -> int:
     if native_symbols != {"h2_native_structure_bsp_idle"}:
         raise RuntimeError("unexpected native structure-BSP provider set")
 
+    bound_inputs = (args.crt, args.bindings, args.providers_output)
+    if any(bound_inputs) and not all(bound_inputs):
+        raise RuntimeError("crt, bindings, and providers-output must be supplied together")
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    if args.providers_output:
+        args.providers_output.parent.mkdir(parents=True, exist_ok=True)
     tool = args.root / "port/tools/guest_elf_cc.py"
     includes = [
         args.root / "port/include",
@@ -85,7 +94,13 @@ def main() -> int:
             run(command)
             objects.append(output)
 
-        run([args.lld, "-r", "-o", args.output, args.table, *objects])
+        provider_output = args.providers_output or args.output
+        run([args.lld, "-r", "-o", provider_output, args.table, *objects])
+        if args.providers_output:
+            run([
+                args.lld, "-r", "-o", args.output,
+                args.providers_output, args.crt, args.bindings,
+            ])
     return 0
 
 

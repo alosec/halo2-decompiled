@@ -246,6 +246,7 @@ add_custom_target(h2_physics_model_table_objects ALL DEPENDS
 )
 
 set(H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_callbacks.o")
+set(H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_providers.o")
 set(H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_provider_cluster.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
@@ -272,13 +273,18 @@ add_custom_command(
     VERBATIM
 )
 add_custom_command(
-    OUTPUT "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
+    OUTPUT
+        "${H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT}"
+        "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_structure_bsp_provider_cluster.py"
             --root "${PROJECT_SOURCE_DIR}"
             --llvm "${H2_LLVM_ROOT}/bin"
             --lld "${H2_LLD}"
             --plugin "$<TARGET_FILE:h2_guest_rebase>"
             --table "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+            --crt "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o"
+            --bindings "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+            --providers-output "${H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT}"
             --output "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
     DEPENDS
         h2_guest_rebase
@@ -286,6 +292,8 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/runtime/structure_bsp_native_providers.json"
         "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+        "${H2_GUEST_OBJECT_DIR}/elf/guest_crt.o"
+        "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
         ${H2_RECOVERED_SOURCES}
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
@@ -293,6 +301,7 @@ add_custom_command(
 )
 add_custom_target(h2_structure_bsp_provider_objects ALL DEPENDS
     "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+    "${H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT}"
     "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
 )
 
