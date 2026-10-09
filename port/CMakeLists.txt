@@ -519,6 +519,7 @@ add_custom_target(h2-main-menu-elf ALL DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}")
 
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
+    src/host_services.cpp
     src/retail_data.cpp
 )
 target_include_directories(h2_port_support PUBLIC include)
@@ -547,6 +548,12 @@ target_compile_features(h2-guest-arena-tests PRIVATE cxx_std_20)
 target_compile_options(h2-guest-arena-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-guest-arena-tests PRIVATE h2_port_support)
 add_test(NAME guest-arena-xbe-loader COMMAND h2-guest-arena-tests)
+
+add_executable(h2-host-services-tests tests/host_services_tests.cpp)
+target_compile_features(h2-host-services-tests PRIVATE cxx_std_20)
+target_compile_options(h2-host-services-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-host-services-tests PRIVATE h2_port_support)
+add_test(NAME native-host-services COMMAND h2-host-services-tests)
 
 add_executable(h2-guest-crt-tests
     tests/guest_crt_tests.c
