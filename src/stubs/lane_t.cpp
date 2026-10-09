@@ -34,12 +34,6 @@ void function_12b6f0(real progress)
 {
 }
 
-/* lane O's region */
-// @stub 0x246c60
-void function_246c60(void *block, long unknown)
-{
-}
-
 /* lane D's region: a machine's connection quality */
 struct s_68a90_entry;
 /* in the region: the collision test of one object (not decompiled yet) */

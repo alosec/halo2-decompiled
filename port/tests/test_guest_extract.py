@@ -168,6 +168,26 @@ def main():
         if "_?function_1c2390@s_part_table@@QAAXXZ" not in part_init_defined:
             raise RuntimeError("Campaign part-table initializer was not selectively compilable")
 
+        physics_runtime_output = Path(temporary) / "physics-runtime-constructor.o"
+        physics_runtime_command = command[:]
+        physics_runtime_command[physics_runtime_command.index("h2_extract_selected")] = "?function_246c60@@YAXPAXJ@Z"
+        physics_runtime_command[physics_runtime_command.index("--extract-global"):physics_runtime_command.index("--output")] = []
+        physics_runtime_command[physics_runtime_command.index(output)] = physics_runtime_output
+        physics_runtime_command[-1] = args.root / "src/unknown_246c60.cpp"
+        subprocess.run([str(value) for value in physics_runtime_command], check=True)
+        physics_runtime_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_runtime_output],
+            text=True,
+        )
+        physics_runtime_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", physics_runtime_output],
+            text=True,
+        )
+        if "_?function_246c60@@YAXPAXJ@Z" not in physics_runtime_defined:
+            raise RuntimeError("physics runtime-object constructor was not selectively compilable")
+        if "_h2_native_physics_runtime_vtable" not in physics_runtime_undefined:
+            raise RuntimeError("native physics constructor did not retain its explicit vtable-owner boundary")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
