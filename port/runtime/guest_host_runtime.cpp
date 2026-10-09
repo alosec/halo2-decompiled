@@ -141,7 +141,18 @@ void __stdcall function_1483c3(long);
 
 alignas(16) static unsigned char g_native_ui_heap[0x100050];
 
-struct s_string_table;
+struct s_string_table
+{
+    void *references;
+    char *data;
+    long count;
+    long data_size;
+    long references_offset;
+    long data_offset;
+    bool loaded;
+    unsigned char unknown19[3];
+};
+static_assert(sizeof(s_string_table) == 0x1c, "string table layout");
 bool string_table_load(s_string_table *table);
 void level_handle_tables_initialize();
 void function_19c190();
@@ -198,7 +209,10 @@ extern "C" int h2_main_menu_guest_load_strings()
         return 1;
     s_string_table *english = reinterpret_cast<s_string_table *>(
         reinterpret_cast<unsigned char *>(g_4e034c) + 0x188);
-    return string_table_load(english) ? 0 : 2;
+    if (!string_table_load(english))
+        return 2;
+    return english->loaded && english->references && english->data &&
+        english->count > 0 && english->data_size > 0 ? 0 : 3;
 }
 
 extern "C" void h2_native_controller_connect(long controller);
@@ -525,7 +539,9 @@ extern "C" int h2_main_menu_guest_load_selected_campaign()
     g_native_expected_campaign_map = 0;
     if (g_native_campaign_options_status != 0)
         return 10;
-    return h2_native_load_campaign_map(map_name) ? 0 : 5;
+    if (!h2_native_load_campaign_map(map_name))
+        return 5;
+    return h2_main_menu_guest_load_strings() == 0 ? 0 : 11;
 }
 
 extern "C" int h2_main_menu_guest_up()
