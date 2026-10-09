@@ -88,8 +88,7 @@ def main() -> int:
          "??_7c_interface_277890@@6Bc_interface_2777d0@@@",
          [0x00277890, 0x002778E0, 0x00277990, 0x00278200,
           0x002789F0, 0x00278A70, 0x00278B30, 0x00278AE0,
-          0x002789B0, 0x00277800, 0x0032131E, 0x0032131E,
-          0x0032131E]),
+          0x002789B0]),
     ]
     actual_primary_tables = [
         (entry.get("name"), int(entry.get("object_offset", "-1"), 0),
@@ -97,12 +96,12 @@ def main() -> int:
          [int(method, 0) for method in entry.get("methods", [])])
         for entry in primary.get("tables", [])
     ]
-    if (primary.get("version") != 1 or
+    if (primary.get("version") != 2 or
             int(primary.get("object_size", "0"), 0) != 0x28 or
             actual_primary_tables != expected_primary_tables):
         raise RuntimeError("primary Havok listener table inventory changed")
     primary_methods = [method for table in actual_primary_tables for method in table[4]]
-    if len(primary_methods) != 18 or len(set(primary_methods)) != 16:
+    if len(primary_methods) != 14 or len(set(primary_methods)) != 14:
         raise RuntimeError("primary Havok listener method coverage changed")
     primary_unique = set(primary_methods)
     if primary_unique - functions.keys():
@@ -110,11 +109,11 @@ def main() -> int:
     primary_source_owned = {
         method for method in primary_unique if functions[method]["source"]
     }
-    if len(primary_source_owned) != 12:
+    if primary_source_owned != primary_unique:
         raise RuntimeError("primary Havok listener source coverage changed")
     excluded_primary = primary.get("excluded_adjacent_tables")
     if ([int(entry.get("retail_address", "0"), 0) for entry in excluded_primary]
-            != [0x0045A740, 0x0045A78C]):
+            != [0x0045A740, 0x0045A77C, 0x0045A78C]):
         raise RuntimeError("primary Havok listener table boundaries changed")
 
     providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"

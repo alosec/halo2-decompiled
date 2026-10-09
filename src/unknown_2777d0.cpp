@@ -15,6 +15,9 @@ struct alignas(16) h2_native_m128
 #define __m128 h2_native_m128
 #endif
 #include <math.h>
+#ifdef H2_NATIVE_PORT
+#include <new>
+#endif
 
 /* Interfaces whose destructors restore their retail virtual tables. */
 struct s_278a70_event;
@@ -108,12 +111,18 @@ class c_reference_277820 : public c_havok_reference_counted
 {
 public:
 	c_reference_277820() { reference_count = 1; }
+	static void operator delete(void *block)
+	{
+		g_480118->allocate((long)block,
+			((c_reference_277820 *)block)->allocation_size, 0x10);
+	}
 };
 
 class c_callback_277820 : public c_reference_277820
 {
 public:
 	c_callback_277820() { target = NULL; }
+	virtual ~c_callback_277820();
 	virtual hkBool test(void *first, void *second);
 	c_callback_277820_target *target;
 };
@@ -177,6 +186,11 @@ void c_interface_277890::event1(void *arg_0)
 }
 
 // @retail 0x277890 deleting c_interface_277890
+
+// @retail 0x0a9ef0 deleting
+c_callback_277820::~c_callback_277820()
+{
+}
 
 // @retail 0x277820
 hkBool c_callback_277820::test(void *first, void *second)
@@ -330,6 +344,7 @@ struct s_278a70_event
 class c_callback_2789b0 : public c_havok_reference_counted, public c_interface_2777f0
 {
 public:
+	virtual ~c_callback_2789b0();
 	virtual void slot2(s_278a70_event *event);
 	virtual void slot4(void *context);
 	static void operator delete(void *block)
@@ -337,6 +352,25 @@ public:
 		g_480118->allocate((long)block, ((c_callback_2789b0 *)block)->allocation_size, 0x10);
 	}
 };
+
+// @retail 0x2789b0 deleting; secondary-base deleting thunk at 0x278b30
+c_callback_2789b0::~c_callback_2789b0()
+{
+}
+
+#ifdef H2_NATIVE_PORT
+// Keeps the compiler-generated Microsoft deleting destructor available to
+// the native table assembler without installing or invoking the table.
+void h2_native_primary_listener_callback_destroy(c_callback_2789b0 *callback)
+{
+	delete callback;
+}
+
+c_callback_2789b0 *h2_native_primary_listener_callback_construct(void *storage)
+{
+	return new(storage) c_callback_2789b0;
+}
+#endif
 
 // @retail 0x278ae0
 void c_callback_2789b0::slot4(void *context)

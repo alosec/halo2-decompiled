@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "object_size": "0x28",
   "tables": [
     {
@@ -7,14 +7,21 @@
       "object_offset": "0x1c",
       "retail_address": "0x0045a738",
       "native_symbol": "??_7c_callback_277820@@6B@",
-      "methods": ["0x000a9ef0", "0x00277820"]
+      "methods": [
+        "0x000a9ef0",
+        "0x00277820"
+      ]
     },
     {
       "name": "contact_events",
       "object_offset": "0x04",
       "retail_address": "0x0045a74c",
       "native_symbol": "??_7c_interface_277890@@6Bc_interface_277840@@@",
-      "methods": ["0x00277a00", "0x00278030", "0x00278100"]
+      "methods": [
+        "0x00277a00",
+        "0x00278030",
+        "0x00278100"
+      ]
     },
     {
       "name": "entity_listener",
@@ -22,10 +29,15 @@
       "retail_address": "0x0045a758",
       "native_symbol": "??_7c_interface_277890@@6Bc_interface_2777d0@@@",
       "methods": [
-        "0x00277890", "0x002778e0", "0x00277990", "0x00278200",
-        "0x002789f0", "0x00278a70", "0x00278b30", "0x00278ae0",
-        "0x002789b0", "0x00277800", "0x0032131e", "0x0032131e",
-        "0x0032131e"
+        "0x00277890",
+        "0x002778e0",
+        "0x00277990",
+        "0x00278200",
+        "0x002789f0",
+        "0x00278a70",
+        "0x00278b30",
+        "0x00278ae0",
+        "0x002789b0"
       ]
     }
   ],
@@ -35,8 +47,12 @@
       "reason": "base c_interface_2777d0 table installed only during destruction"
     },
     {
+      "retail_address": "0x0045a77c",
+      "reason": "base c_interface_2777f0 table installed only during base construction and destruction"
+    },
+    {
       "retail_address": "0x0045a78c",
-      "reason": "next independent retail table after the 13-slot entity-listener table"
+      "reason": "base c_interface_277840 table replaced by the derived contact-event table during construction"
     }
   ]
 }

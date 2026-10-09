@@ -1015,10 +1015,16 @@ def main():
         contact_listener_output = Path(temporary) / "havok-contact-listener.o"
         contact_listener_symbol = "??0c_interface_277890@@QAA@XZ"
         contact_filter_symbol = "?function_2792c0@@YA_NPAUs_2792c0_context@@@Z"
+        contact_leaf_symbols = [
+            "??1c_callback_277820@@UAA@XZ",
+            "??1c_callback_2789b0@@UAA@XZ",
+            "?h2_native_primary_listener_callback_construct@@YAPAVc_callback_2789b0@@PAX@Z",
+        ]
         contact_listener_command = command[:]
         contact_listener_command[contact_listener_command.index("h2_extract_selected")] = contact_listener_symbol
         contact_listener_command[contact_listener_command.index("--extract-global"):contact_listener_command.index("--output")] = [
             "--extract-symbol", contact_filter_symbol,
+            *[value for symbol in contact_leaf_symbols for value in ("--extract-symbol", symbol)],
         ]
         contact_listener_command[contact_listener_command.index(output)] = contact_listener_output
         contact_listener_command[-1] = args.root / "src/unknown_2777d0.cpp"
@@ -1027,7 +1033,7 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", contact_listener_output],
             text=True,
         )
-        for symbol in (contact_listener_symbol, contact_filter_symbol):
+        for symbol in (contact_listener_symbol, contact_filter_symbol, *contact_leaf_symbols):
             if f"_{symbol}" not in contact_listener_defined:
                 raise RuntimeError(f"Havok contact listener source was not retained: {symbol}")
 
