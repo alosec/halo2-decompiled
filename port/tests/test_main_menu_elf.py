@@ -58,6 +58,7 @@ REQUIRED = {
     "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z",
     "?function_18f58c@@YAXXZ",
     "?function_18f5e3@@YAXXZ",
+    "?function_18f62b@@YAXXZ",
     "?function_190186@@YAXJ@Z",
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
