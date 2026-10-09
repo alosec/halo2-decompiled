@@ -49,6 +49,7 @@
     "g_51ec00_owned_component_impact_lists",
     "g_502138_owned_impact_sort_state",
     "g_4e8c24_owned_players_and_local_state",
+    "native_havok_impact_response_state_owned",
     "native_havok_rigid_body_island_state_owned",
     "native_havok_motion_point_impulse_owned",
     "native_havok_world_activation_owned",

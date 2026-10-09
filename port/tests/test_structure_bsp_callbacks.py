@@ -347,6 +347,7 @@ def main() -> int:
         "g_51ec00_owned_component_impact_lists",
         "g_502138_owned_impact_sort_state",
         "g_4e8c24_owned_players_and_local_state",
+        "native_havok_impact_response_state_owned",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -601,9 +602,6 @@ def main() -> int:
         "?function_18a5e0@@YAPAGJ@Z",
         "?function_18a6c0@@YAJJJ@Z",
         "?function_18a720@@YAXJ_N@Z",
-        "?g_4687a8@@3PATvector3f@@A",
-        "?g_47f05c@@3MA",
-        "?g_47f07a@@3_NA",
         "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z",
         "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z",
         "?vector3d_compress@@YAKPBTvector3f@@@Z",
@@ -627,7 +625,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 36):
+            len(actual_impact_allocation_score) != 33):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
