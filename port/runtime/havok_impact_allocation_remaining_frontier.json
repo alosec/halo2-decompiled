@@ -18,11 +18,6 @@
       "blocker": "Requires the exact recovered vector normalization and fallback semantics."
     },
     {
-      "symbol": "?function_146650@@YAJXZ",
-      "subsystem": "game_time",
-      "blocker": "Requires initialized gameplay-time state, not merely menu-time ownership."
-    },
-    {
       "symbol": "?function_177260@@YAXJ_N@Z",
       "subsystem": "effects",
       "blocker": "Requires complete native effect deletion and reference ownership."

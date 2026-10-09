@@ -54,6 +54,7 @@ def main() -> int:
         impact_find = temporary / "impact-find.o"
         impact_tolerance = temporary / "impact-tolerance.o"
         impact_allocation = temporary / "impact-allocation.o"
+        game_time = temporary / "game-time.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -95,8 +96,10 @@ def main() -> int:
             ["?impact_new@@YAJPBUs_impact_data@@J@Z",
              "?impact_component_b_is_faster@@YA_NJJ@Z",
              "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z"])
+        compile_slice(args, args.root / "src/unknown_146240.cpp", game_time,
+                      ["?function_146650@@YAJXZ"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
-             args.impact_output, args.output, impact_allocation])
+             args.impact_output, args.output, impact_allocation, game_time])
     return 0
 
 
