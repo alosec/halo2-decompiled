@@ -17,8 +17,25 @@
 #include "globals.h"
 #include "online_tasks.h"
 #include <string.h>
+#ifdef H2_NATIVE_PORT
+#include <new>
+#endif
 
+#ifdef H2_NATIVE_PORT
+/* The recovered object occupies retail 0x54d598; fixed selection globals such
+ * as g_54e7c0 are fields within this same object, not separate native state. */
+extern c_window_manager g_54d598;
+struct c_native_window_manager_initializer
+{
+	c_native_window_manager_initializer()
+	{
+		::new (&g_54d598) c_window_manager();
+	}
+};
+static c_native_window_manager_initializer g_native_window_manager_initializer;
+#else
 c_window_manager g_54d598;
+#endif
 
 // @retail 0x147645
 c_window_manager::c_window_manager()

@@ -43,6 +43,7 @@
     {"symbol": "?g_51ebec@@3KA", "address": "0x0051ebec"},
     {"symbol": "?g_527330@@3Us_session_states@@A", "address": "0x00527330"},
     {"symbol": "?main_globals@@3Us_main_globals@@A", "address": "0x00547f28"},
+    {"symbol": "?g_54d598@@3Vc_window_manager@@A", "address": "0x0054d598"},
     {"symbol": "?g_54d59f@@3_NA", "address": "0x0054d59f"},
     {"symbol": "?g_54d5a0@@3_NA", "address": "0x0054d5a0"},
     {"symbol": "?g_54d5b8@@3KA", "address": "0x0054d5b8"},
