@@ -204,49 +204,100 @@ CachedFontGlyph* get_font_glyph(NativeRenderContext& context, CachedFont& font,
 }
 
 bool draw_retail_text(NativeRenderContext& context, const std::uint32_t* text,
-                      const GuestRectangle& bounds, float scale, std::uint32_t color,
+                      const GuestRectangle& bounds, int line_gap, float scale,
+                      std::uint32_t color,
                       const h2_text_request_metadata& metadata) {
     CachedFont* font = get_font(context, metadata.font);
     if (!font) {
         return false;
     }
+    struct TextLine {
+        std::size_t begin;
+        std::size_t end;
+        float width;
+    };
     const float glyph_scale = scale > 0.0f ? scale : 1.0f;
-    std::size_t count = 0;
-    float width = 0.0f;
-    while (count < 2048 && text[count] && text[count] != '\r') {
-        CachedFontGlyph* glyph = get_font_glyph(context, *font, text[count]);
-        if (!glyph) {
-            return false;
-        }
-        width += glyph->metrics.advance * glyph_scale;
-        ++count;
-    }
-    float x = static_cast<float>(bounds.left) + font->metrics.initial_offset * glyph_scale;
-    if (metadata.justification == 1) {
-        x = static_cast<float>(bounds.right) - width -
-            font->metrics.initial_offset * glyph_scale;
-    } else if (metadata.justification == 2) {
-        x = (static_cast<float>(bounds.left) + bounds.right - width) * 0.5f;
-    }
-    const float baseline = bounds.top + font->metrics.ascending_height * glyph_scale;
-    const auto draw_pass = [&](std::uint32_t pass_color, float offset) {
-        const SDL_FColor modulation = unpack_color(pass_color);
-        float cursor = x;
-        for (std::size_t i = 0; i < count; ++i) {
-            CachedFontGlyph* glyph = get_font_glyph(context, *font, text[i]);
-            SDL_FRect destination{
-                cursor + glyph->metrics.x_offset * glyph_scale + offset,
-                baseline - glyph->metrics.y_offset * glyph_scale + offset,
-                glyph->metrics.width * glyph_scale,
-                glyph->metrics.height * glyph_scale};
-            if (!SDL_SetTextureColorModFloat(glyph->texture, modulation.r,
-                                             modulation.g, modulation.b) ||
-                !SDL_SetTextureAlphaModFloat(glyph->texture, modulation.a) ||
-                !SDL_RenderTexture(context.renderer, glyph->texture, nullptr,
-                                   &destination)) {
+    const float maximum_width = static_cast<float>(bounds.right - bounds.left);
+    std::vector<TextLine> lines;
+    std::size_t index = 0;
+    while (index < 2048 && text[index]) {
+        const std::size_t begin = index;
+        std::size_t last_space = static_cast<std::size_t>(-1);
+        float width = 0.0f;
+        float width_before_space = 0.0f;
+        bool emitted = false;
+        while (index < 2048 && text[index] && text[index] != '\r') {
+            CachedFontGlyph* glyph = get_font_glyph(context, *font, text[index]);
+            if (!glyph) {
                 return false;
             }
-            cursor += glyph->metrics.advance * glyph_scale;
+            const float advance = glyph->metrics.advance * glyph_scale;
+            if ((metadata.flags & 1u) && index > begin &&
+                width + advance > maximum_width) {
+                if (last_space != static_cast<std::size_t>(-1)) {
+                    lines.push_back({begin, last_space, width_before_space});
+                    index = last_space + 1;
+                    while (index < 2048 && text[index] == ' ') {
+                        ++index;
+                    }
+                } else {
+                    lines.push_back({begin, index, width});
+                }
+                emitted = true;
+                break;
+            }
+            if (text[index] == ' ') {
+                last_space = index;
+                width_before_space = width;
+            }
+            width += advance;
+            ++index;
+        }
+        if (!emitted) {
+            lines.push_back({begin, index, width});
+            if (index < 2048 && text[index] == '\r') {
+                ++index;
+            }
+        }
+    }
+    if (lines.empty()) {
+        return true;
+    }
+    const float line_height =
+        (font->metrics.ascending_height + font->metrics.descending_height +
+         font->metrics.leading_height + line_gap) * glyph_scale;
+    const auto draw_pass = [&](std::uint32_t pass_color, float offset) {
+        const SDL_FColor modulation = unpack_color(pass_color);
+        for (std::size_t line_index = 0; line_index < lines.size(); ++line_index) {
+            const TextLine& line = lines[line_index];
+            float cursor = static_cast<float>(bounds.left) +
+                font->metrics.initial_offset * glyph_scale;
+            if (metadata.justification == 1) {
+                cursor = static_cast<float>(bounds.right) - line.width -
+                    font->metrics.initial_offset * glyph_scale;
+            } else if (metadata.justification == 2) {
+                cursor = (static_cast<float>(bounds.left) + bounds.right -
+                          line.width) * 0.5f;
+            }
+            const float baseline = bounds.top +
+                font->metrics.ascending_height * glyph_scale +
+                line_index * line_height;
+            for (std::size_t i = line.begin; i < line.end; ++i) {
+                CachedFontGlyph* glyph = get_font_glyph(context, *font, text[i]);
+                SDL_FRect destination{
+                    cursor + glyph->metrics.x_offset * glyph_scale + offset,
+                    baseline - glyph->metrics.y_offset * glyph_scale + offset,
+                    glyph->metrics.width * glyph_scale,
+                    glyph->metrics.height * glyph_scale};
+                if (!SDL_SetTextureColorModFloat(glyph->texture, modulation.r,
+                                                 modulation.g, modulation.b) ||
+                    !SDL_SetTextureAlphaModFloat(glyph->texture, modulation.a) ||
+                    !SDL_RenderTexture(context.renderer, glyph->texture, nullptr,
+                                       &destination)) {
+                    return false;
+                }
+                cursor += glyph->metrics.advance * glyph_scale;
+            }
         }
         return true;
     };
@@ -261,7 +312,7 @@ bool draw_retail_text(NativeRenderContext& context, const std::uint32_t* text,
 }
 
 void draw_guest_text(const std::uint32_t* text, const void* bounds_pointer,
-                     const void*, const void*, int, float scale,
+                     const void*, const void*, int line_gap, float scale,
                      std::uint32_t color, const void* metadata_pointer,
                      void* context_pointer) {
     auto& context = *static_cast<NativeRenderContext*>(context_pointer);
@@ -273,7 +324,7 @@ void draw_guest_text(const std::uint32_t* text, const void* bounds_pointer,
         const auto& metadata =
             *static_cast<const h2_text_request_metadata*>(metadata_pointer);
         if (metadata.version == H2_TEXT_PROTOCOL_VERSION &&
-            draw_retail_text(context, text, bounds, scale, color, metadata)) {
+            draw_retail_text(context, text, bounds, line_gap, scale, color, metadata)) {
             return;
         }
     }
