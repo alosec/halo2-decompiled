@@ -270,6 +270,9 @@ s_type_7ba8e9 *function_2b0b19(s_widget_view_2b0a *widget);
 
 PRIVATE __forceinline long bitmap_channel_round_2b(real value)
 {
+#ifdef H2_NATIVE_PORT
+    return (long)(value + 0.5f);
+#else
     long result;
     __asm
     {
@@ -277,6 +280,7 @@ PRIVATE __forceinline long bitmap_channel_round_2b(real value)
         fistp result
     }
     return result;
+#endif
 }
 
 // @retail 0x2b0565
@@ -5589,7 +5593,7 @@ PRIVATE __declspec(noinline) void update_player_actions_2b55ae(c_y_menu_player_s
     function_14887e((s_screen_settings_54dc6c *)&selection);
     function_18ff47(controller, identity);
     function_18ffc3(controller, &local_status);
-    XUID const *xuid = player_selection_get_xuid(&selection);
+    XUID const *xuid = (XUID const *)player_selection_get_xuid(&selection);
     if (xuid && xuid->qwUserID)
     {
         record_pool_release_all(list->data);
@@ -5601,8 +5605,8 @@ PRIVATE __declspec(noinline) void update_player_actions_2b55ae(c_y_menu_player_s
         bool self = xuid_equal(xuid, (XUID *)identity, false);
         bool online = (bool)(flags & 1);
         bool in_session = network_session_interface_has_user(xuid);
-        long player = function_19adca(xuid);
-        bool has_player = function_19acc6(xuid);
+        long player = function_19adca((_XUID const *)xuid);
+        bool has_player = function_19acc6((_XUID const *)xuid);
         bool joinable = ((flags & 8) != 0 || in_session);
         bool can_join = online && same_title && joinable && !self && !has_player && from_friends;
         bool can_join_title = online_title_is_this_title(title) && can_join;

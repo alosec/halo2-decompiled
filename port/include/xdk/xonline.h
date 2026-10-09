@@ -93,7 +93,8 @@ struct XONLINE_USER {
     XUID xuid;
     char szGamertag[XONLINE_GAMERTAG_SIZE];
     DWORD dwUserOptions;
-    BYTE unknown20[0x6c - 0x20];
+    BYTE passcode[4];
+    BYTE unknown24[0x6c - 0x24];
     HRESULT hr;
 };
 #pragma pack(pop)
@@ -132,6 +133,8 @@ static_assert(__builtin_offsetof(XONLINE_PRESENCE, StateDataSize) == 0x1c,
               "retail presence-state-data size offset");
 static_assert(__builtin_offsetof(XONLINE_PRESENCE, StateData) == 0x1d,
               "retail presence-state-data offset");
+static_assert(__builtin_offsetof(XONLINE_USER, passcode) == 0x20,
+              "retail online-user passcode offset");
 static_assert(sizeof(XONLINE_USER) == 0x70, "retail XONLINE_USER layout");
 
 BOOL __stdcall XOnlineAreUsersIdentical(const XUID* first, const XUID* second);

@@ -42,6 +42,8 @@ REQUIRED = {
     "?function_217080@@YAXPBUs_game_variant@@@Z",
     "?function_217300@@YAJJJ@Z",
     "?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z",
+    "?set_bitmap@c_screen_45bd40@@QAAXF@Z",
+    "?set_text@c_screen_45bd40@@QAAXPBD@Z",
     "?function_2523bc@@YAXPAVc_online_task_screen@@@Z",
     "?function_6b640@@YAXJ@Z",
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
