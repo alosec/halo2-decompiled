@@ -81,6 +81,7 @@
     {"source": "src/unknown_01cf50_native.cpp", "symbols": ["?function_1e1c0@@YAXXZ"]},
     {"source": "src/unknown_13e210_native.cpp", "symbols": ["?function_13e270@@YA_NPAUhash_table@@PAXPBX@Z"]},
     {"source": "src/unknown_293070_native.cpp", "symbols": ["?flock_new@@YAJF@Z", "?function_2930c0@@YA_NJ@Z", "?function_292f10@@YAXXZ"]},
-    {"source": "src/unknown_0350e0_native.cpp", "symbols": ["?function_36ab0@@YAXXZ"]}
+    {"source": "src/unknown_0350e0_native.cpp", "symbols": ["?function_36ab0@@YAXXZ"]},
+    {"source": "src/unknown_0b88e0_native.cpp", "symbols": ["?collision_object_flags@@YAGJ@Z", "?function_b88e0@@YAXJPAUs_object_partition_record_ab@@@Z"]}
   ]
 }

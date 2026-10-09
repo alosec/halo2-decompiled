@@ -230,6 +230,7 @@ struct s_object_partition_header_ab
 
 word collision_object_flags(long object_index);
 
+#ifndef H2_NATIVE_PORT
 // @retail 0xb88e0
 void function_b88e0(long object_index, s_object_partition_record_ab *record)
 {
@@ -242,6 +243,7 @@ void function_b88e0(long object_index, s_object_partition_record_ab *record)
 	record->centre = object->centre;
 	record->radius = object->radius;
 }
+#endif
 
 extern void *g_4de2e0;
 extern void *g_4de2e4;

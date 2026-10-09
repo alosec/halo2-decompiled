@@ -168,6 +168,7 @@ bool collision_object_test(long object_index, s_collision_object_header const *h
 	return result;
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x16b430
 word collision_object_flags(long object_index)
 {
@@ -197,6 +198,7 @@ word collision_object_flags(long object_index)
 	}
 	return result;
 }
+#endif
 
 /* the lookup of 0x1efb40 (unknown_1efac0.cpp) */
 struct s_lookup
