@@ -546,6 +546,10 @@ public:
 	c_difficulty_list(word user_flags);
 
 	virtual void v1();
+	/* Retail vtable slots 18/19 use the common +0x88 item accessor and a
+	 * constant-four count (0x19b516/0x334304). */
+	virtual void *get_item_data() { return items; }
+	virtual long get_item_count() { return 4; }
 	virtual void v20(c_class_1a2c81 *widget, long index);
 
 	void handle_item(s_controller_reference **controller, long *item);

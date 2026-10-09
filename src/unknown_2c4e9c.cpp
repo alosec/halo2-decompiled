@@ -3101,6 +3101,12 @@ void function_24c1c5(c_widget *widget, char direction);
 // @retail 0x2c9cad
 void c_difficulty_list::v1()
 {
+#if defined(H2_NATIVE_PORT)
+	/* Native campaign persistence does not own a previous-difficulty value.
+	 * Initialize the genuine four-row list normally and retain its default
+	 * first-row focus rather than manufacturing a preference. */
+	c_class_1474e8::v1();
+#else
 	long difficulty;
 	long i;
 
@@ -3117,6 +3123,7 @@ void c_difficulty_list::v1()
 	{
 		function_24c1c5((c_widget *)this, 1);
 	}
+#endif
 }
 
 // @retail 0x2c9ce7
@@ -3165,6 +3172,14 @@ struct s_screen_view_610
 // @retail 0x2c9d38
 void c_difficulty_list::handle_item(s_controller_reference **controller, long *item)
 {
+#if defined(H2_NATIVE_PORT)
+	/* The recovered difficulty rows are browsable, but selecting one would
+	 * mutate campaign launch, difficulty, and progression state that the native
+	 * port does not own yet. Keep activation inert until gameplay startup is
+	 * implemented truthfully. */
+	(void)controller;
+	(void)item;
+#else
 	long index = *item & 0xffff;
 	long difficulty = index < 0 ? 0 : (index > 3 ? 3 : index);
 
@@ -3190,6 +3205,7 @@ void c_difficulty_list::handle_item(s_controller_reference **controller, long *i
 		screen = (s_screen_view_610 *)parameters.load(&parameters);
 		screen->value610 = 0;
 	}
+#endif
 }
 
 // @retail 0x2cb23f
@@ -3385,11 +3401,27 @@ void c_campaign_level_handles_list::v20(c_class_1a2c81 *widget, long index)
 void c_campaign_level_handles_list::handle_item(s_controller_reference **controller, long *item)
 {
 #if defined(H2_NATIVE_PORT)
-	/* Browsing is genuine, but difficulty selection and campaign launch do not
-	 * have native owners yet. Keep activation inert rather than manufacturing
-	 * progression, launch, or gameplay state. */
-	(void)controller;
-	(void)item;
+	/* Preserve only the authentic selected map identifier, then open the
+	 * recovered difficulty screen. Difficulty, progression, and gameplay launch
+	 * remain untouched until those subsystems have native owners. */
+	if (*item != NONE)
+	{
+		s_map_entry *datum = (s_map_entry *)record_pool_lookup(data, *item);
+		s_campaign_level *level = datum
+			? (s_campaign_level *)function_19c1f0(datum->map_id)
+			: 0;
+		if (level)
+		{
+			s_screen_parameters parameters;
+
+			g_54e7c4 = level->map_id;
+			parameters.field_c = 0;
+			function_149f49((s_message *)&parameters, 0, 0,
+				1 << (*controller)->controller_index, 5, 4,
+				(long)function_2bb3ed);
+			parameters.load(&parameters);
+		}
+	}
 #else
 	if (*item != NONE)
 	{

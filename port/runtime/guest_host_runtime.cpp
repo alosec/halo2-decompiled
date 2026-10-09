@@ -290,10 +290,13 @@ extern "C" int h2_main_menu_guest_accept()
         }
         if (channels[index]->current &&
             (channels[index]->current->screen_id == 6 ||
-             channels[index]->current->screen_id == 0xda))
+             channels[index]->current->screen_id == 0xda ||
+             channels[index]->current->screen_id == 0xb))
         {
-            const long expected_screen =
-                channels[index]->current->screen_id == 6 ? 0xda : 0xb;
+            const long current_screen = channels[index]->current->screen_id;
+            const long expected_screen = current_screen == 6
+                ? 0xda
+                : (current_screen == 0xda ? 0xb : 0xc);
             c_class_1474e8 *const list = reinterpret_cast<c_class_1474e8 *>(
                 reinterpret_cast<c_screen_with_menu *>(channels[index]->current)->list);
             c_class_1a2c81 *const item = list->get_focused_item();
@@ -308,6 +311,14 @@ extern "C" int h2_main_menu_guest_accept()
             }
             return 7;
         }
+        if (channels[index]->current && channels[index]->current->screen_id == 0xc)
+        {
+            c_class_1474e8 *const list = reinterpret_cast<c_class_1474e8 *>(
+                reinterpret_cast<c_screen_with_menu *>(channels[index]->current)->list);
+            c_class_1a2c81 *const item = list->get_focused_item();
+            s_widget_event event = { 5, 0, 0 };
+            return item && item->v10(&event) ? 0 : 8;
+        }
     }
     return h2_native_virtual_keyboard_accept();
 }
@@ -321,7 +332,8 @@ static c_class_1474e8 *h2_native_current_menu_list()
     for (long index = 0; index < 2; ++index)
     {
         c_class_1473c9 *const screen = channels[index]->current;
-        if (screen && (screen->screen_id == 6 || screen->screen_id == 0xda))
+        if (screen && (screen->screen_id == 6 || screen->screen_id == 0xda ||
+                       screen->screen_id == 0xb || screen->screen_id == 0xc))
             return reinterpret_cast<c_class_1474e8 *>(
                 reinterpret_cast<c_screen_with_menu *>(screen)->list);
     }
