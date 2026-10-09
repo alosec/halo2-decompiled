@@ -38,6 +38,7 @@ def main():
     for symbol in (
         "?function_11c0b0@@YAFPBDPAUs_name_table_11c0b0@@@Z",
         "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
+        "?function_1392f8@@YAXPBUs_player_appearance@@@Z",
         "?function_22fa30@@YAPAVc_class_1a2c81@@PAV1@PAUs_bitmap_block@@@Z",
         "?function_235f31@@YAXPAUs_sprite_element@@PBUs_float_rect@@PBUpoint2f@@KF@Z",
         "?function_bb760@@YAJF@Z",

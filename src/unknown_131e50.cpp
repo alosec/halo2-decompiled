@@ -4,9 +4,22 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 
+#ifdef H2_NATIVE_PORT
+PRIVATE __forceinline dword color_channel_byte(real value)
+{
+	return (dword)(long)(value * 255.0f + 0.5f) & 0xff;
+}
+#endif
+
 // @retail 0x131e50
 dword __cdecl pack_color4f(const color4f *color)
 {
+#ifdef H2_NATIVE_PORT
+	return color_channel_byte(color->blue) |
+		(color_channel_byte(color->green) << 8) |
+		(color_channel_byte(color->red) << 16) |
+		(color_channel_byte(color->alpha) << 24);
+#else
 	long b, g, r, a;
 	real scale = 255.0f;
 	dword pixel = 0;
@@ -40,11 +53,17 @@ dword __cdecl pack_color4f(const color4f *color)
 		mov pixel, edx
 	}
 	return pixel;
+#endif
 }
 
 // @retail 0x131ed0
 dword __cdecl pack_color3f(const color3f *color)
 {
+#ifdef H2_NATIVE_PORT
+	return color_channel_byte(color->blue) |
+		(color_channel_byte(color->green) << 8) |
+		(color_channel_byte(color->red) << 16);
+#else
 	real scale = 255.0f;
 	dword pixel = 0;
 
@@ -72,11 +91,18 @@ dword __cdecl pack_color3f(const color3f *color)
 		mov pixel, edx
 	}
 	return pixel;
+#endif
 }
 
 // @retail 0x131f40
 dword __cdecl function_131f40(real alpha, const color3f *color)
 {
+#ifdef H2_NATIVE_PORT
+	return color_channel_byte(color->blue) |
+		(color_channel_byte(color->green) << 8) |
+		(color_channel_byte(color->red) << 16) |
+		(color_channel_byte(alpha) << 24);
+#else
 	real scale = 255.0f;
 	dword pixel = 0;
 
@@ -109,11 +135,15 @@ dword __cdecl function_131f40(real alpha, const color3f *color)
 		mov pixel, edx
 	}
 	return pixel;
+#endif
 }
 
 // @retail 0x131fc0
 dword __cdecl function_131fc0(real alpha)
 {
+#ifdef H2_NATIVE_PORT
+	return color_channel_byte(alpha) << 24;
+#else
 	real scale = 255.0f;
 	dword pixel = 0;
 
@@ -126,4 +156,5 @@ dword __cdecl function_131fc0(real alpha)
 		shl pixel, 0x18
 	}
 	return pixel;
+#endif
 }
