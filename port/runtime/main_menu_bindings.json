@@ -149,6 +149,8 @@
     {"symbol": "?g_4e7414@@3JA", "address": "0x004e7414"},
     {"symbol": "?g_440b94@@3QAY02$$CBFA", "address": "0x00440b94"},
     {"symbol": "?g_4e7418@@3PAJA", "address": "0x004e7418"},
-    {"symbol": "?g_502114@@3PAUs_record_pool@@A", "address": "0x00502114"}
+    {"symbol": "?g_502114@@3PAUs_record_pool@@A", "address": "0x00502114"},
+    {"symbol": "?g_440570@@3PAUs_object_gc_entry_ab@@A", "address": "0x00440570"},
+    {"symbol": "?g_4e031c@@3PAUs_record_pool@@A", "address": "0x004e031c"}
   ]
 }

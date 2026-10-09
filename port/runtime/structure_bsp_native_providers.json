@@ -43,9 +43,10 @@
     {"source": "src/unknown_1d8f00.cpp", "symbols": ["?function_1d8f00@@YAJJJ@Z"]},
     {"source": "src/unknown_0b58c0.cpp", "symbols": ["?function_b9dd0@@YAPATpoint3f@@JPAT1@@Z"]},
     {"source": "src/unknown_0bb760.cpp", "symbols": ["?function_bb950@@YAXJ_NJ@Z"]},
-    {"source": "src/unknown_0bbf40.cpp", "symbols": ["?function_bf090@@YAXJ@Z"]},
+    {"source": "src/unknown_0bbf40.cpp", "symbols": ["?function_bf090@@YAXJ@Z", "?function_bf380@@YAXXZ"]},
     {"source": "src/unknown_0bfd20.cpp", "symbols": ["?function_bfcc0@@YAXXZ"]},
     {"source": "src/unknown_1df080_native.cpp", "symbols": ["?function_1df080@@YAXPBTpoint3f@@JPAT1@PAM@Z"]},
-    {"source": "src/unknown_030290.cpp", "symbols": ["?function_30bf0@@YAMPATvector3f@@@Z"]}
+    {"source": "src/unknown_030290.cpp", "symbols": ["?function_30bf0@@YAMPATvector3f@@@Z"]},
+    {"source": "src/unknown_0c40f0.cpp", "symbols": ["?function_c40f0@@YAXJJM@Z"]}
   ]
 }
