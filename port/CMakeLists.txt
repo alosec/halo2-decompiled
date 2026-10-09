@@ -1232,6 +1232,20 @@ add_custom_command(
 )
 add_custom_target(h2-main-menu-elf ALL DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}")
 
+set(H2_MAIN_MENU_GUEST_IMAGE "${CMAKE_BINARY_DIR}/port/main-menu-core.elf")
+add_custom_command(
+    OUTPUT "${H2_MAIN_MENU_GUEST_IMAGE}"
+    COMMAND ${H2_LLD} -static --no-undefined
+            -T ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
+            -z max-page-size=0x4000
+            -o "${H2_MAIN_MENU_GUEST_IMAGE}"
+            "${H2_MAIN_MENU_PARTIAL_ELF}"
+    DEPENDS "${H2_MAIN_MENU_PARTIAL_ELF}"
+            ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
+    VERBATIM
+)
+add_custom_target(h2-main-menu-guest-image ALL DEPENDS "${H2_MAIN_MENU_GUEST_IMAGE}")
+
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
     src/guest_elf_image.cpp
@@ -1354,6 +1368,13 @@ add_test(
             --image ${H2_MAIN_MENU_PARTIAL_ELF}
             --closure ${H2_MAIN_MENU_CLOSURE_REPORT}
             --import-plan ${H2_MAIN_MENU_IMPORT_PLAN}
+)
+add_test(
+    NAME main-menu-guest-image
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main_menu_guest_image.py
+            --nm ${H2_LLVM_NM}
+            --image ${H2_MAIN_MENU_GUEST_IMAGE}
 )
 add_test(
     NAME guest-asm-elf

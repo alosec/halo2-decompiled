@@ -26,6 +26,18 @@ long function_11ca80(long value)
     }
 }
 
+void function_18f5e3();
+void function_215790();
+
+extern "C" int h2_main_menu_guest_entry()
+{
+    /* Phase one owns only deterministic offline profile/save bootstrap. UI
+     * manager construction and screen enqueueing remain deliberate later phases. */
+    function_18f5e3();
+    function_215790();
+    return 0;
+}
+
 /* The native host has no attract-movie decoder yet. */
 bool function_223976()
 {
