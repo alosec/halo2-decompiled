@@ -61,6 +61,8 @@ REQUIRED = {
     "?function_190186@@YAXJ@Z",
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
+    "?function_199893@@YAXXZ",
+    "?function_199b08@@YAXXZ",
     "?function_199ebc@@YAJXZ",
     "?function_199f34@@YAJXZ",
     "?function_0592d0@@YAKXZ",

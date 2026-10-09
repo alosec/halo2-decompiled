@@ -85,6 +85,16 @@ void network_session_manager_leave_session_b(bool)
 {
 }
 
+/* No peer list or network-session-backed screen can exist in native offline
+ * bootstrap state, so their per-frame updates have no state to advance. */
+void function_199893()
+{
+}
+
+void function_199b08()
+{
+}
+
 // @retail 0x6b5d0
 long online_task_poll(long task_index)
 {

@@ -41,6 +41,8 @@ def main():
     assert "?function_125a90@@YAXJ@Z" not in imports
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
+    assert "?function_199893@@YAXXZ" not in imports
+    assert "?function_199b08@@YAXXZ" not in imports
     assert "?network_session_manager_leave_session_a@@YAX_N@Z" not in imports
     assert "?network_session_manager_leave_session_b@@YAX_N@Z" not in imports
     for symbol in (
