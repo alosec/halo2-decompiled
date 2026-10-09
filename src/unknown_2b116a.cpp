@@ -760,11 +760,21 @@ void c_campaign_options_list::handle_item(s_controller_reference **controller, l
 	short *datum = (short *)record_pool_lookup(data, *item);
 
 #if defined(H2_NATIVE_PORT)
-	/* The first native Campaign milestone owns the recovered menu but not yet
-	 * the saved-game reader or the level/difficulty destinations.  Keep A on
-	 * these rows honest and inert rather than fabricating either state. */
-	(void)controller;
-	(void)datum;
+	/* A new offline campaign has no save-state dependency. Open the genuine
+	 * recovered level browser, while every other row remains inert until its
+	 * saved-game, cooperative, or launch destination is native-owned. */
+	if (datum && datum[1] == 3)
+	{
+		s_screen_parameters parameters;
+
+		parameters.field_c = 0;
+		function_149f49((s_message *)&parameters, 0, 0,
+			(word)(1 << (*controller)->controller_index), 5, 4,
+			(long)function_2b130a);
+		parameters.load(&parameters);
+		goto animate;
+	}
+	return;
 #else
 	if (datum)
 	{

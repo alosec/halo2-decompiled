@@ -360,6 +360,7 @@ struct Options {
     int select_frame = 0;
     int finish_frame = 0;
     int menu_accept_frame = 0;
+    int campaign_accept_frame = 0;
     int down_frame = 0;
     int up_frame = 0;
     int cancel_frame = 0;
@@ -372,7 +373,7 @@ void usage(const char* program) {
                  " [--guest-image PATH] [--guest-entry SYMBOL] [--frames COUNT]"
                  " [--press-start-frame COUNT]"
                  " [--accept-frame COUNT] [--select-frame COUNT] [--finish-frame COUNT]"
-                 " [--menu-accept-frame COUNT] [--down-frame COUNT] [--up-frame COUNT] [--cancel-frame COUNT]"
+                 " [--menu-accept-frame COUNT] [--campaign-accept-frame COUNT] [--down-frame COUNT] [--up-frame COUNT] [--cancel-frame COUNT]"
                  " [--screenshot BMP]\n";
 }
 
@@ -440,6 +441,14 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.menu_accept_frame <= 0) {
                 return false;
             }
+        } else if (argument == "--campaign-accept-frame" && i + 1 < argc) {
+            const std::string_view value(argv[++i]);
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
+                                                options.campaign_accept_frame);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+                options.campaign_accept_frame <= 0) {
+                return false;
+            }
         } else if (argument == "--down-frame" && i + 1 < argc) {
             const std::string_view value(argv[++i]);
             const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
@@ -493,6 +502,10 @@ bool parse_options(int argc, char** argv, Options& options) {
          (options.finish_frame > 0 &&
           options.menu_accept_frame > options.finish_frame &&
           options.frame_count >= options.menu_accept_frame && !options.headless)) &&
+        (options.campaign_accept_frame == 0 ||
+         (options.menu_accept_frame > 0 &&
+          options.campaign_accept_frame > options.menu_accept_frame &&
+          options.frame_count >= options.campaign_accept_frame && !options.headless)) &&
         (options.down_frame == 0 ||
          (options.finish_frame > 0 &&
           options.down_frame > options.finish_frame &&
@@ -511,7 +524,8 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
                GuestEntry guest_accept, GuestEntry guest_up, GuestEntry guest_down,
                GuestEntry guest_cancel, void* guest_stack_top,
                int frame_count, int press_start_frame, int accept_frame, int select_frame,
-               int finish_frame, int menu_accept_frame, int down_frame, int up_frame,
+               int finish_frame, int menu_accept_frame, int campaign_accept_frame,
+               int down_frame, int up_frame,
                int cancel_frame,
                const std::filesystem::path& screenshot,
                const h2::port::GuestArena* arena,
@@ -634,6 +648,9 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
             dispatch_accept();
         }
         if (menu_accept_frame > 0 && rendered_frames + 1 == menu_accept_frame) {
+            dispatch_accept();
+        }
+        if (campaign_accept_frame > 0 && rendered_frames + 1 == campaign_accept_frame) {
             dispatch_accept();
         }
         if (down_frame > 0 && rendered_frames + 1 == down_frame) {
@@ -934,7 +951,8 @@ int main(int argc, char** argv) {
         : run_window(guest_frame, guest_press_start, guest_accept, guest_up, guest_down,
                      guest_cancel, guest_stack_top, options.frame_count,
                      options.press_start_frame, options.accept_frame, options.select_frame,
-                     options.finish_frame, options.menu_accept_frame, options.down_frame,
+                     options.finish_frame, options.menu_accept_frame,
+                     options.campaign_accept_frame, options.down_frame,
                      options.up_frame, options.cancel_frame,
                      options.screenshot,
                      arena.get(), options.data_root);

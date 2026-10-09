@@ -288,8 +288,12 @@ extern "C" int h2_main_menu_guest_accept()
                 return 5;
             return 0;
         }
-        if (channels[index]->current && channels[index]->current->screen_id == 6)
+        if (channels[index]->current &&
+            (channels[index]->current->screen_id == 6 ||
+             channels[index]->current->screen_id == 0xda))
         {
+            const long expected_screen =
+                channels[index]->current->screen_id == 6 ? 0xda : 0xb;
             c_class_1474e8 *const list = reinterpret_cast<c_class_1474e8 *>(
                 reinterpret_cast<c_screen_with_menu *>(channels[index]->current)->list);
             c_class_1a2c81 *const item = list->get_focused_item();
@@ -299,7 +303,7 @@ extern "C" int h2_main_menu_guest_accept()
             for (long destination = 0; destination < 7; ++destination)
             {
                 if (channels[destination]->next &&
-                    channels[destination]->next->screen_id == 0xda)
+                    channels[destination]->next->screen_id == expected_screen)
                     return 0;
             }
             return 7;

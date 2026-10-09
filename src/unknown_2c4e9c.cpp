@@ -3333,6 +3333,11 @@ c_campaign_level_handles_list::c_campaign_level_handles_list(word user_flags, bo
 // @retail 0x2c4ff5
 void c_campaign_level_handles_list::v1()
 {
+#if defined(H2_NATIVE_PORT)
+	/* No campaign progression is owned yet. Initialize the authentic populated
+	 * list normally and keep its first available level focused. */
+	c_class_1474e8::v1();
+#else
 	long map_id = function_1910d9();
 
 	((c_widget *)this)->c_widget::v9();
@@ -3352,6 +3357,7 @@ void c_campaign_level_handles_list::v1()
 			}
 		}
 	}
+#endif
 }
 
 /* shows the level's name */
@@ -3378,6 +3384,13 @@ void c_campaign_level_handles_list::v20(c_class_1a2c81 *widget, long index)
 // @retail 0x2c509c
 void c_campaign_level_handles_list::handle_item(s_controller_reference **controller, long *item)
 {
+#if defined(H2_NATIVE_PORT)
+	/* Browsing is genuine, but difficulty selection and campaign launch do not
+	 * have native owners yet. Keep activation inert rather than manufacturing
+	 * progression, launch, or gameplay state. */
+	(void)controller;
+	(void)item;
+#else
 	if (*item != NONE)
 	{
 		long profile_index = player_slot_get_single_profile_index();
@@ -3418,6 +3431,7 @@ void c_campaign_level_handles_list::handle_item(s_controller_reference **control
 			}
 		}
 	}
+#endif
 }
 
 // @retail 0x2c51a2
@@ -4088,6 +4102,11 @@ void function_28950();
 // @retail 0x2c52af
 void c_level_select_screen::v2()
 {
+#if defined(H2_NATIVE_PORT)
+    /* The Xbox transition/progression subsystem is not native-owned. The
+     * recovered base lifecycle is sufficient for the retained list pane. */
+    c_class_1a2c81::v2();
+#else
     if (*(long *)((byte *)this + 0x610) == 0)
     {
         char *map_name = function_148d73();
@@ -4096,6 +4115,7 @@ void c_level_select_screen::v2()
     }
     c_class_1a2c81::v2();
     function_28950();
+#endif
 }
 
 void network_session_manager_leave_session_a(bool close);

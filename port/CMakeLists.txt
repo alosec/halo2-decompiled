@@ -92,6 +92,9 @@ set(H2_GUEST_SESSION_VALUES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_05b040.o")
 set(H2_GUEST_SAVED_GAME_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_215b40.o")
 set(H2_GUEST_SCREEN_SETTERS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b116a.o")
 set(H2_GUEST_CAMPAIGN_SCREEN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_23068b.o")
+set(H2_GUEST_CAMPAIGN_LEVEL_LIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2c4e9c.o")
+set(H2_GUEST_DATA_ITERATOR_OBJECT "${H2_GUEST_OBJECT_DIR}/data_iterator.o")
+set(H2_GUEST_LOCALIZED_LEVEL_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2afd10.o")
 set(H2_GUEST_SCREEN_WIDGETS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2afd97.o")
 set(H2_GUEST_WIDGET18_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2afea0.o")
 set(H2_GUEST_DIALOG_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19b510.o")
@@ -196,6 +199,9 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_23068b.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2c4e9c.cpp"
+    "${PROJECT_SOURCE_DIR}/src/data_iterator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_2afd10.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2afea0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
@@ -300,6 +306,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_215b40.cpp"
         "${H2_GUEST_SCREEN_SETTERS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp"
         "${H2_GUEST_CAMPAIGN_SCREEN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_23068b.cpp"
+        "${H2_GUEST_CAMPAIGN_LEVEL_LIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2c4e9c.cpp"
+        "${H2_GUEST_DATA_ITERATOR_OBJECT}|${PROJECT_SOURCE_DIR}/src/data_iterator.cpp"
+        "${H2_GUEST_LOCALIZED_LEVEL_TEXT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2afd10.cpp"
         "${H2_GUEST_SCREEN_WIDGETS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2afd97.cpp"
         "${H2_GUEST_WIDGET18_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2afea0.cpp"
         "${H2_GUEST_DIALOG_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19b510.cpp"
@@ -437,6 +446,7 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_19028d@@YA_NXZ"
             --extract-symbol "?function_1904cb@@YA_NJ@Z"
             --extract-symbol "?function_19052c@@YAXJPAJ0@Z"
+            --extract-symbol "?function_190565@@YAJXZ"
             --extract-symbol "?function_190001@@YAXJPBD@Z"
             --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
@@ -567,6 +577,7 @@ foreach(pair IN ITEMS
             --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
             --extract-symbol "?function_2b0a48@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b0a7b@@YAXPAUs_widget_view_2b0a@@PAUs_type_7ba8e9@@@Z"
             --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b10a3@@YAXPBKPAVc_class_2b0b5e@@J@Z"
             --extract-symbol "?function_2b014f@@YAJPAUs_widget_item@@@Z"
@@ -581,6 +592,14 @@ foreach(pair IN ITEMS
             --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
             --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
             --extract-symbol "?v4@c_widget_45adf0@@UAAXJ@Z"
+            --extract-symbol "??0c_level_select_screen@@QAA@JJG_N@Z"
+            --extract-symbol "??_Gc_level_select_screen@@UAAPAXI@Z"
+            --extract-symbol "?function_2b130a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b136d@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?get_load_proc@c_level_select_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?v18@c_level_select_screen@@UAAXPAX@Z"
+            --extract-global "??_7c_level_select_screen@@6B@"
+            --extract-alias "??_Ec_level_select_screen@@UAAPAXI@Z"
             --extract-symbol "??0c_campaign_options_list@@QAA@G@Z"
             --extract-symbol "?handle_item@c_campaign_options_list@@QAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?v2@c_campaign_options_list@@UAAXXZ"
@@ -601,6 +620,30 @@ foreach(pair IN ITEMS
             --extract-alias "??_Ec_screen_45bc60@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_CAMPAIGN_LEVEL_LIST_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "??0c_campaign_level_handles_list@@QAA@G_N@Z"
+            --extract-symbol "??_Gc_campaign_level_handles_list@@UAAPAXI@Z"
+            --extract-symbol "?get_item_data@c_campaign_level_handles_list@@UAAPAXXZ"
+            --extract-symbol "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
+            --extract-symbol "?handle_item@c_campaign_level_handles_list@@QAAXPAPAUs_controller_reference@@PAJ@Z"
+            --extract-symbol "?v1@c_campaign_level_handles_list@@UAAXXZ"
+            --extract-symbol "?v20@c_campaign_level_handles_list@@UAAXPAVc_class_1a2c81@@J@Z"
+            --extract-symbol "?v2@c_level_select_screen@@UAAXXZ"
+            --extract-symbol "?v3@c_level_select_screen@@UAAXXZ"
+            --extract-global "??_7c_campaign_level_handles_list@@6B@"
+            --extract-global "??_C@_0BH@JBNGBMEB@campaign?5level?5handles?$AA@"
+            --extract-alias "??_Ec_campaign_level_handles_list@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_DATA_ITERATOR_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?data_datum_iterator_next@@YA_NPAUs_data_datum_iterator@@@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_LOCALIZED_LEVEL_TEXT_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?localized_description_get@@YAPAGPAUs_localized_description@@@Z"
+            --extract-symbol "?localized_name_get@@YAPAGPAUs_localized_name@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_CAMPAIGN_SCREEN_OBJECT)
         list(APPEND guest_extract_args
@@ -652,6 +695,7 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args
             --extract-symbol "?function_19c1f0@@YAPAUs_entry_b@@J@Z"
             --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z"
+            --extract-symbol "?function_19c670@@YAPAUs_record_pool@@XZ"
             --extract-symbol "?function_19c6d0@@YAXPAUs_record_pool@@J@Z"
             --extract-symbol "?function_19c7c0@@YA_NJJPBX@Z"
             --extract-symbol "?function_19c190@@YAXXZ")
@@ -834,6 +878,9 @@ set_source_files_properties(
     "${H2_GUEST_SESSION_MODE_OBJECT}" "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}" "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
     "${H2_GUEST_CAMPAIGN_SCREEN_OBJECT}"
+    "${H2_GUEST_CAMPAIGN_LEVEL_LIST_OBJECT}"
+    "${H2_GUEST_DATA_ITERATOR_OBJECT}"
+    "${H2_GUEST_LOCALIZED_LEVEL_TEXT_OBJECT}"
     "${H2_GUEST_SCREEN_WIDGETS_OBJECT}" "${H2_GUEST_WIDGET18_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}" "${H2_GUEST_DIALOG_BASE_OBJECT}" "${H2_GUEST_DIALOG_EVENT_OBJECT}"
     "${H2_GUEST_SCREEN_CLEANUP_OBJECT}" "${H2_GUEST_ACTIVE_SESSION_OBJECT}"
@@ -929,6 +976,9 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}"
     "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
     "${H2_GUEST_CAMPAIGN_SCREEN_OBJECT}"
+    "${H2_GUEST_CAMPAIGN_LEVEL_LIST_OBJECT}"
+    "${H2_GUEST_DATA_ITERATOR_OBJECT}"
+    "${H2_GUEST_LOCALIZED_LEVEL_TEXT_OBJECT}"
     "${H2_GUEST_SCREEN_WIDGETS_OBJECT}"
     "${H2_GUEST_WIDGET18_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}"
@@ -1101,6 +1151,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_19028d@@YA_NXZ"
             --extract-symbol "?function_1904cb@@YA_NJ@Z"
             --extract-symbol "?function_19052c@@YAXJPAJ0@Z"
+            --extract-symbol "?function_190565@@YAJXZ"
             --extract-symbol "?function_190001@@YAXJPBD@Z"
             --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
@@ -1231,6 +1282,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
             --extract-symbol "?function_2b0a48@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b0a68@@YAJPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b0a7b@@YAXPAUs_widget_view_2b0a@@PAUs_type_7ba8e9@@@Z"
             --extract-symbol "?function_2b12ba@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?function_2b10a3@@YAXPBKPAVc_class_2b0b5e@@J@Z"
             --extract-symbol "?function_2b014f@@YAJPAUs_widget_item@@@Z"
@@ -1245,6 +1297,14 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?v1@c_class_2b0b5e@@UAAXXZ"
             --extract-symbol "?v3@c_widget_45adf0@@UAAXXZ"
             --extract-symbol "?v4@c_widget_45adf0@@UAAXJ@Z"
+            --extract-symbol "??0c_level_select_screen@@QAA@JJG_N@Z"
+            --extract-symbol "??_Gc_level_select_screen@@UAAPAXI@Z"
+            --extract-symbol "?function_2b130a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b136d@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?get_load_proc@c_level_select_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?v18@c_level_select_screen@@UAAXPAX@Z"
+            --extract-global "??_7c_level_select_screen@@6B@"
+            --extract-alias "??_Ec_level_select_screen@@UAAPAXI@Z"
             --extract-symbol "??0c_campaign_options_list@@QAA@G@Z"
             --extract-symbol "?handle_item@c_campaign_options_list@@QAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?v2@c_campaign_options_list@@UAAXXZ"
@@ -1265,6 +1325,30 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-alias "??_Ec_screen_45bc60@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
             --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2c4e9c.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "??0c_campaign_level_handles_list@@QAA@G_N@Z"
+            --extract-symbol "??_Gc_campaign_level_handles_list@@UAAPAXI@Z"
+            --extract-symbol "?get_item_data@c_campaign_level_handles_list@@UAAPAXXZ"
+            --extract-symbol "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
+            --extract-symbol "?handle_item@c_campaign_level_handles_list@@QAAXPAPAUs_controller_reference@@PAJ@Z"
+            --extract-symbol "?v1@c_campaign_level_handles_list@@UAAXXZ"
+            --extract-symbol "?v20@c_campaign_level_handles_list@@UAAXPAVc_class_1a2c81@@J@Z"
+            --extract-symbol "?v2@c_level_select_screen@@UAAXXZ"
+            --extract-symbol "?v3@c_level_select_screen@@UAAXXZ"
+            --extract-global "??_7c_campaign_level_handles_list@@6B@"
+            --extract-global "??_C@_0BH@JBNGBMEB@campaign?5level?5handles?$AA@"
+            --extract-alias "??_Ec_campaign_level_handles_list@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/data_iterator.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?data_datum_iterator_next@@YA_NPAUs_data_datum_iterator@@@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2afd10.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?localized_description_get@@YAPAGPAUs_localized_description@@@Z"
+            --extract-symbol "?localized_name_get@@YAPAGPAUs_localized_name@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_22f118.cpp")
         list(APPEND guest_extract_args
@@ -1365,6 +1449,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
         list(APPEND guest_extract_args
             --extract-symbol "?function_19c1f0@@YAPAUs_entry_b@@J@Z"
             --extract-symbol "?function_19c270@@YAPAUs_entry_a@@JJ@Z"
+            --extract-symbol "?function_19c670@@YAPAUs_record_pool@@XZ"
             --extract-symbol "?function_19c6d0@@YAXPAUs_record_pool@@J@Z"
             --extract-symbol "?function_19c7c0@@YA_NJJPBX@Z"
             --extract-symbol "?function_19c190@@YAXXZ")
