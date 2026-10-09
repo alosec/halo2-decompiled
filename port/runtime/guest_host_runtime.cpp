@@ -157,8 +157,11 @@ extern "C" int h2_main_menu_guest_load_campaign_metadata()
     if (!g_4ee4e8 || !g_4ee4e4)
         return 1;
     function_19c190();
-    if (!g_4ee4e8->valid || g_4ee4e8->actual_count <= 0 ||
-        g_4ee4e8->actual_count > g_4ee4e8->maximum_count)
+    /* The matching main-menu tag table contains the retail Campaign's exact
+     * fifteen built-in level handles. Fail closed if metadata ownership ever
+     * regresses to a partial, empty, or fabricated list. */
+    if (!g_4ee4e8->valid || g_4ee4e8->actual_count != 15 ||
+        g_4ee4e8->maximum_count != 20)
         return 2;
     return 0;
 }
