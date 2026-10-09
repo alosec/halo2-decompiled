@@ -98,6 +98,46 @@ void function_18f62b()
     /* No native controller-event or online-team task source exists yet. */
 }
 
+bool controller_is_connected(short)
+{
+    return false;
+}
+
+long function_1249d0(short)
+{
+    return 0;
+}
+
+void function_1905bf(long, bool)
+{
+    /* No controller event can request profile sign-in yet. */
+}
+
+bool function_19a76d(short)
+{
+    return false;
+}
+
+void function_121100(long *value)
+{
+    /* Native bootstrap has no persisted preferred session mode yet. */
+    *value = 0;
+}
+
+void __stdcall function_238f3f(long, void *, unsigned __int64)
+{
+    /* Xbox Live invitation dispatch is unavailable offline. */
+}
+
+struct s_screen_parameters;
+class c_class_1473c9;
+
+c_class_1473c9 *__stdcall function_253185(s_screen_parameters *)
+{
+    /* The network squad browser has no native-offline screen. */
+    return 0;
+}
+
 void function_199893()
 {
 }

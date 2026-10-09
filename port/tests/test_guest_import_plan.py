@@ -44,6 +44,15 @@ def main():
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
     assert "?function_1bbd0@@YAXXZ" not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
+    for symbol in (
+        "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_25240c@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_252433@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_25245a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_252481@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?function_2524a8@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+    ):
+        assert symbol not in imports
     assert "?function_223976@@YA_NXZ" not in imports
     assert "?function_223a21@@YAXXZ" not in imports
     assert "?function_199893@@YAXXZ" not in imports

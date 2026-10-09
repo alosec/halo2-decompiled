@@ -6,6 +6,13 @@
  * conservatively without fabricating loaded texture, geometry, or audio state.
  * Actual resource ownership remains at the explicit host rendering boundary. */
 struct s_predicted_resource_block;
+union point3f;
+
+bool function_bacc0(long, long, point3f const *)
+{
+    /* Menu-model marker state has no native model renderer yet. */
+    return false;
+}
 
 /* The native immediate protocol carries all per-draw state explicitly. */
 void function_1bbd0()
