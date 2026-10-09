@@ -737,6 +737,7 @@ short first_person_weapon_animation_ticks(long weapon_index, long animation_name
 	return result;
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0x16640f
 bool first_person_weapon_get_marker(long object_index, long marker_name, point3f *position, vector3f *forward, vector3f *up)
 {
@@ -760,6 +761,8 @@ bool first_person_weapon_get_marker(long object_index, long marker_name, point3f
 	}
 	return result;
 }
+#endif
+
 static inline void first_person_bits_reset(s_first_person_bits *bits)
 {
 	bits->unknown1 = 0;
