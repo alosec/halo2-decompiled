@@ -772,6 +772,27 @@ def main():
         if f"_{object_relocation_symbol}" not in object_relocation_defined:
             raise RuntimeError("object placement relocation was not selectively compilable")
 
+        placement_sources = (
+            ("?function_bef30@@YAXJJJJJ@Z", "src/unknown_0bef30.cpp"),
+            ("?function_b8b70@@YAXJ@Z", "src/unknown_0b8b70.cpp"),
+            ("?function_c3220@@YAXJ@Z", "src/unknown_0b8b70.cpp"),
+            ("?function_b8540@@YAXJ@Z", "src/unknown_0b8540.cpp"),
+        )
+        for placement_symbol, placement_source in placement_sources:
+            placement_output = Path(temporary) / f"placement-{len(placement_symbol)}-{placement_symbol[10:16]}.o"
+            placement_command = command[:]
+            placement_command[placement_command.index("h2_extract_selected")] = placement_symbol
+            placement_command[placement_command.index("--extract-global"):placement_command.index("--output")] = []
+            placement_command[placement_command.index(output)] = placement_output
+            placement_command[-1] = args.root / placement_source
+            subprocess.run([str(value) for value in placement_command], check=True)
+            placement_defined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix", placement_output],
+                text=True,
+            )
+            if f"_{placement_symbol}" not in placement_defined:
+                raise RuntimeError(f"placement dependency was not selectively compilable: {placement_symbol}")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
