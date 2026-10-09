@@ -123,6 +123,7 @@ LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,
                                    ULARGE_INTEGER* total, ULARGE_INTEGER* free_bytes);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
+DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);
 void __stdcall Sleep(DWORD milliseconds);
 BOOL __stdcall SwitchToThread(void);

@@ -126,6 +126,20 @@ def main():
         if "_?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in preview_defined:
             raise RuntimeError("preview renderer was not selectively compilable")
 
+        profile_storage_output = Path(temporary) / "profile-storage.o"
+        profile_storage_command = command[:]
+        profile_storage_command[profile_storage_command.index("h2_extract_selected")] = "?function_215790@@YAXXZ"
+        profile_storage_command[profile_storage_command.index("--extract-global"):profile_storage_command.index("--output")] = []
+        profile_storage_command[profile_storage_command.index(output)] = profile_storage_output
+        profile_storage_command[-1] = args.root / "src/unknown_2157e0.cpp"
+        subprocess.run([str(value) for value in profile_storage_command], check=True)
+        profile_storage_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", profile_storage_output],
+            text=True,
+        )
+        if "_?function_215790@@YAXXZ" not in profile_storage_defined:
+            raise RuntimeError("profile storage source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
