@@ -48,11 +48,6 @@
       "blocker": "Requires owned looping-sound release semantics."
     },
     {
-      "symbol": "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z",
-      "subsystem": "havok_contact",
-      "blocker": "Requires bounded contact-property selection over initialized component arrays."
-    },
-    {
       "symbol": "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z",
       "subsystem": "havok_motion",
       "blocker": "Requires exact rigid-body transform extraction over initialized component state."

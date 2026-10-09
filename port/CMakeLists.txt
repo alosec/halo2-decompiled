@@ -327,6 +327,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_match_tolerance_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0b8bd0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_0dc3a0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11fc80.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_146240.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_182020.cpp"

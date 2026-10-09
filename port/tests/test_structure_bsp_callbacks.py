@@ -600,7 +600,6 @@ def main() -> int:
         "?function_18a5e0@@YAPAGJ@Z",
         "?function_18a6c0@@YAJJJ@Z",
         "?function_18a720@@YAXJ_N@Z",
-        "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z",
         "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z",
     }
     expected_impact_allocation_score = (
@@ -622,7 +621,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 30):
+            len(actual_impact_allocation_score) != 29):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
@@ -630,7 +629,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.impact_allocation_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(impact_undefined) != 44:
+    if len(impact_undefined) != 43:
         raise RuntimeError("Havok impact-allocation raw closure changed")
     impact_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
@@ -638,7 +637,8 @@ def main() -> int:
     if (impact_allocation_symbol not in impact_defined or
             "?function_146650@@YAJXZ" not in impact_defined or
             "?function_1201a0@@YAMPATvector3f@@PBT1@@Z" not in impact_defined or
-            "?vector3d_compress@@YAKPBTvector3f@@@Z" not in impact_defined):
+            "?vector3d_compress@@YAKPBTvector3f@@@Z" not in impact_defined or
+            "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z" not in impact_defined):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")
     impact_frontier = json.loads((
         args.root / "port/runtime/havok_impact_allocation_remaining_frontier.json"
