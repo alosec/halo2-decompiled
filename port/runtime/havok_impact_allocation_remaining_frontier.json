@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "description": "Exact production-linked imports added by the dormant complete impact-allocation candidate beyond the current contact-processing candidate. This inventory does not authorize production linking or execution.",
+  "imports": [
+    {"symbol": "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z", "subsystem": "effects", "blocker": "Requires complete native effect allocation and lifecycle ownership."},
+    {"symbol": "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z", "subsystem": "structure_location", "blocker": "Requires bounded active-BSP location ownership for impact effect placement."},
+    {"symbol": "?function_1201a0@@YAMPATvector3f@@PBT1@@Z", "subsystem": "impact_math", "blocker": "Requires the exact recovered vector normalization and fallback semantics."},
+    {"symbol": "?function_146650@@YAJXZ", "subsystem": "game_time", "blocker": "Requires initialized gameplay-time state, not merely menu-time ownership."},
+    {"symbol": "?function_177260@@YAXJ_N@Z", "subsystem": "effects", "blocker": "Requires complete native effect deletion and reference ownership."},
+    {"symbol": "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z", "subsystem": "impact_geometry", "blocker": "Requires exact effect/contact geometry selection over owned shape state."},
+    {"symbol": "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z", "subsystem": "effects", "blocker": "Requires complete impact effect submission and output-handle ownership."},
+    {"symbol": "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z", "subsystem": "audio", "blocker": "Requires a native positional sound provider rather than fabricated playback."},
+    {"symbol": "?function_18a5e0@@YAPAGJ@Z", "subsystem": "audio", "blocker": "Requires owned looping-sound instance lookup."},
+    {"symbol": "?function_18a6c0@@YAJJJ@Z", "subsystem": "audio", "blocker": "Requires owned looping-sound creation and tag state."},
+    {"symbol": "?function_18a720@@YAXJ_N@Z", "subsystem": "audio", "blocker": "Requires owned looping-sound release semantics."},
+    {"symbol": "?g_4687a8@@3PATvector3f@@A", "subsystem": "impact_math", "blocker": "Requires exact initialized fallback-vector storage."},
+    {"symbol": "?g_47f05c@@3MA", "subsystem": "impact_state", "blocker": "Requires exact initialized impact response threshold state."},
+    {"symbol": "?g_47f07a@@3_NA", "subsystem": "impact_state", "blocker": "Requires exact initialized impact feature-state ownership."},
+    {"symbol": "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z", "subsystem": "havok_contact", "blocker": "Requires bounded contact-property selection over initialized component arrays."},
+    {"symbol": "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z", "subsystem": "havok_motion", "blocker": "Requires exact rigid-body transform extraction over initialized component state."},
+    {"symbol": "?vector3d_compress@@YAKPBTvector3f@@@Z", "subsystem": "impact_math", "blocker": "Requires exact recovered packed-vector encoding semantics."}
+  ]
+}

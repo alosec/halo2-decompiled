@@ -36,9 +36,11 @@ def main() -> int:
     parser.add_argument("--lld", type=Path, required=True)
     parser.add_argument("--plugin", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--impact-output", type=Path, required=True)
     args = parser.parse_args()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.impact_output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="h2-contact-material-") as temporary:
         temporary = Path(temporary)
         lookup = temporary / "lookup.o"
@@ -51,6 +53,7 @@ def main() -> int:
         impact_match = temporary / "impact-match.o"
         impact_find = temporary / "impact-find.o"
         impact_tolerance = temporary / "impact-tolerance.o"
+        impact_allocation = temporary / "impact-allocation.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -87,6 +90,13 @@ def main() -> int:
              lookup, properties, velocity, rigid_velocity, combine, impact_data,
              impact_validity, impact_match, impact_find, impact_tolerance,
              candidate])
+        compile_slice(
+            args, args.root / "src/impacts.cpp", impact_allocation,
+            ["?impact_new@@YAJPBUs_impact_data@@J@Z",
+             "?impact_component_b_is_faster@@YA_NJJ@Z",
+             "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z"])
+        run([args.lld, "-r", "--allow-multiple-definition", "-o",
+             args.impact_output, args.output, impact_allocation])
     return 0
 
 
