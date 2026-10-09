@@ -898,6 +898,28 @@ def main():
         if f"_{sound_bsp_symbol}" not in sound_bsp_defined:
             raise RuntimeError("structure-BSP sound-location update was not selectively compilable")
 
+        bsp_table_output = Path(temporary) / "structure-bsp-callback-table.o"
+        bsp_table_command = command[:]
+        bsp_table_command[bsp_table_command.index("h2_extract_selected")] = "h2_native_structure_bsp_idle"
+        bsp_table_command[bsp_table_command.index("--extract-global") + 1] = "h2_native_structure_bsp_switch_callbacks"
+        alias_index = bsp_table_command.index("--extract-alias")
+        del bsp_table_command[alias_index:alias_index + 2]
+        bsp_table_command[bsp_table_command.index(output)] = bsp_table_output
+        bsp_table_command[-1] = args.root / "port/runtime/guest_structure_bsp_callbacks.cpp"
+        subprocess.run([str(value) for value in bsp_table_command], check=True)
+        bsp_table_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", bsp_table_output],
+            text=True,
+        )
+        for symbol in ("h2_native_structure_bsp_idle", "h2_native_structure_bsp_switch_callbacks"):
+            if symbol not in bsp_table_defined:
+                raise RuntimeError(f"structure-BSP callback assembly omitted {symbol}")
+        bsp_table_relocations = subprocess.check_output(
+            [args.llvm / "llvm-readelf", "-r", bsp_table_output], text=True,
+        )
+        if bsp_table_relocations.count("ARM64_RELOC_UNSIGNED") != 21:
+            raise RuntimeError("structure-BSP callback assembly must retain exactly 21 providers")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
