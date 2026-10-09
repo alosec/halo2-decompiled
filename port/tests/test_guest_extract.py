@@ -283,6 +283,28 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_leaf_output = Path(temporary) / "physics-model-runtime-leaf.o"
+        physics_model_leaf_command = command[:]
+        physics_model_leaf_command[physics_model_leaf_command.index("h2_extract_selected")] = (
+            "?function_2dae30@c_physics_model_leaf@@QAAXPAX00@Z"
+        )
+        physics_model_leaf_command[physics_model_leaf_command.index("--extract-global"):physics_model_leaf_command.index("--output")] = [
+            "--extract-symbol", "?function_2fdfb0@c_physics_model_leaf@@QAAXPAX0PAM@Z",
+        ]
+        physics_model_leaf_command[physics_model_leaf_command.index(output)] = physics_model_leaf_output
+        physics_model_leaf_command[-1] = args.root / "src/unknown_2dae30.cpp"
+        subprocess.run([str(value) for value in physics_model_leaf_command], check=True)
+        physics_model_leaf_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_leaf_output],
+            text=True,
+        )
+        for symbol in (
+            "?function_2dae30@c_physics_model_leaf@@QAAXPAX00@Z",
+            "?function_2fdfb0@c_physics_model_leaf@@QAAXPAX0PAM@Z",
+        ):
+            if f"_{symbol}" not in physics_model_leaf_defined:
+                raise RuntimeError(f"physics-model leaf method was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
