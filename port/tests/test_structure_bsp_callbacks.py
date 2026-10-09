@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 
 EXPECTED = {
     16: 0x00123D20,
@@ -36,7 +37,9 @@ def main() -> int:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--llvm-nm", type=Path, required=True)
     parser.add_argument("--llvm-readelf", type=Path, required=True)
+    parser.add_argument("--lld", type=Path, required=True)
     parser.add_argument("--provider-cluster-object", type=Path, required=True)
+    parser.add_argument("--production-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -131,6 +134,37 @@ def main() -> int:
     if encoded_globals:
         raise RuntimeError("structure-BSP bound cluster left encoded globals unbound: " +
                            ", ".join(encoded_globals))
+
+    production_owned = {
+        "?data_datum_iterator_next@@YA_NPAUs_data_datum_iterator@@@Z",
+        "?function_16bc00@@YAJPAUs_record_pool@@J@Z",
+        "?loop_compact@@YAXPAUs_loop_allocator@@@Z",
+        "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+        "?record_pool_release_all@@YAXPAUs_record_pool@@@Z",
+    }
+    with tempfile.TemporaryDirectory(prefix="h2-structure-bsp-production-") as temporary:
+        combined = Path(temporary) / "cluster.o"
+        subprocess.run([
+            args.lld, "-r", "--allow-multiple-definition", "-o", combined,
+            args.provider_cluster_object, args.production_object,
+        ], check=True)
+        production_text = subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", "--format=posix", combined], text=True,
+        )
+    production_undefined = {
+        line.split()[0] for line in production_text.splitlines() if line.strip()
+    }
+    if undefined - production_undefined != production_owned:
+        raise RuntimeError("structure-BSP production ownership changed: " +
+                           ", ".join(sorted(undefined - production_undefined)))
+    if production_undefined - undefined:
+        raise RuntimeError("structure-BSP production link added imports: " +
+                           ", ".join(sorted(production_undefined - undefined)))
+    if len(production_undefined) != 45:
+        raise RuntimeError(
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 45")
+
     expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
     missing_symbols = sorted(expected_symbols - definitions)

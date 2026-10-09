@@ -2341,7 +2341,9 @@ add_test(
             --root ${PROJECT_SOURCE_DIR}
             --llvm-nm ${H2_LLVM_NM}
             --llvm-readelf ${H2_LLVM_ROOT}/bin/llvm-readelf
+            --lld ${H2_LLD}
             --provider-cluster-object ${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}
+            --production-object ${H2_MAIN_MENU_PARTIAL_ELF}
 )
 add_test(
     NAME recovered-guest-unit
