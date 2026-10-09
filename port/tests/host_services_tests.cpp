@@ -312,11 +312,19 @@ int main() {
                             host_copy[0] == cache_bytes[0x800],
                         "native cache ownership did not expose bounded host bytes");
             std::strcpy(static_cast<char*>(native_buffer),
+                        "scenarios\\ui\\mainmenu\\mainmenu");
+            ok &= check(host_h2_map_is_active(static_cast<char*>(native_buffer)) == 1,
+                        "configured main-menu cache was not active");
+            std::strcpy(static_cast<char*>(native_buffer),
                         "scenarios\\solo\\00a_introduction\\00a_introduction");
+            ok &= check(host_h2_map_is_active(static_cast<char*>(native_buffer)) == 0,
+                        "unselected Campaign cache was reported active");
             ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 1,
                         "campaign cache preflight rejected a valid recovered path");
             ok &= check(host_h2_map_select(static_cast<char*>(native_buffer)) == 1,
                         "campaign cache selection rejected a valid recovered path");
+            ok &= check(host_h2_map_is_active(static_cast<char*>(native_buffer)) == 1,
+                        "selected Campaign cache was not reported active");
             const auto* selected_header = static_cast<const unsigned char*>(
                 arena->pointer_const(0x00557c94u));
             ok &= check(selected_header[0x198] == '0' &&
@@ -344,6 +352,8 @@ int main() {
                         "campaign cache preflight accepted an unterminated name");
             ok &= check(host_h2_map_preflight("00a_introduction") == 0,
                         "campaign cache preflight accepted a host pointer");
+            ok &= check(host_h2_map_is_active("00a_introduction") == 0,
+                        "active-map query accepted a host pointer");
             h2::port::reset_cache_services();
         }
         std::filesystem::remove_all(cache_root);

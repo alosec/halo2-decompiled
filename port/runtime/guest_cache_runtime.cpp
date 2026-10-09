@@ -1,17 +1,19 @@
 #include <xtl.h>
+#include "h2/host_abi.h"
 #include "unknown_122870.h"
 
-/* The native bootstrap owns one validated mainmenu.map and no asynchronous
- * Xbox cache-file handles.  These narrow services preserve the recovered map
- * loader while making that ownership explicit. */
+/* The native host owns one validated active map and no asynchronous Xbox
+ * cache-file handles. These narrow services preserve the recovered map loader
+ * while making that ownership explicit. */
 long cache_file_get_maximum_size(long)
 {
     return 0x20800000;
 }
 
-long cache_file_find(char const *)
+long cache_file_find(char const *map_name)
 {
-    return 0;
+    /* The recovered loader passes null for the already configured map. */
+    return !map_name || host_h2_map_is_active(map_name) ? 0 : NONE;
 }
 
 bool __stdcall version_is_compatible(char const *)
@@ -30,7 +32,8 @@ extern void *g_4e034c;
 
 extern "C" int h2_native_load_campaign_map(char const *map_name)
 {
-    if (!map_name || !cache_files_load_map(map_name))
+    if (!map_name || cache_file_find(map_name) == NONE ||
+        !cache_files_load_map(map_name))
         return 0;
     return cache_file_globals.loaded && cache_file_globals.tags &&
         cache_file_globals.header.type == 0 &&

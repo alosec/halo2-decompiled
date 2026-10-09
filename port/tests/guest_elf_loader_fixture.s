@@ -27,6 +27,9 @@ h2_host_slot_host_h2_map_preflight:
 .globl h2_host_slot_host_h2_map_select
 h2_host_slot_host_h2_map_select:
     .xword 0
+.globl h2_host_slot_host_h2_map_is_active
+h2_host_slot_host_h2_map_is_active:
+    .xword 0
 .globl h2_host_slot_host_h2_video_control
 h2_host_slot_host_h2_video_control:
     .xword 0

@@ -26,6 +26,7 @@ def main():
     assert imports["host_h2_text_request"]["category"] == "host_abi"
     assert imports["host_h2_map_preflight"]["category"] == "host_abi"
     assert imports["host_h2_map_select"]["category"] == "host_abi"
+    assert imports["host_h2_map_is_active"]["category"] == "host_abi"
     for symbol in (
         "host_h2_profile_list", "host_h2_profile_create", "host_h2_profile_read",
         "host_h2_profile_write", "host_h2_profile_delete",

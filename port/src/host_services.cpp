@@ -48,6 +48,7 @@ struct CacheState {
     h2::port::GuestArena* arena = nullptr;
     std::vector<unsigned char> bytes;
     std::filesystem::path map_directory;
+    std::string active_map_name;
     std::uint32_t next_address = kPhysicalAllocationBase;
 };
 
@@ -119,7 +120,7 @@ bool locate_campaign_cache(const std::filesystem::path& map_directory,
            fixed_string(header, 0x198, 0x20) == map_name;
 }
 
-bool guest_campaign_cache_name(const CacheState& state, const char* map_name,
+bool guest_cache_name(const CacheState& state, const char* map_name,
                                std::string& cache_name) {
     if (!map_name || !state.arena) {
         return false;
@@ -215,6 +216,7 @@ bool configure_cache_services(GuestArena& arena, const std::filesystem::path& ma
     state.arena = &arena;
     state.bytes = std::move(bytes);
     state.map_directory = map_path.parent_path();
+    state.active_map_name = map_path.stem().string();
     state.next_address = kPhysicalAllocationBase;
     return true;
 }
@@ -225,6 +227,7 @@ void reset_cache_services() {
     state.arena = nullptr;
     state.bytes.clear();
     state.map_directory.clear();
+    state.active_map_name.clear();
     state.next_address = kPhysicalAllocationBase;
 }
 
@@ -316,6 +319,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         {"host_h2_cache_read", function_address(&host_h2_cache_read)},
         {"host_h2_map_preflight", function_address(&host_h2_map_preflight)},
         {"host_h2_map_select", function_address(&host_h2_map_select)},
+        {"host_h2_map_is_active", function_address(&host_h2_map_is_active)},
         {"host_h2_video_control", function_address(&host_h2_video_control)},
         {"host_h2_render_request", function_address(&host_h2_render_request)},
         {"host_h2_text_request", function_address(&host_h2_text_request)},
@@ -394,7 +398,7 @@ extern "C" int host_h2_map_preflight(const char* map_name) {
     const std::lock_guard lock(state.mutex);
     std::string cache_name;
     std::filesystem::path path;
-    return guest_campaign_cache_name(state, map_name, cache_name) &&
+    return guest_cache_name(state, map_name, cache_name) &&
            locate_campaign_cache(state.map_directory, cache_name, path);
 }
 
@@ -403,7 +407,7 @@ extern "C" int host_h2_map_select(const char* map_name) {
     const std::lock_guard lock(state.mutex);
     std::string cache_name;
     std::filesystem::path path;
-    if (!guest_campaign_cache_name(state, map_name, cache_name) ||
+    if (!guest_cache_name(state, map_name, cache_name) ||
         !locate_campaign_cache(state.map_directory, cache_name, path)) {
         return 0;
     }
@@ -421,7 +425,16 @@ extern "C" int host_h2_map_select(const char* map_name) {
     }
     std::memcpy(state.arena->pointer(kCacheHeaderAddress), bytes.data(), kCacheHeaderSize);
     state.bytes = std::move(bytes);
+    state.active_map_name = cache_name;
     return 1;
+}
+
+extern "C" int host_h2_map_is_active(const char* map_name) {
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    std::string cache_name;
+    return guest_cache_name(state, map_name, cache_name) &&
+           cache_name == state.active_map_name;
 }
 
 extern "C" void host_h2_video_control(int command) {

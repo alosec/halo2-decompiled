@@ -79,6 +79,7 @@ def main() -> None:
         "host_h2_cache_read",
         "host_h2_map_preflight",
         "host_h2_map_select",
+        "host_h2_map_is_active",
         "host_h2_physical_memory_malloc_low",
         "host_h2_profile_list",
         "host_h2_profile_create",
