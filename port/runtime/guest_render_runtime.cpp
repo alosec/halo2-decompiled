@@ -7,6 +7,15 @@
  * Actual resource ownership remains at the explicit host rendering boundary. */
 struct s_predicted_resource_block;
 
+/* The Xbox loading-screen image buffer has no native owner yet. */
+void function_2133a1()
+{
+}
+
+void function_213484()
+{
+}
+
 bool function_16e5e0(s_predicted_resource_block const *block, short mode)
 {
     (void)block;

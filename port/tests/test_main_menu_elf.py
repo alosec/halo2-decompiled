@@ -70,6 +70,8 @@ REQUIRED = {
     "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z",
     "?function_199e3c@@YAXJ@Z",
     "?function_199f6d@@YAJXZ",
+    "?function_2133a1@@YAXXZ",
+    "?function_213484@@YAXXZ",
     "?function_215790@@YAXXZ",
     "?function_2164c0@@YAXJPAUs_save_list_2164c0@@@Z",
     "?function_217080@@YAXPBUs_game_variant@@@Z",
