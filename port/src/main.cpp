@@ -16,12 +16,14 @@ namespace {
 struct Options {
     std::filesystem::path data_root;
     std::filesystem::path guest_image;
+    std::string guest_entry;
     bool headless = false;
 };
 
 void usage(const char* program) {
     std::cerr << "Usage: " << program
-              << " [--headless] [--data-root PATH] [--guest-image PATH]\n";
+              << " [--headless] [--data-root PATH] [--guest-image PATH]"
+                 " [--guest-entry SYMBOL]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -36,6 +38,8 @@ bool parse_options(int argc, char** argv, Options& options) {
             options.data_root = argv[++i];
         } else if (argument == "--guest-image" && i + 1 < argc) {
             options.guest_image = argv[++i];
+        } else if (argument == "--guest-entry" && i + 1 < argc) {
+            options.guest_entry = argv[++i];
         } else {
             return false;
         }
@@ -96,6 +100,11 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    if (!options.guest_entry.empty() && options.guest_image.empty()) {
+        std::cerr << "error: --guest-entry requires --guest-image\n";
+        return 2;
+    }
+
     const auto report = h2::port::inspect_retail_data(options.data_root);
     if (!report.ready) {
         for (const auto& error : report.errors) {
@@ -125,6 +134,21 @@ int main(int argc, char** argv) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
         }
+        if (!options.guest_entry.empty()) {
+            const auto address = guest_image->symbol_address(options.guest_entry);
+            if (!address) {
+                std::cerr << "error: guest entry symbol not found: "
+                          << options.guest_entry << '\n';
+                return 1;
+            }
+            using GuestEntry = int (*)();
+            const auto entry = reinterpret_cast<GuestEntry>(arena->pointer(*address));
+            const int result = entry();
+            if (result != 0) {
+                std::cerr << "error: guest entry returned " << result << '\n';
+                return 1;
+            }
+        }
     }
 
     std::cout << "Supported retail Halo 2 data verified at " << options.data_root << '\n'
@@ -137,6 +161,10 @@ int main(int argc, char** argv) {
     if (guest_image) {
         std::cout << "Loaded " << guest_image->segments().size()
                   << " protected guest ELF segments and patched native host services\n";
+        if (!options.guest_entry.empty()) {
+            std::cout << "Executed guest entry " << options.guest_entry
+                      << " successfully\n";
+        }
     }
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless ? 0 : run_window();
