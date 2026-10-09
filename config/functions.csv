@@ -7986,7 +7986,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0022c075,32,game,size,packed,,,,src/unknown_22c033.cpp,matched
 0022c0a0,20,game,speed,a16 pad,,,,src/unknown_22c0a0.cpp,matched
 0022c0c0,5,game,speed,a16 pad,,,,src/unknown_22c0a0.cpp,matched
-0022c0d0,424,game,speed,a16 pad,,,0022c330,,todo
+0022c0d0,424,game,speed,a16 pad,,,0022c330,src/unknown_22c0a0.cpp,done
 0022c280,124,game,speed,a16 pad,,,,src/unknown_22c0a0.cpp,todo
 0022c300,20,game,speed,a16 pad,,,,src/unknown_22c0a0.cpp,matched
 0022c320,13,game,speed,a16 pad,,,,src/unknown_22c0a0.cpp,matched

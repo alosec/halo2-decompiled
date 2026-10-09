@@ -127,6 +127,8 @@ def main() -> int:
         "g_4e0348_owned_match_globals",
         "g_4e7c20_owned_collision_scratch",
         "g_4ed280_owned_bsp_bit_vectors",
+        "g_479888_owned_havok_allocator_block",
+        "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
         raise RuntimeError("structure-BSP callback execution preconditions changed")
@@ -152,7 +154,10 @@ def main() -> int:
             raise RuntimeError(f"missing structure-BSP closure source: {source}")
         closure_symbols.update(entry_symbols)
         retained_globals.update(entry_globals)
-    if retained_globals != {"??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@"}:
+    if retained_globals != {
+        "??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@",
+        "g_h2_native_fixed_vtable",
+    }:
         raise RuntimeError("structure-BSP retained data globals changed")
     required_light_symbols = {
         "?function_c1720@@YAXJ_N0@Z",
@@ -182,6 +187,15 @@ def main() -> int:
     }
     if not required_geometry_symbols.issubset(closure_symbols):
         raise RuntimeError("collision correction left outside BSP closure")
+    required_fixed_allocator_symbols = {
+        "?function_146b80@@YAXXZ",
+        "h2_native_havok_fixed_memory_construct",
+        "?allocate_aligned@c_havok_fixed_memory@@UAAPAXJJJ@Z",
+        "?h2_native_fixed_allocate_aligned@@YAPAXPAVc_havok_fixed_memory@@JJJ@Z",
+        "?h2_native_fixed_deallocate_aligned@@YAXPAVc_havok_fixed_memory@@PAX@Z",
+    }
+    if not required_fixed_allocator_symbols.issubset(closure_symbols):
+        raise RuntimeError("Havok scratch allocator left outside BSP closure")
 
     symbols = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
@@ -193,8 +207,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 26:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 26")
+    if len(undefined) != 25:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 25")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -230,16 +244,16 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 20:
+    if len(production_undefined) != 19:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 20")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 19")
 
     frontier_path = args.root / "port/runtime/structure_bsp_remaining_frontier.json"
     frontier_manifest = json.loads(frontier_path.read_text())
     if frontier_manifest.get("version") != 1:
         raise RuntimeError("unsupported structure-BSP frontier manifest")
     frontier_entries = frontier_manifest.get("imports")
-    if not isinstance(frontier_entries, list) or len(frontier_entries) != 20:
+    if not isinstance(frontier_entries, list) or len(frontier_entries) != 19:
         raise RuntimeError("structure-BSP frontier inventory changed")
     frontier_symbols = set()
     allowed_subsystems = {"ai", "geometry_query", "havok_lifecycle", "object_placement"}
@@ -272,10 +286,20 @@ def main() -> int:
     if data_heading not in relocations:
         raise RuntimeError("structure-BSP callback table relocation section is missing")
     data_relocations = relocations.split(data_heading, 1)[1].split("Relocation section ", 1)[0]
-    if data_relocations.count("R_AARCH64_ABS32") != 21:
+    absolute_lines = [line for line in data_relocations.splitlines()
+                      if "R_AARCH64_ABS32" in line]
+    callback_lines = [line for line in absolute_lines
+                      if int(line.split()[0], 16) < 0x110]
+    allocator_lines = [line for line in absolute_lines
+                       if int(line.split()[0], 16) >= 0x110]
+    if len(callback_lines) != 21:
         raise RuntimeError("structure-BSP callback table must retain exactly 21 providers")
-    if data_relocations.count("h2_native_structure_bsp_idle") != 5:
+    if sum("h2_native_structure_bsp_idle" in line for line in callback_lines) != 5:
         raise RuntimeError("structure-BSP callback table must retain five idle leaves")
+    if len(allocator_lines) != 11:
+        raise RuntimeError("native fixed allocator table must retain exactly 11 methods")
+    if sum("h2_native_fixed_idle" in line for line in allocator_lines) != 4:
+        raise RuntimeError("native fixed allocator table must retain four idle methods")
     return 0
 
 

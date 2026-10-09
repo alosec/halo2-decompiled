@@ -63,6 +63,7 @@ static __int64 read_tsc(void)
 	__asm rdtsc
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x146a20
 void function_146a20(void)
 {
@@ -73,6 +74,7 @@ void function_146a20(void)
 	g_479898 = new ((byte *)g_479888 + 0x15040) hkPoolMemory;
 	g_4798b4++;
 }
+#endif
 
 // @retail 0x146ac0
 void function_146ac0(void)
@@ -124,6 +126,7 @@ void function_146b30(void)
 	g_479888 = virtual_memory_allocate_aligned(0x105470);
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x146b80
 void function_146b80(void)
 {
@@ -140,6 +143,7 @@ void function_146b80(void)
 	}
 	g_47989c = new ((byte *)g_479888 + 0x105410) c_havok_fixed_memory(buffer, size);
 }
+#endif
 
 // @retail 0x146bf0
 void function_146bf0(void)

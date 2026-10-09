@@ -104,7 +104,11 @@ public:
 	/* unknown_22c0a0.cpp */
 	virtual void *allocate(long size, long memory_class);
 	virtual void deallocate(void *address);
+#ifdef H2_NATIVE_PORT
+	virtual void *allocate_aligned(long alignment, long size, long memory_class);
+#else
 	virtual void *allocate_aligned(long alignment, long size, long memory_class) { return 0; }
+#endif
 	virtual void deallocate_aligned(void *address);
 	virtual void *allocate16(long size, long memory_class);
 	virtual void deallocate16(void *address, long size, long memory_class);
