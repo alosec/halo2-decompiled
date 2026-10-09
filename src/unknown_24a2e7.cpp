@@ -8,6 +8,11 @@
 #include "loop_allocator.h"
 #include <wchar.h>
 #include <string.h>
+#include <new>
+
+#if defined(H2_NATIVE_PORT)
+extern "C" wchar_t *wcsncat(wchar_t *, wchar_t const *, unsigned int);
+#endif
 
 // @flags /O1 /Oi /Gr
 
@@ -22,14 +27,21 @@ struct s_entry_24a64d
 	word field_1e4[50];
 };
 
-class c_list_24a64d : public c_list_widget_with_items
+class c_list_24a64d : public c_list_widget_26
 {
 public:
 	c_list_24a64d(word arg_0);
+	virtual ~c_list_24a64d() {}
+	virtual void v1();
+	virtual void v2();
+	virtual void v3();
 	virtual void v20(c_class_1a2c81 *item, long);
 	virtual void *function_24a64d(long index);
 	virtual void v24();
 	virtual word const *function_24a691(long index, bool append);
+	virtual void *get_item_data();
+	virtual long get_item_count();
+	virtual void *get_items(long *count);
 	bool function_24a2e7(long controller);
 	void function_24a30e(s_controller_reference **arg_0, long *arg_1);
 	byte field_88;
@@ -39,8 +51,64 @@ public:
 	c_list_item_handler field_90;
 };
 
+#if defined(H2_NATIVE_PORT)
+static_assert(sizeof(c_list_24a64d) == 0xa8, "profile list base layout");
+#endif
+
 short player_slot_count_active(void);
 bool function_148c3e(long controller, long type);
+void function_24a190(void *arg_0);
+void function_249fcc(c_unknown_249fa3 *arg_0);
+void function_24bc12(c_class_1474e8 *list, bool remove_extra);
+extern long g_470a60;
+
+// @retail 0x249fa3
+void c_list_24a64d::v1()
+{
+	g_470a60 = NONE;
+	function_24a190(this);
+#if defined(H2_NATIVE_PORT)
+	/* The screen layout is built before this list populates its empty-storage
+	   create-new datum. Apply the recovered list skin once that item exists. */
+	function_24bc12(this, false);
+#endif
+	c_class_1a2c81::v1();
+	function_24c0c4((c_widget *)this);
+	function_249fcc((c_unknown_249fa3 *)this);
+}
+
+void c_list_24a64d::v2()
+{
+	g_470a60 = NONE;
+	c_class_1a2c81::v2();
+}
+
+void c_list_24a64d::v3()
+{
+#if defined(H2_NATIVE_PORT)
+	/* Native persistence is explicitly empty, so there is no profile record
+	   to refresh. Keep the recovered widget frame traversal active. */
+	c_class_1a2c81::v3();
+#else
+	c_class_1a2c81::v3();
+#endif
+}
+
+void *c_list_24a64d::get_item_data()
+{
+	return (byte *)this + 0xa8;
+}
+
+long c_list_24a64d::get_item_count()
+{
+	return 4;
+}
+
+void *c_list_24a64d::get_items(long *count)
+{
+	*count = 4;
+	return (byte *)this + 0x2a8;
+}
 
 // @retail 0x24a2e7
 bool c_list_24a64d::function_24a2e7(long controller)
@@ -54,6 +122,10 @@ bool c_list_24a64d::function_24a2e7(long controller)
 // @retail 0x24a64d
 void *c_list_24a64d::function_24a64d(long index)
 {
+#if defined(H2_NATIVE_PORT)
+	(void)index;
+	return 0;
+#else
 	long count;
 	s_entry_24a64d *entries = (s_entry_24a64d *)get_items(&count);
 	void *result = 0;
@@ -66,6 +138,7 @@ void *c_list_24a64d::function_24a64d(long index)
 		}
 	}
 	return result;
+#endif
 }
 
 struct s_datum_24a763
@@ -154,6 +227,24 @@ void function_22f042(s_widget_item *items, c_class_1a2c81 *widget, long count);
 // @retail 0x24a09b
 void c_list_24a64d::v20(c_class_1a2c81 *item, long)
 {
+#if defined(H2_NATIVE_PORT)
+	long datum_index = ((c_class_14750b *)item)->value70;
+	if (datum_index == NONE)
+		return;
+	s_datum_24a763 *datum = (s_datum_24a763 *)record_pool_lookup(data, datum_index);
+	if (!datum || datum->index != NONE)
+		return;
+	c_text_widget_45a5e0 *text = (c_text_widget_45a5e0 *)item->find_child(6, 0, false);
+	if (text)
+	{
+		s_widget_item layout = {};
+		layout.value5e = true;
+		layout.flags = 0x20;
+		text->function_253b1a(0x12000195);
+		text->value6e = true;
+		function_22f042(&layout, item, 1);
+	}
+#else
 	long datum_index = ((c_class_14750b *)item)->value70;
 	if (datum_index != NONE)
 	{
@@ -184,11 +275,17 @@ void c_list_24a64d::v20(c_class_1a2c81 *item, long)
 			function_22f042(&layout, item, 1);
 		}
 	}
+#endif
 }
 
 // @retail 0x24a691
 word const *c_list_24a64d::function_24a691(long index, bool append)
 {
+#if defined(H2_NATIVE_PORT)
+	(void)index;
+	(void)append;
+	return 0;
+#else
 	word const *result = (word const *)L"";
 	long local_0 = 0;
 	long count;
@@ -216,6 +313,7 @@ word const *c_list_24a64d::function_24a691(long index, bool append)
 		}
 	}
 	return result;
+#endif
 }
 
 void function_1630b0(long *values, long value);
@@ -225,6 +323,11 @@ word *function_215b50(long file_index, word *name);
 // @retail 0x24a52b
 void c_list_24a64d::v24()
 {
+#if defined(H2_NATIVE_PORT)
+	/* The native save-file provider is empty, so no profile records can
+	   change beneath this list. */
+	return;
+#else
 	long count;
 	s_entry_24a64d *entries = (s_entry_24a64d *)get_items(&count);
 	long capacity = count;
@@ -279,17 +382,35 @@ void c_list_24a64d::v24()
 			}
 		}
 	}
+#endif
 }
 
 // @retail 0x249f0d
 c_list_24a64d::c_list_24a64d(word arg_0) :
-	c_list_widget_with_items(arg_0),
+	c_list_widget_26(arg_0),
 	field_88(0), field_89(false), field_8a(false), field_8c(NONE),
 	field_90(this, (list_item_method)&c_list_24a64d::function_24a30e)
 {
 	data = user_interface_data_new("player profile list", 0x1001, 8);
 	function_16b790(data);
 	delegate_register(&item_handlers, &field_90);
+}
+
+/* Native integration wrapper for the exact retail 0x18f372 construction
+   sequence. The list base occupies 0xa8 bytes, followed by four 0x80-byte
+   item widgets and four 0x248-byte profile records. */
+extern "C" void h2_profile_list_construct(void *storage, word user_flags)
+{
+	c_list_24a64d *list = ::new (storage) c_list_24a64d(user_flags);
+	byte *base = (byte *)list;
+	for (long index = 0; index < 4; ++index)
+		::new (base + 0xa8 + index * 0x80) c_class_14750b();
+	for (long index = 0; index < 4; ++index)
+	{
+		byte *profile = base + 0x2a8 + index * 0x248;
+		*(long *)profile = NONE;
+		memset(profile + 4, 0, 0x1e0);
+	}
 }
 
 void function_24c166(c_class_1474e8 *arg_0);
@@ -299,6 +420,24 @@ bool player_slot_profile_in_use(long arg_0);
 // @retail 0x24a190
 void function_24a190(void *arg_0)
 {
+#if defined(H2_NATIVE_PORT)
+	c_list_24a64d *list = (c_list_24a64d *)arg_0;
+	record_pool_release_all(list->data);
+	function_24c166(list);
+	long datum_index = record_pool_allocate(list->data);
+	((s_datum_24a763 *)list->data->data)[datum_index & 0xffff].index = NONE;
+	c_class_14750b *items = (c_class_14750b *)list->get_item_data();
+	if (list->get_item_count() > 0)
+		list->add_child(&items[0]);
+	long count;
+	s_entry_24a64d *profiles = (s_entry_24a64d *)list->get_items(&count);
+	for (long index = 0; index < count; ++index)
+	{
+		profiles[index].index = NONE;
+		memset((byte *)&profiles[index] + 4, 0, 0x1e0);
+	}
+	function_24c0c4((c_widget *)list);
+#else
 	c_list_24a64d *local_0 = (c_list_24a64d *)arg_0;
 	record_pool_release_all(local_0->data);
 	function_24c166(local_0);
@@ -336,6 +475,7 @@ void function_24a190(void *arg_0)
 		memset((byte *)&local_9[local_10] + 4, 0, 0x1e0);
 	}
 	function_24c0c4((c_widget *)local_0);
+#endif
 }
 
 extern byte g_54eae8[4][0xc70];
@@ -352,6 +492,12 @@ bool __stdcall function_24aad1(long arg_0);
 // @retail 0x24a30e
 void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 {
+#if defined(H2_NATIVE_PORT)
+	s_datum_24a763 *datum = (s_datum_24a763 *)record_pool_lookup(data, *arg_1);
+	if (datum && datum->index == NONE &&
+		function_24a2e7((*arg_0)->controller_index) && !field_89)
+		function_14800c(v11(), v12());
+#else
 	s_datum_24a763 *local_0 = (s_datum_24a763 *)record_pool_lookup(data, *arg_1);
 	if (local_0)
 	{
@@ -425,6 +571,7 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 			}
 		}
 	}
+#endif
 }
 
 void function_120e20(long arg_0, long *arg_1);
@@ -432,6 +579,9 @@ void function_120e20(long arg_0, long *arg_1);
 // @retail 0x249fcc
 void function_249fcc(c_unknown_249fa3 *arg_0)
 {
+#if defined(H2_NATIVE_PORT)
+	(void)arg_0;
+#else
 	c_list_24a64d *local_0 = (c_list_24a64d *)arg_0;
 	long local_1;
 	function_120e20(local_0->get_controller_index(), &local_1);
@@ -450,6 +600,7 @@ void function_249fcc(c_unknown_249fa3 *arg_0)
 			}
 		}
 	}
+#endif
 }
 
 // @retail 0x24a80d

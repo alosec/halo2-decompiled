@@ -117,6 +117,28 @@ extern "C" int h2_main_menu_guest_press_start()
 
 bool __stdcall function_252a32(long controller);
 
+extern "C" int h2_main_menu_guest_accept()
+{
+    c_window_channel *channels[] = {
+        &g_54d598.window_0,
+        &g_54d598.windows_1[4],
+        &g_54d598.window_2,
+        &g_54d598.windows_3[4],
+        &g_54d598.window_4,
+        &g_54d598.windows_5[4],
+        &g_54d598.default_window,
+    };
+    for (long index = 0; index < 7; ++index)
+    {
+        if (channels[index]->current && channels[index]->current->screen_id == 0x1e)
+        {
+            s_widget_event event = { 5, 0, 0 };
+            return channels[index]->current->v10(&event) ? 0 : 3;
+        }
+    }
+    return 2;
+}
+
 extern "C" int h2_main_menu_guest_cancel()
 {
     c_window_channel *channels[] = {

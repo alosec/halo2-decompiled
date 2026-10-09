@@ -980,6 +980,7 @@ public:
 class c_list_widget_26 : public c_list_widget_with_items
 {
 public:
+	c_list_widget_26(word user_flags) : c_list_widget_with_items(user_flags) {}
 	virtual void v23() {}
 	virtual void v24() {}
 	virtual void v25() {}

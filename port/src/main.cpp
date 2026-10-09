@@ -346,6 +346,7 @@ struct Options {
     std::filesystem::path screenshot;
     int frame_count = 0;
     int press_start_frame = 0;
+    int accept_frame = 0;
     int cancel_frame = 0;
     bool headless = false;
 };
@@ -354,7 +355,7 @@ void usage(const char* program) {
     std::cerr << "Usage: " << program
               << " [--headless] [--data-root PATH] [--guest-image PATH]"
                  " [--guest-entry SYMBOL] [--frames COUNT] [--press-start-frame COUNT]"
-                 " [--cancel-frame COUNT] [--screenshot BMP]\n";
+                 " [--accept-frame COUNT] [--cancel-frame COUNT] [--screenshot BMP]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -387,6 +388,14 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.press_start_frame <= 0) {
                 return false;
             }
+        } else if (argument == "--accept-frame" && i + 1 < argc) {
+            const std::string_view value(argv[++i]);
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
+                                                options.accept_frame);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+                options.accept_frame <= 0) {
+                return false;
+            }
         } else if (argument == "--cancel-frame" && i + 1 < argc) {
             const std::string_view value(argv[++i]);
             const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
@@ -405,6 +414,10 @@ bool parse_options(int argc, char** argv, Options& options) {
         (options.screenshot.empty() || options.frame_count > 0) &&
         (options.press_start_frame == 0 ||
          (options.frame_count >= options.press_start_frame && !options.headless)) &&
+        (options.accept_frame == 0 ||
+         (options.press_start_frame > 0 &&
+          options.accept_frame > options.press_start_frame &&
+          options.frame_count >= options.accept_frame && !options.headless)) &&
         (options.cancel_frame == 0 ||
          (options.press_start_frame > 0 &&
           options.cancel_frame > options.press_start_frame &&
@@ -412,8 +425,8 @@ bool parse_options(int argc, char** argv, Options& options) {
 }
 
 int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
-               GuestEntry guest_cancel, void* guest_stack_top,
-               int frame_count, int press_start_frame, int cancel_frame,
+               GuestEntry guest_accept, GuestEntry guest_cancel, void* guest_stack_top,
+               int frame_count, int press_start_frame, int accept_frame, int cancel_frame,
                const std::filesystem::path& screenshot,
                const h2::port::GuestArena* arena,
                const std::filesystem::path& data_root) {
@@ -469,6 +482,22 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
             running = false;
         }
     };
+    const auto dispatch_accept = [&]() {
+        if (!guest_accept) {
+            return false;
+        }
+        const int input_result = h2_call_guest_int_0(guest_accept, guest_stack_top);
+        if (input_result == 2) {
+            return false;
+        }
+        if (input_result != 0) {
+            std::cerr << "guest accept dispatch failed with result "
+                      << input_result << '\n';
+            result = 1;
+            running = false;
+        }
+        return true;
+    };
     const auto dispatch_cancel = [&]() {
         if (!guest_cancel) {
             return false;
@@ -489,6 +518,9 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
         if (press_start_frame > 0 && rendered_frames + 1 == press_start_frame) {
             dispatch_press_start();
         }
+        if (accept_frame > 0 && rendered_frames + 1 == accept_frame) {
+            dispatch_accept();
+        }
         if (cancel_frame > 0 && rendered_frames + 1 == cancel_frame) {
             dispatch_cancel();
         }
@@ -503,11 +535,15 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
                 }
             } else if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat &&
                        (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE)) {
-                dispatch_press_start();
+                if (!dispatch_accept()) {
+                    dispatch_press_start();
+                }
             } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN &&
                        (event.gbutton.button == SDL_GAMEPAD_BUTTON_SOUTH ||
                         event.gbutton.button == SDL_GAMEPAD_BUTTON_START)) {
-                dispatch_press_start();
+                if (!dispatch_accept()) {
+                    dispatch_press_start();
+                }
             } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN &&
                        event.gbutton.button == SDL_GAMEPAD_BUTTON_EAST) {
                 dispatch_cancel();
@@ -635,6 +671,7 @@ int main(int argc, char** argv) {
     std::optional<h2::port::HostServiceStats> guest_service_stats;
     GuestEntry guest_frame = nullptr;
     GuestEntry guest_press_start = nullptr;
+    GuestEntry guest_accept = nullptr;
     GuestEntry guest_cancel = nullptr;
     void* guest_stack_top = nullptr;
     if (!options.guest_image.empty()) {
@@ -697,6 +734,12 @@ int main(int argc, char** argv) {
                     std::cerr << "error: main-menu press-start entry is missing\n";
                     return 1;
                 }
+                const auto accept_address =
+                    guest_image->symbol_address("h2_main_menu_guest_accept");
+                if (!accept_address) {
+                    std::cerr << "error: main-menu accept entry is missing\n";
+                    return 1;
+                }
                 const auto cancel_address =
                     guest_image->symbol_address("h2_main_menu_guest_cancel");
                 if (!cancel_address) {
@@ -707,6 +750,8 @@ int main(int argc, char** argv) {
                     arena->pointer(*frame_address));
                 guest_press_start = reinterpret_cast<GuestEntry>(
                     arena->pointer(*press_start_address));
+                guest_accept = reinterpret_cast<GuestEntry>(
+                    arena->pointer(*accept_address));
                 guest_cancel = reinterpret_cast<GuestEntry>(
                     arena->pointer(*cancel_address));
                 guest_stack_top = stack_top;
@@ -738,8 +783,8 @@ int main(int argc, char** argv) {
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless
         ? 0
-        : run_window(guest_frame, guest_press_start, guest_cancel, guest_stack_top,
-                     options.frame_count, options.press_start_frame,
-                     options.cancel_frame, options.screenshot,
+        : run_window(guest_frame, guest_press_start, guest_accept, guest_cancel,
+                     guest_stack_top, options.frame_count, options.press_start_frame,
+                     options.accept_frame, options.cancel_frame, options.screenshot,
                      arena.get(), options.data_root);
 }

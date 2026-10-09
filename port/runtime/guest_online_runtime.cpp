@@ -1,5 +1,7 @@
 #include "online_tasks.h"
 #include "unknown_24b5bc.h"
+#include "unknown_234c64.h"
+#include "screen_widgets.h"
 #include <string.h>
 #include <xonline.h>
 #include <xtl.h>
@@ -122,13 +124,34 @@ struct s_screen_parameters;
 class c_class_1473c9;
 c_class_1473c9 *function_149f1e(word user_flags, long load);
 c_class_1473c9 *__stdcall function_252481(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall function_18f42d(s_screen_parameters *parameters);
+
+static bool native_profile_chooser_is_open()
+{
+    c_window_channel *channels[] = {
+        &g_54d598.window_0,
+        &g_54d598.windows_1[4],
+        &g_54d598.window_2,
+        &g_54d598.windows_3[4],
+        &g_54d598.window_4,
+        &g_54d598.windows_5[4],
+        &g_54d598.default_window,
+    };
+    for (long index = 0; index < 7; ++index)
+        if ((channels[index]->current && channels[index]->current->screen_id == 0x1e) ||
+            (channels[index]->next && channels[index]->next->screen_id == 0x1e))
+            return true;
+    return false;
+}
 
 void function_1905bf(long controller, bool)
 {
-    /* Native keyboard/gamepad activation has no persisted profile provider yet.
-     * Route to the recovered four-way profile chooser, which honestly reports
-     * disconnected controller slots until fuller input ownership is present. */
-    function_149f1e((word)(1 << controller), reinterpret_cast<long>(function_252481));
+    /* The first offline activation opens the recovered four-controller chooser.
+     * Accepting its connected slot then opens the genuine recovered empty-profile
+     * selector. No profile or sign-in state is fabricated. */
+    const long load = reinterpret_cast<long>(
+        native_profile_chooser_is_open() ? function_18f42d : function_252481);
+    function_149f1e((word)(1 << controller), load);
 }
 
 bool function_19a76d(short)

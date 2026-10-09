@@ -110,6 +110,8 @@ set(H2_GUEST_UI_GEOMETRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13c050.o")
 set(H2_GUEST_PREVIEW_RENDER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22a664.o")
 set(H2_GUEST_PRESS_START_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22f118.o")
 set(H2_GUEST_SIGNIN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2523e3.o")
+set(H2_GUEST_PROFILE_SCREEN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18f42d.o")
+set(H2_GUEST_PROFILE_LIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24a2e7.o")
 set(H2_GUEST_WIDGET_ITEM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b0149.o")
 set(H2_GUEST_LOCALIZED_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a0120.o")
 set(H2_GUEST_UTF8_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fd90.o")
@@ -166,6 +168,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_059670.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_18fcc4.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
     "${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
@@ -262,6 +266,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SESSION_QUERY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_059670.cpp"
         "${H2_GUEST_PROFILE_UPDATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18fcc4.cpp"
         "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
+        "${H2_GUEST_PROFILE_SCREEN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp"
+        "${H2_GUEST_PROFILE_LIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp"
         "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
         "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}|${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
         "${H2_GUEST_PLAYER_PROFILE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
@@ -333,6 +339,37 @@ foreach(pair IN ITEMS
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z"
             --extract-symbol "?function_18fa4d@@YAJJ@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PROFILE_SCREEN_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_18f42d@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_18f474@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?v17@c_18f4bb@@UAAXXZ"
+            --extract-symbol "?get_load_proc@c_18f4bb@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "??_Gc_18f4bb@@UAAPAXI@Z"
+            --extract-global "??_7c_18f4bb@@6B@"
+            --extract-alias "??_Ec_18f4bb@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PROFILE_LIST_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "h2_profile_list_construct"
+            --extract-symbol "??_Gc_list_24a64d@@UAAPAXI@Z"
+            --extract-symbol "?v1@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v2@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v3@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v20@c_list_24a64d@@UAAXPAVc_class_1a2c81@@J@Z"
+            --extract-symbol "?v24@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v23@c_list_widget_26@@UAAXXZ"
+            --extract-symbol "?v25@c_list_widget_26@@UAAXXZ"
+            --extract-symbol "?function_24a30e@c_list_24a64d@@QAAXPAPAUs_controller_reference@@PAJ@Z"
+            --extract-symbol "?function_24a64d@c_list_24a64d@@UAAPAXJ@Z"
+            --extract-symbol "?function_24a691@c_list_24a64d@@UAAPBGJ_N@Z"
+            --extract-symbol "?get_item_data@c_list_24a64d@@UAAPAXXZ"
+            --extract-symbol "?get_item_count@c_list_24a64d@@UAAJXZ"
+            --extract-symbol "?get_items@c_list_24a64d@@UAAPAXPAJ@Z"
+            --extract-global "??_7c_list_24a64d@@6B@"
+            --extract-alias "??_Ec_list_24a64d@@UAAPAXI@Z"
+            --extract-global "??_C@_0BE@FKGOBLBN@player?5profile?5list?$AA@")
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_SESSION_OBJECT)
         list(APPEND guest_extract_args
@@ -701,7 +738,9 @@ set_source_files_properties(
     "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
     "${H2_GUEST_STORAGE_SIZE_OBJECT}" "${H2_GUEST_PROFILE_STORAGE_UPDATE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}" "${H2_GUEST_PREVIEW_RENDER_OBJECT}"
-    "${H2_GUEST_PRESS_START_OBJECT}" "${H2_GUEST_SIGNIN_OBJECT}" "${H2_GUEST_WIDGET_ITEM_OBJECT}"
+    "${H2_GUEST_PRESS_START_OBJECT}" "${H2_GUEST_SIGNIN_OBJECT}"
+    "${H2_GUEST_PROFILE_SCREEN_OBJECT}" "${H2_GUEST_PROFILE_LIST_OBJECT}"
+    "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}" "${H2_GUEST_UTF8_OBJECT}"
     "${H2_GUEST_COLOR_SPACE_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
@@ -801,6 +840,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_PREVIEW_RENDER_OBJECT}"
     "${H2_GUEST_PRESS_START_OBJECT}"
     "${H2_GUEST_SIGNIN_OBJECT}"
+    "${H2_GUEST_PROFILE_SCREEN_OBJECT}"
+    "${H2_GUEST_PROFILE_LIST_OBJECT}"
     "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}"
     "${H2_GUEST_UTF8_OBJECT}"
@@ -868,6 +909,37 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z"
             --extract-symbol "?function_18fa4d@@YAJJ@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_18f42d@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_18f474@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?v17@c_18f4bb@@UAAXXZ"
+            --extract-symbol "?get_load_proc@c_18f4bb@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "??_Gc_18f4bb@@UAAPAXI@Z"
+            --extract-global "??_7c_18f4bb@@6B@"
+            --extract-alias "??_Ec_18f4bb@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "h2_profile_list_construct"
+            --extract-symbol "??_Gc_list_24a64d@@UAAPAXI@Z"
+            --extract-symbol "?v1@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v2@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v3@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v20@c_list_24a64d@@UAAXPAVc_class_1a2c81@@J@Z"
+            --extract-symbol "?v24@c_list_24a64d@@UAAXXZ"
+            --extract-symbol "?v23@c_list_widget_26@@UAAXXZ"
+            --extract-symbol "?v25@c_list_widget_26@@UAAXXZ"
+            --extract-symbol "?function_24a30e@c_list_24a64d@@QAAXPAPAUs_controller_reference@@PAJ@Z"
+            --extract-symbol "?function_24a64d@c_list_24a64d@@UAAPAXJ@Z"
+            --extract-symbol "?function_24a691@c_list_24a64d@@UAAPBGJ_N@Z"
+            --extract-symbol "?get_item_data@c_list_24a64d@@UAAPAXXZ"
+            --extract-symbol "?get_item_count@c_list_24a64d@@UAAJXZ"
+            --extract-symbol "?get_items@c_list_24a64d@@UAAPAXPAJ@Z"
+            --extract-global "??_7c_list_24a64d@@6B@"
+            --extract-alias "??_Ec_list_24a64d@@UAAPAXI@Z"
+            --extract-global "??_C@_0BE@FKGOBLBN@player?5profile?5list?$AA@")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp")
         list(APPEND guest_extract_args
