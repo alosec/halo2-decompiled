@@ -5,7 +5,9 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include <string.h>
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 #include "slot_handler.h"
 
 real function_1e96a0(short column, short row);
@@ -443,10 +445,17 @@ bool __stdcall function_1e9140(s_request_screen_bounds const *volatile bounds)
 			inner.top = input->top + 8 + g_4b9dd0;
 			s_request_screen_bounds piece = inner;
 			real coordinates[4];
+#ifdef H2_NATIVE_PORT
+			coordinates[0] = 0.0f;
+			coordinates[1] = 1.0f;
+			coordinates[2] = 0.0f;
+			coordinates[3] = 1.0f;
+#else
 			_mm_store_ss(&coordinates[0], _mm_setzero_ps());
 			_mm_store_ss(&coordinates[1], _mm_set_ss(1.0f));
 			_mm_store_ss(&coordinates[2], _mm_setzero_ps());
 			_mm_store_ss(&coordinates[3], _mm_set_ss(1.0f));
+#endif
 			point2f points[4];
 			function_1e90b0(0, &piece, points);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, center, 0, color);
