@@ -79,6 +79,8 @@ REQUIRED = {
     "?function_217080@@YAXPBUs_game_variant@@@Z",
     "?function_217300@@YAJJJ@Z",
     "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z",
+    "?function_223976@@YA_NXZ",
+    "?function_223a21@@YAXXZ",
     "?function_22d2ee@@YAXPAGJ@Z",
     "?function_22fba9@@YAXPAVc_class_1473c9@@@Z",
     "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z",
