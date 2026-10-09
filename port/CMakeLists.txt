@@ -69,6 +69,7 @@ set(H2_GUEST_MENU_ACTION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_250155.o")
 set(H2_GUEST_SESSION_PRESENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19987f.o")
 set(H2_GUEST_SESSION_MANAGER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_058ee0.o")
 set(H2_GUEST_TASK_SCREEN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a2ca7.o")
+set(H2_GUEST_TASK_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/online_task_text.o")
 set(H2_GUEST_TASK_CALLBACK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2521f2.o")
 set(H2_GUEST_SESSION_MODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0592d0.o")
 set(H2_GUEST_SESSION_VALUES_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_05b040.o")
@@ -136,6 +137,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_058ee0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1a2ca7.cpp"
+    "${PROJECT_SOURCE_DIR}/src/online_task_text.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2521f2.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_0592d0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
@@ -206,6 +208,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SESSION_PRESENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
         "${H2_GUEST_SESSION_MANAGER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_058ee0.cpp"
         "${H2_GUEST_TASK_SCREEN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a2ca7.cpp"
+        "${H2_GUEST_TASK_TEXT_OBJECT}|${PROJECT_SOURCE_DIR}/src/online_task_text.cpp"
         "${H2_GUEST_TASK_CALLBACK_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2521f2.cpp"
         "${H2_GUEST_SESSION_MODE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0592d0.cpp"
         "${H2_GUEST_SESSION_VALUES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_05b040.cpp"
@@ -239,8 +242,9 @@ foreach(pair IN ITEMS
             "?data_last_index@@YAJPAUs_record_pool@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_PROFILE_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?initialize@s_player_slot_profile@@QAAXJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_24bac5@@YAXPAX@Z"
+            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT)
         list(APPEND guest_extract_args
@@ -253,6 +257,7 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_PLAYER_SESSION_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_1900a5@@YA_NJ@Z"
+            --extract-symbol "?function_190186@@YAXJ@Z"
             --extract-symbol "?function_1900be@@YAFXZ"
             --extract-symbol "?function_1900ff@@YAFJ@Z"
             --extract-symbol "?function_1901fc@@YAGXZ"
@@ -304,8 +309,15 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_TASK_SCREEN_OBJECT)
         list(APPEND guest_extract_args
+            --extract-symbol "??_Gc_online_task_screen@@UAAPAXI@Z"
+            --extract-symbol "?get_load_proc@c_online_task_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
             --extract-symbol "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z"
-            --extract-symbol "?set_description@c_online_task_screen@@QAAXJ@Z")
+            --extract-symbol "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?set_description@c_online_task_screen@@QAAXJ@Z"
+            --extract-symbol "?v10@c_online_task_screen@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v3@c_online_task_screen@@UAAXXZ"
+            --extract-global "??_7c_online_task_screen@@6B@"
+            --extract-alias "??_Ec_online_task_screen@@UAAPAXI@Z")
     endif()
     if(object STREQUAL H2_GUEST_TASK_CALLBACK_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -447,7 +459,7 @@ set_source_files_properties(
     "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
     "${H2_GUEST_SESSION_MANAGER_OBJECT}" "${H2_GUEST_MUTELIST_OBJECT}"
-    "${H2_GUEST_TASK_SCREEN_OBJECT}" "${H2_GUEST_TASK_CALLBACK_OBJECT}"
+    "${H2_GUEST_TASK_SCREEN_OBJECT}" "${H2_GUEST_TASK_TEXT_OBJECT}" "${H2_GUEST_TASK_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_MODE_OBJECT}" "${H2_GUEST_SESSION_VALUES_OBJECT}"
     "${H2_GUEST_SAVED_GAME_INDEX_OBJECT}" "${H2_GUEST_SCREEN_SETTERS_OBJECT}"
     "${H2_GUEST_DIALOG_OBJECT}" "${H2_GUEST_DIALOG_BASE_OBJECT}" "${H2_GUEST_DIALOG_EVENT_OBJECT}"
@@ -512,6 +524,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SESSION_MANAGER_OBJECT}"
     "${H2_GUEST_MUTELIST_OBJECT}"
     "${H2_GUEST_TASK_SCREEN_OBJECT}"
+    "${H2_GUEST_TASK_TEXT_OBJECT}"
     "${H2_GUEST_TASK_CALLBACK_OBJECT}"
     "${H2_GUEST_SESSION_MODE_OBJECT}"
     "${H2_GUEST_SESSION_VALUES_OBJECT}"
@@ -562,7 +575,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 76
+            --expect-unresolved 75
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -581,8 +594,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             "?data_last_index@@YAJPAUs_record_pool@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?initialize@s_player_slot_profile@@QAAXJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_24bac5@@YAXPAX@Z"
+            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp")
         list(APPEND guest_extract_args
@@ -595,6 +609,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_1900a5@@YA_NJ@Z"
+            --extract-symbol "?function_190186@@YAXJ@Z"
             --extract-symbol "?function_1900be@@YAFXZ"
             --extract-symbol "?function_1900ff@@YAFJ@Z"
             --extract-symbol "?function_1901fc@@YAGXZ"
@@ -646,8 +661,15 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1a2ca7.cpp")
         list(APPEND guest_extract_args
+            --extract-symbol "??_Gc_online_task_screen@@UAAPAXI@Z"
+            --extract-symbol "?get_load_proc@c_online_task_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
             --extract-symbol "?online_task_screen_finish@@YAXPAVc_online_task_screen@@@Z"
-            --extract-symbol "?set_description@c_online_task_screen@@QAAXJ@Z")
+            --extract-symbol "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?set_description@c_online_task_screen@@QAAXJ@Z"
+            --extract-symbol "?v10@c_online_task_screen@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v3@c_online_task_screen@@UAAXXZ"
+            --extract-global "??_7c_online_task_screen@@6B@"
+            --extract-alias "??_Ec_online_task_screen@@UAAPAXI@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2521f2.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -923,7 +945,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 76
+            --expect-unresolved 75
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -931,7 +953,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 76
+            --expect-unresolved 75
 )
 add_test(
     NAME main-menu-elf-core

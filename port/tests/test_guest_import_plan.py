@@ -31,7 +31,8 @@ def main():
     assert "?online_task_poll@@YAJJ@Z" not in imports
     assert "?online_get_logon_status@@YA_NPAJ@Z" not in imports
     assert "?online_team_get_details@@YAXJPBUXUID@@PAUXONLINE_TEAM@@@Z" not in imports
-    assert imports["?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"]["category"] == "named_engine_service"
+    assert "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in imports
+    assert imports["?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z"]["category"] == "named_engine_service"
     print("main-menu import plan classification passed")
 
 

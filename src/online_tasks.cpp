@@ -179,6 +179,7 @@ s_type_9df9da *function_6b910(long task_index)
 	return online_task_try_get(task_index);
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x6ba80
 long online_task_get_title(long task_index)
 {
@@ -484,6 +485,8 @@ long online_task_get_description(long task_index)
 	}
 	return result;
 }
+
+#endif
 
 // @retail 0x6bfa0
 void online_check_development_address(void)

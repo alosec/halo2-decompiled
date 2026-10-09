@@ -21,6 +21,11 @@ bool online_get_logon_status(long *status)
     return false;
 }
 
+// Native offline builds do not start the Xbox Live voice-chat engine.
+void voice_start_engine()
+{
+}
+
 // @retail 0x6c7e0, native offline boundary
 bool function_6c7e0()
 {
