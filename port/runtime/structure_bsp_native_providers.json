@@ -136,7 +136,7 @@
     {"source": "src/unknown_0b88e0_native.cpp", "symbols": ["?collision_object_flags@@YAGJ@Z", "?function_b88e0@@YAXJPAUs_object_partition_record_ab@@@Z"]},
     {"source": "src/unknown_210280_native.cpp", "symbols": ["?function_210280@@YAXXZ"]},
     {"source": "src/unknown_30be40.cpp", "symbols": ["?function_30be40@s_47f048_object@@QAAXJ@Z"]},
-    {"source": "src/unknown_2d91d0.cpp", "symbols": ["?function_2d91d0@@YAXPAXJ@Z"]},
+    {"source": "src/unknown_2d91d0.cpp", "symbols": ["?function_2d91d0@@YAXPAXJ@Z", "?function_2d9160@@YAXPAXJJ@Z"]},
     {"source": "src/unknown_2e90a0.cpp", "symbols": ["?function_2e90a0@@YAXUs_184251@@@Z"]},
     {"source": "src/unknown_146a20_native.cpp", "symbols": ["?function_146a20@@YAXXZ", "?function_146b80@@YAXXZ"]},
     {"source": "src/unknown_22c0a0.cpp", "symbols": ["h2_native_havok_fixed_memory_construct", "?allocate_aligned@c_havok_fixed_memory@@UAAPAXJJJ@Z", "?h2_native_fixed_allocate@@YAPAXPAVc_havok_fixed_memory@@JJ@Z", "?h2_native_fixed_deallocate@@YAXPAVc_havok_fixed_memory@@PAX@Z", "?h2_native_fixed_allocate_aligned@@YAPAXPAVc_havok_fixed_memory@@JJJ@Z", "?h2_native_fixed_deallocate_aligned@@YAXPAVc_havok_fixed_memory@@PAX@Z", "?h2_native_fixed_allocate16@@YAPAXPAVc_havok_fixed_memory@@JJ@Z", "?h2_native_fixed_deallocate16@@YAXPAVc_havok_fixed_memory@@PAXJJ@Z", "?h2_native_fixed_idle@@YAXPAVc_havok_fixed_memory@@J@Z", "?h2_native_fixed_destroy@@YAPAVc_havok_fixed_memory@@PAV1@K@Z"], "globals": ["g_h2_native_fixed_vtable"]},
