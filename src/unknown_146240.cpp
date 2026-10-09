@@ -34,9 +34,16 @@ void random_initialize(void)
 // @retail 0x1462b0
 dword function_1462b0(void)
 {
+#ifdef H2_NATIVE_PORT
+	/* Native startup has no Xbox CRT entropy source. Preserve a changing seed
+	 * from the owned monotonic clock and the recovered LCG constants. */
+	dword seed = GetTickCount();
+	return seed * 0x19660d + 0x3c6ef35f;
+#else
 	dword seed = (dword)time(0);
 	seed = (dword)rand() ^ GetTickCount() ^ seed;
 	return seed;
+#endif
 }
 
 // @retail 0x1462e0

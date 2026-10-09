@@ -46,7 +46,11 @@ struct s_game_globals_137dd0
 bool function_19d650(s_game_variant *variant);
 void function_07ad80(long count, byte *buffer);
 
+#ifdef H2_NATIVE_PORT
+extern byte g_510c49;
+#else
 byte g_510c49;
+#endif
 /* unknown_12b070.cpp */
 extern short g_485ac0;
 

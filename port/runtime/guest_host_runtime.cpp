@@ -367,6 +367,45 @@ long cache_file_find(char const *map_name)
     return h2_native_cache_file_find(map_name);
 }
 
+struct s_game_options
+{
+    long state;
+    unsigned char unknown04;
+    unsigned char unknown05;
+    short field_2_3;
+    unsigned char random_id[8];
+    unsigned long field_8_4;
+    long unknown14;
+    long unknown18;
+    unsigned char unknown1c[0x124 - 0x1c];
+    bool unknown124;
+    unsigned char unknown125[0x128 - 0x125];
+    unsigned char unknown128;
+    unsigned char unknown129;
+    short unknown12a;
+    unsigned char remaining[0x1118 - 0x12c];
+};
+static_assert(sizeof(s_game_options) == 0x1118, "game options layout");
+void function_138110(s_game_options *options);
+unsigned long function_1462b0();
+extern short g_485ac0;
+extern unsigned char g_510c49;
+
+extern "C" int h2_main_menu_guest_game_options_probe()
+{
+    s_game_options options;
+    function_138110(&options);
+    const short ticks = g_485ac0 > 0 ? g_485ac0 : 60;
+    if (options.state != 1 || options.unknown04 != 1 || options.unknown05 != 0 ||
+        options.field_2_3 != ticks / 2 || options.field_8_4 != 0x78a8 ||
+        options.unknown14 != NONE || options.unknown18 != NONE ||
+        options.unknown128 != g_510c49 || options.unknown12a != 1)
+        return 1;
+    volatile unsigned long seed = function_1462b0();
+    (void)seed;
+    return 0;
+}
+
 extern "C" int h2_main_menu_guest_map_location_probe()
 {
     char const main_menu[] = "mainmenu";

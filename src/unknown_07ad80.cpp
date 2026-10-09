@@ -11,16 +11,22 @@ byte g_4cf790;
 // @retail 0x7ad80
 void function_07ad80(long count, byte *buffer)
 {
+#ifndef H2_NATIVE_PORT
 	if (g_4cf790)
 	{
 		XNetRandom(buffer, count);
 		return;
 	}
+#endif
 
+#ifdef H2_NATIVE_PORT
+	dword seed = GetTickCount() ^ 0x3c6ef35f;
+#else
 	time_t now = time(0);
 	long r = rand();
 	dword ticks = GetTickCount();
 	dword seed = r ^ ticks ^ (dword)now;
+#endif
 	for (long i = 0; i < count; i++)
 	{
 		seed = seed * 0x19660d + 0x3c6ef35f;
