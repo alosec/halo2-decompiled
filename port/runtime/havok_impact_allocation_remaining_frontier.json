@@ -13,11 +13,6 @@
       "blocker": "Requires complete native effect deletion and reference ownership."
     },
     {
-      "symbol": "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z",
-      "subsystem": "impact_geometry",
-      "blocker": "Requires exact effect/contact geometry selection over owned shape state."
-    },
-    {
       "symbol": "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
       "subsystem": "effects",
       "blocker": "Requires complete impact effect submission and output-handle ownership."

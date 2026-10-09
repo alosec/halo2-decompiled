@@ -5262,7 +5262,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0017af30,80,game,speed,a16 pad,,,001664a5 0017aec0,src/unknown_175bd0.cpp,todo
 0017af80,72,game,unknown,a16,,,00175100 00178b80,src/unknown_175bd0.cpp,matched
 0017afd0,93,game,speed,a16 pad,,,000badc0,src/unknown_175bd0.cpp,matched
-0017b030,304,game,speed,a16 pad,,,,src/unknown_175bd0.cpp,matched
+0017b030,304,game,speed,a16 pad,,,,src/unknown_175bd0.cpp,done
 0017b160,98,game,unknown,a16,,,00177310,src/unknown_175bd0.cpp,matched
 0017b1d0,147,game,speed,a16 pad,,,00178360,src/unknown_175bd0.cpp,matched
 0017b270,81,game,speed,a16 pad,,,,src/unknown_175bd0.cpp,matched

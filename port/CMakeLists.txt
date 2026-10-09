@@ -331,6 +331,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_11c050.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11fc80.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_146240.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_175bd0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_182020.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_188dd0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2055f0.cpp"

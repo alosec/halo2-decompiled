@@ -60,6 +60,7 @@ def main() -> int:
         contact_properties = temporary / "contact-properties.o"
         rigid_body_matrix = temporary / "rigid-body-matrix.o"
         structure_location = temporary / "structure-location.o"
+        effect_state = temporary / "effect-state.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -113,10 +114,12 @@ def main() -> int:
                       ["?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z"])
         compile_slice(args, args.root / "src/unknown_11c050.cpp", structure_location,
                       ["?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z"])
+        compile_slice(args, args.root / "src/unknown_175bd0.cpp", effect_state,
+                      ["?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
-             rigid_body_matrix, structure_location])
+             rigid_body_matrix, structure_location, effect_state])
     return 0
 
 
