@@ -164,6 +164,7 @@
     {"symbol": "?g_484dc0@@3PAJA", "address": "0x00484dc0"},
     {"symbol": "?g_484dd0@@3PAUs_d3d_palette_015b70_native@@A", "address": "0x00484dd0"},
     {"symbol": "?g_5093ac@@3JA", "address": "0x005093ac"},
+    {"symbol": "?g_51ecb4@@3PAUs_record_pool@@A", "address": "0x0051ecb4"},
     {"symbol": "?g_51f400@@3PAUhash_table@@A", "address": "0x0051f400"}
   ]
 }

@@ -55,6 +55,7 @@ extern s_record_pool *g_51ecb4;
 
 short __stdcall function_272af0(s_match_globals *arg_0, point3f const *arg_1);
 
+#ifndef H2_NATIVE_PORT
 /* a new flock of a scenario flock definition */
 // @retail 0x293070
 long flock_new(short definition_index)
@@ -73,6 +74,7 @@ long flock_new(short definition_index)
 	}
 	return flock_index;
 }
+#endif
 
 /* an object's flock membership: its flock and the next member */
 struct s_flock_member
@@ -251,6 +253,7 @@ void function_2937a0(long flock_index)
 	record_pool_release(g_51ecb4, flock_index);
 }
 
+#ifndef H2_NATIVE_PORT
 /* creates the flock of a scenario flock definition */
 // @retail 0x2930c0
 bool function_2930c0(long definition_index)
@@ -286,6 +289,7 @@ void function_292f10(void)
 			function_2930c0(i);
 	}
 }
+#endif
 
 /* the scenario's trigger volumes (0x44 bytes each), their extents at +0x30 */
 struct s_flock_trigger_volume
