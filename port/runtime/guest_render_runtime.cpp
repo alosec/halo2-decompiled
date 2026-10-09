@@ -7,6 +7,40 @@ union point3f {
 struct color4f { float alpha, red, green, blue; };
 struct short_rectangle2d { short top, left, bottom, right; };
 
+struct s_interface_draw_vertex_native {
+    float position_x;
+    float position_y;
+    float texture_x;
+    float texture_y;
+    unsigned int color;
+};
+static_assert(sizeof(s_interface_draw_vertex_native) == 20,
+              "recovered interface vertex layout");
+
+// @retail 0x52040, native renderer boundary
+void function_52040(void const *, void const *source_vertices)
+{
+    const auto *source =
+        static_cast<const s_interface_draw_vertex_native *>(source_vertices);
+    if (!source)
+        return;
+    h2_render_immediate_request request = {};
+    request.kind = H2_RENDER_REQUEST_INTERFACE_QUAD;
+    request.version = H2_RENDER_PROTOCOL_VERSION;
+    request.primitive_type = 7;
+    request.vertex_count = 4;
+    request.color = source[0].color;
+    h2_render_immediate_vertex vertices[4] = {};
+    for (long i = 0; i < 4; ++i) {
+        vertices[i].texture_x = source[i].texture_x;
+        vertices[i].texture_y = source[i].texture_y;
+        vertices[i].x = source[i].position_x;
+        vertices[i].y = source[i].position_y;
+        vertices[i].w = 1.0f;
+    }
+    host_h2_render_request(&request, vertices);
+}
+
 /* Native menu rendering does not use the Xbox cache-prediction system yet.
  * The recovered callers use this as a best-effort preload hint, so fail
  * conservatively without fabricating loaded texture, geometry, or audio state.
@@ -162,10 +196,11 @@ void function_13ed90(long)
     /* Host text rendering does not consume an Xbox font object. */
 }
 
-bool function_13ee20(unsigned short const *, long)
+bool function_13ee20(unsigned short const *text, long)
 {
-    /* Xbox font-cache prediction is only a best-effort preload hint. */
-    return false;
+    /* The host owns glyph availability synchronously, so a valid recovered
+     * string can proceed to the explicit text request without an Xbox cache. */
+    return text != 0;
 }
 
 void function_13e9c0(unsigned short const *, short_rectangle2d const *bounds,

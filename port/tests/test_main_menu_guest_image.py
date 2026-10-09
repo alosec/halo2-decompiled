@@ -67,6 +67,7 @@ def main() -> None:
     required_symbols = {
         "_Z20cache_files_load_mapPKc",
         "h2_main_menu_guest_bootstrap",
+        "h2_main_menu_guest_frame",
         "host_h2_cache_read",
         "host_h2_physical_memory_malloc_low",
     }

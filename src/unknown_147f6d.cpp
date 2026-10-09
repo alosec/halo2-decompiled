@@ -1125,7 +1125,14 @@ static __forceinline c_window_channel *window_manager_get_window(long channel, l
 // @retail 0x148dfc
 void function_148dfc(long channel, long index, c_class_1473c9 *screen)
 {
-	function_23536a(window_manager_get_window(channel, index), screen);
+	c_window_channel *window = window_manager_get_window(channel, index);
+#ifdef H2_NATIVE_PORT
+	/* Offline bootstrap has no controller-to-user assignment yet.  A widget can
+	   request focus for that absent per-user channel during its first update. */
+	if (!window)
+		return;
+#endif
+	function_23536a(window, screen);
 }
 
 /* whether the user's focused screen takes the user's input: the user's own

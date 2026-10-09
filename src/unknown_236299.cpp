@@ -686,10 +686,16 @@ void function_23675a(s_bitmap_view *bitmap, s_texture_rect const *texture, dword
 	request.scale2c = 1.0f;
 	request.scale28 = 1.0f;
 	request.bitmap = bitmap;
+#ifdef H2_NATIVE_PORT
+	/* The native host owns texture availability.  Always forward recovered
+	   geometry and bitmap metadata instead of consulting the Xbox texture cache. */
+	function_52040(&request, vertices);
+#else
 	if (function_12360(bitmap, 0.0f))
 	{
 		function_52040(&request, vertices);
 	}
+#endif
 }
 
 /* Scales texture coordinates to the sprite and optionally clips them. */

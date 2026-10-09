@@ -270,6 +270,11 @@ void function_146660(real seconds, real *elapsed, long *ticks_due)
 long function_146840(void)
 {
 	s_game_time_globals *globals = g_510c54;
+#ifdef H2_NATIVE_PORT
+	/* The static menu bootstrap runs before gameplay creates game-time state. */
+	if (!globals)
+		return false;
+#endif
 
 	if (globals->active && globals->unknown01)
 	{

@@ -24,6 +24,7 @@ extern "C" void D3DDevice_SetVertexDataColor(unsigned int vertex_register,
                                                unsigned int color);
 extern "C" void h2_render_preview_quad(long bitmap_tag, long bitmap_index,
                                          long layer, const void* vertices);
+void function_52040(const void* request, const void* vertices);
 void function_235d69(short_rectangle2d const* rectangle, float depth,
                      short_rectangle2d const* screen, color4f const* color);
 
@@ -39,6 +40,15 @@ struct PreviewVertex {
     unsigned int color;
 };
 static_assert(sizeof(PreviewVertex) == 28);
+
+struct InterfaceVertex {
+    float position_x;
+    float position_y;
+    float texture_x;
+    float texture_y;
+    unsigned int color;
+};
+static_assert(sizeof(InterfaceVertex) == 20);
 
 struct CallbackCapture {
     int command = 0;
@@ -226,6 +236,26 @@ int main() {
     ok &= check(capture.render_calls == 3 && preview_stats.render_request_calls == 3,
                 "preview render request did not cross the host boundary once");
 
+    const InterfaceVertex interface_quad[] = {
+        {10.0f, 20.0f, 0.0f, 0.0f, 0xff112233u},
+        {30.0f, 20.0f, 1.0f, 0.0f, 0xff112233u},
+        {30.0f, 40.0f, 1.0f, 1.0f, 0xff112233u},
+        {10.0f, 40.0f, 0.0f, 1.0f, 0xff112233u},
+    };
+    function_52040(nullptr, interface_quad);
+    const auto interface_stats = h2::port::host_service_stats();
+    ok &= check(capture.immediate.kind == H2_RENDER_REQUEST_INTERFACE_QUAD &&
+                    capture.immediate.vertex_count == 4 &&
+                    capture.immediate.color == 0xff112233u,
+                "interface quad request metadata is incorrect");
+    ok &= check(capture.immediate_vertices[0].x == 10.0f &&
+                    capture.immediate_vertices[0].y == 20.0f &&
+                    capture.immediate_vertices[2].texture_x == 1.0f &&
+                    capture.immediate_vertices[2].texture_y == 1.0f,
+                "interface quad vertices are incorrect");
+    ok &= check(capture.render_calls == 4 && interface_stats.render_request_calls == 4,
+                "interface quad did not cross the host boundary once");
+
     const short_rectangle2d solid_rect{10, 20, 30, 40};
     const short_rectangle2d solid_screen{0, 0, 480, 640};
     const color4f solid_color{0.5f, 1.0f, 0.25f, 0.0f};
@@ -243,7 +273,7 @@ int main() {
                     capture.immediate_vertices[2].x == 40.0f &&
                     capture.immediate_vertices[3].y == 10.0f,
                 "solid rectangle vertices are incorrect");
-    ok &= check(capture.render_calls == 4 && solid_stats.render_request_calls == 4,
+    ok &= check(capture.render_calls == 5 && solid_stats.render_request_calls == 5,
                 "solid rectangle did not cross the host boundary once");
 
     h2::port::set_video_control_handler(nullptr);

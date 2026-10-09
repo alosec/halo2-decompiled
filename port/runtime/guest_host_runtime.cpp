@@ -63,6 +63,26 @@ extern "C" int h2_main_menu_guest_open_press_start()
     return function_147d13() ? 0 : 2;
 }
 
+class c_render_window;
+void __stdcall function_1479c3(float elapsed);
+void function_147af1(long index, long fallback_index, c_render_window *window);
+
+struct s_native_render_window
+{
+    short top;
+    short left;
+    short bottom;
+    short right;
+};
+
+extern "C" int h2_main_menu_guest_frame()
+{
+    function_1479c3(1.0f / 60.0f);
+    s_native_render_window window = { 0, 0, 480, 640 };
+    function_147af1(4, -1, reinterpret_cast<c_render_window *>(&window));
+    return 0;
+}
+
 /* The native host has no attract-movie decoder yet. */
 bool function_223976()
 {
@@ -77,12 +97,6 @@ void function_223a21()
 void __stdcall function_18f1c0(long command)
 {
     host_h2_video_control((int)command);
-}
-
-// @retail 0x52040
-void function_52040(void const *request, void const *vertices)
-{
-    host_h2_render_request(request, vertices);
 }
 
 struct short_rectangle2d;
