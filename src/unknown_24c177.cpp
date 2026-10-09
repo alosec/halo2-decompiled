@@ -45,6 +45,31 @@ void function_24c0c4(c_widget *widget)
 	}
 }
 
+#if defined(H2_NATIVE_PORT)
+struct s_event;
+void function_24c7e4(void *list_pointer, s_event **event, long *key);
+
+/* Native subset of retail 0x24c024. It preserves ordinary event bubbling and
+   dispatches A/start to the focused datum's registered list-item handlers.
+   Directional stepping remains unavailable until the rest of 0x24c1c5 is
+   recovered. */
+bool c_class_1474e8::v10(s_widget_event *event)
+{
+	if (event && event->type == 5 && (event->param == 0 || event->param == 12))
+	{
+		c_class_1a2c81 *item = get_focused_item();
+		if (item)
+		{
+			long datum = ((c_class_14750b *)item)->value70;
+			s_event *controller_event = (s_event *)event;
+			function_24c7e4(&item_handlers, &controller_event, &datum);
+			return true;
+		}
+	}
+	return c_class_1a2c81::v10(event);
+}
+#endif
+
 /* the list's definition in its screen's current pane */
 // @retail 0x24bbf3
 s_list_definition *c_class_1474e8::function_1751d0()

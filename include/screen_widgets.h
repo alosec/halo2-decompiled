@@ -749,6 +749,9 @@ class c_class_1474e8 : public c_class_1a2c81
 public:
 	c_class_1474e8(word user_flags);
 
+#if defined(H2_NATIVE_PORT)
+	virtual bool v10(s_widget_event *event);
+#endif
 	virtual void v17() {}
 	virtual void *get_item_data() { return 0; }
 	virtual long get_item_count() { return 0; }

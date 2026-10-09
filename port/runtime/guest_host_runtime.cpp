@@ -116,7 +116,6 @@ extern "C" int h2_main_menu_guest_press_start()
 }
 
 bool __stdcall function_252a32(long controller);
-extern "C" bool h2_profile_list_select_create(void *storage, long controller);
 static long g_native_profile_name_reads;
 
 extern "C" int h2_main_menu_guest_accept()
@@ -140,9 +139,12 @@ extern "C" int h2_main_menu_guest_accept()
         if (channels[index]->current && channels[index]->current->screen_id == 0xa)
         {
             c_class_1473c9 *const screen = channels[index]->current;
-            void *const list = reinterpret_cast<c_screen_with_menu *>(screen)->list;
+            c_class_1474e8 *const list = reinterpret_cast<c_class_1474e8 *>(
+                reinterpret_cast<c_screen_with_menu *>(screen)->list);
+            c_class_1a2c81 *const item = list->get_focused_item();
             const long reads = g_native_profile_name_reads;
-            if (!h2_profile_list_select_create(list, 0))
+            s_widget_event event = { 5, 0, 0 };
+            if (!item || !item->v10(&event))
                 return 4;
             /* Empty native persistence must reach the recovered create-profile
              * path, fail its real name read, and remain on this selector. */
