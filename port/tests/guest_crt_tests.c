@@ -10,6 +10,7 @@ struct h2_guest_filetime {
 
 typedef int (*h2_guest_compare_fn)(const void*, const void*);
 
+extern int h2_guest_abs(int value);
 extern float fabsf(float value);
 extern double fabs(double value);
 extern long CompareFileTime(const struct h2_guest_filetime* first,
@@ -35,6 +36,11 @@ static int compare_ints(const void* first, const void* second) {
 }
 
 int main(void) {
+    if (h2_guest_abs(-9) != 9 || h2_guest_abs(0) != 0 ||
+        h2_guest_abs(17) != 17 || h2_guest_abs((int)0x80000000U) != (int)0x80000000U) {
+        puts("guest integer absolute-value helper failed");
+        return 1;
+    }
     union { float value; unsigned int bits; } negative_zero_f = { -0.0f };
     union { double value; unsigned long long bits; } negative_zero = { -0.0 };
     negative_zero_f.value = fabsf(negative_zero_f.value);

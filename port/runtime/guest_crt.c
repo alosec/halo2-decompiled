@@ -2,6 +2,10 @@
 #include <string.h>
 #include <wchar.h>
 
+int h2_guest_abs(int value) {
+    return value < 0 ? (int)(0U - (unsigned int)value) : value;
+}
+
 float fabsf(float value) {
     union { float value; unsigned int bits; } converted = { value };
     converted.bits &= 0x7fffffffU;
