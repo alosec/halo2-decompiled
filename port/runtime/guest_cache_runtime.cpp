@@ -32,6 +32,11 @@ void function_213890()
 
 bool cache_files_load_map(char const *map_name);
 extern long g_4686c0;
+extern short g_4686c4;
+extern void *g_4e033c;
+extern void *g_4e0340;
+extern void *g_4e0344;
+extern void *g_4e0348;
 extern void *g_4e0350;
 extern void *g_4e034c;
 extern void *g_4e3b44;
@@ -145,7 +150,18 @@ extern "C" int h2_native_campaign_load_first_bsp()
         instances[(short)reference->lightmap_tag_index].address !=
             reference->address->lightmap_address)
         return 0;
-    return 1;
+
+    /* This is the pointer-owning tail of retail function_11c1b0. Resource
+     * fixups and subsystem callbacks remain intentionally outside the native
+     * handoff until their caches and lifecycle are owned. */
+    g_4686c4 = 0;
+    g_4e0348 = reference->address->bsp_address;
+    g_4e0344 = reference->lightmap_tag_index == NONE ? 0 :
+        reference->address->lightmap_address;
+    g_4e0340 = collision_root;
+    g_4e033c = collision_root;
+    return g_4e0348 == reference->address->bsp_address &&
+        g_4e0340 == collision_root && g_4e033c == collision_root;
 }
 
 extern "C" int h2_native_load_campaign_map(char const *map_name)

@@ -9,6 +9,7 @@ import subprocess
 
 EXPECTED_BINDINGS = {
     "g_44a3f0": 0x0044A3F0,
+    "g_4686c4": 0x004686C4,
     "?g_4686f8@@3PBUcolor4f@@B": 0x004686F8,
     "?g_468710@@3PATpoint3f@@A": 0x00468710,
     "?g_468734@@3PBUcolor3f@@B": 0x00468734,
@@ -16,6 +17,10 @@ EXPECTED_BINDINGS = {
     "?g_46873c@@3PBUcolor3f@@B": 0x0046873C,
     "?g_470200@@3PAUs_text_parse_entry@@A": 0x00470200,
     "?g_4e0300@@3PAUs_record_pool@@A": 0x004E0300,
+    "g_4e033c": 0x004E033C,
+    "g_4e0340": 0x004E0340,
+    "g_4e0344": 0x004E0344,
+    "g_4e0348": 0x004E0348,
     "?g_4e3b44@@3PAUs_tag_instance@@A": 0x004E3B44,
     "?g_4e696c@@3MA": 0x004E696C,
     "?g_4c99c0@@3Us_online_mutelist_globals@@A": 0x004C99C0,
