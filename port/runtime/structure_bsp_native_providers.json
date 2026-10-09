@@ -43,6 +43,7 @@
     "native_havok_contact_transition_tables_and_callback_owned",
     "native_havok_listener_cache_attachment_owned",
     "native_havok_entity_property_arrays_owned",
+    "native_havok_contact_shape_tree_owned",
     "native_havok_rigid_body_island_state_owned",
     "native_havok_motion_point_impulse_owned",
     "native_havok_world_activation_owned",
