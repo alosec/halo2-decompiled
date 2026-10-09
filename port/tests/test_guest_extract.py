@@ -154,6 +154,20 @@ def main():
         if "_?function_238c21@@YAXJJPAGJ@Z" not in keyboard_defined:
             raise RuntimeError("virtual-keyboard source was not selectively compilable")
 
+        campaign_levels_output = Path(temporary) / "campaign-levels.o"
+        campaign_levels_command = command[:]
+        campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"
+        campaign_levels_command[campaign_levels_command.index("--extract-global"):campaign_levels_command.index("--output")] = []
+        campaign_levels_command[campaign_levels_command.index(output)] = campaign_levels_output
+        campaign_levels_command[-1] = args.root / "src/unknown_2c4e9c.cpp"
+        subprocess.run([str(value) for value in campaign_levels_command], check=True)
+        campaign_levels_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", campaign_levels_output],
+            text=True,
+        )
+        if "_?get_item_count@c_campaign_level_handles_list@@UAAJXZ" not in campaign_levels_defined:
+            raise RuntimeError("campaign-level list source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
