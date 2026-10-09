@@ -49,6 +49,7 @@ set(H2_GUEST_LOOP_ALLOCATOR_OBJECT "${H2_GUEST_OBJECT_DIR}/loop_allocator.o")
 set(H2_GUEST_NAME_BUFFER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_08cc20.o")
 set(H2_GUEST_NAME_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_11c050.o")
 set(H2_GUEST_BITMAP_LOOKUP_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_137550.o")
+set(H2_GUEST_WIDGET_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_0bb760.o")
 set(H2_GUEST_UNICODE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fa70.o")
 set(H2_GUEST_MS_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_ms_runtime.o")
 set(H2_GUEST_HOST_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_host_runtime.o")
@@ -127,6 +128,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_08cc20.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_11c050.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_137550.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_0bb760.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_ms_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
@@ -208,6 +210,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_NAME_BUFFER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_08cc20.cpp"
         "${H2_GUEST_NAME_TABLE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_11c050.cpp"
         "${H2_GUEST_BITMAP_LOOKUP_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_137550.cpp"
+        "${H2_GUEST_WIDGET_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_0bb760.cpp"
         "${H2_GUEST_UNICODE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp"
         "${H2_GUEST_MS_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_ms_runtime.cpp"
         "${H2_GUEST_HOST_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
@@ -316,6 +319,10 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_BITMAP_LOOKUP_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_WIDGET_INDEX_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_bb760@@YAJF@Z")
     endif()
     if(object STREQUAL H2_GUEST_TIME_QUERY_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -529,6 +536,7 @@ set_source_files_properties(
     "${H2_GUEST_UI_HEAP_GLOBALS_OBJECT}" "${H2_GUEST_UI_HEAP_FREE_OBJECT}"
     "${H2_GUEST_LOOP_ALLOCATOR_OBJECT}" "${H2_GUEST_NAME_BUFFER_OBJECT}"
     "${H2_GUEST_NAME_TABLE_OBJECT}" "${H2_GUEST_BITMAP_LOOKUP_OBJECT}"
+    "${H2_GUEST_WIDGET_INDEX_OBJECT}"
     "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
     "${H2_GUEST_HOST_RUNTIME_OBJECT}" "${H2_GUEST_ONLINE_RUNTIME_OBJECT}"
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
@@ -591,6 +599,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_NAME_BUFFER_OBJECT}"
     "${H2_GUEST_NAME_TABLE_OBJECT}"
     "${H2_GUEST_BITMAP_LOOKUP_OBJECT}"
+    "${H2_GUEST_WIDGET_INDEX_OBJECT}"
     "${H2_GUEST_UNICODE_OBJECT}"
     "${H2_GUEST_MS_RUNTIME_OBJECT}"
     "${H2_GUEST_HOST_RUNTIME_OBJECT}"
@@ -673,7 +682,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 68
+            --expect-unresolved 67
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -736,6 +745,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_137550.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_0bb760.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_bb760@@YAJF@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_146240.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -1094,7 +1107,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 68
+            --expect-unresolved 67
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -1102,7 +1115,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 68
+            --expect-unresolved 67
 )
 add_test(
     NAME main-menu-elf-core

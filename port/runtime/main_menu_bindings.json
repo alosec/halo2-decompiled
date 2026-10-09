@@ -50,6 +50,7 @@
     {"symbol": "?g_55c160@@3JA", "address": "0x0055c160"},
     {"symbol": "?g_55c164@@3PAUs_55c164@@A", "address": "0x0055c164"},
     {"symbol": "?g_transport_globals@@3Us_transport_globals@@A", "address": "0x004d8b18"},
-    {"symbol": "?g_4d8ba0@@3_NA", "address": "0x004d8ba0"}
+    {"symbol": "?g_4d8ba0@@3_NA", "address": "0x004d8ba0"},
+    {"symbol": "?g_4de2d0@@3PAJA", "address": "0x004de2d0"}
   ]
 }

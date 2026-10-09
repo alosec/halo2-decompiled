@@ -40,6 +40,7 @@ def main():
         "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
         "?function_22fa30@@YAPAVc_class_1a2c81@@PAV1@PAUs_bitmap_block@@@Z",
         "?function_235f31@@YAXPAUs_sprite_element@@PBUs_float_rect@@PBUpoint2f@@KF@Z",
+        "?function_bb760@@YAJF@Z",
     ):
         assert symbol not in imports
     print("main-menu import plan classification passed")
