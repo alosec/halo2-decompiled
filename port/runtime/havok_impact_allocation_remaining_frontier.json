@@ -8,11 +8,6 @@
       "blocker": "Requires complete native effect allocation and lifecycle ownership."
     },
     {
-      "symbol": "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z",
-      "subsystem": "structure_location",
-      "blocker": "Requires bounded active-BSP location ownership for impact effect placement."
-    },
-    {
       "symbol": "?function_177260@@YAXJ_N@Z",
       "subsystem": "effects",
       "blocker": "Requires complete native effect deletion and reference ownership."

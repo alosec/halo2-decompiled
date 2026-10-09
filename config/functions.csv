@@ -3812,7 +3812,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0011c050,39,game,unknown,a16,,,,src/unknown_11c050.cpp,matched
 0011c080,39,game,speed,a16 pad,,,,src/unknown_11c050.cpp,matched
 0011c0b0,106,game,speed,a16 pad,,,,src/unknown_11c050.cpp,near
-0011c120,142,game,speed,a16 pad,,,,src/unknown_11c050.cpp,todo
+0011c120,142,game,speed,a16 pad,,,,src/unknown_11c050.cpp,done
 0011c1b0,456,game,speed,a16 pad,,,00122b40 00122bc0 00137d40 00137da0 0016e2c0,src/unknown_11c1b0.cpp,todo
 0011c380,232,game,speed,a16 pad,,,001420f0 00142a60 0016da90,src/unknown_11c380.cpp,todo
 0011c470,318,game,speed,a16 pad,,,0011c380,src/unknown_11c380.cpp,todo
