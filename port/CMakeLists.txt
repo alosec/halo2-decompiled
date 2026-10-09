@@ -31,6 +31,9 @@ set(H2_GUEST_MAP_PROGRESS_OBJECT "${H2_GUEST_OBJECT_DIR}/loading.o")
 set(H2_GUEST_RANDOM_ID_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07ad80.o")
 set(H2_GUEST_GAME_OPTIONS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_137dd0.o")
 set(H2_GUEST_PROFILE_RECORD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_153750.o")
+set(H2_GUEST_TAG_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_11c840.o")
+set(H2_GUEST_PART_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1c22c0.o")
+set(H2_GUEST_VEHICLE_INITIALIZE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_205550.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
 set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
 set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
@@ -172,6 +175,9 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_11c840.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_205550.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
@@ -251,6 +257,9 @@ foreach(pair IN ITEMS
         "${H2_GUEST_RANDOM_ID_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
         "${H2_GUEST_GAME_OPTIONS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
         "${H2_GUEST_PROFILE_RECORD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
+        "${H2_GUEST_TAG_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_11c840.cpp"
+        "${H2_GUEST_PART_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp"
+        "${H2_GUEST_VEHICLE_INITIALIZE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_205550.cpp"
         "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
         "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
         "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
@@ -385,6 +394,36 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_PROFILE_RECORD_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_1537f0@@YAXPAUs_profile_record@@@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_TAG_INITIALIZE_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_11c840@@YAXXZ"
+            --extract-symbol "h2_native_tag_initialization_status"
+            --extract-global "g_native_initialized_tags"
+            --extract-global "g_native_deferred_tags")
+    endif()
+    if(object STREQUAL H2_GUEST_PART_INITIALIZE_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1c2390@s_part_table@@QAAXXZ"
+            --extract-symbol "??_Gc_part_a@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_part_b@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_part_c@@UAAPAXI@Z"
+            --extract-global "??_7c_part_a@@6B@"
+            --extract-global "??_7c_part_b@@6B@"
+            --extract-global "??_7c_part_c@@6B@"
+            --extract-alias "??_Ec_part_a@@UAAPAXI@Z"
+            --extract-alias "??_Ec_part_b@@UAAPAXI@Z"
+            --extract-alias "??_Ec_part_c@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_VEHICLE_INITIALIZE_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_205550@@YAXPAX@Z"
+            --extract-symbol "?function_205551@c_205550@@UAAXXZ"
+            --extract-symbol "?function_205551@c_205554@@UAAXXZ"
+            --extract-symbol "?function_205552@c_205558@@UAAXXZ"
+            --extract-symbol "?function_205553@c_205558@@UAAXXZ"
+            --extract-global "??_7c_205550@@6B@"
+            --extract-global "??_7c_205554@@6B@")
     endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -978,6 +1017,9 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_RANDOM_ID_OBJECT}"
     "${H2_GUEST_GAME_OPTIONS_OBJECT}"
     "${H2_GUEST_PROFILE_RECORD_OBJECT}"
+    "${H2_GUEST_TAG_INITIALIZE_OBJECT}"
+    "${H2_GUEST_PART_INITIALIZE_OBJECT}"
+    "${H2_GUEST_VEHICLE_INITIALIZE_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -1122,6 +1164,36 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     get_filename_component(unit "${source}" NAME_WE)
     set(object "${H2_GUEST_OBJECT_DIR}/elf/${unit}.o")
     set(guest_extract_args)
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_11c840.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_11c840@@YAXXZ"
+            --extract-symbol "h2_native_tag_initialization_status"
+            --extract-global "g_native_initialized_tags"
+            --extract-global "g_native_deferred_tags")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1c2390@s_part_table@@QAAXXZ"
+            --extract-symbol "??_Gc_part_a@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_part_b@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_part_c@@UAAPAXI@Z"
+            --extract-global "??_7c_part_a@@6B@"
+            --extract-global "??_7c_part_b@@6B@"
+            --extract-global "??_7c_part_c@@6B@"
+            --extract-alias "??_Ec_part_a@@UAAPAXI@Z"
+            --extract-alias "??_Ec_part_b@@UAAPAXI@Z"
+            --extract-alias "??_Ec_part_c@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_205550.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_205550@@YAXPAX@Z"
+            --extract-symbol "?function_205551@c_205550@@UAAXXZ"
+            --extract-symbol "?function_205551@c_205554@@UAAXXZ"
+            --extract-symbol "?function_205552@c_205558@@UAAXXZ"
+            --extract-symbol "?function_205553@c_205558@@UAAXXZ"
+            --extract-global "??_7c_205550@@6B@"
+            --extract-global "??_7c_205554@@6B@")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_16bc40.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?data_last_index@@YAJPAUs_record_pool@@@Z")

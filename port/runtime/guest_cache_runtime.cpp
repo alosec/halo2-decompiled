@@ -51,6 +51,12 @@ struct s_native_cache_tag_instance
 static_assert(sizeof(s_native_cache_tag_instance) == 0x10,
               "cache tag instance layout");
 
+extern "C" long h2_native_cache_tag_count()
+{
+    return cache_file_globals.loaded && cache_file_globals.tags ?
+        cache_file_globals.tags->instance_count : 0;
+}
+
 extern "C" int h2_native_campaign_bsp_metadata()
 {
     if (!cache_file_globals.loaded || !cache_file_globals.tags || !g_4e0350 ||

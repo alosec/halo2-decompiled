@@ -374,6 +374,8 @@ extern "C" long h2_native_cache_file_find(char const *map_name);
 extern "C" int h2_native_load_campaign_map(char const *map_name);
 extern "C" int h2_native_campaign_bsp_metadata();
 extern "C" int h2_native_campaign_load_first_bsp();
+void function_11c840();
+extern "C" int h2_native_tag_initialization_status();
 
 /* unknown_213d20.cpp is recovered with Microsoft's C++ ABI, while the cache
  * loader runtime also serves Itanium-ABI recovered units. Keep one ownership
@@ -547,6 +549,9 @@ extern "C" int h2_main_menu_guest_load_selected_campaign()
         return 12;
     if (!h2_native_campaign_load_first_bsp())
         return 13;
+    function_11c840();
+    if (h2_native_tag_initialization_status() != ((11 << 16) | 64))
+        return 14;
     return h2_main_menu_guest_load_strings() == 0 ? 0 : 11;
 }
 
