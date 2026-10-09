@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_offset_box_output = Path(temporary) / "physics-model-offset-box.o"
+        physics_model_offset_box_symbol = (
+            "?function_2fd8a0@c_physics_offset_box_shape@@UAAXPBUs_physics_offset_box_matrix@@MPAUs_physics_offset_box_bounds@@@Z"
+        )
+        physics_model_offset_box_command = command[:]
+        physics_model_offset_box_command[physics_model_offset_box_command.index("h2_extract_selected")] = physics_model_offset_box_symbol
+        physics_model_offset_box_command[physics_model_offset_box_command.index("--extract-global"):physics_model_offset_box_command.index("--output")] = []
+        physics_model_offset_box_command[physics_model_offset_box_command.index(output)] = physics_model_offset_box_output
+        physics_model_offset_box_command[-1] = args.root / "src/unknown_2fd8a0.cpp"
+        subprocess.run([str(value) for value in physics_model_offset_box_command], check=True)
+        physics_model_offset_box_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_offset_box_output],
+            text=True,
+        )
+        if f"_{physics_model_offset_box_symbol}" not in physics_model_offset_box_defined:
+            raise RuntimeError("physics-model offset-box bounds method was not retained")
+
         physics_model_collection_query_output = Path(temporary) / "physics-model-collection-query.o"
         physics_model_collection_query_symbols = (
             "?function_2fbb70@c_physics_collection_shape@@UAAPA_NPA_NPAUs_physics_collection_query@@PAUs_physics_collection_hit@@@Z",
