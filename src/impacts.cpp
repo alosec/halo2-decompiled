@@ -149,6 +149,15 @@ void function_141590(transform4x3f const *in, transform4x3f *out);
 PRIVATE inline long game_seconds_to_ticks_round(real seconds)
 {
 	real ticks = g_510c54->field_2_3 * seconds;
+#ifdef H2_NATIVE_PORT
+	long result = (long)ticks;
+	real fraction = ticks - (real)result;
+	if (fraction > 0.5f || (fraction == 0.5f && (result & 1)))
+		result++;
+	else if (fraction < -0.5f || (fraction == -0.5f && (result & 1)))
+		result--;
+	return result;
+#else
 	long result;
 
 	__asm
@@ -157,6 +166,7 @@ PRIVATE inline long game_seconds_to_ticks_round(real seconds)
 		fistp result
 	}
 	return result;
+#endif
 }
 
 long function_146650(void);

@@ -1073,6 +1073,21 @@ def main():
         if f"_{primary_constructor_symbol}" not in primary_constructor_defined:
             raise RuntimeError("native primary Havok listener constructor was not retained")
 
+        impact_creation_output = Path(temporary) / "impact-creation.o"
+        impact_creation_symbol = "?function_226a60@@YAXJ@Z"
+        impact_creation_command = command[:]
+        impact_creation_command[impact_creation_command.index("h2_extract_selected")] = impact_creation_symbol
+        impact_creation_command[impact_creation_command.index("--extract-global"):impact_creation_command.index("--output")] = []
+        impact_creation_command[impact_creation_command.index(output)] = impact_creation_output
+        impact_creation_command[-1] = args.root / "src/impacts.cpp"
+        subprocess.run([str(value) for value in impact_creation_command], check=True)
+        impact_creation_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", impact_creation_output],
+            text=True,
+        )
+        if f"_{impact_creation_symbol}" not in impact_creation_defined:
+            raise RuntimeError("recovered impact-creation source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
