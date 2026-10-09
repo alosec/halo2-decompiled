@@ -28,6 +28,46 @@ double fabs(double value) {
     return converted.value;
 }
 
+double sqrt(double value) {
+    union { double value; unsigned long long bits; } converted = { value };
+    const unsigned long long magnitude = converted.bits & 0x7fffffffffffffffULL;
+    if (!magnitude || magnitude >= 0x7ff0000000000000ULL)
+        return value;
+    if (converted.bits >> 63) {
+        converted.bits = 0x7ff8000000000000ULL;
+        return converted.value;
+    }
+
+    converted.bits = (converted.bits >> 1) + 0x1ff8000000000000ULL;
+    double estimate = converted.value;
+    for (int iteration = 0; iteration < 7; ++iteration)
+        estimate = 0.5 * (estimate + value / estimate);
+    return estimate;
+}
+
+double tan(double value) {
+    union { double value; unsigned long long bits; } converted = { value };
+    const unsigned long long magnitude = converted.bits & 0x7fffffffffffffffULL;
+    if (magnitude >= 0x7ff0000000000000ULL || fabs(value) > 1.0e18) {
+        converted.bits = 0x7ff8000000000000ULL;
+        return converted.value;
+    }
+
+    const double half_pi = 1.57079632679489661923;
+    const double scaled = value / half_pi;
+    long long quadrant = (long long)(scaled + (scaled < 0.0 ? -0.5 : 0.5));
+    const double x = value - (double)quadrant * half_pi;
+    const double square = x * x;
+    const double polynomial = 1.0 + square * (1.0 / 3.0 + square * (2.0 / 15.0 +
+        square * (17.0 / 315.0 + square * (62.0 / 2835.0 +
+        square * (1382.0 / 155925.0 + square * (21844.0 / 6081075.0 +
+        square * (929569.0 / 638512875.0 + square *
+        (6404582.0 / 10854718875.0 + square *
+        (443861162.0 / 1856156927625.0)))))))));
+    const double tangent = x * polynomial;
+    return (quadrant & 1) ? -1.0 / tangent : tangent;
+}
+
 struct h2_guest_filetime {
     unsigned long low;
     unsigned long high;

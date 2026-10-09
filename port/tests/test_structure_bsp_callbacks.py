@@ -124,8 +124,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 47:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 47")
+    if len(undefined) != 45:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 45")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -161,9 +161,9 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 41:
+    if len(production_undefined) != 39:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 41")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 39")
 
     expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
