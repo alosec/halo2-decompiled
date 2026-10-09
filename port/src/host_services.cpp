@@ -47,6 +47,7 @@ struct CacheState {
     std::mutex mutex;
     h2::port::GuestArena* arena = nullptr;
     std::vector<unsigned char> bytes;
+    std::filesystem::path map_directory;
     std::uint32_t next_address = kPhysicalAllocationBase;
 };
 
@@ -73,6 +74,48 @@ std::uintptr_t function_address(Function function) {
     std::uintptr_t address = 0;
     std::memcpy(&address, &function, sizeof(address));
     return address;
+}
+
+std::uint32_t read_u32(const std::array<unsigned char, kCacheHeaderSize>& data,
+                       std::size_t offset) {
+    return static_cast<std::uint32_t>(data[offset]) |
+           (static_cast<std::uint32_t>(data[offset + 1]) << 8) |
+           (static_cast<std::uint32_t>(data[offset + 2]) << 16) |
+           (static_cast<std::uint32_t>(data[offset + 3]) << 24);
+}
+
+std::string fixed_string(const std::array<unsigned char, kCacheHeaderSize>& data,
+                         std::size_t offset, std::size_t capacity) {
+    std::size_t length = 0;
+    while (length < capacity && data[offset + length]) {
+        ++length;
+    }
+    return std::string(reinterpret_cast<const char*>(data.data() + offset), length);
+}
+
+bool preflight_campaign_cache(const std::filesystem::path& map_directory,
+                              const std::string& map_name) {
+    const auto path = map_directory / (map_name + ".map");
+    std::error_code error;
+    const auto status = std::filesystem::symlink_status(path, error);
+    if (error || status.type() != std::filesystem::file_type::regular) {
+        return false;
+    }
+    const auto file_size = std::filesystem::file_size(path, error);
+    if (error || file_size < kCacheHeaderSize || file_size > 0x20800000u) {
+        return false;
+    }
+    std::ifstream input(path, std::ios::binary);
+    std::array<unsigned char, kCacheHeaderSize> header{};
+    if (!input.read(reinterpret_cast<char*>(header.data()),
+                    static_cast<std::streamsize>(header.size()))) {
+        return false;
+    }
+    return read_u32(header, 0) == 0x68656164u && read_u32(header, 4) == 8u &&
+           read_u32(header, 8) == file_size && read_u32(header, 0x140) == 0u &&
+           read_u32(header, 0x7fc) == 0x666f6f74u &&
+           fixed_string(header, 0x120, 0x20) == "02.09.27.09809" &&
+           fixed_string(header, 0x198, 0x20) == map_name;
 }
 
 }  // namespace
@@ -137,6 +180,7 @@ bool configure_cache_services(GuestArena& arena, const std::filesystem::path& ma
     const std::lock_guard lock(state.mutex);
     state.arena = &arena;
     state.bytes = std::move(bytes);
+    state.map_directory = map_path.parent_path();
     state.next_address = kPhysicalAllocationBase;
     return true;
 }
@@ -146,6 +190,7 @@ void reset_cache_services() {
     const std::lock_guard lock(state.mutex);
     state.arena = nullptr;
     state.bytes.clear();
+    state.map_directory.clear();
     state.next_address = kPhysicalAllocationBase;
 }
 
@@ -235,6 +280,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         {"host_h2_physical_memory_malloc_low",
          function_address(&host_h2_physical_memory_malloc_low)},
         {"host_h2_cache_read", function_address(&host_h2_cache_read)},
+        {"host_h2_map_preflight", function_address(&host_h2_map_preflight)},
         {"host_h2_video_control", function_address(&host_h2_video_control)},
         {"host_h2_render_request", function_address(&host_h2_render_request)},
         {"host_h2_text_request", function_address(&host_h2_text_request)},
@@ -306,6 +352,42 @@ extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
     }
     std::memcpy(buffer, state.bytes.data() + offset, count);
     return 1;
+}
+
+extern "C" int host_h2_map_preflight(const char* map_name) {
+    if (!map_name) {
+        return 0;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(map_name);
+    const std::uintptr_t guest_start = h2::port::kGuestBias;
+    const std::uintptr_t guest_end = guest_start + h2::port::kGuestAddressSpaceSize;
+    if (!state.arena || start < guest_start || start >= guest_end ||
+        guest_end - start < 0x100) {
+        return 0;
+    }
+    std::string name;
+    for (std::size_t index = 0; index < 0x100; ++index) {
+        const unsigned char value = static_cast<unsigned char>(map_name[index]);
+        if (!value) {
+            const auto separator = name.find_last_of('\\');
+            const std::string cache_name = separator == std::string::npos
+                ? name
+                : name.substr(separator + 1);
+            return !cache_name.empty() &&
+                   preflight_campaign_cache(state.map_directory, cache_name);
+        }
+        const bool safe = (value >= 'a' && value <= 'z') ||
+                          (value >= 'A' && value <= 'Z') ||
+                          (value >= '0' && value <= '9') || value == '_' || value == '-' ||
+                          value == '\\';
+        if (!safe) {
+            return 0;
+        }
+        name.push_back(static_cast<char>(value));
+    }
+    return 0;
 }
 
 extern "C" void host_h2_video_control(int command) {

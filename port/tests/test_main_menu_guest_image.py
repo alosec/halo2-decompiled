@@ -76,6 +76,7 @@ def main() -> None:
         "h2_main_menu_guest_cancel",
         "h2_native_controller_connect",
         "host_h2_cache_read",
+        "host_h2_map_preflight",
         "host_h2_physical_memory_malloc_low",
         "host_h2_profile_list",
         "host_h2_profile_create",

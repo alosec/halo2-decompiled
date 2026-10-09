@@ -21,6 +21,9 @@ h2_host_slot_host_h2_physical_memory_malloc_low:
 .globl h2_host_slot_host_h2_cache_read
 h2_host_slot_host_h2_cache_read:
     .xword 0
+.globl h2_host_slot_host_h2_map_preflight
+h2_host_slot_host_h2_map_preflight:
+    .xword 0
 .globl h2_host_slot_host_h2_video_control
 h2_host_slot_host_h2_video_control:
     .xword 0

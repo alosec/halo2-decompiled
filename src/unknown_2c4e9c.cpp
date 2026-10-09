@@ -8,6 +8,9 @@
 #include "user_interface_lists.h"
 #include "unknown_19b516.h"
 #include "unknown_234c64.h"
+#if defined(H2_NATIVE_PORT)
+#include "h2/host_abi.h"
+#endif
 
 // @flags /O1 /Oi /Gr
 
@@ -3401,16 +3404,19 @@ void c_campaign_level_handles_list::v20(c_class_1a2c81 *widget, long index)
 void c_campaign_level_handles_list::handle_item(s_controller_reference **controller, long *item)
 {
 #if defined(H2_NATIVE_PORT)
-	/* Preserve only the authentic selected map identifier, then open the
-	 * recovered difficulty screen. Difficulty, progression, and gameplay launch
-	 * remain untouched until those subsystems have native owners. */
+	/* Require a bounded host validation of the selected user-owned campaign
+	 * cache, preserve only its authentic map identifier, then open the recovered
+	 * difficulty screen. Difficulty, progression, and gameplay launch remain
+	 * untouched until those subsystems have native owners. */
 	if (*item != NONE)
 	{
 		s_map_entry *datum = (s_map_entry *)record_pool_lookup(data, *item);
 		s_campaign_level *level = datum
 			? (s_campaign_level *)function_19c1f0(datum->map_id)
 			: 0;
-		if (level)
+		s_entry_a *cache_level = level ? function_19c270(1, level->map_id) : 0;
+		char const *map_name = cache_level ? (char const *)((byte *)cache_level + 8) : 0;
+		if (level && map_name && host_h2_map_preflight(map_name))
 		{
 			s_screen_parameters parameters;
 

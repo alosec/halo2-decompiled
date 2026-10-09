@@ -257,12 +257,36 @@ int main() {
             cache_bytes[i] = static_cast<unsigned char>((i * 29u + 7u) & 0xffu);
         }
         const auto unique = std::chrono::steady_clock::now().time_since_epoch().count();
-        const auto cache_path = std::filesystem::temp_directory_path() /
-            ("h2-host-cache-" + std::to_string(unique) + ".map");
+        const auto cache_root = std::filesystem::temp_directory_path() /
+            ("h2-host-cache-" + std::to_string(unique));
+        const auto cache_path = cache_root / "mainmenu.map";
+        const auto campaign_path = cache_root / "00a_introduction.map";
+        std::filesystem::create_directory(cache_root);
         {
             std::ofstream output(cache_path, std::ios::binary);
             output.write(reinterpret_cast<const char*>(cache_bytes.data()),
                          static_cast<std::streamsize>(cache_bytes.size()));
+        }
+        auto campaign_bytes = cache_bytes;
+        const auto write_u32 = [&](std::size_t offset, std::uint32_t value) {
+            campaign_bytes[offset] = static_cast<unsigned char>(value);
+            campaign_bytes[offset + 1] = static_cast<unsigned char>(value >> 8);
+            campaign_bytes[offset + 2] = static_cast<unsigned char>(value >> 16);
+            campaign_bytes[offset + 3] = static_cast<unsigned char>(value >> 24);
+        };
+        write_u32(0, 0x68656164u);
+        write_u32(4, 8u);
+        write_u32(8, static_cast<std::uint32_t>(campaign_bytes.size()));
+        write_u32(0x140, 0u);
+        write_u32(0x7fc, 0x666f6f74u);
+        std::memset(campaign_bytes.data() + 0x120, 0, 0x20);
+        std::memcpy(campaign_bytes.data() + 0x120, "02.09.27.09809", 14);
+        std::memset(campaign_bytes.data() + 0x198, 0, 0x20);
+        std::memcpy(campaign_bytes.data() + 0x198, "00a_introduction", 16);
+        {
+            std::ofstream output(campaign_path, std::ios::binary);
+            output.write(reinterpret_cast<const char*>(campaign_bytes.data()),
+                         static_cast<std::streamsize>(campaign_bytes.size()));
         }
         const bool configured =
             h2::port::configure_cache_services(*arena, cache_path, arena_error);
@@ -287,9 +311,32 @@ int main() {
                                                    sizeof(host_copy)) &&
                             host_copy[0] == cache_bytes[0x800],
                         "native cache ownership did not expose bounded host bytes");
+            std::strcpy(static_cast<char*>(native_buffer),
+                        "scenarios\\solo\\00a_introduction\\00a_introduction");
+            ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 1,
+                        "campaign cache preflight rejected a valid recovered path");
+            write_u32(0x140, 1u);
+            {
+                std::ofstream output(campaign_path, std::ios::binary | std::ios::trunc);
+                output.write(reinterpret_cast<const char*>(campaign_bytes.data()),
+                             static_cast<std::streamsize>(campaign_bytes.size()));
+            }
+            ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
+                        "campaign cache preflight accepted a non-Campaign header");
+            std::strcpy(static_cast<char*>(native_buffer), "../00a_introduction");
+            ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
+                        "campaign cache preflight accepted path traversal");
+            std::strcpy(static_cast<char*>(native_buffer), "missing_map");
+            ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
+                        "campaign cache preflight accepted an absent map");
+            std::memset(native_buffer, 'a', 0x100);
+            ok &= check(host_h2_map_preflight(static_cast<char*>(native_buffer)) == 0,
+                        "campaign cache preflight accepted an unterminated name");
+            ok &= check(host_h2_map_preflight("00a_introduction") == 0,
+                        "campaign cache preflight accepted a host pointer");
             h2::port::reset_cache_services();
         }
-        std::filesystem::remove(cache_path);
+        std::filesystem::remove_all(cache_root);
     }
 
     CallbackCapture capture;
