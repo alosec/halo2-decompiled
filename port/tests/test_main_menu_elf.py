@@ -9,9 +9,11 @@ import subprocess
 
 EXPECTED_BINDINGS = {
     "?g_4e3b44@@3PAUs_tag_instance@@A": 0x004E3B44,
+    "?g_4c99c0@@3Us_online_mutelist_globals@@A": 0x004C99C0,
     "?g_4e61c0@@3Us_saved_game_drive@@A": 0x004E61C0,
     "?main_globals@@3Us_main_globals@@A": 0x00547F28,
     "?g_54e8e0@@3PAUs_player_slot@@A": 0x0054E8E0,
+    "?g_551ae4@@3_NA": 0x00551AE4,
 }
 
 REQUIRED = {
@@ -25,8 +27,12 @@ REQUIRED = {
     "?player_slot_find_controller@@YAJJ@Z",
     "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z",
     "?initialize@s_player_slot_profile@@QAAXJ@Z",
+    "?function_18f58c@@YAXXZ",
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
+    "?function_199ebc@@YAJXZ",
+    "?function_199f34@@YAJXZ",
+    "?online_mutelist_reset@@YAXJ@Z",
     "?function_2523b7@@YA_NJ@Z",
     "?function_2323ab@@YA_NJ@Z",
     "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z",

@@ -176,7 +176,10 @@ inline bool function_058d50(c_class_58d20 *s)
 }
 
 // @retail 0x58d70
-inline bool function_058d70(c_class_58d20 *s)
+#ifndef H2_NATIVE_PORT
+inline
+#endif
+bool function_058d70(c_class_58d20 *s)
 {
 	if (s->state > 2 && s->state <= 8)
 	{
