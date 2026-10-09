@@ -1283,6 +1283,11 @@ set(H2_MAIN_MENU_BINDINGS
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_bindings.json")
 set(H2_MAIN_MENU_CLOSURE_REPORT
     "${CMAKE_BINARY_DIR}/port/main-menu-symbol-closure.json")
+set(H2_MAIN_MENU_CLOSURE_OBJECTS
+    ${H2_MAIN_MENU_GUEST_OBJECTS}
+    "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
+    "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+)
 add_custom_command(
     OUTPUT "${H2_MAIN_MENU_CLOSURE_REPORT}"
     COMMAND ${Python3_EXECUTABLE}
@@ -1291,8 +1296,8 @@ add_custom_command(
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format json
             --output "${H2_MAIN_MENU_CLOSURE_REPORT}"
-            ${H2_MAIN_MENU_GUEST_OBJECTS}
-    DEPENDS ${H2_MAIN_MENU_GUEST_OBJECTS} ${H2_MAIN_MENU_BINDINGS}
+            ${H2_MAIN_MENU_CLOSURE_OBJECTS}
+    DEPENDS ${H2_MAIN_MENU_CLOSURE_OBJECTS} ${H2_MAIN_MENU_BINDINGS}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_symbol_closure.py
     VERBATIM
 )
@@ -2163,7 +2168,7 @@ add_test(
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
             --expect-unresolved 16
-            ${H2_MAIN_MENU_GUEST_OBJECTS}
+            ${H2_MAIN_MENU_CLOSURE_OBJECTS}
 )
 add_test(
     NAME main-menu-import-plan

@@ -35,6 +35,9 @@ void function_1ea9c0(long arg_0, long arg_1);
 #ifdef H2_NATIVE_PORT
 extern "C" long h2_native_cache_tag_count();
 extern "C" void h2_native_physics_runtime_reset();
+extern "C" void h2_native_physics_model_write_reset();
+extern "C" int h2_native_physics_model_write_status();
+extern "C" void h2_native_physics_model_initialize(long tag_index);
 
 struct s_native_tag_instance_view
 {
@@ -234,6 +237,36 @@ static long h2_native_next_tag(long *next_index)
     }
     return NONE;
 }
+
+static void h2_native_initialize_validated_physics_models()
+{
+    if (!g_native_physics_model_plan_valid ||
+        g_native_deferred_tags != 32 ||
+        g_native_physics_model_entry_count != 175 ||
+        g_native_physics_model_nonzero_mask != 0x2d9 ||
+        g_native_physics_model_planned_resolutions != 94 ||
+        g_native_physics_model_planned_objects != 102)
+        return;
+
+    h2_native_physics_model_write_reset();
+    long written_tags = 0;
+    long next_index = 0;
+    for (long tag_index = h2_native_next_tag(&next_index);
+        tag_index != NONE; tag_index = h2_native_next_tag(&next_index))
+    {
+        if (*(dword *)&g_4e3b44[(short)tag_index] == 0x70686d6f)
+        {
+            h2_native_physics_model_initialize(tag_index);
+            written_tags++;
+        }
+    }
+    if (written_tags == 32 &&
+        h2_native_physics_model_write_status() == ((94 << 16) | 102))
+    {
+        g_native_initialized_tags += written_tags;
+        g_native_deferred_tags = 0;
+    }
+}
 #endif
 
 // @retail 0x11c840
@@ -302,4 +335,7 @@ void function_11c840()
         local_1 = function_122c70(&local_0);
 #endif
     }
+#ifdef H2_NATIVE_PORT
+    h2_native_initialize_validated_physics_models();
+#endif
 }
