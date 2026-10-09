@@ -52,6 +52,7 @@ REQUIRED = {
     "?online_teams_enumerate_get_results@@YAXJPAKPAUXUID@@@Z",
     "?set_description@c_online_task_screen@@QAAXJ@Z",
     "?network_session_get_membership@@YA_NPAVc_class_58d20@@PAJ1111PAPAUs_session_member@@1PAKPAPAUs_network_session_player@@@Z",
+    "?network_session_interface_get_data_4db0@@YAPAEXZ",
     "?online_mutelist_reset@@YAXJ@Z",
     "?function_2523b7@@YA_NJ@Z",
     "?function_2323ab@@YA_NJ@Z",
