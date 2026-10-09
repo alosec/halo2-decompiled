@@ -34,6 +34,7 @@
     "g_479888_owned_havok_allocator_block",
     "g_479898_owned_havok_pool_allocator",
     "g_51ecac_owned_secondary_listener",
+    "native_havok_transition_tables_and_callback_owned",
     "g_510c44_owned_ai_scratch_buffer",
     "native_offline_replication_unavailable"
   ],
@@ -121,6 +122,7 @@
     {"source": "src/unknown_22c0a0.cpp", "symbols": ["h2_native_havok_fixed_memory_construct", "?allocate_aligned@c_havok_fixed_memory@@UAAPAXJJJ@Z", "?h2_native_fixed_allocate@@YAPAXPAVc_havok_fixed_memory@@JJ@Z", "?h2_native_fixed_deallocate@@YAXPAVc_havok_fixed_memory@@PAX@Z", "?h2_native_fixed_allocate_aligned@@YAPAXPAVc_havok_fixed_memory@@JJJ@Z", "?h2_native_fixed_deallocate_aligned@@YAXPAVc_havok_fixed_memory@@PAX@Z", "?h2_native_fixed_allocate16@@YAPAXPAVc_havok_fixed_memory@@JJ@Z", "?h2_native_fixed_deallocate16@@YAXPAVc_havok_fixed_memory@@PAXJJ@Z", "?h2_native_fixed_idle@@YAXPAVc_havok_fixed_memory@@J@Z", "?h2_native_fixed_destroy@@YAPAVc_havok_fixed_memory@@PAV1@K@Z"], "globals": ["g_h2_native_fixed_vtable"]},
     {"source": "src/unknown_22c3e0_native.cpp", "symbols": ["h2_native_havok_pool_memory_construct", "h2_native_pool_allocate", "h2_native_pool_deallocate", "h2_native_pool_allocate_aligned", "h2_native_pool_deallocate_aligned", "h2_native_pool_allocate16", "h2_native_pool_deallocate16", "h2_native_pool_idle", "h2_native_pool_destroy", "?get_used_fraction@hkPoolMemory@@QAAMXZ"], "globals": ["g_h2_native_pool_vtable"]},
     {"source": "src/unknown_278370.cpp", "symbols": ["?function_278370@c_278370@@UAAXPAUs_278371@@@Z"]},
+    {"source": "src/unknown_3153c0_native.cpp", "symbols": ["?function_3153c0@@YAXPAX0PBX@Z"], "globals": ["g_h2_native_transition_pending_table", "g_h2_native_transition_complete_table", "g_h2_native_transition_context"]},
     {"source": "src/unknown_1cec30.cpp", "symbols": ["?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z"]},
     {"source": "src/havok_secondary_listener_native.cpp", "symbols": ["h2_native_havok_secondary_listener_construct", "h2_native_secondary_listener_event", "h2_native_secondary_listener_idle"], "globals": ["g_h2_native_secondary_listener_vtable", "g_h2_native_secondary_listener_storage"]},
     {"source": "src/scenery_bsp_native.cpp", "symbols": ["?function_10a250@@YAXJ@Z"]},
