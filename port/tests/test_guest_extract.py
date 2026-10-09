@@ -283,6 +283,27 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_box_bounds_output = Path(temporary) / "physics-model-box-bounds.o"
+        physics_model_box_bounds_symbols = (
+            "?function_2fe350@@YAXPBUs_physics_bounds_matrix@@PBMMPAUs_physics_bounds@@@Z",
+            "?function_2fe420@c_physics_box_shape@@QAAXPBUs_physics_bounds_matrix@@MPAUs_physics_bounds@@@Z",
+        )
+        physics_model_box_bounds_command = command[:]
+        physics_model_box_bounds_command[physics_model_box_bounds_command.index("h2_extract_selected")] = physics_model_box_bounds_symbols[0]
+        physics_model_box_bounds_command[physics_model_box_bounds_command.index("--extract-global"):physics_model_box_bounds_command.index("--output")] = [
+            "--extract-symbol", physics_model_box_bounds_symbols[1],
+        ]
+        physics_model_box_bounds_command[physics_model_box_bounds_command.index(output)] = physics_model_box_bounds_output
+        physics_model_box_bounds_command[-1] = args.root / "src/unknown_2fe350.cpp"
+        subprocess.run([str(value) for value in physics_model_box_bounds_command], check=True)
+        physics_model_box_bounds_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_box_bounds_output],
+            text=True,
+        )
+        for symbol in physics_model_box_bounds_symbols:
+            if f"_{symbol}" not in physics_model_box_bounds_defined:
+                raise RuntimeError(f"physics-model box-bounds method was not retained: {symbol}")
+
         physics_model_radius_output = Path(temporary) / "physics-model-support-radius.o"
         physics_model_radius_command = command[:]
         physics_model_radius_symbol = (
