@@ -21,9 +21,6 @@ def main():
         assert symbol not in imports
     for symbol in ("host_h2_get_milliseconds", "host_h2_sleep", "host_h2_cos"):
         assert imports[symbol]["category"] == "host_abi"
-    text_renderer = imports["?function_13e9c0@@YAXPBGPBUshort_rectangle2d@@PAU1@2M@Z"]
-    assert text_renderer["category"] == "recovered_provider"
-    assert "unknown_13e8a0.cpp" in text_renderer["providers"]
     assert imports["host_h2_video_control"]["category"] == "host_abi"
     assert imports["host_h2_render_request"]["category"] == "host_abi"
     assert imports["host_h2_text_request"]["category"] == "host_abi"
@@ -55,6 +52,16 @@ def main():
     assert "?function_1bbd0@@YAXXZ" not in imports
     assert "?function_1a0180@@YAXJJPAG@Z" not in imports
     assert "?function_2afeae@@YAXPAUs_widget_item@@PAVc_class_1a2c81@@@Z" not in imports
+    for symbol in (
+        "?function_10f5c0@@YA_NJMJJJ@Z",
+        "?function_12360@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z",
+        "?function_13e9c0@@YAXPBGPBUshort_rectangle2d@@PAU1@2M@Z",
+        "?function_13ed90@@YAXJ@Z",
+        "?function_13ee20@@YA_NPBGJ@Z",
+        "?function_211a0@@YAJJMMMJJJJJMM@Z",
+        "?function_235d69@@YAXPBUshort_rectangle2d@@M0PBUcolor4f@@@Z",
+    ):
+        assert symbol not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
     for symbol in (
         "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",

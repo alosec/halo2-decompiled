@@ -2,6 +2,9 @@
 #include "h2/host_services.hpp"
 #include "h2/render_protocol.h"
 
+struct color4f { float alpha, red, green, blue; };
+struct short_rectangle2d { short top, left, bottom, right; };
+
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -15,6 +18,8 @@ extern "C" void D3DDevice_SetVertexDataColor(unsigned int vertex_register,
                                                unsigned int color);
 extern "C" void h2_render_preview_quad(long bitmap_tag, long bitmap_index,
                                          long layer, const void* vertices);
+void function_235d69(short_rectangle2d const* rectangle, float depth,
+                     short_rectangle2d const* screen, color4f const* color);
 
 namespace {
 
@@ -175,6 +180,26 @@ int main() {
                 "preview render vertices are incorrect");
     ok &= check(capture.render_calls == 3 && preview_stats.render_request_calls == 3,
                 "preview render request did not cross the host boundary once");
+
+    const short_rectangle2d solid_rect{10, 20, 30, 40};
+    const short_rectangle2d solid_screen{0, 0, 480, 640};
+    const color4f solid_color{0.5f, 1.0f, 0.25f, 0.0f};
+    function_235d69(&solid_rect, 0.75f, &solid_screen, &solid_color);
+    const auto solid_stats = h2::port::host_service_stats();
+    ok &= check(capture.immediate.kind == H2_RENDER_REQUEST_IMMEDIATE &&
+                    capture.immediate.primitive_type == 7 &&
+                    capture.immediate.vertex_count == 4 &&
+                    capture.immediate.color == 0x80ff4000u,
+                "solid rectangle request metadata is incorrect");
+    ok &= check(capture.immediate_vertices[0].x == 20.0f &&
+                    capture.immediate_vertices[0].y == 10.0f &&
+                    capture.immediate_vertices[1].x == 20.0f &&
+                    capture.immediate_vertices[1].y == 30.0f &&
+                    capture.immediate_vertices[2].x == 40.0f &&
+                    capture.immediate_vertices[3].y == 10.0f,
+                "solid rectangle vertices are incorrect");
+    ok &= check(capture.render_calls == 4 && solid_stats.render_request_calls == 4,
+                "solid rectangle did not cross the host boundary once");
 
     h2::port::set_video_control_handler(nullptr);
     h2::port::set_render_request_handler(nullptr);
