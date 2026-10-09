@@ -104,7 +104,8 @@ def main() -> int:
             args, args.root / "src/impacts.cpp", impact_allocation,
             ["?impact_new@@YAJPBUs_impact_data@@J@Z",
              "?impact_component_b_is_faster@@YA_NJJ@Z",
-             "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z"])
+             "?impact_local_positions_update@@YAXPAUs_impact@@JJ@Z",
+             "?function_2266a0@@YAXJ@Z"])
         compile_slice(args, args.root / "src/unknown_146240.cpp", game_time,
                       ["?function_146650@@YAJXZ"])
         compile_slice(args, args.root / "src/unknown_11fc80.cpp", vector_normalize,
