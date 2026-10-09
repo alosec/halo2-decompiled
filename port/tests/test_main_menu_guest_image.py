@@ -85,6 +85,7 @@ def main() -> None:
         "h2_native_profile_read",
         "h2_native_profile_write",
         "h2_native_profile_delete",
+        "h2_native_profile_round_trip",
     }
     missing = required_symbols - symbol_lines.keys()
     if missing:

@@ -74,6 +74,52 @@ extern "C" int h2_native_profile_delete(unsigned int identifier)
     return host_h2_profile_delete(identifier);
 }
 
+extern "C" int h2_native_profile_round_trip()
+{
+    unsigned int identifiers[2] = { 0xffffffffu, 0xffffffffu };
+    unsigned char record[0x1e0] = {};
+    unsigned char loaded[0x1e0] = {};
+    record[8] = 'P';
+    record[10] = 'r';
+    record[12] = 'o';
+    record[14] = 'b';
+    record[16] = 'e';
+    if (h2_native_profile_list(identifiers, 2) != 0)
+        return 1;
+    int identifier = h2_native_profile_create(record, sizeof(record));
+    if (identifier < 0)
+        return 2;
+    int result = 0;
+    if (h2_native_profile_list(identifiers, 2) != 1 ||
+        identifiers[0] != (unsigned int)identifier)
+        result = 3;
+    else if (!h2_native_profile_read((unsigned int)identifier, loaded, sizeof(loaded)))
+        result = 4;
+    else
+    {
+        for (unsigned int index = 0; index < sizeof(record); ++index)
+            if (loaded[index] != record[index])
+            {
+                result = 5;
+                break;
+            }
+    }
+    if (!result)
+    {
+        record[0x1df] = 0x5a;
+        if (!h2_native_profile_write((unsigned int)identifier, record, sizeof(record)))
+            result = 6;
+        else if (!h2_native_profile_read((unsigned int)identifier, loaded, sizeof(loaded)) ||
+                 loaded[0x1df] != 0x5a)
+            result = 7;
+    }
+    if (!h2_native_profile_delete((unsigned int)identifier))
+        return result ? result : 8;
+    if (!result && h2_native_profile_list(identifiers, 2) != 0)
+        result = 9;
+    return result;
+}
+
 struct s_loop_allocator;
 class c_memory_source;
 extern s_loop_allocator *g_51e998;

@@ -61,6 +61,11 @@ void function_24a190(void *arg_0);
 void function_249fcc(c_unknown_249fa3 *arg_0);
 void function_24bc12(c_class_1474e8 *list, bool remove_extra);
 extern long g_470a60;
+#if defined(H2_NATIVE_PORT)
+extern "C" int h2_native_profile_list(unsigned int *identifiers, unsigned int capacity);
+extern "C" int h2_native_profile_read(unsigned int identifier, void *record,
+                                      unsigned int size);
+#endif
 
 // @retail 0x249fa3
 void c_list_24a64d::v1()
@@ -76,7 +81,7 @@ void c_list_24a64d::v1()
 	function_24c0c4((c_widget *)this);
 #if defined(H2_NATIVE_PORT)
 	/* This split list view does not yet carry the list-family v7 override.
-	   Use the now-recovered widget focus primitive for its sole honest item. */
+	   Use the now-recovered widget focus primitive for its first honest item. */
 	if (child)
 	{
 		child->function_22ecb4_2(true);
@@ -95,8 +100,8 @@ void c_list_24a64d::v2()
 void c_list_24a64d::v3()
 {
 #if defined(H2_NATIVE_PORT)
-	/* Native persistence is explicitly empty, so there is no profile record
-	   to refresh. Keep the recovered widget frame traversal active. */
+	/* Durable native records are snapshotted when the selector opens. Keep the
+	   recovered widget frame traversal active until live refresh is needed. */
 	c_class_1a2c81::v3();
 #else
 	c_class_1a2c81::v3();
@@ -131,10 +136,6 @@ bool c_list_24a64d::function_24a2e7(long controller)
 // @retail 0x24a64d
 void *c_list_24a64d::function_24a64d(long index)
 {
-#if defined(H2_NATIVE_PORT)
-	(void)index;
-	return 0;
-#else
 	long count;
 	s_entry_24a64d *entries = (s_entry_24a64d *)get_items(&count);
 	void *result = 0;
@@ -147,7 +148,6 @@ void *c_list_24a64d::function_24a64d(long index)
 		}
 	}
 	return result;
-#endif
 }
 
 struct s_datum_24a763
@@ -241,16 +241,25 @@ void c_list_24a64d::v20(c_class_1a2c81 *item, long)
 	if (datum_index == NONE)
 		return;
 	s_datum_24a763 *datum = (s_datum_24a763 *)record_pool_lookup(data, datum_index);
-	if (!datum || datum->index != NONE)
-		return;
 	c_text_widget_45a5e0 *text = (c_text_widget_45a5e0 *)item->find_child(6, 0, false);
-	if (text)
+	if (datum && text)
 	{
 		s_widget_item layout = {};
-		layout.value5e = true;
-		layout.flags = 0x20;
-		text->function_253b1a(0x12000195);
-		text->value6e = true;
+		if (datum->index == NONE)
+		{
+			layout.value5e = true;
+			layout.flags = 0x20;
+			text->function_253b1a(0x12000195);
+			text->value6e = true;
+		}
+		else
+		{
+			layout.value4 = (long)function_24a691(datum->index, false);
+			layout.flags = 1;
+			/* The native model renderer does not own an appearance object yet;
+			   keep the durable row textual rather than fabricating model state. */
+			text->value6e = false;
+		}
 		function_22f042(&layout, item, 1);
 	}
 #else
@@ -291,8 +300,12 @@ void c_list_24a64d::v20(c_class_1a2c81 *item, long)
 word const *c_list_24a64d::function_24a691(long index, bool append)
 {
 #if defined(H2_NATIVE_PORT)
-	(void)index;
 	(void)append;
+	long count;
+	s_entry_24a64d *entries = (s_entry_24a64d *)get_items(&count);
+	for (long item = 0; item < count; ++item)
+		if (entries[item].index == index)
+			return entries[item].field_0c;
 	return 0;
 #else
 	word const *result = (word const *)L"";
@@ -433,17 +446,35 @@ void function_24a190(void *arg_0)
 	c_list_24a64d *list = (c_list_24a64d *)arg_0;
 	record_pool_release_all(list->data);
 	function_24c166(list);
-	long datum_index = record_pool_allocate(list->data);
-	((s_datum_24a763 *)list->data->data)[datum_index & 0xffff].index = NONE;
 	c_class_14750b *items = (c_class_14750b *)list->get_item_data();
-	if (list->get_item_count() > 0)
-		list->add_child(&items[0]);
-	long count;
-	s_entry_24a64d *profiles = (s_entry_24a64d *)list->get_items(&count);
-	for (long index = 0; index < count; ++index)
+	long item_count = list->get_item_count();
+	long profile_count;
+	s_entry_24a64d *profiles = (s_entry_24a64d *)list->get_items(&profile_count);
+	for (long index = 0; index < profile_count; ++index)
 	{
 		profiles[index].index = NONE;
 		memset((byte *)&profiles[index] + 4, 0, 0x1e0);
+	}
+
+	/* The create-new datum remains first. Up to three durable native records
+	   then occupy the remaining retail item/profile slots in stable ID order. */
+	long datum_index = record_pool_allocate(list->data);
+	((s_datum_24a763 *)list->data->data)[datum_index & 0xffff].index = NONE;
+	if (item_count > 0)
+		list->add_child(&items[0]);
+	unsigned int identifiers[3] = {};
+	int stored_count = h2_native_profile_list(identifiers, 3);
+	long visible_count = stored_count < 0 ? 0 : stored_count > 3 ? 3 : stored_count;
+	for (long index = 0; index < visible_count && index < profile_count && index + 1 < item_count; ++index)
+	{
+		if (h2_native_profile_read(identifiers[index], (byte *)&profiles[index] + 4, 0x1e0))
+		{
+			profiles[index].index = (long)identifiers[index];
+			datum_index = record_pool_allocate(list->data);
+			((s_datum_24a763 *)list->data->data)[datum_index & 0xffff].index =
+				(long)identifiers[index];
+			list->add_child(&items[index + 1]);
+		}
 	}
 	function_24c0c4((c_widget *)list);
 #else
