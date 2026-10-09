@@ -735,6 +735,7 @@ void __stdcall function_1c36f0(long parent_index, long object_index)
    3. Tried: declaring it __stdcall alone does nothing under LTCG; /GL- on
       the file would break the register convention of its callee 0x1cf120,
       which takes the component index in eax. */
+#ifndef H2_NATIVE_PORT
 // @retail 0x1c3770 standard
 void __stdcall function_1c3770(long object_index, dword flags)
 {
@@ -758,7 +759,9 @@ void __stdcall function_1c3770(long object_index, dword flags)
 		}
 	}
 }
+#endif
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x1c3850
 void function_1c3850(long object_index)
 {
@@ -770,6 +773,7 @@ void function_1c3850(long object_index)
 		function_1c3770(object_index, 0);
 	}
 }
+#endif
 
 PRIVATE inline char model_permutation_region_get(s_model_region_view const *region, char permutation)
 {

@@ -1031,6 +1031,27 @@ def main():
             if f"_{symbol}" not in contact_listener_defined:
                 raise RuntimeError(f"Havok contact listener source was not retained: {symbol}")
 
+        component_rebuild_output = Path(temporary) / "havok-component-rebuild.o"
+        component_rebuild_symbols = [
+            "?function_1c3850@@YAXJ@Z",
+            "?function_1c3770@@YAXJK@Z",
+        ]
+        component_rebuild_command = command[:]
+        component_rebuild_command[component_rebuild_command.index("h2_extract_selected")] = component_rebuild_symbols[0]
+        component_rebuild_command[component_rebuild_command.index("--extract-global"):component_rebuild_command.index("--output")] = [
+            "--extract-symbol", component_rebuild_symbols[1],
+        ]
+        component_rebuild_command[component_rebuild_command.index(output)] = component_rebuild_output
+        component_rebuild_command[-1] = args.root / "src/unknown_1c3850_native.cpp"
+        subprocess.run([str(value) for value in component_rebuild_command], check=True)
+        component_rebuild_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", component_rebuild_output],
+            text=True,
+        )
+        for symbol in component_rebuild_symbols:
+            if f"_{symbol}" not in component_rebuild_defined:
+                raise RuntimeError(f"Havok component rebuild source was not retained: {symbol}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
