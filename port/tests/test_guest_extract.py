@@ -283,6 +283,44 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_transformed_hit_output = Path(temporary) / "physics-model-transformed-hit.o"
+        physics_model_transformed_hit_symbols = (
+            "?function_2da6e0@s_physics_direction@@QAAXPBUs_physics_transform_matrix@@PBM@Z",
+            "?function_2de9e0@c_physics_transformed_intersection_shape@@UAAPA_NPA_NPBUs_physics_transformed_segment@@PAUs_physics_transformed_hit@@@Z",
+        )
+        physics_model_transformed_hit_command = command[:]
+        physics_model_transformed_hit_command[physics_model_transformed_hit_command.index("h2_extract_selected")] = physics_model_transformed_hit_symbols[0]
+        physics_model_transformed_hit_command[physics_model_transformed_hit_command.index("--extract-global"):physics_model_transformed_hit_command.index("--output")] = [
+            "--extract-symbol", physics_model_transformed_hit_symbols[1],
+        ]
+        physics_model_transformed_hit_command[physics_model_transformed_hit_command.index(output)] = physics_model_transformed_hit_output
+        physics_model_transformed_hit_command[-1] = args.root / "src/unknown_2da6e0.cpp"
+        subprocess.run([str(value) for value in physics_model_transformed_hit_command], check=True)
+        physics_model_transformed_hit_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_transformed_hit_output],
+            text=True,
+        )
+        for symbol in physics_model_transformed_hit_symbols:
+            if f"_{symbol}" not in physics_model_transformed_hit_defined:
+                raise RuntimeError(f"physics-model transformed-hit method was not retained: {symbol}")
+
+        physics_model_transformed_projection_output = Path(temporary) / "physics-model-transformed-projection.o"
+        physics_model_transformed_projection_symbol = (
+            "?function_2de8e0@c_physics_transformed_projection_shape@@UAAMPBM@Z"
+        )
+        physics_model_transformed_projection_command = command[:]
+        physics_model_transformed_projection_command[physics_model_transformed_projection_command.index("h2_extract_selected")] = physics_model_transformed_projection_symbol
+        physics_model_transformed_projection_command[physics_model_transformed_projection_command.index("--extract-global"):physics_model_transformed_projection_command.index("--output")] = []
+        physics_model_transformed_projection_command[physics_model_transformed_projection_command.index(output)] = physics_model_transformed_projection_output
+        physics_model_transformed_projection_command[-1] = args.root / "src/unknown_2de8e0.cpp"
+        subprocess.run([str(value) for value in physics_model_transformed_projection_command], check=True)
+        physics_model_transformed_projection_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_transformed_projection_output],
+            text=True,
+        )
+        if f"_{physics_model_transformed_projection_symbol}" not in physics_model_transformed_projection_defined:
+            raise RuntimeError("physics-model transformed projected-support method was not retained")
+
         physics_model_projection_output = Path(temporary) / "physics-model-projection.o"
         physics_model_projection_symbol = (
             "?function_2df220@c_physics_projected_shape@@UAAMPBM@Z"
