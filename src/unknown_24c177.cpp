@@ -49,6 +49,53 @@ void function_24c0c4(c_widget *widget)
 struct s_event;
 void function_24c7e4(void *list_pointer, s_event **event, long *key);
 
+/* Retail 0x24bb9c initializes the item datums and focus after a screen has
+   attached the list. */
+void c_class_1474e8::v1()
+{
+	c_class_1a2c81::v1();
+	function_24c0c4((c_widget *)this);
+	if (!is_in_window() && child)
+	{
+		v7(child);
+		function_24c610(child, (c_widget *)this);
+	}
+}
+
+/* Retail 0x24bbd0 owns the list's optional record pool. */
+void c_class_1474e8::v2()
+{
+	if (value7f && data)
+	{
+		data_dispose(data);
+		data = 0;
+	}
+	c_class_1a2c81::v2();
+}
+
+/* Retail 0x24bd61 advances the list's scroll state, then its item widgets. */
+void c_class_1474e8::v3()
+{
+	if (function_24c63e((c_widget *)this) && value74)
+		--value74;
+	if (function_24c676((c_widget *)this) && value76)
+		--value76;
+	c_class_1a2c81::v3();
+}
+
+/* Retail 0x24bb60 attaches the concrete list's embedded item widgets before
+   the recovered list skin is applied. */
+void c_class_1474e8::v17()
+{
+	c_class_14750b *items = (c_class_14750b *)get_item_data();
+	long count = get_item_count();
+	for (long index = 0; index < count; ++index)
+	{
+		items[index].set_user_flags(user_flags);
+		add_child(&items[index]);
+	}
+}
+
 /* Native subset of retail 0x24c024. It preserves ordinary event bubbling and
    dispatches A/start to the focused datum's registered list-item handlers.
    Directional stepping remains unavailable until the rest of 0x24c1c5 is
