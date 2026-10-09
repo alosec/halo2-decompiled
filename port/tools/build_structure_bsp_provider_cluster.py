@@ -45,6 +45,13 @@ def main() -> int:
         else:
             units[source].append(symbol)
 
+    for closure in manifest.get("closure", []):
+        source = closure.get("source")
+        symbols = closure.get("symbols")
+        if not source or not isinstance(symbols, list) or not symbols:
+            raise RuntimeError("invalid native structure-BSP closure entry")
+        units[source].extend(symbols)
+
     if native_symbols != {"h2_native_structure_bsp_idle"}:
         raise RuntimeError("unexpected native structure-BSP provider set")
 

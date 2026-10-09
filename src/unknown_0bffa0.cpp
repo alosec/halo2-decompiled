@@ -60,6 +60,7 @@ void function_c0040()
 
 void __stdcall function_c2d00(long light_index);
 void __stdcall function_c3260(long light_index, bool clear_object_flag);
+void function_1cae40(void *partition, long data_index, long *first_cluster_reference);
 
 // @retail 0xc00a0
 void function_c00a0()
@@ -125,6 +126,28 @@ void __stdcall function_c1670(long object_index)
 		}
 	}
 	saved_object->flag6 = false;
+}
+
+// @retail 0xc1720
+void __stdcall function_c1720(long object_index, bool remove, bool add)
+{
+	s_record_pool_iterator iterator;
+	iterator.data = g_4e030c;
+	iterator.index = NONE;
+	iterator.datum_index = NONE;
+	byte *light;
+	while ((light = data_iterator_next_inlined(&iterator)) != 0)
+	{
+		if (*(long *)(light + 0x58) != object_index)
+			continue;
+		if (remove && (light[2] & 2))
+		{
+			function_1cae40(g_4e0310, iterator.datum_index, (long *)(light + 0x10));
+			light[2] &= (byte)~8;
+		}
+		if (add)
+			function_c2d00(iterator.datum_index);
+	}
 }
 
 struct s_light_ab

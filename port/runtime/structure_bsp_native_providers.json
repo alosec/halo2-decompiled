@@ -18,5 +18,13 @@
     {"method": "0x001c2690", "symbol": "?function_1c2690@@YAXXZ", "source": "src/unknown_1c2690.cpp", "portable": true},
     {"method": "0x0014b6a0", "symbol": "?function_14b6a0@@YAXXZ", "source": "src/unknown_14b6a0.cpp", "portable": true},
     {"method": "0x00210df0", "symbol": "?function_210df0@@YAXXZ", "source": "src/unknown_210df0.cpp", "portable": true}
+  ],
+  "closure": [
+    {"source": "src/unknown_0b8600.cpp", "symbols": ["?function_b8600@@YAXJJ@Z"]},
+    {"source": "src/unknown_0bef30.cpp", "symbols": ["?function_bef30@@YAXJJJJJ@Z"]},
+    {"source": "src/unknown_0b8540.cpp", "symbols": ["?function_b8540@@YAXJ@Z"]},
+    {"source": "src/unknown_0b8b70.cpp", "symbols": ["?function_b8b70@@YAXJ@Z", "?function_c3220@@YAXJ@Z"]},
+    {"source": "src/unknown_0bffa0.cpp", "symbols": ["?function_c1720@@YAXJ_N0@Z"]},
+    {"source": "src/unknown_1cabc0.cpp", "symbols": ["?function_1cae40@@YAXPAUs_cluster_partition@@JPAJ@Z"]}
   ]
 }

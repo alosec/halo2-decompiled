@@ -91,12 +91,27 @@ def main() -> int:
         if entry["source"] != "native" and not (args.root / entry["source"]).is_file():
             raise RuntimeError(f"missing structure-BSP provider source: {entry['source']}")
 
+    closure = providers_manifest.get("closure")
+    if not isinstance(closure, list) or not closure:
+        raise RuntimeError("structure-BSP transitive closure inventory is missing")
+    closure_symbols = set()
+    for entry in closure:
+        source = entry.get("source")
+        entry_symbols = entry.get("symbols")
+        if not source or not isinstance(entry_symbols, list) or not entry_symbols:
+            raise RuntimeError("invalid structure-BSP transitive closure entry")
+        if not (args.root / source).is_file():
+            raise RuntimeError(f"missing structure-BSP closure source: {source}")
+        closure_symbols.update(entry_symbols)
+    if "?function_c1720@@YAXJ_N0@Z" not in closure_symbols:
+        raise RuntimeError("object-attached light traversal left outside BSP closure")
+
     symbols = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
         text=True,
     )
     definitions = {line.split()[0] for line in symbols.splitlines() if line.strip()}
-    expected_symbols = {entry["symbol"] for entry in providers}
+    expected_symbols = {entry["symbol"] for entry in providers} | closure_symbols
     expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
     missing_symbols = sorted(expected_symbols - definitions)
     if missing_symbols:
