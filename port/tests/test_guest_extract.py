@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_radius_output = Path(temporary) / "physics-model-support-radius.o"
+        physics_model_radius_command = command[:]
+        physics_model_radius_symbol = (
+            "?function_2df0b0@c_physics_convex_shape@@UAAMPBM@Z"
+        )
+        physics_model_radius_command[physics_model_radius_command.index("h2_extract_selected")] = physics_model_radius_symbol
+        physics_model_radius_command[physics_model_radius_command.index("--extract-global"):physics_model_radius_command.index("--output")] = []
+        physics_model_radius_command[physics_model_radius_command.index(output)] = physics_model_radius_output
+        physics_model_radius_command[-1] = args.root / "src/unknown_2df0b0.cpp"
+        subprocess.run([str(value) for value in physics_model_radius_command], check=True)
+        physics_model_radius_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_radius_output],
+            text=True,
+        )
+        if f"_{physics_model_radius_symbol}" not in physics_model_radius_defined:
+            raise RuntimeError("physics-model support-radius method was not retained")
+
         physics_model_transform_output = Path(temporary) / "physics-model-transform.o"
         physics_model_transform_symbols = (
             "?function_2da450@s_physics_affine_matrix@@QAAXPBU1@0@Z",
