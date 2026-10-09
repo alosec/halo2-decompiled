@@ -79,6 +79,7 @@ REQUIRED = {
     "?function_6b910@@YAPAUs_type_9df9da@@J@Z",
     "?function_6c7e0@@YA_NXZ",
     "?function_6d080@@YA_NJPAUs_channel_message@@@Z",
+    "?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z",
     "?online_get_logon_status@@YA_NPAJ@Z",
     "?online_get_logon_users@@YAXPAUXONLINE_USER@@@Z",
     "?online_task_continue@@YAJPAUs_type_9df9da@@@Z",
