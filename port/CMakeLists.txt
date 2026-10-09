@@ -311,11 +311,29 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_SCREEN_SETTERS_OBJECT)
         list(APPEND guest_extract_args
+            --extract-symbol "??_Gc_screen_45bc60@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_screen_45bcd0@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_screen_45bd40@@UAAPAXI@Z"
             --extract-symbol "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z"
             --extract-symbol "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b72e6@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b7333@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b739a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?get_load_proc@c_screen_45bc60@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?get_load_proc@c_screen_45bcd0@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?get_load_proc@c_screen_45bd40@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
             --extract-symbol "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?set_bitmap@c_screen_45bd40@@QAAXF@Z"
-            --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z")
+            --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z"
+            --extract-symbol "?v3@c_screen_45bd40@@UAAXXZ"
+            --extract-symbol "?v18@c_screen_45bc60@@UAAXPAX@Z"
+            --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
+            --extract-global "??_7c_screen_45bc60@@6B@"
+            --extract-global "??_7c_screen_45bcd0@@6B@"
+            --extract-global "??_7c_screen_45bd40@@6B@"
+            --extract-alias "??_Ec_screen_45bc60@@UAAPAXI@Z"
+            --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
+            --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
@@ -510,7 +528,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 85
+            --expect-unresolved 82
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -616,11 +634,29 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp")
         list(APPEND guest_extract_args
+            --extract-symbol "??_Gc_screen_45bc60@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_screen_45bcd0@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_screen_45bd40@@UAAPAXI@Z"
             --extract-symbol "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z"
             --extract-symbol "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z"
+            --extract-symbol "?function_2b72e6@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b7333@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?function_2b739a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?get_load_proc@c_screen_45bc60@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?get_load_proc@c_screen_45bcd0@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?get_load_proc@c_screen_45bd40@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
             --extract-symbol "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?set_bitmap@c_screen_45bd40@@QAAXF@Z"
-            --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z")
+            --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z"
+            --extract-symbol "?v3@c_screen_45bd40@@UAAXXZ"
+            --extract-symbol "?v18@c_screen_45bc60@@UAAXPAX@Z"
+            --extract-symbol "?v18@c_screen_45bd40@@UAAXPAX@Z"
+            --extract-global "??_7c_screen_45bc60@@6B@"
+            --extract-global "??_7c_screen_45bcd0@@6B@"
+            --extract-global "??_7c_screen_45bd40@@6B@"
+            --extract-alias "??_Ec_screen_45bc60@@UAAPAXI@Z"
+            --extract-alias "??_Ec_screen_45bcd0@@UAAPAXI@Z"
+            --extract-alias "??_Ec_screen_45bd40@@UAAPAXI@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args
@@ -841,7 +877,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 85
+            --expect-unresolved 82
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -849,7 +885,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 85
+            --expect-unresolved 82
 )
 add_test(
     NAME main-menu-elf-core
