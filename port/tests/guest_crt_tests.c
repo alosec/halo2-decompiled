@@ -15,6 +15,7 @@ extern int h2_guest_iswalnum(wchar_t character);
 extern int h2_guest_iswspace(wchar_t character);
 extern float fabsf(float value);
 extern double fabs(double value);
+extern float sqrtf(float value);
 extern double sqrt(double value);
 extern double tan(double value);
 extern long CompareFileTime(const struct h2_guest_filetime* first,
@@ -61,10 +62,13 @@ int main(void) {
         puts("guest absolute-value helpers failed");
         return 1;
     }
+    const float root_two_f = sqrtf(2.0f);
     const double root_two = sqrt(2.0);
     const double tangent_quarter_turn = tan(0.78539816339744830962);
     const double tangent_negative = tan(-0.25);
-    if (sqrt(0.0) != 0.0 || sqrt(81.0) != 9.0 ||
+    if (sqrtf(0.0f) != 0.0f || sqrtf(81.0f) != 9.0f ||
+        root_two_f < 1.4142134f || root_two_f > 1.4142137f ||
+        sqrt(0.0) != 0.0 || sqrt(81.0) != 9.0 ||
         root_two < 1.414213562373094 || root_two > 1.414213562373096 ||
         tangent_quarter_turn < 0.999998 || tangent_quarter_turn > 1.000002 ||
         tangent_negative > -0.25533 || tangent_negative < -0.25535) {

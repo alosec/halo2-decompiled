@@ -28,6 +28,10 @@ double fabs(double value) {
     return converted.value;
 }
 
+float sqrtf(float value) {
+    return __builtin_sqrtf(value);
+}
+
 double sqrt(double value) {
     union { double value; unsigned long long bits; } converted = { value };
     const unsigned long long magnitude = converted.bits & 0x7fffffffffffffffULL;

@@ -7,9 +7,9 @@
       "blocker": "Requires coherent contact removal, impact release, Havok entity-property mutation, and rigid-body surface-state ownership."
     },
     {
-      "symbol": "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
-      "subsystem": "contact_impulse",
-      "blocker": "Requires exact point-impulse application with rigid-body activation plus owned game-time, tag, and contact event state."
+      "symbol": "?activate@hkRigidBody@@QAAXXZ",
+      "subsystem": "rigid_body_activation",
+      "blocker": "Requires exact Havok world/island activation ownership before inactive rigid bodies may accept impulses."
     },
     {
       "symbol": "?function_226a60@@YAXJ@Z",

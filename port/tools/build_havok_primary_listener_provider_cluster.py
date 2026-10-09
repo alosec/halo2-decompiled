@@ -73,6 +73,9 @@ def main() -> int:
         rigid_state = temporary / "rigid-state.o"
         transform = temporary / "transform.o"
         object_wake = temporary / "object-wake.o"
+        contact_impulse = temporary / "contact-impulse.o"
+        point_impulse = temporary / "point-impulse.o"
+        rigid_body_active = temporary / "rigid-body-active.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -103,9 +106,16 @@ def main() -> int:
                       ["?setMulEq@hkTransform@@QAAXABU1@@Z"])
         compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_wake,
                       ["?function_b7360@@YAXJ@Z"])
+        compile_slice(args, args.root / "src/unknown_1cec30.cpp", contact_impulse,
+                      ["?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z"])
+        compile_slice(args, args.root / "src/unknown_1d8dd0.cpp", point_impulse,
+                      ["?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z"])
+        compile_slice(args, args.root / "src/unknown_30bc40_native.cpp", rigid_body_active,
+                      ["?isActive@hkRigidBody@@QBA?AVhkBool@@XZ"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
              args.tables, primary, secondary, constructor, transition, scale,
-             pointer_owner, cache_detach, rigid_state, transform, object_wake])
+             pointer_owner, cache_detach, rigid_state, transform, object_wake,
+             contact_impulse, point_impulse, rigid_body_active])
     return 0
 
 

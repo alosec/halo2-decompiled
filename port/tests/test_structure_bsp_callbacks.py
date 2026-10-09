@@ -167,7 +167,7 @@ def main() -> int:
         raise RuntimeError("dormant primary listener tables entered production")
     expected_primary_cluster_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
-        "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+        "?activate@hkRigidBody@@QAAXXZ",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?cache_file_globals@@3Us_cache_file_globals@@A",
@@ -176,11 +176,14 @@ def main() -> int:
         "?function_b8540@@YAXJ@Z",
         "?g_480118@@3PAVc_allocator@@A",
         "?g_4e0300@@3PAUs_record_pool@@A",
+        "?g_4e3b44@@3PAUs_tag_instance@@A",
+        "?g_510c54@@3PAUs_game_time_globals@@A",
         "?g_51e9b8@@3PAUs_record_pool@@A",
         "?g_4687a4@@3PATvector3f@@A",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
         "h2_guest_memcpy",
+        "sqrtf",
     }
     primary_cluster_undefined = {
         line.strip().split()[-1]
@@ -196,7 +199,10 @@ def main() -> int:
     for symbol in (set(expected_primary_providers.values()) |
                    {table[3] for table in expected_primary_tables} |
                    {"h2_native_havok_primary_listener_vtables",
-                    "??0c_interface_277890@@QAA@XZ"}):
+                    "??0c_interface_277890@@QAA@XZ",
+                    "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+                    "?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z",
+                    "?isActive@hkRigidBody@@QBA?AVhkBool@@XZ"}):
         if symbol not in primary_cluster_defined:
             raise RuntimeError(f"primary Havok listener cluster lacks {symbol}")
 
@@ -235,6 +241,8 @@ def main() -> int:
         "g_51e9d0_owned_shape_owner",
         "g_468630_owned_object_type_definitions",
         "g_4e0300_owned_object_pool",
+        "g_4e3b44_owned_tag_instances",
+        "g_510c54_owned_game_time_globals",
         "g_4e0350_owned_scenario",
         "g_4de2e0_owned_object_partition",
         "g_4f55d0_owned_ai_globals",
@@ -260,6 +268,9 @@ def main() -> int:
         "native_havok_transition_tables_and_callback_owned",
         "native_havok_contact_transition_tables_and_callback_owned",
         "native_havok_listener_cache_attachment_owned",
+        "native_havok_rigid_body_island_state_owned",
+        "native_havok_motion_point_impulse_owned",
+        "native_havok_world_activation_owned",
         "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
@@ -426,7 +437,7 @@ def main() -> int:
 
     listener_additional_imports = {
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
-        "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
+        "?activate@hkRigidBody@@QAAXXZ",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
     }
@@ -461,7 +472,7 @@ def main() -> int:
     if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 4:
         raise RuntimeError("primary Havok listener frontier inventory changed")
     allowed_listener_subsystems = {
-        "contact_removal", "contact_impulse", "impact_creation",
+        "contact_removal", "rigid_body_activation", "impact_creation",
         "contact_processing",
     }
     listener_frontier_symbols = set()

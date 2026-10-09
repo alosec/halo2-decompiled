@@ -15,6 +15,8 @@
     "g_51e9d0_owned_shape_owner",
     "g_468630_owned_object_type_definitions",
     "g_4e0300_owned_object_pool",
+    "g_4e3b44_owned_tag_instances",
+    "g_510c54_owned_game_time_globals",
     "g_4e0350_owned_scenario",
     "g_4de2e0_owned_object_partition",
     "g_4f55d0_owned_ai_globals",
@@ -40,6 +42,9 @@
     "native_havok_transition_tables_and_callback_owned",
     "native_havok_contact_transition_tables_and_callback_owned",
     "native_havok_listener_cache_attachment_owned",
+    "native_havok_rigid_body_island_state_owned",
+    "native_havok_motion_point_impulse_owned",
+    "native_havok_world_activation_owned",
     "g_510c44_owned_ai_scratch_buffer",
     "native_offline_replication_unavailable"
   ],
