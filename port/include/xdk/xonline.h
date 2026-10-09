@@ -54,6 +54,18 @@ struct XONLINE_FRIEND {
     BYTE reserved55;
 };
 
+/* The retail press-start handler reserves 0x9c bytes for an accepted invite,
+ * copies its friend from offset 0, and reads InviteAcceptTime at offset 0x64.
+ * Its exact 15-minute comparison establishes the public-facing interval in
+ * seconds without importing an SDK layout. */
+#define XONLINE_ACCEPTED_GAMEINVITE_EXPIRATION_INTERVAL 900
+struct XONLINE_ACCEPTED_GAMEINVITE {
+    XONLINE_FRIEND InvitingFriend;
+    BYTE unknown56[0x64 - sizeof(XONLINE_FRIEND)];
+    FILETIME InviteAcceptTime;
+    BYTE unknown6c[0x9c - 0x6c];
+};
+
 /* Retail presence processing advances 0x3d bytes per result, reads state at
  * 0x0c and title at 0x18, matching the recovered fields below. */
 struct XONLINE_PRESENCE {
@@ -104,6 +116,10 @@ static_assert(sizeof(XONLINE_MUTELISTUSER) == 0x10, "retail mute-list user layou
 static_assert(sizeof(XONLINE_MUTELISTUSER) * MAX_MUTELISTUSERS == 0xfa0,
               "retail per-controller mute-list size");
 static_assert(sizeof(XONLINE_FRIEND) == 0x56, "retail XONLINE_FRIEND layout");
+static_assert(sizeof(XONLINE_ACCEPTED_GAMEINVITE) == 0x9c,
+              "retail accepted-invite layout");
+static_assert(__builtin_offsetof(XONLINE_ACCEPTED_GAMEINVITE, InviteAcceptTime) == 0x64,
+              "retail accepted-invite time offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, dwFriendState) == 0x1c,
               "retail friend-state offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, gameinviteTime) == 0x20,
@@ -138,6 +154,7 @@ static_assert(__builtin_offsetof(XONLINE_USER, passcode) == 0x20,
 static_assert(sizeof(XONLINE_USER) == 0x70, "retail XONLINE_USER layout");
 
 BOOL __stdcall XOnlineAreUsersIdentical(const XUID* first, const XUID* second);
+HRESULT __stdcall XOnlineFriendsGetAcceptedGameInvite(XONLINE_ACCEPTED_GAMEINVITE* invite);
 HRESULT __stdcall XOnlineMutelistAdd(DWORD controller, XUID user);
 HRESULT __stdcall XOnlineMutelistGet(DWORD controller, DWORD capacity, void* event,
                                      PXONLINETASK_HANDLE task,

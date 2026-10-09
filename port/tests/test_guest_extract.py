@@ -98,7 +98,21 @@ def main():
         if "_?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in predicted_defined:
             raise RuntimeError("predicted-resource source was not selectively compilable")
 
-    print("guest extraction retained constants and parsed recovered rendering sources")
+        press_start_output = Path(temporary) / "press-start.o"
+        press_start_command = command[:]
+        press_start_command[press_start_command.index("h2_extract_selected")] = "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+        press_start_command[press_start_command.index("--extract-global"):press_start_command.index("--output")] = []
+        press_start_command[press_start_command.index(output)] = press_start_output
+        press_start_command[-1] = args.root / "src/unknown_22f118.cpp"
+        subprocess.run([str(value) for value in press_start_command], check=True)
+        press_start_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", press_start_output],
+            text=True,
+        )
+        if "_?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in press_start_defined:
+            raise RuntimeError("press-start source was not selectively compilable")
+
+    print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
 if __name__ == "__main__":
