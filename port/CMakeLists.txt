@@ -422,8 +422,11 @@ foreach(pair IN ITEMS
             "?pack_color3f@@YAKPBUcolor3f@@@Z")
     endif()
     if(object STREQUAL H2_GUEST_COLOR_TABLE_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z"
+            --extract-symbol "?function_1a03a0@@YAJJPAG@Z"
+            --extract-symbol "?function_1a07b0@@YAXPAUs_player_profile@@J@Z"
+            --extract-global "??_C@_1M@CBFBMPEI@?$AAG?$AAu?$AAe?$AAs?$AAt?$AA?$AA@")
     endif()
     if(object STREQUAL H2_GUEST_TIME_QUERY_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -992,8 +995,11 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             "?pack_color3f@@YAKPBUcolor3f@@@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1a06a0.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z"
+            --extract-symbol "?function_1a03a0@@YAJJPAG@Z"
+            --extract-symbol "?function_1a07b0@@YAXPAUs_player_profile@@J@Z"
+            --extract-global "??_C@_1M@CBFBMPEI@?$AAG?$AAu?$AAe?$AAs?$AAt?$AA?$AA@")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_146240.cpp")
         list(APPEND guest_extract_args --extract-symbol

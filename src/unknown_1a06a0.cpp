@@ -235,6 +235,10 @@ bool function_1a0560(wchar_t const *name, s_player_profile_settings *settings, l
 
 long function_215c00(long arg_0, wchar_t const *arg_1);
 void __stdcall function_215e60(long arg_0);
+#if defined(H2_NATIVE_PORT)
+extern "C" int h2_native_profile_create(const void *record, unsigned int size);
+extern long g_55c154;
+#endif
 
 PRIVATE inline long function_1a03a1(long arg_0)
 {
@@ -253,6 +257,17 @@ PRIVATE inline long function_1a03a1(long arg_0)
 long __stdcall function_1a03a0(long arg_0, word *arg_1)
 {
 	s_player_profile local_0;
+#if defined(H2_NATIVE_PORT)
+	(void)arg_0;
+	if (!arg_1 || !arg_1[0])
+		return NONE;
+	function_1a07b0(&local_0, 0);
+	wide_string_copy(local_0.name, (wchar_t const *)arg_1, 31);
+	long identifier = h2_native_profile_create(&local_0, sizeof(local_0));
+	if (identifier == NONE)
+		g_55c154 = 1;
+	return identifier;
+#else
 	long local_1 = function_215c00(0, (wchar_t const *)arg_1);
 	if (local_1 != NONE)
 	{
@@ -276,4 +291,5 @@ long __stdcall function_1a03a0(long arg_0, word *arg_1)
 		}
 	}
 	return local_1;
+#endif
 }

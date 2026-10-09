@@ -74,19 +74,17 @@ extern "C" int h2_native_profile_delete(unsigned int identifier)
     return host_h2_profile_delete(identifier);
 }
 
+long __stdcall function_1a03a0(long controller, word *name);
+
 extern "C" int h2_native_profile_round_trip()
 {
     unsigned int identifiers[2] = { 0xffffffffu, 0xffffffffu };
     unsigned char record[0x1e0] = {};
     unsigned char loaded[0x1e0] = {};
-    record[8] = 'P';
-    record[10] = 'r';
-    record[12] = 'o';
-    record[14] = 'b';
-    record[16] = 'e';
+    word name[] = { 'P', 'r', 'o', 'b', 'e', 0 };
     if (h2_native_profile_list(identifiers, 2) != 0)
         return 1;
-    int identifier = h2_native_profile_create(record, sizeof(record));
+    int identifier = function_1a03a0(0, name);
     if (identifier < 0)
         return 2;
     int result = 0;
@@ -95,15 +93,17 @@ extern "C" int h2_native_profile_round_trip()
         result = 3;
     else if (!h2_native_profile_read((unsigned int)identifier, loaded, sizeof(loaded)))
         result = 4;
+    else if (loaded[8] != 'P' || loaded[9] != 0 ||
+             loaded[10] != 'r' || loaded[11] != 0 ||
+             loaded[12] != 'o' || loaded[13] != 0 ||
+             loaded[14] != 'b' || loaded[15] != 0 ||
+             loaded[16] != 'e' || loaded[17] != 0 ||
+             loaded[18] != 0 || loaded[19] != 0 ||
+             !(loaded[4] & 1) || loaded[0x118] != 10 || loaded[0x11b] != 10)
+        result = 5;
     else
-    {
         for (unsigned int index = 0; index < sizeof(record); ++index)
-            if (loaded[index] != record[index])
-            {
-                result = 5;
-                break;
-            }
-    }
+            record[index] = loaded[index];
     if (!result)
     {
         record[0x1df] = 0x5a;
