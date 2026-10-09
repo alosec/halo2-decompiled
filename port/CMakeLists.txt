@@ -535,6 +535,7 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_STORAGE_SIZE_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?saved_game_file_size_in_blocks@@YAJJ@Z"
+            --extract-symbol "?saved_game_storage_has_free_blocks@@YA_NJ@Z"
             --extract-symbol "?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z"
             --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z"
             --extract-global "switch.table.?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z")
@@ -997,6 +998,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_216a50.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?saved_game_file_size_in_blocks@@YAJJ@Z"
+            --extract-symbol "?saved_game_storage_has_free_blocks@@YA_NJ@Z"
             --extract-symbol "?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z"
             --extract-symbol "?saved_game_file_type_size_in_blocks@@YAJJ@Z"
             --extract-global "switch.table.?saved_game_file_type_from_variant@@YAJPAUs_game_variant@@@Z")

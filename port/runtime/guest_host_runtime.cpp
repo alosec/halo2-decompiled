@@ -96,6 +96,21 @@ void function_2164c0(long, s_save_list_2164c0 *list)
         *reinterpret_cast<long *>(list) = 0;
 }
 
+extern "C" BOOL __stdcall GetDiskFreeSpaceExA(const char *, ULARGE_INTEGER *available,
+                                                ULARGE_INTEGER *total,
+                                                ULARGE_INTEGER *free_bytes)
+{
+    /* Fixed capacity for the native virtual saved-game drive. */
+    constexpr unsigned long long capacity = 8ull * 1024ull * 1024ull * 1024ull;
+    if (available)
+        available->QuadPart = capacity;
+    if (total)
+        total->QuadPart = capacity;
+    if (free_bytes)
+        free_bytes->QuadPart = capacity;
+    return TRUE;
+}
+
 extern "C" DWORD __stdcall XGetDiskClusterSize(const char *)
 {
     /* Halo 2 accounts saved-game storage in 16 KiB blocks.  The native port's

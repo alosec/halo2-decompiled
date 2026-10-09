@@ -36,6 +36,7 @@
     {"symbol": "?global_preferences_globals@@3Us_global_preferences_globals@@A", "address": "0x00510818"},
     {"symbol": "?g_510c54@@3PAUs_game_time_globals@@A", "address": "0x00510c54"},
     {"symbol": "?g_51ea14@@3PAXA", "address": "0x0051ea14"},
+    {"symbol": "?g_51ebec@@3KA", "address": "0x0051ebec"},
     {"symbol": "?g_527330@@3Us_session_states@@A", "address": "0x00527330"},
     {"symbol": "?main_globals@@3Us_main_globals@@A", "address": "0x00547f28"},
     {"symbol": "?g_54d59f@@3_NA", "address": "0x0054d59f"},

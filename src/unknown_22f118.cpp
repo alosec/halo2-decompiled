@@ -249,6 +249,7 @@ bool __stdcall function_22f3a1(long controller_index)
 // @retail 0x22f3b5
 void c_press_start_screen::handle_start(s_controller_reference **controller, long *item)
 {
+#ifndef H2_NATIVE_PORT
 	XONLINE_ACCEPTED_GAMEINVITE invite;
 
 	if (online_get_accepted_game_invite(&invite))
@@ -269,6 +270,7 @@ void c_press_start_screen::handle_start(s_controller_reference **controller, lon
 			return;
 		}
 	}
+#endif
 	if (!TEST_FIELD_BIT(((s_player_slot_signed_in_view *)&g_54e8e0[0])->signed_in) &&
 		!TEST_FIELD_BIT(((s_player_slot_signed_in_view *)&g_54e8e0[1])->signed_in) &&
 		!TEST_FIELD_BIT(((s_player_slot_signed_in_view *)&g_54e8e0[2])->signed_in) &&
