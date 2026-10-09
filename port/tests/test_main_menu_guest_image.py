@@ -86,6 +86,9 @@ def main() -> None:
         "h2_native_profile_write",
         "h2_native_profile_delete",
         "h2_native_profile_round_trip",
+        "?function_238c21",
+        "?function_216120",
+        "??_7c_virtual_keyboard_screen",
     }
     missing = required_symbols - symbol_lines.keys()
     if missing:

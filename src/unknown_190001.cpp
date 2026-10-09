@@ -781,6 +781,16 @@ void function_19060a(long controller, long profile_index)
 	s_player_profile_settings settings;
 	s_player_slot_profile *slot;
 
+#if defined(H2_NATIVE_PORT)
+	if (!function_1a0540(&settings, profile_index))
+		return;
+	slot = player_slot_profile_get(controller);
+	slot->initialize(controller);
+	slot->set_profile_index(profile_index);
+	function_120df0(controller, (wchar_t const *)settings.name);
+	slot->sign_in(NULL);
+	return;
+#else
 	if (function_6c7e0() || (function_8d7c0() && !player_slot_count_active()))
 		select = true;
 	else
@@ -802,6 +812,7 @@ void function_19060a(long controller, long profile_index)
 	{
 		slot->sign_in(NULL);
 	}
+#endif
 }
 
 __forceinline bool logon_user_voice_allowed(long index)

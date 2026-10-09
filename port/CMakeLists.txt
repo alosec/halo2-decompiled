@@ -112,6 +112,8 @@ set(H2_GUEST_PRESS_START_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22f118.o")
 set(H2_GUEST_SIGNIN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2523e3.o")
 set(H2_GUEST_PROFILE_SCREEN_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18f42d.o")
 set(H2_GUEST_PROFILE_LIST_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_24a2e7.o")
+set(H2_GUEST_VIRTUAL_KEYBOARD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_23760b.o")
+set(H2_GUEST_PROFILE_NAME_CHECK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_216b60.o")
 set(H2_GUEST_WIDGET_ITEM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b0149.o")
 set(H2_GUEST_LOCALIZED_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a0120.o")
 set(H2_GUEST_UTF8_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fd90.o")
@@ -170,6 +172,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_23760b.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_216b60.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
     "${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
@@ -268,6 +272,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp"
         "${H2_GUEST_PROFILE_SCREEN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp"
         "${H2_GUEST_PROFILE_LIST_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24a2e7.cpp"
+        "${H2_GUEST_VIRTUAL_KEYBOARD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_23760b.cpp"
+        "${H2_GUEST_PROFILE_NAME_CHECK_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_216b60.cpp"
         "${H2_GUEST_PLAYER_SLOT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_190262.cpp"
         "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}|${PROJECT_SOURCE_DIR}/src/player_slot_get.cpp"
         "${H2_GUEST_PLAYER_PROFILE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp"
@@ -329,7 +335,9 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_PLAYER_PROFILE_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_24bac5@@YAXPAX@Z"
-            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z")
+            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z"
+            --extract-symbol "?set_profile_index@s_player_slot_profile@@QAAXJ@Z"
+            --extract-symbol "?sign_in@s_player_slot_profile@@QAAXP6AXJ_N@Z@Z")
     endif()
     if(object STREQUAL H2_GUEST_PLAYER_SLOT_SERVICES_OBJECT)
         list(APPEND guest_extract_args
@@ -338,7 +346,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?player_slot_count_active@@YAFXZ"
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z"
-            --extract-symbol "?function_18fa4d@@YAJJ@Z")
+            --extract-symbol "?function_18fa4d@@YAJJ@Z"
+            --extract-symbol "?function_18fb34@@YAXJPAUs_player_profile_settings@@J@Z")
     endif()
     if(object STREQUAL H2_GUEST_PROFILE_SCREEN_OBJECT)
         list(APPEND guest_extract_args
@@ -371,6 +380,36 @@ foreach(pair IN ITEMS
             --extract-alias "??_Ec_list_24a64d@@UAAPAXI@Z"
             --extract-global "??_C@_0BE@FKGOBLBN@player?5profile?5list?$AA@")
     endif()
+    if(object STREQUAL H2_GUEST_VIRTUAL_KEYBOARD_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_238c21@@YAXJJPAGJ@Z"
+            --extract-symbol "?function_23784f@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?v10@c_keyboard_key_widget@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v17@c_keyboard_key_widget@@UAAJXZ"
+            --extract-symbol "?v3@c_virtual_keyboard_screen@@UAAXXZ"
+            --extract-symbol "?v4@c_virtual_keyboard_screen@@UAAXJ@Z"
+            --extract-symbol "?v10@c_virtual_keyboard_screen@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v18@c_virtual_keyboard_screen@@UAAXPAX@Z"
+            --extract-symbol "?get_load_proc@c_virtual_keyboard_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?function_2380c0@@YA_NPAVc_virtual_keyboard_screen@@@Z"
+            --extract-symbol "??_Gc_keyboard_key_widget@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_virtual_keyboard_screen@@UAAPAXI@Z"
+            --extract-global "??_7c_keyboard_key_widget@@6B@"
+            --extract-global "??_7c_virtual_keyboard_screen@@6B@"
+            --extract-global g_44a540
+            --extract-global g_44a600
+            --extract-global g_44a6c0
+            --extract-global g_44a780
+            --extract-global g_44a840
+            --extract-global g_44a900
+            --extract-global g_44a9bc
+            --extract-alias "??_Ec_keyboard_key_widget@@UAAPAXI@Z"
+            --extract-alias "??_Ec_virtual_keyboard_screen@@UAAPAXI@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PROFILE_NAME_CHECK_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_216120@@YA_NPAGJ@Z")
+    endif()
     if(object STREQUAL H2_GUEST_PLAYER_SESSION_OBJECT)
         list(APPEND guest_extract_args
             --extract-symbol "?function_1900a5@@YA_NJ@Z"
@@ -380,6 +419,8 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_1901fc@@YAGXZ"
             --extract-symbol "?function_19022f@@YAGXZ"
             --extract-symbol "?function_19028d@@YA_NXZ"
+            --extract-symbol "?function_190001@@YAXJPBD@Z"
+            --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
             --extract-symbol "?function_1906da@@YA_NJ@Z"
             --extract-symbol "?function_1910b8@@YAJJ@Z")
@@ -425,6 +466,7 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args
             --extract-symbol "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z"
             --extract-symbol "?function_1a03a0@@YAJJPAG@Z"
+            --extract-symbol "?function_1a0540@@YA_NPAUs_player_profile_settings@@J@Z"
             --extract-symbol "?function_1a07b0@@YAXPAUs_player_profile@@J@Z"
             --extract-global "??_C@_1M@CBFBMPEI@?$AAG?$AAu?$AAe?$AAs?$AAt?$AA?$AA@")
     endif()
@@ -569,8 +611,9 @@ foreach(pair IN ITEMS
             "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
     endif()
     if(object STREQUAL H2_GUEST_TEXT_PARSER_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_22d2ee@@YAXPAGJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_22d2ee@@YAXPAGJ@Z"
+            --extract-symbol "?parse_text@@YAXPAG@Z")
     endif()
     if(object STREQUAL H2_GUEST_MUTELIST_OBJECT)
         list(APPEND guest_extract_args
@@ -743,6 +786,7 @@ set_source_files_properties(
     "${H2_GUEST_UI_GEOMETRY_OBJECT}" "${H2_GUEST_PREVIEW_RENDER_OBJECT}"
     "${H2_GUEST_PRESS_START_OBJECT}" "${H2_GUEST_SIGNIN_OBJECT}"
     "${H2_GUEST_PROFILE_SCREEN_OBJECT}" "${H2_GUEST_PROFILE_LIST_OBJECT}"
+    "${H2_GUEST_VIRTUAL_KEYBOARD_OBJECT}" "${H2_GUEST_PROFILE_NAME_CHECK_OBJECT}"
     "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}" "${H2_GUEST_UTF8_OBJECT}"
     "${H2_GUEST_COLOR_SPACE_OBJECT}"
@@ -845,6 +889,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SIGNIN_OBJECT}"
     "${H2_GUEST_PROFILE_SCREEN_OBJECT}"
     "${H2_GUEST_PROFILE_LIST_OBJECT}"
+    "${H2_GUEST_VIRTUAL_KEYBOARD_OBJECT}"
+    "${H2_GUEST_PROFILE_NAME_CHECK_OBJECT}"
     "${H2_GUEST_WIDGET_ITEM_OBJECT}"
     "${H2_GUEST_LOCALIZED_TEXT_OBJECT}"
     "${H2_GUEST_UTF8_OBJECT}"
@@ -902,7 +948,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_24b5bc.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_24bac5@@YAXPAX@Z"
-            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z")
+            --extract-symbol "?initialize@s_player_slot_profile@@QAAXJ@Z"
+            --extract-symbol "?set_profile_index@s_player_slot_profile@@QAAXJ@Z"
+            --extract-symbol "?sign_in@s_player_slot_profile@@QAAXP6AXJ_N@Z@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f576.cpp")
         list(APPEND guest_extract_args
@@ -911,7 +959,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?player_slot_count_active@@YAFXZ"
             --extract-symbol "?player_slot_find_controller@@YAJJ@Z"
             --extract-symbol "?player_slot_get_profile@@YAXJPAUs_player_profile@@PAJ@Z"
-            --extract-symbol "?function_18fa4d@@YAJJ@Z")
+            --extract-symbol "?function_18fa4d@@YAJJ@Z"
+            --extract-symbol "?function_18fb34@@YAXJPAUs_player_profile_settings@@J@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f42d.cpp")
         list(APPEND guest_extract_args
@@ -944,6 +993,36 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-alias "??_Ec_list_24a64d@@UAAPAXI@Z"
             --extract-global "??_C@_0BE@FKGOBLBN@player?5profile?5list?$AA@")
     endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_23760b.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_238c21@@YAXJJPAGJ@Z"
+            --extract-symbol "?function_23784f@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+            --extract-symbol "?v10@c_keyboard_key_widget@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v17@c_keyboard_key_widget@@UAAJXZ"
+            --extract-symbol "?v3@c_virtual_keyboard_screen@@UAAXXZ"
+            --extract-symbol "?v4@c_virtual_keyboard_screen@@UAAXJ@Z"
+            --extract-symbol "?v10@c_virtual_keyboard_screen@@UAA_NPAUs_widget_event@@@Z"
+            --extract-symbol "?v18@c_virtual_keyboard_screen@@UAAXPAX@Z"
+            --extract-symbol "?get_load_proc@c_virtual_keyboard_screen@@UAAP6APAVc_class_1473c9@@PAUs_screen_parameters@@@ZXZ"
+            --extract-symbol "?function_2380c0@@YA_NPAVc_virtual_keyboard_screen@@@Z"
+            --extract-symbol "??_Gc_keyboard_key_widget@@UAAPAXI@Z"
+            --extract-symbol "??_Gc_virtual_keyboard_screen@@UAAPAXI@Z"
+            --extract-global "??_7c_keyboard_key_widget@@6B@"
+            --extract-global "??_7c_virtual_keyboard_screen@@6B@"
+            --extract-global g_44a540
+            --extract-global g_44a600
+            --extract-global g_44a6c0
+            --extract-global g_44a780
+            --extract-global g_44a840
+            --extract-global g_44a900
+            --extract-global g_44a9bc
+            --extract-alias "??_Ec_keyboard_key_widget@@UAAPAXI@Z"
+            --extract-alias "??_Ec_virtual_keyboard_screen@@UAAPAXI@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_216b60.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_216120@@YA_NPAGJ@Z")
+    endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_190001.cpp")
         list(APPEND guest_extract_args
             --extract-symbol "?function_1900a5@@YA_NJ@Z"
@@ -953,6 +1032,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_1901fc@@YAGXZ"
             --extract-symbol "?function_19022f@@YAGXZ"
             --extract-symbol "?function_19028d@@YA_NXZ"
+            --extract-symbol "?function_190001@@YAXJPBD@Z"
+            --extract-symbol "?function_19060a@@YAXJJ@Z"
             --extract-symbol "?function_1906b4@@YAXXZ"
             --extract-symbol "?function_1906da@@YA_NJ@Z"
             --extract-symbol "?function_1910b8@@YAJJ@Z")
@@ -998,6 +1079,7 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
         list(APPEND guest_extract_args
             --extract-symbol "?function_1a06a0@@YAPAUcolor3f@@JPAU1@@Z"
             --extract-symbol "?function_1a03a0@@YAJJPAG@Z"
+            --extract-symbol "?function_1a0540@@YA_NPAUs_player_profile_settings@@J@Z"
             --extract-symbol "?function_1a07b0@@YAXPAUs_player_profile@@J@Z"
             --extract-global "??_C@_1M@CBFBMPEI@?$AAG?$AAu?$AAe?$AAs?$AAt?$AA?$AA@")
     endif()
@@ -1191,8 +1273,9 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/user_interface_text_parser.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_22d2ee@@YAXPAGJ@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_22d2ee@@YAXPAGJ@Z"
+            --extract-symbol "?parse_text@@YAXPAG@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_058cb0.cpp")
         list(APPEND guest_extract_args

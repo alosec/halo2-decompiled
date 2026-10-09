@@ -438,12 +438,18 @@ void c_virtual_keyboard_screen::v18(void *parameters)
 		build(&layout);
 	}
 	c_class_1a2c81::v1();
+#if !defined(H2_NATIVE_PORT)
 	function_238de7(this, g_44a900, k_keyboard_key_count);
 	function_238de7(this, g_44a540, k_keyboard_key_count);
 	function_238de7(this, g_44a780, k_keyboard_key_count);
 	function_238de7(this, g_44a600, k_keyboard_key_count);
+#endif
 	update_title();
+#if defined(H2_NATIVE_PORT)
+	if (type == 1)
+#else
 	if (!(g_44a9f8[type].flags & 0xa))
+#endif
 	{
 		keys[0x2e].value6e = false;
 		keys[0x2d].value6e = false;
@@ -655,7 +661,11 @@ shifted_labels:
 replace_labels:
 		function_238de7(this, string_ids, k_keyboard_key_count);
 labels_done:
+#if defined(H2_NATIVE_PORT)
+		if (false)
+#else
 		if (g_44a9f8[type].flags & 0xa && (key == 0x2b || key == 0x2c))
+#endif
 		{
 			key = move_focus(event->type);
 		}
@@ -721,7 +731,14 @@ long c_virtual_keyboard_screen::check_string()
 	bool empty = string[0] == 0;
 	bool has_alphanumeric = false;
 	bool characters_valid = true;
+#if defined(H2_NATIVE_PORT)
+	/* Only recovered type 1 is exposed natively until the other persistence
+	   and online modes have truthful providers. */
+	s_keyboard_type const profile_name_type = { 2, function_2380c0 };
+	s_keyboard_type const *keyboard_type = &profile_name_type;
+#else
 	s_keyboard_type const *keyboard_type = &g_44a9f8[type];
+#endif
 	long result = 0;
 
 	for (long i = 0; string[i]; i++)
@@ -874,10 +891,12 @@ void c_virtual_keyboard_screen::press_key(short key)
 				{
 					word character = *text;
 
+#if !defined(H2_NATIVE_PORT)
 					if (function_140420(character))
 					{
 						character = 0x25a1;
 					}
+#endif
 					if (!insert(character))
 					{
 						break;
@@ -910,6 +929,9 @@ void c_virtual_keyboard_screen::finish()
 {
 	bool done;
 
+#if defined(H2_NATIVE_PORT)
+	done = type == 1 ? finish_profile_create_1(this) : true;
+#else
 	switch (type)
 	{
 	case 0:
@@ -956,6 +978,7 @@ void c_virtual_keyboard_screen::finish()
 		done = true;
 		break;
 	}
+#endif
 	if (done)
 	{
 		start_animation(3);
@@ -1464,6 +1487,12 @@ extern dword g_54d5b8;
 // @retail 0x237c04
 void c_virtual_keyboard_screen::v4(long screen_rect_address)
 {
+#if defined(H2_NATIVE_PORT)
+	(void)screen_rect_address;
+	/* Text is host-rendered lazily; Xbox selection/cursor sprites do not yet
+	   have native cache owners. Keep the recovered edited-string update. */
+	update_string();
+#else
 	short_rectangle2d const *screen = (short_rectangle2d const *)screen_rect_address;
 	c_text_widget_45a5e0 *text = (c_text_widget_45a5e0 *)find_child(6, 2, false);
 	update_string();
@@ -1518,4 +1547,5 @@ void c_virtual_keyboard_screen::v4(long screen_rect_address)
 			function_235e5e(cursor, &from, &to, ((dword)alpha << 24) | 0xffffff, 0, 0);
 		}
 	}
+#endif
 }

@@ -75,13 +75,15 @@ extern "C" int h2_native_profile_delete(unsigned int identifier)
 }
 
 long __stdcall function_1a03a0(long controller, word *name);
+bool __stdcall function_215f40(long type, unsigned char *buffer);
+bool function_216120(word *name, long type);
 
 extern "C" int h2_native_profile_round_trip()
 {
     unsigned int identifiers[2] = { 0xffffffffu, 0xffffffffu };
     unsigned char record[0x1e0] = {};
     unsigned char loaded[0x1e0] = {};
-    word name[] = { 'P', 'r', 'o', 'b', 'e', 0 };
+    word name[] = { 'H', 'a', 'l', 'o', '0', '0', '0', '1', 0 };
     if (h2_native_profile_list(identifiers, 2) != 0)
         return 1;
     int identifier = function_1a03a0(0, name);
@@ -93,17 +95,26 @@ extern "C" int h2_native_profile_round_trip()
         result = 3;
     else if (!h2_native_profile_read((unsigned int)identifier, loaded, sizeof(loaded)))
         result = 4;
-    else if (loaded[8] != 'P' || loaded[9] != 0 ||
-             loaded[10] != 'r' || loaded[11] != 0 ||
-             loaded[12] != 'o' || loaded[13] != 0 ||
-             loaded[14] != 'b' || loaded[15] != 0 ||
-             loaded[16] != 'e' || loaded[17] != 0 ||
-             loaded[18] != 0 || loaded[19] != 0 ||
+    else if (loaded[8] != 'H' || loaded[9] != 0 ||
+             loaded[10] != 'a' || loaded[11] != 0 ||
+             loaded[12] != 'l' || loaded[13] != 0 ||
+             loaded[14] != 'o' || loaded[15] != 0 ||
+             loaded[16] != '0' || loaded[18] != '0' ||
+             loaded[20] != '0' || loaded[22] != '1' || loaded[24] != 0 ||
              !(loaded[4] & 1) || loaded[0x118] != 10 || loaded[0x11b] != 10)
         result = 5;
     else
+    {
+        word next_name[128] = {};
+        if (!function_215f40(0, reinterpret_cast<unsigned char *>(next_name)) ||
+            next_name[0] != 'H' || next_name[1] != 'a' || next_name[2] != 'l' ||
+            next_name[3] != 'o' || next_name[4] != '0' || next_name[5] != '0' ||
+            next_name[6] != '0' || next_name[7] != '2' || next_name[8] != 0 ||
+            function_216120(name, 0) || !function_216120(next_name, 0))
+            result = 5;
         for (unsigned int index = 0; index < sizeof(record); ++index)
             record[index] = loaded[index];
+    }
     if (!result)
     {
         record[0x1df] = 0x5a;
@@ -219,12 +230,10 @@ extern "C" int h2_main_menu_guest_accept()
             s_widget_event event = { 5, 0, 0 };
             if (!item || !item->v10(&event))
                 return 4;
-            /* Empty native persistence must reach the recovered create-profile
-             * path, fail its real name read, and remain on this selector. */
+            /* Create New must obtain one durable default name and enqueue the
+             * genuine recovered type-1 keyboard. */
             if (g_native_profile_name_reads != reads + 1)
                 return 5;
-            if (channels[index]->current != screen || channels[index]->next)
-                return 6;
             return 0;
         }
     }
@@ -440,11 +449,6 @@ H2_NATIVE_UNAVAILABLE_SCREEN(function_23334f)
 H2_NATIVE_UNAVAILABLE_SCREEN(function_24b4a9)
 #undef H2_NATIVE_UNAVAILABLE_SCREEN
 
-void function_18fb34(long, s_player_profile_settings *, long)
-{
-    /* No persisted profile can be applied during empty native bootstrap. */
-}
-
 void function_215367(long, long, void *, long)
 {
     /* Native saved-game task storage is not implemented yet. */
@@ -465,13 +469,47 @@ void __stdcall function_215e60(long)
     /* The native virtual save list is empty. */
 }
 
-bool __stdcall function_215f40(long, unsigned char *buffer)
+bool __stdcall function_215f40(long type, unsigned char *buffer)
 {
     ++g_native_profile_name_reads;
-    if (buffer)
+    if (!buffer || type != 0)
+        return false;
+    word *name = reinterpret_cast<word *>(buffer);
+    name[0] = 0;
+    unsigned int identifiers[4096];
+    int count = h2_native_profile_list(identifiers, 4096);
+    if (count < 0 || count > 4096)
+        return false;
+    for (unsigned int suffix = 1; suffix <= 4096; ++suffix)
     {
-        buffer[0] = 0;
-        buffer[1] = 0;
+        word candidate[9] = { 'H', 'a', 'l', 'o', 0, 0, 0, 0, 0 };
+        unsigned int value = suffix;
+        for (int digit = 7; digit >= 4; --digit)
+        {
+            candidate[digit] = (word)('0' + value % 10);
+            value /= 10;
+        }
+        bool available = true;
+        for (int index = 0; index < count && available; ++index)
+        {
+            unsigned char record[0x1e0];
+            if (!h2_native_profile_read(identifiers[index], record, sizeof(record)))
+                return false;
+            word const *stored = reinterpret_cast<word const *>(record + 8);
+            int character = 0;
+            for (; character < 9 && stored[character] == candidate[character]; ++character)
+                if (!candidate[character])
+                {
+                    available = false;
+                    break;
+                }
+        }
+        if (available)
+        {
+            for (int character = 0; character < 9; ++character)
+                name[character] = candidate[character];
+            return true;
+        }
     }
     return false;
 }

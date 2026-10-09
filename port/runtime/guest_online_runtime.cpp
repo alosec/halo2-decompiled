@@ -196,11 +196,6 @@ void function_121100(long *value)
     *value = 0;
 }
 
-void __stdcall function_238c21(long, long, unsigned short *, long)
-{
-    /* Native text entry has no controller/keyboard screen yet. */
-}
-
 void __stdcall function_238ea7(long)
 {
     /* No Xbox Live friend selection exists offline. */
@@ -223,12 +218,6 @@ c_class_1473c9 *__stdcall function_253185(s_screen_parameters *)
 {
     /* The network squad browser has no native-offline screen. */
     return 0;
-}
-
-void s_player_slot_profile::set_profile_index(long)
-{
-    /* The native virtual save list is empty until persistence exists. */
-    profile_index = NONE;
 }
 
 void s_player_slot_profile::show_dialog(player_sign_in_callback next, long)

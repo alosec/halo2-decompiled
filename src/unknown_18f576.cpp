@@ -380,6 +380,13 @@ extern s_55c164 g_55c164[16];
 void __stdcall function_18fb34(long index, s_player_profile_settings *settings, long profile_index)
 {
 	s_player_slot_view *slot = &player_slots()[index];
+#if defined(H2_NATIVE_PORT)
+	/* Native offline activation owns no machine identity, voice graph, or
+	   save-task queue. Preserve the recovered local slot state exactly. */
+	slot->profile = *(s_player_profile *)settings;
+	slot->flags |= 0x10;
+	slot->profile_index = profile_index;
+#else
 	bool changed = !(slot->flags & 0x10) || slot->profile_index != profile_index;
 
 	if (!(slot->flags & 0x10))
@@ -404,6 +411,7 @@ void __stdcall function_18fb34(long index, s_player_profile_settings *settings, 
 	}
 	function_53810(settings->voice_mask, index);
 	function_54fc0(index, settings->voice_through_tv);
+#endif
 }
 
 void function_215790();

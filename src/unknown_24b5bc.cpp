@@ -112,6 +112,14 @@ void s_player_slot_profile::sign_in(player_sign_in_callback callback)
 {
 	if (profile_index != NONE)
 	{
+#if defined(H2_NATIVE_PORT)
+		char name[16] = { 0 };
+		function_18fb34(player, &settings, profile_index);
+		function_120df0(player, (wchar_t const *)settings.name);
+		function_190001(player, name);
+		if (callback)
+			callback(player, true);
+#else
 		if (xuid_valid(&user.xuid))
 		{
 			task_type = 1;
@@ -131,6 +139,7 @@ void s_player_slot_profile::sign_in(player_sign_in_callback callback)
 				callback(player, true);
 			}
 		}
+#endif
 	}
 	else if (callback)
 	{

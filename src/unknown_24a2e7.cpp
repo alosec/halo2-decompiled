@@ -534,9 +534,27 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 {
 #if defined(H2_NATIVE_PORT)
 	s_datum_24a763 *datum = (s_datum_24a763 *)record_pool_lookup(data, *arg_1);
-	if (datum && datum->index == NONE &&
-		function_24a2e7((*arg_0)->controller_index) && !field_89)
+	if (!datum)
+		return;
+	long controller = (*arg_0)->controller_index;
+	if (datum->index == NONE)
+	{
+		if (function_24a2e7(controller) && !field_89)
+			function_14800c(v11(), v12());
+		return;
+	}
+	if (!field_89)
+	{
+		s_player_profile_settings settings;
+		if (!function_1a0540(&settings, datum->index))
+			return;
+		s_player_slot_profile *slot = (s_player_slot_profile *)g_54eae8[controller];
+		slot->initialize(controller);
+		slot->set_profile_index(datum->index);
+		function_120df0(controller, (wchar_t const *)settings.name);
+		slot->sign_in(NULL);
 		function_14800c(v11(), v12());
+	}
 #else
 	s_datum_24a763 *local_0 = (s_datum_24a763 *)record_pool_lookup(data, *arg_1);
 	if (local_0)

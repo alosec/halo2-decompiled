@@ -3,6 +3,9 @@
 
 #include "unknown_11c920.h"
 #include <string.h>
+#if defined(H2_NATIVE_PORT)
+#include <wchar.h>
+#endif
 #include <xtl.h>
 
 extern void *g_51ea14;
@@ -19,6 +22,11 @@ struct s_saved_game_drive
 
 extern s_saved_game_drive g_4e61c0;
 extern long g_55c154;
+#if defined(H2_NATIVE_PORT)
+extern "C" int h2_native_profile_list(unsigned int *identifiers, unsigned int capacity);
+extern "C" int h2_native_profile_read(unsigned int identifier, void *record,
+                                      unsigned int size);
+#endif
 char *function_11c9c0(char *buffer, long maximum_count, char const *format, ...);
 void unicode_string_snprintf(word *buffer, long maximum_count, word const *format, ...);
 
@@ -60,6 +68,36 @@ bool __stdcall function_215f40(long type, byte *buffer)
 bool function_216120(word *string, long type)
 {
 	(void)&type;
+#if defined(H2_NATIVE_PORT)
+	if (!string || !string[0] || type != 0)
+		return false;
+	unsigned int identifiers[4096];
+	int count = h2_native_profile_list(identifiers, 4096);
+	if (count < 0 || count > 4096)
+		return false;
+	for (int index = 0; index < count; ++index)
+	{
+		byte record[0x1e0];
+		if (!h2_native_profile_read(identifiers[index], record, sizeof(record)))
+			return false;
+		word const *stored = (word const *)(record + 8);
+		long character = 0;
+		for (; character < 32; ++character)
+		{
+			word left = string[character];
+			word right = stored[character];
+			if (left >= 'A' && left <= 'Z')
+				left += 'a' - 'A';
+			if (right >= 'A' && right <= 'Z')
+				right += 'a' - 'A';
+			if (left != right)
+				break;
+			if (!left)
+				return false;
+		}
+	}
+	return true;
+#else
 	bool result = false;
 	char drive;
 	if (string && *string && g_51ea14 && function_1249f0(0, &drive))
@@ -75,6 +113,7 @@ bool function_216120(word *string, long type)
 		}
 	}
 	return result;
+#endif
 }
 
 enum

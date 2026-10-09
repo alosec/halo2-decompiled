@@ -155,6 +155,10 @@ bool function_153750(s_player_appearance *appearance);
 
 /* what the sign-in screens call a player profile */
 struct s_player_profile_settings;
+#if defined(H2_NATIVE_PORT)
+extern "C" int h2_native_profile_read(unsigned int identifier, void *record,
+                                      unsigned int size);
+#endif
 
 /* reads a player profile from its saved game file, then repairs it */
 // @retail 0x1a0850
@@ -184,7 +188,12 @@ bool function_1a0540(s_player_profile_settings *settings, long file_index)
 		function_1a07b0(profile, 0);
 		return true;
 	}
+#if defined(H2_NATIVE_PORT)
+	return h2_native_profile_read((unsigned int)file_index, profile,
+	                              sizeof(*profile)) != 0;
+#else
 	return function_1a0850(file_index, profile);
+#endif
 }
 
 /* reads the name and profile of a saved player profile */
