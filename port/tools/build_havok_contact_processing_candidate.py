@@ -58,6 +58,7 @@ def main() -> int:
         vector_normalize = temporary / "vector-normalize.o"
         vector_compress = temporary / "vector-compress.o"
         contact_properties = temporary / "contact-properties.o"
+        rigid_body_matrix = temporary / "rigid-body-matrix.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -107,9 +108,12 @@ def main() -> int:
                       ["?vector3d_compress@@YAKPBTvector3f@@@Z"])
         compile_slice(args, args.root / "src/unknown_0dc3a0.cpp", contact_properties,
                       ["?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z"])
+        compile_slice(args, args.root / "src/unknown_1cec30.cpp", rigid_body_matrix,
+                      ["?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
-             vector_normalize, vector_compress, contact_properties])
+             vector_normalize, vector_compress, contact_properties,
+             rigid_body_matrix])
     return 0
 
 

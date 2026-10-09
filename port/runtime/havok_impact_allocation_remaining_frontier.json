@@ -46,11 +46,6 @@
       "symbol": "?function_18a720@@YAXJ_N@Z",
       "subsystem": "audio",
       "blocker": "Requires owned looping-sound release semantics."
-    },
-    {
-      "symbol": "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z",
-      "subsystem": "havok_motion",
-      "blocker": "Requires exact rigid-body transform extraction over initialized component state."
     }
   ]
 }

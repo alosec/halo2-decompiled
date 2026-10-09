@@ -6783,7 +6783,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 001d06c0,165,game,speed,a16 pad,,,001d87b0 002277b0,src/unknown_1cec30.cpp,todo
 001d0770,251,game,speed,a16 pad,,,001cf520,src/unknown_1cec30.cpp,matched
 001d0870,104,game,speed,a16 pad,,,001d08e0,src/unknown_1cec30.cpp,matched
-001d08e0,239,game,speed,a16 pad ebp,,,002da5d0,src/unknown_1cec30.cpp,matched
+001d08e0,239,game,speed,a16 pad ebp,,,002da5d0,src/unknown_1cec30.cpp,done
 001d09d0,74,game,speed,a16 pad,,,,src/unknown_1cec30.cpp,matched
 001d0a20,164,game,speed,a16 pad ebp,,,,src/unknown_1cec30.cpp,todo
 001d0ad0,74,game,speed,a16 pad,,,,src/unknown_1cec30.cpp,matched
