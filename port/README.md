@@ -24,7 +24,7 @@ build/native/port/halo2-port --headless --data-root orig/game
 build/native/port/halo2-port --data-root orig/game
 ```
 
-`H2_DATA_ROOT` may be used instead of `--data-root`. The graphical command currently opens only a diagnostic host window. It is not a recreation of the menu and must not be presented as one.
+`H2_DATA_ROOT` may be used instead of `--data-root`. The optional `--guest-image PATH` loads a completed AArch64 guest ELF into the same arena after the retail XBE state, applies its final protections, and patches the standard native services. It does not execute an entry point yet. The graphical command currently opens only a diagnostic host window. It is not a recreation of the menu and must not be presented as one.
 
 To refresh the native-portability census without generating or linking game code:
 

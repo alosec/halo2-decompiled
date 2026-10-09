@@ -1,9 +1,12 @@
 #include "h2/guest_arena.hpp"
+#include "h2/guest_elf_image.hpp"
+#include "h2/host_services.hpp"
 #include "h2/retail_data.hpp"
 
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string_view>
 
 #include <SDL3/SDL.h>
@@ -12,11 +15,13 @@ namespace {
 
 struct Options {
     std::filesystem::path data_root;
+    std::filesystem::path guest_image;
     bool headless = false;
 };
 
 void usage(const char* program) {
-    std::cerr << "Usage: " << program << " [--headless] [--data-root PATH]\n";
+    std::cerr << "Usage: " << program
+              << " [--headless] [--data-root PATH] [--guest-image PATH]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -29,6 +34,8 @@ bool parse_options(int argc, char** argv, Options& options) {
             options.headless = true;
         } else if (argument == "--data-root" && i + 1 < argc) {
             options.data_root = argv[++i];
+        } else if (argument == "--guest-image" && i + 1 < argc) {
+            options.guest_image = argv[++i];
         } else {
             return false;
         }
@@ -109,13 +116,28 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::optional<h2::port::GuestElfImage> guest_image;
+    if (!options.guest_image.empty()) {
+        guest_image = h2::port::GuestElfImage::load(options.guest_image, *arena,
+                                                    arena_error);
+        if (!guest_image || !h2::port::patch_standard_host_imports(
+                                *guest_image, *arena, arena_error)) {
+            std::cerr << "error: " << arena_error << '\n';
+            return 1;
+        }
+    }
+
     std::cout << "Supported retail Halo 2 data verified at " << options.data_root << '\n'
               << "default.xbe sha256 " << report.xbe_sha256 << '\n'
               << "cache build " << report.cache_build << ", map "
               << report.main_menu_name << '\n'
               << "Initialized " << image.sections.size()
               << " XBE sections in non-executable guest memory at 0x" << std::hex
-              << h2::port::kGuestBias << std::dec << '\n'
-              << "Native host preflight passed; game boot is not implemented yet.\n";
+              << h2::port::kGuestBias << std::dec << '\n';
+    if (guest_image) {
+        std::cout << "Loaded " << guest_image->segments().size()
+                  << " protected guest ELF segments and patched native host services\n";
+    }
+    std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless ? 0 : run_window();
 }
