@@ -80,6 +80,10 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 #define PAGE_READONLY 0x02
 #define PAGE_READWRITE 0x04
 #define PAGE_WRITECOMBINE 0x400
+#define WINAPI __stdcall
+/* Public Xbox network QoS listener flags used by recovered session code. */
+#define XNET_QOS_LISTEN_ENABLE 0x01
+#define XNET_QOS_LISTEN_RELEASE 0x10
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,6 +103,9 @@ DWORD __stdcall XCreateSaveGame(const char* root, const wchar_t* name,
 DWORD __stdcall XDeleteSaveGame(const char* root, const wchar_t* name);
 DWORD __stdcall XGetDiskClusterSize(const char* root);
 DWORD __stdcall XGetLanguage(void);
+int __stdcall XNetQosListen(const XNKID* key_id, const BYTE* data,
+                            DWORD data_size, DWORD bits_per_second, DWORD flags);
+int __stdcall XNetUnregisterKey(const XNKID* key_id);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
 #ifdef __cplusplus
