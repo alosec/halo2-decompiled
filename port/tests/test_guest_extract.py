@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_plane_intersection_output = Path(temporary) / "physics-model-plane-intersection.o"
+        physics_model_plane_intersection_symbol = (
+            "?function_2fd5c0@c_physics_plane_cloud_shape@@UAAPA_NPA_NPBUs_physics_plane_segment@@PAUs_physics_plane_hit@@@Z"
+        )
+        physics_model_plane_intersection_command = command[:]
+        physics_model_plane_intersection_command[physics_model_plane_intersection_command.index("h2_extract_selected")] = physics_model_plane_intersection_symbol
+        physics_model_plane_intersection_command[physics_model_plane_intersection_command.index("--extract-global"):physics_model_plane_intersection_command.index("--output")] = []
+        physics_model_plane_intersection_command[physics_model_plane_intersection_command.index(output)] = physics_model_plane_intersection_output
+        physics_model_plane_intersection_command[-1] = args.root / "src/unknown_2fd5c0.cpp"
+        subprocess.run([str(value) for value in physics_model_plane_intersection_command], check=True)
+        physics_model_plane_intersection_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_plane_intersection_output],
+            text=True,
+        )
+        if f"_{physics_model_plane_intersection_symbol}" not in physics_model_plane_intersection_defined:
+            raise RuntimeError("physics-model convex-plane intersection was not retained")
+
         physics_model_vertex_cloud_output = Path(temporary) / "physics-model-vertex-cloud.o"
         physics_model_vertex_cloud_symbols = (
             "?function_2fd260@c_physics_vertex_cloud_shape@@UAAXPBMPAM@Z",
