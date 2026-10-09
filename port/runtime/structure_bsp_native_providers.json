@@ -4,7 +4,8 @@
     "g_51f400_owned_hash_table",
     "g_51f400_native_hash_callback",
     "g_4f55f8_native_ai_text_callbacks",
-    "g_51ecb4_owned_flock_pool"
+    "g_51ecb4_owned_flock_pool",
+    "g_4e7408_owned_random_state"
   ],
   "providers": [
     {"method": "0x00123d20", "symbol": "?arena_initialize_for_new_structure_bsp@@YAXXZ", "source": "src/unknown_123c20.cpp", "portable": true},
@@ -79,6 +80,7 @@
     {"source": "src/unknown_015b70_native.cpp", "symbols": ["?function_015b70@@YAXXZ"]},
     {"source": "src/unknown_01cf50_native.cpp", "symbols": ["?function_1e1c0@@YAXXZ"]},
     {"source": "src/unknown_13e210_native.cpp", "symbols": ["?function_13e270@@YA_NPAUhash_table@@PAXPBX@Z"]},
-    {"source": "src/unknown_293070_native.cpp", "symbols": ["?flock_new@@YAJF@Z", "?function_2930c0@@YA_NJ@Z", "?function_292f10@@YAXXZ"]}
+    {"source": "src/unknown_293070_native.cpp", "symbols": ["?flock_new@@YAJF@Z", "?function_2930c0@@YA_NJ@Z", "?function_292f10@@YAXXZ"]},
+    {"source": "src/unknown_0350e0_native.cpp", "symbols": ["?function_36ab0@@YAXXZ"]}
   ]
 }

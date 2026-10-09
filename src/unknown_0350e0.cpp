@@ -2450,6 +2450,7 @@ struct s_motion_material_map
 
 real g_50941c;
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x36ab0
 void function_36ab0(void)
 {
@@ -2473,6 +2474,7 @@ void function_36ab0(void)
     g_509428 = 0.0f;
     g_50941c = 0.0f;
 }
+#endif
 
 #include "object_markers.h"
 
