@@ -93,6 +93,7 @@
     {"source": "src/unknown_30be40.cpp", "symbols": ["?function_30be40@s_47f048_object@@QAAXJ@Z"]},
     {"source": "src/unknown_2d91d0.cpp", "symbols": ["?function_2d91d0@@YAXPAXJ@Z"]},
     {"source": "src/unknown_2e90a0.cpp", "symbols": ["?function_2e90a0@@YAXUs_184251@@@Z"]},
-    {"source": "src/scenery_bsp_native.cpp", "symbols": ["?function_10a250@@YAXJ@Z"]}
+    {"source": "src/scenery_bsp_native.cpp", "symbols": ["?function_10a250@@YAXJ@Z"]},
+    {"source": "src/sound_looping_paths_native.cpp", "symbols": ["?function_18bb80@@YAXM@Z"]}
   ]
 }

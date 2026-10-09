@@ -410,6 +410,7 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 	function_189fe0(&request, tag);
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
 {
@@ -489,3 +490,4 @@ void __stdcall function_18bb80(real elapsed)
 		}
 	}
 }
+#endif
