@@ -11,6 +11,7 @@
     {"symbol": "?g_4cf770@@3EA", "address": "0x004cf770"},
     {"symbol": "?g_4cf772@@3EA", "address": "0x004cf772"},
     {"symbol": "?g_4cf77c@@3PAUs_simulation_world@@A", "address": "0x004cf77c"},
+    {"symbol": "?g_4cf78c@@3PAUs_record_pool@@A", "address": "0x004cf78c"},
     {"symbol": "?g_4e034c@@3PAUs_tag_header_globals@@A", "address": "0x004e034c"},
     {"symbol": "?g_4e0350@@3PAUs_palette_source_globals@@A", "address": "0x004e0350"},
     {"symbol": "?g_4e3b44@@3PAUs_tag_instance@@A", "address": "0x004e3b44"},
@@ -35,6 +36,7 @@
     {"symbol": "?g_55c154@@3JA", "address": "0x0055c154"},
     {"symbol": "?g_55c160@@3JA", "address": "0x0055c160"},
     {"symbol": "?g_55c164@@3PAUs_55c164@@A", "address": "0x0055c164"},
-    {"symbol": "?g_transport_globals@@3Us_transport_globals@@A", "address": "0x004d8b18"}
+    {"symbol": "?g_transport_globals@@3Us_transport_globals@@A", "address": "0x004d8b18"},
+    {"symbol": "?g_4d8ba0@@3_NA", "address": "0x004d8ba0"}
   ]
 }
