@@ -305,6 +305,31 @@ def main():
             if f"_{symbol}" not in physics_model_leaf_defined:
                 raise RuntimeError(f"physics-model leaf method was not retained: {symbol}")
 
+        physics_model_accessor_output = Path(temporary) / "physics-model-runtime-accessors.o"
+        physics_model_accessor_symbols = (
+            "?function_2fd210@c_physics_shape_456008@@QAAXPAUs_physics_shape_marker@@@Z",
+            "?function_2fd230@c_physics_shape_456008@@QAAXPAJ@Z",
+            "?function_2fe330@c_physics_shape_455ef0@@QAAXPAUs_physics_shape_marker@@@Z",
+            "?function_2fe410@c_physics_shape_455ef0@@QAAXPAM@Z",
+        )
+        physics_model_accessor_command = command[:]
+        physics_model_accessor_command[physics_model_accessor_command.index("h2_extract_selected")] = physics_model_accessor_symbols[0]
+        physics_model_accessor_command[physics_model_accessor_command.index("--extract-global"):physics_model_accessor_command.index("--output")] = []
+        insert_at = physics_model_accessor_command.index("--output")
+        for symbol in physics_model_accessor_symbols[1:]:
+            physics_model_accessor_command[insert_at:insert_at] = ["--extract-symbol", symbol]
+            insert_at += 2
+        physics_model_accessor_command[physics_model_accessor_command.index(output)] = physics_model_accessor_output
+        physics_model_accessor_command[-1] = args.root / "src/unknown_2fd210.cpp"
+        subprocess.run([str(value) for value in physics_model_accessor_command], check=True)
+        physics_model_accessor_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_accessor_output],
+            text=True,
+        )
+        for symbol in physics_model_accessor_symbols:
+            if f"_{symbol}" not in physics_model_accessor_defined:
+                raise RuntimeError(f"physics-model compact accessor was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
