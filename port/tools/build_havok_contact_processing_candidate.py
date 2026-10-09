@@ -72,7 +72,8 @@ def main() -> int:
                       ["?impact_components_valid@@YA_NJJ@Z"])
         compile_slice(args, args.root / "src/impacts.cpp", impact_match,
                       ["?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z",
-                       "?impacts_last_sorted@@YAJXZ"])
+                       "?impacts_last_sorted@@YAJXZ",
+                       "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z"])
         compile_slice(
             args, args.root / "src/unknown_1d5460.cpp", impact_find,
             ["?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",

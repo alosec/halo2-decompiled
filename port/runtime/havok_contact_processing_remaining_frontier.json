@@ -13,11 +13,6 @@
       "blocker": "Eviction stops sounds, releases references, clears component contact or constraint links, and can enter broad impact effect, audio, and rigid-body teardown."
     },
     {
-      "symbol": "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
-      "subsystem": "impact_priority",
-      "blocker": "Requires truthful active-player iteration and player-object position ownership rather than a fabricated distance policy."
-    },
-    {
       "symbol": "?impact_new@@YAJPBUs_impact_data@@J@Z",
       "subsystem": "impact_allocation",
       "blocker": "Requires complete impact-pool allocation, component definitions, player-distance priority, and initialized impact lifetime state."

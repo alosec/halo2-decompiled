@@ -213,7 +213,8 @@ def main() -> int:
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
         "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
-        "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
+        "?g_4e8c24@@3PAUs_record_pool@@A",
+        "?g_4e9bd4@@3PAUs_player_4e9bd4@@A",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
         "h2_guest_memcpy",
         "sqrt",
@@ -267,6 +268,7 @@ def main() -> int:
             "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
             "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
             "?impacts_last_sorted@@YAJXZ",
+            "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
             "?g_55c2d0@@3MA",
             "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
             "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
@@ -341,6 +343,7 @@ def main() -> int:
         "g_51ebfc_owned_impact_pool",
         "g_51ec00_owned_component_impact_lists",
         "g_502138_owned_impact_sort_state",
+        "g_4e8c24_owned_players_and_local_state",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -540,7 +543,6 @@ def main() -> int:
     contact_processing_new_imports = {
         "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
         "?function_2266a0@@YAXJ@Z",
-        "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
     }
     expected_contact_processing_score = (
@@ -562,7 +564,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_contact_processing_score != expected_contact_processing_score or
-            len(actual_contact_processing_score) != 21):
+            len(actual_contact_processing_score) != 20):
         raise RuntimeError("Havok contact-processing candidate score changed")
 
     contact_frontier_path = (

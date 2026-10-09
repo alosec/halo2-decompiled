@@ -7962,7 +7962,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0022a110,802,game,speed,a16 pad,,,000b67a0 000b8d30 000b9dd0 00188dd0,src/impacts.cpp,todo
 0022a440,98,game,speed,a16 pad,,,,src/impacts.cpp,matched
 0022a4b0,168,game,speed,a16 pad,,,00030bf0 000b9dd0,src/impacts.cpp,matched
-0022a560,232,game,speed,a16 pad,,,,src/impacts.cpp,matched
+0022a560,232,game,speed,a16 pad,,,,src/impacts.cpp,done
 0022a648,28,game,size,packed,,,0002c3b0,src/unknown_22ace7.cpp,near
 0022a664,503,game,size,ebp packed,,,0001bbf0 0001bd50 0001be50 0001cc30 0001cd90 0001cf50 0003bcb0 003fb280 003fb2d0 003fb3e0 003fb440 003fb480,src/unknown_22a664.cpp,todo
 0022a85b,22,game,size,packed,,,,src/unknown_22a648.cpp,matched
