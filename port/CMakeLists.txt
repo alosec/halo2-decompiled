@@ -285,6 +285,7 @@ add_custom_command(
         "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}"
         "${PROJECT_SOURCE_DIR}/src/havok_primary_listener_construct_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2777d0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_181e90_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2789f0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_315340_native.cpp"
         ${H2_GUEST_HEADERS}

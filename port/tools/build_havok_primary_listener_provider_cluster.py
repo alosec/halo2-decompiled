@@ -67,6 +67,7 @@ def main() -> int:
         secondary = temporary / "secondary.o"
         constructor = temporary / "constructor.o"
         transition = temporary / "transition.o"
+        scale = temporary / "scale.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -80,8 +81,13 @@ def main() -> int:
                 "g_h2_native_contact_transition_pending_table",
                 "g_h2_native_contact_transition_complete_table",
             ])
+        compile_slice(args, args.root / "src/unknown_181e90_native.cpp", scale, [
+            "?function_181e90@@YA_NMM@Z",
+            "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
+            "?get_inverse_scale@s_scale_owner@@QBAMXZ",
+        ], globals=["?g_54e870@@3MA"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
-             args.tables, primary, secondary, constructor, transition])
+             args.tables, primary, secondary, constructor, transition, scale])
     return 0
 
 

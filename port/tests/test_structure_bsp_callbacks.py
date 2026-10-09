@@ -167,8 +167,6 @@ def main() -> int:
         raise RuntimeError("dormant primary listener tables entered production")
     expected_primary_cluster_imports = {
         "?detach@c_library_30c470@@QAAXPAX@Z",
-        "?function_181e90@@YA_NMM@Z",
-        "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
         "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
         "?function_226a60@@YAXJ@Z",
@@ -181,7 +179,6 @@ def main() -> int:
         "?g_480118@@3PAVc_allocator@@A",
         "?g_4e0300@@3PAUs_record_pool@@A",
         "?g_51e9b8@@3PAUs_record_pool@@A",
-        "?get_inverse_scale@s_scale_owner@@QBAMXZ",
         "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
@@ -427,15 +424,12 @@ def main() -> int:
 
     listener_additional_imports = {
         "?detach@c_library_30c470@@QAAXPAX@Z",
-        "?function_181e90@@YA_NMM@Z",
-        "?function_181ee0@@YAXPBUs_scale_owner@@0PAM1@Z",
         "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z",
         "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?function_279740@@YA_NJ@Z",
         "?function_b7360@@YAXJ@Z",
-        "?get_inverse_scale@s_scale_owner@@QBAMXZ",
         "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
     }
     expected_listener_production = (
@@ -456,7 +450,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 26):
+            len(actual_listener_production) != 23):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |
