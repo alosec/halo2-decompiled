@@ -72,6 +72,7 @@ def main() -> int:
         cache_detach = temporary / "cache-detach.o"
         rigid_state = temporary / "rigid-state.o"
         transform = temporary / "transform.o"
+        object_wake = temporary / "object-wake.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -100,9 +101,11 @@ def main() -> int:
             ["?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z"])
         compile_slice(args, args.root / "src/unknown_2da5d0_native.cpp", transform,
                       ["?setMulEq@hkTransform@@QAAXABU1@@Z"])
+        compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_wake,
+                      ["?function_b7360@@YAXJ@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
              args.tables, primary, secondary, constructor, transition, scale,
-             pointer_owner, cache_detach, rigid_state, transform])
+             pointer_owner, cache_detach, rigid_state, transform, object_wake])
     return 0
 
 

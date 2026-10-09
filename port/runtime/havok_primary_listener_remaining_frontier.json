@@ -20,11 +20,6 @@
       "symbol": "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
       "subsystem": "contact_processing",
       "blocker": "Requires complete contact creation, impact deduplication/allocation, component room policy, shape-key/material extraction, and callback ownership."
-    },
-    {
-      "symbol": "?function_b7360@@YAXJ@Z",
-      "subsystem": "rigid_body_activation",
-      "blocker": "Requires truthful object-to-Havok component activation across owned object, rigid-body, and world lifecycle state."
     }
   ]
 }

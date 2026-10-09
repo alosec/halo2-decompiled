@@ -173,7 +173,6 @@ def main() -> int:
         "?cache_file_globals@@3Us_cache_file_globals@@A",
         "?function_2d91d0@@YAXPAXJ@Z",
         "?function_a7670@@YA_NJ@Z",
-        "?function_b7360@@YAXJ@Z",
         "?function_b8540@@YAXJ@Z",
         "?g_480118@@3PAVc_allocator@@A",
         "?g_4e0300@@3PAUs_record_pool@@A",
@@ -235,6 +234,7 @@ def main() -> int:
         "g_51e9cc_owned_scenery_index_table",
         "g_51e9d0_owned_shape_owner",
         "g_468630_owned_object_type_definitions",
+        "g_4e0300_owned_object_pool",
         "g_4e0350_owned_scenario",
         "g_4de2e0_owned_object_partition",
         "g_4f55d0_owned_ai_globals",
@@ -429,7 +429,6 @@ def main() -> int:
         "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
-        "?function_b7360@@YAXJ@Z",
     }
     expected_listener_production = (
         frontier_symbols - {"??0c_interface_277890@@QAA@XZ"}
@@ -449,7 +448,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 20):
+            len(actual_listener_production) != 19):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     listener_frontier_path = (
@@ -459,11 +458,11 @@ def main() -> int:
     if listener_frontier.get("version") != 1:
         raise RuntimeError("unsupported primary Havok listener frontier manifest")
     listener_frontier_entries = listener_frontier.get("imports")
-    if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 5:
+    if not isinstance(listener_frontier_entries, list) or len(listener_frontier_entries) != 4:
         raise RuntimeError("primary Havok listener frontier inventory changed")
     allowed_listener_subsystems = {
         "contact_removal", "contact_impulse", "impact_creation",
-        "contact_processing", "rigid_body_activation",
+        "contact_processing",
     }
     listener_frontier_symbols = set()
     for entry in listener_frontier_entries:

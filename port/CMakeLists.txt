@@ -284,6 +284,7 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
         "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}"
         "${PROJECT_SOURCE_DIR}/src/havok_primary_listener_construct_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_0b58c0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2777d0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_181e90_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_1cec30.cpp"
