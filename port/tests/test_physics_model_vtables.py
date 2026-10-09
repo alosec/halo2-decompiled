@@ -14,6 +14,7 @@ EXPECTED_TABLES = {
     0x00455F8C: ("0x108-child", 12, 0x002FDFA0),
 }
 COMMON_SLOTS = {1: 0x002D7210, 2: 0x002D7240, 4: 0x00072C70}
+EXPECTED_COMPLETE_TABLES = {0x00455EF0, 0x00455F30, 0x00455F8C}
 
 
 def main() -> int:
@@ -62,8 +63,16 @@ def main() -> int:
         raise RuntimeError("vtable methods absent from functions.csv: " + ", ".join(hex(v) for v in absent))
 
     recovered = {method for method in unique_methods if functions[method]["source"]}
-    if len(recovered) < 58:
-        raise RuntimeError(f"recovered-method ratchet regressed: {len(recovered)} < 58")
+    if len(recovered) < 59:
+        raise RuntimeError(f"recovered-method ratchet regressed: {len(recovered)} < 59")
+    complete_tables = {
+        int(table["retail_address"], 0)
+        for table in tables
+        if all(int(method, 0) in recovered for method in table["slots"])
+    }
+    if not EXPECTED_COMPLETE_TABLES.issubset(complete_tables):
+        missing = sorted(EXPECTED_COMPLETE_TABLES - complete_tables)
+        raise RuntimeError("complete-table ratchet regressed: " + ", ".join(hex(v) for v in missing))
     return 0
 
 

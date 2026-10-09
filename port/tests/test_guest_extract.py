@@ -283,6 +283,23 @@ def main():
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
+        physics_model_projection_output = Path(temporary) / "physics-model-projection.o"
+        physics_model_projection_symbol = (
+            "?function_2df220@c_physics_projected_shape@@UAAMPBM@Z"
+        )
+        physics_model_projection_command = command[:]
+        physics_model_projection_command[physics_model_projection_command.index("h2_extract_selected")] = physics_model_projection_symbol
+        physics_model_projection_command[physics_model_projection_command.index("--extract-global"):physics_model_projection_command.index("--output")] = []
+        physics_model_projection_command[physics_model_projection_command.index(output)] = physics_model_projection_output
+        physics_model_projection_command[-1] = args.root / "src/unknown_2df220.cpp"
+        subprocess.run([str(value) for value in physics_model_projection_command], check=True)
+        physics_model_projection_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_projection_output],
+            text=True,
+        )
+        if f"_{physics_model_projection_symbol}" not in physics_model_projection_defined:
+            raise RuntimeError("physics-model projected-shape support method was not retained")
+
         physics_model_box_ray_output = Path(temporary) / "physics-model-box-ray.o"
         physics_model_box_ray_symbol = (
             "?function_2fe550@c_physics_box_shape@@UAAPA_NPA_NPBUs_physics_line_segment@@PAUs_physics_line_hit@@@Z"
