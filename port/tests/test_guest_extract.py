@@ -347,6 +347,27 @@ def main():
         if f"_{physics_model_aabb_symbol}" not in physics_model_aabb_defined:
             raise RuntimeError("physics-model collection AABB method was not retained")
 
+        physics_model_forward_output = Path(temporary) / "physics-model-shape-forwarder.o"
+        physics_model_forward_symbols = (
+            "?function_2fe1a0@c_physics_shape_forwarder@@QAAPAXPAX00@Z",
+            "?function_2fe1c0@c_physics_shape_forwarder@@QAAXPAXPAJ0@Z",
+        )
+        physics_model_forward_command = command[:]
+        physics_model_forward_command[physics_model_forward_command.index("h2_extract_selected")] = physics_model_forward_symbols[0]
+        physics_model_forward_command[physics_model_forward_command.index("--extract-global"):physics_model_forward_command.index("--output")] = [
+            "--extract-symbol", physics_model_forward_symbols[1],
+        ]
+        physics_model_forward_command[physics_model_forward_command.index(output)] = physics_model_forward_output
+        physics_model_forward_command[-1] = args.root / "src/unknown_2fe1a0.cpp"
+        subprocess.run([str(value) for value in physics_model_forward_command], check=True)
+        physics_model_forward_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_forward_output],
+            text=True,
+        )
+        for symbol in physics_model_forward_symbols:
+            if f"_{symbol}" not in physics_model_forward_defined:
+                raise RuntimeError(f"physics-model shape forwarder was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
