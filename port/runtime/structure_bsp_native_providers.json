@@ -61,6 +61,8 @@
     {"source": "src/unknown_099690.cpp", "symbols": ["?function_99690@@YAPAVc_handle_table_450cd0@@PAV1@JJ@Z"]},
     {"source": "src/unknown_10ace0_native.cpp", "symbols": ["?function_10ace0@@YAXJ@Z"]},
     {"source": "src/unknown_10cf50_native.cpp", "symbols": ["?function_10cf50@@YA_NJ@Z"]},
-    {"source": "src/unknown_152340_native.cpp", "symbols": ["?function_152340@@YAXXZ"]}
+    {"source": "src/unknown_152340_native.cpp", "symbols": ["?function_152340@@YAXXZ"]},
+    {"source": "src/unknown_0bad50.cpp", "symbols": ["?function_badc0@@YAPAUs_object@@JK@Z", "?function_bae80@@YAXPAUs_type_f1af8e@@KE@Z", "?function_baeb0@@YAPAUs_object@@PAUs_type_f1af8e@@@Z"]},
+    {"source": "src/unknown_0a7670_native.cpp", "symbols": ["?function_a7670@@YA_NJ@Z"]}
   ]
 }

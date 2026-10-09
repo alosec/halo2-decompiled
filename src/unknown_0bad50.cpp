@@ -372,7 +372,9 @@ bool function_bacc0(long object_index, long index, point3f const *point)
     return result;
 }
 
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 extern void *g_4de2e0;
 extern void *g_4de2e4;
 extern void *g_4de2d4;
@@ -396,7 +398,13 @@ static __forceinline long cluster_link_next_ab(s_record_pool *array, long *next)
         s_cluster_link_ab *link = (s_cluster_link_ab *)(array->data + (*next & 0xffff) * array->size);
         *next = link->next;
         if (*next != NONE)
+        {
+#ifdef H2_NATIVE_PORT
+            __builtin_prefetch(array->data + (*next & 0xffff) * array->size, 0, 3);
+#else
             _mm_prefetch((char const *)(array->data + (*next & 0xffff) * array->size), _MM_HINT_T0);
+#endif
+        }
         result = link->object_index;
     }
     else
