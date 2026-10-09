@@ -15,6 +15,25 @@ EXPECTED_TABLES = {
 }
 COMMON_SLOTS = {1: 0x002D7210, 2: 0x002D7240, 4: 0x00072C70}
 EXPECTED_COMPLETE_TABLES = set(EXPECTED_TABLES)
+EXPECTED_NATIVE_PROVIDERS = {
+    0x00072C70: "h2_native_physics_idle",
+    0x00099810: "h2_native_physics_zero",
+    0x0009A5E0: "h2_native_physics_kind_22",
+    0x0009AC70: "h2_native_physics_kind_6",
+    0x0009B910: "h2_native_physics_kind_7",
+    0x0009BEC0: "h2_native_physics_kind_2",
+    0x0009CD70: "h2_native_physics_kind_8",
+    0x000A0250: "h2_native_physics_kind_10",
+    0x001C2360: "h2_native_physics_delete",
+    0x001C2380: "h2_native_physics_delete",
+    0x001EA930: "h2_native_physics_delete",
+    0x001EA970: "h2_native_physics_delete",
+    0x001EA990: "h2_native_physics_delete",
+    0x001EA9A0: "h2_native_physics_delete",
+    0x001EE340: "h2_native_physics_first_vertex",
+    0x00224240: "h2_native_physics_none",
+    0x00244930: "h2_native_physics_delete",
+}
 
 
 def main() -> int:
@@ -73,6 +92,40 @@ def main() -> int:
     if not EXPECTED_COMPLETE_TABLES.issubset(complete_tables):
         missing = sorted(EXPECTED_COMPLETE_TABLES - complete_tables)
         raise RuntimeError("complete-table ratchet regressed: " + ", ".join(hex(v) for v in missing))
+
+    provider_path = args.root / "port/runtime/physics_model_native_providers.json"
+    provider_manifest = json.loads(provider_path.read_text())
+    if provider_manifest.get("version") != 1:
+        raise RuntimeError("unsupported native physics provider manifest version")
+    raw_providers = provider_manifest.get("providers")
+    if not isinstance(raw_providers, dict):
+        raise RuntimeError("native physics provider map is missing")
+    providers = {int(address, 0): value for address, value in raw_providers.items()}
+    if set(providers) != unique_methods:
+        missing = sorted(unique_methods - providers.keys())
+        extra = sorted(providers.keys() - unique_methods)
+        raise RuntimeError(f"native provider coverage mismatch: missing={missing}, extra={extra}")
+    native_providers = {
+        method: provider.get("symbol")
+        for method, provider in providers.items()
+        if provider.get("kind") == "native"
+    }
+    if native_providers != EXPECTED_NATIVE_PROVIDERS:
+        raise RuntimeError("native-specialized provider inventory changed")
+    for method, provider in providers.items():
+        if provider.get("kind") not in {"native", "source"}:
+            raise RuntimeError(f"invalid provider kind for {method:#x}")
+        symbol = provider.get("symbol")
+        if not isinstance(symbol, str) or not symbol:
+            raise RuntimeError(f"missing provider symbol for {method:#x}")
+        if provider["kind"] == "source" and not symbol.startswith("?"):
+            raise RuntimeError(f"source provider lacks Microsoft symbol for {method:#x}")
+    for table in tables:
+        slots = [int(value, 0) for value in table["slots"]]
+        if providers[slots[0]]["symbol"] != "h2_native_physics_delete":
+            raise RuntimeError("active table does not use cache-owned deleting semantics")
+        if providers[slots[4]]["symbol"] != "h2_native_physics_idle":
+            raise RuntimeError("active table does not use the recovered idle slot")
     return 0
 
 
