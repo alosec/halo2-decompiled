@@ -260,18 +260,25 @@ extern "C" int h2_main_menu_guest_accept()
     return h2_native_virtual_keyboard_accept();
 }
 
-static c_class_1474e8 *h2_native_main_menu_list()
+static c_class_1474e8 *h2_native_current_menu_list()
 {
-    c_window_channel *const channel = &g_54d598.windows_5[4];
-    if (!channel->current || channel->current->screen_id != 6)
-        return 0;
-    return reinterpret_cast<c_class_1474e8 *>(
-        reinterpret_cast<c_screen_with_menu *>(channel->current)->list);
+    c_window_channel *channels[] = {
+        &g_54d598.windows_3[4],
+        &g_54d598.windows_5[4],
+    };
+    for (long index = 0; index < 2; ++index)
+    {
+        c_class_1473c9 *const screen = channels[index]->current;
+        if (screen && (screen->screen_id == 6 || screen->screen_id == 0xda))
+            return reinterpret_cast<c_class_1474e8 *>(
+                reinterpret_cast<c_screen_with_menu *>(screen)->list);
+    }
+    return 0;
 }
 
 static int h2_native_main_menu_move(long event_type)
 {
-    c_class_1474e8 *const list = h2_native_main_menu_list();
+    c_class_1474e8 *const list = h2_native_current_menu_list();
     if (!list)
         return 2;
     const long before = list->get_focused_datum();
