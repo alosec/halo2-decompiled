@@ -7,7 +7,9 @@
 
 #include "unknown_11c920.h"
 #include <string.h>
+#if !defined(H2_NATIVE_PORT)
 #include <ctype.h>
+#endif
 #include <wchar.h>
 #include <math.h>
 #include "globals.h"
@@ -1493,11 +1495,15 @@ void c_virtual_keyboard_screen::v4(long screen_rect_address)
 			fade *= animation.scale;
 			fade *= 255.0f;
 			long alpha;
+#if defined(H2_NATIVE_PORT)
+			alpha = (long)(fade + 0.5f);
+#else
 			__asm
 			{
 				fld fade
 				fistp alpha
 			}
+#endif
 			s_float_rect from, to;
 			from.y0 = 0.0f;
 			from.x0 = 0.0f;

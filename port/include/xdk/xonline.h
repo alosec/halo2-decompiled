@@ -78,6 +78,17 @@ struct XONLINE_PRESENCE {
 };
 #pragma pack(pop)
 
+/* Retail virtual-keyboard accesses at 0x237b3c..0x237b72 establish four
+ * UTF-16 fields at offsets 0x000, 0x020, 0x220 and 0x420.  Its constructor
+ * clears the complete 0x688-byte property record at object offset 0x3730. */
+struct XONLINE_TEAM_PROPERTIES {
+    WCHAR wszTeamName[16];
+    WCHAR wszDescription[256];
+    WCHAR wszMotto[256];
+    WCHAR wszURL[256];
+    BYTE unknown620[0x68];
+};
+
 /* Retail team-detail code at 0xabdb0 clears exactly 0x6a2 bytes.  Named
  * fields remain intentionally unrecovered until their offsets are needed. */
 struct XONLINE_TEAM {
@@ -118,6 +129,14 @@ static_assert(sizeof(XONLINE_MUTELISTUSER) * MAX_MUTELISTUSERS == 0xfa0,
 static_assert(sizeof(XONLINE_FRIEND) == 0x56, "retail XONLINE_FRIEND layout");
 static_assert(sizeof(XONLINE_ACCEPTED_GAMEINVITE) == 0x9c,
               "retail accepted-invite layout");
+static_assert(sizeof(XONLINE_TEAM_PROPERTIES) == 0x688,
+              "retail team-properties layout");
+static_assert(__builtin_offsetof(XONLINE_TEAM_PROPERTIES, wszDescription) == 0x20,
+              "retail team description offset");
+static_assert(__builtin_offsetof(XONLINE_TEAM_PROPERTIES, wszMotto) == 0x220,
+              "retail team motto offset");
+static_assert(__builtin_offsetof(XONLINE_TEAM_PROPERTIES, wszURL) == 0x420,
+              "retail team URL offset");
 static_assert(__builtin_offsetof(XONLINE_ACCEPTED_GAMEINVITE, InviteAcceptTime) == 0x64,
               "retail accepted-invite time offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, dwFriendState) == 0x1c,

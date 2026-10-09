@@ -6,6 +6,16 @@ int h2_guest_abs(int value) {
     return value < 0 ? (int)(0U - (unsigned int)value) : value;
 }
 
+int h2_guest_iswalnum(wchar_t character) {
+    return (character >= L'0' && character <= L'9') ||
+           (character >= L'A' && character <= L'Z') ||
+           (character >= L'a' && character <= L'z');
+}
+
+int h2_guest_iswspace(wchar_t character) {
+    return character == L' ' || (character >= L'\t' && character <= L'\r');
+}
+
 float fabsf(float value) {
     union { float value; unsigned int bits; } converted = { value };
     converted.bits &= 0x7fffffffU;

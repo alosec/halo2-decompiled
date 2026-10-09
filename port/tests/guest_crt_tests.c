@@ -11,6 +11,8 @@ struct h2_guest_filetime {
 typedef int (*h2_guest_compare_fn)(const void*, const void*);
 
 extern int h2_guest_abs(int value);
+extern int h2_guest_iswalnum(wchar_t character);
+extern int h2_guest_iswspace(wchar_t character);
 extern float fabsf(float value);
 extern double fabs(double value);
 extern long CompareFileTime(const struct h2_guest_filetime* first,
@@ -39,6 +41,13 @@ int main(void) {
     if (h2_guest_abs(-9) != 9 || h2_guest_abs(0) != 0 ||
         h2_guest_abs(17) != 17 || h2_guest_abs((int)0x80000000U) != (int)0x80000000U) {
         puts("guest integer absolute-value helper failed");
+        return 1;
+    }
+    if (!h2_guest_iswalnum(L'A') || !h2_guest_iswalnum(L'z') ||
+        !h2_guest_iswalnum(L'7') || h2_guest_iswalnum(L'_') ||
+        !h2_guest_iswspace(L' ') || !h2_guest_iswspace(L'\n') ||
+        h2_guest_iswspace(L'A')) {
+        puts("guest wide character classification failed");
         return 1;
     }
     union { float value; unsigned int bits; } negative_zero_f = { -0.0f };

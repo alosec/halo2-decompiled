@@ -19,6 +19,8 @@ typedef unsigned short wchar_t;
 #define wcsncpy h2_guest_wcsncpy
 #define _wcsicmp h2_guest_wcsicmp
 #define _vsnwprintf h2_guest_vsnwprintf
+#define iswalnum h2_guest_iswalnum
+#define iswspace h2_guest_iswspace
 #endif
 
 #ifdef __cplusplus
@@ -32,6 +34,8 @@ int wcsncmp(const wchar_t* first, const wchar_t* second, size_t size);
 wchar_t* wcsncpy(wchar_t* destination, const wchar_t* source, size_t size);
 int _wcsicmp(const wchar_t* first, const wchar_t* second);
 int _vsnwprintf(wchar_t* destination, size_t size, const wchar_t* format, va_list arguments);
+int iswalnum(wchar_t character);
+int iswspace(wchar_t character);
 
 #ifdef __cplusplus
 }

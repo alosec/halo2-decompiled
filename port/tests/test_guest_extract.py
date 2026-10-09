@@ -140,6 +140,20 @@ def main():
         if "_?function_215790@@YAXXZ" not in profile_storage_defined:
             raise RuntimeError("profile storage source was not selectively compilable")
 
+        keyboard_output = Path(temporary) / "virtual-keyboard.o"
+        keyboard_command = command[:]
+        keyboard_command[keyboard_command.index("h2_extract_selected")] = "?function_238c21@@YAXJJPAGJ@Z"
+        keyboard_command[keyboard_command.index("--extract-global"):keyboard_command.index("--output")] = []
+        keyboard_command[keyboard_command.index(output)] = keyboard_output
+        keyboard_command[-1] = args.root / "src/unknown_23760b.cpp"
+        subprocess.run([str(value) for value in keyboard_command], check=True)
+        keyboard_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", keyboard_output],
+            text=True,
+        )
+        if "_?function_238c21@@YAXJJPAGJ@Z" not in keyboard_defined:
+            raise RuntimeError("virtual-keyboard source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
