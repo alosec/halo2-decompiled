@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 3u
+#define H2_HOST_ABI_VERSION 4u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the
@@ -16,6 +16,9 @@ void* host_h2_physical_memory_malloc_low(int size, unsigned int protection);
 int host_h2_cache_read(unsigned int offset, int size, void* buffer);
 void host_h2_video_control(int command);
 void host_h2_render_request(const void* request, const void* vertices);
+void host_h2_text_request(const unsigned int* text, const void* bounds,
+                          const void* clip, const void* position, int line_gap,
+                          float scale, unsigned int color, const void* shadow);
 unsigned int host_h2_get_milliseconds(void);
 void host_h2_sleep(unsigned int milliseconds);
 double host_h2_cos(double value);

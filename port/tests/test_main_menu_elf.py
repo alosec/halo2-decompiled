@@ -104,6 +104,7 @@ REQUIRED = {
     "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z",
     "?function_155f60@@YA_NXZ",
     "?function_19c270@@YAPAUs_entry_a@@JJ@Z",
+    "?function_1fa50@c_1fa50@@QBAXPBUshort_rectangle2d@@PBX1JMJ1@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?saved_game_file_size_in_blocks@@YAJJ@Z",
     "?saved_game_file_type_size_in_blocks@@YAJJ@Z",

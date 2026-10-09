@@ -21,6 +21,9 @@ h2_host_slot_host_h2_video_control:
 .globl h2_host_slot_host_h2_render_request
 h2_host_slot_host_h2_render_request:
     .xword 0
+.globl h2_host_slot_host_h2_text_request
+h2_host_slot_host_h2_text_request:
+    .xword 0
 .globl h2_host_slot_host_h2_get_milliseconds
 h2_host_slot_host_h2_get_milliseconds:
     .xword 0

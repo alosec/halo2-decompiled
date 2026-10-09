@@ -20,8 +20,11 @@ struct DispatchState {
     void* video_context = nullptr;
     h2::port::RenderRequestHandler render_handler = nullptr;
     void* render_context = nullptr;
+    h2::port::TextRequestHandler text_handler = nullptr;
+    void* text_context = nullptr;
     std::atomic<std::uint64_t> video_calls{0};
     std::atomic<std::uint64_t> render_calls{0};
+    std::atomic<std::uint64_t> text_calls{0};
 };
 
 DispatchState& dispatch_state() {
@@ -57,16 +60,25 @@ void set_render_request_handler(RenderRequestHandler handler, void* context) {
     state.render_context = context;
 }
 
+void set_text_request_handler(TextRequestHandler handler, void* context) {
+    auto& state = dispatch_state();
+    const std::lock_guard lock(state.mutex);
+    state.text_handler = handler;
+    state.text_context = context;
+}
+
 HostServiceStats host_service_stats() {
     auto& state = dispatch_state();
     return {state.video_calls.load(std::memory_order_relaxed),
-            state.render_calls.load(std::memory_order_relaxed)};
+            state.render_calls.load(std::memory_order_relaxed),
+            state.text_calls.load(std::memory_order_relaxed)};
 }
 
 void reset_host_service_stats() {
     auto& state = dispatch_state();
     state.video_calls.store(0, std::memory_order_relaxed);
     state.render_calls.store(0, std::memory_order_relaxed);
+    state.text_calls.store(0, std::memory_order_relaxed);
 }
 
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
@@ -78,6 +90,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
     const Import imports[] = {
         {"host_h2_video_control", function_address(&host_h2_video_control)},
         {"host_h2_render_request", function_address(&host_h2_render_request)},
+        {"host_h2_text_request", function_address(&host_h2_text_request)},
         {"host_h2_get_milliseconds", function_address(&host_h2_get_milliseconds)},
         {"host_h2_sleep", function_address(&host_h2_sleep)},
         {"host_h2_cos", function_address(&host_h2_cos)},
@@ -129,6 +142,24 @@ extern "C" void host_h2_render_request(const void* request, const void* vertices
     }
     if (handler) {
         handler(request, vertices, context);
+    }
+}
+
+extern "C" void host_h2_text_request(const unsigned int* text, const void* bounds,
+                                       const void* clip, const void* position,
+                                       int line_gap, float scale, unsigned int color,
+                                       const void* shadow) {
+    auto& state = dispatch_state();
+    state.text_calls.fetch_add(1, std::memory_order_relaxed);
+    h2::port::TextRequestHandler handler;
+    void* context;
+    {
+        const std::lock_guard lock(state.mutex);
+        handler = state.text_handler;
+        context = state.text_context;
+    }
+    if (handler) {
+        handler(text, bounds, clip, position, line_gap, scale, color, shadow, context);
     }
 }
 

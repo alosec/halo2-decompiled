@@ -26,6 +26,7 @@ def main():
     assert "unknown_13e8a0.cpp" in text_renderer["providers"]
     assert imports["host_h2_video_control"]["category"] == "host_abi"
     assert imports["host_h2_render_request"]["category"] == "host_abi"
+    assert imports["host_h2_text_request"]["category"] == "host_abi"
     assert "?function_18f1c0@@YAXJ@Z" not in imports
     assert "?function_52040@@YAXPBX0@Z" not in imports
     assert "?online_task_poll@@YAJJ@Z" not in imports
