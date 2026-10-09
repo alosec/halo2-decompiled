@@ -135,6 +135,7 @@ REQUIRED = {
     "?function_13ec70@@YAXPBUcolor4f@@@Z",
     "?function_13ed50@@YAXPBUcolor4f@@@Z",
     "?function_155f60@@YA_NXZ",
+    "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z",
     "?function_19c270@@YAPAUs_entry_a@@JJ@Z",
     "?function_1fa50@c_1fa50@@QBAXPBUshort_rectangle2d@@PBX1JMJ1@Z",
     "?function_1a47fd@@YAPAXI@Z",

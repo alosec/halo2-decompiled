@@ -59,6 +59,7 @@ set(H2_GUEST_MS_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_ms_runtime.o")
 set(H2_GUEST_HOST_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_host_runtime.o")
 set(H2_GUEST_ONLINE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_online_runtime.o")
 set(H2_GUEST_AUDIO_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_audio_runtime.o")
+set(H2_GUEST_RENDER_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_render_runtime.o")
 set(H2_GUEST_CAMPAIGN_ENTRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19c1d0.o")
 set(H2_GUEST_MOVIE_QUERY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_155f60.o")
 set(H2_GUEST_TEXT_STATE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13eb20.o")
@@ -142,6 +143,7 @@ set(H2_MS_ABI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_155f60.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_13eb20.cpp"
@@ -228,6 +230,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_HOST_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
         "${H2_GUEST_ONLINE_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
         "${H2_GUEST_AUDIO_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
+        "${H2_GUEST_RENDER_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
         "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
         "${H2_GUEST_MOVIE_QUERY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_155f60.cpp"
         "${H2_GUEST_TEXT_STATE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13eb20.cpp"
@@ -570,6 +573,7 @@ set_source_files_properties(
     "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
     "${H2_GUEST_HOST_RUNTIME_OBJECT}" "${H2_GUEST_ONLINE_RUNTIME_OBJECT}"
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
+    "${H2_GUEST_RENDER_RUNTIME_OBJECT}"
     "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
     "${H2_GUEST_MOVIE_QUERY_OBJECT}"
     "${H2_GUEST_TEXT_STATE_OBJECT}"
@@ -639,6 +643,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_HOST_RUNTIME_OBJECT}"
     "${H2_GUEST_ONLINE_RUNTIME_OBJECT}"
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
+    "${H2_GUEST_RENDER_RUNTIME_OBJECT}"
     "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
     "${H2_GUEST_MOVIE_QUERY_OBJECT}"
     "${H2_GUEST_TEXT_STATE_OBJECT}"
@@ -716,7 +721,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 66
+            --expect-unresolved 65
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -1157,7 +1162,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 66
+            --expect-unresolved 65
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -1165,7 +1170,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 66
+            --expect-unresolved 65
 )
 add_test(
     NAME main-menu-elf-core
