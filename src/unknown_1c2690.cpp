@@ -47,6 +47,7 @@ extern bool g_55e4fc;
 void function_146a20();
 void function_146ac0();
 #ifdef H2_NATIVE_PORT
+extern "C" c_interface_277890 *h2_native_havok_primary_listener_construct();
 extern "C" c_278370 *h2_native_havok_secondary_listener_construct();
 #endif
 void function_146b80();
@@ -62,10 +63,11 @@ void function_1c2690()
  function_146a20();
  g_461df0();
  g_47f04c = 0;
- g_51eca8 = (byte *)new c_interface_277890;
 #ifndef H2_NATIVE_PORT
+ g_51eca8 = (byte *)new c_interface_277890;
  g_51ecac = new c_278370;
 #else
+ g_51eca8 = (byte *)h2_native_havok_primary_listener_construct();
  g_51ecac = h2_native_havok_secondary_listener_construct();
 #endif
  g_51ebfc->valid = true;

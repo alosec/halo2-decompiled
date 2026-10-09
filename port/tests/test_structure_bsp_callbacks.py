@@ -129,6 +129,7 @@ def main() -> int:
         "g_4ed280_owned_bsp_bit_vectors",
         "g_479888_owned_havok_allocator_block",
         "g_479898_owned_havok_pool_allocator",
+        "g_51eca8_owned_primary_listener_storage",
         "g_51ecac_owned_secondary_listener",
         "native_havok_transition_tables_and_callback_owned",
         "g_510c44_owned_ai_scratch_buffer",
@@ -161,6 +162,7 @@ def main() -> int:
         "??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@",
         "g_h2_native_fixed_vtable",
         "g_h2_native_pool_vtable",
+        "g_h2_native_primary_listener_storage",
         "g_h2_native_secondary_listener_vtable",
         "g_h2_native_secondary_listener_storage",
         "g_h2_native_transition_pending_table",
@@ -212,6 +214,7 @@ def main() -> int:
     required_secondary_listener_symbols = {
         "?function_278370@c_278370@@UAAXPAUs_278371@@@Z",
         "?function_3153c0@@YAXPAX0PBX@Z",
+        "h2_native_havok_primary_listener_construct",
         "h2_native_havok_secondary_listener_construct",
         "h2_native_secondary_listener_event",
         "h2_native_secondary_listener_idle",
@@ -229,8 +232,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 23:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 23")
+    if len(undefined) != 22:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 22")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -266,16 +269,16 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 17:
+    if len(production_undefined) != 16:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 17")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 16")
 
     frontier_path = args.root / "port/runtime/structure_bsp_remaining_frontier.json"
     frontier_manifest = json.loads(frontier_path.read_text())
     if frontier_manifest.get("version") != 1:
         raise RuntimeError("unsupported structure-BSP frontier manifest")
     frontier_entries = frontier_manifest.get("imports")
-    if not isinstance(frontier_entries, list) or len(frontier_entries) != 17:
+    if not isinstance(frontier_entries, list) or len(frontier_entries) != 16:
         raise RuntimeError("structure-BSP frontier inventory changed")
     frontier_symbols = set()
     allowed_subsystems = {"ai", "geometry_query", "havok_lifecycle", "object_placement"}

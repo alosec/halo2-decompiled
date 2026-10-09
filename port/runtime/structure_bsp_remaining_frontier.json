@@ -2,7 +2,6 @@
   "version": 1,
   "imports": [
     {"symbol": "??0c_interface_277890@@QAA@XZ", "subsystem": "havok_lifecycle", "blocker": "constructor and deleting lifecycle require a complete native contact-listener object"},
-    {"symbol": "??2@YAPAXI@Z", "subsystem": "havok_lifecycle", "blocker": "scalar allocation has no general gameplay heap owner"},
     {"symbol": "?function_109400@@YAXJ@Z", "subsystem": "object_placement", "blocker": "attached-object teardown reaches rigid-body activation and biped ragdoll reset"},
     {"symbol": "?function_146bf0@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "memory-pressure recovery traverses world cleanup and scratch allocator ownership"},
     {"symbol": "?function_14e0f0@@YAXJJPBTpoint3f@@0@Z", "subsystem": "object_placement", "blocker": "player relocation requires genuine function_14e200 and vehicle-exit request routing"},
