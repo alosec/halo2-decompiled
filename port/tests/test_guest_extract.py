@@ -853,6 +853,51 @@ def main():
         if f"_{audio_bsp_symbol}" not in audio_bsp_defined:
             raise RuntimeError("structure-BSP audio-state reset was not selectively compilable")
 
+        renderer_bsp_output = Path(temporary) / "structure-bsp-renderer-state.o"
+        renderer_bsp_symbol = "?function_226a0@@YAXXZ"
+        renderer_bsp_command = command[:]
+        renderer_bsp_command[renderer_bsp_command.index("h2_extract_selected")] = renderer_bsp_symbol
+        renderer_bsp_command[renderer_bsp_command.index("--extract-global"):renderer_bsp_command.index("--output")] = []
+        renderer_bsp_command[renderer_bsp_command.index(output)] = renderer_bsp_output
+        renderer_bsp_command[-1] = args.root / "src/unknown_0226a0.cpp"
+        subprocess.run([str(value) for value in renderer_bsp_command], check=True)
+        renderer_bsp_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", renderer_bsp_output],
+            text=True,
+        )
+        if f"_{renderer_bsp_symbol}" not in renderer_bsp_defined:
+            raise RuntimeError("structure-BSP renderer-state reset was not selectively compilable")
+
+        visibility_bsp_output = Path(temporary) / "structure-bsp-visibility-state.o"
+        visibility_bsp_symbol = "?function_03f2b0@@YAXXZ"
+        visibility_bsp_command = command[:]
+        visibility_bsp_command[visibility_bsp_command.index("h2_extract_selected")] = visibility_bsp_symbol
+        visibility_bsp_command[visibility_bsp_command.index("--extract-global"):visibility_bsp_command.index("--output")] = []
+        visibility_bsp_command[visibility_bsp_command.index(output)] = visibility_bsp_output
+        visibility_bsp_command[-1] = args.root / "src/unknown_03f2b0_native.cpp"
+        subprocess.run([str(value) for value in visibility_bsp_command], check=True)
+        visibility_bsp_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", visibility_bsp_output],
+            text=True,
+        )
+        if f"_{visibility_bsp_symbol}" not in visibility_bsp_defined:
+            raise RuntimeError("structure-BSP visibility reset was not selectively compilable")
+
+        sound_bsp_output = Path(temporary) / "structure-bsp-sound-location.o"
+        sound_bsp_symbol = "?sound_update_locations@@YAXXZ"
+        sound_bsp_command = command[:]
+        sound_bsp_command[sound_bsp_command.index("h2_extract_selected")] = sound_bsp_symbol
+        sound_bsp_command[sound_bsp_command.index("--extract-global"):sound_bsp_command.index("--output")] = []
+        sound_bsp_command[sound_bsp_command.index(output)] = sound_bsp_output
+        sound_bsp_command[-1] = args.root / "src/unknown_125920.cpp"
+        subprocess.run([str(value) for value in sound_bsp_command], check=True)
+        sound_bsp_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", sound_bsp_output],
+            text=True,
+        )
+        if f"_{sound_bsp_symbol}" not in sound_bsp_defined:
+            raise RuntimeError("structure-BSP sound-location update was not selectively compilable")
+
         campaign_levels_output = Path(temporary) / "campaign-levels.o"
         campaign_levels_command = command[:]
         campaign_levels_command[campaign_levels_command.index("h2_extract_selected")] = "?get_item_count@c_campaign_level_handles_list@@UAAJXZ"

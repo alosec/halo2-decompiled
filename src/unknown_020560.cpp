@@ -1221,6 +1221,7 @@ void function_015b70(void);
 void function_1e1c0(void);
 void function_36ab0(void);
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x226a0
 void function_226a0(void)
 {
@@ -1228,6 +1229,7 @@ void function_226a0(void)
     function_1e1c0();
     function_36ab0();
 }
+#endif
 
 extern long g_4858b8;
 void function_14f60(short stage, short index);

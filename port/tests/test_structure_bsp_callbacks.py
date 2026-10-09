@@ -78,11 +78,11 @@ def main() -> int:
     provider_methods = {int(entry["method"], 0) for entry in providers}
     if provider_methods != unique:
         raise RuntimeError("structure-BSP providers do not cover every unique callback")
-    if sum(bool(entry.get("portable")) for entry in providers) != 14:
-        raise RuntimeError("structure-BSP portable-provider ratchet regressed")
+    if sum(bool(entry.get("portable")) for entry in providers) != 17:
+        raise RuntimeError("all structure-BSP providers must remain portable")
     blocked = {int(entry["method"], 0) for entry in providers if not entry.get("portable")}
-    if blocked != {0x000226A0, 0x0003F2B0, 0x00125920}:
-        raise RuntimeError("structure-BSP portability frontier changed")
+    if blocked:
+        raise RuntimeError("structure-BSP portability frontier reopened")
     for entry in providers:
         if entry["source"] != "native" and not (args.root / entry["source"]).is_file():
             raise RuntimeError(f"missing structure-BSP provider source: {entry['source']}")

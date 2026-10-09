@@ -1892,6 +1892,7 @@ struct s_structure_bsp_leaves_view
 };
 
 /* finds where in the structure bsp the playing sounds and the listeners are */
+#ifndef H2_NATIVE_PORT
 // @retail 0x125920
 void sound_update_locations(void)
 {
@@ -1930,6 +1931,7 @@ void sound_update_locations(void)
 		looping_sound_update_locations();
 	}
 }
+#endif
 
 /* moves the sound system's two environments toward the two requested:
    each request takes the slot already holding it or a faded-out one and

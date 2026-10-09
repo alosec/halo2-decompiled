@@ -133,11 +133,13 @@ bool function_44690(s_word_bit_iterator *iterator, long *out)
 	return false;
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x3f2b0
 void function_03f2b0(void)
 {
 	g_509438 = 0;
 }
+#endif
 
 struct s_visible_index
 {
