@@ -144,6 +144,8 @@
     {"symbol": "?g_51ec00@@3PAUs_record_pool@@A", "address": "0x0051ec00"},
     {"symbol": "?g_51eca8@@3PAEA", "address": "0x0051eca8"},
     {"symbol": "?g_51ecac@@3PAXA", "address": "0x0051ecac"},
-    {"symbol": "?g_55e4d0@@3PAPAVc_engine_peer@@A", "address": "0x0055e4d0"}
+    {"symbol": "?g_55e4d0@@3PAPAVc_engine_peer@@A", "address": "0x0055e4d0"},
+    {"symbol": "?g_4e7411@@3_NA", "address": "0x004e7411"},
+    {"symbol": "?g_4e7414@@3JA", "address": "0x004e7414"}
   ]
 }

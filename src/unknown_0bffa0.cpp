@@ -61,10 +61,12 @@ void function_c0040()
 
 void __stdcall function_c2d00(long light_index);
 void __stdcall function_c3260(long light_index, bool clear_object_flag);
-void function_1cae40(void *partition, long data_index, long *first_cluster_reference);
-void function_1cac60(dword const *bits, void *partition, long data_index,
+struct s_cluster_partition;
+struct s_partition_location;
+void function_1cae40(s_cluster_partition *partition, long data_index, long *first_cluster_reference);
+void function_1cac60(dword const *bits, s_cluster_partition *partition, long data_index,
 	long *first_cluster_reference, point3f const *point, real radius,
-	s_location const *location, long payload_size, void const *payload, bool *overflow);
+	s_partition_location const *location, long payload_size, void const *payload, bool *overflow);
 
 // @retail 0xc00a0
 void function_c00a0()
@@ -146,7 +148,7 @@ void __stdcall function_c1720(long object_index, bool remove, bool add)
 			continue;
 		if (remove && (light[2] & 2))
 		{
-			function_1cae40(g_4e0310, iterator.datum_index, (long *)(light + 0x10));
+			function_1cae40((s_cluster_partition *)g_4e0310, iterator.datum_index, (long *)(light + 0x10));
 			light[2] &= (byte)~8;
 		}
 		if (add)
@@ -968,9 +970,9 @@ void __stdcall function_c2d00(long light_index)
     }
 
     bool overflow = false;
-    function_1cac60(NULL, g_4e0310, light_index,
+    function_1cac60(NULL, (s_cluster_partition *)g_4e0310, light_index,
         (long *)(light + 0x10), (point3f *)(light + 0x18), *(real *)(light + 0x24),
-        location, 0, NULL, &overflow);
+        (s_partition_location *)location, 0, NULL, &overflow);
     light[2] |= 8;
 }
 
