@@ -7,6 +7,7 @@
     "g_51ecb4_owned_flock_pool",
     "g_4e7408_owned_random_state",
     "g_4f93a0_owned_output_table",
+    "g_4687a4_owned_zero_vector",
     "g_47f048_owned_havok_listener",
     "g_480118_owned_havok_allocator",
     "g_461f08_owned_havok_state_flag",

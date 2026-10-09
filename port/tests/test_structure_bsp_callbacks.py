@@ -178,9 +178,10 @@ def main() -> int:
         "?g_480118@@3PAVc_allocator@@A",
         "?g_4e0300@@3PAUs_record_pool@@A",
         "?g_51e9b8@@3PAUs_record_pool@@A",
-        "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
+        "?g_4687a4@@3PATvector3f@@A",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
+        "h2_guest_memcpy",
     }
     primary_cluster_undefined = {
         line.strip().split()[-1]
@@ -227,6 +228,7 @@ def main() -> int:
         "g_51ecb4_owned_flock_pool",
         "g_4e7408_owned_random_state",
         "g_4f93a0_owned_output_table",
+        "g_4687a4_owned_zero_vector",
         "g_47f048_owned_havok_listener",
         "g_480118_owned_havok_allocator",
         "g_461f08_owned_havok_state_flag",
@@ -428,7 +430,6 @@ def main() -> int:
         "?function_226a60@@YAXJ@Z",
         "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z",
         "?function_b7360@@YAXJ@Z",
-        "?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z",
     }
     expected_listener_production = (
         frontier_symbols - {"??0c_interface_277890@@QAA@XZ"}
@@ -448,7 +449,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_listener_production != expected_listener_production or
-            len(actual_listener_production) != 21):
+            len(actual_listener_production) != 20):
         raise RuntimeError("complete primary Havok listener production score changed")
 
     expected_symbols = ({entry["symbol"] for entry in providers} |

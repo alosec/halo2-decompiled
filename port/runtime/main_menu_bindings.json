@@ -180,6 +180,7 @@
     {"symbol": "?g_509428@@3MA", "address": "0x00509428"},
     {"symbol": "?g_51ecb4@@3PAUs_record_pool@@A", "address": "0x0051ecb4"},
     {"symbol": "?g_51f400@@3PAUhash_table@@A", "address": "0x0051f400"},
+    {"symbol": "?g_4687a4@@3PATvector3f@@A", "address": "0x004687a4"},
     {"symbol": "?g_4687b0@@3PATvector3f@@A", "address": "0x004687b0"},
     {"symbol": "?g_46eeb8@@3PAPAUs_slot_handler@@A", "address": "0x0046eeb8"},
     {"symbol": "?g_470f10@@3PAUs_prop_type_entry@@A", "address": "0x00470f10"},

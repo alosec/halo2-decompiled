@@ -246,7 +246,9 @@ hkBool hkRigidBody::isActive(void) const { return hkBool(); }
 void hkRigidBody::activate(void) { }
 
 // @stub 0x2da5d0
+#ifndef H2_NATIVE_PORT
 void hkTransform::setMulEq(hkTransform const &b) { }
+#endif
 
 /* callees of ai.cpp's 0x1caa40 */
 

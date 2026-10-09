@@ -70,6 +70,8 @@ def main() -> int:
         scale = temporary / "scale.o"
         pointer_owner = temporary / "pointer-owner.o"
         cache_detach = temporary / "cache-detach.o"
+        rigid_state = temporary / "rigid-state.o"
+        transform = temporary / "transform.o"
         compile_slice(args, args.root / "src/unknown_2777d0.cpp", primary,
                       PRIMARY_SOURCE_SYMBOLS, PRIMARY_SOURCE_ALIASES)
         compile_slice(args, args.root / "src/unknown_2789f0.cpp", secondary,
@@ -93,9 +95,14 @@ def main() -> int:
         compile_slice(args, args.root / "src/unknown_30c470_native.cpp",
                       cache_detach,
                       ["?detach@c_library_30c470@@QAAXPAX@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1cec30.cpp", rigid_state,
+            ["?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z"])
+        compile_slice(args, args.root / "src/unknown_2da5d0_native.cpp", transform,
+                      ["?setMulEq@hkTransform@@QAAXABU1@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
              args.tables, primary, secondary, constructor, transition, scale,
-             pointer_owner, cache_detach])
+             pointer_owner, cache_detach, rigid_state, transform])
     return 0
 
 
