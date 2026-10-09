@@ -21,6 +21,20 @@ bool online_get_logon_status(long *status)
     return false;
 }
 
+// @retail 0x6c7e0, native offline boundary
+bool function_6c7e0()
+{
+    return false;
+}
+
+struct s_channel_message;
+
+// @retail 0x6d080, native offline boundary
+bool function_6d080(long, s_channel_message *)
+{
+    return false;
+}
+
 void online_team_get_details(long, XUID const *, XONLINE_TEAM *team)
 {
     memset(team, 0, sizeof(*team));
