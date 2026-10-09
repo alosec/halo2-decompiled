@@ -67,7 +67,23 @@ struct XONLINE_PRESENCE {
 #pragma pack(pop)
 
 struct XONLINE_TEAM;
-struct XONLINE_TEAM_MEMBER;
+
+/* Retail team-member detail code clears 0x92 bytes and reads privileges at
+ * offset 0x1c; list code treats the same record as the recovered 0x92-byte
+ * online-player layout. */
+#pragma pack(push, 1)
+struct XONLINE_TEAM_MEMBER_PROPERTIES {
+    DWORD dwPrivileges;
+    DWORD TeamMemberDataSize;
+    BYTE TeamMemberData[0x6e];
+};
+
+struct XONLINE_TEAM_MEMBER {
+    XUID xuidTeamMember;
+    char szGamertag[XONLINE_GAMERTAG_SIZE];
+    XONLINE_TEAM_MEMBER_PROPERTIES TeamMemberProperties;
+};
+#pragma pack(pop)
 
 struct XONLINE_USER {
     XUID xuid;
@@ -95,6 +111,11 @@ static_assert(__builtin_offsetof(XONLINE_FRIEND, StateDataSize) == 0x34,
               "retail friend-state-data size offset");
 static_assert(__builtin_offsetof(XONLINE_FRIEND, StateData) == 0x35,
               "retail friend-state-data offset");
+static_assert(sizeof(XONLINE_TEAM_MEMBER_PROPERTIES) == 0x76,
+              "retail team-member properties layout");
+static_assert(sizeof(XONLINE_TEAM_MEMBER) == 0x92, "retail team-member layout");
+static_assert(__builtin_offsetof(XONLINE_TEAM_MEMBER, TeamMemberProperties) == 0x1c,
+              "retail team-member properties offset");
 static_assert(sizeof(XONLINE_PRESENCE) == 0x3d, "retail XONLINE_PRESENCE layout");
 static_assert(__builtin_offsetof(XONLINE_PRESENCE, dwUserState) == 0x0c,
               "retail presence-state offset");
