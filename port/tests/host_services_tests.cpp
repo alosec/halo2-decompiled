@@ -332,6 +332,11 @@ int main() {
                         "campaign cache selection rejected a valid recovered path");
             ok &= check(host_h2_map_is_active(static_cast<char*>(native_buffer)) == 1,
                         "selected Campaign cache was not reported active");
+            void* const campaign_allocation =
+                host_h2_physical_memory_malloc_low(0x1000, 0);
+            ok &= check(reinterpret_cast<std::uintptr_t>(campaign_allocation) ==
+                            0x80061000u,
+                        "campaign cache selection did not reset low physical allocation");
             const auto* selected_header = static_cast<const unsigned char*>(
                 arena->pointer_const(0x00557c94u));
             ok &= check(selected_header[0x198] == '0' &&

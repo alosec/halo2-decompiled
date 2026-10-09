@@ -436,6 +436,9 @@ extern "C" int host_h2_map_select(const char* map_name) {
     std::memcpy(state.arena->pointer(kCacheHeaderAddress), bytes.data(), kCacheHeaderSize);
     state.bytes = std::move(bytes);
     state.active_map_name = cache_name;
+    // Retail replaces the active cache and reuses its low physical allocation.
+    // Cache tag pointers are absolute guest addresses built for this base.
+    state.next_address = kPhysicalAllocationBase;
     return 1;
 }
 
