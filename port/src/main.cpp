@@ -316,13 +316,15 @@ struct Options {
     std::string guest_entry;
     std::filesystem::path screenshot;
     int frame_count = 0;
+    int press_start_frame = 0;
     bool headless = false;
 };
 
 void usage(const char* program) {
     std::cerr << "Usage: " << program
               << " [--headless] [--data-root PATH] [--guest-image PATH]"
-                 " [--guest-entry SYMBOL] [--frames COUNT] [--screenshot BMP]\n";
+                 " [--guest-entry SYMBOL] [--frames COUNT] [--press-start-frame COUNT]"
+                 " [--screenshot BMP]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -347,6 +349,14 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.frame_count <= 0) {
                 return false;
             }
+        } else if (argument == "--press-start-frame" && i + 1 < argc) {
+            const std::string_view value(argv[++i]);
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(),
+                                                options.press_start_frame);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+                options.press_start_frame <= 0) {
+                return false;
+            }
         } else if (argument == "--screenshot" && i + 1 < argc) {
             options.screenshot = argv[++i];
         } else {
@@ -354,10 +364,13 @@ bool parse_options(int argc, char** argv, Options& options) {
         }
     }
     return !options.data_root.empty() &&
-        (options.screenshot.empty() || options.frame_count > 0);
+        (options.screenshot.empty() || options.frame_count > 0) &&
+        (options.press_start_frame == 0 ||
+         (options.frame_count >= options.press_start_frame && !options.headless));
 }
 
-int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
+int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
+               void* guest_stack_top, int frame_count, int press_start_frame,
                const std::filesystem::path& screenshot,
                const h2::port::GuestArena* arena,
                const std::filesystem::path& data_root) {
@@ -401,13 +414,38 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
     bool running = true;
     int result = 0;
     int rendered_frames = 0;
+    const auto dispatch_press_start = [&]() {
+        if (!guest_press_start) {
+            return;
+        }
+        const int input_result = h2_call_guest_int_0(guest_press_start, guest_stack_top);
+        if (input_result != 0) {
+            std::cerr << "guest press-start dispatch failed with result "
+                      << input_result << '\n';
+            result = 1;
+            running = false;
+        }
+    };
     while (running) {
+        if (press_start_frame > 0 && rendered_frames + 1 == press_start_frame) {
+            dispatch_press_start();
+        }
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT ||
                 (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)) {
                 running = false;
+            } else if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat &&
+                       (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE)) {
+                dispatch_press_start();
+            } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN &&
+                       (event.gbutton.button == SDL_GAMEPAD_BUTTON_SOUTH ||
+                        event.gbutton.button == SDL_GAMEPAD_BUTTON_START)) {
+                dispatch_press_start();
             }
+        }
+        if (!running) {
+            break;
         }
         SDL_SetRenderDrawColor(renderer, 8, 18, 24, 255);
         SDL_RenderClear(renderer);
@@ -527,6 +565,7 @@ int main(int argc, char** argv) {
     std::optional<h2::port::GuestElfImage> guest_image;
     std::optional<h2::port::HostServiceStats> guest_service_stats;
     GuestEntry guest_frame = nullptr;
+    GuestEntry guest_press_start = nullptr;
     void* guest_stack_top = nullptr;
     if (!options.guest_image.empty()) {
         if (!h2::port::configure_cache_services(
@@ -582,8 +621,16 @@ int main(int argc, char** argv) {
                     std::cerr << "error: main-menu frame entry is missing\n";
                     return 1;
                 }
+                const auto press_start_address =
+                    guest_image->symbol_address("h2_main_menu_guest_press_start");
+                if (!press_start_address) {
+                    std::cerr << "error: main-menu press-start entry is missing\n";
+                    return 1;
+                }
                 guest_frame = reinterpret_cast<GuestEntry>(
                     arena->pointer(*frame_address));
+                guest_press_start = reinterpret_cast<GuestEntry>(
+                    arena->pointer(*press_start_address));
                 guest_stack_top = stack_top;
             }
         }
@@ -613,6 +660,7 @@ int main(int argc, char** argv) {
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless
         ? 0
-        : run_window(guest_frame, guest_stack_top, options.frame_count,
+        : run_window(guest_frame, guest_press_start, guest_stack_top,
+                     options.frame_count, options.press_start_frame,
                      options.screenshot, arena.get(), options.data_root);
 }

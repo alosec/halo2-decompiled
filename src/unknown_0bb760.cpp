@@ -182,6 +182,11 @@ void function_108f60(long object_index, long a);
 // @retail 0xbb760
 long function_bb760(short index)
 {
+#ifdef H2_NATIVE_PORT
+	/* The offline UI bootstrap has no gameplay object-index table. */
+	if (!g_4de2d0)
+		return NONE;
+#endif
 	if (index >= 0 && index < 0x280)
 		return g_4de2d0[index];
 	return NONE;

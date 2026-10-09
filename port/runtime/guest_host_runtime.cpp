@@ -3,6 +3,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_122870.h"
+#include "unknown_234c64.h"
 #include <math.h>
 #include <xtl.h>
 
@@ -66,6 +67,49 @@ extern "C" int h2_main_menu_guest_load_strings()
     s_string_table *english = reinterpret_cast<s_string_table *>(
         reinterpret_cast<unsigned char *>(g_4e034c) + 0x188);
     return string_table_load(english) ? 0 : 2;
+}
+
+class c_press_start_screen
+{
+public:
+    void handle_start(s_controller_reference **controller, long *item);
+};
+
+extern "C" int h2_main_menu_guest_press_start()
+{
+    c_window_channel *channels[] = {
+        &g_54d598.window_0,
+        &g_54d598.windows_1[4],
+        &g_54d598.window_2,
+        &g_54d598.windows_3[4],
+        &g_54d598.window_4,
+        &g_54d598.windows_5[4],
+        &g_54d598.default_window,
+    };
+    for (long index = 0; index < 7; ++index)
+    {
+        if (channels[index]->current && channels[index]->current->screen_id == 9)
+        {
+            s_controller_reference controller{};
+            controller.controller_index = 0;
+            s_controller_reference *controller_pointer = &controller;
+            long item = 0;
+            reinterpret_cast<c_press_start_screen *>(channels[index]->current)->
+                handle_start(&controller_pointer, &item);
+            for (long user = 0; user < 5; ++user)
+            {
+                if (g_54d598.windows_3[user].next)
+                    return 0;
+            }
+            for (long user = 0; user < 5; ++user)
+            {
+                if (g_54d598.windows_5[user].next)
+                    return 0;
+            }
+            return 3;
+        }
+    }
+    return 2;
 }
 
 extern "C" int h2_main_menu_guest_open_press_start()

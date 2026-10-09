@@ -109,9 +109,17 @@ long function_1249d0(short)
     return 0;
 }
 
-void function_1905bf(long, bool)
+struct s_screen_parameters;
+class c_class_1473c9;
+c_class_1473c9 *function_149f1e(word user_flags, long load);
+c_class_1473c9 *__stdcall function_252481(s_screen_parameters *parameters);
+
+void function_1905bf(long controller, bool)
 {
-    /* No controller event can request profile sign-in yet. */
+    /* Native keyboard/gamepad activation has no persisted profile provider yet.
+     * Route to the recovered four-way profile chooser, which honestly reports
+     * disconnected controller slots until fuller input ownership is present. */
+    function_149f1e((word)(1 << controller), reinterpret_cast<long>(function_252481));
 }
 
 bool function_19a76d(short)
