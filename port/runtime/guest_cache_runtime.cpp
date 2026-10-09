@@ -16,6 +16,11 @@ long cache_file_find(char const *map_name)
     return !map_name || host_h2_map_is_active(map_name) ? 0 : NONE;
 }
 
+extern "C" long h2_native_cache_file_find(char const *map_name)
+{
+    return cache_file_find(map_name);
+}
+
 bool __stdcall version_is_compatible(char const *)
 {
     return true;

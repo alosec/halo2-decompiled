@@ -26,6 +26,8 @@ set(H2_GUEST_CACHE_TAG_OBJECT "${H2_GUEST_OBJECT_DIR}/cache_tag_instances.o")
 set(H2_GUEST_CRT_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_crt.o")
 set(H2_GUEST_MAP_LOADER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_122870.o")
 set(H2_GUEST_CACHE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_cache_runtime.o")
+set(H2_GUEST_MAP_LOCATION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_213d20.o")
+set(H2_GUEST_MAP_PROGRESS_OBJECT "${H2_GUEST_OBJECT_DIR}/loading.o")
 set(H2_GUEST_MAIN_MENU_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_14741b.o")
 set(H2_GUEST_WIDGET_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_22e27b.o")
 set(H2_GUEST_SCREEN_BASE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2300cf.o")
@@ -162,6 +164,8 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_13fa70.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_ms_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp"
+    "${PROJECT_SOURCE_DIR}/src/loading.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_render_runtime.cpp"
@@ -236,6 +240,8 @@ foreach(pair IN ITEMS
         "${H2_GUEST_CRT_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_crt.c"
         "${H2_GUEST_MAP_LOADER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_122870.cpp"
         "${H2_GUEST_CACHE_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_cache_runtime.cpp"
+        "${H2_GUEST_MAP_LOCATION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp"
+        "${H2_GUEST_MAP_PROGRESS_OBJECT}|${PROJECT_SOURCE_DIR}/src/loading.cpp"
         "${H2_GUEST_MAIN_MENU_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
         "${H2_GUEST_WIDGET_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
         "${H2_GUEST_SCREEN_BASE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2300cf.cpp"
@@ -348,6 +354,15 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args
             --extract-symbol "_Z19cache_header_verifyPK14s_cache_header"
             --extract-symbol "_Z20cache_files_load_mapPKc")
+    endif()
+    if(object STREQUAL H2_GUEST_MAP_LOCATION_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?map_location_get@@YAJPBD@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_MAP_PROGRESS_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?map_location_progress_get@@YAJPBD@Z"
+            --extract-global "switch.table.?map_location_progress_get@@YAJPBD@Z")
     endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -856,6 +871,7 @@ set_source_files_properties(
     "${H2_GUEST_RANDOM_OBJECT}" "${H2_GUEST_GLOBALS_OBJECT}"
     "${H2_GUEST_CACHE_TAG_OBJECT}" "${H2_GUEST_CRT_OBJECT}"
     "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
+    "${H2_GUEST_MAP_LOCATION_OBJECT}" "${H2_GUEST_MAP_PROGRESS_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}" "${H2_GUEST_SCREEN_BASE_OBJECT}"
     "${H2_GUEST_UI_HEAP_OBJECT}" "${H2_GUEST_UI_MANAGER_OBJECT}"
@@ -928,6 +944,8 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_CRT_OBJECT}"
     "${H2_GUEST_MAP_LOADER_OBJECT}"
     "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
+    "${H2_GUEST_MAP_LOCATION_OBJECT}"
+    "${H2_GUEST_MAP_PROGRESS_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
     "${H2_GUEST_WIDGET_BASE_OBJECT}"
     "${H2_GUEST_SCREEN_BASE_OBJECT}"
@@ -1523,6 +1541,15 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_23625d@@YAXJ@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?map_location_get@@YAJPBD@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/loading.cpp")
+        list(APPEND guest_extract_args
+            --extract-symbol "?map_location_progress_get@@YAJPBD@Z"
+            --extract-global "switch.table.?map_location_progress_get@@YAJPBD@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp")
         list(APPEND guest_extract_args --extract-symbol

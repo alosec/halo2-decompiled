@@ -354,7 +354,38 @@ static int h2_native_main_menu_move(long event_type)
 }
 
 char *function_148d73();
+long map_location_get(char const *map_name);
+long map_location_progress_get(char const *map_name);
+extern "C" long h2_native_cache_file_find(char const *map_name);
 extern "C" int h2_native_load_campaign_map(char const *map_name);
+
+/* unknown_213d20.cpp is recovered with Microsoft's C++ ABI, while the cache
+ * loader runtime also serves Itanium-ABI recovered units. Keep one ownership
+ * implementation behind a narrow C bridge rather than duplicating it. */
+long cache_file_find(char const *map_name)
+{
+    return h2_native_cache_file_find(map_name);
+}
+
+extern "C" int h2_main_menu_guest_map_location_probe()
+{
+    char const main_menu[] = "mainmenu";
+    char const campaign[] =
+        "scenarios\\solo\\00a_introduction\\00a_introduction";
+    if (map_location_get(main_menu) != 3 ||
+        map_location_progress_get(main_menu) != 2)
+        return 1;
+    if (map_location_get(campaign) != 0 ||
+        map_location_progress_get(campaign) != 0)
+        return 2;
+    if (!host_h2_map_select(campaign))
+        return 3;
+    if (map_location_get(campaign) != 3 ||
+        map_location_progress_get(campaign) != 2)
+        return 4;
+    return map_location_get(main_menu) == 0 &&
+        map_location_progress_get(main_menu) == 0 ? 0 : 5;
+}
 
 extern "C" int h2_main_menu_guest_load_selected_campaign()
 {

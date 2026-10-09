@@ -117,6 +117,9 @@ void map_file_path_get(char const *map_name, char *path)
 }
 
 // @retail 0x214a60
+#ifdef H2_NATIVE_PORT
+long cache_file_find(char const *map_name);
+#else
 long cache_file_find(char const *map_name)
 {
 	char path[256];
@@ -134,6 +137,7 @@ long cache_file_find(char const *map_name)
 	}
 	return result;
 }
+#endif
 
 // @retail 0x214060
 s_cache_copy *cache_copy_find(char const *map_name)
@@ -319,6 +323,11 @@ long cache_copy_priority(char const *map_name)
 // @retail 0x213f10
 long map_location_get(char const *map_name)
 {
+#ifdef H2_NATIVE_PORT
+	/* The native host has one synchronously owned cache and no Xbox utility
+	 * drive or asynchronous copy queue. Report only that exact ownership. */
+	return cache_file_find(map_name) != NONE ? _map_location_open : _map_location_none;
+#else
 	char path[256];
 	s_cache_copy *copy;
 
@@ -338,6 +347,7 @@ long map_location_get(char const *map_name)
 		return _map_location_copying;
 	}
 	return cache_copy_queued_priority(map_name) != NONE;
+#endif
 }
 
 // @retail 0x214e40
