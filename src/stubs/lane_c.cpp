@@ -6,8 +6,6 @@
 // @stub 0x211640
 void function_211640(long arg_0) {}
 
-// @stub 0x295e60
-void function_295e60(long arg_0) {}
 
 class c_1d1261
 {

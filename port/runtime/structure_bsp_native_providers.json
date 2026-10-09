@@ -12,6 +12,9 @@
     "g_461f08_owned_havok_state_flag",
     "g_51e9cc_owned_scenery_index_table",
     "g_51e9d0_owned_shape_owner",
+    "g_468630_owned_object_type_definitions",
+    "g_4e0350_owned_scenario",
+    "g_4de2e0_owned_object_partition",
     "native_offline_replication_unavailable"
   ],
   "providers": [
@@ -98,8 +101,9 @@
     {"source": "src/sound_looping_paths_native.cpp", "symbols": ["?function_18bb80@@YAXM@Z"]},
     {"source": "src/first_person_marker_native.cpp", "symbols": ["?first_person_weapon_get_marker@@YA_NJJPATpoint3f@@PATvector3f@@1@Z"]},
     {"source": "src/unknown_1689b0.cpp", "symbols": ["?function_168f40@@YA_NJPBUs_vehicle_ray@@JJ@Z"]},
-    {"source": "src/unknown_0b7740.cpp", "symbols": ["?function_b8940@@YAJFPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z", "?function_b89b0@@YAJPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z"]},
+    {"source": "src/unknown_0b7740.cpp", "symbols": ["?function_b7a40@@YAPAXPBUs_scenario_identifier_ab@@PAJ@Z", "?function_b8940@@YAJFPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z", "?function_b89b0@@YAJPAPAUs_object_cluster_reference@@PAUs_object_cluster_iterator@@@Z"]},
     {"source": "src/unknown_1efac0.cpp", "symbols": ["?initialize@s_lookup@@QAA_NJ@Z", "?function_1efdc0@@YA_NPAUs_lookup@@PBTpoint3f@@@Z"]},
-    {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z", "?function_a7a60@@YAXJ@Z"]}
+    {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z", "?function_a7a60@@YAXJ@Z"]},
+    {"source": "src/unknown_295e60_native.cpp", "symbols": ["?function_295e60@@YAXJ@Z", "?function_10a040@@YAFJPAUs_scenery_placement@@@Z"]}
   ]
 }

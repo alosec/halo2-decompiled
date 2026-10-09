@@ -154,6 +154,7 @@ void __stdcall function_10a030(long scenery_index)
 	function_10a820(scenery_index);
 }
 
+#if !H2_NATIVE_PORT
 // @retail 0x10a040
 short function_10a040(long definition_index, s_scenery_placement *placement)
 {
@@ -186,6 +187,7 @@ short function_10a040(long definition_index, s_scenery_placement *placement)
 	}
 	return result;
 }
+#endif
 
 // @retail 0x10a0b0
 short function_10a0b0(long scenery_index)
