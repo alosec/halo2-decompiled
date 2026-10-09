@@ -159,6 +159,10 @@
     {"symbol": "?g_5107f4@@3PAXA", "address": "0x005107f4"},
     {"symbol": "?g_5044c8@@3PAUs_record_pool@@A", "address": "0x005044c8"},
     {"symbol": "?g_4f55f8@@3Us_text_callback_state@@A", "address": "0x004f55f8"},
-    {"symbol": "?game_state_globals@@3Us_game_state_globals@@A", "address": "0x004e3b60"}
+    {"symbol": "?game_state_globals@@3Us_game_state_globals@@A", "address": "0x004e3b60"},
+    {"symbol": "?g_467000@@3JA", "address": "0x00467000"},
+    {"symbol": "?g_484dc0@@3PAJA", "address": "0x00484dc0"},
+    {"symbol": "?g_484dd0@@3PAUs_d3d_palette_015b70_native@@A", "address": "0x00484dd0"},
+    {"symbol": "?g_5093ac@@3JA", "address": "0x005093ac"}
   ]
 }
