@@ -25,6 +25,14 @@
     {"source": "src/unknown_0b8540.cpp", "symbols": ["?function_b8540@@YAXJ@Z"]},
     {"source": "src/unknown_0b8b70.cpp", "symbols": ["?function_b8b70@@YAXJ@Z", "?function_c3220@@YAXJ@Z"]},
     {"source": "src/unknown_0bffa0.cpp", "symbols": ["?function_c1720@@YAXJ_N0@Z", "?function_c2d00@@YAXJ@Z"]},
-    {"source": "src/unknown_1cabc0.cpp", "symbols": ["?function_1cae40@@YAXPAUs_cluster_partition@@JPAJ@Z"]}
+    {"source": "src/unknown_1cabc0.cpp", "symbols": ["?function_1cae40@@YAXPAUs_cluster_partition@@JPAJ@Z"]},
+    {"source": "src/unknown_0b8c40_native.cpp", "symbols": ["?function_b8c40@@YAJJF@Z"]},
+    {"source": "src/unknown_0b8ca0.cpp", "symbols": ["?function_b8d30@@YAFJJPAUs_object_marker@@F_N@Z"]},
+    {"source": "src/unknown_0b8bd0.cpp", "symbols": ["?object_get_root_location@@YAXJPAUs_location@@@Z"]},
+    {"source": "src/unknown_11bed0.cpp", "symbols": ["?function_11bed0@@YAXPAUs_location@@PBTpoint3f@@@Z"]},
+    {"source": "src/unknown_142570_native.cpp", "symbols": ["?transform4x3f_apply_point@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z"]},
+    {"source": "src/unknown_14a280.cpp", "symbols": ["?function_14a280@@YAJPAUs_bsp3d@@PATpoint3f@@J@Z"]},
+    {"source": "src/unknown_1df080_native.cpp", "symbols": ["?function_1df080@@YAXPBTpoint3f@@JPAT1@PAM@Z"]},
+    {"source": "src/unknown_030290.cpp", "symbols": ["?function_30bf0@@YAMPATvector3f@@@Z"]}
   ]
 }
