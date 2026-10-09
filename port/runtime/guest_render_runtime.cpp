@@ -7,6 +7,14 @@ union point3f {
 struct color4f { float alpha, red, green, blue; };
 struct short_rectangle2d { short top, left, bottom, right; };
 
+struct s_interface_draw_request_native {
+    unsigned int flags;
+    unsigned char unknown04[8];
+    unsigned int bitmap_address;
+};
+static_assert(sizeof(s_interface_draw_request_native) == 16,
+              "recovered interface request prefix layout");
+
 struct s_interface_draw_vertex_native {
     float position_x;
     float position_y;
@@ -18,8 +26,10 @@ static_assert(sizeof(s_interface_draw_vertex_native) == 20,
               "recovered interface vertex layout");
 
 // @retail 0x52040, native renderer boundary
-void function_52040(void const *, void const *source_vertices)
+void function_52040(void const *source_request, void const *source_vertices)
 {
+    const auto *interface_request =
+        static_cast<const s_interface_draw_request_native *>(source_request);
     const auto *source =
         static_cast<const s_interface_draw_vertex_native *>(source_vertices);
     if (!source)
@@ -30,6 +40,10 @@ void function_52040(void const *, void const *source_vertices)
     request.primitive_type = 7;
     request.vertex_count = 4;
     request.color = source[0].color;
+    request.texture_tag = interface_request
+        ? static_cast<int>(interface_request->bitmap_address) : -1;
+    request.texture_index = -1;
+    request.layer = -1;
     h2_render_immediate_vertex vertices[4] = {};
     for (long i = 0; i < 4; ++i) {
         vertices[i].texture_x = source[i].texture_x;

@@ -2,6 +2,7 @@
 #include "h2/host_abi.h"
 #include "h2/host_services.hpp"
 #include "h2/render_protocol.h"
+#include "h2/texture_decode.hpp"
 
 struct color4f { float alpha, red, green, blue; };
 struct short_rectangle2d { short top, left, bottom, right; };
@@ -40,6 +41,13 @@ struct PreviewVertex {
     unsigned int color;
 };
 static_assert(sizeof(PreviewVertex) == 28);
+
+struct InterfaceRequest {
+    unsigned int flags;
+    unsigned char unknown04[8];
+    unsigned int bitmap_address;
+};
+static_assert(sizeof(InterfaceRequest) == 16);
 
 struct InterfaceVertex {
     float position_x;
@@ -116,6 +124,19 @@ int main() {
     ok &= check(std::abs(host_h2_cos(0.5) - std::cos(0.5)) < 1.0e-12,
                 "host cosine adapter mismatch");
 
+    const std::vector<std::uint8_t> red_dxt5 = {
+        255, 0, 0, 0, 0, 0, 0, 0,
+        0x00, 0xf8, 0x00, 0x00, 0, 0, 0, 0,
+    };
+    std::vector<std::uint8_t> decoded;
+    ok &= check(h2::port::decode_dxt5(red_dxt5, 4, 4, decoded) &&
+                    decoded.size() == 64 && decoded[0] == 255 && decoded[1] == 0 &&
+                    decoded[2] == 0 && decoded[3] == 255 && decoded[63] == 255,
+                "DXT5 decoder did not produce the expected opaque red block");
+    ok &= check(!h2::port::decode_dxt5(
+                    std::span<const std::uint8_t>(red_dxt5.data(), 15), 4, 4, decoded),
+                "DXT5 decoder accepted a truncated block");
+
     const unsigned int before = host_h2_get_milliseconds();
     host_h2_sleep(2);
     const unsigned int after = host_h2_get_milliseconds();
@@ -155,6 +176,11 @@ int main() {
                         "native cache read copied incorrect data");
             ok &= check(host_h2_cache_read(0xff8u, 16, native_buffer) == 0,
                         "native cache read accepted an out-of-range request");
+            unsigned char host_copy[16]{};
+            ok &= check(h2::port::copy_cache_bytes(0x800u, host_copy,
+                                                   sizeof(host_copy)) &&
+                            host_copy[0] == cache_bytes[0x800],
+                        "native cache ownership did not expose bounded host bytes");
             h2::port::reset_cache_services();
         }
         std::filesystem::remove(cache_path);
@@ -242,11 +268,13 @@ int main() {
         {30.0f, 40.0f, 1.0f, 1.0f, 0xff112233u},
         {10.0f, 40.0f, 0.0f, 1.0f, 0xff112233u},
     };
-    function_52040(nullptr, interface_quad);
+    const InterfaceRequest interface_request{0, {}, 0x12345678u};
+    function_52040(&interface_request, interface_quad);
     const auto interface_stats = h2::port::host_service_stats();
     ok &= check(capture.immediate.kind == H2_RENDER_REQUEST_INTERFACE_QUAD &&
                     capture.immediate.vertex_count == 4 &&
-                    capture.immediate.color == 0xff112233u,
+                    capture.immediate.color == 0xff112233u &&
+                    capture.immediate.texture_tag == 0x12345678,
                 "interface quad request metadata is incorrect");
     ok &= check(capture.immediate_vertices[0].x == 10.0f &&
                     capture.immediate_vertices[0].y == 20.0f &&

@@ -3,14 +3,18 @@
 #include "h2/host_services.hpp"
 #include "h2/render_protocol.h"
 #include "h2/retail_data.hpp"
+#include "h2/texture_decode.hpp"
 
 #include <charconv>
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include <SDL3/SDL.h>
 
@@ -25,8 +29,63 @@ using GuestEntry = int (*)();
 
 struct NativeRenderContext {
     SDL_Renderer* renderer = nullptr;
+    const h2::port::GuestArena* arena = nullptr;
+    std::unordered_map<std::uint32_t, SDL_Texture*> textures;
     bool failed = false;
 };
+
+std::uint16_t read_u16(const unsigned char* data) {
+    std::uint16_t value = 0;
+    std::memcpy(&value, data, sizeof(value));
+    return value;
+}
+
+std::uint32_t read_u32(const unsigned char* data) {
+    std::uint32_t value = 0;
+    std::memcpy(&value, data, sizeof(value));
+    return value;
+}
+
+SDL_Texture* get_interface_texture(NativeRenderContext& context,
+                                   std::uint32_t guest_address) {
+    if (!guest_address) {
+        return nullptr;
+    }
+    if (const auto found = context.textures.find(guest_address);
+        found != context.textures.end()) {
+        return found->second;
+    }
+    SDL_Texture* texture = nullptr;
+    if (context.arena && guest_address >= 0x80060000u && guest_address <= 0x80233f8cu) {
+        const auto* descriptor = static_cast<const unsigned char*>(
+            context.arena->pointer_const(guest_address));
+        const int width = read_u16(descriptor + 4);
+        const int height = read_u16(descriptor + 6);
+        const unsigned int format = descriptor[0x17];
+        const std::uint32_t data_offset = read_u32(descriptor + 0x1c);
+        const std::uint32_t data_size = read_u32(descriptor + 0x34);
+        if (format == 16 && width > 0 && height > 0 && width <= 4096 &&
+            height <= 4096 && data_offset != 0xffffffffu && data_size != 0 &&
+            data_size <= 64u * 1024u * 1024u) {
+            std::vector<unsigned char> compressed(data_size);
+            std::vector<unsigned char> pixels;
+            if (h2::port::copy_cache_bytes(data_offset, compressed.data(),
+                                            compressed.size()) &&
+                h2::port::decode_dxt5(compressed, width, height, pixels)) {
+                texture = SDL_CreateTexture(context.renderer, SDL_PIXELFORMAT_RGBA32,
+                                            SDL_TEXTUREACCESS_STATIC, width, height);
+                if (texture &&
+                    (!SDL_UpdateTexture(texture, nullptr, pixels.data(), width * 4) ||
+                     !SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND))) {
+                    SDL_DestroyTexture(texture);
+                    texture = nullptr;
+                }
+            }
+        }
+    }
+    context.textures.emplace(guest_address, texture);
+    return texture;
+}
 
 SDL_FColor unpack_color(std::uint32_t color) {
     constexpr float scale = 1.0f / 255.0f;
@@ -67,7 +126,13 @@ void draw_guest_request(const void* request_pointer, const void* vertices_pointe
     }
     static constexpr int indices[] = {0, 1, 2, 0, 2, 3};
     const int index_count = request.vertex_count == 3 ? 3 : 6;
-    if (!SDL_RenderGeometry(context.renderer, nullptr, vertices,
+    SDL_Texture* texture = nullptr;
+    if (request.kind == H2_RENDER_REQUEST_INTERFACE_QUAD &&
+        request.texture_tag != -1) {
+        texture = get_interface_texture(
+            context, static_cast<std::uint32_t>(request.texture_tag));
+    }
+    if (!SDL_RenderGeometry(context.renderer, texture, vertices,
                             static_cast<int>(request.vertex_count), indices,
                             index_count)) {
         context.failed = true;
@@ -78,6 +143,7 @@ struct Options {
     std::filesystem::path data_root;
     std::filesystem::path guest_image;
     std::string guest_entry;
+    std::filesystem::path screenshot;
     int frame_count = 0;
     bool headless = false;
 };
@@ -85,7 +151,7 @@ struct Options {
 void usage(const char* program) {
     std::cerr << "Usage: " << program
               << " [--headless] [--data-root PATH] [--guest-image PATH]"
-                 " [--guest-entry SYMBOL] [--frames COUNT]\n";
+                 " [--guest-entry SYMBOL] [--frames COUNT] [--screenshot BMP]\n";
 }
 
 bool parse_options(int argc, char** argv, Options& options) {
@@ -110,14 +176,19 @@ bool parse_options(int argc, char** argv, Options& options) {
                 options.frame_count <= 0) {
                 return false;
             }
+        } else if (argument == "--screenshot" && i + 1 < argc) {
+            options.screenshot = argv[++i];
         } else {
             return false;
         }
     }
-    return !options.data_root.empty();
+    return !options.data_root.empty() &&
+        (options.screenshot.empty() || options.frame_count > 0);
 }
 
-int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count) {
+int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count,
+               const std::filesystem::path& screenshot,
+               const h2::port::GuestArena* arena) {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         std::cerr << "SDL initialization failed: " << SDL_GetError() << '\n';
         return 1;
@@ -149,7 +220,7 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count) {
         return 1;
     }
 
-    NativeRenderContext render_context{renderer, false};
+    NativeRenderContext render_context{renderer, arena, {}, false};
     h2::port::set_render_request_handler(draw_guest_request, &render_context);
     bool running = true;
     int result = 0;
@@ -179,6 +250,20 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count) {
                 running = false;
             }
         }
+        if (!screenshot.empty() && frame_count > 0 &&
+            rendered_frames + 1 >= frame_count) {
+            SDL_Surface* surface = SDL_RenderReadPixels(renderer, nullptr);
+            if (!surface || !SDL_SaveBMP(surface, screenshot.c_str())) {
+                std::cerr << "screenshot capture failed: " << SDL_GetError() << '\n';
+                result = 1;
+                running = false;
+            } else {
+                std::cout << "Saved final rendered frame to " << screenshot << '\n';
+            }
+            if (surface) {
+                SDL_DestroySurface(surface);
+            }
+        }
         SDL_RenderPresent(renderer);
         ++rendered_frames;
         if (frame_count > 0 && rendered_frames >= frame_count) {
@@ -190,9 +275,21 @@ int run_window(GuestEntry guest_frame, void* guest_stack_top, int frame_count) {
     h2::port::set_render_request_handler(nullptr);
     if (guest_frame) {
         const auto stats = h2::port::host_service_stats();
+        std::size_t decoded_textures = 0;
+        for (const auto& [address, texture] : render_context.textures) {
+            (void)address;
+            decoded_textures += texture != nullptr;
+        }
         std::cout << "Rendered " << rendered_frames << " host frames; guest requests: render "
                   << stats.render_request_calls << ", text " << stats.text_request_calls
-                  << ", video " << stats.video_control_calls << '\n';
+                  << ", video " << stats.video_control_calls << "; decoded textures "
+                  << decoded_textures << '/' << render_context.textures.size() << '\n';
+    }
+    for (const auto& [address, texture] : render_context.textures) {
+        (void)address;
+        if (texture) {
+            SDL_DestroyTexture(texture);
+        }
     }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -318,5 +415,6 @@ int main(int argc, char** argv) {
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
     return options.headless
         ? 0
-        : run_window(guest_frame, guest_stack_top, options.frame_count);
+        : run_window(guest_frame, guest_stack_top, options.frame_count,
+                     options.screenshot, arena.get());
 }

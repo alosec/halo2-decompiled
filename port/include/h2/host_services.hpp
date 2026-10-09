@@ -1,6 +1,7 @@
 #ifndef H2_PORT_HOST_SERVICES_HPP
 #define H2_PORT_HOST_SERVICES_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -32,6 +33,7 @@ void reset_host_service_stats();
 bool configure_cache_services(GuestArena& arena, const std::filesystem::path& map_path,
                               std::string& error);
 void reset_cache_services();
+bool copy_cache_bytes(std::uint32_t offset, void* destination, std::size_t size);
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error);
 

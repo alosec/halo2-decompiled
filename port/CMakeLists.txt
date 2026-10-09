@@ -1317,6 +1317,7 @@ add_library(h2_port_support STATIC
     src/guest_elf_image.cpp
     src/host_services.cpp
     src/retail_data.cpp
+    src/texture_decode.cpp
 )
 target_include_directories(h2_port_support PUBLIC include)
 target_compile_features(h2_port_support PUBLIC cxx_std_20)

@@ -137,6 +137,19 @@ void reset_cache_services() {
     state.next_address = kPhysicalAllocationBase;
 }
 
+bool copy_cache_bytes(std::uint32_t offset, void* destination, std::size_t size) {
+    if (!destination) {
+        return false;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    if (offset > state.bytes.size() || size > state.bytes.size() - offset) {
+        return false;
+    }
+    std::memcpy(destination, state.bytes.data() + offset, size);
+    return true;
+}
+
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error) {
     struct Import {
