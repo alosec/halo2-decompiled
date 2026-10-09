@@ -35,7 +35,13 @@ def main():
     assert "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in imports
     assert "?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z" not in imports
     assert "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z" not in imports
-    assert imports["?function_235f31@@YAXPAUs_sprite_element@@PBUs_float_rect@@PBUpoint2f@@KF@Z"]["category"] == "recovered_provider"
+    for symbol in (
+        "?function_11c0b0@@YAFPBDPAUs_name_table_11c0b0@@@Z",
+        "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
+        "?function_22fa30@@YAPAVc_class_1a2c81@@PAV1@PAUs_bitmap_block@@@Z",
+        "?function_235f31@@YAXPAUs_sprite_element@@PBUs_float_rect@@PBUpoint2f@@KF@Z",
+    ):
+        assert symbol not in imports
     print("main-menu import plan classification passed")
 
 
