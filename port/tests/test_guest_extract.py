@@ -243,6 +243,20 @@ def main():
             if f"_{symbol}" not in physics_model_type_defined:
                 raise RuntimeError(f"physics-model runtime type method was not retained: {symbol}")
 
+        physics_model_count_output = Path(temporary) / "physics-model-runtime-count.o"
+        physics_model_count_command = command[:]
+        physics_model_count_command[physics_model_count_command.index("h2_extract_selected")] = "?function_2fc1a0@@YAJPAX@Z"
+        physics_model_count_command[physics_model_count_command.index("--extract-global"):physics_model_count_command.index("--output")] = []
+        physics_model_count_command[physics_model_count_command.index(output)] = physics_model_count_output
+        physics_model_count_command[-1] = args.root / "src/unknown_2fc1a0.cpp"
+        subprocess.run([str(value) for value in physics_model_count_command], check=True)
+        physics_model_count_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_count_output],
+            text=True,
+        )
+        if "_?function_2fc1a0@@YAJPAX@Z" not in physics_model_count_defined:
+            raise RuntimeError("physics-model runtime count accessor was not selectively compilable")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
