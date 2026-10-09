@@ -239,8 +239,10 @@ foreach(pair IN ITEMS
             "?function_199e2e@@YAX_N@Z")
     endif()
     if(object STREQUAL H2_GUEST_UI_RECT_OBJECT)
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
+            --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
+            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
     if(object STREQUAL H2_GUEST_MUSIC_SILENCE_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -389,7 +391,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 118
+            --expect-unresolved 116
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -459,8 +461,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             "?function_199e2e@@YAX_N@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp")
-        list(APPEND guest_extract_args --extract-symbol
-            "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
+            --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
+            --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -653,7 +657,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 118
+            --expect-unresolved 116
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -661,7 +665,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 118
+            --expect-unresolved 116
 )
 add_test(
     NAME main-menu-elf-core

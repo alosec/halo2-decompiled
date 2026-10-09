@@ -10,6 +10,8 @@ struct h2_guest_filetime {
 
 typedef int (*h2_guest_compare_fn)(const void*, const void*);
 
+extern float fabsf(float value);
+extern double fabs(double value);
 extern long CompareFileTime(const struct h2_guest_filetime* first,
                             const struct h2_guest_filetime* second);
 extern void h2_guest_qsort(void* base, size_t count, size_t size,
@@ -33,14 +35,24 @@ static int compare_ints(const void* first, const void* second) {
 }
 
 int main(void) {
+    union { float value; unsigned int bits; } negative_zero_f = { -0.0f };
+    union { double value; unsigned long long bits; } negative_zero = { -0.0 };
+    negative_zero_f.value = fabsf(negative_zero_f.value);
+    negative_zero.value = fabs(negative_zero.value);
+    if (negative_zero_f.bits != 0 || negative_zero.bits != 0 ||
+        fabsf(-3.5f) != 3.5f || fabs(-7.25) != 7.25) {
+        puts("guest absolute-value helpers failed");
+        return 1;
+    }
+
     int values[] = {7, -2, 7, 0, 3, -9};
     const int expected[] = {-9, -2, 0, 3, 7, 7};
     h2_guest_qsort(values, sizeof(values) / sizeof(values[0]),
                    sizeof(values[0]), compare_ints);
     for (size_t index = 0; index < sizeof(values) / sizeof(values[0]); ++index) {
         if (values[index] != expected[index]) {
-            fprintf(stderr, "guest qsort mismatch at %zu: %d != %d\n",
-                    index, values[index], expected[index]);
+            printf("guest qsort mismatch at %zu: %d != %d\n",
+                   index, values[index], expected[index]);
             return 1;
         }
     }
@@ -51,7 +63,7 @@ int main(void) {
     if (CompareFileTime(&earlier, &later) != -1 ||
         CompareFileTime(&later, &earlier) != 1 ||
         CompareFileTime(&earlier, &same) != 0) {
-        fputs("guest file-time comparison failed\n", stderr);
+        puts("guest file-time comparison failed");
         return 1;
     }
     wchar_t formatted[32];
@@ -59,13 +71,13 @@ int main(void) {
     int formatted_size = guest_swprintf(formatted, 32, L"%s %04d %X %S",
                                         L"Halo", 42, 0xbeef, "ok");
     if (formatted_size != 17 || wcscmp(formatted, expected_text)) {
-        fputs("guest wide formatting failed\n", stderr);
+        puts("guest wide formatting failed");
         return 1;
     }
     wchar_t truncated[4] = {L'x', L'x', L'x', L'x'};
     if (guest_swprintf(truncated, 4, L"hello") != -1 ||
         truncated[0] != L'h' || truncated[3] != L'l') {
-        fputs("guest wide formatting truncation failed\n", stderr);
+        puts("guest wide formatting truncation failed");
         return 1;
     }
 

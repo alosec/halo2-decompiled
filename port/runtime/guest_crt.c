@@ -2,6 +2,18 @@
 #include <string.h>
 #include <wchar.h>
 
+float fabsf(float value) {
+    union { float value; unsigned int bits; } converted = { value };
+    converted.bits &= 0x7fffffffU;
+    return converted.value;
+}
+
+double fabs(double value) {
+    union { double value; unsigned long long bits; } converted = { value };
+    converted.bits &= 0x7fffffffffffffffULL;
+    return converted.value;
+}
+
 struct h2_guest_filetime {
     unsigned long low;
     unsigned long high;
