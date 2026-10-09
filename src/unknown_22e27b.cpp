@@ -510,6 +510,23 @@ void c_class_1a2c81::function_22ecb4_2(bool focus)
 	}
 }
 
+#if defined(H2_NATIVE_PORT)
+/* Focuses this child, then descends through its first widget child. */
+// @retail 0x22eb8c
+void c_class_1a2c81::v7(c_class_1a2c81 *widget)
+{
+	if (widget)
+	{
+		widget->function_22ecb4_2(true);
+		c_class_1a2c81 *nested = widget->child;
+		while (nested && !nested->has_valid_type())
+			nested = nested->next;
+		if (nested)
+			widget->v7(nested);
+	}
+}
+#endif
+
 // @retail 0x22e315
 void c_class_1a2c81::v1()
 {

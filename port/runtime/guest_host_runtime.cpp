@@ -244,6 +244,38 @@ extern "C" int h2_main_menu_guest_accept()
     return h2_native_virtual_keyboard_accept();
 }
 
+static c_class_1474e8 *h2_native_main_menu_list()
+{
+    c_window_channel *const channel = &g_54d598.windows_5[4];
+    if (!channel->current || channel->current->screen_id != 6)
+        return 0;
+    return reinterpret_cast<c_class_1474e8 *>(
+        reinterpret_cast<c_screen_with_menu *>(channel->current)->list);
+}
+
+static int h2_native_main_menu_move(long event_type)
+{
+    c_class_1474e8 *const list = h2_native_main_menu_list();
+    if (!list)
+        return 2;
+    const long before = list->get_focused_datum();
+    s_widget_event event = { event_type, 0, 0 };
+    if (!list->v10(&event))
+        return 3;
+    const long after = list->get_focused_datum();
+    return before != NONE && after != NONE && before != after ? 0 : 4;
+}
+
+extern "C" int h2_main_menu_guest_up()
+{
+    return h2_native_main_menu_move(1);
+}
+
+extern "C" int h2_main_menu_guest_down()
+{
+    return h2_native_main_menu_move(3);
+}
+
 extern "C" int h2_main_menu_guest_cancel()
 {
     c_window_channel *channels[] = {

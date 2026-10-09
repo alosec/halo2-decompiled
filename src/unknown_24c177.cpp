@@ -96,12 +96,14 @@ void c_class_1474e8::v17()
 	}
 }
 
-/* Native subset of retail 0x24c024. It preserves ordinary event bubbling and
-   dispatches A/start to the focused datum's registered list-item handlers.
-   Directional stepping remains unavailable until the rest of 0x24c1c5 is
-   recovered. */
+/* Native spelling of retail 0x24c024. */
 bool c_class_1474e8::v10(s_widget_event *event)
 {
+	if (event && (event->type == 1 || event->type == 3))
+	{
+		function_24c1c5((c_widget *)this, event->type == 1 ? -1 : 1);
+		return true;
+	}
 	if (event && event->type == 5 && (event->param == 0 || event->param == 12))
 	{
 		c_class_1a2c81 *item = get_focused_item();

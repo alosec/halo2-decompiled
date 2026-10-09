@@ -481,7 +481,11 @@ public:
 	virtual void v4(long) {}
 	virtual bool v5(s_widget_event *) { return false; }
 	virtual long v6() { return 0; }
+#if defined(H2_NATIVE_PORT)
+	virtual void v7(c_class_1a2c81 *widget);
+#else
 	virtual void v7(c_class_1a2c81 *) {}
+#endif
 	virtual void v8() {}
 	virtual void v9() {}
 	/* passes the event up to the parent */

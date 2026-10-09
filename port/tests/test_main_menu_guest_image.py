@@ -71,6 +71,8 @@ def main() -> None:
         "h2_main_menu_guest_load_strings",
         "h2_main_menu_guest_press_start",
         "h2_main_menu_guest_accept",
+        "h2_main_menu_guest_up",
+        "h2_main_menu_guest_down",
         "h2_main_menu_guest_cancel",
         "h2_native_controller_connect",
         "host_h2_cache_read",
