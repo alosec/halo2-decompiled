@@ -148,11 +148,13 @@ void function_155e50(void)
 	bink_update_memory_available();
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x155f60
 bool function_155f60(void)
 {
 	return g_4e9188.movie && g_4e9188.initialized;
 }
+#endif
 
 // @retail 0x1565e0
 void function_1565e0(void)

@@ -21,6 +21,7 @@
     {"symbol": "?g_4e61c0@@3Us_saved_game_drive@@A", "address": "0x004e61c0"},
     {"symbol": "?g_4e6948@@3PAUs_game_options_view@@A", "address": "0x004e6948"},
     {"symbol": "?g_4e73a0@@3Us_draw_string_globals@@A", "address": "0x004e73a0"},
+    {"symbol": "?g_4e9188@@3Us_bink_globals@@A", "address": "0x004e9188"},
     {"symbol": "?g_4ee4c4@@3Us_peer_list_globals@@A", "address": "0x004ee4c4"},
     {"symbol": "?g_510c50@@3PAUs_unknown_13bf00@@A", "address": "0x00510c50"},
     {"symbol": "?global_preferences_globals@@3Us_global_preferences_globals@@A", "address": "0x00510818"},
