@@ -5,7 +5,18 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 
+#ifdef H2_NATIVE_PORT
+#pragma clang diagnostic ignored "-Wignored-pragma-intrinsic"
+#endif
+
+#ifdef H2_NATIVE_PORT
+static __forceinline void _ReadWriteBarrier(void)
+{
+	__asm__ volatile("" ::: "memory");
+}
+#else
 extern "C" void _ReadWriteBarrier(void);
+#endif
 
 struct s_looping_sound
 {
@@ -52,6 +63,15 @@ struct s_looping_sound_definition
 
 static __forceinline long float_to_int_nearest(real value)
 {
+#ifdef H2_NATIVE_PORT
+	long result = (long)value;
+	real fraction = value - (real)result;
+	if (fraction > 0.5f || (fraction == 0.5f && (result & 1)))
+		result++;
+	else if (fraction < -0.5f || (fraction == -0.5f && (result & 1)))
+		result--;
+	return result;
+#else
 	long result;
 
 	__asm
@@ -60,6 +80,7 @@ static __forceinline long float_to_int_nearest(real value)
 		fistp result
 	}
 	return result;
+#endif
 }
 
 static inline s_looping_sound *looping_sound_get(long datum_index)

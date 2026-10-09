@@ -63,6 +63,7 @@ def main() -> int:
         effect_state = temporary / "effect-state.o"
         effect_distance = temporary / "effect-distance.o"
         effect_selection = temporary / "effect-selection.o"
+        looping_sound_state = temporary / "looping-sound-state.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -125,11 +126,15 @@ def main() -> int:
             ["?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z"],
             ["switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
              "switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z.2"])
+        compile_slice(
+            args, args.root / "src/unknown_18a2f0.cpp", looping_sound_state,
+            ["?function_18a5e0@@YAPAGJ@Z", "?function_18a6c0@@YAJJJ@Z",
+             "?function_18a720@@YAXJ_N@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.impact_output, args.output, impact_allocation, game_time,
              vector_normalize, vector_compress, contact_properties,
              rigid_body_matrix, structure_location, effect_state,
-             effect_distance, effect_selection])
+             effect_distance, effect_selection, looping_sound_state])
     return 0
 
 

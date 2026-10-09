@@ -16,21 +16,6 @@
       "symbol": "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
       "subsystem": "audio",
       "blocker": "Requires a native positional sound provider rather than fabricated playback."
-    },
-    {
-      "symbol": "?function_18a5e0@@YAPAGJ@Z",
-      "subsystem": "audio",
-      "blocker": "Requires owned looping-sound instance lookup."
-    },
-    {
-      "symbol": "?function_18a6c0@@YAJJJ@Z",
-      "subsystem": "audio",
-      "blocker": "Requires owned looping-sound creation and tag state."
-    },
-    {
-      "symbol": "?function_18a720@@YAXJ_N@Z",
-      "subsystem": "audio",
-      "blocker": "Requires owned looping-sound release semantics."
     }
   ]
 }

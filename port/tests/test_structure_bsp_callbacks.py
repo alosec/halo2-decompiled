@@ -349,6 +349,7 @@ def main() -> int:
         "g_4e8c24_owned_players_and_local_state",
         "native_havok_impact_response_state_owned",
         "native_havok_effect_pools_owned",
+        "native_impact_looping_sound_pool_owned",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -595,9 +596,6 @@ def main() -> int:
         "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
         "?function_177260@@YAXJ_N@Z",
         "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z",
-        "?function_18a5e0@@YAPAGJ@Z",
-        "?function_18a6c0@@YAJJJ@Z",
-        "?function_18a720@@YAXJ_N@Z",
     }
     expected_impact_allocation_score = (
         expected_contact_processing_score - {impact_allocation_symbol}
@@ -618,7 +616,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_impact_allocation_score != expected_impact_allocation_score or
-            len(actual_impact_allocation_score) != 25):
+            len(actual_impact_allocation_score) != 22):
         raise RuntimeError("Havok impact-allocation candidate score changed")
     impact_undefined = {
         line.strip().split()[-1]
@@ -626,7 +624,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.impact_allocation_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(impact_undefined) != 44:
+    if len(impact_undefined) != 42:
         raise RuntimeError("Havok impact-allocation raw closure changed")
     impact_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.impact_allocation_candidate_object], text=True
@@ -640,7 +638,10 @@ def main() -> int:
             "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z" not in impact_defined or
             "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z" not in impact_defined or
             "?function_172750@@YA_NJPBTpoint3f@@M@Z" not in impact_defined or
-            "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z" not in impact_defined):
+            "?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z" not in impact_defined or
+            any(symbol not in impact_defined for symbol in (
+                "?function_18a5e0@@YAPAGJ@Z", "?function_18a6c0@@YAJJJ@Z",
+                "?function_18a720@@YAXJ_N@Z"))):
         raise RuntimeError("Havok impact-allocation candidate lost a required provider")
     impact_frontier = json.loads((
         args.root / "port/runtime/havok_impact_allocation_remaining_frontier.json"

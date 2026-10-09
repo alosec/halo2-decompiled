@@ -51,6 +51,7 @@
     "g_4e8c24_owned_players_and_local_state",
     "native_havok_impact_response_state_owned",
     "native_havok_effect_pools_owned",
+    "native_impact_looping_sound_pool_owned",
     "native_havok_rigid_body_island_state_owned",
     "native_havok_motion_point_impulse_owned",
     "native_havok_world_activation_owned",
