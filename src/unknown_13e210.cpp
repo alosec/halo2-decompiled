@@ -87,6 +87,7 @@ bool function_13e270(hash_table *table, void *key, const void *data)
 }
 #endif
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x13e2d0
 hash_node *function_13e2d0(hash_table *table, void *key)
 {
@@ -120,6 +121,7 @@ bool hash_table_remove(hash_table *table, void *key)
 	}
 	return false;
 }
+#endif
 
 // @retail 0x13e3a0
 long log2_floor(dword value)

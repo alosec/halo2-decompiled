@@ -116,6 +116,13 @@ def main() -> int:
         "g_51e9d8_owned_squad_pool",
         "g_5044c8_owned_perception_pool",
         "g_502420_owned_clump_pool",
+        "g_46eeb8_native_slot_callbacks",
+        "g_557c6c_owned_reference_table",
+        "g_557c6c_native_hash_callbacks",
+        "g_502414_owned_tracking_pool",
+        "g_502418_owned_prop_reference_pool",
+        "g_50241c_owned_prop_pool",
+        "g_51eca4_owned_location_record_pool",
         "native_offline_replication_unavailable",
     ]:
         raise RuntimeError("structure-BSP callback execution preconditions changed")
@@ -149,6 +156,19 @@ def main() -> int:
     }
     if not required_light_symbols.issubset(closure_symbols):
         raise RuntimeError("object-attached light refresh left outside BSP closure")
+    required_actor_reference_symbols = {
+        "?function_13e2d0@@YAPAUhash_node@@PAUhash_table@@PAX@Z",
+        "?hash_table_remove@@YA_NPAUhash_table@@PAX@Z",
+        "?function_1e1500@@YA_NJ@Z",
+        "?function_1e22d0@@YAXJ_N@Z",
+        "?function_1f86a0@@YAXJ@Z",
+        "?function_25d690@@YAPAUs_type_5cfb45@@PAUs_prop_datum@@@Z",
+        "?function_2628f0@@YAXJUs_reference@@@Z",
+        "?function_26dc20@@YAXJ@Z",
+        "?function_28fdf0@@YAXJ@Z",
+    }
+    if not required_actor_reference_symbols.issubset(closure_symbols):
+        raise RuntimeError("actor-reference refresh left outside BSP closure")
 
     symbols = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
@@ -160,8 +180,8 @@ def main() -> int:
         text=True,
     )
     undefined = {line.split()[0] for line in undefined_text.splitlines() if line.strip()}
-    if len(undefined) != 29:
-        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 29")
+    if len(undefined) != 27:
+        raise RuntimeError(f"structure-BSP bound closure changed: {len(undefined)} imports, expected 27")
     leaked_runtime = {"h2_guest_memcpy", "h2_guest_memset"} & undefined
     if leaked_runtime:
         raise RuntimeError("structure-BSP bound cluster leaked guest CRT imports")
@@ -197,16 +217,16 @@ def main() -> int:
     if production_undefined - undefined:
         raise RuntimeError("structure-BSP production link added imports: " +
                            ", ".join(sorted(production_undefined - undefined)))
-    if len(production_undefined) != 23:
+    if len(production_undefined) != 21:
         raise RuntimeError(
-            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 23")
+            f"structure-BSP production closure changed: {len(production_undefined)} imports, expected 21")
 
     frontier_path = args.root / "port/runtime/structure_bsp_remaining_frontier.json"
     frontier_manifest = json.loads(frontier_path.read_text())
     if frontier_manifest.get("version") != 1:
         raise RuntimeError("unsupported structure-BSP frontier manifest")
     frontier_entries = frontier_manifest.get("imports")
-    if not isinstance(frontier_entries, list) or len(frontier_entries) != 23:
+    if not isinstance(frontier_entries, list) or len(frontier_entries) != 21:
         raise RuntimeError("structure-BSP frontier inventory changed")
     frontier_symbols = set()
     allowed_subsystems = {"ai", "geometry_query", "havok_lifecycle", "object_placement"}

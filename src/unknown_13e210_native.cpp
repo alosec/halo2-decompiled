@@ -8,11 +8,11 @@
 #include <stddef.h>
 #include <string.h>
 
-struct hash_node_13e270_native
+struct hash_node
 {
     void *key;
     dword hash;
-    hash_node_13e270_native *next;
+    hash_node *next;
     byte data[1];
 };
 
@@ -29,11 +29,11 @@ struct hash_table
     hash_table_hash_proc_13e270_native hash_proc;
     hash_table_compare_proc_13e270_native compare_proc;
     void *allocator;
-    hash_node_13e270_native *free_list;
-    hash_node_13e270_native *buckets[1];
+    hash_node *free_list;
+    hash_node *buckets[1];
 };
 
-static_assert(offsetof(hash_node_13e270_native, data) == 0x0c,
+static_assert(offsetof(hash_node, data) == 0x0c,
     "hash node data offset");
 static_assert(offsetof(hash_table, bucket_count) == 0x20,
     "hash table bucket-count offset");
@@ -53,7 +53,7 @@ bool function_13e270(hash_table *table, void *key, void const *data)
     {
         dword hash = table->hash_proc(key);
         dword bucket = hash % table->bucket_count;
-        hash_node_13e270_native *node = table->free_list;
+        hash_node *node = table->free_list;
         table->free_list = node->next;
         node->hash = hash;
         node->key = key;
@@ -63,4 +63,40 @@ bool function_13e270(hash_table *table, void *key, void const *data)
         result = true;
     }
     return result;
+}
+
+// @retail 0x13e2d0
+hash_node *function_13e2d0(hash_table *table, void *key)
+{
+    dword hash = table->hash_proc(key);
+    for (hash_node *node = table->buckets[hash % table->bucket_count];
+         node; node = node->next)
+    {
+        if (hash == node->hash && table->compare_proc(key, node->key))
+            return node;
+    }
+    return NULL;
+}
+
+// @retail 0x13e320
+bool hash_table_remove(hash_table *table, void *key)
+{
+    hash_node *previous = NULL;
+    dword bucket = table->hash_proc(key) % table->bucket_count;
+    for (hash_node *node = table->buckets[bucket];
+         node; node = node->next)
+    {
+        if (table->compare_proc(key, node->key))
+        {
+            if (previous)
+                previous->next = node->next;
+            else
+                table->buckets[bucket] = node->next;
+            node->next = table->free_list;
+            table->free_list = node;
+            return true;
+        }
+        previous = node;
+    }
+    return false;
 }

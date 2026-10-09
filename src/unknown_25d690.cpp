@@ -603,6 +603,7 @@ s_type_5cfb45 *function_25d670(long prop_ref_index)
 	return function_25d690(prop_ref_get(prop_ref_index));
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x25d690
 s_type_5cfb45 *function_25d690(s_prop_datum *datum)
 {
@@ -616,6 +617,7 @@ s_type_5cfb45 *function_25d690(s_prop_datum *datum)
 	}
 	return &prop_get(datum->prop_index)->state;
 }
+#endif
 
 // @retail 0x25d700
 s_type_f95cd3 *function_25d700(long index)

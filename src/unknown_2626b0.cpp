@@ -275,6 +275,7 @@ PRIVATE inline void reference_table_replace(hash_table *table, void *key, void c
 		memcpy(node->data, data, table->data_size);
 }
 
+#ifndef H2_NATIVE_PORT
 // @retail 0x2628f0
 void __stdcall function_2628f0(long actor_index, s_reference reference)
 {
@@ -294,6 +295,7 @@ void __stdcall function_2628f0(long actor_index, s_reference reference)
 	}
 	actor->unknown418 = reference;
 }
+#endif
 
 
 // The comparison is passed to the C runtime sorting routine.

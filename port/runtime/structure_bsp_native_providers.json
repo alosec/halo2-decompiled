@@ -20,6 +20,13 @@
     "g_51e9d8_owned_squad_pool",
     "g_5044c8_owned_perception_pool",
     "g_502420_owned_clump_pool",
+    "g_46eeb8_native_slot_callbacks",
+    "g_557c6c_owned_reference_table",
+    "g_557c6c_native_hash_callbacks",
+    "g_502414_owned_tracking_pool",
+    "g_502418_owned_prop_reference_pool",
+    "g_50241c_owned_prop_pool",
+    "g_51eca4_owned_location_record_pool",
     "native_offline_replication_unavailable"
   ],
   "providers": [
@@ -94,7 +101,7 @@
     {"source": "src/unknown_1e9700.cpp", "symbols": ["?function_1e9650@@YAXXZ", "?function_1e95d0@@YAXPBD@Z"]},
     {"source": "src/unknown_015b70_native.cpp", "symbols": ["?function_015b70@@YAXXZ"]},
     {"source": "src/unknown_01cf50_native.cpp", "symbols": ["?function_1e1c0@@YAXXZ"]},
-    {"source": "src/unknown_13e210_native.cpp", "symbols": ["?function_13e270@@YA_NPAUhash_table@@PAXPBX@Z"]},
+    {"source": "src/unknown_13e210_native.cpp", "symbols": ["?function_13e270@@YA_NPAUhash_table@@PAXPBX@Z", "?function_13e2d0@@YAPAUhash_node@@PAUhash_table@@PAX@Z", "?hash_table_remove@@YA_NPAUhash_table@@PAX@Z"]},
     {"source": "src/unknown_293070_native.cpp", "symbols": ["?flock_new@@YAJF@Z", "?function_2930c0@@YA_NJ@Z", "?function_292f10@@YAXXZ"]},
     {"source": "src/unknown_0350e0_native.cpp", "symbols": ["?function_36ab0@@YAXXZ"]},
     {"source": "src/unknown_0b88e0_native.cpp", "symbols": ["?collision_object_flags@@YAGJ@Z", "?function_b88e0@@YAXJPAUs_object_partition_record_ab@@@Z"]},
@@ -111,8 +118,11 @@
     {"source": "src/simulation_bsp_native.cpp", "symbols": ["?function_a8e90@@YAXJ@Z", "?function_a7a60@@YAXJ@Z"]},
     {"source": "src/unknown_295e60_native.cpp", "symbols": ["?function_295e60@@YAXJ@Z", "?function_10a040@@YAFJPAUs_scenery_placement@@@Z"]},
     {"source": "src/actor_squad_bsp_native.cpp", "symbols": ["?function_203bf0@@YA_NJ@Z", "?function_203d70@@YAXJF_N@Z", "?function_203f60@@YAXJ@Z"]},
-    {"source": "src/unknown_1e1f20.cpp", "symbols": ["?function_1e1150@@YAXJF@Z"]},
-    {"source": "src/unknown_290c80.cpp", "symbols": ["?function_290bf0@@YAXJF@Z"]},
+    {"source": "src/unknown_1e1f20.cpp", "symbols": ["?function_1e1150@@YAXJF@Z", "?function_1e1500@@YA_NJ@Z", "?function_1e22d0@@YAXJ_N@Z"]},
+    {"source": "src/unknown_290c80.cpp", "symbols": ["?function_290bf0@@YAXJF@Z", "?function_28fdf0@@YAXJ@Z"]},
+    {"source": "src/unknown_1f8640.cpp", "symbols": ["?function_1f86a0@@YAXJ@Z"]},
+    {"source": "src/unknown_26db50.cpp", "symbols": ["?function_26dc20@@YAXJ@Z"]},
+    {"source": "src/actor_reference_bsp_native.cpp", "symbols": ["?function_25d690@@YAPAUs_type_5cfb45@@PAUs_prop_datum@@@Z", "?function_2628f0@@YAXJUs_reference@@@Z"]},
     {"source": "src/unknown_26b230.cpp", "symbols": ["?function_268810@@YAXJ@Z"]},
     {"source": "src/squads.cpp", "symbols": ["?function_204d30@@YAXPAUs_squad_actor_iterator@@J@Z"]}
   ]
