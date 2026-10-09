@@ -87,6 +87,7 @@ def main() -> None:
         "h2_native_physics_runtime_vtable",
         "h2_native_physics_runtime_reset",
         "h2_native_physics_runtime_object_count",
+        "h2_native_physics_model_census",
         "h2_native_tag_initialization_status",
         "?function_138110",
         "?function_1462b0",

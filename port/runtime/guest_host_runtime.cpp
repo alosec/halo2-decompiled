@@ -376,6 +376,7 @@ extern "C" int h2_native_campaign_bsp_metadata();
 extern "C" int h2_native_campaign_load_first_bsp();
 void function_11c840();
 extern "C" int h2_native_tag_initialization_status();
+extern "C" int h2_native_physics_model_census();
 extern "C" long h2_native_physics_runtime_object_count();
 
 /* unknown_213d20.cpp is recovered with Microsoft's C++ ABI, while the cache
@@ -551,6 +552,8 @@ extern "C" int h2_main_menu_guest_load_selected_campaign()
     if (!h2_native_campaign_load_first_bsp())
         return 13;
     function_11c840();
+    if (h2_native_physics_model_census() != ((175 << 16) | 0x2d9))
+        return 16;
     if (h2_native_tag_initialization_status() != ((43 << 16) | 32))
         return 14;
     if (h2_native_physics_runtime_object_count() <= 0)

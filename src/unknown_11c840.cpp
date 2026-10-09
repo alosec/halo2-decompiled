@@ -46,11 +46,38 @@ struct s_native_tag_instance_view
 
 static long g_native_initialized_tags;
 static long g_native_deferred_tags;
+static long g_native_physics_model_nonzero_mask;
+static long g_native_physics_model_entry_count;
+
+extern "C" int h2_native_physics_model_census()
+{
+    return (g_native_physics_model_entry_count << 16) |
+        (g_native_physics_model_nonzero_mask & 0xffff);
+}
 
 extern "C" int h2_native_tag_initialization_status()
 {
     return (g_native_initialized_tags << 16) |
         (g_native_deferred_tags & 0xffff);
+}
+
+static void h2_native_census_physics_model(long tag_index)
+{
+    static short const count_offsets[] =
+    {
+        0x38, 0x48, 0x50, 0x58, 0x60,
+        0x68, 0x70, 0x90, 0xa0, 0x108,
+    };
+    byte *definition = g_4e3b44[tag_index & 0xffff].bytes;
+    for (long i = 0; i < sizeof(count_offsets) / sizeof(count_offsets[0]); i++)
+    {
+        long count = *(long *)(definition + count_offsets[i]);
+        if (count > 0)
+        {
+            g_native_physics_model_nonzero_mask |= 1 << i;
+            g_native_physics_model_entry_count += count;
+        }
+    }
 }
 
 static long h2_native_next_tag(long *next_index)
@@ -73,6 +100,8 @@ void function_11c840()
 #ifdef H2_NATIVE_PORT
     g_native_initialized_tags = 0;
     g_native_deferred_tags = 0;
+    g_native_physics_model_nonzero_mask = 0;
+    g_native_physics_model_entry_count = 0;
     h2_native_physics_runtime_reset();
     long native_next_index = 0;
     long local_1 = h2_native_next_tag(&native_next_index);
@@ -108,6 +137,7 @@ void function_11c840()
 #ifndef H2_NATIVE_PORT
             function_1ea9c0(local_1, 0);
 #else
+            h2_native_census_physics_model(local_1);
             g_native_deferred_tags++;
 #endif
             break;

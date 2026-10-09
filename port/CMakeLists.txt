@@ -408,8 +408,11 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args
             --extract-symbol "?function_11c840@@YAXXZ"
             --extract-symbol "h2_native_tag_initialization_status"
+            --extract-symbol "h2_native_physics_model_census"
             --extract-global "g_native_initialized_tags"
-            --extract-global "g_native_deferred_tags")
+            --extract-global "g_native_deferred_tags"
+            --extract-global "g_native_physics_model_nonzero_mask"
+            --extract-global "g_native_physics_model_entry_count")
     endif()
     if(object STREQUAL H2_GUEST_PART_INITIALIZE_OBJECT)
         list(APPEND guest_extract_args
@@ -1206,8 +1209,11 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
         list(APPEND guest_extract_args
             --extract-symbol "?function_11c840@@YAXXZ"
             --extract-symbol "h2_native_tag_initialization_status"
+            --extract-symbol "h2_native_physics_model_census"
             --extract-global "g_native_initialized_tags"
-            --extract-global "g_native_deferred_tags")
+            --extract-global "g_native_deferred_tags"
+            --extract-global "g_native_physics_model_nonzero_mask"
+            --extract-global "g_native_physics_model_entry_count")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_1c22c0.cpp")
         list(APPEND guest_extract_args
