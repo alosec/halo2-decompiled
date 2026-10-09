@@ -247,6 +247,14 @@ def main():
         physics_model_count_command = command[:]
         physics_model_count_command[physics_model_count_command.index("h2_extract_selected")] = "?function_2fc1a0@@YAJPAX@Z"
         physics_model_count_command[physics_model_count_command.index("--extract-global"):physics_model_count_command.index("--output")] = []
+        extra_physics_model_accessors = (
+            "?function_2fc1b0@@YAJPAXJ@Z", "?function_2fc1d0@@YAJPAXJJ@Z",
+            "?function_2fc1e0@@YAJPAXJ@Z", "?function_2fc1f0@@YAJPAXJ@Z",
+        )
+        insert_at = physics_model_count_command.index("--output")
+        for symbol in extra_physics_model_accessors:
+            physics_model_count_command[insert_at:insert_at] = ["--extract-symbol", symbol]
+            insert_at += 2
         physics_model_count_command[physics_model_count_command.index(output)] = physics_model_count_output
         physics_model_count_command[-1] = args.root / "src/unknown_2fc1a0.cpp"
         subprocess.run([str(value) for value in physics_model_count_command], check=True)
@@ -254,8 +262,9 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_count_output],
             text=True,
         )
-        if "_?function_2fc1a0@@YAJPAX@Z" not in physics_model_count_defined:
-            raise RuntimeError("physics-model runtime count accessor was not selectively compilable")
+        for symbol in ("?function_2fc1a0@@YAJPAX@Z",) + extra_physics_model_accessors:
+            if f"_{symbol}" not in physics_model_count_defined:
+                raise RuntimeError(f"physics-model runtime accessor was not retained: {symbol}")
 
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
