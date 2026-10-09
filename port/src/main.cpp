@@ -350,6 +350,7 @@ void draw_guest_request(const void* request_pointer, const void* vertices_pointe
 
 struct Options {
     std::filesystem::path data_root;
+    std::filesystem::path profile_root;
     std::filesystem::path guest_image;
     std::string guest_entry;
     std::filesystem::path screenshot;
@@ -363,8 +364,9 @@ struct Options {
 
 void usage(const char* program) {
     std::cerr << "Usage: " << program
-              << " [--headless] [--data-root PATH] [--guest-image PATH]"
-                 " [--guest-entry SYMBOL] [--frames COUNT] [--press-start-frame COUNT]"
+              << " [--headless] [--data-root PATH] [--profile-root PATH]"
+                 " [--guest-image PATH] [--guest-entry SYMBOL] [--frames COUNT]"
+                 " [--press-start-frame COUNT]"
                  " [--accept-frame COUNT] [--select-frame COUNT] [--cancel-frame COUNT]"
                  " [--screenshot BMP]\n";
 }
@@ -379,6 +381,8 @@ bool parse_options(int argc, char** argv, Options& options) {
             options.headless = true;
         } else if (argument == "--data-root" && i + 1 < argc) {
             options.data_root = argv[++i];
+        } else if (argument == "--profile-root" && i + 1 < argc) {
+            options.profile_root = argv[++i];
         } else if (argument == "--guest-image" && i + 1 < argc) {
             options.guest_image = argv[++i];
         } else if (argument == "--guest-entry" && i + 1 < argc) {
@@ -429,7 +433,10 @@ bool parse_options(int argc, char** argv, Options& options) {
             return false;
         }
     }
-    return !options.data_root.empty() &&
+    if (options.profile_root.empty() && !options.data_root.empty()) {
+        options.profile_root = options.data_root.parent_path() / "profiles";
+    }
+    return !options.data_root.empty() && !options.profile_root.empty() &&
         (options.screenshot.empty() || options.frame_count > 0) &&
         (options.press_start_frame == 0 ||
          (options.frame_count >= options.press_start_frame && !options.headless)) &&
@@ -703,7 +710,8 @@ int main(int argc, char** argv) {
     void* guest_stack_top = nullptr;
     if (!options.guest_image.empty()) {
         if (!h2::port::configure_cache_services(
-                *arena, options.data_root / "maps" / "mainmenu.map", arena_error)) {
+                *arena, options.data_root / "maps" / "mainmenu.map", arena_error) ||
+            !h2::port::configure_profile_services(options.profile_root, arena_error)) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
         }

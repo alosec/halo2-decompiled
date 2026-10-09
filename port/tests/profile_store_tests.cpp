@@ -1,3 +1,4 @@
+#include "h2/host_services.hpp"
 #include "h2/profile_store.hpp"
 
 #include <array>
@@ -107,5 +108,25 @@ int main() {
     store.close();
     ok &= check(!store.is_open() && !store.list(ids, error),
                 "closed profile store accepted enumeration");
+
+    const auto service_path = temporary.path / "service";
+    ok &= check(configure_profile_services(service_path, error),
+                "profile host service did not configure");
+    std::uint32_t service_id = 99;
+    ok &= check(create_native_profile(first, service_id, error) && service_id == 0,
+                "profile host service did not create a record");
+    loaded.fill(std::byte{0});
+    ok &= check(read_native_profile(service_id, loaded, error) && loaded == first,
+                "profile host service did not read a record");
+    first[0x20] = std::byte{0x7b};
+    ok &= check(write_native_profile(service_id, first, error) &&
+                    list_native_profiles(ids, error) &&
+                    ids == std::vector<std::uint32_t>({0}),
+                "profile host service did not update/list a record");
+    ok &= check(erase_native_profile(service_id, error),
+                "profile host service did not erase a record");
+    reset_profile_services();
+    ok &= check(!list_native_profiles(ids, error),
+                "reset profile host service accepted enumeration");
     return ok ? 0 : 1;
 }

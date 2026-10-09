@@ -1,7 +1,9 @@
 #include "h2/host_abi.h"
 #include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
+#include "h2/profile_store.hpp"
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -50,6 +52,16 @@ struct CacheState {
 
 CacheState& cache_state() {
     static CacheState state;
+    return state;
+}
+
+struct ProfileState {
+    std::mutex mutex;
+    h2::port::NativeProfileStore store;
+};
+
+ProfileState& profile_state() {
+    static ProfileState state;
     return state;
 }
 
@@ -135,6 +147,69 @@ void reset_cache_services() {
     state.arena = nullptr;
     state.bytes.clear();
     state.next_address = kPhysicalAllocationBase;
+}
+
+bool configure_profile_services(const std::filesystem::path& directory,
+                                std::string& error) {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    if (!state.store.open(directory, error)) {
+        return false;
+    }
+    std::vector<std::uint32_t> ids;
+    if (!state.store.list(ids, error)) {
+        state.store.close();
+        return false;
+    }
+    return true;
+}
+
+void reset_profile_services() {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    state.store.close();
+}
+
+bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error) {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    return state.store.list(ids, error);
+}
+
+bool create_native_profile(std::span<const std::byte> record, std::uint32_t& id,
+                           std::string& error) {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    return state.store.create(record, id, error);
+}
+
+bool read_native_profile(std::uint32_t id, std::span<std::byte> record,
+                         std::string& error) {
+    if (record.size() != kNativeProfileRecordSize) {
+        error = "native profile read buffer has the wrong size";
+        return false;
+    }
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    std::array<std::byte, kNativeProfileRecordSize> stored{};
+    if (!state.store.read(id, stored, error)) {
+        return false;
+    }
+    std::copy(stored.begin(), stored.end(), record.begin());
+    return true;
+}
+
+bool write_native_profile(std::uint32_t id, std::span<const std::byte> record,
+                          std::string& error) {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    return state.store.write(id, record, error);
+}
+
+bool erase_native_profile(std::uint32_t id, std::string& error) {
+    auto& state = profile_state();
+    const std::lock_guard lock(state.mutex);
+    return state.store.erase(id, error);
 }
 
 bool copy_cache_bytes(std::uint32_t offset, void* destination, std::size_t size) {

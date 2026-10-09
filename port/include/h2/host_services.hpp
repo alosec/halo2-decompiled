@@ -4,7 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
+#include <vector>
 
 namespace h2::port {
 
@@ -33,6 +35,17 @@ void reset_host_service_stats();
 bool configure_cache_services(GuestArena& arena, const std::filesystem::path& map_path,
                               std::string& error);
 void reset_cache_services();
+bool configure_profile_services(const std::filesystem::path& directory,
+                                std::string& error);
+void reset_profile_services();
+bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error);
+bool create_native_profile(std::span<const std::byte> record, std::uint32_t& id,
+                           std::string& error);
+bool read_native_profile(std::uint32_t id, std::span<std::byte> record,
+                         std::string& error);
+bool write_native_profile(std::uint32_t id, std::span<const std::byte> record,
+                          std::string& error);
+bool erase_native_profile(std::uint32_t id, std::string& error);
 bool copy_cache_bytes(std::uint32_t offset, void* destination, std::size_t size);
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error);
