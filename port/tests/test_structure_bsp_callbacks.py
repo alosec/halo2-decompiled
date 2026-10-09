@@ -207,7 +207,6 @@ def main() -> int:
         "?g_51ec00@@3PAUs_record_pool@@A",
         "?g_54e898@@3FA",
         "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
-        "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
         "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
         "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
         "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z",
@@ -225,6 +224,11 @@ def main() -> int:
     }
     if contact_candidate_undefined != expected_contact_candidate_imports:
         raise RuntimeError("Havok contact-processing candidate closure changed")
+    contact_candidate_data = subprocess.check_output(
+        [args.llvm_readelf, "-x", ".data", args.contact_processing_candidate_object],
+        text=True)
+    if "807b063f" not in contact_candidate_data:
+        raise RuntimeError("impact match tolerance no longer equals binary32 cos(45.0)")
 
     primary_cluster_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix",
@@ -257,6 +261,9 @@ def main() -> int:
             "?impact_data_set@@YAXPAUs_impact_data@@_NJJVc_type_47f957@@JJ2PBTpoint3f@@PBTvector3f@@JPBUs_physics_model_shape_key@@@Z",
             "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z",
             "?impact_components_valid@@YA_NJJ@Z",
+            "?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z",
+            "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
+            "?g_55c2d0@@3MA",
             "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
             "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
         if symbol not in contact_candidate_defined:
@@ -527,7 +534,6 @@ def main() -> int:
     )
     contact_processing_new_imports = {
         "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z",
-        "?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z",
         "?havok_component_impact_make_room@@YA_NJPAUs_havok_component@@M@Z",
         "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
         "?impact_new@@YAJPBUs_impact_data@@J@Z",
@@ -551,7 +557,7 @@ def main() -> int:
             ).splitlines() if line.strip()
         }
     if (actual_contact_processing_score != expected_contact_processing_score or
-            len(actual_contact_processing_score) != 22):
+            len(actual_contact_processing_score) != 21):
         raise RuntimeError("Havok contact-processing candidate score changed")
 
     listener_frontier_path = (

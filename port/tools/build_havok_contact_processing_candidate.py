@@ -9,7 +9,7 @@ def run(command):
     subprocess.run([str(value) for value in command], check=True)
 
 
-def compile_slice(args, source, output, symbols):
+def compile_slice(args, source, output, symbols, globals=()):
     command = [
         args.python, args.root / "port/tools/guest_elf_cc.py",
         "--llvm", args.llvm,
@@ -22,6 +22,8 @@ def compile_slice(args, source, output, symbols):
     ]
     for symbol in symbols:
         command.extend(("--extract-symbol", symbol))
+    for global_name in globals:
+        command.extend(("--extract-global", global_name))
     command.extend(("--output", output, source))
     run(command)
 
@@ -46,6 +48,9 @@ def main() -> int:
         combine = temporary / "combine.o"
         impact_data = temporary / "impact-data.o"
         impact_validity = temporary / "impact-validity.o"
+        impact_match = temporary / "impact-match.o"
+        impact_find = temporary / "impact-find.o"
+        impact_tolerance = temporary / "impact-tolerance.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -65,12 +70,20 @@ def main() -> int:
              "?havok_component_impact_add@@YAXPAUs_havok_component@@J@Z"])
         compile_slice(args, args.root / "src/impacts.cpp", impact_validity,
                       ["?impact_components_valid@@YA_NJJ@Z"])
+        compile_slice(args, args.root / "src/impacts.cpp", impact_match,
+                      ["?impact_matches_data@@YA_NPAUs_impact@@PBUs_impact_data@@_N@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1d5460.cpp", impact_find,
+            ["?havok_component_impact_find@@YAJPAUs_havok_component@@PBUs_havok_impact_contact@@_N@Z"])
+        compile_slice(args, args.root / "src/impact_match_tolerance_native.cpp",
+                      impact_tolerance, [], ["?g_55c2d0@@3MA"])
         compile_slice(
             args, args.root / "src/unknown_277b80.cpp", candidate,
             ["?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,
              lookup, properties, velocity, rigid_velocity, combine, impact_data,
-             impact_validity, candidate])
+             impact_validity, impact_match, impact_find, impact_tolerance,
+             candidate])
     return 0
 
 
