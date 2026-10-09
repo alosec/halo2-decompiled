@@ -3,7 +3,6 @@
   "imports": [
     {"symbol": "??0c_interface_277890@@QAA@XZ", "subsystem": "havok_lifecycle", "blocker": "constructor and deleting lifecycle require a complete native contact-listener object"},
     {"symbol": "??2@YAPAXI@Z", "subsystem": "havok_lifecycle", "blocker": "scalar allocation has no general gameplay heap owner"},
-    {"symbol": "??_7c_278370@@6B@", "subsystem": "havok_lifecycle", "blocker": "listener table requires complete native callback methods and cache-owned destruction"},
     {"symbol": "?function_109400@@YAXJ@Z", "subsystem": "object_placement", "blocker": "attached-object teardown reaches rigid-body activation and biped ragdoll reset"},
     {"symbol": "?function_146bf0@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "memory-pressure recovery traverses world cleanup and scratch allocator ownership"},
     {"symbol": "?function_14e0f0@@YAXJJPBTpoint3f@@0@Z", "subsystem": "object_placement", "blocker": "player relocation requires genuine function_14e200 and vehicle-exit request routing"},
@@ -17,6 +16,7 @@
     {"symbol": "?function_1c5710@@YAXJ@Z", "subsystem": "havok_lifecycle", "blocker": "contact wakeup requires world queries, rigid-body activation, and contact constructors"},
     {"symbol": "?function_1c7e70@@YAXJF@Z", "subsystem": "ai", "blocker": "rider notification dispatches genuine vehicle-exit request type 0x1e"},
     {"symbol": "?function_278f00@@YAXXZ", "subsystem": "havok_lifecycle", "blocker": "world step and teardown depend on complete Havok object lifecycle"},
+    {"symbol": "?function_3153c0@@YAXPAX0PBX@Z", "subsystem": "havok_lifecycle", "blocker": "secondary listener callback transitions an unowned native Havok library object and table family"},
     {"symbol": "?function_b75a0@@YAXJPBTpoint3f@@PBTvector3f@@1PBUs_location@@_N@Z", "subsystem": "object_placement", "blocker": "relocation always reaches broad recursive function_bd020 physics updates"},
     {"symbol": "?function_bf0f0@@YAXPBUs_type_4f0dcc@@JJPAUs_scenario_block@@_N2@Z", "subsystem": "object_placement", "blocker": "scenario placement requires the real object constructor and placement builder"}
   ]

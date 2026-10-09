@@ -46,6 +46,9 @@ extern hkWorld *g_51e9a4;
 extern bool g_55e4fc;
 void function_146a20();
 void function_146ac0();
+#ifdef H2_NATIVE_PORT
+extern "C" c_278370 *h2_native_havok_secondary_listener_construct();
+#endif
 void function_146b80();
 void function_1c2d40();
 void function_1c2b10();
@@ -60,7 +63,11 @@ void function_1c2690()
  g_461df0();
  g_47f04c = 0;
  g_51eca8 = (byte *)new c_interface_277890;
+#ifndef H2_NATIVE_PORT
  g_51ecac = new c_278370;
+#else
+ g_51ecac = h2_native_havok_secondary_listener_construct();
+#endif
  g_51ebfc->valid = true;
  record_pool_release_all(g_51ebfc);
  g_51ec00->valid = true;

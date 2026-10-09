@@ -129,6 +129,7 @@ def main() -> int:
         "g_4ed280_owned_bsp_bit_vectors",
         "g_479888_owned_havok_allocator_block",
         "g_479898_owned_havok_pool_allocator",
+        "g_51ecac_owned_secondary_listener",
         "g_510c44_owned_ai_scratch_buffer",
         "native_offline_replication_unavailable",
     ]:
@@ -159,6 +160,8 @@ def main() -> int:
         "??_C@_0BH@MAPMFIGJ@placing?5objects?5on?5bsp?$AA@",
         "g_h2_native_fixed_vtable",
         "g_h2_native_pool_vtable",
+        "g_h2_native_secondary_listener_vtable",
+        "g_h2_native_secondary_listener_storage",
     }:
         raise RuntimeError("structure-BSP retained data globals changed")
     required_light_symbols = {
@@ -202,6 +205,14 @@ def main() -> int:
     }
     if not required_fixed_allocator_symbols.issubset(closure_symbols):
         raise RuntimeError("Havok scratch allocator left outside BSP closure")
+    required_secondary_listener_symbols = {
+        "?function_278370@c_278370@@UAAXPAUs_278371@@@Z",
+        "h2_native_havok_secondary_listener_construct",
+        "h2_native_secondary_listener_event",
+        "h2_native_secondary_listener_idle",
+    }
+    if not required_secondary_listener_symbols.issubset(closure_symbols):
+        raise RuntimeError("secondary Havok listener left outside BSP closure")
 
     symbols = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
@@ -306,6 +317,8 @@ def main() -> int:
                              if "h2_native_fixed_" in line]
     pool_allocator_lines = [line for line in allocator_lines
                             if "h2_native_pool_" in line]
+    secondary_listener_lines = [line for line in allocator_lines
+                                if "h2_native_secondary_listener_" in line]
     if len(fixed_allocator_lines) != 11:
         raise RuntimeError("native fixed allocator table must retain exactly 11 methods")
     if sum("h2_native_fixed_idle" in line for line in fixed_allocator_lines) != 4:
@@ -314,6 +327,10 @@ def main() -> int:
         raise RuntimeError("native pool allocator table must retain exactly 11 methods")
     if sum("h2_native_pool_idle" in line for line in pool_allocator_lines) != 4:
         raise RuntimeError("native pool allocator table must retain four idle methods")
+    if len(secondary_listener_lines) != 3:
+        raise RuntimeError("native secondary listener table must retain exactly three methods")
+    if sum("h2_native_secondary_listener_idle" in line for line in secondary_listener_lines) != 2:
+        raise RuntimeError("native secondary listener table must retain two idle methods")
     return 0
 
 

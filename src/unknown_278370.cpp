@@ -76,7 +76,13 @@ void c_278370::function_278370(s_278371 *arg_0)
 		if (!(bool)((havok_component_get(local_4)->unknown04 >> 18) & 1) &&
 			(local_3->field_1a & 0x20) && local_3->field_1b)
 		{
+#ifndef H2_NATIVE_PORT
 			static s_278373 local_5;
+#else
+			// Avoid the C++ thread-safe-static runtime in the freestanding guest.
+			// This value is passed as const and is exactly zero-initialized per call.
+			s_278373 local_5;
+#endif
 			function_3153c0(arg_0->field_4, arg_0->field_10, &local_5);
 		}
 	}
