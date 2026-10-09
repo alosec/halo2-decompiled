@@ -3,6 +3,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import subprocess
 
 EXPECTED = {
     16: 0x00123D20,
@@ -32,6 +33,9 @@ EXPECTED = {
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--llvm-nm", type=Path, required=True)
+    parser.add_argument("--llvm-readelf", type=Path, required=True)
+    parser.add_argument("--provider-cluster-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -86,6 +90,30 @@ def main() -> int:
     for entry in providers:
         if entry["source"] != "native" and not (args.root / entry["source"]).is_file():
             raise RuntimeError(f"missing structure-BSP provider source: {entry['source']}")
+
+    symbols = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix", args.provider_cluster_object],
+        text=True,
+    )
+    definitions = {line.split()[0] for line in symbols.splitlines() if line.strip()}
+    expected_symbols = {entry["symbol"] for entry in providers}
+    expected_symbols.add("h2_native_structure_bsp_switch_callbacks")
+    missing_symbols = sorted(expected_symbols - definitions)
+    if missing_symbols:
+        raise RuntimeError("structure-BSP provider cluster omitted: " +
+                           ", ".join(missing_symbols))
+
+    relocations = subprocess.check_output(
+        [args.llvm_readelf, "-r", args.provider_cluster_object], text=True,
+    )
+    data_heading = "Relocation section '.rela.data'"
+    if data_heading not in relocations:
+        raise RuntimeError("structure-BSP callback table relocation section is missing")
+    data_relocations = relocations.split(data_heading, 1)[1].split("Relocation section ", 1)[0]
+    if data_relocations.count("R_AARCH64_ABS32") != 21:
+        raise RuntimeError("structure-BSP callback table must retain exactly 21 providers")
+    if data_relocations.count("h2_native_structure_bsp_idle") != 5:
+        raise RuntimeError("structure-BSP callback table must retain five idle leaves")
     return 0
 
 

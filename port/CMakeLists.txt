@@ -245,6 +245,57 @@ add_custom_target(h2_physics_model_table_objects ALL DEPENDS
     "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
 )
 
+set(H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_callbacks.o")
+set(H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_provider_cluster.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol h2_native_structure_bsp_idle
+            --extract-global h2_native_structure_bsp_switch_callbacks
+            --output "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_structure_bsp_callbacks.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_structure_bsp_callbacks.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/structure_bsp_switch_callbacks.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/structure_bsp_native_providers.json"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_structure_bsp_provider_cluster.py"
+            --root "${PROJECT_SOURCE_DIR}"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --lld "${H2_LLD}"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --table "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+            --output "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_structure_bsp_provider_cluster.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/structure_bsp_native_providers.json"
+        "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+        ${H2_RECOVERED_SOURCES}
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2_structure_bsp_provider_objects ALL DEPENDS
+    "${H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT}"
+    "${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}"
+)
+
 set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_14741b.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_22e27b.cpp"
@@ -2279,6 +2330,9 @@ add_test(
     NAME structure-bsp-switch-callbacks
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_structure_bsp_callbacks.py
             --root ${PROJECT_SOURCE_DIR}
+            --llvm-nm ${H2_LLVM_NM}
+            --llvm-readelf ${H2_LLVM_ROOT}/bin/llvm-readelf
+            --provider-cluster-object ${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit
