@@ -188,6 +188,29 @@ def main():
         if "_h2_native_physics_runtime_vtable" not in physics_runtime_undefined:
             raise RuntimeError("native physics constructor did not retain its explicit vtable-owner boundary")
 
+        physics_type_output = Path(temporary) / "physics-runtime-type.o"
+        physics_type_command = command[:]
+        physics_type_command[physics_type_command.index("h2_extract_selected")] = "?function_2fbb30@@YAPAXXZ"
+        physics_type_command[physics_type_command.index("--extract-global"):physics_type_command.index("--output")] = []
+        physics_type_command[physics_type_command.index("--output"):physics_type_command.index("--output")] = [
+            "--extract-symbol", "?function_2fdfe0@@YAPAXXZ",
+            "--extract-symbol", "?function_2fbfe0@@YAPAXXZ",
+        ]
+        physics_type_command[physics_type_command.index(output)] = physics_type_output
+        physics_type_command[-1] = args.root / "src/unknown_2fbb30.cpp"
+        subprocess.run([str(value) for value in physics_type_command], check=True)
+        physics_type_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_type_output],
+            text=True,
+        )
+        for symbol in (
+            "_?function_2fbb30@@YAPAXXZ",
+            "_?function_2fdfe0@@YAPAXXZ",
+            "_?function_2fbfe0@@YAPAXXZ",
+        ):
+            if symbol not in physics_type_defined:
+                raise RuntimeError(f"physics runtime type-descriptor method was not retained: {symbol}")
+
         vehicle_init_output = Path(temporary) / "campaign-vehicle-init.o"
         vehicle_init_command = command[:]
         vehicle_init_command[vehicle_init_command.index("h2_extract_selected")] = "?function_205550@@YAXPAX@Z"
