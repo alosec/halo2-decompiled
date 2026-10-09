@@ -306,6 +306,13 @@ int main() {
                         "native cache read copied incorrect data");
             ok &= check(host_h2_cache_read(0xff8u, 16, native_buffer) == 0,
                         "native cache read accepted an out-of-range request");
+            ok &= check(host_h2_cache_read(0, 16, arena->pointer(0x00557c94u)) == 1,
+                        "native cache read rejected the recovered header buffer");
+            ok &= check(host_h2_cache_read(0, 16, arena->pointer(0x00468000u)) == 0,
+                        "native cache read accepted an unowned guest destination");
+            ok &= check(host_h2_cache_read(
+                            0, 16, arena->pointer(0x8205fff8u)) == 0,
+                        "native cache read crossed the physical-region boundary");
             unsigned char host_copy[16]{};
             ok &= check(h2::port::copy_cache_bytes(0x800u, host_copy,
                                                    sizeof(host_copy)) &&

@@ -389,6 +389,16 @@ extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
     if (start < guest_start || start > guest_end || count > guest_end - start) {
         return 0;
     }
+    const std::uint64_t guest_address = start - guest_start;
+    const auto range_is_within = [guest_address, count](std::uint32_t base,
+                                                        std::uint32_t size) {
+        return guest_address >= base && guest_address - base <= size &&
+               count <= static_cast<std::uint64_t>(size) - (guest_address - base);
+    };
+    if (!range_is_within(kCacheHeaderAddress, kCacheHeaderSize) &&
+        !range_is_within(kPhysicalRegionAddress, kPhysicalRegionSize)) {
+        return 0;
+    }
     std::memcpy(buffer, state.bytes.data() + offset, count);
     return 1;
 }
