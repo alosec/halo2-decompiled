@@ -101,6 +101,7 @@ REQUIRED = {
     "?function_2323ab@@YA_NJ@Z",
     "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z",
     "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z",
+    "?function_19c270@@YAPAUs_entry_a@@JJ@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?saved_game_file_size_in_blocks@@YAJJ@Z",
     "?saved_game_file_type_size_in_blocks@@YAJJ@Z",

@@ -52,6 +52,7 @@ set(H2_GUEST_MS_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_ms_runtime.o")
 set(H2_GUEST_HOST_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_host_runtime.o")
 set(H2_GUEST_ONLINE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_online_runtime.o")
 set(H2_GUEST_AUDIO_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_audio_runtime.o")
+set(H2_GUEST_CAMPAIGN_ENTRY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19c1d0.o")
 set(H2_GUEST_UI_MESSAGE_BUILD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_149f49.o")
 set(H2_GUEST_UI_LAYOUT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1482e8.o")
 set(H2_GUEST_VARIANT_INDEX_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_216ab0.o")
@@ -123,6 +124,7 @@ set(H2_MS_ABI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_149f49.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_1482e8.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
@@ -197,6 +199,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_HOST_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
         "${H2_GUEST_ONLINE_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_online_runtime.cpp"
         "${H2_GUEST_AUDIO_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_audio_runtime.cpp"
+        "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp"
         "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_149f49.cpp"
         "${H2_GUEST_UI_LAYOUT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1482e8.cpp"
         "${H2_GUEST_VARIANT_INDEX_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_216ab0.cpp"
@@ -380,6 +383,10 @@ foreach(pair IN ITEMS
         list(APPEND guest_extract_args --extract-symbol
             "?function_22fba9@@YAXPAVc_class_1473c9@@@Z")
     endif()
+    if(object STREQUAL H2_GUEST_CAMPAIGN_ENTRY_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
+    endif()
     if(object STREQUAL H2_GUEST_TEXT_PARSER_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_22d2ee@@YAXPAGJ@Z")
@@ -463,6 +470,7 @@ set_source_files_properties(
     "${H2_GUEST_UNICODE_OBJECT}" "${H2_GUEST_MS_RUNTIME_OBJECT}"
     "${H2_GUEST_HOST_RUNTIME_OBJECT}" "${H2_GUEST_ONLINE_RUNTIME_OBJECT}"
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
+    "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}" "${H2_GUEST_UI_LAYOUT_OBJECT}"
     "${H2_GUEST_VARIANT_INDEX_OBJECT}" "${H2_GUEST_VARIANT_OBJECT}"
     "${H2_GUEST_VARIANT_FIELDS_OBJECT}" "${H2_GUEST_CONTROLLER_INDEX_OBJECT}"
@@ -521,6 +529,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_HOST_RUNTIME_OBJECT}"
     "${H2_GUEST_ONLINE_RUNTIME_OBJECT}"
     "${H2_GUEST_AUDIO_RUNTIME_OBJECT}"
+    "${H2_GUEST_CAMPAIGN_ENTRY_OBJECT}"
     "${H2_GUEST_UI_MESSAGE_BUILD_OBJECT}"
     "${H2_GUEST_UI_LAYOUT_OBJECT}"
     "${H2_GUEST_VARIANT_INDEX_OBJECT}"
@@ -593,7 +602,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 71
+            --expect-unresolved 70
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -740,6 +749,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_22f6ca.cpp")
         list(APPEND guest_extract_args --extract-symbol
             "?function_22fba9@@YAXPAVc_class_1473c9@@@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_19c1d0.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_19c270@@YAPAUs_entry_a@@JJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/user_interface_text_parser.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -967,7 +980,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 71
+            --expect-unresolved 70
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -975,7 +988,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 71
+            --expect-unresolved 70
 )
 add_test(
     NAME main-menu-elf-core
