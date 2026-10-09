@@ -112,6 +112,20 @@ def main():
         if "_?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in press_start_defined:
             raise RuntimeError("press-start source was not selectively compilable")
 
+        preview_output = Path(temporary) / "preview-renderer.o"
+        preview_command = command[:]
+        preview_command[preview_command.index("h2_extract_selected")] = "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z"
+        preview_command[preview_command.index("--extract-global"):preview_command.index("--output")] = []
+        preview_command[preview_command.index(output)] = preview_output
+        preview_command[-1] = args.root / "src/unknown_22a664.cpp"
+        subprocess.run([str(value) for value in preview_command], check=True)
+        preview_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", preview_output],
+            text=True,
+        )
+        if "_?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in preview_defined:
+            raise RuntimeError("preview renderer was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
