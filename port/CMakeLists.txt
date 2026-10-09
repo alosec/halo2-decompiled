@@ -311,6 +311,8 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_SCREEN_SETTERS_OBJECT)
         list(APPEND guest_extract_args
+            --extract-symbol "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z"
+            --extract-symbol "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?set_bitmap@c_screen_45bd40@@QAAXF@Z"
             --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z")
@@ -508,7 +510,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 87
+            --expect-unresolved 85
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -614,6 +616,8 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_2b116a.cpp")
         list(APPEND guest_extract_args
+            --extract-symbol "?function_2b0a14@@YAXPAUs_widget_view_2b0a@@F@Z"
+            --extract-symbol "?function_2b0a57@@YA_NPAUs_widget_view_2b0a@@@Z"
             --extract-symbol "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z"
             --extract-symbol "?set_bitmap@c_screen_45bd40@@QAAXF@Z"
             --extract-symbol "?set_text@c_screen_45bd40@@QAAXPBD@Z")
@@ -837,7 +841,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 87
+            --expect-unresolved 85
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -845,7 +849,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 87
+            --expect-unresolved 85
 )
 add_test(
     NAME main-menu-elf-core
