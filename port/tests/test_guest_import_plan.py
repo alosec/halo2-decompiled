@@ -30,6 +30,7 @@ def main():
     assert "?function_18f1c0@@YAXJ@Z" not in imports
     assert "?function_18f5e3@@YAXXZ" not in imports
     assert "?function_18f62b@@YAXXZ" not in imports
+    assert "?function_6cb60@@YAXXZ" not in imports
     assert "?function_215790@@YAXXZ" not in imports
     assert "?function_2133a1@@YAXXZ" not in imports
     assert "?function_213484@@YAXXZ" not in imports

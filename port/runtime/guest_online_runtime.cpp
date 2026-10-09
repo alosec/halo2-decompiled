@@ -87,6 +87,12 @@ void network_session_manager_leave_session_b(bool)
 
 /* No peer list or network-session-backed screen can exist in native offline
  * bootstrap state, so their per-frame updates have no state to advance. */
+/* Native offline state has no Live tasks, transport reset callbacks, or
+ * memory-unit devices to tear down. */
+void function_6cb60()
+{
+}
+
 void function_18f62b()
 {
     /* No native controller-event or online-team task source exists yet. */
