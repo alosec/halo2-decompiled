@@ -1,9 +1,18 @@
 #include "h2/host_abi.h"
 #include "h2/host_services.hpp"
+#include "h2/render_protocol.h"
 
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+
+extern "C" void D3DDevice_Begin(unsigned int primitive_type);
+extern "C" void D3DDevice_End();
+extern "C" void D3DDevice_SetVertexData2f(unsigned int vertex_register, float x, float y);
+extern "C" void D3DDevice_SetVertexData4f(unsigned int vertex_register, float x, float y,
+                                            float z, float w);
+extern "C" void D3DDevice_SetVertexDataColor(unsigned int vertex_register,
+                                               unsigned int color);
 
 namespace {
 
@@ -19,6 +28,9 @@ struct CallbackCapture {
     int video_calls = 0;
     int render_calls = 0;
     int text_calls = 0;
+    bool decode_immediate = false;
+    h2_render_immediate_request immediate{};
+    h2_render_immediate_vertex immediate_vertices[H2_RENDER_IMMEDIATE_MAX_VERTICES]{};
 };
 
 void capture_video(int command, void* context) {
@@ -32,6 +44,14 @@ void capture_render(const void* request, const void* vertices, void* context) {
     capture.request = request;
     capture.vertices = vertices;
     ++capture.render_calls;
+    if (capture.decode_immediate) {
+        capture.immediate = *static_cast<const h2_render_immediate_request*>(request);
+        const auto* source = static_cast<const h2_render_immediate_vertex*>(vertices);
+        for (unsigned int i = 0; i < capture.immediate.vertex_count &&
+                                 i < H2_RENDER_IMMEDIATE_MAX_VERTICES; ++i) {
+            capture.immediate_vertices[i] = source[i];
+        }
+    }
 }
 
 void capture_text(const std::uint32_t* text, const void* bounds, const void*,
@@ -92,6 +112,33 @@ int main() {
     ok &= check(stats.video_control_calls == 1 && stats.render_request_calls == 1 &&
                     stats.text_request_calls == 1,
                 "host service counters are incorrect");
+
+    capture.decode_immediate = true;
+    D3DDevice_Begin(7);
+    D3DDevice_SetVertexDataColor(9, 0xff336699u);
+    D3DDevice_SetVertexData2f(3, 0.25f, 0.5f);
+    D3DDevice_SetVertexData4f(0, -1.0f, 2.0f, 3.0f, 1.0f);
+    D3DDevice_SetVertexData2f(3, 0.75f, 1.0f);
+    D3DDevice_SetVertexData4f(0, 4.0f, 5.0f, 6.0f, 1.0f);
+    D3DDevice_End();
+    const auto immediate_stats = h2::port::host_service_stats();
+    ok &= check(capture.immediate.kind == H2_RENDER_REQUEST_IMMEDIATE &&
+                    capture.immediate.version == H2_RENDER_PROTOCOL_VERSION &&
+                    capture.immediate.primitive_type == 7 &&
+                    capture.immediate.vertex_count == 2 &&
+                    capture.immediate.color == 0xff336699u,
+                "immediate render request state is incorrect");
+    ok &= check(capture.immediate_vertices[0].texture_x == 0.25f &&
+                    capture.immediate_vertices[0].texture_y == 0.5f &&
+                    capture.immediate_vertices[0].x == -1.0f &&
+                    capture.immediate_vertices[0].w == 1.0f &&
+                    capture.immediate_vertices[1].texture_x == 0.75f &&
+                    capture.immediate_vertices[1].texture_y == 1.0f &&
+                    capture.immediate_vertices[1].x == 4.0f &&
+                    capture.immediate_vertices[1].z == 6.0f,
+                "immediate render vertices are incorrect");
+    ok &= check(capture.render_calls == 2 && immediate_stats.render_request_calls == 2,
+                "immediate render request did not cross the host boundary once");
 
     h2::port::set_video_control_handler(nullptr);
     h2::port::set_render_request_handler(nullptr);

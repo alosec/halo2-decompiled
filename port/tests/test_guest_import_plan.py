@@ -37,6 +37,14 @@ def main():
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
     assert "?network_session_manager_leave_session_a@@YAX_N@Z" not in imports
     assert "?network_session_manager_leave_session_b@@YAX_N@Z" not in imports
+    for symbol in (
+        "D3DDevice_Begin",
+        "D3DDevice_End",
+        "D3DDevice_SetVertexData2f",
+        "D3DDevice_SetVertexData4f",
+        "D3DDevice_SetVertexDataColor",
+    ):
+        assert symbol not in imports
     assert "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z" not in imports
     for symbol in (
         "?function_11c0b0@@YAFPBDPAUs_name_table_11c0b0@@@Z",

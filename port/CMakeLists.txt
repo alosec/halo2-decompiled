@@ -1127,7 +1127,10 @@ target_link_libraries(h2-guest-elf-image-tests PRIVATE h2_port_support)
 add_test(NAME native-guest-elf-image
          COMMAND h2-guest-elf-image-tests "${H2_GUEST_ELF_LOADER_FIXTURE}")
 
-add_executable(h2-host-services-tests tests/host_services_tests.cpp)
+add_executable(h2-host-services-tests
+    tests/host_services_tests.cpp
+    runtime/guest_render_runtime.cpp
+)
 target_compile_features(h2-host-services-tests PRIVATE cxx_std_20)
 target_compile_options(h2-host-services-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-host-services-tests PRIVATE h2_port_support)

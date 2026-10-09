@@ -37,6 +37,11 @@ EXPECTED_BINDINGS = {
 }
 
 REQUIRED = {
+    "D3DDevice_Begin",
+    "D3DDevice_End",
+    "D3DDevice_SetVertexData2f",
+    "D3DDevice_SetVertexData4f",
+    "D3DDevice_SetVertexDataColor",
     "??0c_main_menu_screen@@QAA@JJG@Z",
     "??0c_window_channel@@QAA@XZ",
     "??_Ec_main_menu_screen@@UAAPAXI@Z",
