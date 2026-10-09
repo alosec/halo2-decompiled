@@ -425,7 +425,12 @@ void function_18f5e3()
 		{
 			long *profile_index = &slot->profile_index;
 			if (*profile_index != NONE)
+#ifdef H2_NATIVE_PORT
+				/* Native saved-profile enumeration is not available yet. */
+				*profile_index = NONE;
+#else
 				*profile_index = function_2170e0(*profile_index);
+#endif
 		}
 		index = function_190262(index);
 	} while (index != NONE);

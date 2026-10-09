@@ -76,6 +76,16 @@ extern "C" DWORD __stdcall GetTickCount(void)
     return host_h2_get_milliseconds();
 }
 
+struct s_save_list_2164c0;
+
+void function_2164c0(long, s_save_list_2164c0 *list)
+{
+    /* The native virtual saved-game drive starts with no user-created files.
+     * Preserve the recovered list ABI while host persistence is unavailable. */
+    if (list)
+        *reinterpret_cast<long *>(list) = 0;
+}
+
 extern "C" DWORD __stdcall XGetDiskClusterSize(const char *)
 {
     /* Halo 2 accounts saved-game storage in 16 KiB blocks.  The native port's

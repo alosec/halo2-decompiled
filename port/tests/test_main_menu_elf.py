@@ -34,6 +34,9 @@ EXPECTED_BINDINGS = {
     "?g_54e8e0@@3PAUs_player_slot@@A": 0x0054E8E0,
     "?g_54eae8@@3PAY0MHA@EA": 0x0054EAE8,
     "?g_551ae4@@3_NA": 0x00551AE4,
+    "?g_55c14d@@3_NA": 0x0055C14D,
+    "?g_55c14f@@3EA": 0x0055C14F,
+    "?g_55c150@@3JA": 0x0055C150,
 }
 
 REQUIRED = {
@@ -54,6 +57,7 @@ REQUIRED = {
     "?initialize@s_player_slot_profile@@QAAXJ@Z",
     "?invoke@c_list_item_handler@@UAAXPAPAUs_controller_reference@@PAJ@Z",
     "?function_18f58c@@YAXXZ",
+    "?function_18f5e3@@YAXXZ",
     "?function_190186@@YAXJ@Z",
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
@@ -65,6 +69,8 @@ REQUIRED = {
     "?get_values_4d08@c_class_58d20@@QAA_NPAJ0PAPAE@Z",
     "?function_199e3c@@YAXJ@Z",
     "?function_199f6d@@YAJXZ",
+    "?function_215790@@YAXXZ",
+    "?function_2164c0@@YAXJPAUs_save_list_2164c0@@@Z",
     "?function_217080@@YAXPBUs_game_variant@@@Z",
     "?function_217300@@YAJJJ@Z",
     "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z",
