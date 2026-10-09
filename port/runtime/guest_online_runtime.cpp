@@ -73,6 +73,18 @@ void online_teams_enumerate_get_results(long, DWORD *count, XUID *)
     *count = 0;
 }
 
+/* The native offline bootstrap cannot own either Xbox network session.  The
+ * recovered leave-both-sessions router may still call these while unwinding
+ * UI state, so treat both leaves as already complete rather than fabricating
+ * a session manager or transport. */
+void network_session_manager_leave_session_a(bool)
+{
+}
+
+void network_session_manager_leave_session_b(bool)
+{
+}
+
 // @retail 0x6b5d0
 long online_task_poll(long task_index)
 {

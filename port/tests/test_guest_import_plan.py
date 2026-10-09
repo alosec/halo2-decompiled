@@ -35,6 +35,8 @@ def main():
     assert "?online_task_screen_load@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in imports
     assert "?main_menu_music_update@@YAXPAUs_main_menu_music@@@Z" not in imports
     assert "?function_16e5e0@@YA_NPBUs_predicted_resource_block@@F@Z" not in imports
+    assert "?network_session_manager_leave_session_a@@YAX_N@Z" not in imports
+    assert "?network_session_manager_leave_session_b@@YAX_N@Z" not in imports
     assert "?build@c_class_1473c9@@QAAXPAUs_screen_layout@@@Z" not in imports
     for symbol in (
         "?function_11c0b0@@YAFPBDPAUs_name_table_11c0b0@@@Z",
