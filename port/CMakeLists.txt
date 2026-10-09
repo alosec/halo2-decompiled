@@ -245,6 +245,32 @@ add_custom_target(h2_physics_model_table_objects ALL DEPENDS
     "${H2_GUEST_PHYSICS_MODEL_PROVIDER_CLUSTER_OBJECT}"
 )
 
+set(H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/havok_primary_listener_vtables.s")
+set(H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_primary_listener_vtables.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_ASM}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_havok_primary_listener_vtables.py"
+            --tables "${CMAKE_CURRENT_SOURCE_DIR}/runtime/havok_primary_listener_vtables.json"
+            --providers "${CMAKE_CURRENT_SOURCE_DIR}/runtime/havok_primary_listener_native_providers.json"
+            --output "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_ASM}"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_havok_primary_listener_vtables.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/havok_primary_listener_vtables.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/havok_primary_listener_native_providers.json"
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}"
+    COMMAND "${H2_LLVM_ROOT}/bin/clang" --target=aarch64-linux-gnu -c
+            "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_ASM}"
+            -o "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}"
+    DEPENDS "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_ASM}"
+    VERBATIM
+)
+add_custom_target(h2_havok_primary_listener_table_object ALL DEPENDS
+    "${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}"
+)
+
 set(H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_callbacks.o")
 set(H2_GUEST_STRUCTURE_BSP_PROVIDERS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_providers.o")
 set(H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_provider_cluster.o")
@@ -2344,6 +2370,7 @@ add_test(
             --lld ${H2_LLD}
             --provider-cluster-object ${H2_GUEST_STRUCTURE_BSP_PROVIDER_CLUSTER_OBJECT}
             --production-object ${H2_MAIN_MENU_PARTIAL_ELF}
+            --primary-listener-table-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit

@@ -40,6 +40,7 @@ def main() -> int:
     parser.add_argument("--lld", type=Path, required=True)
     parser.add_argument("--provider-cluster-object", type=Path, required=True)
     parser.add_argument("--production-object", type=Path, required=True)
+    parser.add_argument("--primary-listener-table-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -115,6 +116,54 @@ def main() -> int:
     if ([int(entry.get("retail_address", "0"), 0) for entry in excluded_primary]
             != [0x0045A740, 0x0045A77C, 0x0045A78C]):
         raise RuntimeError("primary Havok listener table boundaries changed")
+
+    primary_provider_path = args.root / "port/runtime/havok_primary_listener_native_providers.json"
+    primary_provider_manifest = json.loads(primary_provider_path.read_text())
+    expected_primary_providers = {
+        "0x000a9ef0": "??_Ec_callback_277820@@UAAPAXI@Z",
+        "0x00277820": "?test@c_callback_277820@@UAA?AVhkBool@@PAX0@Z",
+        "0x00277a00": "?event0@c_interface_277890@@UAAXPAX@Z",
+        "0x00278030": "?event1@c_interface_277890@@UAAXPAX@Z",
+        "0x00278100": "?event2@c_interface_277890@@UAAXPAX@Z",
+        "0x00277890": "??_Ec_interface_277890@@UAAPAXI@Z",
+        "0x002778e0": "?slot1@c_interface_277890@@UAAXPAVhkEntity@@@Z",
+        "0x00277990": "?slot2@c_interface_277890@@UAAXPAVhkEntity@@@Z",
+        "0x00278200": "?test@c_interface_277890@@UAA_NPAUs_278a70_body@@0@Z",
+        "0x002789f0": "?function_2789f0@c_2789f0@@UAAXPAUs_2789f1@@@Z",
+        "0x00278a70": "?slot2@c_callback_2789b0@@UAAXPAUs_278a70_event@@@Z",
+        "0x00278b30": "??_Ec_callback_2789b0@@W7AAPAXI@Z",
+        "0x00278ae0": "?slot4@c_callback_2789b0@@UAAXPAX@Z",
+        "0x002789b0": "??_Ec_callback_2789b0@@UAAPAXI@Z",
+    }
+    if (primary_provider_manifest.get("version") != 1 or
+            primary_provider_manifest.get("providers") != expected_primary_providers):
+        raise RuntimeError("primary Havok listener provider map changed")
+    primary_table_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix",
+         args.primary_listener_table_object], text=True)
+    for table in expected_primary_tables:
+        if table[3] not in primary_table_defined:
+            raise RuntimeError(f"missing native primary listener table: {table[3]}")
+    if "h2_native_havok_primary_listener_vtables" not in primary_table_defined:
+        raise RuntimeError("missing native primary listener table lookup")
+    primary_table_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.primary_listener_table_object],
+            text=True).splitlines() if line.strip()
+    }
+    if primary_table_undefined != set(expected_primary_providers.values()):
+        raise RuntimeError("native primary listener table providers changed")
+    primary_table_relocations = subprocess.check_output(
+        [args.llvm_readelf, "-r", args.primary_listener_table_object], text=True)
+    if primary_table_relocations.count("R_AARCH64_ABS32") != 17:
+        raise RuntimeError("native primary listener table relocations changed")
+    production_defined_for_listener = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix", args.production_object],
+        text=True)
+    if ("h2_native_havok_primary_listener_vtables" in production_defined_for_listener or
+            any(table[3] in production_defined_for_listener for table in expected_primary_tables)):
+        raise RuntimeError("dormant primary listener tables entered production")
 
     providers_path = args.root / "port/runtime/structure_bsp_native_providers.json"
     providers_manifest = json.loads(providers_path.read_text())
