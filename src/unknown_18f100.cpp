@@ -10,6 +10,11 @@ bool __stdcall function_163890(char const *map_name, long mode);
 // @retail 0x18f100
 bool __stdcall function_18f100(char const *map_name)
 {
+#if H2_NATIVE_PORT
+	/* The native host owns cache bytes directly and has no Xbox texture-cache
+	   staging heap to push merely to validate map availability. */
+	return function_163890(map_name, 2);
+#else
 	function_xe0ae94();
 	texture_cache_initialize_for_new_map();
 	g_4ed294 = 5;
@@ -18,4 +23,5 @@ bool __stdcall function_18f100(char const *map_name)
 	g_global_f9ae07.field_0--;
 	g_4ed294 = 0;
 	return result;
+#endif
 }

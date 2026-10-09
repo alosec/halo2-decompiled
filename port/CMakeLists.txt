@@ -28,6 +28,7 @@ set(H2_GUEST_MAP_LOADER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_122870.o")
 set(H2_GUEST_CACHE_RUNTIME_OBJECT "${H2_GUEST_OBJECT_DIR}/guest_cache_runtime.o")
 set(H2_GUEST_MAP_LOCATION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_213d20.o")
 set(H2_GUEST_MAP_PROGRESS_OBJECT "${H2_GUEST_OBJECT_DIR}/loading.o")
+set(H2_GUEST_MAP_READY_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_18f100.o")
 set(H2_GUEST_RANDOM_ID_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_07ad80.o")
 set(H2_GUEST_GAME_OPTIONS_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_137dd0.o")
 set(H2_GUEST_PROFILE_RECORD_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_153750.o")
@@ -280,6 +281,7 @@ set(H2_MS_ABI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_host_runtime.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp"
     "${PROJECT_SOURCE_DIR}/src/loading.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_18f100.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
@@ -366,6 +368,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_CACHE_RUNTIME_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_cache_runtime.cpp"
         "${H2_GUEST_MAP_LOCATION_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_213d20.cpp"
         "${H2_GUEST_MAP_PROGRESS_OBJECT}|${PROJECT_SOURCE_DIR}/src/loading.cpp"
+        "${H2_GUEST_MAP_READY_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_18f100.cpp"
         "${H2_GUEST_RANDOM_ID_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp"
         "${H2_GUEST_GAME_OPTIONS_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_137dd0.cpp"
         "${H2_GUEST_PROFILE_RECORD_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_153750.cpp"
@@ -496,8 +499,13 @@ foreach(pair IN ITEMS
     endif()
     if(object STREQUAL H2_GUEST_MAP_PROGRESS_OBJECT)
         list(APPEND guest_extract_args
+            --extract-symbol "?function_163890@@YA_NPBDJ@Z"
             --extract-symbol "?map_location_progress_get@@YAJPBD@Z"
             --extract-global "switch.table.?map_location_progress_get@@YAJPBD@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_MAP_READY_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_18f100@@YA_NPBD@Z")
     endif()
     if(object STREQUAL H2_GUEST_RANDOM_ID_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -1091,6 +1099,7 @@ set_source_files_properties(
     "${H2_GUEST_CACHE_TAG_OBJECT}" "${H2_GUEST_CRT_OBJECT}"
     "${H2_GUEST_MAP_LOADER_OBJECT}" "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
     "${H2_GUEST_MAP_LOCATION_OBJECT}" "${H2_GUEST_MAP_PROGRESS_OBJECT}"
+    "${H2_GUEST_MAP_READY_OBJECT}"
     "${H2_GUEST_RANDOM_ID_OBJECT}" "${H2_GUEST_GAME_OPTIONS_OBJECT}"
     "${H2_GUEST_PROFILE_RECORD_OBJECT}"
     "${H2_GUEST_MAIN_MENU_OBJECT}"
@@ -1167,6 +1176,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_CACHE_RUNTIME_OBJECT}"
     "${H2_GUEST_MAP_LOCATION_OBJECT}"
     "${H2_GUEST_MAP_PROGRESS_OBJECT}"
+    "${H2_GUEST_MAP_READY_OBJECT}"
     "${H2_GUEST_RANDOM_ID_OBJECT}"
     "${H2_GUEST_GAME_OPTIONS_OBJECT}"
     "${H2_GUEST_PROFILE_RECORD_OBJECT}"
@@ -1851,8 +1861,13 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/loading.cpp")
         list(APPEND guest_extract_args
+            --extract-symbol "?function_163890@@YA_NPBDJ@Z"
             --extract-symbol "?map_location_progress_get@@YAJPBD@Z"
             --extract-global "switch.table.?map_location_progress_get@@YAJPBD@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_18f100.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_18f100@@YA_NPBD@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_07ad80.cpp")
         list(APPEND guest_extract_args --extract-symbol

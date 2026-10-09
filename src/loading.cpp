@@ -250,6 +250,12 @@ static inline void loading_screen_idle(void)
 // @retail 0x163890
 bool __stdcall function_163890(char const *map_name, long mode)
 {
+#if H2_NATIVE_PORT
+	(void)&mode;
+	/* Native has no Xbox utility-drive copy queue. Only the exact host-owned
+	   active cache can satisfy this synchronous launch precondition. */
+	return map_location_get(map_name) == _map_location_open;
+#else
 	bool result = true;
 	long location = map_location_get(map_name);
 
@@ -354,6 +360,7 @@ bool __stdcall function_163890(char const *map_name, long mode)
 	}
 
 	return result;
+#endif
 }
 
 // @retail 0x163b20

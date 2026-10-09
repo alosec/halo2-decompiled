@@ -370,6 +370,8 @@ static int h2_native_main_menu_move(long event_type)
 char *function_148d73();
 long map_location_get(char const *map_name);
 long map_location_progress_get(char const *map_name);
+bool __stdcall function_163890(char const *map_name, long mode);
+bool __stdcall function_18f100(char const *map_name);
 extern "C" long h2_native_cache_file_find(char const *map_name);
 extern "C" int h2_native_load_campaign_map(char const *map_name);
 extern "C" int h2_native_campaign_bsp_metadata();
@@ -439,11 +441,19 @@ extern "C" int h2_main_menu_guest_map_location_probe()
     if (map_location_get(campaign) != 0 ||
         map_location_progress_get(campaign) != 0)
         return 2;
+    if (!function_163890(main_menu, 2) || !function_18f100(main_menu))
+        return 6;
+    if (function_163890(campaign, 2) || function_18f100(campaign))
+        return 7;
     if (!host_h2_map_select(campaign))
         return 3;
     if (map_location_get(campaign) != 3 ||
         map_location_progress_get(campaign) != 2)
         return 4;
+    if (!function_163890(campaign, 2) || !function_18f100(campaign))
+        return 8;
+    if (function_163890(main_menu, 2) || function_18f100(main_menu))
+        return 9;
     return map_location_get(main_menu) == 0 &&
         map_location_progress_get(main_menu) == 0 ? 0 : 5;
 }

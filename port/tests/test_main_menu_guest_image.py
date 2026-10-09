@@ -113,6 +113,8 @@ def main() -> None:
         "?network_session_interface_get_user_properties",
         "?map_location_get",
         "?map_location_progress_get",
+        "?function_163890",
+        "?function_18f100",
         "h2_main_menu_guest_up",
         "h2_main_menu_guest_down",
         "h2_main_menu_guest_cancel",
