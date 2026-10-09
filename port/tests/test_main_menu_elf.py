@@ -9,6 +9,7 @@ import subprocess
 
 EXPECTED_BINDINGS = {
     "?g_4e3b44@@3PAUs_tag_instance@@A": 0x004E3B44,
+    "?main_globals@@3Us_main_globals@@A": 0x00547F28,
     "?g_54e8e0@@3PAUs_player_slot@@A": 0x0054E8E0,
 }
 
@@ -24,6 +25,9 @@ REQUIRED = {
     "?function_1901fc@@YAGXZ",
     "?function_1906b4@@YAXXZ",
     "?function_2523b7@@YA_NJ@Z",
+    "?function_2323ab@@YA_NJ@Z",
+    "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z",
+    "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z",
     "?function_1a47fd@@YAPAXI@Z",
     "?unicode_string_copy@@YAXPAGPBGJ@Z",
     "?g_4e3b44@@3PAUs_tag_instance@@A",

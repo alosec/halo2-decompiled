@@ -67,6 +67,7 @@ set(H2_GUEST_MENU_ACTION_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_250155.o")
 set(H2_GUEST_SESSION_PRESENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_19987f.o")
 set(H2_GUEST_SESSION_LEAVE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_199e2e.o")
 set(H2_GUEST_UI_RECT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_236299.o")
+set(H2_GUEST_QUIT_CALLBACK_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_230612.o")
 set(H2_GUEST_MUSIC_SILENCE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_235b46.o")
 set(H2_GUEST_SESSION_USER_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_054fe0.o")
 set(H2_GUEST_STORAGE_HANDLE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2172a0.o")
@@ -117,6 +118,7 @@ set(H2_MS_ABI_SOURCES
     "${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
+    "${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_054fe0.cpp"
     "${PROJECT_SOURCE_DIR}/src/unknown_2172a0.cpp"
@@ -170,6 +172,7 @@ foreach(pair IN ITEMS
         "${H2_GUEST_SESSION_PRESENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_19987f.cpp"
         "${H2_GUEST_SESSION_LEAVE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_199e2e.cpp"
         "${H2_GUEST_UI_RECT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_236299.cpp"
+        "${H2_GUEST_QUIT_CALLBACK_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp"
         "${H2_GUEST_MUSIC_SILENCE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp"
         "${H2_GUEST_SESSION_USER_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_054fe0.cpp"
         "${H2_GUEST_STORAGE_HANDLE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2172a0.cpp"
@@ -244,6 +247,10 @@ foreach(pair IN ITEMS
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
     endif()
+    if(object STREQUAL H2_GUEST_QUIT_CALLBACK_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2323ab@@YA_NJ@Z")
+    endif()
     if(object STREQUAL H2_GUEST_MUSIC_SILENCE_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?main_menu_music_silence_done@@YA_NPAUs_main_menu_music@@@Z")
@@ -300,7 +307,8 @@ set_source_files_properties(
     "${H2_GUEST_PLAYER_SLOT_GET_OBJECT}" "${H2_GUEST_PLAYER_SESSION_OBJECT}"
     "${H2_GUEST_MENU_ACTION_OBJECT}" "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}" "${H2_GUEST_SESSION_LEAVE_OBJECT}"
-    "${H2_GUEST_UI_RECT_OBJECT}" "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
+    "${H2_GUEST_UI_RECT_OBJECT}" "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
+    "${H2_GUEST_SESSION_USER_OBJECT}" "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
     "${H2_GUEST_UI_GEOMETRY_OBJECT}"
     PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE
 )
@@ -355,6 +363,7 @@ set(H2_MAIN_MENU_GUEST_OBJECTS
     "${H2_GUEST_SESSION_PRESENCE_OBJECT}"
     "${H2_GUEST_SESSION_LEAVE_OBJECT}"
     "${H2_GUEST_UI_RECT_OBJECT}"
+    "${H2_GUEST_QUIT_CALLBACK_OBJECT}"
     "${H2_GUEST_MUSIC_SILENCE_OBJECT}"
     "${H2_GUEST_SESSION_USER_OBJECT}"
     "${H2_GUEST_STORAGE_HANDLE_OBJECT}"
@@ -391,7 +400,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 116
+            --expect-unresolved 115
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -465,6 +474,10 @@ foreach(source IN LISTS H2_MS_ABI_SOURCES)
             --extract-symbol "?function_2360c3@@YAXPBUshort_rectangle2d@@PATpoint3f@@@Z"
             --extract-symbol "?function_23618e@@YAPAUs_float_rect@@PAU1@MPBUshort_rectangle2d@@@Z"
             --extract-symbol "?function_2363d4@@YAXPBUshort_rectangle2d@@PAF1@Z")
+    endif()
+    if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_230612.cpp")
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_2323ab@@YA_NJ@Z")
     endif()
     if(source STREQUAL "${PROJECT_SOURCE_DIR}/src/unknown_235b46.cpp")
         list(APPEND guest_extract_args --extract-symbol
@@ -657,7 +670,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 116
+            --expect-unresolved 115
             ${H2_MAIN_MENU_GUEST_OBJECTS}
 )
 add_test(
@@ -665,7 +678,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 116
+            --expect-unresolved 115
 )
 add_test(
     NAME main-menu-elf-core
