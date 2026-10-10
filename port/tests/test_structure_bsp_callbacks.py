@@ -43,6 +43,8 @@ def main() -> int:
     parser.add_argument("--primary-listener-table-object", type=Path, required=True)
     parser.add_argument("--primary-listener-provider-cluster-object", type=Path, required=True)
     parser.add_argument("--particle-provider-table-object", type=Path, required=True)
+    parser.add_argument("--particle-provider-unbound-object", type=Path, required=True)
+    parser.add_argument("--particle-provider-cluster-object", type=Path, required=True)
     parser.add_argument("--contact-processing-candidate-object", type=Path, required=True)
     parser.add_argument("--impact-allocation-candidate-object", type=Path, required=True)
     parser.add_argument("--effect-lifecycle-candidate-object", type=Path, required=True)
@@ -247,6 +249,35 @@ def main() -> int:
         [args.llvm_readelf, "-r", args.particle_provider_table_object], text=True)
     if particle_table_relocations.count("R_AARCH64_ABS32") != 44:
         raise RuntimeError("native particle provider relocations changed")
+    particle_unbound_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.particle_provider_unbound_object],
+            text=True).splitlines() if line.strip()
+    }
+    expected_particle_unbound = {
+        "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z",
+        "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
+        "?g_4e3b44@@3PAUs_tag_instance@@A",
+    }
+    if particle_unbound_undefined != expected_particle_unbound:
+        raise RuntimeError("unbound particle provider cluster frontier changed")
+    particle_cluster_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.particle_provider_cluster_object],
+            text=True).splitlines() if line.strip()
+    }
+    if particle_cluster_undefined != expected_particle_unbound - {
+            "?g_4e3b44@@3PAUs_tag_instance@@A"}:
+        raise RuntimeError("bound particle provider cluster frontier changed")
+    particle_cluster_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix",
+         args.particle_provider_cluster_object], text=True)
+    if (any(label not in particle_cluster_defined for label in particle_labels) or
+            any(symbol not in particle_cluster_defined
+                for symbol in particle_provider_symbols)):
+        raise RuntimeError("particle provider cluster definitions changed")
 
     production_defined_for_listener = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.production_object],

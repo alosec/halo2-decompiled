@@ -326,8 +326,38 @@ add_custom_command(
     DEPENDS "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM}"
     VERBATIM
 )
+set(H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/effect_particle_provider_cluster_unbound.o")
+set(H2_GUEST_EFFECT_PARTICLE_PROVIDER_CLUSTER_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/effect_particle_provider_cluster.o")
+add_custom_command(
+    OUTPUT
+        "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
+        "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_CLUSTER_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_effect_particle_provider_cluster.py"
+            --root "${PROJECT_SOURCE_DIR}"
+            --python "${Python3_EXECUTABLE}"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --lld "${H2_LLD}"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --tables "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+            --bindings "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+            --unbound-output "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
+            --output "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_CLUSTER_OBJECT}"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_effect_particle_provider_cluster.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+        "${H2_GUEST_OBJECT_DIR}/elf/main_menu_bindings.o"
+        "${PROJECT_SOURCE_DIR}/src/unknown_224240.cpp"
+        "${PROJECT_SOURCE_DIR}/include/unknown_224240.h"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
 add_custom_target(h2_effect_particle_provider_table_object ALL DEPENDS
     "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+    "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
+    "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_CLUSTER_OBJECT}"
 )
 
 set(H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_contact_processing_candidate.o")
@@ -2501,6 +2531,8 @@ add_test(
             --primary-listener-table-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}
             --primary-listener-provider-cluster-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}
             --particle-provider-table-object ${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}
+            --particle-provider-unbound-object ${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}
+            --particle-provider-cluster-object ${H2_GUEST_EFFECT_PARTICLE_PROVIDER_CLUSTER_OBJECT}
             --contact-processing-candidate-object ${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}
             --impact-allocation-candidate-object ${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}
             --effect-lifecycle-candidate-object ${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}
