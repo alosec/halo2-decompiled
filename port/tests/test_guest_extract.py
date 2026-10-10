@@ -1269,6 +1269,48 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_parameter_output = Path(temporary) / "particle-material-parameter.o"
+        material_parameter_symbol = "?function_1b2c0@@YA_NPBEJJJJPAM@Z"
+        material_parameter_command = command[:]
+        material_parameter_command[material_parameter_command.index("h2_extract_selected")] = material_parameter_symbol
+        material_parameter_command[
+            material_parameter_command.index("--extract-global"):material_parameter_command.index("--output")
+        ] = []
+        material_parameter_command[material_parameter_command.index(output)] = material_parameter_output
+        material_parameter_command[-1] = args.root / "src/particle_material_parameter_native.cpp"
+        subprocess.run([str(value) for value in material_parameter_command], check=True)
+        material_parameter_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_parameter_output],
+            text=True,
+        )
+        material_parameter_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_parameter_output],
+            text=True,
+        )
+        if material_parameter_symbol not in material_parameter_defined:
+            raise RuntimeError("particle material parameter unpacker was not selectively compilable")
+        if "sin" not in material_parameter_undefined or "cos" not in material_parameter_undefined:
+            raise RuntimeError("particle material parameter math frontier changed")
+        if "switch.table" in material_parameter_undefined:
+            raise RuntimeError("particle material parameter unpacker gained a false switch provider")
+
+        material_range_output = Path(temporary) / "particle-material-parameter-range.o"
+        material_range_symbol = "?function_19be0@@YAXPAEPBG@Z"
+        material_range_command = command[:]
+        material_range_command[material_range_command.index("h2_extract_selected")] = material_range_symbol
+        material_range_command[
+            material_range_command.index("--extract-global"):material_range_command.index("--output")
+        ] = []
+        material_range_command[material_range_command.index(output)] = material_range_output
+        material_range_command[-1] = args.root / "src/particle_material_parameter_native.cpp"
+        subprocess.run([str(value) for value in material_range_command], check=True)
+        material_range_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_range_output],
+            text=True,
+        )
+        if material_range_symbol not in material_range_defined:
+            raise RuntimeError("particle material parameter range was not selectively compilable")
+
         material_vertex_output = Path(temporary) / "particle-material-vertex-data-flush.o"
         material_vertex_symbol = "?function_18d70@@YAXPAUs_18d70_state@@@Z"
         material_vertex_boundary = "D3DDevice_SetVertexData4f"
