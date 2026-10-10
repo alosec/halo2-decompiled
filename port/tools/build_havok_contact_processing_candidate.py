@@ -134,6 +134,7 @@ def main() -> int:
         particle_sprite_callback = temporary / "particle-sprite-callback.o"
         scalar_floor = temporary / "scalar-floor.o"
         packed_color = temporary / "packed-color.o"
+        tag_function_periodic = temporary / "tag-function-periodic.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -413,6 +414,9 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_131e50.cpp", packed_color,
             ["?pack_color4f@@YAKPBUcolor4f@@@Z"])
+        compile_slice(
+            args, args.root / "src/tag_function_periodic_native.cpp", tag_function_periodic,
+            ["?function_17c900@@YAMFM@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -434,7 +438,7 @@ def main() -> int:
              particle_frame_transform, particle_frame_matrix, particle_cluster_scale,
              particle_iteration, particle_property, tag_function_color,
              particle_sprite_update, particle_sprite_callback, scalar_floor,
-             packed_color])
+             packed_color, tag_function_periodic])
     return 0
 
 

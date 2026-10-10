@@ -979,6 +979,7 @@ def main() -> int:
             "?function_246cd0@@YAMPBUs_particle_property@@PBM@Z" not in effect_defined or
             "?function_246d80@@YAXPBUs_particle_property@@PBMPAUcolor3f@@@Z" not in effect_defined or
             "?function_13bc00@@YAKPBUs_tag_data@@M@Z" not in effect_defined or
+            "?function_17c900@@YAMFM@Z" not in effect_defined or
             "?function_13be80@@YAXPBUs_tag_data@@MPAUcolor3f@@@Z" not in effect_defined or
             "?function_248450@@YAXPAUmatrix3x3@@PBUs_particle_frame@@PATpoint3f@@PAPBU1@PAPBT3@_N@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or

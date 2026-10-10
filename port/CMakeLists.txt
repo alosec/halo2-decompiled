@@ -402,6 +402,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_10aac0.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_range_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_color_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/tag_function_periodic_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/scalar_floor_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_131e50.cpp"
         "${PROJECT_SOURCE_DIR}/src/ai.cpp"

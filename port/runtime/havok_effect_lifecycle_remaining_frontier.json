@@ -60,7 +60,7 @@
     {
       "symbol": "?function_13b390@@YAMPBXMM@Z",
       "subsystem": "general tag-function evaluation",
-      "blocker": "Exact object interpolation, live type-handler queries, recursive object-function policy, bounded input/output clamping, and scalar range remapping are owned. The remaining provider is the general evaluator itself, whose transition, periodic, spline, and exponent implementations require complete table and math ownership."
+      "blocker": "Exact transition-table lookup, periodic curve evaluation/table ownership, object interpolation, bounded clamping, scalar range remapping, and particle color conversion are owned. The remaining general evaluator still requires exact exponent/pow behavior and the Xbox SSE rsqrtss-based spline2 ratio approximation across non-endpoint inputs."
     },
     {
       "symbol": "?function_c0c80@@YAXPBTvector3f@@@Z",
