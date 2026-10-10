@@ -1417,6 +1417,54 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/unknown_12a1b0.cpp",
+                "symbol": "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+                "imports": [
+                    '?function_1251e0@@YAJPBXJM@Z',
+                    '?function_125e60@@YAJPAUs_looping_track_sound@@@Z',
+                    '?function_126960@@YAXPAUs_sound_playback@@@Z',
+                    '?function_127320@@YAXJJ@Z',
+                    '?function_128500@@YAXJPAUs_looping_voice_counts@@@Z',
+                    '?function_128a60@@YAFJFPBF@Z',
+                    '?function_12a420@@YAXF@Z',
+                    '?function_12a9d0@@YAMJPBUs_sound_position@@@Z',
+                    '?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z',
+                    '?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z',
+                    '?function_219290@@YAJFPAUs_permutation_group@@@Z',
+                    '?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z',
+                    '?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z',
+                    '?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z',
+                    '?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z',
+                    '?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z',
+                    '?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z',
+                    '?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z',
+                    '?function_221810@@YAPAUs_unknown_5c@@F@Z',
+                    '?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z',
+                    '?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z',
+                    '?g_4e034c@@3PAUs_tag_header_globals@@A',
+                    '?g_4e3b44@@3PAUs_tag_instance@@A',
+                    '?g_4e6378@@3PAUs_sound_voice@@A',
+                    '?g_4e637c@@3PAUs_record_pool@@A',
+                    '?g_4e6380@@3PAUs_4e6380@@A',
+                    '?g_4e7408@@3PAUs_random_globals@@A',
+                    '?g_502110@@3PAXA',
+                    '?g_51ebd4@@3PAUs_sound_globals@@A',
+                    '?g_51ebd8@@3PAXA',
+                    '?g_51ebdc@@3PAXA',
+                    '?g_51ebe4@@3PAUs_bink_sound_settings@@A',
+                    '?sound_playback_set_chunk@@YAXJJDDF@Z',
+                    '?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z',
+                    'g_44a150',
+                    'g_44a16c',
+                    'g_44a188',
+                    'h2_guest_memcpy',
+                    'h2_guest_memset',
+                    'sqrt'
+                ],
+                "semantics":
+                    "exact looping-track channel initialization, pitch-range/permutation "
+                    "transitions, synchronization, gain/effect updates, chunk queueing, "
+                    "and terminal playback cleanup"}, {
                 "source": "src/sound_impulse_channel_native.cpp",
                 "symbol":
                     "?function_128ca0@@YAXFJPBUs_looping_channel_"
