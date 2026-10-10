@@ -332,6 +332,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/first_person_marker_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_match_tolerance_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/damage_effect_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0259a0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0259d0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_03eb20.cpp"

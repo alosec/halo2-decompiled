@@ -695,7 +695,7 @@ def main() -> int:
     if effect_frontier.get("version") != 1:
         raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
     effect_entries = effect_frontier.get("imports")
-    if not isinstance(effect_entries, list) or len(effect_entries) != 20:
+    if not isinstance(effect_entries, list) or len(effect_entries) != 19:
         raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
     effect_symbols = [entry.get("symbol") for entry in effect_entries]
     if len(effect_symbols) != len(set(effect_symbols)):
@@ -723,7 +723,7 @@ def main() -> int:
                 [args.llvm_nm, "--undefined-only", scored], text=True
             ).splitlines() if line.strip()
         }
-    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 35:
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 34:
         raise RuntimeError("Havok effect-lifecycle candidate score changed")
     effect_undefined = {
         line.strip().split()[-1]
@@ -731,7 +731,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 104:
+    if len(effect_undefined) != 103:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -762,7 +762,9 @@ def main() -> int:
             "?function_baf40@@YAJJ@Z" not in effect_defined or
             "?function_166244@@YAJJ@Z" not in effect_defined or
             "?function_166283@@YA_NJJ@Z" not in effect_defined or
-            "?function_16658d@@YAJJJ@Z" not in effect_defined):
+            "?function_16658d@@YAJJJ@Z" not in effect_defined or
+            "?function_d6660@@YAXPAUs_type_1e6529@@J@Z" not in effect_defined or
+            "?g_47d8e0@@3FA" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")
 
     listener_frontier_path = (

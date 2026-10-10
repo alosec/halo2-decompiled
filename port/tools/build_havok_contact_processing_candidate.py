@@ -92,6 +92,7 @@ def main() -> int:
         object_geometry = temporary / "object-geometry.o"
         first_person_state = temporary / "first-person-state.o"
         first_person_lookup = temporary / "first-person-lookup.o"
+        damage_state = temporary / "damage-state.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -155,7 +156,8 @@ def main() -> int:
             args, args.root / "src/unknown_187ec0.cpp", effect_selection,
             ["?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z"],
             ["switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z",
-             "switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z.2"])
+             "switch.table.?function_1883e0@@YAXJ_NPBTpoint3f@@FJJJPAJ22222@Z.2",
+             "?g_47d8e0@@3FA"])
         compile_slice(
             args, args.root / "src/unknown_18a2f0.cpp", looping_sound_state,
             ["?function_18a5e0@@YAPAGJ@Z", "?function_18a6c0@@YAJJJ@Z",
@@ -241,13 +243,15 @@ def main() -> int:
             ["?function_166244@@YAJJ@Z", "?function_166283@@YA_NJJ@Z"])
         compile_slice(args, args.root / "src/unknown_16658d.cpp", first_person_lookup,
                       ["?function_16658d@@YAJJJ@Z"])
+        compile_slice(args, args.root / "src/damage_effect_native.cpp", damage_state,
+                      ["?function_d6660@@YAXPAUs_type_1e6529@@J@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
              player_state, first_person, particle_helpers, particle_color,
              unpack_color, object_placement, object_type, object_geometry,
-             first_person_state, first_person_lookup])
+             first_person_state, first_person_lookup, damage_state])
     return 0
 
 

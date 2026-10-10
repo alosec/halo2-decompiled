@@ -3048,7 +3048,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 000d5d20,89,game,speed,a16 pad,,,001e9720,src/damage.cpp,todo
 000d5d80,89,game,speed,a16 pad,,,001e9720,src/damage.cpp,todo
 000d5de0,2170,game,speed,a16 pad,,,000a7a30 000ba7f0 000d5b60 000d66d0 000d6800 000d6bc0 000d8b50 000d9f70 000da110 000dbc80 000dbfb0 00138880 0013a6e8 0014de90 001588b0 00176780 001e4a10 001e9720,src/damage.cpp,todo
-000d6660,104,game,speed,a16 pad,,,,src/damage.cpp,todo
+000d6660,104,game,speed,a16 pad,,,,src/damage.cpp,done
 000d66d0,190,game,speed,a16 pad,,,,src/damage.cpp,todo
 000d6790,98,game,speed,a16 pad,,,000b58c0,src/damage.cpp,near
 000d6800,610,game,speed,a16 pad,,,000b58c0 000b7360 000b8540 000b8b70 000d0620 000d0690 000d5b60 000d6a70 000dae60 000dbc80 000dbfb0,src/damage.cpp,todo

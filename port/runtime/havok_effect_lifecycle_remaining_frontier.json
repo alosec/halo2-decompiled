@@ -93,11 +93,6 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_d6660@@YAXPAUs_type_1e6529@@J@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
