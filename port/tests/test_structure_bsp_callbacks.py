@@ -1243,6 +1243,14 @@ def main() -> int:
                 "?async_globals@@3Us_async_globals@@A",
                 "?g_4e6454@@3PAUs_record_pool@@A",
                 "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e6484@@3JA"] or
+            texture_upload.get("owned_lifecycle_helpers") != [{
+                "address": "0x0012d6d0",
+                "symbol": "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z",
+                "role": "level-specific Xbox hardware texture header construction"}] or
+            texture_upload.get("helper_dependencies") != [
+                "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+                "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
+                "?g_450768@@3PAY0BI@JA", "?log2_floor@@YAJK@Z"] or
             texture_upload.get("lifecycle_requirements") != [
                 "cache_request_allocation", "resident_block_ownership",
                 "source_pixel_data_ownership", "initialized_cache_pools",

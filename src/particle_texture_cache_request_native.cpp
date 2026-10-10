@@ -6,7 +6,17 @@
 #include "physical_memory.h"
 #include "async.h"
 
-struct D3DTexture;
+struct D3DTexture
+{
+    dword Common;
+    dword Data;
+    dword Lock;
+    dword Format;
+    dword Size;
+};
+static_assert(sizeof(D3DTexture) == 0x14, "D3DTexture");
+
+struct s_type_7ba8e9;
 
 struct s_bitmap_data
 {
@@ -60,6 +70,68 @@ void function_120d50(volatile bool *complete, bool wait);
 static __forceinline s_texture_cache_entry *texture_cache_entry_get_native(long datum_index)
 {
     return (s_texture_cache_entry *)g_4e6454->data + (datum_index & 0xffff);
+}
+
+struct s_bitmap_texture_view
+{
+    dword signature;
+    short width;
+    short height;
+    char depth;
+    byte unknown09;
+    short type;
+    short format;
+    word flags;
+    byte unknown10[4];
+    short mipmap_count;
+    byte unknown16[0x40 - 0x16];
+    dword level_addresses[3];
+};
+static_assert(sizeof(s_bitmap_texture_view) == 0x4c, "s_bitmap_texture_view");
+
+extern long g_450768[8][24];
+long function_1365a0(s_type_7ba8e9 const *bitmap, long level);
+short bitmap_get_mipmap_count(short width, short height, short depth,
+    short format, bool linear, short maximum_levels);
+long log2_floor(dword value);
+
+// @retail 0x12d6d0
+void __stdcall function_12d6d0(s_bitmap_texture_view const *bitmap, long level,
+    D3DTexture *texture)
+{
+    texture->Data = 0;
+    texture->Lock = 0;
+    texture->Common = 0x40001;
+    if (bitmap->flags & 0x10)
+    {
+        long format = g_450768[1][bitmap->format];
+        if ((bitmap->flags & 0x20) && (bitmap->format == 10 || bitmap->format == 11))
+            format = 0x36;
+        texture->Format = (format << 8) | 0x10029;
+        long pitch = function_1365a0((s_type_7ba8e9 const *)bitmap, 0);
+        texture->Size = ((((pitch - 1) / 64) << 12 | (bitmap->height - 1)) << 12) |
+            (bitmap->width - 1);
+    }
+    else
+    {
+        short reduction = (short)level;
+        long width = bitmap->width >> reduction;
+        long height = bitmap->height >> reduction;
+        long depth = bitmap->depth >> reduction;
+        long levels = bitmap_get_mipmap_count((short)width, (short)height, (short)depth,
+            bitmap->format, false, bitmap->mipmap_count - reduction);
+        long format = g_450768[0][bitmap->format];
+        if ((bitmap->flags & 0x20) && (bitmap->format == 10 || bitmap->format == 11))
+            format = 0x33;
+        short width_bits = (short)log2_floor(width);
+        short height_bits = (short)log2_floor(height);
+        short depth_bits = (short)log2_floor(depth);
+        texture->Format = (((((((depth_bits << 4) | height_bits) << 4) | width_bits) << 12 |
+            format) << 4 | (bitmap->type == 1 ? 3 : 2)) << 4) |
+            (bitmap->type == 2 ? 4 : 0) | ((levels + 1) << 16) | 9;
+        texture->Size = 0;
+    }
+    texture->Data = bitmap->level_addresses[level] & 0x0fffffff;
 }
 
 // @retail 0x12c990

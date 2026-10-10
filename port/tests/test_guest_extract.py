@@ -1524,6 +1524,41 @@ def main():
         if actual_texture_cache_request_imports != expected_texture_cache_request_imports:
             raise RuntimeError("particle texture cache request frontier changed")
 
+        texture_upload_header_output = Path(temporary) / "particle-texture-upload-header.o"
+        texture_upload_header_symbol = (
+            "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z"
+        )
+        texture_upload_header_command = command[:]
+        texture_upload_header_command[
+            texture_upload_header_command.index("h2_extract_selected")
+        ] = texture_upload_header_symbol
+        texture_upload_header_command[
+            texture_upload_header_command.index("--extract-global"):texture_upload_header_command.index("--output")
+        ] = []
+        texture_upload_header_command[texture_upload_header_command.index(output)] = texture_upload_header_output
+        texture_upload_header_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_upload_header_command], check=True)
+        texture_upload_header_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_upload_header_output],
+            text=True,
+        )
+        texture_upload_header_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_upload_header_output],
+            text=True,
+        )
+        if texture_upload_header_symbol not in texture_upload_header_defined:
+            raise RuntimeError("particle texture upload header was not selectively compilable")
+        expected_texture_upload_header_imports = {
+            "_?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+            "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
+            "_?g_450768@@3PAY0BI@JA", "_?log2_floor@@YAJK@Z",
+        }
+        actual_texture_upload_header_imports = {
+            line.split()[0] for line in texture_upload_header_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_upload_header_imports != expected_texture_upload_header_imports:
+            raise RuntimeError("particle texture upload header frontier changed")
+
         texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
         texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
         texture_cache_acquire_command = command[:]

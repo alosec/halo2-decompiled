@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All four direct calls are independently source-owned, and exact function_12c990 now preserves throttling, request allocation, resident-block timestamps, priority escalation, blocking waits, and resident texture selection. Its deeper function_12d5a0/120ce0/120d50 providers still require request allocation, source pixel data, asynchronous completion, and initialized mutable cache pools. Static closure does not establish that lifetime. Keep function_12ce00 and particle execution dormant rather than fabricating a texture, request, or completed upload.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All four direct calls are independently source-owned, and exact function_12c990 now preserves throttling, request allocation, resident-block timestamps, priority escalation, blocking waits, and resident texture selection. Its exact level-specific hardware-header builder function_12d6d0 is also source-owned. Deeper function_12d5a0/120ce0/120d50 providers still require request allocation, source pixel data, asynchronous completion, and initialized mutable cache pools. Static closure does not establish that lifetime. Keep function_12ce00 and particle execution dormant rather than fabricating a texture, request, or completed upload.",
   "request_provider_dependencies": [
     "?function_120ce0@@YA_NJJ@Z",
     "?function_120d50@@YAXPC_N_N@Z",
@@ -52,5 +52,18 @@
     "?g_4e6454@@3PAUs_record_pool@@A",
     "?g_4e6464@@3PAUs_physical_object@@A",
     "?g_4e6484@@3JA"
+  ],
+  "owned_lifecycle_helpers": [
+    {
+      "address": "0x0012d6d0",
+      "symbol": "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z",
+      "role": "level-specific Xbox hardware texture header construction"
+    }
+  ],
+  "helper_dependencies": [
+    "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+    "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
+    "?g_450768@@3PAY0BI@JA",
+    "?log2_floor@@YAJK@Z"
   ]
 }
