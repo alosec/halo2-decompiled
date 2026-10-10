@@ -1269,6 +1269,30 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_vertex_output = Path(temporary) / "particle-material-vertex-data-flush.o"
+        material_vertex_symbol = "?function_18d70@@YAXPAUs_18d70_state@@@Z"
+        material_vertex_boundary = "D3DDevice_SetVertexData4f"
+        material_vertex_command = command[:]
+        material_vertex_command[material_vertex_command.index("h2_extract_selected")] = material_vertex_symbol
+        material_vertex_command[
+            material_vertex_command.index("--extract-global"):material_vertex_command.index("--output")
+        ] = []
+        material_vertex_command[material_vertex_command.index(output)] = material_vertex_output
+        material_vertex_command[-1] = args.root / "src/particle_material_vertex_data_flush_native.cpp"
+        subprocess.run([str(value) for value in material_vertex_command], check=True)
+        material_vertex_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_vertex_output],
+            text=True,
+        )
+        material_vertex_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_vertex_output],
+            text=True,
+        )
+        if material_vertex_symbol not in material_vertex_defined:
+            raise RuntimeError("particle material vertex-data flush was not selectively compilable")
+        if material_vertex_boundary not in material_vertex_undefined:
+            raise RuntimeError("particle material vertex-data flush hid its D3D boundary")
+
         material_constant_output = Path(temporary) / "particle-material-shader-constant-flush.o"
         material_constant_symbol = "?function_18e80@@YAXPAUs_shader_constant_state@@@Z"
         material_constant_boundary = "D3DDevice_SetVertexShaderConstantFast"
@@ -1292,6 +1316,30 @@ def main():
             raise RuntimeError("particle material shader constant flush was not selectively compilable")
         if material_constant_boundary not in material_constant_undefined:
             raise RuntimeError("particle material shader constant flush hid its D3D boundary")
+
+        material_pixel_output = Path(temporary) / "particle-material-pixel-shader-submit.o"
+        material_pixel_symbol = "?function_1b050@@YAXPAUs_01b050_shader_state@@@Z"
+        material_pixel_boundary = "D3DDevice_SetPixelShaderProgram"
+        material_pixel_command = command[:]
+        material_pixel_command[material_pixel_command.index("h2_extract_selected")] = material_pixel_symbol
+        material_pixel_command[
+            material_pixel_command.index("--extract-global"):material_pixel_command.index("--output")
+        ] = []
+        material_pixel_command[material_pixel_command.index(output)] = material_pixel_output
+        material_pixel_command[-1] = args.root / "src/particle_material_pixel_shader_submit_native.cpp"
+        subprocess.run([str(value) for value in material_pixel_command], check=True)
+        material_pixel_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_pixel_output],
+            text=True,
+        )
+        material_pixel_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_pixel_output],
+            text=True,
+        )
+        if material_pixel_symbol not in material_pixel_defined:
+            raise RuntimeError("particle material pixel shader submission was not selectively compilable")
+        if material_pixel_boundary not in material_pixel_undefined:
+            raise RuntimeError("particle material pixel shader submission hid its D3D boundary")
 
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [

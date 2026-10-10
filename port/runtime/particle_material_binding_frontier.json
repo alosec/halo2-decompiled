@@ -35,7 +35,9 @@
     "0x00018900",
     "0x0001cf50",
     "0x00137bd0",
-    "0x00018e80"
+    "0x00018e80",
+    "0x00018d70",
+    "0x0001b050"
   ],
   "remaining_groups": {
     "material_table_selection": [
@@ -44,7 +46,6 @@
     "render_and_shader_state": [
       "0x000189a0",
       "0x00018a90",
-      "0x00018d70",
       "0x00018ee0"
     ],
     "texture_and_stage_state": [
@@ -55,12 +56,11 @@
     ],
     "parameter_and_constant_state": [
       "0x0001ae70",
-      "0x0001b050",
       "0x0001b0a0",
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Eight of its 21 direct calls are independently source-owned. The nested curve route is owned through function_1b230 and ends at the genuine general evaluator and mutable input/time state. function_18e80 now owns exact dirty-bit constant flushing but preserves D3DDevice_SetVertexShaderConstantFast as a real renderer boundary. The remaining 13 direct calls plus the real curve and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Ten of its 21 direct calls are independently source-owned. The nested curve route ends at the genuine general evaluator and mutable input/time state. Exact immediate vertex, vertex-constant, and changed pixel-shader submission now preserve three real D3D boundaries. The remaining 11 direct calls plus the genuine curve and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -94,6 +94,12 @@
   "owned_renderer_boundaries": {
     "0x00018e80": [
       "D3DDevice_SetVertexShaderConstantFast"
+    ],
+    "0x00018d70": [
+      "D3DDevice_SetVertexData4f"
+    ],
+    "0x0001b050": [
+      "D3DDevice_SetPixelShaderProgram"
     ]
   }
 }
