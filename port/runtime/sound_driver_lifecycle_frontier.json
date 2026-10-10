@@ -102,8 +102,8 @@
   "teardown": {
     "retail_function": "0x0021eae0",
     "symbol": "?function_21eae0@@YAXXZ",
-    "source": "src/unknown_21e330.cpp",
-    "source_owned": false,
+    "source": "src/sound_driver_teardown_native.cpp",
+    "source_owned": true,
     "production_linked": false,
     "direct_calls": [
       "function_21f290",
@@ -117,7 +117,7 @@
       "g_47f0d0",
       "g_510c3c"
     ],
-    "semantics": "Stop active driver work, release every channel stream, voice buffer and submix, release DirectSound, release the WMA decoder, clear decoder state, and publish the driver unavailable.",
+    "semantics": "Exact source-owned final driver teardown: halt every configured channel, release each live stream and clear channel count, release every voice buffer/submix, release and clear the DirectSound device, dispose the genuine WMA decoder/chunks, clear codec allocator ownership, and publish the driver uninitialized.",
     "selectively_source_owned_calls": [
       {
         "symbol": "function_21f290",

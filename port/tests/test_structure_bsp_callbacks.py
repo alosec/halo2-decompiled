@@ -2127,6 +2127,8 @@ def main() -> int:
         args.root / "src/unknown_21e4b0.cpp").read_text()
     sound_driver_channel_shutdown_source = (
         args.root / "src/sound_driver_channel_shutdown_native.cpp").read_text()
+    sound_driver_teardown_source = (
+        args.root / "src/sound_driver_teardown_native.cpp").read_text()
     sound_driver_listener_source = (
         args.root / "src/sound_driver_listener_native.cpp").read_text()
     sound_driver_voice_buffer_source = (
@@ -2137,8 +2139,6 @@ def main() -> int:
         args.root / "src/sound_effect_image_startup_native.cpp").read_text()
     sound_effect_input_voices_source = (
         args.root / "src/sound_effect_input_voices_native.cpp").read_text()
-    sound_driver_teardown_source = (
-        args.root / "src/unknown_21e330.cpp").read_text()
     sound_wma_initialize_source = (
         args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
     sound_wma_start_source = (
@@ -2333,7 +2333,7 @@ def main() -> int:
         "CreateSoundBuffer", "function_21eae0();"]
     required_teardown_fragments = [
         "void function_21eae0(void)", "function_21f290();",
-        "(*stream)->Release();", "IDirectSoundBuffer_Release",
+        "IDirectSoundStream_Release", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
     expected_channel_shutdown_fragments = [
         "static_assert(sizeof(s_sound_stream) == 0x34",
@@ -2348,6 +2348,22 @@ def main() -> int:
         "for (long i = 0; i < globals->channel_count; i++)",
         "*reinterpret_cast<dword *>(&stream->unknown04[8]) = 0xc2800000;",
         "sound_stream_stop(stream);"]
+    expected_driver_teardown_fragments = [
+        "static_assert(sizeof(s_driver_stream) == 0x34",
+        "static_assert(offsetof(s_driver_stream, stream) == 0x24",
+        "static_assert(sizeof(s_driver_voice) == 0x3c",
+        "static_assert(offsetof(s_driver_globals_view, voices) == 0x1a18",
+        "static_assert(offsetof(s_driver_globals_view, direct_sound) == 0x2ab0",
+        "function_21f290();",
+        "IDirectSoundStream_Release(*stream);",
+        "globals->channel_count = 0;",
+        "IDirectSoundBuffer_Release(voice->buffer);",
+        "IDirectSoundBuffer_Release(voice->submix);",
+        "IDirectSound_Release(globals->direct_sound);",
+        "globals->direct_sound = NULL;",
+        "reinterpret_cast<c_wma_codec *>(&g_47f0d0)->release_decoder();",
+        "g_510c3c = NULL;",
+        "globals->initialized = false;"]
     expected_listener_fragments = [
         "static_assert(sizeof(s_sound_listener) == 0x38",
         "static_assert(offsetof(s_driver_listener_view, listener_position) == 0x2918",
@@ -2505,8 +2521,9 @@ def main() -> int:
             not lifecycle_startup.get("semantics") or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or
-            lifecycle_teardown.get("source") != "src/unknown_21e330.cpp" or
-            lifecycle_teardown.get("source_owned") is not False or
+            lifecycle_teardown.get("source") !=
+                "src/sound_driver_teardown_native.cpp" or
+            lifecycle_teardown.get("source_owned") is not True or
             lifecycle_teardown.get("production_linked") is not False or
             lifecycle_teardown.get("direct_calls") !=
                 expected_lifecycle_calls["teardown"] or
@@ -2792,6 +2809,8 @@ def main() -> int:
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_driver_channel_shutdown_source
                 for fragment in expected_channel_shutdown_fragments) or
+            any(fragment not in sound_driver_teardown_source
+                for fragment in expected_driver_teardown_fragments) or
             any(fragment not in sound_driver_listener_source
                 for fragment in expected_listener_fragments) or
             any(fragment not in sound_driver_voice_buffer_source
