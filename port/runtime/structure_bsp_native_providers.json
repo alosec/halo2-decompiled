@@ -61,6 +61,7 @@
     "native_particle_frame_state_owned",
     "native_impact_looping_sound_pool_owned",
     "native_havok_motion_basis_state_owned",
+    "native_global_color_table_initialized",
     "native_tag_function_tables_initialized",
     "native_object_function_handler_tables_owned",
     "native_object_interpolated_values_owned",

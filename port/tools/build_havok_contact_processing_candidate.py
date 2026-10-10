@@ -129,6 +129,7 @@ def main() -> int:
         particle_cluster_scale = temporary / "particle-cluster-scale.o"
         particle_iteration = temporary / "particle-iteration.o"
         particle_property = temporary / "particle-property.o"
+        tag_function_color = temporary / "tag-function-color.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -392,6 +393,10 @@ def main() -> int:
             args, args.root / "src/unknown_246cd0.cpp", particle_property,
             ["?function_246cd0@@YAMPBUs_particle_property@@PBM@Z",
              "?function_246d80@@YAXPBUs_particle_property@@PBMPAUcolor3f@@@Z"])
+        compile_slice(
+            args, args.root / "src/tag_function_color_native.cpp", tag_function_color,
+            ["?function_13bc00@@YAKPBUs_tag_data@@M@Z",
+             "?function_13be80@@YAXPBUs_tag_data@@MPAUcolor3f@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -411,7 +416,7 @@ def main() -> int:
              ai_effect_request, ai_effect_queue_front, particle_interface_state,
              particle_value_cache, particle_value_evaluator, particle_value_math,
              particle_frame_transform, particle_frame_matrix, particle_cluster_scale,
-             particle_iteration, particle_property])
+             particle_iteration, particle_property, tag_function_color])
     return 0
 
 

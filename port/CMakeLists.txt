@@ -401,6 +401,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_108a90.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_10aac0.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_range_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/tag_function_color_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/ai.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_290250.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_interface_state_native.cpp"

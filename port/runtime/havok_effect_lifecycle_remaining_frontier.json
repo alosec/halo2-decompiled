@@ -86,11 +86,6 @@
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete area-of-effect object/player gathering, damage eligibility, delivery, and mutable damage/object pool lifecycle."
-    },
-    {
-      "symbol": "?function_13be80@@YAXPBUs_tag_data@@MPAUcolor3f@@@Z",
-      "subsystem": "particle color-function conversion",
-      "blocker": "Scalar and color particle properties are now evaluated exactly, including modifiers and range policy. Final color conversion still requires the complete multi-stop packed-color evaluator and exact nearest-even channel interpolation; no MMX approximation or fabricated default color is permitted."
     }
   ]
 }

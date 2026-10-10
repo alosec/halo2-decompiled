@@ -489,6 +489,7 @@ def main() -> int:
         "native_particle_frame_state_owned",
         "native_impact_looping_sound_pool_owned",
         "native_havok_motion_basis_state_owned",
+        "native_global_color_table_initialized",
         "native_tag_function_tables_initialized",
         "native_object_function_handler_tables_owned",
         "native_object_interpolated_values_owned",
@@ -826,7 +827,7 @@ def main() -> int:
     if effect_frontier.get("version") != 1:
         raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
     effect_entries = effect_frontier.get("imports")
-    if not isinstance(effect_entries, list) or len(effect_entries) != 18:
+    if not isinstance(effect_entries, list) or len(effect_entries) != 17:
         raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
     effect_symbols = [entry.get("symbol") for entry in effect_entries]
     if len(effect_symbols) != len(set(effect_symbols)):
@@ -886,7 +887,7 @@ def main() -> int:
                 [args.llvm_nm, "--undefined-only", scored], text=True
             ).splitlines() if line.strip()
         }
-    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 33:
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 32:
         raise RuntimeError("Havok effect-lifecycle candidate score changed")
     effect_undefined = {
         line.strip().split()[-1]
@@ -899,9 +900,8 @@ def main() -> int:
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
     )
-    if ("?function_13b390@@YAMPBXMM@Z" in effect_defined or
-            "?function_13be80@@YAXPBUs_tag_data@@MPAUcolor3f@@@Z" in effect_defined):
-        raise RuntimeError("general tag-function and color evaluators must remain outside dormant effect ownership")
+    if "?function_13b390@@YAMPBXMM@Z" in effect_defined:
+        raise RuntimeError("general tag-function evaluator must remain outside dormant effect ownership")
     if ("?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z" not in effect_defined or
             "?function_177260@@YAXJ_N@Z" not in effect_defined or
             "?function_259a0@@YAMPAK@Z" not in effect_defined or
@@ -971,6 +971,8 @@ def main() -> int:
             "?function_175610@@YAXPAUs_particle_value_cache@@PAUs_particle_system_datum@@PAUs_particle_location_datum@@P6AXPAUs_particle_175610@@0PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PAX@Z7@Z" not in effect_defined or
             "?function_246cd0@@YAMPBUs_particle_property@@PBM@Z" not in effect_defined or
             "?function_246d80@@YAXPBUs_particle_property@@PBMPAUcolor3f@@@Z" not in effect_defined or
+            "?function_13bc00@@YAKPBUs_tag_data@@M@Z" not in effect_defined or
+            "?function_13be80@@YAXPBUs_tag_data@@MPAUcolor3f@@@Z" not in effect_defined or
             "?function_248450@@YAXPAUmatrix3x3@@PBUs_particle_frame@@PATpoint3f@@PAPBU1@PAPBT3@_N@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
