@@ -215,6 +215,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_cache_async_read_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_request_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_cache_read_limit_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_gain_defaults_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

@@ -141,6 +141,18 @@
     {
       "source": "src/sound_cache_read_limit_native.cpp",
       "global": "?g_46e488@@3KA"
+    },
+    {
+      "source": "src/sound_gain_defaults_native.cpp",
+      "global": "?g_440c48@@3JA"
+    },
+    {
+      "source": "src/sound_gain_defaults_native.cpp",
+      "global": "?g_440c4c@@3JA"
+    },
+    {
+      "source": "src/sound_gain_defaults_native.cpp",
+      "global": "?g_468834@@3MA"
     }
   ],
   "definitions": [
@@ -168,6 +180,9 @@
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?function_21f650@@YAMJJ@Z",
+    "?g_440c48@@3JA",
+    "?g_440c4c@@3JA",
+    "?g_468834@@3MA",
     "?g_46e488@@3KA",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
@@ -191,9 +206,6 @@
     "?function_12be90@@YA_NXZ",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?g_440c48@@3JA",
-    "?g_440c4c@@3JA",
-    "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -253,9 +265,6 @@
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?g_440c48@@3JA",
-    "?g_440c4c@@3JA",
-    "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -425,6 +434,23 @@
       "symbol": "?g_557c90@@3PAUs_texture_cache_file@@A",
       "address": "0x00557c90",
       "semantics": "controller-published six-record cache-file table with live native handles"
+    }
+  ],
+  "sound_gain_defaults": [
+    {
+      "symbol": "?g_440c48@@3JA",
+      "value": "0x00000000",
+      "semantics": "exact recovered full-volume zero-decibel endpoint stored as float bits"
+    },
+    {
+      "symbol": "?g_440c4c@@3JA",
+      "value": "0xc2800000",
+      "semantics": "exact recovered silence endpoint of negative 64 decibels stored as float bits"
+    },
+    {
+      "symbol": "?g_468834@@3MA",
+      "value": "1.0",
+      "semantics": "exact recovered initial driver master gain used by post-update"
     }
   ]
 }
