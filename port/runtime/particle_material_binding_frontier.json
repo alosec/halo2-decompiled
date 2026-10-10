@@ -30,13 +30,13 @@
   "already_owned_calls": [
     "0x00016f60",
     "0x00017000",
+    "0x00017170",
     "0x00018900",
     "0x0001cf50",
     "0x00137bd0"
   ],
   "remaining_groups": {
     "material_table_selection": [
-      "0x00017170",
       "0x00017420",
       "0x000174d0"
     ],
@@ -60,13 +60,17 @@
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Five of its 21 direct calls are now independently owned. function_16f60 exactly expands packed material values into 0x40-byte slots while exposing genuine mutable g_485a80 state; zero-import function_17000 expands packed component selectors into two 16-slot four-dword constant banks and their dirty masks without a compiler switch table. The remaining 16 calls are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Six of its 21 direct calls are now independently owned. function_16f60 expands packed material values while exposing genuine mutable g_485a80 state; zero-import function_17000 expands packed constant-bank components; zero-import function_17170 expands packed pixel-shader masks using the exact retained immutable channel-mask table. The remaining 15 calls are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
     ]
   },
   "owned_zero_import_calls": [
-    "0x00017000"
-  ]
+    "0x00017000",
+    "0x00017170"
+  ],
+  "owned_immutable_data": {
+    "0x00467068": "8 exact dword channel masks retained with function_17170"
+  }
 }

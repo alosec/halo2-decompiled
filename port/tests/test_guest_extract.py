@@ -1179,6 +1179,30 @@ def main():
         if material_bank_undefined.strip():
             raise RuntimeError("particle material constant-bank loader gained imports")
 
+        material_masks_output = Path(temporary) / "particle-material-shader-masks.o"
+        material_masks_symbol = "?function_17170@@YAXPAEPBG@Z"
+        material_masks_global = "?g_467068@@3QBKB"
+        material_masks_command = command[:]
+        material_masks_command[material_masks_command.index("h2_extract_selected")] = material_masks_symbol
+        material_masks_command[
+            material_masks_command.index("--extract-global"):material_masks_command.index("--output")
+        ] = ["--extract-global", material_masks_global]
+        material_masks_command[material_masks_command.index(output)] = material_masks_output
+        material_masks_command[-1] = args.root / "src/particle_material_shader_masks_native.cpp"
+        subprocess.run([str(value) for value in material_masks_command], check=True)
+        material_masks_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_masks_output],
+            text=True,
+        )
+        if material_masks_symbol not in material_masks_defined or material_masks_global not in material_masks_defined:
+            raise RuntimeError("particle material shader masks were not selectively compilable")
+        material_masks_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_masks_output],
+            text=True,
+        )
+        if material_masks_undefined.strip():
+            raise RuntimeError("particle material shader-mask loader gained imports")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
