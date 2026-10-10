@@ -21,6 +21,9 @@ def main() -> int:
     parser.add_argument("--worker-step", type=Path, required=True)
     parser.add_argument("--queue-lifecycle", type=Path, required=True)
     parser.add_argument("--read-request", type=Path, required=True)
+    parser.add_argument("--physical-allocator", type=Path, required=True)
+    parser.add_argument("--physical-choice", type=Path, required=True)
+    parser.add_argument("--record-pool", type=Path, required=True)
     parser.add_argument("--abi", type=Path, required=True)
     args = parser.parse_args()
 
@@ -121,6 +124,48 @@ def main() -> int:
         raise SystemExit(
             f"guest async read import drift: expected "
             f"{sorted(expected_read_imports)}, got {sorted(read_imports)}")
+
+    physical_defined = symbols(args.nm, args.physical_allocator, "--defined-only")
+    expected_physical_definitions = {
+        "?function_13d370@@YAJPAUs_physical_object@@JJ@Z"}
+    if physical_defined != expected_physical_definitions:
+        raise SystemExit(
+            f"guest physical allocator definition drift: "
+            f"{sorted(physical_defined)}")
+    physical_imports = symbols(args.nm, args.physical_allocator, "--undefined-only")
+    expected_physical_imports = {
+        "?function_13d320@@YA_NPBUs_physical_allocator_view@@"
+        "PBUs_physical_block_view@@1@Z",
+        "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+        "h2_guest_memcpy",
+    }
+    if physical_imports != expected_physical_imports:
+        raise SystemExit(
+            f"guest physical allocator import drift: expected "
+            f"{sorted(expected_physical_imports)}, got {sorted(physical_imports)}")
+
+    choice_defined = symbols(args.nm, args.physical_choice, "--defined-only")
+    if choice_defined != {
+            "?function_13d320@@YA_NPBUs_physical_allocator_view@@"
+            "PBUs_physical_block_view@@1@Z"}:
+        raise SystemExit("guest physical allocation choice definition drift")
+    if symbols(args.nm, args.physical_choice, "--undefined-only"):
+        raise SystemExit("guest physical allocation choice gained an import")
+
+    pool_defined = symbols(args.nm, args.record_pool, "--defined-only")
+    expected_pool_definitions = {
+        "?record_pool_allocate@@YAJPAUs_record_pool@@@Z",
+        "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+        "?function_16ba00@@YAXPAUs_record_pool@@PAE@Z",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+    }
+    if pool_defined != expected_pool_definitions:
+        raise SystemExit(
+            f"guest record-pool definition drift: {sorted(pool_defined)}")
+    if symbols(args.nm, args.record_pool, "--undefined-only") != {
+            "h2_guest_memset"}:
+        raise SystemExit("guest record-pool import drift")
 
     abi = args.abi.read_text()
     if "#define H2_HOST_ABI_VERSION 12u" not in abi:

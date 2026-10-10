@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling/scheduler-initialization chain are independently source-owned. Exact initialization preserves the 150-node free list, mutex/semaphore/thread creation, and worker-stack constants. A host-only opaque-token platform foundation now owns recursive mutexes, bounded semaphores, waits, read-only regular-file seek/read/close, short reads, symlink rejection, stale-token rejection, and cooperative yield without exposing host pointers. It is deliberately not guest-bridged. Execution still requires initialized cache/physical/file state, owned source pixels, guest bridging for the synchronization and file services, the confirmed idle=true function_125d60 main-thread sound-idle service, and worker cancellation/shutdown/handle teardown. Static source ownership does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling/scheduler-initialization chain are independently source-owned. The recovered physical allocator and salted record-pool primitives now execute together over exact ILP32 pool layouts in a dormant synthetic fixture. A host-only opaque-token platform foundation owns recursive mutexes, bounded semaphores, waits, read-only regular-file seek/read/close, short reads, symlink rejection, stale-token rejection, and cooperative yield without exposing host pointers. Execution still requires host-owned guest cache/physical pool storage and fixed-global publication, an owned guest upload buffer and source pixels, texture-cache callbacks and teardown, and the confirmed idle=true function_125d60 main-thread sound-idle service. The synthetic pool fixture does not establish those production mutable systems. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -579,5 +579,41 @@
       "runtime_connected": true,
       "production_configured": false
     }
+  },
+  "native_texture_pool_lifecycle": {
+    "status": "recovered_allocator_and_record_pools_execute_in_dormant_synthetic_fixture",
+    "recovered_sources": [
+      "src/unknown_13d170.cpp:function_13d370",
+      "src/unknown_13d320.cpp:function_13d320",
+      "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release"
+    ],
+    "exact_layouts": {
+      "record_pool_bytes": 76,
+      "physical_block_bytes": 24,
+      "texture_entry_bytes": 40,
+      "page_shift": 12
+    },
+    "tested_behavior": [
+      "one_page_then_two_page_contiguous_allocation",
+      "salted_physical_handles_mirrored_into_texture_entries",
+      "doubly_linked_physical_block_order",
+      "texture_entry_release_and_bitmap_clear",
+      "complete_synthetic_reinitialization"
+    ],
+    "guest_object_closure": {
+      "allocator_definitions": 1,
+      "choice_definitions": 1,
+      "record_pool_definitions": 4,
+      "imports_resolved_by_fixture": true
+    },
+    "remaining_ownership": [
+      "host_owned_guest_pool_storage_and_fixed_global_publication",
+      "guest_physical_upload_buffer",
+      "texture_cache_delete_busy_and_state_callbacks",
+      "ordered_map_switch_and_teardown",
+      "source_bitmap_lifetime"
+    ],
+    "execution_enabled": false,
+    "production_configured": false
   }
 }

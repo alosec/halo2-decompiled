@@ -97,6 +97,7 @@ int main(int argc, char** argv) {
     const auto queue_restore_free_head =
         image->symbol_address("h2_async_queue_restore_free_head");
     const auto queue_is_cleared = image->symbol_address("h2_async_queue_is_cleared");
+    const auto texture_pool_probe = image->symbol_address("h2_texture_pool_probe");
     ok &= check(entry.has_value() && recovered_worker_step.has_value() &&
                     active_read_submit.has_value() &&
                     shared_read_submit.has_value() &&
@@ -107,20 +108,26 @@ int main(int argc, char** argv) {
                     queue_free_count.has_value() &&
                     queue_remove_free_head.has_value() &&
                     queue_restore_free_head.has_value() &&
-                    queue_is_cleared.has_value(),
+                    queue_is_cleared.has_value() && texture_pool_probe.has_value(),
                 "guest worker fixture symbols are missing");
     if (!entry || !recovered_worker_step || !active_read_submit ||
         !shared_read_submit || !campaign_read_submit || !read_completed ||
         !counter || !lifecycle_entry || !lifecycle_counter ||
         !queue_initialize ||
         !queue_teardown || !queue_free_count || !queue_remove_free_head ||
-        !queue_restore_free_head || !queue_is_cleared)
+        !queue_restore_free_head || !queue_is_cleared || !texture_pool_probe)
         return 1;
 
     Platform platform;
     Lifecycle lifecycle;
     Worker worker(*arena, platform, lifecycle);
     int invoke_result = 0;
+    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
+                    invoke_result == 1,
+                "recovered texture/physical pool probe failed: " + error);
+    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
+                    invoke_result == 1,
+                "recovered texture/physical pools did not reinitialize: " + error);
     ok &= check(worker.invoke_stopped(*lifecycle_entry, invoke_result, error) &&
                     invoke_result == 1,
                 "stopped guest invocation did not use the validated low stack");

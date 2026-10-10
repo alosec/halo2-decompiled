@@ -1,6 +1,8 @@
 #include "unknown_11c920.h"
 #include <string.h>
+#ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
+#endif
 #include "globals.h"
 #include "data_array.h"
 #include "physical_memory.h"
@@ -235,7 +237,11 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 					previous = current;
 					current = block->next;
 					offset = block->pages + block->offset;
+#ifdef H2_NATIVE_PORT
+					__builtin_prefetch(&((s_physical_block *)physical->blocks->data)[current & 0xffff]);
+#else
 					_mm_prefetch((char *)&((s_physical_block *)physical->blocks->data)[current & 0xffff], _MM_HINT_T0);
+#endif
 				}
 				else
 				{
@@ -251,7 +257,11 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 				{
 					s_block_candidate *candidate = &candidates[i];
 					long next = (i + 1) % 256;
+#ifdef H2_NATIVE_PORT
+					__builtin_prefetch(&candidates[next]);
+#else
 					_mm_prefetch((char *)&candidates[next], _MM_HINT_T0);
+#endif
 					if (segment_time > candidate->time)
 						candidate->time = segment_time;
 					candidate->pages += segment_pages;

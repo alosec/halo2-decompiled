@@ -2454,6 +2454,81 @@ add_custom_command(
 add_custom_target(h2-guest-async-read ALL
     DEPENDS "${H2_GUEST_ASYNC_READ_OBJECT}")
 
+set(H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_allocator.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?function_13d370@@YAJPAUs_physical_object@@JJ@Z"
+            --output "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+
+set(H2_GUEST_PHYSICAL_CHOICE_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_choice.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?function_13d320@@YA_NPBUs_physical_allocator_view@@PBUs_physical_block_view@@1@Z"
+            --output "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/unknown_13d320.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/unknown_13d320.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+
+set(H2_GUEST_RECORD_POOL_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_record_pool.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_RECORD_POOL_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?record_pool_allocate@@YAJPAUs_record_pool@@@Z"
+            --extract-symbol "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z"
+            --extract-symbol "?function_16ba00@@YAXPAUs_record_pool@@PAE@Z"
+            --extract-symbol "?record_pool_release@@YAXPAUs_record_pool@@J@Z"
+            --output "${H2_GUEST_RECORD_POOL_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/unknown_16b570.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+
 add_library(h2_port_support STATIC
     runtime/guest_stack.s
     src/guest_arena.cpp
@@ -2489,6 +2564,26 @@ set(H2_GUEST_ELF_LOADER_FIXTURE_OBJECT
     "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.o")
 set(H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT
     "${CMAKE_BINARY_DIR}/port/guest-async-queue-fixture.o")
+set(H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT
+    "${CMAKE_BINARY_DIR}/port/guest-texture-pool-fixture.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --output "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_texture_pool_fixture.cpp"
+    DEPENDS h2_guest_rebase
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_texture_pool_fixture.cpp"
+            ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
 add_custom_command(
     OUTPUT "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2528,13 +2623,21 @@ add_custom_command(
             "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             "${H2_GUEST_ASYNC_READ_OBJECT}"
+            "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+            "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            "${H2_GUEST_RECORD_POOL_OBJECT}"
             "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
+            "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
     DEPENDS "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
             "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
             "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             "${H2_GUEST_ASYNC_READ_OBJECT}"
+            "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+            "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            "${H2_GUEST_RECORD_POOL_OBJECT}"
             "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
+            "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.ld
     VERBATIM
 )
@@ -2611,6 +2714,9 @@ add_test(
             --worker-step "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             --queue-lifecycle "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             --read-request "${H2_GUEST_ASYNC_READ_OBJECT}"
+            --physical-allocator "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+            --physical-choice "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            --record-pool "${H2_GUEST_RECORD_POOL_OBJECT}"
             --abi "${CMAKE_CURRENT_SOURCE_DIR}/include/h2/host_abi.h"
 )
 

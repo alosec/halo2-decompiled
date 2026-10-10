@@ -1478,6 +1478,37 @@ def main() -> int:
                     "requires_scheduler_stopped": True,
                     "runtime_connected": True,
                     "production_configured": False}} or
+            texture_upload.get("native_texture_pool_lifecycle") != {
+                "status":
+                    "recovered_allocator_and_record_pools_execute_in_dormant_synthetic_fixture",
+                "recovered_sources": [
+                    "src/unknown_13d170.cpp:function_13d370",
+                    "src/unknown_13d320.cpp:function_13d320",
+                    "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release"],
+                "exact_layouts": {
+                    "record_pool_bytes": 76,
+                    "physical_block_bytes": 24,
+                    "texture_entry_bytes": 40,
+                    "page_shift": 12},
+                "tested_behavior": [
+                    "one_page_then_two_page_contiguous_allocation",
+                    "salted_physical_handles_mirrored_into_texture_entries",
+                    "doubly_linked_physical_block_order",
+                    "texture_entry_release_and_bitmap_clear",
+                    "complete_synthetic_reinitialization"],
+                "guest_object_closure": {
+                    "allocator_definitions": 1,
+                    "choice_definitions": 1,
+                    "record_pool_definitions": 4,
+                    "imports_resolved_by_fixture": True},
+                "remaining_ownership": [
+                    "host_owned_guest_pool_storage_and_fixed_global_publication",
+                    "guest_physical_upload_buffer",
+                    "texture_cache_delete_busy_and_state_callbacks",
+                    "ordered_map_switch_and_teardown",
+                    "source_bitmap_lifetime"],
+                "execution_enabled": False,
+                "production_configured": False} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
