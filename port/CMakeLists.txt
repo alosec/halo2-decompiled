@@ -408,6 +408,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/particle_frame_matrix_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_value_math_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_173b90.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_246cd0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_2483f0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_248df0.cpp"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
