@@ -1272,6 +1272,38 @@ def main():
         if "switch.table." in shader_input_undefined:
             raise RuntimeError("particle shader input extraction exposed a compiler switch table")
 
+        shader_program_output = Path(temporary) / "particle-shader-program-state.o"
+        shader_program_symbols = [
+            "?function_1c2e0@@YAPBKJJPAJ@Z",
+            "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z",
+        ]
+        shader_program_command = command[:]
+        shader_program_command[shader_program_command.index("h2_extract_selected")] = shader_program_symbols[0]
+        shader_program_command[
+            shader_program_command.index("--extract-global"):shader_program_command.index("--output")
+        ] = [
+            "--extract-symbol", shader_program_symbols[1],
+            "--extract-global", "g_43f2b0",
+            "--extract-global", "?g_4670ec@@3PAUs_shader_program@@A",
+        ]
+        shader_program_command[shader_program_command.index(output)] = shader_program_output
+        shader_program_command[-1] = args.root / "src/particle_shader_program_state_native.cpp"
+        subprocess.run([str(value) for value in shader_program_command], check=True)
+        shader_program_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", shader_program_output],
+            text=True,
+        )
+        for symbol in [*shader_program_symbols, "g_43f2b0",
+                       "?g_4670ec@@3PAUs_shader_program@@A"]:
+            if symbol not in shader_program_defined:
+                raise RuntimeError(f"particle shader program provider missing: {symbol}")
+        shader_program_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", shader_program_output],
+            text=True,
+        )
+        if "D3DDevice_LoadVertexShaderProgram" not in shader_program_undefined:
+            raise RuntimeError("particle shader program upload boundary missing")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

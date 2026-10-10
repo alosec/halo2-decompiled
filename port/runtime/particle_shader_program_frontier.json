@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "retail_functions": [
+    {"address": "0x0001c2e0", "size": 78, "symbol": "?function_1c2e0@@YAPBKJJPAJ@Z"},
+    {"address": "0x0001c590", "size": 144, "symbol": "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z"}
+  ],
+  "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "owned_fallback_program": {
+    "program_symbol": "g_43f2b0",
+    "program_words": 85,
+    "table_symbol": "?g_4670ec@@3PAUs_shader_program@@A",
+    "byte_count": 340
+  },
+  "sprite_setup_with_shader_input_score_before": 45,
+  "sprite_setup_with_shader_program_score_after": 45,
+  "newly_exposed": ["D3DDevice_LoadVertexShaderProgram"],
+  "blocker": "The exact lookup selects either tag-owned microcode or the recovered 85-dword fallback program and reports its 16-byte instruction count. The cache update preserves binding identity checks, upload-on-change, current-descriptor clearing, all 16 stream resets, and dirty flags. It replaces one setup provider with the genuine Xbox vertex-program upload call, so the measured score remains 45 and execution stays disabled until shader translation/upload and mutable cache ownership exist."
+}
