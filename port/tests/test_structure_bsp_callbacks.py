@@ -1348,6 +1348,13 @@ def main() -> int:
                 "imports": [],
                 "semantics":
                     "exact bounded next-chunk index or NONE selection"}, {
+                "source": "src/sound_driver_playback_rate_native.cpp",
+                "symbol": "?function_21f650@@YAMJJ@Z",
+                "imports": [
+                    "?g_51ebe4@@3PAUs_bink_sound_settings@@A", "exp"],
+                "semantics":
+                    "exact stream pitch-mode offset and exponential "
+                    "playback-rate conversion"}, {
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
@@ -1372,7 +1379,6 @@ def main() -> int:
                 "native_sound_cache_request_lifecycle_owned",
                 "native_sound_reference_pool_initialized",
                 "native_sound_driver_stream_state_initialized",
-                "native_sound_playback_rate_reporting_owned",
                 "native_sound_definition_and_chunk_tables_initialized",
                 "native_sound_driver_pre_and_post_update_owned",
                 "native_sound_gain_and_fade_lifecycle_owned",

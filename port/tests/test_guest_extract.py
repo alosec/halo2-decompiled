@@ -3028,6 +3028,42 @@ def main():
                     f"sound voice helper imports changed for {helper_symbol}: "
                     f"{sorted(helper_imports)}")
 
+        sound_playback_rate_output = Path(temporary) / "sound-playback-rate.o"
+        sound_playback_rate_symbol = "?function_21f650@@YAMJJ@Z"
+        sound_playback_rate_command = command[:]
+        sound_playback_rate_command[
+            sound_playback_rate_command.index("h2_extract_selected")
+        ] = sound_playback_rate_symbol
+        sound_playback_rate_command[
+            sound_playback_rate_command.index("--extract-global"):
+            sound_playback_rate_command.index("--output")
+        ] = []
+        sound_playback_rate_command[
+            sound_playback_rate_command.index(output)
+        ] = sound_playback_rate_output
+        sound_playback_rate_command[-1] = (
+            args.root / "src/sound_driver_playback_rate_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_playback_rate_command], check=True)
+        sound_playback_rate_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_playback_rate_output], text=True)
+        if sound_playback_rate_symbol not in sound_playback_rate_defined:
+            raise RuntimeError("sound playback rate was not selectively compilable")
+        sound_playback_rate_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_playback_rate_output], text=True)
+        sound_playback_rate_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_playback_rate_undefined.splitlines() if line
+        }
+        expected_sound_playback_rate_imports = {
+            "?g_51ebe4@@3PAUs_bink_sound_settings@@A", "exp"}
+        if sound_playback_rate_imports != expected_sound_playback_rate_imports:
+            raise RuntimeError(
+                "sound playback rate imports changed: "
+                f"{sorted(sound_playback_rate_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]
