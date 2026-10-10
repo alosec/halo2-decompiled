@@ -5,7 +5,7 @@
     {
       "symbol": "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z",
       "subsystem": "particles",
-      "blocker": "The exact particle interface-context initializer, particle-system value callback, and render-interface state selection/dirty-mask propagation are owned. Remaining closure requires sprite transforms, broader mutable cache state, particle value-cache traversal, rendering, and function_224550."
+      "blocker": "The exact particle interface-context initializer, particle-system value callback, render-interface state selection/dirty-mask propagation, value-cache fill, and all 17 interface-value inputs are owned. Remaining closure requires sprite transforms, broader mutable cache state, particle iteration, rendering, and function_224550."
     },
     {
       "symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",

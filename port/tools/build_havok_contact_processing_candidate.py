@@ -121,6 +121,9 @@ def main() -> int:
         ai_effect_request = temporary / "ai-effect-request.o"
         ai_effect_queue_front = temporary / "ai-effect-queue-front.o"
         particle_interface_state = temporary / "particle-interface-state.o"
+        particle_value_cache = temporary / "particle-value-cache.o"
+        particle_value_evaluator = temporary / "particle-value-evaluator.o"
+        particle_value_math = temporary / "particle-value-math.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -359,6 +362,15 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/particle_interface_state_native.cpp",
             particle_interface_state, ["?function_1bd50@@YAXPAX@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_173b90.cpp", particle_value_cache,
+            ["?function_173ba0@@YAXKPAX0PBXPAM@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_248df0.cpp", particle_value_evaluator,
+            ["?function_248df0@@YAMJPAX0PBX@Z"])
+        compile_slice(
+            args, args.root / "src/particle_value_math_native.cpp", particle_value_math,
+            ["?function_4efb0@@YAPATvector3f@@PAT1@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -375,7 +387,8 @@ def main() -> int:
              light_marker_point, light_curve_lookup, inherited_ai_effect_flags,
              object_function_evaluation, object_function_handlers,
              object_interpolated_values, tag_function_range,
-             ai_effect_request, ai_effect_queue_front, particle_interface_state])
+             ai_effect_request, ai_effect_queue_front, particle_interface_state,
+             particle_value_cache, particle_value_evaluator, particle_value_math])
     return 0
 
 
