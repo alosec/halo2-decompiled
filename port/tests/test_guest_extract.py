@@ -1269,6 +1269,38 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_color_range_output = Path(temporary) / "particle-material-color-range.o"
+        material_color_range_symbol = "?function_19ca0@@YAXPAEPBG@Z"
+        material_color_range_command = command[:]
+        material_color_range_command[
+            material_color_range_command.index("h2_extract_selected")
+        ] = material_color_range_symbol
+        material_color_range_command[
+            material_color_range_command.index("--extract-global"):material_color_range_command.index("--output")
+        ] = []
+        material_color_range_command[material_color_range_command.index(output)] = material_color_range_output
+        material_color_range_command[-1] = args.root / "src/particle_material_color_range_native.cpp"
+        subprocess.run([str(value) for value in material_color_range_command], check=True)
+        material_color_range_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_color_range_output],
+            text=True,
+        )
+        material_color_range_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_color_range_output],
+            text=True,
+        )
+        if material_color_range_symbol not in material_color_range_defined:
+            raise RuntimeError("particle material color-range expansion was not selectively compilable")
+        expected_material_color_range_imports = {
+            "_?function_1b2c0@@YA_NPBEJJJJPAM@Z", "_?g_467068@@3QBKB",
+            "_?pack_color4f@@YAKPBUcolor4f@@@Z", "_h2_guest_memset",
+        }
+        actual_material_color_range_imports = {
+            line.split()[0] for line in material_color_range_undefined.splitlines() if line.strip()
+        }
+        if actual_material_color_range_imports != expected_material_color_range_imports:
+            raise RuntimeError("particle material color-range frontier changed")
+
         material_texture_binding_output = Path(temporary) / "particle-material-texture-binding.o"
         material_texture_binding_symbol = "?function_18a90@@YAXPAEPBG@Z"
         material_texture_binding_command = command[:]

@@ -1096,9 +1096,9 @@ def main() -> int:
             material_binding.get("execution_gate") != "native_particle_material_binding_state_owned" or
             set(material_binding.get("direct_calls", [])) != expected_material_calls or
             set(material_binding.get("already_owned_calls", [])) != {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00018a90", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00018a90", "0x00019be0", "0x00019ca0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
             grouped_material_calls != expected_material_calls - {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00018a90", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00018a90", "0x00019be0", "0x00019ca0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
             material_binding.get("owned_state_dependencies") != {
                 "0x00016f60": ["?g_485a80@@3PAEA"],
                 "0x00034060": [
@@ -1135,7 +1135,10 @@ def main() -> int:
                     "?function_143c0@@YA_NJFFM@Z", "fabs", "fmod"],
                 "0x00018a90": [
                     "?function_19530@@YAXJPAEFPAJ1@Z", "floor",
-                    "h2_guest_memcpy", "log"]} or
+                    "h2_guest_memcpy", "log"],
+                "0x00019ca0": [
+                    "?function_1b2c0@@YA_NPBEJJJJPAM@Z", "?g_467068@@3QBKB",
+                    "?pack_color4f@@YAKPBUcolor4f@@@Z", "h2_guest_memset"]} or
             material_binding.get("source_owned_transitive_calls") != [
                 "0x00017550", "0x0001b230", "0x0001b2c0",
                 "0x000176a0", "0x00017960", "0x00017b60", "0x00018560",
