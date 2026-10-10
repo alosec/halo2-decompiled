@@ -1381,6 +1381,37 @@ def main() -> int:
                     "exact fade-time anchoring, bounded progress, "
                     "linear/power gain interpolation, direction selection, "
                     "and negative-64-to-zero decibel pinning"}, {
+                "source": "src/sound_playback_reference_native.cpp",
+                "symbol":
+                    "?function_126960@@YAXPAUs_sound_playback@@@Z",
+                "imports": [
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics":
+                    "exact playback-held reference lookup, reference-count "
+                    "decrement, and ownership-bit clear"}, {
+                "source": "src/sound_playback_delete_native.cpp",
+                "symbol": "?sound_playback_delete@@YAXJ@Z",
+                "imports": [
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_51ebd8@@3PAXA",
+                    "?looping_sound_controller_release@@YAXJ@Z",
+                    "?record_pool_release@@YAXPAUs_record_pool@@J@Z"],
+                "semantics":
+                    "exact looping-controller playing-count adjustment and "
+                    "release followed by salted playback-record release"}, {
+                "source": "src/sound_playback_stop_native.cpp",
+                "symbol": "?function_127320@@YAXJJ@Z",
+                "imports": [
+                    "?function_126960@@YAXPAUs_sound_playback@@@Z",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?sound_playback_delete@@YAXJ@Z",
+                    "?sound_voice_free@@YAXF@Z"],
+                "semantics":
+                    "exact voice release, sound-reference release, source "
+                    "stop callback, reason propagation, and playback "
+                    "deletion ordering"}, {
                 "source": "src/sound_master_gain_native.cpp",
                 "symbol": "?function_2197f0@@YAJM@Z",
                 "imports": ["log10"],
@@ -1493,6 +1524,7 @@ def main() -> int:
                 "native_sound_definition_and_chunk_tables_initialized",
                 "native_sound_driver_pre_and_post_update_owned",
                 "native_sound_fade_endpoint_state_owned",
+                "native_sound_playback_stop_lifetime_owned",
                 "native_sound_gain_and_fade_lifecycle_owned",
                 "native_sound_spatialization_and_channel_submission_owned",
                 "native_sound_source_callback_lifetimes_owned",

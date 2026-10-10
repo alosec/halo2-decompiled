@@ -3315,6 +3315,24 @@ def main():
                  "?g_4e637c@@3PAUs_record_pool@@A",
                  "?g_4e6380@@3PAUs_4e6380@@A",
                  "sqrt"}),
+            ("sound-playback-reference.o",
+             "src/sound_playback_reference_native.cpp",
+             "?function_126960@@YAXPAUs_sound_playback@@@Z", {
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-playback-delete.o", "src/sound_playback_delete_native.cpp",
+             "?sound_playback_delete@@YAXJ@Z", {
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?g_51ebd8@@3PAXA",
+                 "?looping_sound_controller_release@@YAXJ@Z",
+                 "?record_pool_release@@YAXPAUs_record_pool@@J@Z"}),
+            ("sound-playback-stop.o", "src/sound_playback_stop_native.cpp",
+             "?function_127320@@YAXJJ@Z", {
+                 "?function_126960@@YAXPAUs_sound_playback@@@Z",
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?sound_playback_delete@@YAXJ@Z",
+                 "?sound_voice_free@@YAXF@Z"}),
         ]
         for fade_name, fade_source, fade_symbol, expected_fade_imports in sound_fade_helper_cases:
             fade_output = Path(temporary) / fade_name
