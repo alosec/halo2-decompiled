@@ -64,12 +64,13 @@ def main() -> int:
         ("src/sound_cache_file_route_native.cpp", "?function_213760@@YAJKJPAXPAKPA_NJJ@Z"),
         ("src/sound_cache_async_read_native.cpp", "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z"),
         ("src/sound_cache_async_read_native.cpp", "?function_1a0e70@@YAJPATs_async_task@@@Z"),
+        ("src/particle_texture_cache_request_native.cpp", "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol"))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 33:
+    if len(set(provider_symbols)) != 34:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
@@ -157,10 +158,18 @@ def main() -> int:
         raise RuntimeError("sound-idle async-read inventory changed")
     if any(not entry.get("semantics") for entry in async_read_helpers):
         raise RuntimeError("sound-idle async-read semantics are missing")
+    queue_helpers = manifest.get("sound_cache_async_queue_helpers", [])
+    if [entry.get("symbol") for entry in queue_helpers] != [
+            "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+            "?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "?function_120900@@YAXPAUs_job_node@@@Z"]:
+        raise RuntimeError("sound-idle async-queue inventory changed")
+    if any(not entry.get("semantics") for entry in queue_helpers):
+        raise RuntimeError("sound-idle async-queue semantics are missing")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 34 or len(expected_imports) != 56:
+    if len(expected_definitions) != 37 or len(expected_imports) != 61:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -194,7 +203,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 39:
+    if len(expected_production_imports) != 38:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

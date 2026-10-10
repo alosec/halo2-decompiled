@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, and asynchronous positioned reads",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, positioned reads, and transactional async queue submission",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -133,9 +133,16 @@
     {
       "source": "src/sound_cache_async_read_native.cpp",
       "symbol": "?function_1a0e70@@YAJPATs_async_task@@@Z"
+    },
+    {
+      "source": "src/particle_texture_cache_request_native.cpp",
+      "symbol": "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z"
     }
   ],
   "definitions": [
+    "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "?function_120900@@YAXPAUs_job_node@@@Z",
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_125d60@@YAXXZ",
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127320@@YAXJJ@Z",
@@ -172,8 +179,8 @@
     "?sound_voices_update_chunks@@YAXXZ"
   ],
   "imports": [
+    "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
-    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
@@ -216,8 +223,10 @@
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "ReadFile",
+    "ReleaseMutex",
     "SetFilePointer",
     "SwitchToThread",
+    "WaitForSingleObject",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
@@ -225,7 +234,10 @@
     "exp",
     "fabs",
     "g_dwDirectSoundDeltaPanicCount",
+    "h2_guest_memcpy",
     "h2_guest_memset",
+    "h2_native_async_publish_admitted",
+    "h2_native_async_try_admit",
     "log10",
     "sqrt"
   ],
@@ -233,7 +245,6 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
-    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
@@ -382,6 +393,20 @@
     {
       "symbol": "?function_1a0e70@@YAJPATs_async_task@@@Z",
       "semantics": "perform bounded positioned file reads, advance cumulative offsets and byte counts, and preserve short-read completion versus retry"
+    }
+  ],
+  "sound_cache_async_queue_helpers": [
+    {
+      "symbol": "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+      "semantics": "account and capture the complete task, allocate a real free-list node, preserve done/callback/category/priority ownership, and submit it transactionally"
+    },
+    {
+      "symbol": "?async_task_queue@@YAJPAUs_job_node@@@Z",
+      "semantics": "reserve native admission before insertion, assign the salted task identifier under the work-list mutex, publish the wake only after visibility, and recycle a rejected publication"
+    },
+    {
+      "symbol": "?function_120900@@YAXPAUs_job_node@@@Z",
+      "semantics": "insert work by descending priority and stable recovered positioned-read ordering"
     }
   ]
 }
