@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "role": "Exact recovered DirectSound driver initialization and teardown required by the source-owned sound-system lifetime. This frontier may not be replaced with successful no-ops.",
+  "startup": {
+    "retail_function": "0x0021e4b0",
+    "symbol": "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
+    "source": "src/unknown_21e4b0.cpp",
+    "source_owned": false,
+    "production_linked": false,
+    "direct_calls": [
+      "function_163ba0",
+      "DirectSoundCreate",
+      "IDirectSound::GetCaps",
+      "IDirectSound::SetDistanceFactor",
+      "IDirectSound::SetDopplerFactor",
+      "IDirectSound::GetSpeakerConfig",
+      "IDirectSound::SetMixBinHeadroom",
+      "IDirectSound::SetRolloffFactor",
+      "DirectSoundDoWork",
+      "function_191300",
+      "function_220790",
+      "function_12c040",
+      "function_21f4e0",
+      "sound_driver_voice_create_buffer",
+      "function_191420",
+      "IDirectSound::CreateSoundBuffer",
+      "IDirectSoundBuffer::Play",
+      "IDirectSoundBuffer::SetMaxDistance",
+      "IDirectSoundBuffer::SetMinDistance",
+      "function_21e3b0",
+      "IDirectSoundBuffer::SetVolume",
+      "IDirectSoundBuffer::SetMixBins",
+      "function_221490",
+      "function_21eae0"
+    ],
+    "state": [
+      "g_510800_pool_base",
+      "g_510804_pool_size",
+      "g_510808_pool_checksum",
+      "g_51ebe4",
+      "g_47f088",
+      "g_47f0d0",
+      "g_4687a8",
+      "g_4687b0"
+    ],
+    "semantics": "Allocate and checksum the exact driver block, create/configure DirectSound, initialize the listener, channel streams, voice buffers, effect images, effect/submix/impulse buffers and mutable driver defaults, publish initialized only after complete success, otherwise execute real teardown."
+  },
+  "teardown": {
+    "retail_function": "0x0021eae0",
+    "symbol": "?function_21eae0@@YAXXZ",
+    "source": "src/unknown_21e330.cpp",
+    "source_owned": false,
+    "production_linked": false,
+    "direct_calls": [
+      "function_21f290",
+      "IDirectSoundStream::Release",
+      "IDirectSoundBuffer::Release",
+      "IDirectSound::Release",
+      "c_wma_codec::release_decoder"
+    ],
+    "state": [
+      "g_51ebe4",
+      "g_47f0d0",
+      "g_510c3c"
+    ],
+    "semantics": "Stop active driver work, release every channel stream, voice buffer and submix, release DirectSound, release the WMA decoder, clear decoder state, and publish the driver unavailable."
+  },
+  "execution_gate": [
+    "native_directsound_device_owned",
+    "native_directsound_caps_and_speaker_config_owned",
+    "native_directsound_deferred_3d_settings_owned",
+    "native_sound_driver_channel_stream_storage_owned",
+    "native_sound_driver_voice_buffer_storage_owned",
+    "native_sound_driver_effect_image_owned",
+    "native_sound_driver_effect_submix_impulse_buffers_owned",
+    "native_sound_driver_listener_state_owned",
+    "native_wma_decoder_lifetime_owned",
+    "native_sound_driver_ordered_teardown_owned"
+  ],
+  "blocker": "The recovered lifecycle performs live DirectSound allocation, configuration, buffer playback, effect routing, and release through mutable interface objects. No successful no-op or fabricated device is permitted."
+}

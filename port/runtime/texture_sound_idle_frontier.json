@@ -880,5 +880,6 @@
     ],
     "semantics": "exact timing gate, nested reentrancy flags, ordered sound updates, and unconditional gated cache-frame advance"
   },
-  "remaining_driver_frontier": "port/runtime/sound_driver_idle_frontier.json"
+  "remaining_driver_frontier": "port/runtime/sound_driver_idle_frontier.json",
+  "driver_lifecycle_frontier": "port/runtime/sound_driver_lifecycle_frontier.json"
 }

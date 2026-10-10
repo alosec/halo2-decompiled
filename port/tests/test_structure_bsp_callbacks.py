@@ -2010,6 +2010,8 @@ def main() -> int:
                 "production_texture_requesters_linked"] or
             sound_idle.get("remaining_driver_frontier") !=
                 "port/runtime/sound_driver_idle_frontier.json" or
+            sound_idle.get("driver_lifecycle_frontier") !=
+                "port/runtime/sound_driver_lifecycle_frontier.json" or
             not sound_idle.get("blocker")):
         raise RuntimeError("texture sound-idle frontier changed")
 
@@ -2097,6 +2099,85 @@ def main() -> int:
             sound_driver_idle.get("source_owned") is not False or
             not sound_driver_idle.get("blocker")):
         raise RuntimeError("sound driver idle frontier changed")
+
+    sound_driver_lifecycle = json.loads((
+        args.root / "port/runtime/sound_driver_lifecycle_frontier.json"
+    ).read_text())
+    sound_driver_startup_source = (
+        args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_teardown_source = (
+        args.root / "src/unknown_21e330.cpp").read_text()
+    expected_lifecycle_calls = {
+        "startup": [
+            "function_163ba0", "DirectSoundCreate", "IDirectSound::GetCaps",
+            "IDirectSound::SetDistanceFactor", "IDirectSound::SetDopplerFactor",
+            "IDirectSound::GetSpeakerConfig", "IDirectSound::SetMixBinHeadroom",
+            "IDirectSound::SetRolloffFactor", "DirectSoundDoWork",
+            "function_191300", "function_220790", "function_12c040",
+            "function_21f4e0", "sound_driver_voice_create_buffer",
+            "function_191420", "IDirectSound::CreateSoundBuffer",
+            "IDirectSoundBuffer::Play", "IDirectSoundBuffer::SetMaxDistance",
+            "IDirectSoundBuffer::SetMinDistance", "function_21e3b0",
+            "IDirectSoundBuffer::SetVolume", "IDirectSoundBuffer::SetMixBins",
+            "function_221490", "function_21eae0"],
+        "teardown": [
+            "function_21f290", "IDirectSoundStream::Release",
+            "IDirectSoundBuffer::Release", "IDirectSound::Release",
+            "c_wma_codec::release_decoder"]}
+    expected_lifecycle_gates = [
+        "native_directsound_device_owned",
+        "native_directsound_caps_and_speaker_config_owned",
+        "native_directsound_deferred_3d_settings_owned",
+        "native_sound_driver_channel_stream_storage_owned",
+        "native_sound_driver_voice_buffer_storage_owned",
+        "native_sound_driver_effect_image_owned",
+        "native_sound_driver_effect_submix_impulse_buffers_owned",
+        "native_sound_driver_listener_state_owned",
+        "native_wma_decoder_lifetime_owned",
+        "native_sound_driver_ordered_teardown_owned"]
+    lifecycle_startup = sound_driver_lifecycle.get("startup", {})
+    lifecycle_teardown = sound_driver_lifecycle.get("teardown", {})
+    required_startup_fragments = [
+        "bool function_21e4b0(", "DirectSoundCreate(",
+        "SetDistanceFactor(3.048f", "SetDopplerFactor(0.0f",
+        "CreateSoundBuffer", "function_21eae0();"]
+    required_teardown_fragments = [
+        "void function_21eae0(void)", "function_21f290();",
+        "(*stream)->Release();", "IDirectSoundBuffer_Release",
+        "IDirectSound_Release", "release_decoder();"]
+    if (
+            sound_driver_lifecycle.get("version") != 1 or
+            lifecycle_startup.get("retail_function") != "0x0021e4b0" or
+            lifecycle_startup.get("symbol") !=
+                "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z" or
+            lifecycle_startup.get("source") != "src/unknown_21e4b0.cpp" or
+            lifecycle_startup.get("source_owned") is not False or
+            lifecycle_startup.get("production_linked") is not False or
+            lifecycle_startup.get("direct_calls") !=
+                expected_lifecycle_calls["startup"] or
+            lifecycle_startup.get("state") != [
+                "g_510800_pool_base", "g_510804_pool_size",
+                "g_510808_pool_checksum", "g_51ebe4", "g_47f088",
+                "g_47f0d0", "g_4687a8", "g_4687b0"] or
+            not lifecycle_startup.get("semantics") or
+            lifecycle_teardown.get("retail_function") != "0x0021eae0" or
+            lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or
+            lifecycle_teardown.get("source") != "src/unknown_21e330.cpp" or
+            lifecycle_teardown.get("source_owned") is not False or
+            lifecycle_teardown.get("production_linked") is not False or
+            lifecycle_teardown.get("direct_calls") !=
+                expected_lifecycle_calls["teardown"] or
+            lifecycle_teardown.get("state") !=
+                ["g_51ebe4", "g_47f0d0", "g_510c3c"] or
+            not lifecycle_teardown.get("semantics") or
+            sound_driver_lifecycle.get("execution_gate") !=
+                expected_lifecycle_gates or
+            any(fragment not in sound_driver_startup_source
+                for fragment in required_startup_fragments) or
+            any(fragment not in sound_driver_teardown_source
+                for fragment in required_teardown_fragments) or
+            not sound_driver_lifecycle.get("blocker")):
+        raise RuntimeError("sound driver lifecycle frontier changed")
 
     texture_upload = json.loads((
         args.root / "port/runtime/particle_texture_upload_frontier.json"
