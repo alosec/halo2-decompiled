@@ -2166,6 +2166,13 @@ def main() -> int:
                     "Reserve the aligned 0xcc-byte codec allocator block "
                     "from the checksummed static sound pool and publish its "
                     "unused state."}, {
+                "symbol": "function_21f4e0",
+                "source": "src/sound_driver_stream_format_native.cpp",
+                "semantics":
+                    "Select the exact channel record, construct the "
+                    "two-packet callback descriptor, select the authentic "
+                    "stream format/codec, and delegate to genuine "
+                    "DirectSound stream creation."}, {
                 "symbol": "function_21e410",
                 "source": "src/sound_driver_stream_format_native.cpp",
                 "via": "function_21f4e0",

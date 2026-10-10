@@ -4,8 +4,11 @@
 
 #include "unknown_11c920.h"
 #include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 class c_sound_stream_codec;
+struct s_sound_stream;
 
 #pragma pack(push, 1)
 struct s_wave_format_ex
@@ -25,6 +28,21 @@ struct XBOXADPCMWAVEFORMAT
 	word samples_per_block;
 };
 #pragma pack(pop)
+
+typedef void (__stdcall *sound_stream_callback)(
+	void *stream_context,
+	void *packet_context,
+	dword status);
+
+struct DSSTREAMDESC
+{
+	dword flags;
+	dword maximum_attached_packets;
+	s_wave_format_ex *format;
+	sound_stream_callback callback;
+	void *context;
+	void *mixbins;
+};
 
 struct s_47f0d0;
 extern s_47f0d0 g_47f0d0;
@@ -69,9 +87,47 @@ void function_21e410(
 	}
 }
 
+struct s_bink_sound_settings;
+extern s_bink_sound_settings *g_51ebe4;
+
+void __stdcall sound_driver_stream_callback(
+	void *stream_context,
+	void *packet_context,
+	dword status);
+
+bool sound_stream_create(
+	s_sound_stream *stream,
+	c_sound_stream_codec *codec,
+	DSSTREAMDESC *description,
+	short channel_count);
+
+// @retail 0x21f4e0
+bool function_21f4e0(long channel_index, long type)
+{
+	s_sound_stream *stream = (s_sound_stream *)((byte *)g_51ebe4 + 0x0c +
+		(dword)channel_index * 0x34);
+	c_sound_stream_codec *codec = NULL;
+	DSSTREAMDESC description;
+	XBOXADPCMWAVEFORMAT format;
+
+	memset(&description, 0, sizeof(description));
+	function_21e410(type, &format, &codec);
+	description.format = &format.wfx;
+	description.flags = 0;
+	description.maximum_attached_packets = 2;
+	description.callback = sound_driver_stream_callback;
+	description.context = (void *)(uintptr_t)(dword)channel_index;
+	return sound_stream_create(stream, codec, &description, (short)type);
+}
+
 static_assert(sizeof(s_wave_format_ex) == 0x12,
 	"Microsoft ABI wave format layout changed");
 static_assert(offsetof(s_wave_format_ex, extra_size) == 0x10,
 	"Microsoft ABI wave format tail changed");
 static_assert(sizeof(XBOXADPCMWAVEFORMAT) == 0x14,
 	"Microsoft ABI Xbox ADPCM format layout changed");
+static_assert(sizeof(DSSTREAMDESC) == 0x18,
+	"Microsoft ABI DirectSound stream descriptor layout changed");
+static_assert(offsetof(DSSTREAMDESC, callback) == 0x0c &&
+	offsetof(DSSTREAMDESC, context) == 0x10,
+	"Microsoft ABI DirectSound stream callback fields changed");

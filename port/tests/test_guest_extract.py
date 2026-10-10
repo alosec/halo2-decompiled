@@ -3328,6 +3328,15 @@ def main():
              "?function_21e410@@YAXJPAUXBOXADPCMWAVEFORMAT@@PAPAVc_sound_stream_codec@@@Z", {
                  "?g_47f0d0@@3Us_47f0d0@@A",
                  "?g_47f0f0@@3Us_47f0f0@@A"}),
+            ("sound-driver-channel-create.o",
+             "src/sound_driver_stream_format_native.cpp",
+             "?function_21f4e0@@YA_NJJ@Z", {
+                 "?g_47f0d0@@3Us_47f0d0@@A",
+                 "?g_47f0f0@@3Us_47f0f0@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "?sound_driver_stream_callback@@YAXPAX0K@Z",
+                 "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
+                 "h2_guest_memset"}),
             ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
              "?function_125600@@YAXXZ", {
                  "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",
