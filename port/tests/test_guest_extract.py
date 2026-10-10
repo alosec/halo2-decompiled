@@ -3606,6 +3606,9 @@ def main():
             ("sound-wma-codec-can-submit.o",
              "src/sound_wma_codec_control_native.cpp",
              "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z", set()),
+            ("sound-pcm-codec-can-submit.o",
+             "src/sound_pcm_codec_control_native.cpp",
+             "?can_submit@c_pcm_codec@@UAA_NPAUs_sound_stream@@_N@Z", set()),
             ("sound-wma-codec-initialize.o",
              "src/sound_wma_codec_initialize_native.cpp",
              "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z", {

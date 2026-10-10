@@ -167,5 +167,12 @@
       "source": "src/sound_wma_codec_control_native.cpp",
       "semantics": "Permit submission exactly while a genuine decoder exists and no packet was already submitted in the current update."
     }
+  ],
+  "pcm_codec_control_helpers": [
+    {
+      "symbol": "c_pcm_codec::can_submit",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Permit PCM submission exactly while the genuine stream has more queued chunks than already-started chunks, independently of the current-update submitted flag."
+    }
   ]
 }

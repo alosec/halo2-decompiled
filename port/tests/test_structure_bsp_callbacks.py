@@ -2131,6 +2131,8 @@ def main() -> int:
         args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
     sound_wma_control_source = (
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
+    sound_pcm_control_source = (
+        args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
     sound_stream_chunk_release_source = (
         args.root / "src/sound_stream_chunk_release_native.cpp").read_text()
     sound_wma_release_source = (
@@ -2146,6 +2148,9 @@ def main() -> int:
         "release_decoder();",
         "bool c_wma_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return m_decoder && !submitted;"]
+    expected_pcm_control_fragments = [
+        "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
+        "return stream->chunk_count > stream->started_count;"]
     expected_stream_chunk_release_fragments = [
         "void sound_stream_release_chunks(s_sound_stream *stream)",
         "while (stream->chunk_count > 0)",
@@ -2327,6 +2332,13 @@ def main() -> int:
                     "Permit submission exactly while a genuine decoder "
                     "exists and no packet was already submitted in the "
                     "current update."}] or
+            sound_driver_lifecycle.get("pcm_codec_control_helpers") != [{
+                "symbol": "c_pcm_codec::can_submit",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Permit PCM submission exactly while the genuine stream "
+                    "has more queued chunks than already-started chunks, "
+                    "independently of the current-update submitted flag."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
@@ -2338,6 +2350,8 @@ def main() -> int:
                 for fragment in expected_wma_initialize_fragments) or
             any(fragment not in sound_wma_control_source
                 for fragment in expected_wma_control_fragments) or
+            any(fragment not in sound_pcm_control_source
+                for fragment in expected_pcm_control_fragments) or
             any(fragment not in sound_stream_chunk_release_source
                 for fragment in expected_stream_chunk_release_fragments) or
             any(fragment not in sound_wma_release_source
