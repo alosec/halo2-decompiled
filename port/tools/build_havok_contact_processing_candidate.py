@@ -111,6 +111,7 @@ def main() -> int:
         light_object_visibility = temporary / "light-object-visibility.o"
         light_root_state = temporary / "light-root-state.o"
         light_root_object = temporary / "light-root-object.o"
+        light_marker_point = temporary / "light-marker-point.o"
         light_curve_lookup = temporary / "light-curve-lookup.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
@@ -320,6 +321,9 @@ def main() -> int:
             args, args.root / "src/unknown_0bad50.cpp", light_root_object,
             ["?function_baf80@@YAJJ@Z"])
         compile_slice(
+            args, args.root / "src/unknown_0bad50.cpp", light_marker_point,
+            ["?function_bad50@@YA_NJJPATpoint3f@@@Z"])
+        compile_slice(
             args, args.root / "src/light_curve_lookup_native.cpp", light_curve_lookup,
             ["?function_17ca10@@YAMMF@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
@@ -335,7 +339,7 @@ def main() -> int:
              object_impulse, object_physics_refresh, particle_interface_context,
              particle_system_value, light_color_space, light_color_interpolation,
              light_object_visibility, light_root_state, light_root_object,
-             light_curve_lookup])
+             light_marker_point, light_curve_lookup])
     return 0
 
 

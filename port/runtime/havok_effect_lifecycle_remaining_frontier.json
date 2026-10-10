@@ -70,7 +70,7 @@
     {
       "symbol": "?function_c0c80@@YAXPBTvector3f@@@Z",
       "subsystem": "lights",
-      "blocker": "Exact light-color interpolation, lookup-curve sampling, object/parent visibility, root-object traversal, and root-state queries are owned. Complete light-record initialization still requires general tag-function evaluation, object-function evaluation, animation state, placement refresh, and mutable cluster-partition state."
+      "blocker": "Exact light-color interpolation, lookup-curve sampling, object marker-point lookup, object/parent visibility, root-object traversal, and root-state queries are owned. Complete light-record initialization still requires general tag-function evaluation, object-function evaluation, animation state, placement refresh, and mutable cluster-partition state."
     },
     {
       "symbol": "?function_d2a50@@YAJJJJPAUs_effect_color_query@@JPBTpoint3f@@@Z",

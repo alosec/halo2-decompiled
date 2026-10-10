@@ -911,6 +911,7 @@ def main() -> int:
             "?object_or_parent_hidden@@YA_NJ@Z" not in effect_defined or
             "?function_b9d20@@YA_NJ@Z" not in effect_defined or
             "?function_baf80@@YAJJ@Z" not in effect_defined or
+            "?function_bad50@@YA_NJJPATpoint3f@@@Z" not in effect_defined or
             "?function_17ca10@@YAMMF@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
