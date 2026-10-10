@@ -95,6 +95,8 @@ def main() -> int:
         damage_state = temporary / "damage-state.o"
         placement_defaults = temporary / "placement-defaults.o"
         object_lookup = temporary / "object-lookup.o"
+        particle_allocation = temporary / "particle-allocation.o"
+        particle_policy = temporary / "particle-policy.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -251,6 +253,13 @@ def main() -> int:
                       ["?function_b7930@@YAXPAXJJPBUs_effect_owner@@@Z"])
         compile_slice(args, args.root / "src/unknown_0bad50.cpp", object_lookup,
                       ["?function_badc0@@YAPAUs_object@@JK@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_173b90.cpp", particle_allocation,
+            ["?function_173fd0@@YAJPAUs_effect_particle_system_definition@@JJFJ@Z"],
+            ["?g_47ff88@@3JA"])
+        compile_slice(
+            args, args.root / "src/unknown_175bd0.cpp", particle_policy,
+            ["?function_178af0@@YA_NJ@Z", "?function_178b30@@YAXJJJ@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -258,7 +267,8 @@ def main() -> int:
              player_state, first_person, particle_helpers, particle_color,
              unpack_color, object_placement, object_type, object_geometry,
              first_person_state, first_person_lookup, damage_state,
-             placement_defaults, object_lookup])
+             placement_defaults, object_lookup, particle_allocation,
+             particle_policy])
     return 0
 
 

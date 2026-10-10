@@ -359,6 +359,7 @@ def main() -> int:
         "native_havok_effect_pools_owned",
         "native_effect_runtime_state_owned",
         "native_first_person_state_owned",
+        "native_particle_system_pool_owned",
         "native_impact_looping_sound_pool_owned",
         "native_havok_motion_basis_state_owned",
         "native_tag_function_tables_initialized",
@@ -695,7 +696,7 @@ def main() -> int:
     if effect_frontier.get("version") != 1:
         raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
     effect_entries = effect_frontier.get("imports")
-    if not isinstance(effect_entries, list) or len(effect_entries) != 18:
+    if not isinstance(effect_entries, list) or len(effect_entries) != 17:
         raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
     effect_symbols = [entry.get("symbol") for entry in effect_entries]
     if len(effect_symbols) != len(set(effect_symbols)):
@@ -723,7 +724,7 @@ def main() -> int:
                 [args.llvm_nm, "--undefined-only", scored], text=True
             ).splitlines() if line.strip()
         }
-    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 33:
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 32:
         raise RuntimeError("Havok effect-lifecycle candidate score changed")
     effect_undefined = {
         line.strip().split()[-1]
@@ -731,7 +732,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 101:
+    if len(effect_undefined) != 100:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -766,7 +767,11 @@ def main() -> int:
             "?function_d6660@@YAXPAUs_type_1e6529@@J@Z" not in effect_defined or
             "?g_47d8e0@@3FA" not in effect_defined or
             "?function_b7930@@YAXPAXJJPBUs_effect_owner@@@Z" not in effect_defined or
-            "?function_badc0@@YAPAUs_object@@JK@Z" not in effect_defined):
+            "?function_badc0@@YAPAUs_object@@JK@Z" not in effect_defined or
+            "?function_173fd0@@YAJPAUs_effect_particle_system_definition@@JJFJ@Z" not in effect_defined or
+            "?function_178af0@@YA_NJ@Z" not in effect_defined or
+            "?function_178b30@@YAXJJJ@Z" not in effect_defined or
+            "?g_47ff88@@3JA" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")
 
     listener_frontier_path = (

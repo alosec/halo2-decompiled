@@ -53,6 +53,7 @@
     "native_havok_effect_pools_owned",
     "native_effect_runtime_state_owned",
     "native_first_person_state_owned",
+    "native_particle_system_pool_owned",
     "native_impact_looping_sound_pool_owned",
     "native_havok_motion_basis_state_owned",
     "native_tag_function_tables_initialized",
