@@ -1355,6 +1355,17 @@ def main() -> int:
                 "semantics":
                     "exact stream pitch-mode offset and exponential "
                     "playback-rate conversion"}, {
+                "source": "src/sound_fade_helpers_native.cpp",
+                "symbol": "?function_12aff0@@YAMMMM_N@Z",
+                "imports": ["fabs"],
+                "semantics":
+                    "exact bounded fade interpolation with recovered "
+                    "near-equal endpoint policy"}, {
+                "source": "src/unknown_2197f0.cpp",
+                "symbol": "?function_2195f0@@YAMM@Z",
+                "imports": ["exp"],
+                "semantics":
+                    "exact pinned decibel-to-linear-gain conversion"}, {
                 "source": "src/sound_master_gain_native.cpp",
                 "symbol": "?function_2197f0@@YAJM@Z",
                 "imports": ["log10"],

@@ -3300,6 +3300,44 @@ def main():
                 "sound cache initialization imports changed: "
                 f"{sorted(sound_cache_initialize_imports)}")
 
+        sound_fade_helper_cases = [
+            ("sound-fade-interpolation.o", "src/sound_fade_helpers_native.cpp",
+             "?function_12aff0@@YAMMMM_N@Z", {"fabs"}),
+            ("sound-decibels-to-gain.o", "src/unknown_2197f0.cpp",
+             "?function_2195f0@@YAMM@Z", {"exp"}),
+        ]
+        for fade_name, fade_source, fade_symbol, expected_fade_imports in sound_fade_helper_cases:
+            fade_output = Path(temporary) / fade_name
+            fade_command = command[:]
+            fade_command[
+                fade_command.index("h2_extract_selected")
+            ] = fade_symbol
+            fade_command[
+                fade_command.index("--extract-global"):
+                fade_command.index("--output")
+            ] = []
+            fade_command[fade_command.index(output)] = fade_output
+            fade_command[-1] = args.root / fade_source
+            subprocess.run([str(value) for value in fade_command], check=True)
+            fade_defined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+                 fade_output], text=True)
+            if fade_symbol not in fade_defined:
+                raise RuntimeError(
+                    f"sound fade helper was not selectively compilable: "
+                    f"{fade_symbol}")
+            fade_undefined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+                 fade_output], text=True)
+            fade_imports = {
+                line.split()[0].removeprefix("_")
+                for line in fade_undefined.splitlines() if line
+            }
+            if fade_imports != expected_fade_imports:
+                raise RuntimeError(
+                    f"sound fade helper imports changed for {fade_symbol}: "
+                    f"{sorted(fade_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]
