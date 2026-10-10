@@ -1269,6 +1269,42 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        texture_residency_request_output = Path(temporary) / "particle-texture-residency-request.o"
+        texture_residency_request_symbol = "?function_143c0@@YA_NJFFM@Z"
+        texture_residency_request_command = command[:]
+        texture_residency_request_command[
+            texture_residency_request_command.index("h2_extract_selected")
+        ] = texture_residency_request_symbol
+        texture_residency_request_command[
+            texture_residency_request_command.index("--extract-global"):texture_residency_request_command.index("--output")
+        ] = []
+        texture_residency_request_command[
+            texture_residency_request_command.index(output)
+        ] = texture_residency_request_output
+        texture_residency_request_command[-1] = args.root / "src/particle_texture_residency_request_native.cpp"
+        subprocess.run([str(value) for value in texture_residency_request_command], check=True)
+        texture_residency_request_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_residency_request_output],
+            text=True,
+        )
+        texture_residency_request_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_residency_request_output],
+            text=True,
+        )
+        if texture_residency_request_symbol not in texture_residency_request_defined:
+            raise RuntimeError("particle texture residency request was not selectively compilable")
+        expected_texture_residency_request_imports = {
+            "_?function_12310@@YAPAXPAUs_bitmap_view@@M@Z",
+            "_?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
+            "_?g_485a80@@3PAEA", "_?g_485af4@@3PAJA", "_?g_485b04@@3PAJA",
+            "_?g_4e3b44@@3PAUs_tag_instance@@A", "_?g_51f3c8@@3PAY03PAXA",
+        }
+        actual_texture_residency_request_imports = {
+            line.split()[0] for line in texture_residency_request_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_residency_request_imports != expected_texture_residency_request_imports:
+            raise RuntimeError("particle texture residency request frontier changed")
+
         material_color_range_output = Path(temporary) / "particle-material-color-range.o"
         material_color_range_symbol = "?function_19ca0@@YAXPAEPBG@Z"
         material_color_range_command = command[:]

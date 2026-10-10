@@ -58,7 +58,7 @@
     ],
     "parameter_and_constant_state": []
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. Exact function_19ca0 now owns packed color-range evaluation, optional signed remapping, channel clamping, remapped combiner slots, mask writes, and dirty bits through already-owned parameter/color providers and immutable g_467068. Function_18a90 owns selected texture records and exposes genuine function_19530 plus mutable tag/BSP/material state. Function_1ba00 owns combiner expansion; function_1b0a0 owns residency traversal; function_1ae70 owns external-state refresh. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve real D3D boundaries. The remaining 4 direct calls are the texture-stage replay and three broad D3D render/texture-stage submission providers; exposed pass/state helpers, general curves, mutable state, and renderer dependencies remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. Exact function_19ca0 owns packed color-range/mask expansion. Function_18a90 owns selected texture records and exposes function_19530. Function_1b0a0 owns dirty residency traversal, and its exact request provider function_143c0 now owns fallback/index validation, bitmap lookup, wanted texture assignment, and dimensions while exposing genuine bitmap-cache acquisition function_12310 and mutable texture cache state. The remaining 4 direct calls are texture-stage replay and three broad D3D submission providers. Bitmap upload/lifetime, packed pass/state helpers, general curves, mutable state, and renderer ownership remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -80,6 +80,13 @@
       "?g_4e0344@@3PAUs_structure_bsp_globals@@A",
       "?g_4e0348@@3PAUs_match_globals@@A",
       "?g_4e3b44@@3PAUs_tag_instance@@A"
+    ],
+    "0x000143c0": [
+      "?g_485a80@@3PAEA",
+      "?g_485af4@@3PAJA",
+      "?g_485b04@@3PAJA",
+      "?g_4e3b44@@3PAUs_tag_instance@@A",
+      "?g_51f3c8@@3PAY03PAXA"
     ]
   },
   "owned_zero_import_calls": [
@@ -137,6 +144,10 @@
       "?g_467068@@3QBKB",
       "?pack_color4f@@YAKPBUcolor4f@@@Z",
       "h2_guest_memset"
+    ],
+    "0x000143c0": [
+      "?function_12310@@YAPAXPAUs_bitmap_view@@M@Z",
+      "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z"
     ]
   },
   "source_owned_transitive_calls": [
@@ -149,7 +160,8 @@
     "0x00018560",
     "0x000336f0",
     "0x00033980",
-    "0x00034060"
+    "0x00034060",
+    "0x000143c0"
   ],
   "owned_renderer_boundaries": {
     "0x00018e80": [
