@@ -1269,6 +1269,32 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        bitmap_lookup_output = Path(temporary) / "particle-bitmap-lookup.o"
+        bitmap_lookup_symbol = "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z"
+        bitmap_lookup_command = command[:]
+        bitmap_lookup_command[bitmap_lookup_command.index("h2_extract_selected")] = bitmap_lookup_symbol
+        bitmap_lookup_command[
+            bitmap_lookup_command.index("--extract-global"):bitmap_lookup_command.index("--output")
+        ] = []
+        bitmap_lookup_command[bitmap_lookup_command.index(output)] = bitmap_lookup_output
+        bitmap_lookup_command[-1] = args.root / "src/unknown_137550.cpp"
+        subprocess.run([str(value) for value in bitmap_lookup_command], check=True)
+        bitmap_lookup_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", bitmap_lookup_output],
+            text=True,
+        )
+        bitmap_lookup_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", bitmap_lookup_output],
+            text=True,
+        )
+        if bitmap_lookup_symbol not in bitmap_lookup_defined:
+            raise RuntimeError("particle bitmap lookup was not selectively compilable")
+        actual_bitmap_lookup_imports = {
+            line.split()[0] for line in bitmap_lookup_undefined.splitlines() if line.strip()
+        }
+        if actual_bitmap_lookup_imports != {"_?g_4e3b44@@3PAUs_tag_instance@@A"}:
+            raise RuntimeError("particle bitmap lookup frontier changed")
+
         texture_mip_math_output = Path(temporary) / "particle-texture-mip-math.o"
         texture_mip_math_symbols = [
             "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z", "?log2_floor@@YAJK@Z",
