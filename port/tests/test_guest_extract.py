@@ -1088,6 +1088,36 @@ def main():
         if f"_{impact_creation_symbol}" not in impact_creation_defined:
             raise RuntimeError("recovered impact-creation source was not selectively compilable")
 
+        area_damage_output = Path(temporary) / "area-damage.o"
+        area_damage_symbol = "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z"
+        area_damage_command = command[:]
+        area_damage_command[area_damage_command.index("h2_extract_selected")] = area_damage_symbol
+        area_damage_command[area_damage_command.index("--extract-global"):area_damage_command.index("--output")] = []
+        area_damage_command[area_damage_command.index(output)] = area_damage_output
+        area_damage_command[-1] = args.root / "src/damage_area_effect_native.cpp"
+        subprocess.run([str(value) for value in area_damage_command], check=True)
+        area_damage_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", area_damage_output],
+            text=True,
+        )
+        if f"_{area_damage_symbol}" not in area_damage_defined:
+            raise RuntimeError("native area-damage dispatcher was not selectively compilable")
+
+        damage_submit_output = Path(temporary) / "damage-submit.o"
+        damage_submit_symbol = "?function_184250@@YAXPBUs_type_1e6529@@@Z"
+        damage_submit_command = command[:]
+        damage_submit_command[damage_submit_command.index("h2_extract_selected")] = damage_submit_symbol
+        damage_submit_command[damage_submit_command.index("--extract-global"):damage_submit_command.index("--output")] = []
+        damage_submit_command[damage_submit_command.index(output)] = damage_submit_output
+        damage_submit_command[-1] = args.root / "src/unknown_184250.cpp"
+        subprocess.run([str(value) for value in damage_submit_command], check=True)
+        damage_submit_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", damage_submit_output],
+            text=True,
+        )
+        if f"_{damage_submit_symbol}" not in damage_submit_defined:
+            raise RuntimeError("damage-event submission source was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

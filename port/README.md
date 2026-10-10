@@ -87,3 +87,5 @@ Follow the repository's `LEGAL.md`, `PROVENANCE.md`, and `CONTRIBUTING.md` witho
 - Do not use leaked source, symbols, PDBs, linker maps, or confidential material.
 - Credit and preserve the licenses of reused open-source platform code.
 - Continue verifying matching-engine changes against the supported retail binary when the lawful local toolchain is available. Native-only adapters require their own tests and runtime evidence.
+
+The dormant area-damage frontier now has a source-local native split for exact `function_d6c80` object/player gathering and dispatch, isolated from unrelated MS x86 assembly in `damage.cpp`; `function_184250` is likewise ARM-compilable with an exact scalar replacement for its aligned vector copy. Scoring still expands the lifecycle through full `function_d74e0` delivery, damage-event submission, object gathering, and live mutable damage/player/object state, so neither provider is linked into the complete effect candidate or authorized for execution.

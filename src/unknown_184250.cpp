@@ -3,7 +3,9 @@
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "unknown_184250.h"
+#if !defined(H2_NATIVE_PORT)
 #include <xmmintrin.h>
+#endif
 
 struct s_type_1e6529;
 class c_havok_reference_counted;
@@ -113,7 +115,11 @@ void __stdcall function_184250(s_type_1e6529 const *arg_0)
 			local_6.field_8 = 0x80000200;
 			voice_fpu_enter();
 			s_184253 local_7;
+#if defined(H2_NATIVE_PORT)
+			local_7 = local_4;
+#else
 			_mm_store_ps(&local_7.field_0, _mm_load_ps(&local_4.field_0));
+#endif
 			local_7.field_c = local_2 < 0.0f ? 0.0f : local_2;
 			((c_184250 *)g_4f55b0)->function_18425b(&local_7, &local_6);
 			voice_fpu_leave();
