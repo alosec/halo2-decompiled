@@ -3348,6 +3348,12 @@ def main():
             ("sound-random-parameter.o",
              "src/sound_driver_filter_helpers_native.cpp",
              "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z", set()),
+            ("sound-filter-frequency.o",
+             "src/sound_driver_filter_coefficients_native.cpp",
+             "?sound_filter_frequency_coefficient@@YAJM@Z", {"logf", "sinf"}),
+            ("sound-filter-gain.o",
+             "src/sound_driver_filter_coefficients_native.cpp",
+             "?sound_filter_gain_coefficient@@YAKM@Z", {"expf"}),
             ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
              "?function_125600@@YAXXZ", {
                  "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",

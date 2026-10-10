@@ -2210,7 +2210,21 @@ def main() -> int:
                 "semantics":
                     "Linearly interpolate a random parameter, advance the "
                     "exact LCG once, map its upper 16 bits over the signed "
-                    "variation, and add the configured offset."}] or
+                    "variation, and add the configured offset."}, {
+                "symbol": "sound_filter_frequency_coefficient",
+                "source":
+                    "src/sound_driver_filter_coefficients_native.cpp",
+                "semantics":
+                    "Pin the valid filter frequency range, encode the "
+                    "recovered logarithmic sine response with truncation, "
+                    "and retain its low 16-bit DirectSound coefficient."}, {
+                "symbol": "sound_filter_gain_coefficient",
+                "source":
+                    "src/sound_driver_filter_coefficients_native.cpp",
+                "semantics":
+                    "Clamp the upper decibel input, encode the recovered "
+                    "exponential gain response, and saturate it to the "
+                    "16-bit DirectSound coefficient range."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
