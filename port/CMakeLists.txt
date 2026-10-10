@@ -192,6 +192,10 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_driver_pre_update_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_post_update_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_effect_refresh_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_channel_usage_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_master_gain_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_fade_helpers_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

@@ -30,19 +30,56 @@ def main() -> int:
     if manifest.get("version") != 1:
         raise RuntimeError("unsupported sound-idle direct cluster manifest")
     providers = manifest.get("providers")
-    if not isinstance(providers, list) or len(providers) != 10:
+    expected_providers = [
+        ("src/sound_idle_service_native.cpp", "?function_125d60@@YAXXZ"),
+        ("src/sound_system_availability_native.cpp", "?sound_system_available@@YAJXZ"),
+        ("src/sound_system_update_time_native.cpp", "?sound_system_update_time@@YAXXZ"),
+        ("src/sound_voice_chunks_native.cpp", "?sound_voices_update_chunks@@YAXXZ"),
+        ("src/sound_playback_update_native.cpp", "?function_1293f0@@YAXXZ"),
+        ("src/sound_cache_frame_native.cpp", "?sound_cache_new_frame@@YAXXZ"),
+        ("src/sound_driver_pre_update_native.cpp", "?function_21ec00@@YAXXZ"),
+        ("src/sound_driver_post_update_native.cpp", "?function_21ee80@@YAXXZ"),
+        ("src/sound_driver_effect_refresh_native.cpp", "?function_191550@@YAXXZ"),
+        ("src/sound_driver_effect_refresh_native.cpp", "?function_1915f0@@YAXXZ"),
+        ("src/unknown_13d170.cpp", "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z"),
+        ("src/sound_driver_channel_usage_native.cpp", "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z"),
+        ("src/sound_master_gain_native.cpp", "?function_2197f0@@YAJM@Z"),
+        ("src/sound_fade_helpers_native.cpp", "?function_12aff0@@YAMMMM_N@Z"),
+    ]
+    if [(entry.get("source"), entry.get("symbol"))
+            for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 10:
+    if len(set(provider_symbols)) != 14:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
         if not source.is_file():
             raise RuntimeError(f"sound-idle provider source is absent: {source}")
 
+    if manifest.get("compact_helpers") != [{
+            "symbol": "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
+            "semantics":
+                "rebase every live physical-cache block timestamp after the "
+                "clock reaches its maximum"}, {
+            "symbol":
+                "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+            "semantics":
+                "snapshot per-state channel occupancy, free voices, and the "
+                "three paired driver counts"}, {
+            "symbol": "?function_2197f0@@YAJM@Z",
+            "semantics":
+                "clamp linear gain and encode the recovered -64 through 0 "
+                "decibel range"}, {
+            "symbol": "?function_12aff0@@YAMMMM_N@Z",
+            "semantics":
+                "bounded linear interpolation with optional reversed "
+                "direction"}]:
+        raise RuntimeError("sound-idle compact helper inventory changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 11 or len(expected_imports) != 41:
+    if len(expected_definitions) != 15 or len(expected_imports) != 38:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -76,7 +113,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 34:
+    if len(expected_production_imports) != 30:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
