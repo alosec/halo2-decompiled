@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "role": "genuine Xbox sound-driver pre/post update pair required by blocking texture idle service",
+  "source": "src/unknown_21e330.cpp",
+  "providers": [
+    {
+      "address": "0x0021ec00",
+      "symbol": "?function_21ec00@@YAXXZ",
+      "phase": "pre_update",
+      "source_owned": false,
+      "indirect_calls": [
+        "IDirectSoundStream::GetStatus"
+      ],
+      "state": [
+        "g_51ebe4",
+        "g_dwDirectSoundDeltaPanicCount"
+      ],
+      "semantics": "audio-processor panic recovery, DirectSound work servicing, stopped-stream detection, and channel flush",
+      "source_level_calls": [
+        "function_1915f0",
+        "memset",
+        "DirectSoundDoWork",
+        "sound_driver_channel_get",
+        "sound_driver_channel_flush"
+      ]
+    },
+    {
+      "address": "0x0021ee80",
+      "symbol": "?function_21ee80@@YAXXZ",
+      "phase": "post_update",
+      "source_owned": false,
+      "indirect_calls": [
+        "c_sound_effects::set_i3dl2",
+        "IDirectSoundBuffer::SetVolume",
+        "IDirectSound::CommitDeferredSettings"
+      ],
+      "state": [
+        "g_47005c",
+        "g_51ebe4",
+        "g_44a250[2]"
+      ],
+      "semantics": "deferred environment, reverb and occlusion application, submix gain updates, stream advancement, and deferred-settings commit",
+      "source_level_calls": [
+        "function_21ece0",
+        "sound_occlusion_overlap",
+        "sound_submix_volume",
+        "sound_stream_update",
+        "function_191550"
+      ]
+    }
+  ],
+  "execution_gate": [
+    "native_audio_processor_recovery_owned",
+    "native_direct_sound_work_service_owned",
+    "native_sound_stream_objects_and_vtables_owned",
+    "native_sound_effects_object_and_vtable_owned",
+    "native_reverb_occlusion_and_submix_state_initialized",
+    "native_deferred_sound_settings_commit_owned"
+  ],
+  "production_linked": false,
+  "source_owned": false,
+  "blocker": "Both providers perform live Xbox DirectSound work through mutable driver objects and indirect interface calls. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required."
+}

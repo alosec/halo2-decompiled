@@ -1348,8 +1348,57 @@ def main() -> int:
                 "native_sound_source_callback_lifetimes_owned",
                 "native_sound_cache_physical_storage_initialized",
                 "production_texture_requesters_linked"] or
+            sound_idle.get("remaining_driver_frontier") !=
+                "port/runtime/sound_driver_idle_frontier.json" or
             not sound_idle.get("blocker")):
         raise RuntimeError("texture sound-idle frontier changed")
+
+    sound_driver_idle = json.loads((
+        args.root / "port/runtime/sound_driver_idle_frontier.json"
+    ).read_text())
+    expected_sound_driver_providers = [{
+        "address": "0x0021ec00",
+        "symbol": "?function_21ec00@@YAXXZ",
+        "phase": "pre_update",
+        "source_owned": False,
+        "source_level_calls": [
+            "function_1915f0", "memset", "DirectSoundDoWork",
+            "sound_driver_channel_get", "sound_driver_channel_flush"],
+        "indirect_calls": ["IDirectSoundStream::GetStatus"],
+        "state": ["g_51ebe4", "g_dwDirectSoundDeltaPanicCount"],
+        "semantics":
+            "audio-processor panic recovery, DirectSound work servicing, "
+            "stopped-stream detection, and channel flush"}, {
+        "address": "0x0021ee80",
+        "symbol": "?function_21ee80@@YAXXZ",
+        "phase": "post_update",
+        "source_owned": False,
+        "source_level_calls": [
+            "function_21ece0", "sound_occlusion_overlap",
+            "sound_submix_volume", "sound_stream_update", "function_191550"],
+        "indirect_calls": [
+            "c_sound_effects::set_i3dl2",
+            "IDirectSoundBuffer::SetVolume",
+            "IDirectSound::CommitDeferredSettings"],
+        "state": ["g_47005c", "g_51ebe4", "g_44a250[2]"],
+        "semantics":
+            "deferred environment, reverb and occlusion application, submix "
+            "gain updates, stream advancement, and deferred-settings commit"}]
+    if (
+            sound_driver_idle.get("version") != 1 or
+            sound_driver_idle.get("source") != "src/unknown_21e330.cpp" or
+            sound_driver_idle.get("providers") != expected_sound_driver_providers or
+            sound_driver_idle.get("execution_gate") != [
+                "native_audio_processor_recovery_owned",
+                "native_direct_sound_work_service_owned",
+                "native_sound_stream_objects_and_vtables_owned",
+                "native_sound_effects_object_and_vtable_owned",
+                "native_reverb_occlusion_and_submix_state_initialized",
+                "native_deferred_sound_settings_commit_owned"] or
+            sound_driver_idle.get("production_linked") is not False or
+            sound_driver_idle.get("source_owned") is not False or
+            not sound_driver_idle.get("blocker")):
+        raise RuntimeError("sound driver idle frontier changed")
 
     texture_upload = json.loads((
         args.root / "port/runtime/particle_texture_upload_frontier.json"
