@@ -125,6 +125,7 @@ void __stdcall D3DDevice_SetVertexData4f(DWORD vertex_register, float x, float y
 void __stdcall D3DDevice_SetVertexDataColor(DWORD vertex_register, DWORD color);
 void __stdcall D3DDevice_DrawIndexedVertices(DWORD primitive_type, DWORD count,
                                                WORD const *indices);
+void __stdcall D3DDevice_SetTexture(DWORD stage, void *texture);
 #endif
 LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,

@@ -928,6 +928,25 @@ def main() -> int:
             not mesh_callback.get("blocker")):
         raise RuntimeError("particle mesh callback frontier changed")
 
+    texture_state = json.loads((
+        args.root / "port/runtime/particle_texture_state_frontier.json"
+    ).read_text())
+    if (texture_state.get("version") != 1 or
+            texture_state.get("retail_function") != "0x0001cf50" or
+            texture_state.get("size") != 48 or
+            texture_state.get("execution_gate") != "native_particle_texture_state_owned" or
+            texture_state.get("direct_calls") != ["0x003f8320"] or
+            set(texture_state.get("newly_exposed", [])) != {
+                "?g_51f3c8@@3PAY03PAXA", "D3DDevice_SetTexture"} or
+            texture_state.get("sprite_setup_score_before") != 46 or
+            texture_state.get("sprite_setup_score_after") != 47 or
+            texture_state.get("mesh_callback_score_before") != 36 or
+            texture_state.get("mesh_callback_score_after") != 37 or
+            texture_state.get("mesh_update_and_callback_score_before") != 44 or
+            texture_state.get("mesh_update_and_callback_score_after") != 45 or
+            not texture_state.get("blocker")):
+        raise RuntimeError("particle texture state frontier changed")
+
     sprite_setup = json.loads((
         args.root / "port/runtime/particle_sprite_setup_frontier.json"
     ).read_text())

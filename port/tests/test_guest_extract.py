@@ -1184,6 +1184,21 @@ def main():
         if "switch.table." in mesh_callback_undefined:
             raise RuntimeError("particle mesh callback exposed a compiler switch table")
 
+        texture_state_output = Path(temporary) / "particle-texture-state.o"
+        texture_state_symbol = "?function_1cf50@@YAXXZ"
+        texture_state_command = command[:]
+        texture_state_command[texture_state_command.index("h2_extract_selected")] = texture_state_symbol
+        texture_state_command[texture_state_command.index("--extract-global"):texture_state_command.index("--output")] = []
+        texture_state_command[texture_state_command.index(output)] = texture_state_output
+        texture_state_command[-1] = args.root / "src/particle_texture_state_native.cpp"
+        subprocess.run([str(value) for value in texture_state_command], check=True)
+        texture_state_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_state_output],
+            text=True,
+        )
+        if f"_{texture_state_symbol}" not in texture_state_defined:
+            raise RuntimeError("particle texture state provider was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
