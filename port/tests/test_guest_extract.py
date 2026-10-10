@@ -1269,6 +1269,36 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_table_output = Path(temporary) / "particle-material-table-select.o"
+        material_table_symbol = "?function_17420@@YAXPAEJJJJ@Z"
+        material_table_command = command[:]
+        material_table_command[material_table_command.index("h2_extract_selected")] = material_table_symbol
+        material_table_command[
+            material_table_command.index("--extract-global"):material_table_command.index("--output")
+        ] = []
+        material_table_command[material_table_command.index(output)] = material_table_output
+        material_table_command[-1] = args.root / "src/particle_material_table_select_native.cpp"
+        subprocess.run([str(value) for value in material_table_command], check=True)
+        material_table_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_table_output],
+            text=True,
+        )
+        material_table_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_table_output],
+            text=True,
+        )
+        if material_table_symbol not in material_table_defined:
+            raise RuntimeError("particle material table selector was not selectively compilable")
+        expected_material_table_imports = {
+            "_?function_176a0@@YAXPAEPBG@Z", "_?function_17960@@YAXPAEPBG@Z",
+            "_?function_17b60@@YAXPAEPBG@Z", "_?function_18560@@YAXPAEPBG@Z",
+        }
+        actual_material_table_imports = {
+            line.split()[0] for line in material_table_undefined.splitlines() if line.strip()
+        }
+        if actual_material_table_imports != expected_material_table_imports:
+            raise RuntimeError("particle material table selection frontier changed")
+
         material_parameter_output = Path(temporary) / "particle-material-parameter.o"
         material_parameter_symbol = "?function_1b2c0@@YA_NPBEJJJJPAM@Z"
         material_parameter_command = command[:]

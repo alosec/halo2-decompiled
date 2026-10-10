@@ -38,12 +38,11 @@
     "0x00018e80",
     "0x00018d70",
     "0x0001b050",
-    "0x00019be0"
+    "0x00019be0",
+    "0x00017420"
   ],
   "remaining_groups": {
-    "material_table_selection": [
-      "0x00017420"
-    ],
+    "material_table_selection": [],
     "render_and_shader_state": [
       "0x000189a0",
       "0x00018a90",
@@ -60,7 +59,7 @@
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Eleven of its 21 direct calls are independently source-owned. Packed constant-range function_19be0 and general parameter unpacker function_1b2c0 now preserve scalar/color/texture-size component semantics and expose only owned sine/cosine math. Exact immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 10 direct calls plus genuine general-curve, mutable-state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Twelve of its 21 direct calls are independently source-owned. Exact nested selector function_17420 now exposes four genuine packed pass-range applicators rather than obscuring table routing. Packed constant-range function_19be0 and general parameter unpacker function_1b2c0 preserve scalar/color/texture-size semantics. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 9 direct calls, four pass-range providers, general-curve, mutable-state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -92,12 +91,22 @@
     "0x0001b2c0": [
       "sin",
       "cos"
+    ],
+    "0x00017420": [
+      "?function_176a0@@YAXPAEPBG@Z",
+      "?function_17960@@YAXPAEPBG@Z",
+      "?function_17b60@@YAXPAEPBG@Z",
+      "?function_18560@@YAXPAEPBG@Z"
     ]
   },
   "source_owned_transitive_calls": [
     "0x00017550",
     "0x0001b230",
-    "0x0001b2c0"
+    "0x0001b2c0",
+    "0x000176a0",
+    "0x00017960",
+    "0x00017b60",
+    "0x00018560"
   ],
   "owned_renderer_boundaries": {
     "0x00018e80": [
