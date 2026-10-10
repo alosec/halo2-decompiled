@@ -19,6 +19,7 @@ double fabs(double value);
 double floor(double value);
 double fmod(double numerator, double denominator);
 double log(double value);
+double log10(double value);
 double pow(double base, double exponent);
 double sin(double value);
 double sqrt(double value);

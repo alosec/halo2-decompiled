@@ -88,7 +88,13 @@ void function_21c400(short voice_index, real gain,
 	s_looping_channel_spatialization const *spatialization);
 void function_128ca0(short voice_index, long gain,
 	s_looping_channel_spatialization const *spatialization);
-long decibels_add(long a, long b);
+
+static long decibels_add(long a, long b)
+{
+	real const result = *reinterpret_cast<real *>(&a) +
+		*reinterpret_cast<real *>(&b);
+	return *reinterpret_cast<long const *>(&result);
+}
 
 static s_sound_playback *sound_playback_get(long sound_index)
 {

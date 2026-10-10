@@ -1355,6 +1355,12 @@ def main() -> int:
                 "semantics":
                     "exact stream pitch-mode offset and exponential "
                     "playback-rate conversion"}, {
+                "source": "src/sound_master_gain_native.cpp",
+                "symbol": "?function_2197f0@@YAJM@Z",
+                "imports": ["log10"],
+                "semantics":
+                    "exact linear-gain clamp, base-10 decibel conversion, "
+                    "and negative-64-to-zero pinning"}, {
                 "source": "src/sound_cache_request_native.cpp",
                 "symbol": "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
                 "imports": [
@@ -1381,7 +1387,6 @@ def main() -> int:
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
-                    "?decibels_add@@YAJJJ@Z",
                     "?function_127320@@YAXJJ@Z",
                     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
                     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",

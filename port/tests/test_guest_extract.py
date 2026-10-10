@@ -3064,6 +3064,40 @@ def main():
                 "sound playback rate imports changed: "
                 f"{sorted(sound_playback_rate_imports)}")
 
+        sound_master_gain_output = Path(temporary) / "sound-master-gain.o"
+        sound_master_gain_symbol = "?function_2197f0@@YAJM@Z"
+        sound_master_gain_command = command[:]
+        sound_master_gain_command[
+            sound_master_gain_command.index("h2_extract_selected")
+        ] = sound_master_gain_symbol
+        sound_master_gain_command[
+            sound_master_gain_command.index("--extract-global"):
+            sound_master_gain_command.index("--output")
+        ] = []
+        sound_master_gain_command[
+            sound_master_gain_command.index(output)
+        ] = sound_master_gain_output
+        sound_master_gain_command[-1] = (
+            args.root / "src/sound_master_gain_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_master_gain_command], check=True)
+        sound_master_gain_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_master_gain_output], text=True)
+        if sound_master_gain_symbol not in sound_master_gain_defined:
+            raise RuntimeError("sound master gain was not selectively compilable")
+        sound_master_gain_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_master_gain_output], text=True)
+        sound_master_gain_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_master_gain_undefined.splitlines() if line
+        }
+        if sound_master_gain_imports != {"log10"}:
+            raise RuntimeError(
+                "sound master gain imports changed: "
+                f"{sorted(sound_master_gain_imports)}")
+
         sound_cache_request_output = Path(temporary) / "sound-cache-request.o"
         sound_cache_request_symbol = "?function_218850@@YAKJPAUs_sound_chunk@@K@Z"
         sound_cache_request_command = command[:]
@@ -3178,7 +3212,6 @@ def main():
             for line in sound_playback_undefined.splitlines() if line
         }
         expected_sound_playback_imports = {
-            "?decibels_add@@YAJJJ@Z",
             "?function_127320@@YAXJJ@Z",
             "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
             "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
