@@ -3,9 +3,14 @@
   "description": "Exact production-linked imports added by the dormant complete impact effect creation/deletion candidate. This expanded inventory records the genuine coupled lifecycle and does not authorize production linking or execution.",
   "imports": [
     {
-      "symbol": "?function_137bd0@@YAPAVc_type_4e7709@@J@Z",
-      "subsystem": "effects",
-      "blocker": "Requires both exact 21-slot particle-definition provider tables and their mutable 12-byte objects; the two slot-11 update methods still reach broad particle/render callbacks."
+      "symbol": "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete particle sprite-update rendering, interface-function evaluation, particle value caches, and draw callbacks."
+    },
+    {
+      "symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete particle mesh-update rendering, shader/geometry caches, interface-function evaluation, and recursive particle provider use."
     },
     {
       "symbol": "?function_155760@@YAJJ@Z",

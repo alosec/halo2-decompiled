@@ -374,6 +374,7 @@ add_custom_command(
             --llvm "${H2_LLVM_ROOT}/bin"
             --lld "${H2_LLD}"
             --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --particle-providers "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
             --output "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
             --impact-output "${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}"
             --effect-output "${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}"
@@ -381,6 +382,8 @@ add_custom_command(
         h2_guest_rebase
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
+        "${PROJECT_SOURCE_DIR}/src/effect_particle_provider_select_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_audio_boundary_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"

@@ -36,6 +36,7 @@ def main() -> int:
     parser.add_argument("--llvm", type=Path, required=True)
     parser.add_argument("--lld", type=Path, required=True)
     parser.add_argument("--plugin", type=Path, required=True)
+    parser.add_argument("--particle-providers", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--impact-output", type=Path, required=True)
     parser.add_argument("--effect-output", type=Path, required=True)
@@ -97,6 +98,7 @@ def main() -> int:
         object_lookup = temporary / "object-lookup.o"
         particle_allocation = temporary / "particle-allocation.o"
         particle_policy = temporary / "particle-policy.o"
+        particle_provider_select = temporary / "particle-provider-select.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -260,6 +262,10 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_175bd0.cpp", particle_policy,
             ["?function_178af0@@YA_NJ@Z", "?function_178b30@@YAXJJJ@Z"])
+        compile_slice(
+            args, args.root / "src/effect_particle_provider_select_native.cpp",
+            particle_provider_select,
+            ["?function_137bd0@@YAPAVc_type_4e7709@@J@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -268,7 +274,7 @@ def main() -> int:
              unpack_color, object_placement, object_type, object_geometry,
              first_person_state, first_person_lookup, damage_state,
              placement_defaults, object_lookup, particle_allocation,
-             particle_policy])
+             particle_policy, particle_provider_select, args.particle_providers])
     return 0
 
 
