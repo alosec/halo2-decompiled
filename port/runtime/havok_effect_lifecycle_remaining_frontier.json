@@ -53,9 +53,9 @@
       "blocker": "Requires simulation object handlers, entry-table mutation, and complete object lifecycle callbacks function_b57d0/b5830/bb780."
     },
     {
-      "symbol": "?function_b7880@@YAXJJPBTpoint3f@@PBTvector3f@@1@Z",
-      "subsystem": "object_effects",
-      "blocker": "Requires broad object collision and rigid-body impulse resolution through function_1c4c50 plus object physics refresh function_bba20."
+      "symbol": "?function_1c4c50@@YA_NJJPBTpoint3f@@PBTvector3f@@1PAJPAT2@3@Z",
+      "subsystem": "object_physics",
+      "blocker": "Requires complete rigid-body point-impulse resolution, component/body selection, Havok shape transforms, and mutable component physics state."
     },
     {
       "symbol": "?function_b7b40@@YAJPAX@Z",

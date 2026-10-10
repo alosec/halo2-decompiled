@@ -387,6 +387,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/light_record_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/effect_placement_transform_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_146a20_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_0b7740.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_0bbf40.cpp"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_audio_boundary_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"
