@@ -20,6 +20,7 @@ def main() -> int:
     parser.add_argument("--object", type=Path, required=True)
     parser.add_argument("--worker-step", type=Path, required=True)
     parser.add_argument("--queue-lifecycle", type=Path, required=True)
+    parser.add_argument("--read-request", type=Path, required=True)
     parser.add_argument("--abi", type=Path, required=True)
     args = parser.parse_args()
 
@@ -94,6 +95,30 @@ def main() -> int:
         raise SystemExit(
             f"guest async queue-lifecycle import drift: expected "
             f"{sorted(expected_lifecycle_imports)}, got {sorted(lifecycle_imports)}")
+
+    read_defined = symbols(args.nm, args.read_request, "--defined-only")
+    expected_read_definitions = {
+        "?async_task_queue@@YAJPAUs_job_node@@@Z",
+        "?function_120900@@YAXPAUs_job_node@@@Z",
+        "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+        "?function_1a0e70@@YAJPATs_async_task@@@Z",
+        "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+    }
+    if read_defined != expected_read_definitions:
+        raise SystemExit(
+            f"guest async read definition drift: expected "
+            f"{sorted(expected_read_definitions)}, got {sorted(read_defined)}")
+    read_imports = symbols(args.nm, args.read_request, "--undefined-only")
+    expected_read_imports = {
+        "?async_globals@@3Us_async_globals@@A", "?g_46e488@@3KA",
+        "ReadFile", "ReleaseMutex", "SetFilePointer", "SwitchToThread",
+        "WaitForSingleObject", "h2_guest_memcpy", "h2_guest_memset",
+        "h2_native_async_publish_admitted", "h2_native_async_try_admit",
+    }
+    if read_imports != expected_read_imports:
+        raise SystemExit(
+            f"guest async read import drift: expected "
+            f"{sorted(expected_read_imports)}, got {sorted(read_imports)}")
 
     abi = args.abi.read_text()
     if "#define H2_HOST_ABI_VERSION 12u" not in abi:

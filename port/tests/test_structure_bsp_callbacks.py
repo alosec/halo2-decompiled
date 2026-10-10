@@ -1256,7 +1256,8 @@ def main() -> int:
                     "guest_abi_v12_sync_file_and_admission_routing",
                     "validated_low_guest_stack_worker_entry",
                     "transactional_guest_queue_admission_and_wake",
-                    "recovered_guest_queue_initialize_and_teardown"],
+                    "recovered_guest_queue_initialize_and_teardown",
+                    "recovered_positioned_read_queue_round_trip"],
                 "remaining_services": [
                     "production_guest_async_runtime_configuration"],
                 "guest_memory_validator": {
@@ -1374,6 +1375,15 @@ def main() -> int:
                         "entry_requires_executable_guest_mapping": True,
                         "stack_requires_guest_read_write_mapping": True},
                     "production_configured": False,
+                    "guest_read_round_trip": {
+                        "request": "function_1a0f10",
+                        "callback": "function_1a0e70",
+                        "cache_slot": 2,
+                        "file_offset": 2048,
+                        "read_bytes": 16,
+                        "callback_chunk_bytes": 8,
+                        "completion_and_150_node_recycle_required": True,
+                        "production_configured": False},
                     "guest_queue_routing": {
                         "source": [
                             "src/async.cpp",
@@ -1435,6 +1445,9 @@ def main() -> int:
                     "clear_requires_worker_shutdown_and_guest_queue_teardown": True,
                     "reset_rejects_live_cache_handles": True,
                     "worker_start_and_reset_reject_unsynchronized_publication": True,
+                    "recovered_positioned_read_round_trip_tested": True,
+                    "read_round_trip_bytes": 16,
+                    "read_callback_chunk_bytes": 8,
                     "restart_after_complete_cleanup_tested": True,
                     "production_configured": False},
                 "state_owner": {

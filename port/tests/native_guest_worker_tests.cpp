@@ -16,6 +16,8 @@
 #include <vector>
 #include <unistd.h>
 
+extern "C" int h2_call_guest_int_0(int (*function)(), void* stack_top);
+
 namespace {
 
 bool check(bool condition, const std::string& message) {
@@ -35,6 +37,8 @@ void write_u32(std::vector<std::uint8_t>& bytes, std::size_t offset,
 bool write_cache(const std::filesystem::path& path, std::int16_t type,
                  const std::string& name) {
     std::vector<std::uint8_t> bytes(0x1000, 0);
+    for (std::size_t index = 0; index < 16; ++index)
+        bytes[0x800 + index] = static_cast<std::uint8_t>(0xa0u + index);
     write_u32(bytes, 0, 0x68656164u);
     write_u32(bytes, 4, 8u);
     write_u32(bytes, 8, static_cast<std::uint32_t>(bytes.size()));
@@ -71,6 +75,11 @@ int main(int argc, char** argv) {
     if (!image)
         return 1;
     const auto entry = image->symbol_address("h2_worker_step_probe");
+    const auto recovered_worker_step =
+        image->symbol_address("h2_native_async_worker_step");
+    const auto read_submit = image->symbol_address("h2_async_submit_slot2_read");
+    const auto read_completed =
+        image->symbol_address("h2_async_slot2_read_completed");
     const auto counter = image->symbol_address("h2_worker_step_calls");
     const auto lifecycle_entry = image->symbol_address("h2_queue_lifecycle_probe");
     const auto lifecycle_counter = image->symbol_address("h2_queue_lifecycle_calls");
@@ -84,17 +93,20 @@ int main(int argc, char** argv) {
     const auto queue_restore_free_head =
         image->symbol_address("h2_async_queue_restore_free_head");
     const auto queue_is_cleared = image->symbol_address("h2_async_queue_is_cleared");
-    ok &= check(entry.has_value() && counter.has_value() &&
-                    lifecycle_entry.has_value() && lifecycle_counter.has_value() &&
-                    queue_initialize.has_value() && queue_teardown.has_value() &&
+    ok &= check(entry.has_value() && recovered_worker_step.has_value() &&
+                    read_submit.has_value() && read_completed.has_value() &&
+                    counter.has_value() && lifecycle_entry.has_value() &&
+                    lifecycle_counter.has_value() && queue_initialize.has_value() &&
+                    queue_teardown.has_value() &&
                     queue_free_count.has_value() &&
                     queue_remove_free_head.has_value() &&
                     queue_restore_free_head.has_value() &&
                     queue_is_cleared.has_value(),
                 "guest worker fixture symbols are missing");
-    if (!entry || !counter || !lifecycle_entry || !lifecycle_counter ||
-        !queue_initialize || !queue_teardown || !queue_free_count ||
-        !queue_remove_free_head || !queue_restore_free_head || !queue_is_cleared)
+    if (!entry || !recovered_worker_step || !read_submit || !read_completed ||
+        !counter || !lifecycle_entry || !lifecycle_counter || !queue_initialize ||
+        !queue_teardown || !queue_free_count || !queue_remove_free_head ||
+        !queue_restore_free_head || !queue_is_cleared)
         return 1;
 
     Platform platform;
@@ -131,10 +143,17 @@ int main(int argc, char** argv) {
     constexpr std::uint32_t cache_slots_address = 0x00557c90u;
     constexpr std::uint32_t cache_active_address = 0x0055aca8u;
     constexpr std::uint32_t cache_slots_size = 6 * 0x804 + 4;
+    constexpr std::uint32_t submit_stack_address = 0x20200000u;
+    constexpr std::uint32_t submit_stack_size = 0x00010000u;
     ok &= check(arena->protect(cache_slots_address, cache_slots_size,
                                h2::port::GuestMemoryProtection::read_write,
-                               error),
-                "guest cache slot storage could not be mapped: " + error);
+                               error) &&
+                    arena->protect(submit_stack_address, submit_stack_size,
+                                   h2::port::GuestMemoryProtection::read_write,
+                                   error),
+                "guest cache slots or submission stack could not be mapped: " + error);
+    void* const submit_stack_top = arena->pointer(
+        submit_stack_address + submit_stack_size - 16);
     const auto cache_directory = std::filesystem::temp_directory_path() /
         ("h2-async-host-cache-" + std::to_string(getpid()));
     std::error_code filesystem_error;
@@ -191,7 +210,19 @@ int main(int argc, char** argv) {
                     h2::port::shutdown_async_worker(Lifecycle::infinite, error),
                 "host ABI admission abort did not drain without execution");
     std::memcpy(&calls, arena->pointer(*counter), sizeof(calls));
-    ok &= check(calls == 4 && !h2::port::reset_async_services(error) &&
+    auto* const submit_read = reinterpret_cast<int (*)()>(
+        arena->pointer(*read_submit));
+    int read_result = 0;
+    ok &= check(calls == 4 &&
+                    h2::port::start_async_worker(*recovered_worker_step, error) &&
+                    h2_call_guest_int_0(submit_read, submit_stack_top) == 1 &&
+                    h2::port::shutdown_async_worker(Lifecycle::infinite, error) &&
+                    worker.invoke_stopped(*read_completed, read_result, error) &&
+                    read_result == 1 &&
+                    worker.invoke_stopped(*queue_free_count, free_count, error) &&
+                    free_count == 150,
+                "recovered async cache read did not complete and recycle: " + error);
+    ok &= check(!h2::port::reset_async_services(error) &&
                     error.find("queue is still initialized") != std::string::npos &&
                     !h2::port::clear_async_cache_files(error) &&
                     error.find("queue must be torn down") != std::string::npos,
