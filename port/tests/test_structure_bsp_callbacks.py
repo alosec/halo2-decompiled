@@ -1248,16 +1248,23 @@ def main() -> int:
                 "role": "physical block allocation, cache entry creation, upload request scheduling, and priority state"}, {
                 "address": "0x0012d6d0",
                 "symbol": "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z",
-                "role": "level-specific Xbox hardware texture header construction"}] or
+                "role": "level-specific Xbox hardware texture header construction"}, {
+                "address": "0x00213760",
+                "symbol": "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
+                "role": "cache-location file selection and asynchronous read routing"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
                 "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-                "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
+                "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
                 "?g_450768@@3PAY0BI@JA", "?g_4e6454@@3PAUs_record_pool@@A",
                 "?g_4e6460@@3KA", "?g_4e6464@@3PAUs_physical_object@@A",
-                "?g_4e6484@@3JA", "?log2_floor@@YAJK@Z", "h2_guest_memset"] or
+                "?g_4e6484@@3JA", "?g_557c90@@3PAUs_texture_cache_file@@A",
+                "?g_55aca8@@3JA", "?log2_floor@@YAJK@Z", "h2_guest_memset"] or
+            texture_upload.get("async_read_provider_imports") != [
+                "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+                "?g_557c90@@3PAUs_texture_cache_file@@A", "?g_55aca8@@3JA"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
