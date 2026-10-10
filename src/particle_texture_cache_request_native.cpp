@@ -254,7 +254,31 @@ long function_213760(dword location, long size, void *buffer, dword *bytes_read,
         priority, bytes_read, done);
 }
 
-bool function_120ce0(long task, long priority);
+// @retail 0x120ce0
+bool function_120ce0(long task, long priority)
+{
+    bool result = false;
+    WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+    s_job_node *node = &async_globals.nodes[task & 0xff];
+    if (node->state == task)
+    {
+        if (async_globals.work_list == node)
+            async_globals.work_list = node->next;
+        else
+        {
+            s_job_node *previous = async_globals.work_list;
+            while (previous->next != node)
+                previous = previous->next;
+            previous->next = node->next;
+        }
+        node->priority = priority;
+        function_120900(node);
+        result = true;
+    }
+    ReleaseMutex(async_globals.work_list_mutex);
+    return result;
+}
+
 void function_120d50(volatile bool *complete, bool wait);
 
 static __forceinline s_texture_cache_entry *texture_cache_entry_get_native(long datum_index)

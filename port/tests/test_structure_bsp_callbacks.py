@@ -1237,7 +1237,9 @@ def main() -> int:
                 "0x0012c820", "0x0012c990", "0x0012cb10", "0x0012ccb0"] or
             texture_upload.get("remaining_direct_calls") != [] or
             texture_upload.get("request_provider_dependencies") != [
-                "?function_120ce0@@YA_NJJ@Z", "?function_120d50@@YAXPC_N_N@Z"] or
+                "?function_120d50@@YAXPC_N_N@Z", "?async_globals@@3Us_async_globals@@A",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
+                "WaitForSingleObject", "h2_guest_memset"] or
             texture_upload.get("request_provider_state") != [
                 "?async_globals@@3Us_async_globals@@A",
                 "?g_4e6454@@3PAUs_record_pool@@A",
@@ -1272,7 +1274,10 @@ def main() -> int:
                 "role": "mutex-guarded task ID assignment and worker semaphore wakeup"}, {
                 "address": "0x001a1720",
                 "symbol": "?async_task_should_run_before@@YA_NJJPBTs_async_task@@0PAUs_async_insert_state@@P6AJPAT1@@Z3@Z",
-                "role": "stable priority and positioned-read ordering policy"}] or
+                "role": "stable priority and positioned-read ordering policy"}, {
+                "address": "0x00120ce0",
+                "symbol": "?function_120ce0@@YA_NJJ@Z",
+                "role": "mutex-guarded live-task reprioritization and ordered work-list reinsertion"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
@@ -1312,6 +1317,10 @@ def main() -> int:
                 "ReleaseSemaphore", "WaitForSingleObject", "h2_guest_memset"] or
             texture_upload.get("async_ordering_imports") != [
                 "?function_1a0e70@@YAJPATs_async_task@@@Z"] or
+            texture_upload.get("async_reprioritize_imports") != [
+                "?async_globals@@3Us_async_globals@@A",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
+                "WaitForSingleObject", "h2_guest_memset"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
