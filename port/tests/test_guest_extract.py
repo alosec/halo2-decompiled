@@ -1519,7 +1519,8 @@ def main():
             "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
             "_?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseSemaphore", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
+            "_h2_guest_memset",
             "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex",
             "_SwitchToThread", "_WaitForSingleObject", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
@@ -1532,7 +1533,10 @@ def main():
             line.split()[0] for line in texture_cache_request_undefined.splitlines() if line.strip()
         }
         if actual_texture_cache_request_imports != expected_texture_cache_request_imports:
-            raise RuntimeError("particle texture cache request frontier changed")
+            raise RuntimeError(
+                "particle texture cache request frontier changed: expected "
+                f"{sorted(expected_texture_cache_request_imports)}, got "
+                f"{sorted(actual_texture_cache_request_imports)}")
 
         texture_upload_header_output = Path(temporary) / "particle-texture-upload-header.o"
         texture_upload_header_symbol = (
@@ -1599,7 +1603,8 @@ def main():
             "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
             "_?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseSemaphore", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
+            "_h2_guest_memset",
             "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex",
             "_SwitchToThread", "_WaitForSingleObject", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
@@ -1638,7 +1643,8 @@ def main():
             raise RuntimeError("particle texture async cache read was not selectively compilable")
         expected_texture_async_read_imports = {
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseSemaphore", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
+            "_h2_guest_memset",
             "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex",
             "_SwitchToThread", "_WaitForSingleObject", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
@@ -1675,7 +1681,8 @@ def main():
             raise RuntimeError("particle texture async read request was not selectively compilable")
         expected_texture_async_request_imports = {
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseSemaphore", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
+            "_h2_guest_memset",
             "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex",
             "_SwitchToThread", "_WaitForSingleObject", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z", "_h2_guest_memset",
@@ -1741,7 +1748,8 @@ def main():
             raise RuntimeError("particle texture async queue submission was not selectively compilable")
         expected_texture_async_queue_imports = {
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseSemaphore", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
+            "_h2_guest_memset",
             "_ReleaseMutex", "_SwitchToThread", "_WaitForSingleObject", "_h2_guest_memcpy",
         }
         actual_texture_async_queue_imports = {
@@ -1770,7 +1778,8 @@ def main():
             raise RuntimeError("particle texture async work queue was not selectively compilable")
         expected_texture_async_work_queue_imports = {
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
-            "_ReleaseMutex", "_ReleaseSemaphore", "_WaitForSingleObject", "_h2_guest_memset",
+            "_ReleaseMutex", "_WaitForSingleObject", "_h2_guest_memset",
+            "_h2_native_async_try_admit", "_h2_native_async_publish_admitted",
         }
         actual_texture_async_work_queue_imports = {
             line.split()[0] for line in texture_async_work_queue_undefined.splitlines() if line.strip()

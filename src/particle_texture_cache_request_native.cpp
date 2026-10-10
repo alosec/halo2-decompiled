@@ -7,6 +7,9 @@
 #include "async.h"
 #include <string.h>
 
+extern "C" int h2_native_async_try_admit(void);
+extern "C" int h2_native_async_publish_admitted(void);
+
 struct D3DTexture
 {
     dword Common;
@@ -198,15 +201,41 @@ void function_120900(s_job_node *node)
 // @retail 0x1209c0
 long async_task_queue(s_job_node *node)
 {
+    if (!h2_native_async_try_admit())
+    {
+        WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+        node->next = async_globals.free_list;
+        async_globals.free_list = node;
+        ReleaseMutex(async_globals.free_list_mutex);
+        return NONE;
+    }
     WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
     function_120900(node);
     node->state = node - async_globals.nodes;
     node->state = (async_globals.task_id_counter << 8) | node->state;
     async_globals.task_id_counter++;
     long task_id = node->state;
+    if (!h2_native_async_publish_admitted())
+    {
+        if (async_globals.work_list == node)
+            async_globals.work_list = node->next;
+        else
+        {
+            s_job_node *previous = async_globals.work_list;
+            while (previous && previous->next != node)
+                previous = previous->next;
+            if (previous)
+                previous->next = node->next;
+        }
+        node->state = NONE;
+        ReleaseMutex(async_globals.work_list_mutex);
+        WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+        node->next = async_globals.free_list;
+        async_globals.free_list = node;
+        ReleaseMutex(async_globals.free_list_mutex);
+        return NONE;
+    }
     ReleaseMutex(async_globals.work_list_mutex);
-    LONG previous_count = 0;
-    ReleaseSemaphore(async_globals.work_semaphore, 1, &previous_count);
     return task_id;
 }
 

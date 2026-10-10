@@ -27,7 +27,8 @@ def main() -> int:
         "CreateMutexA", "CreateSemaphoreA", "WaitForSingleObject",
         "ReleaseMutex", "ReleaseSemaphore", "SetFilePointer", "ReadFile",
         "SetThreadPriority", "GetExitCodeThread", "CloseHandle",
-        "SwitchToThread",
+        "SwitchToThread", "h2_native_async_try_admit",
+        "h2_native_async_publish_admitted", "h2_native_async_abort_admitted",
     }
     missing = sorted(required_definitions - defined)
     if missing:
@@ -48,6 +49,9 @@ def main() -> int:
         "host_h2_async_thread_exit_code",
         "host_h2_async_close",
         "host_h2_async_yield",
+        "host_h2_async_try_admit",
+        "host_h2_async_publish_admitted",
+        "host_h2_async_abort_admitted",
     }
     if undefined != expected_imports:
         raise SystemExit(
@@ -71,8 +75,8 @@ def main() -> int:
             f"{sorted(expected_worker_imports)}, got {sorted(worker_imports)}")
 
     abi = args.abi.read_text()
-    if "#define H2_HOST_ABI_VERSION 11u" not in abi:
-        raise SystemExit("guest async routing requires host ABI version 11")
+    if "#define H2_HOST_ABI_VERSION 12u" not in abi:
+        raise SystemExit("guest async routing requires host ABI version 12")
     for symbol in expected_imports:
         if symbol not in abi:
             raise SystemExit(f"host ABI does not declare {symbol}")

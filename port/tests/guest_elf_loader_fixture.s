@@ -115,3 +115,11 @@ h2_worker_step_probe:
 h2_worker_step_calls:
     .word 0
 .size h2_worker_step_calls, 4
+
+.section .data.h2_async_admission_slots,"aw",@progbits
+.globl h2_host_slot_host_h2_async_try_admit
+h2_host_slot_host_h2_async_try_admit: .xword 0
+.globl h2_host_slot_host_h2_async_publish_admitted
+h2_host_slot_host_h2_async_publish_admitted: .xword 0
+.globl h2_host_slot_host_h2_async_abort_admitted
+h2_host_slot_host_h2_async_abort_admitted: .xword 0

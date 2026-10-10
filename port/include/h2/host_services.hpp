@@ -39,6 +39,8 @@ bool configure_profile_services(const std::filesystem::path& directory,
                                 std::string& error);
 void reset_profile_services();
 bool configure_async_services(GuestArena& arena, std::string& error);
+bool start_async_worker(std::uint32_t guest_entry_address, std::string& error);
+bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error);
 bool reset_async_services(std::string& error);
 bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error);
 bool create_native_profile(std::span<const std::byte> record, std::uint32_t& id,

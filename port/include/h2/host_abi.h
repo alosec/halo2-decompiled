@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 11u
+#define H2_HOST_ABI_VERSION 12u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the
@@ -46,6 +46,9 @@ int host_h2_async_set_thread_priority(unsigned int handle, int priority);
 int host_h2_async_thread_exit_code(unsigned int handle, unsigned int* exit_code);
 int host_h2_async_close(unsigned int handle);
 void host_h2_async_yield(void);
+int host_h2_async_try_admit(void);
+int host_h2_async_publish_admitted(void);
+int host_h2_async_abort_admitted(void);
 
 #ifdef __cplusplus
 }

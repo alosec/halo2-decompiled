@@ -1253,10 +1253,11 @@ def main() -> int:
                     "validated_cache_file_slot_owner",
                     "bounded_guest_cache_slot_publication",
                     "cooperative_worker_drain_join_cleanup",
-                    "guest_abi_v11_sync_file_import_routing",
-                    "validated_low_guest_stack_worker_entry"],
+                    "guest_abi_v12_sync_file_and_admission_routing",
+                    "validated_low_guest_stack_worker_entry",
+                    "transactional_guest_queue_admission_and_wake"],
                 "remaining_services": [
-                    "guest_queue_admission_and_runtime_configuration"],
+                    "production_guest_async_runtime_configuration"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1267,7 +1268,7 @@ def main() -> int:
                 "guest_bridge": {
                     "source": "port/src/native_async_guest_bridge.cpp",
                     "status":
-                        "abi_v11_routes_available_not_production_configured",
+                        "abi_v12_routes_available_not_production_configured",
                     "opaque_tokens_preserved": True,
                     "validate_outputs_before_side_effects": True,
                     "operations": [
@@ -1280,10 +1281,11 @@ def main() -> int:
                     "guest_runtime_source":
                         "port/runtime/guest_async_runtime.cpp",
                     "host_routing_source": "port/src/host_services.cpp",
-                    "host_abi_version": 11,
+                    "host_abi_version": 12,
                     "production_configured": False}} or
             texture_upload.get("native_scheduler_lifecycle") != {
-                "status": "host_worker_lifecycle_implemented_not_guest_routed",
+                "status":
+                    "dormant_end_to_end_routing_implemented_not_production_configured",
                 "recovered_shutdown_provider": None,
                 "states": ["stopped", "accepting", "stopping"],
                 "initial_state": "stopped",
@@ -1291,7 +1293,8 @@ def main() -> int:
                     "linearization_lock": "native_lifecycle_lock",
                     "allowed_state": "accepting",
                     "rejected_task_id": -1,
-                    "rejection_side_effects": "none",
+                    "rejection_side_effects":
+                        "node_recycled_done_false_no_callback_or_task_id",
                     "stop_transition":
                         "accepting_to_stopping_before_any_handle_close",
                     "maximum_admitted_tasks": 150},
@@ -1342,7 +1345,8 @@ def main() -> int:
                         "restart_only_after_finished_stop"]},
                 "worker_controller": {
                     "source": "port/src/native_async_worker.cpp",
-                    "status": "host_only_not_guest_routed",
+                    "status":
+                        "host_guest_step_routed_not_production_configured",
                     "owned_behavior": [
                         "one_wake_per_accepted_admission",
                         "retry_result_resignals_without_completing_admission",
@@ -1352,7 +1356,11 @@ def main() -> int:
                         "finite_timeout_budget_spans_drain_and_join",
                         "timeout_preserves_worker_and_wake_handles",
                         "joined_worker_then_wake_handle_close",
-                        "restart_only_from_stopped_without_live_handles"],
+                        "restart_only_from_stopped_without_live_handles",
+                        "reservation_before_guest_work_list_insertion",
+                        "wake_publication_after_guest_node_visibility",
+                        "reservation_abort_without_guest_execution",
+                        "shutdown_drain_does_not_block_reservation_publish_or_abort"],
                     "guest_worker_entry_connected": True,
                     "execution_enabled": False,
                     "guest_worker_source": "port/src/native_guest_worker.cpp",
@@ -1364,7 +1372,16 @@ def main() -> int:
                         "page_aligned": True,
                         "entry_requires_executable_guest_mapping": True,
                         "stack_requires_guest_read_write_mapping": True},
-                    "production_configured": False}} or
+                    "production_configured": False,
+                    "guest_queue_routing": {
+                        "source": [
+                            "src/async.cpp",
+                            "src/particle_texture_cache_request_native.cpp"],
+                        "host_abi_version": 12,
+                        "reserve_before_insert": True,
+                        "publish_wake_after_insert": True,
+                        "rejected_or_failed_publish_recycles_node": True,
+                        "production_configured": False}}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
                     "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",

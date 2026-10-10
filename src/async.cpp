@@ -11,6 +11,12 @@
 
 void function_125d60(void);
 
+#ifdef H2_NATIVE_PORT
+extern "C" int h2_native_async_try_admit(void);
+extern "C" int h2_native_async_publish_admitted(void);
+extern "C" int h2_native_async_abort_admitted(void);
+#endif
+
 s_async_globals async_globals;
 s_thread_stack g_5020c8;
 s_job_node *g_510810;
@@ -83,17 +89,51 @@ long async_task_queue(s_job_node *node)
 {
 	long task_id;
 
+#ifdef H2_NATIVE_PORT
+	if (!h2_native_async_try_admit())
+	{
+		WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+		node->next = async_globals.free_list;
+		async_globals.free_list = node;
+		ReleaseMutex(async_globals.free_list_mutex);
+		return NONE;
+	}
+#endif
 	WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
 	function_120900(node);
 	node->state = node - async_globals.nodes;
 	node->state = (async_globals.task_id_counter << 8) | node->state;
 	async_globals.task_id_counter++;
 	task_id = node->state;
+#ifdef H2_NATIVE_PORT
+	if (!h2_native_async_publish_admitted())
+	{
+		if (async_globals.work_list == node)
+			async_globals.work_list = node->next;
+		else
+		{
+			s_job_node *previous = async_globals.work_list;
+			while (previous && previous->next != node)
+				previous = previous->next;
+			if (previous)
+				previous->next = node->next;
+		}
+		node->state = NONE;
+		ReleaseMutex(async_globals.work_list_mutex);
+		WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+		node->next = async_globals.free_list;
+		async_globals.free_list = node;
+		ReleaseMutex(async_globals.free_list_mutex);
+		return NONE;
+	}
+	ReleaseMutex(async_globals.work_list_mutex);
+#else
 	ReleaseMutex(async_globals.work_list_mutex);
 	{
 		LONG previous_count = 0;
 		ReleaseSemaphore(async_globals.work_semaphore, 1, &previous_count);
 	}
+#endif
 	return task_id;
 }
 

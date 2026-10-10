@@ -26,6 +26,9 @@ public:
                std::uint32_t stack_address = default_stack_address,
                std::uint32_t stack_size = default_stack_size,
                std::int32_t priority = 1);
+    bool try_admit();
+    bool publish_admitted_wake();
+    bool abort_admitted();
     bool try_admit_and_wake();
     bool shutdown(std::uint32_t milliseconds);
 

@@ -74,12 +74,23 @@ int main() {
 
     context.calls = 0;
     context.may_complete = true;
-    ok &= check(worker.start(run_step, &context) &&
-                    worker.try_admit_and_wake() &&
+    ok &= check(worker.start(run_step, &context) && worker.try_admit() &&
+                    !worker.shutdown(1) &&
+                    lifecycle.state() == Lifecycle::State::stopping &&
+                    lifecycle.admitted_count() == 1 &&
+                    worker.publish_admitted_wake() &&
                     worker.shutdown(Lifecycle::infinite) &&
                     context.calls.load() == 1 &&
                     platform.active_handle_count() == 0,
-                "worker did not restart and drain exactly one admission");
+                "reserved admission could not publish while shutdown waited");
+
+    context.calls = 0;
+    ok &= check(worker.start(run_step, &context) && worker.try_admit() &&
+                    worker.abort_admitted() &&
+                    worker.shutdown(Lifecycle::infinite) &&
+                    context.calls.load() == 0 &&
+                    platform.active_handle_count() == 0,
+                "aborted admission executed or prevented clean shutdown");
     ok &= check(worker.shutdown(0), "stopped worker shutdown was not idempotent");
 
     return ok ? 0 : 1;

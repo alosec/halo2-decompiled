@@ -70,6 +70,18 @@ bool NativeGuestWorker::start(std::uint32_t guest_entry_address,
     return true;
 }
 
+bool NativeGuestWorker::try_admit() {
+    return data_->worker.try_admit();
+}
+
+bool NativeGuestWorker::publish_admitted_wake() {
+    return data_->worker.publish_admitted_wake();
+}
+
+bool NativeGuestWorker::abort_admitted() {
+    return data_->worker.abort_admitted();
+}
+
 bool NativeGuestWorker::try_admit_and_wake() {
     return data_->worker.try_admit_and_wake();
 }

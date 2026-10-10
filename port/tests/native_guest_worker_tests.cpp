@@ -1,5 +1,7 @@
 #include "h2/guest_arena.hpp"
 #include "h2/guest_elf_image.hpp"
+#include "h2/host_abi.h"
+#include "h2/host_services.hpp"
 #include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
 #include "h2/native_guest_worker.hpp"
@@ -71,5 +73,22 @@ int main(int argc, char** argv) {
     std::memcpy(&calls, arena->pointer(*counter), sizeof(calls));
     ok &= check(calls == 3 && platform.active_handle_count() == 0,
                 "restarted guest worker did not execute exactly once");
+
+    ok &= check(h2::port::configure_async_services(*arena, error) &&
+                    h2::port::start_async_worker(*entry, error) &&
+                    host_h2_async_try_admit() &&
+                    host_h2_async_publish_admitted() &&
+                    h2::port::shutdown_async_worker(Lifecycle::infinite, error),
+                "host ABI admission transaction did not execute the guest step");
+    std::memcpy(&calls, arena->pointer(*counter), sizeof(calls));
+    ok &= check(calls == 4 &&
+                    h2::port::start_async_worker(*entry, error) &&
+                    host_h2_async_try_admit() && host_h2_async_abort_admitted() &&
+                    h2::port::shutdown_async_worker(Lifecycle::infinite, error),
+                "host ABI admission abort did not drain without execution");
+    std::memcpy(&calls, arena->pointer(*counter), sizeof(calls));
+    ok &= check(calls == 4 && h2::port::reset_async_services(error) &&
+                    !host_h2_async_try_admit(),
+                "host ABI admission teardown remained configured or ran aborted work");
     return ok ? 0 : 1;
 }

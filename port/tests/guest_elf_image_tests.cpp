@@ -93,7 +93,9 @@ int main(int argc, char** argv) {
              "host_h2_async_release_semaphore", "host_h2_async_set_file_pointer",
              "host_h2_async_read_file", "host_h2_async_set_thread_priority",
              "host_h2_async_thread_exit_code", "host_h2_async_close",
-             "host_h2_async_yield"}) {
+             "host_h2_async_yield", "host_h2_async_try_admit",
+             "host_h2_async_publish_admitted",
+             "host_h2_async_abort_admitted"}) {
         const auto async_slot = image->symbol_address(
             std::string("h2_host_slot_") + symbol);
         std::uintptr_t async_target = 0;

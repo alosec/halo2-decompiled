@@ -89,3 +89,18 @@ extern "C" BOOL __stdcall SwitchToThread(void)
     host_h2_async_yield();
     return TRUE;
 }
+
+extern "C" int h2_native_async_try_admit(void)
+{
+    return host_h2_async_try_admit();
+}
+
+extern "C" int h2_native_async_publish_admitted(void)
+{
+    return host_h2_async_publish_admitted();
+}
+
+extern "C" int h2_native_async_abort_admitted(void)
+{
+    return host_h2_async_abort_admitted();
+}

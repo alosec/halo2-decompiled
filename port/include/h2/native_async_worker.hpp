@@ -25,6 +25,9 @@ public:
 
     bool start(Step step, void* context, std::int32_t priority = 1,
                std::uint32_t stack_size = 0x4000);
+    bool try_admit();
+    bool publish_admitted_wake();
+    bool abort_admitted();
     bool try_admit_and_wake();
     bool shutdown(std::uint32_t milliseconds);
 

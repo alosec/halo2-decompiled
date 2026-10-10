@@ -2400,6 +2400,7 @@ add_custom_target(h2-guest-async-worker-step ALL
     DEPENDS "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}")
 
 add_library(h2_port_support STATIC
+    runtime/guest_stack.s
     src/guest_arena.cpp
     src/guest_elf_image.cpp
     src/host_services.cpp
@@ -2419,7 +2420,7 @@ target_compile_features(h2_port_support PUBLIC cxx_std_20)
 target_compile_options(h2_port_support PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2_port_support PUBLIC OpenSSL::Crypto)
 
-add_executable(halo2-port src/main.cpp runtime/guest_stack.s)
+add_executable(halo2-port src/main.cpp)
 target_compile_features(halo2-port PRIVATE cxx_std_20)
 target_compile_options(halo2-port PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(halo2-port PRIVATE h2_port_support SDL3::SDL3)
@@ -2508,7 +2509,6 @@ add_test(NAME native-async-worker COMMAND h2-native-async-worker-tests)
 
 add_executable(h2-native-guest-worker-tests
     tests/native_guest_worker_tests.cpp
-    runtime/guest_stack.s
     "${H2_GUEST_ELF_LOADER_FIXTURE}")
 target_compile_features(h2-native-guest-worker-tests PRIVATE cxx_std_20)
 target_compile_options(h2-native-guest-worker-tests PRIVATE

@@ -2,7 +2,9 @@
 #include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
 #include "h2/native_async_guest_bridge.hpp"
+#include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
+#include "h2/native_guest_worker.hpp"
 #include "h2/profile_store.hpp"
 
 #include <array>
@@ -72,10 +74,12 @@ ProfileState& profile_state() {
 
 struct AsyncContext {
     explicit AsyncContext(h2::port::GuestArena& arena)
-        : bridge(arena, platform) {}
+        : bridge(arena, platform), worker(arena, platform, lifecycle) {}
 
     h2::port::NativeAsyncPlatform platform;
     h2::port::NativeAsyncGuestBridge bridge;
+    h2::port::NativeAsyncLifecycle lifecycle;
+    h2::port::NativeGuestWorker worker;
 };
 
 struct AsyncState {
@@ -291,6 +295,29 @@ bool configure_async_services(GuestArena& arena, std::string& error) {
     return true;
 }
 
+bool start_async_worker(std::uint32_t guest_entry_address, std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    return context->worker.start(guest_entry_address, error);
+}
+
+bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    if (!context->worker.shutdown(milliseconds)) {
+        error = "native async worker did not drain and stop";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 bool reset_async_services(std::string& error) {
     error.clear();
     auto& state = async_state();
@@ -416,6 +443,11 @@ bool patch_async_host_imports(GuestElfImage& image, GuestArena& arena,
          function_address(&host_h2_async_thread_exit_code)},
         {"host_h2_async_close", function_address(&host_h2_async_close)},
         {"host_h2_async_yield", function_address(&host_h2_async_yield)},
+        {"host_h2_async_try_admit", function_address(&host_h2_async_try_admit)},
+        {"host_h2_async_publish_admitted",
+         function_address(&host_h2_async_publish_admitted)},
+        {"host_h2_async_abort_admitted",
+         function_address(&host_h2_async_abort_admitted)},
     };
     for (const auto& import : imports) {
         if (!image.patch_host_import(arena, import.symbol, import.target, error))
@@ -728,4 +760,19 @@ extern "C" int host_h2_async_close(unsigned int handle) {
 
 extern "C" void host_h2_async_yield() {
     h2::port::NativeAsyncPlatform::yield();
+}
+
+extern "C" int host_h2_async_try_admit() {
+    const auto context = async_context();
+    return context && context->worker.try_admit() ? 1 : 0;
+}
+
+extern "C" int host_h2_async_publish_admitted() {
+    const auto context = async_context();
+    return context && context->worker.publish_admitted_wake() ? 1 : 0;
+}
+
+extern "C" int host_h2_async_abort_admitted() {
+    const auto context = async_context();
+    return context && context->worker.abort_admitted() ? 1 : 0;
 }

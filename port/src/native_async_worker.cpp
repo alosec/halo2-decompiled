@@ -19,6 +19,7 @@ struct NativeAsyncWorker::Data {
     NativeAsyncPlatform::Handle worker = NativeAsyncPlatform::invalid_handle;
     NativeAsyncPlatform::Handle wake = NativeAsyncPlatform::invalid_handle;
     std::atomic<bool> exit_requested = false;
+    std::uint32_t pending_wakes = 0;
     bool exit_wake_sent = false;
 };
 
@@ -69,7 +70,7 @@ bool NativeAsyncWorker::start(Step step, void* context, std::int32_t priority,
                               std::uint32_t stack_size) {
     const std::lock_guard lock(data_->mutex);
     if (!step || data_->worker != NativeAsyncPlatform::invalid_handle ||
-        data_->wake != NativeAsyncPlatform::invalid_handle ||
+        data_->wake != NativeAsyncPlatform::invalid_handle || data_->pending_wakes != 0 ||
         data_->lifecycle.state() != NativeAsyncLifecycle::State::stopped)
         return false;
 
@@ -101,50 +102,88 @@ bool NativeAsyncWorker::start(Step step, void* context, std::int32_t priority,
     return false;
 }
 
-bool NativeAsyncWorker::try_admit_and_wake() {
+bool NativeAsyncWorker::try_admit() {
     const std::lock_guard lock(data_->mutex);
     if (data_->worker == NativeAsyncPlatform::invalid_handle ||
         !data_->lifecycle.try_admit())
         return false;
+    ++data_->pending_wakes;
+    return true;
+}
+
+bool NativeAsyncWorker::publish_admitted_wake() {
+    const std::lock_guard lock(data_->mutex);
+    if (data_->pending_wakes == 0)
+        return false;
+    --data_->pending_wakes;
     if (data_->platform.release_semaphore(data_->wake, 1, nullptr))
         return true;
     data_->lifecycle.complete();
     return false;
 }
 
-bool NativeAsyncWorker::shutdown(std::uint32_t milliseconds) {
+bool NativeAsyncWorker::abort_admitted() {
     const std::lock_guard lock(data_->mutex);
-    if (data_->worker == NativeAsyncPlatform::invalid_handle)
-        return data_->wake == NativeAsyncPlatform::invalid_handle &&
-               data_->lifecycle.state() == NativeAsyncLifecycle::State::stopped;
+    if (data_->pending_wakes == 0)
+        return false;
+    --data_->pending_wakes;
+    return data_->lifecycle.complete();
+}
 
+bool NativeAsyncWorker::try_admit_and_wake() {
+    return try_admit() && publish_admitted_wake();
+}
+
+bool NativeAsyncWorker::shutdown(std::uint32_t milliseconds) {
     const auto deadline = std::chrono::steady_clock::now() +
         std::chrono::milliseconds(milliseconds == NativeAsyncLifecycle::infinite
                                       ? 0
                                       : milliseconds);
-    if (data_->lifecycle.state() == NativeAsyncLifecycle::State::accepting &&
-        !data_->lifecycle.begin_stop())
-        return false;
-    if (data_->lifecycle.state() != NativeAsyncLifecycle::State::stopping ||
-        !data_->lifecycle.wait_drained(
+    {
+        const std::lock_guard lock(data_->mutex);
+        if (data_->worker == NativeAsyncPlatform::invalid_handle)
+            return data_->wake == NativeAsyncPlatform::invalid_handle &&
+                   data_->pending_wakes == 0 &&
+                   data_->lifecycle.state() == NativeAsyncLifecycle::State::stopped;
+        if (data_->lifecycle.state() == NativeAsyncLifecycle::State::accepting &&
+            !data_->lifecycle.begin_stop())
+            return false;
+        if (data_->lifecycle.state() != NativeAsyncLifecycle::State::stopping)
+            return false;
+    }
+
+    // A reserved admission may still be between guest list insertion and wake
+    // publication. Do not hold the controller lock while waiting, so that the
+    // publisher can wake or abort it and allow the drain to complete.
+    if (!data_->lifecycle.wait_drained(
             remaining_milliseconds(milliseconds, deadline)))
         return false;
 
-    if (!data_->exit_wake_sent) {
-        data_->exit_requested.store(true, std::memory_order_release);
-        if (!data_->platform.release_semaphore(data_->wake, 1, nullptr))
+    NativeAsyncPlatform::Handle worker = NativeAsyncPlatform::invalid_handle;
+    {
+        const std::lock_guard lock(data_->mutex);
+        if (data_->pending_wakes != 0)
             return false;
-        data_->exit_wake_sent = true;
+        if (!data_->exit_wake_sent) {
+            data_->exit_requested.store(true, std::memory_order_release);
+            if (!data_->platform.release_semaphore(data_->wake, 1, nullptr))
+                return false;
+            data_->exit_wake_sent = true;
+        }
+        worker = data_->worker;
     }
-    if (data_->platform.wait(data_->worker,
+    if (data_->platform.wait(worker,
                              remaining_milliseconds(milliseconds, deadline)) !=
         NativeAsyncPlatform::WaitResult::signaled)
         return false;
 
+    const std::lock_guard lock(data_->mutex);
+    if (data_->worker != worker)
+        return false;
     std::uint32_t exit_code = 0;
-    const bool clean_exit = data_->platform.thread_exit_code(data_->worker, &exit_code) &&
+    const bool clean_exit = data_->platform.thread_exit_code(worker, &exit_code) &&
                             exit_code == 0;
-    const bool closed_worker = data_->platform.close(data_->worker);
+    const bool closed_worker = data_->platform.close(worker);
     const bool closed_wake = data_->platform.close(data_->wake);
     data_->worker = NativeAsyncPlatform::invalid_handle;
     data_->wake = NativeAsyncPlatform::invalid_handle;
