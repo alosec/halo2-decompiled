@@ -157,6 +157,10 @@
     {
       "source": "src/sound_busy_state_native.cpp",
       "symbol": "?function_12be90@@YA_NXZ"
+    },
+    {
+      "source": "src/sound_spatialization_native.cpp",
+      "symbol": "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z"
     }
   ],
   "definitions": [
@@ -167,6 +171,7 @@
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127320@@YAXJJ@Z",
     "?function_1293f0@@YAXXZ",
+    "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12a810@@YAJJ@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
@@ -206,10 +211,17 @@
   "imports": [
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+    "?function_125060@@YAJPBUs_sound@@J@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+    "?function_12a6d0@@YAJFMM@Z",
+    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+    "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
+    "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+    "?g_468788@@3PATpoint3f@@A",
+    "?g_4687a4@@3PATvector3f@@A",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -234,7 +246,9 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+    "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
     "?voice_start_engine@@YAXXZ",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
@@ -269,9 +283,14 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
+    "?function_125060@@YAJPBUs_sound@@J@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+    "?function_12a6d0@@YAJFMM@Z",
+    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
+    "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
+    "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -286,7 +305,9 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "IDirectSoundBuffer_SetVolume",
@@ -472,5 +493,10 @@
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA"
     ]
+  },
+  "spatialization_provider": {
+    "symbol": "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+    "semantics": "preserve listener-space position, direction, and velocity transforms, attenuation routing, one-second gain transitions, Doppler, promotion gain, and transactional source callbacks",
+    "execution_gate": "initialized listener, playback, voice, sound-definition, promotion, and source-callback state"
   }
 }
