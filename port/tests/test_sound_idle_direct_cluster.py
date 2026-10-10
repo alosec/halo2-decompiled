@@ -51,12 +51,14 @@ def main() -> int:
         ("src/sound_voice_free_native.cpp", "?sound_voice_free@@YAXF@Z"),
         ("src/sound_voice_release_native.cpp", "?sound_voice_release@@YAXJ@Z"),
         ("src/sound_looping_controller_release_native.cpp", "?looping_sound_controller_release@@YAXJ@Z"),
+        ("src/sound_playback_fade_native.cpp", "?function_12a810@@YAJJ@Z"),
+        ("src/unknown_2197f0.cpp", "?function_2195f0@@YAMM@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol"))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 20:
+    if len(set(provider_symbols)) != 22:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
@@ -108,10 +110,20 @@ def main() -> int:
                 "preserve seven-bit looping-controller reference semantics "
                 "and release at zero"}]:
         raise RuntimeError("sound-idle playback-stop inventory changed")
+    if manifest.get("playback_fade_helpers") != [{
+            "symbol": "?function_12a810@@YAJJ@Z",
+            "semantics":
+                "anchor NONE-relative fade times, evaluate linear or power "
+                "gain curves, and return pinned decibel bits"}, {
+            "symbol": "?function_2195f0@@YAMM@Z",
+            "semantics":
+                "pin decibels to the recovered -64 through 0 range and "
+                "convert to linear gain"}]:
+        raise RuntimeError("sound-idle playback-fade inventory changed")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 21 or len(expected_imports) != 44:
+    if len(expected_definitions) != 23 or len(expected_imports) != 47:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -145,7 +157,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 33:
+    if len(expected_production_imports) != 35:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect-refresh helpers, compact dependencies, and complete playback-stop ownership",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect-refresh helpers, compact dependencies, playback fade, and complete playback-stop ownership",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -81,6 +81,14 @@
     {
       "source": "src/sound_looping_controller_release_native.cpp",
       "symbol": "?looping_sound_controller_release@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_playback_fade_native.cpp",
+      "symbol": "?function_12a810@@YAJJ@Z"
+    },
+    {
+      "source": "src/unknown_2197f0.cpp",
+      "symbol": "?function_2195f0@@YAMM@Z"
     }
   ],
   "definitions": [
@@ -88,9 +96,11 @@
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127320@@YAXJJ@Z",
     "?function_1293f0@@YAXXZ",
+    "?function_12a810@@YAJJ@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
+    "?function_2195f0@@YAMM@Z",
     "?function_2197f0@@YAJM@Z",
     "?function_21ec00@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
@@ -109,9 +119,10 @@
   "imports": [
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
-    "?function_12a810@@YAJJ@Z",
     "?function_12be90@@YA_NXZ",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?g_440c48@@3JA",
+    "?g_440c4c@@3JA",
     "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
@@ -147,10 +158,12 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
+    "exp",
     "fabs",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memset",
-    "log10"
+    "log10",
+    "sqrt"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -158,9 +171,10 @@
   "production_score_imports": [
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
-    "?function_12a810@@YAJJ@Z",
     "?function_12be90@@YA_NXZ",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?g_440c48@@3JA",
+    "?g_440c4c@@3JA",
     "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
@@ -187,6 +201,7 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
+    "exp",
     "g_dwDirectSoundDeltaPanicCount",
     "log10"
   ],
@@ -239,6 +254,16 @@
     {
       "symbol": "?looping_sound_controller_release@@YAXJ@Z",
       "semantics": "preserve seven-bit looping-controller reference semantics and release at zero"
+    }
+  ],
+  "playback_fade_helpers": [
+    {
+      "symbol": "?function_12a810@@YAJJ@Z",
+      "semantics": "anchor NONE-relative fade times, evaluate linear or power gain curves, and return pinned decibel bits"
+    },
+    {
+      "symbol": "?function_2195f0@@YAMM@Z",
+      "semantics": "pin decibels to the recovered -64 through 0 range and convert to linear gain"
     }
   ]
 }

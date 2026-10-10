@@ -202,6 +202,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_voice_free_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_release_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_looping_controller_release_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_fade_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_2197f0.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
