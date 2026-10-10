@@ -3305,6 +3305,16 @@ def main():
              "?function_12aff0@@YAMMMM_N@Z", {"fabs"}),
             ("sound-decibels-to-gain.o", "src/unknown_2197f0.cpp",
              "?function_2195f0@@YAMM@Z", {"exp"}),
+            ("sound-playback-fade.o", "src/sound_playback_fade_native.cpp",
+             "?function_12a810@@YAJJ@Z", {
+                 "?function_12aff0@@YAMMMM_N@Z",
+                 "?function_2195f0@@YAMM@Z",
+                 "?function_2197f0@@YAJM@Z",
+                 "?g_440c48@@3JA",
+                 "?g_440c4c@@3JA",
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A",
+                 "sqrt"}),
         ]
         for fade_name, fade_source, fade_symbol, expected_fade_imports in sound_fade_helper_cases:
             fade_output = Path(temporary) / fade_name

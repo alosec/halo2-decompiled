@@ -1366,6 +1366,21 @@ def main() -> int:
                 "imports": ["exp"],
                 "semantics":
                     "exact pinned decibel-to-linear-gain conversion"}, {
+                "source": "src/sound_playback_fade_native.cpp",
+                "symbol": "?function_12a810@@YAJJ@Z",
+                "imports": [
+                    "?function_12aff0@@YAMMMM_N@Z",
+                    "?function_2195f0@@YAMM@Z",
+                    "?function_2197f0@@YAJM@Z",
+                    "?g_440c48@@3JA",
+                    "?g_440c4c@@3JA",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "sqrt"],
+                "semantics":
+                    "exact fade-time anchoring, bounded progress, "
+                    "linear/power gain interpolation, direction selection, "
+                    "and negative-64-to-zero decibel pinning"}, {
                 "source": "src/sound_master_gain_native.cpp",
                 "symbol": "?function_2197f0@@YAJM@Z",
                 "imports": ["log10"],
@@ -1477,6 +1492,7 @@ def main() -> int:
                 "native_sound_driver_stream_state_initialized",
                 "native_sound_definition_and_chunk_tables_initialized",
                 "native_sound_driver_pre_and_post_update_owned",
+                "native_sound_fade_endpoint_state_owned",
                 "native_sound_gain_and_fade_lifecycle_owned",
                 "native_sound_spatialization_and_channel_submission_owned",
                 "native_sound_source_callback_lifetimes_owned",
