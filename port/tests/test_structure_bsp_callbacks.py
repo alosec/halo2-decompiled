@@ -1248,11 +1248,12 @@ def main() -> int:
                     "scheduler_lifecycle_contract",
                     "scheduler_admission_and_drain_state_gate",
                     "tracked_guest_page_read_write_validation",
-                    "bounded_guest_sync_file_bridge"],
+                    "bounded_guest_sync_file_bridge",
+                    "cache_file_slot_lifecycle_contract"],
                 "remaining_services": [
                     "guest_abi_import_routing_and_worker_entry",
                     "scheduler_worker_stop_and_teardown_integration",
-                    "cache_file_handle_initialization"],
+                    "cache_file_slot_initialization_and_switching"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1331,6 +1332,36 @@ def main() -> int:
                         "finite_and_infinite_drain_wait",
                         "timeout_preserves_stopping_state",
                         "restart_only_after_finished_stop"]}} or
+            texture_upload.get("native_cache_file_slot_lifecycle") != {
+                "status": "designed_not_implemented",
+                "recovered_header_type_slots": {
+                    "0": [4, 5], "1": [3], "2": [2], "3": [0], "4": [1]},
+                "recovered_location_selector_slots": {
+                    "0": "g_55aca8_current_slot", "1": 2, "2": 0, "3": 1},
+                "known_retail_identities": {
+                    "mainmenu.map": {"header_type": 2, "slot": 2},
+                    "shared.map": {"header_type": 3, "slot": 0}},
+                "current_native_conflict":
+                    "cache_file_find_always_returns_slot_0_even_when_the_active_map_is_not_type_3",
+                "required_initialization": [
+                    "validate_each_host_selected_cache_header_before_open",
+                    "install_only_opaque_native_file_tokens_in_guest_slots",
+                    "copy_each_validated_0x800_header_into_its_matching_guest_slot",
+                    "set_g_55aca8_to_the_active_maps_type_correct_slot",
+                    "leave_absent_optional_slots_invalid"],
+                "required_switch_order": [
+                    "stop_scheduler_admission",
+                    "drain_and_join_scheduler_worker",
+                    "close_old_active_map_token",
+                    "clear_old_slot_header_and_handle",
+                    "install_new_validated_active_map_slot",
+                    "restart_scheduler_only_after_all_referenced_shared_slots_are_ready"],
+                "teardown_order": [
+                    "scheduler_must_be_stopped",
+                    "close_active_and_shared_file_tokens",
+                    "clear_all_six_guest_slot_handles_and_headers",
+                    "set_g_55aca8_to_none"],
+                "execution_enabled": False} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
