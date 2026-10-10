@@ -35,7 +35,7 @@
     {
       "symbol": "?function_17e670@@YAXPAUs_effect_source@@PBTpoint3f@@JPBTvector3f@@MJJJ@Z",
       "subsystem": "effects",
-      "blocker": "The current source has only a placeholder body; retail is a substantial effect-source construction path requiring exact pool and lifecycle recovery."
+      "blocker": "Retail is an exact 1,787-byte effect-source construction path with a 0x1170-byte frame, tag/runtime gating, vector and transform helpers, and deeper function_1697c0/function_17e490/function_17ed70/function_17ee20 lifecycle work; complete effect-source pool and mutable-state ownership are required."
     },
     {
       "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
@@ -60,7 +60,7 @@
     {
       "symbol": "?function_b7b40@@YAJPAX@Z",
       "subsystem": "object_effects",
-      "blocker": "The current source has only a placeholder constructor; real object allocation, datum initialization, placement, and type-specific creation remain unowned."
+      "blocker": "Retail is an exact 2,150-byte object constructor spanning allocation-pressure recovery, datum initialization, placement/partition insertion, type-specific creation, activation, and cleanup through function_146bf0/function_bd020 plus numerous object providers; complete object lifecycle ownership is required."
     },
     {
       "symbol": "?function_bab40@@YA_NJJPAM@Z",
