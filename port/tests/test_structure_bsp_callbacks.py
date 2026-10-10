@@ -1096,9 +1096,9 @@ def main() -> int:
             material_binding.get("execution_gate") != "native_particle_material_binding_state_owned" or
             set(material_binding.get("direct_calls", [])) != expected_material_calls or
             set(material_binding.get("already_owned_calls", [])) != {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
             grouped_material_calls != expected_material_calls - {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50", "0x00137bd0"} or
             material_binding.get("owned_state_dependencies") != {
                 "0x00016f60": ["?g_485a80@@3PAEA"],
                 "0x00034060": [
@@ -1106,7 +1106,7 @@ def main() -> int:
                     "?g_485a68@@3JA", "?g_4ba014@@3KA"],
                 "0x0001b0a0": [
                     "?g_4ba019@@3_NA", "?g_4e3b44@@3PAUs_tag_instance@@A"]} or
-            material_binding.get("owned_zero_import_calls") != ["0x00017000", "0x00017170"] or
+            material_binding.get("owned_zero_import_calls") != ["0x00017000", "0x00017170", "0x0001ba00"] or
             material_binding.get("owned_immutable_data") != {
                 "0x00467068": "8 exact dword channel masks retained with function_17170"} or
             material_binding.get("owned_transitive_dependencies") != {

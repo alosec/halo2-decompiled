@@ -41,7 +41,8 @@
     "0x00019be0",
     "0x00017420",
     "0x0001ae70",
-    "0x0001b0a0"
+    "0x0001b0a0",
+    "0x0001ba00"
   ],
   "remaining_groups": {
     "material_table_selection": [],
@@ -55,11 +56,9 @@
       "0x0001a170",
       "0x0001ab50"
     ],
-    "parameter_and_constant_state": [
-      "0x0001ba00"
-    ]
+    "parameter_and_constant_state": []
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Fourteen of its 21 direct calls are independently source-owned. Exact function_1b0a0 owns dirty texture residency traversal, time wrapping, mip bias clamping, and level transitions while exposing genuine cache request function_143c0 and mutable tag/policy state. Exact function_1ae70 owns pending scalar/vector/policy refresh; compact policy selector function_34060 exposes five mutable policy/controller globals. Nested selector function_17420 exposes four genuine packed pass-range applicators. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 7 direct calls, seven exposed code providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Fifteen of its 21 direct calls are independently source-owned. Zero-import function_1ba00 now owns selection remapping, combiner block expansion, final-combiner handling, and packed output count/state. Exact function_1b0a0 owns dirty texture residency traversal while exposing genuine cache request function_143c0. Exact function_1ae70 owns pending scalar/vector/policy refresh; compact policy selector function_34060 exposes five mutable globals. Nested selector function_17420 exposes four genuine packed pass-range applicators. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 6 direct calls, seven exposed code providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -78,7 +77,8 @@
   },
   "owned_zero_import_calls": [
     "0x00017000",
-    "0x00017170"
+    "0x00017170",
+    "0x0001ba00"
   ],
   "owned_immutable_data": {
     "0x00467068": "8 exact dword channel masks retained with function_17170"

@@ -1269,6 +1269,29 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_combiner_output = Path(temporary) / "particle-material-combiner-state.o"
+        material_combiner_symbol = "?function_1ba00@@YAXPAE@Z"
+        material_combiner_command = command[:]
+        material_combiner_command[material_combiner_command.index("h2_extract_selected")] = material_combiner_symbol
+        material_combiner_command[
+            material_combiner_command.index("--extract-global"):material_combiner_command.index("--output")
+        ] = []
+        material_combiner_command[material_combiner_command.index(output)] = material_combiner_output
+        material_combiner_command[-1] = args.root / "src/particle_material_combiner_state_native.cpp"
+        subprocess.run([str(value) for value in material_combiner_command], check=True)
+        material_combiner_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_combiner_output],
+            text=True,
+        )
+        material_combiner_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_combiner_output],
+            text=True,
+        )
+        if material_combiner_symbol not in material_combiner_defined:
+            raise RuntimeError("particle material combiner-state expansion was not selectively compilable")
+        if material_combiner_undefined.strip():
+            raise RuntimeError("particle material combiner-state expansion gained imports")
+
         material_residency_output = Path(temporary) / "particle-material-texture-residency.o"
         material_residency_symbol = "?function_1b0a0@@YAXPAE@Z"
         material_residency_command = command[:]
