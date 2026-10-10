@@ -3308,6 +3308,14 @@ def main():
                  "?function_2195f0@@YAMM@Z",
                  "?function_2197f0@@YAJM@Z",
                  "fabs", "sqrt"}),
+            ("sound-channel-properties.o", "src/unknown_12a1b0.cpp",
+             "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_looping_channel_spatialization@@PAUs_looping_channel_properties@@@Z", {
+                 "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
+                 "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
+                 "?g_4e034c@@3PAUs_tag_header_globals@@A",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A", "h2_guest_memcpy", "sqrt"}),
             ("sound-spatialization.o", "src/sound_spatialization_native.cpp",
              "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z", {
                  "?function_125060@@YAJPBUs_sound@@J@Z",

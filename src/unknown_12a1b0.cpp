@@ -1395,7 +1395,10 @@ void function_21b0e0(bool update)
 					if (playback->flags & 0x2000)
 					{
 						long sounds[9] = { NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE };
-						long gains[9] = { 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000, 0xc2800000 };
+						long gains[9] = {
+							(long)0xc2800000u, (long)0xc2800000u, (long)0xc2800000u,
+							(long)0xc2800000u, (long)0xc2800000u, (long)0xc2800000u,
+							(long)0xc2800000u, (long)0xc2800000u, (long)0xc2800000u };
 						dword active_mask = 0;
 						long first = track->sound_index;
 						long current = first;
