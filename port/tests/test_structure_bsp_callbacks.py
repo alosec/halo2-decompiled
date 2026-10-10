@@ -2132,6 +2132,7 @@ def main() -> int:
         "native_sound_driver_voice_buffer_storage_owned",
         "native_sound_driver_effect_image_owned",
         "native_sound_driver_effect_submix_impulse_buffers_owned",
+        "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
         "native_wma_decoder_lifetime_owned",
         "native_sound_driver_ordered_teardown_owned"]
@@ -2166,6 +2167,13 @@ def main() -> int:
                     "Reserve the aligned 0xcc-byte codec allocator block "
                     "from the checksummed static sound pool and publish its "
                     "unused state."}, {
+                "symbol": "function_21e3b0",
+                "source": "src/sound_driver_effects_install_native.cpp",
+                "semantics":
+                    "Dispose the prior effects interface when present, "
+                    "publish the replacement, initialize it against the "
+                    "authentic effect-level and mixbin state, and apply the "
+                    "current I3DL2 room configuration."}, {
                 "symbol": "function_21f4e0",
                 "source": "src/sound_driver_stream_format_native.cpp",
                 "semantics":

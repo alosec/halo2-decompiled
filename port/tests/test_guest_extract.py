@@ -3337,6 +3337,11 @@ def main():
                  "?sound_driver_stream_callback@@YAXPAX0K@Z",
                  "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
                  "h2_guest_memset"}),
+            ("sound-driver-effects-install.o",
+             "src/sound_driver_effects_install_native.cpp",
+             "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z", {
+                 "?g_47005c@@3Us_sound_effect_parameters@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A"}),
             ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
              "?function_125600@@YAXXZ", {
                  "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",
