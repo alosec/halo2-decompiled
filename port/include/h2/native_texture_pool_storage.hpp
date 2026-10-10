@@ -36,6 +36,7 @@ public:
                  std::string& error);
     bool clear(std::string& error);
     bool installed() const;
+    bool empty() const;
 
 private:
     bool publish(std::uint32_t texture_pool, std::uint32_t upload_buffer,

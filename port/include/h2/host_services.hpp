@@ -48,6 +48,8 @@ bool install_async_texture_pools(std::uint32_t delete_callback,
                                  std::uint32_t busy_callback,
                                  std::uint32_t state_callback,
                                  std::string& error);
+bool flush_async_texture_pools(std::uint32_t guest_entry_address,
+                               std::string& error);
 bool clear_async_texture_pools(std::string& error);
 bool initialize_async_queue(std::uint32_t guest_entry_address, std::string& error);
 bool start_async_worker(std::uint32_t guest_entry_address, std::string& error);

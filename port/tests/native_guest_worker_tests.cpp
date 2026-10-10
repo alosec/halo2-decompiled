@@ -110,6 +110,10 @@ int main(int argc, char** argv) {
         image->symbol_address("h2_texture_upload_completed");
     const auto texture_cache_callback_probe =
         image->symbol_address("h2_texture_cache_callback_probe");
+    const auto texture_cache_flush =
+        image->symbol_address("h2_native_texture_cache_flush");
+    const auto texture_cache_flush_completed =
+        image->symbol_address("h2_texture_cache_flush_completed");
     const auto texture_block_delete =
         image->symbol_address("?texture_cache_block_delete");
     const auto texture_entry_busy =
@@ -133,6 +137,8 @@ int main(int argc, char** argv) {
                     texture_upload_submit.has_value() &&
                     texture_upload_completed.has_value() &&
                     texture_cache_callback_probe.has_value() &&
+                    texture_cache_flush.has_value() &&
+                    texture_cache_flush_completed.has_value() &&
                     texture_block_delete.has_value() &&
                     texture_entry_busy.has_value() &&
                     texture_entry_state.has_value(),
@@ -146,6 +152,7 @@ int main(int argc, char** argv) {
         !texture_upload_policy_probe || !texture_pool_probe ||
         !texture_upload_initialize || !texture_upload_submit ||
         !texture_upload_completed || !texture_cache_callback_probe ||
+        !texture_cache_flush || !texture_cache_flush_completed ||
         !texture_block_delete || !texture_entry_busy || !texture_entry_state)
         return 1;
 
@@ -340,15 +347,23 @@ int main(int argc, char** argv) {
                     execute_submission(*texture_upload_submit,
                                        *texture_upload_completed),
                 "recovered texture upload allocation did not complete: " + error);
-    ok &= check(h2::port::teardown_async_queue(*queue_teardown, error) &&
+    ok &= check(!h2::port::flush_async_texture_pools(
+                    *texture_cache_flush, error) &&
+                    error.find("queue must be torn down") != std::string::npos &&
+                    h2::port::teardown_async_queue(*queue_teardown, error) &&
+                    !h2::port::flush_async_texture_pools(
+                        *texture_cache_callback_probe, error) &&
+                    error.find("did not release all records") != std::string::npos &&
                     !h2::port::clear_async_texture_pools(error) &&
                     error.find("live records") != std::string::npos,
-                "texture pool clear accepted a live resident texture");
-    ok &= check(worker.invoke_stopped(*texture_cache_callback_probe,
-                                      invoke_result, error) &&
+                "texture pool lifetime ordering was not enforced");
+    ok &= check(h2::port::flush_async_texture_pools(
+                    *texture_cache_flush, error) &&
+                    worker.invoke_stopped(*texture_cache_flush_completed,
+                                          invoke_result, error) &&
                     invoke_result == 1 &&
                     h2::port::initialize_async_queue(*queue_initialize, error),
-                "texture cache callback eviction did not release ownership: " +
+                "ordered texture cache flush did not release source bitmaps: " +
                     error);
     ok &= check(execute_read(*active_read_submit) &&
                     execute_read(*shared_read_submit),

@@ -180,13 +180,7 @@ bool NativeTexturePoolStorage::clear(std::string& error) {
     }
     if (!installed_)
         return true;
-    GuestRecordPool physical_pool{};
-    GuestRecordPool texture_pool{};
-    std::memcpy(&physical_pool, arena_.pointer(physical_pool_address),
-                sizeof(physical_pool));
-    std::memcpy(&texture_pool, arena_.pointer(texture_pool_address),
-                sizeof(texture_pool));
-    if (physical_pool.actual_count != 0 || texture_pool.actual_count != 0) {
+    if (!empty()) {
         error = "native texture pools still contain live records";
         return false;
     }
@@ -200,6 +194,18 @@ bool NativeTexturePoolStorage::clear(std::string& error) {
 
 bool NativeTexturePoolStorage::installed() const {
     return installed_;
+}
+
+bool NativeTexturePoolStorage::empty() const {
+    if (!installed_)
+        return true;
+    GuestRecordPool physical_pool{};
+    GuestRecordPool texture_pool{};
+    std::memcpy(&physical_pool, arena_.pointer(physical_pool_address),
+                sizeof(physical_pool));
+    std::memcpy(&texture_pool, arena_.pointer(texture_pool_address),
+                sizeof(texture_pool));
+    return physical_pool.actual_count == 0 && texture_pool.actual_count == 0;
 }
 
 }  // namespace h2::port

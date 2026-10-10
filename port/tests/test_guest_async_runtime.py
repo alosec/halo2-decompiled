@@ -174,6 +174,7 @@ def main() -> int:
         "?texture_cache_block_delete@@YAXJ@Z",
         "?texture_cache_entry_busy@@YA_NJ@Z",
         "?texture_cache_entry_state@@YAEJ@Z",
+        "h2_native_texture_cache_flush",
     }
     if lifecycle_defined != expected_lifecycle_definitions:
         raise SystemExit(
@@ -183,7 +184,9 @@ def main() -> int:
         args.nm, args.texture_cache_lifecycle, "--undefined-only")
     expected_lifecycle_imports = {
         "?g_4e6454@@3PAUs_record_pool@@A",
+        "?g_4e6464@@3PAUs_physical_object@@A",
         "?g_4e6479@@3_NA",
+        "?physical_memory_flush@@YAXPAUs_physical_object@@@Z",
         "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
         "SwitchToThread",
     }
@@ -216,6 +219,7 @@ def main() -> int:
     expected_physical_definitions = {
         "?block_delete@s_physical_object@@QAAXJ@Z",
         "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+        "?physical_memory_flush@@YAXPAUs_physical_object@@@Z",
     }
     if physical_defined != expected_physical_definitions:
         raise SystemExit(

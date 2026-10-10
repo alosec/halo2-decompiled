@@ -408,6 +408,37 @@ bool install_async_texture_pools(std::uint32_t delete_callback,
         delete_callback, busy_callback, state_callback, error);
 }
 
+bool flush_async_texture_pools(std::uint32_t guest_entry_address,
+                               std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    if (context->queue_initialized) {
+        error = "native async queue must be torn down before texture pools flush";
+        return false;
+    }
+    if (!context->texture_pools.installed()) {
+        error = "native texture pools are not installed";
+        return false;
+    }
+    int result = 0;
+    if (!context->worker.invoke_stopped(guest_entry_address, result, error))
+        return false;
+    if (!result || !context->texture_pools.empty()) {
+        error = "native guest texture pool flush did not release all records";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 bool clear_async_texture_pools(std::string& error) {
     const auto context = async_context();
     if (!context) {

@@ -2497,6 +2497,7 @@ add_custom_command(
             --extract-symbol "?texture_cache_entry_state@@YAEJ@Z"
             --extract-symbol "?texture_cache_entry_busy@@YA_NJ@Z"
             --extract-symbol "?texture_cache_block_delete@@YAXJ@Z"
+            --extract-symbol "h2_native_texture_cache_flush"
             --output "${H2_GUEST_TEXTURE_CACHE_LIFECYCLE_OBJECT}"
             "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_lifecycle_native.cpp"
     DEPENDS
@@ -2552,6 +2553,7 @@ add_custom_command(
             --ms-abi
             --extract-symbol "?function_13d370@@YAJPAUs_physical_object@@JJ@Z"
             --extract-symbol "?block_delete@s_physical_object@@QAAXJ@Z"
+            --extract-symbol "?physical_memory_flush@@YAXPAUs_physical_object@@@Z"
             --output "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             "${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
     DEPENDS

@@ -347,8 +347,13 @@ extern "C" int h2_texture_cache_callback_probe(void)
 	if (!texture_cache_entry_busy(block_index))
 		return 0;
 	entry->resident = true;
+	return !texture_cache_entry_busy(block_index) &&
+		g_4e6464->blocks->actual_count == 1 &&
+		g_4e6454->actual_count == 1;
+}
 
-	g_4e6464->block_delete(block_index);
+extern "C" int h2_texture_cache_flush_completed(void)
+{
 	return g_upload_bitmap.block_indices[0] == NONE &&
 		g_upload_bitmap.level_addresses[0] == 0 &&
 		g_upload_bitmap.texture == NULL && g_upload_bitmap.last_frame == 0 &&

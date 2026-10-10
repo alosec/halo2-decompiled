@@ -1483,9 +1483,9 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "host_owned_guest_texture_pools_and_callbacks_execute_dormantly",
+                    "host_owned_guest_texture_pools_callbacks_and_flush_execute_dormantly",
                 "recovered_sources": [
-                    "src/unknown_13d170.cpp:function_13d370",
+                    "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
                     "src/unknown_13d320.cpp:function_13d320",
                     "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
                     "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
@@ -1493,7 +1493,7 @@ def main() -> int:
                     "src/particle_bitmap_pitch_native.cpp:function_1365a0",
                     "src/particle_texture_upload_request_native.cpp:function_12ce00",
                     "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable",
-                    "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state",
+                    "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state/h2_native_texture_cache_flush",
                     "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
@@ -1530,7 +1530,11 @@ def main() -> int:
                     "cache_state_callback_preserves_flag_and_pending_state_bits",
                     "cache_busy_callback_tracks_inflight_residency_without_fabricating_a_d3d_fence",
                     "pool_clear_rejects_live_texture_or_physical_records",
-                    "cache_delete_callback_clears_bitmap_residency_and_releases_both_records"],
+                    "cache_delete_callback_clears_bitmap_residency_and_releases_both_records",
+                    "texture_pool_flush_requires_worker_stop_and_guest_queue_teardown",
+                    "host_verifies_empty_pools_after_guest_flush_entry_returns_success",
+                    "recovered_physical_memory_flush_evicts_every_resident_texture",
+                    "ordered_flush_clears_old_map_source_bitmap_residency_before_pool_clear"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1542,12 +1546,11 @@ def main() -> int:
                     "request_policy_chain_definitions": 3,
                     "upload_policy_definitions": 1,
                     "cache_lookup_policy_definitions": 3,
-                    "physical_allocator_definitions": 2,
-                    "cache_lifecycle_callback_definitions": 3},
+                    "physical_allocator_definitions": 3,
+                    "cache_lifecycle_callback_definitions": 4},
                 "remaining_ownership": [
                     "production_configuration_of_host_owned_guest_texture_pools",
-                    "ordered_production_map_switch_and_teardown",
-                    "production_source_bitmap_lifetime"],
+                    "ordered_production_map_switch_and_teardown"],
                 "execution_enabled": False,
                 "production_configured": False,
                 "recovered_upload_allocation_round_trip": {
@@ -1595,6 +1598,10 @@ def main() -> int:
                     "reset_rejects_installed_pools": True,
                     "production_configured": False,
                     "clear_requires_empty_physical_and_texture_pools": True,
+                    "flush_requires_worker_stopped_and_queue_torn_down": True,
+                    "flush_entry":
+                        "h2_native_texture_cache_flush -> physical_memory_flush",
+                    "flush_releases_source_bitmap_references_before_clear": True,
                     "callbacks": {
                         "delete": "texture_cache_block_delete@0x0012d200",
                         "busy": "texture_cache_entry_busy@0x0012d1a0",

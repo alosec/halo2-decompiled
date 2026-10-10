@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Complete recovered function_12ce00 now executes in the dormant fixture over host-owned low guest texture and physical pools plus a 16-page guest upload buffer. The host publishes exact g_4e6454, g_4e6460, g_4e6464, and g_4e6484 values together with validated executable recovered delete/busy/state callbacks, rejects writable callback addresses, and executes state classification plus completed resident eviction without fabricating an Xbox D3D fence. It enforces stopped-only installation, queue-before-pool teardown, pool-before-cache clear, pool clearing before active-map replacement, rejects pool clear until callbacks release every live record, and zeroes all published ownership on clear. The recovered nonblocking path traverses exact scale/mip/priority/shared/fallback policy, function_12c990, function_12d5a0, function_12d6d0, cache routing, queue, worker, and callback before returning the exact resident texture. Production remains unconfigured until source-bitmap lifetime, ordered production map-switch integration, and the confirmed idle=true function_125d60 main-thread sound-idle service for blocking requests are genuine. Keep particle execution dormant.",
+  "blocker": "Complete recovered function_12ce00 now executes in the dormant fixture over host-owned low guest texture and physical pools plus a 16-page guest upload buffer. The host publishes exact g_4e6454, g_4e6460, g_4e6464, and g_4e6484 values together with validated executable recovered delete/busy/state callbacks, rejects writable callback addresses, and executes state classification plus completed resident eviction without fabricating an Xbox D3D fence. It enforces stopped-only installation, queue-before-flush-before-pool teardown, pool-before-cache clear, pool clearing before active-map replacement, and rejects pool clear until the recovered physical allocator flush releases every cache record and old-map source-bitmap reference. The recovered nonblocking path traverses exact scale/mip/priority/shared/fallback policy, function_12c990, function_12d5a0, function_12d6d0, cache routing, queue, worker, and callback before returning the exact resident texture. Production remains unconfigured until ordered production map-switch integration and the confirmed idle=true function_125d60 main-thread sound-idle service for blocking requests are genuine. Keep particle execution dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -596,9 +596,9 @@
     }
   },
   "native_texture_pool_lifecycle": {
-    "status": "host_owned_guest_texture_pools_and_callbacks_execute_dormantly",
+    "status": "host_owned_guest_texture_pools_callbacks_and_flush_execute_dormantly",
     "recovered_sources": [
-      "src/unknown_13d170.cpp:function_13d370",
+      "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
       "src/unknown_13d320.cpp:function_13d320",
       "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
       "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
@@ -606,7 +606,7 @@
       "src/particle_bitmap_pitch_native.cpp:function_1365a0",
       "src/particle_texture_upload_request_native.cpp:function_12ce00",
       "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable",
-      "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state",
+      "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state/h2_native_texture_cache_flush",
       "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication"
     ],
     "exact_layouts": {
@@ -645,7 +645,11 @@
       "cache_state_callback_preserves_flag_and_pending_state_bits",
       "cache_busy_callback_tracks_inflight_residency_without_fabricating_a_d3d_fence",
       "pool_clear_rejects_live_texture_or_physical_records",
-      "cache_delete_callback_clears_bitmap_residency_and_releases_both_records"
+      "cache_delete_callback_clears_bitmap_residency_and_releases_both_records",
+      "texture_pool_flush_requires_worker_stop_and_guest_queue_teardown",
+      "host_verifies_empty_pools_after_guest_flush_entry_returns_success",
+      "recovered_physical_memory_flush_evicts_every_resident_texture",
+      "ordered_flush_clears_old_map_source_bitmap_residency_before_pool_clear"
     ],
     "guest_object_closure": {
       "allocator_definitions": 1,
@@ -658,13 +662,12 @@
       "request_policy_chain_definitions": 3,
       "upload_policy_definitions": 1,
       "cache_lookup_policy_definitions": 3,
-      "physical_allocator_definitions": 2,
-      "cache_lifecycle_callback_definitions": 3
+      "physical_allocator_definitions": 3,
+      "cache_lifecycle_callback_definitions": 4
     },
     "remaining_ownership": [
       "production_configuration_of_host_owned_guest_texture_pools",
-      "ordered_production_map_switch_and_teardown",
-      "production_source_bitmap_lifetime"
+      "ordered_production_map_switch_and_teardown"
     ],
     "execution_enabled": false,
     "production_configured": false,
@@ -722,7 +725,10 @@
         "publication_requires_executable_guest_addresses": true,
         "native_resident_entries_have_no_fabricated_d3d_fence": true
       },
-      "clear_requires_empty_physical_and_texture_pools": true
+      "clear_requires_empty_physical_and_texture_pools": true,
+      "flush_requires_worker_stopped_and_queue_torn_down": true,
+      "flush_entry": "h2_native_texture_cache_flush -> physical_memory_flush",
+      "flush_releases_source_bitmap_references_before_clear": true
     }
   },
   "source_owned": true,

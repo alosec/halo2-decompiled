@@ -52,6 +52,7 @@ struct s_texture_cache_entry
 static_assert(sizeof(s_texture_cache_entry) == 0x28, "s_texture_cache_entry");
 
 extern s_record_pool *g_4e6454;
+extern s_physical_object *g_4e6464;
 extern bool g_4e6479;
 
 static __forceinline s_texture_cache_entry *texture_cache_entry_get_native(
@@ -108,4 +109,14 @@ void __stdcall texture_cache_block_delete(long datum_index)
         }
     }
     record_pool_release(g_4e6454, datum_index);
+}
+
+// Native map teardown calls the recovered physical allocator flush only after
+// the async worker has stopped and the guest queue is gone. This releases every
+// cache entry while its source bitmap still belongs to the old map.
+extern "C" int h2_native_texture_cache_flush(void)
+{
+    physical_memory_flush(g_4e6464);
+    return g_4e6464->blocks->actual_count == 0 &&
+        g_4e6454->actual_count == 0;
 }
