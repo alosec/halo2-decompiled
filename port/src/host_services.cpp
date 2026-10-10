@@ -9,6 +9,7 @@
 #include "h2/native_texture_pool_storage.hpp"
 #include "h2/profile_store.hpp"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -537,6 +538,100 @@ bool teardown_async_queue(std::uint32_t guest_entry_address,
         return false;
     }
     context->queue_initialized = false;
+    return true;
+}
+
+bool start_async_texture_controller(
+    GuestArena& arena, std::span<const AsyncCacheFileConfiguration> cache_files,
+    const AsyncTextureGuestEntries& entries, std::string& error) {
+    if (cache_files.empty() ||
+        std::count_if(cache_files.begin(), cache_files.end(),
+                      [](const auto& file) { return file.make_active; }) != 1) {
+        error = "native async texture controller requires exactly one active cache";
+        return false;
+    }
+    std::array<bool, 5> configured_types{};
+    for (const auto& file : cache_files) {
+        if (file.expected_type < 0 ||
+            static_cast<std::size_t>(file.expected_type) >= configured_types.size() ||
+            configured_types[static_cast<std::size_t>(file.expected_type)]) {
+            error = "native async texture controller cache types are invalid";
+            return false;
+        }
+        configured_types[static_cast<std::size_t>(file.expected_type)] = true;
+    }
+
+    const auto fail = [&error](const char* stage) {
+        error = std::string("native async texture controller failed during ") +
+                stage + ": " + error;
+        return false;
+    };
+    if (!configure_async_services(arena, error))
+        return fail("service configuration");
+    for (const auto& file : cache_files) {
+        if (!install_async_cache_file(file.path, file.expected_type,
+                                      file.expected_name, file.make_active, error)) {
+            const std::string original = error;
+            std::string ignored;
+            clear_async_cache_files(ignored);
+            reset_async_services(ignored);
+            error = original;
+            return fail("cache installation");
+        }
+    }
+    if (!install_async_texture_pools(entries.block_delete, entries.entry_busy,
+                                     entries.entry_state, error)) {
+        const std::string original = error;
+        std::string ignored;
+        clear_async_cache_files(ignored);
+        reset_async_services(ignored);
+        error = original;
+        return fail("texture pool installation");
+    }
+    if (!initialize_async_queue(entries.queue_initialize, error)) {
+        const std::string original = error;
+        std::string ignored;
+        clear_async_texture_pools(ignored);
+        clear_async_cache_files(ignored);
+        reset_async_services(ignored);
+        error = original;
+        return fail("queue initialization");
+    }
+    if (!start_async_worker(entries.worker_step, error)) {
+        const std::string original = error;
+        std::string ignored;
+        teardown_async_queue(entries.queue_teardown, ignored);
+        clear_async_texture_pools(ignored);
+        clear_async_cache_files(ignored);
+        reset_async_services(ignored);
+        error = original;
+        return fail("worker startup");
+    }
+    error.clear();
+    return true;
+}
+
+bool stop_async_texture_controller(const AsyncTextureGuestEntries& entries,
+                                   std::uint32_t milliseconds,
+                                   std::string& error) {
+    const auto fail = [&error](const char* stage) {
+        error = std::string("native async texture controller failed during ") +
+                stage + ": " + error;
+        return false;
+    };
+    if (!shutdown_async_worker(milliseconds, error))
+        return fail("worker shutdown");
+    if (!teardown_async_queue(entries.queue_teardown, error))
+        return fail("queue teardown");
+    if (!flush_async_texture_pools(entries.texture_flush, error))
+        return fail("texture flush");
+    if (!clear_async_texture_pools(error))
+        return fail("texture pool clear");
+    if (!clear_async_cache_files(error))
+        return fail("cache clear");
+    if (!reset_async_services(error))
+        return fail("service reset");
+    error.clear();
     return true;
 }
 

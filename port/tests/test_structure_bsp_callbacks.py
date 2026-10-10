@@ -1483,7 +1483,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "host_owned_guest_texture_pools_callbacks_flush_and_map_switch_execute_dormantly",
+                    "host_owned_guest_texture_controller_executes_dormantly",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1538,7 +1538,11 @@ def main() -> int:
                     "ordered_flush_clears_old_map_source_bitmap_residency_before_pool_clear",
                     "single_controller_orders_worker_queue_flush_pool_cache_reinstall_and_restart",
                     "resident_old_map_texture_is_evicted_before_active_campaign_cache_replacement",
-                    "campaign_and_preserved_shared_reads_execute_after_automatic_worker_restart"],
+                    "campaign_and_preserved_shared_reads_execute_after_automatic_worker_restart",
+                    "complete_controller_installs_active_and_shared_caches_pools_queue_and_worker",
+                    "controller_requires_exactly_one_initial_active_cache_and_unique_cache_types",
+                    "failed_pool_install_rolls_back_cache_handles_and_service_state",
+                    "complete_controller_shutdown_stops_queue_flushes_pools_clears_caches_and_resets_services"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1614,6 +1618,17 @@ def main() -> int:
                         "worker_restart"],
                     "partial_failure_policy":
                         "fail_closed_at_first_incomplete_stage",
+                    "startup_controller": "start_async_texture_controller",
+                    "startup_sequence": [
+                        "service_configuration", "cache_installation",
+                        "texture_pool_installation", "queue_initialization",
+                        "worker_startup"],
+                    "startup_failure_policy":
+                        "rollback_completed_stages_and_fail_closed",
+                    "shutdown_controller": "stop_async_texture_controller",
+                    "shutdown_sequence": [
+                        "worker_shutdown", "queue_teardown", "texture_flush",
+                        "texture_pool_clear", "cache_clear", "service_reset"],
                     "callbacks": {
                         "delete": "texture_cache_block_delete@0x0012d200",
                         "busy": "texture_cache_entry_busy@0x0012d1a0",

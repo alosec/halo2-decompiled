@@ -37,6 +37,13 @@ struct AsyncTextureGuestEntries {
     std::uint32_t entry_state;
 };
 
+struct AsyncCacheFileConfiguration {
+    std::filesystem::path path;
+    std::int16_t expected_type;
+    std::string expected_name;
+    bool make_active;
+};
+
 void set_video_control_handler(VideoControlHandler handler, void* context = nullptr);
 void set_render_request_handler(RenderRequestHandler handler, void* context = nullptr);
 void set_text_request_handler(TextRequestHandler handler, void* context = nullptr);
@@ -65,6 +72,12 @@ bool initialize_async_queue(std::uint32_t guest_entry_address, std::string& erro
 bool start_async_worker(std::uint32_t guest_entry_address, std::string& error);
 bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error);
 bool teardown_async_queue(std::uint32_t guest_entry_address, std::string& error);
+bool start_async_texture_controller(
+    GuestArena& arena, std::span<const AsyncCacheFileConfiguration> cache_files,
+    const AsyncTextureGuestEntries& entries, std::string& error);
+bool stop_async_texture_controller(const AsyncTextureGuestEntries& entries,
+                                   std::uint32_t milliseconds,
+                                   std::string& error);
 bool switch_async_texture_map(const std::filesystem::path& path,
                               std::int16_t expected_type,
                               const std::string& expected_name,

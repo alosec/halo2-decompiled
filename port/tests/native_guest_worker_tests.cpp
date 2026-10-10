@@ -8,6 +8,7 @@
 #include "h2/native_texture_pool_storage.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -460,20 +461,42 @@ int main(int argc, char** argv) {
                     read_guest_u32(TexturePools::texture_pool_address + 0x20) == 0,
                 "host cache/pool clear retained guest ownership");
 
-    ok &= check(h2::port::configure_async_services(*arena, error) &&
-                    h2::port::install_async_cache_file(
-                        mainmenu_path, 2, "mainmenu", true, error) &&
-                    install_texture_pools() &&
-                    h2::port::initialize_async_queue(*queue_initialize, error) &&
-                    h2::port::start_async_worker(*entry, error) &&
-                    host_h2_async_try_admit() &&
-                    host_h2_async_publish_admitted() &&
-                    h2::port::shutdown_async_worker(Lifecycle::infinite, error) &&
-                    h2::port::teardown_async_queue(*queue_teardown, error) &&
-                    h2::port::clear_async_texture_pools(error) &&
-                    h2::port::clear_async_cache_files(error) &&
-                    h2::port::reset_async_services(error),
-                "host async/cache ownership did not restart cleanly: " + error);
+    const std::array controller_caches{
+        h2::port::AsyncCacheFileConfiguration{
+            mainmenu_path, 2, "mainmenu", true},
+        h2::port::AsyncCacheFileConfiguration{
+            shared_path, 3, "shared", false},
+    };
+    const std::array invalid_controller_caches{
+        h2::port::AsyncCacheFileConfiguration{
+            mainmenu_path, 2, "mainmenu", false},
+    };
+    const std::array duplicate_controller_caches{
+        h2::port::AsyncCacheFileConfiguration{
+            mainmenu_path, 2, "mainmenu", true},
+        h2::port::AsyncCacheFileConfiguration{
+            mainmenu_path, 2, "mainmenu", false},
+    };
+    auto invalid_controller_entries = texture_entries;
+    invalid_controller_entries.block_delete = cache_slots_address;
+    ok &= check(!h2::port::start_async_texture_controller(
+                    *arena, invalid_controller_caches, texture_entries, error) &&
+                    error.find("exactly one active cache") != std::string::npos &&
+                    !h2::port::start_async_texture_controller(
+                        *arena, duplicate_controller_caches, texture_entries,
+                        error) &&
+                    error.find("cache types are invalid") != std::string::npos &&
+                    !h2::port::start_async_texture_controller(
+                        *arena, controller_caches, invalid_controller_entries,
+                        error) &&
+                    error.find("texture pool installation") != std::string::npos &&
+                    h2::port::start_async_texture_controller(
+                        *arena, controller_caches, texture_entries, error) &&
+                    h2::port::stop_async_texture_controller(
+                        texture_entries, Lifecycle::infinite, error) &&
+                    !host_h2_async_try_admit(),
+                "complete async texture controller did not restart cleanly: " +
+                    error);
     std::filesystem::remove_all(cache_directory, filesystem_error);
     std::uint32_t lifecycle_calls = 0;
     std::memcpy(&lifecycle_calls, arena->pointer(*lifecycle_counter),
