@@ -40,7 +40,7 @@
     {
       "symbol": "?function_2902b0@@YAXJJJJMMPBUtransform4x3f@@F@Z",
       "subsystem": "AI effect event insertion",
-      "blocker": "Inherited tag flags, AI-active gating, five-slot availability selection, and exact request forwarding are owned. Complete insertion still requires mutable queue ownership plus the broad 1,298-byte event constructor, object/AI queries, perception state, and lifecycle cleanup."
+      "blocker": "Inherited tag flags, AI-active gating, five-slot availability selection, and exact request forwarding are owned. Retail disassembly maps the 1,298-byte insertion routine to exactly 24 direct callees and 14 fixed data references; unresolved work includes complete object construction, AI/perception event assembly, object physics/teardown, initialized queue entries, and rollback cleanup."
     },
     {
       "symbol": "?function_3ddd0@@YAJJ@Z",

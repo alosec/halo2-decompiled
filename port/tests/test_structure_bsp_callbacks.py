@@ -836,6 +836,36 @@ def main() -> int:
                 "placeholder" in entry["blocker"].lower() or
                 entry["blocker"] == "Requires complete recovered effect creation/deletion ownership for this transitive provider."):
             raise RuntimeError("incomplete Havok effect-lifecycle frontier entry")
+    ai_insertion = json.loads((
+        args.root / "port/runtime/ai_effect_event_insertion_frontier.json"
+    ).read_text())
+    if (ai_insertion.get("retail_function") != "0x002902b0" or
+            ai_insertion.get("size") != 1298 or
+            ai_insertion.get("queue_slots") != 5 or
+            ai_insertion.get("execution_gate") != "native_ai_effect_event_queue_owned"):
+        raise RuntimeError("AI effect-event insertion identity changed")
+    ai_calls = ai_insertion.get("direct_calls")
+    expected_ai_calls = {
+        "0x00030bf0", "0x000a7b30", "0x000b7930", "0x000b7b40",
+        "0x000b8540", "0x000b9c60", "0x000b9dd0", "0x000b9fc0",
+        "0x000cbd50", "0x000e6900", "0x0011dfb0", "0x001e0160",
+        "0x001e02f0", "0x001e04a0", "0x001e06b0", "0x001e11b0",
+        "0x001e4990", "0x001e4a50", "0x001f34b0", "0x00210850",
+        "0x0028dab0", "0x0028e200", "0x002907d0", "0x002909b0",
+    }
+    if (not isinstance(ai_calls, list) or len(ai_calls) != 24 or
+            {entry.get("address") for entry in ai_calls} != expected_ai_calls or
+            any(entry.get("status") not in {"matched", "done", "todo"} for entry in ai_calls)):
+        raise RuntimeError("AI effect-event direct call frontier changed")
+    expected_ai_data = {
+        "0x0045dbb8", "0x0045dbcc", "0x0045dbd8", "0x0045dc50",
+        "0x0045dc68", "0x0045dd30", "0x004e0300", "0x004e0350",
+        "0x004e3b44", "0x004e7408", "0x004f55f0", "0x005044c4",
+        "0x005044c8", "0x00510c54",
+    }
+    if set(ai_insertion.get("fixed_data_references", [])) != expected_ai_data:
+        raise RuntimeError("AI effect-event fixed-data frontier changed")
+
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports
     ) | set(effect_symbols)
