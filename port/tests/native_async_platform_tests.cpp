@@ -171,7 +171,11 @@ int main() {
     std::error_code filesystem_error;
     std::filesystem::create_symlink(file_path, symlink_path, filesystem_error);
     const Platform::Handle file = platform.open_read_only(file_path);
-    ok &= check(file != Platform::invalid_handle, "read-only file open failed");
+    std::uint64_t file_size = 0;
+    ok &= check(file != Platform::invalid_handle &&
+                    platform.file_size(file, &file_size) &&
+                    file_size == sizeof(payload) - 1,
+                "read-only file open/size failed");
     ok &= check(platform.open_read_only(symlink_path) == Platform::invalid_handle,
                 "symbolic-link file open was accepted");
     std::int32_t high = 0;

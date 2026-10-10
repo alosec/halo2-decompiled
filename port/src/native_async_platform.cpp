@@ -271,6 +271,21 @@ bool NativeAsyncPlatform::set_file_pointer(Handle handle, std::int32_t distance,
     return true;
 }
 
+bool NativeAsyncPlatform::file_size(Handle handle, std::uint64_t* size) const {
+    if (!size)
+        return false;
+    auto base = state_->get(handle, HandleKind::file);
+    if (!base)
+        return false;
+    auto object = std::static_pointer_cast<FileObject>(std::move(base));
+    std::lock_guard lock(object->mutex);
+    struct stat status {};
+    if (::fstat(object->fd, &status) != 0 || status.st_size < 0)
+        return false;
+    *size = static_cast<std::uint64_t>(status.st_size);
+    return true;
+}
+
 bool NativeAsyncPlatform::read_file(Handle handle, void* buffer,
                                      std::uint32_t bytes_to_read,
                                      std::uint32_t* bytes_read) {

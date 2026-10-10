@@ -36,6 +36,7 @@ public:
                           std::uint32_t* position_low);
     bool read_file(Handle handle, void* buffer, std::uint32_t bytes_to_read,
                    std::uint32_t* bytes_read);
+    bool file_size(Handle handle, std::uint64_t* size) const;
     WaitResult wait(Handle handle, std::uint32_t milliseconds);
     bool release_mutex(Handle handle);
     bool release_semaphore(Handle handle, std::int32_t release_count,

@@ -2355,6 +2355,7 @@ add_library(h2_port_support STATIC
     src/native_async_guest_bridge.cpp
     src/native_async_lifecycle.cpp
     src/native_async_platform.cpp
+    src/native_cache_file_slots.cpp
     src/profile_store.cpp
     src/retail_data.cpp
     src/texture_decode.cpp
@@ -2443,6 +2444,14 @@ target_compile_options(h2-native-async-guest-bridge-tests PRIVATE
     -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-native-async-guest-bridge-tests PRIVATE h2_port_support)
 add_test(NAME native-async-guest-bridge COMMAND h2-native-async-guest-bridge-tests)
+
+add_executable(h2-native-cache-file-slots-tests
+    tests/native_cache_file_slots_tests.cpp)
+target_compile_features(h2-native-cache-file-slots-tests PRIVATE cxx_std_20)
+target_compile_options(h2-native-cache-file-slots-tests PRIVATE
+    -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-native-cache-file-slots-tests PRIVATE h2_port_support)
+add_test(NAME native-cache-file-slots COMMAND h2-native-cache-file-slots-tests)
 
 add_executable(h2-profile-store-tests tests/profile_store_tests.cpp)
 target_compile_features(h2-profile-store-tests PRIVATE cxx_std_20)
