@@ -38,6 +38,18 @@ static_assert(sizeof(s_sound_stream) == 0x34, "sound stream size");
 static_assert(offsetof(s_sound_stream, chunks) == 0x1c,
 	"sound stream chunk-array offset");
 
+// @retail 0x2ae8e0
+void sound_stream_release_chunks(s_sound_stream *stream)
+{
+	while (stream->chunk_count > 0)
+	{
+		s_sound_cache_entry *entry =
+			SOUND_CACHE_ENTRY(stream->chunks[stream->chunk_count - 1]->cache_index);
+		entry->lock_count--;
+		stream->chunk_count--;
+	}
+}
+
 // @retail 0x2ae590
 void sound_stream_release_chunk(s_sound_stream *stream, s_sound_chunk *chunk)
 {

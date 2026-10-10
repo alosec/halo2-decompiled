@@ -104,6 +104,12 @@
         "source": "src/sound_stream_chunk_release_native.cpp",
         "via": "c_wma_codec::release_decoder",
         "semantics": "Decrement the authentic started/chunk counts and cache-entry lock, compact and clear the two-slot chunk queue, and publish the exact one/zero-chunk stream state."
+      },
+      {
+        "symbol": "sound_stream_release_chunks",
+        "source": "src/sound_stream_chunk_release_native.cpp",
+        "via": "function_21f290",
+        "semantics": "Release every queued stream chunk in reverse order by decrementing its authentic cache-entry lock and the stream chunk count without fabricating stream state or progress."
       }
     ]
   },

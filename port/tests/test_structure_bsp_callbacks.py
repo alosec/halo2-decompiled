@@ -2147,6 +2147,9 @@ def main() -> int:
         "bool c_wma_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return m_decoder && !submitted;"]
     expected_stream_chunk_release_fragments = [
+        "void sound_stream_release_chunks(s_sound_stream *stream)",
+        "while (stream->chunk_count > 0)",
+        "stream->chunks[stream->chunk_count - 1]->cache_index",
         "stream->started_count--;", "stream->chunk_count--;",
         "SOUND_CACHE_ENTRY(chunk->cache_index)", "entry->lock_count--;",
         "memmove(&stream->chunks[0], &stream->chunks[1]",
@@ -2272,7 +2275,15 @@ def main() -> int:
                     "Decrement the authentic started/chunk counts and "
                     "cache-entry lock, compact and clear the two-slot chunk "
                     "queue, and publish the exact one/zero-chunk stream "
-                    "state."}] or
+                    "state."}, {
+                "symbol": "sound_stream_release_chunks",
+                "source": "src/sound_stream_chunk_release_native.cpp",
+                "via": "function_21f290",
+                "semantics":
+                    "Release every queued stream chunk in reverse order by "
+                    "decrementing its authentic cache-entry lock and the "
+                    "stream chunk count without fabricating stream state or "
+                    "progress."}] or
             sound_driver_lifecycle.get("channel_parameter_helpers") != [{
                 "symbol": "function_21e330",
                 "source": "src/sound_driver_filter_helpers_native.cpp",
