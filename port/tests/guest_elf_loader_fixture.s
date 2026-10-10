@@ -2,6 +2,14 @@
 .set "?g_557c90@@3PAUs_texture_cache_file@@A", 0x00557c90
 .globl "?g_55aca8@@3JA"
 .set "?g_55aca8@@3JA", 0x0055aca8
+.globl "?g_4e6454@@3PAUs_record_pool@@A"
+.set "?g_4e6454@@3PAUs_record_pool@@A", 0x004e6454
+.globl "?g_4e6460@@3KA"
+.set "?g_4e6460@@3KA", 0x004e6460
+.globl "?g_4e6464@@3PAUs_physical_object@@A"
+.set "?g_4e6464@@3PAUs_physical_object@@A", 0x004e6464
+.globl "?g_4e6484@@3JA"
+.set "?g_4e6484@@3JA", 0x004e6484
 
 .section .text.h2_loader_probe,"ax",@progbits
 .p2align 2

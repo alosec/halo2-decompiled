@@ -2645,6 +2645,7 @@ add_library(h2_port_support STATIC
     src/native_async_worker.cpp
     src/native_guest_worker.cpp
     src/native_cache_file_slots.cpp
+    src/native_texture_pool_storage.cpp
     src/profile_store.cpp
     src/retail_data.cpp
     src/texture_decode.cpp

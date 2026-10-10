@@ -1483,7 +1483,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "complete_recovered_texture_upload_policy_executes_over_dormant_synthetic_pools",
+                    "host_owned_guest_texture_pools_publish_and_execute_dormantly",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1492,7 +1492,8 @@ def main() -> int:
                     "src/particle_texture_mip_math_native.cpp:bitmap_get_mipmap_count/log2_floor",
                     "src/particle_bitmap_pitch_native.cpp:function_1365a0",
                     "src/particle_texture_upload_request_native.cpp:function_12ce00",
-                    "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable"],
+                    "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable",
+                    "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
                     "physical_block_bytes": 24,
@@ -1517,7 +1518,12 @@ def main() -> int:
                     "function_12ce00_returns_exact_resident_texture_after_completion",
                     "function_12ce00_returns_nonstreamed_bitmap_texture_directly",
                     "function_12ce00_returns_available_shared_hardware_texture",
-                    "function_12ce00_routes_blocking_unavailable_request_to_type_fallback_without_idle_wait"],
+                    "function_12ce00_routes_blocking_unavailable_request_to_type_fallback_without_idle_wait",
+                    "host_publishes_exact_g_4e6454_g_4e6460_g_4e6464_and_g_4e6484_values",
+                    "recovered_upload_allocates_from_host_owned_guest_pool_and_buffer_storage",
+                    "active_cache_replacement_requires_queue_teardown_and_texture_pool_clear",
+                    "texture_pool_clear_zeroes_fixed_globals_storage_and_upload_buffer",
+                    "host_owned_texture_pool_lifecycle_restarts_cleanly"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1530,10 +1536,9 @@ def main() -> int:
                     "upload_policy_definitions": 1,
                     "cache_lookup_policy_definitions": 3},
                 "remaining_ownership": [
-                    "host_owned_guest_pool_storage_and_fixed_global_publication",
-                    "production_guest_physical_upload_buffer",
+                    "production_configuration_of_host_owned_guest_texture_pools",
                     "texture_cache_delete_busy_and_state_callbacks",
-                    "ordered_map_switch_and_teardown",
+                    "ordered_production_map_switch_and_teardown",
                     "production_source_bitmap_lifetime"],
                 "execution_enabled": False,
                 "production_configured": False,
@@ -1555,6 +1560,31 @@ def main() -> int:
                     "callback": "function_1a0e70",
                     "fixture_owned_bitmap_lifetime": True,
                     "exact_zero_padded_destination_verified": True,
+                    "production_configured": False},
+                "host_owned_guest_pool_storage": {
+                    "source": "port/src/native_texture_pool_storage.cpp",
+                    "fixed_globals": {
+                        "texture_pool": "0x004e6454",
+                        "upload_buffer": "0x004e6460",
+                        "physical_object": "0x004e6464",
+                        "upload_count": "0x004e6484"},
+                    "guest_storage": {
+                        "physical_object": "0x20400000",
+                        "physical_pool": "0x20400100",
+                        "physical_entries": "0x20400200",
+                        "physical_bitmap": "0x20400800",
+                        "texture_pool": "0x20400900",
+                        "texture_entries": "0x20400a00",
+                        "texture_bitmap": "0x20401400",
+                        "upload_buffer": "0x20500000"},
+                    "maximum_entries": 64,
+                    "upload_pages": 16,
+                    "page_shift": 12,
+                    "install_requires_worker_and_queue_stopped": True,
+                    "clear_requires_worker_stopped_and_queue_torn_down": True,
+                    "active_cache_replacement_requires_pool_clear": True,
+                    "cache_clear_requires_pool_clear": True,
+                    "reset_rejects_installed_pools": True,
                     "production_configured": False}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [

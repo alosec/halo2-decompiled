@@ -6,6 +6,7 @@
 #include "h2/native_async_platform.hpp"
 #include "h2/native_cache_file_slots.hpp"
 #include "h2/native_guest_worker.hpp"
+#include "h2/native_texture_pool_storage.hpp"
 #include "h2/profile_store.hpp"
 
 #include <array>
@@ -76,7 +77,8 @@ ProfileState& profile_state() {
 struct AsyncContext {
     explicit AsyncContext(h2::port::GuestArena& arena_value)
         : arena(arena_value), bridge(arena, platform),
-          worker(arena, platform, lifecycle), cache_files(platform, lifecycle) {}
+          worker(arena, platform, lifecycle), cache_files(platform, lifecycle),
+          texture_pools(arena, lifecycle) {}
 
     h2::port::GuestArena& arena;
     h2::port::NativeAsyncPlatform platform;
@@ -84,6 +86,7 @@ struct AsyncContext {
     h2::port::NativeAsyncLifecycle lifecycle;
     h2::port::NativeGuestWorker worker;
     h2::port::NativeCacheFileSlots cache_files;
+    h2::port::NativeTexturePoolStorage texture_pools;
     std::mutex control_mutex;
     bool queue_initialized = false;
     bool cache_slots_synchronized = true;
@@ -304,6 +307,10 @@ bool configure_async_services(GuestArena& arena, std::string& error) {
             error = "native async cache slots are not synchronized with the guest";
             return false;
         }
+        if (state.context->texture_pools.installed()) {
+            error = "native texture pools are still installed";
+            return false;
+        }
         if (state.context->platform.active_handle_count() != 0) {
             error = "native async services still own live handles";
             return false;
@@ -325,6 +332,12 @@ bool install_async_cache_file(const std::filesystem::path& path,
     const std::lock_guard lock(context->control_mutex);
     if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
         error = "native async worker is still running";
+        return false;
+    }
+    if (make_active &&
+        context->cache_files.active_slot() != NativeCacheFileSlots::no_active_slot &&
+        context->texture_pools.installed()) {
+        error = "native texture pools must clear before active cache replacement";
         return false;
     }
     // Validate guest publication before changing token ownership. The second
@@ -357,6 +370,10 @@ bool clear_async_cache_files(std::string& error) {
         error = "native async queue must be torn down before cache files clear";
         return false;
     }
+    if (context->texture_pools.installed()) {
+        error = "native texture pools must clear before cache files clear";
+        return false;
+    }
     if (!context->cache_files.publish_to_guest(context->arena, error))
         return false;
     context->cache_slots_synchronized = true;
@@ -367,6 +384,42 @@ bool clear_async_cache_files(std::string& error) {
         return false;
     context->cache_slots_synchronized = true;
     return true;
+}
+
+bool install_async_texture_pools(std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    if (context->queue_initialized) {
+        error = "native async queue must be stopped before texture pools install";
+        return false;
+    }
+    return context->texture_pools.install(error);
+}
+
+bool clear_async_texture_pools(std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    if (context->queue_initialized) {
+        error = "native async queue must be torn down before texture pools clear";
+        return false;
+    }
+    return context->texture_pools.clear(error);
 }
 
 bool initialize_async_queue(std::uint32_t guest_entry_address,
@@ -464,6 +517,10 @@ bool reset_async_services(std::string& error) {
         }
         if (!state.context->cache_slots_synchronized) {
             error = "native async cache slots are not synchronized with the guest";
+            return false;
+        }
+        if (state.context->texture_pools.installed()) {
+            error = "native texture pools are still installed";
             return false;
         }
         if (state.context->platform.active_handle_count() != 0) {

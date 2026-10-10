@@ -5,6 +5,7 @@
 #include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
 #include "h2/native_guest_worker.hpp"
+#include "h2/native_texture_pool_storage.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -142,16 +143,6 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*texture_math_probe, invoke_result, error) &&
                     invoke_result == 1,
                 "recovered texture math probe failed: " + error);
-    ok &= check(worker.invoke_stopped(*texture_upload_policy_probe, invoke_result,
-                                      error) &&
-                    invoke_result == 1,
-                "complete recovered texture upload policy probe failed: " + error);
-    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
-                    invoke_result == 1,
-                "recovered texture/physical pool probe failed: " + error);
-    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
-                    invoke_result == 1,
-                "recovered texture/physical pools did not reinitialize: " + error);
     ok &= check(worker.invoke_stopped(*lifecycle_entry, invoke_result, error) &&
                     invoke_result == 1,
                 "stopped guest invocation did not use the validated low stack");
@@ -212,8 +203,46 @@ int main(int argc, char** argv) {
     ok &= check(h2::port::install_async_cache_file(
                     mainmenu_path, 2, "mainmenu", true, error) &&
                     h2::port::install_async_cache_file(
-                        shared_path, 3, "shared", false, error),
-                "host async cache slots did not install and publish: " + error);
+                        shared_path, 3, "shared", false, error) &&
+                    h2::port::install_async_texture_pools(error),
+                "host async cache slots and texture pools did not install: " + error);
+    const auto read_guest_u32 = [&](std::uint32_t address) {
+        std::uint32_t value = 0;
+        std::memcpy(&value, arena->pointer(address), sizeof(value));
+        return value;
+    };
+    using TexturePools = h2::port::NativeTexturePoolStorage;
+    ok &= check(
+        read_guest_u32(TexturePools::global_texture_pool) ==
+                TexturePools::texture_pool_address &&
+            read_guest_u32(TexturePools::global_upload_buffer) ==
+                TexturePools::upload_buffer_address &&
+            read_guest_u32(TexturePools::global_physical_object) ==
+                TexturePools::physical_object_address &&
+            read_guest_u32(TexturePools::global_upload_count) == 0 &&
+            read_guest_u32(TexturePools::texture_pool_address + 0x20) ==
+                TexturePools::maximum_entries &&
+            read_guest_u32(TexturePools::texture_pool_address + 0x24) == 0x28 &&
+            read_guest_u32(TexturePools::texture_pool_address + 0x44) ==
+                TexturePools::texture_entries_address &&
+            read_guest_u32(TexturePools::texture_pool_address + 0x48) ==
+                TexturePools::texture_bitmap_address &&
+            read_guest_u32(TexturePools::physical_object_address + 0x30) ==
+                TexturePools::upload_page_count &&
+            read_guest_u32(TexturePools::physical_object_address + 0x34) == 12 &&
+            read_guest_u32(TexturePools::physical_object_address + 0x64) ==
+                TexturePools::physical_pool_address,
+        "host texture pools published an invalid guest layout");
+    ok &= check(worker.invoke_stopped(*texture_upload_policy_probe, invoke_result,
+                                      error) &&
+                    invoke_result == 1,
+                "complete recovered texture upload policy probe failed: " + error);
+    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
+                    invoke_result == 1,
+                "recovered texture/physical pool probe failed: " + error);
+    ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
+                    invoke_result == 1,
+                "recovered texture/physical pools did not reinitialize: " + error);
     std::uint32_t published_mainmenu = 0;
     std::uint32_t published_shared = 0;
     std::int32_t published_active = -1;
@@ -236,6 +265,11 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*queue_free_count, free_count, error) &&
                     free_count == 150,
                 "recovered guest queue did not initialize all 150 free nodes");
+    ok &= check(!h2::port::install_async_texture_pools(error) &&
+                    error.find("queue must be stopped") != std::string::npos &&
+                    !h2::port::clear_async_texture_pools(error) &&
+                    error.find("queue must be torn down") != std::string::npos,
+                "texture pool lifecycle changed while the guest queue was live");
     ok &= check(worker.invoke_stopped(*texture_upload_initialize, invoke_result,
                                       error) &&
                     invoke_result == 1,
@@ -280,9 +314,17 @@ int main(int argc, char** argv) {
                     execute_read(*shared_read_submit),
                 "recovered active/shared cache routing did not read and recycle: " +
                     error);
-    ok &= check(h2::port::install_async_cache_file(
-                    campaign_path, 0, "campaign", true, error),
-                "dynamic active cache replacement failed: " + error);
+    ok &= check(!h2::port::install_async_cache_file(
+                    campaign_path, 0, "campaign", true, error) &&
+                    error.find("texture pools must clear") != std::string::npos,
+                "active cache replacement retained live texture pools");
+    ok &= check(h2::port::teardown_async_queue(*queue_teardown, error) &&
+                    h2::port::clear_async_texture_pools(error) &&
+                    h2::port::install_async_cache_file(
+                        campaign_path, 0, "campaign", true, error) &&
+                    h2::port::install_async_texture_pools(error) &&
+                    h2::port::initialize_async_queue(*queue_initialize, error),
+                "ordered texture-pool/cache map switch failed: " + error);
     std::memcpy(&published_active, arena->pointer(cache_active_address),
                 sizeof(published_active));
     ok &= check(published_active == 4 && execute_read(*campaign_read_submit) &&
@@ -311,12 +353,16 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*queue_is_cleared, queue_cleared, error) &&
                     queue_cleared == 1 &&
                     !h2::port::reset_async_services(error) &&
+                    error.find("texture pools are still installed") != std::string::npos &&
+                    !h2::port::clear_async_cache_files(error) &&
+                    error.find("texture pools must clear") != std::string::npos &&
+                    h2::port::clear_async_texture_pools(error) &&
+                    !h2::port::reset_async_services(error) &&
                     error.find("live handles") != std::string::npos &&
                     h2::port::clear_async_cache_files(error) &&
                     h2::port::reset_async_services(error) &&
                     !host_h2_async_try_admit(),
-                "recovered queue/cache teardown retained guest or host ownership: " +
-                    error);
+                "recovered queue/pool/cache teardown retained ownership: " + error);
     std::uint32_t cleared_handle = 1;
     std::int32_t cleared_active = 0;
     std::memcpy(&cleared_handle, arena->pointer(cache_slots_address),
@@ -324,18 +370,25 @@ int main(int argc, char** argv) {
     std::memcpy(&cleared_active, arena->pointer(cache_active_address),
                 sizeof(cleared_active));
     ok &= check(cleared_handle == Platform::invalid_handle &&
-                    cleared_active == -1,
-                "host cache clear did not publish invalid guest ownership");
+                    cleared_active == -1 &&
+                    read_guest_u32(TexturePools::global_texture_pool) == 0 &&
+                    read_guest_u32(TexturePools::global_upload_buffer) == 0 &&
+                    read_guest_u32(TexturePools::global_physical_object) == 0 &&
+                    read_guest_u32(TexturePools::global_upload_count) == 0 &&
+                    read_guest_u32(TexturePools::texture_pool_address + 0x20) == 0,
+                "host cache/pool clear retained guest ownership");
 
     ok &= check(h2::port::configure_async_services(*arena, error) &&
                     h2::port::install_async_cache_file(
                         mainmenu_path, 2, "mainmenu", true, error) &&
+                    h2::port::install_async_texture_pools(error) &&
                     h2::port::initialize_async_queue(*queue_initialize, error) &&
                     h2::port::start_async_worker(*entry, error) &&
                     host_h2_async_try_admit() &&
                     host_h2_async_publish_admitted() &&
                     h2::port::shutdown_async_worker(Lifecycle::infinite, error) &&
                     h2::port::teardown_async_queue(*queue_teardown, error) &&
+                    h2::port::clear_async_texture_pools(error) &&
                     h2::port::clear_async_cache_files(error) &&
                     h2::port::reset_async_services(error),
                 "host async/cache ownership did not restart cleanly: " + error);

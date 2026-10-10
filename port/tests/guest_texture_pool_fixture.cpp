@@ -75,12 +75,11 @@ static s_physical_pool_storage g_physical_storage;
 static s_texture_pool_storage g_texture_storage;
 static s_bitmap_data g_upload_bitmap;
 static D3DTexture g_fallback_texture;
-static byte __attribute__((aligned(0x1000))) g_upload_buffer[0x1000];
 static long g_sound_idle_calls;
 
-s_record_pool *g_4e6454;
-s_physical_object *g_4e6464;
-dword g_4e6460;
+extern s_record_pool *g_4e6454;
+extern s_physical_object *g_4e6464;
+extern dword g_4e6460;
 long g_4e646c;
 bool g_4e6468;
 long g_4e6470;
@@ -88,7 +87,7 @@ long g_4e6474;
 bool g_4e647a;
 bool g_4e647b;
 real g_4e647c;
-long g_4e6484;
+extern long g_4e6484;
 bool g_46883c;
 bool g_46883d;
 bool g_468841;
@@ -151,9 +150,6 @@ static void initialize_texture_pools(long page_count)
 	for (long index = 0; index < 8; index++)
 		g_physical.limits[index] = 0x7fffffff;
 
-	g_4e6454 = &g_texture_storage.pool;
-	g_4e6464 = &g_physical;
-	g_4e6460 = (dword)g_upload_buffer;
 	g_4e646c = 0;
 	g_4e6468 = false;
 	g_4e6470 = 0;
@@ -185,7 +181,6 @@ extern "C" int h2_texture_math_probe(void)
 
 extern "C" int h2_texture_upload_policy_probe(void)
 {
-	initialize_texture_pools(1);
 	g_sound_idle_calls = 0;
 	memset(&g_fallback_texture, 0, sizeof(g_fallback_texture));
 
@@ -251,8 +246,12 @@ extern "C" int h2_texture_pool_probe(void)
 
 extern "C" int h2_texture_upload_initialize(void)
 {
-	initialize_texture_pools(1);
-	memset(g_upload_buffer, 0, sizeof(g_upload_buffer));
+	if ((dword)g_4e6454 != 0x20400900 ||
+		(dword)g_4e6464 != 0x20400000 || g_4e6460 != 0x20500000)
+	{
+		return 0;
+	}
+	memset((void *)g_4e6460, 0, 0x10000);
 	memset(&g_upload_bitmap, 0, sizeof(g_upload_bitmap));
 	memset(g_450768, 0, sizeof(g_450768));
 	g_sound_idle_calls = 0;
@@ -280,34 +279,37 @@ extern "C" int h2_texture_upload_submit(void)
 extern "C" int h2_texture_upload_completed(void)
 {
 	long block_index = g_upload_bitmap.block_indices[0];
-	if (block_index == NONE || g_physical_storage.pool.actual_count != 1 ||
-		g_texture_storage.pool.actual_count != 1 || g_4e6484 != 1)
+	if (block_index == NONE || g_4e6464->blocks->actual_count != 1 ||
+		g_4e6454->actual_count != 1 || g_4e6484 != 1)
 	{
 		return 0;
 	}
 
-	s_physical_block *block = &g_physical_storage.entries[block_index & 0xffff];
-	s_texture_pool_entry *entry = &g_texture_storage.entries[block_index & 0xffff];
+	s_physical_block *block =
+		&((s_physical_block *)g_4e6464->blocks->data)[block_index & 0xffff];
+	s_texture_pool_entry *entry =
+		&((s_texture_pool_entry *)g_4e6454->data)[block_index & 0xffff];
+	byte *upload_buffer = (byte *)g_4e6460;
 	D3DTexture *texture = function_12ce00(&g_upload_bitmap, 0, 0.0f);
 	if (texture != &entry->resource || g_4e647a || g_sound_idle_calls != 0 ||
 		block->offset != 0 || block->pages != 1 || !entry->resident ||
 		entry->pending != 0 || entry->priority != 5 ||
 		entry->bitmap != &g_upload_bitmap ||
-		g_upload_bitmap.level_addresses[0] != (long)g_upload_buffer ||
+		g_upload_bitmap.level_addresses[0] != (long)upload_buffer ||
 		entry->resource.Common != 0x40001 ||
-		entry->resource.Data != ((dword)g_upload_buffer & 0x0fffffff))
+		entry->resource.Data != ((dword)upload_buffer & 0x0fffffff))
 	{
 		return 0;
 	}
 
 	for (long index = 0; index < 16; index++)
 	{
-		if (g_upload_buffer[index] != (byte)(0xa0 + index))
+		if (upload_buffer[index] != (byte)(0xa0 + index))
 			return 0;
 	}
 	for (long index = 16; index < 0x200; index++)
 	{
-		if (g_upload_buffer[index] != 0)
+		if (upload_buffer[index] != 0)
 			return 0;
 	}
 	return 1;
