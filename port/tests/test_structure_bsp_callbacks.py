@@ -1215,6 +1215,67 @@ def main() -> int:
             not material_binding.get("blocker")):
         raise RuntimeError("particle material binding frontier changed")
 
+    sound_idle = json.loads((
+        args.root / "port/runtime/texture_sound_idle_frontier.json"
+    ).read_text())
+    expected_sound_idle_calls = [
+        ("0x00125a60", "?sound_system_available@@YAJXZ", True),
+        ("0x001269f0", "?sound_system_update_time@@YAXXZ", False),
+        ("0x001290d0", "?sound_voices_update_chunks@@YAXXZ", False),
+        ("0x001293f0", "?function_1293f0@@YAXXZ", False),
+        ("0x00218810", "?sound_cache_new_frame@@YAXXZ", False),
+        ("0x0021ec00", "?function_21ec00@@YAXXZ", False),
+        ("0x0021ee80", "?function_21ee80@@YAXXZ", False),
+        ("0x003314b0", "GetTickCount", True),
+    ]
+    actual_sound_idle_calls = [
+        (entry.get("address"), entry.get("symbol"), entry.get("source_owned"))
+        for entry in sound_idle.get("direct_calls", [])
+    ]
+    if (
+            sound_idle.get("version") != 1 or
+            sound_idle.get("retail_function") != "0x00125d60" or
+            sound_idle.get("size") != 143 or
+            sound_idle.get("symbol") != "?function_125d60@@YAXXZ" or
+            actual_sound_idle_calls != expected_sound_idle_calls or
+            sound_idle.get("owned_direct_calls") != [
+                "0x00125a60", "0x003314b0"] or
+            sound_idle.get("remaining_direct_calls") != [
+                "0x001269f0", "0x001290d0", "0x001293f0", "0x00218810",
+                "0x0021ec00", "0x0021ee80"] or
+            sound_idle.get("blocking_texture_requests_enabled") is not False or
+            sound_idle.get("production_linked") is not False or
+            sound_idle.get("source_owned") is not False or
+            sound_idle.get("state") != {
+                "sound_system_pointer": "?g_4e6380@@3PAUs_4e6380@@A",
+                "sound_system_required_offsets": {
+                    "initialized": "0x78", "hardware_available": "0x79",
+                    "enabled": "0x7a", "last_tick": "0x80",
+                    "idle_active": "0x7c", "changing_pause": "0x7d"},
+                "game_options_pointer": "?g_4e6948@@3PAUs_game_options_view@@A",
+                "game_options_active_flag_offset": "0x1120",
+                "game_time_pointer": "?g_510c54@@3PAUs_game_time_globals@@A",
+                "game_time_rate_offset": "0x4"} or
+            sound_idle.get("owned_helpers") != [{
+                "source": "src/sound_system_availability_native.cpp",
+                "symbol": "?sound_system_available@@YAJXZ",
+                "imports": ["?g_4e6380@@3PAUs_4e6380@@A"],
+                "semantics":
+                    "exact initialized_and_hardware_available_and_enabled query"}, {
+                "source": "port/runtime/guest_host_runtime.cpp",
+                "symbol": "GetTickCount",
+                "imports": ["host_h2_get_milliseconds"],
+                "semantics":
+                    "monotonic host milliseconds through the production guest ABI"}] or
+            sound_idle.get("execution_gate") != [
+                "native_sound_system_storage_initialized",
+                "native_sound_clock_and_voice_update_owned",
+                "native_sound_driver_pre_and_post_update_owned",
+                "native_sound_physical_cache_frame_lifecycle_owned",
+                "production_texture_requesters_linked"] or
+            not sound_idle.get("blocker")):
+        raise RuntimeError("texture sound-idle frontier changed")
+
     texture_upload = json.loads((
         args.root / "port/runtime/particle_texture_upload_frontier.json"
     ).read_text())
@@ -1702,7 +1763,9 @@ def main() -> int:
                 "wait_provider": "?function_120d50@@YAXPC_N_N@Z",
                 "idle_argument": True,
                 "idle_service": "?function_125d60@@YAXXZ",
-                "native_bypass_allowed": False} or
+                "native_bypass_allowed": False,
+                "ownership_frontier":
+                    "port/runtime/texture_sound_idle_frontier.json"} or
             texture_upload.get("request_provider_state") != [
                 "?async_globals@@3Us_async_globals@@A",
                 "?g_4e6454@@3PAUs_record_pool@@A",

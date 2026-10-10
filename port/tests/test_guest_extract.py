@@ -2717,6 +2717,33 @@ def main():
             if provider not in shader_constants_undefined:
                 raise RuntimeError(f"particle shader constants boundary missing: {provider}")
 
+        sound_available_output = Path(temporary) / "sound-system-availability.o"
+        sound_available_symbol = "?sound_system_available@@YAJXZ"
+        sound_available_command = command[:]
+        sound_available_command[
+            sound_available_command.index("h2_extract_selected")
+        ] = sound_available_symbol
+        sound_available_command[
+            sound_available_command.index("--extract-global"):
+            sound_available_command.index("--output")
+        ] = []
+        sound_available_command[
+            sound_available_command.index(output)
+        ] = sound_available_output
+        sound_available_command[-1] = (
+            args.root / "src/sound_system_availability_native.cpp")
+        subprocess.run([str(value) for value in sound_available_command], check=True)
+        sound_available_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_available_output], text=True)
+        if sound_available_symbol not in sound_available_defined:
+            raise RuntimeError("sound availability provider was not selectively compilable")
+        sound_available_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_available_output], text=True)
+        if "?g_4e6380@@3PAUs_4e6380@@A" not in sound_available_undefined:
+            raise RuntimeError("sound availability state boundary is missing")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

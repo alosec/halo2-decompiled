@@ -56,7 +56,8 @@
     "wait_provider": "?function_120d50@@YAXPC_N_N@Z",
     "idle_argument": true,
     "idle_service": "?function_125d60@@YAXXZ",
-    "native_bypass_allowed": false
+    "native_bypass_allowed": false,
+    "ownership_frontier": "port/runtime/texture_sound_idle_frontier.json"
   },
   "request_provider_state": [
     "?async_globals@@3Us_async_globals@@A",

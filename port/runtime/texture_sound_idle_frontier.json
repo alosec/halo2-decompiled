@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "retail_function": "0x00125d60",
+  "size": 143,
+  "symbol": "?function_125d60@@YAXXZ",
+  "source": "src/unknown_124f90.cpp",
+  "role": "main-thread sound idle service used by blocking async texture waits",
+  "direct_calls": [
+    {
+      "address": "0x00125a60",
+      "symbol": "?sound_system_available@@YAJXZ",
+      "role": "initialized hardware and enabled-state query",
+      "source_owned": true
+    },
+    {
+      "address": "0x001269f0",
+      "symbol": "?sound_system_update_time@@YAXXZ",
+      "role": "sound clock and elapsed-time update",
+      "source_owned": false
+    },
+    {
+      "address": "0x001290d0",
+      "symbol": "?sound_voices_update_chunks@@YAXXZ",
+      "role": "streaming voice chunk update",
+      "source_owned": false
+    },
+    {
+      "address": "0x001293f0",
+      "symbol": "?function_1293f0@@YAXXZ",
+      "role": "sound playback state update",
+      "source_owned": false
+    },
+    {
+      "address": "0x00218810",
+      "symbol": "?sound_cache_new_frame@@YAXXZ",
+      "role": "sound physical-cache frame advance",
+      "source_owned": false
+    },
+    {
+      "address": "0x0021ec00",
+      "symbol": "?function_21ec00@@YAXXZ",
+      "role": "sound driver pre-update",
+      "source_owned": false
+    },
+    {
+      "address": "0x0021ee80",
+      "symbol": "?function_21ee80@@YAXXZ",
+      "role": "sound driver post-update",
+      "source_owned": false
+    },
+    {
+      "address": "0x003314b0",
+      "symbol": "GetTickCount",
+      "role": "monotonic millisecond clock",
+      "source_owned": true
+    }
+  ],
+  "owned_direct_calls": [
+    "0x00125a60",
+    "0x003314b0"
+  ],
+  "remaining_direct_calls": [
+    "0x001269f0",
+    "0x001290d0",
+    "0x001293f0",
+    "0x00218810",
+    "0x0021ec00",
+    "0x0021ee80"
+  ],
+  "state": {
+    "sound_system_pointer": "?g_4e6380@@3PAUs_4e6380@@A",
+    "sound_system_required_offsets": {
+      "initialized": "0x78",
+      "hardware_available": "0x79",
+      "enabled": "0x7a",
+      "last_tick": "0x80",
+      "idle_active": "0x7c",
+      "changing_pause": "0x7d"
+    },
+    "game_options_pointer": "?g_4e6948@@3PAUs_game_options_view@@A",
+    "game_options_active_flag_offset": "0x1120",
+    "game_time_pointer": "?g_510c54@@3PAUs_game_time_globals@@A",
+    "game_time_rate_offset": "0x4"
+  },
+  "owned_helpers": [
+    {
+      "source": "src/sound_system_availability_native.cpp",
+      "symbol": "?sound_system_available@@YAJXZ",
+      "imports": [
+        "?g_4e6380@@3PAUs_4e6380@@A"
+      ],
+      "semantics": "exact initialized_and_hardware_available_and_enabled query"
+    },
+    {
+      "source": "port/runtime/guest_host_runtime.cpp",
+      "symbol": "GetTickCount",
+      "imports": [
+        "host_h2_get_milliseconds"
+      ],
+      "semantics": "monotonic host milliseconds through the production guest ABI"
+    }
+  ],
+  "execution_gate": [
+    "native_sound_system_storage_initialized",
+    "native_sound_clock_and_voice_update_owned",
+    "native_sound_driver_pre_and_post_update_owned",
+    "native_sound_physical_cache_frame_lifecycle_owned",
+    "production_texture_requesters_linked"
+  ],
+  "blocking_texture_requests_enabled": false,
+  "production_linked": false,
+  "source_owned": false,
+  "blocker": "The exact idle service conditionally mutates sound pause/update state and always advances the sound physical cache when its timing gate fires. It cannot be replaced by yield or a no-op. The compact availability query and production monotonic GetTickCount route are source-owned, but the sound clock, voices, playback, driver, cache-frame providers, and initialized mutable sound state remain genuine ownership requirements."
+}
