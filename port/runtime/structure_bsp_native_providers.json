@@ -59,6 +59,7 @@
     "native_particle_emitter_and_particle_pools_owned",
     "native_particle_interface_state_owned",
     "native_particle_frame_state_owned",
+    "native_particle_sprite_render_state_owned",
     "native_impact_looping_sound_pool_owned",
     "native_havok_motion_basis_state_owned",
     "native_global_color_table_initialized",

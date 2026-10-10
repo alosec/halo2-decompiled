@@ -3,11 +3,6 @@
   "description": "Exact production-linked imports added by the dormant complete impact effect creation/deletion candidate. This expanded inventory records the genuine coupled lifecycle and does not authorize production linking or execution.",
   "imports": [
     {
-      "symbol": "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z",
-      "subsystem": "particles",
-      "blocker": "The exact particle interface-context initializer, particle-system value callback, render-interface state selection/dirty-mask propagation, value-cache fill, all 17 interface-value inputs, first-person-offset frame composition, and cluster scale lookup are owned. Remaining closure requires sprite setup, broader mutable cache state, particle iteration/property evaluation, rendering, and function_224550."
-    },
-    {
       "symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
       "subsystem": "particles",
       "blocker": "Requires complete particle mesh-update rendering, shader/geometry caches, interface-function evaluation, and recursive particle provider use."
@@ -86,6 +81,16 @@
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete area-of-effect object/player gathering, damage eligibility, delivery, and mutable damage/object pool lifecycle."
+    },
+    {
+      "symbol": "?function_224550@@YAXPBUs_draw_sprite_seed@@PAUs_draw_value_cache@@PATpoint3f@@2MPBUcolor4f@@PAUs_draw_sprite_context@@@Z",
+      "subsystem": "particle sprite submission",
+      "blocker": "The complete sprite slot-11 update and particle/property traversal are source-owned. This callback still requires truthful sprite geometry/cache construction, mutable render state, and actual renderer submission; it must not be replaced by an inert draw callback."
+    },
+    {
+      "symbol": "?function_23ea80@@YA_NJPBUtransform4x3f@@JJJ@Z",
+      "subsystem": "particle sprite setup",
+      "blocker": "The complete sprite slot-11 update is source-owned, but its setup gate still requires initialized particle camera/render transforms and exact interface draw-state selection. Fixed storage bindings do not establish that mutable state."
     }
   ]
 }

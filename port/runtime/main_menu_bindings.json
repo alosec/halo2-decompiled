@@ -227,6 +227,9 @@
     {"symbol": "?g_4b9da0@@3Tpoint3f@@A", "address": "0x004b9da0"},
     {"symbol": "?g_4b9ee9@@3_NA", "address": "0x004b9ee9"},
     {"symbol": "?g_4b9eec@@3JA", "address": "0x004b9eec"},
-    {"symbol": "?g_4e9bc8@@3PAUs_16658d_group@@A", "address": "0x004e9bc8"}
+    {"symbol": "?g_4e9bc8@@3PAUs_16658d_group@@A", "address": "0x004e9bc8"},
+    {"symbol": "?g_4687d0@@3PAUtransform4x3f@@A", "address": "0x004687d0"},
+    {"symbol": "?g_470a2c@@3EA", "address": "0x00470a2c"},
+    {"symbol": "?g_55edd8@@3Us_interface_function_context@@A", "address": "0x0055edd8"}
   ]
 }
