@@ -1290,7 +1290,10 @@ def main() -> int:
                 "role": "worker callback execution, retry signaling, completion publication, and free-list recycling"}, {
                 "address": "0x00120c30",
                 "symbol": "?async_thread_proc@@YAKPAX@Z",
-                "role": "worker-thread entry into the non-returning async work loop"}] or
+                "role": "worker-thread entry into the non-returning async work loop"}, {
+                "address": "0x00120a90",
+                "symbol": "?function_120a90@@YAXXZ",
+                "role": "150-node free-list, synchronization handles, worker stack, and thread initialization"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
@@ -1342,6 +1345,10 @@ def main() -> int:
             texture_upload.get("async_work_removal_imports") != [
                 "?async_globals@@3Us_async_globals@@A", "ReleaseMutex",
                 "WaitForSingleObject"] or
+            texture_upload.get("async_initialization_imports") != [
+                "?async_globals@@3Us_async_globals@@A", "?async_thread_proc@@YAKPAX@Z",
+                "?g_5020c8@@3Us_thread_stack@@A", "CreateMutexA", "CreateSemaphoreA",
+                "CreateThread", "SetThreadPriority", "h2_guest_memset"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",

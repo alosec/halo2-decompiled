@@ -1904,6 +1904,35 @@ def main():
         }:
             raise RuntimeError("particle texture async work-removal frontier changed")
 
+        texture_async_init_output = Path(temporary) / "particle-texture-async-init.o"
+        texture_async_init_symbol = "?function_120a90@@YAXXZ"
+        texture_async_init_command = command[:]
+        texture_async_init_command[
+            texture_async_init_command.index("h2_extract_selected")
+        ] = texture_async_init_symbol
+        texture_async_init_command[
+            texture_async_init_command.index("--extract-global"):texture_async_init_command.index("--output")
+        ] = []
+        texture_async_init_command[texture_async_init_command.index(output)] = texture_async_init_output
+        texture_async_init_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_init_command], check=True)
+        texture_async_init_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_init_output], text=True)
+        texture_async_init_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_init_output], text=True)
+        if texture_async_init_symbol not in texture_async_init_defined:
+            raise RuntimeError("particle texture async scheduler initialization was not selectively compilable")
+        expected_texture_async_init_imports = {
+            "_?async_globals@@3Us_async_globals@@A", "_?async_thread_proc@@YAKPAX@Z",
+            "_?g_5020c8@@3Us_thread_stack@@A", "_CreateMutexA", "_CreateSemaphoreA",
+            "_CreateThread", "_SetThreadPriority", "_h2_guest_memset",
+        }
+        actual_texture_async_init_imports = {
+            line.split()[0] for line in texture_async_init_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_init_imports != expected_texture_async_init_imports:
+            raise RuntimeError("particle texture async scheduler initialization frontier changed")
+
         texture_async_free_node_output = Path(temporary) / "particle-texture-async-free-node.o"
         texture_async_free_node_symbol = "?function_1208b0@@YAPAUs_job_node@@XZ"
         texture_async_free_node_command = command[:]

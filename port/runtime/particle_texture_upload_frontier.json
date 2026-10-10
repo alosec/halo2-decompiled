@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling chain are independently source-owned. Exact worker ownership preserves callback retry/completion semantics, done publication, work-list removal, and free-list recycling. Execution still requires initialized cache/physical/file and async-global state, owned source pixels, genuine native file-I/O and synchronization boundaries replacing ReadFile/SetFilePointer and WaitForSingleObject/ReleaseMutex/ReleaseSemaphore/SwitchToThread, function_125d60 main-thread idle servicing, and worker initialization/cancellation/shutdown lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling/scheduler-initialization chain are independently source-owned. Exact initialization preserves the 150-node free list, mutex/semaphore/thread creation, and worker-stack constants. Execution still requires initialized cache/physical/file state, owned source pixels, genuine native implementations and lifetimes for ReadFile/SetFilePointer, WaitForSingleObject/ReleaseMutex/ReleaseSemaphore/SwitchToThread, CreateMutexA/CreateSemaphoreA/CreateThread/SetThreadPriority, function_125d60 main-thread idle servicing, and worker cancellation/shutdown/handle teardown. Static source ownership does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -132,6 +132,11 @@
       "address": "0x00120c30",
       "symbol": "?async_thread_proc@@YAKPAX@Z",
       "role": "worker-thread entry into the non-returning async work loop"
+    },
+    {
+      "address": "0x00120a90",
+      "symbol": "?function_120a90@@YAXXZ",
+      "role": "150-node free-list, synchronization handles, worker stack, and thread initialization"
     }
   ],
   "helper_dependencies": [
@@ -238,5 +243,15 @@
     "?async_globals@@3Us_async_globals@@A",
     "ReleaseMutex",
     "WaitForSingleObject"
+  ],
+  "async_initialization_imports": [
+    "?async_globals@@3Us_async_globals@@A",
+    "?async_thread_proc@@YAKPAX@Z",
+    "?g_5020c8@@3Us_thread_stack@@A",
+    "CreateMutexA",
+    "CreateSemaphoreA",
+    "CreateThread",
+    "SetThreadPriority",
+    "h2_guest_memset"
   ]
 }

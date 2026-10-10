@@ -142,6 +142,14 @@ DWORD WINAPI WaitForSingleObject(HANDLE handle, DWORD milliseconds);
 BOOL WINAPI ReleaseMutex(HANDLE mutex);
 BOOL WINAPI ReleaseSemaphore(HANDLE semaphore, LONG release_count,
                              LONG* previous_count);
+typedef DWORD (WINAPI *LPTHREAD_START_ROUTINE)(void* parameter);
+HANDLE WINAPI CreateMutexA(void* attributes, BOOL initial_owner, const char* name);
+HANDLE WINAPI CreateSemaphoreA(void* attributes, LONG initial_count,
+                               LONG maximum_count, const char* name);
+HANDLE WINAPI CreateThread(void* attributes, DWORD stack_size,
+                           LPTHREAD_START_ROUTINE start, void* parameter,
+                           DWORD creation_flags, DWORD* thread_id);
+BOOL WINAPI SetThreadPriority(HANDLE thread, int priority);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);

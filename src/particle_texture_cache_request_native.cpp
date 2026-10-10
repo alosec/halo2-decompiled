@@ -75,6 +75,7 @@ extern s_texture_cache_file g_557c90[6];
 extern long g_55aca8;
 extern dword g_46e488;
 extern s_job_node *g_510810;
+extern s_thread_stack g_5020c8;
 
 // @retail 0x1a0e70
 long __stdcall function_1a0e70(s_async_task *task)
@@ -262,6 +263,29 @@ __declspec(noreturn) void async_work_loop(void)
 unsigned long __stdcall async_thread_proc(void *)
 {
     async_work_loop();
+}
+
+// @retail 0x120a90
+void function_120a90(void)
+{
+    memset(async_globals.nodes, 0, sizeof(async_globals.nodes));
+    for (long i = 0; i < 150; i++)
+    {
+        async_globals.nodes[i].next = &async_globals.nodes[i + 1];
+        async_globals.nodes[i].state = NONE;
+    }
+    async_globals.nodes[149].next = NULL;
+    async_globals.free_list = async_globals.nodes;
+    async_globals.work_list = NULL;
+    async_globals.free_list_mutex = CreateMutexA(NULL, FALSE, NULL);
+    async_globals.work_list_mutex = CreateMutexA(NULL, FALSE, NULL);
+    async_globals.work_semaphore = CreateSemaphoreA(NULL, 0, 150, NULL);
+    g_5020c8.unknown00 = 0;
+    g_5020c8.unknown04 = 0x4fa0c8;
+    g_5020c8.unknown08 = 0x8000;
+    async_globals.thread = CreateThread(NULL, 0x4000, async_thread_proc,
+        NULL, 0, NULL);
+    SetThreadPriority(async_globals.thread, 1);
 }
 
 // @retail 0x120ba0
