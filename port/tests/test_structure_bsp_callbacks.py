@@ -1442,6 +1442,54 @@ def main() -> int:
                 "semantics":
                     "exact epsilon-guarded three-component vector "
                     "normalization with original magnitude return"}, {
+                "source": "src/unknown_21dda0.cpp",
+                "symbol": "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z",
+                "imports": [
+                    "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
+                    "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+                    "?g_502114@@3PAUs_record_pool@@A",
+                    "?record_pool_release_all@@YAXPAUs_record_pool@@@Z"],
+                "semantics":
+                    "exact configured-capacity voice record-pool creation, "
+                    "activation, and complete initial release"}, {
+                "source": "src/unknown_21d110.cpp",
+                "symbol": "?sound_effects_initialize@@YA_NXZ",
+                "imports": [
+                    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+                    "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+                    "?g_51ebe0@@3PAXA",
+                    "?record_pool_release_all@@YAXPAUs_record_pool@@@Z"],
+                "semantics":
+                    "exact 16-entry sound-effect record-pool creation, "
+                    "activation, and complete initial release"}, {
+                "source": "src/unknown_12a1b0.cpp",
+                "symbol": "?function_21a0c0@@YA_NXZ",
+                "imports": [
+                    "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
+                    "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+                    "?g_502110@@3PAXA",
+                    "?record_pool_release_all@@YAXPAUs_record_pool@@@Z"],
+                "semantics":
+                    "exact 128-entry looping-sound record-pool creation, "
+                    "activation, and complete initial release"}, {
+                "source": "src/unknown_12a1b0.cpp",
+                "symbol": "?looping_sound_controllers_initialize@@YA_NXZ",
+                "imports": [
+                    "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
+                    "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+                    "?function_1462b0@@YAKXZ",
+                    "?function_163ba0@@YAXPAKPBXJ@Z",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_510800_pool_base@@3KA",
+                    "?g_510804_pool_size@@3JA",
+                    "?g_510808_pool_checksum@@3KA",
+                    "?g_51ebd8@@3PAXA", "?g_51ebdc@@3PAXA",
+                    "?record_pool_release_all@@YAXPAUs_record_pool@@@Z",
+                    "h2_guest_memset"],
+                "semantics":
+                    "exact 64-controller pool creation plus static auxiliary "
+                    "controller state allocation, checksum accounting, random "
+                    "seed, activation, and initial release"}, {
                 "source": "src/sound_effect_inputs_native.cpp",
                 "symbol": "?function_2221d0@@YAJM@Z",
                 "imports": [],
@@ -1914,6 +1962,8 @@ def main() -> int:
                 "native_sound_spatialization_and_channel_submission_owned",
                 "native_sound_source_callback_lifetimes_owned",
                 "native_sound_cache_physical_storage_initialized",
+                "native_sound_record_pool_allocator_owned",
+                "native_sound_effect_and_controller_pools_initialized",
                 "production_texture_requesters_linked"] or
             sound_idle.get("remaining_driver_frontier") !=
                 "port/runtime/sound_driver_idle_frontier.json" or
