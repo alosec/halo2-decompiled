@@ -1224,7 +1224,7 @@ def main() -> int:
         ("0x001290d0", "?sound_voices_update_chunks@@YAXXZ", True),
         ("0x001293f0", "?function_1293f0@@YAXXZ", True),
         ("0x00218810", "?sound_cache_new_frame@@YAXXZ", True),
-        ("0x0021ec00", "?function_21ec00@@YAXXZ", False),
+        ("0x0021ec00", "?function_21ec00@@YAXXZ", True),
         ("0x0021ee80", "?function_21ee80@@YAXXZ", False),
         ("0x003314b0", "GetTickCount", True),
     ]
@@ -1240,9 +1240,8 @@ def main() -> int:
             actual_sound_idle_calls != expected_sound_idle_calls or
             sound_idle.get("owned_direct_calls") != [
                 "0x00125a60", "0x001269f0", "0x001290d0", "0x001293f0",
-                "0x00218810", "0x003314b0"] or
-            sound_idle.get("remaining_direct_calls") != [
-                "0x0021ec00", "0x0021ee80"] or
+                "0x00218810", "0x0021ec00", "0x003314b0"] or
+            sound_idle.get("remaining_direct_calls") != ["0x0021ee80"] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
             sound_idle.get("source_owned") is not True or
@@ -2038,6 +2037,8 @@ def main() -> int:
     sound_driver_idle = json.loads((
         args.root / "port/runtime/sound_driver_idle_frontier.json"
     ).read_text())
+    sound_driver_pre_update_source = (
+        args.root / "src/sound_driver_pre_update_native.cpp").read_text()
     sound_stream_flush_source = (
         args.root / "src/sound_stream_flush.cpp").read_text()
     expected_stream_flush_fragments = [
@@ -2047,19 +2048,42 @@ def main() -> int:
         "DSSTREAMFLUSHEX_ASYNC | DSSTREAMFLUSHEX_ENVELOPE",
         "stream->codec->stop()",
         "stream->flushing = 1"]
+    expected_pre_update_fragments = [
+        "static_assert(sizeof(s_sound_stream) == 0x34",
+        "static_assert(sizeof(s_driver_pre_update_view) == 0x2ad8",
+        "static_assert(offsetof(s_driver_pre_update_view, channels) == 0x0c",
+        "static_assert(offsetof(s_driver_pre_update_view, reverb_dirty) == 0x2a08",
+        "static_assert(offsetof(s_driver_pre_update_view, panic_count) == 0x2ad4",
+        "void function_21ec00(void)",
+        "globals->panic_count != g_dwDirectSoundDeltaPanicCount",
+        "function_1915f0();",
+        "memset(globals->reverb_dirty, true, sizeof(globals->reverb_dirty));",
+        "DirectSoundDoWork();",
+        "for (long i = 0; i < globals->channel_count; i++)",
+        "if (stream->state == 1)",
+        "IDirectSoundStream_GetStatus(stream->stream, &status);",
+        "volatile bool stopped = !((status >> 16) & 1);",
+        "IDirectSoundStream_Flush(stream->stream);",
+        "stream->codec->stop();",
+        "stream->state = 0;",
+        "sound_stream_release_chunks(stream);",
+        "stream->flushing = 0;",
+        "Retail's trailing four-way switch has four empty cases"]
     expected_sound_driver_providers = [{
         "address": "0x0021ec00",
         "symbol": "?function_21ec00@@YAXXZ",
         "phase": "pre_update",
-        "source_owned": False,
+        "source_owned": True,
         "source_level_calls": [
             "function_1915f0", "memset", "DirectSoundDoWork",
-            "sound_driver_channel_get", "sound_driver_channel_flush"],
-        "indirect_calls": ["IDirectSoundStream::GetStatus"],
+            "IDirectSoundStream_GetStatus", "IDirectSoundStream_Flush",
+            "sound_stream_release_chunks"],
+        "indirect_calls": ["c_sound_stream_codec::stop"],
         "state": ["g_51ebe4", "g_dwDirectSoundDeltaPanicCount"],
         "semantics":
             "audio-processor panic recovery, DirectSound work servicing, "
-            "stopped-stream detection, and channel flush"}, {
+            "stopped-stream detection, and channel flush",
+        "source": "src/sound_driver_pre_update_native.cpp"}, {
         "address": "0x0021ee80",
         "symbol": "?function_21ee80@@YAXXZ",
         "phase": "post_update",
@@ -2077,10 +2101,19 @@ def main() -> int:
             "gain updates, stream advancement, and deferred-settings commit"}]
     if (
             sound_driver_idle.get("version") != 1 or
+            any(fragment not in sound_driver_pre_update_source
+                for fragment in expected_pre_update_fragments) or
             any(fragment not in sound_stream_flush_source
                 for fragment in expected_stream_flush_fragments) or
-            sound_driver_idle.get("source") != "src/unknown_21e330.cpp" or
+            sound_driver_idle.get("source") !=
+                "src/sound_driver_pre_update_native.cpp" or
+            sound_driver_idle.get("recovered_source") !=
+                "src/unknown_21e330.cpp" or
             sound_driver_idle.get("providers") != expected_sound_driver_providers or
+            sound_driver_idle.get("source_owned_providers") !=
+                ["0x0021ec00"] or
+            sound_driver_idle.get("remaining_providers") !=
+                ["0x0021ee80"] or
             sound_driver_idle.get("stream_flush") != {
                 "address": "0x002ae4b0",
                 "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",

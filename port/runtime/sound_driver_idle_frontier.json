@@ -1,15 +1,15 @@
 {
   "version": 1,
   "role": "genuine Xbox sound-driver pre/post update pair required by blocking texture idle service",
-  "source": "src/unknown_21e330.cpp",
+  "source": "src/sound_driver_pre_update_native.cpp",
   "providers": [
     {
       "address": "0x0021ec00",
       "symbol": "?function_21ec00@@YAXXZ",
       "phase": "pre_update",
-      "source_owned": false,
+      "source_owned": true,
       "indirect_calls": [
-        "IDirectSoundStream::GetStatus"
+        "c_sound_stream_codec::stop"
       ],
       "state": [
         "g_51ebe4",
@@ -20,9 +20,11 @@
         "function_1915f0",
         "memset",
         "DirectSoundDoWork",
-        "sound_driver_channel_get",
-        "sound_driver_channel_flush"
-      ]
+        "IDirectSoundStream_GetStatus",
+        "IDirectSoundStream_Flush",
+        "sound_stream_release_chunks"
+      ],
+      "source": "src/sound_driver_pre_update_native.cpp"
     },
     {
       "address": "0x0021ee80",
@@ -63,7 +65,7 @@
   ],
   "production_linked": false,
   "source_owned": false,
-  "blocker": "The idle providers and source-owned stream flush still perform live Xbox DirectSound work through mutable driver, stream, codec, effects and buffer objects. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required.",
+  "blocker": "The source-owned pre-update and unowned post-update still perform live Xbox DirectSound work through mutable driver, stream, codec, effects and buffer objects. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required.",
   "stream_flush": {
     "address": "0x002ae4b0",
     "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
@@ -89,5 +91,12 @@
       "DSSTREAMFLUSHEX_ENVELOPE"
     ],
     "semantics": "non-idle streams query status, resume paused playback, request asynchronous envelope-aware flush, stop the codec, and publish flushing state"
-  }
+  },
+  "recovered_source": "src/unknown_21e330.cpp",
+  "source_owned_providers": [
+    "0x0021ec00"
+  ],
+  "remaining_providers": [
+    "0x0021ee80"
+  ]
 }

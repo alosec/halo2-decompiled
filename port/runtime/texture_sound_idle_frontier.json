@@ -40,7 +40,7 @@
       "address": "0x0021ec00",
       "symbol": "?function_21ec00@@YAXXZ",
       "role": "sound driver pre-update",
-      "source_owned": false
+      "source_owned": true
     },
     {
       "address": "0x0021ee80",
@@ -61,10 +61,10 @@
     "0x001290d0",
     "0x001293f0",
     "0x00218810",
+    "0x0021ec00",
     "0x003314b0"
   ],
   "remaining_direct_calls": [
-    "0x0021ec00",
     "0x0021ee80"
   ],
   "state": {
@@ -881,7 +881,7 @@
   "blocking_texture_requests_enabled": false,
   "production_linked": false,
   "source_owned": true,
-  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, sound-cache request/allocation/read submission, cache initialization, eviction callbacks, bounded shutdown drain and disposal, queued and playback-held reference release, next-chunk selection, stream playback-rate conversion, and complete spatial gain transitions, playback fade, ordered stop, and voice teardown policy, both gain conversions and master-gain policy are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. Genuine Xbox sound-driver pre/post updates still bound every idle pass. Initialized sound cache/reference pools, allocator vtable, upload storage, cache-file routing and driver stream state, gain/fade and spatial channel submission, source callbacks, and initialized sound/main-loop/async/geometry state remain genuine requirements before production blocking texture requests can invoke it.",
+  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, sound-cache request/allocation/read submission, cache initialization, eviction callbacks, bounded shutdown drain and disposal, queued and playback-held reference release, next-chunk selection, stream playback-rate conversion, and complete spatial gain transitions, playback fade, ordered stop, and voice teardown policy, both gain conversions and master-gain policy are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. The genuine Xbox sound-driver post-update still bounds every idle pass; pre-update is source-owned but remains deliberately unlinked behind live DirectSound stream/codec state. Initialized sound cache/reference pools, allocator vtable, upload storage, cache-file routing and driver stream state, gain/fade and spatial channel submission, source callbacks, and initialized sound/main-loop/async/geometry state remain genuine requirements before production blocking texture requests can invoke it.",
   "implementation": {
     "source": "src/sound_idle_service_native.cpp",
     "symbol": "?function_125d60@@YAXXZ",
