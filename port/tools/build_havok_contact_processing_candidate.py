@@ -117,6 +117,7 @@ def main() -> int:
         object_function_evaluation = temporary / "object-function-evaluation.o"
         object_function_handlers = temporary / "object-function-handlers.o"
         object_interpolated_values = temporary / "object-interpolated-values.o"
+        tag_function_range = temporary / "tag-function-range.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -343,6 +344,9 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_10aac0.cpp", object_interpolated_values,
             ["?function_10aac0@@YA_NJJPAMPAJ@Z"])
+        compile_slice(
+            args, args.root / "src/tag_function_range_native.cpp", tag_function_range,
+            ["?function_13bb90@@YAMPBUs_tag_data@@MM@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -358,7 +362,7 @@ def main() -> int:
              light_object_visibility, light_root_state, light_root_object,
              light_marker_point, light_curve_lookup, inherited_ai_effect_flags,
              object_function_evaluation, object_function_handlers,
-             object_interpolated_values])
+             object_interpolated_values, tag_function_range])
     return 0
 
 

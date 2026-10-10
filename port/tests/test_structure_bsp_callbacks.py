@@ -864,6 +864,8 @@ def main() -> int:
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
     )
+    if "?function_13b390@@YAMPBXMM@Z" in effect_defined:
+        raise RuntimeError("general tag-function evaluator must remain outside dormant effect ownership")
     if ("?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z" not in effect_defined or
             "?function_177260@@YAXJ_N@Z" not in effect_defined or
             "?function_259a0@@YAMPAK@Z" not in effect_defined or
@@ -921,6 +923,7 @@ def main() -> int:
             "?function_bab40@@YA_NJJPAM@Z" not in effect_defined or
             "?function_108d90@@YA_NJJPAMPA_N@Z" not in effect_defined or
             "?function_10aac0@@YA_NJJPAMPAJ@Z" not in effect_defined or
+            "?function_13bb90@@YAMPBUs_tag_data@@MM@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")
