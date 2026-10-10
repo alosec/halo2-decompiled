@@ -42,6 +42,7 @@ def main() -> int:
     parser.add_argument("--production-object", type=Path, required=True)
     parser.add_argument("--primary-listener-table-object", type=Path, required=True)
     parser.add_argument("--primary-listener-provider-cluster-object", type=Path, required=True)
+    parser.add_argument("--particle-provider-table-object", type=Path, required=True)
     parser.add_argument("--contact-processing-candidate-object", type=Path, required=True)
     parser.add_argument("--impact-allocation-candidate-object", type=Path, required=True)
     parser.add_argument("--effect-lifecycle-candidate-object", type=Path, required=True)
@@ -98,6 +99,7 @@ def main() -> int:
     ]
     actual_particle_objects = []
     particle_methods = []
+    particle_provider_symbols = []
     for entry in particle_providers.get("objects", []):
         slots = entry.get("slots", [])
         if [slot.get("slot") for slot in slots] != list(range(21)):
@@ -122,6 +124,7 @@ def main() -> int:
                 f"?v{slot_index}@{class_name}@@{signature}")
         if [slot.get("provider") for slot in slots] != expected_symbols:
             raise RuntimeError("particle provider symbol mapping changed")
+        particle_provider_symbols.extend(expected_symbols)
         particle_methods.extend(methods)
         actual_particle_objects.append((
             entry.get("group"), int(entry.get("object_address", "0"), 0),
@@ -220,12 +223,39 @@ def main() -> int:
         [args.llvm_readelf, "-r", args.primary_listener_table_object], text=True)
     if primary_table_relocations.count("R_AARCH64_ABS32") != 17:
         raise RuntimeError("native primary listener table relocations changed")
+
+    particle_table_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", "--format=posix",
+         args.particle_provider_table_object], text=True)
+    particle_labels = {
+        "h2_native_effect_particle_provider_prt3_table",
+        "h2_native_effect_particle_provider_prtm_table",
+        "h2_native_effect_particle_provider_prt3_object",
+        "h2_native_effect_particle_provider_prtm_object",
+    }
+    if any(label not in particle_table_defined for label in particle_labels):
+        raise RuntimeError("native particle provider table/object is missing")
+    particle_table_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.particle_provider_table_object],
+            text=True).splitlines() if line.strip()
+    }
+    if particle_table_undefined != set(particle_provider_symbols):
+        raise RuntimeError("native particle provider table methods changed")
+    particle_table_relocations = subprocess.check_output(
+        [args.llvm_readelf, "-r", args.particle_provider_table_object], text=True)
+    if particle_table_relocations.count("R_AARCH64_ABS32") != 44:
+        raise RuntimeError("native particle provider relocations changed")
+
     production_defined_for_listener = subprocess.check_output(
         [args.llvm_nm, "--defined-only", "--format=posix", args.production_object],
         text=True)
     if ("h2_native_havok_primary_listener_vtables" in production_defined_for_listener or
             any(table[3] in production_defined_for_listener for table in expected_primary_tables)):
         raise RuntimeError("dormant primary listener tables entered production")
+    if any(label in production_defined_for_listener for label in particle_labels):
+        raise RuntimeError("dormant particle provider tables entered production")
     if "?function_277b80@@YAJPAX_NMPAVc_1cf520@@FPAUs_277ec0@@3PAVhkEntity@@4PAPAVc_277b80@@@Z" in production_defined_for_listener:
         raise RuntimeError("dormant contact-processing candidate entered production")
     if ("?impact_new@@YAJPBUs_impact_data@@J@Z" in production_defined_for_listener or

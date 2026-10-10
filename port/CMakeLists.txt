@@ -306,6 +306,30 @@ add_custom_target(h2_havok_primary_listener_table_object ALL DEPENDS
     "${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}"
 )
 
+set(H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/effect_particle_provider_vtables.s")
+set(H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/effect_particle_provider_vtables.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_effect_particle_provider_vtables.py"
+            --manifest "${CMAKE_CURRENT_SOURCE_DIR}/runtime/effect_particle_provider_vtables.json"
+            --output "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM}"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_effect_particle_provider_vtables.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/effect_particle_provider_vtables.json"
+    VERBATIM
+)
+add_custom_command(
+    OUTPUT "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+    COMMAND "${H2_LLVM_ROOT}/bin/clang" --target=aarch64-linux-gnu -c
+            "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM}"
+            -o "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+    DEPENDS "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_ASM}"
+    VERBATIM
+)
+add_custom_target(h2_effect_particle_provider_table_object ALL DEPENDS
+    "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}"
+)
+
 set(H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_contact_processing_candidate.o")
 set(H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_impact_allocation_candidate.o")
 set(H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_effect_lifecycle_candidate.o")
@@ -2476,6 +2500,7 @@ add_test(
             --production-object ${H2_MAIN_MENU_PARTIAL_ELF}
             --primary-listener-table-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_TABLE_OBJECT}
             --primary-listener-provider-cluster-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}
+            --particle-provider-table-object ${H2_GUEST_EFFECT_PARTICLE_PROVIDER_TABLE_OBJECT}
             --contact-processing-candidate-object ${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}
             --impact-allocation-candidate-object ${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}
             --effect-lifecycle-candidate-object ${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}
