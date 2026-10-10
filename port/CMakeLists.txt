@@ -2442,6 +2442,7 @@ add_custom_command(
             --extract-symbol "?function_1a0e70@@YAJPATs_async_task@@@Z"
             --extract-symbol "?function_213760@@YAJKJPAXPAKPA_NJJ@Z"
             --extract-symbol "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z"
+            --extract-symbol "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z"
             --output "${H2_GUEST_ASYNC_READ_OBJECT}"
             "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_request_native.cpp"
     DEPENDS

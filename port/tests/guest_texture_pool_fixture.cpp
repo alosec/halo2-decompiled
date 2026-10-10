@@ -75,6 +75,7 @@ static s_physical_pool_storage g_physical_storage;
 static s_texture_pool_storage g_texture_storage;
 static s_bitmap_data g_upload_bitmap;
 static byte __attribute__((aligned(0x1000))) g_upload_buffer[0x1000];
+static long g_sound_idle_calls;
 
 s_record_pool *g_4e6454;
 s_physical_object *g_4e6464;
@@ -83,12 +84,18 @@ long g_4e6484;
 long g_450768[8][24];
 
 struct s_type_7ba8e9;
-bool function_12d5a0(s_bitmap_data *bitmap, long level, bool blocking,
-	bool alternate, long priority);
+D3DTexture *function_12c990(s_bitmap_data *bitmap, long level, bool request,
+	bool blocking, bool alternate, long priority, bool *waited, bool *failed);
 long function_1365a0(s_type_7ba8e9 const *bitmap, long mipmap_index);
 long log2_floor(dword value);
 short bitmap_get_mipmap_count(short width, short height, short depth,
 	short format, bool linear, short maximum_levels);
+
+// Test-only trap: this nonblocking path must never service the live sound idle hook.
+void function_125d60(void)
+{
+	g_sound_idle_calls++;
+}
 
 static void initialize_pool(s_record_pool *pool, char const *name, long count,
 	long size, byte *entries, dword *bitmap)
@@ -191,6 +198,7 @@ extern "C" int h2_texture_upload_initialize(void)
 	memset(g_upload_buffer, 0, sizeof(g_upload_buffer));
 	memset(&g_upload_bitmap, 0, sizeof(g_upload_bitmap));
 	memset(g_450768, 0, sizeof(g_450768));
+	g_sound_idle_calls = 0;
 
 	g_upload_bitmap.width = 4;
 	g_upload_bitmap.height = 4;
@@ -207,7 +215,11 @@ extern "C" int h2_texture_upload_initialize(void)
 
 extern "C" int h2_texture_upload_submit(void)
 {
-	return function_12d5a0(&g_upload_bitmap, 0, false, false, 3) ? 1 : 0;
+	bool waited = false;
+	bool failed = false;
+	D3DTexture *texture = function_12c990(&g_upload_bitmap, 0, true, false,
+		false, 3, &waited, &failed);
+	return !texture && !waited && !failed;
 }
 
 extern "C" int h2_texture_upload_completed(void)
@@ -221,7 +233,12 @@ extern "C" int h2_texture_upload_completed(void)
 
 	s_physical_block *block = &g_physical_storage.entries[block_index & 0xffff];
 	s_texture_pool_entry *entry = &g_texture_storage.entries[block_index & 0xffff];
-	if (block->offset != 0 || block->pages != 1 || !entry->resident ||
+	bool waited = false;
+	bool failed = false;
+	D3DTexture *texture = function_12c990(&g_upload_bitmap, 0, false, false,
+		false, 0, &waited, &failed);
+	if (texture != &entry->resource || waited || failed || g_sound_idle_calls != 0 ||
+		block->offset != 0 || block->pages != 1 || !entry->resident ||
 		entry->pending != 0 || entry->priority != 3 ||
 		entry->bitmap != &g_upload_bitmap ||
 		g_upload_bitmap.level_addresses[0] != (long)g_upload_buffer ||

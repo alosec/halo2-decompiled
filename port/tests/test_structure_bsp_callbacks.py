@@ -1480,7 +1480,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "recovered_upload_allocation_executes_over_dormant_synthetic_pools",
+                    "recovered_nonblocking_texture_request_executes_over_dormant_synthetic_pools",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1503,7 +1503,10 @@ def main() -> int:
                     "function_12d5a0_allocates_one_physical_page_and_matching_texture_entry",
                     "sixteen_source_bytes_round_to_one_512_byte_async_read",
                     "recovered_header_targets_the_allocated_guest_upload_address",
-                    "worker_completion_sets_resident_and_restores_all_150_queue_nodes"],
+                    "worker_completion_sets_resident_and_restores_all_150_queue_nodes",
+                    "function_12c990_nonblocking_request_returns_null_while_queuing_real_upload",
+                    "function_12c990_returns_exact_resident_texture_after_worker_completion",
+                    "nonblocking_request_never_invokes_function_125d60_idle_service"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1511,7 +1514,8 @@ def main() -> int:
                     "imports_resolved_by_fixture": True,
                     "upload_allocation_definitions": 2,
                     "mip_math_definitions": 2,
-                    "bitmap_pitch_definitions": 1},
+                    "bitmap_pitch_definitions": 1,
+                    "request_policy_chain_definitions": 3},
                 "remaining_ownership": [
                     "host_owned_guest_pool_storage_and_fixed_global_publication",
                     "production_guest_physical_upload_buffer",
@@ -1523,6 +1527,11 @@ def main() -> int:
                 "recovered_upload_allocation_round_trip": {
                     "entry": "function_12d5a0",
                     "header": "function_12d6d0",
+                    "request_policy": "function_12c990",
+                    "blocking": False,
+                    "initial_return": "null_pending_texture",
+                    "completed_return": "exact_resident_texture_entry",
+                    "sound_idle_calls": 0,
                     "source_location": 2048,
                     "source_bytes": 16,
                     "scheduled_bytes": 512,
