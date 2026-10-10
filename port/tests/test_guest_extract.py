@@ -3317,6 +3317,14 @@ def main():
                  "exp", "g_444c84", "pow", "sqrt"}),
             ("sound-effect-normalize.o", "src/unknown_030290.cpp",
              "?function_30bf0@@YAMPATvector3f@@@Z", {"fabs", "sqrt"}),
+            ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
+             "?function_125600@@YAXXZ", {
+                 "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",
+                 "?g_4e6374@@3JA", "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A", "?g_502110@@3PAXA",
+                 "?g_502114@@3PAUs_record_pool@@A", "?g_51ebd8@@3PAXA",
+                 "?g_51ebdc@@3PAXA", "?g_51ebe0@@3PAXA"}),
             ("sound-system-startup.o", "src/sound_system_startup_native.cpp",
              "?function_1253d0@@YAXXZ", {
                  "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",

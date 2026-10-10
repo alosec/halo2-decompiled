@@ -85,6 +85,11 @@ extern s_4e6380 *g_4e6380;
 extern dword g_510800_pool_base;
 extern long g_510804_pool_size;
 extern dword g_510808_pool_checksum;
+extern void *g_502110;
+extern s_record_pool *g_502114;
+extern void *g_51ebd8;
+extern void *g_51ebdc;
+extern void *g_51ebe0;
 
 void function_163ba0(dword *checksum, void const *data, long size);
 s_record_pool *function_11cc20(long maximum_count, char const *name, long size);
@@ -96,6 +101,8 @@ bool sound_effects_initialize(void);
 struct s_sound_voice_settings;
 bool sound_voices_initialize(s_sound_voice_settings const *settings);
 bool function_21e4b0(s_sound_driver_counts const *counts);
+void function_2186b0(void);
+void function_21eae0(void);
 
 static void *sound_static_allocate(long size)
 {
@@ -181,4 +188,36 @@ void function_1253d0(void)
 		}
 	}
 	g_4e6374++;
+}
+
+// @retail 0x125600
+void function_125600(void)
+{
+	if (--g_4e6374 == 0)
+	{
+		function_2186b0();
+		function_21eae0();
+		if (g_51ebe0)
+			g_51ebe0 = NULL;
+		if (g_502114)
+		{
+			g_502114->valid = false;
+			g_502114 = NULL;
+		}
+		if (g_502110)
+			g_502110 = NULL;
+		if (g_51ebd8)
+			g_51ebd8 = NULL;
+		if (g_51ebdc)
+			g_51ebdc = NULL;
+		if (g_4e6380)
+			g_4e6380 = NULL;
+		if (g_4e637c)
+		{
+			g_4e637c->valid = false;
+			g_4e637c = NULL;
+		}
+		if (g_4e6378)
+			g_4e6378 = NULL;
+	}
 }
