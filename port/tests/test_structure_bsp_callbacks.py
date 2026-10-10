@@ -1244,11 +1244,58 @@ def main() -> int:
                     "symbolic_link_file_rejection",
                     "worker_thread_create_stack_wait_join_close",
                     "worker_thread_exit_code",
-                    "worker_thread_precedence_priority_mapping"],
+                    "worker_thread_precedence_priority_mapping",
+                    "scheduler_lifecycle_contract"],
                 "remaining_services": [
                     "guest_host_abi_bridge",
-                    "scheduler_stop_admission_and_shutdown",
+                    "scheduler_lifecycle_implementation",
                     "cache_file_handle_initialization"]} or
+            texture_upload.get("native_scheduler_lifecycle") != {
+                "status": "designed_not_implemented",
+                "recovered_shutdown_provider": None,
+                "states": ["stopped", "accepting", "stopping"],
+                "initial_state": "stopped",
+                "admission": {
+                    "linearization_lock": "native_lifecycle_lock",
+                    "allowed_state": "accepting",
+                    "rejected_task_id": -1,
+                    "rejection_side_effects": "none",
+                    "stop_transition":
+                        "accepting_to_stopping_before_any_handle_close"},
+                "shutdown_policy": {
+                    "mode": "drain_all_admitted_tasks",
+                    "cancellation_supported": False,
+                    "reason":
+                        "the recovered callback and done ABIs have no cancellation result channel",
+                    "queued_nodes":
+                        "remain_queued_and_run_to_terminal_result_one",
+                    "in_flight_node": "runs_to_terminal_result_one",
+                    "retry_result": 0,
+                    "completion_result": 1,
+                    "unsupported_terminal_results":
+                        "callbacks_that_can_return_other_nonzero_results_are_not_bridge_admissible",
+                    "done_publication":
+                        "accepted_tasks_publish_true_only_after_completion_result_one",
+                    "timeout_behavior":
+                        "remain_stopping_with_handles_and_queue_owned_for_retry"},
+                "worker_exit": {
+                    "wake_after_stop_transition": True,
+                    "condition": "state_is_stopping_and_work_list_is_empty",
+                    "check_lock": "work_list_mutex",
+                    "exit_code": 0},
+                "teardown_order": [
+                    "stop_admission", "wake_worker", "drain_admitted_tasks",
+                    "wait_worker_exit", "join_and_close_thread",
+                    "verify_empty_work_list_and_150_free_nodes",
+                    "close_work_semaphore", "close_work_list_mutex",
+                    "close_free_list_mutex",
+                    "clear_current_node_and_guest_handles",
+                    "transition_to_stopped"],
+                "cache_teardown_dependency":
+                    "close_cache_file_handles_and_release_cache_pools_only_after_scheduler_stopped",
+                "restart_policy":
+                    "only_stopped_may_initialize_a_fresh_150_node_queue_and_new_handles",
+                "execution_enabled": False} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
