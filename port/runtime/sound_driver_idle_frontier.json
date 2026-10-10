@@ -30,24 +30,27 @@
       "address": "0x0021ee80",
       "symbol": "?function_21ee80@@YAXXZ",
       "phase": "post_update",
-      "source_owned": false,
+      "source_owned": true,
       "indirect_calls": [
-        "c_sound_effects::set_i3dl2",
-        "IDirectSoundBuffer::SetVolume",
-        "IDirectSound::CommitDeferredSettings"
+        "c_sound_driver_effects::set_i3dl2"
       ],
       "state": [
         "g_47005c",
-        "g_51ebe4",
-        "g_44a250[2]"
+        "g_51ebe4"
       ],
       "semantics": "deferred environment, reverb and occlusion application, submix gain updates, stream advancement, and deferred-settings commit",
       "source_level_calls": [
         "function_21ece0",
         "sound_occlusion_overlap",
         "sound_submix_volume",
+        "IDirectSoundBuffer_SetVolume",
+        "IDirectSound_CommitDeferredSettings",
         "sound_stream_update",
         "function_191550"
+      ],
+      "source": "src/sound_driver_post_update_native.cpp",
+      "constants": [
+        "reverb effect indices 9 and 8"
       ]
     }
   ],
@@ -64,8 +67,8 @@
     "native_sound_stream_codec_stop_owned"
   ],
   "production_linked": false,
-  "source_owned": false,
-  "blocker": "The source-owned pre-update and unowned post-update still perform live Xbox DirectSound work through mutable driver, stream, codec, effects and buffer objects. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required.",
+  "source_owned": true,
+  "blocker": "Both exact idle providers and source-owned stream flush still perform live Xbox DirectSound/XAudio work through mutable driver, stream, codec, effects and buffer objects. They cannot be linked or executed merely to unblock texture waits; a genuine native audio backend or an exact behavior-preserving ownership layer and initialized mutable lifetimes are required.",
   "stream_flush": {
     "address": "0x002ae4b0",
     "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
@@ -94,9 +97,19 @@
   },
   "recovered_source": "src/unknown_21e330.cpp",
   "source_owned_providers": [
-    "0x0021ec00"
-  ],
-  "remaining_providers": [
+    "0x0021ec00",
     "0x0021ee80"
+  ],
+  "remaining_providers": [],
+  "reverb_update": {
+    "address": "0x0021ece0",
+    "symbol": "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
+    "source": "src/sound_driver_post_update_native.cpp",
+    "source_owned": true,
+    "semantics": "construct the exact high-level I3DL2 reverb description from recovered driver state, master gain, and bounded fade conversion, then submit it through genuine XAudioSetEffectData"
+  },
+  "native_sources": [
+    "src/sound_driver_pre_update_native.cpp",
+    "src/sound_driver_post_update_native.cpp"
   ]
 }

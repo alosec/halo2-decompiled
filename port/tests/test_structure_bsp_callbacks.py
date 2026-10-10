@@ -1225,7 +1225,7 @@ def main() -> int:
         ("0x001293f0", "?function_1293f0@@YAXXZ", True),
         ("0x00218810", "?sound_cache_new_frame@@YAXXZ", True),
         ("0x0021ec00", "?function_21ec00@@YAXXZ", True),
-        ("0x0021ee80", "?function_21ee80@@YAXXZ", False),
+        ("0x0021ee80", "?function_21ee80@@YAXXZ", True),
         ("0x003314b0", "GetTickCount", True),
     ]
     actual_sound_idle_calls = [
@@ -1240,8 +1240,9 @@ def main() -> int:
             actual_sound_idle_calls != expected_sound_idle_calls or
             sound_idle.get("owned_direct_calls") != [
                 "0x00125a60", "0x001269f0", "0x001290d0", "0x001293f0",
-                "0x00218810", "0x0021ec00", "0x003314b0"] or
-            sound_idle.get("remaining_direct_calls") != ["0x0021ee80"] or
+                "0x00218810", "0x0021ec00", "0x0021ee80",
+                "0x003314b0"] or
+            sound_idle.get("remaining_direct_calls") != [] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
             sound_idle.get("source_owned") is not True or
@@ -2039,6 +2040,8 @@ def main() -> int:
     ).read_text())
     sound_driver_pre_update_source = (
         args.root / "src/sound_driver_pre_update_native.cpp").read_text()
+    sound_driver_post_update_source = (
+        args.root / "src/sound_driver_post_update_native.cpp").read_text()
     sound_stream_flush_source = (
         args.root / "src/sound_stream_flush.cpp").read_text()
     expected_stream_flush_fragments = [
@@ -2069,6 +2072,30 @@ def main() -> int:
         "sound_stream_release_chunks(stream);",
         "stream->flushing = 0;",
         "Retail's trailing four-way switch has four empty cases"]
+    expected_post_update_fragments = [
+        "static_assert(sizeof(s_driver_post_update_view) == 0x2ad8",
+        "static_assert(offsetof(s_driver_post_update_view, channels) == 0x0c",
+        "static_assert(offsetof(s_driver_post_update_view, reverbs) == 0x2950",
+        "static_assert(offsetof(s_driver_post_update_view, reverb_scales) == 0x29e0",
+        "static_assert(offsetof(s_driver_post_update_view, occlusions) == 0x29e8",
+        "static_assert(offsetof(s_driver_post_update_view, reverb_dirty) == 0x2a08",
+        "static_assert(offsetof(s_driver_post_update_view, occlusion_dirty) == 0x2a0a",
+        "static_assert(offsetof(s_driver_post_update_view, submix_buffers) == 0x2a70",
+        "static_assert(offsetof(s_driver_post_update_view, direct_sound) == 0x2ab0",
+        "static_assert(offsetof(s_driver_post_update_view, effects) == 0x2ab4",
+        "void function_21ece0(long effect_index,",
+        "static const dword k_i3dl2_reverb = 12;",
+        "long gain = function_2197f0(g_468834);",
+        "XAudioSetEffectData(effect_index, &description, NULL);",
+        "void function_21ee80(void)",
+        "globals->effects->set_i3dl2(&g_47005c.room, globals->surround);",
+        "function_21ece0(9 - group, &globals->reverbs[group]);",
+        "real overlap0 = sound_occlusion_overlap(",
+        "sound_submix_volume(gain));",
+        "IDirectSound_CommitDeferredSettings(globals->direct_sound);",
+        "sound_stream_update(stream);",
+        "Both retail state switches have four empty cases.",
+        "function_191550();"]
     expected_sound_driver_providers = [{
         "address": "0x0021ec00",
         "symbol": "?function_21ec00@@YAXXZ",
@@ -2087,33 +2114,49 @@ def main() -> int:
         "address": "0x0021ee80",
         "symbol": "?function_21ee80@@YAXXZ",
         "phase": "post_update",
-        "source_owned": False,
+        "source_owned": True,
         "source_level_calls": [
             "function_21ece0", "sound_occlusion_overlap",
-            "sound_submix_volume", "sound_stream_update", "function_191550"],
-        "indirect_calls": [
-            "c_sound_effects::set_i3dl2",
-            "IDirectSoundBuffer::SetVolume",
-            "IDirectSound::CommitDeferredSettings"],
-        "state": ["g_47005c", "g_51ebe4", "g_44a250[2]"],
+            "sound_submix_volume", "IDirectSoundBuffer_SetVolume",
+            "IDirectSound_CommitDeferredSettings", "sound_stream_update",
+            "function_191550"],
+        "indirect_calls": ["c_sound_driver_effects::set_i3dl2"],
+        "state": ["g_47005c", "g_51ebe4"],
         "semantics":
             "deferred environment, reverb and occlusion application, submix "
-            "gain updates, stream advancement, and deferred-settings commit"}]
+            "gain updates, stream advancement, and deferred-settings commit",
+        "source": "src/sound_driver_post_update_native.cpp",
+        "constants": ["reverb effect indices 9 and 8"]}]
     if (
             sound_driver_idle.get("version") != 1 or
             any(fragment not in sound_driver_pre_update_source
                 for fragment in expected_pre_update_fragments) or
+            any(fragment not in sound_driver_post_update_source
+                for fragment in expected_post_update_fragments) or
             any(fragment not in sound_stream_flush_source
                 for fragment in expected_stream_flush_fragments) or
             sound_driver_idle.get("source") !=
                 "src/sound_driver_pre_update_native.cpp" or
             sound_driver_idle.get("recovered_source") !=
                 "src/unknown_21e330.cpp" or
+            sound_driver_idle.get("native_sources") != [
+                "src/sound_driver_pre_update_native.cpp",
+                "src/sound_driver_post_update_native.cpp"] or
             sound_driver_idle.get("providers") != expected_sound_driver_providers or
             sound_driver_idle.get("source_owned_providers") !=
-                ["0x0021ec00"] or
-            sound_driver_idle.get("remaining_providers") !=
-                ["0x0021ee80"] or
+                ["0x0021ec00", "0x0021ee80"] or
+            sound_driver_idle.get("remaining_providers") != [] or
+            sound_driver_idle.get("reverb_update") != {
+                "address": "0x0021ece0",
+                "symbol":
+                    "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
+                "source": "src/sound_driver_post_update_native.cpp",
+                "source_owned": True,
+                "semantics":
+                    "construct the exact high-level I3DL2 reverb "
+                    "description from recovered driver state, master gain, "
+                    "and bounded fade conversion, then submit it through "
+                    "genuine XAudioSetEffectData"} or
             sound_driver_idle.get("stream_flush") != {
                 "address": "0x002ae4b0",
                 "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
@@ -2149,7 +2192,7 @@ def main() -> int:
                 "native_direct_sound_async_envelope_flush_owned",
                 "native_sound_stream_codec_stop_owned"] or
             sound_driver_idle.get("production_linked") is not False or
-            sound_driver_idle.get("source_owned") is not False or
+            sound_driver_idle.get("source_owned") is not True or
             not sound_driver_idle.get("blocker")):
         raise RuntimeError("sound driver idle frontier changed")
 
