@@ -3395,6 +3395,64 @@ def main():
                     f"sound fade helper imports changed for {fade_symbol}: "
                     f"{sorted(fade_imports)}")
 
+        sound_attenuation_symbols = {
+            "?sound_get_minimum_distance@@YAMPBUs_sound@@J@Z",
+            "?sound_get_maximum_distance@@YAMPBUs_sound@@J@Z",
+            "?function_125060@@YAJPBUs_sound@@J@Z",
+            "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
+            "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
+            "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
+            "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
+        }
+        sound_attenuation_output = Path(temporary) / "sound-attenuation.o"
+        sound_attenuation_command = command[:]
+        sound_attenuation_command[
+            sound_attenuation_command.index("h2_extract_selected")
+        ] = sorted(sound_attenuation_symbols)[0]
+        sound_attenuation_command[
+            sound_attenuation_command.index("--extract-global"):
+            sound_attenuation_command.index("--output")
+        ] = []
+        insertion = sound_attenuation_command.index("--output")
+        for symbol in sorted(sound_attenuation_symbols)[1:]:
+            sound_attenuation_command[insertion:insertion] = [
+                "--extract-symbol", symbol]
+            insertion += 2
+        sound_attenuation_command[
+            sound_attenuation_command.index(output)
+        ] = sound_attenuation_output
+        sound_attenuation_command[-1] = (
+            args.root / "src/sound_attenuation_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_attenuation_command], check=True)
+        sound_attenuation_defined = {
+            line.split()[0].removeprefix("_")
+            for line in subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+                 sound_attenuation_output], text=True).splitlines()
+            if line and not line.startswith("ltmp")
+        }
+        if sound_attenuation_defined != sound_attenuation_symbols:
+            raise RuntimeError(
+                "sound attenuation definitions changed: "
+                f"{sorted(sound_attenuation_defined)}")
+        sound_attenuation_imports = {
+            line.split()[0].removeprefix("_")
+            for line in subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+                 sound_attenuation_output], text=True).splitlines() if line
+        }
+        expected_sound_attenuation_imports = {
+            "?function_12aff0@@YAMMMM_N@Z",
+            "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+            "?g_4e3b44@@3PAUs_tag_instance@@A",
+            "?g_51ebd4@@3PAUs_sound_globals@@A",
+        }
+        if sound_attenuation_imports != expected_sound_attenuation_imports:
+            raise RuntimeError(
+                "sound attenuation imports changed: "
+                f"{sorted(sound_attenuation_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]

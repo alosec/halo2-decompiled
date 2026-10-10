@@ -1365,6 +1365,58 @@ def main() -> int:
                 "semantics":
                     "exact 0x34-byte stream traversal, per-state channel "
                     "masks, free-voice mask, and three paired driver counts"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_minimum_distance@@YAMPBUs_sound@@J@Z",
+                "imports": [
+                    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact per-sound, promotion, and class "
+                             "minimum-distance selection"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_maximum_distance@@YAMPBUs_sound@@J@Z",
+                "imports": [
+                    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact per-sound, promotion, and class "
+                             "maximum-distance selection"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?function_125060@@YAJPBUs_sound@@J@Z",
+                "imports": ["?g_4e3b44@@3PAUs_tag_instance@@A"],
+                "semantics": "exact directional-cone override and "
+                             "definition policy"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
+                "imports": [
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact compressed override or class "
+                             "inner-cone angle"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
+                "imports": [
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact compressed override or class "
+                             "outer-cone angle"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
+                "imports": [
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact per-sound override or class "
+                             "outer-cone gain"}, {
+                "source": "src/sound_attenuation_native.cpp",
+                "symbol": "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
+                "imports": [
+                    "?function_12aff0@@YAMMMM_N@Z",
+                    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "semantics": "exact minimum-distance plateau, "
+                             "inverse-distance falloff, and maximum-distance "
+                             "fade"}, {
                 "source": "src/sound_spatial_gain_native.cpp",
                 "symbol": "?function_12a6d0@@YAJFMM@Z",
                 "imports": [
