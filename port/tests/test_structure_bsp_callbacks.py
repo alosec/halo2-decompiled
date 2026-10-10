@@ -2144,8 +2144,14 @@ def main() -> int:
         "offsetof(s_wma_codec_initialize_view, packet_status) == 0x18"]
     expected_wma_control_fragments = [
         "void c_wma_codec::attach(s_sound_stream *stream)",
-        "m_stream = stream;", "void c_wma_codec::stop()",
-        "release_decoder();",
+        "m_stream = stream;",
+        "void c_wma_codec::packet_submitted(s_sound_stream *stream,",
+        "stream->offset = 0;",
+        "dword c_wma_codec::read(dword offset, dword byte_count, void **data)",
+        "m_stream->chunks[m_stream->started_count - 1]",
+        "*data = offset <= SOUND_CHUNK_SIZE(chunk) ? chunk_data + offset : NULL;",
+        "entry->reference_count--;",
+        "void c_wma_codec::stop()", "release_decoder();",
         "bool c_wma_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return m_decoder && !submitted;"]
     expected_pcm_control_fragments = [
@@ -2336,6 +2342,17 @@ def main() -> int:
                 "source": "src/sound_wma_codec_control_native.cpp",
                 "semantics":
                     "Publish the genuine owning stream on codec attachment."}, {
+                "symbol": "c_wma_codec::packet_submitted",
+                "source": "src/sound_wma_codec_control_native.cpp",
+                "semantics":
+                    "Reset the authentic stream byte offset only after "
+                    "DirectSound accepts a decoded WMA packet."}, {
+                "symbol": "c_wma_codec::read",
+                "source": "src/sound_wma_codec_control_native.cpp",
+                "semantics":
+                    "Expose bounded bytes from the currently started cached "
+                    "WMA chunk, release its cache reference, and preserve "
+                    "retail unsigned remaining-byte semantics."}, {
                 "symbol": "c_wma_codec::stop",
                 "source": "src/sound_wma_codec_control_native.cpp",
                 "semantics":
