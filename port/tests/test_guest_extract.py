@@ -2906,6 +2906,44 @@ def main():
                 "sound cache frame imports changed: "
                 f"{sorted(sound_cache_frame_imports)}")
 
+        sound_voices_output = Path(temporary) / "sound-voice-chunks.o"
+        sound_voices_symbol = "?sound_voices_update_chunks@@YAXXZ"
+        sound_voices_command = command[:]
+        sound_voices_command[
+            sound_voices_command.index("h2_extract_selected")
+        ] = sound_voices_symbol
+        sound_voices_command[
+            sound_voices_command.index("--extract-global"):
+            sound_voices_command.index("--output")
+        ] = []
+        sound_voices_command[
+            sound_voices_command.index(output)
+        ] = sound_voices_output
+        sound_voices_command[-1] = (
+            args.root / "src/sound_voice_chunks_native.cpp")
+        subprocess.run([str(value) for value in sound_voices_command], check=True)
+        sound_voices_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_voices_output], text=True)
+        if sound_voices_symbol not in sound_voices_defined:
+            raise RuntimeError(
+                "sound voice traversal was not selectively compilable")
+        sound_voices_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_voices_output], text=True)
+        sound_voices_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_voices_undefined.splitlines() if line
+        }
+        expected_sound_voices_imports = {
+            "?g_4e6380@@3PAUs_4e6380@@A",
+            "?sound_voice_update_chunks@@YAXF@Z",
+        }
+        if sound_voices_imports != expected_sound_voices_imports:
+            raise RuntimeError(
+                "sound voice traversal imports changed: "
+                f"{sorted(sound_voices_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
