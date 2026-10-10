@@ -1203,6 +1203,30 @@ def main():
         if material_masks_undefined.strip():
             raise RuntimeError("particle material shader-mask loader gained imports")
 
+        material_curve_output = Path(temporary) / "particle-material-curve-route.o"
+        material_curve_symbol = "?function_174d0@@YAXPAEJJJJ@Z"
+        material_curve_dependency = "?function_17550@@YAXPAEPBG@Z"
+        material_curve_command = command[:]
+        material_curve_command[material_curve_command.index("h2_extract_selected")] = material_curve_symbol
+        material_curve_command[
+            material_curve_command.index("--extract-global"):material_curve_command.index("--output")
+        ] = []
+        material_curve_command[material_curve_command.index(output)] = material_curve_output
+        material_curve_command[-1] = args.root / "src/particle_material_curve_route_native.cpp"
+        subprocess.run([str(value) for value in material_curve_command], check=True)
+        material_curve_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_curve_output],
+            text=True,
+        )
+        if material_curve_symbol not in material_curve_defined:
+            raise RuntimeError("particle material curve router was not selectively compilable")
+        material_curve_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_curve_output],
+            text=True,
+        )
+        if material_curve_dependency not in material_curve_undefined:
+            raise RuntimeError("particle material curve router hid its evaluator boundary")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
