@@ -125,6 +125,7 @@
     "native_sound_driver_listener_state_owned",
     "native_directsound_stream_creation_owned",
     "native_directsound_stream_stop_owned",
+    "native_directsound_stream_reset_owned",
     "native_directsound_stream_packet_pump_owned",
     "native_sound_stream_chunk_and_cache_lifetime_owned",
     "native_wma_codec_packet_buffer_owned",
@@ -243,6 +244,14 @@
       "source": "src/sound_stream_update_native.cpp",
       "address": "0x002ae820",
       "semantics": "While state 2 or 3 is genuinely ready, obtain codec packets, submit them through the live DirectSound stream, route accepted and failed submissions to the codec, repeat only after success, and publish a real discontinuity after any accepted packet."
+    }
+  ],
+  "sound_stream_reset_helpers": [
+    {
+      "symbol": "sound_stream_reset",
+      "source": "src/sound_stream_reset_native.cpp",
+      "address": "0x002ae750",
+      "semantics": "Restore the default zero-attack/quarter-second-release envelope, halt a state-1 stream through genuine status, flush, codec-stop, and queued-cache release operations, then invoke the exact asynchronous stream flush policy."
     }
   ]
 }

@@ -2133,6 +2133,8 @@ def main() -> int:
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_pcm_control_source = (
         args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
+    sound_stream_reset_source = (
+        args.root / "src/sound_stream_reset_native.cpp").read_text()
     sound_stream_update_source = (
         args.root / "src/sound_stream_update_native.cpp").read_text()
     sound_stream_stop_source = (
@@ -2178,6 +2180,16 @@ def main() -> int:
         "sound_stream_release_chunk(stream, chunk);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
+    expected_stream_reset_fragments = [
+        "void sound_stream_reset(s_sound_stream *stream)",
+        "sound_stream_set_envelope(stream, 0.0f, 0.25f);",
+        "if (stream->state == 1)",
+        "IDirectSoundStream_GetStatus(stream->stream, &status);",
+        "IDirectSoundStream_Flush(stream->stream);",
+        "stream->codec->stop();",
+        "sound_stream_release_chunks(stream);",
+        "stream->flushing = 0;",
+        "sound_stream_flush(stream);"]
     expected_stream_update_fragments = [
         "void sound_stream_update(s_sound_stream *stream)",
         "((1 << stream->state) & ((1 << 2) | (1 << 3)))",
@@ -2255,6 +2267,7 @@ def main() -> int:
         "native_sound_driver_listener_state_owned",
         "native_directsound_stream_creation_owned",
         "native_directsound_stream_stop_owned",
+        "native_directsound_stream_reset_owned",
         "native_directsound_stream_packet_pump_owned",
         "native_sound_stream_chunk_and_cache_lifetime_owned",
         "native_wma_codec_packet_buffer_owned",
@@ -2472,6 +2485,15 @@ def main() -> int:
                     "DirectSound interface, stop the attached codec, release "
                     "every queued cache lock, clear flushing state, and then "
                     "normalize authentic started and queued counts to zero."}] or
+            sound_driver_lifecycle.get("sound_stream_reset_helpers") != [{
+                "symbol": "sound_stream_reset",
+                "source": "src/sound_stream_reset_native.cpp",
+                "address": "0x002ae750",
+                "semantics":
+                    "Restore the default zero-attack/quarter-second-release "
+                    "envelope, halt a state-1 stream through genuine status, "
+                    "flush, codec-stop, and queued-cache release operations, "
+                    "then invoke the exact asynchronous stream flush policy."}] or
             sound_driver_lifecycle.get("sound_stream_update_helpers") != [{
                 "symbol": "sound_stream_update",
                 "source": "src/sound_stream_update_native.cpp",
@@ -2495,6 +2517,8 @@ def main() -> int:
                 for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_pcm_control_source
                 for fragment in expected_pcm_control_fragments) or
+            any(fragment not in sound_stream_reset_source
+                for fragment in expected_stream_reset_fragments) or
             any(fragment not in sound_stream_update_source
                 for fragment in expected_stream_update_fragments) or
             any(fragment not in sound_stream_stop_source
