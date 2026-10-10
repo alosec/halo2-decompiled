@@ -77,5 +77,31 @@ int main() {
         std::cerr << "synthetic XBE did not initialize guest memory correctly\n";
         return 1;
     }
+
+    unsigned char host_byte = 0;
+    constexpr std::uint32_t kProbeAddress = 0x40000;
+    if (!arena->host_range_accessible(header, 4, false) ||
+        !arena->host_range_accessible(section, 0x8000, true) ||
+        arena->host_range_accessible(&host_byte, 1, false) ||
+        arena->host_range_accessible(arena->pointer(kProbeAddress), 1, false) ||
+        arena->host_range_accessible(arena->pointer(0xfffffff0u), 0x20, false)) {
+        std::cerr << "initial guest accessibility validation failed\n";
+        return 1;
+    }
+    if (!arena->protect(kProbeAddress, static_cast<std::uint32_t>(arena->page_size()),
+                        h2::port::GuestMemoryProtection::read_write, error) ||
+        !arena->host_range_accessible(arena->pointer(kProbeAddress),
+                                      arena->page_size(), true) ||
+        !arena->protect(kProbeAddress, static_cast<std::uint32_t>(arena->page_size()),
+                        h2::port::GuestMemoryProtection::read_only, error) ||
+        !arena->host_range_accessible(arena->pointer(kProbeAddress),
+                                      arena->page_size(), false) ||
+        arena->host_range_accessible(arena->pointer(kProbeAddress), 1, true) ||
+        !arena->protect(kProbeAddress, static_cast<std::uint32_t>(arena->page_size()),
+                        h2::port::GuestMemoryProtection::none, error) ||
+        arena->host_range_accessible(arena->pointer(kProbeAddress), 1, false)) {
+        std::cerr << "guest protection accessibility tracking failed: " << error << '\n';
+        return 1;
+    }
     return 0;
 }

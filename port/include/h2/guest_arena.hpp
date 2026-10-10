@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -49,6 +50,8 @@ public:
 
     void* pointer(std::uint32_t guest_address) const;
     const void* pointer_const(std::uint32_t guest_address) const;
+    bool host_range_accessible(const void* pointer, std::size_t size,
+                               bool writable) const;
     std::size_t page_size() const { return page_size_; }
 
 private:
@@ -57,6 +60,8 @@ private:
 
     void* reservation_ = nullptr;
     std::size_t page_size_ = 0;
+    mutable std::mutex protection_mutex_;
+    std::vector<GuestMemoryProtection> page_protections_;
 };
 
 }  // namespace h2::port

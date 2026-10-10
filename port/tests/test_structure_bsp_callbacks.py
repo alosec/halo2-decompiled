@@ -1246,11 +1246,19 @@ def main() -> int:
                     "worker_thread_exit_code",
                     "worker_thread_precedence_priority_mapping",
                     "scheduler_lifecycle_contract",
-                    "scheduler_admission_and_drain_state_gate"],
+                    "scheduler_admission_and_drain_state_gate",
+                    "tracked_guest_page_read_write_validation"],
                 "remaining_services": [
                     "guest_host_abi_bridge",
                     "scheduler_worker_stop_and_teardown_integration",
-                    "cache_file_handle_initialization"]} or
+                    "cache_file_handle_initialization"],
+                "guest_memory_validator": {
+                    "source": "port/src/guest_arena.cpp",
+                    "host_pointer_bounds_checked": True,
+                    "cross_end_rejected": True,
+                    "page_protections_tracked": True,
+                    "write_requires_read_write": True,
+                    "unmapped_pages_rejected": True}} or
             texture_upload.get("native_scheduler_lifecycle") != {
                 "status": "state_gate_implemented_not_integrated",
                 "recovered_shutdown_provider": None,

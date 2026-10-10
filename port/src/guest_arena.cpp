@@ -61,6 +61,9 @@ bool read_name(const std::vector<unsigned char>& data, std::uint32_t address,
 GuestArena::GuestArena(void* reservation) : reservation_(reservation) {
     const long page_size = sysconf(_SC_PAGESIZE);
     page_size_ = page_size > 0 ? static_cast<std::size_t>(page_size) : 0;
+    if (page_size_ && (page_size_ & (page_size_ - 1)) == 0)
+        page_protections_.assign(kGuestAddressSpaceSize / page_size_,
+                                 GuestMemoryProtection::none);
 }
 
 GuestArena::~GuestArena() {
@@ -98,6 +101,32 @@ const void* GuestArena::pointer_const(std::uint32_t guest_address) const {
     return reinterpret_cast<const void*>(kGuestBias + guest_address);
 }
 
+bool GuestArena::host_range_accessible(const void* pointer_value, std::size_t size,
+                                       bool writable) const {
+    if (!pointer_value || !page_size_ || page_protections_.empty())
+        return false;
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(pointer_value);
+    const std::uintptr_t guest_end = kGuestBias + kGuestAddressSpaceSize;
+    if (start < kGuestBias || start >= guest_end || size > guest_end - start)
+        return false;
+    if (!size)
+        return true;
+
+    const std::size_t first = (start - kGuestBias) / page_size_;
+    const std::size_t last = (start - kGuestBias + size - 1) / page_size_;
+    const std::lock_guard lock(protection_mutex_);
+    for (std::size_t page = first; page <= last; ++page) {
+        const GuestMemoryProtection protection = page_protections_[page];
+        if (writable) {
+            if (protection != GuestMemoryProtection::read_write)
+                return false;
+        } else if (protection == GuestMemoryProtection::none) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool GuestArena::protect(std::uint32_t address, std::uint32_t size,
                          GuestMemoryProtection protection, std::string& error) {
     if (!size) {
@@ -129,6 +158,14 @@ bool GuestArena::protect(std::uint32_t address, std::uint32_t size,
                  static_cast<std::size_t>(last - first), native_protection) != 0) {
         error = "could not protect guest memory: " + std::string(std::strerror(errno));
         return false;
+    }
+    {
+        const std::lock_guard lock(protection_mutex_);
+        const std::size_t first_page = static_cast<std::size_t>(first / page_size_);
+        const std::size_t last_page = static_cast<std::size_t>(last / page_size_);
+        std::fill(page_protections_.begin() + static_cast<std::ptrdiff_t>(first_page),
+                  page_protections_.begin() + static_cast<std::ptrdiff_t>(last_page),
+                  protection);
     }
     return true;
 }
