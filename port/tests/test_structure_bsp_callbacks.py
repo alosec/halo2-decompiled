@@ -914,6 +914,7 @@ def main() -> int:
             "?function_baf80@@YAJJ@Z" not in effect_defined or
             "?function_bad50@@YA_NJJPATpoint3f@@@Z" not in effect_defined or
             "?function_17ca10@@YAMMF@Z" not in effect_defined or
+            "?function_1e4990@@YAJJ@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")

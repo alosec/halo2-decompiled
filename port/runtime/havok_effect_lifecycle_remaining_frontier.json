@@ -40,7 +40,7 @@
     {
       "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
       "subsystem": "effects",
-      "blocker": "Requires inherited AI effect flags plus the live five-entry AI effect-event queue and complete function_2902b0 insertion lifecycle."
+      "blocker": "Exact inherited AI effect-flag lookup across the tag parent chain is owned. AI effect submission still requires the live five-entry event queue, its mutable ownership, and complete function_290250/function_2902b0 insertion semantics."
     },
     {
       "symbol": "?function_3ddd0@@YAJJ@Z",

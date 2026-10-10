@@ -397,6 +397,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_0b8ca0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_0bad50.cpp"
         "${PROJECT_SOURCE_DIR}/src/light_curve_lookup_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_1e4990.cpp"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_audio_boundary_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"

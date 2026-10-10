@@ -113,6 +113,7 @@ def main() -> int:
         light_root_object = temporary / "light-root-object.o"
         light_marker_point = temporary / "light-marker-point.o"
         light_curve_lookup = temporary / "light-curve-lookup.o"
+        inherited_ai_effect_flags = temporary / "inherited-ai-effect-flags.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -326,6 +327,9 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/light_curve_lookup_native.cpp", light_curve_lookup,
             ["?function_17ca10@@YAMMF@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1e4990.cpp", inherited_ai_effect_flags,
+            ["?function_1e4990@@YAJJ@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -339,7 +343,7 @@ def main() -> int:
              object_impulse, object_physics_refresh, particle_interface_context,
              particle_system_value, light_color_space, light_color_interpolation,
              light_object_visibility, light_root_state, light_root_object,
-             light_marker_point, light_curve_lookup])
+             light_marker_point, light_curve_lookup, inherited_ai_effect_flags])
     return 0
 
 
