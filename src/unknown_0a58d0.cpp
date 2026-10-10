@@ -956,11 +956,23 @@ PRIVATE inline void z_encode_state_scalar(s_bitstream *stream, real value, real 
 {
  real scaled = (value - minimum) * multiplier;
  long quantized;
+#ifdef H2_NATIVE_PORT
+ /* Retail fistp uses nearest-even under the default x87 control word. */
+ double converted = scaled;
+ long truncated = (long)converted;
+ double fraction = converted - (double)truncated;
+ if (fraction > 0.5 || (fraction == 0.5 && (truncated & 1)))
+  ++truncated;
+ else if (fraction < -0.5 || (fraction == -0.5 && (truncated & 1)))
+  --truncated;
+ quantized = truncated;
+#else
  __asm
  {
   fld scaled
   fistp quantized
  }
+#endif
  function_195720(stream, quantized, bits);
 }
 

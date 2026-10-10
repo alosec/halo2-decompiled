@@ -87,6 +87,8 @@ def main() -> int:
         particle_helpers = temporary / "particle-helpers.o"
         particle_color = temporary / "particle-color.o"
         unpack_color = temporary / "unpack-color.o"
+        object_placement = temporary / "object-placement.o"
+        object_type = temporary / "object-type.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -222,12 +224,17 @@ def main() -> int:
                       ["?function_175a80@@YAX_NKKPAUs_particle_system_datum@@0@Z"])
         compile_slice(args, args.root / "src/unknown_1317a0.cpp", unpack_color,
                       ["?unpack_color3f@@YAPAUcolor3f@@KPAU1@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0a58d0.cpp", object_placement,
+            ["?function_a7640@@YA_NPAUs_effect_object_placement@@@Z"])
+        compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_type,
+                      ["?function_b5990@@YAJJ_N@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
              player_state, first_person, particle_helpers, particle_color,
-             unpack_color])
+             unpack_color, object_placement, object_type])
     return 0
 
 
