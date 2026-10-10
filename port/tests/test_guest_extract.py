@@ -2944,6 +2944,53 @@ def main():
                 "sound voice traversal imports changed: "
                 f"{sorted(sound_voices_imports)}")
 
+        sound_voice_transition_output = Path(temporary) / "sound-voice-transition.o"
+        sound_voice_transition_symbol = "?sound_voice_update_chunks@@YAXF@Z"
+        sound_voice_transition_command = command[:]
+        sound_voice_transition_command[
+            sound_voice_transition_command.index("h2_extract_selected")
+        ] = sound_voice_transition_symbol
+        sound_voice_transition_command[
+            sound_voice_transition_command.index("--extract-global"):
+            sound_voice_transition_command.index("--output")
+        ] = []
+        sound_voice_transition_command[
+            sound_voice_transition_command.index(output)
+        ] = sound_voice_transition_output
+        sound_voice_transition_command[-1] = (
+            args.root / "src/sound_voice_chunk_transition_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_voice_transition_command], check=True)
+        sound_voice_transition_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_voice_transition_output], text=True)
+        if sound_voice_transition_symbol not in sound_voice_transition_defined:
+            raise RuntimeError(
+                "sound voice chunk transition was not selectively compilable")
+        sound_voice_transition_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_voice_transition_output], text=True)
+        sound_voice_transition_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_voice_transition_undefined.splitlines() if line
+        }
+        expected_sound_voice_transition_imports = {
+            "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+            "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+            "?function_21f650@@YAMJJ@Z",
+            "?g_4e3b44@@3PAUs_tag_instance@@A",
+            "?g_4e6378@@3PAUs_sound_voice@@A",
+            "?g_4e637c@@3PAUs_record_pool@@A",
+            "?g_4e6380@@3PAUs_4e6380@@A",
+            "?g_51ebd4@@3PAUs_sound_globals@@A",
+            "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+            "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
+        }
+        if sound_voice_transition_imports != expected_sound_voice_transition_imports:
+            raise RuntimeError(
+                "sound voice chunk transition imports changed: "
+                f"{sorted(sound_voice_transition_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]

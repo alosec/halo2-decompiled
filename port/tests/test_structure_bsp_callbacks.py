@@ -1320,6 +1320,22 @@ def main() -> int:
                 "semantics":
                     "exact signed-short traversal of every configured voice "
                     "queued-chunk update"}, {
+                "source": "src/sound_voice_chunk_transition_native.cpp",
+                "symbol": "?sound_voice_update_chunks@@YAXF@Z",
+                "imports": [
+                    "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+                    "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+                    "?function_21f650@@YAMJJ@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_4e6378@@3PAUs_sound_voice@@A",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A",
+                    "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                    "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"],
+                "semantics":
+                    "exact queued-chunk promotion, reference release, "
+                    "unloaded-chunk fallback, and stream-time advance"}, {
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
@@ -1341,7 +1357,10 @@ def main() -> int:
                 "native_sound_system_storage_initialized",
                 "native_main_loop_busy_state_initialized",
                 "native_sound_voice_records_and_streams_initialized",
-                "native_sound_voice_chunk_transition_owned",
+                "native_sound_cache_request_and_reference_lifecycle_owned",
+                "native_sound_driver_stream_state_initialized",
+                "native_sound_playback_rate_reporting_owned",
+                "native_sound_definition_and_chunk_tables_initialized",
                 "native_sound_driver_pre_and_post_update_owned",
                 "native_sound_gain_and_fade_lifecycle_owned",
                 "native_sound_spatialization_and_channel_submission_owned",
