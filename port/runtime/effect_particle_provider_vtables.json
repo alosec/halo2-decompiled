@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "description": "Exact retail particle-definition provider objects and their complete 21-slot tables. This inventory is asset-free metadata and does not authorize native object construction or effect execution.",
+  "object_size": 12,
+  "objects": [
+    {
+      "group": "prt3",
+      "object_address": "0x00479868",
+      "table_address": "0x004535f0",
+      "class": "c_interface_b",
+      "slots": [
+        {
+          "slot": 0,
+          "retail_method": "0x00224d20",
+          "provider": "?v0@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 1,
+          "retail_method": "0x00224d50",
+          "provider": "?v1@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 2,
+          "retail_method": "0x00224d60",
+          "provider": "?v2@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 3,
+          "retail_method": "0x00224d30",
+          "provider": "?v3@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 4,
+          "retail_method": "0x00224240",
+          "provider": "?v4@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 5,
+          "retail_method": "0x00224240",
+          "provider": "?v5@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 6,
+          "retail_method": "0x00224250",
+          "provider": "?v6@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 7,
+          "retail_method": "0x00224260",
+          "provider": "?v7@c_interface_b@@UAAPAXJ@Z"
+        },
+        {
+          "slot": 8,
+          "retail_method": "0x00224280",
+          "provider": "?v8@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 9,
+          "retail_method": "0x00224290",
+          "provider": "?v9@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 10,
+          "retail_method": "0x002242a0",
+          "provider": "?v10@c_interface_b@@UAAJXZ"
+        },
+        {
+          "slot": 11,
+          "retail_method": "0x002242b0",
+          "provider": "?v11@c_interface_b@@UAAXJJJJ@Z"
+        },
+        {
+          "slot": 12,
+          "retail_method": "0x002242e0",
+          "provider": "?v12@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 13,
+          "retail_method": "0x002242f0",
+          "provider": "?v13@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 14,
+          "retail_method": "0x00224300",
+          "provider": "?v14@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 15,
+          "retail_method": "0x00224310",
+          "provider": "?v15@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 16,
+          "retail_method": "0x00224320",
+          "provider": "?v16@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 17,
+          "retail_method": "0x00224330",
+          "provider": "?v17@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 18,
+          "retail_method": "0x00224340",
+          "provider": "?v18@c_interface_b@@UAA_NXZ"
+        },
+        {
+          "slot": 19,
+          "retail_method": "0x00224350",
+          "provider": "?v19@c_interface_b@@UAAMXZ"
+        },
+        {
+          "slot": 20,
+          "retail_method": "0x002243a0",
+          "provider": "?v20@c_interface_b@@UAAXJ@Z"
+        }
+      ]
+    },
+    {
+      "group": "PRTM",
+      "object_address": "0x00479874",
+      "table_address": "0x00453598",
+      "class": "c_interface_a",
+      "slots": [
+        {
+          "slot": 0,
+          "retail_method": "0x00224cf0",
+          "provider": "?v0@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 1,
+          "retail_method": "0x00224d00",
+          "provider": "?v1@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 2,
+          "retail_method": "0x00224d10",
+          "provider": "?v2@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 3,
+          "retail_method": "0x00224d20",
+          "provider": "?v3@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 4,
+          "retail_method": "0x00224240",
+          "provider": "?v4@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 5,
+          "retail_method": "0x00224240",
+          "provider": "?v5@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 6,
+          "retail_method": "0x00224d30",
+          "provider": "?v6@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 7,
+          "retail_method": "0x00224d40",
+          "provider": "?v7@c_interface_a@@UAAPAXJ@Z"
+        },
+        {
+          "slot": 8,
+          "retail_method": "0x00224d50",
+          "provider": "?v8@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 9,
+          "retail_method": "0x00224d60",
+          "provider": "?v9@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 10,
+          "retail_method": "0x00224d70",
+          "provider": "?v10@c_interface_a@@UAAJXZ"
+        },
+        {
+          "slot": 11,
+          "retail_method": "0x00224d90",
+          "provider": "?v11@c_interface_a@@UAAXJJJJ@Z"
+        },
+        {
+          "slot": 12,
+          "retail_method": "0x002242e0",
+          "provider": "?v12@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 13,
+          "retail_method": "0x002242f0",
+          "provider": "?v13@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 14,
+          "retail_method": "0x00224300",
+          "provider": "?v14@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 15,
+          "retail_method": "0x00224310",
+          "provider": "?v15@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 16,
+          "retail_method": "0x00224320",
+          "provider": "?v16@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 17,
+          "retail_method": "0x00224330",
+          "provider": "?v17@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 18,
+          "retail_method": "0x00224340",
+          "provider": "?v18@c_interface_a@@UAA_NXZ"
+        },
+        {
+          "slot": 19,
+          "retail_method": "0x00224da0",
+          "provider": "?v19@c_interface_a@@UAAMXZ"
+        },
+        {
+          "slot": 20,
+          "retail_method": "0x002243a0",
+          "provider": "?v20@c_interface_a@@UAAXJ@Z"
+        }
+      ]
+    }
+  ]
+}

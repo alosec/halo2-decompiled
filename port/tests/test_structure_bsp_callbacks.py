@@ -81,6 +81,64 @@ def main() -> int:
     if recovered != unique:
         raise RuntimeError("all structure-BSP callbacks must remain source-owned")
 
+    particle_provider_path = (
+        args.root / "port/runtime/effect_particle_provider_vtables.json")
+    particle_providers = json.loads(particle_provider_path.read_text())
+    expected_particle_objects = [
+        ("prt3", 0x00479868, 0x004535F0, "c_interface_b",
+         [0x224D20, 0x224D50, 0x224D60, 0x224D30, 0x224240, 0x224240,
+          0x224250, 0x224260, 0x224280, 0x224290, 0x2242A0, 0x2242B0,
+          0x2242E0, 0x2242F0, 0x224300, 0x224310, 0x224320, 0x224330,
+          0x224340, 0x224350, 0x2243A0]),
+        ("PRTM", 0x00479874, 0x00453598, "c_interface_a",
+         [0x224CF0, 0x224D00, 0x224D10, 0x224D20, 0x224240, 0x224240,
+          0x224D30, 0x224D40, 0x224D50, 0x224D60, 0x224D70, 0x224D90,
+          0x2242E0, 0x2242F0, 0x224300, 0x224310, 0x224320, 0x224330,
+          0x224340, 0x224DA0, 0x2243A0]),
+    ]
+    actual_particle_objects = []
+    particle_methods = []
+    for entry in particle_providers.get("objects", []):
+        slots = entry.get("slots", [])
+        if [slot.get("slot") for slot in slots] != list(range(21)):
+            raise RuntimeError("particle provider slot order changed")
+        methods = [int(slot.get("retail_method", "0"), 0) for slot in slots]
+        class_name = entry.get("class")
+        expected_symbols = []
+        for slot_index in range(21):
+            if slot_index <= 6 or 8 <= slot_index <= 10:
+                signature = "UAAJXZ"
+            elif slot_index == 7:
+                signature = "UAAPAXJ@Z"
+            elif slot_index == 11:
+                signature = "UAAXJJJJ@Z"
+            elif 12 <= slot_index <= 18:
+                signature = "UAA_NXZ"
+            elif slot_index == 19:
+                signature = "UAAMXZ"
+            else:
+                signature = "UAAXJ@Z"
+            expected_symbols.append(
+                f"?v{slot_index}@{class_name}@@{signature}")
+        if [slot.get("provider") for slot in slots] != expected_symbols:
+            raise RuntimeError("particle provider symbol mapping changed")
+        particle_methods.extend(methods)
+        actual_particle_objects.append((
+            entry.get("group"), int(entry.get("object_address", "0"), 0),
+            int(entry.get("table_address", "0"), 0), class_name, methods))
+    if (particle_providers.get("version") != 1 or
+            particle_providers.get("object_size") != 12 or
+            actual_particle_objects != expected_particle_objects):
+        raise RuntimeError("particle provider object/table inventory changed")
+    if len(particle_methods) != 42 or len(set(particle_methods)) != 27:
+        raise RuntimeError("particle provider method coverage changed")
+    particle_unique = set(particle_methods)
+    if particle_unique - functions.keys():
+        raise RuntimeError("particle provider method is absent from functions.csv")
+    if any(functions[method]["source"] != "src/unknown_224240.cpp"
+           for method in particle_unique):
+        raise RuntimeError("particle provider source coverage changed")
+
     primary_path = args.root / "port/runtime/havok_primary_listener_vtables.json"
     primary = json.loads(primary_path.read_text())
     expected_primary_tables = [
