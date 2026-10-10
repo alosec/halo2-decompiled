@@ -2165,7 +2165,14 @@ def main() -> int:
                 "semantics":
                     "Reserve the aligned 0xcc-byte codec allocator block "
                     "from the checksummed static sound pool and publish its "
-                    "unused state."}] or
+                    "unused state."}, {
+                "symbol": "function_21e410",
+                "source": "src/sound_driver_stream_format_native.cpp",
+                "via": "function_21f4e0",
+                "semantics":
+                    "Construct the exact mono/stereo Xbox ADPCM or stereo "
+                    "PCM wave format and select the authentic static codec "
+                    "object without creating a stream."}] or
             not lifecycle_startup.get("semantics") or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or

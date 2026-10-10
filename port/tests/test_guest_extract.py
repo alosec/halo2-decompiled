@@ -3323,6 +3323,11 @@ def main():
                  "?g_510800_pool_base@@3KA", "?g_510804_pool_size@@3JA",
                  "?g_510808_pool_checksum@@3KA", "?g_510c3c@@3PAXA",
                  "?g_510c40@@3_NA"}),
+            ("sound-stream-format.o",
+             "src/sound_driver_stream_format_native.cpp",
+             "?function_21e410@@YAXJPAUXBOXADPCMWAVEFORMAT@@PAPAVc_sound_stream_codec@@@Z", {
+                 "?g_47f0d0@@3Us_47f0d0@@A",
+                 "?g_47f0f0@@3Us_47f0f0@@A"}),
             ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
              "?function_125600@@YAXXZ", {
                  "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",
