@@ -3342,6 +3342,12 @@ def main():
              "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z", {
                  "?g_47005c@@3Us_sound_effect_parameters@@A",
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A"}),
+            ("sound-filter-coefficient.o",
+             "src/sound_driver_filter_helpers_native.cpp",
+             "?function_21e330@@YAJM@Z", {"exp"}),
+            ("sound-random-parameter.o",
+             "src/sound_driver_filter_helpers_native.cpp",
+             "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z", set()),
             ("sound-system-teardown.o", "src/sound_system_startup_native.cpp",
              "?function_125600@@YAXXZ", {
                  "?function_2186b0@@YAXXZ", "?function_21eae0@@YAXXZ",

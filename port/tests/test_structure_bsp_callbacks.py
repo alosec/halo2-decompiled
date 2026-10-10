@@ -2198,6 +2198,19 @@ def main() -> int:
                 expected_lifecycle_calls["teardown"] or
             lifecycle_teardown.get("state") !=
                 ["g_51ebe4", "g_47f0d0", "g_510c3c"] or
+            sound_driver_lifecycle.get("channel_parameter_helpers") != [{
+                "symbol": "function_21e330",
+                "source": "src/sound_driver_filter_helpers_native.cpp",
+                "semantics":
+                    "Convert a decibel filter parameter through the "
+                    "recovered exponential curve, truncate it, and pin its "
+                    "asymmetric signed DSP coefficient range."}, {
+                "symbol": "function_219880",
+                "source": "src/sound_driver_filter_helpers_native.cpp",
+                "semantics":
+                    "Linearly interpolate a random parameter, advance the "
+                    "exact LCG once, map its upper 16 bits over the signed "
+                    "variation, and add the configured offset."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
