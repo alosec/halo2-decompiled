@@ -73,6 +73,9 @@ def main() -> int:
         contact_removal = temporary / "contact-removal.o"
         audio_boundary = temporary / "audio-boundary.o"
         effect_lifecycle = temporary / "effect-lifecycle.o"
+        random_unit = temporary / "random-unit.o"
+        random_range = temporary / "random-range.o"
+        random_cone = temporary / "random-cone.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -169,8 +172,17 @@ def main() -> int:
             ["?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
              "?function_177260@@YAXJ_N@Z"],
             ["??_C@_0BH@MAKJFDPB@src?1unknown_175bd0?4cpp?$AA@"])
+        compile_slice(args, args.root / "src/unknown_0259a0.cpp", random_unit,
+                      ["?function_259a0@@YAMPAK@Z"])
+        compile_slice(args, args.root / "src/unknown_0259d0.cpp", random_range,
+                      ["?function_259d0@@YAMPAKPBDJMM@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_146240.cpp", random_cone,
+            ["?random_vector_in_cone@@YAXPBTvector3f@@PAT1@PAKMM@Z"],
+            ["??_C@_0BH@GEOAMOEG@src?1unknown_146240?4cpp?$AA@"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
-             args.effect_output, args.impact_output, effect_lifecycle])
+             args.effect_output, args.impact_output, effect_lifecycle,
+             random_unit, random_range, random_cone])
     return 0
 
 

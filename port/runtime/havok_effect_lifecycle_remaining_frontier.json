@@ -113,16 +113,6 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_259a0@@YAMPAK@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_259d0@@YAMPAKPBDJMM@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_3ddd0@@YAJJ@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
@@ -205,11 +195,6 @@
     {
       "symbol": "?particle_system_link@@YAXPAUs_particle_system_datum@@PAJ1@Z",
       "subsystem": "particles",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?random_vector_in_cone@@YAXPBTvector3f@@PAT1@PAKMM@Z",
-      "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     }
   ]
