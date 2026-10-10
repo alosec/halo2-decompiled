@@ -488,6 +488,7 @@ def main() -> int:
         "native_tag_function_tables_initialized",
         "native_object_function_handler_tables_owned",
         "native_object_interpolated_values_owned",
+        "native_ai_effect_event_queue_owned",
         "native_havok_rigid_body_island_state_owned",
         "native_havok_motion_point_impulse_owned",
         "native_havok_world_activation_owned",
@@ -859,7 +860,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 107:
+    if len(effect_undefined) != 109:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -924,6 +925,8 @@ def main() -> int:
             "?function_108d90@@YA_NJJPAMPA_N@Z" not in effect_defined or
             "?function_10aac0@@YA_NJJPAMPAJ@Z" not in effect_defined or
             "?function_13bb90@@YAMPBUs_tag_data@@MM@Z" not in effect_defined or
+            "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z" not in effect_defined or
+            "?function_290250@@YAXJJJJMMPBUtransform4x3f@@@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")

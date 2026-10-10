@@ -895,14 +895,25 @@ point3f *function_b9dd0(long object_index, point3f *result);
 static inline long ai_seconds_to_ticks(real seconds)
 {
 	real ticks = g_510c54->field_2_3 * seconds;
+#ifdef H2_NATIVE_PORT
+	/* Retail fistp uses nearest-even under the default x87 control word. */
+	double converted = ticks;
+	long truncated = (long)converted;
+	double fraction = converted - (double)truncated;
+	if (fraction > 0.5 || (fraction == 0.5 && (truncated & 1)))
+		++truncated;
+	else if (fraction < -0.5 || (fraction == -0.5 && (truncated & 1)))
+		--truncated;
+	return truncated;
+#else
 	long result;
-
 	__asm
 	{
 		fld ticks
 		fistp result
 	}
 	return result;
+#endif
 }
 void *function_1e5280(long actor_index, long key); /* unknown_1e5240.cpp */
 

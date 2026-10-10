@@ -61,6 +61,7 @@
     "native_tag_function_tables_initialized",
     "native_object_function_handler_tables_owned",
     "native_object_interpolated_values_owned",
+    "native_ai_effect_event_queue_owned",
     "native_havok_rigid_body_island_state_owned",
     "native_havok_motion_point_impulse_owned",
     "native_havok_world_activation_owned",

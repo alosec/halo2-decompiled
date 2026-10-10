@@ -118,6 +118,8 @@ def main() -> int:
         object_function_handlers = temporary / "object-function-handlers.o"
         object_interpolated_values = temporary / "object-interpolated-values.o"
         tag_function_range = temporary / "tag-function-range.o"
+        ai_effect_request = temporary / "ai-effect-request.o"
+        ai_effect_queue_front = temporary / "ai-effect-queue-front.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -347,6 +349,12 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/tag_function_range_native.cpp", tag_function_range,
             ["?function_13bb90@@YAMPBUs_tag_data@@MM@Z"])
+        compile_slice(
+            args, args.root / "src/ai.cpp", ai_effect_request,
+            ["?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_290250.cpp", ai_effect_queue_front,
+            ["?function_290250@@YAXJJJJMMPBUtransform4x3f@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -362,7 +370,8 @@ def main() -> int:
              light_object_visibility, light_root_state, light_root_object,
              light_marker_point, light_curve_lookup, inherited_ai_effect_flags,
              object_function_evaluation, object_function_handlers,
-             object_interpolated_values, tag_function_range])
+             object_interpolated_values, tag_function_range,
+             ai_effect_request, ai_effect_queue_front])
     return 0
 
 

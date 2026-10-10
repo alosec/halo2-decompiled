@@ -38,9 +38,9 @@
       "blocker": "Retail is an exact 1,787-byte effect-source construction path with a 0x1170-byte frame, tag/runtime gating, vector and transform helpers, and deeper function_1697c0/function_17e490/function_17ed70/function_17ee20 lifecycle work; complete effect-source pool and mutable-state ownership are required."
     },
     {
-      "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
-      "subsystem": "effects",
-      "blocker": "Exact inherited AI effect-flag lookup across the tag parent chain is owned. AI effect submission still requires the live five-entry event queue, its mutable ownership, and complete function_290250/function_2902b0 insertion semantics."
+      "symbol": "?function_2902b0@@YAXJJJJMMPBUtransform4x3f@@F@Z",
+      "subsystem": "AI effect event insertion",
+      "blocker": "Inherited tag flags, AI-active gating, five-slot availability selection, and exact request forwarding are owned. Complete insertion still requires mutable queue ownership plus the broad 1,298-byte event constructor, object/AI queries, perception state, and lifecycle cleanup."
     },
     {
       "symbol": "?function_3ddd0@@YAJJ@Z",
