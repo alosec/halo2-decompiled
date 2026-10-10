@@ -2991,6 +2991,43 @@ def main():
                 "sound voice chunk transition imports changed: "
                 f"{sorted(sound_voice_transition_imports)}")
 
+        sound_voice_helper_cases = [
+            ("sound-reference-release.o",
+             "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
+             {"?g_502104@@3PAUs_record_pool@@A"}),
+            ("sound-next-chunk.o",
+             "?function_219290@@YAJFPAUs_permutation_group@@@Z", set()),
+        ]
+        for helper_name, helper_symbol, expected_helper_imports in sound_voice_helper_cases:
+            helper_output = Path(temporary) / helper_name
+            helper_command = command[:]
+            helper_command[helper_command.index("h2_extract_selected")] = helper_symbol
+            helper_command[
+                helper_command.index("--extract-global"):
+                helper_command.index("--output")
+            ] = []
+            helper_command[helper_command.index(output)] = helper_output
+            helper_command[-1] = (
+                args.root / "src/sound_voice_chunk_helpers_native.cpp")
+            subprocess.run([str(value) for value in helper_command], check=True)
+            helper_defined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+                 helper_output], text=True)
+            if helper_symbol not in helper_defined:
+                raise RuntimeError(
+                    f"sound voice helper was not selectively compilable: {helper_symbol}")
+            helper_undefined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+                 helper_output], text=True)
+            helper_imports = {
+                line.split()[0].removeprefix("_")
+                for line in helper_undefined.splitlines() if line
+            }
+            if helper_imports != expected_helper_imports:
+                raise RuntimeError(
+                    f"sound voice helper imports changed for {helper_symbol}: "
+                    f"{sorted(helper_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]

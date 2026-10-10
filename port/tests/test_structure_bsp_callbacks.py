@@ -1336,6 +1336,18 @@ def main() -> int:
                 "semantics":
                     "exact queued-chunk promotion, reference release, "
                     "unloaded-chunk fallback, and stream-time advance"}, {
+                "source": "src/sound_voice_chunk_helpers_native.cpp",
+                "symbol":
+                    "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
+                "imports": ["?g_502104@@3PAUs_record_pool@@A"],
+                "semantics":
+                    "exact salted-reference lookup and byte reference-count "
+                    "decrement"}, {
+                "source": "src/sound_voice_chunk_helpers_native.cpp",
+                "symbol": "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+                "imports": [],
+                "semantics":
+                    "exact bounded next-chunk index or NONE selection"}, {
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
@@ -1357,7 +1369,8 @@ def main() -> int:
                 "native_sound_system_storage_initialized",
                 "native_main_loop_busy_state_initialized",
                 "native_sound_voice_records_and_streams_initialized",
-                "native_sound_cache_request_and_reference_lifecycle_owned",
+                "native_sound_cache_request_lifecycle_owned",
+                "native_sound_reference_pool_initialized",
                 "native_sound_driver_stream_state_initialized",
                 "native_sound_playback_rate_reporting_owned",
                 "native_sound_definition_and_chunk_tables_initialized",
