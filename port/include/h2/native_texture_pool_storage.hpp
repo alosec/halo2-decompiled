@@ -30,7 +30,10 @@ public:
 
     NativeTexturePoolStorage(GuestArena& arena, NativeAsyncLifecycle& lifecycle);
 
-    bool install(std::string& error);
+    bool install(std::uint32_t delete_callback,
+                 std::uint32_t busy_callback,
+                 std::uint32_t state_callback,
+                 std::string& error);
     bool clear(std::string& error);
     bool installed() const;
 

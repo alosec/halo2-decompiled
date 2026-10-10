@@ -1483,7 +1483,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "host_owned_guest_texture_pools_publish_and_execute_dormantly",
+                    "host_owned_guest_texture_pools_and_callbacks_execute_dormantly",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1493,6 +1493,7 @@ def main() -> int:
                     "src/particle_bitmap_pitch_native.cpp:function_1365a0",
                     "src/particle_texture_upload_request_native.cpp:function_12ce00",
                     "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable",
+                    "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state",
                     "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
@@ -1523,7 +1524,13 @@ def main() -> int:
                     "recovered_upload_allocates_from_host_owned_guest_pool_and_buffer_storage",
                     "active_cache_replacement_requires_queue_teardown_and_texture_pool_clear",
                     "texture_pool_clear_zeroes_fixed_globals_storage_and_upload_buffer",
-                    "host_owned_texture_pool_lifecycle_restarts_cleanly"],
+                    "host_owned_texture_pool_lifecycle_restarts_cleanly",
+                    "host_publishes_three_validated_executable_cache_callback_addresses",
+                    "nonexecutable_cache_callback_publication_is_rejected_before_install",
+                    "cache_state_callback_preserves_flag_and_pending_state_bits",
+                    "cache_busy_callback_tracks_inflight_residency_without_fabricating_a_d3d_fence",
+                    "pool_clear_rejects_live_texture_or_physical_records",
+                    "cache_delete_callback_clears_bitmap_residency_and_releases_both_records"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1534,10 +1541,11 @@ def main() -> int:
                     "bitmap_pitch_definitions": 1,
                     "request_policy_chain_definitions": 3,
                     "upload_policy_definitions": 1,
-                    "cache_lookup_policy_definitions": 3},
+                    "cache_lookup_policy_definitions": 3,
+                    "physical_allocator_definitions": 2,
+                    "cache_lifecycle_callback_definitions": 3},
                 "remaining_ownership": [
                     "production_configuration_of_host_owned_guest_texture_pools",
-                    "texture_cache_delete_busy_and_state_callbacks",
                     "ordered_production_map_switch_and_teardown",
                     "production_source_bitmap_lifetime"],
                 "execution_enabled": False,
@@ -1585,7 +1593,14 @@ def main() -> int:
                     "active_cache_replacement_requires_pool_clear": True,
                     "cache_clear_requires_pool_clear": True,
                     "reset_rejects_installed_pools": True,
-                    "production_configured": False}} or
+                    "production_configured": False,
+                    "clear_requires_empty_physical_and_texture_pools": True,
+                    "callbacks": {
+                        "delete": "texture_cache_block_delete@0x0012d200",
+                        "busy": "texture_cache_entry_busy@0x0012d1a0",
+                        "state": "texture_cache_entry_state@0x0012d160",
+                        "publication_requires_executable_guest_addresses": True,
+                        "native_resident_entries_have_no_fabricated_d3d_fence": True}}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
@@ -1664,7 +1679,16 @@ def main() -> int:
                 "role": "mutex-guarded pending-category query"}, {
                 "address": "0x00120bf0",
                 "symbol": "?function_120bf0@@YAJXZ",
-                "role": "mutex-guarded pending-task count"}] or
+                "role": "mutex-guarded pending-task count"}, {
+                "address": "0x0012d160",
+                "symbol": "?texture_cache_entry_state@@YAEJ@Z",
+                "role": "texture entry flag and pending-state classification"}, {
+                "address": "0x0012d1a0",
+                "symbol": "?texture_cache_entry_busy@@YA_NJ@Z",
+                "role": "native async residency and cache pin busy policy without a fabricated D3D fence"}, {
+                "address": "0x0012d200",
+                "symbol": "?texture_cache_block_delete@@YAXJ@Z",
+                "role": "completed texture eviction, bitmap residency cleanup, and texture-record release"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",

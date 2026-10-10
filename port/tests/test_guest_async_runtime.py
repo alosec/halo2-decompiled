@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--queue-lifecycle", type=Path, required=True)
     parser.add_argument("--read-request", type=Path, required=True)
     parser.add_argument("--texture-upload-request", type=Path, required=True)
+    parser.add_argument("--texture-cache-lifecycle", type=Path, required=True)
     parser.add_argument("--texture-cache-lookup", type=Path, required=True)
     parser.add_argument("--physical-allocator", type=Path, required=True)
     parser.add_argument("--physical-choice", type=Path, required=True)
@@ -167,6 +168,31 @@ def main() -> int:
             f"guest texture upload-request import drift: expected "
             f"{sorted(expected_upload_imports)}, got {sorted(upload_imports)}")
 
+    lifecycle_defined = symbols(
+        args.nm, args.texture_cache_lifecycle, "--defined-only")
+    expected_lifecycle_definitions = {
+        "?texture_cache_block_delete@@YAXJ@Z",
+        "?texture_cache_entry_busy@@YA_NJ@Z",
+        "?texture_cache_entry_state@@YAEJ@Z",
+    }
+    if lifecycle_defined != expected_lifecycle_definitions:
+        raise SystemExit(
+            "guest texture cache-lifecycle definition drift: "
+            f"{sorted(lifecycle_defined)}")
+    lifecycle_imports = symbols(
+        args.nm, args.texture_cache_lifecycle, "--undefined-only")
+    expected_lifecycle_imports = {
+        "?g_4e6454@@3PAUs_record_pool@@A",
+        "?g_4e6479@@3_NA",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+        "SwitchToThread",
+    }
+    if lifecycle_imports != expected_lifecycle_imports:
+        raise SystemExit(
+            "guest texture cache-lifecycle import drift: expected "
+            f"{sorted(expected_lifecycle_imports)}, got "
+            f"{sorted(lifecycle_imports)}")
+
     lookup_defined = symbols(args.nm, args.texture_cache_lookup, "--defined-only")
     expected_lookup_definitions = {
         "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
@@ -188,7 +214,9 @@ def main() -> int:
 
     physical_defined = symbols(args.nm, args.physical_allocator, "--defined-only")
     expected_physical_definitions = {
-        "?function_13d370@@YAJPAUs_physical_object@@JJ@Z"}
+        "?block_delete@s_physical_object@@QAAXJ@Z",
+        "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+    }
     if physical_defined != expected_physical_definitions:
         raise SystemExit(
             f"guest physical allocator definition drift: "

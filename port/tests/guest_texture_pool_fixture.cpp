@@ -84,6 +84,7 @@ long g_4e646c;
 bool g_4e6468;
 long g_4e6470;
 long g_4e6474;
+bool g_4e6479;
 bool g_4e647a;
 bool g_4e647b;
 real g_4e647c;
@@ -103,6 +104,8 @@ long function_1365a0(s_type_7ba8e9 const *bitmap, long mipmap_index);
 long log2_floor(dword value);
 short bitmap_get_mipmap_count(short width, short height, short depth,
 	short format, bool linear, short maximum_levels);
+byte __stdcall texture_cache_entry_state(long datum_index);
+bool __stdcall texture_cache_entry_busy(long datum_index);
 
 // Test-only trap: this nonblocking path must never service the live sound idle hook.
 void function_125d60(void)
@@ -154,6 +157,7 @@ static void initialize_texture_pools(long page_count)
 	g_4e6468 = false;
 	g_4e6470 = 0;
 	g_4e6474 = 0;
+	g_4e6479 = false;
 	g_4e647a = false;
 	g_4e647b = false;
 	g_4e647c = 0.0f;
@@ -313,4 +317,41 @@ extern "C" int h2_texture_upload_completed(void)
 			return 0;
 	}
 	return 1;
+}
+
+extern "C" int h2_texture_cache_callback_probe(void)
+{
+	long block_index = g_upload_bitmap.block_indices[0];
+	if (block_index == NONE)
+		return 0;
+	s_texture_pool_entry *entry =
+		&((s_texture_pool_entry *)g_4e6454->data)[block_index & 0xffff];
+	if (texture_cache_entry_state(block_index) != 0 ||
+		texture_cache_entry_busy(block_index))
+	{
+		return 0;
+	}
+
+	entry->flags |= 1;
+	if (texture_cache_entry_state(block_index) != 0x10 ||
+		!texture_cache_entry_busy(block_index))
+	{
+		return 0;
+	}
+	entry->flags &= ~1;
+	entry->pending = 1;
+	if (texture_cache_entry_state(block_index) != 0x20)
+		return 0;
+	entry->pending = 0;
+	entry->resident = false;
+	if (!texture_cache_entry_busy(block_index))
+		return 0;
+	entry->resident = true;
+
+	g_4e6464->block_delete(block_index);
+	return g_upload_bitmap.block_indices[0] == NONE &&
+		g_upload_bitmap.level_addresses[0] == 0 &&
+		g_upload_bitmap.texture == NULL && g_upload_bitmap.last_frame == 0 &&
+		g_4e6464->blocks->actual_count == 0 &&
+		g_4e6454->actual_count == 0;
 }

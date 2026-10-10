@@ -105,7 +105,10 @@ bool NativeTexturePoolStorage::publish(
     return true;
 }
 
-bool NativeTexturePoolStorage::install(std::string& error) {
+bool NativeTexturePoolStorage::install(std::uint32_t delete_callback,
+                                       std::uint32_t busy_callback,
+                                       std::uint32_t state_callback,
+                                       std::string& error) {
     error.clear();
     if (lifecycle_.state() != NativeAsyncLifecycle::State::stopped) {
         error = "native texture pools require a stopped async lifecycle";
@@ -114,6 +117,13 @@ bool NativeTexturePoolStorage::install(std::string& error) {
     if (installed_) {
         error = "native texture pools are already installed";
         return false;
+    }
+    for (const std::uint32_t callback :
+         {delete_callback, busy_callback, state_callback}) {
+        if (!arena_.host_range_executable(arena_.pointer(callback), 1)) {
+            error = "native texture pool callback is not executable";
+            return false;
+        }
     }
     if (!arena_.protect(kStorageAddress, kStorageSize,
                         GuestMemoryProtection::read_write, error) ||
@@ -132,6 +142,9 @@ bool NativeTexturePoolStorage::install(std::string& error) {
         texture_bitmap_address);
     GuestPhysicalObject physical{};
     copy_name(physical.name, "texture cache");
+    physical.delete_proc = delete_callback;
+    physical.busy_proc = busy_callback;
+    physical.state_proc = state_callback;
     physical.state = 2;
     physical.page_count = upload_page_count;
     physical.page_shift = 12;
@@ -167,6 +180,16 @@ bool NativeTexturePoolStorage::clear(std::string& error) {
     }
     if (!installed_)
         return true;
+    GuestRecordPool physical_pool{};
+    GuestRecordPool texture_pool{};
+    std::memcpy(&physical_pool, arena_.pointer(physical_pool_address),
+                sizeof(physical_pool));
+    std::memcpy(&texture_pool, arena_.pointer(texture_pool_address),
+                sizeof(texture_pool));
+    if (physical_pool.actual_count != 0 || texture_pool.actual_count != 0) {
+        error = "native texture pools still contain live records";
+        return false;
+    }
     if (!publish(0, 0, 0, 0, error))
         return false;
     std::memset(arena_.pointer(kStorageAddress), 0, kStorageSize);

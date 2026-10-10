@@ -386,7 +386,10 @@ bool clear_async_cache_files(std::string& error) {
     return true;
 }
 
-bool install_async_texture_pools(std::string& error) {
+bool install_async_texture_pools(std::uint32_t delete_callback,
+                                 std::uint32_t busy_callback,
+                                 std::uint32_t state_callback,
+                                 std::string& error) {
     const auto context = async_context();
     if (!context) {
         error = "native async services are not configured";
@@ -401,7 +404,8 @@ bool install_async_texture_pools(std::string& error) {
         error = "native async queue must be stopped before texture pools install";
         return false;
     }
-    return context->texture_pools.install(error);
+    return context->texture_pools.install(
+        delete_callback, busy_callback, state_callback, error);
 }
 
 bool clear_async_texture_pools(std::string& error) {

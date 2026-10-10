@@ -4110,9 +4110,9 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0012ccf0,260,game,speed,a16 pad,,,0012c960 0012ccb0,src/unknown_12c0d0.cpp,todo
 0012ce00,658,game,speed,a16 pad,,,0012c820 0012c990 0012cb10 0012ccb0,src/particle_texture_upload_request_native.cpp,done
 0012d0a0,186,game,speed,a16 pad,,,0013d2b0 0016ba40 003fac30,src/unknown_12c0d0.cpp,matched
-0012d160,51,game,speed,a16 pad,,,,src/unknown_12c0d0.cpp,matched
-0012d1a0,83,game,speed,a16 pad,,,003fb710,src/unknown_12c0d0.cpp,todo
-0012d200,238,game,speed,a16 pad,,,0016ba40 002d62c4 002d63fa 003fad50 003fb710,src/unknown_12c0d0.cpp,near
+0012d160,51,game,speed,a16 pad,,,,src/particle_texture_cache_lifecycle_native.cpp,done
+0012d1a0,83,game,speed,a16 pad,,,003fb710,src/particle_texture_cache_lifecycle_native.cpp,done
+0012d200,238,game,speed,a16 pad,,,0016ba40 002d62c4 002d63fa 003fad50 003fb710,src/particle_texture_cache_lifecycle_native.cpp,done
 0012d2f0,267,game,speed,a16 pad,,,0013d370 0016b910 002d15da,src/unknown_12c0d0.cpp,matched
 0012d400,286,game,speed,a16 pad,,,0012c600 0012d2f0 00223bb0 002d2084 003fac30,src/unknown_12c0d0.cpp,near
 0012d520,113,game,speed,a16 pad,,,0013d830 002d15da,src/unknown_12c0d0.cpp,matched

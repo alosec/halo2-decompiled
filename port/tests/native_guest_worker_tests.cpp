@@ -108,6 +108,14 @@ int main(int argc, char** argv) {
         image->symbol_address("h2_texture_upload_submit");
     const auto texture_upload_completed =
         image->symbol_address("h2_texture_upload_completed");
+    const auto texture_cache_callback_probe =
+        image->symbol_address("h2_texture_cache_callback_probe");
+    const auto texture_block_delete =
+        image->symbol_address("?texture_cache_block_delete");
+    const auto texture_entry_busy =
+        image->symbol_address("?texture_cache_entry_busy");
+    const auto texture_entry_state =
+        image->symbol_address("?texture_cache_entry_state");
     ok &= check(entry.has_value() && recovered_worker_step.has_value() &&
                     active_read_submit.has_value() &&
                     shared_read_submit.has_value() &&
@@ -123,7 +131,11 @@ int main(int argc, char** argv) {
                     texture_pool_probe.has_value() &&
                     texture_upload_initialize.has_value() &&
                     texture_upload_submit.has_value() &&
-                    texture_upload_completed.has_value(),
+                    texture_upload_completed.has_value() &&
+                    texture_cache_callback_probe.has_value() &&
+                    texture_block_delete.has_value() &&
+                    texture_entry_busy.has_value() &&
+                    texture_entry_state.has_value(),
                 "guest worker fixture symbols are missing");
     if (!entry || !recovered_worker_step || !active_read_submit ||
         !shared_read_submit || !campaign_read_submit || !read_completed ||
@@ -133,8 +145,15 @@ int main(int argc, char** argv) {
         !queue_restore_free_head || !queue_is_cleared || !texture_math_probe ||
         !texture_upload_policy_probe || !texture_pool_probe ||
         !texture_upload_initialize || !texture_upload_submit ||
-        !texture_upload_completed)
+        !texture_upload_completed || !texture_cache_callback_probe ||
+        !texture_block_delete || !texture_entry_busy || !texture_entry_state)
         return 1;
+
+    const auto install_texture_pools = [&] {
+        return h2::port::install_async_texture_pools(
+            *texture_block_delete, *texture_entry_busy, *texture_entry_state,
+            error);
+    };
 
     Platform platform;
     Lifecycle lifecycle;
@@ -200,11 +219,16 @@ int main(int argc, char** argv) {
     ok &= check(h2::port::configure_async_services(*arena, error) &&
                     h2::port::patch_async_host_imports(*image, *arena, error),
                 error);
+    ok &= check(!h2::port::install_async_texture_pools(
+                    cache_slots_address, *texture_entry_busy,
+                    *texture_entry_state, error) &&
+                    error.find("callback is not executable") != std::string::npos,
+                "texture pools accepted a writable callback address");
     ok &= check(h2::port::install_async_cache_file(
                     mainmenu_path, 2, "mainmenu", true, error) &&
                     h2::port::install_async_cache_file(
                         shared_path, 3, "shared", false, error) &&
-                    h2::port::install_async_texture_pools(error),
+                    install_texture_pools(),
                 "host async cache slots and texture pools did not install: " + error);
     const auto read_guest_u32 = [&](std::uint32_t address) {
         std::uint32_t value = 0;
@@ -227,6 +251,12 @@ int main(int argc, char** argv) {
                 TexturePools::texture_entries_address &&
             read_guest_u32(TexturePools::texture_pool_address + 0x48) ==
                 TexturePools::texture_bitmap_address &&
+            read_guest_u32(TexturePools::physical_object_address + 0x20) ==
+                *texture_block_delete &&
+            read_guest_u32(TexturePools::physical_object_address + 0x24) ==
+                *texture_entry_busy &&
+            read_guest_u32(TexturePools::physical_object_address + 0x28) ==
+                *texture_entry_state &&
             read_guest_u32(TexturePools::physical_object_address + 0x30) ==
                 TexturePools::upload_page_count &&
             read_guest_u32(TexturePools::physical_object_address + 0x34) == 12 &&
@@ -265,7 +295,7 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*queue_free_count, free_count, error) &&
                     free_count == 150,
                 "recovered guest queue did not initialize all 150 free nodes");
-    ok &= check(!h2::port::install_async_texture_pools(error) &&
+    ok &= check(!install_texture_pools() &&
                     error.find("queue must be stopped") != std::string::npos &&
                     !h2::port::clear_async_texture_pools(error) &&
                     error.find("queue must be torn down") != std::string::npos,
@@ -310,6 +340,16 @@ int main(int argc, char** argv) {
                     execute_submission(*texture_upload_submit,
                                        *texture_upload_completed),
                 "recovered texture upload allocation did not complete: " + error);
+    ok &= check(h2::port::teardown_async_queue(*queue_teardown, error) &&
+                    !h2::port::clear_async_texture_pools(error) &&
+                    error.find("live records") != std::string::npos,
+                "texture pool clear accepted a live resident texture");
+    ok &= check(worker.invoke_stopped(*texture_cache_callback_probe,
+                                      invoke_result, error) &&
+                    invoke_result == 1 &&
+                    h2::port::initialize_async_queue(*queue_initialize, error),
+                "texture cache callback eviction did not release ownership: " +
+                    error);
     ok &= check(execute_read(*active_read_submit) &&
                     execute_read(*shared_read_submit),
                 "recovered active/shared cache routing did not read and recycle: " +
@@ -322,7 +362,7 @@ int main(int argc, char** argv) {
                     h2::port::clear_async_texture_pools(error) &&
                     h2::port::install_async_cache_file(
                         campaign_path, 0, "campaign", true, error) &&
-                    h2::port::install_async_texture_pools(error) &&
+                    install_texture_pools() &&
                     h2::port::initialize_async_queue(*queue_initialize, error),
                 "ordered texture-pool/cache map switch failed: " + error);
     std::memcpy(&published_active, arena->pointer(cache_active_address),
@@ -381,7 +421,7 @@ int main(int argc, char** argv) {
     ok &= check(h2::port::configure_async_services(*arena, error) &&
                     h2::port::install_async_cache_file(
                         mainmenu_path, 2, "mainmenu", true, error) &&
-                    h2::port::install_async_texture_pools(error) &&
+                    install_texture_pools() &&
                     h2::port::initialize_async_queue(*queue_initialize, error) &&
                     h2::port::start_async_worker(*entry, error) &&
                     host_h2_async_try_admit() &&
