@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling/scheduler-initialization chain are independently source-owned. The recovered physical allocator and salted record-pool primitives now execute together over exact ILP32 pool layouts in a dormant synthetic fixture. A host-only opaque-token platform foundation owns recursive mutexes, bounded semaphores, waits, read-only regular-file seek/read/close, short reads, symlink rejection, stale-token rejection, and cooperative yield without exposing host pointers. Execution still requires host-owned guest cache/physical pool storage and fixed-global publication, an owned guest upload buffer and source pixels, texture-cache callbacks and teardown, and the confirmed idle=true function_125d60 main-thread sound-idle service. The synthetic pool fixture does not establish those production mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling/scheduler-initialization chain are independently source-owned. Recovered function_12d5a0 now executes in the dormant synthetic fixture over exact physical and texture pools, builds its genuine function_12d6d0 hardware header, rounds a 16-byte source level to a 512-byte read, routes through the active cache slot and real worker callback, and reaches resident completion with exact node recycling. A host-only opaque-token platform foundation owns synchronization and file I/O without exposing host pointers. Production execution still requires host-owned guest pool storage and fixed-global publication, a production upload buffer and source-bitmap lifetime, texture-cache callbacks and ordered teardown, and the confirmed idle=true function_125d60 main-thread sound-idle service. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -581,11 +581,14 @@
     }
   },
   "native_texture_pool_lifecycle": {
-    "status": "recovered_allocator_and_record_pools_execute_in_dormant_synthetic_fixture",
+    "status": "recovered_upload_allocation_executes_over_dormant_synthetic_pools",
     "recovered_sources": [
       "src/unknown_13d170.cpp:function_13d370",
       "src/unknown_13d320.cpp:function_13d320",
-      "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release"
+      "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
+      "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
+      "src/particle_texture_mip_math_native.cpp:bitmap_get_mipmap_count/log2_floor",
+      "src/particle_bitmap_pitch_native.cpp:function_1365a0"
     ],
     "exact_layouts": {
       "record_pool_bytes": 76,
@@ -598,22 +601,44 @@
       "salted_physical_handles_mirrored_into_texture_entries",
       "doubly_linked_physical_block_order",
       "texture_entry_release_and_bitmap_clear",
-      "complete_synthetic_reinitialization"
+      "complete_synthetic_reinitialization",
+      "bitmap_pitch_and_mip_policy_execute_with_exact_results",
+      "function_12d5a0_allocates_one_physical_page_and_matching_texture_entry",
+      "sixteen_source_bytes_round_to_one_512_byte_async_read",
+      "recovered_header_targets_the_allocated_guest_upload_address",
+      "worker_completion_sets_resident_and_restores_all_150_queue_nodes"
     ],
     "guest_object_closure": {
       "allocator_definitions": 1,
       "choice_definitions": 1,
       "record_pool_definitions": 4,
-      "imports_resolved_by_fixture": true
+      "imports_resolved_by_fixture": true,
+      "upload_allocation_definitions": 2,
+      "mip_math_definitions": 2,
+      "bitmap_pitch_definitions": 1
     },
     "remaining_ownership": [
       "host_owned_guest_pool_storage_and_fixed_global_publication",
-      "guest_physical_upload_buffer",
+      "production_guest_physical_upload_buffer",
       "texture_cache_delete_busy_and_state_callbacks",
       "ordered_map_switch_and_teardown",
-      "source_bitmap_lifetime"
+      "production_source_bitmap_lifetime"
     ],
     "execution_enabled": false,
-    "production_configured": false
+    "production_configured": false,
+    "recovered_upload_allocation_round_trip": {
+      "entry": "function_12d5a0",
+      "header": "function_12d6d0",
+      "source_location": 2048,
+      "source_bytes": 16,
+      "scheduled_bytes": 512,
+      "physical_pages": 1,
+      "active_cache_selector": 0,
+      "priority": 3,
+      "callback": "function_1a0e70",
+      "fixture_owned_bitmap_lifetime": true,
+      "exact_zero_padded_destination_verified": true,
+      "production_configured": false
+    }
   }
 }

@@ -97,7 +97,14 @@ int main(int argc, char** argv) {
     const auto queue_restore_free_head =
         image->symbol_address("h2_async_queue_restore_free_head");
     const auto queue_is_cleared = image->symbol_address("h2_async_queue_is_cleared");
+    const auto texture_math_probe = image->symbol_address("h2_texture_math_probe");
     const auto texture_pool_probe = image->symbol_address("h2_texture_pool_probe");
+    const auto texture_upload_initialize =
+        image->symbol_address("h2_texture_upload_initialize");
+    const auto texture_upload_submit =
+        image->symbol_address("h2_texture_upload_submit");
+    const auto texture_upload_completed =
+        image->symbol_address("h2_texture_upload_completed");
     ok &= check(entry.has_value() && recovered_worker_step.has_value() &&
                     active_read_submit.has_value() &&
                     shared_read_submit.has_value() &&
@@ -108,20 +115,29 @@ int main(int argc, char** argv) {
                     queue_free_count.has_value() &&
                     queue_remove_free_head.has_value() &&
                     queue_restore_free_head.has_value() &&
-                    queue_is_cleared.has_value() && texture_pool_probe.has_value(),
+                    queue_is_cleared.has_value() && texture_math_probe.has_value() &&
+                    texture_pool_probe.has_value() &&
+                    texture_upload_initialize.has_value() &&
+                    texture_upload_submit.has_value() &&
+                    texture_upload_completed.has_value(),
                 "guest worker fixture symbols are missing");
     if (!entry || !recovered_worker_step || !active_read_submit ||
         !shared_read_submit || !campaign_read_submit || !read_completed ||
         !counter || !lifecycle_entry || !lifecycle_counter ||
         !queue_initialize ||
         !queue_teardown || !queue_free_count || !queue_remove_free_head ||
-        !queue_restore_free_head || !queue_is_cleared || !texture_pool_probe)
+        !queue_restore_free_head || !queue_is_cleared || !texture_math_probe ||
+        !texture_pool_probe || !texture_upload_initialize || !texture_upload_submit ||
+        !texture_upload_completed)
         return 1;
 
     Platform platform;
     Lifecycle lifecycle;
     Worker worker(*arena, platform, lifecycle);
     int invoke_result = 0;
+    ok &= check(worker.invoke_stopped(*texture_math_probe, invoke_result, error) &&
+                    invoke_result == 1,
+                "recovered texture math probe failed: " + error);
     ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
                     invoke_result == 1,
                 "recovered texture/physical pool probe failed: " + error);
@@ -212,6 +228,10 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*queue_free_count, free_count, error) &&
                     free_count == 150,
                 "recovered guest queue did not initialize all 150 free nodes");
+    ok &= check(worker.invoke_stopped(*texture_upload_initialize, invoke_result,
+                                      error) &&
+                    invoke_result == 1,
+                "texture upload pools did not initialize: " + error);
     ok &= check(h2::port::start_async_worker(*entry, error), error);
     ok &= check(!h2::port::install_async_cache_file(
                     mainmenu_path, 2, "mainmenu", true, error) &&
@@ -228,19 +248,27 @@ int main(int argc, char** argv) {
                     h2::port::shutdown_async_worker(Lifecycle::infinite, error),
                 "host ABI admission abort did not drain without execution");
     std::memcpy(&calls, arena->pointer(*counter), sizeof(calls));
-    const auto execute_read = [&](std::uint32_t submit_address) {
+    const auto execute_submission = [&](std::uint32_t submit_address,
+                                        std::uint32_t completed_address) {
         auto* const submit = reinterpret_cast<int (*)()>(
             arena->pointer(submit_address));
-        int read_result = 0;
+        int completed_result = 0;
         return h2::port::start_async_worker(*recovered_worker_step, error) &&
                h2_call_guest_int_0(submit, submit_stack_top) == 1 &&
                h2::port::shutdown_async_worker(Lifecycle::infinite, error) &&
-               worker.invoke_stopped(*read_completed, read_result, error) &&
-               read_result == 1 &&
+               worker.invoke_stopped(completed_address, completed_result, error) &&
+               completed_result == 1 &&
                worker.invoke_stopped(*queue_free_count, free_count, error) &&
                free_count == 150;
     };
-    ok &= check(calls == 4 && execute_read(*active_read_submit) &&
+    const auto execute_read = [&](std::uint32_t submit_address) {
+        return execute_submission(submit_address, *read_completed);
+    };
+    ok &= check(calls == 4 &&
+                    execute_submission(*texture_upload_submit,
+                                       *texture_upload_completed),
+                "recovered texture upload allocation did not complete: " + error);
+    ok &= check(execute_read(*active_read_submit) &&
                     execute_read(*shared_read_submit),
                 "recovered active/shared cache routing did not read and recycle: " +
                     error);

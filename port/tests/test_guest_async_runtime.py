@@ -24,6 +24,8 @@ def main() -> int:
     parser.add_argument("--physical-allocator", type=Path, required=True)
     parser.add_argument("--physical-choice", type=Path, required=True)
     parser.add_argument("--record-pool", type=Path, required=True)
+    parser.add_argument("--texture-mip-math", type=Path, required=True)
+    parser.add_argument("--bitmap-pitch", type=Path, required=True)
     parser.add_argument("--abi", type=Path, required=True)
     args = parser.parse_args()
 
@@ -104,6 +106,8 @@ def main() -> int:
         "?async_task_queue@@YAJPAUs_job_node@@@Z",
         "?function_120900@@YAXPAUs_job_node@@@Z",
         "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+        "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z",
+        "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z",
         "?function_1a0e70@@YAJPATs_async_task@@@Z",
         "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
         "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
@@ -114,8 +118,16 @@ def main() -> int:
             f"{sorted(expected_read_definitions)}, got {sorted(read_defined)}")
     read_imports = symbols(args.nm, args.read_request, "--undefined-only")
     expected_read_imports = {
-        "?async_globals@@3Us_async_globals@@A", "?g_46e488@@3KA",
+        "?async_globals@@3Us_async_globals@@A",
+        "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+        "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+        "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
+        "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+        "?g_450768@@3PAY0BI@JA", "?g_46e488@@3KA",
+        "?g_4e6454@@3PAUs_record_pool@@A", "?g_4e6460@@3KA",
+        "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e6484@@3JA",
         "?g_557c90@@3PAUs_texture_cache_file@@A", "?g_55aca8@@3JA",
+        "?log2_floor@@YAJK@Z",
         "ReadFile", "ReleaseMutex", "SetFilePointer", "SwitchToThread",
         "WaitForSingleObject", "h2_guest_memcpy", "h2_guest_memset",
         "h2_native_async_publish_admitted", "h2_native_async_try_admit",
@@ -166,6 +178,20 @@ def main() -> int:
     if symbols(args.nm, args.record_pool, "--undefined-only") != {
             "h2_guest_memset"}:
         raise SystemExit("guest record-pool import drift")
+
+    mip_defined = symbols(args.nm, args.texture_mip_math, "--defined-only")
+    if mip_defined != {
+            "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+            "?log2_floor@@YAJK@Z"}:
+        raise SystemExit(f"guest texture mip-math definition drift: {sorted(mip_defined)}")
+    if symbols(args.nm, args.texture_mip_math, "--undefined-only"):
+        raise SystemExit("guest texture mip math gained an import")
+
+    pitch_defined = symbols(args.nm, args.bitmap_pitch, "--defined-only")
+    if pitch_defined != {"?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z"}:
+        raise SystemExit(f"guest bitmap-pitch definition drift: {sorted(pitch_defined)}")
+    if symbols(args.nm, args.bitmap_pitch, "--undefined-only"):
+        raise SystemExit("guest bitmap pitch gained an import")
 
     abi = args.abi.read_text()
     if "#define H2_HOST_ABI_VERSION 12u" not in abi:

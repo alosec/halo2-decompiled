@@ -2441,6 +2441,7 @@ add_custom_command(
             --extract-symbol "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z"
             --extract-symbol "?function_1a0e70@@YAJPATs_async_task@@@Z"
             --extract-symbol "?function_213760@@YAJKJPAXPAKPA_NJJ@Z"
+            --extract-symbol "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z"
             --output "${H2_GUEST_ASYNC_READ_OBJECT}"
             "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_request_native.cpp"
     DEPENDS
@@ -2497,6 +2498,55 @@ add_custom_command(
         h2_guest_rebase
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
         "${PROJECT_SOURCE_DIR}/src/unknown_13d320.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+
+set(H2_GUEST_TEXTURE_MIP_MATH_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_texture_mip_math.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?log2_floor@@YAJK@Z"
+            --extract-symbol "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z"
+            --output "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/particle_texture_mip_math_native.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/particle_texture_mip_math_native.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+
+set(H2_GUEST_BITMAP_PITCH_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_bitmap_pitch.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_BITMAP_PITCH_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z"
+            --output "${H2_GUEST_BITMAP_PITCH_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/particle_bitmap_pitch_native.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/particle_bitmap_pitch_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
@@ -2625,6 +2675,8 @@ add_custom_command(
             "${H2_GUEST_ASYNC_READ_OBJECT}"
             "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
+            "${H2_GUEST_BITMAP_PITCH_OBJECT}"
             "${H2_GUEST_RECORD_POOL_OBJECT}"
             "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
             "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
@@ -2635,6 +2687,8 @@ add_custom_command(
             "${H2_GUEST_ASYNC_READ_OBJECT}"
             "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
+            "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
+            "${H2_GUEST_BITMAP_PITCH_OBJECT}"
             "${H2_GUEST_RECORD_POOL_OBJECT}"
             "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
             "${H2_GUEST_TEXTURE_POOL_FIXTURE_OBJECT}"
@@ -2717,6 +2771,8 @@ add_test(
             --physical-allocator "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             --physical-choice "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
             --record-pool "${H2_GUEST_RECORD_POOL_OBJECT}"
+            --texture-mip-math "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
+            --bitmap-pitch "${H2_GUEST_BITMAP_PITCH_OBJECT}"
             --abi "${CMAKE_CURRENT_SOURCE_DIR}/include/h2/host_abi.h"
 )
 

@@ -1480,11 +1480,14 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "recovered_allocator_and_record_pools_execute_in_dormant_synthetic_fixture",
+                    "recovered_upload_allocation_executes_over_dormant_synthetic_pools",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370",
                     "src/unknown_13d320.cpp:function_13d320",
-                    "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release"],
+                    "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
+                    "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
+                    "src/particle_texture_mip_math_native.cpp:bitmap_get_mipmap_count/log2_floor",
+                    "src/particle_bitmap_pitch_native.cpp:function_1365a0"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
                     "physical_block_bytes": 24,
@@ -1495,20 +1498,41 @@ def main() -> int:
                     "salted_physical_handles_mirrored_into_texture_entries",
                     "doubly_linked_physical_block_order",
                     "texture_entry_release_and_bitmap_clear",
-                    "complete_synthetic_reinitialization"],
+                    "complete_synthetic_reinitialization",
+                    "bitmap_pitch_and_mip_policy_execute_with_exact_results",
+                    "function_12d5a0_allocates_one_physical_page_and_matching_texture_entry",
+                    "sixteen_source_bytes_round_to_one_512_byte_async_read",
+                    "recovered_header_targets_the_allocated_guest_upload_address",
+                    "worker_completion_sets_resident_and_restores_all_150_queue_nodes"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
                     "record_pool_definitions": 4,
-                    "imports_resolved_by_fixture": True},
+                    "imports_resolved_by_fixture": True,
+                    "upload_allocation_definitions": 2,
+                    "mip_math_definitions": 2,
+                    "bitmap_pitch_definitions": 1},
                 "remaining_ownership": [
                     "host_owned_guest_pool_storage_and_fixed_global_publication",
-                    "guest_physical_upload_buffer",
+                    "production_guest_physical_upload_buffer",
                     "texture_cache_delete_busy_and_state_callbacks",
                     "ordered_map_switch_and_teardown",
-                    "source_bitmap_lifetime"],
+                    "production_source_bitmap_lifetime"],
                 "execution_enabled": False,
-                "production_configured": False} or
+                "production_configured": False,
+                "recovered_upload_allocation_round_trip": {
+                    "entry": "function_12d5a0",
+                    "header": "function_12d6d0",
+                    "source_location": 2048,
+                    "source_bytes": 16,
+                    "scheduled_bytes": 512,
+                    "physical_pages": 1,
+                    "active_cache_selector": 0,
+                    "priority": 3,
+                    "callback": "function_1a0e70",
+                    "fixture_owned_bitmap_lifetime": True,
+                    "exact_zero_padded_destination_verified": True,
+                    "production_configured": False}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
