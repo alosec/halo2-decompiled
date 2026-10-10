@@ -89,6 +89,7 @@ def main() -> int:
         unpack_color = temporary / "unpack-color.o"
         object_placement = temporary / "object-placement.o"
         object_type = temporary / "object-type.o"
+        object_geometry = temporary / "object-geometry.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -229,12 +230,16 @@ def main() -> int:
             ["?function_a7640@@YA_NPAUs_effect_object_placement@@@Z"])
         compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_type,
                       ["?function_b5990@@YAJJ_N@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0bad50.cpp", object_geometry,
+            ["?function_bad50@@YA_NJJPATpoint3f@@@Z",
+             "?function_baf40@@YAJJ@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
              player_state, first_person, particle_helpers, particle_color,
-             unpack_color, object_placement, object_type])
+             unpack_color, object_placement, object_type, object_geometry])
     return 0
 
 
