@@ -208,6 +208,14 @@
     {"symbol": "?g_479884@@3JA", "address": "0x00479884"},
     {"symbol": "?g_479894@@3PAVhkMemory@@A", "address": "0x00479894"},
     {"symbol": "?g_479898@@3PAVhkMemory@@A", "address": "0x00479898"},
-    {"symbol": "?g_4798b4@@3JA", "address": "0x004798b4"}
+    {"symbol": "?g_4798b4@@3JA", "address": "0x004798b4"},
+    {"symbol": "?g_4417f0@@3PATvector3f@@A", "address": "0x004417f0"},
+    {"symbol": "?g_4687bc@@3PATvector3f@@A", "address": "0x004687bc"},
+    {"symbol": "?g_47ff8c@@3JA", "address": "0x0047ff8c"},
+    {"symbol": "?g_4c56c0@@3PAKA", "address": "0x004c56c0"},
+    {"symbol": "?g_509434@@3PAUs_record_pool@@A", "address": "0x00509434"},
+    {"symbol": "?g_510c78@@3PAUs_effect_source@@A", "address": "0x00510c78"},
+    {"symbol": "?g_510c7c@@3_NA", "address": "0x00510c7c"},
+    {"symbol": "?g_55e756@@3_NA", "address": "0x0055e756"}
   ]
 }

@@ -203,46 +203,6 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?g_4417f0@@3PATvector3f@@A",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_4687bc@@3PATvector3f@@A",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_47ff8c@@3JA",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_4c56c0@@3PAKA",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_509434@@3PAUs_record_pool@@A",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_510c78@@3PAUs_effect_source@@A",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_510c7c@@3_NA",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?g_55e756@@3_NA",
-      "subsystem": "runtime_state",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?particle_system_link@@YAXPAUs_particle_system_datum@@PAJ1@Z",
       "subsystem": "particles",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
