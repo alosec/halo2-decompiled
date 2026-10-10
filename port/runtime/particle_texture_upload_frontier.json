@@ -13,7 +13,7 @@
     {
       "address": "0x0012c990",
       "symbol": "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z",
-      "source_owned": false
+      "source_owned": true
     },
     {
       "address": "0x0012cb10",
@@ -28,12 +28,11 @@
   ],
   "owned_direct_calls": [
     "0x0012c820",
+    "0x0012c990",
     "0x0012cb10",
     "0x0012ccb0"
   ],
-  "remaining_direct_calls": [
-    "0x0012c990"
-  ],
+  "remaining_direct_calls": [],
   "lifecycle_requirements": [
     "cache_request_allocation",
     "resident_block_ownership",
@@ -42,5 +41,16 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. Three of its four direct calls are independently source-owned, but function_12c990 still reaches request allocation, resident physical blocks, asynchronous upload completion, and cache-pool mutation. Static bitmap headers and lookup policy do not establish source pixel-data or mutable pool ownership. Keep function_12ce00 and particle execution dormant rather than fabricating a texture, request, or completed upload."
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All four direct calls are independently source-owned, and exact function_12c990 now preserves throttling, request allocation, resident-block timestamps, priority escalation, blocking waits, and resident texture selection. Its deeper function_12d5a0/120ce0/120d50 providers still require request allocation, source pixel data, asynchronous completion, and initialized mutable cache pools. Static closure does not establish that lifetime. Keep function_12ce00 and particle execution dormant rather than fabricating a texture, request, or completed upload.",
+  "request_provider_dependencies": [
+    "?function_120ce0@@YA_NJJ@Z",
+    "?function_120d50@@YAXPC_N_N@Z",
+    "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z"
+  ],
+  "request_provider_state": [
+    "?async_globals@@3Us_async_globals@@A",
+    "?g_4e6454@@3PAUs_record_pool@@A",
+    "?g_4e6464@@3PAUs_physical_object@@A",
+    "?g_4e6484@@3JA"
+  ]
 }

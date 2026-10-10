@@ -1230,12 +1230,19 @@ def main() -> int:
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
-                ("0x0012c990", "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z", False),
+                ("0x0012c990", "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z", True),
                 ("0x0012cb10", "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z", True),
                 ("0x0012ccb0", "?texture_cache_format_scalable@@YA_NJ@Z", True)] or
             texture_upload.get("owned_direct_calls") != [
-                "0x0012c820", "0x0012cb10", "0x0012ccb0"] or
-            texture_upload.get("remaining_direct_calls") != ["0x0012c990"] or
+                "0x0012c820", "0x0012c990", "0x0012cb10", "0x0012ccb0"] or
+            texture_upload.get("remaining_direct_calls") != [] or
+            texture_upload.get("request_provider_dependencies") != [
+                "?function_120ce0@@YA_NJJ@Z", "?function_120d50@@YAXPC_N_N@Z",
+                "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z"] or
+            texture_upload.get("request_provider_state") != [
+                "?async_globals@@3Us_async_globals@@A",
+                "?g_4e6454@@3PAUs_record_pool@@A",
+                "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e6484@@3JA"] or
             texture_upload.get("lifecycle_requirements") != [
                 "cache_request_allocation", "resident_block_ownership",
                 "source_pixel_data_ownership", "initialized_cache_pools",

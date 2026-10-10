@@ -1487,6 +1487,43 @@ def main():
         if actual_texture_cache_lookup_imports != expected_texture_cache_lookup_imports:
             raise RuntimeError("particle texture cache lookup frontier changed")
 
+        texture_cache_request_output = Path(temporary) / "particle-texture-cache-request.o"
+        texture_cache_request_symbol = (
+            "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z"
+        )
+        texture_cache_request_command = command[:]
+        texture_cache_request_command[
+            texture_cache_request_command.index("h2_extract_selected")
+        ] = texture_cache_request_symbol
+        texture_cache_request_command[
+            texture_cache_request_command.index("--extract-global"):texture_cache_request_command.index("--output")
+        ] = []
+        texture_cache_request_command[texture_cache_request_command.index(output)] = texture_cache_request_output
+        texture_cache_request_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_cache_request_command], check=True)
+        texture_cache_request_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_cache_request_output],
+            text=True,
+        )
+        texture_cache_request_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_cache_request_output],
+            text=True,
+        )
+        if texture_cache_request_symbol not in texture_cache_request_defined:
+            raise RuntimeError("particle texture cache request policy was not selectively compilable")
+        expected_texture_cache_request_imports = {
+            "_?async_globals@@3Us_async_globals@@A", "_?function_120ce0@@YA_NJJ@Z",
+            "_?function_120d50@@YAXPC_N_N@Z",
+            "_?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z",
+            "_?g_4e6454@@3PAUs_record_pool@@A", "_?g_4e6464@@3PAUs_physical_object@@A",
+            "_?g_4e6484@@3JA",
+        }
+        actual_texture_cache_request_imports = {
+            line.split()[0] for line in texture_cache_request_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_cache_request_imports != expected_texture_cache_request_imports:
+            raise RuntimeError("particle texture cache request frontier changed")
+
         texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
         texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
         texture_cache_acquire_command = command[:]
