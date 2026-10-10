@@ -124,6 +124,7 @@
     "native_sound_driver_effects_interface_owned",
     "native_sound_driver_listener_state_owned",
     "native_directsound_stream_creation_owned",
+    "native_directsound_stream_stop_owned",
     "native_sound_stream_chunk_and_cache_lifetime_owned",
     "native_wma_codec_packet_buffer_owned",
     "native_wma_decoder_lifetime_owned",
@@ -225,6 +226,14 @@
       "source": "src/sound_stream_create_native.cpp",
       "address": "0x002ae660",
       "semantics": "Attach the authentic codec, request a genuine DirectSound stream with the recovered descriptor flag, apply zero headroom through the live interface, and initialize the exact two-slot stream bookkeeping regardless of backend success."
+    }
+  ],
+  "sound_stream_stop_helpers": [
+    {
+      "symbol": "sound_stream_stop",
+      "source": "src/sound_stream_stop_native.cpp",
+      "address": "0x002ae6f0",
+      "semantics": "For state-1 streams, query and flush the genuine DirectSound interface, stop the attached codec, release every queued cache lock, clear flushing state, and then normalize authentic started and queued counts to zero."
     }
   ]
 }

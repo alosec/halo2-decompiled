@@ -2133,6 +2133,8 @@ def main() -> int:
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_pcm_control_source = (
         args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
+    sound_stream_stop_source = (
+        args.root / "src/sound_stream_stop_native.cpp").read_text()
     sound_stream_create_source = (
         args.root / "src/sound_stream_create_native.cpp").read_text()
     sound_stream_chunk_release_source = (
@@ -2174,6 +2176,14 @@ def main() -> int:
         "sound_stream_release_chunk(stream, chunk);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
+    expected_stream_stop_fragments = [
+        "void sound_stream_stop(s_sound_stream *stream)",
+        "if (stream->state == 1)",
+        "IDirectSoundStream_GetStatus(stream->stream, &status);",
+        "IDirectSoundStream_Flush(stream->stream);",
+        "stream->codec->stop();", "stream->state = 0;",
+        "sound_stream_release_chunks(stream);", "stream->flushing = 0;",
+        "stream->started_count = 0;", "stream->chunk_count = 0;"]
     expected_stream_create_fragments = [
         "bool sound_stream_create(s_sound_stream *stream, c_sound_stream_codec *codec,",
         "stream->codec = codec;", "codec->attach(stream);",
@@ -2231,6 +2241,7 @@ def main() -> int:
         "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
         "native_directsound_stream_creation_owned",
+        "native_directsound_stream_stop_owned",
         "native_sound_stream_chunk_and_cache_lifetime_owned",
         "native_wma_codec_packet_buffer_owned",
         "native_wma_decoder_lifetime_owned",
@@ -2438,6 +2449,15 @@ def main() -> int:
                     "headroom through the live interface, and initialize the "
                     "exact two-slot stream bookkeeping regardless of backend "
                     "success."}] or
+            sound_driver_lifecycle.get("sound_stream_stop_helpers") != [{
+                "symbol": "sound_stream_stop",
+                "source": "src/sound_stream_stop_native.cpp",
+                "address": "0x002ae6f0",
+                "semantics":
+                    "For state-1 streams, query and flush the genuine "
+                    "DirectSound interface, stop the attached codec, release "
+                    "every queued cache lock, clear flushing state, and then "
+                    "normalize authentic started and queued counts to zero."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
@@ -2451,6 +2471,8 @@ def main() -> int:
                 for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_pcm_control_source
                 for fragment in expected_pcm_control_fragments) or
+            any(fragment not in sound_stream_stop_source
+                for fragment in expected_stream_stop_fragments) or
             any(fragment not in sound_stream_create_source
                 for fragment in expected_stream_create_fragments) or
             any(fragment not in sound_stream_chunk_release_source
