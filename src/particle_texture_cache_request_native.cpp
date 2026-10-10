@@ -73,6 +73,21 @@ static_assert(sizeof(s_texture_cache_file) == 0x804, "s_texture_cache_file");
 
 extern s_texture_cache_file g_557c90[6];
 extern long g_55aca8;
+long __stdcall function_1a0e70(s_async_task *task);
+
+// @retail 0x1a0f10
+long function_1a0f10(s_file_handle file, void *buffer, dword size, dword offset,
+    long category, long priority, dword *bytes_read, bool volatile *done)
+{
+    s_async_task task;
+    memset(&task, 0, sizeof(task));
+    task.read_position.file = file;
+    task.read_position.buffer = buffer;
+    task.read_position.size = size;
+    task.read_position.offset = offset;
+    task.read_position.bytes_read_out = bytes_read;
+    return function_120ba0(priority, &task, category, function_1a0e70, done);
+}
 
 // @retail 0x213760
 long function_213760(dword location, long size, void *buffer, dword *bytes_read,

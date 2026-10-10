@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All four direct calls are independently source-owned. Exact function_12c990 preserves throttling, request policy, timestamps, priority escalation, blocking waits, and resident selection. Exact function_12d5a0 preserves physical allocation, datum and cache-entry setup, header creation, 512-byte upload rounding, async submission, and accounting; function_12d6d0 preserves Xbox texture headers; function_213760 preserves top-bit cache-file routing and delegates to the genuine async file-read scheduler. Execution still requires initialized cache/physical pools and cache-file handles, owned source pixels, genuine function_1a0f10 completion, and safe function_120ce0/function_120d50 scheduler and wait lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All four direct calls are independently source-owned. Exact function_12c990 preserves request/residency policy; function_12d5a0 preserves physical allocation, cache-entry setup, header creation, upload rounding and accounting; function_12d6d0 preserves Xbox texture headers; function_213760 preserves cache-file routing; and function_1a0f10 now preserves zero-initialized async read-task construction and queue submission. Execution still requires initialized cache/physical pools and file handles, owned source pixels, genuine function_1a0e70 file reads, safe function_120ba0 queue ownership, and function_120ce0/function_120d50 scheduler and wait lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_120ce0@@YA_NJJ@Z",
     "?function_120d50@@YAXPC_N_N@Z"
@@ -67,6 +67,11 @@
       "address": "0x00213760",
       "symbol": "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
       "role": "cache-location file selection and asynchronous read routing"
+    },
+    {
+      "address": "0x001a0f10",
+      "symbol": "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+      "role": "zero-initialized asynchronous file-read task construction and queue submission"
     }
   ],
   "helper_dependencies": [
@@ -80,7 +85,8 @@
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-    "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?g_450768@@3PAY0BI@JA",
     "?g_4e6454@@3PAUs_record_pool@@A",
     "?g_4e6460@@3KA",
@@ -92,8 +98,15 @@
     "h2_guest_memset"
   ],
   "async_read_provider_imports": [
-    "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?g_557c90@@3PAUs_texture_cache_file@@A",
-    "?g_55aca8@@3JA"
+    "?g_55aca8@@3JA",
+    "h2_guest_memset"
+  ],
+  "async_request_provider_imports": [
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "h2_guest_memset"
   ]
 }
