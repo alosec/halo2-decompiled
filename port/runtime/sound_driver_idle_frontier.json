@@ -55,7 +55,8 @@
     }
   ],
   "execution_gate": [
-    "native_audio_processor_recovery_owned",
+    "native_dsp_effect_image_section_and_download_backend_owned",
+    "native_voice_engine_dispose_and_restart_owned",
     "native_direct_sound_work_service_owned",
     "native_sound_stream_objects_and_vtables_owned",
     "native_sound_effects_object_and_vtable_owned",
@@ -68,7 +69,7 @@
   ],
   "production_linked": false,
   "source_owned": true,
-  "blocker": "Both exact idle providers and source-owned stream flush still perform live Xbox DirectSound/XAudio work through mutable driver, stream, codec, effects and buffer objects. They cannot be linked or executed merely to unblock texture waits; a genuine native audio backend or an exact behavior-preserving ownership layer and initialized mutable lifetimes are required.",
+  "blocker": "Both exact idle providers, both effect-refresh helpers, and source-owned stream flush still perform live Xbox DirectSound/XAudio, DSP-image, and voice-engine work through mutable driver, stream, codec, effects, buffer, and voice objects. They cannot be linked or executed merely to unblock texture waits; a genuine native audio backend or an exact behavior-preserving ownership layer and initialized mutable lifetimes are required.",
   "stream_flush": {
     "address": "0x002ae4b0",
     "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
@@ -110,6 +111,23 @@
   },
   "native_sources": [
     "src/sound_driver_pre_update_native.cpp",
-    "src/sound_driver_post_update_native.cpp"
+    "src/sound_driver_post_update_native.cpp",
+    "src/sound_driver_effect_refresh_native.cpp"
+  ],
+  "effect_refresh_providers": [
+    {
+      "address": "0x00191550",
+      "symbol": "?function_191550@@YAXXZ",
+      "source": "src/sound_driver_effect_refresh_native.cpp",
+      "source_owned": true,
+      "semantics": "submit only effect blocks cleared from the current dirty mask, then roll current dirty state into previous and clear current"
+    },
+    {
+      "address": "0x001915f0",
+      "symbol": "?function_1915f0@@YAXXZ",
+      "source": "src/sound_driver_effect_refresh_native.cpp",
+      "source_owned": true,
+      "semantics": "reload the DSP image at recovered indices 9 and 10, disposing an active voice engine first and restarting it after the genuine image download"
+    }
   ]
 }

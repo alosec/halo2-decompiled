@@ -2044,6 +2044,8 @@ def main() -> int:
         args.root / "src/sound_driver_pre_update_native.cpp").read_text()
     sound_driver_post_update_source = (
         args.root / "src/sound_driver_post_update_native.cpp").read_text()
+    sound_driver_effect_refresh_source = (
+        args.root / "src/sound_driver_effect_refresh_native.cpp").read_text()
     sound_stream_flush_source = (
         args.root / "src/sound_stream_flush.cpp").read_text()
     expected_stream_flush_fragments = [
@@ -2098,6 +2100,27 @@ def main() -> int:
         "sound_stream_update(stream);",
         "Both retail state switches have four empty cases.",
         "function_191550();"]
+    expected_effect_refresh_fragments = [
+        "static_assert(offsetof(s_driver_effect_refresh_view, direct_sound) == 0x2ab0",
+        "static_assert(sizeof(s_voice_effects) == 0x48",
+        "static_assert(sizeof(s_voice_globals) == 0x144",
+        "static_assert(offsetof(s_voice_globals, unknownEE) == 0xee",
+        "static_assert(offsetof(s_voice_globals, initialized) == 0x140",
+        "void function_191550(void)",
+        "static const dword k_dsfx_immediate = 0;",
+        "static const dword k_download_xbe_section = 1;",
+        "IDirectSound_SetEffectData(direct_sound, i + 4, 0x20,",
+        "k_dsfx_immediate);",
+        "g_510c90->previous_changed = g_510c90->changed;",
+        "g_510c90->changed = 0;",
+        "void function_1915f0(void)",
+        "s_effect_image_location location = { 9, 10 };",
+        "voice_xhv_dispose(&g_476fc8);",
+        "g_4c9878.unknownEE = 0;",
+        "XAudioDownloadEffectsImage(effect_image_name, &location,",
+        "k_download_xbe_section, &g_510c90->description);",
+        "voice_start_engine();",
+        "XFreeSection(effect_image_name);"]
     expected_sound_driver_providers = [{
         "address": "0x0021ec00",
         "symbol": "?function_21ec00@@YAXXZ",
@@ -2135,6 +2158,8 @@ def main() -> int:
                 for fragment in expected_pre_update_fragments) or
             any(fragment not in sound_driver_post_update_source
                 for fragment in expected_post_update_fragments) or
+            any(fragment not in sound_driver_effect_refresh_source
+                for fragment in expected_effect_refresh_fragments) or
             any(fragment not in sound_stream_flush_source
                 for fragment in expected_stream_flush_fragments) or
             sound_driver_idle.get("source") !=
@@ -2143,11 +2168,29 @@ def main() -> int:
                 "src/unknown_21e330.cpp" or
             sound_driver_idle.get("native_sources") != [
                 "src/sound_driver_pre_update_native.cpp",
-                "src/sound_driver_post_update_native.cpp"] or
+                "src/sound_driver_post_update_native.cpp",
+                "src/sound_driver_effect_refresh_native.cpp"] or
             sound_driver_idle.get("providers") != expected_sound_driver_providers or
             sound_driver_idle.get("source_owned_providers") !=
                 ["0x0021ec00", "0x0021ee80"] or
             sound_driver_idle.get("remaining_providers") != [] or
+            sound_driver_idle.get("effect_refresh_providers") != [{
+                "address": "0x00191550",
+                "symbol": "?function_191550@@YAXXZ",
+                "source": "src/sound_driver_effect_refresh_native.cpp",
+                "source_owned": True,
+                "semantics":
+                    "submit only effect blocks cleared from the current dirty "
+                    "mask, then roll current dirty state into previous and "
+                    "clear current"}, {
+                "address": "0x001915f0",
+                "symbol": "?function_1915f0@@YAXXZ",
+                "source": "src/sound_driver_effect_refresh_native.cpp",
+                "source_owned": True,
+                "semantics":
+                    "reload the DSP image at recovered indices 9 and 10, "
+                    "disposing an active voice engine first and restarting "
+                    "it after the genuine image download"}] or
             sound_driver_idle.get("reverb_update") != {
                 "address": "0x0021ece0",
                 "symbol":
@@ -2183,7 +2226,8 @@ def main() -> int:
                     "request asynchronous envelope-aware flush, stop the codec, "
                     "and publish flushing state"} or
             sound_driver_idle.get("execution_gate") != [
-                "native_audio_processor_recovery_owned",
+                "native_dsp_effect_image_section_and_download_backend_owned",
+                "native_voice_engine_dispose_and_restart_owned",
                 "native_direct_sound_work_service_owned",
                 "native_sound_stream_objects_and_vtables_owned",
                 "native_sound_effects_object_and_vtable_owned",

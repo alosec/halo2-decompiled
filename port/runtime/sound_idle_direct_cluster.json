@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service plus all seven direct sound-provider callees",
+  "role": "source-owned dormant idle service, all seven direct sound-provider callees, and driver effect-refresh helpers",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -33,11 +33,21 @@
     {
       "source": "src/sound_driver_post_update_native.cpp",
       "symbol": "?function_21ee80@@YAXXZ"
+    },
+    {
+      "source": "src/sound_driver_effect_refresh_native.cpp",
+      "symbol": "?function_191550@@YAXXZ"
+    },
+    {
+      "source": "src/sound_driver_effect_refresh_native.cpp",
+      "symbol": "?function_1915f0@@YAXXZ"
     }
   ],
   "definitions": [
     "?function_125d60@@YAXXZ",
     "?function_1293f0@@YAXXZ",
+    "?function_191550@@YAXXZ",
+    "?function_1915f0@@YAXXZ",
     "?function_21ec00@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
@@ -53,38 +63,45 @@
     "?function_12a810@@YAJJ@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
-    "?function_191550@@YAXXZ",
-    "?function_1915f0@@YAXXZ",
     "?function_2197f0@@YAJM@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
+    "?g_476fc8@@3Vc_voice_xhv@@A",
+    "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_4e637c@@3PAUs_record_pool@@A",
     "?g_4e6380@@3PAUs_4e6380@@A",
     "?g_4e6948@@3PAUs_game_options_view@@A",
     "?g_50210c@@3PAXA",
     "?g_510c54@@3PAUs_game_time_globals@@A",
+    "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
+    "?voice_start_engine@@YAXXZ",
+    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "GetTickCount",
     "IDirectSoundBuffer_SetVolume",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
     "IDirectSound_CommitDeferredSettings",
+    "IDirectSound_SetEffectData",
+    "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
+    "XFreeSection",
+    "XLoadSection",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memset",
     "log10"
   ],
   "production_linked": false,
   "execution_enabled": false,
-  "blocker": "The complete direct cluster still exposes genuine playback, stream, effect, cache, clock, mutable-state, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
+  "blocker": "The cluster still exposes genuine playback, stream, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
     "?function_127320@@YAXJJ@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
@@ -92,27 +109,40 @@
     "?function_12a810@@YAJJ@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
-    "?function_191550@@YAXXZ",
-    "?function_1915f0@@YAXXZ",
     "?function_2197f0@@YAJM@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?g_468834@@3MA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
+    "?g_476fc8@@3Vc_voice_xhv@@A",
+    "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_50210c@@3PAXA",
+    "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
+    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "IDirectSoundBuffer_SetVolume",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
     "IDirectSound_CommitDeferredSettings",
+    "IDirectSound_SetEffectData",
+    "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
+    "XFreeSection",
+    "XLoadSection",
     "g_dwDirectSoundDeltaPanicCount",
     "log10"
+  ],
+  "production_inadequate_resolutions": [
+    {
+      "symbol": "?voice_start_engine@@YAXXZ",
+      "provider": "port/runtime/guest_online_runtime.cpp",
+      "reason": "the current native-offline provider is intentionally empty and cannot satisfy DSP recovery restart semantics"
+    }
   ]
 }

@@ -191,6 +191,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_cache_frame_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_pre_update_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_post_update_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_effect_refresh_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

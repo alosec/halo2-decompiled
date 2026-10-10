@@ -30,10 +30,10 @@ def main() -> int:
     if manifest.get("version") != 1:
         raise RuntimeError("unsupported sound-idle direct cluster manifest")
     providers = manifest.get("providers")
-    if not isinstance(providers, list) or len(providers) != 8:
-        raise RuntimeError("sound-idle direct provider inventory changed")
+    if not isinstance(providers, list) or len(providers) != 10:
+        raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 8:
+    if len(set(provider_symbols)) != 10:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
@@ -42,8 +42,8 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 9 or len(expected_imports) != 34:
-        raise RuntimeError("sound-idle direct cluster coverage ratchet changed")
+    if len(expected_definitions) != 11 or len(expected_imports) != 41:
+        raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
     if manifest.get("production_linked") is not False:
@@ -76,8 +76,15 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 28:
+    if len(expected_production_imports) != 34:
         raise RuntimeError("sound-idle production score ratchet changed")
+    if manifest.get("production_inadequate_resolutions") != [{
+            "symbol": "?voice_start_engine@@YAXXZ",
+            "provider": "port/runtime/guest_online_runtime.cpp",
+            "reason":
+                "the current native-offline provider is intentionally empty "
+                "and cannot satisfy DSP recovery restart semantics"}]:
+        raise RuntimeError("sound-idle inadequate production resolution changed")
     with tempfile.TemporaryDirectory(
             prefix="h2-sound-idle-direct-score-") as temporary:
         scored = Path(temporary) / "scored.o"
