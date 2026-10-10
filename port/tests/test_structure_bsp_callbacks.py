@@ -1263,6 +1263,12 @@ def main() -> int:
                 "?async_globals@@3Us_async_globals@@A",
                 "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
                 "WaitForSingleObject", "h2_guest_memset"] or
+            texture_upload.get("blocking_wait_usage") != {
+                "caller": "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z",
+                "wait_provider": "?function_120d50@@YAXPC_N_N@Z",
+                "idle_argument": True,
+                "idle_service": "?function_125d60@@YAXXZ",
+                "native_bypass_allowed": False} or
             texture_upload.get("request_provider_state") != [
                 "?async_globals@@3Us_async_globals@@A",
                 "?g_4e6454@@3PAUs_record_pool@@A",
