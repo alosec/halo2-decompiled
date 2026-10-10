@@ -1518,7 +1518,8 @@ def main():
             "_?function_120ce0@@YA_NJJ@Z", "_?function_120d50@@YAXPC_N_N@Z",
             "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
             "_?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-            "_?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+            "_?async_globals@@3Us_async_globals@@A", "_?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "_?function_1208b0@@YAPAUs_job_node@@XZ", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
             "_?g_450768@@3PAY0BI@JA", "_?g_4e6454@@3PAUs_record_pool@@A",
             "_?g_4e6460@@3KA", "_?g_4e6464@@3PAUs_physical_object@@A",
@@ -1595,7 +1596,8 @@ def main():
             "_?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
             "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
             "_?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-            "_?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+            "_?async_globals@@3Us_async_globals@@A", "_?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "_?function_1208b0@@YAPAUs_job_node@@XZ", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
             "_?g_450768@@3PAY0BI@JA", "_?g_4e6454@@3PAUs_record_pool@@A",
             "_?g_4e6460@@3KA", "_?g_4e6464@@3PAUs_physical_object@@A",
@@ -1631,7 +1633,8 @@ def main():
         if texture_async_read_symbol not in texture_async_read_defined:
             raise RuntimeError("particle texture async cache read was not selectively compilable")
         expected_texture_async_read_imports = {
-            "_?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+            "_?async_globals@@3Us_async_globals@@A", "_?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "_?function_1208b0@@YAPAUs_job_node@@XZ", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z",
             "_?g_557c90@@3PAUs_texture_cache_file@@A", "_?g_55aca8@@3JA",
             "_h2_guest_memset",
@@ -1665,7 +1668,8 @@ def main():
         if texture_async_request_symbol not in texture_async_request_defined:
             raise RuntimeError("particle texture async read request was not selectively compilable")
         expected_texture_async_request_imports = {
-            "_?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
+            "_?async_globals@@3Us_async_globals@@A", "_?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "_?function_1208b0@@YAPAUs_job_node@@XZ", "_h2_guest_memcpy",
             "_?function_1a0e70@@YAJPATs_async_task@@@Z", "_h2_guest_memset",
         }
         actual_texture_async_request_imports = {
@@ -1704,6 +1708,38 @@ def main():
         }
         if actual_texture_async_worker_imports != expected_texture_async_worker_imports:
             raise RuntimeError("particle texture async read worker frontier changed")
+
+        texture_async_queue_output = Path(temporary) / "particle-texture-async-queue.o"
+        texture_async_queue_symbol = "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z"
+        texture_async_queue_command = command[:]
+        texture_async_queue_command[
+            texture_async_queue_command.index("h2_extract_selected")
+        ] = texture_async_queue_symbol
+        texture_async_queue_command[
+            texture_async_queue_command.index("--extract-global"):texture_async_queue_command.index("--output")
+        ] = []
+        texture_async_queue_command[texture_async_queue_command.index(output)] = texture_async_queue_output
+        texture_async_queue_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_queue_command], check=True)
+        texture_async_queue_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_queue_output],
+            text=True,
+        )
+        texture_async_queue_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_queue_output],
+            text=True,
+        )
+        if texture_async_queue_symbol not in texture_async_queue_defined:
+            raise RuntimeError("particle texture async queue submission was not selectively compilable")
+        expected_texture_async_queue_imports = {
+            "_?async_globals@@3Us_async_globals@@A", "_?async_task_queue@@YAJPAUs_job_node@@@Z",
+            "_?function_1208b0@@YAPAUs_job_node@@XZ", "_h2_guest_memcpy",
+        }
+        actual_texture_async_queue_imports = {
+            line.split()[0] for line in texture_async_queue_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_queue_imports != expected_texture_async_queue_imports:
+            raise RuntimeError("particle texture async queue frontier changed")
 
         texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
         texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"

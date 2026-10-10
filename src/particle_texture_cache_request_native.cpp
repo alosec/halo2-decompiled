@@ -98,6 +98,23 @@ long __stdcall function_1a0e70(s_async_task *task)
     return 0;
 }
 
+s_job_node *function_1208b0(void);
+
+// @retail 0x120ba0
+long function_120ba0(long priority, s_async_task *task, long category,
+    async_work_callback callback, bool volatile *done)
+{
+    async_globals.tasks_added++;
+    *done = false;
+    s_job_node *node = function_1208b0();
+    node->task = *task;
+    node->done = done;
+    node->priority = priority;
+    node->callback = callback;
+    node->category = category;
+    return async_task_queue(node);
+}
+
 // @retail 0x1a0f10
 long function_1a0f10(s_file_handle file, void *buffer, dword size, dword offset,
     long category, long priority, dword *bytes_read, bool volatile *done)
