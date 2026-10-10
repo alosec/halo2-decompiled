@@ -1096,9 +1096,9 @@ def main() -> int:
             material_binding.get("execution_gate") != "native_particle_material_binding_state_owned" or
             set(material_binding.get("direct_calls", [])) != expected_material_calls or
             set(material_binding.get("already_owned_calls", [])) != {
-                "0x00016f60", "0x00017000", "0x00017170", "0x000174d0", "0x00018900", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x000174d0", "0x00018e80", "0x00018900", "0x0001cf50", "0x00137bd0"} or
             grouped_material_calls != expected_material_calls - {
-                "0x00016f60", "0x00017000", "0x00017170", "0x000174d0", "0x00018900", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x000174d0", "0x00018e80", "0x00018900", "0x0001cf50", "0x00137bd0"} or
             material_binding.get("owned_state_dependencies") != {
                 "0x00016f60": ["?g_485a80@@3PAEA"]} or
             material_binding.get("owned_zero_import_calls") != ["0x00017000", "0x00017170"] or
@@ -1112,6 +1112,8 @@ def main() -> int:
                     "?g_485a58@@3PAUs_33a0b_view@@A", "fmod"]} or
             material_binding.get("source_owned_transitive_calls") != [
                 "0x00017550", "0x0001b230"] or
+            material_binding.get("owned_renderer_boundaries") != {
+                "0x00018e80": ["D3DDevice_SetVertexShaderConstantFast"]} or
             len(material_groups) != 4 or
             not material_binding.get("blocker")):
         raise RuntimeError("particle material binding frontier changed")

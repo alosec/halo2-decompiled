@@ -34,7 +34,8 @@
     "0x000174d0",
     "0x00018900",
     "0x0001cf50",
-    "0x00137bd0"
+    "0x00137bd0",
+    "0x00018e80"
   ],
   "remaining_groups": {
     "material_table_selection": [
@@ -44,7 +45,6 @@
       "0x000189a0",
       "0x00018a90",
       "0x00018d70",
-      "0x00018e80",
       "0x00018ee0"
     ],
     "texture_and_stage_state": [
@@ -60,7 +60,7 @@
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seven of its 21 direct calls are independently source-owned. The nested curve route is now source-owned through function_174d0, function_17550, and function_1b230, exposing only the genuine general evaluator function_13b390, mutable time/interface state, and fmod. The remaining 14 direct calls plus those real curve dependencies are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Eight of its 21 direct calls are independently source-owned. The nested curve route is owned through function_1b230 and ends at the genuine general evaluator and mutable input/time state. function_18e80 now owns exact dirty-bit constant flushing but preserves D3DDevice_SetVertexShaderConstantFast as a real renderer boundary. The remaining 13 direct calls plus the real curve and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -90,5 +90,10 @@
   "source_owned_transitive_calls": [
     "0x00017550",
     "0x0001b230"
-  ]
+  ],
+  "owned_renderer_boundaries": {
+    "0x00018e80": [
+      "D3DDevice_SetVertexShaderConstantFast"
+    ]
+  }
 }

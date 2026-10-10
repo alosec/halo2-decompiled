@@ -1269,6 +1269,30 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_constant_output = Path(temporary) / "particle-material-shader-constant-flush.o"
+        material_constant_symbol = "?function_18e80@@YAXPAUs_shader_constant_state@@@Z"
+        material_constant_boundary = "D3DDevice_SetVertexShaderConstantFast"
+        material_constant_command = command[:]
+        material_constant_command[material_constant_command.index("h2_extract_selected")] = material_constant_symbol
+        material_constant_command[
+            material_constant_command.index("--extract-global"):material_constant_command.index("--output")
+        ] = []
+        material_constant_command[material_constant_command.index(output)] = material_constant_output
+        material_constant_command[-1] = args.root / "src/particle_material_shader_constant_flush_native.cpp"
+        subprocess.run([str(value) for value in material_constant_command], check=True)
+        material_constant_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_constant_output],
+            text=True,
+        )
+        material_constant_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_constant_output],
+            text=True,
+        )
+        if material_constant_symbol not in material_constant_defined:
+            raise RuntimeError("particle material shader constant flush was not selectively compilable")
+        if material_constant_boundary not in material_constant_undefined:
+            raise RuntimeError("particle material shader constant flush hid its D3D boundary")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
