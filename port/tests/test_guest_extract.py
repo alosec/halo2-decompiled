@@ -3596,6 +3596,10 @@ def main():
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
                  "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
                  "?sound_voice_release@@YAXJ@Z"}),
+            ("sound-wma-decoder-release.o",
+             "src/sound_wma_decoder_release_native.cpp",
+             "?release_decoder@c_wma_codec@@QAAXXZ", {
+                 "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"}),
             ("sound-driver-channel-usage.o",
              "src/sound_driver_channel_usage_native.cpp",
              "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z", {

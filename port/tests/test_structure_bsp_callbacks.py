@@ -2127,6 +2127,13 @@ def main() -> int:
         args.root / "src/unknown_21e4b0.cpp").read_text()
     sound_driver_teardown_source = (
         args.root / "src/unknown_21e330.cpp").read_text()
+    sound_wma_release_source = (
+        args.root / "src/sound_wma_decoder_release_native.cpp").read_text()
+    expected_wma_release_fragments = [
+        "m_decoder->vtable[2]", "release(m_decoder);", "m_decoder = NULL;",
+        "m_stream->started_count = m_stream->chunk_count;",
+        "while (m_stream->chunk_count > 0)",
+        "sound_stream_release_chunk("]
     expected_lifecycle_calls = {
         "startup": [
             "function_163ba0", "DirectSoundCreate", "IDirectSound::GetCaps",
@@ -2218,6 +2225,14 @@ def main() -> int:
                 expected_lifecycle_calls["teardown"] or
             lifecycle_teardown.get("state") !=
                 ["g_51ebe4", "g_47f0d0", "g_510c3c"] or
+            lifecycle_teardown.get("selectively_source_owned_calls") != [{
+                "symbol": "c_wma_codec::release_decoder",
+                "source": "src/sound_wma_decoder_release_native.cpp",
+                "semantics":
+                    "Release the genuine decoder through its COM interface, "
+                    "clear ownership, synchronize started/chunk counts, and "
+                    "release every queued stream chunk through the recovered "
+                    "stream lifetime."}] or
             sound_driver_lifecycle.get("channel_parameter_helpers") != [{
                 "symbol": "function_21e330",
                 "source": "src/sound_driver_filter_helpers_native.cpp",
@@ -2252,6 +2267,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_wma_release_source
+                for fragment in expected_wma_release_fragments) or
             not sound_driver_lifecycle.get("blocker")):
         raise RuntimeError("sound driver lifecycle frontier changed")
 

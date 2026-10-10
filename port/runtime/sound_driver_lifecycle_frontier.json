@@ -86,7 +86,14 @@
       "g_47f0d0",
       "g_510c3c"
     ],
-    "semantics": "Stop active driver work, release every channel stream, voice buffer and submix, release DirectSound, release the WMA decoder, clear decoder state, and publish the driver unavailable."
+    "semantics": "Stop active driver work, release every channel stream, voice buffer and submix, release DirectSound, release the WMA decoder, clear decoder state, and publish the driver unavailable.",
+    "selectively_source_owned_calls": [
+      {
+        "symbol": "c_wma_codec::release_decoder",
+        "source": "src/sound_wma_decoder_release_native.cpp",
+        "semantics": "Release the genuine decoder through its COM interface, clear ownership, synchronize started/chunk counts, and release every queued stream chunk through the recovered stream lifetime."
+      }
+    ]
   },
   "execution_gate": [
     "native_directsound_device_owned",
