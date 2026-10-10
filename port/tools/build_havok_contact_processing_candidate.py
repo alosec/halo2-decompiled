@@ -106,6 +106,8 @@ def main() -> int:
         object_physics_refresh = temporary / "object-physics-refresh.o"
         particle_interface_context = temporary / "particle-interface-context.o"
         particle_system_value = temporary / "particle-system-value.o"
+        light_color_space = temporary / "light-color-space.o"
+        light_color_interpolation = temporary / "light-color-interpolation.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -296,6 +298,14 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_173c30.cpp", particle_system_value,
             ["?function_173c30@@YAMPBUs_particle_system_datum@@J@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_1317a0.cpp", light_color_space,
+            ["?function_1318d0@@YAPAUhsv3f@@PBUcolor3f@@PAU1@@Z",
+             "?function_131a00@@YAPAUcolor3f@@PBUhsv3f@@PAU1@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_131c20.cpp", light_color_interpolation,
+            ["?function_131c20@@YAPAUcolor3f@@PBU1@0KMPAU1@@Z",
+             "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPBU1@PAU1@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -307,7 +317,7 @@ def main() -> int:
              particle_policy, particle_provider_select, args.particle_providers,
              light_record, placement_transform, scratch_teardown,
              object_impulse, object_physics_refresh, particle_interface_context,
-             particle_system_value])
+             particle_system_value, light_color_space, light_color_interpolation])
     return 0
 
 
