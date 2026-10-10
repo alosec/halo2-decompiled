@@ -308,10 +308,12 @@ add_custom_target(h2_havok_primary_listener_table_object ALL DEPENDS
 
 set(H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_contact_processing_candidate.o")
 set(H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_impact_allocation_candidate.o")
+set(H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/havok_effect_lifecycle_candidate.o")
 add_custom_command(
     OUTPUT
         "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
         "${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}"
+        "${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
             --root "${PROJECT_SOURCE_DIR}"
             --python "${Python3_EXECUTABLE}"
@@ -320,6 +322,7 @@ add_custom_command(
             --plugin "$<TARGET_FILE:h2_guest_rebase>"
             --output "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
             --impact-output "${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}"
+            --effect-output "${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}"
     DEPENDS
         h2_guest_rebase
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_havok_contact_processing_candidate.py"
@@ -352,6 +355,7 @@ add_custom_command(
 add_custom_target(h2_havok_contact_processing_candidate ALL DEPENDS
     "${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}"
     "${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}"
+    "${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}"
 )
 
 set(H2_GUEST_STRUCTURE_BSP_CALLBACK_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/structure_bsp_callbacks.o")
@@ -2457,6 +2461,7 @@ add_test(
             --primary-listener-provider-cluster-object ${H2_GUEST_HAVOK_PRIMARY_LISTENER_PROVIDER_CLUSTER_OBJECT}
             --contact-processing-candidate-object ${H2_GUEST_HAVOK_CONTACT_PROCESSING_CANDIDATE_OBJECT}
             --impact-allocation-candidate-object ${H2_GUEST_HAVOK_IMPACT_ALLOCATION_CANDIDATE_OBJECT}
+            --effect-lifecycle-candidate-object ${H2_GUEST_HAVOK_EFFECT_LIFECYCLE_CANDIDATE_OBJECT}
 )
 add_test(
     NAME recovered-guest-unit

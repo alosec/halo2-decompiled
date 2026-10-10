@@ -1,0 +1,261 @@
+{
+  "version": 1,
+  "description": "Exact production-linked imports added by the dormant complete impact effect creation/deletion candidate. This expanded inventory records the genuine coupled lifecycle and does not authorize production linking or execution.",
+  "imports": [
+    {
+      "symbol": "?first_person_weapon_get_markers_internal@@YAFJJPAUs_first_person_marker@@F@Z",
+      "subsystem": "first_person",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_11c050@@YA_NPBUs_location@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_11c080@@YA_NPBUs_location@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_11d000@@YAPATvector3f@@PBT1@PAT1@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_137bd0@@YAPAVc_type_4e7709@@J@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1469f0@@YAJM@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_155760@@YAJJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_163080@@YA_NXZ",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_166244@@YAJJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_166283@@YA_NJJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1664a5@@YAPAUtransform4x3f@@JJF@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1664da@@YAXJJFPAUtransform4x3f@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_16f3a0@@YAPAUs_player_state@@J@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_173fd0@@YAJPAUs_effect_particle_system_definition@@JJFJ@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1751d0@s_particle_system_datum@@QAAPAUs_effect_particle_system_definition@@XZ",
+      "subsystem": "particles",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_175270@@YAXPAUs_particle_system_datum@@PAUs_particle_system_spawn@@PBUtransform4x3f@@_N@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_175a80@@YAX_NKKPAUs_particle_system_datum@@0@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_17e670@@YAXPAUs_effect_source@@PBTpoint3f@@JPBTvector3f@@MJJJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_189060@@YAJJFMPBTpoint3f@@PBTvector3f@@J@Z",
+      "subsystem": "audio",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1895f0@@YAJPBUs_sound_position@@MJ@Z",
+      "subsystem": "audio",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_18a750@@YAJJJ@Z",
+      "subsystem": "audio",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_259a0@@YAMPAK@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_259d0@@YAMPAKPBDJMM@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_3ddd0@@YAJJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_3eb20@@YA_NJ@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_a7640@@YA_NPAUs_effect_object_placement@@@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_a7870@@YAXJ@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_b7880@@YAXJJPBTpoint3f@@PBTvector3f@@1@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_b7930@@YAXPAXJJPBUs_effect_owner@@@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_b7b40@@YAJPAX@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_bab40@@YA_NJJPAM@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_bad50@@YA_NJJPATpoint3f@@@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_baf40@@YAJJ@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z",
+      "subsystem": "object_effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_d2a50@@YAJJJJPAUs_effect_color_query@@JPBTpoint3f@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_d2bb0@@YAJPAXPAUs_effect_color_query@@@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_d6660@@YAXPAUs_type_1e6529@@J@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_4417f0@@3PATvector3f@@A",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_4687bc@@3PATvector3f@@A",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_47ff8c@@3JA",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_4c56c0@@3PAKA",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_509434@@3PAUs_record_pool@@A",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_510c78@@3PAUs_effect_source@@A",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_510c7c@@3_NA",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?g_55e756@@3_NA",
+      "subsystem": "runtime_state",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?particle_system_link@@YAXPAUs_particle_system_datum@@PAJ1@Z",
+      "subsystem": "particles",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "?random_vector_in_cone@@YAXPBTvector3f@@PAT1@PAKMM@Z",
+      "subsystem": "effects",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    },
+    {
+      "symbol": "sin",
+      "subsystem": "math",
+      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+    }
+  ]
+}

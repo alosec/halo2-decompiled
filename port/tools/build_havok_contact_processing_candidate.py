@@ -5,8 +5,8 @@ import tempfile
 from pathlib import Path
 
 
-def run(command):
-    subprocess.run([str(value) for value in command], check=True)
+def run(command, cwd=None):
+    subprocess.run([str(value) for value in command], check=True, cwd=cwd)
 
 
 def compile_slice(args, source, output, symbols, globals=()):
@@ -24,8 +24,9 @@ def compile_slice(args, source, output, symbols, globals=()):
         command.extend(("--extract-symbol", symbol))
     for global_name in globals:
         command.extend(("--extract-global", global_name))
-    command.extend(("--output", output, source))
-    run(command)
+    source_argument = source.relative_to(args.root)
+    command.extend(("--output", output, source_argument))
+    run(command, cwd=args.root)
 
 
 def main() -> int:
@@ -37,10 +38,12 @@ def main() -> int:
     parser.add_argument("--plugin", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--impact-output", type=Path, required=True)
+    parser.add_argument("--effect-output", type=Path, required=True)
     args = parser.parse_args()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.impact_output.parent.mkdir(parents=True, exist_ok=True)
+    args.effect_output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="h2-contact-material-") as temporary:
         temporary = Path(temporary)
         lookup = temporary / "lookup.o"
@@ -69,6 +72,7 @@ def main() -> int:
         active_body = temporary / "active-body.o"
         contact_removal = temporary / "contact-removal.o"
         audio_boundary = temporary / "audio-boundary.o"
+        effect_lifecycle = temporary / "effect-lifecycle.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -160,6 +164,13 @@ def main() -> int:
              effect_distance, effect_selection, looping_sound_state,
              contact_creation, motion_basis, active_body, contact_removal,
              audio_boundary])
+        compile_slice(
+            args, args.root / "src/unknown_175bd0.cpp", effect_lifecycle,
+            ["?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
+             "?function_177260@@YAXJ_N@Z"],
+            ["??_C@_0BH@MAKJFDPB@src?1unknown_175bd0?4cpp?$AA@"])
+        run([args.lld, "-r", "--allow-multiple-definition", "-o",
+             args.effect_output, args.impact_output, effect_lifecycle])
     return 0
 
 

@@ -44,6 +44,7 @@ def main() -> int:
     parser.add_argument("--primary-listener-provider-cluster-object", type=Path, required=True)
     parser.add_argument("--contact-processing-candidate-object", type=Path, required=True)
     parser.add_argument("--impact-allocation-candidate-object", type=Path, required=True)
+    parser.add_argument("--effect-lifecycle-candidate-object", type=Path, required=True)
     args = parser.parse_args()
 
     path = args.root / "port/runtime/structure_bsp_switch_callbacks.json"
@@ -173,6 +174,8 @@ def main() -> int:
             "?function_2266a0@@YAXJ@Z" in production_defined_for_listener or
             "?function_226a60@@YAXJ@Z" in production_defined_for_listener or
             "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z" in production_defined_for_listener or
+            "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z" in production_defined_for_listener or
+            "?function_177260@@YAXJ_N@Z" in production_defined_for_listener or
             "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z" in production_defined_for_listener or
             "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z" in production_defined_for_listener):
         raise RuntimeError("dormant impact lifetime candidate entered production")
@@ -683,6 +686,57 @@ def main() -> int:
     for entry in impact_entries:
         if not entry.get("subsystem") or not entry.get("blocker"):
             raise RuntimeError("incomplete Havok impact-allocation frontier entry")
+
+    effect_frontier = json.loads((
+        args.root / "port/runtime/havok_effect_lifecycle_remaining_frontier.json"
+    ).read_text())
+    if effect_frontier.get("version") != 1:
+        raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
+    effect_entries = effect_frontier.get("imports")
+    if not isinstance(effect_entries, list) or len(effect_entries) != 51:
+        raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
+    effect_symbols = [entry.get("symbol") for entry in effect_entries]
+    if len(effect_symbols) != len(set(effect_symbols)):
+        raise RuntimeError("duplicate Havok effect-lifecycle frontier symbol")
+    for entry in effect_entries:
+        if (not isinstance(entry.get("subsystem"), str) or not entry["subsystem"] or
+                not isinstance(entry.get("blocker"), str) or not entry["blocker"] or
+                "stub" in entry["blocker"].lower()):
+            raise RuntimeError("incomplete Havok effect-lifecycle frontier entry")
+    expected_effect_score = (
+        actual_impact_allocation_score - impact_allocation_new_imports
+    ) | set(effect_symbols)
+    with tempfile.TemporaryDirectory(prefix="h2-effect-lifecycle-score-") as temporary:
+        scored = Path(temporary) / "effect-lifecycle-production.o"
+        subprocess.run([
+            args.lld, "-r", "--allow-multiple-definition", "-o", scored,
+            args.effect_lifecycle_candidate_object,
+            args.primary_listener_provider_cluster_object,
+            args.provider_cluster_object,
+            args.production_object,
+        ], check=True)
+        actual_effect_score = {
+            line.strip().split()[-1]
+            for line in subprocess.check_output(
+                [args.llvm_nm, "--undefined-only", scored], text=True
+            ).splitlines() if line.strip()
+        }
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 66:
+        raise RuntimeError("Havok effect-lifecycle candidate score changed")
+    effect_undefined = {
+        line.strip().split()[-1]
+        for line in subprocess.check_output(
+            [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
+            text=True).splitlines() if line.strip()
+    }
+    if len(effect_undefined) != 120:
+        raise RuntimeError("Havok effect-lifecycle raw closure changed")
+    effect_defined = subprocess.check_output(
+        [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
+    )
+    if ("?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z" not in effect_defined or
+            "?function_177260@@YAXJ_N@Z" not in effect_defined):
+        raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")
 
     listener_frontier_path = (
         args.root / "port/runtime/havok_primary_listener_remaining_frontier.json"
