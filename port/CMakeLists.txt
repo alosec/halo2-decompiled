@@ -384,6 +384,7 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
         "${H2_GUEST_EFFECT_PARTICLE_PROVIDER_UNBOUND_OBJECT}"
         "${PROJECT_SOURCE_DIR}/src/effect_particle_provider_select_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/light_record_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/impacts.cpp"
         "${PROJECT_SOURCE_DIR}/src/impact_audio_boundary_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/havok_motion_basis_native.cpp"

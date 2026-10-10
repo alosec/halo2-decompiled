@@ -476,6 +476,7 @@ def main() -> int:
         "g_4e8c24_owned_players_and_local_state",
         "native_havok_impact_response_state_owned",
         "native_havok_effect_pools_owned",
+        "native_light_record_pool_owned",
         "native_effect_runtime_state_owned",
         "native_first_person_state_owned",
         "native_particle_system_pool_owned",
@@ -852,7 +853,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 101:
+    if len(effect_undefined) != 103:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -893,6 +894,7 @@ def main() -> int:
             "?function_178b30@@YAXJJJ@Z" not in effect_defined or
             "?g_47ff88@@3JA" not in effect_defined or
             "?function_137bd0@@YAPAVc_type_4e7709@@J@Z" not in effect_defined or
+            "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")

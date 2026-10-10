@@ -73,9 +73,9 @@
       "blocker": "Requires live object function inputs function_108d90/10aac0 and the general tag-function evaluator function_13bb90."
     },
     {
-      "symbol": "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z",
-      "subsystem": "object_effects",
-      "blocker": "The current source has only a placeholder body; retail performs 0x1c4 bytes of light-record allocation, attachment state, and function_c0c80 initialization."
+      "symbol": "?function_c0c80@@YAXPBTvector3f@@@Z",
+      "subsystem": "lights",
+      "blocker": "Requires complete light-record definition initialization, object-function evaluation, runtime curves, bounds, placement refresh, and cluster-partition state."
     },
     {
       "symbol": "?function_d2a50@@YAJJJJPAUs_effect_color_query@@JPBTpoint3f@@@Z",

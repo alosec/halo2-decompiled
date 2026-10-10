@@ -19,7 +19,9 @@ struct s_effect_source;
 
 
 // @stub 0xc0350
+#ifndef H2_NATIVE_PORT
 void function_c0350(long tag_index, long object_index, long node_index, vector3f const *up, vector3f const *forward, point3f const *position, real scale) { }
+#endif
 
 /* in region */
 /* in region */

@@ -99,6 +99,7 @@ def main() -> int:
         particle_allocation = temporary / "particle-allocation.o"
         particle_policy = temporary / "particle-policy.o"
         particle_provider_select = temporary / "particle-provider-select.o"
+        light_record = temporary / "light-record.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -266,6 +267,9 @@ def main() -> int:
             args, args.root / "src/effect_particle_provider_select_native.cpp",
             particle_provider_select,
             ["?function_137bd0@@YAPAVc_type_4e7709@@J@Z"])
+        compile_slice(
+            args, args.root / "src/light_record_native.cpp", light_record,
+            ["?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -274,7 +278,8 @@ def main() -> int:
              unpack_color, object_placement, object_type, object_geometry,
              first_person_state, first_person_lookup, damage_state,
              placement_defaults, object_lookup, particle_allocation,
-             particle_policy, particle_provider_select, args.particle_providers])
+             particle_policy, particle_provider_select, args.particle_providers,
+             light_record])
     return 0
 
 

@@ -2797,7 +2797,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 000c0110,161,game,speed,a16 pad,,,001cae40,,todo
 000c01c0,106,game,speed,a16 pad,,,000c3260,src/unknown_0bffa0.cpp,matched
 000c0230,273,game,speed,a16 pad,,,000c0c80 0016b840,,todo
-000c0350,452,game,speed,a16 pad,,,000c0c80 0016b840,,todo
+000c0350,452,game,speed,a16 pad,,,000c0c80 0016b840,src/light_record_native.cpp,done
 000c0520,795,game,speed,a16 pad,,,00030bf0 000c0c80 000c19f0 00141ce0 0016b840,,todo
 000c0840,383,game,speed,a16 pad,,,0014a280,src/unknown_0bffa0.cpp,todo
 000c09c0,133,game,speed,a16 pad,,,000c0520,,todo
