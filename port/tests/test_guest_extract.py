@@ -3303,6 +3303,11 @@ def main():
         sound_fade_helper_cases = [
             ("sound-fade-interpolation.o", "src/sound_fade_helpers_native.cpp",
              "?function_12aff0@@YAMMMM_N@Z", {"fabs"}),
+            ("sound-spatial-gain.o", "src/sound_spatial_gain_native.cpp",
+             "?function_12a6d0@@YAJFMM@Z", {
+                 "?function_2195f0@@YAMM@Z",
+                 "?function_2197f0@@YAJM@Z",
+                 "fabs", "sqrt"}),
             ("sound-decibels-to-gain.o", "src/unknown_2197f0.cpp",
              "?function_2195f0@@YAMM@Z", {"exp"}),
             ("sound-playback-fade.o", "src/sound_playback_fade_native.cpp",
