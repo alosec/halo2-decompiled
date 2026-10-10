@@ -1105,7 +1105,13 @@ def main() -> int:
             material_binding.get("owned_immutable_data") != {
                 "0x00467068": "8 exact dword channel masks retained with function_17170"} or
             material_binding.get("owned_transitive_dependencies") != {
-                "0x000174d0": ["?function_17550@@YAXPAEPBG@Z"]} or
+                "0x000174d0": ["?function_17550@@YAXPAEPBG@Z"],
+                "0x00017550": ["?function_1b230@@YAMPBUs_1b230_function@@JJM@Z"],
+                "0x0001b230": [
+                    "?function_13b390@@YAMPBXMM@Z", "?g_4858a0@@3NA",
+                    "?g_485a58@@3PAUs_33a0b_view@@A", "fmod"]} or
+            material_binding.get("source_owned_transitive_calls") != [
+                "0x00017550", "0x0001b230"] or
             len(material_groups) != 4 or
             not material_binding.get("blocker")):
         raise RuntimeError("particle material binding frontier changed")

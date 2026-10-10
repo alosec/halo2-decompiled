@@ -1227,6 +1227,48 @@ def main():
         if material_curve_dependency not in material_curve_undefined:
             raise RuntimeError("particle material curve router hid its evaluator boundary")
 
+        material_curve_apply_output = Path(temporary) / "particle-material-curve-apply.o"
+        material_curve_apply_symbol = "?function_17550@@YAXPAEPBG@Z"
+        material_curve_eval_symbol = "?function_1b230@@YAMPBUs_1b230_function@@JJM@Z"
+        material_curve_apply_command = command[:]
+        material_curve_apply_command[material_curve_apply_command.index("h2_extract_selected")] = material_curve_apply_symbol
+        material_curve_apply_command[
+            material_curve_apply_command.index("--extract-global"):material_curve_apply_command.index("--output")
+        ] = []
+        material_curve_apply_command[material_curve_apply_command.index(output)] = material_curve_apply_output
+        material_curve_apply_command[-1] = args.root / "src/particle_material_curve_apply_native.cpp"
+        subprocess.run([str(value) for value in material_curve_apply_command], check=True)
+        material_curve_apply_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_curve_apply_output],
+            text=True,
+        )
+        if material_curve_eval_symbol not in material_curve_apply_undefined:
+            raise RuntimeError("particle material curve application hid its evaluator bridge")
+
+        material_curve_eval_output = Path(temporary) / "particle-material-curve-evaluate.o"
+        material_curve_eval_command = command[:]
+        material_curve_eval_command[material_curve_eval_command.index("h2_extract_selected")] = material_curve_eval_symbol
+        material_curve_eval_command[
+            material_curve_eval_command.index("--extract-global"):material_curve_eval_command.index("--output")
+        ] = []
+        material_curve_eval_command[material_curve_eval_command.index(output)] = material_curve_eval_output
+        material_curve_eval_command[-1] = args.root / "src/particle_material_curve_evaluate_native.cpp"
+        subprocess.run([str(value) for value in material_curve_eval_command], check=True)
+        material_curve_eval_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_curve_eval_output],
+            text=True,
+        )
+        expected_curve_eval_undefined = {
+            "_?function_13b390@@YAMPBXMM@Z", "_?g_4858a0@@3NA",
+            "_?g_485a58@@3PAUs_33a0b_view@@A", "_fmod",
+        }
+        actual_curve_eval_undefined = {
+            line.split()[0] for line in material_curve_eval_undefined.splitlines() if line.strip()
+        }
+        if actual_curve_eval_undefined != expected_curve_eval_undefined:
+            raise RuntimeError(
+                f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",

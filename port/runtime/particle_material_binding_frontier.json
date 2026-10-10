@@ -60,7 +60,7 @@
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seven of its 21 direct calls are now independently source-owned. function_16f60 expands packed material values while exposing genuine mutable g_485a80 state; zero-import function_17000 expands packed constant-bank components; zero-import function_17170 expands packed pixel-shader masks through the exact immutable channel-mask table; function_174d0 validates all four nested table indices and exposes genuine dynamic curve evaluation function_17550. The remaining 14 direct calls plus that transitive curve provider are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seven of its 21 direct calls are independently source-owned. The nested curve route is now source-owned through function_174d0, function_17550, and function_1b230, exposing only the genuine general evaluator function_13b390, mutable time/interface state, and fmod. The remaining 14 direct calls plus those real curve dependencies are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -76,6 +76,19 @@
   "owned_transitive_dependencies": {
     "0x000174d0": [
       "?function_17550@@YAXPAEPBG@Z"
+    ],
+    "0x00017550": [
+      "?function_1b230@@YAMPBUs_1b230_function@@JJM@Z"
+    ],
+    "0x0001b230": [
+      "?function_13b390@@YAMPBXMM@Z",
+      "?g_4858a0@@3NA",
+      "?g_485a58@@3PAUs_33a0b_view@@A",
+      "fmod"
     ]
-  }
+  },
+  "source_owned_transitive_calls": [
+    "0x00017550",
+    "0x0001b230"
+  ]
 }
