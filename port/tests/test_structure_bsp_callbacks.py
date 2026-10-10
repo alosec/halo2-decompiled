@@ -971,6 +971,24 @@ def main() -> int:
             not shader_state.get("blocker")):
         raise RuntimeError("particle shader cache state frontier changed")
 
+    vertex_register = json.loads((
+        args.root / "port/runtime/particle_vertex_register_state_frontier.json"
+    ).read_text())
+    if (vertex_register.get("version") != 1 or
+            vertex_register.get("retail_function") != "0x0023ecd0" or
+            vertex_register.get("size") != 81 or
+            vertex_register.get("symbol") != "?function_23ecd0@@YAXXZ" or
+            vertex_register.get("execution_gate") != "native_particle_vertex_register_state_owned" or
+            vertex_register.get("initialized_registers") != list(range(1, 9)) or
+            vertex_register.get("remaining_provider") != "?g_470a3c@@3PAJA" or
+            vertex_register.get("sprite_setup_score_before") != 46 or
+            vertex_register.get("sprite_setup_score_after") != 46 or
+            vertex_register.get("sprite_setup_and_geometry_score_before") != 48 or
+            vertex_register.get("sprite_setup_and_geometry_score_after") != 47 or
+            vertex_register.get("sprite_setup_geometry_and_shader_state_score_after") != 45 or
+            not vertex_register.get("blocker")):
+        raise RuntimeError("particle vertex register state frontier changed")
+
     sprite_setup = json.loads((
         args.root / "port/runtime/particle_sprite_setup_frontier.json"
     ).read_text())

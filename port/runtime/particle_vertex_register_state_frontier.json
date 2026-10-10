@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "retail_function": "0x0023ecd0",
+  "size": 81,
+  "symbol": "?function_23ecd0@@YAXXZ",
+  "execution_gate": "native_particle_vertex_register_state_owned",
+  "initialized_registers": [1, 2, 3, 4, 5, 6, 7, 8],
+  "remaining_provider": "?g_470a3c@@3PAJA",
+  "sprite_setup_score_before": 46,
+  "sprite_setup_score_after": 46,
+  "sprite_setup_and_geometry_score_before": 48,
+  "sprite_setup_and_geometry_score_after": 47,
+  "sprite_setup_geometry_and_shader_state_score_after": 45,
+  "blocker": "The exact initializer owns the recovered one-through-eight vertex-register mapping, but the mutable eight-entry table is consumed by NV2A packet emission and remains renderer-owned. It is neutral for setup alone because it replaces one function with one state provider, and improves the combined setup/geometry frontier only because geometry already exposes that same table. Packet reservation and D3D submission remain disabled."
+}

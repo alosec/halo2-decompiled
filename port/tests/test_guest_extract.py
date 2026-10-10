@@ -1199,6 +1199,23 @@ def main():
         if f"_{texture_state_symbol}" not in texture_state_defined:
             raise RuntimeError("particle texture state provider was not selectively compilable")
 
+        vertex_register_output = Path(temporary) / "particle-vertex-register-state.o"
+        vertex_register_symbol = "?function_23ecd0@@YAXXZ"
+        vertex_register_command = command[:]
+        vertex_register_command[vertex_register_command.index("h2_extract_selected")] = vertex_register_symbol
+        vertex_register_command[
+            vertex_register_command.index("--extract-global"):vertex_register_command.index("--output")
+        ] = []
+        vertex_register_command[vertex_register_command.index(output)] = vertex_register_output
+        vertex_register_command[-1] = args.root / "src/particle_vertex_register_state_native.cpp"
+        subprocess.run([str(value) for value in vertex_register_command], check=True)
+        vertex_register_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", vertex_register_output],
+            text=True,
+        )
+        if f"_{vertex_register_symbol}" not in vertex_register_defined:
+            raise RuntimeError("particle vertex register initializer was not selectively compilable")
+
         shader_state_output = Path(temporary) / "particle-shader-cache-state.o"
         shader_state_symbols = ["?function_1c6b0@@YAXPAX@Z", "?function_1ccb0@@YAXJ@Z"]
         shader_state_command = command[:]
