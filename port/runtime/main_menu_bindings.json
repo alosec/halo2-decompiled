@@ -218,6 +218,7 @@
     {"symbol": "?g_510c7c@@3_NA", "address": "0x00510c7c"},
     {"symbol": "?g_55e756@@3_NA", "address": "0x0055e756"},
     {"symbol": "?g_4b9ee9@@3_NA", "address": "0x004b9ee9"},
-    {"symbol": "?g_4b9eec@@3JA", "address": "0x004b9eec"}
+    {"symbol": "?g_4b9eec@@3JA", "address": "0x004b9eec"},
+    {"symbol": "?g_4e9bc8@@3PAUs_16658d_group@@A", "address": "0x004e9bc8"}
   ]
 }
