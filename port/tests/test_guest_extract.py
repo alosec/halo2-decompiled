@@ -1133,6 +1133,36 @@ def main():
         if f"_{light_curve_symbol}" not in light_curve_defined:
             raise RuntimeError("native light lookup-curve evaluator was not retained")
 
+        render_reset_output = Path(temporary) / "particle-render-state-reset.o"
+        render_reset_symbols = [
+            "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
+            "?function_18900@@YAXPBUs_render_state_source@@PBG@Z",
+        ]
+        render_reset_command = command[:]
+        render_reset_command[render_reset_command.index("h2_extract_selected")] = render_reset_symbols[0]
+        render_reset_global_index = render_reset_command.index("--extract-global")
+        render_reset_command[render_reset_global_index:render_reset_global_index] = [
+            "--extract-symbol", render_reset_symbols[1]]
+        render_reset_command[
+            render_reset_command.index("--extract-global"):render_reset_command.index("--output")
+        ] = []
+        render_reset_command[render_reset_command.index(output)] = render_reset_output
+        render_reset_command[-1] = args.root / "src/particle_render_state_reset_native.cpp"
+        subprocess.run([str(value) for value in render_reset_command], check=True)
+        render_reset_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", render_reset_output],
+            text=True,
+        )
+        for symbol in render_reset_symbols:
+            if symbol not in render_reset_defined:
+                raise RuntimeError(f"particle render-state reset provider missing: {symbol}")
+        render_reset_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", render_reset_output],
+            text=True,
+        )
+        if "D3DDevice_SetRenderStateNotInline" not in render_reset_undefined:
+            raise RuntimeError("particle render-state submission boundary missing")
+
         sprite_setup_output = Path(temporary) / "particle-sprite-setup.o"
         sprite_setup_symbol = "?function_23ea80@@YA_NJPBUtransform4x3f@@JJJ@Z"
         sprite_setup_command = command[:]

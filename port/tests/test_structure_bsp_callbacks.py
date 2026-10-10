@@ -1074,6 +1074,27 @@ def main() -> int:
             not vertex_register.get("blocker")):
         raise RuntimeError("particle vertex register state frontier changed")
 
+    render_reset = json.loads((
+        args.root / "port/runtime/particle_render_state_reset_frontier.json"
+    ).read_text())
+    expected_render_reset_functions = {
+        ("0x00016b10", 117, "?function_16b10@@YAXPAUs_render_reset_state@@@Z"),
+        ("0x00018900", 153, "?function_18900@@YAXPBUs_render_state_source@@PBG@Z"),
+    }
+    render_reset_functions = {
+        (entry.get("address"), entry.get("size"), entry.get("symbol"))
+        for entry in render_reset.get("retail_functions", [])
+    }
+    if (render_reset.get("version") != 1 or
+            render_reset_functions != expected_render_reset_functions or
+            render_reset.get("execution_gate") != "native_particle_render_state_owned" or
+            render_reset.get("reset_state_size") != 5152 or
+            render_reset.get("binding_slot_count") != 4 or
+            render_reset.get("packed_entry_bytes") != 5 or
+            render_reset.get("newly_exposed") != ["D3DDevice_SetRenderStateNotInline"] or
+            not render_reset.get("blocker")):
+        raise RuntimeError("particle render-state reset frontier changed")
+
     sprite_setup = json.loads((
         args.root / "port/runtime/particle_sprite_setup_frontier.json"
     ).read_text())

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "retail_functions": [
+    {"address": "0x00016b10", "size": 117, "symbol": "?function_16b10@@YAXPAUs_render_reset_state@@@Z"},
+    {"address": "0x00018900", "size": 153, "symbol": "?function_18900@@YAXPBUs_render_state_source@@PBG@Z"}
+  ],
+  "execution_gate": "native_particle_render_state_owned",
+  "reset_state_size": 5152,
+  "binding_slot_count": 4,
+  "packed_entry_bytes": 5,
+  "newly_exposed": ["D3DDevice_SetRenderStateNotInline"],
+  "blocker": "The exact 0x1420-byte reset provider first replays the optional packed prior-state range, then clears five tracked words, both state pointers, both active indices, and all four binding indices while restoring each binding scalar to 3.0f. The exact packed replay uses the low nine range bits as a five-byte entry offset and the upper bits as the entry count, forwarding every state/value pair to the genuine non-inline Xbox render-state boundary. This closes function_16b10 and function_18900 as a coherent lifecycle pair but deliberately exposes D3DDevice_SetRenderStateNotInline; mutable state storage, packed-state lifetime, and real renderer submission remain required before execution."
+}
