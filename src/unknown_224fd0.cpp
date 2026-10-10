@@ -97,6 +97,15 @@ void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache 
 	scaling.j=function_246cd0(&definition->scale_y,values->values)*scale;
 	scaling.k=function_246cd0(&definition->scale_z,values->values)*scale;
 	matrix3x3 rotation, basis;
+#ifdef H2_NATIVE_PORT
+	/* Avoid retaining a compiler-emitted switch table as a false external
+	   provider while preserving the exact orientation-to-axis mapping. */
+	__assume(definition->orientation >= 0 && definition->orientation <= 4);
+	if (definition->orientation == 2 || definition->orientation == 4)
+		draw_rotation(g_4687b0,sine,cosine,&rotation);
+	else
+		draw_rotation(g_4687ac,sine,cosine,&rotation);
+#else
 	switch(definition->orientation)
 	{
 	case 0: draw_rotation(g_4687ac,sine,cosine,&rotation); break;
@@ -106,6 +115,7 @@ void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache 
 	case 4: draw_rotation(g_4687b0,sine,cosine,&rotation); break;
 	default: __assume(0);
 	}
+#endif
 	rotation.forward.i*=scaling.i; rotation.forward.j*=scaling.i; rotation.forward.k*=scaling.i;
 	rotation.left.i*=scaling.j; rotation.left.j*=scaling.j; rotation.left.k*=scaling.j;
 	rotation.up.i*=scaling.k; rotation.up.j*=scaling.k; rotation.up.k*=scaling.k;

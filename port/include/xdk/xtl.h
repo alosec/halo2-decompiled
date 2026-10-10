@@ -102,6 +102,7 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
  * Retail function_22a664 passes primitive value 7 for TRIANGLEFAN; the native
  * boundary keeps the vertex register explicit instead of relying on the Xbox
  * compiler intrinsic. */
+#define D3DPT_TRIANGLELIST 4
 #define D3DPT_TRIANGLEFAN 7
 #define D3DVSDE_VERTEX 0
 #endif
@@ -122,6 +123,8 @@ void __stdcall D3DDevice_SetVertexShaderConstant(int register_index, void const 
 void __stdcall D3DDevice_SetVertexData4f(DWORD vertex_register, float x, float y,
                                          float z, float w);
 void __stdcall D3DDevice_SetVertexDataColor(DWORD vertex_register, DWORD color);
+void __stdcall D3DDevice_DrawIndexedVertices(DWORD primitive_type, DWORD count,
+                                               WORD const *indices);
 #endif
 LONG __stdcall CompareFileTime(const FILETIME* first, const FILETIME* second);
 BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,

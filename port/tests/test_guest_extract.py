@@ -1163,6 +1163,27 @@ def main():
         if f"_{sprite_geometry_symbol}" not in sprite_geometry_defined:
             raise RuntimeError("native particle sprite geometry was not selectively compilable")
 
+        mesh_callback_output = Path(temporary) / "particle-mesh-callback.o"
+        mesh_callback_symbol = "?function_224fd0@@YAXPBUs_draw_mesh_seed@@PAUs_draw_value_cache@@PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PBUs_draw_mesh_context@@@Z"
+        mesh_callback_command = command[:]
+        mesh_callback_command[mesh_callback_command.index("h2_extract_selected")] = mesh_callback_symbol
+        mesh_callback_command[mesh_callback_command.index("--extract-global"):mesh_callback_command.index("--output")] = []
+        mesh_callback_command[mesh_callback_command.index(output)] = mesh_callback_output
+        mesh_callback_command[-1] = args.root / "src/unknown_224fd0.cpp"
+        subprocess.run([str(value) for value in mesh_callback_command], check=True)
+        mesh_callback_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", mesh_callback_output],
+            text=True,
+        )
+        if f"_{mesh_callback_symbol}" not in mesh_callback_defined:
+            raise RuntimeError("particle mesh callback was not selectively compilable")
+        mesh_callback_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", mesh_callback_output],
+            text=True,
+        )
+        if "switch.table." in mesh_callback_undefined:
+            raise RuntimeError("particle mesh callback exposed a compiler switch table")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

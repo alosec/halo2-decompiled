@@ -903,6 +903,31 @@ def main() -> int:
             not mesh_update.get("blocker")):
         raise RuntimeError("particle mesh update frontier changed")
 
+    mesh_callback = json.loads((
+        args.root / "port/runtime/particle_mesh_callback_frontier.json"
+    ).read_text())
+    expected_mesh_callback_calls = {
+        "0x0001cf50", "0x00030bf0", "0x0011d000", "0x00142eb0",
+        "0x00173ba0", "0x00246cd0", "0x003faae0", "0x003fafa0",
+        "0x003fb2d0",
+    }
+    expected_mesh_callback_expansion = {
+        "?function_1cf50@@YAXXZ", "?g_4687ac@@3PATvector3f@@A",
+        "D3DDevice_DrawIndexedVertices",
+    }
+    if (mesh_callback.get("version") != 1 or
+            mesh_callback.get("retail_function") != "0x00224fd0" or
+            mesh_callback.get("size") != 1836 or
+            mesh_callback.get("execution_gate") != "native_particle_mesh_render_state_owned" or
+            set(mesh_callback.get("direct_calls", [])) != expected_mesh_callback_calls or
+            mesh_callback.get("production_score_before") != 33 or
+            mesh_callback.get("production_score_after") != 36 or
+            mesh_callback.get("mesh_update_score_before") != 42 or
+            mesh_callback.get("mesh_update_score_after") != 44 or
+            set(mesh_callback.get("newly_exposed", [])) != expected_mesh_callback_expansion or
+            not mesh_callback.get("blocker")):
+        raise RuntimeError("particle mesh callback frontier changed")
+
     sprite_setup = json.loads((
         args.root / "port/runtime/particle_sprite_setup_frontier.json"
     ).read_text())
