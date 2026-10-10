@@ -57,6 +57,11 @@
         "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
       },
       {
+        "symbol": "function_191420",
+        "source": "src/sound_effect_input_voices_native.cpp",
+        "semantics": "Query the exact DSP-image effect input addresses through genuine DirectSound, translate valid recovered mixbin windows, and create only the routed authentic driver voices."
+      },
+      {
         "symbol": "function_21e3b0",
         "source": "src/sound_driver_effects_install_native.cpp",
         "semantics": "Dispose the prior effects interface when present, publish the replacement, initialize it against the authentic effect-level and mixbin state, and apply the current I3DL2 room configuration."
@@ -120,6 +125,8 @@
     "native_sound_driver_channel_stream_storage_owned",
     "native_sound_driver_voice_buffer_storage_owned",
     "native_sound_driver_effect_image_owned",
+    "native_directsound_effect_data_query_owned",
+    "native_sound_driver_effect_input_voices_owned",
     "native_sound_driver_effect_submix_impulse_buffers_owned",
     "native_sound_driver_effects_interface_owned",
     "native_sound_driver_listener_state_owned",
@@ -284,6 +291,14 @@
       "source": "src/sound_wma_codec_start_native.cpp",
       "address": "0x002ae490",
       "semantics": "Route decoder byte requests with their exact offset, count, and output pointer into c_wma_codec::read without fabricating bytes or progress."
+    }
+  ],
+  "effect_input_voice_helpers": [
+    {
+      "symbol": "function_191420",
+      "source": "src/sound_effect_input_voices_native.cpp",
+      "address": "0x00191420",
+      "semantics": "For the exact 15-effect DSP image, query each of five recovered effect states through genuine DirectSound, translate only aligned input addresses from the two retail mixbin windows, apply the recovered effect mask, and create only authentic driver voices for valid routed inputs."
     }
   ]
 }

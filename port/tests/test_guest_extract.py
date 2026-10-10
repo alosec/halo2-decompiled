@@ -3341,6 +3341,12 @@ def main():
                  "?sound_driver_stream_callback@@YAXPAX0K@Z",
                  "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
                  "h2_guest_memset"}),
+            ("sound-effect-input-voices.o",
+             "src/sound_effect_input_voices_native.cpp",
+             "?function_191420@@YAXPAUIDirectSound@@@Z",
+             {"?g_510c90@@3PAUs_voice_effects@@A",
+              "?sound_driver_voice_new@@YAFKK@Z",
+              "IDirectSound_GetEffectData"}),
             ("sound-driver-effects-install.o",
              "src/sound_driver_effects_install_native.cpp",
              "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z", {

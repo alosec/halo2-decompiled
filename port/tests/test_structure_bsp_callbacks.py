@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_effect_input_voices_source = (
+        args.root / "src/sound_effect_input_voices_native.cpp").read_text()
     sound_driver_teardown_source = (
         args.root / "src/unknown_21e330.cpp").read_text()
     sound_wma_initialize_source = (
@@ -2292,6 +2294,8 @@ def main() -> int:
         "native_sound_driver_channel_stream_storage_owned",
         "native_sound_driver_voice_buffer_storage_owned",
         "native_sound_driver_effect_image_owned",
+        "native_directsound_effect_data_query_owned",
+        "native_sound_driver_effect_input_voices_owned",
         "native_sound_driver_effect_submix_impulse_buffers_owned",
         "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
@@ -2317,6 +2321,15 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "(*stream)->Release();", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_effect_input_voice_fragments = [
+        "static_assert(sizeof(s_effect_state) == 0x3c",
+        "if (g_510c90->description->effect_count == 15)",
+        "IDirectSound_GetEffectData(direct_sound, k_effect_mixbins[i].effect,",
+        "state.input_mixbins[k_effect_mixbins[i].parameter]",
+        "mixbin_from_address(address, 0xc00, 0xfe0)",
+        "mixbin_from_address(address, 0x1400, 0x17e0)",
+        "((1 << k_effect_mixbins[i].effect) & 2) && mixbin != NONE",
+        "sound_driver_voice_new(0, mixbin);"]
     if (
             sound_driver_lifecycle.get("version") != 1 or
             lifecycle_startup.get("retail_function") != "0x0021e4b0" or
@@ -2345,6 +2358,13 @@ def main() -> int:
                     "Allocate the exact 128 KiB WMA packet buffer through "
                     "the recovered staged physical allocator, publish it at "
                     "codec offset 0x14, and clear both packet-status words."}, {
+                "symbol": "function_191420",
+                "source": "src/sound_effect_input_voices_native.cpp",
+                "semantics":
+                    "Query the exact DSP-image effect input addresses through "
+                    "genuine DirectSound, translate valid recovered mixbin "
+                    "windows, and create only the routed authentic driver "
+                    "voices."}, {
                 "symbol": "function_21e3b0",
                 "source": "src/sound_driver_effects_install_native.cpp",
                 "semantics":
@@ -2400,6 +2420,17 @@ def main() -> int:
                     "decrementing its authentic cache-entry lock and the "
                     "stream chunk count without fabricating stream state or "
                     "progress."}] or
+            sound_driver_lifecycle.get("effect_input_voice_helpers") != [{
+                "symbol": "function_191420",
+                "source": "src/sound_effect_input_voices_native.cpp",
+                "address": "0x00191420",
+                "semantics":
+                    "For the exact 15-effect DSP image, query each of five "
+                    "recovered effect states through genuine DirectSound, "
+                    "translate only aligned input addresses from the two "
+                    "retail mixbin windows, apply the recovered effect mask, "
+                    "and create only authentic driver voices for valid "
+                    "routed inputs."}] or
             sound_driver_lifecycle.get("channel_parameter_helpers") != [{
                 "symbol": "function_21e330",
                 "source": "src/sound_driver_filter_helpers_native.cpp",
@@ -2582,6 +2613,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_effect_input_voices_source
+                for fragment in expected_effect_input_voice_fragments) or
             any(fragment not in sound_wma_initialize_source
                 for fragment in expected_wma_initialize_fragments) or
             any(fragment not in sound_wma_start_source
