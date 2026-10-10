@@ -166,6 +166,39 @@ file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h"
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
 
+set(H2_GUEST_SOUND_IDLE_DIRECT_CLUSTER_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/sound_idle_direct_cluster.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_SOUND_IDLE_DIRECT_CLUSTER_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_sound_idle_direct_cluster.py"
+            --root "${PROJECT_SOURCE_DIR}"
+            --python "${Python3_EXECUTABLE}"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --lld "${H2_LLD}"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --manifest "${CMAKE_CURRENT_SOURCE_DIR}/runtime/sound_idle_direct_cluster.json"
+            --output "${H2_GUEST_SOUND_IDLE_DIRECT_CLUSTER_OBJECT}"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/build_sound_idle_direct_cluster.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/sound_idle_direct_cluster.json"
+        "${PROJECT_SOURCE_DIR}/src/sound_idle_service_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_system_availability_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_system_update_time_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_voice_chunks_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_update_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_cache_frame_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_pre_update_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_post_update_native.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2_sound_idle_direct_cluster ALL DEPENDS
+    "${H2_GUEST_SOUND_IDLE_DIRECT_CLUSTER_OBJECT}"
+)
+
 set(H2_GUEST_PHYSICS_MODEL_TABLE_ASM "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.s")
 set(H2_GUEST_PHYSICS_MODEL_TABLE_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/physics_model_vtables.o")
 set(H2_GUEST_PHYSICS_MODEL_LEAF_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/guest_physics_model_runtime.o")
@@ -3061,6 +3094,15 @@ add_test(
             --root ${PROJECT_SOURCE_DIR}
             --llvm ${H2_LLVM_ROOT}/bin
             --plugin $<TARGET_FILE:h2_guest_rebase>
+)
+add_test(
+    NAME sound-idle-direct-cluster
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sound_idle_direct_cluster.py
+            --root ${PROJECT_SOURCE_DIR}
+            --llvm-nm ${H2_LLVM_NM}
+            --lld ${H2_LLD}
+            --cluster-object ${H2_GUEST_SOUND_IDLE_DIRECT_CLUSTER_OBJECT}
+            --production-object ${H2_MAIN_MENU_PARTIAL_ELF}
 )
 add_test(
     NAME physics-model-vtables

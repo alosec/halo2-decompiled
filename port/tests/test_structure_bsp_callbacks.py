@@ -1246,6 +1246,8 @@ def main() -> int:
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
             sound_idle.get("source_owned") is not True or
+            sound_idle.get("direct_cluster") !=
+                "port/runtime/sound_idle_direct_cluster.json" or
             sound_idle.get("implementation") != {
                 "source": "src/sound_idle_service_native.cpp",
                 "symbol": "?function_125d60@@YAXXZ",
