@@ -1096,14 +1096,16 @@ def main() -> int:
             material_binding.get("execution_gate") != "native_particle_material_binding_state_owned" or
             set(material_binding.get("direct_calls", [])) != expected_material_calls or
             set(material_binding.get("already_owned_calls", [])) != {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001cf50", "0x00137bd0"} or
             grouped_material_calls != expected_material_calls - {
-                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001cf50", "0x00137bd0"} or
+                "0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0", "0x00018d70", "0x00018e80", "0x00018900", "0x00019be0", "0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001cf50", "0x00137bd0"} or
             material_binding.get("owned_state_dependencies") != {
                 "0x00016f60": ["?g_485a80@@3PAEA"],
                 "0x00034060": [
                     "?g_4858c4@@3PAEA", "?g_485a2c@@3JA", "?g_485a64@@3JA",
-                    "?g_485a68@@3JA", "?g_4ba014@@3KA"]} or
+                    "?g_485a68@@3JA", "?g_4ba014@@3KA"],
+                "0x0001b0a0": [
+                    "?g_4ba019@@3_NA", "?g_4e3b44@@3PAUs_tag_instance@@A"]} or
             material_binding.get("owned_zero_import_calls") != ["0x00017000", "0x00017170"] or
             material_binding.get("owned_immutable_data") != {
                 "0x00467068": "8 exact dword channel masks retained with function_17170"} or
@@ -1123,7 +1125,9 @@ def main() -> int:
                 "0x0001ae70": [
                     "?function_336f0@@YAMJ@Z",
                     "?function_33980@@YAXJPAUvector3f@@@Z",
-                    "?function_34060@@YAJJK@Z"]} or
+                    "?function_34060@@YAJJK@Z"],
+                "0x0001b0a0": [
+                    "?function_143c0@@YA_NJFFM@Z", "fabs", "fmod"]} or
             material_binding.get("source_owned_transitive_calls") != [
                 "0x00017550", "0x0001b230", "0x0001b2c0",
                 "0x000176a0", "0x00017960", "0x00017b60", "0x00018560",

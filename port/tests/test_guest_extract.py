@@ -1269,6 +1269,36 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_residency_output = Path(temporary) / "particle-material-texture-residency.o"
+        material_residency_symbol = "?function_1b0a0@@YAXPAE@Z"
+        material_residency_command = command[:]
+        material_residency_command[material_residency_command.index("h2_extract_selected")] = material_residency_symbol
+        material_residency_command[
+            material_residency_command.index("--extract-global"):material_residency_command.index("--output")
+        ] = []
+        material_residency_command[material_residency_command.index(output)] = material_residency_output
+        material_residency_command[-1] = args.root / "src/particle_material_texture_residency_native.cpp"
+        subprocess.run([str(value) for value in material_residency_command], check=True)
+        material_residency_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_residency_output],
+            text=True,
+        )
+        material_residency_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_residency_output],
+            text=True,
+        )
+        if material_residency_symbol not in material_residency_defined:
+            raise RuntimeError("particle material texture residency refresh was not selectively compilable")
+        expected_material_residency_imports = {
+            "_?function_143c0@@YA_NJFFM@Z", "_?g_4ba019@@3_NA",
+            "_?g_4e3b44@@3PAUs_tag_instance@@A", "_fabs", "_fmod",
+        }
+        actual_material_residency_imports = {
+            line.split()[0] for line in material_residency_undefined.splitlines() if line.strip()
+        }
+        if actual_material_residency_imports != expected_material_residency_imports:
+            raise RuntimeError("particle material texture residency frontier changed")
+
         material_policy_output = Path(temporary) / "particle-material-policy-state.o"
         material_policy_symbol = "?function_34060@@YAJJK@Z"
         material_policy_command = command[:]
