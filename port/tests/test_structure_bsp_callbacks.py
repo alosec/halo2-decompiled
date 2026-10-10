@@ -1220,7 +1220,7 @@ def main() -> int:
     ).read_text())
     expected_sound_idle_calls = [
         ("0x00125a60", "?sound_system_available@@YAJXZ", True),
-        ("0x001269f0", "?sound_system_update_time@@YAXXZ", False),
+        ("0x001269f0", "?sound_system_update_time@@YAXXZ", True),
         ("0x001290d0", "?sound_voices_update_chunks@@YAXXZ", False),
         ("0x001293f0", "?function_1293f0@@YAXXZ", False),
         ("0x00218810", "?sound_cache_new_frame@@YAXXZ", False),
@@ -1239,9 +1239,9 @@ def main() -> int:
             sound_idle.get("symbol") != "?function_125d60@@YAXXZ" or
             actual_sound_idle_calls != expected_sound_idle_calls or
             sound_idle.get("owned_direct_calls") != [
-                "0x00125a60", "0x003314b0"] or
+                "0x00125a60", "0x001269f0", "0x003314b0"] or
             sound_idle.get("remaining_direct_calls") != [
-                "0x001269f0", "0x001290d0", "0x001293f0", "0x00218810",
+                "0x001290d0", "0x001293f0", "0x00218810",
                 "0x0021ec00", "0x0021ee80"] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
@@ -1284,11 +1284,23 @@ def main() -> int:
                 "symbol": "GetTickCount",
                 "imports": ["host_h2_get_milliseconds"],
                 "semantics":
-                    "monotonic host milliseconds through the production guest ABI"}] or
+                    "monotonic host milliseconds through the production guest ABI"}, {
+                "source": "src/sound_system_update_time_native.cpp",
+                "symbol": "?sound_system_update_time@@YAXXZ",
+                "imports": [
+                    "?function_12be90@@YA_NXZ",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_4e6948@@3PAUs_game_options_view@@A",
+                    "GetTickCount"],
+                "semantics":
+                    "exact wrap-safe sound clock, ambience fades, and master "
+                    "pause fade policy"}] or
             sound_idle.get("execution_gate") != [
                 "native_sound_system_storage_initialized",
-                "native_sound_clock_and_voice_update_owned",
+                "native_sound_busy_voice_query_owned",
+                "native_sound_voice_chunk_update_owned",
                 "native_sound_driver_pre_and_post_update_owned",
+                "native_sound_playback_state_update_owned",
                 "native_sound_physical_cache_frame_lifecycle_owned",
                 "production_texture_requesters_linked"] or
             not sound_idle.get("blocker")):

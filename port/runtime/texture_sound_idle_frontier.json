@@ -16,7 +16,7 @@
       "address": "0x001269f0",
       "symbol": "?sound_system_update_time@@YAXXZ",
       "role": "sound clock and elapsed-time update",
-      "source_owned": false
+      "source_owned": true
     },
     {
       "address": "0x001290d0",
@@ -57,10 +57,10 @@
   ],
   "owned_direct_calls": [
     "0x00125a60",
+    "0x001269f0",
     "0x003314b0"
   ],
   "remaining_direct_calls": [
-    "0x001269f0",
     "0x001290d0",
     "0x001293f0",
     "0x00218810",
@@ -98,19 +98,32 @@
         "host_h2_get_milliseconds"
       ],
       "semantics": "monotonic host milliseconds through the production guest ABI"
+    },
+    {
+      "source": "src/sound_system_update_time_native.cpp",
+      "symbol": "?sound_system_update_time@@YAXXZ",
+      "imports": [
+        "?function_12be90@@YA_NXZ",
+        "?g_4e6380@@3PAUs_4e6380@@A",
+        "?g_4e6948@@3PAUs_game_options_view@@A",
+        "GetTickCount"
+      ],
+      "semantics": "exact wrap-safe sound clock, ambience fades, and master pause fade policy"
     }
   ],
   "execution_gate": [
     "native_sound_system_storage_initialized",
-    "native_sound_clock_and_voice_update_owned",
+    "native_sound_busy_voice_query_owned",
+    "native_sound_voice_chunk_update_owned",
     "native_sound_driver_pre_and_post_update_owned",
+    "native_sound_playback_state_update_owned",
     "native_sound_physical_cache_frame_lifecycle_owned",
     "production_texture_requesters_linked"
   ],
   "blocking_texture_requests_enabled": false,
   "production_linked": false,
   "source_owned": true,
-  "blocker": "The exact idle service is now source-owned without replacing any behavior, but it remains deliberately unlinked and uncallable. Its timing gate conditionally mutates sound pause/update state and always advances the sound physical cache when fired. The sound clock, voices, playback, driver, cache-frame providers, and initialized mutable sound state remain genuine ownership requirements before production blocking texture requests can invoke it.",
+  "blocker": "The exact idle service and sound clock/fade update are now source-owned without replacing any behavior, but remain deliberately unlinked and uncallable. The timing gate mutates sound pause/update state and always advances the sound physical cache when fired. The busy-voice query, voice chunks, playback state, driver updates, cache-frame provider, and initialized mutable sound state remain genuine ownership requirements before production blocking texture requests can invoke it.",
   "implementation": {
     "source": "src/sound_idle_service_native.cpp",
     "symbol": "?function_125d60@@YAXXZ",

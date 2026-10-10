@@ -2790,6 +2790,45 @@ def main():
                 "sound idle service imports changed: "
                 f"{sorted(sound_idle_imports)}")
 
+        sound_time_output = Path(temporary) / "sound-system-update-time.o"
+        sound_time_symbol = "?sound_system_update_time@@YAXXZ"
+        sound_time_command = command[:]
+        sound_time_command[
+            sound_time_command.index("h2_extract_selected")
+        ] = sound_time_symbol
+        sound_time_command[
+            sound_time_command.index("--extract-global"):
+            sound_time_command.index("--output")
+        ] = []
+        sound_time_command[
+            sound_time_command.index(output)
+        ] = sound_time_output
+        sound_time_command[-1] = (
+            args.root / "src/sound_system_update_time_native.cpp")
+        subprocess.run([str(value) for value in sound_time_command], check=True)
+        sound_time_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_time_output], text=True)
+        if sound_time_symbol not in sound_time_defined:
+            raise RuntimeError("sound clock update was not selectively compilable")
+        sound_time_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_time_output], text=True)
+        sound_time_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_time_undefined.splitlines() if line
+        }
+        expected_sound_time_imports = {
+            "?function_12be90@@YA_NXZ",
+            "?g_4e6380@@3PAUs_4e6380@@A",
+            "?g_4e6948@@3PAUs_game_options_view@@A",
+            "GetTickCount",
+        }
+        if sound_time_imports != expected_sound_time_imports:
+            raise RuntimeError(
+                "sound clock update imports changed: "
+                f"{sorted(sound_time_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
