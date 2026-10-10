@@ -1271,7 +1271,8 @@ def main():
 
         render_surface_state_output = Path(temporary) / "particle-render-surface-state.o"
         render_surface_state_symbols = [
-            "?function_25960@@YAJXZ", "?function_01dd60@@YA_NJPAJ0@Z",
+            "?function_25960@@YAJXZ", "?function_01dcc0@@YAPAXJ@Z",
+            "?function_01dd60@@YA_NJPAJ0@Z",
         ]
         render_surface_state_command = command[:]
         render_surface_state_command[render_surface_state_command.index("h2_extract_selected")] = (
@@ -1279,7 +1280,8 @@ def main():
         )
         insertion = render_surface_state_command.index("--extract-global")
         render_surface_state_command[insertion:insertion] = [
-            "--extract-symbol", render_surface_state_symbols[1]
+            "--extract-symbol", render_surface_state_symbols[1],
+            "--extract-symbol", render_surface_state_symbols[2],
         ]
         render_surface_state_command[
             render_surface_state_command.index("--extract-global"):render_surface_state_command.index("--output")
@@ -1302,6 +1304,42 @@ def main():
         }
         if actual_render_surface_state_imports != {"_?g_4b4b58@@3PAUs_unknown_01dcc0@@A"}:
             raise RuntimeError("particle render-surface state frontier changed")
+
+        render_surface_texture_output = Path(temporary) / "particle-render-surface-texture.o"
+        render_surface_texture_symbol = "?function_14f60@@YAXFF@Z"
+        render_surface_texture_command = command[:]
+        render_surface_texture_command[render_surface_texture_command.index("h2_extract_selected")] = (
+            render_surface_texture_symbol
+        )
+        render_surface_texture_command[
+            render_surface_texture_command.index("--extract-global"):render_surface_texture_command.index("--output")
+        ] = []
+        render_surface_texture_command[render_surface_texture_command.index(output)] = render_surface_texture_output
+        render_surface_texture_command[-1] = args.root / "src/particle_render_surface_texture_native.cpp"
+        subprocess.run([str(value) for value in render_surface_texture_command], check=True)
+        render_surface_texture_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", render_surface_texture_output],
+            text=True,
+        )
+        render_surface_texture_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", render_surface_texture_output],
+            text=True,
+        )
+        if render_surface_texture_symbol not in render_surface_texture_defined:
+            raise RuntimeError("particle render-surface texture routing was not selectively compilable")
+        expected_render_surface_texture_imports = {
+            "_?function_01dcc0@@YAPAXJ@Z", "_?function_01dd60@@YA_NJPAJ0@Z",
+            "_?g_485aa0@@3_JA", "_?g_485af4@@3PAJA", "_?g_485b04@@3PAJA",
+            "_?g_509354@@3PAPAUD3DTexture@@A", "_?g_509368@@3PAUD3DTexture@@A",
+            "_?g_50936c@@3PAUD3DTexture@@A", "_?g_509374@@3PAUD3DResource@@A",
+            "_?g_50937c@@3PAUD3DResource@@A", "_?g_50938c@@3PAUD3DTexture@@A",
+            "_?g_51f3c8@@3PAY03PAUIDirect3DBaseTexture8@@A",
+        }
+        actual_render_surface_texture_imports = {
+            line.split()[0] for line in render_surface_texture_undefined.splitlines() if line.strip()
+        }
+        if actual_render_surface_texture_imports != expected_render_surface_texture_imports:
+            raise RuntimeError("particle render-surface texture routing frontier changed")
 
         bitmap_lookup_output = Path(temporary) / "particle-bitmap-lookup.o"
         bitmap_lookup_symbol = "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z"

@@ -34,6 +34,15 @@ long function_25960(void)
     return result;
 }
 
+// @retail 0x1dcc0
+void *function_01dcc0(long index)
+{
+    s_unknown_01dcc0 *surface = &g_4b4b58[index];
+    if (surface->data && !surface->flag95)
+        return &surface->sub_header;
+    return NULL;
+}
+
 // @retail 0x1dd60
 bool function_01dd60(long index, long *width, long *height)
 {
