@@ -934,6 +934,7 @@ def main() -> int:
             "?function_248df0@@YAMJPAX0PBX@Z" not in effect_defined or
             "?function_4efb0@@YAPATvector3f@@PAT1@@Z" not in effect_defined or
             "?function_142eb0@@YAPAUmatrix3x3@@PBU1@0PAU1@@Z" not in effect_defined or
+            "?function_3eb70@@YAMXZ" not in effect_defined or
             "?function_248450@@YAXPAUmatrix3x3@@PBUs_particle_frame@@PATpoint3f@@PAPBU1@PAPBT3@_N@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):

@@ -404,6 +404,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/ai.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_290250.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_interface_state_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/particle_cluster_scale_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_frame_matrix_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/particle_value_math_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_173b90.cpp"
