@@ -1237,7 +1237,8 @@ def main() -> int:
                 "0x0012c820", "0x0012c990", "0x0012cb10", "0x0012ccb0"] or
             texture_upload.get("remaining_direct_calls") != [] or
             texture_upload.get("request_provider_dependencies") != [
-                "?function_120d50@@YAXPC_N_N@Z", "?async_globals@@3Us_async_globals@@A",
+                "?function_125d60@@YAXXZ", "SwitchToThread",
+                "?async_globals@@3Us_async_globals@@A",
                 "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
                 "WaitForSingleObject", "h2_guest_memset"] or
             texture_upload.get("request_provider_state") != [
@@ -1277,7 +1278,10 @@ def main() -> int:
                 "role": "stable priority and positioned-read ordering policy"}, {
                 "address": "0x00120ce0",
                 "symbol": "?function_120ce0@@YA_NJJ@Z",
-                "role": "mutex-guarded live-task reprioritization and ordered work-list reinsertion"}] or
+                "role": "mutex-guarded live-task reprioritization and ordered work-list reinsertion"}, {
+                "address": "0x00120d50",
+                "symbol": "?function_120d50@@YAXPC_N_N@Z",
+                "role": "cooperative completion wait with optional main-thread idle servicing"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
@@ -1321,6 +1325,8 @@ def main() -> int:
                 "?async_globals@@3Us_async_globals@@A",
                 "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
                 "WaitForSingleObject", "h2_guest_memset"] or
+            texture_upload.get("async_wait_imports") != [
+                "?function_125d60@@YAXXZ", "SwitchToThread"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",

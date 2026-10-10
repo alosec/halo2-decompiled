@@ -1515,7 +1515,7 @@ def main():
             "_?async_globals@@3Us_async_globals@@A",
             "_?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
             "_?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
-            "_?function_120d50@@YAXPC_N_N@Z",
+            "_?function_125d60@@YAXXZ",
             "_?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
             "_?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
             "_?async_globals@@3Us_async_globals@@A", "_?function_1a0e70@@YAJPATs_async_task@@@Z",
@@ -1829,6 +1829,30 @@ def main():
         }
         if actual_texture_async_reprioritize_imports != expected_texture_async_reprioritize_imports:
             raise RuntimeError("particle texture async reprioritization frontier changed")
+
+        texture_async_wait_output = Path(temporary) / "particle-texture-async-wait.o"
+        texture_async_wait_symbol = "?function_120d50@@YAXPC_N_N@Z"
+        texture_async_wait_command = command[:]
+        texture_async_wait_command[
+            texture_async_wait_command.index("h2_extract_selected")
+        ] = texture_async_wait_symbol
+        texture_async_wait_command[
+            texture_async_wait_command.index("--extract-global"):texture_async_wait_command.index("--output")
+        ] = []
+        texture_async_wait_command[texture_async_wait_command.index(output)] = texture_async_wait_output
+        texture_async_wait_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_wait_command], check=True)
+        texture_async_wait_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_wait_output], text=True)
+        texture_async_wait_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_wait_output], text=True)
+        if texture_async_wait_symbol not in texture_async_wait_defined:
+            raise RuntimeError("particle texture async completion wait was not selectively compilable")
+        actual_texture_async_wait_imports = {
+            line.split()[0] for line in texture_async_wait_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_wait_imports != {"_?function_125d60@@YAXXZ", "_SwitchToThread"}:
+            raise RuntimeError("particle texture async completion-wait frontier changed")
 
         texture_async_free_node_output = Path(temporary) / "particle-texture-async-free-node.o"
         texture_async_free_node_symbol = "?function_1208b0@@YAPAUs_job_node@@XZ"

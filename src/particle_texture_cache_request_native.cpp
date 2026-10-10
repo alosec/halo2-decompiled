@@ -279,7 +279,21 @@ bool function_120ce0(long task, long priority)
     return result;
 }
 
-void function_120d50(volatile bool *complete, bool wait);
+void function_125d60(void);
+
+// @retail 0x120d50
+void function_120d50(volatile bool *complete, bool idle)
+{
+    if (!*complete)
+    {
+        while (!*complete)
+        {
+            SwitchToThread();
+            if (idle)
+                function_125d60();
+        }
+    }
+}
 
 static __forceinline s_texture_cache_entry *texture_cache_entry_get_native(long datum_index)
 {
