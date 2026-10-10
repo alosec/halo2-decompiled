@@ -124,6 +124,8 @@ def main() -> int:
         particle_value_cache = temporary / "particle-value-cache.o"
         particle_value_evaluator = temporary / "particle-value-evaluator.o"
         particle_value_math = temporary / "particle-value-math.o"
+        particle_frame_transform = temporary / "particle-frame-transform.o"
+        particle_frame_matrix = temporary / "particle-frame-matrix.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -371,6 +373,12 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/particle_value_math_native.cpp", particle_value_math,
             ["?function_4efb0@@YAPATvector3f@@PAT1@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_2483f0.cpp", particle_frame_transform,
+            ["?function_248450@@YAXPAUmatrix3x3@@PBUs_particle_frame@@PATpoint3f@@PAPBU1@PAPBT3@_N@Z"])
+        compile_slice(
+            args, args.root / "src/particle_frame_matrix_native.cpp", particle_frame_matrix,
+            ["?function_142eb0@@YAPAUmatrix3x3@@PBU1@0PAU1@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -388,7 +396,8 @@ def main() -> int:
              object_function_evaluation, object_function_handlers,
              object_interpolated_values, tag_function_range,
              ai_effect_request, ai_effect_queue_front, particle_interface_state,
-             particle_value_cache, particle_value_evaluator, particle_value_math])
+             particle_value_cache, particle_value_evaluator, particle_value_math,
+             particle_frame_transform, particle_frame_matrix])
     return 0
 
 
