@@ -6,6 +6,8 @@
 #include <mutex>
 #include <thread>
 #include <fcntl.h>
+#include <mach/mach.h>
+#include <mach/thread_policy.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -204,6 +206,29 @@ NativeAsyncPlatform::Handle NativeAsyncPlatform::create_thread(
         object->started = true;
     }
     return handle;
+}
+
+bool NativeAsyncPlatform::set_thread_priority(Handle handle,
+                                               std::int32_t priority) {
+    if (priority < -15 || priority > 15)
+        return false;
+    auto base = state_->get(handle, HandleKind::thread);
+    if (!base)
+        return false;
+    auto object = std::static_pointer_cast<ThreadObject>(std::move(base));
+    pthread_t thread{};
+    {
+        std::lock_guard lock(object->mutex);
+        if (!object->started || object->exited || object->joined)
+            return false;
+        thread = object->thread;
+    }
+    thread_precedence_policy_data_t policy{priority};
+    const thread_port_t port = ::pthread_mach_thread_np(thread);
+    return port != MACH_PORT_NULL &&
+           ::thread_policy_set(port, THREAD_PRECEDENCE_POLICY,
+                               reinterpret_cast<thread_policy_t>(&policy),
+                               THREAD_PRECEDENCE_POLICY_COUNT) == KERN_SUCCESS;
 }
 
 bool NativeAsyncPlatform::thread_exit_code(Handle handle,

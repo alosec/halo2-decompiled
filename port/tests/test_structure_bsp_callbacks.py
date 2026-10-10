@@ -1243,9 +1243,9 @@ def main() -> int:
                     "short_read_and_64_bit_seek_semantics",
                     "symbolic_link_file_rejection",
                     "worker_thread_create_stack_wait_join_close",
-                    "worker_thread_exit_code"],
+                    "worker_thread_exit_code",
+                    "worker_thread_precedence_priority_mapping"],
                 "remaining_services": [
-                    "worker_thread_priority_mapping",
                     "guest_host_abi_bridge",
                     "scheduler_stop_admission_and_shutdown",
                     "cache_file_handle_initialization"]} or

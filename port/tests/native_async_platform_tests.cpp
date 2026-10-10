@@ -87,6 +87,10 @@ int main() {
                 "worker thread creation validation failed");
     ok &= check(platform.wait(thread, 0) == Platform::WaitResult::timeout,
                 "running worker thread reported completion");
+    ok &= check(platform.set_thread_priority(thread, 1) &&
+                    !platform.set_thread_priority(thread, 16) &&
+                    !platform.set_thread_priority(semaphore, 1),
+                "worker thread priority mapping failed");
     ok &= check(platform.release_semaphore(thread_semaphore, 1, nullptr) &&
                     platform.wait(thread, Platform::infinite) == Platform::WaitResult::signaled,
                 "worker thread completion wait failed");

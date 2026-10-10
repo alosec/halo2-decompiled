@@ -29,6 +29,7 @@ public:
     Handle create_semaphore(std::int32_t initial_count, std::int32_t maximum_count);
     Handle open_read_only(const std::filesystem::path& path);
     Handle create_thread(std::uint32_t stack_size, ThreadStart start, void* parameter);
+    bool set_thread_priority(Handle handle, std::int32_t priority);
     bool thread_exit_code(Handle handle, std::uint32_t* exit_code) const;
     bool set_file_pointer(Handle handle, std::int32_t distance,
                           std::int32_t* distance_high, std::uint32_t method,
