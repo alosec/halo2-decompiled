@@ -369,5 +369,12 @@
       "address": "0x00191300",
       "semantics": "Condition startup on genuine DSPImage section load, allocate exact aligned/checksummed 0x48 static state, initialize 15 indices to NONE and both change fields to zero, download with recovered I3DL2/crosstalk indices 9/10 and XBE-section mode 1, always free a loaded section, and query effects 4..7 at offset 0x20 for eight bytes each only after successful download."
     }
+  ],
+  "startup_phase_helpers": [
+    {
+      "symbol": "sound_driver_device_startup",
+      "source": "src/sound_driver_device_startup_native.cpp",
+      "semantics": "Reserve and checksum the exact aligned 0x2ad8-byte driver globals, create the genuine DirectSound device, query its real capabilities and speaker configuration, apply the recovered immediate distance/Doppler settings, clear all 32 mixbin headrooms, apply deferred zero rolloff, and perform real DirectSound work. Partial failure remains published for ordered teardown."
+    }
   ]
 }

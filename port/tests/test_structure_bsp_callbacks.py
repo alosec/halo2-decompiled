@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_device_startup_source = (
+        args.root / "src/sound_driver_device_startup_native.cpp").read_text()
     sound_driver_channel_shutdown_source = (
         args.root / "src/sound_driver_channel_shutdown_native.cpp").read_text()
     sound_driver_teardown_source = (
@@ -2335,6 +2337,27 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "IDirectSoundStream_Release", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_device_startup_fragments = [
+        "static_assert(sizeof(s_driver_device_view) == 0x2ad8",
+        "static_assert(offsetof(s_driver_device_view, caps) == 0x2aa0",
+        "static_assert(offsetof(s_driver_device_view, direct_sound) == 0x2ab0",
+        "bool sound_driver_device_startup(void)",
+        "(reinterpret_cast<dword>(top) + 3) & ~3",
+        "dword checksum = g_510808_pool_checksum;",
+        "function_163ba0(&checksum, &allocated_size, sizeof(allocated_size));",
+        "g_510808_pool_checksum = checksum;",
+        "memset(memory, 0, sizeof(s_driver_device_view));",
+        "g_51ebe4 = reinterpret_cast<s_bink_sound_settings *>(memory);",
+        "DirectSoundCreate(NULL, &globals->direct_sound, NULL) < 0",
+        "IDirectSound_GetCaps(globals->direct_sound, globals->caps) < 0",
+        "IDirectSound_SetDistanceFactor(globals->direct_sound, 3.048f,",
+        "IDirectSound_SetDopplerFactor(globals->direct_sound, 0.0f,",
+        "IDirectSound_GetSpeakerConfig(globals->direct_sound,",
+        "(speaker_flags & 0xffff) == 2 &&",
+        "for (long mixbin = 0; mixbin <= 31; mixbin++)",
+        "IDirectSound_SetMixBinHeadroom(globals->direct_sound, mixbin, 0);",
+        "IDirectSound_SetRolloffFactor(globals->direct_sound, 0.0f, k_deferred);",
+        "DirectSoundDoWork();"]
     expected_channel_shutdown_fragments = [
         "static_assert(sizeof(s_sound_stream) == 0x34",
         "static_assert(offsetof(s_driver_channels_view, channels) == 0x0c",
@@ -2519,6 +2542,17 @@ def main() -> int:
                     "PCM wave format and select the authentic static codec "
                     "object without creating a stream."}] or
             not lifecycle_startup.get("semantics") or
+            sound_driver_lifecycle.get("startup_phase_helpers") != [{
+                "symbol": "sound_driver_device_startup",
+                "source": "src/sound_driver_device_startup_native.cpp",
+                "semantics":
+                    "Reserve and checksum the exact aligned 0x2ad8-byte "
+                    "driver globals, create the genuine DirectSound device, "
+                    "query its real capabilities and speaker configuration, "
+                    "apply the recovered immediate distance/Doppler settings, "
+                    "clear all 32 mixbin headrooms, apply deferred zero "
+                    "rolloff, and perform real DirectSound work. Partial "
+                    "failure remains published for ordered teardown."}] or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or
             lifecycle_teardown.get("source") !=
@@ -2805,6 +2839,8 @@ def main() -> int:
                 expected_lifecycle_gates or
             any(fragment not in sound_driver_startup_source
                 for fragment in required_startup_fragments) or
+            any(fragment not in sound_driver_device_startup_source
+                for fragment in expected_device_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_driver_channel_shutdown_source
