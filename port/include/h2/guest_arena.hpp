@@ -52,6 +52,7 @@ public:
     const void* pointer_const(std::uint32_t guest_address) const;
     bool host_range_accessible(const void* pointer, std::size_t size,
                                bool writable) const;
+    bool host_range_executable(const void* pointer, std::size_t size) const;
     std::size_t page_size() const { return page_size_; }
 
 private:

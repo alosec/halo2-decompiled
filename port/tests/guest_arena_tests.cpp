@@ -97,9 +97,16 @@ int main() {
         !arena->host_range_accessible(arena->pointer(kProbeAddress),
                                       arena->page_size(), false) ||
         arena->host_range_accessible(arena->pointer(kProbeAddress), 1, true) ||
+        arena->host_range_executable(arena->pointer(kProbeAddress), 1) ||
+        !arena->protect(kProbeAddress, static_cast<std::uint32_t>(arena->page_size()),
+                        h2::port::GuestMemoryProtection::read_execute, error) ||
+        !arena->host_range_executable(arena->pointer(kProbeAddress),
+                                      arena->page_size()) ||
+        arena->host_range_executable(&host_byte, 1) ||
         !arena->protect(kProbeAddress, static_cast<std::uint32_t>(arena->page_size()),
                         h2::port::GuestMemoryProtection::none, error) ||
-        arena->host_range_accessible(arena->pointer(kProbeAddress), 1, false)) {
+        arena->host_range_accessible(arena->pointer(kProbeAddress), 1, false) ||
+        arena->host_range_executable(arena->pointer(kProbeAddress), 1)) {
         std::cerr << "guest protection accessibility tracking failed: " << error << '\n';
         return 1;
     }

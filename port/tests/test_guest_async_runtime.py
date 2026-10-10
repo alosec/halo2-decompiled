@@ -18,6 +18,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--nm", required=True)
     parser.add_argument("--object", type=Path, required=True)
+    parser.add_argument("--worker-step", type=Path, required=True)
     parser.add_argument("--abi", type=Path, required=True)
     args = parser.parse_args()
 
@@ -52,6 +53,22 @@ def main() -> int:
         raise SystemExit(
             f"guest async runtime import drift: expected {sorted(expected_imports)}, "
             f"got {sorted(undefined)}")
+
+    worker_defined = symbols(args.nm, args.worker_step, "--defined-only")
+    if worker_defined != {"h2_native_async_worker_step"}:
+        raise SystemExit(
+            f"guest async worker-step definition drift: {sorted(worker_defined)}")
+    worker_imports = symbols(args.nm, args.worker_step, "--undefined-only")
+    expected_worker_imports = {
+        "?async_globals@@3Us_async_globals@@A",
+        "?g_510810@@3PAUs_job_node@@A",
+        "WaitForSingleObject",
+        "ReleaseMutex",
+    }
+    if worker_imports != expected_worker_imports:
+        raise SystemExit(
+            f"guest async worker-step import drift: expected "
+            f"{sorted(expected_worker_imports)}, got {sorted(worker_imports)}")
 
     abi = args.abi.read_text()
     if "#define H2_HOST_ABI_VERSION 11u" not in abi:

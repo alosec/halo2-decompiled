@@ -16,7 +16,17 @@ bool check(bool condition, const char* message) {
     return condition;
 }
 
-std::uint32_t exit_probe(void*) {
+struct ExitProbeContext {
+    h2::port::NativeAsyncPlatform* platform;
+    h2::port::NativeAsyncPlatform::Handle semaphore;
+};
+
+std::uint32_t exit_probe(void* raw_context) {
+    auto& context = *static_cast<ExitProbeContext*>(raw_context);
+    if (context.platform->wait(
+            context.semaphore, h2::port::NativeAsyncPlatform::infinite) !=
+        h2::port::NativeAsyncPlatform::WaitResult::signaled)
+        return 1;
     return 0xabcdef01u;
 }
 
@@ -106,9 +116,14 @@ int main() {
                     std::string_view(reinterpret_cast<char*>(guest), 4) == "4567",
                 "bridged file read failed or invalid reads moved the file offset");
 
-    const Bridge::Handle thread = platform.create_thread(0x4000, exit_probe, nullptr);
+    ExitProbeContext exit_context{&platform, semaphore};
+    const Bridge::Handle thread =
+        platform.create_thread(0x4000, exit_probe, &exit_context);
+    *guest_previous = -1;
     ok &= check(thread != Platform::invalid_handle &&
                     bridge.set_thread_priority(thread, 1) &&
+                    bridge.release_semaphore(semaphore, 1, guest_previous) &&
+                    *guest_previous == 0 &&
                     bridge.wait(thread, Platform::infinite) == Bridge::WaitResult::signaled &&
                     bridge.thread_exit_code(thread, guest_exit_code) &&
                     *guest_exit_code == 0xabcdef01u &&

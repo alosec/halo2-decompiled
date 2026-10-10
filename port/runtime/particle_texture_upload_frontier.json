@@ -302,10 +302,11 @@
       "validated_cache_file_slot_owner",
       "bounded_guest_cache_slot_publication",
       "cooperative_worker_drain_join_cleanup",
-      "guest_abi_v11_sync_file_import_routing"
+      "guest_abi_v11_sync_file_import_routing",
+      "validated_low_guest_stack_worker_entry"
     ],
     "remaining_services": [
-      "guest_worker_entry_routing"
+      "guest_queue_admission_and_runtime_configuration"
     ],
     "guest_memory_validator": {
       "source": "port/src/guest_arena.cpp",
@@ -328,8 +329,7 @@
         "worker_priority_wait_exit_code_close"
       ],
       "unowned_operations": [
-        "guest_path_file_open",
-        "guest_worker_entry_routing"
+        "guest_path_file_open"
       ],
       "guest_runtime_source": "port/runtime/guest_async_runtime.cpp",
       "host_routing_source": "port/src/host_services.cpp",
@@ -414,8 +414,18 @@
         "joined_worker_then_wake_handle_close",
         "restart_only_from_stopped_without_live_handles"
       ],
-      "guest_worker_entry_connected": false,
-      "execution_enabled": false
+      "guest_worker_entry_connected": true,
+      "execution_enabled": false,
+      "guest_worker_source": "port/src/native_guest_worker.cpp",
+      "guest_step_source": "src/async.cpp:h2_native_async_worker_step",
+      "guest_stack": {
+        "default_address": "0x20100000",
+        "size": 65536,
+        "page_aligned": true,
+        "entry_requires_executable_guest_mapping": true,
+        "stack_requires_guest_read_write_mapping": true
+      },
+      "production_configured": false
     }
   },
   "native_cache_file_slot_lifecycle": {

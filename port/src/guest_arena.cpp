@@ -127,6 +127,24 @@ bool GuestArena::host_range_accessible(const void* pointer_value, std::size_t si
     return true;
 }
 
+bool GuestArena::host_range_executable(const void* pointer_value,
+                                       std::size_t size) const {
+    if (!pointer_value || !page_size_ || page_protections_.empty() || !size)
+        return false;
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(pointer_value);
+    const std::uintptr_t guest_end = kGuestBias + kGuestAddressSpaceSize;
+    if (start < kGuestBias || start >= guest_end || size > guest_end - start)
+        return false;
+    const std::size_t first = (start - kGuestBias) / page_size_;
+    const std::size_t last = (start - kGuestBias + size - 1) / page_size_;
+    const std::lock_guard lock(protection_mutex_);
+    for (std::size_t page = first; page <= last; ++page) {
+        if (page_protections_[page] != GuestMemoryProtection::read_execute)
+            return false;
+    }
+    return true;
+}
+
 bool GuestArena::protect(std::uint32_t address, std::uint32_t size,
                          GuestMemoryProtection protection, std::string& error) {
     if (!size) {

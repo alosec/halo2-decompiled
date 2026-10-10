@@ -92,3 +92,26 @@ h2_host_slot_host_h2_async_thread_exit_code: .xword 0
 h2_host_slot_host_h2_async_close: .xword 0
 .globl h2_host_slot_host_h2_async_yield
 h2_host_slot_host_h2_async_yield: .xword 0
+
+.section .text.h2_worker_step_probe,"ax",@progbits
+.p2align 2
+.globl h2_worker_step_probe
+.type h2_worker_step_probe, @function
+h2_worker_step_probe:
+    adrp x9, h2_worker_step_calls
+    add x9, x9, :lo12:h2_worker_step_calls
+    ldr w10, [x9]
+    add w10, w10, #1
+    str w10, [x9]
+    cmp w10, #2
+    cset w0, hs
+    ret
+.size h2_worker_step_probe, .-h2_worker_step_probe
+
+.section .data.h2_worker_step_probe,"aw",@progbits
+.p2align 2
+.globl h2_worker_step_calls
+.type h2_worker_step_calls, @object
+h2_worker_step_calls:
+    .word 0
+.size h2_worker_step_calls, 4

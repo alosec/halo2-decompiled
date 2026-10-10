@@ -2373,6 +2373,32 @@ add_custom_command(
 add_custom_target(h2-guest-async-runtime ALL
     DEPENDS "${H2_GUEST_ASYNC_RUNTIME_OBJECT}")
 
+set(H2_GUEST_ASYNC_WORKER_STEP_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_worker_step.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol h2_native_async_worker_step
+            --output "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/async.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/async.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2-guest-async-worker-step ALL
+    DEPENDS "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}")
+
 add_library(h2_port_support STATIC
     src/guest_arena.cpp
     src/guest_elf_image.cpp
@@ -2381,6 +2407,7 @@ add_library(h2_port_support STATIC
     src/native_async_lifecycle.cpp
     src/native_async_platform.cpp
     src/native_async_worker.cpp
+    src/native_guest_worker.cpp
     src/native_cache_file_slots.cpp
     src/profile_store.cpp
     src/retail_data.cpp
@@ -2479,12 +2506,24 @@ target_compile_options(h2-native-async-worker-tests PRIVATE
 target_link_libraries(h2-native-async-worker-tests PRIVATE h2_port_support)
 add_test(NAME native-async-worker COMMAND h2-native-async-worker-tests)
 
+add_executable(h2-native-guest-worker-tests
+    tests/native_guest_worker_tests.cpp
+    runtime/guest_stack.s
+    "${H2_GUEST_ELF_LOADER_FIXTURE}")
+target_compile_features(h2-native-guest-worker-tests PRIVATE cxx_std_20)
+target_compile_options(h2-native-guest-worker-tests PRIVATE
+    -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-native-guest-worker-tests PRIVATE h2_port_support)
+add_test(NAME native-guest-worker
+         COMMAND h2-native-guest-worker-tests "${H2_GUEST_ELF_LOADER_FIXTURE}")
+
 add_test(
     NAME guest-async-runtime
     COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_async_runtime.py"
             --nm "${H2_LLVM_NM}"
             --object "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
+            --worker-step "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             --abi "${CMAKE_CURRENT_SOURCE_DIR}/include/h2/host_abi.h"
 )
 

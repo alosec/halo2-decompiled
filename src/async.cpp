@@ -220,6 +220,35 @@ void async_work_loop(void)
 	}
 }
 
+#ifdef H2_NATIVE_PORT
+/* One native-host wake processes exactly one recovered queue head. The host owns
+ * admission accounting, retry re-signaling, and cooperative exit; this guest
+ * step preserves callback, done publication, removal, and free-list recycling. */
+extern "C" int h2_native_async_worker_step(void)
+{
+	s_job_node *node;
+	long result;
+
+	WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+	node = async_globals.work_list;
+	ReleaseMutex(async_globals.work_list_mutex);
+	if (!node)
+		return 0;
+	g_510810 = node;
+	result = node->callback(&node->task);
+	if (result == 0)
+		return 0;
+	if (result == 1 && node->done)
+		*node->done = true;
+	function_120a30(node);
+	WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+	node->next = async_globals.free_list;
+	async_globals.free_list = node;
+	ReleaseMutex(async_globals.free_list_mutex);
+	return 1;
+}
+#endif
+
 // @retail 0x120c30
 unsigned long __stdcall async_thread_proc(void *parameter)
 {

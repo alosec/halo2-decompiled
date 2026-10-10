@@ -1253,8 +1253,10 @@ def main() -> int:
                     "validated_cache_file_slot_owner",
                     "bounded_guest_cache_slot_publication",
                     "cooperative_worker_drain_join_cleanup",
-                    "guest_abi_v11_sync_file_import_routing"],
-                "remaining_services": ["guest_worker_entry_routing"],
+                    "guest_abi_v11_sync_file_import_routing",
+                    "validated_low_guest_stack_worker_entry"],
+                "remaining_services": [
+                    "guest_queue_admission_and_runtime_configuration"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1274,9 +1276,7 @@ def main() -> int:
                         "host_selected_read_only_file_open",
                         "file_seek_and_read",
                         "worker_priority_wait_exit_code_close"],
-                    "unowned_operations": [
-                        "guest_path_file_open",
-                        "guest_worker_entry_routing"],
+                    "unowned_operations": ["guest_path_file_open"],
                     "guest_runtime_source":
                         "port/runtime/guest_async_runtime.cpp",
                     "host_routing_source": "port/src/host_services.cpp",
@@ -1353,8 +1353,18 @@ def main() -> int:
                         "timeout_preserves_worker_and_wake_handles",
                         "joined_worker_then_wake_handle_close",
                         "restart_only_from_stopped_without_live_handles"],
-                    "guest_worker_entry_connected": False,
-                    "execution_enabled": False}} or
+                    "guest_worker_entry_connected": True,
+                    "execution_enabled": False,
+                    "guest_worker_source": "port/src/native_guest_worker.cpp",
+                    "guest_step_source":
+                        "src/async.cpp:h2_native_async_worker_step",
+                    "guest_stack": {
+                        "default_address": "0x20100000",
+                        "size": 65536,
+                        "page_aligned": True,
+                        "entry_requires_executable_guest_mapping": True,
+                        "stack_requires_guest_read_write_mapping": True},
+                    "production_configured": False}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
                     "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",
