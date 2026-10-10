@@ -1269,6 +1269,40 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        render_surface_state_output = Path(temporary) / "particle-render-surface-state.o"
+        render_surface_state_symbols = [
+            "?function_25960@@YAJXZ", "?function_01dd60@@YA_NJPAJ0@Z",
+        ]
+        render_surface_state_command = command[:]
+        render_surface_state_command[render_surface_state_command.index("h2_extract_selected")] = (
+            render_surface_state_symbols[0]
+        )
+        insertion = render_surface_state_command.index("--extract-global")
+        render_surface_state_command[insertion:insertion] = [
+            "--extract-symbol", render_surface_state_symbols[1]
+        ]
+        render_surface_state_command[
+            render_surface_state_command.index("--extract-global"):render_surface_state_command.index("--output")
+        ] = []
+        render_surface_state_command[render_surface_state_command.index(output)] = render_surface_state_output
+        render_surface_state_command[-1] = args.root / "src/particle_render_surface_state_native.cpp"
+        subprocess.run([str(value) for value in render_surface_state_command], check=True)
+        render_surface_state_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", render_surface_state_output],
+            text=True,
+        )
+        render_surface_state_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", render_surface_state_output],
+            text=True,
+        )
+        if any(symbol not in render_surface_state_defined for symbol in render_surface_state_symbols):
+            raise RuntimeError("particle render-surface state was not selectively compilable")
+        actual_render_surface_state_imports = {
+            line.split()[0] for line in render_surface_state_undefined.splitlines() if line.strip()
+        }
+        if actual_render_surface_state_imports != {"_?g_4b4b58@@3PAUs_unknown_01dcc0@@A"}:
+            raise RuntimeError("particle render-surface state frontier changed")
+
         bitmap_lookup_output = Path(temporary) / "particle-bitmap-lookup.o"
         bitmap_lookup_symbol = "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z"
         bitmap_lookup_command = command[:]
