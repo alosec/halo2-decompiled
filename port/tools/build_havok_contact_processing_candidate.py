@@ -105,6 +105,7 @@ def main() -> int:
         object_impulse = temporary / "object-impulse.o"
         object_physics_refresh = temporary / "object-physics-refresh.o"
         particle_interface_context = temporary / "particle-interface-context.o"
+        particle_system_value = temporary / "particle-system-value.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -292,6 +293,9 @@ def main() -> int:
             args, args.root / "src/particle_interface_context_native.cpp",
             particle_interface_context,
             ["?function_2c3b0@@YAXPAUs_interface_function_context@@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_173c30.cpp", particle_system_value,
+            ["?function_173c30@@YAMPBUs_particle_system_datum@@J@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -302,7 +306,8 @@ def main() -> int:
              placement_defaults, object_lookup, particle_allocation,
              particle_policy, particle_provider_select, args.particle_providers,
              light_record, placement_transform, scratch_teardown,
-             object_impulse, object_physics_refresh, particle_interface_context])
+             object_impulse, object_physics_refresh, particle_interface_context,
+             particle_system_value])
     return 0
 
 

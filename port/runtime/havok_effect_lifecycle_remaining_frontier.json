@@ -5,7 +5,7 @@
     {
       "symbol": "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z",
       "subsystem": "particles",
-      "blocker": "The exact particle interface-context initializer is owned. Remaining closure requires sprite transforms, particle value-cache traversal, rendering, and the function_224550 draw callback."
+      "blocker": "The exact particle interface-context initializer and particle-system value callback are owned. Remaining closure requires sprite transforms, mutable interface/cache state, particle value-cache traversal, rendering, and function_224550."
     },
     {
       "symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
