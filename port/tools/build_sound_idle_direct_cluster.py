@@ -34,7 +34,11 @@ def main() -> int:
         objects = []
         for index, provider in enumerate(providers):
             source = args.root / provider["source"]
-            symbol = provider["symbol"]
+            symbol = provider.get("symbol")
+            global_symbol = provider.get("global")
+            if (symbol is None) == (global_symbol is None):
+                raise RuntimeError(
+                    "sound-idle provider needs exactly one symbol or global")
             output = temporary / f"provider-{index}.o"
             command = [
                 args.python,
@@ -46,7 +50,8 @@ def main() -> int:
                 "--include", args.root / "port/include/xdk",
                 "--include", args.root / "include",
                 "--ms-abi",
-                "--extract-symbol", symbol,
+                "--extract-symbol" if symbol is not None else "--extract-global",
+                symbol if symbol is not None else global_symbol,
                 "--output", output,
                 source,
             ]

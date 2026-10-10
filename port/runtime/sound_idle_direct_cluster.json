@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, positioned reads, and transactional async queue submission",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, positioned reads, transactional async queue submission, and exact read sizing",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -137,6 +137,10 @@
     {
       "source": "src/particle_texture_cache_request_native.cpp",
       "symbol": "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z"
+    },
+    {
+      "source": "src/sound_cache_read_limit_native.cpp",
+      "global": "?g_46e488@@3KA"
     }
   ],
   "definitions": [
@@ -164,6 +168,7 @@
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?function_21f650@@YAMJJ@Z",
+    "?g_46e488@@3KA",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
@@ -189,7 +194,6 @@
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_468834@@3MA",
-    "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -252,7 +256,6 @@
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_468834@@3MA",
-    "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -408,5 +411,10 @@
       "symbol": "?function_120900@@YAXPAUs_job_node@@@Z",
       "semantics": "insert work by descending priority and stable recovered positioned-read ordering"
     }
-  ]
+  ],
+  "sound_cache_read_limit": {
+    "symbol": "?g_46e488@@3KA",
+    "value": "0x40000",
+    "semantics": "cap each asynchronous positioned cache-read callback to the exact recovered 256 KiB chunk size"
+  }
 }
