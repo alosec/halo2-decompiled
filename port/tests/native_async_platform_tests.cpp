@@ -1,8 +1,12 @@
 #include "h2/native_async_platform.hpp"
 
+#include <array>
 #include <atomic>
+#include <filesystem>
 #include <iostream>
+#include <string_view>
 #include <thread>
+#include <unistd.h>
 
 namespace {
 
@@ -56,6 +60,57 @@ int main() {
                 "semaphore wake release failed");
     waiter.join();
     ok &= check(awakened.load(), "semaphore waiter was not awakened");
+
+    char file_template[] = "/tmp/h2-native-async-XXXXXX";
+    const int temporary_fd = ::mkstemp(file_template);
+    constexpr char payload[] = "0123456789abcdef";
+    ok &= check(temporary_fd >= 0, "temporary file creation failed");
+    if (temporary_fd >= 0) {
+        ok &= check(::write(temporary_fd, payload, sizeof(payload) - 1) ==
+                        static_cast<ssize_t>(sizeof(payload) - 1),
+                    "temporary file write failed");
+        ::close(temporary_fd);
+    }
+    const std::filesystem::path file_path(file_template);
+    const std::filesystem::path symlink_path = file_path.string() + ".link";
+    std::error_code filesystem_error;
+    std::filesystem::create_symlink(file_path, symlink_path, filesystem_error);
+    const Platform::Handle file = platform.open_read_only(file_path);
+    ok &= check(file != Platform::invalid_handle, "read-only file open failed");
+    ok &= check(platform.open_read_only(symlink_path) == Platform::invalid_handle,
+                "symbolic-link file open was accepted");
+    std::int32_t high = 0;
+    std::uint32_t position = 0;
+    std::array<char, 5> bytes{};
+    std::uint32_t bytes_read = 0;
+    ok &= check(platform.set_file_pointer(file, 4, &high, 0, &position) &&
+                    position == 4 && high == 0,
+                "absolute file seek failed");
+    ok &= check(platform.read_file(file, bytes.data(), 4, &bytes_read) &&
+                    bytes_read == 4 && std::string_view(bytes.data(), 4) == "4567",
+                "positioned file read failed");
+    ok &= check(platform.set_file_pointer(file, 2, nullptr, 1, &position) &&
+                    position == 10 &&
+                    platform.read_file(file, bytes.data(), 2, &bytes_read) &&
+                    bytes_read == 2 && std::string_view(bytes.data(), 2) == "ab",
+                "current-relative file seek failed");
+    high = 1;
+    ok &= check(platform.set_file_pointer(file, 0, &high, 0, &position) &&
+                    position == 0 && high == 1,
+                "64-bit file seek failed");
+    ok &= check(platform.set_file_pointer(file, -2, nullptr, 2, &position) &&
+                    position == sizeof(payload) - 3,
+                "end-relative file seek failed");
+    ok &= check(platform.read_file(file, bytes.data(), 4, &bytes_read) &&
+                    bytes_read == 2 && std::string_view(bytes.data(), 2) == "ef",
+                "short file read failed");
+    ok &= check(!platform.set_file_pointer(file, 0, nullptr, 3, &position),
+                "invalid file seek method accepted");
+    ok &= check(platform.close(file) &&
+                    !platform.read_file(file, bytes.data(), 1, &bytes_read),
+                "file handle teardown failed");
+    std::filesystem::remove(symlink_path, filesystem_error);
+    std::filesystem::remove(file_path, filesystem_error);
 
     ok &= check(platform.active_handle_count() == 2, "active handle count mismatch");
     ok &= check(platform.close(semaphore), "semaphore close failed");

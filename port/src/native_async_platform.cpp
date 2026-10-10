@@ -5,6 +5,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace h2::port {
 namespace {
@@ -18,6 +21,7 @@ constexpr std::uint32_t kGenerationMask = 0xffffu;
 enum class HandleKind : std::uint32_t {
     mutex = 1,
     semaphore = 2,
+    file = 3,
 };
 
 struct HandleObject {
@@ -39,6 +43,17 @@ struct SemaphoreObject final : HandleObject {
     std::condition_variable condition;
     std::int32_t count;
     const std::int32_t maximum;
+};
+
+struct FileObject final : HandleObject {
+    explicit FileObject(int descriptor) : HandleObject(HandleKind::file), fd(descriptor) {}
+    ~FileObject() override {
+        if (fd >= 0)
+            ::close(fd);
+    }
+
+    std::mutex mutex;
+    int fd;
 };
 
 std::uint32_t make_handle(std::uint32_t index, std::uint16_t generation,
@@ -100,6 +115,64 @@ NativeAsyncPlatform::Handle NativeAsyncPlatform::create_semaphore(
     if (maximum_count <= 0 || initial_count < 0 || initial_count > maximum_count)
         return invalid_handle;
     return state_->insert(std::make_shared<SemaphoreObject>(initial_count, maximum_count));
+}
+
+NativeAsyncPlatform::Handle NativeAsyncPlatform::open_read_only(
+    const std::filesystem::path& path) {
+    const int descriptor = ::open(path.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (descriptor < 0)
+        return invalid_handle;
+    struct stat status {};
+    if (::fstat(descriptor, &status) != 0 || !S_ISREG(status.st_mode)) {
+        ::close(descriptor);
+        return invalid_handle;
+    }
+    return state_->insert(std::make_shared<FileObject>(descriptor));
+}
+
+bool NativeAsyncPlatform::set_file_pointer(Handle handle, std::int32_t distance,
+                                            std::int32_t* distance_high,
+                                            std::uint32_t method,
+                                            std::uint32_t* position_low) {
+    auto base = state_->get(handle, HandleKind::file);
+    if (!base || method > 2)
+        return false;
+    auto object = std::static_pointer_cast<FileObject>(std::move(base));
+    std::int64_t offset = distance;
+    if (distance_high)
+        offset = static_cast<std::int64_t>(*distance_high) * 0x100000000ll +
+                 static_cast<std::uint32_t>(distance);
+    const int whence = method == 0 ? SEEK_SET : (method == 1 ? SEEK_CUR : SEEK_END);
+    std::lock_guard lock(object->mutex);
+    const off_t position = ::lseek(object->fd, static_cast<off_t>(offset), whence);
+    if (position < 0)
+        return false;
+    const std::uint64_t value = static_cast<std::uint64_t>(position);
+    if (distance_high)
+        *distance_high = static_cast<std::int32_t>(value >> 32);
+    if (position_low)
+        *position_low = static_cast<std::uint32_t>(value);
+    return true;
+}
+
+bool NativeAsyncPlatform::read_file(Handle handle, void* buffer,
+                                     std::uint32_t bytes_to_read,
+                                     std::uint32_t* bytes_read) {
+    if (bytes_read)
+        *bytes_read = 0;
+    if (bytes_to_read && !buffer)
+        return false;
+    auto base = state_->get(handle, HandleKind::file);
+    if (!base)
+        return false;
+    auto object = std::static_pointer_cast<FileObject>(std::move(base));
+    std::lock_guard lock(object->mutex);
+    const ssize_t result = ::read(object->fd, buffer, bytes_to_read);
+    if (result < 0)
+        return false;
+    if (bytes_read)
+        *bytes_read = static_cast<std::uint32_t>(result);
+    return true;
 }
 
 NativeAsyncPlatform::WaitResult NativeAsyncPlatform::wait(
