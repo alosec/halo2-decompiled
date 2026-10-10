@@ -278,6 +278,15 @@
       "semantics": "exact five-speaker directional response from azimuth/elevation, linear or powered falloff, and recovered speaker coefficients"
     },
     {
+      "source": "src/unknown_030290.cpp",
+      "symbol": "?function_30bf0@@YAMPATvector3f@@@Z",
+      "imports": [
+        "fabs",
+        "sqrt"
+      ],
+      "semantics": "exact epsilon-guarded three-component vector normalization with original magnitude return"
+    },
+    {
       "source": "src/sound_effect_inputs_native.cpp",
       "symbol": "?function_2221d0@@YAJM@Z",
       "imports": [],

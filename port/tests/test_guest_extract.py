@@ -3315,6 +3315,8 @@ def main():
             ("sound-speaker-response.o", "src/unknown_192b90.cpp",
              "?function_192b90@@YAMPBTpoint3f@@J_N@Z", {
                  "exp", "g_444c84", "pow", "sqrt"}),
+            ("sound-effect-normalize.o", "src/unknown_030290.cpp",
+             "?function_30bf0@@YAMPATvector3f@@@Z", {"fabs", "sqrt"}),
             ("sound-effect-dsp.o", "src/sound_effect_inputs_native.cpp",
              "?function_2221d0@@YAJM@Z", set()),
             ("sound-effect-speaker-gain.o", "src/sound_effect_inputs_native.cpp",
