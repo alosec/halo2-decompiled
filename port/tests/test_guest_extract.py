@@ -1273,6 +1273,7 @@ def main():
         texture_cache_lookup_symbols = [
             "?texture_cache_format_scalable@@YA_NJ@Z",
             "?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
+            "?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z",
         ]
         texture_cache_lookup_command = command[:]
         texture_cache_lookup_command[
@@ -1280,7 +1281,8 @@ def main():
         ] = texture_cache_lookup_symbols[0]
         insertion = texture_cache_lookup_command.index("--extract-global")
         texture_cache_lookup_command[insertion:insertion] = [
-            "--extract-symbol", texture_cache_lookup_symbols[1]
+            "--extract-symbol", texture_cache_lookup_symbols[1],
+            "--extract-symbol", texture_cache_lookup_symbols[2],
         ]
         texture_cache_lookup_command[
             texture_cache_lookup_command.index("--extract-global"):texture_cache_lookup_command.index("--output")
@@ -1300,9 +1302,9 @@ def main():
             raise RuntimeError("particle texture cache lookup was not selectively compilable")
         expected_texture_cache_lookup_imports = {
             "_?g_468841@@3_NA", "_?g_4e6454@@3PAUs_record_pool@@A",
-            "_?g_4e6464@@3PAUs_physical_object@@A", "_?g_4e647b@@3_NA",
-            "_?g_4e647c@@3MA", "_?g_4e6488@@3JA",
-            "_?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z",
+            "_?g_4e6464@@3PAUs_physical_object@@A", "_?g_4e6468@@3_NA",
+            "_?g_4e647b@@3_NA", "_?g_4e647c@@3MA", "_?g_4e6488@@3JA",
+            "_?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
         }
         actual_texture_cache_lookup_imports = {
             line.split()[0] for line in texture_cache_lookup_undefined.splitlines() if line.strip()

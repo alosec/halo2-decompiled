@@ -5,7 +5,10 @@
 #include "data_array.h"
 #include "physical_memory.h"
 
-struct D3DTexture;
+struct D3DTexture
+{
+    dword Common;
+};
 
 struct s_bitmap_data
 {
@@ -45,13 +48,31 @@ struct s_texture_cache_entry
 static_assert(sizeof(s_texture_cache_entry) == 0x28, "s_texture_cache_entry");
 
 extern bool g_468841;
+extern bool g_4e6468;
 extern s_record_pool *g_4e6454;
 extern s_physical_object *g_4e6464;
 extern bool g_4e647b;
 extern real g_4e647c;
 extern long g_4e6488;
 
-D3DTexture *texture_cache_bitmap_get_shared_texture(s_bitmap_data *bitmap);
+void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap);
+
+// @retail 0x12c960
+D3DTexture *texture_cache_bitmap_get_shared_texture(s_bitmap_data *bitmap)
+{
+    D3DTexture *result = NULL;
+    if (g_4e6468)
+    {
+        D3DTexture *texture = (D3DTexture *)&bitmap->hardware_common;
+        if (texture->Common || bitmap->hardware_lock > 0)
+        {
+            if ((long)texture->Common <= 0)
+                texture_cache_bitmap_build_texture(bitmap);
+            result = texture;
+        }
+    }
+    return result;
+}
 
 // @retail 0x12ccb0
 bool texture_cache_format_scalable(long format)
