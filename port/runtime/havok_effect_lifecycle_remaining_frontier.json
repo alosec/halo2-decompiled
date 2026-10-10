@@ -63,21 +63,6 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_189060@@YAJJFMPBTpoint3f@@PBTvector3f@@J@Z",
-      "subsystem": "audio",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_1895f0@@YAJPBUs_sound_position@@MJ@Z",
-      "subsystem": "audio",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_18a750@@YAJJJ@Z",
-      "subsystem": "audio",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."

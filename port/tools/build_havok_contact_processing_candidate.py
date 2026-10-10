@@ -72,6 +72,7 @@ def main() -> int:
         active_body = temporary / "active-body.o"
         contact_removal = temporary / "contact-removal.o"
         audio_boundary = temporary / "audio-boundary.o"
+        effect_audio = temporary / "effect-audio.o"
         effect_lifecycle = temporary / "effect-lifecycle.o"
         random_unit = temporary / "random-unit.o"
         random_range = temporary / "random-range.o"
@@ -178,6 +179,11 @@ def main() -> int:
             ["?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z",
              "?function_177260@@YAXJ_N@Z"],
             ["??_C@_0BH@MAKJFDPB@src?1unknown_175bd0?4cpp?$AA@"])
+        compile_slice(
+            args, args.root / "src/impact_audio_boundary_native.cpp", effect_audio,
+            ["?function_189060@@YAJJFMPBTpoint3f@@PBTvector3f@@J@Z",
+             "?function_1895f0@@YAJPBUs_sound_position@@MJ@Z",
+             "?function_18a750@@YAJJJ@Z"])
         compile_slice(args, args.root / "src/unknown_0259a0.cpp", random_unit,
                       ["?function_259a0@@YAMPAK@Z"])
         compile_slice(args, args.root / "src/unknown_0259d0.cpp", random_range,
@@ -203,7 +209,7 @@ def main() -> int:
                       ["?function_16f3a0@@YAPAUs_player_state@@J@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
-             random_unit, random_range, random_cone, location_bits,
+             effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
              player_state])
     return 0

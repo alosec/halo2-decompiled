@@ -5409,14 +5409,14 @@ va,size,owner,style,evidence,name,object,calls,source,status
 00188ea0,227,game,speed,a16 pad,,,00030bf0,src/unknown_188dd0.cpp,todo
 00188f90,114,game,speed,a16 pad,,,0016b840,src/unknown_18a2f0.cpp,matched
 00189010,77,game,speed,a16 pad,,,,src/unknown_189010.cpp,matched
-00189060,86,game,speed,a16 pad,,,00189010 001892a0 00189340,src/unknown_189010.cpp,todo
+00189060,86,game,speed,a16 pad,,,00189010 001892a0 00189340,src/unknown_189010.cpp,done
 001890c0,265,game,speed,a16 pad,,,00189010 001892a0 00189fe0 0018c3b0 0018d4f0 0018d5b0,src/unknown_189010.cpp,todo
 001891d0,54,game,speed,a16 pad,,,000b8d30 001890c0,src/unknown_189010.cpp,matched
 00189210,131,game,speed,a16 pad,,,000b8d30 000ba300 00188dd0 00189400,src/unknown_189010.cpp,todo
 001892a0,152,game,speed,a16 pad,,,00189010,src/unknown_189010.cpp,todo
 00189340,179,game,speed,a16 pad,,,00189fe0 0018d4f0,src/unknown_189010.cpp,todo
 00189400,487,game,speed,a16 pad,,,001892a0 00189340 001895f0 0018d4f0,src/unknown_189010.cpp,todo
-001895f0,89,game,speed,a16 pad,,,00189fe0,src/unknown_189010.cpp,matched
+001895f0,89,game,speed,a16 pad,,,00189fe0,src/unknown_189010.cpp,done
 00189650,110,game,speed,a16 pad,,,00189fe0 0018d5b0,src/unknown_189010.cpp,done
 001896c0,70,game,speed,a16 pad,,,00189fe0,src/unknown_189010.cpp,matched
 00189710,74,game,speed,a16 pad,,,00189fe0,src/unknown_189010.cpp,matched
@@ -5440,7 +5440,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0018a600,191,game,speed,a16 pad,,,0016b840,src/unknown_18a2f0.cpp,matched
 0018a6c0,90,game,speed,a16 pad,,,0016b840,src/unknown_18a2f0.cpp,done
 0018a720,41,game,speed,a16 pad,,,,src/unknown_18a2f0.cpp,done
-0018a750,90,game,speed,a16 pad,,,0016b840,src/unknown_18a2f0.cpp,todo
+0018a750,90,game,speed,a16 pad,,,0016b840,src/unknown_18a2f0.cpp,done
 0018a7b0,945,game,speed,a16 pad,,,000b9dd0 000b9fc0 000ba1d0 000bab40 0016ba40 00188dd0 0018cbc0 0018d1c0 0018d670 0018d6e0 00219c30 0021a250,src/unknown_18a2f0.cpp,todo
 0018ab70,736,game,speed,a16 pad,,,0014b240 00322bd8,src/sound_portal_angles.cpp,todo
 0018ae50,36,game,unknown,a16,,,,src/unknown_18a2f0.cpp,matched
