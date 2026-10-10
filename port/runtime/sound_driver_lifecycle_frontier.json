@@ -123,6 +123,7 @@
     "native_sound_driver_effect_submix_impulse_buffers_owned",
     "native_sound_driver_effects_interface_owned",
     "native_sound_driver_listener_state_owned",
+    "native_directsound_stream_creation_owned",
     "native_sound_stream_chunk_and_cache_lifetime_owned",
     "native_wma_codec_packet_buffer_owned",
     "native_wma_decoder_lifetime_owned",
@@ -216,6 +217,14 @@
       "source": "src/sound_stream_chunk_release_native.cpp",
       "address": "0x002ae500",
       "semantics": "Clear the transient stream flag, advance the authentic queue state, lock and append at most two genuine cache chunks, and start the attached codec only while no chunk is already started."
+    }
+  ],
+  "sound_stream_creation_helpers": [
+    {
+      "symbol": "sound_stream_create",
+      "source": "src/sound_stream_create_native.cpp",
+      "address": "0x002ae660",
+      "semantics": "Attach the authentic codec, request a genuine DirectSound stream with the recovered descriptor flag, apply zero headroom through the live interface, and initialize the exact two-slot stream bookkeeping regardless of backend success."
     }
   ]
 }

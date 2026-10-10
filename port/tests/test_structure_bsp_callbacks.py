@@ -2133,6 +2133,8 @@ def main() -> int:
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_pcm_control_source = (
         args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
+    sound_stream_create_source = (
+        args.root / "src/sound_stream_create_native.cpp").read_text()
     sound_stream_chunk_release_source = (
         args.root / "src/sound_stream_chunk_release_native.cpp").read_text()
     sound_wma_release_source = (
@@ -2172,6 +2174,16 @@ def main() -> int:
         "sound_stream_release_chunk(stream, chunk);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
+    expected_stream_create_fragments = [
+        "bool sound_stream_create(s_sound_stream *stream, c_sound_stream_codec *codec,",
+        "stream->codec = codec;", "codec->attach(stream);",
+        "description->dwFlags |= 0x20000000;",
+        "IDirectSound_CreateSoundStream(direct_sound, description,",
+        "IDirectSoundStream_SetHeadroom(stream->stream, 0);",
+        "stream->channel_count = channel_count == 2 ? 1 : channel_count;",
+        "stream->chunk_count = 0;", "stream->started_count = 0;",
+        "stream->unknown28 = NONE;",
+        "memset(stream->chunks, 0, sizeof(stream->chunks));"]
     expected_stream_chunk_release_fragments = [
         "void sound_stream_add_chunk(s_sound_stream *stream, s_sound_chunk *chunk)",
         "stream->unknown03_3 = 0;", "stream->state = 2;",
@@ -2218,6 +2230,7 @@ def main() -> int:
         "native_sound_driver_effect_submix_impulse_buffers_owned",
         "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
+        "native_directsound_stream_creation_owned",
         "native_sound_stream_chunk_and_cache_lifetime_owned",
         "native_wma_codec_packet_buffer_owned",
         "native_wma_decoder_lifetime_owned",
@@ -2415,6 +2428,16 @@ def main() -> int:
                     "queue state, lock and append at most two genuine cache "
                     "chunks, and start the attached codec only while no "
                     "chunk is already started."}] or
+            sound_driver_lifecycle.get("sound_stream_creation_helpers") != [{
+                "symbol": "sound_stream_create",
+                "source": "src/sound_stream_create_native.cpp",
+                "address": "0x002ae660",
+                "semantics":
+                    "Attach the authentic codec, request a genuine DirectSound "
+                    "stream with the recovered descriptor flag, apply zero "
+                    "headroom through the live interface, and initialize the "
+                    "exact two-slot stream bookkeeping regardless of backend "
+                    "success."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
@@ -2428,6 +2451,8 @@ def main() -> int:
                 for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_pcm_control_source
                 for fragment in expected_pcm_control_fragments) or
+            any(fragment not in sound_stream_create_source
+                for fragment in expected_stream_create_fragments) or
             any(fragment not in sound_stream_chunk_release_source
                 for fragment in expected_stream_chunk_release_fragments) or
             any(fragment not in sound_wma_release_source
