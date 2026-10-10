@@ -57,6 +57,11 @@
         "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
       },
       {
+        "symbol": "function_220790",
+        "source": "src/sound_driver_listener_native.cpp",
+        "semantics": "Publish exact initial listener position/orientation through deferred DirectSound calls, copy changed reverb/occlusion environments into checked driver storage, and dirty only authentic changed state."
+      },
+      {
         "symbol": "sound_driver_voice_create_buffer",
         "source": "src/sound_driver_voice_buffer_native.cpp",
         "semantics": "Create one exact ordinary 3D mix-in driver voice buffer, route the recovered five mixbins, initialize maximum distances and zero rolloff/Doppler/cone volume as deferred settings, and leave the submix clear."
@@ -327,6 +332,14 @@
       "source": "src/sound_driver_voice_buffer_native.cpp",
       "address": "0x00220a70",
       "semantics": "Create an exact 0x2010-capability DirectSound voice buffer at the checked 0x3c voice stride, install mixbins 6/8/7/9/10, publish mask 0x1f, initialize retail maximum-distance and zero deferred 3D factors, and clear submix ownership on both success and failure."
+    }
+  ],
+  "listener_helpers": [
+    {
+      "symbol": "function_220790",
+      "source": "src/sound_driver_listener_native.cpp",
+      "address": "0x00220790",
+      "semantics": "Submit Y-up listener position/orientation with recovered tolerances, bound environment processing to two reverb slots, copy changed 0x48 reverb and 0x10 occlusion records, reset unused slots to the recovered default reverb and zero scale, and mark the exact deferred-update dirty bytes."
     }
   ]
 }

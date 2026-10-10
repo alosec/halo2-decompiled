@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_listener_source = (
+        args.root / "src/sound_driver_listener_native.cpp").read_text()
     sound_driver_voice_buffer_source = (
         args.root / "src/sound_driver_voice_buffer_native.cpp").read_text()
     sound_silence_buffer_source = (
@@ -2327,6 +2329,21 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "(*stream)->Release();", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_listener_fragments = [
+        "static_assert(sizeof(s_sound_listener) == 0x38",
+        "static_assert(offsetof(s_driver_listener_view, listener_position) == 0x2918",
+        "static_assert(offsetof(s_driver_listener_view, reverbs) == 0x2950",
+        "static_assert(offsetof(s_driver_listener_view, direct_sound) == 0x2ab0",
+        "IDirectSound_SetPosition(globals->direct_sound,",
+        "listener->position.x, listener->position.z, listener->position.y,",
+        "IDirectSound_SetOrientation(globals->direct_sound,",
+        "listener->forward.i, listener->forward.k, listener->forward.j,",
+        "long environment_count = listener->environment_count < 2 ?",
+        "memcmp(environment->reverb, &globals->reverbs[i]",
+        "globals->reverb_dirty[i] = true;",
+        "globals->occlusion_dirty[i] = true;",
+        "memcmp(&g_44a2a0, &globals->reverbs[i]",
+        "globals->reverb_scales[i] = 0.0f;"]
     expected_voice_buffer_fragments = [
         "static_assert(sizeof(s_driver_voice) == 0x3c",
         "static_assert(offsetof(s_driver_globals_view, voices) == 0x1a18",
@@ -2395,6 +2412,13 @@ def main() -> int:
                     "Allocate the exact 128 KiB WMA packet buffer through "
                     "the recovered staged physical allocator, publish it at "
                     "codec offset 0x14, and clear both packet-status words."}, {
+                "symbol": "function_220790",
+                "source": "src/sound_driver_listener_native.cpp",
+                "semantics":
+                    "Publish exact initial listener position/orientation "
+                    "through deferred DirectSound calls, copy changed "
+                    "reverb/occlusion environments into checked driver "
+                    "storage, and dirty only authentic changed state."}, {
                 "symbol": "sound_driver_voice_create_buffer",
                 "source": "src/sound_driver_voice_buffer_native.cpp",
                 "semantics":
@@ -2470,6 +2494,17 @@ def main() -> int:
                     "decrementing its authentic cache-entry lock and the "
                     "stream chunk count without fabricating stream state or "
                     "progress."}] or
+            sound_driver_lifecycle.get("listener_helpers") != [{
+                "symbol": "function_220790",
+                "source": "src/sound_driver_listener_native.cpp",
+                "address": "0x00220790",
+                "semantics":
+                    "Submit Y-up listener position/orientation with recovered "
+                    "tolerances, bound environment processing to two reverb "
+                    "slots, copy changed 0x48 reverb and 0x10 occlusion "
+                    "records, reset unused slots to the recovered default "
+                    "reverb and zero scale, and mark the exact deferred-update "
+                    "dirty bytes."}] or
             sound_driver_lifecycle.get("voice_buffer_helpers") != [{
                 "symbol": "sound_driver_voice_create_buffer",
                 "source": "src/sound_driver_voice_buffer_native.cpp",
@@ -2683,6 +2718,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_driver_listener_source
+                for fragment in expected_listener_fragments) or
             any(fragment not in sound_driver_voice_buffer_source
                 for fragment in expected_voice_buffer_fragments) or
             any(fragment not in sound_silence_buffer_source
