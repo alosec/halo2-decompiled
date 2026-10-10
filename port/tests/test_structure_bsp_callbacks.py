@@ -1384,6 +1384,36 @@ def main() -> int:
                     "exact physical-page and salted-record allocation, "
                     "512-byte read rounding, and asynchronous loaded-byte "
                     "submission"}, {
+                "source": "src/unknown_218850.cpp",
+                "symbol": "?sound_cache_initialize@@YAXXZ",
+                "imports": [
+                    "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
+                    "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
+                    "?g_468758@@3PAVc_data_allocator@@A",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_502108@@3KA",
+                    "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+                    "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+                    "?sound_cache_entry_busy@@YA_NJ@Z",
+                    "?sound_cache_entry_delete@@YAXJ@Z",
+                    "XPhysicalProtect"],
+                "semantics":
+                    "exact record pool and physical cache construction, "
+                    "callback installation, active state publication, and "
+                    "fixed 3 MiB upload allocation"}, {
+                "source": "src/unknown_218850.cpp",
+                "symbol": "?function_2186f0@@YAXXZ",
+                "imports": [
+                    "?async_globals@@3Us_async_globals@@A",
+                    "?block_delete@s_physical_object@@QAAXJ@Z",
+                    "?function_120bf0@@YAJXZ",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+                    "GetTickCount"],
+                "semantics":
+                    "exact bounded shutdown drain, pending-task "
+                    "publication, physical block deletion, and record-pool "
+                    "invalidation"}, {
                 "source": "src/sound_cache_callbacks_native.cpp",
                 "symbol": "?sound_cache_entry_busy@@YA_NJ@Z",
                 "imports": ["?g_502104@@3PAUs_record_pool@@A"],

@@ -3195,6 +3195,14 @@ def main():
                  "?g_502104@@3PAUs_record_pool@@A",
                  "?g_502108@@3KA",
                  "?g_50210c@@3PAUs_sound_cache_allocator@@A"}),
+            ("sound-cache-drain.o", "src/unknown_218850.cpp",
+             "?function_2186f0@@YAXXZ", {
+                 "?async_globals@@3Us_async_globals@@A",
+                 "?block_delete@s_physical_object@@QAAXJ@Z",
+                 "?function_120bf0@@YAJXZ",
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+                 "GetTickCount"}),
         ]
         for lifecycle_name, lifecycle_source, lifecycle_symbol, expected_lifecycle_imports in sound_cache_lifecycle_cases:
             lifecycle_output = Path(temporary) / lifecycle_name
@@ -3228,6 +3236,69 @@ def main():
                 raise RuntimeError(
                     f"sound cache lifecycle imports changed for {lifecycle_symbol}: "
                     f"{sorted(lifecycle_imports)}")
+
+        sound_cache_initialize_output = (
+            Path(temporary) / "sound-cache-initialize.o")
+        sound_cache_initialize_command = command[:]
+        sound_cache_initialize_command[
+            sound_cache_initialize_command.index("h2_extract_selected")
+        ] = "?sound_cache_initialize@@YAXXZ"
+        sound_cache_initialize_command[
+            sound_cache_initialize_command.index("--extract-global"):
+            sound_cache_initialize_command.index("--output")
+        ] = [
+            "--extract-global",
+            "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
+            "--extract-global",
+            "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
+        ]
+        sound_cache_initialize_command[
+            sound_cache_initialize_command.index(output)
+        ] = sound_cache_initialize_output
+        sound_cache_initialize_command[-1] = (
+            args.root / "src/unknown_218850.cpp")
+        subprocess.run(
+            [str(value) for value in sound_cache_initialize_command], check=True)
+        sound_cache_initialize_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_cache_initialize_output], text=True)
+        expected_sound_cache_initialize_definitions = {
+            "?sound_cache_initialize@@YAXXZ",
+            "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
+            "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
+        }
+        sound_cache_initialize_definitions = {
+            line.split()[0].removeprefix("_")
+            for line in sound_cache_initialize_defined.splitlines()
+            if line and not line.startswith("ltmp")
+        }
+        if sound_cache_initialize_definitions != expected_sound_cache_initialize_definitions:
+            raise RuntimeError(
+                "sound cache initialization definitions changed: "
+                f"{sorted(sound_cache_initialize_definitions)}")
+        sound_cache_initialize_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_cache_initialize_output], text=True)
+        sound_cache_initialize_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_cache_initialize_undefined.splitlines() if line
+        }
+        expected_sound_cache_initialize_imports = {
+            "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
+            "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
+            "?g_468758@@3PAVc_data_allocator@@A",
+            "?g_502104@@3PAUs_record_pool@@A",
+            "?g_502108@@3KA",
+            "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+            "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+            "?sound_cache_entry_busy@@YA_NJ@Z",
+            "?sound_cache_entry_delete@@YAXJ@Z",
+            "XPhysicalProtect",
+        }
+        if sound_cache_initialize_imports != expected_sound_cache_initialize_imports:
+            raise RuntimeError(
+                "sound cache initialization imports changed: "
+                f"{sorted(sound_cache_initialize_imports)}")
 
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
