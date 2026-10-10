@@ -704,7 +704,8 @@ def main() -> int:
     for entry in effect_entries:
         if (not isinstance(entry.get("subsystem"), str) or not entry["subsystem"] or
                 not isinstance(entry.get("blocker"), str) or not entry["blocker"] or
-                "stub" in entry["blocker"].lower()):
+                "stub" in entry["blocker"].lower() or
+                entry["blocker"] == "Requires complete recovered effect creation/deletion ownership for this transitive provider."):
             raise RuntimeError("incomplete Havok effect-lifecycle frontier entry")
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports

@@ -5,87 +5,87 @@
     {
       "symbol": "?function_137bd0@@YAPAVc_type_4e7709@@J@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires both exact 21-slot particle-definition provider tables and their mutable 12-byte objects; the two slot-11 update methods still reach broad particle/render callbacks."
     },
     {
       "symbol": "?function_155760@@YAJJ@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires the live player observer-command table and first-person callback graph, including function_16c840 and the 0x23c110/0x23cbb0/0x23d090 handlers."
     },
     {
       "symbol": "?function_1664a5@@YAPAUtransform4x3f@@JJF@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Returns a directly consumed matrix pointer from mutable first-person node state; null or fabricated transforms are unsafe despite bounded key lookup ownership."
     },
     {
       "symbol": "?function_1664da@@YAXJJFPAUtransform4x3f@@@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires genuine mutable first-person node and group transforms before composing an output matrix; a no-op result would corrupt effect placement."
     },
     {
       "symbol": "?function_175270@@YAXPAUs_particle_system_datum@@PAUs_particle_system_spawn@@PBUtransform4x3f@@_N@Z",
       "subsystem": "particles",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires coherent particle-location allocation, initialization, linking, interpolation, and evaluation through function_248620/248970/248d90/248df0."
     },
     {
       "symbol": "?function_17e670@@YAXPAUs_effect_source@@PBTpoint3f@@JPBTvector3f@@MJJJ@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "The current source has only a placeholder body; retail is a substantial effect-source construction path requiring exact pool and lifecycle recovery."
     },
     {
       "symbol": "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires inherited AI effect flags plus the live five-entry AI effect-event queue and complete function_2902b0 insertion lifecycle."
     },
     {
       "symbol": "?function_3ddd0@@YAJJ@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires interface-function context ownership, render-state evaluation, record allocation, and function_be8b0 rather than only the now-owned color lookup."
     },
     {
       "symbol": "?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires exact Havok scratch teardown/restoration through function_146de0 and genuine mutable placement state at g_4b9da0."
     },
     {
       "symbol": "?function_a7870@@YAXJ@Z",
       "subsystem": "object_effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires simulation object handlers, entry-table mutation, and complete object lifecycle callbacks function_b57d0/b5830/bb780."
     },
     {
       "symbol": "?function_b7880@@YAXJJPBTpoint3f@@PBTvector3f@@1@Z",
       "subsystem": "object_effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires broad object collision and rigid-body impulse resolution through function_1c4c50 plus object physics refresh function_bba20."
     },
     {
       "symbol": "?function_b7b40@@YAJPAX@Z",
       "subsystem": "object_effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "The current source has only a placeholder constructor; real object allocation, datum initialization, placement, and type-specific creation remain unowned."
     },
     {
       "symbol": "?function_bab40@@YA_NJJPAM@Z",
       "subsystem": "object_effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires live object function inputs function_108d90/10aac0 and the general tag-function evaluator function_13bb90."
     },
     {
       "symbol": "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z",
       "subsystem": "object_effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "The current source has only a placeholder body; retail performs 0x1c4 bytes of light-record allocation, attachment state, and function_c0c80 initialization."
     },
     {
       "symbol": "?function_d2a50@@YAJJJJPAUs_effect_color_query@@JPBTpoint3f@@@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires the complete effect color-query geometry and renderer group, including texture-cache, BSP sampling, and interface-function providers."
     },
     {
       "symbol": "?function_d2bb0@@YAJPAXPAUs_effect_color_query@@@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires the same complete color-query provider graph as function_d2a50 plus recursive source ownership; isolated admission exposes about thirty providers."
     },
     {
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
+      "blocker": "Requires complete area-of-effect object/player gathering, damage eligibility, delivery, and mutable damage/object pool lifecycle."
     }
   ]
 }
