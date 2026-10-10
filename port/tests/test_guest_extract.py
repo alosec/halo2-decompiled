@@ -1269,6 +1269,36 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_external_output = Path(temporary) / "particle-material-external-state.o"
+        material_external_symbol = "?function_1ae70@@YAXPAE@Z"
+        material_external_command = command[:]
+        material_external_command[material_external_command.index("h2_extract_selected")] = material_external_symbol
+        material_external_command[
+            material_external_command.index("--extract-global"):material_external_command.index("--output")
+        ] = []
+        material_external_command[material_external_command.index(output)] = material_external_output
+        material_external_command[-1] = args.root / "src/particle_material_external_state_native.cpp"
+        subprocess.run([str(value) for value in material_external_command], check=True)
+        material_external_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_external_output],
+            text=True,
+        )
+        material_external_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_external_output],
+            text=True,
+        )
+        if material_external_symbol not in material_external_defined:
+            raise RuntimeError("particle material external state refresh was not selectively compilable")
+        expected_material_external_imports = {
+            "_?function_336f0@@YAMJ@Z", "_?function_33980@@YAXJPAUvector3f@@@Z",
+            "_?function_34060@@YAJJK@Z",
+        }
+        actual_material_external_imports = {
+            line.split()[0] for line in material_external_undefined.splitlines() if line.strip()
+        }
+        if actual_material_external_imports != expected_material_external_imports:
+            raise RuntimeError("particle material external state frontier changed")
+
         material_table_output = Path(temporary) / "particle-material-table-select.o"
         material_table_symbol = "?function_17420@@YAXPAEJJJJ@Z"
         material_table_command = command[:]
