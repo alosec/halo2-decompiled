@@ -5,6 +5,7 @@
 #include "data_array.h"
 #include "physical_memory.h"
 #include "async.h"
+#include <string.h>
 
 struct D3DTexture
 {
@@ -60,10 +61,12 @@ static_assert(sizeof(s_texture_cache_entry) == 0x28, "s_texture_cache_entry");
 
 extern s_record_pool *g_4e6454;
 extern s_physical_object *g_4e6464;
+extern dword g_4e6460;
 extern long g_4e6484;
 
-bool function_12d5a0(s_bitmap_data *bitmap, long level, bool blocking,
-    bool alternate, long priority);
+long function_213760(dword location, long size, void *buffer, dword *bytes_read,
+    bool *done, long type, long priority);
+
 bool function_120ce0(long task, long priority);
 void function_120d50(volatile bool *complete, bool wait);
 
@@ -132,6 +135,45 @@ void __stdcall function_12d6d0(s_bitmap_texture_view const *bitmap, long level,
         texture->Size = 0;
     }
     texture->Data = bitmap->level_addresses[level] & 0x0fffffff;
+}
+
+// @retail 0x12d5a0
+bool function_12d5a0(s_bitmap_data *bitmap, long level, bool blocking,
+    bool alternate, long priority)
+{
+    long block_index = function_13d370(g_4e6464, bitmap->level_sizes[level],
+        (blocking || alternate) ? 2 : 5);
+    if (blocking && !alternate)
+        priority = 7;
+    if (block_index == NONE)
+        return false;
+
+    long address =
+        (((s_physical_block *)g_4e6464->blocks->data)[block_index & 0xffff].offset <<
+            g_4e6464->page_shift) +
+        g_4e6460;
+    datum_new_at_index_with_salt(g_4e6454, block_index);
+    s_texture_cache_entry *entry = texture_cache_entry_get_native(block_index);
+    entry->resident = false;
+    entry->flags &= ~1;
+    entry->pending = level;
+    entry->bitmap = bitmap;
+    memset(&entry->resource, 0, sizeof(D3DTexture));
+    bitmap->block_indices[level] = block_index;
+    bitmap->unknown40[level] = address;
+    if (!level)
+        bitmap->unknown54 = address;
+    function_12d6d0((s_bitmap_texture_view *)bitmap, level,
+        (D3DTexture *)&entry->resource);
+
+    long size = bitmap->level_sizes[level];
+    if (size & 0x1ff)
+        size = (size | 0x1ff) + 1;
+    entry->hardware_format = function_213760(bitmap->data_offsets[level], size,
+        (void *)address, NULL, &entry->resident, 3, priority);
+    *(long *)entry->unknown08 = priority;
+    g_4e6484++;
+    return true;
 }
 
 // @retail 0x12c990

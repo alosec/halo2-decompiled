@@ -1237,16 +1237,27 @@ def main() -> int:
                 "0x0012c820", "0x0012c990", "0x0012cb10", "0x0012ccb0"] or
             texture_upload.get("remaining_direct_calls") != [] or
             texture_upload.get("request_provider_dependencies") != [
-                "?function_120ce0@@YA_NJJ@Z", "?function_120d50@@YAXPC_N_N@Z",
-                "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z"] or
+                "?function_120ce0@@YA_NJJ@Z", "?function_120d50@@YAXPC_N_N@Z"] or
             texture_upload.get("request_provider_state") != [
                 "?async_globals@@3Us_async_globals@@A",
                 "?g_4e6454@@3PAUs_record_pool@@A",
                 "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e6484@@3JA"] or
             texture_upload.get("owned_lifecycle_helpers") != [{
+                "address": "0x0012d5a0",
+                "symbol": "?function_12d5a0@@YA_NPAUs_bitmap_data@@J_N1J@Z",
+                "role": "physical block allocation, cache entry creation, upload request scheduling, and priority state"}, {
                 "address": "0x0012d6d0",
                 "symbol": "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z",
                 "role": "level-specific Xbox hardware texture header construction"}] or
+            texture_upload.get("allocation_provider_imports") != [
+                "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+                "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+                "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
+                "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+                "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
+                "?g_450768@@3PAY0BI@JA", "?g_4e6454@@3PAUs_record_pool@@A",
+                "?g_4e6460@@3KA", "?g_4e6464@@3PAUs_physical_object@@A",
+                "?g_4e6484@@3JA", "?log2_floor@@YAJK@Z", "h2_guest_memset"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
