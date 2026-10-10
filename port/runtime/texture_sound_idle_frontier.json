@@ -255,6 +255,25 @@
       "semantics": "exact minimum-distance plateau, inverse-distance falloff, and maximum-distance fade"
     },
     {
+      "source": "src/sound_cone_attenuation_native.cpp",
+      "symbol": "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
+      "imports": [
+        "?function_11cf50@@YAMPBTvector3f@@0@Z",
+        "?function_12aff0@@YAMMMM_N@Z",
+        "?function_2195f0@@YAMM@Z",
+        "?function_30bf0@@YAMPATvector3f@@@Z",
+        "?g_4e3b44@@3PAUs_tag_instance@@A",
+        "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
+        "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
+        "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
+        "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
+        "fabs",
+        "h2_guest_memcpy",
+        "sqrt"
+      ],
+      "semantics": "exact distance/cone attenuation, direction reversal and normalization, outer-cone interpolation, and inverse policy"
+    },
+    {
       "source": "src/sound_spatial_gain_native.cpp",
       "symbol": "?function_12a6d0@@YAJFMM@Z",
       "imports": [
