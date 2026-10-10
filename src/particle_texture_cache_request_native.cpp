@@ -98,7 +98,26 @@ long __stdcall function_1a0e70(s_async_task *task)
     return 0;
 }
 
-s_job_node *function_1208b0(void);
+// @retail 0x1208b0
+s_job_node *function_1208b0(void)
+{
+    s_job_node *node = NULL;
+    do
+    {
+        WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+        if (async_globals.free_list)
+        {
+            node = async_globals.free_list;
+            async_globals.free_list = node->next;
+            node->next = NULL;
+        }
+        ReleaseMutex(async_globals.free_list_mutex);
+        if (!node)
+            SwitchToThread();
+    }
+    while (!node);
+    return node;
+}
 
 // @retail 0x120ba0
 long function_120ba0(long priority, s_async_task *task, long category,

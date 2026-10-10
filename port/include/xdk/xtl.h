@@ -94,6 +94,7 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 #define PAGE_WRITECOMBINE 0x400
 #define FILE_BEGIN 0
 #define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#define INFINITE ((DWORD)-1)
 #define WINAPI __stdcall
 /* Public Xbox network QoS listener flags used by recovered session code. */
 #define XNET_QOS_LISTEN_ENABLE 0x01
@@ -137,6 +138,8 @@ BOOL WINAPI FileTimeToSystemTime(const FILETIME* file_time, SYSTEMTIME* system_t
 DWORD WINAPI SetFilePointer(HANDLE file, LONG distance, LONG* distance_high, DWORD method);
 BOOL WINAPI ReadFile(HANDLE file, void* buffer, DWORD bytes_to_read,
                      DWORD* bytes_read, void* overlapped);
+DWORD WINAPI WaitForSingleObject(HANDLE handle, DWORD milliseconds);
+BOOL WINAPI ReleaseMutex(HANDLE mutex);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);
