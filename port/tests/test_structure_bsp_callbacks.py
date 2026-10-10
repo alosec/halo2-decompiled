@@ -2162,7 +2162,15 @@ def main() -> int:
         "release_decoder();",
         "stream->started_count++;",
         "WmaCreateInMemoryDecoder(wma_codec_read_callback, this, 1, &format,",
-        "&m_decoder);"]
+        "&m_decoder);",
+        "bool c_wma_codec::get_packet(s_sound_stream *stream, XMEDIAPACKET *packet)",
+        "static const dword k_packet_status_pending = 0x8000000a;",
+        "byte *buffer = m_buffer + (packet_index << 16);",
+        "reinterpret_cast<process_method>(decoder->vtable[4])",
+        "if (process(decoder, NULL, &output) < 0)",
+        "m_position += completed;",
+        "if (completed < output.dwMaxSize)",
+        "packet->pdwStatus = &m_packet_status[packet_index];"]
     expected_wma_control_fragments = [
         "void c_wma_codec::attach(s_sound_stream *stream)",
         "m_stream = stream;",
@@ -2296,6 +2304,7 @@ def main() -> int:
         "native_wma_codec_packet_buffer_owned",
         "native_wma_decoder_construction_owned",
         "native_wma_decoder_read_callback_owned",
+        "native_wma_decoder_packet_decode_owned",
         "native_wma_decoder_lifetime_owned",
         "native_sound_driver_ordered_teardown_owned"]
     lifecycle_startup = sound_driver_lifecycle.get("startup", {})
@@ -2455,6 +2464,16 @@ def main() -> int:
                     "in-memory WMA decoder at yield rate 1 with the exact "
                     "callback, codec context, output format, and decoder "
                     "destination."}, {
+                "symbol": "c_wma_codec::get_packet",
+                "source": "src/sound_wma_codec_start_native.cpp",
+                "address": "0x002ae290",
+                "semantics":
+                    "Select a non-pending one of the exact two packet "
+                    "buffers, synchronously decode through the genuine "
+                    "XMediaObject Process virtual, advance only completed "
+                    "bytes, preserve decoder rollover and chunk-count policy, "
+                    "and publish the exact DirectSound packet/status fields "
+                    "only after producing bytes."}, {
                 "symbol": "wma_codec_read_callback",
                 "source": "src/sound_wma_codec_start_native.cpp",
                 "address": "0x002ae490",

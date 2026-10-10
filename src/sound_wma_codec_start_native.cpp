@@ -32,10 +32,26 @@ struct s_sound_stream
 	byte unknown03[0x31];
 };
 
+struct XMEDIAPACKET
+{
+	void *pvBuffer;
+	dword dwMaxSize;
+	dword *pdwCompletedSize;
+	dword *pdwStatus;
+	void *hCompletionEvent;
+	long long *prtTimestamp;
+};
+
+struct s_xmedia_object_process_view
+{
+	void **vtable;
+};
+
 class c_wma_codec
 {
 public:
 	virtual void start(s_sound_stream *stream);
+	virtual bool get_packet(s_sound_stream *stream, XMEDIAPACKET *packet);
 
 	void release_decoder();
 	dword read(dword offset, dword byte_count, void **data);
@@ -66,6 +82,7 @@ static dword __stdcall wma_codec_read_callback(void *context, dword offset,
 }
 
 static_assert(sizeof(WAVEFORMATEX) == 0x12, "WAVEFORMATEX size");
+static_assert(sizeof(XMEDIAPACKET) == 0x18, "XMEDIAPACKET size");
 static_assert(sizeof(s_sound_stream) == 0x34, "sound stream size");
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -85,6 +102,85 @@ void c_wma_codec::start(s_sound_stream *stream)
 	stream->started_count++;
 	WmaCreateInMemoryDecoder(wma_codec_read_callback, this, 1, &format,
 		&m_decoder);
+}
+
+// @retail 0x2ae290
+bool c_wma_codec::get_packet(s_sound_stream *stream, XMEDIAPACKET *packet)
+{
+	static const dword k_packet_status_pending = 0x8000000a;
+	bool result = false;
+	long packet_index = NONE;
+
+	for (long index = 0; index < 2; index++)
+	{
+		if (m_packet_status[index] != k_packet_status_pending)
+		{
+			packet_index = index;
+			break;
+		}
+	}
+
+	if (packet_index != NONE)
+	{
+		dword total = 0;
+		byte *buffer = m_buffer + (packet_index << 16);
+
+		while (total < m_packet_size)
+		{
+			WAVEFORMATEX format;
+			XMEDIAPACKET output;
+			dword completed;
+
+			output.pvBuffer = buffer + total;
+			output.dwMaxSize = m_packet_size - total;
+			output.pdwCompletedSize = &completed;
+			output.pdwStatus = NULL;
+			output.hCompletionEvent = NULL;
+			output.prtTimestamp = NULL;
+
+			typedef long (__stdcall *process_method)(
+				s_xmedia_object_process_view *object,
+				XMEDIAPACKET *input,
+				XMEDIAPACKET *output);
+			s_xmedia_object_process_view *decoder =
+				reinterpret_cast<s_xmedia_object_process_view *>(m_decoder);
+			process_method process =
+				reinterpret_cast<process_method>(decoder->vtable[4]);
+			if (process(decoder, NULL, &output) < 0)
+				break;
+
+			m_position += completed;
+			total += completed;
+			if (completed < output.dwMaxSize)
+			{
+				release_decoder();
+				m_position = 0;
+			}
+
+			if (stream->started_count >= stream->chunk_count ||
+				stream->started_count != 0)
+			{
+				break;
+			}
+
+			stream->started_count++;
+			WmaCreateInMemoryDecoder(wma_codec_read_callback, this, 1,
+				&format, &m_decoder);
+		}
+
+		result = total > 0;
+		if (result)
+		{
+			packet->pvBuffer = buffer;
+			packet->dwMaxSize = total;
+			packet->pdwCompletedSize = NULL;
+			packet->pdwStatus = &m_packet_status[packet_index];
+			packet->hCompletionEvent = NULL;
+			packet->prtTimestamp = NULL;
+		}
+	}
+
+	return result;
 }
 
 #endif

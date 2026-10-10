@@ -132,6 +132,7 @@
     "native_wma_codec_packet_buffer_owned",
     "native_wma_decoder_construction_owned",
     "native_wma_decoder_read_callback_owned",
+    "native_wma_decoder_packet_decode_owned",
     "native_wma_decoder_lifetime_owned",
     "native_sound_driver_ordered_teardown_owned"
   ],
@@ -271,6 +272,12 @@
       "source": "src/sound_wma_codec_start_native.cpp",
       "address": "0x002ae240",
       "semantics": "Release any prior genuine decoder, increment the authentic started-chunk count, and construct a real in-memory WMA decoder at yield rate 1 with the exact callback, codec context, output format, and decoder destination."
+    },
+    {
+      "symbol": "c_wma_codec::get_packet",
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "address": "0x002ae290",
+      "semantics": "Select a non-pending one of the exact two packet buffers, synchronously decode through the genuine XMediaObject Process virtual, advance only completed bytes, preserve decoder rollover and chunk-count policy, and publish the exact DirectSound packet/status fields only after producing bytes."
     },
     {
       "symbol": "wma_codec_read_callback",
