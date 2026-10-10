@@ -2867,6 +2867,45 @@ def main():
                 "sound busy query imports changed: "
                 f"{sorted(sound_busy_imports)}")
 
+        sound_cache_frame_output = Path(temporary) / "sound-cache-frame.o"
+        sound_cache_frame_symbol = "?sound_cache_new_frame@@YAXXZ"
+        sound_cache_frame_command = command[:]
+        sound_cache_frame_command[
+            sound_cache_frame_command.index("h2_extract_selected")
+        ] = sound_cache_frame_symbol
+        sound_cache_frame_command[
+            sound_cache_frame_command.index("--extract-global"):
+            sound_cache_frame_command.index("--output")
+        ] = []
+        sound_cache_frame_command[
+            sound_cache_frame_command.index(output)
+        ] = sound_cache_frame_output
+        sound_cache_frame_command[-1] = (
+            args.root / "src/sound_cache_frame_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_cache_frame_command], check=True)
+        sound_cache_frame_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_cache_frame_output], text=True)
+        if sound_cache_frame_symbol not in sound_cache_frame_defined:
+            raise RuntimeError(
+                "sound cache frame advance was not selectively compilable")
+        sound_cache_frame_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_cache_frame_output], text=True)
+        sound_cache_frame_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_cache_frame_undefined.splitlines() if line
+        }
+        expected_sound_cache_frame_imports = {
+            "?g_50210c@@3PAXA",
+            "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
+        }
+        if sound_cache_frame_imports != expected_sound_cache_frame_imports:
+            raise RuntimeError(
+                "sound cache frame imports changed: "
+                f"{sorted(sound_cache_frame_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

@@ -34,7 +34,7 @@
       "address": "0x00218810",
       "symbol": "?sound_cache_new_frame@@YAXXZ",
       "role": "sound physical-cache frame advance",
-      "source_owned": false
+      "source_owned": true
     },
     {
       "address": "0x0021ec00",
@@ -58,12 +58,12 @@
   "owned_direct_calls": [
     "0x00125a60",
     "0x001269f0",
+    "0x00218810",
     "0x003314b0"
   ],
   "remaining_direct_calls": [
     "0x001290d0",
     "0x001293f0",
-    "0x00218810",
     "0x0021ec00",
     "0x0021ee80"
   ],
@@ -120,6 +120,15 @@
         "?main_globals@@3Us_main_globals@@A"
       ],
       "semantics": "exact main-loop, async texture, and geometry-cache busy-state query"
+    },
+    {
+      "source": "src/sound_cache_frame_native.cpp",
+      "symbol": "?sound_cache_new_frame@@YAXXZ",
+      "imports": [
+        "?g_50210c@@3PAXA",
+        "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z"
+      ],
+      "semantics": "exact physical-cache clock advance, wrap rebasing, and eight per-type limit resets"
     }
   ],
   "execution_gate": [
@@ -128,13 +137,13 @@
     "native_sound_voice_chunk_update_owned",
     "native_sound_driver_pre_and_post_update_owned",
     "native_sound_playback_state_update_owned",
-    "native_sound_physical_cache_frame_lifecycle_owned",
+    "native_sound_cache_physical_storage_initialized",
     "production_texture_requesters_linked"
   ],
   "blocking_texture_requests_enabled": false,
   "production_linked": false,
   "source_owned": true,
-  "blocker": "The exact idle service, sound clock/fade update, and busy-state query are now source-owned without replacing any behavior, but remain deliberately unlinked and uncallable. The timing gate mutates sound pause/update state and always advances the sound physical cache when fired. Voice chunks, playback state, driver updates, cache-frame provider, and initialized sound/main-loop/async/geometry state remain genuine ownership requirements before production blocking texture requests can invoke it.",
+  "blocker": "The exact idle service, sound clock/fade update, busy-state query, and sound-cache frame advance are now source-owned without replacing any behavior, but remain deliberately unlinked and uncallable. The timing gate mutates sound pause/update state and advances genuine sound physical-cache state when fired. Voice chunks, playback state, driver updates, initialized sound/main-loop/async/geometry state, and an initialized sound physical cache remain genuine requirements before production blocking texture requests can invoke it.",
   "implementation": {
     "source": "src/sound_idle_service_native.cpp",
     "symbol": "?function_125d60@@YAXXZ",

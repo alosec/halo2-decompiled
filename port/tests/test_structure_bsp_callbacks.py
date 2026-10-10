@@ -1223,7 +1223,7 @@ def main() -> int:
         ("0x001269f0", "?sound_system_update_time@@YAXXZ", True),
         ("0x001290d0", "?sound_voices_update_chunks@@YAXXZ", False),
         ("0x001293f0", "?function_1293f0@@YAXXZ", False),
-        ("0x00218810", "?sound_cache_new_frame@@YAXXZ", False),
+        ("0x00218810", "?sound_cache_new_frame@@YAXXZ", True),
         ("0x0021ec00", "?function_21ec00@@YAXXZ", False),
         ("0x0021ee80", "?function_21ee80@@YAXXZ", False),
         ("0x003314b0", "GetTickCount", True),
@@ -1239,10 +1239,9 @@ def main() -> int:
             sound_idle.get("symbol") != "?function_125d60@@YAXXZ" or
             actual_sound_idle_calls != expected_sound_idle_calls or
             sound_idle.get("owned_direct_calls") != [
-                "0x00125a60", "0x001269f0", "0x003314b0"] or
+                "0x00125a60", "0x001269f0", "0x00218810", "0x003314b0"] or
             sound_idle.get("remaining_direct_calls") != [
-                "0x001290d0", "0x001293f0", "0x00218810",
-                "0x0021ec00", "0x0021ee80"] or
+                "0x001290d0", "0x001293f0", "0x0021ec00", "0x0021ee80"] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
             sound_idle.get("source_owned") is not True or
@@ -1303,14 +1302,22 @@ def main() -> int:
                     "?main_globals@@3Us_main_globals@@A"],
                 "semantics":
                     "exact main-loop, async texture, and geometry-cache "
-                    "busy-state query"}] or
+                    "busy-state query"}, {
+                "source": "src/sound_cache_frame_native.cpp",
+                "symbol": "?sound_cache_new_frame@@YAXXZ",
+                "imports": [
+                    "?g_50210c@@3PAXA",
+                    "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z"],
+                "semantics":
+                    "exact physical-cache clock advance, wrap rebasing, and "
+                    "eight per-type limit resets"}] or
             sound_idle.get("execution_gate") != [
                 "native_sound_system_storage_initialized",
                 "native_main_loop_busy_state_initialized",
                 "native_sound_voice_chunk_update_owned",
                 "native_sound_driver_pre_and_post_update_owned",
                 "native_sound_playback_state_update_owned",
-                "native_sound_physical_cache_frame_lifecycle_owned",
+                "native_sound_cache_physical_storage_initialized",
                 "production_texture_requesters_linked"] or
             not sound_idle.get("blocker")):
         raise RuntimeError("texture sound-idle frontier changed")
