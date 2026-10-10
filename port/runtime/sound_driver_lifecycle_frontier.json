@@ -380,6 +380,11 @@
       "symbol": "sound_driver_channels_startup",
       "source": "src/sound_driver_channels_startup_native.cpp",
       "semantics": "Reserve the exact codec allocator block, restore its recovered initial state, publish all three channel ranges before genuine stream creation, preserve failure-short-circuited stream and voice construction, publish both voice counts, and always query authentic DSP effect-input routing for the live DirectSound device. Partial counts and objects remain available to ordered teardown."
+    },
+    {
+      "symbol": "sound_driver_effect_buffers_startup",
+      "source": "src/sound_driver_effect_buffers_startup_native.cpp",
+      "semantics": "Publish the recovered effect levels, settings, and mixbins; create and play all genuine direct and deferred-3D effect input buffers; install the authentic effects interface; create, route, and play all eight genuine submix buffers; construct both recovered looping impulse buffers; and publish the exact terminal driver defaults. Individual buffer failures remain null for ordered teardown."
     }
   ]
 }

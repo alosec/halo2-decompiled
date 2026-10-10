@@ -2129,6 +2129,9 @@ def main() -> int:
         args.root / "src/sound_driver_device_startup_native.cpp").read_text()
     sound_driver_channels_startup_source = (
         args.root / "src/sound_driver_channels_startup_native.cpp").read_text()
+    sound_driver_effect_buffers_startup_source = (
+        args.root /
+        "src/sound_driver_effect_buffers_startup_native.cpp").read_text()
     sound_driver_channel_shutdown_source = (
         args.root / "src/sound_driver_channel_shutdown_native.cpp").read_text()
     sound_driver_teardown_source = (
@@ -2380,6 +2383,31 @@ def main() -> int:
         "globals->unknown0008 = voices;",
         "result = result && sound_driver_voice_create_buffer(voice);",
         "function_191420(globals->direct_sound);"]
+    expected_effect_buffers_startup_fragments = [
+        "static_assert(sizeof(s_driver_effect_buffers_view) == 0x2ad8",
+        "static_assert(offsetof(s_driver_effect_buffers_view, effect_levels_a) == 0x2a0c",
+        "static_assert(offsetof(s_driver_effect_buffers_view, effect_mixbins) == 0x2a4c",
+        "static_assert(offsetof(s_driver_effect_buffers_view, effect_buffers_a) == 0x2a58",
+        "static_assert(offsetof(s_driver_effect_buffers_view, submix_buffers) == 0x2a70",
+        "static_assert(offsetof(s_driver_effect_buffers_view, impulse_buffers) == 0x2a90",
+        "static_assert(offsetof(s_driver_effect_buffers_view, direct_sound) == 0x2ab0",
+        "void sound_driver_effect_buffers_startup(void)",
+        "globals->effect_levels_a[1] = 0xc0c0a8c1;",
+        "reinterpret_cast<dword *>(globals->effect_settings)[1] = 0xc0400000;",
+        "globals->effect_mixbins[0] = 23;",
+        "description.flags = k_effect_input;",
+        "spatial_description.flags = k_effect_input | k_control_3d;",
+        "IDirectSoundBuffer_SetMaxDistance(*spatial_buffer, max_distance,",
+        "IDirectSoundBuffer_SetMinDistance(*spatial_buffer, max_distance,",
+        "function_21e3b0(reinterpret_cast<c_sound_driver_effects *>(&g_47f088));",
+        "description.input_mixbin = 15 + group * 4 + i;",
+        "pair.mixbin = 6 + i;",
+        "IDirectSoundBuffer_SetMixBins(*buffer, &bins);",
+        "function_221490(&globals->impulse_buffers[impulse]);",
+        "globals->impulse_ids[impulse] = NONE;",
+        "globals->volume_a = 1.0f;",
+        "globals->unknown2acc = 8000;",
+        "globals->unknown2ad0 = 0.0f;"]
     expected_channel_shutdown_fragments = [
         "static_assert(sizeof(s_sound_stream) == 0x34",
         "static_assert(offsetof(s_driver_channels_view, channels) == 0x0c",
@@ -2585,6 +2613,18 @@ def main() -> int:
                     "publish both voice counts, and always query authentic "
                     "DSP effect-input routing for the live DirectSound "
                     "device. Partial counts and objects remain available to "
+                    "ordered teardown."}, {
+                "symbol": "sound_driver_effect_buffers_startup",
+                "source":
+                    "src/sound_driver_effect_buffers_startup_native.cpp",
+                "semantics":
+                    "Publish the recovered effect levels, settings, and "
+                    "mixbins; create and play all genuine direct and "
+                    "deferred-3D effect input buffers; install the authentic "
+                    "effects interface; create, route, and play all eight "
+                    "genuine submix buffers; construct both recovered looping "
+                    "impulse buffers; and publish the exact terminal driver "
+                    "defaults. Individual buffer failures remain null for "
                     "ordered teardown."}] or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or
@@ -2876,6 +2916,8 @@ def main() -> int:
                 for fragment in expected_device_startup_fragments) or
             any(fragment not in sound_driver_channels_startup_source
                 for fragment in expected_channels_startup_fragments) or
+            any(fragment not in sound_driver_effect_buffers_startup_source
+                for fragment in expected_effect_buffers_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_driver_channel_shutdown_source
