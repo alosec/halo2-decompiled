@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "retail_function": "0x00224db0",
+  "size": 544,
+  "symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
+  "execution_gate": "native_particle_mesh_render_state_owned",
+  "direct_calls": [
+    "0x0001bbf0",
+    "0x0001bd50",
+    "0x0001c590",
+    "0x0001c620",
+    "0x0001c710",
+    "0x0001cdd0",
+    "0x0002c3b0",
+    "0x0012de70",
+    "0x00137bd0",
+    "0x00173ba0",
+    "0x00175610"
+  ],
+  "production_score_before": 33,
+  "production_score_after": 42,
+  "closed_symbol": "?function_224db0@@YAXPAUs_interface_definition@@JJJJ@Z",
+  "newly_exposed": [
+    "?function_12de70@@YA_NPAUs_geometry_block_info@@K@Z",
+    "?function_1bbf0@@YAXJJJJJM@Z",
+    "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z",
+    "?function_1c620@@YAXPAUs_shader_cache@@JJJPBE@Z",
+    "?function_1c710@@YAXPAX@Z",
+    "?function_1cdd0@@YAXPBME@Z",
+    "?function_224fd0@@YAXPBUs_draw_mesh_seed@@PAUs_draw_value_cache@@PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PBUs_draw_mesh_context@@@Z",
+    "?g_51f0f0@@3PAEA",
+    "?g_55ed60@@3Us_interface_function_context@@A",
+    "g_43f408"
+  ],
+  "blocker": "The 544-byte mesh slot-11 update performs geometry-block residency, shader and bitmap cache setup, mutable interface context installation, parameter binding, particle traversal, and dispatch into the 1,836-byte mesh callback function_224fd0. Admitting it now replaces one frontier symbol with ten renderer/cache/state providers and worsens the measured production-linked score from 33 to 42, so it remains dormant and unlinked."
+}

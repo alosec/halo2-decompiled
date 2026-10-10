@@ -872,6 +872,37 @@ def main() -> int:
     if set(ai_insertion.get("fixed_data_references", [])) != expected_ai_data:
         raise RuntimeError("AI effect-event fixed-data frontier changed")
 
+    mesh_update = json.loads((
+        args.root / "port/runtime/particle_mesh_update_frontier.json"
+    ).read_text())
+    expected_mesh_calls = {
+        "0x0001bbf0", "0x0001bd50", "0x0001c590", "0x0001c620",
+        "0x0001c710", "0x0001cdd0", "0x0002c3b0", "0x0012de70",
+        "0x00137bd0", "0x00173ba0", "0x00175610",
+    }
+    expected_mesh_expansion = {
+        "?function_12de70@@YA_NPAUs_geometry_block_info@@K@Z",
+        "?function_1bbf0@@YAXJJJJJM@Z",
+        "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z",
+        "?function_1c620@@YAXPAUs_shader_cache@@JJJPBE@Z",
+        "?function_1c710@@YAXPAX@Z",
+        "?function_1cdd0@@YAXPBME@Z",
+        "?function_224fd0@@YAXPBUs_draw_mesh_seed@@PAUs_draw_value_cache@@PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PBUs_draw_mesh_context@@@Z",
+        "?g_51f0f0@@3PAEA",
+        "?g_55ed60@@3Us_interface_function_context@@A",
+        "g_43f408",
+    }
+    if (mesh_update.get("version") != 1 or
+            mesh_update.get("retail_function") != "0x00224db0" or
+            mesh_update.get("size") != 544 or
+            mesh_update.get("execution_gate") != "native_particle_mesh_render_state_owned" or
+            set(mesh_update.get("direct_calls", [])) != expected_mesh_calls or
+            mesh_update.get("production_score_before") != 33 or
+            mesh_update.get("production_score_after") != 42 or
+            set(mesh_update.get("newly_exposed", [])) != expected_mesh_expansion or
+            not mesh_update.get("blocker")):
+        raise RuntimeError("particle mesh update frontier changed")
+
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports
     ) | set(effect_symbols)
