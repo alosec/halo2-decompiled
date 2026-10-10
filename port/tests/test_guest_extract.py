@@ -1933,6 +1933,35 @@ def main():
         if actual_texture_async_init_imports != expected_texture_async_init_imports:
             raise RuntimeError("particle texture async scheduler initialization frontier changed")
 
+        for async_query_symbol, async_query_name in (
+            ("?function_120b50@@YA_NJ@Z", "category"),
+            ("?function_120bf0@@YAJXZ", "count"),
+        ):
+            texture_async_query_output = Path(temporary) / f"particle-texture-async-{async_query_name}.o"
+            texture_async_query_command = command[:]
+            texture_async_query_command[
+                texture_async_query_command.index("h2_extract_selected")
+            ] = async_query_symbol
+            texture_async_query_command[
+                texture_async_query_command.index("--extract-global"):texture_async_query_command.index("--output")
+            ] = []
+            texture_async_query_command[texture_async_query_command.index(output)] = texture_async_query_output
+            texture_async_query_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+            subprocess.run([str(value) for value in texture_async_query_command], check=True)
+            texture_async_query_defined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_query_output], text=True)
+            texture_async_query_undefined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_query_output], text=True)
+            if async_query_symbol not in texture_async_query_defined:
+                raise RuntimeError(f"particle texture async {async_query_name} query was not selectively compilable")
+            actual_texture_async_query_imports = {
+                line.split()[0] for line in texture_async_query_undefined.splitlines() if line.strip()
+            }
+            if actual_texture_async_query_imports != {
+                "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex", "_WaitForSingleObject"
+            }:
+                raise RuntimeError(f"particle texture async {async_query_name} frontier changed")
+
         texture_async_free_node_output = Path(temporary) / "particle-texture-async-free-node.o"
         texture_async_free_node_symbol = "?function_1208b0@@YAPAUs_job_node@@XZ"
         texture_async_free_node_command = command[:]

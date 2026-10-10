@@ -288,6 +288,34 @@ void function_120a90(void)
     SetThreadPriority(async_globals.thread, 1);
 }
 
+// @retail 0x120b50
+bool function_120b50(long category)
+{
+    bool result = false;
+    WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+    for (s_job_node *node = async_globals.work_list; node; node = node->next)
+    {
+        if (node->category == category)
+        {
+            result = true;
+            break;
+        }
+    }
+    ReleaseMutex(async_globals.work_list_mutex);
+    return result;
+}
+
+// @retail 0x120bf0
+long function_120bf0(void)
+{
+    long count = 0;
+    WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+    for (s_job_node *node = async_globals.work_list; node; node = node->next)
+        count++;
+    ReleaseMutex(async_globals.work_list_mutex);
+    return count;
+}
+
 // @retail 0x120ba0
 long function_120ba0(long priority, s_async_task *task, long category,
     async_work_callback callback, bool volatile *done)
