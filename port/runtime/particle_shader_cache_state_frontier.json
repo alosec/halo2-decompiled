@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "retail_functions": [
+    {"address": "0x0001c6b0", "size": 87, "symbol": "?function_1c6b0@@YAXPAX@Z"},
+    {"address": "0x0001ccb0", "size": 55, "symbol": "?function_1ccb0@@YAXJ@Z"}
+  ],
+  "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "owned_descriptor_table": {
+    "symbol": "g_43f408",
+    "entries": 63,
+    "bytes_per_entry": 21,
+    "total_bytes": 1323
+  },
+  "sprite_setup_score_before": 46,
+  "sprite_setup_score_after": 44,
+  "remaining_providers": [
+    "?function_1c710@@YAXPAX@Z",
+    "?g_51f0f0@@3PAEA"
+  ],
+  "blocker": "The exact cache reset clears 16 stream records and both 16-pointer descriptor arrays while setting the recovered dirty flags. The immediate descriptor selector then chooses one of the 63 exact 21-byte immutable descriptors, installs it as wanted slot zero, and invokes the genuine mutable shader-input flush. Owning these compact providers improves sprite setup from 46 to 44, but execution remains blocked on the initialized 0x2d8 cache and function_1c710's D3D vertex-input/shader submission."
+}

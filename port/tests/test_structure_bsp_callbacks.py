@@ -947,6 +947,30 @@ def main() -> int:
             not texture_state.get("blocker")):
         raise RuntimeError("particle texture state frontier changed")
 
+    shader_state = json.loads((
+        args.root / "port/runtime/particle_shader_cache_state_frontier.json"
+    ).read_text())
+    expected_shader_functions = {
+        ("0x0001c6b0", 87, "?function_1c6b0@@YAXPAX@Z"),
+        ("0x0001ccb0", 55, "?function_1ccb0@@YAXJ@Z"),
+    }
+    shader_functions = {
+        (entry.get("address"), entry.get("size"), entry.get("symbol"))
+        for entry in shader_state.get("retail_functions", [])
+    }
+    descriptor_table = shader_state.get("owned_descriptor_table", {})
+    if (shader_state.get("version") != 1 or
+            shader_functions != expected_shader_functions or
+            shader_state.get("execution_gate") != "native_particle_camera_and_shader_state_owned" or
+            descriptor_table != {"symbol": "g_43f408", "entries": 63,
+                                 "bytes_per_entry": 21, "total_bytes": 1323} or
+            shader_state.get("sprite_setup_score_before") != 46 or
+            shader_state.get("sprite_setup_score_after") != 44 or
+            set(shader_state.get("remaining_providers", [])) != {
+                "?function_1c710@@YAXPAX@Z", "?g_51f0f0@@3PAEA"} or
+            not shader_state.get("blocker")):
+        raise RuntimeError("particle shader cache state frontier changed")
+
     sprite_setup = json.loads((
         args.root / "port/runtime/particle_sprite_setup_frontier.json"
     ).read_text())

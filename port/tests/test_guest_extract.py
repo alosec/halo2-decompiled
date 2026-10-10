@@ -1199,6 +1199,29 @@ def main():
         if f"_{texture_state_symbol}" not in texture_state_defined:
             raise RuntimeError("particle texture state provider was not selectively compilable")
 
+        shader_state_output = Path(temporary) / "particle-shader-cache-state.o"
+        shader_state_symbols = ["?function_1c6b0@@YAXPAX@Z", "?function_1ccb0@@YAXJ@Z"]
+        shader_state_command = command[:]
+        shader_state_command[shader_state_command.index("h2_extract_selected")] = shader_state_symbols[0]
+        shader_global_index = shader_state_command.index("--extract-global")
+        shader_state_command[shader_global_index:shader_global_index] = [
+            "--extract-symbol", shader_state_symbols[1]]
+        shader_state_command[shader_state_command.index("--extract-global") + 1] = "g_43f408"
+        shader_alias_index = shader_state_command.index("--extract-alias")
+        del shader_state_command[shader_alias_index:shader_alias_index + 2]
+        shader_state_command[shader_state_command.index(output)] = shader_state_output
+        shader_state_command[-1] = args.root / "src/particle_shader_cache_state_native.cpp"
+        subprocess.run([str(value) for value in shader_state_command], check=True)
+        shader_state_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", shader_state_output],
+            text=True,
+        )
+        for symbol in shader_state_symbols:
+            if f"_{symbol}" not in shader_state_defined:
+                raise RuntimeError(f"particle shader state provider missing: {symbol}")
+        if "g_43f408" not in shader_state_defined:
+            raise RuntimeError("particle shader descriptor table was not retained")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
