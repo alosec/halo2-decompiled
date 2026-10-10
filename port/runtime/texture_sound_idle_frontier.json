@@ -256,12 +256,59 @@
     },
     {
       "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_2221d0@@YAJM@Z",
+      "imports": [],
+      "semantics": "exact -1..1 clamp and signed 24-bit DSP fixed-point encoding with retail positive/negative endpoint scales"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_222250@@YAMPBTvector3f@@J@Z",
+      "imports": [
+        "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+        "?function_30bf0@@YAMPATvector3f@@@Z",
+        "h2_guest_memcpy"
+      ],
+      "semantics": "exact valid-speaker direction normalization, speaker response lookup, and unit-range gain clamp"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
+      "imports": [
+        "?function_13b390@@YAMPBXMM@Z",
+        "?function_191660@@YAKJJ@Z",
+        "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+        "?function_30bf0@@YAMPATvector3f@@@Z",
+        "fmod",
+        "h2_guest_memcpy"
+      ],
+      "semantics": "exact effect header/mask setup, default/constant/function parameter selection, periodic and directional inputs, general function evaluation/remap, min/max pinning, nearest-even integer conversion, and DSP encoding"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_2225a0@@YAXPBUs_effect_overrides@@PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z",
+      "imports": [
+        "?function_13b390@@YAMPBXMM@Z",
+        "?function_191660@@YAKJJ@Z",
+        "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+        "?function_30bf0@@YAMPATvector3f@@@Z",
+        "fmod",
+        "h2_guest_memcpy"
+      ],
+      "semantics": "exact component count/header publication, override-mask traversal, per-speaker expansion, aligned effect-block advancement, and byte-size accumulation"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
       "symbol": "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
       "imports": [
+        "?function_13b390@@YAMPBXMM@Z",
         "?function_18d090@@YAPAXJJ@Z",
-        "?function_2225a0@@YAXPBUs_effect_overrides@@PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z",
+        "?function_191660@@YAKJJ@Z",
+        "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+        "?function_30bf0@@YAMPATvector3f@@@Z",
         "?g_4e3b44@@3PAUs_tag_instance@@A",
-        "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z"
+        "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
+        "fmod",
+        "h2_guest_memcpy"
       ],
       "semantics": "exact class/playback filter and LFO inheritance, valid effect override preference, component-definition lookup, effect-buffer construction, and empty-effect fallback"
     },
