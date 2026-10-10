@@ -21,6 +21,8 @@ def main() -> int:
     parser.add_argument("--worker-step", type=Path, required=True)
     parser.add_argument("--queue-lifecycle", type=Path, required=True)
     parser.add_argument("--read-request", type=Path, required=True)
+    parser.add_argument("--texture-upload-request", type=Path, required=True)
+    parser.add_argument("--texture-cache-lookup", type=Path, required=True)
     parser.add_argument("--physical-allocator", type=Path, required=True)
     parser.add_argument("--physical-choice", type=Path, required=True)
     parser.add_argument("--record-pool", type=Path, required=True)
@@ -140,6 +142,49 @@ def main() -> int:
         raise SystemExit(
             f"guest async read import drift: expected "
             f"{sorted(expected_read_imports)}, got {sorted(read_imports)}")
+
+    upload_defined = symbols(args.nm, args.texture_upload_request, "--defined-only")
+    if upload_defined != {
+            "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z"}:
+        raise SystemExit(
+            f"guest texture upload-request definition drift: {sorted(upload_defined)}")
+    upload_imports = symbols(args.nm, args.texture_upload_request, "--undefined-only")
+    expected_upload_imports = {
+        "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z",
+        "?g_46883c@@3_NA", "?g_46883d@@3_NA", "?g_468841@@3_NA",
+        "?g_485ae4@@3PAUD3DResource@@A", "?g_485ae8@@3PAUD3DResource@@A",
+        "?g_485aec@@3PAUD3DResource@@A",
+        "?g_4e6454@@3PAUs_record_pool@@A",
+        "?g_4e6464@@3PAUs_physical_object@@A",
+        "?g_4e6468@@3_NA", "?g_4e6470@@3JA", "?g_4e6474@@3JA",
+        "?g_4e647a@@3_NA", "?g_4e647b@@3_NA", "?g_4e647c@@3MA",
+        "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
+        "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z",
+        "?texture_cache_format_scalable@@YA_NJ@Z",
+    }
+    if upload_imports != expected_upload_imports:
+        raise SystemExit(
+            f"guest texture upload-request import drift: expected "
+            f"{sorted(expected_upload_imports)}, got {sorted(upload_imports)}")
+
+    lookup_defined = symbols(args.nm, args.texture_cache_lookup, "--defined-only")
+    expected_lookup_definitions = {
+        "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
+        "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z",
+        "?texture_cache_format_scalable@@YA_NJ@Z",
+    }
+    if lookup_defined != expected_lookup_definitions:
+        raise SystemExit(
+            f"guest texture cache-lookup definition drift: {sorted(lookup_defined)}")
+    lookup_imports = symbols(args.nm, args.texture_cache_lookup, "--undefined-only")
+    expected_lookup_imports = {
+        "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+        "?g_450768@@3PAY0BI@JA", "?g_4e646c@@3JA", "?log2_floor@@YAJK@Z",
+    }
+    if lookup_imports != expected_lookup_imports:
+        raise SystemExit(
+            f"guest texture cache-lookup import drift: expected "
+            f"{sorted(expected_lookup_imports)}, got {sorted(lookup_imports)}")
 
     physical_defined = symbols(args.nm, args.physical_allocator, "--defined-only")
     expected_physical_definitions = {

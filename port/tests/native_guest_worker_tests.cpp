@@ -98,6 +98,8 @@ int main(int argc, char** argv) {
         image->symbol_address("h2_async_queue_restore_free_head");
     const auto queue_is_cleared = image->symbol_address("h2_async_queue_is_cleared");
     const auto texture_math_probe = image->symbol_address("h2_texture_math_probe");
+    const auto texture_upload_policy_probe =
+        image->symbol_address("h2_texture_upload_policy_probe");
     const auto texture_pool_probe = image->symbol_address("h2_texture_pool_probe");
     const auto texture_upload_initialize =
         image->symbol_address("h2_texture_upload_initialize");
@@ -116,6 +118,7 @@ int main(int argc, char** argv) {
                     queue_remove_free_head.has_value() &&
                     queue_restore_free_head.has_value() &&
                     queue_is_cleared.has_value() && texture_math_probe.has_value() &&
+                    texture_upload_policy_probe.has_value() &&
                     texture_pool_probe.has_value() &&
                     texture_upload_initialize.has_value() &&
                     texture_upload_submit.has_value() &&
@@ -127,7 +130,8 @@ int main(int argc, char** argv) {
         !queue_initialize ||
         !queue_teardown || !queue_free_count || !queue_remove_free_head ||
         !queue_restore_free_head || !queue_is_cleared || !texture_math_probe ||
-        !texture_pool_probe || !texture_upload_initialize || !texture_upload_submit ||
+        !texture_upload_policy_probe || !texture_pool_probe ||
+        !texture_upload_initialize || !texture_upload_submit ||
         !texture_upload_completed)
         return 1;
 
@@ -138,6 +142,10 @@ int main(int argc, char** argv) {
     ok &= check(worker.invoke_stopped(*texture_math_probe, invoke_result, error) &&
                     invoke_result == 1,
                 "recovered texture math probe failed: " + error);
+    ok &= check(worker.invoke_stopped(*texture_upload_policy_probe, invoke_result,
+                                      error) &&
+                    invoke_result == 1,
+                "complete recovered texture upload policy probe failed: " + error);
     ok &= check(worker.invoke_stopped(*texture_pool_probe, invoke_result, error) &&
                     invoke_result == 1,
                 "recovered texture/physical pool probe failed: " + error);

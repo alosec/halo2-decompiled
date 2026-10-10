@@ -1538,6 +1538,56 @@ def main():
                 f"{sorted(expected_texture_cache_request_imports)}, got "
                 f"{sorted(actual_texture_cache_request_imports)}")
 
+        texture_upload_policy_output = Path(temporary) / "particle-texture-upload-policy.o"
+        texture_upload_policy_symbol = (
+            "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z"
+        )
+        texture_upload_policy_command = command[:]
+        texture_upload_policy_command[
+            texture_upload_policy_command.index("h2_extract_selected")
+        ] = texture_upload_policy_symbol
+        texture_upload_policy_command[
+            texture_upload_policy_command.index("--extract-global"):
+            texture_upload_policy_command.index("--output")
+        ] = []
+        texture_upload_policy_command[
+            texture_upload_policy_command.index(output)
+        ] = texture_upload_policy_output
+        texture_upload_policy_command[-1] = (
+            args.root / "src/particle_texture_upload_request_native.cpp")
+        subprocess.run([str(value) for value in texture_upload_policy_command], check=True)
+        texture_upload_policy_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             texture_upload_policy_output], text=True)
+        texture_upload_policy_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             texture_upload_policy_output], text=True)
+        if texture_upload_policy_symbol not in texture_upload_policy_defined:
+            raise RuntimeError(
+                "complete particle texture upload policy was not selectively compilable")
+        expected_texture_upload_policy_imports = {
+            "_?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z",
+            "_?g_46883c@@3_NA", "_?g_46883d@@3_NA", "_?g_468841@@3_NA",
+            "_?g_485ae4@@3PAUD3DResource@@A", "_?g_485ae8@@3PAUD3DResource@@A",
+            "_?g_485aec@@3PAUD3DResource@@A",
+            "_?g_4e6454@@3PAUs_record_pool@@A",
+            "_?g_4e6464@@3PAUs_physical_object@@A",
+            "_?g_4e6468@@3_NA", "_?g_4e6470@@3JA", "_?g_4e6474@@3JA",
+            "_?g_4e647a@@3_NA", "_?g_4e647b@@3_NA", "_?g_4e647c@@3MA",
+            "_?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
+            "_?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z",
+            "_?texture_cache_format_scalable@@YA_NJ@Z",
+        }
+        actual_texture_upload_policy_imports = {
+            line.split()[0] for line in texture_upload_policy_undefined.splitlines()
+            if line.strip()
+        }
+        if actual_texture_upload_policy_imports != expected_texture_upload_policy_imports:
+            raise RuntimeError(
+                "complete particle texture upload policy frontier changed: expected "
+                f"{sorted(expected_texture_upload_policy_imports)}, got "
+                f"{sorted(actual_texture_upload_policy_imports)}")
+
         texture_upload_header_output = Path(temporary) / "particle-texture-upload-header.o"
         texture_upload_header_symbol = (
             "?function_12d6d0@@YAXPBUs_bitmap_texture_view@@JPAUD3DTexture@@@Z"

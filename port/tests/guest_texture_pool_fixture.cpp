@@ -74,18 +74,32 @@ static s_physical_object g_physical;
 static s_physical_pool_storage g_physical_storage;
 static s_texture_pool_storage g_texture_storage;
 static s_bitmap_data g_upload_bitmap;
+static D3DTexture g_fallback_texture;
 static byte __attribute__((aligned(0x1000))) g_upload_buffer[0x1000];
 static long g_sound_idle_calls;
 
 s_record_pool *g_4e6454;
 s_physical_object *g_4e6464;
 dword g_4e6460;
+long g_4e646c;
+bool g_4e6468;
+long g_4e6470;
+long g_4e6474;
+bool g_4e647a;
+bool g_4e647b;
+real g_4e647c;
 long g_4e6484;
+bool g_46883c;
+bool g_46883d;
+bool g_468841;
+struct D3DResource;
+D3DResource *g_485ae4;
+D3DResource *g_485ae8;
+D3DResource *g_485aec;
 long g_450768[8][24];
 
 struct s_type_7ba8e9;
-D3DTexture *function_12c990(s_bitmap_data *bitmap, long level, bool request,
-	bool blocking, bool alternate, long priority, bool *waited, bool *failed);
+D3DTexture *function_12ce00(s_bitmap_data *bitmap, dword flags, real bias);
 long function_1365a0(s_type_7ba8e9 const *bitmap, long mipmap_index);
 long log2_floor(dword value);
 short bitmap_get_mipmap_count(short width, short height, short depth,
@@ -140,7 +154,20 @@ static void initialize_texture_pools(long page_count)
 	g_4e6454 = &g_texture_storage.pool;
 	g_4e6464 = &g_physical;
 	g_4e6460 = (dword)g_upload_buffer;
+	g_4e646c = 0;
+	g_4e6468 = false;
+	g_4e6470 = 0;
+	g_4e6474 = 0;
+	g_4e647a = false;
+	g_4e647b = false;
+	g_4e647c = 0.0f;
 	g_4e6484 = 0;
+	g_46883c = false;
+	g_46883d = false;
+	g_468841 = true;
+	g_485ae4 = NULL;
+	g_485ae8 = NULL;
+	g_485aec = NULL;
 }
 
 extern "C" int h2_texture_math_probe(void)
@@ -154,6 +181,36 @@ extern "C" int h2_texture_math_probe(void)
 	return function_1365a0((s_type_7ba8e9 const *)&bitmap, 0) == 32 &&
 		log2_floor(16) == 4 &&
 		bitmap_get_mipmap_count(16, 8, 1, 10, false, 10) == 4;
+}
+
+extern "C" int h2_texture_upload_policy_probe(void)
+{
+	initialize_texture_pools(1);
+	g_sound_idle_calls = 0;
+	memset(&g_fallback_texture, 0, sizeof(g_fallback_texture));
+
+	s_bitmap_data bitmap = {};
+	bitmap.texture = &g_fallback_texture;
+	if (function_12ce00(&bitmap, 0, 0.0f) != &g_fallback_texture)
+		return 0;
+
+	memset(&bitmap, 0, sizeof(bitmap));
+	bitmap.flags = 0x0200;
+	bitmap.hardware_texture.Common = 1;
+	g_4e6468 = true;
+	if (function_12ce00(&bitmap, 0, 0.0f) != &bitmap.hardware_texture)
+		return 0;
+
+	memset(&bitmap, 0, sizeof(bitmap));
+	bitmap.flags = 0x0200;
+	bitmap.type = 0;
+	for (long level = 0; level < 3; level++)
+		bitmap.block_indices[level] = NONE;
+	g_4e6468 = false;
+	g_485ae4 = (D3DResource *)&g_fallback_texture;
+	D3DTexture *fallback = function_12ce00(&bitmap, 2, 0.0f);
+	return fallback == &g_fallback_texture && g_4e647a &&
+		g_sound_idle_calls == 0;
 }
 
 extern "C" int h2_texture_pool_probe(void)
@@ -204,6 +261,7 @@ extern "C" int h2_texture_upload_initialize(void)
 	g_upload_bitmap.height = 4;
 	g_upload_bitmap.depth = 1;
 	g_upload_bitmap.source_format = 10;
+	g_upload_bitmap.flags = 0x0200;
 	g_upload_bitmap.cache_format = 10;
 	g_upload_bitmap.data_offsets[0] = 0x800;
 	g_upload_bitmap.level_sizes[0] = 16;
@@ -215,11 +273,8 @@ extern "C" int h2_texture_upload_initialize(void)
 
 extern "C" int h2_texture_upload_submit(void)
 {
-	bool waited = false;
-	bool failed = false;
-	D3DTexture *texture = function_12c990(&g_upload_bitmap, 0, true, false,
-		false, 3, &waited, &failed);
-	return !texture && !waited && !failed;
+	D3DTexture *texture = function_12ce00(&g_upload_bitmap, 1 | 8, 0.0f);
+	return !texture && !g_4e647a;
 }
 
 extern "C" int h2_texture_upload_completed(void)
@@ -233,13 +288,10 @@ extern "C" int h2_texture_upload_completed(void)
 
 	s_physical_block *block = &g_physical_storage.entries[block_index & 0xffff];
 	s_texture_pool_entry *entry = &g_texture_storage.entries[block_index & 0xffff];
-	bool waited = false;
-	bool failed = false;
-	D3DTexture *texture = function_12c990(&g_upload_bitmap, 0, false, false,
-		false, 0, &waited, &failed);
-	if (texture != &entry->resource || waited || failed || g_sound_idle_calls != 0 ||
+	D3DTexture *texture = function_12ce00(&g_upload_bitmap, 0, 0.0f);
+	if (texture != &entry->resource || g_4e647a || g_sound_idle_calls != 0 ||
 		block->offset != 0 || block->pages != 1 || !entry->resident ||
-		entry->pending != 0 || entry->priority != 3 ||
+		entry->pending != 0 || entry->priority != 5 ||
 		entry->bitmap != &g_upload_bitmap ||
 		g_upload_bitmap.level_addresses[0] != (long)g_upload_buffer ||
 		entry->resource.Common != 0x40001 ||

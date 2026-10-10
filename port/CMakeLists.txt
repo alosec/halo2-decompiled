@@ -2456,6 +2456,60 @@ add_custom_command(
 add_custom_target(h2-guest-async-read ALL
     DEPENDS "${H2_GUEST_ASYNC_READ_OBJECT}")
 
+set(H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_texture_upload_request.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z"
+            --output "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/particle_texture_upload_request_native.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/particle_texture_upload_request_native.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2-guest-texture-upload-request ALL
+    DEPENDS "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}")
+
+set(H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_texture_cache_lookup.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z"
+            --extract-symbol "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z"
+            --extract-symbol "?texture_cache_format_scalable@@YA_NJ@Z"
+            --output "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_lookup_native.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_lookup_native.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2-guest-texture-cache-lookup ALL
+    DEPENDS "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}")
+
 set(H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT
     "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_allocator.o")
 add_custom_command(
@@ -2674,6 +2728,8 @@ add_custom_command(
             "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             "${H2_GUEST_ASYNC_READ_OBJECT}"
+            "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}"
+            "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}"
             "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
             "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
@@ -2686,6 +2742,8 @@ add_custom_command(
             "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             "${H2_GUEST_ASYNC_READ_OBJECT}"
+            "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}"
+            "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}"
             "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
             "${H2_GUEST_TEXTURE_MIP_MATH_OBJECT}"
@@ -2769,6 +2827,8 @@ add_test(
             --worker-step "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
             --queue-lifecycle "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             --read-request "${H2_GUEST_ASYNC_READ_OBJECT}"
+            --texture-upload-request "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}"
+            --texture-cache-lookup "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}"
             --physical-allocator "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
             --physical-choice "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
             --record-pool "${H2_GUEST_RECORD_POOL_OBJECT}"

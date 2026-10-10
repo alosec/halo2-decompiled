@@ -1225,6 +1225,9 @@ def main() -> int:
             texture_upload.get("size") != 658 or
             texture_upload.get("symbol") !=
                 "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z" or
+            texture_upload.get("source_owned") is not True or
+            texture_upload.get("implementation") !=
+                "src/particle_texture_upload_request_native.cpp" or
             texture_upload.get("execution_gate") !=
                 "native_particle_texture_upload_lifetime_owned" or
             texture_upload.get("native_platform_foundation") != {
@@ -1480,14 +1483,16 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "recovered_nonblocking_texture_request_executes_over_dormant_synthetic_pools",
+                    "complete_recovered_texture_upload_policy_executes_over_dormant_synthetic_pools",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370",
                     "src/unknown_13d320.cpp:function_13d320",
                     "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
                     "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
                     "src/particle_texture_mip_math_native.cpp:bitmap_get_mipmap_count/log2_floor",
-                    "src/particle_bitmap_pitch_native.cpp:function_1365a0"],
+                    "src/particle_bitmap_pitch_native.cpp:function_1365a0",
+                    "src/particle_texture_upload_request_native.cpp:function_12ce00",
+                    "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
                     "physical_block_bytes": 24,
@@ -1506,7 +1511,13 @@ def main() -> int:
                     "worker_completion_sets_resident_and_restores_all_150_queue_nodes",
                     "function_12c990_nonblocking_request_returns_null_while_queuing_real_upload",
                     "function_12c990_returns_exact_resident_texture_after_worker_completion",
-                    "nonblocking_request_never_invokes_function_125d60_idle_service"],
+                    "nonblocking_request_never_invokes_function_125d60_idle_service",
+                    "function_12ce00_applies_recovered_streaming_level_and_priority_policy",
+                    "function_12ce00_returns_null_for_pending_nonblocking_upload",
+                    "function_12ce00_returns_exact_resident_texture_after_completion",
+                    "function_12ce00_returns_nonstreamed_bitmap_texture_directly",
+                    "function_12ce00_returns_available_shared_hardware_texture",
+                    "function_12ce00_routes_blocking_unavailable_request_to_type_fallback_without_idle_wait"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1515,7 +1526,9 @@ def main() -> int:
                     "upload_allocation_definitions": 2,
                     "mip_math_definitions": 2,
                     "bitmap_pitch_definitions": 1,
-                    "request_policy_chain_definitions": 3},
+                    "request_policy_chain_definitions": 3,
+                    "upload_policy_definitions": 1,
+                    "cache_lookup_policy_definitions": 3},
                 "remaining_ownership": [
                     "host_owned_guest_pool_storage_and_fixed_global_publication",
                     "production_guest_physical_upload_buffer",
@@ -1525,8 +1538,9 @@ def main() -> int:
                 "execution_enabled": False,
                 "production_configured": False,
                 "recovered_upload_allocation_round_trip": {
-                    "entry": "function_12d5a0",
+                    "entry": "function_12ce00",
                     "header": "function_12d6d0",
+                    "allocation": "function_12d5a0",
                     "request_policy": "function_12c990",
                     "blocking": False,
                     "initial_return": "null_pending_texture",
@@ -1537,7 +1551,7 @@ def main() -> int:
                     "scheduled_bytes": 512,
                     "physical_pages": 1,
                     "active_cache_selector": 0,
-                    "priority": 3,
+                    "priority": 5,
                     "callback": "function_1a0e70",
                     "fixture_owned_bitmap_lifetime": True,
                     "exact_zero_padded_destination_verified": True,
