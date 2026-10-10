@@ -43,11 +43,6 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_175a80@@YAX_NKKPAUs_particle_system_datum@@0@Z",
-      "subsystem": "particles",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_17e670@@YAXPAUs_effect_source@@PBTpoint3f@@JPBTvector3f@@MJJJ@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."

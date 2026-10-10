@@ -340,6 +340,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_11c050.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11cc90.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11fc80.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_146240.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_1469f0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_163080.cpp"
