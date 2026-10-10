@@ -115,6 +115,11 @@
     "semantics": "Stop active driver work, release every channel stream, voice buffer and submix, release DirectSound, release the WMA decoder, clear decoder state, and publish the driver unavailable.",
     "selectively_source_owned_calls": [
       {
+        "symbol": "function_21f290",
+        "source": "src/sound_driver_channel_shutdown_native.cpp",
+        "semantics": "Halt every configured 0x34-byte channel stream through genuine status, flush, codec stop and bulk chunk release, restore -64 dB, then apply the exact owned stream-stop normalization."
+      },
+      {
         "symbol": "c_wma_codec::release_decoder",
         "source": "src/sound_wma_decoder_release_native.cpp",
         "semantics": "Release the genuine decoder through its COM interface, clear ownership, synchronize started/chunk counts, and release every queued stream chunk through the recovered stream lifetime."
@@ -340,6 +345,14 @@
       "source": "src/sound_driver_listener_native.cpp",
       "address": "0x00220790",
       "semantics": "Submit Y-up listener position/orientation with recovered tolerances, bound environment processing to two reverb slots, copy changed 0x48 reverb and 0x10 occlusion records, reset unused slots to the recovered default reverb and zero scale, and mark the exact deferred-update dirty bytes."
+    }
+  ],
+  "channel_shutdown_helpers": [
+    {
+      "symbol": "function_21f290",
+      "source": "src/sound_driver_channel_shutdown_native.cpp",
+      "address": "0x0021f290",
+      "semantics": "Walk the configured channel count at driver offset 0x04, unconditionally mark each stream flushing, query live status, flush DirectSound, stop the genuine codec, clear state, release every queued chunk, restore -64 dB at stream offset 0x0c, and normalize counts through sound_stream_stop."
     }
   ]
 }

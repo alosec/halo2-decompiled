@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_channel_shutdown_source = (
+        args.root / "src/sound_driver_channel_shutdown_native.cpp").read_text()
     sound_driver_listener_source = (
         args.root / "src/sound_driver_listener_native.cpp").read_text()
     sound_driver_voice_buffer_source = (
@@ -2329,6 +2331,19 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "(*stream)->Release();", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_channel_shutdown_fragments = [
+        "static_assert(sizeof(s_sound_stream) == 0x34",
+        "static_assert(offsetof(s_driver_channels_view, channels) == 0x0c",
+        "stream->flushing = 1;",
+        "IDirectSoundStream_GetStatus(stream->stream, &status);",
+        "IDirectSoundStream_Flush(stream->stream);",
+        "stream->codec->stop();",
+        "stream->state = 0;",
+        "sound_stream_release_chunks(stream);",
+        "stream->flushing = 0;",
+        "for (long i = 0; i < globals->channel_count; i++)",
+        "*reinterpret_cast<dword *>(&stream->unknown04[8]) = 0xc2800000;",
+        "sound_stream_stop(stream);"]
     expected_listener_fragments = [
         "static_assert(sizeof(s_sound_listener) == 0x38",
         "static_assert(offsetof(s_driver_listener_view, listener_position) == 0x2918",
@@ -2471,6 +2486,13 @@ def main() -> int:
             lifecycle_teardown.get("state") !=
                 ["g_51ebe4", "g_47f0d0", "g_510c3c"] or
             lifecycle_teardown.get("selectively_source_owned_calls") != [{
+                "symbol": "function_21f290",
+                "source": "src/sound_driver_channel_shutdown_native.cpp",
+                "semantics":
+                    "Halt every configured 0x34-byte channel stream through "
+                    "genuine status, flush, codec stop and bulk chunk "
+                    "release, restore -64 dB, then apply the exact owned "
+                    "stream-stop normalization."}, {
                 "symbol": "c_wma_codec::release_decoder",
                 "source": "src/sound_wma_decoder_release_native.cpp",
                 "semantics":
@@ -2494,6 +2516,17 @@ def main() -> int:
                     "decrementing its authentic cache-entry lock and the "
                     "stream chunk count without fabricating stream state or "
                     "progress."}] or
+            sound_driver_lifecycle.get("channel_shutdown_helpers") != [{
+                "symbol": "function_21f290",
+                "source": "src/sound_driver_channel_shutdown_native.cpp",
+                "address": "0x0021f290",
+                "semantics":
+                    "Walk the configured channel count at driver offset "
+                    "0x04, unconditionally mark each stream flushing, query "
+                    "live status, flush DirectSound, stop the genuine codec, "
+                    "clear state, release every queued chunk, restore -64 dB "
+                    "at stream offset 0x0c, and normalize counts through "
+                    "sound_stream_stop."}] or
             sound_driver_lifecycle.get("listener_helpers") != [{
                 "symbol": "function_220790",
                 "source": "src/sound_driver_listener_native.cpp",
@@ -2718,6 +2751,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_driver_channel_shutdown_source
+                for fragment in expected_channel_shutdown_fragments) or
             any(fragment not in sound_driver_listener_source
                 for fragment in expected_listener_fragments) or
             any(fragment not in sound_driver_voice_buffer_source
