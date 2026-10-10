@@ -16,6 +16,22 @@ bool check(bool condition, const char* message) {
     return condition;
 }
 
+struct ThreadProbeContext {
+    h2::port::NativeAsyncPlatform* platform;
+    h2::port::NativeAsyncPlatform::Handle semaphore;
+    std::atomic<bool>* ran;
+};
+
+std::uint32_t thread_probe(void* raw_context) {
+    auto* context = static_cast<ThreadProbeContext*>(raw_context);
+    if (context->platform->wait(context->semaphore,
+                                h2::port::NativeAsyncPlatform::infinite) !=
+        h2::port::NativeAsyncPlatform::WaitResult::signaled)
+        return 1;
+    *context->ran = true;
+    return 0x12345678u;
+}
+
 } // namespace
 
 int main() {
@@ -60,6 +76,27 @@ int main() {
                 "semaphore wake release failed");
     waiter.join();
     ok &= check(awakened.load(), "semaphore waiter was not awakened");
+
+    const Platform::Handle thread_semaphore = platform.create_semaphore(0, 1);
+    std::atomic<bool> thread_ran = false;
+    ThreadProbeContext thread_context{&platform, thread_semaphore, &thread_ran};
+    const Platform::Handle thread = platform.create_thread(0x4000, thread_probe,
+                                                            &thread_context);
+    ok &= check(thread != Platform::invalid_handle &&
+                    platform.create_thread(0, nullptr, nullptr) == Platform::invalid_handle,
+                "worker thread creation validation failed");
+    ok &= check(platform.wait(thread, 0) == Platform::WaitResult::timeout,
+                "running worker thread reported completion");
+    ok &= check(platform.release_semaphore(thread_semaphore, 1, nullptr) &&
+                    platform.wait(thread, Platform::infinite) == Platform::WaitResult::signaled,
+                "worker thread completion wait failed");
+    std::uint32_t exit_code = 0;
+    ok &= check(thread_ran.load() && platform.thread_exit_code(thread, &exit_code) &&
+                    exit_code == 0x12345678u,
+                "worker thread exit state was not preserved");
+    ok &= check(platform.close(thread) && platform.close(thread_semaphore) &&
+                    platform.wait(thread, 0) == Platform::WaitResult::failed,
+                "worker thread join/teardown failed");
 
     char file_template[] = "/tmp/h2-native-async-XXXXXX";
     const int temporary_fd = ::mkstemp(file_template);

@@ -1241,9 +1241,11 @@ def main() -> int:
                     "cooperative_thread_yield",
                     "read_only_regular_file_open_seek_read_close",
                     "short_read_and_64_bit_seek_semantics",
-                    "symbolic_link_file_rejection"],
+                    "symbolic_link_file_rejection",
+                    "worker_thread_create_stack_wait_join_close",
+                    "worker_thread_exit_code"],
                 "remaining_services": [
-                    "worker_thread_create_priority_join_close",
+                    "worker_thread_priority_mapping",
                     "guest_host_abi_bridge",
                     "scheduler_stop_admission_and_shutdown",
                     "cache_file_handle_initialization"]} or

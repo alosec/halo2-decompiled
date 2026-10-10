@@ -6,6 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <fcntl.h>
+#include <pthread.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -22,6 +23,7 @@ enum class HandleKind : std::uint32_t {
     mutex = 1,
     semaphore = 2,
     file = 3,
+    thread = 4,
 };
 
 struct HandleObject {
@@ -55,6 +57,40 @@ struct FileObject final : HandleObject {
     std::mutex mutex;
     int fd;
 };
+
+struct ThreadObject final : HandleObject {
+    ThreadObject() : HandleObject(HandleKind::thread) {}
+    ~ThreadObject() override {
+        if (started && !joined)
+            ::pthread_detach(thread);
+    }
+
+    mutable std::mutex mutex;
+    std::condition_variable condition;
+    pthread_t thread{};
+    bool started = false;
+    bool exited = false;
+    bool joined = false;
+    std::uint32_t exit_code = 0;
+};
+
+struct ThreadContext {
+    std::shared_ptr<ThreadObject> object;
+    NativeAsyncPlatform::ThreadStart start;
+    void* parameter;
+};
+
+void* thread_trampoline(void* raw_context) {
+    std::unique_ptr<ThreadContext> context(static_cast<ThreadContext*>(raw_context));
+    const std::uint32_t result = context->start(context->parameter);
+    {
+        std::lock_guard lock(context->object->mutex);
+        context->object->exit_code = result;
+        context->object->exited = true;
+    }
+    context->object->condition.notify_all();
+    return nullptr;
+}
 
 std::uint32_t make_handle(std::uint32_t index, std::uint16_t generation,
                           HandleKind kind) {
@@ -130,6 +166,61 @@ NativeAsyncPlatform::Handle NativeAsyncPlatform::open_read_only(
     return state_->insert(std::make_shared<FileObject>(descriptor));
 }
 
+NativeAsyncPlatform::Handle NativeAsyncPlatform::create_thread(
+    std::uint32_t stack_size, ThreadStart start, void* parameter) {
+    if (!start)
+        return invalid_handle;
+    auto object = std::make_shared<ThreadObject>();
+    const Handle handle = state_->insert(object);
+    if (handle == invalid_handle)
+        return invalid_handle;
+
+    pthread_attr_t attributes;
+    if (::pthread_attr_init(&attributes) != 0) {
+        close(handle);
+        return invalid_handle;
+    }
+    if (stack_size) {
+        const std::size_t page = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
+        std::size_t adjusted = stack_size < PTHREAD_STACK_MIN ? PTHREAD_STACK_MIN : stack_size;
+        adjusted = (adjusted + page - 1) & ~(page - 1);
+        if (::pthread_attr_setstacksize(&attributes, adjusted) != 0) {
+            ::pthread_attr_destroy(&attributes);
+            close(handle);
+            return invalid_handle;
+        }
+    }
+    auto* context = new ThreadContext{object, start, parameter};
+    const int result = ::pthread_create(&object->thread, &attributes,
+                                        thread_trampoline, context);
+    ::pthread_attr_destroy(&attributes);
+    if (result != 0) {
+        delete context;
+        close(handle);
+        return invalid_handle;
+    }
+    {
+        std::lock_guard lock(object->mutex);
+        object->started = true;
+    }
+    return handle;
+}
+
+bool NativeAsyncPlatform::thread_exit_code(Handle handle,
+                                            std::uint32_t* exit_code) const {
+    if (!exit_code)
+        return false;
+    auto base = state_->get(handle, HandleKind::thread);
+    if (!base)
+        return false;
+    auto object = std::static_pointer_cast<ThreadObject>(std::move(base));
+    std::lock_guard lock(object->mutex);
+    if (!object->exited)
+        return false;
+    *exit_code = object->exit_code;
+    return true;
+}
+
 bool NativeAsyncPlatform::set_file_pointer(Handle handle, std::int32_t distance,
                                             std::int32_t* distance_high,
                                             std::uint32_t method,
@@ -198,6 +289,17 @@ NativeAsyncPlatform::WaitResult NativeAsyncPlatform::wait(
         --object->count;
         return WaitResult::signaled;
     }
+    if (auto base = state_->get(handle, HandleKind::thread)) {
+        auto object = std::static_pointer_cast<ThreadObject>(std::move(base));
+        std::unique_lock lock(object->mutex);
+        const auto exited = [&] { return object->exited; };
+        if (milliseconds == infinite)
+            object->condition.wait(lock, exited);
+        else if (!object->condition.wait_for(lock, std::chrono::milliseconds(milliseconds),
+                                              exited))
+            return WaitResult::timeout;
+        return WaitResult::signaled;
+    }
     return WaitResult::failed;
 }
 
@@ -237,6 +339,21 @@ bool NativeAsyncPlatform::close(Handle handle) {
     State::Slot& slot = state_->slots[index];
     if (!slot.object || slot.generation != generation)
         return false;
+    if (slot.object->kind == HandleKind::thread) {
+        auto object = std::static_pointer_cast<ThreadObject>(slot.object);
+        bool should_join = false;
+        {
+            std::lock_guard thread_lock(object->mutex);
+            should_join = object->started && object->exited && !object->joined &&
+                          !::pthread_equal(object->thread, ::pthread_self());
+        }
+        if (should_join) {
+            if (::pthread_join(object->thread, nullptr) != 0)
+                return false;
+            std::lock_guard thread_lock(object->mutex);
+            object->joined = true;
+        }
+    }
     slot.object.reset();
     ++slot.generation;
     if (!slot.generation)
