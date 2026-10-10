@@ -856,7 +856,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 107:
+    if len(effect_undefined) != 105:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -908,6 +908,10 @@ def main() -> int:
             "?function_131a00@@YAPAUcolor3f@@PBUhsv3f@@PAU1@@Z" not in effect_defined or
             "?function_131c20@@YAPAUcolor3f@@PBU1@0KMPAU1@@Z" not in effect_defined or
             "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPBU1@PAU1@@Z" not in effect_defined or
+            "?object_or_parent_hidden@@YA_NJ@Z" not in effect_defined or
+            "?function_b9d20@@YA_NJ@Z" not in effect_defined or
+            "?function_baf80@@YAJJ@Z" not in effect_defined or
+            "?function_17ca10@@YAMMF@Z" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")

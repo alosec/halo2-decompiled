@@ -108,6 +108,10 @@ def main() -> int:
         particle_system_value = temporary / "particle-system-value.o"
         light_color_space = temporary / "light-color-space.o"
         light_color_interpolation = temporary / "light-color-interpolation.o"
+        light_object_visibility = temporary / "light-object-visibility.o"
+        light_root_state = temporary / "light-root-state.o"
+        light_root_object = temporary / "light-root-object.o"
+        light_curve_lookup = temporary / "light-curve-lookup.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -306,6 +310,18 @@ def main() -> int:
             args, args.root / "src/unknown_131c20.cpp", light_color_interpolation,
             ["?function_131c20@@YAPAUcolor3f@@PBU1@0KMPAU1@@Z",
              "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPBU1@PAU1@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0b8bd0.cpp", light_object_visibility,
+            ["?object_or_parent_hidden@@YA_NJ@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0b8ca0.cpp", light_root_state,
+            ["?function_b9d20@@YA_NJ@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0bad50.cpp", light_root_object,
+            ["?function_baf80@@YAJJ@Z"])
+        compile_slice(
+            args, args.root / "src/light_curve_lookup_native.cpp", light_curve_lookup,
+            ["?function_17ca10@@YAMMF@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -317,7 +333,9 @@ def main() -> int:
              particle_policy, particle_provider_select, args.particle_providers,
              light_record, placement_transform, scratch_teardown,
              object_impulse, object_physics_refresh, particle_interface_context,
-             particle_system_value, light_color_space, light_color_interpolation])
+             particle_system_value, light_color_space, light_color_interpolation,
+             light_object_visibility, light_root_state, light_root_object,
+             light_curve_lookup])
     return 0
 
 

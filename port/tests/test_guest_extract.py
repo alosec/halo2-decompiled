@@ -1118,6 +1118,21 @@ def main():
         if f"_{damage_submit_symbol}" not in damage_submit_defined:
             raise RuntimeError("damage-event submission source was not selectively compilable")
 
+        light_curve_output = Path(temporary) / "light-curve.o"
+        light_curve_symbol = "?function_17ca10@@YAMMF@Z"
+        light_curve_command = command[:]
+        light_curve_command[light_curve_command.index("h2_extract_selected")] = light_curve_symbol
+        light_curve_command[light_curve_command.index("--extract-global"):light_curve_command.index("--output")] = []
+        light_curve_command[light_curve_command.index(output)] = light_curve_output
+        light_curve_command[-1] = args.root / "src/light_curve_lookup_native.cpp"
+        subprocess.run([str(value) for value in light_curve_command], check=True)
+        light_curve_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", light_curve_output],
+            text=True,
+        )
+        if f"_{light_curve_symbol}" not in light_curve_defined:
+            raise RuntimeError("native light lookup-curve evaluator was not retained")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
