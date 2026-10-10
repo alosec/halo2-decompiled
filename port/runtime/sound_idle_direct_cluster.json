@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, all seven direct sound-provider callees, driver effect-refresh helpers, and compact state/math dependencies",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect-refresh helpers, compact dependencies, and complete playback-stop ownership",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -57,10 +57,36 @@
     {
       "source": "src/sound_fade_helpers_native.cpp",
       "symbol": "?function_12aff0@@YAMMMM_N@Z"
+    },
+    {
+      "source": "src/sound_playback_stop_native.cpp",
+      "symbol": "?function_127320@@YAXJJ@Z"
+    },
+    {
+      "source": "src/sound_playback_reference_native.cpp",
+      "symbol": "?function_126960@@YAXPAUs_sound_playback@@@Z"
+    },
+    {
+      "source": "src/sound_playback_delete_native.cpp",
+      "symbol": "?sound_playback_delete@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_voice_free_native.cpp",
+      "symbol": "?sound_voice_free@@YAXF@Z"
+    },
+    {
+      "source": "src/sound_voice_release_native.cpp",
+      "symbol": "?sound_voice_release@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_looping_controller_release_native.cpp",
+      "symbol": "?looping_sound_controller_release@@YAXJ@Z"
     }
   ],
   "definitions": [
     "?function_125d60@@YAXXZ",
+    "?function_126960@@YAXPAUs_sound_playback@@@Z",
+    "?function_127320@@YAXJJ@Z",
     "?function_1293f0@@YAXXZ",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_191550@@YAXXZ",
@@ -70,14 +96,17 @@
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+    "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
+    "?sound_playback_delete@@YAXJ@Z",
     "?sound_system_available@@YAJXZ",
     "?sound_system_update_time@@YAXXZ",
+    "?sound_voice_free@@YAXF@Z",
+    "?sound_voice_release@@YAXJ@Z",
     "?sound_voices_update_chunks@@YAXXZ"
   ],
   "imports": [
-    "?function_127320@@YAXJJ@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12a810@@YAJJ@Z",
@@ -87,14 +116,21 @@
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
+    "?g_4e3b44@@3PAUs_tag_instance@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_4e637c@@3PAUs_record_pool@@A",
     "?g_4e6380@@3PAUs_4e6380@@A",
     "?g_4e6948@@3PAUs_game_options_view@@A",
+    "?g_502104@@3PAUs_record_pool@@A",
     "?g_50210c@@3PAXA",
+    "?g_502114@@3PAUs_record_pool@@A",
     "?g_510c54@@3PAUs_game_time_globals@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
+    "?g_51ebd4@@3PAUs_sound_globals@@A",
+    "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
@@ -118,9 +154,8 @@
   ],
   "production_linked": false,
   "execution_enabled": false,
-  "blocker": "The cluster still exposes genuine playback, stream, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
+  "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
-    "?function_127320@@YAXJJ@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12a810@@YAJJ@Z",
@@ -131,9 +166,13 @@
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
+    "?g_502104@@3PAUs_record_pool@@A",
     "?g_50210c@@3PAXA",
     "?g_510c90@@3PAUs_voice_effects@@A",
+    "?g_51ebd4@@3PAUs_sound_globals@@A",
+    "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
@@ -174,6 +213,32 @@
     {
       "symbol": "?function_12aff0@@YAMMMM_N@Z",
       "semantics": "bounded linear interpolation with optional reversed direction"
+    }
+  ],
+  "playback_stop_helpers": [
+    {
+      "symbol": "?function_127320@@YAXJJ@Z",
+      "semantics": "stop a live playback in recovered voice, reference, callback, looping-controller, and record-release order"
+    },
+    {
+      "symbol": "?function_126960@@YAXPAUs_sound_playback@@@Z",
+      "semantics": "release the playback-held sound cache reference selected through authentic tag permutation data"
+    },
+    {
+      "symbol": "?sound_playback_delete@@YAXJ@Z",
+      "semantics": "adjust and release the optional looping controller before releasing the playback record"
+    },
+    {
+      "symbol": "?sound_voice_free@@YAXF@Z",
+      "semantics": "unlock queued and current chunks, flush the live stream, clear ownership, and release the shared voice"
+    },
+    {
+      "symbol": "?sound_voice_release@@YAXJ@Z",
+      "semantics": "clear sound-to-voice ownership and release the shared voice record at zero references"
+    },
+    {
+      "symbol": "?looping_sound_controller_release@@YAXJ@Z",
+      "semantics": "preserve seven-bit looping-controller reference semantics and release at zero"
     }
   ]
 }

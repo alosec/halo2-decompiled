@@ -45,12 +45,18 @@ def main() -> int:
         ("src/sound_driver_channel_usage_native.cpp", "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z"),
         ("src/sound_master_gain_native.cpp", "?function_2197f0@@YAJM@Z"),
         ("src/sound_fade_helpers_native.cpp", "?function_12aff0@@YAMMMM_N@Z"),
+        ("src/sound_playback_stop_native.cpp", "?function_127320@@YAXJJ@Z"),
+        ("src/sound_playback_reference_native.cpp", "?function_126960@@YAXPAUs_sound_playback@@@Z"),
+        ("src/sound_playback_delete_native.cpp", "?sound_playback_delete@@YAXJ@Z"),
+        ("src/sound_voice_free_native.cpp", "?sound_voice_free@@YAXF@Z"),
+        ("src/sound_voice_release_native.cpp", "?sound_voice_release@@YAXJ@Z"),
+        ("src/sound_looping_controller_release_native.cpp", "?looping_sound_controller_release@@YAXJ@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol"))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 14:
+    if len(set(provider_symbols)) != 20:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
@@ -76,10 +82,36 @@ def main() -> int:
                 "bounded linear interpolation with optional reversed "
                 "direction"}]:
         raise RuntimeError("sound-idle compact helper inventory changed")
+    if manifest.get("playback_stop_helpers") != [{
+            "symbol": "?function_127320@@YAXJJ@Z",
+            "semantics":
+                "stop a live playback in recovered voice, reference, callback, "
+                "looping-controller, and record-release order"}, {
+            "symbol": "?function_126960@@YAXPAUs_sound_playback@@@Z",
+            "semantics":
+                "release the playback-held sound cache reference selected "
+                "through authentic tag permutation data"}, {
+            "symbol": "?sound_playback_delete@@YAXJ@Z",
+            "semantics":
+                "adjust and release the optional looping controller before "
+                "releasing the playback record"}, {
+            "symbol": "?sound_voice_free@@YAXF@Z",
+            "semantics":
+                "unlock queued and current chunks, flush the live stream, "
+                "clear ownership, and release the shared voice"}, {
+            "symbol": "?sound_voice_release@@YAXJ@Z",
+            "semantics":
+                "clear sound-to-voice ownership and release the shared voice "
+                "record at zero references"}, {
+            "symbol": "?looping_sound_controller_release@@YAXJ@Z",
+            "semantics":
+                "preserve seven-bit looping-controller reference semantics "
+                "and release at zero"}]:
+        raise RuntimeError("sound-idle playback-stop inventory changed")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 15 or len(expected_imports) != 38:
+    if len(expected_definitions) != 21 or len(expected_imports) != 44:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -113,7 +145,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 30:
+    if len(expected_production_imports) != 33:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

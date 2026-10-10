@@ -196,6 +196,12 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_driver_channel_usage_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_master_gain_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_fade_helpers_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_stop_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_reference_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_delete_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_voice_free_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_voice_release_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_looping_controller_release_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
