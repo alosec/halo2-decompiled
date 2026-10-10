@@ -114,6 +114,9 @@ def main() -> int:
         light_marker_point = temporary / "light-marker-point.o"
         light_curve_lookup = temporary / "light-curve-lookup.o"
         inherited_ai_effect_flags = temporary / "inherited-ai-effect-flags.o"
+        object_function_evaluation = temporary / "object-function-evaluation.o"
+        object_function_handlers = temporary / "object-function-handlers.o"
+        object_interpolated_values = temporary / "object-interpolated-values.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -330,6 +333,16 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_1e4990.cpp", inherited_ai_effect_flags,
             ["?function_1e4990@@YAJJ@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_0bad50.cpp", object_function_evaluation,
+            ["?function_ba8c0@@YA_NPBUs_object_function_ab@@JPAM@Z",
+             "?function_bab40@@YA_NJJPAM@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_108a90.cpp", object_function_handlers,
+            ["?function_108d90@@YA_NJJPAMPA_N@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_10aac0.cpp", object_interpolated_values,
+            ["?function_10aac0@@YA_NJJPAMPAJ@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -343,7 +356,9 @@ def main() -> int:
              object_impulse, object_physics_refresh, particle_interface_context,
              particle_system_value, light_color_space, light_color_interpolation,
              light_object_visibility, light_root_state, light_root_object,
-             light_marker_point, light_curve_lookup, inherited_ai_effect_flags])
+             light_marker_point, light_curve_lookup, inherited_ai_effect_flags,
+             object_function_evaluation, object_function_handlers,
+             object_interpolated_values])
     return 0
 
 

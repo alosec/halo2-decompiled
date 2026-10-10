@@ -63,9 +63,9 @@
       "blocker": "Retail is an exact 2,150-byte object constructor spanning allocation-pressure recovery, datum initialization, placement/partition insertion, type-specific creation, activation, and cleanup through function_146bf0/function_bd020 plus numerous object providers; complete object lifecycle ownership is required."
     },
     {
-      "symbol": "?function_bab40@@YA_NJJPAM@Z",
-      "subsystem": "object_effects",
-      "blocker": "Requires live object function inputs function_108d90/10aac0 and the general tag-function evaluator function_13bb90."
+      "symbol": "?function_13bb90@@YAMPBUs_tag_data@@MM@Z",
+      "subsystem": "general tag-function evaluation",
+      "blocker": "Exact object interpolation, live type-handler queries, recursive object-function lookup, and enable/scale/threshold/parent-fallback policy are owned. The remaining provider is the general tag-function evaluator, whose transition, periodic, spline, and exponent semantics require complete table and math ownership."
     },
     {
       "symbol": "?function_c0c80@@YAXPBTvector3f@@@Z",

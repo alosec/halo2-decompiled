@@ -71,6 +71,17 @@ struct s_object_header_10ab80
 
 static inline long real_to_long(real value)
 {
+#ifdef H2_NATIVE_PORT
+	/* Retail fistp uses nearest-even under the default x87 control word. */
+	double converted = value;
+	long truncated = (long)converted;
+	double fraction = converted - (double)truncated;
+	if (fraction > 0.5 || (fraction == 0.5 && (truncated & 1)))
+		++truncated;
+	else if (fraction < -0.5 || (fraction == -0.5 && (truncated & 1)))
+		--truncated;
+	return truncated;
+#else
 	long result;
 	__asm
 	{
@@ -78,6 +89,7 @@ static inline long real_to_long(real value)
 		fistp result
 	}
 	return result;
+#endif
 }
 
 // @retail 0x10ab80
