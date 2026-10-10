@@ -3308,6 +3308,9 @@ def main():
                  "?function_2195f0@@YAMM@Z",
                  "?function_2197f0@@YAJM@Z",
                  "fabs", "sqrt"}),
+            ("sound-doppler.o", "src/sound_doppler_native.cpp",
+             "?function_12a9d0@@YAMJPBUs_sound_position@@@Z", {
+                 "?g_4e6380@@3PAUs_4e6380@@A", "fabs", "log", "sqrt"}),
             ("sound-cone-attenuation.o",
              "src/sound_cone_attenuation_native.cpp",
              "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z", {

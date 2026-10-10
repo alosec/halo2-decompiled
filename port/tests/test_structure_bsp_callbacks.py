@@ -1417,6 +1417,14 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/sound_doppler_native.cpp",
+                "symbol": "?function_12a9d0@@YAMJPBUs_sound_position@@@Z",
+                "imports": [
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "fabs", "log", "sqrt"],
+                "semantics":
+                    "exact listener/source relative-velocity projection, "
+                    "speed-of-sound ratio clamp, and cents conversion"}, {
                 "source": "src/sound_cone_attenuation_native.cpp",
                 "symbol":
                     "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
