@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "retail_function": "0x0023e460",
+  "size": 1562,
+  "symbol": "?function_23e460@@YAXXZ",
+  "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "constant_register": 52,
+  "constant_vectors": 22,
+  "ring_samples": 16,
+  "object_imports": [
+    "?g_4856c4@@3PAMA",
+    "?g_485af0@@3EA",
+    "D3DDevice_SetVertexShaderConstant",
+    "cos",
+    "sin"
+  ],
+  "newly_exposed": ["?g_4856c4@@3PAMA", "?g_485af0@@3EA"],
+  "sprite_setup_with_shader_program_score_before": 45,
+  "sprite_setup_with_shader_constants_score_after": 46,
+  "blocker": "The exact provider preserves the 22-vector register-52 payload, the 16 fixed-angle sine/cosine samples and wrap deltas, the mutable 3x3 camera basis columns, the two terminal control vectors, one-shot dirty flag, and final vertex-constant submission. Existing setup ownership already exposes the D3D call and native math providers, so admission replaces one function with two genuine mutable camera-state globals and worsens the measured score from 45 to 46. Those globals are storage, not initialized camera ownership, so execution remains disabled."
+}

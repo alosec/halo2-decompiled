@@ -1304,6 +1304,31 @@ def main():
         if "D3DDevice_LoadVertexShaderProgram" not in shader_program_undefined:
             raise RuntimeError("particle shader program upload boundary missing")
 
+        shader_constants_output = Path(temporary) / "particle-shader-constants.o"
+        shader_constants_symbol = "?function_23e460@@YAXXZ"
+        shader_constants_command = command[:]
+        shader_constants_command[shader_constants_command.index("h2_extract_selected")] = shader_constants_symbol
+        shader_constants_command[
+            shader_constants_command.index("--extract-global"):shader_constants_command.index("--output")
+        ] = []
+        shader_constants_command[shader_constants_command.index(output)] = shader_constants_output
+        shader_constants_command[-1] = args.root / "src/particle_shader_constants_native.cpp"
+        subprocess.run([str(value) for value in shader_constants_command], check=True)
+        shader_constants_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", shader_constants_output],
+            text=True,
+        )
+        if shader_constants_symbol not in shader_constants_defined:
+            raise RuntimeError("particle shader constants provider was not selectively compilable")
+        shader_constants_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", shader_constants_output],
+            text=True,
+        )
+        for provider in ("?g_4856c4@@3PAMA", "?g_485af0@@3EA",
+                         "D3DDevice_SetVertexShaderConstant", "cos", "sin"):
+            if provider not in shader_constants_undefined:
+                raise RuntimeError(f"particle shader constants boundary missing: {provider}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

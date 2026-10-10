@@ -1020,6 +1020,27 @@ def main() -> int:
             not shader_program.get("blocker")):
         raise RuntimeError("particle shader program frontier changed")
 
+    shader_constants = json.loads((
+        args.root / "port/runtime/particle_shader_constants_frontier.json"
+    ).read_text())
+    if (shader_constants.get("version") != 1 or
+            shader_constants.get("retail_function") != "0x0023e460" or
+            shader_constants.get("size") != 1562 or
+            shader_constants.get("symbol") != "?function_23e460@@YAXXZ" or
+            shader_constants.get("execution_gate") != "native_particle_camera_and_shader_state_owned" or
+            shader_constants.get("constant_register") != 52 or
+            shader_constants.get("constant_vectors") != 22 or
+            shader_constants.get("ring_samples") != 16 or
+            set(shader_constants.get("object_imports", [])) != {
+                "?g_4856c4@@3PAMA", "?g_485af0@@3EA",
+                "D3DDevice_SetVertexShaderConstant", "cos", "sin"} or
+            set(shader_constants.get("newly_exposed", [])) != {
+                "?g_4856c4@@3PAMA", "?g_485af0@@3EA"} or
+            shader_constants.get("sprite_setup_with_shader_program_score_before") != 45 or
+            shader_constants.get("sprite_setup_with_shader_constants_score_after") != 46 or
+            not shader_constants.get("blocker")):
+        raise RuntimeError("particle shader constants frontier changed")
+
     vertex_register = json.loads((
         args.root / "port/runtime/particle_vertex_register_state_frontier.json"
     ).read_text())
