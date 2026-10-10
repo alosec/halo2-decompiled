@@ -17,6 +17,7 @@ extern float fabsf(float value);
 extern double fabs(double value);
 extern float sqrtf(float value);
 extern double sqrt(double value);
+extern double sin(double value);
 extern double tan(double value);
 extern long CompareFileTime(const struct h2_guest_filetime* first,
                             const struct h2_guest_filetime* second);
@@ -64,15 +65,24 @@ int main(void) {
     }
     const float root_two_f = sqrtf(2.0f);
     const double root_two = sqrt(2.0);
+    volatile double quarter_turn = 0.78539816339744830962;
+    volatile double negative_quarter = -0.25;
+    volatile double half_turn = 3.14159265358979323846;
+    const double sine_quarter_turn = sin(quarter_turn);
+    const double sine_negative = sin(negative_quarter);
+    const double sine_half_turn = sin(half_turn);
     const double tangent_quarter_turn = tan(0.78539816339744830962);
     const double tangent_negative = tan(-0.25);
     if (sqrtf(0.0f) != 0.0f || sqrtf(81.0f) != 9.0f ||
         root_two_f < 1.4142134f || root_two_f > 1.4142137f ||
         sqrt(0.0) != 0.0 || sqrt(81.0) != 9.0 ||
         root_two < 1.414213562373094 || root_two > 1.414213562373096 ||
+        sine_quarter_turn < 0.70710678118654 || sine_quarter_turn > 0.70710678118656 ||
+        sine_negative > -0.24740395925451 || sine_negative < -0.24740395925453 ||
+        sine_half_turn < -1.0e-15 || sine_half_turn > 1.0e-15 ||
         tangent_quarter_turn < 0.999998 || tangent_quarter_turn > 1.000002 ||
         tangent_negative > -0.25533 || tangent_negative < -0.25535) {
-        puts("guest square-root/tangent helpers failed");
+        puts("guest square-root/trigonometry helpers failed");
         return 1;
     }
 

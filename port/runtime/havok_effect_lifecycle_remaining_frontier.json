@@ -211,11 +211,6 @@
       "symbol": "?random_vector_in_cone@@YAXPBTvector3f@@PAT1@PAKMM@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "sin",
-      "subsystem": "math",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     }
   ]
 }

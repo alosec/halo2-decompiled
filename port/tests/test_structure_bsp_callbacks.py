@@ -694,7 +694,7 @@ def main() -> int:
     if effect_frontier.get("version") != 1:
         raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
     effect_entries = effect_frontier.get("imports")
-    if not isinstance(effect_entries, list) or len(effect_entries) != 43:
+    if not isinstance(effect_entries, list) or len(effect_entries) != 42:
         raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
     effect_symbols = [entry.get("symbol") for entry in effect_entries]
     if len(effect_symbols) != len(set(effect_symbols)):
@@ -722,7 +722,7 @@ def main() -> int:
                 [args.llvm_nm, "--undefined-only", scored], text=True
             ).splitlines() if line.strip()
         }
-    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 58:
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 57:
         raise RuntimeError("Havok effect-lifecycle candidate score changed")
     effect_undefined = {
         line.strip().split()[-1]

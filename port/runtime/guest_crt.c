@@ -49,6 +49,35 @@ double sqrt(double value) {
     return estimate;
 }
 
+double sin(double value) {
+    union { double value; unsigned long long bits; } converted = { value };
+    const unsigned long long magnitude = converted.bits & 0x7fffffffffffffffULL;
+    if (magnitude >= 0x7ff0000000000000ULL || fabs(value) > 1.0e18) {
+        converted.bits = 0x7ff8000000000000ULL;
+        return converted.value;
+    }
+
+    const double half_pi = 1.57079632679489661923;
+    const double scaled = value / half_pi;
+    long long quadrant = (long long)(scaled + (scaled < 0.0 ? -0.5 : 0.5));
+    const double x = value - (double)quadrant * half_pi;
+    const double square = x * x;
+    const double sine = x * (1.0 + square * (-1.0 / 6.0 + square *
+        (1.0 / 120.0 + square * (-1.0 / 5040.0 + square *
+        (1.0 / 362880.0 + square * (-1.0 / 39916800.0 + square *
+        (1.0 / 6227020800.0)))))));
+    const double cosine = 1.0 + square * (-1.0 / 2.0 + square *
+        (1.0 / 24.0 + square * (-1.0 / 720.0 + square *
+        (1.0 / 40320.0 + square * (-1.0 / 3628800.0 + square *
+        (1.0 / 479001600.0 + square * (-1.0 / 87178291200.0)))))));
+    switch ((unsigned long long)quadrant & 3ULL) {
+    case 0: return sine;
+    case 1: return cosine;
+    case 2: return -sine;
+    default: return -cosine;
+    }
+}
+
 double tan(double value) {
     union { double value; unsigned long long bits; } converted = { value };
     const unsigned long long magnitude = converted.bits & 0x7fffffffffffffffULL;
