@@ -125,6 +125,7 @@
     "native_sound_driver_listener_state_owned",
     "native_directsound_stream_creation_owned",
     "native_directsound_stream_stop_owned",
+    "native_directsound_stream_envelope_owned",
     "native_directsound_stream_reset_owned",
     "native_directsound_stream_packet_pump_owned",
     "native_sound_stream_chunk_and_cache_lifetime_owned",
@@ -252,6 +253,14 @@
       "source": "src/sound_stream_reset_native.cpp",
       "address": "0x002ae750",
       "semantics": "Restore the default zero-attack/quarter-second-release envelope, halt a state-1 stream through genuine status, flush, codec-stop, and queued-cache release operations, then invoke the exact asynchronous stream flush policy."
+    }
+  ],
+  "sound_stream_envelope_helpers": [
+    {
+      "symbol": "sound_stream_set_envelope",
+      "source": "src/sound_stream_envelope_native.cpp",
+      "address": "0x002ae7a0",
+      "semantics": "Build the exact zeroed 0x28-byte Xbox amplitude/attack envelope, convert attack and release seconds at 93.75 units per second with retail truncation, set sustain to 255, and submit it through the genuine DirectSound SetEG operation."
     }
   ]
 }

@@ -2133,6 +2133,8 @@ def main() -> int:
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_pcm_control_source = (
         args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
+    sound_stream_envelope_source = (
+        args.root / "src/sound_stream_envelope_native.cpp").read_text()
     sound_stream_reset_source = (
         args.root / "src/sound_stream_reset_native.cpp").read_text()
     sound_stream_update_source = (
@@ -2180,6 +2182,15 @@ def main() -> int:
         "sound_stream_release_chunk(stream, chunk);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
+    expected_stream_envelope_fragments = [
+        "static_assert(sizeof(s_direct_sound_envelope_desc) == 0x28",
+        "void sound_stream_set_envelope(s_sound_stream *stream, real attack, real release)",
+        "envelope.eg = k_direct_sound_envelope_amplitude;",
+        "envelope.mode = k_direct_sound_envelope_mode_attack;",
+        "envelope.attack = (dword)(attack * 93.75f);",
+        "envelope.release = (dword)(release * 93.75f);",
+        "envelope.sustain = 0xff;",
+        "IDirectSoundStream_SetEG(stream->stream, &envelope);"]
     expected_stream_reset_fragments = [
         "void sound_stream_reset(s_sound_stream *stream)",
         "sound_stream_set_envelope(stream, 0.0f, 0.25f);",
@@ -2267,6 +2278,7 @@ def main() -> int:
         "native_sound_driver_listener_state_owned",
         "native_directsound_stream_creation_owned",
         "native_directsound_stream_stop_owned",
+        "native_directsound_stream_envelope_owned",
         "native_directsound_stream_reset_owned",
         "native_directsound_stream_packet_pump_owned",
         "native_sound_stream_chunk_and_cache_lifetime_owned",
@@ -2485,6 +2497,16 @@ def main() -> int:
                     "DirectSound interface, stop the attached codec, release "
                     "every queued cache lock, clear flushing state, and then "
                     "normalize authentic started and queued counts to zero."}] or
+            sound_driver_lifecycle.get("sound_stream_envelope_helpers") != [{
+                "symbol": "sound_stream_set_envelope",
+                "source": "src/sound_stream_envelope_native.cpp",
+                "address": "0x002ae7a0",
+                "semantics":
+                    "Build the exact zeroed 0x28-byte Xbox amplitude/attack "
+                    "envelope, convert attack and release seconds at 93.75 "
+                    "units per second with retail truncation, set sustain to "
+                    "255, and submit it through the genuine DirectSound SetEG "
+                    "operation."}] or
             sound_driver_lifecycle.get("sound_stream_reset_helpers") != [{
                 "symbol": "sound_stream_reset",
                 "source": "src/sound_stream_reset_native.cpp",
@@ -2517,6 +2539,8 @@ def main() -> int:
                 for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_pcm_control_source
                 for fragment in expected_pcm_control_fragments) or
+            any(fragment not in sound_stream_envelope_source
+                for fragment in expected_stream_envelope_fragments) or
             any(fragment not in sound_stream_reset_source
                 for fragment in expected_stream_reset_fragments) or
             any(fragment not in sound_stream_update_source
