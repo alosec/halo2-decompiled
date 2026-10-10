@@ -1239,6 +1239,39 @@ def main():
         if "g_43f408" not in shader_state_defined:
             raise RuntimeError("particle shader descriptor table was not retained")
 
+        shader_input_output = Path(temporary) / "particle-shader-input.o"
+        shader_input_symbols = [
+            "?function_1c330@@YAXPAEPAUs_1c330_output@@@Z",
+            "?function_1c710@@YAXPAX@Z",
+            "?function_35790@@YAJJ@Z",
+            "?function_35850@@YAJJ@Z",
+        ]
+        shader_input_command = command[:]
+        shader_input_command[shader_input_command.index("h2_extract_selected")] = shader_input_symbols[0]
+        shader_input_command[
+            shader_input_command.index("--extract-global"):shader_input_command.index("--output")
+        ] = sum((["--extract-symbol", symbol] for symbol in shader_input_symbols[1:]), [])
+        shader_input_command[shader_input_command.index(output)] = shader_input_output
+        shader_input_command[-1] = args.root / "src/particle_shader_descriptor_native.cpp"
+        subprocess.run([str(value) for value in shader_input_command], check=True)
+        shader_input_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", shader_input_output],
+            text=True,
+        )
+        for symbol in shader_input_symbols:
+            if f"_{symbol}" not in shader_input_defined:
+                raise RuntimeError(f"particle shader input provider missing: {symbol}")
+        shader_input_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", shader_input_output],
+            text=True,
+        )
+        for provider in ("D3DDevice_SelectVertexShaderDirect",
+                         "D3DDevice_SetVertexShaderInputDirect"):
+            if provider not in shader_input_undefined:
+                raise RuntimeError(f"particle shader input boundary missing: {provider}")
+        if "switch.table." in shader_input_undefined:
+            raise RuntimeError("particle shader input extraction exposed a compiler switch table")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

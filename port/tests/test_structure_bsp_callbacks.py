@@ -971,6 +971,30 @@ def main() -> int:
             not shader_state.get("blocker")):
         raise RuntimeError("particle shader cache state frontier changed")
 
+    shader_input = json.loads((
+        args.root / "port/runtime/particle_shader_input_frontier.json"
+    ).read_text())
+    expected_shader_input_functions = {
+        ("0x0001c330", 359, "?function_1c330@@YAXPAEPAUs_1c330_output@@@Z"),
+        ("0x0001c710", 213, "?function_1c710@@YAXPAX@Z"),
+        ("0x00035790", 188, "?function_35790@@YAJJ@Z"),
+        ("0x00035850", 128, "?function_35850@@YAJJ@Z"),
+    }
+    shader_input_functions = {
+        (entry.get("address"), entry.get("size"), entry.get("symbol"))
+        for entry in shader_input.get("retail_functions", [])
+    }
+    if (shader_input.get("version") != 1 or
+            shader_input_functions != expected_shader_input_functions or
+            shader_input.get("execution_gate") != "native_particle_camera_and_shader_state_owned" or
+            shader_input.get("sprite_setup_with_compact_state_score_before") != 44 or
+            shader_input.get("sprite_setup_with_shader_input_score_after") != 45 or
+            set(shader_input.get("newly_exposed", [])) != {
+                "D3DDevice_SelectVertexShaderDirect",
+                "D3DDevice_SetVertexShaderInputDirect"} or
+            not shader_input.get("blocker")):
+        raise RuntimeError("particle shader input frontier changed")
+
     vertex_register = json.loads((
         args.root / "port/runtime/particle_vertex_register_state_frontier.json"
     ).read_text())

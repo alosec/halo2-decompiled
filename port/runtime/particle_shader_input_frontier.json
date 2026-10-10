@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "retail_functions": [
+    {"address": "0x0001c330", "size": 359, "symbol": "?function_1c330@@YAXPAEPAUs_1c330_output@@@Z"},
+    {"address": "0x0001c710", "size": 213, "symbol": "?function_1c710@@YAXPAX@Z"},
+    {"address": "0x00035790", "size": 188, "symbol": "?function_35790@@YAJJ@Z"},
+    {"address": "0x00035850", "size": 128, "symbol": "?function_35850@@YAJJ@Z"}
+  ],
+  "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "sprite_setup_with_compact_state_score_before": 44,
+  "sprite_setup_with_shader_input_score_after": 45,
+  "newly_exposed": [
+    "D3DDevice_SelectVertexShaderDirect",
+    "D3DDevice_SetVertexShaderInputDirect"
+  ],
+  "blocker": "The descriptor compiler now owns the exact 16-entry output reset, shader input remapping, up to 16 wanted/current descriptor transitions, all 18 recovered format encodings and byte sizes, stream offset construction, and dirty-state clearing. The flush preserves stream-input and shader-selection ordering, but truthfully exposes both final Xbox D3D calls. Admission therefore worsens the compact-state setup score from 44 to 45, and remains analysis-only until the mutable 0x2d8 cache and real host shader-input protocol are owned."
+}
