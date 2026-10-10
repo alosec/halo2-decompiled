@@ -2159,6 +2159,13 @@ def main() -> int:
                 "g_510800_pool_base", "g_510804_pool_size",
                 "g_510808_pool_checksum", "g_51ebe4", "g_47f088",
                 "g_47f0d0", "g_4687a8", "g_4687b0"] or
+            lifecycle_startup.get("selectively_source_owned_calls") != [{
+                "symbol": "function_12c040",
+                "source": "src/sound_static_allocator_native.cpp",
+                "semantics":
+                    "Reserve the aligned 0xcc-byte codec allocator block "
+                    "from the checksummed static sound pool and publish its "
+                    "unused state."}] or
             not lifecycle_startup.get("semantics") or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or

@@ -43,7 +43,14 @@
       "g_4687a8",
       "g_4687b0"
     ],
-    "semantics": "Allocate and checksum the exact driver block, create/configure DirectSound, initialize the listener, channel streams, voice buffers, effect images, effect/submix/impulse buffers and mutable driver defaults, publish initialized only after complete success, otherwise execute real teardown."
+    "semantics": "Allocate and checksum the exact driver block, create/configure DirectSound, initialize the listener, channel streams, voice buffers, effect images, effect/submix/impulse buffers and mutable driver defaults, publish initialized only after complete success, otherwise execute real teardown.",
+    "selectively_source_owned_calls": [
+      {
+        "symbol": "function_12c040",
+        "source": "src/sound_static_allocator_native.cpp",
+        "semantics": "Reserve the aligned 0xcc-byte codec allocator block from the checksummed static sound pool and publish its unused state."
+      }
+    ]
   },
   "teardown": {
     "retail_function": "0x0021eae0",
