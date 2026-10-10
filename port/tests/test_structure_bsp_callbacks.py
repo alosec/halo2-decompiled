@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_silence_buffer_source = (
+        args.root / "src/sound_silence_buffer_native.cpp").read_text()
     sound_effect_input_voices_source = (
         args.root / "src/sound_effect_input_voices_native.cpp").read_text()
     sound_driver_teardown_source = (
@@ -2293,6 +2295,8 @@ def main() -> int:
         "native_directsound_deferred_3d_settings_owned",
         "native_sound_driver_channel_stream_storage_owned",
         "native_sound_driver_voice_buffer_storage_owned",
+        "native_sound_static_pool_bounds_owned",
+        "native_directsound_buffer_creation_and_playback_owned",
         "native_sound_driver_effect_image_owned",
         "native_directsound_effect_data_query_owned",
         "native_sound_driver_effect_input_voices_owned",
@@ -2321,6 +2325,19 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "(*stream)->Release();", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_silence_buffer_fragments = [
+        "static_assert(sizeof(s_wave_format) == 0x14",
+        "static_assert(sizeof(s_buffer_description) == 0x18",
+        "format.samples_per_second = k_silence_buffer_size;",
+        "description.buffer_bytes = 0;",
+        "pair.mixbin = 0xe;",
+        "DirectSoundCreateBuffer(&description, &buffer);",
+        "(reinterpret_cast<dword>(top) + 3) & ~3",
+        "function_163ba0(&g_510808_pool_checksum, &aligned_size,",
+        "memset(memory, 0, k_silence_buffer_size);",
+        "IDirectSoundBuffer_SetBufferData(buffer, memory, k_silence_buffer_size);",
+        "IDirectSoundBuffer_SetVolume(buffer, -10000);",
+        "IDirectSoundBuffer_Play(buffer, 0, 0, k_play_looping);"]
     expected_effect_input_voice_fragments = [
         "static_assert(sizeof(s_effect_state) == 0x3c",
         "if (g_510c90->description->effect_count == 15)",
@@ -2358,6 +2375,12 @@ def main() -> int:
                     "Allocate the exact 128 KiB WMA packet buffer through "
                     "the recovered staged physical allocator, publish it at "
                     "codec offset 0x14, and clear both packet-status words."}, {
+                "symbol": "function_221490",
+                "source": "src/sound_silence_buffer_native.cpp",
+                "semantics":
+                    "Construct the exact mixbin-14 looping silence buffer "
+                    "over aligned checksummed static backing and configure "
+                    "it only through genuine DirectSound buffer operations."}, {
                 "symbol": "function_191420",
                 "source": "src/sound_effect_input_voices_native.cpp",
                 "semantics":
@@ -2420,6 +2443,16 @@ def main() -> int:
                     "decrementing its authentic cache-entry lock and the "
                     "stream chunk count without fabricating stream state or "
                     "progress."}] or
+            sound_driver_lifecycle.get("silence_buffer_helpers") != [{
+                "symbol": "function_221490",
+                "source": "src/sound_silence_buffer_native.cpp",
+                "address": "0x00221490",
+                "semantics":
+                    "Construct the exact mono 1 kHz 8-bit looping silence "
+                    "buffer routed to mixbin 14, reserve and checksum its "
+                    "aligned 1000-byte static-pool backing, zero it, and "
+                    "submit data, headroom, volume -10000, and looping play "
+                    "through genuine DirectSound operations."}] or
             sound_driver_lifecycle.get("effect_input_voice_helpers") != [{
                 "symbol": "function_191420",
                 "source": "src/sound_effect_input_voices_native.cpp",
@@ -2613,6 +2646,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_silence_buffer_source
+                for fragment in expected_silence_buffer_fragments) or
             any(fragment not in sound_effect_input_voices_source
                 for fragment in expected_effect_input_voice_fragments) or
             any(fragment not in sound_wma_initialize_source

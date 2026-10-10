@@ -57,6 +57,11 @@
         "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
       },
       {
+        "symbol": "function_221490",
+        "source": "src/sound_silence_buffer_native.cpp",
+        "semantics": "Construct the exact mixbin-14 looping silence buffer over aligned checksummed static backing and configure it only through genuine DirectSound buffer operations."
+      },
+      {
         "symbol": "function_191420",
         "source": "src/sound_effect_input_voices_native.cpp",
         "semantics": "Query the exact DSP-image effect input addresses through genuine DirectSound, translate valid recovered mixbin windows, and create only the routed authentic driver voices."
@@ -124,6 +129,8 @@
     "native_directsound_deferred_3d_settings_owned",
     "native_sound_driver_channel_stream_storage_owned",
     "native_sound_driver_voice_buffer_storage_owned",
+    "native_sound_static_pool_bounds_owned",
+    "native_directsound_buffer_creation_and_playback_owned",
     "native_sound_driver_effect_image_owned",
     "native_directsound_effect_data_query_owned",
     "native_sound_driver_effect_input_voices_owned",
@@ -299,6 +306,14 @@
       "source": "src/sound_effect_input_voices_native.cpp",
       "address": "0x00191420",
       "semantics": "For the exact 15-effect DSP image, query each of five recovered effect states through genuine DirectSound, translate only aligned input addresses from the two retail mixbin windows, apply the recovered effect mask, and create only authentic driver voices for valid routed inputs."
+    }
+  ],
+  "silence_buffer_helpers": [
+    {
+      "symbol": "function_221490",
+      "source": "src/sound_silence_buffer_native.cpp",
+      "address": "0x00221490",
+      "semantics": "Construct the exact mono 1 kHz 8-bit looping silence buffer routed to mixbin 14, reserve and checksum its aligned 1000-byte static-pool backing, zero it, and submit data, headroom, volume -10000, and looping play through genuine DirectSound operations."
     }
   ]
 }
