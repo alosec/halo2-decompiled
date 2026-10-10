@@ -1417,6 +1417,32 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/sound_effect_inputs_native.cpp",
+                "symbol":
+                    "?function_222770@@YAXJJPBUs_effect_inputs@@"
+                    "PAUs_sound_playback_effects@@@Z",
+                "imports": [
+                    "?function_18d090@@YAPAXJJ@Z",
+                    "?function_2225a0@@YAXPBUs_effect_overrides@@"
+                    "PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z"],
+                "semantics":
+                    "exact class/playback filter and LFO inheritance, valid "
+                    "effect override preference, component-definition lookup, "
+                    "effect-buffer construction, and empty-effect fallback"}, {
+                "source": "src/unknown_222930.cpp",
+                "symbol":
+                    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
+                "imports": [
+                    "?function_18d090@@YAPAXJJ@Z",
+                    "?function_1914f0@@YAJJ@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A"],
+                "semantics":
+                    "exact default-empty impulse parameters, effect-template "
+                    "lookup, bounded impulse definition selection, mixbin "
+                    "resolution, override preference, and fallback tag-data "
+                    "publication"}, {
                 "source": "src/unknown_12a1b0.cpp",
                 "symbol": "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
                 "imports": [

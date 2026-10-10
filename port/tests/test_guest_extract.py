@@ -3308,6 +3308,17 @@ def main():
                  "?function_2195f0@@YAMM@Z",
                  "?function_2197f0@@YAJM@Z",
                  "fabs", "sqrt"}),
+            ("sound-effect-inputs.o", "src/sound_effect_inputs_native.cpp",
+             "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z", {
+                 "?function_18d090@@YAPAXJJ@Z",
+                 "?function_2225a0@@YAXPBUs_effect_overrides@@PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z"}),
+            ("sound-looping-impulse.o", "src/unknown_222930.cpp",
+             "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z", {
+                 "?function_18d090@@YAPAXJJ@Z",
+                 "?function_1914f0@@YAJJ@Z",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A"}),
             ("sound-looping-channel.o", "src/unknown_12a1b0.cpp",
              "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z", {
                  "?function_1251e0@@YAJPBXJM@Z",
