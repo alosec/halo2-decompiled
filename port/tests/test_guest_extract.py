@@ -1269,6 +1269,47 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        texture_cache_lookup_output = Path(temporary) / "particle-texture-cache-lookup.o"
+        texture_cache_lookup_symbols = [
+            "?texture_cache_format_scalable@@YA_NJ@Z",
+            "?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
+        ]
+        texture_cache_lookup_command = command[:]
+        texture_cache_lookup_command[
+            texture_cache_lookup_command.index("h2_extract_selected")
+        ] = texture_cache_lookup_symbols[0]
+        insertion = texture_cache_lookup_command.index("--extract-global")
+        texture_cache_lookup_command[insertion:insertion] = [
+            "--extract-symbol", texture_cache_lookup_symbols[1]
+        ]
+        texture_cache_lookup_command[
+            texture_cache_lookup_command.index("--extract-global"):texture_cache_lookup_command.index("--output")
+        ] = []
+        texture_cache_lookup_command[texture_cache_lookup_command.index(output)] = texture_cache_lookup_output
+        texture_cache_lookup_command[-1] = args.root / "src/particle_texture_cache_lookup_native.cpp"
+        subprocess.run([str(value) for value in texture_cache_lookup_command], check=True)
+        texture_cache_lookup_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_cache_lookup_output],
+            text=True,
+        )
+        texture_cache_lookup_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_cache_lookup_output],
+            text=True,
+        )
+        if any(symbol not in texture_cache_lookup_defined for symbol in texture_cache_lookup_symbols):
+            raise RuntimeError("particle texture cache lookup was not selectively compilable")
+        expected_texture_cache_lookup_imports = {
+            "_?g_468841@@3_NA", "_?g_4e6454@@3PAUs_record_pool@@A",
+            "_?g_4e6464@@3PAUs_physical_object@@A", "_?g_4e647b@@3_NA",
+            "_?g_4e647c@@3MA", "_?g_4e6488@@3JA",
+            "_?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z",
+        }
+        actual_texture_cache_lookup_imports = {
+            line.split()[0] for line in texture_cache_lookup_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_cache_lookup_imports != expected_texture_cache_lookup_imports:
+            raise RuntimeError("particle texture cache lookup frontier changed")
+
         texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
         texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
         texture_cache_acquire_command = command[:]

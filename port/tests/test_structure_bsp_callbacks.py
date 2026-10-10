@@ -1114,8 +1114,13 @@ def main() -> int:
                 "0x000143c0": [
                     "?g_485a80@@3PAEA", "?g_485af4@@3PAJA", "?g_485b04@@3PAJA",
                     "?g_4e3b44@@3PAUs_tag_instance@@A", "?g_51f3c8@@3PAY03PAXA"],
-                "0x00012310": ["?g_4e6488@@3JA"]} or
-            material_binding.get("owned_zero_import_calls") != ["0x00017000", "0x00017170", "0x0001ba00"] or
+                "0x00012310": ["?g_4e6488@@3JA"],
+                "0x0012ccf0": [
+                    "?g_468841@@3_NA", "?g_4e6454@@3PAUs_record_pool@@A",
+                    "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e647b@@3_NA",
+                    "?g_4e647c@@3MA", "?g_4e6488@@3JA"]} or
+            material_binding.get("owned_zero_import_calls") != [
+                "0x00017000", "0x00017170", "0x0001ba00", "0x0012ccb0"] or
             material_binding.get("owned_immutable_data") != {
                 "0x00467068": "8 exact dword channel masks retained with function_17170"} or
             material_binding.get("owned_transitive_dependencies") != {
@@ -1148,12 +1153,14 @@ def main() -> int:
                     "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z"],
                 "0x00012310": [
                     "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
-                    "?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z"]} or
+                    "?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z"],
+                "0x0012ccf0": [
+                    "?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z"]} or
             material_binding.get("source_owned_transitive_calls") != [
                 "0x00017550", "0x0001b230", "0x0001b2c0",
                 "0x000176a0", "0x00017960", "0x00017b60", "0x00018560",
                 "0x000336f0", "0x00033980", "0x00034060", "0x000143c0",
-                "0x00012310"] or
+                "0x00012310", "0x0012ccb0", "0x0012ccf0"] or
             material_binding.get("owned_renderer_boundaries") != {
                 "0x00018d70": ["D3DDevice_SetVertexData4f"],
                 "0x00018e80": ["D3DDevice_SetVertexShaderConstantFast"],
