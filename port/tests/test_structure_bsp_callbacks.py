@@ -1365,6 +1365,19 @@ def main() -> int:
                 "semantics":
                     "exact load admission, page touch, cooperative blocking "
                     "wait, loaded/used/lock state, and result flags"}, {
+                "source": "src/sound_cache_allocation_native.cpp",
+                "symbol": "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
+                "imports": [
+                    "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+                    "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+                    "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_502108@@3KA",
+                    "?g_50210c@@3PAUs_sound_cache_allocator@@A"],
+                "semantics":
+                    "exact physical-page and salted-record allocation, "
+                    "512-byte read rounding, and asynchronous loaded-byte "
+                    "submission"}, {
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
@@ -1386,7 +1399,8 @@ def main() -> int:
                 "native_sound_system_storage_initialized",
                 "native_main_loop_busy_state_initialized",
                 "native_sound_voice_records_and_streams_initialized",
-                "native_sound_cache_allocation_and_read_submission_owned",
+                "native_sound_cache_upload_buffer_initialized",
+                "native_sound_cache_file_read_route_initialized",
                 "native_sound_cache_allocator_initialized",
                 "native_sound_reference_pool_initialized",
                 "native_sound_driver_stream_state_initialized",

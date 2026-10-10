@@ -191,6 +191,19 @@
       "semantics": "exact load admission, page touch, cooperative blocking wait, loaded/used/lock state, and result flags"
     },
     {
+      "source": "src/sound_cache_allocation_native.cpp",
+      "symbol": "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
+      "imports": [
+        "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+        "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+        "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
+        "?g_502104@@3PAUs_record_pool@@A",
+        "?g_502108@@3KA",
+        "?g_50210c@@3PAUs_sound_cache_allocator@@A"
+      ],
+      "semantics": "exact physical-page and salted-record allocation, 512-byte read rounding, and asynchronous loaded-byte submission"
+    },
+    {
       "source": "src/sound_playback_update_native.cpp",
       "symbol": "?function_1293f0@@YAXXZ",
       "imports": [
@@ -213,7 +226,8 @@
     "native_sound_system_storage_initialized",
     "native_main_loop_busy_state_initialized",
     "native_sound_voice_records_and_streams_initialized",
-    "native_sound_cache_allocation_and_read_submission_owned",
+    "native_sound_cache_upload_buffer_initialized",
+    "native_sound_cache_file_read_route_initialized",
     "native_sound_cache_allocator_initialized",
     "native_sound_reference_pool_initialized",
     "native_sound_driver_stream_state_initialized",
@@ -228,7 +242,7 @@
   "blocking_texture_requests_enabled": false,
   "production_linked": false,
   "source_owned": true,
-  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, cache request state machine, reference release, next-chunk selection, and stream playback-rate conversion are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. Genuine Xbox sound-driver pre/post updates still bound every idle pass. Sound cache allocation/read submission, initialized cache/reference pools and driver stream state, gain/fade and spatial channel submission, source callbacks, initialized sound/main-loop/async/geometry state, and initialized sound physical-cache storage remain genuine requirements before production blocking texture requests can invoke it.",
+  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, sound-cache request/allocation/read submission, reference release, next-chunk selection, and stream playback-rate conversion are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. Genuine Xbox sound-driver pre/post updates still bound every idle pass. Initialized sound cache/reference pools, upload storage, cache-file routing and driver stream state, gain/fade and spatial channel submission, source callbacks, and initialized sound/main-loop/async/geometry state remain genuine requirements before production blocking texture requests can invoke it.",
   "implementation": {
     "source": "src/sound_idle_service_native.cpp",
     "symbol": "?function_125d60@@YAXXZ",
