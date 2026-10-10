@@ -3596,6 +3596,12 @@ def main():
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
                  "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
                  "?sound_voice_release@@YAXJ@Z"}),
+            ("sound-wma-codec-initialize.o",
+             "src/sound_wma_codec_initialize_native.cpp",
+             "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z", {
+                 "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+                 "XPhysicalProtect",
+                 "h2_guest_memset"}),
             ("sound-wma-decoder-release.o",
              "src/sound_wma_decoder_release_native.cpp",
              "?release_decoder@c_wma_codec@@QAAXXZ", {

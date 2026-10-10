@@ -2127,8 +2127,15 @@ def main() -> int:
         args.root / "src/unknown_21e4b0.cpp").read_text()
     sound_driver_teardown_source = (
         args.root / "src/unknown_21e330.cpp").read_text()
+    sound_wma_initialize_source = (
+        args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
     sound_wma_release_source = (
         args.root / "src/sound_wma_decoder_release_native.cpp").read_text()
+    expected_wma_initialize_fragments = [
+        "physical_memory_malloc_fixed(0x20000, PAGE_READWRITE)",
+        "codec->buffer =", "memset(codec->packet_status, 0",
+        "offsetof(s_wma_codec_initialize_view, buffer) == 0x14",
+        "offsetof(s_wma_codec_initialize_view, packet_status) == 0x18"]
     expected_wma_release_fragments = [
         "m_decoder->vtable[2]", "release(m_decoder);", "m_decoder = NULL;",
         "m_stream->started_count = m_stream->chunk_count;",
@@ -2161,6 +2168,7 @@ def main() -> int:
         "native_sound_driver_effect_submix_impulse_buffers_owned",
         "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
+        "native_wma_codec_packet_buffer_owned",
         "native_wma_decoder_lifetime_owned",
         "native_sound_driver_ordered_teardown_owned"]
     lifecycle_startup = sound_driver_lifecycle.get("startup", {})
@@ -2194,6 +2202,13 @@ def main() -> int:
                     "Reserve the aligned 0xcc-byte codec allocator block "
                     "from the checksummed static sound pool and publish its "
                     "unused state."}, {
+                "symbol": "function_2ae1d0",
+                "source": "src/sound_wma_codec_initialize_native.cpp",
+                "via": "function_191300",
+                "semantics":
+                    "Allocate the exact 128 KiB WMA packet buffer through "
+                    "the recovered staged physical allocator, publish it at "
+                    "codec offset 0x14, and clear both packet-status words."}, {
                 "symbol": "function_21e3b0",
                 "source": "src/sound_driver_effects_install_native.cpp",
                 "semantics":
@@ -2267,6 +2282,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_wma_initialize_source
+                for fragment in expected_wma_initialize_fragments) or
             any(fragment not in sound_wma_release_source
                 for fragment in expected_wma_release_fragments) or
             not sound_driver_lifecycle.get("blocker")):

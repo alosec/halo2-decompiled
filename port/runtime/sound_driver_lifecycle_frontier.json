@@ -51,6 +51,12 @@
         "semantics": "Reserve the aligned 0xcc-byte codec allocator block from the checksummed static sound pool and publish its unused state."
       },
       {
+        "symbol": "function_2ae1d0",
+        "source": "src/sound_wma_codec_initialize_native.cpp",
+        "via": "function_191300",
+        "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
+      },
+      {
         "symbol": "function_21e3b0",
         "source": "src/sound_driver_effects_install_native.cpp",
         "semantics": "Dispose the prior effects interface when present, publish the replacement, initialize it against the authentic effect-level and mixbin state, and apply the current I3DL2 room configuration."
@@ -105,6 +111,7 @@
     "native_sound_driver_effect_submix_impulse_buffers_owned",
     "native_sound_driver_effects_interface_owned",
     "native_sound_driver_listener_state_owned",
+    "native_wma_codec_packet_buffer_owned",
     "native_wma_decoder_lifetime_owned",
     "native_sound_driver_ordered_teardown_owned"
   ],
