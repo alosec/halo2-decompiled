@@ -3,11 +3,6 @@
   "description": "Exact production-linked imports added by the dormant complete impact effect creation/deletion candidate. This expanded inventory records the genuine coupled lifecycle and does not authorize production linking or execution.",
   "imports": [
     {
-      "symbol": "?first_person_weapon_get_markers_internal@@YAFJJPAUs_first_person_marker@@F@Z",
-      "subsystem": "first_person",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_137bd0@@YAPAVc_type_4e7709@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
@@ -39,11 +34,6 @@
     },
     {
       "symbol": "?function_173fd0@@YAJPAUs_effect_particle_system_definition@@JJFJ@Z",
-      "subsystem": "particles",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_1751d0@s_particle_system_datum@@QAAPAUs_effect_particle_system_definition@@XZ",
       "subsystem": "particles",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
@@ -140,11 +130,6 @@
     {
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?particle_system_link@@YAXPAUs_particle_system_datum@@PAJ1@Z",
-      "subsystem": "particles",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     }
   ]

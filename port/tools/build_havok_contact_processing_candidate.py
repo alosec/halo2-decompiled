@@ -83,6 +83,8 @@ def main() -> int:
         seconds_to_ticks = temporary / "seconds-to-ticks.o"
         game_state = temporary / "game-state.o"
         player_state = temporary / "player-state.o"
+        first_person = temporary / "first-person.o"
+        particle_helpers = temporary / "particle-helpers.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -207,11 +209,18 @@ def main() -> int:
                       ["?function_163080@@YA_NXZ"])
         compile_slice(args, args.root / "src/unknown_16f3a0.cpp", player_state,
                       ["?function_16f3a0@@YAPAUs_player_state@@J@Z"])
+        compile_slice(
+            args, args.root / "src/first_person_marker_native.cpp", first_person,
+            ["?first_person_weapon_get_markers_internal@@YAFJJPAUs_first_person_marker@@F@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_173b90.cpp", particle_helpers,
+            ["?particle_system_link@@YAXPAUs_particle_system_datum@@PAJ1@Z",
+             "?function_1751d0@s_particle_system_datum@@QAAPAUs_effect_particle_system_definition@@XZ"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
-             player_state])
+             player_state, first_person, particle_helpers])
     return 0
 
 
