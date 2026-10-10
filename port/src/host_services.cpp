@@ -80,6 +80,8 @@ struct AsyncContext {
     h2::port::NativeAsyncGuestBridge bridge;
     h2::port::NativeAsyncLifecycle lifecycle;
     h2::port::NativeGuestWorker worker;
+    std::mutex control_mutex;
+    bool queue_initialized = false;
 };
 
 struct AsyncState {
@@ -287,11 +289,41 @@ bool configure_async_services(GuestArena& arena, std::string& error) {
     error.clear();
     auto& state = async_state();
     const std::lock_guard lock(state.mutex);
-    if (state.context && state.context->platform.active_handle_count() != 0) {
-        error = "native async services still own live handles";
-        return false;
+    if (state.context) {
+        const std::lock_guard control_lock(state.context->control_mutex);
+        if (state.context->queue_initialized) {
+            error = "native async queue is still initialized";
+            return false;
+        }
+        if (state.context->platform.active_handle_count() != 0) {
+            error = "native async services still own live handles";
+            return false;
+        }
     }
     state.context = std::make_shared<AsyncContext>(arena);
+    return true;
+}
+
+bool initialize_async_queue(std::uint32_t guest_entry_address,
+                            std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->queue_initialized) {
+        error = "native async queue is already initialized";
+        return false;
+    }
+    int result = 0;
+    if (!context->worker.invoke_stopped(guest_entry_address, result, error))
+        return false;
+    if (!result) {
+        error = "native guest async queue initialization failed";
+        return false;
+    }
+    context->queue_initialized = true;
     return true;
 }
 
@@ -299,6 +331,11 @@ bool start_async_worker(std::uint32_t guest_entry_address, std::string& error) {
     const auto context = async_context();
     if (!context) {
         error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (!context->queue_initialized) {
+        error = "native async queue is not initialized";
         return false;
     }
     return context->worker.start(guest_entry_address, error);
@@ -310,6 +347,7 @@ bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error) {
         error = "native async services are not configured";
         return false;
     }
+    const std::lock_guard lock(context->control_mutex);
     if (!context->worker.shutdown(milliseconds)) {
         error = "native async worker did not drain and stop";
         return false;
@@ -318,13 +356,47 @@ bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error) {
     return true;
 }
 
+bool teardown_async_queue(std::uint32_t guest_entry_address,
+                          std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    if (!context->queue_initialized) {
+        error = "native async queue is not initialized";
+        return false;
+    }
+    int result = 0;
+    if (!context->worker.invoke_stopped(guest_entry_address, result, error))
+        return false;
+    if (!result) {
+        error = "native guest async queue teardown failed";
+        return false;
+    }
+    context->queue_initialized = false;
+    return true;
+}
+
 bool reset_async_services(std::string& error) {
     error.clear();
     auto& state = async_state();
     const std::lock_guard lock(state.mutex);
-    if (state.context && state.context->platform.active_handle_count() != 0) {
-        error = "native async services still own live handles";
-        return false;
+    if (state.context) {
+        const std::lock_guard control_lock(state.context->control_mutex);
+        if (state.context->queue_initialized) {
+            error = "native async queue is still initialized";
+            return false;
+        }
+        if (state.context->platform.active_handle_count() != 0) {
+            error = "native async services still own live handles";
+            return false;
+        }
     }
     state.context.reset();
     return true;

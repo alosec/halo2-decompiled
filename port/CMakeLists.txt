@@ -2399,6 +2399,33 @@ add_custom_command(
 add_custom_target(h2-guest-async-worker-step ALL
     DEPENDS "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}")
 
+set(H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_queue_lifecycle.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --extract-symbol h2_native_async_queue_initialize
+            --extract-symbol h2_native_async_queue_teardown
+            --output "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
+            "${PROJECT_SOURCE_DIR}/src/async.cpp"
+    DEPENDS
+        h2_guest_rebase
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+        "${PROJECT_SOURCE_DIR}/src/async.cpp"
+        ${H2_GUEST_HEADERS}
+        ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
+add_custom_target(h2-guest-async-queue-lifecycle ALL
+    DEPENDS "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}")
+
 add_library(h2_port_support STATIC
     runtime/guest_stack.s
     src/guest_arena.cpp
@@ -2432,6 +2459,26 @@ endif()
 enable_testing()
 set(H2_GUEST_ELF_LOADER_FIXTURE_OBJECT
     "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.o")
+set(H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT
+    "${CMAKE_BINARY_DIR}/port/guest-async-queue-fixture.o")
+add_custom_command(
+    OUTPUT "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            --llvm "${H2_LLVM_ROOT}/bin"
+            --plugin "$<TARGET_FILE:h2_guest_rebase>"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/crt"
+            --include "${CMAKE_CURRENT_SOURCE_DIR}/include/xdk"
+            --include "${PROJECT_SOURCE_DIR}/include"
+            --ms-abi
+            --output "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_async_queue_fixture.cpp"
+    DEPENDS h2_guest_rebase
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_async_queue_fixture.cpp"
+            ${H2_GUEST_HEADERS} ${H2_PORT_GUEST_HEADERS}
+    VERBATIM
+)
 set(H2_GUEST_ELF_LOADER_FIXTURE
     "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.elf")
 add_custom_command(
@@ -2449,7 +2496,13 @@ add_custom_command(
             -z max-page-size=0x4000
             -o "${H2_GUEST_ELF_LOADER_FIXTURE}"
             "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+            "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
+            "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
+            "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
     DEPENDS "${H2_GUEST_ELF_LOADER_FIXTURE_OBJECT}"
+            "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
+            "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
+            "${H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT}"
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/guest_elf_loader_fixture.ld
     VERBATIM
 )
@@ -2524,6 +2577,7 @@ add_test(
             --nm "${H2_LLVM_NM}"
             --object "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
             --worker-step "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
+            --queue-lifecycle "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
             --abi "${CMAKE_CURRENT_SOURCE_DIR}/include/h2/host_abi.h"
 )
 

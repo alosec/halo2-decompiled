@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("--nm", required=True)
     parser.add_argument("--object", type=Path, required=True)
     parser.add_argument("--worker-step", type=Path, required=True)
+    parser.add_argument("--queue-lifecycle", type=Path, required=True)
     parser.add_argument("--abi", type=Path, required=True)
     args = parser.parse_args()
 
@@ -73,6 +74,26 @@ def main() -> int:
         raise SystemExit(
             f"guest async worker-step import drift: expected "
             f"{sorted(expected_worker_imports)}, got {sorted(worker_imports)}")
+
+    lifecycle_defined = symbols(args.nm, args.queue_lifecycle, "--defined-only")
+    expected_lifecycle_definitions = {
+        "h2_native_async_queue_initialize", "h2_native_async_queue_teardown"}
+    if lifecycle_defined != expected_lifecycle_definitions:
+        raise SystemExit(
+            f"guest async queue-lifecycle definition drift: expected "
+            f"{sorted(expected_lifecycle_definitions)}, "
+            f"got {sorted(lifecycle_defined)}")
+    lifecycle_imports = symbols(args.nm, args.queue_lifecycle, "--undefined-only")
+    expected_lifecycle_imports = {
+        "?async_globals@@3Us_async_globals@@A",
+        "?g_5020c8@@3Us_thread_stack@@A",
+        "?g_510810@@3PAUs_job_node@@A",
+        "CloseHandle", "CreateMutexA", "h2_guest_memset",
+    }
+    if lifecycle_imports != expected_lifecycle_imports:
+        raise SystemExit(
+            f"guest async queue-lifecycle import drift: expected "
+            f"{sorted(expected_lifecycle_imports)}, got {sorted(lifecycle_imports)}")
 
     abi = args.abi.read_text()
     if "#define H2_HOST_ABI_VERSION 12u" not in abi:

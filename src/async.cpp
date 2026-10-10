@@ -7,6 +7,7 @@
 #include "unknown_11c920.h"
 #include "async.h"
 #include <xtl.h>
+#include <stdint.h>
 #include <string.h>
 
 void function_125d60(void);
@@ -261,6 +262,87 @@ void async_work_loop(void)
 }
 
 #ifdef H2_NATIVE_PORT
+/* Native queue setup keeps the recovered 150-node ownership and mutex ABI, but
+ * deliberately omits the recovered semaphore/thread pair: the host lifecycle
+ * owns wake admission and its low-stack worker. */
+extern "C" int h2_native_async_queue_initialize(void)
+{
+	if (async_globals.thread || async_globals.free_list_mutex ||
+		async_globals.work_list_mutex || async_globals.work_semaphore ||
+		async_globals.free_list || async_globals.work_list)
+		return 0;
+
+	memset(&async_globals, 0, sizeof(async_globals));
+	memset(&g_5020c8, 0, sizeof(g_5020c8));
+	g_510810 = NULL;
+	for (long i = 0; i < 150; i++)
+	{
+		async_globals.nodes[i].next = i + 1 < 150 ? &async_globals.nodes[i + 1] : NULL;
+		async_globals.nodes[i].state = NONE;
+	}
+	async_globals.free_list = async_globals.nodes;
+	async_globals.free_list_mutex = CreateMutexA(NULL, FALSE, NULL);
+	if (!async_globals.free_list_mutex)
+	{
+		memset(&async_globals, 0, sizeof(async_globals));
+		return 0;
+	}
+	async_globals.work_list_mutex = CreateMutexA(NULL, FALSE, NULL);
+	if (!async_globals.work_list_mutex)
+	{
+		CloseHandle(async_globals.free_list_mutex);
+		memset(&async_globals, 0, sizeof(async_globals));
+		return 0;
+	}
+	g_5020c8.unknown04 = 0x4fa0c8;
+	g_5020c8.unknown08 = 0x8000;
+	return 1;
+}
+
+/* Teardown is valid only after the host lifecycle has drained. Validate the
+ * complete free-list restoration before closing either guest-visible mutex;
+ * a failed close preserves the remaining handle so teardown can be retried. */
+extern "C" int h2_native_async_queue_teardown(void)
+{
+	bool seen[150];
+	memset(seen, 0, sizeof(seen));
+	if (async_globals.thread || async_globals.work_semaphore ||
+		async_globals.work_list)
+		return 0;
+
+	long count = 0;
+	for (s_job_node *node = async_globals.free_list; node; node = node->next)
+	{
+		uintptr_t address = (uintptr_t)node;
+		uintptr_t first = (uintptr_t)&async_globals.nodes[0];
+		uintptr_t end = (uintptr_t)&async_globals.nodes[150];
+		if (address < first || address >= end ||
+			(address - first) % sizeof(s_job_node) != 0)
+			return 0;
+		long index = (long)((address - first) / sizeof(s_job_node));
+		if (seen[index] || node->state != NONE)
+			return 0;
+		seen[index] = true;
+		if (++count > 150)
+			return 0;
+	}
+	if (count != 150)
+		return 0;
+
+	if (async_globals.free_list_mutex &&
+		CloseHandle(async_globals.free_list_mutex))
+		async_globals.free_list_mutex = NULL;
+	if (async_globals.work_list_mutex &&
+		CloseHandle(async_globals.work_list_mutex))
+		async_globals.work_list_mutex = NULL;
+	if (async_globals.free_list_mutex || async_globals.work_list_mutex)
+		return 0;
+	memset(&async_globals, 0, sizeof(async_globals));
+	memset(&g_5020c8, 0, sizeof(g_5020c8));
+	g_510810 = NULL;
+	return 1;
+}
+
 /* One native-host wake processes exactly one recovered queue head. The host owns
  * admission accounting, retry re-signaling, and cooperative exit; this guest
  * step preserves callback, done publication, removal, and free-list recycling. */

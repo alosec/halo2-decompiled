@@ -7,6 +7,37 @@
 extern "C" int h2_call_guest_int_0(int (*function)(), void* stack_top);
 
 namespace h2::port {
+namespace {
+
+bool prepare_guest_call(GuestArena& arena, std::uint32_t guest_entry_address,
+                        std::uint32_t stack_address, std::uint32_t stack_size,
+                        int (*&entry)(), void*& stack_top, std::string& error) {
+    const std::uint64_t stack_end =
+        static_cast<std::uint64_t>(stack_address) + stack_size;
+    const std::uint32_t page_size = static_cast<std::uint32_t>(arena.page_size());
+    if (!page_size || stack_size < 0x4000 || stack_address % page_size != 0 ||
+        stack_size % page_size != 0 || stack_end > kGuestAddressSpaceSize) {
+        error = "guest worker stack range is invalid or not page aligned";
+        return false;
+    }
+    void* const entry_pointer = arena.pointer(guest_entry_address);
+    if (!arena.host_range_executable(entry_pointer, 4)) {
+        error = "guest worker entry is not mapped executable guest code";
+        return false;
+    }
+    if (guest_entry_address >= stack_address && guest_entry_address < stack_end) {
+        error = "guest worker stack overlaps its entry point";
+        return false;
+    }
+    if (!arena.protect(stack_address, stack_size,
+                       GuestMemoryProtection::read_write, error))
+        return false;
+    entry = reinterpret_cast<int (*)()>(entry_pointer);
+    stack_top = arena.pointer(static_cast<std::uint32_t>(stack_end) - 16);
+    return true;
+}
+
+} // namespace
 
 struct NativeGuestWorker::Data {
     Data(GuestArena& arena_value, NativeAsyncPlatform& platform,
@@ -36,37 +67,33 @@ bool NativeGuestWorker::start(std::uint32_t guest_entry_address,
         error = "native guest worker is already running";
         return false;
     }
-    const std::uint64_t stack_end =
-        static_cast<std::uint64_t>(stack_address) + stack_size;
-    const std::uint32_t page_size =
-        static_cast<std::uint32_t>(data_->arena.page_size());
-    if (!page_size || stack_size < 0x4000 || stack_address % page_size != 0 ||
-        stack_size % page_size != 0 || stack_end > kGuestAddressSpaceSize) {
-        error = "guest worker stack range is invalid or not page aligned";
+    if (!prepare_guest_call(data_->arena, guest_entry_address, stack_address,
+                            stack_size, data_->entry, data_->stack_top, error))
         return false;
-    }
-    void* const entry = data_->arena.pointer(guest_entry_address);
-    if (!data_->arena.host_range_executable(entry, 4)) {
-        error = "guest worker entry is not mapped executable guest code";
-        return false;
-    }
-    if (guest_entry_address >= stack_address && guest_entry_address < stack_end) {
-        error = "guest worker stack overlaps its entry point";
-        return false;
-    }
-    if (!data_->arena.protect(stack_address, stack_size,
-                              GuestMemoryProtection::read_write, error))
-        return false;
-
-    data_->entry = reinterpret_cast<int (*)()>(entry);
-    data_->stack_top = data_->arena.pointer(
-        static_cast<std::uint32_t>(stack_end) - 16);
     if (!data_->worker.start(run_guest_step, data_.get(), priority, 0x4000)) {
         data_->entry = nullptr;
         data_->stack_top = nullptr;
         error = "native guest worker could not start";
         return false;
     }
+    return true;
+}
+
+bool NativeGuestWorker::invoke_stopped(std::uint32_t guest_entry_address,
+                                       int& result, std::string& error,
+                                       std::uint32_t stack_address,
+                                       std::uint32_t stack_size) {
+    error.clear();
+    if (data_->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native guest worker is running";
+        return false;
+    }
+    int (*entry)() = nullptr;
+    void* stack_top = nullptr;
+    if (!prepare_guest_call(data_->arena, guest_entry_address, stack_address,
+                            stack_size, entry, stack_top, error))
+        return false;
+    result = h2_call_guest_int_0(entry, stack_top);
     return true;
 }
 

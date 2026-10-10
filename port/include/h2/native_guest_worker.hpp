@@ -26,6 +26,10 @@ public:
                std::uint32_t stack_address = default_stack_address,
                std::uint32_t stack_size = default_stack_size,
                std::int32_t priority = 1);
+    bool invoke_stopped(std::uint32_t guest_entry_address, int& result,
+                        std::string& error,
+                        std::uint32_t stack_address = default_stack_address,
+                        std::uint32_t stack_size = default_stack_size);
     bool try_admit();
     bool publish_admitted_wake();
     bool abort_admitted();

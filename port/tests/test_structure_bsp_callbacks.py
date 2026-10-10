@@ -1255,7 +1255,8 @@ def main() -> int:
                     "cooperative_worker_drain_join_cleanup",
                     "guest_abi_v12_sync_file_and_admission_routing",
                     "validated_low_guest_stack_worker_entry",
-                    "transactional_guest_queue_admission_and_wake"],
+                    "transactional_guest_queue_admission_and_wake",
+                    "recovered_guest_queue_initialize_and_teardown"],
                 "remaining_services": [
                     "production_guest_async_runtime_configuration"],
                 "guest_memory_validator": {
@@ -1322,12 +1323,12 @@ def main() -> int:
                 "teardown_order": [
                     "stop_admission", "drain_admitted_tasks",
                     "wake_worker_for_cooperative_exit", "wait_worker_exit",
-                    "join_and_close_thread",
-                    "verify_empty_work_list_and_150_free_nodes",
-                    "close_work_semaphore", "close_work_list_mutex",
-                    "close_free_list_mutex",
-                    "clear_current_node_and_guest_handles",
-                    "transition_to_stopped"],
+                    "join_and_close_host_worker",
+                    "close_host_wake_semaphore", "transition_to_stopped",
+                    "verify_empty_guest_work_list_and_150_free_nodes",
+                    "close_guest_work_list_mutex",
+                    "close_guest_free_list_mutex",
+                    "clear_current_node_and_guest_queue_state"],
                 "cache_teardown_dependency":
                     "close_cache_file_handles_and_release_cache_pools_only_after_scheduler_stopped",
                 "restart_policy":
@@ -1381,6 +1382,18 @@ def main() -> int:
                         "reserve_before_insert": True,
                         "publish_wake_after_insert": True,
                         "rejected_or_failed_publish_recycles_node": True,
+                        "production_configured": False},
+                    "guest_queue_lifecycle": {
+                        "source": "src/async.cpp",
+                        "host_control_source": "port/src/host_services.cpp",
+                        "initialize": "h2_native_async_queue_initialize",
+                        "teardown": "h2_native_async_queue_teardown",
+                        "initial_free_nodes": 150,
+                        "native_omits_recovered_thread_and_work_semaphore": True,
+                        "guest_mutexes_are_opaque_host_tokens": True,
+                        "teardown_requires_empty_work_list_and_exact_free_list_restoration": True,
+                        "failed_handle_close_is_retryable": True,
+                        "reset_rejected_until_guest_queue_teardown": True,
                         "production_configured": False}}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
