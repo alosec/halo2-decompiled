@@ -1254,7 +1254,10 @@ def main() -> int:
                 "role": "cache-location file selection and asynchronous read routing"}, {
                 "address": "0x001a0f10",
                 "symbol": "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
-                "role": "zero-initialized asynchronous file-read task construction and queue submission"}] or
+                "role": "zero-initialized asynchronous file-read task construction and queue submission"}, {
+                "address": "0x001a0e70",
+                "symbol": "?function_1a0e70@@YAJPATs_async_task@@@Z",
+                "role": "chunked positioned file-read worker and completion detection"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
@@ -1274,6 +1277,8 @@ def main() -> int:
             texture_upload.get("async_request_provider_imports") != [
                 "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
                 "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset"] or
+            texture_upload.get("async_worker_imports") != [
+                "?g_46e488@@3KA", "ReadFile", "SetFilePointer"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",

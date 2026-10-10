@@ -1674,6 +1674,37 @@ def main():
         if actual_texture_async_request_imports != expected_texture_async_request_imports:
             raise RuntimeError("particle texture async read request frontier changed")
 
+        texture_async_worker_output = Path(temporary) / "particle-texture-async-worker.o"
+        texture_async_worker_symbol = "?function_1a0e70@@YAJPATs_async_task@@@Z"
+        texture_async_worker_command = command[:]
+        texture_async_worker_command[
+            texture_async_worker_command.index("h2_extract_selected")
+        ] = texture_async_worker_symbol
+        texture_async_worker_command[
+            texture_async_worker_command.index("--extract-global"):texture_async_worker_command.index("--output")
+        ] = []
+        texture_async_worker_command[texture_async_worker_command.index(output)] = texture_async_worker_output
+        texture_async_worker_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_worker_command], check=True)
+        texture_async_worker_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_worker_output],
+            text=True,
+        )
+        texture_async_worker_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_worker_output],
+            text=True,
+        )
+        if texture_async_worker_symbol not in texture_async_worker_defined:
+            raise RuntimeError("particle texture async read worker was not selectively compilable")
+        expected_texture_async_worker_imports = {
+            "_?g_46e488@@3KA", "_ReadFile", "_SetFilePointer",
+        }
+        actual_texture_async_worker_imports = {
+            line.split()[0] for line in texture_async_worker_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_worker_imports != expected_texture_async_worker_imports:
+            raise RuntimeError("particle texture async read worker frontier changed")
+
         texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
         texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
         texture_cache_acquire_command = command[:]

@@ -92,6 +92,8 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 #define PAGE_READONLY 0x02
 #define PAGE_READWRITE 0x04
 #define PAGE_WRITECOMBINE 0x400
+#define FILE_BEGIN 0
+#define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #define WINAPI __stdcall
 /* Public Xbox network QoS listener flags used by recovered session code. */
 #define XNET_QOS_LISTEN_ENABLE 0x01
@@ -132,6 +134,9 @@ BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,
                                    ULARGE_INTEGER* total, ULARGE_INTEGER* free_bytes);
 BOOL WINAPI FileTimeToLocalFileTime(const FILETIME* file_time, FILETIME* local_file_time);
 BOOL WINAPI FileTimeToSystemTime(const FILETIME* file_time, SYSTEMTIME* system_time);
+DWORD WINAPI SetFilePointer(HANDLE file, LONG distance, LONG* distance_high, DWORD method);
+BOOL WINAPI ReadFile(HANDLE file, void* buffer, DWORD bytes_to_read,
+                     DWORD* bytes_read, void* overlapped);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);

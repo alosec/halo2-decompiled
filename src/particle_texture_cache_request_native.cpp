@@ -73,7 +73,30 @@ static_assert(sizeof(s_texture_cache_file) == 0x804, "s_texture_cache_file");
 
 extern s_texture_cache_file g_557c90[6];
 extern long g_55aca8;
-long __stdcall function_1a0e70(s_async_task *task);
+extern dword g_46e488;
+
+// @retail 0x1a0e70
+long __stdcall function_1a0e70(s_async_task *task)
+{
+    s_read_position_task *read = &task->read_position;
+    LONG high = 0;
+    DWORD bytes_read = 0;
+    dword remaining = read->size - read->bytes_read;
+    dword size = remaining > g_46e488 ? g_46e488 : remaining;
+    if (SetFilePointer(read->file.handle, read->offset, &high, FILE_BEGIN) !=
+        INVALID_SET_FILE_POINTER)
+    {
+        ReadFile(read->file.handle, (byte *)read->buffer + read->bytes_read, size,
+            &bytes_read, NULL);
+        read->bytes_read += bytes_read;
+        read->offset += bytes_read;
+        if (read->bytes_read_out)
+            *read->bytes_read_out = read->bytes_read;
+    }
+    if (read->size == read->bytes_read || bytes_read < size)
+        return 1;
+    return 0;
+}
 
 // @retail 0x1a0f10
 long function_1a0f10(s_file_handle file, void *buffer, dword size, dword offset,
