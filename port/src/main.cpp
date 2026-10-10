@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <string_view>
 #include <unordered_map>
@@ -27,8 +28,44 @@ namespace {
 
 constexpr std::uint32_t kGuestStackAddress = 0x20000000u;
 constexpr std::uint32_t kGuestStackSize = 0x00100000u;
+constexpr std::uint32_t kAsyncControllerTimeoutMilliseconds = 5000u;
 
 using GuestEntry = int (*)();
+
+class AsyncTextureControllerGuard {
+public:
+    explicit AsyncTextureControllerGuard(
+        h2::port::AsyncTextureGuestEntries entries)
+        : entries_(entries) {}
+
+    ~AsyncTextureControllerGuard() {
+        if (!active_)
+            return;
+        std::string error;
+        if (!h2::port::stop_async_texture_controller(
+                entries_, kAsyncControllerTimeoutMilliseconds, error)) {
+            std::cerr << "error: async texture controller teardown failed: "
+                      << error << '\n';
+        }
+    }
+
+    void activate() { active_ = true; }
+
+    bool stop(std::string& error) {
+        if (!active_)
+            return true;
+        if (!h2::port::stop_async_texture_controller(
+                entries_, kAsyncControllerTimeoutMilliseconds, error)) {
+            return false;
+        }
+        active_ = false;
+        return true;
+    }
+
+private:
+    h2::port::AsyncTextureGuestEntries entries_{};
+    bool active_ = false;
+};
 
 struct CachedFontGlyph {
     h2::port::FontGlyph metrics;
@@ -927,6 +964,8 @@ int main(int argc, char** argv) {
     }
 
     std::optional<h2::port::GuestElfImage> guest_image;
+    std::optional<h2::port::AsyncTextureGuestEntries> texture_controller_entries;
+    std::optional<AsyncTextureControllerGuard> texture_controller;
     std::optional<h2::port::HostServiceStats> guest_service_stats;
     GuestEntry guest_frame = nullptr;
     GuestEntry guest_press_start = nullptr;
@@ -952,6 +991,38 @@ int main(int argc, char** argv) {
                 *guest_image, *arena, arena_error)) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
+        }
+        if (options.guest_entry == "h2_main_menu_guest_bootstrap") {
+            h2::port::AsyncTextureGuestEntries entries{};
+            const auto resolve_entry = [&](const char* symbol,
+                                           std::uint32_t& result) {
+                const auto address = guest_image->symbol_address(symbol);
+                if (!address ||
+                    *address > std::numeric_limits<std::uint32_t>::max()) {
+                    arena_error = std::string("async texture controller entry is missing: ") +
+                                  symbol;
+                    return false;
+                }
+                result = static_cast<std::uint32_t>(*address);
+                return true;
+            };
+            if (!resolve_entry("h2_native_async_worker_step", entries.worker_step) ||
+                !resolve_entry("h2_native_async_queue_initialize",
+                               entries.queue_initialize) ||
+                !resolve_entry("h2_native_async_queue_teardown",
+                               entries.queue_teardown) ||
+                !resolve_entry("h2_native_texture_cache_flush",
+                               entries.texture_flush) ||
+                !resolve_entry("?texture_cache_block_delete",
+                               entries.block_delete) ||
+                !resolve_entry("?texture_cache_entry_busy",
+                               entries.entry_busy) ||
+                !resolve_entry("?texture_cache_entry_state",
+                               entries.entry_state)) {
+                std::cerr << "error: " << arena_error << '\n';
+                return 1;
+            }
+            texture_controller_entries = entries;
         }
         if (!options.guest_entry.empty()) {
             const auto address = guest_image->symbol_address(options.guest_entry);
@@ -1041,6 +1112,28 @@ int main(int argc, char** argv) {
                 guest_cancel = reinterpret_cast<GuestEntry>(
                     arena->pointer(*cancel_address));
                 guest_stack_top = stack_top;
+
+                const std::array cache_files{
+                    h2::port::AsyncCacheFileConfiguration{
+                        options.data_root / "maps" / "mainmenu.map", 2,
+                        "mainmenu", true},
+                    h2::port::AsyncCacheFileConfiguration{
+                        options.data_root / "maps" / "shared.map", 3,
+                        "shared", false},
+                    h2::port::AsyncCacheFileConfiguration{
+                        options.data_root / "maps" /
+                            "single_player_shared.map",
+                        4, "single_player_shared", false},
+                };
+                if (!texture_controller_entries ||
+                    !h2::port::start_async_texture_controller(
+                        *arena, cache_files, *texture_controller_entries,
+                        arena_error)) {
+                    std::cerr << "error: " << arena_error << '\n';
+                    return 1;
+                }
+                texture_controller.emplace(*texture_controller_entries);
+                texture_controller->activate();
             }
         }
     }
@@ -1067,7 +1160,7 @@ int main(int argc, char** argv) {
         }
     }
     std::cout << "Native host preflight passed; game boot is not implemented yet.\n";
-    return options.headless
+    const int result = options.headless
         ? 0
         : run_window(guest_frame, guest_press_start, guest_accept, guest_campaign_load,
                      guest_up, guest_down, guest_cancel, guest_stack_top,
@@ -1079,4 +1172,10 @@ int main(int argc, char** argv) {
                      options.up_frame, options.cancel_frame,
                      options.screenshot,
                      arena.get(), options.data_root);
+    if (texture_controller && !texture_controller->stop(arena_error)) {
+        std::cerr << "error: async texture controller teardown failed: "
+                  << arena_error << '\n';
+        return 1;
+    }
+    return result;
 }

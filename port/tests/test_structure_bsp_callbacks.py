@@ -1218,8 +1218,27 @@ def main() -> int:
     texture_upload = json.loads((
         args.root / "port/runtime/particle_texture_upload_frontier.json"
     ).read_text())
+    production_main_source = (args.root / "port/src/main.cpp").read_text()
+    host_services_source = (args.root / "port/src/host_services.cpp").read_text()
+    guest_cache_source = (
+        args.root / "port/runtime/guest_cache_runtime.cpp").read_text()
+    production_controller_fragments = [
+        "start_async_texture_controller(",
+        "stop_async_texture_controller(",
+        'options.data_root / "maps" / "mainmenu.map"',
+        'options.data_root / "maps" / "shared.map"',
+        '"single_player_shared.map"',
+    ]
     texture_upload_calls = texture_upload.get("direct_calls", [])
     if (
+            any(fragment not in production_main_source
+                for fragment in production_controller_fragments) or
+            "switch_async_texture_map(" not in host_services_source or
+            "controller_entries = context->controller_entries" not in
+                host_services_source or
+            "? g_55aca8 : NONE" not in guest_cache_source or
+            production_main_source.index("h2_call_guest_int_0(entry, stack_top)") >
+                production_main_source.index("start_async_texture_controller(") or
             texture_upload.get("version") != 1 or
             texture_upload.get("retail_function") != "0x0012ce00" or
             texture_upload.get("size") != 658 or
@@ -1261,8 +1280,7 @@ def main() -> int:
                     "transactional_guest_queue_admission_and_wake",
                     "recovered_guest_queue_initialize_and_teardown",
                     "recovered_positioned_read_queue_round_trip"],
-                "remaining_services": [
-                    "production_guest_async_runtime_configuration"],
+                "remaining_services": ["guest_path_file_open"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1273,7 +1291,7 @@ def main() -> int:
                 "guest_bridge": {
                     "source": "port/src/native_async_guest_bridge.cpp",
                     "status":
-                        "abi_v12_routes_available_not_production_configured",
+                        "abi_v12_routes_configured_for_production_controller",
                     "opaque_tokens_preserved": True,
                     "validate_outputs_before_side_effects": True,
                     "operations": [
@@ -1287,10 +1305,10 @@ def main() -> int:
                         "port/runtime/guest_async_runtime.cpp",
                     "host_routing_source": "port/src/host_services.cpp",
                     "host_abi_version": 12,
-                    "production_configured": False}} or
+                    "production_configured": True}} or
             texture_upload.get("native_scheduler_lifecycle") != {
                 "status":
-                    "dormant_end_to_end_routing_implemented_not_production_configured",
+                    "production_controller_started_after_map_bootstrap",
                 "recovered_shutdown_provider": None,
                 "states": ["stopped", "accepting", "stopping"],
                 "initial_state": "stopped",
@@ -1337,7 +1355,7 @@ def main() -> int:
                     "close_cache_file_handles_and_release_cache_pools_only_after_scheduler_stopped",
                 "restart_policy":
                     "only_stopped_may_initialize_a_fresh_150_node_queue_and_new_handles",
-                "execution_enabled": False,
+                "execution_enabled": True,
                 "state_gate": {
                     "source": "port/src/native_async_lifecycle.cpp",
                     "owned_behavior": [
@@ -1350,8 +1368,7 @@ def main() -> int:
                         "restart_only_after_finished_stop"]},
                 "worker_controller": {
                     "source": "port/src/native_async_worker.cpp",
-                    "status":
-                        "host_guest_step_routed_not_production_configured",
+                    "status": "production_host_guest_step_routed",
                     "owned_behavior": [
                         "one_wake_per_accepted_admission",
                         "retry_result_resignals_without_completing_admission",
@@ -1367,7 +1384,7 @@ def main() -> int:
                         "reservation_abort_without_guest_execution",
                         "shutdown_drain_does_not_block_reservation_publish_or_abort"],
                     "guest_worker_entry_connected": True,
-                    "execution_enabled": False,
+                    "execution_enabled": True,
                     "guest_worker_source": "port/src/native_guest_worker.cpp",
                     "guest_step_source":
                         "src/async.cpp:h2_native_async_worker_step",
@@ -1377,7 +1394,7 @@ def main() -> int:
                         "page_aligned": True,
                         "entry_requires_executable_guest_mapping": True,
                         "stack_requires_guest_read_write_mapping": True},
-                    "production_configured": False,
+                    "production_configured": True,
                     "guest_read_round_trip": {
                         "location_router": "function_213760",
                         "request": "function_1a0f10",
@@ -1393,7 +1410,7 @@ def main() -> int:
                         "read_bytes": 16,
                         "callback_chunk_bytes": 8,
                         "completion_and_150_node_recycle_required": True,
-                        "production_configured": False},
+                        "production_configured": True},
                     "guest_queue_routing": {
                         "source": [
                             "src/async.cpp",
@@ -1402,7 +1419,7 @@ def main() -> int:
                         "reserve_before_insert": True,
                         "publish_wake_after_insert": True,
                         "rejected_or_failed_publish_recycles_node": True,
-                        "production_configured": False},
+                        "production_configured": True},
                     "guest_queue_lifecycle": {
                         "source": "src/async.cpp",
                         "host_control_source": "port/src/host_services.cpp",
@@ -1414,19 +1431,20 @@ def main() -> int:
                         "teardown_requires_empty_work_list_and_exact_free_list_restoration": True,
                         "failed_handle_close_is_retryable": True,
                         "reset_rejected_until_guest_queue_teardown": True,
-                        "production_configured": False}}} or
+                        "production_configured": True}}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
-                    "host_slot_owner_connected_to_dormant_async_context_not_production_started",
+                    "production_controller_owns_active_and_shared_slots",
                 "recovered_header_type_slots": {
                     "0": [4, 5], "1": [3], "2": [2], "3": [0], "4": [1]},
                 "recovered_location_selector_slots": {
                     "0": "g_55aca8_current_slot", "1": 2, "2": 0, "3": 1},
                 "known_retail_identities": {
                     "mainmenu.map": {"header_type": 2, "slot": 2},
-                    "shared.map": {"header_type": 3, "slot": 0}},
+                    "shared.map": {"header_type": 3, "slot": 0},
+                    "single_player_shared.map": {"header_type": 4, "slot": 1}},
                 "current_native_conflict":
-                    "cache_file_find_always_returns_slot_0_even_when_the_active_map_is_not_type_3",
+                    "resolved_cache_file_find_returns_controller_published_g_55aca8",
                 "required_initialization": [
                     "validate_each_host_selected_cache_header_before_open",
                     "install_only_opaque_native_file_tokens_in_guest_slots",
@@ -1446,7 +1464,7 @@ def main() -> int:
                     "close_active_and_shared_file_tokens",
                     "clear_all_six_guest_slot_handles_and_headers",
                     "set_g_55aca8_to_none"],
-                "execution_enabled": False,
+                "execution_enabled": True,
                 "host_service_integration": {
                     "source": "port/src/host_services.cpp",
                     "context_owns_slot_lifecycle": True,
@@ -1460,7 +1478,7 @@ def main() -> int:
                     "read_callback_chunk_bytes": 8,
                     "stopped_dynamic_active_switch_read_tested": True,
                     "restart_after_complete_cleanup_tested": True,
-                    "production_configured": False},
+                    "production_configured": True},
                 "state_owner": {
                     "source": "port/src/native_cache_file_slots.cpp",
                     "owned_behavior": [
@@ -1480,10 +1498,10 @@ def main() -> int:
                     "requires_writable_guest_ranges": True,
                     "requires_scheduler_stopped": True,
                     "runtime_connected": True,
-                    "production_configured": False}} or
+                    "production_configured": True}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "production_guest_controller_linked_but_unconfigured",
+                    "production_controller_configured_upload_requesters_still_dormant",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1545,7 +1563,13 @@ def main() -> int:
                     "complete_controller_shutdown_stops_queue_flushes_pools_clears_caches_and_resets_services",
                     "production_guest_image_links_controller_queue_flush_and_callback_entries",
                     "production_guest_scheduler_storage_is_bound_to_exact_retail_addresses",
-                    "production_guest_image_imports_only_standard_and_async_host_abi_services"],
+                    "production_guest_image_imports_only_standard_and_async_host_abi_services",
+                    "production_controller_starts_after_recovered_mainmenu_cache_bootstrap",
+                    "production_controller_installs_mainmenu_shared_and_single_player_shared_slots",
+                    "production_host_map_selection_runs_ordered_texture_controller_switch_before_campaign_tag_load",
+                    "production_cache_file_find_returns_controller_published_active_slot",
+                    "authentic_campaign_handoff_succeeds_with_controller_restart",
+                    "production_controller_shutdown_completes_after_headless_and_windowed_execution"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1560,10 +1584,10 @@ def main() -> int:
                     "physical_allocator_definitions": 3,
                     "cache_lifecycle_callback_definitions": 4},
                 "remaining_ownership": [
-                    "production_configuration_of_host_owned_guest_texture_pools",
-                    "ordered_production_map_switch_and_teardown"],
+                    "production_linkage_and_execution_of_texture_upload_requesters",
+                    "genuine_function_125d60_main_thread_sound_idle_service_for_blocking_requests"],
                 "execution_enabled": False,
-                "production_configured": False,
+                "production_configured": True,
                 "recovered_upload_allocation_round_trip": {
                     "entry": "function_12ce00",
                     "header": "function_12d6d0",
@@ -1607,7 +1631,7 @@ def main() -> int:
                     "active_cache_replacement_requires_pool_clear": True,
                     "cache_clear_requires_pool_clear": True,
                     "reset_rejects_installed_pools": True,
-                    "production_configured": False,
+                    "production_configured": True,
                     "production_guest_linked": True,
                     "clear_requires_empty_physical_and_texture_pools": True,
                     "flush_requires_worker_stopped_and_queue_torn_down": True,
@@ -1649,6 +1673,10 @@ def main() -> int:
                         "?g_4e6479@@3_NA": "0x004e6479",
                         "?g_5020c8@@3Us_thread_stack@@A": "0x005020c8",
                         "?g_510810@@3PAUs_job_node@@A": "0x00510810"},
+                    "production_start_after_mainmenu_bootstrap": True,
+                    "production_campaign_switch_via_host_h2_map_select": True,
+                    "production_shutdown_after_host_execution": True,
+                    "production_transition_timeout_milliseconds": 5000,
                     "callbacks": {
                         "delete": "texture_cache_block_delete@0x0012d200",
                         "busy": "texture_cache_entry_busy@0x0012d1a0",

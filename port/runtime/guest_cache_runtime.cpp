@@ -10,10 +10,13 @@ long cache_file_get_maximum_size(long)
     return 0x20800000;
 }
 
+extern long g_55aca8;
+
 long cache_file_find(char const *map_name)
 {
-    /* The recovered loader passes null for the already configured map. */
-    return !map_name || host_h2_map_is_active(map_name) ? 0 : NONE;
+    /* The host validates active-map identity. The recovered async controller
+     * publishes the exact current slot, including alternating type-0 maps. */
+    return !map_name || host_h2_map_is_active(map_name) ? g_55aca8 : NONE;
 }
 
 extern "C" long h2_native_cache_file_find(char const *map_name)

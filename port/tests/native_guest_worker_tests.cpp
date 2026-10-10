@@ -479,6 +479,9 @@ int main(int argc, char** argv) {
     };
     auto invalid_controller_entries = texture_entries;
     invalid_controller_entries.block_delete = cache_slots_address;
+    ok &= check(h2::port::configure_cache_services(
+                    *arena, mainmenu_path, error),
+                "host cache selection services did not configure: " + error);
     ok &= check(!h2::port::start_async_texture_controller(
                     *arena, invalid_controller_caches, texture_entries, error) &&
                     error.find("exactly one active cache") != std::string::npos &&
@@ -491,12 +494,23 @@ int main(int argc, char** argv) {
                         error) &&
                     error.find("texture pool installation") != std::string::npos &&
                     h2::port::start_async_texture_controller(
-                        *arena, controller_caches, texture_entries, error) &&
+                        *arena, controller_caches, texture_entries, error),
+                "complete async texture controller did not restart cleanly: " +
+                    error);
+    const char campaign_name[] = "campaign";
+    std::memcpy(arena->pointer(submit_stack_address), campaign_name,
+                sizeof(campaign_name));
+    ok &= check(host_h2_map_select(static_cast<const char *>(
+                    arena->pointer(submit_stack_address))) == 1 &&
+                    read_guest_u32(cache_active_address) == 4 &&
+                    host_h2_map_is_active(static_cast<const char *>(
+                        arena->pointer(submit_stack_address))) == 1 &&
                     h2::port::stop_async_texture_controller(
                         texture_entries, Lifecycle::infinite, error) &&
                     !host_h2_async_try_admit(),
-                "complete async texture controller did not restart cleanly: " +
+                "host map selection did not perform the ordered controller switch: " +
                     error);
+    h2::port::reset_cache_services();
     std::filesystem::remove_all(cache_directory, filesystem_error);
     std::uint32_t lifecycle_calls = 0;
     std::memcpy(&lifecycle_calls, arena->pointer(*lifecycle_counter),

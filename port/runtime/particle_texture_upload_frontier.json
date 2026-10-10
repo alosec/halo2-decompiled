@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Complete recovered function_12ce00 now executes in the dormant fixture over host-owned low guest texture and physical pools plus a 16-page guest upload buffer. The host publishes exact g_4e6454, g_4e6460, g_4e6464, and g_4e6484 values together with validated executable recovered delete/busy/state callbacks, rejects writable callback addresses, and executes state classification plus completed resident eviction without fabricating an Xbox D3D fence. A single dormant controller now performs worker drain/stop, guest queue teardown, recovered physical flush, verified pool clear, active-cache replacement, pool reinstall, queue reconstruction, and worker restart in that exact order; a resident old-map upload is released before Campaign and preserved shared-cache reads resume. The recovered nonblocking path traverses exact scale/mip/priority/shared/fallback policy, function_12c990, function_12d5a0, function_12d6d0, cache routing, queue, worker, and callback before returning the exact resident texture. The controller entries and exact scheduler globals are now linked into the production guest and their async host imports are patched, but production remains unconfigured until host startup and map selection call the controller and the confirmed idle=true function_125d60 main-thread sound-idle service for blocking requests is genuine. Keep particle execution dormant.",
+  "blocker": "The production guest now links and configures the recovered async controller after the main-menu map bootstrap, owns mainmenu/shared/single-player-shared cache slots, and routes Campaign selection through the strict worker stop, queue teardown, texture flush, pool clear, active-cache replacement, pool reinstall, queue reconstruction, and worker restart sequence before recovered tag loading. Shutdown drains and clears the complete controller. Texture upload requesters remain deliberately absent from the production guest, and blocking requests remain gated on genuine function_125d60 main-thread sound-idle ownership. Keep particle rendering dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -324,7 +324,7 @@
       "recovered_positioned_read_queue_round_trip"
     ],
     "remaining_services": [
-      "production_guest_async_runtime_configuration"
+      "guest_path_file_open"
     ],
     "guest_memory_validator": {
       "source": "port/src/guest_arena.cpp",
@@ -336,7 +336,7 @@
     },
     "guest_bridge": {
       "source": "port/src/native_async_guest_bridge.cpp",
-      "status": "abi_v12_routes_available_not_production_configured",
+      "status": "abi_v12_routes_configured_for_production_controller",
       "opaque_tokens_preserved": true,
       "validate_outputs_before_side_effects": true,
       "operations": [
@@ -352,11 +352,11 @@
       "guest_runtime_source": "port/runtime/guest_async_runtime.cpp",
       "host_routing_source": "port/src/host_services.cpp",
       "host_abi_version": 12,
-      "production_configured": false
+      "production_configured": true
     }
   },
   "native_scheduler_lifecycle": {
-    "status": "dormant_end_to_end_routing_implemented_not_production_configured",
+    "status": "production_controller_started_after_map_bootstrap",
     "recovered_shutdown_provider": null,
     "states": [
       "stopped",
@@ -405,7 +405,7 @@
     ],
     "cache_teardown_dependency": "close_cache_file_handles_and_release_cache_pools_only_after_scheduler_stopped",
     "restart_policy": "only_stopped_may_initialize_a_fresh_150_node_queue_and_new_handles",
-    "execution_enabled": false,
+    "execution_enabled": true,
     "state_gate": {
       "source": "port/src/native_async_lifecycle.cpp",
       "owned_behavior": [
@@ -420,7 +420,7 @@
     },
     "worker_controller": {
       "source": "port/src/native_async_worker.cpp",
-      "status": "host_guest_step_routed_not_production_configured",
+      "status": "production_host_guest_step_routed",
       "owned_behavior": [
         "one_wake_per_accepted_admission",
         "retry_result_resignals_without_completing_admission",
@@ -437,7 +437,7 @@
         "shutdown_drain_does_not_block_reservation_publish_or_abort"
       ],
       "guest_worker_entry_connected": true,
-      "execution_enabled": false,
+      "execution_enabled": true,
       "guest_worker_source": "port/src/native_guest_worker.cpp",
       "guest_step_source": "src/async.cpp:h2_native_async_worker_step",
       "guest_stack": {
@@ -447,7 +447,7 @@
         "entry_requires_executable_guest_mapping": true,
         "stack_requires_guest_read_write_mapping": true
       },
-      "production_configured": false,
+      "production_configured": true,
       "guest_queue_routing": {
         "source": [
           "src/async.cpp",
@@ -457,7 +457,7 @@
         "reserve_before_insert": true,
         "publish_wake_after_insert": true,
         "rejected_or_failed_publish_recycles_node": true,
-        "production_configured": false
+        "production_configured": true
       },
       "guest_queue_lifecycle": {
         "source": "src/async.cpp",
@@ -470,7 +470,7 @@
         "teardown_requires_empty_work_list_and_exact_free_list_restoration": true,
         "failed_handle_close_is_retryable": true,
         "reset_rejected_until_guest_queue_teardown": true,
-        "production_configured": false
+        "production_configured": true
       },
       "guest_read_round_trip": {
         "location_router": "function_213760",
@@ -492,12 +492,12 @@
         "read_bytes": 16,
         "callback_chunk_bytes": 8,
         "completion_and_150_node_recycle_required": true,
-        "production_configured": false
+        "production_configured": true
       }
     }
   },
   "native_cache_file_slot_lifecycle": {
-    "status": "host_slot_owner_connected_to_dormant_async_context_not_production_started",
+    "status": "production_controller_owns_active_and_shared_slots",
     "recovered_header_type_slots": {
       "0": [
         4,
@@ -530,9 +530,13 @@
       "shared.map": {
         "header_type": 3,
         "slot": 0
+      },
+      "single_player_shared.map": {
+        "header_type": 4,
+        "slot": 1
       }
     },
-    "current_native_conflict": "cache_file_find_always_returns_slot_0_even_when_the_active_map_is_not_type_3",
+    "current_native_conflict": "resolved_cache_file_find_returns_controller_published_g_55aca8",
     "required_initialization": [
       "validate_each_host_selected_cache_header_before_open",
       "install_only_opaque_native_file_tokens_in_guest_slots",
@@ -555,7 +559,7 @@
       "clear_all_six_guest_slot_handles_and_headers",
       "set_g_55aca8_to_none"
     ],
-    "execution_enabled": false,
+    "execution_enabled": true,
     "host_service_integration": {
       "source": "port/src/host_services.cpp",
       "context_owns_slot_lifecycle": true,
@@ -568,7 +572,7 @@
       "read_round_trip_bytes": 16,
       "read_callback_chunk_bytes": 8,
       "restart_after_complete_cleanup_tested": true,
-      "production_configured": false,
+      "production_configured": true,
       "stopped_dynamic_active_switch_read_tested": true
     },
     "state_owner": {
@@ -592,11 +596,11 @@
       "requires_writable_guest_ranges": true,
       "requires_scheduler_stopped": true,
       "runtime_connected": true,
-      "production_configured": false
+      "production_configured": true
     }
   },
   "native_texture_pool_lifecycle": {
-    "status": "production_guest_controller_linked_but_unconfigured",
+    "status": "production_controller_configured_upload_requesters_still_dormant",
     "recovered_sources": [
       "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
       "src/unknown_13d320.cpp:function_13d320",
@@ -660,7 +664,13 @@
       "complete_controller_shutdown_stops_queue_flushes_pools_clears_caches_and_resets_services",
       "production_guest_image_links_controller_queue_flush_and_callback_entries",
       "production_guest_scheduler_storage_is_bound_to_exact_retail_addresses",
-      "production_guest_image_imports_only_standard_and_async_host_abi_services"
+      "production_guest_image_imports_only_standard_and_async_host_abi_services",
+      "production_controller_starts_after_recovered_mainmenu_cache_bootstrap",
+      "production_controller_installs_mainmenu_shared_and_single_player_shared_slots",
+      "production_host_map_selection_runs_ordered_texture_controller_switch_before_campaign_tag_load",
+      "production_cache_file_find_returns_controller_published_active_slot",
+      "authentic_campaign_handoff_succeeds_with_controller_restart",
+      "production_controller_shutdown_completes_after_headless_and_windowed_execution"
     ],
     "guest_object_closure": {
       "allocator_definitions": 1,
@@ -677,11 +687,11 @@
       "cache_lifecycle_callback_definitions": 4
     },
     "remaining_ownership": [
-      "production_configuration_of_host_owned_guest_texture_pools",
-      "ordered_production_map_switch_and_teardown"
+      "production_linkage_and_execution_of_texture_upload_requesters",
+      "genuine_function_125d60_main_thread_sound_idle_service_for_blocking_requests"
     ],
     "execution_enabled": false,
-    "production_configured": false,
+    "production_configured": true,
     "recovered_upload_allocation_round_trip": {
       "entry": "function_12ce00",
       "header": "function_12d6d0",
@@ -728,7 +738,7 @@
       "active_cache_replacement_requires_pool_clear": true,
       "cache_clear_requires_pool_clear": true,
       "reset_rejects_installed_pools": true,
-      "production_configured": false,
+      "production_configured": true,
       "callbacks": {
         "delete": "texture_cache_block_delete@0x0012d200",
         "busy": "texture_cache_entry_busy@0x0012d1a0",
@@ -788,7 +798,11 @@
         "?g_4e6479@@3_NA": "0x004e6479",
         "?g_5020c8@@3Us_thread_stack@@A": "0x005020c8",
         "?g_510810@@3PAUs_job_node@@A": "0x00510810"
-      }
+      },
+      "production_start_after_mainmenu_bootstrap": true,
+      "production_campaign_switch_via_host_h2_map_select": true,
+      "production_shutdown_after_host_execution": true,
+      "production_transition_timeout_milliseconds": 5000
     }
   },
   "source_owned": true,

@@ -20,6 +20,7 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -50,6 +51,7 @@ constexpr std::uint32_t kPhysicalRegionAddress = 0x80060000u;
 constexpr std::uint32_t kPhysicalRegionSize = 0x02000000u;
 constexpr std::uint32_t kPhysicalAllocationBase = 0x80061000u;
 constexpr std::uint32_t kCacheHeaderSize = 0x800u;
+constexpr std::uint32_t kAsyncControllerTransitionMilliseconds = 5000u;
 
 struct CacheState {
     std::mutex mutex;
@@ -91,6 +93,7 @@ struct AsyncContext {
     std::mutex control_mutex;
     bool queue_initialized = false;
     bool cache_slots_synchronized = true;
+    std::optional<h2::port::AsyncTextureGuestEntries> controller_entries;
 };
 
 struct AsyncState {
@@ -607,6 +610,15 @@ bool start_async_texture_controller(
         error = original;
         return fail("worker startup");
     }
+    const auto context = async_context();
+    if (!context) {
+        error = "native async texture controller lost its services";
+        return fail("worker startup");
+    }
+    {
+        const std::lock_guard lock(context->control_mutex);
+        context->controller_entries = entries;
+    }
     error.clear();
     return true;
 }
@@ -913,7 +925,23 @@ extern "C" int host_h2_map_select(const char* map_name) {
     if (bytes.size() != declared_size) {
         return 0;
     }
-    std::memcpy(state.arena->pointer(kCacheHeaderAddress), bytes.data(), kCacheHeaderSize);
+
+    std::optional<h2::port::AsyncTextureGuestEntries> controller_entries;
+    if (const auto context = async_context()) {
+        const std::lock_guard control_lock(context->control_mutex);
+        controller_entries = context->controller_entries;
+    }
+    if (controller_entries) {
+        std::string error;
+        if (!h2::port::switch_async_texture_map(
+                path, 0, cache_name, *controller_entries,
+                kAsyncControllerTransitionMilliseconds, error)) {
+            return 0;
+        }
+    } else {
+        std::memcpy(state.arena->pointer(kCacheHeaderAddress), bytes.data(),
+                    kCacheHeaderSize);
+    }
     state.bytes = std::move(bytes);
     state.active_map_name = cache_name;
     // Retail replaces the active cache and reuses its low physical allocation.
