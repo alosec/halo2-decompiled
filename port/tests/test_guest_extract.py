@@ -1133,6 +1133,21 @@ def main():
         if f"_{light_curve_symbol}" not in light_curve_defined:
             raise RuntimeError("native light lookup-curve evaluator was not retained")
 
+        sprite_setup_output = Path(temporary) / "particle-sprite-setup.o"
+        sprite_setup_symbol = "?function_23ea80@@YA_NJPBUtransform4x3f@@JJJ@Z"
+        sprite_setup_command = command[:]
+        sprite_setup_command[sprite_setup_command.index("h2_extract_selected")] = sprite_setup_symbol
+        sprite_setup_command[sprite_setup_command.index("--extract-global"):sprite_setup_command.index("--output")] = []
+        sprite_setup_command[sprite_setup_command.index(output)] = sprite_setup_output
+        sprite_setup_command[-1] = args.root / "src/particle_sprite_setup_native.cpp"
+        subprocess.run([str(value) for value in sprite_setup_command], check=True)
+        sprite_setup_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", sprite_setup_output],
+            text=True,
+        )
+        if f"_{sprite_setup_symbol}" not in sprite_setup_defined:
+            raise RuntimeError("native particle sprite setup was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

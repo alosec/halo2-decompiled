@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "retail_function": "0x0023ea80",
+  "size": 588,
+  "symbol": "?function_23ea80@@YA_NJPBUtransform4x3f@@JJJ@Z",
+  "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "direct_calls": [
+    "0x0001bbf0",
+    "0x0001c590",
+    "0x0001c6b0",
+    "0x0001c710",
+    "0x0001ccb0",
+    "0x0001cf50",
+    "0x00137bd0",
+    "0x0023e460",
+    "0x0023ecd0",
+    "0x003f5cf0",
+    "0x003f7330"
+  ],
+  "production_score_before": 33,
+  "production_score_after": 46,
+  "closed_symbol": "?function_23ea80@@YA_NJPBUtransform4x3f@@JJJ@Z",
+  "newly_exposed": [
+    "?function_1bbf0@@YAXJJJJJM@Z",
+    "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z",
+    "?function_1c6b0@@YAXPAX@Z",
+    "?function_1c710@@YAXPAX@Z",
+    "?function_1ccb0@@YAXJ@Z",
+    "?function_1cf50@@YAXXZ",
+    "?function_23e460@@YAXXZ",
+    "?function_23ecd0@@YAXXZ",
+    "?g_470a38@@3EA",
+    "?g_470a39@@3EA",
+    "?g_4b8348@@3KA",
+    "?g_51f0f0@@3PAEA",
+    "D3DDevice_SetRenderState",
+    "D3DDevice_SetVertexShaderConstant"
+  ],
+  "blocker": "The exact setup selects particle material/shader bindings, publishes the camera transform, initializes shader-cache state, binds parameters, and commits Xbox D3D render state. Admitting it now replaces one frontier symbol with fourteen shader/cache/global/D3D providers and worsens the production-linked score from 33 to 46. The native split exists only for truthful closure scoring; execution still requires initialized camera, shader cache, parameter bindings, and a real renderer backend."
+}

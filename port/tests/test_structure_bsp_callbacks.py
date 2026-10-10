@@ -903,6 +903,34 @@ def main() -> int:
             not mesh_update.get("blocker")):
         raise RuntimeError("particle mesh update frontier changed")
 
+    sprite_setup = json.loads((
+        args.root / "port/runtime/particle_sprite_setup_frontier.json"
+    ).read_text())
+    expected_setup_calls = {
+        "0x0001bbf0", "0x0001c590", "0x0001c6b0", "0x0001c710",
+        "0x0001ccb0", "0x0001cf50", "0x00137bd0", "0x0023e460",
+        "0x0023ecd0", "0x003f5cf0", "0x003f7330",
+    }
+    expected_setup_expansion = {
+        "?function_1bbf0@@YAXJJJJJM@Z", "?function_1c590@@YAXPAUs_shader_cache@@JJ@Z",
+        "?function_1c6b0@@YAXPAX@Z", "?function_1c710@@YAXPAX@Z",
+        "?function_1ccb0@@YAXJ@Z", "?function_1cf50@@YAXXZ",
+        "?function_23e460@@YAXXZ", "?function_23ecd0@@YAXXZ",
+        "?g_470a38@@3EA", "?g_470a39@@3EA", "?g_4b8348@@3KA",
+        "?g_51f0f0@@3PAEA", "D3DDevice_SetRenderState",
+        "D3DDevice_SetVertexShaderConstant",
+    }
+    if (sprite_setup.get("version") != 1 or
+            sprite_setup.get("retail_function") != "0x0023ea80" or
+            sprite_setup.get("size") != 588 or
+            sprite_setup.get("execution_gate") != "native_particle_camera_and_shader_state_owned" or
+            set(sprite_setup.get("direct_calls", [])) != expected_setup_calls or
+            sprite_setup.get("production_score_before") != 33 or
+            sprite_setup.get("production_score_after") != 46 or
+            set(sprite_setup.get("newly_exposed", [])) != expected_setup_expansion or
+            not sprite_setup.get("blocker")):
+        raise RuntimeError("particle sprite setup frontier changed")
+
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports
     ) | set(effect_symbols)
