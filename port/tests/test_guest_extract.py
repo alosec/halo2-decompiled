@@ -3321,12 +3321,31 @@ def main():
                  "?g_4e3b44@@3PAUs_tag_instance@@A",
                  "?g_502104@@3PAUs_record_pool@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-looping-controller-release.o",
+             "src/sound_looping_controller_release_native.cpp",
+             "?looping_sound_controller_release@@YAXJ@Z", {
+                 "?g_51ebd8@@3PAXA",
+                 "?record_pool_release@@YAXPAUs_record_pool@@J@Z"}),
             ("sound-playback-delete.o", "src/sound_playback_delete_native.cpp",
              "?sound_playback_delete@@YAXJ@Z", {
                  "?g_4e637c@@3PAUs_record_pool@@A",
                  "?g_51ebd8@@3PAXA",
                  "?looping_sound_controller_release@@YAXJ@Z",
                  "?record_pool_release@@YAXPAUs_record_pool@@J@Z"}),
+            ("sound-voice-release.o", "src/sound_voice_release_native.cpp",
+             "?sound_voice_release@@YAXJ@Z", {
+                 "?g_4e6380@@3PAUs_4e6380@@A",
+                 "?g_502114@@3PAUs_record_pool@@A",
+                 "?record_pool_release@@YAXPAUs_record_pool@@J@Z"}),
+            ("sound-voice-free.o", "src/sound_voice_free_native.cpp",
+             "?sound_voice_free@@YAXF@Z", {
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A",
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?g_51ebd4@@3PAUs_sound_globals@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+                 "?sound_voice_release@@YAXJ@Z"}),
             ("sound-playback-stop.o", "src/sound_playback_stop_native.cpp",
              "?function_127320@@YAXJJ@Z", {
                  "?function_126960@@YAXPAUs_sound_playback@@@Z",

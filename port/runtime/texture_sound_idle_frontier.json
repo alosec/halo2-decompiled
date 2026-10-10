@@ -221,6 +221,15 @@
       "semantics": "exact playback-held reference lookup, reference-count decrement, and ownership-bit clear"
     },
     {
+      "source": "src/sound_looping_controller_release_native.cpp",
+      "symbol": "?looping_sound_controller_release@@YAXJ@Z",
+      "imports": [
+        "?g_51ebd8@@3PAXA",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z"
+      ],
+      "semantics": "exact seven-bit controller reference decrement and zero-reference salted record release"
+    },
+    {
       "source": "src/sound_playback_delete_native.cpp",
       "symbol": "?sound_playback_delete@@YAXJ@Z",
       "imports": [
@@ -230,6 +239,30 @@
         "?record_pool_release@@YAXPAUs_record_pool@@J@Z"
       ],
       "semantics": "exact looping-controller playing-count adjustment and release followed by salted playback-record release"
+    },
+    {
+      "source": "src/sound_voice_release_native.cpp",
+      "symbol": "?sound_voice_release@@YAXJ@Z",
+      "imports": [
+        "?g_4e6380@@3PAUs_4e6380@@A",
+        "?g_502114@@3PAUs_record_pool@@A",
+        "?record_pool_release@@YAXPAUs_record_pool@@J@Z"
+      ],
+      "semantics": "exact shared voice reference decrement, sound-to-voice bit clear, and salted voice-record release"
+    },
+    {
+      "source": "src/sound_voice_free_native.cpp",
+      "symbol": "?sound_voice_free@@YAXF@Z",
+      "imports": [
+        "?g_4e6378@@3PAUs_sound_voice@@A",
+        "?g_4e6380@@3PAUs_4e6380@@A",
+        "?g_502104@@3PAUs_record_pool@@A",
+        "?g_51ebd4@@3PAUs_sound_globals@@A",
+        "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+        "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+        "?sound_voice_release@@YAXJ@Z"
+      ],
+      "semantics": "exact queued/current chunk unlock, stream flush, streaming-bit clear, driver-voice release, and voice-state reset"
     },
     {
       "source": "src/sound_playback_stop_native.cpp",
@@ -374,7 +407,7 @@
   "blocking_texture_requests_enabled": false,
   "production_linked": false,
   "source_owned": true,
-  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, sound-cache request/allocation/read submission, cache initialization, eviction callbacks, bounded shutdown drain and disposal, queued and playback-held reference release, next-chunk selection, stream playback-rate conversion, and complete playback fade and ordered stop policy, both gain conversions and master-gain policy are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. Genuine Xbox sound-driver pre/post updates still bound every idle pass. Initialized sound cache/reference pools, allocator vtable, upload storage, cache-file routing and driver stream state, gain/fade and spatial channel submission, source callbacks, and initialized sound/main-loop/async/geometry state remain genuine requirements before production blocking texture requests can invoke it.",
+  "blocker": "The exact idle service, all non-driver direct providers, per-voice queued-chunk transition, sound-cache request/allocation/read submission, cache initialization, eviction callbacks, bounded shutdown drain and disposal, queued and playback-held reference release, next-chunk selection, stream playback-rate conversion, and complete playback fade, ordered stop, and voice teardown policy, both gain conversions and master-gain policy are now source-owned without replacing behavior, but remain deliberately unlinked and uncallable. Genuine Xbox sound-driver pre/post updates still bound every idle pass. Initialized sound cache/reference pools, allocator vtable, upload storage, cache-file routing and driver stream state, gain/fade and spatial channel submission, source callbacks, and initialized sound/main-loop/async/geometry state remain genuine requirements before production blocking texture requests can invoke it.",
   "implementation": {
     "source": "src/sound_idle_service_native.cpp",
     "symbol": "?function_125d60@@YAXXZ",

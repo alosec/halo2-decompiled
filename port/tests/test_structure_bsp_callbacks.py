@@ -1391,6 +1391,15 @@ def main() -> int:
                 "semantics":
                     "exact playback-held reference lookup, reference-count "
                     "decrement, and ownership-bit clear"}, {
+                "source":
+                    "src/sound_looping_controller_release_native.cpp",
+                "symbol": "?looping_sound_controller_release@@YAXJ@Z",
+                "imports": [
+                    "?g_51ebd8@@3PAXA",
+                    "?record_pool_release@@YAXPAUs_record_pool@@J@Z"],
+                "semantics":
+                    "exact seven-bit controller reference decrement and "
+                    "zero-reference salted record release"}, {
                 "source": "src/sound_playback_delete_native.cpp",
                 "symbol": "?sound_playback_delete@@YAXJ@Z",
                 "imports": [
@@ -1401,6 +1410,29 @@ def main() -> int:
                 "semantics":
                     "exact looping-controller playing-count adjustment and "
                     "release followed by salted playback-record release"}, {
+                "source": "src/sound_voice_release_native.cpp",
+                "symbol": "?sound_voice_release@@YAXJ@Z",
+                "imports": [
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_502114@@3PAUs_record_pool@@A",
+                    "?record_pool_release@@YAXPAUs_record_pool@@J@Z"],
+                "semantics":
+                    "exact shared voice reference decrement, sound-to-voice "
+                    "bit clear, and salted voice-record release"}, {
+                "source": "src/sound_voice_free_native.cpp",
+                "symbol": "?sound_voice_free@@YAXF@Z",
+                "imports": [
+                    "?g_4e6378@@3PAUs_sound_voice@@A",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A",
+                    "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+                    "?sound_voice_release@@YAXJ@Z"],
+                "semantics":
+                    "exact queued/current chunk unlock, stream flush, "
+                    "streaming-bit clear, driver-voice release, and "
+                    "voice-state reset"}, {
                 "source": "src/sound_playback_stop_native.cpp",
                 "symbol": "?function_127320@@YAXJJ@Z",
                 "imports": [
