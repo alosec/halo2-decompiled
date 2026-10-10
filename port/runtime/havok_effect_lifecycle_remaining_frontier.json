@@ -86,6 +86,16 @@
       "symbol": "?function_d6c80@@YAJPAUs_type_1e6529@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete area-of-effect object/player gathering, damage eligibility, delivery, and mutable damage/object pool lifecycle."
+    },
+    {
+      "symbol": "?function_246cd0@@YAMPBUs_particle_property@@PBM@Z",
+      "subsystem": "particle scalar property evaluation",
+      "blocker": "Complete particle iteration is source-owned, but scalar property evaluation dispatches through general function evaluator function_13b390; transition, periodic, spline, exponent, approximation-table, and exact math semantics remain unowned."
+    },
+    {
+      "symbol": "?function_246d80@@YAXPBUs_particle_property@@PBMPAUcolor3f@@@Z",
+      "subsystem": "particle color property evaluation",
+      "blocker": "Complete particle iteration is source-owned, but color property evaluation requires the general function evaluator function_13b390 plus exact function-color conversion; no simplified curve or fabricated color state is permitted."
     }
   ]
 }

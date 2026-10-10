@@ -127,6 +127,7 @@ def main() -> int:
         particle_frame_transform = temporary / "particle-frame-transform.o"
         particle_frame_matrix = temporary / "particle-frame-matrix.o"
         particle_cluster_scale = temporary / "particle-cluster-scale.o"
+        particle_iteration = temporary / "particle-iteration.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -383,6 +384,9 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/particle_cluster_scale_native.cpp", particle_cluster_scale,
             ["?function_3eb70@@YAMXZ"])
+        compile_slice(
+            args, args.root / "src/unknown_173b90.cpp", particle_iteration,
+            ["?function_175610@@YAXPAUs_particle_value_cache@@PAUs_particle_system_datum@@PAUs_particle_location_datum@@P6AXPAUs_particle_175610@@0PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PAX@Z7@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -401,7 +405,8 @@ def main() -> int:
              object_interpolated_values, tag_function_range,
              ai_effect_request, ai_effect_queue_front, particle_interface_state,
              particle_value_cache, particle_value_evaluator, particle_value_math,
-             particle_frame_transform, particle_frame_matrix, particle_cluster_scale])
+             particle_frame_transform, particle_frame_matrix, particle_cluster_scale,
+             particle_iteration])
     return 0
 
 
