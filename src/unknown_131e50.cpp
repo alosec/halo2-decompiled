@@ -7,7 +7,12 @@
 #ifdef H2_NATIVE_PORT
 PRIVATE __forceinline dword color_channel_byte(real value)
 {
-	return (dword)(long)(value * 255.0f + 0.5f) & 0xff;
+	real const scaled = value * 255.0f;
+	long result = (long)scaled;
+	real const fraction = scaled - (real)result;
+	if (fraction > 0.5f || (fraction == 0.5f && (result & 1)))
+		++result;
+	return (dword)result & 0xff;
 }
 #endif
 

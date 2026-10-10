@@ -299,6 +299,7 @@ def main() -> int:
             "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z" in production_defined_for_listener or
             "?function_175610@@YAXPAUs_particle_value_cache@@PAUs_particle_system_datum@@PAUs_particle_location_datum@@P6AXPAUs_particle_175610@@0PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PAX@Z7@Z" in production_defined_for_listener or
             "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z" in production_defined_for_listener or
+            "?function_224550@@YAXPBUs_draw_sprite_seed@@PAUs_draw_value_cache@@PATpoint3f@@2MPBUcolor4f@@PAUs_draw_sprite_context@@@Z" in production_defined_for_listener or
             "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z" in production_defined_for_listener or
             "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z" in production_defined_for_listener):
         raise RuntimeError("dormant impact lifetime candidate entered production")
@@ -972,6 +973,9 @@ def main() -> int:
             "?function_3eb70@@YAMXZ" not in effect_defined or
             "?function_175610@@YAXPAUs_particle_value_cache@@PAUs_particle_system_datum@@PAUs_particle_location_datum@@P6AXPAUs_particle_175610@@0PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PAX@Z7@Z" not in effect_defined or
             "?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z" not in effect_defined or
+            "?function_224550@@YAXPBUs_draw_sprite_seed@@PAUs_draw_value_cache@@PATpoint3f@@2MPBUcolor4f@@PAUs_draw_sprite_context@@@Z" not in effect_defined or
+            "?function_016ae0@@YAJM@Z" not in effect_defined or
+            "?pack_color4f@@YAKPBUcolor4f@@@Z" not in effect_defined or
             "?function_246cd0@@YAMPBUs_particle_property@@PBM@Z" not in effect_defined or
             "?function_246d80@@YAXPBUs_particle_property@@PBMPAUcolor3f@@@Z" not in effect_defined or
             "?function_13bc00@@YAKPBUs_tag_data@@M@Z" not in effect_defined or

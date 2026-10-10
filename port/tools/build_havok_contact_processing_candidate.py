@@ -131,6 +131,9 @@ def main() -> int:
         particle_property = temporary / "particle-property.o"
         tag_function_color = temporary / "tag-function-color.o"
         particle_sprite_update = temporary / "particle-sprite-update.o"
+        particle_sprite_callback = temporary / "particle-sprite-callback.o"
+        scalar_floor = temporary / "scalar-floor.o"
+        packed_color = temporary / "packed-color.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -401,6 +404,15 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_2243c0.cpp", particle_sprite_update,
             ["?function_2243c0@@YAXPAUs_interface_definition@@JJJJJ@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_224550.cpp", particle_sprite_callback,
+            ["?function_224550@@YAXPBUs_draw_sprite_seed@@PAUs_draw_value_cache@@PATpoint3f@@2MPBUcolor4f@@PAUs_draw_sprite_context@@@Z"])
+        compile_slice(
+            args, args.root / "src/scalar_floor_native.cpp", scalar_floor,
+            ["?function_016ae0@@YAJM@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_131e50.cpp", packed_color,
+            ["?pack_color4f@@YAKPBUcolor4f@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -421,7 +433,8 @@ def main() -> int:
              particle_value_cache, particle_value_evaluator, particle_value_math,
              particle_frame_transform, particle_frame_matrix, particle_cluster_scale,
              particle_iteration, particle_property, tag_function_color,
-             particle_sprite_update])
+             particle_sprite_update, particle_sprite_callback, scalar_floor,
+             packed_color])
     return 0
 
 
