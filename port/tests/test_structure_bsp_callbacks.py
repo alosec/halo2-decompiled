@@ -1397,7 +1397,7 @@ def main() -> int:
                         "production_configured": False}}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
-                    "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",
+                    "host_slot_owner_connected_to_dormant_async_context_not_production_started",
                 "recovered_header_type_slots": {
                     "0": [4, 5], "1": [3], "2": [2], "3": [0], "4": [1]},
                 "recovered_location_selector_slots": {
@@ -1422,10 +1422,21 @@ def main() -> int:
                     "restart_scheduler_only_after_all_referenced_shared_slots_are_ready"],
                 "teardown_order": [
                     "scheduler_must_be_stopped",
+                    "guest_queue_must_be_torn_down",
                     "close_active_and_shared_file_tokens",
                     "clear_all_six_guest_slot_handles_and_headers",
                     "set_g_55aca8_to_none"],
                 "execution_enabled": False,
+                "host_service_integration": {
+                    "source": "port/src/host_services.cpp",
+                    "context_owns_slot_lifecycle": True,
+                    "install_publishes_before_worker_start": True,
+                    "replacement_rejected_while_worker_live": True,
+                    "clear_requires_worker_shutdown_and_guest_queue_teardown": True,
+                    "reset_rejects_live_cache_handles": True,
+                    "worker_start_and_reset_reject_unsynchronized_publication": True,
+                    "restart_after_complete_cleanup_tested": True,
+                    "production_configured": False},
                 "state_owner": {
                     "source": "port/src/native_cache_file_slots.cpp",
                     "owned_behavior": [
@@ -1444,7 +1455,8 @@ def main() -> int:
                     "active_slot_address": "0x0055aca8",
                     "requires_writable_guest_ranges": True,
                     "requires_scheduler_stopped": True,
-                    "runtime_connected": False}} or
+                    "runtime_connected": True,
+                    "production_configured": False}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),

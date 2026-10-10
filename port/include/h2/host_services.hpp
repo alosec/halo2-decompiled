@@ -39,6 +39,11 @@ bool configure_profile_services(const std::filesystem::path& directory,
                                 std::string& error);
 void reset_profile_services();
 bool configure_async_services(GuestArena& arena, std::string& error);
+bool install_async_cache_file(const std::filesystem::path& path,
+                              std::int16_t expected_type,
+                              const std::string& expected_name, bool make_active,
+                              std::string& error);
+bool clear_async_cache_files(std::string& error);
 bool initialize_async_queue(std::uint32_t guest_entry_address, std::string& error);
 bool start_async_worker(std::uint32_t guest_entry_address, std::string& error);
 bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error);

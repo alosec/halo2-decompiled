@@ -459,7 +459,7 @@
     }
   },
   "native_cache_file_slot_lifecycle": {
-    "status": "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",
+    "status": "host_slot_owner_connected_to_dormant_async_context_not_production_started",
     "recovered_header_type_slots": {
       "0": [
         4,
@@ -512,11 +512,23 @@
     ],
     "teardown_order": [
       "scheduler_must_be_stopped",
+      "guest_queue_must_be_torn_down",
       "close_active_and_shared_file_tokens",
       "clear_all_six_guest_slot_handles_and_headers",
       "set_g_55aca8_to_none"
     ],
     "execution_enabled": false,
+    "host_service_integration": {
+      "source": "port/src/host_services.cpp",
+      "context_owns_slot_lifecycle": true,
+      "install_publishes_before_worker_start": true,
+      "replacement_rejected_while_worker_live": true,
+      "clear_requires_worker_shutdown_and_guest_queue_teardown": true,
+      "reset_rejects_live_cache_handles": true,
+      "worker_start_and_reset_reject_unsynchronized_publication": true,
+      "restart_after_complete_cleanup_tested": true,
+      "production_configured": false
+    },
     "state_owner": {
       "source": "port/src/native_cache_file_slots.cpp",
       "owned_behavior": [
@@ -537,7 +549,8 @@
       "active_slot_address": "0x0055aca8",
       "requires_writable_guest_ranges": true,
       "requires_scheduler_stopped": true,
-      "runtime_connected": false
+      "runtime_connected": true,
+      "production_configured": false
     }
   }
 }

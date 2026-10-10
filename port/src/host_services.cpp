@@ -4,6 +4,7 @@
 #include "h2/native_async_guest_bridge.hpp"
 #include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
+#include "h2/native_cache_file_slots.hpp"
 #include "h2/native_guest_worker.hpp"
 #include "h2/profile_store.hpp"
 
@@ -73,15 +74,19 @@ ProfileState& profile_state() {
 }
 
 struct AsyncContext {
-    explicit AsyncContext(h2::port::GuestArena& arena)
-        : bridge(arena, platform), worker(arena, platform, lifecycle) {}
+    explicit AsyncContext(h2::port::GuestArena& arena_value)
+        : arena(arena_value), bridge(arena, platform),
+          worker(arena, platform, lifecycle), cache_files(platform, lifecycle) {}
 
+    h2::port::GuestArena& arena;
     h2::port::NativeAsyncPlatform platform;
     h2::port::NativeAsyncGuestBridge bridge;
     h2::port::NativeAsyncLifecycle lifecycle;
     h2::port::NativeGuestWorker worker;
+    h2::port::NativeCacheFileSlots cache_files;
     std::mutex control_mutex;
     bool queue_initialized = false;
+    bool cache_slots_synchronized = true;
 };
 
 struct AsyncState {
@@ -295,12 +300,72 @@ bool configure_async_services(GuestArena& arena, std::string& error) {
             error = "native async queue is still initialized";
             return false;
         }
+        if (!state.context->cache_slots_synchronized) {
+            error = "native async cache slots are not synchronized with the guest";
+            return false;
+        }
         if (state.context->platform.active_handle_count() != 0) {
             error = "native async services still own live handles";
             return false;
         }
     }
     state.context = std::make_shared<AsyncContext>(arena);
+    return true;
+}
+
+bool install_async_cache_file(const std::filesystem::path& path,
+                              std::int16_t expected_type,
+                              const std::string& expected_name, bool make_active,
+                              std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    // Validate guest publication before changing token ownership. The second
+    // publication commits the newly installed records before a worker may start.
+    if (!context->cache_files.publish_to_guest(context->arena, error))
+        return false;
+    context->cache_slots_synchronized = true;
+    if (!context->cache_files.install(path, expected_type, expected_name,
+                                      make_active, error))
+        return false;
+    context->cache_slots_synchronized = false;
+    if (!context->cache_files.publish_to_guest(context->arena, error))
+        return false;
+    context->cache_slots_synchronized = true;
+    return true;
+}
+
+bool clear_async_cache_files(std::string& error) {
+    const auto context = async_context();
+    if (!context) {
+        error = "native async services are not configured";
+        return false;
+    }
+    const std::lock_guard lock(context->control_mutex);
+    if (context->worker.worker_handle() != NativeAsyncPlatform::invalid_handle) {
+        error = "native async worker is still running";
+        return false;
+    }
+    if (context->queue_initialized) {
+        error = "native async queue must be torn down before cache files clear";
+        return false;
+    }
+    if (!context->cache_files.publish_to_guest(context->arena, error))
+        return false;
+    context->cache_slots_synchronized = true;
+    if (!context->cache_files.clear(error))
+        return false;
+    context->cache_slots_synchronized = false;
+    if (!context->cache_files.publish_to_guest(context->arena, error))
+        return false;
+    context->cache_slots_synchronized = true;
     return true;
 }
 
@@ -336,6 +401,10 @@ bool start_async_worker(std::uint32_t guest_entry_address, std::string& error) {
     const std::lock_guard lock(context->control_mutex);
     if (!context->queue_initialized) {
         error = "native async queue is not initialized";
+        return false;
+    }
+    if (!context->cache_slots_synchronized) {
+        error = "native async cache slots are not synchronized with the guest";
         return false;
     }
     return context->worker.start(guest_entry_address, error);
@@ -391,6 +460,10 @@ bool reset_async_services(std::string& error) {
         const std::lock_guard control_lock(state.context->control_mutex);
         if (state.context->queue_initialized) {
             error = "native async queue is still initialized";
+            return false;
+        }
+        if (!state.context->cache_slots_synchronized) {
+            error = "native async cache slots are not synchronized with the guest";
             return false;
         }
         if (state.context->platform.active_handle_count() != 0) {
