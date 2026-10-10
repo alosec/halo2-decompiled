@@ -2352,6 +2352,7 @@ add_library(h2_port_support STATIC
     src/guest_arena.cpp
     src/guest_elf_image.cpp
     src/host_services.cpp
+    src/native_async_platform.cpp
     src/profile_store.cpp
     src/retail_data.cpp
     src/texture_decode.cpp
@@ -2426,6 +2427,12 @@ target_compile_features(h2-host-services-tests PRIVATE cxx_std_20)
 target_compile_options(h2-host-services-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2-host-services-tests PRIVATE h2_port_support)
 add_test(NAME native-host-services COMMAND h2-host-services-tests)
+
+add_executable(h2-native-async-platform-tests tests/native_async_platform_tests.cpp)
+target_compile_features(h2-native-async-platform-tests PRIVATE cxx_std_20)
+target_compile_options(h2-native-async-platform-tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2-native-async-platform-tests PRIVATE h2_port_support)
+add_test(NAME native-async-platform COMMAND h2-native-async-platform-tests)
 
 add_executable(h2-profile-store-tests tests/profile_store_tests.cpp)
 target_compile_features(h2-profile-store-tests PRIVATE cxx_std_20)

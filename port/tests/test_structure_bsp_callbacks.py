@@ -1227,6 +1227,25 @@ def main() -> int:
                 "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z" or
             texture_upload.get("execution_gate") !=
                 "native_particle_texture_upload_lifetime_owned" or
+            texture_upload.get("native_platform_foundation") != {
+                "source": "port/src/native_async_platform.cpp",
+                "host_only": True,
+                "guest_bridge_enabled": False,
+                "opaque_handle_tokens": True,
+                "host_pointer_exposure": False,
+                "owned_services": [
+                    "recursive_mutex_create_wait_release_close",
+                    "bounded_semaphore_create_wait_release_close",
+                    "finite_timeout_and_infinite_wait",
+                    "stale_handle_generation_rejection",
+                    "cooperative_thread_yield"],
+                "remaining_services": [
+                    "read_only_file_handle_open_close",
+                    "set_file_pointer_and_read",
+                    "worker_thread_create_priority_join_close",
+                    "guest_host_abi_bridge",
+                    "scheduler_stop_admission_and_shutdown",
+                    "cache_file_handle_initialization"]} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
