@@ -267,8 +267,6 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?g_557c90@@3PAUs_texture_cache_file@@A",
-    "?g_55aca8@@3JA",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
@@ -416,5 +414,17 @@
     "symbol": "?g_46e488@@3KA",
     "value": "0x40000",
     "semantics": "cap each asynchronous positioned cache-read callback to the exact recovered 256 KiB chunk size"
-  }
+  },
+  "production_cache_state_bindings": [
+    {
+      "symbol": "?g_55aca8@@3JA",
+      "address": "0x0055aca8",
+      "semantics": "controller-published active cache-file slot used by recovered cache routing"
+    },
+    {
+      "symbol": "?g_557c90@@3PAUs_texture_cache_file@@A",
+      "address": "0x00557c90",
+      "semantics": "controller-published six-record cache-file table with live native handles"
+    }
+  ]
 }

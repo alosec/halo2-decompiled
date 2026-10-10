@@ -175,6 +175,26 @@ def main() -> int:
             read_limit.get("value") != "0x40000" or \
             not read_limit.get("semantics"):
         raise RuntimeError("sound-idle cache-read limit changed")
+    cache_state_bindings = manifest.get("production_cache_state_bindings")
+    expected_cache_state_bindings = {
+        "?g_55aca8@@3JA": "0x0055aca8",
+        "?g_557c90@@3PAUs_texture_cache_file@@A": "0x00557c90",
+    }
+    if not isinstance(cache_state_bindings, list) or \
+            len(cache_state_bindings) != 2 or \
+            any(not entry.get("semantics") for entry in cache_state_bindings) or \
+            {entry.get("symbol"): entry.get("address")
+             for entry in cache_state_bindings} != expected_cache_state_bindings:
+        raise RuntimeError("sound-idle production cache-state bindings changed")
+    main_menu_bindings = json.loads((
+        args.root / "port/runtime/main_menu_bindings.json").read_text())
+    binding_addresses = {
+        entry.get("symbol"): entry.get("address")
+        for entry in main_menu_bindings.get("symbols", [])}
+    for symbol, address in expected_cache_state_bindings.items():
+        if binding_addresses.get(symbol) != address:
+            raise RuntimeError(
+                f"sound-idle production cache-state binding is absent: {symbol}")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
@@ -212,7 +232,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 37:
+    if len(expected_production_imports) != 35:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
