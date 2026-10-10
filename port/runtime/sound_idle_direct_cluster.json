@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, and sound-cache allocation routing",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, and asynchronous positioned reads",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -125,6 +125,14 @@
     {
       "source": "src/sound_cache_file_route_native.cpp",
       "symbol": "?function_213760@@YAJKJPAXPAKPA_NJJ@Z"
+    },
+    {
+      "source": "src/sound_cache_async_read_native.cpp",
+      "symbol": "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z"
+    },
+    {
+      "source": "src/sound_cache_async_read_native.cpp",
+      "symbol": "?function_1a0e70@@YAJPATs_async_task@@@Z"
     }
   ],
   "definitions": [
@@ -136,6 +144,8 @@
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
     "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
     "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
     "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
@@ -163,15 +173,16 @@
   ],
   "imports": [
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-    "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_468834@@3MA",
+    "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -204,6 +215,8 @@
     "IDirectSoundStream_Process",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
+    "ReadFile",
+    "SetFilePointer",
     "SwitchToThread",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
@@ -220,14 +233,15 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
+    "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
-    "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_468834@@3MA",
+    "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -358,6 +372,16 @@
     {
       "symbol": "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
       "semantics": "route top-two-bit cache locations through the live active/shared cache handles into genuine asynchronous read submission"
+    }
+  ],
+  "sound_cache_async_read_helpers": [
+    {
+      "symbol": "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+      "semantics": "zero and populate the exact positioned-read task, preserve output/done ownership, and submit it to the genuine asynchronous queue"
+    },
+    {
+      "symbol": "?function_1a0e70@@YAJPATs_async_task@@@Z",
+      "semantics": "perform bounded positioned file reads, advance cumulative offsets and byte counts, and preserve short-read completion versus retry"
     }
   ]
 }
