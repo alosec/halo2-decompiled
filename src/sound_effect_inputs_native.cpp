@@ -134,7 +134,36 @@ struct s_sound_playback_effects
 struct s_sound_class_definition;
 void *function_18d090(long tag_index, long handle);
 s_sound_class_definition *sound_get_class(long tag_index);
-dword function_191660(long string_handle, long index);
+// @retail 0x1914f0
+long function_1914f0(long string_handle)
+{
+	if (string_handle == 0x1300012d)
+		return 0xd;
+	if (string_handle == 0x14000135)
+		return 0xe;
+	if (string_handle >= 0x1600013c && string_handle <= 0x1600013f)
+		return 0x1b + (string_handle - 0x1600013c);
+	return NONE;
+}
+
+// @retail 0x191660
+__declspec(noinline) dword function_191660(long string_handle, long index)
+{
+	if (index == NONE)
+	{
+		if (string_handle == 0x11000138)
+			return 0xf0;
+		if (string_handle == 0x17000137)
+			return 0xc0;
+		if (string_handle == 0x18000136)
+			return 0x30;
+		return string_handle == 0x1300012d ? 2 : 0;
+	}
+	if (string_handle == 0x11000138 && index >= 0 && index <= 3)
+		return 0x10u << index;
+	return 0;
+}
+
 real function_13b390(void const *function, real input, real range);
 real function_30bf0(vector3f *vector);
 real function_192b90(point3f const *direction, long speaker, bool linear);

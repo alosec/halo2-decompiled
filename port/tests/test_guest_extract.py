@@ -3308,6 +3308,13 @@ def main():
                  "?function_2195f0@@YAMM@Z",
                  "?function_2197f0@@YAJM@Z",
                  "fabs", "sqrt"}),
+            ("sound-effect-mixbin.o", "src/sound_effect_inputs_native.cpp",
+             "?function_1914f0@@YAJJ@Z", set()),
+            ("sound-effect-mask.o", "src/sound_effect_inputs_native.cpp",
+             "?function_191660@@YAKJJ@Z", set()),
+            ("sound-speaker-response.o", "src/unknown_192b90.cpp",
+             "?function_192b90@@YAMPBTpoint3f@@J_N@Z", {
+                 "exp", "g_444c84", "pow", "sqrt"}),
             ("sound-effect-dsp.o", "src/sound_effect_inputs_native.cpp",
              "?function_2221d0@@YAJM@Z", set()),
             ("sound-effect-speaker-gain.o", "src/sound_effect_inputs_native.cpp",
@@ -3316,13 +3323,13 @@ def main():
                  "?function_30bf0@@YAMPATvector3f@@@Z", "h2_guest_memcpy"}),
             ("sound-effect-parameters.o", "src/sound_effect_inputs_native.cpp",
              "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z", {
-                 "?function_13b390@@YAMPBXMM@Z", "?function_191660@@YAKJJ@Z",
+                 "?function_13b390@@YAMPBXMM@Z",
                  "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                  "?function_30bf0@@YAMPATvector3f@@@Z",
                  "fmod", "h2_guest_memcpy"}),
             ("sound-effect-buffer.o", "src/sound_effect_inputs_native.cpp",
              "?function_2225a0@@YAXPBUs_effect_overrides@@PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z", {
-                 "?function_13b390@@YAMPBXMM@Z", "?function_191660@@YAKJJ@Z",
+                 "?function_13b390@@YAMPBXMM@Z",
                  "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                  "?function_30bf0@@YAMPATvector3f@@@Z",
                  "fmod", "h2_guest_memcpy"}),
@@ -3330,7 +3337,6 @@ def main():
              "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z", {
                  "?function_13b390@@YAMPBXMM@Z",
                  "?function_18d090@@YAPAXJJ@Z",
-                 "?function_191660@@YAKJJ@Z",
                  "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                  "?function_30bf0@@YAMPATvector3f@@@Z",
                  "?g_4e3b44@@3PAUs_tag_instance@@A",

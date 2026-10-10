@@ -1418,6 +1418,25 @@ def main() -> int:
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
                 "source": "src/sound_effect_inputs_native.cpp",
+                "symbol": "?function_1914f0@@YAJJ@Z",
+                "imports": [],
+                "semantics":
+                    "exact six-name sound effect mixbin routing with NONE "
+                    "fallback"}, {
+                "source": "src/sound_effect_inputs_native.cpp",
+                "symbol": "?function_191660@@YAKJJ@Z",
+                "imports": [],
+                "semantics":
+                    "exact aggregate and per-speaker DSP effect-mask routing "
+                    "for the four recovered effect names"}, {
+                "source": "src/unknown_192b90.cpp",
+                "symbol": "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+                "imports": ["exp", "g_444c84", "pow", "sqrt"],
+                "semantics":
+                    "exact five-speaker directional response from azimuth/"
+                    "elevation, linear or powered falloff, and recovered "
+                    "speaker coefficients"}, {
+                "source": "src/sound_effect_inputs_native.cpp",
                 "symbol": "?function_2221d0@@YAJM@Z",
                 "imports": [],
                 "semantics":
@@ -1439,7 +1458,6 @@ def main() -> int:
                     "PBUs_effect_inputs@@J@Z",
                 "imports": [
                     "?function_13b390@@YAMPBXMM@Z",
-                    "?function_191660@@YAKJJ@Z",
                     "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                     "?function_30bf0@@YAMPATvector3f@@@Z",
                     "fmod", "h2_guest_memcpy"],
@@ -1454,7 +1472,6 @@ def main() -> int:
                     "PBUs_effect_components@@PBUs_effect_inputs@@PAJ3@Z",
                 "imports": [
                     "?function_13b390@@YAMPBXMM@Z",
-                    "?function_191660@@YAKJJ@Z",
                     "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                     "?function_30bf0@@YAMPATvector3f@@@Z",
                     "fmod", "h2_guest_memcpy"],
@@ -1469,7 +1486,6 @@ def main() -> int:
                 "imports": [
                     "?function_13b390@@YAMPBXMM@Z",
                     "?function_18d090@@YAPAXJJ@Z",
-                    "?function_191660@@YAKJJ@Z",
                     "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
                     "?function_30bf0@@YAMPATvector3f@@@Z",
                     "?g_4e3b44@@3PAUs_tag_instance@@A",
