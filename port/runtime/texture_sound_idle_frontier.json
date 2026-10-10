@@ -287,6 +287,31 @@
       "semantics": "exact epsilon-guarded three-component vector normalization with original magnitude return"
     },
     {
+      "source": "src/sound_system_startup_native.cpp",
+      "symbol": "?function_1253d0@@YAXXZ",
+      "imports": [
+        "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
+        "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+        "?function_163ba0@@YAXPAKPBXJ@Z",
+        "?function_21a0c0@@YA_NXZ",
+        "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
+        "?g_4e6374@@3JA",
+        "?g_4e6378@@3PAUs_sound_voice@@A",
+        "?g_4e637c@@3PAUs_record_pool@@A",
+        "?g_4e6380@@3PAUs_4e6380@@A",
+        "?g_510800_pool_base@@3KA",
+        "?g_510804_pool_size@@3JA",
+        "?g_510808_pool_checksum@@3KA",
+        "?looping_sound_controllers_initialize@@YA_NXZ",
+        "?record_pool_release_all@@YAXPAUs_record_pool@@@Z",
+        "?sound_cache_initialize@@YAXXZ",
+        "?sound_effects_initialize@@YA_NXZ",
+        "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z",
+        "h2_guest_memset"
+      ],
+      "semantics": "exact reference-counted sound-system startup: static storage accounting, cache and record-pool initialization, environment defaults, 73 typed runtime voices, recovered driver capacities, and initialized publication only after complete success"
+    },
+    {
       "source": "src/unknown_21dda0.cpp",
       "symbol": "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z",
       "imports": [
