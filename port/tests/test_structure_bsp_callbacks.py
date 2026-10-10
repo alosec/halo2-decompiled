@@ -2153,6 +2153,17 @@ def main() -> int:
         "index < stream->started_count", "chunk->cache_index & 0xffff",
         "usage->counts[cache_index]++;",
         "usage->flags[cache_index >> 5] |= 1 << (cache_index & 0x1f);",
+        "bool c_pcm_codec::get_packet(s_sound_stream *stream, XMEDIAPACKET *packet)",
+        "byte *data = sound_cache_chunk_get_data(chunk);",
+        "long size = (long)SOUND_CHUNK_SIZE(chunk) - 0x48;",
+        "packet->hCompletionEvent = chunk;",
+        "packet->dwMaxSize = SOUND_CHUNK_SIZE(chunk) - offset;",
+        "void c_pcm_codec::packet_submitted(s_sound_stream *stream,",
+        "stream->started_count++;", "stream->offset = 0;",
+        "void c_pcm_codec::packet_failed(s_sound_stream *stream,",
+        "stream->chunks[stream->started_count]->cache_index",
+        "void c_pcm_codec::chunk_finished(s_sound_stream *stream, s_sound_chunk *chunk,",
+        "sound_stream_release_chunk(stream, chunk);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
     expected_stream_chunk_release_fragments = [
@@ -2343,6 +2354,30 @@ def main() -> int:
                     "Count every already-started queued PCM chunk by its "
                     "genuine low-16-bit cache index and set the matching "
                     "cache-usage bit."}, {
+                "symbol": "c_pcm_codec::get_packet",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Expose the authentic current cached PCM bytes after "
+                    "the recovered 0x48-byte tail guard and stream-offset "
+                    "clamp, with the owning chunk as completion context."}, {
+                "symbol": "c_pcm_codec::packet_submitted",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Advance the authentic started-chunk count and reset "
+                    "the stream byte offset only after DirectSound accepts "
+                    "the PCM packet."}, {
+                "symbol": "c_pcm_codec::packet_failed",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Release the current queued chunk cache reference after "
+                    "DirectSound rejects PCM packet submission, without "
+                    "advancing stream progress."}, {
+                "symbol": "c_pcm_codec::chunk_finished",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Run exact queue/cache-lock chunk release, then release "
+                    "the completed chunk cache reference without fabricating "
+                    "another completion."}, {
                 "symbol": "c_pcm_codec::can_submit",
                 "source": "src/sound_pcm_codec_control_native.cpp",
                 "semantics":

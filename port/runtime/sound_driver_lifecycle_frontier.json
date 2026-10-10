@@ -175,6 +175,26 @@
       "semantics": "Count every already-started queued PCM chunk by its genuine low-16-bit cache index and set the matching cache-usage bit."
     },
     {
+      "symbol": "c_pcm_codec::get_packet",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Expose the authentic current cached PCM bytes after the recovered 0x48-byte tail guard and stream-offset clamp, with the owning chunk as completion context."
+    },
+    {
+      "symbol": "c_pcm_codec::packet_submitted",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Advance the authentic started-chunk count and reset the stream byte offset only after DirectSound accepts the PCM packet."
+    },
+    {
+      "symbol": "c_pcm_codec::packet_failed",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Release the current queued chunk cache reference after DirectSound rejects PCM packet submission, without advancing stream progress."
+    },
+    {
+      "symbol": "c_pcm_codec::chunk_finished",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Run exact queue/cache-lock chunk release, then release the completed chunk cache reference without fabricating another completion."
+    },
+    {
       "symbol": "c_pcm_codec::can_submit",
       "source": "src/sound_pcm_codec_control_native.cpp",
       "semantics": "Permit PCM submission exactly while the genuine stream has more queued chunks than already-started chunks, independently of the current-update submitted flag."
