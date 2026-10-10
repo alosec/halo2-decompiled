@@ -60,7 +60,7 @@
     {
       "symbol": "?function_13b390@@YAMPBXMM@Z",
       "subsystem": "general tag-function evaluation",
-      "blocker": "Exact transition-table lookup, periodic curve evaluation/table ownership, object interpolation, bounded clamping, scalar range remapping, and particle color conversion are owned. The remaining general evaluator still requires exact exponent/pow behavior and the Xbox SSE rsqrtss-based spline2 ratio approximation across non-endpoint inputs."
+      "blocker": "The complete general evaluator policy is source-owned separately, including transition, periodic, linear, keyed, spline, exponent, ranged interpolation, and clamping behavior. It remains outside this executable candidate because exponent evaluation retains genuine pow and non-endpoint spline2 retains the unresolved Xbox SSE rsqrtss estimate rather than substituting host square root."
     },
     {
       "symbol": "?function_c0c80@@YAXPBTvector3f@@@Z",

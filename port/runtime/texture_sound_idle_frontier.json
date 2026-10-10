@@ -398,6 +398,26 @@
       "semantics": "exact valid-speaker direction normalization, speaker response lookup, and unit-range gain clamp"
     },
     {
+      "source": "src/tag_function_general_native.cpp",
+      "symbol": "?function_13bec0@@YAPAUpoint2f@@PBUs_tag_data@@EE@Z",
+      "imports": [
+        "g_44178c"
+      ],
+      "semantics": "exact bounded spline control-point addressing for linear, keyed, spline, multi-spline, and spline2 function formats"
+    },
+    {
+      "source": "src/tag_function_general_native.cpp",
+      "symbol": "?function_13b390@@YAMPBXMM@Z",
+      "imports": [
+        "?function_17c900@@YAMFM@Z",
+        "?function_17ca10@@YAMMF@Z",
+        "?h2_xbox_rsqrtss@@YAMM@Z",
+        "fabs",
+        "pow"
+      ],
+      "semantics": "exact identity, constant, transition, periodic, linear, keyed-linear, spline, exponent, and spline2 evaluation with ranged interpolation and unit clamping; non-endpoint spline2 retains Xbox rsqrtss as a genuine numeric boundary"
+    },
+    {
       "source": "src/sound_effect_inputs_native.cpp",
       "symbol": "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
       "imports": [

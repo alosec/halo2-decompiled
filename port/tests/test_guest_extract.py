@@ -3317,6 +3317,10 @@ def main():
                  "exp", "g_444c84", "pow", "sqrt"}),
             ("sound-effect-normalize.o", "src/unknown_030290.cpp",
              "?function_30bf0@@YAMPATvector3f@@@Z", {"fabs", "sqrt"}),
+            ("tag-function-spline-point.o",
+             "src/tag_function_general_native.cpp",
+             "?function_13bec0@@YAPAUpoint2f@@PBUs_tag_data@@EE@Z",
+             {"g_44178c"}),
             ("sound-static-allocator.o", "src/sound_static_allocator_native.cpp",
              "?function_12c040@@YAXXZ", {
                  "?function_163ba0@@YAXPAKPBXJ@Z",
@@ -3635,6 +3639,49 @@ def main():
                 raise RuntimeError(
                     f"sound fade helper imports changed for {fade_symbol}: "
                     f"{sorted(fade_imports)}")
+
+        general_function_output = Path(temporary) / "tag-function-general.o"
+        general_function_command = command[:]
+        general_function_command[
+            general_function_command.index("h2_extract_selected")
+        ] = "?function_13b390@@YAMPBXMM@Z"
+        general_function_command[
+            general_function_command.index("h2_extract_constant")
+        ] = "g_44178c"
+        alias_index = general_function_command.index("--extract-alias")
+        del general_function_command[alias_index:alias_index + 2]
+        general_function_command[
+            general_function_command.index(output)
+        ] = general_function_output
+        general_function_command[-1] = (
+            args.root / "src/tag_function_general_native.cpp")
+        subprocess.run(
+            [str(value) for value in general_function_command], check=True)
+        general_function_defined = {
+            line.split()[0].removeprefix("_")
+            for line in subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+                 general_function_output], text=True).splitlines()
+            if line and not line.startswith("ltmp") and not line.startswith("lCPI")
+        }
+        if general_function_defined != {
+                "?function_13b390@@YAMPBXMM@Z", "g_44178c"}:
+            raise RuntimeError(
+                "general tag-function definitions changed: "
+                f"{sorted(general_function_defined)}")
+        general_function_imports = {
+            line.split()[0].removeprefix("_")
+            for line in subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+                 general_function_output], text=True).splitlines() if line
+        }
+        if general_function_imports != {
+                "?function_17c900@@YAMFM@Z",
+                "?function_17ca10@@YAMMF@Z",
+                "?h2_xbox_rsqrtss@@YAMM@Z", "fabs", "pow"}:
+            raise RuntimeError(
+                "general tag-function imports changed: "
+                f"{sorted(general_function_imports)}")
 
         sound_attenuation_symbols = {
             "?sound_get_minimum_distance@@YAMPBUs_sound@@J@Z",
