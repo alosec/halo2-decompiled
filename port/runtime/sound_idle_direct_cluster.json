@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect-refresh helpers, compact dependencies, playback fade, and complete playback-stop ownership",
+  "role": "source-owned dormant idle service, direct sound-provider callees, effect-refresh helpers, compact dependencies, playback fade/stop, and complete voice-chunk transition ownership",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -89,6 +89,34 @@
     {
       "source": "src/unknown_2197f0.cpp",
       "symbol": "?function_2195f0@@YAMM@Z"
+    },
+    {
+      "source": "src/sound_stream_chunk_release_native.cpp",
+      "symbol": "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/sound_stream_update_native.cpp",
+      "symbol": "?sound_stream_update@@YAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/sound_voice_chunk_transition_native.cpp",
+      "symbol": "?sound_voice_update_chunks@@YAXF@Z"
+    },
+    {
+      "source": "src/sound_cache_request_native.cpp",
+      "symbol": "?function_218850@@YAKJPAUs_sound_chunk@@K@Z"
+    },
+    {
+      "source": "src/sound_voice_chunk_helpers_native.cpp",
+      "symbol": "?function_219290@@YAJFPAUs_permutation_group@@@Z"
+    },
+    {
+      "source": "src/sound_driver_playback_rate_native.cpp",
+      "symbol": "?function_21f650@@YAMJJ@Z"
+    },
+    {
+      "source": "src/sound_voice_chunk_helpers_native.cpp",
+      "symbol": "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"
     }
   ],
   "definitions": [
@@ -100,26 +128,34 @@
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
+    "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+    "?function_219290@@YAJFPAUs_permutation_group@@@Z",
     "?function_2195f0@@YAMM@Z",
     "?function_2197f0@@YAJM@Z",
     "?function_21ec00@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+    "?function_21f650@@YAMJJ@Z",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
     "?sound_playback_delete@@YAXJ@Z",
+    "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
+    "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
+    "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_system_available@@YAJXZ",
     "?sound_system_update_time@@YAXXZ",
     "?sound_voice_free@@YAXF@Z",
     "?sound_voice_release@@YAXJ@Z",
+    "?sound_voice_update_chunks@@YAXF@Z",
     "?sound_voices_update_chunks@@YAXXZ"
   ],
   "imports": [
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
+    "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
@@ -133,7 +169,7 @@
     "?g_4e6380@@3PAUs_4e6380@@A",
     "?g_4e6948@@3PAUs_game_options_view@@A",
     "?g_502104@@3PAUs_record_pool@@A",
-    "?g_50210c@@3PAXA",
+    "?g_50210c@@3PAUs_sound_cache_allocator@@A",
     "?g_502114@@3PAUs_record_pool@@A",
     "?g_510c54@@3PAUs_game_time_globals@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
@@ -142,18 +178,18 @@
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
-    "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
-    "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
-    "?sound_voice_update_chunks@@YAXF@Z",
     "?voice_start_engine@@YAXXZ",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "GetTickCount",
     "IDirectSoundBuffer_SetVolume",
+    "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
+    "IDirectSoundStream_Process",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
+    "SwitchToThread",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
@@ -172,6 +208,7 @@
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12be90@@YA_NXZ",
+    "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
@@ -181,20 +218,19 @@
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_502104@@3PAUs_record_pool@@A",
-    "?g_50210c@@3PAXA",
+    "?g_50210c@@3PAUs_sound_cache_allocator@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
-    "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
-    "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
-    "?sound_voice_update_chunks@@YAXF@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "IDirectSoundBuffer_SetVolume",
+    "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
+    "IDirectSoundStream_Process",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "XAudioDownloadEffectsImage",
@@ -264,6 +300,36 @@
     {
       "symbol": "?function_2195f0@@YAMM@Z",
       "semantics": "pin decibels to the recovered -64 through 0 range and convert to linear gain"
+    }
+  ],
+  "voice_transition_helpers": [
+    {
+      "symbol": "?sound_voice_update_chunks@@YAXF@Z",
+      "semantics": "promote queued chunks, release prior references, request missing cache data, and advance authentic stream time"
+    },
+    {
+      "symbol": "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
+      "semantics": "pump ready state-2/3 streams through genuine codec packets and DirectSound process/discontinuity operations"
+    },
+    {
+      "symbol": "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
+      "semantics": "release every queued cache lock in reverse order without fabricating stream progress"
+    },
+    {
+      "symbol": "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+      "semantics": "admit sound-cache loads, update physical timestamps, cooperate on blocking waits, and report authentic cache state"
+    },
+    {
+      "symbol": "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+      "semantics": "select the next bounded permutation chunk"
+    },
+    {
+      "symbol": "?function_21f650@@YAMJJ@Z",
+      "semantics": "convert exact pitch-mode state to exponential playback rate"
+    },
+    {
+      "symbol": "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
+      "semantics": "release authentic salted sound-reference ownership"
     }
   ]
 }

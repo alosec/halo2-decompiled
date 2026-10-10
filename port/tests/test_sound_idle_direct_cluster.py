@@ -53,12 +53,19 @@ def main() -> int:
         ("src/sound_looping_controller_release_native.cpp", "?looping_sound_controller_release@@YAXJ@Z"),
         ("src/sound_playback_fade_native.cpp", "?function_12a810@@YAJJ@Z"),
         ("src/unknown_2197f0.cpp", "?function_2195f0@@YAMM@Z"),
+        ("src/sound_stream_chunk_release_native.cpp", "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z"),
+        ("src/sound_stream_update_native.cpp", "?sound_stream_update@@YAXPAUs_sound_stream@@@Z"),
+        ("src/sound_voice_chunk_transition_native.cpp", "?sound_voice_update_chunks@@YAXF@Z"),
+        ("src/sound_cache_request_native.cpp", "?function_218850@@YAKJPAUs_sound_chunk@@K@Z"),
+        ("src/sound_voice_chunk_helpers_native.cpp", "?function_219290@@YAJFPAUs_permutation_group@@@Z"),
+        ("src/sound_driver_playback_rate_native.cpp", "?function_21f650@@YAMJJ@Z"),
+        ("src/sound_voice_chunk_helpers_native.cpp", "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol"))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol") for entry in providers]
-    if len(set(provider_symbols)) != 22:
+    if len(set(provider_symbols)) != 29:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         source = args.root / entry.get("source", "")
@@ -120,10 +127,22 @@ def main() -> int:
                 "pin decibels to the recovered -64 through 0 range and "
                 "convert to linear gain"}]:
         raise RuntimeError("sound-idle playback-fade inventory changed")
+    voice_transition_helpers = manifest.get("voice_transition_helpers", [])
+    if [entry.get("symbol") for entry in voice_transition_helpers] != [
+            "?sound_voice_update_chunks@@YAXF@Z",
+            "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
+            "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
+            "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+            "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+            "?function_21f650@@YAMJJ@Z",
+            "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"]:
+        raise RuntimeError("sound-idle voice-transition inventory changed")
+    if any(not entry.get("semantics") for entry in voice_transition_helpers):
+        raise RuntimeError("sound-idle voice-transition semantics are missing")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 23 or len(expected_imports) != 47:
+    if len(expected_definitions) != 30 or len(expected_imports) != 48:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
