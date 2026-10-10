@@ -1409,6 +1409,7 @@ def main():
         texture_residency_request_symbols = [
             "?function_143c0@@YA_NJFFM@Z",
             "?function_14390@@YA_NFPAUs_type_7ba8e9@@M@Z",
+            "?function_144f0@@YAXJFFFFM@Z",
         ]
         texture_residency_request_command = command[:]
         texture_residency_request_command[
@@ -1416,7 +1417,8 @@ def main():
         ] = texture_residency_request_symbols[0]
         insertion = texture_residency_request_command.index("--extract-global")
         texture_residency_request_command[insertion:insertion] = [
-            "--extract-symbol", texture_residency_request_symbols[1]
+            "--extract-symbol", texture_residency_request_symbols[1],
+            "--extract-symbol", texture_residency_request_symbols[2],
         ]
         texture_residency_request_command[
             texture_residency_request_command.index("--extract-global"):texture_residency_request_command.index("--output")

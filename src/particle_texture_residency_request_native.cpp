@@ -28,6 +28,29 @@ bool function_14390(short stage, s_type_7ba8e9 *bitmap, real priority)
     return true;
 }
 
+// @retail 0x144f0
+void function_144f0(long tag, short stage, short fallback,
+    short fallback_index, short index, real priority)
+{
+    s_type_7ba8e9 *bitmap = NULL;
+    if (tag != NONE)
+    {
+        byte *group = g_4e3b44[tag & 0xffff].bytes;
+        long count = *(long *)(group + 0x44);
+        if (count > 0)
+            bitmap = function_137550(tag, (short)(index % count));
+    }
+    if (!bitmap || *(short *)((byte *)bitmap + 0x0a) != fallback)
+    {
+        tag = *(long *)(g_485a80 + fallback * 8 + 0x64);
+        if (tag == NONE)
+            return;
+        bitmap = function_137550(tag, fallback_index);
+    }
+    if (bitmap)
+        function_14390(stage, bitmap, priority);
+}
+
 // @retail 0x143c0
 bool function_143c0(long tag, short index, short stage, real priority)
 {

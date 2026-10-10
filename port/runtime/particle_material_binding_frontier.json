@@ -58,7 +58,7 @@
     ],
     "parameter_and_constant_state": []
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. The texture chain now owns bitmap-group bounds lookup, direct bitmap-to-stage residency assignment, fallback/index validation, wanted assignment, current-frame reuse, resident-level policy, shared-header routing, Xbox hardware texture-header construction, exact mip-count policy, and integer log2. The deeper texture frontier is broad function_19530 routing, 658-byte function_12ce00 upload/request lifetime, source pixel-data ownership, and initialized cache pools. The remaining 4 direct calls are texture-stage replay and three broad D3D submission providers. Packed pass/state helpers, general curves, mutable state, and renderer ownership remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. The texture chain now owns bitmap-group bounds lookup, direct and fallback bitmap-to-stage routing, tag/index validation, wanted assignment, current-frame reuse, resident-level policy, shared-header routing, Xbox hardware texture-header construction, exact mip-count policy, and integer log2. The deeper texture frontier is broad function_19530 routing, 658-byte function_12ce00 upload/request lifetime, source pixel-data ownership, and initialized cache pools. The remaining 4 direct calls are texture-stage replay and three broad D3D submission providers. Packed pass/state helpers, general curves, mutable state, and renderer ownership remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -113,6 +113,10 @@
       "?g_485af4@@3PAJA",
       "?g_485b04@@3PAJA",
       "?g_51f3c8@@3PAY03PAXA"
+    ],
+    "0x000144f0": [
+      "?g_485a80@@3PAEA",
+      "?g_4e3b44@@3PAUs_tag_instance@@A"
     ]
   },
   "owned_zero_import_calls": [
@@ -194,6 +198,10 @@
     ],
     "0x00014390": [
       "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
+    ],
+    "0x000144f0": [
+      "?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
+      "?function_14390@@YA_NFPAUs_type_7ba8e9@@M@Z"
     ]
   },
   "source_owned_transitive_calls": [
@@ -216,7 +224,8 @@
     "0x000359e0",
     "0x0013e3a0",
     "0x00137550",
-    "0x00014390"
+    "0x00014390",
+    "0x000144f0"
   ],
   "owned_renderer_boundaries": {
     "0x00018e80": [
