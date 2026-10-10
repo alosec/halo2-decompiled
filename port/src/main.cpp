@@ -945,8 +945,11 @@ int main(int argc, char** argv) {
         }
         guest_image = h2::port::GuestElfImage::load(options.guest_image, *arena,
                                                     arena_error);
-        if (!guest_image || !h2::port::patch_standard_host_imports(
-                                *guest_image, *arena, arena_error)) {
+        if (!guest_image ||
+            !h2::port::patch_standard_host_imports(
+                *guest_image, *arena, arena_error) ||
+            !h2::port::patch_async_host_imports(
+                *guest_image, *arena, arena_error)) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
         }

@@ -1483,7 +1483,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "host_owned_guest_texture_controller_executes_dormantly",
+                    "production_guest_controller_linked_but_unconfigured",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1542,7 +1542,10 @@ def main() -> int:
                     "complete_controller_installs_active_and_shared_caches_pools_queue_and_worker",
                     "controller_requires_exactly_one_initial_active_cache_and_unique_cache_types",
                     "failed_pool_install_rolls_back_cache_handles_and_service_state",
-                    "complete_controller_shutdown_stops_queue_flushes_pools_clears_caches_and_resets_services"],
+                    "complete_controller_shutdown_stops_queue_flushes_pools_clears_caches_and_resets_services",
+                    "production_guest_image_links_controller_queue_flush_and_callback_entries",
+                    "production_guest_scheduler_storage_is_bound_to_exact_retail_addresses",
+                    "production_guest_image_imports_only_standard_and_async_host_abi_services"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1605,6 +1608,7 @@ def main() -> int:
                     "cache_clear_requires_pool_clear": True,
                     "reset_rejects_installed_pools": True,
                     "production_configured": False,
+                    "production_guest_linked": True,
                     "clear_requires_empty_physical_and_texture_pools": True,
                     "flush_requires_worker_stopped_and_queue_torn_down": True,
                     "flush_entry":
@@ -1629,6 +1633,22 @@ def main() -> int:
                     "shutdown_sequence": [
                         "worker_shutdown", "queue_teardown", "texture_flush",
                         "texture_pool_clear", "cache_clear", "service_reset"],
+                    "production_guest_entries": [
+                        "h2_native_async_worker_step",
+                        "h2_native_async_queue_initialize",
+                        "h2_native_async_queue_teardown",
+                        "h2_native_texture_cache_flush",
+                        "?texture_cache_block_delete@@YAXJ@Z",
+                        "?texture_cache_entry_busy@@YA_NJ@Z",
+                        "?texture_cache_entry_state@@YAEJ@Z",
+                        "?physical_memory_flush@@YAXPAUs_physical_object@@@Z"],
+                    "production_guest_bindings": {
+                        "?async_globals@@3Us_async_globals@@A": "0x004e0354",
+                        "?g_4e6454@@3PAUs_record_pool@@A": "0x004e6454",
+                        "?g_4e6464@@3PAUs_physical_object@@A": "0x004e6464",
+                        "?g_4e6479@@3_NA": "0x004e6479",
+                        "?g_5020c8@@3Us_thread_stack@@A": "0x005020c8",
+                        "?g_510810@@3PAUs_job_node@@A": "0x00510810"},
                     "callbacks": {
                         "delete": "texture_cache_block_delete@0x0012d200",
                         "busy": "texture_cache_entry_busy@0x0012d1a0",

@@ -138,6 +138,30 @@ set(H2_GUEST_WIDGET_ITEM_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_2b0149.o")
 set(H2_GUEST_LOCALIZED_TEXT_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1a0120.o")
 set(H2_GUEST_UTF8_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_13fd90.o")
 set(H2_GUEST_COLOR_SPACE_OBJECT "${H2_GUEST_OBJECT_DIR}/unknown_1317a0.o")
+set(H2_GUEST_ASYNC_RUNTIME_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/guest_async_runtime_main.o")
+set(H2_GUEST_ASYNC_WORKER_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/async_worker_main.o")
+set(H2_GUEST_ASYNC_QUEUE_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/async_queue_main.o")
+set(H2_GUEST_TEXTURE_CACHE_LIFECYCLE_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/texture_cache_lifecycle_main.o")
+set(H2_GUEST_PHYSICAL_FLUSH_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/physical_flush_main.o")
+set(H2_GUEST_PHYSICAL_CHOICE_MAIN_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/physical_choice_main.o")
+set(H2_GUEST_ASYNC_RUNTIME_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_runtime.o")
+set(H2_GUEST_ASYNC_WORKER_STEP_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_worker_step.o")
+set(H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_queue_lifecycle.o")
+set(H2_GUEST_TEXTURE_CACHE_LIFECYCLE_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_texture_cache_lifecycle.o")
+set(H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_allocator.o")
+set(H2_GUEST_PHYSICAL_CHOICE_OBJECT
+    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_choice.o")
 file(GLOB H2_GUEST_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.h")
 file(GLOB_RECURSE H2_RECOVERED_SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE H2_PORT_GUEST_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*")
@@ -757,7 +781,13 @@ foreach(pair IN ITEMS
         "${H2_GUEST_WIDGET_ITEM_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_2b0149.cpp"
         "${H2_GUEST_LOCALIZED_TEXT_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1a0120.cpp"
         "${H2_GUEST_UTF8_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13fd90.cpp"
-        "${H2_GUEST_COLOR_SPACE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp")
+        "${H2_GUEST_COLOR_SPACE_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_1317a0.cpp"
+        "${H2_GUEST_ASYNC_RUNTIME_MAIN_OBJECT}|${CMAKE_CURRENT_SOURCE_DIR}/runtime/guest_async_runtime.cpp"
+        "${H2_GUEST_ASYNC_WORKER_MAIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/async.cpp"
+        "${H2_GUEST_ASYNC_QUEUE_MAIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/async.cpp"
+        "${H2_GUEST_TEXTURE_CACHE_LIFECYCLE_MAIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/particle_texture_cache_lifecycle_native.cpp"
+        "${H2_GUEST_PHYSICAL_FLUSH_MAIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
+        "${H2_GUEST_PHYSICAL_CHOICE_MAIN_OBJECT}|${PROJECT_SOURCE_DIR}/src/unknown_13d320.cpp")
     string(REPLACE "|" ";" fields "${pair}")
     list(GET fields 0 object)
     list(GET fields 1 source)
@@ -765,6 +795,14 @@ foreach(pair IN ITEMS
     set(guest_extract_args)
     list(FIND H2_MS_ABI_SOURCES "${source}" ms_abi_index)
     if(NOT ms_abi_index EQUAL -1)
+        list(APPEND guest_abi_args --ms-abi)
+    endif()
+    if(object STREQUAL H2_GUEST_ASYNC_RUNTIME_MAIN_OBJECT OR
+       object STREQUAL H2_GUEST_ASYNC_WORKER_MAIN_OBJECT OR
+       object STREQUAL H2_GUEST_ASYNC_QUEUE_MAIN_OBJECT OR
+       object STREQUAL H2_GUEST_TEXTURE_CACHE_LIFECYCLE_MAIN_OBJECT OR
+       object STREQUAL H2_GUEST_PHYSICAL_FLUSH_MAIN_OBJECT OR
+       object STREQUAL H2_GUEST_PHYSICAL_CHOICE_MAIN_OBJECT)
         list(APPEND guest_abi_args --ms-abi)
     endif()
     if(object STREQUAL H2_GUEST_MAP_LOADER_OBJECT)
@@ -865,6 +903,32 @@ foreach(pair IN ITEMS
     if(object STREQUAL H2_GUEST_COLLISION_INITIALIZE_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
             "?function_2122b0@@YAXJ@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_ASYNC_WORKER_MAIN_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "h2_native_async_worker_step")
+    endif()
+    if(object STREQUAL H2_GUEST_ASYNC_QUEUE_MAIN_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "h2_native_async_queue_initialize"
+            --extract-symbol "h2_native_async_queue_teardown")
+    endif()
+    if(object STREQUAL H2_GUEST_TEXTURE_CACHE_LIFECYCLE_MAIN_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?texture_cache_entry_state@@YAEJ@Z"
+            --extract-symbol "?texture_cache_entry_busy@@YA_NJ@Z"
+            --extract-symbol "?texture_cache_block_delete@@YAXJ@Z"
+            --extract-symbol "h2_native_texture_cache_flush")
+    endif()
+    if(object STREQUAL H2_GUEST_PHYSICAL_FLUSH_MAIN_OBJECT)
+        list(APPEND guest_extract_args
+            --extract-symbol "?function_13d370@@YAJPAUs_physical_object@@JJ@Z"
+            --extract-symbol "?block_delete@s_physical_object@@QAAXJ@Z"
+            --extract-symbol "?physical_memory_flush@@YAXPAUs_physical_object@@@Z")
+    endif()
+    if(object STREQUAL H2_GUEST_PHYSICAL_CHOICE_MAIN_OBJECT)
+        list(APPEND guest_extract_args --extract-symbol
+            "?function_13d320@@YA_NPBUs_physical_allocator_view@@PBUs_physical_block_view@@1@Z")
     endif()
     if(object STREQUAL H2_GUEST_RECORD_POOL_LAST_OBJECT)
         list(APPEND guest_extract_args --extract-symbol
@@ -1577,6 +1641,12 @@ set(H2_MAIN_MENU_CLOSURE_OBJECTS
     ${H2_MAIN_MENU_GUEST_OBJECTS}
     "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+    "${H2_GUEST_ASYNC_RUNTIME_MAIN_OBJECT}"
+    "${H2_GUEST_ASYNC_WORKER_MAIN_OBJECT}"
+    "${H2_GUEST_ASYNC_QUEUE_MAIN_OBJECT}"
+    "${H2_GUEST_TEXTURE_CACHE_LIFECYCLE_MAIN_OBJECT}"
+    "${H2_GUEST_PHYSICAL_FLUSH_MAIN_OBJECT}"
+    "${H2_GUEST_PHYSICAL_CHOICE_MAIN_OBJECT}"
 )
 add_custom_command(
     OUTPUT "${H2_MAIN_MENU_CLOSURE_REPORT}"
@@ -1602,7 +1672,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
             --closure "${H2_MAIN_MENU_CLOSURE_REPORT}"
             --source-root "${PROJECT_SOURCE_DIR}/src"
-            --expect-unresolved 16
+            --expect-unresolved 30
             --output "${H2_MAIN_MENU_IMPORT_PLAN}"
     DEPENDS "${H2_MAIN_MENU_CLOSURE_REPORT}" ${H2_RECOVERED_SOURCES}
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_import_plan.py
@@ -2295,6 +2365,12 @@ list(APPEND H2_MAIN_MENU_ELF_OBJECTS "${H2_MAIN_MENU_BINDINGS_OBJECT}")
 list(APPEND H2_MAIN_MENU_ELF_OBJECTS
     "${H2_GUEST_PHYSICS_MODEL_PROVIDERS_OBJECT}"
     "${H2_GUEST_PHYSICS_MODEL_INITIALIZE_OBJECT}"
+    "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
+    "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
+    "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
+    "${H2_GUEST_TEXTURE_CACHE_LIFECYCLE_OBJECT}"
+    "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
+    "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
 )
 set(H2_MAIN_MENU_HOST_IMPORTS_ASM "${H2_GUEST_OBJECT_DIR}/elf/host_imports.s")
 set(H2_MAIN_MENU_HOST_IMPORTS_OBJECT "${H2_GUEST_OBJECT_DIR}/elf/host_imports.o")
@@ -2348,8 +2424,6 @@ add_custom_command(
 )
 add_custom_target(h2-main-menu-guest-image ALL DEPENDS "${H2_MAIN_MENU_GUEST_IMAGE}")
 
-set(H2_GUEST_ASYNC_RUNTIME_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_runtime.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_ASYNC_RUNTIME_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2373,8 +2447,6 @@ add_custom_command(
 add_custom_target(h2-guest-async-runtime ALL
     DEPENDS "${H2_GUEST_ASYNC_RUNTIME_OBJECT}")
 
-set(H2_GUEST_ASYNC_WORKER_STEP_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_worker_step.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2399,8 +2471,6 @@ add_custom_command(
 add_custom_target(h2-guest-async-worker-step ALL
     DEPENDS "${H2_GUEST_ASYNC_WORKER_STEP_OBJECT}")
 
-set(H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_async_queue_lifecycle.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_ASYNC_QUEUE_LIFECYCLE_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2482,8 +2552,6 @@ add_custom_command(
 add_custom_target(h2-guest-texture-upload-request ALL
     DEPENDS "${H2_GUEST_TEXTURE_UPLOAD_REQUEST_OBJECT}")
 
-set(H2_GUEST_TEXTURE_CACHE_LIFECYCLE_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_texture_cache_lifecycle.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_TEXTURE_CACHE_LIFECYCLE_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2539,8 +2607,6 @@ add_custom_command(
 add_custom_target(h2-guest-texture-cache-lookup ALL
     DEPENDS "${H2_GUEST_TEXTURE_CACHE_LOOKUP_OBJECT}")
 
-set(H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_allocator.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_PHYSICAL_ALLOCATOR_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2565,8 +2631,6 @@ add_custom_command(
     VERBATIM
 )
 
-set(H2_GUEST_PHYSICAL_CHOICE_OBJECT
-    "${H2_GUEST_OBJECT_DIR}/elf/guest_physical_choice.o")
 add_custom_command(
     OUTPUT "${H2_GUEST_PHYSICAL_CHOICE_OBJECT}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/guest_elf_cc.py"
@@ -2915,7 +2979,7 @@ add_test(
             --nm ${H2_LLVM_NM}
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --format text
-            --expect-unresolved 16
+            --expect-unresolved 30
             ${H2_MAIN_MENU_CLOSURE_OBJECTS}
 )
 add_test(
@@ -2923,7 +2987,7 @@ add_test(
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_guest_import_plan.py
             --plan "${H2_MAIN_MENU_IMPORT_PLAN}"
-            --expect-unresolved 16
+            --expect-unresolved 30
 )
 add_test(
     NAME main-menu-elf-core
