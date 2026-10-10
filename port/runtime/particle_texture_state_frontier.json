@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "retail_function": "0x0001cf50",
-  "size": 48,
-  "symbol": "?function_1cf50@@YAXXZ",
-  "execution_gate": "native_particle_texture_state_owned",
-  "direct_calls": [
-    "0x003f8320"
+  "retail_functions": [
+    {"address": "0x0001cf50", "size": 48, "symbol": "?function_1cf50@@YAXXZ", "changed_only": true},
+    {"address": "0x0001cf80", "size": 40, "symbol": "?function_1cf80@@YAXXZ", "changed_only": false}
   ],
+  "execution_gate": "native_particle_texture_state_owned",
+  "stage_count": 4,
+  "direct_calls": ["0x003f8320"],
   "newly_exposed": [
     "?g_51f3c8@@3PAY03PAXA",
     "D3DDevice_SetTexture"
@@ -17,5 +17,5 @@
   "mesh_callback_score_after": 37,
   "mesh_update_and_callback_score_before": 44,
   "mesh_update_and_callback_score_after": 45,
-  "blocker": "The exact 48-byte provider compares four desired texture bindings with four current bindings, submits only changed stages, then mutates the current cache. Owning its loop exposes both the live eight-pointer texture cache and real D3D texture submission. It therefore worsens every measured renderer frontier by one and remains unlinked until texture lifetime, cache initialization, and submission are jointly owned."
+  "blocker": "The exact 48-byte provider compares four desired texture bindings with four current bindings, submits only changed stages, then mutates the current cache. The exact 40-byte forced provider submits all four desired stages and synchronizes every current pointer regardless of equality. Both expose the same live eight-pointer texture cache and genuine D3D texture submission. The direct renderer scores are unchanged by lifecycle ownership and remain worse by one when the changed-only provider is admitted. Both providers stay unlinked until texture lifetime, cache initialization, and real submission are jointly owned."
 }

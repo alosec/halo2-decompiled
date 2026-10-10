@@ -1208,9 +1208,12 @@ def main():
             raise RuntimeError("particle mesh callback exposed a compiler switch table")
 
         texture_state_output = Path(temporary) / "particle-texture-state.o"
-        texture_state_symbol = "?function_1cf50@@YAXXZ"
+        texture_state_symbols = ["?function_1cf50@@YAXXZ", "?function_1cf80@@YAXXZ"]
         texture_state_command = command[:]
-        texture_state_command[texture_state_command.index("h2_extract_selected")] = texture_state_symbol
+        texture_state_command[texture_state_command.index("h2_extract_selected")] = texture_state_symbols[0]
+        texture_global_index = texture_state_command.index("--extract-global")
+        texture_state_command[texture_global_index:texture_global_index] = [
+            "--extract-symbol", texture_state_symbols[1]]
         texture_state_command[texture_state_command.index("--extract-global"):texture_state_command.index("--output")] = []
         texture_state_command[texture_state_command.index(output)] = texture_state_output
         texture_state_command[-1] = args.root / "src/particle_texture_state_native.cpp"
@@ -1219,8 +1222,9 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_state_output],
             text=True,
         )
-        if f"_{texture_state_symbol}" not in texture_state_defined:
-            raise RuntimeError("particle texture state provider was not selectively compilable")
+        for symbol in texture_state_symbols:
+            if f"_{symbol}" not in texture_state_defined:
+                raise RuntimeError(f"particle texture state provider missing: {symbol}")
 
         vertex_register_output = Path(temporary) / "particle-vertex-register-state.o"
         vertex_register_symbol = "?function_23ecd0@@YAXXZ"

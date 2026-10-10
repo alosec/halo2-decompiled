@@ -931,10 +931,19 @@ def main() -> int:
     texture_state = json.loads((
         args.root / "port/runtime/particle_texture_state_frontier.json"
     ).read_text())
+    expected_texture_functions = {
+        ("0x0001cf50", 48, "?function_1cf50@@YAXXZ", True),
+        ("0x0001cf80", 40, "?function_1cf80@@YAXXZ", False),
+    }
+    texture_functions = {
+        (entry.get("address"), entry.get("size"), entry.get("symbol"),
+         entry.get("changed_only"))
+        for entry in texture_state.get("retail_functions", [])
+    }
     if (texture_state.get("version") != 1 or
-            texture_state.get("retail_function") != "0x0001cf50" or
-            texture_state.get("size") != 48 or
+            texture_functions != expected_texture_functions or
             texture_state.get("execution_gate") != "native_particle_texture_state_owned" or
+            texture_state.get("stage_count") != 4 or
             texture_state.get("direct_calls") != ["0x003f8320"] or
             set(texture_state.get("newly_exposed", [])) != {
                 "?g_51f3c8@@3PAY03PAXA", "D3DDevice_SetTexture"} or

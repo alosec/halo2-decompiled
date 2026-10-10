@@ -1,6 +1,7 @@
-// Source-local native reconstruction of retail function_1cf50. The matching
-// Xbox definition remains in unknown_01cf50.cpp beside unrelated x86 and D3D
-// implementation detail. This provider remains dormant and unlinked.
+// Source-local native reconstruction of the compact retail texture-state
+// providers. The matching Xbox definitions remain in unknown_01cf50.cpp beside
+// unrelated x86 and D3D implementation detail. These providers remain dormant
+// and unlinked.
 
 #include "unknown_11c920.h"
 #include <xtl.h>
@@ -19,5 +20,15 @@ void function_1cf50(void)
             D3DDevice_SetTexture(stage, *wanted);
             *current = *wanted;
         }
+    }
+}
+
+// @retail 0x1cf80
+void function_1cf80(void)
+{
+    for (long stage = 0; stage < 4; ++stage)
+    {
+        D3DDevice_SetTexture(stage, g_51f3c8[1][stage]);
+        g_51f3c8[0][stage] = g_51f3c8[1][stage];
     }
 }
