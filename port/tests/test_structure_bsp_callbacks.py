@@ -1074,6 +1074,35 @@ def main() -> int:
             not vertex_register.get("blocker")):
         raise RuntimeError("particle vertex register state frontier changed")
 
+    material_binding = json.loads((
+        args.root / "port/runtime/particle_material_binding_frontier.json"
+    ).read_text())
+    expected_material_calls = {
+        "0x00016f60", "0x00017000", "0x00017170", "0x00017420",
+        "0x000174d0", "0x00018900", "0x000189a0", "0x00018a90",
+        "0x00018d70", "0x00018e80", "0x00018ee0", "0x00019be0",
+        "0x00019ca0", "0x0001a170", "0x0001ab50", "0x0001ae70",
+        "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50",
+        "0x00137bd0",
+    }
+    material_groups = material_binding.get("remaining_groups", {})
+    grouped_material_calls = {
+        call for calls in material_groups.values() for call in calls
+    }
+    if (material_binding.get("version") != 1 or
+            material_binding.get("retail_function") != "0x00016b90" or
+            material_binding.get("size") != 972 or
+            material_binding.get("symbol") != "?function_16b90@@YAXPAEJJJJM@Z" or
+            material_binding.get("execution_gate") != "native_particle_material_binding_state_owned" or
+            set(material_binding.get("direct_calls", [])) != expected_material_calls or
+            set(material_binding.get("already_owned_calls", [])) != {
+                "0x00018900", "0x0001cf50", "0x00137bd0"} or
+            grouped_material_calls != expected_material_calls - {
+                "0x00018900", "0x0001cf50", "0x00137bd0"} or
+            len(material_groups) != 4 or
+            not material_binding.get("blocker")):
+        raise RuntimeError("particle material binding frontier changed")
+
     render_reset = json.loads((
         args.root / "port/runtime/particle_render_state_reset_frontier.json"
     ).read_text())
