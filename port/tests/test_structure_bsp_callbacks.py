@@ -931,6 +931,29 @@ def main() -> int:
             not sprite_setup.get("blocker")):
         raise RuntimeError("particle sprite setup frontier changed")
 
+    sprite_geometry = json.loads((
+        args.root / "port/runtime/particle_sprite_geometry_frontier.json"
+    ).read_text())
+    expected_geometry_expansion = {
+        "?function_015d00@@YA_NJPAPAK@Z", "?g_470a38@@3EA",
+        "?g_470a3c@@3PAJA", "D3DDevice_EndPush",
+    }
+    packet = sprite_geometry.get("packet", {})
+    if (sprite_geometry.get("version") != 1 or
+            sprite_geometry.get("retail_function") != "0x0023ed30" or
+            sprite_geometry.get("size") != 589 or
+            sprite_geometry.get("execution_gate") != "native_particle_push_buffer_owned" or
+            sprite_geometry.get("direct_calls") != ["0x00015d00"] or
+            sprite_geometry.get("production_score_before") != 33 or
+            sprite_geometry.get("production_score_after") != 36 or
+            set(sprite_geometry.get("newly_exposed", [])) != expected_geometry_expansion or
+            packet.get("reserved_dwords") != 46 or
+            packet.get("vertex_attributes") != 8 or
+            packet.get("primitive") != 8 or
+            packet.get("inline_indices") != [0, 0, 1, 0, 65537, 0, 65536, 0] or
+            not sprite_geometry.get("blocker")):
+        raise RuntimeError("particle sprite geometry frontier changed")
+
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports
     ) | set(effect_symbols)

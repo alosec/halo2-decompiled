@@ -1148,6 +1148,21 @@ def main():
         if f"_{sprite_setup_symbol}" not in sprite_setup_defined:
             raise RuntimeError("native particle sprite setup was not selectively compilable")
 
+        sprite_geometry_output = Path(temporary) / "particle-sprite-geometry.o"
+        sprite_geometry_symbol = "?function_23ed30@@YAXPATpoint3f@@0MMKMPAM11@Z"
+        sprite_geometry_command = command[:]
+        sprite_geometry_command[sprite_geometry_command.index("h2_extract_selected")] = sprite_geometry_symbol
+        sprite_geometry_command[sprite_geometry_command.index("--extract-global"):sprite_geometry_command.index("--output")] = []
+        sprite_geometry_command[sprite_geometry_command.index(output)] = sprite_geometry_output
+        sprite_geometry_command[-1] = args.root / "src/particle_sprite_geometry_native.cpp"
+        subprocess.run([str(value) for value in sprite_geometry_command], check=True)
+        sprite_geometry_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", sprite_geometry_output],
+            text=True,
+        )
+        if f"_{sprite_geometry_symbol}" not in sprite_geometry_defined:
+            raise RuntimeError("native particle sprite geometry was not selectively compilable")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

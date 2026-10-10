@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "retail_function": "0x0023ed30",
+  "size": 589,
+  "symbol": "?function_23ed30@@YAXPATpoint3f@@0MMKMPAM11@Z",
+  "execution_gate": "native_particle_push_buffer_owned",
+  "direct_calls": [
+    "0x00015d00"
+  ],
+  "production_score_before": 33,
+  "production_score_after": 36,
+  "closed_symbol": "?function_23ed30@@YAXPATpoint3f@@0MMKMPAM11@Z",
+  "newly_exposed": [
+    "?function_015d00@@YA_NJPAPAK@Z",
+    "?g_470a38@@3EA",
+    "?g_470a3c@@3PAJA",
+    "D3DDevice_EndPush"
+  ],
+  "packet": {
+    "reserved_dwords": 46,
+    "vertex_attributes": 8,
+    "primitive": 8,
+    "inline_indices": [0, 0, 1, 0, 65537, 0, 65536, 0]
+  },
+  "blocker": "The exact geometry provider emits direction, blend, position, scale/angle, packed color, geometry, and two UV rectangles into a 46-dword NV2A push packet, then submits a four-vertex quad. Admitting it replaces one frontier symbol with push-buffer reservation, vertex-register state, renderer-enabled state, and D3D submission, worsening score 33 to 36. It cannot be replaced by a no-op draw boundary and remains unlinked until a real renderer owns the packet lifecycle."
+}
