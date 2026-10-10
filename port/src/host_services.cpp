@@ -540,6 +540,38 @@ bool teardown_async_queue(std::uint32_t guest_entry_address,
     return true;
 }
 
+bool switch_async_texture_map(const std::filesystem::path& path,
+                              std::int16_t expected_type,
+                              const std::string& expected_name,
+                              const AsyncTextureGuestEntries& entries,
+                              std::uint32_t milliseconds,
+                              std::string& error) {
+    const auto fail = [&error](const char* stage) {
+        error = std::string("native async texture map switch failed during ") +
+                stage + ": " + error;
+        return false;
+    };
+    if (!shutdown_async_worker(milliseconds, error))
+        return fail("worker shutdown");
+    if (!teardown_async_queue(entries.queue_teardown, error))
+        return fail("queue teardown");
+    if (!flush_async_texture_pools(entries.texture_flush, error))
+        return fail("texture flush");
+    if (!clear_async_texture_pools(error))
+        return fail("texture pool clear");
+    if (!install_async_cache_file(path, expected_type, expected_name, true, error))
+        return fail("active cache replacement");
+    if (!install_async_texture_pools(entries.block_delete, entries.entry_busy,
+                                     entries.entry_state, error))
+        return fail("texture pool install");
+    if (!initialize_async_queue(entries.queue_initialize, error))
+        return fail("queue initialization");
+    if (!start_async_worker(entries.worker_step, error))
+        return fail("worker restart");
+    error.clear();
+    return true;
+}
+
 bool reset_async_services(std::string& error) {
     error.clear();
     auto& state = async_state();

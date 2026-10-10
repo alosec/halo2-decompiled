@@ -156,10 +156,19 @@ int main(int argc, char** argv) {
         !texture_block_delete || !texture_entry_busy || !texture_entry_state)
         return 1;
 
+    const h2::port::AsyncTextureGuestEntries texture_entries{
+        .worker_step = *recovered_worker_step,
+        .queue_initialize = *queue_initialize,
+        .queue_teardown = *queue_teardown,
+        .texture_flush = *texture_cache_flush,
+        .block_delete = *texture_block_delete,
+        .entry_busy = *texture_entry_busy,
+        .entry_state = *texture_entry_state,
+    };
     const auto install_texture_pools = [&] {
         return h2::port::install_async_texture_pools(
-            *texture_block_delete, *texture_entry_busy, *texture_entry_state,
-            error);
+            texture_entries.block_delete, texture_entries.entry_busy,
+            texture_entries.entry_state, error);
     };
 
     Platform platform;
@@ -343,6 +352,17 @@ int main(int argc, char** argv) {
     const auto execute_read = [&](std::uint32_t submit_address) {
         return execute_submission(submit_address, *read_completed);
     };
+    const auto execute_running_read = [&](std::uint32_t submit_address) {
+        auto* const submit = reinterpret_cast<int (*)()>(
+            arena->pointer(submit_address));
+        int completed_result = 0;
+        return h2_call_guest_int_0(submit, submit_stack_top) == 1 &&
+               h2::port::shutdown_async_worker(Lifecycle::infinite, error) &&
+               worker.invoke_stopped(*read_completed, completed_result, error) &&
+               completed_result == 1 &&
+               worker.invoke_stopped(*queue_free_count, free_count, error) &&
+               free_count == 150;
+    };
     ok &= check(calls == 4 &&
                     execute_submission(*texture_upload_submit,
                                        *texture_upload_completed),
@@ -369,20 +389,27 @@ int main(int argc, char** argv) {
                     execute_read(*shared_read_submit),
                 "recovered active/shared cache routing did not read and recycle: " +
                     error);
+    ok &= check(worker.invoke_stopped(*texture_upload_initialize, invoke_result,
+                                      error) &&
+                    invoke_result == 1 &&
+                    execute_submission(*texture_upload_submit,
+                                       *texture_upload_completed),
+                "pre-switch resident texture upload did not complete: " + error);
     ok &= check(!h2::port::install_async_cache_file(
                     campaign_path, 0, "campaign", true, error) &&
                     error.find("texture pools must clear") != std::string::npos,
                 "active cache replacement retained live texture pools");
-    ok &= check(h2::port::teardown_async_queue(*queue_teardown, error) &&
-                    h2::port::clear_async_texture_pools(error) &&
-                    h2::port::install_async_cache_file(
-                        campaign_path, 0, "campaign", true, error) &&
-                    install_texture_pools() &&
-                    h2::port::initialize_async_queue(*queue_initialize, error),
+    ok &= check(h2::port::switch_async_texture_map(
+                    campaign_path, 0, "campaign", texture_entries,
+                    Lifecycle::infinite, error),
                 "ordered texture-pool/cache map switch failed: " + error);
     std::memcpy(&published_active, arena->pointer(cache_active_address),
                 sizeof(published_active));
-    ok &= check(published_active == 4 && execute_read(*campaign_read_submit) &&
+    ok &= check(published_active == 4 &&
+                    execute_running_read(*campaign_read_submit) &&
+                    worker.invoke_stopped(*texture_cache_flush_completed,
+                                          invoke_result, error) &&
+                    invoke_result == 1 &&
                     execute_read(*shared_read_submit),
                 "recovered dynamic/shared cache routing did not read and recycle: " +
                     error);

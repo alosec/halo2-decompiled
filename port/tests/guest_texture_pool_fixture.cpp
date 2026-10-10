@@ -258,6 +258,7 @@ extern "C" int h2_texture_upload_initialize(void)
 	memset((void *)g_4e6460, 0, 0x10000);
 	memset(&g_upload_bitmap, 0, sizeof(g_upload_bitmap));
 	memset(g_450768, 0, sizeof(g_450768));
+	g_4e6484 = 0;
 	g_sound_idle_calls = 0;
 
 	g_upload_bitmap.width = 4;

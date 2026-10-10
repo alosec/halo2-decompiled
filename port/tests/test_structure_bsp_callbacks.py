@@ -1483,7 +1483,7 @@ def main() -> int:
                     "production_configured": False}} or
             texture_upload.get("native_texture_pool_lifecycle") != {
                 "status":
-                    "host_owned_guest_texture_pools_callbacks_and_flush_execute_dormantly",
+                    "host_owned_guest_texture_pools_callbacks_flush_and_map_switch_execute_dormantly",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
                     "src/unknown_13d320.cpp:function_13d320",
@@ -1494,7 +1494,8 @@ def main() -> int:
                     "src/particle_texture_upload_request_native.cpp:function_12ce00",
                     "src/particle_texture_cache_lookup_native.cpp:texture_cache_bitmap_build_texture/texture_cache_bitmap_level/texture_cache_format_scalable",
                     "src/particle_texture_cache_lifecycle_native.cpp:texture_cache_block_delete/texture_cache_entry_busy/texture_cache_entry_state/h2_native_texture_cache_flush",
-                    "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication"],
+                    "port/src/native_texture_pool_storage.cpp:host-owned guest pool and upload-buffer publication",
+                    "port/src/host_services.cpp:ordered async texture map-switch controller"],
                 "exact_layouts": {
                     "record_pool_bytes": 76,
                     "physical_block_bytes": 24,
@@ -1534,7 +1535,10 @@ def main() -> int:
                     "texture_pool_flush_requires_worker_stop_and_guest_queue_teardown",
                     "host_verifies_empty_pools_after_guest_flush_entry_returns_success",
                     "recovered_physical_memory_flush_evicts_every_resident_texture",
-                    "ordered_flush_clears_old_map_source_bitmap_residency_before_pool_clear"],
+                    "ordered_flush_clears_old_map_source_bitmap_residency_before_pool_clear",
+                    "single_controller_orders_worker_queue_flush_pool_cache_reinstall_and_restart",
+                    "resident_old_map_texture_is_evicted_before_active_campaign_cache_replacement",
+                    "campaign_and_preserved_shared_reads_execute_after_automatic_worker_restart"],
                 "guest_object_closure": {
                     "allocator_definitions": 1,
                     "choice_definitions": 1,
@@ -1602,6 +1606,14 @@ def main() -> int:
                     "flush_entry":
                         "h2_native_texture_cache_flush -> physical_memory_flush",
                     "flush_releases_source_bitmap_references_before_clear": True,
+                    "ordered_map_switch_controller": "switch_async_texture_map",
+                    "ordered_map_switch_sequence": [
+                        "worker_shutdown", "queue_teardown", "texture_flush",
+                        "texture_pool_clear", "active_cache_replacement",
+                        "texture_pool_install", "queue_initialize",
+                        "worker_restart"],
+                    "partial_failure_policy":
+                        "fail_closed_at_first_incomplete_stage",
                     "callbacks": {
                         "delete": "texture_cache_block_delete@0x0012d200",
                         "busy": "texture_cache_entry_busy@0x0012d1a0",

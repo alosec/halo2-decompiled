@@ -27,6 +27,16 @@ struct HostServiceStats {
     std::uint64_t text_request_calls;
 };
 
+struct AsyncTextureGuestEntries {
+    std::uint32_t worker_step;
+    std::uint32_t queue_initialize;
+    std::uint32_t queue_teardown;
+    std::uint32_t texture_flush;
+    std::uint32_t block_delete;
+    std::uint32_t entry_busy;
+    std::uint32_t entry_state;
+};
+
 void set_video_control_handler(VideoControlHandler handler, void* context = nullptr);
 void set_render_request_handler(RenderRequestHandler handler, void* context = nullptr);
 void set_text_request_handler(TextRequestHandler handler, void* context = nullptr);
@@ -55,6 +65,12 @@ bool initialize_async_queue(std::uint32_t guest_entry_address, std::string& erro
 bool start_async_worker(std::uint32_t guest_entry_address, std::string& error);
 bool shutdown_async_worker(std::uint32_t milliseconds, std::string& error);
 bool teardown_async_queue(std::uint32_t guest_entry_address, std::string& error);
+bool switch_async_texture_map(const std::filesystem::path& path,
+                              std::int16_t expected_type,
+                              const std::string& expected_name,
+                              const AsyncTextureGuestEntries& entries,
+                              std::uint32_t milliseconds,
+                              std::string& error);
 bool reset_async_services(std::string& error);
 bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error);
 bool create_native_profile(std::span<const std::byte> record, std::uint32_t& id,
