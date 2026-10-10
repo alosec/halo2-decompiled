@@ -1269,6 +1269,37 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        texture_mip_math_output = Path(temporary) / "particle-texture-mip-math.o"
+        texture_mip_math_symbols = [
+            "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z", "?log2_floor@@YAJK@Z",
+        ]
+        texture_mip_math_command = command[:]
+        texture_mip_math_command[texture_mip_math_command.index("h2_extract_selected")] = (
+            texture_mip_math_symbols[0]
+        )
+        insertion = texture_mip_math_command.index("--extract-global")
+        texture_mip_math_command[insertion:insertion] = [
+            "--extract-symbol", texture_mip_math_symbols[1]
+        ]
+        texture_mip_math_command[
+            texture_mip_math_command.index("--extract-global"):texture_mip_math_command.index("--output")
+        ] = []
+        texture_mip_math_command[texture_mip_math_command.index(output)] = texture_mip_math_output
+        texture_mip_math_command[-1] = args.root / "src/particle_texture_mip_math_native.cpp"
+        subprocess.run([str(value) for value in texture_mip_math_command], check=True)
+        texture_mip_math_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_mip_math_output],
+            text=True,
+        )
+        texture_mip_math_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_mip_math_output],
+            text=True,
+        )
+        if any(symbol not in texture_mip_math_defined for symbol in texture_mip_math_symbols):
+            raise RuntimeError("particle texture mip math was not selectively compilable")
+        if texture_mip_math_undefined.strip():
+            raise RuntimeError("particle texture mip math gained an import")
+
         texture_cache_lookup_output = Path(temporary) / "particle-texture-cache-lookup.o"
         texture_cache_lookup_symbols = [
             "?texture_cache_format_scalable@@YA_NJ@Z",

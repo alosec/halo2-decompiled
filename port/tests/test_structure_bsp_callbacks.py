@@ -1123,7 +1123,8 @@ def main() -> int:
                 "0x0012c820": [
                     "?g_450768@@3PAY0BI@JA", "?g_4e646c@@3JA"]} or
             material_binding.get("owned_zero_import_calls") != [
-                "0x00017000", "0x00017170", "0x0001ba00", "0x0012ccb0"] or
+                "0x00017000", "0x00017170", "0x0001ba00", "0x0012ccb0",
+                "0x000359e0", "0x0013e3a0"] or
             material_binding.get("owned_immutable_data") != {
                 "0x00467068": "8 exact dword channel masks retained with function_17170"} or
             material_binding.get("owned_transitive_dependencies") != {
@@ -1168,7 +1169,7 @@ def main() -> int:
                 "0x000176a0", "0x00017960", "0x00017b60", "0x00018560",
                 "0x000336f0", "0x00033980", "0x00034060", "0x000143c0",
                 "0x00012310", "0x0012ccb0", "0x0012ccf0", "0x0012c960",
-                "0x0012c820"] or
+                "0x0012c820", "0x000359e0", "0x0013e3a0"] or
             material_binding.get("owned_renderer_boundaries") != {
                 "0x00018d70": ["D3DDevice_SetVertexData4f"],
                 "0x00018e80": ["D3DDevice_SetVertexShaderConstantFast"],
