@@ -1417,6 +1417,36 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/sound_spatialization_native.cpp",
+                "symbol":
+                    "?function_129aa0@@YAXFPAJPAUs_looping_channel_"
+                    "spatialization@@@Z",
+                "imports": [
+                    "?function_125060@@YAJPBUs_sound@@J@Z",
+                    "?function_12a6d0@@YAJFMM@Z",
+                    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
+                    "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@"
+                    "PAT1@@Z",
+                    "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@"
+                    "PAT1@@Z",
+                    "?function_2195f0@@YAMM@Z",
+                    "?function_2197f0@@YAJM@Z",
+                    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                    "?g_440c48@@3JA", "?g_440c4c@@3JA",
+                    "?g_468788@@3PATpoint3f@@A",
+                    "?g_4687a4@@3PATvector3f@@A",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_4e6378@@3PAUs_sound_voice@@A",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?sound_source_get_position@@YAXPBUs_sound_location_source@@"
+                    "JPATpoint3f@@@Z",
+                    "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
+                    "h2_guest_memcpy"],
+                "semantics":
+                    "exact listener-space source transform, attenuation "
+                    "routing, direct/spatial transition fades, promotion gain, "
+                    "and source spatialization callback policy"}, {
                 "source": "src/sound_source_position_native.cpp",
                 "symbol":
                     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@"
