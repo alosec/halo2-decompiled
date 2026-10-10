@@ -118,6 +118,26 @@ D3DTexture *texture_cache_bitmap_get_shared_texture(s_bitmap_data *bitmap)
     return result;
 }
 
+// @retail 0x12cb10
+long texture_cache_bitmap_level(s_bitmap_data const *bitmap, real scale)
+{
+    long result = 0;
+    for (long i = 0; i < 3; ++i)
+    {
+        if (bitmap->data_offsets[i] != NONE)
+        {
+            long size = bitmap->level_sizes[i];
+            if (size && (!i || size > 0x400))
+            {
+                if ((real)i > scale)
+                    break;
+                result = i;
+            }
+        }
+    }
+    return result;
+}
+
 // @retail 0x12ccb0
 bool texture_cache_format_scalable(long format)
 {

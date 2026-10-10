@@ -1445,6 +1445,7 @@ def main():
             "?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
             "?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z",
             "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z",
+            "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z",
         ]
         texture_cache_lookup_command = command[:]
         texture_cache_lookup_command[
@@ -1455,6 +1456,7 @@ def main():
             "--extract-symbol", texture_cache_lookup_symbols[1],
             "--extract-symbol", texture_cache_lookup_symbols[2],
             "--extract-symbol", texture_cache_lookup_symbols[3],
+            "--extract-symbol", texture_cache_lookup_symbols[4],
         ]
         texture_cache_lookup_command[
             texture_cache_lookup_command.index("--extract-global"):texture_cache_lookup_command.index("--output")
