@@ -2944,6 +2944,54 @@ def main():
                 "sound voice traversal imports changed: "
                 f"{sorted(sound_voices_imports)}")
 
+        sound_playback_output = Path(temporary) / "sound-playback-update.o"
+        sound_playback_symbol = "?function_1293f0@@YAXXZ"
+        sound_playback_command = command[:]
+        sound_playback_command[
+            sound_playback_command.index("h2_extract_selected")
+        ] = sound_playback_symbol
+        sound_playback_command[
+            sound_playback_command.index("--extract-global"):
+            sound_playback_command.index("--output")
+        ] = []
+        sound_playback_command[
+            sound_playback_command.index(output)
+        ] = sound_playback_output
+        sound_playback_command[-1] = (
+            args.root / "src/sound_playback_update_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_playback_command], check=True)
+        sound_playback_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_playback_output], text=True)
+        if sound_playback_symbol not in sound_playback_defined:
+            raise RuntimeError(
+                "sound playback update was not selectively compilable")
+        sound_playback_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_playback_output], text=True)
+        sound_playback_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_playback_undefined.splitlines() if line
+        }
+        expected_sound_playback_imports = {
+            "?decibels_add@@YAJJJ@Z",
+            "?function_127320@@YAXJJ@Z",
+            "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+            "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+            "?function_12a810@@YAJJ@Z",
+            "?function_2197f0@@YAJM@Z",
+            "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+            "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+            "?g_4e6378@@3PAUs_sound_voice@@A",
+            "?g_4e637c@@3PAUs_record_pool@@A",
+            "?g_4e6380@@3PAUs_4e6380@@A",
+        }
+        if sound_playback_imports != expected_sound_playback_imports:
+            raise RuntimeError(
+                "sound playback update imports changed: "
+                f"{sorted(sound_playback_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

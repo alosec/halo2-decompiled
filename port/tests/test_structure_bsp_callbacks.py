@@ -1222,7 +1222,7 @@ def main() -> int:
         ("0x00125a60", "?sound_system_available@@YAJXZ", True),
         ("0x001269f0", "?sound_system_update_time@@YAXXZ", True),
         ("0x001290d0", "?sound_voices_update_chunks@@YAXXZ", True),
-        ("0x001293f0", "?function_1293f0@@YAXXZ", False),
+        ("0x001293f0", "?function_1293f0@@YAXXZ", True),
         ("0x00218810", "?sound_cache_new_frame@@YAXXZ", True),
         ("0x0021ec00", "?function_21ec00@@YAXXZ", False),
         ("0x0021ee80", "?function_21ee80@@YAXXZ", False),
@@ -1239,10 +1239,10 @@ def main() -> int:
             sound_idle.get("symbol") != "?function_125d60@@YAXXZ" or
             actual_sound_idle_calls != expected_sound_idle_calls or
             sound_idle.get("owned_direct_calls") != [
-                "0x00125a60", "0x001269f0", "0x001290d0", "0x00218810",
-                "0x003314b0"] or
+                "0x00125a60", "0x001269f0", "0x001290d0", "0x001293f0",
+                "0x00218810", "0x003314b0"] or
             sound_idle.get("remaining_direct_calls") != [
-                "0x001293f0", "0x0021ec00", "0x0021ee80"] or
+                "0x0021ec00", "0x0021ee80"] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
             sound_idle.get("source_owned") is not True or
@@ -1319,14 +1319,33 @@ def main() -> int:
                     "?sound_voice_update_chunks@@YAXF@Z"],
                 "semantics":
                     "exact signed-short traversal of every configured voice "
-                    "queued-chunk update"}] or
+                    "queued-chunk update"}, {
+                "source": "src/sound_playback_update_native.cpp",
+                "symbol": "?function_1293f0@@YAXXZ",
+                "imports": [
+                    "?decibels_add@@YAJJJ@Z",
+                    "?function_127320@@YAXJJ@Z",
+                    "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+                    "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+                    "?function_12a810@@YAJJ@Z",
+                    "?function_2197f0@@YAJM@Z",
+                    "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+                    "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+                    "?g_4e6378@@3PAUs_sound_voice@@A",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_4e6380@@3PAUs_4e6380@@A"],
+                "semantics":
+                    "exact master gain, fade-stop, spatialization, channel "
+                    "submission, and source callback traversal"}] or
             sound_idle.get("execution_gate") != [
                 "native_sound_system_storage_initialized",
                 "native_main_loop_busy_state_initialized",
                 "native_sound_voice_records_and_streams_initialized",
                 "native_sound_voice_chunk_transition_owned",
                 "native_sound_driver_pre_and_post_update_owned",
-                "native_sound_playback_state_update_owned",
+                "native_sound_gain_and_fade_lifecycle_owned",
+                "native_sound_spatialization_and_channel_submission_owned",
+                "native_sound_source_callback_lifetimes_owned",
                 "native_sound_cache_physical_storage_initialized",
                 "production_texture_requesters_linked"] or
             not sound_idle.get("blocker")):
