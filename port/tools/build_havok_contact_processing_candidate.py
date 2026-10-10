@@ -93,6 +93,8 @@ def main() -> int:
         first_person_state = temporary / "first-person-state.o"
         first_person_lookup = temporary / "first-person-lookup.o"
         damage_state = temporary / "damage-state.o"
+        placement_defaults = temporary / "placement-defaults.o"
+        object_lookup = temporary / "object-lookup.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -245,13 +247,18 @@ def main() -> int:
                       ["?function_16658d@@YAJJJ@Z"])
         compile_slice(args, args.root / "src/damage_effect_native.cpp", damage_state,
                       ["?function_d6660@@YAXPAUs_type_1e6529@@J@Z"])
+        compile_slice(args, args.root / "src/unknown_0b7740.cpp", placement_defaults,
+                      ["?function_b7930@@YAXPAXJJPBUs_effect_owner@@@Z"])
+        compile_slice(args, args.root / "src/unknown_0bad50.cpp", object_lookup,
+                      ["?function_badc0@@YAPAUs_object@@JK@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
              perpendicular, current_cluster, seconds_to_ticks, game_state,
              player_state, first_person, particle_helpers, particle_color,
              unpack_color, object_placement, object_type, object_geometry,
-             first_person_state, first_person_lookup, damage_state])
+             first_person_state, first_person_lookup, damage_state,
+             placement_defaults, object_lookup])
     return 0
 
 
