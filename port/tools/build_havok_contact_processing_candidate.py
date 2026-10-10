@@ -100,6 +100,8 @@ def main() -> int:
         particle_policy = temporary / "particle-policy.o"
         particle_provider_select = temporary / "particle-provider-select.o"
         light_record = temporary / "light-record.o"
+        placement_transform = temporary / "placement-transform.o"
+        scratch_teardown = temporary / "scratch-teardown.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -270,6 +272,13 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/light_record_native.cpp", light_record,
             ["?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z"])
+        compile_slice(
+            args, args.root / "src/effect_placement_transform_native.cpp",
+            placement_transform,
+            ["?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_146a20_native.cpp", scratch_teardown,
+            ["?function_146de0@@YAXXZ"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
              effect_audio, random_unit, random_range, random_cone, location_bits,
@@ -279,7 +288,7 @@ def main() -> int:
              first_person_state, first_person_lookup, damage_state,
              placement_defaults, object_lookup, particle_allocation,
              particle_policy, particle_provider_select, args.particle_providers,
-             light_record])
+             light_record, placement_transform, scratch_teardown])
     return 0
 
 

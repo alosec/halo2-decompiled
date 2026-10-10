@@ -295,6 +295,8 @@ def main() -> int:
             "?function_189650@@YAJPBUs_sound_position@@PBUs_sound_label_play@@@Z" in production_defined_for_listener or
             "?effect_new_from_parameters@@YAJPAUs_effect_parameters@@@Z" in production_defined_for_listener or
             "?function_177260@@YAXJ_N@Z" in production_defined_for_listener or
+            "?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z" in production_defined_for_listener or
+            "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z" in production_defined_for_listener or
             "?function_1d05d0@@YAXPBVhkEntity@@0PAUs_havok_component@@PBF@Z" in production_defined_for_listener or
             "?function_1d0400@@YAJPAUs_havok_component@@FRBXJJJDPAVhkEntity@@2MMFF@Z" in production_defined_for_listener):
         raise RuntimeError("dormant impact lifetime candidate entered production")
@@ -478,6 +480,7 @@ def main() -> int:
         "native_havok_effect_pools_owned",
         "native_light_record_pool_owned",
         "native_effect_runtime_state_owned",
+        "native_effect_placement_state_owned",
         "native_first_person_state_owned",
         "native_particle_system_pool_owned",
         "native_impact_looping_sound_pool_owned",
@@ -816,7 +819,7 @@ def main() -> int:
     if effect_frontier.get("version") != 1:
         raise RuntimeError("unsupported Havok effect-lifecycle frontier manifest")
     effect_entries = effect_frontier.get("imports")
-    if not isinstance(effect_entries, list) or len(effect_entries) != 18:
+    if not isinstance(effect_entries, list) or len(effect_entries) != 17:
         raise RuntimeError("Havok effect-lifecycle frontier inventory changed")
     effect_symbols = [entry.get("symbol") for entry in effect_entries]
     if len(effect_symbols) != len(set(effect_symbols)):
@@ -845,7 +848,7 @@ def main() -> int:
                 [args.llvm_nm, "--undefined-only", scored], text=True
             ).splitlines() if line.strip()
         }
-    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 33:
+    if actual_effect_score != expected_effect_score or len(actual_effect_score) != 32:
         raise RuntimeError("Havok effect-lifecycle candidate score changed")
     effect_undefined = {
         line.strip().split()[-1]
@@ -853,7 +856,7 @@ def main() -> int:
             [args.llvm_nm, "--undefined-only", args.effect_lifecycle_candidate_object],
             text=True).splitlines() if line.strip()
     }
-    if len(effect_undefined) != 103:
+    if len(effect_undefined) != 106:
         raise RuntimeError("Havok effect-lifecycle raw closure changed")
     effect_defined = subprocess.check_output(
         [args.llvm_nm, "--defined-only", args.effect_lifecycle_candidate_object], text=True
@@ -895,6 +898,8 @@ def main() -> int:
             "?g_47ff88@@3JA" not in effect_defined or
             "?function_137bd0@@YAPAVc_type_4e7709@@J@Z" not in effect_defined or
             "?function_c0350@@YAXJJJPBTvector3f@@0PBTpoint3f@@M@Z" not in effect_defined or
+            "?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z" not in effect_defined or
+            "?function_146de0@@YAXXZ" not in effect_defined or
             "h2_native_effect_particle_provider_prt3_object" not in effect_defined or
             "h2_native_effect_particle_provider_prtm_object" not in effect_defined):
         raise RuntimeError("Havok effect-lifecycle candidate lost a required provider")

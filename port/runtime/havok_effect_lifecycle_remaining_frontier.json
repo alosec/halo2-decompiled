@@ -48,11 +48,6 @@
       "blocker": "Requires interface-function context ownership, render-state evaluation, record allocation, and function_be8b0 rather than only the now-owned color lookup."
     },
     {
-      "symbol": "?function_3ebd0@@YA_NPBTvector3f@@PBUtransform4x3f@@PAU2@J@Z",
-      "subsystem": "effects",
-      "blocker": "Requires exact Havok scratch teardown/restoration through function_146de0 and genuine mutable placement state at g_4b9da0."
-    },
-    {
       "symbol": "?function_a7870@@YAXJ@Z",
       "subsystem": "object_effects",
       "blocker": "Requires simulation object handlers, entry-table mutation, and complete object lifecycle callbacks function_b57d0/b5830/bb780."

@@ -438,7 +438,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0003ea60,188,game,speed,a16 pad,,,0016d940 0016d9c0 00320560,src/unknown_0350e0.cpp,todo
 0003eb20,75,game,speed,a16 pad,,,,src/unknown_03eb20.cpp,done
 0003eb70,94,game,speed,a16 pad,,,,src/unknown_0350e0.cpp,matched
-0003ebd0,526,game,speed,a16 pad,,,00142a60 00146b80 00146de0,src/unknown_0350e0.cpp,todo
+0003ebd0,526,game,speed,a16 pad,,,00142a60 00146b80 00146de0,src/effect_placement_transform_native.cpp,done
 0003ede0,217,game,speed,a16 pad,,,00014bc0 0003ebd0 0004c690 00320560,src/unknown_0350e0.cpp,todo
 0003eec0,857,game,speed,a16 pad,,,00016b10 0002dba0 00030bf0 0011d000,src/unknown_0350e0.cpp,todo
 0003f220,129,game,speed,a16 pad,,,,src/unknown_03f2b0.cpp,matched

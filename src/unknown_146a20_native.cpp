@@ -29,6 +29,15 @@ void function_146a20(void)
     g_4798b4++;
 }
 
+// Portable cache-owned teardown of the recovered scratch allocator at 0x146de0.
+// hkMemory's destructor is empty and the next placement construction replaces
+// the table pointer, so native ownership only clears the live pointer.
+void function_146de0(void)
+{
+    if (g_47989c)
+        g_47989c = 0;
+}
+
 // Portable construction of the exact recovered scratch allocator at 0x146b80.
 void function_146b80(void)
 {
