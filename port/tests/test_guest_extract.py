@@ -3064,6 +3064,46 @@ def main():
                 "sound playback rate imports changed: "
                 f"{sorted(sound_playback_rate_imports)}")
 
+        sound_cache_request_output = Path(temporary) / "sound-cache-request.o"
+        sound_cache_request_symbol = "?function_218850@@YAKJPAUs_sound_chunk@@K@Z"
+        sound_cache_request_command = command[:]
+        sound_cache_request_command[
+            sound_cache_request_command.index("h2_extract_selected")
+        ] = sound_cache_request_symbol
+        sound_cache_request_command[
+            sound_cache_request_command.index("--extract-global"):
+            sound_cache_request_command.index("--output")
+        ] = []
+        sound_cache_request_command[
+            sound_cache_request_command.index(output)
+        ] = sound_cache_request_output
+        sound_cache_request_command[-1] = (
+            args.root / "src/sound_cache_request_native.cpp")
+        subprocess.run(
+            [str(value) for value in sound_cache_request_command], check=True)
+        sound_cache_request_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_cache_request_output], text=True)
+        if sound_cache_request_symbol not in sound_cache_request_defined:
+            raise RuntimeError("sound cache request was not selectively compilable")
+        sound_cache_request_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_cache_request_output], text=True)
+        sound_cache_request_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_cache_request_undefined.splitlines() if line
+        }
+        expected_sound_cache_request_imports = {
+            "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
+            "?g_502104@@3PAUs_record_pool@@A",
+            "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+            "SwitchToThread",
+        }
+        if sound_cache_request_imports != expected_sound_cache_request_imports:
+            raise RuntimeError(
+                "sound cache request imports changed: "
+                f"{sorted(sound_cache_request_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]
