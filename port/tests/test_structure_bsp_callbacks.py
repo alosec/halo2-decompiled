@@ -1263,40 +1263,55 @@ def main() -> int:
                 "role": "async node allocation, task capture, callback/category setup, and work-list insertion"}, {
                 "address": "0x001208b0",
                 "symbol": "?function_1208b0@@YAPAUs_job_node@@XZ",
-                "role": "mutex-guarded free-node acquisition and cooperative retry"}] or
+                "role": "mutex-guarded free-node acquisition and cooperative retry"}, {
+                "address": "0x00120900",
+                "symbol": "?function_120900@@YAXPAUs_job_node@@@Z",
+                "role": "priority and positioned-read work-list insertion"}, {
+                "address": "0x001209c0",
+                "symbol": "?async_task_queue@@YAJPAUs_job_node@@@Z",
+                "role": "mutex-guarded task ID assignment and worker semaphore wakeup"}, {
+                "address": "0x001a1720",
+                "symbol": "?async_task_should_run_before@@YA_NJJPBTs_async_task@@0PAUs_async_insert_state@@P6AJPAT1@@Z3@Z",
+                "role": "stable priority and positioned-read ordering policy"}] or
             texture_upload.get("allocation_provider_imports") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
                 "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-                "?async_globals@@3Us_async_globals@@A", "?async_task_queue@@YAJPAUs_job_node@@@Z",
+                "?async_globals@@3Us_async_globals@@A", "ReleaseSemaphore",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset",
                 "ReleaseMutex",
                 "SwitchToThread", "WaitForSingleObject", "h2_guest_memcpy",
-                "?function_1a0e70@@YAJPATs_async_task@@@Z",
                 "?g_450768@@3PAY0BI@JA", "?g_4e6454@@3PAUs_record_pool@@A",
                 "?g_4e6460@@3KA", "?g_4e6464@@3PAUs_physical_object@@A",
                 "?g_4e6484@@3JA", "?g_557c90@@3PAUs_texture_cache_file@@A",
-                "?g_55aca8@@3JA", "?log2_floor@@YAJK@Z", "h2_guest_memset"] or
+                "?g_55aca8@@3JA", "?log2_floor@@YAJK@Z"] or
             texture_upload.get("async_read_provider_imports") != [
-                "?async_globals@@3Us_async_globals@@A", "?async_task_queue@@YAJPAUs_job_node@@@Z",
+                "?async_globals@@3Us_async_globals@@A", "ReleaseSemaphore",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset",
                 "ReleaseMutex",
                 "SwitchToThread", "WaitForSingleObject", "h2_guest_memcpy",
-                "?function_1a0e70@@YAJPATs_async_task@@@Z",
-                "?g_557c90@@3PAUs_texture_cache_file@@A", "?g_55aca8@@3JA",
-                "h2_guest_memset"] or
+                "?g_557c90@@3PAUs_texture_cache_file@@A", "?g_55aca8@@3JA"] or
             texture_upload.get("async_request_provider_imports") != [
-                "?async_globals@@3Us_async_globals@@A", "?async_task_queue@@YAJPAUs_job_node@@@Z",
+                "?async_globals@@3Us_async_globals@@A", "ReleaseSemaphore",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset",
                 "ReleaseMutex",
-                "SwitchToThread", "WaitForSingleObject", "h2_guest_memcpy",
-                "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset"] or
+                "SwitchToThread", "WaitForSingleObject", "h2_guest_memcpy"] or
             texture_upload.get("async_worker_imports") != [
                 "?g_46e488@@3KA", "ReadFile", "SetFilePointer"] or
             texture_upload.get("async_queue_provider_imports") != [
-                "?async_globals@@3Us_async_globals@@A", "?async_task_queue@@YAJPAUs_job_node@@@Z",
+                "?async_globals@@3Us_async_globals@@A", "ReleaseSemaphore",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "h2_guest_memset",
                 "ReleaseMutex", "SwitchToThread", "WaitForSingleObject", "h2_guest_memcpy"] or
             texture_upload.get("async_free_node_imports") != [
                 "?async_globals@@3Us_async_globals@@A", "ReleaseMutex",
                 "SwitchToThread", "WaitForSingleObject"] or
+            texture_upload.get("async_work_queue_imports") != [
+                "?async_globals@@3Us_async_globals@@A",
+                "?function_1a0e70@@YAJPATs_async_task@@@Z", "ReleaseMutex",
+                "ReleaseSemaphore", "WaitForSingleObject", "h2_guest_memset"] or
+            texture_upload.get("async_ordering_imports") != [
+                "?function_1a0e70@@YAJPATs_async_task@@@Z"] or
             texture_upload.get("helper_dependencies") != [
                 "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
                 "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",

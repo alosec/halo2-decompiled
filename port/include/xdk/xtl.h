@@ -140,6 +140,8 @@ BOOL WINAPI ReadFile(HANDLE file, void* buffer, DWORD bytes_to_read,
                      DWORD* bytes_read, void* overlapped);
 DWORD WINAPI WaitForSingleObject(HANDLE handle, DWORD milliseconds);
 BOOL WINAPI ReleaseMutex(HANDLE mutex);
+BOOL WINAPI ReleaseSemaphore(HANDLE semaphore, LONG release_count,
+                             LONG* previous_count);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);

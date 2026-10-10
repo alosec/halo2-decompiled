@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/queue-submission/free-node chain are independently source-owned. Exact function_1208b0 now preserves mutex-guarded free-node removal and cooperative retry. Execution still requires initialized cache/physical/file and async-global state, owned source pixels, genuine native file-I/O and synchronization boundaries replacing ReadFile/SetFilePointer and WaitForSingleObject/ReleaseMutex/SwitchToThread, exact async_task_queue work-list insertion/wakeup, plus function_120ce0/function_120d50 reprioritization and wait lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup chain are independently source-owned. Exact queue insertion preserves priority, positioned-read locality, task IDs, mutex ordering, and semaphore signaling. Execution still requires initialized cache/physical/file and async-global state, owned source pixels, genuine native file-I/O and synchronization boundaries replacing ReadFile/SetFilePointer and WaitForSingleObject/ReleaseMutex/ReleaseSemaphore/SwitchToThread, complete worker execution/recycling and cancellation, plus function_120ce0/function_120d50 reprioritization and wait lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_120ce0@@YA_NJJ@Z",
     "?function_120d50@@YAXPC_N_N@Z"
@@ -87,6 +87,21 @@
       "address": "0x001208b0",
       "symbol": "?function_1208b0@@YAPAUs_job_node@@XZ",
       "role": "mutex-guarded free-node acquisition and cooperative retry"
+    },
+    {
+      "address": "0x00120900",
+      "symbol": "?function_120900@@YAXPAUs_job_node@@@Z",
+      "role": "priority and positioned-read work-list insertion"
+    },
+    {
+      "address": "0x001209c0",
+      "symbol": "?async_task_queue@@YAJPAUs_job_node@@@Z",
+      "role": "mutex-guarded task ID assignment and worker semaphore wakeup"
+    },
+    {
+      "address": "0x001a1720",
+      "symbol": "?async_task_should_run_before@@YA_NJJPBTs_async_task@@0PAUs_async_insert_state@@P6AJPAT1@@Z3@Z",
+      "role": "stable priority and positioned-read ordering policy"
     }
   ],
   "helper_dependencies": [
@@ -101,12 +116,13 @@
     "?function_1365a0@@YAJPBUs_type_7ba8e9@@J@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?async_globals@@3Us_async_globals@@A",
-    "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "ReleaseSemaphore",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "h2_guest_memset",
     "ReleaseMutex",
     "SwitchToThread",
     "WaitForSingleObject",
     "h2_guest_memcpy",
-    "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?g_450768@@3PAY0BI@JA",
     "?g_4e6454@@3PAUs_record_pool@@A",
     "?g_4e6460@@3KA",
@@ -114,30 +130,29 @@
     "?g_4e6484@@3JA",
     "?g_557c90@@3PAUs_texture_cache_file@@A",
     "?g_55aca8@@3JA",
-    "?log2_floor@@YAJK@Z",
-    "h2_guest_memset"
+    "?log2_floor@@YAJK@Z"
   ],
   "async_read_provider_imports": [
     "?async_globals@@3Us_async_globals@@A",
-    "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "ReleaseSemaphore",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "h2_guest_memset",
     "ReleaseMutex",
     "SwitchToThread",
     "WaitForSingleObject",
     "h2_guest_memcpy",
-    "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?g_557c90@@3PAUs_texture_cache_file@@A",
-    "?g_55aca8@@3JA",
-    "h2_guest_memset"
+    "?g_55aca8@@3JA"
   ],
   "async_request_provider_imports": [
     "?async_globals@@3Us_async_globals@@A",
-    "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "ReleaseSemaphore",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "h2_guest_memset",
     "ReleaseMutex",
     "SwitchToThread",
     "WaitForSingleObject",
-    "h2_guest_memcpy",
-    "?function_1a0e70@@YAJPATs_async_task@@@Z",
-    "h2_guest_memset"
+    "h2_guest_memcpy"
   ],
   "async_worker_imports": [
     "?g_46e488@@3KA",
@@ -146,7 +161,9 @@
   ],
   "async_queue_provider_imports": [
     "?async_globals@@3Us_async_globals@@A",
-    "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "ReleaseSemaphore",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "h2_guest_memset",
     "ReleaseMutex",
     "SwitchToThread",
     "WaitForSingleObject",
@@ -157,5 +174,16 @@
     "ReleaseMutex",
     "SwitchToThread",
     "WaitForSingleObject"
+  ],
+  "async_work_queue_imports": [
+    "?async_globals@@3Us_async_globals@@A",
+    "?function_1a0e70@@YAJPATs_async_task@@@Z",
+    "ReleaseMutex",
+    "ReleaseSemaphore",
+    "WaitForSingleObject",
+    "h2_guest_memset"
+  ],
+  "async_ordering_imports": [
+    "?function_1a0e70@@YAJPATs_async_task@@@Z"
   ]
 }

@@ -119,6 +119,95 @@ s_job_node *function_1208b0(void)
     return node;
 }
 
+// @retail 0x1a1720
+bool async_task_should_run_before(long priority, long other_priority,
+    s_async_task const *task, s_async_task const *other_task,
+    s_async_insert_state *state, async_work_callback callback,
+    async_work_callback other_callback)
+{
+    bool result = false;
+    if (priority > other_priority)
+        result = true;
+    else if (priority < other_priority)
+        result = false;
+    else if (callback == function_1a0e70 && other_callback != function_1a0e70)
+        result = true;
+    else if (callback != function_1a0e70 && other_callback == function_1a0e70)
+        result = false;
+    else if (callback == function_1a0e70 && other_callback == function_1a0e70)
+    {
+        if (!state->valid)
+            result = false;
+        else if ((dword)task->read_position.file.handle - state->file <
+                 (dword)other_task->read_position.file.handle - state->file)
+            result = true;
+        else if ((dword)task->read_position.file.handle - state->file >
+                 (dword)other_task->read_position.file.handle - state->file)
+            result = false;
+        else
+            result = task->read_position.offset - state->offset <
+                     other_task->read_position.offset - state->offset;
+    }
+    if (other_callback == function_1a0e70)
+    {
+        state->file = (dword)other_task->read_position.file.handle;
+        state->offset = other_task->read_position.offset;
+        state->valid = true;
+    }
+    return result;
+}
+
+// @retail 0x120900
+void function_120900(s_job_node *node)
+{
+    s_async_insert_state state;
+    memset(&state, 0, sizeof(state));
+    s_job_node *previous = async_globals.work_list;
+    if (!previous)
+    {
+        async_globals.work_list = node;
+        node->next = previous;
+        return;
+    }
+    long priority = node->priority;
+    if (priority > previous->priority)
+    {
+        node->next = previous;
+        async_globals.work_list = node;
+        return;
+    }
+    async_work_callback callback = node->callback;
+    while (previous->next)
+    {
+        s_job_node *next = previous->next;
+        if (async_task_should_run_before(priority, next->priority, &node->task,
+            &next->task, &state, callback, next->callback))
+        {
+            node->next = previous->next;
+            previous->next = node;
+            return;
+        }
+        previous = next;
+    }
+    previous->next = node;
+    node->next = NULL;
+}
+
+// @retail 0x1209c0
+long async_task_queue(s_job_node *node)
+{
+    WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+    function_120900(node);
+    node->state = node - async_globals.nodes;
+    node->state = (async_globals.task_id_counter << 8) | node->state;
+    async_globals.task_id_counter++;
+    long task_id = node->state;
+    ReleaseMutex(async_globals.work_list_mutex);
+    LONG previous_count = 0;
+    ReleaseSemaphore(async_globals.work_semaphore, 1, &previous_count);
+    return task_id;
+}
+
 // @retail 0x120ba0
 long function_120ba0(long priority, s_async_task *task, long category,
     async_work_callback callback, bool volatile *done)
