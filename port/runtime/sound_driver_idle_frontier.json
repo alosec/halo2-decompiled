@@ -55,9 +55,39 @@
     "native_sound_stream_objects_and_vtables_owned",
     "native_sound_effects_object_and_vtable_owned",
     "native_reverb_occlusion_and_submix_state_initialized",
-    "native_deferred_sound_settings_commit_owned"
+    "native_deferred_sound_settings_commit_owned",
+    "native_direct_sound_stream_status_owned",
+    "native_direct_sound_stream_resume_owned",
+    "native_direct_sound_async_envelope_flush_owned",
+    "native_sound_stream_codec_stop_owned"
   ],
   "production_linked": false,
   "source_owned": false,
-  "blocker": "Both providers perform live Xbox DirectSound work through mutable driver objects and indirect interface calls. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required."
+  "blocker": "The idle providers and source-owned stream flush still perform live Xbox DirectSound work through mutable driver, stream, codec, effects and buffer objects. They cannot be replaced by no-ops merely to unblock texture waits; a genuine native audio driver lifecycle or an exact behavior-preserving ownership layer is required.",
+  "stream_flush": {
+    "address": "0x002ae4b0",
+    "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "source": "src/sound_stream_flush.cpp",
+    "source_owned": true,
+    "stream_size": "0x34",
+    "state_offsets": {
+      "state": "0x01 bits 0..2",
+      "flushing": "0x03 bit 2",
+      "direct_sound_stream": "0x24",
+      "codec": "0x30"
+    },
+    "indirect_calls": [
+      "IDirectSoundStream::GetStatus",
+      "IDirectSoundStream::Pause",
+      "IDirectSoundStream::FlushEx",
+      "c_sound_stream_codec::stop"
+    ],
+    "constants": [
+      "DSSTREAMSTATUS_PAUSED",
+      "DSSTREAMPAUSE_RESUME",
+      "DSSTREAMFLUSHEX_ASYNC",
+      "DSSTREAMFLUSHEX_ENVELOPE"
+    ],
+    "semantics": "non-idle streams query status, resume paused playback, request asynchronous envelope-aware flush, stop the codec, and publish flushing state"
+  }
 }

@@ -1827,6 +1827,15 @@ def main() -> int:
     sound_driver_idle = json.loads((
         args.root / "port/runtime/sound_driver_idle_frontier.json"
     ).read_text())
+    sound_stream_flush_source = (
+        args.root / "src/sound_stream_flush.cpp").read_text()
+    expected_stream_flush_fragments = [
+        "stream->stream->GetStatus(&status)",
+        "IDirectSoundStream_Pause(stream->stream, DSSTREAMPAUSE_RESUME)",
+        "IDirectSoundStream_FlushEx(stream->stream, 0,",
+        "DSSTREAMFLUSHEX_ASYNC | DSSTREAMFLUSHEX_ENVELOPE",
+        "stream->codec->stop()",
+        "stream->flushing = 1"]
     expected_sound_driver_providers = [{
         "address": "0x0021ec00",
         "symbol": "?function_21ec00@@YAXXZ",
@@ -1857,15 +1866,44 @@ def main() -> int:
             "gain updates, stream advancement, and deferred-settings commit"}]
     if (
             sound_driver_idle.get("version") != 1 or
+            any(fragment not in sound_stream_flush_source
+                for fragment in expected_stream_flush_fragments) or
             sound_driver_idle.get("source") != "src/unknown_21e330.cpp" or
             sound_driver_idle.get("providers") != expected_sound_driver_providers or
+            sound_driver_idle.get("stream_flush") != {
+                "address": "0x002ae4b0",
+                "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+                "source": "src/sound_stream_flush.cpp",
+                "source_owned": True,
+                "stream_size": "0x34",
+                "state_offsets": {
+                    "state": "0x01 bits 0..2",
+                    "flushing": "0x03 bit 2",
+                    "direct_sound_stream": "0x24",
+                    "codec": "0x30"},
+                "indirect_calls": [
+                    "IDirectSoundStream::GetStatus",
+                    "IDirectSoundStream::Pause",
+                    "IDirectSoundStream::FlushEx",
+                    "c_sound_stream_codec::stop"],
+                "constants": [
+                    "DSSTREAMSTATUS_PAUSED", "DSSTREAMPAUSE_RESUME",
+                    "DSSTREAMFLUSHEX_ASYNC", "DSSTREAMFLUSHEX_ENVELOPE"],
+                "semantics":
+                    "non-idle streams query status, resume paused playback, "
+                    "request asynchronous envelope-aware flush, stop the codec, "
+                    "and publish flushing state"} or
             sound_driver_idle.get("execution_gate") != [
                 "native_audio_processor_recovery_owned",
                 "native_direct_sound_work_service_owned",
                 "native_sound_stream_objects_and_vtables_owned",
                 "native_sound_effects_object_and_vtable_owned",
                 "native_reverb_occlusion_and_submix_state_initialized",
-                "native_deferred_sound_settings_commit_owned"] or
+                "native_deferred_sound_settings_commit_owned",
+                "native_direct_sound_stream_status_owned",
+                "native_direct_sound_stream_resume_owned",
+                "native_direct_sound_async_envelope_flush_owned",
+                "native_sound_stream_codec_stop_owned"] or
             sound_driver_idle.get("production_linked") is not False or
             sound_driver_idle.get("source_owned") is not False or
             not sound_driver_idle.get("blocker")):
