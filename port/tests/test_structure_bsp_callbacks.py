@@ -2149,6 +2149,10 @@ def main() -> int:
         "bool c_wma_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return m_decoder && !submitted;"]
     expected_pcm_control_fragments = [
+        "void c_pcm_codec::mark_cache_usage(s_sound_stream *stream,",
+        "index < stream->started_count", "chunk->cache_index & 0xffff",
+        "usage->counts[cache_index]++;",
+        "usage->flags[cache_index >> 5] |= 1 << (cache_index & 0x1f);",
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
     expected_stream_chunk_release_fragments = [
@@ -2333,6 +2337,12 @@ def main() -> int:
                     "exists and no packet was already submitted in the "
                     "current update."}] or
             sound_driver_lifecycle.get("pcm_codec_control_helpers") != [{
+                "symbol": "c_pcm_codec::mark_cache_usage",
+                "source": "src/sound_pcm_codec_control_native.cpp",
+                "semantics":
+                    "Count every already-started queued PCM chunk by its "
+                    "genuine low-16-bit cache index and set the matching "
+                    "cache-usage bit."}, {
                 "symbol": "c_pcm_codec::can_submit",
                 "source": "src/sound_pcm_codec_control_native.cpp",
                 "semantics":

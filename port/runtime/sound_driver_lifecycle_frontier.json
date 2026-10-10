@@ -170,6 +170,11 @@
   ],
   "pcm_codec_control_helpers": [
     {
+      "symbol": "c_pcm_codec::mark_cache_usage",
+      "source": "src/sound_pcm_codec_control_native.cpp",
+      "semantics": "Count every already-started queued PCM chunk by its genuine low-16-bit cache index and set the matching cache-usage bit."
+    },
+    {
       "symbol": "c_pcm_codec::can_submit",
       "source": "src/sound_pcm_codec_control_native.cpp",
       "semantics": "Permit PCM submission exactly while the genuine stream has more queued chunks than already-started chunks, independently of the current-update submitted flag."
