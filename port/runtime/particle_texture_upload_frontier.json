@@ -458,9 +458,21 @@
         "production_configured": false
       },
       "guest_read_round_trip": {
+        "location_router": "function_213760",
         "request": "function_1a0f10",
         "callback": "function_1a0e70",
-        "cache_slot": 2,
+        "selector_slots": {
+          "0": "active_g_55aca8",
+          "1": 2,
+          "2": 0,
+          "3": 1
+        },
+        "tested_routes": [
+          "mainmenu_active_slot_2",
+          "shared_selector_2_slot_0",
+          "campaign_active_slot_4_after_stopped_switch",
+          "shared_slot_0_preserved_after_active_switch"
+        ],
         "file_offset": 2048,
         "read_bytes": 16,
         "callback_chunk_bytes": 8,
@@ -541,7 +553,8 @@
       "read_round_trip_bytes": 16,
       "read_callback_chunk_bytes": 8,
       "restart_after_complete_cleanup_tested": true,
-      "production_configured": false
+      "production_configured": false,
+      "stopped_dynamic_active_switch_read_tested": true
     },
     "state_owner": {
       "source": "port/src/native_cache_file_slots.cpp",

@@ -103,6 +103,7 @@ def main() -> int:
         "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
         "?function_1a0e70@@YAJPATs_async_task@@@Z",
         "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
+        "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
     }
     if read_defined != expected_read_definitions:
         raise SystemExit(
@@ -111,6 +112,7 @@ def main() -> int:
     read_imports = symbols(args.nm, args.read_request, "--undefined-only")
     expected_read_imports = {
         "?async_globals@@3Us_async_globals@@A", "?g_46e488@@3KA",
+        "?g_557c90@@3PAUs_texture_cache_file@@A", "?g_55aca8@@3JA",
         "ReadFile", "ReleaseMutex", "SetFilePointer", "SwitchToThread",
         "WaitForSingleObject", "h2_guest_memcpy", "h2_guest_memset",
         "h2_native_async_publish_admitted", "h2_native_async_try_admit",

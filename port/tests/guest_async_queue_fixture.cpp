@@ -10,6 +10,10 @@ static s_job_node *g_removed_free_node;
 static byte g_async_read_buffer[16];
 static dword g_async_read_bytes;
 static bool volatile g_async_read_done;
+static byte g_async_read_expected;
+
+long function_213760(dword location, long size, void *buffer, dword *bytes_read,
+	bool *done, long type, long priority);
 
 extern "C" void *h2_guest_memset(void *destination, int value, size_t count)
 {
@@ -29,26 +33,39 @@ extern "C" void *h2_guest_memcpy(void *destination, void const *source,
 	return destination;
 }
 
-extern "C" int h2_async_submit_slot2_read(void)
+static int submit_read(dword location, byte expected)
 {
-	HANDLE handle = *(HANDLE *)(0x00557c90u + 2u * 0x804u);
-	if (!handle)
-		return 0;
 	h2_guest_memset(g_async_read_buffer, 0, sizeof(g_async_read_buffer));
 	g_async_read_bytes = 0;
 	g_async_read_done = false;
-	s_file_handle file = { handle };
-	return function_1a0f10(file, g_async_read_buffer, sizeof(g_async_read_buffer),
-		0x800, 7, 3, &g_async_read_bytes, &g_async_read_done) != NONE;
+	g_async_read_expected = expected;
+	return function_213760(location, sizeof(g_async_read_buffer),
+		g_async_read_buffer, &g_async_read_bytes, (bool *)&g_async_read_done,
+		7, 3) != NONE;
 }
 
-extern "C" int h2_async_slot2_read_completed(void)
+extern "C" int h2_async_submit_active_read(void)
+{
+	return submit_read(0x00000800u, 0xa0u);
+}
+
+extern "C" int h2_async_submit_shared_read(void)
+{
+	return submit_read(0x80000800u, 0xc0u);
+}
+
+extern "C" int h2_async_submit_campaign_read(void)
+{
+	return submit_read(0x00000800u, 0xe0u);
+}
+
+extern "C" int h2_async_read_completed(void)
 {
 	if (!g_async_read_done || g_async_read_bytes != sizeof(g_async_read_buffer))
 		return 0;
 	for (dword i = 0; i < sizeof(g_async_read_buffer); i++)
 	{
-		if (g_async_read_buffer[i] != (byte)(0xa0u + i))
+		if (g_async_read_buffer[i] != (byte)(g_async_read_expected + i))
 			return 0;
 	}
 	return 1;

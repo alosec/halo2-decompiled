@@ -1376,9 +1376,16 @@ def main() -> int:
                         "stack_requires_guest_read_write_mapping": True},
                     "production_configured": False,
                     "guest_read_round_trip": {
+                        "location_router": "function_213760",
                         "request": "function_1a0f10",
                         "callback": "function_1a0e70",
-                        "cache_slot": 2,
+                        "selector_slots": {
+                            "0": "active_g_55aca8", "1": 2, "2": 0, "3": 1},
+                        "tested_routes": [
+                            "mainmenu_active_slot_2",
+                            "shared_selector_2_slot_0",
+                            "campaign_active_slot_4_after_stopped_switch",
+                            "shared_slot_0_preserved_after_active_switch"],
                         "file_offset": 2048,
                         "read_bytes": 16,
                         "callback_chunk_bytes": 8,
@@ -1448,6 +1455,7 @@ def main() -> int:
                     "recovered_positioned_read_round_trip_tested": True,
                     "read_round_trip_bytes": 16,
                     "read_callback_chunk_bytes": 8,
+                    "stopped_dynamic_active_switch_read_tested": True,
                     "restart_after_complete_cleanup_tested": True,
                     "production_configured": False},
                 "state_owner": {

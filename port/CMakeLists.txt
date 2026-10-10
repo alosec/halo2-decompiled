@@ -2440,6 +2440,7 @@ add_custom_command(
             --ms-abi
             --extract-symbol "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z"
             --extract-symbol "?function_1a0e70@@YAJPATs_async_task@@@Z"
+            --extract-symbol "?function_213760@@YAJKJPAXPAKPA_NJJ@Z"
             --output "${H2_GUEST_ASYNC_READ_OBJECT}"
             "${PROJECT_SOURCE_DIR}/src/particle_texture_cache_request_native.cpp"
     DEPENDS

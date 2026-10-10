@@ -1,3 +1,8 @@
+.globl "?g_557c90@@3PAUs_texture_cache_file@@A"
+.set "?g_557c90@@3PAUs_texture_cache_file@@A", 0x00557c90
+.globl "?g_55aca8@@3JA"
+.set "?g_55aca8@@3JA", 0x0055aca8
+
 .section .text.h2_loader_probe,"ax",@progbits
 .p2align 2
 .globl h2_loader_probe
