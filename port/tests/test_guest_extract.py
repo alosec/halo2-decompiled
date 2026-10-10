@@ -3181,6 +3181,54 @@ def main():
                 "sound cache allocation imports changed: "
                 f"{sorted(sound_cache_allocation_imports)}")
 
+        sound_cache_lifecycle_cases = [
+            ("sound-cache-busy.o", "src/sound_cache_callbacks_native.cpp",
+             "?sound_cache_entry_busy@@YA_NJ@Z",
+             {"?g_502104@@3PAUs_record_pool@@A"}),
+            ("sound-cache-delete.o", "src/sound_cache_callbacks_native.cpp",
+             "?sound_cache_entry_delete@@YAXJ@Z", {
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?record_pool_release@@YAXPAUs_record_pool@@J@Z"}),
+            ("sound-cache-dispose.o", "src/sound_cache_dispose.cpp",
+             "?function_2186b0@@YAXXZ", {
+                 "?data_dispose@@YAXPAUs_record_pool@@@Z",
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?g_502108@@3KA",
+                 "?g_50210c@@3PAUs_sound_cache_allocator@@A"}),
+        ]
+        for lifecycle_name, lifecycle_source, lifecycle_symbol, expected_lifecycle_imports in sound_cache_lifecycle_cases:
+            lifecycle_output = Path(temporary) / lifecycle_name
+            lifecycle_command = command[:]
+            lifecycle_command[
+                lifecycle_command.index("h2_extract_selected")
+            ] = lifecycle_symbol
+            lifecycle_command[
+                lifecycle_command.index("--extract-global"):
+                lifecycle_command.index("--output")
+            ] = []
+            lifecycle_command[lifecycle_command.index(output)] = lifecycle_output
+            lifecycle_command[-1] = args.root / lifecycle_source
+            subprocess.run(
+                [str(value) for value in lifecycle_command], check=True)
+            lifecycle_defined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+                 lifecycle_output], text=True)
+            if lifecycle_symbol not in lifecycle_defined:
+                raise RuntimeError(
+                    f"sound cache lifecycle provider was not selectively compilable: "
+                    f"{lifecycle_symbol}")
+            lifecycle_undefined = subprocess.check_output(
+                [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+                 lifecycle_output], text=True)
+            lifecycle_imports = {
+                line.split()[0].removeprefix("_")
+                for line in lifecycle_undefined.splitlines() if line
+            }
+            if lifecycle_imports != expected_lifecycle_imports:
+                raise RuntimeError(
+                    f"sound cache lifecycle imports changed for {lifecycle_symbol}: "
+                    f"{sorted(lifecycle_imports)}")
+
         sound_playback_output = Path(temporary) / "sound-playback-update.o"
         sound_playback_symbol = "?function_1293f0@@YAXXZ"
         sound_playback_command = command[:]

@@ -1384,6 +1384,29 @@ def main() -> int:
                     "exact physical-page and salted-record allocation, "
                     "512-byte read rounding, and asynchronous loaded-byte "
                     "submission"}, {
+                "source": "src/sound_cache_callbacks_native.cpp",
+                "symbol": "?sound_cache_entry_busy@@YA_NJ@Z",
+                "imports": ["?g_502104@@3PAUs_record_pool@@A"],
+                "semantics":
+                    "exact lock/reference/loading cache-entry eviction guard"}, {
+                "source": "src/sound_cache_callbacks_native.cpp",
+                "symbol": "?sound_cache_entry_delete@@YAXJ@Z",
+                "imports": [
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?record_pool_release@@YAXPAUs_record_pool@@J@Z"],
+                "semantics":
+                    "exact chunk residency clear and salted cache-record "
+                    "release"}, {
+                "source": "src/sound_cache_dispose.cpp",
+                "symbol": "?function_2186b0@@YAXXZ",
+                "imports": [
+                    "?data_dispose@@YAXPAUs_record_pool@@@Z",
+                    "?g_502104@@3PAUs_record_pool@@A",
+                    "?g_502108@@3KA",
+                    "?g_50210c@@3PAUs_sound_cache_allocator@@A"],
+                "semantics":
+                    "exact record-pool disposal, allocator-backed physical "
+                    "cache release, and upload-base clear"}, {
                 "source": "src/sound_playback_update_native.cpp",
                 "symbol": "?function_1293f0@@YAXXZ",
                 "imports": [
@@ -1407,6 +1430,8 @@ def main() -> int:
                 "native_sound_cache_upload_buffer_initialized",
                 "native_sound_cache_file_read_route_initialized",
                 "native_sound_cache_allocator_initialized",
+                "native_sound_cache_allocator_vtable_owned",
+                "native_sound_cache_lifecycle_ordering_owned",
                 "native_sound_reference_pool_initialized",
                 "native_sound_driver_stream_state_initialized",
                 "native_sound_definition_and_chunk_tables_initialized",
