@@ -1269,6 +1269,42 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_texture_binding_output = Path(temporary) / "particle-material-texture-binding.o"
+        material_texture_binding_symbol = "?function_18a90@@YAXPAEPBG@Z"
+        material_texture_binding_command = command[:]
+        material_texture_binding_command[
+            material_texture_binding_command.index("h2_extract_selected")
+        ] = material_texture_binding_symbol
+        material_texture_binding_command[
+            material_texture_binding_command.index("--extract-global"):material_texture_binding_command.index("--output")
+        ] = []
+        material_texture_binding_command[
+            material_texture_binding_command.index(output)
+        ] = material_texture_binding_output
+        material_texture_binding_command[-1] = args.root / "src/particle_material_texture_binding_native.cpp"
+        subprocess.run([str(value) for value in material_texture_binding_command], check=True)
+        material_texture_binding_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_texture_binding_output],
+            text=True,
+        )
+        material_texture_binding_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_texture_binding_output],
+            text=True,
+        )
+        if material_texture_binding_symbol not in material_texture_binding_defined:
+            raise RuntimeError("particle material texture binding refresh was not selectively compilable")
+        expected_material_texture_binding_imports = {
+            "_?function_19530@@YAXJPAEFPAJ1@Z", "_?g_485a60@@3JA",
+            "_?g_485a80@@3PAEA", "_?g_4e0344@@3PAUs_structure_bsp_globals@@A",
+            "_?g_4e0348@@3PAUs_match_globals@@A", "_?g_4e3b44@@3PAUs_tag_instance@@A",
+            "_floor", "_h2_guest_memcpy", "_log",
+        }
+        actual_material_texture_binding_imports = {
+            line.split()[0] for line in material_texture_binding_undefined.splitlines() if line.strip()
+        }
+        if actual_material_texture_binding_imports != expected_material_texture_binding_imports:
+            raise RuntimeError("particle material texture binding frontier changed")
+
         material_combiner_output = Path(temporary) / "particle-material-combiner-state.o"
         material_combiner_symbol = "?function_1ba00@@YAXPAE@Z"
         material_combiner_command = command[:]

@@ -42,13 +42,13 @@
     "0x00017420",
     "0x0001ae70",
     "0x0001b0a0",
-    "0x0001ba00"
+    "0x0001ba00",
+    "0x00018a90"
   ],
   "remaining_groups": {
     "material_table_selection": [],
     "render_and_shader_state": [
       "0x000189a0",
-      "0x00018a90",
       "0x00018ee0"
     ],
     "texture_and_stage_state": [
@@ -58,7 +58,7 @@
     ],
     "parameter_and_constant_state": []
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Fifteen of its 21 direct calls are independently source-owned. Zero-import function_1ba00 now owns selection remapping, combiner block expansion, final-combiner handling, and packed output count/state. Exact function_1b0a0 owns dirty texture residency traversal while exposing genuine cache request function_143c0. Exact function_1ae70 owns pending scalar/vector/policy refresh; compact policy selector function_34060 exposes five mutable globals. Nested selector function_17420 exposes four genuine packed pass-range applicators. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 6 direct calls, seven exposed code providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Sixteen of its 21 direct calls are independently source-owned. Exact function_18a90 owns selected texture-record copying, linear-bitmap dimensions, special active-BSP bitmap routing, dirty masks, and fallback tags while exposing genuine function_19530 plus mutable tag/BSP/material state. Zero-import function_1ba00 owns combiner block expansion and final-combiner defaults. Function_1b0a0 owns dirty texture residency traversal. Function_1ae70 owns pending scalar/vector/policy refresh. Nested selector function_17420 exposes four genuine packed pass-range applicators. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 5 direct calls, eight exposed code providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -72,6 +72,13 @@
     ],
     "0x0001b0a0": [
       "?g_4ba019@@3_NA",
+      "?g_4e3b44@@3PAUs_tag_instance@@A"
+    ],
+    "0x00018a90": [
+      "?g_485a60@@3JA",
+      "?g_485a80@@3PAEA",
+      "?g_4e0344@@3PAUs_structure_bsp_globals@@A",
+      "?g_4e0348@@3PAUs_match_globals@@A",
       "?g_4e3b44@@3PAUs_tag_instance@@A"
     ]
   },
@@ -118,6 +125,12 @@
       "?function_143c0@@YA_NJFFM@Z",
       "fabs",
       "fmod"
+    ],
+    "0x00018a90": [
+      "?function_19530@@YAXJPAEFPAJ1@Z",
+      "floor",
+      "h2_guest_memcpy",
+      "log"
     ]
   },
   "source_owned_transitive_calls": [
