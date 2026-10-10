@@ -16,6 +16,18 @@ extern void *g_51f3c8[2][4];
 s_type_7ba8e9 *function_137550(long tag, short bitmap);
 D3DTexture *function_12310(s_bitmap_view *bitmap, real priority);
 
+// @retail 0x14390
+bool function_14390(short stage, s_type_7ba8e9 *bitmap, real priority)
+{
+    if (bitmap)
+    {
+        g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, priority);
+        g_485af4[stage] = *(short *)((byte *)bitmap + 4);
+        g_485b04[stage] = *(short *)((byte *)bitmap + 6);
+    }
+    return true;
+}
+
 // @retail 0x143c0
 bool function_143c0(long tag, short index, short stage, real priority)
 {

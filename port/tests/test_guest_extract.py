@@ -1406,11 +1406,18 @@ def main():
             raise RuntimeError("particle texture cache acquisition frontier changed")
 
         texture_residency_request_output = Path(temporary) / "particle-texture-residency-request.o"
-        texture_residency_request_symbol = "?function_143c0@@YA_NJFFM@Z"
+        texture_residency_request_symbols = [
+            "?function_143c0@@YA_NJFFM@Z",
+            "?function_14390@@YA_NFPAUs_type_7ba8e9@@M@Z",
+        ]
         texture_residency_request_command = command[:]
         texture_residency_request_command[
             texture_residency_request_command.index("h2_extract_selected")
-        ] = texture_residency_request_symbol
+        ] = texture_residency_request_symbols[0]
+        insertion = texture_residency_request_command.index("--extract-global")
+        texture_residency_request_command[insertion:insertion] = [
+            "--extract-symbol", texture_residency_request_symbols[1]
+        ]
         texture_residency_request_command[
             texture_residency_request_command.index("--extract-global"):texture_residency_request_command.index("--output")
         ] = []
@@ -1427,7 +1434,8 @@ def main():
             [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_residency_request_output],
             text=True,
         )
-        if texture_residency_request_symbol not in texture_residency_request_defined:
+        if any(symbol not in texture_residency_request_defined
+               for symbol in texture_residency_request_symbols):
             raise RuntimeError("particle texture residency request was not selectively compilable")
         expected_texture_residency_request_imports = {
             "_?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z",
