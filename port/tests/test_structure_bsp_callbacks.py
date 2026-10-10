@@ -2129,6 +2129,8 @@ def main() -> int:
         args.root / "src/unknown_21e330.cpp").read_text()
     sound_wma_initialize_source = (
         args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
+    sound_wma_control_source = (
+        args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_stream_chunk_release_source = (
         args.root / "src/sound_stream_chunk_release_native.cpp").read_text()
     sound_wma_release_source = (
@@ -2138,6 +2140,12 @@ def main() -> int:
         "codec->buffer =", "memset(codec->packet_status, 0",
         "offsetof(s_wma_codec_initialize_view, buffer) == 0x14",
         "offsetof(s_wma_codec_initialize_view, packet_status) == 0x18"]
+    expected_wma_control_fragments = [
+        "void c_wma_codec::attach(s_sound_stream *stream)",
+        "m_stream = stream;", "void c_wma_codec::stop()",
+        "release_decoder();",
+        "bool c_wma_codec::can_submit(s_sound_stream *stream, bool submitted)",
+        "return m_decoder && !submitted;"]
     expected_stream_chunk_release_fragments = [
         "stream->started_count--;", "stream->chunk_count--;",
         "SOUND_CACHE_ENTRY(chunk->cache_index)", "entry->lock_count--;",
@@ -2292,6 +2300,22 @@ def main() -> int:
                     "Clamp the upper decibel input, encode the recovered "
                     "exponential gain response, and saturate it to the "
                     "16-bit DirectSound coefficient range."}] or
+            sound_driver_lifecycle.get("wma_codec_control_helpers") != [{
+                "symbol": "c_wma_codec::attach",
+                "source": "src/sound_wma_codec_control_native.cpp",
+                "semantics":
+                    "Publish the genuine owning stream on codec attachment."}, {
+                "symbol": "c_wma_codec::stop",
+                "source": "src/sound_wma_codec_control_native.cpp",
+                "semantics":
+                    "Stop the codec by running the exact owned decoder and "
+                    "chunk-release lifetime."}, {
+                "symbol": "c_wma_codec::can_submit",
+                "source": "src/sound_wma_codec_control_native.cpp",
+                "semantics":
+                    "Permit submission exactly while a genuine decoder "
+                    "exists and no packet was already submitted in the "
+                    "current update."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
@@ -2301,6 +2325,8 @@ def main() -> int:
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_wma_initialize_source
                 for fragment in expected_wma_initialize_fragments) or
+            any(fragment not in sound_wma_control_source
+                for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_stream_chunk_release_source
                 for fragment in expected_stream_chunk_release_fragments) or
             any(fragment not in sound_wma_release_source

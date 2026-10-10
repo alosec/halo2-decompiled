@@ -3596,6 +3596,16 @@ def main():
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
                  "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
                  "?sound_voice_release@@YAXJ@Z"}),
+            ("sound-wma-codec-attach.o",
+             "src/sound_wma_codec_control_native.cpp",
+             "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z", set()),
+            ("sound-wma-codec-stop.o",
+             "src/sound_wma_codec_control_native.cpp",
+             "?stop@c_wma_codec@@UAAXXZ", {
+                 "?release_decoder@c_wma_codec@@QAAXXZ"}),
+            ("sound-wma-codec-can-submit.o",
+             "src/sound_wma_codec_control_native.cpp",
+             "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z", set()),
             ("sound-wma-codec-initialize.o",
              "src/sound_wma_codec_initialize_native.cpp",
              "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z", {

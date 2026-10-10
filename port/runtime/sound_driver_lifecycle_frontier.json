@@ -144,5 +144,22 @@
       "source": "src/sound_driver_filter_coefficients_native.cpp",
       "semantics": "Clamp the upper decibel input, encode the recovered exponential gain response, and saturate it to the 16-bit DirectSound coefficient range."
     }
+  ],
+  "wma_codec_control_helpers": [
+    {
+      "symbol": "c_wma_codec::attach",
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "semantics": "Publish the genuine owning stream on codec attachment."
+    },
+    {
+      "symbol": "c_wma_codec::stop",
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "semantics": "Stop the codec by running the exact owned decoder and chunk-release lifetime."
+    },
+    {
+      "symbol": "c_wma_codec::can_submit",
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "semantics": "Permit submission exactly while a genuine decoder exists and no packet was already submitted in the current update."
+    }
   ]
 }
