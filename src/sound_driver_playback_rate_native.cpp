@@ -12,7 +12,7 @@ struct s_sound_stream_view
 {
 	byte unknown00[8];
 	long pitch_cents;
-	byte unknown0c[0x2c];
+	byte unknown0c[0x28];
 };
 
 struct s_sound_driver_streams_view
@@ -24,7 +24,7 @@ struct s_sound_driver_streams_view
 struct s_bink_sound_settings;
 extern s_bink_sound_settings *g_51ebe4;
 
-static_assert(sizeof(s_sound_stream_view) == 0x38, "sound stream size");
+static_assert(sizeof(s_sound_stream_view) == 0x34, "sound stream size");
 static_assert(offsetof(s_sound_stream_view, pitch_cents) == 0x08,
 	"sound stream pitch offset");
 static_assert(offsetof(s_sound_driver_streams_view, streams) == 0x0c,

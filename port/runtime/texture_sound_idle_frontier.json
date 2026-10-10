@@ -154,7 +154,7 @@
         "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
         "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"
       ],
-      "semantics": "exact queued-chunk promotion, reference release, unloaded-chunk fallback, and stream-time advance"
+      "semantics": "exact queued-chunk promotion, reference release, unloaded-chunk fallback, and 0x34-byte stream-time advance"
     },
     {
       "source": "src/sound_voice_chunk_helpers_native.cpp",
@@ -177,7 +177,16 @@
         "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
         "exp"
       ],
-      "semantics": "exact stream pitch-mode offset and exponential playback-rate conversion"
+      "semantics": "exact 0x34-byte driver-stream pitch-mode selection and exponential cents-to-rate conversion"
+    },
+    {
+      "source": "src/sound_driver_channel_usage_native.cpp",
+      "symbol": "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+      "imports": [
+        "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+        "h2_guest_memset"
+      ],
+      "semantics": "exact 0x34-byte stream traversal, per-state channel masks, free-voice mask, and three paired driver counts"
     },
     {
       "source": "src/sound_fade_helpers_native.cpp",
@@ -262,7 +271,7 @@
         "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
         "?sound_voice_release@@YAXJ@Z"
       ],
-      "semantics": "exact queued/current chunk unlock, stream flush, streaming-bit clear, driver-voice release, and voice-state reset"
+      "semantics": "exact queued/current chunk unlock, 0x34-byte stream flush, streaming-bit clear, driver-voice release, and voice-state reset"
     },
     {
       "source": "src/sound_playback_stop_native.cpp",

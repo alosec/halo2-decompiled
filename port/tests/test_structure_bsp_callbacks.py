@@ -1335,7 +1335,8 @@ def main() -> int:
                     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z"],
                 "semantics":
                     "exact queued-chunk promotion, reference release, "
-                    "unloaded-chunk fallback, and stream-time advance"}, {
+                    "unloaded-chunk fallback, and 0x34-byte stream-time "
+                    "advance"}, {
                 "source": "src/sound_voice_chunk_helpers_native.cpp",
                 "symbol":
                     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
@@ -1353,8 +1354,17 @@ def main() -> int:
                 "imports": [
                     "?g_51ebe4@@3PAUs_bink_sound_settings@@A", "exp"],
                 "semantics":
-                    "exact stream pitch-mode offset and exponential "
-                    "playback-rate conversion"}, {
+                    "exact 0x34-byte driver-stream pitch-mode selection and "
+                    "exponential cents-to-rate conversion"}, {
+                "source": "src/sound_driver_channel_usage_native.cpp",
+                "symbol":
+                    "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
+                "imports": [
+                    "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                    "h2_guest_memset"],
+                "semantics":
+                    "exact 0x34-byte stream traversal, per-state channel "
+                    "masks, free-voice mask, and three paired driver counts"}, {
                 "source": "src/sound_fade_helpers_native.cpp",
                 "symbol": "?function_12aff0@@YAMMMM_N@Z",
                 "imports": ["fabs"],
@@ -1430,8 +1440,8 @@ def main() -> int:
                     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
                     "?sound_voice_release@@YAXJ@Z"],
                 "semantics":
-                    "exact queued/current chunk unlock, stream flush, "
-                    "streaming-bit clear, driver-voice release, and "
+                    "exact queued/current chunk unlock, 0x34-byte stream "
+                    "flush, streaming-bit clear, driver-voice release, and "
                     "voice-state reset"}, {
                 "source": "src/sound_playback_stop_native.cpp",
                 "symbol": "?function_127320@@YAXJJ@Z",

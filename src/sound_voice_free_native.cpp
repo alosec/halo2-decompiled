@@ -54,7 +54,7 @@ struct s_sound_system_channels_view
 
 struct s_sound_stream
 {
-	byte unknown00[0x38];
+	byte unknown00[0x34];
 };
 
 struct s_sound_driver_streams_view
@@ -83,7 +83,7 @@ static_assert(offsetof(s_sound_voice, chunk_index) == 0x18,
 	"sound voice chunk offset");
 static_assert(offsetof(s_sound_voice, permutation) == 0x1c,
 	"sound voice permutation offset");
-static_assert(sizeof(s_sound_stream) == 0x38, "sound stream size");
+static_assert(sizeof(s_sound_stream) == 0x34, "sound stream size");
 static_assert(offsetof(s_sound_globals_chunks_view, chunks) == 0x44,
 	"sound globals chunks offset");
 static_assert(offsetof(s_sound_system_channels_view, streaming_bits) == 0x60,

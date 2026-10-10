@@ -3346,6 +3346,11 @@ def main():
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
                  "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
                  "?sound_voice_release@@YAXJ@Z"}),
+            ("sound-driver-channel-usage.o",
+             "src/sound_driver_channel_usage_native.cpp",
+             "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z", {
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "h2_guest_memset"}),
             ("sound-playback-stop.o", "src/sound_playback_stop_native.cpp",
              "?function_127320@@YAXJJ@Z", {
                  "?function_126960@@YAXPAUs_sound_playback@@@Z",

@@ -69,7 +69,7 @@ struct s_sound_stream_view
 	char state : 3;
 	char channel_count : 3;
 	char unknown01_6 : 2;
-	byte unknown02[0x36];
+	byte unknown02[0x32];
 };
 
 struct s_sound_driver_streams_view
@@ -95,7 +95,7 @@ static_assert(sizeof(s_sound_permutation) == 0x10,
 	"sound permutation size");
 static_assert(offsetof(s_sound_permutation, first_chunk) == 0x0c,
 	"sound permutation chunk offset");
-static_assert(sizeof(s_sound_stream_view) == 0x38, "sound stream size");
+static_assert(sizeof(s_sound_stream_view) == 0x34, "sound stream size");
 static_assert(offsetof(s_4e6380, elapsed_time) == 0x1e0,
 	"sound elapsed time offset");
 static_assert(offsetof(s_sound_globals_chunks_view, chunks) == 0x44,
