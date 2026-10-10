@@ -2829,6 +2829,44 @@ def main():
                 "sound clock update imports changed: "
                 f"{sorted(sound_time_imports)}")
 
+        sound_busy_output = Path(temporary) / "sound-busy-state.o"
+        sound_busy_symbol = "?function_12be90@@YA_NXZ"
+        sound_busy_command = command[:]
+        sound_busy_command[
+            sound_busy_command.index("h2_extract_selected")
+        ] = sound_busy_symbol
+        sound_busy_command[
+            sound_busy_command.index("--extract-global"):
+            sound_busy_command.index("--output")
+        ] = []
+        sound_busy_command[
+            sound_busy_command.index(output)
+        ] = sound_busy_output
+        sound_busy_command[-1] = args.root / "src/sound_busy_state_native.cpp"
+        subprocess.run([str(value) for value in sound_busy_command], check=True)
+        sound_busy_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_busy_output], text=True)
+        if sound_busy_symbol not in sound_busy_defined:
+            raise RuntimeError("sound busy query was not selectively compilable")
+        sound_busy_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_busy_output], text=True)
+        sound_busy_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_busy_undefined.splitlines() if line
+        }
+        expected_sound_busy_imports = {
+            "?g_4e6470@@3JA",
+            "?g_4e64a0@@3JA",
+            "?g_4ed39d@@3_NA",
+            "?main_globals@@3Us_main_globals@@A",
+        }
+        if sound_busy_imports != expected_sound_busy_imports:
+            raise RuntimeError(
+                "sound busy query imports changed: "
+                f"{sorted(sound_busy_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 

@@ -1294,10 +1294,19 @@ def main() -> int:
                     "GetTickCount"],
                 "semantics":
                     "exact wrap-safe sound clock, ambience fades, and master "
-                    "pause fade policy"}] or
+                    "pause fade policy"}, {
+                "source": "src/sound_busy_state_native.cpp",
+                "symbol": "?function_12be90@@YA_NXZ",
+                "imports": [
+                    "?g_4e6470@@3JA", "?g_4e64a0@@3JA",
+                    "?g_4ed39d@@3_NA",
+                    "?main_globals@@3Us_main_globals@@A"],
+                "semantics":
+                    "exact main-loop, async texture, and geometry-cache "
+                    "busy-state query"}] or
             sound_idle.get("execution_gate") != [
                 "native_sound_system_storage_initialized",
-                "native_sound_busy_voice_query_owned",
+                "native_main_loop_busy_state_initialized",
                 "native_sound_voice_chunk_update_owned",
                 "native_sound_driver_pre_and_post_update_owned",
                 "native_sound_playback_state_update_owned",
