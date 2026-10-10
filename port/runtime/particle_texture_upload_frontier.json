@@ -41,7 +41,7 @@
     "asynchronous_upload_completion",
     "fallback_texture_routing"
   ],
-  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup chain are independently source-owned. Exact queue insertion preserves priority, positioned-read locality, task IDs, mutex ordering, and semaphore signaling. Execution still requires initialized cache/physical/file and async-global state, owned source pixels, genuine native file-I/O and synchronization boundaries replacing ReadFile/SetFilePointer and WaitForSingleObject/ReleaseMutex/ReleaseSemaphore/SwitchToThread, complete worker execution/recycling and cancellation, plus function_125d60 main-thread idle servicing, complete worker execution/recycling, and cancellation lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
+  "blocker": "Function 12ce00 is a coherent 658-byte cache request and upload lifecycle. All direct calls and the request/allocation/header/cache-routing/read-task/read-worker/free-node/ordered-work-list/queue-wakeup/worker-recycling chain are independently source-owned. Exact worker ownership preserves callback retry/completion semantics, done publication, work-list removal, and free-list recycling. Execution still requires initialized cache/physical/file and async-global state, owned source pixels, genuine native file-I/O and synchronization boundaries replacing ReadFile/SetFilePointer and WaitForSingleObject/ReleaseMutex/ReleaseSemaphore/SwitchToThread, function_125d60 main-thread idle servicing, and worker initialization/cancellation/shutdown lifetimes. Static closure does not establish those mutable systems. Keep function_12ce00 and particle execution dormant.",
   "request_provider_dependencies": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread",
@@ -117,6 +117,21 @@
       "address": "0x00120d50",
       "symbol": "?function_120d50@@YAXPC_N_N@Z",
       "role": "cooperative completion wait with optional main-thread idle servicing"
+    },
+    {
+      "address": "0x00120a30",
+      "symbol": "?function_120a30@@YAXPAUs_job_node@@@Z",
+      "role": "mutex-guarded completed-task removal from the work list"
+    },
+    {
+      "address": "0x00120c40",
+      "symbol": "?async_work_loop@@YAXXZ",
+      "role": "worker callback execution, retry signaling, completion publication, and free-list recycling"
+    },
+    {
+      "address": "0x00120c30",
+      "symbol": "?async_thread_proc@@YAKPAX@Z",
+      "role": "worker-thread entry into the non-returning async work loop"
     }
   ],
   "helper_dependencies": [
@@ -211,5 +226,17 @@
   "async_wait_imports": [
     "?function_125d60@@YAXXZ",
     "SwitchToThread"
+  ],
+  "async_worker_lifecycle_imports": [
+    "?async_globals@@3Us_async_globals@@A",
+    "?g_510810@@3PAUs_job_node@@A",
+    "ReleaseMutex",
+    "ReleaseSemaphore",
+    "WaitForSingleObject"
+  ],
+  "async_work_removal_imports": [
+    "?async_globals@@3Us_async_globals@@A",
+    "ReleaseMutex",
+    "WaitForSingleObject"
   ]
 }

@@ -74,6 +74,7 @@ static_assert(sizeof(s_texture_cache_file) == 0x804, "s_texture_cache_file");
 extern s_texture_cache_file g_557c90[6];
 extern long g_55aca8;
 extern dword g_46e488;
+extern s_job_node *g_510810;
 
 // @retail 0x1a0e70
 long __stdcall function_1a0e70(s_async_task *task)
@@ -206,6 +207,61 @@ long async_task_queue(s_job_node *node)
     LONG previous_count = 0;
     ReleaseSemaphore(async_globals.work_semaphore, 1, &previous_count);
     return task_id;
+}
+
+// @retail 0x120a30
+void function_120a30(s_job_node *node)
+{
+    WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+    if (async_globals.work_list == node)
+    {
+        async_globals.work_list = node->next;
+        node->state = NONE;
+    }
+    else
+    {
+        s_job_node *previous = async_globals.work_list;
+        while (previous->next != node)
+            previous = previous->next;
+        previous->next = node->next;
+        node->state = NONE;
+    }
+    ReleaseMutex(async_globals.work_list_mutex);
+}
+
+// @retail 0x120c40
+__declspec(noreturn) void async_work_loop(void)
+{
+    for (;;)
+    {
+        WaitForSingleObject(async_globals.work_semaphore, INFINITE);
+        WaitForSingleObject(async_globals.work_list_mutex, INFINITE);
+        s_job_node *node = async_globals.work_list;
+        ReleaseMutex(async_globals.work_list_mutex);
+        g_510810 = node;
+        long result = node->callback(&node->task);
+        if (result != 0)
+        {
+            if (result == 1 && node->done)
+                *node->done = true;
+            function_120a30(node);
+            WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
+            node->next = async_globals.free_list;
+            async_globals.free_list = node;
+            ReleaseMutex(async_globals.free_list_mutex);
+        }
+        else
+        {
+            LONG previous_count = 0;
+            ReleaseSemaphore(async_globals.work_semaphore, 1, &previous_count);
+        }
+    }
+}
+
+// @retail 0x120c30
+unsigned long __stdcall async_thread_proc(void *)
+{
+    async_work_loop();
 }
 
 // @retail 0x120ba0

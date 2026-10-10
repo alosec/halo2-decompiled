@@ -1854,6 +1854,56 @@ def main():
         if actual_texture_async_wait_imports != {"_?function_125d60@@YAXXZ", "_SwitchToThread"}:
             raise RuntimeError("particle texture async completion-wait frontier changed")
 
+        texture_async_work_loop_output = Path(temporary) / "particle-texture-async-work-loop.o"
+        texture_async_work_loop_symbol = "?async_work_loop@@YAXXZ"
+        texture_async_work_loop_command = command[:]
+        texture_async_work_loop_command[
+            texture_async_work_loop_command.index("h2_extract_selected")
+        ] = texture_async_work_loop_symbol
+        texture_async_work_loop_command[
+            texture_async_work_loop_command.index("--extract-global"):texture_async_work_loop_command.index("--output")
+        ] = []
+        texture_async_work_loop_command[texture_async_work_loop_command.index(output)] = texture_async_work_loop_output
+        texture_async_work_loop_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_work_loop_command], check=True)
+        texture_async_work_loop_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_async_work_loop_output], text=True)
+        texture_async_work_loop_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_work_loop_output], text=True)
+        if texture_async_work_loop_symbol not in texture_async_work_loop_defined:
+            raise RuntimeError("particle texture async work loop was not selectively compilable")
+        expected_texture_async_work_loop_imports = {
+            "_?async_globals@@3Us_async_globals@@A", "_?g_510810@@3PAUs_job_node@@A",
+            "_ReleaseMutex", "_ReleaseSemaphore", "_WaitForSingleObject",
+        }
+        actual_texture_async_work_loop_imports = {
+            line.split()[0] for line in texture_async_work_loop_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_work_loop_imports != expected_texture_async_work_loop_imports:
+            raise RuntimeError("particle texture async work-loop frontier changed")
+
+        texture_async_work_remove_output = Path(temporary) / "particle-texture-async-work-remove.o"
+        texture_async_work_remove_symbol = "?function_120a30@@YAXPAUs_job_node@@@Z"
+        texture_async_work_remove_command = command[:]
+        texture_async_work_remove_command[
+            texture_async_work_remove_command.index("h2_extract_selected")
+        ] = texture_async_work_remove_symbol
+        texture_async_work_remove_command[
+            texture_async_work_remove_command.index("--extract-global"):texture_async_work_remove_command.index("--output")
+        ] = []
+        texture_async_work_remove_command[texture_async_work_remove_command.index(output)] = texture_async_work_remove_output
+        texture_async_work_remove_command[-1] = args.root / "src/particle_texture_cache_request_native.cpp"
+        subprocess.run([str(value) for value in texture_async_work_remove_command], check=True)
+        texture_async_work_remove_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_async_work_remove_output], text=True)
+        actual_texture_async_work_remove_imports = {
+            line.split()[0] for line in texture_async_work_remove_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_async_work_remove_imports != {
+            "_?async_globals@@3Us_async_globals@@A", "_ReleaseMutex", "_WaitForSingleObject"
+        }:
+            raise RuntimeError("particle texture async work-removal frontier changed")
+
         texture_async_free_node_output = Path(temporary) / "particle-texture-async-free-node.o"
         texture_async_free_node_symbol = "?function_1208b0@@YAPAUs_job_node@@XZ"
         texture_async_free_node_command = command[:]
