@@ -1245,7 +1245,25 @@ def main() -> int:
                 "0x0021ec00", "0x0021ee80"] or
             sound_idle.get("blocking_texture_requests_enabled") is not False or
             sound_idle.get("production_linked") is not False or
-            sound_idle.get("source_owned") is not False or
+            sound_idle.get("source_owned") is not True or
+            sound_idle.get("implementation") != {
+                "source": "src/sound_idle_service_native.cpp",
+                "symbol": "?function_125d60@@YAXXZ",
+                "imports": [
+                    "?function_1293f0@@YAXXZ",
+                    "?function_21ec00@@YAXXZ",
+                    "?function_21ee80@@YAXXZ",
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?g_4e6948@@3PAUs_game_options_view@@A",
+                    "?g_510c54@@3PAUs_game_time_globals@@A",
+                    "?sound_cache_new_frame@@YAXXZ",
+                    "?sound_system_available@@YAJXZ",
+                    "?sound_system_update_time@@YAXXZ",
+                    "?sound_voices_update_chunks@@YAXXZ",
+                    "GetTickCount"],
+                "semantics":
+                    "exact timing gate, nested reentrancy flags, ordered sound "
+                    "updates, and unconditional gated cache-frame advance"} or
             sound_idle.get("state") != {
                 "sound_system_pointer": "?g_4e6380@@3PAUs_4e6380@@A",
                 "sound_system_required_offsets": {

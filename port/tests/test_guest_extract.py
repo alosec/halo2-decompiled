@@ -2744,6 +2744,52 @@ def main():
         if "?g_4e6380@@3PAUs_4e6380@@A" not in sound_available_undefined:
             raise RuntimeError("sound availability state boundary is missing")
 
+        sound_idle_output = Path(temporary) / "sound-idle-service.o"
+        sound_idle_symbol = "?function_125d60@@YAXXZ"
+        sound_idle_command = command[:]
+        sound_idle_command[
+            sound_idle_command.index("h2_extract_selected")
+        ] = sound_idle_symbol
+        sound_idle_command[
+            sound_idle_command.index("--extract-global"):
+            sound_idle_command.index("--output")
+        ] = []
+        sound_idle_command[
+            sound_idle_command.index(output)
+        ] = sound_idle_output
+        sound_idle_command[-1] = (
+            args.root / "src/sound_idle_service_native.cpp")
+        subprocess.run([str(value) for value in sound_idle_command], check=True)
+        sound_idle_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix",
+             sound_idle_output], text=True)
+        if sound_idle_symbol not in sound_idle_defined:
+            raise RuntimeError("sound idle service was not selectively compilable")
+        sound_idle_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix",
+             sound_idle_output], text=True)
+        sound_idle_imports = {
+            line.split()[0].removeprefix("_")
+            for line in sound_idle_undefined.splitlines() if line
+        }
+        expected_sound_idle_imports = {
+            "?function_1293f0@@YAXXZ",
+            "?function_21ec00@@YAXXZ",
+            "?function_21ee80@@YAXXZ",
+            "?g_4e6380@@3PAUs_4e6380@@A",
+            "?g_4e6948@@3PAUs_game_options_view@@A",
+            "?g_510c54@@3PAUs_game_time_globals@@A",
+            "?sound_cache_new_frame@@YAXXZ",
+            "?sound_system_available@@YAJXZ",
+            "?sound_system_update_time@@YAXXZ",
+            "?sound_voices_update_chunks@@YAXXZ",
+            "GetTickCount",
+        }
+        if sound_idle_imports != expected_sound_idle_imports:
+            raise RuntimeError(
+                "sound idle service imports changed: "
+                f"{sorted(sound_idle_imports)}")
+
     print("guest extraction retained constants and parsed recovered UI/rendering sources")
 
 
