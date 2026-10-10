@@ -2129,6 +2129,8 @@ def main() -> int:
         args.root / "src/unknown_21e330.cpp").read_text()
     sound_wma_initialize_source = (
         args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
+    sound_stream_chunk_release_source = (
+        args.root / "src/sound_stream_chunk_release_native.cpp").read_text()
     sound_wma_release_source = (
         args.root / "src/sound_wma_decoder_release_native.cpp").read_text()
     expected_wma_initialize_fragments = [
@@ -2136,6 +2138,12 @@ def main() -> int:
         "codec->buffer =", "memset(codec->packet_status, 0",
         "offsetof(s_wma_codec_initialize_view, buffer) == 0x14",
         "offsetof(s_wma_codec_initialize_view, packet_status) == 0x18"]
+    expected_stream_chunk_release_fragments = [
+        "stream->started_count--;", "stream->chunk_count--;",
+        "SOUND_CACHE_ENTRY(chunk->cache_index)", "entry->lock_count--;",
+        "memmove(&stream->chunks[0], &stream->chunks[1]",
+        "memset(&stream->chunks[stream->chunk_count]",
+        "stream->state = 1;", "stream->state = 2;"]
     expected_wma_release_fragments = [
         "m_decoder->vtable[2]", "release(m_decoder);", "m_decoder = NULL;",
         "m_stream->started_count = m_stream->chunk_count;",
@@ -2168,6 +2176,7 @@ def main() -> int:
         "native_sound_driver_effect_submix_impulse_buffers_owned",
         "native_sound_driver_effects_interface_owned",
         "native_sound_driver_listener_state_owned",
+        "native_sound_stream_chunk_and_cache_lifetime_owned",
         "native_wma_codec_packet_buffer_owned",
         "native_wma_decoder_lifetime_owned",
         "native_sound_driver_ordered_teardown_owned"]
@@ -2247,7 +2256,15 @@ def main() -> int:
                     "Release the genuine decoder through its COM interface, "
                     "clear ownership, synchronize started/chunk counts, and "
                     "release every queued stream chunk through the recovered "
-                    "stream lifetime."}] or
+                    "stream lifetime."}, {
+                "symbol": "sound_stream_release_chunk",
+                "source": "src/sound_stream_chunk_release_native.cpp",
+                "via": "c_wma_codec::release_decoder",
+                "semantics":
+                    "Decrement the authentic started/chunk counts and "
+                    "cache-entry lock, compact and clear the two-slot chunk "
+                    "queue, and publish the exact one/zero-chunk stream "
+                    "state."}] or
             sound_driver_lifecycle.get("channel_parameter_helpers") != [{
                 "symbol": "function_21e330",
                 "source": "src/sound_driver_filter_helpers_native.cpp",
@@ -2284,6 +2301,8 @@ def main() -> int:
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_wma_initialize_source
                 for fragment in expected_wma_initialize_fragments) or
+            any(fragment not in sound_stream_chunk_release_source
+                for fragment in expected_stream_chunk_release_fragments) or
             any(fragment not in sound_wma_release_source
                 for fragment in expected_wma_release_fragments) or
             not sound_driver_lifecycle.get("blocker")):

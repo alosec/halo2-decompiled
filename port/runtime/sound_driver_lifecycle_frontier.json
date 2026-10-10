@@ -98,6 +98,12 @@
         "symbol": "c_wma_codec::release_decoder",
         "source": "src/sound_wma_decoder_release_native.cpp",
         "semantics": "Release the genuine decoder through its COM interface, clear ownership, synchronize started/chunk counts, and release every queued stream chunk through the recovered stream lifetime."
+      },
+      {
+        "symbol": "sound_stream_release_chunk",
+        "source": "src/sound_stream_chunk_release_native.cpp",
+        "via": "c_wma_codec::release_decoder",
+        "semantics": "Decrement the authentic started/chunk counts and cache-entry lock, compact and clear the two-slot chunk queue, and publish the exact one/zero-chunk stream state."
       }
     ]
   },
@@ -111,6 +117,7 @@
     "native_sound_driver_effect_submix_impulse_buffers_owned",
     "native_sound_driver_effects_interface_owned",
     "native_sound_driver_listener_state_owned",
+    "native_sound_stream_chunk_and_cache_lifetime_owned",
     "native_wma_codec_packet_buffer_owned",
     "native_wma_decoder_lifetime_owned",
     "native_sound_driver_ordered_teardown_owned"

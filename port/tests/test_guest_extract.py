@@ -3602,6 +3602,12 @@ def main():
                  "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
                  "XPhysicalProtect",
                  "h2_guest_memset"}),
+            ("sound-stream-chunk-release.o",
+             "src/sound_stream_chunk_release_native.cpp",
+             "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z", {
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "h2_guest_memmove",
+                 "h2_guest_memset"}),
             ("sound-wma-decoder-release.o",
              "src/sound_wma_decoder_release_native.cpp",
              "?release_decoder@c_wma_codec@@QAAXXZ", {
