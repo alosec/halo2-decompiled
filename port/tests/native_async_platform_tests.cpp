@@ -1,3 +1,4 @@
+#include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
 
 #include <array>
@@ -35,8 +36,61 @@ std::uint32_t thread_probe(void* raw_context) {
 } // namespace
 
 int main() {
+    using Lifecycle = h2::port::NativeAsyncLifecycle;
     using Platform = h2::port::NativeAsyncPlatform;
     bool ok = true;
+
+    Lifecycle lifecycle;
+    ok &= check(lifecycle.state() == Lifecycle::State::stopped &&
+                    lifecycle.admitted_count() == 0 &&
+                    !lifecycle.try_admit() && !lifecycle.complete() &&
+                    !lifecycle.wait_drained(0) && !lifecycle.finish_stop(),
+                "stopped lifecycle accepted an operation");
+    ok &= check(lifecycle.start() && !lifecycle.start() &&
+                    lifecycle.state() == Lifecycle::State::accepting,
+                "lifecycle start transition failed");
+    ok &= check(lifecycle.try_admit() && lifecycle.try_admit() &&
+                    lifecycle.admitted_count() == 2,
+                "lifecycle admission accounting failed");
+    ok &= check(lifecycle.begin_stop() && !lifecycle.begin_stop() &&
+                    lifecycle.state() == Lifecycle::State::stopping &&
+                    !lifecycle.try_admit() && lifecycle.admitted_count() == 2,
+                "lifecycle stop admission was not linearized");
+    std::atomic<bool> lifecycle_drained = false;
+    std::thread lifecycle_waiter([&] {
+        lifecycle_drained = lifecycle.wait_drained(Lifecycle::infinite);
+    });
+    ok &= check(!lifecycle.wait_drained(0) && lifecycle.complete() &&
+                    !lifecycle.finish_stop() && lifecycle.complete(),
+                "lifecycle drain tracking failed");
+    lifecycle_waiter.join();
+    ok &= check(lifecycle_drained.load() && lifecycle.wait_drained(0),
+                "lifecycle drain waiter was not awakened");
+    ok &= check(lifecycle.finish_stop() &&
+                    lifecycle.state() == Lifecycle::State::stopped &&
+                    lifecycle.admitted_count() == 0 && !lifecycle.complete(),
+                "lifecycle finish transition failed");
+    ok &= check(lifecycle.start() && lifecycle.begin_stop() &&
+                    lifecycle.wait_drained(Lifecycle::infinite) &&
+                    lifecycle.finish_stop(),
+                "empty lifecycle restart/drain failed");
+
+    Lifecycle capacity_lifecycle;
+    ok &= check(capacity_lifecycle.start(), "capacity lifecycle start failed");
+    for (std::uint32_t index = 0; index < Lifecycle::maximum_admitted; ++index)
+        ok &= check(capacity_lifecycle.try_admit(),
+                    "lifecycle rejected an in-capacity admission");
+    ok &= check(!capacity_lifecycle.try_admit() &&
+                    capacity_lifecycle.admitted_count() == Lifecycle::maximum_admitted &&
+                    capacity_lifecycle.begin_stop(),
+                "lifecycle exceeded the recovered queue capacity");
+    for (std::uint32_t index = 0; index < Lifecycle::maximum_admitted; ++index)
+        ok &= check(capacity_lifecycle.complete(),
+                    "lifecycle capacity drain underflowed");
+    ok &= check(capacity_lifecycle.wait_drained(0) &&
+                    capacity_lifecycle.finish_stop(),
+                "capacity lifecycle did not finish stopping");
+
     Platform platform;
 
     ok &= check(platform.create_semaphore(-1, 1) == Platform::invalid_handle,

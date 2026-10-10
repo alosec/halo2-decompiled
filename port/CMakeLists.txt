@@ -2352,6 +2352,7 @@ add_library(h2_port_support STATIC
     src/guest_arena.cpp
     src/guest_elf_image.cpp
     src/host_services.cpp
+    src/native_async_lifecycle.cpp
     src/native_async_platform.cpp
     src/profile_store.cpp
     src/retail_data.cpp

@@ -1245,13 +1245,14 @@ def main() -> int:
                     "worker_thread_create_stack_wait_join_close",
                     "worker_thread_exit_code",
                     "worker_thread_precedence_priority_mapping",
-                    "scheduler_lifecycle_contract"],
+                    "scheduler_lifecycle_contract",
+                    "scheduler_admission_and_drain_state_gate"],
                 "remaining_services": [
                     "guest_host_abi_bridge",
-                    "scheduler_lifecycle_implementation",
+                    "scheduler_worker_stop_and_teardown_integration",
                     "cache_file_handle_initialization"]} or
             texture_upload.get("native_scheduler_lifecycle") != {
-                "status": "designed_not_implemented",
+                "status": "state_gate_implemented_not_integrated",
                 "recovered_shutdown_provider": None,
                 "states": ["stopped", "accepting", "stopping"],
                 "initial_state": "stopped",
@@ -1261,7 +1262,8 @@ def main() -> int:
                     "rejected_task_id": -1,
                     "rejection_side_effects": "none",
                     "stop_transition":
-                        "accepting_to_stopping_before_any_handle_close"},
+                        "accepting_to_stopping_before_any_handle_close",
+                    "maximum_admitted_tasks": 150},
                 "shutdown_policy": {
                     "mode": "drain_all_admitted_tasks",
                     "cancellation_supported": False,
@@ -1295,7 +1297,17 @@ def main() -> int:
                     "close_cache_file_handles_and_release_cache_pools_only_after_scheduler_stopped",
                 "restart_policy":
                     "only_stopped_may_initialize_a_fresh_150_node_queue_and_new_handles",
-                "execution_enabled": False} or
+                "execution_enabled": False,
+                "state_gate": {
+                    "source": "port/src/native_async_lifecycle.cpp",
+                    "owned_behavior": [
+                        "stopped_accepting_stopping_transitions",
+                        "accepting_only_admission",
+                        "recovered_150_node_capacity_limit",
+                        "admitted_task_accounting",
+                        "finite_and_infinite_drain_wait",
+                        "timeout_preserves_stopping_state",
+                        "restart_only_after_finished_stop"]}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
