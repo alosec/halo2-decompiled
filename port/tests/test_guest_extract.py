@@ -1269,6 +1269,38 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_policy_output = Path(temporary) / "particle-material-policy-state.o"
+        material_policy_symbol = "?function_34060@@YAJJK@Z"
+        material_policy_command = command[:]
+        material_policy_command[material_policy_command.index("h2_extract_selected")] = material_policy_symbol
+        material_policy_command[
+            material_policy_command.index("--extract-global"):material_policy_command.index("--output")
+        ] = []
+        material_policy_command[material_policy_command.index(output)] = material_policy_output
+        material_policy_command[-1] = args.root / "src/particle_material_policy_state_native.cpp"
+        subprocess.run([str(value) for value in material_policy_command], check=True)
+        material_policy_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_policy_output],
+            text=True,
+        )
+        material_policy_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_policy_output],
+            text=True,
+        )
+        if material_policy_symbol not in material_policy_defined:
+            raise RuntimeError("particle material policy state selector was not selectively compilable")
+        expected_material_policy_imports = {
+            "_?g_4858c4@@3PAEA", "_?g_485a2c@@3JA", "_?g_485a64@@3JA",
+            "_?g_485a68@@3JA", "_?g_4ba014@@3KA",
+        }
+        actual_material_policy_imports = {
+            line.split()[0] for line in material_policy_undefined.splitlines() if line.strip()
+        }
+        if actual_material_policy_imports != expected_material_policy_imports:
+            raise RuntimeError("particle material policy state frontier changed")
+        if "switch.table" in material_policy_undefined:
+            raise RuntimeError("particle material policy selector gained a false switch provider")
+
         material_external_output = Path(temporary) / "particle-material-external-state.o"
         material_external_symbol = "?function_1ae70@@YAXPAE@Z"
         material_external_command = command[:]

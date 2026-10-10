@@ -59,10 +59,17 @@
       "0x0001ba00"
     ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Thirteen of its 21 direct calls are independently source-owned. Exact function_1ae70 owns the five pending-mask scans and dirty-bit clearing while exposing genuine scalar, vector, and policy state providers. Nested selector function_17420 exposes four genuine packed pass-range applicators. Packed constant-range function_19be0 and general parameter unpacker function_1b2c0 preserve scalar/color/texture-size semantics. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 8 direct calls, seven exposed state/pass providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Thirteen of its 21 direct calls are independently source-owned. Exact function_1ae70 owns the five pending-mask scans and dirty-bit clearing; its compact policy selector function_34060 is also source-owned and now exposes only five mutable policy/controller state globals, while scalar and vector providers remain genuine code boundaries. Nested selector function_17420 exposes four genuine packed pass-range applicators. Packed constant-range function_19be0 and general parameter unpacker function_1b2c0 preserve scalar/color/texture-size semantics. Immediate vertex, vertex-constant, and changed pixel-shader submission preserve three real D3D boundaries. The remaining 8 direct calls, six exposed code providers, general curves, mutable state, and renderer dependencies remain a coherent lifecycle; function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
+    ],
+    "0x00034060": [
+      "?g_4858c4@@3PAEA",
+      "?g_485a2c@@3JA",
+      "?g_485a64@@3JA",
+      "?g_485a68@@3JA",
+      "?g_4ba014@@3KA"
     ]
   },
   "owned_zero_import_calls": [
