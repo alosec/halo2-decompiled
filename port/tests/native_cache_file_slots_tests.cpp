@@ -1,9 +1,11 @@
+#include "h2/guest_arena.hpp"
 #include "h2/native_async_lifecycle.hpp"
 #include "h2/native_async_platform.hpp"
 #include "h2/native_cache_file_slots.hpp"
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -74,6 +76,19 @@ int main() {
     Lifecycle lifecycle;
     Slots slots(platform, lifecycle);
     std::string error;
+    auto arena = h2::port::GuestArena::create(error);
+    ok &= check(arena != nullptr, "guest arena creation failed");
+    constexpr std::uint32_t guest_slots_address = 0x00557c90u;
+    constexpr std::uint32_t guest_active_address = 0x0055aca8u;
+    constexpr std::uint32_t guest_slots_size = 6 * 0x804 + 4;
+    if (arena) {
+        ok &= check(!slots.publish_to_guest(*arena, error),
+                    "cache slots published into unmapped guest storage");
+        ok &= check(arena->protect(guest_slots_address, guest_slots_size,
+                                   h2::port::GuestMemoryProtection::read_write,
+                                   error),
+                    "guest cache slot storage could not be mapped");
+    }
     ok &= check(slots.install(mainmenu, 2, "mainmenu", true, error) &&
                     slots.active_slot() == 2,
                 "mainmenu cache did not enter recovered slot 2");
@@ -87,11 +102,30 @@ int main() {
                                   false, error) &&
                     slots.slot_handle(1) != Platform::invalid_handle,
                 "shared caches did not enter recovered slots 0 and 1");
+    if (arena) {
+        ok &= check(slots.publish_to_guest(*arena, error),
+                    "cache slots did not publish to writable guest storage");
+        auto* const guest_slots = static_cast<std::uint8_t*>(
+            arena->pointer(guest_slots_address));
+        std::uint32_t published_slot0 = 0;
+        std::uint32_t published_slot2 = 0;
+        std::int32_t published_active = Slots::no_active_slot;
+        std::memcpy(&published_slot0, guest_slots, sizeof(published_slot0));
+        std::memcpy(&published_slot2, guest_slots + 2 * 0x804,
+                    sizeof(published_slot2));
+        std::memcpy(&published_active, arena->pointer(guest_active_address),
+                    sizeof(published_active));
+        ok &= check(published_slot0 == slots.slot_handle(0) &&
+                        published_slot2 == mainmenu_handle && published_active == 2 &&
+                        guest_slots[2 * 0x804 + 4] == 'd',
+                    "published guest slot layout did not match recovered storage");
+    }
 
     ok &= check(lifecycle.start(), "scheduler lifecycle did not start");
     ok &= check(!slots.install(campaign_a, 0, "campaign_a", true, error) &&
-                    !slots.clear(error),
-                "cache slots changed while the scheduler was accepting");
+                    !slots.clear(error) &&
+                    (!arena || !slots.publish_to_guest(*arena, error)),
+                "cache slots changed or published while the scheduler was accepting");
     ok &= check(lifecycle.begin_stop() && lifecycle.wait_drained(0) &&
                     lifecycle.finish_stop(),
                 "scheduler lifecycle did not return to stopped");
@@ -109,6 +143,20 @@ int main() {
     std::uint64_t closed_size = 0;
     ok &= check(!platform.file_size(campaign_a_handle, &closed_size),
                 "replaced Campaign token remained live");
+    if (arena) {
+        ok &= check(slots.publish_to_guest(*arena, error),
+                    "Campaign cache slots did not publish");
+        std::uint32_t published_slot5 = 0;
+        std::int32_t published_active = Slots::no_active_slot;
+        auto* const guest_slots = static_cast<std::uint8_t*>(
+            arena->pointer(guest_slots_address));
+        std::memcpy(&published_slot5, guest_slots + 5 * 0x804,
+                    sizeof(published_slot5));
+        std::memcpy(&published_active, arena->pointer(guest_active_address),
+                    sizeof(published_active));
+        ok &= check(published_slot5 == slots.slot_handle(5) && published_active == 5,
+                    "Campaign guest slot publication used the wrong active slot");
+    }
 
     const auto symlink = directory / "campaign.link";
     std::filesystem::create_symlink(campaign_b, symlink, filesystem_error);
@@ -122,6 +170,19 @@ int main() {
                     slots.active_slot() == Slots::no_active_slot &&
                     platform.active_handle_count() == 0,
                 "cache slot teardown did not close and clear every token");
+    if (arena) {
+        ok &= check(slots.publish_to_guest(*arena, error),
+                    "cleared cache slots did not publish");
+        std::uint32_t cleared_handle = 1;
+        std::int32_t cleared_active = 0;
+        std::memcpy(&cleared_handle, arena->pointer(guest_slots_address),
+                    sizeof(cleared_handle));
+        std::memcpy(&cleared_active, arena->pointer(guest_active_address),
+                    sizeof(cleared_active));
+        ok &= check(cleared_handle == Platform::invalid_handle &&
+                        cleared_active == Slots::no_active_slot,
+                    "guest cache teardown did not clear handles and active slot");
+    }
     std::filesystem::remove_all(directory, filesystem_error);
     return ok ? 0 : 1;
 }

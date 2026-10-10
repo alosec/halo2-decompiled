@@ -1,8 +1,10 @@
 #include "h2/native_cache_file_slots.hpp"
 
 #include "h2/native_async_lifecycle.hpp"
+#include "h2/guest_arena.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <mutex>
 
 namespace h2::port {
@@ -12,6 +14,9 @@ constexpr std::uint32_t kCacheMagic = 0x68656164u;
 constexpr std::uint32_t kCacheVersion = 8u;
 constexpr std::uint32_t kCacheFooter = 0x666f6f74u;
 constexpr const char* kRetailBuild = "02.09.27.09809";
+constexpr std::uint32_t kGuestCacheSlotsAddress = 0x00557c90u;
+constexpr std::uint32_t kGuestActiveSlotAddress = 0x0055aca8u;
+constexpr std::size_t kGuestSlotSize = 0x804;
 
 std::uint32_t read_u32(const std::array<std::uint8_t, 0x800>& header,
                        std::size_t offset) {
@@ -183,6 +188,39 @@ bool NativeCacheFileSlots::clear(std::string& error) {
     if (!result)
         error = "one or more cache handles could not close";
     return result;
+}
+
+bool NativeCacheFileSlots::publish_to_guest(GuestArena& arena,
+                                             std::string& error) const {
+    error.clear();
+    if (data_->lifecycle.state() != NativeAsyncLifecycle::State::stopped) {
+        error = "cache slots may publish only while the async scheduler is stopped";
+        return false;
+    }
+    void* const guest_slots = arena.pointer(kGuestCacheSlotsAddress);
+    void* const guest_active = arena.pointer(kGuestActiveSlotAddress);
+    if (!arena.host_range_accessible(guest_slots, slot_count * kGuestSlotSize, true) ||
+        !arena.host_range_accessible(guest_active, sizeof(std::int32_t), true)) {
+        error = "guest cache slot storage is not writable";
+        return false;
+    }
+
+    std::array<std::uint8_t, slot_count * kGuestSlotSize> image{};
+    std::int32_t active = no_active_slot;
+    {
+        const std::lock_guard lock(data_->mutex);
+        for (std::size_t index = 0; index < slot_count; ++index) {
+            auto* const destination = image.data() + index * kGuestSlotSize;
+            std::memcpy(destination, &data_->slots[index].handle,
+                        sizeof(data_->slots[index].handle));
+            std::memcpy(destination + sizeof(data_->slots[index].handle),
+                        data_->slots[index].header.data(), header_size);
+        }
+        active = data_->active;
+    }
+    std::memcpy(guest_slots, image.data(), image.size());
+    std::memcpy(guest_active, &active, sizeof(active));
+    return true;
 }
 
 std::int32_t NativeCacheFileSlots::active_slot() const {

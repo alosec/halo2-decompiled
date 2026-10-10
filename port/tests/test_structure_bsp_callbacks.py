@@ -1250,11 +1250,11 @@ def main() -> int:
                     "tracked_guest_page_read_write_validation",
                     "bounded_guest_sync_file_bridge",
                     "cache_file_slot_lifecycle_contract",
-                    "validated_cache_file_slot_owner"],
+                    "validated_cache_file_slot_owner",
+                    "bounded_guest_cache_slot_publication"],
                 "remaining_services": [
                     "guest_abi_import_routing_and_worker_entry",
-                    "scheduler_worker_stop_and_teardown_integration",
-                    "guest_cache_slot_publication"],
+                    "scheduler_worker_stop_and_teardown_integration"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1334,7 +1334,8 @@ def main() -> int:
                         "timeout_preserves_stopping_state",
                         "restart_only_after_finished_stop"]}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
-                "status": "host_slot_owner_implemented_not_guest_published",
+                "status":
+                    "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",
                 "recovered_header_type_slots": {
                     "0": [4, 5], "1": [3], "2": [2], "3": [0], "4": [1]},
                 "recovered_location_selector_slots": {
@@ -1372,7 +1373,16 @@ def main() -> int:
                         "campaign_slot_4_5_alternation",
                         "fixed_shared_slot_preservation_across_active_map_switch",
                         "stopped_only_install_and_teardown",
-                        "opaque_token_close_and_slot_clear"]}} or
+                        "opaque_token_close_and_slot_clear",
+                        "exact_g_557c90_and_g_55aca8_guest_publication"]},
+                "guest_publication": {
+                    "slots_address": "0x00557c90",
+                    "slot_count": 6,
+                    "slot_size": 2052,
+                    "active_slot_address": "0x0055aca8",
+                    "requires_writable_guest_ranges": True,
+                    "requires_scheduler_stopped": True,
+                    "runtime_connected": False}} or
             [(call.get("address"), call.get("symbol"), call.get("source_owned"))
              for call in texture_upload_calls] != [
                 ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),

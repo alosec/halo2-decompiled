@@ -11,6 +11,7 @@
 
 namespace h2::port {
 
+class GuestArena;
 class NativeAsyncLifecycle;
 
 class NativeCacheFileSlots {
@@ -29,6 +30,7 @@ public:
                  const std::string& expected_name, bool make_active,
                  std::string& error);
     bool clear(std::string& error);
+    bool publish_to_guest(GuestArena& arena, std::string& error) const;
 
     std::int32_t active_slot() const;
     NativeAsyncPlatform::Handle slot_handle(std::size_t index) const;
