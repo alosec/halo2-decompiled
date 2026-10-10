@@ -3645,6 +3645,10 @@ def main():
                  "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
                  "XPhysicalProtect",
                  "h2_guest_memset"}),
+            ("sound-stream-add-chunk.o",
+             "src/sound_stream_chunk_release_native.cpp",
+             "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
+             {"?function_218850@@YAKJPAUs_sound_chunk@@K@Z"}),
             ("sound-stream-chunks-release.o",
              "src/sound_stream_chunk_release_native.cpp",
              "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z", {

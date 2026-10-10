@@ -209,5 +209,13 @@
       "source": "src/sound_pcm_codec_control_native.cpp",
       "semantics": "Permit PCM submission exactly while the genuine stream has more queued chunks than already-started chunks, independently of the current-update submitted flag."
     }
+  ],
+  "sound_stream_queue_helpers": [
+    {
+      "symbol": "sound_stream_add_chunk",
+      "source": "src/sound_stream_chunk_release_native.cpp",
+      "address": "0x002ae500",
+      "semantics": "Clear the transient stream flag, advance the authentic queue state, lock and append at most two genuine cache chunks, and start the attached codec only while no chunk is already started."
+    }
   ]
 }

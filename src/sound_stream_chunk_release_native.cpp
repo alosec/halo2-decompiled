@@ -8,7 +8,14 @@
 
 #ifdef H2_NATIVE_PORT
 
-class c_sound_stream_codec;
+struct s_sound_stream;
+
+class c_sound_stream_codec
+{
+public:
+	virtual void attach(s_sound_stream *stream) = 0;
+	virtual void start(s_sound_stream *stream) = 0;
+};
 
 struct s_sound_stream
 {
@@ -37,6 +44,26 @@ struct s_sound_stream
 static_assert(sizeof(s_sound_stream) == 0x34, "sound stream size");
 static_assert(offsetof(s_sound_stream, chunks) == 0x1c,
 	"sound stream chunk-array offset");
+
+// @retail 0x2ae500
+void sound_stream_add_chunk(s_sound_stream *stream, s_sound_chunk *chunk)
+{
+	stream->unknown03_3 = 0;
+	if (stream->state == 0 || stream->state == 1)
+		stream->state = 2;
+	else if (stream->state == 2)
+		stream->state = 3;
+
+	if (stream->chunk_count < 2)
+	{
+		function_218850(NONE, chunk, 4);
+		stream->chunks[stream->chunk_count] = chunk;
+		stream->chunk_count++;
+	}
+
+	if (stream->started_count == 0)
+		stream->codec->start(stream);
+}
 
 // @retail 0x2ae8e0
 void sound_stream_release_chunks(s_sound_stream *stream)

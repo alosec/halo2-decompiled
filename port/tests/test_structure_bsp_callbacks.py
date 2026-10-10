@@ -2173,6 +2173,11 @@ def main() -> int:
         "bool c_pcm_codec::can_submit(s_sound_stream *stream, bool submitted)",
         "return stream->chunk_count > stream->started_count;"]
     expected_stream_chunk_release_fragments = [
+        "void sound_stream_add_chunk(s_sound_stream *stream, s_sound_chunk *chunk)",
+        "stream->unknown03_3 = 0;", "stream->state = 2;",
+        "stream->state = 3;", "function_218850(NONE, chunk, 4);",
+        "stream->chunks[stream->chunk_count] = chunk;",
+        "stream->codec->start(stream);",
         "void sound_stream_release_chunks(s_sound_stream *stream)",
         "while (stream->chunk_count > 0)",
         "stream->chunks[stream->chunk_count - 1]->cache_index",
@@ -2401,6 +2406,15 @@ def main() -> int:
                     "Permit PCM submission exactly while the genuine stream "
                     "has more queued chunks than already-started chunks, "
                     "independently of the current-update submitted flag."}] or
+            sound_driver_lifecycle.get("sound_stream_queue_helpers") != [{
+                "symbol": "sound_stream_add_chunk",
+                "source": "src/sound_stream_chunk_release_native.cpp",
+                "address": "0x002ae500",
+                "semantics":
+                    "Clear the transient stream flag, advance the authentic "
+                    "queue state, lock and append at most two genuine cache "
+                    "chunks, and start the attached codec only while no "
+                    "chunk is already started."}] or
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
