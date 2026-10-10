@@ -3308,6 +3308,18 @@ def main():
                  "?function_2195f0@@YAMM@Z",
                  "?function_2197f0@@YAJM@Z",
                  "fabs", "sqrt"}),
+            ("sound-source-vector-transform.o", "src/sound_source_position_native.cpp",
+             "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z", set()),
+            ("sound-direction-decompress.o", "src/unknown_188dd0.cpp",
+             "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z", {
+                 "?function_30bf0@@YAMPATvector3f@@@Z"}),
+            ("sound-source-position.o", "src/sound_source_position_native.cpp",
+             "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z", {
+                 "?g_4e6380@@3PAUs_4e6380@@A", "h2_guest_memcpy"}),
+            ("sound-source-listener-distance.o", "src/sound_source_position_native.cpp",
+             "?sound_source_get_listener_distance@@YAMPBUs_sound_location_source@@J@Z", {
+                 "?g_4e6380@@3PAUs_4e6380@@A",
+                 "?magnitude3d@@YAMPBTvector3f@@@Z"}),
             ("sound-doppler.o", "src/sound_doppler_native.cpp",
              "?function_12a9d0@@YAMJPBUs_sound_position@@@Z", {
                  "?g_4e6380@@3PAUs_4e6380@@A", "fabs", "log", "sqrt"}),

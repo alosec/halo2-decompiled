@@ -1417,6 +1417,39 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/sound_source_position_native.cpp",
+                "symbol":
+                    "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@"
+                    "PAT1@@Z",
+                "imports": [],
+                "semantics":
+                    "exact inverse listener-frame vector transform with "
+                    "recovered scale policy"}, {
+                "source": "src/unknown_188dd0.cpp",
+                "symbol": "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
+                "imports": ["?function_30bf0@@YAMPATvector3f@@@Z"],
+                "semantics":
+                    "exact packed 11/11/10-bit direction decompression and "
+                    "normalization"}, {
+                "source": "src/sound_source_position_native.cpp",
+                "symbol":
+                    "?sound_source_get_position@@YAXPBUs_sound_location_source@@"
+                    "JPATpoint3f@@@Z",
+                "imports": [
+                    "?g_4e6380@@3PAUs_4e6380@@A", "h2_guest_memcpy"],
+                "semantics":
+                    "exact world, ground-plane, and listener-height source "
+                    "position selection"}, {
+                "source": "src/sound_source_position_native.cpp",
+                "symbol":
+                    "?sound_source_get_listener_distance@@YAMPBUs_sound_location_"
+                    "source@@J@Z",
+                "imports": [
+                    "?g_4e6380@@3PAUs_4e6380@@A",
+                    "?magnitude3d@@YAMPBTvector3f@@@Z"],
+                "semantics":
+                    "exact unspatialized, world, bounded-height ground-plane, "
+                    "and listener-relative distance policy"}, {
                 "source": "src/sound_doppler_native.cpp",
                 "symbol": "?function_12a9d0@@YAMJPBUs_sound_position@@@Z",
                 "imports": [
