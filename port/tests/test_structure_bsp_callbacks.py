@@ -1215,6 +1215,34 @@ def main() -> int:
             not material_binding.get("blocker")):
         raise RuntimeError("particle material binding frontier changed")
 
+    texture_upload = json.loads((
+        args.root / "port/runtime/particle_texture_upload_frontier.json"
+    ).read_text())
+    texture_upload_calls = texture_upload.get("direct_calls", [])
+    if (
+            texture_upload.get("version") != 1 or
+            texture_upload.get("retail_function") != "0x0012ce00" or
+            texture_upload.get("size") != 658 or
+            texture_upload.get("symbol") !=
+                "?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z" or
+            texture_upload.get("execution_gate") !=
+                "native_particle_texture_upload_lifetime_owned" or
+            [(call.get("address"), call.get("symbol"), call.get("source_owned"))
+             for call in texture_upload_calls] != [
+                ("0x0012c820", "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z", True),
+                ("0x0012c990", "?function_12c990@@YAPAUD3DTexture@@PAUs_bitmap_data@@J_N11JPA_N2@Z", False),
+                ("0x0012cb10", "?texture_cache_bitmap_level@@YAJPBUs_bitmap_data@@M@Z", True),
+                ("0x0012ccb0", "?texture_cache_format_scalable@@YA_NJ@Z", True)] or
+            texture_upload.get("owned_direct_calls") != [
+                "0x0012c820", "0x0012cb10", "0x0012ccb0"] or
+            texture_upload.get("remaining_direct_calls") != ["0x0012c990"] or
+            texture_upload.get("lifecycle_requirements") != [
+                "cache_request_allocation", "resident_block_ownership",
+                "source_pixel_data_ownership", "initialized_cache_pools",
+                "asynchronous_upload_completion", "fallback_texture_routing"] or
+            not texture_upload.get("blocker")):
+        raise RuntimeError("particle texture upload frontier changed")
+
     render_reset = json.loads((
         args.root / "port/runtime/particle_render_state_reset_frontier.json"
     ).read_text())
