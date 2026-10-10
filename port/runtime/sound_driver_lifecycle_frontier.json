@@ -4,8 +4,8 @@
   "startup": {
     "retail_function": "0x0021e4b0",
     "symbol": "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
-    "source": "src/unknown_21e4b0.cpp",
-    "source_owned": false,
+    "source": "src/sound_driver_startup_native.cpp",
+    "source_owned": true,
     "production_linked": false,
     "direct_calls": [
       "function_163ba0",
@@ -43,7 +43,7 @@
       "g_4687a8",
       "g_4687b0"
     ],
-    "semantics": "Allocate and checksum the exact driver block, create/configure DirectSound, initialize the listener, channel streams, voice buffers, effect images, effect/submix/impulse buffers and mutable driver defaults, publish initialized only after complete success, otherwise execute real teardown.",
+    "semantics": "Exact source-owned top-level startup: run genuine device/capability/speaker setup, require the real DSP effect image, publish the recovered listener, construct authentic channel streams and voice buffers, initialize all effect/submix/impulse buffers and defaults even after channel failure, publish initialized only after complete required success, and otherwise execute exact ordered teardown.",
     "selectively_source_owned_calls": [
       {
         "symbol": "function_12c040",
@@ -97,6 +97,17 @@
         "via": "function_21f4e0",
         "semantics": "Construct the exact mono/stereo Xbox ADPCM or stereo PCM wave format and select the authentic static codec object without creating a stream."
       }
+    ],
+    "recovered_source": "src/unknown_21e4b0.cpp",
+    "native_direct_calls": [
+      "sound_driver_device_startup",
+      "function_191300",
+      "function_220790",
+      "sound_driver_channels_startup",
+      "sound_driver_effect_buffers_startup",
+      "function_21eae0",
+      "memcpy",
+      "memset"
     ]
   },
   "teardown": {

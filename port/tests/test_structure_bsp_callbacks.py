@@ -2123,8 +2123,10 @@ def main() -> int:
     sound_driver_lifecycle = json.loads((
         args.root / "port/runtime/sound_driver_lifecycle_frontier.json"
     ).read_text())
-    sound_driver_startup_source = (
+    sound_driver_recovered_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_startup_source = (
+        args.root / "src/sound_driver_startup_native.cpp").read_text()
     sound_driver_device_startup_source = (
         args.root / "src/sound_driver_device_startup_native.cpp").read_text()
     sound_driver_channels_startup_source = (
@@ -2334,10 +2336,24 @@ def main() -> int:
         "native_sound_driver_ordered_teardown_owned"]
     lifecycle_startup = sound_driver_lifecycle.get("startup", {})
     lifecycle_teardown = sound_driver_lifecycle.get("teardown", {})
-    required_startup_fragments = [
+    required_recovered_startup_fragments = [
         "bool function_21e4b0(", "DirectSoundCreate(",
         "SetDistanceFactor(3.048f", "SetDopplerFactor(0.0f",
         "CreateSoundBuffer", "function_21eae0();"]
+    required_startup_fragments = [
+        "static_assert(sizeof(s_sound_listener) == 0x38",
+        "static_assert(offsetof(s_driver_startup_view, direct_sound) == 0x2ab0",
+        "bool function_21e4b0(s_sound_driver_counts const *counts)",
+        "if (sound_driver_device_startup())",
+        "if (function_191300(globals->direct_sound))",
+        "memset(&listener, 0, sizeof(listener));",
+        "listener.forward = *g_4687a8;",
+        "listener.up = *g_4687b0;",
+        "function_220790(&listener);",
+        "result = sound_driver_channels_startup(counts);",
+        "sound_driver_effect_buffers_startup();",
+        "globals->initialized = true;",
+        "function_21eae0();"]
     required_teardown_fragments = [
         "void function_21eae0(void)", "function_21f290();",
         "IDirectSoundStream_Release", "IDirectSoundBuffer_Release",
@@ -2512,11 +2528,19 @@ def main() -> int:
             lifecycle_startup.get("retail_function") != "0x0021e4b0" or
             lifecycle_startup.get("symbol") !=
                 "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z" or
-            lifecycle_startup.get("source") != "src/unknown_21e4b0.cpp" or
-            lifecycle_startup.get("source_owned") is not False or
+            lifecycle_startup.get("source") !=
+                "src/sound_driver_startup_native.cpp" or
+            lifecycle_startup.get("recovered_source") !=
+                "src/unknown_21e4b0.cpp" or
+            lifecycle_startup.get("source_owned") is not True or
             lifecycle_startup.get("production_linked") is not False or
             lifecycle_startup.get("direct_calls") !=
                 expected_lifecycle_calls["startup"] or
+            lifecycle_startup.get("native_direct_calls") != [
+                "sound_driver_device_startup", "function_191300",
+                "function_220790", "sound_driver_channels_startup",
+                "sound_driver_effect_buffers_startup", "function_21eae0",
+                "memcpy", "memset"] or
             lifecycle_startup.get("state") != [
                 "g_510800_pool_base", "g_510804_pool_size",
                 "g_510808_pool_checksum", "g_51ebe4", "g_47f088",
@@ -2910,6 +2934,8 @@ def main() -> int:
             not lifecycle_teardown.get("semantics") or
             sound_driver_lifecycle.get("execution_gate") !=
                 expected_lifecycle_gates or
+            any(fragment not in sound_driver_recovered_startup_source
+                for fragment in required_recovered_startup_fragments) or
             any(fragment not in sound_driver_startup_source
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_device_startup_source
