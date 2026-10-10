@@ -1110,6 +1110,22 @@ def main() -> int:
             not sprite_geometry.get("blocker")):
         raise RuntimeError("particle sprite geometry frontier changed")
 
+    push_buffer = json.loads((
+        args.root / "port/runtime/particle_push_buffer_frontier.json"
+    ).read_text())
+    if (push_buffer.get("version") != 1 or
+            push_buffer.get("retail_function") != "0x00015d00" or
+            push_buffer.get("size") != 104 or
+            push_buffer.get("symbol") != "?function_015d00@@YA_NJPAPAK@Z" or
+            push_buffer.get("execution_gate") != "native_particle_push_buffer_owned" or
+            push_buffer.get("maximum_exclusive_dwords") != 2048 or
+            push_buffer.get("sprite_packet_dwords") != 46 or
+            push_buffer.get("sprite_geometry_score_before") != 36 or
+            push_buffer.get("sprite_geometry_score_after") != 36 or
+            push_buffer.get("newly_exposed") != ["D3DDevice_BeginPush"] or
+            not push_buffer.get("blocker")):
+        raise RuntimeError("particle push-buffer frontier changed")
+
     expected_effect_score = (
         actual_impact_allocation_score - impact_allocation_new_imports
     ) | set(effect_symbols)

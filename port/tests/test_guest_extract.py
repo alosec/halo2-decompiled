@@ -1163,6 +1163,29 @@ def main():
         if f"_{sprite_geometry_symbol}" not in sprite_geometry_defined:
             raise RuntimeError("native particle sprite geometry was not selectively compilable")
 
+        push_buffer_output = Path(temporary) / "particle-push-buffer.o"
+        push_buffer_symbol = "?function_015d00@@YA_NJPAPAK@Z"
+        push_buffer_command = command[:]
+        push_buffer_command[push_buffer_command.index("h2_extract_selected")] = push_buffer_symbol
+        push_buffer_command[
+            push_buffer_command.index("--extract-global"):push_buffer_command.index("--output")
+        ] = []
+        push_buffer_command[push_buffer_command.index(output)] = push_buffer_output
+        push_buffer_command[-1] = args.root / "src/particle_push_buffer_native.cpp"
+        subprocess.run([str(value) for value in push_buffer_command], check=True)
+        push_buffer_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", push_buffer_output],
+            text=True,
+        )
+        if push_buffer_symbol not in push_buffer_defined:
+            raise RuntimeError("particle push-buffer reservation was not selectively compilable")
+        push_buffer_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", push_buffer_output],
+            text=True,
+        )
+        if "D3DDevice_BeginPush" not in push_buffer_undefined:
+            raise RuntimeError("particle push-buffer allocation boundary missing")
+
         mesh_callback_output = Path(temporary) / "particle-mesh-callback.o"
         mesh_callback_symbol = "?function_224fd0@@YAXPBUs_draw_mesh_seed@@PAUs_draw_value_cache@@PBTpoint3f@@PBTvector3f@@MPBUcolor4f@@PBUs_draw_mesh_context@@@Z"
         mesh_callback_command = command[:]

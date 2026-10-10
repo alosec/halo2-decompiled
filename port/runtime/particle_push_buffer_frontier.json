@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "retail_function": "0x00015d00",
+  "size": 104,
+  "symbol": "?function_015d00@@YA_NJPAPAK@Z",
+  "execution_gate": "native_particle_push_buffer_owned",
+  "maximum_exclusive_dwords": 2048,
+  "sprite_packet_dwords": 46,
+  "sprite_geometry_score_before": 36,
+  "sprite_geometry_score_after": 36,
+  "newly_exposed": ["D3DDevice_BeginPush"],
+  "blocker": "The exact reservation provider rejects counts at or above 0x800, clears the output and returns false on rejection, and otherwise forwards the requested dword count to the genuine Xbox push-buffer allocator. It replaces one geometry provider with D3DDevice_BeginPush, so the measured score remains 36. Native does not fabricate packet storage or discard the resulting packet; real reservation lifetime plus D3DDevice_EndPush submission remain required before execution."
+}
