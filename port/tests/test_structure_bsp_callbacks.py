@@ -1247,9 +1247,10 @@ def main() -> int:
                     "worker_thread_precedence_priority_mapping",
                     "scheduler_lifecycle_contract",
                     "scheduler_admission_and_drain_state_gate",
-                    "tracked_guest_page_read_write_validation"],
+                    "tracked_guest_page_read_write_validation",
+                    "bounded_guest_sync_file_bridge"],
                 "remaining_services": [
-                    "guest_host_abi_bridge",
+                    "guest_abi_import_routing_and_worker_entry",
                     "scheduler_worker_stop_and_teardown_integration",
                     "cache_file_handle_initialization"],
                 "guest_memory_validator": {
@@ -1258,7 +1259,21 @@ def main() -> int:
                     "cross_end_rejected": True,
                     "page_protections_tracked": True,
                     "write_requires_read_write": True,
-                    "unmapped_pages_rejected": True}} or
+                    "unmapped_pages_rejected": True},
+                "guest_bridge": {
+                    "source": "port/src/native_async_guest_bridge.cpp",
+                    "status": "host_only_not_abi_patched",
+                    "opaque_tokens_preserved": True,
+                    "validate_outputs_before_side_effects": True,
+                    "operations": [
+                        "mutex_create_wait_release_close",
+                        "semaphore_create_wait_release_close",
+                        "host_selected_read_only_file_open",
+                        "file_seek_and_read",
+                        "worker_priority_wait_exit_code_close"],
+                    "unowned_operations": [
+                        "guest_path_file_open",
+                        "guest_worker_entry_routing"]}} or
             texture_upload.get("native_scheduler_lifecycle") != {
                 "status": "state_gate_implemented_not_integrated",
                 "recovered_shutdown_provider": None,
