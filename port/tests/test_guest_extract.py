@@ -1269,6 +1269,47 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        material_texture_route_output = Path(temporary) / "particle-material-texture-route.o"
+        material_texture_route_symbol = "?function_19530@@YAXJPAEFPAJ1@Z"
+        material_texture_route_command = command[:]
+        material_texture_route_command[material_texture_route_command.index("h2_extract_selected")] = (
+            material_texture_route_symbol
+        )
+        material_texture_route_command[
+            material_texture_route_command.index("--extract-global"):material_texture_route_command.index("--output")
+        ] = []
+        material_texture_route_command[material_texture_route_command.index(output)] = material_texture_route_output
+        material_texture_route_command[-1] = args.root / "src/particle_material_texture_route_native.cpp"
+        subprocess.run([str(value) for value in material_texture_route_command], check=True)
+        material_texture_route_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_texture_route_output],
+            text=True,
+        )
+        material_texture_route_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_texture_route_output],
+            text=True,
+        )
+        if material_texture_route_symbol not in material_texture_route_defined:
+            raise RuntimeError("particle material texture routing was not selectively compilable")
+        expected_material_texture_route_imports = {
+            "_?function_01dd60@@YA_NJPAJ0@Z", "_?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
+            "_?function_14390@@YA_NFPAUs_type_7ba8e9@@M@Z", "_?function_143c0@@YA_NJFFM@Z",
+            "_?function_144f0@@YAXJFFFFM@Z", "_?function_14f60@@YAXFF@Z",
+            "_?function_25960@@YAJXZ", "_?g_485607@@3EA", "_?g_4858b8@@3JA",
+            "_?g_4858c4@@3PAEA", "_?g_4858c8@@3FA", "_?g_485a76@@3EA",
+            "_?g_485a77@@3EA", "_?g_485a78@@3PAJA", "_?g_485a80@@3PAEA",
+            "_?g_4b4b58@@3PAUs_unknown_01dcc0@@A", "_?g_4e3b44@@3PAUs_tag_instance@@A",
+            "_?g_4e6978@@3JA", "_?g_4e697c@@3JA",
+            "_?g_51f3c8@@3PAY03PAUIDirect3DBaseTexture8@@A", "_?g_55e6bd@@3EA",
+        }
+        actual_material_texture_route_imports = {
+            line.split()[0] for line in material_texture_route_undefined.splitlines() if line.strip()
+        }
+        if actual_material_texture_route_imports != expected_material_texture_route_imports:
+            raise RuntimeError("particle material texture routing frontier changed")
+        if "switch.table" in material_texture_route_undefined:
+            raise RuntimeError("particle material texture routing leaked a compiler switch table")
+
         render_surface_state_output = Path(temporary) / "particle-render-surface-state.o"
         render_surface_state_symbols = [
             "?function_25960@@YAJXZ", "?function_01dcc0@@YAPAXJ@Z",
