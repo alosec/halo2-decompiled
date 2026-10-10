@@ -130,6 +130,8 @@
     "native_directsound_stream_packet_pump_owned",
     "native_sound_stream_chunk_and_cache_lifetime_owned",
     "native_wma_codec_packet_buffer_owned",
+    "native_wma_decoder_construction_owned",
+    "native_wma_decoder_read_callback_owned",
     "native_wma_decoder_lifetime_owned",
     "native_sound_driver_ordered_teardown_owned"
   ],
@@ -261,6 +263,20 @@
       "source": "src/sound_stream_envelope_native.cpp",
       "address": "0x002ae7a0",
       "semantics": "Build the exact zeroed 0x28-byte Xbox amplitude/attack envelope, convert attack and release seconds at 93.75 units per second with retail truncation, set sustain to 255, and submit it through the genuine DirectSound SetEG operation."
+    }
+  ],
+  "wma_codec_start_helpers": [
+    {
+      "symbol": "c_wma_codec::start",
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "address": "0x002ae240",
+      "semantics": "Release any prior genuine decoder, increment the authentic started-chunk count, and construct a real in-memory WMA decoder at yield rate 1 with the exact callback, codec context, output format, and decoder destination."
+    },
+    {
+      "symbol": "wma_codec_read_callback",
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "address": "0x002ae490",
+      "semantics": "Route decoder byte requests with their exact offset, count, and output pointer into c_wma_codec::read without fabricating bytes or progress."
     }
   ]
 }

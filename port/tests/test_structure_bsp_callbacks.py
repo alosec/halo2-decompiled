@@ -2129,6 +2129,8 @@ def main() -> int:
         args.root / "src/unknown_21e330.cpp").read_text()
     sound_wma_initialize_source = (
         args.root / "src/sound_wma_codec_initialize_native.cpp").read_text()
+    sound_wma_start_source = (
+        args.root / "src/sound_wma_codec_start_native.cpp").read_text()
     sound_wma_control_source = (
         args.root / "src/sound_wma_codec_control_native.cpp").read_text()
     sound_pcm_control_source = (
@@ -2152,6 +2154,15 @@ def main() -> int:
         "codec->buffer =", "memset(codec->packet_status, 0",
         "offsetof(s_wma_codec_initialize_view, buffer) == 0x14",
         "offsetof(s_wma_codec_initialize_view, packet_status) == 0x18"]
+    expected_wma_start_fragments = [
+        "static_assert(sizeof(WAVEFORMATEX) == 0x12",
+        "static dword __stdcall wma_codec_read_callback(void *context, dword offset,",
+        "return reinterpret_cast<c_wma_codec *>(context)->read(offset, byte_count,",
+        "void c_wma_codec::start(s_sound_stream *stream)",
+        "release_decoder();",
+        "stream->started_count++;",
+        "WmaCreateInMemoryDecoder(wma_codec_read_callback, this, 1, &format,",
+        "&m_decoder);"]
     expected_wma_control_fragments = [
         "void c_wma_codec::attach(s_sound_stream *stream)",
         "m_stream = stream;",
@@ -2283,6 +2294,8 @@ def main() -> int:
         "native_directsound_stream_packet_pump_owned",
         "native_sound_stream_chunk_and_cache_lifetime_owned",
         "native_wma_codec_packet_buffer_owned",
+        "native_wma_decoder_construction_owned",
+        "native_wma_decoder_read_callback_owned",
         "native_wma_decoder_lifetime_owned",
         "native_sound_driver_ordered_teardown_owned"]
     lifecycle_startup = sound_driver_lifecycle.get("startup", {})
@@ -2432,6 +2445,23 @@ def main() -> int:
                     "Permit submission exactly while a genuine decoder "
                     "exists and no packet was already submitted in the "
                     "current update."}] or
+            sound_driver_lifecycle.get("wma_codec_start_helpers") != [{
+                "symbol": "c_wma_codec::start",
+                "source": "src/sound_wma_codec_start_native.cpp",
+                "address": "0x002ae240",
+                "semantics":
+                    "Release any prior genuine decoder, increment the "
+                    "authentic started-chunk count, and construct a real "
+                    "in-memory WMA decoder at yield rate 1 with the exact "
+                    "callback, codec context, output format, and decoder "
+                    "destination."}, {
+                "symbol": "wma_codec_read_callback",
+                "source": "src/sound_wma_codec_start_native.cpp",
+                "address": "0x002ae490",
+                "semantics":
+                    "Route decoder byte requests with their exact offset, "
+                    "count, and output pointer into c_wma_codec::read without "
+                    "fabricating bytes or progress."}] or
             sound_driver_lifecycle.get("pcm_codec_control_helpers") != [{
                 "symbol": "c_pcm_codec::mark_cache_usage",
                 "source": "src/sound_pcm_codec_control_native.cpp",
@@ -2535,6 +2565,8 @@ def main() -> int:
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_wma_initialize_source
                 for fragment in expected_wma_initialize_fragments) or
+            any(fragment not in sound_wma_start_source
+                for fragment in expected_wma_start_fragments) or
             any(fragment not in sound_wma_control_source
                 for fragment in expected_wma_control_fragments) or
             any(fragment not in sound_pcm_control_source
