@@ -1119,7 +1119,9 @@ def main() -> int:
                     "?g_468841@@3_NA", "?g_4e6454@@3PAUs_record_pool@@A",
                     "?g_4e6464@@3PAUs_physical_object@@A", "?g_4e647b@@3_NA",
                     "?g_4e647c@@3MA", "?g_4e6488@@3JA"],
-                "0x0012c960": ["?g_4e6468@@3_NA"]} or
+                "0x0012c960": ["?g_4e6468@@3_NA"],
+                "0x0012c820": [
+                    "?g_450768@@3PAY0BI@JA", "?g_4e646c@@3JA"]} or
             material_binding.get("owned_zero_import_calls") != [
                 "0x00017000", "0x00017170", "0x0001ba00", "0x0012ccb0"] or
             material_binding.get("owned_immutable_data") != {
@@ -1158,12 +1160,15 @@ def main() -> int:
                 "0x0012ccf0": [
                     "?texture_cache_bitmap_get_shared_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@@Z"],
                 "0x0012c960": [
-                    "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z"]} or
+                    "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z"],
+                "0x0012c820": [
+                    "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z", "?log2_floor@@YAJK@Z"]} or
             material_binding.get("source_owned_transitive_calls") != [
                 "0x00017550", "0x0001b230", "0x0001b2c0",
                 "0x000176a0", "0x00017960", "0x00017b60", "0x00018560",
                 "0x000336f0", "0x00033980", "0x00034060", "0x000143c0",
-                "0x00012310", "0x0012ccb0", "0x0012ccf0", "0x0012c960"] or
+                "0x00012310", "0x0012ccb0", "0x0012ccf0", "0x0012c960",
+                "0x0012c820"] or
             material_binding.get("owned_renderer_boundaries") != {
                 "0x00018d70": ["D3DDevice_SetVertexData4f"],
                 "0x00018e80": ["D3DDevice_SetVertexShaderConstantFast"],

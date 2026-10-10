@@ -58,7 +58,7 @@
     ],
     "parameter_and_constant_state": []
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. Exact function_19ca0 owns packed color-range/mask expansion. Function_1b0a0 owns dirty residency traversal; function_143c0 owns fallback/index validation, bitmap lookup, wanted texture assignment, and dimensions; function_12310 owns current-frame reuse and cache request fallback; texture_cache_bitmap_get_texture owns scale/bias selection, resident levels, timestamps, and frame caching; and texture_cache_bitmap_get_shared_texture owns shared-header availability and lazy-build routing. The deeper texture frontier is genuine texture_cache_bitmap_build_texture plus 658-byte function_12ce00 upload/request lifetime and initialized cache pools. The remaining 4 direct calls are texture-stage replay and three broad D3D submission providers. Packed pass/state helpers, general curves, mutable state, and renderer ownership remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Seventeen of its 21 direct calls are independently source-owned. The texture chain now owns dirty traversal, fallback/index validation, bitmap lookup, wanted assignment, current-frame reuse, resident-level policy, shared-header routing, and exact Xbox hardware texture-header construction through function_143c0/function_12310/texture_cache_bitmap_get_texture/texture_cache_bitmap_get_shared_texture/texture_cache_bitmap_build_texture. The deeper texture frontier is 658-byte function_12ce00 upload/request lifetime, mip/log helpers, source pixel-data ownership, and initialized cache pools. The remaining 4 direct calls are texture-stage replay and three broad D3D submission providers. Packed pass/state helpers, general curves, mutable state, and renderer ownership remain unready. Function_16b90 stays unlinked rather than reducing Xbox renderer operations to no-ops.",
   "owned_state_dependencies": {
     "0x00016f60": [
       "?g_485a80@@3PAEA"
@@ -101,6 +101,10 @@
     ],
     "0x0012c960": [
       "?g_4e6468@@3_NA"
+    ],
+    "0x0012c820": [
+      "?g_450768@@3PAY0BI@JA",
+      "?g_4e646c@@3JA"
     ]
   },
   "owned_zero_import_calls": [
@@ -173,6 +177,10 @@
     ],
     "0x0012c960": [
       "?texture_cache_bitmap_build_texture@@YAXPAUs_bitmap_data@@@Z"
+    ],
+    "0x0012c820": [
+      "?bitmap_get_mipmap_count@@YAFFFFF_NF@Z",
+      "?log2_floor@@YAJK@Z"
     ]
   },
   "source_owned_transitive_calls": [
@@ -190,7 +198,8 @@
     "0x00012310",
     "0x0012ccb0",
     "0x0012ccf0",
-    "0x0012c960"
+    "0x0012c960",
+    "0x0012c820"
   ],
   "owned_renderer_boundaries": {
     "0x00018e80": [

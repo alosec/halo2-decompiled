@@ -8,7 +8,12 @@
 struct D3DTexture
 {
     dword Common;
+    dword Data;
+    dword Lock;
+    dword Format;
+    dword Size;
 };
+static_assert(sizeof(D3DTexture) == 0x14, "D3DTexture");
 
 struct s_bitmap_data
 {
@@ -30,8 +35,16 @@ struct s_bitmap_data
     long hardware_common;
     dword hardware_data;
     long hardware_lock;
-    dword hardware_format;
-    dword hardware_size;
+    union
+    {
+        dword hardware_format;
+        struct { short format, width; };
+    };
+    union
+    {
+        dword hardware_size;
+        struct { short height, depth; };
+    };
     long last_frame;
 };
 static_assert(sizeof(s_bitmap_data) == 0x74, "s_bitmap_data");
@@ -54,8 +67,39 @@ extern s_physical_object *g_4e6464;
 extern bool g_4e647b;
 extern real g_4e647c;
 extern long g_4e6488;
+extern long g_4e646c;
+extern long g_450768[8][24];
 
-void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap);
+short bitmap_get_mipmap_count(short width, short height, short depth,
+    short format, bool linear, short maximum_levels);
+long log2_floor(dword value);
+
+// @retail 0x12c820
+void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
+{
+    D3DTexture *texture = (D3DTexture *)&bitmap->hardware_common;
+    dword data = bitmap->hardware_data + g_4e646c;
+    short format = bitmap->format;
+    long hardware_format = g_450768[0][format];
+    if ((bitmap->flags & 0x20) && (format == 10 || format == 11))
+        hardware_format = 0x33;
+    short depth = bitmap->depth;
+    short height = bitmap->height;
+    short width = bitmap->width;
+    short levels = bitmap_get_mipmap_count(width, height, depth, format,
+        ((bitmap->flags >> 4) & 1) != 0, 0);
+    texture->Data = 0;
+    texture->Lock = 0;
+    texture->Common = 0x40001;
+    texture->Format = bitmap->type == 2 ? 0x0d : 9;
+    texture->Format |= ((((bitmap->type != 1) ? 2 : 3) |
+        (hardware_format << 4)) << 4) | ((levels + 1) << 16);
+    texture->Format |= (short)log2_floor(width) << 20;
+    texture->Format |= (short)log2_floor(height) << 24;
+    texture->Format |= (short)log2_floor(depth) << 28;
+    texture->Size = 0;
+    texture->Data = data & 0x0fffffff;
+}
 
 // @retail 0x12c960
 D3DTexture *texture_cache_bitmap_get_shared_texture(s_bitmap_data *bitmap)
