@@ -1156,6 +1156,29 @@ def main():
         if "?g_485a80@@3PAEA" not in material_value_undefined:
             raise RuntimeError("particle material-value mutable state boundary missing")
 
+        material_bank_output = Path(temporary) / "particle-material-constant-bank.o"
+        material_bank_symbol = "?function_17000@@YAXPAEPBG@Z"
+        material_bank_command = command[:]
+        material_bank_command[material_bank_command.index("h2_extract_selected")] = material_bank_symbol
+        material_bank_command[
+            material_bank_command.index("--extract-global"):material_bank_command.index("--output")
+        ] = []
+        material_bank_command[material_bank_command.index(output)] = material_bank_output
+        material_bank_command[-1] = args.root / "src/particle_material_constant_bank_native.cpp"
+        subprocess.run([str(value) for value in material_bank_command], check=True)
+        material_bank_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_bank_output],
+            text=True,
+        )
+        if material_bank_symbol not in material_bank_defined:
+            raise RuntimeError("particle material constant-bank loader was not selectively compilable")
+        material_bank_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_bank_output],
+            text=True,
+        )
+        if material_bank_undefined.strip():
+            raise RuntimeError("particle material constant-bank loader gained imports")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
