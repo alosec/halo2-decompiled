@@ -375,6 +375,11 @@
       "symbol": "sound_driver_device_startup",
       "source": "src/sound_driver_device_startup_native.cpp",
       "semantics": "Reserve and checksum the exact aligned 0x2ad8-byte driver globals, create the genuine DirectSound device, query its real capabilities and speaker configuration, apply the recovered immediate distance/Doppler settings, clear all 32 mixbin headrooms, apply deferred zero rolloff, and perform real DirectSound work. Partial failure remains published for ordered teardown."
+    },
+    {
+      "symbol": "sound_driver_channels_startup",
+      "source": "src/sound_driver_channels_startup_native.cpp",
+      "semantics": "Reserve the exact codec allocator block, restore its recovered initial state, publish all three channel ranges before genuine stream creation, preserve failure-short-circuited stream and voice construction, publish both voice counts, and always query authentic DSP effect-input routing for the live DirectSound device. Partial counts and objects remain available to ordered teardown."
     }
   ]
 }

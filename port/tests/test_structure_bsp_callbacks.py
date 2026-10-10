@@ -2127,6 +2127,8 @@ def main() -> int:
         args.root / "src/unknown_21e4b0.cpp").read_text()
     sound_driver_device_startup_source = (
         args.root / "src/sound_driver_device_startup_native.cpp").read_text()
+    sound_driver_channels_startup_source = (
+        args.root / "src/sound_driver_channels_startup_native.cpp").read_text()
     sound_driver_channel_shutdown_source = (
         args.root / "src/sound_driver_channel_shutdown_native.cpp").read_text()
     sound_driver_teardown_source = (
@@ -2358,6 +2360,26 @@ def main() -> int:
         "IDirectSound_SetMixBinHeadroom(globals->direct_sound, mixbin, 0);",
         "IDirectSound_SetRolloffFactor(globals->direct_sound, 0.0f, k_deferred);",
         "DirectSoundDoWork();"]
+    expected_channels_startup_fragments = [
+        "static_assert(sizeof(s_sound_driver_counts) == 0x0e",
+        "static_assert(sizeof(s_47f0d0) == 0x18",
+        "static_assert(offsetof(s_driver_channels_view, channel_count) == 0x04",
+        "static_assert(offsetof(s_driver_channels_view, channel_first) == 0x1a0c",
+        "static_assert(offsetof(s_driver_channels_view, channel_last) == 0x1a12",
+        "static_assert(offsetof(s_driver_channels_view, direct_sound) == 0x2ab0",
+        "bool sound_driver_channels_startup(s_sound_driver_counts const *counts)",
+        "function_12c040();",
+        "g_47f0d0.field04 = 0;",
+        "g_47f0d0.field14 = NULL;",
+        "g_47f0d0.field10 = 0x10000;",
+        "globals->channel_first[type] = globals->channel_count;",
+        "globals->channel_count += counts->channels[type];",
+        "result = result && function_21f4e0(first + i, type);",
+        "globals->channel_last[type] = globals->channel_count - 1;",
+        "globals->voice_count = voices;",
+        "globals->unknown0008 = voices;",
+        "result = result && sound_driver_voice_create_buffer(voice);",
+        "function_191420(globals->direct_sound);"]
     expected_channel_shutdown_fragments = [
         "static_assert(sizeof(s_sound_stream) == 0x34",
         "static_assert(offsetof(s_driver_channels_view, channels) == 0x0c",
@@ -2552,7 +2574,18 @@ def main() -> int:
                     "apply the recovered immediate distance/Doppler settings, "
                     "clear all 32 mixbin headrooms, apply deferred zero "
                     "rolloff, and perform real DirectSound work. Partial "
-                    "failure remains published for ordered teardown."}] or
+                    "failure remains published for ordered teardown."}, {
+                "symbol": "sound_driver_channels_startup",
+                "source": "src/sound_driver_channels_startup_native.cpp",
+                "semantics":
+                    "Reserve the exact codec allocator block, restore its "
+                    "recovered initial state, publish all three channel "
+                    "ranges before genuine stream creation, preserve "
+                    "failure-short-circuited stream and voice construction, "
+                    "publish both voice counts, and always query authentic "
+                    "DSP effect-input routing for the live DirectSound "
+                    "device. Partial counts and objects remain available to "
+                    "ordered teardown."}] or
             lifecycle_teardown.get("retail_function") != "0x0021eae0" or
             lifecycle_teardown.get("symbol") != "?function_21eae0@@YAXXZ" or
             lifecycle_teardown.get("source") !=
@@ -2841,6 +2874,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_device_startup_source
                 for fragment in expected_device_startup_fragments) or
+            any(fragment not in sound_driver_channels_startup_source
+                for fragment in expected_channels_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
             any(fragment not in sound_driver_channel_shutdown_source
