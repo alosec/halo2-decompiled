@@ -300,11 +300,11 @@
       "bounded_guest_sync_file_bridge",
       "cache_file_slot_lifecycle_contract",
       "validated_cache_file_slot_owner",
-      "bounded_guest_cache_slot_publication"
+      "bounded_guest_cache_slot_publication",
+      "cooperative_worker_drain_join_cleanup"
     ],
     "remaining_services": [
-      "guest_abi_import_routing_and_worker_entry",
-      "scheduler_worker_stop_and_teardown_integration"
+      "guest_abi_import_routing_and_worker_entry"
     ],
     "guest_memory_validator": {
       "source": "port/src/guest_arena.cpp",
@@ -333,7 +333,7 @@
     }
   },
   "native_scheduler_lifecycle": {
-    "status": "state_gate_implemented_not_integrated",
+    "status": "host_worker_lifecycle_implemented_not_guest_routed",
     "recovered_shutdown_provider": null,
     "states": [
       "stopped",
@@ -369,8 +369,8 @@
     },
     "teardown_order": [
       "stop_admission",
-      "wake_worker",
       "drain_admitted_tasks",
+      "wake_worker_for_cooperative_exit",
       "wait_worker_exit",
       "join_and_close_thread",
       "verify_empty_work_list_and_150_free_nodes",
@@ -394,6 +394,23 @@
         "timeout_preserves_stopping_state",
         "restart_only_after_finished_stop"
       ]
+    },
+    "worker_controller": {
+      "source": "port/src/native_async_worker.cpp",
+      "status": "host_only_not_guest_routed",
+      "owned_behavior": [
+        "one_wake_per_accepted_admission",
+        "retry_result_resignals_without_completing_admission",
+        "completion_result_decrements_exactly_one_admission",
+        "stop_rejects_new_admission_before_drain",
+        "cooperative_exit_wake_only_after_drain",
+        "finite_timeout_budget_spans_drain_and_join",
+        "timeout_preserves_worker_and_wake_handles",
+        "joined_worker_then_wake_handle_close",
+        "restart_only_from_stopped_without_live_handles"
+      ],
+      "guest_worker_entry_connected": false,
+      "execution_enabled": false
     }
   },
   "native_cache_file_slot_lifecycle": {

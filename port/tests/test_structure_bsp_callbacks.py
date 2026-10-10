@@ -1251,10 +1251,10 @@ def main() -> int:
                     "bounded_guest_sync_file_bridge",
                     "cache_file_slot_lifecycle_contract",
                     "validated_cache_file_slot_owner",
-                    "bounded_guest_cache_slot_publication"],
+                    "bounded_guest_cache_slot_publication",
+                    "cooperative_worker_drain_join_cleanup"],
                 "remaining_services": [
-                    "guest_abi_import_routing_and_worker_entry",
-                    "scheduler_worker_stop_and_teardown_integration"],
+                    "guest_abi_import_routing_and_worker_entry"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1277,7 +1277,7 @@ def main() -> int:
                         "guest_path_file_open",
                         "guest_worker_entry_routing"]}} or
             texture_upload.get("native_scheduler_lifecycle") != {
-                "status": "state_gate_implemented_not_integrated",
+                "status": "host_worker_lifecycle_implemented_not_guest_routed",
                 "recovered_shutdown_provider": None,
                 "states": ["stopped", "accepting", "stopping"],
                 "initial_state": "stopped",
@@ -1311,8 +1311,9 @@ def main() -> int:
                     "check_lock": "work_list_mutex",
                     "exit_code": 0},
                 "teardown_order": [
-                    "stop_admission", "wake_worker", "drain_admitted_tasks",
-                    "wait_worker_exit", "join_and_close_thread",
+                    "stop_admission", "drain_admitted_tasks",
+                    "wake_worker_for_cooperative_exit", "wait_worker_exit",
+                    "join_and_close_thread",
                     "verify_empty_work_list_and_150_free_nodes",
                     "close_work_semaphore", "close_work_list_mutex",
                     "close_free_list_mutex",
@@ -1332,7 +1333,22 @@ def main() -> int:
                         "admitted_task_accounting",
                         "finite_and_infinite_drain_wait",
                         "timeout_preserves_stopping_state",
-                        "restart_only_after_finished_stop"]}} or
+                        "restart_only_after_finished_stop"]},
+                "worker_controller": {
+                    "source": "port/src/native_async_worker.cpp",
+                    "status": "host_only_not_guest_routed",
+                    "owned_behavior": [
+                        "one_wake_per_accepted_admission",
+                        "retry_result_resignals_without_completing_admission",
+                        "completion_result_decrements_exactly_one_admission",
+                        "stop_rejects_new_admission_before_drain",
+                        "cooperative_exit_wake_only_after_drain",
+                        "finite_timeout_budget_spans_drain_and_join",
+                        "timeout_preserves_worker_and_wake_handles",
+                        "joined_worker_then_wake_handle_close",
+                        "restart_only_from_stopped_without_live_handles"],
+                    "guest_worker_entry_connected": False,
+                    "execution_enabled": False}} or
             texture_upload.get("native_cache_file_slot_lifecycle") != {
                 "status":
                     "host_slot_owner_and_guest_publication_implemented_not_runtime_connected",
