@@ -1417,6 +1417,36 @@ def main() -> int:
                 "semantics": "exact minimum-distance plateau, "
                              "inverse-distance falloff, and maximum-distance "
                              "fade"}, {
+                "source": "src/sound_impulse_channel_native.cpp",
+                "symbol":
+                    "?function_128ca0@@YAXFJPBUs_looping_channel_"
+                    "spatialization@@@Z",
+                "imports": [
+                    "?function_1251e0@@YAJPBXJM@Z",
+                    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
+                    "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_"
+                    "looping_channel_spatialization@@PAUs_looping_channel_"
+                    "properties@@@Z",
+                    "?function_12a9d0@@YAMJPBUs_sound_position@@@Z",
+                    "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
+                    "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_"
+                    "looping_effect_playback@@@Z",
+                    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_"
+                    "looping_effect_playback@@_N@Z",
+                    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                    "?g_4e3b44@@3PAUs_tag_instance@@A",
+                    "?g_4e6378@@3PAUs_sound_voice@@A",
+                    "?g_4e637c@@3PAUs_record_pool@@A",
+                    "?g_51ebd4@@3PAUs_sound_globals@@A",
+                    "?g_51ebd8@@3PAXA",
+                    "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                    "?sound_playback_set_chunk@@YAXJJFFF@Z",
+                    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
+                    "h2_guest_memset"],
+                "semantics":
+                    "exact impulse channel property assembly, Doppler pitch, "
+                    "initial/update submission, controller synchronization, "
+                    "chunk queueing, and terminal stream transition"}, {
                 "source": "src/unknown_12a1b0.cpp",
                 "symbol":
                     "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_"
