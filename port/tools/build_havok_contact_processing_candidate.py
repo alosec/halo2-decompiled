@@ -76,6 +76,12 @@ def main() -> int:
         random_unit = temporary / "random-unit.o"
         random_range = temporary / "random-range.o"
         random_cone = temporary / "random-cone.o"
+        location_bits = temporary / "location-bits.o"
+        perpendicular = temporary / "perpendicular.o"
+        current_cluster = temporary / "current-cluster.o"
+        seconds_to_ticks = temporary / "seconds-to-ticks.o"
+        game_state = temporary / "game-state.o"
+        player_state = temporary / "player-state.o"
         candidate = temporary / "candidate.o"
         compile_slice(args, args.root / "src/unknown_1ee410_native.cpp", lookup,
                       ["?function_1ee410@@YAXPBUs_lookup_source@@PAF@Z"])
@@ -180,9 +186,26 @@ def main() -> int:
             args, args.root / "src/unknown_146240.cpp", random_cone,
             ["?random_vector_in_cone@@YAXPBTvector3f@@PAT1@PAKMM@Z"],
             ["??_C@_0BH@GEOAMOEG@src?1unknown_146240?4cpp?$AA@"])
+        compile_slice(
+            args, args.root / "src/unknown_11c050.cpp", location_bits,
+            ["?function_11c050@@YA_NPBUs_location@@@Z",
+             "?function_11c080@@YA_NPBUs_location@@@Z"])
+        compile_slice(
+            args, args.root / "src/unknown_11cc90.cpp", perpendicular,
+            ["?function_11d000@@YAPATvector3f@@PBT1@PAT1@@Z"])
+        compile_slice(args, args.root / "src/unknown_03eb20.cpp", current_cluster,
+                      ["?function_3eb20@@YA_NJ@Z"])
+        compile_slice(args, args.root / "src/unknown_1469f0.cpp", seconds_to_ticks,
+                      ["?function_1469f0@@YAJM@Z"])
+        compile_slice(args, args.root / "src/unknown_163080.cpp", game_state,
+                      ["?function_163080@@YA_NXZ"])
+        compile_slice(args, args.root / "src/unknown_16f3a0.cpp", player_state,
+                      ["?function_16f3a0@@YAPAUs_player_state@@J@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o",
              args.effect_output, args.impact_output, effect_lifecycle,
-             random_unit, random_range, random_cone])
+             random_unit, random_range, random_cone, location_bits,
+             perpendicular, current_cluster, seconds_to_ticks, game_state,
+             player_state])
     return 0
 
 

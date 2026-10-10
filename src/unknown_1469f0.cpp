@@ -11,10 +11,22 @@ long function_1469f0(real seconds)
 	long ticks;
 
 	seconds = (real)g_510c54->field_2_3 * seconds;
+#ifdef H2_NATIVE_PORT
+	/* Retail fistp uses nearest-even under the default x87 control word. */
+	double value = seconds;
+	long truncated = (long)value;
+	double fraction = value - (double)truncated;
+	if (fraction > 0.5 || (fraction == 0.5 && (truncated & 1)))
+		++truncated;
+	else if (fraction < -0.5 || (fraction == -0.5 && (truncated & 1)))
+		--truncated;
+	ticks = truncated;
+#else
 	__asm
 	{
 		fld seconds
 		fistp ticks
 	}
+#endif
 	return ticks;
 }

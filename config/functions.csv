@@ -436,7 +436,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0003e9c0,101,game,speed,a16 pad,,,000baf80 00155760,src/unknown_03f2b0.cpp,todo
 0003ea30,41,game,speed,a16 pad,,,,src/unknown_0259d0.cpp,matched
 0003ea60,188,game,speed,a16 pad,,,0016d940 0016d9c0 00320560,src/unknown_0350e0.cpp,todo
-0003eb20,75,game,speed,a16 pad,,,,src/unknown_03eb20.cpp,todo
+0003eb20,75,game,speed,a16 pad,,,,src/unknown_03eb20.cpp,done
 0003eb70,94,game,speed,a16 pad,,,,src/unknown_0350e0.cpp,matched
 0003ebd0,526,game,speed,a16 pad,,,00142a60 00146b80 00146de0,src/unknown_0350e0.cpp,todo
 0003ede0,217,game,speed,a16 pad,,,00014bc0 0003ebd0 0004c690 00320560,src/unknown_0350e0.cpp,todo
@@ -3809,8 +3809,8 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0011bf90,81,game,speed,a16 pad,,,0014a280,src/unknown_11c050.cpp,matched
 0011bff0,23,game,speed,a16 pad,,,,src/unknown_11bff0.cpp,matched
 0011c010,64,game,speed,a16 pad,,,,src/unknown_11bff0.cpp,matched
-0011c050,39,game,unknown,a16,,,,src/unknown_11c050.cpp,matched
-0011c080,39,game,speed,a16 pad,,,,src/unknown_11c050.cpp,matched
+0011c050,39,game,unknown,a16,,,,src/unknown_11c050.cpp,done
+0011c080,39,game,speed,a16 pad,,,,src/unknown_11c050.cpp,done
 0011c0b0,106,game,speed,a16 pad,,,,src/unknown_11c050.cpp,near
 0011c120,142,game,speed,a16 pad,,,,src/unknown_11c050.cpp,done
 0011c1b0,456,game,speed,a16 pad,,,00122b40 00122bc0 00137d40 00137da0 0016e2c0,src/unknown_11c1b0.cpp,todo
@@ -3838,7 +3838,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0011cd20,241,game,speed,a16 pad,,,00322bd8,src/unknown_11cc90.cpp,todo
 0011ce20,292,game,speed,a16 pad,,,00322bd8,src/unknown_11cc90.cpp,todo
 0011cf50,161,game,speed,a16 pad,,,00322bd8,src/unknown_11cc90.cpp,todo
-0011d000,139,game,speed,a16 pad,,,,src/unknown_11cc90.cpp,matched
+0011d000,139,game,speed,a16 pad,,,,src/unknown_11cc90.cpp,done
 0011d090,226,game,speed,a16 pad,,,,src/unknown_11cc90.cpp,todo
 0011d180,545,game,speed,a16 pad,,,00030bf0,src/unknown_11d180.cpp,todo
 0011d3b0,458,game,speed,a16 pad,,,00030bf0 0011d000,src/unknown_11d180.cpp,todo
@@ -4491,7 +4491,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 00146840,26,game,speed,a16 pad,,,,src/unknown_146240.cpp,matched
 00146860,283,game,speed,a16 pad,,,,src/unknown_146240.cpp,todo
 00146980,104,game,speed,a16 pad,,,,src/unknown_146240.cpp,todo
-001469f0,40,game,speed,a16 pad,,,,src/unknown_1469f0.cpp,matched
+001469f0,40,game,speed,a16 pad,,,,src/unknown_1469f0.cpp,done
 00146a20,146,game,speed,a16 pad,,,0022c3e0,src/unknown_146a20.cpp,todo
 00146ac0,108,game,speed,a16 pad,,,0012d520 00146de0,src/unknown_146a20.cpp,todo
 00146b30,72,game,speed,a16 pad,,,002d1d3e 003312cc,src/unknown_146a20.cpp,matched
@@ -4955,7 +4955,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 00162de0,485,game,speed,a16 pad,,,00053750 0019f240,src/unknown_1600f0.cpp,todo
 00162fd0,111,game,speed,a16 pad,,,0019f240,src/unknown_1600f0.cpp,matched
 00163040,50,game,speed,a16 pad,,,,src/unknown_1600f0.cpp,matched
-00163080,36,game,speed,a16 pad,,,,src/unknown_163080.cpp,matched
+00163080,36,game,speed,a16 pad,,,,src/unknown_163080.cpp,done
 001630b0,48,game,speed,a16 pad,,,,src/unknown_1600f0.cpp,matched
 001630e0,36,game,unknown,a16,,,00321ef9,src/unknown_1630e0.cpp,matched
 00163110,33,game,speed,a16 pad,,,00321ef9,src/unknown_163110.cpp,matched
@@ -5121,7 +5121,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 0016f190,98,game,speed,a16 pad,,,00172520,src/unknown_16e290.cpp,matched
 0016f200,117,game,speed,a16 pad,,,,src/unknown_16e290.cpp,matched
 0016f280,273,game,speed,a16 pad,,,0003f450 0003f500 0014a280 0016ebf0 0016f570 0016fe90 00170fd0,src/unknown_16e290.cpp,todo
-0016f3a0,32,game,speed,a16 pad,,,,src/unknown_16f3a0.cpp,matched
+0016f3a0,32,game,speed,a16 pad,,,,src/unknown_16f3a0.cpp,done
 0016f3c0,149,game,unknown,a16,,,,src/unknown_16e290.cpp,matched
 0016f460,79,game,speed,a16 pad,,,,src/unknown_16e290.cpp,matched
 0016f4b0,189,game,speed,a16 pad,,,0016f3c0,src/unknown_16e290.cpp,matched

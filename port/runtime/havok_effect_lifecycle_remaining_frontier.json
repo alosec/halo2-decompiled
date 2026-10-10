@@ -8,37 +8,12 @@
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_11c050@@YA_NPBUs_location@@@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_11c080@@YA_NPBUs_location@@@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_11d000@@YAPATvector3f@@PBT1@PAT1@@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_137bd0@@YAPAVc_type_4e7709@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
     {
-      "symbol": "?function_1469f0@@YAJM@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
       "symbol": "?function_155760@@YAJJ@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_163080@@YA_NXZ",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
@@ -59,11 +34,6 @@
     },
     {
       "symbol": "?function_1664da@@YAXJJFPAUtransform4x3f@@@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_16f3a0@@YAPAUs_player_state@@J@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
@@ -114,11 +84,6 @@
     },
     {
       "symbol": "?function_3ddd0@@YAJJ@Z",
-      "subsystem": "effects",
-      "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
-    },
-    {
-      "symbol": "?function_3eb20@@YA_NJ@Z",
       "subsystem": "effects",
       "blocker": "Requires complete recovered effect creation/deletion ownership for this transitive provider."
     },
