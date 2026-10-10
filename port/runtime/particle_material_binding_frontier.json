@@ -5,19 +5,65 @@
   "symbol": "?function_16b90@@YAXPAEJJJJM@Z",
   "execution_gate": "native_particle_material_binding_state_owned",
   "direct_calls": [
-    "0x00016f60", "0x00017000", "0x00017170", "0x00017420",
-    "0x000174d0", "0x00018900", "0x000189a0", "0x00018a90",
-    "0x00018d70", "0x00018e80", "0x00018ee0", "0x00019be0",
-    "0x00019ca0", "0x0001a170", "0x0001ab50", "0x0001ae70",
-    "0x0001b050", "0x0001b0a0", "0x0001ba00", "0x0001cf50",
+    "0x00016f60",
+    "0x00017000",
+    "0x00017170",
+    "0x00017420",
+    "0x000174d0",
+    "0x00018900",
+    "0x000189a0",
+    "0x00018a90",
+    "0x00018d70",
+    "0x00018e80",
+    "0x00018ee0",
+    "0x00019be0",
+    "0x00019ca0",
+    "0x0001a170",
+    "0x0001ab50",
+    "0x0001ae70",
+    "0x0001b050",
+    "0x0001b0a0",
+    "0x0001ba00",
+    "0x0001cf50",
     "0x00137bd0"
   ],
-  "already_owned_calls": ["0x00018900", "0x0001cf50", "0x00137bd0"],
+  "already_owned_calls": [
+    "0x00016f60",
+    "0x00018900",
+    "0x0001cf50",
+    "0x00137bd0"
+  ],
   "remaining_groups": {
-    "material_table_selection": ["0x00016f60", "0x00017000", "0x00017170", "0x00017420", "0x000174d0"],
-    "render_and_shader_state": ["0x000189a0", "0x00018a90", "0x00018d70", "0x00018e80", "0x00018ee0"],
-    "texture_and_stage_state": ["0x00019be0", "0x00019ca0", "0x0001a170", "0x0001ab50"],
-    "parameter_and_constant_state": ["0x0001ae70", "0x0001b050", "0x0001b0a0", "0x0001ba00"]
+    "material_table_selection": [
+      "0x00017000",
+      "0x00017170",
+      "0x00017420",
+      "0x000174d0"
+    ],
+    "render_and_shader_state": [
+      "0x000189a0",
+      "0x00018a90",
+      "0x00018d70",
+      "0x00018e80",
+      "0x00018ee0"
+    ],
+    "texture_and_stage_state": [
+      "0x00019be0",
+      "0x00019ca0",
+      "0x0001a170",
+      "0x0001ab50"
+    ],
+    "parameter_and_constant_state": [
+      "0x0001ae70",
+      "0x0001b050",
+      "0x0001b0a0",
+      "0x0001ba00"
+    ]
   },
-  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Three of its 21 direct calls are now independently owned. The remaining 18 are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than parsing unrelated x86 assembly or reducing genuine Xbox renderer operations to no-ops."
+  "blocker": "The exact binder resolves material/provider parameters and pass tables, tracks tag/record transitions in the 0x1420-plus mutable render context, replays old and new packed render state, refreshes external parameters, derives stage and shader state, flushes textures, and chooses one of two terminal shader paths. Four of its 21 direct calls are now independently owned. function_16f60 exactly expands a packed range into 0x40-byte material slots, preserving live and NONE/fallback cases while exposing genuine mutable g_485a80 state. The remaining 17 calls are a coherent mutable material, shader, texture-stage, parameter, and constant lifecycle; function_16b90 remains unlinked rather than reducing Xbox renderer operations to no-ops.",
+  "owned_state_dependencies": {
+    "0x00016f60": [
+      "?g_485a80@@3PAEA"
+    ]
+  }
 }

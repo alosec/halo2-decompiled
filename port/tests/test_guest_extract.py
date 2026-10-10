@@ -1133,6 +1133,29 @@ def main():
         if f"_{light_curve_symbol}" not in light_curve_defined:
             raise RuntimeError("native light lookup-curve evaluator was not retained")
 
+        material_value_output = Path(temporary) / "particle-material-value.o"
+        material_value_symbol = "?function_16f60@@YAXPAEPBG@Z"
+        material_value_command = command[:]
+        material_value_command[material_value_command.index("h2_extract_selected")] = material_value_symbol
+        material_value_command[
+            material_value_command.index("--extract-global"):material_value_command.index("--output")
+        ] = []
+        material_value_command[material_value_command.index(output)] = material_value_output
+        material_value_command[-1] = args.root / "src/particle_material_value_native.cpp"
+        subprocess.run([str(value) for value in material_value_command], check=True)
+        material_value_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", material_value_output],
+            text=True,
+        )
+        if material_value_symbol not in material_value_defined:
+            raise RuntimeError("particle material-value loader was not selectively compilable")
+        material_value_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", material_value_output],
+            text=True,
+        )
+        if "?g_485a80@@3PAEA" not in material_value_undefined:
+            raise RuntimeError("particle material-value mutable state boundary missing")
+
         render_reset_output = Path(temporary) / "particle-render-state-reset.o"
         render_reset_symbols = [
             "?function_16b10@@YAXPAUs_render_reset_state@@@Z",
