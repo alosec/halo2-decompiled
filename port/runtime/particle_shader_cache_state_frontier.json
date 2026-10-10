@@ -1,10 +1,19 @@
 {
   "version": 1,
   "retail_functions": [
+    {"address": "0x0001c4a0", "size": 227, "symbol": "?function_1c4a0@@YAXPAUs_shader_cache@@@Z"},
     {"address": "0x0001c6b0", "size": 87, "symbol": "?function_1c6b0@@YAXPAX@Z"},
     {"address": "0x0001ccb0", "size": 55, "symbol": "?function_1ccb0@@YAXJ@Z"}
   ],
   "execution_gate": "native_particle_camera_and_shader_state_owned",
+  "owned_cache_initializer": {
+    "size": 728,
+    "binding_count": 8,
+    "descriptor_count": 16,
+    "stream_count": 16,
+    "active_value": -1,
+    "clears_current_descriptors": false
+  },
   "owned_descriptor_table": {
     "symbol": "g_43f408",
     "entries": 63,
@@ -17,5 +26,5 @@
     "?function_1c710@@YAXPAX@Z",
     "?g_51f0f0@@3PAEA"
   ],
-  "blocker": "The exact cache reset clears 16 stream records and both 16-pointer descriptor arrays while setting the recovered dirty flags. The immediate descriptor selector then chooses one of the 63 exact 21-byte immutable descriptors, installs it as wanted slot zero, and invokes the genuine mutable shader-input flush. Owning these compact providers improves sprite setup from 46 to 44, but execution remains blocked on the initialized 0x2d8 cache and function_1c710's D3D vertex-input/shader submission."
+  "blocker": "The exact 0x2d8 cache initializer clears both dirty flags and stream count, sets the tag/index/field_0c words of all eight bindings plus active binding to NONE, clears all 16 wanted descriptors and all 16 stream records, and deliberately leaves current descriptors untouched exactly like retail. The exact reset clears all stream records and both descriptor arrays while setting dirty flags. Immediate selection chooses one of 63 exact immutable descriptors and invokes the genuine mutable shader-input flush. Setup remains 46 to 44 because initialization is lifecycle ownership rather than another direct setup import. Execution remains blocked on owning the mutable g_51f0f0 storage, proving the initializer is called before use, and the real D3D flush boundaries beneath function_1c710."
 }

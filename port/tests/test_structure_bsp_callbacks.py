@@ -951,6 +951,7 @@ def main() -> int:
         args.root / "port/runtime/particle_shader_cache_state_frontier.json"
     ).read_text())
     expected_shader_functions = {
+        ("0x0001c4a0", 227, "?function_1c4a0@@YAXPAUs_shader_cache@@@Z"),
         ("0x0001c6b0", 87, "?function_1c6b0@@YAXPAX@Z"),
         ("0x0001ccb0", 55, "?function_1ccb0@@YAXJ@Z"),
     }
@@ -959,9 +960,14 @@ def main() -> int:
         for entry in shader_state.get("retail_functions", [])
     }
     descriptor_table = shader_state.get("owned_descriptor_table", {})
+    cache_initializer = shader_state.get("owned_cache_initializer", {})
     if (shader_state.get("version") != 1 or
             shader_functions != expected_shader_functions or
             shader_state.get("execution_gate") != "native_particle_camera_and_shader_state_owned" or
+            cache_initializer != {"size": 728, "binding_count": 8,
+                                  "descriptor_count": 16, "stream_count": 16,
+                                  "active_value": -1,
+                                  "clears_current_descriptors": False} or
             descriptor_table != {"symbol": "g_43f408", "entries": 63,
                                  "bytes_per_entry": 21, "total_bytes": 1323} or
             shader_state.get("sprite_setup_score_before") != 46 or

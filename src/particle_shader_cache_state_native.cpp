@@ -6,16 +6,24 @@
 #include <stddef.h>
 #include <string.h>
 
-struct s_native_shader_stream
+struct s_shader_binding
+{
+    long field_00;
+    long tag;
+    long index;
+    long field_0c;
+};
+
+struct s_shader_stream
 {
     long field_00;
     long field_04;
     long field_08;
 };
 
-struct s_native_shader_cache
+struct s_shader_cache
 {
-    byte bindings[8 * 16];
+    s_shader_binding bindings[8];
     long active;
     long field_84;
     bool field_88;
@@ -25,21 +33,23 @@ struct s_native_shader_cache
     byte field_10c[0x100];
     bool descriptors_changed;
     byte field_20d[3];
-    s_native_shader_stream streams[16];
+    s_shader_stream streams[16];
     long stream_count;
     bool streams_changed;
     byte field_2d5[3];
 };
 
-static_assert(sizeof(s_native_shader_cache) == 0x2d8,
+static_assert(sizeof(s_shader_binding) == 0x10,
+    "shader binding size");
+static_assert(sizeof(s_shader_cache) == 0x2d8,
     "shader cache size");
-static_assert(offsetof(s_native_shader_cache, wanted) == 0x8c,
+static_assert(offsetof(s_shader_cache, wanted) == 0x8c,
     "shader wanted offset");
-static_assert(offsetof(s_native_shader_cache, current) == 0xcc,
+static_assert(offsetof(s_shader_cache, current) == 0xcc,
     "shader current offset");
-static_assert(offsetof(s_native_shader_cache, descriptors_changed) == 0x20c,
+static_assert(offsetof(s_shader_cache, descriptors_changed) == 0x20c,
     "shader descriptor dirty offset");
-static_assert(offsetof(s_native_shader_cache, stream_count) == 0x2d0,
+static_assert(offsetof(s_shader_cache, stream_count) == 0x2d0,
     "shader stream count offset");
 
 byte const g_43f408[63][21] =
@@ -111,10 +121,27 @@ byte const g_43f408[63][21] =
 extern byte g_51f0f0[0x2d8];
 void __stdcall function_1c710(void *memory);
 
+// @retail 0x1c4a0
+void function_1c4a0(s_shader_cache *state)
+{
+    state->streams_changed = false;
+    state->descriptors_changed = false;
+    state->stream_count = 0;
+    for (long i = 0; i < 8; ++i)
+    {
+        state->bindings[i].field_0c = -1;
+        state->bindings[i].tag = -1;
+        state->bindings[i].index = -1;
+    }
+    state->active = -1;
+    memset(state->wanted, 0, sizeof(state->wanted));
+    memset(state->streams, 0, sizeof(state->streams));
+}
+
 // @retail 0x1c6b0
 void function_1c6b0(void *memory)
 {
-    s_native_shader_cache *state = (s_native_shader_cache *)memory;
+    s_shader_cache *state = (s_shader_cache *)memory;
     state->stream_count = 0;
     state->streams_changed = true;
     state->descriptors_changed = true;
@@ -134,7 +161,7 @@ void function_1ccb0(long format)
 {
     byte const *descriptor = g_43f408[format];
     function_1c6b0(g_51f0f0);
-    s_native_shader_cache *state = (s_native_shader_cache *)g_51f0f0;
+    s_shader_cache *state = (s_shader_cache *)g_51f0f0;
     state->wanted[0] = descriptor;
     if (state->current[0] != descriptor)
         state->descriptors_changed = true;

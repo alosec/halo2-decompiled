@@ -1240,12 +1240,17 @@ def main():
             raise RuntimeError("particle vertex register initializer was not selectively compilable")
 
         shader_state_output = Path(temporary) / "particle-shader-cache-state.o"
-        shader_state_symbols = ["?function_1c6b0@@YAXPAX@Z", "?function_1ccb0@@YAXJ@Z"]
+        shader_state_symbols = [
+            "?function_1c4a0@@YAXPAUs_shader_cache@@@Z",
+            "?function_1c6b0@@YAXPAX@Z",
+            "?function_1ccb0@@YAXJ@Z",
+        ]
         shader_state_command = command[:]
         shader_state_command[shader_state_command.index("h2_extract_selected")] = shader_state_symbols[0]
         shader_global_index = shader_state_command.index("--extract-global")
         shader_state_command[shader_global_index:shader_global_index] = [
-            "--extract-symbol", shader_state_symbols[1]]
+            "--extract-symbol", shader_state_symbols[1],
+            "--extract-symbol", shader_state_symbols[2]]
         shader_state_command[shader_state_command.index("--extract-global") + 1] = "g_43f408"
         shader_alias_index = shader_state_command.index("--extract-alias")
         del shader_state_command[shader_alias_index:shader_alias_index + 2]
