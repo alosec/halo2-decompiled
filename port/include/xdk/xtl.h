@@ -150,6 +150,8 @@ HANDLE WINAPI CreateThread(void* attributes, DWORD stack_size,
                            LPTHREAD_START_ROUTINE start, void* parameter,
                            DWORD creation_flags, DWORD* thread_id);
 BOOL WINAPI SetThreadPriority(HANDLE thread, int priority);
+BOOL WINAPI GetExitCodeThread(HANDLE thread, DWORD* exit_code);
+BOOL WINAPI CloseHandle(HANDLE handle);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);

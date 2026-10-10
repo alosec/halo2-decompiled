@@ -301,10 +301,11 @@
       "cache_file_slot_lifecycle_contract",
       "validated_cache_file_slot_owner",
       "bounded_guest_cache_slot_publication",
-      "cooperative_worker_drain_join_cleanup"
+      "cooperative_worker_drain_join_cleanup",
+      "guest_abi_v11_sync_file_import_routing"
     ],
     "remaining_services": [
-      "guest_abi_import_routing_and_worker_entry"
+      "guest_worker_entry_routing"
     ],
     "guest_memory_validator": {
       "source": "port/src/guest_arena.cpp",
@@ -316,7 +317,7 @@
     },
     "guest_bridge": {
       "source": "port/src/native_async_guest_bridge.cpp",
-      "status": "host_only_not_abi_patched",
+      "status": "abi_v11_routes_available_not_production_configured",
       "opaque_tokens_preserved": true,
       "validate_outputs_before_side_effects": true,
       "operations": [
@@ -329,7 +330,11 @@
       "unowned_operations": [
         "guest_path_file_open",
         "guest_worker_entry_routing"
-      ]
+      ],
+      "guest_runtime_source": "port/runtime/guest_async_runtime.cpp",
+      "host_routing_source": "port/src/host_services.cpp",
+      "host_abi_version": 11,
+      "production_configured": false
     }
   },
   "native_scheduler_lifecycle": {

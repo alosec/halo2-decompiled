@@ -69,3 +69,26 @@ h2_host_slot_host_h2_profile_delete:
 h2_loader_data:
     .word 0x12345678
 .size h2_loader_data, 4
+
+.globl h2_host_slot_host_h2_async_create_mutex
+h2_host_slot_host_h2_async_create_mutex: .xword 0
+.globl h2_host_slot_host_h2_async_create_semaphore
+h2_host_slot_host_h2_async_create_semaphore: .xword 0
+.globl h2_host_slot_host_h2_async_wait
+h2_host_slot_host_h2_async_wait: .xword 0
+.globl h2_host_slot_host_h2_async_release_mutex
+h2_host_slot_host_h2_async_release_mutex: .xword 0
+.globl h2_host_slot_host_h2_async_release_semaphore
+h2_host_slot_host_h2_async_release_semaphore: .xword 0
+.globl h2_host_slot_host_h2_async_set_file_pointer
+h2_host_slot_host_h2_async_set_file_pointer: .xword 0
+.globl h2_host_slot_host_h2_async_read_file
+h2_host_slot_host_h2_async_read_file: .xword 0
+.globl h2_host_slot_host_h2_async_set_thread_priority
+h2_host_slot_host_h2_async_set_thread_priority: .xword 0
+.globl h2_host_slot_host_h2_async_thread_exit_code
+h2_host_slot_host_h2_async_thread_exit_code: .xword 0
+.globl h2_host_slot_host_h2_async_close
+h2_host_slot_host_h2_async_close: .xword 0
+.globl h2_host_slot_host_h2_async_yield
+h2_host_slot_host_h2_async_yield: .xword 0

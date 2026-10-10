@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 10u
+#define H2_HOST_ABI_VERSION 11u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the
@@ -31,6 +31,21 @@ int host_h2_profile_read(unsigned int identifier, void* record, unsigned int siz
 int host_h2_profile_write(unsigned int identifier, const void* record,
                           unsigned int size);
 int host_h2_profile_delete(unsigned int identifier);
+unsigned int host_h2_async_create_mutex(int initial_owner);
+unsigned int host_h2_async_create_semaphore(int initial_count, int maximum_count);
+unsigned int host_h2_async_wait(unsigned int handle, unsigned int milliseconds);
+int host_h2_async_release_mutex(unsigned int handle);
+int host_h2_async_release_semaphore(unsigned int handle, int release_count,
+                                    int* previous_count);
+int host_h2_async_set_file_pointer(unsigned int handle, int distance,
+                                   int* distance_high, unsigned int method,
+                                   unsigned int* position_low);
+int host_h2_async_read_file(unsigned int handle, void* buffer,
+                            unsigned int bytes_to_read, unsigned int* bytes_read);
+int host_h2_async_set_thread_priority(unsigned int handle, int priority);
+int host_h2_async_thread_exit_code(unsigned int handle, unsigned int* exit_code);
+int host_h2_async_close(unsigned int handle);
+void host_h2_async_yield(void);
 
 #ifdef __cplusplus
 }

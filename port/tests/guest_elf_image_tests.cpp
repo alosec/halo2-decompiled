@@ -86,6 +86,24 @@ int main(int argc, char** argv) {
                     std::string("standard host import was not patched: ") + symbol);
     }
 
+    ok &= check(h2::port::patch_async_host_imports(*image, *arena, error), error);
+    for (const char* symbol : {
+             "host_h2_async_create_mutex", "host_h2_async_create_semaphore",
+             "host_h2_async_wait", "host_h2_async_release_mutex",
+             "host_h2_async_release_semaphore", "host_h2_async_set_file_pointer",
+             "host_h2_async_read_file", "host_h2_async_set_thread_priority",
+             "host_h2_async_thread_exit_code", "host_h2_async_close",
+             "host_h2_async_yield"}) {
+        const auto async_slot = image->symbol_address(
+            std::string("h2_host_slot_") + symbol);
+        std::uintptr_t async_target = 0;
+        if (async_slot)
+            std::memcpy(&async_target, arena->pointer(*async_slot),
+                        sizeof(async_target));
+        ok &= check(async_slot.has_value() && async_target != 0,
+                    std::string("async host import was not patched: ") + symbol);
+    }
+
     std::string missing_error;
     ok &= check(!image->patch_host_import(*arena, "host_h2_missing", kTarget,
                                           missing_error) &&

@@ -368,6 +368,42 @@ int main() {
                         "active-map query accepted a host pointer");
             h2::port::reset_cache_services();
         }
+
+        constexpr std::uint32_t async_scratch_address = 0x00600000u;
+        ok &= check(arena->protect(async_scratch_address, 0x4000,
+                                   h2::port::GuestMemoryProtection::read_write,
+                                   arena_error),
+                    "could not map guest async ABI scratch storage");
+        ok &= check(h2::port::configure_async_services(*arena, arena_error),
+                    "could not configure native async ABI services");
+        const unsigned int mutex = host_h2_async_create_mutex(0);
+        const unsigned int semaphore = host_h2_async_create_semaphore(0, 2);
+        auto* const guest_previous = static_cast<int*>(
+            arena->pointer(async_scratch_address));
+        *guest_previous = -1;
+        ok &= check(mutex != 0 && semaphore != 0 &&
+                        host_h2_async_wait(mutex, 0) == 0 &&
+                        host_h2_async_wait(mutex, 0) == 0 &&
+                        host_h2_async_release_mutex(mutex) &&
+                        host_h2_async_release_mutex(mutex),
+                    "guest async ABI mutex route failed");
+        ok &= check(host_h2_async_wait(semaphore, 0) == 0x102u &&
+                        host_h2_async_release_semaphore(
+                            semaphore, 2, guest_previous) &&
+                        *guest_previous == 0 &&
+                        host_h2_async_wait(semaphore, 0) == 0 &&
+                        host_h2_async_wait(semaphore, 0) == 0,
+                    "guest async ABI semaphore route failed");
+        int host_previous = -1;
+        ok &= check(!host_h2_async_release_semaphore(
+                         semaphore, 1, &host_previous) && host_previous == -1,
+                    "guest async ABI accepted a host output pointer");
+        ok &= check(!h2::port::reset_async_services(arena_error),
+                    "async ABI reset discarded live opaque handles");
+        ok &= check(host_h2_async_close(mutex) && host_h2_async_close(semaphore) &&
+                        h2::port::reset_async_services(arena_error) &&
+                        host_h2_async_create_mutex(0) == 0,
+                    "async ABI teardown did not close then disable routing");
         std::filesystem::remove_all(cache_root);
     }
 

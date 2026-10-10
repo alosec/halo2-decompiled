@@ -1,6 +1,8 @@
 #include "h2/host_abi.h"
 #include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
+#include "h2/native_async_guest_bridge.hpp"
+#include "h2/native_async_platform.hpp"
 #include "h2/profile_store.hpp"
 
 #include <array>
@@ -11,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -65,6 +68,30 @@ struct ProfileState {
 ProfileState& profile_state() {
     static ProfileState state;
     return state;
+}
+
+struct AsyncContext {
+    explicit AsyncContext(h2::port::GuestArena& arena)
+        : bridge(arena, platform) {}
+
+    h2::port::NativeAsyncPlatform platform;
+    h2::port::NativeAsyncGuestBridge bridge;
+};
+
+struct AsyncState {
+    std::mutex mutex;
+    std::shared_ptr<AsyncContext> context;
+};
+
+AsyncState& async_state() {
+    static AsyncState state;
+    return state;
+}
+
+std::shared_ptr<AsyncContext> async_context() {
+    auto& state = async_state();
+    const std::lock_guard lock(state.mutex);
+    return state.context;
 }
 
 const Clock::time_point kClockStart = Clock::now();
@@ -252,6 +279,30 @@ void reset_profile_services() {
     state.store.close();
 }
 
+bool configure_async_services(GuestArena& arena, std::string& error) {
+    error.clear();
+    auto& state = async_state();
+    const std::lock_guard lock(state.mutex);
+    if (state.context && state.context->platform.active_handle_count() != 0) {
+        error = "native async services still own live handles";
+        return false;
+    }
+    state.context = std::make_shared<AsyncContext>(arena);
+    return true;
+}
+
+bool reset_async_services(std::string& error) {
+    error.clear();
+    auto& state = async_state();
+    const std::lock_guard lock(state.mutex);
+    if (state.context && state.context->platform.active_handle_count() != 0) {
+        error = "native async services still own live handles";
+        return false;
+    }
+    state.context.reset();
+    return true;
+}
+
 bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error) {
     auto& state = profile_state();
     const std::lock_guard lock(state.mutex);
@@ -336,6 +387,39 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         if (!image.patch_host_import(arena, import.symbol, import.target, error)) {
             return false;
         }
+    }
+    return true;
+}
+
+bool patch_async_host_imports(GuestElfImage& image, GuestArena& arena,
+                              std::string& error) {
+    struct Import {
+        const char* symbol;
+        std::uintptr_t target;
+    };
+    const Import imports[] = {
+        {"host_h2_async_create_mutex",
+         function_address(&host_h2_async_create_mutex)},
+        {"host_h2_async_create_semaphore",
+         function_address(&host_h2_async_create_semaphore)},
+        {"host_h2_async_wait", function_address(&host_h2_async_wait)},
+        {"host_h2_async_release_mutex",
+         function_address(&host_h2_async_release_mutex)},
+        {"host_h2_async_release_semaphore",
+         function_address(&host_h2_async_release_semaphore)},
+        {"host_h2_async_set_file_pointer",
+         function_address(&host_h2_async_set_file_pointer)},
+        {"host_h2_async_read_file", function_address(&host_h2_async_read_file)},
+        {"host_h2_async_set_thread_priority",
+         function_address(&host_h2_async_set_thread_priority)},
+        {"host_h2_async_thread_exit_code",
+         function_address(&host_h2_async_thread_exit_code)},
+        {"host_h2_async_close", function_address(&host_h2_async_close)},
+        {"host_h2_async_yield", function_address(&host_h2_async_yield)},
+    };
+    for (const auto& import : imports) {
+        if (!image.patch_host_import(arena, import.symbol, import.target, error))
+            return false;
     }
     return true;
 }
@@ -566,4 +650,82 @@ extern "C" int host_h2_profile_write(unsigned int identifier,
 extern "C" int host_h2_profile_delete(unsigned int identifier) {
     std::string error;
     return h2::port::erase_native_profile(identifier, error) ? 1 : 0;
+}
+
+extern "C" unsigned int host_h2_async_create_mutex(int initial_owner) {
+    const auto context = async_context();
+    return context ? context->bridge.create_mutex(initial_owner != 0) : 0;
+}
+
+extern "C" unsigned int host_h2_async_create_semaphore(int initial_count,
+                                                          int maximum_count) {
+    const auto context = async_context();
+    return context ? context->bridge.create_semaphore(initial_count, maximum_count) : 0;
+}
+
+extern "C" unsigned int host_h2_async_wait(unsigned int handle,
+                                             unsigned int milliseconds) {
+    const auto context = async_context();
+    if (!context)
+        return 0xffffffffu;
+    switch (context->bridge.wait(handle, milliseconds)) {
+    case h2::port::NativeAsyncPlatform::WaitResult::signaled:
+        return 0;
+    case h2::port::NativeAsyncPlatform::WaitResult::timeout:
+        return 0x102u;
+    case h2::port::NativeAsyncPlatform::WaitResult::failed:
+        return 0xffffffffu;
+    }
+    return 0xffffffffu;
+}
+
+extern "C" int host_h2_async_release_mutex(unsigned int handle) {
+    const auto context = async_context();
+    return context && context->bridge.release_mutex(handle) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_release_semaphore(unsigned int handle,
+                                                  int release_count,
+                                                  int* previous_count) {
+    const auto context = async_context();
+    return context && context->bridge.release_semaphore(
+                          handle, release_count, previous_count) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_set_file_pointer(unsigned int handle, int distance,
+                                                 int* distance_high,
+                                                 unsigned int method,
+                                                 unsigned int* position_low) {
+    const auto context = async_context();
+    return context && context->bridge.set_file_pointer(
+                          handle, distance, distance_high, method, position_low) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_read_file(unsigned int handle, void* buffer,
+                                         unsigned int bytes_to_read,
+                                         unsigned int* bytes_read) {
+    const auto context = async_context();
+    return context && context->bridge.read_file(
+                          handle, buffer, bytes_to_read, bytes_read) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_set_thread_priority(unsigned int handle,
+                                                    int priority) {
+    const auto context = async_context();
+    return context && context->bridge.set_thread_priority(handle, priority) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_thread_exit_code(unsigned int handle,
+                                                 unsigned int* exit_code) {
+    const auto context = async_context();
+    return context && context->bridge.thread_exit_code(handle, exit_code) ? 1 : 0;
+}
+
+extern "C" int host_h2_async_close(unsigned int handle) {
+    const auto context = async_context();
+    return context && context->bridge.close(handle) ? 1 : 0;
+}
+
+extern "C" void host_h2_async_yield() {
+    h2::port::NativeAsyncPlatform::yield();
 }

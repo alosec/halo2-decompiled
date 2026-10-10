@@ -1252,9 +1252,9 @@ def main() -> int:
                     "cache_file_slot_lifecycle_contract",
                     "validated_cache_file_slot_owner",
                     "bounded_guest_cache_slot_publication",
-                    "cooperative_worker_drain_join_cleanup"],
-                "remaining_services": [
-                    "guest_abi_import_routing_and_worker_entry"],
+                    "cooperative_worker_drain_join_cleanup",
+                    "guest_abi_v11_sync_file_import_routing"],
+                "remaining_services": ["guest_worker_entry_routing"],
                 "guest_memory_validator": {
                     "source": "port/src/guest_arena.cpp",
                     "host_pointer_bounds_checked": True,
@@ -1264,7 +1264,8 @@ def main() -> int:
                     "unmapped_pages_rejected": True},
                 "guest_bridge": {
                     "source": "port/src/native_async_guest_bridge.cpp",
-                    "status": "host_only_not_abi_patched",
+                    "status":
+                        "abi_v11_routes_available_not_production_configured",
                     "opaque_tokens_preserved": True,
                     "validate_outputs_before_side_effects": True,
                     "operations": [
@@ -1275,7 +1276,12 @@ def main() -> int:
                         "worker_priority_wait_exit_code_close"],
                     "unowned_operations": [
                         "guest_path_file_open",
-                        "guest_worker_entry_routing"]}} or
+                        "guest_worker_entry_routing"],
+                    "guest_runtime_source":
+                        "port/runtime/guest_async_runtime.cpp",
+                    "host_routing_source": "port/src/host_services.cpp",
+                    "host_abi_version": 11,
+                    "production_configured": False}} or
             texture_upload.get("native_scheduler_lifecycle") != {
                 "status": "host_worker_lifecycle_implemented_not_guest_routed",
                 "recovered_shutdown_provider": None,

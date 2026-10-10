@@ -38,6 +38,8 @@ void reset_cache_services();
 bool configure_profile_services(const std::filesystem::path& directory,
                                 std::string& error);
 void reset_profile_services();
+bool configure_async_services(GuestArena& arena, std::string& error);
+bool reset_async_services(std::string& error);
 bool list_native_profiles(std::vector<std::uint32_t>& ids, std::string& error);
 bool create_native_profile(std::span<const std::byte> record, std::uint32_t& id,
                            std::string& error);
@@ -49,6 +51,8 @@ bool erase_native_profile(std::uint32_t id, std::string& error);
 bool copy_cache_bytes(std::uint32_t offset, void* destination, std::size_t size);
 bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
                                  std::string& error);
+bool patch_async_host_imports(GuestElfImage& image, GuestArena& arena,
+                              std::string& error);
 
 }  // namespace h2::port
 
