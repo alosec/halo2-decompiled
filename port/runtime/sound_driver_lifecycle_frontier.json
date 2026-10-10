@@ -57,6 +57,11 @@
         "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
       },
       {
+        "symbol": "function_191300",
+        "source": "src/sound_effect_image_startup_native.cpp",
+        "semantics": "Load the real DSPImage section, reserve and checksum the aligned 0x48 voice-effects state, initialize indices/change tracking, perform genuine effect-image download, free the section, and query the four recovered effect-state pairs only after success."
+      },
+      {
         "symbol": "function_220790",
         "source": "src/sound_driver_listener_native.cpp",
         "semantics": "Publish exact initial listener position/orientation through deferred DirectSound calls, copy changed reverb/occlusion environments into checked driver storage, and dirty only authentic changed state."
@@ -147,6 +152,8 @@
     "native_sound_static_pool_bounds_owned",
     "native_directsound_buffer_creation_and_playback_owned",
     "native_sound_driver_effect_image_owned",
+    "native_xbe_dsp_section_loader_owned",
+    "native_directsound_effect_image_download_owned",
     "native_directsound_effect_data_query_owned",
     "native_sound_driver_effect_input_voices_owned",
     "native_sound_driver_effect_submix_impulse_buffers_owned",
@@ -353,6 +360,14 @@
       "source": "src/sound_driver_channel_shutdown_native.cpp",
       "address": "0x0021f290",
       "semantics": "Walk the configured channel count at driver offset 0x04, unconditionally mark each stream flushing, query live status, flush DirectSound, stop the genuine codec, clear state, release every queued chunk, restore -64 dB at stream offset 0x0c, and normalize counts through sound_stream_stop."
+    }
+  ],
+  "effect_image_startup_helpers": [
+    {
+      "symbol": "function_191300",
+      "source": "src/sound_effect_image_startup_native.cpp",
+      "address": "0x00191300",
+      "semantics": "Condition startup on genuine DSPImage section load, allocate exact aligned/checksummed 0x48 static state, initialize 15 indices to NONE and both change fields to zero, download with recovered I3DL2/crosstalk indices 9/10 and XBE-section mode 1, always free a loaded section, and query effects 4..7 at offset 0x20 for eight bytes each only after successful download."
     }
   ]
 }

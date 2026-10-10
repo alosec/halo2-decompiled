@@ -2133,6 +2133,8 @@ def main() -> int:
         args.root / "src/sound_driver_voice_buffer_native.cpp").read_text()
     sound_silence_buffer_source = (
         args.root / "src/sound_silence_buffer_native.cpp").read_text()
+    sound_effect_image_startup_source = (
+        args.root / "src/sound_effect_image_startup_native.cpp").read_text()
     sound_effect_input_voices_source = (
         args.root / "src/sound_effect_input_voices_native.cpp").read_text()
     sound_driver_teardown_source = (
@@ -2304,6 +2306,8 @@ def main() -> int:
         "native_sound_static_pool_bounds_owned",
         "native_directsound_buffer_creation_and_playback_owned",
         "native_sound_driver_effect_image_owned",
+        "native_xbe_dsp_section_loader_owned",
+        "native_directsound_effect_image_download_owned",
         "native_directsound_effect_data_query_owned",
         "native_sound_driver_effect_input_voices_owned",
         "native_sound_driver_effect_submix_impulse_buffers_owned",
@@ -2390,6 +2394,21 @@ def main() -> int:
         "IDirectSoundBuffer_SetBufferData(buffer, memory, k_silence_buffer_size);",
         "IDirectSoundBuffer_SetVolume(buffer, -10000);",
         "IDirectSoundBuffer_Play(buffer, 0, 0, k_play_looping);"]
+    expected_effect_image_startup_fragments = [
+        "static_assert(sizeof(s_effect_image_location) == 0x08",
+        "static_assert(sizeof(s_voice_effects) == 0x48",
+        "static_assert(offsetof(s_voice_effects, effects) == 0x28",
+        "if (XLoadSection(effect_image_name))",
+        "(reinterpret_cast<dword>(top) + 3) & ~3",
+        "function_163ba0(&g_510808_pool_checksum, &aligned_size,",
+        "memset(effects->indices, 0xff, sizeof(effects->indices));",
+        "effects->changed = 0;",
+        "effects->previous_changed = 0;",
+        "s_effect_image_location location = { 9, 10 };",
+        "XAudioDownloadEffectsImage(effect_image_name, &location,",
+        "XFreeSection(effect_image_name);",
+        "IDirectSound_GetEffectData(direct_sound, i + 4, 0x20,",
+        "g_510c90->effects[i], sizeof(g_510c90->effects[i]))"]
     expected_effect_input_voice_fragments = [
         "static_assert(sizeof(s_effect_state) == 0x3c",
         "if (g_510c90->description->effect_count == 15)",
@@ -2427,6 +2446,14 @@ def main() -> int:
                     "Allocate the exact 128 KiB WMA packet buffer through "
                     "the recovered staged physical allocator, publish it at "
                     "codec offset 0x14, and clear both packet-status words."}, {
+                "symbol": "function_191300",
+                "source": "src/sound_effect_image_startup_native.cpp",
+                "semantics":
+                    "Load the real DSPImage section, reserve and checksum "
+                    "the aligned 0x48 voice-effects state, initialize "
+                    "indices/change tracking, perform genuine effect-image "
+                    "download, free the section, and query the four "
+                    "recovered effect-state pairs only after success."}, {
                 "symbol": "function_220790",
                 "source": "src/sound_driver_listener_native.cpp",
                 "semantics":
@@ -2558,6 +2585,18 @@ def main() -> int:
                     "aligned 1000-byte static-pool backing, zero it, and "
                     "submit data, headroom, volume -10000, and looping play "
                     "through genuine DirectSound operations."}] or
+            sound_driver_lifecycle.get("effect_image_startup_helpers") != [{
+                "symbol": "function_191300",
+                "source": "src/sound_effect_image_startup_native.cpp",
+                "address": "0x00191300",
+                "semantics":
+                    "Condition startup on genuine DSPImage section load, "
+                    "allocate exact aligned/checksummed 0x48 static state, "
+                    "initialize 15 indices to NONE and both change fields "
+                    "to zero, download with recovered I3DL2/crosstalk "
+                    "indices 9/10 and XBE-section mode 1, always free a "
+                    "loaded section, and query effects 4..7 at offset 0x20 "
+                    "for eight bytes each only after successful download."}] or
             sound_driver_lifecycle.get("effect_input_voice_helpers") != [{
                 "symbol": "function_191420",
                 "source": "src/sound_effect_input_voices_native.cpp",
@@ -2759,6 +2798,8 @@ def main() -> int:
                 for fragment in expected_voice_buffer_fragments) or
             any(fragment not in sound_silence_buffer_source
                 for fragment in expected_silence_buffer_fragments) or
+            any(fragment not in sound_effect_image_startup_source
+                for fragment in expected_effect_image_startup_fragments) or
             any(fragment not in sound_effect_input_voices_source
                 for fragment in expected_effect_input_voice_fragments) or
             any(fragment not in sound_wma_initialize_source
