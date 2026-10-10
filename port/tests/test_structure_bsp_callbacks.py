@@ -2125,6 +2125,8 @@ def main() -> int:
     ).read_text())
     sound_driver_startup_source = (
         args.root / "src/unknown_21e4b0.cpp").read_text()
+    sound_driver_voice_buffer_source = (
+        args.root / "src/sound_driver_voice_buffer_native.cpp").read_text()
     sound_silence_buffer_source = (
         args.root / "src/sound_silence_buffer_native.cpp").read_text()
     sound_effect_input_voices_source = (
@@ -2325,6 +2327,24 @@ def main() -> int:
         "void function_21eae0(void)", "function_21f290();",
         "(*stream)->Release();", "IDirectSoundBuffer_Release",
         "IDirectSound_Release", "release_decoder();"]
+    expected_voice_buffer_fragments = [
+        "static_assert(sizeof(s_driver_voice) == 0x3c",
+        "static_assert(offsetof(s_driver_globals_view, voices) == 0x1a18",
+        "static_assert(offsetof(s_driver_globals_view, direct_sound) == 0x2ab0",
+        "static const dword k_voice_buffer_flags = 0x2010;",
+        "IDirectSound_CreateSoundBuffer(globals->direct_sound,",
+        "{ 6, 0 },",
+        "{ 8, 0 },",
+        "{ 7, 0 },",
+        "{ 9, 0 },",
+        "{ 10, 0 },",
+        "voice->unknown00 = 0x1f;",
+        "IDirectSoundBuffer_SetMaxDistance(voice->buffer, max_distance,",
+        "IDirectSoundBuffer_SetMinDistance(voice->buffer, max_distance,",
+        "IDirectSoundBuffer_SetRolloffFactor(voice->buffer, 0.0f,",
+        "IDirectSoundBuffer_SetDopplerFactor(voice->buffer, 0.0f,",
+        "IDirectSoundBuffer_SetConeOutsideVolume(voice->buffer, 0,",
+        "voice->submix = NULL;"]
     expected_silence_buffer_fragments = [
         "static_assert(sizeof(s_wave_format) == 0x14",
         "static_assert(sizeof(s_buffer_description) == 0x18",
@@ -2375,6 +2395,13 @@ def main() -> int:
                     "Allocate the exact 128 KiB WMA packet buffer through "
                     "the recovered staged physical allocator, publish it at "
                     "codec offset 0x14, and clear both packet-status words."}, {
+                "symbol": "sound_driver_voice_create_buffer",
+                "source": "src/sound_driver_voice_buffer_native.cpp",
+                "semantics":
+                    "Create one exact ordinary 3D mix-in driver voice "
+                    "buffer, route the recovered five mixbins, initialize "
+                    "maximum distances and zero rolloff/Doppler/cone volume "
+                    "as deferred settings, and leave the submix clear."}, {
                 "symbol": "function_221490",
                 "source": "src/sound_silence_buffer_native.cpp",
                 "semantics":
@@ -2443,6 +2470,16 @@ def main() -> int:
                     "decrementing its authentic cache-entry lock and the "
                     "stream chunk count without fabricating stream state or "
                     "progress."}] or
+            sound_driver_lifecycle.get("voice_buffer_helpers") != [{
+                "symbol": "sound_driver_voice_create_buffer",
+                "source": "src/sound_driver_voice_buffer_native.cpp",
+                "address": "0x00220a70",
+                "semantics":
+                    "Create an exact 0x2010-capability DirectSound voice "
+                    "buffer at the checked 0x3c voice stride, install "
+                    "mixbins 6/8/7/9/10, publish mask 0x1f, initialize "
+                    "retail maximum-distance and zero deferred 3D factors, "
+                    "and clear submix ownership on both success and failure."}] or
             sound_driver_lifecycle.get("silence_buffer_helpers") != [{
                 "symbol": "function_221490",
                 "source": "src/sound_silence_buffer_native.cpp",
@@ -2646,6 +2683,8 @@ def main() -> int:
                 for fragment in required_startup_fragments) or
             any(fragment not in sound_driver_teardown_source
                 for fragment in required_teardown_fragments) or
+            any(fragment not in sound_driver_voice_buffer_source
+                for fragment in expected_voice_buffer_fragments) or
             any(fragment not in sound_silence_buffer_source
                 for fragment in expected_silence_buffer_fragments) or
             any(fragment not in sound_effect_input_voices_source

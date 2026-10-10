@@ -57,6 +57,11 @@
         "semantics": "Allocate the exact 128 KiB WMA packet buffer through the recovered staged physical allocator, publish it at codec offset 0x14, and clear both packet-status words."
       },
       {
+        "symbol": "sound_driver_voice_create_buffer",
+        "source": "src/sound_driver_voice_buffer_native.cpp",
+        "semantics": "Create one exact ordinary 3D mix-in driver voice buffer, route the recovered five mixbins, initialize maximum distances and zero rolloff/Doppler/cone volume as deferred settings, and leave the submix clear."
+      },
+      {
         "symbol": "function_221490",
         "source": "src/sound_silence_buffer_native.cpp",
         "semantics": "Construct the exact mixbin-14 looping silence buffer over aligned checksummed static backing and configure it only through genuine DirectSound buffer operations."
@@ -314,6 +319,14 @@
       "source": "src/sound_silence_buffer_native.cpp",
       "address": "0x00221490",
       "semantics": "Construct the exact mono 1 kHz 8-bit looping silence buffer routed to mixbin 14, reserve and checksum its aligned 1000-byte static-pool backing, zero it, and submit data, headroom, volume -10000, and looping play through genuine DirectSound operations."
+    }
+  ],
+  "voice_buffer_helpers": [
+    {
+      "symbol": "sound_driver_voice_create_buffer",
+      "source": "src/sound_driver_voice_buffer_native.cpp",
+      "address": "0x00220a70",
+      "semantics": "Create an exact 0x2010-capability DirectSound voice buffer at the checked 0x3c voice stride, install mixbins 6/8/7/9/10, publish mask 0x1f, initialize retail maximum-distance and zero deferred 3D factors, and clear submix ownership on both success and failure."
     }
   ]
 }
