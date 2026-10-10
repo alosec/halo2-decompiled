@@ -6,6 +6,7 @@
 
 struct s_bitmap_view;
 struct s_type_7ba8e9;
+struct D3DTexture;
 
 extern byte *g_485a80;
 extern long g_485af4[4];
@@ -13,7 +14,7 @@ extern long g_485b04[4];
 extern void *g_51f3c8[2][4];
 
 s_type_7ba8e9 *function_137550(long tag, short bitmap);
-void *function_12310(s_bitmap_view *bitmap, real priority);
+D3DTexture *function_12310(s_bitmap_view *bitmap, real priority);
 
 // @retail 0x143c0
 bool function_143c0(long tag, short index, short stage, real priority)

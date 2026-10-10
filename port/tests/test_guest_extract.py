@@ -1269,6 +1269,39 @@ def main():
             raise RuntimeError(
                 f"particle material curve evaluator frontier changed: {sorted(actual_curve_eval_undefined)}")
 
+        texture_cache_acquire_output = Path(temporary) / "particle-texture-cache-acquire.o"
+        texture_cache_acquire_symbol = "?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z"
+        texture_cache_acquire_command = command[:]
+        texture_cache_acquire_command[
+            texture_cache_acquire_command.index("h2_extract_selected")
+        ] = texture_cache_acquire_symbol
+        texture_cache_acquire_command[
+            texture_cache_acquire_command.index("--extract-global"):texture_cache_acquire_command.index("--output")
+        ] = []
+        texture_cache_acquire_command[texture_cache_acquire_command.index(output)] = texture_cache_acquire_output
+        texture_cache_acquire_command[-1] = args.root / "src/particle_texture_cache_acquire_native.cpp"
+        subprocess.run([str(value) for value in texture_cache_acquire_command], check=True)
+        texture_cache_acquire_defined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--defined-only", "--format=posix", texture_cache_acquire_output],
+            text=True,
+        )
+        texture_cache_acquire_undefined = subprocess.check_output(
+            [args.llvm / "llvm-nm", "--undefined-only", "--format=posix", texture_cache_acquire_output],
+            text=True,
+        )
+        if texture_cache_acquire_symbol not in texture_cache_acquire_defined:
+            raise RuntimeError("particle texture cache acquisition was not selectively compilable")
+        expected_texture_cache_acquire_imports = {
+            "_?function_12ce00@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
+            "_?g_4e6488@@3JA",
+            "_?texture_cache_bitmap_get_texture@@YAPAUD3DTexture@@PAUs_bitmap_data@@KM@Z",
+        }
+        actual_texture_cache_acquire_imports = {
+            line.split()[0] for line in texture_cache_acquire_undefined.splitlines() if line.strip()
+        }
+        if actual_texture_cache_acquire_imports != expected_texture_cache_acquire_imports:
+            raise RuntimeError("particle texture cache acquisition frontier changed")
+
         texture_residency_request_output = Path(temporary) / "particle-texture-residency-request.o"
         texture_residency_request_symbol = "?function_143c0@@YA_NJFFM@Z"
         texture_residency_request_command = command[:]
@@ -1294,7 +1327,7 @@ def main():
         if texture_residency_request_symbol not in texture_residency_request_defined:
             raise RuntimeError("particle texture residency request was not selectively compilable")
         expected_texture_residency_request_imports = {
-            "_?function_12310@@YAPAXPAUs_bitmap_view@@M@Z",
+            "_?function_12310@@YAPAUD3DTexture@@PAUs_bitmap_view@@M@Z",
             "_?function_137550@@YAPAUs_type_7ba8e9@@JF@Z",
             "_?g_485a80@@3PAEA", "_?g_485af4@@3PAJA", "_?g_485b04@@3PAJA",
             "_?g_4e3b44@@3PAUs_tag_instance@@A", "_?g_51f3c8@@3PAY03PAXA",
