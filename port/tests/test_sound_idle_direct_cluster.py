@@ -97,13 +97,17 @@ def main() -> int:
         ("src/unknown_219110.cpp", "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"),
         ("src/sound_playback_reference_native.cpp", "?function_125e60@@YAJPAUs_looping_track_sound@@@Z"),
         ("src/sound_playback_gain_native.cpp", "?function_1251e0@@YAJPBXJM@Z"),
+        ("src/tag_function_general_native.cpp", "?function_13b390@@YAMPBXMM@Z"),
+        ("src/tag_function_periodic_native.cpp", "?function_17c900@@YAMFM@Z"),
+        ("src/light_curve_lookup_native.cpp", "?function_17ca10@@YAMMF@Z"),
+        ("src/tag_function_general_native.cpp", "g_44178c"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 66:
+    if len(set(provider_symbols)) != 70:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -299,6 +303,18 @@ def main() -> int:
             not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    general_function = manifest.get("general_function_closure", {})
+    if general_function.get("root") != "?function_13b390@@YAMPBXMM@Z" or \
+            general_function.get("providers") != [
+                "?function_13b390@@YAMPBXMM@Z",
+                "?function_17c900@@YAMFM@Z",
+                "?function_17ca10@@YAMMF@Z",
+                "g_44178c"
+            ] or general_function.get("numeric_boundary") != \
+            "?h2_xbox_rsqrtss@@YAMM@Z" or \
+            not general_function.get("semantics") or \
+            not general_function.get("execution_gate"):
+        raise RuntimeError("sound-idle general-function closure changed")
     playback_gain = manifest.get("playback_gain_closure", {})
     if playback_gain.get("root") != "?function_1251e0@@YAJPBXJM@Z" or \
             playback_gain.get("recursive_definitions") != [
@@ -329,7 +345,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 75 or len(expected_imports) != 74:
+    if len(expected_definitions) != 79 or len(expected_imports) != 76:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
