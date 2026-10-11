@@ -293,6 +293,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_wma_codec_control_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_wma_codec_start_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_wma_codec_initialize_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_effects_object_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_218ac0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21d110.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21dda0.cpp"

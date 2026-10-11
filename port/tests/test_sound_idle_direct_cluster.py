@@ -238,13 +238,24 @@ def main() -> int:
         ("src/sound_wma_codec_initialize_native.cpp", "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z"),
         ("src/sound_wma_codec_object_native.cpp", "?function_21ebc0@@YAXJ@Z"),
         ("src/sound_wma_codec_object_native.cpp", "?function_21ebe0@@YAXXZ"),
+        ("src/sound_effects_object_native.cpp", "?g_44f70c@@3MB"),
+        ("src/sound_effects_object_native.cpp", "?g_44f710@@3MB"),
+        ("src/sound_effects_object_native.cpp", "?g_47f088@@3Vc_sound_effects@@A"),
+        ("src/sound_effects_object_native.cpp", "h2_sound_effects_vtable"),
+        ("src/sound_effects_object_native.cpp", "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z"),
+        ("src/sound_effects_object_native.cpp", "?v1@c_sound_effects@@UAAXXZ"),
+        ("src/sound_effects_object_native.cpp", "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z"),
+        ("src/sound_effects_object_native.cpp", "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z"),
+        ("src/sound_effects_object_native.cpp", "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z"),
+        ("src/sound_effects_object_native.cpp", "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z"),
+        ("src/sound_effects_object_native.cpp", "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 207:
+    if len(set(provider_symbols)) != 218:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -1037,6 +1048,49 @@ def main() -> int:
             if fragment not in source:
                 raise RuntimeError(f"WMA codec method lost {fragment}")
 
+    effects = manifest.get("sound_effects_object_lifetime", {})
+    effects_slots = [
+        "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z",
+        "?v1@c_sound_effects@@UAAXXZ",
+        "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z",
+        "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z",
+        "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z",
+        "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z",
+        "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"]
+    if effects.get("object") != "?g_47f088@@3Vc_sound_effects@@A" or \
+            effects.get("size") != 0x48 or \
+            effects.get("vtable") != "h2_sound_effects_vtable" or \
+            effects.get("retail_vtable") != "0x457140" or \
+            effects.get("slots") != effects_slots or \
+            effects.get("immutable_routing_constants") != {
+                "?g_44f70c@@3MB": "0.0", "?g_44f710@@3MB": "-64.0"} or \
+            effects.get("source") != \
+            "src/sound_effects_object_native.cpp" or \
+            effects.get("production_score_before") != 75 or \
+            effects.get("production_score_after") != 76 or \
+            not effects.get("semantics") or not effects.get("execution_gate"):
+        raise RuntimeError("sound effects object lifetime changed")
+    effects_source = (
+        args.root / "src/sound_effects_object_native.cpp").read_text()
+    for fragment in [
+            "static_assert(sizeof(c_sound_effects) == 0x48",
+            "offsetof(c_sound_effects, settings) == 0x04",
+            "offsetof(c_sound_effects, buffers) == 0x44",
+            "extern real const g_44f70c = 0.0f",
+            "extern real const g_44f710 = -64.0f",
+            "s_sound_effects_method const h2_sound_effects_vtable[7]",
+            "c_sound_effects g_47f088 =",
+            "IDirectSoundBuffer_SetI3DL2Source",
+            "IDirectSoundBuffer_SetFilter",
+            "IDirectSoundBuffer_SetMixBinVolumes",
+            "IDirectSoundBuffer_SetVolume",
+            "sound_filter_frequency_coefficient",
+            "sound_filter_gain_coefficient",
+            "first.value = self->settings.gain + first.value",
+            "second.value = self->settings.gain + second.value"]:
+        if fragment not in effects_source:
+            raise RuntimeError(f"sound effects object lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -1087,7 +1141,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 219 or len(expected_imports) != 132:
+    if len(expected_definitions) != 230 or len(expected_imports) != 133:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -1138,6 +1192,16 @@ def main() -> int:
         raise RuntimeError(
             "WMA codec object/vtable relocation order changed: " +
             repr(wma_relocations))
+    effects_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in
+            ["h2_sound_effects_vtable", *effects_slots])]
+    if effects_relocations != ["h2_sound_effects_vtable", *effects_slots]:
+        raise RuntimeError(
+            "sound effects object/vtable relocation order changed: " +
+            repr(effects_relocations))
 
     production_definitions = symbols(
         args.llvm_nm, args.production_object, "--defined-only")
@@ -1149,7 +1213,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 75:
+    if len(expected_production_imports) != 76:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1158,7 +1222,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [11, 63, 0, 0, 1]:
+    if [len(category) for category in categories] != [10, 65, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \

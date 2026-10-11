@@ -829,6 +829,50 @@
     {
       "source": "src/sound_wma_codec_object_native.cpp",
       "symbol": "?function_21ebe0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "global": "?g_44f70c@@3MB"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "global": "?g_44f710@@3MB"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "global": "?g_47f088@@3Vc_sound_effects@@A"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "global": "h2_sound_effects_vtable"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?v1@c_sound_effects@@UAAXXZ"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z"
+    },
+    {
+      "source": "src/sound_effects_object_native.cpp",
+      "symbol": "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"
     }
   ],
   "definitions": [
@@ -839,6 +883,10 @@
     "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+    "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z",
+    "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z",
+    "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z",
+    "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z",
     "?async_task_queue@@YAJPAUs_job_node@@@Z",
     "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
     "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
@@ -955,9 +1003,12 @@
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_44a2a0@@3Us_sound_driver_reverb@@A",
+    "?g_44f70c@@3MB",
+    "?g_44f710@@3MB",
     "?g_468834@@3MA",
     "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
+    "?g_47f088@@3Vc_sound_effects@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_47f0f0@@3Us_47f0f0@@A",
     "?g_4e6374@@3JA",
@@ -980,6 +1031,7 @@
     "?g_sound_crc_table_built@@3_NA",
     "?get_packet@c_pcm_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+    "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?looping_sound_controllers_initialize@@YA_NXZ",
     "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
@@ -993,6 +1045,7 @@
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?read@c_wma_codec@@QAAKKKPAPAX@Z",
     "?release_decoder@c_wma_codec@@QAAXXZ",
+    "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z",
     "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z",
     "?sound_cache_entry_busy@@YA_NJ@Z",
     "?sound_cache_entry_delete@@YAXJ@Z",
@@ -1041,6 +1094,7 @@
     "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
     "?stop@c_sound_stream_codec@@UAAXXZ",
     "?stop@c_wma_codec@@UAAXXZ",
+    "?v1@c_sound_effects@@UAAXXZ",
     "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "?wma_codec_read_callback@@YAKPAXKKPAPAX@Z",
@@ -1050,6 +1104,7 @@
     "g_44a16c",
     "g_44a188",
     "h2_pcm_codec_vtable",
+    "h2_sound_effects_vtable",
     "h2_wma_codec_vtable"
   ],
   "imports": [
@@ -1074,7 +1129,6 @@
     "?g_468d48@@3QAY0EAA@$$CBEA",
     "?g_46bd48@@3PAY0EAA@EA",
     "?g_476fc8@@3Vc_voice_xhv@@A",
-    "?g_47f088@@3Vc_sound_effects@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e034c@@3PAUs_tag_header_globals@@A",
     "?g_4e0350@@3PAUs_palette_source_globals@@A",
@@ -1115,7 +1169,9 @@
     "IDirectSoundBuffer_SetConeOutsideVolume",
     "IDirectSoundBuffer_SetCurrentPosition",
     "IDirectSoundBuffer_SetDopplerFactor",
+    "IDirectSoundBuffer_SetFilter",
     "IDirectSoundBuffer_SetHeadroom",
+    "IDirectSoundBuffer_SetI3DL2Source",
     "IDirectSoundBuffer_SetMaxDistance",
     "IDirectSoundBuffer_SetMinDistance",
     "IDirectSoundBuffer_SetMixBinVolumes",
@@ -1196,7 +1252,6 @@
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
-    "?g_47f088@@3Vc_sound_effects@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6470@@3JA",
     "?g_4e64a0@@3JA",
@@ -1218,7 +1273,9 @@
     "IDirectSoundBuffer_SetConeOutsideVolume",
     "IDirectSoundBuffer_SetCurrentPosition",
     "IDirectSoundBuffer_SetDopplerFactor",
+    "IDirectSoundBuffer_SetFilter",
     "IDirectSoundBuffer_SetHeadroom",
+    "IDirectSoundBuffer_SetI3DL2Source",
     "IDirectSoundBuffer_SetMaxDistance",
     "IDirectSoundBuffer_SetMinDistance",
     "IDirectSoundBuffer_SetMixBinVolumes",
@@ -1277,8 +1334,7 @@
       "?g_510800_pool_base@@3KA",
       "?g_510804_pool_size@@3JA",
       "?g_510808_pool_checksum@@3KA",
-      "g_dwDirectSoundDeltaPanicCount",
-      "?g_47f088@@3Vc_sound_effects@@A"
+      "g_dwDirectSoundDeltaPanicCount"
     ],
     "backend_operations": [
       "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -1343,7 +1399,9 @@
       "IDirectSoundStream_SetHeadroom",
       "IDirectSound_CreateSoundStream",
       "XPhysicalAlloc",
-      "WmaCreateInMemoryDecoder"
+      "WmaCreateInMemoryDecoder",
+      "IDirectSoundBuffer_SetFilter",
+      "IDirectSoundBuffer_SetI3DL2Source"
     ],
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
@@ -2286,5 +2344,29 @@
     "execution_gate": "requires a genuine WMA XMediaObject backend, initialized physical and sound-cache storage, and live stream ownership; decoder creation, processing, release, packet bytes, and progress are never fabricated",
     "production_score_before": 75,
     "production_score_after": 75
+  },
+  "sound_effects_object_lifetime": {
+    "object": "?g_47f088@@3Vc_sound_effects@@A",
+    "size": 72,
+    "vtable": "h2_sound_effects_vtable",
+    "retail_vtable": "0x457140",
+    "slots": [
+      "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z",
+      "?v1@c_sound_effects@@UAAXXZ",
+      "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z",
+      "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z",
+      "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z",
+      "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z",
+      "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"
+    ],
+    "immutable_routing_constants": {
+      "?g_44f70c@@3MB": "0.0",
+      "?g_44f710@@3MB": "-64.0"
+    },
+    "source": "src/sound_effects_object_native.cpp",
+    "semantics": "directly initialize the exact 0x48-byte effects object and seven-slot interface; preserve copied 0x40-byte settings, live buffer publication, direct/split/rear/source routing, duplicated mode-1 sends, I3DL2/filter application, and exact mixbin/volume defaults",
+    "execution_gate": "requires genuine DirectSound effect buffers and SetMixBinVolumes, SetVolume, SetI3DL2Source, and SetFilter operations; no buffer, filter, routing, or backend success is fabricated",
+    "production_score_before": 75,
+    "production_score_after": 76
   }
 }
