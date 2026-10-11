@@ -71,13 +71,14 @@ def main() -> int:
         ("src/sound_gain_defaults_native.cpp", "?g_468834@@3MA"),
         ("src/sound_busy_state_native.cpp", "?function_12be90@@YA_NXZ"),
         ("src/sound_spatialization_native.cpp", "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z"),
+        ("src/sound_spatial_gain_native.cpp", "?function_12a6d0@@YAJFMM@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 40:
+    if len(set(provider_symbols)) != 41:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -226,10 +227,15 @@ def main() -> int:
             not spatialization.get("semantics") or \
             not spatialization.get("execution_gate"):
         raise RuntimeError("sound-idle spatialization ownership changed")
+    spatial_gain = manifest.get("spatial_gain_provider", {})
+    if spatial_gain.get("symbol") != "?function_12a6d0@@YAJFMM@Z" or \
+            not spatial_gain.get("semantics") or \
+            not spatial_gain.get("execution_gate"):
+        raise RuntimeError("sound-idle spatial-gain ownership changed")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 43 or len(expected_imports) != 69:
+    if len(expected_definitions) != 44 or len(expected_imports) != 68:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -263,7 +269,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 41:
+    if len(expected_production_imports) != 40:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

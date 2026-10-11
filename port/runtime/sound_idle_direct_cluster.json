@@ -161,6 +161,10 @@
     {
       "source": "src/sound_spatialization_native.cpp",
       "symbol": "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z"
+    },
+    {
+      "source": "src/sound_spatial_gain_native.cpp",
+      "symbol": "?function_12a6d0@@YAJFMM@Z"
     }
   ],
   "definitions": [
@@ -172,6 +176,7 @@
     "?function_127320@@YAXJJ@Z",
     "?function_1293f0@@YAXXZ",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+    "?function_12a6d0@@YAJFMM@Z",
     "?function_12a810@@YAJJ@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
@@ -213,7 +218,6 @@
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_125060@@YAJPBUs_sound@@J@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_12a6d0@@YAJFMM@Z",
     "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
@@ -285,7 +289,6 @@
   "production_score_imports": [
     "?function_125060@@YAJPBUs_sound@@J@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_12a6d0@@YAJFMM@Z",
     "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
@@ -498,5 +501,10 @@
     "symbol": "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "semantics": "preserve listener-space position, direction, and velocity transforms, attenuation routing, one-second gain transitions, Doppler, promotion gain, and transactional source callbacks",
     "execution_gate": "initialized listener, playback, voice, sound-definition, promotion, and source-callback state"
+  },
+  "spatial_gain_provider": {
+    "symbol": "?function_12a6d0@@YAJFMM@Z",
+    "semantics": "preserve signed range normalization, clamping, direction reversal, linear or powered interpolation between silence and full gain, and exact gain-to-decibel conversion",
+    "execution_gate": "exact recovered gain endpoint globals and standard exponential/logarithmic math"
   }
 }
