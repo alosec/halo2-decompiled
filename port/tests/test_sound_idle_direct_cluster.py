@@ -364,6 +364,42 @@ def main() -> int:
             not mixbins.get("semantics") or \
             len(mixbins.get("execution_gates", [])) != 3:
         raise RuntimeError("sound-idle mixbin submission closure changed")
+    shared_update = manifest.get("shared_channel_update_frontier", {})
+    expected_update_symbol = \
+        "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"
+    if shared_update.get("source") != "src/unknown_21fa80.cpp" or \
+            shared_update.get("symbol") != expected_update_symbol or \
+            shared_update.get("checked_layouts") != {
+                "channel_update_input_size": 72,
+                "channel_levels_offset": 56,
+                "sound_stream_size": 52,
+                "driver_channels_offset": 12,
+                "driver_voices_offset": 6680,
+                "driver_effects_offset": 10932
+            } or shared_update.get("source_owned_providers") != [
+                "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
+                "?sound_mixbins_add@@YAXPAUs_mixbin_settings@@JM@Z",
+                "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z",
+                "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z"
+            ] or len(shared_update.get("directsound_operations", [])) != 9 or \
+            len(shared_update.get("effects_virtual_methods", [])) != 4 or \
+            not shared_update.get("semantics") or \
+            len(shared_update.get("execution_gates", [])) != 4 or \
+            not shared_update.get("prohibited_substitution"):
+        raise RuntimeError("sound-idle shared channel update frontier changed")
+    shared_source = (args.root / shared_update["source"]).read_text()
+    for fragment in [
+            "stream->stream->GetVoiceProperties",
+            "function_2215d0",
+            "voice->buffer->GetVoiceProperties",
+            "function_2216f0",
+            "channel_effects()->add_effect_sends",
+            "stream->stream->SetMixBins",
+            "stream->stream->SetPitch",
+            "function_2201f0"]:
+        if fragment not in shared_source:
+            raise RuntimeError(
+                f"sound-idle shared channel source lost {fragment}")
     looping_channel_start = manifest.get("looping_channel_start_closure", {})
     if looping_channel_start.get("providers") != [
             "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",

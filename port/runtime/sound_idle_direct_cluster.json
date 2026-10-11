@@ -936,6 +936,49 @@
       "valid bounded mixbin indices and pair counts"
     ]
   },
+  "shared_channel_update_frontier": {
+    "source": "src/unknown_21fa80.cpp",
+    "symbol": "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
+    "checked_layouts": {
+      "channel_update_input_size": 72,
+      "channel_levels_offset": 56,
+      "sound_stream_size": 52,
+      "driver_channels_offset": 12,
+      "driver_voices_offset": 6680,
+      "driver_effects_offset": 10932
+    },
+    "source_owned_providers": [
+      "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
+      "?sound_mixbins_add@@YAXPAUs_mixbin_settings@@JM@Z",
+      "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z",
+      "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z"
+    ],
+    "directsound_operations": [
+      "IDirectSoundStream_GetVoiceProperties",
+      "IDirectSoundStream_SetVolume",
+      "IDirectSoundStream_SetMixBins",
+      "IDirectSoundStream_SetPitch",
+      "IDirectSoundBuffer_GetVoiceProperties",
+      "IDirectSoundBuffer_SetVolume",
+      "IDirectSoundBuffer_GetStatus",
+      "IDirectSoundBuffer_Play",
+      "IDirectSoundBuffer_StopEx"
+    ],
+    "effects_virtual_methods": [
+      "add_effect_sends",
+      "add_send",
+      "add_source_mixbins",
+      "add_sends"
+    ],
+    "semantics": "preserve gain and direct-mode change suppression, voice/submix routing, effect-send flags, four-speaker energy reduction, stream and buffer mixbin updates, format-dependent pitch conversion, cached state publication, and final channel-parameter refresh",
+    "execution_gates": [
+      "live DirectSound stream and voice buffer objects",
+      "initialized driver voice table and configured voice threshold",
+      "genuine effects interface and virtual send policy",
+      "valid source mixbin and submix lifetimes"
+    ],
+    "prohibited_substitution": "must not replace voice, submix, effects-vtable, pitch, volume, or mixbin operations with success stubs"
+  },
   "looping_channel_start_closure": {
     "providers": [
       "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
