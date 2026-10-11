@@ -409,6 +409,10 @@
     {
       "source": "src/voice_xhv_dispose_native.cpp",
       "symbol": "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"
+    },
+    {
+      "source": "src/unknown_192b90.cpp",
+      "global": "g_444c84"
     }
   ],
   "definitions": [
@@ -487,6 +491,7 @@
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "g_44178c",
+    "g_444c84",
     "g_44a150",
     "g_44a16c",
     "g_44a188",
@@ -613,7 +618,6 @@
     "expf",
     "fabs",
     "fmod",
-    "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memcmp",
     "h2_guest_memcpy",
@@ -689,7 +693,6 @@
     "exp",
     "expf",
     "fmod",
-    "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
     "log",
     "log10",
@@ -938,6 +941,13 @@
       "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
       "?function_18d090@@YAPAXJJ@Z",
       "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"
+    ],
+    "immutable_speaker_directions": [
+      [0.7071067690849304, 0.7071067690849304, 0.0],
+      [0.7071067690849304, -0.7071067690849304, 0.0],
+      [-0.7071067690849304, 0.7071067690849304, 0.0],
+      [-0.7071067690849304, -0.7071067690849304, 0.0],
+      [0.7071067690849304, 0.0, 0.0]
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"

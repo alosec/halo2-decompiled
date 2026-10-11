@@ -133,13 +133,14 @@ def main() -> int:
         ("src/unknown_12a1b0.cpp", "g_44a188"),
         ("src/sound_stream_flush_native.cpp", "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z"),
         ("src/voice_xhv_dispose_native.cpp", "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"),
+        ("src/unknown_192b90.cpp", "g_444c84"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 102:
+    if len(set(provider_symbols)) != 103:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -332,9 +333,21 @@ def main() -> int:
         raise RuntimeError("sound-idle effect-routing closure changed")
     effect_lookups = manifest.get("effect_lookup_closure", {})
     if len(effect_lookups.get("providers", [])) != 5 or \
-            not effect_lookups.get("semantics") or \
+            effect_lookups.get("immutable_speaker_directions") != [
+                [0.7071067690849304, 0.7071067690849304, 0.0],
+                [0.7071067690849304, -0.7071067690849304, 0.0],
+                [-0.7071067690849304, 0.7071067690849304, 0.0],
+                [-0.7071067690849304, -0.7071067690849304, 0.0],
+                [0.7071067690849304, 0.0, 0.0]
+            ] or not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    speaker_source = (args.root / "src/unknown_192b90.cpp").read_text()
+    for fragment in ["static point3f const g_444c84[5]", "front left",
+                     "front right", "back left", "back", "center"]:
+        if fragment not in speaker_source:
+            raise RuntimeError(
+                f"sound-idle speaker table lost {fragment}")
     channel_scalars = manifest.get("channel_parameter_scalar_closure", {})
     if channel_scalars.get("providers") != [
             "?function_21e330@@YAJM@Z",
@@ -583,7 +596,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 114 or len(expected_imports) != 99:
+    if len(expected_definitions) != 115 or len(expected_imports) != 98:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -619,7 +632,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 64:
+    if len(expected_production_imports) != 63:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
