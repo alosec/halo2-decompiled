@@ -677,6 +677,34 @@
     {
       "source": "src/globals.cpp",
       "global": "?g_global_f9ae07@@3Us_physical_memory_globals@@A"
+    },
+    {
+      "source": "src/sound_map_lifetime_native.cpp",
+      "symbol": "?function_125690@@YAXXZ"
+    },
+    {
+      "source": "src/sound_map_lifetime_native.cpp",
+      "symbol": "?function_1257b0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_map_lifetime_native.cpp",
+      "global": "?g_51ebd4@@3PAUs_sound_globals@@A"
+    },
+    {
+      "source": "src/sound_map_lifetime_native.cpp",
+      "global": "?g_47f0e0@@3JA"
+    },
+    {
+      "source": "src/sound_map_reset_helpers_native.cpp",
+      "symbol": "?function_191270@@YAXXZ"
+    },
+    {
+      "source": "src/sound_map_reset_helpers_native.cpp",
+      "symbol": "?function_21f6d0@@YAXPBK0PBX@Z"
+    },
+    {
+      "source": "src/sound_map_reset_helpers_native.cpp",
+      "symbol": "?sound_mix_apply@@YAXXZ"
     }
   ],
   "definitions": [
@@ -860,7 +888,14 @@
     "?g_510c3c@@3PAXA",
     "?g_510c40@@3_NA",
     "?function_12b400@@YAXXZ",
-    "?g_global_f9ae07@@3Us_physical_memory_globals@@A"
+    "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+    "?function_125690@@YAXXZ",
+    "?function_1257b0@@YAXXZ",
+    "?g_51ebd4@@3PAUs_sound_globals@@A",
+    "?g_47f0e0@@3JA",
+    "?function_191270@@YAXXZ",
+    "?function_21f6d0@@YAXPBK0PBX@Z",
+    "?sound_mix_apply@@YAXXZ"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -893,7 +928,6 @@
     "?g_510804_pool_size@@3JA",
     "?g_510808_pool_checksum@@3KA",
     "?g_510c54@@3PAUs_game_time_globals@@A",
-    "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_557c90@@3PAUs_texture_cache_file@@A",
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
@@ -994,7 +1028,9 @@
     "IDirectSoundStream_SetHeadroom",
     "IDirectSound_CreateSoundStream",
     "??_C@_00CNPNBAHC@?$AA@",
-    "?game_state_globals@@3Us_game_state_globals@@A"
+    "?game_state_globals@@3Us_game_state_globals@@A",
+    "?function_1264c0@@YAXK@Z",
+    "?function_16bc00@@YAJPAUs_record_pool@@J@Z"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -1012,7 +1048,6 @@
     "?g_510800_pool_base@@3KA",
     "?g_510804_pool_size@@3JA",
     "?g_510808_pool_checksum@@3KA",
-    "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
@@ -1076,7 +1111,8 @@
     "IDirectSoundBuffer_SetDopplerFactor",
     "IDirectSoundBuffer_SetRolloffFactor",
     "IDirectSoundStream_SetHeadroom",
-    "IDirectSound_CreateSoundStream"
+    "IDirectSound_CreateSoundStream",
+    "?function_1264c0@@YAXK@Z"
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
@@ -1090,7 +1126,6 @@
       "?g_510800_pool_base@@3KA",
       "?g_510804_pool_size@@3JA",
       "?g_510808_pool_checksum@@3KA",
-      "?g_51ebd4@@3PAUs_sound_globals@@A",
       "g_dwDirectSoundDeltaPanicCount",
       "?g_47f088@@3Vc_sound_effects@@A",
       "?g_47f0f0@@3Us_47f0f0@@A"
@@ -1159,7 +1194,9 @@
       "IDirectSound_CreateSoundStream",
       "XPhysicalAlloc"
     ],
-    "recovered_lifecycle_operations": [],
+    "recovered_lifecycle_operations": [
+      "?function_1264c0@@YAXK@Z"
+    ],
     "immutable_diagnostics": [],
     "numeric_boundaries": [
       "?h2_xbox_rsqrtss@@YAMM@Z"
@@ -1987,5 +2024,39 @@
     "layout": "the exact recovered stage stack is zeroed, starts at stage 0, and publishes the retail 0x61000 base and 0x3145000 top in both current-stage bounds",
     "semantics": "initialization requests the complete recovered physical arena through genuine XPhysicalAlloc after publishing the exact allocator bounds",
     "execution_gate": "requires genuine low guest physical-arena reservation at the requested base and size; ownership does not permit a fabricated successful XPhysicalAlloc or enable sound execution"
+  },
+  "map_sound_globals_lifetime": {
+    "storage": "?g_51ebd4@@3PAUs_sound_globals@@A",
+    "buffer_size": "?g_47f0e0@@3JA",
+    "startup_owner": "?function_125690@@YAXXZ",
+    "teardown_owner": "?function_1257b0@@YAXXZ",
+    "reset_helpers": [
+      "?sound_mix_apply@@YAXXZ",
+      "?function_21f6d0@@YAXPBK0PBX@Z",
+      "?function_191270@@YAXXZ"
+    ],
+    "required_order": [
+      "publish the active map sound-globals tag before any sound-table lookup",
+      "reset master fade, clock, ambience, environments, and all four listeners",
+      "apply the map sound mix and reset the four downloaded DSP effect states",
+      "clear both impulse identifiers and publish the game-state-dependent sound buffer size",
+      "fade live playbacks for 300 milliseconds through genuine sound idle service",
+      "invoke exact old-map sound disposal before disabling and releasing looping pools",
+      "clear the map sound-globals publication before the final DSP and impulse reset"
+    ],
+    "semantics": "The exact recovered map transition publishes the active sound-globals tag, resets map-scoped sound/listener/mix/effect state, performs bounded playback fade-out through the genuine idle chain, invokes authentic old-map disposal, releases looping pools, and clears the publication in recovered order.",
+    "execution_gate": "Exact old-map disposal function_1264c0 remains a recovered lifecycle boundary, and all DirectSound effect operations plus initialized sound/tag/pool state remain required; this ownership does not enable production sound or blocking texture residency.",
+    "prohibited_shortcut": "Do not replace function_1264c0, the 300 ms idle-serviced fade, pool release, DSP reset, or map tag lookup with a pointer-only clear, no-op, fabricated completion, or isolated BSS binding.",
+    "production_score": {
+      "before": 77,
+      "after": 77,
+      "removed": [
+        "?g_51ebd4@@3PAUs_sound_globals@@A"
+      ],
+      "added": [
+        "?function_1264c0@@YAXK@Z"
+      ],
+      "interpretation": "The coherent map publication/clear lifetime is score-neutral: one opaque mutable pointer becomes the exact recovered old-map disposal boundary after compact mix and DSP reset helpers are owned."
+    }
   }
 }

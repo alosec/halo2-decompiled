@@ -200,13 +200,20 @@ def main() -> int:
         ("src/sound_codec_allocator_state_native.cpp", "?g_510c40@@3_NA"),
         ("src/unknown_12b400.cpp", "?function_12b400@@YAXXZ"),
         ("src/globals.cpp", "?g_global_f9ae07@@3Us_physical_memory_globals@@A"),
+        ("src/sound_map_lifetime_native.cpp", "?function_125690@@YAXXZ"),
+        ("src/sound_map_lifetime_native.cpp", "?function_1257b0@@YAXXZ"),
+        ("src/sound_map_lifetime_native.cpp", "?g_51ebd4@@3PAUs_sound_globals@@A"),
+        ("src/sound_map_lifetime_native.cpp", "?g_47f0e0@@3JA"),
+        ("src/sound_map_reset_helpers_native.cpp", "?function_191270@@YAXXZ"),
+        ("src/sound_map_reset_helpers_native.cpp", "?function_21f6d0@@YAXPBK0PBX@Z"),
+        ("src/sound_map_reset_helpers_native.cpp", "?sound_mix_apply@@YAXXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 169:
+    if len(set(provider_symbols)) != 176:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -806,6 +813,57 @@ def main() -> int:
             not physical_memory.get("execution_gate"):
         raise RuntimeError("sound physical-memory lifetime changed")
 
+    map_lifetime = manifest.get("map_sound_globals_lifetime", {})
+    if map_lifetime.get("storage") != \
+            "?g_51ebd4@@3PAUs_sound_globals@@A" or \
+            map_lifetime.get("buffer_size") != "?g_47f0e0@@3JA" or \
+            map_lifetime.get("startup_owner") != \
+            "?function_125690@@YAXXZ" or \
+            map_lifetime.get("teardown_owner") != \
+            "?function_1257b0@@YAXXZ" or \
+            map_lifetime.get("reset_helpers") != [
+                "?sound_mix_apply@@YAXXZ",
+                "?function_21f6d0@@YAXPBK0PBX@Z",
+                "?function_191270@@YAXXZ"] or \
+            len(map_lifetime.get("required_order", [])) != 7 or \
+            map_lifetime.get("production_score") != {
+                "before": 77,
+                "after": 77,
+                "removed": ["?g_51ebd4@@3PAUs_sound_globals@@A"],
+                "added": ["?function_1264c0@@YAXK@Z"],
+                "interpretation":
+                    "The coherent map publication/clear lifetime is "
+                    "score-neutral: one opaque mutable pointer becomes the "
+                    "exact recovered old-map disposal boundary after compact "
+                    "mix and DSP reset helpers are owned."} or \
+            "function_1264c0" not in map_lifetime.get("execution_gate", "") or \
+            not map_lifetime.get("semantics") or \
+            not map_lifetime.get("prohibited_shortcut"):
+        raise RuntimeError("sound map-globals lifetime changed")
+    map_source = (args.root / "src/sound_map_lifetime_native.cpp").read_text()
+    for fragment in [
+            "g_51ebd4 = reinterpret_cast<s_sound_globals *>",
+            "g_4e6380->master_fade = 1.0f",
+            "g_4e6380->listeners[listener_index].active = false",
+            "playback->fade_start_time = 300",
+            "function_125d60();",
+            "function_1264c0(0);",
+            "record_pool_release_all",
+            "g_51ebd4 = NULL"]:
+        if fragment not in map_source:
+            raise RuntimeError(
+                f"sound map-globals lifetime lost {fragment}")
+    reset_source = (
+        args.root / "src/sound_map_reset_helpers_native.cpp").read_text()
+    for fragment in [
+            "IDirectSound_SetEffectData",
+            "g_510c90->previous_changed = 0",
+            "memcpy(driver->effect_settings",
+            "function_21e3b0(driver->effects)",
+            "sound_system->master_fade_times[2]"]:
+        if fragment not in reset_source:
+            raise RuntimeError(f"sound map reset helper lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -856,7 +914,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 181 or len(expected_imports) != 132:
+    if len(expected_definitions) != 188 or len(expected_imports) != 133:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -903,7 +961,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [14, 62, 0, 0, 1]:
+    if [len(category) for category in categories] != [13, 62, 1, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
