@@ -202,6 +202,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_looping_voice_policy_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_looping_chunk_policy_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_looping_impulse_submit_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_looping_channel_start_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_stream_envelope_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_range_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_delete_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_free_native.cpp"

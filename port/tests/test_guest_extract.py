@@ -3748,6 +3748,15 @@ def main():
              "src/tag_function_range_native.cpp",
              "?function_13bb90@@YAMPBUs_tag_data@@MM@Z", {
                  "?function_13b390@@YAMPBXMM@Z"}),
+            ("sound-looping-channel-start.o",
+             "src/sound_looping_channel_start_native.cpp",
+             "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z", {
+                 "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
+                 "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
+                 "IDirectSoundStream_Pause",
+                 "IDirectSoundStream_SetOutputBuffer"}),
             ("sound-looping-impulse-submit.o",
              "src/sound_looping_impulse_submit_native.cpp",
              "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z", {
