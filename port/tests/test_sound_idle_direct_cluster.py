@@ -189,13 +189,20 @@ def main() -> int:
         ("src/sound_runtime_storage_native.cpp", "?g_510c90@@3PAUs_voice_effects@@A"),
         ("src/sound_runtime_storage_native.cpp", "?g_51ebe0@@3PAXA"),
         ("src/sound_runtime_storage_native.cpp", "?g_51ebe4@@3PAUs_bink_sound_settings@@A"),
+        ("src/game_state_static_allocator_native.cpp", "?function_123d40@@YAPAXPBD0J@Z"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?function_221850@@YAXXZ"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?function_2218a0@@YAXXZ"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?function_2218e0@@YAXXZ"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?function_2218f0@@YAXXZ"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?g_502118@@3PAUs_sound_class_fade@@A"),
+        ("src/sound_class_fade_lifetime_native.cpp", "?g_50211c@@3_NA"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 158:
+    if len(set(provider_symbols)) != 165:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -755,6 +762,23 @@ def main() -> int:
             not effect_state.get("execution_gate"):
         raise RuntimeError("sound-idle effect parameter state changed")
 
+    class_fades = manifest.get("sound_class_fade_lifetime_closure", {})
+    if class_fades.get("providers") != [
+            "?function_123d40@@YAPAXPBD0J@Z",
+            "?function_221850@@YAXXZ",
+            "?function_2218a0@@YAXXZ",
+            "?function_2218e0@@YAXXZ",
+            "?function_2218f0@@YAXXZ",
+            "?g_502118@@3PAUs_sound_class_fade@@A",
+            "?g_50211c@@3_NA"] or \
+            class_fades.get("record_count") != 54 or \
+            class_fades.get("record_size") != 16 or \
+            class_fades.get("allocation_bytes") != 864 or \
+            not class_fades.get("initial_state") or \
+            not class_fades.get("semantics") or \
+            not class_fades.get("execution_gate"):
+        raise RuntimeError("sound-idle class-fade lifetime changed")
+
     publications = manifest.get("runtime_publication_storage_closure", {})
     if publications.get("providers") != [
             {"symbol": "?g_4e6374@@3JA",
@@ -789,7 +813,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 170 or len(expected_imports) != 133:
+    if len(expected_definitions) != 177 or len(expected_imports) != 134:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -827,7 +851,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 89:
+    if len(expected_production_imports) != 88:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -836,7 +860,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [18, 61, 0, 0, 10]:
+    if [len(category) for category in categories] != [17, 61, 0, 0, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1001,6 +1025,43 @@ def main() -> int:
         if fragment not in effect_state_source:
             raise RuntimeError(
                 f"sound effect parameter state lost {fragment}")
+    game_state_allocator_source = (args.root /
+        "src/game_state_static_allocator_native.cpp").read_text()
+    for fragment in [
+            "long aligned_size = (size + 3) & ~3",
+            "game_state_globals.base_address +",
+            "game_state_globals.cpu_allocation_size += aligned_size",
+            "&game_state_globals.allocation_size_checksum",
+            "&aligned_size",
+            "sizeof(aligned_size)"]:
+        if fragment not in game_state_allocator_source:
+            raise RuntimeError(
+                f"game-state static allocator lost {fragment}")
+    class_fade_source = (args.root /
+        "src/sound_class_fade_lifetime_native.cpp").read_text()
+    for fragment in [
+            "sizeof(s_sound_class_fade) == 0x10",
+            "offsetof(s_sound_class_fade, time) == 0x08",
+            "offsetof(s_sound_class_fade, flags) == 0x0c",
+            "s_sound_class_fade *g_502118;",
+            "bool g_50211c;",
+            "g_502118 = (s_sound_class_fade *)function_123d40(",
+            "k_sound_class_count * sizeof(s_sound_class_fade)",
+            "memset(g_502118, 0, k_sound_class_count * sizeof(s_sound_class_fade))",
+            "g_50211c = true",
+            "i < k_sound_class_count",
+            "g_502118[i].current = 0",
+            "g_502118[i].target = 0",
+            "g_502118[i].time = 0.0f",
+            "g_50211c = false",
+            "g_502118 = NULL"]:
+        if fragment not in class_fade_source:
+            raise RuntimeError(
+                f"sound class-fade lifetime lost {fragment}")
+    lifecycle_table_source = (args.root / "src/unknown_11c1b0.cpp").read_text()
+    if "0x00221850, 0x002218f0, 0x002218a0, 0x002218e0" not in \
+            lifecycle_table_source:
+        raise RuntimeError("sound class-fade lifecycle registration changed")
     runtime_storage_source = (args.root /
         "src/sound_runtime_storage_native.cpp").read_text()
     for fragment in [

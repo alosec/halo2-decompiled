@@ -633,6 +633,34 @@
     {
       "source": "src/sound_runtime_storage_native.cpp",
       "global": "?g_51ebe4@@3PAUs_bink_sound_settings@@A"
+    },
+    {
+      "source": "src/game_state_static_allocator_native.cpp",
+      "symbol": "?function_123d40@@YAPAXPBD0J@Z"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "symbol": "?function_221850@@YAXXZ"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "symbol": "?function_2218a0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "symbol": "?function_2218e0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "symbol": "?function_2218f0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "global": "?g_502118@@3PAUs_sound_class_fade@@A"
+    },
+    {
+      "source": "src/sound_class_fade_lifetime_native.cpp",
+      "global": "?g_50211c@@3_NA"
     }
   ],
   "definitions": [
@@ -805,7 +833,14 @@
     "?g_50210c@@3PAUs_sound_cache_allocator@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebe0@@3PAXA",
-    "?g_51ebe4@@3PAUs_bink_sound_settings@@A"
+    "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?function_123d40@@YAPAXPBD0J@Z",
+    "?function_221850@@YAXXZ",
+    "?function_2218a0@@YAXXZ",
+    "?function_2218e0@@YAXXZ",
+    "?function_2218f0@@YAXXZ",
+    "?g_502118@@3PAUs_sound_class_fade@@A",
+    "?g_50211c@@3_NA"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -834,7 +869,6 @@
     "?g_4ed39d@@3_NA",
     "?g_502110@@3PAXA",
     "?g_502114@@3PAUs_record_pool@@A",
-    "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_510800_pool_base@@3KA",
     "?g_510804_pool_size@@3JA",
     "?g_510808_pool_checksum@@3KA",
@@ -940,7 +974,9 @@
     "IDirectSoundBuffer_SetDopplerFactor",
     "IDirectSoundBuffer_SetRolloffFactor",
     "IDirectSoundStream_SetHeadroom",
-    "IDirectSound_CreateSoundStream"
+    "IDirectSound_CreateSoundStream",
+    "??_C@_00CNPNBAHC@?$AA@",
+    "?game_state_globals@@3Us_game_state_globals@@A"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -955,7 +991,6 @@
     "?g_4e6470@@3JA",
     "?g_4e64a0@@3JA",
     "?g_4ed39d@@3_NA",
-    "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_510800_pool_base@@3KA",
     "?g_510804_pool_size@@3JA",
     "?g_510808_pool_checksum@@3KA",
@@ -1045,7 +1080,6 @@
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA",
       "?g_4ed39d@@3_NA",
-      "?g_502118@@3PAUs_sound_class_fade@@A",
       "?g_510800_pool_base@@3KA",
       "?g_510804_pool_size@@3JA",
       "?g_510808_pool_checksum@@3KA",
@@ -1421,11 +1455,31 @@
       "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"
     ],
     "immutable_speaker_directions": [
-      [0.7071067690849304, 0.7071067690849304, 0.0],
-      [0.7071067690849304, -0.7071067690849304, 0.0],
-      [-0.7071067690849304, 0.7071067690849304, 0.0],
-      [-0.7071067690849304, -0.7071067690849304, 0.0],
-      [0.7071067690849304, 0.0, 0.0]
+      [
+        0.7071067690849304,
+        0.7071067690849304,
+        0.0
+      ],
+      [
+        0.7071067690849304,
+        -0.7071067690849304,
+        0.0
+      ],
+      [
+        -0.7071067690849304,
+        0.7071067690849304,
+        0.0
+      ],
+      [
+        -0.7071067690849304,
+        -0.7071067690849304,
+        0.0
+      ],
+      [
+        0.7071067690849304,
+        0.0,
+        0.0
+      ]
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
@@ -1854,5 +1908,22 @@
     "initial_state": "all eight ILP32 publications are process-lifetime zero-initialized storage before recovered startup",
     "semantics": "retain exact storage for the already assembled reference-count, voice, sound-cache, DSP-image, sound-effects, and driver publication lifetimes; recovered startup publishes live objects and recovered teardown invalidates, clears, or marks them inactive in its original order",
     "execution_gate": "requires the genuine static sound arena, record pools, physical allocator and upload allocation, driver/effect objects, codec state, and audio backend; BSS ownership does not fabricate any pointed-to object or successful startup"
+  },
+  "sound_class_fade_lifetime_closure": {
+    "providers": [
+      "?function_123d40@@YAPAXPBD0J@Z",
+      "?function_221850@@YAXXZ",
+      "?function_2218a0@@YAXXZ",
+      "?function_2218e0@@YAXXZ",
+      "?function_2218f0@@YAXXZ",
+      "?g_502118@@3PAUs_sound_class_fade@@A",
+      "?g_50211c@@3_NA"
+    ],
+    "record_count": 54,
+    "record_size": 16,
+    "allocation_bytes": 864,
+    "initial_state": "pointer and active flag are process-lifetime zero-initialized storage; registered startup allocates and zeroes all 54 records before reset activates them",
+    "semantics": "the exact game-state bump allocator aligns and checksums the 864-byte reservation; reset activates the subsystem and zeroes target/current/time while preserving flags, deactivate clears the active flag, and final disposal clears the publication pointer",
+    "execution_gate": "requires a genuinely initialized game_state_globals arena and the registered lifecycle ordering; owning the publication and allocator does not fabricate arena storage or permit sound execution"
   }
 }
