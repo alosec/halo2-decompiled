@@ -2434,7 +2434,7 @@ def main() -> int:
         "native_directsound_deferred_3d_settings_owned",
         "native_sound_driver_channel_stream_storage_owned",
         "native_sound_driver_voice_buffer_storage_owned",
-        "native_sound_static_pool_bounds_owned",
+        "native_sound_static_arena_virtual_memory_owned",
         "native_directsound_buffer_creation_and_playback_owned",
         "native_sound_driver_effect_image_owned",
         "native_xbe_dsp_section_loader_owned",

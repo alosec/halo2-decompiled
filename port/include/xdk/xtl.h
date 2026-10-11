@@ -92,6 +92,8 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 #define PAGE_READONLY 0x02
 #define PAGE_READWRITE 0x04
 #define PAGE_WRITECOMBINE 0x400
+#define MEM_COMMIT 0x1000
+#define MEM_RELEASE 0x8000
 #define FILE_BEGIN 0
 #define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #define INFINITE ((DWORD)-1)
@@ -135,6 +137,9 @@ BOOL __stdcall GetDiskFreeSpaceExA(const char* root, ULARGE_INTEGER* available,
                                    ULARGE_INTEGER* total, ULARGE_INTEGER* free_bytes);
 BOOL WINAPI FileTimeToLocalFileTime(const FILETIME* file_time, FILETIME* local_file_time);
 BOOL WINAPI FileTimeToSystemTime(const FILETIME* file_time, SYSTEMTIME* system_time);
+void* WINAPI VirtualAlloc(void* address, DWORD size, DWORD allocation_type,
+                          DWORD protection);
+BOOL WINAPI VirtualFree(void* address, DWORD size, DWORD free_type);
 DWORD WINAPI SetFilePointer(HANDLE file, LONG distance, LONG* distance_high, DWORD method);
 BOOL WINAPI ReadFile(HANDLE file, void* buffer, DWORD bytes_to_read,
                      DWORD* bytes_read, void* overlapped);

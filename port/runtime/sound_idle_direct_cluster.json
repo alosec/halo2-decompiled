@@ -893,6 +893,26 @@
     {
       "source": "src/sound_data_allocator_object_native.cpp",
       "symbol": "h2_sound_data_allocator_deallocate"
+    },
+    {
+      "source": "src/sound_static_arena_lifetime_native.cpp",
+      "global": "?g_510800_pool_base@@3KA"
+    },
+    {
+      "source": "src/sound_static_arena_lifetime_native.cpp",
+      "global": "?g_510804_pool_size@@3JA"
+    },
+    {
+      "source": "src/sound_static_arena_lifetime_native.cpp",
+      "global": "?g_510808_pool_checksum@@3KA"
+    },
+    {
+      "source": "src/sound_static_arena_lifetime_native.cpp",
+      "symbol": "?sound_static_arena_initialize@@YA_NXZ"
+    },
+    {
+      "source": "src/sound_static_arena_lifetime_native.cpp",
+      "symbol": "?sound_static_arena_dispose@@YAXXZ"
     }
   ],
   "definitions": [
@@ -1039,6 +1059,9 @@
     "?g_50210c@@3PAUs_sound_cache_allocator@@A",
     "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_50211c@@3_NA",
+    "?g_510800_pool_base@@3KA",
+    "?g_510804_pool_size@@3JA",
+    "?g_510808_pool_checksum@@3KA",
     "?g_510c3c@@3PAXA",
     "?g_510c40@@3_NA",
     "?g_510c90@@3PAUs_voice_effects@@A",
@@ -1095,6 +1118,8 @@
     "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
     "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
+    "?sound_static_arena_dispose@@YAXXZ",
+    "?sound_static_arena_initialize@@YA_NXZ",
     "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
     "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
@@ -1167,9 +1192,6 @@
     "?g_4ed39d@@3_NA",
     "?g_502110@@3PAXA",
     "?g_502114@@3PAUs_record_pool@@A",
-    "?g_510800_pool_base@@3KA",
-    "?g_510804_pool_size@@3JA",
-    "?g_510808_pool_checksum@@3KA",
     "?g_510c54@@3PAUs_game_time_globals@@A",
     "?g_557c90@@3PAUs_texture_cache_file@@A",
     "?g_55aca8@@3JA",
@@ -1238,6 +1260,8 @@
     "ReleaseMutex",
     "SetFilePointer",
     "SwitchToThread",
+    "VirtualAlloc",
+    "VirtualFree",
     "WaitForSingleObject",
     "WmaCreateInMemoryDecoder",
     "XAudioDownloadEffectsImage",
@@ -1279,9 +1303,6 @@
     "?g_4e6470@@3JA",
     "?g_4e64a0@@3JA",
     "?g_4ed39d@@3_NA",
-    "?g_510800_pool_base@@3KA",
-    "?g_510804_pool_size@@3JA",
-    "?g_510808_pool_checksum@@3KA",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "DirectSoundCreate",
     "DirectSoundCreateBuffer",
@@ -1337,6 +1358,8 @@
     "IDirectSound_SetOrientation",
     "IDirectSound_SetPosition",
     "IDirectSound_SetRolloffFactor",
+    "VirtualAlloc",
+    "VirtualFree",
     "WmaCreateInMemoryDecoder",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
@@ -1351,9 +1374,6 @@
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA",
       "?g_4ed39d@@3_NA",
-      "?g_510800_pool_base@@3KA",
-      "?g_510804_pool_size@@3JA",
-      "?g_510808_pool_checksum@@3KA",
       "g_dwDirectSoundDeltaPanicCount"
     ],
     "backend_operations": [
@@ -1419,7 +1439,9 @@
       "IDirectSound_CreateSoundStream",
       "WmaCreateInMemoryDecoder",
       "IDirectSoundBuffer_SetFilter",
-      "IDirectSoundBuffer_SetI3DL2Source"
+      "IDirectSoundBuffer_SetI3DL2Source",
+      "VirtualAlloc",
+      "VirtualFree"
     ],
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
@@ -2427,5 +2449,33 @@
       "deallocation_has_no_side_effect",
       "preallocated_record_pools_retain_exact_allocator_pointer"
     ]
+  },
+  "sound_static_arena_lifetime": {
+    "source": "src/sound_static_arena_lifetime_native.cpp",
+    "providers": [
+      "?g_510800_pool_base@@3KA",
+      "?g_510804_pool_size@@3JA",
+      "?g_510808_pool_checksum@@3KA",
+      "?sound_static_arena_initialize@@YA_NXZ",
+      "?sound_static_arena_dispose@@YAXXZ"
+    ],
+    "retail_startup_function": "0x00012000",
+    "retail_teardown_function": "0x00012080",
+    "capacity": "0x23000",
+    "allocation_type": "0x1000",
+    "protection": "0x04",
+    "release_type": "0x8000",
+    "retail_reference_audit": {
+      "base_encoded_text_references": 11,
+      "size_encoded_text_references": 18,
+      "checksum_encoded_text_references": 9,
+      "publication": "VirtualAlloc result published before subsystem and sound startup",
+      "allocation_accounting": "eight recovered allocation sites advance size and fold each aligned size into CRC-32",
+      "teardown": "VirtualFree after sound and subsystem teardown, followed by clearing base, size, and checksum",
+      "final_size_validation": false,
+      "final_checksum_validation": false
+    },
+    "semantics": "own the exact zero-initialized ILP32 base/size/checksum storage together with a 0x23000-byte committed read/write allocation and release lifetime; preserve allocation accounting without inventing a retail final-size or checksum comparison",
+    "execution_gate": "requires genuine VirtualAlloc and VirtualFree platform ownership plus ordered publication before function_1253d0 and release after function_125600; the dormant cluster remains unlinked and does not enable sound"
   }
 }

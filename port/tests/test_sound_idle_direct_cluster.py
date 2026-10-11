@@ -254,13 +254,18 @@ def main() -> int:
         ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_vtable"),
         ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_allocate"),
         ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_deallocate"),
+        ("src/sound_static_arena_lifetime_native.cpp", "?g_510800_pool_base@@3KA"),
+        ("src/sound_static_arena_lifetime_native.cpp", "?g_510804_pool_size@@3JA"),
+        ("src/sound_static_arena_lifetime_native.cpp", "?g_510808_pool_checksum@@3KA"),
+        ("src/sound_static_arena_lifetime_native.cpp", "?sound_static_arena_initialize@@YA_NXZ"),
+        ("src/sound_static_arena_lifetime_native.cpp", "?sound_static_arena_dispose@@YAXXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 223:
+    if len(set(provider_symbols)) != 228:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -1136,6 +1141,58 @@ def main() -> int:
         if fragment not in allocator_source:
             raise RuntimeError(f"sound data allocator object lost {fragment}")
 
+    arena = manifest.get("sound_static_arena_lifetime", {})
+    audit = arena.get("retail_reference_audit", {})
+    if arena.get("source") != \
+            "src/sound_static_arena_lifetime_native.cpp" or \
+            arena.get("providers") != [
+                "?g_510800_pool_base@@3KA",
+                "?g_510804_pool_size@@3JA",
+                "?g_510808_pool_checksum@@3KA",
+                "?sound_static_arena_initialize@@YA_NXZ",
+                "?sound_static_arena_dispose@@YAXXZ"] or \
+            arena.get("retail_startup_function") != "0x00012000" or \
+            arena.get("retail_teardown_function") != "0x00012080" or \
+            arena.get("capacity") != "0x23000" or \
+            arena.get("allocation_type") != "0x1000" or \
+            arena.get("protection") != "0x04" or \
+            arena.get("release_type") != "0x8000" or \
+            audit.get("base_encoded_text_references") != 11 or \
+            audit.get("size_encoded_text_references") != 18 or \
+            audit.get("checksum_encoded_text_references") != 9 or \
+            audit.get("final_size_validation") is not False or \
+            audit.get("final_checksum_validation") is not False or \
+            not audit.get("publication") or \
+            not audit.get("allocation_accounting") or \
+            not audit.get("teardown") or \
+            not arena.get("semantics") or \
+            not arena.get("execution_gate"):
+        raise RuntimeError("sound static arena lifetime changed")
+    arena_source = (args.root / arena["source"]).read_text()
+    for fragment in [
+            "dword g_510800_pool_base;",
+            "long g_510804_pool_size;",
+            "dword g_510808_pool_checksum;",
+            "k_sound_static_arena_size = 0x23000",
+            "VirtualAlloc(NULL, k_sound_static_arena_size",
+            "MEM_COMMIT, PAGE_READWRITE",
+            "g_510804_pool_size = 0;",
+            "g_510808_pool_checksum = 0;",
+            "return arena != NULL;",
+            "if (g_510800_pool_base)",
+            "VirtualFree((void *)(uintptr_t)g_510800_pool_base, 0, MEM_RELEASE)",
+            "static_assert(sizeof(void *) == 4"]:
+        if fragment not in arena_source:
+            raise RuntimeError(f"sound static arena lifetime lost {fragment}")
+    xdk_header = (args.root / "port/include/xdk/xtl.h").read_text()
+    for fragment in [
+            "#define MEM_COMMIT 0x1000",
+            "#define MEM_RELEASE 0x8000",
+            "void* WINAPI VirtualAlloc(void* address, DWORD size, DWORD allocation_type,",
+            "BOOL WINAPI VirtualFree(void* address, DWORD size, DWORD free_type);"]:
+        if fragment not in xdk_header:
+            raise RuntimeError(f"sound static arena platform ABI lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 14 or \
             math_bridge.get("routes") != [
@@ -1186,7 +1243,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 235 or len(expected_imports) != 132:
+    if len(expected_definitions) != 240 or len(expected_imports) != 131:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -1213,6 +1270,17 @@ def main() -> int:
         raise RuntimeError(
             "sound-idle direct imports changed: " +
             repr(sorted(actual_imports)))
+    typed_symbols = {
+        line.split()[0].removeprefix("_"): line.split()[1]
+        for line in subprocess.check_output([
+            args.llvm_nm, "--defined-only", "--extern-only", "--format=posix",
+            args.cluster_object], text=True).splitlines()
+        if line
+    }
+    for symbol in arena["providers"][:3]:
+        if typed_symbols.get(symbol) != "B":
+            raise RuntimeError(
+                f"sound static arena publication is not BSS: {symbol}")
 
     relocations = subprocess.check_output(
         [args.llvm_nm.with_name("llvm-readelf"), "-r", args.cluster_object],
@@ -1275,7 +1343,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 73:
+    if len(expected_production_imports) != 72:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1284,7 +1352,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [9, 63, 0, 0, 1]:
+    if [len(category) for category in categories] != [6, 65, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
