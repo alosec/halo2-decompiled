@@ -1420,6 +1420,94 @@ def main() -> int:
         if fragment not in stage_native:
             raise RuntimeError(f"native voice stage lifetime lost {fragment}")
 
+    busy_lifetime = manifest.get("busy_state_lifetime_frontier", {})
+    if busy_lifetime.get("storage") != [
+            {"symbol": "?g_4ed39d@@3_NA",
+             "source": "src/unknown_12be90.cpp", "size": 1,
+             "initial_state": "false",
+             "role": "pending map/session transition"},
+            {"symbol": "?g_4e6470@@3JA",
+             "source": "src/unknown_12be90.cpp", "size": 4,
+             "initial_state": 0,
+             "role": "texture/cache transition countdown"},
+            {"symbol": "?g_4e64a0@@3JA",
+             "source": "src/unknown_12de70.cpp", "size": 4,
+             "initial_state": 0,
+             "role": "geometry streaming urgency countdown"}] or \
+            busy_lifetime.get("production_score_before") != 76 or \
+            busy_lifetime.get("production_score_after") != 76 or \
+            busy_lifetime.get("observer") != {
+                "function": "?function_12be90@@YA_NXZ",
+                "address": "0x0012be90", "size": 107} or \
+            len(busy_lifetime.get("geometry_consumers", [])) != 5 or \
+            not busy_lifetime.get("semantics") or \
+            not busy_lifetime.get("prohibited_shortcut"):
+        raise RuntimeError("busy-state lifetime frontier changed")
+    pending = busy_lifetime.get("map_transition_pending", {})
+    countdowns = busy_lifetime.get("streaming_countdowns", {})
+    if [entry.get("address") for entry in pending.get("publishers", [])] != [
+            "0x0012bf00", "0x0018e790", "0x0018eaa0", "0x00121fc0"] or \
+            pending.get("consumer") != {
+                "function": "?function_18e810@@YAXXZ",
+                "address": "0x0018e810", "size": 160} or \
+            pending.get("coupled_state") != [
+                "?g_4ed39e@@3_NA", "?g_4ed3a0@@3KA",
+                "?g_4ed3a8@@3Us_game_options@@A",
+                "?main_globals@@3Us_main_globals@@A"] or \
+            countdowns.get("publisher", {}).get("value") != 3 or \
+            countdowns.get("new_map_reset", {}).get("address") != \
+            "0x0018ec60" or \
+            countdowns.get("frame_tick", {}).get("address") != \
+            "0x002234e0" or \
+            countdowns.get("frame_owner", {}).get("address") != \
+            "0x00223240" or \
+            countdowns.get("coupled_state") != [
+                "?g_4e6474@@3JA", "?g_4e64a4@@3JA",
+                "?g_4e64ac@@3JA", "?g_4e6098@@3_NA",
+                "?g_4e64b0@@3_NA"] or \
+            not pending.get("semantics") or \
+            not countdowns.get("semantics"):
+        raise RuntimeError("busy-state transition map changed")
+    busy_owner = (args.root / "src/unknown_12be90.cpp").read_text()
+    transition_source = (args.root / "src/unknown_18e700.cpp").read_text()
+    streaming_source = (args.root / "src/unknown_16e290.cpp").read_text()
+    frame_source = (args.root / "src/unknown_223240.cpp").read_text()
+    geometry_source = (args.root / "src/unknown_12de70.cpp").read_text()
+    for fragment in [
+            "bool g_4ed39d;", "long g_4e6470;",
+            "if (g_4ed39d)", "g_4e6470 > 0 || g_4e64a0 > 0",
+            "g_4ed39e = true;", "g_4ed39d = true;",
+            "g_4ed3a0 = GetTickCount()"]:
+        if fragment not in busy_owner:
+            raise RuntimeError(f"busy-state owner lost {fragment}")
+    for fragment in [
+            "bool local_0 = g_4ed39d",
+            "g_4ed39d && !g_4ed39e && g_51ea10 > 0",
+            "!window_manager_has_pause_screen() && local_0",
+            "g_4ed39d = false", "g_4ed39e = false",
+            "g_4ed3a4 = 0"]:
+        if fragment not in transition_source:
+            raise RuntimeError(f"busy transition consumer lost {fragment}")
+    for fragment in [
+            "g_4e64a0 = 3;", "g_4e6470 = 3;",
+            "g_4e64a4 = 1;", "g_4e6474 = 1;",
+            "g_4e64a4 = 0;", "g_4e6474 = 0;"]:
+        if fragment not in streaming_source:
+            raise RuntimeError(f"busy countdown publication lost {fragment}")
+    for fragment in [
+            "if (g_4e6470 > 0)", "--g_4e6470",
+            "if (g_4e64a0 > 0)", "--g_4e64a0",
+            "g_4e6470 <= 0 && g_4e64a0 <= 0",
+            "main_time_wait_for_vblank()"]:
+        if fragment not in frame_source:
+            raise RuntimeError(f"busy frame countdown lost {fragment}")
+    for fragment in [
+            "long g_4e64a0;", "g_4e64a0 = 0;",
+            "g_4e64a0 > 0 && load && !optional && !wait",
+            "g_4e64a0 == 1 && urgent", "g_4e64a0 = 3;"]:
+        if fragment not in geometry_source:
+            raise RuntimeError(f"geometry busy lifetime lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 15 or \
             math_bridge.get("routes") != [

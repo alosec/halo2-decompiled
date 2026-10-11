@@ -2868,6 +2868,139 @@
     "remaining_code_gate": "?function_53a20@@YGXKPAXK@Z",
     "execution_gate": "The exact dormant lifetime remains absent from production and uncallable until genuine XHV backend services and the recovered local-chat packet route are assembled; production sound and blocking texture residency remain disabled."
   },
+  "busy_state_lifetime_frontier": {
+    "storage": [
+      {
+        "symbol": "?g_4ed39d@@3_NA",
+        "source": "src/unknown_12be90.cpp",
+        "size": 1,
+        "initial_state": "false",
+        "role": "pending map/session transition"
+      },
+      {
+        "symbol": "?g_4e6470@@3JA",
+        "source": "src/unknown_12be90.cpp",
+        "size": 4,
+        "initial_state": 0,
+        "role": "texture/cache transition countdown"
+      },
+      {
+        "symbol": "?g_4e64a0@@3JA",
+        "source": "src/unknown_12de70.cpp",
+        "size": 4,
+        "initial_state": 0,
+        "role": "geometry streaming urgency countdown"
+      }
+    ],
+    "map_transition_pending": {
+      "publishers": [
+        {
+          "function": "?function_12bf00@@YAXXZ",
+          "address": "0x0012bf00",
+          "size": 57
+        },
+        {
+          "function": "?function_18e790@@YAXPBUs_game_options@@@Z",
+          "address": "0x0018e790",
+          "size": 114
+        },
+        {
+          "function": "?function_18eaa0@@YA_NPBUs_18eaa0@@@Z",
+          "address": "0x0018eaa0",
+          "size": 220
+        },
+        {
+          "function": "?function_121fc0@@YAXXZ",
+          "address": "0x00121fc0",
+          "size": 773
+        }
+      ],
+      "consumer": {
+        "function": "?function_18e810@@YAXXZ",
+        "address": "0x0018e810",
+        "size": 160
+      },
+      "coupled_state": [
+        "?g_4ed39e@@3_NA",
+        "?g_4ed3a0@@3KA",
+        "?g_4ed3a8@@3Us_game_options@@A",
+        "?main_globals@@3Us_main_globals@@A"
+      ],
+      "semantics": "publish pending together with null-options policy and timestamp, preserve copied game options or map-failure/font-failure state, consume only outside the pause screen and after dependent loading drains, execute the matching reset/session path, then clear both pending flags and transition time state"
+    },
+    "streaming_countdowns": {
+      "publisher": {
+        "function": "?function_16f200@@YAXXZ",
+        "address": "0x0016f200",
+        "size": 117,
+        "value": 3
+      },
+      "new_map_reset": {
+        "function": "?function_18ec60@@YAX_NPBD@Z",
+        "address": "0x0018ec60",
+        "size": 160
+      },
+      "frame_tick": {
+        "function": "?function_2234e0@@YAXXZ",
+        "address": "0x002234e0",
+        "size": 575
+      },
+      "frame_owner": {
+        "function": "?function_223240@@YAXXZ",
+        "address": "0x00223240",
+        "size": 92
+      },
+      "coupled_state": [
+        "?g_4e6474@@3JA",
+        "?g_4e64a4@@3JA",
+        "?g_4e64ac@@3JA",
+        "?g_4e6098@@3_NA",
+        "?g_4e64b0@@3_NA"
+      ],
+      "semantics": "publish both countdowns at three with the requested transition kind, decrement each once in the real render/frame owner, gate texture blocking and geometry urgency independently, and wait for both to expire before the ordinary post-vblank path"
+    },
+    "geometry_consumers": [
+      {
+        "function": "?function_12de70@@YA_NPAUs_geometry_block_info@@K@Z",
+        "address": "0x0012de70",
+        "size": 591,
+        "role": "urgent/blocking geometry request policy"
+      },
+      {
+        "function": "?function_12dcb0@@YA_NPAUs_geometry_block_info@@@Z",
+        "address": "0x0012dcb0",
+        "size": 204,
+        "role": "predicted geometry request admission"
+      },
+      {
+        "function": "?geometry_cache_initialize_for_new_map@@YAXXZ",
+        "address": "0x0012daf0",
+        "size": 68,
+        "role": "new-map counter and cache reset"
+      },
+      {
+        "function": "?function_12e480@@YAXXZ",
+        "address": "0x0012e480",
+        "size": 344,
+        "role": "low-memory cache flush and countdown restart"
+      },
+      {
+        "function": "?function_223080@@YAXJJJPAUs_223080@@JJPBUs_223081@@@Z",
+        "address": "0x00223080",
+        "size": 441,
+        "role": "render-time geometry streaming policy"
+      }
+    ],
+    "observer": {
+      "function": "?function_12be90@@YA_NXZ",
+      "address": "0x0012be90",
+      "size": 107
+    },
+    "production_score_before": 76,
+    "production_score_after": 76,
+    "semantics": "these three globals are a cross-system map/session/cache/render lifetime; source-own them only with their coupled publishers, frame decrement/reset rules, consumers, and terminal clears",
+    "prohibited_shortcut": "do not add standalone BSS definitions, clear pending without the paired options/null-policy/timestamp state, decrement either countdown outside function_2234e0, merge the two countdowns, or fabricate completed cache work"
+  },
   "native_virtual_memory_bridge": {
     "host_abi_version": 15,
     "guest_wrappers": [
