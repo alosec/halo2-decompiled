@@ -405,6 +405,10 @@
     {
       "source": "src/sound_stream_flush_native.cpp",
       "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/voice_xhv_dispose_native.cpp",
+      "symbol": "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"
     }
   ],
   "definitions": [
@@ -520,9 +524,14 @@
     "?sound_voice_release@@YAXJ@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
     "?sound_voices_update_chunks@@YAXXZ",
-    "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z"
+    "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
+    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"
   ],
   "imports": [
+    "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+    "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+    "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
+    "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
@@ -561,7 +570,6 @@
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
     "?voice_start_engine@@YAXXZ",
-    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "GetTickCount",
     "IDirectSoundBuffer_GetStatus",
@@ -624,6 +632,10 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
+    "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+    "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+    "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
+    "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -640,7 +652,6 @@
     "?g_51ebd8@@3PAXA",
     "?g_51ebdc@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "DirectSoundDoWork",
     "IDirectSoundBuffer_GetStatus",
@@ -981,6 +992,32 @@
       "live DirectSound stream mixbin operations",
       "live DirectSound buffer mixbin operations",
       "valid bounded mixbin indices and pair counts"
+    ]
+  },
+  "xhv_dispose_closure": {
+    "source": "src/voice_xhv_dispose_native.cpp",
+    "provider": "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
+    "checked_layout": {
+      "xuid_size": 12,
+      "initialized_offset": 4,
+      "flags_offset": 12,
+      "engine_offset": 16
+    },
+    "retail_verified_policy": {
+      "local_ports": 4,
+      "remote_capacity": 30,
+      "remote_enabled_mask": 4,
+      "user_flags": 0,
+      "local_unregister": "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
+      "remote_enumeration": "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+      "remote_unregister": "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
+      "engine_release": "?Release@CXHVEngine@XHVNamespace@@QAGKXZ"
+    },
+    "semantics": "preserve four local-talker unregisters, optional successful remote enumeration and guarded unregisters, live engine release and clear, and terminal initialized clear",
+    "execution_gates": [
+      "initialized XHV voice object",
+      "genuine local and remote talker registration ownership",
+      "live concrete XHV engine lifetime"
     ]
   },
   "stream_flush_closure": {

@@ -3958,6 +3958,13 @@ def main():
                  "IDirectSoundStream_FlushEx",
                  "IDirectSoundStream_GetStatus",
                  "IDirectSoundStream_Pause"}),
+            ("voice-xhv-dispose.o",
+             "src/voice_xhv_dispose_native.cpp",
+             "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z", {
+                 "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+                 "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+                 "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
+                 "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z"}),
             ("sound-stream-reset.o",
              "src/sound_stream_reset_native.cpp",
              "?sound_stream_reset@@YAXPAUs_sound_stream@@@Z",

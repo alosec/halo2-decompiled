@@ -132,13 +132,14 @@ def main() -> int:
         ("src/unknown_12a1b0.cpp", "g_44a16c"),
         ("src/unknown_12a1b0.cpp", "g_44a188"),
         ("src/sound_stream_flush_native.cpp", "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z"),
+        ("src/voice_xhv_dispose_native.cpp", "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 101:
+    if len(set(provider_symbols)) != 102:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -370,6 +371,42 @@ def main() -> int:
             not mixbins.get("semantics") or \
             len(mixbins.get("execution_gates", [])) != 3:
         raise RuntimeError("sound-idle mixbin submission closure changed")
+    xhv_dispose = manifest.get("xhv_dispose_closure", {})
+    if xhv_dispose.get("source") != "src/voice_xhv_dispose_native.cpp" or \
+            xhv_dispose.get("provider") != \
+            "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z" or \
+            xhv_dispose.get("checked_layout") != {
+                "xuid_size": 12,
+                "initialized_offset": 4,
+                "flags_offset": 12,
+                "engine_offset": 16
+            } or xhv_dispose.get("retail_verified_policy") != {
+                "local_ports": 4,
+                "remote_capacity": 30,
+                "remote_enabled_mask": 4,
+                "user_flags": 0,
+                "local_unregister":
+                    "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
+                "remote_enumeration":
+                    "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+                "remote_unregister":
+                    "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
+                "engine_release":
+                    "?Release@CXHVEngine@XHVNamespace@@QAGKXZ"
+            } or not xhv_dispose.get("semantics") or \
+            len(xhv_dispose.get("execution_gates", [])) != 3:
+        raise RuntimeError("sound-idle XHV disposal closure changed")
+    xhv_source = (args.root / xhv_dispose["source"]).read_text()
+    for fragment in [
+            "for (dword port = 0; port < 4; port++)",
+            "_XUID talkers[30]",
+            "xhv_get_remote_talkers",
+            "xhv_unregister_remote_talker",
+            "xhv_release(xhv->engine)",
+            "xhv->engine = 0",
+            "xhv->initialized = false"]:
+        if fragment not in xhv_source:
+            raise RuntimeError(f"sound-idle XHV disposal lost {fragment}")
     stream_flush = manifest.get("stream_flush_closure", {})
     if stream_flush.get("source") != "src/sound_stream_flush_native.cpp" or \
             stream_flush.get("provider") != \
@@ -546,7 +583,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 113 or len(expected_imports) != 96:
+    if len(expected_definitions) != 114 or len(expected_imports) != 99:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -582,7 +619,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 61:
+    if len(expected_production_imports) != 64:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

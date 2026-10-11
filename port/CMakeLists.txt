@@ -212,6 +212,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_stream_envelope_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_stream_flush_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_range_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/voice_xhv_dispose_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_delete_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_free_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_release_native.cpp"
