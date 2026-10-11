@@ -345,6 +345,22 @@
     {
       "source": "src/sound_looping_channel_start_native.cpp",
       "symbol": "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z"
+    },
+    {
+      "source": "src/sound_driver_filter_helpers_native.cpp",
+      "symbol": "?function_21e330@@YAJM@Z"
+    },
+    {
+      "source": "src/sound_driver_filter_helpers_native.cpp",
+      "symbol": "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z"
+    },
+    {
+      "source": "src/sound_driver_filter_coefficients_native.cpp",
+      "symbol": "?sound_filter_frequency_coefficient@@YAJM@Z"
+    },
+    {
+      "source": "src/sound_driver_filter_coefficients_native.cpp",
+      "symbol": "?sound_filter_gain_coefficient@@YAKM@Z"
     }
   ],
   "definitions": [
@@ -399,6 +415,8 @@
     "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z",
     "?function_2195f0@@YAMM@Z",
     "?function_2197f0@@YAJM@Z",
+    "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z",
+    "?function_21e330@@YAJM@Z",
     "?function_21ec00@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
@@ -421,6 +439,8 @@
     "?sound_cache_new_frame@@YAXXZ",
     "?sound_definition_gain_lower@@YAJPBUs_sound_definition@@@Z",
     "?sound_definition_gain_upper@@YAJPBUs_sound_definition@@@Z",
+    "?sound_filter_frequency_coefficient@@YAJM@Z",
+    "?sound_filter_gain_coefficient@@YAKM@Z",
     "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
     "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
@@ -511,6 +531,7 @@
     "XLoadSection",
     "acos",
     "exp",
+    "expf",
     "fabs",
     "fmod",
     "g_444c84",
@@ -522,7 +543,9 @@
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "log",
     "log10",
+    "logf",
     "pow",
+    "sinf",
     "sqrt"
   ],
   "production_linked": false,
@@ -570,12 +593,15 @@
     "XLoadSection",
     "acos",
     "exp",
+    "expf",
     "fmod",
     "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
     "log",
     "log10",
-    "pow"
+    "logf",
+    "pow",
+    "sinf"
   ],
   "production_inadequate_resolutions": [
     {
@@ -821,6 +847,16 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "channel_parameter_scalar_closure": {
+    "providers": [
+      "?function_21e330@@YAJM@Z",
+      "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z",
+      "?sound_filter_frequency_coefficient@@YAJM@Z",
+      "?sound_filter_gain_coefficient@@YAKM@Z"
+    ],
+    "semantics": "preserve randomized interpolated filter/LFO parameters, exponential decibel-to-DSP conversion, frequency response encoding, and gain coefficient saturation",
+    "execution_gate": "genuine channel parameter submission and live DirectSound stream filter/LFO objects"
   },
   "looping_channel_start_closure": {
     "providers": [
