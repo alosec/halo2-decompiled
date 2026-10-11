@@ -181,13 +181,21 @@ def main() -> int:
         ("src/unknown_12a1b0.cpp", "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@"),
         ("src/unknown_21d110.cpp", "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"),
         ("src/sound_effect_parameters_state_native.cpp", "?g_47005c@@3Us_sound_effect_parameters@@A"),
+        ("src/sound_runtime_storage_native.cpp", "?g_4e6374@@3JA"),
+        ("src/sound_runtime_storage_native.cpp", "?g_4e6378@@3PAUs_sound_voice@@A"),
+        ("src/sound_runtime_storage_native.cpp", "?g_502104@@3PAUs_record_pool@@A"),
+        ("src/sound_runtime_storage_native.cpp", "?g_502108@@3KA"),
+        ("src/sound_runtime_storage_native.cpp", "?g_50210c@@3PAUs_sound_cache_allocator@@A"),
+        ("src/sound_runtime_storage_native.cpp", "?g_510c90@@3PAUs_voice_effects@@A"),
+        ("src/sound_runtime_storage_native.cpp", "?g_51ebe0@@3PAXA"),
+        ("src/sound_runtime_storage_native.cpp", "?g_51ebe4@@3PAUs_bink_sound_settings@@A"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 150:
+    if len(set(provider_symbols)) != 158:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -747,9 +755,41 @@ def main() -> int:
             not effect_state.get("execution_gate"):
         raise RuntimeError("sound-idle effect parameter state changed")
 
+    publications = manifest.get("runtime_publication_storage_closure", {})
+    if publications.get("providers") != [
+            {"symbol": "?g_4e6374@@3JA",
+             "publication": "sound system reference count",
+             "owners": "function_1253d0 / function_125600"},
+            {"symbol": "?g_4e6378@@3PAUs_sound_voice@@A",
+             "publication": "73-entry static runtime voice publication",
+             "owners": "function_1253d0 / function_125600"},
+            {"symbol": "?g_502104@@3PAUs_record_pool@@A",
+             "publication": "512-entry sound cache record-pool publication",
+             "owners": "sound_cache_initialize / function_2186b0"},
+            {"symbol": "?g_502108@@3KA",
+             "publication": "3 MiB sound cache upload-base publication",
+             "owners": "sound_cache_initialize / function_2186b0"},
+            {"symbol": "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+             "publication": "sound physical-cache allocator publication",
+             "owners": "sound_cache_initialize / function_2186b0"},
+            {"symbol": "?g_510c90@@3PAUs_voice_effects@@A",
+             "publication": "15-effect DSP image state publication",
+             "owners": "function_191300 / driver teardown ownership"},
+            {"symbol": "?g_51ebe0@@3PAXA",
+             "publication": "16-entry sound-effects record-pool publication",
+             "owners": "sound_effects_initialize / function_125600"},
+            {"symbol": "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+             "publication": "0x2ad8 driver-state publication",
+             "owners": "sound_driver_device_startup / function_21eae0"}] or \
+            publications.get("storage_bytes") != 32 or \
+            not publications.get("initial_state") or \
+            not publications.get("semantics") or \
+            not publications.get("execution_gate"):
+        raise RuntimeError("sound-idle runtime publication storage changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 162 or len(expected_imports) != 141:
+    if len(expected_definitions) != 170 or len(expected_imports) != 133:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -787,7 +827,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 97:
+    if len(expected_production_imports) != 89:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -796,7 +836,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [26, 61, 0, 0, 10]:
+    if [len(category) for category in categories] != [18, 61, 0, 0, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -961,6 +1001,50 @@ def main() -> int:
         if fragment not in effect_state_source:
             raise RuntimeError(
                 f"sound effect parameter state lost {fragment}")
+    runtime_storage_source = (args.root /
+        "src/sound_runtime_storage_native.cpp").read_text()
+    for fragment in [
+            "long g_4e6374;",
+            "s_sound_voice *g_4e6378;",
+            "s_record_pool *g_502104;",
+            "dword g_502108;",
+            "s_sound_cache_allocator *g_50210c;",
+            "s_voice_effects *g_510c90;",
+            "void *g_51ebe0;",
+            "s_bink_sound_settings *g_51ebe4;"]:
+        if fragment not in runtime_storage_source:
+            raise RuntimeError(
+                f"sound runtime publication storage lost {fragment}")
+    publication_lifetimes = {
+        "src/sound_system_startup_native.cpp": [
+            "if (g_4e6374 == 0)",
+            "g_4e6378 = reinterpret_cast<s_sound_voice *>(voices)",
+            "g_4e6374++",
+            "if (--g_4e6374 == 0)",
+            "g_4e6378 = NULL",
+            "g_51ebe0 = NULL"],
+        "src/unknown_218850.cpp": [
+            'g_502104 = data_new_inlined("xbox sound"',
+            "g_50210c = (s_sound_cache_allocator *)physical",
+            "g_502108 = (dword)physical_memory_malloc_fixed(0x300000"],
+        "src/sound_cache_dispose.cpp": [
+            "data_dispose(g_502104)",
+            "((s_physical_object *)g_50210c)->allocator->deallocate(g_50210c)",
+            "g_502108 = 0"],
+        "src/sound_effect_image_startup_native.cpp": [
+            "g_510c90 = effects"],
+        "src/unknown_21d110.cpp": [
+            'g_51ebe0 = function_11cc20(0x10, "sounds effects"'],
+        "src/sound_driver_device_startup_native.cpp": [
+            "g_51ebe4 = reinterpret_cast<s_bink_sound_settings *>(memory)"],
+        "src/sound_driver_teardown_native.cpp": [
+            "globals->initialized = false"]}
+    for source, fragments in publication_lifetimes.items():
+        text = (args.root / source).read_text()
+        for fragment in fragments:
+            if fragment not in text:
+                raise RuntimeError(
+                    f"sound runtime publication lifetime lost {fragment}")
     diagnostic_sources = {
         "src/unknown_218850.cpp": [
             'data_new_inlined("xbox sound", 0x200',

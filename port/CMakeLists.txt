@@ -227,6 +227,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_driver_effect_buffers_startup_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_effects_install_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_effect_parameters_state_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_runtime_storage_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_silence_buffer_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_channel_shutdown_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_stream_stop_native.cpp"
