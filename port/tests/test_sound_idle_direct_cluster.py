@@ -634,6 +634,65 @@ def main() -> int:
         manifest.get("production_score_imports", []))
     if len(expected_production_imports) != 63:
         raise RuntimeError("sound-idle production score ratchet changed")
+    runtime_frontier = manifest.get("remaining_runtime_frontier", {})
+    categories = [
+        runtime_frontier.get("mutable_lifetimes", []),
+        runtime_frontier.get("backend_operations", []),
+        runtime_frontier.get("numeric_boundaries", [])]
+    if [len(category) for category in categories] != [17, 36, 10]:
+        raise RuntimeError("sound-idle runtime frontier category changed")
+    flattened = [symbol for category in categories for symbol in category]
+    if len(flattened) != len(set(flattened)) or \
+            set(flattened) != expected_production_imports:
+        raise RuntimeError(
+            "sound-idle runtime frontier no longer partitions production")
+    controller = runtime_frontier.get("controller_storage_lifetime", {})
+    if controller.get("storage") != "?g_51ebdc@@3PAXA" or \
+            controller.get("record_pool") != "?g_51ebd8@@3PAXA" or \
+            controller.get("initializer") != \
+            "?looping_sound_controllers_initialize@@YA_NXZ" or \
+            controller.get("startup_owner") != \
+            "?function_1253d0@@YAXXZ" or \
+            controller.get("teardown_owner") != \
+            "?function_125600@@YAXXZ" or \
+            controller.get("capacity") != 64 or \
+            controller.get("alignment") != 4 or \
+            len(controller.get("required_order", [])) != 7 or \
+            not controller.get("semantics") or \
+            not controller.get("prohibited_shortcut"):
+        raise RuntimeError("sound-idle controller storage lifetime changed")
+    controller_source = (args.root / controller["source"]).read_text()
+    teardown_source = (args.root / controller["teardown_source"]).read_text()
+    for fragment in [
+            "looping_sound_controllers_initialize(void)",
+            "function_11cc20(64, \"sound playback controllers\"",
+            "((dword)top + 3) & ~3",
+            "function_163ba0(&g_510808_pool_checksum",
+            "g_51ebdc = memory",
+            "record_pool_release_all(CONTROLLERS)"]:
+        if fragment not in controller_source:
+            raise RuntimeError(
+                f"sound-idle controller initialization lost {fragment}")
+    startup_body = teardown_source[
+        teardown_source.index("// @retail 0x1253d0"):]
+    startup_order = [
+        startup_body.index("looping_sound_controllers_initialize()"),
+        startup_body.index("function_21a0c0()"),
+        startup_body.index("sound_effects_initialize()"),
+        startup_body.index("sound_voices_initialize("),
+        startup_body.index("function_21e4b0(&counts)"),
+        startup_body.index("system->initialized = true")]
+    if startup_order != sorted(startup_order):
+        raise RuntimeError("sound-idle controller startup order changed")
+    for fragment in [
+            "void function_125600(void)",
+            "if (g_51ebd8)",
+            "g_51ebd8 = NULL",
+            "if (g_51ebdc)",
+            "g_51ebdc = NULL"]:
+        if fragment not in teardown_source:
+            raise RuntimeError(
+                f"sound-idle controller teardown lost {fragment}")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
             "provider": "port/runtime/guest_online_runtime.cpp",
