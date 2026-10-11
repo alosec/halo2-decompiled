@@ -2477,5 +2477,183 @@
     },
     "semantics": "own the exact zero-initialized ILP32 base/size/checksum storage together with a 0x23000-byte committed read/write allocation and release lifetime; preserve allocation accounting without inventing a retail final-size or checksum comparison",
     "execution_gate": "requires genuine VirtualAlloc and VirtualFree platform ownership plus ordered publication before function_1253d0 and release after function_125600; the dormant cluster remains unlinked and does not enable sound"
+  },
+  "voice_runtime_lifetime_frontier": {
+    "source_files": [
+      "src/network_voice.cpp",
+      "src/unknown_053310.cpp",
+      "src/unknown_453c00.cpp",
+      "include/network_voice.h",
+      "include/globals.h"
+    ],
+    "process_objects": [
+      {
+        "symbol": "?g_476fbc@@3Vc_physical_memory_source@@A",
+        "retail_address": "0x00476fbc",
+        "size": "0x08",
+        "table_address": "0x004508fc",
+        "initial_field04": 2,
+        "table_slots": [
+          "0x000531b0 allocate from physical-memory top",
+          "0x00072c70 inert release"
+        ]
+      },
+      {
+        "symbol": "?g_476fc8@@3Vc_voice_xhv@@A",
+        "retail_address": "0x00476fc8",
+        "size": "0x90",
+        "table_address": "0x0045095c",
+        "table_slots": [
+          "0x000555f0 LocalChatDataReady",
+          "0x000555b0 CommunicatorStatusUpdate",
+          "0x00055630 SpeechRecognized",
+          "0x00055620 MicrophoneRawDataReady",
+          "0x00055640 VoiceMailDataReady",
+          "0x00055680 VoiceMailStopped"
+        ]
+      },
+      {
+        "symbol": "?g_4c9878@@3Us_voice_globals@@A",
+        "retail_address": "0x004c9878",
+        "size": "0x144",
+        "initial_state": "zero before function_53210"
+      },
+      {
+        "symbol": "?g_5259b8@@3Us_voice_player_values@@A",
+        "retail_address": "0x005259b8",
+        "size": "0x44",
+        "initial_state": "zero before function_53210"
+      },
+      {
+        "symbol": "?g_525a00@@3Us_voice_channels@@A",
+        "retail_address": "0x00525a00",
+        "size": "0x1704",
+        "initial_state": "zero before function_53210"
+      },
+      {
+        "symbol": "?g_527104@@3Us_voice_routing@@A",
+        "retail_address": "0x00527104",
+        "size": "0x218",
+        "initial_state": "zero before function_53210"
+      },
+      {
+        "symbol": "?g_52731c@@3PAW4XHV_PROCESSING_MODE@@A",
+        "retail_address": "0x0052731c",
+        "size": "0x10",
+        "initial_state": "four zero processing-mode handles before XHV ownership"
+      }
+    ],
+    "global_initializer": {
+      "function": "?function_53210@@YAXXZ",
+      "retail_address": "0x00053210",
+      "size": 120,
+      "dependencies": [
+        "?voice_channels_initialize@@YAXPAUs_voice_channels@@@Z",
+        "?voice_player_settings_initialize@@YAXPAUs_voice_player_settings@@@Z",
+        "h2_guest_memset"
+      ],
+      "semantics": "zero voice globals and player values; publish NONE/default modes, empty pool ownership, enabled values/routing, 16 initialized channels, initialized player settings, and publish voice initialized only last",
+      "owner_function": "0x0008d9f0",
+      "owner_size": 892,
+      "owner_callsite": "0x0008dd36"
+    },
+    "registered_stage_lifetime": {
+      "table": "?g_453c00@@3PAUs_callback_pair@@A",
+      "table_slot": 3,
+      "initialize": "?function_53310@@YGXJ@Z",
+      "initialize_address": "0x00053310",
+      "initialize_size": 206,
+      "dispose": "?function_533e0@@YAXXZ",
+      "dispose_address": "0x000533e0",
+      "dispose_size": 62,
+      "stage_policy": {
+        "0_or_1": "type 2, mode 2, 0x78000-byte primary pool",
+        "2_or_3": "type 1, mode 1, deferred menu pool",
+        "above_3": "type 0, mode 0, no pool"
+      },
+      "semantics": "publish type/mode, allocate type-2 pool through the exact physical-memory source, initialize loop metadata and all three flags, create XHV only through the complete engine path, then dispose XHV before loop teardown and pool clear"
+    },
+    "menu_pool_lifetime": {
+      "initialize": "?voice_initialize_menu_pool@@YAXXZ",
+      "initialize_address": "0x00053420",
+      "dispose": "?voice_dispose_menu_pool@@YAXXZ",
+      "dispose_address": "0x000534a0",
+      "bytes": "0x61800",
+      "semantics": "type-1-only secondary pool publication, three loop flags, engine start after successful pool creation, engine stop before pool disposal, pointer clear, and final use_pool2 clear",
+      "initialize_size": 118,
+      "dispose_size": 106
+    },
+    "engine_lifetime": {
+      "start": "?voice_start_engine@@YAXXZ",
+      "start_address": "0x00053510",
+      "stop": "?voice_stop_engine@@YAXXZ",
+      "stop_address": "0x00053550",
+      "initialize": "?voice_xhv_initialize@@YAXPAVc_voice_xhv@@J@Z",
+      "create": "?voice_xhv_create@@YA_NPAVc_voice_xhv@@@Z",
+      "dispose": "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
+      "startup_helpers": [
+        {
+          "symbol": "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z",
+          "address": "0x000556a0",
+          "size": 116
+        },
+        {
+          "symbol": "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z",
+          "address": "0x00055720",
+          "size": 88
+        },
+        {
+          "symbol": "?voice_xhv_get_runtime_parameters@@YA_NPAUXHV_RUNTIME_PARAMS@@PAVc_voice_xhv@@@Z",
+          "address": "0x00055780",
+          "size": 132
+        }
+      ],
+      "backend_operations": [
+        "XHVEngineCreate",
+        "EnableProcessingMode",
+        "SetCallbackInterface",
+        "SetMaxPlaybackStreamsCount",
+        "RegisterLocalTalker",
+        "SetProcessingMode",
+        "GetLocalTalkerStatus",
+        "GetRemoteTalkers",
+        "UnregisterLocalTalker",
+        "UnregisterRemoteTalker",
+        "Release"
+      ],
+      "semantics": "require downloaded DSP effect description, preserve mode-specific processing masks and port defaults, create the genuine XHV engine, configure enabled modes and callback interface, register all four local talkers, publish communicator/chat/mail state, and reverse local/remote/engine ownership before clearing initialized",
+      "start_size": 58,
+      "stop_size": 38,
+      "initialize_address": "0x00055080",
+      "initialize_size": 48,
+      "create_address": "0x00055810",
+      "create_size": 270,
+      "dispose_address": "0x000550b0",
+      "dispose_size": 128
+    },
+    "callback_object": {
+      "slots": 6,
+      "local_chat_dependency": "?function_53a20@@YGXKPAXK@Z",
+      "semantics": "directly initialized callback table with exact six retail methods; local chat dispatch remains genuine, communicator/mail state updates remain bounded to the owning object, and default speech/raw callbacks return E_NOTIMPL",
+      "slot_sizes": [
+        41,
+        49,
+        8,
+        8,
+        51,
+        21
+      ]
+    },
+    "additional_dependencies": [
+      "?g_510c90@@3PAUs_voice_effects@@A",
+      "?g_4e6948@@3PAUs_game_options_view@@A",
+      "?g_46dd54@@3PAVc_memory_source@@A",
+      "?function_18e1f0@@YAPAUs_loop_allocator@@PAVc_memory_source@@JPBD@Z",
+      "?function_18e230@@YAXPAUs_loop_allocator@@@Z",
+      "?function_18e250@@YAXPAUs_loop_allocator@@JPBDPAVc_memory_source@@@Z",
+      "?physical_memory_malloc_fixed@@YAPAXJK@Z"
+    ],
+    "production_inadequacy": "the current production voice_start_engine is intentionally empty and cannot satisfy this lifetime or DSP recovery",
+    "prohibited_shortcut": "do not define g_476fc8 or g_4c9878 alone, fabricate an initialized engine, zero the callback vptr, collapse stage/menu pool ownership, or replace XHV methods with successful no-ops"
   }
 }

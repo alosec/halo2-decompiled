@@ -1193,6 +1193,133 @@ def main() -> int:
         if fragment not in xdk_header:
             raise RuntimeError(f"sound static arena platform ABI lost {fragment}")
 
+    voice = manifest.get("voice_runtime_lifetime_frontier", {})
+    voice_objects = voice.get("process_objects", [])
+    if voice.get("source_files") != [
+            "src/network_voice.cpp", "src/unknown_053310.cpp",
+            "src/unknown_453c00.cpp", "include/network_voice.h",
+            "include/globals.h"] or len(voice_objects) != 7 or \
+            [(item.get("retail_address"), item.get("size"))
+             for item in voice_objects] != [
+                ("0x00476fbc", "0x08"), ("0x00476fc8", "0x90"),
+                ("0x004c9878", "0x144"), ("0x005259b8", "0x44"),
+                ("0x00525a00", "0x1704"), ("0x00527104", "0x218"),
+                ("0x0052731c", "0x10")]:
+        raise RuntimeError("voice runtime object map changed")
+    physical_source, xhv_object = voice_objects[:2]
+    if physical_source.get("table_address") != "0x004508fc" or \
+            physical_source.get("initial_field04") != 2 or \
+            physical_source.get("table_slots") != [
+                "0x000531b0 allocate from physical-memory top",
+                "0x00072c70 inert release"] or \
+            xhv_object.get("table_address") != "0x0045095c" or \
+            xhv_object.get("table_slots") != [
+                "0x000555f0 LocalChatDataReady",
+                "0x000555b0 CommunicatorStatusUpdate",
+                "0x00055630 SpeechRecognized",
+                "0x00055620 MicrophoneRawDataReady",
+                "0x00055640 VoiceMailDataReady",
+                "0x00055680 VoiceMailStopped"]:
+        raise RuntimeError("voice runtime object table map changed")
+    voice_global_init = voice.get("global_initializer", {})
+    voice_stage = voice.get("registered_stage_lifetime", {})
+    voice_menu = voice.get("menu_pool_lifetime", {})
+    voice_engine = voice.get("engine_lifetime", {})
+    voice_callback = voice.get("callback_object", {})
+    if voice_global_init.get("function") != "?function_53210@@YAXXZ" or \
+            voice_global_init.get("retail_address") != "0x00053210" or \
+            voice_global_init.get("size") != 120 or \
+            voice_global_init.get("owner_function") != "0x0008d9f0" or \
+            voice_global_init.get("owner_size") != 892 or \
+            voice_global_init.get("owner_callsite") != "0x0008dd36" or \
+            len(voice_global_init.get("dependencies", [])) != 3 or \
+            voice_stage.get("table") != "?g_453c00@@3PAUs_callback_pair@@A" or \
+            voice_stage.get("table_slot") != 3 or \
+            voice_stage.get("initialize") != "?function_53310@@YGXJ@Z" or \
+            voice_stage.get("initialize_size") != 206 or \
+            voice_stage.get("dispose") != "?function_533e0@@YAXXZ" or \
+            voice_stage.get("dispose_size") != 62 or \
+            voice_stage.get("stage_policy") != {
+                "0_or_1": "type 2, mode 2, 0x78000-byte primary pool",
+                "2_or_3": "type 1, mode 1, deferred menu pool",
+                "above_3": "type 0, mode 0, no pool"} or \
+            voice_menu.get("initialize_address") != "0x00053420" or \
+            voice_menu.get("initialize_size") != 118 or \
+            voice_menu.get("dispose_address") != "0x000534a0" or \
+            voice_menu.get("dispose_size") != 106 or \
+            voice_menu.get("bytes") != "0x61800" or \
+            voice_engine.get("start_address") != "0x00053510" or \
+            voice_engine.get("start_size") != 58 or \
+            voice_engine.get("stop_address") != "0x00053550" or \
+            voice_engine.get("stop_size") != 38 or \
+            voice_engine.get("initialize_address") != "0x00055080" or \
+            voice_engine.get("initialize_size") != 48 or \
+            voice_engine.get("create_address") != "0x00055810" or \
+            voice_engine.get("create_size") != 270 or \
+            voice_engine.get("dispose_address") != "0x000550b0" or \
+            voice_engine.get("dispose_size") != 128 or \
+            voice_engine.get("startup_helpers") != [
+                {"symbol": "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z",
+                 "address": "0x000556a0", "size": 116},
+                {"symbol": "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z",
+                 "address": "0x00055720", "size": 88},
+                {"symbol": "?voice_xhv_get_runtime_parameters@@YA_NPAUXHV_RUNTIME_PARAMS@@PAVc_voice_xhv@@@Z",
+                 "address": "0x00055780", "size": 132}] or \
+            voice_engine.get("backend_operations") != [
+                "XHVEngineCreate", "EnableProcessingMode",
+                "SetCallbackInterface", "SetMaxPlaybackStreamsCount",
+                "RegisterLocalTalker", "SetProcessingMode",
+                "GetLocalTalkerStatus", "GetRemoteTalkers",
+                "UnregisterLocalTalker", "UnregisterRemoteTalker", "Release"] or \
+            voice_callback.get("slots") != 6 or \
+            voice_callback.get("slot_sizes") != [41, 49, 8, 8, 51, 21] or \
+            not voice_global_init.get("semantics") or \
+            not voice_stage.get("semantics") or \
+            not voice_menu.get("semantics") or \
+            not voice_engine.get("semantics") or \
+            not voice_callback.get("semantics") or \
+            not voice.get("production_inadequacy") or \
+            not voice.get("prohibited_shortcut"):
+        raise RuntimeError("voice runtime lifetime frontier changed")
+    network_voice_source = (args.root / "src/network_voice.cpp").read_text()
+    voice_stage_source = (args.root / "src/unknown_053310.cpp").read_text()
+    voice_table_source = (args.root / "src/unknown_453c00.cpp").read_text()
+    for fragment in [
+            "c_voice_xhv g_476fc8;", "s_voice_globals g_4c9878;",
+            "XHV_PROCESSING_MODE g_52731c[4];",
+            "s_voice_player_values g_5259b8;", "s_voice_channels g_525a00;",
+            "s_voice_routing g_527104;", "void function_53210(void)",
+            "voice_channels_initialize(&g_525a00)",
+            "voice_player_settings_initialize(&g_527104.settings)",
+            "g_4c9878.initialized = true;", "bool voice_xhv_create(",
+            "XHVEngineCreate(&parameters, engine)",
+            "(*engine)->SetCallbackInterface(xhv)",
+            "(*engine)->RegisterLocalTalker(port)",
+            "void voice_start_engine(void)", "void voice_stop_engine(void)"]:
+        if fragment not in network_voice_source:
+            raise RuntimeError(f"voice runtime recovered source lost {fragment}")
+    initializer = network_voice_source[
+        network_voice_source.index("// @retail 0x53210"):
+        network_voice_source.index("/* the header of a voice packet")]
+    if initializer.index("memset(&g_4c9878") > \
+            initializer.index("g_4c9878.initialized = true"):
+        raise RuntimeError("voice globals initialized publication moved")
+    for fragment in [
+            "c_physical_memory_source g_476fbc;",
+            "void __stdcall function_53310(long stage)",
+            "size = 0x78000;", "mode = 2;",
+            "source->allocate(size + 0x50)",
+            "function_18e250(loop, size, \"voice pool\", source)",
+            "g_476fc8.initialized = voice_xhv_create(&g_476fc8)",
+            "void function_533e0(void)",
+            "voice_xhv_dispose(&g_476fc8)",
+            "function_18e230(g_4c9878.pool)",
+            "g_4c9878.pool = 0;"]:
+        if fragment not in voice_stage_source:
+            raise RuntimeError(f"voice stage lifetime lost {fragment}")
+    if "{ function_533e0, function_53310 }" not in voice_table_source:
+        raise RuntimeError("voice registered stage pair changed")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 14 or \
             math_bridge.get("routes") != [
