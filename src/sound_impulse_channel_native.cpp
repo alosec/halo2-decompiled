@@ -152,7 +152,7 @@ void function_21fa80(long channel_index,
 	s_looping_effect_playback const *effects, bool force);
 long __stdcall function_125e60(s_looping_track_sound *sound);
 void sound_playback_set_chunk(long sound_index, long definition_index,
-	short pitch_range_index, short permutation_index, short chunk_index);
+	char pitch_range_index, char permutation_index, short chunk_index);
 
 // @retail 0x128ca0
 void function_128ca0(short voice_index, long gain,

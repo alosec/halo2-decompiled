@@ -298,6 +298,16 @@ def main() -> int:
             not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    playback_chunk_abi = manifest.get("playback_chunk_abi", {})
+    if playback_chunk_abi != {
+            "symbol": "?sound_playback_set_chunk@@YAXJJDDF@Z",
+            "parameters": ["long", "long", "char", "char", "short"],
+            "rejected_widened_symbol":
+                "?sound_playback_set_chunk@@YAXJJFFF@Z",
+            "semantics":
+                "preserve the recovered signed byte pitch-range and "
+                "permutation indices plus signed short chunk index"}:
+        raise RuntimeError("sound-idle playback chunk ABI changed")
     playback_reference = manifest.get("playback_reference_closure", {})
     if playback_reference.get("root") != \
             "?function_125e60@@YAJPAUs_looping_track_sound@@@Z" or \
@@ -311,6 +321,8 @@ def main() -> int:
     expected_imports = set(manifest.get("imports", []))
     if len(expected_definitions) != 71 or len(expected_imports) != 74:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
+    if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
+        raise RuntimeError("widened playback chunk ABI returned to the cluster")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
     if manifest.get("production_linked") is not False:

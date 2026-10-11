@@ -3652,7 +3652,7 @@ def main():
                  "?g_4e637c@@3PAUs_record_pool@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A", "?g_51ebd8@@3PAXA",
                  "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-                 "?sound_playback_set_chunk@@YAXJJFFF@Z",
+                 "?sound_playback_set_chunk@@YAXJJDDF@Z",
                  "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
                  "h2_guest_memset"}),
             ("sound-channel-properties.o", "src/unknown_12a1b0.cpp",

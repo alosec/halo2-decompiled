@@ -374,7 +374,7 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
-    "?sound_playback_set_chunk@@YAXJJFFF@Z",
+    "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_start_engine@@YAXXZ",
@@ -436,7 +436,7 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?sound_playback_set_chunk@@YAXJJFFF@Z",
+    "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
@@ -705,6 +705,18 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "playback_chunk_abi": {
+    "symbol": "?sound_playback_set_chunk@@YAXJJDDF@Z",
+    "parameters": [
+      "long",
+      "long",
+      "char",
+      "char",
+      "short"
+    ],
+    "rejected_widened_symbol": "?sound_playback_set_chunk@@YAXJJFFF@Z",
+    "semantics": "preserve the recovered signed byte pitch-range and permutation indices plus signed short chunk index"
   },
   "playback_reference_closure": {
     "root": "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
