@@ -58,6 +58,17 @@ extern "C" int host_h2_physical_protect(void*, unsigned int,
                                          unsigned int) {
     return 1;
 }
+extern "C" void* host_h2_virtual_alloc(void*, unsigned int size,
+                                         unsigned int allocation_type,
+                                         unsigned int protection) {
+    return size == 0x23000u && allocation_type == 0x1000u && protection == 0x04u
+               ? reinterpret_cast<void*>(0x30000000u)
+               : nullptr;
+}
+extern "C" int host_h2_virtual_free(void*, unsigned int size,
+                                      unsigned int free_type) {
+    return size == 0 && free_type == 0x8000u;
+}
 extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
     if (size < 0 || offset > map_data.size() ||
         static_cast<std::size_t>(size) > map_data.size() - offset) {

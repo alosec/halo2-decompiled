@@ -275,8 +275,8 @@ def main() -> int:
         raise SystemExit("guest bitmap pitch gained an import")
 
     abi = args.abi.read_text()
-    if "#define H2_HOST_ABI_VERSION 14u" not in abi:
-        raise SystemExit("guest async routing requires host ABI version 14")
+    if "#define H2_HOST_ABI_VERSION 15u" not in abi:
+        raise SystemExit("guest async and virtual-memory routing requires host ABI version 15")
     for symbol in expected_imports:
         if symbol not in abi:
             raise SystemExit(f"host ABI does not declare {symbol}")

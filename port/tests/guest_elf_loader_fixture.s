@@ -37,6 +37,12 @@ h2_host_slot_host_h2_physical_alloc:
 .globl h2_host_slot_host_h2_physical_protect
 h2_host_slot_host_h2_physical_protect:
     .xword 0
+.globl h2_host_slot_host_h2_virtual_alloc
+h2_host_slot_host_h2_virtual_alloc:
+    .xword 0
+.globl h2_host_slot_host_h2_virtual_free
+h2_host_slot_host_h2_virtual_free:
+    .xword 0
 .globl h2_host_slot_host_h2_cache_read
 h2_host_slot_host_h2_cache_read:
     .xword 0

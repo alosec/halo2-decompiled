@@ -865,7 +865,7 @@ def main() -> int:
             not physical_memory.get("execution_gate"):
         raise RuntimeError("sound physical-memory lifetime changed")
     physical_bridge = manifest.get("native_physical_memory_bridge", {})
-    if physical_bridge.get("host_abi_version") != 14 or \
+    if physical_bridge.get("host_abi_version") != 15 or \
             physical_bridge.get("guest_wrappers") != [
                 {"guest_symbol": "XPhysicalAlloc",
                  "host_import": "host_h2_physical_alloc"},
@@ -1192,6 +1192,24 @@ def main() -> int:
             "BOOL WINAPI VirtualFree(void* address, DWORD size, DWORD free_type);"]:
         if fragment not in xdk_header:
             raise RuntimeError(f"sound static arena platform ABI lost {fragment}")
+    virtual_bridge = manifest.get("native_virtual_memory_bridge", {})
+    if virtual_bridge.get("host_abi_version") != 15 or \
+            virtual_bridge.get("guest_wrappers") != [
+                {"guest_symbol": "VirtualAlloc",
+                 "host_import": "host_h2_virtual_alloc"},
+                {"guest_symbol": "VirtualFree",
+                 "host_import": "host_h2_virtual_free"}] or \
+            virtual_bridge.get("guest_region") != {
+                "base": "0x30000000", "maximum_size": "0x01000000"} or \
+            virtual_bridge.get("sound_arena_request") != {
+                "size": "0x23000", "allocation_type": "MEM_COMMIT",
+                "protection": "PAGE_READWRITE", "free_size": 0,
+                "free_type": "MEM_RELEASE"} or \
+            virtual_bridge.get("production_score_before") != 72 or \
+            virtual_bridge.get("production_score_after") != 70 or \
+            not virtual_bridge.get("semantics") or \
+            not virtual_bridge.get("execution_gate"):
+        raise RuntimeError("native virtual-memory bridge changed")
 
     voice = manifest.get("voice_runtime_lifetime_frontier", {})
     voice_objects = voice.get("process_objects", [])
@@ -1321,7 +1339,7 @@ def main() -> int:
         raise RuntimeError("voice registered stage pair changed")
 
     math_bridge = manifest.get("native_sound_math_bridge", {})
-    if math_bridge.get("host_abi_version") != 14 or \
+    if math_bridge.get("host_abi_version") != 15 or \
             math_bridge.get("routes") != [
                 {"guest_symbol": "acos", "host_import": "host_h2_math_acos"},
                 {"guest_symbol": "exp", "host_import": "host_h2_math_exp"},
@@ -1470,7 +1488,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 72:
+    if len(expected_production_imports) != 70:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1479,7 +1497,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [6, 65, 0, 0, 1]:
+    if [len(category) for category in categories] != [6, 63, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1752,6 +1770,26 @@ def main() -> int:
             "GuestMemoryProtection::read_write"]:
         if fragment not in host_services_source:
             raise RuntimeError(f"host physical bridge lost {fragment}")
+    for fragment in [
+            "VirtualAlloc(void *address, DWORD size",
+            "return host_h2_virtual_alloc(address, size, allocation_type, protection)",
+            "VirtualFree(void *address, DWORD size",
+            "return host_h2_virtual_free(address, size, free_type)"]:
+        if fragment not in guest_host_runtime:
+            raise RuntimeError(f"guest virtual-memory bridge lost {fragment}")
+    for fragment in [
+            "kVirtualAllocationAddress = 0x30000000u",
+            "kVirtualAllocationLimit = 0x01000000u",
+            "host_h2_virtual_alloc(void* address",
+            "allocation_type != 0x1000u || protection != 0x04u",
+            "state.virtual_allocation_size",
+            "GuestMemoryProtection::read_write",
+            "host_h2_virtual_free(void* address",
+            "native_address != h2::port::kGuestBias + kVirtualAllocationAddress",
+            "free_type != 0x8000u",
+            "GuestMemoryProtection::none"]:
+        if fragment not in host_services_source:
+            raise RuntimeError(f"host virtual-memory bridge lost {fragment}")
     for guest, host, native in [
             ("acos", "host_h2_math_acos", "std::acos"),
             ("exp", "host_h2_math_exp", "std::exp"),

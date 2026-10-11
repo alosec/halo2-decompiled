@@ -310,6 +310,48 @@ int main() {
             ok &= check(*static_cast<const unsigned char*>(
                             arena->pointer_const(0x00557c94u)) == cache_bytes[0],
                         "cache header was not staged at the recovered guest address");
+            void* const native_virtual = arena->pointer(0x30000000u);
+            ok &= check(host_h2_virtual_alloc(native_virtual, 0x23000u,
+                                               0x1000u, 0x04u) == nullptr &&
+                            host_h2_virtual_alloc(nullptr, 0, 0x1000u,
+                                                  0x04u) == nullptr &&
+                            host_h2_virtual_alloc(nullptr, 0x01000001u,
+                                                  0x1000u, 0x04u) == nullptr,
+                        "virtual allocation accepted a fixed, empty, or oversized request");
+            void* virtual_allocation = host_h2_virtual_alloc(
+                nullptr, 0x23000u, 0x1000u, 0x04u);
+            ok &= check(reinterpret_cast<std::uintptr_t>(virtual_allocation) ==
+                            0x30000000u &&
+                            arena->host_range_accessible(native_virtual, 0x23000u,
+                                                         true),
+                        "virtual allocation did not publish bounded writable guest memory");
+            ok &= check(*static_cast<unsigned char*>(native_virtual) == 0,
+                        "virtual allocation was not zero initialized");
+            *static_cast<unsigned char*>(native_virtual) = 0x5a;
+            ok &= check(host_h2_virtual_alloc(nullptr, 0x1000u, 0x1000u,
+                                               0x04u) == nullptr &&
+                            host_h2_virtual_alloc(nullptr, 0x1000u, 0x2000u,
+                                                  0x04u) == nullptr &&
+                            host_h2_virtual_alloc(nullptr, 0x1000u, 0x1000u,
+                                                  0x02u) == nullptr,
+                        "virtual allocation accepted a live or unsupported request");
+            unsigned char ordinary_virtual_byte = 0;
+            ok &= check(!host_h2_virtual_free(&ordinary_virtual_byte, 0, 0x8000u) &&
+                            !host_h2_virtual_free(native_virtual, 1, 0x8000u) &&
+                            !host_h2_virtual_free(native_virtual, 0, 0x4000u),
+                        "virtual free accepted an invalid address, size, or type");
+            ok &= check(host_h2_virtual_free(native_virtual, 0, 0x8000u) == 1 &&
+                            !arena->host_range_accessible(native_virtual,
+                                                          0x23000u, false) &&
+                            !host_h2_virtual_free(native_virtual, 0, 0x8000u),
+                        "virtual free did not release the exact live allocation");
+            virtual_allocation = host_h2_virtual_alloc(
+                nullptr, 0x23000u, 0x1000u, 0x04u);
+            ok &= check(reinterpret_cast<std::uintptr_t>(virtual_allocation) ==
+                            0x30000000u &&
+                            *static_cast<unsigned char*>(native_virtual) == 0 &&
+                            host_h2_virtual_free(native_virtual, 0, 0x8000u) == 1,
+                        "virtual allocation reuse did not restore zeroed ownership");
             void* const physical_arena = host_h2_physical_alloc(
                 0x3145000u - 0x61000u, 0x61000u, 0, 0x04u);
             ok &= check(reinterpret_cast<std::uintptr_t>(physical_arena) ==

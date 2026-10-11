@@ -1358,8 +1358,6 @@
     "IDirectSound_SetOrientation",
     "IDirectSound_SetPosition",
     "IDirectSound_SetRolloffFactor",
-    "VirtualAlloc",
-    "VirtualFree",
     "WmaCreateInMemoryDecoder",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
@@ -1439,9 +1437,7 @@
       "IDirectSound_CreateSoundStream",
       "WmaCreateInMemoryDecoder",
       "IDirectSoundBuffer_SetFilter",
-      "IDirectSoundBuffer_SetI3DL2Source",
-      "VirtualAlloc",
-      "VirtualFree"
+      "IDirectSoundBuffer_SetI3DL2Source"
     ],
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
@@ -2223,7 +2219,7 @@
     "execution_gate": "requires the genuine recovered function_12c090 and XMemAlloc/XMemFree routing plus their default and voice allocator backends; storage ownership does not allocate, free, or fabricate a codec block"
   },
   "native_sound_math_bridge": {
-    "host_abi_version": 14,
+    "host_abi_version": 15,
     "routes": [
       {
         "guest_symbol": "acos",
@@ -2410,7 +2406,7 @@
     "production_score_after": 76
   },
   "native_physical_memory_bridge": {
-    "host_abi_version": 14,
+    "host_abi_version": 15,
     "guest_wrappers": [
       {
         "guest_symbol": "XPhysicalAlloc",
@@ -2476,7 +2472,7 @@
       "final_checksum_validation": false
     },
     "semantics": "own the exact zero-initialized ILP32 base/size/checksum storage together with a 0x23000-byte committed read/write allocation and release lifetime; preserve allocation accounting without inventing a retail final-size or checksum comparison",
-    "execution_gate": "requires genuine VirtualAlloc and VirtualFree platform ownership plus ordered publication before function_1253d0 and release after function_125600; the dormant cluster remains unlinked and does not enable sound"
+    "execution_gate": "requires the installed bounded low guest virtual-memory service and ordered publication before function_1253d0 and release after function_125600; the dormant cluster remains unlinked and does not enable sound"
   },
   "voice_runtime_lifetime_frontier": {
     "source_files": [
@@ -2655,5 +2651,33 @@
     ],
     "production_inadequacy": "the current production voice_start_engine is intentionally empty and cannot satisfy this lifetime or DSP recovery",
     "prohibited_shortcut": "do not define g_476fc8 or g_4c9878 alone, fabricate an initialized engine, zero the callback vptr, collapse stage/menu pool ownership, or replace XHV methods with successful no-ops"
+  },
+  "native_virtual_memory_bridge": {
+    "host_abi_version": 15,
+    "guest_wrappers": [
+      {
+        "guest_symbol": "VirtualAlloc",
+        "host_import": "host_h2_virtual_alloc"
+      },
+      {
+        "guest_symbol": "VirtualFree",
+        "host_import": "host_h2_virtual_free"
+      }
+    ],
+    "guest_region": {
+      "base": "0x30000000",
+      "maximum_size": "0x01000000"
+    },
+    "sound_arena_request": {
+      "size": "0x23000",
+      "allocation_type": "MEM_COMMIT",
+      "protection": "PAGE_READWRITE",
+      "free_size": 0,
+      "free_type": "MEM_RELEASE"
+    },
+    "semantics": "accept only the recovered null-base commit/read-write allocation shape, page-align and zero the bounded guest range, reject a second live allocation, require exact rebased-base release semantics, clear bytes before removing access, and permit zeroed reuse only after successful release",
+    "execution_gate": "requires configured guest-arena ownership; unsupported allocation flags, protection, address, size, ordinary host free pointers, duplicate allocation, duplicate release, and native page-protection failure fail closed",
+    "production_score_before": 72,
+    "production_score_after": 70
   }
 }

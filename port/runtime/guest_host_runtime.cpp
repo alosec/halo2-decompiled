@@ -28,6 +28,17 @@ extern "C" void __stdcall XPhysicalProtect(void *address, DWORD size,
     host_h2_physical_protect(address, size, protection);
 }
 
+extern "C" void *WINAPI VirtualAlloc(void *address, DWORD size,
+                                       DWORD allocation_type, DWORD protection)
+{
+    return host_h2_virtual_alloc(address, size, allocation_type, protection);
+}
+
+extern "C" BOOL WINAPI VirtualFree(void *address, DWORD size, DWORD free_type)
+{
+    return host_h2_virtual_free(address, size, free_type);
+}
+
 bool function_122d60(s_cache_file_location location, long size, void *buffer)
 {
     return host_h2_cache_read(location.offset, size, buffer) != 0;

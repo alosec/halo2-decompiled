@@ -51,6 +51,8 @@ constexpr std::uint32_t kPhysicalRegionAddress = 0x80060000u;
 constexpr std::uint32_t kPhysicalRegionSize = 0x030e5000u;
 constexpr std::uint32_t kPhysicalAllocationBase = 0x80061000u;
 constexpr std::uint32_t kPhysicalAllocationEnd = 0x83145000u;
+constexpr std::uint32_t kVirtualAllocationAddress = 0x30000000u;
+constexpr std::uint32_t kVirtualAllocationLimit = 0x01000000u;
 constexpr std::uint32_t kCacheHeaderSize = 0x800u;
 constexpr std::uint32_t kAsyncControllerTransitionMilliseconds = 5000u;
 
@@ -61,6 +63,7 @@ struct CacheState {
     std::filesystem::path map_directory;
     std::string active_map_name;
     std::uint32_t next_address = kPhysicalAllocationBase;
+    std::uint32_t virtual_allocation_size = 0;
 };
 
 CacheState& cache_state() {
@@ -264,13 +267,21 @@ bool configure_cache_services(GuestArena& arena, const std::filesystem::path& ma
     state.map_directory = map_path.parent_path();
     state.active_map_name = map_path.stem().string();
     state.next_address = kPhysicalAllocationBase;
+    state.virtual_allocation_size = 0;
     return true;
 }
 
 void reset_cache_services() {
     auto& state = cache_state();
     const std::lock_guard lock(state.mutex);
+    if (state.arena && state.virtual_allocation_size) {
+        std::string ignored;
+        state.arena->protect(kVirtualAllocationAddress,
+                             state.virtual_allocation_size,
+                             GuestMemoryProtection::none, ignored);
+    }
     state.arena = nullptr;
+    state.virtual_allocation_size = 0;
     state.bytes.clear();
     state.map_directory.clear();
     state.active_map_name.clear();
@@ -773,6 +784,8 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
          function_address(&host_h2_physical_memory_malloc_low)},
         {"host_h2_physical_alloc", function_address(&host_h2_physical_alloc)},
         {"host_h2_physical_protect", function_address(&host_h2_physical_protect)},
+        {"host_h2_virtual_alloc", function_address(&host_h2_virtual_alloc)},
+        {"host_h2_virtual_free", function_address(&host_h2_virtual_free)},
         {"host_h2_cache_read", function_address(&host_h2_cache_read)},
         {"host_h2_map_preflight", function_address(&host_h2_map_preflight)},
         {"host_h2_map_select", function_address(&host_h2_map_select)},
@@ -945,6 +958,64 @@ extern "C" int host_h2_physical_protect(void* address, unsigned int size,
     return state.arena && state.arena->protect(
         static_cast<std::uint32_t>(guest_address), size,
         guest_protection, error);
+}
+
+extern "C" void* host_h2_virtual_alloc(void* address, unsigned int size,
+                                          unsigned int allocation_type,
+                                          unsigned int protection) {
+    if (address || !size || allocation_type != 0x1000u || protection != 0x04u) {
+        return nullptr;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    if (!state.arena || state.virtual_allocation_size) {
+        return nullptr;
+    }
+    const std::uint64_t page_size = state.arena->page_size();
+    const std::uint64_t aligned =
+        (static_cast<std::uint64_t>(size) + page_size - 1u) & ~(page_size - 1u);
+    if (!aligned || aligned > kVirtualAllocationLimit) {
+        return nullptr;
+    }
+    std::string error;
+    if (!state.arena->protect(kVirtualAllocationAddress,
+                              static_cast<std::uint32_t>(aligned),
+                              h2::port::GuestMemoryProtection::read_write,
+                              error)) {
+        return nullptr;
+    }
+    std::memset(state.arena->pointer(kVirtualAllocationAddress), 0,
+                static_cast<std::size_t>(aligned));
+    state.virtual_allocation_size = static_cast<std::uint32_t>(aligned);
+    return reinterpret_cast<void*>(
+        static_cast<std::uintptr_t>(kVirtualAllocationAddress));
+}
+
+extern "C" int host_h2_virtual_free(void* address, unsigned int size,
+                                      unsigned int free_type) {
+    if (!address || size || free_type != 0x8000u) {
+        return 0;
+    }
+    const std::uintptr_t native_address = reinterpret_cast<std::uintptr_t>(address);
+    if (native_address != h2::port::kGuestBias + kVirtualAllocationAddress) {
+        return 0;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    if (!state.arena || !state.virtual_allocation_size) {
+        return 0;
+    }
+    void* const storage = state.arena->pointer(kVirtualAllocationAddress);
+    std::memset(storage, 0, state.virtual_allocation_size);
+    std::string error;
+    if (!state.arena->protect(kVirtualAllocationAddress,
+                              state.virtual_allocation_size,
+                              h2::port::GuestMemoryProtection::none,
+                              error)) {
+        return 0;
+    }
+    state.virtual_allocation_size = 0;
+    return 1;
 }
 
 extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
