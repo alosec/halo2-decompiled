@@ -259,13 +259,44 @@ def main() -> int:
         ("src/sound_static_arena_lifetime_native.cpp", "?g_510808_pool_checksum@@3KA"),
         ("src/sound_static_arena_lifetime_native.cpp", "?sound_static_arena_initialize@@YA_NXZ"),
         ("src/sound_static_arena_lifetime_native.cpp", "?sound_static_arena_dispose@@YAXXZ"),
+        ("src/voice_xhv_lifetime_native.cpp", "?LocalChatDataReady@c_voice_xhv@@UAGJKKPAX@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?CommunicatorStatusUpdate@c_voice_xhv@@UAGJKW4XHV_VOICE_COMMUNICATOR_STATUS@@@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?SpeechRecognized@c_voice_xhv@@UAGJKPAUXHV_SR_ITEM@@K@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?MicrophoneRawDataReady@c_voice_xhv@@UAGJKKPAXPAH@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?VoiceMailDataReady@c_voice_xhv@@UAGJKKK@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?VoiceMailStopped@c_voice_xhv@@UAGJK@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z"),
+        ("src/voice_xhv_lifetime_native.cpp", "?voice_start_engine@@YAXXZ"),
+        ("src/voice_xhv_lifetime_native.cpp", "?voice_stop_engine@@YAXXZ"),
+        ("src/voice_xhv_lifetime_native.cpp", "?h2_voice_xhv_callback_vtable@@3QBQ6AXXZB"),
+        ("src/voice_xhv_lifetime_native.cpp", "?g_476fc8@@3Vc_voice_xhv@@A"),
+        ("src/voice_xhv_lifetime_native.cpp", "?g_52731c@@3PAPAXA"),
+        ("src/voice_runtime_storage_native.cpp", "?g_46dd54@@3PAVc_memory_source@@A"),
+        ("src/voice_runtime_storage_native.cpp", "?g_4c9878@@3Us_voice_globals@@A"),
+        ("src/voice_runtime_storage_native.cpp", "?g_5259b8@@3Us_voice_player_values@@A"),
+        ("src/voice_runtime_storage_native.cpp", "?g_525a00@@3Us_voice_channels@@A"),
+        ("src/voice_runtime_storage_native.cpp", "?g_527104@@3Us_voice_routing@@A"),
+        ("src/voice_runtime_storage_native.cpp", "?function_53210@@YAXXZ"),
+        ("src/voice_runtime_storage_native.cpp", "?voice_channels_initialize@@YAXPAUs_voice_channels@@@Z"),
+        ("src/voice_runtime_storage_native.cpp", "?voice_player_settings_initialize@@YAXPAUs_voice_player_settings@@@Z"),
+        ("src/voice_stage_lifetime_native.cpp", "?allocate@c_physical_memory_source@@UAEPAXJ@Z"),
+        ("src/voice_stage_lifetime_native.cpp", "?release@c_physical_memory_source@@UAEXPAX@Z"),
+        ("src/voice_stage_lifetime_native.cpp", "?function_53310@@YGXJ@Z"),
+        ("src/voice_stage_lifetime_native.cpp", "?function_533e0@@YAXXZ"),
+        ("src/voice_stage_lifetime_native.cpp", "?voice_initialize_menu_pool@@YAXXZ"),
+        ("src/voice_stage_lifetime_native.cpp", "?voice_dispose_menu_pool@@YAXXZ"),
+        ("src/voice_stage_lifetime_native.cpp", "?h2_physical_memory_source_vtable@@3Us_table@c_memory_source@@B"),
+        ("src/voice_stage_lifetime_native.cpp", "?g_476fbc@@3Vc_physical_memory_source@@A"),
+        ("src/voice_stage_lifetime_native.cpp", "?g_voice_pool_name@@3QBDB"),
+        ("src/voice_stage_lifetime_native.cpp", "?g_voice_menu_pool_name@@3QBDB"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 228:
+    if len(set(provider_symbols)) != 259:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -1244,7 +1275,14 @@ def main() -> int:
     voice_menu = voice.get("menu_pool_lifetime", {})
     voice_engine = voice.get("engine_lifetime", {})
     voice_callback = voice.get("callback_object", {})
-    if voice_global_init.get("function") != "?function_53210@@YAXXZ" or \
+    if voice.get("assembled") is not True or \
+            len(voice.get("providers", [])) != 31 or \
+            voice.get("production_score_before") != 70 or \
+            voice.get("production_score_after") != 76 or \
+            voice.get("remaining_code_gate") != \
+            "?function_53a20@@YGXKPAXK@Z" or \
+            not voice.get("execution_gate") or \
+            voice_global_init.get("function") != "?function_53210@@YAXXZ" or \
             voice_global_init.get("retail_address") != "0x00053210" or \
             voice_global_init.get("size") != 120 or \
             voice_global_init.get("owner_function") != "0x0008d9f0" or \
@@ -1337,6 +1375,50 @@ def main() -> int:
             raise RuntimeError(f"voice stage lifetime lost {fragment}")
     if "{ function_533e0, function_53310 }" not in voice_table_source:
         raise RuntimeError("voice registered stage pair changed")
+    xhv_native = (args.root / "src/voice_xhv_lifetime_native.cpp").read_text()
+    storage_native = (args.root /
+        "src/voice_runtime_storage_native.cpp").read_text()
+    stage_native = (args.root /
+        "src/voice_stage_lifetime_native.cpp").read_text()
+    for fragment in [
+            "sizeof(c_voice_xhv) == 0x90",
+            "h2_voice_xhv_callback_vtable[6]",
+            "function_53a20(port, data, size)",
+            "return static_cast<long>(0x80004001u)",
+            "XHVEngineCreate(&parameters, &xhv->engine)",
+            "xhv_set_callback_interface(xhv->engine, xhv)",
+            "xhv_register_local_talker(xhv->engine, port)",
+            "xhv->initialized = voice_xhv_create(xhv)",
+            "void voice_start_engine(void)",
+            "voice_xhv_dispose(&g_476fc8)"]:
+        if fragment not in xhv_native:
+            raise RuntimeError(f"native voice XHV lifetime lost {fragment}")
+    for fragment in [
+            "sizeof(s_voice_globals) == 0x144",
+            "sizeof(s_voice_channels) == 0x1704",
+            "sizeof(s_voice_routing) == 0x218",
+            "c_memory_source *g_46dd54",
+            "s_voice_globals g_4c9878",
+            "voice_channels_initialize(&g_525a00)",
+            "voice_player_settings_initialize(&g_527104.settings)",
+            "g_4c9878.initialized = true"]:
+        if fragment not in storage_native:
+            raise RuntimeError(f"native voice storage lifetime lost {fragment}")
+    for fragment in [
+            "sizeof(c_physical_memory_source) == 0x08",
+            "h2_physical_memory_source_vtable",
+            "long const aligned_size = (size + 0xfff) & 0xfffff000",
+            "XPhysicalProtect(result, aligned_size, 0x04)",
+            "void function_53310(long stage)",
+            "size = 0x78000",
+            "function_18e250(loop, size, g_voice_pool_name, source)",
+            "g_4c9878.pool->field3e = 1",
+            "void function_533e0(void)",
+            "voice_initialize_menu_pool",
+            "voice_dispose_menu_pool",
+            "g_4c9878.use_pool2 = false"]:
+        if fragment not in stage_native:
+            raise RuntimeError(f"native voice stage lifetime lost {fragment}")
 
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 15 or \
@@ -1388,7 +1470,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 240 or len(expected_imports) != 131:
+    if len(expected_definitions) != 272 or len(expected_imports) != 139:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -1477,18 +1559,60 @@ def main() -> int:
         raise RuntimeError(
             "sound data allocator object/vtable relocation order changed: " +
             repr(allocator_relocations))
+    voice_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in [
+            "LocalChatDataReady@c_voice_xhv",
+            "CommunicatorStatusUpdate@c_voice_xhv",
+            "SpeechRecognized@c_voice_xhv",
+            "MicrophoneRawDataReady@c_voice_xhv",
+            "VoiceMailDataReady@c_voice_xhv",
+            "VoiceMailStopped@c_voice_xhv",
+            "h2_voice_xhv_callback_vtable"])]
+    if voice_relocations != [
+            "?LocalChatDataReady@c_voice_xhv@@UAGJKKPAX@Z",
+            "?CommunicatorStatusUpdate@c_voice_xhv@@UAGJKW4XHV_VOICE_COMMUNICATOR_STATUS@@@Z",
+            "?SpeechRecognized@c_voice_xhv@@UAGJKPAUXHV_SR_ITEM@@K@Z",
+            "?MicrophoneRawDataReady@c_voice_xhv@@UAGJKKPAXPAH@Z",
+            "?VoiceMailDataReady@c_voice_xhv@@UAGJKKK@Z",
+            "?VoiceMailStopped@c_voice_xhv@@UAGJK@Z",
+            "?h2_voice_xhv_callback_vtable@@3QBQ6AXXZB"]:
+        raise RuntimeError(
+            "voice callback object/vtable relocation order changed: " +
+            repr(voice_relocations))
+    physical_source_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in [
+            "allocate@c_physical_memory_source",
+            "release@c_physical_memory_source",
+            "h2_physical_memory_source_vtable"])]
+    if physical_source_relocations != [
+            "?allocate@c_physical_memory_source@@UAEPAXJ@Z",
+            "?release@c_physical_memory_source@@UAEXPAX@Z",
+            "?h2_physical_memory_source_vtable@@3Us_table@c_memory_source@@B"]:
+        raise RuntimeError(
+            "voice physical source object/vtable relocation order changed: " +
+            repr(physical_source_relocations))
+    if any("GLOBAL__sub_I" in symbol or
+           "cxx_global_var_init" in symbol
+           for symbol in actual_definitions):
+        raise RuntimeError("voice lifetime gained a host constructor")
 
     production_definitions = symbols(
         args.llvm_nm, args.production_object, "--defined-only")
     linked = sorted(expected_definitions & production_definitions)
-    if linked:
+    if linked != ["?voice_start_engine@@YAXXZ"]:
         raise RuntimeError(
             "dormant sound-idle direct providers entered production: " +
             repr(linked))
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 70:
+    if len(expected_production_imports) != 76:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1497,7 +1621,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [6, 63, 0, 0, 1]:
+    if [len(category) for category in categories] != [4, 70, 1, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1912,9 +2036,13 @@ def main() -> int:
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
             "provider": "port/runtime/guest_online_runtime.cpp",
+            "exact_dormant_provider":
+                "src/voice_xhv_lifetime_native.cpp",
             "reason":
-                "the current native-offline provider is intentionally empty "
-                "and cannot satisfy DSP recovery restart semantics"}]:
+                "the production native-offline provider remains intentionally "
+                "empty; the complete exact implementation is confined to the "
+                "dormant cluster and cannot enter production before genuine "
+                "XHV and callback routing ownership"}]:
         raise RuntimeError("sound-idle inadequate production resolution changed")
     with tempfile.TemporaryDirectory(
             prefix="h2-sound-idle-direct-score-") as temporary:

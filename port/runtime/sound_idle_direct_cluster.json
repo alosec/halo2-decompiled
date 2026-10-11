@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "role": "source-owned dormant idle service, direct sound-provider callees, effect refresh, playback/voice transitions, sound-cache allocation routing, positioned reads, transactional async queue submission, and exact read sizing",
+  "role": "source-owned dormant sound and complete voice/XHV runtime lifetimes; all audio, XHV, and callback-routing backends remain execution gates",
   "providers": [
     {
       "source": "src/sound_idle_service_native.cpp",
@@ -913,6 +913,130 @@
     {
       "source": "src/sound_static_arena_lifetime_native.cpp",
       "symbol": "?sound_static_arena_dispose@@YAXXZ"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?LocalChatDataReady@c_voice_xhv@@UAGJKKPAX@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?CommunicatorStatusUpdate@c_voice_xhv@@UAGJKW4XHV_VOICE_COMMUNICATOR_STATUS@@@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?SpeechRecognized@c_voice_xhv@@UAGJKPAUXHV_SR_ITEM@@K@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?MicrophoneRawDataReady@c_voice_xhv@@UAGJKKPAXPAH@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?VoiceMailDataReady@c_voice_xhv@@UAGJKKK@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?VoiceMailStopped@c_voice_xhv@@UAGJK@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?voice_start_engine@@YAXXZ"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "symbol": "?voice_stop_engine@@YAXXZ"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "global": "?h2_voice_xhv_callback_vtable@@3QBQ6AXXZB"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "global": "?g_476fc8@@3Vc_voice_xhv@@A"
+    },
+    {
+      "source": "src/voice_xhv_lifetime_native.cpp",
+      "global": "?g_52731c@@3PAPAXA"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "global": "?g_46dd54@@3PAVc_memory_source@@A"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "global": "?g_4c9878@@3Us_voice_globals@@A"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "global": "?g_5259b8@@3Us_voice_player_values@@A"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "global": "?g_525a00@@3Us_voice_channels@@A"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "global": "?g_527104@@3Us_voice_routing@@A"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "symbol": "?function_53210@@YAXXZ"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "symbol": "?voice_channels_initialize@@YAXPAUs_voice_channels@@@Z"
+    },
+    {
+      "source": "src/voice_runtime_storage_native.cpp",
+      "symbol": "?voice_player_settings_initialize@@YAXPAUs_voice_player_settings@@@Z"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?allocate@c_physical_memory_source@@UAEPAXJ@Z"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?release@c_physical_memory_source@@UAEXPAX@Z"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?function_53310@@YGXJ@Z"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?function_533e0@@YAXXZ"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?voice_initialize_menu_pool@@YAXXZ"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "symbol": "?voice_dispose_menu_pool@@YAXXZ"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "global": "?h2_physical_memory_source_vtable@@3Us_table@c_memory_source@@B"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "global": "?g_476fbc@@3Vc_physical_memory_source@@A"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "global": "?g_voice_pool_name@@3QBDB"
+    },
+    {
+      "source": "src/voice_stage_lifetime_native.cpp",
+      "global": "?g_voice_menu_pool_name@@3QBDB"
     }
   ],
   "definitions": [
@@ -923,10 +1047,17 @@
     "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+    "?CommunicatorStatusUpdate@c_voice_xhv@@UAGJKW4XHV_VOICE_COMMUNICATOR_STATUS@@@Z",
+    "?LocalChatDataReady@c_voice_xhv@@UAGJKKPAX@Z",
+    "?MicrophoneRawDataReady@c_voice_xhv@@UAGJKKPAXPAH@Z",
+    "?SpeechRecognized@c_voice_xhv@@UAGJKPAUXHV_SR_ITEM@@K@Z",
+    "?VoiceMailDataReady@c_voice_xhv@@UAGJKKK@Z",
+    "?VoiceMailStopped@c_voice_xhv@@UAGJK@Z",
     "?add_effect_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@_NJPAUs_mixbin_settings@@@Z",
     "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z",
     "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z",
     "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z",
+    "?allocate@c_physical_memory_source@@UAEPAXJ@Z",
     "?async_task_queue@@YAJPAUs_job_node@@@Z",
     "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
     "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
@@ -1040,6 +1171,9 @@
     "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z",
     "?function_30bf0@@YAMPATvector3f@@@Z",
+    "?function_53210@@YAXXZ",
+    "?function_53310@@YGXJ@Z",
+    "?function_533e0@@YAXXZ",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_44a2a0@@3Us_sound_driver_reverb@@A",
@@ -1047,11 +1181,15 @@
     "?g_44f710@@3MB",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_468834@@3MA",
+    "?g_46dd54@@3PAVc_memory_source@@A",
     "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
+    "?g_476fbc@@3Vc_physical_memory_source@@A",
+    "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_47f088@@3Vc_sound_effects@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_47f0f0@@3Us_47f0f0@@A",
+    "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6374@@3JA",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_502104@@3PAUs_record_pool@@A",
@@ -1070,11 +1208,19 @@
     "?g_51ebdc@@3PAXA",
     "?g_51ebe0@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?g_5259b8@@3Us_voice_player_values@@A",
+    "?g_525a00@@3Us_voice_channels@@A",
+    "?g_527104@@3Us_voice_routing@@A",
+    "?g_52731c@@3PAPAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?g_sound_crc_table@@3PAKA",
     "?g_sound_crc_table_built@@3_NA",
+    "?g_voice_menu_pool_name@@3QBDB",
+    "?g_voice_pool_name@@3QBDB",
     "?get_packet@c_pcm_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+    "?h2_physical_memory_source_vtable@@3Us_table@c_memory_source@@B",
+    "?h2_voice_xhv_callback_vtable@@3QBQ6AXXZB",
     "?initialize@c_sound_effects@@UAAXPAUs_sound_effect_settings@@PAUs_sound_effect_buffers@@_N@Z",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?looping_sound_controllers_initialize@@YA_NXZ",
@@ -1088,6 +1234,7 @@
     "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?read@c_wma_codec@@QAAKKKPAPAX@Z",
+    "?release@c_physical_memory_source@@UAEXPAX@Z",
     "?release_decoder@c_wma_codec@@QAAXXZ",
     "?set_i3dl2@c_sound_effects@@UAAXPAUs_sound_i3dl2_parameters@@J@Z",
     "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z",
@@ -1142,7 +1289,16 @@
     "?stop@c_wma_codec@@UAAXXZ",
     "?v1@c_sound_effects@@UAAXXZ",
     "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
+    "?voice_channels_initialize@@YAXPAUs_voice_channels@@@Z",
+    "?voice_dispose_menu_pool@@YAXXZ",
+    "?voice_initialize_menu_pool@@YAXXZ",
+    "?voice_player_settings_initialize@@YAXPAUs_voice_player_settings@@@Z",
+    "?voice_start_engine@@YAXXZ",
+    "?voice_stop_engine@@YAXXZ",
+    "?voice_xhv_create@@YA_NPAVc_voice_xhv@@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
+    "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z",
+    "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z",
     "?wma_codec_read_callback@@YAKPAXKKPAPAX@Z",
     "g_44178c",
     "g_444c84",
@@ -1159,8 +1315,13 @@
   ],
   "imports": [
     "??_C@_00CNPNBAHC@?$AA@",
+    "?EnableProcessingMode@CXHVEngine@XHVNamespace@@QAGJPAX@Z",
+    "?GetLocalTalkerStatus@CXHVEngine@XHVNamespace@@QAGJKPAU_XHV_LOCAL_TALKER_STATUS@@@Z",
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+    "?RegisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+    "?SetMaxPlaybackStreamsCount@CXHVEngine@XHVNamespace@@QAGJK@Z",
+    "?SetProcessingMode@CXHVEngine@XHVNamespace@@QAGJKPAX@Z",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
     "?async_globals@@3Us_async_globals@@A",
@@ -1170,6 +1331,10 @@
     "?function_1462b0@@YAKXZ",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
     "?function_16bc00@@YAJPAUs_record_pool@@J@Z",
+    "?function_18e1f0@@YAPAUs_loop_allocator@@PAVc_memory_source@@JPBD@Z",
+    "?function_18e230@@YAXPAUs_loop_allocator@@@Z",
+    "?function_18e250@@YAXPAUs_loop_allocator@@JPBDPAVc_memory_source@@@Z",
+    "?function_53a20@@YGXKPAXK@Z",
     "?g_468758@@3PAVc_data_allocator@@A",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
@@ -1177,8 +1342,6 @@
     "?g_4687b0@@3PATvector3f@@A",
     "?g_468d48@@3QAY0EAA@$$CBEA",
     "?g_46bd48@@3PAY0EAA@EA",
-    "?g_476fc8@@3Vc_voice_xhv@@A",
-    "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e034c@@3PAUs_tag_header_globals@@A",
     "?g_4e0350@@3PAUs_palette_source_globals@@A",
     "?g_4e3b44@@3PAUs_tag_instance@@A",
@@ -1200,7 +1363,6 @@
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
     "?record_pool_release_all@@YAXPAUs_record_pool@@@Z",
-    "?voice_start_engine@@YAXXZ",
     "DirectSoundCreate",
     "DirectSoundCreateBuffer",
     "DirectSoundDoWork",
@@ -1267,6 +1429,8 @@
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
+    "XHVEngineCreate@8",
+    "XHVEngine_SetCallbackInterface@8",
     "XLoadSection",
     "XPhysicalAlloc",
     "XPhysicalProtect",
@@ -1294,12 +1458,16 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
+    "?EnableProcessingMode@CXHVEngine@XHVNamespace@@QAGJPAX@Z",
+    "?GetLocalTalkerStatus@CXHVEngine@XHVNamespace@@QAGJKPAU_XHV_LOCAL_TALKER_STATUS@@@Z",
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+    "?RegisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+    "?SetMaxPlaybackStreamsCount@CXHVEngine@XHVNamespace@@QAGJK@Z",
+    "?SetProcessingMode@CXHVEngine@XHVNamespace@@QAGJKPAX@Z",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
-    "?g_476fc8@@3Vc_voice_xhv@@A",
-    "?g_4c9878@@3Us_voice_globals@@A",
+    "?function_53a20@@YGXKPAXK@Z",
     "?g_4e6470@@3JA",
     "?g_4e64a0@@3JA",
     "?g_4ed39d@@3_NA",
@@ -1362,23 +1530,30 @@
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
+    "XHVEngineCreate@8",
+    "XHVEngine_SetCallbackInterface@8",
     "XLoadSection",
     "g_dwDirectSoundDeltaPanicCount"
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
-      "?g_476fc8@@3Vc_voice_xhv@@A",
-      "?g_4c9878@@3Us_voice_globals@@A",
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA",
       "?g_4ed39d@@3_NA",
       "g_dwDirectSoundDeltaPanicCount"
     ],
     "backend_operations": [
+      "?EnableProcessingMode@CXHVEngine@XHVNamespace@@QAGJPAX@Z",
+      "?GetLocalTalkerStatus@CXHVEngine@XHVNamespace@@QAGJKPAU_XHV_LOCAL_TALKER_STATUS@@@Z",
       "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
+      "?RegisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
       "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
+      "?SetMaxPlaybackStreamsCount@CXHVEngine@XHVNamespace@@QAGJK@Z",
+      "?SetProcessingMode@CXHVEngine@XHVNamespace@@QAGJKPAX@Z",
       "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
       "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
+      "DirectSoundCreate",
+      "DirectSoundCreateBuffer",
       "DirectSoundDoWork",
       "IDirectSoundBuffer_GetStatus",
       "IDirectSoundBuffer_GetVoiceProperties",
@@ -1386,9 +1561,18 @@
       "IDirectSoundBuffer_Pause",
       "IDirectSoundBuffer_Play",
       "IDirectSoundBuffer_Release",
+      "IDirectSoundBuffer_SetBufferData",
+      "IDirectSoundBuffer_SetConeOutsideVolume",
       "IDirectSoundBuffer_SetCurrentPosition",
-      "IDirectSoundBuffer_SetMixBins",
+      "IDirectSoundBuffer_SetDopplerFactor",
+      "IDirectSoundBuffer_SetFilter",
+      "IDirectSoundBuffer_SetHeadroom",
+      "IDirectSoundBuffer_SetI3DL2Source",
+      "IDirectSoundBuffer_SetMaxDistance",
+      "IDirectSoundBuffer_SetMinDistance",
       "IDirectSoundBuffer_SetMixBinVolumes",
+      "IDirectSoundBuffer_SetMixBins",
+      "IDirectSoundBuffer_SetRolloffFactor",
       "IDirectSoundBuffer_SetVolume",
       "IDirectSoundBuffer_StopEx",
       "IDirectSoundStream_Discontinuity",
@@ -1401,45 +1585,38 @@
       "IDirectSoundStream_Release",
       "IDirectSoundStream_SetEG",
       "IDirectSoundStream_SetFilter",
+      "IDirectSoundStream_SetHeadroom",
       "IDirectSoundStream_SetLFO",
-      "IDirectSoundStream_SetMixBins",
       "IDirectSoundStream_SetMixBinVolumes",
+      "IDirectSoundStream_SetMixBins",
       "IDirectSoundStream_SetOutputBuffer",
       "IDirectSoundStream_SetPitch",
       "IDirectSoundStream_SetVolume",
-      "IDirectSound_GetEffectData",
       "IDirectSound_CommitDeferredSettings",
+      "IDirectSound_CreateSoundBuffer",
+      "IDirectSound_CreateSoundStream",
+      "IDirectSound_GetCaps",
+      "IDirectSound_GetEffectData",
+      "IDirectSound_GetSpeakerConfig",
       "IDirectSound_Release",
+      "IDirectSound_SetDistanceFactor",
+      "IDirectSound_SetDopplerFactor",
+      "IDirectSound_SetEffectData",
+      "IDirectSound_SetMixBinHeadroom",
       "IDirectSound_SetOrientation",
       "IDirectSound_SetPosition",
-      "IDirectSound_SetEffectData",
+      "IDirectSound_SetRolloffFactor",
+      "WmaCreateInMemoryDecoder",
       "XAudioDownloadEffectsImage",
       "XAudioSetEffectData",
       "XFreeSection",
-      "XLoadSection",
-      "DirectSoundCreate",
-      "IDirectSound_GetCaps",
-      "IDirectSound_GetSpeakerConfig",
-      "IDirectSound_SetDistanceFactor",
-      "IDirectSound_SetDopplerFactor",
-      "IDirectSound_SetMixBinHeadroom",
-      "IDirectSound_SetRolloffFactor",
-      "DirectSoundCreateBuffer",
-      "IDirectSoundBuffer_SetBufferData",
-      "IDirectSoundBuffer_SetHeadroom",
-      "IDirectSoundBuffer_SetMaxDistance",
-      "IDirectSoundBuffer_SetMinDistance",
-      "IDirectSound_CreateSoundBuffer",
-      "IDirectSoundBuffer_SetConeOutsideVolume",
-      "IDirectSoundBuffer_SetDopplerFactor",
-      "IDirectSoundBuffer_SetRolloffFactor",
-      "IDirectSoundStream_SetHeadroom",
-      "IDirectSound_CreateSoundStream",
-      "WmaCreateInMemoryDecoder",
-      "IDirectSoundBuffer_SetFilter",
-      "IDirectSoundBuffer_SetI3DL2Source"
+      "XHVEngineCreate@8",
+      "XHVEngine_SetCallbackInterface@8",
+      "XLoadSection"
     ],
-    "recovered_lifecycle_operations": [],
+    "recovered_lifecycle_operations": [
+      "?function_53a20@@YGXKPAXK@Z"
+    ],
     "immutable_diagnostics": [],
     "numeric_boundaries": [
       "?h2_xbox_rsqrtss@@YAMM@Z"
@@ -1492,7 +1669,8 @@
     {
       "symbol": "?voice_start_engine@@YAXXZ",
       "provider": "port/runtime/guest_online_runtime.cpp",
-      "reason": "the current native-offline provider is intentionally empty and cannot satisfy DSP recovery restart semantics"
+      "exact_dormant_provider": "src/voice_xhv_lifetime_native.cpp",
+      "reason": "the production native-offline provider remains intentionally empty; the complete exact implementation is confined to the dormant cluster and cannot enter production before genuine XHV and callback routing ownership"
     }
   ],
   "compact_helpers": [
@@ -2647,10 +2825,48 @@
       "?function_18e1f0@@YAPAUs_loop_allocator@@PAVc_memory_source@@JPBD@Z",
       "?function_18e230@@YAXPAUs_loop_allocator@@@Z",
       "?function_18e250@@YAXPAUs_loop_allocator@@JPBDPAVc_memory_source@@@Z",
-      "?physical_memory_malloc_fixed@@YAPAXJK@Z"
+      "XPhysicalProtect"
     ],
     "production_inadequacy": "the current production voice_start_engine is intentionally empty and cannot satisfy this lifetime or DSP recovery",
-    "prohibited_shortcut": "do not define g_476fc8 or g_4c9878 alone, fabricate an initialized engine, zero the callback vptr, collapse stage/menu pool ownership, or replace XHV methods with successful no-ops"
+    "prohibited_shortcut": "Do not link the exact dormant voice_start_engine into production, fabricate XHV engine success, replace function_53a20 with a drop/no-op, zero the callback vptr, or collapse either primary/menu pool lifetime.",
+    "assembled": true,
+    "providers": [
+      "?LocalChatDataReady@c_voice_xhv@@UAGJKKPAX@Z",
+      "?CommunicatorStatusUpdate@c_voice_xhv@@UAGJKW4XHV_VOICE_COMMUNICATOR_STATUS@@@Z",
+      "?SpeechRecognized@c_voice_xhv@@UAGJKPAUXHV_SR_ITEM@@K@Z",
+      "?MicrophoneRawDataReady@c_voice_xhv@@UAGJKKPAXPAH@Z",
+      "?VoiceMailDataReady@c_voice_xhv@@UAGJKKK@Z",
+      "?VoiceMailStopped@c_voice_xhv@@UAGJK@Z",
+      "?voice_xhv_reset_masks@@YAXPAVc_voice_xhv@@@Z",
+      "?voice_xhv_reset_port_modes@@YAXPAVc_voice_xhv@@@Z",
+      "?voice_start_engine@@YAXXZ",
+      "?voice_stop_engine@@YAXXZ",
+      "?h2_voice_xhv_callback_vtable@@3QBQ6AXXZB",
+      "?g_476fc8@@3Vc_voice_xhv@@A",
+      "?g_52731c@@3PAPAXA",
+      "?g_46dd54@@3PAVc_memory_source@@A",
+      "?g_4c9878@@3Us_voice_globals@@A",
+      "?g_5259b8@@3Us_voice_player_values@@A",
+      "?g_525a00@@3Us_voice_channels@@A",
+      "?g_527104@@3Us_voice_routing@@A",
+      "?function_53210@@YAXXZ",
+      "?voice_channels_initialize@@YAXPAUs_voice_channels@@@Z",
+      "?voice_player_settings_initialize@@YAXPAUs_voice_player_settings@@@Z",
+      "?allocate@c_physical_memory_source@@UAEPAXJ@Z",
+      "?release@c_physical_memory_source@@UAEXPAX@Z",
+      "?function_53310@@YGXJ@Z",
+      "?function_533e0@@YAXXZ",
+      "?voice_initialize_menu_pool@@YAXXZ",
+      "?voice_dispose_menu_pool@@YAXXZ",
+      "?h2_physical_memory_source_vtable@@3Us_table@c_memory_source@@B",
+      "?g_476fbc@@3Vc_physical_memory_source@@A",
+      "?g_voice_pool_name@@3QBDB",
+      "?g_voice_menu_pool_name@@3QBDB"
+    ],
+    "production_score_before": 70,
+    "production_score_after": 76,
+    "remaining_code_gate": "?function_53a20@@YGXKPAXK@Z",
+    "execution_gate": "The exact dormant lifetime remains absent from production and uncallable until genuine XHV backend services and the recovered local-chat packet route are assembled; production sound and blocking texture residency remain disabled."
   },
   "native_virtual_memory_bridge": {
     "host_abi_version": 15,
