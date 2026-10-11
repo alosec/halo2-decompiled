@@ -3744,6 +3744,19 @@ def main():
                  "?g_4e6380@@3PAUs_4e6380@@A",
                  "?g_502118@@3PAUs_sound_class_fade@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-function-range.o",
+             "src/tag_function_range_native.cpp",
+             "?function_13bb90@@YAMPBUs_tag_data@@MM@Z", {
+                 "?function_13b390@@YAMPBXMM@Z"}),
+            ("sound-looping-impulse-submit.o",
+             "src/sound_looping_impulse_submit_native.cpp",
+             "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z", {
+                 "?function_13bb90@@YAMPBUs_tag_data@@MM@Z",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "IDirectSoundBuffer_Lock",
+                 "IDirectSoundBuffer_Pause",
+                 "IDirectSoundBuffer_SetCurrentPosition",
+                 "IDirectSoundBuffer_SetVolume"}),
             ("sound-looping-playback-set-chunk.o",
              "src/sound_looping_chunk_policy_native.cpp",
              "?sound_playback_set_chunk@@YAXJJDDF@Z", {
