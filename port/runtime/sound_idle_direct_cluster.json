@@ -1046,16 +1046,7 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
-    "acos",
-    "exp",
-    "expf",
-    "fmod",
     "g_dwDirectSoundDeltaPanicCount",
-    "log",
-    "log10",
-    "logf",
-    "pow",
-    "sinf",
     "DirectSoundCreate",
     "IDirectSound_GetCaps",
     "IDirectSound_GetSpeakerConfig",
@@ -1161,16 +1152,7 @@
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
     "numeric_boundaries": [
-      "?h2_xbox_rsqrtss@@YAMM@Z",
-      "acos",
-      "exp",
-      "expf",
-      "fmod",
-      "log",
-      "log10",
-      "logf",
-      "pow",
-      "sinf"
+      "?h2_xbox_rsqrtss@@YAMM@Z"
     ],
     "crc_storage_lifetime": {
       "updater": "?function_163ba0@@YAXPAKPBXJ@Z",
@@ -1945,5 +1927,48 @@
     "initial_state": "the ILP32 block pointer and in-use byte are process-lifetime zero-initialized storage",
     "semantics": "assembled driver startup reserves and publishes the exact aligned 0xcc-byte static block and clears the in-use byte; recovered allocation marks object type 1 in use, matching free clears it, and assembled driver teardown clears the block publication",
     "execution_gate": "requires the genuine recovered function_12c090 and XMemAlloc/XMemFree routing plus their default and voice allocator backends; storage ownership does not allocate, free, or fabricate a codec block"
+  },
+  "native_sound_math_bridge": {
+    "host_abi_version": 13,
+    "routes": [
+      {
+        "guest_symbol": "acos",
+        "host_import": "host_h2_math_acos"
+      },
+      {
+        "guest_symbol": "exp",
+        "host_import": "host_h2_math_exp"
+      },
+      {
+        "guest_symbol": "expf",
+        "host_import": "host_h2_math_expf"
+      },
+      {
+        "guest_symbol": "fmod",
+        "host_import": "host_h2_math_fmod"
+      },
+      {
+        "guest_symbol": "log",
+        "host_import": "host_h2_math_log"
+      },
+      {
+        "guest_symbol": "log10",
+        "host_import": "host_h2_math_log10"
+      },
+      {
+        "guest_symbol": "logf",
+        "host_import": "host_h2_math_logf"
+      },
+      {
+        "guest_symbol": "pow",
+        "host_import": "host_h2_math_pow"
+      },
+      {
+        "guest_symbol": "sinf",
+        "host_import": "host_h2_math_sinf"
+      }
+    ],
+    "semantics": "the production guest defines each recovered C math ABI as a thin call through a patchable host import; the native service invokes the corresponding Darwin libm operation with the original float or double signature",
+    "execution_gate": "exact Xbox reciprocal-square-root estimate h2_xbox_rsqrtss remains unresolved and may not be replaced by host sqrt; native math routing does not enable any sound backend or mutable audio lifetime"
   }
 }

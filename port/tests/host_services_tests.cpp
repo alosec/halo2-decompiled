@@ -127,6 +127,21 @@ int main() {
                 "host ABI version mismatch");
     ok &= check(std::abs(host_h2_cos(0.5) - std::cos(0.5)) < 1.0e-12,
                 "host cosine adapter mismatch");
+    ok &= check(std::abs(host_h2_math_acos(0.5) - std::acos(0.5)) < 1.0e-12,
+                "host arccosine adapter mismatch");
+    ok &= check(std::abs(host_h2_math_exp(0.5) - std::exp(0.5)) < 1.0e-12 &&
+                    std::abs(host_h2_math_expf(0.5f) - std::exp(0.5f)) < 1.0e-6f,
+                "host exponential adapters mismatch");
+    ok &= check(std::abs(host_h2_math_fmod(5.5, 2.0) - std::fmod(5.5, 2.0)) < 1.0e-12,
+                "host remainder adapter mismatch");
+    ok &= check(std::abs(host_h2_math_log(2.0) - std::log(2.0)) < 1.0e-12 &&
+                    std::abs(host_h2_math_log10(2.0) - std::log10(2.0)) < 1.0e-12 &&
+                    std::abs(host_h2_math_logf(2.0f) - std::log(2.0f)) < 1.0e-6f,
+                "host logarithm adapters mismatch");
+    ok &= check(std::abs(host_h2_math_pow(2.0, 3.0) - 8.0) < 1.0e-12,
+                "host power adapter mismatch");
+    ok &= check(std::abs(host_h2_math_sinf(0.5f) - std::sin(0.5f)) < 1.0e-6f,
+                "host sine adapter mismatch");
 
     const std::vector<std::uint8_t> red_dxt5 = {
         255, 0, 0, 0, 0, 0, 0, 0,

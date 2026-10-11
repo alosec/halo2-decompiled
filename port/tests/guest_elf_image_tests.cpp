@@ -72,7 +72,10 @@ int main(int argc, char** argv) {
                                "host_h2_video_control",
                                "host_h2_render_request", "host_h2_text_request",
                                "host_h2_get_milliseconds", "host_h2_sleep",
-                               "host_h2_cos", "host_h2_profile_list",
+                               "host_h2_cos", "host_h2_math_acos", "host_h2_math_exp",
+                               "host_h2_math_expf", "host_h2_math_fmod", "host_h2_math_log",
+                               "host_h2_math_log10", "host_h2_math_logf", "host_h2_math_pow",
+                               "host_h2_math_sinf", "host_h2_profile_list",
                                "host_h2_profile_create", "host_h2_profile_read",
                                "host_h2_profile_write", "host_h2_profile_delete"}) {
         const auto standard_slot = image->symbol_address(

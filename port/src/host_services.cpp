@@ -780,6 +780,15 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         {"host_h2_get_milliseconds", function_address(&host_h2_get_milliseconds)},
         {"host_h2_sleep", function_address(&host_h2_sleep)},
         {"host_h2_cos", function_address(&host_h2_cos)},
+        {"host_h2_math_acos", function_address(&host_h2_math_acos)},
+        {"host_h2_math_exp", function_address(&host_h2_math_exp)},
+        {"host_h2_math_expf", function_address(&host_h2_math_expf)},
+        {"host_h2_math_fmod", function_address(&host_h2_math_fmod)},
+        {"host_h2_math_log", function_address(&host_h2_math_log)},
+        {"host_h2_math_log10", function_address(&host_h2_math_log10)},
+        {"host_h2_math_logf", function_address(&host_h2_math_logf)},
+        {"host_h2_math_pow", function_address(&host_h2_math_pow)},
+        {"host_h2_math_sinf", function_address(&host_h2_math_sinf)},
         {"host_h2_profile_list", function_address(&host_h2_profile_list)},
         {"host_h2_profile_create", function_address(&host_h2_profile_create)},
         {"host_h2_profile_read", function_address(&host_h2_profile_read)},
@@ -1018,6 +1027,42 @@ extern "C" void host_h2_sleep(unsigned int milliseconds) {
 
 extern "C" double host_h2_cos(double value) {
     return std::cos(value);
+}
+
+extern "C" double host_h2_math_acos(double value) {
+    return std::acos(value);
+}
+
+extern "C" double host_h2_math_exp(double value) {
+    return std::exp(value);
+}
+
+extern "C" float host_h2_math_expf(float value) {
+    return std::exp(value);
+}
+
+extern "C" double host_h2_math_fmod(double numerator, double denominator) {
+    return std::fmod(numerator, denominator);
+}
+
+extern "C" double host_h2_math_log(double value) {
+    return std::log(value);
+}
+
+extern "C" double host_h2_math_log10(double value) {
+    return std::log10(value);
+}
+
+extern "C" float host_h2_math_logf(float value) {
+    return std::log(value);
+}
+
+extern "C" double host_h2_math_pow(double base, double exponent) {
+    return std::pow(base, exponent);
+}
+
+extern "C" float host_h2_math_sinf(float value) {
+    return std::sin(value);
 }
 
 extern "C" int host_h2_profile_list(unsigned int* identifiers,

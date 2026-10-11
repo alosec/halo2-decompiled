@@ -793,6 +793,22 @@ def main() -> int:
             not codec_storage.get("execution_gate"):
         raise RuntimeError("sound-idle codec allocator storage changed")
 
+    math_bridge = manifest.get("native_sound_math_bridge", {})
+    if math_bridge.get("host_abi_version") != 13 or \
+            math_bridge.get("routes") != [
+                {"guest_symbol": "acos", "host_import": "host_h2_math_acos"},
+                {"guest_symbol": "exp", "host_import": "host_h2_math_exp"},
+                {"guest_symbol": "expf", "host_import": "host_h2_math_expf"},
+                {"guest_symbol": "fmod", "host_import": "host_h2_math_fmod"},
+                {"guest_symbol": "log", "host_import": "host_h2_math_log"},
+                {"guest_symbol": "log10", "host_import": "host_h2_math_log10"},
+                {"guest_symbol": "logf", "host_import": "host_h2_math_logf"},
+                {"guest_symbol": "pow", "host_import": "host_h2_math_pow"},
+                {"guest_symbol": "sinf", "host_import": "host_h2_math_sinf"}] or \
+            not math_bridge.get("semantics") or \
+            "h2_xbox_rsqrtss" not in math_bridge.get("execution_gate", ""):
+        raise RuntimeError("sound-idle native math bridge changed")
+
     publications = manifest.get("runtime_publication_storage_closure", {})
     if publications.get("providers") != [
             {"symbol": "?g_4e6374@@3JA",
@@ -865,7 +881,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 86:
+    if len(expected_production_imports) != 77:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -874,7 +890,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [15, 61, 0, 0, 10]:
+    if [len(category) for category in categories] != [15, 61, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1109,6 +1125,27 @@ def main() -> int:
         if fragment not in codec_free_source:
             raise RuntimeError(
                 f"sound codec allocator free path lost {fragment}")
+    guest_host_runtime = (args.root /
+        "port/runtime/guest_host_runtime.cpp").read_text()
+    host_services_source = (args.root / "port/src/host_services.cpp").read_text()
+    for guest, host, native in [
+            ("acos", "host_h2_math_acos", "std::acos"),
+            ("exp", "host_h2_math_exp", "std::exp"),
+            ("expf", "host_h2_math_expf", "std::exp"),
+            ("fmod", "host_h2_math_fmod", "std::fmod"),
+            ("log", "host_h2_math_log", "std::log"),
+            ("log10", "host_h2_math_log10", "std::log10"),
+            ("logf", "host_h2_math_logf", "std::log"),
+            ("pow", "host_h2_math_pow", "std::pow"),
+            ("sinf", "host_h2_math_sinf", "std::sin")]:
+        if f'extern "C"' not in guest_host_runtime or \
+                f"{guest}(" not in guest_host_runtime or \
+                f"return {host}(" not in guest_host_runtime:
+            raise RuntimeError(f"guest math route lost {guest} -> {host}")
+        if f'{{"{host}", function_address(&{host})}}' not in \
+                host_services_source or \
+                f"return {native}(" not in host_services_source:
+            raise RuntimeError(f"host math route lost {host} -> {native}")
     runtime_storage_source = (args.root /
         "src/sound_runtime_storage_native.cpp").read_text()
     for fragment in [

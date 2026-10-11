@@ -61,6 +61,33 @@ h2_host_slot_host_h2_sleep:
 .globl h2_host_slot_host_h2_cos
 h2_host_slot_host_h2_cos:
     .xword 0
+.globl h2_host_slot_host_h2_math_acos
+h2_host_slot_host_h2_math_acos:
+    .xword 0
+.globl h2_host_slot_host_h2_math_exp
+h2_host_slot_host_h2_math_exp:
+    .xword 0
+.globl h2_host_slot_host_h2_math_expf
+h2_host_slot_host_h2_math_expf:
+    .xword 0
+.globl h2_host_slot_host_h2_math_fmod
+h2_host_slot_host_h2_math_fmod:
+    .xword 0
+.globl h2_host_slot_host_h2_math_log
+h2_host_slot_host_h2_math_log:
+    .xword 0
+.globl h2_host_slot_host_h2_math_log10
+h2_host_slot_host_h2_math_log10:
+    .xword 0
+.globl h2_host_slot_host_h2_math_logf
+h2_host_slot_host_h2_math_logf:
+    .xword 0
+.globl h2_host_slot_host_h2_math_pow
+h2_host_slot_host_h2_math_pow:
+    .xword 0
+.globl h2_host_slot_host_h2_math_sinf
+h2_host_slot_host_h2_math_sinf:
+    .xword 0
 .globl h2_host_slot_host_h2_profile_list
 h2_host_slot_host_h2_profile_list:
     .xword 0

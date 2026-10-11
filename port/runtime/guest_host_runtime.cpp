@@ -881,3 +881,48 @@ extern "C" double cos(double value)
 {
     return host_h2_cos(value);
 }
+
+extern "C" double acos(double value)
+{
+    return host_h2_math_acos(value);
+}
+
+extern "C" double exp(double value)
+{
+    return host_h2_math_exp(value);
+}
+
+extern "C" float expf(float value)
+{
+    return host_h2_math_expf(value);
+}
+
+extern "C" double fmod(double numerator, double denominator)
+{
+    return host_h2_math_fmod(numerator, denominator);
+}
+
+extern "C" double log(double value)
+{
+    return host_h2_math_log(value);
+}
+
+extern "C" double log10(double value)
+{
+    return host_h2_math_log10(value);
+}
+
+extern "C" float logf(float value)
+{
+    return host_h2_math_logf(value);
+}
+
+extern "C" double pow(double base, double exponent)
+{
+    return host_h2_math_pow(base, exponent);
+}
+
+extern "C" float sinf(float value)
+{
+    return host_h2_math_sinf(value);
+}
