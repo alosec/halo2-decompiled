@@ -217,6 +217,18 @@
     {
       "source": "src/sound_class_route_native.cpp",
       "symbol": "?function_221810@@YAPAUs_unknown_5c@@F@Z"
+    },
+    {
+      "source": "src/sound_impulse_channel_native.cpp",
+      "symbol": "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "symbol": "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_looping_channel_spatialization@@PAUs_looping_channel_properties@@@Z"
+    },
+    {
+      "source": "src/sound_doppler_native.cpp",
+      "symbol": "?function_12a9d0@@YAMJPBUs_sound_position@@@Z"
     }
   ],
   "definitions": [
@@ -228,10 +240,13 @@
     "?function_125d60@@YAXXZ",
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127320@@YAXJJ@Z",
+    "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_1293f0@@YAXXZ",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
+    "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_looping_channel_spatialization@@PAUs_looping_channel_properties@@@Z",
     "?function_12a6d0@@YAJFMM@Z",
     "?function_12a810@@YAJJ@Z",
+    "?function_12a9d0@@YAMJPBUs_sound_position@@@Z",
     "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
@@ -281,9 +296,15 @@
   "imports": [
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
-    "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+    "?function_1251e0@@YAJPBXJM@Z",
+    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
+    "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
+    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
+    "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
+    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
@@ -311,7 +332,9 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+    "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_start_engine@@YAXXZ",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
@@ -340,6 +363,7 @@
     "h2_guest_memset",
     "h2_native_async_publish_admitted",
     "h2_native_async_try_admit",
+    "log",
     "log10",
     "sqrt"
   ],
@@ -347,8 +371,14 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
-    "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+    "?function_1251e0@@YAJPBXJM@Z",
+    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
+    "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
+    "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
+    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
+    "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
+    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -363,7 +393,9 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "IDirectSoundBuffer_SetVolume",
@@ -380,6 +412,7 @@
     "acos",
     "exp",
     "g_dwDirectSoundDeltaPanicCount",
+    "log",
     "log10"
   ],
   "production_inadequate_resolutions": [
@@ -593,5 +626,15 @@
     "symbol": "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "semantics": "preserve exact out-of-line sound-class tag lookup through active tag-header and instance tables",
     "execution_gate": "initialized active tag-header globals and sound-class tag instance storage"
+  },
+  "impulse_channel_closure": {
+    "root": "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+    "providers": [
+      "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
+      "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_looping_channel_spatialization@@PAUs_looping_channel_properties@@@Z",
+      "?function_12a9d0@@YAMJPBUs_sound_position@@@Z"
+    ],
+    "semantics": "preserve exact impulse channel property assembly, gain and Doppler policy, initial/update submission, impulse dispatch, controller synchronization, chunk queueing and advance, and terminal stream transition",
+    "execution_gate": "initialized voice/playback/tag/controller state plus genuine effect, driver, impulse and chunk-submission lifetimes"
   }
 }
