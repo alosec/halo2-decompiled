@@ -485,6 +485,14 @@
     {
       "source": "src/sound_cache_callbacks_native.cpp",
       "symbol": "?sound_cache_entry_delete@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_wma_decoder_release_native.cpp",
+      "symbol": "?release_decoder@c_wma_codec@@QAAXXZ"
+    },
+    {
+      "source": "src/sound_stream_chunk_release_native.cpp",
+      "symbol": "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"
     }
   ],
   "definitions": [
@@ -586,6 +594,7 @@
     "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
     "?looping_sound_set_permutations@@YAXPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JFKF@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
+    "?release_decoder@c_wma_codec@@QAAXXZ",
     "?sound_cache_entry_busy@@YA_NJ@Z",
     "?sound_cache_entry_delete@@YAXJ@Z",
     "?sound_cache_initialize@@YAXXZ",
@@ -608,6 +617,7 @@
     "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
     "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
@@ -690,7 +700,6 @@
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
-    "?release_decoder@c_wma_codec@@QAAXXZ",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
     "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
@@ -744,6 +753,7 @@
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memcmp",
     "h2_guest_memcpy",
+    "h2_guest_memmove",
     "h2_guest_memset",
     "h2_native_async_publish_admitted",
     "h2_native_async_try_admit",
@@ -798,7 +808,6 @@
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
-    "?release_decoder@c_wma_codec@@QAAXXZ",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
     "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
@@ -923,7 +932,6 @@
       "?function_191300@@YA_NPAUIDirectSound@@@Z",
       "?function_21f290@@YAXXZ",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
-      "?release_decoder@c_wma_codec@@QAAXXZ",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
       "?sound_driver_device_startup@@YA_NXZ",
       "?sound_driver_effect_buffers_startup@@YAXXZ"
