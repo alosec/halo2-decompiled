@@ -569,6 +569,34 @@
     {
       "source": "src/sound_driver_voice_new_native.cpp",
       "symbol": "?sound_driver_voice_new@@YAFKK@Z"
+    },
+    {
+      "source": "src/unknown_218850.cpp",
+      "global": "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "global": "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@"
+    },
+    {
+      "source": "src/unknown_218850.cpp",
+      "global": "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@"
+    },
+    {
+      "source": "src/unknown_21dda0.cpp",
+      "global": "??_C@_0N@JEHEBEHD@sound?5voices?$AA@"
+    },
+    {
+      "source": "src/sound_system_startup_native.cpp",
+      "global": "??_C@_0O@JBDOIMAP@sound?5sources?$AA@"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "global": "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@"
+    },
+    {
+      "source": "src/unknown_21d110.cpp",
+      "global": "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"
     }
   ],
   "definitions": [
@@ -725,16 +753,16 @@
     "?sound_driver_voice_create_buffer@@YA_NJ@Z",
     "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
     "?sound_driver_stream_callback@@YAXPAX0K@Z",
-    "?sound_driver_voice_new@@YAFKK@Z"
-  ],
-  "imports": [
+    "?sound_driver_voice_new@@YAFKK@Z",
     "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
     "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
     "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
     "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
-    "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
-    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
     "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
+    "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
+    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"
+  ],
+  "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
@@ -882,8 +910,6 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
-    "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
-    "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
@@ -908,11 +934,6 @@
     "?g_51ebe0@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
     "?h2_xbox_rsqrtss@@YAMM@Z",
-    "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
-    "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
-    "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
-    "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
-    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_510c3c@@3PAXA",
@@ -1082,15 +1103,7 @@
       "IDirectSound_CreateSoundStream"
     ],
     "recovered_lifecycle_operations": [],
-    "immutable_diagnostics": [
-      "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
-      "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
-      "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
-      "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
-      "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
-      "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
-      "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"
-    ],
+    "immutable_diagnostics": [],
     "numeric_boundaries": [
       "?h2_xbox_rsqrtss@@YAMM@Z",
       "acos",
@@ -1721,5 +1734,39 @@
     "voice_semantics": "preserve the 64-voice cap, submix creation/playback, optional 3D buffer flags and rollback, exact 0..5 and 6/8/7/9/10 mixbins, FLT_MAX distances, and optional play",
     "failure_policy": "retain published channel ranges and partial objects for exact ordered teardown; never fabricate stream, voice, codec, or DirectSound success",
     "execution_gate": "requires initialized PCM/WMA codec objects and vtables, static allocator storage, genuine DirectSound streams/buffers, mutable driver state, and ordered teardown"
+  },
+  "diagnostic_string_closure": {
+    "providers": [
+      {
+        "symbol": "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
+        "value": "xbox sound cache"
+      },
+      {
+        "symbol": "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
+        "value": "sound playback controllers"
+      },
+      {
+        "symbol": "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
+        "value": "xbox sound"
+      },
+      {
+        "symbol": "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
+        "value": "sound voices"
+      },
+      {
+        "symbol": "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
+        "value": "sound sources"
+      },
+      {
+        "symbol": "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
+        "value": "looping sounds"
+      },
+      {
+        "symbol": "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+        "value": "sounds effects"
+      }
+    ],
+    "semantics": "retain the exact recovered immutable record-pool and physical-cache labels, including the retail sounds effects wording, as null-terminated read-only data",
+    "execution_gate": "none beyond the owning startup lifetimes; these labels are diagnostics only and do not initialize mutable sound state or an audio backend"
   }
 }

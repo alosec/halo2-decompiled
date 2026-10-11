@@ -173,13 +173,20 @@ def main() -> int:
         ("src/sound_stream_create_native.cpp", "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z"),
         ("src/sound_driver_stream_callback_native.cpp", "?sound_driver_stream_callback@@YAXPAX0K@Z"),
         ("src/sound_driver_voice_new_native.cpp", "?sound_driver_voice_new@@YAFKK@Z"),
+        ("src/unknown_218850.cpp", "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@"),
+        ("src/unknown_12a1b0.cpp", "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@"),
+        ("src/unknown_218850.cpp", "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@"),
+        ("src/unknown_21dda0.cpp", "??_C@_0N@JEHEBEHD@sound?5voices?$AA@"),
+        ("src/sound_system_startup_native.cpp", "??_C@_0O@JBDOIMAP@sound?5sources?$AA@"),
+        ("src/unknown_12a1b0.cpp", "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@"),
+        ("src/unknown_21d110.cpp", "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 142:
+    if len(set(provider_symbols)) != 149:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -698,9 +705,29 @@ def main() -> int:
             not channel_startup.get("execution_gate"):
         raise RuntimeError("sound-idle channel-startup closure changed")
 
+    diagnostics = manifest.get("diagnostic_string_closure", {})
+    if diagnostics.get("providers") != [
+            {"symbol": "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
+             "value": "xbox sound cache"},
+            {"symbol": "??_C@_0BL@LDINANCG@sound?5playback?5controllers?$AA@",
+             "value": "sound playback controllers"},
+            {"symbol": "??_C@_0L@LPLEFDPA@xbox?5sound?$AA@",
+             "value": "xbox sound"},
+            {"symbol": "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
+             "value": "sound voices"},
+            {"symbol": "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
+             "value": "sound sources"},
+            {"symbol": "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
+             "value": "looping sounds"},
+            {"symbol": "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+             "value": "sounds effects"}] or \
+            not diagnostics.get("semantics") or \
+            not diagnostics.get("execution_gate"):
+        raise RuntimeError("sound-idle diagnostic string closure changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 154 or len(expected_imports) != 149:
+    if len(expected_definitions) != 161 or len(expected_imports) != 142:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -738,7 +765,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 105:
+    if len(expected_production_imports) != 98:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -747,7 +774,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [27, 61, 0, 7, 10]:
+    if [len(category) for category in categories] != [27, 61, 0, 0, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -899,6 +926,25 @@ def main() -> int:
             "voice->buffer = NULL"]:
         if fragment not in voice_new_source:
             raise RuntimeError(f"sound driver voice creation lost {fragment}")
+    diagnostic_sources = {
+        "src/unknown_218850.cpp": [
+            'data_new_inlined("xbox sound", 0x200',
+            'physical_memory_new("xbox sound cache", 0xc0'],
+        "src/unknown_12a1b0.cpp": [
+            'function_11cc20(128, "looping sounds"',
+            'function_11cc20(64, "sound playback controllers"'],
+        "src/unknown_21dda0.cpp": [
+            'function_11cc20(settings->maximum_voice_count, "sound voices"'],
+        "src/sound_system_startup_native.cpp": [
+            'function_11cc20(0x180, "sound sources", 0xbc)'],
+        "src/unknown_21d110.cpp": [
+            'function_11cc20(0x10, "sounds effects"']}
+    for source, fragments in diagnostic_sources.items():
+        text = (args.root / source).read_text()
+        for fragment in fragments:
+            if fragment not in text:
+                raise RuntimeError(
+                    f"sound diagnostic provider lost {fragment}")
     controller_source = (args.root / controller["source"]).read_text()
     storage_source = (args.root / controller["storage_source"]).read_text()
     teardown_source = (args.root / controller["teardown_source"]).read_text()
