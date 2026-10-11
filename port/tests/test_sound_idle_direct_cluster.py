@@ -203,7 +203,6 @@ def main() -> int:
         ("src/sound_map_lifetime_native.cpp", "?function_125690@@YAXXZ"),
         ("src/sound_map_lifetime_native.cpp", "?function_1257b0@@YAXXZ"),
         ("src/sound_map_lifetime_native.cpp", "?g_51ebd4@@3PAUs_sound_globals@@A"),
-        ("src/sound_map_lifetime_native.cpp", "?g_47f0e0@@3JA"),
         ("src/sound_map_reset_helpers_native.cpp", "?function_191270@@YAXXZ"),
         ("src/sound_map_reset_helpers_native.cpp", "?function_21f6d0@@YAXPBK0PBX@Z"),
         ("src/sound_map_reset_helpers_native.cpp", "?sound_mix_apply@@YAXXZ"),
@@ -223,13 +222,29 @@ def main() -> int:
         ("src/sound_pcm_codec_control_native.cpp", "?chunk_finished@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z"),
         ("src/sound_pcm_codec_control_native.cpp", "?can_submit@c_pcm_codec@@UAA_NPAUs_sound_stream@@_N@Z"),
         ("src/unknown_218850.cpp", "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z"),
+        ("src/sound_wma_codec_object_native.cpp", "?g_47f0d0@@3Us_47f0d0@@A"),
+        ("src/sound_wma_codec_object_native.cpp", "h2_wma_codec_vtable"),
+        ("src/sound_wma_codec_object_native.cpp", "?mark_cache_usage@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z"),
+        ("src/sound_wma_codec_object_native.cpp", "?packet_failed@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_wma_codec_object_native.cpp", "?chunk_finished@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z"),
+        ("src/sound_wma_codec_control_native.cpp", "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z"),
+        ("src/sound_wma_codec_start_native.cpp", "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z"),
+        ("src/sound_wma_codec_start_native.cpp", "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_wma_codec_control_native.cpp", "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_wma_codec_control_native.cpp", "?stop@c_wma_codec@@UAAXXZ"),
+        ("src/sound_wma_codec_control_native.cpp", "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z"),
+        ("src/sound_wma_codec_control_native.cpp", "?read@c_wma_codec@@QAAKKKPAPAX@Z"),
+        ("src/sound_wma_codec_start_native.cpp", "?wma_codec_read_callback@@YAKPAXKKPAPAX@Z"),
+        ("src/sound_wma_codec_initialize_native.cpp", "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z"),
+        ("src/sound_wma_codec_object_native.cpp", "?function_21ebc0@@YAXJ@Z"),
+        ("src/sound_wma_codec_object_native.cpp", "?function_21ebe0@@YAXXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 192:
+    if len(set(provider_symbols)) != 207:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -832,7 +847,10 @@ def main() -> int:
     map_lifetime = manifest.get("map_sound_globals_lifetime", {})
     if map_lifetime.get("storage") != \
             "?g_51ebd4@@3PAUs_sound_globals@@A" or \
-            map_lifetime.get("buffer_size") != "?g_47f0e0@@3JA" or \
+            map_lifetime.get("buffer_size") != \
+            "?g_47f0d0@@3Us_47f0d0@@A+0x10" or \
+            "interior field" not in \
+            map_lifetime.get("buffer_size_semantics", "") or \
             map_lifetime.get("startup_owner") != \
             "?function_125690@@YAXXZ" or \
             map_lifetime.get("teardown_owner") != \
@@ -861,6 +879,7 @@ def main() -> int:
             "g_51ebd4 = reinterpret_cast<s_sound_globals *>",
             "g_4e6380->master_fade = 1.0f",
             "g_4e6380->listeners[listener_index].active = false",
+            "g_47f0d0.packet_size = g_4e6948->state == 3",
             "playback->fade_start_time = 300",
             "function_125d60();",
             "function_1264c0(0);",
@@ -962,6 +981,62 @@ def main() -> int:
         if fragment not in pcm_method_source:
             raise RuntimeError(f"PCM codec method lost {fragment}")
 
+    wma = manifest.get("wma_codec_object_lifetime", {})
+    wma_slots = [
+        "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
+        "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
+        "?mark_cache_usage@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z",
+        "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?packet_failed@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?chunk_finished@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z",
+        "?stop@c_wma_codec@@UAAXXZ",
+        "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z"]
+    if wma.get("object") != "?g_47f0d0@@3Us_47f0d0@@A" or \
+            wma.get("size") != 0x20 or \
+            wma.get("vtable") != "h2_wma_codec_vtable" or \
+            wma.get("retail_vtable") != "0x45711c" or \
+            wma.get("packet_size_offset") != "0x10" or \
+            wma.get("slots") != wma_slots or \
+            wma.get("stage_initializer") != "?function_21ebc0@@YAXJ@Z" or \
+            wma.get("stage_disposer") != "?function_21ebe0@@YAXXZ" or \
+            wma.get("storage_initializer") != \
+            "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z" or \
+            wma.get("decoder_backend") != "WmaCreateInMemoryDecoder" or \
+            wma.get("production_score_before") != 75 or \
+            wma.get("production_score_after") != 75 or \
+            not wma.get("semantics") or not wma.get("execution_gate"):
+        raise RuntimeError("WMA codec object lifetime changed")
+    wma_object_source = (
+        args.root / "src/sound_wma_codec_object_native.cpp").read_text()
+    for fragment in [
+            "s_wma_codec_method const h2_wma_codec_vtable[9]",
+            "static_assert(sizeof(s_47f0d0) == 0x20",
+            "offsetof(s_47f0d0, packet_size) == 0x10",
+            "s_47f0d0 g_47f0d0 =",
+            "if (stage == 1)",
+            "function_2ae1d0(&g_47f0d0)",
+            "g_47f0d0.buffer = NULL"]:
+        if fragment not in wma_object_source:
+            raise RuntimeError(f"WMA codec object lost {fragment}")
+    for source_name, fragments in {
+            "src/sound_wma_codec_start_native.cpp": [
+                "WmaCreateInMemoryDecoder",
+                "decoder->vtable[4]",
+                "m_packet_status[index] != k_packet_status_pending"],
+            "src/sound_wma_codec_control_native.cpp": [
+                "m_stream = stream",
+                "stream->offset = 0",
+                "return m_decoder && !submitted",
+                "sound_cache_chunk_get_data(chunk)"],
+            "src/sound_wma_codec_initialize_native.cpp": [
+                "physical_memory_malloc_fixed(0x20000, PAGE_READWRITE)",
+                "memset(codec->packet_status, 0"]}.items():
+        source = (args.root / source_name).read_text()
+        for fragment in fragments:
+            if fragment not in source:
+                raise RuntimeError(f"WMA codec method lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -1012,7 +1087,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 204 or len(expected_imports) != 132:
+    if len(expected_definitions) != 219 or len(expected_imports) != 132:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -1053,6 +1128,16 @@ def main() -> int:
         raise RuntimeError(
             "PCM codec object/vtable relocation order changed: " +
             repr(pcm_relocations))
+    wma_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in
+            ["h2_wma_codec_vtable", *wma_slots])]
+    if wma_relocations != ["h2_wma_codec_vtable", *wma_slots]:
+        raise RuntimeError(
+            "WMA codec object/vtable relocation order changed: " +
+            repr(wma_relocations))
 
     production_definitions = symbols(
         args.llvm_nm, args.production_object, "--defined-only")
@@ -1073,7 +1158,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [12, 62, 0, 0, 1]:
+    if [len(category) for category in categories] != [11, 63, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \

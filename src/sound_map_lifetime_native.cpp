@@ -95,8 +95,24 @@ static_assert(offsetof(s_sound_playback, fade_start_time) == 0xb4,
 static_assert(offsetof(s_sound_playback, fade_end_time) == 0xb8,
 	"sound playback fade-end offset");
 
+struct s_47f0d0
+{
+	void *vtable;
+	void *stream;
+	void *decoder;
+	dword position;
+	dword packet_size;
+	byte *buffer;
+	dword packet_status[2];
+};
+
+static_assert(sizeof(s_47f0d0) == 0x20, "WMA codec object size");
+static_assert(offsetof(s_47f0d0, packet_size) == 0x10,
+	"WMA codec packet-size alias offset");
+
 extern s_4e6380 *g_4e6380;
 extern s_record_pool *g_4e637c;
+extern s_47f0d0 g_47f0d0;
 extern void *g_502110;
 extern void *g_51ebd8;
 extern s_bink_sound_settings *g_51ebe4;
@@ -109,7 +125,6 @@ void function_125d60(void);
 void __stdcall function_1264c0(dword flags);
 
 s_sound_globals *g_51ebd4;
-long g_47f0e0;
 
 // @retail 0x125690
 void function_125690(void)
@@ -141,7 +156,7 @@ void function_125690(void)
 	function_191270();
 	g_51ebe4->impulse_ids[0] = NONE;
 	g_51ebe4->impulse_ids[1] = NONE;
-	g_47f0e0 = g_4e6948->state == 3 ? 0x10000 : 0x4000;
+	g_47f0d0.packet_size = g_4e6948->state == 3 ? 0x10000 : 0x4000;
 }
 
 // @retail 0x1257b0

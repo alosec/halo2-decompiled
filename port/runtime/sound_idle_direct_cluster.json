@@ -691,10 +691,6 @@
       "global": "?g_51ebd4@@3PAUs_sound_globals@@A"
     },
     {
-      "source": "src/sound_map_lifetime_native.cpp",
-      "global": "?g_47f0e0@@3JA"
-    },
-    {
       "source": "src/sound_map_reset_helpers_native.cpp",
       "symbol": "?function_191270@@YAXXZ"
     },
@@ -769,6 +765,70 @@
     {
       "source": "src/unknown_218850.cpp",
       "symbol": "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "global": "?g_47f0d0@@3Us_47f0d0@@A"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "global": "h2_wma_codec_vtable"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "symbol": "?mark_cache_usage@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "symbol": "?packet_failed@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "symbol": "?chunk_finished@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "symbol": "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "symbol": "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "symbol": "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "symbol": "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "symbol": "?stop@c_wma_codec@@UAAXXZ"
+    },
+    {
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "symbol": "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_control_native.cpp",
+      "symbol": "?read@c_wma_codec@@QAAKKKPAPAX@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_start_native.cpp",
+      "symbol": "?wma_codec_read_callback@@YAKPAXKKPAPAX@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_initialize_native.cpp",
+      "symbol": "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "symbol": "?function_21ebc0@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_wma_codec_object_native.cpp",
+      "symbol": "?function_21ebe0@@YAXXZ"
     }
   ],
   "definitions": [
@@ -781,8 +841,11 @@
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
     "?async_task_queue@@YAJPAUs_job_node@@@Z",
     "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+    "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
     "?can_submit@c_pcm_codec@@UAA_NPAUs_sound_stream@@_N@Z",
+    "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z",
     "?chunk_finished@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z",
+    "?chunk_finished@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z",
     "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
     "?function_11cf50@@YAMPBTvector3f@@0@Z",
     "?function_120900@@YAXPAUs_job_node@@@Z",
@@ -860,6 +923,8 @@
     "?function_21e410@@YAXJPAUXBOXADPCMWAVEFORMAT@@PAPAVc_sound_stream_codec@@@Z",
     "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
     "?function_21eae0@@YAXXZ",
+    "?function_21ebc0@@YAXJ@Z",
+    "?function_21ebe0@@YAXXZ",
     "?function_21ec00@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
@@ -885,6 +950,7 @@
     "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
     "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
     "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
+    "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z",
     "?function_30bf0@@YAMPATvector3f@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
@@ -892,7 +958,7 @@
     "?g_468834@@3MA",
     "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
-    "?g_47f0e0@@3JA",
+    "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_47f0f0@@3Us_47f0f0@@A",
     "?g_4e6374@@3JA",
     "?g_4e6378@@3PAUs_sound_voice@@A",
@@ -913,14 +979,19 @@
     "?g_sound_crc_table@@3PAKA",
     "?g_sound_crc_table_built@@3_NA",
     "?get_packet@c_pcm_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+    "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?looping_sound_controllers_initialize@@YA_NXZ",
     "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
     "?looping_sound_set_permutations@@YAXPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JFKF@Z",
     "?mark_cache_usage@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z",
+    "?mark_cache_usage@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z",
     "?packet_failed@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+    "?packet_failed@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?packet_submitted@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+    "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
+    "?read@c_wma_codec@@QAAKKKPAPAX@Z",
     "?release_decoder@c_wma_codec@@QAAXXZ",
     "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z",
     "?sound_cache_entry_busy@@YA_NJ@Z",
@@ -967,15 +1038,19 @@
     "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z",
     "?sound_voices_update_chunks@@YAXXZ",
     "?start@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+    "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
     "?stop@c_sound_stream_codec@@UAAXXZ",
+    "?stop@c_wma_codec@@UAAXXZ",
     "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
+    "?wma_codec_read_callback@@YAKPAXKKPAPAX@Z",
     "g_44178c",
     "g_444c84",
     "g_44a150",
     "g_44a16c",
     "g_44a188",
-    "h2_pcm_codec_vtable"
+    "h2_pcm_codec_vtable",
+    "h2_wma_codec_vtable"
   ],
   "imports": [
     "??_C@_00CNPNBAHC@?$AA@",
@@ -1000,7 +1075,6 @@
     "?g_46bd48@@3PAY0EAA@EA",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_47f088@@3Vc_sound_effects@@A",
-    "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e034c@@3PAUs_tag_header_globals@@A",
     "?g_4e0350@@3PAUs_palette_source_globals@@A",
@@ -1085,6 +1159,7 @@
     "SetFilePointer",
     "SwitchToThread",
     "WaitForSingleObject",
+    "WmaCreateInMemoryDecoder",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
@@ -1122,7 +1197,6 @@
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_47f088@@3Vc_sound_effects@@A",
-    "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6470@@3JA",
     "?g_4e64a0@@3JA",
@@ -1183,6 +1257,7 @@
     "IDirectSound_SetOrientation",
     "IDirectSound_SetPosition",
     "IDirectSound_SetRolloffFactor",
+    "WmaCreateInMemoryDecoder",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
     "XFreeSection",
@@ -1195,7 +1270,6 @@
     "mutable_lifetimes": [
       "?g_46875c@@3PAVc_data_allocator@@A",
       "?g_476fc8@@3Vc_voice_xhv@@A",
-      "?g_47f0d0@@3Us_47f0d0@@A",
       "?g_4c9878@@3Us_voice_globals@@A",
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA",
@@ -1268,7 +1342,8 @@
       "IDirectSoundBuffer_SetRolloffFactor",
       "IDirectSoundStream_SetHeadroom",
       "IDirectSound_CreateSoundStream",
-      "XPhysicalAlloc"
+      "XPhysicalAlloc",
+      "WmaCreateInMemoryDecoder"
     ],
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
@@ -2101,7 +2176,7 @@
   },
   "map_sound_globals_lifetime": {
     "storage": "?g_51ebd4@@3PAUs_sound_globals@@A",
-    "buffer_size": "?g_47f0e0@@3JA",
+    "buffer_size": "?g_47f0d0@@3Us_47f0d0@@A+0x10",
     "startup_owner": "?function_125690@@YAXXZ",
     "teardown_owner": "?function_1257b0@@YAXXZ",
     "reset_helpers": [
@@ -2131,7 +2206,8 @@
         "?function_1264c0@@YAXK@Z"
       ],
       "interpretation": "The coherent map publication/clear lifetime is score-neutral: one opaque mutable pointer becomes the exact recovered old-map disposal boundary after compact mix and DSP reset helpers are owned."
-    }
+    },
+    "buffer_size_semantics": "The former g_47f0e0 decompiler view is the WMA codec packet_size field at object offset 0x10; map setup writes the interior field directly so no overlapping standalone storage is fabricated."
   },
   "old_map_sound_disposal_closure": {
     "root": "?function_1264c0@@YAXK@Z",
@@ -2182,6 +2258,33 @@
     "semantics": "directly initialize the exact four-byte PCM codec object with the recovered nine-slot virtual interface; preserve empty base attach/start/stop, started-chunk cache accounting, bounded packet views, accepted/failed/completed packet bookkeeping, and queue-based submission eligibility",
     "execution_gate": "requires genuine initialized sound cache pools/data and a live DirectSound stream; no packet acceptance, completion, or playback progress is fabricated",
     "production_score_before": 76,
+    "production_score_after": 75
+  },
+  "wma_codec_object_lifetime": {
+    "object": "?g_47f0d0@@3Us_47f0d0@@A",
+    "size": 32,
+    "vtable": "h2_wma_codec_vtable",
+    "retail_vtable": "0x45711c",
+    "packet_size_offset": "0x10",
+    "slots": [
+      "?attach@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
+      "?start@c_wma_codec@@UAAXPAUs_sound_stream@@@Z",
+      "?mark_cache_usage@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z",
+      "?get_packet@c_wma_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+      "?packet_submitted@c_wma_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+      "?packet_failed@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+      "?chunk_finished@c_sound_stream_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z",
+      "?stop@c_wma_codec@@UAAXXZ",
+      "?can_submit@c_wma_codec@@UAA_NPAUs_sound_stream@@_N@Z"
+    ],
+    "stage_initializer": "?function_21ebc0@@YAXJ@Z",
+    "stage_disposer": "?function_21ebe0@@YAXXZ",
+    "storage_initializer": "?function_2ae1d0@@YAXPAUs_47f0d0@@@Z",
+    "decoder_backend": "WmaCreateInMemoryDecoder",
+    "source": "src/sound_wma_codec_object_native.cpp",
+    "semantics": "directly initialize the exact 0x20-byte WMA object and nine-slot interface; preserve its packet-size interior alias, stage-1 two-packet buffer allocation, decoder attachment/start/process/read/submission/stop policy, and arena-owned buffer publication clear",
+    "execution_gate": "requires a genuine WMA XMediaObject backend, initialized physical and sound-cache storage, and live stream ownership; decoder creation, processing, release, packet bytes, and progress are never fabricated",
+    "production_score_before": 75,
     "production_score_after": 75
   }
 }
