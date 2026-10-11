@@ -198,13 +198,15 @@ def main() -> int:
         ("src/sound_class_fade_lifetime_native.cpp", "?g_50211c@@3_NA"),
         ("src/sound_codec_allocator_state_native.cpp", "?g_510c3c@@3PAXA"),
         ("src/sound_codec_allocator_state_native.cpp", "?g_510c40@@3_NA"),
+        ("src/unknown_12b400.cpp", "?function_12b400@@YAXXZ"),
+        ("src/globals.cpp", "?g_global_f9ae07@@3Us_physical_memory_globals@@A"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 167:
+    if len(set(provider_symbols)) != 169:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -793,6 +795,17 @@ def main() -> int:
             not codec_storage.get("execution_gate"):
         raise RuntimeError("sound-idle codec allocator storage changed")
 
+    physical_memory = manifest.get("physical_memory_lifetime", {})
+    if physical_memory.get("storage") != \
+            "?g_global_f9ae07@@3Us_physical_memory_globals@@A" or \
+            physical_memory.get("initializer") != \
+            "?function_12b400@@YAXXZ" or \
+            "0x61000" not in physical_memory.get("layout", "") or \
+            "0x3145000" not in physical_memory.get("layout", "") or \
+            "XPhysicalAlloc" not in physical_memory.get("semantics", "") or \
+            not physical_memory.get("execution_gate"):
+        raise RuntimeError("sound physical-memory lifetime changed")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -843,7 +856,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 179 or len(expected_imports) != 132:
+    if len(expected_definitions) != 181 or len(expected_imports) != 132:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -890,7 +903,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [15, 61, 0, 0, 1]:
+    if [len(category) for category in categories] != [14, 62, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1125,6 +1138,23 @@ def main() -> int:
         if fragment not in codec_free_source:
             raise RuntimeError(
                 f"sound codec allocator free path lost {fragment}")
+    physical_memory_source = (args.root / "src/unknown_12b400.cpp").read_text()
+    for fragment in [
+            "memset(&g_global_f9ae07, 0, sizeof(g_global_f9ae07))",
+            "g_global_f9ae07.field_0 = 0",
+            "g_global_f9ae07.base_address = 0x61000",
+            "g_global_f9ae07.field_8_3 = 0x3145000",
+            "g_global_f9ae07.field_c_6[0] = 0x61000",
+            "g_global_f9ae07.field_20[0] = 0x3145000",
+            "XPhysicalAlloc(0x3145000 - 0x61000, 0x61000, 0, PAGE_READWRITE)"]:
+        if fragment not in physical_memory_source:
+            raise RuntimeError(
+                f"sound physical-memory initializer lost {fragment}")
+    xdk_header = (args.root / "port/include/xdk/xtl.h").read_text()
+    if "void* __stdcall XPhysicalAlloc(DWORD size, DWORD physical_address," \
+            not in xdk_header or \
+            "DWORD alignment, DWORD protection);" not in xdk_header:
+        raise RuntimeError("sound physical allocation ABI changed")
     guest_host_runtime = (args.root /
         "port/runtime/guest_host_runtime.cpp").read_text()
     host_services_source = (args.root / "port/src/host_services.cpp").read_text()

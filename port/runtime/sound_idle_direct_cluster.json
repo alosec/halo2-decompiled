@@ -669,6 +669,14 @@
     {
       "source": "src/sound_codec_allocator_state_native.cpp",
       "global": "?g_510c40@@3_NA"
+    },
+    {
+      "source": "src/unknown_12b400.cpp",
+      "symbol": "?function_12b400@@YAXXZ"
+    },
+    {
+      "source": "src/globals.cpp",
+      "global": "?g_global_f9ae07@@3Us_physical_memory_globals@@A"
     }
   ],
   "definitions": [
@@ -850,7 +858,9 @@
     "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_50211c@@3_NA",
     "?g_510c3c@@3PAXA",
-    "?g_510c40@@3_NA"
+    "?g_510c40@@3_NA",
+    "?function_12b400@@YAXXZ",
+    "?g_global_f9ae07@@3Us_physical_memory_globals@@A"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -897,7 +907,7 @@
     "?g_4687a8@@3PATvector3f@@A",
     "?g_4687b0@@3PATvector3f@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
-    "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+    "XPhysicalAlloc",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
     "IDirectSound_Release",
@@ -1006,7 +1016,7 @@
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
-    "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+    "XPhysicalAlloc",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
     "IDirectSound_Release",
@@ -1081,7 +1091,6 @@
       "?g_510804_pool_size@@3JA",
       "?g_510808_pool_checksum@@3KA",
       "?g_51ebd4@@3PAUs_sound_globals@@A",
-      "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
       "g_dwDirectSoundDeltaPanicCount",
       "?g_47f088@@3Vc_sound_effects@@A",
       "?g_47f0f0@@3Us_47f0f0@@A"
@@ -1147,7 +1156,8 @@
       "IDirectSoundBuffer_SetDopplerFactor",
       "IDirectSoundBuffer_SetRolloffFactor",
       "IDirectSoundStream_SetHeadroom",
-      "IDirectSound_CreateSoundStream"
+      "IDirectSound_CreateSoundStream",
+      "XPhysicalAlloc"
     ],
     "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
@@ -1970,5 +1980,12 @@
     ],
     "semantics": "the production guest defines each recovered C math ABI as a thin call through a patchable host import; the native service invokes the corresponding Darwin libm operation with the original float or double signature",
     "execution_gate": "exact Xbox reciprocal-square-root estimate h2_xbox_rsqrtss remains unresolved and may not be replaced by host sqrt; native math routing does not enable any sound backend or mutable audio lifetime"
+  },
+  "physical_memory_lifetime": {
+    "storage": "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
+    "initializer": "?function_12b400@@YAXXZ",
+    "layout": "the exact recovered stage stack is zeroed, starts at stage 0, and publishes the retail 0x61000 base and 0x3145000 top in both current-stage bounds",
+    "semantics": "initialization requests the complete recovered physical arena through genuine XPhysicalAlloc after publishing the exact allocator bounds",
+    "execution_gate": "requires genuine low guest physical-arena reservation at the requested base and size; ownership does not permit a fabricated successful XPhysicalAlloc or enable sound execution"
   }
 }

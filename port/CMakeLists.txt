@@ -290,6 +290,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_218ac0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21d110.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21dda0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_12b400.cpp"
+        "${PROJECT_SOURCE_DIR}/src/globals.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

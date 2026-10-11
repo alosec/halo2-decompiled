@@ -166,6 +166,8 @@ DWORD __stdcall XGetLanguage(void);
 int __stdcall XNetQosListen(const XNKID* key_id, const BYTE* data,
                             DWORD data_size, DWORD bits_per_second, DWORD flags);
 int __stdcall XNetUnregisterKey(const XNKID* key_id);
+void* __stdcall XPhysicalAlloc(DWORD size, DWORD physical_address,
+                              DWORD alignment, DWORD protection);
 void __stdcall XPhysicalProtect(void* address, DWORD size, DWORD protection);
 
 #ifdef __cplusplus
