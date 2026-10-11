@@ -211,13 +211,25 @@ def main() -> int:
         ("src/sound_old_map_disposal_native.cpp", "?function_21d4d0@@YAXXZ"),
         ("src/sound_old_map_disposal_native.cpp", "?function_21b070@@YAXJ@Z"),
         ("src/sound_old_map_disposal_native.cpp", "?function_21a1e0@@YAXXZ"),
+        ("src/sound_pcm_codec_object_native.cpp", "?g_47f0f0@@3Us_47f0f0@@A"),
+        ("src/sound_pcm_codec_object_native.cpp", "h2_pcm_codec_vtable"),
+        ("src/sound_pcm_codec_object_native.cpp", "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z"),
+        ("src/sound_pcm_codec_object_native.cpp", "?start@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z"),
+        ("src/sound_pcm_codec_object_native.cpp", "?stop@c_sound_stream_codec@@UAAXXZ"),
+        ("src/sound_pcm_codec_control_native.cpp", "?mark_cache_usage@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z"),
+        ("src/sound_pcm_codec_control_native.cpp", "?get_packet@c_pcm_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_pcm_codec_control_native.cpp", "?packet_submitted@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_pcm_codec_control_native.cpp", "?packet_failed@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z"),
+        ("src/sound_pcm_codec_control_native.cpp", "?chunk_finished@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z"),
+        ("src/sound_pcm_codec_control_native.cpp", "?can_submit@c_pcm_codec@@UAA_NPAUs_sound_stream@@_N@Z"),
+        ("src/unknown_218850.cpp", "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 180:
+    if len(set(provider_symbols)) != 192:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -905,6 +917,51 @@ def main() -> int:
         if fragment not in old_map_source:
             raise RuntimeError(f"old-map sound disposal lost {fragment}")
 
+    pcm = manifest.get("pcm_codec_object_lifetime", {})
+    pcm_slots = [
+        "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+        "?start@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+        "?mark_cache_usage@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_cache_usage@@@Z",
+        "?get_packet@c_pcm_codec@@UAA_NPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?packet_submitted@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?packet_failed@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUXMEDIAPACKET@@@Z",
+        "?chunk_finished@c_pcm_codec@@UAAXPAUs_sound_stream@@PAUs_sound_chunk@@J@Z",
+        "?stop@c_sound_stream_codec@@UAAXXZ",
+        "?can_submit@c_pcm_codec@@UAA_NPAUs_sound_stream@@_N@Z"]
+    if pcm.get("object") != "?g_47f0f0@@3Us_47f0f0@@A" or \
+            pcm.get("vtable") != "h2_pcm_codec_vtable" or \
+            pcm.get("retail_vtable") != "0x45715c" or \
+            pcm.get("slots") != pcm_slots or \
+            pcm.get("cache_data_provider") != \
+            "?sound_cache_chunk_get_data@@YAPAEPAUs_sound_chunk@@@Z" or \
+            pcm.get("production_score_before") != 76 or \
+            pcm.get("production_score_after") != 75 or \
+            not pcm.get("semantics") or not pcm.get("execution_gate"):
+        raise RuntimeError("PCM codec object lifetime changed")
+    pcm_object_source = (
+        args.root / "src/sound_pcm_codec_object_native.cpp").read_text()
+    for fragment in [
+            "s_pcm_codec_method const h2_pcm_codec_vtable[9]",
+            "s_47f0f0 g_47f0f0 = { h2_pcm_codec_vtable }",
+            "static_assert(sizeof(s_47f0f0) == 0x04",
+            "static_assert(sizeof(h2_pcm_codec_vtable) == 0x24",
+            "?attach@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+            "?start@c_sound_stream_codec@@UAAXPAUs_sound_stream@@@Z",
+            "?stop@c_sound_stream_codec@@UAAXXZ"]:
+        if fragment not in pcm_object_source:
+            raise RuntimeError(f"PCM codec object lost {fragment}")
+    pcm_method_source = (
+        args.root / "src/sound_pcm_codec_control_native.cpp").read_text()
+    for fragment in [
+            "usage->counts[cache_index]++",
+            "byte *data = sound_cache_chunk_get_data(chunk)",
+            "stream->started_count++",
+            "entry->reference_count--",
+            "sound_stream_release_chunk(stream, chunk)",
+            "stream->chunk_count > stream->started_count"]:
+        if fragment not in pcm_method_source:
+            raise RuntimeError(f"PCM codec method lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -955,7 +1012,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 192 or len(expected_imports) != 133:
+    if len(expected_definitions) != 204 or len(expected_imports) != 132:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -983,6 +1040,20 @@ def main() -> int:
             "sound-idle direct imports changed: " +
             repr(sorted(actual_imports)))
 
+    relocations = subprocess.check_output(
+        [args.llvm_nm.with_name("llvm-readelf"), "-r", args.cluster_object],
+        text=True)
+    pcm_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in
+            ["h2_pcm_codec_vtable", *pcm_slots])]
+    if pcm_relocations != ["h2_pcm_codec_vtable", *pcm_slots]:
+        raise RuntimeError(
+            "PCM codec object/vtable relocation order changed: " +
+            repr(pcm_relocations))
+
     production_definitions = symbols(
         args.llvm_nm, args.production_object, "--defined-only")
     linked = sorted(expected_definitions & production_definitions)
@@ -993,7 +1064,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 76:
+    if len(expected_production_imports) != 75:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1002,7 +1073,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [13, 62, 0, 0, 1]:
+    if [len(category) for category in categories] != [12, 62, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \

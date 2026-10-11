@@ -287,6 +287,8 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_18d090.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_219110.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_218850.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_pcm_codec_object_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_pcm_codec_control_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_218ac0.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21d110.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_21dda0.cpp"
