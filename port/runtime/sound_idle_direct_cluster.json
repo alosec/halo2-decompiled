@@ -365,6 +365,10 @@
     {
       "source": "src/sound_channel_parameters_native.cpp",
       "symbol": "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z"
+    },
+    {
+      "source": "src/sound_effect_data_submit_native.cpp",
+      "symbol": "?function_21f960@@YAXKPBK@Z"
     }
   ],
   "definitions": [
@@ -428,6 +432,7 @@
     "?function_21f650@@YAMJJ@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
+    "?function_21f960@@YAXKPBK@Z",
     "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
     "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
@@ -475,7 +480,6 @@
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
-    "?function_21f960@@YAXKPBK@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_468d48@@3QAY0EAA@$$CBEA",
@@ -543,6 +547,7 @@
     "fmod",
     "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
+    "h2_guest_memcmp",
     "h2_guest_memcpy",
     "h2_guest_memset",
     "h2_native_async_publish_admitted",
@@ -561,7 +566,6 @@
   "production_score_imports": [
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
-    "?function_21f960@@YAXKPBK@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -881,6 +885,18 @@
       "live DirectSound stream SetLFO operation",
       "genuine function_21f960 effect-data submission",
       "initialized sound driver channels"
+    ]
+  },
+  "effect_data_submission_closure": {
+    "provider": "?function_21f960@@YAXKPBK@Z",
+    "packed_header_size": 16,
+    "effect_map_stride": 32,
+    "semantics": "preserve packed block traversal, skip flags, ascending effect-mask iteration, high-level XAudio submission, bounded DSP state comparison and immediate DirectSound writes, and changed-mask publication",
+    "execution_gates": [
+      "downloaded effect image description and state segments",
+      "live DirectSound device SetEffectData operation",
+      "genuine XAudio high-level effect submission",
+      "initialized voice-effects and driver state"
     ]
   },
   "looping_channel_start_closure": {

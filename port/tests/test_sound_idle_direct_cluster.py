@@ -122,13 +122,14 @@ def main() -> int:
         ("src/sound_driver_filter_coefficients_native.cpp", "?sound_filter_frequency_coefficient@@YAJM@Z"),
         ("src/sound_driver_filter_coefficients_native.cpp", "?sound_filter_gain_coefficient@@YAKM@Z"),
         ("src/sound_channel_parameters_native.cpp", "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z"),
+        ("src/sound_effect_data_submit_native.cpp", "?function_21f960@@YAXKPBK@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 91:
+    if len(set(provider_symbols)) != 92:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -344,6 +345,13 @@ def main() -> int:
             } or not channel_submission.get("semantics") or \
             len(channel_submission.get("execution_gates", [])) != 4:
         raise RuntimeError("sound-idle channel parameter submission closure changed")
+    effect_data = manifest.get("effect_data_submission_closure", {})
+    if effect_data.get("provider") != "?function_21f960@@YAXKPBK@Z" or \
+            effect_data.get("packed_header_size") != 16 or \
+            effect_data.get("effect_map_stride") != 32 or \
+            not effect_data.get("semantics") or \
+            len(effect_data.get("execution_gates", [])) != 4:
+        raise RuntimeError("sound-idle effect data submission closure changed")
     looping_channel_start = manifest.get("looping_channel_start_closure", {})
     if looping_channel_start.get("providers") != [
             "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
@@ -427,7 +435,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 100 or len(expected_imports) != 84:
+    if len(expected_definitions) != 101 or len(expected_imports) != 84:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -463,7 +471,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 52:
+    if len(expected_production_imports) != 51:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

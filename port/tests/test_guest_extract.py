@@ -3770,6 +3770,14 @@ def main():
                  "IDirectSoundStream_SetLFO",
                  "fabs",
                  "h2_guest_memset"}),
+            ("sound-effect-data-submit.o",
+             "src/sound_effect_data_submit_native.cpp",
+             "?function_21f960@@YAXKPBK@Z", {
+                 "?g_510c90@@3PAUs_voice_effects@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "IDirectSound_SetEffectData",
+                 "XAudioSetEffectData",
+                 "h2_guest_memcmp"}),
             ("sound-looping-impulse-submit.o",
              "src/sound_looping_impulse_submit_native.cpp",
              "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z", {
