@@ -509,6 +509,14 @@
     {
       "source": "src/sound_effect_image_startup_native.cpp",
       "symbol": "?function_191300@@YA_NPAUIDirectSound@@@Z"
+    },
+    {
+      "source": "src/sound_driver_listener_native.cpp",
+      "symbol": "?function_220790@@YAXPBUs_sound_listener@@@Z"
+    },
+    {
+      "source": "src/sound_driver_reverb_default_native.cpp",
+      "global": "?g_44a2a0@@3Us_sound_driver_reverb@@A"
     }
   ],
   "definitions": [
@@ -588,6 +596,7 @@
     "?function_21f960@@YAXKPBK@Z",
     "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
     "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
+    "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z",
     "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z",
     "?function_221810@@YAPAUs_unknown_5c@@F@Z",
@@ -599,6 +608,7 @@
     "?g_440c4c@@3JA",
     "g_44178c",
     "g_444c84",
+    "?g_44a2a0@@3Us_sound_driver_reverb@@A",
     "g_44a150",
     "g_44a16c",
     "g_44a188",
@@ -709,7 +719,6 @@
     "?voice_start_engine@@YAXXZ",
     "?data_dispose@@YAXPAUs_record_pool@@@Z",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
-    "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_468758@@3PAVc_data_allocator@@A",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_4687a8@@3PATvector3f@@A",
@@ -753,6 +762,8 @@
     "IDirectSoundStream_SetVolume",
     "IDirectSound_GetEffectData",
     "IDirectSound_CommitDeferredSettings",
+    "IDirectSound_SetOrientation",
+    "IDirectSound_SetPosition",
     "IDirectSound_SetEffectData",
     "ReadFile",
     "ReleaseMutex",
@@ -819,7 +830,6 @@
     "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
-    "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
     "?g_510c3c@@3PAXA",
@@ -859,6 +869,8 @@
     "IDirectSoundStream_SetVolume",
     "IDirectSound_GetEffectData",
     "IDirectSound_CommitDeferredSettings",
+    "IDirectSound_SetOrientation",
+    "IDirectSound_SetPosition",
     "IDirectSound_SetEffectData",
     "XAudioDownloadEffectsImage",
     "XAudioSetEffectData",
@@ -938,6 +950,8 @@
       "IDirectSound_GetEffectData",
       "IDirectSound_CommitDeferredSettings",
       "IDirectSound_Release",
+      "IDirectSound_SetOrientation",
+      "IDirectSound_SetPosition",
       "IDirectSound_SetEffectData",
       "XAudioDownloadEffectsImage",
       "XAudioSetEffectData",
@@ -946,7 +960,6 @@
       "XPhysicalProtect"
     ],
     "recovered_lifecycle_operations": [
-      "?function_220790@@YAXPBUs_sound_listener@@@Z",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
       "?sound_driver_device_startup@@YA_NXZ",
       "?sound_driver_effect_buffers_startup@@YAXXZ"
