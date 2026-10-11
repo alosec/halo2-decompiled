@@ -213,6 +213,10 @@
     {
       "source": "src/unknown_188dd0.cpp",
       "symbol": "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z"
+    },
+    {
+      "source": "src/sound_class_route_native.cpp",
+      "symbol": "?function_221810@@YAPAUs_unknown_5c@@F@Z"
     }
   ],
   "definitions": [
@@ -248,6 +252,7 @@
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?function_21f650@@YAMJJ@Z",
+    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "?function_30bf0@@YAMPATvector3f@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
@@ -279,12 +284,12 @@
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
+    "?g_4e034c@@3PAUs_tag_header_globals@@A",
     "?g_4e3b44@@3PAUs_tag_instance@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_4e637c@@3PAUs_record_pool@@A",
@@ -344,7 +349,6 @@
   "production_score_imports": [
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?function_221810@@YAPAUs_unknown_5c@@F@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -584,5 +588,10 @@
     ],
     "semantics": "preserve inverse point and vector transforms with scale handling, world or bounded-height source position selection, and normalized packed 11/11/10-bit direction decompression",
     "execution_gate": "initialized listener and sound-source state plus exact packed-vector format"
+  },
+  "sound_class_route_provider": {
+    "symbol": "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+    "semantics": "preserve exact out-of-line sound-class tag lookup through active tag-header and instance tables",
+    "execution_gate": "initialized active tag-header globals and sound-class tag instance storage"
   }
 }
