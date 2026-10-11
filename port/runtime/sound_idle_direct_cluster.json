@@ -597,6 +597,10 @@
     {
       "source": "src/unknown_21d110.cpp",
       "global": "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"
+    },
+    {
+      "source": "src/sound_effect_parameters_state_native.cpp",
+      "global": "?g_47005c@@3Us_sound_effect_parameters@@A"
     }
   ],
   "definitions": [
@@ -760,7 +764,8 @@
     "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
     "??_C@_0O@JBDOIMAP@sound?5sources?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
-    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"
+    "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
+    "?g_47005c@@3Us_sound_effect_parameters@@A"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -775,7 +780,6 @@
     "?g_4687a4@@3PATvector3f@@A",
     "?g_468d48@@3QAY0EAA@$$CBEA",
     "?g_46bd48@@3PAY0EAA@EA",
-    "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e034c@@3PAUs_tag_header_globals@@A",
@@ -914,7 +918,6 @@
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
-    "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6374@@3JA",
@@ -1012,7 +1015,6 @@
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
       "?g_46875c@@3PAVc_data_allocator@@A",
-      "?g_47005c@@3Us_sound_effect_parameters@@A",
       "?g_476fc8@@3Vc_voice_xhv@@A",
       "?g_47f0d0@@3Us_47f0d0@@A",
       "?g_4c9878@@3Us_voice_globals@@A",
@@ -1768,5 +1770,25 @@
     ],
     "semantics": "retain the exact recovered immutable record-pool and physical-cache labels, including the retail sounds effects wording, as null-terminated read-only data",
     "execution_gate": "none beyond the owning startup lifetimes; these labels are diagnostics only and do not initialize mutable sound state or an audio backend"
+  },
+  "effect_parameter_state_closure": {
+    "provider": "?g_47005c@@3Us_sound_effect_parameters@@A",
+    "size": 48,
+    "initial_values": {
+      "dirty": true,
+      "room": 0,
+      "room_hf": 0,
+      "direct": 0,
+      "direct_hf": 0,
+      "unknown70": 0.0,
+      "unknown74": 0,
+      "unknown78": 0.0,
+      "unknown7c": 0,
+      "unknown80": 0.25,
+      "unknown84": 8000,
+      "unknown88": 0.0
+    },
+    "semantics": "retain exact process-lifetime mutable I3DL2/filter parameter storage with recovered dirty publication and 0.25/8000 defaults; driver updates clear and republish the dirty state without replacing the object",
+    "execution_gate": "genuine effects object and DirectSound/XAudio submission remain required; static state ownership alone does not enable sound execution"
   }
 }

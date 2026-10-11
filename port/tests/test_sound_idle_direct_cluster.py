@@ -180,13 +180,14 @@ def main() -> int:
         ("src/sound_system_startup_native.cpp", "??_C@_0O@JBDOIMAP@sound?5sources?$AA@"),
         ("src/unknown_12a1b0.cpp", "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@"),
         ("src/unknown_21d110.cpp", "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@"),
+        ("src/sound_effect_parameters_state_native.cpp", "?g_47005c@@3Us_sound_effect_parameters@@A"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 149:
+    if len(set(provider_symbols)) != 150:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -725,9 +726,30 @@ def main() -> int:
             not diagnostics.get("execution_gate"):
         raise RuntimeError("sound-idle diagnostic string closure changed")
 
+    effect_state = manifest.get("effect_parameter_state_closure", {})
+    if effect_state.get("provider") != \
+            "?g_47005c@@3Us_sound_effect_parameters@@A" or \
+            effect_state.get("size") != 0x30 or \
+            effect_state.get("initial_values") != {
+                "dirty": True,
+                "room": 0,
+                "room_hf": 0,
+                "direct": 0,
+                "direct_hf": 0,
+                "unknown70": 0.0,
+                "unknown74": 0,
+                "unknown78": 0.0,
+                "unknown7c": 0,
+                "unknown80": 0.25,
+                "unknown84": 8000,
+                "unknown88": 0.0} or \
+            not effect_state.get("semantics") or \
+            not effect_state.get("execution_gate"):
+        raise RuntimeError("sound-idle effect parameter state changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 161 or len(expected_imports) != 142:
+    if len(expected_definitions) != 162 or len(expected_imports) != 141:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -765,7 +787,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 98:
+    if len(expected_production_imports) != 97:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -774,7 +796,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [27, 61, 0, 0, 10]:
+    if [len(category) for category in categories] != [26, 61, 0, 0, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -926,6 +948,19 @@ def main() -> int:
             "voice->buffer = NULL"]:
         if fragment not in voice_new_source:
             raise RuntimeError(f"sound driver voice creation lost {fragment}")
+    effect_state_source = (args.root /
+        "src/sound_effect_parameters_state_native.cpp").read_text()
+    for fragment in [
+            "sizeof(s_sound_effect_parameters) == 0x30",
+            "offsetof(s_sound_effect_parameters, room) == 0x04",
+            "offsetof(s_sound_effect_parameters, unknown80) == 0x24",
+            "offsetof(s_sound_effect_parameters, unknown88) == 0x2c",
+            "s_sound_effect_parameters g_47005c =",
+            "true, {0, 0, 0}",
+            "0.0f, 0, 0.0f, 0, 0.25f, 8000, 0.0f"]:
+        if fragment not in effect_state_source:
+            raise RuntimeError(
+                f"sound effect parameter state lost {fragment}")
     diagnostic_sources = {
         "src/unknown_218850.cpp": [
             'data_new_inlined("xbox sound", 0x200',
