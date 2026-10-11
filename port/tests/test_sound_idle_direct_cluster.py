@@ -164,13 +164,22 @@ def main() -> int:
         ("src/sound_driver_effect_buffers_startup_native.cpp", "?sound_driver_effect_buffers_startup@@YAXXZ"),
         ("src/sound_driver_effects_install_native.cpp", "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z"),
         ("src/sound_silence_buffer_native.cpp", "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"),
+        ("src/sound_driver_channels_startup_native.cpp", "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z"),
+        ("src/sound_static_allocator_native.cpp", "?function_12c040@@YAXXZ"),
+        ("src/sound_effect_input_voices_native.cpp", "?function_191420@@YAXPAUIDirectSound@@@Z"),
+        ("src/sound_driver_stream_format_native.cpp", "?function_21f4e0@@YA_NJJ@Z"),
+        ("src/sound_driver_stream_format_native.cpp", "?function_21e410@@YAXJPAUXBOXADPCMWAVEFORMAT@@PAPAVc_sound_stream_codec@@@Z"),
+        ("src/sound_driver_voice_buffer_native.cpp", "?sound_driver_voice_create_buffer@@YA_NJ@Z"),
+        ("src/sound_stream_create_native.cpp", "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z"),
+        ("src/sound_driver_stream_callback_native.cpp", "?sound_driver_stream_callback@@YAXPAX0K@Z"),
+        ("src/sound_driver_voice_new_native.cpp", "?sound_driver_voice_new@@YAFKK@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 133:
+    if len(set(provider_symbols)) != 142:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -660,9 +669,38 @@ def main() -> int:
             not effect_startup.get("execution_gate"):
         raise RuntimeError("sound-idle effect-buffer closure changed")
 
+    channel_startup = manifest.get("channel_startup_closure", {})
+    if channel_startup.get("root") != \
+            "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z" or \
+            channel_startup.get("providers") != [
+                "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
+                "?function_12c040@@YAXXZ",
+                "?function_191420@@YAXPAUIDirectSound@@@Z",
+                "?function_21f4e0@@YA_NJJ@Z",
+                "?function_21e410@@YAXJPAUXBOXADPCMWAVEFORMAT@@PAPAVc_sound_stream_codec@@@Z",
+                "?sound_driver_voice_create_buffer@@YA_NJ@Z",
+                "?sound_stream_create@@YA_NPAUs_sound_stream@@PAVc_sound_stream_codec@@PAUDSSTREAMDESC@@F@Z",
+                "?sound_driver_stream_callback@@YAXPAX0K@Z",
+                "?sound_driver_voice_new@@YAFKK@Z"] or \
+            channel_startup.get("mutable_lifetimes") != [
+                "?g_47f0f0@@3Us_47f0f0@@A",
+                "?g_510c40@@3_NA"] or \
+            channel_startup.get("backend_operations") != [
+                "IDirectSoundBuffer_SetConeOutsideVolume",
+                "IDirectSoundBuffer_SetDopplerFactor",
+                "IDirectSoundBuffer_SetRolloffFactor",
+                "IDirectSoundStream_SetHeadroom",
+                "IDirectSound_CreateSoundStream"] or \
+            not channel_startup.get("semantics") or \
+            not channel_startup.get("callback_semantics") or \
+            not channel_startup.get("voice_semantics") or \
+            not channel_startup.get("failure_policy") or \
+            not channel_startup.get("execution_gate"):
+        raise RuntimeError("sound-idle channel-startup closure changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 145 or len(expected_imports) != 143:
+    if len(expected_definitions) != 154 or len(expected_imports) != 149:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -700,7 +738,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 99:
+    if len(expected_production_imports) != 105:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -709,7 +747,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [25, 56, 1, 7, 10]:
+    if [len(category) for category in categories] != [27, 61, 0, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -819,6 +857,48 @@ def main() -> int:
             "IDirectSoundBuffer_Play(buffer, 0, 0, k_play_looping)"]:
         if fragment not in silence_source:
             raise RuntimeError(f"sound silence buffer lost {fragment}")
+    channel_source = (args.root /
+        "src/sound_driver_channels_startup_native.cpp").read_text()
+    for fragment in [
+            "function_12c040();",
+            "g_47f0d0.field10 = 0x10000",
+            "globals->channel_first[type] = globals->channel_count",
+            "result = result && function_21f4e0(first + i, type)",
+            "globals->channel_last[type] = globals->channel_count - 1",
+            "result = result && sound_driver_voice_create_buffer(voice)",
+            "function_191420(globals->direct_sound)"]:
+        if fragment not in channel_source:
+            raise RuntimeError(f"sound channel startup lost {fragment}")
+    callback_source = (args.root /
+        "src/sound_driver_stream_callback_native.cpp").read_text()
+    for fragment in [
+            "sizeof(s_sound_stream) == 0x34",
+            "offsetof(s_driver_callback_view, channels) == 0x0c",
+            "if (packet_context)",
+            "channel_index >= 0 && channel_index < globals->channel_count",
+            "stream->codec->chunk_finished(stream",
+            "status == k_packet_status_success",
+            "!(stream->flags & k_stream_flush_or_transient)",
+            "sound_stream_update(stream)"]:
+        if fragment not in callback_source:
+            raise RuntimeError(f"sound stream callback lost {fragment}")
+    voice_new_source = (args.root /
+        "src/sound_driver_voice_new_native.cpp").read_text()
+    for fragment in [
+            "offsetof(s_driver_voice_new_view, voice_count) == 0x06",
+            "offsetof(s_driver_voice_new_view, voices) == 0x1a18",
+            "static const dword k_effect_input = 0x1000",
+            "static const dword k_effect_input_2 = 0x2000",
+            "if (voice_index >= 0x40)",
+            "globals->voice_count = voice_index + 1",
+            "s_mixbins mixbins = { 6, pairs }",
+            "buffer_description.flags = k_effect_input | k_control_3d",
+            "globals->voice_count--",
+            "s_mixbins mixbins = { 5, pairs }",
+            "IDirectSoundBuffer_SetMaxDistance(voice->buffer, max_distance",
+            "voice->buffer = NULL"]:
+        if fragment not in voice_new_source:
+            raise RuntimeError(f"sound driver voice creation lost {fragment}")
     controller_source = (args.root / controller["source"]).read_text()
     storage_source = (args.root / controller["storage_source"]).read_text()
     teardown_source = (args.root / controller["teardown_source"]).read_text()
