@@ -3778,6 +3778,20 @@ def main():
                  "IDirectSound_SetEffectData",
                  "XAudioSetEffectData",
                  "h2_guest_memcmp"}),
+            ("sound-mixbins-add.o",
+             "src/sound_mixbin_submit_native.cpp",
+             "?sound_mixbins_add@@YAXPAUs_mixbin_settings@@JM@Z", {
+                 "?function_12aff0@@YAMMMM_N@Z"}),
+            ("sound-mixbins-stream.o",
+             "src/sound_mixbin_submit_native.cpp",
+             "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z", {
+                 "IDirectSoundStream_SetMixBinVolumes",
+                 "IDirectSoundStream_SetMixBins"}),
+            ("sound-mixbins-buffer.o",
+             "src/sound_mixbin_submit_native.cpp",
+             "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z", {
+                 "IDirectSoundBuffer_SetMixBinVolumes",
+                 "IDirectSoundBuffer_SetMixBins"}),
             ("sound-looping-impulse-submit.o",
              "src/sound_looping_impulse_submit_native.cpp",
              "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z", {
