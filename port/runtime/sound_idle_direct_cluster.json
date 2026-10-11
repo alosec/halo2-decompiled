@@ -873,6 +873,26 @@
     {
       "source": "src/sound_effects_object_native.cpp",
       "symbol": "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"
+    },
+    {
+      "source": "src/sound_data_allocator_object_native.cpp",
+      "global": "?g_46875c@@3PAVc_data_allocator@@A"
+    },
+    {
+      "source": "src/sound_data_allocator_object_native.cpp",
+      "global": "h2_sound_data_allocator_object"
+    },
+    {
+      "source": "src/sound_data_allocator_object_native.cpp",
+      "global": "h2_sound_data_allocator_vtable"
+    },
+    {
+      "source": "src/sound_data_allocator_object_native.cpp",
+      "symbol": "h2_sound_data_allocator_allocate"
+    },
+    {
+      "source": "src/sound_data_allocator_object_native.cpp",
+      "symbol": "h2_sound_data_allocator_deallocate"
     }
   ],
   "definitions": [
@@ -1005,6 +1025,7 @@
     "?g_44a2a0@@3Us_sound_driver_reverb@@A",
     "?g_44f70c@@3MB",
     "?g_44f710@@3MB",
+    "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_468834@@3MA",
     "?g_46e488@@3KA",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
@@ -1104,6 +1125,10 @@
     "g_44a16c",
     "g_44a188",
     "h2_pcm_codec_vtable",
+    "h2_sound_data_allocator_allocate",
+    "h2_sound_data_allocator_deallocate",
+    "h2_sound_data_allocator_object",
+    "h2_sound_data_allocator_vtable",
     "h2_sound_effects_vtable",
     "h2_wma_codec_vtable"
   ],
@@ -1121,7 +1146,6 @@
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
     "?function_16bc00@@YAJPAUs_record_pool@@J@Z",
     "?g_468758@@3PAVc_data_allocator@@A",
-    "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_4687a8@@3PATvector3f@@A",
@@ -1250,7 +1274,6 @@
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
-    "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e6470@@3JA",
@@ -1323,7 +1346,6 @@
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
-      "?g_46875c@@3PAVc_data_allocator@@A",
       "?g_476fc8@@3Vc_voice_xhv@@A",
       "?g_4c9878@@3Us_voice_globals@@A",
       "?g_4e6470@@3JA",
@@ -2387,5 +2409,23 @@
     "execution_gate": "requires an installed low guest arena; invalid ranges, ordinary host pointers, unsupported protections, and failed native page protection fail closed rather than reporting allocation or protection success",
     "production_score_before": 76,
     "production_score_after": 74
+  },
+  "sound_data_allocator_object_lifetime": {
+    "source": "src/sound_data_allocator_object_native.cpp",
+    "retail_object_address": "0x479864",
+    "retail_table_address": "0x453300",
+    "object_size": "0x4",
+    "table_slots": [
+      "allocate_returns_null",
+      "deallocate_noop"
+    ],
+    "constructor_free": true,
+    "owns_static_sound_arena": false,
+    "semantics": [
+      "directly_initialized_process_lifetime_object",
+      "allocation_fails_without_fabricated_storage",
+      "deallocation_has_no_side_effect",
+      "preallocated_record_pools_retain_exact_allocator_pointer"
+    ]
   }
 }

@@ -249,13 +249,18 @@ def main() -> int:
         ("src/sound_effects_object_native.cpp", "?add_send@c_sound_effects@@UAAXJJMPAUs_mixbin_settings@@@Z"),
         ("src/sound_effects_object_native.cpp", "?add_source_mixbins@c_sound_effects@@UAAXPAUs_sound_mixbin_source@@_NJPAUs_mixbin_settings@@@Z"),
         ("src/sound_effects_object_native.cpp", "?add_sends@c_sound_effects@@UAAXPAUs_sound_send_parameters@@JJPAUs_mixbin_settings@@@Z"),
+        ("src/sound_data_allocator_object_native.cpp", "?g_46875c@@3PAVc_data_allocator@@A"),
+        ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_object"),
+        ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_vtable"),
+        ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_allocate"),
+        ("src/sound_data_allocator_object_native.cpp", "h2_sound_data_allocator_deallocate"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 218:
+    if len(set(provider_symbols)) != 223:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -1107,6 +1112,30 @@ def main() -> int:
         if fragment not in effects_source:
             raise RuntimeError(f"sound effects object lost {fragment}")
 
+    allocator = manifest.get("sound_data_allocator_object_lifetime", {})
+    if allocator.get("source") != \
+            "src/sound_data_allocator_object_native.cpp" or \
+            allocator.get("retail_object_address") != "0x479864" or \
+            allocator.get("retail_table_address") != "0x453300" or \
+            allocator.get("object_size") != "0x4" or \
+            allocator.get("table_slots") != [
+                "allocate_returns_null", "deallocate_noop"] or \
+            allocator.get("constructor_free") is not True or \
+            allocator.get("owns_static_sound_arena") is not False or \
+            not allocator.get("semantics"):
+        raise RuntimeError("sound data allocator object lifetime changed")
+    allocator_source = (
+        args.root / "src/sound_data_allocator_object_native.cpp").read_text()
+    for fragment in [
+            "h2_sound_data_allocator_method const h2_sound_data_allocator_vtable[2]",
+            "static_assert(sizeof(s_sound_data_allocator_object) == 0x04",
+            "s_sound_data_allocator_object h2_sound_data_allocator_object =",
+            "c_data_allocator *g_46875c =",
+            "return 0;",
+            "(void)block;"]:
+        if fragment not in allocator_source:
+            raise RuntimeError(f"sound data allocator object lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 14 or \
             math_bridge.get("routes") != [
@@ -1157,7 +1186,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 230 or len(expected_imports) != 133:
+    if len(expected_definitions) != 235 or len(expected_imports) != 132:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -1218,6 +1247,23 @@ def main() -> int:
         raise RuntimeError(
             "sound effects object/vtable relocation order changed: " +
             repr(effects_relocations))
+    allocator_relocations = [
+        line.split()[-3]
+        for line in relocations.splitlines()
+        if "R_AARCH64_ABS32" in line and
+        any(symbol in line for symbol in [
+            "h2_sound_data_allocator_vtable",
+            "h2_sound_data_allocator_allocate",
+            "h2_sound_data_allocator_deallocate",
+            "h2_sound_data_allocator_object"])]
+    if allocator_relocations != [
+            "h2_sound_data_allocator_object",
+            "h2_sound_data_allocator_vtable",
+            "h2_sound_data_allocator_allocate",
+            "h2_sound_data_allocator_deallocate"]:
+        raise RuntimeError(
+            "sound data allocator object/vtable relocation order changed: " +
+            repr(allocator_relocations))
 
     production_definitions = symbols(
         args.llvm_nm, args.production_object, "--defined-only")
@@ -1229,7 +1275,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 74:
+    if len(expected_production_imports) != 73:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1238,7 +1284,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [10, 63, 0, 0, 1]:
+    if [len(category) for category in categories] != [9, 63, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
