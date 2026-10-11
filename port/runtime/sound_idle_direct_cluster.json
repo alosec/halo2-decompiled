@@ -317,6 +317,18 @@
     {
       "source": "src/sound_looping_voice_policy_native.cpp",
       "symbol": "?function_128500@@YAXJPAUs_looping_voice_counts@@@Z"
+    },
+    {
+      "source": "src/sound_looping_chunk_policy_native.cpp",
+      "symbol": "?sound_playback_set_chunk@@YAXJJDDF@Z"
+    },
+    {
+      "source": "src/sound_looping_chunk_policy_native.cpp",
+      "symbol": "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z"
+    },
+    {
+      "source": "src/sound_stream_chunk_release_native.cpp",
+      "symbol": "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"
     }
   ],
   "definitions": [
@@ -397,13 +409,16 @@
     "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
     "?sound_playback_acquire_reference@@YAXPAUs_sound_playback@@@Z",
     "?sound_playback_delete@@YAXJ@Z",
+    "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
     "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
+    "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_system_available@@YAJXZ",
     "?sound_system_update_time@@YAXXZ",
     "?sound_voice_free@@YAXF@Z",
+    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?sound_voice_release@@YAXJ@Z",
     "?sound_voice_update_chunks@@YAXF@Z",
     "?sound_voices_update_chunks@@YAXXZ",
@@ -448,9 +463,7 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
-    "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
-    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_start_engine@@YAXXZ",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
@@ -510,9 +523,7 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?sound_playback_set_chunk@@YAXJJDDF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
-    "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "DirectSoundDoWork",
@@ -780,6 +791,15 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "looping_chunk_policy_closure": {
+    "providers": [
+      "?sound_playback_set_chunk@@YAXJJDDF@Z",
+      "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
+      "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"
+    ],
+    "semantics": "preserve held-reference release before playback reassignment, two-slot voice queue replacement and cache unlocking, cache admission, codec start on the first stream chunk, and current/next permutation bookkeeping",
+    "execution_gate": "initialized playback, voice, cache-record, sound-global, driver-stream, and codec-object lifetimes"
   },
   "looping_voice_policy_closure": {
     "providers": [

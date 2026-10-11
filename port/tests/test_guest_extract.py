@@ -3744,6 +3744,20 @@ def main():
                  "?g_4e6380@@3PAUs_4e6380@@A",
                  "?g_502118@@3PAUs_sound_class_fade@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-looping-playback-set-chunk.o",
+             "src/sound_looping_chunk_policy_native.cpp",
+             "?sound_playback_set_chunk@@YAXJJDDF@Z", {
+                 "?function_126960@@YAXPAUs_sound_playback@@@Z",
+                 "?g_4e637c@@3PAUs_record_pool@@A"}),
+            ("sound-looping-voice-queue-chunk.o",
+             "src/sound_looping_chunk_policy_native.cpp",
+             "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z", {
+                 "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_502104@@3PAUs_record_pool@@A",
+                 "?g_51ebd4@@3PAUs_sound_globals@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                 "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"}),
             ("sound-looping-channel-dirty.o",
              "src/sound_looping_voice_policy_native.cpp",
              "?function_12a420@@YAXF@Z", {
