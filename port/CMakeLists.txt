@@ -232,6 +232,10 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_doppler_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_effect_inputs_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_222930.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_192b90.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_get_class.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_18d090.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_219110.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

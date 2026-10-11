@@ -237,6 +237,26 @@
     {
       "source": "src/unknown_222930.cpp",
       "symbol": "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_1914f0@@YAJJ@Z"
+    },
+    {
+      "source": "src/unknown_192b90.cpp",
+      "symbol": "?function_192b90@@YAMPBTpoint3f@@J_N@Z"
+    },
+    {
+      "source": "src/sound_get_class.cpp",
+      "symbol": "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z"
+    },
+    {
+      "source": "src/unknown_18d090.cpp",
+      "symbol": "?function_18d090@@YAPAXJJ@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"
     }
   ],
   "definitions": [
@@ -260,15 +280,19 @@
     "?function_12be90@@YA_NXZ",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
+    "?function_18d090@@YAPAXJJ@Z",
+    "?function_1914f0@@YAJJ@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
     "?function_191660@@YAKJJ@Z",
+    "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
     "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
     "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
     "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
     "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
     "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+    "?function_2194a0@@YAPAEPAUs_object_ref@@@Z",
     "?function_2195f0@@YAMM@Z",
     "?function_2197f0@@YAJM@Z",
     "?function_21ec00@@YAXXZ",
@@ -288,6 +312,7 @@
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
+    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
     "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
     "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
@@ -312,9 +337,6 @@
     "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
-    "?function_18d090@@YAPAXJJ@Z",
-    "?function_1914f0@@YAJJ@Z",
-    "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
@@ -325,6 +347,7 @@
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
     "?g_4e034c@@3PAUs_tag_header_globals@@A",
+    "?g_4e0350@@3PAUs_palette_source_globals@@A",
     "?g_4e3b44@@3PAUs_tag_instance@@A",
     "?g_4e6378@@3PAUs_sound_voice@@A",
     "?g_4e637c@@3PAUs_record_pool@@A",
@@ -346,7 +369,6 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
-    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
@@ -374,6 +396,7 @@
     "exp",
     "fabs",
     "fmod",
+    "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memcpy",
     "h2_guest_memset",
@@ -381,6 +404,7 @@
     "h2_native_async_try_admit",
     "log",
     "log10",
+    "pow",
     "sqrt"
   ],
   "production_linked": false,
@@ -390,9 +414,6 @@
     "?function_1251e0@@YAJPBXJM@Z",
     "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_13b390@@YAMPBXMM@Z",
-    "?function_18d090@@YAPAXJJ@Z",
-    "?function_1914f0@@YAJJ@Z",
-    "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
@@ -411,7 +432,6 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
@@ -431,9 +451,11 @@
     "acos",
     "exp",
     "fmod",
+    "g_444c84",
     "g_dwDirectSoundDeltaPanicCount",
     "log",
-    "log10"
+    "log10",
+    "pow"
   ],
   "production_inadequate_resolutions": [
     {
@@ -668,5 +690,16 @@
     ],
     "semantics": "preserve class/playback filter and LFO inheritance, effect override preference, component evaluation, default-empty looping impulse state, definition/mixbin selection, and fallback tag data",
     "execution_gate": "exact general-function numerics plus initialized tag, effect-template, playback, class, and speaker-response state"
+  },
+  "effect_lookup_closure": {
+    "providers": [
+      "?function_1914f0@@YAJJ@Z",
+      "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
+      "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
+      "?function_18d090@@YAPAXJJ@Z",
+      "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"
+    ],
+    "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
+    "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
   }
 }
