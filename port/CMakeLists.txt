@@ -293,6 +293,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_12b400.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_map_lifetime_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_map_reset_helpers_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_old_map_disposal_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/globals.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}

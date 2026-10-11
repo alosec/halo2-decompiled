@@ -705,6 +705,22 @@
     {
       "source": "src/sound_map_reset_helpers_native.cpp",
       "symbol": "?sound_mix_apply@@YAXXZ"
+    },
+    {
+      "source": "src/sound_old_map_disposal_native.cpp",
+      "symbol": "?function_1264c0@@YAXK@Z"
+    },
+    {
+      "source": "src/sound_old_map_disposal_native.cpp",
+      "symbol": "?function_21d4d0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_old_map_disposal_native.cpp",
+      "symbol": "?function_21b070@@YAXJ@Z"
+    },
+    {
+      "source": "src/sound_old_map_disposal_native.cpp",
+      "symbol": "?function_21a1e0@@YAXXZ"
     }
   ],
   "definitions": [
@@ -895,7 +911,11 @@
     "?g_47f0e0@@3JA",
     "?function_191270@@YAXXZ",
     "?function_21f6d0@@YAXPBK0PBX@Z",
-    "?sound_mix_apply@@YAXXZ"
+    "?sound_mix_apply@@YAXXZ",
+    "?function_1264c0@@YAXK@Z",
+    "?function_21d4d0@@YAXXZ",
+    "?function_21b070@@YAXJ@Z",
+    "?function_21a1e0@@YAXXZ"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -1029,8 +1049,8 @@
     "IDirectSound_CreateSoundStream",
     "??_C@_00CNPNBAHC@?$AA@",
     "?game_state_globals@@3Us_game_state_globals@@A",
-    "?function_1264c0@@YAXK@Z",
-    "?function_16bc00@@YAJPAUs_record_pool@@J@Z"
+    "?function_16bc00@@YAJPAUs_record_pool@@J@Z",
+    "?g_4ed288@@3PAUs_looping_sound_globals@@A"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -1111,8 +1131,7 @@
     "IDirectSoundBuffer_SetDopplerFactor",
     "IDirectSoundBuffer_SetRolloffFactor",
     "IDirectSoundStream_SetHeadroom",
-    "IDirectSound_CreateSoundStream",
-    "?function_1264c0@@YAXK@Z"
+    "IDirectSound_CreateSoundStream"
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
@@ -1194,9 +1213,7 @@
       "IDirectSound_CreateSoundStream",
       "XPhysicalAlloc"
     ],
-    "recovered_lifecycle_operations": [
-      "?function_1264c0@@YAXK@Z"
-    ],
+    "recovered_lifecycle_operations": [],
     "immutable_diagnostics": [],
     "numeric_boundaries": [
       "?h2_xbox_rsqrtss@@YAMM@Z"
@@ -2045,7 +2062,7 @@
       "clear the map sound-globals publication before the final DSP and impulse reset"
     ],
     "semantics": "The exact recovered map transition publishes the active sound-globals tag, resets map-scoped sound/listener/mix/effect state, performs bounded playback fade-out through the genuine idle chain, invokes authentic old-map disposal, releases looping pools, and clears the publication in recovered order.",
-    "execution_gate": "Exact old-map disposal function_1264c0 remains a recovered lifecycle boundary, and all DirectSound effect operations plus initialized sound/tag/pool state remain required; this ownership does not enable production sound or blocking texture residency.",
+    "execution_gate": "Exact old-map disposal function_1264c0 is now owned with its effect and looping cleanup helpers; genuine DirectSound operations plus initialized sound, tag, playback, effect, looping, controller, and pool lifetimes remain required, so this ownership does not enable production sound or blocking texture residency.",
     "prohibited_shortcut": "Do not replace function_1264c0, the 300 ms idle-serviced fade, pool release, DSP reset, or map tag lookup with a pointer-only clear, no-op, fabricated completion, or isolated BSS binding.",
     "production_score": {
       "before": 77,
@@ -2058,5 +2075,33 @@
       ],
       "interpretation": "The coherent map publication/clear lifetime is score-neutral: one opaque mutable pointer becomes the exact recovered old-map disposal boundary after compact mix and DSP reset helpers are owned."
     }
+  },
+  "old_map_sound_disposal_closure": {
+    "root": "?function_1264c0@@YAXK@Z",
+    "effect_disposal": "?function_21d4d0@@YAXXZ",
+    "looping_sound_disposal": [
+      "?function_21a1e0@@YAXXZ",
+      "?function_21b070@@YAXJ@Z"
+    ],
+    "production_score": {
+      "before": 77,
+      "after": 76,
+      "removed": [
+        "?function_1264c0@@YAXK@Z"
+      ],
+      "added": [],
+      "interpretation": "Owning exact old-map disposal and its effect/looping record cleanup removes the sole recovered lifecycle boundary without exposing a new production import."
+    },
+    "required_order": [
+      "clear stale reentrant map-switch publication",
+      "delete every live sound effect and release its optional looping controller",
+      "walk live playbacks and either stop them with reason 10 or clear the retained marker under exact partial-switch policy",
+      "service one preserved-object idle frame or halt every driver channel",
+      "reset tick, time, ambience, and looping-sound synchronization counters",
+      "delete every looping sound and release its controller unless this is a partial switch"
+    ],
+    "semantics": "The exact callback preserves full and partial map-switch policy, tag-type retention, old-map playback stop ordering, sound-effect and looping-controller reference release, channel halt versus one idle update, and terminal sound/looping state reset.",
+    "execution_gate": "Requires initialized playback, effect, looping-sound, controller, tag-instance, sound-system, and driver-stream lifetimes; the closure remains dormant and does not enable audio or blocking texture residency.",
+    "prohibited_shortcut": "Do not replace effect/playback/looping iteration, controller releases, tag-type retention, driver halt, or preserved-object idle service with bulk pool clears, no-ops, or fabricated completion."
   }
 }

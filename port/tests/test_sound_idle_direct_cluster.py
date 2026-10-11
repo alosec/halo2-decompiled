@@ -207,13 +207,17 @@ def main() -> int:
         ("src/sound_map_reset_helpers_native.cpp", "?function_191270@@YAXXZ"),
         ("src/sound_map_reset_helpers_native.cpp", "?function_21f6d0@@YAXPBK0PBX@Z"),
         ("src/sound_map_reset_helpers_native.cpp", "?sound_mix_apply@@YAXXZ"),
+        ("src/sound_old_map_disposal_native.cpp", "?function_1264c0@@YAXK@Z"),
+        ("src/sound_old_map_disposal_native.cpp", "?function_21d4d0@@YAXXZ"),
+        ("src/sound_old_map_disposal_native.cpp", "?function_21b070@@YAXJ@Z"),
+        ("src/sound_old_map_disposal_native.cpp", "?function_21a1e0@@YAXXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 176:
+    if len(set(provider_symbols)) != 180:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -864,6 +868,43 @@ def main() -> int:
         if fragment not in reset_source:
             raise RuntimeError(f"sound map reset helper lost {fragment}")
 
+    old_map = manifest.get("old_map_sound_disposal_closure", {})
+    if old_map.get("root") != "?function_1264c0@@YAXK@Z" or \
+            old_map.get("effect_disposal") != \
+            "?function_21d4d0@@YAXXZ" or \
+            old_map.get("looping_sound_disposal") != [
+                "?function_21a1e0@@YAXXZ",
+                "?function_21b070@@YAXJ@Z"] or \
+            old_map.get("production_score") != {
+                "before": 77,
+                "after": 76,
+                "removed": ["?function_1264c0@@YAXK@Z"],
+                "added": [],
+                "interpretation":
+                    "Owning exact old-map disposal and its effect/looping "
+                    "record cleanup removes the sole recovered lifecycle "
+                    "boundary without exposing a new production import."} or \
+            len(old_map.get("required_order", [])) != 6 or \
+            not old_map.get("semantics") or \
+            not old_map.get("execution_gate") or \
+            not old_map.get("prohibited_shortcut"):
+        raise RuntimeError("old-map sound disposal closure changed")
+    old_map_source = (
+        args.root / "src/sound_old_map_disposal_native.cpp").read_text()
+    for fragment in [
+            "void __stdcall function_1264c0(dword flags)",
+            "function_21d4d0();",
+            "function_127320(sound_index, 10);",
+            "sound->retained_marker = NONE",
+            "function_125d60();",
+            "function_21f290();",
+            "g_4ed288->value20 = 0",
+            "function_21a1e0();",
+            "looping_sound_controller_release(effect->controller_index)",
+            "record_pool_release(looping_sounds, looping_sound_index)"]:
+        if fragment not in old_map_source:
+            raise RuntimeError(f"old-map sound disposal lost {fragment}")
+
     math_bridge = manifest.get("native_sound_math_bridge", {})
     if math_bridge.get("host_abi_version") != 13 or \
             math_bridge.get("routes") != [
@@ -914,7 +955,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 188 or len(expected_imports) != 133:
+    if len(expected_definitions) != 192 or len(expected_imports) != 133:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -952,7 +993,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 77:
+    if len(expected_production_imports) != 76:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -961,7 +1002,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [13, 62, 1, 0, 1]:
+    if [len(category) for category in categories] != [13, 62, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
