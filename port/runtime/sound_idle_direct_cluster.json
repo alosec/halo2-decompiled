@@ -521,6 +521,18 @@
     {
       "source": "src/sound_driver_device_startup_native.cpp",
       "symbol": "?sound_driver_device_startup@@YA_NXZ"
+    },
+    {
+      "source": "src/sound_driver_effect_buffers_startup_native.cpp",
+      "symbol": "?sound_driver_effect_buffers_startup@@YAXXZ"
+    },
+    {
+      "source": "src/sound_driver_effects_install_native.cpp",
+      "symbol": "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z"
+    },
+    {
+      "source": "src/sound_silence_buffer_native.cpp",
+      "symbol": "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"
     }
   ],
   "definitions": [
@@ -665,7 +677,10 @@
     "?sound_voices_update_chunks@@YAXXZ",
     "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
-    "?sound_driver_device_startup@@YA_NXZ"
+    "?sound_driver_device_startup@@YA_NXZ",
+    "?sound_driver_effect_buffers_startup@@YAXXZ",
+    "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z",
+    "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"
   ],
   "imports": [
     "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
@@ -732,7 +747,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-    "?sound_driver_effect_buffers_startup@@YAXXZ",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
     "IDirectSound_Release",
@@ -804,7 +818,14 @@
     "IDirectSound_SetDistanceFactor",
     "IDirectSound_SetDopplerFactor",
     "IDirectSound_SetMixBinHeadroom",
-    "IDirectSound_SetRolloffFactor"
+    "IDirectSound_SetRolloffFactor",
+    "?g_47f088@@3Vc_sound_effects@@A",
+    "DirectSoundCreateBuffer",
+    "IDirectSoundBuffer_SetBufferData",
+    "IDirectSoundBuffer_SetHeadroom",
+    "IDirectSoundBuffer_SetMaxDistance",
+    "IDirectSoundBuffer_SetMinDistance",
+    "IDirectSound_CreateSoundBuffer"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -846,7 +867,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-    "?sound_driver_effect_buffers_startup@@YAXXZ",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
     "IDirectSound_Release",
@@ -902,7 +922,14 @@
     "IDirectSound_SetDistanceFactor",
     "IDirectSound_SetDopplerFactor",
     "IDirectSound_SetMixBinHeadroom",
-    "IDirectSound_SetRolloffFactor"
+    "IDirectSound_SetRolloffFactor",
+    "?g_47f088@@3Vc_sound_effects@@A",
+    "DirectSoundCreateBuffer",
+    "IDirectSoundBuffer_SetBufferData",
+    "IDirectSoundBuffer_SetHeadroom",
+    "IDirectSoundBuffer_SetMaxDistance",
+    "IDirectSoundBuffer_SetMinDistance",
+    "IDirectSound_CreateSoundBuffer"
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
@@ -929,7 +956,8 @@
       "?g_51ebe0@@3PAXA",
       "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
       "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
-      "g_dwDirectSoundDeltaPanicCount"
+      "g_dwDirectSoundDeltaPanicCount",
+      "?g_47f088@@3Vc_sound_effects@@A"
     ],
     "backend_operations": [
       "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -981,11 +1009,16 @@
       "IDirectSound_SetDistanceFactor",
       "IDirectSound_SetDopplerFactor",
       "IDirectSound_SetMixBinHeadroom",
-      "IDirectSound_SetRolloffFactor"
+      "IDirectSound_SetRolloffFactor",
+      "DirectSoundCreateBuffer",
+      "IDirectSoundBuffer_SetBufferData",
+      "IDirectSoundBuffer_SetHeadroom",
+      "IDirectSoundBuffer_SetMaxDistance",
+      "IDirectSoundBuffer_SetMinDistance",
+      "IDirectSound_CreateSoundBuffer"
     ],
     "recovered_lifecycle_operations": [
-      "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-      "?sound_driver_effect_buffers_startup@@YAXXZ"
+      "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z"
     ],
     "immutable_diagnostics": [
       "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
@@ -1576,5 +1609,25 @@
     ],
     "failure_policy": "publish the allocated driver state before backend setup so exact ordered teardown can release a partially initialized device; never fabricate device or capability success",
     "execution_gate": "requires a genuine native DirectSound device backend and all mutable sound-driver/static-arena lifetimes"
+  },
+  "effect_buffer_startup_closure": {
+    "root": "?sound_driver_effect_buffers_startup@@YAXXZ",
+    "providers": [
+      "?sound_driver_effect_buffers_startup@@YAXXZ",
+      "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z",
+      "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"
+    ],
+    "semantics": "initialize exact effect levels, settings, and mixbins; create three direct and three deferred-3D effect inputs; install the authentic effects interface; create eight routed submix buffers and two aligned/checksummed looping silence buffers; publish NONE impulse IDs and terminal 1.0/8000/0 defaults",
+    "backend_operations": [
+      "DirectSoundCreateBuffer",
+      "IDirectSoundBuffer_SetBufferData",
+      "IDirectSoundBuffer_SetHeadroom",
+      "IDirectSoundBuffer_SetMaxDistance",
+      "IDirectSoundBuffer_SetMinDistance",
+      "IDirectSound_CreateSoundBuffer"
+    ],
+    "mutable_effects_lifetime": "?g_47f088@@3Vc_sound_effects@@A",
+    "failure_policy": "preserve null buffer entries after individual creation failures for exact ordered teardown; never fabricate buffer or effects-interface success",
+    "execution_gate": "requires genuine DirectSound buffers, the initialized c_sound_effects object and vtable, driver/static-arena ownership, and ordered teardown"
   }
 }

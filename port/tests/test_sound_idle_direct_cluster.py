@@ -161,13 +161,16 @@ def main() -> int:
         ("src/sound_driver_listener_native.cpp", "?function_220790@@YAXPBUs_sound_listener@@@Z"),
         ("src/sound_driver_reverb_default_native.cpp", "?g_44a2a0@@3Us_sound_driver_reverb@@A"),
         ("src/sound_driver_device_startup_native.cpp", "?sound_driver_device_startup@@YA_NXZ"),
+        ("src/sound_driver_effect_buffers_startup_native.cpp", "?sound_driver_effect_buffers_startup@@YAXXZ"),
+        ("src/sound_driver_effects_install_native.cpp", "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z"),
+        ("src/sound_silence_buffer_native.cpp", "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 130:
+    if len(set(provider_symbols)) != 133:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -636,12 +639,35 @@ def main() -> int:
             not device_startup.get("execution_gate"):
         raise RuntimeError("sound-idle device-startup closure changed")
 
+    effect_startup = manifest.get("effect_buffer_startup_closure", {})
+    if effect_startup.get("root") != \
+            "?sound_driver_effect_buffers_startup@@YAXXZ" or \
+            effect_startup.get("providers") != [
+                "?sound_driver_effect_buffers_startup@@YAXXZ",
+                "?function_21e3b0@@YAXPAVc_sound_driver_effects@@@Z",
+                "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z"] or \
+            effect_startup.get("backend_operations") != [
+                "DirectSoundCreateBuffer",
+                "IDirectSoundBuffer_SetBufferData",
+                "IDirectSoundBuffer_SetHeadroom",
+                "IDirectSoundBuffer_SetMaxDistance",
+                "IDirectSoundBuffer_SetMinDistance",
+                "IDirectSound_CreateSoundBuffer"] or \
+            effect_startup.get("mutable_effects_lifetime") != \
+            "?g_47f088@@3Vc_sound_effects@@A" or \
+            not effect_startup.get("semantics") or \
+            not effect_startup.get("failure_policy") or \
+            not effect_startup.get("execution_gate"):
+        raise RuntimeError("sound-idle effect-buffer closure changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 142 or len(expected_imports) != 137:
+    if len(expected_definitions) != 145 or len(expected_imports) != 143:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
+    if "?function_163ba0@@YAXPAKPAXJ@Z" in expected_imports:
+        raise RuntimeError("mutable checksum ABI returned to the cluster")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
     if manifest.get("production_linked") is not False:
@@ -674,7 +700,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 93:
+    if len(expected_production_imports) != 99:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -683,7 +709,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [24, 50, 2, 7, 10]:
+    if [len(category) for category in categories] != [25, 56, 1, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -764,6 +790,35 @@ def main() -> int:
             "DirectSoundDoWork();"]:
         if fragment not in device_source:
             raise RuntimeError(f"sound device startup lost {fragment}")
+    effect_buffer_source = (args.root /
+        "src/sound_driver_effect_buffers_startup_native.cpp").read_text()
+    for fragment in [
+            "sizeof(s_driver_effect_buffers_view) == 0x2ad8",
+            "globals->effect_levels_a[1] = 0xc0c0a8c1",
+            "description.flags = k_effect_input",
+            "spatial_description.flags = k_effect_input | k_control_3d",
+            "IDirectSoundBuffer_SetMaxDistance(*spatial_buffer, max_distance",
+            "function_21e3b0(reinterpret_cast<c_sound_driver_effects *>",
+            "description.input_mixbin = 15 + group * 4 + i",
+            "function_221490(&globals->impulse_buffers[impulse])",
+            "globals->impulse_ids[impulse] = NONE",
+            "globals->unknown2acc = 8000"]:
+        if fragment not in effect_buffer_source:
+            raise RuntimeError(f"sound effect-buffer startup lost {fragment}")
+    silence_source = (args.root /
+        "src/sound_silence_buffer_native.cpp").read_text()
+    for fragment in [
+            "void function_163ba0(dword *checksum, void const *data",
+            "static const dword k_silence_buffer_size = 1000",
+            "pair.mixbin = 0xe",
+            "DirectSoundCreateBuffer(&description, &buffer)",
+            "function_163ba0(&g_510808_pool_checksum, &aligned_size",
+            "IDirectSoundBuffer_SetBufferData(buffer, memory",
+            "IDirectSoundBuffer_SetHeadroom(buffer, 0)",
+            "IDirectSoundBuffer_SetVolume(buffer, -10000)",
+            "IDirectSoundBuffer_Play(buffer, 0, 0, k_play_looping)"]:
+        if fragment not in silence_source:
+            raise RuntimeError(f"sound silence buffer lost {fragment}")
     controller_source = (args.root / controller["source"]).read_text()
     storage_source = (args.root / controller["storage_source"]).read_text()
     teardown_source = (args.root / controller["teardown_source"]).read_text()

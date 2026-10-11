@@ -3468,7 +3468,7 @@ def main():
             ("sound-silence-buffer.o",
              "src/sound_silence_buffer_native.cpp",
              "?function_221490@@YAXPAPAUIDirectSoundBuffer@@@Z",
-             {"?function_163ba0@@YAXPAKPAXJ@Z",
+             {"?function_163ba0@@YAXPAKPBXJ@Z",
               "?g_510800_pool_base@@3KA",
               "?g_510804_pool_size@@3JA",
               "?g_510808_pool_checksum@@3KA",

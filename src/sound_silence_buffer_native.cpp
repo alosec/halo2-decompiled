@@ -47,7 +47,7 @@ extern dword g_510800_pool_base;
 extern long g_510804_pool_size;
 extern dword g_510808_pool_checksum;
 
-void function_163ba0(dword *checksum, void *data, long data_size);
+void function_163ba0(dword *checksum, void const *data, long data_size);
 
 extern "C" long __stdcall DirectSoundCreateBuffer(
 	s_buffer_description *description,
