@@ -3733,6 +3733,17 @@ def main():
                  "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
                  "?g_4e3b44@@3PAUs_tag_instance@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-playback-gain.o",
+             "src/sound_playback_gain_native.cpp",
+             "?function_1251e0@@YAJPBXJM@Z", {
+                 "?function_2195f0@@YAMM@Z",
+                 "?function_2197f0@@YAJM@Z",
+                 "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+                 "?g_4e034c@@3PAUs_tag_header_globals@@A",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A",
+                 "?g_502118@@3PAUs_sound_class_fade@@A",
+                 "?g_51ebd4@@3PAUs_sound_globals@@A"}),
             ("sound-looping-controller-release.o",
              "src/sound_looping_controller_release_native.cpp",
              "?looping_sound_controller_release@@YAXJ@Z", {

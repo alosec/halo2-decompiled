@@ -96,13 +96,14 @@ def main() -> int:
         ("src/unknown_18d090.cpp", "?function_18d090@@YAPAXJJ@Z"),
         ("src/unknown_219110.cpp", "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"),
         ("src/sound_playback_reference_native.cpp", "?function_125e60@@YAJPAUs_looping_track_sound@@@Z"),
+        ("src/sound_playback_gain_native.cpp", "?function_1251e0@@YAJPBXJM@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 65:
+    if len(set(provider_symbols)) != 66:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -298,6 +299,15 @@ def main() -> int:
             not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    playback_gain = manifest.get("playback_gain_closure", {})
+    if playback_gain.get("root") != "?function_1251e0@@YAJPBXJM@Z" or \
+            playback_gain.get("recursive_definitions") != [
+                "?function_127010@@YAJF@Z",
+                "?sound_definition_gain_lower@@YAJPBUs_sound_definition@@@Z",
+                "?sound_definition_gain_upper@@YAJPBUs_sound_definition@@@Z"
+            ] or not playback_gain.get("semantics") or \
+            not playback_gain.get("execution_gate"):
+        raise RuntimeError("sound-idle playback gain closure changed")
     playback_chunk_abi = manifest.get("playback_chunk_abi", {})
     if playback_chunk_abi != {
             "symbol": "?sound_playback_set_chunk@@YAXJJDDF@Z",
@@ -319,7 +329,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 71 or len(expected_imports) != 74:
+    if len(expected_definitions) != 75 or len(expected_imports) != 74:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")

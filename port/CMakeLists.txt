@@ -198,6 +198,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_fade_helpers_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_stop_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_reference_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_playback_gain_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_delete_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_free_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_voice_release_native.cpp"

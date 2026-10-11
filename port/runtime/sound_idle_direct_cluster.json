@@ -261,6 +261,10 @@
     {
       "source": "src/sound_playback_reference_native.cpp",
       "symbol": "?function_125e60@@YAJPAUs_looping_track_sound@@@Z"
+    },
+    {
+      "source": "src/sound_playback_gain_native.cpp",
+      "symbol": "?function_1251e0@@YAJPBXJM@Z"
     }
   ],
   "definitions": [
@@ -269,9 +273,11 @@
     "?function_120900@@YAXPAUs_job_node@@@Z",
     "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_125060@@YAJPBUs_sound@@J@Z",
+    "?function_1251e0@@YAJPBXJM@Z",
     "?function_125d60@@YAXXZ",
     "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
+    "?function_127010@@YAJF@Z",
     "?function_127320@@YAXJJ@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_1293f0@@YAXXZ",
@@ -317,6 +323,8 @@
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
+    "?sound_definition_gain_lower@@YAJPBUs_sound_definition@@@Z",
+    "?sound_definition_gain_upper@@YAJPBUs_sound_definition@@@Z",
     "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
     "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
@@ -339,7 +347,6 @@
   "imports": [
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
-    "?function_1251e0@@YAJPBXJM@Z",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
@@ -365,6 +372,7 @@
     "?g_502108@@3KA",
     "?g_50210c@@3PAUs_sound_cache_allocator@@A",
     "?g_502114@@3PAUs_record_pool@@A",
+    "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_510c54@@3PAUs_game_time_globals@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebd4@@3PAUs_sound_globals@@A",
@@ -416,7 +424,6 @@
   "execution_enabled": false,
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
-    "?function_1251e0@@YAJPBXJM@Z",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
@@ -432,6 +439,7 @@
     "?g_502104@@3PAUs_record_pool@@A",
     "?g_502108@@3KA",
     "?g_50210c@@3PAUs_sound_cache_allocator@@A",
+    "?g_502118@@3PAUs_sound_class_fade@@A",
     "?g_510c90@@3PAUs_voice_effects@@A",
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
@@ -705,6 +713,16 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "playback_gain_closure": {
+    "root": "?function_1251e0@@YAJPBXJM@Z",
+    "recursive_definitions": [
+      "?function_127010@@YAJF@Z",
+      "?sound_definition_gain_lower@@YAJPBUs_sound_definition@@@Z",
+      "?sound_definition_gain_upper@@YAJPBUs_sound_definition@@@Z"
+    ],
+    "semantics": "preserve definition/class/playback gain bounds, linear interpolation, active and previous ambience ducking, fade timing, and decibel encoding",
+    "execution_gate": "initialized sound-class fade, sound-system ambience, class-tag, and playback-parameter state"
   },
   "playback_chunk_abi": {
     "symbol": "?sound_playback_set_chunk@@YAXJJDDF@Z",
