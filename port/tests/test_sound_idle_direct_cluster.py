@@ -73,13 +73,20 @@ def main() -> int:
         ("src/sound_spatialization_native.cpp", "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z"),
         ("src/sound_spatial_gain_native.cpp", "?function_12a6d0@@YAJFMM@Z"),
         ("src/sound_attenuation_native.cpp", "?function_125060@@YAJPBUs_sound@@J@Z"),
+        ("src/sound_cone_attenuation_native.cpp", "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z"),
+        ("src/sound_attenuation_native.cpp", "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z"),
+        ("src/sound_attenuation_native.cpp", "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z"),
+        ("src/sound_attenuation_native.cpp", "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z"),
+        ("src/sound_attenuation_native.cpp", "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z"),
+        ("src/unknown_11cc90.cpp", "?function_11cf50@@YAMPBTvector3f@@0@Z"),
+        ("src/unknown_030290.cpp", "?function_30bf0@@YAMPATvector3f@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 42:
+    if len(set(provider_symbols)) != 49:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -238,10 +245,17 @@ def main() -> int:
             not directional_cone.get("semantics") or \
             not directional_cone.get("execution_gate"):
         raise RuntimeError("sound-idle directional-cone ownership changed")
+    cone_closure = manifest.get("cone_attenuation_closure", {})
+    if cone_closure.get("root") != \
+            "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z" or \
+            len(cone_closure.get("providers", [])) != 6 or \
+            not cone_closure.get("semantics") or \
+            not cone_closure.get("execution_gate"):
+        raise RuntimeError("sound-idle cone-attenuation closure changed")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 45 or len(expected_imports) != 67:
+    if len(expected_definitions) != 52 or len(expected_imports) != 67:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")

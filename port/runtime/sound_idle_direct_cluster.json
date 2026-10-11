@@ -169,10 +169,39 @@
     {
       "source": "src/sound_attenuation_native.cpp",
       "symbol": "?function_125060@@YAJPBUs_sound@@J@Z"
+    },
+    {
+      "source": "src/sound_cone_attenuation_native.cpp",
+      "symbol": "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z"
+    },
+    {
+      "source": "src/sound_attenuation_native.cpp",
+      "symbol": "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z"
+    },
+    {
+      "source": "src/sound_attenuation_native.cpp",
+      "symbol": "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z"
+    },
+    {
+      "source": "src/sound_attenuation_native.cpp",
+      "symbol": "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z"
+    },
+    {
+      "source": "src/sound_attenuation_native.cpp",
+      "symbol": "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z"
+    },
+    {
+      "source": "src/unknown_11cc90.cpp",
+      "symbol": "?function_11cf50@@YAMPBTvector3f@@0@Z"
+    },
+    {
+      "source": "src/unknown_030290.cpp",
+      "symbol": "?function_30bf0@@YAMPATvector3f@@@Z"
     }
   ],
   "definitions": [
     "?async_task_queue@@YAJPAUs_job_node@@@Z",
+    "?function_11cf50@@YAMPBTvector3f@@0@Z",
     "?function_120900@@YAXPAUs_job_node@@@Z",
     "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_125060@@YAJPBUs_sound@@J@Z",
@@ -183,6 +212,7 @@
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12a6d0@@YAJFMM@Z",
     "?function_12a810@@YAJJ@Z",
+    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_12aff0@@YAMMMM_N@Z",
     "?function_12be90@@YA_NXZ",
     "?function_191550@@YAXXZ",
@@ -200,6 +230,7 @@
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?function_21f650@@YAMJJ@Z",
+    "?function_30bf0@@YAMPATvector3f@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "?g_468834@@3MA",
@@ -207,6 +238,10 @@
     "?looping_sound_controller_release@@YAXJ@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
     "?sound_cache_new_frame@@YAXXZ",
+    "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
+    "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
+    "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
+    "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
     "?sound_playback_delete@@YAXJ@Z",
     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
@@ -222,7 +257,6 @@
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
@@ -277,6 +311,7 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
+    "acos",
     "exp",
     "fabs",
     "g_dwDirectSoundDeltaPanicCount",
@@ -292,7 +327,6 @@
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
-    "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
@@ -327,6 +361,7 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
+    "acos",
     "exp",
     "g_dwDirectSoundDeltaPanicCount",
     "log10"
@@ -514,5 +549,18 @@
     "symbol": "?function_125060@@YAJPBUs_sound@@J@Z",
     "semantics": "preserve per-sound directional-cone overrides and sound-definition directional-disable policy",
     "execution_gate": "initialized sound-definition tag ownership"
+  },
+  "cone_attenuation_closure": {
+    "root": "?function_12ad30@@YAMPBTvector3f@@PBUs_sound@@J0@Z",
+    "providers": [
+      "?sound_get_distance_gain@@YAMJPBUs_sound@@M@Z",
+      "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
+      "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
+      "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
+      "?function_11cf50@@YAMPBTvector3f@@0@Z",
+      "?function_30bf0@@YAMPATvector3f@@@Z"
+    ],
+    "semantics": "preserve minimum-plateau/inverse-distance/maximum-fade attenuation, cone angle and outer-gain overrides, normalized reverse direction, angular interpolation, and inverse attenuation policy",
+    "execution_gate": "initialized sound definitions, class and promotion state plus exact acos/fabs/sqrt math"
   }
 }

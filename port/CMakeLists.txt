@@ -220,6 +220,9 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_spatialization_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_spatial_gain_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_attenuation_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_cone_attenuation_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_11cc90.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_030290.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
