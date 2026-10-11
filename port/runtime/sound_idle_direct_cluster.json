@@ -477,6 +477,14 @@
     {
       "source": "src/sound_crc_update_native.cpp",
       "global": "?g_sound_crc_table_built@@3_NA"
+    },
+    {
+      "source": "src/sound_cache_callbacks_native.cpp",
+      "symbol": "?sound_cache_entry_busy@@YA_NJ@Z"
+    },
+    {
+      "source": "src/sound_cache_callbacks_native.cpp",
+      "symbol": "?sound_cache_entry_delete@@YAXJ@Z"
     }
   ],
   "definitions": [
@@ -578,6 +586,8 @@
     "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
     "?looping_sound_set_permutations@@YAXPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JFKF@Z",
     "?physical_memory_reset_time@@YAXPAUs_physical_object@@@Z",
+    "?sound_cache_entry_busy@@YA_NJ@Z",
+    "?sound_cache_entry_delete@@YAXJ@Z",
     "?sound_cache_initialize@@YAXXZ",
     "?sound_cache_new_frame@@YAXXZ",
     "?sound_definition_gain_lower@@YAJPBUs_sound_definition@@@Z",
@@ -681,8 +691,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?release_decoder@c_wma_codec@@QAAXXZ",
-    "?sound_cache_entry_busy@@YA_NJ@Z",
-    "?sound_cache_entry_delete@@YAXJ@Z",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
     "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
@@ -791,8 +799,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?release_decoder@c_wma_codec@@QAAXXZ",
-    "?sound_cache_entry_busy@@YA_NJ@Z",
-    "?sound_cache_entry_delete@@YAXJ@Z",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
     "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
@@ -918,8 +924,6 @@
       "?function_21f290@@YAXXZ",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
       "?release_decoder@c_wma_codec@@QAAXXZ",
-      "?sound_cache_entry_busy@@YA_NJ@Z",
-      "?sound_cache_entry_delete@@YAXJ@Z",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
       "?sound_driver_device_startup@@YA_NXZ",
       "?sound_driver_effect_buffers_startup@@YAXXZ"
