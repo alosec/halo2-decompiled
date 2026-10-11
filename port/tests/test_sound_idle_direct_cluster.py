@@ -160,13 +160,14 @@ def main() -> int:
         ("src/sound_effect_image_startup_native.cpp", "?function_191300@@YA_NPAUIDirectSound@@@Z"),
         ("src/sound_driver_listener_native.cpp", "?function_220790@@YAXPBUs_sound_listener@@@Z"),
         ("src/sound_driver_reverb_default_native.cpp", "?g_44a2a0@@3Us_sound_driver_reverb@@A"),
+        ("src/sound_driver_device_startup_native.cpp", "?sound_driver_device_startup@@YA_NXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 129:
+    if len(set(provider_symbols)) != 130:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -620,9 +621,24 @@ def main() -> int:
             not playback_reference.get("execution_gate"):
         raise RuntimeError("sound-idle playback-reference closure changed")
 
+    device_startup = manifest.get("device_startup_closure", {})
+    if device_startup.get("symbol") != \
+            "?sound_driver_device_startup@@YA_NXZ" or \
+            device_startup.get("backend_operations") != [
+                "DirectSoundCreate", "DirectSoundDoWork",
+                "IDirectSound_GetCaps", "IDirectSound_GetSpeakerConfig",
+                "IDirectSound_SetDistanceFactor",
+                "IDirectSound_SetDopplerFactor",
+                "IDirectSound_SetMixBinHeadroom",
+                "IDirectSound_SetRolloffFactor"] or \
+            not device_startup.get("semantics") or \
+            not device_startup.get("failure_policy") or \
+            not device_startup.get("execution_gate"):
+        raise RuntimeError("sound-idle device-startup closure changed")
+
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 141 or len(expected_imports) != 131:
+    if len(expected_definitions) != 142 or len(expected_imports) != 137:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -658,7 +674,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 87:
+    if len(expected_production_imports) != 93:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -667,7 +683,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [24, 43, 3, 7, 10]:
+    if [len(category) for category in categories] != [24, 50, 2, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -731,6 +747,23 @@ def main() -> int:
             "sizeof(s_sound_driver_reverb) == 0x48"]:
         if fragment not in reverb_source:
             raise RuntimeError(f"default listener reverb lost {fragment}")
+    device_source = (args.root /
+        "src/sound_driver_device_startup_native.cpp").read_text()
+    for fragment in [
+            "sizeof(s_driver_device_view) == 0x2ad8",
+            "offsetof(s_driver_device_view, caps) == 0x2aa0",
+            "function_163ba0(&checksum, &allocated_size",
+            "g_51ebe4 = reinterpret_cast<s_bink_sound_settings *>(memory)",
+            "DirectSoundCreate(NULL, &globals->direct_sound, NULL)",
+            "IDirectSound_GetCaps(globals->direct_sound, globals->caps)",
+            "IDirectSound_SetDistanceFactor(globals->direct_sound, 3.048f",
+            "IDirectSound_SetDopplerFactor(globals->direct_sound, 0.0f",
+            "(speaker_flags & 0xffff) == 2",
+            "for (long mixbin = 0; mixbin <= 31; mixbin++)",
+            "IDirectSound_SetRolloffFactor(globals->direct_sound, 0.0f",
+            "DirectSoundDoWork();"]:
+        if fragment not in device_source:
+            raise RuntimeError(f"sound device startup lost {fragment}")
     controller_source = (args.root / controller["source"]).read_text()
     storage_source = (args.root / controller["storage_source"]).read_text()
     teardown_source = (args.root / controller["teardown_source"]).read_text()

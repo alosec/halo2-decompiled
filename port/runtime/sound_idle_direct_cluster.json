@@ -517,6 +517,10 @@
     {
       "source": "src/sound_driver_reverb_default_native.cpp",
       "global": "?g_44a2a0@@3Us_sound_driver_reverb@@A"
+    },
+    {
+      "source": "src/sound_driver_device_startup_native.cpp",
+      "symbol": "?sound_driver_device_startup@@YA_NXZ"
     }
   ],
   "definitions": [
@@ -660,7 +664,8 @@
     "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z",
     "?sound_voices_update_chunks@@YAXXZ",
     "?vector3d_decompress@@YAPATvector3f@@KPAT1@@Z",
-    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z"
+    "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
+    "?sound_driver_device_startup@@YA_NXZ"
   ],
   "imports": [
     "??_C@_0BB@KEGBILOA@xbox?5sound?5cache?$AA@",
@@ -727,7 +732,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-    "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
@@ -793,7 +797,14 @@
     "logf",
     "pow",
     "sinf",
-    "sqrt"
+    "sqrt",
+    "DirectSoundCreate",
+    "IDirectSound_GetCaps",
+    "IDirectSound_GetSpeakerConfig",
+    "IDirectSound_SetDistanceFactor",
+    "IDirectSound_SetDopplerFactor",
+    "IDirectSound_SetMixBinHeadroom",
+    "IDirectSound_SetRolloffFactor"
   ],
   "production_linked": false,
   "execution_enabled": false,
@@ -835,7 +846,6 @@
     "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-    "?sound_driver_device_startup@@YA_NXZ",
     "?sound_driver_effect_buffers_startup@@YAXXZ",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
@@ -885,7 +895,14 @@
     "log10",
     "logf",
     "pow",
-    "sinf"
+    "sinf",
+    "DirectSoundCreate",
+    "IDirectSound_GetCaps",
+    "IDirectSound_GetSpeakerConfig",
+    "IDirectSound_SetDistanceFactor",
+    "IDirectSound_SetDopplerFactor",
+    "IDirectSound_SetMixBinHeadroom",
+    "IDirectSound_SetRolloffFactor"
   ],
   "remaining_runtime_frontier": {
     "mutable_lifetimes": [
@@ -957,11 +974,17 @@
       "XAudioSetEffectData",
       "XFreeSection",
       "XLoadSection",
-      "XPhysicalProtect"
+      "XPhysicalProtect",
+      "DirectSoundCreate",
+      "IDirectSound_GetCaps",
+      "IDirectSound_GetSpeakerConfig",
+      "IDirectSound_SetDistanceFactor",
+      "IDirectSound_SetDopplerFactor",
+      "IDirectSound_SetMixBinHeadroom",
+      "IDirectSound_SetRolloffFactor"
     ],
     "recovered_lifecycle_operations": [
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
-      "?sound_driver_device_startup@@YA_NXZ",
       "?sound_driver_effect_buffers_startup@@YAXXZ"
     ],
     "immutable_diagnostics": [
@@ -1537,5 +1560,21 @@
     ],
     "semantics": "preserve exact current-chunk cache admission, loaded-result selection, one-time held-reference publication, and reference-counting request",
     "execution_gate": "initialized sound definition/global chunk tables plus genuine sound-cache lifetime"
+  },
+  "device_startup_closure": {
+    "symbol": "?sound_driver_device_startup@@YA_NXZ",
+    "semantics": "allocate and checksum the exact 0x2ad8-byte driver state, create the genuine DirectSound device, query caps and speaker configuration, apply immediate distance and Doppler factors, clear all 32 mixbin headrooms, set deferred zero rolloff, and perform real DirectSound work",
+    "backend_operations": [
+      "DirectSoundCreate",
+      "DirectSoundDoWork",
+      "IDirectSound_GetCaps",
+      "IDirectSound_GetSpeakerConfig",
+      "IDirectSound_SetDistanceFactor",
+      "IDirectSound_SetDopplerFactor",
+      "IDirectSound_SetMixBinHeadroom",
+      "IDirectSound_SetRolloffFactor"
+    ],
+    "failure_policy": "publish the allocated driver state before backend setup so exact ordered teardown can release a partially initialized device; never fabricate device or capability success",
+    "execution_gate": "requires a genuine native DirectSound device backend and all mutable sound-driver/static-arena lifetimes"
   }
 }
