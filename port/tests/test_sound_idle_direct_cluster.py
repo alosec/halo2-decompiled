@@ -101,13 +101,19 @@ def main() -> int:
         ("src/tag_function_periodic_native.cpp", "?function_17c900@@YAMFM@Z"),
         ("src/light_curve_lookup_native.cpp", "?function_17ca10@@YAMMF@Z"),
         ("src/tag_function_general_native.cpp", "g_44178c"),
+        ("src/unknown_218ac0.cpp", "?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z"),
+        ("src/unknown_219110.cpp", "?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z"),
+        ("src/unknown_219110.cpp", "?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z"),
+        ("src/unknown_219110.cpp", "?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z"),
+        ("src/unknown_219110.cpp", "?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z"),
+        ("src/unknown_219110.cpp", "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 70:
+    if len(set(provider_symbols)) != 76:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -303,6 +309,17 @@ def main() -> int:
             not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    looping_selection = manifest.get("looping_selection_closure", {})
+    if looping_selection.get("providers") != [
+            "?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z",
+            "?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z",
+            "?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z",
+            "?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z",
+            "?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z",
+            "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z"
+            ] or not looping_selection.get("semantics") or \
+            not looping_selection.get("execution_gate"):
+        raise RuntimeError("sound-idle looping selection closure changed")
     general_function = manifest.get("general_function_closure", {})
     if general_function.get("root") != "?function_13b390@@YAMPBXMM@Z" or \
             general_function.get("providers") != [
@@ -345,7 +362,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 79 or len(expected_imports) != 76:
+    if len(expected_definitions) != 85 or len(expected_imports) != 76:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")

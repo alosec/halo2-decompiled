@@ -281,6 +281,30 @@
     {
       "source": "src/tag_function_general_native.cpp",
       "global": "g_44178c"
+    },
+    {
+      "source": "src/unknown_218ac0.cpp",
+      "symbol": "?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z"
+    },
+    {
+      "source": "src/unknown_219110.cpp",
+      "symbol": "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z"
     }
   ],
   "definitions": [
@@ -321,8 +345,14 @@
     "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
     "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
     "?function_218a10@@YAXPAUs_sound_chunk@@J@Z",
+    "?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z",
+    "?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z",
     "?function_219290@@YAJFPAUs_permutation_group@@@Z",
+    "?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z",
+    "?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z",
     "?function_2194a0@@YAPAEPAUs_object_ref@@@Z",
+    "?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z",
+    "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z",
     "?function_2195f0@@YAMM@Z",
     "?function_2197f0@@YAJM@Z",
     "?function_21ec00@@YAXXZ",
@@ -735,6 +765,18 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "looping_selection_closure": {
+    "providers": [
+      "?function_218f50@@YAFPAUs_looping_playback_definition@@FM@Z",
+      "?function_219110@@YAFPAUs_set_ref@@FPAKF1PA_N_N@Z",
+      "?function_2192b0@@YAXPAUs_animation_state@@PAUs_animation_ref@@E@Z",
+      "?function_219370@@YAJPAUs_animation_state@@PAUs_animation_ref@@@Z",
+      "?function_2194c0@@YAKPAUs_packed_value@@PAUs_animation_ref@@@Z",
+      "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z"
+    ],
+    "semantics": "preserve pitch-based permutation selection, used-mask/random set selection, animation reset/advance, and packed animation value get/set",
+    "execution_gate": "initialized looping definitions, animation references, sound-global tables, and random state"
   },
   "general_function_closure": {
     "root": "?function_13b390@@YAMPBXMM@Z",

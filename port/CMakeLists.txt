@@ -240,6 +240,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_get_class.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_18d090.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_219110.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_218ac0.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
