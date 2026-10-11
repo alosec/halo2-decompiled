@@ -126,13 +126,14 @@ def main() -> int:
         ("src/sound_mixbin_submit_native.cpp", "?sound_mixbins_add@@YAXPAUs_mixbin_settings@@JM@Z"),
         ("src/sound_mixbin_submit_native.cpp", "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z"),
         ("src/sound_mixbin_submit_native.cpp", "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z"),
+        ("src/sound_looping_channel_update_native.cpp", "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 95:
+    if len(set(provider_symbols)) != 96:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -364,10 +365,11 @@ def main() -> int:
             not mixbins.get("semantics") or \
             len(mixbins.get("execution_gates", [])) != 3:
         raise RuntimeError("sound-idle mixbin submission closure changed")
-    shared_update = manifest.get("shared_channel_update_frontier", {})
+    shared_update = manifest.get("shared_channel_update_closure", {})
     expected_update_symbol = \
         "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"
-    if shared_update.get("source") != "src/unknown_21fa80.cpp" or \
+    if shared_update.get("source") != \
+            "src/sound_looping_channel_update_native.cpp" or \
             shared_update.get("symbol") != expected_update_symbol or \
             shared_update.get("checked_layouts") != {
                 "channel_update_input_size": 72,
@@ -389,13 +391,13 @@ def main() -> int:
         raise RuntimeError("sound-idle shared channel update frontier changed")
     shared_source = (args.root / shared_update["source"]).read_text()
     for fragment in [
-            "stream->stream->GetVoiceProperties",
+            "IDirectSoundStream_GetVoiceProperties",
             "function_2215d0",
-            "voice->buffer->GetVoiceProperties",
+            "IDirectSoundBuffer_GetVoiceProperties",
             "function_2216f0",
-            "channel_effects()->add_effect_sends",
-            "stream->stream->SetMixBins",
-            "stream->stream->SetPitch",
+            "channel_effects(globals)->add_effect_sends",
+            "IDirectSoundStream_SetMixBins",
+            "IDirectSoundStream_SetPitch",
             "function_2201f0"]:
         if fragment not in shared_source:
             raise RuntimeError(
@@ -483,7 +485,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 104 or len(expected_imports) != 88:
+    if len(expected_definitions) != 105 or len(expected_imports) != 94:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -519,7 +521,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 55:
+    if len(expected_production_imports) != 61:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

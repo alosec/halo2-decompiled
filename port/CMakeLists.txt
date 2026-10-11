@@ -208,6 +208,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_channel_parameters_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_effect_data_submit_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_mixbin_submit_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_looping_channel_update_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_stream_envelope_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/tag_function_range_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_playback_delete_native.cpp"

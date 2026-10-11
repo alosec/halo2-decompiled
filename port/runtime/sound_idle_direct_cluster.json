@@ -381,6 +381,10 @@
     {
       "source": "src/sound_mixbin_submit_native.cpp",
       "symbol": "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z"
+    },
+    {
+      "source": "src/sound_looping_channel_update_native.cpp",
+      "symbol": "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"
     }
   ],
   "definitions": [
@@ -445,6 +449,7 @@
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
     "?function_21f960@@YAXKPBK@Z",
+    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
     "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z",
     "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z",
     "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z",
@@ -494,7 +499,6 @@
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_468d48@@3QAY0EAA@$$CBEA",
@@ -531,15 +535,20 @@
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
     "GetTickCount",
+    "IDirectSoundBuffer_GetStatus",
+    "IDirectSoundBuffer_GetVoiceProperties",
     "IDirectSoundBuffer_Lock",
     "IDirectSoundBuffer_Pause",
+    "IDirectSoundBuffer_Play",
     "IDirectSoundBuffer_SetCurrentPosition",
     "IDirectSoundBuffer_SetMixBins",
     "IDirectSoundBuffer_SetMixBinVolumes",
     "IDirectSoundBuffer_SetVolume",
+    "IDirectSoundBuffer_StopEx",
     "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
+    "IDirectSoundStream_GetVoiceProperties",
     "IDirectSoundStream_Pause",
     "IDirectSoundStream_Process",
     "IDirectSoundStream_SetEG",
@@ -548,6 +557,8 @@
     "IDirectSoundStream_SetMixBins",
     "IDirectSoundStream_SetMixBinVolumes",
     "IDirectSoundStream_SetOutputBuffer",
+    "IDirectSoundStream_SetPitch",
+    "IDirectSoundStream_SetVolume",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "ReadFile",
@@ -584,7 +595,6 @@
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
-    "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -604,15 +614,20 @@
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "DirectSoundDoWork",
+    "IDirectSoundBuffer_GetStatus",
+    "IDirectSoundBuffer_GetVoiceProperties",
     "IDirectSoundBuffer_Lock",
     "IDirectSoundBuffer_Pause",
+    "IDirectSoundBuffer_Play",
     "IDirectSoundBuffer_SetCurrentPosition",
     "IDirectSoundBuffer_SetMixBins",
     "IDirectSoundBuffer_SetMixBinVolumes",
     "IDirectSoundBuffer_SetVolume",
+    "IDirectSoundBuffer_StopEx",
     "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
     "IDirectSoundStream_GetStatus",
+    "IDirectSoundStream_GetVoiceProperties",
     "IDirectSoundStream_Pause",
     "IDirectSoundStream_Process",
     "IDirectSoundStream_SetEG",
@@ -621,6 +636,8 @@
     "IDirectSoundStream_SetMixBins",
     "IDirectSoundStream_SetMixBinVolumes",
     "IDirectSoundStream_SetOutputBuffer",
+    "IDirectSoundStream_SetPitch",
+    "IDirectSoundStream_SetVolume",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "XAudioDownloadEffectsImage",
@@ -936,8 +953,8 @@
       "valid bounded mixbin indices and pair counts"
     ]
   },
-  "shared_channel_update_frontier": {
-    "source": "src/unknown_21fa80.cpp",
+  "shared_channel_update_closure": {
+    "source": "src/sound_looping_channel_update_native.cpp",
     "symbol": "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
     "checked_layouts": {
       "channel_update_input_size": 72,
