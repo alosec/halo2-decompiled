@@ -95,13 +95,14 @@ def main() -> int:
         ("src/sound_get_class.cpp", "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z"),
         ("src/unknown_18d090.cpp", "?function_18d090@@YAPAXJJ@Z"),
         ("src/unknown_219110.cpp", "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"),
+        ("src/sound_playback_reference_native.cpp", "?function_125e60@@YAJPAUs_looping_track_sound@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 64:
+    if len(set(provider_symbols)) != 65:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -297,10 +298,18 @@ def main() -> int:
             not effect_lookups.get("semantics") or \
             not effect_lookups.get("execution_gate"):
         raise RuntimeError("sound-idle effect-lookup closure changed")
+    playback_reference = manifest.get("playback_reference_closure", {})
+    if playback_reference.get("root") != \
+            "?function_125e60@@YAJPAUs_looping_track_sound@@@Z" or \
+            playback_reference.get("recursive_definitions") != [
+                "?sound_playback_acquire_reference@@YAXPAUs_sound_playback@@@Z"
+            ] or not playback_reference.get("semantics") or \
+            not playback_reference.get("execution_gate"):
+        raise RuntimeError("sound-idle playback-reference closure changed")
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 69 or len(expected_imports) != 75:
+    if len(expected_definitions) != 71 or len(expected_imports) != 74:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if not set(provider_symbols).issubset(expected_definitions):
         raise RuntimeError("sound-idle direct provider definition is missing")
@@ -334,7 +343,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 45:
+    if len(expected_production_imports) != 44:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",

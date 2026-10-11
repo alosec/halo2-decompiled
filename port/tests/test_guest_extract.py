@@ -3727,6 +3727,12 @@ def main():
                  "?g_4e3b44@@3PAUs_tag_instance@@A",
                  "?g_502104@@3PAUs_record_pool@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-playback-acquire-reference.o",
+             "src/sound_playback_reference_native.cpp",
+             "?function_125e60@@YAJPAUs_looping_track_sound@@@Z", {
+                 "?function_218850@@YAKJPAUs_sound_chunk@@K@Z",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_51ebd4@@3PAUs_sound_globals@@A"}),
             ("sound-looping-controller-release.o",
              "src/sound_looping_controller_release_native.cpp",
              "?looping_sound_controller_release@@YAXJ@Z", {

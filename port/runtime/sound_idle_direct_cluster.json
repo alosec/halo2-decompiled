@@ -257,6 +257,10 @@
     {
       "source": "src/unknown_219110.cpp",
       "symbol": "?function_2194a0@@YAPAEPAUs_object_ref@@@Z"
+    },
+    {
+      "source": "src/sound_playback_reference_native.cpp",
+      "symbol": "?function_125e60@@YAJPAUs_looping_track_sound@@@Z"
     }
   ],
   "definitions": [
@@ -266,6 +270,7 @@
     "?function_120ba0@@YAJJPATs_async_task@@JP6AJ0@ZPC_N@Z",
     "?function_125060@@YAJPBUs_sound@@J@Z",
     "?function_125d60@@YAXXZ",
+    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127320@@YAXJJ@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
@@ -317,6 +322,7 @@
     "?sound_get_inner_cone_angle@@YAMPBUs_sound@@J@Z",
     "?sound_get_outer_cone_angle@@YAMPBUs_sound@@J@Z",
     "?sound_get_outer_cone_gain@@YAJPBUs_sound@@J@Z",
+    "?sound_playback_acquire_reference@@YAXPAUs_sound_playback@@@Z",
     "?sound_playback_delete@@YAXJ@Z",
     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
     "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
@@ -334,7 +340,6 @@
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_1251e0@@YAJPBXJM@Z",
-    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
@@ -412,7 +417,6 @@
   "blocker": "The cluster still exposes genuine playback, stream-flush, effect, cache, clock, mutable-state, DSP-image section/download, voice-engine, and Xbox DirectSound/XAudio imports. It is built only to ratchet exact source ownership and must remain absent from production until a behavior-preserving native audio backend and initialized sound lifetimes own those boundaries.",
   "production_score_imports": [
     "?function_1251e0@@YAJPBXJM@Z",
-    "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
@@ -701,5 +705,13 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "playback_reference_closure": {
+    "root": "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
+    "recursive_definitions": [
+      "?sound_playback_acquire_reference@@YAXPAUs_sound_playback@@@Z"
+    ],
+    "semantics": "preserve exact current-chunk cache admission, loaded-result selection, one-time held-reference publication, and reference-counting request",
+    "execution_gate": "initialized sound definition/global chunk tables plus genuine sound-cache lifetime"
   }
 }
