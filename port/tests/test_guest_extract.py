@@ -3744,6 +3744,27 @@ def main():
                  "?g_4e6380@@3PAUs_4e6380@@A",
                  "?g_502118@@3PAUs_sound_class_fade@@A",
                  "?g_51ebd4@@3PAUs_sound_globals@@A"}),
+            ("sound-looping-channel-dirty.o",
+             "src/sound_looping_voice_policy_native.cpp",
+             "?function_12a420@@YAXF@Z", {
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_51ebe4@@3PAUs_bink_sound_settings@@A"}),
+            ("sound-looping-voice-preemption.o",
+             "src/sound_looping_voice_policy_native.cpp",
+             "?function_128a60@@YAFJFPBF@Z", {
+                 "?g_4e034c@@3PAUs_tag_header_globals@@A",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A"}),
+            ("sound-looping-voice-counts.o",
+             "src/sound_looping_voice_policy_native.cpp",
+             "?function_128500@@YAXJPAUs_looping_voice_counts@@@Z", {
+                 "?g_4e034c@@3PAUs_tag_header_globals@@A",
+                 "?g_4e3b44@@3PAUs_tag_instance@@A",
+                 "?g_4e6378@@3PAUs_sound_voice@@A",
+                 "?g_4e637c@@3PAUs_record_pool@@A",
+                 "?g_4e6380@@3PAUs_4e6380@@A"}),
             ("sound-looping-controller-release.o",
              "src/sound_looping_controller_release_native.cpp",
              "?looping_sound_controller_release@@YAXJ@Z", {

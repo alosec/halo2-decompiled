@@ -305,6 +305,18 @@
     {
       "source": "src/unknown_219110.cpp",
       "symbol": "?function_219560@@YAXPAUs_packed_value@@PAUs_animation_ref@@K@Z"
+    },
+    {
+      "source": "src/sound_looping_voice_policy_native.cpp",
+      "symbol": "?function_12a420@@YAXF@Z"
+    },
+    {
+      "source": "src/sound_looping_voice_policy_native.cpp",
+      "symbol": "?function_128a60@@YAFJFPBF@Z"
+    },
+    {
+      "source": "src/sound_looping_voice_policy_native.cpp",
+      "symbol": "?function_128500@@YAXJPAUs_looping_voice_counts@@@Z"
     }
   ],
   "definitions": [
@@ -319,10 +331,13 @@
     "?function_126960@@YAXPAUs_sound_playback@@@Z",
     "?function_127010@@YAJF@Z",
     "?function_127320@@YAXJJ@Z",
+    "?function_128500@@YAXJPAUs_looping_voice_counts@@@Z",
+    "?function_128a60@@YAFJFPBF@Z",
     "?function_128ca0@@YAXFJPBUs_looping_channel_spatialization@@@Z",
     "?function_1293f0@@YAXXZ",
     "?function_129aa0@@YAXFPAJPAUs_looping_channel_spatialization@@@Z",
     "?function_12a1b0@@YAXFPAUs_looping_track_sound@@PBUs_looping_channel_spatialization@@PAUs_looping_channel_properties@@@Z",
+    "?function_12a420@@YAXF@Z",
     "?function_12a6d0@@YAJFMM@Z",
     "?function_12a810@@YAJJ@Z",
     "?function_12a9d0@@YAMJPBUs_sound_position@@@Z",
@@ -765,6 +780,15 @@
     ],
     "semantics": "preserve exact mixbin selection, five-speaker directional response, class tag lookup, platform-playback handle routing, and object-reference resolution",
     "execution_gate": "initialized tag/object/sound-global state plus exact powered speaker-response math"
+  },
+  "looping_voice_policy_closure": {
+    "providers": [
+      "?function_128500@@YAXJPAUs_looping_voice_counts@@@Z",
+      "?function_128a60@@YAFJFPBF@Z",
+      "?function_12a420@@YAXF@Z"
+    ],
+    "semantics": "preserve per-definition and per-source voice counting, same-source callback comparison, preemption-age and loudness selection, and driver-channel dirty publication",
+    "execution_gate": "initialized playback, voice, sound-system, class-tag, source-callback, and driver-channel lifetimes"
   },
   "looping_selection_closure": {
     "providers": [
