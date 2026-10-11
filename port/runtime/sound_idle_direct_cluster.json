@@ -505,6 +505,10 @@
     {
       "source": "src/unknown_13d170.cpp",
       "symbol": "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z"
+    },
+    {
+      "source": "src/sound_effect_image_startup_native.cpp",
+      "symbol": "?function_191300@@YA_NPAUIDirectSound@@@Z"
     }
   ],
   "definitions": [
@@ -544,6 +548,7 @@
     "?function_17c900@@YAMFM@Z",
     "?function_17ca10@@YAMMF@Z",
     "?function_18d090@@YAPAXJJ@Z",
+    "?function_191300@@YA_NPAUIDirectSound@@@Z",
     "?function_1914f0@@YAJJ@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
@@ -704,7 +709,6 @@
     "?voice_start_engine@@YAXXZ",
     "?data_dispose@@YAXPAUs_record_pool@@@Z",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
-    "?function_191300@@YA_NPAUIDirectSound@@@Z",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_468758@@3PAVc_data_allocator@@A",
     "?g_46875c@@3PAVc_data_allocator@@A",
@@ -747,6 +751,7 @@
     "IDirectSoundStream_SetOutputBuffer",
     "IDirectSoundStream_SetPitch",
     "IDirectSoundStream_SetVolume",
+    "IDirectSound_GetEffectData",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "ReadFile",
@@ -814,7 +819,6 @@
     "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
-    "?function_191300@@YA_NPAUIDirectSound@@@Z",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
@@ -853,6 +857,7 @@
     "IDirectSoundStream_SetOutputBuffer",
     "IDirectSoundStream_SetPitch",
     "IDirectSoundStream_SetVolume",
+    "IDirectSound_GetEffectData",
     "IDirectSound_CommitDeferredSettings",
     "IDirectSound_SetEffectData",
     "XAudioDownloadEffectsImage",
@@ -930,6 +935,7 @@
       "IDirectSoundStream_SetOutputBuffer",
       "IDirectSoundStream_SetPitch",
       "IDirectSoundStream_SetVolume",
+      "IDirectSound_GetEffectData",
       "IDirectSound_CommitDeferredSettings",
       "IDirectSound_Release",
       "IDirectSound_SetEffectData",
@@ -940,7 +946,6 @@
       "XPhysicalProtect"
     ],
     "recovered_lifecycle_operations": [
-      "?function_191300@@YA_NPAUIDirectSound@@@Z",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
       "?sound_driver_device_startup@@YA_NXZ",

@@ -3481,7 +3481,7 @@ def main():
             ("sound-effect-image-startup.o",
              "src/sound_effect_image_startup_native.cpp",
              "?function_191300@@YA_NPAUIDirectSound@@@Z",
-             {"?function_163ba0@@YAXPAKPAXJ@Z",
+             {"?function_163ba0@@YAXPAKPBXJ@Z",
               "?g_510800_pool_base@@3KA",
               "?g_510804_pool_size@@3JA",
               "?g_510808_pool_checksum@@3KA",

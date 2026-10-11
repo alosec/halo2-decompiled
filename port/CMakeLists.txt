@@ -212,6 +212,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_cache_dispose.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_cache_callbacks_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_wma_decoder_release_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_effect_image_startup_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_channel_shutdown_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_stream_stop_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_startup_native.cpp"

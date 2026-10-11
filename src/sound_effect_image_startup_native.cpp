@@ -31,7 +31,7 @@ extern long g_510804_pool_size;
 extern dword g_510808_pool_checksum;
 extern s_voice_effects *g_510c90;
 
-void function_163ba0(dword *checksum, void *data, long data_size);
+void function_163ba0(dword *checksum, void const *data, long data_size);
 
 extern "C" void *__stdcall XLoadSection(char const *name);
 extern "C" void __stdcall XFreeSection(char const *name);
