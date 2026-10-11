@@ -493,6 +493,14 @@
     {
       "source": "src/sound_stream_chunk_release_native.cpp",
       "symbol": "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"
+    },
+    {
+      "source": "src/sound_driver_channel_shutdown_native.cpp",
+      "symbol": "?function_21f290@@YAXXZ"
+    },
+    {
+      "source": "src/sound_stream_stop_native.cpp",
+      "symbol": "?sound_stream_stop@@YAXPAUs_sound_stream@@@Z"
     }
   ],
   "definitions": [
@@ -560,6 +568,7 @@
     "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
     "?function_21eae0@@YAXXZ",
     "?function_21ec00@@YAXXZ",
+    "?function_21f290@@YAXXZ",
     "?function_21ece0@@YAXJPBUs_sound_driver_reverb@@@Z",
     "?function_21ee80@@YAXXZ",
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
@@ -620,6 +629,7 @@
     "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
+    "?sound_stream_stop@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
     "?sound_system_available@@YAJXZ",
     "?sound_system_update_time@@YAXXZ",
@@ -691,7 +701,6 @@
     "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
     "?function_191300@@YA_NPAUIDirectSound@@@Z",
-    "?function_21f290@@YAXXZ",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_468758@@3PAVc_data_allocator@@A",
     "?g_46875c@@3PAVc_data_allocator@@A",
@@ -802,7 +811,6 @@
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
     "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
     "?function_191300@@YA_NPAUIDirectSound@@@Z",
-    "?function_21f290@@YAXXZ",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
@@ -930,7 +938,6 @@
     "recovered_lifecycle_operations": [
       "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
       "?function_191300@@YA_NPAUIDirectSound@@@Z",
-      "?function_21f290@@YAXXZ",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",
       "?sound_driver_device_startup@@YA_NXZ",
