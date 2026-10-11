@@ -389,6 +389,18 @@
     {
       "source": "src/unknown_12a1b0.cpp",
       "symbol": "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "global": "g_44a150"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "global": "g_44a16c"
+    },
+    {
+      "source": "src/unknown_12a1b0.cpp",
+      "global": "g_44a188"
     }
   ],
   "definitions": [
@@ -467,6 +479,9 @@
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
     "g_44178c",
+    "g_44a150",
+    "g_44a16c",
+    "g_44a188",
     "?g_468834@@3MA",
     "?g_46e488@@3KA",
     "?looping_sound_controller_release@@YAXJ@Z",
@@ -586,9 +601,6 @@
     "fabs",
     "fmod",
     "g_444c84",
-    "g_44a150",
-    "g_44a16c",
-    "g_44a188",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memcmp",
     "h2_guest_memcpy",
@@ -662,9 +674,6 @@
     "expf",
     "fmod",
     "g_444c84",
-    "g_44a150",
-    "g_44a16c",
-    "g_44a188",
     "g_dwDirectSoundDeltaPanicCount",
     "log",
     "log10",
@@ -978,13 +987,15 @@
       "?looping_sound_set_permutations@@YAXPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JFKF@Z"
     ],
     "semantics": "preserve first-channel startup, controller synchronization, gain and effect refresh, transition-boundary selection, pitch-range and permutation changes, cache admission, chunk queueing, terminal stop policy, and primary-track permutation publication",
-    "new_mutable_and_table_imports": [
-      "?g_4e7408@@3PAUs_random_globals@@A",
-      "?g_502110@@3PAXA",
-      "?g_51ebdc@@3PAXA",
+    "source_owned_transition_tables": [
       "g_44a150",
       "g_44a16c",
       "g_44a188"
+    ],
+    "new_mutable_imports": [
+      "?g_4e7408@@3PAUs_random_globals@@A",
+      "?g_502110@@3PAXA",
+      "?g_51ebdc@@3PAXA"
     ],
     "execution_gates": [
       "initialized voice, track-sound, looping-sound, controller, and tag tables",
