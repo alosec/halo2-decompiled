@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -1709,13 +1710,55 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [4, 70, 1, 0, 1]:
+    if [len(category) for category in categories] != [3, 71, 1, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
             set(flattened) != expected_production_imports:
         raise RuntimeError(
             "sound-idle runtime frontier no longer partitions production")
+    panic = runtime_frontier.get("directsound_panic_counter_boundary", {})
+    if panic.get("symbol") != "g_dwDirectSoundDeltaPanicCount" or \
+            panic.get("owner") != "dsound.lib audio processor backend" or \
+            panic.get("classification") != "backend operation" or \
+            panic.get("consumer") != {
+                "function": "?function_21ec00@@YAXXZ",
+                "address": "0x0021ec00",
+                "source": "src/sound_driver_pre_update_native.cpp"} or \
+            panic.get("snapshot") != {
+                "storage": "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+                "offset": "0x2ad4"} or \
+            panic.get("recovery", {}).get("function") != \
+            "?function_1915f0@@YAXXZ" or \
+            not panic.get("recovery", {}).get("semantics") or \
+            not panic.get("semantics") or \
+            not panic.get("prohibited_shortcut"):
+        raise RuntimeError("DirectSound panic counter boundary changed")
+    if panic["symbol"] in runtime_frontier["mutable_lifetimes"] or \
+            panic["symbol"] not in runtime_frontier["backend_operations"]:
+        raise RuntimeError("DirectSound panic counter misclassified")
+    panic_source = (args.root / panic["consumer"]["source"]).read_text()
+    recovered_driver_source = (
+        args.root / "src/unknown_21e330.cpp").read_text()
+    for fragment in [
+            'extern "C" dword g_dwDirectSoundDeltaPanicCount;',
+            "globals->panic_count != g_dwDirectSoundDeltaPanicCount",
+            "function_1915f0();",
+            "memset(globals->reverb_dirty, true",
+            "globals->panic_count = g_dwDirectSoundDeltaPanicCount;"]:
+        if fragment not in panic_source:
+            raise RuntimeError(
+                f"DirectSound panic recovery lost {fragment}")
+    for fragment in [
+            "/* counts the resets of the audio processor (dsound.lib) */",
+            "extern \"C\" DWORD g_dwDirectSoundDeltaPanicCount;",
+            "the processor was reset: download its image and the reverbs again"]:
+        if fragment not in recovered_driver_source:
+            raise RuntimeError(
+                f"recovered DirectSound panic ownership lost {fragment}")
+    if any(re.search(r"g_dwDirectSoundDeltaPanicCount\\s*=", source)
+           for source in [panic_source, recovered_driver_source]):
+        raise RuntimeError("game source writes DirectSound panic counter")
     crc = runtime_frontier.get("crc_storage_lifetime", {})
     if crc.get("updater") != "?function_163ba0@@YAXPAKPBXJ@Z" or \
             crc.get("table") != "?g_sound_crc_table@@3PAKA" or \

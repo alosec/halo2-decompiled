@@ -1539,8 +1539,7 @@
     "mutable_lifetimes": [
       "?g_4e6470@@3JA",
       "?g_4e64a0@@3JA",
-      "?g_4ed39d@@3_NA",
-      "g_dwDirectSoundDeltaPanicCount"
+      "?g_4ed39d@@3_NA"
     ],
     "backend_operations": [
       "?EnableProcessingMode@CXHVEngine@XHVNamespace@@QAGJPAX@Z",
@@ -1612,7 +1611,8 @@
       "XFreeSection",
       "XHVEngineCreate@8",
       "XHVEngine_SetCallbackInterface@8",
-      "XLoadSection"
+      "XLoadSection",
+      "g_dwDirectSoundDeltaPanicCount"
     ],
     "recovered_lifecycle_operations": [
       "?function_53a20@@YGXKPAXK@Z"
@@ -1663,6 +1663,26 @@
         "controller pool and auxiliary storage ownership clear"
       ],
       "prohibited_shortcut": "a standalone BSS definition or null pointer binding does not satisfy initialized controller storage lifetime"
+    },
+    "directsound_panic_counter_boundary": {
+      "symbol": "g_dwDirectSoundDeltaPanicCount",
+      "owner": "dsound.lib audio processor backend",
+      "consumer": {
+        "function": "?function_21ec00@@YAXXZ",
+        "address": "0x0021ec00",
+        "source": "src/sound_driver_pre_update_native.cpp"
+      },
+      "snapshot": {
+        "storage": "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+        "offset": "0x2ad4"
+      },
+      "recovery": {
+        "function": "?function_1915f0@@YAXXZ",
+        "semantics": "reload the DSP image, dispose active XHV state, download genuine XAudio effects, restart the genuine voice engine, and mark both reverbs dirty"
+      },
+      "classification": "backend operation",
+      "semantics": "the game never writes the exported counter; DirectSound increments it when the audio processor resets, and the recovered pre-update compares its driver snapshot, performs complete DSP/XHV/effect recovery, dirties both reverbs, then copies the backend count",
+      "prohibited_shortcut": "do not define game-owned BSS, increment or clear the counter from recovered game code, fabricate a processor reset, copy the count without complete recovery, or assume a permanently zero backend value"
     }
   },
   "production_inadequate_resolutions": [
