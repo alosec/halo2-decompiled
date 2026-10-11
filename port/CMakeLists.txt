@@ -208,6 +208,9 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_driver_filter_coefficients_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_channel_parameters_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_controller_storage_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_cache_dispose.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_startup_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_driver_teardown_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_effect_data_submit_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_mixbin_submit_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_looping_channel_update_native.cpp"
@@ -238,6 +241,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_spatial_gain_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_attenuation_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_cone_attenuation_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_11cc10.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11cc90.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_030290.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_141e10_native.cpp"
@@ -256,7 +260,10 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_get_class.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_18d090.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_219110.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_218850.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_218ac0.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_21d110.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_21dda0.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM

@@ -139,13 +139,21 @@ def main() -> int:
         ("src/unknown_12a1b0.cpp", "?looping_sound_controllers_initialize@@YA_NXZ"),
         ("src/sound_controller_storage_native.cpp", "?g_51ebd8@@3PAXA"),
         ("src/sound_controller_storage_native.cpp", "?g_51ebdc@@3PAXA"),
+        ("src/unknown_11cc10.cpp", "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z"),
+        ("src/sound_cache_dispose.cpp", "?function_2186b0@@YAXXZ"),
+        ("src/unknown_12a1b0.cpp", "?function_21a0c0@@YA_NXZ"),
+        ("src/unknown_218850.cpp", "?sound_cache_initialize@@YAXXZ"),
+        ("src/unknown_21d110.cpp", "?sound_effects_initialize@@YA_NXZ"),
+        ("src/unknown_21dda0.cpp", "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z"),
+        ("src/sound_driver_startup_native.cpp", "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z"),
+        ("src/sound_driver_teardown_native.cpp", "?function_21eae0@@YAXXZ"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 108:
+    if len(set(provider_symbols)) != 116:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -601,7 +609,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 120 or len(expected_imports) != 114:
+    if len(expected_definitions) != 128 or len(expected_imports) != 134:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -637,7 +645,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 77:
+    if len(expected_production_imports) != 92:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -646,7 +654,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [20, 38, 7, 2, 10]:
+    if [len(category) for category in categories] != [24, 40, 11, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -662,7 +670,16 @@ def main() -> int:
             "?function_1253d0@@YAXXZ" or \
             controller.get("teardown_owner") != \
             "?function_125600@@YAXXZ" or \
-            controller.get("capacity") != 64 or \
+            controller.get("dependent_providers") != [
+                "?function_11cc20@@YAPAUs_record_pool@@JPBDJ@Z",
+                "?function_2186b0@@YAXXZ",
+                "?function_21a0c0@@YA_NXZ",
+                "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z",
+                "?function_21eae0@@YAXXZ",
+                "?sound_cache_initialize@@YAXXZ",
+                "?sound_effects_initialize@@YA_NXZ",
+                "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z"
+            ] or controller.get("capacity") != 64 or \
             controller.get("alignment") != 4 or \
             len(controller.get("required_order", [])) != 7 or \
             not controller.get("semantics") or \
