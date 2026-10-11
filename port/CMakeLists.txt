@@ -219,6 +219,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_busy_state_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_spatialization_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_spatial_gain_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_attenuation_native.cpp"
         ${H2_GUEST_HEADERS}
         ${H2_PORT_GUEST_HEADERS}
     VERBATIM
