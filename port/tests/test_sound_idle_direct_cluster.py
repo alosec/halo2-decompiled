@@ -121,13 +121,14 @@ def main() -> int:
         ("src/sound_driver_filter_helpers_native.cpp", "?function_219880@@YAMPBUs_sound_random_parameter@@PAKM@Z"),
         ("src/sound_driver_filter_coefficients_native.cpp", "?sound_filter_frequency_coefficient@@YAJM@Z"),
         ("src/sound_driver_filter_coefficients_native.cpp", "?sound_filter_gain_coefficient@@YAKM@Z"),
+        ("src/sound_channel_parameters_native.cpp", "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 90:
+    if len(set(provider_symbols)) != 91:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -332,6 +333,17 @@ def main() -> int:
             ] or not channel_scalars.get("semantics") or \
             not channel_scalars.get("execution_gate"):
         raise RuntimeError("sound-idle channel parameter scalar closure changed")
+    channel_submission = manifest.get("channel_parameter_submission_closure", {})
+    if channel_submission.get("provider") != \
+            "?function_2201f0@@YAXJPBUs_sound_channel_parameters@@_N@Z" or \
+            channel_submission.get("filter_modes") != {
+                "bypass": 0,
+                "dls2": 1,
+                "parametric_equalizer": 2,
+                "multiband": 3
+            } or not channel_submission.get("semantics") or \
+            len(channel_submission.get("execution_gates", [])) != 4:
+        raise RuntimeError("sound-idle channel parameter submission closure changed")
     looping_channel_start = manifest.get("looping_channel_start_closure", {})
     if looping_channel_start.get("providers") != [
             "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
@@ -415,7 +427,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 99 or len(expected_imports) != 82:
+    if len(expected_definitions) != 100 or len(expected_imports) != 84:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -451,7 +463,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 50:
+    if len(expected_production_imports) != 52:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
