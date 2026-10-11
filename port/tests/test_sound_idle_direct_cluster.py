@@ -127,13 +127,14 @@ def main() -> int:
         ("src/sound_mixbin_submit_native.cpp", "?function_2215d0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundStream@@@Z"),
         ("src/sound_mixbin_submit_native.cpp", "?function_2216f0@@YAXPAUs_mixbin_list@@PAUs_mixbin_settings@@PAUIDirectSoundBuffer@@@Z"),
         ("src/sound_looping_channel_update_native.cpp", "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"),
+        ("src/unknown_12a1b0.cpp", "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 96:
+    if len(set(provider_symbols)) != 97:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -365,6 +366,28 @@ def main() -> int:
             not mixbins.get("semantics") or \
             len(mixbins.get("execution_gates", [])) != 3:
         raise RuntimeError("sound-idle mixbin submission closure changed")
+    looping_root = manifest.get("looping_channel_state_machine_closure", {})
+    if looping_root.get("source") != "src/unknown_12a1b0.cpp" or \
+            looping_root.get("root") != \
+            "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z" or \
+            looping_root.get("recursive_definitions") != [
+                "?function_21c190@@YA_NPAUs_type_5ef569@@PAUs_type_06b94f@@JPAK@Z",
+                "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
+                "?looping_sound_set_permutations@@YAXPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JFKF@Z"
+            ] or not looping_root.get("semantics") or \
+            len(looping_root.get("new_mutable_and_table_imports", [])) != 6 or \
+            len(looping_root.get("execution_gates", [])) != 3:
+        raise RuntimeError("sound-idle looping channel closure changed")
+    looping_source = (args.root / looping_root["source"]).read_text()
+    for fragment in [
+            "function_21f8a0(voice->channel_index",
+            "function_21c190(sound, track",
+            "sound_playback_set_chunk(voice->sound_index",
+            "sound_voice_queue_chunk(voice_index",
+            "function_21fa80("]:
+        if fragment not in looping_source:
+            raise RuntimeError(
+                f"sound-idle looping root lost {fragment}")
     shared_update = manifest.get("shared_channel_update_closure", {})
     expected_update_symbol = \
         "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z"
@@ -485,7 +508,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 105 or len(expected_imports) != 94:
+    if len(expected_definitions) != 109 or len(expected_imports) != 99:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -521,7 +544,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 61:
+    if len(expected_production_imports) != 64:
         raise RuntimeError("sound-idle production score ratchet changed")
     if manifest.get("production_inadequate_resolutions") != [{
             "symbol": "?voice_start_engine@@YAXXZ",
