@@ -3952,6 +3952,12 @@ def main():
              "src/sound_stream_envelope_native.cpp",
              "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
              {"IDirectSoundStream_SetEG", "h2_guest_memset"}),
+            ("sound-stream-flush.o",
+             "src/sound_stream_flush_native.cpp",
+             "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z", {
+                 "IDirectSoundStream_FlushEx",
+                 "IDirectSoundStream_GetStatus",
+                 "IDirectSoundStream_Pause"}),
             ("sound-stream-reset.o",
              "src/sound_stream_reset_native.cpp",
              "?sound_stream_reset@@YAXPAUs_sound_stream@@@Z",

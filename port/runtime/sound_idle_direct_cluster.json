@@ -401,6 +401,10 @@
     {
       "source": "src/unknown_12a1b0.cpp",
       "global": "g_44a188"
+    },
+    {
+      "source": "src/sound_stream_flush_native.cpp",
+      "symbol": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z"
     }
   ],
   "definitions": [
@@ -505,6 +509,7 @@
     "?sound_reference_release@@YAXPAUs_sound_reference_holder@@@Z",
     "?sound_source_get_position@@YAXPBUs_sound_location_source@@JPATpoint3f@@@Z",
     "?sound_stream_add_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z",
+    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_release_chunks@@YAXPAUs_sound_stream@@@Z",
     "?sound_stream_set_envelope@@YAXPAUs_sound_stream@@MM@Z",
     "?sound_stream_update@@YAXPAUs_sound_stream@@@Z",
@@ -555,7 +560,6 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
-    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?voice_start_engine@@YAXXZ",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "DirectSoundDoWork",
@@ -572,6 +576,7 @@
     "IDirectSoundBuffer_StopEx",
     "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
+    "IDirectSoundStream_FlushEx",
     "IDirectSoundStream_GetStatus",
     "IDirectSoundStream_GetVoiceProperties",
     "IDirectSoundStream_Pause",
@@ -635,7 +640,6 @@
     "?g_51ebd8@@3PAXA",
     "?g_51ebdc@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
-    "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?voice_xhv_dispose@@YAXPAVc_voice_xhv@@@Z",
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "DirectSoundDoWork",
@@ -651,6 +655,7 @@
     "IDirectSoundBuffer_StopEx",
     "IDirectSoundStream_Discontinuity",
     "IDirectSoundStream_Flush",
+    "IDirectSoundStream_FlushEx",
     "IDirectSoundStream_GetStatus",
     "IDirectSoundStream_GetVoiceProperties",
     "IDirectSoundStream_Pause",
@@ -976,6 +981,29 @@
       "live DirectSound stream mixbin operations",
       "live DirectSound buffer mixbin operations",
       "valid bounded mixbin indices and pair counts"
+    ]
+  },
+  "stream_flush_closure": {
+    "source": "src/sound_stream_flush_native.cpp",
+    "provider": "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
+    "checked_layout": {
+      "stream_size": 52,
+      "state_offset": 1,
+      "flags_offset": 3,
+      "interface_offset": 36,
+      "codec_offset": 48
+    },
+    "retail_verified_constants": {
+      "paused_status_bit": 131072,
+      "resume_argument": 0,
+      "async_envelope_flags": 3,
+      "codec_stop_vtable_offset": 28
+    },
+    "semantics": "preserve non-idle status query, paused-stream resume, zero-timestamp asynchronous envelope flush, codec stop, and flushing-bit publication",
+    "execution_gates": [
+      "live DirectSound stream object",
+      "genuine asynchronous envelope flush implementation",
+      "attached codec object with valid stop virtual"
     ]
   },
   "looping_channel_state_machine_closure": {

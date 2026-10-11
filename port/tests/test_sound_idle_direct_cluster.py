@@ -131,13 +131,14 @@ def main() -> int:
         ("src/unknown_12a1b0.cpp", "g_44a150"),
         ("src/unknown_12a1b0.cpp", "g_44a16c"),
         ("src/unknown_12a1b0.cpp", "g_44a188"),
+        ("src/sound_stream_flush_native.cpp", "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 100:
+    if len(set(provider_symbols)) != 101:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -369,6 +370,35 @@ def main() -> int:
             not mixbins.get("semantics") or \
             len(mixbins.get("execution_gates", [])) != 3:
         raise RuntimeError("sound-idle mixbin submission closure changed")
+    stream_flush = manifest.get("stream_flush_closure", {})
+    if stream_flush.get("source") != "src/sound_stream_flush_native.cpp" or \
+            stream_flush.get("provider") != \
+            "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z" or \
+            stream_flush.get("checked_layout") != {
+                "stream_size": 52,
+                "state_offset": 1,
+                "flags_offset": 3,
+                "interface_offset": 36,
+                "codec_offset": 48
+            } or stream_flush.get("retail_verified_constants") != {
+                "paused_status_bit": 131072,
+                "resume_argument": 0,
+                "async_envelope_flags": 3,
+                "codec_stop_vtable_offset": 28
+            } or not stream_flush.get("semantics") or \
+            len(stream_flush.get("execution_gates", [])) != 3:
+        raise RuntimeError("sound-idle stream flush closure changed")
+    stream_flush_source = (args.root / stream_flush["source"]).read_text()
+    for fragment in [
+            "k_stream_status_paused = 0x00020000",
+            "k_stream_pause_resume = 0",
+            "k_stream_flush_async_envelope = 3",
+            "IDirectSoundStream_FlushEx",
+            "stream->codec->stop()",
+            "stream->flags |= 4"]:
+        if fragment not in stream_flush_source:
+            raise RuntimeError(
+                f"sound-idle stream flush lost {fragment}")
     looping_root = manifest.get("looping_channel_state_machine_closure", {})
     if looping_root.get("source") != "src/unknown_12a1b0.cpp" or \
             looping_root.get("root") != \
@@ -516,7 +546,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 112 or len(expected_imports) != 96:
+    if len(expected_definitions) != 113 or len(expected_imports) != 96:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
