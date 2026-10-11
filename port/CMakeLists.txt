@@ -208,6 +208,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/sound_driver_filter_coefficients_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_channel_parameters_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_controller_storage_native.cpp"
+        "${PROJECT_SOURCE_DIR}/src/sound_crc_update_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_cache_dispose.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_startup_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_driver_teardown_native.cpp"

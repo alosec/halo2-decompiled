@@ -465,6 +465,18 @@
     {
       "source": "src/sound_driver_teardown_native.cpp",
       "symbol": "?function_21eae0@@YAXXZ"
+    },
+    {
+      "source": "src/sound_crc_update_native.cpp",
+      "symbol": "?function_163ba0@@YAXPAKPBXJ@Z"
+    },
+    {
+      "source": "src/sound_crc_update_native.cpp",
+      "global": "?g_sound_crc_table@@3PAKA"
+    },
+    {
+      "source": "src/sound_crc_update_native.cpp",
+      "global": "?g_sound_crc_table_built@@3_NA"
     }
   ],
   "definitions": [
@@ -499,6 +511,7 @@
     "?function_13bb90@@YAMPBUs_tag_data@@MM@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
+    "?function_163ba0@@YAXPAKPBXJ@Z",
     "?function_17c900@@YAMFM@Z",
     "?function_17ca10@@YAMMF@Z",
     "?function_18d090@@YAPAXJJ@Z",
@@ -558,6 +571,8 @@
     "?g_46e488@@3KA",
     "?g_51ebd8@@3PAXA",
     "?g_51ebdc@@3PAXA",
+    "?g_sound_crc_table@@3PAKA",
+    "?g_sound_crc_table_built@@3_NA",
     "?looping_sound_controller_release@@YAXJ@Z",
     "?looping_sound_controllers_initialize@@YA_NXZ",
     "?looping_sound_get_permutations@@YAKPAUs_type_5ef569@@PAUlooping_sound_definition@@PAUs_looping_playback_definition@@JF_N@Z",
@@ -612,7 +627,6 @@
     "?async_globals@@3Us_async_globals@@A",
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_1462b0@@YAKXZ",
-    "?function_163ba0@@YAXPAKPBXJ@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
@@ -743,7 +757,6 @@
     "?Release@CXHVEngine@XHVNamespace@@QAGKXZ",
     "?UnregisterLocalTalker@CXHVEngine@XHVNamespace@@QAGJK@Z",
     "?UnregisterRemoteTalker@CXHVEngine@XHVNamespace@@QAGJU_XUID@@@Z",
-    "?function_163ba0@@YAXPAKPBXJ@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -901,7 +914,6 @@
     ],
     "recovered_lifecycle_operations": [
       "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
-      "?function_163ba0@@YAXPAKPBXJ@Z",
       "?function_191300@@YA_NPAUIDirectSound@@@Z",
       "?function_21f290@@YAXXZ",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
@@ -933,6 +945,16 @@
       "pow",
       "sinf"
     ],
+    "crc_storage_lifetime": {
+      "updater": "?function_163ba0@@YAXPAKPBXJ@Z",
+      "table": "?g_sound_crc_table@@3PAKA",
+      "built_flag": "?g_sound_crc_table_built@@3_NA",
+      "source": "src/sound_crc_update_native.cpp",
+      "table_entries": 256,
+      "polynomial": "0xedb88320",
+      "semantics": "The recovered one-time CRC-32 table and built flag are source-owned together with the exact update function. The source-local split prevents LLVM's synthetic .crctable lowering so no generated checksum table remains unresolved.",
+      "prohibited_shortcut": "Do not replace the one-time table lifetime with a fabricated ready flag, a host checksum API, or an unresolved compiler-generated .crctable section."
+    },
     "controller_storage_lifetime": {
       "storage": "?g_51ebdc@@3PAXA",
       "record_pool": "?g_51ebd8@@3PAXA",

@@ -147,13 +147,16 @@ def main() -> int:
         ("src/unknown_21dda0.cpp", "?sound_voices_initialize@@YA_NPBUs_sound_voice_settings@@@Z"),
         ("src/sound_driver_startup_native.cpp", "?function_21e4b0@@YA_NPBUs_sound_driver_counts@@@Z"),
         ("src/sound_driver_teardown_native.cpp", "?function_21eae0@@YAXXZ"),
+        ("src/sound_crc_update_native.cpp", "?function_163ba0@@YAXPAKPBXJ@Z"),
+        ("src/sound_crc_update_native.cpp", "?g_sound_crc_table@@3PAKA"),
+        ("src/sound_crc_update_native.cpp", "?g_sound_crc_table_built@@3_NA"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 116:
+    if len(set(provider_symbols)) != 119:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -609,7 +612,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 128 or len(expected_imports) != 134:
+    if len(expected_definitions) != 131 or len(expected_imports) != 133:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -645,7 +648,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 92:
+    if len(expected_production_imports) != 91:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -654,13 +657,23 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [24, 40, 11, 7, 10]:
+    if [len(category) for category in categories] != [24, 40, 10, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
             set(flattened) != expected_production_imports:
         raise RuntimeError(
             "sound-idle runtime frontier no longer partitions production")
+    crc = runtime_frontier.get("crc_storage_lifetime", {})
+    if crc.get("updater") != "?function_163ba0@@YAXPAKPBXJ@Z" or \
+            crc.get("table") != "?g_sound_crc_table@@3PAKA" or \
+            crc.get("built_flag") != \
+            "?g_sound_crc_table_built@@3_NA" or \
+            crc.get("table_entries") != 256 or \
+            crc.get("polynomial") != "0xedb88320" or \
+            ".crctable" not in crc.get("semantics", "") or \
+            ".crctable" not in crc.get("prohibited_shortcut", ""):
+        raise RuntimeError("sound CRC storage lifetime changed")
     controller = runtime_frontier.get("controller_storage_lifetime", {})
     if controller.get("storage") != "?g_51ebdc@@3PAXA" or \
             controller.get("record_pool") != "?g_51ebd8@@3PAXA" or \
@@ -685,6 +698,19 @@ def main() -> int:
             not controller.get("semantics") or \
             not controller.get("prohibited_shortcut"):
         raise RuntimeError("sound-idle controller storage lifetime changed")
+    crc_source = (args.root / crc["source"]).read_text()
+    for fragment in [
+            "dword g_sound_crc_table[k_crc_table_size]",
+            "bool g_sound_crc_table_built",
+            "__attribute__((optnone))",
+            "k_crc32_polynomial = 0xedb88320",
+            "if (!g_sound_crc_table_built)",
+            "for (short table_index = 0;",
+            "for (short round = 0; round < 8;",
+            "g_sound_crc_table[table_index] = crc",
+            "g_sound_crc_table_built = true"]:
+        if fragment not in crc_source:
+            raise RuntimeError(f"sound CRC implementation lost {fragment}")
     controller_source = (args.root / controller["source"]).read_text()
     storage_source = (args.root / controller["storage_source"]).read_text()
     teardown_source = (args.root / controller["teardown_source"]).read_text()
