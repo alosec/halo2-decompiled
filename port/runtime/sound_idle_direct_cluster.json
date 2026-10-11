@@ -229,6 +229,14 @@
     {
       "source": "src/sound_doppler_native.cpp",
       "symbol": "?function_12a9d0@@YAMJPBUs_sound_position@@@Z"
+    },
+    {
+      "source": "src/sound_effect_inputs_native.cpp",
+      "symbol": "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z"
+    },
+    {
+      "source": "src/unknown_222930.cpp",
+      "symbol": "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z"
     }
   ],
   "definitions": [
@@ -254,6 +262,7 @@
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_191550@@YAXXZ",
     "?function_1915f0@@YAXXZ",
+    "?function_191660@@YAKJJ@Z",
     "?function_1a0e70@@YAJPATs_async_task@@@Z",
     "?function_1a0f10@@YAJUs_file_handle@@PAXKKJJPAKPC_N@Z",
     "?function_213760@@YAJKJPAXPAKPA_NJJ@Z",
@@ -268,6 +277,9 @@
     "?function_21f360@@YAXPAUs_sound_driver_channel_usage@@@Z",
     "?function_21f650@@YAMJJ@Z",
     "?function_221810@@YAPAUs_unknown_5c@@F@Z",
+    "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
+    "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
+    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?function_30bf0@@YAMPATvector3f@@@Z",
     "?g_440c48@@3JA",
     "?g_440c4c@@3JA",
@@ -298,13 +310,15 @@
     "?datum_new_at_index_with_salt@@YAJPAUs_record_pool@@J@Z",
     "?function_1251e0@@YAJPBXJM@Z",
     "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
+    "?function_13b390@@YAMPBXMM@Z",
     "?function_13d370@@YAJPAUs_physical_object@@JJ@Z",
+    "?function_18d090@@YAPAXJJ@Z",
+    "?function_1914f0@@YAJJ@Z",
+    "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
     "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
-    "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
-    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?g_468788@@3PATpoint3f@@A",
     "?g_4687a4@@3PATvector3f@@A",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
@@ -332,6 +346,7 @@
     "?g_55aca8@@3JA",
     "?main_globals@@3Us_main_globals@@A",
     "?record_pool_release@@YAXPAUs_record_pool@@J@Z",
+    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
@@ -358,6 +373,7 @@
     "acos",
     "exp",
     "fabs",
+    "fmod",
     "g_dwDirectSoundDeltaPanicCount",
     "h2_guest_memcpy",
     "h2_guest_memset",
@@ -373,12 +389,14 @@
   "production_score_imports": [
     "?function_1251e0@@YAJPBXJM@Z",
     "?function_125e60@@YAJPAUs_looping_track_sound@@@Z",
+    "?function_13b390@@YAMPBXMM@Z",
+    "?function_18d090@@YAPAXJJ@Z",
+    "?function_1914f0@@YAJJ@Z",
+    "?function_192b90@@YAMPBTpoint3f@@J_N@Z",
     "?function_21c400@@YAXFMPBUs_looping_channel_spatialization@@@Z",
     "?function_21f720@@YAXPBUs_looping_impulse_parameters@@@Z",
     "?function_21f8a0@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@@Z",
     "?function_21fa80@@YAXJPBUs_looping_channel_properties@@PBUs_looping_effect_playback@@_N@Z",
-    "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
-    "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z",
     "?g_47005c@@3Us_sound_effect_parameters@@A",
     "?g_476fc8@@3Vc_voice_xhv@@A",
     "?g_4c9878@@3Us_voice_globals@@A",
@@ -393,6 +411,7 @@
     "?g_51ebd4@@3PAUs_sound_globals@@A",
     "?g_51ebd8@@3PAXA",
     "?g_51ebe4@@3PAUs_bink_sound_settings@@A",
+    "?sound_get_class@@YAPAUs_sound_class_definition@@J@Z",
     "?sound_playback_set_chunk@@YAXJJFFF@Z",
     "?sound_stream_flush@@YAXPAUs_sound_stream@@@Z",
     "?sound_voice_queue_chunk@@YAXFPBUs_sound_permutation@@F@Z",
@@ -411,6 +430,7 @@
     "XLoadSection",
     "acos",
     "exp",
+    "fmod",
     "g_dwDirectSoundDeltaPanicCount",
     "log",
     "log10"
@@ -636,5 +656,17 @@
     ],
     "semantics": "preserve exact impulse channel property assembly, gain and Doppler policy, initial/update submission, impulse dispatch, controller synchronization, chunk queueing and advance, and terminal stream transition",
     "execution_gate": "initialized voice/playback/tag/controller state plus genuine effect, driver, impulse and chunk-submission lifetimes"
+  },
+  "effect_routing_closure": {
+    "roots": [
+      "?function_222770@@YAXJJPBUs_effect_inputs@@PAUs_sound_playback_effects@@@Z",
+      "?function_222930@@YAXJJPAUs_looping_impulse_parameters@@@Z"
+    ],
+    "recursive_definitions": [
+      "?function_2222c0@@YAXPAUs_effect_data_block@@PBUs_effect_component@@PBUs_effect_component_overrides@@PBUs_effect_inputs@@J@Z",
+      "?function_191660@@YAKJJ@Z"
+    ],
+    "semantics": "preserve class/playback filter and LFO inheritance, effect override preference, component evaluation, default-empty looping impulse state, definition/mixbin selection, and fallback tag data",
+    "execution_gate": "exact general-function numerics plus initialized tag, effect-template, playback, class, and speaker-response state"
   }
 }
