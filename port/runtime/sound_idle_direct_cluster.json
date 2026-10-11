@@ -501,6 +501,10 @@
     {
       "source": "src/sound_stream_stop_native.cpp",
       "symbol": "?sound_stream_stop@@YAXPAUs_sound_stream@@@Z"
+    },
+    {
+      "source": "src/unknown_13d170.cpp",
+      "symbol": "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z"
     }
   ],
   "definitions": [
@@ -533,6 +537,7 @@
     "?function_12be90@@YA_NXZ",
     "?function_13b390@@YAMPBXMM@Z",
     "?function_13bb90@@YAMPBUs_tag_data@@MM@Z",
+    "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
     "?function_142700@@YAPATpoint3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_1427f0@@YAPATvector3f@@PBUtransform4x3f@@PBT1@PAT1@@Z",
     "?function_163ba0@@YAXPAKPBXJ@Z",
@@ -698,7 +703,6 @@
     "?record_pool_release_all@@YAXPAUs_record_pool@@@Z",
     "?voice_start_engine@@YAXXZ",
     "?data_dispose@@YAXPAUs_record_pool@@@Z",
-    "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
     "?function_191300@@YA_NPAUIDirectSound@@@Z",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
@@ -764,6 +768,7 @@
     "h2_guest_memcpy",
     "h2_guest_memmove",
     "h2_guest_memset",
+    "h2_guest_strncpy",
     "h2_native_async_publish_admitted",
     "h2_native_async_try_admit",
     "?h2_xbox_rsqrtss@@YAMM@Z",
@@ -809,7 +814,6 @@
     "??_C@_0N@JEHEBEHD@sound?5voices?$AA@",
     "??_C@_0P@FIIBGGGF@looping?5sounds?$AA@",
     "??_C@_0P@HNBFCPDP@sounds?5effects?$AA@",
-    "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
     "?function_191300@@YA_NPAUIDirectSound@@@Z",
     "?function_220790@@YAXPBUs_sound_listener@@@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
@@ -936,7 +940,6 @@
       "XPhysicalProtect"
     ],
     "recovered_lifecycle_operations": [
-      "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z",
       "?function_191300@@YA_NPAUIDirectSound@@@Z",
       "?function_220790@@YAXPBUs_sound_listener@@@Z",
       "?sound_driver_channels_startup@@YA_NPBUs_sound_driver_counts@@@Z",

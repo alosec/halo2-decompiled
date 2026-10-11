@@ -156,13 +156,14 @@ def main() -> int:
         ("src/sound_stream_chunk_release_native.cpp", "?sound_stream_release_chunk@@YAXPAUs_sound_stream@@PAUs_sound_chunk@@@Z"),
         ("src/sound_driver_channel_shutdown_native.cpp", "?function_21f290@@YAXXZ"),
         ("src/sound_stream_stop_native.cpp", "?sound_stream_stop@@YAXPAUs_sound_stream@@@Z"),
+        ("src/unknown_13d170.cpp", "?function_13d170@@YAXPAUs_physical_object@@PBDJJJP6AXJ@ZP6A_NJ@ZP6AEJ@ZPAVc_data_allocator@@@Z"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 125:
+    if len(set(provider_symbols)) != 126:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -618,7 +619,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 137 or len(expected_imports) != 130:
+    if len(expected_definitions) != 138 or len(expected_imports) != 130:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -654,7 +655,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 87:
+    if len(expected_production_imports) != 86:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -663,7 +664,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [24, 40, 6, 7, 10]:
+    if [len(category) for category in categories] != [24, 40, 5, 7, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \

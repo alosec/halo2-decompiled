@@ -249,6 +249,7 @@ add_custom_command(
         "${PROJECT_SOURCE_DIR}/src/unknown_11cc10.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_11cc90.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_030290.cpp"
+        "${PROJECT_SOURCE_DIR}/src/unknown_13d170.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_141e10_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/sound_source_position_native.cpp"
         "${PROJECT_SOURCE_DIR}/src/unknown_188dd0.cpp"
