@@ -67,6 +67,8 @@ int main(int argc, char** argv) {
 
     ok &= check(h2::port::patch_standard_host_imports(*image, *arena, error), error);
     for (const char* symbol : {"host_h2_physical_memory_malloc_low",
+                               "host_h2_physical_alloc",
+                               "host_h2_physical_protect",
                                "host_h2_cache_read", "host_h2_map_preflight",
                                "host_h2_map_select", "host_h2_map_is_active",
                                "host_h2_video_control",

@@ -48,8 +48,9 @@ DispatchState& dispatch_state() {
 
 constexpr std::uint32_t kCacheHeaderAddress = 0x00557c94u;
 constexpr std::uint32_t kPhysicalRegionAddress = 0x80060000u;
-constexpr std::uint32_t kPhysicalRegionSize = 0x02000000u;
+constexpr std::uint32_t kPhysicalRegionSize = 0x030e5000u;
 constexpr std::uint32_t kPhysicalAllocationBase = 0x80061000u;
+constexpr std::uint32_t kPhysicalAllocationEnd = 0x83145000u;
 constexpr std::uint32_t kCacheHeaderSize = 0x800u;
 constexpr std::uint32_t kAsyncControllerTransitionMilliseconds = 5000u;
 
@@ -770,6 +771,8 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
     const Import imports[] = {
         {"host_h2_physical_memory_malloc_low",
          function_address(&host_h2_physical_memory_malloc_low)},
+        {"host_h2_physical_alloc", function_address(&host_h2_physical_alloc)},
+        {"host_h2_physical_protect", function_address(&host_h2_physical_protect)},
         {"host_h2_cache_read", function_address(&host_h2_cache_read)},
         {"host_h2_map_preflight", function_address(&host_h2_map_preflight)},
         {"host_h2_map_select", function_address(&host_h2_map_select)},
@@ -871,6 +874,77 @@ extern "C" void* host_h2_physical_memory_malloc_low(int size, unsigned int) {
     const std::uint32_t result = state.next_address;
     state.next_address = static_cast<std::uint32_t>(end);
     return reinterpret_cast<void*>(static_cast<std::uintptr_t>(result));
+}
+
+extern "C" void* host_h2_physical_alloc(unsigned int size,
+                                           unsigned int physical_address,
+                                           unsigned int alignment,
+                                           unsigned int protection) {
+    if (!size || alignment || (physical_address & 0xfffu)) {
+        return nullptr;
+    }
+    const std::uint64_t guest_address =
+        static_cast<std::uint64_t>(physical_address) | 0x80000000ull;
+    const std::uint64_t end = guest_address + size;
+    if (guest_address < kPhysicalAllocationBase ||
+        end > kPhysicalAllocationEnd || end < guest_address) {
+        return nullptr;
+    }
+    h2::port::GuestMemoryProtection guest_protection;
+    switch (protection & ~0x400u) {
+    case 0x02u:
+        guest_protection = h2::port::GuestMemoryProtection::read_only;
+        break;
+    case 0x04u:
+        guest_protection = h2::port::GuestMemoryProtection::read_write;
+        break;
+    default:
+        return nullptr;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    std::string error;
+    if (!state.arena || !state.arena->protect(
+            static_cast<std::uint32_t>(guest_address), size,
+            guest_protection, error)) {
+        return nullptr;
+    }
+    return reinterpret_cast<void*>(static_cast<std::uintptr_t>(guest_address));
+}
+
+extern "C" int host_h2_physical_protect(void* address, unsigned int size,
+                                         unsigned int protection) {
+    if (!address || !size) {
+        return 0;
+    }
+    h2::port::GuestMemoryProtection guest_protection;
+    switch (protection & ~0x400u) {
+    case 0x02u:
+        guest_protection = h2::port::GuestMemoryProtection::read_only;
+        break;
+    case 0x04u:
+        guest_protection = h2::port::GuestMemoryProtection::read_write;
+        break;
+    default:
+        return 0;
+    }
+    const std::uintptr_t start = reinterpret_cast<std::uintptr_t>(address);
+    const std::uintptr_t guest_start = h2::port::kGuestBias;
+    if (start < guest_start || start >= guest_start + h2::port::kGuestAddressSpaceSize) {
+        return 0;
+    }
+    const std::uint64_t guest_address = start - guest_start;
+    const std::uint64_t end = guest_address + size;
+    if (guest_address < kPhysicalAllocationBase ||
+        end > kPhysicalAllocationEnd || end < guest_address) {
+        return 0;
+    }
+    auto& state = cache_state();
+    const std::lock_guard lock(state.mutex);
+    std::string error;
+    return state.arena && state.arena->protect(
+        static_cast<std::uint32_t>(guest_address), size,
+        guest_protection, error);
 }
 
 extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {

@@ -31,6 +31,12 @@ h2_host_slot_host_h2_probe:
 .globl h2_host_slot_host_h2_physical_memory_malloc_low
 h2_host_slot_host_h2_physical_memory_malloc_low:
     .xword 0
+.globl h2_host_slot_host_h2_physical_alloc
+h2_host_slot_host_h2_physical_alloc:
+    .xword 0
+.globl h2_host_slot_host_h2_physical_protect
+h2_host_slot_host_h2_physical_protect:
+    .xword 0
 .globl h2_host_slot_host_h2_cache_read
 h2_host_slot_host_h2_cache_read:
     .xword 0

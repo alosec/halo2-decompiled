@@ -19,11 +19,13 @@ def main():
     imports = {entry["symbol"]: entry for entry in plan["imports"]}
     for symbol in (
         "GetTickCount", "Sleep", "cos", "acos", "exp", "expf", "fmod",
-        "log", "log10", "logf", "pow", "sinf",
+        "log", "log10", "logf", "pow", "sinf", "XPhysicalAlloc",
+        "XPhysicalProtect",
     ):
         assert symbol not in imports
     for symbol in (
         "host_h2_get_milliseconds", "host_h2_sleep", "host_h2_cos",
+        "host_h2_physical_alloc", "host_h2_physical_protect",
         "host_h2_math_acos", "host_h2_math_exp", "host_h2_math_expf", "host_h2_math_fmod",
         "host_h2_math_log", "host_h2_math_log10", "host_h2_math_logf", "host_h2_math_pow",
         "host_h2_math_sinf",

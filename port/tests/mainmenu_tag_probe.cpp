@@ -45,6 +45,19 @@ extern "C" void host_h2_log(const char*) {}
 extern "C" void* host_h2_physical_memory_malloc_low(int size, unsigned int) {
     return size > 0 && size <= 0x1d3000 ? reinterpret_cast<void*>(kPhysicalBase) : nullptr;
 }
+extern "C" void* host_h2_physical_alloc(unsigned int size,
+                                          unsigned int physical_address,
+                                          unsigned int alignment,
+                                          unsigned int protection) {
+    return size == 0x30e4000u && physical_address == 0x61000u && !alignment &&
+                   protection == 0x04u
+               ? reinterpret_cast<void*>(kPhysicalBase)
+               : nullptr;
+}
+extern "C" int host_h2_physical_protect(void*, unsigned int,
+                                         unsigned int) {
+    return 1;
+}
 extern "C" int host_h2_cache_read(unsigned int offset, int size, void* buffer) {
     if (size < 0 || offset > map_data.size() ||
         static_cast<std::size_t>(size) > map_data.size() - offset) {

@@ -1319,8 +1319,6 @@
     "XAudioSetEffectData",
     "XFreeSection",
     "XLoadSection",
-    "XPhysicalAlloc",
-    "XPhysicalProtect",
     "g_dwDirectSoundDeltaPanicCount"
   ],
   "remaining_runtime_frontier": {
@@ -1379,7 +1377,6 @@
       "XAudioSetEffectData",
       "XFreeSection",
       "XLoadSection",
-      "XPhysicalProtect",
       "DirectSoundCreate",
       "IDirectSound_GetCaps",
       "IDirectSound_GetSpeakerConfig",
@@ -1398,7 +1395,6 @@
       "IDirectSoundBuffer_SetRolloffFactor",
       "IDirectSoundStream_SetHeadroom",
       "IDirectSound_CreateSoundStream",
-      "XPhysicalAlloc",
       "WmaCreateInMemoryDecoder",
       "IDirectSoundBuffer_SetFilter",
       "IDirectSoundBuffer_SetI3DL2Source"
@@ -2183,7 +2179,7 @@
     "execution_gate": "requires the genuine recovered function_12c090 and XMemAlloc/XMemFree routing plus their default and voice allocator backends; storage ownership does not allocate, free, or fabricate a codec block"
   },
   "native_sound_math_bridge": {
-    "host_abi_version": 13,
+    "host_abi_version": 14,
     "routes": [
       {
         "guest_symbol": "acos",
@@ -2230,7 +2226,7 @@
     "initializer": "?function_12b400@@YAXXZ",
     "layout": "the exact recovered stage stack is zeroed, starts at stage 0, and publishes the retail 0x61000 base and 0x3145000 top in both current-stage bounds",
     "semantics": "initialization requests the complete recovered physical arena through genuine XPhysicalAlloc after publishing the exact allocator bounds",
-    "execution_gate": "requires genuine low guest physical-arena reservation at the requested base and size; ownership does not permit a fabricated successful XPhysicalAlloc or enable sound execution"
+    "execution_gate": "requires the installed low guest arena now validated by the genuine native XPhysicalAlloc bridge; ownership does not enable sound execution or fabricate any later staged allocation"
   },
   "map_sound_globals_lifetime": {
     "storage": "?g_51ebd4@@3PAUs_sound_globals@@A",
@@ -2368,5 +2364,28 @@
     "execution_gate": "requires genuine DirectSound effect buffers and SetMixBinVolumes, SetVolume, SetI3DL2Source, and SetFilter operations; no buffer, filter, routing, or backend success is fabricated",
     "production_score_before": 75,
     "production_score_after": 76
+  },
+  "native_physical_memory_bridge": {
+    "host_abi_version": 14,
+    "guest_wrappers": [
+      {
+        "guest_symbol": "XPhysicalAlloc",
+        "host_import": "host_h2_physical_alloc"
+      },
+      {
+        "guest_symbol": "XPhysicalProtect",
+        "host_import": "host_h2_physical_protect"
+      }
+    ],
+    "physical_bounds": {
+      "base": "0x61000",
+      "end": "0x3145000",
+      "virtual_alias_base": "0x80061000",
+      "virtual_alias_end": "0x83145000"
+    },
+    "semantics": "validate the recovered fixed physical arena, preserve its high-bit Xbox virtual alias, reject unsupported alignment and out-of-range reservations, and apply bounded read-only/read-write guest page protections while treating write-combine only as an access-compatible cache hint",
+    "execution_gate": "requires an installed low guest arena; invalid ranges, ordinary host pointers, unsupported protections, and failed native page protection fail closed rather than reporting allocation or protection success",
+    "production_score_before": 76,
+    "production_score_after": 74
   }
 }

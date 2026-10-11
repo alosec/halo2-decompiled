@@ -310,10 +310,40 @@ int main() {
             ok &= check(*static_cast<const unsigned char*>(
                             arena->pointer_const(0x00557c94u)) == cache_bytes[0],
                         "cache header was not staged at the recovered guest address");
+            void* const physical_arena = host_h2_physical_alloc(
+                0x3145000u - 0x61000u, 0x61000u, 0, 0x04u);
+            ok &= check(reinterpret_cast<std::uintptr_t>(physical_arena) ==
+                            0x80061000u,
+                        "physical arena reservation did not preserve the Xbox alias");
+            ok &= check(host_h2_physical_alloc(0x1000u, 0x61000u, 0x1000u,
+                                                0x04u) == nullptr,
+                        "physical arena reservation accepted unsupported alignment");
+            ok &= check(host_h2_physical_alloc(0x1000u, 0x3145000u, 0,
+                                                0x04u) == nullptr,
+                        "physical arena reservation crossed the recovered limit");
+            void* const native_buffer = arena->pointer(0x80061000u);
+            ok &= check(host_h2_physical_protect(native_buffer, 0x1000u,
+                                                  0x02u) == 1 &&
+                            arena->host_range_accessible(native_buffer, 0x1000u,
+                                                         false) &&
+                            !arena->host_range_accessible(native_buffer, 0x1000u,
+                                                          true),
+                        "physical protection did not publish read-only access");
+            ok &= check(host_h2_physical_protect(native_buffer, 0x1000u,
+                                                  0x404u) == 1 &&
+                            arena->host_range_accessible(native_buffer, 0x1000u,
+                                                         true),
+                        "write-combine physical protection lost writable access");
+            ok &= check(host_h2_physical_protect(arena->pointer(0x80060000u),
+                                                  0x1000u, 0x04u) == 0,
+                        "physical protection accepted the pre-arena guard page");
+            unsigned char ordinary_host_byte = 0;
+            ok &= check(host_h2_physical_protect(&ordinary_host_byte, 1,
+                                                  0x04u) == 0,
+                        "physical protection accepted an ordinary host pointer");
             void* const allocation = host_h2_physical_memory_malloc_low(0x1000, 0);
             ok &= check(reinterpret_cast<std::uintptr_t>(allocation) == 0x80061000u,
                         "physical cache allocation did not return the expected guest address");
-            void* const native_buffer = arena->pointer(0x80061000u);
             ok &= check(host_h2_cache_read(0x800u, 16, native_buffer) == 1,
                         "native cache read rejected a valid guest destination");
             ok &= check(*static_cast<const unsigned char*>(native_buffer) ==
@@ -326,7 +356,7 @@ int main() {
             ok &= check(host_h2_cache_read(0, 16, arena->pointer(0x00468000u)) == 0,
                         "native cache read accepted an unowned guest destination");
             ok &= check(host_h2_cache_read(
-                            0, 16, arena->pointer(0x8205fff8u)) == 0,
+                            0, 16, arena->pointer(0x83144ff8u)) == 0,
                         "native cache read crossed the physical-region boundary");
             unsigned char host_copy[16]{};
             ok &= check(h2::port::copy_cache_bytes(0x800u, host_copy,

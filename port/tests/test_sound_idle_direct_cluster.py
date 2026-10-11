@@ -854,6 +854,22 @@ def main() -> int:
             "XPhysicalAlloc" not in physical_memory.get("semantics", "") or \
             not physical_memory.get("execution_gate"):
         raise RuntimeError("sound physical-memory lifetime changed")
+    physical_bridge = manifest.get("native_physical_memory_bridge", {})
+    if physical_bridge.get("host_abi_version") != 14 or \
+            physical_bridge.get("guest_wrappers") != [
+                {"guest_symbol": "XPhysicalAlloc",
+                 "host_import": "host_h2_physical_alloc"},
+                {"guest_symbol": "XPhysicalProtect",
+                 "host_import": "host_h2_physical_protect"}] or \
+            physical_bridge.get("physical_bounds") != {
+                "base": "0x61000", "end": "0x3145000",
+                "virtual_alias_base": "0x80061000",
+                "virtual_alias_end": "0x83145000"} or \
+            physical_bridge.get("production_score_before") != 76 or \
+            physical_bridge.get("production_score_after") != 74 or \
+            not physical_bridge.get("semantics") or \
+            not physical_bridge.get("execution_gate"):
+        raise RuntimeError("native physical-memory bridge changed")
 
     map_lifetime = manifest.get("map_sound_globals_lifetime", {})
     if map_lifetime.get("storage") != \
@@ -1092,7 +1108,7 @@ def main() -> int:
             raise RuntimeError(f"sound effects object lost {fragment}")
 
     math_bridge = manifest.get("native_sound_math_bridge", {})
-    if math_bridge.get("host_abi_version") != 13 or \
+    if math_bridge.get("host_abi_version") != 14 or \
             math_bridge.get("routes") != [
                 {"guest_symbol": "acos", "host_import": "host_h2_math_acos"},
                 {"guest_symbol": "exp", "host_import": "host_h2_math_exp"},
@@ -1213,7 +1229,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 76:
+    if len(expected_production_imports) != 74:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -1222,7 +1238,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [10, 65, 0, 0, 1]:
+    if [len(category) for category in categories] != [10, 63, 0, 0, 1]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1477,6 +1493,24 @@ def main() -> int:
     guest_host_runtime = (args.root /
         "port/runtime/guest_host_runtime.cpp").read_text()
     host_services_source = (args.root / "port/src/host_services.cpp").read_text()
+    for fragment in [
+            "XPhysicalAlloc(DWORD size, DWORD physical_address",
+            "return host_h2_physical_alloc(size, physical_address, alignment, protection)",
+            "XPhysicalProtect(void *address, DWORD size",
+            "host_h2_physical_protect(address, size, protection)"]:
+        if fragment not in guest_host_runtime:
+            raise RuntimeError(f"guest physical bridge lost {fragment}")
+    for fragment in [
+            "kPhysicalRegionSize = 0x030e5000u",
+            "kPhysicalAllocationEnd = 0x83145000u",
+            "host_h2_physical_alloc(unsigned int size",
+            "physical_address) | 0x80000000ull",
+            "host_h2_physical_protect(void* address",
+            "protection & ~0x400u",
+            "GuestMemoryProtection::read_only",
+            "GuestMemoryProtection::read_write"]:
+        if fragment not in host_services_source:
+            raise RuntimeError(f"host physical bridge lost {fragment}")
     for guest, host, native in [
             ("acos", "host_h2_math_acos", "std::acos"),
             ("exp", "host_h2_math_exp", "std::exp"),

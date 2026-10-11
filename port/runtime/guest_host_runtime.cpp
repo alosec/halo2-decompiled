@@ -16,6 +16,18 @@ extern "C" DWORD __stdcall XGetLanguage()
     return 1; /* English */
 }
 
+extern "C" void *__stdcall XPhysicalAlloc(DWORD size, DWORD physical_address,
+                                            DWORD alignment, DWORD protection)
+{
+    return host_h2_physical_alloc(size, physical_address, alignment, protection);
+}
+
+extern "C" void __stdcall XPhysicalProtect(void *address, DWORD size,
+                                             DWORD protection)
+{
+    host_h2_physical_protect(address, size, protection);
+}
+
 bool function_122d60(s_cache_file_location location, long size, void *buffer)
 {
     return host_h2_cache_read(location.offset, size, buffer) != 0;
