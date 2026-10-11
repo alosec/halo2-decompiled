@@ -196,13 +196,15 @@ def main() -> int:
         ("src/sound_class_fade_lifetime_native.cpp", "?function_2218f0@@YAXXZ"),
         ("src/sound_class_fade_lifetime_native.cpp", "?g_502118@@3PAUs_sound_class_fade@@A"),
         ("src/sound_class_fade_lifetime_native.cpp", "?g_50211c@@3_NA"),
+        ("src/sound_codec_allocator_state_native.cpp", "?g_510c3c@@3PAXA"),
+        ("src/sound_codec_allocator_state_native.cpp", "?g_510c40@@3_NA"),
     ]
     if [(entry.get("source"), entry.get("symbol", entry.get("global")))
             for entry in providers] != expected_providers:
         raise RuntimeError("sound-idle provider inventory changed")
     provider_symbols = [entry.get("symbol", entry.get("global"))
                         for entry in providers]
-    if len(set(provider_symbols)) != 165:
+    if len(set(provider_symbols)) != 167:
         raise RuntimeError("sound-idle direct provider symbols are not unique")
     for entry in providers:
         if ("symbol" in entry) == ("global" in entry):
@@ -779,6 +781,18 @@ def main() -> int:
             not class_fades.get("execution_gate"):
         raise RuntimeError("sound-idle class-fade lifetime changed")
 
+    codec_storage = manifest.get("sound_codec_allocator_storage_closure", {})
+    if codec_storage.get("providers") != [
+            {"symbol": "?g_510c3c@@3PAXA",
+             "publication": "0xcc-byte static codec block publication"},
+            {"symbol": "?g_510c40@@3_NA",
+             "publication": "codec block in-use publication"}] or \
+            codec_storage.get("storage_bytes") != 5 or \
+            not codec_storage.get("initial_state") or \
+            not codec_storage.get("semantics") or \
+            not codec_storage.get("execution_gate"):
+        raise RuntimeError("sound-idle codec allocator storage changed")
+
     publications = manifest.get("runtime_publication_storage_closure", {})
     if publications.get("providers") != [
             {"symbol": "?g_4e6374@@3JA",
@@ -813,7 +827,7 @@ def main() -> int:
 
     expected_definitions = set(manifest.get("definitions", []))
     expected_imports = set(manifest.get("imports", []))
-    if len(expected_definitions) != 177 or len(expected_imports) != 134:
+    if len(expected_definitions) != 179 or len(expected_imports) != 132:
         raise RuntimeError("sound-idle provider cluster coverage ratchet changed")
     if playback_chunk_abi["rejected_widened_symbol"] in expected_imports:
         raise RuntimeError("widened playback chunk ABI returned to the cluster")
@@ -851,7 +865,7 @@ def main() -> int:
 
     expected_production_imports = set(
         manifest.get("production_score_imports", []))
-    if len(expected_production_imports) != 88:
+    if len(expected_production_imports) != 86:
         raise RuntimeError("sound-idle production score ratchet changed")
     runtime_frontier = manifest.get("remaining_runtime_frontier", {})
     categories = [
@@ -860,7 +874,7 @@ def main() -> int:
         runtime_frontier.get("recovered_lifecycle_operations", []),
         runtime_frontier.get("immutable_diagnostics", []),
         runtime_frontier.get("numeric_boundaries", [])]
-    if [len(category) for category in categories] != [17, 61, 0, 0, 10]:
+    if [len(category) for category in categories] != [15, 61, 0, 0, 10]:
         raise RuntimeError("sound-idle runtime frontier category changed")
     flattened = [symbol for category in categories for symbol in category]
     if len(flattened) != len(set(flattened)) or \
@@ -1062,6 +1076,39 @@ def main() -> int:
     if "0x00221850, 0x002218f0, 0x002218a0, 0x002218e0" not in \
             lifecycle_table_source:
         raise RuntimeError("sound class-fade lifecycle registration changed")
+    codec_storage_source = (args.root /
+        "src/sound_codec_allocator_state_native.cpp").read_text()
+    for fragment in ["void *g_510c3c;", "bool g_510c40;"]:
+        if fragment not in codec_storage_source:
+            raise RuntimeError(
+                f"sound codec allocator storage lost {fragment}")
+    codec_startup_source = (args.root /
+        "src/sound_static_allocator_native.cpp").read_text()
+    for fragment in [
+            "long aligned_size = (long)(memory - top) + 0xcc",
+            "g_510c3c = memory",
+            "g_510c40 = false"]:
+        if fragment not in codec_startup_source:
+            raise RuntimeError(
+                f"sound codec allocator startup lost {fragment}")
+    codec_allocate_source = (args.root / "src/unknown_12c040.cpp").read_text()
+    for fragment in [
+            "attributes->dwObjectType == 1",
+            "void *block = g_510c3c",
+            "g_510c40 = true",
+            "memset(block, 0, 0xcc)",
+            "return XMemAllocDefault(dwSize, dwAllocAttributes)"]:
+        if fragment not in codec_allocate_source:
+            raise RuntimeError(
+                f"sound codec allocator path lost {fragment}")
+    codec_free_source = (args.root / "src/unknown_012280.cpp").read_text()
+    for fragment in [
+            "g_510c3c == pAddress",
+            "g_510c40 = false",
+            "XMemFreeDefault(pAddress, dwAllocAttributes)"]:
+        if fragment not in codec_free_source:
+            raise RuntimeError(
+                f"sound codec allocator free path lost {fragment}")
     runtime_storage_source = (args.root /
         "src/sound_runtime_storage_native.cpp").read_text()
     for fragment in [
@@ -1099,6 +1146,7 @@ def main() -> int:
         "src/sound_driver_device_startup_native.cpp": [
             "g_51ebe4 = reinterpret_cast<s_bink_sound_settings *>(memory)"],
         "src/sound_driver_teardown_native.cpp": [
+            "g_510c3c = NULL",
             "globals->initialized = false"]}
     for source, fragments in publication_lifetimes.items():
         text = (args.root / source).read_text()

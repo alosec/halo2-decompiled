@@ -661,6 +661,14 @@
     {
       "source": "src/sound_class_fade_lifetime_native.cpp",
       "global": "?g_50211c@@3_NA"
+    },
+    {
+      "source": "src/sound_codec_allocator_state_native.cpp",
+      "global": "?g_510c3c@@3PAXA"
+    },
+    {
+      "source": "src/sound_codec_allocator_state_native.cpp",
+      "global": "?g_510c40@@3_NA"
     }
   ],
   "definitions": [
@@ -840,7 +848,9 @@
     "?function_2218e0@@YAXXZ",
     "?function_2218f0@@YAXXZ",
     "?g_502118@@3PAUs_sound_class_fade@@A",
-    "?g_50211c@@3_NA"
+    "?g_50211c@@3_NA",
+    "?g_510c3c@@3PAXA",
+    "?g_510c40@@3_NA"
   ],
   "imports": [
     "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -887,7 +897,6 @@
     "?g_4687a8@@3PATvector3f@@A",
     "?g_4687b0@@3PATvector3f@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
-    "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
@@ -969,7 +978,6 @@
     "IDirectSoundBuffer_SetMinDistance",
     "IDirectSound_CreateSoundBuffer",
     "?g_47f0f0@@3Us_47f0f0@@A",
-    "?g_510c40@@3_NA",
     "IDirectSoundBuffer_SetConeOutsideVolume",
     "IDirectSoundBuffer_SetDopplerFactor",
     "IDirectSoundBuffer_SetRolloffFactor",
@@ -998,7 +1006,6 @@
     "?h2_xbox_rsqrtss@@YAMM@Z",
     "?g_46875c@@3PAVc_data_allocator@@A",
     "?g_47f0d0@@3Us_47f0d0@@A",
-    "?g_510c3c@@3PAXA",
     "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
     "IDirectSoundBuffer_Release",
     "IDirectSoundStream_Release",
@@ -1064,7 +1071,6 @@
     "IDirectSoundBuffer_SetMinDistance",
     "IDirectSound_CreateSoundBuffer",
     "?g_47f0f0@@3Us_47f0f0@@A",
-    "?g_510c40@@3_NA",
     "IDirectSoundBuffer_SetConeOutsideVolume",
     "IDirectSoundBuffer_SetDopplerFactor",
     "IDirectSoundBuffer_SetRolloffFactor",
@@ -1083,13 +1089,11 @@
       "?g_510800_pool_base@@3KA",
       "?g_510804_pool_size@@3JA",
       "?g_510808_pool_checksum@@3KA",
-      "?g_510c3c@@3PAXA",
       "?g_51ebd4@@3PAUs_sound_globals@@A",
       "?g_global_f9ae07@@3Us_physical_memory_globals@@A",
       "g_dwDirectSoundDeltaPanicCount",
       "?g_47f088@@3Vc_sound_effects@@A",
-      "?g_47f0f0@@3Us_47f0f0@@A",
-      "?g_510c40@@3_NA"
+      "?g_47f0f0@@3Us_47f0f0@@A"
     ],
     "backend_operations": [
       "?GetRemoteTalkers@CXHVEngine@XHVNamespace@@QAGJPAKPAU_XUID@@@Z",
@@ -1925,5 +1929,21 @@
     "initial_state": "pointer and active flag are process-lifetime zero-initialized storage; registered startup allocates and zeroes all 54 records before reset activates them",
     "semantics": "the exact game-state bump allocator aligns and checksums the 864-byte reservation; reset activates the subsystem and zeroes target/current/time while preserving flags, deactivate clears the active flag, and final disposal clears the publication pointer",
     "execution_gate": "requires a genuinely initialized game_state_globals arena and the registered lifecycle ordering; owning the publication and allocator does not fabricate arena storage or permit sound execution"
+  },
+  "sound_codec_allocator_storage_closure": {
+    "providers": [
+      {
+        "symbol": "?g_510c3c@@3PAXA",
+        "publication": "0xcc-byte static codec block publication"
+      },
+      {
+        "symbol": "?g_510c40@@3_NA",
+        "publication": "codec block in-use publication"
+      }
+    ],
+    "storage_bytes": 5,
+    "initial_state": "the ILP32 block pointer and in-use byte are process-lifetime zero-initialized storage",
+    "semantics": "assembled driver startup reserves and publishes the exact aligned 0xcc-byte static block and clears the in-use byte; recovered allocation marks object type 1 in use, matching free clears it, and assembled driver teardown clears the block publication",
+    "execution_gate": "requires the genuine recovered function_12c090 and XMemAlloc/XMemFree routing plus their default and voice allocator backends; storage ownership does not allocate, free, or fabricate a codec block"
   }
 }
