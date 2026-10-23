@@ -1,16 +1,8 @@
 // @flags /O2 /GL-
 // Havok (third-party physics library): the bounds of a box under a transform,
 // grown by the box's radius and a tolerance (through the game's 0x1ce210).
-#ifdef H2_NATIVE_PORT
-/* ARM has no SSE: a source-local 16-byte vector keeps the guest layout and
-   the bounds are computed in scalar C below. */
-struct __declspec(align(16)) h2_native_box_2fd8a0_vector
-{
-	float m128_f32[4];
-};
-typedef h2_native_box_2fd8a0_vector __m128;
-#else
 #include <xmmintrin.h>
+#ifndef H2_NATIVE_PORT
 
 void __cdecl function_1ce210(const __m128 *matrix, const __m128 *extent,
 	const __m128 *center, float expansion, __m128 *output);

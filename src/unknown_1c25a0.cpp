@@ -751,6 +751,10 @@ void __stdcall function_1c36f0(long parent_index, long object_index)
    Retail keeps both arguments on the stack (ret 8). With the attachment
    helper call at 0xb93b0 -> 0xb7300 kept out of line, the code-reference
    cycle preserves this convention without an address-escape marker. */
+#if H2_NATIVE_PORT
+/* native: unknown_1c3850_native.cpp */
+void __stdcall function_1c3770(long object_index, dword flags);
+#endif
 #ifndef H2_NATIVE_PORT
 // @retail 0x1c3770
 void __stdcall function_1c3770(long object_index, dword flags)

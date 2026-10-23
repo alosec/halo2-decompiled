@@ -170,6 +170,10 @@ void __stdcall function_10a030(long scenery_index)
 	function_10a820(scenery_index);
 }
 
+#if H2_NATIVE_PORT
+/* native: unknown_295e60_native.cpp */
+short __fastcall function_10a040(long definition_index, s_scenery_placement *placement);
+#endif
 #if !H2_NATIVE_PORT
 // @retail 0x10a040
 short __fastcall function_10a040(long definition_index, s_scenery_placement *placement)
@@ -405,6 +409,10 @@ bool __stdcall function_10a1b0(long scenery_index, void *placement, bool *result
 	return true;
 }
 
+#if H2_NATIVE_PORT
+/* native: scenery_bsp_native.cpp */
+void __stdcall function_10a250(long scenery_index);
+#endif
 #if !H2_NATIVE_PORT
 // @retail 0x10a250
 void __stdcall function_10a250(long scenery_index)

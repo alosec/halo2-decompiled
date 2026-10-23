@@ -124,11 +124,15 @@ bool __stdcall function_1ac090(long actor_index, s_slot *slot)
 	long ticks;
 
 	*(real *)&slot = scale * g_510c54->field_2_3;
+#if H2_NATIVE_PORT
+	ticks = (long)__builtin_rint((double)*(real *)&slot);
+#else
 	__asm
 	{
 		fld slot
 		fistp ticks
 	}
+#endif
 	state->ticks = (short)ticks;
 	state->unknown39 = false;
 	return true;

@@ -110,7 +110,19 @@ def operands(match):
     return [g for g in match.groups() if g is not None]
 
 
-ROUND = lambda m: f"{operands(m)[1]} = (long)__builtin_rint((double)({operands(m)[0]}));"
+def fld_value(operand):
+    """What fld loads from a variable: its storage read as float or double,
+    whatever C type the variable has (MSVC asm ignores it)."""
+    return (f"(sizeof({operand}) == 8 ? *(double *)&({operand}) : "
+            f"(double)*(float *)&({operand}))")
+
+
+def fistp_store(operand, value):
+    """fistp into a variable of any C type."""
+    return f"{operand} = (__typeof__({operand}))(long)({value});"
+
+
+ROUND = lambda m: fistp_store(operands(m)[1], f"__builtin_rint({fld_value(operands(m)[0])})")
 REWRITES = [
     # fld/fistp under the default x87 control word: round to nearest, ties to even.
     (asm_block(r'fld\s+' + OPERAND, r'fistp\s+' + OPERAND), ROUND),
@@ -121,6 +133,27 @@ REWRITES = [
     # bsr: index of the highest set bit (the operand is known to be nonzero).
     (asm_blocks(r'bsr\s+eax\s*,\s*' + OPERAND, r'mov\s+' + OPERAND + r'\s*,\s*eax'),
      lambda m: f"{operands(m)[1]} = 31 - __builtin_clz((unsigned)({operands(m)[0]}));"),
+    # bsf: index of the lowest set bit (the operand is known to be nonzero).
+    (asm_block(r'bsf\s+(?:e[a-d]x)\s*,\s*' + OPERAND, r'mov\s+' + OPERAND + r'\s*,\s*e[a-d]x'),
+     lambda m: f"{operands(m)[1]} = __builtin_ctz((unsigned)({operands(m)[0]}));"),
+    (asm_blocks(r'bsf\s+(?:e[a-d]x)\s*,\s*' + OPERAND, r'mov\s+' + OPERAND + r'\s*,\s*e[a-d]x'),
+     lambda m: f"{operands(m)[1]} = __builtin_ctz((unsigned)({operands(m)[0]}));"),
+    # fld a / fld b / fmulp / fistp: the rounded product.
+    (asm_blocks(r'fld\s+' + OPERAND, r'fld\s+' + OPERAND, r'fmulp\s+st\(1\)\s*,\s*st\(0\)',
+                r'fistp\s+' + OPERAND),
+     lambda m: f"{operands(m)[2]} = (long)__builtin_rint((double)({operands(m)[0]}) * (double)({operands(m)[1]}));"),
+    # ... and the same rounded product shifted into the top byte.
+    (asm_block(r'fld\s+' + OPERAND, r'fld\s+' + OPERAND, r'fmulp\s+st\(1\)\s*,\s*st(?:\(0\))?',
+               r'fistp\s+' + OPERAND, r'shl\s+' + OPERAND + r'\s*,\s*(\d+)'),
+     lambda m: f"{operands(m)[2]} = (long)((unsigned long)(long)__builtin_rint((double)({operands(m)[0]}) * "
+               f"(double)({operands(m)[1]})) << {operands(m)[4]});"),
+    # bsf leaves its destination alone for a zero source: -1 here.
+    (asm_block(r'mov\s+(e[a-d]x)\s*,\s*-1', r'bsf\s+\1\s*,\s*' + OPERAND, r'mov\s+' + OPERAND + r'\s*,\s*\1'),
+     lambda m: f"{operands(m)[2]} = ({operands(m)[1]}) ? (long)__builtin_ctz((unsigned)({operands(m)[1]})) : -1;"),
+    (re.compile(r'__asm\s+wbinvd\b;?'), lambda m: "/* wbinvd: no cache maintenance natively */"),
+    # truncate, keep the low 16 bits, leave it in eax
+    (asm_block(r'movss\s+xmm0\s*,\s*' + OPERAND, r'cvttss2si\s+eax\s*,\s*xmm0', r'and\s+eax\s*,\s*0xffff'),
+     lambda m: f"return (long)({operands(m)[0]}) & 0xffff;"),
     (asm_block(r'cvtsi2ss\s+(xmm\d)\s*,\s*' + OPERAND, r'movss\s+' + OPERAND + r'\s*,\s*\1'),
      lambda m: f"{operands(m)[2]} = (float)({operands(m)[1]});"),
     # Time-stamp reads.
@@ -133,7 +166,7 @@ REWRITES = [
     # fld a / fmul b leaving the product in st(0) as the implicit result.
     (asm_block(r'fld\s+' + OPERAND, r'fmul\s+' + OPERAND),
      lambda m: f"return (double)({operands(m)[0]}) * (double)({operands(m)[1]});"),
-    (re.compile(r'__asm\s*\{\s*int\s+3\s*\}|__asm\s+int\s+3\b'), lambda m: "__builtin_trap()"),
+    (re.compile(r'__asm\s*\{\s*int\s+3\s*\}|__asm\s+int\s+3\b;?'), lambda m: "__builtin_trap();"),
 ]
 # Widen four signed words (a quantized quaternion) and normalize them.
 QUATERNION_LOAD = re.compile(
@@ -149,12 +182,18 @@ QUATERNION_LOAD_NATIVE = (
     "for (int h2_i = 0; h2_i < 4; h2_i++) {{ h2_v[h2_i] = (float)h2_q[h2_i]; h2_d += h2_v[h2_i] * h2_v[h2_i]; }} "
     "float h2_s = 1.0f / __builtin_sqrtf(h2_d); "
     "for (int h2_i = 0; h2_i < 4; h2_i++) ((float *)({1}))[h2_i] = h2_v[h2_i] * h2_s; }}")
+# The nine-real dot product macro (unknown_023540.cpp).
+DOT_PRODUCT9 = re.compile(r'#define DOT_PRODUCT9\(result, a, b\) \\\n(?:\s*__asm[^\n]*\\\n)*\s*__asm[^\n]*\n')
+DOT_PRODUCT9_NATIVE = ("#define DOT_PRODUCT9(result, a, b) do { float const *h2_a = (float const *)(a); "
+                       "float const *h2_b = (float const *)(b); float h2_r = 0.0f; "
+                       "for (int h2_i = 0; h2_i < 9; h2_i++) h2_r += h2_a[h2_i] * h2_b[h2_i]; "
+                       "(result) = h2_r; } while (0)\n")
 # Truncate-then-correct sequences that leave floor(value) in eax.
 FLOOR_BLOCK = re.compile(r'__asm\s*\{\s*movss\s+xmm0\s*,\s*' + OPERAND +
                          r'\s*\n\s*cvttss2si\s+eax\s*,\s*xmm0[^}]*?cmpneqss[^}]*?movmskps[^}]*\}')
 
 
-REWRITE_VERSION = "4"
+REWRITE_VERSION = "8"
 
 
 def native_source(text):
@@ -167,6 +206,7 @@ def native_source(text):
     original = text
     for pattern, replacement in REWRITES:
         text = pattern.sub(replacement, text)
+    text = DOT_PRODUCT9.sub(lambda m: DOT_PRODUCT9_NATIVE, text)
     text = QUATERNION_LOAD.sub(lambda m: QUATERNION_LOAD_NATIVE.format(m.group(1), m.group(2)), text)
     text = FLOOR_BLOCK.sub(lambda m: f"return (long)__builtin_floorf({m.group(1)});", text)
     if text == original:
@@ -261,10 +301,7 @@ def split_type(text):
         elif char in "]}>)":
             depth -= 1
         elif char == " " and depth == 0 and index:
-            head = text[:index]
-            if head.endswith((",", "x")):
-                continue
-            return head, text[index + 1:]
+            return text[:index], text[index + 1:]
     return text, ""
 
 

@@ -1752,6 +1752,10 @@ void function_204450(long definition_index, long squad_index)
 
 bool function_1e11b0(long actor_index, bool active);
 
+#if H2_NATIVE_PORT
+/* native: actor_squad_bsp_native.cpp */
+bool function_203bf0(long squad_index);
+#endif
 #if !H2_NATIVE_PORT
 #pragma inline_depth(0)
 // @retail 0x203bf0
