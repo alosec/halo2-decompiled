@@ -18,28 +18,7 @@ static __forceinline long real_to_long(real value);
 #include "unknown_122870.h"
 #include "normalize3d.h"
 
-#if H2_NATIVE_PORT
-/* This source-local scalar storage exists only so the contact-listener slice
-   can be parsed on ARM. No method with an __m128 parameter or result is
-   retained in the native provider cluster. */
-typedef h2_native_vector4_storage __m128;
-inline __m128 _mm_setzero_ps() { __m128 r = {{0, 0, 0, 0}}; return r; }
-inline __m128 _mm_set1_ps(real v) { __m128 r = {{v, v, v, v}}; return r; }
-inline __m128 _mm_set_ss(real v) { __m128 r = {{v, 0, 0, 0}}; return r; }
-inline __m128 _mm_add_ps(__m128 a, __m128 b) { for (long i = 0; i < 4; i++) a.m128_f32[i] += b.m128_f32[i]; return a; }
-inline __m128 _mm_sub_ps(__m128 a, __m128 b) { for (long i = 0; i < 4; i++) a.m128_f32[i] -= b.m128_f32[i]; return a; }
-inline __m128 _mm_mul_ps(__m128 a, __m128 b) { for (long i = 0; i < 4; i++) a.m128_f32[i] *= b.m128_f32[i]; return a; }
-inline __m128 _mm_min_ps(__m128 a, __m128 b) { for (long i = 0; i < 4; i++) a.m128_f32[i] = a.m128_f32[i] < b.m128_f32[i] ? a.m128_f32[i] : b.m128_f32[i]; return a; }
-inline __m128 _mm_max_ps(__m128 a, __m128 b) { for (long i = 0; i < 4; i++) a.m128_f32[i] = a.m128_f32[i] > b.m128_f32[i] ? a.m128_f32[i] : b.m128_f32[i]; return a; }
-inline __m128 _mm_shuffle_ps(__m128 a, __m128 b, long c) { __m128 r; r.m128_f32[0] = a.m128_f32[c & 3]; r.m128_f32[1] = a.m128_f32[(c >> 2) & 3]; r.m128_f32[2] = b.m128_f32[(c >> 4) & 3]; r.m128_f32[3] = b.m128_f32[(c >> 6) & 3]; return r; }
-inline __m128 _mm_add_ss(__m128 a, __m128 b) { a.m128_f32[0] += b.m128_f32[0]; return a; }
-inline __m128 _mm_sub_ss(__m128 a, __m128 b) { a.m128_f32[0] -= b.m128_f32[0]; return a; }
-inline __m128 _mm_mul_ss(__m128 a, __m128 b) { a.m128_f32[0] *= b.m128_f32[0]; return a; }
-inline __m128 _mm_load_ps(real const *p) { __m128 r; for (long i = 0; i < 4; i++) r.m128_f32[i] = p[i]; return r; }
-inline __m128 _mm_sqrt_ss(__m128 v) { v.m128_f32[0] = __builtin_sqrtf(v.m128_f32[0]); return v; }
-inline __m128 _mm_rsqrt_ss(__m128 v) { v.m128_f32[0] = 1.0f / __builtin_sqrtf(v.m128_f32[0]); return v; }
-inline void _mm_store_ss(real *p, __m128 v) { *p = v.m128_f32[0]; }
-#endif
+#include <xmmintrin.h>
 
 void __cdecl function_2d91d0(void *array, long element_size);
 

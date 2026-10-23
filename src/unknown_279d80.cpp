@@ -1060,6 +1060,21 @@ static __declspec(align(16)) dword const g_47ffc0[4] = { 0x80000000, 0, 0, 0 };
 /* the normalized linear blend of two quaternions, along the shorter arc */
 __forceinline void quaternion_blend(quaternionf *destination, quaternionf const *source, real fraction)
 {
+#if H2_NATIVE_PORT
+	/* take the source with the destination's sign (dot product sign bit),
+	   blend, then normalize */
+	real *d = (real *)destination;
+	real const *s = (real const *)source;
+	real dot = (d[0] * s[0] + d[2] * s[2]) + (d[1] * s[1] + d[3] * s[3]);
+	real sign = __builtin_signbit(dot) ? -1.0f : 1.0f;
+	real v[4];
+	for (long i = 0; i < 4; i++)
+		v[i] = (s[i] * sign - d[i]) * fraction + d[i];
+	real length_sq = (v[0] * v[0] + v[2] * v[2]) + (v[1] * v[1] + v[3] * v[3]);
+	real scale = 1.0f / __builtin_sqrtf(length_sq);
+	for (long i = 0; i < 4; i++)
+		d[i] = v[i] * scale;
+#else
 	__asm
 	{
 		mov eax, destination
@@ -1094,11 +1109,24 @@ __forceinline void quaternion_blend(quaternionf *destination, quaternionf const 
 		mov eax, destination
 		movaps [eax], xmm2
 	}
+#endif
 }
 
 /* the product of two quaternions */
 __forceinline void quaternion_multiply(quaternionf const *a, quaternionf const *b, quaternionf *result)
 {
+#if H2_NATIVE_PORT
+	/* the Hamilton product a * b, components (x, y, z, w) */
+	real const *p = (real const *)a;
+	real const *q = (real const *)b;
+	real product[4];
+	product[0] = p[3] * q[0] + q[3] * p[0] + p[1] * q[2] - p[2] * q[1];
+	product[1] = p[3] * q[1] + q[3] * p[1] + p[2] * q[0] - p[0] * q[2];
+	product[2] = p[3] * q[2] + q[3] * p[2] + p[0] * q[1] - p[1] * q[0];
+	product[3] = p[3] * q[3] - p[0] * q[0] - p[1] * q[1] - p[2] * q[2];
+	for (long i = 0; i < 4; i++)
+		((real *)result)[i] = product[i];
+#else
 	__declspec(align(16)) dword sign[4] = { 0, 0, 0, 0x80000000 };
 
 	__asm
@@ -1129,6 +1157,7 @@ __forceinline void quaternion_multiply(quaternionf const *a, quaternionf const *
 		subps xmm3, xmm0
 		movaps [eax], xmm3
 	}
+#endif
 }
 
 /* the value a fraction of the way from a to b */

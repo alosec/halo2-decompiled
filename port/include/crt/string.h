@@ -21,7 +21,15 @@ typedef __SIZE_TYPE__ size_t;
 #define strrchr h2_guest_strrchr
 #define strspn h2_guest_strspn
 #define strstr h2_guest_strstr
+#define strpbrk h2_guest_strpbrk
+#define strcat h2_guest_strcat
+#define strncat h2_guest_strncat
+#define _stricmp h2_guest_stricmp
+#define _strnicmp h2_guest_strnicmp
 #endif
+
+/* As in the Microsoft CRT, <string.h> also declares the wide-string calls. */
+#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +50,10 @@ char* strrchr(const char* text, int character);
 char* strpbrk(const char* text, const char* accepted);
 size_t strspn(const char* text, const char* accepted);
 char* strstr(const char* text, const char* pattern);
+char* strcat(char* destination, const char* source);
+char* strncat(char* destination, const char* source, size_t size);
+int _stricmp(const char* first, const char* second);
+int _strnicmp(const char* first, const char* second, size_t size);
 
 #ifdef __cplusplus
 }

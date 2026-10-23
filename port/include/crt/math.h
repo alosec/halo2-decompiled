@@ -4,10 +4,16 @@
 /* Freestanding declarations for the recovered guest. Implementations are
  * supplied by the native CRT bridge; this header intentionally contains no
  * platform SDK material. */
+/* As in the Microsoft CRT, <math.h> also declares abs. */
+#ifdef H2_NATIVE_PORT
+#define abs h2_guest_abs
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+int abs(int value);
 double acos(double value);
 double asin(double value);
 double atan2(double y, double x);

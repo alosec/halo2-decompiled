@@ -6,14 +6,7 @@
 #include "data_array.h"
 #include "physical_memory.h"
 
-struct D3DTexture
-{
-    dword Common;
-    dword Data;
-    dword Lock;
-    dword Format;
-    dword Size;
-};
+/* D3DTexture comes from <d3d8.h> (through async.h) */
 static_assert(sizeof(D3DTexture) == 0x14, "D3DTexture");
 
 struct s_bitmap_data

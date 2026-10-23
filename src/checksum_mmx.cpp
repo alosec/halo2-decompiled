@@ -3,6 +3,7 @@
    time (written in assembly, as retail's prefetchnta and MMX code shows). */
 
 #include "unknown_11c920.h"
+#include <string.h>
 
 #pragma warning(disable: 4035)
 
@@ -10,6 +11,19 @@
 // @retail 0x123110
 dword __stdcall checksum_buffer_mmx(void const *buffer, dword buffer_size)
 {
+#if H2_NATIVE_PORT
+	/* XOR of every whole 8-byte word, seeded with bytes 01 02 04 .. 80 when
+	   the word count is odd, then the two halves folded together. */
+	dword count = buffer_size >> 3;
+	unsigned long long accumulator = (count & 1) ? 0x8040201008040201ull : 0;
+	for (dword index = 0; index < count; index++)
+	{
+		unsigned long long word;
+		memcpy(&word, (byte const *)buffer + index * 8, sizeof(word));
+		accumulator ^= word;
+	}
+	return (dword)accumulator ^ (dword)(accumulator >> 32);
+#else
 	byte seed[8];
 
 	__asm
@@ -45,6 +59,7 @@ dword __stdcall checksum_buffer_mmx(void const *buffer, dword buffer_size)
 		movd eax, mm0
 		emms
 	}
+#endif
 }
 
 #pragma warning(default: 4035)

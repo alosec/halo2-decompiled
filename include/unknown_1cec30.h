@@ -7,13 +7,10 @@
 
 #include "unknown_11c920.h"
 #include "globals.h"
-#if H2_NATIVE_PORT
-struct __declspec(align(16)) h2_native_vector4_storage
-{
-	real m128_f32[4];
-};
-#else
 #include <xmmintrin.h>
+#if H2_NATIVE_PORT
+/* the port's portable <xmmintrin.h> provides __m128 with m128_f32 */
+typedef __m128 h2_native_vector4_storage;
 #endif
 
 class s_havok_property_word

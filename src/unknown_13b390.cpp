@@ -66,6 +66,10 @@ static __forceinline real square_root_ratio_approximate(real a, real b)
 	*(long *)&a = (*(long *)&a >> 1) + 0x1fc00000;
 	real reciprocal;
 
+#if H2_NATIVE_PORT
+	reciprocal = 1.0f / __builtin_sqrtf(b);
+	return reciprocal * a;
+#else
 	__asm
 	{
 		rsqrtss xmm0, b
@@ -73,6 +77,7 @@ static __forceinline real square_root_ratio_approximate(real a, real b)
 		fld reciprocal
 		fmul a
 	}
+#endif
 }
 
 struct vector2f
@@ -340,6 +345,24 @@ real const g_47ff50 = 16384.0f;
 /* interpolates two colours channel by channel in fixed point (MMX) */
 static __forceinline dword pixel32_interpolate(real t, dword second, dword first)
 {
+#if H2_NATIVE_PORT
+	/* per byte: first + (((second - first) << 3) * weight >> 16) + 1 >> 1,
+	   in 16-bit lanes, saturated back to 0..255 */
+	short weight = (short)(long)__builtin_rint((double)(t * g_47ff50));
+	dword result = 0;
+	for (long channel = 0; channel < 4; channel++)
+	{
+		short from = (short)((first >> (channel * 8)) & 0xff);
+		short to = (short)((second >> (channel * 8)) & 0xff);
+		short delta = (short)((short)(to - from) << 3);
+		short product = (short)(((long)delta * (long)weight) >> 16);
+		short step = (short)((short)(product + 1) >> 1);
+		short value = (short)(from + step);
+		dword byte_value = value < 0 ? 0 : (value > 255 ? 255 : (dword)value);
+		result |= byte_value << (channel * 8);
+	}
+	return result;
+#else
 	__int64 zero = 0;
 	__int64 rounding = 0x0001000100010001;
 
@@ -363,6 +386,7 @@ static __forceinline dword pixel32_interpolate(real t, dword second, dword first
 		movd eax, mm0
 		emms
 	}
+#endif
 }
 
 enum

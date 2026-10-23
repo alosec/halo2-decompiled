@@ -750,6 +750,20 @@ real_quaternion_transform *g_4687d8;
 
 PRIVATE __forceinline void first_frame_rotation_unpack(s_animation_first_frame const *a, real_quaternion_transform *transform)
 {
+#if H2_NATIVE_PORT
+	/* the four signed words widened and normalized */
+	short const *quantized = (short const *)a;
+	real value[4];
+	real dot = 0.0f;
+	for (long i = 0; i < 4; i++)
+	{
+		value[i] = (real)quantized[i];
+		dot += value[i] * value[i];
+	}
+	real scale = 1.0f / __builtin_sqrtf(dot);
+	for (long i = 0; i < 4; i++)
+		((real *)&transform->rotation)[i] = value[i] * scale;
+#else
 	__asm
 	{
 		mov ecx, a
@@ -775,6 +789,7 @@ PRIVATE __forceinline void first_frame_rotation_unpack(s_animation_first_frame c
 		mulps xmm1, xmm0
 		movaps [eax], xmm1
 	}
+#endif
 }
 
 // @retail 0x1dd8f0

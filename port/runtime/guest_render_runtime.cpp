@@ -123,7 +123,7 @@ extern "C" void D3DDevice_SetVertexDataColor(unsigned int, unsigned int color)
         g_immediate.request.color = color;
 }
 
-extern "C" void D3DDevice_SetVertexData2f(unsigned int, float x, float y)
+extern "C" void D3DDevice_SetVertexData2f(int, float x, float y)
 {
     if (!g_immediate.active)
         return;

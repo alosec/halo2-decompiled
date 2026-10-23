@@ -38,7 +38,7 @@ def main():
         ir = root / "unit.ll"
         rebased = root / "unit.rebased.ll"
         assembly = root / "unit.s"
-        language_flags = ["-fno-exceptions", "-fno-rtti"] if compiler.name == "clang++" else []
+        language_flags = ["-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"] if compiler.name == "clang++" else []
         include_flags = [f"-I{directory}" for directory in args.include]
         frontend_target = "thumbv7-pc-windows-msvc" if args.ms_abi else "arm64_32-apple-watchos"
         abi_flags = ["-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar"] if args.ms_abi else []

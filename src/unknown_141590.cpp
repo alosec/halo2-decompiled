@@ -11,7 +11,10 @@
 
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
-#ifndef H2_NATIVE_PORT
+#ifdef H2_NATIVE_PORT
+/* native: unknown_141590_native.cpp */
+void function_141590(transform4x3f const *in, transform4x3f *out);
+#else
 // @retail 0x141590
 void function_141590(
 	transform4x3f const *in,
@@ -343,6 +346,42 @@ void __stdcall function_1421f0(
 	rigid_transform_scaled const *orientation)
 {
 	static real epsilon = g_45dbdc;
+#if H2_NATIVE_PORT
+	/* the matrix of the quaternion scaled by 2 / |q|^2 (an identity basis
+	   for a near-zero quaternion), then the position and scale */
+	real const *q = (real const *)&orientation->rotation;
+	real *m = (real *)out;
+	real x = q[0], y = q[1], z = q[2], w = q[3];
+	real norm = x * x + z * z + (y * y + w * w);
+	if (!(norm > epsilon))
+	{
+		m[1] = g_45dbc0; m[2] = 0.0f; m[3] = 0.0f;
+		m[4] = 0.0f; m[5] = g_45dbc0; m[6] = 0.0f;
+		m[7] = 0.0f; m[8] = 0.0f; m[9] = g_45dbc0;
+	}
+	else
+	{
+		real s = 2.0f / norm;
+		real xx = x * x * s, xy = x * y * s, xz = x * z * s, xw = x * w * s;
+		real yy = y * y * s, yz = y * z * s, yw = y * w * s;
+		real zz = z * z * s, wz = w * z * s, wy = w * y * s, wx = w * x * s;
+		(void)xw;
+		(void)yw;
+		m[1] = g_45dbc0 - zz - yy;
+		m[2] = xy + wz;
+		m[3] = xz - wy;
+		m[4] = xy - wz;
+		m[5] = g_45dbc0 - zz - xx;
+		m[6] = yz + wx;
+		m[7] = xz + wy;
+		m[8] = yz - wx;
+		m[9] = g_45dbc0 - xx - yy;
+	}
+	m[0] = orientation->scale;
+	m[10] = orientation->position.x;
+	m[11] = orientation->position.y;
+	m[12] = orientation->position.z;
+#else
 	__asm
 	{
 		mov eax, orientation
@@ -420,6 +459,7 @@ void __stdcall function_1421f0(
 		movss xmm0, dword ptr [eax + 0x18]
 		movss dword ptr [ecx + 0x30], xmm0
 	}
+#endif
 }
 
 // @retail 0x142360

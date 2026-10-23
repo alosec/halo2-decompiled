@@ -767,6 +767,12 @@ extern "C" DWORD __stdcall GetTickCount(void)
     return host_h2_get_milliseconds();
 }
 
+extern "C" DWORD __stdcall GetLastError(void)
+{
+    /* Native file and memory services report failure through their results. */
+    return 0;
+}
+
 __int64 h2_native_time_stamp(void)
 {
     return static_cast<__int64>(host_h2_get_milliseconds()) * 733333;

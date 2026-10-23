@@ -189,6 +189,21 @@ int __stdcall function_1429d0(
 	point3f const *source,
 	point3f *destination)
 {
+#if H2_NATIVE_PORT
+	/* destination[i] = scale * (rotation * source[i]) + position */
+	real scale = matrix->scale;
+	for (long i = 0; i < count; i++)
+	{
+		real x = source[i].x, y = source[i].y, z = source[i].z;
+		destination[i].x = x * (matrix->forward.i * scale) + y * (matrix->left.i * scale) +
+			(z * (matrix->up.i * scale) + matrix->position.x);
+		destination[i].y = x * (matrix->forward.j * scale) + y * (matrix->left.j * scale) +
+			(z * (matrix->up.j * scale) + matrix->position.y);
+		destination[i].z = x * (matrix->forward.k * scale) + y * (matrix->left.k * scale) +
+			(z * (matrix->up.k * scale) + matrix->position.z);
+	}
+	return 0;
+#else
 	__asm
 	{
 		mov ecx, matrix
@@ -231,7 +246,12 @@ int __stdcall function_1429d0(
 		jne again
 	done:
 	}
+#endif
 }
+#if H2_NATIVE_PORT
+/* native: unknown_142a60_native.cpp */
+int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
+#else
 // @retail 0x142a60
 int __fastcall function_142a60(
 	transform4x3f const *a,
@@ -315,6 +335,7 @@ int __fastcall function_142a60(
 		movss dword ptr [eax], xmm3
 	}
 }
+#endif
 // @retail 0x1428b0
 plane3f *function_1428b0(
 	transform4x3f const *matrix,

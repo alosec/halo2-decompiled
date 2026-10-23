@@ -2,10 +2,17 @@
 // Havok (third-party physics library): reading the processor time stamp
 // counter, and measuring how fast it counts.
 
+#if H2_NATIVE_PORT
+extern "C" __int64 h2_native_time_stamp(void);
+#endif
+
 // @retail 0x2da0d0
 unsigned __int64 __cdecl function_2da0d0()
 {
 	unsigned __int64 ticks;
+#if H2_NATIVE_PORT
+	ticks = (unsigned __int64)h2_native_time_stamp();
+#else
 	__asm
 	{
 		push ebx
@@ -14,6 +21,7 @@ unsigned __int64 __cdecl function_2da0d0()
 		mov dword ptr ticks, eax
 		mov dword ptr ticks + 4, edx
 	}
+#endif
 	return ticks;
 }
 

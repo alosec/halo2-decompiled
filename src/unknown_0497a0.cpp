@@ -311,6 +311,16 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
     long b, g, r, a;
     real scale = 255.0f;
     dword pixel = 0;
+#if H2_NATIVE_PORT
+    /* the four components scaled by 255 and rounded as fistp does; the
+       fourth lands in the low byte and the first in the high byte */
+    real const *component = (real const *)color;
+    b = (long)__builtin_rint((double)(component[3] * scale));
+    g = (long)__builtin_rint((double)(component[2] * scale));
+    r = (long)__builtin_rint((double)(component[1] * scale));
+    a = (long)__builtin_rint((double)(component[0] * scale));
+    pixel = (dword)b | ((dword)g << 8) | ((dword)r << 0x10) | ((dword)a << 0x18);
+#else
     __asm
     {
         mov edx, color
@@ -339,6 +349,7 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
         or edx, eax
         mov pixel, edx
     }
+#endif
     return pixel;
 }
 

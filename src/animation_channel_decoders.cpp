@@ -62,6 +62,21 @@ void animation_codec_blend_screen_rotation_interpolate()
 	quaternionf *b = rotations + g_sampling_settings.next_frame_index;
 	quaternionf *a = rotations + g_sampling_settings.frame_index;
 
+#if H2_NATIVE_PORT
+	/* normalize(a + (b - a) * t), as the SSE sequence below computes it */
+	real const *qa = (real const *)a;
+	real const *qb = (real const *)b;
+	real blend[4];
+	real dot = 0.0f;
+	for (long i = 0; i < 4; i++)
+	{
+		blend[i] = (qb[i] - qa[i]) * t + qa[i];
+		dot += blend[i] * blend[i];
+	}
+	real scale = 1.0f / __builtin_sqrtf(dot);
+	for (long i = 0; i < 4; i++)
+		((real *)result)[i] = blend[i] * scale;
+#else
 	__asm
 	{
 		mov eax, a
@@ -86,6 +101,7 @@ void animation_codec_blend_screen_rotation_interpolate()
 		mulps xmm2, xmm0
 		movaps [edx], xmm2
 	}
+#endif
 }
 
 /* *result = a + (b - a) * t */

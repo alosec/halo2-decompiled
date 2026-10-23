@@ -89,6 +89,93 @@ def retarget(text):
     return text
 
 
+OPERAND = r'(?:(?:dword|word|qword|tbyte)\s+ptr\s+)?([A-Za-z_][\w.\[\]>-]*)'
+SEP = r'\s*(?:;[^\n]*)?\s*'
+
+
+def asm_block(*instructions):
+    """A single __asm { ... } block holding exactly these instructions."""
+    return re.compile(r'__asm\s*\{' + SEP + SEP.join(instructions) + SEP + r'\}')
+
+
+def asm_blocks(*instructions):
+    """Consecutive one-instruction __asm statements (braced or not, possibly
+    continued with backslashes inside a macro)."""
+    pieces = [r'__asm\s*(?:\{\s*' + i + r'\s*\}|' + i + r')' for i in instructions]
+    return re.compile(r'(?:[ \t]*\\?\s*)'.join(pieces) + r'[ \t]*;?')
+
+
+def operands(match):
+    """The captured operands in order (alternative branches leave gaps)."""
+    return [g for g in match.groups() if g is not None]
+
+
+ROUND = lambda m: f"{operands(m)[1]} = (long)__builtin_rint((double)({operands(m)[0]}));"
+REWRITES = [
+    # fld/fistp under the default x87 control word: round to nearest, ties to even.
+    (asm_block(r'fld\s+' + OPERAND, r'fistp\s+' + OPERAND), ROUND),
+    (asm_blocks(r'fld\s+' + OPERAND, r'fistp\s+' + OPERAND), ROUND),
+    # rsqrtss is an estimate; the native form is exact.
+    (asm_block(r'rsqrtss\s+xmm0\s*,\s*' + OPERAND, r'movss\s+' + OPERAND + r'\s*,\s*xmm0'),
+     lambda m: f"{operands(m)[1]} = 1.0f / __builtin_sqrtf({operands(m)[0]});"),
+    # bsr: index of the highest set bit (the operand is known to be nonzero).
+    (asm_blocks(r'bsr\s+eax\s*,\s*' + OPERAND, r'mov\s+' + OPERAND + r'\s*,\s*eax'),
+     lambda m: f"{operands(m)[1]} = 31 - __builtin_clz((unsigned)({operands(m)[0]}));"),
+    (asm_block(r'cvtsi2ss\s+(xmm\d)\s*,\s*' + OPERAND, r'movss\s+' + OPERAND + r'\s*,\s*\1'),
+     lambda m: f"{operands(m)[2]} = (float)({operands(m)[1]});"),
+    # Time-stamp reads.
+    (asm_block(r'rdtsc', r'mov\s+' + OPERAND + r'\s*,\s*eax'),
+     lambda m: f"{operands(m)[0]} = (unsigned long)h2_native_time_stamp();"),
+    (asm_blocks(r'rdtsc', r'mov\s+' + OPERAND + r'\s*,\s*eax'),
+     lambda m: f"{operands(m)[0]} = (unsigned long)h2_native_time_stamp();"),
+    (re.compile(r'volatile\s+(?:unsigned\s+)?__int64\s+\w+\s*=\s*0\s*;\s*__asm\s+rdtsc\b'),
+     lambda m: "return h2_native_time_stamp();"),
+    # fld a / fmul b leaving the product in st(0) as the implicit result.
+    (asm_block(r'fld\s+' + OPERAND, r'fmul\s+' + OPERAND),
+     lambda m: f"return (double)({operands(m)[0]}) * (double)({operands(m)[1]});"),
+    (re.compile(r'__asm\s*\{\s*int\s+3\s*\}|__asm\s+int\s+3\b'), lambda m: "__builtin_trap()"),
+]
+# Widen four signed words (a quantized quaternion) and normalize them.
+QUATERNION_LOAD = re.compile(
+    r'__asm\s*\{\s*mov\s+ecx\s*,\s*(\w+)\s+mov\s+eax\s*,\s*(\w+)\s+movq\s+mm3\s*,\s*\[ecx\]\s+'
+    r'punpcklwd\s+mm1\s*,\s*mm3\s+punpckhwd\s+mm2\s*,\s*mm3\s+psrad\s+mm1\s*,\s*0x10\s+'
+    r'psrad\s+mm2\s*,\s*0x10\s+cvtpi2ps\s+xmm1\s*,\s*mm1\s+cvtpi2ps\s+xmm2\s*,\s*mm2\s+emms\s+'
+    r'movlhps\s+xmm1\s*,\s*xmm2\s+movaps\s+xmm0\s*,\s*xmm1\s+mulps\s+xmm0\s*,\s*xmm1\s+'
+    r'movaps\s+xmm3\s*,\s*xmm0\s+shufps\s+xmm3\s*,\s*xmm3\s*,\s*0x4e\s+addps\s+xmm0\s*,\s*xmm3\s+'
+    r'movaps\s+xmm4\s*,\s*xmm0\s+shufps\s+xmm4\s*,\s*xmm4\s*,\s*0x11\s+addps\s+xmm0\s*,\s*xmm4\s+'
+    r'rsqrtps\s+xmm0\s*,\s*xmm0\s+mulps\s+xmm1\s*,\s*xmm0\s+movaps\s+\[eax\]\s*,\s*xmm1\s*\}')
+QUATERNION_LOAD_NATIVE = (
+    "{{ short const *h2_q = (short const *)({0}); float h2_v[4], h2_d = 0.0f; "
+    "for (int h2_i = 0; h2_i < 4; h2_i++) {{ h2_v[h2_i] = (float)h2_q[h2_i]; h2_d += h2_v[h2_i] * h2_v[h2_i]; }} "
+    "float h2_s = 1.0f / __builtin_sqrtf(h2_d); "
+    "for (int h2_i = 0; h2_i < 4; h2_i++) ((float *)({1}))[h2_i] = h2_v[h2_i] * h2_s; }}")
+# Truncate-then-correct sequences that leave floor(value) in eax.
+FLOOR_BLOCK = re.compile(r'__asm\s*\{\s*movss\s+xmm0\s*,\s*' + OPERAND +
+                         r'\s*\n\s*cvttss2si\s+eax\s*,\s*xmm0[^}]*?cmpneqss[^}]*?movmskps[^}]*\}')
+
+
+REWRITE_VERSION = "4"
+
+
+def native_source(text):
+    """Rewrite mechanical x86 inline-assembly idioms for the ARM guest.
+
+    Rewriting a block that a native guard already hides is harmless. Returns
+    None when nothing changed."""
+    if "__asm" not in text:
+        return None
+    original = text
+    for pattern, replacement in REWRITES:
+        text = pattern.sub(replacement, text)
+    text = QUATERNION_LOAD.sub(lambda m: QUATERNION_LOAD_NATIVE.format(m.group(1), m.group(2)), text)
+    text = FLOOR_BLOCK.sub(lambda m: f"return (long)__builtin_floorf({m.group(1)});", text)
+    if text == original:
+        return None
+    if "h2_native_time_stamp" in text and "h2_native_time_stamp" not in original:
+        text = 'extern "C" __int64 h2_native_time_stamp(void);\n' + text
+    return text
+
+
 class Unit:
     def __init__(self, source, root, work):
         self.source = source
@@ -110,11 +197,23 @@ def frontend(unit, args, header_stamp):
     if not is_c:
         # Retail relies on LTCG to inline 'inline' definitions across files;
         # emit every one as a weak definition so other units can link it.
-        command += ["-fno-exceptions", "-fno-rtti", "-Dinline=inline __attribute__((used))"]
+        # VC 7.1 (the retail compiler) predates thread-safe local statics.
+        command += ["-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics",
+                    "-Dinline=inline __attribute__((used))",
+                    # MSVC accepts these; the Xbox headers make SSE types and
+                    # the memory intrinsics visible everywhere.
+                    "-Wno-address-of-temporary", "-include", "xmmintrin.h", "-include", "string.h"]
     for include in args.include:
         command.append(f"-I{include}")
-    command += ["-S", "-emit-llvm", unit.source, "-o", unit.ir]
-    key = hashlib.sha256((header_stamp + str(unit.source.stat().st_mtime_ns) +
+    source = unit.source
+    rewritten = native_source(unit.source.read_text(errors="replace"))
+    if rewritten is not None:
+        source = unit.ir.with_suffix(unit.source.suffix)
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(f'#line 1 "{unit.source}"\n' + rewritten)
+        command.append(f"-I{unit.source.parent}")
+    command += ["-S", "-emit-llvm", source, "-o", unit.ir]
+    key = hashlib.sha256((REWRITE_VERSION + header_stamp + str(unit.source.stat().st_mtime_ns) +
                           " ".join(map(str, command))).encode()).hexdigest()
     if unit.ir.exists() and unit.stamp.exists() and unit.stamp.read_text() == key:
         return True, ""
@@ -221,10 +320,10 @@ def backend(unit, args, delete_functions, delete_globals, promote=()):
          "-S", ir, "-o", rebased], capture_output=True)
     run([args.llvm / "llc", "-O2", "-mtriple=arm64_32-apple-watchos", rebased, "-o", darwin],
         capture_output=True)
-    run([sys.executable, TOOLS / "guest_asm_elf.py", darwin, elf])
+    run([sys.executable, TOOLS / "guest_asm_elf.py", darwin, elf], capture_output=True)
     elf.write_text(escape_symbols(elf.read_text()))
     run([args.llvm / "llvm-mc", "-triple=aarch64-linux-gnu", "-filetype=obj", elf,
-         "-o", unit.object])
+         "-o", unit.object], capture_output=True)
     for path in (rebased, darwin, elf):
         path.unlink(missing_ok=True)
 
@@ -391,7 +490,8 @@ def main():
             return None
         except subprocess.CalledProcessError as error:
             stderr = error.stderr.decode() if isinstance(error.stderr, bytes) else (error.stderr or "")
-            line = next((l for l in stderr.splitlines() if "error" in l.lower()), stderr[:200])
+            lines = [l for l in stderr.splitlines() if l.strip()]
+            line = next((l for l in lines if "error" in l.lower()), lines[-1] if lines else "failed")
             return f"backend: {line}"
 
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
@@ -419,7 +519,9 @@ def main():
     for unit in compiled:
         text_decl = scans[unit.relative]["declarations"]
         declared_functions.update(text_decl)
-    function_like = set()
+    # The start assembly only calls functions.
+    function_like = set(run([args.llvm / "llvm-nm", "--undefined-only", "--format=just-symbols", start],
+                            capture_output=True, text=True).stdout.replace("%", "@").split())
     for unit in compiled:
         ir = unit.ir.read_text()
         function_like.update(unquote(m.group(1)) for m in DECLARE.finditer(ir))
