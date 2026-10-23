@@ -33,6 +33,7 @@ void host_h2_text_request(const unsigned int* text, const void* bounds,
                           float scale, unsigned int color, const void* shadow);
 unsigned int host_h2_get_milliseconds(void);
 void host_h2_sleep(unsigned int milliseconds);
+unsigned int host_h2_unimplemented(const char* symbol);
 double host_h2_cos(double value);
 double host_h2_math_acos(double value);
 double host_h2_math_exp(double value);

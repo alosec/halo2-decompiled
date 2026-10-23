@@ -10,6 +10,9 @@
 #include "h2/profile_store.hpp"
 
 #include <algorithm>
+#include <cstdio>
+#include <string>
+#include <unordered_map>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -816,6 +819,12 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
             return false;
         }
     }
+    /* Only whole-image builds carry trap stubs. */
+    if (image.symbol_address("h2_host_slot_host_h2_unimplemented") &&
+        !image.patch_host_import(arena, "host_h2_unimplemented",
+                                 function_address(&host_h2_unimplemented), error)) {
+        return false;
+    }
     return true;
 }
 
@@ -1168,6 +1177,18 @@ extern "C" unsigned int host_h2_get_milliseconds() {
 
 extern "C" void host_h2_sleep(unsigned int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+extern "C" unsigned int host_h2_unimplemented(const char* symbol) {
+    /* Whole-image trap stubs land here for functions no recovered unit
+       defines yet. Report each one once, then keep running with a zero result. */
+    static std::mutex lock;
+    static std::unordered_map<std::string, unsigned long> counts;
+    std::lock_guard<std::mutex> guard(lock);
+    const std::string name = symbol ? symbol : "?";
+    if (counts[name]++ == 0)
+        std::fprintf(stderr, "h2-port: unimplemented guest function %s\n", name.c_str());
+    return 0;
 }
 
 extern "C" double host_h2_cos(double value) {

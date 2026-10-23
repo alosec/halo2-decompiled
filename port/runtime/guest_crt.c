@@ -469,3 +469,17 @@ int _wcsicmp(const wchar_t* first, const wchar_t* second) {
     return (int)guest_lower(*first) - (int)guest_lower(*second);
 }
 unsigned int h2_sse_emulated_csr = 0x1f80u;
+
+/* Static destructors registered by recovered constructors never run: the guest
+   image lives for the whole process. */
+int atexit(void (*function)(void))
+{
+    (void)function;
+    return 0;
+}
+
+/* MSVC's compiler barrier intrinsic; an opaque call is already a barrier. */
+void _ReadWriteBarrier(void)
+{
+    __asm__ __volatile__("" ::: "memory");
+}

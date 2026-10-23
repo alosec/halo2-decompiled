@@ -5,12 +5,12 @@
 #include "unknown_19b510.h"
 #include "unknown_19b516.h"
 #include "unknown_2b116a.h"
-#if defined(H2_NATIVE_PORT)
-#define c_list_24a64d c_list_24a64d_shared
-#endif
 #include "loop_allocator.h"
 #if defined(H2_NATIVE_PORT)
-#undef c_list_24a64d
+/* The native profile list below is a self-contained view with its own layout
+   and virtual slots, so it must not share c_list_24a64d's vtable symbol with
+   the recovered class in loop_allocator.h. */
+#define c_list_24a64d c_native_profile_list
 #endif
 #include <wchar.h>
 #include <string.h>

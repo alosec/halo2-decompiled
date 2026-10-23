@@ -3866,3 +3866,24 @@ add_test(
             --root ${PROJECT_SOURCE_DIR}
             --host-cxx ${CMAKE_CXX_COMPILER}
 )
+
+# Whole guest image: every recovered unit the native frontend accepts, with
+# duplicate definitions resolved, retail globals bound to their addresses and
+# trap stubs for what no unit defines yet (tools/build_whole_image.py).
+set(H2_WHOLE_IMAGE_DIR "${CMAKE_BINARY_DIR}/port/whole")
+set(H2_WHOLE_IMAGE "${H2_WHOLE_IMAGE_DIR}/whole-image.elf")
+add_custom_target(h2-whole-image
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/build_whole_image.py
+            --root ${PROJECT_SOURCE_DIR}
+            --llvm ${H2_LLVM_ROOT}/bin
+            --lld ${H2_LLD}
+            --plugin $<TARGET_FILE:h2_guest_rebase>
+            --work ${H2_WHOLE_IMAGE_DIR}
+            --bindings ${H2_MAIN_MENU_BINDINGS}
+            --start ${CMAKE_CURRENT_SOURCE_DIR}/runtime/whole_image_start.s
+            --linker-script ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
+    DEPENDS h2_guest_rebase
+    BYPRODUCTS "${H2_WHOLE_IMAGE}"
+    USES_TERMINAL
+    VERBATIM
+)

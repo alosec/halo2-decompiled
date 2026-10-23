@@ -238,10 +238,27 @@ std::optional<GuestElfImage> GuestElfImage::load(const std::filesystem::path& pa
 
 std::optional<std::uint32_t> GuestElfImage::symbol_address(std::string_view name) const {
     const auto found = symbols_.find(std::string(name));
-    if (found == symbols_.end()) {
-        return std::nullopt;
+    if (found != symbols_.end()) {
+        return found->second;
     }
-    return found->second;
+    /* Curated images name MS-mangled functions by their base ("?name"), because
+       ld.lld reads the rest after '@' as a version. Whole images keep the full
+       name with '@' escaped as '%', so accept the one full name with that base. */
+    if (!name.empty() && name.front() == '?' &&
+        name.find('@') == std::string_view::npos && name.find('%') == std::string_view::npos) {
+        const std::string prefix = std::string(name) + "%%";
+        std::optional<std::uint32_t> match;
+        for (const auto& [symbol, address] : symbols_) {
+            if (symbol.compare(0, prefix.size(), prefix) == 0) {
+                if (match) {
+                    return std::nullopt;
+                }
+                match = address;
+            }
+        }
+        return match;
+    }
+    return std::nullopt;
 }
 
 bool GuestElfImage::patch_host_import(GuestArena& arena, std::string_view symbol,
