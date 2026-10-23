@@ -16,10 +16,10 @@ real __stdcall function_173c30(s_particle_system_datum const *particle_system, l
 		result = particle_system->unknown04;
 		break;
 	case 0x0d00069e:
-		result = particle_system->random_a;
+		result = particle_system->random[0];
 		break;
 	case 0x0d00069f:
-		result = particle_system->random_b;
+		result = particle_system->random[1];
 		break;
 	}
 	return result;

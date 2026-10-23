@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "pool_storage.h"
 #include "unknown_11c920.h"
 #include "sound_driver.h"
 #include "globals.h"
@@ -59,9 +60,6 @@ struct s_47f0d0
 };
 
 extern s_47f0d0 g_47f0d0;
-extern dword g_510800_pool_base;
-extern long g_510804_pool_size;
-extern dword g_510808_pool_checksum;
 
 struct s_sound_listener_environment;
 struct s_sound_listener
@@ -98,14 +96,12 @@ void function_221490(LPDIRECTSOUNDBUFFER *buffer_reference);
 // @retail 0x21e4b0
 bool function_21e4b0(s_sound_driver_counts const *counts)
 {
-	byte *top = (byte *)(g_510800_pool_base + g_510804_pool_size);
+	byte *top = (byte *)(g_510804_pool_size + g_510800_pool_base);
 	byte *memory = (byte *)(((dword)top + 3) & ~3);
 	long allocated_size = (memory - top) + sizeof(s_sound_driver_globals);
 	bool result = false;
 	g_510804_pool_size += allocated_size;
-	dword checksum = g_510808_pool_checksum;
-	function_163ba0(&checksum, &allocated_size, sizeof(allocated_size));
-	g_510808_pool_checksum = checksum;
+	function_163ba0(&g_510808_pool_checksum, &allocated_size, sizeof(allocated_size));
 	memset(memory, 0, sizeof(s_sound_driver_globals));
 	g_51ebe4 = (s_bink_sound_settings *)memory;
 	SOUND_DRIVER_GLOBALS->unknown0000 = false;
@@ -129,18 +125,20 @@ bool function_21e4b0(s_sound_driver_counts const *counts)
 				listener.forward = *g_4687a8;
 				listener.up = *g_4687b0;
 				function_220790(&listener);
-				result = true;
 				function_12c040();
 				g_47f0d0.field04 = 0;
 				g_47f0d0.field14 = NULL;
 				g_47f0d0.field10 = 0x10000;
+				result = true;
 				for (long type = 0; type < 3; type++)
 				{
 					long first = SOUND_DRIVER_GLOBALS->channel_count;
 					SOUND_DRIVER_GLOBALS->unknown1a0c[type] = SOUND_DRIVER_GLOBALS->channel_count;
 					SOUND_DRIVER_GLOBALS->channel_count += counts->channels[type];
 					for (long i = 0; result && i < counts->channels[type]; i++)
+					{
 						result = result && function_21f4e0(first + i, type);
+					}
 					SOUND_DRIVER_GLOBALS->unknown1a12[type] = SOUND_DRIVER_GLOBALS->channel_count - 1;
 				}
 				short voices = counts->voices;
@@ -163,15 +161,19 @@ bool function_21e4b0(s_sound_driver_counts const *counts)
 				for (long send = 0; send < 3; send++)
 				{
 					long mixbin = SOUND_DRIVER_GLOBALS->effect_mixbins[send];
-					LPDIRECTSOUNDBUFFER *buffer = &SOUND_DRIVER_GLOBALS->effect_buffers_a[send];
 					LPDIRECTSOUNDBUFFER *spatial_buffer = &SOUND_DRIVER_GLOBALS->effect_buffers_b[send];
-					DSBUFFERDESC description = {0};
-					description.dwSize = sizeof(description);
-					description.dwFlags = DSBCAPS_FXIN2;
-					description.dwInputMixBin = mixbin;
-					if (SUCCEEDED(SOUND_DRIVER_GLOBALS->direct_sound->CreateSoundBuffer(&description, buffer, NULL)))
-						(*buffer)->Play(0, 0, 0);
-					DSBUFFERDESC spatial_description = {0};
+					LPDIRECTSOUNDBUFFER *buffer = &SOUND_DRIVER_GLOBALS->effect_buffers_a[send];
+					{
+						DSBUFFERDESC description;
+						memset(&description, 0, sizeof(DSBUFFERDESC));
+						description.dwSize = sizeof(description);
+						description.dwFlags = DSBCAPS_FXIN2;
+						description.dwInputMixBin = mixbin;
+						if (SUCCEEDED(SOUND_DRIVER_GLOBALS->direct_sound->CreateSoundBuffer(&description, buffer, NULL)))
+							(*buffer)->Play(0, 0, 0);
+					}
+					DSBUFFERDESC spatial_description;
+					memset(&spatial_description, 0, sizeof(DSBUFFERDESC));
 					spatial_description.dwSize = sizeof(spatial_description);
 					spatial_description.dwFlags = DSBCAPS_FXIN2 | DSBCAPS_CTRL3D;
 					spatial_description.dwInputMixBin = mixbin;

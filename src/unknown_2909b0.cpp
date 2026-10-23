@@ -3,8 +3,8 @@
 #include "unknown_0259d0.h"
 // @flags /O2 /arch:SSE /Gr
 
-struct s_290b90_entry;
-extern s_290b90_entry *g_5044c4;
+struct s_swarm_spawn_slot;
+extern s_swarm_spawn_slot *g_5044c4;
 
 struct s_2909b0
 {
@@ -50,8 +50,6 @@ __forceinline void function_290a16(transform4x3f const *arg_0, vector3f const *a
 // @retail 0x2909b0
 void function_2909b0(short arg_0, long arg_1)
 {
-	long const *local_8 = &arg_1;
-	arg_1 = *local_8;
 	s_2909b0 *local_0 = &((s_2909b0 *)g_5044c4)[arg_0];
 	s_2909b2 *local_1 = (s_2909b2 *)g_4e0300->data;
 	s_2909b1 *local_2 = local_1[arg_1 & 0xffff].field_8;

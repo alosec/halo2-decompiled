@@ -175,7 +175,7 @@ and game_time (`+8`). Through `.data` pointers it reads (0, 0, 0) (`g_4687a4`),
 It works in three phases: the points, which cast rays straight down; the
 contacts, which use a batch query and then add springs, friction and impacts;
 and the havok component's impact list. There is no jump table and no indirect
-jump; the one indirect call is the virtual getType at `0x206a8d`. There is no
+jump; the one indirect call is the virtual kind_code at `0x206a8d`. There is no
 early return: both `ret 0xc`, returning true at `0x2078e0` and false at
 `0x2078eb`, follow the third phase. Fillers at `0x2067ca`, `0x2073d9`,
 `0x20763e` and `0x207809` pad to an aligned jump target; those at `0x207417`,
@@ -288,7 +288,7 @@ When the result's index (`+0x24`) is not NONE and F > 0 (`0x206a31`,
    other_index (`+0x28`, not checked for NONE), as
    `havok_component_rigid_body_get` finds it (`include/unknown_1cec30.h:435`).
 2. Nothing is pushed when the body's m_fixed is set (`0x206a80`) or its
-   motion's getType returns 6 (`0x206a8d`–`0x206a93`);
+   motion's kind_code returns 6 (`0x206a8d`–`0x206a93`);
    `src/unknown_1c25a0.cpp:202` makes the same test.
 3. M is the body's mass, at least 1, inlined as
    `havok_component_rigid_body_mass_get` computes it (`0x206abd`–`0x206afa`;
@@ -436,7 +436,7 @@ Otherwise it returns false, and `function_2056e0` then clears its braking
 
 None. Every function it calls has source with an `@retail` marker (see
 [Existing declarations](#existing-declarations)), and its one virtual call is
-`hkMotion::getType`, the seventh slot of `hkMotion`
+`c_havok_body_motion_state::kind_code`, the seventh slot of `c_havok_body_motion_state`
 (`include/unknown_1cec30.h:127`).
 
 ## Existing declarations

@@ -76,6 +76,7 @@ struct s_type_12fea0_definition
 // @retail 0x12fea0
 bool function_12fea0(s_fog_state *state, long cluster_index, point3f const *point, vector3f const *normal)
 {
+	bool result = false;
 	s_type_12fea0_view *fog = (s_type_12fea0_view *)state;
 	s_type_12fea0_cluster *cluster = &((s_type_12fea0_bsp *)g_4e0348)->field_a0[cluster_index];
 	fog->field_f4.n = *normal;
@@ -84,7 +85,6 @@ bool function_12fea0(s_fog_state *state, long cluster_index, point3f const *poin
 	local_1 += local_0->j * point->y;
 	local_1 += point->x * local_0->i;
 	local_0->d = local_1;
-	bool result = false;
 	{
 		long definition_index;
 		if (cluster->field_71 != NONE)

@@ -5,7 +5,7 @@
 #include "unknown_11c920.h"
 #include "screen_widgets.h"
 
-long function_149ead(long value);
+long ui_definition_find_range(long value);
 void function_2b01b5(s_widget_item *item, short value);
 
 /* sets the item's range: the user interface globals' range that holds the
@@ -13,5 +13,5 @@ void function_2b01b5(s_widget_item *item, short value);
 // @retail 0x2b01a2
 void function_2b01a2(long value, s_widget_item *item)
 {
-	function_2b01b5(item, (short)function_149ead(value));
+	function_2b01b5(item, (short)ui_definition_find_range(value));
 }

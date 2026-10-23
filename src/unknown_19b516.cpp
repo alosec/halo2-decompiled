@@ -128,18 +128,19 @@ void c_widget::v15(c_widget *widget)
 // @retail 0x22ebc3
 void c_widget::v16()
 {
-	c_widget *widget = next;
-	if (!widget)
+	c_widget *candidate = next;
+	if (!candidate)
 	{
 		c_widget *p = prev;
-		widget = this;
+		candidate = this;
 		while (p)
 		{
-			widget = p;
-			p = widget->prev;
+			candidate = p;
+			p = candidate->prev;
 		}
 	}
-	while (widget)
+	c_widget *widget;
+	while ((widget = candidate) != 0)
 	{
 		if (widget->function_22e37f())
 		{
@@ -147,7 +148,7 @@ void c_widget::v16()
 			widget->function_22ecb4(true);
 			return;
 		}
-		c_widget *candidate = widget->next;
+		candidate = widget->next;
 		if (!candidate)
 		{
 			c_widget *p = widget->prev;
@@ -158,25 +159,25 @@ void c_widget::v16()
 				p = candidate->prev;
 			}
 		}
-		widget = candidate;
 	}
 }
 
 // @retail 0x22ec1b
 void c_widget::v17()
 {
-	c_widget *widget = prev;
-	if (!widget)
+	c_widget *candidate = prev;
+	if (!candidate)
 	{
 		c_widget *p = next;
-		widget = this;
+		candidate = this;
 		while (p)
 		{
-			widget = p;
-			p = widget->next;
+			candidate = p;
+			p = candidate->next;
 		}
 	}
-	while (widget)
+	c_widget *widget;
+	while ((widget = candidate) != 0)
 	{
 		if (widget->function_22e37f())
 		{
@@ -184,7 +185,7 @@ void c_widget::v17()
 			widget->function_22ecb4(true);
 			return;
 		}
-		c_widget *candidate = widget->prev;
+		candidate = widget->prev;
 		if (!candidate)
 		{
 			c_widget *p = widget->next;
@@ -195,7 +196,6 @@ void c_widget::v17()
 				p = candidate->next;
 			}
 		}
-		widget = candidate;
 	}
 }
 
@@ -250,32 +250,39 @@ bool c_widget::function_22ef1b()
 // @retail 0x24c024
 bool c_widget::v18(s_event *event)
 {
+	bool handled = false;
 	switch (event->type)
 	{
 	case 1:
 		function_24c1c5(this, -1);
-		return true;
+		handled = true;
+		break;
 	case 3:
 		function_24c1c5(this, 1);
-		return true;
+		handled = true;
+		break;
 	case 5:
-		if (event->param == 0 || event->param == 12)
 		{
-			if (!function_22ef1b())
+			long button = event->param;
+			if ((button == 0 || button == 12) && !function_22ef1b())
 			{
 				c_widget *item = function_24bae6(this);
 				if (item)
 				{
-					long key = *(long *)((byte *)item + 4);
-					key = *(long *)((byte *)item + 0x70);
-					function_24c7e4(sub84, &event, &key);
+					long type = *(long *)((byte *)item + 4);
+					long datum = *(long *)((byte *)item + 0x70);
+					volatile long key = type;
+					key = datum;
+					function_24c7e4(sub84, &event, (long *)&key);
 				}
+				handled = true;
 			}
-			return true;
+			break;
 		}
-		break;
 	}
-	return function_22ec73(event);
+	if (!handled)
+		handled = function_22ec73(event);
+	return handled;
 }
 
 // @retail 0x22ec90
@@ -302,9 +309,14 @@ void c_widget::v21()
 	function_24c610(child, this);
 }
 
+#include "slot_handler.h"
+static __forceinline long real_to_long(real value);
+
 // @retail 0x24bda2
 void c_widget::v12(long a)
 {
+	real offset_y;
+	real offset_x;
 	short x;
 	short y;
 	s_bounds bounds;
@@ -314,7 +326,7 @@ void c_widget::v12(long a)
 	{
 		return;
 	}
-	s_sprite_placement *placement = function_14837a(function_24c0b3(this));
+	s_sprite_placement *placement = ui_definition_get_skin(function_24c0b3(this));
 	if (!placement)
 	{
 		return;
@@ -339,27 +351,23 @@ void c_widget::v12(long a)
 		{
 			s_float_rect from;
 			s_float_rect to;
-			real width = (real)element->width;
-			real height = (real)element->height;
-			real px = (real)(placement->main_x + bounds.b);
-			real py = (real)(placement->main_y + bounds.c);
-
-			from.x0 = 0.0f;
-			from.x1 = width;
 			from.y0 = 0.0f;
-			from.y1 = height;
-			to.x0 = (real)y + px;
-			to.x1 = (real)y + (width + px);
-			to.y0 = (real)x + py;
-			to.y1 = (real)x + (py - height);
+			from.x0 = 0.0f;
+			from.x1 = (real)element->width;
+			from.y1 = (real)element->height;
+			to.x0 = (real)(placement->main_x + bounds.b);
+			to.y0 = (real)(placement->main_y + bounds.c);
+			to.y1 = to.y0 - from.y1;
+			to.x1 = to.x0 + from.x1;
+			offset_x = (real)x;
+			offset_y = (real)y;
+			to.x0 += offset_x;
+			to.y0 += offset_y;
+			to.x1 += offset_x;
+			to.y1 += offset_y;
 			function_23618e(&to, scale, (short_rectangle2d const *)a);
 			opacity *= 255.0f;
-			long alpha;
-			__asm
-			{
-				fld opacity
-				fistp alpha
-			}
+			long alpha = real_to_long(opacity);
 			function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
 		}
 	}
@@ -375,27 +383,23 @@ void c_widget::v12(long a)
 		{
 			s_float_rect from;
 			s_float_rect to;
-			real width = (real)element->width;
-			real height = (real)element->height;
-			real px = (real)(placement->second_x + bounds.b);
-			real py = (real)(placement->second_y + bounds.c);
-
-			from.x0 = 0.0f;
-			from.x1 = width;
 			from.y0 = 0.0f;
-			from.y1 = height;
-			to.x0 = (real)y + px;
-			to.x1 = (real)y + (width + px);
-			to.y0 = (real)x + py;
-			to.y1 = (real)x + (py - height);
+			from.x0 = 0.0f;
+			from.x1 = (real)element->width;
+			from.y1 = (real)element->height;
+			to.x0 = (real)(placement->second_x + bounds.b);
+			to.y0 = (real)(placement->second_y + bounds.c);
+			to.y1 = to.y0 - from.y1;
+			to.x1 = to.x0 + from.x1;
+			offset_x = (real)x;
+			offset_y = (real)y;
+			to.x0 += offset_x;
+			to.y0 += offset_y;
+			to.x1 += offset_x;
+			to.y1 += offset_y;
 			function_23618e(&to, scale, (short_rectangle2d const *)a);
 			opacity *= 255.0f;
-			long alpha;
-			__asm
-			{
-				fld opacity
-				fistp alpha
-			}
+			long alpha = real_to_long(opacity);
 			function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
 		}
 	}

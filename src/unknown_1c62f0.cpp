@@ -82,6 +82,7 @@ bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 an
 {
 	if (graph_tag_index != NONE && animation_id.index != NONE)
 	{
+		this->graph_tag_index = graph_tag_index;
 		this->animation_id.graph_index = NONE;
 		this->animation_id.index = NONE;
 		this->unknown10 = 0;
@@ -95,7 +96,6 @@ bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 an
 		this->flags = flags;
 		this->unknown0d = unknown0d;
 		this->unknown0e = unknown0e;
-		this->graph_tag_index = graph_tag_index;
 		this->frame_position = 0.0f;
 		this->rate = 1.0f;
 		this->animation_id = animation_id;
@@ -127,12 +127,21 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 
 /* the codecs' readers of an animation's data (unknown_20aa70.cpp, which
    names s_animation_data s_anim_data) */
-struct s_anim_data;
-void function_20aa70(vector3f *out, s_anim_data *data, long index, real *w);
+struct s_anim_header;
+struct s_anim_data
+{
+	byte *base;
+	s_anim_header *header;
+	byte unknown8;
+	byte type;
+	short count;
+
+	void movement_get(vector3f *out, long index, real *w);
+};
 void function_20ad40(s_anim_data *data, vector3f *a, vector3f *b, long index);
 
 /* the sampling state the codecs' decoders read (unknown_279d80.cpp,
-   unknown_28c510.cpp) */
+   animation_channel_decoders.cpp) */
 
 // @retail 0x1c73a0
 void c_animation_channel_node_position_get(c_animation_channel const *channel, point3f *position, real frame,
@@ -166,10 +175,17 @@ void c_animation_channel_movement_get(c_animation_channel const *channel, vector
 	*value = 0.0f;
 	if (channel->animation_id.index != NONE)
 	{
-		s_animation_data data;
+		struct s_movement_1c6dc0 : s_animation_data
+		{
+			__forceinline void movement_get(vector3f *vector, long frame, real *value)
+			{
+				((s_anim_data *)this)->movement_get(vector, frame, value);
+			}
+		};
+		s_movement_1c6dc0 data;
 
 		c_animation_channel_data_get(channel, &data);
-		function_20aa70(vector, (s_anim_data *)&data, frame, value);
+		data.movement_get(vector, frame, value);
 	}
 }
 
@@ -181,10 +197,17 @@ bool c_animation_channel_frame_sample(c_animation_channel const *channel, real f
 	if (channel->graph_tag_index != NONE && channel->animation_id.index != NONE)
 	{
 		long frame_index = real_truncate(frame);
-		s_animation_data data;
+		struct s_sample_1c6c80 : s_animation_data
+		{
+			__forceinline void frame_sample(vector3f *delta, vector3f *position, long frame_index)
+			{
+				function_20ad40((s_anim_data *)this, delta, position, frame_index);
+			}
+		};
+		s_sample_1c6c80 data;
 
 		c_animation_channel_data_get(channel, &data);
-		function_20ad40((s_anim_data *)&data, delta, position, frame_index);
+		data.frame_sample(delta, position, frame_index);
 		result = true;
 	}
 	return result;
@@ -217,7 +240,10 @@ void c_animation_channel::update_events()
 
 			if (lower == frame_position)
 			{
-				if (frame > lower && upper >= frame)
+				bool local_724437 = false;
+				if (frame > lower)
+					local_724437 = upper >= frame;
+				if (local_724437)
 				{
 					unknown16 |= 1 << event->type;
 				}
@@ -395,6 +421,8 @@ void node_mask_and(dword *mask, dword const *other);
 
 extern dword g_55e590[8];
 
+dword const *node_masks_combine(dword const *mask, dword const *other);
+
 // @retail 0x1c6f60
 void c_animation_channel::sample(real weight, dword const *node_mask, long node_count, real_quaternion_transform *transforms)
 {
@@ -403,50 +431,43 @@ void c_animation_channel::sample(real weight, dword const *node_mask, long node_
 	dword const *graph_mask;
 	dword const *mask;
 	s_graph_inheritance *inheritance;
+	s_tag_instance *tags;
+	word channel_flags;
 
 	if (unknown10 && animation->type)
 	{
-		function_1dd9d0(graph_tag_get(graph_tag_index), animation_id);
+		c_type_709360 id = animation_id;
+		function_1dd9d0(graph_tag_get(graph_tag_index), id);
 		return;
 	}
-	interpolate = (flags >> 6) & 1;
-	if ((flags & 1) && rate != 0.0f && (rate != 1.0f || g_510c54->field_2_3 != 30))
+	channel_flags = flags;
+	interpolate = (channel_flags >> 6) & 1;
+	if ((channel_flags & 1) && rate != 0.0f && (rate != 1.0f || g_510c54->field_2_3 != 30))
 	{
 		interpolate = true;
 	}
+	tags = g_4e3b44;
 	graph_mask = NULL;
-	if (flags & 0x800)
+	if (channel_flags & 0x800)
 	{
-		graph_mask = graph_tag_get(graph_tag_index)->node_mask5c;
+		graph_mask = ((s_graph_tag *)tags[graph_tag_index & 0xffff].bytes)->node_mask5c;
 	}
-	else if (flags & 0x400)
+	else if (channel_flags & 0x400)
 	{
-		graph_mask = graph_tag_get(graph_tag_index)->node_mask7c;
+		graph_mask = ((s_graph_tag *)tags[graph_tag_index & 0xffff].bytes)->node_mask7c;
 	}
 	mask = NULL;
 	if (graph_mask || node_mask)
 	{
-		if (graph_mask && node_mask && graph_mask != node_mask)
-		{
-			memcpy(g_55e590, graph_mask, sizeof(g_55e590));
-			node_mask_and(g_55e590, node_mask);
-			mask = g_55e590;
-		}
-		else if (graph_mask)
-		{
-			mask = graph_mask;
-		}
-		else if (node_mask)
-		{
-			mask = node_mask;
-		}
+		mask = node_masks_combine(graph_mask, node_mask);
 	}
 	inheritance = NULL;
 	if (animation_id.index != NONE && animation_id.graph_index != NONE)
 	{
-		inheritance = function_1daff0(graph_tag_get(graph_tag_index), animation_id);
+		inheritance = function_1daff0(graph_tag_get(*(volatile long const *)&graph_tag_index), animation_id);
 	}
-	function_279d80(graph_tag_get(graph_tag_index), animation_id, node_count, frame_position, weight, inheritance, mask, transforms,
+	c_type_709360 id = animation_id;
+	function_279d80(graph_tag_get(graph_tag_index), id, node_count, frame_position, weight, inheritance, mask, transforms,
 		interpolate);
 }
 /* the graph's sound or effect an animation's event names, or NULL */
@@ -735,22 +756,6 @@ void function_27a060(s_graph_tag *graph, c_type_709360 animation_id, long node_c
 	s_graph_inheritance *inheritance, dword const *node_mask, real_quaternion_transform *transforms);
 dword const *node_masks_combine(dword const *mask, dword const *other);
 
-/* the node mask the channel's flags select in its graph, or NULL */
-inline dword const *c_animation_channel_graph_mask(c_animation_channel const *channel)
-{
-	dword const *mask = NULL;
-
-	if (channel->flags & 0x800)
-	{
-		mask = graph_tag_get(channel->graph_tag_index)->node_mask5c;
-	}
-	else if (channel->flags & 0x400)
-	{
-		mask = graph_tag_get(channel->graph_tag_index)->node_mask7c;
-	}
-	return mask;
-}
-
 PRIVATE __forceinline dword const *function_1c7101(c_animation_channel const *arg_0)
 {
 	dword const *local_0 = NULL;
@@ -785,7 +790,8 @@ void c_animation_channel::sample_aiming(real yaw, real pitch, real weight, dword
 			{
 				inheritance = function_1daff0(graph_tag_get(*(volatile long const *)&graph_tag_index), animation_id);
 			}
-			function_279e40(screen, graph_tag_get(*(volatile long const *)&graph_tag_index), animation_id, node_count, yaw, pitch, weight,
+			c_type_709360 id = animation_id;
+			function_279e40(screen, graph_tag_get(graph_tag_index), id, node_count, yaw, pitch, weight,
 				inheritance, mask, transforms);
 		}
 	}
@@ -795,10 +801,20 @@ void c_animation_channel::sample_aiming(real yaw, real pitch, real weight, dword
 void c_animation_channel::sample_ratio(real ratio, real weight, long node_count, real_quaternion_transform *transforms,
 	dword const *node_mask)
 {
-	dword const *graph_mask = c_animation_channel_graph_mask(this);
-	dword const *mask = NULL;
+	s_tag_instance *tags = g_4e3b44;
+	dword const *graph_mask = NULL;
+	dword const *mask;
 	s_graph_inheritance *inheritance;
 
+	if (flags & 0x800)
+	{
+		graph_mask = ((s_graph_tag *)tags[graph_tag_index & 0xffff].bytes)->node_mask5c;
+	}
+	else if (flags & 0x400)
+	{
+		graph_mask = ((s_graph_tag *)tags[graph_tag_index & 0xffff].bytes)->node_mask7c;
+	}
+	mask = NULL;
 	if (graph_mask || node_mask)
 	{
 		mask = node_masks_combine(graph_mask, node_mask);
@@ -806,8 +822,9 @@ void c_animation_channel::sample_ratio(real ratio, real weight, long node_count,
 	inheritance = NULL;
 	if (animation_id.index != NONE && animation_id.graph_index != NONE)
 	{
-		inheritance = function_1daff0(graph_tag_get(graph_tag_index), animation_id);
+		inheritance = function_1daff0(graph_tag_get(*(volatile long const *)&graph_tag_index), animation_id);
 	}
-	function_27a060(graph_tag_get(graph_tag_index), animation_id, node_count, ratio, weight, inheritance, mask,
+	c_type_709360 id = animation_id;
+	function_27a060(graph_tag_get(graph_tag_index), id, node_count, ratio, weight, inheritance, mask,
 		transforms);
 }

@@ -55,7 +55,7 @@ struct s_sound_play
 };
 
 struct s_type_954545;
-s_type_954545 *function_148350(void);
+s_type_954545 *ui_definition_get(void);
 void function_1a0180(long tag_index, long string_handle, word *buffer);
 
 struct s_user_interface_globals_strings
@@ -79,7 +79,8 @@ struct s_bitmap_group_view
 struct D3DTexture;
 D3DTexture *function_12360(s_bitmap_view *bitmap, real priority);
 long function_11cae0(void);
-byte __stdcall function_219070(long set_index);
+struct s_sound_definition;
+short function_219070(long set_index, s_sound_definition const *definition);
 /* unknown_189010.cpp */
 struct s_sound_label_play;
 long function_189760(s_sound_label_play const *play);
@@ -92,7 +93,7 @@ void function_23620d(long string_handle, word *buffer)
 	buffer[0] = 0;
 	if (string_handle != NONE)
 	{
-		s_user_interface_globals_strings *globals = (s_user_interface_globals_strings *)function_148350();
+		s_user_interface_globals_strings *globals = (s_user_interface_globals_strings *)ui_definition_get();
 		if (globals && globals->string_list_index != NONE)
 		{
 			function_1a0180(globals->string_list_index, string_handle, buffer);
@@ -121,7 +122,9 @@ void function_23625d(long tag_index)
 // @retail 0x236299
 void function_236299(long sound)
 {
-	s_interface_sound_globals *globals = (s_interface_sound_globals *)function_148350();
+	s_sound_play play;
+	byte set[8];
+	s_interface_sound_globals *globals = (s_interface_sound_globals *)ui_definition_get();
 	if (globals)
 	{
 		long tag_index = sound < 13 ? globals->sounds[sound].index : NONE;
@@ -166,13 +169,10 @@ void function_236299(long sound)
 
 				for (long i = 0; i < tag->set_count; i++)
 				{
-					s_sound_globals_view *sound_globals = (s_sound_globals_view *)g_51ebd4;
-					if (sound_globals->names[sound_globals->sets[tag->first_set + i].name] == name)
+					if (((s_sound_globals_view *)g_51ebd4)->names[((s_sound_globals_view *)g_51ebd4)->sets[tag->first_set + i].name] == name)
 					{
-						byte set[2];
-						s_sound_play play;
 						set[0] = (byte)i;
-						set[1] = function_219070(i);
+						set[1] = (byte)function_219070(i, (s_sound_definition const *)tag);
 						play.object_index = NONE;
 						play.tag_index = tag_index;
 						play.scale = 1.f;
@@ -191,7 +191,7 @@ void function_236299(long sound)
 }
 
 struct s_type_7ba8e9;
-s_type_7ba8e9 *function_137610(long group_index, short frame_index, short sequence_index);
+s_type_7ba8e9 *function_137610(long group_index, short sequence_index, short frame_index);
 
 /* the user interface globals' cursor bitmap */
 struct s_user_interface_globals_cursor
@@ -205,26 +205,32 @@ struct s_user_interface_globals_cursor
 s_type_7ba8e9 *function_236235(short frame_index, short sequence_index)
 {
 	s_type_7ba8e9 *result = 0;
-	s_user_interface_globals_cursor *globals = (s_user_interface_globals_cursor *)function_148350();
+	s_user_interface_globals_cursor *globals = (s_user_interface_globals_cursor *)ui_definition_get();
 
 	if (globals && globals->cursor_bitmap_index != NONE)
 	{
-		result = function_137610(globals->cursor_bitmap_index, frame_index, sequence_index);
+		result = function_137610(globals->cursor_bitmap_index, sequence_index, frame_index);
 	}
 	return result;
 }
 
 /* projects a point onto the screen: the window manager's depth moves it away
    from the eye, and x and y scale about the bounds' centre */
+/* true when a value is too close to zero to divide by */
+static __forceinline bool real_is_tiny(real value)
+{
+	return (real)fabs(value) < 0.0001f;
+}
+
 // @retail 0x2360c3
-void function_2360c3(short_rectangle2d const *bounds, point3f *point)
+void function_2360c3(point3f *point, short_rectangle2d const *bounds)
 {
 	real half_width = (real)(bounds->right - bounds->left) * 0.5f;
 	real half_height = (real)(bounds->bottom - bounds->top) * 0.5f;
 	real depth = g_54d598.color14.green;
 	real scale;
 
-	if (fabsf(g_54d598.color14.green) < 0.0001f)
+	if (real_is_tiny(g_54d598.color14.green))
 	{
 		depth = 1.0f;
 	}
@@ -257,8 +263,8 @@ s_float_rect *function_23618e(s_float_rect *rect, real depth, short_rectangle2d 
 	p1.x = rect->x1;
 	p1.y = rect->y1;
 	p1.z = depth;
-	function_2360c3(bounds, &p0);
-	function_2360c3(bounds, &p1);
+	function_2360c3(&p0, bounds);
+	function_2360c3(&p1, bounds);
 	rect->x0 = p0.x;
 	rect->y0 = p0.y;
 	rect->x1 = p1.x;
@@ -286,12 +292,12 @@ void function_2363d4(short_rectangle2d const *bounds, short *x, short *y)
 			if (left == 0)
 			{
 				*x = 20;
-				goto negative_y;
+				*y = -16;
 			}
 			else
 			{
 				*x = -20;
-				goto negative_y;
+				*y = -16;
 			}
 		}
 		else
@@ -299,40 +305,33 @@ void function_2363d4(short_rectangle2d const *bounds, short *x, short *y)
 			if (left == 0)
 			{
 				*x = 20;
-				goto positive_y;
+				*y = 16;
 			}
 			else
 			{
 				*x = -20;
-				goto positive_y;
+				*y = 16;
 			}
+		}
+	}
+	else if (height == 240)
+	{
+		if (top == 0)
+		{
+			*x = 0;
+			*y = -16;
+		}
+		else
+		{
+			*x = 0;
+			*y = 16;
 		}
 	}
 	else
 	{
 		*x = 0;
-		if (height == 240)
-		{
-			if (top == 0)
-			{
-				goto negative_y;
-			}
-			else
-			{
-				goto positive_y;
-			}
-		}
-		else
-		{
-			*y = 0;
-		}
+		*y = 0;
 	}
-	return;
-negative_y:
-	*y = -16;
-	return;
-positive_y:
-	*y = 16;
 }
 
 /* a machine address */
@@ -422,9 +421,6 @@ void function_18e790(s_game_options const *options);
 #ifdef H2_NATIVE_PORT
 extern "C" void h2_native_campaign_options_ready(s_game_options const *options);
 #endif
-extern long g_54e7c0;
-extern long g_54e7c4;
-extern long g_54e7c8;
 
 /* starts the chosen map with the signed in local players */
 // @retail 0x23643f
@@ -512,7 +508,7 @@ struct s_dialog_globals_view
 void function_23661f(s_dialog_definition *definition, long dialog_id)
 {
 	bool found = false;
-	s_dialog_globals_view *globals = (s_dialog_globals_view *)function_148350();
+	s_dialog_globals_view *globals = (s_dialog_globals_view *)ui_definition_get();
 
 	memset(definition, 0, sizeof(*definition));
 	definition->dialog_id = dialog_id;
@@ -616,16 +612,16 @@ void function_235d69(short_rectangle2d const *rectangle, real depth,
     d.x = (real)rectangle->right;
     d.y = (real)rectangle->bottom;
     d.z = depth;
-    function_2360c3(screen, &a);
-    function_2360c3(screen, &b);
-    function_2360c3(screen, &c);
-    function_2360c3(screen, &d);
+    function_2360c3(&a, screen);
+    function_2360c3(&b, screen);
+    function_2360c3(&c, screen);
+    function_2360c3(&d, screen);
     s_1ed70_point points[5];
     points[0].x = (short)a.x; points[0].y = (short)a.y;
     points[1].x = (short)c.x; points[1].y = (short)c.y;
     points[2].x = (short)d.x; points[2].y = (short)d.y;
     points[3].x = (short)b.x; points[3].y = (short)b.y;
-    points[4] = points[0];
+    points[4].x = (short)a.x; points[4].y = (short)a.y;
     function_1eb00();
     function_1ed70(color, points, 5);
     function_1ee50();
@@ -662,18 +658,16 @@ struct s_interface_draw_request
 void __stdcall function_52040(void const *request, void const *vertices);
 
 /* Draws a textured rectangle through the shared rendering request. */
+// score 8 (was 8): retail loads x0 first and stores the first corner's x
+// before its y, ours stores the y first; every other order scores worse.
 // @retail 0x23675a
 void function_23675a(s_bitmap_view *bitmap, s_texture_rect const *texture, dword color, short mode, s_float_rect const *bounds)
 {
-	(void)&bitmap;
-	(void)&texture;
-	(void)&color;
-	(void)&mode;
 	point2f corners[4];
+	corners[0].y = bounds->y0;
+	corners[0].x = bounds->x0;
 	real height = bounds->y1 - bounds->y0;
 	real width = bounds->x1 - bounds->x0;
-	corners[0].x = bounds->x0;
-	corners[0].y = bounds->y0;
 	corners[1].x = bounds->x0 + width;
 	corners[1].y = bounds->y0;
 	corners[2].x = bounds->x0 + width;
@@ -712,10 +706,6 @@ void function_23675a(s_bitmap_view *bitmap, s_texture_rect const *texture, dword
 // @retail 0x235e5e
 void function_235e5e(s_sprite_element *element, s_float_rect *from, s_float_rect *to, dword color, long clamp, long mode)
 {
-	(void)&to;
-	(void)&color;
-	(void)&clamp;
-	(void)&mode;
 	real width = element->width;
 	real height = element->height;
 	real draw_width = from->x1 - from->x0;
@@ -727,17 +717,19 @@ void function_235e5e(s_sprite_element *element, s_float_rect *from, s_float_rect
 	texture.bottom = draw_height / (1.0f > height ? 1.0f : height);
 	if ((byte)clamp)
 	{
-		if (*(volatile real *)&texture.right > 1.0f)
+		if (texture.right > 1.0f)
 			texture.right = 1.0f;
 		if (texture.bottom > 1.0f)
 			texture.bottom = 1.0f;
 	}
 	if (((byte *)element)[0xe] & 0x10)
 	{
-		texture.right = width * *(volatile real *)&texture.right;
-		texture.left = width * texture.left;
-		texture.top = height * texture.top;
-		texture.bottom = height * texture.bottom;
+		real scale_width = element->width;
+		real scale_height = element->height;
+		texture.left = scale_width * texture.left;
+		texture.right = scale_width * texture.right;
+		texture.top = scale_height * texture.top;
+		texture.bottom = scale_height * texture.bottom;
 	}
 	function_23675a((s_bitmap_view *)element, &texture, color, (short)mode, to);
 }

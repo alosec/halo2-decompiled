@@ -15,8 +15,7 @@ void function_1c9c00(long arg_0, long arg_1)
   byte *local_0 = (byte *)function_badc0(arg_0, 3);
   if (local_0)
   {
-   long local_1 = *(long *)(local_0 + 0x248);
-   if (local_1 == NONE) local_1 = arg_0;
+   long local_1 = *(long *)(local_0 + 0x248) == NONE ? arg_0 : *(long *)(local_0 + 0x248);
    if (local_1 != NONE)
    {
     byte *local_2 = (byte *)havok_object_get(local_1);

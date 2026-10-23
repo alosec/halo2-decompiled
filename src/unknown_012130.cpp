@@ -4,7 +4,7 @@
 #include "unknown_11c920.h"
 #include <string.h>
 
-/* the build version (unknown_123c20.cpp) */
+/* the build version (game_state_lifecycle.cpp) */
 extern char g_450698[0x20];
 
 struct s_compatible_version

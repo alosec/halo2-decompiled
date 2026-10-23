@@ -1,6 +1,6 @@
 /* UNKNOWN_1E1F20.H: the weapons of a unit and of an actor's character
    (outside functions lane I's firing position evaluators call:
-   unknown_0e5280.cpp, unknown_1e1f20.cpp, unknown_1e5240.cpp) */
+   unknown_0e5280.cpp, unknown_1e1f20.cpp, character_tag_accessors.cpp) */
 
 #ifndef UNKNOWN_1E1F20_H
 #define UNKNOWN_1E1F20_H
@@ -68,7 +68,7 @@ struct s_character_weapon
 };
 
 long function_e5280(long unit_index);
-/* lane M's definitions (unknown_1e1f20.cpp, unknown_1e5240.cpp; declared
+/* lane M's definitions (unknown_1e1f20.cpp, character_tag_accessors.cpp; declared
    in ai_actor.h too): 0x1e5280 returns an s_character_weapon */
 long function_1e1f20(long actor_index);
 void *function_1e5280(long actor_index, long key);

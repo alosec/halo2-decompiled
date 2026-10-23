@@ -107,8 +107,9 @@ void function_b5920(long identifier)
 	{
 		s_world_pool *pool = &world->data->pool;
 		long index = identifier & 0x3ff;
-		byte flags = *(byte *)&pool->state->entries[index];
+		s_world_state *saved_state = pool->state;
 		s_world_slot *slot = &pool->slots[index];
+		byte flags = *(byte *)&saved_state->entries[index];
 		*((byte *)slot + 6) = 0;
 		*(long *)((byte *)slot + 8) = NONE;
 		if (flags & 4)
@@ -193,35 +194,36 @@ void function_b7360(long object_index)
 	}
 }
 
+PRIVATE __forceinline point3f *transform_parent_point(transform4x3f const *matrix, point3f const *point, point3f *result)
+{
+    real x = point->x;
+    real y = point->y;
+    real z = point->z;
+    if (matrix->scale != 1.0f)
+    {
+        x = matrix->scale * x;
+        y = matrix->scale * y;
+        z = matrix->scale * z;
+    }
+    result->x = matrix->rotation.up.i * z + matrix->rotation.left.i * y + matrix->rotation.forward.i * x + matrix->position.x;
+    result->y = matrix->rotation.up.j * z + matrix->rotation.left.j * y + matrix->rotation.forward.j * x + matrix->position.y;
+    result->z = matrix->rotation.up.k * z + matrix->rotation.left.k * y + matrix->rotation.forward.k * x + matrix->position.z;
+    return result;
+}
+
 // @retail 0xb9dd0
 point3f *function_b9dd0(long object_index, point3f *result)
 {
-	s_object_header *headers = (s_object_header *)g_4e0300->data;
-	s_object *object = headers[object_index & 0xffff].object;
-
-	if (object->parent_index == NONE)
-	{
-		*result = object->position;
-		return result;
-	}
-
-	real x = object->position.x;
-	real y = object->position.y;
-	real z = object->position.z;
-	s_object *parent = headers[object->parent_index & 0xffff].object;
-	transform4x3f *matrix = (transform4x3f *)((byte *)parent + parent->nodes_offset + object->parent_node * 0x34);
-
-	if (matrix->scale != 1.0f)
-	{
-		x *= matrix->scale;
-		y *= matrix->scale;
-		z *= matrix->scale;
-	}
-
-	result->x = matrix->rotation.up.i * z + matrix->rotation.left.i * y + matrix->rotation.forward.i * x + matrix->position.x;
-	result->y = matrix->rotation.up.j * z + matrix->rotation.left.j * y + matrix->rotation.forward.j * x + matrix->position.y;
-	result->z = matrix->rotation.up.k * z + matrix->rotation.left.k * y + matrix->rotation.forward.k * x + matrix->position.z;
-	return result;
+    s_object_header *headers = (s_object_header *)g_4e0300->data;
+    s_object *object = headers[object_index & 0xffff].object;
+    if (object->parent_index == NONE)
+    {
+        *result = object->position;
+        return result;
+    }
+    s_object *parent = headers[object->parent_index & 0xffff].object;
+    transform4x3f *matrix = (transform4x3f *)((byte *)parent + parent->nodes_offset) + object->parent_node;
+    return transform_parent_point(matrix, &object->position, result);
 }
 
 
@@ -246,24 +248,30 @@ long function_b5990(long tag_index, bool flag)
     switch (definition->kind)
     {
     case 0: result = 9; break;
+    case 2:
+        if (flag) result = 14;
+        break;
     case 1: result = flag ? 12 : 15; break;
-    case 2: if (flag) result = 14; break;
     case 3: result = 10; break;
     case 4: result = 10; break;
     case 5: result = 13; break;
+    case 7: result = 16; break;
+    case 8: result = 16; break;
     case 6:
         if (definition->model_index != NONE)
         {
             s_entity_model_ab *model = (s_entity_model_ab *)g_4e3b44[definition->model_index & 0xffff].bytes;
             if (model->count > 0 && (*(long *)(model->entries + 0xbc) > 0 || *(long *)(model->entries + 0xe0) > 0))
-                result = 11;
+                goto model_kind;
         }
         break;
-    case 7: result = 16; break;
-    case 8: result = 16; break;
+
     case 9: break;
     case 10: break;
-    case 11: result = 11; break;
+    case 11:
+model_kind:
+        result = 11;
+        break;
     }
     return result;
 }
@@ -275,6 +283,10 @@ long simulation_watcher_find_machine(s_simulation_world_owner const *watcher, s_
 void function_8b4d0(s_event_distribution *distribution, long type, long entity_count,
     long const *entities, dword machine_mask, long size, void const *data, long timeout);
 
+// score 92 (was 92): retail passes the first parameter in EAX with six stack
+// arguments and returns with ret 0x18, but the callers in
+// src/unknown_0a7c50.cpp, src/unknown_0a7d50.cpp and src/unknown_0b8ca0.cpp
+// declare this __stdcall with seven stack arguments.
 // @retail 0xb5a70
 void __stdcall function_b5a70(long player_index, long type, long count, long object_indices,
     long size, void const *data, long timeout)
@@ -290,12 +302,13 @@ void __stdcall function_b5a70(long player_index, long type, long count, long obj
     if (state == 4 || state == 5)
     {
         s_event_distribution *distribution = (s_event_distribution *)((byte *)world->data + 0xa0ac);
-        for (long i = 0; i < *count_reference; i++)
+        long *output = entities;
+        for (long i = 0; i < *count_reference; i++, ++output)
         {
             if (state != 3 && state != 5)
-                entities[i] = function_a5930(((long const *)*object_indices_reference)[i]);
+                *output = function_a5930(((long const *)*object_indices_reference)[i]);
             else
-                entities[i] = function_a5980(((long const *)*object_indices_reference)[i]);
+                *output = function_a5980(((long const *)*object_indices_reference)[i]);
         }
         if (*count_reference <= 0 || entities[0] != NONE)
         {
@@ -312,45 +325,52 @@ void __stdcall function_b5a70(long player_index, long type, long count, long obj
                         mask = ~(1 << index);
                 }
             }
-            function_8b4d0(distribution, type, *count_reference, *count_reference > 0 ? entities : 0, mask, size, data, timeout);
+            long const *entity_list = 0;
+            if (*count_reference > 0) entity_list = entities;
+            function_8b4d0(distribution, type, *count_reference, entity_list, mask, size, data, timeout);
         }
     }
 }
 
+// score 79 (was 79): retail passes the first parameter in EAX with six stack
+// arguments and returns with ret 0x18, but the callers in
+// src/unknown_0a7c50.cpp declare this __stdcall with seven stack arguments.
 // @retail 0xb5ba0
 void __stdcall function_b5ba0(long player_index, long type, long count, long object_indices,
     long size, void const *data, long timeout)
 {
-    // Preserve NONE while reducing valid handles to their player slots.
-    player_index = player_index == NONE ? NONE : (player_index & 0xffff);
-    // Keep the count and object-list inputs in their retail stack slots.
-    long const *count_reference = &count;
-    long const *object_indices_reference = &object_indices;
+    bool has_player = player_index != NONE;
+    long player_slot = player_index & 0xffff;
     long entities[2];
     s_world *world = (s_world *)g_4cf77c;
     long state = world->state;
     if (state == 4 || state == 5)
     {
         s_event_distribution *distribution = (s_event_distribution *)((byte *)world->data + 0xa0ac);
-        for (long i = 0; i < *count_reference; i++)
+        long i = 0;
+        if (count > 0)
         {
-            if (state != 3 && state != 5)
-                entities[i] = function_a5930(((long const *)*object_indices_reference)[i]);
-            else
-                entities[i] = function_a5980(((long const *)*object_indices_reference)[i]);
-        }
-        if (*count_reference <= 0 || entities[0] != NONE)
-        {
-            if (state != 3 && state != 5 && player_index != NONE)
+            do
             {
-                byte *player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+                if (state != 3 && state != 5)
+                    entities[i] = function_a5930(((long const *)object_indices)[i]);
+                else
+                    entities[i] = function_a5980(((long const *)object_indices)[i]);
+                i++;
+            } while (i < count);
+        }
+        if (count <= 0 || entities[0] != NONE)
+        {
+            if (state != 3 && state != 5 && has_player)
+            {
+                byte *player = g_4e8c24->data + player_slot * 0x21c;
                 short machine = *(short *)(player + 0x1a);
                 if (machine != NONE)
                 {
                     s_machine_address const *address = (s_machine_address const *)((byte *)g_4e8c20 + 0x30) + machine;
                     long index = simulation_watcher_find_machine(*(s_simulation_world_owner **)g_4cf77c, address);
                     if (index != NONE)
-                        function_8b4d0(distribution, type, *count_reference, *count_reference > 0 ? entities : 0,
+                        function_8b4d0(distribution, type, count, count > 0 ? entities : 0,
                             1 << index, size, data, timeout);
                 }
             }

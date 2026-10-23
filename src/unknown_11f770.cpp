@@ -7,24 +7,29 @@ long function_11f9a0(box3f const *rectangle,
 
 typedef point3f rectangle3d_edge[2];
 
+PRIVATE __forceinline void function_11f771(box3f *arg_0, point3f const *arg_1)
+{
+	if (arg_0->x0 > arg_1->x)
+		arg_0->x0 = arg_1->x;
+	if (arg_1->x > arg_0->x1)
+		arg_0->x1 = arg_1->x;
+	if (arg_0->y0 > arg_1->y)
+		arg_0->y0 = arg_1->y;
+	if (arg_1->y > arg_0->y1)
+		arg_0->y1 = arg_1->y;
+	if (arg_0->z0 > arg_1->z)
+		arg_0->z0 = arg_1->z;
+	if (arg_1->z > arg_0->z1)
+		arg_0->z1 = arg_1->z;
+}
+
 // @retail 0x11f770
 box3f *function_11f770(box3f *rectangle,
 	long point_count, point3f const points[])
 {
 	for (long i = 0; i < point_count; i++)
 	{
-		if (rectangle->x0 > points[i].x)
-			rectangle->x0 = points[i].x;
-		if (points[i].x > rectangle->x1)
-			rectangle->x1 = points[i].x;
-		if (rectangle->y0 > points[i].y)
-			rectangle->y0 = points[i].y;
-		if (points[i].y > rectangle->y1)
-			rectangle->y1 = points[i].y;
-		if (rectangle->z0 > points[i].z)
-			rectangle->z0 = points[i].z;
-		if (points[i].z > rectangle->z1)
-			rectangle->z1 = points[i].z;
+		function_11f771(rectangle, &points[i]);
 	}
 	return rectangle;
 }

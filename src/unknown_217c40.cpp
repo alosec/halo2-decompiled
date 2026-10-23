@@ -51,7 +51,11 @@ PRIVATE real const g_4570a0[4] =
 
 PRIVATE __forceinline real function_217c41(real arg_0)
 {
-    return arg_0 < -1.0f ? -1.0f : arg_0 > 1.0f ? 1.0f : arg_0;
+    if (arg_0 < -1.0f)
+        arg_0 = -1.0f;
+    if (arg_0 > 1.0f)
+        arg_0 = 1.0f;
+    return arg_0;
 }
 
 PRIVATE __forceinline void function_217c42(real *arg_0, real *arg_1, real arg_2, double arg_3, real arg_4)
@@ -90,7 +94,14 @@ PRIVATE __forceinline void function_217c42(real *arg_0, real *arg_1, real arg_2,
     *arg_1 = function_217c41(local_1);
 }
 
-// @retail 0x217c40
+/* standard marker before the body matches (frame alignment): retail's
+   prologue self-aligns its frame (`push ebp; mov ebp, esp; and esp, -8`),
+   takes no arguments and returns with a bare `ret`. Our build self-aligns
+   such a function only when its address escapes (a scan of the 170
+   self-aligning functions showed this). Retail holds no reference to its
+   address, and its caller 0x12b450 is LTCG code. With the marker 0x12b450 and
+   0x12b690 match; without it they don't. The body itself doesn't match yet. */
+// @retail 0x217c40 standard
 void function_217c40(void)
 {
     for (long local_0 = 0; local_0 != NONE; )
@@ -100,26 +111,24 @@ void function_217c40(void)
             local_1 = g_4e61b9 ? &g_4e630c : &g_4e61dc[(short)local_0];
         if (local_1)
         {
-            real local_2 = (real)*(short *)((byte *)local_1 + 0x40);
+            s_gamepad_preferences *local_20 = &((s_gamepad_preferences *)g_51ea18)[local_0];
+            s_217c40 *local_21 = &((s_217c40 *)(g_51ea18 + 0x70))[local_0];
             real local_3 = (real)*(short *)((byte *)local_1 + 0x42);
+            real local_2 = (real)*(short *)((byte *)local_1 + 0x40);
             double local_4 = atan2(local_3, local_2);
-            real local_5 = (real)local_4;
             real local_6 = (real)fabs(sin(local_4));
             real local_7 = (real)fabs(cos(local_4));
             real local_8 = 1.0f / (local_6 > local_7 ? local_6 : local_7);
             real local_9 = function_217c41(local_2 * local_8 * 0.000030518509447574615f);
             real local_10 = function_217c41(local_3 * local_8 * 0.000030518509447574615f);
-            real local_11 = (real)*(short *)((byte *)local_1 + 0x44);
             real local_12 = (real)*(short *)((byte *)local_1 + 0x46);
+            real local_11 = (real)*(short *)((byte *)local_1 + 0x44);
             double local_13 = atan2(local_12, local_11);
-            real local_14 = (real)local_13;
             real local_15 = (real)fabs(sin(local_13));
             real local_16 = (real)fabs(cos(local_13));
             real local_17 = 1.0f / (local_15 > local_16 ? local_15 : local_16);
             real local_18 = function_217c41(local_11 * local_17 * 0.000030518509447574615f);
             real local_19 = function_217c41(local_12 * local_17 * 0.000030518509447574615f);
-            s_gamepad_preferences *local_20 = &((s_gamepad_preferences *)g_51ea18)[local_0];
-            s_217c40 *local_21 = &((s_217c40 *)(g_51ea18 + 0x70))[local_0];
             for (long local_22 = 0; local_22 < 16; local_22++)
             {
                 long local_23 = (byte)local_20->button_map[local_22];
@@ -156,8 +165,8 @@ void function_217c40(void)
             short local_27 = local_20->unknown18;
             if (local_27 == 2 || local_27 == 3)
             {
-                function_217c42(&local_9, &local_10, local_5, local_4, 0.6108652353286743f);
-                function_217c42(&local_18, &local_19, local_14, local_13, 0.1745329201221466f);
+                function_217c42(&local_9, &local_10, (real)local_4, local_4, 0.6108652353286743f);
+                function_217c42(&local_18, &local_19, (real)local_13, local_13, 0.1745329201221466f);
             }
             bool local_28 = local_20->unknown1a;
             if (!local_28 && local_20->unknown1b)

@@ -1,11 +1,15 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#include "unknown_0bad50.h"
 #include "object_iterator.h"
 #include "unknown_16d180.h"
 #include <string.h>
 
 // @flags /O2 /Gr
+#include "object_masks_storage.h"
+#include "partition_colliding_storage.h"
+#include "partition_noncolliding_storage.h"
 
 struct s_object_blocks_ab
 {
@@ -30,13 +34,17 @@ void __stdcall function_ba6f0(long object_index, long region_index, long state, 
 // @retail 0xbf890
 void function_bf890(long object_index, byte const *states)
 {
-	byte const *const *states_reference = &states;
-	s_object_blocks_ab *object = ((s_object_blocks_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
-	long count = object->regions_size / 10;
-	byte const *values = *states_reference;
-	for (long i = 0; i < count; i++)
+	short regions_size;
+	byte *data = g_4e0300->data;
+	s_object_blocks_ab volatile *object = ((s_object_blocks_header_ab *)data)[(long)object_index & 0xffff].object;
+	regions_size = object->regions_size;
+	byte const *values;
+	long count = regions_size / 10;
+	values = *&states;
+	for (long i = 0; count > i; ++i)
 	{
-		long state = values[i];
+		long state;
+		state = values[i];
 		function_ba6f0(object_index, i, state, false);
 	}
 }
@@ -77,7 +85,7 @@ struct s_region_change_ab
 };
 
 void function_17b1d0(long object_index);
-void function_1c54b0(long object_index, char const *variants);
+void function_1c54b0(char const *variants, long object_index);
 void function_1c5710(long object_index);
 
 // @retail 0xba410
@@ -90,8 +98,8 @@ void __stdcall function_ba410(long object_index, long region_name, long arg_dbe8
     if (definition->model_index != NONE)
     {
         long region_index = function_16d1d0(definition->model_index, (string_handle)region_name);
-        long count = object->regions_size / 10;
         char *regions = (char *)object + object->regions_offset;
+        long count = object->regions_size / 10;
         memcpy(previous, regions, count);
         if (((byte *)header)[3] == 6 && *(short *)((byte *)object + 0x1a) != NONE &&
             !(((byte *)object)[0x12c] & 2))
@@ -105,15 +113,14 @@ void __stdcall function_ba410(long object_index, long region_name, long arg_dbe8
                 {
                     regions[i] = (char)variant;
                     s_region_change_ab *change = (s_region_change_ab *)(regions + count * 2) + i;
-                    change->variant = 0xff;
-                    change->state = 0;
+                    *(word *)change = 0xff;
                     change->flags = 0;
                     change->stamp = NONE;
                 }
             }
         }
         function_17b1d0(object_index);
-        function_1c54b0(object_index, previous);
+        function_1c54b0(previous, object_index);
     }
 }
 
@@ -140,7 +147,7 @@ void __stdcall function_ba6f0(long object_index, long region_index, long state, 
         object_change_region_permutations(object_index, definition->model_index, object->variant, region_index,
             state, force, NONE, 0, regions, (s_region_permutation_choice *)changes);
         function_17b1d0(object_index);
-        function_1c54b0(object_index, previous);
+        function_1c54b0(previous, object_index);
         function_b7360(object_index);
     }
 }
@@ -171,31 +178,43 @@ void function_ba690(long object_index, byte **states, long *state_count, long *a
 		*b = (long)(regions + 2 * *state_count);
 }
 
-struct s_object
-{
-	byte unknown00[4];
-	dword : 26;
-	dword flag26 : 1;
-	dword : 5;
-	byte unknown08[0xc];
-	long parent_index;
-	byte unknown18[0xc0 - 0x18];
-    word flags_c0;
-    byte unknownc2[0x124 - 0xc2];
-	short markers_size;
-	short markers_offset;
-};
+void render_model_choose_permutations(long render_model_index, long variant_index,
+    char *permutation_indices, s_region_permutation_choice *region_choices, dword fixed_region_mask);
 
-struct s_object_header
+// @retail 0xba590
+void __stdcall function_ba590(long object_index, dword fixed_region_mask)
 {
-	short identifier;
-	byte flags;
-	byte type;
-	byte unknown04[4];
-	s_object *object;
-};
+    byte *states;
+    long count;
+    long saved_states;
+    long choices;
+    char previous[16];
+    s_object_blocks_ab *object = object_blocks_get_ab(object_index);
+    s_object_variant_definition_ab *definition = (s_object_variant_definition_ab *)g_4e3b44[object->tag_index & 0xffff].bytes;
+    function_ba690(object_index, &states, &count, &saved_states, &choices);
+    memcpy(previous, states, count);
+    if (definition->model_index != NONE)
+        render_model_choose_permutations(definition->model_index, object->variant,
+            (char *)states, (s_region_permutation_choice *)choices, fixed_region_mask);
+    else
+    {
+        for (long i = 0; i < count; ++i)
+        {
+            states[i] = 0;
+            s_region_change_ab *choice = &((s_region_change_ab *)choices)[i];
+            choice->variant = 0xff;
+            choice->state = 0;
+            choice->flags = 0;
+        }
+    }
+    memcpy((void *)saved_states, states, count);
+    function_17b1d0(object_index);
+    function_1c54b0(previous, object_index);
+}
 
 #define OBJECT_HEADER(index) ((s_object_header *)(g_4e0300->data + g_4e0300->size * (index)))
+
+__declspec(noinline) bool function_bad50(long object_index, long index, point3f *out);
 
 // @retail 0xbad50
 bool function_bad50(long object_index, long index, point3f *out)
@@ -294,6 +313,8 @@ s_object *function_baeb0(s_type_f1af8e *iterator)
 	return result;
 }
 
+__declspec(noinline) long function_baf40(long object_index);
+
 // @retail 0xbaf40
 long function_baf40(long object_index)
 {
@@ -375,13 +396,6 @@ bool function_bacc0(long object_index, long index, point3f const *point)
 #ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
 #endif
-extern void *g_4de2e0;
-extern void *g_4de2e4;
-extern void *g_4de2d4;
-extern void *g_4de2d8;
-extern bool g_4de2f8;
-extern long g_4de2fc;
-extern long g_4de300[0x800];
 
 struct s_cluster_link_ab
 {
@@ -395,20 +409,24 @@ static __forceinline long cluster_link_next_ab(s_record_pool *array, long *next)
     long result;
     if (*next != NONE)
     {
-        s_cluster_link_ab *link = (s_cluster_link_ab *)(array->data + (*next & 0xffff) * array->size);
-        *next = link->next;
-        if (*next != NONE)
-        {
+        long size = array->size;
+        byte *data = array->data;
+        s_cluster_link_ab *link = (s_cluster_link_ab *)(data + (*next & 0xffff) * size);
+        long following = link->next;
+
+        if (following != NONE)
 #ifdef H2_NATIVE_PORT
-            __builtin_prefetch(array->data + (*next & 0xffff) * array->size, 0, 3);
+            __builtin_prefetch(data + (following & 0xffff) * size, 0, 3);
 #else
-            _mm_prefetch((char const *)(array->data + (*next & 0xffff) * array->size), _MM_HINT_T0);
+            _mm_prefetch((char const *)(data + (following & 0xffff) * size), _MM_HINT_T0);
 #endif
-        }
+        *next = following;
         result = link->object_index;
     }
     else
+    {
         result = NONE;
+    }
     return result;
 }
 
@@ -420,201 +438,87 @@ short function_bb430(long mask, short cluster_count, short const *clusters, shor
         mask = NONE;
     ++g_4de2fc;
     g_4de2f8 = true;
-    for (short i = 0; i < cluster_count; ++i)
+    for (short i = 0; i < cluster_count; i++)
     {
         short cluster = clusters[i];
         long next;
         long object;
+
         if (mask & 1)
         {
             next = ((long *)g_4de2e0)[cluster];
-            while ((object = cluster_link_next_ab((s_record_pool *)g_4de2e4, &next)) != NONE)
+            object = cluster_link_next_ab((s_record_pool *)g_4de2e4, &next);
+            while (object != NONE)
             {
-                if (g_4de300[object & 0xffff] != g_4de2fc)
+                long index = object & 0xffff;
+                if (g_4de300[index] != g_4de2fc)
                 {
-                    g_4de300[object & 0xffff] = g_4de2fc;
+                    g_4de300[index] = g_4de2fc;
                     if (count >= maximum)
-                        goto done;
+                    {
+                        g_4de2f8 = false;
+                        return count;
+                    }
                     objects[count++] = object;
                 }
+                object = cluster_link_next_ab((s_record_pool *)g_4de2e4, &next);
             }
         }
         if (mask & 2)
         {
             next = ((long *)g_4de2d4)[cluster];
-            while ((object = cluster_link_next_ab((s_record_pool *)g_4de2d8, &next)) != NONE)
+            object = cluster_link_next_ab((s_record_pool *)g_4de2d8, &next);
+            while (object != NONE)
             {
-                if (g_4de300[object & 0xffff] != g_4de2fc)
+                long index = object & 0xffff;
+                if (g_4de300[index] != g_4de2fc)
                 {
-                    g_4de300[object & 0xffff] = g_4de2fc;
+                    g_4de300[index] = g_4de2fc;
                     if (count >= maximum)
-                        goto done;
+                    {
+                        g_4de2f8 = false;
+                        return count;
+                    }
                     objects[count++] = object;
                 }
+                object = cluster_link_next_ab((s_record_pool *)g_4de2d8, &next);
             }
         }
     }
-done:
     g_4de2f8 = false;
     return count;
 }
 
-struct s_tag_data
-{
-    long size;
-    byte *address;
-};
-struct s_object_function_ab
-{
-    dword flags;
-    long input_name;
-    long output_name;
-    long enable_name;
-    real threshold;
-    s_tag_data curve;
-    long scale_name;
-};
 struct s_object_functions_definition_ab
 {
     byte unknown00[0x64];
     long count;
     s_object_function_ab *functions;
 };
-bool function_108d90(long object_index, long name, real *value, bool *enabled);
+bool object_dispatch_query_function_value(long object_index, long name, real *value, bool *enabled);
 bool function_10aac0(long object_index, long name, real *value, long *index);
 real function_13bb90(s_tag_data const *function, real input, real range);
 bool __stdcall function_bab40(long object_index, long name, real *value);
 
-#pragma inline_depth(0)
-// @retail 0xba8c0
-bool function_ba8c0(s_object_function_ab const *function, long object_index, real *out)
-{
-    bool implicit_enable = !(bool)((function->flags >> 1) & 1);
-    bool periodic = function->curve.address[0] == 3;
-    bool enabled = false;
-    real value = 0.0f;
-    s_object *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-    if ((bool)(((dword)object->flags_c0 >> 9) & 1))
-    {
-        long index;
-        if (function_10aac0(object_index, function->input_name, out, &index))
-            return true;
-    }
-    function_108d90(object_index, function->input_name, &value, &enabled);
-    if (enabled || implicit_enable || periodic)
-    {
-        if (!periodic)
-        {
-            if (function->flags & 1)
-                value = 1.0f - value;
-            value = function_13bb90(&function->curve, value, 1.0f);
-            if (implicit_enable)
-                enabled = value > 0.0f;
-        }
-        else
-        {
-            real time = g_510c54->game_time * g_510c54->rate;
-            if (function->flags & 8)
-            {
-                dword random = ((dword)object_index * 0x19660d + 0x3c6ef35f) >> 16;
-                time += random * 0.000015259021893143654f;
-            }
-            value *= function_13bb90(&function->curve, time, 1.0f);
-        }
-    }
-    if (function->scale_name)
-    {
-        real scale;
-        bool scale_enabled = function_bab40(object_index, function->scale_name, &scale);
-        value = scale * value;
-        enabled = enabled && scale_enabled;
-    }
-    if (enabled && function->threshold > 0.0f)
-        enabled = value > function->threshold;
-    if (function->flags & 4)
-        enabled = true;
-    if (function->enable_name && enabled)
-    {
-        real ignored = 0.0f;
-        bool gate = false;
-        function_108d90(object_index, function->enable_name, &ignored, &gate);
-        if (!gate)
-        {
-            *out = 0.0f;
-            return false;
-        }
-    }
-    if (enabled)
-        *out = value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value;
-    else
-        *out = 0.0f;
-    return enabled;
-}
-#pragma inline_depth()
+bool function_ba8c0(s_object_function_ab const *function, long object_index, real *out);
 
-
-// @retail 0xbab40
-bool __stdcall function_bab40(long object_index, long name, real *value)
-{
-    *value = 0.0f;
-    bool enabled = false;
-    s_object *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-    if ((bool)(((dword)object->flags_c0 >> 9) & 1))
-    {
-        long index;
-        if (function_10aac0(object_index, name, value, &index))
-            return true;
-    }
-    if (!name || name == 0x030005a6)
-    {
-        *value = 1.0f;
-        return true;
-    }
-    if (name == 0x040005a7)
-    {
-        *value = 0.0f;
-        return false;
-    }
-    if (object_index != NONE && !function_108d90(object_index, name, value, &enabled))
-    {
-        object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-        s_object_functions_definition_ab *definition = (s_object_functions_definition_ab *)g_4e3b44[*(long *)object & 0xffff].bytes;
-        bool found = false;
-        for (long i = 0; i < definition->count; ++i)
-        {
-            s_object_function_ab *function = &definition->functions[i];
-            if (function->output_name == name)
-            {
-                enabled = function_ba8c0(function, object_index, value);
-                found = true;
-            }
-        }
-        if (!found)
-        {
-            if (TEST_FIELD_BIT(object->flag26) && object->parent_index != NONE)
-                return function_bab40(object->parent_index, name, value);
-            *value = 0.0f;
-            return false;
-        }
-    }
-    return enabled;
-}
 
 // @retail 0xba7f0
 void __stdcall function_ba7f0(long object_index, long region_index, long bit_index, long bit_mask)
 {
     char previous[16];
     s_object_blocks_ab *object = ((s_object_blocks_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
-    long model_index = ((s_object_variant_definition_ab *)g_4e3b44[object->tag_index & 0xffff].bytes)->model_index;
+    s_object_variant_definition_ab *definition = (s_object_variant_definition_ab *)g_4e3b44[object->tag_index & 0xffff].bytes;
+    long model_index = *(long volatile *)&definition->model_index;
     if (model_index != NONE)
     {
-        long count = object->regions_size / 10;
         char *regions = (char *)object + object->regions_offset;
+        long count = object->regions_size / 10;
         memcpy(previous, regions, count);
         object_change_region_permutations(object_index, model_index, object->variant, region_index,
             NONE, false, bit_index, (short)bit_mask, regions,
             (s_region_permutation_choice *)(regions + count * 2));
         function_17b1d0(object_index);
-        function_1c54b0(object_index, previous);
+        function_1c54b0(previous, object_index);
     }
 }

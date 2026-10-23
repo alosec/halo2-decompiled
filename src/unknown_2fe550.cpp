@@ -1,127 +1,106 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): casting a segment against a box
+// centred on the origin, clipping it against each face it crosses.
+#include <xmmintrin.h>
 
-// @flags /O2 /Gr
+static __declspec(align(16)) const unsigned long g_4124a0[4] = {0x80000000, 0x80000000, 0x80000000, 0x80000000};
 
-struct s_physics_line_segment
+// the one-byte answer of a cast, returned through a hidden pointer
+struct answer_2fe550
 {
-    float start[4];
-    float end[4];
+	char value;
+
+	answer_2fe550(bool value_) : value((char)value_) {}
 };
-static_assert(sizeof(s_physics_line_segment) == 0x20,
-    "physics line-segment layout");
 
-struct s_physics_line_hit
+struct segment_2fe550
 {
-    float normal[4];
-    dword key;
-    float fraction;
+	__m128 start;
+	__m128 end;
 };
-static_assert(sizeof(s_physics_line_hit) == 0x18,
-    "physics line-hit layout");
 
-class c_physics_box_shape
+// where a cast hit: the surface normal, the part hit and the fraction of the
+// segment travelled
+struct hit_2fe550
 {
-    byte field_4[8];
-    float radius;
-    float extent[4];
+	__m128 normal;
+	long part;
+	float fraction;
+};
+
+class box_2fe550
+{
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void v6();
-    virtual void v7();
-    virtual bool *function_2fe550(bool *accepted,
-        const s_physics_line_segment *segment, s_physics_line_hit *hit);
+	char unknown0[0x10];
+	__m128 half_extents;
+
+	answer_2fe550 function_2fe550(segment_2fe550 const *segment, hit_2fe550 *hit) const;
 };
-static_assert(sizeof(c_physics_box_shape) == 0x20, "box shape layout");
 
+// a segment starting inside the box misses; otherwise the faces are taken
+// first on the positive side, then on the negative side, each one the start
+// lies outside of moving the entry and each other one moving the exit
+// score 73 (was 141): retail walks the three axes by their byte offset, so the
+// offset is the loop's one counter and every access is a plain displacement;
+// ours still derives the axis from the offset and scales it, and our four
+// masks and the frame's slots for the normal and the negated extents sit in
+// other registers and other places than retail's.
 // @retail 0x2fe550
-bool *c_physics_box_shape::function_2fe550(bool *accepted,
-    const s_physics_line_segment *segment, s_physics_line_hit *hit)
+answer_2fe550 box_2fe550::function_2fe550(segment_2fe550 const *segment, hit_2fe550 *hit) const
 {
-    dword start_positive = 0;
-    dword start_negative = 0;
-    dword end_positive = 0;
-    dword end_negative = 0;
-    for (long axis = 0; axis < 3; axis++)
-    {
-        dword bit = 1u << axis;
-        if (extent[axis] <= segment->start[axis])
-            start_positive |= bit;
-        if (segment->start[axis] <= -extent[axis])
-            start_negative |= bit;
-        if (extent[axis] <= segment->end[axis])
-            end_positive |= bit;
-        if (segment->end[axis] <= -extent[axis])
-            end_negative |= bit;
-    }
-
-    if ((start_positive & end_positive) != 0 ||
-        (start_negative & end_negative) != 0 ||
-        (start_positive | start_negative) == 0)
-    {
-        *accepted = false;
-        return accepted;
-    }
-
-    float minimum_fraction = 0.0f;
-    float maximum_fraction = hit->fraction;
-    float normal[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-    for (long side_index = 0; side_index < 2; side_index++)
-    {
-        float side = side_index == 0 ? 1.0f : -1.0f;
-        dword start_mask = side_index == 0 ? start_positive : start_negative;
-        dword active_mask = start_mask |
-            (side_index == 0 ? end_positive : end_negative);
-
-        for (long axis = 2; axis >= 0; axis--)
-        {
-            dword bit = 1u << axis;
-            if ((active_mask & bit) == 0)
-                continue;
-
-            float start_distance = side * segment->start[axis] - extent[axis];
-            float end_distance = side * segment->end[axis] - extent[axis];
-            float fraction = start_distance / (start_distance - end_distance);
-            if (!(fraction == fraction))
-            {
-                *accepted = false;
-                return accepted;
-            }
-            if ((start_mask & bit) != 0)
-            {
-                if (!(fraction >= minimum_fraction))
-                {
-                    *accepted = false;
-                    return accepted;
-                }
-                minimum_fraction = fraction;
-                normal[0] = normal[1] = normal[2] = normal[3] = 0.0f;
-                normal[axis] = side;
-            }
-            else if (maximum_fraction >= fraction)
-            {
-                maximum_fraction = fraction;
-            }
-
-            if (!(maximum_fraction >= minimum_fraction))
-            {
-                *accepted = false;
-                return accepted;
-            }
-        }
-    }
-
-    hit->normal[0] = normal[0];
-    hit->normal[1] = normal[1];
-    hit->normal[2] = normal[2];
-    hit->normal[3] = normal[3];
-    hit->key = 0xffffffff;
-    hit->fraction = minimum_fraction;
-    *accepted = true;
-    return accepted;
+	__m128 const extents = half_extents;
+	__m128 const negative_extents = _mm_xor_ps(extents, *(__m128 const *)g_4124a0);
+	int const start_above = _mm_movemask_ps(_mm_cmple_ps(extents, segment->start)) & 7;
+	int const start_below = _mm_movemask_ps(_mm_cmple_ps(segment->start, negative_extents)) & 7;
+	int const end_above = _mm_movemask_ps(_mm_cmple_ps(extents, segment->end)) & 7;
+	int const end_below = _mm_movemask_ps(_mm_cmple_ps(segment->end, negative_extents)) & 7;
+	if ((start_above & end_above) != 0 || (start_below & end_below) != 0 || (start_below | start_above) == 0)
+	{
+		return answer_2fe550(false);
+	}
+	int const axis_bits[3] = {1, 2, 4};
+	float enter = 0.0f;
+	float leave = hit->fraction;
+	__m128 normal;
+	float side = 1.0f;
+	int crossed = end_above | start_above;
+	int outside = start_above;
+	for (int pass = 1; pass >= 0; pass--)
+	{
+		for (int offset = 8; offset >= 0; offset -= 4)
+		{
+			int const axis = offset >> 2;
+			if ((crossed & axis_bits[axis]) == 0)
+			{
+				continue;
+			}
+			float const start_distance = side * segment->start.m128_f32[axis] + negative_extents.m128_f32[axis];
+			float const end_distance = side * segment->end.m128_f32[axis] + negative_extents.m128_f32[axis];
+			float const fraction = start_distance / (start_distance - end_distance);
+			if ((outside & axis_bits[axis]) != 0)
+			{
+				if (fraction >= enter)
+				{
+					enter = fraction;
+					normal = _mm_setzero_ps();
+					normal.m128_f32[axis] = side;
+				}
+			}
+			else if (fraction <= leave)
+			{
+				leave = fraction;
+			}
+			if (leave < enter)
+			{
+				return answer_2fe550(false);
+			}
+		}
+		side = -1.0f;
+		crossed = end_below | start_below;
+		outside = start_below;
+	}
+	hit->normal = normal;
+	hit->fraction = enter;
+	hit->part = -1;
+	return answer_2fe550(true);
 }

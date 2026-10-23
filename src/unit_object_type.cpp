@@ -325,14 +325,14 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 void function_e69c0(long unit_index, long type);
 void function_114240(long unit_index);
 void function_a94b0(long unit_index);
-void function_a9440(long unit_index, long player_index);
+bool function_a9440(long unit_index, long player_index);
 void function_a7bc0(long unit_index);
 bool function_a9500(long unit_index, long index);
 bool function_101640(long weapon_index);
 bool function_e68c0(long type, long unit_index);
 struct s_effect_owner;
 void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner);
-long function_b7b40(void *data);
+long __stdcall function_b7b40(void *data);
 void function_101980(long weapon_index, short rounds_loaded, short magazine_index, short rounds_total);
 void function_10cdf0(long object_index);
 void function_10ca80(long object_index, long a);
@@ -348,13 +348,13 @@ void function_1520f0(long player_index);
 long __stdcall function_cdeb0(long unit_index, long state_name, long a, long b);
 bool function_100f00(long weapon_index);
 bool function_1e3370(long actor_index, void *unknown);
-void function_10cec0(long unit_index, long weapon_index, long parent_marker_name, long marker_name);
+void function_10cec0(long weapon_index, long unit_index, long parent_marker_name, long marker_name);
 void function_1c9c80(long object_index, long unknown2d0, word unknown2c8, real unknown2cc, long a, bool b);
 bool unit_has_weapon_definition(long unit_index, long definition_index);
 bool __stdcall function_cd0c0(long unit_index, long weapon_index, short mode);
 void function_10cd50(long weapon_index);
 bool unit_action_active(long unit_index, long action_type);
-bool function_10fcd0(long unit_index, long unknown, long state_name, long action_name);
+byte function_10fcd0(long unit_index, long unknown, long state_name, long action_name);
 bool function_100880(long weapon_index, long magazine_index);
 void function_c98a0(point2f const *direction, long unit_index, long type, short value);
 bool function_10f930(long object_index, real time, bool from_end);
@@ -466,8 +466,8 @@ extern const long g_467430[5];
 bool function_10f9b0(long unit_index, long state_name, long action_name, long a, transform4x3f *matrix, bool flag);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 void function_15e050(long object_index, short value);
-void __stdcall function_153d10(short team, long definition_index, void *a, void *b, long c, real d, real e, long f);
-void object_get_damage_owner(long object_index, s_damage_owner *owner);
+void __stdcall function_153d10(long team, long definition_index, void *a, void *b, long c, real d, real e, bool f);
+void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
 void function_107370(long device_index, real value);
 void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
 void function_cafc0(long unit_index, point3f *position);
@@ -479,7 +479,7 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
 	s_location const *location, bool unknown);
 void __stdcall function_b77d0(long object_index, vector3f const *linear_velocity, vector3f const *angular_velocity);
 bool function_b9d20(long object_index);
-void __stdcall function_bef30(long object_index, long a, long b, long c, long d);
+void __stdcall function_bef30(long object_index, long a, long b, long c, bool d);
 real function_30bf0(vector3f *v);
 void __stdcall function_def60(point3f *point, long arg_159e6d_2, short mode, point3f const *origin,
 	vector3f const *forward, real const *offsets);
@@ -501,7 +501,7 @@ void function_10b360(long object_index);
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle);
 void function_10cf80(vector3f const *impulse, long item_index, bool flag);
 point3f *function_b9ef0(long object_index, point3f *result);
-bool __stdcall function_bc1d0(long object_index, point3f *point);
+bool __stdcall function_bc1d0(long object_index, point3f const *point, long ignore_unit_index);
 
 /* the globals of 0x5107e8 (unknown_29f5b0.cpp) */
 struct s_5107e8
@@ -539,7 +539,7 @@ struct s_collision_result_1697c0;
 bool function_16a040(long flags, point3f const *point0, point3f const *point1, long ignore_object_index,
 	long ignore_unit_index, s_collision_result_1697c0 *result);
 void object_get_root_location(long object_index, s_location *location);
-long function_d6c80(s_type_1e6529 *data, long ignore_object_index);
+long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 short *function_1886d0(long object_index, short *material_type);
 struct s_globals_element;
 s_globals_element *function_188690(short index);
@@ -606,7 +606,7 @@ long function_189060(long object_index, short value, real scale, point3f const *
 
 
 void function_d6660(s_type_1e6529 *data, long definition_index);
-void function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index,
+void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index,
 	vector3f const *unknown14);
 
 struct s_sound_label_play
@@ -927,11 +927,11 @@ short function_cd620(long unit_index)
 // @retail 0xcdff0
 short function_cdff0(long unit_index, short grenade_type)
 {
-	if (grenade_type == NONE)
+	if (grenade_type != NONE)
 	{
-		return 0;
+		return UNIT_GET(unit_index)->grenade_counts[grenade_type];
 	}
-	return UNIT_GET(unit_index)->grenade_counts[grenade_type];
+	return 0;
 }
 
 // @retail 0xce020
@@ -1069,7 +1069,7 @@ short __stdcall function_c8ef0(long unit_index, long a, long *object_index, shor
 short function_c5340()
 {
 	real scale = 1.0f;
-	short difficulty;
+	long difficulty;
 
 	if (g_4e6948->state == 1)
 	{
@@ -1079,7 +1079,7 @@ short function_c5340()
 	{
 		difficulty = 1;
 	}
-	switch (difficulty)
+	switch ((short)difficulty)
 	{
 	case 2:
 		scale = 0.75f;
@@ -1510,7 +1510,7 @@ short function_c8960(long unit_index, short value)
 void function_d12b0(long unit_index, long seat_index, bool a, bool b)
 {
 	if (unit_index != NONE && seat_index != NONE &&
-		(*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit_index)))[seat_index].flags >> 15) & 1)
+		TEST_FIELD_BIT((*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit_index)))[seat_index].flags >> 15) & 1))
 	{
 		s_unit_request request;
 
@@ -1527,7 +1527,7 @@ void function_d12b0(long unit_index, long seat_index, bool a, bool b)
 void __stdcall function_d1360(long unit_index, long seat_index, bool a, bool b)
 {
 	if (unit_index != NONE && seat_index != NONE &&
-		(*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit_index)))[seat_index].flags >> 15) & 1)
+		TEST_FIELD_BIT((*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit_index)))[seat_index].flags >> 15) & 1))
 	{
 		s_unit_request request;
 
@@ -1542,7 +1542,7 @@ void __stdcall function_d1360(long unit_index, long seat_index, bool a, bool b)
 /* whether a biped faces along the direction: always while in animation
    0x6000084, else by the sign of its facing's dot product with it */
 // @retail 0xcc010
-bool function_cc010(long object_index, vector3f const *direction)
+bool __stdcall function_cc010(long object_index, vector3f const *direction)
 {
 	s_unit *unit = (s_unit *)function_badc0(object_index, 3);
 	bool result = false;
@@ -1746,7 +1746,7 @@ void __stdcall function_d0870(long weapon_index, long unit_index, bool secondary
 			marker_name = *(long *)(local_67e06b + 0x284);
 		}
 	}
-	function_10cec0(unit_index, weapon_index, parent_marker_name, marker_name);
+	function_10cec0(weapon_index, unit_index, parent_marker_name, marker_name);
 }
 
 /* drops every weapon the unit holds (mode 1: deletes them) */
@@ -2021,8 +2021,12 @@ long __stdcall function_cbd80(long object_index, long *holder_index)
 {
 	s_unit *unit = UNIT_GET(object_index);
 	short index = unit->current_weapon_index;
-	long weapon_index = index != NONE ? unit->weapon_object_indices[index] : NONE;
+	long weapon_index = NONE;
 
+	if (index != NONE)
+	{
+		weapon_index = unit->weapon_object_indices[index];
+	}
 	if (weapon_index != NONE)
 	{
 		if (holder_index)
@@ -2036,7 +2040,7 @@ long __stdcall function_cbd80(long object_index, long *holder_index)
 	{
 		s_unit *child = UNIT_GET(child_index);
 
-		if ((1 << child->type) & 3 && (*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 27) & 1)
+		if ((1 << child->type) & 3 && TEST_FIELD_BIT((*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 27) & 1))
 		{
 			weapon_index = function_cbd80(child_index, holder_index);
 			if (weapon_index != NONE)
@@ -2212,7 +2216,7 @@ long function_cb6d0(long unit_index)
 				s_unit *parent = UNIT_GET(parent_index);
 				s_unit_seat_definition *seat = &UNIT_SEATS(UNIT_DEFINITION_GET(parent))[seat_index];
 
-				if (*(byte *)seat & 1 || (*(dword *)seat >> 3) & 1)
+				if (*(byte *)seat & 1 || TEST_FIELD_BIT((*(dword *)seat >> 3) & 1))
 				{
 					result = parent_index;
 				}
@@ -2221,8 +2225,8 @@ long function_cb6d0(long unit_index)
 				{
 					s_unit *child = (s_unit *)function_badc0(child_index, 3);
 
-					if (child && (*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 27) & 1 &&
-						(child->object_flags >> 26) & 1)
+					if (child && TEST_FIELD_BIT((*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 27) & 1) &&
+						TEST_FIELD_BIT((child->object_flags >> 26) & 1))
 					{
 						return child_index;
 					}
@@ -2321,7 +2325,7 @@ bool __stdcall function_cd6a0(long unit_index, long unknown, long weapon_index)
 			&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit->parent_index)))[unit->parent_seat_index];
 
 		seat_state_name = seat->label;
-		seat_blocks = !((*(dword *)&seat->flags >> 5) & 1);
+		seat_blocks = !(TEST_FIELD_BIT((*(dword *)&seat->flags >> 5) & 1));
 	}
 	else
 	{
@@ -2342,10 +2346,12 @@ bool __stdcall function_cd6a0(long unit_index, long unknown, long weapon_index)
 	}
 	else
 	{
-		result = function_10fcd0(unit_index, unknown, *(long *)(local_67e06b + 0x288),
+		byte available = function_10fcd0(unit_index, unknown, *(long *)(local_67e06b + 0x288),
 			*(long *)(local_67e06b + 0x28c));
+
+		result = *(bool *)&available;
 	}
-	if (unit->unknown13c != NONE && (*(dword *)(local_67e06b + 0x12c) >> 29) & 1)
+	if (unit->unknown13c != NONE && TEST_FIELD_BIT((*(dword *)(local_67e06b + 0x12c) >> 29) & 1))
 	{
 		result = false;
 	}
@@ -2942,7 +2948,7 @@ void function_c6810(long unit_index)
    handler, then the player's controller hears of it), from its second
    hand by request 0x13, else from its slot (0xce920) */
 // @retail 0xce520
-void function_ce520(long unit_index, long weapon_index, bool flag)
+void function_ce520(long weapon_index, long unit_index, bool flag)
 {
 	s_unit *unit = UNIT_GET(unit_index);
 	long slot = NONE;
@@ -3054,7 +3060,7 @@ long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, long u
 		}
 		return 3;
 	}
-	if ((unit->flags_10a >> 2) & 1)
+	if (TEST_FIELD_BIT((unit->flags_10a >> 2) & 1))
 	{
 		return 0;
 	}
@@ -3072,7 +3078,7 @@ long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, long u
 			result = 1;
 		}
 	}
-	if ((unit->flags_134 >> 5) & 1 || (g_4e6948->state == 1 && g_4f55dc[7]) || unit->unknown13c != NONE)
+	if (TEST_FIELD_BIT((unit->flags_134 >> 5) & 1) || (g_4e6948->state == 1 && g_4f55dc[7]) || unit->unknown13c != NONE)
 	{
 		if (result > 1)
 		{
@@ -3098,7 +3104,7 @@ bool __stdcall function_cc460(long object_index)
 	bool result = false;
 
 	if (*(short *)(header + 4) != NONE && (header[2] & 1) && (header[2] & 0x40) &&
-		(root->unknownc0 >> 6) & 1 && root->unknownb4 != NONE)
+		TEST_FIELD_BIT((root->unknownc0 >> 6) & 1) && root->unknownb4 != NONE)
 	{
 		s_havok_component *component = havok_component_get(root->unknownb4);
 		short rigid_body_index = function_0b67a0((s_small_index const *)component);
@@ -3314,7 +3320,7 @@ void __stdcall function_d09c0(long unit_index, long slot_index, long definition_
 	}
 	if (weapon_index != NONE)
 	{
-		function_ce520(unit_index, weapon_index, false);
+		function_ce520(weapon_index, unit_index, false);
 		weapon_index = NONE;
 	}
 	if (definition_index != NONE)
@@ -3399,17 +3405,7 @@ void function_d03e0(long unit_index, long definition_index)
 }
 
 /* what a unit's melee hit: an object, or a surface */
-struct s_unit_melee_hit
-{
-	long object_index;
-	long unknown04;
-	long unknown08;
-	long unknown0c;
-	short material_index;
-	byte unknown12[2];
-	real unknown14;
-	bool unknown18;
-};
+#include "unit_hit.h"
 
 /* applies the unit's melee damage to what it hit (a device of type 7 with
    bit 5 at +0x1cc is triggered first), then ends its state +0x2bc */
@@ -3550,7 +3546,7 @@ void function_cc590(long unit_index)
 		again->object_flags &= ~1;
 		if (function_b9d20(unit_index))
 		{
-			function_bef30(unit_index, 0, 1, 0, 0);
+			function_bef30(unit_index, 0, 1, 0, false);
 		}
 		function_b8b70(unit_index);
 	}
@@ -3627,13 +3623,13 @@ bool function_c5eb0(long unit_index)
 	byte *definition = UNIT_DEFINITION_GET(unit);
 	bool result = false;
 
-	if ((*(dword *)(definition + 0xbc) >> 11) & 1)
+	if (TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 11) & 1))
 	{
 		return false;
 	}
 	function_d0c10(unit_index);
 	function_ce0c0(unit_index);
-	if ((unit->flags_134 >> 26) & 1 && g_4e6948->mode != 4 && unit->parent_index != NONE &&
+	if (TEST_FIELD_BIT((unit->flags_134 >> 26) & 1) && g_4e6948->mode != 4 && unit->parent_index != NONE &&
 		unit->parent_seat_index != NONE)
 	{
 		unit->flags_134 &= ~0x4000000;
@@ -3647,7 +3643,7 @@ bool function_c5eb0(long unit_index)
 		switch (i)
 		{
 		case 0:
-			active = unit->unknown248 != NONE || (unit->flags_134 >> 1) & 1;
+			active = unit->unknown248 != NONE || TEST_FIELD_BIT((unit->flags_134 >> 1) & 1);
 			break;
 		case 1:
 			active = unit->unknown24c != NONE && unit->unknown24c != unit->unknown248;
@@ -3656,7 +3652,7 @@ bool function_c5eb0(long unit_index)
 			active = false;
 			break;
 		}
-		if (!((unit->flags_10a >> 2) & 1) && active)
+		if (!(TEST_FIELD_BIT((unit->flags_10a >> 2) & 1)) && active)
 		{
 			if (unit->unknown25c[i] != 1.0f)
 			{
@@ -3715,7 +3711,7 @@ bool function_cb810(long unit_index, vector3f *vector)
 		return false;
 	}
 	long parent_index = unit->parent_index;
-	if ((*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(parent_index)))[seat_index].flags >> 4) & 1)
+	if (TEST_FIELD_BIT((*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(parent_index)))[seat_index].flags >> 4) & 1))
 	{
 		return false;
 	}
@@ -3763,7 +3759,7 @@ void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_d
 	{
 		knocked_down = function_10f340(unit_index, 0x7000101, 0xd000042) && is_biped && function_e4050(unit_index);
 	}
-	if (*(short *)damage == 3 && is_biped && (*(dword *)(local_98b918_2 + 0x1f0) >> 10) & 1)
+	if (*(short *)damage == 3 && is_biped && TEST_FIELD_BIT((*(dword *)(local_98b918_2 + 0x1f0) >> 10) & 1))
 	{
 		function_e3f00(unit_index);
 	}
@@ -3771,7 +3767,7 @@ void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_d
 	bool ignore = false;
 	bool held = false;
 	bool force = false;
-	if ((data->flags & 0x10) || (damage[4] & 0x10) || (unit->flags_134 >> 19) & 1)
+	if ((data->flags & 0x10) || (damage[4] & 0x10) || TEST_FIELD_BIT((unit->flags_134 >> 19) & 1))
 	{
 		ignore = true;
 	}
@@ -3791,11 +3787,11 @@ void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_d
 		{
 			held = true;
 		}
-		if ((*(dword *)(local_98b918_2 + 0xbc) >> 7) & 1 && !(damage[4] & 4))
+		if (TEST_FIELD_BIT((*(dword *)(local_98b918_2 + 0xbc) >> 7) & 1) && !(damage[4] & 4))
 		{
 			held = true;
 		}
-		if ((unit->flags_134 >> 5) & 1)
+		if (TEST_FIELD_BIT((unit->flags_134 >> 5) & 1))
 		{
 			held = true;
 		}
@@ -3961,7 +3957,7 @@ void function_ce6b0(long unit_index, long name, long object_index, real scale)
 	object->unknown14c = unit_index;
 	function_10cf80(&velocity, object_index, false);
 	point3f point;
-	if (!function_bc1d0(object_index, function_b9ef0(unit_index, &point)))
+	if (!function_bc1d0(object_index, function_b9ef0(unit_index, &point), unit_index))
 	{
 		if (g_4e6948->mode == 4 && UNIT_GET(object_index)->unknown0d4 != NONE)
 		{
@@ -4020,7 +4016,7 @@ void function_c50a0(long unit_index)
 	}
 	if ((byte)unit->unknown148 & 4)
 	{
-		if ((unit->flags_134 >> 29) & 1)
+		if (TEST_FIELD_BIT((unit->flags_134 >> 29) & 1))
 		{
 			function_c5890(unit_index, 4);
 			unit->flags_134 &= ~0x20000000;
@@ -4032,7 +4028,7 @@ void function_c50a0(long unit_index)
 			unit->unknown268 = 4.0f;
 		}
 	}
-	if ((unit->flags_134 >> 29) & 1)
+	if (TEST_FIELD_BIT((unit->flags_134 >> 29) & 1))
 	{
 		if (unit->unknown268 > 0.0f)
 		{
@@ -4042,7 +4038,7 @@ void function_c50a0(long unit_index)
 				unit->unknown268 = 0.0f;
 			}
 		}
-		if (unit->parent_index != NONE || (unit->flags_10a >> 2) & 1 ||
+		if (unit->parent_index != NONE || TEST_FIELD_BIT((unit->flags_10a >> 2) & 1) ||
 			(!g_5107e8->flag0 && unit->unknown268 == 0.0f))
 		{
 			unit->flags_134 &= ~0x20000000;
@@ -4646,7 +4642,7 @@ void function_c8bb0(long unit_index, long vehicle_index, long *object_index, sho
 	short count = 0;
 
 	function_c8a40(vehicle_index, seats, &count, 0x40);
-	if (unit->unknown13c != NONE && (vehicle->flags_134 >> 12) & 1)
+	if (unit->unknown13c != NONE && TEST_FIELD_BIT((vehicle->flags_134 >> 12) & 1))
 	{
 		return;
 	}
@@ -4656,13 +4652,13 @@ void function_c8bb0(long unit_index, long vehicle_index, long *object_index, sho
 		long candidate_index = entry->object_index;
 		s_unit *candidate = UNIT_GET(candidate_index);
 
-		if (unit->unknown13c != NONE && (candidate->flags_134 >> 12) & 1)
+		if (unit->unknown13c != NONE && TEST_FIELD_BIT((candidate->flags_134 >> 12) & 1))
 		{
 			continue;
 		}
 		short seat = entry->seat_index;
 		dword flags = *(dword *)&entry->definition->flags;
-		if (unit->unknown13c == NONE ? (flags >> 17) & 1 : (flags >> 16) & 1)
+		if (unit->unknown13c == NONE ? TEST_FIELD_BIT((flags >> 17) & 1) : TEST_FIELD_BIT((flags >> 16) & 1))
 		{
 			continue;
 		}
@@ -4686,7 +4682,7 @@ void function_c8bb0(long unit_index, long vehicle_index, long *object_index, sho
 		real marker_distance = (real)sqrt(dz * dz + dy * dy + dx * dx);
 		real nearest = entry_distance > marker_distance ? marker_distance : entry_distance;
 
-		if ((flags >> 9) & 1 && candidate->unknown248 == NONE)
+		if (TEST_FIELD_BIT((flags >> 9) & 1) && candidate->unknown248 == NONE)
 		{
 			continue;
 		}
@@ -4717,7 +4713,7 @@ void function_c8bb0(long unit_index, long vehicle_index, long *object_index, sho
 		{
 			continue;
 		}
-		bool driver = (flags >> 2) & 1;
+		bool driver = TEST_FIELD_BIT((flags >> 2) & 1);
 		real scale = *flag && !driver ? 1.5f : 1.0f;
 		if (*seat_index == NONE || rank > *priority || *distance > scale * nearest)
 		{
@@ -4870,7 +4866,7 @@ void function_ce0c0(long unit_index)
 
 	unit->flags_134 &= ~0x4000000;
 	unit->flags_134 &= ~0x2000000;
-	if ((unit->flags_10a >> 2) & 1 && (UNIT_GET(unit_index)->type != 0 || !function_e4050(unit_index)))
+	if (TEST_FIELD_BIT((unit->flags_10a >> 2) & 1) && (UNIT_GET(unit_index)->type != 0 || !function_e4050(unit_index)))
 	{
 		still = true;
 	}
@@ -4923,7 +4919,7 @@ void function_ce0c0(long unit_index)
 	}
 	real keep = 0.7f;
 	real take = 0.3f;
-	if ((unit->flags_134 >> 28) & 1)
+	if (TEST_FIELD_BIT((unit->flags_134 >> 28) & 1))
 	{
 		keep = 0.95f;
 		take = 0.05f;
@@ -5074,7 +5070,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 	s_unit_seat_definition *seat = &UNIT_SEATS(UNIT_DEFINITION_GET(vehicle))[seat_index];
 	s_unit *unit = UNIT_GET(unit_index);
 	dword flags = *(dword *)&seat->flags;
-	bool group = (flags >> 11) & 1;
+	bool group = TEST_FIELD_BIT((flags >> 11) & 1);
 	bool occupied = false;
 	long occupant_index = NONE;
 	bool result = true;
@@ -5087,11 +5083,11 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 	{
 		result = false;
 	}
-	if (unit->unknown13c != NONE && (vehicle->flags_134 >> 12) & 1)
+	if (unit->unknown13c != NONE && TEST_FIELD_BIT((vehicle->flags_134 >> 12) & 1))
 	{
 		result = false;
 	}
-	if (unit->unknown13c == NONE ? (flags >> 17) & 1 : (flags >> 16) & 1)
+	if (unit->unknown13c == NONE ? TEST_FIELD_BIT((flags >> 17) & 1) : TEST_FIELD_BIT((flags >> 16) & 1))
 	{
 		result = false;
 	}
@@ -5134,7 +5130,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 			long weapon_index = holder->weapon_object_indices[index];
 
 			if (weapon_index != NONE &&
-				(((flags >> 2) & 1 && function_101380(weapon_index)) || ((flags >> 3) & 1 && function_1013e0(weapon_index))))
+				((TEST_FIELD_BIT((flags >> 2) & 1) && function_101380(weapon_index)) || (TEST_FIELD_BIT((flags >> 3) & 1) && function_1013e0(weapon_index))))
 			{
 				result = false;
 			}
@@ -5155,7 +5151,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		}
 		else if (other_seat_index == NONE)
 		{
-			if ((flags >> 14) & 1 && !enemy_aboard)
+			if (TEST_FIELD_BIT((flags >> 14) & 1) && !enemy_aboard)
 			{
 				result = false;
 			}
@@ -6099,7 +6095,7 @@ bool __stdcall function_c58f0(long unit_index)
 	byte *definition = UNIT_DEFINITION_GET(unit);
 	bool changed = false;
 
-	if (!((*(dword *)(definition + 0xbc) >> 11) & 1))
+	if (!(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 11) & 1)))
 	{
 		if ((char)unit->unknown1f5 > 0)
 		{
@@ -6120,7 +6116,7 @@ bool __stdcall function_c58f0(long unit_index)
 			unit->unknown1fb--;
 			changed = true;
 		}
-		if ((unit->flags_134 >> 1) & 1)
+		if (TEST_FIELD_BIT((unit->flags_134 >> 1) & 1))
 		{
 			dword control = unit->unknown148;
 
@@ -6139,7 +6135,7 @@ bool __stdcall function_c58f0(long unit_index)
 			}
 		}
 	}
-	if (!((*(dword *)(definition + 0xbc) >> 10) & 1) && !((unit->flags_10a >> 2) & 1))
+	if (!(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 10) & 1)) && !(TEST_FIELD_BIT((unit->flags_10a >> 2) & 1)))
 	{
 		if (*((byte *)unit + 0x19) & 8)
 		{
@@ -6248,7 +6244,7 @@ bool __stdcall function_c58f0(long unit_index)
 			}
 		}
 	}
-	if (!((*(dword *)(definition + 0xbc) >> 11) & 1))
+	if (!(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 11) & 1)))
 	{
 		for (long hand = 0; hand < 2; hand++)
 		{
@@ -6269,7 +6265,7 @@ bool __stdcall function_c58f0(long unit_index)
 			}
 			dword const *bits = (dword const *)((byte *)holder + holder->unknown346 + 4);
 			long bit = first ? 8 : 0x12;
-			if ((bits[0] >> 22) & 1 || (bits[0] >> 26) & 1 || (bits[0] >> 27) & 1 || (bits[bit >> 5] & (1 << (bit & 0x1f))))
+			if (TEST_FIELD_BIT((bits[0] >> 22) & 1) || TEST_FIELD_BIT((bits[0] >> 26) & 1) || TEST_FIELD_BIT((bits[0] >> 27) & 1) || (bits[bit >> 5] & (1 << (bit & 0x1f))))
 			{
 				held = true;
 			}
@@ -6279,24 +6275,24 @@ bool __stdcall function_c58f0(long unit_index)
 
 			if (first)
 			{
-				flags = (word)(((control >> 16) & 1) << 1);
-				flags = (control >> 17) & 1 ? flags | 4 : flags & ~4;
-				flags = (control >> 18) & 1 ? flags | 8 : flags & ~8;
-				flags = (control >> 19) & 1 ? flags | 0x10 : flags & ~0x10;
-				flags = (control >> 20) & 1 ? flags | 1 : flags & ~1;
-				last = (control >> 30) & 1;
+				flags = (word)((TEST_FIELD_BIT((control >> 16) & 1)) << 1);
+				flags = TEST_FIELD_BIT((control >> 17) & 1) ? flags | 4 : flags & ~4;
+				flags = TEST_FIELD_BIT((control >> 18) & 1) ? flags | 8 : flags & ~8;
+				flags = TEST_FIELD_BIT((control >> 19) & 1) ? flags | 0x10 : flags & ~0x10;
+				flags = TEST_FIELD_BIT((control >> 20) & 1) ? flags | 1 : flags & ~1;
+				last = TEST_FIELD_BIT((control >> 30) & 1);
 			}
 			else
 			{
-				flags = (word)(((control >> 21) & 1) << 1);
-				flags = (control >> 22) & 1 ? flags | 4 : flags & ~4;
-				flags = (control >> 23) & 1 ? flags | 8 : flags & ~8;
-				flags = (control >> 24) & 1 ? flags | 0x10 : flags & ~0x10;
-				flags = (control >> 25) & 1 ? flags | 1 : flags & ~1;
-				last = (control >> 31) & 1;
+				flags = (word)((TEST_FIELD_BIT((control >> 21) & 1)) << 1);
+				flags = TEST_FIELD_BIT((control >> 22) & 1) ? flags | 4 : flags & ~4;
+				flags = TEST_FIELD_BIT((control >> 23) & 1) ? flags | 8 : flags & ~8;
+				flags = TEST_FIELD_BIT((control >> 24) & 1) ? flags | 0x10 : flags & ~0x10;
+				flags = TEST_FIELD_BIT((control >> 25) & 1) ? flags | 1 : flags & ~1;
+				last = TEST_FIELD_BIT((control >> 31) & 1);
 			}
 			flags = last ? flags | 0x80 : flags & ~0x80;
-			flags = (control >> 29) & 1 ? flags | 0x100 : flags & ~0x100;
+			flags = TEST_FIELD_BIT((control >> 29) & 1) ? flags | 0x100 : flags & ~0x100;
 			flags = held ? flags | 0x20 : flags & ~0x20;
 			flags = unit->unknown240 != NONE ? flags | 0x40 : flags & ~0x40;
 			real rate = first ? *(real *)&unit->unknown1c0 : *(real *)&unit->unknown1c4;
@@ -6347,7 +6343,7 @@ bool __stdcall function_c60c0(long unit_index)
 	s_unit *unit = UNIT_GET(unit_index);
 	byte *definition = UNIT_DEFINITION_GET(unit);
 
-	if ((*(dword *)(definition + 0xbc) >> 10) & 1 || (unit->flags_10a >> 2) & 1)
+	if (TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 10) & 1) || TEST_FIELD_BIT((unit->flags_10a >> 2) & 1))
 	{
 		return false;
 	}
@@ -6367,7 +6363,7 @@ bool __stdcall function_c60c0(long unit_index)
 		}
 		unit->unknown174 = *g_4687a4;
 	}
-	else if ((state[0] >> 5) & 1)
+	else if (TEST_FIELD_BIT((state[0] >> 5) & 1))
 	{
 		vector3f forward;
 		vector3f up;
@@ -6414,7 +6410,7 @@ bool __stdcall function_c60c0(long unit_index)
 		function_cba50(unit_index, (vector3f *)&unit->unknown18c, true);
 		unit->unknown198 = *g_4687a4;
 	}
-	else if ((state[0] >> 6) & 1)
+	else if (TEST_FIELD_BIT((state[0] >> 6) & 1))
 	{
 		vector3f forward;
 		vector3f up;
@@ -6867,7 +6863,7 @@ long function_10f720(long object_index, bool first);
 bool function_f42f0(long vehicle_index);
 bool function_1143d0(long unit_index);
 bool function_a76b0(long unit_index, long flag);
-void function_a9260(long damage_index, struct s_unit_melee_hit const *hit);
+void __stdcall function_a9260(long unit_index, struct s_unit_melee_hit const *hit, long damage_index);
 extern short g_47d8e0;
 
 /* the unit's control input for a tick: its wandering direction (flag 21)
@@ -6883,7 +6879,7 @@ bool __stdcall function_c49b0(long unit_index)
 	bool changed = false;
 
 	function_d0d20(unit_index);
-	if ((unit->flags_134 >> 21) & 1)
+	if (TEST_FIELD_BIT((unit->flags_134 >> 21) & 1))
 	{
 		function_d0080(unit_index, &unit->unknown150);
 		unit->unknown15c = unit->unknown150;
@@ -6892,7 +6888,7 @@ bool __stdcall function_c49b0(long unit_index)
 		changed = true;
 		unit->unknown148 = 0;
 	}
-	else if ((unit->flags_134 >> 1) & 1)
+	else if (TEST_FIELD_BIT((unit->flags_134 >> 1) & 1))
 	{
 		changed = true;
 	}
@@ -6921,9 +6917,9 @@ bool __stdcall function_c49b0(long unit_index)
 		unit->unknown1b0 = *g_4687a4;
 		unit->unknown148 = 0;
 	}
-	if (!((*(dword *)(definition + 0xbc) >> 11) & 1))
+	if (!(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 11) & 1)))
 	{
-		bool frozen = (unit->flags_134 >> 22) & 1;
+		bool frozen = TEST_FIELD_BIT((unit->flags_134 >> 22) & 1);
 
 		if (unit->unknown1ec > 0)
 		{
@@ -6959,7 +6955,7 @@ bool __stdcall function_c49b0(long unit_index)
 		{
 			long driver_index = unit->unknown248;
 
-			if (driver_index != NONE && !((unit->flags_10a >> 2) & 1))
+			if (driver_index != NONE && !(TEST_FIELD_BIT((unit->flags_10a >> 2) & 1)))
 			{
 				s_unit *driver = UNIT_GET(driver_index);
 				long state = function_10f5f0(driver_index);
@@ -6994,7 +6990,7 @@ bool __stdcall function_c49b0(long unit_index)
 				}
 				changed = true;
 			}
-			if (unit->unknown24c != NONE && !((unit->flags_10a >> 2) & 1) && function_1143d0(unit_index))
+			if (unit->unknown24c != NONE && !(TEST_FIELD_BIT((unit->flags_10a >> 2) & 1)) && function_1143d0(unit_index))
 			{
 				long gunner_index = unit->unknown24c;
 				s_unit *gunner = UNIT_GET(gunner_index);
@@ -7047,7 +7043,7 @@ bool __stdcall function_c49b0(long unit_index)
 		}
 	}
 	bool boosting = (unit->type == 1 && function_f42f0(unit_index)) || unit->unknown148 & 0x800;
-	if ((*(dword *)(definition + 0xbc) >> 28) & 1 && (boosting || unit->unknown334 > 0.0f))
+	if (TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 28) & 1) && (boosting || unit->unknown334 > 0.0f))
 	{
 		if (unit->unknown338 != 0.0f)
 		{
@@ -7308,7 +7304,7 @@ void __stdcall function_cf3d0(long unit_index, long name, long flags, real scale
 		{
 			if (function_a76b0(unit_index, 0))
 			{
-				function_a9260(damage_index, &hit);
+				function_a9260(unit_index, &hit, damage_index);
 			}
 			else if (g_4e6948->mode != 4)
 			{
@@ -7366,3 +7362,40 @@ impact:
 			(byte)unit_round(g_510c54->field_2_3 * 0.5f);
 	}
 }
+
+/* the unit object type's definition: its datum size and the callbacks it
+   dispatches to (only this file's callbacks are filled in) */
+struct s_unit_type_definition_view
+{
+	char const *name;
+	long group_tag;
+	short datum_size;
+	short unknown0a;
+	long unknown0c;
+	void *functions[29];
+	void *parent;
+	void *self;
+	byte unknown8c[0xc8 - 0x8c];
+};
+
+extern s_unit_type_definition_view g_4679b0;
+s_unit_type_definition_view g_4679b0 =
+{
+	"unit",
+	'unit',
+	0x348,
+	NONE,
+	NONE,
+	{
+		NULL, NULL, NULL, NULL,
+		NULL, NULL, NULL, (void *)function_c4410,
+		NULL, NULL, (void *)function_c4820, (void *)function_c4880,
+		(void *)function_c6b30, NULL, NULL, (void *)function_c6b90,
+		NULL, NULL, (void *)function_ced30, (void *)function_ceea0,
+		NULL, NULL, NULL, NULL,
+		NULL, NULL, NULL, NULL,
+		NULL
+	},
+	NULL,
+	&g_4679b0
+};

@@ -57,3 +57,80 @@ bool function_29d740(vector3f *arg_0, s_pathfinding_data const *arg_1, long arg_
 		local_5 = true;
 	return local_5;
 }
+
+#include "unknown_25fc30.h"
+
+// @retail 0x29d7b0
+bool function_29d7b0(long index, s_pathfinding_data *pathfinding, s_type_d4fbfa *definition,
+	vector3f const *direction, point3f *point, vector3f *normal, char *side)
+{
+	bool result = false;
+	if (index < 0 || index >= *(long *)((byte *)pathfinding + 8))
+		return result != 0;
+	vector3f edge_normal;
+	if (!function_29d740(&edge_normal, pathfinding, index))
+		return result != 0;
+	vector3f local_direction;
+	if (direction)
+	{
+		function_210770(definition->unknown0c, direction, &local_direction);
+		real alignment = local_direction.k * edge_normal.k + local_direction.i * edge_normal.i + local_direction.j * edge_normal.j;
+		if (0.0f > alignment)
+			return false;
+	}
+	if (normal)
+		*normal = edge_normal;
+	s_pathfinding_edge *edge = &pathfinding->edges[index];
+	point3f *first = &pathfinding->vertices[edge->vertices[0]];
+	vector3f delta;
+	vector3d_from_points3d(first, &pathfinding->vertices[edge->vertices[1]], &delta);
+	real length = function_30bf0(&delta);
+	if (length > 0.0f)
+	{
+		point3f const *origin = (point3f const *)definition;
+		real position = (origin->z - first->z) * delta.k + (origin->y - first->y) * delta.j + (origin->x - first->x) * delta.i;
+		if (0.0f > position)
+			position = 0.0f;
+		else if (position > length)
+			position = length;
+		if (side)
+			*side = 0;
+		bool check_end;
+		bool check_start;
+		if (direction)
+		{
+			real alignment = local_direction.k * edge_normal.k + local_direction.j * (0.0f - edge_normal.i) + local_direction.i * edge_normal.j;
+			check_start = alignment > 0.0f;
+			check_end = !check_start;
+		}
+		else
+		{
+			check_start = true;
+			check_end = true;
+		}
+		result = check_start && 0.4f > position && (((byte *)edge)[5] & 0x10);
+		if (result)
+		{
+			position = 0.0f;
+			if (side)
+				*side = 1;
+		}
+		if (check_end)
+		{
+			if (0.4f > length - position && (((byte *)edge)[5] & 0x20))
+			{
+				position = length;
+				result = true;
+			}
+			if (result && side)
+				*side = 2;
+		}
+		point3f projected;
+		projected.x = delta.i * position + first->x;
+		projected.y = delta.j * position + first->y;
+		projected.z = delta.k * position + first->z;
+		if (point)
+			*point = projected;
+	}
+	return result != 0;
+}

@@ -14,9 +14,9 @@ public:
 
 struct s_location_storage_table
 {
-	__forceinline s_location_storage_table() : count(0) {}
+	__forceinline s_location_storage_table();
 	long count;
-	c_location_record entries[0x1000];
+	byte entries[0x1000 * sizeof(c_location_record)];
 };
 
 struct s_location_storage
@@ -32,6 +32,19 @@ struct s_location_storage
 extern void *g_51ea14;
 long g_55c150;
 long g_55c15c;
+
+typedef void *(__fastcall *constructor_proc)(void *);
+void __stdcall vector_constructor_iterator(void *arg_0, unsigned arg_1, int arg_2, constructor_proc arg_3);
+
+PRIVATE void *__fastcall function_215881(void *arg_0)
+{
+	return new (arg_0) c_location_record;
+}
+
+__forceinline s_location_storage_table::s_location_storage_table() : count(0)
+{
+	vector_constructor_iterator(entries, sizeof(c_location_record), 0x1000, function_215881);
+}
 
 // @retail 0x215880
 void function_215880(void *reference)

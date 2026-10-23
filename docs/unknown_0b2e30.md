@@ -112,7 +112,7 @@ Each entry is `0x784` bytes. The same layout serves both searches.
 | `+0x70` | `s_session_description` | The host's description, `0x714` bytes, to the end of the entry |
 
 Description fields this range uses, as offsets in the description
-(`s_session_description` in `src/unknown_07b4c0.cpp` and
+(`s_session_description` in `include/network_session_description.h` and
 `include/unknown_058ee0.h`):
 
 - `+0x02` (`field2`): `0xb35e0` returns only entries where this is 0.

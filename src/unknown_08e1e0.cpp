@@ -37,10 +37,11 @@ long pending_message_find_free(void)
 
 static __forceinline void function_8e215(long arg_0)
 {
- g_4d8c28[arg_0].header = 0;
- g_4d8c28[arg_0].size = 0;
- g_4d8c28[arg_0].task_index = NONE;
- g_4d8c28[arg_0].data = 0;
+ s_pending_message *local_0 = g_4d8c28 + arg_0;
+ local_0->header = 0;
+ local_0->task_index = NONE;
+ local_0->size = 0;
+ local_0->data = 0;
 }
 
 // @retail 0x8e210
@@ -97,47 +98,71 @@ long pending_message_add_received(s_pending_message_header *header, void *data, 
 		i++;
 	} while (slot == NONE);
 	g_4d8c28[index].task_index = NONE;
-	g_4d8c28[index].size = size;
+	long local_0 = *(long volatile *)&size;
 	g_4d8c28[index].header = header;
+	g_4d8c28[index].size = local_0;
 	g_4d8c28[index].data = data;
 	g_4d8ba8[1][slot] = index;
 	return index;
 }
 
 void function_6b640(long task_index);
-void function_81050(long result, s_pending_message_header *header);
+void function_81050(s_pending_message_header *header, long result);
 void function_12d520(long memory);
 void __stdcall function_812d0(void *allocation, s_pending_message_header *header);
 
+void __stdcall function_8e0f0(long index, long result);
+#pragma optimize("g", off)
+PRIVATE __forceinline void function_8e0f1(long offset)
+{
+ s_pending_message_header *header = ((s_pending_message_header **)g_4d8c28)[offset];
+ if (header->kind && header->pending_index != NONE)
+  function_8e0f0(header->pending_index, 13);
+ header = ((s_pending_message_header **)g_4d8c28)[offset];
+ void *allocation = header->data;
+ if (allocation)
+ {
+  function_12d520((long)allocation);
+  header->data = 0;
+  header->size = 0;
+ }
+}
+#pragma optimize("", on)
 // @retail 0x8e0f0
 void __stdcall function_8e0f0(long index, long result)
 {
- if (g_4d8c28[index].header)
+ long offset = index * 5;
+ if (((s_pending_message_header **)g_4d8c28)[offset])
  {
-  if (g_4d8c28[index].task_index != NONE)
-   function_6b640(g_4d8c28[index].task_index);
-  function_81050(result, g_4d8c28[index].header);
-  s_pending_message_header *header = g_4d8c28[index].header;
-  if (header->kind == 4 && header->pending_index == NONE)
+  if (((long *)g_4d8c28)[offset + 1] != NONE)
+   function_6b640(((long *)g_4d8c28)[offset + 1]);
+  function_81050(((s_pending_message_header **)g_4d8c28)[offset], result);
+  s_pending_message_header *header = ((s_pending_message_header **)g_4d8c28)[offset];
+  if (header->kind == 4)
   {
-   function_812d0(header->data, header);
+   long local_0 = header->pending_index;
+   if (local_0 == NONE)
+    function_8e0f1(offset);
   }
-  g_4d8c28[index].header = 0;
-  g_4d8c28[index].task_index = NONE;
-  g_4d8c28[index].size = 0;
-  g_4d8c28[index].data = 0;
-  for (long queue = 0; queue < 2; queue++)
+  ((s_pending_message_header **)g_4d8c28)[offset] = 0;
+  ((long *)g_4d8c28)[offset + 1] = NONE;
+  ((long *)g_4d8c28)[offset + 2] = 0;
+  ((void **)g_4d8c28)[offset + 3] = 0;
+  for (long row = 0; row < 2; row++)
   {
-   for (long slot = 0; slot < 16; slot++)
+   long *queue = g_4d8ba8[row];
+   long slot = 0;
+   do
    {
-    if (g_4d8ba8[queue][slot] == index)
-     g_4d8ba8[queue][slot] = NONE;
-    if (slot > 0 && g_4d8ba8[queue][slot - 1] == NONE)
+    if (queue[slot] == index)
+     queue[slot] = NONE;
+    if (slot > 0 && queue[slot - 1] == NONE)
     {
-     g_4d8ba8[queue][slot - 1] = g_4d8ba8[queue][slot];
-     g_4d8ba8[queue][slot] = NONE;
+     queue[slot - 1] = queue[slot];
+     queue[slot] = NONE;
     }
-   }
+    slot++;
+   } while (slot < 16);
   }
  }
 }
@@ -167,19 +192,7 @@ void function_8e5e0(long status, long task_index)
  long result;
  switch (status)
  {
- case 0:
-  result = 1;
-  if (type == 0x2a)
-  {
-   if (size > (dword)message->size)
-    result = 9;
-   else if (size != transferred)
-    result = 7;
-   else
-    result = pending_message_request_validate(message->header,
-     (const s_pending_payload_header *)message->data, size);
-  }
-  break;
+ case 0: result = 1; break;
  case 1: result = 2; break;
  case 2: result = 3; break;
  case 3: result = 4; break;
@@ -187,6 +200,16 @@ void function_8e5e0(long status, long task_index)
  case 5: result = 6; break;
  case 6: result = 7; break;
  default: result = 2; break;
+ }
+ if (result == 1 && type == 0x2a)
+ {
+  if (size > (dword)message->size)
+   result = 9;
+  else if (size != transferred)
+   result = 7;
+  else
+   result = pending_message_request_validate(message->header,
+    (const s_pending_payload_header *)message->data, transferred);
  }
  function_8e0f0(index, result);
 }
@@ -243,9 +266,8 @@ void function_8e240(void)
      {
      case 0:
       {
-      // Reload the request's definition before testing its transfer kind.
       s_pending_transfer_definition *current_definition =
-       (s_pending_transfer_definition *)*(volatile dword *)&header->unknown00;
+       (s_pending_transfer_definition *)header->unknown00;
       if (header->kind == 3)
        status = function_b4670(kind, controller, owner, filename, current_definition->directory, &task);
       else
@@ -255,7 +277,7 @@ void function_8e240(void)
      case 1:
       {
       s_pending_transfer_definition *current_definition =
-       (s_pending_transfer_definition *)*(volatile dword *)&header->unknown00;
+       (s_pending_transfer_definition *)header->unknown00;
       if (header->kind == 3)
        status = function_b4810(kind, controller, owner, filename, current_definition->directory, &task);
       else

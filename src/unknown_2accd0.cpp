@@ -68,15 +68,15 @@ struct s_saved_game_file_read_parameters
 #define FILE_COPY_CHUNK_SIZE 0x20000
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 
-const char *function_216b60(long type);
+const char *saved_game_type_get_storage_name(long type);
 long function_217480(long type);
 char *function_122810(char *path, const char *name);
 char *function_11c9c0(char *buffer, long maximum_count, const char *format, ...);
 bool function_1249f0(long memory_unit, char *drive_letter);
 bool function_1367d0(s_type_acf665 *file);
-bool function_136c40(s_type_acf665 *file, dword position);
-bool function_216da0(wchar_t *name, long type, const wchar_t *display_name, long language);
-bool function_216f80(long type, s_saved_game_file_location *location);
+bool file_ref_truncate(s_type_acf665 *file, dword position);
+bool function_216da0(long type, wchar_t *name, const wchar_t *display_name, long language);
+bool saved_game_file_write_save_image(long type, s_saved_game_file_location *location);
 bool function_2168b0(s_saved_game_file_location *location, long flags);
 
 /* the root of the memory unit a saved game file is on, or the hard disk's */
@@ -134,7 +134,7 @@ inline bool function_xe8ca68(s_type_acf665 *file, dword size, const void *buffer
 
 inline bool function_xab2909(s_type_acf665 *file, dword size, bool silent, void *buffer)
 {
-	return function_136ca0(file, buffer, size, silent);
+	return file_ref_read(file, size, buffer, silent);
 }
 
 inline bool function_x8231f3(s_type_acf665 *file)
@@ -272,8 +272,8 @@ s_saved_game_file *saved_game_file_new_from_id(s_saved_game_file *file, long fla
 	const s_saved_game_file_location *const *location_reference = &location;
 	file->flags = flags;
 	s_saved_game_file_location *file_location = &file->location;
-	file_location->name[0] = 0;
-	file_location->display_name[0] = 0;
+	memset(file_location->name, 0, sizeof(file_location->name[0]));
+	memset(file_location->display_name, 0, sizeof(file_location->display_name[0]));
 	saved_game_file_copy_display_name(file->display_name, display_name);
 	file->id = *(const s_saved_game_file_id *)*location_reference;
 	file->done = done;
@@ -290,32 +290,41 @@ s_saved_game_file *saved_game_file_new_from_id(s_saved_game_file *file, long fla
 	return file;
 }
 
+/* creates the saved game's directory on the file's device */
+__forceinline bool saved_game_file_create_directory(const s_saved_game_file *file, const wchar_t *name, char *path)
+{
+	char root[8];
+
+	saved_game_file_get_root(file, root);
+	return XCreateSaveGame(root, name, CREATE_NEW, 0, path, 0x100) == ERROR_SUCCESS;
+}
+
 // @retail 0x2ad020
 bool saved_game_file_copy_create(s_saved_game_file *file)
 {
-	long type = file->flags & 0xf;
 	bool result = false;
-	wchar_t name[0x80];
-	char root[8];
+	long type = file->flags & 0xf;
+	long language = get_current_language();
 	char path[0x100] = { 0 };
+	wchar_t name[0x80];
 	char file_path[0x100];
 	s_saved_game_file_id id;
 	s_type_acf665 s_type_acf665;
-	dword error;
 
 	name[0] = 0;
-	function_216da0(name, type, file->display_name, get_current_language());
-	saved_game_file_get_root(file, root);
-	if (XCreateSaveGame(root, name, CREATE_NEW, 0, path, sizeof(path)) == ERROR_SUCCESS)
+	function_216da0(type, name, file->display_name, language);
+	if (saved_game_file_create_directory(file, name, path))
 	{
+		dword error;
+
 		file_path[0] = 0;
 		function_x91aa57(id.data, path, sizeof(id.data));
 		function_x91aa57(file_path, id.data, sizeof(file_path));
-		function_122810(file_path, function_216b60(type));
+		function_122810(file_path, saved_game_type_get_storage_name(type));
 		function_xbb02d2(&s_type_acf665, file_path);
 		if (function_1367d0(&s_type_acf665) && function_136970(&s_type_acf665, 2, &error))
 		{
-			if (function_136c40(&s_type_acf665, function_217480(type)))
+			if (file_ref_truncate(&s_type_acf665, function_217480(type)))
 			{
 				*(s_saved_game_file_id *)file->location.name = id;
 				result = true;
@@ -330,19 +339,16 @@ bool file_copy_read_chunk(s_saved_game_file *copy)
 {
 	bool result = false;
 	dword offset = copy->read_offset;
-	dword size = copy->size - offset;
+	dword remaining = copy->size - offset;
+	dword size = remaining < FILE_COPY_CHUNK_SIZE ? remaining : FILE_COPY_CHUNK_SIZE;
 	dword bytes;
 
-	if (size >= FILE_COPY_CHUNK_SIZE)
-	{
-		size = FILE_COPY_CHUNK_SIZE;
-	}
 	if (SetFilePointer(copy->source, offset, NULL, FILE_BEGIN) == copy->read_offset)
 	{
 		if (ReadFile(copy->source, copy->buffer, size, &bytes, NULL) && size == bytes)
 		{
-			copy->read_offset += bytes;
 			result = true;
+			copy->read_offset += bytes;
 		}
 	}
 	return result;
@@ -353,19 +359,16 @@ bool file_copy_write_chunk(s_saved_game_file *copy)
 {
 	bool result = false;
 	dword offset = copy->write_offset;
-	dword size = copy->size - offset;
+	dword remaining = copy->size - offset;
+	dword size = remaining < FILE_COPY_CHUNK_SIZE ? remaining : FILE_COPY_CHUNK_SIZE;
 	dword bytes;
 
-	if (size >= FILE_COPY_CHUNK_SIZE)
-	{
-		size = FILE_COPY_CHUNK_SIZE;
-	}
 	if (SetFilePointer(copy->destination, offset, NULL, FILE_BEGIN) == copy->write_offset)
 	{
 		if (WriteFile(copy->destination, copy->buffer, size, &bytes, NULL) && size == bytes)
 		{
-			copy->write_offset += bytes;
 			result = true;
+			copy->write_offset += bytes;
 		}
 	}
 	return result;
@@ -419,6 +422,8 @@ bool file_copy_open(s_saved_game_file *copy, bool *exists)
 done:
 	return result;
 }
+// score 19 (was 19): the second argument of the save call is a pointer held in a register here and
+// the address of the local buffer in retail.
 // @retail 0x2ad480
 void saved_game_file_copy_finish(s_saved_game_file *file, bool succeeded)
 {
@@ -430,7 +435,7 @@ void saved_game_file_copy_finish(s_saved_game_file *file, bool succeeded)
 	name[0] = 0;
 	if (succeeded)
 	{
-		function_216da0(name, type, file->location.display_name, file->location.language);
+		function_216da0(type, name, file->location.display_name, file->location.language);
 		XDeleteSaveGame(root, name);
 		saved_game_file_copy_display_name(file->location.display_name, file->display_name);
 		file->location.language = (char)get_current_language();
@@ -438,7 +443,7 @@ void saved_game_file_copy_finish(s_saved_game_file *file, bool succeeded)
 	}
 	else
 	{
-		function_216da0(name, type, file->display_name, get_current_language());
+		function_216da0(type, name, file->display_name, get_current_language());
 		XDeleteSaveGame(root, name);
 	}
 	*file->done = true;
@@ -463,6 +468,7 @@ bool saved_game_file_copy_update(s_saved_game_file *file, long *error)
 {
 	bool result = false;
 	bool exists;
+	long type;
 
 	*error = 0;
 	switch (file->copy_state)
@@ -475,7 +481,8 @@ bool saved_game_file_copy_update(s_saved_game_file *file, long *error)
 		break;
 
 	case _saved_game_file_copy_finish:
-		if (function_216f80(file->flags & 0xf, &file->location))
+		type = file->flags & 0xf;
+		if (saved_game_file_write_save_image(type, &file->location))
 			file->copy_state = _saved_game_file_copy_open;
 		else
 			*error = 2;
@@ -549,7 +556,7 @@ inline void saved_game_file_build_path(char *path, const char *folder, long type
 {
 	strncpy(path, folder, 0x100);
 	path[0xff] = 0;
-	function_122810(path, function_216b60(type));
+	function_122810(path, saved_game_type_get_storage_name(type));
 }
 
 // @retail 0x2ad760
@@ -630,19 +637,19 @@ PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_r
 			if (parameters->body_offset < parameters->body_size)
 			{
 				byte *buffer;
-				dword size;
+				dword size = parameters->body_size - parameters->body_offset;
 				dword bytes;
 				if (parameters->body)
 				{
 					buffer = parameters->body + parameters->body_offset;
-					size = parameters->body_size - parameters->body_offset;
 				}
 				else
 				{
-					buffer = job_thread_buffer_get(task, &size);
-					if (size > parameters->body_size - parameters->body_offset)
+					dword available;
+					buffer = job_thread_buffer_get(task, &available);
+					if (size > available)
 					{
-						size = parameters->body_size - parameters->body_offset;
+						size = available;
 					}
 				}
 
@@ -677,7 +684,10 @@ PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_r
 				if (XCalculateSignatureEnd(parameters->signature_handle, &computed) == ERROR_SUCCESS)
 				{
 					s_saved_game_file_task *output = parameters->task;
-					output->succeeded = memcmp(&computed, &stored, sizeof(stored)) == 0;
+					if (memcmp(&computed, &stored, sizeof(stored)) == 0)
+						output->succeeded = true;
+					else
+						output->succeeded = false;
 				}
 				parameters->signature_handle = INVALID_HANDLE_VALUE;
 			}
@@ -699,7 +709,7 @@ PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_r
 }
 
 // @retail 0x2ada70
-bool signed_file_read_begin(void *header, dword header_size, void *body, dword body_size, bool non_roamable, s_saved_game_file_task *task, const char *path)
+bool signed_file_read_begin(const char *path, void *header, dword header_size, void *body, dword body_size, bool non_roamable, s_saved_game_file_task *task)
 {
 	s_signed_file_read_parameters parameters;
 
@@ -905,7 +915,7 @@ PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_
 }
 
 // @retail 0x2adec0
-bool signed_file_write_begin(void *header, dword header_size, void *body, dword body_size, bool non_roamable, s_saved_game_file_task *task, const char *path)
+bool signed_file_write_begin(const char *path, void *header, dword header_size, void *body, dword body_size, bool non_roamable, s_saved_game_file_task *task)
 {
 	s_signed_file_write_parameters parameters;
 
@@ -945,7 +955,7 @@ void saved_game_file_read(s_type_acf665 *file, void *buffer, dword size, bool no
 
 				XCalculateSignatureUpdate(signature_handle, (const BYTE *)buffer, size);
 				if (XCalculateSignatureEnd(signature_handle, &computed) == ERROR_SUCCESS &&
-					function_136d50(file, size, sizeof(stored), false, &stored) &&
+					file_ref_read_at(file, size, sizeof(stored), false, &stored) &&
 					memcmp(&computed, &stored, sizeof(stored)) == 0)
 				{
 					task->succeeded = true;
@@ -974,7 +984,7 @@ void saved_game_file_write(s_type_acf665 *file, void *buffer, dword size, bool n
 
 				XCalculateSignatureUpdate(signature_handle, (const BYTE *)buffer, size);
 				if (XCalculateSignatureEnd(signature_handle, &signature) == ERROR_SUCCESS &&
-					function_136d90(file, size, sizeof(signature), &signature))
+					file_ref_write_at(file, size, sizeof(signature), &signature))
 				{
 					task->succeeded = true;
 					task->state = 0;

@@ -11,6 +11,7 @@
 #include "unknown_1cafc0.h"
 #include "object_queries.h"
 #include <math.h>
+#include "vector_products.h"
 
 /* the object as this reads it */
 struct s_forward_flags
@@ -110,6 +111,8 @@ void function_118fe0(long object_index, bool enabled)
 	object_flag_set_118fe0(&object->flags, enabled);
 }
 
+__declspec(noinline) bool function_119bc0(long object_index);
+
 // @retail 0x119bc0
 bool function_119bc0(long object_index)
 {
@@ -131,6 +134,8 @@ struct s_orientation_request_118f90
 	vector3f forward;
 	vector3f up;
 };
+
+__declspec(noinline) void function_118f90(s_orientation_request_118f90 *request);
 
 // @retail 0x118f90
 void function_118f90(s_orientation_request_118f90 *request)
@@ -179,9 +184,9 @@ void function_118e80(long object_index, vector3f *forward);
 bool function_1faf80(vector3f *facing, long object_index, void const *settings_pointer,
 	vector3f const *control, real threshold, real *turn);
 void function_11f0d0(vector3f *position, vector3f *forward, vector3f const *target, real rate, real max_angle, real scale);
-void function_11d180(vector3f *left, vector3f const *in, vector3f *out, vector3f const *up, vector3f *forward);
+void function_11d180(vector3f const *in, vector3f const *up, vector3f *forward, vector3f *left, vector3f *out);
 real function_11ce20(vector3f const *a, vector3f const *b);
-void function_109290(long object_index, long a, long b, long c);
+void object_dispatch_moved(long object_index, long a, long b, long c);
 
 struct s_facing_definition_1197b0
 {
@@ -244,18 +249,18 @@ void function_1197b0(long object_index)
 	vector3f temporary_velocity = *g_4687a4;
 	vector3f up;
 	world_up_1197b0(object_index, &up);
-	vector3f new_forward, target_up, left1, left2, forward2;
-	function_11d180(&left1, &forward, &target_up, &object->requested_up, &new_forward);
-	function_11d180(&left2, &forward, &up, &up, &forward2);
+	vector3f new_forward, target_up, left, forward2;
+	function_11d180(&forward, &object->requested_up, &new_forward, &left, &target_up);
+	function_11d180(&forward, &up, &forward2, &left, &up);
 	if (function_11ce20(&up, &target_up) > max_angle * g_510c54->rate)
 	{
 		function_11f0d0(&temporary_velocity, &up, &target_up, g_510c54->rate, max_angle, acceleration * 2.0f);
-		function_11d180(&left2, &forward, &up, &up, &forward2);
+		function_11d180(&forward, &up, &forward2, &left, &up);
 	}
 	else
 		up = target_up;
 	point3f position = object->position;
-	function_109290(object_index, (long)&position, (long)&new_forward, (long)&up);
+	object_dispatch_moved(object_index, (long)&position, (long)&new_forward, (long)&up);
 	if (dot3f(&object->up, &up) < 0.9999f || dot3f(&object->forward, &new_forward) < 0.9999f)
 	{
 		object->up = up;
@@ -286,13 +291,13 @@ void function_119020(long object_index, vector3f const *impulse)
 	if (TEST_FIELD_BIT(object->frozen) || (bool)((definition->flags >> 3) & 1) || object->mode == 2)
 	{
 		vector3f axis;
-		axis.i = g_4687b0->j * impulse->k - g_4687b0->k * impulse->j;
-		axis.j = g_4687b0->k * impulse->i - g_4687b0->i * impulse->k;
-		axis.k = g_4687b0->i * impulse->j - g_4687b0->j * impulse->i;
+		cross3f(g_4687b0, impulse, &axis);
 		function_30bf0(&axis);
-		real magnitude = (real)sqrt(impulse->i * impulse->i + impulse->j * impulse->j + impulse->k * impulse->k);
-		real scale = function_x82e52f(&g_4e7408->unknown0, NULL, 0) * magnitude * 1.57079637f;
-		object->angular_velocity.i += scale * axis.i;
+		real first_axis = axis.i;
+		real fraction = function_x82e52f(&g_4e7408->unknown0, NULL, 0);
+		real magnitude = (real)sqrt(impulse->i * impulse->i + (impulse->j * impulse->j + impulse->k * impulse->k));
+		real scale = fraction * magnitude * 1.57079637f;
+		object->angular_velocity.i += scale * first_axis;
 		object->angular_velocity.j += scale * axis.j;
 		object->angular_velocity.k += scale * axis.k;
 	}
@@ -318,22 +323,24 @@ bool function_119650(long object_index, long mode, long set, real seconds, long 
 	s_animation_state *state = (s_animation_state *)((byte *)object + object->animation_state_offset);
 	long old_mode = state->unknown70;
 	long old_set = state->unknown7c;
-	bool result = true;
+	bool result;
 	if (mode != 0x7000101 || set != 0x7000101)
 		result = state->animation_set(mode, 0x7000101, 0x7000101, set, flags, 0x3f);
+	else
+		result = true;
 	if (result)
 	{
 		bool mode_changed = old_mode != mode && mode != 0x7000101;
 		bool set_changed = old_set != set && set != 0x7000101;
 		if (mode_changed || set_changed)
 		{
-			volatile real blend = 0.267f;
+			real blend = 0.267f;
 			if (mode_changed)
 				blend = 0.267f;
 			if ((old_set == 0x400000c && direction_state_119650(set)) ||
 				(direction_state_119650(old_set) && (direction_state_119650(set) || set == 0x400000c)))
 				blend = 0.267f;
-			if (blend <= seconds)
+			if (!(blend > seconds))
 				blend = seconds;
 			if (blend > 0.0f)
 				function_ba350(object_index, blend);
@@ -407,8 +414,8 @@ struct s_type_1e6529
 };
 
 void function_d6660(s_type_1e6529 *data, long definition_index);
-void object_get_damage_owner(long object_index, s_damage_owner *owner);
-void function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index, vector3f const *unknown14);
+void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
+void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index, vector3f const *unknown14);
 
 struct s_parent_effect_definition_11a140
 {
@@ -418,6 +425,8 @@ struct s_parent_effect_definition_11a140
 	long alternate_effect_index;
 };
 
+// score 5 (was 5): the call to object_get_damage_owner gets its first argument in a register here,
+// while retail passes both arguments on the stack.
 // @retail 0x11a140
 void function_11a140(long object_index)
 {
@@ -509,6 +518,7 @@ void function_2116c0(long arg_0, long arg_1, long arg_2);
 // @retail 0x119380
 bool function_119380(long arg_0, s_119380 *arg_1)
 {
+    bool local_2 = false;
     (void)&arg_0;
     (void)&arg_1;
     s_forward_object *local_0 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
@@ -516,7 +526,6 @@ bool function_119380(long arg_0, s_119380 *arg_1)
     memset(arg_1, 0, sizeof(*arg_1));
     arg_1->field_0 = 0x7000101;
     arg_1->field_4 = 0x7000101;
-    bool local_2 = false;
     if (local_1->channels[0].graph_tag_index != NONE && local_1->channels[0].animation_id.index != NONE)
     {
         s_forward_object *local_3 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
@@ -570,6 +579,9 @@ bool function_119380(long arg_0, s_119380 *arg_1)
 void function_1e54d0(void *arg_0, long arg_1);
 bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 
+// score 83 (was 83): the object table base and the looked up object are kept in different
+// registers, one word field is loaded zero extended here and as a plain word in retail, and the
+// value stored at the 0x134 slot is sign extended differently.
 // @retail 0x118510
 bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
 {
@@ -594,38 +606,42 @@ bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
     *(short *)((byte *)local_0 + 0x206) = 0;
     function_118f90((s_orientation_request_118f90 *)((byte *)local_0 + 0x13c));
     s_forward_object *local_3 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
+    bool local_4 = false;
     if (local_3->animation_state_offset == NONE)
-        return false;
-    bool local_4 = true;
-    short local_5 = *(short const *)((byte const *)arg_1 + 0xb4);
-    if (local_5 != NONE)
+        goto done;
     {
-        *(long *)((byte *)local_0 + 0x134) = local_5;
-        local_4 = function_bc380(arg_0, 0x138, *(word const *)((byte const *)arg_1 + 0xb6), 0) != 0;
-        local_0 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
-    }
-    else
-        *(long *)((byte *)local_0 + 0x134) = NONE;
-    if (local_4)
-    {
-        short local_6 = *(short const *)((byte const *)arg_1 + 0x64);
-        *(short *)((byte *)local_0 + 0x12e) = local_6;
-        if (g_4e6948->state == 1 && (local_6 == 0 || local_6 == NONE))
-            *(short *)((byte *)local_0 + 0x12e) = *(short *)(local_1 + 0xc0);
-        s_forward_object *local_7 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
-        s_animation_state *local_8 = (s_animation_state *)((byte *)local_7 + local_7->animation_state_offset);
-        long local_9 = local_8->unknown70;
-        long local_10 = local_8->unknown7c;
-        if (local_8->animation_set(0x7000001, 0x7000101, 0x7000101, 0x7000001, 2, 0x3f))
+        local_4 = true;
+        short local_5 = *(short const *)((byte const *)arg_1 + 0xb4);
+        if (local_5 != NONE)
         {
-            bool local_11 = local_9 != 0x7000001;
-            bool local_12 = local_10 != 0x7000001;
-            if (local_11 || local_12)
-                function_ba350(arg_0, 0.267f);
+            *(long *)((byte *)local_0 + 0x134) = local_5;
+            local_4 = function_bc380(arg_0, 0x138, *(word const *)((byte const *)arg_1 + 0xb6), 0) != 0;
+            local_0 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
         }
+        else
+            *(long *)((byte *)local_0 + 0x134) = NONE;
+        if (local_4)
+        {
+            short local_6 = *(short const *)((byte const *)arg_1 + 0x64);
+            *(short *)((byte *)local_0 + 0x12e) = local_6;
+            if (g_4e6948->state == 1 && (local_6 == 0 || local_6 == NONE))
+                *(short *)((byte *)local_0 + 0x12e) = *(short *)(local_1 + 0xc0);
+            s_forward_object *local_7 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
+            s_animation_state *local_8 = (s_animation_state *)((byte *)local_7 + local_7->animation_state_offset);
+            long local_9 = local_8->unknown70;
+            long local_10 = local_8->unknown7c;
+            if (local_8->animation_set(0x7000001, 0x7000101, 0x7000101, 0x7000001, 2, 0x3f))
+            {
+                bool local_11 = local_9 != 0x7000001;
+                bool local_12 = local_10 != 0x7000001;
+                if (local_11 | local_12)
+                    function_ba350(arg_0, 0.267f);
+            }
+        }
+        else
+            *arg_2 = true;
     }
-    else
-        *arg_2 = true;
+done:
     return local_4;
 }
 
@@ -687,6 +703,7 @@ void __stdcall function_118b80(long arg_0)
         if (havok_component_any_rigid_body_active(local_3) || local_7
             || !(bool)((*(word *)((byte *)local_1 + 0xc0) >> 6) & 1))
         {
+            bool use_flag = TEST_FIELD_BIT(local_1->flags.flag5);
             word local_8 = *(word *)((byte *)local_1 + 0xc0);
             long local_9 = NONE;
             if ((bool)((local_8 >> 2) & 1) || (bool)((local_8 >> 1) & 1))
@@ -697,7 +714,7 @@ void __stdcall function_118b80(long arg_0)
             byte *local_13 = (byte *)local_1 + 0x17c;
             function_1e68a0((s_character_physics_update_input_datum_a *)&local_10,
                 (s_source_a *)local_13, (long)local_12, *(long *)((byte *)local_1 + 0xb4),
-                local_9, TEST_FIELD_BIT(local_1->flags.flag5), false, false,
+                local_9, use_flag, false, false,
                 (bool)((local_8 >> 8) & 1), local_7, &local_6,
                 (point3f *)&local_1->forward, (point3f *)&local_1->control);
             local_10.field_14 = true;
@@ -729,16 +746,15 @@ void __stdcall function_118b80(long arg_0)
                 *((byte *)local_1 + 0x12c) |= 0x80;
             else
                 *((byte *)local_1 + 0x12c) &= ~0x80;
+            real threshold_scale = (*(dword *)local_12 & 8) ? 3.0f : 1.0f;
             if (TEST_FIELD_BIT(local_1->flags.flag5))
             {
-                real local_16 = (*(dword *)local_12 & 8) ? 3.0f : 1.0f;
-                if (*((byte *)local_1 + 0x131) * g_510c54->rate > local_16 * 0.15f)
+                if (*((byte *)local_1 + 0x131) * g_510c54->rate > threshold_scale * 0.15f)
                     local_1->flags.flag5 = false;
             }
             else
             {
-                real local_17 = (*(dword *)local_12 & 8) ? 3.0f : 1.0f;
-                if (local_7 || *((byte *)local_1 + 0x130) * g_510c54->rate > local_17 * 0.15f)
+                if (local_7 || *((byte *)local_1 + 0x130) * g_510c54->rate > threshold_scale * 0.15f)
                     local_1->flags.flag5 = true;
             }
         }
@@ -781,12 +797,12 @@ bool function_1df560(short arg_0, short arg_1);
 bool function_1696d0(long arg_0, s_biped_ground_collision *arg_1, long arg_2,
     point3f const *arg_3, vector3f const *arg_4, long arg_5, long arg_6);
 void function_d6660(s_type_1e6529 *arg_0, long arg_1);
-void object_get_damage_owner(long arg_0, s_damage_owner *arg_1);
-void function_d7b80(s_type_1e6529 *arg_0, long arg_1, short arg_2, short arg_3, short arg_4, vector3f const *arg_5);
+void __stdcall object_get_damage_owner(long arg_0, s_damage_owner *arg_1);
+void __stdcall function_d7b80(s_type_1e6529 *arg_0, long arg_1, short arg_2, short arg_3, short arg_4, vector3f const *arg_5);
 void __stdcall function_d6bc0(long arg_0);
 void function_b75a0(long arg_0, point3f const *arg_1, vector3f const *arg_2, vector3f const *arg_3,
     s_location const *arg_4, bool arg_5);
-void __stdcall function_b93b0(long arg_0, long arg_1, long arg_2);
+void __stdcall function_b93b0(long arg_0, long arg_1, short arg_2);
 
 // @retail 0x119c10
 long function_119c10(long arg_0)
@@ -872,9 +888,9 @@ long function_119c10(long arg_0)
                 local_2.j = 0.0f - local_14.j;
                 local_2.k = 0.0f - local_14.k;
                 vector3f local_26;
-                function_11d180(&local_26, &local_2, &local_6, &local_0->up, &local_2);
+                function_11d180(&local_2, &local_0->up, &local_2, &local_26, &local_6);
                 function_b75a0(arg_0, &local_13, &local_2, &local_6, &local_15, false);
-                function_b93b0(local_1, arg_0, local_11);
+                function_b93b0(local_1, arg_0, (short)(local_11));
                 real local_27 = g_510c54->field_2_3 * 0.2f;
                 long local_28;
                 __asm
@@ -937,7 +953,7 @@ void function_1e5bb0(s_biped_physics_output *arg_0, void *arg_1, void *arg_2, re
     vector3f const *arg_20, vector3f const *arg_21, vector3f const *arg_22,
     vector3f const *arg_23, vector3f const *arg_24, long arg_25);
 void function_1e6360(s_biped_physics_output *arg_0, real arg_1, long arg_2, real arg_3);
-void function_1e5af0(s_biped_physics_output *arg_0, void *arg_1, vector3f const *arg_2, vector3f const *arg_3);
+void function_1e5af0(void *arg_1, s_biped_physics_output *arg_0, vector3f const *arg_2, vector3f const *arg_3);
 void function_1e6120(s_biped_physics_output *arg_0, void *arg_1, real arg_2, bool arg_3, bool arg_4,
     bool arg_5, real arg_6);
 void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped_physics_output *arg_2);
@@ -970,20 +986,21 @@ bool __stdcall function_118700(long arg_0)
             function_1197b0(arg_0);
         vector3f local_7;
         function_ba1d0(arg_0, &local_7, NULL);
-        byte *local_8 = local_1 + 0xd4;
         byte *local_9 = (byte *)local_0 + 0x17c;
+        s_forward_flags object_flags = local_0->flags;
         word local_10 = *(word *)((byte *)local_0 + 0xc0);
+        byte *local_8 = local_1 + 0xd4;
         function_1e5bb0((s_biped_physics_output *)&local_3, local_9, local_2, 1.0f,
             *(long *)((byte *)local_0 + 0xb4), arg_0, local_8, 0xf,
             (bool)((local_10 >> 6) & 1), false, true, false,
-            (bool)((local_10 >> 8) & 1), TEST_FIELD_BIT(local_0->flags.flag5),
-            (bool)((local_0->flags.value >> 8) & 1), false, g_51e9c4->unknown0, 1.0f,
+            (bool)((local_10 >> 8) & 1), TEST_FIELD_BIT(object_flags.flag5),
+            (bool)((object_flags.value >> 8) & 1), false, g_51e9c4->unknown0, 1.0f,
             &local_0->control, &local_5, &local_0->forward, &local_0->up,
             &local_0->forward, &local_0->forward, &local_7, 0);
         if ((bool)((*(dword *)local_8 >> 4) & 1))
         {
             function_1e6360((s_biped_physics_output *)&local_3, local_0->turn, arg_0, 0.0f);
-            function_1e5af0((s_biped_physics_output *)&local_3, local_9, &local_0->up, &local_0->forward);
+            function_1e5af0(local_9, (s_biped_physics_output *)&local_3, &local_0->up, &local_0->forward);
         }
         else
             function_1e6120((s_biped_physics_output *)&local_3, local_9, 0.0f, false, false,
@@ -994,14 +1011,11 @@ bool __stdcall function_118700(long arg_0)
         {
             local_0->forward = local_11.field_18;
             local_0->up = local_11.field_24;
-            function_1e5af0((s_biped_physics_output *)&local_3, local_9, &local_0->up, &local_0->forward);
+            function_1e5af0(local_9, (s_biped_physics_output *)&local_3, &local_0->up, &local_0->forward);
         }
         vector3f *local_12 = (vector3f *)((byte *)&local_3 + 0x138);
         bool local_13 = local_12->k * local_12->k + local_12->j * local_12->j + local_12->i * local_12->i > 0.0f;
-        if (local_13)
-            local_0->flags.flag4 = true;
-        else
-            local_0->flags.flag4 = false;
+        local_0->flags.flag4 = local_13;
         bool local_14 = function_119bc0(arg_0);
         s_forward_object *local_15 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
         *(vector3f *)((byte *)local_15 + 0x88) = local_11.field_c;

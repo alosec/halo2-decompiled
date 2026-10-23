@@ -1,4 +1,5 @@
 // @flags /O2 /Gr
+#include "handles_storage.h"
 /* UNKNOWN_03D380.CPP: the game module callbacks of the table at 0x46e320
    (batch 18-4); every entry takes one dword on the stack */
 
@@ -108,18 +109,17 @@ dword g_453498[1];
 s_4e6380 *g_4e6380;
 s_record_pool *g_4e637c;
 s_looping_sound_globals *g_4ed288;
-dword g_4c8798[256];
 
 void decal_delete_group(long decal_index);
 
 // @retail 0x43820
 void __stdcall function_43820(long index)
 {
-	index &= 0xffff;
-	if (g_4c8798[index] != NONE)
+	dword *entry = g_4c8798 + (index & 0xffff);
+	if (*entry != NONE)
 	{
-		decal_delete_group(g_4c8798[index]);
-		g_4c8798[index] = NONE;
+		decal_delete_group(*entry);
+		*entry = NONE;
 	}
 }
 
@@ -208,11 +208,11 @@ game_module_proc g_46e320[30] =
 // @retail 0x3d380
 void __stdcall function_3d380(dword flags)
 {
-	s_type_f1af8e iterator;
+	struct { s_object *object; s_type_f1af8e iterator; } iteration;
 
-	function_bae80(&iterator, 0, 0);
-	for (s_object *object = function_baeb0(&iterator); object; object = function_baeb0(&iterator))
-		object->unknownCC = NONE;
+	function_bae80(&iteration.iterator, 0, 0);
+	for (iteration.object = function_baeb0(&iteration.iterator); iteration.object; iteration.object = function_baeb0(&iteration.iterator))
+		iteration.object->unknownCC = NONE;
 }
 
 // @retail 0x43970
@@ -228,14 +228,20 @@ void __stdcall function_67fb0(dword flags)
 	g_4cf77b = 1;
 }
 
+struct s_67fc1
+{
+	byte field_0[0xc];
+	signed long field_c : 8;
+};
+
 // @retail 0x67fc0
 void __stdcall function_67fc0(dword flags)
 {
 	if (flags & 4)
 	{
 		function_593e0();
-		s_simulation_world *world = g_4cf77c;
-		if (GAME_MODE == 1 && world->state == 1)
+		s_simulation_world *world;
+		if (GAME_MODE == 1 && (world = g_4cf77c)->state == 1)
 		{
 			function_6b040((c_class_6a600 *)world);
 			g_4cf772 = 0;
@@ -251,7 +257,9 @@ void __stdcall function_67fc0(dword flags)
 				if (proc)
 					function_162060(proc);
 			}
-			if (GAME_MODE >= 4 && GAME_MODE <= 5)
+			s_67fc1 *local_0 = (s_67fc1 *)g_4e6948;
+			long local_1 = local_0->field_c;
+			if (local_1 >= 4 && local_1 <= 5)
 			{
 				function_162420();
 				function_bb7f0();
@@ -304,21 +312,23 @@ void __stdcall function_124750(dword flags)
 		*(dword *)g_510c2c = (dword)g_453498;
 }
 
+void function_125a90(long value);
+
+// score 46 (was 46): the address of the record is built here with an imul
+// into ESI and an add; retail multiplies into EAX and forms the address with a
+// lea, so the type byte that is tested afterwards is compared in another value.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {
-	bool a = (flags >> 6) & 1;
 	bool b = (flags >> 5) & 1;
-	s_4e6380 *globals = g_4e6380;
+	bool a = (flags >> 6) & 1;
 
-	if (!b && globals->flag7b)
-	{
-		globals->flag7d = 1;
-		globals->flag7b = 0;
-		globals->flag7d = 0;
-	}
 
-	if (globals->flag78)
+	/* neither pause (0) nor resume (1): only clears the paused flag */
+	if (!b)
+		function_125a90(2);
+
+	if (g_4e6380->flag78)
 	{
 		long datum;
 
@@ -327,42 +337,47 @@ void __stdcall function_1264c0(dword flags)
 		datum = data_datum_index(array, function_16bc00(array, 0));
 		while (datum != NONE)
 		{
-			s_element_bc *element = ELEMENT(array, s_element_bc, datum);
+			long index = datum & 0xffff;
+			s_element_bc *element = (s_element_bc *)array->data + index;
 			bool remove = true;
 
 			if (b)
 			{
-				short type = *((char *)g_4e3b44[element->object_index & 0xffff].flags + 2);
+				long type = *((char *)g_4e3b44[element->object_index & 0xffff].flags + 2);
 
-				if (type == 0x20 || type == 0x26)
+				if ((short)type == 0x20 || (short)type == 0x26)
 				{
-					remove = (type == 0x26 && !a);
+					remove = false;
+					if (type == 0x26)
+						remove = !a;
 				}
 				else if ((1 << element->kind) & 0x1e)
 				{
-					remove = (((byte *)function_221810(type))[0x4c] != 1);
+					if (((byte *)function_221810(type))[0x4c] == 1)
+						remove = false;
 				}
 			}
 
-			if (remove)
+			if (!remove)
+				element->unknown8c = NONE;
+			else
 			{
 				function_127320(datum, 10);
 				array = g_4e637c;
 			}
-			else
-				element->unknown8c = NONE;
 
-			datum = data_datum_index(array, function_16bc00(array, datum == NONE ? 0 : (datum & 0xffff) + 1));
+			datum = data_datum_index(array, function_16bc00(array, datum == NONE ? 0 : index + 1));
 		}
 
-		if (a)
-			function_125d60();
-		else
+		if (!b)
 			function_21f290();
+		else
+			function_125d60();
 	}
 
-	globals = g_4e6380;
-	globals->unknown80 = GetTickCount();
+	dword ticks = GetTickCount();
+	s_4e6380 *globals = g_4e6380;
+	globals->unknown80 = ticks;
 	globals->unknown1f8 = NONE;
 	globals->unknown200 = NONE;
 	globals->unknown84 = 0;
@@ -418,17 +433,19 @@ void __stdcall function_155f10(dword flags)
 // @retail 0x16eff0
 void __stdcall function_16eff0(dword flags)
 {
-	if (!((flags >> 4) & 1))
+	if ((bool)((~(flags >> 4)) & 1))
 	{
-		long *out = g_510c70;
-		long *entry = g_4e8c20->entries;
 		long i;
 
-		*out++ = g_4686c4;
+		g_510c70[0] = g_4686c4;
 		for (i = 0; i < 4; i++)
 		{
-			*out = NONE;
-			if (i != NONE && *entry != NONE)
+			bool valid = false;
+
+			g_510c70[i + 1] = NONE;
+			if (i != NONE)
+				valid = g_4e8c20->entries[i] != NONE;
+			if (valid)
 			{
 				struct
 				{
@@ -437,10 +454,8 @@ void __stdcall function_16eff0(dword flags)
 				} result;
 
 				function_11bed0((s_location *)&result, (point3f const *)&g_4e9bd4[i].state);
-				*out = result.value;
+				g_510c70[i + 1] = result.value;
 			}
-			entry++;
-			out++;
 		}
 	}
 }
@@ -462,24 +477,55 @@ void __stdcall function_16f0c0(dword flags)
 		g_4ea936 = 1;
 }
 
+/* the next used index at or after index, or NONE */
+static __forceinline long record_pool_next_used_index(s_record_pool *array, long index)
+{
+	if (index >= 0 && index < array->high_water_index)
+	{
+		long count = array->high_water_index;
+		dword *bits = array->bitmap;
+
+		do
+		{
+			if (bits[index >> 5] & (1 << (index & 0x1f)))
+				return index;
+			index++;
+		} while (index < count);
+	}
+	return NONE;
+}
+
+/* steps the iterator to the next used datum; its address, or NULL at the end */
+static __forceinline byte *record_pool_iterator_next_used(s_record_pool_iterator *iterator)
+{
+	s_record_pool *array = iterator->data;
+	long index = record_pool_next_used_index(array, iterator->index + 1);
+
+	if (index == NONE)
+		return NULL;
+
+	byte *datum = array->data + array->size * index;
+
+	iterator->index = index;
+	iterator->datum_index = (*(short *)datum << 16) | index;
+	return datum;
+}
+
 // @retail 0x17d190
 void __stdcall function_17d190(dword flags)
 {
 	if (g_4ea950->valid)
 	{
-		s_record_pool *array = g_4ea950;
-		long index = NONE;
-		long datum;
+		s_record_pool_iterator iterator;
 
-		for (;;)
+		iterator.data = g_4ea950;
+		iterator.index = NONE;
+		while (record_pool_iterator_next_used(&iterator))
 		{
-			index = data_find_index(array, index + 1);
-			if (index == NONE)
-				break;
-			datum = data_datum_index(array, index);
-			s_element_40 *element = ELEMENT(array, s_element_40, datum);
-			if (element->datum_index == datum)
-				g_4c8798[element->table_index & 0xffff] = datum;
+			s_element_40 *element = ELEMENT(g_4ea950, s_element_40, iterator.datum_index);
+
+			if (element->datum_index == iterator.datum_index)
+				g_4c8798[element->table_index & 0xffff] = iterator.datum_index;
 		}
 	}
 }
@@ -524,22 +570,23 @@ void __stdcall function_188ac0(dword flags)
 	{
 		s_element_18 *element = ELEMENT(array, s_element_18, datum);
 
-		s_element_18_flags flags5 = element->flags;
-
 		if (element->state == 2)
 			record_pool_release(array, datum);
-		else if (flags5.flag5)
+		else
 		{
-			long value = element->value;
-
-			if (!(function_18d360(value) && a))
+			register word flags5 = *(word const *)&element->flags;
+			if ((bool)((flags5 >> 5) & 1))
 			{
-				if (flags5.flag6 || (*(byte *)g_4e3b44[value & 0xffff].flags & 2))
-					record_pool_release(array, datum);
-				else
+				long value = element->value;
+				if (!(function_18d360(value) && a))
 				{
-					function_18d290(datum, value);
-					array = g_4ed28c;
+					if ((bool)((flags5 >> 6) & 1) || (*(byte *)g_4e3b44[value & 0xffff].flags & 2))
+						record_pool_release(array, datum);
+					else
+					{
+						function_18d290(datum, value);
+						array = g_4ed28c;
+					}
 				}
 			}
 		}
@@ -635,4 +682,65 @@ void __stdcall function_226030(dword flags)
 {
 	if (!(flags & 0x80))
 		g_4701ec.stage = 0;
+}
+
+
+// Disabled: shared decal handles currently hold 256 entries; retail initializes 1024.
+#if 0
+#include "crc.h"
+#include "physical_memory.h"
+extern D3DResource *g_509444;
+
+// Retail 0x43890
+void function_43890()
+{
+    byte *state = (byte *)VirtualAlloc(0, 12, 0x101000, PAGE_READWRITE);
+    if (!state) GetLastError();
+    *(long *)state = 1;
+    long size = 0x14000;
+    game_state_globals.unknown8 += size;
+    byte *buffer = (byte *)game_state_globals.base_address + 0x3fe000 - game_state_globals.unknown8;
+    g_509444 = (D3DResource *)state;
+    function_163ba0(&game_state_globals.allocation_size_checksum, &size, 4);
+    *(byte **)(state + 4) = buffer;
+    *(long *)(state + 8) = 0;
+    if ((*(long *)state & 0x70000) != 0x20000) buffer = (byte *)((dword)buffer & 0x0fffffff);
+    *(byte **)(state + 4) = buffer;
+    c_data_allocator *allocator = g_510c2c;
+    void *table = allocator->allocate(0x613c);
+    function_13d170((s_physical_object *)table, "decal vertex cache", 0x500, 6, 1024,
+        function_43820, (physical_block_busy_proc)function_43850, 0, allocator);
+    memset(g_4c8798, 0xff, 1024 * sizeof(dword));
+    g_509448 = (s_game_proc_table_509448 *)table;
+}
+#endif
+
+
+s_handles_storage g_handles_storage;
+
+#include "crc.h"
+#include "physical_memory.h"
+extern D3DResource *g_509444;
+
+// @retail 0x43890
+void function_43890()
+{
+    byte *state = (byte *)VirtualAlloc(0, 12, 0x101000, PAGE_READWRITE);
+    if (!state) GetLastError();
+    *(long *)state = 1;
+    g_509444 = (D3DResource *)state;
+    long size = 0x14000;
+    game_state_globals.unknown8 += size;
+    byte *buffer = (byte *)game_state_globals.base_address + 0x3fe000 - game_state_globals.unknown8;
+    function_163ba0(&game_state_globals.allocation_size_checksum, &size, 4);
+    *(byte **)(state + 4) = buffer;
+    *(long *)(state + 8) = 0;
+    if ((*(long *)state & 0x70000) != 0x20000) buffer = (byte *)((dword)buffer & 0x0fffffff);
+    c_data_allocator *allocator = g_510c2c;
+    *(byte **)(state + 4) = buffer;
+    void *table = g_510c2c->allocate(0x613c);
+    function_13d170((s_physical_object *)table, "decal vertex cache", 0x500, 6, 1024,
+        function_43820, (physical_block_busy_proc)function_43850, 0, allocator);
+    memset(g_4c8798, 0xff, 1024 * sizeof(dword));
+    g_509448 = (s_game_proc_table_509448 *)table;
 }

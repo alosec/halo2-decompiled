@@ -48,7 +48,8 @@ bool function_10aac0(long object_index, long name, real *value, long *index)
 				else
 					*value = final_value;
 				*index = i;
-				return true;
+				result = true;
+				break;
 			}
 		}
 	}
@@ -69,6 +70,7 @@ struct s_object_header_10ab80
 	s_object_10ab80 *object;
 };
 
+static __forceinline long real_to_long(real value);
 static inline long real_to_long(real value)
 {
 #ifdef H2_NATIVE_PORT
@@ -92,6 +94,8 @@ static inline long real_to_long(real value)
 #endif
 }
 
+// score 19 (was 19): ours keeps the name argument in EDI and the g_5107f4 pointer in ESI;
+// retail keeps the name in ESI and the pointer in EDI.
 // @retail 0x10ab80
 void function_10ab80(long object_index, long name, real value, real frames)
 {
@@ -106,15 +110,14 @@ void function_10ab80(long object_index, long name, real value, real frames)
 
 		if (index == NONE)
 		{
-			long free_index = NONE;
 			long oldest_index = NONE;
 			long oldest_time = 0x7fffffff;
 
-			for (long i = 0; i < 32; i++)
+			for (unsigned long i = 0; i < 32; i++)
 			{
 				if (values->object_indices[i] == NONE)
 				{
-					free_index = i;
+					index = i;
 					break;
 				}
 				if (values->entries[i].start_time < oldest_time)
@@ -123,14 +126,15 @@ void function_10ab80(long object_index, long name, real value, real frames)
 					oldest_index = i;
 				}
 			}
-			index = free_index != NONE ? free_index : oldest_index;
+			if (index == NONE)
+				index = oldest_index;
 		}
 
 		s_object_10ab80 *object = ((s_object_header_10ab80 *)g_4e0300->data)[object_index & 0xffff].object;
 		s_interpolated_value *entry = &values->entries[index];
 
-		values->object_indices[index] = object_index;
 		entry->name = name;
+		values->object_indices[index] = object_index;
 		entry->initial_value = initial_value;
 		entry->final_value = value;
 		entry->start_time = g_510c54->game_time;

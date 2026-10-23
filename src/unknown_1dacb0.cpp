@@ -1,10 +1,11 @@
 // @flags /O2 /Ob1 /arch:SSE /Gr
+#include "orientations_storage.h"
 /* UNKNOWN_1DACB0.CPP: the animation graph tag's lookups (0x1dacb0..0x1ddea0) */
 
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_1dacb0.h"
-#include "unknown_123680.h"
+#include "animation_cache.h"
 #include "unknown_0259d0.h"
 #include "unknown_11cb00.h"
 
@@ -26,7 +27,7 @@ inline void graph_animation_request(s_graph_tag *graph, long animation_index)
 
 		if (resource->streamed)
 		{
-			function_1236f0(resource, true);
+			animation_cache_request_resource(resource, true);
 		}
 	}
 }
@@ -258,7 +259,7 @@ bool function_1dd4c0(long render_model_tag_index, s_graph_tag *graph, long *node
 }
 
 // @retail 0x1dd5d0
-c_type_709360 function_1dd5d0(s_graph_tag *graph, c_type_709360 animation_id)
+c_type_709360 *function_1dd5d0(s_graph_tag *graph, c_type_709360 animation_id, c_type_709360 *output)
 {
 	c_type_709360 result = animation_id;
 
@@ -276,7 +277,8 @@ c_type_709360 function_1dd5d0(s_graph_tag *graph, c_type_709360 animation_id)
 			}
 		}
 	}
-	return result;
+	*output = result;
+	return output;
 }
 
 PRIVATE __forceinline real function_1dd632(bool arg_0, s_random_globals *arg_1)
@@ -299,7 +301,8 @@ c_type_709360 *function_1dd630(s_graph_tag *graph, c_type_709360 *result, c_type
 			{
 				arg_0e6cbc = function_1dafc0(graph, animation_id.graph_index);
 			}
-			animation_id = function_1dd5d0(graph, animation_id);
+			long temporary;
+			animation_id = *function_1dd5d0(graph, animation_id, (c_type_709360 *)&temporary);
 			animation = graph_animation_get(arg_0e6cbc, animation_id.index);
 			if (1.0f > animation->weight)
 			{
@@ -355,7 +358,7 @@ byte *function_1dd7c0(s_graph_tag *graph, c_type_709360 animation_id)
 	{
 		s_cache_resource *resource = &graph->resources[animation->resource_index];
 
-		return (byte *)function_1237e0(resource, animation->name) + animation->resource_offset;
+		return (byte *)animation_cache_get_resource(resource, animation->name) + animation->resource_offset;
 	}
 	return animation->data;
 }
@@ -387,7 +390,7 @@ void function_1ddab0(s_graph_tag *graph)
 
 		if (resource->streamed)
 		{
-			function_1236f0(resource, false);
+			animation_cache_request_resource(resource, false);
 		}
 	}
 }
@@ -449,7 +452,7 @@ PRIVATE __forceinline void graph_type_resources_request(s_graph_tag *graph, long
 
 					if (resource->streamed)
 					{
-						function_1236f0(resource, true);
+						animation_cache_request_resource(resource, true);
 					}
 				}
 			}
@@ -461,7 +464,7 @@ PRIVATE __forceinline void graph_type_resources_request(s_graph_tag *graph, long
 
 					if (resource->streamed)
 					{
-						function_1236f0(resource, false);
+						animation_cache_request_resource(resource, false);
 					}
 				}
 			}
@@ -533,7 +536,7 @@ PRIVATE __forceinline void graph_resources_request(s_graph_tag *graph, long mode
 }
 
 // @retail 0x1dacb0
-void function_1dacb0(s_graph_tag *graph, c_type_709360 animation_id, real *distance, real *event_distance)
+void function_1dacb0(s_graph_tag *graph, c_type_709360 animation_id, real *event_distance, real *distance)
 {
 	real total = 0.0f;
 	real total_at_event = 0.0f;
@@ -555,7 +558,11 @@ void function_1dacb0(s_graph_tag *graph, c_type_709360 animation_id, real *dista
 			switch (animation->frame_info_type)
 			{
 			case 1:
+				total += *movement++;
+				break;
 			case 2:
+				total += *movement++;
+				break;
 			case 3:
 				total += *movement++;
 				break;
@@ -638,14 +645,14 @@ bool function_1dceb0(s_graph_iterator3c *iterator, s_graph_tag *graph)
 /* the animation of the given name in the graph or the graphs it inherits
    from, the graph first */
 // @retail 0x1dd0b0
-c_type_709360 function_1dd0b0(s_graph_tag *graph, long name)
+c_type_709360 s_graph_tag::animation_by_name(long name)
 {
 	c_type_709360 animation_id;
+	s_graph_tag *current = this;
+	long graph_index = NONE;
 
-	if (graph)
+	if (this)
 	{
-		s_graph_tag *current = graph;
-		long graph_index = NONE;
 
 		do
 		{
@@ -663,7 +670,7 @@ c_type_709360 function_1dd0b0(s_graph_tag *graph, long name)
 				{
 					animation = &current->animations[index];
 				}
-				if (animation->name == name)
+				if (animation->name == *(volatile long const *)&name)
 				{
 					animation_id.graph_index = (short)graph_index;
 					animation_id.index = (short)index;
@@ -672,37 +679,25 @@ c_type_709360 function_1dd0b0(s_graph_tag *graph, long name)
 			}
 			if (animation_id.index == NONE)
 			{
-				s_graph_inheritance *inheritance;
-
 				graph_index++;
-				if (graph_index >= graph->inheritance_count)
+				if (graph_index >= inheritance_count)
 				{
 					break;
 				}
-				inheritance = &graph->inheritance[graph_index];
-				current = NULL;
-				if (inheritance->graph_tag_index != NONE)
-				{
-					current = graph_tag_get(inheritance->graph_tag_index);
-				}
+				current = graph_inherited_get(this, graph_index);
 			}
 		}
 		while (current);
 		if (animation_id.index != NONE)
 		{
-			function_1dd9d0(graph, animation_id);
+			function_1dd9d0(this, animation_id);
 		}
 	}
 	return animation_id;
 }
 
 /* an orientation (as unknown_141590.cpp declares it) */
-struct rigid_transform_scaled
-{
-	quaternionf rotation;
-	point3f position;
-	real scale;
-};
+
 
 void __stdcall function_1421f0(transform4x3f *out, rigid_transform_scaled const *orientation);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
@@ -807,19 +802,6 @@ bool function_1dd8f0(s_graph_tag *graph, c_type_709360 animation_id, real_quater
 	return result;
 }
 
-/* the weapon class entry of a mode (inlined copies) */
-inline s_graph_mode_entry *graph_weapon_class_get(s_graph_tag *graph, long mode, long weapon_class)
-{
-	s_graph_mode_entry *result = NULL;
-	s_graph_mode_entry *mode_entry = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&graph->mode_count, mode, 0x14);
-
-	if (mode_entry)
-	{
-		result = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&mode_entry->child_count, weapon_class, 0x14);
-	}
-	return result;
-}
-
 // @retail 0x1dcf20
 bool function_1dcf20(s_graph_tag *graph, s_graph_pair_iterator *iterator)
 {
@@ -873,7 +855,6 @@ bool function_1dcf20(s_graph_tag *graph, s_graph_pair_iterator *iterator)
 // @retail 0x1dcfa0
 bool function_1dcfa0(s_graph_tag *graph, s_graph_pair_iterator *iterator)
 {
-	bool local_1 = false;
 	long index = iterator->index + 1;
 
 	for (;;)
@@ -882,21 +863,60 @@ bool function_1dcfa0(s_graph_tag *graph, s_graph_pair_iterator *iterator)
 
 		while (iterator->step < 4 && !entry)
 		{
-			short local_0 = *(volatile short const *)&iterator->step;
+			/* the weapon class lookup is written out in each case: retail rereads
+			   the weapon class after the first lookup */
+			short local_0 = iterator->step;
+			s_graph_mode_entry *mode_entry;
 			switch (local_0)
 			{
 			case 0:
-				entry = graph_weapon_class_get(graph, iterator->mode, iterator->weapon_class);
+			{
+				s_graph_mode_entry *result = NULL;
+
+				mode_entry = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&graph->mode_count, iterator->mode, 0x14);
+				if (mode_entry)
+				{
+					result = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&mode_entry->child_count, iterator->weapon_class, 0x14);
+				}
+				entry = result;
 				break;
+			}
 			case 1:
-				entry = graph_weapon_class_get(graph, iterator->mode, 0x30000d9);
+			{
+				s_graph_mode_entry *result = NULL;
+
+				mode_entry = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&graph->mode_count, iterator->mode, 0x14);
+				if (mode_entry)
+				{
+					result = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&mode_entry->child_count, 0x30000d9, 0x14);
+				}
+				entry = result;
 				break;
+			}
 			case 2:
-				entry = graph_weapon_class_get(graph, 0x30000d9, iterator->weapon_class);
+			{
+				s_graph_mode_entry *result = NULL;
+
+				mode_entry = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&graph->mode_count, 0x30000d9, 0x14);
+				if (mode_entry)
+				{
+					result = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&mode_entry->child_count, iterator->weapon_class, 0x14);
+				}
+				entry = result;
 				break;
+			}
 			case 3:
-				entry = graph_weapon_class_get(graph, 0x30000d9, 0x30000d9);
+			{
+				s_graph_mode_entry *result = NULL;
+
+				mode_entry = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&graph->mode_count, 0x30000d9, 0x14);
+				if (mode_entry)
+				{
+					result = (s_graph_mode_entry *)function_1dd560((s_sorted_array *)&mode_entry->child_count, 0x30000d9, 0x14);
+				}
+				entry = result;
 				break;
+			}
 			}
 			if (!entry)
 			{
@@ -904,23 +924,32 @@ bool function_1dcfa0(s_graph_tag *graph, s_graph_pair_iterator *iterator)
 				index = 0;
 			}
 		}
-		if (!entry)
+		if (entry)
 		{
-			break;
-		}
-		if (index < entry->pair_count)
-		{
-			s_graph_pair *pair = &entry->pairs[index];
+			if (index < entry->pair_count)
+			{
+				s_graph_pair *pair = &entry->pairs[index];
 
-			iterator->a = pair->a;
-			iterator->b = pair->b;
-			iterator->index = (short)index;
-			local_1 = true;
+				iterator->a = pair->a;
+				iterator->b = pair->b;
+				iterator->index = (short)index;
+				return true;
+			}
+			iterator->step++;
+		}
+		else
+		{
 			break;
 		}
-		iterator->step++;
 	}
-	return local_1;
+	return false;
+}
+
+static inline void cross_product3d_1dd290(vector3f const *a, vector3f const *b, vector3f *result)
+{
+	result->i = a->j * b->k - a->k * b->j;
+	result->j = a->k * b->i - a->i * b->k;
+	result->k = a->i * b->j - a->j * b->i;
 }
 
 // @retail 0x1dd290
@@ -953,19 +982,18 @@ void function_1dd290(s_graph_tag *graph, transform4x3f *matrices, rigid_transfor
 			function_1421f0(&matrix, &orientations[node_index]);
 			if (mirrored_node_index == node_index)
 			{
+				parent = &matrices[mirror_parent_index];
 				vector3f forward = matrix.forward;
 				vector3f up = matrix.up;
 				point3f position = matrix.position;
 
-				parent = &matrices[mirror_parent_index];
-				forward.j = 0.0f - forward.j;
-				up.j = 0.0f - up.j;
 				position.y = 0.0f - position.y;
+				forward.j = 0.0f - forward.j;
 				matrix.scale = 1.0f;
+				up.j = 0.0f - up.j;
+				vector3f const *mirrored_forward = &forward;
 				matrix.forward = forward;
-				matrix.left.i = up.j * forward.k - up.k * forward.j;
-				matrix.left.j = up.k * forward.i - up.i * forward.k;
-				matrix.left.k = up.i * forward.j - up.j * forward.i;
+				cross_product3d_1dd290(&up, mirrored_forward, &matrix.left);
 				matrix.up = up;
 				matrix.position = position;
 			}
@@ -983,6 +1011,21 @@ void function_1dd290(s_graph_tag *graph, transform4x3f *matrices, rigid_transfor
 	}
 }
 
+/* the animation at (item, index) of a weapon type's set, or none */
+static inline c_type_709360 animation_find_in_type_1dc790(s_graph_weapon_type *weapon_type_entry, long set,
+	long item_index, long animation_index)
+{
+	c_type_709360 animation_id;
+	s_graph_set_entry *set_entry = (s_graph_set_entry *)function_1dd560(
+		(s_sorted_array *)&weapon_type_entry->set_count, set, 0xc);
+
+	if (set_entry)
+	{
+		animation_id = set_entry->items[item_index].animation_ids[animation_index];
+	}
+	return animation_id;
+}
+
 // @retail 0x1dc790
 c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long weapon_type, long set, long item_index,
 	long animation_index, long *found_mode, long *found_weapon_class, long *found_weapon_type)
@@ -998,31 +1041,27 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 		s_graph_weapon_type *weapon_type_entry;
 
 		iterator.graph = this;
-		iterator.mode = mode;
-		iterator.weapon_class = weapon_class;
-		iterator.weapon_type = weapon_type;
 		iterator.step = 0;
 		iterator.mode_entry = NULL;
 		iterator.class_entry = NULL;
+		iterator.mode = mode;
+		iterator.weapon_class = weapon_class;
+		iterator.weapon_type = weapon_type;
 		weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
 			&iterator_weapon_type);
-		while (weapon_type_entry)
+		bool found = false;
+		while (!found && weapon_type_entry)
 		{
-			c_type_709360 animation_id;
-			s_graph_set_entry *set_entry = (s_graph_set_entry *)function_1dd560(
-				(s_sorted_array *)&weapon_type_entry->set_count, set, 0xc);
-
-			if (set_entry)
-			{
-				animation_id = set_entry->items[item_index].animation_ids[animation_index];
-			}
-			result = animation_id;
+			result = animation_find_in_type_1dc790(weapon_type_entry, set, item_index, animation_index);
 			if (result.index != NONE)
 			{
-				break;
+				found = true;
 			}
-			weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
-				&iterator_weapon_type);
+			else
+			{
+				weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
+					&iterator_weapon_type);
+			}
 		}
 		if (found_mode)
 		{
@@ -1050,7 +1089,8 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 {
 	c_type_709360 result;
 
-	if (weapon_class != NONE)
+	if (weapon_class == NONE)
+		return result;
 	{
 		s_graph_weapon_type_iterator iterator;
 		long iterator_mode = NONE;
@@ -1065,9 +1105,12 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 		iterator.step = 0;
 		iterator.mode_entry = NULL;
 		iterator.class_entry = NULL;
-		while ((weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
-			&iterator_weapon_type)) != NULL)
+		do
 		{
+			weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
+				&iterator_weapon_type);
+			if (!weapon_type_entry)
+				break;
 			c_type_709360 animation_id;
 			s_graph_named_animation *named = (s_graph_named_animation *)function_1dd560(
 				(s_sorted_array *)&weapon_type_entry->named_animation_count, set, sizeof(s_graph_named_animation));
@@ -1077,11 +1120,7 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 				animation_id = named->animation_id;
 			}
 			result = animation_id;
-			if (result.index != NONE)
-			{
-				break;
-			}
-		}
+		} while (result.index == NONE);
 		if (found_mode)
 		{
 			*found_mode = iterator_mode;
@@ -1110,7 +1149,8 @@ c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon
 {
 	c_type_709360 result;
 
-	if (weapon_class != NONE)
+	if (weapon_class == NONE)
+		return result;
 	{
 		s_graph_weapon_type_iterator iterator;
 		long iterator_mode = NONE;
@@ -1125,9 +1165,12 @@ c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon
 		iterator.step = 0;
 		iterator.mode_entry = NULL;
 		iterator.class_entry = NULL;
-		while ((weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
-			&iterator_weapon_type)) != NULL)
+		do
 		{
+			weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
+				&iterator_weapon_type);
+			if (!weapon_type_entry)
+				break;
 			c_type_709360 animation_id;
 			s_graph_named_animation *named = (s_graph_named_animation *)function_1dd560(
 				(s_sorted_array *)&weapon_type_entry->overlay_count, set, sizeof(s_graph_named_animation));
@@ -1137,11 +1180,7 @@ c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon
 				animation_id = named->animation_id;
 			}
 			result = animation_id;
-			if (result.index != NONE)
-			{
-				break;
-			}
-		}
+		} while (result.index == NONE);
 		if (found_mode)
 		{
 			*found_mode = iterator_mode;
@@ -1181,21 +1220,28 @@ c_type_709360 s_graph_tag::transition_find(long mode, long weapon_class, long we
 		long const *mode_reference = &mode;
 
 		iterator.graph = this;
-		iterator.mode = *mode_reference;
-		iterator.weapon_class = weapon_class;
-		iterator.weapon_type = weapon_type;
 		iterator.step = 0;
 		iterator.mode_entry = NULL;
 		iterator.class_entry = NULL;
-		while ((weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
-			&iterator_weapon_type)) != NULL)
+		iterator.mode = *mode_reference;
+		iterator.weapon_class = weapon_class;
+		iterator.weapon_type = weapon_type;
+		weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
+			&iterator_weapon_type);
+		bool found = false;
+		while (!found && weapon_type_entry)
 		{
 			result = weapon_type_entry->variant_find(name, a, b, c, d, e, f, g);
 			if (result.index != NONE)
 			{
 				function_1dd9d0(this, result);
 				graph_resources_request(this, c, iterator_weapon_class, iterator_weapon_type, true, false);
-				break;
+				found = true;
+			}
+			else
+			{
+				weapon_type_entry = graph_weapon_type_iterate(&iterator, &iterator_mode, &iterator_weapon_class,
+					&iterator_weapon_type);
 			}
 		}
 	}

@@ -122,9 +122,9 @@ long function_1249d0(short)
 
 struct s_screen_parameters;
 class c_class_1473c9;
-c_class_1473c9 *function_149f1e(word user_flags, long load);
+c_class_1473c9 *window_manager_open_channel_5_screen(short user_flags, long load);
 c_class_1473c9 *__stdcall function_252481(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_18f42d(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall profile_mode_screen_load(s_screen_parameters *parameters);
 
 static bool native_profile_chooser_is_open()
 {
@@ -150,8 +150,8 @@ void function_1905bf(long controller, bool)
      * Accepting its connected slot then opens the genuine recovered empty-profile
      * selector. No profile or sign-in state is fabricated. */
     const long load = reinterpret_cast<long>(
-        native_profile_chooser_is_open() ? function_18f42d : function_252481);
-    function_149f1e((word)(1 << controller), load);
+        native_profile_chooser_is_open() ? profile_mode_screen_load : function_252481);
+    window_manager_open_channel_5_screen((short)(1 << controller), load);
 }
 
 bool function_19a76d(short)

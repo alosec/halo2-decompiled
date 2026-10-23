@@ -68,6 +68,8 @@ short __stdcall function_1b6450(long actor_index, s_slot *slot, bool active);
 long __stdcall function_1b6120(long actor_index, s_slot *slot);
 bool function_26ba60(long prop_index, long actor_index, long clump_index);
 
+static __forceinline long real_to_long(real value);
+
 // @retail 0x1b6120
 long __stdcall function_1b6120(long actor_index, s_slot *slot)
 {
@@ -90,14 +92,15 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 			iterator.reference.unknown0 = NONE;
 			for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
 			{
+				long current_reference = iterator.reference.unknown0;
 				if (joint_index == NONE && element_502424_get(entry->unknown4)->target.unknown4 == node->object_index &&
-					function_26ecc0(actor_index, iterator.reference.unknown0, (s_joint_behavior_state *)slot))
+					function_26ecc0(actor_index, current_reference, (s_joint_behavior_state *)slot))
 				{
 					joint_index = entry->unknown4;
 				}
 				else
 				{
-					joint_decline(actor_index, iterator.reference.unknown0);
+					joint_decline(actor_index, current_reference);
 				}
 			}
 
@@ -126,7 +129,7 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 				}
 				else if (function_26ba60(node->unknown08, actor_index, actor->unknown07c))
 				{
-					function_1fb7e0(actor_index, 0x4e, NULL, node->object_index, NONE);
+					function_1fb7e0(0x4e, actor_index, NULL, node->object_index, NONE);
 				}
 
 				if (element->unknown90 == -1.0f || (real)view->unknown0c > element->unknown90)
@@ -143,13 +146,7 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 					}
 				}
 				real ticks = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__) * 3.0f * g_510c54->field_2_3;
-				long value;
-
-				__asm
-				{
-					fld ticks
-					fistp value
-				}
+				long value = real_to_long(ticks);
 				state->unknown1c = (short)value;
 			}
 		}
@@ -157,7 +154,7 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 	return joint_index;
 }
 short __stdcall function_1b6740(long actor_index, long leader_index, long a, long b);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 
 /* the state of slot type 0x22 another actor has */
 struct s_slot_22
@@ -184,61 +181,18 @@ inline s_50241c_element_25 *element_50241c_25_get(long index)
 // @retail 0x1b6450
 short __stdcall function_1b6450(long actor_index, s_slot *slot, bool active)
 {
+	short result = g_46fbe8;
 	s_actor_view *actor = actor_get(actor_index);
 	s_prop_node_view *node = prop_node_get(actor->prop_index);
-	short result = g_46fbe8;
 	s_slot_25 *state = (s_slot_25 *)slot;
 	s_502424_element_25 *joint = (s_502424_element_25 *)element_502424_get(state->element_index);
 
-	if (joint->object_index != NONE)
-	{
-		if (joint->unknown80)
-		{
-			if (--state->unknown1c > 0)
-				return result;
-		}
-		else
-		{
-			if (joint->unknown88 >= g_510c54->game_time)
-				return result;
-
-			joint->unknown88 = g_510c54->game_time;
-			for (short i = 0; i < 10; i++)
-			{
-				s_joint_participant_25 *participant = &joint->participants[i];
-
-				if (participant->actor_index != NONE && participant->status == 0)
-				{
-					s_actor_view *other = (s_actor_view *)record_pool_lookup(g_4f55f0, participant->actor_index);
-
-					if (other && other->unknown221 && actor->unknown009)
-					{
-						if (joint->unknown8c > 10 * g_510c54->field_2_3)
-							goto done;
-
-						joint->unknown8c++;
-						if (joint->state == 1 && !joint->unknown81 &&
-							function_26ba60(node->unknown08, actor_index, actor->unknown07c) &&
-							function_1fb7e0(actor_index, 0x4d, NULL, joint->object_index, NONE))
-						{
-							joint->unknown81 = true;
-						}
-						return result;
-					}
-				}
-			}
-
-			s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
-
-			if (view && view->unknown70.unknown0 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
-			{
-				s_50241c_element_25 *element = element_50241c_25_get(node->unknown08);
-
-				if (!element->unknown33)
-					element->unknown33 = function_1fb7e0(actor_index, 0x4f, NULL, joint->object_index, NONE);
-			}
-		}
-	}
+	if (joint->object_index == NONE)
+		goto done;
+	if (!joint->unknown80)
+		goto evaluate;
+	if (--state->unknown1c > 0)
+		goto leave;
 
 done:
 	result = g_46fbe4;
@@ -255,30 +209,75 @@ done:
 				view->unknown94 = joint->unknownb0;
 		}
 	}
+leave:
 	return result;
+
+evaluate:
+	{
+		if (joint->unknown88 >= g_510c54->game_time)
+			goto leave;
+
+		joint->unknown88 = g_510c54->game_time;
+		for (short i = 0; i < 10; i++)
+		{
+			s_joint_participant_25 *participant = &joint->participants[i];
+
+			if (participant->actor_index != NONE && participant->status == 0)
+			{
+				s_actor_view *other = (s_actor_view *)record_pool_lookup(g_4f55f0, participant->actor_index);
+
+				if (other && other->unknown221 && actor->unknown009)
+				{
+					if (joint->unknown8c > 10 * g_510c54->field_2_3)
+						goto done;
+
+					joint->unknown8c++;
+					if (joint->state == 1 && !joint->unknown81 &&
+						function_26ba60(node->unknown08, actor_index, actor->unknown07c) &&
+						function_1fb7e0(0x4d, actor_index, NULL, joint->object_index, NONE))
+					{
+						joint->unknown81 = true;
+					}
+					goto leave;
+				}
+			}
+		}
+
+		s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
+
+		if (view && view->unknown70.unknown0 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
+		{
+			s_50241c_element_25 *element = element_50241c_25_get(node->unknown08);
+
+			if (!element->unknown33)
+				element->unknown33 = function_1fb7e0(0x4f, actor_index, NULL, joint->object_index, NONE);
+		}
+	}
+	goto done;
 }
 
 /* invites the clump members whose slot 0x22 is at the actor's prop */
 // @retail 0x1b6740
 short __stdcall function_1b6740(long actor_index, long leader_index, long a, long b)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	long count = 0;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->unknown07c != NONE && actor->prop_index != NONE)
 	{
 		s_prop_node_view *node = prop_node_get(actor->prop_index);
-		long index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_element_502420_member_iterator iterator;
+		s_actor_view *other;
 
-		while (index != NONE)
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		iterator.index = NONE;
+		while ((other = element_502420_member_next(&iterator)) != 0)
 		{
-			s_actor_view *other = actor_get(index);
-			long other_index = index;
+			long other_index = iterator.index;
 
-			index = other->next_index;
 			if (other != actor && other->unknown221)
 			{
-				short slot_index = function_1a6fe0(other_index, 0x22);
+				short slot_index = actor_behavior_find_level(other_index, 0x22);
 
 				if (slot_index != NONE)
 				{

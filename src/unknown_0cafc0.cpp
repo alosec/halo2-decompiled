@@ -17,7 +17,9 @@ struct s_unit_eye_object
 	real scale;
 	byte unknowna4[0xaa - 0xa4];
 	byte type;
-	byte unknownab[0x10a - 0xab];
+	byte unknownab[0xb4 - 0xab];
+	long attachment_index;
+	byte unknownb8[0x10a - 0xb8];
 	byte flags10a_0 : 1;
 	byte flags10a_1 : 1;
 	byte flags10a_2 : 1;
@@ -112,28 +114,46 @@ bool function_e0dc0(long unit_index)
 	return result;
 }
 
-// @retail 0xb9ef0
-point3f *function_b9ef0(long object_index, point3f *result)
+/* the attachment's selected element, or NONE */
+static __forceinline short attachment_element_index_b9ef0(s_unit_eye_attachment const *attachment)
+{
+	if (attachment->index >= 0 && attachment->index < attachment->element_count)
+		return attachment->index;
+	return NONE;
+}
+
+/* the outermost parent of an object */
+static __forceinline long root_object_index_b9ef0(long object_index)
 {
 	long root_index = NONE;
 	long index = object_index;
-	long attachment_index;
 
 	while (index != NONE)
 	{
 		root_index = index;
 		index = EYE_OBJECT(index)->parent_index;
 	}
-	attachment_index = *(long *)((byte *)EYE_OBJECT(root_index) + 0xb4);
+	return root_index;
+}
+
+// @retail 0xb9ef0
+point3f *function_b9ef0(long object_index, point3f *result)
+{
+	long root_index = root_object_index_b9ef0(object_index);
+	long attachment_index;
+
+	s_unit_eye_object *root_object = EYE_OBJECT(root_index);
+	s_unit_eye_object *const *root_reference = &root_object;
+	attachment_index = (*root_reference)->attachment_index;
 	if (attachment_index != NONE)
 	{
 		s_unit_eye_attachment *attachment = &((s_unit_eye_attachment *)g_51e9b8->data)[attachment_index & 0xffff];
-		short element_index = (attachment->index >= 0 && attachment->index < attachment->element_count) ? attachment->index : NONE;
+		long element_index = attachment_element_index_b9ef0(attachment);
 
 		if (element_index != NONE)
 		{
-			*result = attachment->elements[element_index].definition->data->position;
-			return result;
+			point3f const *position = &attachment->elements[element_index].definition->data->position;
+			return real_point3d_set(result, position->x, position->y, position->z);
 		}
 	}
 	function_b9dd0(object_index, result);

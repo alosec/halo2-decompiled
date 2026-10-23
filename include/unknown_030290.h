@@ -3,7 +3,7 @@
 #ifndef UNKNOWN_030290_H
 #define UNKNOWN_030290_H
 
-struct short_rectangle2d { short top, left, bottom, right; };
+#include "camera_storage.h"
 
 /* a view: position first, screen bounds at 0x30 */
 struct s_view
@@ -14,21 +14,7 @@ struct s_view
 };
 
 /* matrix4x3 (scale, rotation, position) followed by projection values */
-struct s_camera
-{
-	real scale;
-	vector3f right;
-	vector3f up;
-	vector3f forward;
-	point3f position;
-	byte unknown34[0x44];
-	real unknown78;
-	byte unknown7c[0x10];
-	real unknown8c;
-	byte unknown90[8];
-	real unknown98;
-	real unknown9c;
-};
+#include "projection_storage.h"
 
 struct s_obj
 {
@@ -50,11 +36,6 @@ struct s_obj_array
 	s_obj_element elements[1];
 };
 
-struct s_flag_entry
-{
-	long key;
-	long value;
-	real x;
-};
+#include "flags_storage.h"
 
 #endif

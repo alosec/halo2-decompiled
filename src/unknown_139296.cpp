@@ -1,7 +1,9 @@
 // @flags /O1 /Oi /arch:SSE /Gr
+#include "view_context_storage.h"
 /* UNKNOWN_139296.CPP: per-player interface state (built for size) */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "unknown_07f720.h"
@@ -9,6 +11,8 @@
 #include <math.h>
 #ifdef H2_NATIVE_PORT
 #include <wchar.h>
+#else
+#include <xmmintrin.h>
 #endif
 
 struct s_player_view
@@ -129,7 +133,11 @@ struct s_new_hud_globals
 struct s_13a720_status
 {
 	byte unknown00[0x1e];
-	word flags;
+	union
+	{
+		word flags;
+		byte low_flags;
+	};
 	byte unknown20[8];
 	real value28;
 	real value2c;
@@ -150,32 +158,37 @@ void function_13a720(long user_index, s_13a720_status const *status)
 {
 	s_new_hud_user *user = &((s_new_hud_globals *)g_510c4c)->users[user_index];
 	dword flags = 0;
-	if (!(status->flags & 4) && status->value28 > 0.0f && !function_13cb40())
+	if (!(status->low_flags & 4) && !(0.0f >= status->value28) && !function_13cb40())
 	{
+		dword status_flags = 0;
 		if (user->value00 != -1.0f && function_15eb20(function_14de70(user_index)))
 		{
-			flags = (status->flags >> 9) & 1;
+			if (status->flags & 0x200)
+				status_flags |= 1;
+			else
+				status_flags &= ~1;
 			if (user->value00 > status->value2c)
-				flags |= 2;
+				status_flags |= 2;
 			else
-				flags &= ~2;
+				status_flags &= ~2;
 			if (status->value2c < 0.25f && status->value2c > 0.0f)
-				flags |= 4;
+				status_flags |= 4;
 			else
-				flags &= ~4;
+				status_flags &= ~4;
 			if (status->value2c == 0.0f)
-				flags |= 8;
+				status_flags |= 8;
 			else
-				flags &= ~8;
+				status_flags &= ~8;
 			if (status->flagad)
-				flags |= 0x100;
+				status_flags |= 0x100;
 			else
-				flags &= ~0x100;
+				status_flags &= ~0x100;
 			if (status->flagae)
-				flags |= 0x200;
+				status_flags |= 0x200;
 			else
-				flags &= ~0x200;
+				status_flags &= ~0x200;
 		}
+		flags = status_flags;
 		if (g_4e6948->state == 2 && status->value2c >= 1.0f)
 			flags &= ~2;
 	}
@@ -397,7 +410,7 @@ void function_13a050(byte const *status, long user_index, long type, s_13ad48_it
 	*fourth_out = fourth;
 }
 
-void function_22a648(void);
+void new_hud_function_context_initialize(void);
 
 // @retail 0x139152
 void new_hud_initialize_for_new_map(void)
@@ -421,7 +434,7 @@ void new_hud_initialize_for_new_map(void)
 		globals->users[i].index08 = NONE;
 	}
 	memset(&globals->appearance, 0, sizeof(globals->appearance));
-	function_22a648();
+	new_hud_function_context_initialize();
 	function_13ac30();
 }
 
@@ -441,8 +454,9 @@ void function_1392f8(s_player_appearance const *appearance)
 	{
 		g_502234[i] = pack_color3f(&colors[i]);
 	}
+	byte *local_1 = &g_502244;
+	*local_1 = 4;
 	((s_new_hud_globals *)g_510c4c)->appearance = **appearance_reference;
-	g_502244 = 4;
 }
 
 struct s_new_hud_player
@@ -522,46 +536,44 @@ void function_13934d(s_name_buffer *buffer, long string_handle)
 
 long function_155760(long index);
 bool function_155d60(long index);
-extern long g_4b9ed8;
 bool g_4f55e2;
 
+// score 7 (was 7): ours masks the byte with an and against a memory constant and negates it, retail masks a
+// dword in memory and tests the low byte.
 // @retail 0x13939b
 bool function_13939b()
 {
 	long index = g_4b9ed8;
-	return (function_155760(index) != 3 || function_155d60(index)) &&
+	if ((function_155760(index) != 3 || function_155d60(index)) &&
 		function_155760(index) != 2 &&
-		((s_510c4c_view *)g_510c4c)->flag1d2 &&
-		!(g_4e6948->state == 1 ? g_4f55e2 : false);
+		((s_510c4c_view *)g_510c4c)->flag1d2)
+	{
+		bool local_1 = g_4e6948->state == 1 ? g_4f55e2 : false;
+		if (local_1)
+			return false;
+		return true;
+	}
+	return false;
 }
 
-short g_4b9dd4;
-short g_4b9dd6;
-extern short g_4b9dd0;
-extern short g_4b9dd2;
 byte function_016a90();
 
 // @retail 0x13a690
 long function_13a690(long mode)
 {
 	long result = 0;
-	short width = g_4b9dd6 - g_4b9dd2;
 	short top = g_4b9dd0;
 	short bottom = g_4b9dd4;
 
-	if (width < 640 || (short)(bottom - top) < 480)
+	if ((short)(g_4b9dd6 - g_4b9dd2) < 640 || (short)(bottom - top) < 480)
 	{
-		if (width < 640 && (short)(bottom - top) < 480)
-		{
+		if ((short)(g_4b9dd6 - g_4b9dd2) < 640 && (short)(bottom - top) < 480)
 			result = 2;
-		}
 		else
 		{
 			result = 1;
 			if (function_016a90() && mode == 3)
-			{
 				result = 2;
-			}
 		}
 	}
 
@@ -627,9 +639,10 @@ PRIVATE __forceinline s_new_hud_user *pulse_user(long index)
 // @retail 0x2003dc
 void function_2003dc(long user_index)
 {
-	char *ticks = (char *)pulse_user(user_index) + 0x2d;
-	for (long i = 0; i < 9; i++, ticks += 4)
+	s_new_hud_user *user = pulse_user(user_index);
+	for (long i = 0; i < 9; i++)
 	{
+		char *ticks = (char *)user + 0x2d + i * 4;
 		if (ticks[-1] > 0)
 		{
 			if (--ticks[-1] == 0)
@@ -718,7 +731,7 @@ struct s_condition_subject
 };
 
 // @retail 0x13ac87
-bool function_13ac87(s_condition_masks const *masks, word first, word second, word fourth, word third, s_condition_subject const *subject)
+bool function_13ac87(s_condition_masks const *masks, word first, word second, word fourth, s_condition_subject const *subject, word third)
 {
 	if (subject)
 	{
@@ -762,50 +775,142 @@ bool function_13ac87(s_condition_masks const *masks, word first, word second, wo
 
 struct s_ammunition_state
 {
-	byte unknown00[8];
+	long field_0;
+	byte unknown04[2];
+	short field_6;
 	short rounds;
-	byte unknown0a[2];
+	short field_a;
 	short magazine;
 	byte unknown0e[2];
 	real charge;
 	byte unknown14[0xd];
 	bool flag21;
+	bool field_22;
 };
 
 struct s_ammunition_definition
 {
-	byte unknown00[0x1a];
+	byte unknown00[0x18];
+	short field_18;
 	short maximum_rounds;
 	real minimum_charge;
 };
 
 /* the state an ammunition counter shows */
+static __forceinline long function_13b084(s_ammunition_state const *arg_1)
+{
+    return real_truncate(arg_1->charge * 100.0f);
+}
+
 // @retail 0x13b083
-long function_13b083(s_ammunition_state const *state, long definition_index)
+long function_13b083(long definition_index, s_ammunition_state const *state)
 {
 	long result = NONE;
 	if (definition_index != NONE)
 	{
 		s_ammunition_definition *definition = (s_ammunition_definition *)g_4e3b44[definition_index & 0xffff].bytes;
-		if (state->magazine == 0 && 100 - PIN((long)(state->charge * 100.0f), 0, 100) == 0)
+		if (state->magazine == 0 && 100 - PIN(function_13b084(state), 0, 100) == 0)
 		{
-			return 4;
+			result = 4;
 		}
-		if (state->magazine == 0 && definition->minimum_charge >= (1.0f - state->charge) * 100.0f)
+		else if (state->magazine == 0 && definition->minimum_charge >= (1.0f - state->charge) * 100.0f)
 		{
-			return 3;
+			result = 3;
 		}
-		if (state->rounds == 0)
+		else if (state->rounds == 0)
 		{
-			return 2;
+			result = 2;
 		}
-		if (state->rounds > definition->maximum_rounds || state->flag21)
+		else if (state->rounds > definition->maximum_rounds || state->flag21)
 		{
-			return 7;
+			result = 7;
 		}
-		return 1;
+		else
+			result = 1;
 	}
 	return result;
+}
+
+struct s_13aa27_record
+{
+	long field_0;
+	byte field_4;
+	byte field_5;
+};
+
+void function_2007b3(long arg_0, long arg_1, long arg_2, long arg_3);
+
+// @retail 0x13aa27
+void function_13aa27(long arg_1, byte const *arg_2, byte *arg_3, long arg_4, byte const *arg_5)
+{
+	byte const *const *local_0 = &arg_5;
+	s_ammunition_state const *state = (s_ammunition_state const *)arg_2;
+	s_13aa27_record *record = (s_13aa27_record *)arg_3;
+
+	if (state->field_0 != record->field_0)
+	{
+		record->field_4 = 0;
+		record->field_0 = state->field_0;
+	}
+	if (arg_4 != NONE)
+	{
+		s_ammunition_definition *definition = (s_ammunition_definition *)g_4e3b44[arg_4 & 0xffff].bytes;
+		byte previous = record->field_4;
+		byte local_1 = 0;
+		if (state->field_a == 0)
+		{
+			if (definition->minimum_charge >= (1.0f - state->charge) * 100.0f)
+				local_1 = 2;
+		}
+		else if (state->field_6 <= definition->field_18)
+		{
+			local_1 = 1;
+		}
+		if (local_1 != previous && local_1 != 0)
+		{
+			long local_2 = function_13b083(arg_4, state);
+			if (local_2 != NONE)
+				function_2007b3(arg_1, local_2, 3, NONE);
+			record->field_5 = (byte)function_1469f0(5.0f);
+		}
+		if (local_1 != 0)
+		{
+			if (--record->field_5 == 0)
+			{
+				long local_3 = function_13b083(arg_4, state);
+				record->field_5 = (byte)function_1469f0(5.0f);
+				if (local_3 != NONE)
+					function_2007b3(arg_1, local_3, 1, NONE);
+			}
+			if (state->field_a != 0 && state->field_22)
+			{
+				if (state->rounds == 0)
+				{
+					function_2007b3(arg_1, 2, 1, NONE);
+					record->field_5 = (byte)function_1469f0(5.0f);
+				}
+				else if (state->rounds <= definition->maximum_rounds && !state->flag21)
+				{
+					function_2007b3(arg_1, 1, 1, NONE);
+					record->field_5 = (byte)function_1469f0(5.0f);
+				}
+			}
+			if (state->magazine == 0 && state->field_22)
+			{
+				if (100 - PIN(function_13b084(state), 0, 100) == 0)
+				{
+					function_2007b3(arg_1, 4, 1, NONE);
+					record->field_5 = (byte)function_1469f0(5.0f);
+				}
+				else if (definition->minimum_charge >= (1.0f - state->charge) * 100.0f)
+				{
+					function_2007b3(arg_1, 3, 1, NONE);
+					record->field_5 = (byte)function_1469f0(5.0f);
+				}
+			}
+		}
+		record->field_4 = local_1;
+	}
 }
 
 void function_1a0180(long tag_index, long string_handle, word *buffer);
@@ -881,7 +986,7 @@ struct s_hud_weapon_record
 };
 
 // @retail 0x13afa9
-void function_13afa9(long object_index, s_hud_weapon_record *record, long *definition_out)
+void function_13afa9(long object_index, long *definition_out, s_hud_weapon_record *record)
 {
 	s_13b164_object *object = ((s_13b164_header *)g_4e0300->data)[object_index & 0xffff].object;
 	s_weapon_status status;
@@ -925,11 +1030,12 @@ struct s_text_widget_state;
 bool function_22a9bc(s_text_widget const *arg_1, long arg_2,
     s_text_widget_state const *arg_3, color4f const *arg_4);
 bool function_22b7dd(byte const *arg_1, long arg_2);
-bool function_22af8d(long arg_1, byte const *arg_2);
+struct s_bitmap_widget_22ae21;
+bool function_22af8d(long arg_1, byte const *arg_2, s_bitmap_widget_22ae21 const *widget);
 struct s_22b8e2;
 void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2);
 void function_22aff1(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
-void function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
+void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 
 // @retail 0x13a3c6
 bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
@@ -950,12 +1056,12 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_24 + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)local_7, local_5))
             {
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
                 bool local_12 = function_22b7dd(local_9, arg_2);
-                if (!local_12) local_1 = local_12;
+                if (local_12 != true) local_1 = local_12;
             }
             local_8 += 0x50;
         }
@@ -969,12 +1075,12 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_c + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)local_7, local_5))
             {
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
-                bool local_12 = function_22af8d(arg_2, arg_3);
-                if (!local_12) local_1 = local_12;
+                bool local_12 = function_22af8d(arg_2, arg_3, (s_bitmap_widget_22ae21 const *)local_9);
+                if (local_12 != true) local_1 = local_12;
             }
             local_8 += 0x64;
         }
@@ -988,12 +1094,12 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_14 + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)local_7, local_5))
             {
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
                 bool local_12 = function_22a9bc((s_text_widget const *)local_9, arg_2, (s_text_widget_state const *)arg_3, (color4f const *)local_10);
-                if (!local_12) local_1 = local_12;
+                if (local_12 != true) local_1 = local_12;
             }
             local_8 += 0x54;
         }
@@ -1010,8 +1116,8 @@ void function_13a532(long arg_1, long arg_2, byte const *arg_3, long arg_4)
     word local_4 = 0;
     word local_5 = 0;
     word local_6 = 0;
-    s_13ad48_item const *local_7;
-    function_13a050(arg_3, arg_2, arg_4, &local_7, &local_3, &local_4, &local_5, &local_6);
+    s_13ad48_item const *item;
+    function_13a050(arg_3, arg_2, arg_4, &item, &local_3, &local_4, &local_5, &local_6);
     if (local_2->field_20 > 0)
     {
         long local_8 = 0;
@@ -1020,10 +1126,10 @@ void function_13a532(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_24 + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)item, local_5))
             {
                 real local_10[4];
-                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
+                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, item);
                 function_22b8e2((s_22b8e2 const *)local_9, arg_2, (color4f const *)local_10);
             }
             local_8 += 0x50;
@@ -1038,10 +1144,10 @@ void function_13a532(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_c + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)item, local_5))
             {
                 real local_10[4];
-                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
+                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, item);
                 function_22aff1(arg_2, arg_3, local_9, local_10);
             }
             local_8 += 0x64;
@@ -1056,10 +1162,10 @@ void function_13a532(long arg_1, long arg_2, byte const *arg_3, long arg_4)
         {
             byte const *local_9 = local_2->field_14 + local_8;
             if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, local_5, (s_condition_subject const *)local_7))
+                local_6, (s_condition_subject const *)item, local_5))
             {
                 real local_10[4];
-                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
+                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, item);
                 function_22aa16(arg_2, arg_3, local_9, local_10);
             }
             local_8 += 0x54;
@@ -1154,49 +1260,52 @@ void function_13b285(void);
 long players_first_active_local_player(void);
 long function_14de10(long arg_1);
 
-__forceinline long function_13a839(long const *arg_1)
+__forceinline long function_13a83a(long arg_1)
 {
-    return *(long const volatile *)arg_1;
+    long local_1;
+    if (function_14ddc0(arg_1))
+    {
+        long local_2 = function_14de70(arg_1);
+        local_1 = *(long *)(g_4e8c24->data + (local_2 & 0xffff) * 0x21c + 0x2c);
+    }
+    else
+        local_1 = NONE;
+    return local_1;
 }
 
 // @retail 0x13a838
 void __stdcall function_13a838(long arg_1)
 {
-    long local_13 = function_13a839(&arg_1);
-    byte *local_1 = (byte *)g_510c4c + local_13 * 0x6c;
+    long const *local_0 = &arg_1;
+    byte *local_1 = (byte *)g_510c4c + arg_1 * 0x6c;
     byte local_2[0x270];
-    function_2003dc(local_13);
-    function_13992a(local_2, local_13);
-    function_13a720(local_13, (s_13a720_status const *)local_2);
+    function_2003dc(arg_1);
+    function_13992a(local_2, arg_1);
+    function_13a720(arg_1, (s_13a720_status const *)local_2);
     if (local_2[0x130])
     {
         real local_3 = local_2[0x133] ? 1.0f : 0.0f;
-        if (*(real *)(local_1 + 0x28) != local_3)
+        real *local_15 = (real *)(local_1 + 0x28);
+        if (*local_15 != local_3)
         {
             real local_4 = 2.0f / g_510c54->field_2_3;
-            if (local_3 > *(real *)(local_1 + 0x28))
+            if (local_3 > *local_15)
             {
-                real local_5 = *(real *)(local_1 + 0x28) + local_4;
-                *(real *)(local_1 + 0x28) = local_5 > 1.0f ? 1.0f : local_5;
+                real local_5 = *local_15 + local_4;
+                *local_15 = local_5 > 1.0f ? 1.0f : local_5;
             }
             else
             {
-                real local_5 = *(real *)(local_1 + 0x28) - local_4;
-                *(real *)(local_1 + 0x28) = local_5 > 0.0f ? local_5 : 0.0f;
+                real local_5 = *local_15 - local_4;
+                *local_15 = local_5 > 0.0f ? local_5 : 0.0f;
             }
         }
     }
-    long local_6 = NONE;
-    if (function_14ddc0(local_13))
-    {
-        long local_7 = function_14de70(local_13);
-        local_6 = *(long *)(g_4e8c24->data + (local_7 & 0xffff) * 0x21c + 0x2c);
-    }
+    long local_6 = function_13a83a(arg_1);
     if (local_6 != NONE)
     {
         byte const *local_8 = *(byte **)(g_4e0300->data + (local_6 & 0xffff) * 12 + 8);
-        real local_9 = *(real *)(local_8 + 0xf0);
-        if (*(real *)local_1 > local_9)
+        if (*(real *)local_1 > *(real *)(local_8 + 0xf0))
         {
             if (*(real *)(local_1 + 4) < 0.0f || *(real *)(local_1 + 4) > 1.0f)
                 *(long *)(local_1 + 8) = g_510c54->game_time;
@@ -1205,27 +1314,33 @@ void __stdcall function_13a838(long arg_1)
                 *(real *)(local_1 + 4) = 0.0f;
             else
             {
-                *(real *)local_1 = local_9;
+                *(real *)local_1 = *(real *)(local_8 + 0xf0);
                 *(real *)(local_1 + 4) += (g_510c54->game_time - local_10) * g_510c54->rate;
+                *(long *)(local_1 + 8) = g_510c54->game_time;
             }
         }
         else
         {
-            bool local_11 = local_9 > *(real *)local_1;
-            *(real *)local_1 = local_9;
-            if (local_11)
+            if (*(real *)(local_8 + 0xf0) > *(real *)local_1)
+            {
+                *(real *)local_1 = *(real *)(local_8 + 0xf0);
                 *(real *)(local_1 + 4) = -1.0f;
-            else if (*(real *)(local_1 + 4) > 0.0f)
-                *(real *)(local_1 + 4) += (g_510c54->game_time - *(long *)(local_1 + 8)) * g_510c54->rate;
+            }
+            else
+            {
+                *(real *)local_1 = *(real *)(local_8 + 0xf0);
+                if (*(real *)(local_1 + 4) > 0.0f)
+                    *(real *)(local_1 + 4) += (g_510c54->game_time - *(long *)(local_1 + 8)) * g_510c54->rate;
+            }
             *(long *)(local_1 + 8) = g_510c54->game_time;
         }
     }
     long local_12 = *(long *)(local_2 + 0xc);
     if (local_12 != NONE)
-        function_13aa27(local_13, local_2 + 0x88, local_1 + 0x18, local_12, local_2);
+        function_13aa27(arg_1, local_2 + 0x88, local_1 + 0x18, local_12, local_2);
     local_12 = *(long *)(local_2 + 0x10);
     if (local_12 != NONE)
-        function_13aa27(local_13, local_2 + 0xc0, local_1 + 0x20, local_12, local_2);
+        function_13aa27(arg_1, local_2 + 0xc0, local_1 + 0x20, local_12, local_2);
 }
 
 // @retail 0x1391ed

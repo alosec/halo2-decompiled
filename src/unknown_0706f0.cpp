@@ -33,7 +33,7 @@ bool c_session_state_matchmaking::update()
 	{
 		function_06df60(local_0, 0, 0, 0);
 		mode = 1;
-		return local_3;
+		goto local_done;
 	}
 	if (local_4 == 5 || local_4 == 6 || local_4 == 7 || local_4 == 8)
 	{
@@ -114,5 +114,6 @@ bool c_session_state_matchmaking::update()
 	{
 		volatile long local_8 = local_4;
 	}
+local_done:
 	return local_3;
 }

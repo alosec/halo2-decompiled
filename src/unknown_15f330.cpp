@@ -7,9 +7,9 @@
 // @retail 0x15f330
 bool function_15f330(s_player_appearance const *appearance, short team_index, color3f *colors)
 {
-	bool result = false;
 	long color_team = NONE;
 	bool use_default = team_index == NONE;
+	bool result = false;
 
 	if (game_engine_get() || (((byte const *)appearance)[7] & 8))
 	{

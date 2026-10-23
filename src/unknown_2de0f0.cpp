@@ -1,66 +1,64 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): the bounding box of a segment with a
+// radius, placed by a transform.
+#include <xmmintrin.h>
 
-// @flags /O2 /Gr
-
-struct s_physics_two_vertex_matrix
+struct transform_2de0f0
 {
-    float rows[4][4];
+	__m128 axes[3];
+	__m128 position;
 };
-static_assert(sizeof(s_physics_two_vertex_matrix) == 0x40,
-    "two-vertex matrix layout");
 
-struct s_physics_two_vertex_bounds
+// a vector updated in place
+struct vector_2de0f0
 {
-    float minimum[4];
-    float maximum[4];
+	__m128 value;
+
+	void set_max(__m128 const &a, __m128 const &b) { value = _mm_max_ps(a, b); }
+	void set_min(__m128 const &a, __m128 const &b) { value = _mm_min_ps(a, b); }
+	void add(__m128 const &a) { value = _mm_add_ps(value, a); }
+	void subtract(__m128 const &a) { value = _mm_sub_ps(value, a); }
 };
-static_assert(sizeof(s_physics_two_vertex_bounds) == 0x20,
-    "two-vertex bounds layout");
 
-class c_physics_two_vertex_shape
+struct bounds_2de0f0
 {
-    byte field_4[8];
-    float radius;
-    float vertices[2][4];
+	vector_2de0f0 lower;
+	vector_2de0f0 upper;
+};
+
+class rounded_segment_2de0f0
+{
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void function_2de0f0(const s_physics_two_vertex_matrix *matrix,
-        float extra_radius, s_physics_two_vertex_bounds *result);
+	long field_0;
+	long field_4;
+	long field_8;
+	float radius;
+	__m128 ends[2];
+
+	void function_2de0f0(transform_2de0f0 const &transform, float tolerance, bounds_2de0f0 &out) const;
 };
-static_assert(sizeof(c_physics_two_vertex_shape) == 0x30,
-    "two-vertex shape layout");
 
+// both ends placed by the transform, the box around them grown by the radius
+// and the tolerance
 // @retail 0x2de0f0
-void c_physics_two_vertex_shape::function_2de0f0(
-    const s_physics_two_vertex_matrix *matrix,
-    float extra_radius, s_physics_two_vertex_bounds *result)
+void rounded_segment_2de0f0::function_2de0f0(transform_2de0f0 const &transform, float tolerance, bounds_2de0f0 &out) const
 {
-    float transformed[2][4];
-    for (long vertex = 0; vertex < 2; vertex++)
-    {
-        for (long component = 0; component < 4; component++)
-        {
-            transformed[vertex][component] =
-                matrix->rows[0][component] * vertices[vertex][0] +
-                matrix->rows[1][component] * vertices[vertex][1] +
-                matrix->rows[2][component] * vertices[vertex][2] +
-                matrix->rows[3][component];
-        }
-    }
-
-    float combined_radius = radius + extra_radius;
-    for (long component = 0; component < 4; component++)
-    {
-        float lower = transformed[0][component] < transformed[1][component]
-            ? transformed[0][component] : transformed[1][component];
-        float upper = transformed[0][component] > transformed[1][component]
-            ? transformed[0][component] : transformed[1][component];
-        result->minimum[component] = lower - combined_radius;
-        result->maximum[component] = upper + combined_radius;
-    }
+	__m128 const grow = _mm_set1_ps(tolerance + radius);
+	__m128 points[2];
+	__m128 const *end = ends;
+	__m128 *point = points;
+	for (int i = 1; i >= 0; i--)
+	{
+		__m128 const p = *end;
+		*point = _mm_add_ps(_mm_add_ps(
+			_mm_mul_ps(transform.axes[0], _mm_shuffle_ps(p, p, 0x00)),
+			_mm_mul_ps(transform.axes[1], _mm_shuffle_ps(p, p, 0x55))),
+			_mm_add_ps(_mm_mul_ps(transform.axes[2], _mm_shuffle_ps(p, p, 0xaa)), transform.position));
+		end++;
+		point++;
+	}
+	out.upper.set_max(points[0], points[1]);
+	out.lower.set_min(points[0], points[1]);
+	out.lower.subtract(grow);
+	out.upper.add(grow);
 }

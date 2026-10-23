@@ -3,7 +3,7 @@
 #include "game_engine_events.h"
 #include <string.h>
 
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 
 /* Sends a game engine event to the clients (as a simulation event of type 7,
    with the player indices made absolute). Decompiled by lane O because the
@@ -366,6 +366,8 @@ struct s_direction_event_data
     vector3f direction;
 };
 
+// score 19 (was 19): the fields are copied into the output struct in the other
+// order and the locals live in the other stack slots
 // @retail 0xa91c0
 void function_a91c0(long index, long value, point3f const *origin, vector3f const *direction)
 {
@@ -376,9 +378,9 @@ void function_a91c0(long index, long value, point3f const *origin, vector3f cons
         signed char selected = *(signed char *)(EVENT_OBJECT(current) + 0x23c);
         if (selected >= 0 && selected < 2)
         {
-            data.value = (short)value;
-            data.origin = *origin;
             data.direction = *direction;
+            data.origin = *origin;
+            data.value = (short)value;
             function_b5a70(NONE, 0x16, 1, (long)&index, sizeof(data), &data, g_4cef1c);
         }
     }
@@ -391,6 +393,9 @@ struct s_slot_event_data
     long definition;
 };
 
+// score 17 (was 17): the constant 0x212 is folded into the load in ours and
+// into the address in retail, so ours reads the byte at [eax+ecx+0x212] and
+// retail computes the address first and reads the byte at [ecx]
 // @retail 0xa8f80
 void function_a8f80(long index, short slot)
 {
@@ -398,15 +403,19 @@ void function_a8f80(long index, short slot)
     long current = index;
     if (function_a76b0(current, 1))
     {
-        byte *object = EVENT_OBJECT(current);
-        short selected = *(signed char *)(object + 0x212 + slot);
+        s_record_pool *objects = g_4e0300;
+        byte *volatile *headers = &objects->data;
+        byte *object = ((s_event_object_header *)*headers)[current & 0xffff].object;
+        long offset = slot;
+        signed char const volatile *selection = (signed char const volatile *)(object + offset + 0x212);
+        short selected = selection[0];
         if (selected != NONE)
         {
             long item = ((long *)(object + 0x218))[selected];
             if (item != NONE)
             {
-                data.selected = *(signed char *)(object + 0x212 + slot);
-                data.definition = *(long *)EVENT_OBJECT(item);
+                data.selected = selection[0];
+                data.definition = *(long *)((s_event_object_header *)*headers)[item & 0xffff].object;
                 data.slot = slot;
                 function_b5a70(NONE, 17, 1, (long)&index, sizeof(data), &data, g_4ceeb8);
             }
@@ -414,6 +423,9 @@ void function_a8f80(long index, short slot)
     }
 }
 
+// score 17 (was 17): the constant 0x212 is folded into the load in ours and
+// into the address in retail, so ours reads the byte at [eax+ecx+0x212] and
+// retail computes the address first and reads the byte at [ecx]
 // @retail 0xa9030
 void function_a9030(long index, short slot)
 {
@@ -421,15 +433,19 @@ void function_a9030(long index, short slot)
     long current = index;
     if (function_a76b0(current, 1))
     {
-        byte *object = EVENT_OBJECT(current);
-        short selected = *(signed char *)(object + 0x212 + slot);
+        s_record_pool *objects = g_4e0300;
+        byte *volatile *headers = &objects->data;
+        byte *object = ((s_event_object_header *)*headers)[current & 0xffff].object;
+        long offset = slot;
+        signed char const volatile *selection = (signed char const volatile *)(object + offset + 0x212);
+        short selected = selection[0];
         if (selected != NONE)
         {
             long item = ((long *)(object + 0x218))[selected];
             if (item != NONE)
             {
-                data.selected = *(signed char *)(object + 0x212 + slot);
-                data.definition = *(long *)EVENT_OBJECT(item);
+                data.selected = selection[0];
+                data.definition = *(long *)((s_event_object_header *)*headers)[item & 0xffff].object;
                 data.slot = slot;
                 function_b5a70(NONE, 18, 1, (long)&index, sizeof(data), &data, g_4ceecc);
             }
@@ -640,7 +656,7 @@ struct s_attachment_event_data
 };
 
 // @retail 0xa83e0
-void function_a83e0(long index, long parent, point3f const *point, long node, vector3f const *reference)
+void function_a83e0(long index, long parent, point3f const *point, short node, vector3f const *reference)
 {
     long mode = g_4e6948->mode;
     if (mode >= 4 && mode <= 5 && event_mode_sends(mode))
@@ -733,48 +749,6 @@ struct s_collision_target_event_data : s_collision_event_data
     s_collision_target_event_data() { memset(&flag, 0, 8); }
 };
 
-// @retail 0xa85c0
-void function_a85c0(long index, s_collision_result_1697c0 const *collision,
-    vector3f const *direction, bool flag, real first_scale, real second_scale)
-{
-    long mode = g_4e6948->mode;
-    if (mode >= 4 && mode <= 5 && event_mode_sends(mode))
-    {
-        byte *object = EVENT_OBJECT(index);
-        if (*(long *)(object + 0xd4) != NONE)
-        {
-            byte const *input = (byte const *)collision;
-            long target = *(long *)(input + 0x40);
-            if (*(long *)input == 4 && target != NONE && *(long *)(EVENT_OBJECT(target) + 0xd4) != NONE)
-            {
-                s_collision_target_event_data data;
-                data.definition = *(long *)object;
-                data.direction = *direction;
-                data.first_scale = first_scale;
-                data.second_scale = second_scale;
-                data.normal = *(vector3f const *)(input + 0x28);
-                data.point = *(point3f const *)(input + 8);
-                data.material = *(short const *)(input + 0x24);
-                data.node = *(short const *)(input + 0x46);
-                data.flag = flag;
-                function_b5a70(NONE, 6, 1, (long)&target, sizeof(data), &data, g_4ceddc);
-            }
-            else
-            {
-                s_collision_event_data data;
-                data.definition = *(long *)object;
-                data.direction = *direction;
-                data.first_scale = first_scale;
-                data.second_scale = second_scale;
-                data.normal = *(vector3f const *)(input + 0x28);
-                data.point = *(point3f const *)(input + 8);
-                data.material = *(short const *)(input + 0x24);
-                function_b5a70(NONE, 5, 0, 0, sizeof(data), &data, g_4cedc8);
-            }
-        }
-    }
-}
-
 struct s_damage_report;
 struct s_object;
 s_object *function_badc0(long index, dword mask);
@@ -799,6 +773,17 @@ struct s_damage_event_data
     byte unknown35[3];
 };
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
+/* the unit flags word at +0x10a that 0xa80f0 tests */
+struct s_a80f0_unit_flags
+{
+    byte unknown000[0x10a];
+    word unknown0 : 2;
+    word suppressed : 1;
+    word unknown3 : 13;
+};
+
 // @retail 0xa80f0
 void function_a80f0(long index, s_damage_report const *report)
 {
@@ -811,15 +796,16 @@ void function_a80f0(long index, s_damage_report const *report)
         long definition_index = *(long const *)(input + 8);
         byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
         byte *local_446d88 = g_4e3b44[definition_index & 0xffff].bytes;
-        long mask = 1 << header->unknown00[3];
+        long type = header->unknown00[3];
+        long mask = 1 << type;
         long player = NONE;
         if (mask & 3)
             player = *(long *)(object + 0x13c);
-        if ((mask & 3) || (mask & 0x800))
+        if ((mask & 3) || ((1u << type) & 0x800))
         {
             real strength = *(real *)(local_446d88 + 0x40) * *(real *)(definition + 0x14);
             bool send = strength > 0.0001f;
-            if (!send && (mask & 3) && !((object[0x10a] >> 2) & 1))
+            if (!send && (mask & 3) && !TEST_FIELD_BIT(((s_a80f0_unit_flags *)object)->suppressed))
                 send = *(real const *)(input + 0x44) > 0.0f || *(real const *)(input + 0x48) > 0.0f;
             if (!send)
                 send = player != NONE && *(long const *)(input + 0xc) != NONE && *(long const *)(input + 0xc) != player;
@@ -836,16 +822,12 @@ void function_a80f0(long index, s_damage_report const *report)
                 data.direction = *(vector3f const *)(input + 0x18);
                 if (function_30bf0(&data.direction) > 0.0001f)
                     data.has_direction = true;
-                real scale = *(real const *)(input + 0x34);
-                data.scale = scale < 0.0f ? 0.0f : (scale > 2.0f ? 2.0f : scale);
-                real field38 = *(real const *)(input + 0x38);
-                data.field1c = field38 < 0.0f ? 0.0f : (field38 > 2.0f ? 2.0f : field38);
+                data.scale = PIN(*(real const *)(input + 0x34), 0.0f, 2.0f);
+                data.field1c = PIN(*(real const *)(input + 0x38), 0.0f, 2.0f);
                 data.flags = *(dword const *)(input + 4);
                 data.field30 = *(long const *)(input + 0x50);
-                real field44 = *(real const *)(input + 0x44);
-                data.field28 = field44 < 0.0f ? 0.0f : (field44 > 9.0f ? 9.0f : field44);
-                real field48 = *(real const *)(input + 0x48);
-                data.field24 = field48 < 0.0f ? 0.0f : (field48 > 3.0f ? 3.0f : field48);
+                data.field28 = PIN(*(real const *)(input + 0x44), 0.0f, 9.0f);
+                data.field24 = PIN(*(real const *)(input + 0x48), 0.0f, 3.0f);
                 data.field2c = *(short const *)(input + 0x3c);
                 data.field2e = *(short const *)(input + 0x40);
                 data.field34 = input[0];
@@ -886,93 +868,3 @@ struct s_action_event_data
     long linked_identifier;
     long linked_slot;
 };
-
-// @retail 0xa7d50
-void function_a7d50(long index, long group, long target, short node, point3f const *point)
-{
-    long mode = g_4e6948->mode;
-    if (mode >= 4 && mode <= 5)
-    {
-        s_event_object_header *headers = (s_event_object_header *)g_4e0300->data;
-        byte *object = headers[index & 0xffff].object;
-        byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
-        byte *entry = *(byte **)(definition + 0x2d4) + group * 0xec;
-        if (*(short *)(entry + 0x34) != 1)
-        {
-            long parent = NONE;
-            if (object[0x12c] & 1)
-                parent = *(long *)(object + 0x154);
-            long slot = function_101f50(index);
-            long objects[2] = {NONE, NONE};
-            long source = NONE;
-            long subject = NONE;
-            if (parent != NONE)
-            {
-                if (slot >= 0 && slot < 4)
-                {
-                    objects[0] = subject = parent;
-                    long linked = *(long *)(headers[parent & 0xffff].object + 0x24c);
-                    source = linked != NONE ? linked : parent;
-                }
-            }
-            else if (slot == NONE)
-                objects[0] = subject = index;
-            s_event_object_header *header = &headers[subject & 0xffff];
-            if (header->unknown00[3] == 1)
-            {
-                long linked = *(long *)(header->object + 0x24c);
-                if (linked == NONE || *(long *)(headers[linked & 0xffff].object + 0x13c) == NONE)
-                    subject = function_1b8c80(subject);
-            }
-            if (subject != NONE)
-            {
-                long player;
-                if (mode != 4)
-                    player = event_player(subject);
-                else
-                {
-                    if (!function_a76b0(subject, 1))
-                        return;
-                    player = NONE;
-                }
-                s_action_event_data data;
-                memset(&data, 0, sizeof(data));
-                data.slot = slot;
-                data.definition = *(long *)object;
-                data.group = group;
-                data.direction = *g_4687a8;
-                data.relevance.first = 0;
-                data.relevance.second = 0;
-                data.relevance.object_index = NONE;
-                data.relevance.identifier = NONE;
-                if (target != NONE)
-                {
-                    objects[1] = target;
-                    data.node = node;
-                    data.point = *point;
-                    data.field_c_9 = true;
-                }
-                if (source != NONE)
-                {
-                    function_82ac0((s_object_relevance_source *)(EVENT_OBJECT(source) + 0x1c8), &data.relevance);
-                    function_cb7e0(source, &data.direction);
-                }
-                if ((*(dword *)entry >> 13) & 1)
-                {
-                    long linked = *(long *)(object + 0x194);
-                    if (linked != NONE)
-                    {
-                        long identifier = function_138880() ? function_a5980(linked) : function_a5930(linked);
-                        if (identifier != NONE)
-                        {
-                            data.linked_identifier = identifier;
-                            data.linked_slot = *(signed char *)(object + 0x177);
-                            data.linked = true;
-                        }
-                    }
-                }
-                function_b5a70(player, 0xc, 2, (long)objects, sizeof(data), &data, g_4cee54);
-            }
-        }
-    }
-}

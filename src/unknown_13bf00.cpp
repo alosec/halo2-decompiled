@@ -2,6 +2,7 @@
 /* UNKNOWN_13BF00.CPP: the lifecycle callbacks of entry 53 */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "unknown_123b30.h"
 #include "globals.h"
 #include "unknown_030290.h"
@@ -131,8 +132,7 @@ static inline void timer_update()
 		data->timer -= g_510c54->rate;
 		if (0.0f >= data->timer)
 		{
-			data->timer_index = 0;
-			*(long *)&data->timer = 0;
+			memset(&data->timer_index, 0, 8);
 		}
 	}
 }
@@ -179,8 +179,8 @@ void function_13c680(void)
 			long pinned = index < 0 ? 0 : (index > globals->title_count - 1 ? globals->title_count - 1 : index);
 			if (pinned == index)
 			{
-				title->ticks++;
 				s_title_definition *definition = &globals->titles[index];
+				title->ticks++;
 				real duration = definition->up_time + definition->fade_in_time;
 				if (title->ticks * game_time->rate >= duration)
 				{
@@ -230,10 +230,6 @@ void function_13cb50(long string_handle, real seconds)
 }
 
 /* the window bounds (unknown_1a1c3e.cpp, unknown_139296.cpp) */
-extern short g_4b9dd0;
-extern short g_4b9dd2;
-extern short g_4b9dd4;
-extern short g_4b9dd6;
 
 bool g_485ac2;
 
@@ -245,17 +241,22 @@ static __forceinline short real_to_short(real value)
 	return (short)result;
 }
 
-/* the screen between the letterbox bars, and the two bars */
-// @retail 0x13ccf0
-void function_13ccf0(short_rectangle2d *bottom_bar, short_rectangle2d *screen, short_rectangle2d *top_bar)
+static __forceinline real function_13ccf1(void)
 {
-	real letterbox = 0.0f;
-	real height;
-
+	real result = 0.0f;
 	if ((g_4e6948 && g_4e6948->flag && g_4e6948->index != NONE && g_4e6948->state == 3) || !g_485ac2)
 	{
-		letterbox = g_510c50->unknown0 * 0.125f;
+		result = g_510c50->unknown0 * 0.125f;
 	}
+	return result;
+}
+
+/* the screen between the letterbox bars, and the two bars */
+// @retail 0x13ccf0
+void function_13ccf0(short_rectangle2d *screen, short_rectangle2d *top_bar, short_rectangle2d *bottom_bar)
+{
+	real letterbox = function_13ccf1();
+	real height;
 
 	height = (real)(g_4b9dd4 - g_4b9dd0);
 	screen->left = real_to_short((real)g_4b9dd2);
@@ -303,41 +304,22 @@ static inline s_subtitle_slot_view *subtitle_slot_get(long index)
 	return index != NONE ? (s_subtitle_slot_view *)&g_54e8e0[index] : NULL;
 }
 
-static inline long controller_next(long index)
-{
-	long result;
-
-	switch (index)
-	{
-	case NONE:
-		result = 0;
-		break;
-	case 0:
-		result = 1;
-		break;
-	case 1:
-		result = 2;
-		break;
-	case 2:
-		result = 3;
-		break;
-	default:
-		result = NONE;
-		break;
-	}
-	return result;
-}
+/* the slot after this one (player_slot_iterator.cpp) */
+long player_slot_iterate_next(long index);
 
 /* whether a signed in player wants subtitles: always, or when the map's
    language isn't the game's */
+// score 14 (was 17): retail does not common the element address, it uses two
+// displacement-form instructions where ours emits a lea plus a load.
 // @retail 0x13cbf0
 bool function_13cbf0(void)
 {
-	bool result = false;
-	long map_language = 0;
+	long map_language;
 	long index;
 
+	bool result = false;
 	get_current_language();
+	map_language = 0;
 	if (g_4e0350)
 	{
 		long language = ((s_language_globals_view *)g_4e034c)->language;
@@ -347,7 +329,7 @@ bool function_13cbf0(void)
 		}
 	}
 
-	for (index = 0; index != NONE; index = controller_next(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		if (TEST_FIELD_BIT(g_54e8e0[index].flag4))
 		{
@@ -362,7 +344,11 @@ bool function_13cbf0(void)
 			{
 				memset(&profile, 0, sizeof(profile));
 			}
-			if (profile.subtitles == 1 || (profile.subtitles == 0 && g_47ff38 != map_language))
+			if (profile.subtitles == 1)
+			{
+				result = true;
+			}
+			else if (profile.subtitles == 0 && g_47ff38 != map_language)
 			{
 				result = true;
 			}

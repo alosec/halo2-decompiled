@@ -42,7 +42,6 @@ void function_12bd40(void)
 class c_slots_215541;
 struct s_storage_request;
 extern dword g_54d5b8;
-extern bool g_4ee4e0;
 s_storage_request *__stdcall function_215454(c_slots_215541 *arg_0, byte arg_1);
 void __stdcall function_215641(c_slots_215541 *arg_0);
 long __stdcall function_2155f4(c_slots_215541 *arg_0, long *arg_1, real *arg_2, long *arg_3);
@@ -58,39 +57,80 @@ struct s_12bbd0
 	long field_4[8];
 };
 
-#pragma inline_depth(0)
+struct s_loop_allocator;
+extern s_loop_allocator *g_51e998;
+bool loop_allocate(s_loop_allocator *loop, void **pointer, long size, char const *file, long line);
+void function_147ebe(void);
+
+bool function_138820();
+
+static inline void *allocate_12bbd0(long size)
+{
+	void *pointer;
+	#pragma inline_depth(0)
+	if (!loop_allocate(g_51e998, &pointer, size, 0, 0))
+	{
+		function_147ebe();
+		if (!loop_allocate(g_51e998, &pointer, size, 0, 0))
+			pointer = 0;
+	}
+	#pragma inline_depth()
+	return pointer;
+}
+
+static inline s_12bbd0 *construct_12bbd0(s_12bbd0 *object)
+{
+	object->field_0 = g_54d5b8;
+	for (long index = 0; index < 8; index++)
+		memset(&object->field_4[index], 0, sizeof(long));
+	return object;
+}
+
 // @retail 0x12bbd0
 void function_12bbd0(void)
 {
-	s_12bbd0 *local_0 = (s_12bbd0 *)function_1a47fd(sizeof(s_12bbd0));
-	if (local_0)
+	void *local_5 = allocate_12bbd0(sizeof(s_12bbd0));
+	s_12bbd0 *local_0 = local_5 ? construct_12bbd0((s_12bbd0 *)local_5) : NULL;
+	if (g_4e6948->state == 1 && !g_4e6948->flag134)
 	{
-		local_0->field_0 = g_54d5b8;
-		for (long local_1 = 0; local_1 < 8; local_1++)
-			local_0->field_4[local_1] = 0;
-	}
-	if (g_4e6948->state == 1 && !*((byte *)g_4e6948 + 0x134))
+		#pragma inline_depth(0)
 		function_1241b0((s_saved_game_read *)function_215454((c_slots_215541 *)local_0, false));
+		#pragma inline_depth()
+	}
+	#pragma inline_depth(0)
 	function_190e71((long)local_0);
+	#pragma inline_depth()
 	if (!g_510c54->active || !g_510c54->unknown01)
 		g_510c54->unknown01 = true;
 	s_screen_parameters local_2;
 	local_2.field_c = 0;
 	local_2.type = 0;
+	#pragma inline_depth(0)
 	local_2.user_flags = function_1901fc();
+	#pragma inline_depth()
 	local_2.a = 1;
 	local_2.b = 4;
-	local_2.id[0] = NONE;
-	local_2.id[1] = NONE;
-	local_2.id[2] = NONE;
+	memset(local_2.id, 0xff, sizeof(local_2.id));
 	local_2.load = progress_screen_load;
+	#pragma inline_depth(0)
 	byte *local_3 = (byte *)progress_screen_load(&local_2);
+	#pragma inline_depth()
 	*(s_12bbd0 **)(local_3 + 0x610) = local_0;
 	*(long *)(local_3 + 0x624) = 0;
 	*(long *)(local_3 + 0x61c) = (long)function_2155f4;
 	*(long *)(local_3 + 0x620) = (long)function_215641;
 	g_4ee4e0 = true;
-	function_18f1c0(g_4e6948->state == 1 && *((byte *)g_4e6948 + 0x134) ? 3 : 0);
+	if (function_138820())
+	{
+		#pragma inline_depth(0)
+		function_18f1c0(3);
+		#pragma inline_depth()
+	}
+	else
+	{
+		#pragma inline_depth(0)
+		function_18f1c0(0);
+		#pragma inline_depth()
+	}
 	main_globals.quit_game = false;
 }
-#pragma inline_depth(255)

@@ -18,10 +18,7 @@ void function_24a150(void *p);
 
 // @retail 0x18f3d4 deleting c_unknown_249fa3
 
-// @retail 0x18f40e
-c_unknown_249fa3::~c_unknown_249fa3()
-{
-}
+// @retail 0x18f40e destructor c_unknown_249fa3
 
 // @retail 0x249fa3
 void c_unknown_249fa3::v1()

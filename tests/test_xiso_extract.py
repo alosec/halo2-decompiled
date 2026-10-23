@@ -1,7 +1,9 @@
 """Hardening tests for tools/xiso_extract.py."""
 from __future__ import annotations
 
+import hashlib
 import struct
+import sys
 import time
 from pathlib import Path
 
@@ -111,3 +113,74 @@ def test_ordinary_names_still_extract(tmp_path: Path, name: str) -> None:
     out.mkdir()
     xiso.extract(str(iso), str(out))
     assert (out / name).read_bytes() == b'DATA'
+
+
+def test_redump_partition_lists_and_extracts(tmp_path: Path, capsys) -> None:
+    """A full-disc partition uses relative sectors without filling the gap."""
+    base = 0x18300000
+    payload = b'Synthetic XISO payload\x00\xff\n'
+    root = _entry(0, 0, 34, len(payload), 0, 'sample.bin')
+    iso = tmp_path / 'redump.iso'
+    with iso.open('wb') as f:
+        f.seek(base)
+        f.write(_image_with_root(33, root, {34: payload}))
+
+    assert iso.stat().st_size > base
+    # st_blocks counts allocated 512-byte blocks, not the sparse logical size.
+    stat = iso.stat()
+    if hasattr(stat, 'st_blocks'):
+        assert stat.st_blocks * 512 < 1 << 20
+    with iso.open('rb') as f:
+        assert xiso.find_partition(f) == (base, 33, len(root))
+    assert xiso.list_entries(str(iso)) == [('sample.bin', len(payload), 34)]
+
+    out = tmp_path / 'out'
+    digest = hashlib.sha256(payload).hexdigest()
+    assert xiso.extract(str(iso), str(out)) == [('sample.bin', digest)]
+    extracted = out / 'sample.bin'
+    assert extracted.read_bytes() == payload
+    assert hashlib.sha256(extracted.read_bytes()).hexdigest() == digest
+    assert capsys.readouterr().out == f'sample.bin  sha256 {digest}\n'
+    assert list(out.iterdir()) == [extracted]
+
+
+@pytest.mark.parametrize('base', [0, 0x18300000])
+@pytest.mark.parametrize('header', [b'', b'\x00' * len(MAGIC), MAGIC[:-1], b'X' + MAGIC[1:]])
+@pytest.mark.parametrize('extract', [False, True], ids=['list', 'extract'])
+def test_missing_or_invalid_header_exits_cleanly(
+    tmp_path: Path, monkeypatch, base: int, header: bytes, extract: bool,
+) -> None:
+    iso = tmp_path / 'invalid.iso'
+    with iso.open('wb') as f:
+        if header:
+            f.seek(base + 0x10000)
+            f.write(header)
+    out = tmp_path / 'out'
+    argv = ['xiso_extract.py', str(iso)] + ([str(out)] if extract else [])
+    monkeypatch.setattr(sys, 'argv', argv)
+    with pytest.raises(SystemExit) as exc:
+        xiso.main()
+    assert exc.value.code == 'not an Xbox disc image (no XDVDFS header found)'
+    assert not out.exists()
+
+
+@pytest.mark.parametrize('base', [0, 0x18300000])
+@pytest.mark.parametrize('metadata_size', [0, 4, 7])
+@pytest.mark.parametrize('extract', [False, True], ids=['list', 'extract'])
+def test_truncated_header_exits_cleanly(
+    tmp_path: Path, monkeypatch, base: int, metadata_size: int, extract: bool,
+) -> None:
+    iso = tmp_path / 'truncated-header.iso'
+    with iso.open('wb') as f:
+        f.seek(base + 0x10000)
+        f.write(MAGIC + struct.pack('<II', 33, SECTOR)[:metadata_size])
+    out = tmp_path / 'out'
+    argv = ['xiso_extract.py', str(iso)] + ([str(out)] if extract else [])
+    monkeypatch.setattr(sys, 'argv', argv)
+    with pytest.raises(SystemExit) as exc:
+        xiso.main()
+    assert exc.value.code == (
+        f'error: truncated XISO header at offset {base + 0x10000}: '
+        f'wanted 8 bytes of root directory metadata, got {metadata_size}'
+    )
+    assert not out.exists()

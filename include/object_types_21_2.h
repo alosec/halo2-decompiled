@@ -14,6 +14,9 @@
 class c_item_type : public c_object_type_definition
 {
 public:
+	virtual void v12(long a, s_entity_info *info, long c, s_bitstream *stream);
+	virtual bool v19(long a, long info, long c, s_entity_data *data);
+	virtual long v29(long a, s_entity_info *info, long *flags, long size, long state);
 	virtual void v31(long a, long b, long c, long d);
 	virtual bool v14(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8);
 	virtual bool v15(long a, long b, long c, long d, s_bitstream *stream);
@@ -32,6 +35,8 @@ public:
 class c_projectile_type : public c_object_type_definition
 {
 public:
+	virtual void v12(long a, s_entity_info *info, long c, s_bitstream *stream);
+	virtual long v29(long a, s_entity_info *info, long *flags, long size, long state);
 	virtual void v31(long a, long b, long c, long d);
 	virtual bool v14(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8);
 	virtual bool v15(long a, long b, long c, long d, s_bitstream *stream);
@@ -45,12 +50,16 @@ public:
 	virtual void v26(long index, long b, s_entity_state *state);
 	virtual bool v30(long index);
 	virtual void v10(s_creation_request *request, long parameter, long size, char *buffer);
+    virtual bool v13(long a, s_entity_info *info, s_bitstream *stream);
 };
 
 /* the weapon type (vtable part of 0x4524d8, slots 36..71) */
 class c_weapon_type : public c_object_type_definition
 {
 public:
+	virtual bool v19(long a, long info, long c, s_entity_data *data);
+	virtual long v29(long a, s_entity_info *info, long *flags, long size, long state);
+	virtual bool v13(long a, s_entity_info *info, s_bitstream *stream);
 	virtual bool v16(long a, long b, long c);
 	virtual void v31(long a, long b, long c, long d);
 	virtual bool v14(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8);
@@ -68,6 +77,9 @@ public:
 class c_device_type : public c_object_type_definition
 {
 public:
+	virtual bool v19(long a, long info, long c, s_entity_data *data);
+	virtual long v29(long a, s_entity_info *info, long *flags, long size, long state);
+	virtual bool v13(long a, s_entity_info *info, s_bitstream *stream);
 	virtual bool v16(long a, long b, long c);
 	virtual void v31(long a, long b, long c, long d);
 	virtual bool v14(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8);

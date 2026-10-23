@@ -2,8 +2,8 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 
-struct s_290b90_entry;
-extern s_290b90_entry *g_5044c4;
+struct s_swarm_spawn_slot;
+extern s_swarm_spawn_slot *g_5044c4;
 
 struct s_290250
 {

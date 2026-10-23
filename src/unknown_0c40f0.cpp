@@ -62,12 +62,25 @@ void __stdcall function_c3cc0(long index)
 		record_pool_release(array, index);
 }
 
-/* The lifecycle slots and deletion slot of the liquid callback table. */
-void (*g_467510[4])() =
+long __stdcall function_c3ad0(long tag_index, long object_index);
+void __stdcall function_c3f90(real step);
+
+/* The seven lifecycle, creation, deletion and update callbacks. */
+struct s_liquid_callbacks
 {
-	function_c3a40, function_c3a80, function_c3aa0, function_c3ab0
+    void (*initialize)();
+    void (*activate)();
+    void (*deactivate)();
+    void (*dispose)();
+    long (__stdcall *create)(long, long);
+    void (__stdcall *release)(long);
+    void (__stdcall *update)(real);
 };
-void (__stdcall *g_467524)(long) = function_c3cc0;
+s_liquid_callbacks g_467510 =
+{
+    function_c3a40, function_c3a80, function_c3aa0, function_c3ab0,
+    function_c3ad0, function_c3cc0, function_c3f90
+};
 
 // @retail 0xc4210
 byte *function_c4210(long index, long element_index)
@@ -190,13 +203,14 @@ static __forceinline long liquid_datum_ab(s_record_pool *pool, long index)
     return result;
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0xc3ad0
-long function_c3ad0(long tag_index, long object_index)
+long __stdcall function_c3ad0(long tag_index, long object_index)
 {
-    long const *local_947334_2 = &tag_index;
-    s_record_pool *pool = g_4e031c;
     long result = NONE;
-    if (pool && pool->valid && *local_947334_2 != NONE && object_index != NONE)
+    s_record_pool *pool = g_4e031c;
+    if (pool && pool->valid && tag_index != NONE && object_index != NONE)
     {
         real time;
         if (g_510c54 && g_510c54->active)
@@ -237,16 +251,32 @@ long function_c3ad0(long tag_index, long object_index)
                 liquid->flags = (liquid->flags & ~2) | 1;
                 liquid->time = definition->kind == 0 ? -1.0f : 0.0f;
                 liquid->field_3 = 0;
-                liquid->value = definition->kind == 0 ? 0.0f : 1.0f;
-                liquid->object_index = object_index;
+                /* the object index stored in both arms; the barrier keeps the
+                   compiler from hoisting the store above the branch, so the
+                   arms' common tail is merged at the join */
+                real value;
+                if (definition->kind == 0)
+                {
+                    value = 0.0f;
+                    liquid->object_index = object_index;
+                }
+                else
+                {
+                    value = 1.0f;
+                    _ReadWriteBarrier();
+                    liquid->object_index = object_index;
+                }
+                liquid->value = value;
                 liquid->tag_index = tag_index;
                 for (long i = 0; i < definition->count; i++)
                     function_50690((s_random_draw *)(liquid->entries + i * 0x50));
             }
         }
     }
-    return result;
+    // Keep the result in the stack slot used by the common return.
+    return *(volatile long *)&result;
 }
+#pragma function(_ReadWriteBarrier)
 
 #include "object_markers.h"
 
@@ -278,22 +308,30 @@ void __stdcall function_c3cf0(short pass, long liquid_index)
             long count;
             if (function_3e9c0(liquid->object_index))
             {
-                count = first_person_weapon_get_markers(liquid->object_index, definition->enabled,
+                long marker_name = definition->enabled;
+                long object_index = liquid->object_index;
+                count = first_person_weapon_get_markers(object_index, marker_name,
                     (s_first_person_marker *)&marker, 1);
                 local_287b6e = 1;
             }
             else
-                count = function_b8d30(liquid->object_index, definition->enabled, &marker, 1, false);
+            {
+                long marker_name = definition->enabled;
+                long object_index = liquid->object_index;
+                count = function_b8d30(object_index, marker_name, &marker, 1, false);
+            }
             if (count > 0)
             {
                 real opacity;
                 if (definition->kind != 0)
                 {
-                    opacity = (time - liquid->time - (1.0f / 3.0f)) * -3.0f;
-                    if (opacity < 0.0f)
+                    real faded = (time - liquid->time - (1.0f / 3.0f)) * -3.0f;
+                    if (faded < 0.0f)
                         return;
-                    if (opacity > 1.0f)
+                    if (faded > 1.0f)
                         opacity = 1.0f;
+                    else
+                        opacity = faded;
                 }
                 else
                     opacity = liquid->value;

@@ -8,7 +8,6 @@ struct c_query_transform;
 struct s_query_bounds;
 struct c_shape_owner : c_shape_library_base_a
 {
-	byte field_8[0x14 - 8];
 	c_havok_reference_counted *object;
 	c_shape_owner(c_havok_reference_counted *arg_0, long arg_1);
 	virtual ~c_shape_owner();

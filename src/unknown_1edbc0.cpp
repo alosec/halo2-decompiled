@@ -56,14 +56,17 @@ void function_1edc10()
 {
 	s_record_pool *data = g_4e0300;
 	memset(g_1edbc0_data, 0xff, 8000);
-	long index = NONE;
-	while ((index = data_next_absolute_index_inlined(data, index + 1)) != NONE)
+	long previous = NONE;
+	for (;;)
 	{
+		long index = data_next_absolute_index_inlined(data, previous + 1);
+		if (index == NONE) return;
 		s_mapping_header *header = (s_mapping_header *)(data->data + data->size * index);
 		long object_index = (header->salt << 16) | index;
+		previous = index;
 		if (header->cluster != NONE && ((1 << header->type) & 0x40) && !(header->flags & 0x10))
 		{
-			s_mapping_object *object = ((s_mapping_header *)data->data)[object_index & 0xffff].object;
+			s_mapping_object *object = ((s_mapping_header *)(*(byte *volatile *)&data->data))[object_index & 0xffff].object;
 			if (object->scenario_index != NONE)
 			{
 				s_mapping_definition *definition = &((s_mapping_scenario *)g_4e0350)->definitions[object->scenario_index];

@@ -37,7 +37,7 @@ c_class_1473c9 *__stdcall function_2bbacb(s_screen_parameters *parameters);
 /* ---- opening screens ---- */
 
 struct s_message;
-void function_149f49(s_message *message, word a, dword *id, word b, long c, long d, long e);
+void function_149f49(s_message *message, word a, dword *id, short b, long c, long d, long e);
 
 /* the screens 0x2c7dc3/0x2c7e0f and 0x2c8362/0x2c83a4 load */
 struct s_screen_view_2c83
@@ -48,8 +48,14 @@ struct s_screen_view_2c83
 	long valuec9c;
 };
 
-// @retail 0x2c83e6
-void function_2c83e6(long type, long a, long b, word user_flags)
+// Retail's body matches with the standard convention. Enabling the setting
+// handler otherwise moves type and a into ECX and EDX and breaks its callers.
+// Retail has no literal code or data pointer to this function; its callers
+// 0x2b75e8, 0x2bb978 and 0x2c8159 push all four arguments.
+// Const parameter references and explicit parameter-address expressions both
+// leave the two register arguments in place when the handler is enabled.
+// @retail 0x2c83e6 standard
+void __stdcall function_2c83e6(long type, long a, long b, word user_flags)
 {
 	long types[9] = { 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e };
 	s_screen_parameters parameters;
@@ -181,7 +187,7 @@ void c_list_45d078::handle_item(s_controller_reference **controller, long *item)
 }
 
 /* the tag references a category's options are read from (the list
-   function_236a3a finds by its id) */
+   game_variant_settings_find_category finds by its id) */
 struct s_option_reference
 {
 	long group;
@@ -196,14 +202,14 @@ struct s_option_reference_list
 	s_option_reference *references;
 };
 
-struct s_reference_list;
-s_reference_list *function_236a3a(long id);
+struct s_game_variant_setting_category;
+s_game_variant_setting_category *game_variant_settings_find_category(long category_id);
 
 /* one item per option of the category: each holds its option's tag */
 // @retail 0x2c7b7d
 void c_list_45d078::v17()
 {
-	value68c = (long)(s_option_reference_list *)function_236a3a(value688);
+	value68c = (long)(s_option_reference_list *)game_variant_settings_find_category(value688);
 	if (value68c && ((s_option_reference_list *)value68c)->count > 0)
 	{
 		data = user_interface_data_new("variant category options list", ((s_option_reference_list *)value68c)->count, 8);
@@ -629,7 +635,7 @@ bool online_title_is_this_title(DWORD title_id);
 bool function_1906da(long index);
 void parse_replace_missing_characters(word *string, long count);
 void function_253bc9(c_text_widget_458940 *widget, long subtitle_type);
-bool function_230265(c_class_1473c9 *screen);
+bool screen_lower_channel_window_in_use(c_class_1473c9 *screen);
 void voice_play_voice_mail(long port, const long *data, long size);
 void function_236299(long sound);
 c_class_1473c9 *__stdcall function_2b7152(s_screen_parameters *parameters);
@@ -849,7 +855,7 @@ void function_14887e(s_screen_settings_54dc6c *settings);
 struct s_screen_settings_view
 {
 	long mode;
-	XUID xuid;
+	dword xuid[2];
 	byte unknown0c[0x78 - 0x0c];
 };
 
@@ -859,19 +865,32 @@ void c_xbox_live_message_display_screen::show_next_message()
 	s_screen_settings_view settings;
 
 	function_14887e((s_screen_settings_54dc6c *)&settings);
+	/* both settings modes keep the viewer's xuid in the same place */
+	XUID const *self_xuid;
+	switch (settings.mode)
+	{
+	case 1:
+		self_xuid = (XUID const *)settings.xuid;
+		break;
+	case 2:
+		self_xuid = (XUID const *)settings.xuid;
+		break;
+	default:
+		__assume(0);
+	}
 	message_text[0] = 0;
 	value3510 = 0;
 	voice_mail_length = 0;
 	value7eb6 = 0;
 	voice_mail_duration = 0;
 	value7eb4 = false;
-	for (; value2d04 < message_count; value2d04++)
+	if (value2d04 < message_count) do
 	{
 		c_text_widget_45a5e0 *text = (c_text_widget_45a5e0 *)find_child(6, 0, false);
 		long controller_index = get_controller_index();
 		s_online_message_view *message = &messages[value2d04];
 		XUID const *xuid = NULL;
-		bool other_title;
+		byte other_title;
 
 		if (message)
 			xuid = (XUID const *)&message->xuid;
@@ -886,7 +905,7 @@ void c_xbox_live_message_display_screen::show_next_message()
 			task_2d0c = NONE;
 		}
 		other_title = !online_title_is_this_title(message->title_id);
-		if (xuid_equal(xuid, &settings.xuid, false) &&
+		if (xuid_equal(xuid, self_xuid, false) &&
 			(!TEST_FIELD_BIT(message->flag_bits.flag10) || value_db8 == 1) &&
 			(!TEST_FIELD_BIT(message->flag_bits.flag12) || value_db8 == 2))
 		{
@@ -898,10 +917,9 @@ void c_xbox_live_message_display_screen::show_next_message()
 					string_handle = 0x1d0002cc;
 				else if (TEST_FIELD_BIT(message->flag_bits.flag11))
 				{
+					string_handle = 0x1b0002ce;
 					if (other_title)
 						string_handle = 0x1a0002cd;
-					else
-						string_handle = 0x1b0002ce;
 				}
 				else if (TEST_FIELD_BIT(message->flag_bits.flag12))
 					string_handle = 0x1b0002d1;
@@ -920,7 +938,8 @@ void c_xbox_live_message_display_screen::show_next_message()
 			value2d04++;
 			return;
 		}
-	}
+		value2d04++;
+	} while (value2d04 < message_count);
 	value7ecc = true;
 }
 
@@ -1068,7 +1087,7 @@ void c_xbox_live_message_display_screen::v3()
 		update_details();
 		update_attachment();
 	}
-	else if (!function_230265(this))
+	else if (!screen_lower_channel_window_in_use(this))
 	{
 		s_screen_parameters parameters;
 
@@ -1273,10 +1292,10 @@ screen_load_proc c_screen_45d140::get_load_proc()
    one setting of the variant can take ---- */
 
 void function_1a0180(long tag_index, long string_handle, word *buffer);
-long *function_2369b3(long id);
-struct s_indexed_block;
-struct s_indexed_entry;
-s_indexed_entry *function_236aa9(s_indexed_block *block, long id);
+struct s_game_variant_setting_definition;
+s_game_variant_setting_definition *game_variant_settings_find_setting(long setting_index);
+struct s_game_variant_setting_option;
+s_game_variant_setting_option *game_variant_setting_find_option(s_game_variant_setting_definition *setting, long value);
 long function_2374f0(void *base, long index);
 void function_2373be(long index, void *base, long value);
 bool __stdcall function_19a728(s_game_variant *variant);
@@ -1403,7 +1422,7 @@ void c_list_45d078::v20(c_class_1a2c81 *item, long unused)
 				s_game_variant *variant = variant_settings_get_variant(alternate, &buffer);
 				long value = function_2374f0(variant, *datum->value);
 				s_variant_setting_definition *definition = (s_variant_setting_definition *)datum->value;
-				s_variant_setting_option *option = (s_variant_setting_option *)function_236aa9((s_indexed_block *)definition, value);
+				s_variant_setting_option *option = (s_variant_setting_option *)game_variant_setting_find_option((s_game_variant_setting_definition *)definition, value);
 				word text[0x100];
 
 				text[0] = 0;
@@ -1430,7 +1449,7 @@ c_variant_parameter_setting_list::c_variant_parameter_setting_list(word user_fla
 // @retail 0x2c7f7f
 void c_variant_parameter_setting_list::v17()
 {
-	definition = (s_variant_setting_definition *)function_2369b3(setting_index);
+	definition = (s_variant_setting_definition *)game_variant_settings_find_setting(setting_index);
 	if (definition && definition->option_count > 0)
 	{
 		data = user_interface_data_new("variant parameter setting list", definition->option_count, 8);
@@ -1500,16 +1519,6 @@ void c_variant_parameter_setting_list::select_current_value()
 	}
 }
 
-/* 0x2c8159, the list's handler, is written below but left out: as a third
-   caller of function_2c83e6 it moves that function's first two arguments
-   into registers (retail keeps all four on the stack), which breaks it and
-   function_2bb978. The placeholder keeps the handler's slot. */
-void c_variant_parameter_setting_list::handle_item(s_controller_reference **controller, long *item)
-{
-	get_screen()->start_animation(3);
-}
-
-#if 0
 /* opens the settings of the game engine (unknown_2bb295.cpp's
    0x2bb978 does the same) */
 static __forceinline void open_game_engine_settings(long field_xcb8724, s_controller_reference **controller)
@@ -1567,7 +1576,6 @@ void c_variant_parameter_setting_list::handle_item(s_controller_reference **cont
 	}
 	get_screen()->start_animation(3);
 }
-#endif
 
 // @retail 0x2c8252
 c_variant_parameter_setting_screen::c_variant_parameter_setting_screen(long a, long b, word user_flags) :
@@ -1582,7 +1590,7 @@ void c_variant_parameter_setting_screen::v19()
 	word buffer[0x100];
 	c_class_1a2c81 *title = find_child(6, 0, false);
 	c_class_1a2c81 *description = find_child(6, 2, false);
-	s_variant_setting_definition *definition = (s_variant_setting_definition *)function_2369b3(list.setting_index);
+	s_variant_setting_definition *definition = (s_variant_setting_definition *)game_variant_settings_find_setting(list.setting_index);
 
 	if (definition && definition->string_list_index != NONE)
 	{
@@ -1638,6 +1646,8 @@ screen_load_proc c_variant_parameter_setting_screen::get_load_proc()
 }
 
 bool function_153850(byte *model);
+
+
 
 /* the screen at 0x45d2b8 and the ones that derive from it (0x45d328,
    0x45d398, 0x45d408): a press of B or back copies its settings out */
@@ -1724,7 +1734,7 @@ c_class_1473c9 *__stdcall function_2c8896(s_screen_parameters *parameters)
 }
 
 /* the screen id of each kind of emblem */
-static long emblem_screen_id(long mode)
+static __forceinline long emblem_screen_id(long mode)
 {
 	long screen_id;
 
@@ -1733,9 +1743,11 @@ static long emblem_screen_id(long mode)
 	case 0:
 		screen_id = 0x31;
 		break;
-	default:
+	case 1:
 		screen_id = 0xe9;
 		break;
+	default:
+		__assume(0);
 	}
 	return screen_id;
 }
@@ -1878,6 +1890,7 @@ class c_screen_45d398 : public c_screen_45d2b8
 {
 public:
 	c_screen_45d398(long a, long b, word user_flags);
+	virtual void v3();
 
 	/* focuses the color the profile has */
 	virtual void v19();
@@ -2012,7 +2025,7 @@ void c_screen_45d408::v19()
 
 /* ---- the settings menus ---- */
 
-/* a player's profile (unknown_18f576.cpp) */
+/* a player's profile (player_slots.cpp) */
 struct s_player_profile
 {
 	dword data[0x78];
@@ -2029,7 +2042,7 @@ c_class_1473c9 *__stdcall function_2b46a6(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_2b47a7(s_screen_parameters *parameters);
 
 /* loads a screen for these controllers (not decompiled yet) */
-c_class_1473c9 *function_149ef3(word user_flags, long load); /* unknown_1490ec.cpp */
+c_class_1473c9 *window_manager_open_channel_3_screen(word user_flags, long load); /* window_manager_events.cpp */
 
 // @retail 0x2c5b35
 c_xbox_live_appear_offline_list::c_xbox_live_appear_offline_list(word user_flags) :
@@ -2157,7 +2170,8 @@ void c_controller_settings_edit_list::handle_item(s_controller_reference **contr
 		s_screen_parameters parameters;
 
 		parameters.field_c = 0;
-		function_149f49((s_message *)&parameters, 0, 0, 1 << (*controller)->controller_index, 5, 4, 0);
+		long const &controller_mask = 1 << (*controller)->controller_index;
+		function_149f49((s_message *)&parameters, 0, 0, controller_mask, 5, 4, 0);
 		switch (index)
 		{
 		case 0:
@@ -2212,25 +2226,25 @@ void c_multiplayer_settings_edit_list::handle_item(s_controller_reference **cont
 		switch (*(short *)item)
 		{
 		case 0:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c8a8f);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c8a8f);
 			break;
 		case 1:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c8998);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c8998);
 			break;
 		case 2:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c89a8);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c89a8);
 			break;
 		case 3:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c89b9);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c89b9);
 			break;
 		case 4:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c89ca);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c89ca);
 			break;
 		case 5:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c8858);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c8858);
 			break;
 		default:
-			function_149ef3(1 << (*controller)->controller_index, (long)function_2c8896);
+			window_manager_open_channel_3_screen(1 << (*controller)->controller_index, (long)function_2c8896);
 			break;
 		}
 	}
@@ -2606,17 +2620,22 @@ void c_invert_look_settings_edit_list::v20(c_class_1a2c81 *widget, long index)
 // @retail 0x2c6431
 void c_invert_look_settings_edit_list::handle_item(s_controller_reference **controller, long *item)
 {
+	bool invert;
 	switch (*(short *)item)
 	{
-	case 1:
-		g_54e5d0.settings.controller_flags.invert_look = false;
-		break;
 	case 0:
-		g_54e5d0.settings.controller_flags.invert_look = true;
+		invert = true;
+		break;
+	case 1:
+		invert = false;
 		break;
 	default:
 		__assume(0);
 	}
+	if (invert)
+		g_54e5d0.settings.controller_flags.invert_look = true;
+	else
+		g_54e5d0.settings.controller_flags.invert_look = false;
 	if (value188)
 	{
 		profile_edit_save();
@@ -2719,17 +2738,22 @@ c_auto_level_settings_edit_list::c_auto_level_settings_edit_list(word user_flags
 // @retail 0x2c66b5
 void c_auto_level_settings_edit_list::handle_item(s_controller_reference **controller, long *item)
 {
+	bool auto_level;
 	switch (*(short *)item)
 	{
-	case 1:
-		g_54e5d0.settings.controller_flags.auto_level = false;
-		break;
 	case 0:
-		g_54e5d0.settings.controller_flags.auto_level = true;
+		auto_level = true;
+		break;
+	case 1:
+		auto_level = false;
 		break;
 	default:
 		__assume(0);
 	}
+	if (auto_level)
+		g_54e5d0.settings.controller_flags.auto_level = true;
+	else
+		g_54e5d0.settings.controller_flags.auto_level = false;
 	if (value188)
 	{
 		profile_edit_save();
@@ -2780,18 +2804,23 @@ void c_vibration_settings_edit_list::v20(c_class_1a2c81 *widget, long index)
 // @retail 0x2c67d7
 void c_vibration_settings_edit_list::handle_item(s_controller_reference **controller, long *item)
 {
+	bool vibration;
 	switch (*(short *)item)
 	{
 	case 0:
-		g_54e5d0.settings.controller_flags.vibration = false;
+		vibration = false;
 		break;
 	case 1:
-		g_54e5d0.settings.controller_flags.vibration = true;
+		vibration = true;
 		break;
 	default:
-		g_54e5d0.settings.controller_flags.vibration = true;
+		vibration = true;
 		break;
 	}
+	if (vibration)
+		g_54e5d0.settings.controller_flags.vibration = true;
+	else
+		g_54e5d0.settings.controller_flags.vibration = false;
 	if (value188)
 	{
 		profile_edit_save();
@@ -3011,7 +3040,7 @@ c_custom_game_maps_list::c_custom_game_maps_list(word user_flags) :
 // @retail 0x2c9a73
 void c_custom_game_maps_list::select_last_map()
 {
-	long map_id = g_51098c;
+	volatile long map_id = g_51098c;
 
 	if (map_id != NONE)
 	{
@@ -3288,8 +3317,6 @@ s_type_7ba8e9 *function_137550(long group_index, short bitmap_index);
 struct s_widget_view_2b0a;
 void function_2b0a7b(s_widget_view_2b0a *widget, s_type_7ba8e9 *bitmap);
 
-extern long g_54e7c0;
-extern long g_54e7c4;
 
 /* a campaign level's definition: its map id, its picture and its scenario */
 struct s_campaign_level
@@ -3300,19 +3327,30 @@ struct s_campaign_level
 	long bitmap_tag_index;
 };
 
-// @retail 0x2c4ea0
+/* the standard marker on a constructor (docs/DECOMPILING.md): (1) retail
+   keeps the plain thiscall here (`this` in ecx, both arguments pushed,
+   `ret 8`); without the marker LTCG passes `this` in edi, and with it the
+   two callers 0x2b130a and 0x2b13b3 match. (2) retail holds no reference to
+   its address and both callers are LTCG code; retail's LTCG kept the
+   default convention because the constructor lies on a call cycle through
+   0x18f1c0, which is still a stub here. (3) tried: a virtual destructor,
+   five body shapes, register pressure, probe callers sorted first or last,
+   and a throwaway LTCG 0x18f1c0 that closed the cycle (it fixed 0x1483c3
+   but not this one): `this` stayed in edi in every one. */
+// @retail 0x2c4ea0 standard
 c_campaign_level_handles_list::c_campaign_level_handles_list(word user_flags, bool alternate) :
 	c_class_1474e8(user_flags),
 	handler(this, (list_item_method)&c_campaign_level_handles_list::handle_item)
 {
 	this->alternate = alternate;
-	unlocked = false;
+	*(volatile bool *)&unlocked = false;
+	s_data_datum_iterator iterator;
 
 	s_record_pool *levels = function_19c670();
 	long last_level = function_190565();
-	s_data_datum_iterator iterator;
 
-	if (alternate && last_level <= 0x68)
+	bool const *alternate_reference = &alternate;
+	if (*alternate_reference && last_level <= 0x68)
 	{
 		last_level = 0x68;
 	}
@@ -3448,13 +3486,15 @@ void c_campaign_level_handles_list::handle_item(s_controller_reference **control
 		{
 			s_campaign_level *level = (s_campaign_level *)function_19c270(1, ((s_map_entry *)data->data)[*item & 0xffff].map_id);
 
+			char const *name = level->field_8_5;
 			g_54e7c4 = level->map_id;
 			if (function_592f0())
 			{
-				function_19a6f2(1, level->map_id);
+				long map_id = *(volatile long *)&level->map_id;
+				function_19a6f2(1, map_id);
 			}
 			function_19040d(level->map_id);
-			function_163890(level->field_8_5, 0);
+			function_163890(name, 0);
 			if (alternate)
 			{
 				get_screen()->start_animation(3);
@@ -3503,7 +3543,7 @@ long __stdcall function_120e70(byte *buffer);
 bool __stdcall function_215f40(long arg_9db745, byte *buffer);
 long function_212380(long arg_9db745, long controller_index, byte *buffer);
 bool function_212bc0(long file_index, s_game_variant *variant);
-void function_148aa3(long error, dword controller_flags);
+void function_148aa3(long error, word controller_flags);
 void function_238c21(long controller, long type, word *name, long maximum_count);
 c_class_1473c9 *__stdcall function_2ca4cd(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_2ca525(s_screen_parameters *parameters);
@@ -3917,7 +3957,7 @@ struct s_player_color
 	char index;
 };
 
-long function_14986f(s_player_color color);
+long player_color_get_string_id(s_player_color color);
 
 /* shows the color's name */
 // @retail 0x2cb2d5
@@ -3930,12 +3970,12 @@ void c_choose_player_color_list::v20(c_class_1a2c81 *widget, long index)
 		s_player_color color;
 
 		color.index = (char)widget_item(widget)->value70;
-		text->function_253b1a(function_14986f(color));
+		text->function_253b1a(player_color_get_string_id(color));
 	}
 }
 
-long function_14990f(byte index);
-long function_2365e0(long type);
+long player_emblem_list_get_string_id(byte index);
+long player_model_get_string_id(long model);
 
 // @retail 0x2cb0d3
 void c_choose_emblem_list::v20(c_class_1a2c81 *widget, long index)
@@ -3944,7 +3984,7 @@ void c_choose_emblem_list::v20(c_class_1a2c81 *widget, long index)
 
 	if (text)
 	{
-		text->function_253b1a(function_14990f((byte)widget_item(widget)->value70));
+		text->function_253b1a(player_emblem_list_get_string_id((byte)widget_item(widget)->value70));
 	}
 }
 
@@ -3955,7 +3995,7 @@ void c_choose_model_list::v20(c_class_1a2c81 *widget, long index)
 
 	if (text)
 	{
-		text->function_253b1a(function_2365e0(widget_item(widget)->value70 & 0xffff));
+		text->function_253b1a(player_model_get_string_id(widget_item(widget)->value70 & 0xffff));
 	}
 }
 
@@ -4082,8 +4122,8 @@ void c_controller_settings_edit_list::v20(c_class_1a2c81 *widget, long index)
 	}
 }
 
-long function_149b5a(byte index);
-long function_149da5(byte index);
+long player_emblem_foreground_get_string_id(byte index);
+long player_emblem_background_get_string_id(byte index);
 
 /* shows the setting's name and the edited profile's value of it */
 // @retail 0x2c8bf5
@@ -4094,42 +4134,37 @@ void c_multiplayer_settings_edit_list::v20(c_class_1a2c81 *widget, long index)
 
 	if (name && value)
 	{
-		long string_handle;
-
 		switch ((short)widget_item(widget)->value70)
 		{
 		case 0:
 			name->function_253b1a(0xc0002f8);
-			string_handle = function_2365e0((char)g_54e5d0.settings.model);
+			value->function_253b1a(player_model_get_string_id((char)g_54e5d0.settings.model));
 			break;
 		case 4:
 			name->function_253b1a(0x120002fc);
-			string_handle = function_14986f(*(s_player_color *)&g_54e5d0.settings.colors[3]);
+			value->function_253b1a(player_color_get_string_id(*(s_player_color *)&g_54e5d0.settings.colors[3]));
 			break;
 		case 3:
 			name->function_253b1a(0x120002fb);
-			string_handle = function_14986f(*(s_player_color *)&g_54e5d0.settings.colors[2]);
+			value->function_253b1a(player_color_get_string_id(*(s_player_color *)&g_54e5d0.settings.colors[2]));
 			break;
 		case 2:
 			name->function_253b1a(0x120002fa);
-			string_handle = function_14986f(*(s_player_color *)&g_54e5d0.settings.colors[1]);
+			value->function_253b1a(player_color_get_string_id(*(s_player_color *)&g_54e5d0.settings.colors[1]));
 			break;
 		case 1:
 			name->function_253b1a(0x120002f9);
-			string_handle = function_14986f(*(s_player_color *)&g_54e5d0.settings.colors[0]);
+			value->function_253b1a(player_color_get_string_id(*(s_player_color *)&g_54e5d0.settings.colors[0]));
 			break;
 		case 5:
 			name->function_253b1a(0x110002fd);
-			string_handle = function_149b5a(g_54e5d0.settings.unknown11d[0]);
+			value->function_253b1a(player_emblem_foreground_get_string_id(g_54e5d0.settings.unknown11d[0]));
 			break;
 		case 6:
 			name->function_253b1a(0x110002fe);
-			string_handle = function_149da5(g_54e5d0.settings.unknown11d[1]);
+			value->function_253b1a(player_emblem_background_get_string_id(g_54e5d0.settings.unknown11d[1]));
 			break;
-		default:
-			return;
 		}
-		value->function_253b1a(string_handle);
 	}
 }
 
@@ -4173,3 +4208,5 @@ bool __stdcall function_2c55c4(long unused)
     }
     return true;
 }
+
+void function_2b10a3(dword const *appearance, c_class_2b0b5e *widget, long type);

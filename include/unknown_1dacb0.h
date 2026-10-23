@@ -4,7 +4,7 @@
    An animation is named by a c_type_709360: the graph it is in (NONE for the
    graph itself, else an index into the graph's inheritance list) and its index
    in that graph's animation block. An animation's data may sit in a streamed
-   resource of the graph (the cache of unknown_123680.cpp); the lookups request
+   resource of the graph (the cache of animation_cache.cpp); the lookups request
    the resources of the animations they touch. */
 
 #ifndef UNKNOWN_1DACB0_H
@@ -264,6 +264,9 @@ struct s_graph_tag
 		long *found_weapon_class, long *found_weapon_type);
 	c_type_709360 overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 		long *found_weapon_class, long *found_weapon_type);
+	/* 0x1dd0b0: the animation of the given name here or in the graphs this
+	   one inherits from */
+	c_type_709360 animation_by_name(long name);
 	c_type_709360 animation_find(long mode, long weapon_class, long weapon_type, long set, long item_index,
 		long animation_index, long *found_mode, long *found_weapon_class, long *found_weapon_type);
 
@@ -461,7 +464,7 @@ real *function_1daf30(s_graph_tag *graph, c_type_709360 animation_id);
 void *function_1db120(s_graph_tag *graph, long mode, long weapon_class, long weapon_type);
 long function_1dd490(s_graph_tag *graph, long flags);
 bool function_1dd4c0(long render_model_tag_index, s_graph_tag *graph, long *node_count, long *node_map);
-c_type_709360 function_1dd5d0(s_graph_tag *graph, c_type_709360 animation_id);
+c_type_709360 *function_1dd5d0(s_graph_tag *graph, c_type_709360 animation_id, c_type_709360 *output);
 c_type_709360 *function_1dd630(s_graph_tag *graph, c_type_709360 *result, c_type_709360 animation_id, bool first_seed);
 byte *function_1dd7c0(s_graph_tag *graph, c_type_709360 animation_id);
 void function_1dd880(s_graph_tag *graph, c_type_709360 animation_id, s_graph_tag **arg_0e6cbc, s_animation **animation);

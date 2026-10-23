@@ -1,5 +1,6 @@
 // @flags /O2 /arch:SSE /Gr
 #include "unknown_11c920.h"
+#include "segment_sphere.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
 #ifndef H2_NATIVE_PORT
@@ -67,33 +68,32 @@ struct s_1debd0
  short field_6;
 };
 
+// score 12 (was 12): the cross product keeps the other operand order, and
+// every swap of the factors leaves this code unchanged.
 // @retail 0x1debd0
 bool function_1debd0(dword const *arg_1, s_bsp3d const *arg_0, short arg_2, long arg_3,
  short arg_4, bool arg_5, point2f const *arg_6)
 {
- (void)&arg_2; (void)&arg_3; (void)&arg_4; (void)&arg_5; (void)&arg_6;
- point2f const *const *local_18 = &arg_6;
  s_1ddda0 const *local_0 = (s_1ddda0 const *)arg_0;
  s_1debd0 const *local_1 = &((s_1debd0 const *)local_0->field_2c)[arg_3];
  if (arg_1 && (local_1->field_4 & 8) && (short)local_1->field_5 < arg_2 &&
   !(arg_1[local_1->field_5 >> 5] & (1 << (local_1->field_5 & 31))))
   return false;
- s_1ddda2 const *local_2 = local_0->field_34;
- s_1ddda3 const *local_3 = local_0->field_3c;
+
  long local_4 = local_1->field_2;
  long local_5 = local_4;
- short const *local_6 = g_440b94[arg_4 * 2 + arg_5];
- long local_7 = local_6[0] * sizeof(real), local_8 = local_6[1] * sizeof(real);
  do
  {
-  s_1ddda2 const *local_9 = &local_2[local_5];
+  s_1ddda2 const *local_9 = &local_0->field_34[local_5];
   bool local_10 = local_9->field_a == arg_3;
-  real const *local_11 = (real const *)&local_3[local_9->field_0[local_10]].field_0;
-  point2f local_12 = { *(real const *)((byte const *)local_11 + local_7), *(real const *)((byte const *)local_11 + local_8) };
-  point2f local_14 = { (*local_18)->x - local_12.x, (*local_18)->y - local_12.y };
-  real const *local_16 = (real const *)&local_3[local_9->field_0[!local_10]].field_0;
-  point2f local_17 = { *(real const *)((byte const *)local_16 + local_7) - local_12.x, *(real const *)((byte const *)local_16 + local_8) - local_12.y };
-  if (local_17.y * local_14.x - local_14.y * local_17.x > 0.0f) return false;
+  point3f const *local_11 = &local_0->field_3c[local_9->field_0[local_10]].field_0;
+  point3f const *local_16 = &local_0->field_3c[local_9->field_0[!local_10]].field_0;
+  point2f local_12 = { local_11->n[g_440b94[arg_4 * 2 + arg_5][0]], local_11->n[g_440b94[arg_4 * 2 + arg_5][1]] };
+  point2f local_14 = { arg_6->x - local_12.x, arg_6->y - local_12.y };
+  point2f local_15 = { local_16->n[g_440b94[arg_4 * 2 + arg_5][0]], local_16->n[g_440b94[arg_4 * 2 + arg_5][1]] };
+  point2f local_17 = { local_15.x - local_12.x, local_15.y - local_12.y };
+  if (local_17.y * local_14.x - local_14.y * local_17.x > 0.0f)
+   return false;
   local_5 = local_9->field_4[local_10];
  } while (local_5 != local_4);
  return true;
@@ -119,6 +119,12 @@ struct s_1dea00
  long field_18;
  s_1dea02 *field_1c;
 };
+/* whether the plane's normal points along the positive axis */
+PRIVATE inline bool plane3f_axis_positive(plane3f const *plane, short axis)
+{
+ return ((real const *)plane)[axis] > 0.0f;
+}
+
 struct s_296520_tree;
 long function_296520(s_296520_tree *tree, long index, point2f const *point);
 
@@ -126,7 +132,6 @@ long function_296520(s_296520_tree *tree, long index, point2f const *point);
 long function_1dea00(s_bsp3d const *arg_0, long arg_1, point3f const *arg_6,
  vector3f const *arg_7, short arg_2, dword const *arg_3, long arg_4, real arg_5, bool arg_8)
 {
- (void)&arg_2; (void)&arg_3; (void)&arg_4; (void)&arg_5; (void)&arg_8;
  s_1dea00 const *local_0 = (s_1dea00 const *)arg_0;
  s_1dea01 const *local_1 = &local_0->field_14[arg_1];
  long local_2 = local_1->field_2;
@@ -145,13 +150,12 @@ long function_1dea00(s_bsp3d const *arg_0, long arg_1, point3f const *arg_6,
    if (local_8 >= local_7 && local_8 >= local_6) local_9 = 2;
    else if (local_7 >= local_6) local_9 = 1;
    else local_9 = 0;
-   bool local_10 = (((real const *)local_5)[local_9] > 0.0f) != (bool)((local_15 >> 15) & 1);
+   bool local_10 = plane3f_axis_positive(local_5, local_9) != ((local_15 & 0x8000) != 0);
    point3f local_11;
    local_11.x = arg_7->i * arg_5 + arg_6->x;
    local_11.y = arg_7->j * arg_5 + arg_6->y;
    local_11.z = arg_7->k * arg_5 + arg_6->z;
-   short const *local_12 = g_440b94[local_9 * 2 + local_10];
-   point2f local_13 = { ((real *)&local_11)[local_12[0]], ((real *)&local_11)[local_12[1]] };
+   point2f local_13 = { ((real *)&local_11)[g_440b94[local_9 * 2 + local_10][0]], ((real *)&local_11)[g_440b94[local_9 * 2 + local_10][1]] };
    long local_14 = function_296520((s_296520_tree *)((byte *)arg_0 + 0x20), local_4->field_2, &local_13);
    if (!arg_8 || function_1debd0(arg_3, arg_0, arg_2, local_14, local_9, local_10, &local_13))
     return local_14;
@@ -210,10 +214,11 @@ PRIVATE __forceinline real function_1de6d4(vector3f const *arg_0, vector3f const
  return arg_0->k * arg_1->k + arg_0->j * arg_1->j + arg_0->i * arg_1->i;
 }
 
+// score 2 (was 2): the inlined dot product multiplies the i terms with the
+// operands in the other order; the compiler canonicalises every source order.
 // @retail 0x1de6d0
 bool __stdcall function_1de6d0(s_1de6d0 *arg_0, long arg_1, real arg_2, real arg_3)
 {
- (void)&arg_0; (void)&arg_1; (void)&arg_2; (void)&arg_3;
  while (!(arg_1 & 0x800000))
  {
   s_1de6d1 const *local_0 = &arg_0->field_4->field_4[arg_1 & 0x7fffff];
@@ -244,7 +249,7 @@ bool __stdcall function_1de6d0(s_1de6d0 *arg_0, long arg_1, real arg_2, real arg
  if (arg_1 != NONE)
  {
   local_8 = arg_1 & 0x7fffff;
-  byte local_18 = *(byte volatile const *)&arg_0->field_4->field_14[local_8].field_0;
+  byte local_18 = arg_0->field_4->field_14[local_8].field_0;
   local_9 = (local_18 & 1) ? 2 : 1;
  }
  dword local_11 = arg_0->field_0;
@@ -318,7 +323,6 @@ struct s_1de2c0
  bool field_21f;
  point2f field_220;
 };
-bool function_11e5e0(point3f const *, point3f const *, vector3f const *, real);
 
 PRIVATE __forceinline void function_1de2c1(s_1de2c2 *arg_0, long arg_1)
 {
@@ -376,10 +380,12 @@ PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *
 #endif
 }
 
+// score 44 (was 44): the loads after the first loop are in the other order
+// and the byte load uses mov cl where retail uses movzx ecx, so the table
+// address that follows is off.
 // @retail 0x1de2c0
 void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
 {
- (void)&arg_1;
  s_1debd0 const *local_0 = &((s_1debd0 const *)arg_0->field_0->field_2c)[arg_1];
  if ((local_0->field_4 & 8) && (short)local_0->field_5 < arg_0->field_4 &&
   !(arg_0->field_8[local_0->field_5 >> 5] & (1 << (local_0->field_5 & 31)))) return;
@@ -410,7 +416,7 @@ void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
   local_11.i = local_10->x - local_9->x;
   local_11.j = local_10->y - local_9->y;
   local_11.k = local_10->z - local_9->z;
-  if (function_11e5e0(local_9, arg_0->field_c, &local_11, arg_0->field_10))
+  if (function_11e5e0(local_9, &local_11, arg_0->field_c, arg_0->field_10))
   {
    function_1de2c4(arg_0->field_14, local_3);
    local_1 = true;
@@ -419,20 +425,22 @@ void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
  } while (local_3 != local_0->field_2);
  if (!local_1)
  {
+  long local_14 = local_0->field_2;
   s_1ddda2 const *local_12 = arg_0->field_0->field_34;
   s_1ddda3 const *local_13 = arg_0->field_0->field_3c;
-  long local_14 = local_0->field_2;
   long local_15 = local_14;
-  long local_16 = arg_0->field_21c * 2 + arg_0->field_21e;
+  bool local_28 = arg_0->field_21e;
+  long local_16 = local_28 + arg_0->field_21c * 2;
   long local_17 = g_440b94[local_16][0] * sizeof(real), local_18 = g_440b94[local_16][1] * sizeof(real);
   do
   {
    s_1ddda2 const *local_19 = &local_12[local_15];
    bool local_20 = local_19->field_a == arg_1;
    volatile long local_26 = local_20;
+   long local_27 = arg_0->field_21e;
    real const *local_21 = (real const *)&local_13[local_19->field_0[local_20]].field_0;
    real const *local_24 = (real const *)&local_13[local_19->field_0[!local_20]].field_0;
-   long local_22 = *(short const volatile *)&arg_0->field_21c * 2 + *(bool const volatile *)&arg_0->field_21e;
+   long local_22 = *(short const volatile *)&arg_0->field_21c * 2 + local_27;
    point2f local_23 = { local_21[g_440b94[local_22][0]] - arg_0->field_220.x, local_21[g_440b94[local_22][1]] - arg_0->field_220.y };
    point2f local_25 = { *(real const *)((byte const *)local_24 + local_17) - arg_0->field_220.x,
     *(real const *)((byte const *)local_24 + local_18) - arg_0->field_220.y };
@@ -515,7 +523,46 @@ void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
 {
  (void)&arg_0; (void)&arg_1;
  s_1de6d2 const *local_0 = (s_1de6d2 const *)arg_0->field_0;
- if (!(arg_1 & 0x800000))
+ if (arg_1 & 0x800000)
+ {
+  if (arg_1 != NONE)
+  {
+   long local_9 = arg_1 & 0x7fffff;
+   s_1dea01 const *local_10 = &local_0->field_14[local_9];
+   if (arg_0->field_14->field_c0c.field_0 < 256)
+    arg_0->field_14->field_c0c.field_4[arg_0->field_14->field_c0c.field_0++] = local_9;
+   if (arg_0->field_21f) return;
+   for (long local_11 = local_10->field_2; local_11 < local_10->field_2 + local_10->field_1; ++local_11)
+   {
+    s_1de6d2 const *local_12 = (s_1de6d2 const *)arg_0->field_0;
+    s_1dea02 const *local_13 = &local_12->field_1c[local_11];
+    if (function_1ddea1(arg_0, local_13->field_0))
+    {
+     plane3f const *local_15 = &local_12->field_c[local_13->field_0 & 0x7fff];
+     real local_19 = (real)fabs(local_15->i);
+     real local_20 = (real)fabs(local_15->j);
+     real local_21 = (real)fabs(local_15->k);
+     real local_16 = local_15->k * arg_0->field_c->z + local_15->j * arg_0->field_c->y + local_15->i * arg_0->field_c->x - local_15->d;
+     real local_17 = 0.0f - local_16;
+     point3f local_18;
+     local_18.x = local_17 * local_15->i + arg_0->field_c->x;
+     local_18.y = local_17 * local_15->j + arg_0->field_c->y;
+     local_18.z = local_15->k * local_17 + arg_0->field_c->z;
+     short local_22;
+     if (local_21 >= local_20 && local_21 >= local_19) local_22 = 2;
+     else if (local_20 >= local_19) local_22 = 1;
+     else local_22 = 0;
+     arg_0->field_21c = local_22;
+     arg_0->field_21e = plane3f_axis_positive(local_15, local_22) != ((local_13->field_0 & 0x8000) != 0);
+     short const *local_23 = g_440b94[local_22 * 2 + arg_0->field_21e];
+     arg_0->field_220.x = ((real const *)&local_18)[local_23[0]];
+     arg_0->field_220.y = ((real const *)&local_18)[local_23[1]];
+     function_1de220(arg_0, local_13->field_2);
+    }
+   }
+  }
+ }
+ else
  {
   s_1de6d1 const *local_1 = &local_0->field_4[arg_1];
   long local_2 = *(long const *)&local_1->field_2[-1] >> 8;
@@ -542,42 +589,6 @@ void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
   }
   else
    function_1ddea0(*(s_1de2c0 *volatile *)&arg_0, *(long const *)&local_1->field_2[local_8 * 3 - 1] >> 8);
- }
- else if (arg_1 != NONE)
- {
-  long local_9 = arg_1 & 0x7fffff;
-  s_1dea01 const *local_10 = &local_0->field_14[local_9];
-  if (arg_0->field_14->field_c0c.field_0 < 256)
-   arg_0->field_14->field_c0c.field_4[arg_0->field_14->field_c0c.field_0++] = local_9;
-  if (arg_0->field_21f) return;
-  for (long local_11 = local_10->field_2; local_11 < local_10->field_2 + local_10->field_1; ++local_11)
-  {
-   s_1de6d2 const *local_12 = (s_1de6d2 const *)arg_0->field_0;
-   s_1dea02 const *local_13 = &local_12->field_1c[local_11];
-   if (function_1ddea1(arg_0, local_13->field_0))
-   {
-    plane3f const *local_15 = &local_12->field_c[local_13->field_0 & 0x7fff];
-    real local_16 = local_15->k * arg_0->field_c->z + local_15->j * arg_0->field_c->y + local_15->i * arg_0->field_c->x - local_15->d;
-    real local_17 = 0.0f - local_16;
-    point3f local_18;
-    local_18.x = local_17 * local_15->i + arg_0->field_c->x;
-    local_18.y = local_17 * local_15->j + arg_0->field_c->y;
-    local_18.z = local_15->k * local_17 + arg_0->field_c->z;
-    real local_19 = (real)fabs(local_15->i);
-    real local_20 = (real)fabs(local_15->j);
-    real local_21 = (real)fabs(local_15->k);
-    short local_22;
-    if (local_21 >= local_20 && local_21 >= local_19) local_22 = 2;
-    else if (local_20 >= local_19) local_22 = 1;
-    else local_22 = 0;
-    arg_0->field_21c = local_22;
-    arg_0->field_21e = (((real const *)local_15)[local_22] > 0.0f) != (bool)(((word)local_13->field_0 >> 15) & 1);
-    short const *local_23 = g_440b94[local_22 * 2 + arg_0->field_21e];
-    arg_0->field_220.x = ((real const *)&local_18)[local_23[0]];
-    arg_0->field_220.y = ((real const *)&local_18)[local_23[1]];
-    function_1de220(arg_0, local_13->field_2);
-   }
-  }
  }
 }
 

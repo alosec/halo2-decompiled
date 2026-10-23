@@ -4,6 +4,7 @@
    samples of up to 16 blips that fade out in turn. */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "object_iterator.h"
@@ -27,7 +28,7 @@ struct s_motion_sensor_sample
 
 struct s_motion_sensor_player
 {
-	void motion_sensor_add_other_object(long object_index);
+	__declspec(noinline) void motion_sensor_add_other_object(long object_index);
 	s_motion_sensor_sample samples[10];
 	long objects[16];
 	long nearby_count;
@@ -53,10 +54,11 @@ struct s_sensor_object
 	byte unknownab[0xc1 - 0xab];
 	byte flagsc1;
 	byte unknownc2[0x10a - 0xc2];
-	byte flags10a_0 : 1;
-	byte flags10a_1 : 1;
-	byte flags10a_2 : 1;
-	byte unknown10b[0x12c - 0x10b];
+	word flags10a_0 : 1;
+	word flags10a_1 : 1;
+	word flags10a_2 : 1;
+	word : 13;
+	byte unknown10c[0x12c - 0x10c];
 	union
 	{
 		long unknown12c;
@@ -139,8 +141,6 @@ real g_51e98c;
 bool g_51e990;
 real g_47ff98 = 1.1f;
 real g_47ff9c[3] = { 0.0f, -0.75f, 1.0f };
-short g_4b9dd0;
-short g_4b9dd2;
 
 extern color3f const g_445320[9] =
 {
@@ -185,7 +185,7 @@ void __stdcall function_2548f0(point2f const *center, real scale);
 /* ---- the object lists ---- */
 
 // @retail 0x1a1c3e
-void motion_sensor_add_nearby_object(s_motion_sensor_player *sensor, long object_index)
+inline void motion_sensor_add_nearby_object(s_motion_sensor_player *sensor, long object_index)
 {
 	if (sensor->nearby_count < 16)
 	{
@@ -202,27 +202,21 @@ void motion_sensor_add_nearby_object(s_motion_sensor_player *sensor, long object
 }
 
 // @retail 0x1a1c8e
-void s_motion_sensor_player::motion_sensor_add_other_object(long object_index)
+inline void s_motion_sensor_player::motion_sensor_add_other_object(long object_index)
 {
-	s_motion_sensor_player *sensor = this;
-	long *local_0 = &sensor->other_count;
-	long count = sensor->nearby_count;
-	long local_1 = *(volatile long *)local_0;
-	count += local_1;
-	if (count < 16)
+	if (nearby_count + other_count < 16)
 	{
-		sensor->objects[count] = object_index;
-		(*local_0)++;
+		objects[nearby_count + other_count] = object_index;
+		other_count++;
 	}
 }
 
 // @retail 0x1a1cb5
-void motion_sensor_remove_object(s_motion_sensor_player *sensor, long index)
+inline void motion_sensor_remove_object(s_motion_sensor_player *sensor, long index)
 {
 	if (index >= 0)
 	{
-		long count = sensor->nearby_count + sensor->other_count;
-		if (index < count)
+		if (index < sensor->nearby_count + sensor->other_count)
 		{
 			if (index < sensor->nearby_count)
 			{
@@ -234,8 +228,8 @@ void motion_sensor_remove_object(s_motion_sensor_player *sensor, long index)
 			}
 			else
 			{
-				if (index != count - 1)
-					sensor->objects[index] = sensor->objects[count - 1];
+				if (index != sensor->nearby_count + sensor->other_count - 1)
+					sensor->objects[index] = sensor->objects[sensor->nearby_count + sensor->other_count - 1];
 				sensor->other_count--;
 			}
 		}
@@ -326,14 +320,20 @@ char motion_sensor_object_type(long local_player_index, long object_index)
 							rider_index = object->unknown248;
 						if (rider_index != NONE)
 						{
-							result = function_1df560(SENSOR_OBJECT(rider_index)->team138, team) ? 5 : 4;
+							if (function_1df560(SENSOR_OBJECT(rider_index)->team138, team))
+								result = 5;
+							else
+								result = 4;
 						}
 						else
 						{
 							s_sensor_definition *definition = SENSOR_DEFINITION(object->definition_index);
 							result = 4;
-							if (definition->block_count > 1 && definition->block[0].type == 0xa000082)
-								result = 5;
+							if (definition->block_count > 1)
+							{
+								if (definition->block[0].type == 0xa000082)
+									result = 5;
+							}
 						}
 					}
 					else
@@ -345,12 +345,20 @@ char motion_sensor_object_type(long local_player_index, long object_index)
 				{
 					result = function_1df560(object->team138, team) ? 3 : 2;
 					if (g_4e6948->state == 2 && object->unknown13c != NONE && function_53750(object->unknown13c & 0xffff))
-						result = result == 3 ? 8 : 7;
+					{
+						if (result == 3)
+							result += 5;
+						else
+							result = 7;
+					}
 				}
 			}
 			else if (mask & 0x1000)
 			{
-				result = function_1df560(object->team12e, team) ? 3 : 2;
+				if (function_1df560(object->team12e, team))
+					result = 3;
+				else
+					result = 2;
 			}
 		}
 	}
@@ -359,32 +367,45 @@ char motion_sensor_object_type(long local_player_index, long object_index)
 	return result;
 }
 
+__forceinline short function_1a1fb0(short height)
+{
+	if (height < 0)
+		height = 0;
+	else if (height > 3)
+		height = 3;
+	return height;
+}
+
 // @retail 0x1a1faf
 void motion_sensor_blip_set_type(long local_player_index, long object_index, s_motion_sensor_blip *blip)
 {
+	s_motion_sensor_blip *volatile *local_0 = (s_motion_sensor_blip *volatile *)&blip;
 	char type = motion_sensor_object_type(local_player_index, object_index);
+	s_motion_sensor_blip *local_1 = *local_0;
 
-	blip->type = type;
+	local_1->type = type;
 	if (object_index == NONE)
 	{
-		blip->height = 0;
+		local_1->height = 0;
 	}
 	else
 	{
 		s_sensor_object *object = SENSOR_OBJECT(object_index);
-		long mask = 1 << object->type;
-
-		if (mask & 3)
+		if ((1 << object->type) & 3)
 		{
 			short height = SENSOR_DEFINITION(object->definition_index)->height194;
-			blip->height = (char)(height < 0 ? 0 : (height > 3 ? 3 : height));
+			height = function_1a1fb0(height);
+			local_1 = *local_0;
+			local_1->height = (char)height;
 			if (g_4e6948->state == 2 && (type == 7 || type == 8))
-				blip->height = 2;
+				local_1->height = 2;
 		}
-		else if (mask & 0x1000)
+		else if ((1 << object->type) & 0x1000)
 		{
 			short height = SENSOR_DEFINITION(object->definition_index)->heightc2;
-			blip->height = (char)(height < 0 ? 0 : (height > 3 ? 3 : height));
+			height = function_1a1fb0(height);
+			local_1 = *local_0;
+			local_1->height = (char)height;
 		}
 	}
 }
@@ -394,20 +415,25 @@ bool motion_sensor_object_valid(long object_index)
 {
 	s_sensor_object *object = (s_sensor_object *)function_badc0(object_index, NONE);
 	bool result = false;
-
-	if (object)
+	long mask;
+	if (!object)
+		goto local_0;
+	mask = 1 << object->type;
+	if (mask & 3)
 	{
-		long mask = 1 << object->type;
-		bool skip;
-		if (mask & 3)
-			skip = object->unknown13c != NONE;
-		else if (mask & 0x1000)
-			skip = TEST_FIELD_BIT(SENSOR_DEFINITION(object->definition_index)->flagbc_6);
-		else
-			skip = true;
-		if (!skip && !TEST_FIELD_BIT(object->flags10a_2))
-			result = true;
+		if (object->unknown13c != NONE)
+			goto local_0;
 	}
+	else
+	{
+		if (!(mask & 0x1000))
+			goto local_0;
+		if (TEST_FIELD_BIT(SENSOR_DEFINITION(object->definition_index)->flagbc_6))
+			goto local_0;
+	}
+	if (!TEST_FIELD_BIT(object->flags10a_2))
+		result = true;
+local_0:
 	return result;
 }
 
@@ -475,6 +501,14 @@ void motion_sensor_update_pulse(void)
 		g_51e98c = 0.4f;
 }
 
+PRIVATE inline real function_1a2337(point3f const *arg_0, point3f const *arg_1)
+{
+	point2f local_0;
+	local_0.x = arg_1->x - arg_0->x;
+	local_0.y = arg_1->y - arg_0->y;
+	return local_0.x * local_0.x + local_0.y * local_0.y;
+}
+
 // @retail 0x1a2336
 void motion_sensor_update_nearby_objects(void)
 {
@@ -502,8 +536,8 @@ void motion_sensor_update_nearby_objects(void)
 
 	s_data_datum_iterator iterator;
 	iterator.data = g_4e8c24;
-	iterator.datum_index = NONE;
 	iterator.index = NONE;
+	iterator.datum_index = NONE;
 	while (data_datum_iterator_next(&iterator))
 	{
 		s_sensor_player *player = (s_sensor_player *)iterator.datum;
@@ -511,15 +545,14 @@ void motion_sensor_update_nearby_objects(void)
 		{
 			s_sensor_object *unit = SENSOR_OBJECT(player->unit_index);
 			bool room = false;
-			s_motion_sensor_player *sensor = g_51e994->players;
-			for (i = 0; i < 4; i++, sensor++)
+			s_motion_sensor_player *sensor;
+			point3f *position;
+			for (i = 0, position = positions, sensor = g_51e994->players; i < 4; i++, sensor++, position++)
 			{
 				if (valid[i] && sensor->nearby_count < 16)
 				{
-					real dy = unit->position.y - positions[i].y;
-					real dx = unit->position.x - positions[i].x;
 					room = true;
-					if (range_squared >= dx * dx + dy * dy)
+					if (range_squared >= function_1a2337(position, &unit->position))
 						motion_sensor_add_nearby_object(sensor, player->unit_index);
 				}
 			}
@@ -567,24 +600,25 @@ void motion_sensor_update_other_objects(void)
 		}
 	}
 
-	s_type_f1af8e iterator;
-	function_bae80(&iterator, 0x1003, 1);
-	s_sensor_object *object;
-	while ((object = (s_sensor_object *)function_baeb0(&iterator)) != NULL)
+	struct
 	{
-		if (motion_sensor_object_valid(iterator.object_index))
+		s_sensor_object *object;
+		s_type_f1af8e iterator;
+	} state;
+	function_bae80(&state.iterator, 0x1003, 1);
+	while ((state.object = (s_sensor_object *)function_baeb0(&state.iterator)) != NULL)
+	{
+		if (motion_sensor_object_valid(state.iterator.object_index))
 		{
 			bool room = false;
-			s_motion_sensor_player *sensor = g_51e994->players;
-			for (i = 0; i < 4; i++, sensor++)
+			for (i = 0; i < 4; i++)
 			{
+				s_motion_sensor_player *sensor = &g_51e994->players[i];
 				if (valid[i] && sensor->other_count + sensor->nearby_count < 16)
 				{
-					real dy = object->position.y - positions[i].y;
-					real dx = object->position.x - positions[i].x;
 					room = true;
-					if (range_squared >= dx * dx + dy * dy)
-						sensor->motion_sensor_add_other_object(iterator.object_index);
+					if (range_squared >= function_1a2337(&positions[i], &state.object->position))
+						sensor->motion_sensor_add_other_object(state.iterator.object_index);
 				}
 			}
 			if (!room)
@@ -603,10 +637,10 @@ void motion_sensor_build_sample(long local_player_index)
 	sample->count = 0;
 	if (unit_index != NONE)
 	{
-		real angle = -(g_4ed284->entries[local_player_index].yaw + 1.5707964f);
-		real sine = (real)sin(angle);
+		real facing = g_4ed284->entries[local_player_index].yaw + 1.5707964f;
+		real sine = (real)sin(-facing);
 		real scale = 1.0f / g_510c94->motion_sensor_range;
-		real cosine = (real)cos(angle);
+		real cosine = (real)cos(-facing);
 		point3f origin;
 		function_cafc0(unit_index, &origin);
 
@@ -615,17 +649,19 @@ void motion_sensor_build_sample(long local_player_index)
 		{
 			long object_index = sensor->objects[i];
 			s_sensor_object *object = (s_sensor_object *)function_badc0(object_index, NONE);
-			if (object && motion_sensor_object_visible(object_index))
+			if (object && (byte)motion_sensor_object_visible(object_index))
 			{
 				real dx = object->position.x - origin.x;
 				real dy = object->position.y - origin.y;
 				real range = g_510c94->motion_sensor_range;
-				if (range * range > dx * dx + dy * dy)
+				if (dx * dx + dy * dy < range * range)
 				{
 					s_motion_sensor_blip *blip = &sample->blips[sample->count++];
 					point2f point;
-					point.x = ((dy * sine - dx * cosine) * scale + 1.0f) * 32.0f;
-					point.y = ((dy * cosine + dx * sine) * scale + 1.0f) * 32.0f;
+					point.x = dy * sine - dx * cosine;
+					point.y = dy * cosine + dx * sine;
+					point.x = (point.x * scale + 1.0f) * 32.0f;
+					point.y = (point.y * scale + 1.0f) * 32.0f;
 					motion_sensor_blip_set_position(&point, blip);
 					motion_sensor_blip_set_type(local_player_index, object_index, blip);
 				}
@@ -651,7 +687,7 @@ void motion_sensor_render(long local_player_index, short const *origin)
 			s_motion_sensor_sample *sample = &sensor->samples[(g_51e994->sample_index + i) % 10];
 			real fraction = (real)age * 0.1f;
 			real scale = fraction * fraction;
-			real intensity = (real)pow(1.0 - fraction, 3.5) * 7.0f + 1.0f;
+			fraction = pow(1.0f - fraction, 3.5f) * 7.0f + 1.0f;
 			for (long j = 0; j < sample->count; j++)
 			{
 				s_motion_sensor_blip *blip = &sample->blips[j];
@@ -660,7 +696,7 @@ void motion_sensor_render(long local_player_index, short const *origin)
 					point2f point;
 					point.x = (real)blip->x;
 					point.y = (real)blip->y;
-					motion_sensor_draw_blip(blip->type, &point, scale, intensity, blip->height);
+					motion_sensor_draw_blip(blip->type, &point, scale, fraction, blip->height);
 				}
 			}
 		}
@@ -679,11 +715,10 @@ bool motion_sensor_enemy_vehicle_ahead(long local_player_index)
 		s_sensor_player *player = SENSOR_PLAYER(player_index);
 		if (player->unit_index != NONE)
 		{
-			long unit_index = player->unit_index;
 			s_motion_sensor_player *sensor = &g_51e994->players[local_player_index];
-			s_sensor_object *unit = SENSOR_OBJECT(unit_index);
+			s_sensor_object *unit = SENSOR_OBJECT(player->unit_index);
 			point3f unit_position;
-			function_b9dd0(unit_index, &unit_position);
+			function_b9dd0(player->unit_index, &unit_position);
 			for (long i = 0; i < sensor->other_count; i++)
 			{
 				long object_index = sensor->objects[sensor->nearby_count + i];
@@ -694,10 +729,10 @@ bool motion_sensor_enemy_vehicle_ahead(long local_player_index)
 					{
 						point3f position;
 						function_b9dd0(object_index, &position);
-						real dz = position.z - unit_position.z;
-						real dy = position.y - unit_position.y;
 						real dx = position.x - unit_position.x;
-						if (16.0f > dz * dz + dx * dx + dy * dy)
+						real dy = position.y - unit_position.y;
+						real dz = position.z - unit_position.z;
+						if (16.0f > dz * dz + dy * dy + dx * dx)
 						{
 							vector3f velocity;
 							function_ba1d0(object_index, &velocity, NULL);
@@ -708,7 +743,7 @@ bool motion_sensor_enemy_vehicle_ahead(long local_player_index)
 								direction.j = object->position.y - unit->position.y;
 								direction.k = object->position.z - unit->position.z;
 								function_30bf0(&direction);
-								if (direction.k * unit->forward.k + direction.j * unit->forward.j + direction.i * unit->forward.i > cos(0.5235987715423107))
+								if (direction.k * unit->forward.k + direction.j * unit->forward.j + direction.i * unit->forward.i < (real)cos(0.5235987715423107))
 								{
 									s_sensor_definition *definition = SENSOR_DEFINITION(object->definition_index);
 									for (long j = 0; j < definition->block_count; j++)
@@ -741,10 +776,10 @@ bool motion_sensor_enemy_nearby(long local_player_index)
 	if (player_index != NONE)
 	{
 		s_sensor_player *player = SENSOR_PLAYER(player_index);
-		if (player->unit_index != NONE)
+		if (((s_sensor_player volatile *)player)->unit_index != NONE)
 		{
-			s_motion_sensor_player *sensor = &g_51e994->players[local_player_index];
 			real range = g_510c94->motion_sensor_range;
+			s_motion_sensor_player *sensor = &g_51e994->players[local_player_index];
 			real range_squared = range * range;
 			s_sensor_object *unit = SENSOR_OBJECT(player->unit_index);
 			for (long i = 0; i < sensor->other_count; i++)
@@ -755,12 +790,12 @@ bool motion_sensor_enemy_nearby(long local_player_index)
 					s_sensor_object *object = (s_sensor_object *)function_badc0(object_index, 3);
 					if (object)
 					{
-						char type = motion_sensor_object_type(local_player_index, object_index);
+						long type = motion_sensor_object_type(local_player_index, object_index);
 						if (type == 5 || type == 3)
 						{
-							real dy = object->position.y - unit->position.y;
 							real dx = object->position.x - unit->position.x;
-							if (range_squared >= dx * dx + dy * dy)
+							real dy = object->position.y - unit->position.y;
+							if (range_squared >= dy * dy + dx * dx)
 							{
 								result = true;
 								break;

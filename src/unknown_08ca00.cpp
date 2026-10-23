@@ -1,20 +1,15 @@
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_08CA00.CPP: the message of the day, kept in
    n:\message_of_the_day.dat (lane D) */
 
 #include "unknown_11c920.h"
 #include "files.h"
 #include <string.h>
+#include "pending_messages.h"
 
-/* the message of the day's state: its flags (bit 1: there is a message) and
-   its length */
-struct s_message_of_the_day_globals
-{
-	dword flags;
-	short length;
-};
-
-s_message_of_the_day_globals g_479784;
+/* the request that receives the message of the day: its flags (bit 1: there
+   is a message) and its kind */
+s_pending_message_header g_479780;
 char const *g_4672b8 = "message_of_the_day.dat";
 
 static inline void function_x454397(s_type_acf665 *reference)
@@ -43,7 +38,7 @@ void message_of_the_day_get_file(s_type_acf665 *file)
 // @retail 0x8ca50
 bool message_of_the_day_available(void)
 {
-	if (g_479784.length != 0 && (g_479784.flags & 2))
+	if (g_479780.kind != 0 && (g_479780.flags & 2))
 		return true;
 	return false;
 }
@@ -61,13 +56,13 @@ bool __stdcall function_8c900(const byte *messages)
 		dword error;
 		if (function_136970(&file, 2, &error))
 		{
-			long language;
 			if (g_47ff38 == NONE)
 			{
 				g_47ff38 = function_11ca80(XGetLanguage());
 			}
-			language = g_47ff38;
-			if (function_136d00(&file, messages + language * 0x200, 0x200) &&
+			const byte *local_0 = messages + g_47ff38 * 0x200;
+			long language = g_47ff38;
+			if (function_136d00(&file, local_0, 0x200) &&
 				function_136d00(&file, messages + 0x1200 + language * 0x4004, 0x4004))
 				result = true;
 			if (CloseHandle(file.handle))
@@ -82,7 +77,7 @@ bool __stdcall function_8c900(const byte *messages)
 			}
 		}
 		if (!result)
-			function_136860(&file);
+			file_ref_delete(&file);
 	}
 	return result;
 }
@@ -104,6 +99,12 @@ s_name_list *name_list_clear(s_name_list *list);
 void function_08cc20(s_name_buffer *buffer, const wchar_t *name);
 bool function_1368f0(s_type_acf665 *file);
 
+#pragma inline_depth(0)
+static __forceinline bool function_8ca71(s_type_acf665 *arg_0, dword arg_1, bool arg_2)
+{
+ return file_ref_seek(arg_0, arg_1, arg_2);
+}
+#pragma inline_depth(8)
 // @retail 0x8ca70
 bool __stdcall function_8ca70(long mode, s_name_buffer *output)
 {
@@ -127,19 +128,23 @@ bool __stdcall function_8ca70(long mode, s_name_buffer *output)
 				{
 					s_name_list list;
 					name_list_clear(&list);
-					function_136bf0(&file, 0x200, true);
-					if (function_136ca0(&file, &list, sizeof(list), true) && list.count <= 32)
+					function_8ca71(&file, 0x200, true);
+					if (file_ref_read(&file, sizeof(list), &list, true))
 					{
-						g_4e7408->seed = g_4e7408->seed * 0x19660d + 0x3c6ef35f;
-						short index = (short)(((g_4e7408->seed >> 16) * (short)list.count) >> 16);
-						function_08cc20(output, list.names[index].name);
-						result = true;
+						if (list.count <= 32)
+						{
+							short choice_count = (short)list.count;
+							g_4e7408->seed = g_4e7408->seed * 0x19660d + 0x3c6ef35f;
+							short index = (short)(((g_4e7408->seed >> 16) * choice_count) >> 16);
+							function_08cc20(output, list.names[index].name);
+							result = true;
+						}
 					}
 				}
 				else
 				{
 					wchar_t message[256] = { 0 };
-					if (function_136ca0(&file, message, sizeof(message), true))
+					if (file_ref_read(&file, sizeof(message), message, true))
 					{
 						function_08cc20(output, message);
 						result = true;
@@ -153,8 +158,7 @@ bool __stdcall function_8ca70(long mode, s_name_buffer *output)
 }
 
 
-#include "physical_memory.h"
-#include <d3d8.h>
+#include "unknown_080e10.h"
 extern s_physical_object *g_4e6464;
 long __stdcall function_12d2f0(long size, long user_data, long update, long release);
 void function_12c600(void);
@@ -163,55 +167,62 @@ double timing_ticks_to_seconds(__int64 ticks);
 dword function_199560(void *data, dword size);
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size);
 
-static inline __int64 message_read_ticks(void)
+struct s_4672bc
 {
- volatile __int64 value = 0;
- __asm rdtsc
+ long unknown00;
+ const wchar_t *filename;
+ long version;
+ struct
+ {
+  long unknown00;
+  bool (__stdcall *handler)(const byte *request);
+ } handlers[2];
+};
+
+/* folded with 0xa45d0 in retail */
+static bool __stdcall function_a45d0(const byte *request)
+{
+ return true;
 }
 
+bool __stdcall function_8c790(const byte *request);
+
+/* the message of the day's handlers, laid out like g_46729c (src/unknown_08c5b0.cpp) */
+s_4672bc g_4672bc =
+{
+ 0, L"message_of_the_day.dat", 1,
+ { {0, function_a45d0}, {0, function_8c790} }
+};
+
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x8c790
-bool function_8c790(const byte *request)
+bool __stdcall function_8c790(const byte *request)
 {
  volatile bool result = false;
- if (*(short *)(request + 8) && (request[4] & 2) && *(short *)(request + 0xe) == 1)
+ if (*(short *)(request + 8) && (request[4] & 2))
  {
-  byte *source = 0;
-  if (*(byte **)(request + 0x24) && *(dword *)(request + 0x28) > 16)
-   source = *(byte **)(request + 0x24) + 16;
-  dword size = *(dword *)(request + 0x28) - 16;
-  if (source && size && function_199560(source, size) == 0x25224)
+  short kind = *(short *)(request + 0xe);
+  if (kind == 1)
   {
-   __int64 start = message_read_ticks();
-   byte *allocation = 0;
-   if (g_4e6464->page_count > 0)
+   byte *source = 0;
+   if (*(byte **)(request + 0x24) && *(dword *)(request + 0x28) > 16)
+    source = *(byte **)(request + 0x24) + 16;
+   dword size = *(dword *)(request + 0x28) - 16;
+   if (source && size > 0 && function_199560(source, size) == 0x25224)
    {
-    long attempts = 0;
-    while (!(allocation = (byte *)function_12d2f0(0x25224, 0, 0, 0)))
+    _ReadWriteBarrier();
+    byte *allocation = (byte *)function_80e14(0x25224, 0, 0, 0, 90, 1.0f);
+    if (allocation)
     {
-     if (attempts < 90)
-     {
-      attempts++;
-      function_12c600();
-     }
-     else
-     {
-      __int64 elapsed = message_read_ticks() - start;
-      if (elapsed < 0) elapsed = 0;
-      if (timing_ticks_to_seconds(elapsed) >= 1.0f) break;
-      D3DDevice_KickPushBuffer();
-      D3DDevice_IsBusy();
-      SwitchToThread();
-     }
+     long decompressed = 0;
+     if (function_199740(source, size, allocation, &decompressed) && function_8c900(allocation))
+      result = true;
+     function_12d520((long)allocation);
     }
-   }
-   if (allocation)
-   {
-    long decompressed = 0;
-    if (function_199740(source, size, allocation, &decompressed) && function_8c900(allocation))
-     result = true;
-    function_12d520((long)allocation);
    }
   }
  }
  return result;
 }
+#pragma function(_ReadWriteBarrier)

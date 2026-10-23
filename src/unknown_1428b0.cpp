@@ -62,39 +62,43 @@ matrix3x3 *function_142d10(
 	return out;
 }
 
+/* out = left * right; the right matrix comes first, which gives retail's
+   operand order in the products */
 // @retail 0x142eb0
 matrix3x3 *function_142eb0(
-	matrix3x3 const *a,
-	matrix3x3 const *b,
+	matrix3x3 const *right,
+	matrix3x3 const *left,
 	matrix3x3 *out)
 {
 	matrix3x3 temp;
-	if (b == out)
+	if (right == out)
 	{
-		temp = *b;
-		b = &temp;
+		temp = *right;
+		right = &temp;
 	}
-	if (a == out)
+	if (left == out)
 	{
-		temp = *a;
-		a = &temp;
+		temp = *left;
+		left = &temp;
 	}
-	out->forward.i = b->forward.i * a->forward.i + b->left.i * a->forward.j + b->up.i * a->forward.k;
-	out->forward.j = b->forward.j * a->forward.i + b->left.j * a->forward.j + b->up.j * a->forward.k;
-	out->forward.k = b->forward.k * a->forward.i + b->left.k * a->forward.j + b->up.k * a->forward.k;
-	out->left.i = b->forward.i * a->left.i + b->left.i * a->left.j + b->up.i * a->left.k;
-	out->left.j = b->forward.j * a->left.i + b->left.j * a->left.j + b->up.j * a->left.k;
-	out->left.k = b->forward.k * a->left.i + b->left.k * a->left.j + b->up.k * a->left.k;
-	out->up.i = b->forward.i * a->up.i + b->left.i * a->up.j + b->up.i * a->up.k;
-	out->up.j = b->forward.j * a->up.i + b->left.j * a->up.j + b->up.j * a->up.k;
-	out->up.k = b->forward.k * a->up.i + b->left.k * a->up.j + b->up.k * a->up.k;
+	out->forward.i = right->forward.i * left->forward.i + right->left.i * left->forward.j + right->up.i * left->forward.k;
+	out->forward.j = right->forward.j * left->forward.i + right->left.j * left->forward.j + right->up.j * left->forward.k;
+	out->forward.k = right->forward.k * left->forward.i + right->left.k * left->forward.j + right->up.k * left->forward.k;
+	out->left.i = right->forward.i * left->left.i + right->left.i * left->left.j + right->up.i * left->left.k;
+	out->left.j = right->forward.j * left->left.i + right->left.j * left->left.j + right->up.j * left->left.k;
+	out->left.k = right->forward.k * left->left.i + right->left.k * left->left.j + right->up.k * left->left.k;
+	out->up.i = right->forward.i * left->up.i + right->left.i * left->up.j + right->up.i * left->up.k;
+	out->up.j = right->forward.j * left->up.i + right->left.j * left->up.j + right->up.j * left->up.k;
+	out->up.k = right->forward.k * left->up.i + right->left.k * left->up.j + right->up.k * left->up.k;
 	return out;
 }
 
+__declspec(noinline) vector3f *function_143070(matrix3x3 const *m, vector3f const *v, vector3f *out);
+
 // @retail 0x143070
 vector3f *function_143070(
-	vector3f const *v,
 	matrix3x3 const *m,
+	vector3f const *v,
 	vector3f *out)
 {
 	vector3f temp;
@@ -132,14 +136,14 @@ matrix3x3 *function_142da0(
 	real cos_yaw = (real)cos(yaw);
 	real sin_yaw = (real)sin(yaw);
 	real cc = cos_yaw * cos_roll;
-	real cs = cos_yaw * sin_roll;
 	real sc = sin_yaw * cos_roll;
+	real cs = cos_yaw * sin_roll;
 	real ss = sin_yaw * sin_roll;
 	out->forward.i = cos_yaw * cos_pitch;
 	out->forward.j = sin_yaw * cos_pitch;
+	out->forward.k = sin_pitch;
 	out->left.i = 0.f - cs * sin_pitch - sc;
 	out->left.j = cc - ss * sin_pitch;
-	out->forward.k = sin_pitch;
 	out->left.k = cos_pitch * sin_roll;
 	out->up.i = ss - cc * sin_pitch;
 	out->up.j = 0.f - sc * sin_pitch - cs;
@@ -153,7 +157,7 @@ matrix3x3 *function_142bf0(
 	matrix3x3 *out)
 {
 	matrix3x3 temp;
-	real one_over_scale = 1.f / scale;
+	real one_over_scale;
 	real const *m;
 	real *r = (real *)out;
 	short i, j;
@@ -163,6 +167,7 @@ matrix3x3 *function_142bf0(
 		in = &temp;
 	}
 	m = (real const *)in;
+	one_over_scale = 1.f / scale;
 	for (i = 0; i < 3; i++)
 	{
 		for (j = 0; j < 3; j++)
@@ -171,7 +176,7 @@ matrix3x3 *function_142bf0(
 			short i2 = i > 0 ? i - 1 : 2;
 			short j1 = j < 2 ? j + 1 : 0;
 			short j2 = j > 0 ? j - 1 : 2;
-			r[j * 3 + i] = (m[i1 * 3 + j1] * m[i2 * 3 + j2] - m[i1 * 3 + j2] * m[i2 * 3 + j1]) * (1.f / scale);
+			r[j * 3 + i] = (m[i1 * 3 + j1] * m[i2 * 3 + j2] - m[i1 * 3 + j2] * m[i2 * 3 + j1]) * one_over_scale;
 		}
 	}
 	return out;
@@ -233,6 +238,11 @@ int __fastcall function_142a60(
 	transform4x3f const *b,
 	transform4x3f *result)
 {
+	/* the asm reads *a and *b through ecx and edx without naming them; these
+	   two reads (dropped as dead) tell the optimizer that it does, so callers
+	   keep the code that fills them (0x1424f0's 0x141590 call) */
+	real a_scale = a->scale;
+	real b_scale = b->scale;
 	__asm
 	{
 		mov eax, result

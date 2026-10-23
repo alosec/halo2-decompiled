@@ -15,6 +15,7 @@
 #include "unknown_2729b0.h"
 #include "data_array.h"
 #include "unknown_25d020.h"
+#include "vector_products.h"
 #include <string.h>
 
 
@@ -80,7 +81,7 @@ void function_266540(long actor_index)
 					(real)(g_510c54->game_time - view->unknown14) > g_510c54->rate * 8.0f &&
 					function_20e190(object_index) > 0.0f)
 				{
-					function_1fb7e0(*actor_reference, 0xb7, NULL, node->object_index, NONE);
+					function_1fb7e0(0xb7, *actor_reference, NULL, node->object_index, NONE);
 					prop->unknown35 = 1;
 				}
 			}
@@ -99,8 +100,8 @@ real __stdcall function_265d30(long actor_index, long prop_index)
 {
 	long const *actor_reference = &actor_index;
 	long const *prop_reference = &prop_index;
-	s_prop_datum *node = prop_ref_get(prop_index);
 	s_actor_view *actor = actor_get(actor_index);
+	s_prop_datum *node = prop_ref_get(prop_index);
 	s_type_76cf92 *prop = prop_get(node->prop_index);
 	s_type_5cfb45 *state = function_25d690(node);
 	s_type_f95cd3 *view = NULL;
@@ -113,8 +114,12 @@ real __stdcall function_265d30(long actor_index, long prop_index)
 		(state->unknown5e && *(short *)((byte *)state + 0x5c) * g_510c54->rate >= 5.0f) ||
 		object_get(node->object_index)->type == 15 || (node->type != 1 && node->type != 6))
 		return 0.0f;
-	short range_score = 0, state_score = 0, special_score = 0;
-	real current_bonus = 0.0f, view_bonus = 0.0f, direction_bonus = 0.0f;
+	short state_score = 0;
+	short range_score = 0;
+	real current_bonus = 0.0f;
+	short special_score = 0;
+	real view_bonus = 0.0f;
+	real direction_bonus = 0.0f;
 	if (actor->unknown007)
 		range_score = 0;
 	else if (function_25d9b0(*prop_reference))
@@ -188,19 +193,15 @@ real __stdcall function_265d30(long actor_index, long prop_index)
 			if (view) delta = *(vector3f *)((byte *)view + 0x2c);
 			else
 			{
-				delta.i = state->position.x - *(real *)((byte *)actor + 0x238);
-				delta.j = state->position.y - *(real *)((byte *)actor + 0x23c);
-				delta.k = state->position.z - *(real *)((byte *)actor + 0x240);
+				vector3d_from_points3d((point3f const *)((byte *)actor + 0x238), &state->position, &delta);
 			}
-			vector3f const *velocity = (vector3f *)((byte *)rider + 0x150);
-			direction_bonus = (velocity->k * delta.k + velocity->j * delta.j + velocity->i * delta.i) * 6.0f;
-			if (direction_bonus < 0.0f) direction_bonus = 0.0f;
+			direction_bonus = 0.0f > dot3f((vector3f const *)((byte *)rider + 0x150), &delta) * 6.0f ? 0.0f : dot3f((vector3f const *)((byte *)rider + 0x150), &delta) * 6.0f;
 		}
 	}
-	return (real)(range_score + state_score) + (real)special_score + direction_bonus + distance_bonus + view_bonus + current_bonus;
+	return ((real)(range_score + state_score) + (real)special_score + direction_bonus) + distance_bonus + view_bonus + current_bonus;
 }
 
-void *function_1e51a0(long actor_index);
+void *actor_get_character_situation_entry(long actor_index);
 bool function_11bf30(s_location const *location);
 
 struct s_perception_origin_view
@@ -219,7 +220,7 @@ short function_263ed0(long actor_index, s_perception_origin_view const *origin, 
 	short const *type_reference = &type;
 	short const *mode_reference = &mode;
 	s_actor_view *actor = actor_get(actor_index);
-	byte *settings = (byte *)function_1e51a0(actor_index);
+	byte *settings = (byte *)actor_get_character_situation_entry(actor_index);
 	short result = 0;
 	if (settings && type && origin->location.cluster_index != NONE && location->cluster_index != NONE)
 	{
@@ -248,9 +249,9 @@ short function_263ed0(long actor_index, s_perception_origin_view const *origin, 
 			long cluster_a = origin->location.cluster_index;
 			long cluster_b = location->cluster_index;
 			s_structure_bsp_view *bsp = (s_structure_bsp_view *)g_4e0348;
-			if (!function_249c20(cluster_b, cluster_a, bsp))
+			if (!function_249c20(bsp, cluster_b, cluster_a))
 			{
-				real distance = function_249d60(cluster_b, cluster_a, bsp) * 1.3333333730697632f;
+				real distance = function_249d60(bsp, cluster_b, cluster_a) * 1.3333333730697632f;
 				real direct_distance = (real)sqrt(distance_squared);
 				distance = distance > direct_distance ? distance : direct_distance;
 				if (range > distance)
@@ -273,7 +274,7 @@ struct s_distance_rates_view
 // @retail 0x263d70
 void function_263d70(long actor_index, real distance, real rate, real scale, real *secondary, real *primary)
 {
-	s_distance_rates_view *settings = (s_distance_rates_view *)function_1e51a0(actor_index);
+	s_distance_rates_view *settings = (s_distance_rates_view *)actor_get_character_situation_entry(actor_index);
 	real *const *primary_reference = &primary;
 	real *const *secondary_reference = &secondary;
 	real a = 0.0f;
@@ -363,8 +364,7 @@ bool function_26d370(point3f const *point, vector3f const *direction, plane3f co
 real function_30bf0(vector3f *vector);
 
 // @retail 0x263810
-short function_263810(long actor_index, point3f const *origin, point3f const *point,
-	point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
+short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
 	long const *actor_reference = &actor_index;
 	point3f const *const *endpoint_reference = &endpoint;
@@ -376,7 +376,7 @@ short function_263810(long actor_index, point3f const *origin, point3f const *po
 	if (mode == 0 || mode == 1)
 	{
 		s_actor_view *actor = actor_get(actor_index);
-		byte *settings = (byte *)function_1e51a0(actor_index);
+		byte *settings = (byte *)actor_get_character_situation_entry(actor_index);
 		if (settings)
 		{
 			real range = *(real *)(settings + 4);
@@ -396,24 +396,21 @@ short function_263810(long actor_index, point3f const *origin, point3f const *po
 					plane.n = *(vector3f *)((byte *)actor + 0x2c0);
 					plane.d = origin->y * plane.n.j + origin->z * plane.n.k + origin->x * plane.n.i;
 					real amount;
-					if (function_26d370(point, &motion, &plane, &amount) && amount >= 0.0f)
+					if (function_26d370(point, &motion, &plane, &amount) && !(0.0f > amount))
 					{
-						if (amount > 1.0f) amount = 1.0f;
-						if (amount > 0.0f)
+						real clipped_amount = amount;
+						if (clipped_amount > 1.0f) clipped_amount = 1.0f;
+						if (clipped_amount > 0.0f)
 						{
-							delta.i = motion.i * amount + point->x - origin->x;
-							delta.j = motion.j * amount + point->y - origin->y;
-							delta.k = motion.k * amount + point->z - origin->z;
+							delta.i = motion.i * clipped_amount + point->x - origin->x;
+							delta.j = motion.j * clipped_amount + point->y - origin->y;
+							delta.k = motion.k * clipped_amount + point->z - origin->z;
 						}
 					}
 				}
 			}
 			real distance_squared = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
-			if (!(range * range > distance_squared))
-			{
-				if (*range_reference) **range_reference = true;
-			}
-			else
+			if (range * range > distance_squared)
 			{
 				real scale = 1.0f;
 				if (!(*settings & 1))
@@ -425,11 +422,7 @@ short function_263810(long actor_index, point3f const *origin, point3f const *po
 					}
 				}
 				real scaled_range = scale * range;
-				if (!(scaled_range * scaled_range > distance_squared))
-				{
-					if (*range_reference) **range_reference = true;
-				}
-				else
+				if (scaled_range * scaled_range > distance_squared)
 				{
 					real secondary, primary;
 					if (!actor->unknown007 && *facing_reference)
@@ -452,13 +445,9 @@ short function_263810(long actor_index, point3f const *origin, point3f const *po
 									{
 										vector3f const *forward = (vector3f *)((byte *)object + 0x18c);
 										vector3f side, up;
-										side.i = g_4687b0->j * forward->k - g_4687b0->k * forward->j;
-										side.j = g_4687b0->k * forward->i - g_4687b0->i * forward->k;
-										side.k = g_4687b0->i * forward->j - g_4687b0->j * forward->i;
+										cross3f(g_4687b0, forward, &side);
 										function_30bf0(&side);
-										up.i = side.k * forward->j - side.j * forward->k;
-										up.j = side.i * forward->k - side.k * forward->i;
-										up.k = side.j * forward->i - side.i * forward->j;
+										cross3f(forward, &side, &up);
 										real a, b;
 										function_263740(*actor_reference, &delta, forward, &side, &up, range, scale, &a, &b);
 										if (a > secondary) secondary = a;
@@ -478,6 +467,14 @@ short function_263810(long actor_index, point3f const *origin, point3f const *po
 					else if (primary * primary > distance_squared)
 						result = 1;
 				}
+				else
+				{
+					if (*range_reference) **range_reference = true;
+				}
+			}
+			else
+			{
+				if (*range_reference) **range_reference = true;
 			}
 		}
 	}
@@ -488,23 +485,26 @@ short const g_44ae3c[13] = { 1, 1, 2, 3, 4, 6, 7, 8, 8, 9, 9, 9, 9 };
 short g_470fa4[4] = { 0, 0, 2, 3 };
 short g_470fe0[3] = { 1, 2, 3 };
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 void *function_272a00(long actor_index);
 bool function_1a8220(long index, short a, short b, long unknown, short c, short d, short e);
 
 // @retail 0x2662f0
 void function_2662f0(long actor_index)
 {
-	s_actor_view *actor = actor_get(actor_index);
+	long const *actor_reference = &actor_index;
+	s_actor_view *actor = actor_get(*actor_reference);
 	short desired;
 	long task_index = actor->unknown858;
 	if (task_index != NONE)
 	{
 		byte *task = g_502408->data + (task_index & 0xffff) * 0xd4;
-		short level = *(short *)(task + 0x84);
-		if (level > 0)
+		if (*(short *)(task + 0x84) > 0)
 		{
-			desired = level - 1;
-			goto reset_time;
+			desired = *(short *)(task + 0x84) - 1;
+			*(long *)actor->unknown088 = 0;
+			goto update;
 		}
 	}
 	desired = g_44ae3c[actor->unknown328];
@@ -520,60 +520,63 @@ void function_2662f0(long actor_index)
 			desired = 0;
 		if (actor->unknown358 > 0)
 			recent_minimum = 2;
-		short maximum = clump_minimum > recent_minimum ? clump_minimum : recent_minimum;
-		desired = desired > maximum ? desired : (clump_minimum > recent_minimum ? clump_minimum : recent_minimum);
+		desired = MAX(desired, MAX(clump_minimum, recent_minimum));
 	}
-	if (desired >= 3)
-		goto reset_time;
-	if (actor->unknown086 > 3)
+	if (desired < 3)
 	{
-		actor->unknown086 = 3;
-		*(long *)actor->unknown088 = 0;
-	}
-	{
-		byte *definition = NULL;
-		if (actor->unknown030 != NONE)
+		if (actor->unknown086 > 3)
 		{
-			byte *squad = g_51e9d8->data + (actor->unknown030 & 0xffff) * 0x98;
-			short definition_index = *(short *)(squad + 0x2a);
-			if (definition_index != NONE)
-				definition = *(byte **)((byte *)g_4e0350 + 0x244) + definition_index * 0x7c;
+			actor->unknown086 = 3;
+			*(long *)actor->unknown088 = 0;
 		}
-		if (definition && desired < *(short *)(definition + 0x28) - 1)
-			desired = *(short *)(definition + 0x28) - 1;
-		else
 		{
-			byte *variant = (byte *)function_272a00(actor_index);
-			if (variant)
+			byte *definition = NULL;
+			if (actor->unknown030 != NONE)
 			{
-				short level = g_470fe0[*(short *)(variant + 0x20)];
-				if (actor->unknown086 >= level && desired < level)
-					desired = level;
+				byte *squad = g_51e9d8->data + (actor->unknown030 & 0xffff) * 0x98;
+				definition = *(short *)(squad + 0x2a) != NONE ?
+					*(byte **)((byte *)g_4e0350 + 0x244) + *(short *)(squad + 0x2a) * 0x7c : NULL;
+			}
+			if (definition && desired < *(short *)(definition + 0x28) - 1)
+				desired = *(short *)(definition + 0x28) - 1;
+			else
+			{
+				byte *variant = (byte *)function_272a00(*actor_reference);
+				if (variant)
+				{
+					short level = g_470fe0[*(short *)(variant + 0x20)];
+					if (actor->unknown086 >= level && desired < level)
+						desired = level;
+				}
 			}
 		}
+		if (desired < actor->unknown086)
+		{
+			short timer = *(short *)actor->unknown088;
+			desired = actor->unknown086;
+			switch (actor->unknown086)
+			{
+			case 3:
+				if (timer * g_510c54->rate >= 0.0f)
+					desired = 2;
+				else
+					break;
+			case 2:
+				if (timer * g_510c54->rate >= 15.0f)
+					desired = 1;
+				break;
+			}
+		}
+		else
+			*(long *)actor->unknown088 = 0;
 	}
-	if (desired >= actor->unknown086)
-		goto reset_time;
-	desired = actor->unknown086;
-	switch (desired)
-	{
-	case 3:
-		if (*(short *)actor->unknown088 * g_510c54->rate < 0.0f)
-			break;
-		desired = 2;
-	case 2:
-		if (*(short *)actor->unknown088 * g_510c54->rate >= 15.0f)
-			desired = 1;
-		break;
-	}
-	goto update;
-reset_time:
-	*(long *)actor->unknown088 = 0;
+	else
+		*(long *)actor->unknown088 = 0;
 update:
 	if (actor->unknown086 != desired)
 	{
 		if (desired >= 3 && actor->unknown086 < 2)
-			function_1a8220(actor_index, 7, 2, 3, 1, 42, 3);
+			function_1a8220(*actor_reference, 7, 2, 3, 1, 42, 3);
 		*(long *)actor->unknown088 = 0;
 		actor->unknown086 = desired;
 	}
@@ -581,32 +584,6 @@ update:
 		++*(long *)actor->unknown088;
 	if (actor->unknown086 >= 7)
 		*(bool *)((byte *)actor + 0x8c) = true;
-}
-
-// @retail 0x265cb0
-void function_265cb0(long actor_index)
-{
-	long prop_index = actor_get(actor_index)->first_prop_index;
-
-	for (;;)
-	{
-		s_prop_node_view *node;
-		long current_index;
-		s_prop_view_fields *view;
-
-		if (prop_index == NONE)
-		{
-			break;
-		}
-		node = prop_node_get(prop_index);
-		current_index = prop_index;
-		prop_index = node->next_index;
-		view = prop_node_view(node);
-		if (view)
-		{
-			view->unknown3c = function_265d30(actor_index, current_index);
-		}
-	}
 }
 
 // @retail 0x263d30
@@ -643,15 +620,10 @@ void function_265c30(long prop_index, long actor_index, bool active)
 	if (view)
 	{
 		if (*active_reference)
-		{
 			view->unknown50 = g_510c54->game_time;
-			*(real *)((byte *)view + 0x3c) = function_265d30(*actor_reference, prop_index);
-		}
 		else
-		{
 			view->unknown50 = NONE;
-			*(real *)((byte *)view + 0x3c) = function_265d30(*actor_reference, prop_index);
-		}
+		*(real *)((byte *)view + 0x3c) = function_265d30(*actor_reference, prop_index);
 	}
 }
 
@@ -754,6 +726,20 @@ PRIVATE __forceinline s_prop_node_view *actor_next_prop(s_actor_prop_iterator *i
 	return node;
 }
 
+// @retail 0x265cb0
+void function_265cb0(long actor_index)
+{
+	s_actor_prop_iterator iterator;
+	iterator.next = actor_get(actor_index)->first_prop_index;
+	s_prop_node_view *node;
+	while ((node = actor_next_prop(&iterator)) != NULL)
+	{
+		s_prop_view_fields *view = prop_node_view(node);
+		if (view)
+			view->unknown3c = function_265d30(actor_index, iterator.index);
+	}
+}
+
 // @retail 0x265bb0
 void function_265bb0(long actor_index)
 {
@@ -793,20 +779,20 @@ long function_cbd50(long unit_index, short weapon_index);
 struct s_object_activity_flags
 {
 	byte unknown00[0x10a];
-	byte flag0 : 1;
-	byte flag1 : 1;
-	byte blocked : 1;
-	byte unused : 5;
+	word flag0 : 1;
+	word flag1 : 1;
+	word blocked : 1;
+	word unused : 13;
 };
 
 // @retail 0x267370
-real function_267370(long object_index)
+real function_267370(long volatile object_index)
 {
-	long const *object_reference = &object_index;
 	real result = 0.0f;
-	if (*object_reference != NONE)
+	long initial_object_index = object_index;
+	if (initial_object_index != NONE)
 	{
-		s_slot_object_view *object = object_get(*object_reference);
+		s_slot_object_view *object = object_get(initial_object_index);
 		s_actor_view *actor = NULL;
 		byte *settings = NULL;
 		if (((s_prop_threshold_table *)g_4e034c)->count > 0)
@@ -814,8 +800,7 @@ real function_267370(long object_index)
 		if (!((bool)((s_object_activity_flags *)object)->blocked) && ((1 << object->type) & 3))
 		{
 			long actor_index = object->actor_index;
-			if (actor_index != NONE)
-				actor = actor_get(actor_index);
+			actor = actor_index != NONE ? actor_get(actor_index) : NULL;
 			long first;
 			if (actor)
 			{
@@ -824,11 +809,11 @@ real function_267370(long object_index)
 			}
 			else
 			{
-				first = function_cbd50(*object_reference, *(char *)((byte *)object + 0x212));
+				first = function_cbd50(initial_object_index, *(char *)((byte *)object + 0x212));
 				if (object->player_index != NONE && settings)
 					result = *(real *)(settings + 0x160);
 			}
-			long second = function_cbd50(*object_reference, *(char *)((byte *)object + 0x213));
+			long second = function_cbd50(object_index, *(char *)((byte *)object + 0x213));
 			if (object->parent_index != NONE)
 			{
 				s_slot_object_view *parent = object_get(object->parent_index);
@@ -935,6 +920,9 @@ bool function_1e1e50(long actor_index, vector3f *direction);
 void function_26be00(long actor_index, s_iterator *iterator);
 real function_30bf0(vector3f *vector);
 
+struct s_node_view;
+s_node_view *function_26be30(s_iterator *iterator);
+
 // @retail 0x267840
 bool function_267840(long actor_index, long prop_index, vector3f *direction)
 {
@@ -947,37 +935,36 @@ bool function_267840(long actor_index, long prop_index, vector3f *direction)
 	{
 		if (prop->unknown25)
 		{
-			long player_index = object_get(*(long *)((byte *)prop + 8))->player_index;
+			s_slot_object_view *object = object_get(*(long *)((byte *)prop + 8));
 			s_ai_player *player;
-			if (player_index != NONE && (player = ai_player_get(player_index)) != NULL)
+			if (object->player_index != NONE && (player = ai_player_get(object->player_index)) != NULL)
 			{
 				if (state->unknown63)
 					result = true;
 				else
 				{
+					long now = g_510c54->game_time;
 					real ticks = (real)g_510c54->field_2_3 * 2.5f;
 					long rounded;
 					__asm { fld ticks }
 					__asm { fistp rounded }
-					result = g_510c54->game_time - player->unknown0c < rounded;
+					long elapsed = now - player->unknown0c;
+					result = false;
+					if (elapsed < rounded) result = true;
 				}
 				function_cb7e0(node->object_index, direction);
 				if (!result && *(char *)((byte *)actor + 0x324) > 0)
 				{
 					s_iterator iterator;
 					function_26be00(actor_index, &iterator);
-					long index = iterator.next;
-					while (index != NONE)
+					s_prop_datum *other;
+					while ((other = (s_prop_datum *)function_26be30(&iterator)) != NULL)
 					{
-						s_prop_datum *other = prop_ref_get(index);
-						index = other->next_index;
 						if (other->state >= 1 && prop_get(other->prop_index)->unknown23)
 						{
 							s_type_5cfb45 *other_state = function_25d690(other);
 							vector3f delta;
-							delta.i = other_state->position.x - state->position.x;
-							delta.j = other_state->position.y - state->position.y;
-							delta.k = other_state->position.z - state->position.z;
+							vector3d_from_points3d(&state->position, &other_state->position, &delta);
 							if (function_30bf0(&delta) > 0.0f &&
 								direction->i * delta.i + direction->j * delta.j + direction->k * delta.k > 0.5f)
 							{
@@ -992,6 +979,8 @@ bool function_267840(long actor_index, long prop_index, vector3f *direction)
 		else if (prop->actor_index != NONE)
 			result = function_1e1e50(prop->actor_index, direction);
 	}
+	else
+		result = false;
 	return result;
 }
 
@@ -1016,6 +1005,9 @@ struct s_equipped_object_view
 
 /* The held-object lookup rereads the pool's data field. */
 
+// score 6 (was 6): the tag lookup: retail keeps the index in ecx and the
+// table base in eax, ours keeps the index in eax and the base in ecx;
+// thirteen source rewrites all scored 6.
 // @retail 0x2675f0
 bool function_2675f0(long object_index)
 {
@@ -1035,6 +1027,8 @@ bool function_2675f0(long object_index)
 	return result;
 }
 
+// Keep the prop lookup out of line in this accessor.
+#pragma inline_depth(0)
 // @retail 0x2684f0
 short function_2684f0(s_actor_view *actor)
 {
@@ -1046,9 +1040,10 @@ short function_2684f0(s_actor_view *actor)
 	}
 	return 0;
 }
+#pragma inline_depth(255)
 
 long function_1e4a10(long index);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 struct s_node_view;
 s_node_view *function_26be30(s_iterator *iterator);
 void function_1f86a0(long actor_index);
@@ -1105,8 +1100,8 @@ void function_267c50(long actor_index)
 	*(real *)(data + 0x3d8) += difference * blend;
 	if (actor->unknown024 != NONE && !team_is_enemy(actor->unknown024, 1) &&
 		*(long *)(data + 0x26c) == NONE && !*(bool *)(data + 0x225) && actor->unknown858 == NONE &&
-		function_1a6fe0(actor_index, 0x38) == NONE && function_1a6fe0(actor_index, 0x10) == NONE &&
-		function_1a6fe0(actor_index, 0x11) == NONE)
+		actor_behavior_find_level(actor_index, 0x38) == NONE && actor_behavior_find_level(actor_index, 0x10) == NONE &&
+		actor_behavior_find_level(actor_index, 0x11) == NONE)
 	{
 		bool moving_toward = false, nearby_player = false;
 		bool check_target = function_2684f0(actor) > 6;
@@ -1346,7 +1341,15 @@ struct s_prop_object_links_view
 struct s_prop_object_link
 {
 	byte unknown00[4];
-	word packed_index;
+	union
+	{
+		word packed_index;
+		struct
+		{
+			word unknown04_0 : 3;
+			word link_index : 13;
+		};
+	};
 	byte unknown06[2];
 };
 
@@ -1364,13 +1367,12 @@ bool function_2651e0(long object_index, short *volatile output_index)
 		index = 0x7fff;
 		for (short i = 0; i < count; i++)
 		{
-			dword packed = links[i].packed_index;
-			if ((packed & 0xfff8) > 0)
+			s_prop_object_link *link = &links[i];
+			if ((link->packed_index & 0xfff8) > 0)
 			{
-				word candidate = links[i].packed_index;
-				if ((word)(candidate >> 3) < (word)index)
+				if (link->link_index < (word)index)
 				{
-					index = candidate >> 3;
+					index = link->packed_index >> 3;
 					result = true;
 				}
 				break;
@@ -1390,7 +1392,7 @@ bool function_2651e0(long object_index, short *volatile output_index)
 
 
 // @retail 0x264260
-long function_264260(vector3f const *facing, vector3f const *direction, real distance)
+long function_264260(vector3f const *direction, vector3f const *facing, real distance)
 {
 	real cosine = 0.0f - (direction->k * facing->k + direction->j * facing->j + direction->i * facing->i);
 	real lateral;
@@ -1413,7 +1415,7 @@ long function_264260(vector3f const *facing, vector3f const *direction, real dis
 }
 
 
-void *function_1e51a0(long actor_index);
+void *actor_get_character_situation_entry(long actor_index);
 
 short const g_44ae58[4][4] =
 {
@@ -1433,7 +1435,7 @@ struct s_prop_rate_definition
 real function_2683f0(long actor_index, long node_index, short type)
 {
 	real result = 0.0f;
-	s_prop_rate_definition *definition = (s_prop_rate_definition *)function_1e51a0(actor_index);
+	s_prop_rate_definition *definition = (s_prop_rate_definition *)actor_get_character_situation_entry(actor_index);
 	if (definition)
 	{
 		s_prop_datum *node = prop_ref_get(node_index);
@@ -1494,10 +1496,7 @@ void function_266640(long actor_index)
 	long best_node = NONE, strongest_node = NONE;
 	short best_level = 0;
 	real strongest = 0.0f;
-	*(long *)(data + 0x324) = 0;
-	*(long *)(data + 0x328) = 0;
-	*(long *)(data + 0x32c) = 0;
-	*(long *)(data + 0x330) = 0;
+	memset(data + 0x324, 0, 0x10);
 	long next = actor_get(actor_index)->first_prop_index;
 	while (next != NONE)
 	{
@@ -1534,11 +1533,14 @@ void function_266640(long actor_index)
 				{
 					long other_index = object_get(node->object_index)->actor_index;
 					s_actor_view *other = other_index == NONE ? NULL : actor_get(other_index);
-					bool close = node->unknown28 < 8.0f;
-					if (!close && *(bool *)((byte *)state + 0x62) && other &&
+					bool close = false;
+					bool very_close = false;
+					if (node->unknown28 < 8.0f) close = true;
+					else if (*(bool *)((byte *)state + 0x62) && other &&
 						*(long *)(data + 0x338) != NONE && *(long *)((byte *)other + 0x338) != NONE)
 						close = prop_ref_get(*(long *)(data + 0x338))->object_index == prop_ref_get(*(long *)((byte *)other + 0x338))->object_index;
-					bool very_close = (view->unknown06 == 0 || view->unknown06 == 1) && node->unknown28 < 3.0f;
+					if (view->unknown06 == 0 || view->unknown06 == 1)
+						very_close = node->unknown28 < 3.0f;
 					if (close) ++*(char *)(data + 0x326);
 					if (very_close) ++*(char *)(data + 0x327);
 				}
@@ -1574,10 +1576,10 @@ void function_266640(long actor_index)
 			if (elapsed == first)
 			{
 				if (player->player_index != NONE)
-					function_1fb7e0(*actor_reference, 0xa8, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
+					function_1fb7e0(0xa8, *actor_reference, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
 			}
 			else if (elapsed == second && player->player_index != NONE)
-				function_1fb7e0(*actor_reference, 0xa9, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
+				function_1fb7e0(0xa9, *actor_reference, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
 		}
 		else *(short *)(data + 0x30e) = 0;
 	}

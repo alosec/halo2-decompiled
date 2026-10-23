@@ -43,7 +43,7 @@ struct s_1d8e40 : hkRigidBody
 // @retail 0x1d8e40
 void s_1d8e40::function_1d8e40(hkVector4 const &arg_0)
 {
-	if (!isActive().m_bool && m_simulation_island)
+	if (!body_is_simulating().m_bool && m_simulation_island)
 		activate();
 	m_motion->setLinearVelocity(arg_0);
 }
@@ -51,7 +51,7 @@ void s_1d8e40::function_1d8e40(hkVector4 const &arg_0)
 // @retail 0x1d8ec0
 void s_1d8e40::function_1d8ec0(hkVector4 const &arg_0, hkVector4 const &arg_1)
 {
-	if (!isActive().m_bool && m_simulation_island)
+	if (!body_is_simulating().m_bool && m_simulation_island)
 		activate();
 	m_motion->applyPointImpulse(arg_0, arg_1);
 }
@@ -116,17 +116,21 @@ char function_1d1910(c_1d19d0 *arg_0)
  byte *local_2 = local_1->field_8;
  s_havok_component *local_3 = havok_component_get(*(long *)(local_2 + 0xb4));
  bool local_4 = *((byte *)local_3->rigid_bodies.data + arg_0->field_64 * 0x60 + 0x44) == 1;
- volatile bool local_5 = false;
+ char result = false;
  switch (local_1->field_3)
  {
  case 0:
-  if (local_2[0x34b] == 1) return local_5;
-  return local_4 || function_e5240(local_0);
+  if (local_2[0x34b] == 1) break;
+  result = local_4 || function_e5240(local_0);
+  break;
  case 1:
-  return local_4 || function_efb60(local_0);
+  result = local_4 || function_efb60(local_0);
+  break;
  default:
-  return local_4;
+  result = local_4;
+  break;
  }
+ return result;
 }
 
 // @retail 0x1d1870

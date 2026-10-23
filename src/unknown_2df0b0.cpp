@@ -1,35 +1,39 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): how far an object with a radius
+// reaches along a direction: its support vertex's projection plus the
+// radius.
+#include <xmmintrin.h>
 
-// @flags /O2 /Gr
-
-class c_physics_convex_shape
+class convex_2df0b0
 {
-    byte field_4[8];
-    float radius;
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void v6();
-    virtual float function_2df0b0(const float *direction);
-    virtual void v8();
-    virtual void v9();
-    virtual void v10();
-    virtual void v11();
-    virtual void support_vertex(const float *direction, float *result);
+	virtual void slot_0() {}
+	virtual void slot_1() {}
+	virtual void slot_2() {}
+	virtual void slot_3() {}
+	virtual void slot_4() {}
+	virtual void slot_5() {}
+	virtual void slot_6() {}
+	virtual void slot_7() {}
+	virtual void slot_8() {}
+	virtual void slot_9() {}
+	virtual void slot_10() {}
+	virtual void slot_11() {}
+	virtual void support(__m128 const *direction, __m128 *out) const {}
+
+	char unknown4[8];
+	float radius;
+
+	float reach(__m128 const *direction) const;
 };
-static_assert(sizeof(c_physics_convex_shape) == 0x10, "convex shape base layout");
 
 // @retail 0x2df0b0
-float c_physics_convex_shape::function_2df0b0(const float *direction)
+float convex_2df0b0::reach(__m128 const *direction) const
 {
-    float vertex[4];
-    support_vertex(direction, vertex);
-    float x = vertex[0] * direction[0];
-    float y = vertex[1] * direction[1];
-    float z = vertex[2] * direction[2];
-    return x + y + z + radius;
+	__m128 vertex;
+	support(direction, &vertex);
+	__m128 d = _mm_mul_ps(vertex, *direction);
+	float dot;
+	_mm_store_ss(&dot, _mm_add_ss(_mm_shuffle_ps(d, d, 0xaa), _mm_add_ss(_mm_shuffle_ps(d, d, 0x55), d)));
+	return dot + radius;
 }

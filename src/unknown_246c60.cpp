@@ -3,9 +3,14 @@
 // @flags /O2 /Gr
 
 #ifdef H2_NATIVE_PORT
-void *function_2fbb30();
-void *function_2fdfe0();
-void *function_2fbfe0();
+/* The three type queries (retail 0x2fbb30, 0x2fdfe0, 0x2fbfe0) return the
+   addresses of these static type objects. */
+struct object_4803c4;
+struct object_480504;
+struct object_4803ec;
+extern object_4803c4 g_4803c4;
+extern object_480504 g_480504;
+extern object_4803ec g_4803ec;
 
 static void *h2_native_physics_delete(void *object, dword)
 {
@@ -30,17 +35,17 @@ static void h2_native_physics_enable(void *object, bool enable)
 
 static void *h2_native_physics_root_type(void *)
 {
-    return function_2fbb30();
+    return &g_4803c4;
 }
 
 static void *h2_native_physics_nested_type(void *)
 {
-    return function_2fdfe0();
+    return &g_480504;
 }
 
 static void *h2_native_physics_wrapper_type(void *)
 {
-    return function_2fbfe0();
+    return &g_4803ec;
 }
 
 static void h2_native_physics_idle(void *)

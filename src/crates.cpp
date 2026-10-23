@@ -75,7 +75,7 @@ struct s_crate_model_info_view
 /* Keep PR #21's dependency declarations unchanged. Its matrix-result type
    remains opaque here; this callback reads a different field of the result. */
 struct s_type_1a7926;
-bool function_20a9a0(long object_index, s_type_1a7926 *matrices);
+bool function_20a9a0(s_type_1a7926 *matrices, long object_index);
 void __stdcall function_1d24a0(s_havok_component *component, real position);
 
 #define CRATE_GET(index) (((s_crate_header_view *)g_4e0300->data)[(index) & 0xffff].object)
@@ -113,7 +113,7 @@ bool __stdcall function_11bbf0(long object_index, s_crate_placement_view const *
 		}
 	}
 	s_crate_model_info_view info;
-	return function_20a9a0(object_index, (s_type_1a7926 *)&info)
+	return function_20a9a0((s_type_1a7926 *)&info, object_index)
 		&& info.physics_model->rigid_body_count > 0;
 }
 

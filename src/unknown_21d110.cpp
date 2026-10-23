@@ -272,8 +272,29 @@ void sound_effect_attach(long effect_index, s_sound_play_state *state)
 	}
 }
 
+#pragma inline_depth(0)
+PRIVATE __forceinline void function_21dcf2(long arg_0, s_record_pool *arg_1)
+{
+    s_sound_effect *local_0 = &((s_sound_effect *)arg_1->data)[arg_0 & 0xffff];
+    if (local_0->record_index != NONE)
+    {
+        looping_sound_controller_release(local_0->record_index);
+        local_0->record_index = NONE;
+    }
+    record_pool_release(arg_1, arg_0);
+}
+#pragma inline_depth(255)
+
+#pragma inline_depth(1)
 // @retail 0x21dcf0
-__forceinline void sound_effect_delete(long effect_index)
+void __cdecl sound_effect_delete(long effect_index)
+{
+    function_21dcf2(effect_index, (s_record_pool *)g_51ebe0);
+}
+#pragma inline_depth(255)
+
+
+PRIVATE __forceinline void function_21dcf1(long effect_index)
 {
 	s_record_pool *effects = function_x39bdd5();
 	s_sound_effect *effect = &((s_sound_effect *)effects->data)[effect_index & 0xffff];
@@ -285,6 +306,8 @@ __forceinline void sound_effect_delete(long effect_index)
 	}
 	record_pool_release(effects, effect_index);
 }
+
+#define sound_effect_delete function_21dcf1
 
 // @retail 0x21d110
 long function_21d110(s_sound_play_state *state, long tag_index)
@@ -325,6 +348,22 @@ long function_21d110(s_sound_play_state *state, long tag_index)
 	return sound_start(state, tag_index);
 }
 
+PRIVATE __forceinline long function_21d2c1(s_sound_effect_definition *arg_0)
+{
+	long local_0 = NONE;
+	if (arg_0->count)
+	{
+		local_0 = record_pool_allocate(function_x39bdd5());
+		if (local_0 != NONE)
+		{
+			s_sound_effect *local_1 = sound_effect_get(local_0);
+			local_1->definition = arg_0;
+			local_1->record_index = NONE;
+		}
+	}
+	return local_0;
+}
+
 // @retail 0x21d2c0
 long function_21d2c0(long platform_playback, real scale, short priority)
 {
@@ -333,12 +372,12 @@ long function_21d2c0(long platform_playback, real scale, short priority)
 
 	if (sound_effect_get_definition(NONE, platform_playback, &definition))
 	{
-		effect_index = sound_effect_new(definition);
+		effect_index = function_21d2c1(definition);
 		if (effect_index != NONE)
 		{
 			s_sound_effect *effect = sound_effect_get(effect_index);
 			effect->type = 0;
-			effect->scale = scale;
+			sound_effect_get(effect_index)->scale = scale;
 			effect->priority = priority;
 			function_21d630(effect_index, 0);
 		}
@@ -368,23 +407,25 @@ bool function_21d5a0(long effect_index)
 	case 0:
 		result = !TEST_BIT(effect->flags, _sound_effect_stopped_bit);
 		break;
+	case 2:
+		return result;
 	case 1:
-		if (effect->flags & (FLAG(_sound_effect_unmanaged_bit) | FLAG(_sound_effect_stopped_bit)))
+		if (!(effect->flags & (FLAG(_sound_effect_unmanaged_bit) | FLAG(_sound_effect_stopped_bit))))
 		{
-			result = true;
+			long local_0 = effect->sound_index;
+			s_sound_effect_link const &local_1 = playing_sound_get(local_0)->marker.link;
+			s_sound_playback_flags flags;
+			memset(&flags, 0, sizeof(flags));
+			result = sound_playback_update_source(local_0, local_1.source, &flags);
+			if (TEST_FIELD_BIT(flags.source_updated))
+				effect->flags |= FLAG(_sound_effect_unmanaged_bit);
 		}
 		else
 		{
-			s_sound_playback_flags flags = {0};
-			result = sound_playback_update_source(effect->sound_index, playing_sound_get(effect->sound_index)->marker.link.source, &flags);
-			if (TEST_FIELD_BIT(flags.source_updated))
-			{
-				effect->flags |= FLAG(_sound_effect_unmanaged_bit);
-			}
+			result = true;
 		}
 		break;
-	case 2:
-		break;
+
 	}
 	return result;
 }
@@ -486,17 +527,10 @@ bool __stdcall sound_effect_only_update(long object_index, long tag_index, s_sou
 {
 	long effect_index = sound_effect_marker(marker)->link.effect_index;
 	s_sound_effect *effect = (s_sound_effect *)datum_get_inlined(function_x39bdd5(), effect_index);
-	if (effect && !TEST_FIELD_BIT(effect->flag0))
-	{
-		volatile bool local_0 = true;
-		if (!TEST_FIELD_BIT(effect->flag4))
-		{
-			sound_effect_update_location(effect_index, location);
-			return local_0;
-		}
-		return true;
-	}
-	return false;
+	bool result = effect && !TEST_FIELD_BIT(effect->flag0);
+	if (result && !TEST_FIELD_BIT(effect->flag4))
+		sound_effect_update_location(effect_index, location);
+	return result;
 }
 
 // @retail 0x21d9f0
@@ -612,6 +646,8 @@ PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
 // @retail 0x21d630
+// score 60 (was 60): the local variables sit in stack slots that are four bytes apart from retail's,
+// so every load and store of a local uses a different offset.
 void __stdcall function_21d630(long effect_index, long mode)
 {
 	s_sound_effect *effect = sound_effect_get(effect_index);
@@ -622,12 +658,13 @@ void __stdcall function_21d630(long effect_index, long mode)
 	s_type_99c531 location;
 	location.flags = 0;
 	sound_effect_update_location(effect_index, &location);
-	struct { long state; bool alternate; } loop_snapshot;
+	long repeat_state;
+	bool loop_alternate;
 	if (effect->type == 2)
 	{
 		s_effect_looping_view *looping = &((s_effect_looping_view *)g_4ed28c->data)[effect->sound_index & 0xffff];
-		loop_snapshot.alternate = (bool)((looping->flags >> 4) & 1);
-		loop_snapshot.state = looping->state;
+		loop_alternate = (bool)((looping->flags >> 4) & 1);
+		repeat_state = looping->state;
 	}
 	s_sound_effect_definition *definition = effect->definition;
 	for (long i = 0; i < definition->count; i++)
@@ -654,9 +691,12 @@ void __stdcall function_21d630(long effect_index, long mode)
 					state.source_data_size = sizeof(state.source_data);
 					state.effect_marker.link.effect_index = effect_index;
 				}
+				long local_0 = *(long *)&entry->gain;
+				s_sound_system_effect_view *local_1 = (s_sound_system_effect_view *)g_4e6380;
+				bool local_2 = local_1->initialized;
+				*(long *)&state.gain = local_0;
 				state.flags |= 0x80;
-				*(long *)&state.gain = *(long *)&entry->gain;
-				if (sound_system_available())
+				if (local_2 && local_1->hardware_available && local_1->enabled)
 				{
 					long listener_index;
 					long rate_limit_stage;
@@ -674,8 +714,8 @@ void __stdcall function_21d630(long effect_index, long mode)
 				bool alternate;
 				if ((entry_flags & 0x20) && effect->type == 2)
 				{
-					state = g_44a20c[loop_snapshot.state];
-					alternate = loop_snapshot.alternate;
+					alternate = loop_alternate;
+					state = g_44a20c[repeat_state];
 				}
 				else
 				{
@@ -700,3 +740,5 @@ void __stdcall function_21d630(long effect_index, long mode)
 		}
 	}
 }
+
+#undef sound_effect_delete

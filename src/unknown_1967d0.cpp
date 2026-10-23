@@ -10,13 +10,13 @@
 #include <string.h>
 #include <time.h>
 
-s_flagged_value g_511020;
-s_flagged_value g_511028;
 s_counter_bits g_46ddc0[86];
 s_input_address g_51e8d4[16];
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
 // @retail 0x001967d0
-void function_1967d0(long a, long b, long c, long delta)
+void function_1967d0(long a, long c, long b, long delta)
 {
 	if (g_510ca0 && !g_510ca1)
 	{
@@ -25,30 +25,18 @@ void function_1967d0(long a, long b, long c, long delta)
 		if (a != NONE)
 		{
 			s_input_counter *counter = &g_511bf4.all[a * 0x1b5 + b];
-			long value = counter->value;
-			value += delta;
-			if (value < minimum)
-				value = minimum;
-			else if (value > maximum)
-				value = maximum;
-			counter->value = value;
+			counter->value = PIN(counter->value + delta, minimum, maximum);
 		}
 		if (c != NONE)
 		{
 			s_input_counter *counter = &g_511bf4.counters[0][c * 0x2d + b];
-			long value = counter->value;
-			value += delta;
-			if (value < minimum)
-				value = minimum;
-			else if (value > maximum)
-				value = maximum;
-			counter->value = value;
+			counter->value = PIN(counter->value + delta, minimum, maximum);
 		}
 	}
 }
 
 // @retail 0x001968b0
-void function_1968b0(long c, long a, long b, long value)
+void function_1968b0(long a, long c, long b, long value)
 {
 	if (g_510ca0 && !g_510ca1)
 	{
@@ -57,22 +45,12 @@ void function_1968b0(long c, long a, long b, long value)
 		if (a != NONE)
 		{
 			s_input_counter *counter = &g_511bf4.all[a * 0x1b5 + b];
-			long clamped;
-			if (value < minimum)
-				clamped = minimum;
-			else
-				clamped = value > maximum ? maximum : value;
-			counter->value = clamped;
+			counter->value = value < minimum ? minimum : (value > maximum ? maximum : value);
 		}
 		if (c != NONE)
 		{
 			s_input_counter *counter = &g_511bf4.counters[0][c * 0x2d + b];
-			long clamped;
-			if (value < minimum)
-				clamped = minimum;
-			else
-				clamped = value > maximum ? maximum : value;
-			counter->value = clamped;
+			counter->value = value < minimum ? minimum : (value > maximum ? maximum : value);
 		}
 	}
 }
@@ -95,8 +73,9 @@ void function_197360(s_input_record *record)
 	record->flag1 = g_511020.flag;
 	if (record->flag1)
 		record->value4 = g_511020.value;
-	record->flag8 = g_511028.flag;
-	if (g_511028.flag)
+	byte flag8 = g_511028.flag;
+	record->flag8 = flag8;
+	if (flag8)
 		record->valuec = g_511028.value;
 	record->flag0 = g_510cb1;
 	memcpy(record->devices, input_device(0), sizeof(record->devices));
@@ -378,7 +357,7 @@ byte function_197d80(s_bitstream *stream, void *results)
 }
 
 // @retail 0x001984e0
-bool function_1984e0(s_input_counter *current, long count, s_input_counter *out, s_input_counter *previous)
+bool function_1984e0(s_input_counter *current, long count, s_input_counter *previous, s_input_counter *out)
 {
 	bool changed = false;
 	long i;
@@ -475,11 +454,11 @@ void __stdcall function_198540(s_input_record const *previous, s_input_record co
 
 	for (i = 0; i < 16; i++)
 	{
-		update->groups[i].flag0 = function_1984e0((s_input_counter *)current->groups[i], 45, update->groups[i].first, (s_input_counter *)previous->groups[i]);
-		update->groups[i].flag1 = function_1984e0((s_input_counter *)&current->groups[i][45], 32, update->groups[i].second, (s_input_counter *)&previous->groups[i][45]);
+		update->groups[i].flag0 = function_1984e0((s_input_counter *)current->groups[i], 45, (s_input_counter *)previous->groups[i], update->groups[i].first);
+		update->groups[i].flag1 = function_1984e0((s_input_counter *)&current->groups[i][45], 32, (s_input_counter *)&previous->groups[i][45], update->groups[i].second);
 		for (j = 0; j < 45; j++)
 		{
-			update->groups[i].entries[j].flag = function_1984e0((s_input_counter *)&current->groups[i][78 + j * 8], 7, update->groups[i].entries[j].counters, (s_input_counter *)&previous->groups[i][78 + j * 8]);
+			update->groups[i].entries[j].flag = function_1984e0((s_input_counter *)&current->groups[i][78 + j * 8], 7, (s_input_counter *)&previous->groups[i][78 + j * 8], update->groups[i].entries[j].counters);
 		}
 	}
 
@@ -487,13 +466,13 @@ void __stdcall function_198540(s_input_record const *previous, s_input_record co
 	{
 		for (j = 0; j < 16; j++)
 		{
-			update->pairs[i][j].flag = function_1984e0((s_input_counter *)current->pairs[i][j], 2, update->pairs[i][j].counters, (s_input_counter *)previous->pairs[i][j]);
+			update->pairs[i][j].flag = function_1984e0((s_input_counter *)current->pairs[i][j], 2, (s_input_counter *)previous->pairs[i][j], update->pairs[i][j].counters);
 		}
 	}
 
 	for (i = 0; i < 16; i++)
 	{
-		update->counters[i].flag = function_1984e0((s_input_counter *)current->counters[i], 45, update->counters[i].counters, (s_input_counter *)previous->counters[i]);
+		update->counters[i].flag = function_1984e0((s_input_counter *)current->counters[i], 45, (s_input_counter *)previous->counters[i], update->counters[i].counters);
 	}
 
 	for (i = 0; i < 16; i++)
@@ -510,6 +489,18 @@ void __stdcall function_198540(s_input_record const *previous, s_input_record co
 		{
 			address_update->flag = false;
 		}
+	}
+}
+
+/* copies the counters an update flags into the record's counters */
+static inline void counters_apply_1988e0(s_input_counter *counters, long count, s_input_counter const *update)
+{
+	long i;
+
+	for (i = 0; i < count; i++)
+	{
+		if (update[i].flag)
+			counters[i].value = update[i].value;
 	}
 }
 
@@ -563,33 +554,15 @@ void function_1988e0(s_input_record *record, s_input_update *update)
 	for (i = 0; i < 16; i++)
 	{
 		s_counter_group_update *group = &update->groups[i];
-		s_input_counter *counters = record->groups[i];
-		
+
 		if (group->flag0)
-		{
-			for (j = 0; j < 45; j++)
-			{
-				if (group->first[j].flag)
-					counters[j].value = group->first[j].value;
-			}
-		}
+			counters_apply_1988e0(record->groups[i], 45, group->first);
 		if (group->flag1)
-		{
-			for (j = 0; j < 32; j++)
-			{
-				if (group->second[j].flag)
-					counters[45 + j].value = group->second[j].value;
-			}
-		}		for (j = 0; j < 45; j++)
+			counters_apply_1988e0(&record->groups[i][45], 32, group->second);
+		for (j = 0; j < 45; j++)
 		{
 			if (group->entries[j].flag)
-			{
-				for (k = 0; k < 7; k++)
-				{
-					if (group->entries[j].counters[k].flag)
-						counters[78 + j * 8 + k].value = group->entries[j].counters[k].value;
-				}
-			}
+				counters_apply_1988e0(&record->groups[i][78 + j * 8], 7, group->entries[j].counters);
 		}
 	}
 
@@ -598,19 +571,11 @@ void function_1988e0(s_input_record *record, s_input_update *update)
 		for (j = 0; j < 16; j++)
 		{
 			s_pair_update *pair = &update->pairs[i][j];
-			s_input_counter *counters = record->pairs[i][j];
+
 			if (pair->flag)
 			{
-				k = 2;
-				do
-				{
-					if (pair->counters[0].flag)
-						counters[0].value = pair->counters[0].value;
-					if (pair->counters[1].flag)
-						counters[1].value = pair->counters[1].value;
-					k--;
-				}
-				while (k);
+				for (k = 0; k < 2; k++)
+					counters_apply_1988e0(record->pairs[i][j], 2, pair->counters);
 			}
 		}
 	}
@@ -618,15 +583,9 @@ void function_1988e0(s_input_record *record, s_input_update *update)
 	for (i = 0; i < 16; i++)
 	{
 		s_counters_update *group = &update->counters[i];
-		s_input_counter *counters = record->counters[i];
+
 		if (group->flag)
-		{
-			for (j = 0; j < 45; j++)
-			{
-				if (group->counters[j].flag)
-					counters[j].value = group->counters[j].value;
-			}
-		}
+			counters_apply_1988e0(record->counters[i], 45, group->counters);
 	}
 
 	for (i = 0; i < 4; i++)
@@ -665,7 +624,7 @@ void sort_4byte(long *elements, unsigned long count, void *unused, t_sort_4byte_
 
 /* lists the active devices and the active entries, each sorted */
 // @retail 0x1990b0
-void function_1990b0(long *device_count, long *devices, long *entry_count, long *entries)
+void function_1990b0(long *devices, long *device_count, long *entry_count, long *entries)
 {
 	if (g_510cb0 && g_510cb1)
 	{
@@ -677,7 +636,11 @@ void function_1990b0(long *device_count, long *devices, long *entry_count, long 
 			if (input_device(i)->active)
 				devices[(*device_count)++] = i;
 		}
-		sort_4byte(devices, *device_count, &entries, function_199010, 0);
+		{
+			long temporary;
+
+			sort_4byte(devices, *device_count, &temporary, function_199010, 0);
+		}
 
 		*entry_count = 0;
 		for (i = 0; i < 16; i++)
@@ -685,7 +648,11 @@ void function_1990b0(long *device_count, long *devices, long *entry_count, long 
 			if (g_511a74[i].active)
 				entries[(*entry_count)++] = i;
 		}
-		sort_4byte(entries, *entry_count, &entries, function_199060, 0);
+		{
+			long temporary;
+
+			sort_4byte(entries, *entry_count, &temporary, function_199060, 0);
+		}
 	}
 	else
 	{
@@ -741,7 +708,7 @@ long function_199250(s_address_table *table, byte const *address)
 
 
 // @retail 0x1969a0
-long function_1969a0(long a, long b, long c)
+long function_1969a0(long a, long c, long b)
 {
 	long result = NONE;
 	if (g_510cb0 && g_510cb1)
@@ -877,15 +844,197 @@ void function_73ca0(byte *results);
 void __stdcall function_b3e90(byte *results);
 void function_232d77(void);
 
+#include "unknown_157450.h"
+
+/* the results' flag: the game has teams (0x510ddb, inside the results at 0x510cb0) */
+byte g_510ddb;
+
+struct s_score_display;
+void function_23f3e0(s_score_display *display, long mode, bool fallback);
+long function_1587f0(long team);
+void function_199460(void);
+struct s_network_observer;
+struct s_simulation_world_owner;
+struct s_session_machine_address;
+struct s_machine_address;
+long simulation_watcher_find_machine(s_simulation_world_owner const *watcher, s_machine_address const *address);
+long network_observer_find_channel_by_machine(s_network_observer *observer, s_session_machine_address const *address, long owner);
+
+/* the players and teams in the order of their ranks (0x6c bytes, filled by 0x23f3e0) */
+struct s_results_ranking_195ed0
+{
+	long players[16];
+	short teams[8];
+	char player_ranks[16];
+	char team_ranks[8];
+	short player_count;
+	short team_count;
+};
+
+/* a player's record in the game results (0xa4 bytes, sixteen from 0x511034) */
+struct s_results_player_195ed0
+{
+	bool active;
+	byte address_index;
+	byte unknown02[0xe];
+	struct
+	{
+		byte unknown00[0x7c];
+		char team_index;
+		byte unknown7d[0x13];
+	} configuration;
+	char rank;
+	byte unknowna1[3];
+};
+
+/* inline copies of game_engine_team_is_active (0x161e60) and of the team
+   score (0x1587f0), which retail inlines here */
+static inline bool team_is_active_195ed0(long team)
+{
+	bool result = false;
+
+	if (function_x340af0() && team >= 0 && team < 8)
+	{
+		result = (function_xaee93d()->team_mask & (1 << team)) != 0;
+	}
+	return result;
+}
+
+static inline long team_score_195ed0(long team)
+{
+	long result = NONE;
+
+	if (game_engine_statborg_inline() && function_x340af0() && team_is_active_195ed0(team))
+	{
+		result = game_engine_statborg_inline()->teams[team].score;
+	}
+	return result;
+}
+
+/* updates the game results: the active teams, the players' configurations,
+   the ranks and scores, and which machines are still connected */
+// @retail 0x195ed0
+void function_195ed0(void)
+{
+	if (g_510ca0 && !g_510cb1)
+	{
+		if (!g_511020.flag)
+		{
+			function_199460();
+		}
+		for (long team = 0; team < 16; team++)
+		{
+			if (game_engine_team_is_active(team))
+			{
+				if (!g_511a74[team].active)
+				{
+					g_511a74[team].active = true;
+				}
+				if (!g_510ddb)
+				{
+					g_510ddb = true;
+				}
+			}
+		}
+		for (long index = 0; index < 16; index++)
+		{
+			s_machine_player *player = machine_player_try_get(index);
+
+			if (player)
+			{
+				s_results_player_195ed0 *record = (s_results_player_195ed0 *)input_device(index);
+
+				memcpy(&record->configuration, (byte *)player + 0x44, sizeof(record->configuration));
+				record->address_index = 0xff;
+				if (g_510ddb)
+				{
+					long team = record->configuration.team_index;
+
+					if (team != NONE)
+					{
+						s_input_entry *entry = &g_511a74[team];
+
+						if (!entry->active)
+						{
+							entry->active = true;
+							entry->value = 0;
+							entry->unknown01 = 0xff;
+						}
+					}
+				}
+				word *counter = (word *)&g_511bf4.groups[index][0];
+				*counter = (*counter & 0x8001) | 1;
+			}
+		}
+		if ((bool)((function_xaee93d()->flags >> 5) & 1))
+		{
+			s_results_ranking_195ed0 ranking;
+			long rank;
+
+			function_23f3e0((s_score_display *)&ranking, 1, false);
+			for (rank = 0; rank < ranking.team_count; rank++)
+			{
+				long team = ranking.teams[rank];
+				s_input_entry *entry = &g_511a74[team];
+
+				entry->unknown01 = ranking.team_ranks[rank] / 2;
+				entry->value = (short)(team_score_195ed0(team) < 0 ? 0 :
+					team_score_195ed0(team) > 0x7fff ? 0x7fff : function_1587f0(team));
+			}
+			for (rank = 0; rank < ranking.player_count; rank++)
+			{
+				((s_results_player_195ed0 *)input_device(ranking.players[rank] & 0xffff))->rank = ranking.player_ranks[rank] / 2;
+			}
+		}
+		function_199310(&g_510cb0);
+		for (long index = 0; index < 16; index++)
+		{
+			s_input_address *address = &g_51e8d4[index];
+
+			if (address->data[6])
+			{
+				if (!memcmp(g_4cf7cc, address->data, 6))
+				{
+					address->data[8] = true;
+					address->data[7] = true;
+				}
+				else
+				{
+					s_network_observer *observer;
+					bool connected;
+
+					address->data[8] = false;
+					observer = *(s_network_observer **)((byte *)g_4cf780 + 8);
+					connected = false;
+					if (observer && simulation_watcher_find_machine((s_simulation_world_owner *)g_4cf780,
+						(s_machine_address const *)address->data) != NONE)
+					{
+						long channel = network_observer_find_channel_by_machine(observer,
+							(s_session_machine_address const *)address->data, 3);
+
+						if (channel != NONE && *(long *)((byte *)observer + channel * 0x528 + 0xa8) == 7)
+						{
+							connected = true;
+						}
+					}
+					address->data[7] = connected;
+				}
+			}
+		}
+	}
+}
+
+
 /* starts the game results: the host records its own address and the
    results go to the session's link */
 // @retail 0x196390
 void function_196390(void)
 {
-	g_510cb1 = true;
-	if (g_4e6948->state == 2)
+	*(volatile bool *)&g_510cb1 = true;
+	if (2 == g_4e6948->state)
 	{
-		long index = function_199290(&g_510cb0);
+		long index;
+		index = function_199290(&g_510cb0);
 		bool local = false;
 
 		if (index != NONE)
@@ -901,9 +1050,12 @@ void function_196390(void)
 			g_51051c = true;
 			g_51051d = false;
 		}
-		if (local && !g_510cb2)
+		if (local)
 		{
-			function_b3e90(&g_510cb0);
+			if (!g_510cb2)
+			{
+				function_b3e90(&g_510cb0);
+			}
 		}
 	}
 	function_232d77();
@@ -1281,7 +1433,8 @@ struct s_simulation_world_owner;
 long simulation_watcher_find_machine(s_simulation_world_owner const *watcher, s_machine_address const *address);
 long network_observer_find_channel_by_machine(s_network_observer *observer, s_session_machine_address const *address, long owner);
 
-// Core of retail 0x195ed0; the storage parameter is only an analysis binding.
+// Disabled: the contiguous results object still has split shared bindings.
+// Retail 0x195ed0; the storage parameter is only an analysis binding.
 void refresh_results_195ed0(s_results_update_storage *results)
 {
 	if (g_510ca0 && !g_510cb1)
@@ -1365,4 +1518,117 @@ void refresh_results_195ed0(s_results_update_storage *results)
 		}
 	}
 }
+
+extern dword g_510ca4, g_510ca8;
+struct s_surface_description;
+s_surface_description *function_192e60(long index);
+void utf8_string_to_utf16_string(char const *source, word *destination, long destination_count);
+
+// Disabled: the contiguous 0xdcd8-byte results object still has split shared bindings.
+// Retail 0x195a40; results exposes the missing contiguous storage binding.
+void function_195a40(byte *results)
+{
+    memset(results, 0, 0xdcd8);
+    g_510ca4 = 0;
+    g_510ca8 = (long)time(NULL);
+    if (g_55e4d0[g_4e9ae8->engine_index])
+    {
+        byte *options = (byte *)g_4e6948;
+        *(long *)(results + 0x130) = *(long *)(options + 0x10);
+        *(long *)(results + 0x134) = *(long *)(options + 0x14);
+        *(long *)(results + 4) = *(long *)(options + 0x138);
+        if (*(long *)(options + 0x138) != NONE)
+        {
+            byte *variant = (byte *)function_192e60(*(long *)(options + 0x138));
+            if (variant)
+            {
+                long mode = *(long *)variant;
+                results[0x12a] = mode == 5;
+                results[0x128] = mode == 5 || mode == 2 || mode == 4;
+                results[0x129] = mode == 5 || mode == 3 || mode == 4;
+                for (long i = 0; i < 9; ++i)
+                    utf8_string_to_utf16_string((char const *)(variant + 0xc + i * 0x10),
+                        (word *)(results + 8 + i * 0x20), 0x10);
+            }
+        }
+        *(long *)(results + 0x130) = *(long *)(options + 0x10);
+        *(long *)(results + 0x134) = *(long *)(options + 0x14);
+        memcpy(results + 0x138, options + 0x13c, 0x130);
+        *(long *)(results + 0x268) = *(long *)(options + 0x20);
+        memcpy(results + 0x26c, options + 0x24, 0x104);
+        for (long i = 0; i < 16; ++i)
+        {
+            byte *source = options + 0x2dc + i * 0xe4;
+            byte *record = results + 0x384 + i * 0xa4;
+            record[0] = source[0];
+            if (record[0])
+            {
+                memcpy(record + 2, source + 0xe, 12);
+                memcpy(record + 0x10, source + 0x1c, 0x90);
+                record[1] = function_199250((s_address_table *)results, source + 8);
+                if (record[1] == 0xff) record[1] = function_1991f0((s_address_table *)results, source + 8);
+            }
+        }
+        results[0x12b] = results[0x180] & 1;
+        if (results[0x12b])
+        {
+            for (long i = 0; i < 16; ++i)
+            {
+                byte *record = results + 0x384 + i * 0xa4;
+                long team = *(char *)(record + 0x8c);
+                if (!record[0] || team == NONE) continue;
+                byte *entry = results + 0xdc4 + team * 0x18;
+                if (entry[0]) continue;
+                entry[0] = 1;
+                entry[1] = 0xff;
+                *(short *)(entry + 2) = 0;
+                *(short *)(entry + 4) = NONE;
+                *(long *)(entry + 8) = NONE;
+                memset(entry + 0xc, 0, 12);
+                if (results[0x12a] && memcmp(record + 0x80, g_440070, 12))
+                {
+                    memcpy(entry + 0xc, record + 0x80, 12);
+                    *(long *)(entry + 8) = *(long *)(record + 0x9c);
+                    *(short *)(entry + 4) = *(short *)(record + 0x9a);
+                }
+            }
+        }
+        byte *session = *(byte **)((byte *)g_4cf780 + 0xc);
+        bool local_host = false;
+        if (session && simulation_watcher_find_machine((s_simulation_world_owner *)g_4cf780,
+            (s_machine_address const *)g_4cf7cc) != NONE)
+            local_host = !memcmp(session + 0x62 + *(long *)(session + 0x40) * 0x10c, g_4cf7cc, 6);
+        for (long i = 0; i < 16; ++i)
+        {
+            byte *address = results + 0xdc24 + i * 11;
+            if (!address[6]) continue;
+            session = *(byte **)((byte *)g_4cf780 + 0xc);
+            bool remote_host = session && simulation_watcher_find_machine((s_simulation_world_owner *)g_4cf780,
+                (s_machine_address const *)address) != NONE &&
+                !memcmp(session + 0x62 + *(long *)(session + 0x40) * 0x10c, address, 6);
+            address[8] = remote_host;
+            address[9] = remote_host;
+            if (local_host && remote_host) address[7] = 1;
+            else if (local_host || remote_host)
+            {
+                s_network_observer *observer = *(s_network_observer **)((byte *)g_4cf780 + 8);
+                long channel = NONE;
+                if (observer && simulation_watcher_find_machine((s_simulation_world_owner *)g_4cf780,
+                    (s_machine_address const *)address) != NONE)
+                    channel = network_observer_find_channel_by_machine(observer, (s_session_machine_address const *)address, 3);
+                address[7] = channel != NONE && *(long *)((byte *)observer + channel * 0x528 + 0xa8) == 7;
+            }
+            else address[7] = 0;
+        }
+        results[0] = 1;
+        if (g_4e6948->mode != 4)
+        {
+            g_510ca0 = true;
+            g_510ca1 = false;
+            function_196470();
+            function_196780();
+        }
+    }
+}
+
 #endif

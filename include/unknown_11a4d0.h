@@ -22,13 +22,13 @@ bool function_11ac30(long vehicle_index, long label, long list_index);
 void function_11ade0(long unit_index, long vehicle_index, long label);
 void function_11af10(long unit_index, long label);
 void function_11af90(long unit_index, short mode);
-short function_11b0c0(long vehicle_index, long filter_range, long list_index);
+short function_11b0c0(long vehicle_index, long filter_range, long volatile list_index);
 short function_11b2b0(long vehicle_index, long filter_range);
 void function_11b350(void);
 void function_11b3e0(long unit_index, bool flag);
 void function_11b420(long unit_index, bool flag);
 void function_11b460(long unit_index, bool flag);
-bool function_11b520(long animation_graph_index, long unit_index, long animation_name, bool interpolate,
+bool function_11b520(long unit_index, long animation_graph_index, long animation_name, bool interpolate,
 	long attached_object_index, bool flag);
 void function_11b710(long unit_index, long field_7c);
 real function_11b6b0(long unit_index);

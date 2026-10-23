@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "slot_handler.h"
 #include "ai_actor.h"
+#include "vector_products.h"
 #include "unknown_26c380.h"
 
 /* the state of a slot of type 0x53 */
@@ -62,7 +63,7 @@ struct s_tag_element_53
 };
 
 long function_1469f0(real seconds);
-void __stdcall function_1f4280(long actor_index);
+bool __stdcall function_1f4280(long actor_index);
 real function_30bf0(vector3f *v);
 bool __stdcall function_1ab770(long actor_index, s_slot *slot);
 bool function_25d9b0(long prop_index);
@@ -107,9 +108,8 @@ short __stdcall function_1ab3d0(long actor_index)
 		if (prop->unknown24 >= 1 && prop->unknown24 <= 2)
 		{
 			s_prop_state_53 *state = (s_prop_state_53 *)function_25d690((s_prop_datum *)prop);
-			long object_index = state->object_index;
-			if (object_index == NONE ||
-				object_definition_244(actor->unknown26c)->unknown244 >= object_definition_244(object_index)->unknown244)
+			if (state->object_index == NONE ||
+				object_definition_244(actor->unknown26c)->unknown244 >= object_definition_244(state->object_index)->unknown244)
 			{
 				result = 3;
 			}
@@ -117,6 +117,19 @@ short __stdcall function_1ab3d0(long actor_index)
 	}
 	return result;
 }
+
+PRIVATE __forceinline vector3f *function_1ab4b1(vector3f const *arg_0, real arg_1,
+    point3f const *arg_2, point3f const *arg_3, vector3f *arg_4)
+{
+    point3f local_0;
+    local_0.x = arg_0->i * arg_1 + arg_2->x;
+    local_0.y = arg_0->j * arg_1 + arg_2->y;
+    local_0.z = arg_0->k * arg_1 + arg_2->z;
+    scaled_difference3f(arg_3->n, local_0.n, 1.0f, arg_4->n);
+    return arg_4;
+}
+
+static __forceinline long real_to_long(real value);
 
 // @retail 0x1ab4b0
 bool __stdcall function_1ab4b0(long actor_index, s_slot *slot)
@@ -133,16 +146,14 @@ bool __stdcall function_1ab4b0(long actor_index, s_slot *slot)
 			s_slot_53 *slot_state = (s_slot_53 *)slot;
 			vector3f *direction = &slot_state->direction;
 
-			direction->i = (state->velocity.i * 0.5f + state->position.x) - actor->position.x;
-			direction->j = (state->velocity.j * 0.5f + state->position.y) - actor->position.y;
-			direction->k = (state->velocity.k * 0.5f + state->position.z) - actor->position.z;
+			direction = function_1ab4b1(&state->velocity, 0.5f, &state->position, &actor->position, direction);
 			if (0.0f > actor->unknown290.k * direction->k + actor->unknown290.j * direction->j + direction->i * actor->unknown290.i)
 			{
 				direction->i = state->position.x - actor->position.x;
 				direction->j = state->position.y - actor->position.y;
 				direction->k = state->position.z - actor->position.z;
 			}
-			direction->k = 0.0f;
+			slot_state->direction.k = 0.0f;
 			if (function_30bf0(direction) > g_45dbd8)
 			{
 				s_tag_element_53 *element = (s_tag_element_53 *)function_1e5450(actor_index, ai_object_get(actor->unknown26c)->definition_index);
@@ -150,17 +161,12 @@ bool __stdcall function_1ab4b0(long actor_index, s_slot *slot)
 				if (!element || (ticks = (short)function_1469f0(element->unknown8c)) <= 0)
 				{
 					real seconds = (real)g_510c54->field_2_3 * 2.5f;
-					long rounded;
-					__asm
-					{
-						fld seconds
-						fistp rounded
-					}
+					long rounded = real_to_long(seconds);
 					ticks = (short)rounded;
 				}
 				slot_state->ticks = ticks;
 				slot_state->timer = NONE;
-				return true;
+				result = true;
 			}
 		}
 	}
@@ -199,9 +205,7 @@ short __stdcall function_1ab690(long actor_index, s_slot *slot, bool active)
 			return result;
 		return g_46fbe4;
 	}
-	short local_0 = state->timer - 1;
-	*(volatile short *)&state->timer = local_0;
-	if (local_0 <= 0)
+	if (--state->timer <= 0)
 		return g_46fbe4;
 	return result;
 }
@@ -306,25 +310,24 @@ bool function_1ab950(long actor_index, long prop_index, s_tag_element_52 *elemen
 	if (view)
 	{
 		real distance = prop->unknown28 - value;
-		real scale = strict ? 0.8f : 1.0f;
+		real range_scale = strict ? 0.8f : 1.0f;
+		real facing_scale = strict ? 0.8f : 1.0f;
 		real range = 15.0f;
 
 		if (element->unknown74 > 0.0f)
 			range = element->unknown74;
 		if (element->unknown78 > 0.0f)
 			range = element->unknown78;
+		real cosine = dot3f(&actor->unknown290, &view->unknown2c);
 		result = true;
-		if (range * scale > distance &&
-			scale * 0.5f > dot3f(&actor->unknown290, &view->unknown2c))
-		{
+		if (range * range_scale > distance && facing_scale * 0.5f > cosine)
 			result = false;
-		}
 	}
 	return result;
 }
 
 // @retail 0x1aba50
-bool function_1aba50(long prop_index, long actor_index, real *out)
+bool function_1aba50(long actor_index, long prop_index, real *out)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_object_view *unit = object_get(actor->unknown26c);
@@ -336,8 +339,8 @@ bool function_1aba50(long prop_index, long actor_index, real *out)
 
 	if (view)
 	{
-		real height = unit->unknown03c;
 		real scale = 1.0f;
+		real height = unit->unknown03c;
 		real value;
 
 		if (state->object_index != NONE)
@@ -345,9 +348,9 @@ bool function_1aba50(long prop_index, long actor_index, real *out)
 		real prop_speed = dot3f(&state->velocity, &view->unknown2c);
 		real unit_speed = dot3f(&unit->velocity, &view->unknown2c);
 
-		value = unit_speed - prop_speed;
 		if (element->unknown80 > 0.0f)
 			scale = element->unknown80;
+		value = unit_speed - prop_speed;
 		value *= scale;
 		result = prop->unknown28 - height - value > 0.0f;
 		if (out)
@@ -375,7 +378,7 @@ short __stdcall function_1abbc0(long actor_index)
 			if ((actor->unknown229 || !((s_prop_state_53 *)prop_node_state(prop))->unknown64) &&
 				(element->unknown84 == g_45dbd8 || element->unknown84 > prop->unknown28) &&
 				prop->unknown27 >= 2 &&
-				function_1aba50(actor->prop_index, actor_index, &value) &&
+				function_1aba50(actor_index, actor->prop_index, &value) &&
 				function_1ab950(actor_index, actor->prop_index, element, value, false))
 			{
 				long time = actor->unknown3e8;
@@ -406,7 +409,7 @@ short __stdcall function_1abda0(long actor_index, s_slot *slot, bool active)
 		{
 			real value;
 			real random;
-			bool close = function_1aba50(actor->prop_index, actor_index, &value);
+			bool close = function_1aba50(actor_index, actor->prop_index, &value);
 
 			if (element->unknown14 * 2.0f > prop->unknown28)
 				close = false;
@@ -469,8 +472,8 @@ bool __stdcall function_1ab770(long actor_index, s_slot *slot)
 			s_sector_trace_result *result = (s_sector_trace_result *)&trace;
 			if (result->blocked && result->edge_index != 0xffff)
 			{
-				word flags = *(word *)&pathfinding->edges[result->edge_index].unknown04;
-				if ((flags & 0x400) || ((flags & 0x200) && radius > result->distance))
+				s_pathfinding_edge *edge = &pathfinding->edges[result->edge_index];
+				if ((*(word *)&edge->unknown04 & 0x400) || ((*(word *)&edge->unknown04 & 0x200) && radius > result->distance))
 					((s_slot_53 *)slot)->ticks = 0;
 			}
 		}

@@ -113,29 +113,24 @@ bool __stdcall function_07b140(void *object, long destination, long type, long s
 			memcmp(old, address, length) == 0))
 			network_message_gateway_send_pending_messages(gateway);
 	}
-	s_bitstream *stream = &gateway->outgoing_packet;
 	for (;;)
 	{
 		bool started = false;
 		if (!gateway->outgoing_packet_pending)
 		{
-			stream->size_in_bytes = 0x518;
-			stream->mode = 0;
-			stream->bit_position = 0;
-			stream->checkpoint_count = 0;
-			stream->error = false;
-			stream->data = (byte *)gateway + 0x15;
-			gateway_stream_begin(stream);
+			stream_set_buffer(&gateway->outgoing_packet, gateway->outgoing_packet_storage, 0x518);
+			gateway_stream_begin(&gateway->outgoing_packet);
 			gateway->outgoing_packet_address = *address;
 			gateway->outgoing_packet_pending = true;
 			started = true;
 		}
-		stream->checkpoints[stream->checkpoint_count++] = stream->bit_position;
-		stream_write_bit(stream, true);
+		stream_save_position(&gateway->outgoing_packet);
+		stream_write_bit(&gateway->outgoing_packet, true);
 		c_type_659ceb *collection = gateway->field_c_7;
-		network_message_write_header(stream, type, size);
-		collection->m_types[type].encode(stream, size, message);
-		if (stream->bit_position + 1 <= (stream->size_in_bytes << 3))
+		network_message_write_header(&gateway->outgoing_packet, type, size);
+		collection->m_types[type].encode(&gateway->outgoing_packet, size, message);
+		s_bitstream *stream = &gateway->outgoing_packet;
+		if (stream->bit_position + 1 <= stream->size_in_bytes << 3)
 		{
 			stream->checkpoint_count--;
 			result = true;

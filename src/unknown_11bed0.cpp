@@ -8,7 +8,7 @@
 #include "object_queries.h"
 
 struct s_bsp3d;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 /* the structure bsp's collision bsp */
 s_bsp3d *g_4e033c;
@@ -63,7 +63,7 @@ void function_11bed0(s_location *location, point3f const *point)
 	}
 	else
 	{
-		long leaf_index = function_14a280(g_4e033c, (point3f *)point, 0);
+		long leaf_index = function_14a280(g_4e033c, 0, (point3f *)point);
 		location->leaf_index = leaf_index;
 		long cluster_index = leaf_index != NONE ? ((s_structure_bsp_leaves_view *)g_4e0348)->leaves[leaf_index].cluster_index : NONE;
 		location->bsp_index = g_4686c4;

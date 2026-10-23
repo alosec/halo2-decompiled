@@ -69,11 +69,11 @@ void function_23aea0()
 	g_5022f0 = g_4709f0;
 	globals->value4 = *(real *)(definition + 0x154);
 	globals->value0 = *(real *)(definition + 0x150);
-	for (long i = 2; i < 14; i += 6)
+	for (long i = 0; i < 2; i++)
 	{
 		for (long j = 0; j < 6; j++)
 		{
-			long type = i + j;
+			long type = i * 6 + j + 2;
 			g_502258[type * 3 - 4] = *(dword *)(definition + 0x148 + type * 0x1c);
 			g_502258[type * 3 - 3] = *(dword *)(definition + 0x14c + type * 0x1c);
 			g_502258[type * 3 - 2] = *(dword *)(definition + 0x150 + type * 0x1c);
@@ -221,22 +221,24 @@ struct s_spawn_globals_tag_view
 void function_23b3f0(s_spawn_settings_view *settings, real *distance20, real *distance1c)
 {
 	s_spawn_scenario_view *scenario = (s_spawn_scenario_view *)g_4e0350;
-	s_spawn_tag_header_view *header = (s_spawn_tag_header_view *)g_4e034c;
-	s_tag_instance *tags = g_4e3b44;
 
 	if (settings->distance1c == 0.0f)
 	{
-		s_spawn_globals_tag_view *tag = (s_spawn_globals_tag_view *)tags[header->globals_index & 0xffff].flags;
+		long globals_index = ((s_spawn_tag_header_view *)g_4e034c)->globals_index;
+		s_spawn_globals_tag_view *tag = (s_spawn_globals_tag_view *)g_4e3b44[globals_index & 0xffff].flags;
 		long scenario_count = scenario->spawn_data_count;
 		byte *globals = tag->data;
 
-		if (scenario_count <= 0 || scenario->spawn_data[0] == 0.0f)
+		if (scenario_count > 0)
 		{
-			*distance1c = (real)fabs(*(real *)(globals + 0x154));
+			if (scenario->spawn_data[0] == 0.0f)
+				*distance1c = (real)fabs(*(real *)(globals + 0x154));
+			else
+				*distance1c = (real)fabs(scenario->spawn_data[0]);
 		}
 		else
 		{
-			*distance1c = (real)fabs(scenario->spawn_data[0]);
+			*distance1c = (real)fabs(*(real *)(globals + 0x154));
 		}
 	}
 	else
@@ -245,7 +247,8 @@ void function_23b3f0(s_spawn_settings_view *settings, real *distance20, real *di
 	}
 	if (settings->distance20 == 0.0f)
 	{
-		s_spawn_globals_tag_view *tag = (s_spawn_globals_tag_view *)tags[header->globals_index & 0xffff].flags;
+		long globals_index = ((s_spawn_tag_header_view *)g_4e034c)->globals_index;
+		s_spawn_globals_tag_view *tag = (s_spawn_globals_tag_view *)g_4e3b44[globals_index & 0xffff].flags;
 		long scenario_count = scenario->spawn_data_count;
 		byte *globals = tag->data;
 
@@ -299,9 +302,10 @@ real function_23ba90(point3f const *point, long player_index, bool deterministic
 
 		real *random_weight_pointer = *(real **)(globals + 0x534);
 		real *const *random_weight_reference = &random_weight_pointer;
+		bool use_seed = *(volatile bool *)&deterministic;
 		double random_weight = **random_weight_reference;
 		real random;
-		if (deterministic)
+		if (use_seed)
 			random = (real)_random(seed, NULL, 0);
 		else
 			random = (real)(dword)_random(&g_4e7408->seed, NULL, 0);
@@ -367,20 +371,29 @@ void function_23b170(long player_index, s_spawn_influence_list *list)
 	s_spawn_scenario_23aea0 *scenario = (s_spawn_scenario_23aea0 *)g_4e0350;
 	if (scenario->count > 0)
 	{
-		s_spawn_zone_block_23b170 *block = (s_spawn_zone_block_23b170 *)((byte *)scenario->settings +
-			((player->unknown000[2] & 8) ? 0x58 : 0x50));
+		byte *settings = (byte *)scenario->settings;
+		s_spawn_zone_block_23b170 *block;
+		if (player->unknown000[2] & 8)
+			block = (s_spawn_zone_block_23b170 *)(settings + 0x58);
+		else
+			block = (s_spawn_zone_block_23b170 *)(settings + 0x50);
 		for (long i = 0; i < block->count; i++)
 		{
 			s_spawn_zone_23b170 *zone = &block->zones[i];
-			c_engine_peer *engine = game_engine_get();
-			if (engine && TEST_FIELD_BIT(g_4e6948->flags184.bit0) && player->team != NONE)
+			bool teams = game_engine_get() != NULL;
+			if (teams)
+				teams = TEST_FIELD_BIT(g_4e6948->flags184.bit0);
+			if (teams && player->team != NONE)
 			{
 				bool accepted = false;
 				for (long j = 0; j < 9; j++)
 				{
-					if ((function_xaee93d()->assigned_teams & (1 << j)) &&
-						(zone->teams & (1 << j)) && function_xaee93d()->team_designators[j] == player->team)
-						accepted = true;
+					if ((function_xaee93d()->assigned_teams & (1 << j)) && (zone->teams & (1 << j)))
+					{
+						short designator = function_xaee93d()->team_designators[j];
+						if (designator == player->team)
+							accepted = true;
+					}
 				}
 				if (!accepted)
 					continue;
@@ -390,19 +403,18 @@ void function_23b170(long player_index, s_spawn_influence_list *list)
 				bool accepted;
 				switch (function_xaee93d()->engine_index)
 				{
-				case 1: accepted = (bool)((zone->modes >> 3) & 1); break;
 				case 2: accepted = (bool)(zone->modes & 1); break;
+				case 1: case 9: accepted = (bool)((zone->modes >> 3) & 1); break;
 				case 3: accepted = (bool)((zone->modes >> 1) & 1); break;
 				case 4: accepted = (bool)((zone->modes >> 2) & 1); break;
 				case 7: accepted = (bool)((zone->modes >> 6) & 1); break;
 				case 8: accepted = (bool)((zone->modes >> 7) & 1); break;
-				case 9: accepted = (bool)((zone->modes >> 3) & 1); break;
 				default: __assume(0);
 				}
 				if (!accepted)
 					continue;
 			}
-			if (((c_spawn_filter_23b170 *)engine)->accepts(player_index, zone))
+			if (((c_spawn_filter_23b170 *)game_engine_get())->accepts(player_index, zone))
 			{
 				real distance20, distance1c;
 				function_23b3f0((s_spawn_settings_view *)zone, &distance20, &distance1c);
@@ -421,7 +433,7 @@ struct s_spawn_player_iterator
 	long absolute_index;
 };
 
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 
 /* a unit as spawning sees it: its position, and whether it is dead */
 struct s_spawn_unit_view
@@ -456,20 +468,31 @@ struct s_spawn_engine_globals_view
 	s_spawn_player_state_view players[16];
 };
 
+/* the engine's test of two teams (false without an engine) */
+static inline bool spawn_teams_test_23b8e0(short team, short other_team)
+{
+	bool result = false;
+	c_engine_peer *engine = game_engine_get();
+
+	if (engine)
+	{
+		result = engine->p27(team, other_team);
+	}
+	return result;
+}
+
 /* adds the other players' influences: a living one as a friend or a foe, a
    dead one where it died */
 // @retail 0x23b8e0
 void function_23b8e0(long player_index, s_spawn_influence_list *list)
 {
-    /* Retail passes this parameter on the stack. */
-    long const *player_reference = &player_index;
 	s_spawn_player_view *player = &((s_spawn_player_view *)g_4e8c24->data)[player_index & 0xffff];
 	s_spawn_player_iterator iterator;
 
 	iterator.data = g_4e8c24;
 	iterator.absolute_index = NONE;
 	iterator.index = NONE;
-	while (function_19f240((long *)&iterator))
+	while (player_iterator_next((long *)&iterator))
 	{
 		s_spawn_player_view *other = iterator.player;
 		long index = iterator.index;
@@ -493,9 +516,7 @@ void function_23b8e0(long player_index, s_spawn_influence_list *list)
 		}
 		else
 		{
-			c_engine_peer *engine = game_engine_get();
-
-			if (!engine || !function_x340af0() || !engine->p27(player->team, other->team))
+			if (!game_engine_get() || !function_x340af0() || !spawn_teams_test_23b8e0(player->team, other->team))
 			{
 				s_spawn_player_state_view *state = &((s_spawn_engine_globals_view *)g_4e9ae8)->players[index & 0xffff];
 
@@ -537,6 +558,14 @@ struct s_spawn_motion_settings_23b500
 	real vehicle_time;
 };
 
+/* the point a scaled vector away from a point */
+static inline void point_along_vector_23b500(point3f const *point, vector3f const *vector, real t, point3f *result)
+{
+	result->x = vector->i * t + point->x;
+	result->y = vector->j * t + point->y;
+	result->z = vector->k * t + point->z;
+}
+
 // @retail 0x23b500
 void function_23b500(long player_index, s_spawn_influence_list *list)
 {
@@ -577,8 +606,12 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 						friendly = false;
 				}
 			}
-			long influence_type = empty ? 4 : friendly ? 3 : 2;
-			function_23ba10(influence_type, list, &object->position);
+			if (empty)
+				function_23ba10(4, list, &object->position);
+			else if (friendly)
+				function_23ba10(3, list, &object->position);
+			else
+				function_23ba10(2, list, &object->position);
 			real speed_squared = object->velocity.i * object->velocity.i +
 				object->velocity.j * object->velocity.j + object->velocity.k * object->velocity.k;
 			if (speed_squared > settings->minimum_speed * settings->minimum_speed)
@@ -586,9 +619,7 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 				real radius = (real)sqrt(speed_squared);
 				radius = radius < 0.f ? 0.f : radius > settings->maximum_radius ? settings->maximum_radius : radius;
 				point3f predicted;
-				predicted.x = object->velocity.i * settings->vehicle_time + object->position.x;
-				predicted.y = object->velocity.j * settings->vehicle_time + object->position.y;
-				predicted.z = object->velocity.k * settings->vehicle_time + object->position.z;
+				point_along_vector_23b500(&object->position, &object->velocity, settings->vehicle_time, &predicted);
 				spawn_influence_add(list, &predicted, radius, radius * 1.2f,
 					((s_spawn_influence_globals *)g_502258)->value0,
 					((s_spawn_influence_globals *)g_502258)->value4, settings->vehicle_weight);
@@ -600,9 +631,7 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 			if (*(real *)(definition + 0xcc) > 0.f && *(real *)(definition + 0xd0) > 0.f)
 			{
 				point3f predicted;
-				predicted.x = object->velocity.i * settings->projectile_time + object->position.x;
-				predicted.y = object->velocity.j * settings->projectile_time + object->position.y;
-				predicted.z = object->velocity.k * settings->projectile_time + object->position.z;
+				point_along_vector_23b500(&object->position, &object->velocity, settings->projectile_time, &predicted);
 				spawn_influence_add(list, &predicted, settings->projectile_inner, settings->projectile_outer,
 					((s_spawn_influence_globals *)g_502258)->value0,
 					((s_spawn_influence_globals *)g_502258)->value4, settings->projectile_weight);

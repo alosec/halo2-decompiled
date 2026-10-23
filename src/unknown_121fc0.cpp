@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "font_loading_storage.h"
 #include "unknown_11c920.h"
 #include "font_loading.h"
 #include "async.h"
@@ -20,6 +21,31 @@ void font_cache_initialize(void);
 void font_cache_pixels_initialize(void);
 void function_593e0(void);
 
+/* the next token of a string separated by any of the delimiters (NULL when
+   there is none); the token is terminated in place and *next set to the text
+   after it */
+static inline char *function_xe9ecc4(char *string, char const *delimiters, char **next)
+{
+	char *end = string;
+	char *token;
+
+	if (end)
+	{
+		end += strspn(end, delimiters);
+		if (!*end)
+			end = NULL;
+	}
+	token = end;
+	if (end)
+	{
+		end = strpbrk(end, delimiters);
+		if (end)
+			*end++ = 0;
+	}
+	*next = end;
+	return token;
+}
+
 // @retail 0x121fc0
 void function_121fc0(void)
 {
@@ -27,10 +53,7 @@ void function_121fc0(void)
 		g_4e28f4[local_0] = -2;
 	if (!g_4e3b40)
 	{
-		s_font_cache_entry local_1;
-		memset(&local_1, 0, sizeof(local_1));
-		for (long local_2 = 0; local_2 < k_maximum_font_count; local_2++)
-			g_4e2920[local_2] = local_1;
+		memset(g_4e2920, 0, k_maximum_font_count * sizeof(s_font_cache_entry));
 		if (!function_121b00())
 		{
 			g_51ea00 = true;
@@ -53,35 +76,31 @@ void function_121fc0(void)
 		bool local_7;
 		dword local_8;
 		function_1a1480(local_3, local_5, sizeof(local_5) - 1, 7, 6, &local_7, &local_8, &local_6);
-		if (!local_6)
-			while (!local_6)
-				SwitchToThread();
+		function_120d50(&local_6, false);
 		if (local_7)
 		{
 			char *local_9[11] = {0};
 			long local_10 = 0;
 			long local_11 = 0;
-			if (local_8 > sizeof(local_5) - 1)
-				local_8 = sizeof(local_5) - 1;
+			local_8 = local_8 > sizeof(local_5) - 1 ? sizeof(local_5) - 1 : local_8;
 			local_5[local_8] = 0;
-			char *local_12 = local_5;
-			while (local_12)
+			char *local_12;
+			char *local_13 = function_xe9ecc4(local_5, "\t\n\r ", &local_12);
+			while (local_13)
 			{
-				local_12 += strspn(local_12, "\t\n\r ");
-				if (!*local_12)
-					break;
-				char *local_13 = local_12;
-				local_12 = strpbrk(local_13, "\t\n\r ");
-				if (local_12)
-					*local_12++ = 0;
 				if (local_10 < 11)
 				{
+					long local_14 = NONE;
 					local_9[local_10] = local_13;
-					long local_14;
-					for (local_14 = 0; local_14 < local_10; local_14++)
-						if (!strcmp(local_13, local_9[local_14]))
+					for (long local_15 = 0; local_15 < local_10; local_15++)
+					{
+						if (!strcmp(local_13, local_9[local_15]))
+						{
+							local_14 = local_15;
 							break;
-					if (local_14 < local_10)
+						}
+					}
+					if (local_14 != NONE)
 						g_4e28f4[local_10] = g_4e28f4[local_14];
 					else
 					{
@@ -91,6 +110,7 @@ void function_121fc0(void)
 					}
 					local_10++;
 				}
+				local_13 = function_xe9ecc4(local_12, "\t\n\r ", &local_12);
 			}
 		}
 		g_4e3b40 = true;

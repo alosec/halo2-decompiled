@@ -48,8 +48,7 @@ void __stdcall function_10a250(long scenery_index)
 {
 	s_native_scenery *scenery =
 		((s_native_scenery_header *)g_4e0300->data)[scenery_index & 0xffff].scenery;
-	s_184251 state;
-	state.field_0 = false;
+	s_184251 state(false);
 	function_2e90a0(state);
 	if (!(scenery->flags & 2))
 	{

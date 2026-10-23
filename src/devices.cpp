@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "orientations_storage.h"
 /* DEVICES.CPP: devices (object types 7..9: machines, controls and light
    fixtures) and the device groups that drive their position and power.
    device_groups_initialize and device_groups_dispose (0x106460, 0x106490)
@@ -448,14 +449,13 @@ bool function_107870(long device_index)
 	{
 		s_device_group *power_group = DEVICE_GROUP_GET(device->power_group_index);
 		s_device_group *position_group = DEVICE_GROUP_GET(device->position_group_index);
-		word flags = power_group->flags;
 		bool active = true;
 
-		if ((flags & 1) && !(flags & 2))
+		if ((power_group->flags & 1) && (power_group->flags & 2))
 			active = false;
 		if (device->flags & 2)
 			active = false;
-		result = position_group->value == 1.0f && active;
+		result = position_group->value != 1.0f ? false : active;
 	}
 	return result;
 }
@@ -526,8 +526,8 @@ PRIVATE inline bool device_channel_valid(c_animation_channel const *channel)
 	return channel->graph_tag_index != NONE && channel->animation_id.index != NONE;
 }
 
-/* samples a device's two channels; the render model goes unused */
-PRIVATE __forceinline void device_channels_sample(void const *render_model, s_device *device, dword const *node_mask,
+/* samples a device's two channels */
+PRIVATE __forceinline void device_channels_sample(s_device *device, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms)
 {
 	if (device->animation_state_offset != NONE)
@@ -544,14 +544,17 @@ void __stdcall function_107000(long device_index, dword const *node_mask, long n
 	real_quaternion_transform *transforms)
 {
 	s_device *device = DEVICE_GET(device_index);
-	long model_tag_index = ((s_device_definition *)g_4e3b44[device->definition_index & 0xffff].bytes)->model_tag_index;
+	s_device_definition *definition = (s_device_definition *)g_4e3b44[device->definition_index & 0xffff].bytes;
 
-	if (model_tag_index != NONE)
+	if (definition->model_tag_index != NONE)
 	{
-		long render_model_tag_index = ((s_device_model_definition *)g_4e3b44[model_tag_index & 0xffff].bytes)->render_model_tag_index;
+		s_device_model_definition *model = (s_device_model_definition *)g_4e3b44[definition->model_tag_index & 0xffff].bytes;
 
-		if (render_model_tag_index != NONE)
-			device_channels_sample(g_4e3b44[render_model_tag_index & 0xffff].bytes, device, node_mask, node_count, transforms);
+		if (model->render_model_tag_index != NONE)
+		{
+			void const *volatile render_model = g_4e3b44[model->render_model_tag_index & 0xffff].bytes;
+			device_channels_sample(device, node_mask, node_count, transforms);
+		}
 	}
 }
 
@@ -594,7 +597,7 @@ void __stdcall function_1076e0(long device_index, s_device_placement const *plac
 	if (placement->power_group_index == NONE)
 	{
 		real value = (placement->flags & 1) ? 1.0f : 0.0f;
-		word flags = (word)(((placement->flags & 4) | 0x10) >> 2);
+		dword flags = ((placement->flags & 4) | 0x10) >> 2;
 		long group_index = record_pool_allocate(g_4e0328.groups);
 
 		if (group_index != NONE)
@@ -631,6 +634,9 @@ struct s_device_machine_view
 
 #define DEVICE_PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
+// score 42 (was 42): the group-flag test is two bytes longer than retail's: ours shifts the flags byte down by
+// one before the second test, retail tests bit 2 directly; retail also clears the result in
+// case 0x1200055f where ours does not.
 // @retail 0x106d70
 bool __stdcall device_export_function(long device_index, long name, real *value, bool *active)
 {
@@ -663,7 +669,8 @@ bool __stdcall device_export_function(long device_index, long name, real *value,
 			if (machine_flags & 0xd)
 				function_value = 1.0f;
 			group_flags = group->flags;
-			if ((group_flags & 1) && (group_flags & 2))
+			bool second = (group_flags & 2) != 0;
+			if ((group_flags & 1) && second)
 				function_value = 1.0f;
 			if (device->power == 1.0f || (machine_flags & 0x10))
 			{
@@ -676,8 +683,12 @@ bool __stdcall device_export_function(long device_index, long name, real *value,
 		function_value = device->power;
 		break;
 	case 0xf00055e:
-		if (device->position_velocity != 0.0f && definition->position_speed != 0.0f)
-			function_value = (real)fabs(device->position_velocity) / definition->position_speed;
+		if (device->position_velocity != 0.0f)
+		{
+			function_value = 0.0f;
+			if (definition->position_speed != 0.0f)
+				function_value = (real)fabs(device->position_velocity) / definition->position_speed;
+		}
 		break;
 	case 0x1200055f:
 		if (device->power_velocity != 0.0f)
@@ -877,8 +888,8 @@ void device_motion_start(s_device_motion *motion, real target, real duration, re
 		if (!(0.000001f > distance))
 		{
 			real cruise_time = remaining - ramp_down_time;
-			real half_ramp_up_time = ramp_up_time * 0.5f;
 			real half_ramp_down_time = ramp_down_time * 0.5f;
+			real half_ramp_up_time = ramp_up_time * 0.5f;
 			real denominator = cruise_time + half_ramp_down_time + half_ramp_up_time;
 			real velocity;
 
@@ -993,6 +1004,8 @@ PRIVATE inline real device_translation_distance_squared(point3f const *a, point3
 	return difference.k * difference.k + difference.j * difference.j + difference.i * difference.i;
 }
 
+// score 2 (was 2): the float argument is stored to the stack before edi is pushed; retail pushes edi first and
+// stores the float one slot higher.
 // @retail 0x107ed0
 bool __stdcall function_107ed0(long device_index, long name, real seconds)
 {
@@ -1018,8 +1031,6 @@ bool __stdcall function_107ed0(long device_index, long name, real seconds)
 						transform4x3f adjusted;
 						transform4x3f sampled;
 						transform4x3f start;
-						transform4x3f inverse;
-						transform4x3f relative;
 						function_1420f0(&original, &device->field_xcc658c, &device->forward, &device->up);
 						adjusted = original;
 						if (device->flags & 8)
@@ -1035,6 +1046,8 @@ bool __stdcall function_107ed0(long device_index, long name, real seconds)
 							}
 							else
 							{
+								transform4x3f inverse;
+								transform4x3f relative;
 								function_141590(&start, &inverse);
 								function_142a60(&sampled, &inverse, &relative);
 								function_142a60(&adjusted, &relative, &adjusted);
@@ -1078,17 +1091,19 @@ bool __stdcall function_107ed0(long device_index, long name, real seconds)
 								if (function_bf5d0(device_index))
 								{
 									s_device *object = DEVICE_GET(device_index);
-									real_quaternion_transform *a = (real_quaternion_transform *)((byte *)object + object->orientation_a_offset);
 									real_quaternion_transform *b = (real_quaternion_transform *)((byte *)object + object->orientation_b_offset);
+									real_quaternion_transform *a = (real_quaternion_transform *)((byte *)object + object->orientation_a_offset);
 									real_quaternion_transform orientation;
 									orientation_from_matrix4x3(&original, (rigid_transform_scaled *)&orientation);
-									function_11dbb0(a, &orientation, a);
 									function_11dbb0(b, &orientation, b);
-									function_1420f0(&relative, &device->field_xcc658c, &device->forward, &device->up);
-									function_141590(&relative, &inverse);
-									orientation_from_matrix4x3(&inverse, (rigid_transform_scaled *)&orientation);
 									function_11dbb0(a, &orientation, a);
+									transform4x3f current;
+									transform4x3f current_inverse;
+									function_1420f0(&current, &device->field_xcc658c, &device->forward, &device->up);
+									function_141590(&current, &current_inverse);
+									orientation_from_matrix4x3(&current_inverse, (rigid_transform_scaled *)&orientation);
 									function_11dbb0(b, &orientation, b);
+									function_11dbb0(a, &orientation, a);
 								}
 							}
 						}
@@ -1187,8 +1202,8 @@ bool function_107cc0(long device_index, s_device_motion *motion, c_animation_cha
 
 bool function_107cc0(long device_index, s_device_motion *motion, c_animation_channel *channel,
 	s_animation_state *state, real position, real *out_position);
-bool function_11eed0(real *velocity, real *position, real dt, bool wrap, real target,
-	real speed, real acceleration, real lower, real upper);
+bool function_11eed0(real *position, real *velocity, real target, real time_step, real speed,
+	real acceleration, bool wrap, real lower, real upper);
 void __stdcall function_bd020(long object_index);
 void machine_keyframe_rigid_bodies(long object_index, bool value);
 struct s_index_pair
@@ -1243,22 +1258,21 @@ bool __stdcall function_106790(long volatile device_index)
 		{
 			if (state && device->channels[0].graph_tag_index != NONE && device->channels[0].animation_id.index != NONE)
 				device->channels[0].set_frame_ratio(device->power);
-			byte const *definition = saved_definition;
-			real acceleration = *(real const *)(definition + 0xcc) * device->position +
-				*(real const *)(definition + 0xd4) * (1.0f - device->position);
-			real speed = *(real const *)(definition + 0xc8) * device->position +
-				*(real const *)(definition + 0xd0) * (1.0f - device->position);
+			real acceleration = *(real const *)(saved_definition + 0xcc) * device->position +
+				*(real const *)(saved_definition + 0xd4) * (1.0f - device->position);
+			real speed = *(real const *)(saved_definition + 0xc8) * device->position +
+				*(real const *)(saved_definition + 0xd0) * (1.0f - device->position);
 			bool increasing = device->power_velocity > 0.0f;
 			if (acceleration > 0.0f && speed > 0.0f)
 				device->flags |= 0x100;
 			else
 				device->flags &= ~0x100;
-			if (!((real)device->delay_ticks * g_510c54->rate >= *(real const *)(definition + 0x10c)) &&
+			if (!((real)device->delay_ticks * g_510c54->rate >= *(real const *)(saved_definition + 0x10c)) &&
 				device->power == 0.0f && !(device->power > group->value))
 			{
 				++device->delay_ticks;
 				if (device->delay_ticks == 1)
-					function_107980(device_index, *(long const *)(definition + 0x114));
+					function_107980(device_index, *(long const *)(saved_definition + 0x114));
 			}
 			else
 			{
@@ -1266,13 +1280,13 @@ bool __stdcall function_106790(long volatile device_index)
 				real previous = device->power;
 				if (fabs(local_c01284_2) > speed)
 					device->power_velocity = increasing ? speed : 0.0f - speed;
-				bool reached = function_11eed0(&device->power_velocity, &device->power,
-					g_510c54->rate, (*(byte const *)(definition + 0xbc) & 1) != 0,
-					group->value, speed, acceleration, 0.0f, 1.0f);
+				bool reached = function_11eed0(&device->power, &device->power_velocity,
+					group->value, g_510c54->rate, speed, acceleration,
+					(*(byte const *)(saved_definition + 0xbc) & 1) != 0, 0.0f, 1.0f);
 				if (reached)
-					function_107980(device_index, *(long const *)(definition + (increasing ? 0xf0 : 0xf8)));
+					function_107980(device_index, *(long const *)(saved_definition + (increasing ? 0xf0 : 0xf8)));
 				else if (device->power_velocity != 0.0f && device->power_velocity * local_c01284_2 <= 0.0f)
-					function_107980(device_index, *(long const *)(definition +
+					function_107980(device_index, *(long const *)(saved_definition +
 						(device->power_velocity > local_c01284_2 ? 0xe0 : 0xe8)));
 				if (previous != device->power || (device->flags & 0x80))
 				{
@@ -1306,10 +1320,9 @@ bool __stdcall function_106790(long volatile device_index)
 		{
 			if (state && function_0b6760((s_index_pair const *)&device->channels[1]))
 				device->channels[1].set_frame_ratio(device->position);
-			byte const *definition = saved_definition;
 			real previous = device->position;
-			function_11eed0(&device->position_velocity, &device->position, g_510c54->rate, false,
-				group->value, *(real const *)(definition + 0xc0), *(real const *)(definition + 0xc4), 0.0f, 1.0f);
+			function_11eed0(&device->position, &device->position_velocity, group->value, g_510c54->rate,
+				*(real const *)(saved_definition + 0xc0), *(real const *)(saved_definition + 0xc4), false, 0.0f, 1.0f);
 			if (previous != device->position)
 			{
 				function_107520(device_index);

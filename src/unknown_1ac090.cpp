@@ -120,14 +120,13 @@ void __stdcall function_1ada70(long actor_index, s_slot *slot);
 bool __stdcall function_1ac090(long actor_index, s_slot *slot)
 {
 	s_slot_2c *state = (s_slot_2c *)slot;
-	dword *seed = &g_4e7408->unknown0;
+	real scale = (slot_random() + 1.0f) * 2.0f;
 	long ticks;
 
-	*seed = 1664525 * *seed + 1013904223;
-	real seconds = ((real)(*seed >> 16) * (1.f / 65535.f) + 1.0f) * 2.0f * g_510c54->field_2_3;
+	*(real *)&slot = scale * g_510c54->field_2_3;
 	__asm
 	{
-		fld seconds
+		fld slot
 		fistp ticks
 	}
 	state->ticks = (short)ticks;
@@ -162,8 +161,8 @@ PRIVATE __forceinline void local_1(real seconds, short *timer)
 // @retail 0x1ac100
 short __stdcall function_1ac100(long actor_index, s_slot *slot, s_slot *next)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	short result = g_46fbe8;
+	s_actor_view *actor = actor_get(actor_index);
 	s_slot_2c *state = (s_slot_2c *)slot;
 	long unit_index = actor->unknown018;
 	short mode = UNIT_MODE(unit_index);
@@ -175,10 +174,20 @@ short __stdcall function_1ac100(long actor_index, s_slot *slot, s_slot *next)
 		*seed = 1664525 * *seed + 1013904223;
 		short delay = (short)(2 + (3 * (*seed >> 16) >> 16));
 		real seconds = (real)delay * g_510c54->field_2_3;
-		local_0(seconds, &state->ticks);
+		__asm
+		{
+			fld seconds
+			fistp slot
+		}
+		state->ticks += (short)(long)slot;
 		state->unknown12 = false;
 		seconds = g_510c54->field_2_3 * 0.5f;
-		local_1(seconds, &state->unknown22);
+		__asm
+		{
+			fld seconds
+			fistp slot
+		}
+		state->unknown22 = (short)(long)slot;
 		if (actor->prop_index != NONE)
 			function_265bb0(actor_index);
 		if (function_e68c0(0x24, actor->unknown018))
@@ -223,11 +232,10 @@ void __stdcall function_1ac270(long actor_index, s_slot *slot)
 bool __stdcall function_1ac300(long actor_index, s_slot *slot)
 {
 	bool result = false;
-	s_actor_view *local_0 = actor_get(actor_index);
-	long unit_index = *(volatile long *)&local_0->unknown018;
-	long mode = UNIT_MODE(unit_index);
+	s_actor_view *actor = actor_get(actor_index);
+	long unit_index = actor->unknown018;
 
-	switch (mode)
+	switch (UNIT_MODE(actor->unknown018))
 	{
 	case 6: result = function_e68c0(0x25, unit_index); break;
 	case 7: result = true; break;
@@ -277,10 +285,8 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 
 	if (!state->unknown0c)
 	{
-		real delay = random_range(character->lower, character->upper);
-		real scale = random_range(1.0f, 3.0f);
-		real seconds;
-		long ticks;
+		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->lower, character->upper);
+		real scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 1.0f, 3.0f);
 
 		state->unknown0d = true;
 		state->unknown12 = false;
@@ -290,13 +296,17 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 		state->unknown0c = true;
 		state->unknown22 = 0;
 		state->unknown3b = false;
-		seconds = g_510c54->field_2_3 * scale;
-		__asm
 		{
-			fld seconds
-			fistp ticks
+			real rate = g_510c54->field_2_3;
+			real seconds = rate * scale;
+			long ticks;
+			__asm
+			{
+				fld seconds
+				fistp ticks
+			}
+			state->unknown20 = (short)ticks;
 		}
-		state->unknown20 = (short)ticks;
 		state->unknown13 = false;
 		function_1f86a0(actor_index);
 		if (g_45dbd8 > delay)
@@ -305,7 +315,8 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 		}
 		else
 		{
-			seconds = g_510c54->field_2_3 * delay;
+			real seconds = g_510c54->field_2_3 * delay;
+			long ticks;
 			__asm
 			{
 				fld seconds
@@ -339,7 +350,7 @@ short __stdcall function_1ac570(long actor_index, s_slot *slot, s_slot *next)
 		}
 		else
 		{
-			*(volatile bool *)&state->unknown39 = false;
+			state->unknown39 = false;
 			result = g_46fbe4;
 		}
 	}
@@ -351,7 +362,7 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_character_2b *character = (s_character_2b *)function_1e4d10(actor_index);
-	s_slot_2c *state = (s_slot_2c *)slot;
+	s_slot_2c *state = *(s_slot_2c *volatile *)&slot;
 
 	if (actor->prop_index == NONE)
 	{
@@ -392,7 +403,7 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 		}
 		else if (state->unknown20 > 0 && --state->unknown20 == 0)
 		{
-			function_1fb7e0(actor_index, 0x47, NULL, prop->object_index, NONE);
+			function_1fb7e0(0x47, actor_index, NULL, prop->object_index, NONE);
 		}
 	}
 }
@@ -414,8 +425,16 @@ void __stdcall function_1ad130(long actor_index, s_slot *slot)
 					s_unit_request request;
 					request.type = 0x24;
 					function_210850(&state->point, &request.type25.point);
-					request.type25.facing = state->facing;
+					union s_1ad133 { dword field_0[3]; vector3f field_00; };
+					s_1ad133 local_4;
+					local_4.field_00 = state->facing;
+					dword local_1 = local_4.field_0[0];
+					dword local_2 = local_4.field_0[1];
+					dword local_3 = local_4.field_0[2];
+					*(dword *)&request.type25.facing.i = local_1;
 					request.type25.unknown1c = state->unknown38;
+					*(dword *)&request.type25.facing.j = local_2;
+					*(dword *)&request.type25.facing.k = local_3;
 					if (function_e6900(actor->unknown018, &request))
 					{
 						real seconds = g_510c54->field_2_3 * 0.5f;
@@ -508,13 +527,11 @@ bool function_1acd30(long actor_index, s_prop_datum_54 *prop)
 // @retail 0x1ad400
 void __stdcall function_1ad400(long actor_index, s_slot *slot)
 {
-	s_game_time_globals *local_1 = g_510c54;
-	long local_2 = *(volatile long *)&local_1->game_time;
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_2c *state = (s_slot_2c *)slot;
-	long unit_index = actor->unknown018;
 
-	ACTOR_VIEW_3C(actor)->unknown20c = local_2;
+	ACTOR_VIEW_3C(actor)->unknown20c = g_510c54->game_time;
+	long unit_index = actor->unknown018;
 	short mode = UNIT_MODE(unit_index);
 	if (!state->unknown39)
 	{
@@ -547,7 +564,7 @@ bool function_1ad4c0(long actor_index, long prop_index)
 	{
 		s_prop_datum_54 *prop = (s_prop_datum_54 *)prop_node_get(prop_index);
 		real range = element->unknown98 > g_45dbd8 ? element->unknown98 : 20.0f;
-		return prop->unknown28 > range;
+		result = prop->unknown28 > range;
 	}
 	return result;
 }
@@ -681,34 +698,41 @@ bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 	if (local_0->unknown040)
 	{
 		if (local_2->unknown0c && function_1f8660(arg_0))
-			return local_1;
+			goto done;
 		s_tag_element_54 *local_3 = (s_tag_element_54 *)function_1e5450(arg_0,
 			ai_object_get(local_0->unknown26c)->definition_index);
 		if (!local_3)
-			return false;
+		{
+			local_1 = false;
+			goto done;
+		}
 		byte *local_4 = ai_scratch_buffer_get();
-		s_2605d0_request local_5;
-		memset(&local_5, 0, sizeof(local_5));
-		*(real *)((byte *)&local_5 + 0x60) = 15.0f;
-		local_5.type = 7;
-		local_5.unknown015 = true;
-		local_5.unknown05b = true;
-		real local_6 = local_3->unknown98 > 0.0f ? local_3->unknown98 : 20.0f;
-		local_5.unknown008 = local_6 * 0.5f;
-		local_5.unknown00c = local_6;
-		local_5.unknown010 = local_6 + 10.0f;
-		s_261d20_entry *local_7;
+		s_261d20_entry local_7;
 		long local_8;
 		bool local_9;
-		s_reference local_10 = function_2605d0(arg_0, &local_5, (long)&local_7,
-			(long)&local_8, local_4, &local_9);
-		local_10 = function_2626b0(arg_0, local_10, local_8, local_4, local_9, true);
+		s_reference local_10;
+		{
+			s_2605d0_request local_5;
+			memset(&local_5, 0, sizeof(local_5));
+			*(real *)((byte *)&local_5 + 0x60) = 15.0f;
+			local_5.type = 7;
+			local_5.unknown015 = true;
+			local_5.unknown05b = true;
+			real local_6 = local_3->unknown98 > 0.0f ? local_3->unknown98 : 20.0f;
+			local_5.unknown008 = local_6 * 0.5f;
+			local_5.unknown00c = local_6;
+			local_5.unknown010 = local_6 + 10.0f;
+			local_10 = function_2605d0(arg_0, &local_5, (long)&local_7,
+				(long)&local_8, local_4, &local_9);
+			local_10 = function_2626b0(arg_0, local_10, local_8, local_4, local_9, true);
+		}
 		s_reference local_11 = g_470fa0;
 		if (*(long *)&local_10 == *(long *)&local_11)
 		{
 			actor_get(arg_0)->unknown040 = false;
 			ai_scratch_buffer_release(local_4);
-			return false;
+			local_1 = false;
+			goto done;
 		}
 		if (!local_2->unknown0c && local_0->unknown270 == 4 && local_0->prop_index != NONE)
 		{
@@ -730,9 +754,9 @@ bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 				local_18 += local_15.i * local_17.i;
 				if (local_18 > 0.9f)
 				{
-					local_17.i = local_7->point.x - local_0->position.x;
-					local_17.j = local_7->point.y - local_0->position.y;
-					local_17.k = local_7->point.z - local_0->position.z;
+					local_17.i = local_7.point.x - local_0->position.x;
+					local_17.j = local_7.point.y - local_0->position.y;
+					local_17.k = local_7.point.z - local_0->position.z;
 					real local_19 = function_30bf0(&local_17);
 					local_18 = local_15.k * local_17.k;
 					local_18 += local_15.j * local_17.j;
@@ -754,6 +778,7 @@ bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 		local_2->unknown0c = true;
 		ai_scratch_buffer_release(local_4);
 	}
+done:
 	return local_1;
 }
 
@@ -813,7 +838,7 @@ bool __stdcall function_1ac610(long arg_0, point3f const *arg_1,
 		short local_6 = function_bb050(1, 0x8c3, local_3, &local_4, 4.0f, local_5, 20);
 		long local_7 = NONE;
 		real local_8 = 3.402823466e38f;
-		for (long local_9 = 0; local_9 < local_6; ++local_9)
+		for (short local_9 = 0; local_9 < local_6; ++local_9)
 		{
 			long local_10 = local_5[local_9];
 			if (local_10 != local_0->unknown018)
@@ -901,9 +926,9 @@ bool __stdcall function_1ac610(long arg_0, point3f const *arg_1,
 
 struct s_1f4a20_entry;
 struct s_1f4a20_source;
-bool function_1f4a20(long arg_0, s_reference arg_1, s_1f4a20_entry const *arg_2,
+bool function_1f4a20(s_1f4a20_entry const *arg_2, long arg_0, s_reference arg_1, s_1f4a20_source const *arg_8,
 	bool arg_3, s_type_c3b527 *arg_4, vector3f *arg_5,
-	signed char *arg_6, bool *arg_7, s_1f4a20_source const *arg_8);
+	signed char *arg_6, bool *arg_7);
 
 struct s_1ac9e1
 {
@@ -933,17 +958,18 @@ bool function_1ac9e0(long arg_0, s_reference arg_1, s_1f4a20_entry const *arg_2,
 		*(long *)((byte *)local_2 + 0x14) != NONE &&
 		*(long *)((byte *)local_2 + 0x14) != 0xffff)
 	{
-		if (function_1f4a20(arg_0, arg_1, arg_2, false, &arg_7->field_1c,
-			&arg_7->field_8, &arg_7->field_2c, &local_0, arg_6))
+		bool local_8 = function_1f4a20(arg_2, arg_0, arg_1, arg_6, false, &arg_7->field_1c,
+			&arg_7->field_8, &arg_7->field_2c, &local_0);
+		if (local_8)
 		{
 			arg_7->field_19 = true;
 			arg_7->field_2e = false;
 			arg_7->field_7 = true;
 			arg_7->field_1 = false;
-			return true;
+			return local_8;
 		}
 		if (local_0)
-			return false;
+			return local_8;
 	}
 	s_reference local_3 = function_2626b0(arg_0, arg_1, arg_3, arg_4, arg_5, true);
 	arg_7->field_1 = false;
@@ -998,8 +1024,7 @@ bool __stdcall function_1acb50(long arg_0, s_slot *arg_1)
 	{
 		if (local_4 == 6)
 			function_e68c0(0x27, local_3);
-		s_reference local_5 = g_470fa0;
-		if (*(long *)&local_0->unknown418 != *(long *)&local_5)
+		if (!REFERENCE_EQUAL(local_0->unknown418, g_470fa0))
 			function_262800(arg_0, local_0->unknown418, false);
 	}
 	s_object_marker local_6[32];
@@ -1011,10 +1036,10 @@ bool __stdcall function_1acb50(long arg_0, s_slot *arg_1)
 	*(volatile bool *)((byte *)&local_8 + 0x46) = true;
 	*(volatile bool *)&local_8.unknown015 = true;
 	*(volatile bool *)((byte *)&local_8 + 0x59) = true;
-	*(volatile real *)((byte *)&local_8 + 0x48) = 10.0f;
+	s_object_marker *local_9 = local_2 ? local_6 : NULL;
+	*(real *)((byte *)&local_8 + 0x48) = 10.0f;
 	*(volatile short *)&local_8.type = 2;
 	*(volatile real *)((byte *)&local_8 + 0x4c) = 3.0f;
-	s_object_marker *local_9 = local_2 ? local_6 : NULL;
 	*(s_object_marker *volatile *)((byte *)&local_8 + 0x64) = local_9;
 	byte *local_10 = ai_scratch_buffer_get();
 
@@ -1027,11 +1052,10 @@ bool __stdcall function_1acb50(long arg_0, s_slot *arg_1)
 	{
 		local_16 = false;
 		actor_get(arg_0)->unknown040 = local_16;
-		ai_scratch_buffer_release(local_10);
-		return local_16;
 	}
-	local_16 = function_1ac9e0(arg_0, local_14, (s_1f4a20_entry const *)&local_7.field_00,
-		local_10, local_13, local_12, (s_1f4a20_source const *)local_9, (s_1ac9e1 *)arg_1);
+	else
+		local_16 = function_1ac9e0(arg_0, local_14, (s_1f4a20_entry const *)&local_7.field_00,
+			local_10, local_13, local_12, (s_1f4a20_source const *)local_9, (s_1ac9e1 *)arg_1);
 	ai_scratch_buffer_release(local_10);
 	return local_16;
 }
@@ -1041,14 +1065,38 @@ bool function_2613d0(long arg_0, s_reference arg_1, s_prop_search *arg_2);
 bool __stdcall function_1acb50(long arg_0, s_slot *arg_1);
 
 #pragma inline_depth(0)
+/* the slot state of 0x1acda0 seen past its header (the same layout as s_slot_2c from +0xc) */
+struct s_1acda0
+{
+    bool unknown0c;
+    bool unknown0d;
+    short ticks;
+    bool unknown10;
+    byte unknown11;
+    bool unknown12;
+    bool unknown13;
+    vector3f facing;
+    short unknown20;
+    short unknown22;
+    bool unknown24;
+    bool unknown25;
+    byte unknown26[2];
+    s_type_c3b527 point;
+    char unknown38;
+    bool unknown39;
+    bool unknown3a;
+    bool unknown3b;
+    byte unknown3c[0x40 - 0x3c];
+};
+
 // @retail 0x1acda0
 bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
 {
     s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
-    s_slot_2c *local_1 = (s_slot_2c *)arg_1;
     volatile bool local_2 = true;
     if (local_0->unknown007)
         return false;
+    s_1acda0 *local_1 = (s_1acda0 *)((byte *)arg_1 + sizeof(s_slot_header));
     if (local_1->unknown12)
     {
         local_2 = false;
@@ -1074,7 +1122,7 @@ bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
                 (!local_1->unknown25 || local_1->unknown3a && !function_110ab0(local_0->unknown018)))
             {
                 if (local_3)
-                    function_1fb7e0(arg_0, 0x8a, NULL, local_3->object_index, NONE);
+                    function_1fb7e0(0x8a, arg_0, NULL, local_3->object_index, NONE);
                 if (!local_1->unknown3b)
                 {
                     function_e68c0(0, local_0->unknown018);
@@ -1090,7 +1138,7 @@ bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
     {
         if (local_1->unknown0d)
         {
-            local_2 = function_1acb50(arg_0, (s_slot *)((byte *)arg_1 + 0xc));
+            local_2 = function_1acb50(arg_0, (s_slot *)local_1);
             return local_2;
         }
         if (function_1f8660(arg_0) && !REFERENCE_EQUAL(local_0->unknown418, g_470fa0))

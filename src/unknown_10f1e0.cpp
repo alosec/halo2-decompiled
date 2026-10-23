@@ -127,6 +127,8 @@ bool g_4686a4 = true;
 
 bool function_0c7070(long object_index);
 
+// score 6 (was 6): the parameter is masked in ECX where retail masks it in EAX; the argument is
+// passed in the other register.
 // @retail 0x111010
 bool function_111010(long unit_index)
 {
@@ -204,12 +206,11 @@ int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, t
 // @retail 0x112dc0
 void __stdcall function_112dc0(long unit_index, transform4x3f *matrix)
 {
-	s_unit_animation_object_header *headers = (s_unit_animation_object_header *)g_4e0300->data;
-	s_unit_animation_object *unit = headers[unit_index & 0xffff].object;
-	long parent_index = UNIT_ANIMATION_CONTROL(unit)->unknown28;
-	if (parent_index != NONE && function_badc0(parent_index, (dword)NONE))
+	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
+	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
+	if (control->unknown28 != NONE && function_badc0(control->unknown28, (dword)NONE))
 	{
-		s_unit_animation_object *parent = headers[parent_index & 0xffff].object;
+		s_unit_animation_object *parent = UNIT_ANIMATION_OBJECT(control->unknown28);
 		transform4x3f *nodes = (transform4x3f *)((byte *)parent + parent->node_matrices_offset);
 		function_142a60(nodes, matrix, matrix);
 	}
@@ -242,7 +243,7 @@ PRIVATE __forceinline real function_112e21(real arg_0)
 }
 
 // @retail 0x112e20
-void function_112e20(transform4x3f *matrix, transform4x3f const *orientation, point3f const *target)
+void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
 	static real yaw_limit = angle_radians_112e20(30.0f);
 	static real pitch_limit = angle_radians_112e20(15.0f);
@@ -261,9 +262,10 @@ void function_112e20(transform4x3f *matrix, transform4x3f const *orientation, po
 			relative.j *= inverse;
 			relative.k *= inverse;
 		}
-		direction.i = dot3f(&frame.forward, &relative);
-		direction.j = dot3f(&frame.left, &relative);
-		direction.k = dot3f(&frame.up, &relative);
+		// summed k, j, i as retail does
+		direction.i = frame.forward.k * relative.k + frame.forward.j * relative.j + frame.forward.i * relative.i;
+		direction.j = frame.left.k * relative.k + frame.left.j * relative.j + frame.left.i * relative.i;
+		direction.k = frame.up.k * relative.k + frame.up.j * relative.j + frame.up.i * relative.i;
 	}
 	else
 		direction.i = direction.j = direction.k = 0.0f;
@@ -277,7 +279,8 @@ void function_112e20(transform4x3f *matrix, transform4x3f const *orientation, po
 		direction.k *= inverse;
 	}
 	real yaw = (real)atan2(direction.j, direction.i);
-	real pitch = (real)atan2(direction.k, sqrt(direction.i * direction.i + direction.j * direction.j));
+	// retail keeps the planar length on the x87 stack: fsqrt and fpatan see it unrounded
+	real pitch = (real)atan2((double)direction.k, sqrt((double)direction.j * direction.j + (double)direction.i * direction.i));
 	if (0.0f - yaw_limit > yaw)
 		yaw = 0.0f - yaw_limit;
 	else if (yaw > yaw_limit)
@@ -346,11 +349,10 @@ const long g_468684[4][2] =
 };
 
 void function_10f040(long object_index);
-void function_10e920(long object_index);
-void function_10dbc0(long object_index);
+void unit_animation_channel_blend_reset(long object_index);
+void unit_animation_periodic_layer_reset(long object_index);
 long render_model_find_named_entry(long render_model_index, long name);
 void function_11b710(long unit_index, long field_7c);
-c_type_709360 function_1dd0b0(s_graph_tag *graph, long name);
 s_animation *function_1daea0(s_graph_tag *graph, c_type_709360 animation_id);
 
 // @retail 0x111590
@@ -382,9 +384,11 @@ struct s_1d9240;
 void function_1d9240(s_1d9240 *slot, char flag, real seconds);
 bool function_1d9320(s_1d9240 *slot);
 
-void function_1d90e0(long render_model_index, transform4x3f *nodes, long node_index, transform4x3f const *marker_matrix,
+void function_1d90e0(long render_model_index, long node_index, transform4x3f *nodes, transform4x3f const *marker_matrix,
 	transform4x3f const *target_matrix, real weight, long node_count);
 
+// score 46 (was 46): the global is loaded into EBX and the stack slot into ESI; retail loads them
+// in the opposite order.
 // @retail 0x113980
 void __stdcall function_113980(long object_index, long target_index, bool alternate, real weight,
 	s_animation_state *state, s_graph_pair_iterator *iterator, long node_count, transform4x3f *nodes)
@@ -395,7 +399,8 @@ void __stdcall function_113980(long object_index, long target_index, bool altern
 	if (object_index != NONE && target_index != NONE && weight > 0.0f)
 	{
 		s_graph_tag *graph = GRAPH_GET(state->graph_tag_index);
-		if (graph && (short)graph->node_count != 0)
+		long const &initial_node_count = graph ? (long)(short)graph->node_count : 0;
+		if (graph && initial_node_count != 0)
 		{
 			s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(object_index);
 			s_unit_animation_definition *definition = (s_unit_animation_definition *)TAG_BYTES(unit->definition_index);
@@ -429,7 +434,7 @@ void __stdcall function_113980(long object_index, long target_index, bool altern
 						!(visited[marker.node_index >> 5] & (1 << (marker.node_index & 31))) &&
 						function_b8d30(target_index, iterator->b, &target, 1, false))
 					{
-						function_1d90e0(*(long *)(model + 4), nodes, marker.node_index, &marker.node_matrix,
+						function_1d90e0(*(long *)(model + 4), marker.node_index, nodes, &marker.node_matrix,
 							&target.matrix, weight, node_count);
 						visited[marker.node_index >> 5] |= 1 << (marker.node_index & 31);
 					}
@@ -438,7 +443,7 @@ void __stdcall function_113980(long object_index, long target_index, bool altern
 		}
 	}
 }
-bool function_10ee20(s_animation_state *state);
+bool unit_animation_state_finished(s_animation_state *state);
 bool function_10f630(long object_index, long *first, long *second);
 long function_10f720(long object_index, bool first);
 
@@ -448,7 +453,7 @@ bool function_113e40(long unit_index)
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_animation_state *state = UNIT_ANIMATION_STATE(unit);
 	return state && state->graph_tag_index != NONE && state->channels[0].graph_tag_index != NONE &&
-		state->channels[0].animation_id.index != NONE && !(state->flags & 1) && !function_10ee20(state);
+		state->channels[0].animation_id.index != NONE && !(state->flags & 1) && !unit_animation_state_finished(state);
 }
 
 // @retail 0x114040
@@ -458,12 +463,18 @@ bool function_114040(long unit_index, long name)
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
 	bool result = false;
 	if (control->channel_9c.unknown08 == name)
-		return true;
-	if (control->channel_bc.unknown08 == name)
-		return true;
-	long second, first;
-	if (function_10f630(unit_index, &first, &second))
-		result = second == name;
+		result = true;
+	else if (control->channel_bc.unknown08 == name)
+		result = true;
+	else
+	{
+		long second, first;
+		if (function_10f630(unit_index, &first, &second))
+		{
+			if (second == name)
+				result = true;
+		}
+	}
 	return result;
 }
 
@@ -527,11 +538,11 @@ void function_113d60(long unit_index, real seconds)
 	}
 }
 
-PRIVATE __forceinline long animation_slot_finished(s_unit_animation_control const *control)
+/* whether the slot is counting, up (bit 0 of its flags) or down; bit 1 is set
+   once it has finished */
+PRIVATE __forceinline bool animation_slot_running(s_unit_animation_slot const *slot, bool up)
 {
-	if (control->slots[2].unknown1 && !(control->slots[2].unknown3 & 1) && (control->slots[2].unknown3 & 2))
-		return 1;
-	return 0;
+	return slot->unknown1 && (slot->unknown3 & 1) == up;
 }
 
 // @retail 0x113da0
@@ -539,9 +550,10 @@ long function_113da0(long unit_index)
 {
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
-	if (!control->slots[2].unknown1)
+	if (!control->slots[2].unknown1 ||
+		(animation_slot_running(&control->slots[2], false) && (control->slots[2].unknown3 & 2)))
 		return 1;
-	return animation_slot_finished(control);
+	return 0;
 }
 
 // @retail 0x113df0
@@ -549,7 +561,7 @@ long function_113df0(long unit_index)
 {
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
-	if (control->slots[2].unknown1 && (control->slots[2].unknown3 & 1) && (control->slots[2].unknown3 & 2))
+	if (animation_slot_running(&control->slots[2], true) && (control->slots[2].unknown3 & 2))
 		return 1;
 	return 0;
 }
@@ -595,18 +607,32 @@ static inline void slot_reset(s_unit_animation_slot *slot, byte value)
 	slot->unknown3 = 0;
 }
 
+PRIVATE __forceinline void function_113871(s_unit_animation_slot *arg_0)
+{
+	arg_0->unknown1 = 0;
+	arg_0->unknown0 = 0;
+	arg_0->unknown3 = 0;
+}
+
 // @retail 0x113870
 void function_113870(long unit_index)
 {
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
-
-	slot_reset(&control->slots[0], 1);
-	slot_reset(&control->slots[1], 1);
-	slot_reset(&control->slots[2], 2);
-	slot_reset(&control->slots[3], 1);
-	slot_reset(&control->slots[4], 1);
+	function_113871(&control->slots[0]);
+	function_113871(&control->slots[1]);
+	function_113871(&control->slots[2]);
+	function_113871(&control->slots[3]);
+	function_113871(&control->slots[4]);
+	control->slots[0].unknown2 = 1;
+	control->slots[1].unknown2 = 1;
+	control->slots[2].unknown2 = 2;
+	control->slots[3].unknown2 = 1;
+	control->slots[4].unknown2 = 1;
 }
+
+
+#include "channel_start_out_of_line.h"
 
 // @retail 0x114330
 void function_114330(long unit_index)
@@ -614,16 +640,15 @@ void function_114330(long unit_index)
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_animation_state *state = UNIT_ANIMATION_STATE(unit);
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
-	long weapon_class = state->unknown74;
-	long weapon_type = state->unknown78;
+	long weapon[2] = { state->unknown74, state->unknown78 };
 
 	if (state->graph_tag_index != NONE)
 	{
-		c_type_709360 animation_id = GRAPH_GET(state->graph_tag_index)->overlay_get(state->unknown70, weapon_class,
-			weapon_type, 0x10000551, NULL, NULL, NULL);
+		c_type_709360 animation_id = GRAPH_GET(state->graph_tag_index)->overlay_get(state->unknown70, weapon[0],
+			weapon[1], 0x10000551, NULL, NULL, NULL);
 
 		if (animation_id.index != NONE &&
-			state->channel_start(&control->channel_dc, animation_id, 0x10000551, NONE, NONE, 1, 0x803f))
+			channel_start_out_of_line(state, &control->channel_dc, animation_id, 0x10000551, NONE, NONE, 1, 0x803f))
 		{
 			control->flag7 = false;
 		}
@@ -639,19 +664,14 @@ void function_113410(long unit_index)
 
 	if (state)
 	{
+		long first_set = NONE;
+		long second_set = NONE;
 		long weapon_class = state->unknown74;
 		long weapon_type = state->unknown78;
 		long other_weapon_type = control->weapon_type;
-		long first_set = NONE;
-		long second_set = NONE;
 
 		switch (state->unknown7c)
 		{
-		case 0x400004a:
-		case 0x5000049:
-		case 0xc000058:
-			if (unit->parent_index != NONE)
-				break;
 		case 0x400000c:
 		case 0x700005c:
 		case 0x700005d:
@@ -663,9 +683,18 @@ void function_113410(long unit_index)
 		case 0xa00000f:
 		case 0xb000059:
 		case 0xb00005a:
+		case 0xc000058:
 		case 0xc00005b:
 			first_set = 0xc000026;
 			second_set = 0xe000028;
+			break;
+		case 0x400004a:
+		case 0x5000049:
+			if (unit->parent_index == NONE)
+			{
+				first_set = 0xc000026;
+				second_set = 0xe000028;
+			}
 			break;
 		case 0x9000015:
 		case 0x9000016:
@@ -686,24 +715,26 @@ void function_113410(long unit_index)
 			break;
 		}
 
-		control->animation_fc = animation_state_overlay_or_animation_get(state, weapon_class, first_set, weapon_type);
-		control->animation_100 = animation_state_overlay_or_animation_get(state, weapon_class, second_set, weapon_type);
-		control->animation_114 = animation_state_overlay_or_animation_get(state, weapon_class, 0x400004b, weapon_type);
+		control->animation_fc = state->overlay_or_animation_get(weapon_class, first_set, weapon_type);
+		control->animation_100 = state->overlay_or_animation_get(weapon_class, second_set, weapon_type);
+		control->animation_114 = state->overlay_or_animation_get(weapon_class, 0x400004b, weapon_type);
 		if (weapon_class == 0x400054b)
 		{
-			control->animation_104 = animation_state_overlay_or_animation_get(state, weapon_class, 0xb00054a, weapon_type);
-			control->animation_108 = animation_state_overlay_or_animation_get(state, weapon_class, 0xb00054a,
+			control->animation_104 = state->overlay_or_animation_get(weapon_class, 0xb00054a, weapon_type);
+			control->animation_108 = state->overlay_or_animation_get(weapon_class, 0xb00054a,
 				other_weapon_type);
-			control->animation_10c = animation_state_overlay_or_animation_get(state, weapon_class, 0x400060b, weapon_type);
-			control->animation_110 = animation_state_overlay_or_animation_get(state, weapon_class, 0x400060b,
+			control->animation_10c = state->overlay_or_animation_get(weapon_class, 0x400060b, weapon_type);
+			control->animation_110 = state->overlay_or_animation_get(weapon_class, 0x400060b,
 				other_weapon_type);
 		}
 		else
 		{
-			control->animation_104 = c_type_709360();
-			control->animation_108 = c_type_709360();
-			control->animation_10c = animation_state_overlay_or_animation_get(state, weapon_class, 0x400060b, weapon_type);
-			control->animation_110 = animation_state_overlay_or_animation_get(state, weapon_class, 0x400060b, weapon_type);
+			control->animation_104.graph_index = NONE;
+			control->animation_104.index = NONE;
+			control->animation_108.graph_index = NONE;
+			control->animation_108.index = NONE;
+			control->animation_10c = state->overlay_or_animation_get(weapon_class, 0x400060b, weapon_type);
+			control->animation_110 = state->overlay_or_animation_get(weapon_class, 0x400060b, weapon_type);
 		}
 		function_114330(unit_index);
 
@@ -734,7 +765,7 @@ void function_113740(long unit_index)
 }
 
 // @retail 0x1137b0
-real function_1137b0(long set, bool other, real minimum, bool changed, long current_set)
+real function_1137b0(bool other, real minimum, bool changed, long set, long current_set)
 {
 	real result = 0.267f;
 
@@ -778,8 +809,8 @@ void __stdcall function_10f260(long unit_index)
 		state->unknown74 = NONE;
 		state->unknown78 = NONE;
 	}
-	function_10e920(unit_index);
-	function_10dbc0(unit_index);
+	unit_animation_channel_blend_reset(unit_index);
+	unit_animation_periodic_layer_reset(unit_index);
 	function_113870(unit_index);
 	control->weapon_class = NONE;
 	control->weapon_type = NONE;
@@ -842,7 +873,7 @@ bool __stdcall function_10f430(long unit_index, long mode, long weapon_class, lo
 		}
 		if (mode_changed || set_changed)
 		{
-			real seconds = function_1137b0(set, false, blend, mode_changed, current_set);
+			real seconds = function_1137b0(false, blend, mode_changed, set, current_set);
 
 			if (seconds > 0.0f && !(bool)(((dword)(short)state->flags >> 4) & 1))
 				function_ba350(unit_index, seconds);
@@ -860,24 +891,30 @@ bool function_1140b0(long unit_index, long name)
 	bool result = false;
 	if (control->channel_9c.unknown08 == name)
 	{
-		channel_reset_114240(&control->channel_9c);
+		control->channel_9c.clear();
 		function_ba350(unit_index, 0.267f);
-		return true;
+		result = true;
 	}
-	if (control->channel_bc.unknown08 == name)
+	else if (control->channel_bc.unknown08 == name)
 	{
-		channel_reset_114240(&control->channel_bc);
+		control->channel_bc.clear();
 		function_ba350(unit_index, 0.267f);
-		return true;
+		result = true;
 	}
-	long first, second;
-	if (function_10f630(unit_index, &first, &second) && second == name)
+	else
 	{
-		function_10f430(unit_index, 0x7000101, 0x7000101, 0x7000101, 0x7000001, 0.0f, false, 0);
-		return true;
+		long first, second;
+		if (function_10f630(unit_index, &first, &second) && second == name)
+		{
+			function_10f430(unit_index, 0x7000101, 0x7000101, 0x7000101, 0x7000001, 0.0f, false, 0);
+			result = true;
+		}
 	}
 	return result;
 }
+
+/* kept out of line: retail calls it from every caller */
+__declspec(noinline) bool __stdcall function_113e90(long unit_index, long name, real blend, c_animation_channel **output, long mode);
 
 // @retail 0x113e90
 bool __stdcall function_113e90(long unit_index, long name, real blend, c_animation_channel **output, long mode)
@@ -886,19 +923,24 @@ bool __stdcall function_113e90(long unit_index, long name, real blend, c_animati
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
 	s_animation_state *state = UNIT_ANIMATION_STATE(unit);
 	c_animation_channel *channel = mode == 3 ? &control->channel_bc : &control->channel_9c;
+	long weapon_type;
 	long weapon_class = 0x7000101;
-	long weapon_type = 0x7000101;
+	weapon_type = 0x7000101;
 	if (mode == 1 || mode == 3)
 	{
 		weapon_class = 0x400054b;
 		weapon_type = control->weapon_type;
 	}
 	else if (mode == 2 && state->unknown74 == 0x400054b)
+	{
 		weapon_class = control->weapon_class;
+		weapon_type = 0x7000101;
+	}
 	bool can_blend = true;
 	if (channel->graph_tag_index != NONE && channel->animation_id.index != NONE)
 	{
-		s_animation *animation = function_1daea0(GRAPH_GET(channel->graph_tag_index), channel->animation_id);
+		s_graph_tag *graph = GRAPH_GET(channel->graph_tag_index);
+		s_animation *animation = function_1daea0(graph, channel->animation_id);
 		can_blend = !TEST_FIELD_BIT(animation->flag1);
 	}
 	if (state->overlay_play(channel, 0x803f, name, weapon_class, weapon_type))
@@ -910,8 +952,13 @@ bool __stdcall function_113e90(long unit_index, long name, real blend, c_animati
 		return true;
 	}
 	long first, second;
-	if ((function_10f630(unit_index, &first, &second) && second == name) ||
-		function_10f430(unit_index, 0x7000101, 0x7000101, 0x7000101, name, blend, false, 0))
+	if (function_10f630(unit_index, &first, &second) && second == name)
+	{
+		if (output)
+			*output = &UNIT_ANIMATION_STATE(unit)->channels[0];
+		return true;
+	}
+	if (function_10f430(unit_index, 0x7000101, 0x7000101, 0x7000101, name, blend, false, 0))
 	{
 		if (output)
 			*output = &UNIT_ANIMATION_STATE(unit)->channels[0];
@@ -962,7 +1009,7 @@ bool function_10fd40(long unit_index, long weapon_type, long weapon_class, bool 
 
 		if (class_changed || type_changed)
 		{
-			real seconds = function_1137b0(state->unknown7c, true, 0.0f, false, state->unknown7c);
+			real seconds = function_1137b0(true, 0.0f, false, state->unknown7c, state->unknown7c);
 
 			channel_refresh_if_valid(state, &control->channel_9c, 0x7000101, 0x7000101);
 			channel_refresh_if_valid(state, &control->channel_dc, 0x7000101, 0x7000101);
@@ -998,26 +1045,28 @@ bool function_1101e0(long animation_graph_index, long unit_index, long animation
 
 		if (graph)
 		{
-			if (function_1dd0b0(graph, animation_name).index == NONE)
-				return false;
+			c_type_709360 first_id = graph->animation_by_name(animation_name);
+			if (first_id.index == NONE)
+				goto done_1101e0;
 
 			s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
+			s_unit_animation_definition *definition = (s_unit_animation_definition *)TAG_BYTES(unit->definition_index);
 			s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
 			s_animation_state *state = UNIT_ANIMATION_STATE(unit);
-			s_unit_animation_definition *definition = (s_unit_animation_definition *)TAG_BYTES(unit->definition_index);
 
 			function_11b710(unit_index, 0x7000101);
 			if (state->graph_tag_index != animation_graph_index &&
 				!state->initialize(animation_graph_index, definition->model_tag_index, true))
 			{
-				return false;
+				goto done_1101e0;
 			}
 
-			c_type_709360 animation_id = function_1dd0b0(GRAPH_GET(state->graph_tag_index), animation_name);
+			c_type_709360 animation_id = GRAPH_GET(state->graph_tag_index)->animation_by_name(animation_name);
 			function_10f260(unit_index);
 
-			word channel_flags = flag ? 0x4003 : 0x4001;
-			if (function_1daea0(GRAPH_GET(state->graph_tag_index), animation_id)->type)
+			dword channel_flags = flag ? 0x4003 : 0x4001;
+			s_graph_tag *state_graph = GRAPH_GET(state->graph_tag_index);
+			if (function_1daea0(state_graph, animation_id)->type)
 			{
 				control->channel_9c.clear();
 				result = state->channel_play(&control->channel_9c, animation_id, channel_flags);
@@ -1036,6 +1085,7 @@ bool function_1101e0(long animation_graph_index, long unit_index, long animation
 			function_114330(unit_index);
 		}
 	}
+done_1101e0:
 	return result;
 }
 
@@ -1112,12 +1162,14 @@ bool function_111490(long unit_index)
 			}
 		}
 		if (!function_111590(unit_index, 2))
-			return false;
+			result = false;
 	}
 	return result;
 }
 
 
+// score 1 (was 1): the argument is copied into EAX where retail passes it in ECX, because the
+// callee at 0xc7070 keeps its parameter in ECX.
 // @retail 0x1112f0
 bool function_1112f0(long unit_index)
 {
@@ -1151,7 +1203,7 @@ bool function_1112f0(long unit_index)
 		}
 	}
 	if (!function_111590(unit_index, 3))
-		return false;
+		result = false;
 	return result;
 }
 
@@ -1171,7 +1223,6 @@ bool __stdcall function_110ab0(long unit_index)
 {
 	// Retail keeps this argument on the stack.
 	long const *unit_reference = &unit_index;
-	unit_index = *unit_reference;
 	s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
 	s_animation_state *state = UNIT_ANIMATION_STATE(unit);
@@ -1192,7 +1243,7 @@ bool __stdcall function_110ab0(long unit_index)
 		if (*(byte *)((byte *)state + 0x14) & 0x10)
 			interruptible = true;
 	}
-	if (function_c70b0(unit_index))
+	if (function_c70b0(*(long const volatile *)unit_reference))
 		result = true;
 	else
 	{
@@ -1300,7 +1351,7 @@ bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 	s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
 	s_animation_state *state = UNIT_ANIMATION_STATE(unit);
 	long controlling = unit->field_13c;
-	bool result = true;
+	bool result;
 	bool depleted = false;
 	bool interruptible = false;
 	if (controlling != NONE)
@@ -1345,8 +1396,7 @@ bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 		case 0xe00002a:
 		case 0xe0000c3:
 		case 0x1000006c:
-			if (requested != 0x600008c)
-				result = interruptible;
+			result = requested != 0x600008c ? interruptible : true;
 			break;
 		case 0x500000a:
 		case 0x5000024:
@@ -1404,8 +1454,7 @@ bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 		case 0x800061e:
 		case 0x900000e:
 		case 0xa00000f:
-			if (requested == 0x400000c)
-				result = allow;
+			result = requested == 0x400000c ? allow : true;
 			break;
 		case 0x800001c:
 		case 0xa00001d:
@@ -1414,6 +1463,9 @@ bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 		case 0xe00003b:
 		case 0xf00003a:
 			result = false;
+			break;
+		default:
+			result = true;
 			break;
 		}
 	}
@@ -1488,7 +1540,7 @@ bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 extern point2f *g_4687c4;
 struct s_unit_seat_definition;
 s_unit_seat_definition *function_c8fc0(long unit_index);
-bool function_10f890(long object_index);
+bool unit_animation_control_channel_playing(long object_index);
 void function_b9fc0(long object_index, vector3f *forward, vector3f *up);
 vector2f *function_11df30(vector2f *angles, vector3f const *v);
 
@@ -1526,7 +1578,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 	{
 		s_unit_seat_definition *seat = function_c8fc0(unit_index);
 		real weight = 1.0f;
-		if (function_10f890(unit_index) && seat && *(real *)((byte *)seat + 0x1c) > 0.0f)
+		if (unit_animation_control_channel_playing(unit_index) && seat && *(real *)((byte *)seat + 0x1c) > 0.0f)
 			weight = *(real *)((byte *)seat + 0x1c);
 		control->channel_dc.sample(weight, node_mask, node_count, transforms);
 	}
@@ -1590,13 +1642,12 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 					if (screen_a || screen_b)
 					{
 						project_112070((vector3f *)((byte *)unit + 0x168), &forward, &side, &up, &projected);
-						angles.i = (real)atan2(projected.j, projected.i);
-						angles.j = (real)atan2(projected.k, sqrt(projected.i * projected.i + projected.j * projected.j));
+						function_11df30(&angles, &projected);
 						control->flags |= 0x20;
 						if (screen_a) bounds_112070(screen_a, (real *)control->unknown04);
 						else if (screen_b) bounds_112070(screen_b, (real *)control->unknown04);
 						active = function_111590(unit_index, 4);
-						if ((state->unknown7c == 0x700005c || state->unknown7c == 0x700005d) && !function_10ee20(state))
+						if ((state->unknown7c == 0x700005c || state->unknown7c == 0x700005d) && !unit_animation_state_finished(state))
 							active = false;
 						bool centered = fabs(angles.j) < 0.0001f && fabs(angles.i) < 0.0001f;
 						if (control->slots[4].unknown1)
@@ -1671,7 +1722,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 	{
 		if (control->animation_10c.index != NONE)
 		{
-			word flags = 0;
+			dword flags = 0;
 			if (control->slots[0].unknown1 && function_1d9370((s_1d9240 *)&control->slots[0]) < 0.0001f)
 				flags = 0x400;
 			if (state->graph_tag_index != NONE && state->channel_start(&channel, control->animation_10c, NONE, NONE, NONE, NONE, flags))
@@ -1747,14 +1798,13 @@ struct s_request_114b60
 	s_request_extra_114b60 extra;
 };
 
+__declspec(noinline) bool unit_submit_entry_request(short fallback_index, short entry_index, long unit_index, long priority, void const *extra);
+
 // @retail 0x114b60
-bool function_114b60(short entry_index, short fallback_index, long unit_index, long priority, void const *extra)
+bool unit_submit_entry_request(short fallback_index, short entry_index, long unit_index, long priority, void const *extra)
 {
-	// Retail keeps the object on the stack and reuses the priority slot for the tag.
-	long const *unit_reference = &unit_index;
-	unit_index = *unit_reference;
-	short request_priority = (short)priority;
 	short index = entry_index;
+	short request_priority = (short)priority;
 	if (index == NONE)
 	{
 		index = function_20ba00(fallback_index);
@@ -1774,16 +1824,23 @@ bool function_114b60(short entry_index, short fallback_index, long unit_index, l
 		if (extra)
 		{
 			memcpy(&request.extra, extra, sizeof(request.extra));
-			function_114680(unit_index, &request);
-			return true;
 		}
-		request.extra.marker = NONE;
-		request.extra.object_index = NONE;
-		request.extra.flags = 0;
+		else
+		{
+			request.extra.marker = NONE;
+			request.extra.object_index = NONE;
+			request.extra.flags = 0;
+		}
 		function_114680(unit_index, &request);
 		return true;
 	}
 	return false;
+}
+
+/* the same request with the entry first, for callers written in that order */
+bool function_114b60(short entry_index, short fallback_index, long unit_index, long priority, void const *extra)
+{
+	return unit_submit_entry_request(fallback_index, entry_index, unit_index, priority, extra);
 }
 
 real function_259a0(dword *seed);
@@ -1792,6 +1849,13 @@ void function_c96b0(long unit_index, long *result, real a, real b);
 // @retail 0x1147e0
 bool function_1147e0(long unit_index, bool a, real b, real c, long definition_index, bool hard)
 {
+	bool result = false;
+	char outside = 0;
+	short priority;
+	short entry;
+	long tag_index;
+	bool local_0 = hard;
+	bool local_1 = a;
 	// Retail preserves the object argument on the stack throughout the request.
 	long const *unit_reference = &unit_index;
 	unit_index = *unit_reference;
@@ -1799,8 +1863,6 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 	byte *state = (byte *)unit + *(short *)((byte *)unit + 0x342);
 	short type = 0;
 	bool special = false;
-	bool result = false;
-	bool outside = false;
 	if (definition_index != NONE)
 	{
 		byte *definition = TAG_BYTES(definition_index);
@@ -1808,7 +1870,7 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 		special = (*(dword *)(definition + 0x14) >> 7) & 1;
 	}
 	short selection;
-	if (hard)
+	if (local_0)
 	{
 		long actor_index = *(long *)((byte *)unit + 0x12c);
 		bool strong = false;
@@ -1825,13 +1887,13 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 		else if (!strong && type == 6)
 			selection = 5;
 		else
-			selection = a ? 4 : 0;
+			selection = local_1 ? 4 : 0;
 	}
 	else
 	{
 		if (*(short *)(state + 0x42))
-			return false;
-		a = *(real *)((byte *)unit + 0x100) > 0.0f;
+			goto local_2;
+		local_1 = *(real *)((byte *)unit + 0x100) > 0.0f;
 		long range;
 		function_c96b0(unit_index, &range, c, b);
 		outside = range == 2;
@@ -1839,7 +1901,7 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 			selection = 11;
 		else if (outside)
 		{
-			if (a)
+			if (local_1)
 				selection = function_259a0(&g_4e7408->unknown0) < 0.6667f ? 8 : 9;
 			else
 				selection = 10;
@@ -1847,15 +1909,15 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 		else
 		{
 			if (*(short *)(state + 0x40) || *(short *)(state + 0x3e) >= 3)
-				return false;
+				goto local_2;
 			if (*(short *)(state + 0xc) && !(function_259a0(&g_4e7408->unknown0) < 0.4f))
-				return false;
-			selection = a ? 7 : 10;
+				goto local_2;
+			selection = local_1 ? 7 : 10;
 		}
 	}
-	short priority = hard ? 15 : 12;
-	short entry = function_20ba00(selection);
-	long tag_index = NONE;
+	tag_index = NONE;
+	priority = local_0 ? 15 : 12;
+	entry = function_20ba00(selection);
 	if (entry != NONE && function_114520(unit_index, entry, priority, NULL, &tag_index))
 	{
 		s_request_114b60 request;
@@ -1880,6 +1942,7 @@ bool function_1147e0(long unit_index, bool a, real b, real c, long definition_in
 				*(short *)(state + 0x40) = duration_ticks_1145f0(2.0f);
 		}
 	}
+local_2:
 	return result;
 }
 
@@ -1914,7 +1977,7 @@ void (__stdcall *g_467a2c)(long, long, long) = function_114710;
 
 
 long players_first_active_local_player();
-s_player_state *function_16f3a0(long arg_0);
+__declspec(noinline) s_player_state *function_16f3a0(long arg_0);
 bool function_0bfe60(dword const *arg_0, long arg_1);
 
 // @retail 0x1132f0
@@ -1927,7 +1990,13 @@ void function_1132f0(long arg_0, dword const *arg_1, long arg_2, transform4x3f *
     {
         s_unit_animation_object *local_0 = UNIT_ANIMATION_OBJECT(arg_0);
         point3f const *local_1;
-        if ((short)local_0->flags148 < 0)
+        union
+        {
+            long field_0;
+            char field_4[4];
+        } local_6;
+        local_6.field_0 = local_0->flags148;
+        if ((local_6.field_4[1] & (char)0x80) != 0)
             local_1 = (point3f *)((byte *)local_0 + 0x1a4);
         else
         {
@@ -1945,10 +2014,10 @@ void function_1132f0(long arg_0, dword const *arg_1, long arg_2, transform4x3f *
             {
                 char local_4 = local_0->index1f6;
                 if (local_4 >= 0 && local_4 < arg_2 && (!arg_1 || function_0bfe60(arg_1, local_4)))
-                    function_112e20(&arg_3[local_4], &local_3.matrix, local_1);
+                    function_112e20(&arg_3[local_4], local_1, &local_3.matrix);
                 char local_5 = local_0->index1f7;
                 if (local_5 >= 0 && local_5 < arg_2 && (!arg_1 || function_0bfe60(arg_1, local_5)))
-                    function_112e20(&arg_3[local_5], &local_3.matrix, local_1);
+                    function_112e20(&arg_3[local_5], local_1, &local_3.matrix);
             }
         }
     }
@@ -1965,7 +2034,7 @@ struct s_114c60
 
 void sound_choose_permutation(long arg_0, s_sound_permutation_reference *arg_1, bool *arg_2);
 long function_1891d0(long arg_0, long arg_1, s_sound_label_play const *arg_2);
-void __stdcall function_20d570(long arg_0, short arg_1, long arg_2, void *arg_3);
+void __stdcall function_20d570(short arg_1, long arg_0, long arg_2, void *arg_3);
 void function_20fd50(long arg_0, long arg_1);
 
 // @retail 0x114c60
@@ -2005,9 +2074,9 @@ void function_114c60(long arg_0)
                 if (*(long *)(local_1 + 0x1c) == NONE)
                     sound_choose_permutation(local_6, (s_sound_permutation_reference *)(local_1 + 0x18), NULL);
                 s_114c60 local_8;
-                local_8.field_0 = local_7;
                 local_8.field_4 = *(long *)(local_1 + 0x10);
                 local_8.field_8 = 1.0f;
+                local_8.field_0 = local_7;
                 local_8.field_c = local_1 + 0x18;
                 *(long *)(local_1 + 0x54) = function_1891d0(arg_0, 0x4000095, (s_sound_label_play const *)&local_8);
             }
@@ -2033,22 +2102,22 @@ void function_114c60(long arg_0)
             if ((short)local_11 > 0)
                 *(short *)(local_1 + 0x50) = (short)(local_11 - 1);
         }
-        if (*(short *)(local_1 + 0xc) > 0 && !*(short *)(local_1 + 0x4e) && !local_1[0x49])
+    }
+    if (*(short *)(local_1 + 0xc) > 0 && !*(short *)(local_1 + 0x4e) && !local_1[0x49])
+    {
+        function_20d570(*(short *)(local_1 + 0xe), *(long *)(local_1 + 0x1c), arg_0, local_1 + 0x20);
+        local_1[0x49] = true;
+    }
+    if (*(short *)(local_1 + 0xc) > 0 && !*(short *)(local_1 + 0x4c) && !*(short *)(local_1 + 0x50))
+    {
+        if (!local_1[0x49])
         {
-            function_20d570(*(long *)(local_1 + 0x1c), *(short *)(local_1 + 0xe), arg_0, local_1 + 0x20);
+            function_20d570(*(short *)(local_1 + 0xe), *(long *)(local_1 + 0x1c), arg_0, local_1 + 0x20);
             local_1[0x49] = true;
         }
-        if (*(short *)(local_1 + 0xc) > 0 && !*(short *)(local_1 + 0x4c) && !*(short *)(local_1 + 0x50))
-        {
-            if (!local_1[0x49])
-            {
-                function_20d570(*(long *)(local_1 + 0x1c), *(short *)(local_1 + 0xe), arg_0, local_1 + 0x20);
-                local_1[0x49] = true;
-            }
-            if (*(long *)(local_1 + 0x1c) != NONE)
-                function_20fd50(arg_0, *(long *)(local_1 + 0x1c));
-            *(short *)(local_1 + 0xc) = 0;
-        }
+        if (*(long *)(local_1 + 0x1c) != NONE)
+            function_20fd50(arg_0, *(long *)(local_1 + 0x1c));
+        *(short *)(local_1 + 0xc) = 0;
     }
     real local_12 = 0.0f - *(real *)((byte *)local_0 + 0x208);
     if (-0.1f > local_12)
@@ -2280,7 +2349,7 @@ bool __stdcall function_111650(long arg_0, long *arg_1)
             if ((local_5 == 0x7000101 ? local_2->unknown7c == 0x400000c : local_5 == 0x400000c) && !(local_2->unknown6e & 1))
                 local_2->channels_clear();
         }
-        if (local_2->graph_tag_index != NONE && function_111651(&local_2->channels[0]) && !function_10ee20(local_2))
+        if (local_2->graph_tag_index != NONE && function_111651(&local_2->channels[0]) && !unit_animation_state_finished(local_2))
             local_10 = true;
     }
     else if (!((++g_55e70c ^ arg_0) & 0xf))
@@ -2375,16 +2444,20 @@ const long g_440918[8] = { NONE, NONE, 0x600008c, 0xc000043, 0xc000043, 0xd00004
 const long g_440938[8] = { NONE, NONE, NONE, 0x6000086, 0x6000086, 0x6000086, 0x6000086, 0x6000086 };
 const long g_46fc30[4] = { 0x600008b, 0x600008c, 0x600008d, 0x600008e };
 
+/* the time a channel has played, in seconds (none when it plays nothing) */
+static inline real channel_elapsed_seconds(c_animation_channel const *channel)
+{
+    real elapsed = 0.0f;
+
+    if (channel->graph_tag_index != NONE && channel->animation_id.index != NONE)
+        elapsed = channel->frame_position * (1.0f / 30.0f);
+    return elapsed;
+}
+
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
 {
-    (void)&unit_index;
-    (void)&side;
-    (void)&value;
-    (void)&flag;
-    (void)&side_out;
-    (void)&value_out;
     s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
     byte *definition = (byte *)TAG_BYTES(unit->definition_index);
     s_animation_state *state = UNIT_ANIMATION_STATE(unit);
@@ -2393,64 +2466,61 @@ bool function_10ff40(long unit_index, long type, short side, short value,
     long set = g_440918[type];
     long mode = g_440938[type];
     long lookup = g_4408f8[type];
-    long animation = lookup == NONE ? NONE : g_46fc30[lookup];
+    long animation = NONE;
+    if (lookup != NONE) animation = g_46fc30[lookup];
     bool result = false;
     bool force_overlay = false;
-    c_animation_channel *overlay = 0;
+    short action;
+    c_animation_channel *overlay;
     if (set != NONE)
     {
-        bool test_base = type < 3;
-        if (test_base && state->unknown7c == 0x600008c)
-        {
-            real elapsed = 0.0f;
-            if (state->channels[0].graph_tag_index != NONE && state->channels[0].animation_id.index != NONE)
-                elapsed = state->channels[0].frame_position * 0.03333333507180214f;
-            test_base = !(elapsed > *(real *)(definition + 0x110));
-        }
-        if (test_base)
+        overlay = NULL;
+        if (type < 3 &&
+            (state->unknown7c != 0x600008c || !(channel_elapsed_seconds(&state->channels[0]) > *(real *)(definition + 0x110))))
         {
             if (!function_1103a0(unit_index, set, true) || function_c8fc0(unit_index))
                 force_overlay = true;
             else
             {
-                short action;
                 function_e70b0(unit_index, &action);
                 if (action != 0 ||
                     (*((byte *)g_4e0300->data + (unit_index & 0xffff) * 12 + 3) == 0 && function_e4050(unit_index)))
                     force_overlay = true;
             }
         }
-        bool available = true;
         if (animation != NONE)
         {
             byte channel_storage[sizeof(c_animation_channel)];
             c_animation_channel *channel = (c_animation_channel *)channel_storage;
             channel->copy_from(&state->channels[0]);
-            available = state->channel_play_indexed(channel, animation, side, value, 0, 0);
+            if (!state->channel_play_indexed(channel, animation, side, value, 0, 0))
+                force_overlay = true;
         }
-        if (!available || force_overlay)
+        if (force_overlay)
         {
             if (animation == 0x600008c) animation = 0x600008b;
             else if (animation == 0x600008e) animation = 0x600008d;
-            else return result;
+            else goto done;
             set = NONE;
         }
     }
     if (set == NONE)
     {
         overlay = &control->channel_dc;
-        if ((bool)((control->flags >> 7) & 1) && overlay->graph_tag_index != NONE &&
+        if (TEST_FIELD_BIT(control->flag7) && overlay->graph_tag_index != NONE &&
             overlay->animation_id.index != NONE &&
-            overlay->frame_position * 0.03333333507180214f <= *(real *)(definition + 0x108))
-            return result;
+            *(real *)(definition + 0x108) >= overlay->frame_position * (1.0f / 30.0f))
+            goto done;
     }
     if (set != NONE)
     {
         long selected_mode = 0x7000101;
+        long play_flags = 2;
+        if (animation != NONE)
+            play_flags = 14;
         if ((unit->parent_index == NONE || *(short *)((byte *)unit + 0x1fc) == NONE) && mode != NONE)
             selected_mode = mode;
-        result = function_10f430(unit_index, selected_mode, 0x7000101, 0x7000101, set, 0.0f, false,
-            animation == NONE ? 2 : 14);
+        result = function_10f430(unit_index, selected_mode, 0x7000101, 0x7000101, set, 0.0f, false, play_flags);
     }
     if (animation != NONE)
     {
@@ -2458,15 +2528,18 @@ bool function_10ff40(long unit_index, long type, short side, short value,
         if (overlay)
         {
             animated = state->channel_play_indexed(overlay, animation, side, value, side_out, value_out);
-            if (animated) control->flags |= 0x80;
+            if (animated)
+                control->flag7 = true;
         }
         else
             animated = state->play_indexed(animation, side, value, side_out, value_out);
         if (animated)
         {
             *flag = true;
-            return true;
+            result = true;
+            goto done;
         }
     }
+done:
     return result;
 }

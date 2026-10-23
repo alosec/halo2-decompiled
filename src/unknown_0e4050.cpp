@@ -56,6 +56,11 @@ bool function_e4050(long object_index)
 	return false;
 }
 
+/* inline keeps it out of the callers' register tracking: retail's callers
+   treat every scratch register (edx, the xmm registers) as clobbered by it
+   (0x21e230 keeps `this` in esi across the call); noinline keeps the call */
+inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool flag);
+
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {
@@ -69,7 +74,8 @@ real function_12aff0(real a, real b, real c, bool flag)
 		return t;
 	}
 
-	return (a > c) == flag ? 0.0f : 1.0f;
+	word above = a > c;
+	return above == flag ? 0.0f : 1.0f;
 }
 
 /* the particle system objects at 0x479868 and 0x479874, picked by the group
@@ -92,13 +98,13 @@ c_type_4e7709 *function_137bd0(long tag_index)
 	{
 	case 'prt3':
 		result = &g_479868;
-		result->initialize(tag_index);
 		break;
 	case 'PRTM':
 		result = &g_479874;
-		result->initialize(tag_index);
 		break;
 	}
+	if (result)
+		result->initialize(tag_index);
 	return result;
 }
 

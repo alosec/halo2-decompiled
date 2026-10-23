@@ -160,7 +160,8 @@ bool function_26be90(long object_index)
 // @retail 0x26bf10
 bool function_26bf10(long object_index)
 {
-	long root = NONE;
+	bool root_check_outcome = false;
+    long root = NONE;
 
 	while (object_index != NONE)
 	{
@@ -171,17 +172,20 @@ bool function_26bf10(long object_index)
 	s_game_object *object = OBJECT(root);
 	long type = object->type;
 
-	switch (type)
-	{
-	case 0:
-		return object->value354 != NONE || object->time350 == g_510c54->game_time;
-	case 12:
-		if (object->state17c == 1)
-		{
-			return (bool)!object->flags12c.flag7;
-		}
-		return true;
-	default:
-		return false;
-	}
+    switch (type)
+    {
+    case 0:
+        if (object->value354 != NONE || object->time350 == g_510c54->game_time)
+            root_check_outcome = true;
+        break;
+    case 12:
+        if (object->state17c == 1)
+            root_check_outcome = (bool)!object->flags12c.flag7;
+        else
+            root_check_outcome = true;
+        break;
+    default:
+        return false;
+    }
+    return root_check_outcome;
 }

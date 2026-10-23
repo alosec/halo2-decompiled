@@ -7,6 +7,8 @@
 #include "globals.h"
 #include "data_array.h"
 #include "unknown_0259d0.h"
+#include "slot_handler.h"
+static __forceinline long real_to_long(real value);
 
 /* a flock (g_51ecb4, ai.cpp): the index of its scenario definition at +2 */
 struct s_flock
@@ -326,7 +328,7 @@ bool function_295490(long flock_index, point3f const *point, real radius)
 
 		if (function_11c380(definition->trigger_volume_index, &matrix))
 		{
-			s_flock_trigger_volume *volume = &scenario->trigger_volumes[definition->trigger_volume_index];
+			real const *extents = scenario->trigger_volumes[definition->trigger_volume_index].extents;
 			vector3f vector;
 
 			vector3d_from_points3d(&matrix.position, point, &vector);
@@ -334,7 +336,7 @@ bool function_295490(long flock_index, point3f const *point, real radius)
 			for (short i = 0; i < 3; i++)
 			{
 				real distance = dot3f(&vector, &(&matrix.forward)[i]);
-				if (-radius > distance || distance > volume->extents[i] + radius)
+				if (-radius > distance || distance > extents[i] + radius)
 				{
 					result = false;
 					break;
@@ -366,6 +368,14 @@ inline void flock_move_point(point3f *point, vector3f const *axis, real distance
 
 real function_30bf0(vector3f *vector);
 
+PRIVATE __forceinline real function_293d31(vector3f const *arg_0, vector3f const *arg_1)
+{
+	real local_0 = arg_0->k * arg_1->k;
+	local_0 += arg_0->j * arg_1->j;
+	local_0 += arg_0->i * arg_1->i;
+	return local_0;
+}
+
 /* steers a flock member away from its volume's faces, optionally moving
    an outside point back into the volume */
 // @retail 0x293d30
@@ -373,32 +383,33 @@ void function_293d30(s_scenario_flock const *definition, point3f *point, real *s
 {
 	/* Taking the address preserves retail's stack-passed horizontal flag. */
 	bool const *horizontal_reference = &horizontal_only;
-	real boundary_distance = 1.0f;
+	real boundary_range = 1.0f;
 	s_scenario_flock_volumes_view *scenario = (s_scenario_flock_volumes_view *)g_4e0350;
 	bool clamp_position = (definition->flags & 1) != 0;
 	*strength = 0.0f;
 	*direction = *g_4687a4;
 	*moved = false;
 	if (definition->boundary_distance > 0.0f)
-		boundary_distance = definition->boundary_distance;
+		boundary_range = definition->boundary_distance;
 	if (definition->trigger_volume_index >= 0 && definition->trigger_volume_index < scenario->trigger_volume_count)
 	{
 		transform4x3f matrix;
 		if (function_11c380(definition->trigger_volume_index, &matrix))
 		{
-			s_flock_trigger_volume *volume = &((s_scenario_flock_volumes_view *)g_4e0350)->trigger_volumes[definition->trigger_volume_index];
+			s_flock_trigger_volume *volume = &scenario->trigger_volumes[definition->trigger_volume_index];
 			real const *extents = volume->extents;
 			real maximum_strength = 0.0f;
 			vector3f relative;
 			vector3d_from_points3d(&matrix.position, point, &relative);
+			long axis_index = 0;
 			long axis_count = *horizontal_reference ? 2 : 3;
-			for (short i = 0; i < axis_count; i++)
+			for (; (short)axis_index < axis_count; axis_index++)
 			{
-				vector3f const *axis = &(&matrix.forward)[i];
-				real distance = axis->k * relative.k + axis->j * relative.j + axis->i * relative.i;
-				if (boundary_distance >= distance)
+				vector3f const *axis = &(&matrix.forward)[(short)axis_index];
+				real distance = function_293d31(axis, &relative);
+				if (boundary_range >= distance)
 				{
-					real value = flock_boundary_clip(boundary_distance - distance, boundary_distance) / boundary_distance * 3.0f;
+					real value = flock_boundary_clip(boundary_range - distance, boundary_range) / boundary_range * 3.0f;
 					flock_add_direction(direction, axis, value);
 					if (value > maximum_strength)
 						maximum_strength = value;
@@ -408,15 +419,15 @@ void function_293d30(s_scenario_flock const *definition, point3f *point, real *s
 						*moved = true;
 					}
 				}
-				if (distance >= extents[i] - boundary_distance)
+				if (distance >= extents[(short)axis_index] - boundary_range)
 				{
-					real value = (1.0f - flock_boundary_clip(extents[i] - distance, boundary_distance) / boundary_distance) * 3.0f;
+					real value = (1.0f - flock_boundary_clip(extents[(short)axis_index] - distance, boundary_range) / boundary_range) * 3.0f;
 					flock_add_direction(direction, axis, 0.0f - value);
 					if (value > maximum_strength)
 						maximum_strength = value;
-					if (clamp_position && distance > extents[i])
+					if (clamp_position && distance > extents[(short)axis_index])
 					{
-						flock_move_point(point, axis, extents[i] - distance);
+						flock_move_point(point, axis, extents[(short)axis_index] - distance);
 						*moved = true;
 					}
 				}
@@ -512,12 +523,26 @@ void function_293a20(long flock_index)
 	}
 }
 
+PRIVATE __forceinline s_flock *function_295321(s_active_flock_iterator *arg_0, bool arg_1)
+{
+	s_flock *local_0 = NULL;
+	if (arg_1)
+	{
+		local_0 = (s_flock *)data_iterator_next_inlined(&arg_0->iterator);
+		arg_0->flock_index = arg_0->iterator.datum_index;
+	}
+	arg_0->flock = local_0;
+	return local_0;
+}
+
+// score 99 (was 99): the walk over the active flocks is built with another
+// iterator shape, so the register choices and the instruction order differ.
 // @retail 0x295320
 void function_295320(point3f const *point)
 {
 	s_active_flock_iterator iterator;
 	flock_iterator_begin(&iterator, g_4f55d0->active);
-	while (flock_iterator_next(&iterator, g_4f55d0->active))
+	while (function_295321(&iterator, g_4f55d0->active))
 	{
 		if (iterator.flock->unknown0c && iterator.flock->definition_index >= 0 &&
 			iterator.flock->definition_index < ((s_scenario_flocks_view *)g_4e0350)->flock_count)
@@ -528,13 +553,7 @@ void function_295320(point3f const *point)
 				radius = definition->proximity_radius;
 			if (function_295490(iterator.flock_index, point, radius + 1.0f))
 			{
-				real ticks_real = (real)g_510c54->field_2_3 * 3.0f;
-				long ticks;
-				__asm
-				{
-					fld ticks_real
-					fistp ticks
-				}
+				long ticks = real_to_long((real)g_510c54->field_2_3 * 3.0f);
 				iterator.flock->unknown24 = (short)ticks;
 				iterator.flock->position14 = *point;
 				iterator.flock->value20 = 2.0f;
@@ -544,6 +563,9 @@ void function_295320(point3f const *point)
 }
 
 /* the flock whose scenario definition has the name, or NONE */
+// score 69 (was 69): the scenario view is read before the loop here and
+// after it in retail, so the loop body and the exit differ; ours is 187
+// bytes against retail's 193.
 // @retail 0x2958a0
 long function_2958a0(long name)
 {
@@ -628,17 +650,16 @@ void function_295600(s_295600_state *state, bool planar, real magnitude,
 // @retail 0x2938c0
 bool function_2938c0(long arg_0)
 {
-	bool local_0 = false;
 	s_flock *local_1 = &((s_flock *)g_51ecb4->data)[arg_0 & 0xffff];
-	long local_2 = local_1->unknown04;
-	while (local_2 != NONE)
+	bool local_0 = false;
+	s_flock_member_iterator local_2;
+	local_2.next_object_index = local_1->unknown04;
+	local_2.object_index = NONE;
+	s_flock_object *local_5;
+	while ((local_5 = function_2937a1(&local_2)) != NULL)
 	{
-		long local_3 = local_2;
-		s_flock_object_header *local_4 = &((s_flock_object_header *)g_4e0300->data)[local_3 & 0xffff];
-		s_flock_object *local_5 = local_4->object;
+		s_flock_object_header *local_4 = &((s_flock_object_header *)g_4e0300->data)[local_2.object_index & 0xffff];
 		s_flock_member *local_6 = flock_object_get_member(local_5);
-		local_2 = local_6 ? local_6->next_object_index : NONE;
-		local_6 = flock_object_get_member(local_5);
 		bool local_7 = (*((byte *)local_4 + 2) & 1) != 0;
 		local_0 |= local_7;
 		if (local_6)
@@ -647,15 +668,15 @@ bool function_2938c0(long arg_0)
 	if (local_1->unknown0e)
 	{
 		*(word *)((byte *)local_1 + 0x10) = 0;
-		s_scenario_flocks_view *local_8 = (s_scenario_flocks_view *)g_4e0350;
-		if (local_1->definition_index >= 0 && local_1->definition_index < local_8->flock_count)
+		if (local_1->definition_index >= 0 && local_1->definition_index < ((s_scenario_flocks_view *)g_4e0350)->flock_count)
 		{
-			s_scenario_flock *local_9 = &local_8->flocks[local_1->definition_index];
+			s_scenario_flock *local_9 = &((s_scenario_flocks_view *)g_4e0350)->flocks[local_1->definition_index];
+			byte *mask_base = (byte *)g_4e6948;
 			for (short local_10 = 0; local_10 < *(long *)((byte *)local_9 + 0xc); local_10++)
 			{
 				point3f const *local_11 = (point3f const *)(*(byte **)((byte *)local_9 + 0x10) + local_10 * 0x1c);
 				short local_12 = function_272af0(g_4e0348, local_11);
-				if (((dword *)((byte *)g_4e6948 + 0x11b8))[local_12 >> 5] & (1 << (local_12 & 0x1f)))
+				if (((dword *)(mask_base + 0x11b8))[local_12 >> 5] & (1 << (local_12 & 0x1f)))
 				{
 					local_0 = true;
 					*(word *)((byte *)local_1 + 0x10) |= 1 << local_10;

@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "unknown_08b110.h"
 #include "unknown_096ed0.h"
+#include "unknown_0662e0.h"
 
 // @flags /O2 /arch:SSE /Gr
 
@@ -21,7 +22,7 @@ void c_vtable_450c94::v3(s_node_450d1c *node, long a2, long a3, long key,
 	s_bitstream *stream, long reserved_bits)
 {
 	long index = (long)node;
-	stream->checkpoints[stream->checkpoint_count++] = stream->bit_position;
+	stream_save_position(stream);
 	stream_write_bit(stream, true);
 	stream_write_checked(stream, index, 5);
 	stream_write_bit(stream, (active_mask & (1 << index)) != 0);
@@ -43,13 +44,6 @@ void c_vtable_450c94::v3(s_node_450d1c *node, long a2, long a3, long key,
 
 s_definition_4ced60 g_4ced60[32];
 long g_4cf474;
-real g_4cf478;
-long g_4cf47c;
-real g_4cf480;
-real g_4cf484;
-real g_4cf488;
-real g_4cf48c;
-real g_4cf490;
 
 struct s_object;
 s_object *function_badc0(long object_index, dword type_mask);
@@ -98,35 +92,37 @@ void function_82ac0(s_object_relevance_source *source, s_object_relevance_result
 	}
 }
 
+// score 32 (was 32): the blocks are laid out in another order, so the relative
+// offsets of the jumps differ, and the value in ebx is set after the test on esi
+// where retail sets it before.
 // @retail 0x8b110
 long c_vtable_450cb8::v0(long index, long a2, long a3, long *count, s_item_450cb8 *items, void *a6)
 {
 	long result;
 	result = 0;
 	if (index < 0 || index >= handlers->count)
-		return 3;
+		{ result = 3; goto local_0; }
 
 	c_handler_450cb8 * handler;
 	handler = handlers->handlers[index];
-	dword size;
+	long size;
 	size = handler->v2();
 	if (size > 0)
 	{
 		int error;
-		error = 3;
 		void * block;
 		block = function_96e90(size);
-		if (block == 0)
-			error = 2;
-		else if (handler->v10(size, block, a6))
+		if (block != 0 && handler->v10(size, block, a6))
 		{
 			s_item_450cb8 * item = &items[(*count)++];
 			item->data = block;
 			item->size = (short)size;
 			item->type = 0xe;
-			return result;
+			goto local_0;
 		}
-
+		error = 2;
+		if (block != 0)
+			error = 3;
 		if (0 != block)
 		{
 			s_allocator_globals * globals;
@@ -136,8 +132,10 @@ long c_vtable_450cb8::v0(long index, long a2, long a3, long *count, s_item_450cb
 			globals->allocator->release(block, NONE);
 			globals->count--;
 		}
-		return error;
+		result = error;
+		goto local_0;
 	}
+	local_0:
 	return result;
 }
 
@@ -182,11 +180,9 @@ void c_vtable_450cb8::v4(s_message_450cb8 *a1, s_context_450cb8 *a2, real *a3, l
 {
 	c_handler_450cb8 *handler = handlers->handlers[a1->type];
 	long count = handler->v3();
-	long i;
-	long *handle_pointer;
-	for (i = 0, handle_pointer = a1->handles; i < count; i++, handle_pointer++)
+	for (long i = 0; i < count; i++)
 	{
-		long handle = *handle_pointer;
+		long handle = a1->handles[i];
 		if (handle != NONE)
 		{
 			s_table_450cb8 *table = &a2->world->a->block->table;
@@ -204,22 +200,24 @@ void c_vtable_450cb8::v4(s_message_450cb8 *a1, s_context_450cb8 *a2, real *a3, l
 		}
 	}
 
-	if (!handler->v5(a1, a2))
-		goto fail;
-	handler->v6(a1, a2, a4);
-
+	if (handler->v5(a1, a2))
 	{
+		handler->v6(a1, a2, a4);
 		s_definition_4ced60 *definition = &g_4ced60[a1->type];
+		real value;
 		if (definition->unknown00 > 0.0f)
 		{
-			*a3 = definition->unknown00;
-			return;
+			value = definition->unknown00;
 		}
-		real difference = definition->unknown10 - definition->unknown0c;
-		real fraction = 0.0f;
-		if (difference > 0.0f)
-			fraction = handler->v7(a1, a2, definition->unknown08);
-		*a3 = fraction * difference + definition->unknown0c;
+		else
+		{
+			real difference = definition->unknown10 - definition->unknown0c;
+			real fraction = 0.0f;
+			if (difference > 0.0f)
+				fraction = handler->v7(a1, a2, definition->unknown08);
+			value = fraction * difference + definition->unknown0c;
+		}
+		*a3 = value;
 		return;
 	}
 
@@ -292,7 +290,7 @@ long c_vtable_450c94::v1(long a1, long max_count, void *entries)
 				size += 0x71;
 
 			entry->unknown00 = unknown04;
-			real value = *(volatile real *)&g_4cf478;
+			real value = g_network_configuration.real1438;
 			if (flag_a)
 			{
 				real x;
@@ -300,12 +298,12 @@ long c_vtable_450c94::v1(long a1, long max_count, void *entries)
 				source->v1(i, a1, &x, &y);
 				long start = *time_pointer;
 				long elapsed = time_now() - start;
-				if (elapsed >= g_4cf47c)
-					value = g_4cf480;
+				if (elapsed >= g_network_configuration.value143c)
+					value = g_network_configuration.real1440;
 				else if (elapsed >= y)
-					value = g_4cf488 * x + g_4cf484;
+					value = g_network_configuration.real1448 * x + g_network_configuration.real1444;
 				else
-					value = g_4cf490 * x + g_4cf48c;
+					value = g_network_configuration.real1450 * x + g_network_configuration.real144c;
 			}
 			entry->size = size;
 			entry->unknown04 = value;
@@ -398,7 +396,12 @@ long c_vtable_450c94::v5(dword a1, s_bitstream *stream, long max_blocks, s_block
  while (stream_read_bit(stream))
  {
   long index = function_1959c0(stream, 5);
-  if (index < 0 || index >= 32 || used >= max_blocks)
+  if (index < 0 || index >= 32)
+  {
+   result = 3;
+   break;
+  }
+  if (used >= max_blocks)
   {
    result = 3;
    break;
@@ -427,23 +430,26 @@ long c_vtable_450c94::v5(dword a1, s_bitstream *stream, long max_blocks, s_block
   }
   if (!result && !has_input && !has_transform)
    result = 3;
-  if (result)
+  if (!result)
+  {
+   s_block_450c94 *block = &blocks[used++];
+   block->index = index;
+   ((s_item_450cb8 *)block->data)[0].size = input ? 0x34 : 0;
+   ((s_item_450cb8 *)block->data)[1].size = transform ? 0x40 : 0;
+   ((s_item_450cb8 *)block->data)[0].data = input;
+   block->unknown00 = NONE;
+   block->count = 2;
+   ((s_item_450cb8 *)block->data)[0].type = 9;
+   ((s_item_450cb8 *)block->data)[1].type = 10;
+   ((s_item_450cb8 *)block->data)[1].data = transform;
+  }
+  else
   {
    if (input) { long size; release_input_block(input, &size); }
    if (transform) { long size; release_input_block(transform, &size); }
-   break;
   }
-  s_block_450c94 *block = &blocks[used++];
-  block->unknown00 = NONE;
-  block->index = index;
-  block->count = 2;
-  s_item_450cb8 *items = (s_item_450cb8 *)block->data;
-  items[0].size = input ? 0x34 : 0;
-  items[0].type = 9;
-  items[0].data = input;
-  items[1].size = transform ? 0x40 : 0;
-  items[1].type = 10;
-  items[1].data = transform;
+  if (result)
+   break;
  }
  *count = used;
  return result;

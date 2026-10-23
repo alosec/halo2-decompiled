@@ -66,6 +66,11 @@ PRIVATE inline XUID const *slot_update_id(XONLINE_USER const *user)
 	return result;
 }
 
+PRIVATE inline s_slot_update_view *slot_update_get(long index)
+{
+	return &((s_slot_update_view *)g_54e8e0)[index];
+}
+
 PRIVATE inline bool slot_update_connected(short index)
 {
 	return g_4e61cc[index] != 0;
@@ -85,22 +90,17 @@ void function_18f62b()
 	}
 	else if (!g_551ae4)
 		function_1907d6(g_54d5b8);
+	bool *reconnect_flags = g_551ae0;
 	long index = 0;
 	do
 	{
-		s_slot_update_view *slot = &((s_slot_update_view *)g_54e8e0)[index];
 		bool changed = false;
+		s_slot_update_view *slot = slot_update_get(index);
 		bool connected = slot_update_connected((short)index);
-		if (connected)
-		{
-			g_551ae0[index] = false;
-			slot->flags |= 1;
-		}
-		else
-		{
-			function_191234(index);
-			slot->flags &= ~1;
-		}
+		if (!connected) function_191234(index);
+		else reconnect_flags[index] = false;
+		if (connected) slot->flags |= 1;
+		else slot->flags &= ~1;
 		if (connected)
 		{
 			char drive;
@@ -112,7 +112,7 @@ void function_18f62b()
 			else slot->flags &= ~8;
 		}
 		else slot->flags &= ~14;
-		if (TEST_FIELD_BIT(slot->field_0_5)) function_190f9b(index);
+		if (TEST_FIELD_BIT(slot_update_get(index)->field_0_5)) function_190f9b(index);
 		if (slot->team_task != NONE)
 		{
 			long status = online_task_poll(slot->team_task);

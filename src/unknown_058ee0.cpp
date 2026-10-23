@@ -147,14 +147,24 @@ bool network_session_manager_is_joining(void)
 	return result;
 }
 
+PRIVATE __forceinline void function_59281(const c_class_58d20 *arg_0, bool *arg_1)
+{
+	long local_0 = arg_0->state;
+	if (!local_0)
+		*arg_1 = true;
+	else if (local_0 > 2 && local_0 <= 8)
+		*arg_1 = arg_0->current_member == arg_0->value50;
+}
+
 // @retail 0x59280
 void network_session_manager_check_joining_leader(void)
 {
 	if (g_527330.initialized && g_527330.state == 5 && !g_527330.state_joining.unknown104)
 	{
 		c_class_58d20 *session = g_527330.state_joining.owner->session_a;
-		long state = session->state;
-		if (!state || (state > 2 && state <= 8 && session->current_member == session->value50))
+		bool local_0 = false;
+		function_59281(session, &local_0);
+		if (local_0)
 			g_527330.state_joining.flage9 = true;
 	}
 }
@@ -179,6 +189,128 @@ void network_session_check_tracking(c_class_58d20 *session)
 	{
 		if (!memcmp(&g_510528, network_session_get_id(session), sizeof(s_session_id)))
 			session_tracking_changed();
+	}
+}
+
+struct s_helper_source;
+
+struct s_helper_output
+{
+	long l0;
+	long l4;
+	long l8;
+	long lc;
+	long l10;
+	long l14;
+	long l18;
+	long l1c;
+	long l20;
+	long l24;
+	long l28;
+};
+
+
+struct s_online_match_session_info
+{
+	XNKEY key;
+	XNKID session_id;
+	XNADDR address;
+	s_helper_output output;
+};
+
+class c_helper_a
+{
+public:
+	virtual void v0(long a, long b);
+	virtual void v1();
+	virtual void v2();
+	virtual void v3(s_helper_output *out);
+	virtual long v4();
+	virtual long v5(long size, void *data);
+	virtual long v6();
+	virtual bool v7();
+	virtual void v8(long a);
+
+	s_helper_source *source;
+	bool b8;
+	bool b9;
+	bool ba;
+	byte unknownb;
+	long lc;
+	long l10;
+	long l14;
+	long l18;
+	long l1c;
+	long l20;
+	bool listening;
+	byte unknown25[3];
+	long listen_time;
+	long l2c;
+	bool b30;
+	byte unknown31[3];
+	s_online_match_session_info info;
+};
+
+struct s_session_search
+{
+	long unknown00;
+	s_session_owner *owner;
+	bool active;
+	bool unknown09;
+	bool unknown0a;
+	byte unknown0b;
+	long task0c;
+	long value10;
+	long task14;
+	long value18;
+	long value1c;
+	long value20;
+	byte unknown24[8];
+	long type;
+	bool unknown30;
+	byte unknown31[0x9c - 0x31];
+};
+
+struct s_session_searches
+{
+	bool initialized;
+	s_session_search search_a;
+	c_session_state_matchmaking *matchmaking;
+	s_session_search search_b;
+};
+
+extern s_session_searches g_477088;
+
+struct s_network_session_list;
+void function_6dec0(s_session_owner_view *owner);
+void function_737b0(c_helper_a *helper);
+c_class_58d20 *network_session_manager_find_session(s_network_session_list *manager, s_session_id const *id);
+
+// score 20 (was 20): after the call to 0x75800, retail rereads g_510518 and
+// stores an immediate 0 into g_51051d; ours drops the repeated check, since
+// the callee does not write g_510518 (a separate global here), and stores al,
+// the call's zero result. A _ReadWriteBarrier before the check brings the
+// reread back with other registers (23, also with nested ifs); an inner-block
+// barrier and a session local stay at 20. The 600 s permutation run found no
+// improvement.
+// @retail 0x59940
+void function_59940(void)
+{
+	if (g_527330.initialized)
+	{
+		function_6dec0((s_session_owner_view *)&g_527330.state);
+		((c_helper_a *)&g_477088.search_a)->c_helper_a::v2();
+		((c_helper_a *)&g_477088.search_b)->c_helper_a::v2();
+		function_737b0((c_helper_a *)&g_477088.search_b);
+		if (g_510518 && !network_session_manager_find_session(
+			(s_network_session_list *)g_527330.unknown30, &g_510528))
+		{
+			if (g_510518)
+			{
+				g_51051c = true;
+				g_51051d = false;
+			}
+		}
 	}
 }
 
@@ -269,10 +401,11 @@ static inline long session_get_value49f8(c_class_58d20 *session)
 // @retail 0x59500
 long network_session_manager_get_value49f8(void)
 {
-	c_class_58d20 *session = session_manager_session_a();
-	if (!session_state_is_live(session))
-		return 1;
-	return session_get_value49f8(session);
+	long local_0 = 1;
+    c_class_58d20 *session = session_manager_session_a();
+	if (session_state_is_live(session))
+        local_0 = session_get_value49f8(session);
+    return local_0;
 }
 
 // @retail 0x59530
@@ -318,21 +451,33 @@ void network_session_manager_request_mode_acknowledge(void)
 	}
 }
 
+PRIVATE __forceinline void function_59615(c_class_58d20 *arg_0, bool *arg_1)
+{
+	if (network_session_parameters_set_mode(arg_0, 1))
+		*arg_1 = true;
+	else
+		*arg_1 = *(volatile bool *)arg_1;
+}
+
 // @retail 0x59610
 bool network_session_manager_set_mode(void)
 {
 	bool result = false;
-	if (g_527330.state)
+	long local_0 = g_527330.state;
+	if (!local_0)
+		goto local_1;
+	if (local_0 == 1)
+		goto local_2;
 	{
-		if (g_527330.state == 1)
-			return true;
 		c_class_58d20 *session = session_manager_session_a();
-		if (session_state_is_live(session) && function_058d50(session))
-		{
-			if (network_session_parameters_set_mode(session, 1))
-				return true;
-		}
+		if (!function_058d50(session))
+			goto local_1;
+		function_59615(session, &result);
+		goto local_1;
 	}
+local_2:
+	result = true;
+local_1:
 	return result;
 }
 
@@ -555,14 +700,14 @@ void network_session_interface_update_session(c_class_58d20 *session);
 // @retail 0x59890 standard
 bool __stdcall network_session_manager_host_session(long mode, const XNKID *kid, const XNKEY *key)
 {
+	long state = session_manager_session_a()->state;
 	c_class_58d20 *session = session_manager_session_a();
 	bool result = false;
-	if (!session->state)
+	if (!state)
 	{
 		s_session_id id;
-		id.a = 0;
-		id.b = 0;
-		if (network_session_host(session, mode, 0, kid, key, 0, NULL, NULL, &id, 0))
+		memset(&id, 0, sizeof(id));
+		if (network_session_host(session_manager_session_a(), mode, 0, kid, key, 0, NULL, NULL, &id, 0))
 		{
 			result = true;
 			network_session_interface_update_session(session);

@@ -40,44 +40,51 @@ bool function_e4050(long object_index);
 s_type_5cfb45 *function_25d670(long prop_ref_index);
 real normalize2d(point2f *v);
 bool function_1f57f0(long actor_index, long animation, long const *target);
-bool function_1be410(point3f *point, long object_index, long actor_index);
+bool function_1be410(long actor_index, long object_index, point3f *point);
 point3f *function_b9dd0(long object_index, point3f *result);
 bool function_1f8100(long actor_index, point3f const *origin, point3f const *target);
 
+// score 74 (was 74): the three position components are loaded into different
+// SSE registers
+// here and the copies on the stack sit at different offsets.
 // @retail 0x1be4b0
 short __stdcall function_1be4b0(long actor_index)
 {
+	struct { point3f origin; point3f point; } geometry;
 	s_actor_view *actor = actor_get(actor_index);
 	short result = 0;
 	if (actor->prop_index != NONE && actor->unknown348 != NONE)
 	{
 		if (object_get(actor->unknown018)->type == 0)
 		{
-			point3f point;
-			function_b9dd0(actor->unknown348, &point);
-			real z = actor->position.z - point.z;
-			real x = actor->position.x - point.x;
-			real y = actor->position.y - point.y;
-			if (z * z + x * x + y * y < 16.0f && function_1be410(&point, actor->unknown348, actor_index))
+			function_b9dd0(actor->unknown348, &geometry.point);
+			real z = actor->position.z - geometry.point.z;
+			real x = actor->position.x - geometry.point.x;
+			real y = actor->position.y - geometry.point.y;
+			if (z * z + x * x + y * y < 16.0f && function_1be410(actor_index, actor->unknown348, &geometry.point))
 			{
-				point3f origin = point;
-				origin.x -= object_get(actor->unknown348)->unknown03c;
-				origin.z = actor->position.z;
-				if (function_1f8100(actor_index, &origin, &point))
-					return 3;
+				geometry.origin = geometry.point;
+				geometry.origin.x -= object_get(actor->unknown348)->unknown03c;
+				geometry.origin.z = actor->position.z;
+				if (function_1f8100(actor_index, &geometry.origin, &geometry.point))
+				{
+					result = 3;
+					goto done;
+				}
 			}
-			return 0;
 		}
 	}
+done:
 	return result;
 }
 
 // @retail 0x1be6e0
 short __stdcall function_1be6e0(long actor_index, s_slot *slot, bool active)
 {
-	s_actor_view *actor = actor_get(actor_index);
-	s_slot_20 *state = (s_slot_20 *)slot;
+	s_slot *volatile *local_0 = &slot;
+	s_slot_20 *state = (s_slot_20 *)*local_0;
 	short result = g_46fbe4;
+	s_actor_view *actor = actor_get(actor_index);
 	if (actor->prop_index != NONE && state->unknown10 != NONE &&
 		(actor->unknown348 == state->unknown10 || state->unknown0d))
 	{
@@ -103,8 +110,11 @@ short __stdcall function_1be6e0(long actor_index, s_slot *slot, bool active)
 }
 
 /* where the actor goes to reach the object */
+// score 46 (was 46): the point argument travels on the stack here and in EAX
+// in retail, because function_26fc80 takes its point argument in EBX in
+// retail and on the stack in our build.
 // @retail 0x1be410
-bool function_1be410(point3f *point, long object_index, long actor_index)
+bool function_1be410(long actor_index, long object_index, point3f *point)
 {
 	s_slot_object_view *object = object_get(object_index);
 	real distance = 0.2f;
@@ -124,8 +134,8 @@ bool function_1be410(point3f *point, long object_index, long actor_index)
 // @retail 0x1be630
 bool __stdcall function_1be630(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE && actor->unknown348 != NONE)
 	{
@@ -136,7 +146,7 @@ bool __stdcall function_1be630(long actor_index, s_slot *slot)
 		{
 			state->unknown10 = actor->unknown348;
 			function_1f86a0(actor_index);
-			return true;
+			result = true;
 		}
 	}
 	return result;
@@ -151,24 +161,24 @@ void __stdcall function_1be6b0(long actor_index, s_slot *slot)
 // @retail 0x1be840
 bool __stdcall function_1be840(long actor_index, s_slot *slot)
 {
+	bool result = true;
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_20 *state = (s_slot_20 *)slot;
-	bool result = true;
 
 	if (state->unknown10 == NONE)
-		return false;
-	if (actor->unknown348 != state->unknown10 && !state->unknown0d)
-		return true;
-	if (state->unknown0c)
+		result = false;
+	else if (actor->unknown348 == state->unknown10 || state->unknown0d)
 	{
-		if (object_get(actor->unknown018)->type != 0)
-			return false;
-		if (function_e4050(actor->unknown018))
-			state->unknown0d = true;
-		return true;
+		if (state->unknown0c)
+		{
+			if (object_get(actor->unknown018)->type != 0)
+				result = false;
+			else if (function_e4050(actor->unknown018))
+				state->unknown0d = true;
+		}
+		else if (!function_1f4460(actor_index, &state->unknown18.point, state->unknown14, state->unknown10, false))
+			result = false;
 	}
-	if (!function_1f4460(actor_index, &state->unknown18.point, state->unknown14, state->unknown10, false))
-		return false;
 	return result;
 }
 
@@ -192,6 +202,9 @@ s_slot_handler_2 g_47ed58 =
 
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force);
 
+// score 36 (was 36): the point argument is passed to function_1be410 on the
+// stack here and in EAX in retail, which moves the stores of the slot state
+// around as well.
 // @retail 0x1be8f0
 void __stdcall function_1be8f0(long actor_index, s_slot *slot)
 {
@@ -205,7 +218,7 @@ void __stdcall function_1be8f0(long actor_index, s_slot *slot)
         actor->unknown420 = 6;
         *(long *)&actor->unknown424 = state->unknown10;
         point3f point;
-        if (function_1be410(&point, state->unknown10, actor_index) && function_1f8160(actor_index, NULL, &point, false))
+        if (function_1be410(actor_index, state->unknown10, &point) && function_1f8160(actor_index, NULL, &point, false))
         {
             actor->unknown228 = true;
             state->unknown0c = true;

@@ -11,8 +11,6 @@ public:
     void function_315910(void *arg_0);
 };
 
-// @stub 0x30cb30
-void c_2784c4::function_30cb30(void *arg_0) {}
 
 // @stub 0x315910
 void c_2784c5::function_315910(void *arg_0) {}

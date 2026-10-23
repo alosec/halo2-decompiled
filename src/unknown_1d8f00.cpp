@@ -55,9 +55,9 @@ matrix3x3 *function_141e10(matrix3x3 *out, quaternionf const *q);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 void function_1421b0(transform4x3f *out, point3f const *position, quaternionf const *rotation);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
-void function_120220(transform4x3f *mid, transform4x3f *root, transform4x3f *target, transform4x3f *end);
+void function_120220(transform4x3f *target, transform4x3f *end, transform4x3f *root, transform4x3f *mid);
 struct s_render_model_definition;
-void render_model_build_child_node_matrices(s_render_model_definition const *definition, transform4x3f const *parent_matrix,
+void __stdcall render_model_build_child_node_matrices(s_render_model_definition const *definition, transform4x3f const *parent_matrix,
 	long node_index, long node_count, transform4x3f *field_50);
 
 PRIVATE inline s_render_model_view *render_model_view_get(long render_model_index)
@@ -113,24 +113,40 @@ PRIVATE __forceinline void function_1d8f51(transform4x3f *arg_0, point3f const *
     arg_0->position = *arg_1;
 }
 
+struct s_1d8f53
+{
+	long field_0;
+	s_render_model_marker_group *field_4;
+	long field_8;
+};
+
+#pragma optimize("g", off)
+PRIVATE __forceinline void function_1d8f54(real *arg_0)
+{
+	*arg_0 = 0.0f - *arg_0;
+}
+#pragma optimize("g", on)
+
 PRIVATE __forceinline long function_1d8f52(long marker_group_index, long render_model_index, byte const *region_permutations,
 	long const *node_remapping, transform4x3f const *field_50, bool mirrored, s_object_marker *markers, long count)
 {
 	s_object_marker **local_1 = &markers;
 	s_object_marker *local_2;
 	long result = 0;
+	s_1d8f53 local_3;
 
 	if (marker_group_index != NONE)
 	{
-		s_render_model_marker_group *group = &render_model_view_get(render_model_index)->marker_groups[marker_group_index];
-		long i;
+		local_3.field_4 = &render_model_view_get(render_model_index)->marker_groups[marker_group_index];
 
-		if (group->marker_count > 0)
+		local_3.field_8 = 0;
+		if (local_3.field_4->marker_count > 0)
 		{
 			local_2 = *local_1;
-			for (i = 0; i < group->marker_count; i++)
+			local_3.field_0 = 0;
+			while (true)
 			{
-				s_render_model_marker *marker = &group->markers[i];
+				s_render_model_marker *marker = (s_render_model_marker *)((byte *)local_3.field_4->markers + local_3.field_0);
 
 				if (marker_permutation_visible(region_permutations, marker))
 				{
@@ -156,10 +172,14 @@ PRIVATE __forceinline long function_1d8f52(long marker_group_index, long render_
 					if (mirrored)
 					{
 						out->matrix.left.i = 0.0f - out->matrix.left.i;
-						out->matrix.left.j = 0.0f - out->matrix.left.j;
-						out->matrix.left.k = 0.0f - out->matrix.left.k;
+						function_1d8f54(&out->matrix.left.j);
+						function_1d8f54(&out->matrix.left.k);
 					}
 				}
+				local_3.field_8++;
+				local_3.field_0 += sizeof(s_render_model_marker);
+				if (local_3.field_8 >= local_3.field_4->marker_count)
+					break;
 			}
 		}
 	}
@@ -197,7 +217,7 @@ short function_1d90b0(long render_model_index, long marker_name, byte const *reg
    reaches the target (weighted toward the node's own position), then carries
    the node's children along */
 // @retail 0x1d90e0
-void function_1d90e0(long render_model_index, transform4x3f *nodes, long node_index, transform4x3f const *marker_matrix,
+void function_1d90e0(long render_model_index, long node_index, transform4x3f *nodes, transform4x3f const *marker_matrix,
 	transform4x3f const *target_matrix, real weight, long node_count)
 {
 	s_render_model_view *definition = render_model_view_get(render_model_index);
@@ -212,19 +232,18 @@ void function_1d90e0(long render_model_index, transform4x3f *nodes, long node_in
 			transform4x3f target;
 			transform4x3f node_inverse;
 			transform4x3f delta;
-			transform4x3f *node = &nodes[node_index];
 
 			function_141590(marker_matrix, &target);
 			function_142a60(target_matrix, &target, &target);
-			function_141590(node, &node_inverse);
+			function_141590(&nodes[node_index], &node_inverse);
 			if (!(fabs(weight - 1.0f) < k_real_epsilon))
 			{
-				target.position.x = node->position.x * (1.0f - weight) + target.position.x * weight;
-				target.position.y = node->position.y * (1.0f - weight) + target.position.y * weight;
-				target.position.z = node->position.z * (1.0f - weight) + target.position.z * weight;
+				target.position.x = nodes[node_index].position.x * (1.0f - weight) + target.position.x * weight;
+				target.position.y = nodes[node_index].position.y * (1.0f - weight) + target.position.y * weight;
+				target.position.z = nodes[node_index].position.z * (1.0f - weight) + target.position.z * weight;
 			}
-			function_120220(&nodes[parent_node_index], &nodes[grandparent_node_index], &target, node);
-			function_142a60(node, &node_inverse, &delta);
+			function_120220(&target, &nodes[node_index], &nodes[grandparent_node_index], &nodes[parent_node_index]);
+			function_142a60(&nodes[node_index], &node_inverse, &delta);
 			render_model_build_child_node_matrices((s_render_model_definition const *)definition, &delta, node_index, node_count,
 				nodes);
 		}

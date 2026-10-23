@@ -20,7 +20,7 @@ struct s_recorded_animation
 	byte unknown9e[2];
 };
 
-s_recorded_animation *recorded_animation_find(long object_index, long *datum_index);
+s_recorded_animation *recorded_animation_find(long *datum_index, long object_index);
 __declspec(noinline) long recorded_animation_get_frames(long object_index);
 /* plays a cutscene recording on a unit (cutscene_play: flags 0;
    cutscene_play_and_free: 8; cutscene_play_and_float: 0x10) */

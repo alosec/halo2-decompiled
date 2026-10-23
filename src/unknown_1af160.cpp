@@ -12,17 +12,17 @@ struct s_1f4a20_entry;
 struct s_1f4a20_source;
 void *function_1e4be0(long arg_0);
 bool __stdcall function_1ac610(long arg_0, point3f const *arg_1, s_object_marker *arg_2, short *arg_3);
-bool function_1f4a20(long arg_0, s_reference arg_1, s_1f4a20_entry const *arg_2,
-    bool arg_3, s_type_c3b527 *arg_4, vector3f *arg_5, signed char *arg_6, bool *arg_7, s_1f4a20_source const *arg_8);
+bool function_1f4a20(s_1f4a20_entry const *arg_2, long arg_0, s_reference arg_1, s_1f4a20_source const *arg_8,
+    bool arg_3, s_type_c3b527 *arg_4, vector3f *arg_5, signed char *arg_6, bool *arg_7);
 bool function_1af530(long arg_0, long *arg_1, long *arg_2);
 void function_265c30(long arg_0, long arg_1, bool arg_2);
 
-#pragma inline_depth(1)
+// score 36 (was 36): the locals sit at stack addresses eight bytes lower than retail's, so the
+// values handed to the calls are taken from the wrong slots.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {
-    long const *local_25 = &arg_0;
-    s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (*local_25 & 0xffff) * sizeof(s_actor_view));
+    s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
     s_prop_node_view *local_1 = (s_prop_node_view *)(g_502418->data + (local_0->prop_index & 0xffff) * sizeof(s_prop_node_view));
     s_type_5cfb45 *local_2 = function_25d690((s_prop_datum *)local_1);
     s_reference local_3 = local_0->unknown418;
@@ -33,7 +33,7 @@ bool function_1af160(long arg_0, s_1af160 *arg_1)
     arg_1->field_b = local_6;
     arg_1->field_28 = local_6;
     arg_1->field_8 = local_6;
-    volatile bool local_5 = true;
+    bool local_5 = true;
     s_object_marker local_7[32];
     short local_8[32];
     if (!*(bool *)((byte *)local_0 + 0x3c) && local_0->unknown227)
@@ -63,66 +63,62 @@ bool function_1af160(long arg_0, s_1af160 *arg_1)
             ((s_actor_view *)g_4f55f0->data)[arg_0 & 0xffff].unknown040 = false;
             local_5 = false;
         }
-        ai_scratch_buffer_release(local_11);
-        return local_5;
     }
-    bool local_17 = false;
-    s_262b40_result *local_16 = function_262b40(local_15);
-    bool local_18 = false;
-    if (*(short *)((byte *)&local_12 + 0x5c) != 0 &&
-        *(long *)((byte *)local_16 + 0x14) != NONE && *(long *)((byte *)local_16 + 0x14) != 0xffff)
+    else
     {
-        local_18 = function_1f4a20(arg_0, local_15, (s_1f4a20_entry const *)&local_12,
-            true, &arg_1->field_c, &arg_1->field_1c, &arg_1->field_28, &local_17, (s_1f4a20_source const *)local_10);
-        if (local_18)
+        bool local_17 = false;
+        s_262b40_result *local_16 = function_262b40(local_15);
+        bool local_18 = false;
+        if (*(short *)((byte *)&local_12 + 0x5c) != 0 &&
+            *(long *)((byte *)local_16 + 0x14) != NONE && *(long *)((byte *)local_16 + 0x14) != 0xffff)
         {
-            arg_1->field_a = true;
-            arg_1->field_b = false;
+            local_18 = function_1f4a20((s_1f4a20_entry const *)&local_12, arg_0, local_15, (s_1f4a20_source const *)local_10,
+                true, &arg_1->field_c, &arg_1->field_1c, &arg_1->field_28, &local_17);
+            if (local_18)
+            {
+                arg_1->field_a = true;
+                arg_1->field_b = false;
+            }
+            else if (local_17)
+                local_15 = g_470fa0;
         }
-        else if (local_17)
-            local_15 = g_470fa0;
-    }
-    if (!local_18 && !local_17)
-        local_15 = function_2626b0(arg_0, local_15, local_13, local_11, local_14, true);
-    if (!REFERENCE_EQUAL(local_15, local_3))
-    {
-        real local_20 = (slot_random() * 0.0f + 2.0f) * g_510c54->field_2_3;
-        arg_1->field_0 = (short)real_to_long(local_20);
-    }
-    if (!REFERENCE_EQUAL(local_15, g_470fa0))
-    {
-        arg_1->field_4 = 0;
-        local_0->unknown4ae = true;
-        real local_21;
-        real local_22;
-        if (function_1af530(arg_0, (long *)&local_22, (long *)&local_21) &&
-            local_21 > function_210ac0((s_type_c3b527 const *)local_16, &local_2->position))
-            arg_1->field_8 = true;
-    }
-    long local_23 = function_1e1f20(arg_0);
-    if (local_23 != NONE)
-    {
-        byte *local_24 = (byte *)function_1e5280(arg_0, ai_object_get(local_23)->definition_index);
-        if (local_24)
+        if (!local_17 && !local_18)
+            local_15 = function_2626b0(arg_0, local_15, local_13, local_11, local_14, true);
+        if (!REFERENCE_EQUAL(local_15, local_3))
+        {
+            real local_20 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 5.0f, 5.0f) * g_510c54->field_2_3;
+            arg_1->field_0 = (short)real_to_long(local_20);
+        }
+        if (!REFERENCE_EQUAL(local_15, g_470fa0))
+        {
+            arg_1->field_4 = 0;
+            local_0->unknown4ae = true;
+            real local_22;
+            if (function_1af530(arg_0, (long *)&local_22, &local_13) &&
+                local_22 > function_210ac0((s_type_c3b527 const *)local_16, &local_2->position))
+                arg_1->field_8 = true;
+        }
+        long local_23 = function_1e1f20(arg_0);
+        if (local_23 != NONE)
         {
             bool local_26 = true;
-            real local_27 = *(real *)(local_24 + 0xc);
-            if (local_27 > local_1->unknown28)
-                local_26 = false;
-            else if (!REFERENCE_EQUAL(local_15, g_470fa0))
+            byte *local_24 = (byte *)function_1e5280(arg_0, ai_object_get(local_23)->definition_index);
+            if (local_24)
             {
-                point3f *local_28 = &function_25d690((s_prop_datum *)local_1)->position;
-                vector3f local_29;
-                local_29.i = local_28->x - local_12.point.x;
-                local_29.j = local_28->y - local_12.point.y;
-                local_29.k = local_28->z - local_12.point.z;
-                if (local_27 * local_27 > local_29.k * local_29.k + local_29.i * local_29.i + local_29.j * local_29.j)
+                if (*(real *)(local_24 + 0xc) > local_1->unknown28)
                     local_26 = false;
+                else if (!REFERENCE_EQUAL(local_15, g_470fa0))
+                {
+                    point3f *local_28 = &function_25d690((s_prop_datum *)local_1)->position;
+                    vector3f local_29;
+                    vector3d_from_points3d(&local_12.point, local_28, &local_29);
+                    if (length_sq3f(&local_29) < *(real *)(local_24 + 0xc) * *(real *)(local_24 + 0xc))
+                        local_26 = false;
+                }
+                function_265c30(local_0->prop_index, arg_0, local_26);
             }
-            function_265c30(local_0->prop_index, arg_0, local_26);
         }
     }
     ai_scratch_buffer_release(local_11);
     return local_5;
 }
-#pragma inline_depth(255)

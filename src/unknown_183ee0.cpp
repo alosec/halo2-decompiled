@@ -1,7 +1,7 @@
 // @flags /O2 /Ob1 /Gr
 /* UNKNOWN_183EE0.CPP: the structure bsp bit vectors (g_4ed280, allocated by
    183e40) and the eight slot identifiers (g_4eca60) with the tables that map
-   to them (g_4ea960, g_4eaa60, g_4eca80); the lifecycle callbacks of the
+   to them (g_4ea958, g_4eca80); the lifecycle callbacks of the
    entry with 183e40 (initialize_for_new_structure_bsp and
    dispose_from_old_structure_bsp) */
 
@@ -22,17 +22,6 @@ struct s_bsp_bit_vectors
 };
 
 extern byte *g_4ed280;
-extern long g_4ea95c;
-
-struct s_slot_pair
-{
-	long a;
-	long b;
-};
-
-byte g_4ea960[0x100];
-byte g_4eaa60[0x400][8];
-s_slot_pair g_4eca80[0x100];
 
 /* the view of the match globals the slot code reads */
 struct s_slot_entry
@@ -88,6 +77,13 @@ static inline byte *bsp_bit_vector(long index)
 	return &((s_bsp_bit_vectors *)g_4ed280)->bits[g_4686c4][index];
 }
 
+// score 6 (was 6): retail keeps the slot index in esi ([esi*4 + g_4eca60],
+// inc esi, cmp esi, 8); ours steps a byte offset ([esi + g_4eca60], add esi, 4,
+// cmp esi, 0x20). The other differing lines are the same instructions one byte
+// apart. dword, short and byte indices, do/while, a post-increment, a counter
+// in a struct, inline read, clear and release helpers, and a plain global array
+// keep the byte offset or score worse; the 600 s permutation run found no
+// improvement.
 // @retail 0x185a30
 void function_185a30(void)
 {
@@ -99,7 +95,7 @@ void function_185a30(void)
 		}
 		g_4eca60[i] = NONE;
 	}
-	g_4ea95c = 0;
+	g_4ea958.active_slot_count = 0;
 }
 
 // @retail 0x185a70
@@ -110,8 +106,8 @@ void function_185a70(void)
 		g_4eca80[i].b = NONE;
 		g_4eca80[i].a = NONE;
 	}
-	memset(g_4ea960, 0xff, sizeof(g_4ea960));
-	memset(g_4eaa60, 0xff, sizeof(g_4eaa60));
+	memset(g_4ea958.entry_slots, 0xff, sizeof(g_4ea958.entry_slots));
+	memset(g_4ea958.owner_entry_slots, 0xff, sizeof(g_4ea958.owner_entry_slots));
 }
 
 // @retail 0x183ee0
@@ -136,7 +132,7 @@ void function_183f00(void)
 // @retail 0x183f10
 void function_183f10(void)
 {
-	g_4ea95c = 0;
+	g_4ea958.active_slot_count = 0;
 	for (long i = 0; i < NUMBEROF(g_4eca60); i++)
 	{
 		g_4eca60[i] = NONE;
@@ -184,7 +180,7 @@ byte *function_183fc0(long index)
 }
 
 // @retail 0x184000
-long function_184000(long bit, long index)
+long function_184000(long index, long bit)
 {
 	if (bit != NONE)
 	{
@@ -207,11 +203,11 @@ long function_184400(long a, long b)
 	{
 		if (b == NONE)
 		{
-			value = g_4ea960[a];
+			value = g_4ea958.entry_slots[a];
 		}
 		else
 		{
-			value = g_4eaa60[b][a];
+			value = g_4ea958.owner_entry_slots[b][a];
 		}
 	}
 	if (value != NONE)
@@ -222,7 +218,7 @@ long function_184400(long a, long b)
 }
 
 void function_a8e90(long slot);
-long g_4ea958;
+s_slot_table_globals g_4ea958;
 
 struct s_slot_group
 {
@@ -245,24 +241,24 @@ PRIVATE inline long slot_identifier(long entry, long owner)
 	byte value = -1;
 	if (entry != NONE)
 	{
-		if (owner == NONE) value = g_4ea960[entry];
-		else value = g_4eaa60[owner][entry];
+		if (owner == NONE) value = g_4ea958.entry_slots[entry];
+		else value = g_4ea958.owner_entry_slots[owner][entry];
 	}
 	if (value != NONE) result = g_4eca60[value >> 5];
 	return result;
 }
 
-PRIVATE inline void slot_assign(long owner, long entry, long index, bool *used)
+__forceinline void slot_assign(long owner, long entry, long index, bool *used)
 {
 	long slot = index / 32;
-	if (owner == NONE) g_4ea960[entry] = (byte)index;
-	else g_4eaa60[owner][entry] = (byte)index;
+	if (owner == NONE) g_4ea958.entry_slots[entry] = (byte)index;
+	else g_4ea958.owner_entry_slots[owner][entry] = (byte)index;
 	g_4eca80[index].b = entry;
 	g_4eca80[index].a = owner;
 	if (!used[slot])
 	{
 		function_a8e90(slot);
-		++g_4ea95c;
+		g_4ea958.active_slot_count++;
 		used[slot] = true;
 		if (g_4e6948->mode == 4 && slot >= 0 && slot < 8)
 			g_4eca60[slot] = slot;
@@ -272,10 +268,10 @@ PRIVATE inline void slot_assign(long owner, long entry, long index, bool *used)
 // @retail 0x185630
 void function_185630()
 {
-	bool used[8] = { false };
-	long count = 0;
 	s_match_globals_slot_view *globals = (s_match_globals_slot_view *)g_4e0348;
 	s_slot_entry_list *list = g_4e0340;
+	long count = 0;
+	bool used[8] = { false };
 	for (long i = 0; i < list->count; ++i)
 	{
 		s_slot_entry *entry = &list->entries[i];
@@ -306,8 +302,8 @@ void function_185630()
 	}
 	if (g_4e6948->mode == 4)
 	{
-		g_4ea95c = 0;
+		g_4ea958.active_slot_count = 0;
 		for (long i = 0; i < 8; ++i) g_4eca60[i] = NONE;
 	}
-	g_4ea958 = count;
+	g_4ea958.assigned_entry_count = count;
 }

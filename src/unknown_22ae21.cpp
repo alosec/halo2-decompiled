@@ -76,7 +76,8 @@ void function_22ae21(long local_player_index, s_bitmap_widget_22ae21 const *widg
 		}
 		if (sequence_index >= 0)
 		{
-			if (sequence_index < tag->sequence_count)
+			/* retail compares the count in memory and does not keep it for the else-branch */
+			if (sequence_index < ((s_bitmap_tag_22ae21 volatile *)tag)->sequence_count)
 			{
 				s_bitmap_sequence_22ae21 *sequence = &tag->sequences[sequence_index];
 				if (sequence->sprite_count > 0)

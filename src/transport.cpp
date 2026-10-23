@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Gr
 /* TRANSPORT.CPP: the transport layer's startup and shutdown: XNet, Winsock and
    Xbox Live start when the Ethernet link comes up, and the network modules'
@@ -23,12 +24,12 @@ struct s_xnet_registry_entry
 	XNKID kid;
 	XNKEY key;
 };
-extern s_xnet_registry_entry g_4cf7d4[8];
-extern bool g_4cf791;
+
+
 
 /* the QoS pool (globals.cpp) */
-extern s_record_pool *g_4cf8d8;
-extern bool g_4cf8d4;
+
+
 
 /* the transport address cache and the security keys (unknown_07a9a0.cpp;
    0x7a840 is not decompiled yet: src/stubs/lane_d.cpp) */
@@ -206,4 +207,16 @@ void transport_shutdown(void)
 		WSACleanup();
 		XNetCleanup();
 	}
+}
+
+void __stdcall function_07a9a0(long unused);
+
+// @retail 0x7a840
+void function_07a840(void)
+{
+    memset(&g_4cf790, 0, 0x144);
+    transport_register_transition_functions(0,
+        (transport_transition_function)function_07a9a0,
+        (transport_transition_function)function_07a9a0, 0);
+    g_4cf790 = 1;
 }

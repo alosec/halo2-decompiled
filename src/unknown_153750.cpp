@@ -46,12 +46,16 @@ bool function_153750(s_player_appearance *appearance)
 }
 
 // @retail 0x1537a0
-char *function_1537a0(byte const *address)
+char *__stdcall function_1537a0(byte const *address)
 {
-	for (long i = 0; i < 12; i++)
+	long i = 0;
+	long remaining = 12;
+	do
 	{
 		sprintf(&g_55eb88[i * 3], "%02x%c", address[i], (char)(i == 11 ? 0 : ':'));
+		i++;
 	}
+	while (--remaining);
 	return g_55eb88;
 }
 
@@ -77,13 +81,8 @@ struct s_profile_record
 void function_1537f0(s_profile_record *record)
 {
 	memset(record, 0, sizeof(*record));
-	record->value40[0] = 0;
-	record->value40[1] = 0;
-	record->value40[2] = 0;
-	record->value40[3] = 0;
-	record->value70[0] = 0;
-	record->value70[1] = 0;
-	record->value70[2] = 0;
+	memset(record->value40, 0, sizeof(record->value40));
+	memset(record->value70, 0, sizeof(record->value70));
 	record->flag7c = false;
 	record->value7e = NONE;
 	record->value7f = NONE;
@@ -97,7 +96,7 @@ void function_1537f0(s_profile_record *record)
 // @retail 0x153850
 bool function_153850(byte *model)
 {
-	char value = (char)*model;
+	char signed_model_code = (char)*model;
 
-	return value >= -1 && value < 4;
+	return signed_model_code >= -1 && signed_model_code < 4;
 }

@@ -13,10 +13,7 @@ struct s_particle_properties_2ba;
 
 
 
-// @stub 0x2c52e7
-void __stdcall function_2c52e7(char const *map_name)
-{
-}
+
 
 struct s_widget_quad_2b11;
 struct s_float_rect;

@@ -1,0 +1,39 @@
+// @flags /O2 /GL- /GX
+// Havok (third-party physics library): a second copy of 0x2f9950's query: a
+// shape holding a tree of parts against the child of a wrapping shape, into
+// a collector of the nearest result; and a second copy of 0x2f99d0's query.
+#include "child_query_2f9950.h"
+#include "swapped_query_2ed2a0.h"
+
+void __cdecl function_2ea640(void const *a, void const *b, void const *input, void *collector, void *second_collector);
+
+// @retail 0x2facf0
+void __cdecl function_2facf0(body_2ea940 const *a, body_2ea940 const *b, input_2ea940 const *input, long value)
+{
+	nearest_value_2f9950 collector(value);
+	body_2ea940 child(a, a->placement, (wrapper_2f9950 const *)a->shape);
+	function_2ea940(b, &child, input, &collector);
+}
+
+// a second copy of 0x2f99d0: the query with the first side replaced by the
+// child of the shape that wraps it, and the two sides the other way round
+// @retail 0x2fad70
+void __cdecl function_2fad70(void const *a, void const *b, void const *input, void *collector, void *second_collector)
+{
+	query_2ed2a0 const *query = (query_2ed2a0 const *)input;
+	query_2ed2a0 swapped;
+	swap_query_2ed2a0(&swapped, query);
+	swapped_collector_2ed2a0 first(query->direction, collector);
+	body_2ea940 const *side = (body_2ea940 const *)a;
+	if (second_collector)
+	{
+		swapped_collector_2ed2a0 second(query->direction, second_collector);
+		body_2ea940 child(side, side->placement, (wrapper_2f9950 const *)side->shape);
+		function_2ea640(b, &child, &swapped, &first, &second);
+	}
+	else
+	{
+		body_2ea940 child(side, side->placement, (wrapper_2f9950 const *)side->shape);
+		function_2ea640(b, &child, &swapped, &first, 0);
+	}
+}

@@ -10,14 +10,14 @@ real g_4cf5d0;
 bool network_observer_channel_has_host(s_network_observer *arg_0, long arg_1);
 bool function_76520(long arg_0, bool arg_1, long *arg_2);
 long __stdcall function_765c0(long arg_0, long arg_1, byte *arg_2);
-long network_connection_get_reliable_window(s_network_connection *arg_0);
-long network_connection_get_reliable_value48(s_network_connection *arg_0);
-long network_connection_get_reliable_pending(s_network_connection *arg_0);
-long network_connection_owner_active(s_network_connection *arg_0);
+long link_connection_get_reliable_window(s_link_connection *arg_0);
+long link_connection_get_reliable_bytes(s_link_connection *arg_0);
+long link_connection_get_reliable_pending(s_link_connection *arg_0);
+long link_connection_owner_active(s_link_connection *arg_0);
 
 struct s_75fc0
 {
-	byte field_0[0x470];
+	byte field_0[0x518];
 	long field_470;
 	byte field_474[4];
 	__int64 field_478;
@@ -55,28 +55,35 @@ static __forceinline long function_75fc1(real arg_0)
 	return local_0;
 }
 
+#pragma optimize("g", off)
+static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
+{
+    long local_0 = NONE;
+    for (long local_1 = 0; local_1 < MAXIMUM_OBSERVER_CHANNELS; local_1++)
+    {
+        s_network_observer_channel *local_2 = &arg_0->channels[local_1];
+        if (local_2->state && local_2->connection_index == arg_1)
+        {
+            local_0 = local_1;
+            break;
+        }
+    }
+    return local_0;
+}
+#pragma optimize("", on)
+
 // @retail 0x75fc0
-bool function_75fc0(s_network_observer *arg_0, long arg_1,
+bool s_network_observer::connection_v05(long arg_1,
 	bool arg_2, bool arg_3, bool arg_4, bool *arg_5, bool *arg_6,
 	long *arg_7, long *arg_8, long arg_9, byte *arg_10)
 {
-	long local_0 = NONE;
-	long local_1 = 0;
-	do
-	{
-		if (arg_0->channels[local_1].state &&
-			arg_0->channels[local_1].connection_index == arg_1)
-		{
-			local_0 = local_1;
-			break;
-		}
-		local_1++;
-	} while (local_1 < MAXIMUM_OBSERVER_CHANNELS);
+	s_network_observer *arg_0 = this;
+	long local_0 = function_75fc3(arg_0, arg_1);
 	bool local_2 = false;
 	if (local_0 == NONE)
 		return local_2;
-	s_network_connection *local_3 = function_x7665e0(arg_1);
-	s_75fc0 *local_4 = (s_75fc0 *)&arg_0->channels[local_0];
+	s_link_connection *local_3 = link_connection_get(arg_1);
+	s_75fc0 *local_4 = (s_75fc0 *)((byte *)arg_0 + local_0 * sizeof(arg_0->channels[0]));
 	long local_5 = NONE;
 	long local_6 = NONE;
 	bool local_7 = false;
@@ -124,7 +131,7 @@ bool function_75fc0(s_network_observer *arg_0, long arg_1,
 	if (local_3->state == 5 && !local_8)
 	{
 		long local_19 = (local_3->flags & 8) ? 128 : 0;
-		long local_20 = network_connection_get_reliable_window(local_3);
+		long local_20 = link_connection_get_reliable_window(local_3);
 		real local_21 = (real)local_20 /
 			((real)local_19 * *(real *)((byte *)arg_0->configuration + 0x90));
 		if (local_21 < 1.0f)
@@ -160,7 +167,7 @@ bool function_75fc0(s_network_observer *arg_0, long arg_1,
 		if (local_23 < local_13)
 			return local_2;
 	}
-	else if (local_17 != 0.0f)
+	else if (local_17 == 0.0f)
 		return local_2;
 	long local_26 = NONE;
 	if (local_18 >= 0)
@@ -182,8 +189,8 @@ bool function_75fc0(s_network_observer *arg_0, long arg_1,
 		local_7 = true;
 	if (local_5 >= 0 && local_26 >= 0)
 	{
-		long local_27 = network_connection_get_reliable_value48(local_3);
-		long local_28 = network_connection_get_reliable_pending(local_3);
+		long local_27 = link_connection_get_reliable_bytes(local_3);
+		long local_28 = link_connection_get_reliable_pending(local_3);
 		if (local_28 > 0 && local_27 + local_26 > local_5)
 		{
 			long local_29 = local_5 - local_27;
@@ -204,7 +211,7 @@ bool function_75fc0(s_network_observer *arg_0, long arg_1,
 		{
 			if (local_3->callback)
 				local_31 = *(real *)((byte *)arg_0->configuration +
-					(network_connection_owner_active(local_3) ? 0xe4 : 0xe8));
+					(link_connection_owner_active(local_3) ? 0xe4 : 0xe8));
 			else
 				local_31 = *(real *)((byte *)arg_0->configuration + 0xec);
 		}

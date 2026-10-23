@@ -204,11 +204,12 @@ short __stdcall function_1adce0(long actor_index, s_slot *slot, bool active)
 }
 
 // @retail 0x1add50
-void __stdcall function_1add50(long actor_index, s_slot *slot)
+long __stdcall function_1add50(long actor_index, s_slot *slot)
 {
 	s_slot_47 *state = (s_slot_47 *)slot;
 	s_slot_entry_iterator iterator;
 	s_slot_memory_entry *entry;
+	long joint_index;
 
 	iterator.actor_index = actor_index;
 	iterator.reference.unknown2 = 0x47;
@@ -217,34 +218,57 @@ void __stdcall function_1add50(long actor_index, s_slot *slot)
 	{
 		if (function_26ecc0(actor_index, iterator.reference.unknown0, (s_joint_behavior_state *)slot))
 		{
-			if (entry->unknown4 != NONE)
-				return;
+			joint_index = entry->unknown4;
+			if (joint_index != NONE)
+				return joint_index;
 			break;
 		}
 	}
-	long joint_index = function_26e940(actor_index);
+	joint_index = function_26e940(actor_index);
 	if (joint_index != NONE)
 	{
 		state->joined = true;
 		state->joint_index = joint_index;
 	}
+	return joint_index;
+}
+
+/* walks the actors of the group at 0x502420 (the walk 0x256150 makes);
+   retail tests the next index at the loop head */
+struct s_member_iterator_1addd0
+{
+	long next_index;
+	long index;
+};
+
+static inline s_actor_view *member_iterator_next_1addd0(s_member_iterator_1addd0 *iterator)
+{
+	s_actor_view *member = 0;
+
+	if (iterator->next_index != NONE)
+	{
+		member = actor_get(iterator->next_index);
+		iterator->index = iterator->next_index;
+		iterator->next_index = member->next_index;
+	}
+	return member;
 }
 
 // @retail 0x1addd0
-short __stdcall function_1addd0(long actor_index, s_slot *slot, long joint_index, long unknown)
+short __stdcall function_1addd0(long actor_index, long joint_index, s_slot *slot, long unknown)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	short count = 0;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->unknown07c != NONE)
 	{
-		long other_index = element_502420_get(actor->unknown07c)->first_actor_index;
-		while (other_index != NONE)
+		s_member_iterator_1addd0 iterator;
+		s_actor_view *other;
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		iterator.index = NONE;
+		while ((other = member_iterator_next_1addd0(&iterator)) != 0)
 		{
-			s_actor_view *other = actor_get(other_index);
-			long index = other_index;
-			other_index = other->next_index;
-			if (actor != other && function_26eae0(joint_index, index, 3, 1.0f))
+			if (actor != other && function_26eae0(joint_index, iterator.index, 3, 1.0f))
 				count++;
 		}
 	}
@@ -275,36 +299,51 @@ local_0:
 	return result;
 }
 
+#pragma optimize("g", off)
+PRIVATE __forceinline real function_1aded1(real arg_0, real arg_1)
+{
+    return arg_0 + (arg_1 - arg_0) * AI_RANDOM_REAL();
+}
+#pragma optimize("", on)
+
 // @retail 0x1aded0
 bool __stdcall function_1aded0(long actor_index, s_slot *slot)
 {
 	s_slot_3b *state = (s_slot_3b *)slot;
-	bool result = true;
+	volatile bool result = true;
 	s_actor_entry_4ef0 *entry = (s_actor_entry_4ef0 *)function_1e4ef0(actor_index);
 
-	if (!entry)
-		return false;
-
-	real delay = entry->unknown14 + (entry->unknown18 - entry->unknown14) * AI_RANDOM_REAL();
-	real duration = entry->unknown1c + (entry->unknown20 - entry->unknown1c) * AI_RANDOM_REAL();
-	real ticks = (real)g_510c54->field_2_3 * delay;
-	long rounded;
-	__asm
+	if (entry)
 	{
-		fld ticks
-		fistp rounded
+		real delay = function_1aded1(entry->unknown14, entry->unknown18);
+		real duration = function_1aded1(entry->unknown1c, entry->unknown20);
+		{
+			real rate = g_510c54->field_2_3;
+			real ticks = rate * delay;
+			long rounded;
+			__asm
+			{
+				fld ticks
+				fistp rounded
+			}
+			state->ticks = (short)rounded;
+		}
+		{
+			real rate = g_510c54->field_2_3;
+			real ticks = rate * duration;
+			long rounded;
+			__asm
+			{
+				fld ticks
+				fistp rounded
+			}
+			state->unknown10 = 0;
+			state->unknown12 = false;
+			state->timer = (short)rounded;
+		}
+		return result;
 	}
-	state->ticks = (short)rounded;
-	ticks = (real)g_510c54->field_2_3 * duration;
-	__asm
-	{
-		fld ticks
-		fistp rounded
-	}
-	state->unknown10 = 0;
-	state->unknown12 = false;
-	state->timer = (short)rounded;
-	return result;
+	return false;
 }
 
 // @retail 0x1ae350
@@ -330,6 +369,17 @@ short __stdcall function_1ae360(long actor_index, s_slot *slot)
 
 /* ---- slot type 0x31 ---- */
 
+PRIVATE __forceinline bool function_1ae3b1(s_ai_actor_view_344 *view, s_actor_entry_4be0 *entry)
+{
+	bool flag = view->unknown5d4;
+	real value = view->unknown3d8;
+	if (!flag && value > entry->unknown04)
+		return true;
+	if (view->unknown5d4 && entry->unknown08 > value)
+		return false;
+	return flag;
+}
+
 // @retail 0x1ae3b0
 short __stdcall function_1ae3b0(long actor_index, s_slot *slot)
 {
@@ -339,19 +389,11 @@ short __stdcall function_1ae3b0(long actor_index, s_slot *slot)
 
 	if (entry)
 	{
-		bool flag = view->unknown5d4;
-		real value = view->unknown3d8;
-		if (!flag && value > entry->unknown04)
-			flag = true;
-		else if (flag && entry->unknown08 > value)
-			flag = false;
+		bool flag = function_1ae3b1(view, entry);
 		view->unknown449 = flag;
 		view->unknown44a = flag;
 		if (flag && !(*(byte *)function_1e4a50(actor->unknown054) & 1))
-		{
 			view->unknown480 = true;
-			return g_46fbe4;
-		}
 	}
 	return g_46fbe4;
 }
@@ -378,7 +420,7 @@ s_slot_handler_2x g_47dd00 =
 		},
 		(t_slot_proc)joint_update, joint_activate, joint_deactivate
 	},
-	function_1add50, 0, 0, 0, 0, (t_slot_proc4)function_1addd0,
+	(t_slot_proc)function_1add50, 0, 0, 0, 0, (t_slot_proc4)function_1addd0,
 	2, 10, 1.0f, 0
 };
 
@@ -431,6 +473,9 @@ real function_1c9ee0(real arg_0);
 void __stdcall function_26c2d0(long arg_0);
 bool function_255b10(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool arg_3);
 
+// score 41 (was 41): retail keeps the -1 sentinel in EBP and pushes the
+// arguments in the other order, where ours uses EBX for the sentinel, so the
+// prologue and the calls that follow differ.
 // @retail 0x1ae680
 short __stdcall function_1ae680(long arg_0, s_slot *arg_1)
 {
@@ -465,6 +510,12 @@ short __stdcall function_1ae680(long arg_0, s_slot *arg_1)
 	return g_46fbe4;
 }
 
+s_slot_handler_0 g_47ddf8 =
+{
+	0x13, 0, 0, -2, 0, function_1ae680
+};
+
+
 struct s_1ae440
 {
 	byte field_0[0x1c];
@@ -483,34 +534,38 @@ struct s_1ae441
 short __stdcall function_1ae440(long arg_0, s_slot *arg_1)
 {
 	s_actor_view *local_0 = actor_get(arg_0);
-	if (local_0->prop_index != NONE && !function_110ab0(local_0->unknown018) && g_4f55d0->unknown340)
+	if (local_0->prop_index != NONE)
 	{
-		s_prop_node_view *local_1 = prop_node_get(local_0->prop_index);
-		s_prop_state_view *local_2 = prop_node_state(local_1);
-		if (local_1->unknown24 >= 1 && local_1->unknown24 <= 2 && local_2->unknown3c != NONE)
+		long unit_index = local_0->unknown018;
+		if (!function_110ab0(unit_index) && g_4f55d0->unknown340)
 		{
-			s_1ae681 *local_3 = (s_1ae681 *)function_1e5380(arg_0);
-			if (local_3 && local_3->field_6 != NONE)
+			s_prop_node_view *local_1 = prop_node_get(local_0->prop_index);
+			s_prop_state_view *local_2 = prop_node_state(local_1);
+			if (local_1->unknown24 >= 1 && local_1->unknown24 <= 2 && local_2->unknown3c != NONE)
 			{
-				real local_4 = function_1e9700(0x18) * local_3->field_28;
-				long local_5 = ((s_1ae680 *)local_0)->field_7c8;
-				if (local_5 == NONE || (g_4e6948->state == 1 && g_4f55e5) || (real)(g_510c54->game_time - local_5) * g_510c54->rate >= local_4)
+				s_1ae681 *local_3 = (s_1ae681 *)function_1e5380(arg_0);
+				if (local_3 && local_3->field_6 != NONE)
 				{
-					real local_6 = function_1c9ee0(((s_1ae441 *)local_3)->field_30) * function_1e9700(0x17);
-					if (g_4e6948->state == 1 && g_4f55e5)
-						local_6 = 1.0f;
-					if (local_6 > function_259a0(&g_4e7408->unknown0) && local_0->unknown07c != NONE)
+					real local_4 = function_1e9700(0x18) * local_3->field_28;
+					long local_5 = ((s_1ae680 *)local_0)->field_7c8;
+					if (local_5 == NONE || (g_4e6948->state == 1 && g_4f55e5) || (real)(g_510c54->game_time - local_5) * g_510c54->rate >= local_4)
 					{
-						function_26c2d0(local_0->prop_index);
-						s_1ae440 *local_7 = (s_1ae440 *)local_2;
-						vector3f local_8;
-						function_210770(local_7->field_48.output_index, &local_7->field_1c, &local_8);
-						s_type_c3b527 local_9 = local_7->field_48;
-						local_9.point.x += local_8.i * 1.5f;
-						local_9.point.y += local_8.j * 1.5f;
-						local_9.point.z += local_8.k * 1.5f;
-						if (function_255b10(arg_0, &local_9, local_0->prop_index, false))
-							function_1fb7e0(arg_0, 0x1c, NULL, local_1->object_index, NONE);
+						real local_6 = function_1c9ee0(((s_1ae441 *)local_3)->field_30) * function_1e9700(0x17);
+						if (g_4e6948->state == 1 && g_4f55e5)
+							local_6 = 1.0f;
+						if (local_6 > function_259a0(&g_4e7408->unknown0) && local_0->unknown07c != NONE)
+						{
+							function_26c2d0(local_0->prop_index);
+							s_1ae440 *local_7 = (s_1ae440 *)local_2;
+							vector3f local_8;
+							function_210770(local_7->field_48.output_index, &local_7->field_1c, &local_8);
+							s_type_c3b527 local_9 = local_7->field_48;
+							local_9.point.x += local_8.i * 1.5f;
+							local_9.point.y += local_8.j * 1.5f;
+							local_9.point.z += local_8.k * 1.5f;
+							if (function_255b10(arg_0, &local_9, local_0->prop_index, false))
+								function_1fb7e0(0x1c, arg_0, NULL, local_1->object_index, NONE);
+						}
 					}
 				}
 			}
@@ -518,6 +573,12 @@ short __stdcall function_1ae440(long arg_0, s_slot *arg_1)
 	}
 	return g_46fbe4;
 }
+
+s_slot_handler_0 g_47dde4 =
+{
+	0x14, 0, 0, -2, 0, function_1ae440
+};
+
 
 
 struct s_1adff0
@@ -619,16 +680,25 @@ short __stdcall function_1adff0(long arg_0, short arg_1, bool arg_2)
 		byte *local_14 = (byte *)ai_object_get(local_13);
 		short local_15 = *(short *)(local_14 + 0x342);
 		if (*(short *)(local_14 + local_15 + 0xc) > 0)
-			return 2;
-		if (local_2->field_4 > 0)
+			local_1 = 2;
+		else if (local_2->field_4 > 0)
 		{
 			local_2->field_4--;
-			return 2;
+			local_1 = 2;
 		}
-		function_114b60(NONE, 0xd, local_13, 0xd, NULL);
-		real local_16 = (AI_RANDOM_REAL() + 2.0f) * g_510c54->field_2_3;
-		local_2->field_4 = (short)real_to_long(local_16);
-		local_1 = 2;
+		else
+		{
+			function_114b60(NONE, 0xd, local_13, 0xd, NULL);
+			real local_16 = (AI_RANDOM_REAL() + 2.0f) * g_510c54->field_2_3;
+			long local_17;
+			__asm
+			{
+				fld local_16
+				fistp local_17
+			}
+			local_2->field_4 = (short)local_17;
+			local_1 = 2;
+		}
 	}
 	return local_1;
 }

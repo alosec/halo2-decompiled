@@ -23,7 +23,7 @@ static inline dword network_time_now(void)
 }
 
 struct s_block_header;
-s_block_header *function_0b4d50(word tag);
+s_transport_endpoint *transport_endpoint_allocate(word tag);
 
 static inline void transport_endpoint_free(s_transport_endpoint *endpoint)
 {
@@ -189,10 +189,12 @@ void network_samples_add(s_network_samples *samples, long value)
 	samples->index = (samples->index + 1) % samples->count;
 }
 
+// score 38 (was 38): the stack frame differs: retail keeps the two words at esp+0x1e and
+// esp+0x20, ours at esp+0xc and esp+0x10.
 // @retail 0x92ae0
 bool network_link_open_endpoint(long type, word port, bool broadcast, s_transport_endpoint **endpoint_out)
 {
-	s_transport_endpoint *endpoint = (s_transport_endpoint *)function_0b4d50((word)type);
+	s_transport_endpoint *endpoint = (s_transport_endpoint *)transport_endpoint_allocate((word)type);
 	if (endpoint)
 	{
 		s_type_99af70 address;
@@ -273,7 +275,7 @@ long network_link_find_route(c_class_93590 *link, long kind, s_type_99af70 const
 		s_link_route *route = &link->m_routes[i];
 		if (link_address_match(address, &route->address))
 		{
-			s_network_connection *connection = function_x7665e0(route->connection_index);
+			s_link_connection *connection = link_connection_get(route->connection_index);
 			bool found;
 			switch (kind)
 			{
@@ -311,7 +313,7 @@ inline long network_link_find_connection(c_class_93590 *link, long kind, s_type_
 bool network_link_add_route(c_class_93590 *link, long connection_index, long kind, s_type_99af70 const *address)
 {
 	bool result = true;
-	s_network_connection *connection = function_x7665e0(connection_index);
+	s_link_connection *connection = link_connection_get(connection_index);
 	long existing;
 	if (connection->state > 2 && (connection->flags & 0x80))
 		existing = network_link_find_connection(link, 1, address);
@@ -323,10 +325,10 @@ bool network_link_add_route(c_class_93590 *link, long connection_index, long kin
 	{
 		if (existing != NONE)
 		{
-			if (connection->local_sequence - function_x7665e0(existing)->local_sequence == 0)
+			if (connection->local_sequence - link_connection_get(existing)->local_sequence == 0)
 				result = false;
 			else
-				network_connection_dispose(function_x7665e0(existing));
+				link_connection_dispose(link_connection_get(existing));
 		}
 		if (result)
 		{
@@ -349,13 +351,13 @@ bool network_link_add_route(c_class_93590 *link, long connection_index, long kin
 void network_link_close_connections(c_class_93590 *link)
 {
 	for (long i = 0; i < link->m_route_count; i++)
-		network_connection_close(function_x7665e0(link->m_routes[i].connection_index), 1);
+		link_connection_close(link_connection_get(link->m_routes[i].connection_index), 1);
 	link->m_route_count = 0;
 }
 
 /* a connection's update (lane D's region, not decompiled yet:
    src/stubs/lane_j.cpp) */
-void __stdcall function_0883c0(s_network_connection *connection);
+void __stdcall link_connection_update(s_link_connection *connection);
 
 /* updates the routes' connections and closes those whose route was dropped */
 // @retail 0x93090
@@ -364,12 +366,12 @@ void network_link_update_connections(c_class_93590 *link)
 	for (long i = 0; i < link->m_route_count; i++)
 	{
 		s_link_route *route = &link->m_routes[i];
-		s_network_connection *connection = function_x7665e0(route->connection_index);
-		function_0883c0(connection);
+		s_link_connection *connection = link_connection_get(route->connection_index);
+		link_connection_update(connection);
 		if (route->pending)
 		{
 			if (connection->state > 2)
-				network_connection_close(connection, 9);
+				link_connection_close(connection, 9);
 			route->pending = false;
 		}
 	}
@@ -550,7 +552,7 @@ void network_link_send_out_of_band(c_class_93590 *link, s_bitstream const *strea
 void network_link_send_connection_packet(c_class_93590 *link, long connection_index, s_bitstream const *stream, long extra_size, void const *extra, long *size_out)
 {
 	long result = 0;
-	s_network_connection *connection = function_x7665e0(connection_index);
+	s_link_connection *connection = link_connection_get(connection_index);
 	s_link_packet packet;
 	memset(&packet, 0, sizeof(packet));
 	if (connection->state != 0 && connection->state != 1)
@@ -591,7 +593,7 @@ done:
 }
 
 /* src/unknown_0820f0.cpp (lane D) */
-bool network_connection_read_packet(s_network_connection *connection, s_bitstream *stream, long packet_size, bool out_of_band);
+bool link_connection_read_packet(s_link_connection *connection, s_bitstream *stream, long packet_size, bool out_of_band);
 void __stdcall function_054810(void const *data, long size);
 
 /* a stream over data that is read */
@@ -630,17 +632,17 @@ void network_link_receive_packet(c_class_93590 *link, s_link_packet const *packe
 			long connection_index = link->m_routes[route_index].connection_index;
 			if (connection_index != NONE)
 			{
-				s_network_connection *connection = function_x7665e0(connection_index);
+				s_link_connection *connection = link_connection_get(connection_index);
 				if (packet->payload_size > 0)
 				{
 					s_bitstream stream;
 					stream_set_data(&stream, packet->payload, packet->payload_size);
-					network_connection_read_packet(connection, &stream, packet_size, false);
+					link_connection_read_packet(connection, &stream, packet_size, false);
 				}
 				if (packet->extra_size > 0)
 				{
 					function_054810(packet->extra, packet->extra_size);
-					network_connection_reset_timer(connection, 5);
+					link_connection_reset_timer(connection, 5);
 				}
 			}
 		}

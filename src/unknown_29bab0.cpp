@@ -72,6 +72,7 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
 {
+	vector3f const *const * input_reference = &arg_2;
 	byte *local_0 = (byte *)actor_get(arg_0);
 	s_slot_object_view *local_1 = object_get(arg_1);
 	s_29bab0 const *local_2 = (s_29bab0 const *)function_1e5450(arg_0, local_1->tag_index);
@@ -91,7 +92,7 @@ void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f local_7 = *g_4687a4;
 	point3f local_8;
 	function_b9dd0(arg_1, &local_8);
-	vector3f local_9 = *arg_2;
+	vector3f local_9 = *(*input_reference);
 	real local_10 = function_29bab1(&local_9);
 	if (!local_2)
 		*(bool *)(local_0 + 0x654) = false;
@@ -115,27 +116,25 @@ void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 		else
 		{
 			function_26c180(arg_0);
-			point2f local_14 = { local_8.x + arg_2->i, local_8.y + arg_2->j };
-			vector2f local_15 = { arg_2->i, arg_2->j };
+			point2f local_14 = { local_8.x + (*input_reference)->i, local_8.y + (*input_reference)->j };
+			vector2f local_15 = { (*input_reference)->i, (*input_reference)->j };
 			real local_16 = normalize2d((point2f *)&local_15);
 			vector2f local_17 = { local_4->i, local_4->j };
 			normalize2d((point2f *)&local_17);
 			real local_18 = (real)((double)local_2->field_1c * 0.5);
 			real local_19 = 0.0f >= local_2->field_14 ? local_1->unknown03c : local_2->field_14;
 			real local_20 = 1.0f;
-			bool local_21;
+			bool local_21 = true;
 			if (*(bool *)(local_0 + 0x654))
 			{
 				if ((double)local_15.i * local_17.i + (double)local_15.j * local_17.j < 0.99)
 					local_21 = false;
 				else if (!*(bool *)(local_0 + 0x4ae) && local_18 > local_16)
 					local_21 = false;
-				else
-					local_21 = true;
 			}
 			else
 			{
-				bool local_22 = arg_2->i * -local_17.j + arg_2->j * local_17.i > 0.0f;
+				bool local_22 = (*input_reference)->i * -local_17.j + (*input_reference)->j * local_17.i > 0.0f;
 				real local_23 = local_2->field_20;
 				real local_24 = local_22 ? local_23 : -local_23;
 				point2f local_25 = { local_8.x + -local_17.j * local_24, local_8.y + local_17.i * local_24 };
@@ -145,7 +144,7 @@ void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 					local_21 = false;
 				else if (!(local_23 > local_27) && !*(bool *)(local_0 + 0x4ae) && local_18 > local_16)
 					local_21 = false;
-				else if (arg_2->j * local_17.j + arg_2->i * local_17.i > 0.0f)
+				else if ((*input_reference)->j * local_17.j + (*input_reference)->i * local_17.i > 0.0f)
 					local_21 = true;
 				else
 				{
@@ -153,7 +152,7 @@ void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 					if (!local_22) local_21 = !local_21;
 				}
 			}
-			local_5 = *arg_2;
+			local_5 = *(*input_reference);
 			short local_22;
 			real local_23;
 			if (!(local_2->field_44 > local_16) && local_21 && !*(bool *)(local_0 + 0x4d5) && !*(bool *)(local_0 + 0x5d1))

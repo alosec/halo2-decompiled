@@ -123,6 +123,8 @@ PRIVATE void function_11ba50(long control_index)
 		case _control_call_button:
 			desired_value = definition->call_value;
 			break;
+		default:
+			__assume(0);
 		}
 
 		if (function_1071e0(control->group_index_13c, desired_value))

@@ -164,9 +164,10 @@ bool function_1df640(short team_a, short team_b)
 	if (g_4e6948->state == _game_mode_campaign &&
 		team_a >= 0 && team_a < k_maximum_game_teams && team_b >= 0 && team_b < k_maximum_game_teams)
 	{
-		long bit = team_a * k_maximum_game_teams + team_b;
-
-		result = function_0bfe60(g_4f55ec->ally_bits, bit) && !function_0bfe60(g_4f55ec->peace_bits, bit);
+		if (!function_0bfe60(g_4f55ec->ally_bits, team_a * k_maximum_game_teams + team_b) ||
+			function_0bfe60(g_4f55ec->peace_bits, team_a * k_maximum_game_teams + team_b))
+			return false;
+		result = true;
 	}
 	return result;
 }
@@ -196,10 +197,10 @@ void function_1df6c0(short team_a, short team_b, bool team_b_provokes, bool team
 
 	if (i < globals->allegiance_count)
 	{
-		allegiance = &globals->allegiances[i];
+		allegiance = &g_4f55ec->allegiances[i];
 
-		allegiance->team_a_provokes = team_a_provokes;
 		allegiance->team_b_provokes = team_b_provokes;
+		allegiance->team_a_provokes = team_a_provokes;
 		allegiance->team_a = team_a;
 		allegiance->team_b = team_b;
 		allegiance->incident_threshold = incident_threshold;
@@ -213,8 +214,11 @@ void function_1df6c0(short team_a, short team_b, bool team_b_provokes, bool team
 }
 
 // @retail 0x1df770
-bool function_1df770(short team_a, short team_b)
+bool function_1df770(short volatile team_a, short volatile team_b)
 {
+	short first_team = team_a;
+	short const *second_reference = (short const *)&team_b;
+	short second_team = *second_reference;
 	bool result = false;
 
 	if (g_4e6948->state == _game_mode_campaign)
@@ -223,14 +227,15 @@ bool function_1df770(short team_a, short team_b)
 
 		for (short i = 0; i < g_4f55ec->allegiance_count; i++, allegiance++)
 		{
-			if (allegiance->team_a == team_a && allegiance->team_b == team_b ||
-				allegiance->team_b == team_a && allegiance->team_a == team_b)
+			if (allegiance->team_a == first_team && allegiance->team_b == second_team ||
+				allegiance->team_b == first_team && allegiance->team_a == second_team)
 			{
 				function_1df9c0(allegiance, true, true);
 				g_4f55ec->allegiance_count--;
 				if (g_4f55ec->allegiance_count > i)
 					g_4f55ec->allegiances[i] = g_4f55ec->allegiances[g_4f55ec->allegiance_count];
-				return true;
+				result = true;
+				break;
 			}
 		}
 	}
@@ -333,22 +338,29 @@ PRIVATE void function_1dfaa0(dword *vector, long bit, bool value)
 		vector[bit >> 5] &= ~(1 << (bit & 31));
 }
 
-// @retail 0x1df9c0
+/* All 213 bytes match with the standard convention. Without this marker,
+   the same body takes the pointer in a register and returns ret 8.
+   Retail has no absolute reference to this address; its four callers
+   (0x1df500, 0x1df6c0, 0x1df770, 0x1df820) push all three arguments.
+   Direct pointer copies, parameter references and a force-inline helper
+   all used ret 8. Keeping the earlier guard held ret 12 but gave 217 bytes. */
+// @retail 0x1df9c0 standard
 PRIVATE void __stdcall function_1df9c0(s_type_e695f2 *volatile allegiance, bool broken, bool removed)
 {
-	if (!removed && allegiance->broken == broken)
+	s_type_e695f2 *local_0 = *(s_type_e695f2 *const *)&allegiance;
+	if (!removed && local_0->broken == broken)
 		return;
 
-	allegiance->broken = broken;
-	if (allegiance->team_a < k_maximum_game_teams && allegiance->team_b < k_maximum_game_teams)
+	local_0->broken = broken;
+	if (local_0->team_a < k_maximum_game_teams && local_0->team_b < k_maximum_game_teams)
 	{
-		function_1dfaa0(g_4f55ec->ally_bits, allegiance->team_a * k_maximum_game_teams + allegiance->team_b, !removed);
-		function_1dfaa0(g_4f55ec->ally_bits, allegiance->team_b * k_maximum_game_teams + allegiance->team_a, !removed);
-		function_1dfaa0(g_4f55ec->peace_bits, allegiance->team_a * k_maximum_game_teams + allegiance->team_b, !broken);
-		function_1dfaa0(g_4f55ec->peace_bits, allegiance->team_b * k_maximum_game_teams + allegiance->team_a, !broken);
+		function_1dfaa0(g_4f55ec->ally_bits, local_0->team_a * k_maximum_game_teams + local_0->team_b, !removed);
+		function_1dfaa0(g_4f55ec->ally_bits, local_0->team_b * k_maximum_game_teams + local_0->team_a, !removed);
+		function_1dfaa0(g_4f55ec->peace_bits, local_0->team_a * k_maximum_game_teams + local_0->team_b, !broken);
+		function_1dfaa0(g_4f55ec->peace_bits, local_0->team_b * k_maximum_game_teams + local_0->team_a, !broken);
 	}
-	allegiance->changed = true;
-	function_1c9830(allegiance->team_a, allegiance->team_b, broken, removed);
+	local_0->changed = true;
+	function_1c9830(local_0->team_a, local_0->team_b, broken, removed);
 }
 
 #include "data_array.h"

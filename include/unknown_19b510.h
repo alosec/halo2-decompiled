@@ -58,8 +58,8 @@ void dialog_ok_show(long a, long dialog_id, long b, short user_flags, dialog_cho
 
 /* opens the ok/cancel dialog (0x19b5af), and without its second choice and
    closed callbacks (0x19b590) */
-void dialog_choice_show(long a, long dialog_id, long b, word user_flags, dialog_choice_callback first_chosen, dialog_choice_callback second_chosen, dialog_closed_callback closed);
-void dialog_choice_show_default(long a, long b, word user_flags, dialog_choice_callback first_chosen, long dialog_id);
+void dialog_choice_show(long a, long dialog_id, long b, short user_flags, dialog_choice_callback first_chosen, dialog_choice_callback second_chosen, dialog_closed_callback closed);
+void dialog_choice_show_default(long a, long b, short user_flags, dialog_choice_callback first_chosen, long dialog_id);
 
 void function_23661f(s_dialog_definition *definition, long dialog_id);
 

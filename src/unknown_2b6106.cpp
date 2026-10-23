@@ -76,7 +76,8 @@ class c_y_menu_player_selected_screen : public c_screen_with_menu
 {
 public:
 	c_y_menu_player_selected_screen(long a, long b, word user_flags);
-	~c_y_menu_player_selected_screen();
+	virtual ~c_y_menu_player_selected_screen();
+	virtual void v3();
 
 	virtual screen_load_proc get_load_proc();
 
@@ -377,31 +378,31 @@ word *function_1630e0(word *buffer, const word *format, ...);
 bool function_2b6db1(s_time_left *time, c_widget *screen, word *result_string)
 {
 	bool result = false;
-	word format[0x100];
-	long string_handle;
+	struct s_string_buffer
+	{
+		word text[0x100];
+		void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+	} format;
 	long minutes;
 	long seconds;
 
-	format[0] = 0;
+	format.text[0] = 0;
 	if (time->game_seconds > 0)
 	{
-		minutes = time->game_seconds / 60;
 		seconds = time->game_seconds % 60;
-		string_handle = 0x13000264;
+		minutes = time->game_seconds / 60;
+		format.load(screen, 0x13000264);
+		function_1630e0(result_string, format.text, minutes, seconds);
+		result = true;
 	}
 	else if (time->session_seconds > 0)
 	{
-		minutes = time->session_seconds / 60;
 		seconds = time->session_seconds % 60;
-		string_handle = 0x15000265;
+		minutes = time->session_seconds / 60;
+		format.load(screen, 0x15000265);
+		function_1630e0(result_string, format.text, minutes, seconds);
+		result = true;
 	}
-	else
-	{
-		return result;
-	}
-	screen->function_230134(string_handle, format);
-	function_1630e0(result_string, format, minutes, seconds);
-	result = true;
 	return result;
 }
 
@@ -452,6 +453,117 @@ struct s_friend_session_2b642e
     short session_seconds;
 };
 
+#include "network_qos.h"
+struct s_match_result_data
+{
+    XNKEY key;
+    XNKID id;
+    XNADDR address;
+    DWORD public_filled, public_open, private_filled, private_open;
+    long properties[7];
+};
+struct s_qos_target { XNKID kid; XNKEY key; XNADDR xna; };
+extern byte g_4771c8[0x2580];
+extern dword g_54d5b8;
+bool __stdcall function_8c150(void *, long, unsigned __int64 *, void *, unsigned __int64 *);
+void function_1a31ff();
+struct s_window_manager_text;
+const char *function_148956(s_window_manager_text *);
+void ascii_string_to_unicode(const char *, word *, long);
+long online_task_poll(long);
+bool function_90160(long, s_match_result_data *);
+long qos_lookup(long, long, long, s_qos_target *);
+bool qos_is_complete(long);
+bool session_description_decode_buffer(byte const *, long, void *);
+struct s_friend_presence_status;
+bool function_8d230(XONLINE_FRIEND const *, s_friend_presence_status *);
+bool online_title_is_this_title(DWORD);
+// @retail 0x2b6e55
+void c_y_menu_player_selected_screen::v3()
+{
+	c_y_menu_player_selected_screen *screen = this;
+	word formatted[256];
+	s_global_string_buffer format;
+	word name[16], group_name[16];
+	formatted[0] = 0;
+	format.text[0] = 0;
+	if (!window_manager_channel_window_in_use(4, 4)) function_1a31ff();
+	screen->update_selection();
+	s_name_request selection;
+	function_14887e((s_screen_settings_54dc6c *)&selection);
+	XUID *user = selection_get_xuid(&selection);
+	ascii_string_to_unicode(function_148956((s_window_manager_text *)&selection), name, 16);
+	XUID group;
+	if (function_8c150(g_4771c8, 0, (unsigned __int64 *)user, group_name, &group.qwUserID) && group.qwUserID)
+	{
+		format.load(0x220006bd);
+		function_1630e0(formatted, format.text, name, group_name);
+		((c_class_1a2c81 *)((byte *)screen + 0x80))->function_22f52e()->set_text(formatted);
+	}
+	else
+		((c_class_1a2c81 *)((byte *)screen + 0x80))->function_22f52e()->set_text(name);
+	if (screen->task_index != NONE)
+	{
+		switch (online_task_poll(screen->task_index))
+		{
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+		{
+			/* the match search finished: look up the session it found */
+			s_match_result_data result;
+			if (function_90160(screen->task_index, &result))
+			{
+				s_qos_target target;
+				target.kid = result.id;
+				target.key = result.key;
+				target.xna = result.address;
+				screen->qos_handle = qos_lookup(1, 1, 0x10000, &target);
+			}
+		}
+			/* fall through: the task is done */
+		default:
+			function_6b640(screen->task_index);
+			screen->task_index = NONE;
+			break;
+		}
+	}
+	else if (screen->qos_handle != NONE && qos_is_complete(screen->qos_handle))
+	{
+		s_qos_result information;
+		if (qos_target_result(screen->qos_handle, &information, 0) &&
+			session_description_decode_buffer(information.data, information.data_size, screen->unknown9c4))
+		{
+			screen->value10e4 = true;
+			screen->value10e0 = g_54d5b8;
+		}
+		qos_release(screen->qos_handle);
+		screen->qos_handle = NONE;
+	}
+	for (long i = 0; i < 8; ++i)
+	{
+		c_class_1a2c81 *widget = screen->find_text(i + 2);
+		if (widget) widget->value6e = false;
+	}
+	if (screen->value10e5)
+	{
+		s_name_request friend_selection;
+		function_14887e((s_screen_settings_54dc6c *)&friend_selection);
+		s_friend_session_2b642e session;
+		bool present = function_8d230(&friend_selection.field_xb3bdcf, (s_friend_presence_status *)&session);
+		if (online_title_is_this_title(friend_selection.field_xb3bdcf.dwTitleID))
+			screen->update_friend_details(&friend_selection.field_xb3bdcf, &session);
+		else if (present)
+			screen->update_friend_status(&friend_selection.field_xb3bdcf, &session);
+		else function_2b635f(&friend_selection.field_xb3bdcf, (c_widget *)screen);
+	}
+	else screen->update_join_text();
+	screen->c_class_1a2c81::v3();
+}
+
+
 
 // @retail 0x2b642e
 void c_y_menu_player_selected_screen::update_friend_status(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
@@ -463,9 +575,13 @@ void c_y_menu_player_selected_screen::update_friend_status(XONLINE_FRIEND const 
     suffix[0] = 0;
     bool joinable = (bool)((online_friend_get_flags(friend_) >> 3) & 1);
     function_2b635f(friend_, (c_widget *)this);
-    if (session->type == 1)
+    /* volatile: retail keeps session on the stack and reads it from there
+       after the calls, which leaves edi to this; a plain read makes LTCG
+       pass session in edi instead */
+    s_friend_session_2b642e *current = *(s_friend_session_2b642e * const volatile *)&session;
+    if (current->type == 1)
     {
-        if (session->state)
+        if (current->state)
         {
             ((c_widget *)this)->function_230134(0x11000253, message);
             goto activity;
@@ -473,12 +589,12 @@ void c_y_menu_player_selected_screen::update_friend_status(XONLINE_FRIEND const 
         ((c_widget *)this)->function_230134(0xe000258, message);
         goto default_suffix;
     }
-    else if (session->type == 5)
+    else if (current->type == 5)
     {
         ((c_widget *)this)->function_230134(0x17000259, message);
         goto default_suffix;
     }
-    else if (session->activity == 1)
+    else if (current->activity == 1)
     {
         ((c_widget *)this)->function_230134(0x1900025a, message);
     activity:
@@ -492,7 +608,7 @@ void c_y_menu_player_selected_screen::update_friend_status(XONLINE_FRIEND const 
             break;
         }
     }
-    else if (session->activity == 2 || session->activity == 3)
+    else if (current->activity == 2 || current->activity == 3)
     {
         ((c_widget *)this)->function_230134(0x1500025b, message);
     default_suffix:
@@ -551,12 +667,17 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
     unsigned row = 0;
     dword flags = online_friend_get_flags(friend_);
     bool local = network_session_interface_has_user(&friend_->xuid);
-    bool active = false;
-    long player = NONE;
+    bool active;
+    long player;
     if (network_session_manager_session_unready() && function_19acc6(&friend_->xuid))
     {
         active = true;
         player = function_19adca(&friend_->xuid);
+    }
+    else
+    {
+        active = false;
+        player = NONE;
     }
     bool joinable = player != NONE && active && function_19abe4(player);
     dword now = g_54d5b8;
@@ -569,10 +690,22 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
     }
     if (task_index == NONE && qos_handle == NONE && now - value10e0 > 60000 && in_session)
         task_index = online_match_session_find((XNKID const *)((byte const *)friend_ + 0x28));
-    if (joinable || active || local)
+    if (joinable)
     {
         text[0]->value6e = true;
-        text[0]->function_253b1a(joinable ? 0x18000250 : active ? 0x14000251 : 0x13000252);
+        text[0]->function_253b1a(0x18000250);
+        return;
+    }
+    if (active)
+    {
+        text[0]->value6e = true;
+        text[0]->function_253b1a(0x14000251);
+        return;
+    }
+    if (local)
+    {
+        text[0]->value6e = true;
+        text[0]->function_253b1a(0x13000252);
         return;
     }
     byte *details = (byte *)this;
@@ -591,12 +724,23 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
         value10dc = now;
         value10d8 = (value10d8 + 1) % count;
     }
-    short kind = *(short *)(details + 0x9d8);
-    bool waiting = kind == 0 || (kind == 1 && flag7);
-    short total = waiting ? *(short *)(details + 0xa58) + *(short *)(details + 0xa5a)
-                          : *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-    long label = 0;
-    if (state == 1) label = waiting ? 0x1500026b : 0x1700026c;
+    if (state == 1)
+    {
+        short total;
+        short kind = *(short *)(details + 0x9d8);
+        if (kind == 0 || (kind == 1 && flag7))
+        {
+            total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+            ((c_widget *)this)->function_230134(0x1500026b, format);
+        }
+        else
+        {
+            total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+            ((c_widget *)this)->function_230134(0x1700026c, format);
+        }
+        function_1630e0(message, format, (long)total);
+        show_friend_detail(text[row++], message);
+    }
     else if (state == 2 || state == 3)
     {
         if (campaign)
@@ -604,22 +748,57 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
             ((c_widget *)this)->function_230134(0x17000259, message);
             show_friend_detail(text[row++], message);
         }
-        else label = waiting ? 0x1500026f : 0x17000270;
+        else
+        {
+            short total;
+            short kind = *(short *)(details + 0x9d8);
+            if (kind == 0 || (kind == 1 && flag7))
+            {
+                total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+                ((c_widget *)this)->function_230134(0x1500026f, format);
+            }
+            else
+            {
+                total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                ((c_widget *)this)->function_230134(0x17000270, format);
+            }
+            function_1630e0(message, format, (long)total);
+            show_friend_detail(text[row++], message);
+        }
     }
-    else if (state == 4 || state == 9) label = waiting ? 0x1600026d : 0x1800026e;
+    else if (state == 4 || state == 9)
+    {
+        short total;
+        short kind = *(short *)(details + 0x9d8);
+        if (kind == 0 || (kind == 1 && flag7))
+        {
+            total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+            ((c_widget *)this)->function_230134(0x1600026d, format);
+        }
+        else
+        {
+            total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+            ((c_widget *)this)->function_230134(0x1800026e, format);
+        }
+        function_1630e0(message, format, (long)total);
+        show_friend_detail(text[row++], message);
+    }
     else if (state == 5)
     {
         ((c_widget *)this)->function_230134(0xe000271, message);
         show_friend_detail(text[row++], message);
     }
-    else if (state == 6 || state == 7 || state == 8)
+    else if (state == 6)
     {
-        label = state == 6 ? 0x1300043d : 0x16000272;
-        total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+        short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+        ((c_widget *)this)->function_230134(0x1300043d, format);
+        function_1630e0(message, format, (long)total);
+        show_friend_detail(text[row++], message);
     }
-    if (label)
+    else if (state == 7 || state == 8)
     {
-        ((c_widget *)this)->function_230134(label, format);
+        short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+        ((c_widget *)this)->function_230134(0x16000272, format);
         function_1630e0(message, format, (long)total);
         show_friend_detail(text[row++], message);
     }
@@ -631,7 +810,7 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
                        activity == 3 ? 0xe000274 : 0xf000275, message);
         show_friend_detail(text[row++], message);
     }
-    if (state == 8 || state == 3 || activity == 1)
+    if (*(short *)(details + 0xa62) == 8 || *(short *)(details + 0xa62) == 3 || *(short *)(details + 0xa60) == 1)
     {
         wchar_t *name = NULL;
         long key = *(long *)(details + 0xa70);
@@ -674,11 +853,22 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
     if (!campaign && (state == 3 || state == 8))
     {
         long timer = *(long *)(details + 0xa78);
-        if (timer == 1 || timer == 2)
+        if (timer == 2)
         {
             long seconds = *(long *)(details + 0xa7c);
-            ((c_widget *)this)->function_230134(timer == 2 ? 0x1400027c : 0x1200027d, format);
-            function_1630e0(message, format, seconds / 60, seconds % 60);
+            long minutes = seconds / 60;
+            seconds %= 60;
+            ((c_widget *)this)->function_230134(0x1400027c, format);
+            function_1630e0(message, format, minutes, seconds);
+            show_friend_detail(text[row++], message);
+        }
+        else if (timer == 1)
+        {
+            long seconds = *(long *)(details + 0xa7c);
+            long minutes = seconds / 60;
+            seconds %= 60;
+            ((c_widget *)this)->function_230134(0x1200027d, format);
+            function_1630e0(message, format, minutes, seconds);
             show_friend_detail(text[row++], message);
         }
         for (long i = 0; i < *(short *)(details + 0xa80); i++)

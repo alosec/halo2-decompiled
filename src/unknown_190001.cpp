@@ -17,7 +17,7 @@
 
 #define MAXIMUM_CONTROLLERS 4
 
-/* the player profile a controller holds (0x1e0 bytes; unknown_18f576.cpp
+/* the player profile a controller holds (0x1e0 bytes; player_slots.cpp
    views it as raw dwords) */
 struct s_player_profile
 {
@@ -184,7 +184,7 @@ struct s_controller_input_globals
 s_controller_input_globals g_55e758;
 bool g_551ae0[MAXIMUM_CONTROLLERS];
 
-long function_190262(long value);
+long player_slot_iterate_next(long value);
 void function_6b640(long task_index);
 void network_session_interface_clear_user(long index);
 void online_get_logon_users(XONLINE_USER *users);
@@ -290,7 +290,7 @@ void function_18fe9e(long index)
 	}
 }
 
-/* unknown_18f576.cpp */
+/* player_slots.cpp */
 void player_slot_get_profile(long index, s_player_profile *profile, long *profile_index);
 
 /* not decompiled yet (src/stubs/lane_e.cpp); screen_widgets.h's
@@ -299,10 +299,10 @@ struct s_player_profile_settings;
 void __stdcall function_2153dd(long player, long profile_index, s_player_profile_settings *settings, long flags);
 
 /* not decompiled yet (src/stubs/lane_h.cpp) */
-void __stdcall function_18fcc4(long controller, s_player_profile *profile, long profile_index);
+void __stdcall player_slot_change_profile(long controller, s_player_profile *profile, long profile_index);
 void function_147dbe(s_controller_event *event);
 bool __stdcall function_148f36(long controller);
-bool function_1a0660(long profile_index, s_player_profile *profile);
+bool player_profile_store(long profile_index, s_player_profile *profile);
 long function_abc70(long index, XUID const *xuid);
 
 /* unknown_2172a0.cpp */
@@ -331,7 +331,7 @@ void function_190eb3(long index)
 {
 	s_controller *controller = controller_get(index);
 
-	if (TEST_FIELD_BIT(controller->active))
+	if (TEST_FIELD_BIT(controller_get(index)->active))
 	{
 		XONLINE_USER *user = &controller->user;
 		XUID const *xuid = online_user_get_xuid(user);
@@ -350,7 +350,7 @@ void function_190eb3(long index)
 			unicode_string_snprintf(controller->name, 0x20, (const word *)L"%hs", online_user_get_gamertag(user));
 		}
 	}
-	else if (TEST_FIELD_BIT(controller->signed_in))
+	else if (TEST_FIELD_BIT(controller_get(index)->signed_in))
 	{
 		unicode_string_copy(controller->name, controller->profile.name, 0x20);
 	}
@@ -403,7 +403,7 @@ void function_190001(long index, char const *name)
 		{
 			strncpy(profile.short_name, name, 16);
 			profile.short_name[15] = 0;
-			function_18fcc4(index, &profile, profile_index);
+			player_slot_change_profile(index, &profile, profile_index);
 		}
 	}
 }
@@ -449,7 +449,7 @@ short function_1900ff(long controller)
 			{
 				s_controller *other = controller_get(index);
 
-				if (TEST_FIELD_BIT(other->active))
+				if (TEST_FIELD_BIT(controller_get(index)->active))
 				{
 					XUID const *a = online_user_get_xuid(&controller_get(controller)->user);
 					XUID const *b = online_user_get_xuid(&other->user);
@@ -474,16 +474,21 @@ void function_190186(long controller)
 	{
 		long index;
 
-		for (index = 0; index != NONE; index = function_190262(index))
+		for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 		{
-			if (index != controller && TEST_FIELD_BIT(controller_get(index)->active))
+			if (index != controller)
 			{
-				XUID const *a = online_user_get_xuid(&controller_get(controller)->user);
-				XUID const *b = online_user_get_xuid(&controller_get(index)->user);
+				s_controller *other = controller_get(index);
 
-				if (a && b && a->qwUserID == b->qwUserID)
+				if (TEST_FIELD_BIT(controller_get(index)->active))
 				{
-					function_190d4b(index);
+					XUID const *a = online_user_get_xuid(&controller_get(controller)->user);
+					XUID const *b = online_user_get_xuid(&other->user);
+
+					if (a && b && a->qwUserID == b->qwUserID)
+					{
+						function_190d4b(index);
+					}
 				}
 			}
 		}
@@ -496,7 +501,7 @@ word function_1901fc(void)
 	dword mask = 0;
 	long index;
 
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		if (TEST_FIELD_BIT(controller_get(index)->signed_in))
 		{
@@ -512,7 +517,7 @@ word function_19022f(void)
 	dword mask = 0;
 	long index;
 
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		if (TEST_FIELD_BIT(controller_get(index)->active))
 		{
@@ -573,7 +578,7 @@ void function_1902fc(long index, long value)
 
 		player_slot_get_profile(index, &profile, &profile_index);
 		profile.valuee4 = value;
-		function_18fcc4(index, &profile, profile_index);
+		player_slot_change_profile(index, &profile, profile_index);
 	}
 }
 
@@ -582,7 +587,7 @@ void function_19034d(long index, long state, long unknown08, long unknown04, sho
 {
 	s_controller *controller = controller_get(index);
 
-	if (TEST_FIELD_BIT(controller->active))
+	if (TEST_FIELD_BIT(controller_get(index)->active))
 	{
 		s_online_presence_source source;
 		s_online_presence presence;
@@ -595,7 +600,7 @@ void function_19034d(long index, long state, long unknown08, long unknown04, sho
 		source.unknown08 = unknown08;
 		source.unknown04 = unknown04;
 		online_presence_build(built, &source);
-		if (controller->presence != *(dword *)built)
+		if (memcmp(&controller->presence, built, sizeof(controller->presence)) != 0)
 		{
 			controller->presence = *(dword *)&presence;
 			controller->notification_dirty = true;
@@ -615,7 +620,7 @@ void function_1903c2(long index, long value)
 		if (profile_index != NONE && profile.value5c != value)
 		{
 			profile.value5c = value;
-			function_18fcc4(index, &profile, profile_index);
+			player_slot_change_profile(index, &profile, profile_index);
 		}
 	}
 }
@@ -646,7 +651,7 @@ void function_19043f(long index, long kind, long value)
 		if (profile_index != NONE && profile.keys[kind] < value)
 		{
 			profile.keys[kind] = value;
-			function_18fcc4(index, &profile, profile_index);
+			player_slot_change_profile(index, &profile, profile_index);
 		}
 	}
 }
@@ -661,7 +666,7 @@ void function_19048c(long index)
 	if (profile_index != NONE)
 	{
 		profile.flag1 = true;
-		function_18fcc4(index, &profile, profile_index);
+		player_slot_change_profile(index, &profile, profile_index);
 	}
 }
 
@@ -695,14 +700,7 @@ long function_1904ff(long index)
 	return result;
 }
 
-/* the profile's keys (unknown_1a06a0.cpp) */
-struct s_key_set
-{
-	byte unknown00[0xec];
-	long keys[4];
-};
-
-void function_1a06f0(s_key_set *set, long *best_key, long *best_index);
+void player_profile_get_highest_key(s_player_profile *profile, long *best_key, long *best_index);
 
 /* the best key of the controller's profile */
 // @retail 0x19052c
@@ -714,7 +712,7 @@ void function_19052c(long index, long *best_key, long *best_index)
 	player_slot_get_profile(index, &profile, &profile_index);
 	if (profile_index != NONE)
 	{
-		function_1a06f0((s_key_set *)&profile, best_key, best_index);
+		player_profile_get_highest_key(&profile, best_key, best_index);
 	}
 	else
 	{
@@ -750,9 +748,9 @@ long function_190565(void)
 bool g_54d5a0;
 
 bool function_8d7c0(void);
-c_class_1473c9 *function_149ef3(word user_flags, long load);
-c_class_1473c9 *__stdcall function_18f42d(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_18f474(s_screen_parameters *parameters);
+c_class_1473c9 *window_manager_open_channel_3_screen(word user_flags, long load);
+c_class_1473c9 *__stdcall profile_mode_screen_load(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall profile_mode_screen_load_online(s_screen_parameters *parameters);
 
 // @retail 0x1905bf
 void function_1905bf(long controller, bool flag)
@@ -763,12 +761,12 @@ void function_1905bf(long controller, bool flag)
 	}
 	else
 	{
-		function_149ef3(1 << controller, (long)(flag ? function_18f474 : function_18f42d));
+		window_manager_open_channel_3_screen(1 << controller, (long)(flag ? profile_mode_screen_load_online : profile_mode_screen_load));
 	}
 }
 
 short player_slot_count_active(void);
-bool function_1a0540(s_player_profile_settings *settings, long file_index);
+bool player_profile_load(long file_index, s_player_profile_settings *settings);
 void function_120df0(long index, wchar_t const *name);
 c_class_1473c9 *__stdcall function_24b4a9(s_screen_parameters *parameters);
 #if defined(H2_NATIVE_PORT)
@@ -785,7 +783,7 @@ void function_19060a(long controller, long profile_index)
 	s_player_slot_profile *slot;
 
 #if defined(H2_NATIVE_PORT)
-	if (!function_1a0540(&settings, profile_index))
+	if (!player_profile_load(profile_index, &settings))
 		return;
 	slot = player_slot_profile_get(controller);
 	slot->initialize(controller);
@@ -800,7 +798,7 @@ void function_19060a(long controller, long profile_index)
 	else
 		select = false;
 	slot = player_slot_profile_get(controller);
-	function_1a0540(&settings, profile_index);
+	player_profile_load(profile_index, &settings);
 	slot->initialize(controller);
 	slot->set_profile_index(profile_index);
 	function_120df0(controller, (wchar_t const *)settings.name);
@@ -843,7 +841,7 @@ void function_1906b4(void)
 	long index;
 
 	function_6cb60();
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		function_190d4b(index);
 	}
@@ -886,11 +884,13 @@ void function_190728(long index)
 	}
 	memset(&controller->identity, 0, sizeof(controller->identity));
 	memset(controller->unknownb82, 0, sizeof(controller->unknownb82));
-	if (TEST_FIELD_BIT(controller->active) && !function_1900a5(index))
+	if (TEST_FIELD_BIT(controller_get(index)->active) && !function_1900a5(index))
 	{
 		controller->task_c14 = function_abc70(index, online_user_get_xuid(&controller->user));
 	}
 }
+
+inline bool function_1907bf(byte frames_down, word msec_down);
 
 // @retail 0x1907bf
 bool function_1907bf(byte frames_down, word msec_down)
@@ -906,51 +906,36 @@ bool function_1907bf(byte frames_down, word msec_down)
 
 PRIVATE __forceinline long controller_direction_magnitude(short value)
 {
-	long result = value;
-	if (value < 0)
-		result = -result;
-	return result;
+	return value >= 0 ? value : -value;
 }
 
 PRIVATE __forceinline long controller_direction_sign(short value)
 {
-	long result = 0;
-	if (value != 0)
-		result = value >= 0 ? 1 : -1;
-	return result;
+	if (value == 0)
+		return 0;
+	return value >= 0 ? 1 : -1;
 }
 
 // @retail 0x190a3d
 void function_190a3d(long controller, short *direction, dword time, long value)
 {
-	// Keep the direction argument in its retail stack slot.
-	short *const *direction_reference = &direction;
-	short x = (*direction_reference)[0];
-
-	if (x == 0 && direction[1] == 0)
+	if (direction[0] == 0 && direction[1] == 0)
 	{
 		g_55e758.last_time[controller] = 0;
 	}
 	else
 	{
-		if (controller_direction_magnitude(x) < 0x7332 || controller_direction_magnitude(g_55e758.last_direction[controller][0]) < 0x7332)
-		{
-			if (controller_direction_magnitude(direction[1]) < 0x7332 || controller_direction_magnitude(g_55e758.last_direction[controller][1]) < 0x7332)
-			{
-				goto send;
-			}
-		}
-		if (time - g_55e758.last_time[controller] < 250)
-		{
-			goto done;
-		}
-send:
+		short x = direction[0];
+
+		if ((controller_direction_magnitude(x) >= 0x7332 && controller_direction_magnitude(g_55e758.last_direction[controller][0]) < 0x7332) ||
+			(controller_direction_magnitude(direction[1]) >= 0x7332 && controller_direction_magnitude(g_55e758.last_direction[controller][1]) < 0x7332) ||
+			time - g_55e758.last_time[controller] >= 250)
 		{
 			s_controller_event event;
 
-			event.amount = NONE;
 			event.controller = controller;
 			event.value = value;
+			event.amount = NONE;
 			if (controller_direction_magnitude(x) >= 0x7332)
 			{
 				event.type = controller_direction_sign(x) > 0 ? 4 : 2;
@@ -1027,13 +1012,13 @@ void function_190b65(long controller, byte button)
 // @retail 0x1907d6
 void function_1907d6(dword time)
 {
-	short controller;
+	long controller;
 
-	for (controller = 0; controller != NONE; controller = (short)controller_next(controller))
+	for (controller = 0; controller != NONE; controller = controller_next(controller))
 	{
 		s_type_ff3a2a const *state;
 
-		if (!g_4e61cc[controller])
+		if (!g_4e61cc[(short)controller])
 		{
 			continue;
 		}
@@ -1043,8 +1028,8 @@ void function_1907d6(dword time)
 			continue;
 		}
 
-		short direction[2] = { 0, 0 };
 		long value = 16;
+		short direction[2] = { 0 };
 
 		if (state->analog_button_frames_down[0] == 1)
 		{
@@ -1109,19 +1094,15 @@ void function_1907d6(dword time)
 
 		if (state->thumbsticks[0] != 0 || state->thumbsticks[1] != 0)
 		{
-			direction[0] = state->thumbsticks[0];
-			if (abs(direction[0]) < 0x7332)
-			{
-				direction[0] = 0;
-			}
-			direction[1] = state->thumbsticks[1];
-			if (abs(direction[1]) < 0x7332)
-			{
-				direction[1] = 0;
-			}
+			short x = state->thumbsticks[0];
+			direction[0] = controller_direction_magnitude(x) >= 0x7332 ? x : 0;
+			short y = state->thumbsticks[1];
+			direction[1] = controller_direction_magnitude(y) >= 0x7332 ? y : 0;
 		}
 		if (direction[0] == 0 && direction[1] == 0)
 		{
+			bool pressed = true;
+
 			if (function_1907bf(state->button_frames_down[3], state->button_msec_down[3]))
 			{
 				direction[0] = 1;
@@ -1146,8 +1127,15 @@ void function_1907d6(dword time)
 				value = 9;
 				direction[0] = 0;
 			}
-			direction[0] *= 0x7fff;
-			direction[1] *= 0x7fff;
+			else
+			{
+				pressed = false;
+			}
+			if (pressed)
+			{
+				direction[0] *= 0x7fff;
+				direction[1] *= 0x7fff;
+			}
 		}
 		if (direction[0] != 0 || direction[1] != 0)
 		{
@@ -1228,13 +1216,13 @@ void function_190e37(void)
 {
 	long index;
 
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		s_controller *controller = controller_get(index);
 
 		if ((*(dword *)controller & 0x10) && (*(dword *)controller & 0x40))
 		{
-			function_1a0660(controller->profile_index, &controller->profile);
+			player_profile_store(controller->profile_index, &controller->profile);
 		}
 	}
 }
@@ -1244,7 +1232,7 @@ void function_190e71(long value)
 {
 	long index;
 
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		s_controller *controller = controller_get(index);
 
@@ -1335,7 +1323,7 @@ long function_1910d9(void)
 {
 	long index;
 
-	for (index = 0; index != NONE; index = function_190262(index))
+	for (index = 0; index != NONE; index = player_slot_iterate_next(index))
 	{
 		if (TEST_FIELD_BIT(controller_get(index)->signed_in))
 		{
@@ -1418,16 +1406,16 @@ bool __stdcall function_19119c(c_class_1473c9 *screen, long dialog_id)
 
 char const *function_19c970(long campaign_id, long map_id);
 
-bool window_manager_window_has_pause_screen_for_user(long channel, long index, long user_index);
+bool window_manager_window_has_dialog(long channel, long index, long dialog_id);
 
 /* one of the controllers' reconnect dialogs is showing */
 // @retail 0x18f973
 bool function_18f973(void)
 {
-	if (window_manager_window_has_pause_screen_for_user(0, 4, 0x1c)
-		|| window_manager_window_has_pause_screen_for_user(0, 4, 0x1d)
-		|| window_manager_window_has_pause_screen_for_user(0, 4, 0x1e)
-		|| window_manager_window_has_pause_screen_for_user(0, 4, 0x1f))
+	if (window_manager_window_has_dialog(0, 4, 0x1c)
+		|| window_manager_window_has_dialog(0, 4, 0x1d)
+		|| window_manager_window_has_dialog(0, 4, 0x1e)
+		|| window_manager_window_has_dialog(0, 4, 0x1f))
 	{
 		return true;
 	}
@@ -1441,7 +1429,7 @@ struct s_scenario_type_view
 	short type;
 };
 
-bool function_2365f7(void);
+bool controller_reconnect_dialog_allowed(void);
 long function_146840(void);
 void function_125a90(long value);
 
@@ -1456,7 +1444,7 @@ void function_18f9be(void)
 	{
 		if (g_551ae0[index])
 		{
-			if (!function_18f973() && function_2365f7())
+			if (!function_18f973() && controller_reconnect_dialog_allowed())
 			{
 				short type;
 

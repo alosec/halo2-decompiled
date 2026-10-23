@@ -225,25 +225,46 @@ static inline bool texture_cache_lock_exists(s_texture_cache_lock *lock)
 	return false;
 }
 
+static inline bool texture_cache_lock_exists_12c400(s_texture_cache_lock *lock)
+{
+	s_texture_cache_lock *other = g_4e645c;
+
+	if (g_4e645c)
+	{
+		do
+		{
+			if (other == lock)
+			{
+				return true;
+			}
+			other = other->next;
+		} while (other);
+	}
+	return false;
+}
+
 // @retail 0x12c400
 void texture_cache_update_locks(void)
 {
 	s_texture_cache_lock *lock = g_4e645c;
 
-	while (lock)
+	if (g_4e645c)
 	{
-		if (lock->update)
+		do
 		{
-			lock->update(lock->address, lock->user_data);
-		}
-		if (!texture_cache_lock_exists(lock))
-		{
-			lock = g_4e645c;
-		}
-		else
-		{
-			lock = lock->next;
-		}
+			if (lock->update)
+			{
+				lock->update(lock->address, lock->user_data);
+			}
+			if (!texture_cache_lock_exists_12c400(lock))
+			{
+				lock = g_4e645c;
+			}
+			else
+			{
+				lock = lock->next;
+			}
+		} while (lock);
 	}
 }
 
@@ -335,9 +356,12 @@ bool __stdcall texture_cache_entry_busy(long datum_index)
 	{
 		if (entry->hardware_format == NONE)
 			return false;
-		if (!entry->resident || D3DResource_IsBusy(&entry->resource))
+		if (entry->resident)
+		{
+			if (!D3DResource_IsBusy(&entry->resource))
+				return false;
 			return true;
-		return false;
+		}
 	}
 	return true;
 }
@@ -449,9 +473,9 @@ void texture_cache_bitmap_unload(s_bitmap_data *bitmap)
 			s_record_pool_iterator iterator;
 			s_texture_cache_request *request;
 
-			iterator.data = g_4e6458;
-			iterator.index = NONE;
 			iterator.datum_index = NONE;
+			iterator.index = NONE;
+			iterator.data = g_4e6458;
 			while ((request = (s_texture_cache_request *)data_iterator_next_calling(&iterator)) != NULL)
 			{
 				if (request->bitmap == bitmap)
@@ -657,44 +681,54 @@ void texture_cache_load_shared_data(void)
 	}
 }
 
-extern long g_450768[8][24];
+extern long g_450768[2][24];
 short bitmap_get_mipmap_count(short width, short height, short depth, short format, bool linear, short maximum_levels);
 long log2_floor(dword value);
 
 /* builds a bitmap's hardware texture header over its description, pointing
    into the shared pixel data */
+// score 86 (was 98): the hardware format is kept in EDI and the width spilled across the mip count
+// call, where retail keeps all three sizes in registers and the hardware format on the stack.
 // @retail 0x12c820
 void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
 {
-	short depth;
-	short height;
-	short width;
 	D3DTexture *texture = (D3DTexture *)&bitmap->hardware_common;
 	dword data = bitmap->hardware_data + g_4e646c;
 	short format = bitmap->format;
-	long hardware_format = g_450768[0][format];
-	short levels;
+	long hardware_format;
+	long levels;
 
 	if ((bitmap->flags & 0x20) && (format == 10 || format == 11))
 	{
 		hardware_format = 0x33;
 	}
-	depth = bitmap->depth;
-	height = bitmap->height;
-	width = bitmap->width;
+	else
+	{
+		hardware_format = g_450768[0][format];
+	}
+	short depth = bitmap->depth;
+	short height = bitmap->height;
+	short width = bitmap->width;
 	levels = bitmap_get_mipmap_count(width, height, depth, format, (bitmap->flags >> 4) & 1, 0);
 	texture->Data = 0;
 	texture->Lock = 0;
 	texture->Common = 0x40001;
 	texture->Format = 9;
+	/* the size fields are taken as 32-bit values from here on */
+	dword texture_width = width;
+	dword texture_height = height;
+	dword texture_depth = depth;
 	if (bitmap->type == 2)
 	{
 		texture->Format = 0xd;
 	}
-	texture->Format |= ((((bitmap->type != 1) ? 2 : 3) | (hardware_format << 4)) << 4) | ((levels + 1) << 16);
-	texture->Format |= (short)log2_floor(width) << 20;
-	texture->Format |= (short)log2_floor(height) << 24;
-	texture->Format |= (short)log2_floor(depth) << 28;
+	long local_0;
+	if (bitmap->type != 1) local_0 = 2;
+	else local_0 = 3;
+	texture->Format |= ((local_0 | (hardware_format << 4)) << 4) | ((levels + 1) << 16);
+	texture->Format |= (short)log2_floor(texture_width) << 20;
+	texture->Format |= (short)log2_floor(texture_height) << 24;
+	texture->Format |= (short)log2_floor(texture_depth) << 28;
 	texture->Size = 0;
 	texture->Data = data & 0xfffffff;
 }
@@ -728,6 +762,8 @@ bool g_4e647b;
    cached, the shared one for scalable formats, else the cached level the
    scale (raised by the cache's own bias) asks for when it is resident; a
    texture remembered for this frame or the next wins */
+// score 40 (was 40): the loop counter is cleared in EDI where retail clears ECX, so the compare
+// uses a different register.
 // @retail 0x12ccf0
 D3DTexture *texture_cache_bitmap_get_texture(s_bitmap_data *bitmap, dword flags, real bias)
 {
@@ -764,8 +800,6 @@ D3DTexture *texture_cache_bitmap_get_texture(s_bitmap_data *bitmap, dword flags,
 	}
 	else if (bitmap->minimum_scale > scale)
 	{
-		long block_index;
-
 		level = 0;
 
 		if (scale >= 2.0f)
@@ -776,12 +810,11 @@ D3DTexture *texture_cache_bitmap_get_texture(s_bitmap_data *bitmap, dword flags,
 		{
 			level = 1;
 		}
-		block_index = bitmap->block_indices[level];
-		if (block_index != NONE)
+		if (bitmap->block_indices[level] != NONE)
 		{
-			s_texture_cache_entry *entry = texture_cache_entry_get(block_index);
+			s_texture_cache_entry *entry = texture_cache_entry_get(bitmap->block_indices[level]);
 
-			((s_physical_block *)g_4e6464->blocks->data)[block_index & 0xffff].time = g_4e6464->time;
+			((s_physical_block *)g_4e6464->blocks->data)[bitmap->block_indices[level] & 0xffff].time = g_4e6464->time;
 			if (entry->resident)
 			{
 				result = (D3DTexture *)&entry->resource;
@@ -831,6 +864,8 @@ long texture_cache_bitmap_level(s_bitmap_data const *bitmap, real scale)
 /* function_12d2f0, pumping the cache until a block is free: not at all
    (type 0), or for up to 30 pumps and 0.1 seconds (type 1) or 90 pumps and
    one second (type 2) */
+// score 2 (was 2): the value is stored to the stack before EDI is pushed; retail pushes EDI
+// first and stores it afterwards.
 // @retail 0x12d400
 long function_12d400(long type, long size, long user_data, long update, long release)
 {
@@ -978,37 +1013,44 @@ void __stdcall function_12d6d0(s_bitmap_texture_view const *bitmap, long level, 
 // @retail 0x12d5a0
 bool function_12d5a0(s_bitmap_data *arg_0, long arg_1, bool arg_2, bool arg_3, long arg_4)
 {
-	long local_0 = function_13d370(g_4e6464, arg_0->field_34[arg_1], (arg_2 || arg_3) ? 2 : 5);
+	bool local_5 = arg_2 || arg_3;
+	long local_6 = arg_0->field_34[arg_1];
+	long local_0 = function_13d370(g_4e6464, local_6, local_5 ? 2 : 5);
 	if (arg_2 && !arg_3)
 		arg_4 = 7;
-	if (local_0 == NONE)
-		return false;
-	long local_1 = (((s_physical_block *)g_4e6464->blocks->data)[local_0 & 0xffff].offset << g_4e6464->page_shift) + g_4e6460;
-	datum_new_at_index_with_salt(g_4e6454, local_0);
-	s_texture_cache_entry *local_2 = texture_cache_entry_get(local_0);
-	local_2->resident = false;
-	local_2->flags &= ~1;
-	local_2->pending = arg_1;
-	local_2->bitmap = arg_0;
-	memset(&local_2->resource, 0, sizeof(D3DTexture));
-	arg_0->block_indices[arg_1] = local_0;
-	arg_0->unknown40[arg_1] = local_1;
-	if (!arg_1)
-		arg_0->unknown54 = local_1;
-	function_12d6d0((s_bitmap_texture_view *)arg_0, arg_1, (D3DTexture *)&local_2->resource);
-	long local_3 = arg_0->field_34[arg_1];
-	if (local_3 & 0x1ff)
-		local_3 = (local_3 | 0x1ff) + 1;
-	volatile long local_4 = arg_0->unknown40[3];
-	local_2->hardware_format = function_213760(arg_0->data_offsets[arg_1], local_3, (void *)local_1, NULL, &local_2->resident, 3, arg_4);
-	*(long *)local_2->unknown08 = arg_4;
-	g_4e6484++;
-	return true;
+	if (local_0 != NONE)
+	{
+		long local_1 = (((s_physical_block *)g_4e6464->blocks->data)[local_0 & 0xffff].offset << g_4e6464->page_shift) + g_4e6460;
+		datum_new_at_index_with_salt(g_4e6454, local_0);
+		s_texture_cache_entry *local_2 = texture_cache_entry_get(local_0);
+		local_2->resident = false;
+		*(word *)&local_2->flags &= ~1; /* retail clears the bit with a word-wide and */
+		local_2->pending = arg_1;
+		local_2->bitmap = arg_0;
+		memset(&local_2->resource, 0, sizeof(D3DTexture));
+		arg_0->block_indices[arg_1] = local_0;
+		arg_0->unknown40[arg_1] = local_1;
+		if (!arg_1)
+			arg_0->unknown54 = local_1;
+		function_12d6d0((s_bitmap_texture_view *)arg_0, arg_1, (D3DTexture *)&local_2->resource);
+		long local_3 = arg_0->field_34[arg_1];
+		if (local_3 & 0x1ff)
+			local_3 = (local_3 | 0x1ff) + 1;
+		long local_7 = arg_0->data_offsets[arg_1];
+		volatile long local_4 = arg_0->unknown40[3];
+		local_2->hardware_format = function_213760(local_7, local_3, (void *)local_1, NULL, &local_2->resident, 3, arg_4);
+		*(long *)local_2->unknown08 = arg_4;
+		g_4e6484++;
+		return true;
+	}
+	return false;
 }
 
 bool function_120ce0(long arg_0, long arg_1);
 void function_125d60(void);
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x12c990
 D3DTexture *function_12c990(s_bitmap_data *arg_0, long arg_1, bool arg_2, bool arg_3, bool arg_4, long arg_5, bool *arg_6, bool *arg_7)
 {
@@ -1025,6 +1067,7 @@ D3DTexture *function_12c990(s_bitmap_data *arg_0, long arg_1, bool arg_2, bool a
 			}
 			if (arg_0->block_indices[arg_1] != NONE)
 			{
+				_ReadWriteBarrier();
 				long local_2 = arg_0->block_indices[arg_1];
 				s_texture_cache_entry *local_3 = texture_cache_entry_get(local_2);
 				((s_physical_block *)g_4e6464->blocks->data)[local_2 & 0xffff].time = g_4e6464->time;
@@ -1057,6 +1100,7 @@ D3DTexture *function_12c990(s_bitmap_data *arg_0, long arg_1, bool arg_2, bool a
 	}
 	return local_0;
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x12cb80
 bool function_12cb80(s_bitmap_data *arg_0)
@@ -1091,14 +1135,13 @@ void function_12c450(void)
 	if (g_4e6458->valid && async_globals.tasks_added <= 25)
 	{
 		long local_0 = 0;
-		s_record_pool_iterator local_1;
-		local_1.data = g_4e6458;
-		local_1.index = NONE;
-		local_1.datum_index = NONE;
-		s_texture_cache_request *local_2;
-		while ((local_2 = (s_texture_cache_request *)data_iterator_next_calling(&local_1)) != NULL && local_0 < 5)
+		struct { s_texture_cache_request *request; s_record_pool_iterator iterator; } local_1;
+		local_1.iterator.data = g_4e6458;
+		local_1.iterator.index = NONE;
+		local_1.iterator.datum_index = NONE;
+		while ((local_1.request = (s_texture_cache_request *)data_iterator_next_calling(&local_1.iterator)) != NULL && local_0 < 5)
 		{
-			s_bitmap_data *local_3 = local_2->bitmap;
+			s_bitmap_data *local_3 = local_1.request->bitmap;
 			if (local_3->unknown70 <= g_4e6488 || !local_3->texture)
 			{
 				_mm_prefetch((char const *)&local_3->flags, _MM_HINT_T0);
@@ -1109,9 +1152,118 @@ void function_12c450(void)
 				if (!texture_cache_bitmap_get_texture(local_3, 2, 0.0f))
 					function_12ce00(local_3, 2, 0.0f);
 			}
-			local_2->bitmap->flags &= ~0x400;
-			record_pool_release(g_4e6458, local_1.datum_index);
+			local_1.request->bitmap->flags &= ~0x400;
+			record_pool_release(g_4e6458, local_1.iterator.datum_index);
 			local_0++;
 		}
 	}
+}
+
+
+bool g_46883c;
+bool g_46883d;
+extern long g_4e6470, g_4e6474;
+extern D3DResource *g_485ae4, *g_485ae8, *g_485aec;
+
+// @retail 0x12ce00
+D3DTexture *function_12ce00(s_bitmap_data *bitmap, dword flags, real bias)
+{
+    s_bitmap_data *const *bitmap_reference = &bitmap;
+    s_bitmap_data *view = *bitmap_reference;
+    bool wait = (flags & 1) != 0;
+    bool request = (flags & 2) != 0;
+    bool unscaled = (flags & 4) != 0;
+    D3DTexture *result = NULL;
+    real scale = bias;
+    if (g_468841)
+    {
+        scale = (real)view->level_bias * 0.01f;
+        scale += bias;
+        scale += g_4e647c;
+    }
+    bool restricted = false;
+    bool failed = false;
+    if (g_46883d)
+        scale = 0.0f;
+    if (g_46883c)
+        scale = 1.0f;
+    if (!(view->flags & 0x200))
+        return view->texture;
+
+    if (!unscaled)
+    {
+        result = texture_cache_bitmap_get_shared_texture(view);
+        if (g_4e6470 > 0 && (g_4e6474 == 0 ||
+            (g_4e6474 == 1 && view->cache_format == 3)))
+        {
+            restricted = true;
+            wait = g_4e6470 == 1;
+        }
+        else if (result && !(view->flags & 0x80))
+            wait = false;
+    }
+    if (((g_4e647b && texture_cache_format_scalable(view->cache_format)) ||
+        bias >= view->minimum_scale) && result)
+        return result;
+
+    long level = unscaled ? 0 : texture_cache_bitmap_level(view, scale);
+    long priority = 2;
+    if (!restricted)
+    {
+        if (wait)
+            priority = 7;
+        else if (flags & 8)
+            priority = 5;
+        else if (flags & 16)
+            priority = 1;
+    }
+    bool waited;
+    D3DTexture *loaded = function_12c990(view, level, request, wait,
+        restricted, priority, &waited, &failed);
+    if (loaded)
+        result = loaded;
+    else if (!unscaled)
+    {
+        long remaining = 3;
+        long const *block_indices = view->block_indices;
+        do
+        {
+            long block_index = *block_indices;
+            if (block_index != NONE)
+            {
+                s_texture_cache_entry *entry = texture_cache_entry_get(block_index);
+                ((s_physical_block *)g_4e6464->blocks->data)[block_index & 0xffff].time = g_4e6464->time;
+                if (entry->resident)
+                {
+                    D3DTexture *candidate = (D3DTexture *)&entry->resource;
+                    if (candidate)
+                    {
+                        result = candidate;
+                        wait = false;
+                    }
+                }
+            }
+            ++block_indices;
+        } while (--remaining);
+        if (wait && !result)
+        {
+            switch (view->type)
+            {
+            case 0:
+                result = (D3DTexture *)g_485ae4;
+                break;
+            case 1:
+                result = (D3DTexture *)g_485ae8;
+                break;
+            default:
+                result = (D3DTexture *)g_485aec;
+                break;
+            }
+            g_4e647a = true;
+            return result;
+        }
+    }
+    if (failed)
+        g_4e647a = true;
+    return result;
 }

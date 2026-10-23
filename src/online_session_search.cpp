@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /arch:SSE /Gr
 /* ONLINE_SESSION_SEARCH.CPP: the Xbox Live matchmaking session searches: the
    online tasks that create, find and delete match sessions, the results of a
@@ -65,9 +66,8 @@ struct s_search_result
 	long unknown78;
 	long unknown7c;
 	long unknown80;
-	byte unknown84[0x90 - 0x84];
-	long field90;
-	byte unknown94[0xaa - 0x94];
+	s_qos_result qos;
+	byte unknowna4[0xaa - 0xa4];
 	short session_kind;
 	byte unknownac[0xbc - 0xac];
 	XNKID session_id;
@@ -132,8 +132,8 @@ long g_4ce384;
 double g_4ce388;
 long g_4ce390;
 
-extern bool g_4cf792;
-extern XNADDR g_4cf793;
+
+
 bool function_07a9b0(void);
 
 #define SEARCH_LONG(object, offset) (*(long *)((byte *)(object) + (offset)))
@@ -159,7 +159,7 @@ struct s_match_result_data
 	s_long7 properties;
 };
 
-void function_0b4a40(s_long7 *out, const __int64 *in);
+void online_match_properties_from_attributes(s_long7 *out, const __int64 *in);
 long online_match_search(s_range_input const *input);
 
 // @retail 0x90160
@@ -186,13 +186,24 @@ bool function_90160(long task_index, s_match_result_data *result)
 			{
 				__int64 properties[7];
 				if (SUCCEEDED(XOnlineMatchSearchParse(results[0], results[0]->dwNumAttributes, g_44050c, properties)))
-					function_0b4a40(&result->properties, properties);
+					online_match_properties_from_attributes(&result->properties, properties);
 			}
 		}
 	}
 	return success;
 }
 
+/* sets the lowest score a session must reach: it falls from the strictest
+   score to the loosest as the search widens */
+static inline void session_search_set_minimum_score(s_session_search *search)
+{
+	if (search->unknown1c != NONE && search->unknown20 > 0)
+		search->minimum_score = (long)((real)g_network_configuration.value1e8 + ((real)search->unknown1c / (real)search->unknown20) * ((real)g_network_configuration.value1ec - (real)g_network_configuration.value1e8));
+	else
+		search->minimum_score = g_network_configuration.value1ec;
+}
+
+extern "C" void _ReadWriteBarrier(void);
 // @retail 0x90b30
 void function_90b30(s_session_search *search)
 {
@@ -215,10 +226,7 @@ void function_90b30(s_session_search *search)
 		SEARCH_FLAG(search, 0x2c) = false;
 		SEARCH_FLAG(search, 0x24) = false;
 	}
-	if (current != NONE && search->unknown20 > 0)
-		search->minimum_score = (long)((real)g_network_configuration.value1e8 + ((real)current / (real)search->unknown20) * ((real)g_network_configuration.value1ec - (real)g_network_configuration.value1e8));
-	else
-		search->minimum_score = g_network_configuration.value1ec;
+	session_search_set_minimum_score(search);
 	s_range_input input;
 	memset(&input, 0, sizeof(input));
 	input.x = SEARCH_LONG(search, 0x10);
@@ -247,6 +255,12 @@ struct s_qos_target
 
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 
+struct s_90021
+{
+	byte field_0[0x10];
+	XNKID field_10;
+};
+
 // @retail 0x90020
 long online_match_session_delete(s_search_session const *session, bool *unavailable)
 {
@@ -258,19 +272,20 @@ long online_match_session_delete(s_search_session const *session, bool *unavaila
 		s_type_9df9da *task = online_task_try_and_get(task_index);
 		if (task)
 		{
-			HRESULT result = XOnlineMatchSessionDelete(session->id, NULL, (PXONLINETASK_HANDLE)&task->handle);
+			HRESULT result = XOnlineMatchSessionDelete(((s_90021 const *)session)->field_10, NULL, (PXONLINETASK_HANDLE)&task->handle);
 			if (SUCCEEDED(result))
 			{
 				task->flags = 1;
 				task->type = 8;
 				task->controller_index = NONE;
-				*unavailable = service_unavailable;
-				return task_index;
 			}
-			if (result == 0x80155100)
-				service_unavailable = true;
-			function_6b640(task_index);
-			task_index = NONE;
+			else
+			{
+				if (result == 0x80155100)
+					service_unavailable = true;
+				function_6b640(task_index);
+				task_index = NONE;
+			}
 		}
 	}
 	*unavailable = service_unavailable;
@@ -286,23 +301,37 @@ long online_match_session_find(XNKID const *session_id)
 	s_type_9df9da *task = function_6b910(task_index);
 	if (task)
 	{
-		if (FAILED(XOnlineMatchSessionFindFromID(*session_id, NULL, (PXONLINETASK_HANDLE)&task->handle)))
+		if (SUCCEEDED(XOnlineMatchSessionFindFromID(*session_id, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 		{
-			function_6b640(task_index);
-			return NONE;
+			task->flags = 1;
+			task->type = 9;
+			task->controller_index = NONE;
+			return task_index;
 		}
-		task->flags = 1;
-		task->type = 9;
-		task->controller_index = NONE;
+		function_6b640(task_index);
+		return NONE;
 	}
 	return task_index;
 }
 
+/* the release routine, with the block's size written to *info */
+static inline void release_block(void *block, long *info)
+{
+	g_4d87f8->allocator->get_info(block, info);
+	s_allocator_globals *globals = g_4d87f8;
+	globals->allocator->release(block, NONE);
+	if (block != 0)
+		globals->count--;
+}
+
+/* stops a session search: cancels its online task and its QoS lookups and
+   releases its buffers */
 // @retail 0x90c80
 void __stdcall function_090c80(byte *p)
 {
-	byte *const *reference = &p;
-	s_session_search *search = (s_session_search *)*reference;
+	/* retail writes each block's size over the parameter, which is dead by
+	   then */
+	s_session_search *search = (s_session_search *)p;
 	if (search->state == 1)
 		search->state = 2;
 	if (search->task_index != NONE)
@@ -322,22 +351,21 @@ void __stdcall function_090c80(byte *p)
 	}
 	if (search->unknown90)
 	{
-		free_block(search->unknown90);
+		release_block(search->unknown90, (long *)&p);
 		search->unknown90 = 0;
 	}
 	if (search->results)
 	{
-		free_block(search->results);
+		release_block(search->results, (long *)&p);
 		search->results = 0;
 	}
 	if (search->seen)
 	{
-		free_block(search->seen);
+		release_block(search->seen, (long *)&p);
 		search->seen = 0;
 	}
 	search->active = false;
 }
-
 
 // @retail 0x91290
 bool session_search_seen(s_session_search *search, XNKID const *id)
@@ -362,7 +390,9 @@ void function_902b0(s_session_search *arg_0)
 	if (local_1 != NONE)
 	{
 		long local_2 = online_task_poll(local_1);
-		if (local_2 >= 0 && local_2 <= 1)
+		if (local_2 < 0)
+			goto local_5;
+		if (local_2 <= 1)
 			return;
 		if (local_2 == 2)
 		{
@@ -384,6 +414,7 @@ void function_902b0(s_session_search *arg_0)
 			for (; local_4 < 50; local_4++)
 				arg_0->results[local_4].valid = false;
 		}
+local_5:
 		if (arg_0->task_index != NONE)
 		{
 			function_6b640(arg_0->task_index);
@@ -445,26 +476,25 @@ void __stdcall function_905a0(s_session_search *search, long kind)
 					case 4: session_search_mark_seen(search, entry); break;
 					case 5:
 						{
-							s_qos_result *result = (s_qos_result *)((byte *)entry + 0x84);
-							if (!qos_target_result(search->qos_handles[kind], result, entry->unknown7c))
+							if (!qos_target_result(search->qos_handles[kind], &entry->qos, entry->unknown7c))
 								session_search_mark_seen(search, entry);
-							else if (!result->data_size)
+							else if (!entry->qos.data_size)
 								session_search_mark_seen(search, entry);
 							else
 							{
 								dword values[0x53];
-								if (function_7e080(result->data, result->data_size, (s_session_message_values *)values))
+								if (function_7e080(entry->qos.data, entry->qos.data_size, (s_session_message_values *)values))
 								{
 									memcpy((byte *)entry + 0xa8, values, sizeof(values));
 									SEARCH_FLAG(entry, 0xa4) = true;
 									SEARCH_LONG(entry, 0x1f4) = function_75870();
-									*((bool *)entry + 0x74 + kind) = true;
+									((bool *)&entry->unknown74)[kind] = true;
 									entry->unknown7c = NONE;
 								}
 								else
 									session_search_mark_seen(search, entry);
-								result->data_size = 0;
-								result->data = 0;
+								entry->qos.data_size = 0;
+								entry->qos.data = 0;
 							}
 						}
 						break;
@@ -552,22 +582,22 @@ bool __stdcall session_search_result_precedes(void const *a, void const *b, void
 	s_search_result const *second = (s_search_result const *)b;
 	if (first->field1f8 < second->field1f8)
 		return true;
-	if (first->field1f8 > second->field1f8)
-		goto failed;
-	if (first->unknown74)
+	if (first->field1f8 <= second->field1f8)
 	{
-		if (first->field90 > second->field90)
+		if (first->unknown74)
+		{
+			if (first->qos.rtt_median > second->qos.rtt_median)
+				return true;
+			if (first->qos.rtt_median < second->qos.rtt_median)
+				return false;
+		}
+		if (first->field1fc > second->field1fc)
 			return true;
-		if (first->field90 < second->field90)
-			goto failed;
+		if (first->field1fc < second->field1fc)
+			return false;
+		if (first->field10c > second->field10c)
+			return true;
 	}
-	if (first->field1fc > second->field1fc)
-		return true;
-	if (first->field1fc < second->field1fc)
-		goto failed;
-	if (first->field10c > second->field10c)
-		return true;
-failed:
 	return false;
 }
 
@@ -579,10 +609,10 @@ static inline bool session_search_version_allowed(long type, long lower, long up
 // @retail 0x90d90
 bool __stdcall session_search_result_allowed(s_session_search *search, s_search_result *entry)
 {
-	volatile bool result = true;
-	long mask;
+	bool result = true;
 	long minimum;
-	long maximum;
+	long mask;
+	volatile long maximum;
 	if (SEARCH_FLAG(entry, 0xa4))
 	{
 		mask = SEARCH_LONG(entry, 0x110);
@@ -599,7 +629,7 @@ bool __stdcall session_search_result_allowed(s_session_search *search, s_search_
 	{
 		long local_0 = SEARCH_LONG(entry, 0xac);
 		long upper = *(volatile long *)((byte *)entry + 0xb4);
-		long lower = *(volatile long *)((byte *)entry + 0xb0);
+		dword lower = *(volatile long *)((byte *)entry + 0xb0);
 		if (!session_search_version_allowed(local_0, lower, upper))
 			return false;
 	}
@@ -609,14 +639,14 @@ bool __stdcall session_search_result_allowed(s_session_search *search, s_search_
 	XNADDR address = g_4cf793;
 	if (address_valid && memcmp(&address, (byte *)entry + 0x24, sizeof(address)) == 0)
 		return false;
-	if (SEARCH_FLAG(entry, 0xa4) && SEARCH_FLAG(search, 0x15))
+	if (SEARCH_FLAG(entry, 0xa4) && SEARCH_FLAG(search, 0x15) != 0)
 	{
 		long count = SEARCH_LONG(entry, 0x130);
 		if (count > 0)
 		{
 			for (long i = 0; i < count; i++)
 			{
-				if (memcmp((byte *)entry + 0x134 + i * 12, (byte *)search + 0x3d, 12) == 0)
+				if (memcmp((byte *)entry + 0x134 + i * 12, 0x3d + (byte *)search, 12) == 0)
 					result = false;
 			}
 			if (!result)
@@ -638,9 +668,11 @@ void __stdcall session_search_score_and_sort(s_session_search *search)
 {
 	if (memcmp(search->unknown90, search->results, search->unknown88) == 0)
 		return;
-	for (s_search_result *entry = search->results; entry < search->results + MAXIMUM_SEARCH_RESULTS; entry++)
+	s_search_result *local_0 = search->results + MAXIMUM_SEARCH_RESULTS;
+	for (s_search_result *entry = search->results; entry < local_0; entry++)
 	{
-		entry->field1f8 = 0;
+		byte *local_1 = (byte *)entry + 0x10c;
+		(*(long *)(local_1 + 0xec)) = 0;
 		if (entry->valid && entry->unknown01 && !session_search_result_allowed(search, entry))
 			entry->unknown01 = false;
 		if (entry->valid && entry->unknown01)
@@ -651,9 +683,9 @@ void __stdcall session_search_score_and_sort(s_session_search *search)
 			long count;
 			if (has_details)
 			{
-				kind = entry->field10c;
-				value = SEARCH_LONG(entry, 0x120);
-				count = SEARCH_LONG(entry, 0x11c);
+				kind = (*(long *)local_1);
+				value = (*(long *)(local_1 + 0x14));
+				count = (*(long *)(local_1 + 0x10));
 			}
 			else
 			{
@@ -661,24 +693,24 @@ void __stdcall session_search_score_and_sort(s_session_search *search)
 				value = SEARCH_LONG(entry, 0x5c);
 				count = SEARCH_LONG(entry, 0x6c);
 			}
-			entry->field1fc = abs(value - SEARCH_LONG(search, 0x4c));
-			if (entry->field1fc <= g_4ce230)
-				entry->field1f8 += g_4ce234 - ((g_4ce234 - g_4ce238) / (g_4ce230 + 1)) * entry->field1fc;
+			(*(long *)(local_1 + 0xf0)) = abs(value - SEARCH_LONG(search, 0x4c));
+			if ((*(long *)(local_1 + 0xf0)) <= g_4ce230)
+				(*(long *)(local_1 + 0xec)) += g_4ce234 - ((g_4ce234 - g_4ce238) / (g_4ce230 + 1)) * (*(long *)(local_1 + 0xf0));
 			if (kind == SEARCH_LONG(search, 0x38))
-				entry->field1f8 += g_4ce380;
+				(*(long *)(local_1 + 0xec)) += g_4ce380;
 			long bounded = count < 0 ? 0 : (count > g_4ce384 ? g_4ce384 : count);
-			entry->field200 = bounded;
-			entry->field1f8 = (long)(entry->field1f8 + bounded * g_4ce388);
+			(*(long *)(local_1 + 0xf4)) = bounded;
+			(*(long *)(local_1 + 0xec)) = (long)((*(long *)(local_1 + 0xec)) + bounded * g_4ce388);
 			if (has_details)
 			{
 				if ((SEARCH_LONG(entry, 0xf8) < g_4ce11c || SEARCH_LONG(entry, 0xfc) < g_4ce118) &&
 					SEARCH_LONG(search, 0x58) >= g_4ce11c && SEARCH_LONG(search, 0x5c) >= g_4ce118)
-					entry->field1f8 += g_4ce390;
-				entry->field1f8 += g_4ce23c[SEARCH_LONG(search, 0x6c)][SEARCH_LONG(entry, 0xb8)];
+					(*(long *)(local_1 + 0xec)) += g_4ce390;
+				(*(long *)(local_1 + 0xec)) += g_4ce23c[SEARCH_LONG(search, 0x6c)][SEARCH_LONG(entry, 0xb8)];
 			}
 			if (entry->unknown74)
 			{
-				real value = entry->field90 * 0.01f;
+				real value = entry->qos.rtt_median * 0.01f;
 				value = value < 0.0f ? 0.0f : (value > 9.0f ? 9.0f : value);
 				long index = (long)value;
 				long score;
@@ -690,7 +722,7 @@ void __stdcall session_search_score_and_sort(s_session_search *search)
 				}
 				else
 					score = g_4ce200[9];
-				entry->field1f8 += score;
+				(*(long *)(local_1 + 0xec)) += score;
 			}
 		}
 	}
@@ -714,25 +746,20 @@ bool session_search_select(s_session_search *search, s_search_session *session)
 	{
 		for (s_search_result *entry = search->results; entry < search->results + MAXIMUM_SEARCH_RESULTS; entry++)
 		{
-			if (entry->valid)
+			if (entry->valid && entry->unknown01)
 			{
-				result = entry->unknown01;
-				if (result)
+				candidate_count++;
+				if (entry->unknown74)
 				{
-					candidate_count++;
-					result = entry->unknown74;
-					if (result)
-					{
-						ready_count++;
-						if (entry->field1f8 >= search->minimum_score && selected == 0)
-							selected = entry;
-					}
+					ready_count++;
+					if (entry->field1f8 >= search->minimum_score && selected == 0)
+						selected = entry;
 				}
 			}
 		}
-		if (selected && (ready_count == candidate_count ||
-			(ready_count >= (candidate_count >> 2) &&
-			session_search_elapsed(search->start_time) > g_4ce394)))
+		bool ready = selected && (ready_count == candidate_count ||
+			(ready_count >= (candidate_count >> 2) && session_search_elapsed(search->start_time) > g_4ce394));
+		if (ready)
 		{
 			if (session)
 			{
@@ -741,11 +768,10 @@ bool session_search_select(s_session_search *search, s_search_session *session)
 				session->id = selected->session_id;
 				session->key = selected->session_key;
 				session->address = selected->session_address;
-				session->value = selected->field90;
+				session->value = selected->qos.rtt_median;
 			}
-			return true;
+			result = true;
 		}
-		return false;
 	}
 	return result;
 }
@@ -800,11 +826,12 @@ void function_90f70(s_session_search *arg_0)
 	if (arg_0->state != 0 && arg_0->task_index == NONE && arg_0->qos_handles[0] == NONE &&
 		arg_0->qos_handles[1] == NONE && !session_search_select(arg_0, 0))
 	{
+		bool local_1 = false;
 		long local_0 = arg_0->result_count;
 		long local_2 = SEARCH_LONG(arg_0, 0xc) + local_0;
 		SEARCH_LONG(arg_0, 0xc) = local_2;
-		bool local_1 = false;
-		if (SEARCH_LONG(arg_0, 0xc) < g_network_configuration.value1b8)
+		if (SEARCH_LONG(arg_0, 0xc) >= g_network_configuration.value1b8)
+			goto local_3;
 		{
 			if (arg_0->unknown1c != NONE)
 			{
@@ -819,14 +846,17 @@ void function_90f70(s_session_search *arg_0)
 					local_1 = true;
 				}
 			}
-			if (local_0 != MAXIMUM_SEARCH_RESULTS && !local_1)
-				arg_0->state = 0;
-			else
-				function_90b30(arg_0);
+			if (local_0 == MAXIMUM_SEARCH_RESULTS)
+				goto local_4;
+			if (!local_1)
+				goto local_3;
 		}
-		else
-			arg_0->state = 0;
+local_4:
+		function_90b30(arg_0);
 	}
+	return;
+local_3:
+	arg_0->state = 0;
 }
 
 
@@ -861,38 +891,93 @@ PRIVATE inline void *function_90891(long arg_0)
 	return local_1;
 }
 
+static __forceinline long function_90882(s_surface_description *description, long limit)
+{
+	return function_1931a0(limit, description);
+}
+
+#pragma intrinsic(_ReadWriteBarrier)
+#pragma inline_depth(0)
 // @retail 0x90880
 bool function_90880(s_session_search *arg_0, long arg_1, long arg_2, long arg_3, long arg_4, long arg_5, long arg_6, long arg_7, s_909ff const *arg_8, long arg_9)
 {
 	s_surface_description *local_0 = function_192e60(arg_1);
+	_ReadWriteBarrier();
 	arg_0->unknown88 = 50 * sizeof(s_search_result);
-	arg_0->results = (s_search_result *)function_90891(arg_0->unknown88);
-	arg_0->unknown90 = function_90891(arg_0->unknown88);
+	{
+		long local_12 = arg_0->unknown88;
+		c_allocator *allocation_interface = g_4d87f8->allocator;
+		s_allocator_globals *local_10 = g_4d87f8;
+		void *local_11 = allocation_interface->allocate(local_12, 0, 0);
+		if (!local_11)
+		{
+			local_10->allocator->compact(0);
+			local_11 = local_10->allocator->allocate(local_12, 0, 0);
+		}
+		if (local_11)
+			local_10->count++;
+		arg_0->results = (s_search_result *)local_11;
+	}
+	{
+		long local_12 = arg_0->unknown88;
+		c_allocator *allocation_interface = g_4d87f8->allocator;
+		s_allocator_globals *local_10 = g_4d87f8;
+		void *local_11 = allocation_interface->allocate(local_12, 0, 0);
+		if (!local_11)
+		{
+			local_10->allocator->compact(0);
+			local_11 = local_10->allocator->allocate(local_12, 0, 0);
+		}
+		if (local_11)
+			local_10->count++;
+		arg_0->unknown90 = local_11;
+	}
 	arg_0->seen_capacity = g_network_configuration.value1f8;
 	arg_0->unknown9c = arg_0->seen_capacity * sizeof(XNKID);
-	arg_0->seen = (XNKID *)function_90891(arg_0->unknown9c);
+	{
+		long local_12 = arg_0->unknown9c;
+		c_allocator *allocation_interface = g_4d87f8->allocator;
+		s_allocator_globals *local_10 = g_4d87f8;
+		void *local_11 = allocation_interface->allocate(local_12, 0, 0);
+		if (!local_11)
+		{
+			local_10->allocator->compact(0);
+			local_11 = local_10->allocator->allocate(local_12, 0, 0);
+		}
+		if (local_11)
+			local_10->count++;
+		arg_0->seen = (XNKID *)local_11;
+	}
 	if (arg_0->results && arg_0->unknown90 && arg_0->seen)
 	{
 		SEARCH_LONG(arg_0, 0x6c) = arg_9;
 		SEARCH_LONG(arg_0, 0x4c) = arg_3;
 		SEARCH_LONG(arg_0, 0x50) = arg_4;
 		SEARCH_LONG(arg_0, 0x54) = arg_5;
-		SEARCH_LONG(arg_0, 0x10) = arg_1;
+		SEARCH_LONG(arg_0, 0x10) = *(long volatile *)&arg_1;
 		s_90880 *local_1 = (s_90880 *)local_0;
 		arg_0->flag14 = local_1->field_0 == 5 || local_1->field_0 == 2 || local_1->field_0 == 4;
 		SEARCH_FLAG(arg_0, 0x15) = local_1->field_0 == 5;
 		SEARCH_LONG(arg_0, 0x18) = function_193250(local_0);
-		long local_2 = function_1931a0(arg_4, local_0);
+		long local_2 = function_90882(local_0, arg_4);
+		long highest = local_2;
+		if (arg_5 >= local_2)
+			highest = arg_5;
 		SEARCH_LONG(arg_0, 0x60) = local_2;
-		SEARCH_LONG(arg_0, 0x68) = local_2 > arg_5 ? local_2 : arg_5;
-		SEARCH_LONG(arg_0, 0x64) = local_1->field_51c[SEARCH_LONG(arg_0, 0x68)];
-		long local_3 = SEARCH_LONG(arg_0, 0x68) - SEARCH_LONG(arg_0, 0x60);
-		long local_4 = SEARCH_LONG(arg_0, 0x64) - arg_4;
-		arg_0->unknown20 = local_3 > local_4 ? local_3 : local_4;
+		SEARCH_LONG(arg_0, 0x68) = highest;
+		long rating = local_1->field_51c[highest];
+		long local_3 = highest - local_2;
+		long local_4 = rating - arg_4;
+		long span = local_4;
+		if (local_3 > local_4)
+			span = local_3;
+		SEARCH_LONG(arg_0, 0x64) = rating;
+		arg_0->unknown20 = span;
 		SEARCH_LONG(arg_0, 0x38) = arg_2;
 		arg_0->unknown1c = 0;
-		SEARCH_FLAG(arg_0, 0x3c) = arg_8 != 0;
-		if (arg_8)
+		bool has_extra = arg_8 != 0;
+		SEARCH_FLAG(arg_0, 0x3c) = has_extra;
+		if (has_extra)
 			*(s_909ff *)((byte *)arg_0 + 0x3d) = *arg_8;
 		SEARCH_LONG(arg_0, 0x58) = arg_6;
 		SEARCH_LONG(arg_0, 0x5c) = arg_7;
@@ -906,22 +991,42 @@ bool function_90880(s_session_search *arg_0, long arg_1, long arg_2, long arg_3,
 	{
 		if (arg_0->results)
 		{
-			free_block(arg_0->results);
+			void *local_12 = arg_0->results;
+			g_4d87f8->allocator->get_info(local_12, &arg_1);
+			c_allocator *release_interface = g_4d87f8->allocator;
+			s_allocator_globals *local_11 = g_4d87f8;
+			release_interface->release(local_12, NONE);
+			if (local_12)
+				local_11->count--;
 			arg_0->results = 0;
 		}
 		if (arg_0->unknown90)
 		{
-			free_block(arg_0->unknown90);
+			void *local_12 = arg_0->unknown90;
+			g_4d87f8->allocator->get_info(local_12, &arg_1);
+			c_allocator *release_interface = g_4d87f8->allocator;
+			s_allocator_globals *local_11 = g_4d87f8;
+			release_interface->release(local_12, NONE);
+			if (local_12)
+				local_11->count--;
 			arg_0->unknown90 = 0;
 		}
 		if (arg_0->seen)
 		{
-			free_block(arg_0->seen);
+			void *local_12 = arg_0->seen;
+			g_4d87f8->allocator->get_info(local_12, &arg_1);
+			c_allocator *release_interface = g_4d87f8->allocator;
+			s_allocator_globals *local_11 = g_4d87f8;
+			release_interface->release(local_12, NONE);
+			if (local_12)
+				local_11->count--;
 			arg_0->seen = 0;
 		}
 	}
 	return arg_0->active;
 }
+#pragma inline_depth(255)
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x90840
 void function_90840(s_session_search *arg_0)

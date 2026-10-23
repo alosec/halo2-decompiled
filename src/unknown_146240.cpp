@@ -26,9 +26,10 @@ void random_initialize(void)
 
 	g_4e7408 = globals;
 	globals->unknown0 = 0x78a8;
-	dword seed = (dword)time(0);
-	seed = (dword)rand() ^ GetTickCount() ^ seed;
-	g_4e7408->seed = seed;
+	dword time_seed = (dword)time(0);
+	dword seed = (dword)rand();
+	seed ^= GetTickCount();
+	g_4e7408->seed = seed ^ time_seed;
 }
 
 // @retail 0x1462b0
@@ -55,6 +56,16 @@ vector3f *random_unit_vector(vector3f *result, dword *seed)
 	return result;
 }
 
+PRIVATE inline void rotate_scalars_146320(vector3f *v, real axis_i, real axis_j, real axis_k, real sine, real cosine)
+{
+	real projection = (v->k * axis_k + v->j * axis_j + v->i * axis_i) * (1.f - cosine);
+	real cross_j = v->k * axis_i - v->i * axis_k;
+	real cross_k = v->i * axis_j - v->j * axis_i;
+	v->i = v->i * cosine + projection * axis_i - (v->j * axis_k - v->k * axis_j) * sine;
+	v->j = v->j * cosine + projection * axis_j - cross_j * sine;
+	v->k = v->k * cosine + projection * axis_k - cross_k * sine;
+}
+
 // @retail 0x146320
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle)
 {
@@ -63,36 +74,26 @@ void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *see
 
 	*result = *forward;
 
-	*seed = 1664525 * *seed + 1013904223;
-	random_vector = g_4417f0[(short)(((*seed >> 16) * 0x402) >> 16)];
+	random_unit_vector(&random_vector, seed);
 
 	axis.i = random_vector.k * forward->j - random_vector.j * forward->k;
 	axis.j = random_vector.i * forward->k - random_vector.k * forward->i;
 	axis.k = random_vector.j * forward->i - random_vector.i * forward->j;
-
 	real magnitude = (real)sqrt(axis.k * axis.k + axis.j * axis.j + axis.i * axis.i);
-	if (fabs(magnitude) >= 0.0001f)
+
+	if (!(fabs(magnitude) < 0.0001f))
 	{
 		real scale = 1.0f / magnitude;
-		axis.i *= scale;
-		axis.j *= scale;
-		axis.k *= scale;
-
-		if (magnitude > 0.0001f)
+		real axis_i = axis.i * scale;
+		real axis_j = axis.j * scale;
+		real axis_k = axis.k * scale;
+		if (magnitude > 0.0f)
 		{
 			real angle = function_259d0(seed, __FILE__, __LINE__, min_angle, max_angle);
 			real s = (real)sin(angle);
 			real c = (real)cos(angle);
 
-			real dot = result->k * axis.k + result->j * axis.j + result->i * axis.i;
-			real t = dot * (1.0f - c);
-			real x = result->i;
-			real y = result->j;
-			real z = result->k;
-
-			result->i = x * c + axis.i * t - (y * axis.k - z * axis.j) * s;
-			result->j = y * c + axis.j * t - (z * axis.i - x * axis.k) * s;
-			result->k = z * c + axis.k * t - (x * axis.j - y * axis.i) * s;
+			rotate_scalars_146320(result, axis_i, axis_j, axis_k, s, c);
 		}
 	}
 }
@@ -151,10 +152,23 @@ long function_146650(void)
 static inline long game_time_speed_to_ticks(s_game_options_view *options, real speed)
 {
 	real ticks = (real)options->field_2_3 / speed;
-	long result;
+	volatile long result;
 
 	REAL_TO_LONG(ticks, result);
 	return result;
+}
+
+/* sets the game speed: the ticks per second follow from it */
+static __forceinline void game_time_apply_speed(real speed)
+{
+	s_game_options_view *options = g_4e6948;
+	real rate = (speed > 0.01f) ? speed : 0.01f;
+	long ticks = game_time_speed_to_ticks(options, rate);
+	s_game_time_globals *globals = g_510c54;
+
+	globals->rate = 1.0f / (real)ticks;
+	globals->field_2_3 = (short)ticks;
+	globals->scale = (real)options->field_2_3 / (real)ticks;
 }
 
 /* the fields of the game options and the 0x510c50 state read here */
@@ -174,6 +188,9 @@ struct s_510c50_time_view
 
 struct s_unknown_13bf00;
 extern s_unknown_13bf00 *g_510c50;
+
+#include "slot_handler.h"
+static __forceinline long real_to_long(real value);
 
 /* the number of ticks the network simulation allows (sets synchronous) */
 long function_680c0(bool *synchronous);
@@ -218,31 +235,27 @@ void function_146660(real seconds, real *elapsed, long *ticks_due)
 			{
 				unlimited = true;
 			}
-			if (options->mode >= 2 && options->mode <= 5)
+			long mode = options->mode;
+			/* modes 2 to 5 run on the network's ticks (the test function_138840 makes) */
+			bool networked = false;
+			if (mode >= 2 && mode <= 5)
+			{
+				networked = true;
+			}
+			if (!networked)
+			{
+				maximum_ticks = globals->field_2_3 * 5;
+			}
+			else
 			{
 				maximum_ticks = function_680c0(&synchronous);
 				globals = g_510c54;
 			}
-			else
-			{
-				maximum_ticks = globals->field_2_3 * 5;
-			}
 			if (!synchronous && !unlimited)
 			{
-				real scale = globals->scale;
-				real limit;
-				long limit_ticks;
+				real scale = globals->scale < 1.0f ? 1.0f : (globals->scale > 5.0f ? 5.0f : globals->scale);
+				long limit_ticks = real_to_long(scale * 2.0f);
 
-				if (1.0f > scale)
-				{
-					scale = 1.0f;
-				}
-				else if (scale > 5.0f)
-				{
-					scale = 5.0f;
-				}
-				limit = scale * 2.0f;
-				REAL_TO_LONG(limit, limit_ticks);
 				if (maximum_ticks > limit_ticks)
 				{
 					maximum_ticks = limit_ticks;
@@ -250,15 +263,30 @@ void function_146660(real seconds, real *elapsed, long *ticks_due)
 			}
 			elapsed_seconds = globals->scale * seconds;
 			ticks_elapsed = (real)globals->field_2_3 * elapsed_seconds + globals->leftover_ticks;
-			ticks = (long)ticks_elapsed;
-			if (synchronous ? (ticks <= maximum_ticks && ticks + 7 >= maximum_ticks && ticks + 1 == maximum_ticks) : ticks <= maximum_ticks)
+			long candidate_ticks = real_truncate(ticks_elapsed);
+			/* a synchronous game runs the candidate only when it is one tick short of the network's count */
+			bool limited = true;
+			if (synchronous)
 			{
-				leftover = ticks_elapsed - (real)ticks;
+				if (candidate_ticks <= maximum_ticks && candidate_ticks + 7 >= maximum_ticks &&
+					candidate_ticks + 1 >= maximum_ticks && candidate_ticks + 1 <= maximum_ticks)
+				{
+					limited = false;
+				}
 			}
-			else
+			else if (candidate_ticks <= maximum_ticks)
+			{
+				limited = false;
+			}
+			if (limited)
 			{
 				elapsed_seconds = (real)maximum_ticks * globals->rate;
 				ticks = maximum_ticks;
+			}
+			else
+			{
+				ticks = candidate_ticks;
+				leftover = ticks_elapsed - (real)candidate_ticks;
 			}
 		}
 	}
@@ -321,25 +349,16 @@ void function_146860(real initial_speed, real speed, real duration)
 		globals->speed_timer = 0.0f;
 		globals->speed_duration = duration;
 		globals->speed_initial = initial_speed;
-		speed = initial_speed;
+		game_time_apply_speed(initial_speed);
 	}
-	game_time_set_speed_internal(speed);
+	else
+	{
+		game_time_apply_speed(speed);
+	}
 }
 
 // @retail 0x146980
 PRIVATE void game_time_set_speed_internal(real speed)
 {
-	s_game_options_view *options = g_4e6948;
-
-	if (!(speed > 0.01f))
-	{
-		speed = 0.01f;
-	}
-
-	long ticks = game_time_speed_to_ticks(options, speed);
-	s_game_time_globals *globals = g_510c54;
-
-	globals->rate = 1.0f / (real)ticks;
-	globals->field_2_3 = (short)ticks;
-	globals->scale = (real)options->field_2_3 / (real)ticks;
+	game_time_apply_speed(speed);
 }

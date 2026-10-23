@@ -120,6 +120,26 @@ PRIVATE __forceinline void function_294b56(vector3f *arg_0, vector3f *arg_1,
     *arg_2 += *arg_3;
 }
 
+PRIVATE __forceinline void function_2950bd(transform4x3f const *arg_0,
+    vector3f const *arg_1, vector3f *arg_2)
+{
+    real local_0 = arg_1->i;
+    real local_1 = arg_1->j;
+    real local_2 = arg_1->k;
+    arg_2->i = arg_0->up.i * local_2 + arg_0->left.i * local_1 + arg_0->forward.i * local_0;
+    arg_2->j = arg_0->up.j * local_2 + arg_0->left.j * local_1 + arg_0->forward.j * local_0;
+    arg_2->k = arg_0->up.k * local_2 + arg_0->left.k * local_1 + arg_0->forward.k * local_0;
+}
+PRIVATE __forceinline void function_295027(long arg_0, vector3f *arg_1)
+{
+    s_slot_object_view *local_0 = object_get(arg_0);
+    if (local_0->parent_index == NONE)
+        *arg_1 = local_0->forward;
+    else
+        function_2950bd(object_node_matrix(object_get(local_0->parent_index), local_0->parent_node),
+            &local_0->forward, arg_1);
+}
+
 // @retail 0x294380
 void function_294380(long arg_0, long arg_1)
 {
@@ -130,7 +150,8 @@ void function_294380(long arg_0, long arg_1)
     if (local_2->parent_index != NONE || !local_3) return;
     point3f local_4;
     real local_5 = 0.0f;
-    function_b9dd0(arg_1, &local_4);
+    /* arg_1 reread from its stack slot: keeps arg_0 arriving in eax, as retail */
+    function_b9dd0(*(long const volatile *)&arg_1, &local_4);
     vector3f local_6 = *g_4687a4;
     bool local_7 = !TEST_FIELD_BIT((*(dword *)(g_4e3b44[local_2->tag_index & 0xffff].bytes + 0xd4) >> 4) & 1);
     real local_8 = local_1->field_34 * 0.5f;
@@ -285,10 +306,10 @@ void function_294380(long arg_0, long arg_1)
     if (!(local_12 > local_18)) local_12 = local_18;
     local_6.i = local_12;
     if (local_7) { local_6.k = 0.0f; local_19.k = 0.0f; }
-    if (local_3->field_d ? local_5 < local_1->field_68 * 0.7f : local_5 < local_1->field_68)
+    if (!(local_3->field_d ? local_5 >= local_1->field_68 * 0.7f : local_5 >= local_1->field_68))
     {
         local_6 = *g_4687a4;
-        object_get_forward(arg_1, &local_19);
+        function_295027(arg_1, &local_19);
         local_3->field_d = false;
     }
     else

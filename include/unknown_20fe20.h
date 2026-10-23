@@ -23,6 +23,6 @@ bool function_210770(short output_index, vector3f const *vector, vector3f *out);
 real function_210970(s_type_c3b527 const *a, s_type_c3b527 const *b);
 real function_210ac0(s_type_c3b527 const *a, point3f const *b);
 void function_210be0(s_type_c3b527 const *a, s_type_c3b527 const *b, vector3f *out);
-void function_210c90(s_type_c3b527 const *a, point3f const *b, vector3f *out);
+void function_210c90(point3f const *b, s_type_c3b527 const *a, vector3f *out);
 
 #endif

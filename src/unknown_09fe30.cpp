@@ -1,4 +1,5 @@
 #include "unknown_11c920.h"
+#include <string.h>
 #include "globals.h"
 #include "unknown_0a58d0.h"
 
@@ -19,9 +20,9 @@
 
 struct s_object_data_view
 {
-	byte unknown00[8];
-	long unknown08;
-	byte unknown0c[0xb8];
+	byte unknown00[0xc];
+	long field_0c;
+	byte unknown10[0xb4];
 };
 
 struct s_object_creation
@@ -32,11 +33,7 @@ struct s_object_creation
 
 static void object_state_clear(s_entity_state *state)
 {
-	state->field0 = 0;
-	state->field4 = 0;
-	state->field8_long = 0;
-	state->fieldc = 0;
-	state->field10 = 0;
+	memset(state, 0, sizeof(*state));
 }
 
 // @retail 0x9fe30
@@ -67,6 +64,8 @@ void c_object_type_definition::v21(s_entity *link)
 	}
 }
 
+// score 49 (was 49): the prologue differs: retail masks the index before saving the
+// registers, ours pushes ebx, esi and edi first and masks afterwards.
 // @retail 0xa0700
 void c_object_type_definition::v26(long object_index, long unused, s_entity_state *state)
 {
@@ -101,11 +100,11 @@ long c_object_type_definition::v29(long a, s_entity_info *info, long *c, long d,
 
 	creation.owner = (c_vehicle_type *)this;
 	function_a5d90(&creation.data, info, c, e);
-	creation.data.unknown08 = info->identifier;
+	creation.data.field_0c = info->identifier;
 	if (info->field0 != NONE)
 		index = function_a73b0(info);
 	else
-		index = function_b7b40(&creation);
+		index = function_b7b40(&creation.data);
 	if (index != NONE)
 	{
 		byte *object = OBJECT_FROM_INDEX(index);
@@ -118,17 +117,28 @@ long c_object_type_definition::v29(long a, s_entity_info *info, long *c, long d,
 // @retail 0xa0900
 void c_object_type_definition::v12(long a, s_entity_info *info, long c, s_bitstream *stream)
 {
-	function_a6660(info);
-	function_1955d0(stream, info->vehicle_data, 0x20);
+    c_object_type_definition *volatile self = this;
+    (void)&self;
+    s_entity_info *volatile *info_reference = &info;
+    s_entity_info *held_info = *(s_entity_info **)info_reference;
+    s_bitstream *volatile *stream_reference = &stream;
+    s_bitstream *held_stream = *(s_bitstream **)stream_reference;
+	function_a6660(held_info, held_stream);
+	function_1955d0(held_stream, held_info->vehicle_data, 0x20);
 }
 
 // @retail 0xa0a60
 bool c_object_type_definition::v13(long a, s_entity_info *info, s_bitstream *stream)
 {
-	bool ok = function_a6810(stream);
+    c_object_type_definition const *volatile unused_this = this;
+	bool ok = function_a6810(info, stream);
 
 	function_195820(stream, info->vehicle_data, 0x20);
-	return stream->bit_position <= (stream->size_in_bytes << 3) && ok;
+	if (stream->bit_position <= (stream->size_in_bytes << 3) && ok)
+    {
+        return true;
+    }
+    return false;
 }
 
 // @retail 0xa09f0

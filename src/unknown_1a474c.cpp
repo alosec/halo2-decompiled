@@ -20,7 +20,7 @@ void __stdcall function_1a474c(long stage)
 		size = (stage > 1) ? 0x18000 : 0x100000;
 	}
 
-	loop = function_18e1f0((c_memory_source *)g_47d924, size, "ui memory pool");
+	loop = function_18e1f0(size, (c_memory_source *)g_47d924, "ui memory pool");
 	g_51e998 = loop;
 	if (loop)
 	{

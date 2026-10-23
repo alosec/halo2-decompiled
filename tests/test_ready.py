@@ -36,9 +36,27 @@ def test_ready_counts_decompiled_callees_and_skips_decompiled_functions():
     assert {r['va'] for r in ready(rows)} == {'00000010', '00000050', '00000060'}
 
 
+def test_ready_for_havok_lists_havok_and_ignores_game_callees():
+    rows = dict([
+        (0x10, row(0x10, owner='third:havok', calls=[0x20], size=8)),  # calls a todo Havok function
+        (0x20, row(0x20, owner='third:havok', size=4)),                # leaf
+        (0x30, row(0x30, owner='third:havok', calls=[0x40], size=6)),  # calls back into the game
+        (0x40, row(0x40)),                                             # todo game function
+        (0x50, row(0x50, size=2)),                                     # game leaf: not listed
+    ])
+    assert [r['va'] for r in ready(rows, 'third:havok')] == ['00000020', '00000030']
+    assert [r['va'] for r in ready(rows)] == ['00000050', '00000040']
+
+
 def test_ready_treats_recursion_as_one_unit():
     rows = {0x10: row(0x10, calls=[0x20]), 0x20: row(0x20, calls=[0x10])}
     assert {r['va'] for r in ready(rows)} == {'00000010', '00000020'}
+
+
+def test_ready_leaves_out_disabled_drafts():
+    rows = {0x10: row(0x10), 0x20: row(0x20)}
+    assert [r['va'] for r in ready(rows)] == ['00000010', '00000020']
+    assert [r['va'] for r in ready(rows, disabled={0x10})] == ['00000020']
 
 
 def test_ready_line():

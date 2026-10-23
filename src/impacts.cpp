@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "data_array.h"
 #include "unknown_0259d0.h"
+#include "vector_products.h"
 #include "unknown_1cec30.h"
 #include "impacts.h"
 #include "unknown_1428b0.h"
@@ -40,7 +41,7 @@ struct s_impact
 	real priority;
 	short reference_count;
 	char age;
-	byte unknownb;
+	char unknownb;
 	char type;
 	char unknownd;
 	bool unknowne;
@@ -129,7 +130,8 @@ extern s_record_pool *g_51ebfc;
 extern s_record_pool *g_51ec00;
 long g_502138;
 long g_50213c[32];
-real g_55c2d0;
+/* retail startup initializer 378170 */
+real g_55c2d0 = 0.52532196f;
 
 struct s_small_index;
 short function_0b67a0(const s_small_index *data);
@@ -137,8 +139,6 @@ point3f *function_b9dd0(long object_index, point3f *result);
 real function_30bf0(vector3f *v);
 
 /* the havok components (src/unknown_1cec30.cpp, src/unknown_0dc3a0.cpp) */
-void havok_component_rigid_body_matrix_get(long rigid_body_index, s_havok_component *component, transform4x3f *matrix);
-bool havok_component_rigid_body_keyframed(long rigid_body_index, s_havok_component *component);
 void havok_component_contact_properties_get(s_havok_component const *component, long contact_index, long *property_a, long *property_b);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 
@@ -264,7 +264,7 @@ bool havok_component_impact_make_room(long rigid_body_index, s_havok_component *
 bool havok_component_any_rigid_body_active(s_havok_component *component);
 real havok_component_rigid_body_mass_get(long rigid_body_index, s_havok_component *component);
 void havok_component_rigid_body_point_velocity_get(long rigid_body_index, s_havok_component *component, point3f const *point, vector3f *velocity);
-void havok_component_rigid_body_linear_velocity_get(long rigid_body_index, s_havok_component *component, vector3f *velocity);
+void havok_component_rigid_body_linear_velocity_get(s_havok_component *component, long rigid_body_index, vector3f *velocity);
 void havok_component_impact_add(s_havok_component *component, long impact_index);
 
 /* a physics model's material: its two global materials and the shapes made
@@ -337,7 +337,7 @@ PRIVATE inline byte *impact_component_definition_get(long component_index)
 	return impact_tag_get(impact_object_header_get(havok_component_get(component_index)->object_index)->object->definition_index);
 }
 
-PRIVATE inline bool impact_type_is_continuous(char type)
+PRIVATE __forceinline bool impact_type_is_continuous(char type)
 {
 	return PIN(type, 2, 3) == type;
 }
@@ -565,19 +565,31 @@ bool impacts_match(
 	{
 		if (flag)
 		{
-			return impact_material_a == material_a && impact_material_b == material_b ||
-				impact_material_b == material_a && impact_material_a == material_b;
+			if (impact_material_a == material_a && impact_material_b == material_b ||
+				impact_material_b == material_a && impact_material_a == material_b)
+				goto local_0;
 		}
 	}
 	else if (!flag)
 	{
-		return (impact_component_a == component_a && impact_component_b == component_b ||
+		if ((impact_component_a == component_a && impact_component_b == component_b ||
 			impact_component_a == component_b && impact_component_b == component_a) &&
 			c_class_227600::function_227600(NONE, impact_material_a, impact_material_b, material_a, material_b) &&
 			impact_unknown == unknown &&
-			impact_type == type;
+			impact_type == type)
+			goto local_0;
 	}
 	return false;
+local_0:
+	return true;
+}
+
+PRIVATE __forceinline real function_2274f1(vector3f const *arg_0)
+{
+	real local_0 = arg_0->i * arg_0->i;
+	local_0 += arg_0->j * arg_0->j;
+	local_0 += arg_0->k * arg_0->k;
+	return local_0;
 }
 
 // @retail 0x2274f0
@@ -586,10 +598,9 @@ bool impact_matches_data(
 	s_impact_data const *data,
 	bool check_position)
 {
-	long local_0 = data->component_b;
-	long component_a = data->component_a;
+	unsigned long local_0 = *(volatile long *)&data->component_b;
 
-	if (impacts_match(impact->component_a, impact->component_b, component_a, local_0,
+	if (impacts_match(impact->component_a, impact->component_b, data->component_a, local_0,
 		impact->material_a, impact->material_b, data->material_a, data->material_b,
 		impact->unknownd, data->type, impact->unknowne, data->unknown38, impact->shape.type, data->shape.type))
 	{
@@ -599,24 +610,61 @@ bool impact_matches_data(
 			real distance_squared;
 
 			vector3d_from_points3d(&impact->position, &data->position, &delta);
-			distance_squared = length_sq3f(&delta);
+			distance_squared = function_2274f1(&delta);
 			if (!(distance_squared < 0.25f) &&
 				(!(distance_squared < 16.0f) || !(dot3f(&impact->normal, &data->normal) > g_55c2d0)))
 			{
 				return false;
 			}
 		}
-		if (impact_components_valid(component_a, local_0))
+		if (impact_components_valid(data->component_a, local_0))
 			return true;
 	}
 	return false;
 }
 
-PRIVATE inline void cross3f(vector3f const *a, vector3f const *b, vector3f *result)
+PRIVATE __forceinline real function_227811(vector3f const *arg_0, vector3f const *arg_1)
 {
-	result->i = a->j * b->k - a->k * b->j;
-	result->j = a->k * b->i - a->i * b->k;
-	result->k = a->i * b->j - a->j * b->i;
+	real local_0 = arg_0->k * arg_1->k;
+	local_0 += arg_0->j * arg_1->j;
+	local_0 += arg_0->i * arg_1->i;
+	return local_0;
+}
+
+PRIVATE __forceinline void function_227812(vector3f const *arg_0, vector3f *arg_1)
+{
+	real local_0 = function_227811(arg_0, arg_1);
+	vector3f local_1;
+	local_1.i = local_0;
+	local_1.i *= arg_0->i;
+	local_1.j = arg_0->j * local_0;
+	local_1.k = arg_0->k * local_0;
+	arg_1->i -= local_1.i;
+	arg_1->j -= local_1.j;
+	arg_1->k -= local_1.k;
+}
+
+PRIVATE __forceinline vector3f const *function_227813(s_impact_object *arg_0, vector3f const *arg_1)
+{
+	vector3f const *local_1 = &arg_0->unknown70;
+	real local_0 = local_1->k * arg_1->k;
+	local_0 += arg_0->unknown70.j * arg_1->j;
+	local_0 += arg_0->unknown70.i * arg_1->i;
+	if (!(local_0 >= 0.0f))
+		local_0 = -local_0;
+	if (!(local_0 < 0.9f))
+		local_1 = &arg_0->unknown7c;
+	return local_1;
+}
+
+PRIVATE __forceinline void function_227814(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
+{
+	real local_0 = arg_0->i * arg_1->j - arg_0->j * arg_1->i;
+	real local_1 = arg_1->i * arg_0->k - arg_0->i * arg_1->k;
+	real local_2 = arg_0->j * arg_1->k - arg_0->k * arg_1->j;
+	arg_2->i = local_2;
+	arg_2->j = local_1;
+	arg_2->k = local_0;
 }
 
 // @retail 0x227810
@@ -626,22 +674,13 @@ void impact_build_matrix(
 	matrix3x3 *matrix)
 {
 	s_impact_object *object = impact_object_header_get(havok_component_get(component_index)->object_index)->object;
-	vector3f const *forward = &object->unknown70;
-	real dot;
 
 	matrix->up = impact->normal;
-	dot = dot3f(forward, &impact->normal);
-	if (!(dot >= 0.0f))
-		dot = -dot;
-	if (!(dot < 0.9f))
-		forward = &object->unknown7c;
+	vector3f const *forward = function_227813(object, &impact->normal);
 	matrix->forward = *forward;
-	dot = dot3f(&matrix->up, &matrix->forward);
-	matrix->forward.i -= matrix->up.i * dot;
-	matrix->forward.j -= matrix->up.j * dot;
-	matrix->forward.k -= matrix->up.k * dot;
+	function_227812(&matrix->up, &matrix->forward);
 	function_30bf0(&matrix->forward);
-	cross3f(&matrix->up, &matrix->forward, &matrix->left);
+	function_227814(&matrix->up, &matrix->forward, &matrix->left);
 	function_30bf0(&matrix->left);
 }
 
@@ -667,9 +706,9 @@ long function_2273d0(
 
 		if (rigid_body_index_a != NONE && rigid_body_index_b != NONE &&
 			!havok_component_rigid_body_get(rigid_body_index_a, havok_component_a)->m_fixed &&
-			!havok_component_rigid_body_keyframed(rigid_body_index_a, havok_component_a) &&
+			!havok_component_a->rigid_body_keyframed(rigid_body_index_a) &&
 			!havok_component_rigid_body_get(rigid_body_index_b, havok_component_b)->m_fixed &&
-			!havok_component_rigid_body_keyframed(rigid_body_index_b, havok_component_b))
+			!havok_component_b->rigid_body_keyframed(rigid_body_index_b))
 		{
 			result = 1;
 		}
@@ -695,7 +734,7 @@ void impact_rigid_body_indices_get(
 		{
 			s_havok_component_element0c *contact = &component->unknown7c.data[i];
 
-			if (contact->unknown00 == impact->shape.type && contact->unknown02 == impact->shape.index)
+			if (contact->unknown00 == impact->shape.type && contact->unknown02 == (*(s_impact const *const volatile *)&impact)->shape.index)
 			{
 				contact_index = i;
 			}
@@ -731,6 +770,25 @@ void impact_rigid_body_indices_get(
 	}
 }
 
+PRIVATE __forceinline void function_2281a1(transform4x3f const *arg_0, point3f const *arg_1, point3f *arg_2)
+{
+	real local_0 = arg_1->x;
+	real local_1 = arg_1->y;
+	real local_2 = arg_1->z;
+	if (arg_0->scale != 1.f)
+	{
+		local_0 = arg_0->scale * local_0;
+		local_1 = arg_0->scale * local_1;
+		local_2 = arg_0->scale * local_2;
+	}
+	arg_2->x = arg_0->up.i * local_2 + arg_0->left.i * local_1 + arg_0->forward.i * local_0 + arg_0->position.x;
+	real local_3 = arg_0->up.j * local_2;
+	local_3 += arg_0->left.j * local_1;
+	local_3 += arg_0->forward.j * local_0;
+	arg_2->y = local_3 + arg_0->position.y;
+	arg_2->z = arg_0->up.k * local_2 + arg_0->left.k * local_1 + arg_0->forward.k * local_0 + arg_0->position.z;
+}
+
 // @retail 0x2281a0
 void impact_local_positions_update(
 	s_impact *impact,
@@ -740,7 +798,7 @@ void impact_local_positions_update(
 	transform4x3f matrix;
 	transform4x3f inverse;
 
-	havok_component_rigid_body_matrix_get(rigid_body_index_a, havok_component_get(impact->component_a), &matrix);
+	havok_component_get(impact->component_a)->rigid_body_matrix_get(rigid_body_index_a, &matrix);
 	if (impact->shape.type != NONE)
 	{
 		impact->position = matrix.position;
@@ -748,15 +806,27 @@ void impact_local_positions_update(
 	else
 	{
 		function_141590(&matrix, &inverse);
-		transform4x3f_apply_point(&inverse, &impact->position, &impact->local_position_a);
+		function_2281a1(&inverse, &impact->position, &impact->local_position_a);
 		if (impact->component_b != NONE)
 		{
-			havok_component_rigid_body_matrix_get(rigid_body_index_b, havok_component_get(impact->component_b), &matrix);
+			havok_component_get(impact->component_b)->rigid_body_matrix_get(rigid_body_index_b, &matrix);
 			function_141590(&matrix, &inverse);
-			transform4x3f_apply_point(&inverse, &impact->position, &impact->local_position_b);
+			function_2281a1(&inverse, &impact->position, &impact->local_position_b);
 		}
 	}
 }
+
+struct s_227af0
+{
+	real field_0;
+	real field_4;
+	real field_8;
+	real field_c;
+	real field_10;
+	real field_14;
+	real field_18;
+	real field_1c;
+};
 
 // @retail 0x227af0
 void impact_orientation_get(
@@ -777,7 +847,7 @@ void impact_orientation_get(
 	{
 		transform4x3f matrix;
 
-		havok_component_rigid_body_matrix_get(rigid_body_index, havok_component_get(impact->component_a), &matrix);
+		havok_component_get(impact->component_a)->rigid_body_matrix_get(rigid_body_index, &matrix);
 		*position = matrix.position;
 		*forward = matrix.forward;
 		*up = matrix.up;
@@ -785,31 +855,33 @@ void impact_orientation_get(
 		*half_width = 0.0f;
 		*half_length = 0.0f;
 	}
-	else if (impact->reference_count <= 1 || impact->unknowne && !unknown)
+	else if (impact->reference_count <= 1 && !(impact->unknowne && unknown))
 	{
 		*half_width = 0.0f;
 		*half_length = 0.0f;
-		cross3f(up, g_4687b0, forward);
+		vector3f const *normal = up;
+		function_227814(normal, g_4687b0, forward);
 		if (function_30bf0(forward) < 0.001f)
 		{
-			cross3f(up, g_4687a8, forward);
+			function_227814(normal, g_4687a8, forward);
 			function_30bf0(forward);
 		}
-		cross3f(up, forward, left);
+		function_227814(normal, forward, left);
 		function_30bf0(left);
 	}
 	else
 	{
 		s_havok_component *component = havok_component_get(impact->component_a);
 		bool has_component_b = impact->component_b != NONE;
-		real x_a_max = -3.4028235e+38f;
-		real x_a_min = 3.4028235e+38f;
-		real y_a_max = -3.4028235e+38f;
-		real y_a_min = 3.4028235e+38f;
-		real x_b_max = -3.4028235e+38f;
-		real x_b_min = 3.4028235e+38f;
-		real y_b_max = -3.4028235e+38f;
-		real y_b_min = 3.4028235e+38f;
+		s_227af0 local_1;
+		local_1.field_10 = 3.4028235e+38f;
+		local_1.field_0 = -3.4028235e+38f;
+		local_1.field_14 = 3.4028235e+38f;
+		local_1.field_c = -3.4028235e+38f;
+		local_1.field_4 = 3.4028235e+38f;
+		local_1.field_1c = -3.4028235e+38f;
+		local_1.field_8 = 3.4028235e+38f;
+		local_1.field_18 = -3.4028235e+38f;
 		matrix3x3 matrix_a;
 		matrix3x3 matrix_b;
 		long i;
@@ -829,46 +901,50 @@ void impact_orientation_get(
 				real x;
 				real y;
 
-				vector3d_from_points3d(position, &constraint->position, &delta);
+				point3f const *point = &constraint->position;
+				delta.i = point->x - position->x;
+				delta.j = point->y - position->y;
+				delta.k = point->z - position->z;
+
 				x = dot3f(&matrix_a.forward, &delta);
 				y = dot3f(&matrix_a.left, &delta);
-				if (x >= x_a_max)
-					x_a_max = x;
-				if (x < x_a_min)
-					x_a_min = x;
-				if (y >= y_a_max)
-					y_a_max = y;
-				if (y < y_a_min)
-					y_a_min = y;
+				if (!(local_1.field_0 > x))
+					local_1.field_0 = x;
+				if (local_1.field_10 > x)
+					local_1.field_10 = x;
+				if (!(local_1.field_c > y))
+					local_1.field_c = y;
+				if (local_1.field_14 > y)
+					local_1.field_14 = y;
 				if (has_component_b)
 				{
 					x = matrix_b.up.i * delta.k + matrix_b.left.i * delta.j + matrix_b.forward.i * delta.i;
 					y = matrix_b.up.j * delta.k + matrix_b.left.j * delta.j + matrix_b.forward.j * delta.i;
-					if (x >= x_b_max)
-						x_b_max = x;
-					if (x < x_b_min)
-						x_b_min = x;
-					if (y >= y_b_max)
-						y_b_max = y;
-					if (y < y_b_min)
-						y_b_min = y;
+					if (!(local_1.field_1c > x))
+						local_1.field_1c = x;
+					if (local_1.field_4 > x)
+						local_1.field_4 = x;
+					if (!(local_1.field_18 > y))
+						local_1.field_18 = y;
+					if (local_1.field_8 > y)
+						local_1.field_8 = y;
 				}
 			}
 		}
-		if (has_component_b && !((y_a_max - y_a_min) * (x_a_max - x_a_min) > (x_b_max - x_b_min) * (y_b_max - y_b_min)))
+		if (has_component_b && !((local_1.field_c - local_1.field_14) * (local_1.field_0 - local_1.field_10) > (local_1.field_1c - local_1.field_4) * (local_1.field_18 - local_1.field_8)))
 		{
 			real x_center;
 			real y_center;
 
-			*half_width = (x_b_max - x_b_min) * 0.5f;
-			*half_length = (y_b_max - y_b_min) * 0.5f;
+			*half_width = (local_1.field_1c - local_1.field_4) * 0.5f;
+			*half_length = (local_1.field_18 - local_1.field_8) * 0.5f;
 			*forward = matrix_b.forward;
 			*left = matrix_b.left;
-			x_center = (x_b_max + x_b_min) * 0.5f;
+			x_center = (local_1.field_1c + local_1.field_4) * 0.5f;
 			position->x += forward->i * x_center;
 			position->y += forward->j * x_center;
 			position->z += forward->k * x_center;
-			y_center = (y_b_max + y_b_min) * 0.5f;
+			y_center = (local_1.field_18 + local_1.field_8) * 0.5f;
 			position->x += left->i * y_center;
 			position->y += left->j * y_center;
 			position->z += left->k * y_center;
@@ -878,15 +954,15 @@ void impact_orientation_get(
 			real x_center;
 			real y_center;
 
-			*half_width = (x_a_max - x_a_min) * 0.5f;
-			*half_length = (y_a_max - y_a_min) * 0.5f;
+			*half_width = (local_1.field_0 - local_1.field_10) * 0.5f;
+			*half_length = (local_1.field_c - local_1.field_14) * 0.5f;
 			*forward = matrix_a.forward;
 			*left = matrix_a.left;
-			x_center = (x_a_max + x_a_min) * 0.5f;
+			x_center = (local_1.field_0 + local_1.field_10) * 0.5f;
 			position->x += forward->i * x_center;
 			position->y += forward->j * x_center;
 			position->z += forward->k * x_center;
-			y_center = (y_a_max + y_a_min) * 0.5f;
+			y_center = (local_1.field_c + local_1.field_14) * 0.5f;
 			position->x += left->i * y_center;
 			position->y += left->j * y_center;
 			position->z += left->k * y_center;
@@ -1026,7 +1102,10 @@ void impact_type_update(
 		rigid_body = component_a->rigid_bodies.data[rigid_body_index_a].rigid_body;
 		if (!rigid_body->m_fixed)
 		{
-			velocity = *(vector3f *)&rigid_body->m_motion->m_linear_velocity;
+			point3f const *local_1 = (point3f const *)&rigid_body->m_motion->m_linear_velocity;
+			velocity.i = local_1->x;
+			velocity.j = local_1->y;
+			velocity.k = local_1->z;
 		}
 		else
 		{
@@ -1036,7 +1115,7 @@ void impact_type_update(
 		{
 			vector3f velocity_b;
 
-			havok_component_rigid_body_linear_velocity_get(rigid_body_index_b, havok_component_get(impact->component_b), &velocity_b);
+			havok_component_rigid_body_linear_velocity_get(havok_component_get(impact->component_b), rigid_body_index_b, &velocity_b);
 			velocity.i -= velocity_b.i;
 			velocity.j -= velocity_b.j;
 			velocity.k -= velocity_b.k;
@@ -1147,7 +1226,6 @@ void function_2266a0(
 	s_impact *impact = impact_get(impact_index);
 	s_havok_component *component = havok_component_get(impact->component_a);
 	s_impact_array *impacts;
-	long i;
 
 	if (impact->sort_index != NONE)
 	{
@@ -1162,7 +1240,7 @@ void function_2266a0(
 		}
 		else
 		{
-			for (i = 0; i < component->unknown88.size; i++)
+			for (long i = 0; i < component->unknown88.size; i++)
 			{
 				s_havok_component_element48 *constraint = &component->unknown88.data[i];
 
@@ -1172,20 +1250,20 @@ void function_2266a0(
 					constraint->impact_index = NONE;
 				}
 			}
-			for (i = 0; i < component->unknown7c.size; i++)
+			for (long i = 0; i < component->unknown7c.size; i++)
 			{
 				s_havok_component_element0c *contact = &component->unknown7c.data[i];
 
 				if (contact->impact_index == impact_index)
 				{
 					impact_release(impact_index, impact);
-					contact->impact_index = NONE;
+					component->unknown7c.data[i].impact_index = NONE;
 				}
 			}
 		}
 	}
 	impacts = impact_array_get(component->unknown20);
-	for (i = 0; i < impacts->count; i++)
+	for (long i = 0; i < impacts->count; i++)
 	{
 		if (impacts->impacts[i] == impact_index)
 		{
@@ -1250,7 +1328,10 @@ long impact_new(
 	impact->unknown1f = NONE;
 	impact->normal = data->normal;
 	function_1201a0(&impact->normal, g_4687b0);
-	impact->position = data->position;
+	dword const *local_0 = (dword const *)&data->position;
+	*(dword *)&impact->position.x = local_0[0];
+	*(dword *)&impact->position.y = local_0[1];
+	*(dword *)&impact->position.z = local_0[2];
 	impact->unknown48 = 0.0f;
 	impact->unknown4c = 0.0f;
 	impact->sort_index = NONE;
@@ -1279,6 +1360,7 @@ long impact_new(
 
 // @retail 0x2285d0
 void impact_material_effects_get_for_component(
+	vector3f const *normal,
 	long component_index,
 	long unknownd,
 	long unknownb,
@@ -1287,7 +1369,6 @@ void impact_material_effects_get_for_component(
 	c_type_47f957 material_a,
 	c_type_47f957 material_b,
 	long type,
-	vector3f const *normal,
 	long *first_value04,
 	long *second_value04,
 	long *first_value,
@@ -1336,6 +1417,11 @@ void impact_material_effects_get_for_component(
 		first_value04, second_value04, first_value, second_value, first_value0c, second_value0c);
 }
 
+PRIVATE __forceinline byte *function_2284c1(long arg_0)
+{
+	return impact_tag_get(impact_object_header_get(havok_component_get(arg_0)->object_index)->object->definition_index);
+}
+
 // @retail 0x2284c0
 void impact_material_effects_get(
 	s_impact const *impact,
@@ -1355,8 +1441,8 @@ void impact_material_effects_get(
 	c_type_47f957 second_material;
 
 	if (impact->component_b != NONE &&
-		*(long *)(impact_component_definition_get(impact->component_a) + 0x58) == NONE &&
-		*(long *)(impact_component_definition_get(impact->component_b) + 0x58) != NONE)
+		*(long *)(function_2284c1(impact->component_a) + 0x58) == NONE &&
+		*(long *)(function_2284c1(impact->component_b) + 0x58) != NONE)
 	{
 		first_material = material_a;
 		second_material = material_b;
@@ -1368,12 +1454,12 @@ void impact_material_effects_get(
 		second_material = material_a;
 		component_index = impact->component_a;
 	}
-	impact_material_effects_get_for_component(component_index, impact->unknownd, impact->unknownb, impact->component_b != NONE,
-		position, second_material, first_material, type, &impact->normal,
+	impact_material_effects_get_for_component(&impact->normal, component_index, impact->unknownd, impact->unknownb, impact->component_b != NONE,
+		position, second_material, first_material, type,
 		first_value04, second_value04, first_value, second_value, first_value0c, second_value0c);
 }
 
-PRIVATE inline real impact_level_get(s_impact const *impact, char type)
+PRIVATE __forceinline real impact_level_get(s_impact const *impact, char type)
 {
 	real level;
 
@@ -1411,6 +1497,29 @@ PRIVATE inline void impact_effect_data_new(s_effect_new_data *data, long definit
 	data->scale_b = scale;
 }
 
+PRIVATE __forceinline void function_2294a1(s_effect_new_data *data, long definition_index, s_impact_effect_location const *location, real scale)
+{
+	memset(data, 0, sizeof(*data));
+	data->color_a = 0xff808080;
+	data->color_b = 0xff808080;
+	data->unknown34 = 0;
+	data->unknown38 = 0;
+	data->unknown3c = 0;
+	data->unknown30 = 0;
+	data->unknown5c = 0;
+	data->unknown00 = 0;
+	data->unknown18 = NONE;
+	data->unknown08 = NONE;
+	data->unknown10 = NONE;
+	data->unknown0c = NONE;
+	data->unknown14 = NONE;
+	data->definition_index = definition_index;
+	data->unknown20 = 1;
+	data->location = location;
+	data->scale_a = scale;
+	data->scale_b = scale;
+}
+
 // @retail 0x2294a0
 void function_2294a0(
 	long impact_index,
@@ -1424,6 +1533,7 @@ void function_2294a0(
 	long impulse_effect_b = NONE;
 	real scale;
 	bool impulse = false;
+	union { short field_0; point2f field_0_1; } local_3;
 
 	effect_location.position = impact->position;
 	effect_location.normal = impact->normal;
@@ -1436,7 +1546,7 @@ void function_2294a0(
 		impulse = true;
 		if (impact_type_is_continuous(previous_type))
 		{
-			real level = previous_type == 3 ? impact->unknown48 : impact->unknown4c;
+			real level = impact->unknown1d == 3 ? impact->unknown48 : impact->unknown4c;
 
 			if (previous_type != 2 || !(level < 0.5f || impact->unknown18 > 0.25f))
 			{
@@ -1447,19 +1557,20 @@ void function_2294a0(
 	if (impulse)
 	{
 		s_sound_position sound_position;
+
+		scale = PIN(impact->unknown18, 0.0f, 1.0f);
 		long sound_a = NONE;
 		long effect_a = NONE;
 		long sound_b = NONE;
 		long effect_b = NONE;
 		long sound_c = NONE;
 		long effect_c = NONE;
-
-		scale = PIN(impact->unknown18, 0.0f, 1.0f);
 		sound_position.position = impact->position;
 		sound_position.compressed_forward = vector3d_compress(&impact->unknown50);
 		sound_position.velocity = *g_4687a4;
 		sound_position.location = object->location;
-		impact_material_effects_get(impact, &impact->position, impact->material_a, impact->material_b, 0,
+		local_3.field_0 = *(short const *)&impact->material_b;
+		impact_material_effects_get(impact, &impact->position, impact->material_a, *(c_type_47f957 const *)&local_3.field_0, 0,
 			&sound_a, &effect_a, &sound_b, &effect_b, &sound_c, &effect_c);
 		if (sound_a != NONE)
 		{
@@ -1497,17 +1608,17 @@ void function_2294a0(
 
 			if (effect_a != NONE)
 			{
-				impact_effect_data_new(&data, effect_a, &effect_location, scale);
+				function_2294a1(&data, effect_a, &effect_location, scale);
 				impulse_effect_a = effect_new_from_parameters((s_effect_parameters *)&data);
 			}
 			if (effect_b != NONE)
 			{
-				impact_effect_data_new(&data, effect_b, &effect_location, scale);
+				function_2294a1(&data, effect_b, &effect_location, scale);
 				impulse_effect_b = effect_new_from_parameters((s_effect_parameters *)&data);
 			}
 			if (effect_c != NONE)
 			{
-				impact_effect_data_new(&data, effect_c, &effect_location, scale);
+				function_2294a1(&data, effect_c, &effect_location, scale);
 				impulse_effect_b = effect_new_from_parameters((s_effect_parameters *)&data);
 			}
 		}
@@ -1560,7 +1671,8 @@ void function_2294a0(
 					long effect_b = NONE;
 
 					scale = impact_level_get(impact, impact->type);
-					impact_material_effects_get(impact, &impact->position, impact->material_a, impact->material_b, impact->type,
+					local_3.field_0 = *(short const *)&impact->material_b;
+					impact_material_effects_get(impact, &impact->position, impact->material_a, *(c_type_47f957 const *)&local_3.field_0, impact->type,
 						&looping_sound_a, &effect_a, &looping_sound_b, &effect_b, NULL, NULL);
 					if (start_looping_sounds)
 					{
@@ -1595,12 +1707,12 @@ void function_2294a0(
 
 						if (effect_a != NONE)
 						{
-							impact_effect_data_new(&data, effect_a, &effect_location, scale);
+							function_2294a1(&data, effect_a, &effect_location, scale);
 							impact->effect_a = effect_new_from_parameters((s_effect_parameters *)&data);
 						}
 						if (effect_b != NONE)
 						{
-							impact_effect_data_new(&data, effect_b, &effect_location, scale);
+							function_2294a1(&data, effect_b, &effect_location, scale);
 							impact->effect_b = effect_new_from_parameters((s_effect_parameters *)&data);
 						}
 					}
@@ -1621,7 +1733,7 @@ void function_2294a0(
 		real level = impact_level_get(impact, impact->unknown1d);
 		s_havok_component *component = havok_component_get(impact->component_a);
 		transform4x3f matrix;
-		point2f size;
+		point2f &size=local_3.field_0_1;
 		vector3f velocity;
 		hkRigidBody *rigid_body;
 
@@ -1633,7 +1745,10 @@ void function_2294a0(
 		rigid_body = component->rigid_bodies.data[rigid_body_index_a].rigid_body;
 		if (!rigid_body->m_fixed)
 		{
-			velocity = *(vector3f *)&rigid_body->m_motion->m_linear_velocity;
+			point3f const *local_2=(point3f const *)&rigid_body->m_motion->m_linear_velocity;
+			velocity.i=local_2->x;
+			velocity.j=local_2->y;
+			velocity.k=local_2->z;
 		}
 		else
 		{
@@ -1643,7 +1758,7 @@ void function_2294a0(
 		{
 			vector3f velocity_b;
 
-			havok_component_rigid_body_linear_velocity_get(rigid_body_index_b, havok_component_get(impact->component_b), &velocity_b);
+			havok_component_rigid_body_linear_velocity_get(havok_component_get(impact->component_b), rigid_body_index_b, &velocity_b);
 			velocity.i -= velocity_b.i;
 			velocity.j -= velocity_b.j;
 			velocity.k -= velocity_b.k;
@@ -1690,14 +1805,14 @@ void function_228770(
 	{
 		transform4x3f matrix;
 
-		havok_component_rigid_body_matrix_get(rigid_body_index_a, component, &matrix);
-		transform4x3f_apply_point(&matrix, &impact->local_position_a, &impact->position);
+		component->rigid_body_matrix_get(rigid_body_index_a, &matrix);
+		function_2281a1(&matrix, &impact->local_position_a, &impact->position);
 		if (impact->component_b != NONE)
 		{
 			point3f position_b;
 
-			havok_component_rigid_body_matrix_get(rigid_body_index_b, havok_component_get(impact->component_b), &matrix);
-			transform4x3f_apply_point(&matrix, &impact->local_position_b, &position_b);
+			havok_component_get(impact->component_b)->rigid_body_matrix_get(rigid_body_index_b, &matrix);
+			function_2281a1(&matrix, &impact->local_position_b, &position_b);
 			impact->position.x += (position_b.x - impact->position.x) * 0.5f;
 			impact->position.y += (position_b.y - impact->position.y) * 0.5f;
 			impact->position.z += (position_b.z - impact->position.z) * 0.5f;
@@ -1738,7 +1853,9 @@ void function_228770(
 				real distance_squared;
 
 				vector3d_from_points3d(&impact->position, &constraint->position, &delta);
-				distance_squared = length_sq3f(&delta);
+				distance_squared = delta.i * delta.i;
+				distance_squared += delta.k * delta.k;
+				distance_squared += delta.j * delta.j;
 				if (distance_squared < 0.25f ||
 					distance_squared < 16.0f && dot3f(&impact->normal, &constraint->normal) > g_55c2d0)
 				{
@@ -1819,7 +1936,9 @@ void function_228770(
 			velocity.j -= rigid_body_b->linear_velocity.j;
 			velocity.k -= rigid_body_b->linear_velocity.k;
 		}
-		speed_squared = length_sq3f(&velocity);
+		speed_squared = velocity.i * velocity.i;
+		speed_squared += velocity.k * velocity.k;
+		speed_squared += velocity.j * velocity.j;
 		if (impact->unknown90 >= 3)
 		{
 			impact->unknown8c = 0.0f;
@@ -1860,10 +1979,9 @@ void function_226a60(
 
 		for (i = 0; i < component->unknown7c.size; i++)
 		{
-			s_havok_component_element0c *contact = &component->unknown7c.data[i];
-
-			if (contact->impact_index == NONE)
+			if (component->unknown7c.data[i].impact_index == NONE)
 			{
+				s_havok_component_element0c *contact = &component->unknown7c.data[i];
 				s_physics_model_shape_key shape;
 				long element_size;
 				s_impact_tag_block *block;
@@ -1879,10 +1997,12 @@ void function_226a60(
 				material_index = *(short *)(element + 0x70);
 				if (material_index != NONE)
 				{
+					long local_2;
 					s_physics_model_material *material = &(*(s_physics_model_material **)(physics_model + 0x34))[material_index];
+					local_2 = material->shape_count;
 					long j;
 
-					for (j = 0; j < material->shape_count; j++)
+					for (j = 0; j < local_2; j++)
 					{
 						s_physics_model_material_shape *material_shape = &material->shapes[j];
 
@@ -1903,9 +2023,9 @@ void function_226a60(
 						long impact_index;
 
 						havok_component_contact_properties_get(component, i, &rigid_body_index_a, &rigid_body_index_b);
-						havok_component_rigid_body_matrix_get(rigid_body_index_a, component, &matrix);
-						impact_data_set(&data, false, component_index, rigid_body_index_a, c_type_47f957(material->material_a),
-							rigid_body_index_b != NONE ? component_index : NONE, rigid_body_index_b, c_type_47f957(material->material_b),
+						component->rigid_body_matrix_get(rigid_body_index_a, &matrix);
+						impact_data_set(&data, false, component_index, rigid_body_index_a, *(c_type_47f957 const *)&material->material_a,
+							rigid_body_index_b != NONE ? component_index : NONE, rigid_body_index_b, *(c_type_47f957 const *)&material->material_b,
 							&matrix.position, &matrix.forward, NONE, &shape);
 						impact_index = havok_component_impact_find(component, (s_havok_impact_contact const *)&data, false);
 						if (impact_index == NONE)
@@ -1982,19 +2102,10 @@ void function_226ce0(void)
 					s_impact_data data;
 					long impact_index;
 
-					data.unknown00 = false;
-					data.component_a = g_5021bc.iterator.datum_index;
-					data.unknown08 = constraint->rigid_body_index_a;
-					data.material_a.m_index = constraint->material_a;
-					data.component_b = constraint->component_b;
-					data.unknown14 = constraint->rigid_body_index_b;
-					data.material_b.m_index = constraint->material_b;
-					data.position = constraint->position;
-					data.normal = constraint->normal;
-					data.type = NONE;
-					data.unknown38 = false;
-					data.shape.type = NONE;
-					data.shape.index = NONE;
+					impact_data_set(&data, false, g_5021bc.iterator.datum_index, constraint->rigid_body_index_a,
+						c_type_47f957(constraint->material_a), constraint->component_b,
+						constraint->rigid_body_index_b, c_type_47f957(constraint->material_b),
+						&constraint->position, &constraint->normal, NONE, NULL);
 					impact_index = havok_component_impact_find(component, (s_havok_impact_contact const *)&data, true);
 					if (impact_index == NONE)
 					{
@@ -2020,14 +2131,27 @@ void function_226ce0(void)
 	} while (count <= 0x20);
 }
 
+/* an iteration over the impacts: the current impact, then the record-pool iterator */
+struct s_impact_iterator_226f80
+{
+	s_impact *impact;
+	s_record_pool_iterator iterator;
+};
+
+static inline bool impact_iterator_next_226f80(s_impact_iterator_226f80 *iterator)
+{
+	iterator->impact = (s_impact *)data_iterator_next_inlined(&iterator->iterator);
+	return iterator->impact != NULL;
+}
+
 // @retail 0x226f80
 void function_226f80(void)
 {
-	s_impact_iterator iterator;
+	s_impact_iterator_226f80 iterator;
 
 	iterator.iterator.data = g_51ebfc;
 	iterator.iterator.index = NONE;
-	while ((iterator.impact = (s_impact *)data_iterator_next_inlined(&iterator.iterator)) != NULL)
+	while (impact_iterator_next_226f80(&iterator))
 	{
 		s_impact *impact = iterator.impact;
 		long impact_index = iterator.iterator.datum_index;
@@ -2050,7 +2174,7 @@ void function_226f80(void)
 					vector3f delta;
 
 					vector3d_from_points3d(&impact->position, &other->position, &delta);
-					if (length_sq3f(&delta) < 4.0f &&
+					if (delta.i * delta.i + delta.j * delta.j + delta.k * delta.k < 4.0f &&
 						(has_sounds && !other_has_sounds || has_sounds == other_has_sounds))
 					{
 						bool other_merged = false;
@@ -2064,22 +2188,14 @@ void function_226f80(void)
 							{
 								s_impact_data data;
 
-								data.unknown00 = false;
-								data.component_a = other->component_a;
-								data.unknown08 = constraint->rigid_body_index_a;
-								data.material_a = other->material_a;
-								data.component_b = other->component_b;
-								data.unknown14 = constraint->rigid_body_index_b;
-								data.material_b = other->material_b;
-								data.position = constraint->position;
-								data.normal = constraint->normal;
-								data.type = NONE;
-								data.unknown38 = false;
-								data.shape.type = NONE;
-								data.shape.index = NONE;
+								impact_data_set(&data, false, other->component_a, constraint->rigid_body_index_a, other->material_a,
+									other->component_b, constraint->rigid_body_index_b, other->material_b,
+									&constraint->position, &constraint->normal, NONE, NULL);
 								if (impact_matches_data(impact, &data, true))
 								{
+#pragma inline_depth(0)
 									impact_release(other_index, other);
+#pragma inline_depth()
 									impact->reference_count++;
 									constraint->impact_index = impact_index;
 									merged = true;
@@ -2159,7 +2275,7 @@ void impacts_update(void)
 			impact->age = MIN(impact->age + 1, 0x7e);
 			if (!impact_has_sounds_or_effects(impact) &&
 				(impact->time == NONE || function_146650() - impact->time > game_seconds_to_ticks_round(0.2f)) ||
-				!(impact->age * g_510c54->rate < 0.2f))
+				impact->age * g_510c54->rate >= 0.2f)
 			{
 				function_2266a0(impact_index);
 				continue;
@@ -2195,7 +2311,13 @@ static __forceinline bool impact_component_center_get(s_havok_component *compone
 	{
 		hkRigidBody *rigid_body = component->rigid_bodies.data[function_0b67a0((s_small_index const *)component)].rigid_body;
 
-		*center = *(point3f *)((byte *)rigid_body->m_motion + 0x70);
+		point3f const *local_0 = (point3f const *)((byte *)rigid_body->m_motion + 0x70);
+		real x = local_0->x;
+		real z = local_0->z;
+		real y = local_0->y;
+		center->x = x;
+		center->y = y;
+		center->z = z;
 		return true;
 	}
 	return false;
@@ -2246,9 +2368,9 @@ void impact_sound_location_get(s_impact const *impact, s_impact_sound_location *
 				}
 				if (has_a && has_b)
 				{
-					arg_26d7e7->position.x = (center_b.x + center_a.x) * 0.5f;
-					arg_26d7e7->position.y = (center_b.y + center_a.y) * 0.5f;
-					arg_26d7e7->position.z = (center_b.z + center_a.z) * 0.5f;
+					arg_26d7e7->position.x = (center_a.x + center_b.x) * 0.5f;
+					arg_26d7e7->position.y = (center_a.y + center_b.y) * 0.5f;
+					arg_26d7e7->position.z = (center_a.z + center_b.z) * 0.5f;
 				}
 			}
 			else

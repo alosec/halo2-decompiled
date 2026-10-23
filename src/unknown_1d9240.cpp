@@ -2,7 +2,9 @@
 /* UNKNOWN_1D9240.CPP */
 
 #include "unknown_11c920.h"
+#include "slot_handler.h"
 #include "globals.h"
+#include "unknown_0259d0.h"
 
 struct s_1d9240
 {
@@ -11,7 +13,19 @@ struct s_1d9240
 	char unknown02;
 	byte flag;
 };
+#pragma optimize("p", on)
+PRIVATE __forceinline real function_1d9241(real arg_0, real arg_1)
+{
+ return arg_0 / arg_1;
+}
+#pragma optimize("", on)
 
+
+static __forceinline long real_to_long(real value);
+
+// score 7 (was 7): retail loads the flag byte into eax with movzx and masks
+// it with a 32-bit and; ours narrows the load to al and masks it in al, so
+// the load, the mask and every block offset after them differ.
 // @retail 0x1d9240
 void function_1d9240(s_1d9240 *p, char flag, real x)
 {
@@ -20,11 +34,7 @@ void function_1d9240(s_1d9240 *p, char flag, real x)
 	long q;
 
 	x = g_510c54->field_2_3 * x;
-	__asm
-	{
-		fld x
-		fistp q
-	}
+	q = real_to_long(x);
 	n = q;
 
 	if (n < 1)
@@ -35,7 +45,7 @@ void function_1d9240(s_1d9240 *p, char flag, real x)
 
 	if (n > 0)
 	{
-		if (p->count && (p->flag & 1) == flag && n == p->count)
+		if (p->count && flag == ((char)p->flag & 1) && n == p->count)
 			return;
 
 		if (p->count)
@@ -44,8 +54,8 @@ void function_1d9240(s_1d9240 *p, char flag, real x)
 
 			if (!(denominator > 1.0f))
 				denominator = 1.0f;
-			x = (real)p->value / denominator * (real)(n - 1);
-			value = (long)x;
+			x = function_1d9241((real)p->value, denominator) * (real)(n - 1);
+			value = real_truncate(x);
 		}
 		else
 			value = flag ? 1 : n - 1;
@@ -119,8 +129,10 @@ real function_1d9430(s_1d9240 const *p)
 #define PIN(value, lower, upper) ((value) < (lower) ? (lower) : (value) > (upper) ? (upper) : (value))
 
 /* 6t^5 - 15t^4 + 10t^3, clamped to [0, 1] */
+__declspec(noinline) inline real function_1d9670(real t);
+
 // @retail 0x1d9670
-real function_1d9670(real t)
+inline real function_1d9670(real t)
 {
 	real t3 = t * t * t;
 	real t4 = t3 * t;
@@ -137,7 +149,6 @@ real function_10e8e0(real t);
 real function_1d9370(s_1d9240 const *p)
 {
 	real result = 0.0f;
-
 	if (p->count)
 	{
 		real count = (real)p->count;
@@ -161,9 +172,7 @@ real function_1d9370(s_1d9240 const *p)
 			break;
 		case 4:
 		{
-			real u = 1.0f - result;
-
-			result = 1.0f - u * u * u;
+			result = 1.0f - (1.0f - result) * (1.0f - result) * (1.0f - result);
 			break;
 		}
 		}
@@ -187,23 +196,24 @@ struct s_blend_orientation
    towards the orientations by the counter's position, renormalizing the
    quaternions */
 // @retail 0x1d9470
-void function_1d9470(s_1d9240 const *p, s_blend_orientation const *targets, long count, dword const *mask, s_blend_orientation *orientations)
+void function_1d9470(s_1d9240 const *p, long count, dword const *mask, s_blend_orientation const *targets, s_blend_orientation *orientations)
 {
 	if (p->count)
 	{
 		real t = function_1d9370(p);
 		short i;
 
-		for (i = 0; i < count; i++, orientations++, targets++)
+		for (i = 0; i < count; targets++, orientations++, i++)
 		{
 			if (!mask || (mask[i >> 5] & (1 << (i & 0x1f))))
 			{
-				real dot = orientations->quaternion[0] * targets->quaternion[0] +
+				real first_product = orientations->quaternion[0] * targets->quaternion[0];
+				real dot = first_product +
 					targets->quaternion[1] * orientations->quaternion[1] +
 					targets->quaternion[2] * orientations->quaternion[2] +
 					orientations->quaternion[3] * targets->quaternion[3];
-				real target_weight = 1.0f - t;
 				real weight = t;
+				real target_weight = 1.0f - t;
 				real length_squared;
 
 				if (0.0f > dot)
@@ -220,19 +230,20 @@ void function_1d9470(s_1d9240 const *p, s_blend_orientation const *targets, long
 					orientations->quaternion[3] * orientations->quaternion[3];
 				if (length_squared > 0.0f)
 				{
-					double inverse = 1.0f / sqrt(length_squared);
+					real inverse = (real)(1.0f / sqrt(length_squared));
 
-					orientations->quaternion[0] = (real)(inverse * orientations->quaternion[0]);
-					orientations->quaternion[1] = (real)(inverse * orientations->quaternion[1]);
-					orientations->quaternion[2] = (real)(inverse * orientations->quaternion[2]);
-					orientations->quaternion[3] = (real)(inverse * orientations->quaternion[3]);
+					orientations->quaternion[0] *= inverse;
+					orientations->quaternion[1] *= inverse;
+					orientations->quaternion[2] *= inverse;
+					orientations->quaternion[3] *= inverse;
 				}
 				else
 				{
-					orientations->quaternion[0] = 0.0f;
-					orientations->quaternion[1] = 0.0f;
-					orientations->quaternion[2] = 0.0f;
-					orientations->quaternion[3] = 1.0f;
+					real zero = 0.0f;
+					orientations->quaternion[0] = zero;
+					orientations->quaternion[1] = zero;
+					orientations->quaternion[2] = zero;
+					orientations->quaternion[3] = zero + 1.0f;
 				}
 				orientations->translation[0] = (orientations->translation[0] - targets->translation[0]) * t + targets->translation[0];
 				orientations->translation[1] = (orientations->translation[1] - targets->translation[1]) * t + targets->translation[1];

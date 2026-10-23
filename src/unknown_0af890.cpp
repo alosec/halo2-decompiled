@@ -205,21 +205,18 @@ void __stdcall function_0af890(s_bitstream *stream, long size, s_message_0af890 
 	if (message->has_j)
 	{
 		stream_write_checked(stream, message->j_type, 3);
-		if (message->j_type == 1)
+		dword kind = message->j_type;
+		if (kind == 1)
 		{
 			stream_write_checked(stream, message->j_value0, 4);
 			stream_write_checked(stream, message->j_value1, 4);
 			stream_write_checked(stream, message->j_value2, 6);
 			stream_write_checked(stream, message->j_value3, 10);
 		}
-		else if (message->j_type == 2)
-		{
+		if (kind == 2)
 			stream_write_checked(stream, message->j_value4, 10);
-		}
-		else if (message->j_type == 3)
-		{
+		if (kind == 3)
 			stream_write_checked(stream, message->j_value5, 10);
-		}
 	}
 
 	stream_write_bit(stream, message->has_k);
@@ -357,7 +354,7 @@ struct s_message_0b0900_entry
 {
 	bool flag0;
 	bool flag1;
-	word value1;
+	short value1;
 	dword value2;
 	byte address[6];
 	byte unknown0e[12];
@@ -467,7 +464,6 @@ struct s_message_0b0900
 // @retail 0xb0900
 bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b0900 *message)
 {
-	long i;
 	bool valid = true;
 	function_195820(stream, message, 0x40);
 	message->value1 = function_1959c0(stream, 0x20);
@@ -551,19 +547,7 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 	{
 		message->value398 = function_1959c0(stream, 0x20);
 		message->value39c = function_1959c0(stream, 0x20);
-		i = 0;
-		do
-		{
-			message->string[i] = (byte)function_1959c0(stream, 8);
-			if (message->string[i] == 0)
-				break;
-			i++;
-		} while (i < 0x80);
-		if (i >= 0x80)
-		{
-			message->string[0x7f] = 0;
-			stream->error = true;
-		}
+		read_byte_string(stream, message->string, 0x80);
 	}
 	message->flag420 = function_1957d0(stream);
 	if (message->flag420)
@@ -587,67 +571,67 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 		if (message->flag5b7)
 		{
 			message->mask = function_1959c0(stream, 0x10);
-			for (i = 0; i < 16; i++)
+			for (long address_index = 0; address_index < 16; address_index++)
 			{
-				if (message->mask & (1 << i))
+				if (message->mask & (1 << address_index))
 				{
 					long j;
-					function_195820(stream, message->addresses[i], 0x30);
-					for (j = 0; j < i; j++)
+					function_195820(stream, message->addresses[address_index], 0x30);
+					for (j = 0; j < address_index; j++)
 					{
-						if ((message->mask & (1 << j)) && memcmp(message->addresses[i], message->addresses[j], 6) == 0)
+						if ((message->mask & (1 << j)) && memcmp(message->addresses[address_index], message->addresses[j], 6) == 0)
 							valid = false;
 					}
 				}
 			}
-			for (i = 0; i < 16; i++)
+			for (long entry_index = 0; entry_index < 16; entry_index++)
 			{
-				message->entries[i].flag0 = stream_read_bit(stream);
-				if (message->entries[i].flag0)
+				message->entries[entry_index].flag0 = stream_read_bit(stream);
+				if (message->entries[entry_index].flag0)
 				{
-					message->entries[i].flag1 = stream_read_bit(stream);
-					if (message->entries[i].flag1)
+					message->entries[entry_index].flag1 = stream_read_bit(stream);
+					if (message->entries[entry_index].flag1)
 					{
-						message->entries[i].value1 = message->entries[i].value2 = NONE;
+						message->entries[entry_index].value1 = NONE;
+						message->entries[entry_index].value2 = NONE;
 					}
 					else
 					{
-						function_195820(stream, message->entries[i].address, 0x30);
-						message->entries[i].value1 = (word)function_1959c0(stream, 2);
-						message->entries[i].value2 = function_1959c0(stream, 2);
+						function_195820(stream, message->entries[entry_index].address, 0x30);
+						message->entries[entry_index].value1 = (word)function_1959c0(stream, 2);
+						message->entries[entry_index].value2 = function_1959c0(stream, 2);
 					}
-					function_195820(stream, message->entries[i].unknown0e, 0x60);
-					bool entry_valid = function_07ca70(stream, message->entries[i].unknown1c);
-					if (valid && entry_valid)
+					function_195820(stream, message->entries[entry_index].unknown0e, 0x60);
+					byte entry_valid = function_07ca70(stream, message->entries[entry_index].unknown1c);
+					valid = valid && entry_valid;
+					if (valid)
 					{
 						long j;
-						valid = true;
-						if (!message->entries[i].flag1)
+						if (!message->entries[entry_index].flag1)
 						{
 							long found = NONE;
 							for (j = 0; j < 16; j++)
 							{
-								if ((message->mask & (1 << j)) && memcmp(message->addresses[j], message->entries[i].address, 6) == 0)
+								if ((message->mask & (1 << j)) && memcmp(message->addresses[j], message->entries[entry_index].address, 6) == 0)
 									found = j;
 							}
 							valid = found != NONE;
 						}
-						for (j = 0; j < i; j++)
+						for (j = 0; j < entry_index; j++)
 						{
 							s_message_0b0900_entry *other = &message->entries[j];
 							if (other->flag0)
 							{
-								valid = valid && memcmp(message->entries[i].unknown0e, other->unknown0e, 12) != 0;
-								if (!message->entries[i].flag1)
+								if (valid && memcmp(message->entries[entry_index].unknown0e, other->unknown0e, 12) == 0)
+									valid = false;
+								if (!message->entries[entry_index].flag1)
 								{
-									if (memcmp(message->entries[i].address, other->address, 6) == 0)
-										valid = valid && message->entries[i].value1 != other->value1 && message->entries[i].value2 != other->value2;
+									if (memcmp(message->entries[entry_index].address, other->address, 6) == 0)
+										valid = valid && message->entries[entry_index].value1 != other->value1 && message->entries[entry_index].value2 != other->value2;
 								}
 							}
 						}
 					}
-					else
-						valid = false;
 				}
 			}
 		}
@@ -682,7 +666,10 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 	{
 		message->flag1485 = stream_read_bit(stream);
 		if (message->flag1485)
-			valid = valid && function_b23d0(stream, &message->data1488);
+        {
+            bool decoded = function_b23d0(stream, &message->data1488);
+            valid = valid && decoded;
+        }
 	}
 	message->flag14cc = stream_read_bit(stream);
 	if (message->flag14cc)
@@ -721,7 +708,10 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 	if (message->flag14cc)
 	{
 		long v = message->value14d0;
-		valid = valid && ((v < 0 ? 0 : (v > 15 ? 15 : v)) == v || v == NONE);
+		long clipped = v;
+		if (clipped < 0) clipped = 0;
+		else if (clipped > 15) clipped = 15;
+		valid = valid && (clipped == v || v == NONE);
 	}
 	return valid;
 }
@@ -887,7 +877,10 @@ bool __stdcall function_b1c80(s_bitstream *stream, long size, void *message_)
 	{
 		message->part8_valid = function_1957d0(stream);
 		if (message->part8_valid)
-			valid = function_063980(stream, message->part8);
+		{
+			byte const &decoded = function_063980(stream, message->part8);
+			valid = decoded != 0;
+		}
 	}
 	message->has_name = function_1957d0(stream);
 	if (message->has_name)
@@ -919,7 +912,10 @@ bool __stdcall function_b1c80(s_bitstream *stream, long size, void *message_)
 	{
 		message->part15_valid = function_1957d0(stream);
 		if (message->part15_valid)
-			valid = valid && function_b23d0(stream, &message->part15);
+		{
+			bool decoded = function_b23d0(stream, &message->part15);
+			valid = valid && decoded;
+		}
 	}
 	bool result = valid && !stream_overflowed(stream);
 	if (message->has_value0)

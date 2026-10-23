@@ -1,82 +1,74 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): how far an object reaches along a
+// direction, from its own bounding box.
+#include <xmmintrin.h>
 
-// @flags /O2 /Gr
+static __declspec(align(16)) const unsigned long sign_mask_2df220[4] = {0x80000000, 0x80000000, 0x80000000, 0x80000000};
 
-struct s_physics_projection_matrix
+// a vector of four copies of a float
+inline __m128 splat_2df220(float value)
 {
-    float rows[4][4];
-};
-static_assert(sizeof(s_physics_projection_matrix) == 0x40,
-    "projection matrix layout");
+	__m128 const single = _mm_set_ss(value);
+	return _mm_shuffle_ps(single, single, 0);
+}
 
-struct s_physics_projection_bounds
+// a 3x4 transform of SSE columns
+struct transform_2df220
 {
-    float minimum[4];
-    float maximum[4];
-};
-static_assert(sizeof(s_physics_projection_bounds) == 0x20,
-    "projection bounds layout");
+	__m128 columns[4];
 
-union u_physics_projection_float
+	void load_unit_columns()
+	{
+		__m128 zero = _mm_setzero_ps();
+		columns[0] = zero;
+		columns[1] = zero;
+		columns[2] = zero;
+		float *elements = (float *)columns;
+		elements[0] = 1.0f;
+		elements[5] = 1.0f;
+		elements[10] = 1.0f;
+		columns[3] = zero;
+	}
+};
+
+struct bounds_2df220
 {
-    float real;
-    dword bits;
+	__m128 lower;
+	__m128 upper;
 };
 
-class c_physics_projected_shape
+class shape_2df220
 {
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void bounds(const s_physics_projection_matrix *matrix,
-        float extra_radius, s_physics_projection_bounds *result);
-    virtual float function_2df220(const float *direction);
+	virtual void slot_0() {}
+	virtual void slot_1() {}
+	virtual void slot_2() {}
+	virtual void slot_3() {}
+	virtual void slot_4() {}
+	virtual void slot_5() {}
+	// the bounding box under a transform, grown by a tolerance
+	virtual void slot_6(transform_2df220 const &transform, float tolerance, bounds_2df220 &out) const {}
+
+	float function_2df220(__m128 const &direction) const;
 };
 
+// the corner of the untransformed bounding box furthest along the direction,
+// measured along it
 // @retail 0x2df220
-float c_physics_projected_shape::function_2df220(const float *direction)
+float shape_2df220::function_2df220(__m128 const &direction) const
 {
-    s_physics_projection_matrix identity;
-    identity.rows[0][0] = 1.0f;
-    identity.rows[0][1] = 0.0f;
-    identity.rows[0][2] = 0.0f;
-    identity.rows[0][3] = 0.0f;
-    identity.rows[1][0] = 0.0f;
-    identity.rows[1][1] = 1.0f;
-    identity.rows[1][2] = 0.0f;
-    identity.rows[1][3] = 0.0f;
-    identity.rows[2][0] = 0.0f;
-    identity.rows[2][1] = 0.0f;
-    identity.rows[2][2] = 1.0f;
-    identity.rows[2][3] = 0.0f;
-    identity.rows[3][0] = 0.0f;
-    identity.rows[3][1] = 0.0f;
-    identity.rows[3][2] = 0.0f;
-    identity.rows[3][3] = 0.0f;
-
-    s_physics_projection_bounds shape_bounds;
-    bounds(&identity, 0.0f, &shape_bounds);
-
-    float projected[4];
-    for (long component = 0; component < 4; component++)
-    {
-        float center = 0.5f *
-            (shape_bounds.maximum[component] + shape_bounds.minimum[component]);
-        float half_extent = 0.5f *
-            (shape_bounds.maximum[component] - shape_bounds.minimum[component]);
-        u_physics_projection_float signed_extent;
-        signed_extent.real = half_extent;
-        u_physics_projection_float sign;
-        sign.real = direction[component];
-        signed_extent.bits ^= sign.bits & 0x80000000;
-        projected[component] = center + signed_extent.real;
-    }
-
-    return projected[0] * direction[0] +
-        projected[1] * direction[1] +
-        projected[2] * direction[2];
+	transform_2df220 identity;
+	identity.load_unit_columns();
+	bounds_2df220 bounds;
+	slot_6(identity, 0.0f, bounds);
+	__m128 const d = direction;
+	__m128 const lower = bounds.lower;
+	__m128 const upper = bounds.upper;
+	__m128 const center = _mm_mul_ps(splat_2df220(0.5f), _mm_add_ps(upper, lower));
+	__m128 const extent = _mm_mul_ps(splat_2df220(0.5f), _mm_sub_ps(upper, lower));
+	__m128 const corner = _mm_add_ps(_mm_xor_ps(extent, _mm_and_ps(d, *(__m128 const *)sign_mask_2df220)), center);
+	__m128 const product = _mm_mul_ps(corner, d);
+	float result;
+	_mm_store_ss(&result, _mm_add_ss(_mm_shuffle_ps(product, product, 0xaa), _mm_add_ss(_mm_shuffle_ps(product, product, 0x55), product)));
+	return result;
 }

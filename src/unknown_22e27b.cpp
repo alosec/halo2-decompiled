@@ -14,7 +14,7 @@
 void unicode_string_copy(word *destination, const word *source, long maximum_count);
 void function_22d2ee(word *string, long maximum_length);
 void function_13ed90(long font);
-void function_2360c3(short_rectangle2d const *bounds, point3f *point);
+void function_2360c3(point3f *point, short_rectangle2d const *bounds);
 void function_13e9c0(word const *text, short_rectangle2d const *bounds,
 	short_rectangle2d *a, short_rectangle2d *b, real scale);
 
@@ -46,8 +46,8 @@ void function_22d13d(c_class_22cc8e *text, short_rectangle2d const *bounds,
 	last.y = (real)bounds->bottom;
 	last.z = depth;
 	long width = bounds->right - bounds->left;
-	function_2360c3(screen, &first);
-	function_2360c3(screen, &last);
+	function_2360c3(&first, screen);
+	function_2360c3(&last, screen);
 	short_rectangle2d projected, measured;
 	projected.top = (short)first.y;
 	long left = (long)first.x;
@@ -84,7 +84,13 @@ struct short_rect_pair
 	short_rect a, b;
 };
 
-extern short_rect_pair g_485a8a;
+struct s_unknown_485a88
+{
+    byte flag;
+    short_rect_pair rects;
+};
+extern s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
 
 // @retail 0x22e27b
 c_class_1a2c81::c_class_1a2c81(long type, word user_flags)
@@ -733,7 +739,7 @@ c_class_1a2c81 *c_class_1a2c81::find_by_id(long id)
 }
 
 // @retail 0x22ee92
-void c_class_1a2c81::set_user_flags(word flags)
+void c_class_1a2c81::set_user_flags(short flags)
 {
 	user_flags = flags;
 	for (c_class_1a2c81 *widget = child; widget; widget = widget->next)
@@ -782,7 +788,7 @@ long c_class_1a2c81::new_widget_id()
 // @retail 0x22e65e
 void c_class_1a2c81::build_animation(s_type_0cfb31 *animation, short index, long type)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 
 	if (globals)
 	{
@@ -1129,7 +1135,7 @@ c_class_22cc8e *c_text_widget_458940::function_22f52e()
 void unicode_string_copy(word *destination, const word *source, long maximum_count);
 
 // @retail 0x22f4fa
-c_user_interface_text_buffer_32::c_user_interface_text_buffer_32()
+inline c_user_interface_text_buffer_32::c_user_interface_text_buffer_32()
 {
 }
 
@@ -1169,7 +1175,7 @@ c_class_1473c9::c_class_1473c9(long screen_id, long a, long b, word user_flags) 
 	value5f2(false),
 	value5f3(0),
 	value5f4(false),
-	delegate(this, &c_class_1473c9::function_230427)
+	delegate(this, &c_class_1473c9::select_pane)
 {
 	type = 0;
 	value0c = ++next_widget_id;
@@ -1367,6 +1373,7 @@ void c_class_14750b::v14()
 				animation.type = 4;
 				animation.direction = 1;
 				animation.value14 = 0;
+				v5((s_widget_event *)&animation);
 			}
 			else
 			{
@@ -1388,8 +1395,8 @@ void c_class_14750b::v14()
 				animation.offset.y = 0.0f;
 				animation.offset.x = 0.0f;
 				animation.scale = 1.0f;
+				v5((s_widget_event *)&animation);
 			}
-			v5((s_widget_event *)&animation);
 		}
 	}
 }
@@ -1401,11 +1408,15 @@ void c_text_widget_45a5e0::function_253b1a(long string_handle)
 		c_class_1473c9 *screen = get_screen();
 		if (screen)
 		{
-			word buffer[0x100];
+			struct s_string_buffer
+			{
+				word text[0x100];
+				void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+			} buffer;
 
-			buffer[0] = 0;
-			((c_widget *)screen)->function_230134(string_handle, buffer);
-			function_22f52e()->set_text(buffer);
+			buffer.text[0] = 0;
+			buffer.load((c_widget *)screen, string_handle);
+			function_22f52e()->set_text(buffer.text);
 		}
 	}
 }
@@ -1453,9 +1464,9 @@ struct s_text_cursor_settings
 };
 
 struct s_type_954545;
-s_type_954545 *function_148350(void);
+s_type_954545 *ui_definition_get(void);
 word *unicode_string_upper(word *string, long maximum_count);
-void function_13eb20(short count, short const *tab_stops);
+void function_13eb20(short const *tab_stops, short count);
 void function_13ec70(color4f const *color);
 void function_13ed50(color4f const *color);
 bool function_13ee20(word const *string, long font);
@@ -1486,17 +1497,20 @@ void function_22cd48(c_class_22cc8e *text, short_rectangle2d const *bounds,
 	{
 		word buffer[0x400];
 		{
-		s_text_cursor_settings *settings = (s_text_cursor_settings *)function_148350();
+		s_text_cursor_settings *settings = (s_text_cursor_settings *)ui_definition_get();
 		word cursor_character = settings ? settings->character : 0xdb;
 		unicode_string_copy(buffer, string, 0x400);
-		if (text->cursor >= 0)
+		short const cursor_position = text->cursor;
+		if (cursor_position >= 0)
 		{
 			dword time = g_54d5b8;
 			long cursor = 0x3fe;
-			if (text->cursor <= (short)cursor)
-				cursor = text->cursor;
-			buffer[(short)cursor] = cursor_character;
-			buffer[(short)cursor + 1] = 0;
+			if (cursor_position <= (short)cursor)
+				cursor = cursor_position;
+			word &glyph = buffer[(short)cursor];
+			word &terminator = buffer[(short)cursor + 1];
+			glyph = cursor_character;
+			terminator = 0;
 			text->cursor = (short)cursor;
 			if (!text->value40)
 			{
@@ -1546,8 +1560,8 @@ void function_22cd48(c_class_22cc8e *text, short_rectangle2d const *bounds,
 		last.x = bounds->right;
 		last.y = bounds->bottom;
 		last.z = depth;
-		function_2360c3(screen, &first);
-		function_2360c3(screen, &last);
+		function_2360c3(&first, screen);
+		function_2360c3(&last, screen);
 		short_rectangle2d projected;
 		projected.left = (short)first.x;
 		projected.top = (short)first.y;
@@ -1562,8 +1576,8 @@ void function_22cd48(c_class_22cc8e *text, short_rectangle2d const *bounds,
 			last.x = clip->right;
 			last.y = clip->bottom;
 			last.z = depth;
-			function_2360c3(screen, &first);
-			function_2360c3(screen, &last);
+			function_2360c3(&first, screen);
+			function_2360c3(&last, screen);
 			projected_clip.left = (short)first.x;
 			projected_clip.top = (short)first.y;
 			projected_clip.right = (short)last.x;
@@ -1578,7 +1592,7 @@ void function_22cd48(c_class_22cc8e *text, short_rectangle2d const *bounds,
 		{
 			for (long i = 0; i < text->value38; i++)
 				tab_stops[i] = ((short *)text->unknown28)[i] + projected.left;
-			function_13eb20((short)text->value38, tab_stops);
+			function_13eb20(tab_stops, (short)text->value38);
 		}
 		else
 		{
@@ -1604,10 +1618,14 @@ void __stdcall function_253b65(c_class_1a2c81 *widget, long string_handle)
         c_class_1473c9 *screen = widget->get_screen();
         if (screen)
         {
-            word buffer[0x100];
+            struct s_buffer_253b65 {
+                word data[0x100];
+                __forceinline void load(c_widget *screen, long handle) { screen->function_230134(handle, data); }
+            } local;
+            word *buffer = local.data;
             buffer[0] = 0;
-            ((c_widget *)screen)->function_230134(string_handle, buffer);
-            if (function_13ee20(buffer, widget->function_22f52e()->value04))
+            local.load((c_widget *)screen, string_handle);
+            if (function_13ee20(local.data, widget->function_22f52e()->value04))
                 widget->function_22f52e()->set_text(buffer);
         }
     }
@@ -1628,18 +1646,19 @@ void c_text_widget_45a5e0::v4(long screen_rect_address)
     function_2363d4(screen, &x, &y);
     short_rectangle2d rectangle;
     get_bounds((s_widget_bounds *)&rectangle);
-    color3f saved = function_22f52e()->color;
+    c_class_22cc8e *original = function_22f52e();
+    color3f saved = original->color;
     color3f widget_color = color;
     color3f tinted;
-    tinted.red = widget_color.red * saved.red;
-    tinted.green = widget_color.green * saved.green;
-    tinted.blue = widget_color.blue * saved.blue;
+    tinted.red = saved.red * widget_color.red;
+    tinted.green = saved.green * widget_color.green;
+    tinted.blue = saved.blue * widget_color.blue;
     c_class_22cc8e *text = function_22f52e();
+    text->color = tinted;
     rectangle.left += x;
     rectangle.right += x;
     rectangle.top += y;
     rectangle.bottom += y;
-    text->color = tinted;
     if (!debug)
         function_22cd48(function_22f52e(), &rectangle, &rectangle, depth, alpha, screen);
     function_22f52e()->color = saved;
@@ -1648,8 +1667,9 @@ void c_text_widget_45a5e0::v4(long screen_rect_address)
         c_user_interface_text_buffer_32 label;
         word buffer[16];
         unicode_string_snprintf(buffer, 16, (word const *)L"%d", value0a);
-        label.setup(buffer, 0, (color3f const *)g_468720, 0, NONE, 0, NONE);
-        function_22cd48(&label, &rectangle, &rectangle, depth, alpha, screen);
+        c_class_22cc8e *label_text = &label;
+        label_text->setup(buffer, 0, (color3f const *)g_468720, 0, NONE, 0, NONE);
+        function_22cd48(label_text, &rectangle, &rectangle, depth, alpha, screen);
         function_235d69(&rectangle, depth, screen, g_4686dc);
     }
 }

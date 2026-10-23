@@ -79,7 +79,7 @@ __forceinline short function_293b31(short arg_0, short arg_1)
 {
 	dword local_0 = g_4e7408->unknown0 * 0x19660d + 0x3c6ef35f;
 	g_4e7408->unknown0 = local_0;
-	return arg_0 + (short)(((local_0 >> 16) * (arg_1 - arg_0)) >> 16);
+	return arg_0 + (short)(((g_4e7408->unknown0 >> 16) * (arg_1 - arg_0)) >> 16);
 }
 
 // @retail 0x293b30

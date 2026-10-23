@@ -9,7 +9,7 @@ from capstone import CS_ARCH_X86, CS_MODE_32, Cs
 
 
 from inventory import COLUMNS, apply_owners, load_owners, check_retail, function_name, check_unique, fill_from_neighbours, is_eh_stub, library_hits, merge, owner, read_rows, write_rows
-from inventory import NOT_STARTS, OWNERS_JSON
+from inventory import DATA_RANGES, KNOWN_STARTS, NOT_STARTS, OWNERS_JSON, in_data
 from xbe import FUNCTIONS_CSV
 
 
@@ -235,3 +235,47 @@ def test_bungie_code_ends_where_zlibs_compress2_begins():
 
 def test_no_inventory_row_starts_at_a_not_start():
     assert not NOT_STARTS & read_rows(FUNCTIONS_CSV).keys()
+
+
+def test_in_data_is_half_open():
+    for start, end in DATA_RANGES:
+        assert in_data(start) and in_data(end - 1)
+        assert not in_data(start - 1) and not in_data(end)
+
+
+def test_no_inventory_row_starts_in_data():
+    assert not [va for va in read_rows(FUNCTIONS_CSV) if in_data(va)]
+
+
+@pytest.mark.retail
+def test_wmadec_code_reads_its_tables_as_data(retail_xbe):
+    from xbe import Xbe
+    image = Xbe(retail_xbe)
+    md = Cs(CS_ARCH_X86, CS_MODE_32)
+    ins = next(md.disasm(image.read(0x38d2be, 16), 0x38d2be))
+    assert (ins.mnemonic, ins.op_str) == ('mov', 'edx, dword ptr [edi*4 + 0x392830]')
+    assert in_data(0x392830)
+
+
+@pytest.mark.retail
+@pytest.mark.parametrize('va, op_str, target', [
+    (0x37a154, 'dword ptr [0x386b0c], 0', 0x386b0c),               # DSOUND
+    (0x3d9907, 'esi, dword ptr [0x3e02e8]', 0x3e02e8),             # XNET
+    (0x3fd840, 'eax, dword ptr [ecx*4 + 0x4039e8]', 0x4039e8),     # D3D
+])
+def test_library_code_reads_its_section_tails_as_data(retail_xbe, va, op_str, target):
+    from xbe import Xbe
+    image = Xbe(retail_xbe)
+    md = Cs(CS_ARCH_X86, CS_MODE_32)
+    ins = next(md.disasm(image.read(va, 16), va))
+    assert (ins.mnemonic, ins.op_str) == ('cmp', op_str)
+    assert in_data(target)
+
+
+def test_every_known_start_has_its_own_row():
+    rows = read_rows(FUNCTIONS_CSV)
+    starts = sorted(rows)
+    for va in KNOWN_STARTS:
+        assert va in rows
+        before = starts[starts.index(va) - 1]
+        assert before + int(rows[before]['size']) <= va

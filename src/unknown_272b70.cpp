@@ -23,23 +23,6 @@
 /* the actor whose command script is being run (unknown_29f5b0.cpp) */
 extern long g_50240c;
 
-enum
-{
-	_ai_index_type_squad = 0,
-	_ai_index_type_squad_group,
-	_ai_index_type_actor,
-	_ai_index_type_starting_location
-};
-
-/* walks the squads an ai index names */
-struct s_ai_squad_iterator
-{
-	s_squad_group_iterator group_iterator;
-	long squad_group_index;
-	long squad_index;
-	long next_squad_index;
-};
-
 /* the scenario's squads (g_4e0350, globals.h), 0x74 bytes each, and their
    starting locations, 0x64 bytes each */
 struct s_scenario_starting_location
@@ -77,11 +60,6 @@ struct s_ai_script_object
 inline s_ai_script_object *ai_script_object_get(long object_index)
 {
 	return (s_ai_script_object *)object_header_get(object_index)->object;
-}
-
-inline long ai_index_get_type(long ai_index)
-{
-	return (dword)ai_index >> 30;
 }
 
 /* the vehicles of a squad (a local view of the objects) */
@@ -160,7 +138,7 @@ long function_272c90(long ai_index)
 	return result;
 }
 // @retail 0x272d50
-void ai_squad_iterator_new(s_ai_squad_iterator *iterator, long ai_index)
+void ai_squad_iterator_new(long ai_index, s_ai_squad_iterator *iterator)
 {
 	if (ai_index_get_type(ai_index) == _ai_index_type_squad_group)
 	{
@@ -179,27 +157,6 @@ void ai_squad_iterator_new(s_ai_squad_iterator *iterator, long ai_index)
 	}
 }
 
-/* retail inlines ai_squad_iterator_new (0x272d50) into some callers; this
-   file is built /Ob1, so those callers use this copy */
-inline void ai_squad_iterator_new_inline(s_ai_squad_iterator *iterator, long ai_index)
-{
-	if (ai_index_get_type(ai_index) == _ai_index_type_squad_group)
-	{
-		long squad_group_index = ai_index & 0xffff;
-		iterator->squad_group_index = squad_group_index;
-		function_204db0(&iterator->group_iterator, squad_group_index);
-	}
-	else if (ai_index_get_type(ai_index) == _ai_index_type_squad)
-	{
-		iterator->squad_group_index = NONE;
-		iterator->next_squad_index = ai_index & 0xffff;
-	}
-	else
-	{
-		iterator->squad_group_index = NONE;
-		iterator->next_squad_index = NONE;
-	}
-}
 // @retail 0x272d90
 void ai_actor_iterator_new(long ai_index, s_ai_actor_iterator *iterator)
 {
@@ -314,7 +271,7 @@ long __stdcall function_272ea0(long ai_index)
 					s_ai_object_iterator object_iterator;
 					object_iterator.next_index = perception_get(actor->perception_index)->object_index;
 					object_iterator.index = NONE;
-					while (function_290c80(&object_iterator))
+					while (swarm_creature_iterator_next(&object_iterator))
 						ai_script_object_list_add(list_index, object_iterator.index);
 				}
 			}
@@ -348,25 +305,6 @@ long function_272ff0(long object_index)
 	}
 	return 0xc3e703e7;
 }
-inline s_squad_datum *ai_squad_iterator_next(s_ai_squad_iterator *iterator)
-{
-	s_squad_datum *squad = NULL;
-	if (iterator->squad_group_index == NONE)
-	{
-		if (iterator->next_squad_index != NONE)
-		{
-			iterator->squad_index = iterator->next_squad_index;
-			iterator->next_squad_index = NONE;
-			squad = squad_get(iterator->squad_index);
-		}
-	}
-	else
-	{
-		squad = function_204e10(&iterator->group_iterator);
-		iterator->squad_index = iterator->group_iterator.squad_index;
-	}
-	return squad;
-}
 
 /* the clump objects (g_502420), 0x50 bytes each */
 struct s_ai_script_clump_object
@@ -378,16 +316,22 @@ struct s_ai_script_clump_object
 
 void __stdcall function_1e1a00(long index, long value);
 
+/* an object, or NULL for NONE */
+inline s_slot_object_view *object_get_or_null(long object_index)
+{
+	return object_index == NONE ? NULL : object_get(object_index);
+}
+
 /* resets (1e1a00) the actor of every object in an object list */
 // @retail 0x273150
 void function_273150(long list_index)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 
 	while (object_index != NONE)
 	{
-		s_slot_object_view *object = object_get(object_index);
+		s_slot_object_view *object = object_get_or_null(object_index);
 
 		if (object->actor_index != NONE)
 			function_1e1a00(object->actor_index, 0);
@@ -428,7 +372,7 @@ void function_273200(long ai_index, bool flag)
 
 			object_iterator.next_index = perception_get(actor->perception_index)->object_index;
 			object_iterator.index = NONE;
-			while (function_290c80(&object_iterator))
+			while (swarm_creature_iterator_next(&object_iterator))
 				ai_script_object_set_flag10a_14(object_iterator.index, flag);
 		}
 	}
@@ -461,7 +405,7 @@ bool function_2732e0(long ai_index)
 
 			object_iterator.next_index = perception_get(actor->perception_index)->object_index;
 			object_iterator.index = NONE;
-			while (function_290c80(&object_iterator))
+			while (swarm_creature_iterator_next(&object_iterator))
 			{
 				result = function_dc310(object_iterator.index);
 				if (!result)
@@ -493,7 +437,7 @@ s_object *function_badc0(long object_index, dword type_mask);
 void function_275160(long list_index, bool flag)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		s_ai_script_unit_flags *unit = (s_ai_script_unit_flags *)function_badc0(object_index, 3);
@@ -513,7 +457,7 @@ void function_275160(long list_index, bool flag)
 void function_275270(long list_index, bool flag)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		s_ai_script_unit_flags *unit = (s_ai_script_unit_flags *)function_badc0(object_index, 3);
@@ -577,6 +521,14 @@ void function_273900(long ai_index, bool flag)
 	}
 }
 
+PRIVATE __forceinline void function_2739d7(s_squad_datum *arg_0, bool arg_1)
+{
+    if (arg_1)
+        arg_0->flag0 = true;
+    else
+        arg_0->flag0 = false;
+}
+
 // @retail 0x2739d0
 void function_2739d0(long ai_index, bool flag)
 {
@@ -588,9 +540,12 @@ void function_2739d0(long ai_index, bool flag)
 		case _ai_index_type_squad_group:
 		{
 			s_ai_squad_iterator iterator;
-			ai_squad_iterator_new(&iterator, ai_index);
+			ai_squad_iterator_new(ai_index, &iterator);
 			while (ai_squad_iterator_next(&iterator))
-				squad_set_flag0(iterator.squad_index, flag);
+				{
+                if (g_4f55d0->active)
+                    function_2739d7(squad_get(iterator.squad_index), flag);
+            }
 			break;
 		}
 		case _ai_index_type_actor:
@@ -684,24 +639,23 @@ void function_273d30(long ai_index, long object_index)
 {
 	if (!(ai_index & 0xc0000000))
 	{
-		long squad_index = ai_index & 0xffff;
 		dword clump_bits[1];
 		s_squad_actor_iterator iterator;
 		s_actor_datum *actor;
 
 		clump_bits[0] = 0;
+		long squad_index = ai_index & 0xffff;
 		function_204d30(&iterator, squad_index);
 		while ((actor = squad_actor_iterator_next_inlined(&iterator)) != NULL)
 		{
 			long clump_index = actor->clump_object_index;
 			if (clump_index == NONE)
 				continue;
-			clump_index &= 0xffff;
-			if (bit_vector_test(clump_bits, clump_index))
+			if (bit_vector_test(clump_bits, clump_index & 0xffff))
 				continue;
-			bit_vector_set(clump_bits, clump_index, true);
+			bit_vector_set(clump_bits, clump_index & 0xffff, true);
 
-			long prop_index = ((s_ai_clump_273d30 *)g_502420->data)[clump_index].first_prop_index;
+			long prop_index = ((s_ai_clump_273d30 *)g_502420->data)[clump_index & 0xffff].first_prop_index;
 			while (prop_index != NONE)
 			{
 				s_ai_prop_273d30 *prop = &((s_ai_prop_273d30 *)g_50241c->data)[prop_index & 0xffff];
@@ -757,7 +711,7 @@ void function_273670(long ai_index, bool flag)
 	}
 }
 
-void function_201520(short value, word type, long a, long b, long c);
+void function_201520(short value, long type, long a, long b, long c);
 void function_204010(long squad_index, long other_squad_index);
 
 /* for every squad an ai index names (or the squad of a starting location),
@@ -773,7 +727,7 @@ void function_273480(long ai_index)
 			s_ai_squad_iterator iterator;
 			ai_squad_iterator_new_inline(&iterator, ai_index);
 			while (ai_squad_iterator_next(&iterator))
-				function_201520(NONE, (word)iterator.squad_index, NONE, 0, 1);
+				function_201520(NONE, iterator.squad_index, NONE, 0, 1);
 			g_4f55d0->unknown364 = ai_index;
 		}
 		else if (type == _ai_index_type_starting_location)
@@ -832,13 +786,13 @@ void function_201df0(void);
 // @retail 0x274140
 void function_274140(long ai_index, long squad_index)
 {
-	long const *squad_reference = &squad_index;
 	short actor_count = 0;
-	s_ai_actor_iterator field_10;
-	ai_actor_iterator_new(ai_index, &field_10);
-	while (ai_actor_iterator_next(&field_10))
+	s_ai_squad_iterator squad_cursor;
+	s_ai_actor_iterator actor_cursor;
+	ai_actor_iterator_new(ai_index, &actor_cursor);
+	while (ai_actor_iterator_next(&actor_cursor))
 	{
-		function_1e3400(field_10.actor_index, *squad_reference);
+		function_1e3400(actor_cursor.actor_index, squad_index);
 		actor_count++;
 	}
 
@@ -868,15 +822,14 @@ void function_274140(long ai_index, long squad_index)
 		actor_index = actor->next_actor_index;
 	}
 
-	s_ai_squad_iterator local_278a95;
 	s_squad_datum *squad;
-	ai_squad_iterator_new_inline(&local_278a95, ai_index);
-	while ((squad = ai_squad_iterator_next(&local_278a95)) != NULL)
+	ai_squad_iterator_new_inline(&squad_cursor, ai_index);
+	while ((squad = ai_squad_iterator_next(&squad_cursor)) != NULL)
 	{
 		long vehicle_index = squad->first_vehicle_index;
 		while (vehicle_index != NONE)
 		{
-			long next_vehicle_index = ((s_ai_script_squad_vehicle *)ai_script_object_get(vehicle_index))->next_squad_vehicle_index;
+			long next_vehicle_index = ((s_ai_script_squad_vehicle *)((s_object_header_view *)g_4e0300->data)[vehicle_index & 0xffff].object)->next_squad_vehicle_index;
 			function_201ad0(squad_index, vehicle_index);
 			vehicle_index = next_vehicle_index;
 		}
@@ -893,13 +846,13 @@ void function_2735c0(long ai_index, long squad_ai_index)
 {
 	if (ai_index != NONE && squad_ai_index != NONE && !(squad_ai_index & 0xc0000000))
 	{
-		long squad_index = squad_ai_index & 0xffff;
+		long target_squad_index = squad_ai_index & 0xffff;
 		s_ai_squad_iterator iterator;
-		ai_squad_iterator_new(&iterator, ai_index);
+		ai_squad_iterator_new(ai_index, &iterator);
 		while (ai_squad_iterator_next(&iterator))
 		{
-			function_201520(NONE, (word)iterator.squad_index, NONE, 0, 1);
-			function_204010(squad_index, iterator.squad_index);
+			function_201520(NONE, iterator.squad_index, NONE, 0, 1);
+			function_204010(target_squad_index, iterator.squad_index);
 		}
 		g_4f55d0->unknown364 = ai_index;
 	}
@@ -960,41 +913,17 @@ struct s_actor_274e70
 	short value084;
 };
 
-void function_290040(long field_1c);
+void swarm_reset_orientations(long field_1c);
 void function_1e31b0(long unit_index);
 
 inline void actor_274e70_erase(long actor_index)
 {
 	s_actor_274e70 *actor = (s_actor_274e70 *)actor_datum_get(actor_index);
 	if (actor->flag007 && actor->field_1c != NONE)
-		function_290040(actor->field_1c);
+		swarm_reset_orientations(actor->field_1c);
 	else
 		function_1e31b0(actor->unit_index);
 	actor->flag008 = true;
-}
-
-// @retail 0x274e70
-void function_274e70(long ai_index, bool flag)
-{
-	if (ai_index != NONE)
-	{
-		s_ai_actor_iterator iterator;
-		ai_actor_iterator_new(ai_index, &iterator);
-		while (ai_actor_iterator_next(&iterator))
-		{
-			long actor_index = iterator.actor_index;
-			s_actor_274e70 *actor = (s_actor_274e70 *)actor_datum_get(actor_index);
-			if (flag)
-			{
-				actor->value084 = 0;
-				actor_274e70_erase(actor_index);
-			}
-			else if (actor->value084 == 0)
-			{
-				actor->value084 = 3;
-			}
-		}
-	}
 }
 
 inline void actor_274f30_update(long actor_index, bool flag)
@@ -1008,6 +937,23 @@ inline void actor_274f30_update(long actor_index, bool flag)
 	else if (actor->value084 == 0)
 	{
 		actor->value084 = 3;
+	}
+}
+
+// @retail 0x274e70
+void function_274e70(long ai_index, bool flag)
+{
+	if (ai_index != NONE)
+	{
+		s_ai_actor_iterator iterator;
+		ai_actor_iterator_new(ai_index, &iterator);
+		while (ai_actor_iterator_next(&iterator))
+		{
+			long actor_index = iterator.actor_index;
+			/* retail stores a copy of the actor index in a stack slot it never reads */
+			volatile long stored_actor_index = actor_index;
+			actor_274f30_update(actor_index, flag);
+		}
 	}
 }
 
@@ -1038,8 +984,8 @@ void function_274f30(long list_index, bool flag)
 	}
 }
 
-void __stdcall function_202e90(long squad_index, long index, long flag);
-void __stdcall function_203120(long squad_group_index, long index, long flag);
+void __stdcall function_202e90(long squad_index, short index, long flag);
+void __stdcall function_203120(long squad_group_index, short index, long flag);
 
 struct s_scenario_275cb0_view
 {
@@ -1110,7 +1056,8 @@ void function_273040(long unit_index, long squad_index)
 			s_scenario_squad_273040 *squad = &scenario->squads[index & 0xffff];
 			if (squad->entry_index != NONE)
 			{
-				long entry_index = scenario->entries[squad->entry_index].index;
+				s_scenario_entry_273040 const *const &entry = &scenario->entries[squad->entry_index];
+				long entry_index = entry->index;
 				if (entry_index != NONE)
 				{
 					function_1e0160(index, entry_index, unit_index, (bool)((squad->flags >> 10) & 1));
@@ -1126,7 +1073,7 @@ void function_273040(long unit_index, long squad_index)
 void function_2730c0(long list_index, long squad_index)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		function_273040(object_index, squad_index);
@@ -1172,7 +1119,7 @@ struct s_object_275b60
 	short team;
 };
 
-void function_290bf0(long field_1c, short team);
+void swarm_set_team(long field_1c, short team);
 void function_1c9a00(void);
 
 /* sets the team of the squads an ai index names and of their actors */
@@ -1184,7 +1131,7 @@ void function_275b60(long ai_index, short team)
 		s_ai_squad_iterator iterator;
 		s_squad_datum *squad;
 
-		ai_squad_iterator_new(&iterator, ai_index);
+		ai_squad_iterator_new(ai_index, &iterator);
 		while ((squad = ai_squad_iterator_next(&iterator)) != NULL)
 		{
 			s_squad_actor_iterator field_10;
@@ -1198,7 +1145,7 @@ void function_275b60(long ai_index, short team)
 				actor_view->team = team;
 				if (actor_view->flag007)
 				{
-					function_290bf0(actor_view->field_1c, team);
+					swarm_set_team(actor_view->field_1c, team);
 				}
 				else if (actor_view->unit_index != NONE)
 				{
@@ -1252,7 +1199,7 @@ long function_273f30(long ai_index, short mode, long *actor_count, real *average
 	else
 	{
 		s_ai_squad_iterator iterator;
-		ai_squad_iterator_new(&iterator, ai_index);
+		ai_squad_iterator_new(ai_index, &iterator);
 		s_squad_datum *squad;
 		while ((squad = ai_squad_iterator_next(&iterator)) != NULL)
 		{
@@ -1265,14 +1212,11 @@ long function_273f30(long ai_index, short mode, long *actor_count, real *average
 				result += squad->count_c;
 				break;
 			default:
-			{
-				long difference = squad->count_a - squad->count_c;
-				result += difference < 0 ? 0 : difference;
+				result += squad->count_a - squad->count_c < 0 ? 0 : squad->count_a - squad->count_c;
 				break;
 			}
-			}
-			vitality += squad->actor_count * squad->value10;
 			count += squad->actor_count;
+			vitality += squad->actor_count * squad->value10;
 		}
 	}
 	if (actor_count)
@@ -1313,9 +1257,9 @@ void function_2742f0(short team_a, short team_b)
 
 			if (g_4e6948->state == 1)
 				difficulty = g_4e6948->difficulty;
-			incident_decay_ticks = (short)ai_seconds_to_ticks_round(decay_seconds[(short)difficulty]);
-			incident_threshold = 5;
 			player_alliance = true;
+			incident_threshold = 5;
+			incident_decay_ticks = (short)ai_seconds_to_ticks_round(decay_seconds[(short)difficulty]);
 		}
 		function_1df6c0(team_a, team_b, player_alliance && team_a == ai_team, player_alliance && team_b == ai_team,
 			incident_threshold, incident_decay_ticks);
@@ -1357,7 +1301,7 @@ point3f *function_b9dd0(long object_index, point3f *result);
 s_object *function_badc0(long object_index, dword type_mask);
 long function_1b8c80(long object_index);
 long function_2116f0(long unit_index, long filter_range, long seat_type, long occupancy, s_object_seat *results, long maximum_count);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 bool function_1a80e0(long index, short type, s_slot *data, short slot);
 bool function_e68c0(long type, long unit_index);
 
@@ -1411,6 +1355,16 @@ PRIVATE int __cdecl vehicle_load_candidate_compare(void const *a, void const *b)
 	return 0;
 }
 
+PRIVATE __forceinline bool function_274a51(long arg_0, s_object_seat const *arg_1, s_unit_request *arg_2)
+{
+	arg_2->type = 0x1c;
+	arg_2->type1c.object_index = arg_1->object_index;
+	arg_2->type1c.seat_index = arg_1->seat_index;
+	arg_2->type1c.unknowna = true;
+	arg_2->type1c.unknownb = false;
+	return function_e6900(arg_0, arg_2);
+}
+
 /* puts the actors an ai index names into the free seats of a vehicle (or
    makes them walk to them), nearest first, best seat first */
 // @retail 0x274a50
@@ -1444,7 +1398,7 @@ void function_274a50(long ai_index, long vehicle_index, long filter_range, bool 
 					candidates[candidate_count].actor_index = iterator.actor_index;
 					vector3d_from_points3d(&actor->position, &position, &vector);
 					candidates[candidate_count].distance_squared = length_sq3f(&vector);
-					candidates[candidate_count].busy = function_1a6fe0(iterator.actor_index, 0x4c) != NONE;
+					candidates[candidate_count].busy = actor_behavior_find_level(iterator.actor_index, 0x4c) != NONE;
 					candidate_count++;
 				}
 			}
@@ -1487,8 +1441,8 @@ void function_274a50(long ai_index, long vehicle_index, long filter_range, bool 
 
 				if (best_seat_index != NONE)
 				{
-					s_slot_object_view *unit = object_get(candidate_actor->unit_index);
 					s_object_seat *seat = &seats[best_seat_index];
+					s_slot_object_view *unit = object_get(candidate_actor->unit_index);
 					bool success;
 
 					if (unit->parent_index != NONE && unit->unknown1fc != NONE && unit->parent_index != seat->object_index)
@@ -1496,12 +1450,7 @@ void function_274a50(long ai_index, long vehicle_index, long filter_range, bool 
 
 					if (load)
 					{
-						request.type = 0x1c;
-						request.type1c.object_index = seat->object_index;
-						request.type1c.seat_index = seat->seat_index;
-						request.type1c.unknowna = true;
-						request.type1c.unknownb = false;
-						success = function_e6900(candidate_actor->unit_index, &request);
+						success = function_274a51(candidate_actor->unit_index, seat, &request);
 					}
 					else
 					{
@@ -1605,7 +1554,7 @@ struct s_character_grenades_2758b0
 	short maximum_count;
 };
 
-void *function_1e53e0(long character_index, short key);
+void *character_grenade_settings_get(long character_index, short key);
 
 inline s_ai_unit_2758b0 *ai_unit_get(long unit_index)
 {
@@ -1614,13 +1563,13 @@ inline s_ai_unit_2758b0 *ai_unit_get(long unit_index)
 
 inline s_character_grenades_2758b0 *actor_get_grenade_properties(long actor_index)
 {
-	s_ai_actor_2758b0 *actor = &((s_ai_actor_2758b0 *)g_4f55f0->data)[actor_index & 0xffff];
 	s_character_grenades_2758b0 *result = NULL;
+	s_ai_actor_2758b0 *actor = &((s_ai_actor_2758b0 *)g_4f55f0->data)[actor_index & 0xffff];
 	if (actor->unit_index != NONE)
 	{
 		short grenade_index = ai_unit_get(actor->unit_index)->current_grenade_index;
 		if (grenade_index != NONE)
-			result = (s_character_grenades_2758b0 *)function_1e53e0(actor->character_index, grenade_index);
+			result = (s_character_grenades_2758b0 *)character_grenade_settings_get(actor->character_index, grenade_index);
 	}
 	return result;
 }
@@ -1645,10 +1594,10 @@ inline void unit_add_grenades(long unit_index, short grenade_type, char count)
 	unit->current_grenade_index = (char)grenade_type;
 }
 
-inline short ai_random_range(dword *seed, short lower, short upper)
+inline short ai_random_range(short lower, short upper)
 {
-	*seed = *seed * 0x19660d + 0x3c6ef35f;
-	return lower + (short)(((upper - lower) * (*seed >> 16)) >> 16);
+	g_4e7408->unknown0 = g_4e7408->unknown0 * 0x19660d + 0x3c6ef35f;
+	return lower + (short)(((upper - lower) * (g_4e7408->unknown0 >> 16)) >> 16);
 }
 
 /* gives the actors an ai index names a random number of grenades of their
@@ -1672,7 +1621,7 @@ void function_2758b0(long ai_index)
 			unit->valuef0 = unit->valuee8 > 0.0f ? 1.0f : 0.0f;
 			if (grenades)
 			{
-				short count = ai_random_range(&g_4e7408->unknown0, grenades->minimum_count, grenades->maximum_count + 1);
+				short count = ai_random_range(grenades->minimum_count, grenades->maximum_count + 1);
 				short current_count = unit_get_current_grenade_count(actor->unit_index);
 				if (current_count < count)
 					unit_add_grenades(actor->unit_index, grenades->grenade_type, (char)(count - current_count));
@@ -1687,7 +1636,7 @@ void function_275a50(long ai_index, bool flag)
 	if (g_4f55d0->active && ai_index != NONE)
 	{
 		s_ai_squad_iterator iterator;
-		ai_squad_iterator_new(&iterator, ai_index);
+		ai_squad_iterator_new(ai_index, &iterator);
 		s_squad_datum *squad;
 		while ((squad = ai_squad_iterator_next(&iterator)) != NULL)
 		{
@@ -1897,7 +1846,7 @@ real function_2760a0(long actor_index, long script_index, long name, long sound_
 	return seconds;
 }
 
-bool function_291ea0(long actor_index, long script_index, long arg_80f1d4, real *duration);
+bool function_291ea0(long arg_80f1d4, long actor_index, long script_index, real *duration);
 
 /* the ticks a vocalization of the first actor an ai index names lasts */
 // @retail 0x276160
@@ -1911,7 +1860,7 @@ short function_276160(long ai_index, long arg_80f1d4)
 		if (ai_actor_iterator_next(&iterator))
 		{
 			real seconds;
-			function_291ea0(iterator.actor_index, NONE, arg_80f1d4, &seconds);
+			function_291ea0(arg_80f1d4, iterator.actor_index, NONE, &seconds);
 			if (seconds > g_45dbd8)
 				duration = seconds;
 		}
@@ -2005,11 +1954,11 @@ short function_2761d0(long ai_index, long arg_80f1d4)
 		if (ai_actor_iterator_next(&iterator))
 		{
 			long actor_index = iterator.actor_index;
-			long best_index = NONE;
 			real best_rating = 0.0f;
+			long best_index = NONE;
 			real seconds = 0.0f;
 
-			function_291ea0(actor_index, NONE, arg_80f1d4, &seconds);
+			function_291ea0(arg_80f1d4, actor_index, NONE, &seconds);
 			if (seconds > g_45dbd8)
 				duration = seconds;
 
@@ -2175,9 +2124,10 @@ bool function_276380(long ai_index)
 	long actor_index = function_272b70(ai_index);
 	if (actor_index != NONE)
 	{
+		long unit_index = actor_datum_get(actor_index)->unit_index;
 		s_unit_request request;
 		memset(&request, 0, sizeof(request));
-		result = function_276381(actor_datum_get(actor_index)->unit_index, &request);
+		result = function_276381(unit_index, &request);
 	}
 	return result;
 }
@@ -2238,7 +2188,7 @@ void function_276480(long ai_index, short script_index)
 		function_257fa0(iterator.actor_index, script_index, NONE);
 }
 
-long function_257ed0(long thread_index, long actor_index, short script_index);
+long function_257ed0(long actor_index, short script_index, long thread_index);
 bool function_2580c0(short squad_index, short script_index, long *actor_indices, short count);
 
 /* gives every actor an ai index names a command script (257ed0) */
@@ -2249,7 +2199,7 @@ void function_2764c0(long ai_index, short script_index)
 
 	ai_actor_iterator_new(ai_index, &iterator);
 	while (ai_actor_iterator_next(&iterator))
-		function_257ed0(NONE, iterator.actor_index, script_index);
+		function_257ed0(iterator.actor_index, script_index, NONE);
 }
 
 /* gives the first actors two ai indices name a shared command script */
@@ -2418,27 +2368,31 @@ void function_2768d0(long role_name)
 		script->type = 0x16;
 		if (joint_index != NONE)
 		{
-			short scene_index = ((s_ai_script_joint *)(g_502404->data + (joint_index & 0xffff) * sizeof(s_ai_script_joint)))->scene_index;
-			s_ai_script_scenes_view *scenario = (s_ai_script_scenes_view *)g_4e0350;
+			s_ai_script_joint *joint = (s_ai_script_joint *)(g_502404->data + (joint_index & 0xffff) * sizeof(s_ai_script_joint));
 
-			if (scene_index != NONE && scene_index >= 0 && scene_index < scenario->scene_count)
+			if (joint->scene_index != NONE)
 			{
-				s_ai_script_scene *scene = &scenario->scenes[scene_index];
-				short participant_index = NONE;
+				s_ai_script_scenes_view *scenario = (s_ai_script_scenes_view *)g_4e0350;
 
-				if (role_name != NONE)
+				if (joint->scene_index >= 0 && joint->scene_index < scenario->scene_count)
 				{
-					for (short i = 0; i < scene->role_count; i++)
+					s_ai_script_scene *scene = &scenario->scenes[joint->scene_index];
+					short participant_index = NONE;
+
+					if (role_name != NONE)
 					{
-						if (scene->roles[i].name == role_name)
+						for (short i = 0; i < scene->role_count; i++)
 						{
-							participant_index = i;
-							break;
+							if (scene->roles[i].name == role_name)
+							{
+								participant_index = i;
+								break;
+							}
 						}
 					}
+					if (participant_index != NONE)
+						function_258340(participant_index, joint_index);
 				}
-				if (participant_index != NONE)
-					function_258340(participant_index, joint_index);
 			}
 		}
 	}
@@ -2532,7 +2486,7 @@ struct s_scenario_point
 {
 	byte unknown00[0x20];
 	s_type_c3b527 position;
-	byte unknown2e[0x3c - 0x2e];
+	byte unknown2e[0x3c - 0x30];
 };
 
 struct s_scenario_point_set
@@ -2567,14 +2521,16 @@ void function_2769d0(long point_reference)
 		s_scenario_scripting_view *scenario = (s_scenario_scripting_view *)g_4e0350;
 		if (scenario->scripting_data_count > 0)
 		{
+			short point_index = 0;
 			s_actor_datum *actor = actor_datum_get(g_50240c);
+			s_scenario_scripting_data *local_0 = scenario->scripting_data;
 			short point_set_index = (short)(point_reference >> 16);
-			if (point_set_index >= 0 && point_set_index < scenario->scripting_data->point_set_count)
+			if (point_set_index >= 0 && point_set_index < local_0->point_set_count)
 			{
-				s_scenario_point_set *point_set = &scenario->scripting_data->point_sets[point_set_index];
-				volatile real best_distance = 3.4028235e38f;
+				s_scenario_point_set *point_set = &local_0->point_sets[point_set_index];
+				real best_distance = 3.4028235e38f;
 				short best_index = NONE;
-				for (short point_index = 0; point_index < point_set->point_count; point_index++)
+				for (; point_index < point_set->point_count; point_index++)
 				{
 					s_type_c3b527 *point = (s_type_c3b527 *)((byte *)point_set->points + point_index * 0x3c + 0x20);
 					vector3f vector;
@@ -2613,9 +2569,12 @@ void __stdcall function_2772b0(long animation_graph_index, long animation_name, 
 		s_actor_datum *actor = actor_datum_get(g_50240c);
 		real duration = 0.0f;
 
-		if (function_11b520(animation_graph_index, actor->unit_index, animation_name, interpolate, NONE, false))
+		long unit_index = actor->unit_index;
+		if (function_11b520(unit_index, animation_graph_index, animation_name, interpolate, NONE, false))
 		{
-			real ticks_real = (real)g_510c54->field_2_3 * (function_11b6b0(actor->unit_index) * scale);
+			real animation_ticks = function_11b6b0(actor->unit_index);
+			real scaled_ticks = animation_ticks * scale;
+			real ticks_real = (real)g_510c54->field_2_3 * scaled_ticks;
 			long ticks;
 			__asm
 			{
@@ -2651,6 +2610,18 @@ struct s_actor_2773d0
 	bool flying;
 };
 
+struct s_2773d1
+{
+	volatile long field_0;
+	vector3f field_4;
+	union
+	{
+		point3f field_0;
+		vector3f field_1;
+	} field_10;
+	point3f field_1c;
+};
+
 bool function_25ab50(long reference);
 void function_118e80(long object_index, vector3f *forward);
 vector3f *function_11d090(vector3f const *v, vector3f *out);
@@ -2661,7 +2632,7 @@ struct s_location;
 void function_b75a0(long object_index, point3f const *point, vector3f const *forward, vector3f const *up,
 	s_location const *location, bool unknown);
 void function_b73b0(long object_index);
-void __stdcall function_1f4280(long actor_index);
+bool __stdcall function_1f4280(long actor_index);
 
 inline s_type_c3b527 *scenario_point_get(long point_reference)
 {
@@ -2671,44 +2642,44 @@ inline s_type_c3b527 *scenario_point_get(long point_reference)
 
 /* places the current actor's unit at a point, facing another point */
 // @retail 0x2773d0
-void function_2773d0(long facing_point_reference, long point_reference)
+void function_2773d0(long point_reference, long facing_point_reference)
 {
 	if (g_50240c != NONE && function_25ab50(point_reference))
 	{
 		s_actor_2773d0 *actor = (s_actor_2773d0 *)actor_datum_get(g_50240c);
-		long unit_index = actor->unit_index;
-		point3f position;
-		point3f facing_position;
-		vector3f forward;
-		vector3f up;
+		s_2773d1 local_0;
+		local_0.field_0 = actor->unit_index;
 
-		function_210850(scenario_point_get(point_reference), &position);
-		function_118e80(unit_index, &forward);
+		function_210850(scenario_point_get(point_reference), &local_0.field_1c);
+		long unit_index = local_0.field_0;
+		function_118e80(unit_index, &local_0.field_4);
 		if (function_25ab50(facing_point_reference))
 		{
-			function_210850(scenario_point_get(facing_point_reference), &facing_position);
-			vector3d_from_points3d(&position, &facing_position, &forward);
+			s_scenario_scripting_view *scenario = (s_scenario_scripting_view *)g_4e0350;
+			s_type_c3b527 *facing = &scenario->scripting_data->point_sets[(facing_point_reference >> 16) & 0xffff].points[facing_point_reference & 0xffff].position;
+			function_210850(facing, &local_0.field_10.field_0);
+			vector3d_from_points3d(&local_0.field_1c, &local_0.field_10.field_0, &local_0.field_4);
 			if (actor->flying)
 			{
-				if (function_30bf0(&forward) == 0.0f)
-					function_118e80(unit_index, &forward);
-				function_11d090(&forward, &up);
+				if (function_30bf0(&local_0.field_4) == g_45dbd8)
+					function_118e80(unit_index, &local_0.field_4);
+				function_11d090(&local_0.field_4, &local_0.field_10.field_1);
 			}
 			else
 			{
-				forward.k = 0.0f;
-				if (normalize2d((point2f *)&forward) == 0.0f)
+				local_0.field_4.k = g_45dbd8;
+				if (normalize2d((point2f *)&local_0.field_4) == 0.0f)
 				{
-					function_118e80(unit_index, &forward);
-					forward.k = 0.0f;
-					if (normalize2d((point2f *)&forward) == 0.0f)
-						forward = *g_4687a8;
+					function_118e80(unit_index, &local_0.field_4);
+					local_0.field_4.k = 0.0f;
+					if (normalize2d((point2f *)&local_0.field_4) == g_45dbd8)
+						local_0.field_4 = *g_4687a8;
 				}
-				up = *g_4687b0;
+				local_0.field_10.field_1 = *g_4687b0;
 			}
 
 			long object_index = function_baf80(unit_index);
-			function_b75a0(object_index, &position, &forward, &up, NULL, false);
+			function_b75a0(object_index, &local_0.field_1c, &local_0.field_4, &local_0.field_10.field_1, NULL, false);
 			function_b73b0(object_index);
 			function_1f4280(g_50240c);
 		}
@@ -2741,14 +2712,15 @@ void function_276b40(long object_index, real a, real b, real c)
 		{
 			s_command_script *target = command_script_get(script_index);
 
-			target->flag52 = true;
-			target->flag46 = false;
-			target->flag51 = false;
+			((s_command_script volatile *)target)->flag52 = true;
+			((s_command_script volatile *)target)->flag46 = false;
+			((s_command_script volatile *)target)->flag51 = false;
 			target->type54 = 1;
 			target->index58 = object_index;
-			command_script_get(script_index)->flag46 = true;
-			command_script_get(script_index)->type48 = 1;
-			command_script_get(script_index)->index4c = object_index;
+			s_command_script *local_0 = command_script_get(script_index);
+			local_0->flag46 = true;
+			local_0->type48 = 1;
+			local_0->index4c = object_index;
 			target->flag50 = true;
 			target->flag51 = true;
 		}
@@ -2797,14 +2769,14 @@ void __stdcall function_273ac0(long ai_index, long target_ai_index)
 	ai_actor_iterator_new(ai_index, &iterator);
 	while ((actor = ai_actor_iterator_next(&iterator)) != NULL)
 	{
-		long clump_index = actor->clump_object_index;
-		if (clump_index == NONE)
+		long clump_object_index = actor->clump_object_index;
+		if (clump_object_index == NONE)
 			continue;
-		clump_index &= 0xffff;
-		if (bit_vector_test(clump_bits, clump_index))
+		long clump_index = clump_object_index;
+		if (bit_vector_test(clump_bits, clump_index & 0xffff))
 			continue;
-		bit_vector_set(clump_bits, clump_index, true);
-		long prop_index = ((s_ai_clump_273d30 *)g_502420->data)[clump_index].first_prop_index;
+		bit_vector_set(clump_bits, clump_index & 0xffff, true);
+		long prop_index = ((s_ai_clump_273d30 *)g_502420->data)[clump_index & 0xffff].first_prop_index;
 		while (prop_index != NONE)
 		{
 			s_ai_prop_273d30 *prop = &((s_ai_prop_273d30 *)g_50241c->data)[prop_index & 0xffff];
@@ -2817,9 +2789,9 @@ void __stdcall function_273ac0(long ai_index, long target_ai_index)
 				case _ai_index_type_squad:
 				case _ai_index_type_squad_group:
 				{
-					long squad_index = actor_datum_get(target_actor_index)->squad_index;
-					if (squad_index != NONE)
-						target_matches = function_272c40(target_ai_index, squad_index);
+					s_actor_datum *target_datum = actor_datum_get(target_actor_index);
+					if (target_datum->squad_index != NONE)
+						target_matches = function_272c40(target_ai_index, target_datum->squad_index);
 					break;
 				}
 				case _ai_index_type_actor:
@@ -2840,10 +2812,10 @@ void __stdcall function_273ac0(long ai_index, long target_ai_index)
 						case _ai_index_type_squad:
 						case _ai_index_type_squad_group:
 						{
-							long squad_index = actor_datum_get(actor_index)->squad_index;
-							if (squad_index != NONE)
+							s_actor_datum *datum = actor_datum_get(actor_index);
+							if (datum->squad_index != NONE)
 							{
-								matches = squad_in_ai_273ac0(ai_index, squad_index);
+								matches = squad_in_ai_273ac0(ai_index, datum->squad_index);
 							}
 							break;
 						}
@@ -2869,7 +2841,7 @@ void __stdcall function_273ac0(long ai_index, long target_ai_index)
 
 void function_1e2a90(long arg_0);
 void __stdcall function_b8540(long arg_0);
-void __stdcall function_28e200(long arg_0);
+void __stdcall swarm_delete(long arg_0);
 bool __stdcall function_beb30(long arg_0);
 
 struct s_2736c0
@@ -2879,49 +2851,41 @@ struct s_2736c0
 	long field_3a4;
 };
 
-struct s_2736e0
-{
-	s_ai_squad_iterator field_0;
-	s_ai_actor_iterator field_20;
-};
-
 // @retail 0x2736c0
 void __stdcall function_2736c0(long arg_0)
 {
 	if (arg_0 != NONE)
 	{
-		s_2736e0 local_0;
+		s_ai_squad_iterator squad_cursor;
+		s_ai_actor_iterator actor_cursor;
 		s_actor_datum *local_1;
-		ai_actor_iterator_new(arg_0, &local_0.field_20);
-		while ((local_1 = ai_actor_iterator_next(&local_0.field_20)) != NULL)
+		ai_actor_iterator_new(arg_0, &actor_cursor);
+		while ((local_1 = ai_actor_iterator_next(&actor_cursor)) != NULL)
 		{
-			if (local_0.field_20.actor_index == g_46fc80)
+			if (actor_cursor.actor_index == g_46fc80)
 				*((byte *)local_1 + 0xd) = true;
 			else
 			{
-				s_actor_datum *local_2 = actor_datum_get(local_0.field_20.actor_index);
+				s_actor_datum *local_2 = actor_datum_get(actor_cursor.actor_index);
 				long local_3 = local_2->unit_index;
 				long local_4 = local_2->perception_index;
-				function_1e2a90(local_0.field_20.actor_index);
+				function_1e2a90(actor_cursor.actor_index);
 				if (local_3 != NONE)
 					function_b8540(local_3);
 				else if (local_4 != NONE)
-					function_28e200(local_4);
+					swarm_delete(local_4);
 			}
 		}
 		s_squad_datum *local_6;
-		ai_squad_iterator_new_inline(&local_0.field_0, arg_0);
-		while ((local_6 = ai_squad_iterator_next(&local_0.field_0)) != NULL)
+		ai_squad_iterator_new_inline(&squad_cursor, arg_0);
+		while ((local_6 = ai_squad_iterator_next(&squad_cursor)) != NULL)
 		{
 			long local_7 = local_6->first_vehicle_index;
 			long local_8 = NONE;
 			while (local_7 != NONE)
 			{
 				long local_11 = local_7;
-			s_object_header_view *local_9 = (s_object_header_view *)datum_get_inlined(g_4e0300, local_7);
-				if (!local_9 || !((1 << local_9->type) & 2))
-					break;
-				s_2736c0 *local_10 = (s_2736c0 *)local_9->object;
+				s_2736c0 *local_10 = (s_2736c0 *)function_badc0(local_7, 2);
 				if (!local_10)
 					break;
 				local_7 = local_10->field_3a4;
@@ -2941,16 +2905,19 @@ void __stdcall function_2736c0(long arg_0)
 	}
 }
 
-PRIVATE __forceinline bool function_274611(long arg_0, short arg_1)
+PRIVATE __forceinline bool function_274611(long arg_0, short arg_1, s_slot_object_view *object)
 {
-	s_slot_object_view *local_0 = object_get(arg_0);
-	return function_c8f60(arg_0, arg_1) != NONE ||
-		(local_0->type == 1 && ((local_0->unknown3b0 & (1 << arg_1)) ||
-		(local_0->unknown3b4 & (1 << arg_1))));
+	bool result = false;
+	if (function_c8f60(arg_0, arg_1) != NONE)
+		result = true;
+	else if (object->type == 1 && ((object->unknown3b0 & (1 << arg_1)) || (object->unknown3b4 & (1 << arg_1))))
+		result = true;
+	return result;
 }
 
 PRIVATE __forceinline long function_2746fc(long arg_0)
 {
+	long result = arg_0;
 	long local_0 = arg_0;
 	while (local_0 != NONE)
 	{
@@ -2958,45 +2925,50 @@ PRIVATE __forceinline long function_2746fc(long arg_0)
 		if (!TEST_FIELD_BIT((*(dword *)((byte *)local_1 + 4) >> 26) & 1)) break;
 		local_0 = local_1->parent_index;
 	}
-	return object_header_get(local_0)->type == 1 ? local_0 : arg_0;
+	if (object_header_get(local_0)->type == 1)
+		result = local_0;
+	return result;
 }
 
 // @retail 0x274470
 short __stdcall function_274470(long arg_0)
 {
 	struct { s_vehicle_enter_slot field_0; s_ai_actor_iterator field_40; } local_40;
-	dword local_0[10] = {0};
+	dword local_0[10];
 	s_object_seat local_1[320];
 	short local_2 = 0;
 	short local_3 = 0;
 	short local_4 = 0;
-	s_ai_squad_iterator local_5;
-	ai_squad_iterator_new_inline(&local_5, arg_0);
-	s_squad_datum *local_6;
-	while ((local_6 = ai_squad_iterator_next(&local_5)) != NULL)
+	memset(local_0, 0, sizeof(local_0));
 	{
-		long local_7 = local_6->first_vehicle_index;
-		while (local_7 != NONE && local_2 < 320)
+		s_ai_squad_iterator local_5;
+		ai_squad_iterator_new_inline(&local_5, arg_0);
+		s_squad_datum *local_6;
+		while ((local_6 = ai_squad_iterator_next(&local_5)) != NULL)
 		{
-			s_ai_script_squad_vehicle *local_8 = (s_ai_script_squad_vehicle *)ai_script_object_get(local_7);
-			short local_9 = 0;
-			function_c8a40(local_7, &local_1[local_2], &local_9, 320 - local_2);
-			local_2 += local_9;
-			local_7 = local_8->next_squad_vehicle_index;
+			long local_7 = local_6->first_vehicle_index;
+			while (local_7 != NONE && local_2 < 320)
+			{
+				s_ai_script_squad_vehicle *local_8 = (s_ai_script_squad_vehicle *)ai_script_object_get(local_7);
+				short local_9 = 0;
+				function_c8a40(local_7, &local_1[local_2], &local_9, 320 - local_2);
+				local_2 += local_9;
+				local_7 = local_8->next_squad_vehicle_index;
+			}
+			if (local_2 >= 320) break;
 		}
-		if (local_2 >= 320) break;
 	}
-	for (long local_10 = 0; local_10 < local_2; local_10++)
-		if (function_274611(local_1[local_10].object_index, local_1[local_10].seat_index))
-			local_0[local_10 >> 5] |= 1 << (local_10 & 31);
+	for (short local_10 = 0; local_10 < local_2; local_10++)
+		if (function_274611(local_1[local_10].object_index, local_1[local_10].seat_index, object_get(local_1[local_10].object_index)))
+			bit_vector_set(local_0, local_10, true);
 
 	ai_actor_iterator_new(arg_0, &local_40.field_40);
 	while (ai_actor_iterator_next(&local_40.field_40))
-		if (function_1a6fe0(local_40.field_40.actor_index, 0x4c) == NONE) local_4++;
+		if (actor_behavior_find_level(local_40.field_40.actor_index, 0x4c) == NONE) local_4++;
 	for (;;)
 	{
-		real local_12 = 0.0f;
 		short local_13 = NONE;
+		real local_12 = 0.0f;
 		long local_14 = NONE;
 		bool local_15 = false;
 		for (short local_16 = 0; local_16 < local_2; local_16++)
@@ -3006,23 +2978,24 @@ short __stdcall function_274470(long arg_0)
 			{
 				local_14 = local_17->object_index;
 				long local_18 = function_2746fc(local_14);
-				local_15 = function_274611(local_18, function_274400(local_18));
+				local_15 = function_274611(local_18, function_274400(local_18), object_get(local_18));
 			}
-			if (!(local_0[local_16 >> 5] & (1 << (local_16 & 31))))
+			if (!bit_vector_test(local_0, local_16))
 			{
+				s_unit_seat_definition *local_29 = local_17->definition;
 				real local_19 = 0.0f;
-				if (TEST_FIELD_BIT(local_17->definition->flags.bit2))
+				if (TEST_FIELD_BIT(local_29->flags.bit2))
 				{
-					if (TEST_FIELD_BIT(local_17->definition->flags.bit3)) local_19 = 3.0f;
+					if (TEST_FIELD_BIT(local_29->flags.bit3)) local_19 = 3.0f;
 					else if (local_4 > 0) local_19 = 5.0f;
 				}
-				else if (TEST_FIELD_BIT(local_17->definition->flags.bit3))
+				else if (TEST_FIELD_BIT(local_29->flags.bit3))
 				{
-					if (local_15) local_19 = 20.0f;
+					local_19 = local_15 ? 20.0f : 0.0f;
 				}
-				else if (!TEST_FIELD_BIT(local_17->definition->flags.bit11))
+				else if (!TEST_FIELD_BIT(local_29->flags.bit11))
 				{
-					if (local_15) local_19 = 1.0f;
+					local_19 = local_15 ? 1.0f : 0.0f;
 				}
 				if (local_19 > local_12) { local_12 = local_19; local_13 = local_16; }
 			}
@@ -3040,7 +3013,7 @@ short __stdcall function_274470(long arg_0)
 		s_actor_datum *local_26;
 		while ((local_26 = ai_actor_iterator_next(&local_25)) != NULL)
 		{
-			if (function_1a6fe0(local_25.actor_index, 0x4c) == NONE && local_26->unknown26c == NONE)
+			if (actor_behavior_find_level(local_25.actor_index, 0x4c) == NONE && local_26->unknown26c == NONE)
 			{
 				vector3f local_27;
 				vector3d_from_points3d(&local_26->position, &local_24, &local_27);
@@ -3052,21 +3025,21 @@ short __stdcall function_274470(long arg_0)
 		{
 
 			memset(&local_40.field_0, 0, sizeof(local_40.field_0));
-			local_40.field_0.vehicle_index = local_20;
 			local_40.field_0.seat_index = local_21;
+			local_40.field_0.unknown28 = 3.402823466e38f;
+			local_40.field_0.unknown2c = 3.402823466e38f;
+			local_40.field_0.vehicle_index = local_20;
 			local_40.field_0.flag0 = false;
 			local_40.field_0.flag3 = false;
 			local_40.field_0.flag5 = true;
 			local_40.field_0.flag6 = true;
-			local_40.field_0.unknown28 = 3.402823466e38f;
-			local_40.field_0.unknown2c = 3.402823466e38f;
 			if (function_1a80e0(local_23, 0x4c, (s_slot *)&local_40.field_0, 1))
 			{
 				local_3++;
 				local_4--;
 			}
 		}
-		local_0[local_13 >> 5] |= 1 << (local_13 & 31);
+		bit_vector_set(local_0, local_13, true);
 	}
 	return local_3;
 }

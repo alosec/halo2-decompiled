@@ -46,7 +46,6 @@ struct c_aggregate : c_child
 	byte unknown04[8];
 	c_child *children[3];
 
-	long function_97d80(dword *source, s_request *request);
 	void v7(void *a);
 	void v8(long a, long b);
 
@@ -54,21 +53,21 @@ struct c_aggregate : c_child
 
 
 // @retail 0x97d80
-long c_aggregate::function_97d80(dword *source, s_request *request)
+long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
 	s_block blocks[256];
 	long starts[4];
 	long error = 0;
 	long total = 0;
 
-	c_child **child = children;
-	for (long i = 0; i < 3; i++, child++)
+	for (long i = 0; i < 3; i++)
 	{
+		c_child *child = ((c_child **)children)[i];
 		starts[i] = total;
-		if (*child != 0 && error == 0)
+		if (child != 0 && error == 0)
 		{
 			long produced = 0;
-			error = (*child)->v5(*source, request, 256 - total, &blocks[total], &produced);
+			error = child->v5(*source, request, 256 - total, &blocks[total], &produced);
 			total += produced;
 		}
 	}
@@ -76,7 +75,7 @@ long c_aggregate::function_97d80(dword *source, s_request *request)
 
 	if (error == 0 && request->type != 4)
 	{
-		child = children;
+		c_child **child = (c_child **)children;
 		for (long i = 0; i < 3; i++, child++)
 		{
 			c_child *object = *child;
@@ -94,7 +93,8 @@ long c_aggregate::function_97d80(dword *source, s_request *request)
 			if (object != 0)
 			{
 				long result;
-				g_4d87f8->allocator->get_info(object, &result);
+				if (!g_4d87f8->allocator->get_info(object, &result))
+					result = NONE;
 				g_4d87f8->allocator->release(object, NONE);
 				if (object != 0)
 					g_4d87f8->count--;
@@ -134,9 +134,10 @@ void c_aggregate::v8(long a, long b)
 void function_97f60(s_handle_peers *t, long a, c_handle_table_450cd0 *self)
 {
 	self->table = t;
-	self->shift = a;
-	self->bit = 1 << a;
+	long local_0 = 1 << a;
 	self->head = 0;
+	self->shift = a;
+	self->bit = local_0;
 	self->node = 0;
 	for (long i = 0; i < 1024; i++)
 	{
@@ -165,10 +166,11 @@ void c_handle_table_450cd0::function_97fe0()
 	while (head != 0)
 		v8(head->handle, false);
 
+	long local_0 = 0;
 	s_handle_entry *entry = entries;
 	for (long i = 0; i < 1024; i++, entry++)
 	{
-		if (entry->state != 0)
+		if (entry->state != local_0)
 		{
 			long handle = entry->handle;
 			s_handle_peer *item = &table->peers[handle & 0x3ff];
@@ -180,13 +182,14 @@ void c_handle_table_450cd0::function_97fe0()
 				if (t->peers[handle & 0x3ff].mask == 0)
 				{
 					t->owner->v12(handle);
-					t->peers[handle & 0x3ff].flags &= 0xfe;
+					byte *local_1 = &t->peers[handle & 0x3ff].flags;
+					*local_1 &= 0xfe;
 				}
 			}
-			entry->state = 0;
+			entry->state = (short)local_0;
 			entry->handle = NONE;
 			entry->unknown0a = NONE;
-			entry->unknown10 = 0;
+			entry->unknown10 = (word)local_0;
 		}
 	}
 

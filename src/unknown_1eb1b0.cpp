@@ -56,10 +56,10 @@ void function_1eb110(s_physics_constraint_iterator *iterator)
 {
 	byte *volatile element;
 	iterator->type = 0;
+	iterator->index = 0;
 	s_physics_model_shape_key *key = (s_physics_model_shape_key *)&iterator->type;
 	for (;;)
 	{
-		iterator->index = 0;
 		long size;
 		s_impact_tag_block *block = physics_model_shape_block_get(iterator->physics, key, &size);
 		if (key->index < block->count)
@@ -72,6 +72,7 @@ void function_1eb110(s_physics_constraint_iterator *iterator)
 		if (key->type >= 5)
 			break;
 		key->type++;
+		iterator->index = 0;
 	}
 }
 

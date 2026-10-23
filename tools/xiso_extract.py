@@ -24,7 +24,13 @@ def find_partition(f):
     for base in PARTITION_OFFSETS:
         f.seek(base + 0x10000)
         if f.read(len(MAGIC)) == MAGIC:
-            return (base, *struct.unpack('<II', f.read(8)))
+            metadata = f.read(8)
+            if len(metadata) < 8:
+                raise EOFError(
+                    f'truncated XISO header at offset {base + 0x10000}: '
+                    f'wanted 8 bytes of root directory metadata, got {len(metadata)}'
+                )
+            return (base, *struct.unpack('<II', metadata))
     sys.exit('not an Xbox disc image (no XDVDFS header found)')
 
 

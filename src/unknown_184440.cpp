@@ -11,7 +11,7 @@ extern s_slot_entry_list *g_4e0340;
 bool g_46dd50 = true;
 struct s_184440
 {
-    word field_0;
+    short field_0;
     word field_2;
     byte field_4;
     byte field_5;
@@ -109,8 +109,8 @@ bool function_23a220(point2f const *arg_0, short volatile arg_1, point2f const *
 
 __forceinline real function_184441(vector3f const *arg_0, point3f const *arg_1)
 {
-    vector3f const volatile *local_0 = arg_0;
-    point3f const volatile *local_1 = arg_1;
+    vector3f const *local_0 = arg_0;
+    point3f const *local_1 = arg_1;
     return local_0->k * local_1->z + local_0->j * local_1->y + local_0->i * local_1->x;
 }
 __forceinline real function_184442(vector3f *arg_0)
@@ -130,8 +130,17 @@ __forceinline real function_184443(real arg_0, real arg_1, real arg_2)
 }
 __forceinline long function_184444(real arg_0)
 {
-    long local_0 = (long)arg_0;
-    return local_0 - ((real)local_0 != arg_0 && arg_0 < 0.0f);
+    __asm
+    {
+        movss xmm0, arg_0
+        cvttss2si eax, xmm0
+        cvtsi2ss xmm1, eax
+        cmpneqss xmm1, xmm0
+        cmpltss xmm0, g_45dbd8
+        andps xmm0, xmm1
+        movmskps ecx, xmm0
+        sub eax, ecx
+    }
 }
 __forceinline void function_184445(transform4x3f const *arg_0, point3f *arg_1)
 {
@@ -219,14 +228,17 @@ void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, lo
         long local_15 = local_0[(short)local_14++];
         s_184440 *local_16 = &local_6->field_2c[local_15];
         real_bounds local_33[2] = { { FLT_MAX, -FLT_MAX }, { FLT_MAX, -FLT_MAX } };
-        plane3f local_17 = local_6->field_c[local_16->field_0 & 0x7fff];
+        plane3f const *local_54 = &local_6->field_c[local_16->field_0 & 0x7fff];
+        plane3f local_17;
         if (local_16->field_0 & 0x8000)
         {
-            local_17.i = 0.0f - local_17.i;
-            local_17.j = 0.0f - local_17.j;
-            local_17.k = 0.0f - local_17.k;
-            local_17.d = 0.0f - local_17.d;
+            local_17.i = 0.0f - local_54->i;
+            local_17.j = 0.0f - local_54->j;
+            local_17.k = 0.0f - local_54->k;
+            local_17.d = 0.0f - local_54->d;
         }
+        else
+            local_17 = *local_54;
         if (local_5)
             function_184446(&local_5->field_0, &local_17);
         real local_18 = (real)fabs(local_17.i);
@@ -250,7 +262,7 @@ void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, lo
             local_2[local_27].y = local_1[local_27].n[local_24];
             local_27++;
             long local_30 = local_28->field_8[!local_29];
-            short local_31 = 0;
+            long local_31 = 0;
             while (local_31 < (short)local_13 && local_0[local_31] != local_30)
                 local_31++;
             if (local_31 == (short)local_13 && local_30 != NONE &&
@@ -261,7 +273,7 @@ void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, lo
         point3f local_28;
         if (local_15 == arg_3)
         {
-            real local_29 = 0.0f - (function_184441(&local_17.n, &arg_2->field_30) - local_17.d);
+            real local_29 = 0.0f - (arg_2->field_30.z * local_17.k + arg_2->field_30.y * local_17.j + local_17.i * arg_2->field_30.x - local_17.d);
             local_28.x = local_29 * local_17.i + arg_2->field_30.x;
             local_28.y = local_29 * local_17.j + arg_2->field_30.y;
             local_28.z = local_29 * local_17.k + arg_2->field_30.z;
@@ -275,12 +287,14 @@ void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, lo
         local_30.i = local_29.k * local_17.j - local_29.j * local_17.k;
         local_30.j = local_17.k * local_29.i - local_29.k * local_17.i;
         local_30.k = local_29.j * local_17.i - local_17.j * local_29.i;
-        real local_31 = function_184441(&local_29, &local_28);
-        real local_32 = function_184441(&local_30, &local_28);
+        vector3f local_55 = local_29;
+        real local_31 = function_184441(&local_55, &local_28);
+        vector3f local_56 = local_30;
+        real local_32 = function_184441(&local_56, &local_28);
         for (short local_34 = 0; local_34 < local_27; local_34++)
         {
-            real local_35 = function_184441(&local_29, &local_1[local_34]) - local_31;
-            real local_36 = function_184441(&local_30, &local_1[local_34]) - local_32;
+            real local_35 = (local_55.k * local_1[local_34].z + local_55.j * local_1[local_34].y + local_1[local_34].x * local_55.i) - local_31;
+            real local_36 = (local_56.k * local_1[local_34].z + local_56.j * local_1[local_34].y + local_1[local_34].x * local_56.i) - local_32;
             if (local_33[0].lo > local_35) local_33[0].lo = local_35;
             if (local_35 > local_33[0].hi) local_33[0].hi = local_35;
             if (local_33[1].lo > local_36) local_33[1].lo = local_36;

@@ -14,19 +14,21 @@ struct s_network_session_membership;
 
 #define SESSION_STATE_IS_LIVE(state) ((state) > 2 && (state) <= 8)
 
+PRIVATE __forceinline bool function_592f1(const c_class_58d20 *arg_0)
+{
+	bool local_0 = false;
+	long local_1 = arg_0->state;
+	if (local_1 && SESSION_STATE_IS_LIVE(local_1))
+		local_0 = arg_0->current_member == arg_0->value50;
+	return local_0;
+}
+
 // @retail 0x592f0
 bool function_592f0(void)
 {
 	bool result = false;
 	if (g_527330.initialized)
-	{
-		c_class_58d20 *session = (c_class_58d20 *)g_527330.session_a;
-		long state = session->state;
-		if (state && SESSION_STATE_IS_LIVE(state))
-		{
-			result = session->current_member == session->value50;
-		}
-	}
+		result = function_592f1((const c_class_58d20 *)g_527330.session_a);
 	return result;
 }
 

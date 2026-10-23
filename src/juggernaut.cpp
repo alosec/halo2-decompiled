@@ -59,12 +59,12 @@ struct s_juggernaut_update
 	word players;
 };
 
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 void function_b58c0(long index, dword mask);
 bool function_15b7c0(long a, long b);
 bool function_15d770(long player_index);
 bool function_15db30(long player_index);
-void function_1967d0(long a, long b, long c, long delta);
+void function_1967d0(long a, long c, long b, long delta);
 
 extern s_game_time_globals *g_510c54;
 
@@ -146,7 +146,7 @@ void juggernaut_update_teams()
 	g_510c9c->teams = 0;
 	iterator.absolute_index = NONE;
 	iterator.index = NONE;
-	while (function_19f240((long *)&iterator))
+	while (player_iterator_next((long *)&iterator))
 	{
 		if (g_510c9c->players & (1 << (char)iterator.index))
 			g_510c9c->teams |= 1 << iterator.player->team;
@@ -193,6 +193,8 @@ void juggernaut_set(long player_index, bool juggernaut)
 	juggernaut_update_teams();
 }
 
+// score 20 (was 20): the loop counter and the g_510c9c pointer sit in the other two callee-saved
+// registers than retail; the instruction order is the same.
 // @retail 0x192a30
 void function_192a30(long excluded_player_index)
 {
@@ -203,7 +205,7 @@ void function_192a30(long excluded_player_index)
 	iterator.data = g_4e8c24;
 	iterator.absolute_index = NONE;
 	iterator.index = NONE;
-	while (function_19f240((long *)&iterator))
+	while (player_iterator_next((long *)&iterator))
 	{
 		long player_index = iterator.index;
 
@@ -272,13 +274,15 @@ void c_juggernaut_engine::v15(long player_index)
 		long absolute_index = player_index & 0xffff;
 
 		if (g_510c9c->players & (1 << absolute_index) &&
-			((s_juggernaut_player *)(g_4e8c24->data + absolute_index * sizeof(s_juggernaut_player)))->unit_index != NONE)
+			juggernaut_player_get(player_index)->unit_index != NONE)
 		{
-			function_1967d0(absolute_index, 0x28, NONE, 1);
+			function_1967d0(absolute_index, NONE, 0x28, 1);
 		}
 	}
 }
 
+// score 5 (was 5): the first bit test shifts by the low byte of the player index; retail shifts
+// by the 16-bit masked index and computes that mask before the shift.
 // @retail 0x192530
 void c_juggernaut_engine::v18()
 {
@@ -291,20 +295,19 @@ void c_juggernaut_engine::v18()
 		iterator.data = g_4e8c24;
 		iterator.absolute_index = NONE;
 		iterator.index = NONE;
-		while (function_19f240((long *)&iterator))
+		while (player_iterator_next((long *)&iterator))
 		{
 			long player_index = iterator.index;
 			long absolute_index = player_index & 0xffff;
 
-			if (g_510c9c->players & (1 << absolute_index))
+			if (juggernaut_is((short)player_index))
 			{
 				word flags = iterator.player->flags;
 
-				if (flags & 2 || flags & 1 && (function_15d770(player_index) || function_15db30(player_index)))
+				bool remove = flags & 2 || flags & 1 && (function_15d770(player_index) || function_15db30(player_index));
+				if (remove)
 				{
-					g_510c9c->players &= ~(1 << absolute_index);
-					juggernaut_globals_changed();
-					juggernaut_update_teams();
+					juggernaut_set(player_index, false);
 				}
 				else
 				{
@@ -314,7 +317,8 @@ void c_juggernaut_engine::v18()
 			}
 		}
 
-		if (g_510c9c->players != (word)players)
+		word difference = g_510c9c->players ^ (word)players;
+		if (difference)
 		{
 			g_510c9c->players = (word)players;
 			juggernaut_globals_changed();
@@ -389,21 +393,21 @@ void c_juggernaut_engine::v30(long killer, long victim, long, long)
 			if (killer != NONE)
 			{
 				juggernaut_set(killer, true);
-				function_1967d0(killer & 0xffff, 0x26, NONE, 1);
+				function_1967d0(killer & 0xffff, NONE, 0x26, 1);
 			}
 		}
 		else if (killer != NONE && g_510c9c->players & (1 << (killer & 0xffff)) &&
 			killer != victim && victim != NONE)
 		{
 			function_15b7c0(1, killer);
-			function_1967d0(killer & 0xffff, 0x27, NONE, 1);
+			function_1967d0(killer & 0xffff, NONE, 0x27, 1);
 		}
 		else if (g_4e6948->flags22c_bits.bit3 && killer != NONE && victim != NONE && killer != victim &&
 			!juggernaut_is(killer) && !juggernaut_is(victim))
 		{
 			function_15b7c0(NONE, killer);
 		}
-		else if (victim != NONE && g_510c9c->players & (1 << victim))
+		else if (victim != NONE && g_510c9c->players & (1 << (char)victim))
 		{
 			juggernaut_set(victim, false);
 			function_192a30(victim);
@@ -524,7 +528,7 @@ void c_juggernaut_engine::v14(long local_index)
 				iterator.data = g_4e8c24;
 				iterator.absolute_index = NONE;
 				iterator.index = NONE;
-				while (function_19f240((long *)&iterator))
+				while (player_iterator_next((long *)&iterator))
 				{
 					long other = iterator.index;
 

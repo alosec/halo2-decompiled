@@ -25,9 +25,7 @@ struct s_system_link_globals
 	s_session_id session_id;
 };
 
-extern s_system_link_globals g_4d8eb4;
-long g_4d8ec4;
-void *g_4d8ec8;
+#include "system_link_globals.h"
 void *g_4d8eb0;
 
 struct s_network_message_session_query
@@ -56,7 +54,7 @@ struct s_online_search_globals
 	long start_time;
 };
 
-s_online_search_globals g_4d8ecc = { false, { 0 }, { 0 }, NONE, NONE, 0, NULL, 0 };
+s_online_search_globals g_4d8ecc = { 0 };
 
 #define g_4d8ed0 g_4d8ecc.input
 #define g_4d8ef0 g_4d8ecc.task_index
@@ -64,6 +62,8 @@ s_online_search_globals g_4d8ecc = { false, { 0 }, { 0 }, NONE, NONE, 0, NULL, 0
 #define g_4d8ef8 g_4d8ecc.capacity
 #define g_4d8efc g_4d8ecc.entries
 #define g_4d8f00 g_4d8ecc.start_time
+
+__declspec(noinline) void function_b31b0(void);
 
 // @retail 0xb31b0
 void function_b31b0(void)
@@ -90,16 +90,12 @@ bool function_b2e30(void *entries, long count)
 	{
 		g_4d8eb4.active = true;
 		g_4d8eb4.unknown01[0] = 0;
-		g_4d8eb4.unknown01[3] = 0;
-		g_4d8eb4.unknown01[4] = 0;
-		g_4d8eb4.unknown01[5] = 0;
-		g_4d8eb4.unknown01[6] = 0;
-		s_session_id identity;
-		function_07ad50((byte *)&identity);
-		g_4d8eb4.session_id = identity;
+		*(dword *)&g_4d8eb4.unknown01[3] = 0;
+		function_07ad50((byte *)&g_4d8eb4.session_id);
 		g_4d8ec4 = count;
 		g_4d8ec8 = entries;
-		memset(entries, 0, count * 0x784);
+		// Re-read the stored count so its global write stays ahead of the entry clear.
+		memset(entries, 0, (*(long const *)&g_4d8ec4) * 0x784);
 	}
 	return g_4d8eb4.active;
 }
@@ -129,10 +125,7 @@ void function_b2ea0(void)
 {
 	if (g_4d8eb4.active)
 	{
-		long last_query = (dword)g_4d8eb4.unknown01[3] |
-			((dword)g_4d8eb4.unknown01[4] << 8) |
-			((dword)g_4d8eb4.unknown01[5] << 16) |
-			((dword)g_4d8eb4.unknown01[6] << 24);
+		long last_query = *(long const *)&g_4d8eb4.unknown01[3];
 		if ((long)(search_time() - last_query) > 1500)
 		{
 			s_network_message_session_query query;
@@ -140,24 +133,26 @@ void function_b2ea0(void)
 			query.identifier = 2;
 			query.session_id = g_4d8eb4.session_id;
 			s_type_99af70 address;
+			address.address_length = 4;
 			address.ipv4_address = 0xffffffff;
 			address.port = 1001;
-			address.address_length = 4;
 			function_07b140(g_4d8eb0, (long)&address, 2, sizeof(query), &query);
 			long now = search_time();
-			g_4d8eb4.unknown01[3] = (byte)now;
-			g_4d8eb4.unknown01[4] = (byte)(now >> 8);
-			g_4d8eb4.unknown01[5] = (byte)(now >> 16);
-			g_4d8eb4.unknown01[6] = (byte)(now >> 24);
+			*(long *)&g_4d8eb4.unknown01[3] = now;
 		}
 		for (long i = 0; i < g_4d8ec4; i++)
 		{
 			byte *entry = (byte *)g_4d8ec8 + i * 0x784;
-			if (entry[0] && (long)(search_time() - *(long *)(entry + 4)) > 2000)
-			{
-				memset(entry, 0, 0x784);
-				g_4d8eb4.unknown01[0] = 1;
-			}
+			if (entry[0])
+            {
+                long previous_time = *(long *)(entry + 4);
+                long current_time = search_time();
+                if ((long)(current_time - previous_time) > 2000)
+                {
+                    memset(entry, 0, 0x784);
+                    g_4d8eb4.unknown01[0] = 1;
+                }
+            }
 		}
 	}
 }
@@ -169,8 +164,8 @@ void __stdcall function_0b2fc0(s_network_message_session_query const *message)
 	{
 		byte const *reply = (byte const *)message;
 		long free_index = NONE;
-		long replacement = NONE;
 		long match = NONE;
+		long replacement = NONE;
 		for (long i = 0; i < g_4d8ec4; i++)
 		{
 			byte *entry = (byte *)g_4d8ec8 + i * 0x784;
@@ -188,7 +183,7 @@ void __stdcall function_0b2fc0(s_network_message_session_query const *message)
 				*(short const *)(reply + 0xaa) < *(short *)(entry + 0x10e))
 				replacement = i;
 		}
-		long index = match != NONE ? match : free_index != NONE ? free_index : replacement;
+		long index = match != NONE ? match : (free_index != NONE ? free_index : (replacement != NONE ? replacement : NONE));
 		if (index != NONE)
 		{
 			byte *entry = (byte *)g_4d8ec8 + index * 0x784;
@@ -201,8 +196,8 @@ void __stdcall function_0b2fc0(s_network_message_session_query const *message)
 				g_4d8eb4.unknown01[0] = 1;
 			}
 			entry[0] = 1;
-			entry[0x44] = 1;
 			*(long *)(entry + 4) = search_time();
+			entry[0x44] = 1;
 		}
 	}
 }
@@ -217,7 +212,7 @@ extern long g_4d8f14;
 extern s_0b35e0_entry *g_4d8f18;
 
 bool function_b3610(void);
-void function_b3670(void);
+__declspec(noinline) void function_b3670(void);
 
 // @retail 0xb3610
 bool function_b3610(void)
@@ -283,12 +278,12 @@ struct s_qos_handle
 };
 
 struct s_online_match_session_info;
-void function_b3500(s_online_match_session_info const *record, s_0b35e0_entry *entry);
+void session_search_result_initialize(s_online_match_session_info const *record, s_0b35e0_entry *entry);
 void function_8fb30(long task_index, s_online_match_result *output, word *capacity);
 long online_task_poll(long task_index);
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 long qos_target_status(long handle, long index);
-bool function_7c530(byte const *data, long size, void *description);
+bool session_description_decode_buffer(byte const *data, long size, void *description);
 
 PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
 {
@@ -308,6 +303,9 @@ PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
 }
 
 // @retail 0xb3200
+// score 73 (was 73): the count, the loop index and the entry pointer take the
+// three frame slots in the other order, and retail reads the qos result fields
+// through the entry pointer instead of keeping the result in ebp
 void function_b3200(void)
 {
 	union
@@ -321,6 +319,7 @@ void function_b3200(void)
 		switch (online_task_poll(g_4d8ef0))
 		{
 		case 0:
+			break;
 		case 1:
 			break;
 		case 2:
@@ -330,7 +329,7 @@ void function_b3200(void)
 			memset(g_4d8efc, 0, g_4d8ef8 * 0x784);
 			long count = (word)capacity;
 			for (long i = 0; i < count; i++)
-				function_b3500((s_online_match_session_info const *)&buffer.results[i],
+				session_search_result_initialize((s_online_match_session_info const *)&buffer.results[i],
 					(s_0b35e0_entry *)((byte *)g_4d8efc + i * 0x784));
 			if (g_4d8ef4 != NONE)
 			{
@@ -360,8 +359,10 @@ void function_b3200(void)
 	}
 	if (g_4d8ef4 != NONE)
 	{
+		long count = 0;
 		s_qos_handle *lookup = search_qos_handle(g_4d8ef4);
-		long count = lookup ? lookup->qos->cxnqos : 0;
+		if (lookup)
+			count = lookup->qos->cxnqos;
 		for (long i = 0; i < count; i++)
 		{
 			long status = qos_target_status(g_4d8ef4, i);
@@ -369,14 +370,12 @@ void function_b3200(void)
 			if (status != *(long *)(entry + 0x48))
 			{
 				*(long *)(entry + 0x48) = status;
-				if (status == 4)
-					entry[0x44] = true;
-				else if (status == 2 || status == 5)
+				if (status == 2 || status == 5)
 				{
 					entry[0x44] = true;
 					s_qos_result *result = (s_qos_result *)(entry + 0x4c);
 					entry[0x45] = qos_target_result(g_4d8ef4, result, i);
-					if (result->data && function_7c530(result->data, result->data_size, description))
+					if (entry[0x45] && result->data_size > 0 && session_description_decode_buffer(result->data, result->data_size, description))
 					{
 						memcpy(entry + 0x70, description, sizeof(description));
 						entry[0x6c] = true;
@@ -384,6 +383,8 @@ void function_b3200(void)
 					result->data_size = 0;
 					result->data = NULL;
 				}
+				else if (status == 4)
+					entry[0x44] = true;
 			}
 		}
 		lookup = search_qos_handle(g_4d8ef4);

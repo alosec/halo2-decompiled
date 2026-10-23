@@ -26,7 +26,6 @@ struct s_1d5bf0
 bool function_1d5bf0(s_havok_component *arg_0, s_physics_model_owner *arg_1, char const *arg_2,
  bool arg_3, long arg_4, long *arg_5, dword *arg_6, s_physics_body_groups *arg_7, s_1d5bf0 *arg_8)
 {
- (void)&arg_0; (void)&arg_1; (void)&arg_3; (void)&arg_4; (void)&arg_5; (void)&arg_6; (void)&arg_7; (void)&arg_8;
  bool local_0 = false;
  char local_1[64];
  long local_2 = 0;
@@ -38,8 +37,8 @@ bool function_1d5bf0(s_havok_component *arg_0, s_physics_model_owner *arg_1, cha
   arg_7, arg_4, arg_6, &local_6, &local_7, &local_8, &local_3, arg_5, &local_4, &local_5);
  if (local_9)
  {
-  long local_21 = local_1[0];
   byte *local_10 = *(byte **)((byte *)arg_1 + 0x48);
+  long local_21 = local_1[0];
   byte *local_11 = *(byte **)(local_10 + 0x3c) + local_21 * 0x90;
   long local_12 = local_3 ? 7 : arg_2[local_21];
   long local_13 = function_1d69d0(arg_0, local_12, arg_1, *arg_5, local_21);
@@ -68,7 +67,7 @@ bool function_1d5bf0(s_havok_component *arg_0, s_physics_model_owner *arg_1, cha
   arg_8->field_48 = local_4;
   arg_8->field_44 = local_2;
   local_0 = true;
-  if (local_5) (*(s_havok_component *const *)&arg_0)->unknown04 |= 0x4000;
+  if (local_5) arg_0->unknown04 |= 0x4000;
  }
  return local_0;
 }
@@ -127,11 +126,13 @@ PRIVATE __forceinline bool function_1d6d04(long arg_0)
  return arg_0 == 4 || arg_0 == 5;
 }
 
+// score 49 (was 49): the arguments of the outgoing call are set up in another
+// order: retail pushes the address of the local, then 0, then the float, while
+// ours pushes 0 first and reloads the float out of the stack.
 // @retail 0x1d6d00
 void __stdcall function_1d6d00(s_havok_component *arg_0, void *arg_1, byte *arg_2,
- long arg_3, long arg_4, long arg_5, bool arg_6)
+ long arg_3, long arg_4, bool arg_5, bool arg_6)
 {
- (void)&arg_0; (void)&arg_1; (void)&arg_2; (void)&arg_3; (void)&arg_4; (void)&arg_5; (void)&arg_6;
  if (!arg_6) arg_0->unknown04 |= 0x40000;
  else arg_0->unknown04 &= ~0x40000;
  dword local_0 = *(dword *)arg_1;

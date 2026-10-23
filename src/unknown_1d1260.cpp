@@ -12,7 +12,7 @@ public:
 class c_contact_query_world
 {
 public:
- void add(void *volume);
+ void *add(void *volume);
  void remove(void *volume);
 };
 struct s_1d1261
@@ -69,10 +69,10 @@ void function_1d1260(s_havok_component *arg_0)
  {
   hkRigidBody *local_2 = arg_0->rigid_bodies.data[local_1].rigid_body;
   ((c_1d1261 *)local_2)->function_30bd10(g_51eca8);
-  if ((arg_0->unknown04 & 1) && !local_2->m_fixed && local_2->m_motion->getType() != 6)
-   ((hkEntityApi *)local_2)->removeEntityListener((hkEntityListener *)(g_51eca8 ? g_51eca8 + 4 : NULL));
+  if ((arg_0->unknown04 & 1) && !local_2->m_fixed && local_2->m_motion->kind_code() != 6)
+   ((c_physics_body_island_view *)local_2)->entity_observer_detach((c_havok_entity_observer *)(g_51eca8 ? g_51eca8 + 4 : NULL));
   --g_47f050;
-  g_51e9a4->removeEntity((hkEntity *)local_2);
+  g_51e9a4->entity_world_remove((hkEntity *)local_2);
   function_278f00();
  }
  if (arg_0->unknown94)
@@ -106,18 +106,9 @@ void function_1d1260(s_havok_component *arg_0)
  }
  if (arg_0->unknown04 & 1)
  {
-  for (;;)
-  {
-   long local_13 = *(volatile long *)&arg_0->unknown20;
-   if (local_13 == NONE)
-    break;
-   s_1d1263 *local_12 = &((s_1d1263 *)g_51ec00->data)[local_13 & 0xffff];
-   long local_14 = *(volatile short *)&local_12->field_2;
-   if (!local_14)
-    break;
-   function_2266a0(local_12->field_4);
-  }
-  if (arg_0->unknown88.capacity_and_flags >= 0)
+  while ((arg_0->unknown20 == NONE ? 0 : ((s_1d1263 *)g_51ec00->data)[arg_0->unknown20 & 0xffff].field_2) != 0)
+   function_2266a0(((s_1d1263 *)g_51ec00->data)[arg_0->unknown20 & 0xffff].field_4);
+  if (!(arg_0->unknown88.capacity_and_flags & 0x80000000))
    g_480118->allocate((long)arg_0->unknown88.data, (arg_0->unknown88.capacity_and_flags & 0x7fffffff) * 0x48, 0x12);
   arg_0->unknown88.data = NULL;
   arg_0->unknown88.size = 0;

@@ -43,7 +43,7 @@ struct s_cluster_visibility_11c010
 };
 
 // @retail 0x11c010
-long function_11c010(short row, short column)
+bool function_11c010(short row, short column)
 {
 	s_cluster_visibility_11c010 *bsp = (s_cluster_visibility_11c010 *)g_4e0348;
 	return (bsp->bits[((bsp->cluster_count + 31) >> 5) * row + (column >> 5)] & (1 << (column & 31))) != 0;

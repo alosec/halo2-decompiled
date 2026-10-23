@@ -44,11 +44,11 @@ def main():
     ):
         assert imports[symbol]["category"] == "host_abi"
     assert "?function_18f1c0@@YAXJ@Z" not in imports
-    assert "?function_18f5e3@@YAXXZ" not in imports
+    assert "?player_slots_refresh_profile_indices@@YAXXZ" not in imports
     assert "?function_18f62b@@YAXXZ" not in imports
     assert "?function_6cb60@@YAXXZ" not in imports
-    assert "?function_215790@@YAXXZ" not in imports
-    assert "?function_18fb34@@YAXJPAUs_player_profile_settings@@J@Z" not in imports
+    assert "?saved_game_storage_update@@YAXXZ" not in imports
+    assert "?player_slot_set_profile@@YAXJPAUs_player_profile_settings@@J@Z" not in imports
     assert "?function_215367@@YAXJJPAXJ@Z" not in imports
     assert "?function_2153dd@@YAXJJPAUs_player_profile_settings@@J@Z" not in imports
     assert "?function_2157c0@@YAXJ@Z" not in imports
@@ -83,7 +83,7 @@ def main():
         assert symbol not in imports
     assert "?function_22a664@@YAXPBUs_widget_quad_2b11@@PBUs_float_rect@@JJJ@Z" not in imports
     for symbol in (
-        "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?press_start_screen_open@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_25240c@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_252433@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_25245a@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
@@ -91,13 +91,13 @@ def main():
         "?function_2524a8@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
     ):
         assert symbol not in imports
-    assert "?function_223976@@YA_NXZ" not in imports
-    assert "?function_223a21@@YAXXZ" not in imports
+    assert "?attract_movie_due@@YA_NXZ" not in imports
+    assert "?attract_mode_play_movie@@YAXXZ" not in imports
     for symbol in (
         "?function_230616@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_230691@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_2310b7@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
-        "?function_231995@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
+        "?online_y_menu_open@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_231db5@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_2320c4@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",
         "?function_2323c3@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z",

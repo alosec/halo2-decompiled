@@ -15,11 +15,10 @@ real function_30bf0(vector3f *arg_0);
 real magnitude3d(vector3f const *arg_0);
 bool __stdcall function_a75d0(vector3f *arg_0, real arg_1);
 quaternionf *function_141f60(matrix3x3 const *arg_0, quaternionf *arg_1);
-matrix3x3 *function_142eb0(matrix3x3 const *arg_0, matrix3x3 const *arg_1, matrix3x3 *arg_2);
+matrix3x3 *function_142eb0(matrix3x3 const *right, matrix3x3 const *left, matrix3x3 *out);
 void function_11d790(quaternionf const *arg_0, vector3f *arg_1, real *arg_2);
-void havok_component_rigid_body_matrix_get(long arg_0, s_havok_component *arg_1, transform4x3f *arg_2);
-void havok_component_rigid_body_angular_velocity_get(long arg_0, s_havok_component *arg_1, vector3f *arg_2);
-void havok_component_rigid_body_linear_velocity_get(long arg_0, s_havok_component *arg_1, vector3f *arg_2);
+void havok_component_rigid_body_angular_velocity_get(s_havok_component *arg_1, long arg_0, vector3f *arg_2);
+void havok_component_rigid_body_linear_velocity_get(s_havok_component *arg_1, long arg_0, vector3f *arg_2);
 real havok_component_rigid_body_mass_get(long arg_0, s_havok_component *arg_1);
 void havok_component_rigid_body_linear_velocity_change(long arg_0, s_havok_component *arg_1, vector3f const *arg_2);
 void havok_component_rigid_body_angular_velocity_set(long arg_0, s_havok_component *arg_1, vector3f const *arg_2);
@@ -110,8 +109,6 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {
- (void)&arg_0;
- (void)&arg_1;
  if (!(arg_0->unknown04 & 0x104000)) return;
  bool local_0 = !(fabs(arg_1) < 0.0001f);
  bool local_1 = local_0 && !(bool)((arg_0->unknown04 >> 13) & 1);
@@ -145,8 +142,8 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
    bool local_17 = (bool)((local_12->field_0 >> 2) & 1);
    bool local_18 = (bool)((local_12->field_0 >> 1) & 1);
    hkRigidBody *local_19 = arg_0->rigid_bodies.data[local_10->field_3].rigid_body;
-   bool local_20 = (!local_19->m_fixed && local_19->isActive().m_bool) || local_1;
-   bool local_21 = local_14->rigid_bodies.data[local_15].rigid_body->isActive().m_bool || local_20;
+   bool local_20 = (!local_19->m_fixed && local_19->body_is_simulating().m_bool) || local_1;
+   bool local_21 = local_14->rigid_bodies.data[local_15].rigid_body->body_is_simulating().m_bool || local_20;
    bool local_22 = (bool)((local_12->field_0 >> 25) & 1);
    bool local_23 = (bool)((local_12->field_0 >> 26) & 1);
    s_object_marker local_24;
@@ -160,14 +157,11 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
    else if (local_27 & 0x1000) function_119250(local_14->object_index);
    local_15 = local_10->field_1;
    point3f const *local_76 = (point3f const *)((byte *)local_14->rigid_bodies.data[local_15].rigid_body->m_motion + 0x70);
-   point3f local_28;
-   local_28.x = local_76->x;
-   local_28.y = local_76->y;
-   local_28.z = local_76->z;
+   point3f local_28 = *local_76;
    vector3f local_29;
    vector3f local_30;
-   havok_component_rigid_body_angular_velocity_get(local_15, local_14, &local_29);
-   havok_component_rigid_body_linear_velocity_get(local_15, local_14, &local_30);
+   havok_component_rigid_body_angular_velocity_get(local_14, local_15, &local_29);
+   havok_component_rigid_body_linear_velocity_get(local_14, local_15, &local_30);
    if (local_12->field_20 != 0.0f && local_12->field_24 != 0.0f)
    {
     vector3f local_75;
@@ -276,11 +270,11 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
     if (local_12->field_58 != 0.0f && local_12->field_5c != 0.0f)
     {
      transform4x3f local_60;
-     havok_component_rigid_body_matrix_get(local_10->field_1, local_14, &local_60);
+     local_14->rigid_body_matrix_get(local_10->field_1, &local_60);
      function_142b80(&local_60.rotation, &local_60.rotation);
      matrix3x3 local_61;
      quaternionf local_62;
-     function_141f60(function_142eb0(&local_24.matrix.rotation, &local_60.rotation, &local_61), &local_62);
+     function_141f60(function_142eb0(&local_60.rotation, &local_24.matrix.rotation, &local_61), &local_62);
      vector3f local_63;
      real local_64;
      function_11d790(&local_62, &local_63, &local_64);

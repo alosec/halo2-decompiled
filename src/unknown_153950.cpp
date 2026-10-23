@@ -1,4 +1,5 @@
 // @flags /O2 /Ob1 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_153950.CPP: the game speed (time dilation and camera shake) slots */
 
 #include "unknown_11c920.h"
@@ -21,6 +22,15 @@ short g_468cec[7] = { 0, 1, 2, 3, 4, 5, 6 };
 real function_17ca10(real x, short curve);
 real function_30bf0(vector3f *v);
 vector3f *random_unit_vector(vector3f *result, dword *seed);
+
+static __forceinline bool local_player_present(long index)
+{
+	bool result = false;
+
+	if (index != NONE)
+		result = g_4e8c20->entries[index] != NONE;
+	return result;
+}
 
 // @retail 0x153950
 void function_153950(void)
@@ -49,10 +59,9 @@ void function_153950(void)
 
 	for (index = 0; index < 4; index++)
 	{
-		s_speed_slot *slot = speed->slots + index;
-
-		if (index != NONE && g_4e8c20->entries[index] != NONE)
+		if (local_player_present(index))
 		{
+			s_speed_slot *slot = speed->slots + index;
 			real quarter_second = (real)g_510c54->field_2_3 * 0.25f;
 			long rounded;
 			long decay;
@@ -70,8 +79,7 @@ void function_153950(void)
 			{
 				if (slot->decay[i] > 0)
 				{
-					long value = slot->decay[i] - decay;
-					slot->decay[i] = value < 0 ? 0 : value;
+					slot->decay[i] = (byte)(slot->decay[i] - decay < 0 ? 0 : slot->decay[i] - decay);
 				}
 				i++;
 			}
@@ -110,7 +118,7 @@ void function_153950(void)
 		{
 			long i;
 
-			memset(slot, 0, sizeof(s_speed_slot));
+			memset(&speed->slots[index], 0, sizeof(s_speed_slot));
 			memset(&g_502120->entries[index], 0, sizeof(s_speed_table_entry));
 			for (i = 0; i < 8; i++)
 			{
@@ -179,13 +187,14 @@ void function_153bd0(long index, real scale)
 		values.value[2] = scale * 0.01;
 		values.value[0] = 1.0f;
 		values.value[5] = 1.0f;
-		request.shake = *(s_speed_shake const *)g_4686cc;
-		request.duration = 1.0f;
-		g_502120->entries[index].value80 = scale;
-		g_502120->entries[index].value84 = scale;
 		request.type = 1;
 		request.priority = 2;
+		request.duration = 1.0f;
 		request.amount = scale;
+		request.shake = *(s_speed_shake const *)g_4686cc;
+		s_speed_table_entry *entry = &g_502120->entries[index];
+		entry->value80 = scale;
+		entry->value84 = scale;
 		function_154d70(&request, slot, scale);
 		function_155240(&values, slot, scale);
 	}
@@ -206,7 +215,7 @@ void function_153cd0(long player_index)
 }
 
 // @retail 0x154220
-void function_154220(short seconds, real x, real y, real z)
+void function_154220(real x, short seconds, real y, real z)
 {
 	s_game_time_globals *time = g_510c54;
 	s_game_speed *speed;
@@ -335,18 +344,28 @@ void function_1544e0(transform4x3f *matrix, real distance, real angle)
 
 		real s = (real)sin(angle);
 		real c = (real)cos(angle);
-		real t = 1.0f - c;
-
+		real ii = axis.i * axis.i;
+		real jj = axis.j * axis.j;
+		real kk = axis.k * axis.k;
+		vector3f sine_axis;
+		sine_axis.i = axis.i * s;
+		sine_axis.j = axis.j * s;
+		sine_axis.k = axis.k * s;
 		matrix->scale = 1.0f;
-		matrix->forward.i = (1.0f - axis.i * axis.i) * c + axis.i * axis.i;
-		matrix->forward.j = t * axis.i * axis.j + axis.k * s;
-		matrix->forward.k = t * axis.k * axis.i - axis.j * s;
-		matrix->left.i = t * axis.i * axis.j - axis.k * s;
-		matrix->left.j = (1.0f - axis.j * axis.j) * c + axis.j * axis.j;
-		matrix->left.k = t * axis.k * axis.j + axis.i * s;
-		matrix->up.i = t * axis.k * axis.i + axis.j * s;
-		matrix->up.j = t * axis.k * axis.j - axis.i * s;
-		matrix->up.k = (1.0f - axis.k * axis.k) * c + axis.k * axis.k;
+		matrix->forward.i = (1.0f - ii) * c + ii;
+		real t = 1.0f - c;
+		real tij = (t * axis.i) * axis.j;
+		matrix->left.i = tij - sine_axis.k;
+		matrix->forward.j = tij + sine_axis.k;
+		matrix->left.j = (1.0f - jj) * c + jj;
+		real tk = t * axis.k;
+		real tki = tk * axis.i;
+		matrix->up.i = tki + sine_axis.j;
+		matrix->forward.k = tki - sine_axis.j;
+		matrix->up.k = (1.0f - kk) * c + kk;
+		real tkj = tk * axis.j;
+		matrix->up.j = tkj - sine_axis.i;
+		matrix->left.k = tkj + sine_axis.i;
 		matrix->position.z = 0.0f;
 		matrix->position.y = 0.0f;
 		matrix->position.x = 0.0f;
@@ -383,12 +402,12 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 }
 
 // @retail 0x154df0
-void function_154df0(vector3f *direction, s_speed_bounds *bounds, long index, s_speed_slot *slot, real priority)
+void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vector3f *direction, real priority)
 {
-	s_game_time_globals *time = g_510c54;
 	real timer = (real)slot->timer80;
 
-	if (bounds->duration > timer || priority > slot->priority9c || (priority >= slot->priority9c && bounds->duration > time->rate * timer))
+	bool update = bounds->duration > timer || priority > slot->priority9c || (priority >= slot->priority9c && bounds->duration > g_510c54->rate * timer);
+	if (update)
 	{
 		vector3f w;
 		vector3f v;
@@ -398,15 +417,15 @@ void function_154df0(vector3f *direction, s_speed_bounds *bounds, long index, s_
 		function_30bf0(&v);
 
 		s_unknown_185ab0_entry *view = g_4ed284->entries + index;
-		real yaw = view->yaw;
-		real pitch = view->pitch;
+		s_view_angles angles = view->angles;
 
-		w.i = (real)(cos(yaw) * cos(pitch));
-		w.j = (real)(sin(yaw) * cos(pitch));
+		double horizontal = cos(angles.pitch);
+		w.i = (real)(cos(angles.yaw) * horizontal);
+		w.j = (real)(sin(angles.yaw) * horizontal);
 		w.k = 0.0f;
 		function_30bf0(&w);
 
-		if (fabs(v.j * v.j + v.i * v.i + v.k * v.k - 1.0f) < 0.0001f && fabs(w.j * w.j + w.i * w.i + w.k * w.k - 1.0f) < 0.0001f)
+		if (fabs(v.i * v.i + v.j * v.j + v.k * v.k - 1.0f) < 0.0001f && fabs(w.i * w.i + w.j * w.j + w.k * w.k - 1.0f) < 0.0001f)
 		{
 			real dot = v.j * w.j + w.i * v.i;
 			real angle;
@@ -425,22 +444,21 @@ void function_154df0(vector3f *direction, s_speed_bounds *bounds, long index, s_
 
 			slot->bounds = *bounds;
 			slot->priority9c = priority;
-			slot->bounds.duration = (real)time->field_2_3 * slot->bounds.duration;
+			slot->bounds.duration = (real)g_510c54->field_2_3 * slot->bounds.duration;
 			slot->timer80 = (short)slot->bounds.duration;
 			slot->forward.k = 0.0f;
 			slot->forward.i = (real)cos(angle);
 			slot->forward.j = (real)sin(angle);
 
-			s_random_globals *random = g_4e7408;
-			real scale = function_259d0(&random->seed, __FILE__, __LINE__, slot->bounds.lower, slot->bounds.upper);
-			real rotation = function_x82e52f(&random->seed, __FILE__, __LINE__) * 6.2831855f;
+			real scale = function_259d0(&g_4e7408->seed, __FILE__, __LINE__, slot->bounds.lower, slot->bounds.upper);
+			real rotation = function_259d0(&g_4e7408->seed, __FILE__, __LINE__, 0.0f, 6.2831855f);
 			vector3f *up = g_4687b0;
 			vector3f *e = &slot->forward;
 			vector3f *u = &slot->vector;
 
-			real ci = up->k * e->j - up->j * e->k;
-			real cj = up->i * e->k - up->k * e->i;
 			real ck = e->i * up->j - e->j * up->i;
+			real cj = up->i * e->k - up->k * e->i;
+			real ci = up->k * e->j - up->j * e->k;
 			u->i = ci;
 			u->j = cj;
 			u->k = ck;
@@ -449,13 +467,14 @@ void function_154df0(vector3f *direction, s_speed_bounds *bounds, long index, s_
 			real s = (real)sin(rotation);
 			real c = (real)cos(rotation);
 			real t = (u->k * e->k + u->j * e->j + e->i * u->i) * (1.0f - c);
-			real x = u->i;
-			real y = u->j;
-			real z = u->k;
+			vector3f axis_cross;
+			axis_cross.j = u->k * e->i - u->i * e->k;
+			axis_cross.k = u->i * e->j - u->j * e->i;
+			axis_cross.i = u->j * e->k - u->k * e->j;
 
-			u->i = e->i * t + x * c - (y * e->k - z * e->j) * s;
-			u->j = e->j * t + y * c - (z * e->i - x * e->k) * s;
-			u->k = e->k * t + z * c - (x * e->j - y * e->i) * s;
+			u->i = e->i * t + u->i * c - axis_cross.i * s;
+			u->j = e->j * t + u->j * c - axis_cross.j * s;
+			u->k = e->k * t + u->k * c - axis_cross.k * s;
 			u->i = u->i * scale;
 			u->j = u->j * scale;
 			u->k = u->k * scale;
@@ -468,13 +487,10 @@ void function_154df0(vector3f *direction, s_speed_bounds *bounds, long index, s_
 void function_155240(s_speed_values *values, s_speed_slot *slot, real priority)
 {
 	s_game_time_globals *time = g_510c54;
-	real rate = time->rate;
-	real timer = (real)slot->timer82;
-	real t = rate * timer;
 	real scaled;
 	long ticks;
 
-	if (values->value[0] > t || priority > slot->priority98 || (priority >= slot->priority98 && values->value[0] > t))
+	if (values->value[0] > time->rate * (real)slot->timer82 || priority > slot->priority98 || (priority >= slot->priority98 && values->value[0] > time->rate * (real)slot->timer82))
 	{
 		slot->values50 = *values;
 		slot->priority98 = priority;
@@ -493,7 +509,7 @@ struct s_object;
 s_object *function_badc0(long index, dword mask);
 point3f *function_b9dd0(long index, point3f *point);
 void function_caf60(long index, point3f *point);
-s_player_state *function_16f3a0(long index);
+__declspec(noinline) s_player_state *function_16f3a0(long index);
 long function_189fe0(s_sound_request const *request, long tag_index);
 void rumble_player_play_effect(long player_index, long definition_index, long effect_index, real scale);
 void function_225df0(long tag_index, long entry_index);
@@ -518,17 +534,26 @@ struct s_camera_effect_tag_153d10
     long sound_index;
 };
 
+struct s_player_axes_153d10
+{
+	byte unknown00[0x20];
+	vector3f forward;
+	vector3f up;
+};
+
+// score 2 (was 2): one product is built with its operands in the other order: retail multiplies up.k by
+// forward.i, ours multiplies forward.i by up.k. Everything else is identical.
 // @retail 0x153d10
-void __stdcall function_153d10(short user_index, long tag_index, void *owner, void *direction, long unused, real scale, real priority, long directional)
+void __stdcall function_153d10(long user_index, long tag_index, void *owner, void *direction, long unused, real scale, real priority, bool directional)
 {
     long local_index = user_index;
     if (local_index == NONE)
         return;
     s_camera_effect_tag_153d10 *definition = (s_camera_effect_tag_153d10 *)g_4e3b44[tag_index & 0xffff].bytes;
     s_speed_slot *slot = &g_510c5c->slots[local_index];
-    long player_index = g_4e8c20->entries[local_index];
-    if (player_index != NONE)
+    if (local_player_present(local_index))
     {
+        long player_index = g_4e8c20->entries[local_index];
         long unit_index = *(long *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x2c);
         if (unit_index != NONE)
         {
@@ -537,20 +562,21 @@ void __stdcall function_153d10(short user_index, long tag_index, void *owner, vo
             for (long i = 0; i < definition->count; i++)
             {
                 s_camera_effect_153d10 *effect = &definition->effects[i];
-                if (effect->type != (active ? 1 : 0))
+                if ((active && effect->type != 1) || (!active && effect->type != 0))
                 {
                     if (effect->request.duration > 0.05f && effect->request.amount > 0.05f)
                     {
                         s_speed_request request = effect->request;
-                        request.shake.scale = 1.0f;
                         if (active)
                         {
+                            request.shake.scale = 1.0f;
                             request.shake.vector.i = 0.0f;
                             request.shake.vector.j = 0.6f;
                             request.shake.vector.k = 0.8f;
                         }
                         else
                         {
+                            request.shake.scale = 1.0f;
                             request.shake.vector.i = 1.0f;
                             request.shake.vector.j = 0.0f;
                             request.shake.vector.k = 0.0f;
@@ -559,16 +585,18 @@ void __stdcall function_153d10(short user_index, long tag_index, void *owner, vo
                         {
                             request.duration = 0.8f;
                             request.amount = 0.6f;
+                            request.priority = 1;
+                            request.type = 1;
                             request.curve = 1;
                         }
                         else
                         {
                             request.duration = active ? 0.2f : 0.3f;
                             request.amount = 0.3f;
+                            request.priority = 1;
+                            request.type = 1;
                             request.curve = 0;
                         }
-                        request.priority = 1;
-                        request.type = 1;
                         function_154d70(&request, slot, function_17ca10(scale, 2));
                     }
                     rumble_player_play_effect(local_index, tag_index, i, priority);
@@ -578,7 +606,7 @@ void __stdcall function_153d10(short user_index, long tag_index, void *owner, vo
             }
         }
     }
-    function_154df0((vector3f *)direction, &definition->bounds, local_index, slot, priority);
+    function_154df0(local_index, &definition->bounds, slot, (vector3f *)direction, priority);
     function_155240(&definition->values, slot, priority);
     if (definition->sound_index != NONE)
     {
@@ -602,10 +630,16 @@ void __stdcall function_153d10(short user_index, long tag_index, void *owner, vo
             slot->decay[2] = 0xff;
             return;
         }
-        long unit_index = NONE;
-        long player = g_4e8c20->entries[local_index];
-        if (player != NONE)
+        long unit_index;
+        if (local_player_present(local_index))
+        {
+            long player = g_4e8c20->entries[local_index];
             unit_index = *(long *)(g_4e8c24->data + (player & 0xffff) * 0x21c + 0x2c);
+        }
+        else
+        {
+            unit_index = NONE;
+        }
         if (function_badc0(unit_index, 3) && function_badc0(((long *)owner)[1], (dword)NONE))
         {
             s_player_state *state = function_16f3a0(local_index);
@@ -614,13 +648,16 @@ void __stdcall function_153d10(short user_index, long tag_index, void *owner, vo
                 point3f origin, target;
                 function_caf60(unit_index, &origin);
                 function_b9dd0(((long *)owner)[1], &target);
-                vector3f *forward = (vector3f *)((byte *)state + 0x20);
-                vector3f *up = (vector3f *)((byte *)state + 0x2c);
+                s_player_axes_153d10 *axes = (s_player_axes_153d10 *)state;
+                vector3f const *forward = &axes->forward;
+                vector3f const *up = &axes->up;
                 vector3f delta = { target.x - origin.x, target.y - origin.y, target.z - origin.z };
+                vector3f cross;
                 vector3f relative;
-                relative.i = (forward->k * up->i - up->k * forward->i) * delta.j
-                    + (forward->i * up->j - forward->j * up->i) * delta.k
-                    + (forward->j * up->k - forward->k * up->j) * delta.i;
+                cross.i = axes->forward.j * axes->up.k - axes->forward.k * axes->up.j;
+                cross.j = axes->forward.k * axes->up.i - axes->up.k * axes->forward.i;
+                cross.k = axes->forward.i * axes->up.j - axes->forward.j * axes->up.i;
+                relative.i = cross.k * delta.k + cross.j * delta.j + cross.i * delta.i;
                 relative.j = forward->k * delta.k + forward->j * delta.j + forward->i * delta.i;
                 relative.k = up->k * delta.k + up->j * delta.j + up->i * delta.i;
                 *(real *)((byte *)slot + 0x8c) = relative.i;
@@ -652,6 +689,27 @@ void function_141ce0(real a, real b, real c, transform4x3f *out);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 real function_17c900(short curve, real input);
 
+/* a random real in [0, 1] from the seed; the cast keeps its 1/65535 scale
+   apart from the caller's constants, as retail has it */
+static inline real random_real_1546f0(dword *seed)
+{
+	return (real)(_random(seed, 0, 0) * (1.f / 65535.f));
+}
+
+static inline void point_set_1546f0(point3f *point, real x, real y, real z)
+{
+	point->x = x;
+	point->y = y;
+	point->z = z;
+}
+
+static inline void cross_product3d_1546f0(vector3f const *a, vector3f const *b, vector3f *result)
+{
+	result->i = a->j * b->k - a->k * b->j;
+	result->j = a->k * b->i - a->i * b->k;
+	result->k = a->i * b->j - a->j * b->i;
+}
+
 // @retail 0x1546f0
 void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
 {
@@ -660,8 +718,8 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
     s_game_speed *speed = g_510c5c;
     if (speed->flags & 1)
     {
-        real amount = *(real *)&speed->value20;
         transform4x3f transform = *g_4687d0;
+        real amount = *(real *)&speed->value20;
         if (speed->timer24 > 0)
         {
             if (speed->flags & 2)
@@ -673,12 +731,13 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
         s_random_globals *random = g_4e7408;
         g_502120->value228 = amount;
         function_141ce0(
-            (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->angles[0] * amount,
-            (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->angles[1] * amount,
-            (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->angles[2] * amount, &transform);
-        transform.position.x = (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->point.x * amount;
-        transform.position.y = (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->point.y * amount;
-        transform.position.z = (function_x82e52f(&random->seed, 0, 0) * 2.0f - 1.0f) * speed->point.z * amount;
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[0] * amount,
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[1] * amount,
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[2] * amount, &transform);
+        point_set_1546f0(&transform.position,
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.y * amount,
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.x * amount,
+            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.z * amount);
         function_142a60(matrix, &transform, matrix);
     }
     else
@@ -690,33 +749,43 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
             if (slot->flags & 2)
                 amount = 1.0f;
             else
-                amount = function_17ca10(1.0f - (slot->bounds.duration - (real)slot->timer80) / slot->bounds.duration,
-                    *(short *)&slot->bounds.unknown04[0]) * slot->priority9c;
+            {
+                real duration = slot->bounds.duration;
+                real elapsed = (duration - (real)slot->timer80) / duration;
+                real priority = slot->priority9c;
+                amount = priority * function_17ca10(1.0f - elapsed, *(short *)&slot->bounds.unknown04[0]);
+            }
             real angle = amount * slot->bounds.unknown04[1];
-            vector3f axis;
-            axis.i = g_4687b0->j * slot->forward.k - g_4687b0->k * slot->forward.j;
-            axis.j = slot->forward.i * g_4687b0->k - slot->forward.k * g_4687b0->i;
-            axis.k = g_4687b0->i * slot->forward.j - slot->forward.i * g_4687b0->j;
             real sine = (real)sin(angle), cosine = (real)cos(angle);
+            vector3f axis;
+            cross_product3d_1546f0(g_4687b0, &slot->forward, &axis);
             real x = axis.i, y = axis.j, z = axis.k;
+            real yy = y * y, zz = z * z, xx = x * x;
             transform4x3f transform;
             transform.scale = 1.0f;
-            transform.forward.i = x * x + (1.0f - x * x) * cosine;
-            transform.left.j = y * y + (1.0f - y * y) * cosine;
-            transform.up.k = z * z + (1.0f - z * z) * cosine;
+            real zs = z * sine;
+            real xs = x * sine;
+            real ys = y * sine;
+            transform.forward.i = (1.0f - xx) * cosine + xx;
             real xy = (1.0f - cosine) * y * x;
+            transform.left.i = xy - zs;
+            transform.forward.j = xy + zs;
+            transform.left.j = (1.0f - yy) * cosine + yy;
             real xz = (1.0f - cosine) * z * x;
+            transform.up.i = xz + ys;
+            transform.forward.k = xz - ys;
+            transform.up.k = (1.0f - zz) * cosine + zz;
             real yz = (1.0f - cosine) * z * y;
-            transform.left.i = xy - z * sine;
-            transform.forward.j = xy + z * sine;
-            transform.up.i = xz + y * sine;
-            transform.forward.k = xz - y * sine;
-            transform.up.j = yz - x * sine;
-            transform.left.k = yz + x * sine;
+            transform.up.j = yz - xs;
+            transform.left.k = yz + xs;
             real distance = slot->bounds.unknown04[2] * amount;
-            transform.position.x = slot->vector.i * amount + slot->forward.i * distance;
-            transform.position.y = slot->vector.j * amount + slot->forward.j * distance;
-            transform.position.z = slot->vector.k * amount + slot->forward.k * distance;
+            vector3f offset;
+            offset.i = slot->forward.i * distance;
+            offset.j = slot->forward.j * distance;
+            offset.k = slot->forward.k * distance;
+            transform.position.x = slot->vector.i * amount + offset.i;
+            transform.position.y = slot->vector.j * amount + offset.j;
+            transform.position.z = slot->vector.k * amount + offset.k;
             function_142a60(matrix, &transform, matrix);
         }
         if (slot->timer82 > 0 || (slot->flags & 4))
@@ -727,8 +796,12 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
             if (slot->flags & 4)
                 amount = 1.0f;
             else
-                amount = function_17ca10(1.0f - (slot->values50.value[0] - (real)slot->timer82 * time->rate) / slot->values50.value[0],
-                    *(short *)&slot->values50.value[1]) * slot->priority98;
+            {
+                real duration = slot->values50.value[0];
+                real elapsed = (duration - (real)slot->timer82 * time->rate) / duration;
+                real priority = slot->priority98;
+                amount = priority * function_17ca10(1.0f - elapsed, *(short *)&slot->values50.value[1]);
+            }
             real elapsed = (slot->values50.value[0] - (real)slot->timer82 * time->rate) / slot->values50.value[5];
             real curve = function_17c900(*(short *)&slot->values50.value[4], elapsed);
             real scale = (slot->values50.value[6] * curve + (1.0f - slot->values50.value[6])) * amount;

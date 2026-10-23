@@ -1,4 +1,5 @@
 // @flags /O2 /Gr
+#include "pool_storage.h"
 /* UNKNOWN_11CC10.CPP: a lifecycle callback (entry 2, field_c_5) */
 
 #include "unknown_11c920.h"
@@ -6,12 +7,8 @@
 #include "data_array.h"
 #include "globals.h"
 
-bool g_5107fc;
 
 /* the static memory pool (defined with the sound code, unknown_221490.cpp) */
-extern dword g_510800_pool_base;
-extern long g_510804_pool_size;
-extern dword g_510808_pool_checksum;
 
 // @retail 0x11cc10
 void function_11cc10(void)
@@ -31,3 +28,5 @@ s_record_pool *function_11cc20(long maximum_count, const char *name, long size)
 	function_16b5f0((s_record_pool *)memory, name, maximum_count, size, 0, g_46875c);
 	return (s_record_pool *)memory;
 }
+
+s_pool_storage g_pool_storage;

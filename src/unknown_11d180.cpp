@@ -14,18 +14,24 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 
 // @retail 0x11d180
 void function_11d180(
-	vector3f *left,
 	vector3f const *in,
-	vector3f *out,
 	vector3f const *up,
-	vector3f *forward)
+	vector3f *forward,
+	vector3f *left,
+	vector3f *out)
 {
 	*forward = *in;
 	if (function_30bf0(forward) == 0.f)
 		*forward = *g_4687a8;
-	left->i = up->j * forward->k - up->k * forward->j;
-	left->j = forward->i * up->k - up->i * forward->k;
-	left->k = up->i * forward->j - up->j * forward->i;
+	{
+		real local_0 = up->i * forward->j - up->j * forward->i;
+		real local_3 = *(real const volatile *)&up->i * forward->k;
+		real local_1 = *(real const volatile *)&forward->i * up->k - local_3;
+		real local_2 = up->j * forward->k - up->k * forward->j;
+		left->i = local_2;
+		left->j = local_1;
+		left->k = local_0;
+	}
 	if (function_30bf0(left) == 0.f)
 	{
 		vector3f axis;
@@ -34,14 +40,24 @@ void function_11d180(
 			axis = *g_4687a8;
 		else
 			axis = *g_4687b0;
-		left->i = axis.j * forward->k - axis.k * forward->j;
-		left->j = forward->i * axis.k - axis.i * forward->k;
-		left->k = axis.i * forward->j - axis.j * forward->i;
+		{
+			real local_0 = axis.i * forward->j - axis.j * forward->i;
+			real local_1 = forward->i * axis.k - axis.i * forward->k;
+			real local_2 = axis.j * forward->k - axis.k * forward->j;
+			left->i = local_2;
+			left->j = local_1;
+			left->k = local_0;
+		}
 		function_30bf0(left);
 	}
-	out->i = forward->j * left->k - left->j * forward->k;
-	out->j = forward->k * left->i - forward->i * left->k;
-	out->k = left->j * forward->i - left->i * forward->j;
+	{
+		real local_0 = left->j * forward->i - left->i * forward->j;
+		real local_1 = *(real const volatile *)&forward->k * left->i - forward->i * left->k;
+		real local_2 = *(real const volatile *)&forward->j * left->k - left->j * forward->k;
+		out->i = local_2;
+		out->j = local_1;
+		out->k = local_0;
+	}
 	function_30bf0(out);
 }
 
@@ -50,10 +66,11 @@ bool function_11d3b0(
 	vector3f const *a,
 	vector3f *out,
 	vector3f const *b,
-	vector2f angle)
+	real sine,
+	real cosine)
 {
 	vector3f axis;
-	if (angle.n[1] <= a->j * b->j + a->i * b->i + b->k * a->k)
+	if (cosine <= a->j * b->j + a->i * b->i + b->k * a->k)
 	{
 		*out = *a;
 		return false;
@@ -68,13 +85,13 @@ bool function_11d3b0(
 	}
 	*out = *b;
 	{
-		real d = (out->k * axis.k + out->j * axis.j + out->i * axis.i) * (1.f - angle.n[1]);
+		real d = (out->k * axis.k + out->j * axis.j + out->i * axis.i) * (1.f - cosine);
 		real t0 = out->j * axis.k - out->k * axis.j;
 		real t1 = out->k * axis.i - out->i * axis.k;
 		real t2 = out->i * axis.j - out->j * axis.i;
-		out->i = out->i * angle.n[1] + d * axis.i - t0 * angle.n[0];
-		out->j = out->j * angle.n[1] + d * axis.j - t1 * angle.n[0];
-		out->k = out->k * angle.n[1] + d * axis.k - t2 * angle.n[0];
+		out->i = out->i * cosine + d * axis.i - t0 * sine;
+		out->j = out->j * cosine + d * axis.j - t1 * sine;
+		out->k = out->k * cosine + d * axis.k - t2 * sine;
 	}
 	return true;
 }
@@ -122,27 +139,28 @@ void function_11d610(quaternionf *q)
 	}
 }
 
+// score 15 (was 15): retail emits the dot product's j term first (ours i first) and
+// hoists one more cross product multiply before the first subtract; the source order
+// of the terms does not change our schedule.
 // @retail 0x11d6a0
 void function_11d6a0(
 	vector3f const *a,
 	vector3f const *b,
 	quaternionf *out)
 {
-	real s = (a->i * b->i + a->j * b->j + a->k * b->k + 1.f) * 2.f;
+	real s = (dot3f(a, b) + 1.f) * 2.f;
 	if (!(s > 0.f))
 		s = 0.f;
 	s = (real)sqrt(s);
 	if (s >= 0.001f)
 	{
-		vector3f c;
-		real inv;
-		c.k = a->i * b->j - a->j * b->i;
-		c.i = a->j * b->k - a->k * b->j;
-		c.j = b->i * a->k - a->i * b->k;
-		inv = 1.f / s;
-		out->i = c.i * inv;
-		out->j = c.j * inv;
-		out->k = c.k * inv;
+		real inv = 1.f / s;
+		real k = a->i * b->j - a->j * b->i;
+		real j = b->i * a->k - b->k * a->i;
+		real i = a->j * b->k - a->k * b->j;
+		out->i = i * inv;
+		out->j = j * inv;
+		out->k = k * inv;
 		out->w = s * 0.5f;
 	}
 	else

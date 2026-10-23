@@ -7,11 +7,13 @@
 #include "data_array.h"
 #include "physical_memory.h"
 
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 
 /* the physical memory allocator (physical_memory.h): a named, doubly linked
    list of blocks kept in a data array that follows the object */
 
+// score 18 (was 18): the final field stores of the manager are scheduled in a different
+// order than retail's; retail's order matches our source order exactly.
 // @retail 0x13d170
 void function_13d170(s_physical_object *manager, const char *name, long page_count, long page_shift, long maximum_count, physical_block_delete_proc delete_proc, physical_block_busy_proc busy_proc, physical_block_state_proc state_proc, c_data_allocator *allocator)
 {
@@ -36,14 +38,8 @@ void function_13d170(s_physical_object *manager, const char *name, long page_cou
 	manager->allocator = allocator;
 	manager->first = NONE;
 	manager->last = NONE;
-	manager->limits[0] = 0x7fffffff;
-	manager->limits[1] = 0x7fffffff;
-	manager->limits[2] = 0x7fffffff;
-	manager->limits[3] = 0x7fffffff;
-	manager->limits[4] = 0x7fffffff;
-	manager->limits[5] = 0x7fffffff;
-	manager->limits[6] = 0x7fffffff;
-	manager->limits[7] = 0x7fffffff;
+	for (long i = 0; i < 8; i++)
+		manager->limits[i] = 0x7fffffff;
 }
 
 // @retail 0x13d230
@@ -168,8 +164,7 @@ long physical_memory_used_pages(s_physical_object *physical, long age)
 }
 
 struct s_physical_block_view;
-struct s_physical_allocator_view;
-bool function_13d320(s_physical_allocator_view const *allocator, s_physical_block_view const *a, s_physical_block_view const *b);
+bool physical_memory_candidate_is_better(s_physical_object const *physical, s_physical_block_view const *a, s_physical_block_view const *b);
 
 struct s_block_candidate
 {
@@ -212,11 +207,12 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 				tail = next_tail;
 			}
 			long segment_pages;
-			dword segment_time = 0;
+			dword segment_time;
 			bool busy = false;
 			if (current == NONE)
 			{
 				segment_pages = physical->page_count - offset;
+				segment_time = 0;
 				offset = physical->page_count;
 			}
 			else
@@ -226,7 +222,8 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 				{
 					segment_pages = block->pages;
 					segment_time = block->time;
-					busy = physical->busy_proc && physical->busy_proc(current);
+					if (physical->busy_proc)
+						busy = physical->busy_proc(current);
 					if ((dword)(block->time + type) >= (dword)physical->time)
 						busy = true;
 					else if (!busy && (oldest == NONE || (dword)block->time < oldest_time))
@@ -246,6 +243,7 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 				else
 				{
 					segment_pages = block->offset - offset;
+					segment_time = 0;
 					offset = block->offset;
 				}
 			}
@@ -276,12 +274,14 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 								better = candidate->time < best.time || (candidate->time == best.time && candidate->pages < best.pages);
 								break;
 							case 1:
-								better = function_13d320((s_physical_allocator_view *)physical, (s_physical_block_view *)candidate, (s_physical_block_view *)&best);
+								better = physical_memory_candidate_is_better(physical, (s_physical_block_view *)candidate, (s_physical_block_view *)&best);
 								break;
 							default:
 								{
 									dword age = physical->time - candidate->time;
 									dword best_age = physical->time - best.time;
+									age = age > 0 ? age : 0;
+									best_age = best_age > 0 ? best_age : 0;
 									better = (long)(best.pages * age) > (long)(candidate->pages * best_age);
 								}
 								break;
@@ -351,11 +351,13 @@ long __stdcall function_13d370(s_physical_object *physical, long size, long type
 				entry->offset = best.offset;
 				entry->pages = pages;
 				entry->time = physical->time;
-				return result;
+				goto done;
 			}
 		}
 		if (type == limit_index)
-			physical->limits[limit_index] = physical->limits[limit_index] < pages ? physical->limits[limit_index] : pages;
+			physical->limits[limit_index] = physical->limits[limit_index] > pages ? pages : physical->limits[limit_index];
 	}
+done:
 	return result;
 }
+

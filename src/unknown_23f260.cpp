@@ -60,22 +60,30 @@ long function_23f990(long first, long second, char criterion, bool fallback)
 		switch (criterion)
 		{
 		case 10:
-			return (function_161e10(second) ? 1L : 0L) - (function_161e10(first) ? 1L : 0L);
+			result = (function_161e10(second) ? 1L : 0L) - (function_161e10(first) ? 1L : 0L);
+			break;
 		case 11:
-			return (long)!function_15db80(second) - (long)!function_15db80(first);
+			result = (long)!function_15db80(second) - (long)!function_15db80(first);
+			break;
 		case 12:
-			return table->teams[second].values[7] - table->teams[first].values[7];
+			result = table->teams[second].values[7] - table->teams[first].values[7];
+			break;
 		case 13:
-			return table->teams[second].values[0] - table->teams[first].values[0];
+			result = table->teams[second].values[0] - table->teams[first].values[0];
+			break;
 		case 14:
-			return table->teams[second].values[1] - table->teams[first].values[1]
+			result = table->teams[second].values[1] - table->teams[first].values[1]
 				- table->teams[first].values[0] + table->teams[second].values[0];
+			break;
 		case 15:
-			return table->teams[second].values[2] - table->teams[first].values[2];
+			result = table->teams[second].values[2] - table->teams[first].values[2];
+			break;
 		case 16:
-			return table->teams[first].values[3] - table->teams[second].values[3];
+			result = table->teams[first].values[3] - table->teams[second].values[3];
+			break;
 		case 17:
-			return table->teams[second].values[6] - table->teams[first].values[6];
+			result = table->teams[second].values[6] - table->teams[first].values[6];
+			break;
 		case 18:
 			if (fallback)
 				result = first - second;
@@ -238,7 +246,7 @@ PRIVATE inline const byte *score_criteria(long mode)
 }
 
 // @retail 0x23f360
-long function_23f360(long mode, long team)
+long function_23f360(long team, long mode)
 {
 	long tied = 0;
 	long better = 0;
@@ -326,6 +334,18 @@ PRIVATE inline long score_next_player(s_record_pool *data, long index)
 	return NONE;
 }
 
+/* the next used player entry after the cursor, with its datum index */
+PRIVATE __forceinline byte *score_next_entry(s_record_pool *data, long *cursor, long *datum)
+{
+	long i = score_next_player(data, *cursor + 1);
+	if (i == NONE)
+		return NULL;
+	byte *entry = data->data + data->size * i;
+	*cursor = i;
+	*datum = (*(short *)entry << 16) | i;
+	return entry;
+}
+
 // @retail 0x23f260
 long function_23f260(long mode, long player, long excluded_team)
 {
@@ -334,16 +354,11 @@ long function_23f260(long mode, long player, long excluded_team)
 	const byte *criteria = score_criteria(mode);
 	s_record_pool *data = g_4e8c24;
 	long cursor = NONE;
-	for (;;)
+	long other;
+	byte *entry;
+	while ((entry = score_next_entry(data, &cursor, &other)) != NULL)
 	{
-		long i = score_next_player(data, cursor + 1);
-		if (i == NONE)
-			break;
-		long other = data_datum_index(data, i);
-		byte *entry = data->data + data->size * i;
-		bool same_player = player == other;
-		cursor = i;
-		if (!same_player && ((s_score_player_view *)entry)->team != (short)excluded_team)
+		if (player != other && ((s_score_player_view *)entry)->team != (short)excluded_team)
 		{
 			long order = function_23fb60(criteria, player, other, false);
 			if (order > 0)
@@ -376,7 +391,6 @@ PRIVATE inline bool score_team_present(long team)
 // @retail 0x23f3e0
 void function_23f3e0(s_score_display *display, long mode, bool fallback)
 {
-	(void)&mode;
 	const byte *criteria = score_criteria(mode);
 	s_record_pool *data = g_4e8c24;
 	display->player_count = 0;
@@ -396,20 +410,19 @@ void function_23f3e0(s_score_display *display, long mode, bool fallback)
 	if (g_55e4d0[g_4e9ae8->engine_index])
 	{
 		teams = ((byte *)g_4e6948)[0x184] & 1;
-		volatile byte observed_teams = teams;
 	}
 	if (teams)
 	{
-		for (long team = 2; team - 2 < 8; team += 4)
+		for (long team = 0; team < 8; team += 4)
 		{
-			if (score_team_present(team - 2))
-				display->teams[display->team_count++] = (short)(team - 2);
-			if (score_team_present(team - 1))
-				display->teams[display->team_count++] = (short)(team - 1);
 			if (score_team_present(team))
 				display->teams[display->team_count++] = (short)team;
 			if (score_team_present(team + 1))
 				display->teams[display->team_count++] = (short)(team + 1);
+			if (score_team_present(team + 2))
+				display->teams[display->team_count++] = (short)(team + 2);
+			if (score_team_present(team + 3))
+				display->teams[display->team_count++] = (short)(team + 3);
 		}
 		s_score_sort_context team_context;
 		team_context.criteria = criteria;

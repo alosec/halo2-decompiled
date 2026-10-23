@@ -41,9 +41,9 @@ struct s_structure_bsp_view
 
 long function_249e20(s_structure_bsp_view *bsp, long index);
 long function_249e60(long cluster_index, s_structure_bsp_view *bsp, long index);
-bool function_249c20(long cluster_a, long cluster_b, s_structure_bsp_view *bsp);
+bool function_249c20(s_structure_bsp_view *bsp, long cluster_a, long cluster_b);
 void function_249c90(dword *bits_a, s_structure_bsp_view *bsp, long index, dword *bits_b);
 void function_249d10(s_structure_bsp_view *bsp, dword *bits, long index);
-real function_249d60(long cluster_a, long cluster_b, s_structure_bsp_view *bsp);
+real function_249d60(s_structure_bsp_view *bsp, long cluster_a, long cluster_b);
 
 #endif

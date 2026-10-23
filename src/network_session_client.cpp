@@ -32,18 +32,21 @@ long __stdcall function_063190(void *summary, long user);
 long session_summary_get_player_value(s_session_summary *summary, long player_index, long variant_index);
 long network_session_find_member(c_class_58d20 *session, const s_session_member_identity *identity);
 void network_session_disband_member(c_class_58d20 *session, long member_index);
-long network_session_cancel_reservations(c_class_58d20 *session, const s_session_id *id);
+__declspec(noinline) long network_session_cancel_reservations(c_class_58d20 *session, const s_session_id *id);
 bool session_summary_remove_machine(s_session_summary *summary, s_session_id *id);
 bool network_session_host_set_summary(c_class_58d20 *session, const s_session_summary *summary);
 
+// score 9 (was 11): the found/count initialisation order matches retail now;
+// only the summary address still differs: retail recomputes `lea eax,[esp+0x24]`
+// after the push, ours reuses the `ebx` copy of `&summary`.
 // @retail 0x6d380
 void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 {
 	{
 		c_class_58d20 *session = client->session;
 		long current = session->current_member;
-		long count = session->member_count;
 		long found = 0;
+		long count = session->member_count;
 		s_session_member_identity members[16];
 		for (long i = 0; i < count; i++)
 		{
@@ -53,13 +56,20 @@ void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 				found++;
 			}
 		}
-		for (long j = 0; j < found; j++)
+		if (found > 0)
 		{
-			session = client->session;
-			long index = network_session_find_member(session, &members[j]);
-			if (index != NONE && index != session->current_member &&
-				session->state != 7 && session->state != 6 && session->state != 8)
-				network_session_disband_member(session, index);
+			long remaining = found;
+			s_session_member_identity *member = members;
+			do
+			{
+				session = client->session;
+				long index = network_session_find_member(session, member);
+				if (index != NONE && index != session->current_member &&
+					session->state != 7 && session->state != 6 && session->state != 8)
+					network_session_disband_member(session, index);
+				member++;
+			}
+			while (--remaining);
 		}
 	}
 	network_session_cancel_reservations(client->session, id);
@@ -77,7 +87,7 @@ void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 
 // @retail 0x6e910
 void function_6e910(const s_network_session_player *player, const s_session_machine *machines,
-	long variant_index, const byte *variant, s_session_summary *summary, char default_team, s_session_player *output)
+	const byte *variant, s_session_summary *summary, char default_team, s_session_player *output, long variant_index)
 {
 	output->active = true;
 	output->flag1 = false;
@@ -143,6 +153,13 @@ bool c_session_client::function_06dd00(long a, s_session_remote *remote)
 	return result;
 }
 
+static __forceinline void function_6ddb0(s_allocator_globals *arg_0, s_session_request *arg_1)
+{
+ arg_0->allocator->release(arg_1, NONE);
+ if (arg_1)
+  arg_0->count--;
+}
+
 // @retail 0x6ddb0
 void session_client_remove_request(c_session_client *client, s_session_request *request)
 {
@@ -154,10 +171,7 @@ void session_client_remove_request(c_session_client *client, s_session_request *
 		*link = (*link)->next;
 		long info;
 		g_4d87f8->allocator->get_info(request, &info);
-		s_allocator_globals *globals = g_4d87f8;
-		globals->allocator->release(request, NONE);
-		if (request)
-			globals->count--;
+		function_6ddb0(g_4d87f8, request);
 		client->request_count--;
 	}
 }
@@ -182,6 +196,7 @@ void session_owner_initialize(s_session_owner *owner_, long unknown40, long unkn
 {
 	s_session_owner_view *owner = (s_session_owner_view *)owner_;
 	memset(owner->states, 0, sizeof(owner->states));
+	owner->mode = 0;
 	owner->unknown40 = unknown40;
 	owner->unknown44 = unknown44;
 	owner->unknown2c = unknown2c;
@@ -189,7 +204,6 @@ void session_owner_initialize(s_session_owner *owner_, long unknown40, long unkn
 	owner->session_c = session_c;
 	owner->session_b = session_b;
 	owner->unknown3c = unknown3c;
-	owner->mode = 0;
 	owner->unknown49 = false;
 	owner->unknown48 = false;
 	owner->failed = false;
@@ -208,7 +222,7 @@ inline void function_06df60(s_session_owner *o, long a, long b, long c)
 }
 
 // @retail 0x6e0f0
-bool network_session_members_ready(c_class_58d20 *session, dword *unready_mask)
+inline bool network_session_members_ready(c_class_58d20 *session, dword *unready_mask)
 {
 	dword mask = 0;
 	bool ready = true;
@@ -320,10 +334,14 @@ void session_state_matchmaking_initialize(c_session_state_matchmaking *state_, s
 {
 	s_session_state_matchmaking_view *state = (s_session_state_matchmaking_view *)state_;
 	session_state_initialize((s_session_state_view *)state, (s_session_owner_view *)owner, 6, true, false);
-	state->unknown97c = false;
-	state->unknowna08 = 0;
-	state->unknowna0c = 0;
-	state->unknowna1c = 0;
+	bool &initial_flag = state->unknown97c;
+	initial_flag = false;
+	long &first_zero = state->unknowna08;
+	first_zero = 0;
+	long &second_zero = state->unknowna0c;
+	second_zero = 0;
+	long &third_zero = state->unknowna1c;
+	third_zero = 0;
 	state->unknown9ec = NONE;
 	state->unknown9f0 = NONE;
 	state->unknown9f4 = NONE;
@@ -548,6 +566,22 @@ void __stdcall session_state_joining_send_target(c_session_state_joining *state_
 	}
 }
 
+/* sets the session's machine limit while it is live and hosting */
+static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
+{
+	bool result = false;
+	if (SESSION_STATE_IS_LIVE(session->state))
+	{
+		if (session->function_058d20())
+		{
+			session->value4990 = value;
+			session->update_count++;
+			result = true;
+		}
+	}
+	return result;
+}
+
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {
@@ -556,42 +590,37 @@ bool function_06e720(c_class_58d20 *session)
 	{
 		if (!session->flag4f20 || !&session->data4f24 || !&session->data4f90)
 		{
-			s_session_summary *summary = session->flag49fd ? (s_session_summary *)session->data4a00 : NULL;
+			s_session_summary *summary = NULL;
+			if (session->flag49fd)
+				summary = (s_session_summary *)session->data4a00;
 			s_unknown_108 machines;
-			__declspec(align(8)) s_session_player players[16];
+			s_session_player players[16];
 			memset(&machines, 0, sizeof(machines));
 			memset(players, 0, sizeof(players));
-			machines.data[0] = (1 << session->member_count) - 1;
+			long member_count = session->member_count;
+			machines.data[0] = (1 << member_count) - 1;
 			s_session_machine *addresses = (s_session_machine *)&machines.data[1];
-			for (long i = 0; i < session->member_count; i++)
-				addresses[i] = *(s_session_machine *)((byte *)session->members[i].words + 0xa);
+			if (member_count > 0)
+			{
+				long i = 0;
+				long members_remaining = member_count;
+				do
+				{
+					addresses[i] = *(s_session_machine *)((byte *)session->members[i].words + 0xa);
+					i++;
+				} while (--members_remaining);
+			}
 			for (long i = 0; i < 16; i++)
 			{
 				if ((session->player_mask & (1 << i)) && session->players[i].unknown14 != NONE)
-					function_6e910(&session->players[i], addresses, session->value49c8,
-						session->data4db0, summary, (char)i, &players[i]);
+					function_6e910(&session->players[i], addresses,
+						session->data4db0, summary, (char)i, &players[i], session->value49c8);
 			}
 			session->set_data_4f24(&machines, (s_unknown_3648 *)players);
-			if (SESSION_STATE_IS_LIVE(session->state) && session->value5dd0 != NONE)
+			if (session_state_is_live(session) && session->value5dd0 != NONE)
 			{
-				if (SESSION_STATE_IS_LIVE(session->state))
-				{
-					if (session->state == 5 || session->state == 6 || session->state == 7 || session->state == 8)
-					{
-						session->value4994 = 2;
-						session->update_count++;
-					}
-					else { volatile long unused = session->state; }
-				}
-				if (SESSION_STATE_IS_LIVE(session->state))
-				{
-					if (session->state == 5 || session->state == 6 || session->state == 7 || session->state == 8)
-					{
-						session->value4990 = 1;
-						session->update_count++;
-					}
-					else { volatile long unused = session->state; }
-				}
+				session->set_value_4994(2);
+				session_set_machine_limit(session, 1);
 			}
 		}
 		result = true;
@@ -600,38 +629,41 @@ bool function_06e720(c_class_58d20 *session)
 }
 
 void function_148823();
-void function_14a152();
-bool __stdcall function_236917(long controller);
-bool __stdcall function_236953(long controller);
-bool __stdcall function_2323ab(long controller);
+void window_manager_reset_all_windows();
+bool __stdcall dialog_callback_dashboard_network_configuration(long controller);
+bool __stdcall dialog_callback_sign_out_to_main_menu(long controller);
+bool __stdcall pause_game_quit_confirmed(long controller);
 void network_session_check_tracking(c_class_58d20 *session);
 void network_session_close(c_class_58d20 *session);
 
 static inline bool session_dialog_is(c_class_1473c9 *screen, long id)
 {
- return screen && ((screen->screen_id >= 7 && screen->screen_id <= 8) ||
-  screen->screen_id == 0xf0) && ((c_dialog_screen *)screen)->dialog_id == id;
+ bool result = false;
+ if (screen && screen->screen_id >= 7 &&
+     (screen->screen_id <= 8 || screen->screen_id == 0xf0))
+  if (((c_dialog_screen *)screen)->dialog_id == id) result = true;
+ return result;
 }
 
 // @retail 0x6d270
 void function_6d270(void)
 {
  function_148823();
- function_14a152();
- bool choice = true;
+ window_manager_reset_all_windows();
  long id = 0x38;
- dialog_choice_callback accept = function_236917;
+ dialog_choice_callback accept = dialog_callback_dashboard_network_configuration;
+ bool choice = true;
  if (g_4e6948 && g_4e6948->flag1120 && g_4e6948->state == 1 && !g_4e6948->flag134)
  {
   choice = false;
   id = 0xb8;
-  accept = function_2323ab;
+  accept = pause_game_quit_confirmed;
  }
- c_window_channel *channel = &g_54d598.windows_1[4];
- if (!session_dialog_is(channel->current, id) && !session_dialog_is(channel->next, id))
+ bool present = session_dialog_is(g_54d598.windows_1[4].current, id);
+ if (!session_dialog_is(g_54d598.windows_1[4].next, id) && !present)
  {
   if (choice)
-   dialog_choice_show(1, id, 4, (word)-1, accept, function_236953, 0);
+   dialog_choice_show(1, id, 4, (word)-1, accept, dialog_callback_sign_out_to_main_menu, 0);
   else
    dialog_ok_show(1, id, 4, (word)-1, accept, 0);
  }
@@ -652,9 +684,9 @@ void function_6d270(void)
 
 struct s_session_join_request;
 long network_session_evaluate_join_request(c_class_58d20 *session, const s_session_join_request *request);
-bool function_630f0(c_class_58d20 *session, const s_session_join_request *request, long address, long reason);
+bool function_630f0(c_class_58d20 *session, long address, const s_session_join_request *request, long reason);
 
-// @retail 0x6dc60
+// @retail 0x6dc60 standard
 void __stdcall function_06dc60(c_session_client *client, long reason)
 {
  s_session_request *request = client->requests;
@@ -665,8 +697,8 @@ void __stdcall function_06dc60(c_session_client *client, long reason)
   if (!rejection)
    rejection = network_session_evaluate_join_request(client->session,
     (const s_session_join_request *)&request->remote);
-  function_630f0(client->session, (const s_session_join_request *)&request->remote,
-   (long)request->key04, rejection);
+  function_630f0(client->session, (long)request->key04,
+   (const s_session_join_request *)&request->remote, rejection);
   session_client_remove_request(client, request);
   request = next;
  }
@@ -722,7 +754,14 @@ bool function_90160(long task_index, s_match_result_data *result);
 long online_match_session_find(XNKID const *session_id);
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 bool qos_is_complete(long handle);
-bool function_7c530(const byte *data, long size, void *description);
+bool session_description_decode_buffer(const byte *data, long size, void *description);
+
+PRIVATE __forceinline bool function_6f4b1(const s_qos_result *arg_0, s_session_description *arg_1)
+{
+ const byte *local_0 = *(byte *volatile const *)&arg_0->data;
+ long local_1 = *(volatile const long *)&arg_0->data_size;
+ return session_description_decode_buffer(local_0, local_1, arg_1);
+}
 
 // @retail 0x6f4b0
 void function_06f4b0(c_session_state_joining *self)
@@ -737,9 +776,8 @@ void function_06f4b0(c_session_state_joining *self)
  {
   switch (online_task_poll(state->unknownf0))
   {
-  case 0:
-  case 1:
-   return;
+  case 0: goto local_1;
+  case 1: return;
   case 2:
    {
     s_match_result_data result;
@@ -757,6 +795,7 @@ void function_06f4b0(c_session_state_joining *self)
      state->unknown104 = 3;
    }
    break;
+  default: break;
   }
   function_6b640(state->unknownf0);
   state->unknownf0 = NONE;
@@ -770,7 +809,7 @@ void function_06f4b0(c_session_state_joining *self)
   {
    struct { s_session_description description; byte remaining[0x714 - sizeof(s_session_description)]; } buffer;
    s_session_description *description = &buffer.description;
-   if (function_7c530(result.data, result.data_size, description))
+   if (function_6f4b1(&result, description))
    {
     self->function_06f2b0(description, state->entry_count);
     state->unknown10 = false;
@@ -799,6 +838,8 @@ void function_06f4b0(c_session_state_joining *self)
   if (state->unknownf0 == NONE)
    state->unknown104 = 16;
  }
+local_1:
+ return;
 }
 
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
@@ -806,23 +847,29 @@ bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  long count, const dword *identities, const long *values, const long *other_values,
  bool reserve, long timeout, const s_session_id *id, const void *extra);
 
-// @retail 0x6fe90
+// score 40 (was 40): the twelve bytes of the member's record are copied with the
+// source and the destination in the other registers, and the two stores that
+// follow are scheduled in the other order.
+// Retail aligns its frame; 0x6fcc0, 0x6f940 and 0x6fa60 push all three arguments.
+// The body still differs; this boundary preserves those callers.
+// score 40 (was 40): the three copies in the loop keep the source and the
+// destination in the other registers, ours copies from esi to ecx and retail
+// from ecx to esi, and the count's increment sits before the loop counter's
+// reload in ours and after it in retail
+// @retail 0x6fe90 standard
 bool __stdcall function_6fe90(c_session_state_joining *state, bool all_players, bool reserve)
 {
  c_class_58d20 *current = state->owner->session_a;
  c_class_58d20 *joining = state->owner->session_c;
- network_session_close(joining);
  long count = 0;
+ network_session_close(joining);
  __declspec(align(8)) dword identities[16][3];
  memset(identities, 0, sizeof(identities));
  if (all_players)
  {
   for (long i = 0; i < 16; i++)
    if (current->player_mask & (1 << i))
-   {
-    memcpy(identities[count], &current->players[i], 12);
-    count++;
-   }
+    memcpy(identities[count++], &current->players[i], 12);
  }
  else
  {
@@ -836,7 +883,8 @@ bool __stdcall function_6fe90(c_session_state_joining *state, bool all_players, 
   first[j] = NONE;
   second[j] = NONE;
  }
- s_session_id id = { 0, 0 };
+ s_session_id id;
+ memset(&id, 0, sizeof(id));
  if (function_59e50(joining, *(long *)((byte *)state + 0xac), *(long *)((byte *)state + 0x6c),
   (const XNKID *)((byte *)state + 0x70), (const XNKEY *)((byte *)state + 0x78),
   (const s_session_member_identity *)((byte *)state + 0x88), count, identities[0], first, second,
@@ -844,13 +892,8 @@ bool __stdcall function_6fe90(c_session_state_joining *state, bool all_players, 
   return true;
  if (SESSION_STATE_IS_LIVE(current->state))
  {
-  long value = current->state;
-  if (value == 5 || value == 6 || value == 7 || value == 8)
+  if (current->function_058d20())
    network_session_set_mode(current, 1);
-  else
-  {
-   volatile long unused = value;
-  }
  }
  *(long *)((byte *)state + 0x104) = 16;
  return false;
@@ -861,22 +904,19 @@ void function_06fcc0(c_session_state_joining *self)
 {
  s_session_state_joining_view *state = (s_session_state_joining_view *)self;
  if (state->unknowne9)
- {
   state->unknown104 = 1;
-  return;
- }
- if (!state->unknown68)
- {
+ else if (!state->unknown68)
   state->unknown104 = 1;
-  return;
- }
- if (!state->unknownf9)
+ else
  {
-  if (function_6fe90(self, false, true))
-   state->unknownf9 = true;
+  if (!state->unknownf9)
+  {
+   if (function_6fe90(self, false, true))
+    state->unknownf9 = true;
+  }
+  if (state->unknownf9)
+   session_state_joining_check_target(self);
  }
- if (state->unknownf9)
-  session_state_joining_check_target(self);
 }
 
 // @retail 0x6f940
@@ -916,8 +956,7 @@ void function_6fa60(c_session_state_joining *self)
  state->unknowne8 = true;
  if (current->type == 17)
  {
-  long value = current->state;
-  if (value == 5 || value == 6 || value == 7 || value == 8)
+  if (current->function_058d20())
   {
    if (session_state_is_live(joining))
    {
@@ -934,20 +973,21 @@ void function_6fa60(c_session_state_joining *self)
   }
   else
   {
-   volatile long unused = value;
    if (!joining->state && session_state_is_live(current) &&
     network_session_get_data5ddc(current, &state->part))
    {
     long local = current->current_member;
     state->entry_count = 0;
-    for (long i = 0; i < 16; i++)
+    long i = 0;
+    do
     {
      if ((current->player_mask & (1 << i)) && current->players[i].member_index == local)
      {
       memcpy(state->entries + state->entry_count * 12, &current->players[i], 12);
       state->entry_count++;
      }
-    }
+     i++;
+    } while (i < 16);
     state->unknown68 = true;
     function_6fe90(self, false, false);
    }
@@ -1013,7 +1053,7 @@ void function_6d4c0(c_session_client *client)
     if (!reason)
      reason = network_session_evaluate_join_request(client->session, (s_session_join_request *)(data + 0x18));
    }
-   function_630f0(client->session, (s_session_join_request *)(data + 0x18), (long)request->key04, reason);
+   function_630f0(client->session, (long)request->key04, (s_session_join_request *)(data + 0x18), reason);
    session_client_remove_request(client, request);
   }
   request = next;
@@ -1076,7 +1116,7 @@ void function_6d4c0(c_session_client *client)
    else reason = network_session_evaluate_join_request(client->session, (s_session_join_request *)(data + 0x18));
    if (reason)
    {
-    function_630f0(client->session, (s_session_join_request *)(data + 0x18), (long)request->key04, reason);
+    function_630f0(client->session, (long)request->key04, (s_session_join_request *)(data + 0x18), reason);
     session_client_remove_request(client, request);
    }
    else

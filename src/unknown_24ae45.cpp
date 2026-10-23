@@ -203,9 +203,8 @@ void c_gamertag_select_list::v1()
 		{
 			datum_index = record_pool_allocate(data);
 			datum = &((s_gamertag_datum *)data->data)[datum_index & 0xffff];
+			memcpy(&datum->user, user, sizeof(datum->user));
 			XONLINE_USER *guest = &datum->user;
-
-			memcpy(guest, user, sizeof(*guest));
 			if (guest_number <= 3)
 			{
 				((s_xuid_flags_view *)&guest->xuid.dwUserFlags)->guest_number = guest_number;
@@ -252,7 +251,7 @@ void c_gamertag_select_list::v20(c_class_1a2c81 *widget, long index)
 }
 
 unsigned long function_11c9a0(char const *string, unsigned long size);
-bool function_1a0540(s_player_profile_settings *settings, long file_index);
+bool player_profile_load(long file_index, s_player_profile_settings *settings);
 bool function_24b5bc(char const *a, char const *b);
 
 /* focuses the gamertag the controller's profile last signed in with */
@@ -262,7 +261,9 @@ void c_gamertag_select_list::focus_signed_in_gamertag()
 	s_player_profile_settings settings;
 	long controller_index = get_controller_index();
 
-	if (function_1a0540(&settings, player_slot_profile_get(controller_index)->profile_index))
+	long profile_index = player_slot_profile_get(controller_index)->profile_index;
+
+	if (player_profile_load(profile_index, &settings))
 	{
 		char gamertag[16];
 

@@ -1,4 +1,4 @@
-/* UNKNOWN_18F576.H: the local player slots (src/unknown_18f576.cpp) */
+/* UNKNOWN_18F576.H: the online status block of a local player slot (player_slots.h, src/player_slots.cpp) */
 
 #ifndef UNKNOWN_18F576_H
 #define UNKNOWN_18F576_H

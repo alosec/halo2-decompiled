@@ -29,7 +29,7 @@ __inline vector3f *subtract_points3f(
 }
 
 // @retail 0x3ea30
-real distance3d(
+inline real distance3d(
 	point3f const *a,
 	point3f const *b)
 {
@@ -39,7 +39,7 @@ real distance3d(
 }
 
 // @retail 0x259d0
-real function_259d0(
+inline real function_259d0(
 	dword *seed,
 	char const *file,
 	long line,
@@ -49,3 +49,8 @@ real function_259d0(
 	real random = function_x82e52f(seed, file, line);
 	return lower_bound + (upper_bound - lower_bound) * random;
 }
+
+#if H2_NATIVE_PORT
+/* native: emit the inline definition so the guest image can link it */
+__attribute__((used)) static void *h2_emit_function_259d0 = (void *)&function_259d0;
+#endif

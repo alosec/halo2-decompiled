@@ -540,19 +540,16 @@ void packed_sta_write(s_sta_source const *source, s_packed_sta *packed)
 	packed->begin = 'bsta';
 	for (i = 0; i < 16; i++)
 	{
-		s_packed_pst *entry = &packed->entries[i];
-		s_pst_source const *entry_source = &source->entries[i];
-
-		entry->begin = 'bpst';
-		packed_shorts_write(&entry->unknown04_count, entry->unknown04, entry_source->unknown000, 45);
-		packed_shorts_write(&entry->unknown88_count, entry->unknown88, entry_source->unknown05a, 32);
-		entry->text_count = 45;
+		packed->entries[i].begin = 'bpst';
+		packed_shorts_write(&packed->entries[i].unknown04_count, packed->entries[i].unknown04, source->entries[i].unknown000, 45);
+		packed_shorts_write(&packed->entries[i].unknown88_count, packed->entries[i].unknown88, source->entries[i].unknown05a, 32);
+		packed->entries[i].text_count = 45;
 		for (j = 0; j < 45; j++)
 		{
-			entry->texts[j].flag = entry_source->texts[j].flag;
-			packed_shorts_write(&entry->texts[j].count, entry->texts[j].text, entry_source->texts[j].text, 45);
+			packed->entries[i].texts[j].flag = source->entries[i].texts[j].flag;
+			packed_shorts_write(&packed->entries[i].texts[j].count, packed->entries[i].texts[j].text, source->entries[i].texts[j].text, 45);
 		}
-		entry->end = 'epst';
+		packed->entries[i].end = 'epst';
 	}
 	for (i = 0; i < 16; i++)
 	{
@@ -728,12 +725,15 @@ void packed_grs_write(s_grs_source const *source, s_packed_grs *packed)
 	}
 	for (i = 0; i < 16; i++)
 	{
-		packed->unknown0dbc[i].unknown00 = source->unknown0dc4[i].unknown00;
-		packed->unknown0dbc[i].unknown01 = source->unknown0dc4[i].unknown01;
-		packed->unknown0dbc[i].unknown02 = source->unknown0dc4[i].unknown02;
-		packed->unknown0dbc[i].unknown04 = source->unknown0dc4[i].unknown04;
-		packed->unknown0dbc[i].unknown06 = source->unknown0dc4[i].unknown08;
-		packed->unknown0dbc[i].unknown0a = source->unknown0dc4[i].unknown0c;
+		s_packed_grs_entry *packed_entry = &packed->unknown0dbc[i];
+		s_grs_entry_source const *entry = &source->unknown0dc4[i];
+
+		packed_entry->unknown00 = entry->unknown00;
+		packed_entry->unknown01 = entry->unknown01;
+		packed_entry->unknown02 = entry->unknown02;
+		packed_entry->unknown04 = entry->unknown04;
+		packed_entry->unknown06 = entry->unknown08;
+		packed_entry->unknown0a = entry->unknown0c;
 	}
 	packed_sta_write(&source->unknown0f44, &packed->unknown0f1c);
 	packed->eve_begin = 'beve';
@@ -743,7 +743,7 @@ void packed_grs_write(s_grs_source const *source, s_packed_grs *packed)
 	{
 		s_player_slot_profile *slot = local_profile_slot_get(index);
 		s_ppr_source profile;
-		s_packed_con *packed_con = &packed->unknown14f4c[index];
+		s_packed_con *packed_con;
 
 		if (slot && (slot->flags & 0x10))
 		{
@@ -753,6 +753,7 @@ void packed_grs_write(s_grs_source const *source, s_packed_grs *packed)
 		{
 			memset(&profile, 0, sizeof(profile));
 		}
+		packed_con = &packed->unknown14f4c[index];
 		packed_con->unknown4 = profile.unknownfc.unknown0;
 		packed_con->unknown8 = profile.unknownfc.unknown4;
 		packed_con->unknown9 = profile.unknownfc.unknown5;
@@ -762,14 +763,19 @@ void packed_grs_write(s_grs_source const *source, s_packed_grs *packed)
 	}
 	for (i = 0; i < 16; i++)
 	{
+		s_grs_mac_source const *mac_source;
+		s_packed_mac *mac;
+
 		packed->unknown14f88[i].begin = 'bmac';
-		packed->unknown14f88[i].mac = source->unknowndc24[i].mac;
-		packed->unknown14f88[i].unknowna = source->unknowndc24[i].unknown6;
-		packed->unknown14f88[i].unknownb = source->unknowndc24[i].unknown7;
-		packed->unknown14f88[i].unknownc = source->unknowndc24[i].unknown8;
-		packed->unknown14f88[i].unknownd = source->unknowndc24[i].unknown9;
-		packed->unknown14f88[i].unknowne = source->unknowndc24[i].unknowna;
-		packed->unknown14f88[i].end = 'emac';
+		mac = &packed->unknown14f88[i];
+		mac_source = &source->unknowndc24[i];
+		mac->mac = mac_source->mac;
+		mac->unknowna = mac_source->unknown6;
+		mac->unknownb = mac_source->unknown7;
+		mac->unknownc = mac_source->unknown8;
+		mac->unknownd = mac_source->unknown9;
+		mac->unknowne = mac_source->unknowna;
+		mac->end = 'emac';
 	}
 	packed->end = 'egrs';
 }

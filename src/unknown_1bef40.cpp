@@ -8,6 +8,8 @@
 #include "unknown_20fe20.h"
 #include "unknown_1e1f20.h"
 
+extern "C" void _ReadWriteBarrier(void);
+
 /* slot types 0xa and 0xb */
 
 struct s_slot_0a
@@ -28,7 +30,7 @@ struct s_slot_0b
 	byte unknown14[0x40 - 0x14];
 };
 
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 short __stdcall function_1b7920(long actor_index);
 
 short __stdcall function_1bef40(long actor_index);
@@ -49,31 +51,36 @@ void *function_1e4d10(long actor_index);
 void function_1f86a0(long index);
 
 short function_2684f0(s_actor_view *actor);
+void function_e70b0(long unit_index, short *value);
 long function_1469f0(real seconds);
 
+#pragma intrinsic(_ReadWriteBarrier)
+// score 18 (was 18): retail reads the slot reference before it fetches the
+// actor, ours fetches the actor first, and g_46fbe8 is read as a byte here
+// where retail reads it as a dword.
 // @retail 0x1bf0f0
 short __stdcall function_1bf0f0(long actor_index, s_slot *slot, bool active)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	s_slot_0a *state = (s_slot_0a *)slot;
+	s_actor_view *actor = actor_get(actor_index);
 	short result = g_46fbe8;
-	s_reference reference = state->reference;
-	if (REFERENCE_EQUAL(reference, g_470fa0))
+	_ReadWriteBarrier();
+	if (REFERENCE_EQUAL(state->reference, g_470fa0))
 	{
 		function_1f86a0(actor_index);
 	}
 	else if (actor->unknown504 == 2)
 	{
-		byte *unit = (byte *)object_get(actor->unknown018);
-		if (*(short *)(unit + *(short *)(unit + 0x346) + 0x36) == 5)
+		short action;
+		function_e70b0(actor->unknown018, &action);
+		if (action == 5)
 		{
 			if (state->unknown12 > 0)
 				state->unknown12--;
 			else if (function_2684f0(actor) >= 10)
 			{
-				real wait;
 				real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 3.0f, 5.0f);
-				wait = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.0f, 0.5f);
+				real wait = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.0f, 0.5f);
 				state->unknown10 = (short)function_1469f0(delay);
 				state->unknown12 = (short)function_1469f0(wait);
 				function_262800(actor_index, state->reference, false);
@@ -94,6 +101,7 @@ short __stdcall function_1bf0f0(long actor_index, s_slot *slot, bool active)
 	}
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x1bef40
 short __stdcall function_1bef40(long actor_index)
@@ -116,33 +124,38 @@ short __stdcall function_1bef40(long actor_index)
 	return result;
 }
 
+PRIVATE __forceinline void function_1befd1(long arg_0)
+{
+    s_actor_view *local_0 = actor_get(arg_0);
+    *(bool volatile *)&local_0->unknown50c = false;
+    *(short volatile *)&local_0->unknown5b4 = 0;
+    *(short volatile *)&local_0->unknown5b6 = 0;
+    *(long volatile *)&local_0->unknown5ac = NONE;
+    *(short volatile *)&local_0->unknown5b0 = NONE;
+    local_0->unknown4ac = 0;
+    local_0->unknown504 = 0;
+}
+
+static __forceinline long real_to_long(real value);
+
+// score 38 (was 42): our frame reserves eight bytes where retail reserves
+// four, so the two temporaries sit four bytes higher; retail also scales the
+// first draw before it converts the second one, loads the tick source after
+// the slot reference (which puts the reference in ECX, not EDX) and stores the
+// actor's 0x5b0 field before its 0x4ac and 0x504 fields.
 // @retail 0x1befd0
 bool __stdcall function_1befd0(long actor_index, s_slot *slot)
 {
+	struct s_1befd4 { real field_0; real field_4; } local_0;
 	s_slot_0a *state = (s_slot_0a *)slot;
-	real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 3.0f, 5.0f);
-	real wait = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.0f, 0.5f);
-	real ticks;
-	long rounded;
+	local_0.field_4 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 3.0f, 5.0f);
+	local_0.field_0 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.0f, 0.5f);
 
-	actor_reset_state(actor_index);
+	function_1befd1(actor_index);
 	state->reference = g_470fa0;
 
-	ticks = g_510c54->field_2_3 * delay;
-	__asm
-	{
-		fld ticks
-		fistp rounded
-	}
-	state->unknown10 = (short)rounded;
-
-	ticks = g_510c54->field_2_3 * wait;
-	__asm
-	{
-		fld ticks
-		fistp rounded
-	}
-	state->unknown12 = (short)rounded;
+	state->unknown10 = (short)real_to_long(g_510c54->field_2_3 * local_0.field_4);
+	state->unknown12 = (short)real_to_long(g_510c54->field_2_3 * local_0.field_0);
 	return true;
 }
 
@@ -177,25 +190,25 @@ bool __stdcall function_1bf230(long actor_index, s_slot *slot)
 			state->reference = function_2605d0(actor_index, &request, 0, (long)&other_index, scratch, &unknown);
 			ai_scratch_buffer_release(scratch);
 			if (REFERENCE_EQUAL(state->reference, g_470fa0))
-				return result;
+				goto done;
 		}
 		state->reference = function_2626b0(actor_index, state->reference, other_index, NULL, false, true);
-		return !REFERENCE_EQUAL(state->reference, g_470fa0);
+		result = !REFERENCE_EQUAL(state->reference, g_470fa0);
 	}
+done:
 	return result;
 }
 
 // @retail 0x1bf360
 void __stdcall function_1bf360(long actor_index, s_slot *slot)
 {
-	long prop_index = actor_get(actor_index)->prop_index;
 	s_actor_view *actor = actor_get(actor_index);
 
-	if (prop_index != NONE)
+	if (actor->prop_index != NONE)
 	{
-		short value = prop_node_get(prop_index)->unknown24;
+		s_prop_node_view *node = prop_node_get(actor->prop_index);
 
-		if (value >= 1 && value <= 2)
+		if (node->unknown24 >= 1 && node->unknown24 <= 2)
 		{
 			actor->unknown41c = 3;
 			actor->unknown420 = 2;
@@ -214,20 +227,20 @@ void __stdcall function_1bf3d0(long actor_index, s_slot *slot, bool active)
 }
 
 // @retail 0x1bf3f0
-bool function_1bf3f0(long other_index, long actor_index, short type)
+bool function_1bf3f0(long actor_index, long other_index, short type)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (other_index != NONE)
 	{
-		long other_prop_index = actor_get(other_index)->prop_index;
+		s_actor_view *other = actor_get(other_index);
 
-		if (other_prop_index != NONE && actor->prop_index != NONE &&
-			prop_node_get(actor->prop_index)->unknown08 == prop_node_get(other_prop_index)->unknown08 &&
-			function_1a6fe0(other_index, type) != NONE)
+		if (other->prop_index != NONE && actor->prop_index != NONE &&
+			prop_node_get(actor->prop_index)->unknown08 == prop_node_get(other->prop_index)->unknown08 &&
+			actor_behavior_find_level(other_index, type) != NONE)
 		{
-			return true;
+			result = true;
 		}
 	}
 	return result;
@@ -239,7 +252,7 @@ short __stdcall function_1bf480(long actor_index)
 	short result = 0;
 	s_actor_view *actor = actor_get(actor_index);
 
-	if (function_1b7920(actor_index) && function_1bf3f0(actor->unknown3cc, actor_index, actor->unknown3d0))
+	if (function_1b7920(actor_index) && function_1bf3f0(actor_index, actor->unknown3cc, actor->unknown3d0))
 		result = 3;
 	return result;
 }
@@ -247,10 +260,10 @@ short __stdcall function_1bf480(long actor_index)
 // @retail 0x1bf4e0
 bool __stdcall function_1bf4e0(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
+	s_actor_view *actor = actor_get(actor_index);
 
-	if (function_1bf3f0(actor->unknown3cc, actor_index, actor->unknown3d0))
+	if (function_1bf3f0(actor_index, actor->unknown3cc, actor->unknown3d0))
 	{
 		s_slot_0b *state = (s_slot_0b *)slot;
 		short type;
@@ -260,9 +273,9 @@ bool __stdcall function_1bf4e0(long actor_index, s_slot *slot)
 		type = actor->unknown3d2;
 		actor->unknown3cc = NONE;
 		if (type != NONE)
-			function_1fb7e0(actor_index, type, NULL, actor_get(state->unknown10)->unknown018, NONE);
+			function_1fb7e0(type, actor_index, NULL, actor_get(state->unknown10)->unknown018, NONE);
 		function_1f86a0(actor_index);
-		return true;
+		result = true;
 	}
 	return result;
 }
@@ -273,7 +286,7 @@ short __stdcall function_1bf590(long actor_index, s_slot *slot, bool active)
 	s_slot_0b *state = (s_slot_0b *)slot;
 	short result = g_46fbe4;
 
-	if (function_1bf3f0(state->unknown10, actor_index, state->unknown0c))
+	if (function_1bf3f0(actor_index, state->unknown10, state->unknown0c))
 		result = g_46fbe8;
 	return result;
 }
@@ -318,9 +331,9 @@ void __stdcall function_1bf5c0(long actor_index, s_slot *slot)
 		actor->unknown41c = 3;
 		actor->unknown420 = 3;
 		actor->unknown424.point = position;
-		actor->unknown438.point = position;
 		actor->unknown430 = 2;
 		actor->unknown434 = 3;
+		actor->unknown438.point = position;
 		actor->unknown444 = NONE;
 		actor->unknown488 = true;
 		actor->unknown4a0 = true;
@@ -333,8 +346,9 @@ void __stdcall function_1bf5c0(long actor_index, s_slot *slot)
 			if (weapon)
 			{
 				s_weapon_difficulty_entry_0b *entry;
+				short local_0 = g_4e6948->state == 1 ? g_4e6948->difficulty : 1;
 
-				switch (g_4e6948->state == 1 ? g_4e6948->difficulty : 1)
+				switch (local_0)
 				{
 				case 2:
 					entry = &weapon->difficulty[1];

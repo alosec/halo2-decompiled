@@ -26,7 +26,7 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="h2-effect-particle-providers-") as temporary:
         methods = Path(temporary) / "methods.o"
-        source = args.root / "src/unknown_224240.cpp"
+        source = args.root / "src/visual_effects_particle_interfaces.cpp"
         run([
             args.python, args.root / "port/tools/guest_elf_cc.py",
             "--llvm", args.llvm,

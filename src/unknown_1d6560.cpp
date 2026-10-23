@@ -100,45 +100,26 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 }
 
 /* the collision layer of one of the object's rigid bodies, by object type */
+// score 96 (was 89): retail pushes ebp and holds the base pointer there, ours keeps the record in esi and ecx;
+// the whole register allocation differs.
 // @retail 0x1d69d0
 long function_1d69d0(s_havok_component *component, long kind, s_physics_model_owner *owner, long level, long rigid_body_index)
 {
-	s_physics_object_header *header = &((s_physics_object_header *)g_4e0300->data)[component->object_index & 0xffff];
-	long type = header->type;
+	long object_index = component->object_index;
 	s_physics_rigid_body *rigid_body = &owner->model->rigid_bodies[rigid_body_index];
 	long result;
 
 	if (kind == 7)
 	{
-		switch (type)
+		switch (((s_physics_object_header *)g_4e0300->data)[object_index & 0xffff].type)
 		{
 		case 1:
-			result = 0xc;
-			break;
-		default:
-			result = 1;
-			break;
+			return 0xc;
 		}
-		return result;
+		return 1;
 	}
-	switch (type)
+	switch (((s_physics_object_header *)g_4e0300->data)[object_index & 0xffff].type)
 	{
-	case 0:
-		result = (bool)(((dword)header->object[0x10a] >> 2) & 1) ? 11 : 9;
-		break;
-	case 1:
-		result = (rigid_body->flags & 8) ? 14 : 12;
-		break;
-	case 7:
-		if (kind == 6)
-		{
-			result = 8;
-		}
-		else
-		{
-			result = (rigid_body->flags & 8) ? 7 : 6;
-		}
-		break;
 	case 11:
 		if (level <= 1)
 		{
@@ -147,6 +128,29 @@ long function_1d69d0(s_havok_component *component, long kind, s_physics_model_ow
 		else
 		{
 			result = level >= 5 ? 5 : 3;
+		}
+		break;
+	case 1:
+		if (rigid_body->flags & 8)
+			result = 14;
+		else
+			result = 12;
+		break;
+	case 0:
+		/* retail looks the object up again from the component here */
+		result = (bool)(((dword)((byte *)havok_object_get(component->object_index))[0x10a] >> 2) & 1) ? 11 : 9;
+		break;
+	case 7:
+		if (kind == 6)
+		{
+			result = 8;
+		}
+		else
+		{
+			if (rigid_body->flags & 8)
+				result = 7;
+			else
+				result = 6;
 		}
 		break;
 	default:
@@ -196,36 +200,33 @@ struct s_physics_body_groups
 
 bool function_db4c0(long object_index, long key_a, long key_b);
 
+/* 0x1d6630 is a method of the component: retail passes it in ecx, the rest on the stack */
+struct s_physics_component_walk : s_havok_component
+{
+    void function_1d6630(s_physics_model_owner *owner, char const *kinds,
+        dword const *entry_mask, s_physics_body_groups *groups, void *context, long parent, long current,
+        char *output, long *output_count, void *other_context, dword *visited, bool *active);
+};
+
 // @retail 0x1d6630
-void function_1d6630(s_havok_component *component, s_physics_model_owner *owner, char const *kinds,
+void s_physics_component_walk::function_1d6630(s_physics_model_owner *owner, char const *kinds,
     dword const *entry_mask, s_physics_body_groups *groups, void *context, long parent, long current,
     char *output, long *output_count, void *other_context, dword *visited, bool *active)
 {
-    (void)&owner;
-    (void)&kinds;
-    (void)&entry_mask;
-    (void)&groups;
-    (void)&context;
-    (void)&parent;
-    (void)&current;
-    (void)&output;
-    (void)&output_count;
-    (void)&other_context;
-    (void)&visited;
-    (void)&active;
+    s_havok_component *component = this;
     bool replace = !(bool)((component->unknown04 >> 13) & 1);
-    if (groups->groups[current == NONE ? 256 : current].count > 0)
+    if ((current == NONE ? groups->groups[256].count : groups->groups[current].count) > 0)
     {
-        for (long i = 0; i < groups->groups[current == NONE ? 256 : current].count; ++i)
+        for (long i = 0; i < (current == NONE ? groups->groups[256].count : groups->groups[current].count); ++i)
         {
-            long body_index = groups->groups[current == NONE ? 256 : current].bodies[i];
+            long body_index = (current == NONE ? groups->groups[256].bodies[i] : groups->groups[current].bodies[i]);
             s_physics_graph_model *model = (s_physics_graph_model *)owner->model;
             s_physics_graph_body *body = &model->bodies[body_index];
             bool replaced = false;
             bool available = false;
             if (body->flags & 0x20)
             {
-                long replacement = body->replacement;
+                short replacement = body->replacement;
                 long bounded = replacement < 0 ? 0 : replacement > model->body_count - 1 ? model->body_count - 1 : replacement;
                 if (bounded == replacement)
                 {
@@ -276,7 +277,7 @@ void function_1d6630(s_havok_component *component, s_physics_model_owner *owner,
                     {
                         if (entry->section_count == 0)
                         {
-                            long this_body = groups->groups[current == NONE ? 256 : current].bodies[0];
+                            long this_body = (current == NONE ? groups->groups[256].bodies[0] : groups->groups[current].bodies[0]);
                             long next_body = groups->groups[next].bodies[0];
                             if (kinds[this_body] == 7 || kinds[next_body] == 7)
                                 continue;
@@ -296,7 +297,7 @@ void function_1d6630(s_havok_component *component, s_physics_model_owner *owner,
                         }
                     }
                     if (first_body != NONE)
-                        function_1d6630(component, owner, kinds, entry_mask, groups, context, current, next,
+                        static_cast<s_physics_component_walk *>(component)->function_1d6630(owner, kinds, entry_mask, groups, context, current, next,
                             output, output_count, other_context, visited, active);
                 }
             }
@@ -365,18 +366,20 @@ public:
     c_physics_shape_list(c_havok_reference_counted **shapes, long count);
 };
 
-void __cdecl function_2dba80(s_physics_mass_array const *array, s_physics_mass *result);
+long __cdecl function_2dba80(s_physics_mass_array const *array, s_physics_mass *result);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *out);
 extern transform4x3f *g_4687d0;
 
-PRIVATE inline void physics_mass_frame(transform4x3f const *matrix, hkTransform *out)
+PRIVATE __forceinline void physics_mass_frame(transform4x3f const *matrix, hkTransform *out)
 {
     real *columns = (real *)out;
     columns[0] = matrix->forward.i; columns[1] = matrix->forward.j; columns[2] = matrix->forward.k; columns[3] = 0;
     columns[4] = matrix->left.i; columns[5] = matrix->left.j; columns[6] = matrix->left.k; columns[7] = 0;
     columns[8] = matrix->up.i; columns[9] = matrix->up.j; columns[10] = matrix->up.k; columns[11] = 0;
-    columns[12] = matrix->position.x; columns[13] = matrix->position.y; columns[14] = matrix->position.z; columns[15] = 0;
+    hkVector4 translation;
+    translation.set(matrix->position.x, matrix->position.y, matrix->position.z);
+    out->m_translation = translation;
 }
 
 PRIVATE inline void physics_mass_identity(hkTransform *out)
@@ -391,14 +394,15 @@ PRIVATE inline void physics_mass_identity(hkTransform *out)
     out->m_translation.m_quad = zero;
 }
 
-PRIVATE inline void physics_mass_copy(byte const *body, s_physics_mass *mass)
+PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_array *array, long i)
 {
-    mass->volume = 0;
-    mass->mass = *(real const *)(body + 0x3c);
-    mass->center = *(hkVector4 const *)(body + 0x40);
-    mass->inertia = *(hkRotation const *)(body + 0x50);
+    array->data[i].mass.volume = 0;
+    array->data[i].mass.mass = *(real const *)(body + 0x3c);
+    array->data[i].mass.center = *(hkVector4 const *)(body + 0x40);
+    array->data[i].mass.inertia = *(hkRotation const *)(body + 0x50);
 }
 
+// score 4 (was 4): the two values are stored to the stack in the opposite order; ours is padded with six int3s.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,
@@ -411,106 +415,114 @@ c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *componen
     *active = false;
     *mixed = false;
     function_1d6560(component, owner, entry_mask);
-    function_1d6630(component, owner, kinds, entry_mask, groups, (void *)current, NONE,
+    static_cast<s_physics_component_walk *>(component)->function_1d6630(owner, kinds, entry_mask, groups, (void *)current, NONE,
         current, output, output_count, (void *)64, visited, active);
-    if (*output_count <= 0)
-        return NULL;
-    long first_index = output[0];
-    bool preserve_wrapper = kinds[first_index] == 7 || kinds[first_index] == 6;
-    byte *bodies = (byte *)owner->model->rigid_bodies;
-    byte *first = bodies + first_index * 0x90;
-    c_havok_reference_counted *result;
-    long flagged = ((dword)first[0x18] >> 2) & 1;
-    *maximum = *(short *)(first + 0x1e);
-    if (*output_count == 1)
+    long count = *output_count;
+    if (count > 0)
     {
-        *mass = *(real *)(first + 0x3c);
-        *center = *(hkVector4 *)(first + 0x40);
-        *inertia = *(hkRotation *)(first + 0x50);
-        result = *(c_havok_reference_counted **)(first + 0x38);
-        result->reference_count++;
-        if (first[0x8e] & 1)
-            *special = true;
-    }
-    else
-    {
-        byte *model = *(byte **)((byte *)owner + 0x44);
-        byte *render = g_4e3b44[*(long *)(model + 4) & 0xffff].bytes;
-        byte *nodes = *(byte **)(render + 0x4c);
-        transform4x3f const *root = *(short *)first == NONE ? g_4687d0 :
-            (transform4x3f *)(nodes + *(short *)first * 0x60 + 0x28);
-        c_havok_reference_counted *shapes[64];
-        c_physics_shape_view *shape = *(c_physics_shape_view **)(first + 0x38);
-        if (!preserve_wrapper && shape->type() == 0x13)
-            shape = *(c_physics_shape_view **)((byte *)shape + 0xc);
-        shapes[0] = shape;
-        shape->reference_count++;
-        if (first[0x8e] & 1)
-            *special = true;
-        c_physics_allocation_view *allocator = (c_physics_allocation_view *)g_480118;
-        s_physics_mass_array array;
-        array.data = (s_physics_mass_entry *)allocator->allocate(*output_count * 0x90, 0x12);
-        array.size = array.capacity = *output_count;
-        s_physics_mass aggregate;
-        aggregate.volume = aggregate.mass = 0;
-        aggregate.center.m_quad = _mm_setzero_ps();
-        aggregate.inertia.m_col0.m_quad = _mm_setzero_ps();
-        aggregate.inertia.m_col1.m_quad = _mm_setzero_ps();
-        aggregate.inertia.m_col2.m_quad = _mm_setzero_ps();
-        physics_mass_identity(&array.data[0].transform);
-        physics_mass_copy(first, &array.data[0].mass);
-        for (long i = 1; i < *output_count; i++)
+        long first_index = output[0];
+        bool preserve_wrapper = kinds[first_index] == 7 || kinds[first_index] == 6;
+        c_havok_reference_counted *result;
+        long flagged;
+        if (count == 1)
         {
-            byte *body = (byte *)owner->model->rigid_bodies + output[i] * 0x90;
-            c_physics_shape_view *child = *(c_physics_shape_view **)(body + 0x38);
-            bool transformed = *(short *)first != *(short *)body;
-            hkTransform transform;
-            if (transformed)
-            {
-                transform4x3f inverse, relative;
-                function_141590((transform4x3f *)(nodes + *(short *)body * 0x60 + 0x28), &inverse);
-                function_142a60(root, &inverse, &relative);
-                physics_mass_frame(&relative, &transform);
-                if (child->type() == 0x15)
-                {
-                    transform.setMulEq(*(hkTransform *)((byte *)child + 0x10));
-                    child = *(c_physics_shape_view **)((byte *)child + 0xc);
-                }
-            }
-            else
-                physics_mass_identity(&transform);
-            if (!preserve_wrapper && child->type() == 0x13)
-                child = *(c_physics_shape_view **)((byte *)child + 0xc);
-            if (transformed)
-            {
-                void *storage = ((c_physics_allocation_view *)g_480118)->allocate(0x50, 0x22);
-                c_child_transform *wrapper = storage ? new (storage) c_child_transform(child) : NULL;
-                wrapper->transform = transform;
-                child = (c_physics_shape_view *)wrapper;
-            }
-            else
-                child->reference_count++;
-            if (body[0x8e] & 1)
+            byte *first = (byte *)owner->model->rigid_bodies + first_index * 0x90;
+            *mass = *(real *)(first + 0x3c);
+            *center = *(hkVector4 *)(first + 0x40);
+            *inertia = *(hkRotation *)(first + 0x50);
+            *maximum = *(short *)(first + 0x1e);
+            flagged = ((dword)first[0x18] >> 2) & 1;
+            result = *(c_havok_reference_counted **)(first + 0x38);
+            result->reference_count++;
+            if (first[0x8e] & 1)
                 *special = true;
-            shapes[i] = child;
-            array.data[i].transform = transform;
-            physics_mass_copy(body, &array.data[i].mass);
-            long value = *(short *)(body + 0x1e);
-            *maximum = *maximum > value ? *maximum : value;
-            flagged += ((dword)body[0x18] >> 2) & 1;
         }
-        function_2dba80(&array, &aggregate);
-        *mass = aggregate.mass;
-        *center = aggregate.center;
-        *inertia = aggregate.inertia;
-        void *storage = ((c_physics_allocation_view *)g_480118)->allocate(0x38, 0x22);
-        *(word *)((byte *)storage + 4) = 0x38;
-        result = (c_havok_reference_counted *)new (storage) c_physics_shape_list(shapes, *output_count);
-        for (long i = 0; i < *output_count; i++)
-            havok_reference_remove(shapes[i]);
-        if (!(array.capacity & 0x80000000))
-            ((c_physics_allocation_view *)g_480118)->release(array.data, (array.capacity & 0x7fffffff) * 0x90, 0x12);
+        else
+        {
+            byte *first = (byte *)owner->model->rigid_bodies + first_index * 0x90;
+            byte *model = *(byte **)((byte *)owner + 0x44);
+            byte *render = g_4e3b44[*(long *)(model + 4) & 0xffff].bytes;
+            transform4x3f const *root = *(short *)first != NONE ?
+                (transform4x3f *)(*(byte **)(render + 0x4c) + *(short *)first * 0x60 + 0x28) : g_4687d0;
+            c_havok_reference_counted *shapes[64];
+            shapes[0] = *(c_havok_reference_counted **)(first + 0x38);
+            if (!preserve_wrapper && ((c_physics_shape_view *)shapes[0])->type() == 0x13)
+                shapes[0] = *(c_havok_reference_counted **)((byte *)shapes[0] + 0xc);
+            shapes[0]->reference_count++;
+            if (first[0x8e] & 1)
+                *special = true;
+            c_physics_allocation_view *allocator = (c_physics_allocation_view *)g_480118;
+            s_physics_mass_array array;
+            long entries = *output_count;
+            array.data = (s_physics_mass_entry *)allocator->allocate(entries * 0x90, 0x12);
+            array.size = entries;
+            array.capacity = entries;
+            s_physics_mass aggregate;
+            aggregate.volume = 0;
+            aggregate.mass = 0;
+            aggregate.center.m_quad = _mm_setzero_ps();
+            aggregate.inertia.m_col0.m_quad = _mm_setzero_ps();
+            aggregate.inertia.m_col1.m_quad = _mm_setzero_ps();
+            aggregate.inertia.m_col2.m_quad = _mm_setzero_ps();
+            physics_mass_identity(&array.data[0].transform);
+            physics_mass_copy(first, &array, 0);
+            *maximum = *(short *)(first + 0x1e);
+            flagged = ((dword)first[0x18] >> 2) & 1;
+            for (long i = 1; i < *output_count; i++)
+            {
+                byte *body = (byte *)owner->model->rigid_bodies + output[i] * 0x90;
+                c_physics_shape_view *child = *(c_physics_shape_view **)(body + 0x38);
+                bool transformed = *(short *)first != *(short *)body;
+                hkTransform transform;
+                if (transformed)
+                {
+                    transform4x3f inverse, relative;
+                    function_141590((transform4x3f *)(*(byte **)(render + 0x4c) + *(short *)body * 0x60 + 0x28), &inverse);
+                    function_142a60(root, &inverse, &relative);
+                    physics_mass_frame(&relative, &transform);
+                    if (child->type() == 0x15)
+                    {
+                        transform.transform_compose_in_place(*(hkTransform *)((byte *)child + 0x10));
+                        child = *(c_physics_shape_view **)((byte *)child + 0xc);
+                    }
+                }
+                else
+                    physics_mass_identity(&transform);
+                if (!preserve_wrapper && child->type() == 0x13)
+                    child = *(c_physics_shape_view **)((byte *)child + 0xc);
+                if (transformed)
+                {
+                    void *storage = ((c_physics_allocation_view *)g_480118)->allocate(0x50, 0x22);
+                    c_child_transform *wrapper = storage ? new (storage) c_child_transform(child) : NULL;
+                    wrapper->transform = transform;
+                    child = (c_physics_shape_view *)wrapper;
+                }
+                else
+                    child->reference_count++;
+                if (body[0x8e] & 1)
+                    *special = true;
+                shapes[i] = child;
+                array.data[i].transform = transform;
+                physics_mass_copy(body, &array, i);
+                long value = *(short *)(body + 0x1e);
+                *maximum = *maximum > value ? *maximum : value;
+                flagged += ((dword)body[0x18] >> 2) & 1;
+            }
+            function_2dba80(&array, &aggregate);
+            *mass = aggregate.mass;
+            *center = aggregate.center;
+            c_physics_allocation_view *list_allocator = (c_physics_allocation_view *)g_480118;
+            *inertia = aggregate.inertia;
+            void *storage = list_allocator->allocate(0x38, 0x22);
+            *(word *)((byte *)storage + 4) = 0x38;
+            result = (c_havok_reference_counted *)new (storage) c_physics_shape_list(shapes, *output_count);
+            for (long i = 0; i < *output_count; i++)
+                havok_reference_remove(shapes[i]);
+            if (!(array.capacity & 0x80000000))
+                ((c_physics_allocation_view *)g_480118)->release(array.data, (array.capacity & 0x7fffffff) * 0x90, 0x12);
+        }
+        *mixed = flagged != *output_count;
+        return result;
     }
-    *mixed = flagged != *output_count;
-    return result;
+    return NULL;
 }

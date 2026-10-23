@@ -7,6 +7,7 @@
 #include "ai_actor.h"
 #include "unknown_2626b0.h"
 #include "unknown_0259a0.h"
+#include "unknown_11cc90.h"
 
 /* the state of a slot of type 0x58 */
 struct s_slot_58
@@ -26,16 +27,26 @@ real function_11e130(point3f const *a0, vector3f const *a, point3f const *b0, ve
 /* where the target (actor +0x360) stands relative to the line the actor
    watches (from +0x370 along +0x37c): whether the actor's own position, the
    point at +0x510 and the segment along +0x5ec come within reach */
+#pragma optimize("g", off)
+PRIVATE __forceinline real function_1a8fa1(vector3f const *arg_0)
+{
+    real local_2 = arg_0->k;
+    real local_1 = arg_0->j;
+    real local_0 = arg_0->i;
+    return (real)sqrt(local_0 * local_0 + local_1 * local_1 + local_2 * local_2);
+}
+#pragma optimize("", on)
+
 // @retail 0x1a8fa0
 void function_1a8fa0(long actor_index, real distance, bool *near_point, bool *near_actor, bool *near_segment)
 {
+	s_ai_object *target = ai_object_get(actor_get(actor_index)->unknown360);
 	s_actor_view *actor = actor_get(actor_index);
-	s_ai_object *target = ai_object_get(actor->unknown360);
 	bool segment = false;
 	bool point;
 	bool within;
 
-	if ((real)sqrt(target->velocity.i * target->velocity.i + target->velocity.j * target->velocity.j + target->velocity.k * target->velocity.k) > 0.1f)
+	if (function_1a8fa1(&target->velocity) > 0.1f)
 	{
 		vector3f direction;
 		direction.i = actor->unknown370.x - actor->position.x;
@@ -52,19 +63,21 @@ void function_1a8fa0(long actor_index, real distance, bool *near_point, bool *ne
 	}
 	{
 		point3f *start = &actor->unknown370;
+		point3f end;
+		end.x = actor->unknown37c.i * 1.5f + start->x;
+		end.y = actor->unknown37c.j * 1.5f + start->y;
+		end.z = actor->unknown37c.k * 1.5f + start->z;
 		vector3f line;
-		line.i = (actor->unknown37c.i * 1.5f + start->x) - start->x;
-		line.j = (actor->unknown37c.j * 1.5f + start->y) - start->y;
-		line.k = (actor->unknown37c.k * 1.5f + start->z) - start->z;
+		vector3d_from_points3d(start, &end, &line);
 		point3f *position = &actor->position;
 		distance += actor->unknown36c;
-		within = distance * distance > function_11e000(position, start, &line);
+		within = function_11e000(position, start, &line) < distance * distance;
 		if (actor->unknown50c && (near_point || near_segment))
 		{
 			point3f other;
 			function_210850(&actor->unknown510, &other);
 			real reach = actor->unknown36c;
-			point = reach * reach > function_11e000(&other, start, &line);
+			point = function_11e000(&other, start, &line) < reach * reach;
 			if (near_segment && actor->unknown5d0 && !within && !point)
 			{
 				vector3f segment_vector;
@@ -72,7 +85,7 @@ void function_1a8fa0(long actor_index, real distance, bool *near_point, bool *ne
 				segment_vector.j = actor->unknown5ec.j * 3.0f;
 				segment_vector.k = actor->unknown5ec.k * 3.0f;
 				reach = actor->unknown36c;
-				if (reach * reach > function_11e130(start, &line, position, &segment_vector))
+				if (function_11e130(start, &line, position, &segment_vector) < reach * reach)
 					segment = true;
 				else
 					segment = false;
@@ -106,8 +119,8 @@ short __stdcall function_1a83b0(long actor_index, short level, bool active)
 // @retail 0x1a92b0
 short __stdcall function_1a92b0(long actor_index)
 {
-	short result = 0;
 	s_actor_view *actor = actor_get(actor_index);
+	short result = 0;
 
 	if (actor->unknown358 != 0 &&
 		prop_node_get(actor->unknown368)->unknown24 >= 1 &&
@@ -120,12 +133,12 @@ short __stdcall function_1a92b0(long actor_index)
 			bool near_actor;
 			bool near_segment;
 
-			function_1a8fa0(actor_index, 0.0f, &near_point, &near_actor, &near_segment);
 			result = 1;
+			function_1a8fa0(actor_index, 0.0f, &near_point, &near_actor, &near_segment);
 			if (near_point || near_segment && !near_actor)
 			{
 				if (!REFERENCE_EQUAL(actor->unknown418, g_470fa0))
-					function_262800(actor_index, actor->unknown418, false);
+					function_262800(actor_index, actor->unknown418, true);
 			}
 			if (near_actor || near_segment)
 				result = 3;
@@ -216,12 +229,12 @@ short __stdcall function_1a9540(long actor_index)
 			bool near_actor;
 			bool near_segment;
 
-			function_1a8fa0(actor_index, 0.5f, &near_point, &near_actor, &near_segment);
 			result = 1;
+			function_1a8fa0(actor_index, 0.5f, &near_point, &near_actor, &near_segment);
 			if (near_point || near_segment && !near_actor)
 			{
 				if (!REFERENCE_EQUAL(actor->unknown418, g_470fa0))
-					function_262800(actor_index, actor->unknown418, false);
+					function_262800(actor_index, actor->unknown418, true);
 			}
 			if (near_actor || near_segment)
 				result = 3;
@@ -329,6 +342,7 @@ bool function_1f5390(point2f const *heading, long actor_index, real distance,
     short *mode, real vertical_distance, bool *vertical_out, s_path_trace_result *trace);
 bool function_1f57a0(long actor_index, long name);
 bool function_1f57f0(long actor_index, long animation, long const *target);
+bool function_1f50e0(long actor_index);
 
 // @retail 0x1ae820
 bool function_1ae820(long arg_0)
@@ -337,32 +351,33 @@ bool function_1ae820(long arg_0)
     s_actor_view *local_1 = actor_get(arg_0);
     if (local_1->unknown26c != NONE)
         goto local_10;
-    if (local_1->unknown018 != NONE && function_110ab0(local_1->unknown018))
+    if (function_1f50e0(arg_0))
         goto local_10;
     if (local_1->prop_index == NONE || local_1->unknown264 || local_1->unknown018 == NONE)
         goto local_10;
     {
         s_1ae820 *local_2 = (s_1ae820 *)g_4e3b44[ai_object_get(local_1->unknown018)->definition_index & 0xffff].bytes;
-        s_type_f95cd3 *local_3 = function_25d740((s_prop_node *)prop_node_get(local_1->prop_index));
+        s_prop_view_fields *local_3 = prop_node_view(prop_node_get(local_1->prop_index));
         if (!local_3 || !(local_2->field_120 > g_45dbd8))
             goto local_10;
-        point3f const *local_4 = (point3f const *)((byte *)local_3 + 0x2c);
         point2f local_5;
+        real local_11;
         if (*(byte *)function_1e4990(local_1->unknown054) & 2)
         {
-            if (!(local_4->z * local_1->unknown290.k + local_4->y * local_1->unknown290.j +
-                local_4->x * local_1->unknown290.i > 0.4f))
-                goto local_10;
+            local_11 = dot3f(&local_3->unknown2c, &local_1->unknown290);
         }
         else
         {
-            local_5 = *(point2f const *)local_4;
-            if (normalize2d(&local_5) > g_45dbd8 &&
-                !(local_1->unknown290.j * local_5.y + local_1->unknown290.i * local_5.x > 0.4f))
-                goto local_10;
+            local_5 = *(point2f const *)&local_3->unknown2c;
+            if (!(normalize2d(&local_5) > g_45dbd8))
+                goto local_12;
+            local_11 = local_1->unknown290.i * local_5.x + local_1->unknown290.j * local_5.y;
         }
-        local_5 = *(point2f const *)local_4;
+        if (!(local_11 > 0.4f))
+            goto local_10;
+local_12:
         long local_6 = 4;
+        local_5 = *(point2f const *)&local_3->unknown2c;
         if (normalize2d(&local_5) == g_45dbd8)
         {
             local_5 = *(point2f const *)&local_1->unknown290;
@@ -419,7 +434,7 @@ short __stdcall function_1aea20(long arg_0, s_slot *arg_1)
                     local_1->unknown3d8 = 0.0f;
                     local_1->times[10] = g_510c54->game_time;
                     local_1->unknown3f1 = true;
-                    function_1fb7e0(arg_0, 0x25, NULL, NONE, NONE);
+                    function_1fb7e0(0x25, arg_0, NULL, NONE, NONE);
                 }
             }
         }
@@ -453,6 +468,9 @@ s_1a8a10 g_4453c0[] =
 };
 
 #pragma inline_depth(0)
+// score 17 (was 17): retail subtracts the local at [esi+0x294] inside the sum
+// and keeps the two partial products in xmm2 and xmm3; ours subtracts after
+// the products and multiplies the terms in the other order.
 // @retail 0x1a8a10
 bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, real arg_4)
 {
@@ -485,23 +503,29 @@ bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, 
             __assume(0);
         }
         real local_5[4];
-        real local_10 = local_1->unknown290.i * local_4.y + (0.0f - local_1->unknown290.j) * local_4.x;
-        real local_11 = local_1->unknown290.j * local_4.y + local_1->unknown290.i * local_4.x;
-        local_5[3] = 0.0f - local_11;
-        local_5[1] = 0.0f - local_10;
-        local_5[2] = local_11;
+        vector2f local_17;
+        local_17.i = local_1->unknown290.i;
+        local_17.j = local_1->unknown290.j;
+        real local_10 = (0.0f - local_1->unknown290.j) * local_4.x + local_17.i * local_4.y;
+        real local_11 = local_17.i * local_4.x + local_17.j * local_4.y;
         local_5[0] = local_10;
-        volatile real local_6 = -0.5f;
+        local_5[2] = local_11;
+        local_5[1] = 0.0f - local_10;
+        local_5[3] = 0.0f - local_11;
+        real local_6 = -0.5f;
         long local_7 = NONE;
         short local_8 = NONE;
         s_1a8a10 *local_9 = g_4453c0;
         do
         {
-            if (local_5[local_9->field_4] + local_9->field_8 > local_6 && function_1f57a0(arg_1, local_9->field_0))
+            real const &bias = local_9->field_8;
+            short const &axis = local_9->field_4;
+            long const &identifier = local_9->field_0;
+            if (local_5[axis] + bias > local_6 && function_1f57a0(arg_1, identifier))
             {
-                local_8 = local_9->field_4;
-                local_7 = local_9->field_0;
-                local_6 = local_5[local_8] + local_9->field_8;
+                local_8 = axis;
+                local_7 = identifier;
+                local_6 = local_5[local_8] + bias;
             }
             local_9++;
         }

@@ -26,26 +26,32 @@ bool __stdcall function_29da40(long arg_0, s_type_c3b527 const *arg_1, long arg_
 	{
 		point3f local_2;
 		transform4x3f local_3;
+		bool local_8 = true;
 		if (arg_0 != NONE)
 		{
-			if (!function_270240(actor_get(arg_0)->unknown018, local_1, 0x5000049, arg_5, arg_6, &local_3))
-				goto local_5;
-			local_2 = local_3.position;
+			s_actor_view *local_7 = actor_get(arg_0);
+			if (function_270240(local_7->unknown018, local_1, 0x5000049, arg_5, arg_6, &local_3))
+				local_2 = local_3.position;
+			else
+				local_8 = false;
 		}
 		else
 			local_2 = *arg_5;
-		local_2.z = arg_5->z;
-		long local_4;
-		if (function_26d290(&arg_1->point, &local_2, arg_2, &local_4))
+		if (local_8)
 		{
-			if (arg_7)
+			local_2.z = arg_5->z;
+			long local_4;
+			if (function_26d290(&arg_1->point, &local_2, arg_2, &local_4))
 			{
-				arg_7->point = local_2;
-				arg_7->output_index = arg_1->output_index;
+				if (arg_7)
+				{
+					arg_7->point = local_2;
+					arg_7->output_index = arg_1->output_index;
+				}
+				if (arg_8)
+					*arg_8 = local_4;
+				local_0 = true;
 			}
-			if (arg_8)
-				*arg_8 = local_4;
-			local_0 = true;
 		}
 	}
 local_5:
@@ -105,12 +111,15 @@ __forceinline void function_29dc62(dword *arg_0, short const &arg_1)
 }
 
 // @retail 0x29db90
-void function_29db90(short arg_1, short arg_0, s_29db90 *arg_2)
+void function_29db90(s_29db90 *list, short block_index, short range_index)
 {
-	if (arg_2->field_b4 < 30 && arg_0 >= 0 && arg_0 < *(long *)((byte *)g_4e0350 + 0x168))
+	if (list->field_b4 < 30)
 	{
-		s_29db95 *local_0 = &(*(s_29db95 **)((byte *)g_4e0350 + 0x16c))[arg_0];
-		if (arg_1 >= 0 && arg_1 < local_0->field_30)
+		byte *scenario = (byte *)g_4e0350;
+		if (block_index < 0 || block_index >= *(long *)(scenario + 0x168))
+			return;
+		s_29db95 *local_0 = &(*(s_29db95 **)(scenario + 0x16c))[block_index];
+		if (range_index >= 0 && range_index < local_0->field_30)
 		{
 			byte *local_1 = (byte *)function_1fa7f0();
 			if (local_1 && *(long *)(local_1 + 0x6c) > 0)
@@ -118,7 +127,7 @@ void function_29db90(short arg_1, short arg_0, s_29db90 *arg_2)
 				s_29db93 *local_2 = *(s_29db93 **)(local_1 + 0x70);
 				dword local_3[2];
 				memset(local_3, 0, sizeof(local_3));
-				s_29db94 *local_4 = &local_0->field_34[arg_1];
+				s_29db94 *local_4 = &local_0->field_34[range_index];
 				for (short local_5 = 0; local_5 < local_4->field_80; local_5++)
 				{
 					short *local_6 = local_4->field_84[local_5];
@@ -126,9 +135,9 @@ void function_29db90(short arg_1, short arg_0, s_29db90 *arg_2)
 					if (!function_29dc40(local_3, local_7))
 					{
 						function_29dc62(local_3, local_7);
-						for (short local_8 = 0; local_8 < arg_2->field_b4; local_8++)
+						for (short local_8 = 0; local_8 < list->field_b4; local_8++)
 						{
-							if (arg_2->field_0[local_8].field_0 == local_7)
+							if (list->field_0[local_8].field_0 == local_7)
 								return;
 						}
 						if (local_7 >= 0 && local_7 < local_2->field_40)
@@ -136,14 +145,14 @@ void function_29db90(short arg_1, short arg_0, s_29db90 *arg_2)
 							s_29db92 *local_9 = &local_2->field_44[local_7];
 							for (short local_10 = 0; local_10 < local_9->field_0; local_10++)
 							{
-								arg_2->field_0[arg_2->field_b4].field_0 = *local_6;
-								arg_2->field_0[arg_2->field_b4].field_2 = local_10;
-								arg_2->field_0[arg_2->field_b4].field_4 = 0;
-								arg_2->field_b4++;
-								if (arg_2->field_b4 >= 30)
+								list->field_0[list->field_b4].field_0 = *local_6;
+								list->field_0[list->field_b4].field_2 = local_10;
+								list->field_0[list->field_b4].field_4 = 0;
+								list->field_b4++;
+								if (list->field_b4 >= 30)
 									return;
 							}
-							if (arg_2->field_b4 >= 30)
+							if (list->field_b4 >= 30)
 								return;
 						}
 					}

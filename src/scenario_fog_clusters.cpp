@@ -64,21 +64,19 @@ long scenario_fog_clusters_find(long cluster_index, point3f const *point, s_fog_
 	s_fog_structure_bsp *local_9e9b6e = (s_fog_structure_bsp *)g_4e0348;
 	dword visited[MAXIMUM_CLUSTERS / 32];
 	short indices[MAXIMUM_CLUSTERS];
-	long count;
 	long current = 0;
 
 	memset(visited, 0, sizeof(visited));
-	indices[cluster_index] = (short)current;
-	visited[cluster_index >> 5] |= 1 << (cluster_index & 31);
 	clusters[0].cluster_index = cluster_index;
 	clusters[0].distance = 0.0f;
 	clusters[0].previous_index = NONE;
-	count = 1;
+	long count = 1;
+	indices[cluster_index] = (short)current;
+	visited[cluster_index >> 5] |= 1 << (cluster_index & 31);
 	do
 	{
-		long local_0 = *(long volatile *)&current;
-		s_fog_cluster_distance *entry = &clusters[local_0];
-		current = local_0 + 1;
+		s_fog_cluster_distance *entry = &clusters[current];
+		current++;
 		s_fog_cluster *cluster = &local_9e9b6e->clusters[entry->cluster_index];
 
 		for (long portal_index = 0; portal_index < cluster->portal_count; portal_index++)
@@ -102,12 +100,11 @@ long scenario_fog_clusters_find(long cluster_index, point3f const *point, s_fog_
 				}
 				else if (k_fog_cluster_maximum_distance > distance)
 				{
-					s_fog_cluster_distance *added = &clusters[count];
-
-					indices[other] = (short)count++;
-					added->cluster_index = other;
-					added->distance = distance;
-					added->previous_index = NONE;
+					indices[other] = (short)count;
+					clusters[count].cluster_index = other;
+					clusters[count].distance = distance;
+					clusters[count].previous_index = NONE;
+					count++;
 					visited[other >> 5] |= 1 << (other & 31);
 				}
 			}

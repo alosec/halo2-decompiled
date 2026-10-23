@@ -3,9 +3,6 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 
-// @stub 0x31bc70
-void *__fastcall function_31bc70(void *arg_0) { return 0; }
-
 struct s_223240;
 // @stub 0x2b5d0
 void function_2b5d0(long arg_0, long arg_1, long arg_2, long arg_3, s_223240 const *arg_4) { }

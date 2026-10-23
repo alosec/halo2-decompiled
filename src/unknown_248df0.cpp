@@ -1,4 +1,5 @@
 #include "unknown_11c920.h"
+#include "frame_storage.h"
 #include "effects.h"
 
 // @flags /O2 /arch:SSE /Gr
@@ -15,14 +16,8 @@ struct s_248df0
 	real field_38;
 };
 
-struct s_frame_offset
-{
-	point3f position;
-	vector3f forward;
-	vector3f up;
-};
-extern s_frame_offset g_485618;
-vector3f *function_4efb0(vector3f *arg_0);
+
+inline vector3f *function_4efb0(vector3f *arg_0);
 
 PRIVATE __forceinline real function_248eff(real arg_0)
 {
@@ -32,8 +27,16 @@ PRIVATE __forceinline real function_248eff(real arg_0)
 	return local_0;
 }
 
-// @retail 0x248df0
-real function_248df0(long arg_0, void *arg_1, void *arg_2, void const *arg_3)
+PRIVATE __forceinline real function_248ef0(real const *arg_0)
+{
+	long local_0 = real_truncate(*arg_0);
+	real local_1 = *arg_0 - (real)local_0;
+	if (local_1 < 0.f)
+		local_1 += 1.f;
+	return local_1;
+}
+
+PRIVATE __forceinline real function_248df1(long arg_0, void *arg_1, void const *const &arg_3, void *arg_2)
 {
 	real local_0 = 0.f;
 	s_248df0 const *local_1 = (s_248df0 const *)arg_3;
@@ -69,14 +72,14 @@ real function_248df0(long arg_0, void *arg_1, void *arg_2, void const *arg_3)
 		break;
 	case 9:
 		if (local_2->effect_index != NONE)
-			local_0 = ((s_effect_datum *)g_4ea93c->data)[local_2->effect_index & 0xffff].scale_a;
-		break;
+			return ((s_effect_datum *)g_4ea93c->data)[local_2->effect_index & 0xffff].scale_a;
+		return 0.f;
 	case 10:
 		if (local_2->effect_index != NONE)
-			local_0 = ((s_effect_datum *)g_4ea93c->data)[local_2->effect_index & 0xffff].scale_b;
-		break;
+			return ((s_effect_datum *)g_4ea93c->data)[local_2->effect_index & 0xffff].scale_b;
+		return 0.f;
 	case 11:
-		if (local_1) local_0 = function_248eff(local_1->field_38);
+		if (local_1) local_0 = function_248ef0(&local_1->field_38);
 		break;
 	case 12:
 		if (local_1 && arg_2)
@@ -109,4 +112,10 @@ real function_248df0(long arg_0, void *arg_1, void *arg_2, void const *arg_3)
 		break;
 	}
 	return local_0;
+}
+
+// @retail 0x248df0
+real function_248df0(long arg_0, void *arg_1, void *arg_2, void const *arg_3)
+{
+	return function_248df1(arg_0, arg_1, arg_3, arg_2);
 }

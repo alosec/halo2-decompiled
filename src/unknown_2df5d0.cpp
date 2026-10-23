@@ -1,39 +1,28 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): forwards to a virtual method of
+// the object held at offset 0xc.
 
-// @flags /O2 /Gr
-
-struct s_physics_forwarded_aabb
+struct target_2df5d0
 {
-    float minimum[4];
-    float maximum[4];
-};
-static_assert(sizeof(s_physics_forwarded_aabb) == 0x20, "forwarded AABB layout");
-
-class c_physics_aabb_target
-{
-public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void get_aabb(void *transform, void *tolerance, s_physics_forwarded_aabb *result);
+    virtual void v0() = 0;
+    virtual void v1() = 0;
+    virtual void v2() = 0;
+    virtual void v3() = 0;
+    virtual void v4() = 0;
+    virtual void v5() = 0;
+    virtual long forwarded() = 0;
 };
 
-class c_physics_aabb_forwarder
+struct class_2df5d0
 {
-    byte field_0[0x0c];
-    c_physics_aabb_target *shape;
-public:
-    void function_2df5d0(void *transform, void *tolerance, s_physics_forwarded_aabb *result);
+    char unknown0[0xc];
+    target_2df5d0 *field_c;
+
+    long function_2df5d0();
 };
 
 // @retail 0x2df5d0
-void c_physics_aabb_forwarder::function_2df5d0(
-    void *transform,
-    void *tolerance,
-    s_physics_forwarded_aabb *result)
+long class_2df5d0::function_2df5d0()
 {
-    shape->get_aabb(transform, tolerance, result);
+    return field_c->forwarded();
 }

@@ -5,7 +5,7 @@
 
 struct s_session_browser_summary;
 bool __stdcall function_64d70(s_session_browser_summary *arg_0);
-void __stdcall function_07ba10(s_bitstream *arg_0, void *arg_1);
+void __stdcall session_description_encode(s_bitstream *arg_0, void *arg_1);
 
 // @retail 0x738f0
 long __stdcall function_738f0(volatile long arg_0, byte *volatile arg_1)
@@ -25,7 +25,7 @@ long __stdcall function_738f0(volatile long arg_0, byte *volatile arg_1)
 		local_1.error = false;
 		local_1.unknown2c = 0;
 		local_1.unknown30 = 0;
-		function_07ba10(&local_1, local_2);
+		session_description_encode(&local_1, local_2);
 		if (local_1.bit_position <= local_1.size_in_bytes * 8)
 			local_0 = (local_1.bit_position + 7) / 8;
 	}

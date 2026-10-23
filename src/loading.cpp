@@ -106,9 +106,7 @@ bool map_load_request_get(s_map_load_request *request)
 	bool campaign = false;
 	long location = map_location_get(g_468808);
 	s_597d0_object *session = NULL;
-	char const *map_name;
-	long priority;
-	bool copy_only;
+	s_map_load_request result;
 
 	if (function_597d0(&session) && session->field_741c > 2 && session->field_741c <= 8)
 	{
@@ -129,37 +127,37 @@ bool map_load_request_get(s_map_load_request *request)
 		campaign = type == 0;
 	}
 
-	copy_only = true;
-	map_name = NULL;
-	priority = 0;
+	result.copy_only = true;
+	result.map_name = NULL;
+	result.priority = 0;
 	if (map_location_get(g_468804) == _map_location_none)
 	{
-		map_name = g_468804;
-		priority = 6;
+		result.map_name = g_468804;
+		result.priority = 6;
 	}
 	else if (map_location_get(g_4687fc) == _map_location_none)
 	{
-		map_name = g_4687fc;
-		priority = 5;
+		result.map_name = g_4687fc;
+		result.priority = 5;
 	}
 	else
 	{
 		if ((multiplayer || !has_scenario) && local_b608f1 &&
 			(location == _map_location_none || location == _map_location_queued))
 		{
-			map_name = g_468808;
-			priority = 4;
+			result.map_name = g_468808;
+			result.priority = 4;
 		}
 		else if (multiplayer && !local_b608f1 && cache_copy_priority(g_468808) == 4)
 		{
-			map_name = g_468808;
-			copy_only = local_b608f1;
-			priority = 0;
+			result.map_name = g_468808;
+			result.copy_only = local_b608f1;
+			result.priority = 0;
 		}
 		else if (map_location_get(g_468800) == _map_location_none)
 		{
-			map_name = g_468800;
-			priority = 3;
+			result.map_name = g_468800;
+			result.priority = 3;
 		}
 		else
 		{
@@ -175,21 +173,22 @@ bool map_load_request_get(s_map_load_request *request)
 			}
 			if (name)
 			{
-				map_name = name;
-				priority = 0;
+				result.map_name = name;
+				result.priority = 0;
 			}
 		}
 	}
 
 	if (request)
 	{
-		request->map_name = map_name;
-		request->priority = priority;
-		request->copy_only = copy_only;
+		*request = result;
 	}
 
-	return map_name != NULL;
+	return result.map_name != NULL;
 }
+
+/* retail calls this out of line from both of its callers (0x12b450, 0x163890) */
+__declspec(noinline) void map_load_request_update(void);
 
 // @retail 0x163820
 void map_load_request_update(void)
@@ -230,7 +229,7 @@ static inline bool loading_bink_playing(void)
 }
 
 /* keeps the network and the screen alive while the loading screen waits */
-static inline void loading_screen_idle(void)
+static __forceinline void loading_screen_idle(void)
 {
 	if (g_4d8ba0)
 	{
@@ -247,6 +246,19 @@ static inline void loading_screen_idle(void)
 	function_13f10(0, 0);
 }
 
+/* cache_copy_priority (unknown_213d20.cpp), which retail inlines here but
+   calls from map_load_request_get */
+static inline long cache_copy_priority_inlined(char const *map_name)
+{
+	long result = cache_copy_current_priority(map_name);
+
+	if (result == NONE)
+	{
+		result = cache_copy_queued_priority(map_name);
+	}
+	return result;
+}
+
 // @retail 0x163890
 bool __stdcall function_163890(char const *map_name, long mode)
 {
@@ -256,7 +268,7 @@ bool __stdcall function_163890(char const *map_name, long mode)
 	   active cache can satisfy this synchronous launch precondition. */
 	return map_location_get(map_name) == _map_location_open;
 #else
-	bool result = true;
+	volatile bool result = true;
 	long location = map_location_get(map_name);
 
 	if (location != _map_location_open && location != _map_location_copied)
@@ -277,7 +289,7 @@ bool __stdcall function_163890(char const *map_name, long mode)
 			wait = true;
 			break;
 		}
-		if (cache_copy_priority(map_name) < priority)
+		if (cache_copy_priority_inlined(map_name) < priority)
 		{
 			map_copy_request(map_name, priority);
 		}

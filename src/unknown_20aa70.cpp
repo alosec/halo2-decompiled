@@ -20,7 +20,7 @@ struct s_type_1a7926
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 
 // @retail 0x20a9a0
-bool function_20a9a0(long object_index, s_type_1a7926 *matrices)
+bool function_20a9a0(s_type_1a7926 *matrices, long object_index)
 {
 	bool result = false;
 	byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
@@ -73,6 +73,8 @@ struct s_anim_data
 	byte unknown8;
 	byte type;
 	short count;
+
+	void movement_get(vector3f *out, long index, real *w);
 };
 
 struct s_vec4 { vector3f v; real w; };
@@ -82,8 +84,15 @@ struct real_vector2d_copy
 };
 
 
+PRIVATE __forceinline void function_20aa71(vector3f *arg_0, byte const *arg_1)
+{
+	((dword *)arg_0)[0] = ((dword const *)arg_1)[0];
+	((dword *)arg_0)[1] = ((dword const *)arg_1)[1];
+	((dword *)arg_0)[2] = ((dword const *)arg_1)[2];
+}
+
 // @retail 0x20aa70
-void function_20aa70(vector3f *out, s_anim_data *data, long index_, real *w)
+void s_anim_data::movement_get(vector3f *out, long index_, real *w)
 {
 	short index = (short)index_;
 	s_anim_header *h;
@@ -91,23 +100,25 @@ void function_20aa70(vector3f *out, s_anim_data *data, long index_, real *w)
 
 	*out = *g_4687a4;
 	*w = 0.0f;
-	switch (data->type)
+	switch (type)
 	{
 	case 1:
-		h = data->header;
-		p = data->base + h->unknown6 + h->unknown1 + index * 8 + h->unknownc + h->unknown0;
-		*(real_vector2d_copy *)out = *(real_vector2d_copy *)p;
+		h = header;
+		p = base + h->unknown6 + h->unknown1 + index * 8 + h->unknownc + h->unknown0;
+		((dword *)out)[0] = ((dword *)p)[0];
+		((dword *)out)[1] = ((dword *)p)[1];
 		break;
 	case 2:
-		h = data->header;
-		p = data->base + h->unknown6 + h->unknown1 + index * 12 + h->unknownc + h->unknown0;
-		*(real_vector2d_copy *)out = *(real_vector2d_copy *)p;
+		h = header;
+		p = base + h->unknown6 + h->unknown1 + index * 12 + h->unknownc + h->unknown0;
+		((dword *)out)[0] = ((dword *)p)[0];
+		((dword *)out)[1] = ((dword *)p)[1];
 		*w = ((real *)p)[2];
 		break;
 	case 3:
-		h = data->header;
-		p = data->base + h->unknown6 + h->unknown1 + index * 16 + h->unknownc + h->unknown0;
-		*out = *(vector3f *)p;
+		h = header;
+		p = base + h->unknown6 + h->unknown1 + index * 16 + h->unknownc + h->unknown0;
+		function_20aa71(out, p);
 		*w = ((real *)p)[3];
 		break;
 	}
@@ -115,7 +126,6 @@ void function_20aa70(vector3f *out, s_anim_data *data, long index_, real *w)
 // @retail 0x20ab60
 void function_20ab60(s_anim_data *data, vector3f *sum, real *w)
 {
-	s_anim_header *h;
 	byte *p;
 	long i;
 	short j;
@@ -127,9 +137,11 @@ void function_20ab60(s_anim_data *data, vector3f *sum, real *w)
 	case 1:
 		for (i = 0; i < data->count; i++)
 		{
-			h = data->header;
+			s_anim_header *const &h = data->header;
+			signed char prefix = h->unknown1;
+			short header_offset = h->unknown6;
 			j = (short)i;
-			p = data->base + h->unknown6 + h->unknown1 + j * 8 + h->unknownc + h->unknown0;
+			p = data->base + header_offset + prefix + j * 8 + h->unknownc + h->unknown0;
 			sum->i = ((real *)p)[0] + sum->i;
 			sum->j = ((real *)p)[1] + sum->j;
 		}
@@ -137,9 +149,11 @@ void function_20ab60(s_anim_data *data, vector3f *sum, real *w)
 	case 2:
 		for (i = 0; i < data->count; i++)
 		{
-			h = data->header;
+			s_anim_header *const &h = data->header;
+			signed char prefix = h->unknown1;
+			short header_offset = h->unknown6;
 			j = (short)i;
-			p = data->base + h->unknown6 + h->unknown1 + j * 12 + h->unknownc + h->unknown0;
+			p = data->base + header_offset + prefix + j * 12 + h->unknownc + h->unknown0;
 			sum->i = ((real *)p)[0] + sum->i;
 			sum->j = ((real *)p)[1] + sum->j;
 			*w = ((real *)p)[2] + *w;
@@ -148,9 +162,11 @@ void function_20ab60(s_anim_data *data, vector3f *sum, real *w)
 	case 3:
 		for (i = 0; i < data->count; i++)
 		{
-			h = data->header;
+			s_anim_header *const &h = data->header;
+			signed char prefix = h->unknown1;
+			short header_offset = h->unknown6;
 			j = (short)i;
-			p = data->base + h->unknown6 + h->unknown1 + j * 16 + h->unknownc + h->unknown0;
+			p = data->base + header_offset + prefix + j * 16 + h->unknownc + h->unknown0;
 			sum->i += ((real *)p)[0];
 			sum->j += ((real *)p)[1];
 			sum->k += ((real *)p)[2];
@@ -171,21 +187,19 @@ void function_20ab60(s_anim_data *data, vector3f *sum, real *w)
 void function_20ad40(s_anim_data *data, vector3f *a, vector3f *b, long index)
 {
 	s_anim_header *h;
-	byte *p;
 
 	*a = *(vector3f *)g_468788;
 	*b = *g_4687a4;
 	h = data->header;
 	if (h->unknown4 != 0)
 	{
-		p = *(byte * volatile *)&data->base + (h->unknown2 + h->unknown6 + h->unknown1 + h->unknownc + h->unknown0);
-		p += index * 12;
-		*a = *(vector3f *)p;
+		vector3f *keys = (vector3f *)(data->base + (h->unknown2 + h->unknown6 + h->unknown1 + h->unknownc + h->unknown0));
+		*a = keys[index];
 		if (index + 1 < data->count)
 		{
-			b->i = ((real *)p)[3] - ((real *)p)[0];
-			b->j = ((real *)p)[4] - ((real *)p)[1];
-			b->k = ((real *)p)[5] - ((real *)p)[2];
+			b->i = keys[index + 1].i - keys[index].i;
+			b->j = keys[index + 1].j - keys[index].j;
+			b->k = keys[index + 1].k - keys[index].k;
 		}
 	}
 }
@@ -193,31 +207,26 @@ void function_20ad40(s_anim_data *data, vector3f *a, vector3f *b, long index)
 // @retail 0x20adf0
 void function_20adf0(s_anim_data *data, byte *dest)
 {
-	s_anim_header *h;
-	byte *src;
-	long n;
-	long i;
-
-	h = data->header;
-	if (h->unknown1)
+	if (data->header->unknown1)
 	{
-		src = data->base + h->unknown6 + h->unknownc + h->unknown0;
-		n = h->unknown1 / 3;
-		for (i = 0; i < n; i++)
+		byte *src = data->base + data->header->unknown6 + data->header->unknownc + data->header->unknown0;
+		long n = data->header->unknown1 / 3;
+
+		for (long i = 0; i < n; i++)
 		{
 			dest[i] |= src[i];
 			dest[i] |= src[n + i];
 			dest[i] |= src[2 * n + i];
 		}
 	}
-	h = data->header;
-	if (h->unknown0)
+	if (data->header->unknown0)
 	{
-		if (h->unknown6)
+		if (data->header->unknown6)
 		{
-			src = data->base + h->unknown6 + h->unknownc;
-			n = h->unknown0 / 3;
-			for (i = 0; i < n; i++)
+			byte *src = data->base + data->header->unknown6 + data->header->unknownc;
+			long n = data->header->unknown0 / 3;
+
+			for (long i = 0; i < n; i++)
 			{
 				dest[i] |= src[i];
 				dest[i] |= src[n + i];

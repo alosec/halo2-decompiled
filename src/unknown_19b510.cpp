@@ -108,14 +108,14 @@ void dialog_ok_show(long a, long dialog_id, long b, short user_flags, dialog_cho
 
 /* opens the ok/cancel dialog without choice callbacks */
 // @retail 0x19b590
-void dialog_choice_show_default(long a, long b, word user_flags, dialog_choice_callback first_chosen, long dialog_id)
+void dialog_choice_show_default(long a, long b, short user_flags, dialog_choice_callback first_chosen, long dialog_id)
 {
 	dialog_choice_show(a, dialog_id, b, user_flags, first_chosen, 0, 0);
 }
 
 /* opens the ok/cancel dialog */
 // @retail 0x19b5af
-void dialog_choice_show(long a, long dialog_id, long b, word user_flags, dialog_choice_callback first_chosen, dialog_choice_callback second_chosen, dialog_closed_callback closed)
+void dialog_choice_show(long a, long dialog_id, long b, short user_flags, dialog_choice_callback first_chosen, dialog_choice_callback second_chosen, dialog_closed_callback closed)
 {
 	s_screen_parameters parameters;
 	c_dialog_choice_screen *screen;
@@ -142,10 +142,11 @@ c_dialog_screen::c_dialog_screen(long screen_id, long a, long b, word user_flags
 	c_class_1473c9(screen_id, a, b, user_flags),
 	dialog_id(0)
 {
-	title[0] = 0;
-	message[0] = 0;
-	first_choice[0] = 0;
-	second_choice[0] = 0;
+	struct { word *title; word *message; word *first; word *second; } buffers = { title, message, first_choice, second_choice };
+	buffers.title[0] = 0;
+	buffers.message[0] = 0;
+	buffers.first[0] = 0;
+	buffers.second[0] = 0;
 	closed = 0;
 	choices = 0;
 }
@@ -250,6 +251,7 @@ c_dialog_ok_screen::c_dialog_ok_screen(long a, long b, word user_flags) :
 void c_dialog_ok_screen::v18(void *parameters)
 {
 	c_class_1a2c81 *volatile widget = (c_class_1a2c81 *)function_1480ff(screen_id);
+	widget = &button;
 	s_screen_layout layout =
 	{
 		0,
@@ -259,7 +261,6 @@ void c_dialog_ok_screen::v18(void *parameters)
 		}
 	};
 
-	widget = &button;
 	build(&layout);
 	{
 		c_class_1a2c81 **parent = &button.parent;

@@ -56,6 +56,12 @@ bool __stdcall function_59e50(c_class_58d20 *arg_0, long arg_1, long arg_2,
 	long arg_6, const dword *arg_7, const long *arg_8, const long *arg_9,
 	bool arg_10, long arg_11, const s_session_id *arg_12, const void *arg_13);
 
+static __forceinline long function_70f23(c_class_58d20 *arg_0)
+{
+	return network_session_get_language(arg_0);
+}
+
+#pragma inline_depth(0)
 // @retail 0x70ea0
 bool function_70ea0(c_session_state_matchmaking *arg_0)
 {
@@ -71,14 +77,16 @@ bool function_70ea0(c_session_state_matchmaking *arg_0)
 		s_session_search *local_4 = (s_session_search *)&arg_0->flag97c;
 		if (!arg_0->flag97c)
 		{
-			const s_909ff *local_5 = NULL;
+			const s_909ff *local_5;
 			if (*(bool *)((byte *)arg_0 + 0x93c))
 				local_5 = (const s_909ff *)((byte *)arg_0 + 0x93d);
+			else
+				local_5 = NULL;
 			function_90880(local_4, *(long *)((byte *)arg_0 + 0x18),
 				*(long *)((byte *)arg_0 + 0x7b4), *(long *)((byte *)arg_0 + 0x960),
 				*(long *)((byte *)arg_0 + 0x958), *(long *)((byte *)arg_0 + 0x95c),
 				*(long *)((byte *)arg_0 + 0x94c), *(long *)((byte *)arg_0 + 0x950),
-				local_5, network_session_get_language(local_1));
+				local_5, function_70f23(local_1));
 		}
 		if (arg_0->flag97c && !local_2->state)
 		{
@@ -87,22 +95,22 @@ bool function_70ea0(c_session_state_matchmaking *arg_0)
 			{
 				s_session_snapshot local_7;
 				local_7.unknown00 = local_6->kind;
-				memcpy(local_7.unknown04, &local_6->id, sizeof(local_6->id));
-				memcpy(local_7.unknown0c, &local_6->key, sizeof(local_6->key));
-				memcpy(local_7.words, &local_6->address, sizeof(local_6->address));
+				memcpy(local_7.unknown04, (byte *)arg_0 + 0xa24, sizeof(local_6->id));
+				memcpy(local_7.unknown0c, (byte *)arg_0 + 0xa2c, sizeof(local_6->key));
+				memcpy(local_7.words, (byte *)arg_0 + 0xa3c, sizeof(local_6->address));
 				local_7.unknown40 = 2;
 				if (network_session_host_set_data5ddc(local_1, (const s_parameters_part *)&local_7))
 				{
 					s_70ea0 local_8;
 					memset(&local_8, 0, sizeof(local_8));
-					local_8.field_0 = 2;
-					local_8.field_4 = *(long *)((byte *)arg_0 + 0x94c);
-					local_8.field_8 = *(long *)((byte *)arg_0 + 0x950);
-					local_8.field_c = (long)time(NULL) - arg_0->unknown968;
-					local_8.field_10 = *(long *)((byte *)arg_0 + 0xa60);
 					local_8.field_14 = *(long *)((byte *)arg_0 + 0x960);
 					local_8.field_18 = *(long *)((byte *)arg_0 + 0x958);
 					local_8.field_1c = *(long *)((byte *)arg_0 + 0x95c);
+					local_8.field_0 = 2;
+					local_8.field_4 = *(long *)((byte *)arg_0 + 0x94c);
+					local_8.field_8 = *(long *)((byte *)arg_0 + 0x950);
+					local_8.field_10 = *(long *)((byte *)arg_0 + 0xa60);
+					local_8.field_c = (long)time(NULL) - arg_0->unknown968;
 					memcpy(local_8.field_20, (byte *)arg_0 + 0x93d, sizeof(local_8.field_20));
 					s_session_id local_9 = *network_session_get_id(local_1);
 					if (function_59e50(local_2, 2, local_7.unknown00,
@@ -119,9 +127,9 @@ bool function_70ea0(c_session_state_matchmaking *arg_0)
 					arg_0->mode = 8;
 				local_0 = true;
 			}
-			else if (*(long *)((byte *)local_4 + 8) != 1)
+			else if (*(long *)((byte *)arg_0 + 0x984) != 1)
 			{
-				if (*(long *)((byte *)local_4 + 8) == 0)
+				if (*(long *)((byte *)arg_0 + 0x984) == 0)
 					network_session_set_mode(local_1, 6);
 				else
 					arg_0->mode = 15;
@@ -138,8 +146,9 @@ bool function_70ea0(c_session_state_matchmaking *arg_0)
 		local_3 = local_1->state;
 		if (local_3 == 5 || local_3 == 6 || local_3 == 7 || local_3 == 8)
 		{
+			long local_18 = arg_0->unknowna7c;
 			long local_11 = g_510548 ? g_51054c : GetTickCount();
-			if (local_11 - arg_0->unknowna7c > *(long *)((byte *)arg_0 + 0x96c) + g_network_configuration.value198)
+			if (local_11 - local_18 > *(long *)((byte *)arg_0 + 0x96c) + g_network_configuration.value198)
 			{
 				network_session_set_mode(local_1, 6);
 				local_0 = true;
@@ -159,3 +168,4 @@ bool function_70ea0(c_session_state_matchmaking *arg_0)
 local_19:
 	return local_0;
 }
+#pragma inline_depth(255)

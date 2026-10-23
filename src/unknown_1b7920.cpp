@@ -4,6 +4,8 @@
 #include "unknown_20fe20.h"
 #include "unknown_1e1f20.h"
 
+static __forceinline long real_to_long(real value);
+
 /* slot type 0x1e: the actor goes to its prop's point */
 
 struct s_slot_1e
@@ -39,6 +41,12 @@ void __stdcall function_1b7c70(long actor_index, s_slot *slot);
 void __stdcall function_1b7cc0(long actor_index, s_slot *slot);
 
 /* whether the actor's prop is in state 3 within 3 of where it should be */
+PRIVATE __forceinline real function_1b7921(s_prop_node_view *arg_0, s_prop_view_fields *arg_1)
+{
+    s_prop_state_view *local_0 = prop_node_state(arg_0);
+    return function_210970(&local_0->unknown48, &arg_1->unknown18);
+}
+
 // @retail 0x1b7920
 short __stdcall function_1b7920(long actor_index)
 {
@@ -51,7 +59,7 @@ short __stdcall function_1b7920(long actor_index)
 		s_prop_view_fields *view = prop_node_view(node);
 
 		if (view && view->unknown06 == 3 &&
-			function_210970(&prop_node_state(node)->unknown48, &view->unknown18) < 3.0f)
+			function_1b7921(node, view) < 3.0f)
 		{
 			result = 1;
 		}
@@ -59,6 +67,9 @@ short __stdcall function_1b7920(long actor_index)
 	return result;
 }
 
+// score 74 (was 74): retail inlines the linear congruential generator (imul by
+// 0x19660d, add 0x3c6ef35f) where ours calls a helper that reads the value out
+// of the state, so our code is four bytes longer.
 // @retail 0x1b79d0
 bool __stdcall function_1b79d0(long actor_index, s_slot *slot)
 {
@@ -71,34 +82,24 @@ bool __stdcall function_1b79d0(long actor_index, s_slot *slot)
 	if (view && view->unknown10 != NONE && character)
 	{
 		s_slot_1e *state = (s_slot_1e *)slot;
-		real ticks = character->unknown08 + function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__) * 2.0f;
+		real sample = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+		real ticks = character->unknown08 + sample * 2.0f;
 		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->unknown1c, character->unknown20);
-		real seconds;
-		long value;
 
 		state->point = view->unknown18;
 		state->point.point.z += s_type_5cfb45->unknown38 - s_type_5cfb45->position.z;
 		function_1f86a0(actor_index);
-		seconds = g_510c54->field_2_3 * ticks;
-		__asm
-		{
-			fld seconds
-			fistp value
-		}
-		state->ticks = (short)value;
+		state->ticks = (short)real_to_long(g_510c54->field_2_3 * ticks);
 		state->start_time = g_510c54->game_time;
-		seconds = g_510c54->field_2_3 * delay;
-		__asm
-		{
-			fld seconds
-			fistp value
-		}
-		state->delay = (short)value;
-		return true;
+		state->delay = (short)real_to_long(g_510c54->field_2_3 * delay);
+		result = true;
 	}
 	return result;
 }
 
+// score 75 (was 75): retail pushes EBP first and keeps the character in EBP,
+// and calls function_25d740 out of line; our build inlines that helper and
+// keeps the character in EBX.
 // @retail 0x1b7b90
 short __stdcall function_1b7b90(long actor_index, s_slot *slot, bool active)
 {
@@ -168,6 +169,21 @@ struct s_character_weapon_1e
 	s_weapon_difficulty_entry difficulty[3];
 };
 
+PRIVATE __forceinline point3f *function_1b7cc1(s_type_c3b527 const *arg_0, point3f *arg_1)
+{
+	if (arg_0->output_index != NONE)
+	{
+		if (!function_2104b0(arg_0->output_index, &arg_0->point, arg_1))
+			*arg_1 = arg_0->point;
+	}
+	else
+	{
+		*arg_1 = arg_0->point;
+	}
+
+	return arg_1;
+}
+
 // @retail 0x1b7cc0
 void __stdcall function_1b7cc0(long actor_index, s_slot *slot)
 {
@@ -176,13 +192,13 @@ void __stdcall function_1b7cc0(long actor_index, s_slot *slot)
 	s_slot_1e *state = (s_slot_1e *)slot;
 	point3f point;
 
-	function_210850(&state->point, &point);
+	function_1b7cc1(&state->point, &point);
 	actor->unknown41c = 3;
 	actor->unknown420 = 3;
 	actor->unknown424.point = point;
-	actor->unknown438.point = point;
 	actor->unknown430 = 2;
 	actor->unknown434 = 3;
+	actor->unknown438.point = point;
 	actor->unknown444 = NONE;
 	actor->unknown488 = true;
 	actor->unknown4a0 = true;
@@ -195,8 +211,9 @@ void __stdcall function_1b7cc0(long actor_index, s_slot *slot)
 		if (weapon)
 		{
 			s_weapon_difficulty_entry *entry;
+			short local_0 = g_4e6948->state == 1 ? g_4e6948->difficulty : 1;
 
-			switch (g_4e6948->state == 1 ? g_4e6948->difficulty : 1)
+			switch (local_0)
 			{
 			case 2:
 				entry = &weapon->difficulty[1];

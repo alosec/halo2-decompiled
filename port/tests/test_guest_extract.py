@@ -100,16 +100,16 @@ def main():
 
         press_start_output = Path(temporary) / "press-start.o"
         press_start_command = command[:]
-        press_start_command[press_start_command.index("h2_extract_selected")] = "?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
+        press_start_command[press_start_command.index("h2_extract_selected")] = "?press_start_screen_open@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z"
         press_start_command[press_start_command.index("--extract-global"):press_start_command.index("--output")] = []
         press_start_command[press_start_command.index(output)] = press_start_output
-        press_start_command[-1] = args.root / "src/unknown_22f118.cpp"
+        press_start_command[-1] = args.root / "src/start_prompt_screen.cpp"
         subprocess.run([str(value) for value in press_start_command], check=True)
         press_start_defined = subprocess.check_output(
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", press_start_output],
             text=True,
         )
-        if "_?function_22f11e@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in press_start_defined:
+        if "_?press_start_screen_open@@YAPAVc_class_1473c9@@PAUs_screen_parameters@@@Z" not in press_start_defined:
             raise RuntimeError("press-start source was not selectively compilable")
 
         preview_output = Path(temporary) / "preview-renderer.o"
@@ -128,7 +128,7 @@ def main():
 
         profile_storage_output = Path(temporary) / "profile-storage.o"
         profile_storage_command = command[:]
-        profile_storage_command[profile_storage_command.index("h2_extract_selected")] = "?function_215790@@YAXXZ"
+        profile_storage_command[profile_storage_command.index("h2_extract_selected")] = "?saved_game_storage_update@@YAXXZ"
         profile_storage_command[profile_storage_command.index("--extract-global"):profile_storage_command.index("--output")] = []
         profile_storage_command[profile_storage_command.index(output)] = profile_storage_output
         profile_storage_command[-1] = args.root / "src/unknown_2157e0.cpp"
@@ -137,7 +137,7 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", profile_storage_output],
             text=True,
         )
-        if "_?function_215790@@YAXXZ" not in profile_storage_defined:
+        if "_?saved_game_storage_update@@YAXXZ" not in profile_storage_defined:
             raise RuntimeError("profile storage source was not selectively compilable")
 
         keyboard_output = Path(temporary) / "virtual-keyboard.o"
@@ -156,16 +156,16 @@ def main():
 
         part_init_output = Path(temporary) / "campaign-part-init.o"
         part_init_command = command[:]
-        part_init_command[part_init_command.index("h2_extract_selected")] = "?function_1c2390@s_part_table@@QAAXXZ"
+        part_init_command[part_init_command.index("h2_extract_selected")] = "?construct_shapes@s_part_table@@QAAXXZ"
         part_init_command[part_init_command.index("--extract-global"):part_init_command.index("--output")] = []
         part_init_command[part_init_command.index(output)] = part_init_output
-        part_init_command[-1] = args.root / "src/unknown_1c22c0.cpp"
+        part_init_command[-1] = args.root / "src/physics_part_tables.cpp"
         subprocess.run([str(value) for value in part_init_command], check=True)
         part_init_defined = subprocess.check_output(
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", part_init_output],
             text=True,
         )
-        if "_?function_1c2390@s_part_table@@QAAXXZ" not in part_init_defined:
+        if "_?construct_shapes@s_part_table@@QAAXXZ" not in part_init_defined:
             raise RuntimeError("Campaign part-table initializer was not selectively compilable")
 
         physics_runtime_output = Path(temporary) / "physics-runtime-constructor.o"
@@ -198,11 +198,11 @@ def main():
 
         physics_type_output = Path(temporary) / "physics-runtime-type.o"
         physics_type_command = command[:]
-        physics_type_command[physics_type_command.index("h2_extract_selected")] = "?function_2fbb30@@YAPAXXZ"
+        physics_type_command[physics_type_command.index("h2_extract_selected")] = "?v3@c_244980_base@@UAAPAXXZ"
         physics_type_command[physics_type_command.index("--extract-global"):physics_type_command.index("--output")] = []
         physics_type_command[physics_type_command.index("--output"):physics_type_command.index("--output")] = [
-            "--extract-symbol", "?function_2fdfe0@@YAPAXXZ",
-            "--extract-symbol", "?function_2fbfe0@@YAPAXXZ",
+            "--extract-symbol", "?function_2fdfe0@class_2fdfe0@@QAAPAUobject_480504@@XZ",
+            "--extract-symbol", "?function_2fbfe0@class_2fbfe0@@QAAPAUobject_4803ec@@XZ",
         ]
         physics_type_command[physics_type_command.index(output)] = physics_type_output
         physics_type_command[-1] = args.root / "src/unknown_2fbb30.cpp"
@@ -212,21 +212,21 @@ def main():
             text=True,
         )
         for symbol in (
-            "_?function_2fbb30@@YAPAXXZ",
-            "_?function_2fdfe0@@YAPAXXZ",
-            "_?function_2fbfe0@@YAPAXXZ",
+            "_?v3@c_244980_base@@UAAPAXXZ",
+            "_?function_2fdfe0@class_2fdfe0@@QAAPAUobject_480504@@XZ",
+            "_?function_2fbfe0@class_2fbfe0@@QAAPAUobject_4803ec@@XZ",
         ):
             if symbol not in physics_type_defined:
                 raise RuntimeError(f"physics runtime type-descriptor method was not retained: {symbol}")
 
         physics_model_type_output = Path(temporary) / "physics-model-runtime-types.o"
         physics_model_type_command = command[:]
-        physics_model_type_command[physics_model_type_command.index("h2_extract_selected")] = "?function_2df310@@YAPAXXZ"
+        physics_model_type_command[physics_model_type_command.index("h2_extract_selected")] = "?function_2df310@class_2df310@@QAAPAUobject_480320@@XZ"
         physics_model_type_command[physics_model_type_command.index("--extract-global"):physics_model_type_command.index("--output")] = []
         extra_physics_model_types = (
-            "?function_2fe260@@YAPAXXZ", "?function_2df4b0@@YAPAXXZ",
-            "?function_2fd0a0@@YAPAXXZ", "?function_2fde30@@YAPAXXZ",
-            "?function_2fe0b0@@YAPAXXZ", "?function_2fdfa0@@YAPAXXZ",
+            "?function_2fe260@class_2fe260@@QAAPAUobject_480554@@XZ", "?function_2df4b0@class_2df4b0@@QAAPAUobject_480370@@XZ",
+            "?function_2fd0a0@class_2fd0a0@@QAAPAUobject_48048c@@XZ", "?function_2fde30@class_2fde30@@QAAPAUobject_4804b4@@XZ",
+            "?function_2fe0b0@class_2fe0b0@@QAAPAUobject_48052c@@XZ", "?function_2fdfa0@class_2fdfa0@@QAAPAUobject_4804dc@@XZ",
         )
         insert_at = physics_model_type_command.index("--output")
         for symbol in extra_physics_model_types:
@@ -239,17 +239,17 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_type_output],
             text=True,
         )
-        for symbol in ("?function_2df310@@YAPAXXZ",) + extra_physics_model_types:
+        for symbol in ("?function_2df310@class_2df310@@QAAPAUobject_480320@@XZ",) + extra_physics_model_types:
             if f"_{symbol}" not in physics_model_type_defined:
                 raise RuntimeError(f"physics-model runtime type method was not retained: {symbol}")
 
         physics_model_count_output = Path(temporary) / "physics-model-runtime-count.o"
         physics_model_count_command = command[:]
-        physics_model_count_command[physics_model_count_command.index("h2_extract_selected")] = "?function_2fc1a0@@YAJPAX@Z"
+        physics_model_count_command[physics_model_count_command.index("h2_extract_selected")] = "?function_2fc1a0@class_2fc1a0@@QBAJXZ"
         physics_model_count_command[physics_model_count_command.index("--extract-global"):physics_model_count_command.index("--output")] = []
         extra_physics_model_accessors = (
-            "?function_2fc1b0@@YAJPAXJ@Z", "?function_2fc1d0@@YAJPAXJJ@Z",
-            "?function_2fc1e0@@YAJPAXJ@Z", "?function_2fc1f0@@YAJPAXJ@Z",
+            "?next@class_2fc1b0@@QBAHH@Z", "?function_2fc1d0@class_2fc1d0@@QBAJJJ@Z",
+            "?get@class_2fc1b0@@QBAJH@Z", "?function_2fc1f0@class_2fc1f0@@QBAJJ@Z",
         )
         insert_at = physics_model_count_command.index("--output")
         for symbol in extra_physics_model_accessors:
@@ -262,15 +262,15 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_count_output],
             text=True,
         )
-        for symbol in ("?function_2fc1a0@@YAJPAX@Z",) + extra_physics_model_accessors:
+        for symbol in ("?function_2fc1a0@class_2fc1a0@@QBAJXZ",) + extra_physics_model_accessors:
             if f"_{symbol}" not in physics_model_count_defined:
                 raise RuntimeError(f"physics-model runtime accessor was not retained: {symbol}")
 
         physics_model_kind_output = Path(temporary) / "physics-model-runtime-kinds.o"
         physics_model_kind_command = command[:]
-        physics_model_kind_command[physics_model_kind_command.index("h2_extract_selected")] = "?function_2de7a0@@YAJXZ"
+        physics_model_kind_command[physics_model_kind_command.index("h2_extract_selected")] = "?function_2de7a0@class_2de7a0@@QAAJXZ"
         physics_model_kind_command[physics_model_kind_command.index("--extract-global"):physics_model_kind_command.index("--output")] = [
-            "--extract-symbol", "?function_2fe190@@YAJXZ",
+            "--extract-symbol", "?function_2fe190@class_2fe190@@QAAJXZ",
         ]
         physics_model_kind_command[physics_model_kind_command.index(output)] = physics_model_kind_output
         physics_model_kind_command[-1] = args.root / "src/unknown_2de7a0.cpp"
@@ -279,13 +279,13 @@ def main():
             [args.llvm / "llvm-nm", "--defined-only", "--format=posix", physics_model_kind_output],
             text=True,
         )
-        for symbol in ("?function_2de7a0@@YAJXZ", "?function_2fe190@@YAJXZ"):
+        for symbol in ("?function_2de7a0@class_2de7a0@@QAAJXZ", "?function_2fe190@class_2fe190@@QAAJXZ"):
             if f"_{symbol}" not in physics_model_kind_defined:
                 raise RuntimeError(f"physics-model runtime kind was not retained: {symbol}")
 
         physics_model_capsule_output = Path(temporary) / "physics-model-capsule.o"
         physics_model_capsule_symbol = (
-            "?function_2de1b0@c_physics_capsule_shape@@UAAPA_NPA_NPBUs_physics_capsule_segment@@PAUs_physics_capsule_hit@@@Z"
+            "?function_2de1b0@capsule_2de1b0@@QAA?AUanswer_2deda0@@PBUsegment_2deda0@@PAUhit_2deda0@@@Z"
         )
         physics_model_capsule_command = command[:]
         physics_model_capsule_command[physics_model_capsule_command.index("h2_extract_selected")] = physics_model_capsule_symbol
@@ -302,7 +302,7 @@ def main():
 
         physics_model_offset_box_output = Path(temporary) / "physics-model-offset-box.o"
         physics_model_offset_box_symbol = (
-            "?function_2fd8a0@c_physics_offset_box_shape@@UAAXPBUs_physics_offset_box_matrix@@MPAUs_physics_offset_box_bounds@@@Z"
+            "?function_2fd8a0@box_2fd8a0@@QBAXPBUh2_native_box_2fd8a0_vector@@MPAU2@@Z"
         )
         physics_model_offset_box_command = command[:]
         physics_model_offset_box_command[physics_model_offset_box_command.index("h2_extract_selected")] = physics_model_offset_box_symbol
@@ -319,8 +319,8 @@ def main():
 
         physics_model_collection_query_output = Path(temporary) / "physics-model-collection-query.o"
         physics_model_collection_query_symbols = (
-            "?function_2fbb70@c_physics_collection_shape@@UAAPA_NPA_NPAUs_physics_collection_query@@PAUs_physics_collection_hit@@@Z",
-            "?function_2fbe90@c_physics_collection_shape@@UAAXPAUs_physics_collection_query@@PAUs_physics_collection_context@@PAX@Z",
+            "?function_2fbb70@container_2fbb70@@QBA?AVanswer_2fbb70@@PBUray_2fbb70@@PAUhit_2fbb70@@@Z",
+            "?function_2fbe90@container_2fbcc0@@QBAXPBUray_2fbe90@@PBUbody_2fbe90@@PAX@Z",
         )
         physics_model_collection_query_command = command[:]
         physics_model_collection_query_command[physics_model_collection_query_command.index("h2_extract_selected")] = physics_model_collection_query_symbols[0]
@@ -357,7 +357,7 @@ def main():
 
         physics_model_plane_intersection_output = Path(temporary) / "physics-model-plane-intersection.o"
         physics_model_plane_intersection_symbol = (
-            "?function_2fd5c0@c_physics_plane_cloud_shape@@UAAPA_NPA_NPBUs_physics_plane_segment@@PAUs_physics_plane_hit@@@Z"
+            "?function_2fd5c0@convex_2fd5c0@@QBA?AVanswer_2fd5c0@@PBUray_2fd5c0@@PAUhit_2fd5c0@@@Z"
         )
         physics_model_plane_intersection_command = command[:]
         physics_model_plane_intersection_command[physics_model_plane_intersection_command.index("h2_extract_selected")] = physics_model_plane_intersection_symbol
@@ -374,9 +374,9 @@ def main():
 
         physics_model_vertex_cloud_output = Path(temporary) / "physics-model-vertex-cloud.o"
         physics_model_vertex_cloud_symbols = (
-            "?function_2fd260@c_physics_vertex_cloud_shape@@UAAXPBMPAM@Z",
-            "?function_2fd430@c_physics_vertex_cloud_shape@@UAAXPBGPAMJ@Z",
-            "?function_2fd730@c_physics_vertex_cloud_shape@@UAAPAMPAM@Z",
+            "?function_2fd260@convex_vertices_2fd260@@QBAXPBT__m128@@PAT2@@Z",
+            "?function_2fd430@convex_vertices_2fd260@@QBAXPBGHPAT__m128@@@Z",
+            "?function_2fd730@convex_2fd5c0@@QBAPAT__m128@@PAT2@@Z",
         )
         physics_model_vertex_cloud_command = command[:]
         physics_model_vertex_cloud_command[physics_model_vertex_cloud_command.index("h2_extract_selected")] = physics_model_vertex_cloud_symbols[0]
@@ -397,7 +397,7 @@ def main():
 
         physics_model_two_vertex_bounds_output = Path(temporary) / "physics-model-two-vertex-bounds.o"
         physics_model_two_vertex_bounds_symbol = (
-            "?function_2de0f0@c_physics_two_vertex_shape@@UAAXPBUs_physics_two_vertex_matrix@@MPAUs_physics_two_vertex_bounds@@@Z"
+            "?function_2de0f0@rounded_segment_2de0f0@@QBAXABUtransform_2de0f0@@MAAUbounds_2de0f0@@@Z"
         )
         physics_model_two_vertex_bounds_command = command[:]
         physics_model_two_vertex_bounds_command[physics_model_two_vertex_bounds_command.index("h2_extract_selected")] = physics_model_two_vertex_bounds_symbol
@@ -469,7 +469,7 @@ def main():
 
         physics_model_projection_output = Path(temporary) / "physics-model-projection.o"
         physics_model_projection_symbol = (
-            "?function_2df220@c_physics_projected_shape@@UAAMPBM@Z"
+            "?function_2df220@shape_2df220@@QBAMABT__m128@@@Z"
         )
         physics_model_projection_command = command[:]
         physics_model_projection_command[physics_model_projection_command.index("h2_extract_selected")] = physics_model_projection_symbol
@@ -486,7 +486,7 @@ def main():
 
         physics_model_box_ray_output = Path(temporary) / "physics-model-box-ray.o"
         physics_model_box_ray_symbol = (
-            "?function_2fe550@c_physics_box_shape@@UAAPA_NPA_NPBUs_physics_line_segment@@PAUs_physics_line_hit@@@Z"
+            "?function_2fe550@box_2fe550@@QBA?AUanswer_2fe550@@PBUsegment_2fe550@@PAUhit_2fe550@@@Z"
         )
         physics_model_box_ray_command = command[:]
         physics_model_box_ray_command[physics_model_box_ray_command.index("h2_extract_selected")] = physics_model_box_ray_symbol
@@ -503,7 +503,7 @@ def main():
 
         physics_model_hit_forward_output = Path(temporary) / "physics-model-hit-forward.o"
         physics_model_hit_forward_symbol = (
-            "?function_2df110@c_physics_convex_shape@@UAAXPBXPAUs_physics_shape_query_transform@@PAVc_physics_shape_hit_collector@@@Z"
+            "?function_2df110@shape_2df110@@QBAXPBXPBUbody_2df110@@PAVcollector_2df110@@@Z"
         )
         physics_model_hit_forward_command = command[:]
         physics_model_hit_forward_command[physics_model_hit_forward_command.index("h2_extract_selected")] = physics_model_hit_forward_symbol
@@ -520,8 +520,8 @@ def main():
 
         physics_model_box_bounds_output = Path(temporary) / "physics-model-box-bounds.o"
         physics_model_box_bounds_symbols = (
-            "?function_2fe350@@YAXPBUs_physics_bounds_matrix@@PBMMPAUs_physics_bounds@@@Z",
-            "?function_2fe420@c_physics_box_shape@@QAAXPBUs_physics_bounds_matrix@@MPAUs_physics_bounds@@@Z",
+            "?function_2fe350@@YAXPBXPBT__m128@@MPAX@Z",
+            "?function_2fe420@class_2fe410@@QBAXPBXMPAX@Z",
         )
         physics_model_box_bounds_command = command[:]
         physics_model_box_bounds_command[physics_model_box_bounds_command.index("h2_extract_selected")] = physics_model_box_bounds_symbols[0]
@@ -542,7 +542,7 @@ def main():
         physics_model_radius_output = Path(temporary) / "physics-model-support-radius.o"
         physics_model_radius_command = command[:]
         physics_model_radius_symbol = (
-            "?function_2df0b0@c_physics_convex_shape@@UAAMPBM@Z"
+            "?reach@convex_2df0b0@@QBAMPBT__m128@@@Z"
         )
         physics_model_radius_command[physics_model_radius_command.index("h2_extract_selected")] = physics_model_radius_symbol
         physics_model_radius_command[physics_model_radius_command.index("--extract-global"):physics_model_radius_command.index("--output")] = []
@@ -600,10 +600,10 @@ def main():
 
         physics_model_marker_output = Path(temporary) / "physics-model-shape-marker.o"
         physics_model_marker_symbols = (
-            "?function_2ddca0@c_physics_shape_455500@@QAAXPAUs_physics_shape_marker_455500@@@Z",
-            "?function_2ddcc0@c_physics_shape_455500@@QAAPAXJ@Z",
-            "?function_2ddd30@c_physics_shape_455500@@QAAXPBMPAM@Z",
-            "?function_2dddb0@c_physics_shape_455500@@QAAXPBGJPAM@Z",
+            "?get_descriptor@class_2ddca0@@QBA?AUdescriptor_2ddca0@@XZ",
+            "?function_2ddcc0@class_2ddcc0@@QAAPAJJ@Z",
+            "?function_2ddd30@class_2ddd00@@QBAXPBT__m128@@PAT2@@Z",
+            "?gather@class_2dddb0@@QBAXPBGHPAT__m128@@@Z",
         )
         physics_model_marker_command = command[:]
         physics_model_marker_command[physics_model_marker_command.index("h2_extract_selected")] = physics_model_marker_symbols[0]
@@ -647,13 +647,13 @@ def main():
 
         physics_model_accessor_output = Path(temporary) / "physics-model-runtime-accessors.o"
         physics_model_accessor_symbols = (
-            "?function_2fd210@c_physics_shape_456008@@QAAXPAUs_physics_shape_marker@@@Z",
-            "?function_2fd230@c_physics_shape_456008@@QAAXPAJ@Z",
-            "?function_2fe330@c_physics_shape_455ef0@@QAAXPAUs_physics_shape_marker@@@Z",
-            "?function_2fe410@c_physics_shape_455ef0@@QAAXPAM@Z",
-            "?function_2fe450@c_physics_shape_455ef0@@QAAXPBMPAM@Z",
-            "?function_2fe490@c_physics_shape_455ef0@@QAAXPBGJPAM@Z",
-            "?function_2fe4f0@c_physics_shape_455ef0@@QAAXPAM@Z",
+            "?get_descriptor@object_2fd210@@QBA?AUdescriptor_2fd210@@XZ",
+            "?get@class_2fd230@@QBAXPAUs_2fd230@@@Z",
+            "?get_descriptor@class_2fe330@@QBA?AUdescriptor_2fe330@@XZ",
+            "?get_half_extents@class_2fe410@@QBAXPAT__m128@@@Z",
+            "?get_support@class_2fe410@@QBAXPBT__m128@@PAT2@@Z",
+            "?get_corners@class_2fe410@@QBAXPBGHPAT__m128@@@Z",
+            "?get_all_corners@class_2fe410@@QBAPAT__m128@@PAT2@@Z",
         )
         physics_model_accessor_command = command[:]
         physics_model_accessor_command[physics_model_accessor_command.index("h2_extract_selected")] = physics_model_accessor_symbols[0]
@@ -676,7 +676,7 @@ def main():
         physics_model_aabb_output = Path(temporary) / "physics-model-collection-aabb.o"
         physics_model_aabb_command = command[:]
         physics_model_aabb_symbol = (
-            "?function_2fc120@c_physics_shape_collection@@QAAXPAX0PAUs_physics_aabb@@@Z"
+            "?box_around@list_shape_2fc120@@QBAXPBXMPAUaabb_2fc120@@@Z"
         )
         physics_model_aabb_command[physics_model_aabb_command.index("h2_extract_selected")] = physics_model_aabb_symbol
         physics_model_aabb_command[physics_model_aabb_command.index("--extract-global"):physics_model_aabb_command.index("--output")] = []
@@ -692,8 +692,8 @@ def main():
 
         physics_model_forward_output = Path(temporary) / "physics-model-shape-forwarder.o"
         physics_model_forward_symbols = (
-            "?function_2fe1a0@c_physics_shape_forwarder@@QAAPAXPAX00@Z",
-            "?function_2fe1c0@c_physics_shape_forwarder@@QAAXPAXPAJ0@Z",
+            "?function_2fe1a0@class_2fe1a0@@QAA?AUs_2fe1a0_result@@JJ@Z",
+            "?function_2fe1c0@class_2fe1a0@@QAAXJPBUs_2fe1a0_input@@J@Z",
         )
         physics_model_forward_command = command[:]
         physics_model_forward_command[physics_model_forward_command.index("h2_extract_selected")] = physics_model_forward_symbols[0]
@@ -714,7 +714,7 @@ def main():
         physics_model_aabb_forward_output = Path(temporary) / "physics-model-aabb-forwarder.o"
         physics_model_aabb_forward_command = command[:]
         physics_model_aabb_forward_symbol = (
-            "?function_2df5d0@c_physics_aabb_forwarder@@QAAXPAX0PAUs_physics_forwarded_aabb@@@Z"
+            "?function_2df5d0@class_2df5d0@@QAAJXZ"
         )
         physics_model_aabb_forward_command[physics_model_aabb_forward_command.index("h2_extract_selected")] = physics_model_aabb_forward_symbol
         physics_model_aabb_forward_command[physics_model_aabb_forward_command.index("--extract-global"):physics_model_aabb_forward_command.index("--output")] = []

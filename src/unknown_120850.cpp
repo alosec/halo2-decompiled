@@ -5,8 +5,10 @@
 #include "unknown_0259d0.h"
 #include <math.h>
 
+__declspec(noinline) short function_120850(vector3f const *v);
+
 // @retail 0x120850
-short function_120850(vector3f const *v)
+inline short function_120850(vector3f const *v)
 {
 	real x = (real)fabs(v->i);
 	real y = (real)fabs(v->j);
@@ -18,3 +20,8 @@ short function_120850(vector3f const *v)
 		return 1;
 	return 0;
 }
+
+#if H2_NATIVE_PORT
+/* native: emit the inline definition so the guest image can link it */
+__attribute__((used)) static void *h2_emit_function_120850 = (void *)&function_120850;
+#endif

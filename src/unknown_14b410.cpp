@@ -15,7 +15,7 @@ struct s_type_fb9815
 #pragma pack(pop)
 
 // @retail 0x14b410
-void machine_identifier_build(s_type_fb9815 *identifier, long index)
+inline void machine_identifier_build(s_type_fb9815 *identifier, long index)
 {
 	memset(identifier, 0, sizeof(s_type_fb9815));
 	identifier->value = (((((((__int64)g_4cf7cc[5] << 8 | (__int64)g_4cf7cc[4]) << 8 | (__int64)g_4cf7cc[3]) << 8 |

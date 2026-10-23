@@ -13,7 +13,7 @@ s_record_pool *g_4ea944;
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 bool __stdcall function_bab40(long object_index, long name, real *value);
 void function_17c0e0(long contrail_index, short count, bool force);
 void __stdcall function_17c540(long contrail_index, real dt);
@@ -166,7 +166,7 @@ static inline void contrail_location_from_point(s_location *location, point3f *p
 	}
 	else
 	{
-		long leaf_index = function_14a280(g_4e033c, point, 0);
+		long leaf_index = function_14a280(g_4e033c, 0, point);
 
 		location->leaf_index = leaf_index;
 		cluster_index = leaf_index != NONE ? ((s_contrail_structure_bsp *)g_4e0348)->leaves[leaf_index].cluster_index : NONE;
@@ -176,7 +176,7 @@ static inline void contrail_location_from_point(s_location *location, point3f *p
 }
 
 void function_17b850(void);
-real function_17bef0(dword flags, real lower, real scale, real upper, byte bit);
+real function_17bef0(dword flags, real scale, real lower, real upper, long bit);
 void function_17bf80(s_contrail_datum *contrail);
 short function_17c040(long contrail_index, real dt);
 void function_17c880(long contrail_index);
@@ -311,7 +311,7 @@ void contrails_update_locations(void)
 					}
 					else
 					{
-						long leaf_index = function_14a280(g_4e033c, &point->position, 0);
+						long leaf_index = function_14a280(g_4e033c, 0, &point->position);
 
 						point->location.leaf_index = leaf_index;
 						point->location.cluster_index = leaf_index != NONE ? ((s_contrail_structure_bsp *)g_4e0348)->leaves[leaf_index].cluster_index : NONE;
@@ -407,14 +407,11 @@ void function_17bc40(real dt)
 				contrail->scale = scale;
 			}
 			if (active)
-			{
 				contrail->flag0 = true;
-				function_17c0e0(contrail_index, function_17c040(contrail_index, dt), true);
-			}
 			else
-			{
 				contrail->flag0 = false;
-			}
+			if (active)
+				function_17c0e0(contrail_index, function_17c040(contrail_index, dt), true);
 		}
 		if (elapsed > 0.0f && (definition->unknown24 > 0.0f || definition->unknown28 > 0.0f))
 		{
@@ -425,7 +422,7 @@ void function_17bc40(real dt)
 			{
 				if (definition->flags02 & 0x20)
 					rate = contrail->scale * rate;
-				for (;;)
+				do
 				{
 					real step = 1.0f / rate - contrail->frame_time;
 
@@ -436,9 +433,7 @@ void function_17bc40(real dt)
 					}
 					function_17bf80(contrail);
 					remaining -= step;
-					if (!(remaining > 0.0f))
-						break;
-				}
+				} while (remaining > 0.0f);
 			}
 			else
 			{
@@ -472,21 +467,18 @@ void function_17bc40(real dt)
 	}
 }
 
-__declspec(noinline) real function_17bef0(dword flags, real lower, real scale, real upper, byte bit);
+__declspec(noinline) real function_17bef0(dword flags, real scale, real lower, real upper, long bit);
 
 // @retail 0x17bef0
-real function_17bef0(dword flags, real lower, real scale, real upper, byte bit)
+real function_17bef0(dword flags, real scale, real lower, real upper, long bit)
 {
-	byte const *bit_argument = &bit;
-	bit = *bit_argument;
+	/* only the low byte of the bit index is read, once */
+	byte b = (byte)*(long const *)&bit;
 	real base = lower;
-
-	if (flags & (1 << bit))
+	if (flags & (1 << b))
 		base = scale * lower;
-
 	real range = upper - lower;
-
-	if (flags & (1 << (byte)(bit + 1)))
+	if (flags & (1 << (byte)(b + 1)))
 		range = range * scale;
 	return base + range * ((real)_random(&g_4e7408->seed, __FILE__, __LINE__) * (1.f / 65535.f));
 }
@@ -552,6 +544,13 @@ short function_17c040(long contrail_index, real dt)
 	return count;
 }
 
+static inline real contrail_scale_if_17c0e0(word flags, word mask, real scale, real value)
+{
+	if (flags & mask)
+		value = scale * value;
+	return value;
+}
+
 // @retail 0x17c0e0
 void function_17c0e0(long contrail_index, short count, bool force)
 {
@@ -561,38 +560,30 @@ void function_17c0e0(long contrail_index, short count, bool force)
 	if (count)
 	{
 		s_object_marker markers[4];
-		long *object = ((s_contrail_object_header *)g_4e0300->data)[contrail->object_index & 0xffff].object;
-		s_contrail_object_marker *attachment = &((s_contrail_object_definition *)g_4e3b44[*object & 0xffff].bytes)->markers[contrail->marker_index];
-		short marker_count = function_b8d30(contrail->object_index, attachment->marker_name, markers, 4, false);
+		long marker_name = ((s_contrail_object_definition *)g_4e3b44[*((s_contrail_object_header *)g_4e0300->data)[contrail->object_index & 0xffff].object & 0xffff].bytes)->markers[contrail->marker_index].marker_name;
+		short marker_count = function_b8d30(contrail->object_index, marker_name, markers, 4, false);
 
 		if (marker_count > 0)
 		{
-			real speed = function_17bef0(definition->flags, definition->velocity_lower, contrail->scale, definition->velocity_upper, 1);
-			real cone_angle = definition->cone_angle;
-			real inherited_velocity;
-
-			if (definition->flags & 8)
-				cone_angle = contrail->scale * cone_angle;
-			inherited_velocity = definition->inherited_velocity;
-			if (definition->flags & 0x10)
-				inherited_velocity = contrail->scale * inherited_velocity;
+			real speed = function_17bef0(definition->flags, contrail->scale, definition->velocity_lower, definition->velocity_upper, 1);
+			real cone_angle = contrail_scale_if_17c0e0(definition->flags, 8, contrail->scale, definition->cone_angle);
+			real inherited_velocity = contrail_scale_if_17c0e0(definition->flags, 0x10, contrail->scale, definition->inherited_velocity);
 
 			for (short i = 0; i < marker_count; i++)
 			{
 				s_object_marker *marker = &markers[i];
-				long *first_index = &contrail->point_indices[i];
 				s_contrail_point_datum *previous;
 				short point_count;
 
-				if (*first_index == NONE)
+				if (contrail->point_indices[i] != NONE)
 				{
-					point_count = 1;
-					previous = 0;
+					previous = CONTRAIL_POINT(contrail->point_indices[i]);
+					point_count = count;
 				}
 				else
 				{
-					previous = CONTRAIL_POINT(*first_index);
-					point_count = count;
+					previous = 0;
+					point_count = 1;
 				}
 				if (previous && !memcmp(&marker->matrix.position, &previous->position, sizeof(point3f)) && !force)
 					continue;
@@ -635,9 +626,9 @@ void function_17c0e0(long contrail_index, short count, bool force)
 							point->velocity.j = previous->velocity.j * s + point->velocity.j * t;
 							point->velocity.k = previous->velocity.k * s + point->velocity.k * t;
 						}
-						point->next_index = *first_index;
+						point->next_index = contrail->point_indices[i];
 						contrail->field_x92e145[i]++;
-						*first_index = point_index;
+						contrail->point_indices[i] = point_index;
 					}
 				}
 			}
@@ -652,10 +643,10 @@ void __stdcall function_17c540(long contrail_index, real dt)
 	s_contrail_definition *definition = CONTRAIL_DEFINITION(contrail->tag_index);
 	long point_list[1024];
 
-	for (long i = 0; i < 4; i++)
+	for (short i = 0; i < 4; i++)
 	{
-		short count = 0;
 		long point_index = contrail->point_indices[i];
+		short count = 0;
 
 		while (point_index != NONE)
 		{
@@ -668,10 +659,11 @@ void __stdcall function_17c540(long contrail_index, real dt)
 				{
 					if (point->flags & 2)
 					{
-						s_contrail_point_state *state = &definition->states[++point->state_index];
+						s_contrail_point_state *state = &definition->states[point->state_index + 1];
 
+						point->state_index++;
 						point->state_time = 0.0f;
-						real duration = function_17bef0(state->flags, state->duration_lower, point->scale, state->duration_upper, 0);
+						real duration = function_17bef0(state->flags, point->scale, state->duration_lower, state->duration_upper, 0);
 
 						point->state_rate = duration;
 						if (duration != 0.0f)
@@ -691,7 +683,7 @@ void __stdcall function_17c540(long contrail_index, real dt)
 						s_contrail_point_state *state = &definition->states[state_index];
 
 						point->state_time = 0.0f;
-						real duration = function_17bef0(state->flags, state->transition_lower, point->scale, state->transition_upper, 2);
+						real duration = function_17bef0(state->flags, point->scale, state->transition_lower, state->transition_upper, 2);
 
 						point->state_rate = duration;
 						if (duration != 0.0f)

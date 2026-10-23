@@ -103,6 +103,10 @@ PRIVATE __forceinline void collision_damage_location(dword key, long *instance, 
 	}
 }
 
+/* fills a collision damage entry from one of an object's contacts when its
+   impulse is above 0.4 */
+// score 13 (was 95): the tail's loads of the location are scheduled
+// differently (retail reloads the instance right after function_1201a0)
 // @retail 0x1da550
 bool function_1da550(long object_index, long contact_index, s_collision_damage_entry *entry)
 {
@@ -110,7 +114,9 @@ bool function_1da550(long object_index, long contact_index, s_collision_damage_e
 	s_havok_component *component = havok_component_get(object->component_index);
 	s_havok_component_element48 *contact = collision_damage_contact_get(component, contact_index);
 	bool result = false;
-	if (contact->impulse > 0.4f)
+	/* retail reads the impulse through the component again (it computes the
+	   component pointer and then drops it) */
+	if (component->unknown88.data[contact_index].impulse > 0.4f)
 	{
 		s_collision_damage_location location;
 		collision_damage_location(*(dword *)&contact->unknown00[4], &location.instance, &location.material, &location.surface);
@@ -124,8 +130,8 @@ bool function_1da550(long object_index, long contact_index, s_collision_damage_e
 		entry->object_value28 = object->value28;
 		entry->object_value2c = object->value2c;
 		entry->flags |= 0x100;
-		entry->surface_index = location.surface;
 		entry->instance_index = location.instance;
+		entry->surface_index = location.surface;
 		entry->material_index = location.material;
 		result = true;
 	}
@@ -134,8 +140,8 @@ bool function_1da550(long object_index, long contact_index, s_collision_damage_e
 
 
 struct s_damage_owner;
-void object_get_damage_owner(long object_index, s_damage_owner *owner);
-void function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_index, vector3f const *direction);
+void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
+void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_index, vector3f const *direction);
 long function_1dac00(long object_index);
 bool havok_component_unknown10_recent(s_havok_component const *component);
 void havok_component_unknown10_expire(s_havok_component *component);
@@ -256,6 +262,10 @@ real magnitude3d(vector3f const *vector);
 long function_1dac40(long object_index, long other_object_index);
 void function_e3f00(long object_index);
 
+// score 90 (was 142): object_get_damage_owner (0xd66d0, unmatched) takes its
+// object index in eax here but on the stack in retail, which shifts the tail;
+// retail also swaps the stack slots of speed and body_speed, keeps scale in
+// xmm1 and the speed in xmm3, and copies the velocity through other registers
 // @retail 0x1da6d0
 bool function_1da6d0(long object_index, long other_object_index, real speed_a, real speed_b, real impulse)
 {
@@ -264,27 +274,35 @@ bool function_1da6d0(long object_index, long other_object_index, real speed_a, r
     s_havok_object *object = havok_object_get(*object_index_reference);
     s_havok_object *other = havok_object_get(other_object_index);
     s_collision_force_definition *definition = (s_collision_force_definition *)g_4e3b44[*(long *)object & 0xffff].bytes;
-    volatile real speed = speed_a > speed_b ? speed_a : speed_b;
-    volatile bool result = false;
+    /* volatile: retail stores the larger speed to its stack slot straight
+       from either argument and reads it back once, after the calls */
+    volatile real speed;
+    if (speed_a > speed_b)
+        speed = speed_a;
+    else
+        speed = speed_b;
+    bool result = false;
     if (speed_b > speed_a * 0.25f && other->havok_component_index != NONE && (byte)function_1dac00(*object_index_reference))
     {
         s_havok_component *component = havok_component_get(other->havok_component_index);
-        if ((byte)function_1dac40(component->object_index, *object_index_reference) && component->rigid_bodies.size > 0)
+        if ((byte)function_1dac40(*object_index_reference, component->object_index) && component->rigid_bodies.size > 0)
         {
             s_collision_force_definition *other_definition = (s_collision_force_definition *)g_4e3b44[*(long *)other & 0xffff].bytes;
             vector3f velocity = component->rigid_bodies[0].linear_velocity;
             real body_speed = magnitude3d(&velocity);
             real scale = 1.0f;
+            real collision_speed = speed;
             if (havok_component_unknown10_recent(component))
             {
                 body_speed += component->unknown14;
-                if (speed >= 0.001f)
-                    scale = (component->unknown14 + speed) / speed;
+                if (collision_speed >= 0.001f)
+                    scale = (component->unknown14 + collision_speed) / collision_speed;
             }
             real maximum_speed = *impulse_reference > body_speed ? *impulse_reference : body_speed;
             if (!(1.5f > *impulse_reference && 1.5f > body_speed))
             {
-                real force = body_speed / maximum_speed * other_definition->transfer_scale * scale * speed;
+                real speed_ratio = body_speed / maximum_speed;
+                real force = speed_ratio * other_definition->transfer_scale * scale * collision_speed;
                 if (maximum_speed >= 0.001f && force > definition->minimum_force && definition->maximum_force - definition->minimum_force >= 0.001f)
                 {
                     real lower = definition->minimum_damage;

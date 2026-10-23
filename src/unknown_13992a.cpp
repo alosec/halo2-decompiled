@@ -59,7 +59,7 @@ bool function_15eb20(long arg_1);
 real function_c53c0(long arg_1);
 long function_22bfc0(char arg_1, s_22bfc0_definition const *arg_2);
 long function_22bff0(short arg_1, s_22bff0_definition const *arg_2, char arg_3);
-void function_13afa9(long arg_1, s_hud_weapon_record *arg_2, long *arg_3);
+void function_13afa9(long arg_1, long *arg_3, s_hud_weapon_record *arg_2);
 short function_cfe40(long arg_1);
 long function_cbe60(long arg_1);
 void function_13b164(long arg_1, s_13b164_status *arg_2);
@@ -70,6 +70,8 @@ void unicode_string_copy(word *arg_1, word const *arg_2, long arg_3);
 long function_162fd0(long arg_1);
 bool function_138820(void);
 long function_14de70(long arg_1);
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 __forceinline byte *function_13992b(long arg_1)
 {
@@ -95,7 +97,7 @@ void function_13992a(byte *arg_1, long arg_2)
         {
             byte const *local_3 = function_13992b(*(long *)(local_2 + 0x2c));
             s_unit_weapon_hands local_4;
-            bool local_5 = false;
+            long local_5 = false;
             function_cb430(*(long *)(local_2 + 0x2c), &local_4);
             arg_1[0x1c] = true;
             *(long *)(arg_1 + 0x20) = *(long *)(local_3 + 0x1e4);
@@ -132,7 +134,7 @@ void function_13992a(byte *arg_1, long arg_2)
                 byte const *local_9 = *(byte *const *)(local_8 + 0x1cc) + *(short *)(local_3 + 0x1fc) * 0xb0;
                 arg_1[0x48] = true;
                 *(long *)(arg_1 + 4) = function_22bff0(*(short *)(local_3 + 0x1fc),
-                    (s_22bff0_definition const *)local_8, g_4e6948->state == 2);
+                    (s_22bff0_definition const *)g_4e3b44[*(long *)local_7 & 0xffff].bytes, g_4e6948->state == 2);
                 if (!(bool)((*(dword *)local_9 >> 5) & 1)) local_5 = true;
                 if ((bool)((*(dword *)local_9 >> 3) & 1))
                 {
@@ -155,7 +157,7 @@ void function_13992a(byte *arg_1, long arg_2)
                         }
                     }
                     if (local_10 != NONE)
-                        function_13afa9(local_10, (s_hud_weapon_record *)(arg_1 + 0x50), (long *)(arg_1 + 8));
+                        function_13afa9(local_10, (long *)(arg_1 + 8), (s_hud_weapon_record *)(arg_1 + 0x50));
                 }
             }
             if (!local_5)
@@ -165,21 +167,21 @@ void function_13992a(byte *arg_1, long arg_2)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
                         *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x212)),
-                        (s_hud_weapon_record *)(arg_1 + 0x88), (long *)(arg_1 + 0xc));
+                        (long *)(arg_1 + 0xc), (s_hud_weapon_record *)(arg_1 + 0x88));
                 }
                 if (function_cbd50(*(long *)(local_2 + 0x2c),
                     *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
                         *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)),
-                        (s_hud_weapon_record *)(arg_1 + 0xc0), (long *)(arg_1 + 0x10));
+                        (long *)(arg_1 + 0x10), (s_hud_weapon_record *)(arg_1 + 0xc0));
                 }
                 if (function_cbd50(*(long *)(local_2 + 0x2c),
                     *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
                         *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)),
-                        (s_hud_weapon_record *)(arg_1 + 0xc0), (long *)(arg_1 + 0x10));
+                        (long *)(arg_1 + 0x10), (s_hud_weapon_record *)(arg_1 + 0xc0));
                 }
             }
             long local_13 = function_cfe40(*(long *)(local_2 + 0x2c));
@@ -199,7 +201,7 @@ void function_13992a(byte *arg_1, long arg_2)
                 }
             }
             if (!local_5 && local_14 != NONE)
-                function_13afa9(local_14, (s_hud_weapon_record *)(arg_1 + 0xf8), (long *)(arg_1 + 0x14));
+                function_13afa9(local_14, (long *)(arg_1 + 0x14), (s_hud_weapon_record *)(arg_1 + 0xf8));
             function_13b164(*(long *)(local_2 + 0x2c), (s_13b164_status *)arg_1);
         }
         if (function_15dea0())
@@ -222,31 +224,21 @@ void function_13992a(byte *arg_1, long arg_2)
                 *(color3f *)(arg_1 + 0x18c) = local_18.color;
                 *(long *)(arg_1 + 0x188) = local_18.player_index;
                 unicode_string_copy((word *)(arg_1 + 0x1bc), local_18.score_text, 8);
-                long local_19 = local_18.limit;
-                if (!local_19)
-                {
-                    local_19 = local_18.rival_score > 1 ? local_18.rival_score : 1;
-                    if (local_18.score > local_19) local_19 = local_18.score;
-                }
-                *(real *)(arg_1 + 0x1cc) = (real)local_18.score / (real)local_19;
+                *(real *)(arg_1 + 0x1cc) = !local_18.limit ? (real)local_18.score / (real)MAX(local_18.score, MAX(local_18.rival_score, 1))
+                    : (real)local_18.score / (real)local_18.limit;
                 if (local_18.rival)
                 {
                     *(color3f *)(arg_1 + 0x1d8) = local_18.rival_color;
                     *(long *)(arg_1 + 0x1d4) = local_18.rival_index;
                     unicode_string_copy((word *)(arg_1 + 0x208), local_18.rival_text, 8);
-                    local_19 = local_18.limit;
-                    if (!local_19)
-                    {
-                        local_19 = local_18.rival_score > 1 ? local_18.rival_score : 1;
-                        if (local_18.score > local_19) local_19 = local_18.score;
-                    }
-                    *(real *)(arg_1 + 0x218) = (real)local_18.rival_score / (real)local_19;
+                    *(real *)(arg_1 + 0x218) = !local_18.limit ? (real)local_18.rival_score / (real)MAX(local_18.score, MAX(local_18.rival_score, 1))
+                    : (real)local_18.rival_score / (real)local_18.limit;
                 }
                 *(long *)(arg_1 + 0x22c) = local_18.zone_count;
                 for (long local_20 = 0; local_20 < *(long *)(arg_1 + 0x22c); local_20++)
                 {
-                    *(real *)(arg_1 + 0x250 + local_20 * 4) = local_18.zone_progress[local_20];
                     *(dword *)(arg_1 + 0x230 + local_20 * 4) = local_18.zone_colors[local_20];
+                    *(real *)(arg_1 + 0x250 + local_20 * 4) = local_18.zone_progress[local_20];
                 }
             }
             else arg_1[0x130] = false;

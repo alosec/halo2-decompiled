@@ -1,9 +1,12 @@
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
 #include "object_markers.h"
 #include "data_array.h"
 
 // @flags /O1 /arch:SSE /Gr
+#include "projection_storage.h"
+#include "view_context_storage.h"
 
 /* UNKNOWN_1916DC.CPP: the messages the HUD shows about the player's weapons */
 
@@ -134,11 +137,11 @@ void function_24ca1d(long player_index, word const *text, long sound, long tag_i
 void function_24c9e9(long player_index, long string_handle, long sound, long tag_index);
 
 struct s_object_header_19188c { byte unknown00[8]; byte *object; };
-static inline byte *object_19188c(long index)
+static __forceinline byte *object_19188c(long index)
 {
     return ((s_object_header_19188c *)g_4e0300->data)[index & 0xffff].object;
 }
-static inline byte *definition_19188c(long index)
+static __forceinline byte *definition_19188c(long index)
 {
     return g_4e3b44[*(long *)object_19188c(index) & 0xffff].bytes;
 }
@@ -146,18 +149,18 @@ static inline byte *definition_19188c(long index)
 // @retail 0x19188c
 void function_19188c(long user_index)
 {
-    long const *user_reference = &user_index;
-    byte *player = g_4e8c24->data + (function_14de70(*user_reference) & 0xffff) * 0x21c;
-    s_target_candidate *candidate = (s_target_candidate *)((byte *)g_4ed284 + *user_reference * 0x94 + 0x80);
+    long const &player_index = function_14de70(user_index);
+    byte *player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
     short state = *(short *)((byte *)g_4e8c20 + 0x9c);
+    s_target_candidate *candidate = (s_target_candidate *)((byte *)g_4ed284 + user_index * 0x94 + 0x80);
     if (state != 0 && *(long *)(player + 0x2c) == NONE)
     {
         switch (state)
         {
-        case 4: function_24c9e9(*user_reference, 0x1a0006a6, 1, *(long *)((byte *)g_510c94 + 0x42c)); break;
-        case 5: function_24c9e9(*user_reference, 0x1a0006a7, 2, *(long *)((byte *)g_510c94 + 0x42c)); break;
-        case 6: function_24c9e9(*user_reference, 0x1a0006a8, 4, *(long *)((byte *)g_510c94 + 0x42c)); break;
-        case 7: function_24c9e9(*user_reference, 0x1b0006a9, 8, *(long *)((byte *)g_510c94 + 0x42c)); break;
+        case 4: function_24c9e9(user_index, 0x1a0006a6, 1, *(long *)((byte *)g_510c94 + 0x42c)); break;
+        case 5: function_24c9e9(user_index, 0x1a0006a7, 2, *(long *)((byte *)g_510c94 + 0x42c)); break;
+        case 6: function_24c9e9(user_index, 0x1a0006a8, 4, *(long *)((byte *)g_510c94 + 0x42c)); break;
+        case 7: function_24c9e9(user_index, 0x1b0006a9, 8, *(long *)((byte *)g_510c94 + 0x42c)); break;
         }
         return;
     }
@@ -166,124 +169,128 @@ void function_19188c(long user_index)
         long unit_index = *(long *)(player + 0x2c);
         if (unit_index == NONE)
         {
-            function_24c98c(*user_reference, false);
-            return;
+            function_24c98c(user_index, false);
         }
-        long primary = function_cbd50(unit_index, *(char *)(object_19188c(unit_index) + 0x212));
-        long secondary = function_cbd50(unit_index, *(char *)(object_19188c(unit_index) + 0x213));
-        byte *unit = object_19188c(unit_index);
-        long message = 0;
-        bool allow_weapons = true;
-        long parent = *(long *)(unit + 0x14);
-        short seat_index = *(short *)(unit + 0x1fc);
-        if (parent != NONE && seat_index != NONE)
+        else
         {
-            byte *seat = *(byte **)(definition_19188c(parent) + 0x1cc) + seat_index * 0xb0;
-            dword flags = *(dword *)seat;
-            allow_weapons = !((bool)((flags >> 3) & 1) || (bool)((flags >> 2) & 1));
-            if ((bool)((flags >> 11) & 1))
+            long primary = function_cbd50(*(long *)(player + 0x2c), *(char *)(object_19188c(*(long *)(player + 0x2c)) + 0x212));
+            long secondary = function_cbd50(*(long *)(player + 0x2c), *(char *)(object_19188c(*(long *)(player + 0x2c)) + 0x213));
+            long message = 0;
+            byte *unit = object_19188c(unit_index);
+            bool allow_weapons = true;
+            if (*(long *)(unit + 0x14) != NONE && *(short *)(unit + 0x1fc) != NONE)
             {
-                if (function_cdff0(unit_index, function_ce020(unit_index)) > 0 && *(long *)(seat + 0x10))
+                byte *seat = *(byte **)(definition_19188c(*(long *)(unit + 0x14)) + 0x1cc) + *(short *)(unit + 0x1fc) * 0xb0;
+                dword flags = *(dword *)seat;
+                allow_weapons = !((bool)((flags >> 3) & 1) || (bool)((flags >> 2) & 1));
+                if ((bool)((flags >> 11) & 1))
                 {
-                    s_object_marker marker;
-                    if (function_b8d30(parent, *(long *)(seat + 0x10), &marker, 1, false) == 1)
-                        message = *(long *)(seat + 0x14);
-                }
-                if (message)
-                {
-                    function_24c9e9(*user_reference, message, (parent & 0xffff) + 0x10000, *(long *)((byte *)g_510c94 + 0x434));
-                    return;
-                }
-                message = *(long *)(seat + 0x18);
-                if (message)
-                {
-                    function_24c9e9(*user_reference, message, (parent & 0xffff) + 0x8000, *(long *)((byte *)g_510c94 + 0x434));
-                    return;
-                }
-            }
-        }
-        if (primary != NONE && allow_weapons)
-        {
-            byte status[0x3c];
-            function_100520(primary, (s_weapon_status *)status);
-            bool depleted = function_1916dc((s_type_2d4969 *)status);
-            if (secondary != NONE)
-            {
-                function_100520(secondary, (s_weapon_status *)status);
-                depleted = depleted && function_1916dc((s_type_2d4969 *)status);
-            }
-            if (depleted)
-            {
-                for (long i = 0; i < 4; i++)
-                {
-                    long weapon = ((long *)(unit + 0x218))[i];
-                    if (weapon != NONE && weapon != primary && weapon != secondary)
+                    if (function_cdff0(unit_index, function_ce020(unit_index)) > 0 && *(long *)(seat + 0x10))
                     {
-                        function_100520(weapon, (s_weapon_status *)status);
-                        if (!function_1916dc((s_type_2d4969 *)status))
+                        s_object_marker marker;
+                        if (function_b8d30(*(long *)(unit + 0x14), *(long *)(seat + 0x10), &marker, 1, false) == 1)
+                            message = *(long *)(seat + 0x14);
+                    }
+                    long seat_message = *(long *)(seat + 0x18);
+                    if (message)
+                    {
+                        function_24c9e9(user_index, message, (*(long *)(unit + 0x14) & 0xffff) + 0x10000, *(long *)((byte *)g_510c94 + 0x434));
+                        return;
+                    }
+                    if (seat_message)
+                    {
+                        function_24c9e9(user_index, seat_message, (*(long *)(unit + 0x14) & 0xffff) + 0x8000, *(long *)((byte *)g_510c94 + 0x434));
+                        return;
+                    }
+                }
+            }
+            if (primary != NONE && allow_weapons)
+            {
+                byte status[0x3c];
+                function_100520(primary, (s_weapon_status *)status);
+                bool depleted = function_1916dc((s_type_2d4969 *)status);
+                if (secondary != NONE)
+                {
+                    function_100520(secondary, (s_weapon_status *)status);
+                    depleted = depleted && function_1916dc((s_type_2d4969 *)status);
+                }
+                if (depleted)
+                {
+                    for (long i = 0; i < 4; i++)
+                    {
+                        long weapon = ((long *)(unit + 0x218))[i];
+                        if (weapon != NONE && weapon != primary && weapon != secondary)
                         {
-                            function_24c9e9(*user_reference, *(long *)(definition_19188c(weapon) + 0xec), (weapon & 0xffff) + 0x10, *(long *)((byte *)g_510c94 + 0x434));
-                            return;
+                            function_100520(weapon, (s_weapon_status *)status);
+                            if (!function_1916dc((s_type_2d4969 *)status))
+                            {
+                                function_24c9e9(user_index, *(long *)(definition_19188c(weapon) + 0xec), (weapon & 0xffff) + 0x10, *(long *)((byte *)g_510c94 + 0x434));
+                                return;
+                            }
                         }
                     }
                 }
             }
+            function_24ca1d(user_index, (word const *)L"", NONE, NONE);
+            function_24c98c(user_index, false);
         }
-        function_24ca1d(*user_reference, (word const *)L"", NONE, NONE);
-        function_24c98c(*user_reference, false);
         return;
     }
-    long object_index = candidate->object_index;
-    long message;
-    long sound = object_index & 0xffff;
-    long tag_index;
     switch (candidate->priority)
     {
     case 8:
-        if (!function_1518f0(candidate, 2)) return;
-        message = *(long *)(definition_19188c(object_index) + 0x21c);
-        sound += 0x1000;
-        tag_index = *(long *)((byte *)g_510c94 + 0x42c);
+        if (function_1518f0(candidate, 2))
+        {
+            long object_index = candidate->object_index;
+            function_24c9e9(user_index, *(long *)(definition_19188c(object_index) + 0x21c),
+                (object_index & 0xffff) + 0x1000, *(long *)((byte *)g_510c94 + 0x42c));
+        }
         break;
     case 4:
     case 5:
     case 6:
-        if (!function_1518f0(candidate, 3)) return;
+        if (function_1518f0(candidate, 3))
         {
+            long object_index = candidate->object_index;
             byte *definition = definition_19188c(object_index);
             long seat = *(short *)((byte *)candidate + 2);
-            message = 0;
+            long message = 0;
             if (seat >= 0 && seat < *(long *)(definition + 0x1c8))
                 message = *(long *)(*(byte **)(definition + 0x1cc) + seat * 0xb0 + 0x84);
+            function_24c9e9(user_index, message, (object_index & 0xffff) + 0x800, *(long *)((byte *)g_510c94 + 0x42c));
         }
-        sound += 0x800;
-        tag_index = *(long *)((byte *)g_510c94 + 0x42c);
         break;
     case 3:
-        if (!function_1518f0(candidate, 0x100)) return;
-        message = function_11ba10(object_index);
-        if (!message) return;
-        sound += 0x400;
-        tag_index = *(long *)((byte *)g_510c94 + 0x42c);
+        if (function_1518f0(candidate, 0x100))
+        {
+            long object_index = candidate->object_index;
+            long message = function_11ba10(object_index);
+            if (message)
+                function_24c9e9(user_index, message, (object_index & 0xffff) + 0x400, *(long *)((byte *)g_510c94 + 0x42c));
+        }
         break;
     case 2:
-        if (!function_badc0(object_index, 3)) return;
+        if (function_badc0(candidate->object_index, 3))
         {
-            long weapon = function_cbd50(object_index, *(char *)(object_19188c(object_index) + 0x212));
-            if (weapon == NONE) return;
-            message = *(long *)(definition_19188c(weapon) + 0xf0);
-            if (!message || message == NONE) return;
+            long weapon = function_cbd50(candidate->object_index, *(char *)(object_19188c(candidate->object_index) + 0x212));
+            if (weapon != NONE)
+            {
+                long message = *(long *)(definition_19188c(weapon) + 0xf0);
+                if (message && message != NONE)
+                    function_24c9e9(user_index, message, (candidate->object_index & 0xffff) + 0x4000, *(long *)((byte *)g_510c94 + 0x42c));
+            }
         }
-        sound += 0x4000;
-        tag_index = *(long *)((byte *)g_510c94 + 0x42c);
         break;
     case 1:
     case 7:
-        if (!function_1518f0(candidate, 4)) return;
+        if (function_1518f0(candidate, 4))
         {
+            long object_index = candidate->object_index;
+            dword flags = candidate->flags;
             byte *definition = definition_19188c(object_index);
-            byte flags = candidate->flags;
-            tag_index = NONE;
+            long message;
+            long sound = object_index & 0xffff;
+            long tag_index = NONE;
             if (!(flags & 12))
             {
                 if (flags & 1)
@@ -298,7 +305,8 @@ void function_19188c(long user_index)
                     sound += 0x200;
                     tag_index = *(long *)((byte *)g_510c94 + 0x42c);
                 }
-                else message = *(long *)(definition + 0xcc);
+                else
+                    message = *(long *)(definition + 0xcc);
             }
             else
             {
@@ -307,24 +315,80 @@ void function_19188c(long user_index)
                 else { message = *(long *)(definition + 0xdc); sound += 0x80; }
                 tag_index = *(long *)((byte *)g_510c94 + 0x434);
             }
+            function_24c9e9(user_index, message, sound, tag_index);
         }
         break;
-    default: return;
     }
-    function_24c9e9(*user_reference, message, sound, tag_index);
 }
 
 
 void function_192129(long local_player_index);
 struct s_view_globals;
 extern s_view_globals *g_510c98;
-extern long g_4b9ed8;
 bool function_159170(long player_index);
 long function_155760(long local_player_index);
 void function_24da7d(long local_player_index);
 void function_24cf66(long local_player_index);
 void function_13954b(void);
 void function_191fd8(long player_index);
+
+#include "unknown_030290.h"
+struct s_bitmap_view;
+struct D3DTexture;
+struct s_type_7ba8e9;
+struct s_13e703 { short field_0, field_2; };
+void function_caf60(long unit_index, point3f *point);
+point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *out);
+bool function_30710(s_camera const *camera, short_rectangle2d const *rect,
+	vector3f const *v, point2f *out, s_view const *view);
+long function_13e615(short index);
+s_type_7ba8e9 *function_137610(long group_index, short sequence_index, short frame_index);
+D3DTexture *function_12360(s_bitmap_view *bitmap, real priority);
+void function_13e703(byte const *bitmap, s_13e703 const *position, box2f const *bounds,
+	real scale, real angle, real alpha);
+
+// @retail 0x191fd8
+void function_191fd8(long player_index)
+{
+	// Read the later camera and view values through const pointer views.
+	s_camera const *camera = (s_camera const *)&g_4b9e14;
+	s_view const *view = (s_view const *)&g_camera_storage;
+	byte *player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+	point3f position, transformed;
+	point2f projected;
+	function_caf60(*(long *)(player + 0x2c), &position);
+	position.z += 0.3f;
+	transform4x3f_apply_point((transform4x3f const *)camera, &position, &transformed);
+	if (function_30710(camera, NULL, (vector3f const *)&transformed, &projected, view))
+	{
+		s_type_7ba8e9 *bitmap = function_137610(function_13e615(9), 0, 0);
+		if (function_12360((s_bitmap_view *)bitmap, 0.0f))
+		{
+			long x, y;
+			s_13e703 screen;
+			__asm
+			{
+				fld projected.x
+				fistp x
+			}
+			screen.field_0 = (short)(x - g_4b9dd2);
+			__asm
+			{
+				fld projected.y
+				fistp y
+			}
+			screen.field_2 = (short)(y - g_4b9dd0);
+			real fraction = 1.0f - ((-transformed.z - g_4b9de0) * 100.0f) / (g_4b9de4 - g_4b9de0);
+			if (fraction < 0.075f) fraction = 0.075f;
+			else if (fraction > 1.0f) fraction = 1.0f;
+			{
+				box2f bounds = { 0.0f, 1.0f, (1.0f - fraction) * 0.5f, 1.0f };
+				function_13e703((byte const *)bitmap, &screen, &bounds, 1.0f, 0.0f, 1.0f);
+			}
+		}
+	}
+}
+
 bool function_13cb40(void);
 bool function_15e020(short first, short second);
 

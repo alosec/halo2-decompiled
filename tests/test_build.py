@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import build
@@ -175,12 +177,43 @@ def test_standard_marker_gives_the_outside_callers_address_escape():
 
 @pytest.mark.parametrize('text', [
     '// @retail 0x1000 standard\nc_list::~c_list()\n{\n}\n',
-    '// @retail 0x1000 standard\nc_list::c_list()\n{\n}\n',
     '// @stub 0x1000 standard\nvoid __stdcall hk(long a)\n{\n}\n',
 ])
 def test_standard_marker_is_only_for_decompiled_functions_and_methods(text):
     with pytest.raises(SystemExit, match='"standard" marks'):
         scan(text, 'src/x.cpp')
+
+
+STANDARD_CONSTRUCTOR = ('#include <string.h>\n#include "lists.h"\n  # include "more.h"\n'
+                        '// @retail 0x2000 standard\nc_list::c_list(word flags, s_item const &item, bool alternate) :\n'
+                        '\tc_base(flags)\n{\n}\n'
+                        '// @retail 0x2010\nc_other::c_other(long a)\n{\n}\n'
+                        '// @retail 0x2020 standard\nvoid __stdcall plain(long a)\n{\n}\n')
+
+
+def test_standard_marker_on_a_constructor_gets_a_caller_built_without_ltcg():
+    marked = scan(STANDARD_CONSTRUCTOR, 'src/l.cpp')
+    assert [(m.retail, m.kind, m.standard) for m in marked] == [
+        (0x2000, 'constructor', True), (0x2010, 'constructor', False), (0x2020, 'function', True)]
+    assert build.standard_constructors(marked) == [marked[0]]
+    text = build.standard_source(STANDARD_CONSTRUCTOR, marked, 'l', {'s_item'})
+    lines = text.splitlines()
+    # the source's includes, not its code: the constructor's body stays in the LTCG object
+    assert lines[1:5] == ['#include <string.h>', '#include "lists.h"', '# include "more.h"', '#include <new>']
+    assert 'c_base(flags)' not in text and 'c_other' not in text and 'plain' not in text
+    assert ('void standard_l_0(void) { ::new ((void *)standin_l_standard_arguments) c_list('
+            '*(word volatile *)(standin_l_standard_arguments + 0), '
+            '**(s_item const * volatile *)(standin_l_standard_arguments + 16), '
+            '*(bool volatile *)(standin_l_standard_arguments + 32)); }') in lines
+    assert build.standard_object('l') == 'standard_l.obj'
+
+
+def test_standard_marker_on_a_constructor_leaves_its_ltcg_object_alone():
+    marked = scan(STANDARD_CONSTRUCTOR, 'src/l.cpp')
+    plain = scan(STANDARD_CONSTRUCTOR.replace('0x2000 standard', '0x2000'), 'src/l.cpp')
+    assert build.standard_constructors(plain) == []
+    assert (build.tu_source('/abs/src/l.cpp', marked, 'l', {'s_item'}, set(), set())
+            == build.tu_source('/abs/src/l.cpp', plain, 'l', {'s_item'}, set(), set()))
 
 
 def test_standard_must_be_the_whole_trailing_word():
@@ -294,6 +327,27 @@ def test_vcall_marker_names_the_compilers_thunk_and_gets_no_standin():
     assert build.standin_names([thunk, f])[('src/l.cpp', 0x1010)] == 'standin_l_1'
 
 
+def test_adjustor_marker_names_the_compilers_this_adjustor_thunk_and_gets_no_standin():
+    text = ('// @retail 0x278b30 adjustor c_object 8' + chr(10) +
+            '// @retail 0x1c58d0 adjustor c_1c3410::function_1c3410 0xc' + chr(10) +
+            '// @retail 0x1010' + chr(10) + 'void f(long a)' + chr(10) + '{' + chr(10) + '}' + chr(10))
+    deleting, method, f = scan(text, 'src/a.cpp')
+    assert (deleting.retail, deleting.name, deleting.cls, deleting.kind, deleting.params, deleting.stub) == (
+        0x278b30, "c_object::`deleting destructor'`adjustor{0x8}'", 'c_object', 'adjustor', [], False)
+    assert (method.name, method.cls, method.kind) == (
+        "c_1c3410::function_1c3410`adjustor{0xc}'", 'c_1c3410', 'adjustor')
+    tu = build.tu_source('/abs/src/a.cpp', [deleting, method, f], 'a', {'c_object'}, {'c_object'})
+    # the class's vtable stand-in emits the thunk; the other stand-ins keep their numbers
+    assert 'standin_a_0' not in tu and 'standin_a_1(' not in tu and 'void standin_a_2(void) { f(' in tu
+    assert 'standin_a_vtable_0' in tu
+    assert build.standin_names([deleting, method, f])[('src/a.cpp', 0x1010)] == 'standin_a_2'
+
+
+def test_adjustor_marker_is_not_for_stubs():
+    with pytest.raises(SystemExit, match='"adjustor" marks'):
+        scan('// @stub 0x278b30 adjustor c_object 8' + chr(10), 'src/stubs/s.cpp')
+
+
 def test_vcall_marker_is_not_for_stubs():
     with pytest.raises(SystemExit, match='"vcall" marks'):
         scan('// @stub 0x234c5f vcall 0x5c\n', 'src/stubs/s.cpp')
@@ -319,6 +373,25 @@ def test_stub_sources_reads_only_the_stubs_folder(tmp_path):
     assert [m.name for m in stub_sources(str(tmp_path))] == ['hkVector4_length']
     assert [m.name for m in build.marked_sources(str(tmp_path))][0] == 'function_163ba0'
     assert all(not m.stub for m in build.marked_sources(str(tmp_path)))
+
+
+def test_markers_are_read_again_when_a_source_changes(tmp_path):
+    (tmp_path / 'src').mkdir()
+    source = tmp_path / 'src' / 'crc.cpp'
+    source.write_text(SOURCE)
+    assert [m.retail for m in build.marked_sources(str(tmp_path))] == [0x163ba0, 0x163c00, 0x259d0]
+    source.write_text(SOURCE.replace('0x163c00', '0x163c10'))
+    stat = source.stat()
+    os.utime(source, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10 ** 9))  # a later write, whatever the clock's resolution
+    assert [m.retail for m in build.marked_sources(str(tmp_path))] == [0x163ba0, 0x163c10, 0x259d0]
+
+
+def test_source_objects_name_objects_as_the_build_does(tmp_path):
+    (tmp_path / 'src' / 'stubs').mkdir(parents=True)
+    (tmp_path / 'src' / 'crc.cpp').write_text(SOURCE)
+    (tmp_path / 'src' / 'stubs' / 'havok.cpp').write_text(STUBS)
+    assert build.source_objects(str(tmp_path)) == {'crc.obj': 'src/crc.cpp', 'standard_crc.obj': 'src/crc.cpp',
+                                                   'stubs_havok.obj': 'src/stubs/havok.cpp'}
 
 
 def test_entry_source_leaves_fltused_to_libcmt():
@@ -362,3 +435,56 @@ def test_standin_names_number_each_sources_markers_in_order():
               build.Marked('src/ui.cpp', 0x30, 'c', 'void', [])]
     assert build.standin_names(marked) == {('src/ui.cpp', 0x10): 'standin_ui_0', ('src/hud.cpp', 0x20): 'standin_hud_0',
                                            ('src/ui.cpp', 0x30): 'standin_ui_1'}
+
+
+def fake_lib_tool(monkeypatch, members):
+    """Stands in for the SDK's lib tool: /LIST prints the members, /EXTRACT
+    writes the member's name to the /OUT file. Returns each run's first argument."""
+    runs = []
+
+    def run_tool(tool, args, cwd, xdk):
+        runs.append(args[0])
+        if args[0] == '/LIST':
+            return ''.join(f'{m}\n' for m in members)
+        with open(args[1][len('/OUT:'):], 'w') as f:
+            f.write(args[0][len('/EXTRACT:'):])
+        return ''
+    monkeypatch.setattr(build, 'run_tool', run_tool)
+    return runs
+
+
+def test_d3d_objects_are_extracted_in_order_once_per_library(tmp_path, monkeypatch):
+    assert len(build.D3D_OBJECTS) == len(set(build.D3D_OBJECTS)) == 25
+    xdk = tmp_path / 'xdk'
+    (xdk / 'lib').mkdir(parents=True)
+    library = xdk / 'lib' / 'd3d8ltcg.lib'
+    library.write_bytes(b'library')
+    runs = fake_lib_tool(monkeypatch, [f'obj\\i386\\{stem}.obj' for stem in ['texture', *reversed(build.D3D_OBJECTS)]])
+    paths = build.d3d_objects(str(tmp_path), str(xdk))
+    assert paths == [str(tmp_path / 'build' / 'd3d8ltcg' / f'{stem}.obj') for stem in build.D3D_OBJECTS]
+    assert open(paths[0]).read() == 'obj\\i386\\d3ddev.obj' and len(runs) == 26
+    assert build.d3d_objects(str(tmp_path), str(xdk)) == paths and len(runs) == 26  # kept
+    stat = library.stat()
+    os.utime(library, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10 ** 9))  # a new library
+    build.d3d_objects(str(tmp_path), str(xdk))
+    assert len(runs) == 52
+
+
+def test_d3d_objects_need_the_library_and_every_member(tmp_path, monkeypatch):
+    xdk = tmp_path / 'xdk'
+    with pytest.raises(SystemExit, match='d3d8ltcg.lib not found'):
+        build.d3d_objects(str(tmp_path), str(xdk))
+    (xdk / 'lib').mkdir(parents=True)
+    (xdk / 'lib' / 'd3d8ltcg.lib').write_bytes(b'library')
+    fake_lib_tool(monkeypatch, [f'obj\\i386\\{stem}.obj' for stem in build.D3D_OBJECTS if stem != 'pusher'])
+    with pytest.raises(SystemExit, match='no member named pusher.obj'):
+        build.d3d_objects(str(tmp_path), str(xdk))
+
+
+def test_build_refuses_a_source_named_like_a_d3d_member(tmp_path):
+    (tmp_path / 'xdk' / 'bin' / 'vc71').mkdir(parents=True)
+    (tmp_path / 'xdk' / 'bin' / 'vc71' / 'CL.Exe').write_bytes(b'')
+    (tmp_path / 'src').mkdir()
+    (tmp_path / 'src' / 'pusher.cpp').write_text('')
+    with pytest.raises(SystemExit, match='src/pusher.cpp'):
+        build.build(root=str(tmp_path), xdk=str(tmp_path / 'xdk'))

@@ -17,6 +17,8 @@
 #include "object_queries.h"
 #include "unknown_1428b0.h"
 
+inline void point2f_set(point2f *point, real x, real y);
+
 real function_30bf0(vector3f *vector);
 point3f *function_b9dd0(long object_index, point3f *result);
 bool object_or_parent_hidden(long object_index);
@@ -129,10 +131,10 @@ void tangent_directions(point2f const *direction, point2f *left, point2f *right,
 	}
 	cosine = (real)sqrt(1.0f - sine * sine);
 	negative_sine = 0.0f - sine;
-	left->y = direction->x * negative_sine + cosine * direction->y;
-	left->x = direction->x * cosine - negative_sine * direction->y;
-	right->y = direction->x * sine + cosine * direction->y;
-	right->x = cosine * direction->x - sine * direction->y;
+	point2f_set(left, direction->x * cosine - negative_sine * direction->y,
+		direction->x * negative_sine + cosine * direction->y);
+	point2f_set(right, cosine * direction->x - sine * direction->y,
+		direction->x * sine + cosine * direction->y);
 	*tangent_length = cosine * distance;
 }
 
@@ -183,7 +185,8 @@ void obstacle_tangent_directions(point2f const *point, s_obstacle_list const *li
 // @retail 0x2c0d00
 bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center, long object_index, real radius)
 {
-	s_obstacle *obstacle;
+	real volatile const *radius_reference = &radius;
+    s_obstacle *obstacle;
 
 	if (list->count == 64)
 	{
@@ -201,8 +204,10 @@ bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center,
 	obstacle->flags = flags;
 	obstacle->group = NONE;
 	obstacle->object_index = object_index;
-	obstacle->center = *center;
-	obstacle->radius = radius;
+	real y = *(real volatile const *)&center->y;
+	memcpy(&obstacle->center.x, &center->x, sizeof(real));
+	obstacle->center.y = y;
+    obstacle->radius = *radius_reference;
 	return true;
 }
 
@@ -250,12 +255,13 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
             }
         }
     }
-    s_location location;
+    struct { s_location location; point3f raised; } query;
+    s_location &location = query.location;
     if (unit_index != NONE)
         location = *(s_location *)((byte *)ai_object_get(unit_index) + 0x28);
     else
     {
-        point3f raised;
+        point3f &raised = query.raised;
         raised.x = g_4687b0->i * 0.05f + position->x;
         raised.y = g_4687b0->j * 0.05f + position->y;
         raised.z = g_4687b0->k * 0.05f + position->z;
@@ -300,7 +306,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
             if (other_actor_index != NONE)
             {
                 s_actor_view *other = actor_get(other_actor_index);
-                bool enemy = actor && function_1df560(actor->unknown024, other->unknown024);
+                bool enemy = actor && function_1df560(other->unknown024, actor->unknown024);
                 if (*((byte *)other + 0x5d0) && (!actor || actor->unknown26c == NONE))
                 {
                     point3f center;
@@ -313,7 +319,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
                     {
                         vector3f const *other_direction = (vector3f const *)((byte *)other + 0x5ec);
                         real dot = offset.k * other_direction->k + offset.j * other_direction->j + offset.i * other_direction->i;
-                        if (dot > magnitude3d(direction) * 0.7071067690849304f)
+                        if (dot > magnitude3d(other_direction) * 0.7071067690849304f)
                             continue;
                     }
                 }
@@ -341,14 +347,14 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
             if (actor && actor->unknown26c == NONE)
             {
                 short team = *(short *)(object + 0x138);
-                skip_classification = team == actor->unknown024 || !function_1df560(actor->unknown024, team);
+                skip_classification = team == actor->unknown024 || !function_1df560(team, actor->unknown024);
             }
         }
         else if (type == 7)
         {
             byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
             word device_flags = *(word *)(definition + 0x11e);
-            if (!(device_flags & 1) || ((device_flags & 2) && *(real *)(object + 0x140) == 1.0f && !(object[0x1cc] & 1)))
+            if (!(device_flags & 1) || ((device_flags & 2) && (*(real *)(object + 0x140) == 1.0f || !(object[0x1cc] & 1))))
                 device_spheres = true;
         }
         else if (type == 11)
@@ -363,7 +369,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
         offset.k = *(real *)(object + 0x38) - position->z;
         real object_radius = *(real *)(object + 0x3c) + radius;
         real distance_squared = offset.k * offset.k + offset.j * offset.j + offset.i * offset.i;
-        if (object_radius * object_radius < distance_squared)
+        if (!(object_radius * object_radius >= distance_squared))
             continue;
         byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
         if (TEST_FIELD_BIT(((s_obstacle_definition_flags_2c *)(definition + 2))->no_obstacle))
@@ -473,22 +479,19 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
                 if (dot > 0.0f && vehicle_index != NONE)
                 {
                     short team = *(short *)(object + 0x138);
-                    if (team == actor->unknown024 || !function_1df560(actor->unknown024, team))
+                    if (team == actor->unknown024 || !function_1df560(team, actor->unknown024))
                     {
                         byte *vehicle = (byte *)ai_object_get(vehicle_index);
                         long vehicle_actor_index = *(long *)(vehicle + 0x12c);
-                        bool forward = false;
+                        byte *vehicle_actor = NULL;
                         if (vehicle_actor_index != NONE)
-                        {
-                            byte *vehicle_actor = (byte *)actor_get(vehicle_actor_index);
-                            if (vehicle_actor[0x5d0])
-                            {
-                                vector3f const *heading = (vector3f const *)(vehicle_actor + 0x5ec);
-                                forward = heading->k * direction->k + heading->j * direction->j + direction->i * heading->i > 0.0f;
-                            }
-                        }
+                            vehicle_actor = (byte *)actor_get(vehicle_actor_index);
                         vector3f const *velocity = (vector3f const *)(object + 0x88);
-                        if (forward || velocity->k * direction->k + velocity->j * direction->j + direction->i * velocity->i > 0.0f)
+                        if ((vehicle_actor_index != NONE && vehicle_actor[0x5d0] &&
+                                *(real *)(vehicle_actor + 0x5f4) * direction->k +
+                                *(real *)(vehicle_actor + 0x5f0) * direction->j +
+                                direction->i * *(real *)(vehicle_actor + 0x5ec) > 0.0f) ||
+                            velocity->k * direction->k + velocity->j * direction->j + direction->i * velocity->i > 0.0f)
                         {
                             obstacle_flags |= 0x200;
                             blocking = true;
@@ -545,7 +548,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
             squared += difference.j * difference.j;
             squared += difference.i * difference.i;
             real combined_radius = local_a47c5e + radius;
-            if (combined_radius * combined_radius < squared)
+            if (!(combined_radius * combined_radius >= squared))
                 continue;
             long moving = 0;
             if (type == 0)
@@ -587,10 +590,10 @@ short obstacle_list_find_containing(s_obstacle_list const *list, short ignore_in
 
 			real distance_squared;
 
+			distance = obstacle->radius + radius;
 			vector2d_from_points2d(point, &obstacle->center, &offset);
 			distance_squared = length_sq2f(&offset);
-			distance = obstacle->radius + radius;
-			if (distance * distance >= distance_squared)
+			if (distance_squared <= distance * distance)
 			{
 				return i;
 			}
@@ -680,13 +683,17 @@ void obstacle_list_flood(short first_index, dword *bits, real radius, s_obstacle
 			{
 				if (!bit_vector_test(bits, i))
 				{
-					s_obstacle const *other = &list->obstacles[i];
 					point2f offset;
+					s_obstacle const *other = &list->obstacles[i];
 					real distance;
 
-					distance = (other->radius + radius) + (current->radius + radius);
+					real other_radius = other->radius;
+					distance = (current->radius + radius) + (other_radius + radius);
 					vector2d_from_points2d(&current->center, &other->center, &offset);
-					if (distance * distance >= length_sq2f(&offset))
+					distance *= distance;
+					real length = offset.x * offset.x;
+					length += offset.y * offset.y;
+					if (length <= distance)
 					{
 						bit_vector_set(bits, i);
 						stack[stack_count++] = i;
@@ -753,6 +760,14 @@ PRIVATE __forceinline real normalize_offset_direction_2c(point2f *v)
 // @retail 0x2c2910
 void function_2c2910(point2f const *center, point2f const *points, point2f const *previous, real radius, point2f *result)
 {
+    struct s_candidate_x
+    {
+        static __forceinline real calculate(point2f const *center, point2f const *first,
+            point2f const *second, real factor)
+        {
+            return center->x - (first->y - second->y) * factor;
+        }
+    };
     point2f first, second;
     vector2d_from_points2d(center, &points[0], &first);
     vector2d_from_points2d(center, &points[1], &second);
@@ -761,7 +776,7 @@ void function_2c2910(point2f const *center, point2f const *points, point2f const
     {
         real factor = radius * radius / cross;
         real y = center->y + (first.x - second.x) * factor;
-        real x = center->x - (first.y - second.y) * factor;
+        real x = s_candidate_x::calculate(center, &first, &second, factor);
         result->x = x;
         result->y = y;
         point2f delta;
@@ -770,11 +785,17 @@ void function_2c2910(point2f const *center, point2f const *points, point2f const
             return;
     }
     point2f direction;
+    point2f normal;
     vector2d_from_points2d(previous, points, &direction);
-    if (normalize_offset_direction_2c(&direction) == 0.0f)
-        direction = *g_46877c;
-    result->x = points[0].x + direction.x * radius;
-    result->y = points[0].y + direction.y * radius;
+    real magnitude = (real)sqrt(length_sq2f(&direction));
+    if (fabs(magnitude) < 0.0001f)
+        magnitude = 0.0f;
+    else
+        scale_offset_direction_2c(1.0f / magnitude, &direction, &normal);
+    if (magnitude == 0.0f)
+        normal = *g_46877c;
+    result->x = points[0].x + normal.x * radius;
+    result->y = points[0].y + normal.y * radius;
 }
 
 // @retail 0x2c2740
@@ -782,17 +803,17 @@ void function_2c2740(point2f const *point, point2f const *center, real radius, b
 {
     point2f direction;
     vector2d_from_points2d(center, point, &direction);
-    real distance_squared = direction.y * direction.y + direction.x * direction.x;
+    real distance_squared = length_sq2f(&direction);
     real factor = distance_squared > 0.0f ? radius / distance_squared : 0.0f;
     point2f candidates[2];
     real tangent_squared = distance_squared - radius * radius;
     if (tangent_squared > 0.0f)
     {
         real tangent = (real)sqrt(tangent_squared);
-        candidates[0].x = center->x + (direction.x * radius + direction.y * tangent) * factor;
+        candidates[0].x = center->x + (direction.y * tangent + direction.x * radius) * factor;
         candidates[0].y = center->y + (direction.y * radius - direction.x * tangent) * factor;
         candidates[1].x = center->x + (direction.x * radius - direction.y * tangent) * factor;
-        candidates[1].y = center->y + (direction.y * radius + direction.x * tangent) * factor;
+        candidates[1].y = center->y + (direction.x * tangent + direction.y * radius) * factor;
         point2f first, second;
         vector2d_from_points2d(point, &candidates[0], &first);
         vector2d_from_points2d(point, &candidates[1], &second);
@@ -801,8 +822,14 @@ void function_2c2740(point2f const *point, point2f const *center, real radius, b
     }
     else
     {
-        candidates[0] = direction;
-        if (normalize_offset_direction_2c(&candidates[0]) == 0.0f)
+        point2f offset;
+        vector2d_from_points2d(center, point, &offset);
+        real magnitude = (real)sqrt(length_sq2f(&offset));
+        if (fabs(magnitude) < 0.0001f)
+            magnitude = 0.0f;
+        else
+            scale_offset_direction_2c(1.0f / magnitude, &offset, &candidates[0]);
+        if (magnitude == 0.0f)
             candidates[0] = *g_46877c;
         result->x = center->x + candidates[0].x * radius;
         result->y = center->y + candidates[0].y * radius;
@@ -828,11 +855,11 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)
 {
-    long previous_vertex = NONE;
-    long first_vertex = NONE;
+    volatile long previous_vertex = NONE;
+    volatile long first_vertex = NONE;
     for (;;)
     {
-        s_pathfinding_edge const *edge = &data->edges[edge_index];
+        s_pathfinding_edge const *volatile edge = &data->edges[edge_index];
         bool first_open = path_node_open_2c(data, edge_node_2c(edge, 0));
         long node_index = edge_node_2c(edge, !first_open);
         if (!path_node_open_2c(data, node_index))
@@ -862,14 +889,10 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         point2f first, second;
         vector2d_from_points2d(&positive, start, &first);
         vector2d_from_points2d(&negative, start, &second);
-        bool crossing = false;
-        if ((first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
-            first.x * direction.y - first.y * direction.x < 0.0f)
-            crossing = true;
-        if (second.x * direction.y - second.y * direction.x < 0.0f)
-            crossing = true;
-        if (first_vertex == NONE)
-            crossing = true;
+        bool first_crossing = (first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
+            first.x * direction.y - first.y * direction.x < 0.0f;
+        bool second_crossing = second.x * direction.y - second.y * direction.x < 0.0f;
+        bool crossing = first_crossing || second_crossing || first_vertex == NONE;
         long vertex = ((crossing != first_open) == side) ? vertex1 : vertex0;
         if (vertex == previous_vertex)
         {
@@ -961,7 +984,7 @@ bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     normalize_offset_direction_2c(&first_direction);
     vector2d_from_points2d(second, origin, &second_direction);
     normalize_offset_direction_2c(&second_direction);
-    real first_side = first_direction.y * normal.y + first_direction.x * normal.x;
+    volatile real first_side = first_direction.y * normal.y + first_direction.x * normal.x;
     real second_side = second_direction.y * normal.y + second_direction.x * normal.x;
     second_side = fabs(second_side) < 0.001 ? 0.0f : second_side;
     first_side = fabs(first_side) < 0.001 ? 0.0f : first_side;
@@ -1030,163 +1053,168 @@ bool function_26c4e0(s_type_c3b527 const *start, s_type_c3b527 const *end,
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)
 {
-    real radius = (real)(query->source.radius + 0.05);
+    volatile real source_radius = query->source.radius;
+    real radius = (real)(source_radius + 0.05);
     s_pathfinding_data *data = *(long *)((byte *)g_4e0348 + 0xc4) > 0 ?
         *(s_pathfinding_data **)((byte *)g_4e0348 + 0xc8) : 0;
-    if (!data)
+    if (data)
     {
-        *result_count = 0;
-        *complete = false;
-        return;
-    }
-    if (count <= 1)
-    {
-        *result_count = 1;
-        result[0] = points[0];
-        return;
-    }
-    point2f origin = *(point2f *)&query->source.point.point;
-    long sector = points[0].node_index;
-    short used = 0;
-    bool copied_last = false;
-    for (short index = 0; index < count; )
-    {
-        s_path_step_view const *entry = &points[index];
-        short next = NONE;
-        long edge = 0xffff;
-        bool found = false;
-        short output_index;
-        if (entry->type != NONE)
-            next = index;
+        if (count <= 1)
+        {
+            *result_count = 1;
+            result[0] = points[0];
+        }
         else
         {
-            short end = index;
-            while (end < count && points[end].type == NONE)
-                ++end;
-            if (end < count)
+            point2f origin = *(point2f *)&query->source.point.point;
+            long sector = points[0].node_index;
+            short used = 0;
+            bool copied_last = false;
+            for (long index = 0; index < count; )
             {
-                next = end;
-                found = true;
-            }
-            for (short candidate = end - 1; candidate >= index; --candidate)
-            {
-                point2f direction;
-                vector2d_from_points2d(&origin, (point2f *)&points[candidate].point.point, &direction);
-                real distance = normalize_offset_direction_2c(&direction);
-                if (!(distance > 0.0f))
-                    break;
-                s_avoidance_trace trace;
-                if (!function_26ccb0(data, 0, NONE, &origin, sector, points[candidate].node_index,
-                    &direction, radius, distance, false, candidate == count - 1, false, &query->location, &trace))
-                    break;
-                edge = trace.edge;
-                next = candidate;
-                found = true;
-            }
-            if (!found)
-            {
-                result[used++] = points[count - 1];
-                copied_last = true;
-                break;
-            }
-            if (edge != 0xffff && points[next].type == NONE)
-            {
-                point2f corners[2];
-                bool left = function_2c3030((s_pathfinding_data *)query->pathfinding,
-                    &origin, radius, edge, true, &corners[0]);
-                bool right = function_2c3030((s_pathfinding_data *)query->pathfinding,
-                    &origin, radius, edge, false, &corners[1]);
-                if (right && left)
+                s_path_step_view const *entry = &points[index];
+                short next = NONE;
+                long edge = 0xffff;
+                bool found = false;
+                volatile short output_index;
+                if (entry->type != NONE)
+                    next = index;
+                else
                 {
-                    point2f const *previous = next > 0 ? (point2f *)&points[next - 1].point.point :
-                        (point2f *)&query->source.point.point;
-                    point2f const *endpoint = (point2f *)&points[next].point.point;
-                    bool side = function_2c2a70(previous, endpoint, &corners[0], &corners[1], &origin);
-                    point3f start = { origin.x, origin.y, 0.0f };
-                    for (short attempt = 0; attempt < 2; ++attempt)
+                    short end = index;
+                    while (end < count && points[end].type == NONE)
+                        ++end;
+                    if (end < count)
                     {
-                        point2f center = corners[side ? 0 : 1];
-                        point2f tangents[2], candidate;
-                        function_2c2740(&origin, &center, radius, side, &tangents[0]);
-                        side = !side;
-                        function_2c2740(endpoint, &center, radius, side, &tangents[1]);
-                        function_2c2910(&center, tangents, &origin, radius, &candidate);
-                        point3f target = { candidate.x, candidate.y, 0.0f };
-                        s_path_trace_result first, second;
-                        function_26c4e0((s_type_c3b527 *)&start, (s_type_c3b527 *)&target,
-                            &first, data, sector, NONE, (long)&query->location);
-                        if (!((s_sector_trace_result *)&first)->blocked &&
-                            !function_26c4e0((s_type_c3b527 *)&target, &points[next].point,
-                                &second, data, ((s_sector_trace_result *)&first)->sector_index,
-                                points[next].node_index, (long)&query->location))
+                        next = end;
+                        found = true;
+                    }
+                    for (short candidate = end - 1; candidate >= index; --candidate)
+                    {
+                        point2f direction;
+                        vector2d_from_points2d(&origin, (point2f *)&points[candidate].point.point, &direction);
+                        real distance = normalize_offset_direction_2c(&direction);
+                        if (!(distance > 0.0f))
+                            break;
+                        s_avoidance_trace trace;
+                        if (!function_26ccb0(data, 0, NONE, &origin, sector, points[candidate].node_index,
+                            &direction, radius, distance, false, candidate == count - 1, false, &query->location, &trace))
+                            break;
+                        edge = trace.edge;
+                        next = candidate;
+                        found = true;
+                    }
+                    if (!found)
+                    {
+                        result[used++] = points[count - 1];
+                        copied_last = true;
+                        break;
+                    }
+                    if (edge != 0xffff && points[next].type == NONE)
+                    {
+                        point2f corners[2];
+                        bool left = function_2c3030((s_pathfinding_data *)query->pathfinding,
+                            &origin, radius, edge, true, &corners[0]);
+                        bool right = function_2c3030((s_pathfinding_data *)query->pathfinding,
+                            &origin, radius, edge, false, &corners[1]);
+                        if (right && left)
                         {
-                            sector = ((s_sector_trace_result *)&first)->sector_index;
-                            origin = candidate;
-                            output_index = points[next].point.output_index;
-                            goto emit;
+                            point2f const *previous = next > 0 ? (point2f *)&points[next - 1].point.point :
+                                (point2f *)&query->source.point.point;
+                            point2f const *endpoint = (point2f *)&points[next].point.point;
+                            bool side = function_2c2a70(previous, endpoint, &corners[0], &corners[1], &origin);
+                            point3f start = { origin.x, origin.y, 0.0f };
+                            for (short attempt = 0; attempt < 2; ++attempt)
+                            {
+                                point2f center = corners[side ? 0 : 1];
+                                point2f tangents[2], candidate;
+                                function_2c2740(&origin, &center, radius, side, &tangents[0]);
+                                side = !side;
+                                function_2c2740(endpoint, &center, radius, side, &tangents[1]);
+                                function_2c2910(&center, tangents, &origin, radius, &candidate);
+                                point3f target = { candidate.x, candidate.y, 0.0f };
+                                s_path_trace_result first, second;
+                                function_26c4e0((s_type_c3b527 *)&start, (s_type_c3b527 *)&target,
+                                    &first, data, sector, NONE, (long)&query->location);
+                                if (!((s_sector_trace_result *)&first)->blocked &&
+                                    !function_26c4e0((s_type_c3b527 *)&target, &points[next].point,
+                                        &second, data, ((s_sector_trace_result *)&first)->sector_index,
+                                        points[next].node_index, (long)&query->location))
+                                {
+                                    sector = ((s_sector_trace_result *)&first)->sector_index;
+                                    origin = candidate;
+                                    output_index = points[next].point.output_index;
+                                    goto emit;
+                                }
+                            }
                         }
                     }
                 }
+                if (next != 0 && next != index)
+                {
+                    origin = *(point2f *)&points[next - 1].point.point;
+                    sector = points[next - 1].node_index;
+                    output_index = points[next - 1].point.output_index;
+                }
+                else
+                {
+                    origin = *(point2f *)&points[next].point.point;
+                    sector = points[next].node_index;
+                    output_index = points[next].point.output_index;
+                    next = index + 1;
+                }
+            emit:
+                s_path_step_view *out = &result[used];
+                out->node_index = sector;
+                out->point.point.x = origin.x;
+                out->point.point.y = origin.y;
+                out->point.point.z = entry->point.point.z;
+                out->point.output_index = output_index;
+                out->unknown02 = entry->unknown02;
+                ++used;
+                if (entry->type != NONE)
+                {
+                    out->type = entry->type;
+                    out->link_index = entry->link_index;
+                }
+                else
+                {
+                    out->type = NONE;
+                    out->link_index = NONE;
+                }
+                if (used >= 4)
+                    break;
+                point3f delta;
+                s_type_c3b527 const *source = (s_type_c3b527 *)&query->source.point;
+                if (source->output_index == out->point.output_index)
+                {
+                    delta.x = out->point.point.x - source->point.x;
+                    delta.y = out->point.point.y - source->point.y;
+                    delta.z = out->point.point.z - source->point.z;
+                }
+                else
+                {
+                    point3f start, end;
+                    if (source->output_index == NONE || !function_2104b0(source->output_index, &source->point, &start))
+                        start = source->point;
+                    if (out->point.output_index == NONE || !function_2104b0(out->point.output_index, &out->point.point, &end))
+                        end = out->point.point;
+                    delta.x = end.x - start.x;
+                    delta.y = end.y - start.y;
+                    delta.z = end.z - start.z;
+                }
+                if (delta.z * delta.z + delta.y * delta.y + delta.x * delta.x > 400.0f)
+                    break;
+                index = next;
             }
+            *result_count = used;
+            if (!copied_last)
+                *complete = false;
         }
-        if (next != 0 && next != index)
-        {
-            origin = *(point2f *)&points[next - 1].point.point;
-            sector = points[next - 1].node_index;
-            output_index = points[next - 1].point.output_index;
-        }
-        else
-        {
-            origin = *(point2f *)&points[next].point.point;
-            sector = points[next].node_index;
-            output_index = points[next].point.output_index;
-            next = index + 1;
-        }
-    emit:
-        s_path_step_view *out = &result[used];
-        out->node_index = sector;
-        out->point.point.x = origin.x;
-        out->point.point.y = origin.y;
-        out->point.point.z = entry->point.point.z;
-        out->point.output_index = output_index;
-        out->unknown02 = entry->unknown02;
-        ++used;
-        if (entry->type != NONE)
-        {
-            out->type = entry->type;
-            out->link_index = entry->link_index;
-        }
-        else
-        {
-            out->type = NONE;
-            out->link_index = NONE;
-        }
-        if (used >= 4)
-            break;
-        point3f delta;
-        s_type_c3b527 const *source = (s_type_c3b527 *)&query->source.point;
-        if (source->output_index == out->point.output_index)
-        {
-            delta.x = out->point.point.x - source->point.x;
-            delta.y = out->point.point.y - source->point.y;
-            delta.z = out->point.point.z - source->point.z;
-        }
-        else
-        {
-            point3f start, end;
-            if (source->output_index == NONE || !function_2104b0(source->output_index, &source->point, &start))
-                start = source->point;
-            if (out->point.output_index == NONE || !function_2104b0(out->point.output_index, &out->point.point, &end))
-                end = out->point.point;
-            delta.x = end.x - start.x;
-            delta.y = end.y - start.y;
-            delta.z = end.z - start.z;
-        }
-        if (delta.z * delta.z + delta.y * delta.y + delta.x * delta.x > 400.0f)
-            break;
-        index = next;
     }
-    *result_count = used;
-    if (!copied_last)
+    else
+    {
+        *result_count = 0;
         *complete = false;
+    }
 }

@@ -38,12 +38,12 @@ struct s_slot_66
 
 short __stdcall function_1b3820(long actor_index, s_slot *slot, bool active);
 bool __stdcall function_1b36e0(long actor_index, s_slot *slot);
-void __stdcall function_1c1990(long actor_index, s_slot *slot, long index);
+void __stdcall actor_behavior_release_prop(long actor_index, s_slot *slot, long index);
 void __stdcall function_1c1520(long actor_index, s_slot *slot, long index);
 bool __stdcall function_1b3600(long actor_index, s_slot *slot);
 void __stdcall function_1b3880(long actor_index, s_slot *slot);
 bool __stdcall function_1b3a80(long actor_index, s_slot *slot);
-void __stdcall function_1b3c60(long actor_index, s_slot *slot);
+void __stdcall actor_behavior_64_update48(long actor_index, s_slot *slot);
 short __stdcall function_1b3f60(long actor_index, s_slot *slot, bool active);
 bool __stdcall function_1b3fd0(long actor_index, s_slot *slot);
 bool __stdcall function_1b4240(long actor_index, s_slot *slot);
@@ -86,22 +86,26 @@ short __stdcall function_1b3590(long actor_index, s_slot *slot, bool active)
 }
 
 // @retail 0x1b3600
-bool __stdcall function_1b3600(long actor_index, s_slot *slot)
+bool __stdcall function_1b3600(long actor_index, s_slot *volatile slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
+	bool local_0 = actor->unknown040;
 	s_slot_64 *state = (s_slot_64 *)slot;
 	bool result = true;
 
-	if (actor->unknown040 && !state->unknown17)
+	if (local_0 && !state->unknown17)
 	{
-		if (state->unknown2c == NONE)
-			return false;
-		result = function_1f4460(actor_index, &state->unknown1c, state->unknown2c, NONE, false);
-		if (result)
+		if (state->unknown2c != NONE)
 		{
-			actor->unknown4cc = 1.0f;
-			state->unknown17 = true;
+			result = function_1f4460(actor_index, &state->unknown1c, state->unknown2c, NONE, false);
+			if (result)
+			{
+				actor->unknown4cc = 1.0f;
+				state->unknown17 = true;
+			}
 		}
+		else
+			return false;
 	}
 	return result;
 }
@@ -122,6 +126,60 @@ short __stdcall function_1b3670(long actor_index)
 	return result;
 }
 
+struct s_1b36e0
+{
+    long field_0;
+    short field_4;
+    short field_6;
+    short field_8;
+    bool field_a;
+    bool field_b;
+    long field_c;
+    s_type_c3b527 field_10;
+    long field_20;
+    real field_24;
+};
+
+void __stdcall function_26c2d0(long arg_0);
+extern "C" void * __cdecl memset(void *, int, unsigned int);
+
+// @retail 0x1b36e0
+bool __stdcall function_1b36e0(long actor_index, s_slot *slot)
+{
+    s_actor_view *local_0 = actor_get(actor_index);
+    s_1b36e0 *local_3 = (s_1b36e0 *)((byte *)slot + 0xc);
+    s_prop_node_view *local_1 = prop_node_get(local_0->prop_index);
+    s_prop_state_view *local_2 = prop_node_state(local_1);
+    byte *local_4 = &object_get(local_1->object_index)->unknownb2;
+    *local_4 |= 1;
+    memset(local_3, 0, sizeof(*local_3));
+    real local_5 = g_510c54->field_2_3 * 15.0f;
+    long local_6;
+    __asm
+    {
+        fld local_5
+        fistp local_6
+    }
+    local_3->field_6 = (short)local_6;
+    local_5 = g_510c54->field_2_3 * 4.0f;
+    __asm
+    {
+        fld local_5
+        fistp local_6
+    }
+    local_3->field_4 = (short)local_6;
+    local_3->field_0 = local_0->prop_index;
+    local_3->field_24 = 1.5f;
+    function_26c2d0(local_0->prop_index);
+    local_3->field_8 = 2;
+    local_3->field_10 = local_2->unknown48;
+    long local_7 = *(long *)((byte *)local_2 + 0x44);
+    local_3->field_20 = local_7;
+    local_3->field_a = false;
+    local_3->field_b = false;
+    return true;
+}
+
 // @retail 0x1b3820
 short __stdcall function_1b3820(long actor_index, s_slot *slot, bool active)
 {
@@ -137,40 +195,50 @@ short __stdcall function_1b3820(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+/* (retail reads slot from its argument twice, once for the target and once
+   after the distance test: the parameter is volatile for that) */
 // @retail 0x1b3880
-void __stdcall function_1b3880(long actor_index, s_slot *slot)
+void __stdcall function_1b3880(long actor_index, s_slot *volatile slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE)
 	{
 		s_prop_node_view *node = (s_prop_node_view *)datum_get_inlined(g_502418, actor->prop_index);
-		s_slot_64 *state = (s_slot_64 *)slot;
-		vector3f delta;
+		s_type_c3b527 *target = &((s_slot_64 *)slot)->unknown1c;
+		real distance_squared;
 
-		if (state->unknown1c.output_index == NONE)
+		if (target->output_index == NONE)
 		{
-			vector3d_from_points3d(&state->unknown1c.point, &actor->position, &delta);
+			vector3f v;
+
+			vector3d_from_points3d(&target->point, &actor->position, &v);
+			distance_squared = (v.k * v.k + v.i * v.i) + v.j * v.j;
 		}
 		else
 		{
 			point3f point;
+			vector3f v;
 
-			function_210850(&state->unknown1c, &point);
-			vector3d_from_points3d(&point, &actor->position, &delta);
+			function_210850(target, &point);
+			vector3d_from_points3d(&point, &actor->position, &v);
+			distance_squared = (v.j * v.j + v.k * v.k) + v.i * v.i;
 		}
 		actor->unknown41c = 3;
 		actor->unknown420 = 2;
 		actor->unknown430 = 2;
 		actor->unknown434 = 2;
 		actor->unknown444 = NONE;
-		if (length_sq3f(&delta) < 2.25f)
+		if (distance_squared < 2.25f)
 		{
+			s_slot_64 *state;
+
 			actor->unknown488 = true;
 			actor->unknown4a2 = true;
+			state = (s_slot_64 *)slot;
 			if (!state->unknown16 && node)
 			{
-				function_1fb7e0(actor_index, 0x60, NULL, node->object_index, NONE);
+				function_1fb7e0(0x60, actor_index, NULL, node->object_index, NONE);
 				state->unknown16 = true;
 			}
 		}
@@ -180,21 +248,85 @@ void __stdcall function_1b3880(long actor_index, s_slot *slot)
 // @retail 0x1b39e0
 short __stdcall function_1b39e0(long actor_index)
 {
+	long result = 0;
+	s_record_pool *object_pool = g_4e0300;
+	s_record_pool *node_pool = g_502418;
+
 	long prop_index = actor_get(actor_index)->first_prop_index;
 
 	while (prop_index != NONE)
 	{
-		s_prop_node_view *node = prop_node_get(prop_index);
+		s_prop_node_view *node = (s_prop_node_view *)(node_pool->data + (prop_index & 0xffff) * sizeof(s_prop_node_view));
 
 		prop_index = node->next_index;
-		if (node->type == 7 && node->unknown28 < 3.5f && prop_node_state(node)->unknown00 != NONE &&
-			!(object_get(node->object_index)->unknownb2 & 1))
-		{
-			return 3;
-		}
+		if (node->type != 7) continue;
+		if (!(node->unknown28 < 3.5f)) continue;
+		if (prop_node_state(node)->unknown00 == NONE) continue;
+		if (((s_slot_object_view *)((s_object_header_view *)object_pool->data)[node->object_index & 0xffff].object)->unknownb2 & 1) continue;
+		result = 3;
+		break;
 	}
-	return 0;
+	return (short)result;
 }
+
+// @retail 0x1b3a80
+bool __stdcall function_1b3a80(long actor_index, s_slot *slot)
+{
+    s_1b36e0 *local_0 = (s_1b36e0 *)((byte *)slot + 0xc);
+    long local_1 = actor_get(actor_index)->first_prop_index;
+    long local_2 = NONE;
+
+    while (local_1 != NONE)
+    {
+        s_prop_node_view *local_3 = prop_node_get(local_1);
+        long local_10 = local_1;
+
+        local_1 = local_3->next_index;
+        if (local_3->type != 7) continue;
+        if (!(local_3->unknown28 < 3.5f)) continue;
+        if (prop_node_state(local_3)->unknown00 == NONE) continue;
+        if (object_get(local_3->object_index)->unknownb2 & 1) continue;
+        local_2 = local_10;
+        break;
+    }
+    if (local_2 != NONE)
+    {
+        s_prop_node_view *local_3 = prop_node_get(local_2);
+        s_prop_state_view *local_4 = prop_node_state(local_3);
+        byte *local_5 = &object_get(local_3->object_index)->unknownb2;
+        *local_5 |= 1;
+        memset(local_0, 0, sizeof(*local_0));
+        real local_6 = g_510c54->field_2_3 * 15.0f;
+        long local_7;
+        __asm
+        {
+            fld local_6
+            fistp local_7
+        }
+        local_0->field_6 = (short)local_7;
+        local_6 = g_510c54->field_2_3 * 4.0f;
+        __asm
+        {
+            fld local_6
+            fistp local_7
+        }
+        local_0->field_4 = (short)local_7;
+        local_0->field_0 = local_2;
+        local_0->field_24 = 1.5f;
+        function_26c2d0(local_2);
+        local_0->field_8 = 2;
+        local_0->field_10 = local_4->unknown48;
+        local_0->field_20 = *(long *)((byte *)local_4 + 0x44);
+        local_0->field_a = false;
+        local_0->field_b = false;
+        long local_8 = actor_get(actor_index)->unknown018;
+        if (local_8 != NONE)
+            function_20ba60(0x62, local_8, local_3->object_index, NONE, NONE, NULL);
+        return true;
+    }
+    return false;
+}
+
 
 // @retail 0x1b3e20
 short __stdcall function_1b3e20(long actor_index, short level, bool active)
@@ -245,7 +377,7 @@ short __stdcall function_1b3f60(long actor_index, s_slot *slot, bool active)
 	if (actor_get(actor_index)->unknown504 == 2)
 	{
 		if (state->unknown10 != NONE)
-			function_1fb7e0(actor_index, 0x63, NULL, actor_get(state->unknown10)->unknown018, NONE);
+			function_1fb7e0(0x63, actor_index, NULL, actor_get(state->unknown10)->unknown018, NONE);
 		return g_46fbe4;
 	}
 	return result;
@@ -330,7 +462,7 @@ short __stdcall function_1b4390(long actor_index, short level, bool active)
 		case 1: type = 0x5d; break;
 		case 2: type = 0x5e; break;
 		}
-		function_1fb7e0(actor_index, type, NULL, NONE, NONE);
+		function_1fb7e0(type, actor_index, NULL, NONE, NONE);
 		state->unknown16 = true;
 	}
 	return result;
@@ -365,7 +497,7 @@ s_slot_handler_2 g_47e210 =
 	{
 		0x65, 2, 0, -2, 0,
 		function_1b3670, function_1b3820, function_1b36e0, 0, NONE, {0},
-		0, function_1c1990, 0, 0, 0, 0, 0
+		0, actor_behavior_release_prop, 0, 0, 0, 0, 0
 	},
 	(t_slot_proc)function_1b3600, 0, function_1b3880
 };
@@ -375,9 +507,9 @@ s_slot_handler_2 g_47e260 =
 	{
 		0x64, 2, 0, -2, 0,
 		function_1b39e0, function_1b3590, function_1b3a80, 0, NONE, {0},
-		0, function_1c1990, 0, 0, 0, 0, 0
+		0, actor_behavior_release_prop, 0, 0, 0, 0, 0
 	},
-	(t_slot_proc)function_1b3600, 0, function_1b3c60
+	(t_slot_proc)function_1b3600, 0, actor_behavior_64_update48
 };
 
 s_slot_handler_2 g_47e2b0 =
@@ -402,7 +534,7 @@ s_slot_handler_1 g_47e300 =
 	{
 		0x62, 1, 0, -2, 0,
 		function_1b4330, function_1b4310, function_1b4240, 0, NONE, {0},
-		0, function_1c1990, 0, function_1b4480, 0, 0, 0
+		0, actor_behavior_release_prop, 0, function_1b4480, 0, 0, 0
 	},
 	function_1b4390, 2, g_46f6e4
 };
@@ -420,7 +552,7 @@ s_slot_handler_1 g_47e350 =
 	{
 		0x63, 1, 0, -2, 0,
 		0, 0, function_1b4490, 0, NONE, {0},
-		0, function_1c1990, 0, function_1b4480, 0, 0, 0
+		0, actor_behavior_release_prop, 0, function_1b4480, 0, 0, 0
 	},
 	function_1b3e20, 3, g_46f710
 };
@@ -437,7 +569,7 @@ s_slot_handler_0 g_47e3b0 =
 
 long function_1e4a50(long index);
 void function_26c180(long actor_index);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 
 // @retail 0x1b3fd0
 bool __stdcall function_1b3fd0(long actor_index, s_slot *slot)
@@ -476,7 +608,7 @@ bool __stdcall function_1b3fd0(long actor_index, s_slot *slot)
 				long current_index = member_index;
 				s_actor_view *member = actor_get(current_index);
 				member_index = member->next_index;
-				if (member != actor && function_1a6fe0(current_index, 0x66) == NONE)
+				if (member != actor && actor_behavior_find_level(current_index, 0x66) == NONE)
 				{
 					function_26c180(current_index);
 					real distance;
@@ -486,9 +618,9 @@ bool __stdcall function_1b3fd0(long actor_index, s_slot *slot)
 						best_index = current_index;
 						best_distance = distance;
 					}
+					}
 				}
 			}
-		}
 		if (best_index != NONE)
 		{
 			s_actor_view *member = actor_get(best_index);
@@ -516,10 +648,14 @@ void *function_1e5380(long actor_index);
 short __stdcall function_1b4560(long actor_index, s_slot *slot)
 {
     s_actor_view *actor = actor_get(actor_index);
-    if (actor->prop_index != NONE && !function_110ab0(actor->unknown018) && g_4f55d0->unknown340)
+    long object_index;
+    if (actor->prop_index != NONE &&
+        (object_index = actor->unknown018, !function_110ab0(object_index)) && g_4f55d0->unknown340)
     {
         s_prop_node_view *node = prop_node_get(actor->prop_index);
+#pragma inline_depth(0)
         s_prop_view_fields *view = (s_prop_view_fields *)function_25d740((s_prop_node *)node);
+#pragma inline_depth()
         if (view && view->unknown06 == 3 && *(long *)((byte *)view + 0x10) >= 0)
         {
             byte *entry = (byte *)function_1e5380(actor_index);
@@ -529,7 +665,7 @@ short __stdcall function_1b4560(long actor_index, s_slot *slot)
                 function_259a0(&g_4e7408->unknown0) < *(real *)(entry + 0x2c) && actor->unknown07c != NONE &&
                 function_255b10(actor_index, (s_type_c3b527 *)((byte *)view + 0x18), NONE, false))
             {
-                function_1fb7e0(actor_index, 0x21, 0, *(long *)((byte *)node + 0x20), NONE);
+                function_1fb7e0(0x21, actor_index, 0, *(long *)((byte *)node + 0x20), NONE);
             }
         }
     }

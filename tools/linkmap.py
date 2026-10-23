@@ -12,6 +12,9 @@ SYMBOL = re.compile(r'^\s*([0-9a-f]{4}):([0-9a-f]{8})\s+(\S+)\s+([0-9a-f]{8})\b'
 SECTION = re.compile(r'^\s*([0-9a-f]{4}):([0-9a-f]{8})\s+([0-9a-f]{8})H\s+\S+\s+\S+\s*$')
 BASE = re.compile(r'Preferred load address is ([0-9a-f]{8})')
 VCALL = re.compile(r'^\?\?_9.*?@\$B(\d|[A-P]+@)')  # a vcall thunk and its vtable offset
+# after the name's '@@': the access code of a this-adjustor thunk (G/H private, O/P protected, W/X public)
+# and the adjustment, then the this qualifier and the calling convention
+ADJUSTOR = re.compile(r'^[GHOPWX](\d|[A-P]+@)[A-D][A-I]')
 
 
 @dataclass(frozen=True)
@@ -20,6 +23,8 @@ class MapSymbol:
     va: int
     section: int
     static: bool
+    object: str = ''  # the map's Lib:Object column: 'object.obj', or 'library:object.obj'
+    function: bool = False  # the map's 'f' flag: code, not data
 
 
 def _number(encoded):
@@ -31,7 +36,13 @@ def _number(encoded):
 
 def plain_name(decorated):
     """A decorated name without its decoration: 'name' or 'class::name'. The
-    compiler's vcall thunk (??_9) is "`vcall'{<vtable offset>}"."""
+    compiler's vcall thunk (??_9) is "`vcall'{<vtable offset>}"; its
+    this-adjustor thunk for a member reached through a base at a nonzero
+    offset is the member's plain name followed by "`adjustor{<offset>}'"."""
+    if decorated.startswith('?') and not decorated.startswith('??_9'):
+        rest = decorated.split('@@', 1)[1] if '@@' in decorated else ''
+        if m := ADJUSTOR.match(rest):
+            return plain_name(decorated[:-len(rest)] + 'U' + rest[m.end(1):]) + adjustor_suffix(_number(m.group(1)))
     if m := VCALL.match(decorated):
         return f"`vcall'{{{_number(m.group(1)):#x}}}"
     if decorated[:4] in ('??_G', '??_E'):  # scalar or vector deleting destructor
@@ -45,6 +56,11 @@ def plain_name(decorated):
         return '::'.join(reversed(parts))
     name = decorated.lstrip('_@')
     return name.split('@', 1)[0]
+
+
+def adjustor_suffix(offset):
+    """What a this-adjustor thunk's plain name adds to its member's."""
+    return f"`adjustor{{{offset:#x}}}'"
 
 
 class LinkMap:
@@ -77,7 +93,8 @@ class LinkMap:
             m = SYMBOL.match(line)
             if m and int(m.group(1), 16) != 0:
                 section, offset, va = int(m.group(1), 16), int(m.group(2), 16), int(m.group(4), 16)
-                self.symbols.append(MapSymbol(m.group(3), va, section, static))
+                words = line.split()
+                self.symbols.append(MapSymbol(m.group(3), va, section, static, words[-1], 'f' in words[3:-1]))
                 starts.setdefault(section, va - offset)
         self._ends = {s: starts[s] + lengths[s] for s in starts if s in lengths}
         self._by_plain = {}
@@ -120,6 +137,14 @@ class LinkMap:
             return []
         lo = bisect.bisect_left(self._addresses, symbol.va)
         return self._by_address[lo:bisect.bisect_right(self._addresses, symbol.va)]
+
+    def around(self, symbol, count):
+        """Up to count symbols before symbol's address, then up to count after it, each nearest first, in
+        its section."""
+        lo = bisect.bisect_left(self._addresses, symbol.va)
+        hi = bisect.bisect_right(self._addresses, symbol.va)
+        nearby = self._by_address[max(lo - count, 0):lo][::-1] + self._by_address[hi:hi + count]
+        return [s for s in nearby if s.section == symbol.section]
 
     def find(self, plain):
         """The symbols with this plain name, one per address (the compiler

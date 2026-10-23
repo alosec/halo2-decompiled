@@ -45,7 +45,7 @@ struct s_saved_game_read
 	byte unknown03;
 	long error;
 	byte unknown08[0x108 - 0x08];
-	real progress;
+	real volatile progress;
 };
 
 /* the saved game header it reads (0x1288 bytes) */

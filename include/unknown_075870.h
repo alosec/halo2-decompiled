@@ -62,11 +62,26 @@ struct s_network_observer_channel
 	byte samples360[0x110];
 	byte unknown470[0x48c - 0x470];
 	bool flag48c;
-	byte unknown48d[0x4a1 - 0x48d];
+	byte unknown48d;
+	bool has_callback;
+	byte unknown48f[0x4a1 - 0x48f];
 	bool flag4a1;
 	byte unknown4a2[2];
 	long value4a4;
-	byte unknown4a8[0x520 - 0x4a8];
+	byte unknown4a8[0x4b0 - 0x4a8];
+	long smoothed_delay;
+	long smoothed_interval;
+	byte unknown4b8[0x4c0 - 0x4b8];
+	bool backoff;
+	byte unknown4c1[0x4d8 - 0x4c1];
+	long loss_penalty;
+	long probe_state;
+	long probe_reset_time;
+	byte unknown4e4[0x4f0 - 0x4e4];
+	long baseline_delay;
+	byte unknown4f4[0x518 - 0x4f4];
+	long constrained_cycles;
+	long unconstrained_cycles;
 	unsigned __int64 message_mask;
 };
 
@@ -101,7 +116,7 @@ struct s_network_observer_configuration
 
 /* what the connections report their traffic to (the observer, vtable
    0x450e10) */
-class c_network_connection_listener
+class c_link_connection_listener
 {
 public:
 	virtual void packet_sent(long connection_index, long size, bool flag) {}
@@ -109,17 +124,20 @@ public:
 	virtual void packet_received(long connection_index, long a, long size) {}
 	virtual void connection_v03(long connection_index, bool a, bool b) {}
 	virtual void connection_v04(long connection_index) {}
-	virtual bool connection_v05(long connection_index, bool a, bool b, bool c, long d, long e, long f, long g, long h, long i) { return false; }
+	virtual bool connection_v05(long connection_index, bool a, bool b, bool c, bool *arg_0, bool *arg_1, long *arg_2, long *arg_3, long arg_4, byte *arg_5) { return false; }
 };
 
-struct s_network_observer : public c_network_connection_listener
+struct s_network_observer : public c_link_connection_listener
 {
+	void function_79c00(long index, bool pass_on);
+	void function_776a0(long channel_index);
 	s_network_observer();
 	~s_network_observer();
 	void packet_sent(long connection_index, long size, bool flag);
 	void connection_updated(long connection_index, long value);
 	void packet_received(long connection_index, long size, long delay);
 	void connection_v03(long connection_index, bool received, bool flag);
+	bool connection_v05(long arg_1, bool arg_2, bool arg_3, bool arg_4, bool *arg_5, bool *arg_6, long *arg_7, long *arg_8, long arg_9, byte *arg_10);
 	void *unknown04;
 	void *link;
 	void *unknown0c;
@@ -171,7 +189,7 @@ struct s_network_observer : public c_network_connection_listener
 long function_75870(void);
 long function_75890(long time);
 
-void network_observer_set_owner_key(s_network_observer *observer, long owner, const s_network_session_id *id, const byte *key, long key_index, long local);
+void network_observer_set_owner_key(s_network_observer *observer, long owner, long key_index, const byte *key, const s_network_session_id *id, long local);
 long network_observer_find_channel(s_network_observer *observer, long owner, long remote_index);
 void network_observer_close_channel(s_network_observer *observer, long channel_index);
 void network_observer_send_message(s_network_observer *observer, long owner, long channel_index, bool out_of_band, long message_type, long message_size, const void *message);

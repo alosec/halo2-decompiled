@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Gr
 /* UNKNOWN_075800.CPP: the handler the message gateway (0x93aa0)
    passes each incoming session message to. Every session message begins
@@ -32,7 +33,7 @@ bool network_session_handle_mode_acknowledge(c_class_58d20 *session, const s_net
 void network_session_close(c_class_58d20 *session);
 bool network_session_channel_is_host_address(c_class_58d20 *session, const s_type_99af70 *address);
 bool network_session_address_is_leaving_host(c_class_58d20 *session, const s_type_99af70 *address);
-bool network_session_handle_countdown_timer(c_class_58d20 *session, long remote_index, const s_network_message_countdown_timer *message);
+bool network_session_handle_countdown_timer(const s_network_message_countdown_timer *message, c_class_58d20 *session, long remote_index);
 bool network_session_handle_session_disband(c_class_58d20 *session, const s_type_99af70 *address);
 bool network_session_handle_session_boot(c_class_58d20 *session, const s_type_99af70 *address);
 bool network_session_handle_channel_closed(c_class_58d20 *session, long remote_index);
@@ -40,27 +41,27 @@ bool network_session_handle_peer_ready(c_class_58d20 *session, long remote_index
 bool network_session_handle_player_refuse(c_class_58d20 *session, const s_network_message_player_refuse *message, long remote_index);
 bool network_session_handle_player_remove(c_class_58d20 *session, long remote_index, const s_network_message_player_remove *message);
 bool network_session_handle_peer_reestablish(c_class_58d20 *session, const s_type_99af70 *address);
-bool network_session_handle_peer_properties(c_class_58d20 *session, long remote_index, const s_network_message_peer_properties *message);
-bool network_session_handle_delegate_leader(c_class_58d20 *session, long remote_index, const s_network_message_peer_identity *message);
+bool __stdcall network_session_handle_peer_properties(c_class_58d20 *session, long remote_index, const s_network_message_peer_properties *message);
+bool __stdcall network_session_handle_delegate_leader(c_class_58d20 *session, long remote_index, const s_network_message_peer_identity *message);
 bool network_session_handle_host_handoff_acknowledge(c_class_58d20 *session, long remote_index, const byte *message);
-bool network_session_handle_boot_machine(c_class_58d20 *session, long remote_index, const s_network_message_peer_identity *message);
+bool __stdcall network_session_handle_boot_machine(c_class_58d20 *session, long remote_index, const s_network_message_peer_identity *message);
 void network_session_handle_join_abort_reply(c_class_58d20 *session, const s_type_99af70 *address);
 bool network_session_member_leave(c_class_58d20 *session, long member_index);
 bool network_session_handle_parameters_request(const s_network_message_parameters_request *message, c_class_58d20 *session, long remote_index);
-bool network_session_handle_host_handoff(c_class_58d20 *session, const s_network_message_handoff *message);
+bool __stdcall network_session_handle_host_handoff(c_class_58d20 *session, const s_network_message_handoff *message);
 bool network_session_handle_player_properties(c_class_58d20 *session, long remote_index, const s_network_message_player_properties *message);
 
 /* the link's send (src/stubs/session.cpp) */
 bool __stdcall function_07b140(void *x, long a, long ten, long twelve, void *local);
 
 /* src/unknown_0820f0.cpp */
-void network_connection_close(s_network_connection *connection, long reason);
+void link_connection_close(s_link_connection *connection, long reason);
 
 /* lane D's session handlers, not decompiled yet (src/stubs/lane_j.cpp) */
 void __stdcall function_061570(c_class_58d20 *session, bool flag);
 bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *address);
 bool __stdcall function_05cb80(c_class_58d20 *session, const void *message);
-bool __stdcall network_session_handle_player_add(c_class_58d20 *session, long remote_index, const void *message);
+bool __stdcall network_session_handle_player_add(c_class_58d20 *session, long remote_index, const void *volatile message);
 bool __stdcall function_05d9e0(c_class_58d20 *session, const void *message);
 bool network_session_handle_peer_establish(c_class_58d20 *session, long remote_index);
 bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *address, const void *message, long *reason, bool *has_identity, s_session_member_identity *identity);
@@ -72,11 +73,11 @@ void __stdcall function_094310(c_class_938e0 *handler, const s_session_id *messa
 void __stdcall function_094330(c_class_938e0 *handler, const s_session_id *message, const s_type_99af70 *address);
 
 /* src/unknown_075870.cpp, src/unknown_0820f0.cpp */
-bool network_connection_get_address(s_network_connection *connection, s_type_99af70 *address);
-void network_connection_establish(s_network_connection *connection, long remote_sequence);
+inline __declspec(noinline) bool link_connection_get_address(s_link_connection *connection, s_type_99af70 *address);
+void link_connection_establish(s_link_connection *connection, long remote_sequence);
 
 /* lane D's region: a connection's reconnect (src/stubs/lane_j.cpp) */
-void network_connection_connect(const s_type_99af70 *address, s_network_connection *connection, bool initiator);
+void link_connection_connect(const s_type_99af70 *address, s_link_connection *connection, bool initiator);
 
 struct s_type_3de205
 {
@@ -94,7 +95,8 @@ struct s_system_link_globals
 	byte unknown01[7];
 	s_session_id session_id;
 };
-s_system_link_globals g_4d8eb4;
+#include "system_link_globals.h"
+s_network_link_globals g_4d8ea8;
 
 /* a broadcast query about a session: identifier 2, then the session */
 struct s_network_message_session_query
@@ -106,7 +108,7 @@ struct s_network_message_session_query
 
 /* not decompiled yet (src/stubs/lane_j.cpp) */
 void __stdcall function_0b2fc0(const s_network_message_session_query *message);
-void __stdcall function_063080(c_class_58d20 *session, const s_network_message_session_query *message, const s_type_99af70 *address);
+bool __stdcall function_063080(c_class_58d20 *session, const s_network_message_session_query *message, const s_type_99af70 *address);
 bool __stdcall network_session_handle_time_synchronize(const s_session_id *message, c_class_58d20 *session, const s_type_99af70 *address);
 void __stdcall function_0785d0(void *unknown10, const s_type_99af70 *address, const void *message);
 class c_class_938e0;
@@ -122,7 +124,7 @@ bool network_session_manager_get_hosted_session(c_class_58d20 **arg_0);
 struct s_session_browser_summary;
 bool __stdcall function_64d70(s_session_browser_summary *arg_0);
 bool function_07a9b0(void);
-extern bool g_4cf792;
+
 
 /* the sessions the session manager owns */
 struct s_network_session_list
@@ -168,7 +170,7 @@ public:
 	void handle_synchronous_update(const s_simulation_block_data *message, long channel_index);
 	void handle_player_update(const struct s_network_message_player_update *message, long channel_index);
 	void handle_join_data_begin(const struct s_network_message_join_data_begin *message, long channel_index);
-	void handle_join_data(const struct s_network_message_join_data *message, long channel_index, long data_size, const byte *data);
+	void handle_join_data(long channel_index, const struct s_network_message_join_data *message, long data_size, const byte *data);
 	void handle_baseline_update(const struct s_network_message_baseline_update *message, long channel_index);
 
 	byte unknown00[4];
@@ -226,8 +228,10 @@ void network_message_handler_refuse_connect(const s_connect_request *request, c_
 }
 
 // @retail 0x940b0
-void network_message_handler_handle_session_query(const s_network_message_session_query *message, const s_type_99af70 *address)
+void __stdcall network_message_handler_handle_session_query(const s_network_message_session_query *message, const s_type_99af70 *address)
 {
+	const s_type_99af70 *const *address_reference = &address;
+	(void)*address_reference;
 	if (message->identifier == 2 && g_4d8eb4.active)
 	{
 		s_session_id id = g_4d8eb4.session_id;
@@ -301,33 +305,40 @@ struct s_type_f7e40b
 	long reason;
 };
 
+PRIVATE __forceinline void function_94151(s_type_f7e40b *reply, const s_session_id *message, long reason)
+{
+    memset(reply, 0, sizeof(*reply));
+    reply->session_id = *message;
+    reply->reason = reason;
+}
+
+// score 12 (was 12): the leave reason is computed without a branch (neg/sbb/add) where
+// retail tests the leave result and moves 8 or 9; the shorter body also moves every
+// branch displacement and the padding at the end.
 // @retail 0x94150
 void network_message_handler_handle_leave_request(c_class_938e0 *handler, long address, const s_session_id *message)
 {
 	c_class_58d20 *session = network_session_manager_find_session(handler->session_manager, message);
 	if (session && function_058d70(session) && session->function_058d20())
 	{
-		long reason;
 		long member_index = network_session_find_member_by_address(session, (const s_type_99af70 *)address);
-		if (member_index == NONE || member_index == session->current_member || network_session_member_leave(session, member_index))
-			reason = 8;
-		else
-			reason = 9;
-		s_type_f7e40b reply = { 0 };
-		reply.session_id = *message;
-		reply.reason = reason;
+        long reason;
+        if (member_index == NONE || member_index == session->current_member)
+            reason = 8;
+        else if (network_session_member_leave(session, member_index))
+            reason = 8;
+        else
+            reason = 9;
+		s_type_f7e40b reply;
+		function_94151(&reply, message, reason);
 		function_07b140(handler->link, address, 10, sizeof(reply), &reply);
 	}
 }
 
-/* 0x94220 (handle_join_abort), kept out of the build: it calls network_session_close
-   (0x5a520, lane D), and with it as a caller our LTCG passes that function's
-   session in ecx instead of eax, which breaks lane D's matched 0x593e0,
-   0x618d0 and 0x61910. Not matched itself: 0x5a520's convention differs. */
-#if 0
-void c_class_938e0::handle_join_abort(const s_session_id *message, const s_type_99af70 *address)
+// @retail 0x94220
+void __stdcall function_094220(c_class_938e0 *handler, const s_session_id *message, const s_type_99af70 *address)
 {
-	c_class_58d20 *session = network_session_manager_find_session(session_manager, message);
+	c_class_58d20 *session = network_session_manager_find_session(handler->session_manager, message);
 	if (session)
 	{
 		if (network_session_channel_is_host_address(session, address))
@@ -341,7 +352,6 @@ void c_class_938e0::handle_join_abort(const s_session_id *message, const s_type_
 		}
 	}
 }
-#endif
 
 // @retail 0x94270
 void c_class_938e0::function_94270(const s_session_id *message, const s_type_99af70 *address)
@@ -355,47 +365,16 @@ void c_class_938e0::function_94270(const s_session_id *message, const s_type_99a
 	}
 }
 
-/* 0x942d0 (function_x769765), kept out of the build: it calls network_session_close
-   (0x5a520, lane D), and with it as a caller our LTCG passes that function's
-   session in ecx instead of eax, which breaks lane D's matched 0x593e0,
-   0x618d0 and 0x61910. Not matched itself: 0x5a520's convention differs. */
-#if 0
-void c_class_938e0::function_x769765(const s_session_id *message, const s_type_99af70 *address)
+// @retail 0x942d0
+void __stdcall function_0942d0(c_class_938e0 *handler, const s_session_id *message, const s_type_99af70 *address)
 {
-	c_class_58d20 *session = network_session_manager_find_session(session_manager, message);
+	c_class_58d20 *session = network_session_manager_find_session(handler->session_manager, message);
 	if (session && function_058d90(session) && session->state == 4 &&
 		network_session_find_member_by_address(session, address) == session->member_index)
 	{
 		network_session_close(session);
 	}
 }
-#endif
-
-/* 0x94310 (handle_session_disband), kept out of the build: it matches, but
-   as a caller of 0x5e150 it makes our LTCG pass network_session_close's
-   (0x5a520) session in ecx instead of eax, which breaks lane D's matched
-   0x593e0, 0x618d0 and 0x61910. */
-#if 0
-void c_class_938e0::handle_session_disband(const s_session_id *message, const s_type_99af70 *address)
-{
-	c_class_58d20 *session = network_session_manager_find_session(session_manager, message);
-	if (session)
-		network_session_handle_session_disband(session, address);
-}
-#endif
-
-/* 0x94330 (handle_session_boot), kept out of the build: it matches, but
-   as a caller of 0x5e1a0 it makes our LTCG pass network_session_close's
-   (0x5a520) session in ecx instead of eax, which breaks lane D's matched
-   0x593e0, 0x618d0 and 0x61910. */
-#if 0
-void c_class_938e0::handle_session_boot(const s_session_id *message, const s_type_99af70 *address)
-{
-	c_class_58d20 *session = network_session_manager_find_session(session_manager, message);
-	if (session)
-		network_session_handle_session_boot(session, address);
-}
-#endif
 
 // @retail 0x94350
 void c_class_938e0::handle_host_handoff(const s_network_message_handoff *message, long remote_index)
@@ -461,7 +440,7 @@ void c_class_938e0::function_944a0(const s_session_id *message, long remote_inde
 		s_type_67cfcd reply;
 		memset(&reply, 0, sizeof(reply));
 		reply.session_id = *message;
-		function_095580(network_stream_get(function_x7665e0(remote_index)->stream_index), 0x13, sizeof(reply), &reply);
+		function_095580(network_stream_get(link_connection_get(remote_index)->stream_index), 0x13, sizeof(reply), &reply);
 	}
 }
 
@@ -483,17 +462,20 @@ struct s_network_message_peer_reply
 // @retail 0x94520
 void c_class_938e0::function_94520(const s_session_id *message, const s_type_99af70 *address)
 {
-	long reason = 0;
-	bool has_identity = false;
 	s_member_identity_bytes identity;
 	c_class_58d20 *session = network_session_manager_find_session(session_manager, message);
+	long reason = 0;
+	bool has_identity = false;
+	bool skip_reply = false;
 	if (session)
 	{
 		if (function_05e7f0(session, address, message, &reason, &has_identity, (s_session_member_identity *)&identity))
-			return;
+			skip_reply = true;
 	}
 	else
 		reason = 1;
+	if (skip_reply)
+		return;
 	s_network_message_peer_reply reply;
 	memset(&reply, 0, sizeof(reply));
 	reply.session_id = *message;
@@ -605,7 +587,7 @@ void c_class_938e0::handle_countdown_timer(const s_network_message_countdown_tim
 {
 	c_class_58d20 *session = network_session_manager_find_session(session_manager, (const s_session_id *)message);
 	if (session && session->function_058d20())
-		network_session_handle_countdown_timer(session, remote_index, message);
+		network_session_handle_countdown_timer(message, session, remote_index);
 }
 
 // @retail 0x948c0
@@ -723,7 +705,7 @@ void c_class_938e0::handle_join_data_begin(const s_network_message_join_data_beg
 }
 
 // @retail 0x94a50
-void c_class_938e0::handle_join_data(const s_network_message_join_data *message, long channel_index, long data_size, const byte *data)
+void c_class_938e0::handle_join_data(long channel_index, const s_network_message_join_data *message, long data_size, const byte *data)
 {
 	c_simulation_view *view = simulation_get_view_by_channel(channel_index);
 	if (data_size == message->size && view && view->type == 1)
@@ -752,31 +734,60 @@ struct s_type_ac8d96
 	long identifier;
 };
 
-#define CONNECTION(index) (&((s_network_connection *)g_4d87d4)[index])
+#define CONNECTION(index) (&((s_link_connection *)g_4d87d4)[index])
+
+static __forceinline void function_94ae1(s_type_2c88a0 const *arg_0, s_link_connection *arg_1)
+{
+	switch (arg_0->reason)
+	{
+	case 0:
+	case 1:
+	case 2:
+	case 5:
+	case 6:
+		link_connection_close(arg_1, 5);
+		break;
+	case 3:
+	case 4:
+	case 7:
+		break;
+	default:
+		__assume(0);
+	}
+}
+
+static __forceinline void function_94ae2(s_link_connection *arg_0, long arg_1)
+{
+	switch (arg_1)
+	{
+	case 0:
+	case 1:
+	case 2:
+	case 5:
+	case 6:
+		link_connection_close(arg_0, 5);
+		break;
+	case 3:
+	case 4:
+	case 7:
+		break;
+	default:
+		__assume(0);
+	}
+}
 
 // @retail 0x94ae0
 void network_message_handle_connect_refuse(long connection_index, const s_type_2c88a0 *message)
 {
-	s_network_connection *connection = CONNECTION(connection_index);
+	s_link_connection *connection = CONNECTION(connection_index);
 	long state = connection->state;
-	if (state > 2 && state != 5 && connection->local_sequence == message->identifier)
+	if (state > 2 && state != 5)
 	{
-		long reason = message->reason;
-		switch (reason)
+		state = connection->local_sequence;
+		if (state == message->identifier)
 		{
-		case 0:
-		case 1:
-		case 2:
-		case 5:
-		case 6:
-			network_connection_close(connection, 5);
-			break;
-		case 3:
-		case 4:
-		case 7:
-			break;
-		default:
-			__assume(0);
+			state = message->reason;
+			function_94ae2(connection, state);
 		}
 	}
 }
@@ -784,27 +795,27 @@ void network_message_handle_connect_refuse(long connection_index, const s_type_2
 // @retail 0x94b40
 void network_message_handle_connect_establish(long connection_index, const s_type_3de205 *message)
 {
-	s_network_connection *connection = CONNECTION(connection_index);
+	s_link_connection *connection = CONNECTION(connection_index);
 	long state = connection->state;
 	if (state > 2 && connection->local_sequence == message->identifier)
 	{
 		if (state >= 4 && connection->remote_sequence != message->remote_identifier)
 		{
 			s_type_99af70 address;
-			network_connection_get_address(connection, &address);
-			network_connection_close(connection, 6);
-			network_connection_connect(&address, connection, false);
+			link_connection_get_address(connection, &address);
+			link_connection_close(connection, 6);
+			link_connection_connect(&address, connection, false);
 		}
-		network_connection_establish(connection, message->remote_identifier);
+		link_connection_establish(connection, message->remote_identifier);
 	}
 }
 
 // @retail 0x94bb0
 void network_message_handle_connect_closed(long connection_index, const s_type_ac8d96 *message)
 {
-	s_network_connection *connection = CONNECTION(connection_index);
+	s_link_connection *connection = CONNECTION(connection_index);
 	if (connection->state > 2 && connection->local_sequence == message->identifier)
-		network_connection_close(connection, 10);
+		link_connection_close(connection, 10);
 }
 
 /* the message types a connection's channel delivers to the handler; the
@@ -812,139 +823,139 @@ void network_message_handle_connect_closed(long connection_index, const s_type_a
 // @retail 0x93aa0
 void c_class_938e0::function_93aa0(long channel_index, long message_type, long message_size, const void *message)
 {
-	s_network_connection *connection = CONNECTION(channel_index);
+	s_link_connection *connection = CONNECTION(channel_index);
 	s_type_99af70 address;
 	switch (message_type)
 	{
 	case 11:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			function_94270((const s_session_id *)message, &address);
-		break;
+		return;
 	case 13:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			function_094310(this, (const s_session_id *)message, &address);
-		break;
+		return;
 	case 14:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			function_094330(this, (const s_session_id *)message, &address);
-		break;
+		return;
 	case 15:
 		if (connection->state == 5)
 			handle_host_handoff((const s_network_message_handoff *)message, channel_index);
-		break;
+		return;
 	case 16:
 		if (connection->state == 5)
 			handle_host_handoff_acknowledge((const byte *)message, channel_index);
-		break;
+		return;
 	case 17:
 		if (connection->state == 5)
 			function_943d0((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 18:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			function_94420((const s_session_id *)message, &address);
-		break;
+		return;
 	case 19:
 		if (connection->state == 5)
 			handle_channel_closed((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 20:
 		if (connection->state == 5)
 			handle_peer_ready((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 21:
 		if (connection->state == 5)
 			function_944a0((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 22:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			function_94520((const s_session_id *)message, &address);
-		break;
+		return;
 	case 23:
-		if (connection->state == 5 && network_connection_get_address(connection, &address))
+		if (connection->state == 5 && link_connection_get_address(connection, &address))
 			handle_peer_reestablish((const s_session_id *)message, &address);
-		break;
+		return;
 	case 25:
 		if (connection->state == 5)
 			function_94610((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 26:
 		if (connection->state == 5)
 			handle_peer_properties((const s_network_message_peer_properties *)message, channel_index);
-		break;
+		return;
 	case 27:
 		if (connection->state == 5)
 			handle_delegate_leader((const s_network_message_peer_identity *)message, channel_index);
-		break;
+		return;
 	case 28:
 		if (connection->state == 5)
 			handle_boot_machine((const s_network_message_peer_identity *)message, channel_index);
-		break;
+		return;
 	case 29:
 		if (connection->state == 5)
 			function_94700((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 30:
 		if (connection->state == 5)
 			handle_player_refuse((const s_network_message_player_refuse *)message, channel_index);
-		break;
+		return;
 	case 31:
 		if (connection->state == 5)
 			handle_player_remove((const s_network_message_player_remove *)message, channel_index);
-		break;
+		return;
 	case 32:
 		if (connection->state == 5)
 			handle_player_properties((const s_network_message_player_properties *)message, channel_index);
-		break;
+		return;
 	case 33:
 		if (connection->state == 5)
 			function_94800((const s_session_id *)message, channel_index);
-		break;
+		return;
 	case 34:
 		if (connection->state == 5)
 			handle_parameters_request((const s_network_message_parameters_request *)message, channel_index);
-		break;
+		return;
 	case 35:
 		if (connection->state == 5)
 			handle_countdown_timer((const s_network_message_countdown_timer *)message, channel_index);
-		break;
+		return;
 	case 36:
 		if (connection->state == 5)
 			handle_mode_acknowledge((const s_network_message_mode_acknowledge *)message, channel_index);
-		break;
+		return;
 	case 37:
 		if (connection->state == 5)
 			handle_view_establishment((const s_type_22101d *)message, channel_index);
-		break;
+		return;
 	case 38:
 		if (connection->state == 5)
 			handle_player_acknowledge((const s_type_0bbd2f *)message, channel_index);
-		break;
+		return;
 	case 39:
 		if (connection->state == 5)
 			handle_synchronous_update((const s_simulation_block_data *)message, channel_index);
-		break;
+		return;
 	case 40:
 		if (connection->state == 5)
 			handle_player_update((const s_network_message_player_update *)message, channel_index);
-		break;
+		return;
 	case 41:
 		if (connection->state == 5)
 			handle_join_data_begin((const s_network_message_join_data_begin *)message, channel_index);
-		break;
+		return;
 	case 43:
 		if (connection->state == 5)
 			handle_baseline_update((const s_network_message_baseline_update *)message, channel_index);
-		break;
+		return;
 	case 6:
 		network_message_handle_connect_establish(channel_index, (const s_type_3de205 *)message);
-		break;
+		return;
 	case 42:
 		if (connection->state == 5)
-			handle_join_data((const s_network_message_join_data *)message, channel_index, message_size - 8, (const byte *)message + 8);
-		break;
+			handle_join_data(channel_index, (const s_network_message_join_data *)message, message_size - 8, (const byte *)message + 8);
+		return;
 	case 44:
-		break;
+		return;
 	}
 }
 
@@ -958,15 +969,34 @@ void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_ty
 	{
 	case 0:
 		network_message_handler_refuse_connect((const s_connect_request *)message, this, (long)address);
-		break;
+		return;
 	case 2:
 		function_093fa0(this, message);
-		break;
+		return;
 	case 3:
 		network_message_handler_handle_session_query((const s_network_message_session_query *)message, address);
-		break;
+		return;
 	case 4:
 		function_0785d0(unknown10, address, message);
+		return;
+	default: break;
+	}
+	switch (message_type)
+	{
+	case 5:
+		connection_index = network_link_find_connection(field_4_5, 0, address);
+		if (connection_index != NONE)
+			network_message_handle_connect_refuse(connection_index, (const s_type_2c88a0 *)message);
+		break;
+	case 6:
+		connection_index = network_link_find_connection(field_4_5, 0, address);
+		if (connection_index != NONE)
+			network_message_handle_connect_establish(connection_index, (const s_type_3de205 *)message);
+		break;
+	case 7:
+		connection_index = network_link_find_connection(field_4_5, 0, address);
+		if (connection_index != NONE)
+			network_message_handle_connect_closed(connection_index, (const s_type_ac8d96 *)message);
 		break;
 	case 8:
 		function_94100((const s_network_message_session_query *)message, address);
@@ -1000,21 +1030,6 @@ void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_ty
 		break;
 	case 11:
 		function_94270((const s_session_id *)message, address);
-		break;
-	case 5:
-		connection_index = network_link_find_connection(field_4_5, 0, address);
-		if (connection_index != NONE)
-			network_message_handle_connect_refuse(connection_index, (const s_type_2c88a0 *)message);
-		break;
-	case 6:
-		connection_index = network_link_find_connection(field_4_5, 0, address);
-		if (connection_index != NONE)
-			network_message_handle_connect_establish(connection_index, (const s_type_3de205 *)message);
-		break;
-	case 7:
-		connection_index = network_link_find_connection(field_4_5, 0, address);
-		if (connection_index != NONE)
-			network_message_handle_connect_closed(connection_index, (const s_type_ac8d96 *)message);
 		break;
 	}
 }

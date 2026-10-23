@@ -9,18 +9,22 @@
 bool function_1fdce0(long arg_0, short arg_1);
 void function_1fe410(point3f *arg_0, real arg_1);
 
+static __forceinline long real_to_long(real value);
+
 // @retail 0x1fe620
 void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
 {
-    volatile bool local_0 = false;
+    bool local_0 = false;
     byte *local_1 = (byte *)actor_get(arg_0);
     if (local_1[0x70e] && !function_1fdce0(arg_0, *(short const *)(arg_2 + 0x7a)))
         local_1[0x70e] = false;
     local_1[0x70d] = local_1[0x70e];
     local_1[0x70e] = false;
-    *(short *)(local_1 + 0x700) = (short)real_to_long(
-        slot_random_range(*(real const *)(arg_1 + 0x20), *(real const *)(arg_1 + 0x24)) *
-        (real)g_510c54->field_2_3);
+    real timer_value = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, *(real const *)(arg_1 + 0x20), *(real const *)(arg_1 + 0x24)) *
+        (real)g_510c54->field_2_3;
+    long timer_result;
+    timer_result = real_to_long(timer_value);
+    *(short *)(local_1 + 0x700) = (short)timer_result;
     *(long *)(local_1 + 0x718) = g_510c54->game_time;
     local_1[0x714] = local_1[0x5d0];
     *(real *)(local_1 + 0x7bc) = *(real const *)(arg_1 + 0x34);
@@ -71,11 +75,13 @@ void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
         local_6.k = 0.0f - local_6.k;
     }
     real local_12 = *(real const *)(arg_1 + 0xc);
-    real local_13 = slot_random_range(0.0f - *(real const *)(arg_1 + 0x10),
-        *(real const *)(arg_1 + 0x10));
-    real local_14 = slot_random_range(0.0f - *(real const *)(arg_1 + 0x1c),
-        *(real const *)(arg_1 + 0x1c)) + local_13;
-    real local_15 = slot_random_range(*(real const *)(arg_1 + 0x14),
+    real first_limit = *(real const *)(arg_1 + 0x10);
+    real second_limit = *(real const *)(arg_1 + 0x1c);
+    real first_lower = 0.0f - first_limit;
+    real second_lower = 0.0f - second_limit;
+    real local_13 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, first_lower, first_limit);
+    real local_14 = slot_random_range(second_lower, second_limit) + local_13;
+    real local_15 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, *(real const *)(arg_1 + 0x14),
         *(real const *)(arg_1 + 0x18));
     real local_16 = *(real const *)(arg_1 + 0x3c);
     if (local_12 > 0.0f && local_9 > 0.0f && atan2(local_12, local_9) > local_16)
@@ -93,10 +99,18 @@ void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
         {
             real local_20 = local_19 * 1.5f;
             if (local_20 > local_12)
-                *(short *)(local_1 + 0x700) = (short)real_to_long(local_12 / local_19 * (real)local_17);
+            {
+                real timer_value = local_12 / local_19 * (real)local_17;
+                long timer_result;
+                timer_result = real_to_long(timer_value);
+                *(short *)(local_1 + 0x700) = (short)timer_result;
+            }
             else
             {
-                *(short *)(local_1 + 0x700) = (short)real_to_long((real)local_17 * 1.5f);
+                real timer_value = (real)local_17 * 1.5f;
+                long timer_result;
+                timer_result = real_to_long(timer_value);
+                *(short *)(local_1 + 0x700) = (short)timer_result;
                 local_15 *= local_20 / local_12;
                 local_12 = local_20;
             }

@@ -5,16 +5,17 @@
 #include "unknown_11c920.h"
 #include <string.h>
 #include "unknown_24b5bc.h"
+#include "online_task_screen.h"
 #include "unknown_19b510.h"
 
-bool function_1a0540(s_player_profile_settings *settings, long profile_index);
-void __stdcall function_18fb34(long player, s_player_profile_settings *settings, long profile_index);
+bool player_profile_load(long profile_index, s_player_profile_settings *settings);
+void __stdcall player_slot_set_profile(long player, s_player_profile_settings *settings, long profile_index);
 void function_120df0(long index, wchar_t const *name);
 void function_190001(long index, char const *name);
 bool window_manager_channel_in_use(long channel);
 void voice_start_engine(void);
 void voice_stop_engine(void);
-long function_6c8b0(XONLINE_USER *user, long player);
+long function_6c8b0(long player, XONLINE_USER *user);
 void function_1487c3(long controller_index, long task_index, long callback, long value, long context);
 void __stdcall function_24b869(c_class_1473c9 *screen);
 bool function_6c7e0();
@@ -29,7 +30,7 @@ void function_190186(long controller);
 void function_190728(long index);
 void function_18fee9(XONLINE_USER const *user, long index);
 void online_get_logon_users(XONLINE_USER *users);
-bool __stdcall function_236937(long controller_index);
+bool __stdcall dialog_callback_dashboard_online_menu(long controller_index);
 extern bool g_50944f;
 bool __stdcall function_24ba7d(long controller_index);
 
@@ -72,7 +73,7 @@ void s_player_slot_profile::initialize(long player)
 // @retail 0x24b652
 void s_player_slot_profile::set_profile_index(long profile_index)
 {
-	if (function_1a0540(&settings, profile_index))
+	if (player_profile_load(profile_index, &settings))
 	{
 		this->profile_index = profile_index;
 	}
@@ -91,7 +92,7 @@ void s_player_slot_profile::set_profile(long profile_index)
 {
 	char name[16];
 
-	if (function_1a0540(&settings, profile_index))
+	if (player_profile_load(profile_index, &settings))
 	{
 		name[0] = 0;
 		this->profile_index = profile_index;
@@ -100,7 +101,7 @@ void s_player_slot_profile::set_profile(long profile_index)
 			strncpy(name, user.szGamertag, 16);
 			name[15] = 0;
 		}
-		function_18fb34(player, &settings, this->profile_index);
+		player_slot_set_profile(player, &settings, this->profile_index);
 		function_120df0(player, (wchar_t const *)settings.name);
 		function_190001(player, name);
 	}
@@ -114,7 +115,7 @@ void s_player_slot_profile::sign_in(player_sign_in_callback callback)
 	{
 #if defined(H2_NATIVE_PORT)
 		char name[16] = { 0 };
-		function_18fb34(player, &settings, profile_index);
+		player_slot_set_profile(player, &settings, profile_index);
 		function_120df0(player, (wchar_t const *)settings.name);
 		function_190001(player, name);
 		if (callback)
@@ -131,7 +132,7 @@ void s_player_slot_profile::sign_in(player_sign_in_callback callback)
 			char name[16] = { 0 };
 
 			task_type = 0;
-			function_18fb34(player, &settings, profile_index);
+			player_slot_set_profile(player, &settings, profile_index);
 			function_120df0(player, (wchar_t const *)settings.name);
 			function_190001(player, name);
 			if (callback)
@@ -163,7 +164,7 @@ void s_player_slot_profile::sign_in_live()
 		long task;
 
 		voice_stop_engine();
-		task = function_6c8b0(&user, player);
+		task = function_6c8b0(player, &user);
 		if (task != NONE)
 		{
 			g_475338 = NONE;
@@ -280,14 +281,14 @@ void s_player_slot_profile::task_succeeded()
 	{
 		task_type = 0;
 		function_190074(player, true);
-		function_18fb34(player, &settings, profile_index);
+		player_slot_set_profile(player, &settings, profile_index);
 		function_120df0(player, (wchar_t const *)settings.name);
 		function_18fee9(&user, player);
 		function_190001(player, user.szGamertag);
 		function_190728(player);
 		if (g_50944f)
 		{
-			dialog_choice_show(1, 0x28, 4, 1 << player, function_236937, 0, 0);
+			dialog_choice_show(1, 0x28, 4, 1 << player, dialog_callback_dashboard_online_menu, 0, 0);
 			g_50944f = false;
 		}
 	}
@@ -301,4 +302,61 @@ void s_player_slot_profile::task_succeeded()
 	{
 		callback(player, false);
 	}
+}
+
+// @retail 0x24ba99
+void s_player_slot_profile::show_task_text(c_online_task_screen *screen)
+{
+    if (task_type == 1)
+    {
+        screen->set_title_from_block(0, 0);
+        screen->set_description_from_block(0, 1);
+    }
+    else
+    {
+        screen->set_title_from_block(0, 2);
+        screen->set_description_from_block(0, 3);
+    }
+}
+
+#include "online_tasks.h"
+bool function_2bb04e(long task_index, bool *completion);
+void online_task_screen_finish(c_online_task_screen *screen);
+extern dword g_54d5b8;
+dword g_51ec94;
+
+// @retail 0x24b869
+void __stdcall function_24b869(c_class_1473c9 *screen_base)
+{
+    c_online_task_screen *screen = (c_online_task_screen *)screen_base;
+    s_player_slot_profile *profile = *(s_player_slot_profile **)screen->unknown618;
+    long task = screen->task_index;
+    profile->show_task_text(screen);
+    if (task != NONE && function_6b910(task))
+    {
+        bool complete = false;
+        if (!function_2bb04e(task, &complete) || complete)
+        {
+            complete = online_task_get_type(task) == 0;
+            long status = online_task_get_logon_status(task);
+            XONLINE_USER users[4];
+            online_get_logon_users(users);
+            if (status == 1 && users[profile->player].xuid.qwUserID &&
+                users[profile->player].szGamertag[0] && users[profile->player].hr >= 0)
+            {
+                if (complete) screen->task_index = NONE;
+                online_task_screen_finish(screen);
+                profile->task_succeeded();
+            }
+            else
+            {
+                if (profile->task_type == 1) profile->sign_in_failed();
+                else profile->signed_out();
+                if (complete) screen->task_index = NONE;
+                online_task_screen_finish(screen);
+            }
+            g_51ec94 = g_54d5b8;
+        }
+    }
+    else online_task_screen_finish(screen);
 }

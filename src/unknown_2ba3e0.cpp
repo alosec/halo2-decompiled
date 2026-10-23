@@ -4,6 +4,8 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "unknown_1eb550.h"
+#include "normalize3d.h"
+#include "vector_products.h"
 
 // @flags /O2 /arch:SSE /Gr
 
@@ -117,20 +119,43 @@ PRIVATE __forceinline void normalize_particle_vector_2b(vector3f *v)
     }
 }
 
+PRIVATE __forceinline real particle_direction_squared_2b(vector3f const *v)
+{
+    real squared = v->k * v->k;
+    squared += v->j * v->j;
+    squared += v->i * v->i;
+    return squared;
+}
+
+PRIVATE __forceinline void normalize_particle_direction_2b(vector3f *v)
+{
+    real squared = particle_direction_squared_2b(v);
+    if (squared != 0.0f)
+    {
+        real inverse = inverse_sqrt_2b96(squared);
+        scale_particle_vector_2b(inverse, v);
+    }
+}
+
 // @retail 0x2b98b0
 void function_2b98b0(s_particle_2b96 const *particle, s_particle_2b96 const *other, real scale, vector3f *result)
 {
     vector3f a = particle->velocity;
     vector3f b = other->velocity;
     normalize_particle_vector_2b(&a);
-    normalize_particle_vector_2b(&b);
+    normalize_particle_direction_2b(&b);
     vector3f delta;
-    delta.i = (b.i - a.i) * scale;
-    delta.j = (b.j - a.j) * scale;
-    delta.k = (b.k - a.k) * scale;
-    result->i += delta.i;
-    result->j += delta.j;
-    result->k += delta.k;
+    scaled_difference3f(a.n, b.n, scale, delta.n);
+    for (long component = 0; component < 3; ++component)
+        result->n[component] += delta.n[component];
+}
+
+PRIVATE __forceinline real particle_distance_estimate_2b(real squared)
+{
+    union { real value; long bits; } estimate;
+    estimate.value = squared;
+    estimate.bits = (estimate.bits >> 1) + 0x1fc00000;
+    return estimate.value;
 }
 
 // @retail 0x2b9750
@@ -139,25 +164,20 @@ void function_2b9750(s_particle_2b96 const *other, s_particle_2b96 const *partic
     if (fabs(scale) < 0.0001f)
         return;
     vector3f delta;
-    delta.i = other->position.x - particle->position.x;
-    delta.j = other->position.y - particle->position.y;
-    delta.k = other->position.z - particle->position.z;
-    union { real value; long bits; } distance;
-    distance.value = delta.i * delta.i + delta.j * delta.j + delta.k * delta.k;
-    distance.bits = (distance.bits >> 1) + 0x1fc00000;
-    real ratio = distance.value / (radius > 0.1f ? radius : 0.1f);
-    delta.i = particle->position.x - other->position.x;
-    delta.j = particle->position.y - other->position.y;
-    delta.k = particle->position.z - other->position.z;
-    normalize_particle_vector_2b(&delta);
+    vector3d_from_points3d(&particle->position, &other->position, &delta);
+    real initial_squared = dot3f(&delta, &delta);
+    real bounded_radius = radius > 0.1f ? radius : 0.1f;
+    real ratio = particle_distance_estimate_2b(initial_squared) / bounded_radius;
+    vector3d_from_points3d(&other->position, &particle->position, &delta);
+    normalize_particle_direction_2b(&delta);
+    vector3f force;
     if (ratio < 1.0f)
-        scale = 0.0f - ratio * scale;
-    delta.i *= scale;
-    delta.j *= scale;
-    delta.k *= scale;
-    result->i += delta.i;
-    result->j += delta.j;
-    result->k += delta.k;
+        vector3f_scale(&delta, 0.0f - ratio * scale, &force);
+    else
+        vector3f_scale(&delta, scale, &force);
+    result->i += force.i;
+    result->j += force.j;
+    result->k += force.k;
 }
 
 #include "globals.h"
@@ -258,12 +278,8 @@ void function_2ba100(s_particle_properties_2ba const *definition, void *system, 
                     properties_values[j] = function_246cd0(&properties[j].property, values);
             }
             short cluster = *(short *)((byte *)system + 0x20);
-            short wind_index = NONE;
-            if (cluster != NONE)
-            {
-                byte *clusters = *(byte **)((byte *)g_4e0348 + 0xa0);
-                wind_index = *(short *)(clusters + cluster * 0xb0 + 0x76);
-            }
+            long wind_index = cluster == NONE ? NONE :
+                *(short *)(*(byte **)((byte *)g_4e0348 + 0xa0) + cluster * 0xb0 + 0x76);
             vector3f wind;
             function_211b70(wind_index, particle->position.n, 8, &wind);
             real time = g_510c54->game_time * g_510c54->rate;
@@ -293,31 +309,20 @@ void function_2b9a00(s_particle_2b96 const *particle, real distance, vector3f *r
         s_collision_result_1697c0 value;
         byte storage[0x5c];
     } collision;
-    real squared = direction.i * direction.i + direction.j * direction.j + direction.k * direction.k;
     collision.value.unknown24 = NONE;
+    real squared = particle_direction_squared_2b(&direction);
     if (squared != 0.0f)
     {
         real inverse = inverse_sqrt_2b96(squared);
         scale_particle_vector_2b(inverse, &direction);
     }
-    direction.i *= distance;
-    direction.j *= distance;
-    direction.k *= distance;
+    scale_particle_vector_2b(distance, &direction);
     if (function_1697c0(0x800005, &particle->position, &direction, NONE, NONE, &collision.value))
     {
-        vector3f const *normal = (vector3f const *)(collision.storage + 0x28);
-        result->i += normal->i;
-        result->j += normal->j;
-        result->k += normal->k;
+        result->i += ((vector3f const *)(collision.storage + 0x28))->i;
+        result->j += ((vector3f const *)(collision.storage + 0x28))->j;
+        result->k += ((vector3f const *)(collision.storage + 0x28))->k;
     }
-}
-
-PRIVATE __forceinline real particle_distance_estimate_2b(real squared)
-{
-    union { real value; long bits; } estimate;
-    estimate.value = squared;
-    estimate.bits = (estimate.bits >> 1) + 0x1fc00000;
-    return estimate.value;
 }
 
 PRIVATE __forceinline void normalize_particle_velocity_2b(vector3f *v)
@@ -363,10 +368,15 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         cache.valid |= requested;
         next = particle->next;
         s_particle_2b96 *nearest = function_2b9670(particle, first);
-        real minimum_speed = function_246cd0(&properties[6].property, cache.values);
-        real maximum_speed = function_246cd0(&properties[7].property, cache.values);
-        real maximum_change = function_246cd0(&properties[8].property, cache.values);
-        vector3f change = { 0.0f, 0.0f, 0.0f };
+        struct { real minimum_speed, maximum_speed, maximum_change; vector3f change, delta, previous; } steering;
+        real &minimum_speed = steering.minimum_speed;
+        minimum_speed = function_246cd0(&properties[6].property, cache.values);
+        real &maximum_speed = steering.maximum_speed;
+        maximum_speed = function_246cd0(&properties[7].property, cache.values);
+        real &maximum_change = steering.maximum_change;
+        maximum_change = function_246cd0(&properties[8].property, cache.values);
+        vector3f &change = steering.change;
+        change.i = change.j = change.k = 0.0f;
         if (nearest)
         {
             function_2b9750(nearest, particle,
@@ -380,7 +390,7 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         if (attraction_radius > 0.0f)
         {
             point3f const *center = (point3f const *)((byte const *)origin + 0x10);
-            vector3f delta;
+            vector3f &delta = steering.delta;
             delta.i = center->x - particle->position.x;
             delta.j = center->y - particle->position.y;
             delta.k = center->z - particle->position.z;
@@ -414,14 +424,13 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
             change.j *= maximum_change;
             change.k *= maximum_change;
         }
-        vector3f local_c01284 = particle->velocity;
+        vector3f &local_c01284 = steering.previous;
+        local_c01284 = particle->velocity;
         scale_particle_vector_2b(0.75f, &local_c01284);
         particle->velocity.i += change.i;
         particle->velocity.j += change.j;
         particle->velocity.k += change.k;
-        particle->velocity.i *= 0.25f;
-        particle->velocity.j *= 0.25f;
-        particle->velocity.k *= 0.25f;
+        scale_particle_vector_2b(0.25f, &particle->velocity);
         particle->velocity.i += local_c01284.i;
         particle->velocity.j += local_c01284.j;
         particle->velocity.k += local_c01284.k;
@@ -429,47 +438,47 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         if (squared > maximum_speed * maximum_speed)
         {
             normalize_particle_velocity_2b(&particle->velocity);
-            particle->velocity.i *= maximum_speed;
-            particle->velocity.j *= maximum_speed;
-            particle->velocity.k *= maximum_speed;
+            scale_particle_vector_2b(maximum_speed, &particle->velocity);
         }
         else if (minimum_speed * minimum_speed > squared)
         {
             normalize_particle_velocity_2b(&particle->velocity);
-            particle->velocity.i *= minimum_speed;
-            particle->velocity.j *= minimum_speed;
-            particle->velocity.k *= minimum_speed;
+            scale_particle_vector_2b(minimum_speed, &particle->velocity);
         }
     }
 }
 
 
 PRIVATE __declspec(noinline) void particle_damping_update_2b(s_particle_properties_2ba const *definition,
+    void *system, long first, real scale);
+
+// @retail 0x2b8e10
+PRIVATE void particle_damping_update_2b(s_particle_properties_2ba const *definition,
     void *system, long first, real scale)
 {
-    dword remaining = definition->constant_mask;
     s_particle_property_entry_2ba *properties = definition->properties;
     long next = first;
-    dword valid = 0;
-    void *current_system = 0;
-    void *current_emitter = 0;
-    s_particle_2b96 *current_particle = 0;
+    s_particle_cache_2ba cache;
+    cache.valid = 0;
+    cache.current_system = 0;
+    cache.current_emitter = 0;
+    cache.current_particle = 0;
     real properties_values[3] = { 0.0f, 0.0f, 0.0f };
-    real values[17];
+    dword remaining = definition->constant_mask;
     if (system)
     {
-        current_system = system;
-        valid = 0;
+        cache.current_system = system;
+        cache.valid = 0;
     }
     dword requested = definition->input_mask & 0x107f0;
-    function_173ba0(requested, current_system, current_emitter, current_particle, values);
-    valid |= requested;
+    function_173ba0(requested, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
+    cache.valid |= requested;
     for (dword i = 0; i < 3 && remaining; ++i)
     {
         dword bit = 1 << i;
         if (remaining & bit)
         {
-            properties_values[i] = function_246cd0(&properties[i].property, values);
+            properties_values[i] = function_246cd0(&properties[i].property, cache.values);
             remaining &= ~bit;
         }
     }
@@ -479,28 +488,25 @@ PRIVATE __declspec(noinline) void particle_damping_update_2b(s_particle_properti
         next = particle->next;
         if (!(*((byte *)particle + 2) & 9) && *(real *)((byte *)particle + 8) <= 1.0f)
         {
-            if (particle != current_particle)
+            if (particle != cache.current_particle)
             {
-                current_particle = particle;
-                valid &= 0xffff07f0;
+                cache.current_particle = particle;
+                cache.valid &= 0xffff07f0;
             }
             requested = definition->input_mask & 0xf80f;
-            function_173ba0(requested & ~valid, current_system, current_emitter, current_particle, values);
-            valid |= requested;
+            function_173ba0(requested & ~cache.valid, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
+            cache.valid |= requested;
             for (dword j = 0; j < 3; ++j)
             {
                 if (!(definition->constant_mask & (1 << j)))
-                    properties_values[j] = function_246cd0(&properties[j].property, values);
+                    properties_values[j] = function_246cd0(&properties[j].property, cache.values);
             }
             real linear = properties_values[1] * scale;
             real angular = properties_values[2] * scale;
             linear = linear < 0.0f ? 0.0f : (linear > 1.0f ? 1.0f : linear);
             angular = angular < 0.0f ? 0.0f : (angular > 1.0f ? 1.0f : angular);
             particle->velocity.k -= g_51e9c4->unknown0 * properties_values[0] * scale;
-            real linear_remaining = 1.0f - linear;
-            particle->velocity.i *= linear_remaining;
-            particle->velocity.j *= linear_remaining;
-            particle->velocity.k *= linear_remaining;
+            scale_particle_vector_2b(1.0f - linear, &particle->velocity);
             *(real *)((byte *)particle + 0x34) *= 1.0f - angular;
         }
     }
@@ -554,17 +560,19 @@ void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void
     s_particle_property_entry_2ba *properties = definition->properties;
     c_particle_collision_interface_2b *material = (c_particle_collision_interface_2b *)function_137bd0(
         ((s_particle_system_datum *)system)->function_1751d0()->tag_index);
-    dword remaining = definition->constant_mask;
-    long next;
-    real coefficients[2];
+    long next = first;
+    union
+    {
+        s_collision_result_1697c0 value;
+        byte storage[0x5c];
+    } collision;
     s_particle_cache_2ba cache;
     cache.valid = 0;
     cache.current_system = 0;
     cache.current_emitter = 0;
     cache.current_particle = 0;
-    coefficients[0] = 0.0f;
-    coefficients[1] = 0.0f;
-    next = first;
+    real coefficients[2] = { 0.0f, 0.0f };
+    dword remaining = definition->constant_mask;
     if (system)
     {
         cache.current_system = system;
@@ -590,123 +598,121 @@ void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void
         if ((*flags & 9) || !(*(real *)((byte *)particle + 8) <= 1.0f))
             continue;
         word countdown = *flags >> 13;
-        if (countdown)
+        if (countdown == 0)
         {
-            *flags = (*flags & 0x1fff) | ((countdown - 1) << 13);
-            continue;
-        }
-        if (cache.current_particle != particle)
-        {
-            cache.current_particle = particle;
-            cache.valid &= 0xffff07f0;
-        }
-        requested = definition->input_mask & 0xf80f;
-        function_173ba0(requested & ~cache.valid, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
-        cache.valid |= requested;
-        dword collision_flags = 0x800000 + ((mode & 2) != 0);
-        if (mode & 2) collision_flags |= 4;
-        else collision_flags &= ~4;
-        if (mode & 4) collision_flags |= 2;
-        else collision_flags &= ~2;
-        if (mode & 0x10) collision_flags |= 0x20;
-        else collision_flags &= ~0x20;
-        if (mode & 8) collision_flags |= 0x400;
-        else collision_flags &= ~0x400;
-        if (mode & 0x20) collision_flags |= 0x10;
-        else collision_flags &= ~0x10;
-        if (collision_flags & 0x430) collision_flags |= 8;
-        if (!(mode & 1) && !(mode & 2) && !(mode & 4) && !(mode & 8))
-        {
-            *flags &= ~2;
-            continue;
-        }
-        vector3f displacement;
-        displacement.i = particle->velocity.i * scale;
-        point3f start = particle->position;
-        displacement.j = particle->velocity.j * scale;
-        displacement.k = particle->velocity.k * scale;
-        vector3f sweep;
-        sweep.i = displacement.i * 12.0f;
-        sweep.j = displacement.j * 12.0f;
-        sweep.k = displacement.k * 12.0f;
-        start.x -= displacement.i;
-        start.y -= displacement.j;
-        start.z -= displacement.k;
-        union
-        {
-            s_collision_result_1697c0 value;
-            byte storage[0x5c];
-        } collision;
-        collision.value.unknown24 = NONE;
-        if (function_1697c0(collision_flags, &start, &sweep, NONE, NONE, &collision.value))
-        {
-            if (g_55e618 > *(real *)(collision.storage + 4))
+            if (particle != cache.current_particle)
             {
-                for (dword j = 0; j < 2 && remaining; ++j)
+                cache.current_particle = particle;
+                cache.valid &= 0xffff07f0;
+            }
+            requested = definition->input_mask & 0xf80f;
+            function_173ba0(requested & ~cache.valid, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
+            cache.valid |= requested;
+            long mode2 = mode & 2;
+            dword collision_flags = 0x800000 + (mode2 != 0);
+            if (mode2) collision_flags |= 4;
+            else collision_flags &= ~4;
+            if (mode & 4) collision_flags |= 2;
+            else collision_flags &= ~2;
+            if (mode & 0x10) collision_flags |= 0x20;
+            else collision_flags &= ~0x20;
+            if (mode & 8) collision_flags |= 0x400;
+            else collision_flags &= ~0x400;
+            if (mode & 0x20) collision_flags |= 0x10;
+            else collision_flags &= ~0x10;
+            if (collision_flags & 0x430) collision_flags |= 8;
+            if (!(mode & 1) && !mode2 && !(mode & 4) && !(mode & 8))
+            {
+                *flags &= ~2;
+                continue;
+            }
+            vector3f displacement;
+            vector3f sweep;
+            displacement.i = particle->velocity.i * scale;
+            point3f start = particle->position;
+            sweep.i = displacement.i * 12.0f;
+            displacement.j = particle->velocity.j * scale;
+            sweep.j = displacement.j * 12.0f;
+            displacement.k = particle->velocity.k * scale;
+            sweep.k = displacement.k * 12.0f;
+            start.x -= displacement.i;
+            start.y -= displacement.j;
+            start.z -= displacement.k;
+            collision.value.unknown24 = NONE;
+            if (function_1697c0(collision_flags, &start, &sweep, NONE, NONE, &collision.value))
+            {
+                if (g_55e618 > *(real *)(collision.storage + 4))
                 {
-                    dword bit = 1 << j;
-                    if (remaining & bit)
+                    for (dword j = 0; j < 2 && remaining; ++j)
                     {
-                        coefficients[j] = function_246cd0(&properties[j].property, cache.values);
-                        remaining &= ~bit;
-                    }
-                }
-                vector3f const *normal = (vector3f const *)(collision.storage + 0x28);
-                real keep = 1.0f - coefficients[0];
-                vector3f velocity;
-                velocity.i = particle->velocity.i;
-                velocity.j = particle->velocity.j;
-                velocity.k = particle->velocity.k;
-                real dot = velocity.i * normal->i + normal->k * velocity.k + normal->j * velocity.j;
-                vector3f perpendicular;
-                perpendicular.i = dot * normal->i;
-                perpendicular.j = dot * normal->j;
-                perpendicular.k = dot * normal->k;
-                vector3f tangent;
-                tangent.i = velocity.i - perpendicular.i;
-                tangent.j = velocity.j - perpendicular.j;
-                tangent.k = velocity.k - perpendicular.k;
-                particle->position.x = normal->i * 0.005f + collision.value.point.x;
-                particle->position.y = normal->j * 0.005f + collision.value.point.y;
-                particle->position.z = normal->k * 0.005f + collision.value.point.z;
-                s_particle_impact impact;
-                impact.index = NONE;
-                placement_set((s_placement *)&impact, &particle->velocity, &particle->position, normal, collision.value.unknown24);
-                particle->velocity.i = tangent.i * keep - perpendicular.i * coefficients[1];
-                particle->velocity.j = tangent.j * keep - perpendicular.j * coefficients[1];
-                particle->velocity.k = tangent.k * keep - perpendicular.k * coefficients[1];
-                *(real *)((byte *)particle + 0x34) *= keep;
-                if (!(*flags & 2))
-                {
-                    if (((s_particle_system_datum *)system)->function_1751d0()->location_mode != 1 && material->tag_index() != NONE)
-                    {
-                        long definition_index = ((s_particle_system_datum *)system)->function_1751d0()->tag_index;
-                        long tag_index = material->tag_index();
-                        dword group = material->group();
-                        if (tag_index != NONE)
+                        dword bit = 1 << j;
+                        if (remaining & bit)
                         {
-                            switch (group)
-                            {
-                            case 'snd!': function_247000((s_object_246eb0 *)particle, tag_index); break;
-                            case 'foot': function_247070((s_object_246eb0 *)particle, &impact, definition_index, tag_index); break;
-                            case 'effe': function_246fa0((s_object_246eb0 *)particle, &impact, tag_index); break;
-                            }
+                            coefficients[j] = function_246cd0(&properties[j].property, cache.values);
+                            remaining &= ~bit;
                         }
                     }
-                    *flags |= 2;
+                    vector3f const *normal = (vector3f const *)(collision.storage + 0x28);
+                    real keep = 1.0f - coefficients[0];
+                    vector3f velocity;
+                    velocity.i = particle->velocity.i;
+                    velocity.j = particle->velocity.j;
+                    velocity.k = particle->velocity.k;
+                    real dot = velocity.i * normal->i + normal->k * velocity.k + normal->j * velocity.j;
+                    vector3f perpendicular;
+                    perpendicular.i = dot * normal->i;
+                    perpendicular.j = dot * normal->j;
+                    perpendicular.k = dot * normal->k;
+                    vector3f tangent;
+                    tangent.i = velocity.i - perpendicular.i;
+                    tangent.j = velocity.j - perpendicular.j;
+                    tangent.k = velocity.k - perpendicular.k;
+                    particle->position.x = normal->i * 0.005f + collision.value.point.x;
+                    particle->position.y = normal->j * 0.005f + collision.value.point.y;
+                    particle->position.z = normal->k * 0.005f + collision.value.point.z;
+                    s_particle_impact impact;
+                    impact.index = NONE;
+                    placement_set((s_placement *)&impact, &particle->velocity, &particle->position, normal, collision.value.unknown24);
+                    particle->velocity.i = tangent.i * keep - perpendicular.i * coefficients[1];
+                    particle->velocity.j = tangent.j * keep - perpendicular.j * coefficients[1];
+                    particle->velocity.k = tangent.k * keep - perpendicular.k * coefficients[1];
+                    *(real *)((byte *)particle + 0x34) *= keep;
+                    if (!(*flags & 2))
+                    {
+                        if (((s_particle_system_datum *)system)->function_1751d0()->location_mode != 1 && material->tag_index() != NONE)
+                        {
+                            long definition_index = ((s_particle_system_datum *)system)->function_1751d0()->tag_index;
+                            long tag_index = material->tag_index();
+                            dword group = material->group();
+                            if (tag_index != NONE)
+                            {
+                                switch (group)
+                                {
+                                case 'snd!': function_247000((s_object_246eb0 *)particle, tag_index); break;
+                                case 'foot': function_247070((s_object_246eb0 *)particle, &impact, definition_index, tag_index); break;
+                                case 'effe': function_246fa0((s_object_246eb0 *)particle, &impact, tag_index); break;
+                                }
+                            }
+                        }
+                        *flags |= 2;
+                    }
+                    if (normal->k > 0.8f) *flags |= 0x10;
+                    else *flags &= ~0x10;
+                    if ((*(long *)collision.storage == 1 && material->stop_on_surface()) ||
+                        (*(long *)collision.storage == 3 && material->stop_on_surface()) ||
+                        (*(long *)collision.storage == 2 && material->stop_on_object()))
+                        *flags |= 1;
                 }
-                if (normal->k > 0.8f) *flags |= 0x10;
-                else *flags &= ~0x10;
-                if ((*(long *)collision.storage == 1 && material->stop_on_surface()) ||
-                    (*(long *)collision.storage == 3 && material->stop_on_surface()) ||
-                    (*(long *)collision.storage == 2 && material->stop_on_object()))
-                    *flags |= 1;
+                else
+                    *flags &= 0x1fff;
             }
             else
-                *flags &= 0x1fff;
+                *flags = (*flags & 0x1ffd) | 0xa000;
         }
         else
-            *flags = (*flags & 0x1ffd) | 0xa000;
+        {
+            *flags = (*flags & 0x1fff) | ((countdown - 1) << 13);
+        }
     }
 }
 

@@ -26,9 +26,11 @@ s_cache_tag_instance *cache_tag_instance_get(long tag_index)
 {
 	s_cache_tag_instance *result = NULL;
 
-	if ((short)tag_index >= 0 && (short)tag_index < cache_file_globals.tags->instance_count)
+	long index = (short)tag_index;
+
+	if (index >= 0 && index < cache_file_globals.tags->instance_count)
 	{
-		s_cache_tag_instance *instance = &((s_cache_tag_instance *)g_4e3b44)[(short)tag_index];
+		s_cache_tag_instance *instance = &((s_cache_tag_instance *)g_4e3b44)[index];
 
 		if (tag_index == instance->datum_index)
 			result = instance;

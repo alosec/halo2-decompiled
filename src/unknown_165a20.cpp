@@ -1,6 +1,5 @@
 // @flags /O2 /Gr
-/* UNKNOWN_165A20.CPP: the object lists of a visibility pass (the end of
-   visibility_volume_group.cpp in the original): adding objects
+/* UNKNOWN_165A20.CPP: the object lists of a visibility pass: adding objects
    and clearing the flags of the ones a viewer's own object hides */
 
 #include "unknown_11c920.h"
@@ -60,19 +59,19 @@ void visibility_object_lists_update_flags(s_visibility_object_lists *lists, long
 
 		if (*(long *)(definition + 0x38) != NONE)
 		{
-			short i;
+			long i;
 
 			for (i = 0; i < (short)lists->extra_objects->count; i++)
 			{
 				s_visible_object_list *list = lists->extra_objects;
 
-				if (list->object_indices[i] == object_index)
+				if (list->object_indices[(short)i] == object_index)
 				{
 					short flags;
 
 					if (*(long *)(g_4e3b44[*(long *)(definition + 0x38) & 0xffff].bytes + 4) != NONE)
 					{
-						flags = list->flags[i];
+						flags = list->flags[(short)i];
 					}
 					else
 					{
@@ -82,27 +81,27 @@ void visibility_object_lists_update_flags(s_visibility_object_lists *lists, long
 					{
 						flags &= ~0x1000;
 					}
-					list->flags[i] = flags;
+					list->flags[(short)i] = flags;
 				}
 				else
 				{
-					s_165a20_object *other = visibility_object_get(list->object_indices[i]);
-					short flags = list->flags[i] & ~0x2000;
+					long flags = lists->extra_objects->flags[(short)i] & ~0x2000;
+					s_165a20_object *other = visibility_object_get(lists->extra_objects->object_indices[(short)i]);
 
 					if (!(type_mask & (1 << other->type)) && !TEST_FIELD_BIT(other->hidden))
 					{
 						flags &= ~0x1000;
 					}
-					list->flags[i] = flags;
+					list->flags[(short)i] = flags;
 				}
 			}
 			for (i = 0; i < (short)lists->lights->count; i++)
 			{
-				lists->lights->flags[i] &= ~0x2000;
+				lists->lights->flags[(short)i] &= ~0x2000;
 			}
 			for (i = 0; i < (short)lists->effects->count; i++)
 			{
-				lists->effects->flags[i] &= ~0x2000;
+				lists->effects->flags[(short)i] &= ~0x2000;
 			}
 		}
 		else

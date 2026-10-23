@@ -20,21 +20,23 @@ byte g_510ca1;
 dword g_510ca4;
 s_196d20_sample g_515c34[1000];
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
 // @retail 0x196d20
 long function_196d20(long index)
 {
 	long result = NONE;
-	if (g_510cb1 && index != NONE && g_511000[index].active)
-		result = g_511000[index].value_90;
+	if (g_510cb1 && index != NONE && g_511000.entries[index].active)
+		result = g_511000.entries[index].value_90;
 	return result;
 }
 
 // @retail 0x196d50
 void function_196d50(long index, s_input_vector *out)
 {
-	if (g_510cb1 && index != NONE && g_511000[index].active)
+	if (g_510cb1 && index != NONE && g_511000.entries[index].active)
 	{
-		*out = g_511000[index].vector;
+		*out = g_511000.entries[index].vector;
 		return;
 	}
 	memset(out, 0, sizeof(*out));
@@ -44,8 +46,8 @@ void function_196d50(long index, s_input_vector *out)
 long function_196da0(long index)
 {
 	long result = NONE;
-	if (g_510cb1 && index != NONE && g_511000[index].active)
-		result = g_511000[index].value_9c;
+	if (g_510cb1 && index != NONE && g_511000.entries[index].active)
+		result = g_511000.entries[index].value_9c;
 	return result;
 }
 
@@ -58,12 +60,7 @@ void function_196dd0(long b, long a, long c, long delta)
 		s_input_counter *counter = &g_515294[i];
 		long minimum = g_46ddc0[52 + a].minimum;
 		long maximum = g_46ddc0[52 + a].maximum;
-		long value = counter->value + delta;
-		if (value < minimum)
-			value = minimum;
-		else if (value > maximum)
-			value = maximum;
-		counter->value = value;
+		counter->value = PIN(counter->value + delta, minimum, maximum);
 	}
 }
 
@@ -76,12 +73,7 @@ void function_196e60(long b, long a, long c, long delta)
 		s_input_counter *counter = &g_511c90[i];
 		long minimum = g_46ddc0[45 + a].minimum;
 		long maximum = g_46ddc0[45 + a].maximum;
-		long value = counter->value + delta;
-		if (value < minimum)
-			value = minimum;
-		else if (value > maximum)
-			value = maximum;
-		counter->value = value;
+		counter->value = PIN(counter->value + delta, minimum, maximum);
 	}
 }
 
@@ -145,12 +137,7 @@ void function_1970a0(long b, long a, long delta)
 		s_input_counter *counter = &g_511c4e[i];
 		long minimum = g_46ddc0[54 + a].minimum;
 		long maximum = g_46ddc0[54 + a].maximum;
-		long value = counter->value + delta;
-		if (value < minimum)
-			value = minimum;
-		else if (value > maximum)
-			value = maximum;
-		counter->value = value;
+		counter->value = PIN(counter->value + delta, minimum, maximum);
 	}
 }
 

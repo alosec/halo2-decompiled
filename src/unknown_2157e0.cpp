@@ -1,6 +1,7 @@
 // @flags /O2 /Gr
 #include "unknown_11c920.h"
 #include "loop_allocator.h"
+#include "saved_game_storage.h"
 #include <xtl.h>
 #include <string.h>
 
@@ -25,26 +26,32 @@ struct s_profile_location_table
 	s_profile_location_bytes entries[0x1000];
 };
 
-struct s_55c164
-{
-	void *field0;
-	byte unknown04[0x40];
-};
 
 void *g_51ea14;
 byte g_55c14e;
 byte g_55c14f;
-long g_55c160;
-s_55c164 g_55c164[16];
-bool g_55c274;
-long g_55c278;
-dword g_55c27c;
+s_55c160 g_55c160_table;
+s_saved_game_file_lock g_saved_game_file_lock;
+#define g_55c274 g_saved_game_file_lock.free
+#define g_55c278 g_saved_game_file_lock.file_index
+#define g_55c27c g_saved_game_file_lock.thread
 
 void function_215880(void *ref);
-bool function_216800(void *a, long b);
+bool function_216800(long b, void *a);
 
 bool function_1249f0(long memory_unit, char *drive_letter);
 void function_2172a0(long handle);
+
+/* a file handle: generation (9 bits), a flag (bit 13 of the 22), the
+   index (13 bits), then the type in the low byte's low nibble */
+static inline long file_handle_build_2170e0(long generation, short index, bool flag, long type)
+{
+	long handle = ((generation & 0x1ff) << 14) | (index & 0x1fff);
+
+	if (flag)
+		handle |= 0x2000;
+	return (handle << 8) | (type & 15);
+}
 
 // @retail 0x2170e0
 long function_2170e0(long file_index)
@@ -54,20 +61,19 @@ long function_2170e0(long file_index)
 	if (g_55c14f)
 	{
 		s_55c164 *cached = NULL;
-		for (long i = 0; i < g_55c160; i++)
+		for (long i = 0; i < g_55c160_table.count; i++)
 		{
-			long index = (long)g_55c164[i].field0;
+			long index = (long)g_55c160_table.entries[i].field0;
 			if (index != NONE && index == file_index)
 			{
-				cached = &g_55c164[i];
+				cached = &g_55c160_table.entries[i];
 				break;
 			}
 		}
 		long type = file_index & 15;
 		if ((bool)(((dword)file_index >> 21) & 1))
 		{
-			long generation = *(long *)((byte *)g_51ea14 + 0x4befc);
-			result = ((((file_index >> 8) & 0x1fff) | ((generation & 0x1ff) << 14) | 0x2000) << 8) | (type & 15);
+			result = file_handle_build_2170e0(*(long *)((byte *)g_51ea14 + 0x4befc), (short)(file_index >> 8), true, type);
 		}
 		else
 		{
@@ -82,21 +88,26 @@ long function_2170e0(long file_index)
 				long next = 0;
 				while (next < table->count)
 				{
-					location = table->entries[next];
 					long current = next++;
-					if (*(long *)(location.data + 0x38) == type &&
-						!strncmp((char const *)cached->unknown04, (char const *)location.data, 20))
-					{
-						long generation = *(long *)((byte *)g_51ea14 + 0x4befc);
-						result = (((generation & 0x1ff) << 14 | (current & 0x1fff)) << 8) | (type & 15);
-						break;
-					}
+
+					s_profile_location_bytes const *entry = &table->entries[current];
+
+					location = *entry;
+					if (*(long *)(location.data + 0x38) != type)
+						continue;
+					if (strncmp((char const *)cached->unknown04, (char const *)location.data, 20))
+						continue;
+					result = file_handle_build_2170e0(*(long *)((byte *)g_51ea14 + 0x4befc), (short)current, false, type);
+					break;
 				}
 			}
 		}
 		function_2172a0(file_index);
 		if (result != NONE)
-			g_55c164[g_55c160++].field0 = (void *)result;
+		{
+			g_55c160_table.count++;
+			g_55c160_table.entries[g_55c160_table.count - 1].field0 = (void *)result;
+		}
 	}
 	else
 	{
@@ -104,7 +115,7 @@ long function_2170e0(long file_index)
 		if (generation == ((file_index >> 22) & 0x1ff))
 		{
 			if ((bool)(((dword)file_index >> 21) & 1))
-				result = ((((file_index >> 8) & 0x1fff) | ((generation & 0x1ff) << 14) | 0x2000) << 8) | (file_index & 15);
+				result = file_handle_build_2170e0(generation, (short)(file_index >> 8), true, file_index);
 			else
 				result = file_index;
 		}
@@ -136,12 +147,12 @@ void function_215810(void)
 	if (table)
 	{
 		long i;
-		long count = g_55c160;
+		long count = g_55c160_table.count;
 		for (i = 0; i < count; i++)
 		{
-			s_55c164 *entry = &g_55c164[i];
+			s_55c164 *entry = &g_55c160_table.entries[i];
 			long file_index = (long)entry->field0;
-			function_216800(entry->unknown04, file_index);
+			function_216800(file_index, entry->unknown04);
 		}
 		g_55c14f = 1;
 	}
@@ -158,7 +169,7 @@ void function_215810(void)
 }
 
 // @retail 0x216800
-bool function_216800(void *location, long file_index)
+bool function_216800(long file_index, void *location)
 {
 	bool result = false;
 	void *files = g_51ea14;
@@ -181,13 +192,13 @@ bool function_216800(void *location, long file_index)
 	}
 	else if (g_55c14f)
 	{
-		long count = g_55c160;
+		long count = g_55c160_table.count;
 		for (long i = 0; i < count; i++)
 		{
-			long cached_index = (long)g_55c164[i].field0;
+			long cached_index = (long)g_55c160_table.entries[i].field0;
 			if (cached_index != NONE && cached_index == file_index)
 			{
-				*(s_profile_location_bytes *)location = *(s_profile_location_bytes *)g_55c164[i].unknown04;
+				*(s_profile_location_bytes *)location = *(s_profile_location_bytes *)g_55c160_table.entries[i].unknown04;
 				result = true;
 				break;
 			}
@@ -222,13 +233,13 @@ bool function_2168b0(s_saved_game_file_location *location, long file_index)
 		}
 		else if (g_55c14f)
 		{
-			long count = g_55c160;
+			long count = g_55c160_table.count;
 			for (long i = 0; i < count; i++)
 			{
-				long cached_index = (long)g_55c164[i].field0;
+				long cached_index = (long)g_55c160_table.entries[i].field0;
 				if (cached_index != NONE && cached_index == *index_reference)
 				{
-					*(s_profile_location_bytes *)g_55c164[i].unknown04 = *(s_profile_location_bytes const *)location;
+					*(s_profile_location_bytes *)g_55c160_table.entries[i].unknown04 = *(s_profile_location_bytes const *)location;
 					break;
 				}
 			}
@@ -238,57 +249,4 @@ bool function_2168b0(s_saved_game_file_location *location, long file_index)
 }
 
 
-extern long g_55c150;
 bool g_55c14d;
-struct s_save_list_2164c0;
-void function_2164c0(long memory_unit, s_save_list_2164c0 *list);
-
-// @retail 0x215790
-void function_215790(void)
-{
-    if (g_55c14d && g_51ea14 && (g_55c150 & 1))
-    {
-        function_2164c0(0, (s_save_list_2164c0 *)((byte *)g_51ea14 + 0xbef8));
-        g_55c150 &= ~1;
-    }
-}
-
-#include "globals.h"
-
-extern bool g_55c14c;
-extern long g_55c154;
-extern long g_55c158;
-extern long g_55c15c;
-extern long g_55c280;
-byte g_55c030[0x11c];
-dword g_51e9f8;
-dword g_51e9fc;
-
-bool __stdcall function_216440(char const *path);
-long function_11ca80(long language);
-
-// @retail 0x215690
-void function_215690(void)
-{
-    function_216440("n:\\sgf");
-    // The retail zeroed range is represented by separate existing globals.
-    memset(g_55c030, 0, sizeof(g_55c030));
-    g_55c14c = true;
-    g_55c14d = true;
-    g_55c14e = 0;
-    g_55c14f = 0;
-    g_55c150 = 3;
-    g_55c154 = 0;
-    g_55c158 = NONE;
-    g_55c15c = 123;
-    g_55c160 = 0;
-    memset(g_55c164, 0, 4 * sizeof(g_55c164[0]));
-    g_55c274 = true;
-    g_55c278 = 0;
-    g_55c27c = 0;
-    g_51e9f8 = 0;
-    g_51e9fc = 1;
-    if (g_47ff38 == NONE)
-        g_47ff38 = function_11ca80(XGetLanguage());
-    g_55c280 = g_47ff38;
-}

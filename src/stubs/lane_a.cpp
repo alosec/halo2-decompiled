@@ -5,37 +5,20 @@
 
 long const g_444ae0 = 0;
 
-// @stub 0x159ac0
-void function_159ac0(void)
-{
-}
 
 
 
 
-// @stub 0xbbfc0
-void __stdcall function_bbfc0(real a, real b, real c, real d, real e)
-{
-}
-
-// @stub 0xbc070
-void __stdcall function_bc070(real a, real b, real c, real d, real e)
-{
-}
-
-
-// @stub 0xbb670
-void __stdcall function_bb670(short name_index, bool flag)
-{
-}
 
 
 
 
-// @stub 0x189cd0
-void __stdcall function_189cd0(long sound_index, long object_index, real scale, long a, long b, long name, long flags)
-{
-}
+
+
+
+
+
+
 
 
 
@@ -57,11 +40,7 @@ struct s_saved_game_file_location;
 struct s_bitmap_data;
 struct D3DTexture;
 
-// @stub 0x12ce00
-D3DTexture *function_12ce00(s_bitmap_data *bitmap, dword flags, real bias)
-{
-    return 0;
-}
+
 
 struct s_ai_trigger_condition;
 
@@ -82,10 +61,7 @@ struct s_ai_trigger_condition;
 
 
 
-// @stub 0xb73b0
-void function_b73b0(long object_index)
-{
-}
+
 
 struct s_ai_scene;
 struct s_ai_scene_assignment;

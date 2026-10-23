@@ -107,20 +107,40 @@ bool function_213800(char const *map_name, s_cache_header *header)
 	return result;
 }
 
+/* text fields of a cache file's header, each constructed as an empty string.
+   Retail's stores interleave as they do only when every field has its own
+   constructor (one constructor on the file or the header that clears all
+   four schedules the stores differently). */
+struct s_cleared_string_256
+{
+	char string[0x100];
+	s_cleared_string_256() { string[0] = 0; }
+};
+
+struct s_cleared_string_32
+{
+	char string[0x20];
+	s_cleared_string_32() { string[0] = 0; }
+};
+
+/* the header layout of include/unknown_122870.h; only the offsets of the
+   four cleared strings are known */
+struct s_cache_initial_header
+{
+	byte unknown00[0x20];
+	s_cleared_string_256 unknown20;
+	s_cleared_string_32 build_version;
+	byte unknown140[0x58];
+	s_cleared_string_32 name;
+	byte unknown1b8[4];
+	s_cleared_string_256 unknown1bc;
+	byte unknown2bc[0x800 - 0x2bc];
+};
+
 struct s_cache_initial_file
 {
-	byte unknown00[0x24];
-	char name[0x100];
-	char build[0x78];
-	char description[0x24];
-	char path[0x804 - 0x1c0];
-	s_cache_initial_file()
-	{
-		name[0] = 0;
-		build[0] = 0;
-		description[0] = 0;
-		path[0] = 0;
-	}
+	HANDLE handle;
+	s_cache_initial_header header;
 };
 
 struct s_cache_initial_path
@@ -129,6 +149,9 @@ struct s_cache_initial_path
 	s_cache_initial_path() { path[0] = 0; }
 };
 
+/* the 0x385c bytes at 0x557c90 (g_557c90, g_55aca8 and g_55acac): retail's
+   static initializer at 0x377f00 constructs them with 0x2135c0, and 0x2136c0
+   clears them with one memset */
 struct s_cache_initial_state
 {
 	s_cache_initial_file files[6];
@@ -136,6 +159,9 @@ struct s_cache_initial_state
 	s_cache_initial_path paths[8];
 	s_cache_initial_state();
 };
+
+typedef char assert_cache_initial_file_size[sizeof(s_cache_initial_file) == 0x804 ? 1 : -1];
+typedef char assert_cache_initial_state_size[sizeof(s_cache_initial_state) == 0x385c ? 1 : -1];
 
 // @retail 0x2135c0
 s_cache_initial_state::s_cache_initial_state()

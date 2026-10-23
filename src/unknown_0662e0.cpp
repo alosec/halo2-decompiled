@@ -343,8 +343,8 @@ void function_67200()
 void network_configuration_set_simulation_defaults()
 {
 	g_network_configuration.realca8 = 0.994f;
-	g_network_configuration.realcac = 0.999f;
 	g_network_configuration.realcb0 = 0.95f;
+	g_network_configuration.realcac = 0.999f;
 	g_network_configuration.realcb4 = 1.0f;
 	g_network_configuration.realcb8 = 100.0f;
 	g_network_configuration.realcbc = 1.0f;
@@ -579,7 +579,7 @@ void network_configuration_set_defaults()
 	g_network_configuration.value180 = 3000;
 	g_network_configuration.value184 = 100;
 	g_network_configuration.value188 = 100;
-	g_network_configuration.value18c = 65536;
+	g_network_configuration.value18c = g_network_configuration.value2c;
 	g_network_configuration.value190 = 10000;
 	g_network_configuration.value194 = 60000;
 	g_network_configuration.value198 = 240000;
@@ -588,7 +588,7 @@ void network_configuration_set_defaults()
 	g_network_configuration.value1a4 = 8;
 	g_network_configuration.value1a8 = 10000;
 	g_network_configuration.flag1ac = false;
-	g_network_configuration.value1b0 = 5;
+	g_network_configuration.value1b0 = g_network_configuration.value28;
 	g_network_configuration.value1b8 = 150;
 	g_network_configuration.value1bc = 3;
 	g_network_configuration.value1c8 = 50;
@@ -637,11 +637,11 @@ void network_configuration_set_defaults()
 	}
 
 	g_network_configuration.value354 = 5000;
-	g_network_configuration.value358 = 65536;
+	g_network_configuration.value358 = g_network_configuration.value2c;
 	g_network_configuration.value35c = 20000;
 	g_network_configuration.value360 = 10000;
 	g_network_configuration.value364 = 100;
-	g_network_configuration.value368 = 5;
+	g_network_configuration.value368 = g_network_configuration.value28;
 	g_network_configuration.value36c = 100;
 	g_network_configuration.value370 = 50;
 	g_network_configuration.value374 = 300;
@@ -839,7 +839,7 @@ void network_configuration_set_defaults()
 	g_network_configuration.value1718 = 2;
 	g_network_configuration.real171c = 0.5f;
 	g_network_configuration.value1720 = 1048576;
-	g_network_configuration.value1724 = 65536;
+	g_network_configuration.value1724 = g_network_configuration.value2c;
 	g_network_configuration.value1728 = 600;
 	g_network_configuration.value172c = 600;
 }
@@ -879,6 +879,9 @@ s_online_file g_477058 =
 	0
 };
 
+#pragma optimize("s", on)
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x662f0
 void network_configuration_initialize()
 {
@@ -887,12 +890,18 @@ void network_configuration_initialize()
 		bool success = g_477058.definition->initialize_defaults(&g_477058);
 
 		if (success)
+		{
 			g_477058.flags |= (1 << 1);
-		else
-			g_477058.flags &= ~(1 << 1);
-		if (success)
+			_ReadWriteBarrier();
 			g_477058.flags |= (1 << 3);
+		}
 		else
+		{
+			g_477058.flags &= ~(1 << 1);
+			_ReadWriteBarrier();
 			g_477058.flags &= ~(1 << 3);
+		}
 	}
 }
+#pragma function(_ReadWriteBarrier)
+#pragma optimize("", on)

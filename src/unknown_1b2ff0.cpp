@@ -91,12 +91,18 @@ s_slot_handler_2 g_47e1c0 =
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	short current = 0;
-	real best_score = -3.402823466e38f;
-	short best = NONE;
-	short best_encounter = NONE;
-	short best_squad = NONE;
-	short previous = NONE;
+	short current;
+	real best_score;
+	short best;
+	short best_encounter;
+	short best_squad;
+	short previous;
+	previous = NONE;
+	current = 0;
+	best_squad = NONE;
+	best_encounter = NONE;
+	best = NONE;
+	best_score = -3.402823466e38f;
 	s_squad_iterator iterator;
 	function_204ec0(&iterator, (short)actor->unknown030, 5, actor->unknown26c != NONE);
 	short squad = function_205010(&iterator);
@@ -113,12 +119,21 @@ bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 			byte *squads = *(byte **)(encounters + encounter * 0x38 + 0x34);
 			s_type_c3b527 *target = (s_type_c3b527 *)(squads + squad * 0x88 + 0x24);
 			point3f point;
-			if (target->output_index == NONE || !function_2104b0(target->output_index, &target->point, &point))
-				point = target->point;
 			vector3f direction;
-			direction.i = point.x - actor->position.x;
-			direction.j = point.y - actor->position.y;
-			direction.k = point.z - actor->position.z;
+			if (target->output_index == NONE)
+			{
+				direction.i = target->point.x - actor->position.x;
+				direction.j = target->point.y - actor->position.y;
+				direction.k = target->point.z - actor->position.z;
+			}
+			else
+			{
+				if (!function_2104b0(target->output_index, &target->point, &point))
+					point = target->point;
+				direction.i = point.x - actor->position.x;
+				direction.j = point.y - actor->position.y;
+				direction.k = point.z - actor->position.z;
+			}
 			real distance = (real)sqrt(direction.i * direction.i + (direction.j * direction.j + direction.k * direction.k));
 			if (!(fabs(distance) < 0.0001f))
 			{
@@ -156,8 +171,12 @@ bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 	choice->tried = 1 << previous;
 	actor = actor_get(actor_index);
 	actor->unknown3fe = 3;
-	for (long i = 0; i < 4; i++)
+	long i = 0;
+	do
+	{
 		actor->unknown400[i].reference = g_470fa0;
+		i++;
+	} while (i < 4);
 	function_1b3070(actor_index, choice);
 	return true;
 }
@@ -167,8 +186,8 @@ real function_1f8940(long actor_index);
 // @retail 0x1b3380
 bool __stdcall function_1b3380(long actor_index, s_slot *slot)
 {
-    s_actor_view *actor = actor_get(actor_index);
     bool result = true;
+    s_actor_view *actor = actor_get(actor_index);
     if (actor->unknown040)
     {
         if (!REFERENCE_EQUAL(actor->unknown418, g_470fa0) &&
@@ -177,7 +196,7 @@ bool __stdcall function_1b3380(long actor_index, s_slot *slot)
             function_262800(actor_index, actor->unknown418, false);
             result = function_1b3070(actor_index, &((s_slot_6d *)slot)->choice);
             if (!result)
-                return result;
+                goto done;
         }
         byte *scratch = ai_scratch_buffer_get();
         s_2605d0_request request;
@@ -206,5 +225,6 @@ bool __stdcall function_1b3380(long actor_index, s_slot *slot)
         }
         ai_scratch_buffer_release(scratch);
     }
+done:
     return result;
 }

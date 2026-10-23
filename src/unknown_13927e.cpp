@@ -9,6 +9,8 @@
 /* not decompiled yet (src/stubs/lane_h.cpp) */
 bool function_22acb4(long player_index);
 
+__declspec(noinline) s_color_bits *function_13927e(long player_index);
+
 // @retail 0x13927e
 s_color_bits *function_13927e(long player_index)
 {

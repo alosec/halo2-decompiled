@@ -12,4 +12,10 @@ struct s_extent_transform
 	void compose(s_extent_transform const *a, s_extent_transform const *b);
 };
 
+/* whether a shape kind holds a list of child shapes */
+static __forceinline bool shape_kind_is_list(long kind)
+{
+	return kind == 2 || (kind > 9 && kind <= 11);
+}
+
 #endif

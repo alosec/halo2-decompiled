@@ -73,14 +73,13 @@ bool function_161e10(long team)
 long function_161eb0(long team)
 {
 	long result = NONE;
-	dword field_c_2 = ((s_team_globals *)g_4e9ae8)->field_c_2;
 
 	for (long i = 0; i < 7; i++)
 	{
 		team++;
 		if (team == 8)
 			team = 0;
-		if (field_c_2 & (1 << team))
+		if (((s_team_globals *)g_4e9ae8)->field_c_2 & (1 << team))
 		{
 			result = team;
 			break;

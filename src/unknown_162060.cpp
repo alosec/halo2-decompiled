@@ -55,8 +55,8 @@ void function_1579f0(void);
 void function_15c000(void);
 void function_a77c0(void);
 long function_1587f0(long team);
-void function_15b3a0(long team, long a);
-bool function_19f240(long *iterator);
+void function_15b3a0(long team, bool a);
+bool player_iterator_next(long *iterator);
 
 #define MACRO_0A8D68 ((s_simulation_world_view *)g_4cf77c)
 
@@ -186,7 +186,7 @@ void __stdcall function_162060(void *engine)
 		iterator.data = g_4e8c24;
 		iterator.index = NONE;
 		iterator.datum_index = NONE;
-		while (function_19f240((long *)&iterator))
+		while (player_iterator_next((long *)&iterator))
 		{
 			s_162060_player *player = iterator.player;
 
@@ -219,19 +219,17 @@ void __stdcall function_162060(void *engine)
 			iterator.data = g_4e8c24;
 			iterator.index = NONE;
 			iterator.datum_index = NONE;
-			while (function_19f240((long *)&iterator))
+			while (player_iterator_next((long *)&iterator))
 			{
 				long score_to_win = g_4e6948->score_to_win;
 
 				if (score_to_win)
 				{
-					s_statborg *statborg = game_engine_statborg_inline();
 					long score = 0;
-
+					s_statborg *statborg = game_engine_statborg_inline();
 					if (statborg)
-					{
 						score = statborg->players[iterator.datum_index & 0xffff].score;
-					}
+
 					if (score >= score_to_win)
 					{
 						function_15b3a0(iterator.datum_index, 0);

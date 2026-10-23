@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "unknown_2626b0.h"
 #include "unknown_20fe20.h"
+#include "bit_vector.h"
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
 struct s_collision_result_1697c0;
@@ -115,7 +116,6 @@ struct s_29df33 { byte field_0[0x168]; long field_168; s_29df32 *field_16c; };
 bool __stdcall function_29df30(point3f const *arg_0, long arg_1, s_reference arg_2, s_29de21 *arg_3)
 {
     bool local_0 = false;
-    (void)&local_0;
     short local_1 = arg_2.unknown2;
     if (!(local_1 & 0x8000))
     {
@@ -125,18 +125,20 @@ bool __stdcall function_29df30(point3f const *arg_0, long arg_1, s_reference arg
             s_29df33 *local_3 = (s_29df33 *)g_4e0350;
             if (local_1 < local_3->field_168)
             {
-                s_29df32 *local_4 = &local_3->field_16c[local_1];
-                if (local_2->unknown10 >= 0 && local_2->unknown10 < local_4->field_30)
+                s_29df32 *local_4 = &local_3->field_16c[(word)local_1];
+                short local_10 = local_2->unknown10;
+                if (local_10 >= 0 && local_10 < local_4->field_30)
                 {
-                    s_29df31 *local_5 = &local_4->field_34[local_2->unknown10];
-                    dword local_6[2] = {0, 0};
+                    s_29df31 *local_5 = &local_4->field_34[local_10];
+                    dword local_6[2];
+                    memset(local_6, 0, sizeof(local_6));
                     for (short local_7 = 0; local_7 < local_5->field_80; ++local_7)
                     {
-                        long local_8 = local_5->field_84[local_7].field_0;
-                        if (!(local_6[local_8 >> 5] & (1 << (local_8 & 31))))
+                        s_29df30 *local_9 = &local_5->field_84[local_7];
+                        if (!bit_vector_test(local_6, local_9->field_0))
                         {
-                            local_6[local_8 >> 5] |= 1 << (local_8 & 31);
-                            if (function_29de90(local_8, arg_0, arg_1, arg_3))
+                            bit_vector_set(local_6, local_9->field_0, true);
+                            if (function_29de90(local_9->field_0, arg_0, arg_1, arg_3))
                             {
                                 local_0 = true;
                                 break;
@@ -162,7 +164,7 @@ PRIVATE __forceinline long function_29e051(s_reference arg_0)
 bool function_29e050(byte *arg_0, long arg_1, s_type_d4fbfa *arg_2,
     s_reference arg_3, long *arg_4)
 {
-    bool local_4 = true;
+    bool local_4 = false;
     point3f local_0;
     s_29e050 *local_3 = (s_29e050 *)arg_2;
     if (local_3->field_c == NONE || !function_2104b0(local_3->field_c, &local_3->field_0, &local_0))
@@ -171,6 +173,6 @@ bool function_29e050(byte *arg_0, long arg_1, s_type_d4fbfa *arg_2,
     if (local_1 && arg_4 && function_29e051(arg_3) != function_29e051(g_470fa0) &&
         !(arg_3.unknown2 & 0x8000))
         local_1 = !function_29df30((point3f *)arg_0, arg_1, arg_3, (s_29de21 *)arg_4);
-    if (local_1) local_4 = false;
+    if (!local_1) local_4 = true;
     return local_4;
 }

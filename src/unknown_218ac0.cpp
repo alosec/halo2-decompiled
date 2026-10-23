@@ -79,10 +79,10 @@ long sound_permutation_chunks_size(long chunk_count, s_sound_permutation const *
 
 /* the size of the whole blocks of sound data that play for a duration */
 // @retail 0x218b00
-long sound_format_duration_to_bytes(long arg_da1d74, long encoding, long compression, real duration)
+long sound_format_duration_to_bytes(long encoding, long compression, long arg_da1d74, real duration)
 {
-	real bytes_per_sample = 1.0f / g_44a06c[compression] / g_44a060[encoding];
-	real block_count = bytes_per_sample * (real)g_44a054[arg_da1d74] * duration / (real)g_44a094[encoding] / (real)g_44a080[compression];
+	real block_count = 1.0f / g_44a060[encoding] / g_44a06c[compression] * (real)g_44a054[arg_da1d74] * duration /
+		(real)g_44a094[encoding] / (real)g_44a080[compression];
 
 	return g_44a094[encoding] * g_44a080[compression] * real_truncate(block_count);
 }
@@ -108,15 +108,13 @@ struct s_218b81
 // @retail 0x218b80
 real sound_permutation_duration(s_sound_definition const *definition, s_sound_pitch_range const *arg_58ecd0, long sample_count)
 {
-	s_sound_pitch_range const *const *local_0 = &arg_58ecd0;
 	s_sound_globals_permutations_view *globals = SOUND_GLOBALS_PERMUTATIONS;
 	s_218b80 const *local_1 = (s_218b80 const *)&globals->classes[definition->class_index];
 	s_218b81 const *local_2 = (s_218b81 const *)&globals->playback_parameters[definition->playback_index];
-	long natural_pitch = SOUND_GLOBALS_DEFINITIONS->pitch_bounds[(*local_0)->bounds_index].unknown00;
-	short local_3 = local_1->field_1a;
-	short local_4 = local_2->field_a;
-	long pitch = (short)(local_1->field_18 <= local_3 ? local_1->field_18 : local_3) +
-		(short)(local_2->field_8 > local_4 ? local_4 : local_2->field_8);
+	long natural_pitch = SOUND_GLOBALS_DEFINITIONS->pitch_bounds[arg_58ecd0->bounds_index].unknown00;
+	short local_3 = local_1->field_18;
+	long pitch = (short)(local_3 > local_1->field_1a ? local_1->field_1a : local_3) +
+		(short)(local_2->field_8 > local_2->field_a ? local_2->field_a : local_2->field_8);
 	real rate = sound_pitch_to_rate(natural_pitch);
 	return rate * g_44a06c[(char)definition->format] * g_44a060[(char)definition->type] * sample_count * 1000.0f /
 		(g_44a054[(char)definition->unknown03] * sound_pitch_to_rate(pitch));
@@ -127,12 +125,11 @@ real sound_permutation_duration(s_sound_definition const *definition, s_sound_pi
 real sound_definition_permutation_duration(long definition_index, long pitch_range_index, long permutation_index, real pitch)
 {
 	s_sound_definition *definition = sound_definition_get(definition_index);
-	s_sound_pitch_range *arg_58ecd0 = &SOUND_GLOBALS_DEFINITIONS->pitch_ranges[definition->pitch_range_base + pitch_range_index];
-	real duration = sound_permutation_duration(definition, arg_58ecd0,
-		SOUND_GLOBALS_PERMUTATIONS->permutations[arg_58ecd0->first_permutation + permutation_index].sample_count);
-	long natural_pitch = SOUND_GLOBALS_DEFINITIONS->pitch_bounds[arg_58ecd0->bounds_index].unknown00;
+	s_sound_pitch_range *selected_range = &SOUND_GLOBALS_DEFINITIONS->pitch_ranges[definition->pitch_range_base + pitch_range_index];
 
-	return duration * (real)exp((pitch - natural_pitch) * 0.000577622675f);
+	return sound_permutation_duration(definition, selected_range,
+		SOUND_GLOBALS_PERMUTATIONS->permutations[selected_range->first_permutation + permutation_index].sample_count) *
+		(real)exp((pitch - SOUND_GLOBALS_DEFINITIONS->pitch_bounds[selected_range->bounds_index].unknown00) * 0.000577622675f);
 }
 
 /* the pitch range of a rate limit's stage, or 0 */
@@ -144,11 +141,12 @@ short sound_definition_rate_limit_pitch_range(long stage_index, s_sound_definiti
 
 	if (rate_limit)
 	{
-		short pitch_range_index = rate_limit->stages[stage_index].pitch_range_index;
+		s_sound_rate_limit_stage *stages = rate_limit->stages;
+		short *pitch_range_index = &stages[stage_index].pitch_range_index;
 
-		if (pitch_range_index != NONE)
+		if (*pitch_range_index != NONE)
 		{
-			result = pitch_range_index;
+			result = *pitch_range_index;
 		}
 	}
 	return result;
@@ -191,24 +189,25 @@ static inline bool sound_bounds_contain(s_short_bounds const *bounds, real value
 // @retail 0x218f50
 short function_218f50(s_looping_playback_definition *playback_definition, short previous, real pitch)
 {
+	long local_0 = *(long const *)&previous;
 	s_sound_definition *definition = (s_sound_definition *)playback_definition;
 	long count = definition->pitch_range_count;
 	long best_index = NONE;
 
-	if (previous != NONE && previous < count)
+	if ((short)local_0 != NONE && (short)local_0 < count)
 	{
-		s_sound_pitch_range *arg_58ecd0 = sound_definition_pitch_range_get(definition, previous);
+		s_sound_pitch_range *arg_58ecd0 = sound_definition_pitch_range_get(definition, (short)local_0);
 
 		if (sound_bounds_contain(&sound_pitch_bounds_get(arg_58ecd0)->playback, pitch) && arg_58ecd0->permutation_count > 0)
 		{
-			return previous;
+			return (short)local_0;
 		}
 	}
 
 	real best_distance = 3.40282347e+38f;
-	for (short index = 0; index < count; index++)
+	for (long index = 0; (short)index < count; index++)
 	{
-		s_sound_pitch_range *arg_58ecd0 = sound_definition_pitch_range_get(definition, index);
+		s_sound_pitch_range *arg_58ecd0 = sound_definition_pitch_range_get(definition, (short)index);
 
 		if (arg_58ecd0->permutation_count > 0)
 		{

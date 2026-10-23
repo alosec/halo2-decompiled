@@ -27,3 +27,8 @@ bool data_datum_iterator_next(s_data_datum_iterator *iterator)
 	iterator->datum = datum;
 	return datum != 0;
 }
+
+#if H2_NATIVE_PORT
+/* native: emit the inline-declared iterator so the guest image can link it */
+__attribute__((used)) static void *h2_emit_data_datum_iterator_next = (void *)&data_datum_iterator_next;
+#endif

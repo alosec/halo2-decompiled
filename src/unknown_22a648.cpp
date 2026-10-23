@@ -59,7 +59,7 @@ struct s_text_widget_state
 };
 
 long function_13a690(long mode);
-real __stdcall function_22ace7(long context, long name);
+real __stdcall new_hud_function_evaluate(long context, long name);
 word *function_1630e0(word *buffer, word const *format, ...);
 void function_13925f(long string_handle, word *buffer);
 byte *record_pool_lookup(s_record_pool *data, long datum_index);
@@ -75,7 +75,7 @@ void function_22a871(s_text_widget const *widget, s_text_widget_state const *sta
 		g_4e6950.color = *color;
 		if (widget->flags & 1)
 		{
-			long value = (long)function_22ace7(NONE, widget->text);
+			long value = (long)new_hud_function_evaluate(NONE, widget->text);
 			if (widget->flags & 2)
 			{
 				value = value < 0 ? 0 : value > 99 ? 99 : value;
@@ -132,6 +132,8 @@ bool function_13ee20(word const *string, long font);
 bool function_22a9bc(s_text_widget const *widget, long unused,
 	s_text_widget_state const *state, color4f const *color)
 {
+	long const *local_0 = &unused;
+	(void)local_0;
 	volatile bool result = true;
 	if (widget->text && widget->font_tag != NONE)
 	{
@@ -183,7 +185,7 @@ real function_13bb40(s_tag_data const *function, real value);
 
 static __forceinline real widget_transform_value(s_widget_transform_function const *transform)
 {
-	real input = function_22ace7(NONE, transform->name);
+	real input = new_hud_function_evaluate(NONE, transform->name);
 	return function_13bb40(&transform->function, function_13b390(&transform->function, input, 1.0f));
 }
 

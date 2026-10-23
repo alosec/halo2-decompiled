@@ -39,29 +39,38 @@ public:
     char field_1a;
 };
 
+PRIVATE __forceinline void function_277b87(hkEntity *arg_0, long *arg_1, long *arg_2)
+{
+    *arg_1 = havok_entity_property_get(arg_0, 0x2001);
+    *arg_2 = havok_entity_property_get(arg_0, 0x2002);
+}
+
 // @retail 0x277b80
 long __stdcall function_277b80(void *arg_0, bool arg_1, real arg_2,
     c_1cf520 *arg_3, short arg_4, s_277ec0 *arg_5, s_277ec0 *arg_6,
     hkEntity *arg_7, hkEntity *arg_8, c_277b80 **arg_9)
 {
-    (void)&arg_0;
-    long local_0 = havok_entity_property_get(arg_7, 0x2001);
-    long local_1 = havok_entity_property_get(arg_7, 0x2002);
-    long local_2 = havok_entity_property_get(arg_8, 0x2001);
-    long local_3 = havok_entity_property_get(arg_8, 0x2002);
+    
+    long local_0;
+    long local_1;
+    long local_2;
+    long local_3;
+    function_277b87(arg_7, &local_0, &local_1);
+    function_277b87(arg_8, &local_2, &local_3);
     s_havok_component *local_4 = havok_component_get(local_0);
-    if (TEST_FIELD_BIT(local_4->flags12 & 1)) return NONE;
-    long local_5 = NONE;
+    long result = NONE;
+    if (!TEST_FIELD_BIT(local_4->flags12 & 1))
     {
+        long local_5;
         s_havok_component *local_6 = local_2 == NONE ? NULL : havok_component_get(local_2);
         long local_7 = local_6 ? local_6->object_index : NONE;
-        short local_8 = g_54e898;
-        short local_9 = g_54e898;
-        real local_10 = 0.0f;
-        real local_11 = 1.0f;
         char local_12 = 0;
         long local_13 = NONE;
-        function_277ec0(&local_11, &local_10, &local_9, &local_8,
+        c_type_47f957 local_9(g_54e898);
+        c_type_47f957 local_8(g_54e898);
+        real local_11 = 1.0f;
+        real local_10 = 0.0f;
+        function_277ec0(&local_11, &local_10, &local_9.m_index, &local_8.m_index,
             arg_5, arg_6, local_0, local_2);
         if ((*arg_9)->function_277b86() == 0x18)
         {
@@ -69,17 +78,19 @@ long __stdcall function_277b80(void *arg_0, bool arg_1, real arg_2,
             local_12 = (*arg_9)->field_1a;
         }
         long local_14 = havok_cd_body_shape_key_get((s_havok_cd_body const *)arg_6);
+        local_5 = NONE;
         if (local_4->unknown04 & 1)
             local_5 = function_1d0400(local_4, arg_4, *(void const **)&arg_2, local_14, local_13,
-                local_7, local_12, arg_7, arg_8, local_11, local_10, local_8, local_9);
-        if (local_5 != NONE)
+                local_7, local_12, arg_7, arg_8, local_11, local_10, local_9.m_index, local_8.m_index);
+        result = local_5;
+        if (result != NONE)
         {
-            s_havok_component_element48 *local_15 = &local_4->unknown88.data[local_5];
+            s_havok_component_element48 *local_15 = &local_4->unknown88.data[result];
             function_1cf520((s_1cf520 *)local_15, arg_3, true, arg_1, local_0,
                 havok_entity_property_2002_get(arg_7));
             s_impact_data local_16;
-            impact_data_set(&local_16, true, local_0, local_1, c_type_47f957(local_9),
-                local_2, local_3, c_type_47f957(local_8), &local_15->position,
+            impact_data_set(&local_16, true, local_0, local_1, local_9,
+                local_2, local_3, local_8, &local_15->position,
                 &local_15->normal, NONE, NULL);
             long local_17 = havok_component_impact_find(local_4, (s_havok_impact_contact const *)&local_16, true);
             if (local_17 == NONE)
@@ -104,5 +115,8 @@ long __stdcall function_277b80(void *arg_0, bool arg_1, real arg_2,
             }
         }
     }
-    return local_5;
+    /* the first parameter is unused, but every caller passes it on the stack */
+    void *const *local_20 = &arg_0;
+    void *local_21 = *local_20;
+    return result;
 }

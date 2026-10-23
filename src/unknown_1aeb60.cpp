@@ -7,6 +7,7 @@
 #include "ai_actor.h"
 #include "unknown_1fb7e0.h"
 #include "unknown_26b230.h"
+#include "unknown_11c010.h"
 
 /* the state of a slot of type 0xe */
 struct s_slot_0e
@@ -92,7 +93,7 @@ bool __stdcall function_1aebd0(long actor_index, s_slot *slot)
 }
 
 short __stdcall function_1a79e0(long actor_index, short level, bool active);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 real function_30bf0(vector3f *vector);
 struct s_clump_object_view;
 s_clump_object_view *function_26bdd0(s_iterator *iterator);
@@ -134,7 +135,7 @@ short __stdcall function_1aec30(long actor_index, short level, bool active)
 				s_actor_view *other = (s_actor_view *)function_26bdd0(&iterator);
 				while (other)
 				{
-					if (other != actor && other->unknown26c == NONE && function_1a6fe0(iterator.index, 0xe) != NONE)
+					if (other != actor && other->unknown26c == NONE && actor_behavior_find_level(iterator.index, 0xe) != NONE)
 					{
 						vector3f offset;
 						vector3d_from_points3d(&actor->position, &other->position, &offset);
@@ -223,11 +224,14 @@ bool __stdcall function_1aefc0(long actor_index, s_slot *slot)
 	return true;
 }
 
+// score 8 (was 8): the branch on the flag falls through where retail jumps to the end of the
+// block, so the two halves are laid out the other way round.
 // @retail 0x1af0a0
-short __stdcall function_1af0a0(long actor_index, s_slot *slot, bool active)
+short __stdcall function_1af0a0(long actor_index, s_slot *slot, s_slot *arg_2)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_0f *state = (s_slot_0f *)slot;
+	s_slot_0f *local_0 = (s_slot_0f *)arg_2;
 	short result = g_46fbe4;
 
 	if (actor->prop_index != NONE)
@@ -236,19 +240,24 @@ short __stdcall function_1af0a0(long actor_index, s_slot *slot, bool active)
 		short other = g_46fbe8;
 		if (state->unknown12)
 		{
-			state->timer = 3;
-			state->ticks = 2;
-			state->unknown0d = true;
-			state->unknown12 = true;
-			state->unknown0c = true;
+			local_0->timer = 3;
+			local_0->ticks = 2;
+			local_0->unknown0d = true;
+			local_0->unknown12 = true;
+			local_0->unknown0c = true;
 			result = 5;
 		}
-		else if (prop->unknown27 >= 2 ||
-			!REFERENCE_EQUAL(actor->unknown418, g_470fa0) && function_1f8660(actor_index) && !state->unknown13)
+		else
 		{
+			if (prop->unknown27 >= 2)
+				goto local_1;
+			if (REFERENCE_EQUAL(actor->unknown418, g_470fa0) || !function_1f8660(actor_index) || state->unknown13)
+				goto local_2;
+local_1:
 			result = other;
 		}
 	}
+local_2:
 	return result;
 }
 
@@ -323,6 +332,10 @@ struct s_unit_state_0f
 	short state_offset;
 };
 
+static __forceinline long real_to_long(real value);
+
+// score 114 (was 114): the argument is read into ECX and the other value into EDX; retail reads them
+// in the opposite order.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {
@@ -335,7 +348,9 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 		if (!state->timer && actor->unknown227 && !actor->unknown229)
 			function_1f86a0(actor_index);
 	}
-	if (--state->ticks <= 0)
+	short remaining = state->ticks - 1;
+	state->ticks = remaining;
+	if (remaining <= 0)
 	{
 		if (actor->prop_index != NONE)
 		{
@@ -344,18 +359,13 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 			long now = g_510c54->game_time;
 			if ((real)(now - timer->time) * g_510c54->rate > 10.0f)
 			{
-				function_1fb7e0(actor_index, 0x96, NULL, node->object_index, NONE);
+				function_1fb7e0(0x96, actor_index, NULL, node->object_index, NONE);
 				timer->time = now;
 			}
 		}
 		real seconds = slot_random_range(3.0f, 10.0f);
 		real ticks = g_510c54->field_2_3 * seconds;
-		long rounded;
-		__asm
-		{
-			fld ticks
-			fistp rounded
-		}
+		long rounded = real_to_long(ticks);
 		state->ticks = (short)rounded;
 	}
 	if (state->unknown16 && !state->unknown17 && state->unknown34 && actor_get(actor_index)->unknown504 == 2)
@@ -452,7 +462,7 @@ s_slot_handler_2 g_47de70 =
 {
 	{
 		0xf, 2, 0, -2, 0,
-		function_1aef40, function_1af0a0, function_1aefc0, 0, NONE, {0},
+		function_1aef40, (t_slot_evaluate)function_1af0a0, function_1aefc0, 0, NONE, {0},
 		0, 0, 0, 0, 0, 0, 0
 	},
 	(t_slot_proc)function_1af810, function_1afb30, function_1afcf0
@@ -460,9 +470,8 @@ s_slot_handler_2 g_47de70 =
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *arg_0, point3f *arg_1, long arg_2);
+long function_14a280(s_bsp3d *arg_0, long arg_2, point3f *arg_1);
 long function_baf40(long arg_0);
-long function_11c010(short arg_0, short arg_1);
 struct s_object_motion_view;
 void function_2640c0(long arg_0, s_object_motion_view *arg_1);
 void function_1e3b00(long arg_0, long arg_1, point3f const *arg_2, void const *arg_3, void const *arg_4, point3f *arg_5);
@@ -506,45 +515,66 @@ struct s_1af5c4
 	byte *field_30;
 };
 
+struct s_1af5c6
+{
+	long field_0;
+	point3f field_4;
+	point3f field_10;
+};
+
+// score 20 (was 20): the index is masked in EAX where retail masks it in ECX; the argument is
+// passed in the other register.
 // @retail 0x1af5c0
-long function_1af5c0(long arg_0, long arg_1, point3f const *arg_2, short arg_3)
+long function_1af5c0(long arg_0, long arg_1, point3f const *arg_2, long arg_3)
 {
 	s_actor_view *local_0 = actor_get(arg_0);
 	s_prop_node_view *local_1 = prop_node_get(arg_1);
 	s_1af5c1 *local_2 = (s_1af5c1 *)function_25d690((s_prop_datum *)local_1);
-	s_1af5c2 *local_3 = &((s_1af5c2 *)g_4e0300->data)[local_1->object_index & 0xffff];
+	long local_19 = local_1->object_index;
+	s_1af5c2 *local_3 = &((s_1af5c2 *)g_4e0300->data)[local_19 & 0xffff];
 	s_ai_object *local_4 = local_3->field_8;
-	point3f local_5 = *arg_2;
-	long local_6 = NONE;
 	s_1af5c0 local_7;
-	function_2640c0(local_1->object_index, (s_object_motion_view *)&local_7);
-	long local_8 = local_1->object_index;
-	if (local_3->field_3 == 0 && ((s_1af5c3 *)local_4)->field_14 != NONE)
-		local_8 = ((s_1af5c3 *)local_4)->field_14;
+	long local_8;
+	s_1af5c6 local_9;
+	point3f &local_5 = local_9.field_10;
+
+	local_9.field_0 = NONE;
+	local_5 = *arg_2;
+
+	function_2640c0(local_19, (s_object_motion_view *)&local_7);
+	local_19 = local_1->object_index;
+	local_3 = &((s_1af5c2 *)g_4e0300->data)[local_19 & 0xffff];
+	if (local_3->field_3 != 0 || (local_8 = ((s_1af5c3 *)local_4)->field_14) == NONE)
+		local_8 = local_19;
 	local_8 = function_baf40(local_8);
-	point3f local_9;
-	if (arg_3 == 0)
+	if ((short)arg_3 == 0)
 	{
-		local_9 = local_5;
-		local_9.z += 0.05f;
+		local_9.field_4 = local_5;
+		local_9.field_4.z += 0.05f;
 	}
 	else
-		function_1e3b00(local_0->unknown018, arg_3, &local_5, NULL, NULL, &local_9);
-	long local_10 = function_14a280(g_4e033c, &local_9, 0);
+		function_1e3b00(local_0->unknown018, arg_3, &local_5, NULL, NULL, &local_9.field_4);
+	long local_10 = function_14a280(g_4e033c, 0, &local_9.field_4);
 	if (local_10 != NONE)
 		local_10 = *(short *)(((s_1af5c4 *)g_4e0348)->field_30 + local_10 * 8);
 	else
-		local_10 = local_6;
+		local_10 = local_9.field_0;
 	bool local_11 = local_0->unknown26c != NONE;
-	if ((short)local_10 != NONE && local_2->field_2c != NONE && !function_11c010(local_2->field_2c, (short)local_10))
+	short local_15 = local_2->field_2c;
+	if (!clusters_visible_11c010(local_10, local_15))
 		return 4;
 	local_7.field_24 = NONE;
-	long local_12 = local_11 ? 0x15808c0f : 0x15808c2f;
-	vector3f local_13;
-	vector3d_from_points3d(&local_9, &local_2->field_30, &local_13);
-	if (!function_1697c0(local_12, &local_9, &local_13, local_8, NONE, (s_collision_result_1697c0 *)&local_7))
+	long local_12 = 0x15808c2f;
+	if (local_11)
+		local_12 = 0x15808c0f;
+	vector3f *local_13 = (vector3f *)&local_5;
+	vector3d_from_points3d(&local_9.field_4, &local_2->field_30, local_13);
+	if (!function_1697c0(local_12, &local_9.field_4, local_13, local_8, NONE, (s_collision_result_1697c0 *)&local_7))
 		return 0;
-	real local_14 = distance3d(&local_9, &local_2->field_30);
+	real local_16 = local_2->field_30.x - local_9.field_4.x;
+	real local_17 = local_2->field_30.y - local_9.field_4.y;
+	real local_18 = local_2->field_30.z - local_9.field_4.z;
+	real local_14 = (real)sqrt(local_18 * local_18 + local_17 * local_17 + local_16 * local_16);
 	if (1.0f > local_14)
 		return 4;
 	return 1.0f > local_14 * local_7.field_4 ? 2 : 4;

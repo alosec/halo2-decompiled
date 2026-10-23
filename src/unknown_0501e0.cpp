@@ -1,12 +1,12 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "unknown_0259d0.h"
 #include "unknown_030290.h"
 #include <math.h>
+#include <string.h>
 
-extern point3f g_4b9da0;
-extern vector3f g_4b9dac;
-extern s_camera g_4b9e14;
 real function_30bf0(vector3f *arg_0);
 
 struct s_501e0
@@ -17,7 +17,7 @@ struct s_501e0
     dword field_14;
 };
 
-static __forceinline void function_0501e0(real arg_0, vector3f const *arg_1, vector3f *arg_2)
+static __forceinline void world_vector_to_view(real arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
     real local_0 = arg_1->i;
     real local_1 = arg_1->j;
@@ -47,8 +47,8 @@ void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
     local_1.k = arg_0[1].field_0.z - g_4b9da0.z;
     vector3f local_2;
     vector3f local_3;
-    function_0501e0(g_4b9e14.scale, &local_0, &local_2);
-    function_0501e0(g_4b9e14.scale, &local_1, &local_3);
+    world_vector_to_view(g_4b9e14.scale, &local_0, &local_2);
+    world_vector_to_view(g_4b9e14.scale, &local_1, &local_3);
     if (local_2.k < 0.f && local_3.k < 0.f &&
         local_2.k * local_2.k * 4.f > local_2.i * local_2.i &&
         local_2.k * local_2.k * 4.f > local_2.j * local_2.j &&
@@ -97,11 +97,6 @@ void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
     }
     else
     {
-        arg_2->field_0.x = 0.f;
-        arg_2->field_0.y = 0.f;
-        arg_2->field_0.z = 0.f;
-        arg_2->field_c = 0.f;
-        arg_2->field_10 = 0.f;
-        arg_2->field_14 = 0;
+        memset(arg_2, 0, sizeof(*arg_2));
     }
 }

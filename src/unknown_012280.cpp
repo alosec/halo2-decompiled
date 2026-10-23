@@ -13,9 +13,9 @@ extern char g_509344[256];
 bool function_12200(void)
 {
     DWORD type;
-    LAUNCH_DATA data;
-    if (XGetLaunchInfo(&type, &data) == ERROR_SUCCESS && type == LDT_TITLE &&
-        strcmp((char const *)&data, "XDEMOS") == 0)
+    LAUNCH_DATA launch_payload_blob;
+    if (XGetLaunchInfo(&type, &launch_payload_blob) == ERROR_SUCCESS && type == LDT_TITLE &&
+        strcmp((char const *)&launch_payload_blob, "XDEMOS") == 0)
     {
         char const *cursor = g_509344;
         unsigned long length = 0;
@@ -38,6 +38,8 @@ LPVOID WINAPI function_12c090(SIZE_T size, DWORD attributes);
 void *g_510c3c;
 bool g_510c40;
 
+__forceinline LPVOID __stdcall XMemAlloc(SIZE_T dwSize, DWORD dwAllocAttributes);
+
 // @retail 0x12280
 LPVOID __stdcall XMemAlloc(SIZE_T dwSize, DWORD dwAllocAttributes)
 {
@@ -53,18 +55,24 @@ LPVOID __stdcall XMemAlloc(SIZE_T dwSize, DWORD dwAllocAttributes)
 	}
 }
 
+__forceinline void __stdcall XMemFree(PVOID pAddress, DWORD dwAllocAttributes);
+
 // @retail 0x122c0
 void __stdcall XMemFree(PVOID pAddress, DWORD dwAllocAttributes)
 {
 	switch (((XALLOC_ATTRIBUTES *)&dwAllocAttributes)->dwAllocatorId)
 	{
 	case 0x82:
-		if (g_510c3c == pAddress)
+	{
+		PVOID address = *(PVOID volatile *)&pAddress;
+		if (g_510c3c == address)
 		{
 			g_510c40 = false;
 			return;
 		}
-		break;
+		XMemFreeDefault(address, dwAllocAttributes);
+		return;
+	}
 	case 0x89:
 	case 0x8a:
 		voice_free(pAddress, dwAllocAttributes);

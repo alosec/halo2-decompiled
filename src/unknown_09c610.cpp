@@ -6,59 +6,78 @@
 
 // @flags /O2 /arch:SSE /Gr
 
-void *function_122c10(long arg_0, long arg_1);
+__declspec(noinline) void *function_122c10(long arg_0, long arg_1);
 void function_db760(long arg_0, long arg_1, long arg_2, long arg_3);
 struct s_18444a;
 void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, long arg_3);
 extern byte *g_4ed280;
 
+static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
+{
+    long local_0;
+    if (arg_0 < arg_1)
+        local_0 = arg_1;
+    else
+    {
+        local_0 = arg_2;
+        if (arg_0 <= arg_2)
+            local_0 = arg_0;
+    }
+    return local_0;
+}
+
+// score 57 (was 57): the table pointer is kept in edi in ours and in esi in
+// retail, the member's fields are copied in the other order and the store of
+// the second field sits before the comparison in ours and after it in retail
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
-    bool local_0 = false;
-    volatile bool local_12 = local_0;
-    arg_0 = function_a58d0(arg_1[0]);
-    long const *local_2 = (long const *)arg_3;
-    if (arg_0 != NONE)
+    bool result = false;
+    long object_index = function_a58d0(arg_1[0]);
+    if (object_index != NONE)
     {
-        byte *local_3 = (byte *)((s_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
-        byte *local_4 = g_4e3b44[*(long *)local_3 & 0xffff].bytes;
-        long local_5 = *(long *)(local_4 + 0x38);
-        if (local_5 != NONE)
+        byte *object = (byte *)((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+        byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
+        long damage_index = *(long *)(definition + 0x38);
+        if (damage_index != NONE)
         {
-            byte *local_6 = local_3 + *(short *)(local_3 + 0x122);
-            long local_7 = local_2[0];
-            if (local_7 >= 0 && local_7 < (long)((dword)(*(short *)(local_3 + 0x120)) / 8))
+            byte *region_flags = object + *(short *)(object + 0x122);
+            long const *event = (long const *)arg_3;
+            long region_index = event[0];
+            if (region_index >= 0 && region_index < (long)((dword)(*(short *)(object + 0x120)) / 8))
             {
-                byte *local_8 = g_4e3b44[local_5 & 0xffff].bytes;
-                if (*(long *)(local_8 + 0x60) > 0)
+                byte *damage = g_4e3b44[damage_index & 0xffff].bytes;
+                if (*(long *)(damage + 0x60) > 0)
                 {
-                    byte *local_9 = *(byte **)(*(byte **)(local_8 + 0x64) + 0xc0) + local_7 * 0x38;
-                    long local_10 = local_2[1];
-                    if (local_10 >= 0 && local_10 < *(long *)(local_9 + 0xc))
+                    byte *region = *(byte **)(*(byte **)(damage + 0x64) + 0xc0) + region_index * 0x38;
+                    /* the permutation index lives in the event pointer's slot from here on */
+                    arg_3 = (void const *)event[1];
+                    long permutation_index = (long)arg_3;
+                    if (permutation_index >= 0 && permutation_index < *(long *)(region + 0xc))
                     {
-                        long local_11 = local_2[2];
-                        if ((local_11 < 0 ? 0 : (local_11 > 1 ? 1 : local_11)) == local_11)
+                        long mode = event[2];
+                        if (function_9c912(mode, 0, 1) == mode)
                         {
-                            if (!(*(word *)(local_6 + local_7 * 8) & (1 << local_10)))
+                            long permutation_bit = event[1];
+                            if (!(*(word *)(region_flags + region_index * 8) & (1 << permutation_bit)))
                             {
-                                if (local_11 != 1 || *(long *)(*(byte **)(local_9 + 0x10) + local_10 * 0x50 + 0x34) != NONE)
+                                if (mode != 1 || *(long *)(*(byte **)(region + 0x10) + permutation_bit * 0x50 + 0x34) != NONE)
                                 {
-                                    function_db760(local_7, local_10, *(volatile long *)&arg_0, local_11);
-                                    local_0 = true;
+                                    function_db760(region_index, (long)arg_3, object_index, mode);
+                                    result = true;
                                 }
                                 else
-                                    local_0 = local_12;
+                                    result = false;
                             }
                             else
-                                local_0 = local_12;
+                                result = false;
                         }
                     }
                 }
             }
         }
     }
-    return local_0;
+    return result;
 }
 
 struct s_9cca0
@@ -75,28 +94,29 @@ struct s_9cca0
     byte field_7e[10];
 };
 
-#pragma inline_depth(0)
+// score 9 (was 9): the two vector copies and the global's test are ordered
+// differently; retail sinks the k component's store past the global's test and
+// loads the tag after it, ours stores the tag before the test
 // @retail 0x9cca0
 bool c_breakable_surface_damage_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
+    s_9cca0 local_1;
     byte const *local_0 = (byte const *)arg_3;
     if (function_122c10(0x6a707421, *(long const *)(local_0 + 0x30)))
     {
-        s_9cca0 local_1;
         memset((byte *)&local_1 + 4, 0, 0x78);
         memset(local_1.field_7e, 0, sizeof(local_1.field_7e));
         local_1.field_1c = *(long const *)(local_0 + 0xc);
         local_1.field_20 = *(long const *)(local_0 + 0x10);
         local_1.field_30 = *(vector3f const *)(local_0 + 0x24);
         local_1.field_3c = *(vector3f const *)(local_0 + 0x18);
-        local_1.field_7c = -1;
         local_1.field_0 = *(long const *)(local_0 + 0x30);
+        local_1.field_7c = -1;
         if (*g_4ed280 && local_1.field_0 != NONE)
             function_184440(*(long const *)local_0, *(long const *)(local_0 + 4), (s_18444a const *)&local_1, *(long const *)(local_0 + 8));
     }
     return false;
 }
-#pragma inline_depth(255)
 
 struct s_9f880
 {
@@ -114,10 +134,10 @@ struct s_9f881
     byte field_0[0x10a];
     struct s_9f882
     {
-        byte field_0 : 1;
-        byte field_1 : 1;
-        byte field_2 : 1;
-        byte field_3 : 5;
+        word field_0 : 1;
+        word field_1 : 1;
+        word field_2 : 1;
+        word field_3 : 13;
     } field_10a;
 };
 
@@ -135,7 +155,7 @@ bool c_unit_melee_damage_event_definition::v11(long arg_0, long const *arg_1, lo
     long local_3 = *(long const *)(local_2 + 4);
     long local_4 = *(long const *)(local_2 + 8);
     long local_5 = *(long const *)(local_2 + 0xc);
-    if (local_3 != NONE && !function_183f50(local_3, local_4, local_5))
+    if (local_3 != NONE && !function_183f50(local_4, local_5, local_3))
     {
         local_3 = NONE;
         local_4 = NONE;
@@ -144,12 +164,14 @@ bool c_unit_melee_damage_event_definition::v11(long arg_0, long const *arg_1, lo
     byte local_6 = local_2[0x18];
     if ((local_6 & 0x3f) >= 0x2a)
         local_6 &= 0xc0;
-    short local_7 = *(short const *)(local_2 + 0x10);
+    struct s_9f883 { signed short field_0 : 16; };
+    s_9f883 local_7;
+    local_7.field_0 = *(short const *)(local_2 + 0x10);
     byte *local_8 = 0;
-    if (local_7 != -1 && local_7 >= 0 && local_7 < *(long *)((byte *)g_4e034c + 0x150))
-        local_8 = *(byte **)((byte *)g_4e034c + 0x154) + local_7 * 0xb4;
+    if (local_7.field_0 != -1 && local_7.field_0 >= 0 && local_7.field_0 < *(long *)((byte *)g_4e034c + 0x150))
+        local_8 = *(byte **)((byte *)g_4e034c + 0x154) + local_7.field_0 * 0xb4;
     if (!local_8)
-        local_7 = g_47d8e0;
+        local_7.field_0 = g_47d8e0;
     if (local_0 != NONE)
     {
         byte *local_9 = (byte *)((s_object_header *)g_4e0300->data)[local_0 & 0xffff].object;
@@ -161,7 +183,7 @@ bool c_unit_melee_damage_event_definition::v11(long arg_0, long const *arg_1, lo
             local_10.field_4 = local_3;
             local_10.field_8 = local_4;
             local_10.field_c = local_5;
-            local_10.field_10 = local_7;
+            local_10.field_10 = local_7.field_0;
             local_10.field_14 = *(real const *)(local_2 + 0x14);
             local_10.field_18 = local_6;
             function_cfc90(local_0, *(long const *)local_2, (s_unit_melee_hit const *)&local_10);
@@ -200,7 +222,25 @@ struct s_9c610
     dword field_50;
 };
 
-#pragma inline_depth(0)
+struct s_input_9c610
+{
+    long field_0;
+    byte field_4[4];
+    short field_8;
+    byte field_a;
+    byte field_b;
+    vector3f field_c;
+    real field_18;
+    real field_1c;
+    dword field_20;
+    real field_24;
+    real field_28;
+    short field_2c;
+    short field_2e;
+    dword field_30;
+    byte field_34;
+};
+
 // @retail 0x9c610
 bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
@@ -209,10 +249,10 @@ bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, lon
     long local_2 = function_a58d0(arg_1[1]);
     if (local_1 != NONE)
     {
-        byte const *local_3 = (byte const *)arg_3;
+        s_input_9c610 const *input = (s_input_9c610 const *)arg_3;
         long local_4 = NONE;
         long local_5 = NONE;
-        short local_6 = *(short const *)(local_3 + 8);
+        short local_6 = input->field_8;
         if (local_6 != -1)
         {
             long local_7 = local_6;
@@ -227,39 +267,39 @@ bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, lon
                 }
             }
         }
-        if (function_122c10(0x6a707421, *(long const *)local_3))
+        if (function_122c10(0x6a707421, input->field_0))
         {
+            short local_11 = (short)local_5;
             s_9c610 local_10;
             memset(&local_10, 0, sizeof(local_10));
-            local_10.field_8 = *(long const *)local_3;
+            local_10.field_10 = local_2;
             local_10.field_c = local_4;
-            local_10.field_10 = local_1;
-            local_10.field_14 = (short)local_5;
-            if (local_3[0xa])
-                local_10.field_18 = *(vector3f const *)(local_3 + 0xc);
-            local_10.field_4 = *(dword const *)(local_3 + 0x20);
-            local_10.field_34 = *(real const *)(local_3 + 0x18);
-            local_10.field_38 = *(real const *)(local_3 + 0x1c);
-            local_10.field_3c = *(short const *)(local_3 + 0x2c);
-            local_10.field_40 = *(short const *)(local_3 + 0x2e);
-            local_10.field_44 = *(real const *)(local_3 + 0x28);
-            local_10.field_48 = *(real const *)(local_3 + 0x24);
-            local_10.field_50 = *(dword const *)(local_3 + 0x30);
-            local_10.field_0 = local_3[0x34];
+            local_10.field_14 = local_11;
+            local_10.field_8 = input->field_0;
+            if (input->field_a)
+                local_10.field_18 = input->field_c;
+            local_10.field_34 = input->field_18;
+            local_10.field_38 = input->field_1c;
+            local_10.field_50 = input->field_30;
+            local_10.field_3c = input->field_2c;
+            local_10.field_44 = input->field_28;
+            local_10.field_40 = input->field_2e;
+            local_10.field_48 = input->field_24;
+            local_10.field_0 = input->field_34;
             local_10.field_30 = 0.0f;
-            function_b9dd0(local_2, &local_10.field_24);
+            local_10.field_4 = input->field_20;
+            function_b9dd0(local_1, &local_10.field_24);
             local_10.field_4c = 0.0f;
-            if (*(dword const *)(local_3 + 0x20) & 2)
-                function_d6a70(local_2);
-            function_d9640((s_damage_report const *)&local_10, local_2);
-            if (g_4e0300->data[(local_2 & 0xffff) * 12 + 3] == 0 && (*(char const *)(local_3 + 0x20) < 0))
-                function_e4a20((point3f const *)(local_3 + 0xc), *(short const *)(local_3 + 0x2e), local_2, false);
+            if (input->field_20 & 2)
+                function_d6a70(local_1);
+            function_d9640((s_damage_report const *)&local_10, local_1);
+            if (g_4e0300->data[(local_1 & 0xffff) * 12 + 3] == 0 && (input->field_20 & 0x80))
+                function_e4a20((point3f const *)&input->field_c, input->field_2e, local_1, false);
         }
         local_0 = true;
     }
     return local_0;
 }
-#pragma inline_depth(255)
 
 struct s_object;
 s_object *function_badc0(long arg_0, dword arg_1);
@@ -271,7 +311,7 @@ long function_1896c0(real arg_0, long arg_1);
 void player_speed_request_14ea20(long arg_0);
 void player_speed_request_14eb10(long arg_0);
 void player_speed_request_14ec00(long arg_0);
-void function_19ca10(long arg_0);
+void teleporter_display_blocked_message(long arg_0);
 
 // @retail 0x9ffa0
 bool c_unit_pickup_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
@@ -297,6 +337,10 @@ bool c_unit_pickup_event_definition::v11(long arg_0, long const *arg_1, long arg
                     case 0:
                         function_191fab(*(long const *)(local_4 + 4), local_3);
                         break;
+                    case 2:
+                        function_191e51(*(long const *)(local_4 + 4), local_3);
+                        function_f8160(*(long const *)(local_4 + 4));
+                        break;
                     case 1:
                     {
                         byte *local_7 = g_4e3b44[*(long const *)(local_4 + 4) & 0xffff].bytes;
@@ -311,10 +355,6 @@ bool c_unit_pickup_event_definition::v11(long arg_0, long const *arg_1, long arg
                         function_191ec4(*(long const *)(local_4 + 4), local_3, *(short const *)(local_4 + 8));
                         break;
                     }
-                    case 2:
-                        function_191e51(*(long const *)(local_4 + 4), local_3);
-                        function_f8160(*(long const *)(local_4 + 4));
-                        break;
                     case 3:
                     {
                         byte *local_9 = g_4e3b44[*(long const *)(local_4 + 4) & 0xffff].bytes;
@@ -336,7 +376,7 @@ bool c_unit_pickup_event_definition::v11(long arg_0, long const *arg_1, long arg
                         byte *local_13 = (byte *)((s_object_header *)g_4e0300->data)[local_0 & 0xffff].object;
                         long local_14 = *(long *)(local_13 + 0x13c);
                         if (local_14 != NONE)
-                            function_19ca10(local_14);
+                            teleporter_display_blocked_message(local_14);
                         break;
                     }
                     }

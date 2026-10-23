@@ -4,8 +4,30 @@
 
 struct s_47f0d0;
 
-// @stub 0x81780
-void __stdcall function_81780(long stage)
+/* library bases of the page heap and its allocator (src/unknown_081780.cpp) */
+class c_library_329d20
+{
+public:
+	c_library_329d20();
+	virtual void v0() {}
+};
+
+class c_library_32a850
+{
+public:
+	c_library_32a850(void *a1, void *a2, long a3, long a4, long a5, long a6, void *a7, void *heap, long a9, long a10, long a11, long a12, long a13);
+	virtual void v0() {}
+
+	byte unknown04[0x30];
+};
+
+// @stub 0x329d20
+c_library_329d20::c_library_329d20()
+{
+}
+
+// @stub 0x32a850
+c_library_32a850::c_library_32a850(void *a1, void *a2, long a3, long a4, long a5, long a6, void *a7, void *heap, long a9, long a10, long a11, long a12, long a13)
 {
 }
 

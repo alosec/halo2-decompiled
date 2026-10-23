@@ -10,8 +10,8 @@
 #include <string.h>
 
 /* src/unknown_11eed0.cpp */
-void function_11f4f0(long bits, real const *in, real_bounds const *ranges, long *out);
-void function_11f580(long bits, real *out, real const *ranges, long const *in);
+void function_11f4f0(real const *in, real_bounds const *ranges, long bits, long *out);
+void function_11f580(real const *ranges, long bits, real *out, long const *in);
 
 /* src/unknown_195720.cpp */
 void function_195720(s_bitstream *stream, dword value, long count);
@@ -19,7 +19,7 @@ dword function_1959c0(s_bitstream *stream, long count);
 
 /* src/unknown_14a280.cpp */
 struct s_bsp3d;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 extern s_bsp3d *g_4e033c;
 
 /* the world's bounds, as the quantization reads them */
@@ -29,15 +29,10 @@ struct s_world_bounds_view
 	real_bounds bounds[3];
 };
 
-static inline real_bounds const *world_bounds(void)
-{
-	return ((s_world_bounds_view *)g_4e0348)->bounds;
-}
-
 /* the leaf of the world's bsp a point is in */
 static inline long world_leaf(real const *point)
 {
-	return function_14a280(g_4e033c, (point3f *)point, 0);
+	return function_14a280(g_4e033c, 0, (point3f *)point);
 }
 
 /* the small range of the relative positions */
@@ -78,15 +73,15 @@ static __forceinline bool quantized_step(long *candidate, long const *quantized,
 /* writes a world position; when asked, a quantized position outside the
    world is moved by one quantum to a neighbour inside it */
 // @retail 0x86d20
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside)
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside)
 {
-	real_bounds const *ranges = world_bounds();
+	s_world_bounds_view *world = (s_world_bounds_view *)g_4e0348;
 	long quantized[3];
-	function_11f4f0(bits, position, ranges, quantized);
+	function_11f4f0(position, world->bounds, bits, quantized);
 	if (keep_inside)
 	{
 		real dequantized[3];
-		function_11f580(bits, dequantized, (real const *)ranges, quantized);
+		function_11f580((real const *)world->bounds, bits, dequantized, quantized);
 		if (world_leaf(dequantized) == NONE && world_leaf(position) != NONE)
 		{
 			for (long step = 0; step < sizeof(g_47fe88) / sizeof(g_47fe88[0]); step++)
@@ -94,7 +89,7 @@ void simulation_write_position(long bits, s_bitstream *stream, real const *posit
 				long candidate[3];
 				if (quantized_step(candidate, quantized, g_47fe88[step], bits))
 				{
-					function_11f580(bits, dequantized, (real const *)ranges, candidate);
+					function_11f580((real const *)world->bounds, bits, dequantized, candidate);
 					if (world_leaf(dequantized) != NONE)
 					{
 						quantized[0] = candidate[0];
@@ -118,18 +113,18 @@ void simulation_read_position(s_bitstream *stream, real *position, long bits)
 	long quantized[3];
 	for (long i = 0; i < 3; i++)
 		quantized[i] = function_1959c0(stream, bits);
-	function_11f580(bits, position, (real const *)world->bounds, quantized);
+	function_11f580((real const *)world->bounds, bits, position, quantized);
 }
 
 /* whether two world positions quantize to within one quantum of each other */
 // @retail 0x86e90
-bool simulation_positions_close(long bits, real const *a, real const *b)
+byte simulation_positions_close(long bits, real const *a, real const *b)
 {
 	s_world_bounds_view *local_0 = (s_world_bounds_view *)g_4e0348;
 	long quantized_a[3];
 	long quantized_b[3];
-	function_11f4f0(bits, a, local_0->bounds, quantized_a);
-	function_11f4f0(bits, b, local_0->bounds, quantized_b);
+	function_11f4f0(a, local_0->bounds, bits, quantized_a);
+	function_11f4f0(b, local_0->bounds, bits, quantized_b);
 	if (abs(quantized_a[0] - quantized_b[0]) > 1 || abs(quantized_a[1] - quantized_b[1]) > 1 || abs(quantized_a[2] - quantized_b[2]) > 1)
 		return false;
 	return true;
@@ -140,20 +135,21 @@ bool simulation_positions_close(long bits, real const *a, real const *b)
 void simulation_write_relative_position(s_bitstream *stream, long bits, real const *position)
 {
 	long quantized[3];
-	function_11f4f0(bits, position, g_440214, quantized);
+	function_11f4f0(position, g_440214, bits, quantized);
 	for (long i = 0; i < 3; i++)
 		function_195720(stream, quantized[i], bits);
 }
 
 /* reads a position relative to something */
 // @retail 0x86f50
-void simulation_read_relative_position(long bits, real *position, s_bitstream *stream)
+void simulation_read_relative_position(s_bitstream *stream, long bits, real *position)
 {
 	long quantized[3];
 	for (long i = 0; i < 3; i++)
 		quantized[i] = function_1959c0(stream, bits);
-	function_11f580(bits, position, (real const *)g_440214, quantized);
+	function_11f580((real const *)g_440214, bits, position, quantized);
 }
+
 
 /* the machines of a game: a mask and their addresses */
 struct s_simulation_machine_list
@@ -164,7 +160,7 @@ struct s_simulation_machine_list
 
 /* writes the machines of a game */
 // @retail 0x87c00
-void simulation_write_machines(s_simulation_machine_list const *machines, s_bitstream *stream)
+void simulation_write_machines(s_bitstream *stream, s_simulation_machine_list const *machines)
 {
 	stream_write_checked(stream, machines->mask, 16);
 	for (long i = 0; i < 16; i++)

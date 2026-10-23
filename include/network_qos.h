@@ -1,5 +1,5 @@
 /* NETWORK_QOS.H: the results of a QoS (quality of service) probe
-   (unknown_07b4c0.cpp) */
+   (src/network_qos.cpp) */
 
 #ifndef NETWORK_QOS_H
 #define NETWORK_QOS_H

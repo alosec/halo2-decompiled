@@ -1,6 +1,6 @@
 /* PHYSICAL_MEMORY.H: a physical memory allocator, cut into blocks of pages
-   (src/unknown_13d170.cpp). The tag resource cache (g_4e3b54,
-   src/unknown_123230.cpp and src/unknown_123680.cpp) and the geometry cache
+   (src/unknown_13d170.cpp). The xbox animation cache (g_4e3b54,
+   src/animation_cache.cpp) and the geometry cache
    (g_4e649c, src/unknown_12d9f0.cpp and src/unknown_12de70.cpp) each own one;
    the sound cache's page allocator (src/unknown_218850.cpp) is one too. The
    blocks are kept in a data array that follows the object, and are linked in

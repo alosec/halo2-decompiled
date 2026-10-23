@@ -1,3 +1,4 @@
+#include "filter_storage.h"
 // @flags /O1 /Oi /arch:SSE /Gr
 /* UNKNOWN_234C64.CPP: the window manager's screen channels: each holds the
    current screen, the next one, the previous one and a pending request */
@@ -15,7 +16,6 @@
 /* ---- globals ---- */
 
 char g_54d5a8;
-byte g_4670cd;
 extern dword g_54d5b8;
 real g_54d5ac;
 real g_54d5b0;
@@ -25,13 +25,13 @@ real g_54d5b4;
 
 bool function_6c7e0();
 long function_147f4f(void);
-s_type_954545 *function_148350(void);
+s_type_954545 *ui_definition_get(void);
 long function_199d7c(void);
 word function_19022f(void);
 c_class_1473c9 *__stdcall function_2b72e6(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_2b7333(s_screen_parameters *request);
-bool function_23029a(c_class_1473c9 *screen);
-real function_230374(c_class_1473c9 *screen);
+bool screen_higher_channel_window_in_use(c_class_1473c9 *screen);
+real screen_get_fade(c_class_1473c9 *screen);
 __declspec(noinline) void function_235756(real fade);
 void function_2359ce(c_window_channel_459a34 *channel);
 void function_235abc(c_window_channel_459a34 *channel);
@@ -144,24 +144,24 @@ void c_window_channel::update()
 // @retail 0x234f8c
 void c_window_channel::render(long window)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 	bool fading = false;
 	real fade = 0.f;
 	short mode = g_54d5a8;
 
-	if (previous && function_23029a(previous))
+	if (previous && screen_higher_channel_window_in_use(previous))
 	{
-		fade = function_230374(previous);
+		fade = screen_get_fade(previous);
 		fading = true;
 	}
-	if (current && function_23029a(current))
+	if (current && screen_higher_channel_window_in_use(current))
 	{
-		fade += function_230374(current);
+		fade += screen_get_fade(current);
 		fading = true;
 	}
-	if (next && function_23029a(next))
+	if (next && screen_higher_channel_window_in_use(next))
 	{
-		fade += function_230374(next);
+		fade += screen_get_fade(next);
 		fading = true;
 	}
 
@@ -172,7 +172,7 @@ void c_window_channel::render(long window)
 	{
 		if (!tint && current)
 		{
-			fade += function_230374(current);
+			fade += screen_get_fade(current);
 			tint = current->screen_id != 0xd4;
 		}
 		fading = false;
@@ -270,6 +270,12 @@ void c_window_channel::v9()
 	dispose();
 }
 
+// score 3 (was 3): after the call to 0x149f49, retail recomputes the
+// request's address (lea eax, [ebp - 0x20]); ours uses mov eax, ecx. The
+// callee leaves ecx unchanged, and retail's 0x2358c3 in this file reuses it
+// after the same call. One tested link-order change left the score unchanged.
+// Other locals, address forms and control flow scored 3 or worse; the 600 s
+// permutation run found no improvement.
 // @retail 0x23531c
 void c_window_channel::v10()
 {
@@ -436,14 +442,14 @@ void c_window_channel_45997c::update()
 				}
 				break;
 			case 2:
-				if (state >= 2)
+				if (!(state >= 2))
 				{
-					m3c = 1.f;
+					m3c = 0.f;
 					value = 1.f;
 				}
 				else
 				{
-					m3c = 0.f;
+					m3c = 1.f;
 					value = 1.f;
 				}
 				break;
@@ -559,14 +565,16 @@ void c_window_channel_4599a8::set_next(c_class_1473c9 *screen, s_screen_paramete
 	if (current && !(new_request->type & 6))
 	{
 		c_class_1473c9 *active = current;
-		s_screen_request previous_request;
-		word flags = active->user_flags;
-		screen_load_proc load = active->get_load_proc();
-		long window = active->v21();
-		long channel = active->v20();
-		function_149f49((s_message *)&previous_request, 2, 0, flags, channel, window, (long)load);
-		active->v24((s_screen_focus *)&previous_request.id);
-		function_2355ed(this, &previous_request, active->screen_id);
+		{
+			s_screen_request previous_request;
+			word flags = active->user_flags;
+			screen_load_proc load = active->get_load_proc();
+			long window = active->v21();
+			long channel = active->v20();
+			function_149f49((s_message *)&previous_request, 2, 0, flags, channel, window, (long)load);
+			active->v24((s_screen_focus *)&previous_request.id);
+			function_2355ed(this, &previous_request, active->screen_id);
+		}
 	}
 	if (new_request->type & 4)
 		function_235647(this);
@@ -955,24 +963,28 @@ int __cdecl function_2356d8(void const *a, void const *b)
 {
 	s_screen_sort_entry const *x = (s_screen_sort_entry const *)a;
 	s_screen_sort_entry const *y = (s_screen_sort_entry const *)b;
+	int result;
 	real difference = x->depth - y->depth;
 	real distance = difference >= 0.f ? difference : 0.f - difference;
 
 	if (distance <= 0.001f)
 	{
 		if (x->layer > y->layer)
-			return 1;
-		if (x->layer < y->layer)
-			return -1;
-		if (x->screen->type < y->screen->type)
-			return 1;
-		return x->screen->type > y->screen->type ? -1 : 0;
+			result = 1;
+		else if (x->layer < y->layer)
+			result = -1;
+		else if (x->screen->type < y->screen->type)
+			result = 1;
+		else
+			result = x->screen->type > y->screen->type ? -1 : 0;
 	}
-	if (y->depth > x->depth)
-		return 1;
-	if (x->depth > y->depth)
-		return -1;
-	return 0;
+	else if (y->depth > x->depth)
+		result = 1;
+	else if (x->depth > y->depth)
+		result = -1;
+	else
+		result = 0;
+	return result;
 }
 
 // @retail 0x2353a5

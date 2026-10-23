@@ -53,6 +53,7 @@ extern dword g_55c02c;
 void __stdcall function_2138f0(long arg_0, long arg_1);
 void function_213970(void);
 
+#pragma optimize("s", on)
 // @retail 0x2136c0
 void function_2136c0(void)
 {
@@ -91,3 +92,4 @@ void function_2136c0(void)
     }
     function_213970();
 }
+#pragma optimize("", on)

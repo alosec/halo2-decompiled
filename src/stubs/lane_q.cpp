@@ -8,14 +8,7 @@
 
 
 
-// @stub 0x15b650
-void __stdcall function_15b650(long team, long delta) { }
 
 struct s_statborg;
 
 
-// @stub 0x1e9df0
-void function_1e9df0(long field, long counter, s_statborg *statistics, long team, long delta) { }
-
-// @stub 0x1e9ce0
-void function_1e9ce0(long player_index, long counter, s_statborg *statistics, long field, long delta, bool by_team) { }

@@ -17,7 +17,7 @@
 
 long function_11ca80(long value);
 void utf8_string_to_utf16_string(const char *source, word *destination, long destination_count);
-bool function_122d60(s_cache_file_location location, long size, void *buffer);
+bool function_122d60(unsigned __int64 location, long size, void *buffer);
 
 /* a string of a table: its id and the offset of its text */
 struct s_string_reference
@@ -156,7 +156,6 @@ void function_1a0180(long tag_index, long string_handle, word *buffer)
 // @retail 0x1a01e0
 bool string_table_load(s_string_table *table)
 {
-	s_cache_file_location location;
 	long size;
 
 #ifdef H2_NATIVE_PORT
@@ -167,9 +166,7 @@ bool string_table_load(s_string_table *table)
 	size = table->count * sizeof(s_string_reference);
 	if (size & 0x1ff)
 		size = (size | 0x1ff) + 1;
-	location.file_index = NONE;
-	location.offset = table->references_offset;
-	function_122d60(location, size, table->references);
+	function_122d60(cache_file_location_make(NONE, table->references_offset), size, table->references);
 
 #ifdef H2_NATIVE_PORT
 	table->data = (char *)host_h2_physical_memory_malloc_low(table->data_size, PAGE_READWRITE);
@@ -179,9 +176,7 @@ bool string_table_load(s_string_table *table)
 	size = table->data_size;
 	if (size & 0x1ff)
 		size = (size | 0x1ff) + 1;
-	location.file_index = NONE;
-	location.offset = table->data_offset;
-	function_122d60(location, size, table->data);
+	function_122d60(cache_file_location_make(NONE, table->data_offset), size, table->data);
 
 	table->loaded = true;
 	return true;

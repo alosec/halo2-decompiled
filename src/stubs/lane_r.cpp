@@ -18,19 +18,13 @@ struct s_effect_source;
 
 
 
-// @stub 0xc0350
-#ifndef H2_NATIVE_PORT
-void function_c0350(long tag_index, long object_index, long node_index, vector3f const *up, vector3f const *forward, point3f const *position, real scale) { }
-#endif
+
 
 /* in region */
 /* in region */
-// @stub 0x17e670
-void function_17e670(s_effect_source *source, point3f const *point, long tag_index, vector3f const *vector, real radius, long unknown0, long unknown1, long unknown2) { }
 
 // @stub 0x211060
 void function_211060(long unknown0, void *physics, s_location *location, long unknown3, point3f *position, long unknown5, long unknown6, long unknown7, real radius, real dt, vector3f *velocity) { }
 
-// @stub 0x43890
-void function_43890(void) { }
+
 

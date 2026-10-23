@@ -60,7 +60,7 @@ bool function_87830(s_player_action *new_action, s_player_action *action)
 #include "bitstream.h"
 #include <string.h>
 
-bool function_07ca70(s_bitstream *stream, void *destination);
+byte function_07ca70(s_bitstream *stream, void *destination);
 void function_07c5a0(s_bitstream *stream, const void *source);
 
 // @retail 0x87930
@@ -124,7 +124,7 @@ bool function_87ac0(s_bitstream *stream, s_simulation_player_update *update)
 		if (!result || update->other_player_index < 0 || update->other_player_index >= 16 ||
 			update->other_player_index == update->player_index)
 			goto failed;
-		return true;
+		result = true;
 	}
 	goto done;
 failed:
@@ -164,16 +164,27 @@ bool function_14d0a0(const s_player_action *action);
 
 static __forceinline real action_decode_real(long value, long maximum, real low, real high)
 {
- if (value == 0) return low;
- if (value >= maximum) return high;
- return ((real)(maximum - value) * low + (real)value * high) * (1.0f / (real)maximum);
+ real result;
+ if (value == 0)
+  result = low;
+ else if (value >= maximum)
+  result = high;
+ else
+  result = ((real)(maximum - value) * low + (real)value * high) * (1.0f / (real)maximum);
+ return result;
 }
 
+#pragma inline_depth(0)
+static __forceinline void function_874c1(s_player_action *arg_0)
+{
+ player_action_initialize(arg_0);
+}
+#pragma inline_depth(8)
 // @retail 0x874c0
-bool function_874c0(s_bitstream *stream, s_player_action *action)
+byte function_874c0(s_bitstream *stream, s_player_action *action)
 {
  s_action_codec_view *result = (s_action_codec_view *)action;
- player_action_initialize(action);
+ function_874c1(action);
  result->control = function_1959c0(stream, 32);
  result->flags = (word)function_1959c0(stream, 9);
  result->yaw = action_decode_real(function_1959c0(stream, 13), 8191, 0.0f, 6.2831855f);
@@ -193,16 +204,19 @@ bool function_874c0(s_bitstream *stream, s_player_action *action)
   result->target = function_1959c0(stream, 32);
   switch (result->target_type)
   {
-  case 1: result->target_byte = (byte)function_1959c0(stream, 4); break;
-  case 4: result->target_slot = (short)function_1959c0(stream, 5); break;
-  case 5: result->target_slot = (short)function_1959c0(stream, 5); break;
+  case 4:
+  case 5:
   case 6: result->target_slot = (short)function_1959c0(stream, 5); break;
+  case 1:
   case 7: result->target_byte = (byte)function_1959c0(stream, 4); break;
   }
  }
  else
   result->target = NONE;
- result->value30 = function_1957d0(stream) ? function_1959c0(stream, 32) : NONE;
+ if (function_1957d0(stream))
+  result->value30 = function_1959c0(stream, 32);
+ else
+  result->value30 = NONE;
  if (function_1957d0(stream))
  {
   result->value50 = action_decode_real(function_1959c0(stream, 4), 15, 0.0f, 1.0f);
@@ -231,6 +245,17 @@ static __forceinline long action_round(real value)
  return result;
 }
 
+static __forceinline void function_86f91(s_bitstream *stream, dword value, long bits)
+{
+ if (bits < 32 && value >= (dword)(1 << bits))
+ {
+  char message[256];
+  message[0] = 0;
+  csprintf_256(message, "%u exceeds max value of %u", value, 1 << bits);
+ }
+ function_195720(stream, value, bits);
+}
+
 // @retail 0x86f90
 void function_86f90(s_bitstream *stream, s_player_action *action)
 {
@@ -248,17 +273,17 @@ void function_86f90(s_bitstream *stream, s_player_action *action)
  stream_write_checked(stream, input->grenade + 1, 3);
  stream_write_checked(stream, input->slot + 1, 2);
  stream_write_checked(stream, input->seat + 1, 2);
- stream_write_checked(stream, input->target_type, 4);
+ function_86f91(stream, input->target_type, 4);
  if (input->target_type)
  {
   function_195720(stream, input->target, 32);
   switch (input->target_type)
   {
-  case 1: stream_write_checked(stream, input->target_byte, 4); break;
-  case 4: stream_write_checked(stream, input->target_slot, 5); break;
-  case 5: stream_write_checked(stream, input->target_slot, 5); break;
-  case 6: stream_write_checked(stream, input->target_slot, 5); break;
-  case 7: stream_write_checked(stream, input->target_byte, 4); break;
+  case 4:
+  case 5:
+  case 6: function_86f91(stream, input->target_slot, 5); break;
+  case 1:
+  case 7: function_86f91(stream, input->target_byte, 4); break;
   }
  }
  stream_write_bit(stream, input->value30 != NONE);
@@ -293,7 +318,7 @@ struct s_simulation_machine_list
  dword mask;
  byte addresses[16][6];
 };
-void simulation_write_machines(const s_simulation_machine_list *machines, s_bitstream *stream);
+void simulation_write_machines(s_bitstream *stream, const s_simulation_machine_list *machines);
 bool simulation_read_machines(s_bitstream *stream, s_simulation_machine_list *machines);
 
 // @retail 0x87d00
@@ -307,7 +332,7 @@ void function_87d00(s_bitstream *stream, void *message)
    function_86f90(stream, (s_player_action *)(block + 0xc + i * 0x5c));
  stream_write_bit(stream, *(bool *)(block + 0xdd0));
  if (*(bool *)(block + 0xdd0))
-  simulation_write_machines((s_simulation_machine_list *)(block + 0xdd4), stream);
+  simulation_write_machines(stream, (s_simulation_machine_list *)(block + 0xdd4));
  stream_write_checked(stream, *(dword *)(block + 0xe38), 5);
  for (long j = 0; j < *(long *)(block + 0xe38); j++)
   function_87930(stream, (s_simulation_player_update *)(block + 0xe3c + j * 0xc8));
@@ -340,5 +365,6 @@ bool function_87e90(s_bitstream *stream, void *message)
  *(bool *)(block + 0x403c) = stream_read_bit(stream);
  *(dword *)(block + 0x4040) = function_1959c0(stream, 32);
  *(dword *)(block + 0x4044) = function_1959c0(stream, 32);
- return result && !stream_overflowed(stream) && *(long *)(block + 0x4040) >= 0 && *(long *)block >= 0;
+ result = result && !stream_overflowed(stream) && *(long *)(block + 0x4040) >= 0 && *(long *)block >= 0;
+ return result;
 }

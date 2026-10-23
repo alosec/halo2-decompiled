@@ -1,10 +1,12 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_23BC90.CPP: the cameras that follow a unit: the first person
    camera, the camera of a unit's seat and the following camera
    (0x23bc90..0x23cea0) */
 
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
+#include "vector_angles.h"
 #include "globals.h"
 #include "data_array.h"
 #include "object_markers.h"
@@ -116,34 +118,57 @@ struct s_camera_command_23bd70
 	vector3f velocity;
 	byte unknown50[0x88 - 0x50];
 	real timer;
+	byte unknown8c;
+	bool constrained_changed;
+	byte unknown8e[0x91 - 0x8e];
+	bool input_changed;
+	byte unknown92[0x98 - 0x92];
+	real constrained_timer;
+	byte unknown9c[0xa8 - 0x9c];
+	real input_timer;
 };
 
-PRIVATE __forceinline void camera_rotate_23bd70(transform4x3f const *matrix, vector3f *direction)
+PRIVATE __forceinline void camera_rotate_23bd70(transform4x3f const *matrix, vector3f const *direction, vector3f *result)
 {
 	real x = direction->i;
 	real y = direction->j;
 	real z = direction->k;
-	direction->i = matrix->up.i * z + matrix->left.i * y + matrix->forward.i * x;
-	direction->j = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x;
-	direction->k = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x;
+	result->i = matrix->up.i * z + matrix->left.i * y + matrix->forward.i * x;
+	result->j = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x;
+	result->k = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x;
 }
 
+PRIVATE __forceinline void camera_unrotate_23bd70(transform4x3f const *matrix, vector3f *direction)
+{
+	real x = direction->i;
+	real y = direction->j;
+	real z = direction->k;
+	direction->i = matrix->forward.k * z + matrix->forward.j * y + matrix->forward.i * x;
+	direction->j = matrix->left.k * z + matrix->left.j * y + matrix->left.i * x;
+	direction->k = matrix->up.k * z + matrix->up.j * y + matrix->up.i * x;
+}
+
+// score 2 (was 2): retail takes the address of the up vector before the
+// last store of the twelve byte copy, ours takes it after.
 // @retail 0x23bd70
 void function_23bd70(long unit_index, vector3f const *forward, s_camera_command_23bd70 *command)
 {
     /* Retail passes the output pointer on the stack. */
     s_camera_command_23bd70 **command_reference = &command;
+	vector3f &command_forward = command->forward;
+	vector3f &command_up = command->up;
+	point3f &command_position = command->position;
 	command->timer = 0.f;
 	command->flags = 0;
 	command->offset = *g_4687a4;
 	command->distance = 0.f;
-	command->forward = *forward;
+	command_forward = *forward;
 	command->field_of_view = g_54e854;
-	function_11d090(&command->forward, &command->up);
+	function_11d090(&command_forward, &command_up);
 	if (unit_index != NONE)
 	{
 		s_camera_unit_view *unit = ((s_camera_object_header_view *)g_4e0300->data)[unit_index & 0xffff].object;
-		function_cafc0(unit_index, &command->position);
+		function_cafc0(unit_index, &command_position);
 		function_ba1d0(unit_index, &command->velocity, 0);
 		long parent_index = unit->parent_index;
 		if (parent_index != NONE)
@@ -157,9 +182,9 @@ void function_23bd70(long unit_index, vector3f const *forward, s_camera_command_
 					s_object_marker marker;
 					if (function_b8d30(parent_index, 0xf0000db, &marker, 1, false))
 					{
-						command->position = marker.matrix.position;
-						command->forward = marker.matrix.forward;
-						command->up = marker.matrix.up;
+						command_position = marker.matrix.position;
+						command_forward = marker.matrix.forward;
+						command_up = marker.matrix.up;
 					}
 				}
 				else
@@ -168,15 +193,10 @@ void function_23bd70(long unit_index, vector3f const *forward, s_camera_command_
 					transform4x3f matrix;
 					function_b9dd0(parent_index, &position);
 					function_1420f0(&matrix, &position, (vector3f *)((byte *)parent + 0x70), (vector3f *)((byte *)parent + 0x7c));
-					real x = command->forward.i;
-					real y = command->forward.j;
-					real z = command->forward.k;
-					command->forward.i = matrix.forward.k * z + matrix.forward.j * y + matrix.forward.i * x;
-					command->forward.j = matrix.left.k * z + matrix.left.j * y + matrix.left.i * x;
-					command->forward.k = matrix.up.k * z + matrix.up.j * y + matrix.up.i * x;
-					function_11d090(&command->forward, &command->up);
-					camera_rotate_23bd70(&matrix, &command->forward);
-					camera_rotate_23bd70(&matrix, &command->up);
+					camera_unrotate_23bd70(&matrix, &command_forward);
+					function_11d090(&command_forward, &command_up);
+					camera_rotate_23bd70(&matrix, &command->forward, &command_forward);
+					camera_rotate_23bd70(&matrix, &command->up, &command_up);
 				}
 			}
 		}
@@ -244,59 +264,65 @@ struct s_camera_track_23c300
 	s_camera_key_23c300 *keys;
 };
 
-void function_212100(point3f const *p3, point3f const *p2, point3f const *p1, point3f const *p0,
-	point3f *out, real start, real step, real time);
+void function_212100(point3f *out, point3f const *p0, point3f const *p1, point3f const *p2,
+	point3f const *p3, real start, real step, real time);
 
-PRIVATE __forceinline void camera_key_direction_23c300(quaternionf const *q, vector3f *out)
+PRIVATE __forceinline void camera_key_direction_23c300(quaternionf q, vector3f *out)
 {
 	vector3f v;
 	v.i = 1.f;
 	v.j = v.k = 0.f;
-	real dot = (q->i * v.i + q->j * v.j + q->k * v.k) * 2.f;
-	real w2 = q->w * 2.f;
-	real s = q->w * q->w * 2.f - 1.f;
 	vector3f cross;
-	cross.i = q->j * v.k - q->k * v.j;
-	cross.j = q->k * v.i - q->i * v.k;
-	cross.k = q->i * v.j - q->j * v.i;
-	out->i = v.i * s + q->i * dot + cross.i * w2;
-	out->j = v.j * s + q->j * dot + cross.j * w2;
-	out->k = v.k * s + q->k * dot + cross.k * w2;
+	real dot = (q.i * v.i + q.j * v.j + q.k * v.k) * 2.f;
+	real w2 = q.w * 2.f;
+	cross.i = q.j * v.k - q.k * v.j;
+	real s = q.w * q.w * 2.f - 1.f;
+	out->i = v.i * s + q.i * dot + cross.i * w2;
+	cross.j = q.k * v.i - q.i * v.k;
+	out->j = v.j * s + q.j * dot + cross.j * w2;
+	cross.k = q.i * v.j - q.j * v.i;
+	out->k = v.k * s + q.k * dot + cross.k * w2;
 }
 
-PRIVATE __forceinline void camera_direction_curve_23c300(vector3f const *p3, vector3f const *p2,
-	vector3f const *p1, vector3f const *p0, vector3f *out, real start, real step, real time)
+PRIVATE __forceinline void camera_direction_curve_23c300(vector3f *out, vector3f const *p0, vector3f const *p1,
+	vector3f const *p2, vector3f const *p3, real start, real step, real time)
 {
-	real two_step = step * 2.f;
-	real three_step = step * 3.f;
-	real inverse_step = 1.f / step;
-	real t0 = time - start;
-	real t1 = time - (start + step);
-	real t2 = time - (two_step + start);
 	for (long i = 0; i < 3; i++)
 	{
-		real s0 = p3->n[i] - p2->n[i];
-		real s1 = p2->n[i] - p1->n[i];
-		real s2 = p1->n[i] - p0->n[i];
-		real d2 = s1 - s2;
-		real d3 = (s0 - s1) - d2;
-		out->n[i] = ((d3 * t2 / three_step + d2) * t1 / two_step + s2) * inverse_step * t0 + p0->n[i];
+		real x3 = p3->n[i];
+		real x2 = p2->n[i];
+		real x1 = p1->n[i];
+		real x0 = p0->n[i];
+		x3 -= x2;
+		x2 -= x1;
+		x1 -= x0;
+		x3 -= x2;
+		x2 -= x1;
+		x3 -= x2;
+		out->n[i] = ((x3 * (time - (step * 2.f + start)) / (step * 3.f) + x2) * (time - (start + step)) / (step * 2.f) + x1) *
+			(1.f / step) * (time - start) + x0;
 	}
 }
 
-// @retail 0x23c300
-void function_23c300(bool alternate, s_camera_tracks_23c300 const *camera,
-	vector3f *direction, real time, point3f *position)
+/* the tag index of a camera's track: the clamped track's, NONE when there is none */
+PRIVATE __forceinline long camera_track_index_23c300(s_camera_tracks_23c300 const *camera, long track)
 {
-	long track = alternate ? 1 : 0;
-	long tag_index = NONE;
+	long tag_index;
 	if (camera->count)
 	{
 		track = track > camera->count - 1 ? camera->count - 1 : track;
 		s_camera_track_reference_23c300 *reference = &camera->tracks[track];
-		if (reference)
-			tag_index = reference->index;
+		tag_index = reference ? reference->index : NONE;
 	}
+	else
+		tag_index = NONE;
+	return tag_index;
+}
+
+// @retail 0x23c300
+void function_23c300(s_camera_tracks_23c300 const *camera, real time, point3f *position, vector3f *direction, bool alternate)
+{
+	long tag_index = camera_track_index_23c300(camera, alternate ? 1 : 0);
 	if (tag_index == NONE)
 		tag_index = (*(s_camera_track_reference_23c300 **)((byte *)g_4e034c + 0xec))->index;
 	s_camera_track_23c300 *definition = (s_camera_track_23c300 *)g_4e3b44[tag_index & 0xffff].bytes;
@@ -310,16 +336,15 @@ void function_23c300(bool alternate, s_camera_tracks_23c300 const *camera,
 		if (direction)
 		{
 			vector3f a, b, c, d;
-			camera_key_direction_23c300(&definition->keys[first].rotation, &a);
-			camera_key_direction_23c300(&definition->keys[first + 1].rotation, &b);
-			camera_key_direction_23c300(&definition->keys[first + 2].rotation, &c);
-			camera_key_direction_23c300(&definition->keys[first + 3].rotation, &d);
-			camera_direction_curve_23c300(&d, &c, &b, &a, direction, first * step, step, time);
+			camera_key_direction_23c300(definition->keys[first].rotation, &a);
+			camera_key_direction_23c300(definition->keys[first + 1].rotation, &b);
+			camera_key_direction_23c300(definition->keys[first + 2].rotation, &c);
+			camera_key_direction_23c300(definition->keys[first + 3].rotation, &d);
+			camera_direction_curve_23c300(direction, &a, &b, &c, &d, first * step, step, time);
 		}
 		if (position)
-			function_212100(&definition->keys[first + 3].position, &definition->keys[first + 2].position,
-				&definition->keys[first + 1].position, &definition->keys[first].position,
-				position, first * step, step, time);
+			function_212100(position, &definition->keys[first].position, &definition->keys[first + 1].position,
+				&definition->keys[first + 2].position, &definition->keys[first + 3].position, first * step, step, time);
 	}
 	else
 	{
@@ -341,20 +366,25 @@ real function_23c980(s_camera_tracks_23c300 const *camera, real angle, bool alte
 {
     /* Keep the selector among the stack parameters. */
     bool const *alternate_reference = &alternate;
-    real lower = 0.f;
-    real upper = 1.f;
-    real time;
+    struct
+    {
+        real time;
+        real upper;
+        real lower;
+    } interval;
+    interval.lower = 0.f;
+    interval.upper = 1.f;
     do
     {
         vector3f direction;
-        time = (upper + lower) * 0.5f;
-        function_23c300(alternate, camera, &direction, time, 0);
+        interval.time = (interval.upper + interval.lower) * 0.5f;
+        function_23c300(camera, interval.time, 0, &direction, alternate);
         if (angle > atan2(direction.k, sqrt(direction.j * direction.j + direction.i * direction.i)))
-            lower = time;
+            interval.lower = interval.time;
         else
-            upper = time;
-    } while (upper - lower > 0.001f);
-    return time;
+            interval.upper = interval.time;
+    } while (interval.upper - interval.lower > 0.001f);
+    return interval.time;
 }
 
 bool function_cb810(long unit_index, vector3f *vector);
@@ -369,35 +399,39 @@ struct s_camera_player_23c110
     byte unknown30[0x21c - 0x30];
 };
 
+bool function_14ddc0(long local_player_index);
+long function_14de70(long local_player_index);
+
+// score 72 (was 72): retail keeps the input in EBX with three pushes and
+// reloads the unit index, ours keeps it in EBP with four pushes and keeps
+// the value live.
 // @retail 0x23c110
 void __stdcall function_23c110(void *state, void *input, s_observer_command *command)
 {
-    long user = *(long *)input;
-    long unit_index = NONE;
+    long unit_index;
     s_record_pool *players = g_4e8c24;
-    s_index_table *indices = g_4e8c20;
-    if (user != NONE && indices->entries[user] != NONE)
+    if (function_14ddc0(*(long *)input))
     {
-        long player = user != NONE ? indices->entries[user] : NONE;
+        long player = function_14de70(*(long *)input);
         unit_index = ((s_camera_player_23c110 *)players->data)[player & 0xffff].unit_index;
     }
-    long player = user != NONE ? indices->entries[user] : NONE;
-    s_unknown_185ab0_entry *view = &g_4ed284->entries[user];
-    vector3f forward;
-    real horizontal = (real)cos(view->pitch);
-    forward.i = horizontal * (real)cos(view->yaw);
-    forward.j = horizontal * (real)sin(view->yaw);
-    forward.k = (real)sin(view->pitch);
+    else
+        unit_index = NONE;
+    long player = function_14de70(*(long *)input);
     long current_unit = ((s_camera_player_23c110 *)players->data)[player & 0xffff].unit_index;
+    s_view_angles *angles = &g_4ed284->entries[*(long *)input].angles;
+    vector3f forward;
+    real horizontal = (real)cos(angles->pitch);
+    forward.i = horizontal * (real)cos(angles->yaw);
+    forward.j = horizontal * (real)sin(angles->yaw);
+    forward.k = (real)sin(angles->pitch);
     if (current_unit != NONE)
         function_cb810(current_unit, &forward);
     function_23bd70(unit_index, &forward, (s_camera_command_23bd70 *)command);
     byte *settings = *(byte **)((byte *)g_4e034c + 0xf4);
-    real limits[2];
-    limits[0] = *(real *)(settings + 0x18);
-    limits[1] = *(real *)(settings + 0x1c);
-    *(real *)((byte *)command + 0x1c) = limits[0];
-    *(real *)((byte *)command + 0x20) = limits[1];
+    real_bounds limits = *(real_bounds *)(settings + 0x18);
+    *(real *)((byte *)command + 0x1c) = limits.lo;
+    *(real *)((byte *)command + 0x20) = limits.hi;
     s_camera_command_23bd70 *camera = (s_camera_command_23bd70 *)command;
     camera->field_of_view = function_187130(*(long *)input) * g_47136c;
     camera->field_of_view = camera->field_of_view < g_55e484 ? g_55e484 :
@@ -406,7 +440,7 @@ void __stdcall function_23c110(void *state, void *input, s_observer_command *com
     {
         *(real *)((byte *)command + 0xa4) = 0.18f;
         *((byte *)command + 0x90) = 1;
-        *(real *)state = camera->field_of_view;
+        *(dword *)state = *(dword *)&camera->field_of_view;
     }
 }
 
@@ -422,26 +456,24 @@ void function_23ca20(long unit_index, point3f *position, vector3f *forward)
     if (object)
         alternate = (bool)((*(dword *)(object + 0x134) >> 17) & 1);
     real vertical = forward->k;
-    vertical = vertical < -1.f ? -1.f : vertical > 1.f ? 1.f : vertical;
-    real time = function_23c980(camera, (real)asin(vertical), alternate);
+    real clamped = vertical < -1.f ? -1.f : vertical > 1.f ? 1.f : vertical;
+    real time = function_23c980(camera, (real)asin(clamped), alternate);
     vector3f direction;
     point3f offset;
-    function_23c300(alternate, camera, &direction, time, &offset);
-    direction.i = forward->i;
-    direction.j = forward->j;
-    real length = (real)sqrt(direction.i * direction.i + direction.j * direction.j);
+    function_23c300(camera, time, &offset, &direction, alternate);
+    struct { real i, j; } planar;
+    planar.i = forward->i;
+    planar.j = forward->j;
+    real length = (real)sqrt(planar.i * planar.i + planar.j * planar.j);
     if (!(fabs(length) < 0.0001f))
     {
         real inverse = 1.f / length;
-        direction.i *= inverse;
-        direction.j *= inverse;
+        planar.i *= inverse;
+        planar.j *= inverse;
     }
-    real y = (offset.x * direction.j + offset.y * direction.i) + position->y;
-    real x = (offset.x * direction.i - offset.y * direction.j) + position->x;
-    real z = position->z + offset.z;
-    position->y = y;
-    position->x = x;
-    position->z = z;
+    position->x += offset.x * planar.i - offset.y * planar.j;
+    position->y += offset.x * planar.j + offset.y * planar.i;
+    position->z += offset.z;
 }
 
 struct s_player_control_camera
@@ -497,12 +529,11 @@ void __stdcall function_23cbb0(void *state, void *input, s_observer_command *out
     if (camera.camera)
     {
         byte *unit = (byte *)((s_camera_object_header_view *)g_4e0300->data)[camera.unit_index & 0xffff].object;
-        bool constrained = (*(dword *)(unit + 0x148) & 3) != 0;
+        bool constrained = (*(dword *)(unit + 0x148) & 1) || (*(dword *)(unit + 0x148) & 2);
         if (constrained != values->constrained)
         {
-            *((byte *)output + 0x8d) = 1;
-            real *timer = (real *)((byte *)output + 0x98);
-            *timer = 0.5f > *timer ? 0.5f : *timer;
+            command->constrained_changed = true;
+            command->constrained_timer = 0.5f > command->constrained_timer ? 0.5f : command->constrained_timer;
             values->constrained = constrained;
         }
         bool alternate = false;
@@ -518,9 +549,8 @@ void __stdcall function_23cbb0(void *state, void *input, s_observer_command *out
         {
             values->yaw += controls->yaw;
             values->pitch += controls->pitch;
-            *((byte *)output + 0x91) = 1;
-            real *timer = (real *)((byte *)output + 0xa8);
-            *timer = 0.4f > *timer ? 0.4f : *timer;
+            command->input_changed = true;
+            command->input_timer = 0.4f > command->input_timer ? 0.4f : command->input_timer;
         }
         else if (values->yaw != 0.f || values->pitch != 0.f)
         {
@@ -528,27 +558,26 @@ void __stdcall function_23cbb0(void *state, void *input, s_observer_command *out
             values->yaw = 0.f;
         }
         s_unknown_185ab0_entry *view = &g_4ed284->entries[controls->user];
-        real yaw = view->yaw;
-        real pitch = values->pitch + view->pitch;
-        pitch = pitch < -1.57079637f ? -1.57079637f : pitch > 1.57079637f ? 1.57079637f : pitch;
+        s_view_angles angles = view->angles;
+        real total_pitch = values->pitch + angles.pitch;
+        real pitch = total_pitch < -1.57079637f ? -1.57079637f : total_pitch > 1.57079637f ? 1.57079637f : total_pitch;
         real time = function_23c980((s_camera_tracks_23c300 *)camera.camera, pitch, alternate);
         vector3f direction;
         point3f offset;
-        function_23c300(alternate, (s_camera_tracks_23c300 *)camera.camera, &direction, time, &offset);
-        real final_yaw = yaw + values->yaw;
+        function_23c300((s_camera_tracks_23c300 *)camera.camera, time, &offset, &direction, alternate);
+        real final_yaw = angles.yaw + values->yaw;
+        vector3f *forward = &command->forward;
+        direction_from_angles(forward, final_yaw, pitch);
         real cosine = (real)cos(pitch);
         real sine = (real)sin(pitch);
-        command->forward.i = (real)cos(final_yaw) * cosine;
-        command->forward.j = (real)sin(final_yaw) * cosine;
-        command->forward.k = sine;
-        real distance = (real)sqrt(offset.z * offset.z + offset.y * offset.y + offset.x * offset.x);
+        real distance = (real)sqrt(offset.x * offset.x + offset.y * offset.y + offset.z * offset.z);
         command->distance = distance;
         command->offset.i = (cosine * distance + offset.x) * values->scale;
         command->offset.j = -values->scale * offset.y;
         command->offset.k = (sine * distance + offset.z) * values->scale;
         function_ba1d0(camera.unit_index, &command->velocity, 0);
         command->flags |= 1;
-        function_11d090(&command->forward, &command->up);
+        function_11d090(forward, &command->up);
     }
     function_172520(output);
     values->initialized = true;

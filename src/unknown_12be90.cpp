@@ -58,6 +58,8 @@ struct s_510c50_view
 bool function_163b60(void);
 void function_18e700(void);
 
+__declspec(noinline) void function_12ba90(void);
+
 // @retail 0x12ba90
 void function_12ba90(void)
 {
@@ -68,23 +70,38 @@ void function_12ba90(void)
 	}
 }
 
+/* retail's only caller (0x12b450) ignores the result; 0x12bad0 is near: the
+   register pattern matches (bl enregistered for the comparisons and the false
+   stores, mov al,1 doubling as result=true), but our build materializes
+   result for the return on the false paths (mov al, bl) where retail's
+   shared epilogue returns the loaded revert value already in al. Returning
+   revert instead kills the bl register entirely (test al, al and immediate
+   stores), so the two constraints can't both be met from this source shape;
+   the permuter's floor is this one instruction. */
 // @retail 0x12bad0
-void function_12bad0(void)
+bool function_12bad0(void)
 {
+	bool result = false;
 	s_510c50_view *state = (s_510c50_view *)g_510c50;
 	bool revert = state->revert_requested;
-
-	if (revert && state->revert_checked)
-	{
-		revert = !function_163b60();
-	}
-	main_globals.unknown72 = false;
 	if (revert)
 	{
-		main_globals.unknown75 = false;
-		main_globals.unknown6f = true;
-		main_globals.unknown74 = true;
+		if (state->revert_checked)
+			revert = !function_163b60();
+		main_globals.unknown72 = false;
+		if (revert)
+		{
+			main_globals.unknown75 = false;
+			result = true;
+			main_globals.unknown6f = true;
+			main_globals.unknown74 = true;
+		}
 	}
+	else
+	{
+		main_globals.unknown72 = false;
+	}
+	return result;
 }
 
 // @retail 0x12bf00
@@ -169,8 +186,8 @@ void function_12b850(short field_0_3)
 		}
 		else
 		{
-			main_globals.field_0_3 = field_0_3;
 			main_globals.switch_structure_bsp = true;
+			main_globals.field_0_3 = field_0_3;
 			if (g_4e6948->state == 1)
 			{
 				function_24cdaf();

@@ -31,13 +31,13 @@ struct s_effect_owner;
 struct s_object_ai_data;
 struct s_28dab2;
 void function_b7930(void *arg_0, long arg_1, long arg_2, s_effect_owner const *arg_3);
-long function_b7b40(void *arg_0);
+long __stdcall function_b7b40(void *arg_0);
 void __stdcall function_b8540(long arg_0);
 void function_141ce0(real arg_0, real arg_1, real arg_2, transform4x3f *arg_3);
 long function_1e06b0(long arg_0);
-void function_28da50(s_object_ai_data *arg_0);
+void swarm_creature_initialize(s_object_ai_data *arg_0);
 bool function_28e320(long arg_0, long arg_1);
-void function_28f890(long arg_0, s_object_ai_data *arg_1);
+void swarm_creature_reset_position(long arg_0, s_object_ai_data *arg_1);
 
 __forceinline real function_28dbd1()
 {
@@ -47,13 +47,13 @@ __forceinline real function_28dbd1()
 
 __forceinline void function_28dbd2(real arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
-	real local_0 = (real)sin(arg_0);
 	real local_1 = (real)cos(arg_0);
 	real local_2 = dot3f(arg_1, arg_2) * (1.0f - local_1);
 	vector3f local_3;
 	local_3.i = arg_1->k * arg_2->j - arg_2->k * arg_1->j;
 	local_3.j = arg_2->k * arg_1->i - arg_1->k * arg_2->i;
 	local_3.k = arg_2->i * arg_1->j - arg_1->i * arg_2->j;
+	real local_0 = (real)sin(arg_0);
 	arg_2->i = arg_2->i * local_1 + arg_1->i * local_2 - local_3.i * local_0;
 	arg_2->j = arg_2->j * local_1 + arg_1->j * local_2 - local_3.j * local_0;
 	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_3.k * local_0;
@@ -67,7 +67,7 @@ __forceinline void function_28dbd4(s_type_c3b527 const *arg_0, point3f *arg_1)
 
 __forceinline s_object_ai_data *function_28dbd5(s_handler_object_view *arg_0)
 {
-	long volatile const *local_0 = (long volatile const *)((byte *)arg_0 + 0x134);
+	long const *local_0 = (long const *)((byte *)arg_0 + 0x134);
 	s_object_ai_data *local_1;
 	if (!*local_0)
 		local_1 = (s_object_ai_data *)((byte *)arg_0 + arg_0->ai_offset);
@@ -130,9 +130,10 @@ long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, 
 			local_0.field_28 = local_2;
 		}
 	}
-	*(long *)((byte *)&local_0 + 0xc) = local_4->field_30;
 	if (!local_4->field_30)
 		*(long *)((byte *)&local_0 + 0xc) = function_1e06b0(arg_1);
+	else
+		*(long *)((byte *)&local_0 + 0xc) = local_4->field_30;
 	local_0.field_b4 = 0;
 	local_0.field_b6 = 0xb0;
 	local_1 = function_b7b40(&local_0);
@@ -142,10 +143,10 @@ long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, 
 		s_object_ai_data *local_3 = function_28dbd5(local_2);
 		if (local_3)
 		{
-			function_28da50(local_3);
+			swarm_creature_initialize(local_3);
 			if (function_28e320(arg_0, local_1))
 			{
-				function_28f890(local_1, local_3);
+				swarm_creature_reset_position(local_1, local_3);
 				goto local_6;
 			}
 		}

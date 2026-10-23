@@ -563,26 +563,26 @@ s_postgame_team g_55dc30[16];
 
 bool function_15dea0();
 bool function_15eaf0();
-void function_1990b0(long *device_count, long *devices, long *entry_count, long *entries);
-long function_196a90();
+void function_1990b0(long *devices, long *device_count, long *entry_count, long *entries);
+long game_results_get_game_type();
 void function_19eae0(long team, word *buffer);
 void unicode_string_copy(word *destination, word const *source, long maximum_count);
-long function_196bb0(long index);
+long game_results_get_team_score(long index);
 void function_159130(long value, word *text);
-long function_196c60(long index);
+long game_results_get_team_standing(long index);
 void function_159050(long index, word *buffer);
-long function_196a50(long a, long b, long c);
-long function_196a10(long a, long b);
-void *function_196ca0(long index);
-long function_196b70(long index);
-long function_1969a0(long a, long b, long c);
-long function_196bf0(long index);
+long game_results_get_player_versus_statistic(long a, long b, long c);
+long game_results_get_player_medal_count(long a, long b);
+void *game_results_get_player_name(long index);
+long game_results_get_player_score(long index);
+long function_1969a0(long a, long c, long b);
+long game_results_get_player_standing(long index);
 long function_196d20(long index);
 bool function_19a0c5();
 long function_196da0(long index);
 void function_196d50(long index, s_input_vector *out);
-void *function_196ce0(long index);
-long function_1969d0(long a, long b, long c);
+void *game_results_get_player_identifier(long index);
+long game_results_get_player_category_statistic(long a, long b, long c);
 
 // @retail 0x232d77
 void function_232d77()
@@ -594,22 +594,24 @@ void function_232d77()
 		memset(g_55dc30, 0, sizeof(g_55dc30));
 		long player_count, team_count;
 		long players[16], team_indices[16];
-		function_1990b0(&player_count, players, &team_count, team_indices);
+		function_1990b0(players, &player_count, &team_count, team_indices);
 		g_51ec08 = player_count;
 		g_51ec0c = team_count;
-		g_50224c = function_196a90();
+		g_50224c = game_results_get_game_type();
 		word name[0x100], score[0x100], place[0x100];
 		if (teams)
 		{
 			for (long i = 0; i < team_count; i++)
 			{
 				long team = team_indices[i];
-				name[0] = score[0] = place[0] = 0;
+				name[0] = 0;
+				score[0] = 0;
+				place[0] = 0;
 				function_19eae0(team, name);
 				unicode_string_copy(g_55dc30[i].name, name, 0x20);
-				function_159130(function_196bb0(team), score);
+				function_159130(game_results_get_team_score(team), score);
 				unicode_string_copy(g_55dc30[i].score, score, 0x10);
-				g_55dc30[i].unknown60 = (short)function_196c60(team);
+				g_55dc30[i].unknown60 = (short)game_results_get_team_standing(team);
 				g_55dc30[i].color_index = (short)team;
 				function_159050(g_55dc30[i].unknown60, place);
 				unicode_string_copy(g_55dc30[i].place, place, 0x10);
@@ -618,92 +620,102 @@ void function_232d77()
 		for (long row = 0; row < g_51ec08; row++)
 		{
 			long player = players[row];
-			s_postgame_player *entry = &g_55caf0[row];
-			place[0] = score[0] = 0;
+			place[0] = 0;
+			score[0] = 0;
 			for (long column = 0; column < g_51ec08; column++)
-				entry->values[column] = function_196a50(player, players[column], 0);
-			entry->medal_count = 0;
-			entry->medals = 0;
+				g_55caf0[row].values[column] = game_results_get_player_versus_statistic(player, players[column], 0);
+			g_55caf0[row].medal_count = 0;
+			g_55caf0[row].medals = 0;
 			bool group13 = false, group0 = false;
 			for (long medal = 31; medal >= 0; medal--)
 			{
-				long count = function_196a10(player, medal);
+				long count = game_results_get_player_medal_count(player, medal);
 				if (count > 0)
 				{
-					bool show = true;
 					if (medal <= 17 && medal >= 13)
 					{
-						show = !group13;
-						group13 = true;
+						if (!group13)
+						{
+							group13 = true;
+							g_55caf0[row].medals |= 1 << medal;
+						}
 					}
 					else if (medal <= 5 && medal >= 0)
 					{
-						show = !group0;
-						group0 = true;
+						if (!group0)
+						{
+							group0 = true;
+							g_55caf0[row].medals |= 1 << medal;
+						}
 					}
-					if (show)
-						entry->medals |= 1 << medal;
-					entry->medal_count += count;
+					else
+						g_55caf0[row].medals |= 1 << medal;
+					g_55caf0[row].medal_count += count;
 				}
 			}
-			unicode_string_copy(entry->name, (word *)function_196ca0(player), 0x20);
-			function_159130(function_196b70(player), place);
-			unicode_string_copy(entry->team_name, place, 0x10);
-			entry->value60 = function_1969a0(player, 7, NONE);
-			entry->value64 = function_1969a0(player, 9, NONE);
-			entry->value68 = function_1969a0(player, 8, NONE);
-			entry->value6c = function_1969a0(player, 11, NONE);
-			entry->value70 = (short)function_196bf0(player);
-			entry->value72 = teams ? (short)function_196d20(player) : NONE;
-			entry->value74 = function_196d20(player) == NONE;
-			entry->value78 = function_19a0c5() ? function_196da0(player) : NONE;
-			function_196d50(player, (s_input_vector *)entry->valued0);
-			function_159050(entry->value70, score);
-			unicode_string_copy(entry->texte0, score, 0x10);
-			entry->id = *(s_id_triplet *)function_196ce0(player);
+			unicode_string_copy(g_55caf0[row].name, (word *)game_results_get_player_name(player), 0x20);
+			function_159130(game_results_get_player_score(player), place);
+			unicode_string_copy(g_55caf0[row].team_name, place, 0x10);
+			g_55caf0[row].value60 = function_1969a0(player, NONE, 7);
+			g_55caf0[row].value64 = function_1969a0(player, NONE, 9);
+			g_55caf0[row].value68 = function_1969a0(player, NONE, 8);
+			g_55caf0[row].value6c = function_1969a0(player, NONE, 11);
+			g_55caf0[row].value70 = (short)game_results_get_player_standing(player);
+			g_55caf0[row].value72 = (short)(teams ? function_196d20(player) : NONE);
+			g_55caf0[row].value74 = function_196d20(player) == NONE;
+			g_55caf0[row].value78 = function_19a0c5() ? function_196da0(player) : NONE;
+			function_196d50(player, (s_input_vector *)g_55caf0[row].valued0);
+			function_159050(g_55caf0[row].value70, score);
+			unicode_string_copy(g_55caf0[row].texte0, score, 0x10);
+			g_55caf0[row].id = *(s_id_triplet *)game_results_get_player_identifier(player);
 			if (g_50224c == 2)
 			{
-				long deaths = function_1969a0(player, 9, NONE) + 1;
-				deaths = deaths > 1 ? deaths : 1;
-				entry->value10c = function_1969a0(player, 13, NONE) / deaths;
-				entry->value110 = function_1969a0(player, 12, NONE);
+				long deaths = function_1969a0(player, NONE, 9) + 1;
+				long divisor = deaths > 1 ? deaths : 1;
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 13) / divisor;
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 12);
 			}
 			else if (g_50224c == 1)
 			{
-				entry->value10c = function_1969a0(player, 16, NONE);
-				entry->value110 = function_1969a0(player, 15, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 16);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 15);
 			}
 			else if (g_50224c == 3)
 			{
-				entry->value10c = function_1969a0(player, 26, NONE);
-				entry->value110 = function_1969a0(player, 25, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 26);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 25);
 			}
 			else if (g_50224c == 4)
 			{
-				entry->value10c = function_1969a0(player, 28, NONE);
-				entry->value110 = function_1969a0(player, 27, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 28);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 27);
 			}
 			else if (g_50224c == 7)
 			{
-				entry->value10c = function_1969a0(player, 38, NONE);
-				entry->value110 = function_1969a0(player, 39, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 38);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 39);
 			}
 			else if (g_50224c == 8)
 			{
-				entry->value10c = function_1969a0(player, 43, NONE);
-				entry->value110 = function_1969a0(player, 44, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 43);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 44);
 			}
 			else if (g_50224c == 9)
 			{
-				entry->value10c = function_1969a0(player, 21, NONE);
-				entry->value110 = function_1969a0(player, 20, NONE);
+				g_55caf0[row].value10c = function_1969a0(player, NONE, 21);
+				g_55caf0[row].value110 = function_1969a0(player, NONE, 20);
 			}
-			entry->count = entry->value = entry->value2 = 0;
+			g_55caf0[row].count = 0;
+			g_55caf0[row].value = 0;
+			g_55caf0[row].value2 = 0;
+			long *total_count = &g_55caf0[row].count;
+			long *total_value = &g_55caf0[row].value;
+			long *total_value2 = &g_55caf0[row].value2;
 			for (long statistic = 5; statistic < 39; statistic++)
 			{
-				entry->count += function_1969d0(player, 4, statistic);
-				entry->value += function_1969d0(player, 5, statistic);
-				entry->value2 += function_1969d0(player, 6, statistic);
+				*total_count += game_results_get_player_category_statistic(player, 4, statistic);
+				*total_value += game_results_get_player_category_statistic(player, 5, statistic);
+				*total_value2 += game_results_get_player_category_statistic(player, 6, statistic);
 			}
 		}
 	}
@@ -959,8 +971,17 @@ void c_postgame_statistics_list_459750::fill_row(c_class_1a2c81 *item, long row)
 	}
 }
 
+/* a string buffer the screen's strings load into */
+struct s_string_buffer
+{
+	word text[0x100];
+	void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+};
+
 /* the player's name, team and the game engine's two scores */
 // @retail 0x2342e9
+// score 65 (was 50): the arguments are pushed in the opposite order and the two virtual calls are
+// made in the other order.
 void c_postgame_statistics_list_459680::fill_row(c_class_1a2c81 *item, long row)
 {
 	c_class_1a2c81 *header = item->find_child(10, 0, false);
@@ -985,25 +1006,25 @@ void c_postgame_statistics_list_459680::fill_row(c_class_1a2c81 *item, long row)
 	}
 	if (score1_text && score2_text)
 	{
-		word format[0x100];
+		s_string_buffer format;
 		word score1[0x100];
 		word score2[0x100];
 		long value1 = 0;
 		long value2 = 0;
 
-		format[0] = 0;
+		format.text[0] = 0;
 		score1[0] = 0;
 		score2[0] = 0;
 		if (g_50224c == 2)
 		{
 			value1 = g_55caf0[row].value10c;
 			value2 = g_55caf0[row].value110;
-			((c_widget *)get_screen())->function_230134(0xb000736, format);
-			function_1630e0(score1, format, value1 / 60, value1 % 60);
+			format.load((c_widget *)get_screen(), 0xb000736);
+			function_1630e0(score1, format.text, value1 / 60, value1 % 60);
 		}
 		else
 		{
-			if (g_50224c == 1 || g_50224c == 3 || g_50224c == 4 || g_50224c == 7 || g_50224c == 8 || g_50224c == 9)
+			if (g_50224c == 1 || g_50224c == 3 || g_50224c == 4 || (g_50224c >= 7 && g_50224c <= 9))
 			{
 				value1 = g_55caf0[row].value10c;
 				value2 = g_55caf0[row].value110;
@@ -1128,11 +1149,11 @@ void c_postgame_statistics_list_459500::fill_row(c_class_1a2c81 *item, long row)
 	{
 		if (g_55caf0[row].medals)
 		{
-			word medal_name[0x100];
+			s_string_buffer medal_name;
 			long shown;
 			long i;
 
-			medal_name[0] = 0;
+			medal_name.text[0] = 0;
 			text[0] = 0;
 			shown = 0;
 			long string_ids[0x18] =
@@ -1148,11 +1169,11 @@ void c_postgame_statistics_list_459500::fill_row(c_class_1a2c81 *item, long row)
 				{
 					if (shown)
 					{
-						unicode_string_append(text, (const word *)L", ", 0x100);
+						unicode_string_append(text, (const word *)L" ", 0x100);
 						text[0xff] = 0;
 					}
-					((c_widget *)get_screen())->function_230134(string_ids[i], medal_name);
-					unicode_string_append(text, medal_name, 0x100);
+					medal_name.load((c_widget *)get_screen(), string_ids[i]);
+					unicode_string_append(text, medal_name.text, 0x100);
 					shown++;
 					text[0xff] = 0;
 				}
@@ -1172,10 +1193,10 @@ void c_postgame_statistics_list_459500::fill_row(c_class_1a2c81 *item, long row)
 // @retail 0x234a97
 void c_postgame_statistics_list_4594a0::fill_row(c_class_1a2c81 *item, long row)
 {
-	word text[256];
+	s_string_buffer text;
 	word percent_text[256];
 
-	text[0] = 0;
+	text.text[0] = 0;
 	c_class_1a2c81 *header = item->find_child(10, 0, false);
 	c_class_1a2c81 *name = header->find_child(6, 0, false);
 	c_class_1a2c81 *score = header->find_child(6, 1, false);
@@ -1189,13 +1210,13 @@ void c_postgame_statistics_list_4594a0::fill_row(c_class_1a2c81 *item, long row)
 	}
 	if (score)
 	{
-		function_1630e0(text, (const word *)L"%d", g_55caf0[row].value);
-		score->function_22f52e()->set_text(text);
+		function_1630e0(text.text, (const word *)L"%d", g_55caf0[row].value);
+		score->function_22f52e()->set_text(text.text);
 	}
 	if (total)
 	{
-		function_1630e0(text, (const word *)L"%d", g_55caf0[row].count);
-		total->function_22f52e()->set_text(text);
+		function_1630e0(text.text, (const word *)L"%d", g_55caf0[row].count);
+		total->function_22f52e()->set_text(text.text);
 	}
 	if (percent)
 	{
@@ -1207,14 +1228,14 @@ void c_postgame_statistics_list_4594a0::fill_row(c_class_1a2c81 *item, long row)
 		{
 			percentage = (long)((real)g_55caf0[row].value * 100.0f / (real)g_55caf0[row].count);
 		}
-		((c_widget *)get_screen())->function_230134(0x11000759, text);
-		function_1630e0(percent_text, text, percentage);
+		text.load((c_widget *)get_screen(), 0x11000759);
+		function_1630e0(percent_text, text.text, percentage);
 		percent->function_22f52e()->set_text(percent_text);
 	}
 	if (extra)
 	{
-		function_1630e0(text, (const word *)L"%d", g_55caf0[row].value2);
-		extra->function_22f52e()->set_text(text);
+		function_1630e0(text.text, (const word *)L"%d", g_55caf0[row].value2);
+		extra->function_22f52e()->set_text(text.text);
 	}
 }
 

@@ -529,10 +529,8 @@ void function_21f960(dword size, dword const *buffer)
 					{
 						local_2.field_8 = EFFECT_DATA(i)->size;
 						local_2.field_c = EFFECT_DATA(i)->offset;
-						LPDSEFFECTIMAGEDESC description = g_510c90->description;
-
-						if ((dword)(local_2.field_c + local_2.field_8) <= description->aEffectMaps[effect_index].dwStateSize * 4 &&
-							memcmp(EFFECT_DATA(i)->data, (byte *)description->aEffectMaps[effect_index].lpvStateSegment + local_2.field_c, local_2.field_8) != 0)
+						if ((dword)(EFFECT_DATA(i)->offset + EFFECT_DATA(i)->size) <= g_510c90->description->aEffectMaps[effect_index].dwStateSize * 4 &&
+							memcmp(EFFECT_DATA(i)->data, (byte *)g_510c90->description->aEffectMaps[effect_index].lpvStateSegment + local_2.field_c, local_2.field_8) != 0)
 						{
 							IDirectSound_SetEffectData(SOUND_DRIVER_GLOBALS->direct_sound, effect_index, local_2.field_c,
 								EFFECT_DATA(i)->data, local_2.field_8, DSFX_IMMEDIATE);
@@ -721,25 +719,38 @@ PRIVATE inline real reverb_decibels_add(long first, long second)
 	return (real)((double)*(real *)&first + *(real *)&second);
 }
 
+PRIVATE __forceinline real function_21ece1(real arg_0, real arg_1)
+{
+	real volatile local_0 = arg_1;
+	return (real)((double)arg_0 + local_0);
+}
+
+// score 25 (was 25): retail loads the x87 accumulator before the value it
+// adds to it, ours loads that value first, so the fadd order differs.
 // @retail 0x21ece0
 void function_21ece0(long effect_index, s_sound_driver_reverb const *reverb)
 {
 	DSFX_HIGH_LEVEL_EFFECT_DESCRIPTION description;
-	long gain = function_2197f0(g_468834);
-
 	description.effectType = DSFX_EFFECT_TYPE_I3DL2REVERB;
+	long gain_bits = function_2197f0(g_468834);
+	real gain;
+	memcpy(&gain, &gain_bits, sizeof(gain));
+	real room_value = function_21ece1(gain, reverb->room);
 	description.I3DL2Reverb.lRoom = (long)(function_12aff0(-64.0f, 0.0f,
-		reverb_decibels_add(*(long const *)&reverb->room, gain), true) * 6400.0f - 6400.0f);
+		room_value, true) * 6400.0f - 6400.0f);
+	real room_hf_value = function_21ece1(gain, reverb->room_hf);
 	description.I3DL2Reverb.lRoomHF = (long)(function_12aff0(-64.0f, 0.0f,
-		reverb_decibels_add(*(long const *)&reverb->room_hf, gain), true) * 6400.0f - 6400.0f);
+		room_hf_value, true) * 6400.0f - 6400.0f);
 	description.I3DL2Reverb.flRoomRolloffFactor = reverb->room_rolloff;
 	description.I3DL2Reverb.flDecayTime = reverb->decay_time;
 	description.I3DL2Reverb.flDecayHFRatio = reverb->decay_hf_ratio;
+	real reflections_value = function_21ece1(gain, reverb->reflections);
 	description.I3DL2Reverb.lReflections = (long)(function_12aff0(-64.0f, 10.0f,
-		reverb_decibels_add(*(long const *)&reverb->reflections, gain), true) * 7400.0f - 6400.0f);
+		reflections_value, true) * 7400.0f - 6400.0f);
 	description.I3DL2Reverb.flReflectionsDelay = reverb->reflections_delay;
+	real reverb_value = function_21ece1(gain, reverb->reverb);
 	description.I3DL2Reverb.lReverb = (long)(function_12aff0(-64.0f, 20.0f,
-		reverb_decibels_add(*(long const *)&reverb->reverb, gain), true) * 8400.0f - 6400.0f);
+		reverb_value, true) * 8400.0f - 6400.0f);
 	description.I3DL2Reverb.flReverbDelay = reverb->reverb_delay;
 	description.I3DL2Reverb.flDiffusion = reverb->diffusion * 100.0f;
 	description.I3DL2Reverb.flDensity = reverb->density * 100.0f;
@@ -776,18 +787,49 @@ static inline long sound_submix_volume(real gain)
 	return volume;
 }
 
+PRIVATE __forceinline real function_21ee81(s_sound_driver_occlusion const *arg_0, real const *arg_1, long arg_2)
+{
+    real upper = arg_1[arg_2 + 1];
+    real maximum = arg_0->maximum;
+    real lower = arg_1[arg_2];
+    real minimum = arg_0->minimum;
+    real local_0 = maximum > upper ? upper : maximum;
+    real local_1 = minimum > lower ? minimum : lower;
+    real local_2 = local_0 - local_1;
+    return local_2 > 0.0f ? local_2 : 0.0f;
+}
+
+PRIVATE __forceinline long function_21ee82(real arg_0)
+{
+    long local_0;
+    real local_1;
+    if (0.0f > arg_0)
+        local_1 = 0.0f;
+    else if (arg_0 > 1.0f)
+        local_1 = 1.0f;
+    else
+        local_1 = arg_0;
+    if (local_1 == 0.0f)
+        local_0 = -6400;
+    else
+    {
+        local_0 = (long)(log10(local_1) * 2000.0f);
+        if (local_0 < -6400)
+            local_0 = -6400;
+        else if (local_0 > 0)
+            local_0 = 0;
+    }
+    return local_0;
+}
+
+// score 25 (was 25): retail loads the x87 accumulator before the value it
+// adds to it, ours loads that value first, so the fadd order differs.
 // @retail 0x21ee80
 void function_21ee80(void)
 {
-	union
-	{
-		s_sound_effect_parameters parameters;
-		real angles[4][6];
-	} local;
 	if (g_47005c.dirty)
 	{
-		local.parameters = g_47005c;
-		SOUND_DRIVER_GLOBALS->effects->set_i3dl2(&local.parameters.room, SOUND_DRIVER_GLOBALS->surround);
+		SOUND_DRIVER_GLOBALS->effects->set_i3dl2(&g_47005c.room, SOUND_DRIVER_GLOBALS->surround);
 		g_47005c.dirty = false;
 	}
 	for (long group = 0; group < k_sound_driver_reverb_count; group++)
@@ -799,63 +841,45 @@ void function_21ee80(void)
 		}
 		if (SOUND_DRIVER_GLOBALS->occlusion_dirty[group])
 		{
-			local.angles[0][0] = -0.785398185f;
-			local.angles[0][1] = 2.3561945f;
-			local.angles[0][2] = 5.49778748f;
-			local.angles[0][3] = 6.28318548f;
-			local.angles[0][4] = -6.28318548f;
-			local.angles[0][5] = -3.92699099f;
-			local.angles[1][0] = 0.785398185f;
-			local.angles[1][1] = 3.92699099f;
-			local.angles[1][2] = -5.49778748f;
-			local.angles[1][3] = -2.3561945f;
-			local.angles[1][4] = 0.0f;
-			local.angles[1][5] = 0.0f;
-			local.angles[2][0] = -2.3561945f;
-			local.angles[2][1] = 0.785398185f;
-			local.angles[2][2] = 3.92699099f;
-			local.angles[2][3] = 6.28318548f;
-			local.angles[2][4] = -6.28318548f;
-			local.angles[2][5] = -5.49778748f;
-			local.angles[3][0] = 2.3561945f;
-			local.angles[3][1] = 5.49778748f;
-			local.angles[3][2] = -3.92699099f;
-			local.angles[3][3] = -0.785398185f;
-			local.angles[3][4] = 0.0f;
-			local.angles[3][5] = 0.0f;
-			real const *ranges[4] = { local.angles[0], local.angles[2], local.angles[1], local.angles[3] };
+			real sectors0[6] = { -0.785398185f, 2.3561945f, 5.49778748f, 6.28318548f, -6.28318548f, -3.92699099f };
+			real sectors1[6] = { -2.3561945f, 0.785398185f, 3.92699099f, 6.28318548f, -6.28318548f, -5.49778748f };
+			real sectors2[6] = { 0.785398185f, 3.92699099f, -5.49778748f, -2.3561945f, 0.0f, 0.0f };
+			real sectors3[6] = { 2.3561945f, 5.49778748f, -3.92699099f, -0.785398185f, 0.0f, 0.0f };
+			real const *volatile ranges[4] = { sectors0, sectors1, sectors2, sectors3 };
 			real scale = SOUND_DRIVER_GLOBALS->reverb_scales[group];
 			s_sound_driver_occlusion const *occlusion = &SOUND_DRIVER_GLOBALS->occlusions[group];
 			for (long channel = 0; channel < 4; channel++)
 			{
-				real overlap0 = sound_occlusion_overlap(occlusion, ranges[channel]);
-				real overlap1 = sound_occlusion_overlap(occlusion, ranges[channel] + 2);
-				real overlap2 = sound_occlusion_overlap(occlusion, ranges[channel] + 4);
+				real overlap0 = function_21ee81(occlusion, ranges[channel], 0);
+				real overlap1 = function_21ee81(occlusion, ranges[channel], 2);
+				real overlap2 = function_21ee81(occlusion, ranges[channel], 4);
 				real fraction = (overlap2 + overlap1 + overlap0) * 0.318309873f;
-				real gain = ((fraction - occlusion->offset) * occlusion->scale + occlusion->offset) * scale;
-				SOUND_DRIVER_GLOBALS->submix_buffers[group * 4 + channel]->SetVolume(sound_submix_volume(gain));
+				real offset = occlusion->offset;
+				real gain = ((fraction - offset) * occlusion->scale + offset) * scale;
+				SOUND_DRIVER_GLOBALS->submix_buffers[group * 4 + channel]->SetVolume(function_21ee82(gain));
 			}
 			SOUND_DRIVER_GLOBALS->occlusion_dirty[group] = false;
 		}
 	}
 	SOUND_DRIVER_GLOBALS->direct_sound->CommitDeferredSettings();
-	for (long channel = 0; channel < SOUND_DRIVER_GLOBALS->channel_count; channel++)
+	for (long channel = 0; channel < SOUND_DRIVER_GLOBALS->channel_count; )
 	{
 		s_sound_stream *stream = &SOUND_DRIVER_GLOBALS->channels[channel];
 		switch (stream->state)
 		{
-		case 0: break;
-		case 1: break;
-		case 2: break;
-		case 3: break;
+		case 0: sound_stream_update(stream); break;
+		case 1: sound_stream_update(stream); break;
+		case 2: sound_stream_update(stream); break;
+		case 3: sound_stream_update(stream); break;
+		default: sound_stream_update(stream); break;
 		}
-		sound_stream_update(stream);
 		switch (stream->state)
 		{
-		case 0: break;
-		case 1: break;
-		case 2: break;
-		case 3: break;
+		case 0: ++channel; break;
+		case 1: ++channel; break;
+		case 2: ++channel; break;
+		case 3: ++channel; break;
+		default: ++channel; break;
 		}
 	}
 	function_191550();
@@ -930,34 +954,34 @@ void function_220790(s_sound_listener const *listener)
 	{
 		s_sound_listener_environment const *environment = &listener->environments[i];
 
-		if (memcmp(environment->reverb, &globals->reverbs[i], sizeof(s_sound_driver_reverb)) != 0 || !globals->unknown0000)
+		if (memcmp(environment->reverb, &SOUND_DRIVER_GLOBALS->reverbs[i], sizeof(s_sound_driver_reverb)) != 0 || !SOUND_DRIVER_GLOBALS->unknown0000)
 		{
-			globals->reverbs[i] = *environment->reverb;
-			globals->reverb_dirty[i] = true;
+			SOUND_DRIVER_GLOBALS->reverbs[i] = *environment->reverb;
+			SOUND_DRIVER_GLOBALS->reverb_dirty[i] = true;
 		}
-		if (memcmp(&globals->occlusions[i], &environment->occlusion, sizeof(s_sound_driver_occlusion)) != 0 || !globals->unknown0000)
+		if (memcmp(&SOUND_DRIVER_GLOBALS->occlusions[i], &environment->occlusion, sizeof(s_sound_driver_occlusion)) != 0 || !SOUND_DRIVER_GLOBALS->unknown0000)
 		{
-			globals->occlusions[i] = environment->occlusion;
-			globals->occlusion_dirty[i] = true;
+			SOUND_DRIVER_GLOBALS->occlusions[i] = environment->occlusion;
+			SOUND_DRIVER_GLOBALS->occlusion_dirty[i] = true;
 		}
-		if (!sound_real_equal(globals->reverb_scales[i], environment->scale, 0.0001f) || !globals->unknown0000)
+		if (!sound_real_equal(SOUND_DRIVER_GLOBALS->reverb_scales[i], environment->scale, 0.0001f) || !SOUND_DRIVER_GLOBALS->unknown0000)
 		{
-			globals->reverb_scales[i] = environment->scale;
-			globals->occlusion_dirty[i] = true;
+			SOUND_DRIVER_GLOBALS->reverb_scales[i] = environment->scale;
+			SOUND_DRIVER_GLOBALS->occlusion_dirty[i] = true;
 		}
 	}
 
 	for (i = environment_count; i < k_sound_driver_reverb_count; i++)
 	{
-		if (memcmp(&g_44a2a0, &globals->reverbs[i], sizeof(s_sound_driver_reverb)) != 0 || !globals->unknown0000)
+		if (memcmp(&g_44a2a0, &SOUND_DRIVER_GLOBALS->reverbs[i], sizeof(s_sound_driver_reverb)) != 0 || !SOUND_DRIVER_GLOBALS->unknown0000)
 		{
-			globals->reverbs[i] = g_44a2a0;
-			globals->reverb_dirty[i] = true;
+			SOUND_DRIVER_GLOBALS->reverbs[i] = g_44a2a0;
+			SOUND_DRIVER_GLOBALS->reverb_dirty[i] = true;
 		}
-		if (!(fabs(globals->reverb_scales[i]) < 0.0001f) || !globals->unknown0000)
+		if (!(fabs(SOUND_DRIVER_GLOBALS->reverb_scales[i]) < 0.0001f) || !SOUND_DRIVER_GLOBALS->unknown0000)
 		{
-			globals->reverb_scales[i] = 0.0f;
-			globals->occlusion_dirty[i] = true;
+			SOUND_DRIVER_GLOBALS->reverb_scales[i] = 0.0f;
+			SOUND_DRIVER_GLOBALS->occlusion_dirty[i] = true;
 		}
 	}
 }
@@ -1002,7 +1026,7 @@ void function_21ec00(void)
 
 	DirectSoundDoWork();
 
-	for (long i = 0; i < SOUND_DRIVER_GLOBALS->channel_count; i++)
+	for (long i = 0; i < SOUND_DRIVER_GLOBALS->channel_count; )
 	{
 		s_sound_stream *stream = sound_driver_channel_get(i);
 
@@ -1018,21 +1042,26 @@ void function_21ec00(void)
 			}
 		}
 
-		/* retail keeps a jump table here whose four cases are all empty;
-		   no source shape for it found yet */
 		switch (((s_sound_stream const volatile *)stream)->state)
 		{
 		case 0:
 			stream = function_21ec01(stream);
+			i++;
 			break;
 		case 1:
 			stream = function_21ec02(stream);
+			i++;
 			break;
 		case 2:
 			stream = function_21ec03(stream);
+			i++;
 			break;
 		case 3:
 			stream = function_21ec04(stream);
+			i++;
+			break;
+		default:
+			i++;
 			break;
 		}
 	}

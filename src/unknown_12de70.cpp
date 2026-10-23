@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "allocator_storage.h"
 /* UNKNOWN_12DE70.CPP: geometry blocks streamed from the cache file: a request
    queues a read job for the block, and the block is linked (its fixups
    applied) once the read is done. Decompiled by lane F for the sound
@@ -37,7 +38,7 @@ bool g_468c4c;
 
 long function_213760(dword location, long size, void *buffer, dword *bytes_read, bool *done, long type, long priority);
 bool function_120ce0(long job, long priority);
-void function_125d60(void);
+void function_120d50(bool volatile *done, bool idle);
 long function_120bf0(void);
 void function_12e0c0(void);
 
@@ -55,29 +56,32 @@ static inline s_physical_block *physical_block_get(long index)
 bool function_12e3a0(bool wait, s_geometry_block_info *block, bool urgent, long priority)
 {
 	bool immediate = wait || urgent;
-	long physical_index = function_13d370(g_4e649c, block->block_size, immediate ? 1 : 5);
+	long local_6 = block->block_size;
+	long local_7 = immediate ? 1 : 5;
+	long physical_index = function_13d370(g_4e649c, local_6, local_7);
 
-	if (physical_index == NONE)
+	if (physical_index != NONE)
 	{
-		return false;
+		dword address = (physical_block_get(physical_index)->offset << physical_object_get()->page_shift) + g_4e6494;
+		long cache_index = datum_new_at_index_with_salt(g_4e648c, physical_index);
+		s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[cache_index & 0xffff];
+		long size;
+	
+		cache_block->block = block;
+		block->cache_block_index = physical_index;
+		cache_block->block->runtime_linked = false;
+		size = block->block_size;
+		if (size & 0x1ff)
+		{
+			size = (size | 0x1ff) + 1;
+		}
+		long local_2 = block->block_offset;
+		volatile long local_0 = *(long *)((byte *)block + 0x18);
+		cache_block->job = function_213760(local_2, size, (void *)address, NULL, &cache_block->done, 4, priority);
+		cache_block->priority = (byte)priority;
+		return true;
 	}
-
-	dword address = (physical_block_get(physical_index)->offset << physical_object_get()->page_shift) + g_4e6494;
-	long cache_index = datum_new_at_index_with_salt(g_4e648c, physical_index);
-	s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[cache_index & 0xffff];
-	long size;
-
-	cache_block->block = block;
-	block->cache_block_index = physical_index;
-	cache_block->block->runtime_linked = false;
-	size = block->block_size;
-	if (size & 0x1ff)
-	{
-		size = (size | 0x1ff) + 1;
-	}
-	cache_block->job = function_213760(block->block_offset, size, (void *)address, NULL, &cache_block->done, 4, priority);
-	cache_block->priority = (byte)priority;
-	return true;
+	return false;
 }
 
 // @retail 0x12de70
@@ -88,108 +92,99 @@ bool function_12de70(s_geometry_block_info *block, dword flags)
 	if (block->runtime_linked)
 	{
 		physical_block_get(block->cache_block_index)->time = physical_object_get()->time;
-		return true;
+		result = true;
 	}
-
-	if (block->section_data_size <= 0 || block->resource_data_size < 0)
+	else if (block->section_data_size > 0 && block->resource_data_size >= 0)
 	{
-		return result;
-	}
+		bool wait = flags & 1;
+		bool optional = (flags >> 2) & 1;
+		bool load = (flags >> 1) & 1;
+		bool background = (flags >> 3) & 1;
+		bool urgent = false;
+		bool structure = false;
+		dword group_tag = *(dword *)&g_4e3b44[block->owner_tag_index];
+		long priority;
 
-	bool wait = flags & 1;
-	bool load = (flags >> 1) & 1;
-	bool optional = (flags >> 2) & 1;
-	bool background = (flags >> 3) & 1;
-	bool urgent = false;
-	bool structure = false;
-	dword group_tag = *(dword *)&g_4e3b44[block->owner_tag_index];
-	long priority;
-
-	if (group_tag == 'ltmp' || group_tag == 'sbsp')
-	{
-		structure = true;
-	}
-	if (g_468c4c)
-	{
-		wait = false;
-	}
-
-	if (g_4e64a0 > 0 && load && !optional && !wait)
-	{
-		if (g_4e64a4 == 0 || g_4e64a4 == 1 && structure)
+		if (group_tag == 'ltmp' || group_tag == 'sbsp')
 		{
-			urgent = true;
+			structure = true;
 		}
-		if (g_4e64a0 == 1 && urgent)
+		if (g_468c4c)
 		{
-			wait = true;
+			wait = false;
 		}
-	}
 
-	if (urgent)
-	{
-		priority = 2;
-	}
-	else if (wait)
-	{
-		priority = 7;
-	}
-	else if (background)
-	{
-		priority = 5;
-	}
-	else
-	{
-		priority = !optional + 1;
-	}
-
-	if (block->cache_block_index == NONE && load)
-	{
-		function_12e3a0(wait, block, urgent, priority);
-	}
-
-	long physical_index = block->cache_block_index;
-	if (physical_index != NONE)
-	{
-		s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[physical_index & 0xffff];
-
-		physical_block_get(physical_index)->time = physical_object_get()->time;
-		if (!cache_block->done)
+		if (g_4e64a0 > 0 && load && !optional && !wait)
 		{
-			if (priority > cache_block->priority)
+			if (g_4e64a4 == 0 || g_4e64a4 == 1 && structure)
 			{
-				function_120ce0(cache_block->job, 7);
-				cache_block->priority = (byte)priority;
+				urgent = true;
 			}
-			if (wait && !cache_block->done)
+			if (g_4e64a0 == 1 && urgent)
 			{
-				while (!cache_block->done)
+				wait = true;
+			}
+		}
+
+		if (urgent)
+		{
+			priority = 2;
+		}
+		else if (wait)
+		{
+			priority = 7;
+		}
+		else if (background)
+		{
+			priority = 5;
+		}
+		else
+		{
+			priority = !optional + 1;
+		}
+
+		if (block->cache_block_index == NONE && load)
+		{
+			function_12e3a0(wait, block, urgent, priority);
+		}
+
+		long physical_index = block->cache_block_index;
+		if (physical_index != NONE)
+		{
+			s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[physical_index & 0xffff];
+
+			bool done = cache_block->done;
+			physical_block_get(physical_index)->time = physical_object_get()->time;
+			if (!done)
+			{
+				if (priority > cache_block->priority)
 				{
-					SwitchToThread();
-					function_125d60();
+					function_120ce0(cache_block->job, 7);
+					cache_block->priority = (byte)priority;
+				}
+				if (wait)
+					function_120d50(&cache_block->done, true);
+			}
+			if (cache_block->done)
+			{
+				result = true;
+				if (!block->runtime_linked)
+				{
+					fixup_group_apply((s_fixup_group *)block, (byte *)(physical_block_get(block->cache_block_index)->offset << physical_object_get()->page_shift) + g_4e6494);
+					block->runtime_linked = true;
 				}
 			}
 		}
-		if (cache_block->done)
+		else if (!optional && load)
 		{
-			if (!block->runtime_linked)
-			{
-				fixup_group_apply((s_fixup_group *)block, (byte *)(physical_block_get(block->cache_block_index)->offset << physical_object_get()->page_shift) + g_4e6494);
-				block->runtime_linked = true;
-			}
-			return true;
+			g_4e64b0 = true;
+		}
+		if (!result && structure)
+		{
+			g_4e64a8++;
 		}
 	}
-	else if (!optional && load)
-	{
-		g_4e64b0 = true;
-	}
-
-	if (structure)
-	{
-		g_4e64a8++;
-	}
-	return false;
+	return result;
 }
 
 /* blocks waiting to be requested (8 bytes each) */
@@ -201,7 +196,6 @@ struct s_pending_block
 };
 
 s_record_pool *g_4e6490;
-bool g_4e6098;
 dword g_55e728;
 
 // @retail 0x12dcb0
@@ -500,13 +494,15 @@ void function_12e150(long tag_index)
 	}
 }
 
+// score 37 (was 37): ours keeps the record pointer in esi, retail uses edi, and retail has two early exits that
+// return 1 where ours falls through to the common tail.
 // @retail 0x12e210
 bool __stdcall geometry_cache_block_busy(long block_index)
 {
 	s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[block_index & 0xffff];
 	s_physical_block *physical_block = physical_block_get(block_index);
-	long age = physical_object_get()->time - physical_block->time;
 	bool result = false;
+	long age = physical_object_get()->time - physical_block->time;
 
 	if (age == 0)
 	{
@@ -516,13 +512,17 @@ bool __stdcall geometry_cache_block_busy(long block_index)
 	{
 		return true;
 	}
-	if (age < 5 && cache_block->block->runtime_linked)
+	if (age >= 5)
+		return false;
+	if (cache_block->block->runtime_linked)
 	{
 		result = fixup_group_has_resource((s_fixup_group *)cache_block->block, (byte *)(physical_block->offset << physical_object_get()->page_shift) + g_4e6494);
 	}
 	return result;
 }
 
+// score 27 (was 27): ours loads the pointer into esi where retail uses edx or ecx, and the result fields are
+// read in a different order.
 // @retail 0x12e290
 void __stdcall function_12e290(long block_index)
 {
@@ -559,7 +559,7 @@ void __stdcall function_12e290(long block_index)
 	record_pool_release(g_4e648c, block_index);
 }
 
-bool function_138800();
+bool game_loop_running();
 bool function_138840();
 struct s_unknown_13bf00_flags_view
 {
@@ -578,7 +578,7 @@ void function_12e480(void)
 {
 	if (g_47ff3c && g_4e64b0)
 	{
-		if (g_4e64a0 <= 0 && (!g_510c50 || !((s_unknown_13bf00_flags_view *)g_510c50)->flag5) && function_138800() &&
+		if (g_4e64a0 <= 0 && (!g_510c50 || !((s_unknown_13bf00_flags_view *)g_510c50)->flag5) && game_loop_running() &&
 			g_4e6948->state == 1 && !function_138840())
 		{
 			dword time = GetTickCount();
@@ -622,7 +622,7 @@ void geometry_cache_update(void)
 		{
 			physical->time++;
 		}
-		for (long i = 0; i < 8; i++)
+		for (short i = 0; i < 8; i++)
 		{
 			physical->limits[i] = 0x7fffffff;
 		}

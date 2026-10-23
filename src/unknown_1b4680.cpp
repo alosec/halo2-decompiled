@@ -9,7 +9,8 @@
 struct s_slot_1b
 {
 	s_slot_header header;
-	byte unknown0c[4];
+	bool unknown0c;
+	byte unknown0d[3];
 	long element_index;
 	byte unknown14[0x1c - 0x14];
 	real unknown1c;
@@ -24,9 +25,38 @@ struct s_slot_1b
 /* the block of the actor's character tag function_1e4e50 returns */
 struct s_character_e50
 {
-	byte unknown00[0x14];
+	byte unknown00[4];
+	real unknown04;
+	real unknown08;
+	real unknown0c;
+	real unknown10;
 	real unknown14;
 };
+
+/* a joint (an element of g_502424) as slot group 0x1b reads it */
+struct s_joint_participant_1b
+{
+	long actor_index;
+	short status;
+	short priority;
+	real score;
+};
+
+struct s_joint_1b
+{
+	short salt;
+	short state;
+	s_joint_participant_1b participants[10];
+	short participant_count;
+	byte unknown7e[2];
+	long unknown80;
+	short unknown84;
+	short unknown86;
+	long prop_index;
+	bool unknown8c;
+	byte unknown8d[0xbc - 0x8d];
+};
+typedef char assert_s_joint_1b_size[(sizeof(s_joint_1b) == 0xbc) ? 1 : -1];
 
 point3f *function_b9dd0(long object_index, point3f *result);
 
@@ -43,7 +73,7 @@ struct s_slot_38
 
 short __stdcall function_1b4680(long actor_index);
 short __stdcall function_1b4bd0(long actor_index, s_slot *slot, bool active);
-void __stdcall function_1b47b0(long actor_index, s_slot *slot);
+long __stdcall function_1b47b0(long actor_index, s_slot *slot);
 /* what slot group 0x1b's release callback gets */
 struct s_1b4d90_group
 {
@@ -84,10 +114,11 @@ void *function_1e4ef0(long actor_index);
 void *function_1e4e50(long actor_index);
 short function_1a77a0(long actor_index, long a, short level);
 
+#pragma inline_depth(0)
 // @retail 0x1b4680
 short __stdcall function_1b4680(long actor_index)
 {
-	s_actor_view *actor = actor_get(actor_index);
+	s_actor_view *actor = (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
 	short result = 0;
 
 	if (actor->unknown225 || actor->unknown223)
@@ -95,8 +126,8 @@ short __stdcall function_1b4680(long actor_index)
 
 	if (actor->prop_index != NONE)
 	{
-		s_prop_node_view *node = prop_node_get(actor->prop_index);
-		s_prop_view_fields *view = prop_node_view(node);
+		s_prop_node_view *node = (s_prop_node_view *)(g_502418->data + (actor->prop_index & 0xffff) * sizeof(s_prop_node_view));
+		s_prop_view_fields *view = (s_prop_view_fields *)function_25d740((s_prop_node *)node);
 
 		if (view && !view->unknown68 && function_1e4e50(actor_index))
 		{
@@ -104,23 +135,183 @@ short __stdcall function_1b4680(long actor_index)
 			s_slot_memory_entry *entry;
 
 			if (view->unknown00 == 5)
-				return 3;
+				goto local_0;
 
 			iterator.actor_index = actor_index;
 			iterator.reference.unknown2 = 0x1b;
 			iterator.reference.unknown0 = NONE;
 			for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
 			{
-				s_502424_element *joint = element_502424_get(entry->unknown4);
+				s_502424_element *joint = (s_502424_element *)(g_502424->data + (entry->unknown4 & 0xffff) * sizeof(s_502424_element));
 
-				if (joint->target.unknown8 != NONE && prop_node_get(joint->target.unknown8)->object_index == node->object_index)
-					return 3;
+				if (joint->target.unknown8 != NONE && ((s_prop_node_view *)(g_502418->data + (joint->target.unknown8 & 0xffff) * sizeof(s_prop_node_view)))->object_index == node->object_index)
+					goto local_0;
 			}
 		}
 		return 0;
 	}
 	return result;
+local_0:
+	result = 3;
+	return result;
 }
+#pragma inline_depth()
+
+long function_25d810(long object_index, long actor_index, bool create);
+bool __stdcall function_25d020(long actor_index, long object_index, long type, long prop_ref_argument,
+	long reference_actor_index, long reference_index);
+
+/* joins the slot group 0x1b joint the actor was invited to about its prop,
+   or starts one, then sets the slot's timers; retail calls the random range
+   (0x259d0) and the prop view (0x25d740) here instead of inlining them */
+// @retail 0x1b47b0
+long __stdcall function_1b47b0(long actor_index, s_slot *slot)
+{
+	long element_index = NONE;
+	s_slot_1b *state = (s_slot_1b *)slot;
+	s_actor_view *actor = actor_get(actor_index);
+	s_character_e50 *character = (s_character_e50 *)function_1e4e50(actor_index);
+
+	if (actor->prop_index != NONE && character)
+	{
+		s_prop_node_view *node = prop_node_get(actor->prop_index);
+		s_slot_entry_iterator iterator;
+		s_slot_memory_entry *entry;
+
+		iterator.actor_index = actor_index;
+		iterator.reference.unknown2 = 0x1b;
+		iterator.reference.unknown0 = NONE;
+		for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
+		{
+			s_502424_element *element = element_502424_get(entry->unknown4);
+
+			if (element->target.unknown8 != NONE && prop_node_get(element->target.unknown8)->object_index == node->object_index &&
+				function_26ecc0(actor_index, iterator.reference.unknown0, (s_joint_behavior_state *)slot))
+			{
+				element_index = entry->unknown4;
+				break;
+			}
+		}
+		if (element_index == NONE)
+		{
+			long created = function_26e940(actor_index);
+
+			if (created != NONE)
+			{
+				state->unknown0c = true;
+				state->element_index = created;
+			}
+			element_index = created;
+		}
+		if (element_index != NONE)
+		{
+			s_joint_1b *joint = (s_joint_1b *)element_502424_get(element_index);
+
+			if (state->unknown0c)
+			{
+#pragma inline_depth(0)
+				real first = function_259d0(&g_4e7408->unknown0, NULL, 0, character->unknown04, character->unknown08);
+				real second = function_259d0(&g_4e7408->unknown0, NULL, 0, character->unknown0c, character->unknown10);
+#pragma inline_depth()
+
+				state->unknown1c = (real)g_510c54->game_time;
+				real ticks = g_510c54->field_2_3 * first;
+				long rounded;
+
+				__asm
+				{
+					fld ticks
+					fistp rounded
+				}
+				state->unknown28 = (short)rounded;
+				ticks = g_510c54->field_2_3 * second;
+				__asm
+				{
+					fld ticks
+					fistp rounded
+				}
+				state->unknown2a = (short)rounded;
+				joint->unknown80 = (long)state->unknown1c;
+				joint->unknown84 = state->unknown28;
+				joint->unknown86 = state->unknown2a;
+				joint->prop_index = actor->prop_index;
+				joint->unknown8c = false;
+			}
+			else
+			{
+				state->unknown1c = (real)joint->unknown80;
+				state->unknown28 = joint->unknown84;
+				state->unknown2a = joint->unknown86;
+
+				s_prop_state_view *node_state = prop_node_state(node);
+#pragma inline_depth(0)
+				s_prop_view_fields *view = (s_prop_view_fields *)function_25d740((s_prop_node *)node);
+#pragma inline_depth()
+				long target_index = joint->prop_index;
+
+				if (target_index != NONE)
+				{
+					s_prop_node_view *target = prop_node_get(target_index);
+					s_prop_state_view *target_state = prop_node_state(target);
+
+					if (target_state->unknown00 > node_state->unknown00)
+					{
+						function_25d020(actor_index, node->object_index, NONE, actor->prop_index, target->unknown04, target_index);
+						if (view)
+						{
+#pragma inline_depth(0)
+							s_prop_view_fields *target_view = (s_prop_view_fields *)function_25d740((s_prop_node *)target);
+#pragma inline_depth()
+
+							if (target_view)
+								view->unknown18 = target_view->unknown18;
+						}
+						goto done;
+					}
+					if (target_state->unknown00 >= node_state->unknown00)
+						goto done;
+				}
+
+				for (short i = 0; i < 10; i++)
+				{
+					long other_index = joint->participants[i].actor_index;
+
+					if (other_index != NONE && joint->participants[i].status == 3)
+					{
+						long other_prop = function_25d810(node->object_index, other_index, false);
+
+						if (other_prop != NONE)
+						{
+							function_25d020(other_index, node->object_index, NONE, other_prop, actor_index, actor->prop_index);
+							if (view && view->unknown10 != NONE)
+							{
+								s_prop_view_fields *other_view = prop_view_fields_get(other_prop);
+
+								if (other_view)
+									other_view->unknown18 = view->unknown18;
+							}
+						}
+					}
+				}
+				joint->prop_index = actor->prop_index;
+			}
+done:
+			real seconds = (slot_random() + 1.0f) * 2.0f;
+			real delay = g_510c54->field_2_3 * seconds;
+			long delay_ticks;
+
+			__asm
+			{
+				fld delay
+				fistp delay_ticks
+			}
+			state->unknown20 = (short)delay_ticks;
+			state->unknown24 = actor->prop_index;
+		}
+	}
+	return element_index;
+}
+
 // @retail 0x1b4bd0
 short __stdcall function_1b4bd0(long actor_index, s_slot *slot, bool active)
 {
@@ -156,23 +347,24 @@ short __stdcall function_1b4bd0(long actor_index, s_slot *slot, bool active)
 			s_prop_node_view *node = prop_node_get(actor->prop_index);
 
 			if (function_26ba60(node->unknown08, actor_index, actor->unknown07c))
-				function_1fb7e0(actor_index, 0x2a, NULL, node->object_index, NONE);
+				function_1fb7e0(0x2a, actor_index, NULL, node->object_index, NONE);
 		}
 	}
 	return result;
 }
 
+#pragma inline_depth(0)
 // @retail 0x1b4d10
 short __stdcall function_1b4d10(long actor_index, short level, long a, long b)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	short result = g_46fbe4;
+	s_actor_view *actor = (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
 
 	actor->unknown41c = 3;
 	actor->unknown420 = 2;
 	if (actor->prop_index != NONE)
 	{
-		s_prop_view_fields *view = prop_view_fields_get(actor->prop_index);
+		s_prop_view_fields *view = (s_prop_view_fields *)function_25d700(actor->prop_index);
 
 		if (view->unknown6d)
 		{
@@ -183,6 +375,19 @@ short __stdcall function_1b4d10(long actor_index, short level, long a, long b)
 	}
 	return result;
 }
+#pragma inline_depth()
+
+static inline s_actor_view *member_next_1b4e70(long &next, long &current)
+{
+	s_actor_view *member = 0;
+	if (next != NONE)
+	{
+		member = actor_get(next);
+		current = next;
+		next = member->next_index;
+	}
+	return member;
+}
 
 // @retail 0x1b4e70
 short __stdcall function_1b4e70(long actor_index, long leader_index, long a, long b)
@@ -190,19 +395,17 @@ short __stdcall function_1b4e70(long actor_index, long leader_index, long a, lon
 	s_actor_view *actor = actor_get(actor_index);
 	long count = 0;
 
-	if (actor->unknown07c == NONE)
-		return 0;
-
-	long index = element_502420_get(actor->unknown07c)->first_actor_index;
-
-	while (index != NONE)
+	if (actor->unknown07c != NONE)
 	{
-		s_actor_view *other = actor_get(index);
-		long other_index = index;
+		long index = element_502420_get(actor->unknown07c)->first_actor_index;
 
-		index = other->next_index;
-		if (actor != other && function_26eae0(leader_index, other_index, 3, 1.0f))
-			count++;
+		s_actor_view *other;
+		long other_index;
+		while ((other = member_next_1b4e70(index, other_index)) != 0)
+		{
+			if (actor != other && function_26eae0(leader_index, other_index, 3, 1.0f))
+				count++;
+		}
 	}
 	return (short)count;
 }
@@ -251,12 +454,11 @@ short __stdcall function_1b4f90(long actor_index, s_slot *slot)
 	return result;
 }
 
-// @retail 0x1b50e0
-short __stdcall function_1b50e0(long actor_index, s_slot *slot)
+PRIVATE __forceinline word function_1b50e1(s_slot *arg_0, long arg_1)
 {
 	short result = g_46fbe4;
-	s_actor_view *actor = actor_get(actor_index);
-	s_character_ef0 *character = (s_character_ef0 *)function_1e4ef0(actor_index);
+	s_actor_view *actor = actor_get(arg_1);
+	s_character_ef0 *character = (s_character_ef0 *)function_1e4ef0(arg_1);
 
 	if (actor->prop_index != NONE && character && actor->unknown3d8 >= character->unknown0c)
 	{
@@ -268,7 +470,7 @@ short __stdcall function_1b50e0(long actor_index, s_slot *slot)
 			return result;
 		}
 
-		s_slot_38 *state = (s_slot_38 *)slot;
+		s_slot_38 *state = (s_slot_38 *)arg_0;
 
 		state->unknown10 = actor->prop_index;
 		state->unknown14 = 0x3d;
@@ -276,6 +478,12 @@ short __stdcall function_1b50e0(long actor_index, s_slot *slot)
 		return 0x38;
 	}
 	return result;
+}
+
+// @retail 0x1b50e0
+short __stdcall function_1b50e0(long actor_index, s_slot *slot)
+{
+	return (short)function_1b50e1(slot, actor_index);
 }
 
 // @retail 0x1b5180
@@ -338,6 +546,14 @@ struct s_actor_type_definition
 extern s_actor_type_definition *g_471088[16];
 
 /* unless a clump member is of the type that leads the actor's type */
+PRIVATE __forceinline real function_1b52a1(void)
+{
+    s_random_globals *local_0 = g_4e7408;
+    dword *local_1 = &local_0->unknown0;
+    *local_1 = 1664525 * *local_1 + 1013904223;
+    return (real)(*local_1 >> 16) * (1.f / 65535.f);
+}
+
 // @retail 0x1b52a0
 short __stdcall function_1b52a0(long actor_index, s_slot *slot)
 {
@@ -346,20 +562,25 @@ short __stdcall function_1b52a0(long actor_index, s_slot *slot)
 	short result = 0x38;
 	long index = element_502420_get(actor->unknown07c)->first_actor_index;
 
-	while (index != NONE)
+	s_actor_view *other;
+	long other_index;
+	while ((other = member_next_1b4e70(index, other_index)) != 0)
 	{
-		s_actor_view *other = actor_get(index);
-
-		index = other->next_index;
 		if (other->unknown004 == type->leader_type)
-			return g_46fbe4;
+		{
+			result = g_46fbe4;
+			goto done;
+		}
 	}
 
 	if (result != g_46fbe4)
 	{
 		s_character_ef0 *character = (s_character_ef0 *)function_1e4ef0(actor_index);
 
-		if (!character || character->unknown2c > slot_random())
+		bool accepted = true;
+		if (character)
+			accepted = character->unknown2c > function_1b52a1();
+		if (accepted)
 		{
 			s_slot_38 *state = (s_slot_38 *)slot;
 
@@ -368,10 +589,9 @@ short __stdcall function_1b52a0(long actor_index, s_slot *slot)
 			state->unknown0c = true;
 		}
 		else
-		{
 			result = g_46fbe4;
-		}
 	}
+done:
 	return result;
 }
 
@@ -434,7 +654,7 @@ s_slot_handler_1x g_47e3c8 =
 		},
 		function_26e8a0, 6, g_46f758
 	},
-	function_1b47b0, (t_slot_release)function_1b4d90, (t_slot_proc4)function_1b4d10, (t_slot_proc4)function_1b4e70,
+	(t_slot_proc)function_1b47b0, (t_slot_release)function_1b4d90, (t_slot_proc4)function_1b4d10, (t_slot_proc4)function_1b4e70,
 	1, 10, 50.0f
 };
 
@@ -504,7 +724,7 @@ void __stdcall function_1b4d90(long actor_index, s_slot *slot, s_1b4d90_group *g
 			if (node->unknown27 < 2 && !group->unknown8c &&
 				function_26ba60(node->unknown08, actor_index, actor->unknown07c))
 			{
-				function_1fb7e0(actor_index, 0x34, NULL, node->object_index, NONE);
+				function_1fb7e0(0x34, actor_index, NULL, node->object_index, NONE);
 				group->unknown8c = true;
 			}
 		}
@@ -555,6 +775,8 @@ real function_259a0(dword *seed);
 void *function_1e5380(long actor_index);
 bool function_255b10(long actor_index, s_type_c3b527 const *point, long target_index, bool unknown);
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x1b54d0
 short __stdcall function_1b54d0(long actor_index, s_slot *slot)
 {
@@ -579,10 +801,11 @@ short __stdcall function_1b54d0(long actor_index, s_slot *slot)
                 if (distance > 0.0f)
                 {
                     real range = *(real *)(entry + 0x18);
-                    distance = distance > range * 2.0f ? distance * 0.5f : range;
+                    distance = distance > range * 2.0f ? distance * 0.5f : *(real const volatile *)(entry + 0x18);
                     s_type_c3b527 point;
                     point.point.x = actor->position.x + direction.i * distance;
                     point.point.y = actor->position.y + direction.j * distance;
+                    _ReadWriteBarrier();
                     point.point.z = actor->position.z + direction.k * distance;
                     point.output_index = NONE;
                     function_255b10(actor_index, &point, NONE, false);
@@ -592,3 +815,4 @@ short __stdcall function_1b54d0(long actor_index, s_slot *slot)
     }
     return g_46fbe4;
 }
+#pragma function(_ReadWriteBarrier)

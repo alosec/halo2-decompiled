@@ -3,8 +3,9 @@ import json
 import pytest
 
 from build import Marked
-from check import (Identity, check_function, check_unique_markers, compare, extract, masked_offsets, parse_addresses,
-                   relative_ok, resolve, StandinCalls, write_report)
+from check import (Identity, Targets, check_function, check_unique_markers, compare, difference_score, extract,
+                   function_targets, literal_size, masked_offsets, parse_addresses, relative_ok, resolve,
+                   settle_statuses, settle_targets, StandinCalls, targets_summary, write_report)
 from linkmap import LinkMap
 
 MAP = """ Preferred load address is 00400000
@@ -95,6 +96,24 @@ def test_failed_relative_field_checked_even_when_bytes_equal():
     assert first == 1 and status == 'near'
 
 
+def test_difference_score_is_zero_when_matched():
+    status, _, lines, length = run(bytes.fromhex('b8' '01000000' 'c3'), 0x401000, bytes.fromhex('b8' '01000000' 'c3'))
+    assert status == 'matched' and difference_score(status, lines, length, 6) == 0
+
+
+def test_difference_score_counts_differing_instructions_and_length():
+    ours = bytes.fromhex('b8' '01000000' '90' 'c3')    # mov eax, 1; nop; ret
+    theirs = bytes.fromhex('b8' '02000000' 'c3')       # mov eax, 2; ret
+    status, _, lines, length = run(ours, 0x401000, theirs)
+    differing = sum(1 for line in lines if line.startswith('  !!'))
+    assert status == 'todo' and differing >= 1
+    assert difference_score(status, lines, length, len(theirs)) == differing + 1
+    # one fewer differing instruction scores lower
+    same_length = bytes.fromhex('b8' '02000000' '90' 'c3')
+    status2, _, lines2, length2 = run(same_length, 0x401000, theirs)
+    assert difference_score(status2, lines2, length2, len(theirs)) < difference_score(status, lines, length, len(theirs))
+
+
 def test_failed_field_counts_as_differing_instruction():
     # two nops differ from retail; with the failed jmp that is three instructions
     ours = bytes.fromhex('e9' '10000000' '90' '90' 'c3')
@@ -132,6 +151,41 @@ def test_jump_table_entries_must_map_to_the_same_offsets():
     assert run(ours, 0x401000, same, absolute=fields)[:2] == ('matched', None)
     swapped = func(0x1000, (7, 9, 8))
     assert run(ours, 0x401000, swapped, absolute=fields)[1] == 16
+
+
+def _jump_table_function(base, order, case=b'\x90'):
+    """jmp [eax*4+table]; three case bodies (case, nop, ret); two bytes of fill; a table of three absolute
+    entries at offset 12, pointing at the case bodies in order."""
+    body = bytes.fromhex('ff2485') + (base + 12).to_bytes(4, 'little') + case + bytes.fromhex('90' 'c3')
+    return body + bytes.fromhex('9090') + b''.join((base + o).to_bytes(4, 'little') for o in order)
+
+
+JUMP_TABLE_FIELDS = {0x401000 + 3, 0x401000 + 12, 0x401000 + 16, 0x401000 + 20}
+
+
+def _differing_lines(lines):
+    """The differing lines of a listing, as (ours, retail) texts."""
+    return [tuple(side.strip() for side in line[5:].split('|')) for line in lines if line.startswith('  !!')]
+
+
+def test_jump_table_entries_that_differ_only_by_layout_do_not_count():
+    # the entries hold different addresses (the functions sit at different places) but the same offsets; only
+    # the changed case body differs, and the table is compared as dwords, not decoded as instructions
+    ours = _jump_table_function(0x401000, (7, 8, 9))
+    theirs = _jump_table_function(0x1000, (7, 8, 9), case=b'\x91')
+    status, first, lines, _ = run(ours, 0x401000, theirs, absolute=JUMP_TABLE_FIELDS)
+    assert first == 7 and status == 'near'
+    assert _differing_lines(lines) == [('nop', 'xchg ecx, eax')]
+    assert sum(line[5:].startswith('dd ') for line in lines) == 3
+
+
+def test_jump_table_entries_that_differ_count_once_each():
+    ours = _jump_table_function(0x401000, (7, 8, 9))
+    theirs = _jump_table_function(0x1000, (7, 9, 8), case=b'\x91')
+    status, first, lines, _ = run(ours, 0x401000, theirs, absolute=JUMP_TABLE_FIELDS)
+    assert first == 7 and status == 'todo'
+    assert _differing_lines(lines) == [('nop', 'xchg ecx, eax'), ('dd 0x401008', 'dd 0x1009'),
+                                       ('dd 0x401009', 'dd 0x1008')]
 
 
 def test_self_recursive_call_matches_when_retail_calls_itself():
@@ -394,3 +448,242 @@ def test_calls_to_overloads_reach_the_marked_one():
                               set(), {CALL_START + 1}, LO, HI, identity)[:2]
     assert result(0x401140) == ('matched', None)
     assert result(0x401100)[1] == 1
+
+
+# Where address fields lead (Targets): a marked function, a global named for
+# its retail address, literal-pool constants, and symbols nothing ties to retail.
+TARGET_MAP = """ Preferred load address is 00400000
+ 0001:00000000 00000300H .text                   CODE
+ 0002:00000000 00000100H .data                   DATA
+ 0001:00000000       ?caller@@YAXXZ             00401000 f   a.obj
+ 0001:00000100       ?function_163ba0@@YIXPAK@Z 00401100 f   a.obj
+ 0001:00000200       ?helper@@YIXXZ             00401200 f   a.obj
+ 0001:00000280       _strncmp                   00401280 f   libcmt:strncmp.obj
+ 0002:00000000       ?g_4e0300@@3PAJA           00402000     a.obj
+ 0002:00000010       ??_C@_03KLMEOHFB@abc?$AA@  00402010     a.obj
+ 0002:00000018       __real@3f800000            00402018     a.obj
+ 0002:00000020       ??_7c_foo@@6B@             00402020     a.obj
+ 0002:00000028       ?g_counter@@3JA            00402028     a.obj
+ 0002:00000030       __imp__KeTickCount         00402030     xboxkrnl:xboxkrnl.exe
+ 0002:00000034       ___lookuptable             00402034     libcmt:output.obj
+"""
+FLOAT_ONE = (0x3f800000).to_bytes(4, 'little')
+
+
+class Memory:
+    """Bytes at given addresses; anywhere else is in no section, as Xbe.read says."""
+
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def read(self, va, size):
+        for start, data in self.chunks.items():
+            if start <= va and va + size <= start + len(data):
+                return data[va - start:va - start + size]
+        raise ValueError(f'{va:#x} is in no section')
+
+
+# "abc" is followed by 4 bytes of data the map does not name
+OUR_DATA = Memory({0x402010: b'abc\0' + bytes(4) + FLOAT_ONE})
+RETAIL_DATA = Memory({0x450000: b'abc\0' b'abd\0' + FLOAT_ONE})
+
+
+def targets(text=TARGET_MAP, rows=None):
+    return Targets(Identity(LinkMap(text), rows or {}, [CALLEE]), OUR_DATA, RETAIL_DATA)
+
+
+@pytest.mark.parametrize('mine, value, result', [
+    (0x401100, 0x2100, ('verified', None, 'function_163ba0', 0x2100)),
+    (0x401104, 0x2104, ('verified', None, 'function_163ba0+0x4', 0x2104)),
+    (0x401100, 0x2200, ('differs', None, 'function_163ba0', 0x2100)),
+])
+def test_a_marked_functions_address_must_be_its_markers(mine, value, result):
+    # push offset function_163ba0, as a callback
+    assert targets().absolute(mine, value)[:4] == result
+
+
+@pytest.mark.parametrize('decorated', ['?g_4e0300@@3PAJA', '_g_4e0300', '?g_4e0300@?1??caller@@YAXXZ@4PAJA'])
+def test_a_global_named_for_its_retail_address_must_be_at_it(decorated):
+    # a C++ global, a C one, a function's static; the field reads 4 bytes into it
+    found = targets(TARGET_MAP.replace('?g_4e0300@@3PAJA', decorated)).absolute
+    assert found(0x402004, 0x4e0304)[:2] == ('verified', None)
+    assert found(0x402004, 0x4e0308)[0] == 'differs' and found(0x402004, 0x4e0308)[3] == 0x4e0304
+    # its size is unknown, so settle_targets decides the offset
+    assert found(0x402004, 0x4e0308)[4] == (decorated, 4)
+
+
+def test_a_global_named_otherwise_is_unverified():
+    assert targets(TARGET_MAP.replace('?g_4e0300@@3PAJA', '?g_4e0300x@@3PAJA')).absolute(
+        0x402004, 0x4e0304)[:2] == ('unverified', 'named global')
+
+
+@pytest.mark.parametrize('mine, value, verdict', [
+    (0x402010, 0x450000, 'verified'),   # "abc" where retail holds "abc"
+    (0x402011, 0x450001, 'verified'),   # "abc" + 1
+    (0x402010, 0x450004, 'differs'),    # retail holds "abd" there
+    (0x402010, 0x900000, 'differs'),    # in no section of retail
+    (0x402018, 0x450008, 'verified'),   # 1.0f
+    (0x402018, 0x450004, 'differs'),
+])
+def test_a_literal_constant_must_hold_the_same_bytes_in_retail(mine, value, verdict):
+    assert targets().absolute(mine, value)[0] == verdict
+
+
+@pytest.mark.parametrize('decorated, size', [
+    ('??_C@_08INJJKPHM@XBOX?51?40?$AA@', 9), ('??_C@_0ED@CEHICPLJ@?5?5?5Type?3@', 0x43),
+    ('??_C@_1M@BHHLEAOO@?$AA?$CF?$AAs?$AA?$AA@', 12), ('__real@3f800000', 4), ('__real@3ff0000000000000', 8),
+    ('?g_counter@@3JA', None), ('??_7c_foo@@6B@', None),
+])
+def test_literal_sizes_come_from_their_names(decorated, size):
+    assert literal_size(decorated) == size
+
+
+@pytest.mark.parametrize('text, rows, mine, same', [
+    (TARGET_MAP, {0x2100: {'size': '16'}}, 0x401110, 0x2110),                             # past a marked function
+    (TARGET_MAP.replace('?g_4e0300@@3PAJA', '?g_4e0300@@3JA'), None, 0x402004, 0x4e0304),  # past a long
+    (TARGET_MAP.replace('?g_4e0300@@3PAJA', '?g_4e0300@?1??caller@@YAXXZ@4_NA'), None, 0x402001, 0x4e0301),  # a bool
+    (TARGET_MAP, None, 0x402014, None),                                                    # past "abc"
+])
+def test_an_offset_past_a_symbols_known_size_is_unverified_unless_retail_agrees(text, rows, mine, same):
+    # the map's extent runs on over data it does not name, which may lie anywhere in retail; a field the same
+    # distance from the symbol's retail address on both sides is verified all the same
+    found = targets(text, rows).absolute
+    assert found(mine, 0x450010)[:2] == ('unverified', "past a symbol's end")
+    if same is not None:
+        assert found(mine, same)[0] == 'verified'
+
+
+def test_a_field_past_a_symbol_before_or_ahead_of_one_after_is_verified_by_it():
+    # a loop's end pointer: g_4e0300's end is where "abc" starts in our image, and retail's field holds its end too
+    found = targets().absolute
+    assert found(0x402010, 0x4e0310)[:4] == ('verified', None, 'g_4e0300+0x10', 0x4e0310)
+    assert found(0x402019, 0x4e0319)[0] == 'verified'  # a member of the element past the end, beyond "abc"
+    # an array's base less one element, ahead of the global after
+    found = targets(TARGET_MAP.replace('??_C@_03KLMEOHFB@abc?$AA@', '?g_4e0340@@3PAJA')).absolute
+    assert found(0x40200c, 0x4e033c)[:3] == ('verified', None, 'g_4e0340-0x4')
+    # farther past g_4e0300's end than its own 16 bytes: our g_4e0300 would be smaller than the code needs
+    found = targets(TARGET_MAP.replace('?g_counter@@3JA', '?g_4e0360@@3PAJA')).absolute
+    assert found(0x402028, 0x4e0328)[0] == 'differs'
+    # a symbol no rule ties to retail stays unverified
+    assert found(0x402024, 0x4e0324)[:2] == ('unverified', 'vtable')
+
+
+@pytest.mark.parametrize('mine, category', [
+    (0x402020, 'vtable'), (0x402028, 'named global'), (0x402030, 'import'), (0x402034, 'library data'),
+    (0x401280, 'library code'), (0x401200, 'unmarked function'), (0x400000, 'no symbol'),
+])
+def test_other_targets_are_unverified_by_category(mine, category):
+    assert targets().absolute(mine, 0x450000)[:2] == ('unverified', category)
+
+
+def caller(base, address, string, helper, callee):
+    """mov eax, [address]; push offset string; call helper; call callee; ret."""
+    def rel(at, target):
+        return ((target - (base + at + 4)) & 0xFFFFFFFF).to_bytes(4, 'little')
+    return (b'\xa1' + address.to_bytes(4, 'little') + b'\x68' + string.to_bytes(4, 'little')
+            + b'\xe8' + rel(11, helper) + b'\xe8' + rel(16, callee) + b'\xc3')
+
+
+def test_targets_count_each_field_that_leaves_the_function():
+    # retail reads 4 bytes into g_4e0300 where ours reads its start; the call to the unmarked helper reaches
+    # an unnamed retail function, which Identity lets pass unverified
+    ours = caller(0x401000, 0x402000, 0x402010, 0x401200, 0x401100)
+    theirs = caller(0x1000, 0x4e0304, 0x450000, 0x3000, 0x2100)
+    absolute, relative = {0x401001, 0x401006}, {0x40100b, 0x401010}
+    entry = dict(targets=function_targets(ours, 0x401000, theirs, 0x1000, absolute, relative, targets()))
+    settle_targets([entry])
+    assert entry['targets'] == dict(verified=2, differs=1, unverified=1, categories={'call': 1},
+                                    differing=[dict(offset=1, ours='g_4e0300', expected='0x4e0300', retail='0x4e0304')])
+    # its bytes match; settle_statuses decides whether the function does
+    identity = Identity(LinkMap(TARGET_MAP), {}, [CALLEE])
+    assert check_function(ours, 0x401000, theirs, 0x1000, absolute, relative, LO, HI, identity)[:2] == (
+        'matched', None)
+
+
+def checked_caller(address, retail_address):
+    """caller's report entry as check_one makes it, before settling: ours
+    reads address, retail's retail_address; the rest is the same on both sides."""
+    ours = caller(0x401000, address, 0x402010, 0x401200, 0x401100)
+    theirs = caller(0x1000, retail_address, 0x450000, 0x3000, 0x2100)
+    absolute, relative = {0x401001, 0x401006}, {0x40100b, 0x401010}
+    identity = Identity(LinkMap(TARGET_MAP), {}, [CALLEE])
+    status, first, _, length = check_function(ours, 0x401000, theirs, 0x1000, absolute, relative, LO, HI, identity)
+    return dict(name='caller', status=status, size=len(theirs), ours=length, first_difference=first,
+                targets=function_targets(ours, 0x401000, theirs, 0x1000, absolute, relative, targets()))
+
+
+def test_a_function_whose_bytes_match_but_whose_field_differs_does_not_match(capsys):
+    # retail reads 4 bytes into g_4e0300 where ours reads its start: one differing field, so near
+    report = {'00001000': checked_caller(0x402000, 0x4e0304)}
+    assert report['00001000']['status'] == 'matched'
+    assert settle_statuses(report) == [report['00001000']]
+    assert report['00001000']['status'] == 'near' and report['00001000']['first_difference'] == 1
+    assert capsys.readouterr().out.splitlines() == [
+        'DIFF   00001000 caller at +0x1 (21 bytes, retail 21), score 1',
+        "  !! address field at +0x1: ours leads to g_4e0300 (0x4e0300 in retail), retail's to 0x4e0304"]
+
+
+@pytest.mark.parametrize('differing, status', [(1, 'near'), (2, 'near'), (3, 'todo')])
+def test_each_differing_field_counts_as_a_differing_instruction(differing, status):
+    fields = [(k, 0x4e0310, 'differs', None, 'g_4e0300', 0x4e0300, None) for k in (1, 6, 11)[:differing]]
+    report = {'00001000': dict(name='f', status='matched', size=16, ours=16, first_difference=None,
+                               targets=fields + [(16, 0x3000, 'unverified', 'call', 'helper', None, None)])}
+    settle_statuses(report)
+    assert report['00001000']['status'] == status and report['00001000']['first_difference'] == 1
+
+
+def test_unverified_fields_do_not_count_against_a_match(capsys):
+    # the call to the unmarked helper is unverified; 4 bytes into g_4e0300 where retail reads 16 in differs until
+    # settled, then may lie past its end (an aggregate offset), so that function's MATCH waits for settling
+    report = {'00001000': checked_caller(0x402000, 0x4e0300), '00002000': checked_caller(0x402004, 0x4e0310),
+              '00003000': dict(name='missing', status='todo', size=4, ours=0, first_difference=0)}
+    assert settle_statuses(report) == []
+    assert [e['status'] for e in report.values()] == ['matched', 'matched', 'todo']
+    assert report['00001000']['targets']['categories'] == {'call': 1}
+    assert report['00002000']['targets']['categories'] == {'call': 1, 'aggregate offset': 1}
+    assert capsys.readouterr().out == 'MATCH  00002000 caller\n'
+
+
+def test_function_targets_leave_out_jump_table_entries():
+    ours, theirs = _jump_table_function(0x401000, (7, 8, 9)), _jump_table_function(0x1000, (7, 8, 9))
+    assert function_targets(ours, 0x401000, theirs, 0x1000, JUMP_TABLE_FIELDS, set(), None) == []
+
+
+def test_an_offset_into_a_global_of_unknown_size_differs_only_where_a_verified_field_reaches():
+    # one function verifies 8 bytes into g_4e0300, so 4 bytes in lies inside it; 12 bytes in may lie past its
+    # end, in data the map does not name
+    found = targets().absolute
+    entries = [dict(targets=[(1, 0x4e0308, *found(0x402008, 0x4e0308))]),
+               dict(targets=[(1, 0x4e0310, *found(0x402004, 0x4e0310)), (6, 0x4e0300, *found(0x40200c, 0x4e0300))]),
+               dict(status='todo')]
+    settle_targets(entries)
+    assert entries[0]['targets']['verified'] == 1
+    assert entries[1]['targets'] == dict(verified=0, differs=1, unverified=1, categories={'aggregate offset': 1},
+                                         differing=[dict(offset=1, ours='g_4e0300+0x4', expected='0x4e0304',
+                                                         retail='0x4e0310')])
+
+
+@pytest.mark.parametrize('retail_target, rows, verdict', [
+    (0x2100, {}, 'verified'), (0x2200, {}, 'differs'), (0x2200, {0x2200: {'name': ''}}, 'differs'),
+])
+def test_call_verdicts_to_a_marked_function(retail_target, rows, verdict):
+    assert Identity(LinkMap(IDENT_MAP), rows, [CALLEE]).verdict(0x401100, retail_target) == verdict
+
+
+def test_call_between_unnamed_functions_is_unverified():
+    identity = Identity(LinkMap(IDENT_MAP), {0x2200: {'name': ''}}, [])
+    assert identity.verdict(0x401200, 0x2200) == 'unverified' and identity.ok(0x401200, 0x2200)
+    assert Identity(LinkMap(IDENT_MAP), {0x2200: {'name': '_strncmp'}}, []).verdict(0x401200, 0x2200) == 'verified'
+
+
+def test_targets_summary_totals_the_functions_whose_bytes_match():
+    def entry(status, verified, differs, categories):
+        return dict(status=status, targets=dict(verified=verified, differs=differs,
+                                                unverified=sum(categories.values()), categories=categories))
+    demoted = entry('near', 2, 1, {'call': 1})
+    entries = [demoted, entry('matched', 1, 0, {'vtable': 2, 'call': 1}), entry('near', 9, 9, {'call': 9}),
+               dict(status='todo')]
+    assert targets_summary(entries, [demoted]) == (
+        'address targets in 2 functions whose bytes match: 3 verified, 1 differ, 4 unverified (2 vtable, 2 call); '
+        '1 demoted from matched for a differing field')
+    assert targets_summary(entries[1:], []).endswith('; 0 demoted from matched for a differing field')

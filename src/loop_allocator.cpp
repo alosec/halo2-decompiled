@@ -69,7 +69,7 @@ void function_18e250(s_loop_allocator *loop, long size, const char *name, c_memo
 }
 
 // @retail 0x18e1f0
-s_loop_allocator *function_18e1f0(c_memory_source *source, long size, const char *name)
+s_loop_allocator *function_18e1f0(long size, c_memory_source *source, const char *name)
 {
 
 	if (!source)
@@ -157,17 +157,17 @@ s_loop_block *loop_allocate_at_end(s_loop_allocator *loop, long size, char const
 // @retail 0x18e600
 s_loop_block *loop_allocate_at_start(s_loop_allocator *loop, long size, char const *file, long line)
 {
-	s_loop_block *first = loop->first;
 	s_loop_block *result = NULL;
 	byte *end;
 
-	if (!first)
+	if (!loop->first)
 	{
-		end = loop->base + loop->size;
+		dword tmp0 = loop->size;
+		end = loop->base + tmp0;
 	}
 	else
 	{
-		end = (byte *)first;
+		end = (byte *)loop->first;
 		if (loop->debug_headers)
 		{
 			end -= sizeof(s_loop_block_debug_header);
@@ -177,7 +177,7 @@ s_loop_block *loop_allocate_at_start(s_loop_allocator *loop, long size, char con
 	byte *address = loop->base;
 	if (address + size <= end)
 	{
-		result = loop_block_insert(loop, address, size, file, line, NULL, first);
+		result = loop_block_insert(loop, address, size, file, line, NULL, loop->first);
 	}
 	return result;
 }
@@ -312,13 +312,14 @@ bool loop_reallocate(s_loop_allocator *loop, void **pointer, long size, char con
 		goto local_1;
 	}
 
-	void *new_pointer;
-	if (loop_allocate(loop, &new_pointer, size, file, line))
+	void *volatile *local_3 = (void *volatile *)&file;
+	if (loop_allocate(loop, (void **)local_3, size, file, line))
 	{
-		memcpy(new_pointer, *pointer, block->size - loop_block_header_size(loop));
+		void *const volatile *local_4 = pointer;
+		memcpy((*local_3), *local_4, block->size - loop_block_header_size(loop));
 		loop_free(loop, pointer);
-		((s_loop_block *)new_pointer - 1)->owner = (*local_2)->field3c ? NULL : pointer;
-		*pointer = new_pointer;
+		((s_loop_block *)(*local_3) - 1)->owner = (*local_2)->field3c ? NULL : pointer;
+		*pointer = (*local_3);
 		local_0 = true;
 	}
 	local_1:

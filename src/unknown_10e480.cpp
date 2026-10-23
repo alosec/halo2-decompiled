@@ -12,7 +12,7 @@ extern s_object_list *g_4de2f4;
 
 struct s_vibration_curve_set;
 struct s_vibration_output;
-void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real time, real blend, bool skip_special);
+void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real volatile time, real blend, bool skip_special);
 
 struct s_vibration_object_view
 {
@@ -98,7 +98,8 @@ void function_20adf0(s_anim_data *data, byte *dest);
 void function_10ec00(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)
 {
-	(void)&unused;
+	long const &unused_reference = unused;
+	(void)&unused_reference;
 	s_vibration_object_view *object = ((s_vibration_object_header *)g_4e0300->data)[object_index & 0xffff].object;
 	s_vibration_sample_view *vibration = (s_vibration_sample_view *)((byte *)object + object->vibration_offset);
 	c_type_709360 animation_id = vibration->animation_id;
@@ -124,9 +125,16 @@ void function_10ec00(long object_index, s_animation_state *state, long unused, d
 			}
 			if (sampled)
 			{
-				s_animation_data data;
+				struct s_output_10ec00 : s_animation_data
+				{
+					__forceinline void write_10ec00(byte *out)
+					{
+						function_20adf0((s_anim_data *)this, out);
+					}
+				};
+				s_output_10ec00 data;
 				function_1ddb40(&data, graph_tag_get(channel.graph_tag_index), channel.animation_id);
-				function_20adf0((s_anim_data *)&data, dest);
+				data.write_10ec00(dest);
 			}
 		}
 	}
@@ -140,10 +148,12 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)
 {
-	(void)&unused;
+	long const &unused_reference = unused;
+	(void)&unused_reference;
 	s_vibration_object_view *object = ((s_vibration_object_header *)g_4e0300->data)[object_index & 0xffff].object;
 	s_vibration_sample_view *vibration = (s_vibration_sample_view *)((byte *)object + object->vibration_offset);
-	if (vibration->frame > 0.0001f)
+	real frame = vibration->frame;
+	if (frame > 0.0001f)
 	{
 		c_animation_channel channel;
 		c_type_709360 animation_id = vibration->base_animation;
@@ -155,8 +165,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			function_1ddb40(&data, graph_tag_get(channel.graph_tag_index), channel.animation_id);
 			function_20adf0((s_anim_data *)&data, dest);
 		}
-		animation_id = vibration->weighted_animation;
-		if (animation_id.index != NONE && state->channel_play(&channel, animation_id, 0))
+		if (vibration->weighted_animation.index != NONE && state->channel_play(&channel, vibration->weighted_animation, 0))
 		{
 			s_animation *animation = channel.function_1c6440();
 			bool sampled = false;
@@ -178,7 +187,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			}
 		}
 	}
-	else if (vibration->frame != 0.0f)
+	else if (frame != 0.0f)
 	{
 		if (vibration->base_animation.index != NONE)
 			state->animation_touch(vibration->base_animation);

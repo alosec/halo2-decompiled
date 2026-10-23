@@ -3,6 +3,7 @@
    ai helpers (0x1c7790..0x1caxxx) */
 
 #include "unknown_11c920.h"
+#include "segment_sphere.h"
 #include "globals.h"
 #include "slot_handler.h"
 #include "unknown_123b30.h"
@@ -423,7 +424,7 @@ void function_1dfae0(void);
 struct s_output_entry;
 extern s_output_entry *g_4f93a0;
 struct hash_table;
-hash_table *function_13e1a0(char const *name, long data_size, long bucket_count,
+__declspec(noinline) hash_table *function_13e1a0(char const *name, long data_size, long bucket_count,
 	dword (__stdcall *hash_proc)(void const *), bool (__stdcall *compare_proc)(void const *, void const *),
 	long maximum_count, c_data_allocator *allocator);
 long __stdcall function_25dd20(long key);
@@ -799,21 +800,24 @@ struct s_ai_position_object
 };
 
 point3f *function_b9ef0(long object_index, point3f *position);
+void function_caf90(long unit_index, point3f *position);
 
-/* where the ai looks at an object: a unit's or vehicle's head marker, the
-   center of mass of a free physics object, otherwise its center */
+/* where the ai looks at an object: the head marker (0xcaf90) of types 0 and
+   1 and, in its own arm, of type 12; the center of mass of a free physics
+   object; otherwise its center */
 // @retail 0x1caa40
 void function_1caa40(long object_index, point3f *position)
 {
 	s_ai_position_object *object = (s_ai_position_object *)((s_ai_object_header *)g_4e0300->data)[object_index & 0xffff].object;
 	long type_mask = 1 << object->type;
 
-	if ((type_mask & 3) || (type_mask & 0x1000))
+	if (type_mask & 3)
 	{
-		s_object_marker marker;
-
-		function_b8d30(object_index, 0x40000bd, &marker, 1, false);
-		*position = marker.matrix.position;
+		function_caf90(object_index, position);
+	}
+	else if (type_mask & 0x1000)
+	{
+		function_caf90(object_index, position);
 	}
 	else if (object->parent_index == NONE && object->havok_component_index != NONE)
 	{
@@ -892,10 +896,12 @@ long function_1e1f20(long actor_index); /* unknown_1e1f20.cpp */
 point3f *function_b9dd0(long object_index, point3f *result);
 
 /* game ticks in the given number of seconds, rounded */
+static __forceinline long real_to_long(real value);
+
 static inline long ai_seconds_to_ticks(real seconds)
 {
-	real ticks = g_510c54->field_2_3 * seconds;
 #ifdef H2_NATIVE_PORT
+	real ticks = g_510c54->field_2_3 * seconds;
 	/* Retail fistp uses nearest-even under the default x87 control word. */
 	double converted = ticks;
 	long truncated = (long)converted;
@@ -906,13 +912,7 @@ static inline long ai_seconds_to_ticks(real seconds)
 		--truncated;
 	return truncated;
 #else
-	long result;
-	__asm
-	{
-		fld ticks
-		fistp result
-	}
-	return result;
+	return real_to_long(g_510c54->field_2_3 * seconds);
 #endif
 }
 void *function_1e5280(long actor_index, long key); /* unknown_1e5240.cpp */
@@ -1059,18 +1059,14 @@ bool function_1ca670(void)
 
 void function_200240(long object_index, long target_index);
 
-#pragma optimize("y", off)
+#pragma optimize("gy", off)
 // @retail 0x1ca9f0
 void __stdcall function_1ca9f0(long object_index, long target_index)
 {
-	(void)&object_index;
-	(void)&target_index;
-	s_ai_globals *local_0 = g_4f55d0;
-	long local_1 = *(volatile byte const *)&local_0->active;
-	if (local_1)
+	if (g_4f55d0->active)
 		function_200240(object_index, target_index);
 }
-#pragma optimize("y", on)
+#pragma optimize("gy", on)
 
 
 void hash_table_initialize(hash_table *table);
@@ -1257,7 +1253,8 @@ long __stdcall function_1dfb90(long definition_index)
             *(long *)(actor + 0x58) = NONE;
             for (long i = 0; i < 8; ++i)
                 ((long *)(actor + 0x5c))[i] = NONE;
-            *(short *)(actor + 0x3e) = g_4686c4;
+            volatile short local_1 = g_4686c4;
+            *(short *)(actor + 0x3e) = local_1;
             *(long *)(actor + 0x7c) = NONE;
             *(long *)(actor + 0x32c) = NONE;
             *(s_reference *)(actor + 0x418) = g_470fa0;
@@ -1267,12 +1264,13 @@ long __stdcall function_1dfb90(long definition_index)
             *(short *)(actor + 0x3fc) = NONE;
             s_actor_view *actor_view = (s_actor_view *)(pool->data + (result & 0xffff) * 0x888);
             actor_view->unknown3fe = 3;
-            long reference_index = 0;
+            long local_2 = 4;
+            s_reference *local_3 = &actor_view->unknown400[0].reference;
             do
             {
-                actor_view->unknown400[reference_index].reference = g_470fa0;
-                ++reference_index;
-            } while (reference_index < 4);
+                *local_3 = g_470fa0;
+                local_3 = (s_reference *)((byte *)local_3 + sizeof(actor_view->unknown400[0]));
+            } while (--local_2);
             *(short *)(actor + 0x84) = 3;
             *(short *)(actor + 0x86) = 1;
             *(long *)(actor + 0x88) = 0;
@@ -1296,7 +1294,10 @@ long __stdcall function_1dfb90(long definition_index)
                 ++slot_index;
             } while (slot_index < 4);
             *(short *)(actor + 0x190) = NONE;
-            function_1a80e0(result, *(bool *)(actor + 7) ? 0x72 : 1, NULL, 0);
+            if (!*(bool *)(actor + 7))
+                function_1a80e0(result, 1, NULL, 0);
+            else
+                function_1a80e0(result, 0x72, NULL, 0);
             for (long i = 0; i < 14; ++i)
                 ((long *)(actor + 0x1e8))[i] = NONE;
             long memory_index = 0;
@@ -1405,8 +1406,13 @@ long __stdcall function_1dfb90(long definition_index)
                 s_actor_creation_tag *tag = (s_actor_creation_tag *)g_4e3b44[tag_index & 0xffff].bytes;
                 if (tag->count > 0)
                 {
-                    if (tag->flags && (bool)((*tag->flags >> 3) & 1))
-                        ++*(short *)((byte *)g_5047f4 + 6);
+                    if (tag->flags)
+                    {
+                        byte *local_0 = (byte *)&definition_index;
+                        *(volatile byte *)local_0 = (byte)((*tag->flags >> 3) & 1);
+                        if (*local_0)
+                            ++*(short *)((byte *)g_5047f4 + 6);
+                    }
                     break;
                 }
                 tag_index = tag->parent_index;
@@ -1417,7 +1423,6 @@ long __stdcall function_1dfb90(long definition_index)
 }
 
 
-bool function_11e5e0(point3f const *origin, point3f const *center, vector3f const *direction, real radius);
 long function_11ea30(point3f const *a, vector3f const *u, point3f const *b, vector3f const *v, real radius);
 
 // @retail 0x1c8d20
@@ -1434,7 +1439,7 @@ bool function_1c8d20(long actor_index, point3f const *origin, long excluded_obje
             continue;
         char intersects;
         if (capsules[i].active)
-            intersects = function_11e5e0(&capsules[i].center, origin, direction, capsules[i].radius);
+            intersects = function_11e5e0(origin, direction, &capsules[i].center, capsules[i].radius);
         else
             intersects = (char)function_11ea30(&capsules[i].center,
                 (vector3f *)&capsules[i].value10, origin, direction, capsules[i].radius);

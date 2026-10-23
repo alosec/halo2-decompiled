@@ -16,4 +16,19 @@ struct s_callback_node
 
 extern s_callback_node *g_4e0330;
 
+struct s_record_pool;
+
+struct s_cluster_partition
+{
+	long *cluster_first_data_references;
+	s_record_pool *data_references;
+	s_record_pool *cluster_references;
+};
+
+extern s_cluster_partition g_4e0310_partition;
+
+#define g_4e0310 (g_4e0310_partition.cluster_first_data_references)
+#define g_4e0314 (g_4e0310_partition.data_references)
+#define g_4e0318 (g_4e0310_partition.cluster_references)
+
 #endif

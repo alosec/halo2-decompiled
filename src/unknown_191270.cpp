@@ -6,6 +6,7 @@
 #include "network_voice.h"
 
 // @flags /O2 /Gr
+#include "pool_storage.h"
 
 /* UNKNOWN_191270.CPP: the voice and sound settings and their string ids */
 
@@ -219,9 +220,6 @@ void function_1915f0(void)
 	}
 }
 /* the static memory pool (unknown_221490.cpp) */
-extern dword g_510800_pool_base;
-extern long g_510804_pool_size;
-extern dword g_510808_pool_checksum;
 
 // @retail 0x191300
 bool function_191300(LPDIRECTSOUND direct_sound)

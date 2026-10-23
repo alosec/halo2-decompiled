@@ -44,12 +44,14 @@ void function_1ca130(long arg_0, long arg_1, long arg_2)
     return;
   }
   s_1fbac0_event local_5;
-  memset(&local_5.data, 0, sizeof(local_5.data));
+  memset(&local_5.data, 0, 12);
   local_0->field_144 = local_2;
+  byte local_8 = *(volatile byte const *)&local_0->field_aa;
   local_5.unknown00 = (short)arg_1;
   local_5.unknown02 = (short)arg_2;
+  memset((byte *)&local_5.data + 12, 0, sizeof(local_5.data) - 12);
   local_0->field_13a = (short)arg_1;
-  if (local_0->field_aa == 1)
+  if (local_8 == 1)
   {
    long local_6 = local_0->field_10;
    while (local_6 != NONE)
@@ -60,7 +62,7 @@ void function_1ca130(long arg_0, long arg_1, long arg_2)
     local_6 = local_7->field_c;
    }
   }
-  else if (local_0->field_aa == 0)
+  else if (local_8 == 0)
    ((void (__stdcall *)(long, long, long, long, s_1fbac0_event *))function_1fbac0)(local_0->field_12c, arg_0, 3, 1, &local_5);
  }
 }

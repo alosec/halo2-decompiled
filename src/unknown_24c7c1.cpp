@@ -3,6 +3,7 @@
    (g_5023f4) */
 
 #include <math.h>
+#include "camera_storage.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef H2_NATIVE_PORT
@@ -14,6 +15,9 @@
 #include "unknown_13fd90.h"
 #include "unknown_030290.h"
 #include "unknown_13927e.h"
+
+/* retail calls the pow intrinsic (_CIpow) even though this file is size-optimised */
+#pragma intrinsic(pow)
 
 struct s_link
 {
@@ -188,7 +192,7 @@ void function_24c878(short index)
 			s_hud_state *hud = g_5023f4;
 
 			hud->element_1390 = element;
-			hud->value_1394 = view->value_ea + view->value_e8;
+			hud->value_1394 = view->timed_message.value_1e + view->timed_message.value_1c;
 		}
 	}
 }
@@ -215,17 +219,18 @@ void function_24c93f(bool flag)
 	short ticks = g_5023f4->ticks_139c;
 	if (ticks > 0)
 	{
-		long delta;
-
 		if (flag)
 		{
-			delta = (word)(g_5023f4->time_1398 - g_510c54->game_time);
+			word delta = (word)g_5023f4->time_1398;
+			delta -= (word)g_510c54->game_time;
+			g_5023f4->ticks_139c = delta + ticks;
 		}
 		else
 		{
-			delta = (short)(g_510c54->game_time - g_5023f4->time_1398);
+			short delta = (short)g_510c54->game_time;
+			delta -= (short)g_5023f4->time_1398;
+			g_5023f4->ticks_139c = delta + ticks;
 		}
-		g_5023f4->ticks_139c = delta + ticks;
 	}
 }
 
@@ -434,6 +439,8 @@ void __fastcall function_24cdaf(void)
 }
 
 // @retail 0x24cdd8
+// score 6 (was 6): the tick counter's address is kept in ECX where retail keeps it in EAX, so the
+// counter is read into EAX and written back from there.
 void function_24cdd8(long player_index)
 {
 	s_hud_globals_definition *view = function_24c80b();
@@ -485,10 +492,12 @@ bool __stdcall function_24cedf(real *vertices, long parameter)
 
 			real local_0 = *(real const volatile *)vertex - center_x;
 			real local_1 = *(real const volatile *)(vertex + 1) - center_y;
-			real local_2 = vertex[0] + local_0 * scale * 0.5f;
-			real local_3 = vertex[1] + local_1 * scale * 0.5f;
-			vertex[0] = local_2;
-			vertex[1] = local_3;
+			local_0 *= scale;
+			local_0 *= 0.5f;
+			vertex[0] = *(real const volatile *)vertex + local_0;
+			local_1 *= scale;
+			local_1 *= 0.5f;
+			vertex[1] = *(real const volatile *)(vertex + 1) + local_1;
 		}
 	}
 
@@ -514,11 +523,8 @@ struct s_33a0b_default;
 
 extern s_510c4c *g_510c4c;
 extern s_33a0b_default *g_4686d4;
-extern short g_4b9dd0;
-extern short g_4b9dd2;
 
 /* the frame the HUD draws in */
-short_rectangle2d g_4b9dd8;
 
 long function_122540(long font);
 color4f *unpack_color4f(dword pixel, color4f *color);
@@ -538,7 +544,7 @@ void function_13e9c0(word const *text, short_rectangle2d const *bounds, short_re
 
 /* measures text placed at (top, left) */
 // @retail 0x24ce9d
-void function_24ce9d(word const *text, short left, short top, short_rectangle2d *bounds, short_rectangle2d *result)
+void function_24ce9d(word const *text, long left, long top, short_rectangle2d *bounds, short_rectangle2d *result)
 {
 	short_rectangle2d rect;
 
@@ -568,8 +574,6 @@ void function_24cf66(long local_player_index)
 		short left;
 		short_rectangle2d bounds;
 		short_rectangle2d text_bounds;
-		color4f color;
-		color4f field_24;
 		word text[0x100];
 
 		function_1396c7(1, &origin);
@@ -579,25 +583,25 @@ void function_24cf66(long local_player_index)
 			top -= 0x19;
 
 		s_hud_player *player = hud_player_get(local_player_index);
-		short count = 4 - split_screen;
+		short count = 4 - (split_screen != 0);
 		s_hud_state *hud = g_5023f4;
-		bool timer_message = hud->element_1390 && hud->value_1394;
+		long timer_message = hud->element_1390 && hud->value_1394;
 		bool tutorial_message = g_510c98->flag && hud->element_138c;
 		bool scripted_message = player->flag_444 && (player->value_440 || player->text[0]);
 		long height = 0;
 
 		if (timer_message || tutorial_message || scripted_message)
 		{
+			color4f color;
+			color4f field_24;
 			if (timer_message)
 			{
-				s_hud_globals_definition *globals = g_510c94;
+				s_hud_timed_message_definition const *timed = &g_510c94->timed_message;
 				real fraction;
 
-				unpack_color4f(globals->color_cc, &color);
-				fraction = (real)hud->value_1394 / (real)globals->value_ea;
-				if (fraction > 1.0f)
-					fraction = 1.0f;
-				color.alpha = fraction * color.alpha;
+				unpack_color4f(timed->color, &color);
+				fraction = (real)hud->value_1394 / (real)timed->value_1e;
+				color.alpha = (fraction > 1.0f ? 1.0f : fraction) * color.alpha;
 				pack_color4f(&color);
 			}
 			else if (tutorial_message)
@@ -614,11 +618,11 @@ void function_24cf66(long local_player_index)
 
 			*(s_color_bits *)&color.red = *function_13927e(local_player_index);
 			color.alpha = function_1392a9(local_player_index);
+			long fade_ticks = g_510c54->field_2_3 / 4;
 			*(color3f *)&field_24.red = *(color3f *)g_468718;
 			field_24.alpha = color.alpha;
 
 			short ticks = player->ticks_446;
-			long fade_ticks = g_510c54->field_2_3 / 4;
 			if (ticks < fade_ticks)
 			{
 				real fraction = (real)ticks / (real)fade_ticks;
@@ -628,22 +632,21 @@ void function_24cf66(long local_player_index)
 					fraction = 1.0f;
 
 				real flash = 1.0f - fraction;
-				real rest = 1.0f - flash;
 
-				color.red = color.red * rest + flash;
-				color.green = color.red * rest + flash;
-				color.blue = color.red * rest + flash;
-				field_24.red = field_24.red * rest + 0.5f * flash;
-				field_24.green = field_24.red * rest + 0.5f * flash;
-				field_24.blue = field_24.red * rest + 0.5f * flash;
+				color.red = (1.0f - flash) * color.red + flash;
+				color.green = (1.0f - flash) * color.red + flash;
+				color.blue = (1.0f - flash) * color.red + flash;
+				field_24.red = (1.0f - flash) * field_24.red + 0.5f * flash;
+				field_24.green = (1.0f - flash) * field_24.red + 0.5f * flash;
+				field_24.blue = (1.0f - flash) * field_24.red + 0.5f * flash;
 				g_4e73a0.vertex_proc = function_24cedf;
 				g_4e73a0.vertex_proc_parameter = *(long *)&flash;
 			}
 
-			bounds.top = top;
 			bounds.left = left;
-			bounds.bottom = top + line_height * 5;
 			bounds.right = g_4b9dd8.right - g_4b9dd2;
+			bounds.top = top;
+			bounds.bottom = top + line_height * 5;
 			text_bounds = bounds;
 			function_13edb0(font, NONE, 0, 0, &color, &field_24);
 			function_13eb60(&color);
@@ -673,91 +676,88 @@ void function_24cf66(long local_player_index)
 
 		top += (short)height;
 		qsort(player->messages, 4, sizeof(s_hud_message), hud_message_compare);
-
-		short y = top;
 		for (short i = 0; i < count; i++)
 		{
+			color4f color;
+			color4f field_24;
 			s_hud_message *message = &player->messages[i];
 
-			if (message->active)
+			if (!message->active)
+				break;
+			long game_time = g_510c54->game_time;
+
+			if (function_163040(local_player_index))
+				message->time++;
+
+			real age = (real)(game_time - message->time) * g_510c54->rate;
+
+			*(s_color_bits *)&color.red = *function_13927e(local_player_index);
+			color.alpha = function_1392a9(local_player_index);
+			field_24 = *(color4f *)g_4686d4;
+			field_24.alpha = function_1392a9(local_player_index);
+
+			if (age > view->fade_time)
 			{
-				s_game_time_globals *game_time_globals = g_510c54;
-				long game_time = game_time_globals->game_time;
+				real remaining = 1.0f - (age - view->fade_time) / view->display_time;
+				real fade = remaining < 0.0f ? 0.0f : (remaining > 1.0f ? 1.0f : remaining);
 
-				if (function_163040(local_player_index))
-					message->time++;
-
-				real age = (real)(game_time - message->time) * game_time_globals->rate;
-
-				*(s_color_bits *)&color.red = *function_13927e(local_player_index);
-				color.alpha = function_1392a9(local_player_index);
-				field_24 = *(color4f *)g_4686d4;
-				field_24.alpha = function_1392a9(local_player_index);
-
-				if (age > view->fade_time)
-				{
-					real fade = 1.0f - (age - view->fade_time) / view->display_time;
-					if (fade < 0.0f)
-						fade = 0.0f;
-					else if (fade > 1.0f)
-						fade = 1.0f;
-
-					real scale = pow(fade, 1.9f);
-					color.alpha *= scale;
-					field_24.alpha *= scale;
-				}
-
-				long message_height = 0;
-				function_13edb0(font, NONE, 0, 0, &color, &field_24);
-
-				if (message->counted && message->count)
-				{
-					unicode_string_copy(text, message->text, 0x100);
-					((s_510c4c_view *)g_510c4c)->text_count = message->count;
-					function_22d2ee(text, 0x100);
-					if (function_13ee20(text, g_4e73a0.font))
-					{
-						function_24ce9d(text, left, y, &bounds, &text_bounds);
-						message_height = (short)(bounds.bottom - bounds.top);
-						function_1fa30(text, &bounds);
-					}
-				}
-				else if (function_13ef30(message->text))
-				{
-					function_24ce9d(message->text, left, y, &bounds, &text_bounds);
-					message_height = (short)(bounds.bottom - bounds.top);
-					function_1fa30(message->text, &bounds);
-				}
-
-				y = (short)((real)message_height * view->line_spacing + (real)y);
+				real scale = pow(fade, 1.9f);
+				color.alpha *= scale;
+				field_24.alpha *= scale;
 			}
+
+			long message_height = 0;
+			function_13edb0(font, NONE, 0, 0, &color, &field_24);
+
+			if (message->counted && message->count)
+			{
+				unicode_string_copy(text, message->text, 0x100);
+				((s_510c4c_view *)g_510c4c)->text_count = message->count;
+				function_22d2ee(text, 0x100);
+				if (function_13ee20(text, g_4e73a0.font))
+				{
+					function_24ce9d(text, left, top, &bounds, &text_bounds);
+					message_height = (short)(bounds.bottom - bounds.top);
+					function_1fa30(text, &bounds);
+				}
+			}
+			else if (function_13ef30(message->text))
+			{
+				function_24ce9d(message->text, left, top, &bounds, &text_bounds);
+				message_height = (short)(bounds.bottom - bounds.top);
+				function_1fa30(message->text, &bounds);
+			}
+
+			top = (short)((real)message_height * view->line_spacing + (real)top);
 		}
 
-		player = hud_player_get(local_player_index);
+		color4f color;
+		color4f field_24;
+		s_hud_player *status_player = hud_player_get(local_player_index);
 		field_24 = *(color4f *)g_4686d4;
 		long game_time = g_510c54->game_time;
-		top = g_4b9dd8.bottom - g_4b9dd0 - 0x28;
+		long local_2 = g_4b9dd8.bottom - g_4b9dd0 - 0x28;
 		*(s_color_bits *)&color.red = *function_13927e(local_player_index);
 		bounds.left = g_4b9dd8.left - g_4b9dd2;
 		bounds.right = g_4b9dd8.right - g_4b9dd2;
-		bounds.bottom = top + line_height * 5;
-		bounds.top = top;
+		bounds.bottom = local_2 + line_height * 5;
+		bounds.top = local_2;
 
-		if (game_time >= player->time_4d8 && game_time < player->time_4d8 + player->value_4dc)
+		if (game_time >= status_player->time_4d8 && game_time < status_player->time_4d8 + status_player->value_4dc)
 		{
-			long duration = player->value_4dc ? player->value_4dc : 1;
-			real fade = pow(1.0f - (real)(game_time - player->time_4d8) / (real)duration, 0.4f);
+			long duration = !status_player->value_4dc ? 1 : status_player->value_4dc;
+			real fade = pow(1.0f - (real)(game_time - status_player->time_4d8) / (real)duration, 0.4f);
 
 			color.alpha = function_1392a9(local_player_index) * fade;
 			field_24.alpha = function_1392a9(local_player_index) * fade;
 			function_13edb0(font, NONE, 2, 0, &color, &field_24);
-			if (function_13ef30(player->text_454))
-				function_1fa30(player->text_454, &bounds);
+			if (function_13ef30(status_player->text_454))
+				function_1fa30(status_player->text_454, &bounds);
 		}
 
 		bounds.bottom += 0x12;
-		top += 0x12;
-		bounds.top = top;
+		local_2 += 0x12;
+		bounds.top = local_2;
 		*(s_color_bits *)&color.red = *function_13927e(local_player_index);
 		color.alpha = function_1392a9(local_player_index);
 		field_24.alpha = function_1392a9(local_player_index);

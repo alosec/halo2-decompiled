@@ -1,4 +1,5 @@
 // @flags /O2 /Ob1 /Gr
+#include "object_masks_storage.h"
 /* UNKNOWN_0BBF40.CPP: object flag setters of the script functions */
 
 #include "unknown_11c920.h"
@@ -301,56 +302,66 @@ s_object_gc_entry_ab g_440570[6] =
     {0, false, 0, 0}
 };
 
+// score 110 (was 110): the size constant is 0x2a08 where retail uses 0x2a04 and the prologue pushes
+// EBP where retail pushes EBX.
 // @retail 0xbf380
 void function_bf380()
 {
-    byte scratch[0x2800];
     byte unused[0x200];
+    byte scratch[0x2800];
     long level = NONE;
     byte *globals = (byte *)g_4de2f4;
     if (globals[1])
-    level = !globals[2];
+        level = !globals[2];
     else
     {
         s_loop_allocator *loop = (s_loop_allocator *)g_4de2ec;
         long used = loop->last ? (byte *)loop->last + loop->last->size - loop->base : 0;
         if (loop->size - used <= 0xcccc || 0x800 - g_4e0300->actual_count <= 0x66)
-        level = 3;
+            level = 3;
         else if (((s_object_gc_globals_ab *)g_4de2f4)->count >= 0x32)
-        level = 2;
+            level = 2;
     }
-    if (level != NONE)
+    if (level == NONE)
     {
-        bool critical = false;
-        bool gathered = false;
-        s_object_gc_entry_ab *entry = g_440570;
-        for (;;)
+        ((byte *)g_4de2f4)[1] = 0;
+        ((byte *)g_4de2f4)[2] = 0;
+        return;
+    }
+    bool critical = false;
+    bool again = false;
+    bool gathered = false;
+    s_object_gc_entry_ab *entry = g_440570;
+    for (;;)
+    {
+        byte *state = (byte *)g_4de2f4;
+        if (!entry->action)
         {
-            byte *state = (byte *)g_4de2f4;
-            if (!entry->action)
-            {
-                state[1] = 0;
-                state[2] = 0;
-                return;
-            }
-            if (!function_bf1c0(level, &critical))
-            break;
-            if ((entry->levels & (1 << level)) && (!entry->critical_only || critical))
-            {
-                if (!gathered)
-                {
-                    if (entry->gather)
-                    entry->gather(level, scratch, sizeof(scratch));
-                    gathered = true;
-                }
-                bool again = false;
-                entry->action(level, scratch, sizeof(scratch), &again, unused, sizeof(unused));
-                if (again)
-                continue;
-            }
-            entry++;
-            gathered = false;
+            state[1] = 0;
+            state[2] = 0;
+            return;
         }
+        if (!function_bf1c0(level, &critical))
+            break;
+        if ((entry->levels & (1 << level)) && (!entry->critical_only || critical))
+        {
+            if (!gathered)
+            {
+                if (entry->gather)
+                    entry->gather(level, scratch, sizeof(scratch));
+                gathered = true;
+            }
+            again = false;
+            entry->action(level, scratch, sizeof(scratch), &again, unused, sizeof(unused));
+            if (!again)
+            {
+                entry++;
+                gathered = false;
+            }
+            continue;
+        }
+        entry++;
+        gathered = false;
     }
     ((byte *)g_4de2f4)[1] = 0;
     ((byte *)g_4de2f4)[2] = 0;
@@ -373,7 +384,7 @@ struct s_model_render_ab
 };
 
 transform4x3f *function_b8c00(long object_index, long *node_count);
-void function_109140(long object_index, long count, long nodes);
+void object_dispatch_adjust_node_matrices(long object_index, long count, long nodes);
 
 // @retail 0xbe1d0
 void function_be1d0(long object_index)
@@ -387,7 +398,7 @@ void function_be1d0(long object_index)
 		{
 			long count;
 			transform4x3f *nodes = function_b8c00(object_index, &count);
-			function_109140(object_index, count, (long)nodes);
+			object_dispatch_adjust_node_matrices(object_index, count, (long)nodes);
 		}
 	}
 }
@@ -498,8 +509,6 @@ bool function_bf5d0(long object_index)
 	return result != 0;
 }
 
-extern long g_4de2fc;
-extern long g_4de300[0x800];
 
 static __forceinline bool object_stamp_ab(long index, long stamp)
 {
@@ -636,6 +645,8 @@ struct s_object_identifier_bbf40
 	char source;
 };
 
+// score 37 (was 41): the byte field is read into DL and the stack byte into CL; retail reads the
+// byte at +0xaa into DL and the stack byte into CL.
 // @retail 0xbf760
 long function_bf760(long const *unique_id)
 {
@@ -653,8 +664,10 @@ long function_bf760(long const *unique_id)
 		function_bae80(&state.iterator, 1 << type, 0);
 		while ((state.object = (s_object_query_bbf40 *)function_baeb0(&state.iterator)) != 0)
 		{
-			bool match = (type == state.object->type) & (source == state.object->source) &
-				(identifier->unique_id == state.object->unique_id);
+			bool match = true;
+			match &= type == state.object->type;
+			match &= identifier->source == state.object->source;
+			match &= identifier->unique_id == state.object->unique_id;
 			if (match && source == 0)
 				match &= identifier->origin_bsp == state.object->origin_bsp;
 			if (match)
@@ -731,10 +744,12 @@ void __stdcall function_bc300(long object_index)
 	record_pool_release(g_4e0300, object_index);
 }
 
+// score 42 (was 42): the mask is applied to the index before the record pointer is loaded; retail
+// loads the pointer first.
 // @retail 0xbc380
 bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
 {
-	volatile bool result = false;
+	bool result = false;
 	s_object_memory_header_ab *header = (s_object_memory_header_ab *)g_4e0300->data + (object_index & 0xffff);
 	if ((short)size == 0)
 	{
@@ -754,7 +769,7 @@ bool function_bc380(long object_index, long block_offset, long size, long alignm
 		block->offset = (short)((old_size + mask) & ~mask);
 		block->size = (short)size;
 		memset((byte *)header->object + old_size, 0, extra);
-		return true;
+		result = true;
 	}
 	return result;
 }
@@ -797,14 +812,17 @@ static __forceinline byte *object_bytes_ab(long index)
     return (byte *)((s_object_header_0bbf40 *)g_4e0300->data)[index & 0xffff].object;
 }
 
+// score 101 (was 101): ours is thirteen bytes shorter and pushes EBP and ESI where retail pushes EBX
+// and EBP, so the saved registers differ.
 // @retail 0xbeb30
 bool __stdcall function_beb30(long object_index)
 {
-    byte *object = object_bytes_ab(object_index);
+    byte *volatile object = object_bytes_ab(object_index);
     byte *unit = (byte *)function_badc0(object_index, 3);
     long player = NONE;
     if (unit) player = *(long *)(unit + 0x13c);
-    bool result = player != NONE;
+    byte &result = *(byte *)&object_index;
+    result = player != NONE;
     if (!result)
     {
         long index = *(long *)(object + 0x10);
@@ -860,8 +878,95 @@ struct s_post_physics_header_ab
 };
 void __stdcall function_bc5e0(long object_index);
 void __stdcall function_1d3920(byte *component, dword *mask, real value);
-void function_108cd0(long object_index);
-void __stdcall function_bef30(long object_index, long remove, long add, long siblings, long own_flags);
+void object_dispatch_late_update(long object_index);
+void __stdcall function_bef30(long object_index, long remove, long add, long siblings, bool own_flags);
+
+struct s_light_link_ab
+{
+    byte kind;
+    byte unknown01[3];
+    long light_index;
+};
+
+struct s_light_tree_object_ab
+{
+    long definition;
+    dword flag0 : 1;
+    dword : 3;
+    dword flag4 : 1;
+    dword : 1;
+    dword flag6 : 1;
+    dword : 25;
+    long unknown08;
+    long sibling;
+    long child;
+    byte unknown14[0x11c - 0x14];
+    short links_size;
+    short links_offset;
+};
+
+struct s_light_tree_header_ab
+{
+    word identifier;
+    byte flags;
+    byte type;
+    dword unknown04;
+    s_light_tree_object_ab *object;
+};
+
+void function_c3220(long light_index);
+void __stdcall function_c2d00(long light_index);
+long __stdcall function_c1720(long object_index, long remove, long add);
+
+// @retail 0xbef30
+void __stdcall function_bef30(long object_index, long remove, long add, long siblings, bool own_flags)
+{
+    (void)&object_index;
+    (void)&remove;
+    (void)&add;
+    (void)&siblings;
+    (void)&own_flags;
+    do
+    {
+        s_light_tree_header_ab *header = &((s_light_tree_header_ab *)g_4e0300->data)[object_index & 0xffff];
+        s_light_tree_object_ab *object = header->object;
+        bool hidden;
+        if ((byte)own_flags)
+        {
+            if ((header->flags & 0x10) || TEST_FIELD_BIT(object->flag0))
+                return;
+            hidden = false;
+        }
+        else
+        {
+            hidden = object_or_parent_hidden(object_index);
+            if (hidden)
+                return;
+        }
+        if (TEST_FIELD_BIT(object->flag4))
+        {
+            long count = (dword)(long)object->links_size / sizeof(s_light_link_ab);
+            s_light_link_ab *links = (s_light_link_ab *)((byte *)object + object->links_offset);
+            for (long i = 0; i < count; ++i)
+            {
+                if (!links[i].kind && links[i].light_index != NONE && !hidden)
+                {
+                    if ((byte)remove)
+                        function_c3220(links[i].light_index);
+                    if ((byte)add)
+                        function_c2d00(links[i].light_index);
+                }
+            }
+        }
+        if (TEST_FIELD_BIT(object->flag6))
+            function_c1720(object_index, remove, add);
+        if (object->child != NONE)
+            function_bef30(object->child, remove, add, 1, !hidden);
+        if (!(byte)siblings || object->sibling == NONE)
+            return;
+        object_index = object->sibling;
+    } while (true);
+}
 
 // @retail 0xbc820
 void __stdcall function_bc820(long object_index)
@@ -884,15 +989,15 @@ void __stdcall function_bc820(long object_index)
             function_1d3920(component, mask, 0.0f);
         }
     }
-    function_108cd0(object_index);
-    if ((bool)(((dword)((volatile byte *)object)[0xc0] >> 2) & 1))
-        ((byte *)object)[0xc0] |= 2;
+    object_dispatch_late_update(object_index);
+    if (TEST_FIELD_BIT(((s_post_physics_object_ab volatile *)object)->flag2))
+        *(word *)((byte *)object + 0xc0) |= 2;
     else
-        ((byte *)object)[0xc0] &= ~2;
+        *(word *)((byte *)object + 0xc0) &= ~2;
     object->flag2 = false;
     bool moved = function_bdef0(object_index);
     if ((header->flags & 0x40) && !moved)
-        function_bef30(object_index, 1, 1, 0, 0);
+        function_bef30(object_index, 1, 1, 0, false);
     long child = object->child;
     while (child != NONE)
     {
@@ -904,7 +1009,7 @@ void __stdcall function_bc820(long object_index)
 
 
 void function_a9570(long object_index);
-bool function_108c60(long object_index);
+bool object_dispatch_update(long object_index);
 bool function_d5de0(long object_index);
 bool __stdcall function_be8e0(long object_index);
 struct s_havok_component;
@@ -932,7 +1037,7 @@ bool __stdcall function_bc470(long object_index)
             if (animation->graph_tag_index != NONE)
                 active = animation->blend_counters_update();
         }
-        active |= function_108c60(object_index);
+        active |= object_dispatch_update(object_index);
         active |= function_d5de0(object_index);
         active |= function_be8e0(object_index);
         long child = object->child;
@@ -965,16 +1070,17 @@ void __stdcall function_c3260(long light_index, bool clear_object_flag);
 bool function_177610(long effect_index);
 void contrail_update(long contrail_index, bool detach, real dt);
 
+// score 2 (was 2): the flag bit is cleared after the store; retail clears it before the store.
 // @retail 0xbee60
-void function_bee60(long object_index)
+dword function_bee60(long object_index)
 {
     byte *object = (byte *)((s_object_header_0bbf40 *)g_4e0300->data)[object_index & 0xffff].object;
     long count = (dword)(long)*(short *)(object + 0x11c) / sizeof(s_object_attachment_ab);
-    s_object_attachment_ab *attachment = (s_object_attachment_ab *)(object + *(short *)(object + 0x11e));
+    s_object_attachment_ab *attachment = (s_object_attachment_ab *)(object + *(volatile short *)(object + 0x11e));
     if (count > 0)
     {
-        volatile long remaining = count;
         long *index = &attachment->index;
+        volatile long remaining = count;
         do
         {
             if (*(char *)(index - 1) != NONE && *index != NONE)
@@ -1005,4 +1111,5 @@ void function_bee60(long object_index)
     dword final_flags = flags & ~0x20;
     *(volatile dword *)(object + 4) = flags;
     *(dword *)(object + 4) = final_flags;
+    return final_flags;
 }

@@ -174,10 +174,10 @@ real function_bcbb0()
 	return result;
 }
 
-void function_108e10(long object_index);
-void function_108e80(long object_index);
-void function_108ef0(long object_index, long a);
-void function_108f60(long object_index, long a);
+void object_dispatch_attach_simulation_entity(long object_index);
+void object_dispatch_detach_simulation_entity(long object_index);
+void object_dispatch_object_removed(long object_index, long a);
+void object_dispatch_player_removed(long object_index, long a);
 
 // @retail 0xbb760
 long function_bb760(short index)
@@ -196,14 +196,24 @@ long function_bb760(short index)
 void function_bb780(long object_index, long value)
 {
 	((s_object_header *)g_4e0300->data)[object_index & 0xffff].object->unknownd4 = value;
-	function_108e10(object_index);
+	object_dispatch_attach_simulation_entity(object_index);
 }
+
+__declspec(noinline) void function_bb7b0(long object_index);
 
 // @retail 0xbb7b0
 void function_bb7b0(long object_index)
 {
 	s_object *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-	function_108e80(object_index);
+	object_dispatch_detach_simulation_entity(object_index);
+	object->unknownd4 = NONE;
+	object->unknownd8 = 0;
+}
+
+PRIVATE __forceinline void object_clear_notification_inline(long object_index)
+{
+	s_object *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+	object_dispatch_detach_simulation_entity(object_index);
 	object->unknownd4 = NONE;
 	object->unknownd8 = 0;
 }
@@ -220,7 +230,7 @@ void function_bb7f0()
 	while ((state.object = function_baeb0(&state.iterator)) != 0)
 	{
 		if (state.object->unknownd4 != NONE)
-			function_bb7b0(state.iterator.object_index);
+			object_clear_notification_inline(state.iterator.object_index);
 	}
 }
 
@@ -236,7 +246,7 @@ void __stdcall function_bb880(long a)
 	function_bae80(&state.iterator, 0, 0);
 	while ((state.object = function_baeb0(&state.iterator)) != 0)
 	{
-		function_108ef0(state.iterator.object_index, a);
+		object_dispatch_object_removed(state.iterator.object_index, a);
 	}
 }
 
@@ -251,10 +261,13 @@ void function_bb8f0(long a)
 	function_bae80(&state.iterator, 0, 0);
 	while ((state.object = function_baeb0(&state.iterator)) != 0)
 	{
-		function_108f60(state.iterator.object_index, a);
+		object_dispatch_player_removed(state.iterator.object_index, a);
 	}
 }
 
+// score 4 (was 4): retail keeps the delta in the accumulator and adds the
+// game time to it, ours keeps the game time in the accumulator and adds the
+// delta to that, so the four instructions that build the time differ.
 // @retail 0xbb950
 void function_bb950(long object_index, bool add, long delta)
 {
@@ -283,9 +296,10 @@ void function_bb950(long object_index, bool add, long delta)
 		long *link = &list->first_index;
 		while (*link != object_index)
 			link = &((s_object_header *)g_4e0300->data)[*link & 0xffff].object->next_index;
-		*link = object->next_index;
-		object->next_index = NONE;
-		object->flag14 = 0;
+		long &next = object->next_index;
+		*link = next;
+		next = NONE;
+		object->flags &= ~0x4000UL;
 		if (TEST_FIELD_BIT(header->flag0))
 			list->count--;
 	}
@@ -299,18 +313,28 @@ real function_0bff60(real a, real b);
 real function_c18e0();
 real function_1588b0(long player_index, long type);
 
+/* the word of flags at 0x10a of an object */
+struct s_object_flags_10a
+{
+    byte unknown000[0x10a];
+    word bit0 : 1;
+    word bit1 : 1;
+    word bit2 : 1;
+    word : 13;
+};
+
 // @retail 0xbcc20
 bool __stdcall function_bcc20(long object_index, long id, real *out, bool *active)
 {
     byte *object = (byte *)((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-    real value = 0.0f;
     bool forced_active = false;
     bool result = true;
+    real value = 0.0f;
     switch (id)
     {
     case 0x030005a6: value = 1.0f; break;
     case 0x040005a7: value = 0.0f; break;
-    case 0x0500055b: value = (bool)((object[0x10a] >> 2) & 1) ? 0.0f : 1.0f; break;
+    case 0x0500055b: value = TEST_FIELD_BIT(((s_object_flags_10a *)object)->bit2) ? 0.0f : 1.0f; break;
     case 0x0700055c:
         {
             transform4x3f *matrix = function_b8bd0(object_index, 0);
@@ -327,12 +351,11 @@ bool __stdcall function_bcc20(long object_index, long id, real *out, bool *activ
         {
             byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
             byte *model = g_4e3b44[*(long *)(definition + 0x38) & 0xffff].bytes;
-            long count = *(long *)(model + 0x50);
-            if (count > 0)
+            if (*(long *)(model + 0x50) > 0)
             {
                 long variant = *(char *)(object + 0xb1) + 1;
-                variant = variant < 0 ? 0 : variant > count ? count : variant;
-                value = (real)variant / count;
+                variant = variant < 0 ? 0 : variant > *(long *)(model + 0x50) ? *(long *)(model + 0x50) : variant;
+                value = (real)variant / *(long *)(model + 0x50);
             }
         }
         break;
@@ -343,39 +366,79 @@ bool __stdcall function_bcc20(long object_index, long id, real *out, bool *activ
     case 0x0c0006b7: value = function_bcb10(); break;
     case 0x0c0006b8: value = function_bcb60(); break;
     case 0x0d000558: value = *(real *)(object + 0xec); break;
-    case 0x0d0005ff: forced_active = function_bc970(object_index, id, &value); break;
     case 0x0f000559: value = *(real *)(object + 0xf0); break;
     case 0x0f0005aa: value = (((dword)object_index * 0x19660d + 0x3c6ef35f) >> 16) * 0.000015259021893143654f; break;
     case 0x0f0005ac:
-        if (g_4e6948->state == 2 && ((1 << object[0xaa]) & 3) && *(long *)(object + 0x13c) != NONE)
-        {
-            if (function_1588b0(*(long *)(object + 0x13c), 2) <= 0.0f)
-                break;
-        }
-        if (*(real *)(object + 0xf0) == 0.0f)
+        if ((g_4e6948->state != 2 || !((1 << object[0xaa]) & 3) || *(long *)(object + 0x13c) == NONE ||
+            function_1588b0(*(long *)(object + 0x13c), 2) > 0.0f) && *(real *)(object + 0xf0) == 0.0f)
             value = 1.0f;
+        else
+            value = 0.0f;
         break;
     case 0x100006b4: value = 1.0f; break;
     case 0x13000556: value = *(real *)(object + 0xf8); break;
     case 0x130006bb: value = function_c18e0(); break;
     case 0x15000557: value = *(real *)(object + 0xf4); break;
-    case 0x170005fa: forced_active = function_bc970(object_index, id, &value); break;
-    case 0x170005fb: forced_active = function_bc970(object_index, id, &value); break;
     case 0x1800055a: value = *(real *)(object + 0xf0) - 1.0f; break;
-    case 0x180005fc: forced_active = function_bc970(object_index, id, &value); break;
     case 0x1a00071a: value = *(real *)((byte *)g_4de2f4 + 0x70); break;
     case 0x1a00071b: value = *(real *)((byte *)g_4de2f4 + 0x74); break;
     case 0x1a00071c: value = *(real *)((byte *)g_4de2f4 + 0x78); break;
     case 0x1a00071d: value = *(real *)((byte *)g_4de2f4 + 0x7c); break;
-    case 0x1d0005fd: forced_active = function_bc970(object_index, id, &value); break;
-    case 0x1d0005fe: forced_active = function_bc970(object_index, id, &value); break;
+    case 0x0d0005ff: case 0x170005fa: case 0x170005fb:
+    case 0x180005fc: case 0x1d0005fd: case 0x1d0005fe:
+        forced_active = function_bc970(object_index, id, &value); break;
     default: result = false; break;
     }
-    value = value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value;
+    if (value < 0.0f)
+        value = 0.0f;
+    else if (value > 1.0f)
+        value = 1.0f;
     *out = value;
-    *active = forced_active || value > 0.0f;
+    if (forced_active)
+        *active = true;
+    else
+        *active = value > 0.0f;
     return result;
 }
+
+/* the base object type (0x4678e8): its name, group tag, datum size, its
+   callbacks and its type list, which holds only itself */
+struct s_object_type_definition_0bb760
+{
+    char const *name;
+    long group_tag;
+    short datum_size;
+    short unknown0a;
+    long unknown0c;
+    void *functions[29];
+    void *types[2];
+    byte unknown8c[0xc8 - 0x8c];
+};
+
+void __stdcall function_be760(long index);
+void __stdcall function_72c70(dword value);
+
+extern s_object_type_definition_0bb760 g_4678e8;
+
+s_object_type_definition_0bb760 g_4678e8 =
+{
+    "object",
+    'obje',
+    0x12c,
+    NONE,
+    NONE,
+    {
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, (void *)function_be760, NULL,
+        NULL, NULL, NULL, (void *)function_bcc20,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
+        (void *)function_72c70
+    },
+    { &g_4678e8, NULL }
+};
 
 struct s_colour_choice_ab
 {
@@ -398,6 +461,7 @@ void function_3dd10(long object_index, bool force);
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
+
     byte *object = (byte *)((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
     byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
     color3f *output = (color3f *)(object + *(short *)(object + 0x126));
@@ -413,22 +477,25 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
             long choice_count = entry->count;
             if (choice_count > 0)
             {
+                long last = NONE;
+                dword eligible = 0;
+                long variant = 0;
+                real weight = 0.0f;
                 real index = (real)i;
                 real seed = (real)fabs(*(real *)(object + 0x6c) * 744.1241455078125f + *(real *)(object + 0x64) * 315.89312744140625f + index * 431.1289367675781f + *(real *)(object + 0x68) * 587.1294555664062f);
                 real selection = (real)fmod((double)seed, 1.0);
                 seed = (real)fabs(index * 0.7121099829673767f + *(real *)(object + 0x68));
                 real blend = (real)fmod((double)seed, 1.0);
-                long variant = 0;
+
                 char variant_index = *(char *)(object + 0xb1);
                 if (variant_index != NONE && *(long *)(definition + 0x38) != NONE)
                 {
                     byte *model = g_4e3b44[*(long *)(definition + 0x38) & 0xffff].bytes;
                     variant = *(long *)(*(byte **)(model + 0x54) + variant_index * 0x38);
                 }
-                dword eligible = 0;
-                long last = NONE;
-                real weight = 0.0f;
-                for (long j = 0; j < choice_count; ++j)
+
+                long j = 0;
+                while (j != choice_count)
                 {
                     s_colour_choice_ab *choice = &entry->choices[j];
                     if (!choice->field_1c_4 || choice->field_1c_4 == variant)
@@ -437,12 +504,15 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                         last = j;
                         eligible |= 1 << j;
                     }
+
+                    ++j;
                 }
                 if (eligible && weight > 0.0f)
                 {
                     real target = selection * weight;
                     real cumulative = 0.0f;
-                    for (long j = 0; j < choice_count; ++j)
+                    long j = 0;
+                    do
                     {
                         s_colour_choice_ab *choice = &entry->choices[j];
                         if (eligible & (1 << j))
@@ -467,7 +537,8 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                                 break;
                             }
                         }
-                    }
+                        ++j;
+                    } while (j < choice_count);
                 }
             }
         }
@@ -516,24 +587,28 @@ struct s_colour_function_ab
 };
 color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t, color3f *result);
 
+// score 91 (was 91): retail tests the count against zero before it computes
+// the output pointer, ours computes the pointer first, and retail keeps the
+// running offset in another register, so the test, the two leas and the
+// loop's bookkeeping differ.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {
-    bool result = false;
     byte *object = (byte *)((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
     byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
+    bool result = false;
     if (definition[0x1c] & 1)
     {
-        long count = (long)((dword)(long)*(short *)(object + 0x124) / 12) / 2;
         color3f *base = (color3f *)(object + *(short *)(object + 0x126));
+        long count = (long)((dword)(long)*(short *)(object + 0x124) / 12) / 2;
         color3f *current = base + count;
         if (count > 0)
         {
             result = true;
-            for (long i = 0; i < count; ++i)
+            for (long remaining = count, i = 0; remaining > 0; --remaining, ++i, ++current, ++base)
             {
                 s_colour_choices_ab *entry = &(*(s_colour_choices_ab **)(definition + 0xb0))[i];
-                current[i] = base[i];
+                *current = *base;
                 for (long j = 0; j < entry->function_count; ++j)
                 {
                     s_colour_function_ab *function = &entry->functions[j];
@@ -541,7 +616,7 @@ bool __stdcall function_be8e0(long object_index)
                     {
                         real value;
                         if (!function_bab40(object_index, function->blend_name, &value)) value = 0.0f;
-                        function_131c20(&function->lower, &function->upper, function->flags, value, &current[i]);
+                        function_131c20(&function->lower, &function->upper, function->flags, value, &*current);
                     }
                 }
                 for (long j = 0; j < entry->function_count; ++j)
@@ -551,14 +626,14 @@ bool __stdcall function_be8e0(long object_index)
                     {
                         real value;
                         if (!function_bab40(object_index, function->scale_name, &value)) value = 0.0f;
-                        current[i].red = value * current[i].red;
-                        current[i].green *= value;
-                        current[i].blue *= value;
+                        current->red = value * current->red;
+                        current->green *= value;
+                        current->blue *= value;
                     }
                 }
-                current[i].red = current[i].red < 0.0f ? 0.0f : current[i].red > 1.0f ? 1.0f : current[i].red;
-                current[i].green = current[i].green < 0.0f ? 0.0f : current[i].green > 1.0f ? 1.0f : current[i].green;
-                current[i].blue = current[i].blue < 0.0f ? 0.0f : current[i].blue > 1.0f ? 1.0f : current[i].blue;
+                current->red = current->red < 0.0f ? 0.0f : current->red > 1.0f ? 1.0f : current->red;
+                current->green = current->green < 0.0f ? 0.0f : current->green > 1.0f ? 1.0f : current->green;
+                current->blue = current->blue < 0.0f ? 0.0f : current->blue > 1.0f ? 1.0f : current->blue;
             }
         }
     }

@@ -28,22 +28,22 @@ void unicode_string_copy(word *destination, const word *source, long maximum_cou
 c_class_1473c9 *__stdcall function_23784f(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_23764f(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_237713(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_2b80b9(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_2b80c9(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall xbox_live_message_send_screen_load_type1_to_gamertag(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall xbox_live_message_send_screen_load_type2_to_gamertag(s_screen_parameters *parameters);
 long function_1480ff(long screen_id);
 s_screen_definition *function_22f871(c_class_1473c9 *screen);
 void function_1a0180(long tag_index, long string_handle, word *buffer);
 void parse_text(word *string);
 bool function_13ee20(word const *string, long font);
-bool function_140420(word c);
+bool unicode_character_is_private_use(word c);
 void function_236299(long sound);
 void __stdcall function_215e60(long index);
 bool function_216120(word *string, long type);
 void function_148a58();
 void function_120df0(long index, wchar_t const *name);
-void function_120e20(long controller_index, long *profile_index);
-long __stdcall function_1a03a0(long controller_index, word *name);
-bool function_1a0540(s_player_profile_settings *settings, long profile_index);
+void function_120e20(long *profile_index, long controller_index);
+long __stdcall player_profile_make(long controller_index, word *name);
+bool player_profile_load(long profile_index, s_player_profile_settings *settings);
 void function_19060a(long controller_index, long profile_index);
 long online_team_create(long controller_index, XONLINE_TEAM_PROPERTIES const *properties);
 void function_1487c3(long controller_index, long task_index, long callback, long value, long context);
@@ -51,7 +51,7 @@ class c_online_task_screen;
 void __stdcall function_1a2cb7(c_online_task_screen *screen);
 struct s_friend_request;
 bool friend_request_get(s_friend_request *request);
-void function_148ca8(long error, dword controller_flags);
+void function_148ca8(long error, short controller_flags);
 bool gamertag_valid(word *string);
 extern long g_55c154;
 
@@ -646,7 +646,7 @@ char c_virtual_keyboard_screen::move_focus(long direction)
 // @retail 0x237f2a
 bool c_virtual_keyboard_screen::v10(s_widget_event *event)
 {
-	bool result;
+	bool result = false;
 	if (event->type == 1 || event->type == 2 || event->type == 3 || event->type == 4)
 	{
 		char key = move_focus(event->type);
@@ -693,7 +693,6 @@ labels_done:
 		}
 		v7(&keys[key]);
 		result = true;
-		goto done;
 	}
 	else if (event->type == 5)
 	{
@@ -707,41 +706,36 @@ labels_done:
 		else if (event->param == 6)
 		{
 			move_cursor(-1);
-			goto action_done;
+			result = true;
 		}
 		else if (event->param == 7)
 		{
 			move_cursor(1);
-			goto action_done;
+			result = true;
 		}
 		else if (event->param == 2)
 		{
 			backspace();
-			goto action_done;
+			result = true;
 		}
 		else if (event->param == 14 || event->param == 15)
 		{
 			toggle_shift();
-			goto action_done;
+			result = true;
 		}
 		else if (event->param == 5)
 		{
 			insert(' ');
-			goto action_done;
+			result = true;
 		}
 		else if (event->param == 12)
 		{
 			press_key(_keyboard_key_done);
-			goto action_done;
+			result = true;
 		}
-		goto fallback;
-action_done:
-		result = true;
-		goto done;
 	}
-fallback:
-	result = c_class_1473c9::v10(event);
-done:
+	if (!result)
+		result = c_class_1473c9::v10(event);
 	return result;
 }
 
@@ -751,8 +745,6 @@ done:
 long c_virtual_keyboard_screen::check_string()
 {
 	bool empty = string[0] == 0;
-	bool has_alphanumeric = false;
-	bool characters_valid = true;
 #if defined(H2_NATIVE_PORT)
 	/* Only recovered type 1 is exposed natively until the other persistence
 	   and online modes have truthful providers. */
@@ -761,6 +753,8 @@ long c_virtual_keyboard_screen::check_string()
 #else
 	s_keyboard_type const *keyboard_type = &g_44a9f8[type];
 #endif
+	bool has_alphanumeric = false;
+	bool characters_valid = true;
 	long result = 0;
 
 	for (long i = 0; string[i]; i++)
@@ -774,10 +768,11 @@ long c_virtual_keyboard_screen::check_string()
 			characters_valid = false;
 		}
 	}
-	if ((!(keyboard_type->flags & 1) || has_alphanumeric) &&
+	bool valid = (!(keyboard_type->flags & 1) || has_alphanumeric) &&
 		(!(keyboard_type->flags & 2) || characters_valid) &&
 		((keyboard_type->flags & 4) || !empty) &&
-		(!(keyboard_type->flags & 8) || gamertag_valid(string)))
+		(!(keyboard_type->flags & 8) || gamertag_valid(string));
+	if (valid)
 	{
 		if (keyboard_type->check && !keyboard_type->check(this))
 			result = 2;
@@ -812,44 +807,40 @@ void c_virtual_keyboard_screen::press_key(short key)
 	case _keyboard_key_done:
 		if (type != NONE)
 		{
+			long dialog_id = 0;
 			long error = check_string();
 
 			if (error)
 			{
-				long dialog_id = 0;
-
-				if (type <= 4)
+				if (type > 4)
 				{
-					if (error == 1)
-						dialog_id = 0x58;
-					else if (error == 2)
-						dialog_id = 0x46;
-				}
-				else if (type <= 7)
-				{
-					if (error == 1)
+					if (type > 7)
+					{
+						if (type > 9)
+						{
+							if (type > 11)
+							{
+								dialog_id = type > 13 ? 0x8e : 0xa7;
+							}
+							else if (error == 1)
+								dialog_id = 0x5b;
+							else if (error == 2)
+								dialog_id = 0x49;
+						}
+						else if (error == 1)
+							dialog_id = 0x5a;
+						else if (error == 2)
+							dialog_id = 0x48;
+					}
+					else if (error == 1)
 						dialog_id = 0x59;
 					else if (error == 2)
 						dialog_id = 0x47;
 				}
-				else if (type <= 9)
-				{
-					if (error == 1)
-						dialog_id = 0x5a;
-					else if (error == 2)
-						dialog_id = 0x48;
-				}
-				else if (type <= 11)
-				{
-					if (error == 1)
-						dialog_id = 0x5b;
-					else if (error == 2)
-						dialog_id = 0x49;
-				}
-				else
-				{
-					dialog_id = type <= 13 ? 0xa7 : 0x8e;
-				}
+				else if (error == 1)
+					dialog_id = 0x58;
+				else if (error == 2)
+					dialog_id = 0x46;
 				dialog_ok_show(1, dialog_id, 4, user_flags, 0, 0);
 				break;
 			}
@@ -907,25 +898,20 @@ void c_virtual_keyboard_screen::press_key(short key)
 		{
 			word const *text = keys[key].function_22f52e()->function_22f52e();
 
-			if (*text)
+			for (long index = 0; text[index]; index++)
 			{
-				do
-				{
-					word character = *text;
+				word character = text[index];
 
 #if !defined(H2_NATIVE_PORT)
-					if (function_140420(character))
-					{
-						character = 0x25a1;
-					}
-#endif
-					if (!insert(character))
-					{
-						break;
-					}
-					text++;
+				if (unicode_character_is_private_use(character))
+				{
+					character = 0x25a1;
 				}
-				while (*text);
+#endif
+				if (!insert(character))
+				{
+					break;
+				}
 			}
 		}
 		break;
@@ -944,12 +930,17 @@ bool finish_variant_save(c_virtual_keyboard_screen *keyboard);
 bool finish_message_gamertag(c_virtual_keyboard_screen *keyboard);
 bool finish_friend_gamertag(c_virtual_keyboard_screen *keyboard);
 
+/* the keyboard types with no finish step of their own; retail's jump table
+   still lists them, so they keep their own (empty) case */
+PRIVATE inline void finish_nothing(c_virtual_keyboard_screen *keyboard)
+{
+}
+
 /* the string is done: the type's finish, then the screen closes */
-/* retail 0x238459: config/functions.csv counts it as the end of 0x2382d6,
-   so it can carry no marker and 0x2382d6 cannot match whole */
+// @retail 0x238459
 void c_virtual_keyboard_screen::finish()
 {
-	bool done;
+	bool done = true;
 
 #if defined(H2_NATIVE_PORT)
 	done = type == 1 ? finish_profile_create_1(this) : true;
@@ -972,13 +963,11 @@ void c_virtual_keyboard_screen::finish()
 		done = finish_profile_rename(this);
 		break;
 	case 5:
+	case 7:
 		done = finish_variant_name(this);
 		break;
 	case 6:
 		done = finish_variant_save(this);
-		break;
-	case 7:
-		done = finish_variant_name(this);
 		break;
 	case 12:
 		done = finish_message_gamertag(this);
@@ -986,18 +975,24 @@ void c_virtual_keyboard_screen::finish()
 	case 13:
 		done = finish_friend_gamertag(this);
 		break;
-	case 14:
-		done = team_task == NONE;
-		break;
 	case 15:
 		done = function_238922(this);
 		break;
 	case 16:
 		create_team();
-		done = true;
 		break;
-	default:
-		done = true;
+	case 14:
+		done = team_task == NONE;
+		break;
+	case 8:
+	case 9:
+	case 10:
+	case 11:
+	case 17:
+	case 18:
+	case 19:
+	case 20:
+		finish_nothing(this);
 		break;
 	}
 #endif
@@ -1329,10 +1324,10 @@ bool finish_profile_create(c_virtual_keyboard_screen *keyboard)
 	long profile_index;
 
 	parameters.field_c = 0;
-	profile_index = function_1a03a0(keyboard->get_controller_index(), keyboard->string);
+	profile_index = player_profile_make(keyboard->get_controller_index(), keyboard->string);
 	if (profile_index != NONE)
 	{
-		function_1a0540(&settings, profile_index);
+		player_profile_load(profile_index, &settings);
 		profile_edit_begin(keyboard->get_controller_index(), &settings, profile_index);
 		player_slot_profile_get(keyboard->get_controller_index())->set_profile(profile_index);
 		function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 5, 4, (long)function_237713);
@@ -1349,11 +1344,11 @@ bool finish_profile_create(c_virtual_keyboard_screen *keyboard)
 bool finish_profile_create_1(c_virtual_keyboard_screen *keyboard)
 {
 	s_player_profile_settings settings;
-	long profile_index = function_1a03a0(keyboard->get_controller_index(), keyboard->string);
+	long profile_index = player_profile_make(keyboard->get_controller_index(), keyboard->string);
 
 	if (profile_index != NONE)
 	{
-		function_1a0540(&settings, profile_index);
+		player_profile_load(profile_index, &settings);
 		profile_edit_begin(keyboard->get_controller_index(), &settings, profile_index);
 		function_19060a(keyboard->get_controller_index(), profile_index);
 	}
@@ -1368,13 +1363,13 @@ bool finish_profile_create_1(c_virtual_keyboard_screen *keyboard)
 bool finish_profile_create_2(c_virtual_keyboard_screen *keyboard)
 {
 	s_player_profile_settings settings;
-	long profile_index = function_1a03a0(keyboard->get_controller_index(), keyboard->string);
+	long profile_index = player_profile_make(keyboard->get_controller_index(), keyboard->string);
 
 	if (profile_index != NONE)
 	{
 		s_screen_parameters parameters;
 
-		function_1a0540(&settings, profile_index);
+		player_profile_load(profile_index, &settings);
 		profile_edit_begin(keyboard->get_controller_index(), &settings, profile_index);
 		parameters.field_c = 0;
 		function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 5, 4, (long)function_237713);
@@ -1391,11 +1386,11 @@ bool finish_profile_create_2(c_virtual_keyboard_screen *keyboard)
 bool finish_profile_create_3(c_virtual_keyboard_screen *keyboard)
 {
 	s_player_profile_settings settings;
-	long profile_index = function_1a03a0(keyboard->get_controller_index(), keyboard->string);
+	long profile_index = player_profile_make(keyboard->get_controller_index(), keyboard->string);
 
 	if (profile_index != NONE)
 	{
-		function_1a0540(&settings, profile_index);
+		player_profile_load(profile_index, &settings);
 		profile_edit_begin(keyboard->get_controller_index(), &settings, profile_index);
 		player_slot_profile_get(keyboard->get_controller_index())->set_profile(profile_index);
 		profile_edit_end();
@@ -1411,6 +1406,8 @@ bool finish_profile_create_3(c_virtual_keyboard_screen *keyboard)
 bool finish_profile_rename(c_virtual_keyboard_screen *keyboard)
 {
 	long profile_index = g_54e5d0.profile_index;
+	long current;
+	volatile long saved_profile_index = profile_index;
 	long controller_index = keyboard->get_controller_index();
 
 	if (!(bool)(((dword)profile_index >> 21) & 1))
@@ -1419,10 +1416,10 @@ bool finish_profile_rename(c_virtual_keyboard_screen *keyboard)
 	}
 	if (controller_index != NONE)
 	{
-		long current;
 
-		function_120e20(controller_index, &current);
-		if (current == profile_index)
+		function_120e20(&current, controller_index);
+		long saved_value = saved_profile_index;
+		if (current == saved_value)
 		{
 			function_120df0(controller_index, (wchar_t const *)g_54e5d0.settings.name);
 		}
@@ -1473,7 +1470,7 @@ bool finish_message_gamertag(c_virtual_keyboard_screen *keyboard)
 	request.name[0xf] = 0;
 	function_148893((s_name_request *)&request, 1);
 	parameters.field_c = 0;
-	function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 3, 4, (long)function_2b80b9);
+	function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 3, 4, (long)xbox_live_message_send_screen_load_type1_to_gamertag);
 	parameters.load(&parameters);
 	return true;
 }
@@ -1495,7 +1492,7 @@ bool finish_friend_gamertag(c_virtual_keyboard_screen *keyboard)
 		request.name[0xf] = 0;
 		function_148893((s_name_request *)&request, 1);
 		parameters.field_c = 0;
-		function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 3, 4, (long)function_2b80c9);
+		function_149f49((s_message *)&parameters, 0, 0, keyboard->user_flags, 3, 4, (long)xbox_live_message_send_screen_load_type2_to_gamertag);
 		parameters.load(&parameters);
 	}
 	return true;
@@ -1542,7 +1539,8 @@ void c_virtual_keyboard_screen::v4(long screen_rect_address)
 		s_sprite_element *cursor = (s_sprite_element *)function_236235(0, 0);
 		if (cursor)
 		{
-			real fade = (real)((cos(g_54d5b8 * 0.003f) + 1.0f) * 0.5f);
+			// Reading the timer through a const pointer here keeps the comparison above in retail's operand order.
+			real fade = (real)((cos(*(dword const *)&g_54d5b8 * 0.003f) + 1.0f) * 0.5f);
 			fade *= animation.scale;
 			fade *= 255.0f;
 			long alpha;

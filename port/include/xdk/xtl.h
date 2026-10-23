@@ -160,6 +160,10 @@ BOOL WINAPI CloseHandle(HANDLE handle);
 void __stdcall GetSystemTimeAsFileTime(FILETIME* time);
 DWORD __stdcall GetCurrentThreadId(void);
 DWORD __stdcall GetTickCount(void);
+/* The retail time-stamp counter, in 733.33 MHz ticks (see timing_ticks_to_seconds). */
+__int64 h2_native_time_stamp(void);
+/* x87 fld/fistp under the default control word: round to nearest, ties to even. */
+static inline long h2_native_fistp(double value) { return (long)__builtin_rint(value); }
 void __stdcall Sleep(DWORD milliseconds);
 BOOL __stdcall SwitchToThread(void);
 DWORD __stdcall XCreateSaveGame(const char* root, const wchar_t* name,

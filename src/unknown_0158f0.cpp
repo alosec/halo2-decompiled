@@ -1,4 +1,7 @@
+#include "surface_resource_pairs.h"
 // @flags /O2 /Gr
+#include "palette_cache_storage.h"
+#include "palette_storage.h"
 /* UNKNOWN_0158F0.CPP: D3D texture and palette creation (the D3D header
    allocation is inlined from the SDK's D3DDevice_CreateTexture2) */
 
@@ -6,14 +9,29 @@
 #include <xtl.h>
 #include "globals.h"
 
-long g_450768[8][24];
+namespace D3D
+{
+	struct CDevice
+	{
+		void LazySetStateVB(dword value);
+		static dword m_PushSegmentSize;
+	};
+
+	dword volatile *WINAPI MakeRequestedSpace(dword fallback_size, dword requested_size);
+}
+
+// Retail has two 24-entry format rows; unrelated data starts at 0x450828.
+// Values map bitmap formats to hardware formats, with -1 for unsupported ones.
+long g_450768[2][24] = {
+    {0x19, 0, 1, 0x1a, -1, -1, 5, -1, 2, 4, 7, 6,
+     -1, -1, 0xc, 0xe, 0xf, 0xb, 0xb, -1, -1, -1, 0x28, 0x28},
+    {0x1f, 0x13, 0x1b, 0x20, -1, -1, 0x11, -1, 0x10, 0x1d, 0x1e, 0x12,
+     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x17, 0x17}
+};
 dword g_43e8a8[12];
 long g_43e8d8[6];
 
-D3DResource *g_509378;
-D3DResource *g_509380;
-D3DResource *g_509374;
-D3DResource *g_50937c;
+s_surface_resource_pairs g_surface_resource_pairs;
 D3DResource *g_485ae4;
 D3DResource *g_485ae8;
 D3DResource *g_485aec;
@@ -89,9 +107,7 @@ struct s_palette_source
 };
 
 
-D3DPalette *g_484dbc;
 long g_484dc0[4];
-D3DPalette g_484dd0[32];
 long g_467000;
 long g_5093ac;
 dword **g_407488;
@@ -99,8 +115,8 @@ dword **g_407488;
 
 // @retail 0x158f0
 bool function_0158f0(
-	byte a,
 	short b,
+	byte a,
 	long width,
 	long height,
 	long levels,
@@ -154,6 +170,8 @@ bool function_015a60(
 	*out = texture;
 	return true;
 }
+
+__declspec(noinline) bool function_015b10(long index, D3DPalette **out);
 
 // @retail 0x15b10
 bool function_015b10(
@@ -236,14 +254,6 @@ dword function_015cd0(long index, dword entry)
 	return result;
 }
 
-// @retail 0x15d00
-bool function_015d00(long count, dword **out)
-{
-	if (count >= 0x800)
-	{
-		*out = NULL;
-		return false;
-	}
-	*out = D3DDevice_BeginPush(count);
-	return true;
-}
+s_palette_storage g_palette_storage;
+
+s_palette_cache_storage g_palette_cache_storage;

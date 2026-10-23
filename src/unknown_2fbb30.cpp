@@ -1,27 +1,17 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): a virtual method that returns the
+// address of a static object in .data.
+#include "unknown_244980.h"
 
-// @flags /O2 /Gr
+struct object_4803c4
+{
+    long unknown0;
+};
 
-/*
- * Type descriptors returned by slot 3 of the three five-entry runtime-object
- * vtables installed by function_246c60.  The descriptors remain owned by the
- * mapped retail image; these functions contain no executable retail pointer.
- */
+object_4803c4 g_4803c4;
 
 // @retail 0x2fbb30
-void *function_2fbb30()
+void *c_244980_base::v3()
 {
-    return (void *)0x004803c4;
-}
-
-// @retail 0x2fdfe0
-void *function_2fdfe0()
-{
-    return (void *)0x00480504;
-}
-
-// @retail 0x2fbfe0
-void *function_2fbfe0()
-{
-    return (void *)0x004803ec;
+    return &g_4803c4;
 }

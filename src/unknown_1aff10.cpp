@@ -30,29 +30,36 @@ long __stdcall function_1aff10(long arg_0, s_slot *arg_1)
     s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
     s_1aff10 *local_1 = (s_1aff10 *)((byte *)arg_1 + 0xc);
     if (local_1->field_10 == NONE && local_0->unknown344 == NONE)
-    {
-        local_2 = 0;
         goto local_3;
-    }
     if (REFERENCE_EQUAL(local_1->field_4, g_470fa0))
+    {
         local_1->field_3 = true;
-    else if (REFERENCE_EQUAL(local_0->unknown418, g_470fa0))
+        goto local_4;
+    }
+    if (REFERENCE_EQUAL(local_0->unknown418, g_470fa0))
     {
         local_1->field_4 = g_470fa0;
         local_1->field_3 = true;
+        goto local_4;
     }
-    else if (function_1b02a0(arg_0))
+    if (function_1b02a0(arg_0))
     {
-        if (local_1->field_0 != 0 || function_1afde0(arg_0) > 0)
-            local_1->field_3 = true;
-        else
+        if (local_1->field_0 != 0)
         {
-            local_1->field_4 = local_0->unknown418;
-            local_1->field_8 = local_0->unknown3f0;
-            local_1->field_a = true;
-            local_1->field_3 = false;
+            local_1->field_3 = true;
+            goto local_4;
         }
+        if (function_1afde0(arg_0) > 0)
+        {
+            local_1->field_3 = true;
+            goto local_4;
+        }
+        local_1->field_4 = local_0->unknown418;
+        local_1->field_8 = local_0->unknown3f0;
+        local_1->field_a = true;
+        local_1->field_3 = false;
     }
+local_4:
     if (local_0->unknown040 && !local_1->field_a)
     {
         if (!REFERENCE_EQUAL(local_1->field_4, g_470fa0) && local_1->field_0 == 0 &&
@@ -68,9 +75,9 @@ long __stdcall function_1aff10(long arg_0, s_slot *arg_1)
                 local_1->field_9 = true;
         }
     }
-    if (local_1->field_9)
-        local_2 = 0;
+    if (!local_1->field_9)
+        return local_2;
 local_3:
-    return local_2;
+    return 0;
 }
 #pragma inline_depth(255)

@@ -8,10 +8,10 @@
    The families, in retail order, one source file per region:
      0xac490-0xacb10  discovery and connection    src/unknown_0ac490.cpp
      0xacc20-0xadab0  session protocol            src/unknown_0acc20.cpp
-     0xadef0-0xaf680  session membership          src/unknown_0adef0.cpp
+     0xadef0-0xaf680  session membership          src/network_messages_membership.cpp
      0xaf890-0xb23d0  session parameters          src/unknown_0af890.cpp
      0xb2440-0xb2de0  view establishment, synchronous, results and test
-                                                  src/unknown_0b2440.cpp */
+                                                  src/simulation_message_codecs.cpp */
 
 #ifndef NETWORK_MESSAGE_TYPES_H
 #define NETWORK_MESSAGE_TYPES_H
@@ -149,16 +149,16 @@ struct s_player_action
 
 struct s_session_id;
 long network_session_time_since_start(const s_session_id *session_id); /* the time synchronize clock (unknown_075870.cpp) */
-void __stdcall function_07ba10(s_bitstream *stream, void *session);    /* writes a session description */
-bool __stdcall function_07c110(s_bitstream *stream, void *session);    /* reads a session description */
+void __stdcall session_description_encode(s_bitstream *stream, void *session);    /* writes a session description */
+bool __stdcall session_description_decode(s_bitstream *stream, void *session);    /* reads a session description */
 void function_07c5a0(s_bitstream *stream, void const *source);         /* writes a 0x90 byte sub-structure */
-bool function_07ca70(s_bitstream *stream, void *destination);          /* reads it, true when it is valid */
+byte function_07ca70(s_bitstream *stream, void *destination);          /* reads it, true when it is valid */
 void __stdcall function_063690(void *part, s_bitstream *stream);       /* writes the parameters' sub-structure at 0x3c / 0x8c */
 byte function_063980(s_bitstream *stream, void *part);                 /* reads it */
 void __stdcall function_07cc50(s_bitstream *stream, void *part);       /* writes the parameters' sub-structure at 0x3dc / 0x444 */
 bool function_07d520(s_bitstream *stream, void *part);                 /* reads it */
 void function_86f90(s_bitstream *stream, s_player_action *action);     /* the synchronous message helpers */
-bool function_874c0(s_bitstream *stream, s_player_action *action);
+byte function_874c0(s_bitstream *stream, s_player_action *action);
 bool function_87830(s_player_action *a, s_player_action *b);
 void function_87d00(s_bitstream *stream, void *message);
 bool function_87e90(s_bitstream *stream, void *message);

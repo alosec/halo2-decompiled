@@ -1,8 +1,13 @@
 // @flags /O2 /arch:SSE /Gr
+#include "cluster_mask_storage.h"
+#include "view_context_storage.h"
 /* UNKNOWN_173B90.CPP: the particle systems effects start (g_510c74) and
    their particles, emitters and locations */
 
 #include "unknown_11c920.h"
+#include "visibility_storage.h"
+#include "camera_storage.h"
+#include "frame_storage.h"
 #include "globals.h"
 #include "data_array.h"
 #include "effects.h"
@@ -11,7 +16,7 @@
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 struct s_structure_leaf_173b90
 {
@@ -89,21 +94,21 @@ bool __stdcall function_173cb0(long tag_index, long unused, long first, long sec
 	byte *items = *(byte **)(table + 0x14);
 	long item_tag = *(long *)(items + index * 10 + 4);
 	byte *item = g_4e3b44[item_tag & 0xffff].bytes;
-	output->field_10 = (*(long **)(item + 0x20))[1];
-	output->field_5 = 3;
-	output->field_4 = 0;
-	output->field_8 = 7;
-	output->field_14 = 0;
-	output->field_6 = value;
-	output->field_c = NONE;
+	s_particle_callback_output_173cb0 *out = output;
+	out->field_10 = (*(long **)(item + 0x20))[1];
+	out->field_5 = 3;
+	out->field_4 = 0;
+	out->field_8 = 7;
+	out->field_14 = 0;
+	out->field_6 = value;
+	out->field_c = NONE;
 	return true;
 }
 
-extern long g_4b9f8c;
-extern real g_4b9fa4, g_4b9ff8, g_4b9f18, g_4b9f9c;
 bool function_16e210(long cluster_index, long value);
 void function_25ca0(bool enabled);
 
+#pragma optimize("p", on)
 // @retail 0x174f80
 void function_174f80(s_particle_system_datum *system, void *a, void *b, void *c)
 {
@@ -114,12 +119,9 @@ void function_174f80(s_particle_system_datum *system, void *a, void *b, void *c)
 	definition->render(system, a, b, c);
 	if (!enabled)
 	{
-		real divisor = g_4b9fa4;
-		if (0.0001f > divisor)
-			divisor = 0.0001f;
-		real value = g_4b9ff8;
-		value *= 1.0f / divisor;
-		value = 0.0f - value;
+		real divisor = 0.0001f > g_4b9fa4 ? 0.0001f : g_4b9fa4;
+		real reciprocal = 1.0f / divisor;
+		real value = 0.0f - g_4b9ff8 * reciprocal;
 		real constants[4];
 		constants[0] = value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value;
 		constants[1] = 0.0f;
@@ -128,6 +130,7 @@ void function_174f80(s_particle_system_datum *system, void *a, void *b, void *c)
 		D3DDevice_SetVertexShaderConstant(-81, constants, 1);
 	}
 }
+#pragma optimize("", on)
 
 struct s_particle_render_request_173c90
 {
@@ -189,14 +192,15 @@ void function_173de0(void)
 void particle_systems_update_locations(void)
 {
 	s_record_pool_iterator iterator;
-	short bsp_index = g_4686c4;
+	union { short index; word bits; } bsp_snapshot;
+	bsp_snapshot.index = g_4686c4;
 	s_particle_system_datum *particle_system;
 
 	iterator.data = g_510c74;
 	iterator.index = NONE;
 	while ((particle_system = (s_particle_system_datum *)data_iterator_next_inlined(&iterator)) != 0)
 	{
-		if (particle_system->location.bsp_index != bsp_index)
+		if (particle_system->location.bsp_index != bsp_snapshot.index)
 		{
 			s_location location;
 
@@ -204,18 +208,18 @@ void particle_systems_update_locations(void)
 			{
 				s_particle_location_datum *particle_location = DATUM(g_51ec8c, s_particle_location_datum, particle_system->location_index);
 
-				if (bsp_index != NONE)
+				if (!(bsp_snapshot.index != NONE))
 				{
-					location.leaf_index = function_14a280(g_4e033c, &particle_location->position, 0);
+					location.leaf_index = NONE;
+					location.cluster_index = NONE;
+				}
+				else
+				{
+					location.leaf_index = function_14a280(g_4e033c, 0, &particle_location->position);
 					if (location.leaf_index != NONE)
 						location.cluster_index = ((s_structure_bsp_173b90 *)g_4e0348)->leaves[location.leaf_index].cluster_index;
 					else
 						location.cluster_index = NONE;
-				}
-				else
-				{
-					location.leaf_index = NONE;
-					location.cluster_index = NONE;
 				}
 			}
 			else
@@ -223,7 +227,7 @@ void particle_systems_update_locations(void)
 				location.leaf_index = NONE;
 				location.cluster_index = NONE;
 			}
-			location.bsp_index = bsp_index;
+			location.bsp_index = bsp_snapshot.index;
 			particle_system->set_location(&location);
 		}
 	}
@@ -305,10 +309,10 @@ void __stdcall function_174990(real dt)
 }
 
 // @retail 0x175070
-void particle_system_link(s_particle_system_datum *particle_system, long *last_index, long *first_index)
+void particle_system_link(s_particle_system_datum *particle_system, long *first_index, long *last_index)
 {
 	s_record_pool *data = g_510c74;
-	long particle_system_index = (particle_system->salt << 16) | (particle_system - (s_particle_system_datum *)data->data);
+	long particle_system_index = ((dword)particle_system->salt << 16) | (particle_system - (s_particle_system_datum *)data->data);
 
 	particle_system->next_index = NONE;
 	if (*first_index == NONE)
@@ -318,7 +322,7 @@ void particle_system_link(s_particle_system_datum *particle_system, long *last_i
 		s_particle_system_datum *last = DATUM(data, s_particle_system_datum, *last_index);
 
 		last->next_index = particle_system_index;
-		particle_system->previous_index = (last->salt << 16) | (last - (s_particle_system_datum *)data->data);
+		particle_system->previous_index = ((dword)last->salt << 16) | (last - (s_particle_system_datum *)data->data);
 		*last_index = particle_system_index;
 	}
 	else
@@ -426,6 +430,8 @@ struct s_particle_value_cache
 	void *field_48;
 	void *field_4c;
 	void const *field_50;
+
+	void function_173c10(dword mask);
 };
 
 struct s_particle_emitter_175610
@@ -465,13 +471,6 @@ void function_246d80(s_particle_property const *property, real const *values, co
 real function_3eb70(void);
 typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_particle_value_cache *, point3f const *, vector3f const *, real, color4f const *, void *);
 
-PRIVATE inline void particle_rotate_175610(matrix3x3 const *matrix, vector3f const *input, vector3f *output)
-{
-	vector3f value = *input;
-	output->i = matrix->left.i * value.j + matrix->forward.i * value.i + matrix->up.i * value.k;
-	output->j = matrix->forward.j * value.i + matrix->up.j * value.k + matrix->left.j * value.j;
-	output->k = matrix->forward.k * value.i + matrix->up.k * value.k + matrix->left.k * value.j;
-}
 
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
@@ -488,11 +487,13 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 		cache->mask &= 0xfffecf7f;
 	}
 	long emitter_index = *(long *)((byte *)location + 4);
-	s_emitter_definition_175610 *emitter_definition = *(s_emitter_definition_175610 **)((byte *)definition + 0x34);
+	long emitter_definition_offset = 0;
 	while (emitter_index != NONE)
 	{
 		s_particle_emitter_175610 *emitter = DATUM(g_51ec88, s_particle_emitter_175610, emitter_index);
 		long particle_index = emitter->first_particle_index;
+		s_emitter_definition_175610 *emitter_definition =
+			(s_emitter_definition_175610 *)(*(byte **)((byte *)definition + 0x34) + emitter_definition_offset);
 		if (particle_index != NONE)
 		{
 			real multiplier = 1.0f;
@@ -504,9 +505,10 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 			matrix3x3 const *rotation_result;
 			point3f const *origin_result;
 			color4f color;
+			dword emitter_mask = emitter_definition->mask;
 			if (definition->unknown0c)
 				function_248450(&rotation, (s_particle_frame const *)emitter, &origin, &rotation_result, &origin_result, *((byte *)location + 2) != 0);
-			dword mask = emitter_definition->mask & 0x107f0;
+			dword mask = emitter_mask & 0x107f0;
 			function_173ba0(~cache->mask & mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
 			cache->mask |= mask;
 			if (emitter_definition->flags & 1)
@@ -515,19 +517,19 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 				function_246d80(&emitter_definition->color, cache->values, (color3f *)&color.red);
 			if ((bool)((emitter_definition->flags >> 2) & 1))
 				scale = function_246cd0(&emitter_definition->scale, cache->values) * multiplier;
-			mask = emitter_definition->mask & 0xf80f;
+			dword particle_mask = emitter_mask & 0xf80f;
 			while (particle_index != NONE)
 			{
 				s_particle_175610 *particle = DATUM(g_51ec84, s_particle_175610, particle_index);
-				point3f position = particle->position;
-				vector3f velocity = particle->velocity;
+				point3f translated_position = particle->position;
+				vector3f motion = particle->velocity;
 				if (particle != cache->field_50)
 				{
 					cache->field_50 = particle;
 					cache->mask &= 0xffff07f0;
 				}
-				function_173ba0(~cache->mask & mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
-				cache->mask |= mask;
+				function_173ba0(~cache->mask & particle_mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
+				cache->mask |= particle_mask;
 				particle_index = particle->next_index;
 				if (!(emitter_definition->flags & 1))
 					color.alpha = function_246cd0(&emitter_definition->alpha, cache->values);
@@ -537,25 +539,31 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 					scale = function_246cd0(&emitter_definition->scale, cache->values) * multiplier;
 				if (definition->unknown0c)
 				{
-					particle_rotate_175610(rotation_result, (vector3f const *)&position, (vector3f *)&position);
-					position.x = origin_result->x + position.x;
-					position.y = origin_result->y + position.y;
-					position.z = origin_result->z + position.z;
-					particle_rotate_175610(rotation_result, &velocity, &velocity);
+					point3f position_input = translated_position;
+					translated_position.x = (rotation_result->left.i * position_input.y + rotation_result->forward.i * position_input.x) + rotation_result->up.i * position_input.z;
+					translated_position.y = (rotation_result->forward.j * position_input.x + rotation_result->up.j * position_input.z) + rotation_result->left.j * position_input.y;
+					translated_position.z = (rotation_result->forward.k * position_input.x + rotation_result->up.k * position_input.z) + rotation_result->left.k * position_input.y;
+					translated_position.x = origin_result->x + translated_position.x;
+					translated_position.y = origin_result->y + translated_position.y;
+					translated_position.z = origin_result->z + translated_position.z;
+					vector3f velocity_input = motion;
+					motion.i = (rotation_result->left.i * velocity_input.j + rotation_result->forward.i * velocity_input.i) + rotation_result->up.i * velocity_input.k;
+					motion.j = (rotation_result->forward.j * velocity_input.i + rotation_result->up.j * velocity_input.k) + rotation_result->left.j * velocity_input.j;
+					motion.k = (rotation_result->forward.k * velocity_input.i + rotation_result->up.k * velocity_input.k) + rotation_result->left.k * velocity_input.j;
 				}
-				callback(particle, cache, &position, &velocity, scale, &color, context);
+				callback(particle, cache, &translated_position, &motion, scale, &color, context);
 			}
 		}
 		emitter_index = emitter->next_index;
-		++emitter_definition;
+		emitter_definition_offset += sizeof(s_emitter_definition_175610);
 	}
 }
 
 // @retail 0x173c10
-void function_173c10(dword mask, s_particle_value_cache *cache)
+void s_particle_value_cache::function_173c10(dword mask)
 {
-	function_173ba0(~cache->mask & mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
-	cache->mask |= mask;
+	function_173ba0(~this->mask & mask, field_48, field_4c, field_50, values);
+	this->mask |= mask;
 }
 
 struct s_248cc0;
@@ -590,18 +598,18 @@ void __stdcall function_175430(s_particle_system_datum *system, point3f const *p
 	}
 	if (system->location_index != NONE)
 	{
-		s_particle_location_datum *location = DATUM(locations, s_particle_location_datum, system->location_index);
 		s_particle_value_cache cache;
-		cache.field_48 = system;
 		cache.field_4c = 0;
 		cache.field_50 = 0;
+		s_particle_location_datum *location = DATUM(locations, s_particle_location_datum, system->location_index);
+		cache.field_48 = system;
 		cache.mask = 0;
 		if (location != cache.field_4c)
 		{
 			cache.field_4c = location;
 			cache.mask = 0;
 		}
-		function_173c10(0x1ffff, &cache);
+		cache.function_173c10(0x1ffff);
 		function_248cc0((s_248cc0 *)location, (s_247fd0 *)&cache, system, position, velocity);
 	}
 }
@@ -611,7 +619,7 @@ long function_173fd0(s_effect_particle_system_definition *definition, long effec
 {
 	long particle_system_index = NONE;
 
-	if (!TEST_FIELD_BIT(definition->flag3) && definition->tag_index != NONE && function_137bd0(definition->tag_index) && definition->unknown30 > 0)
+	if ((bool)((~(((byte *)definition)[0x16] >> 3)) & 1) && definition->tag_index != NONE && function_137bd0(definition->tag_index) && definition->unknown30 > 0)
 	{
 		if (effect_index == NONE || function_178af0(effect_index))
 		{
@@ -621,11 +629,23 @@ long function_173fd0(s_effect_particle_system_definition *definition, long effec
 				s_particle_system_datum *particle_system = DATUM(g_510c74, s_particle_system_datum, particle_system_index);
 
 				*((word *)particle_system + 6) = 9;
-				particle_system->flag4 = definition->flag0;
-				particle_system->flag5 = definition->flag1;
-				particle_system->flag6 = definition->flag2;
-				particle_system->random_a = function_x82e52f(&g_4e7408->seed, __FILE__, __LINE__);
-				particle_system->random_b = function_x82e52f(&g_4e7408->seed, __FILE__, __LINE__);
+				if (TEST_FIELD_BIT(definition->flag0))
+					particle_system->flag4 = true;
+				else
+					particle_system->flag4 = false;
+				if (TEST_FIELD_BIT(definition->flag1))
+					particle_system->flag5 = true;
+				else
+					particle_system->flag5 = false;
+				if (TEST_FIELD_BIT(definition->flag2))
+					particle_system->flag6 = true;
+				else
+					particle_system->flag6 = false;
+				for (long i = 0; i < 2; i++)
+				{
+					g_4e7408->seed = g_4e7408->seed * 1664525 + 1013904223;
+					particle_system->random[i] = (real)(g_4e7408->seed >> 16) * (1.0f / 65535.0f);
+				}
 				particle_system->tag_index = tag_index;
 				particle_system->effect_index = effect_index;
 				particle_system->next_index = NONE;
@@ -675,24 +695,19 @@ s_effect_particle_system_definition *s_particle_system_datum::function_1751d0()
 	return 0;
 }
 
+// score 21 (was 21): the or-ed mask is written into the local after the call arguments are pushed
+// here and before them in retail.
 // @retail 0x175270
 void function_175270(s_particle_system_datum *particle_system, s_particle_system_spawn *spawn, transform4x3f const *matrix, bool field_b4)
 {
-	struct
-	{
-		dword mask;
-		s_particle_system_datum *particle_system;
-		s_particle_location_datum *particle_location;
-		void *unknown0c;
-	} query;
-	real values[17];
+	s_particle_value_cache cache;
 	s_particle_location_datum *particle_location;
 
 	*((word *)particle_system + 6) |= 0x101;
-	query.mask = 0;
-	query.particle_system = 0;
-	query.particle_location = 0;
-	query.unknown0c = 0;
+	cache.mask = 0;
+	cache.field_48 = 0;
+	cache.field_4c = 0;
+	cache.field_50 = 0;
 	if (spawn->location_index == NONE)
 	{
 		spawn->location_index = function_248620();
@@ -704,25 +719,25 @@ void function_175270(s_particle_system_datum *particle_system, s_particle_system
 	}
 	particle_system->unknown04 = (spawn->unknown + spawn->scale) * particle_system->unknown08;
 	particle_location = DATUM(g_51ec8c, s_particle_location_datum, spawn->location_index);
-	if (particle_system != query.particle_system)
+	if (particle_system != cache.field_48)
 	{
-		query.particle_system = particle_system;
-		query.mask &= 0xfffff98f;
+		cache.field_48 = particle_system;
+		cache.mask &= 0xfffff98f;
 	}
-	if (particle_location != query.particle_location)
+	if (particle_location != cache.field_4c)
 	{
-		query.particle_location = particle_location;
-		query.mask &= 0xfffecf7f;
+		cache.field_4c = particle_location;
+		cache.mask &= 0xfffecf7f;
 	}
-	function_173ba0(~query.mask & 0x1ffff, query.particle_system, query.particle_location, matrix, values);
-	query.mask |= 0x1ffff;
-	function_248970(particle_location, field_b4, spawn->unknown, particle_system, values, matrix);
+	cache.function_173c10(0x1ffff);
+	function_248970(particle_location, field_b4, spawn->unknown, particle_system, cache.values, matrix);
 	spawn->location_index = particle_location->next_index;
 }
 
 // @retail 0x175a80
 void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_system_datum *particle_system, bool multiplied)
 {
+	dword packed = color_a;
 	if (!multiplied)
 	{
 		if (tinted)
@@ -733,8 +748,9 @@ void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_syste
 			color.red *= 0.5f;
 			color.green *= 0.5f;
 			color.blue *= 0.5f;
-			particle_system->color = pack_color3f(&color);
+			packed = pack_color3f(&color);
 		}
+		else return;
 	}
 	else if (tinted)
 	{
@@ -746,15 +762,11 @@ void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_syste
 		color.red *= other.red;
 		color.green *= other.green;
 		color.blue *= other.blue;
-		particle_system->color = pack_color3f(&color);
+		packed = pack_color3f(&color);
 	}
-	else
-	{
-		particle_system->color = color_a;
-	}
+	particle_system->color = packed;
 }
 
-extern dword g_4c56c0[64];
 extern vector3f *g_4687bc;
 extern vector3f *g_4687b4;
 real function_30bf0(vector3f *vector);
@@ -917,4 +929,209 @@ bool function_174a30(s_particle_system_datum *particle_system, real dt)
 	if (particle_system->flag0 || particle_system->first_child_index != NONE || particle_system->flag9)
 		return true;
 	return false;
+}
+
+
+#include <math.h>
+struct c_entry_list;
+
+
+extern dword g_4ba034;
+
+struct s_frustum_set_view;
+struct s_sphere_frustum;
+struct s_distance_fade;
+bool function_165010(s_frustum_set_view const *, long, point3f const *, real, bool *);
+long function_181800(s_sphere_frustum const *, point3f const *, real);
+real function_249bb0(s_distance_fade const *, real);
+bool function_3eb20(long cluster_index);
+typedef void (__stdcall *t_1e4e0_callback)(void *);
+bool function_1e4e0(point3f const *, t_1e4e0_callback, void const *, long);
+struct s_sort_record;
+typedef bool (__stdcall *t_record_fill)(long, void *, long, long, long, void *, s_sort_record *);
+void function_40e30(short, long, real, long, short, dword, dword, t_record_fill, dword, void *);
+
+/* the particle system definition's flags byte at 0x16, as 0x174420 tests it */
+struct s_definition_flags_174420
+{
+    byte : 5;
+    byte flag5 : 1;
+    byte : 2;
+};
+
+/* `in` rotated into the frame `m` (in may be out) */
+static inline void matrix_transform_174420(matrix3x3 const *m, vector3f const *in, vector3f *out)
+{
+    vector3f copy;
+
+    if (in == out)
+    {
+        copy = *in;
+        in = &copy;
+    }
+    out->i = (in->j * m->left.i + in->k * m->up.i) + in->i * m->forward.i;
+    out->j = (in->i * m->forward.j + in->j * m->left.j) + in->k * m->up.j;
+    out->k = (in->i * m->forward.k + in->j * m->left.k) + in->k * m->up.k;
+}
+
+static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, vector3f *result)
+{
+    result->i = a->j * b->k - a->k * b->j;
+    result->j = a->k * b->i - a->i * b->k;
+    result->k = a->i * b->j - a->j * b->i;
+}
+
+// @retail 0x174420
+void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
+{
+    s_particle_system_datum *system = DATUM(g_510c74, s_particle_system_datum, system_index);
+    if (function_137bd0(system->function_1751d0()->tag_index))
+    {
+        long tag_index = system->function_1751d0()->tag_index;
+        long const *reference;
+        dword group = TAG_GROUP(tag_index);
+        if (group == 0x5052544d || group == 'prt3')
+            reference = function_137bd0(tag_index)->function_x947334();
+        else reference = *(long const **)(TAG_GET(byte, tag_index) + 0x24);
+        byte *shader = TAG_GET(byte, *reference);
+        byte *table = *(byte **)(shader + 0x5c);
+        dword render_flags = *(dword *)(*(byte **)(table + 4) + 2);
+        s_effect_particle_system_definition *definition = system->function_1751d0();
+        if (!TEST_FIELD_BIT(((s_definition_flags_174420 const *)((byte *)definition + 0x16))->flag5))
+        {
+            real bias = *(short *)definition->unknown14 * 0.05f;
+            matrix3x3 camera;
+            if (camera_relative)
+            {
+                camera.forward = g_4b9dac;
+                camera.up = g_4b9db8;
+                cross_product3d_174420(&g_4b9db8, &g_4b9dac, &camera.left);
+            }
+            s_particle_render_request_173c90 request;
+            request.system = system;
+            for (long index = system->location_index; index != NONE; )
+            {
+                s_particle_location_datum *location = DATUM(g_51ec8c, s_particle_location_datum, index);
+                request.location = location;
+                bool in_view = ((byte *)location)[2] != 0;
+                if (view_pass == in_view)
+                {
+                    bool draw = true;
+                    point3f position;
+                    if (camera_relative)
+                    {
+                        matrix_transform_174420(&camera, (vector3f const *)&location->position, (vector3f *)&position);
+                        position.x = g_4b9da0.x + position.x;
+                        position.y = g_4b9da0.y + position.y;
+                        position.z = g_4b9da0.z + position.z;
+                        *(dword *)((byte *)location + 0x30) = g_4ba034;
+                    }
+                    else
+                    {
+                        long cluster = system->location.cluster_index;
+                        bool visible = function_3eb20(cluster) || (bool)(((dword)*(word const *)((byte const *)system + 0xc) >> 10) & 1);
+                        bool in_pool = (g_547f88.flags[cluster >> 5] & (1 << (cluster & 31))) != 0;
+                        if (!force_visible && !(bool)(((dword)*(word const *)((byte const *)definition + 0x16) >> 9) & 1) && !in_pool && !visible) draw = false;
+                        else
+                        {
+                            if (!visible && !force_visible)
+                            {
+                                if (!(bool)(((dword)*(word const *)((byte const *)definition + 0x16) >> 9) & 1))
+                                {
+                                    bool contained = false;
+                                    draw = function_165010((s_frustum_set_view const *)g_547f88.context,
+                                        ((signed char *)g_547f88.indices)[cluster],
+                                        (point3f const *)((byte *)location + 0x20), *(real *)((byte *)location + 0x2c), &contained);
+                                }
+                                else
+                                    draw = function_181800((s_sphere_frustum const *)((byte *)g_547f88.context + 0x94),
+                                        (point3f const *)((byte *)location + 0x20), *(real *)((byte *)location + 0x2c)) != 0;
+                            }
+                            if (draw)
+                            {
+                                if (visible)
+                                    system->flag10 = true;
+                                else
+                                    system->flag10 = false;
+                                vector3f delta = {location->position.x - g_4b9da0.x,
+                                    location->position.y - g_4b9da0.y, location->position.z - g_4b9da0.z};
+                                if (!visible)
+                                {
+                                    real distance = (real)(sqrt(delta.k * delta.k + delta.j * delta.j + delta.i * delta.i) * g_4b9dcc);
+                                    if (!(function_249bb0((s_distance_fade const *)definition, distance) > 0.0f)) draw = false;
+                                }
+                                *(dword *)((byte *)location + 0x30) = g_4ba034;
+                            }
+                        }
+                        position = location->position;
+                    }
+                    if (draw)
+                    {
+                        position.x += g_485618.forward.i * bias;
+                        position.y += g_485618.forward.j * bias;
+                        position.z += g_485618.forward.k * bias;
+                        if (render_flags & 0x8000)
+                            function_1e4e0(&position, (t_1e4e0_callback)function_173c90, &request, sizeof(request));
+                        if (render_flags & ~0x8000)
+                            function_40e30(0, system->function_1751d0()->tag_index, 0.0f, 5, (word)NONE, NONE, 0,
+                                (t_record_fill)function_173cb0, (dword)function_173d80, (void *)system_index);
+                    }
+                }
+                else *(dword *)((byte *)location + 0x30) = g_4ba034;
+                index = location->next_index;
+            }
+        }
+    }
+    for (long child_index = system->first_child_index; child_index != NONE; )
+    {
+        s_particle_system_datum *child = DATUM(g_510c74, s_particle_system_datum, child_index);
+        child->flag10 = system->flag10;
+        function_174420(child_index, view_pass, camera_relative, force_visible);
+        child_index = child->next_index;
+    }
+}
+
+
+
+long function_155760(long index);
+bool function_17afd0(long effect_index, long value);
+
+// @retail 0x174220
+void __stdcall function_174220(bool view_pass)
+{
+    s_record_pool *systems = g_510c74;
+    long index = data_datum_index(systems, function_16bc00(systems, 0));
+    while (index != NONE)
+    {
+        s_particle_system_datum *system = DATUM(systems, s_particle_system_datum, index);
+        s_effect_particle_system_definition *definition = system->function_1751d0();
+        short cluster = system->location.cluster_index;
+        if (cluster != NONE &&
+            ((*(word *)((byte *)definition + 0x16) & (1 << 9)) ||
+             (g_547f88.flags[cluster >> 5] & (1 << (cluster & 31))) || function_3eb20(cluster)) &&
+            system->unknown4c == NONE && system->location_index != NONE)
+        {
+            long effect_index = system->effect_index;
+            definition = system->function_1751d0();
+            long owner = NONE;
+            if (effect_index != NONE) owner = DATUM(g_4ea93c, s_effect_datum, effect_index)->unknown58;
+            long view = g_4b9ed8;
+            bool local_287b6e_2 = view != NONE && !function_155760(view);
+            bool same_view = owner != NONE && view == owner && local_287b6e_2;
+            bool attached = local_287b6e_2 && effect_index != NONE && function_17afd0(effect_index, view);
+            bool draw = same_view == view_pass;
+            bool camera_relative = false;
+            if (same_view)
+            {
+                if (view != NONE && *(short *)((byte *)g_4ed284 + view * 0x94 + 0x42) != NONE)
+                    draw = (((byte *)definition)[0x16] >> 6) & 1;
+                if (definition->unknown0c != 0) camera_relative = true;
+            }
+            else if (attached && definition->location_mode == 2) draw = false;
+            if (draw) function_174420(index, same_view, camera_relative, false);
+        }
+        long next_index = index == NONE ? 0 : (index & 0xffff) + 1;
+        systems = g_510c74;
+        index = data_datum_index(systems, function_16bc00(systems, next_index));
+    }
 }

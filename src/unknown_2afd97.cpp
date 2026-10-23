@@ -45,45 +45,61 @@ c_class_2b01eb::c_class_2b01eb(s_bitmap_block *definition) :
 	c_class_1a2c81(8, 0),
 	definition(definition),
 	start_time(g_54d5b8),
-	value78(0),
-	value7c(0.0f),
-	value80(0.0f),
-	value84(0.0f),
-	sequence(0),
-	bitmap(0)
+	value78(0)
 {
+	memset(&value7c, 0, 2 * sizeof(real));
+	value7c = 0.0f;
+	value84 = 0.0f;
+	sequence = 0;
+	bitmap = 0;
+	value80 = 0.0f;
 	s_type_7ba8e9 *shown = 0;
-	s_bitmap_group_view *group = 0;
+	s_bitmap_group_view *volatile group = 0;
 	s_widget_bounds bounds;
 
 	value68 = this->definition->value04 - 1;
 	function_23625d(this->definition->tag_index);
 	if (this->definition->tag_index != NONE)
 	{
-		group = (s_bitmap_group_view *)g_4e3b44[this->definition->tag_index & 0xffff].bytes;
-		if (group)
+		s_bitmap_group_view *loaded_group = (s_bitmap_group_view *)g_4e3b44[this->definition->tag_index & 0xffff].bytes;
+		bool have_group = loaded_group != NULL;
+		group = loaded_group;
+		if (have_group)
 		{
-			shown = &group->bitmaps[sequence];
+			shown = &loaded_group->bitmaps[sequence];
 		}
 	}
 	memset(&bounds, 0, sizeof(bounds));
-	if (function_2b0a68((s_widget_view_2b0a *)this))
+	struct { short bottom; } edge;
+	struct scale_test
+	{
+		static __forceinline bool enabled(s_widget_view_2b0a *widget)
+		{ return (byte)function_2b0a68(widget) != 0; }
+	};
+	if (scale_test::enabled((s_widget_view_2b0a *)this))
 	{
 		bounds.right = this->definition->x;
 		bounds.left = this->definition->x;
 		bounds.top = this->definition->y;
-		bounds.bottom = this->definition->height;
+		edge.bottom = this->definition->height;
+		goto set_bottom;
 	}
 	else if (shown)
 	{
 		bounds.top = this->definition->y;
 		bounds.left = this->definition->x;
-		bounds.bottom = this->definition->y - shown->height;
 		bounds.right = this->definition->x + shown->width;
+		edge.bottom = this->definition->y - shown->height;
+		goto set_bottom;
 	}
+	goto bounds_done;
+set_bottom:
+	bounds.bottom = edge.bottom;
+bounds_done:
 	sequence = 0;
 	this->bounds = bounds;
-	if (group && this->definition->sequence >= 0 && this->definition->sequence < group->bitmap_count)
+	struct { s_bitmap_group_view *value; } checked_group = { group };
+	if (checked_group.value && this->definition->sequence >= 0 && this->definition->sequence < checked_group.value->bitmap_count)
 	{
 		sequence = this->definition->sequence;
 	}
@@ -233,7 +249,6 @@ color3f *function_131a00(hsv3f const *hsv, color3f *rgb);
 // @retail 0x2afeae
 void function_2afeae(s_widget_item *item, c_class_1a2c81 *widget)
 {
-	c_class_1a2c81 **widget_reference = &widget;
 	long tag_index = ((c_widget_45ad18 *)widget)->definition->tag_index;
 	if (tag_index != NONE)
 	{
@@ -268,7 +283,7 @@ void function_2afeae(s_widget_item *item, c_class_1a2c81 *widget)
 			}
 		}
 
-		for (widget = widget->child; widget; widget = (*widget_reference)->next)
+		for (widget = widget->child; widget; widget = widget->next)
 		{
 			switch (widget->type)
 			{
@@ -325,22 +340,17 @@ void function_2afeae(s_widget_item *item, c_class_1a2c81 *widget)
 						break;
 					case 0x0b000698:
 					{
-						if (text_id == NONE)
+						if (text_id == NONE && !text && !text_address)
 						{
-							if (!text)
-							{
-								if (!text_address)
-								{
-									widget->value6e = false;
-									break;
-								}
-								widget->function_22f52e()->set_text((word *)text_address);
-							}
-							else
-								widget->function_22f52e()->set_text(text);
+							widget->value6e = false;
+							break;
 						}
-						else
+						if (text_id != NONE)
 							((c_text_widget_45a5e0 *)widget)->function_253b1a(text_id);
+						else if (text)
+							widget->function_22f52e()->set_text(text);
+						else
+							widget->function_22f52e()->set_text((word *)text_address);
 
 						color3f color;
 						if (TEST_FIELD_BIT(item->has_color))
@@ -370,7 +380,6 @@ void function_2afeae(s_widget_item *item, c_class_1a2c81 *widget)
 // @retail 0x2bacbc
 void function_2bacbc(c_class_1a2c81 *widget, s_widget_group_definition *group, s_widget_point *point)
 {
-	s_widget_bounds bounds;
 	long i;
 
 	for (i = 0; i < group->bitmap_count; i++)
@@ -381,8 +390,9 @@ void function_2bacbc(c_class_1a2c81 *widget, s_widget_group_definition *group, s
 		{
 			short height;
 
-			bitmap->get_bounds(&bounds);
-			height = (short)abs(bounds.bottom - bounds.top);
+			s_widget_bounds bounds;
+   bitmap->get_bounds(&bounds);
+			height = (short)(bounds.bottom - bounds.top >= 0 ? bounds.bottom - bounds.top : bounds.top - bounds.bottom);
 			bounds.top += height;
 			bounds.bottom += height;
 			bounds.top += point->y;
@@ -401,8 +411,9 @@ void function_2bacbc(c_class_1a2c81 *widget, s_widget_group_definition *group, s
 		{
 			short height;
 
-			child->get_bounds(&bounds);
-			height = (short)abs(bounds.bottom - bounds.top);
+			s_widget_bounds bounds;
+   child->get_bounds(&bounds);
+			height = (short)(bounds.bottom - bounds.top >= 0 ? bounds.bottom - bounds.top : bounds.top - bounds.bottom);
 			bounds.top += height;
 			bounds.bottom += height;
 			bounds.top += point->y;
@@ -428,7 +439,7 @@ void function_2bacbc(c_class_1a2c81 *widget, s_widget_group_definition *group, s
 				short height;
 
 				child->get_bounds(&child_bounds);
-				height = (short)abs(child_bounds.bottom - child_bounds.top);
+				height = (short)(child_bounds.bottom - child_bounds.top >= 0 ? child_bounds.bottom - child_bounds.top : child_bounds.top - child_bounds.bottom);
 				child_bounds.top += height;
 				child_bounds.bottom += height;
 				child->value0a = (short)i;
@@ -441,7 +452,8 @@ void function_2bacbc(c_class_1a2c81 *widget, s_widget_group_definition *group, s
 
 		if (text)
 		{
-			text->get_bounds(&bounds);
+			s_widget_bounds bounds;
+   text->get_bounds(&bounds);
 			bounds.top += point->y;
 			bounds.left += point->x;
 			bounds.right += point->x;
@@ -458,28 +470,39 @@ void c_widget_45ad18::place(s_widget_point *origin)
 	if (definition->tag_index != NONE)
 	{
 		s_widget_group_definition *group = (s_widget_group_definition *)g_4e3b44[definition->tag_index & 0xffff].bytes;
-		long rows = definition->rows > 1 ? definition->rows : 1;
-		long columns = definition->columns > 1 ? definition->columns : 1;
+		long columns;
+		long rows;
+
+		if (definition->rows > 1)
+			rows = definition->rows;
+		else
+			rows = 1;
+		if (definition->columns > 1)
+			columns = definition->columns;
+		else
+			columns = 1;
 		long column;
 		long row;
 
-		if (definition->order != 0)
+		switch (definition->order)
 		{
+		case 0:
+			row = index / columns;
+			column = index % columns;
+			break;
+		case 1:
 			column = index / rows;
 			row = index % rows;
-		}
-		else
-		{
-			column = index % columns;
-			row = index / columns;
+			break;
+		default:
+			__assume(0);
 		}
 		if (PIN(column, 0, columns - 1) == column && PIN(row, 0, rows - 1) == row)
 		{
 			s_widget_point point;
 			s_widget_bounds group_bounds;
 
-			point.x = definition->x;
-			point.y = definition->y;
+			point = *(s_widget_point *)((byte *)definition + 0xc);
 			point.x += definition->x_step * (short)column + origin->x;
 			point.y += definition->y_step * (short)row + origin->y;
 			function_2bacbc(this, group, &point);

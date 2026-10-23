@@ -24,7 +24,7 @@ struct s_slot_vehicle_board
 	byte unknown28[0x40 - 0x28];
 };
 
-/* the block of the actor's character tag function_1e4ad0 returns */
+/* the block of the actor's character tag character_vehicle_settings_get returns */
 struct s_character_vehicle
 {
 	byte flags;
@@ -42,7 +42,7 @@ struct s_vehicle_board_unit_tag
 	s_unit_seat_definition *seats;
 };
 
-long function_1e4ad0(long index);
+long character_vehicle_settings_get(long index);
 bool function_10f630(long object_index, long *first, long *second);
 bool function_1bf7f0(long actor_index, short seat_index, long object_index);
 
@@ -50,10 +50,10 @@ short __stdcall function_1bf990(long actor_index);
 short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active);
 bool __stdcall function_1bfb10(long actor_index, s_slot *slot);
 void __stdcall function_1bfc30(long actor_index, s_slot *slot);
-void __stdcall function_1c1990(long actor_index, s_slot *slot, long index);
+void __stdcall actor_behavior_release_prop(long actor_index, s_slot *slot, long index);
 void __stdcall function_1c1520(long actor_index, s_slot *slot, long index);
 bool __stdcall function_1bff80(long actor_index, s_slot *slot);
-void __stdcall function_1c0230(long actor_index, s_slot *slot);
+void __stdcall actor_behavior_50_update48(long actor_index, s_slot *slot);
 
 inline s_vehicle_board_unit_tag *vehicle_board_unit_tag_get(s_slot_object_view *unit)
 {
@@ -83,7 +83,7 @@ short __stdcall function_1bf990(long actor_index)
 
 	if (!actor->unknown224 && actor->prop_index != NONE && actor->unknown26c == NONE && actor->unknown018 != NONE)
 	{
-		s_character_vehicle *character = (s_character_vehicle *)function_1e4ad0(actor->unknown054);
+		s_character_vehicle *character = (s_character_vehicle *)character_vehicle_settings_get(actor->unknown054);
 
 		if (character)
 		{
@@ -134,11 +134,10 @@ void __stdcall function_1bfc30(long actor_index, s_slot *slot)
 	}
 }
 
-// @retail 0x1bfd00
-short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active)
+PRIVATE __forceinline word function_1bfd01(long arg_0, s_slot *arg_1, bool arg_2)
 {
-	s_actor_view *actor = actor_get(actor_index);
-	s_slot_vehicle_board *state = (s_slot_vehicle_board *)slot;
+	s_actor_view *actor = actor_get(arg_0);
+	s_slot_vehicle_board *state = (s_slot_vehicle_board *)arg_1;
 	short result = g_46fbe4;
 
 	if (actor->prop_index == state->prop_index && state->vehicle_index != NONE)
@@ -161,9 +160,9 @@ short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active)
 				state->boarding = false;
 				if (seated)
 				{
-					s_character_vehicle *character = (s_character_vehicle *)function_1e4ad0(actor->unknown054);
+					s_character_vehicle *character = (s_character_vehicle *)character_vehicle_settings_get(actor->unknown054);
 
-					if (character && (!function_1e2030(actor_index) || !(node->unknown28 > character->unknown08)))
+					if (character && (!function_1e2030(arg_0) || !(node->unknown28 > character->unknown08)))
 					{
 						s_prop_state_view *s_type_5cfb45 = prop_node_state(node);
 
@@ -177,7 +176,7 @@ short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active)
 						}
 					}
 				}
-				function_1f86a0(actor_index);
+				function_1f86a0(arg_0);
 				result = g_46fbe4;
 			}
 			else if (unit->parent_index == state->vehicle_index && unit->unknown1fc == state->vehicle_seat_index)
@@ -212,14 +211,20 @@ short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// @retail 0x1bfd00
+short __stdcall function_1bfd00(long actor_index, s_slot *slot, bool active)
+{
+	return (short)function_1bfd01(actor_index, slot, active);
+}
+
 s_slot_handler_2 g_47eeb8 =
 {
 	{
 		0x50, 2, 0, -2, 0,
 		function_1bf990, function_1bfd00, function_1bfb10, function_1bfc30, NONE, {0},
-		0, function_1c1990, function_1c1520, 0, 0, 0, 0
+		0, actor_behavior_release_prop, function_1c1520, 0, 0, 0, 0
 	},
-	(t_slot_proc)function_1bff80, 0, function_1c0230
+	(t_slot_proc)function_1bff80, 0, actor_behavior_50_update48
 };
 
 long function_1e4a50(long index);
@@ -228,15 +233,17 @@ short function_1bf890(long actor_index, long object_index, short seat_index, boo
 // @retail 0x1bfb10
 bool __stdcall function_1bfb10(long actor_index, s_slot *slot)
 {
+    bool result = false;
+    s_slot *volatile *local_0 = &slot;
+    s_slot *local_1 = *local_0;
     s_actor_view *actor = actor_get(actor_index);
     s_slot_object_view *unit = object_get(prop_node_get(actor->prop_index)->object_index);
     long vehicle_index = unit->parent_index;
-    bool result = false;
-    s_slot_vehicle_board *state = (s_slot_vehicle_board *)slot;
+    s_slot_vehicle_board *state = (s_slot_vehicle_board *)local_1;
     if (object_header_get(vehicle_index)->type == 1)
     {
         byte *movement = (byte *)function_1e4a50(actor->unknown054);
-        byte *boarding = (byte *)function_1e4ad0(actor->unknown054);
+        byte *boarding = (byte *)character_vehicle_settings_get(actor->unknown054);
         bool vertical = (boarding[0] & 1) && (actor->unknown229 || (movement && (movement[0] & 0x20)));
         short seat = function_1bf890(actor_index, vehicle_index, unit->unknown1fc, vertical);
         if (seat != NONE)
@@ -249,9 +256,8 @@ bool __stdcall function_1bfb10(long actor_index, s_slot *slot)
             state->requested = false;
             state->unknown1b = false;
             state->unknown1a = vertical;
-            return true;
+            result = true;
         }
-        return false;
     }
     return result;
 }
@@ -268,10 +274,13 @@ struct s_1bff80
 struct s_seat_approach_result;
 bool function_1baae0(long arg_0, long arg_1, short arg_2, bool arg_3,
     bool arg_4, bool arg_5, s_seat_approach_result *arg_6);
-bool __stdcall function_1badc0(point3f const *arg_2, long arg_1, long arg_0,
+bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6);
 bool function_1f45c0(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool arg_3);
 
+// score 194 (was 194): the record count is loaded into EBX here and into ECX
+// in retail, and the
+// index is scaled after the mask in one and before it in the other.
 // @retail 0x1bff80
 bool __stdcall function_1bff80(long arg_0, s_slot *arg_1)
 {
@@ -333,7 +342,7 @@ bool __stdcall function_1bff80(long arg_0, s_slot *arg_1)
                 bool local_12;
                 s_type_c3b527 local_13;
                 long local_14;
-                bool local_15 = function_1badc0(&local_10.field_0, local_1->vehicle_index, arg_0,
+                bool local_15 = function_1badc0(arg_0, local_1->vehicle_index, &local_10.field_0,
                     &local_13, &local_14, local_1->unknown1a, &local_12);
                 if (local_15)
                 {

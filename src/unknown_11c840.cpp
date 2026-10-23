@@ -23,8 +23,8 @@ struct s_part_table
     s_single_element *singles;
     long pair_b_count;
     s_pair_element *pairs_b;
-    void function_1c2390();
-    c_part *function_1c2460(long index);
+    void construct_shapes();
+    c_part *get_shape(long index);
 };
 
 long function_122c70(s_tag_iterator *arg_0);
@@ -269,6 +269,8 @@ static void h2_native_initialize_validated_physics_models()
 }
 #endif
 
+// score 19 (was 19): retail passes function_1ea9c0's second argument as a stack byte, ours
+// passes it in ECX; the callee's convention is set by its own (stubbed) file.
 // @retail 0x11c840
 void function_11c840()
 {
@@ -294,7 +296,7 @@ void function_11c840()
         switch (*(dword *)&g_4e3b44[(short)local_1])
         {
         case 0x62697064:
-            ((s_part_table *)(g_4e3b44[local_1 & 0xffff].bytes + 0x264))->function_1c2390();
+            ((s_part_table *)(g_4e3b44[local_1 & 0xffff].bytes + 0x264))->construct_shapes();
 #ifdef H2_NATIVE_PORT
             g_native_initialized_tags++;
 #endif
@@ -306,7 +308,7 @@ void function_11c840()
 #endif
             break;
         case 0x63726561:
-            ((s_part_table *)(g_4e3b44[local_1 & 0xffff].bytes + 0xd4))->function_1c2390();
+            ((s_part_table *)(g_4e3b44[local_1 & 0xffff].bytes + 0xd4))->construct_shapes();
 #ifdef H2_NATIVE_PORT
             g_native_initialized_tags++;
 #endif

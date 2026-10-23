@@ -141,54 +141,56 @@ bool voice_xhv_get_runtime_parameters(XHV_RUNTIME_PARAMS *parameters, c_voice_xh
 }
 
 // @retail 0x55810
+// score 2 (was 2): the engine pointer is loaded into ebp before the branch that
+// skips the creation; retail loads it after the branch.
 bool voice_xhv_create(c_voice_xhv *xhv)
 {
-	XHV_RUNTIME_PARAMS parameters;
-	bool result = voice_xhv_get_runtime_parameters(&parameters, xhv);
-	if (result)
-	{
-		XHVEngine **engine = &xhv->engine;
-		if (SUCCEEDED(XHVEngineCreate(&parameters, engine)))
-		{
-			HRESULT error;
-			xhv->unknown0c = 0;
-			switch (xhv->mode)
-			{
-			case 1:
-				xhv->unknown0c = 0xb;
-				break;
-			default:
-				xhv->unknown0c = 0xf;
-				break;
-			}
-			for (DWORD mode = 0; mode < 4; mode++)
-			{
-				if (xhv->unknown0c & (1 << mode))
-					error = (*engine)->EnableProcessingMode(g_52731c[mode]);
-			}
-			if (SUCCEEDED(error))
-			{
-				error = (*engine)->SetCallbackInterface(xhv);
-				if (xhv->unknown0c & 4)
-					(*engine)->SetMaxPlaybackStreamsCount(15);
-				if (SUCCEEDED(error))
-				{
-					for (long port = 0; port != NONE; port = voice_port_next_index(port))
-					{
-						XHV_LOCAL_TALKER_STATUS status;
-						(*engine)->RegisterLocalTalker(port);
-						(*engine)->SetProcessingMode(port, g_52731c[xhv->port_modes[port]]);
-						(*engine)->GetLocalTalkerStatus(port, &status);
-						xhv->communicator_present[port] = status.communicatorStatus == XHV_VOICE_COMMUNICATOR_STATUS_INSERTED;
-						xhv->chat_data_ready[port] = false;
-						xhv->voice_mail_active[port] = false;
-					}
-					result = true;
-				}
-			}
-		}
-	}
-	return result;
+    XHV_RUNTIME_PARAMS parameters;
+    XHVEngine **engine;
+    HRESULT error;
+    bool result = voice_xhv_get_runtime_parameters(&parameters, xhv);
+    engine = &xhv->engine;
+    bool *local_0 = &result;
+    if (!result)
+        goto local_1;
+    error = XHVEngineCreate(&parameters, engine);
+    if (!SUCCEEDED(error))
+        goto local_1;
+    xhv->unknown0c = 0;
+    switch (xhv->mode)
+    {
+    case 1:
+        xhv->unknown0c = 0xb;
+        break;
+    default:
+        xhv->unknown0c = 0xf;
+        break;
+    }
+    for (DWORD mode = 0; mode < 4; mode++)
+    {
+        if (xhv->unknown0c & (1 << mode))
+            error = (*engine)->EnableProcessingMode(g_52731c[mode]);
+    }
+    if (!SUCCEEDED(error))
+        goto local_1;
+    error = (*engine)->SetCallbackInterface(xhv);
+    if (xhv->unknown0c & 4)
+        (*engine)->SetMaxPlaybackStreamsCount(15);
+    if (!SUCCEEDED(error))
+        goto local_1;
+    for (long port = 0; port != NONE; port = voice_port_next_index(port))
+    {
+        XHV_LOCAL_TALKER_STATUS status;
+        (*engine)->RegisterLocalTalker(port);
+        (*engine)->SetProcessingMode(port, g_52731c[xhv->port_modes[port]]);
+        (*engine)->GetLocalTalkerStatus(port, &status);
+        xhv->communicator_present[port] = status.communicatorStatus == XHV_VOICE_COMMUNICATOR_STATUS_INSERTED;
+        xhv->chat_data_ready[port] = false;
+        xhv->voice_mail_active[port] = false;
+    }
+    *(volatile bool *)local_0 = true;
+local_1:
+    return result;
 }
 
 // @retail 0x55080
@@ -317,8 +319,10 @@ bool voice_xhv_set_remote_talker(c_voice_xhv *xhv, long id, bool registered)
 }
 
 // @retail 0x554c0
-void voice_xhv_play_voice_mail(c_voice_xhv *xhv, DWORD port, const long *data, long size, bool force)
+void voice_xhv_play_voice_mail(DWORD port, c_voice_xhv *controller, const long *data, long size, bool force)
 {
+	c_voice_xhv *const *controller_reference = &controller;
+	c_voice_xhv *xhv = *controller_reference;
 	if (xhv->initialized && xhv->port_modes[port] == 3 && size > 16 && data[0] == 'FFIR' && data[2] == 'EVAW' && data[3] == ' tmf')
 	{
 		if (force || xhv->communicator_present[port])
@@ -330,7 +334,7 @@ void voice_xhv_play_voice_mail(c_voice_xhv *xhv, DWORD port, const long *data, l
 }
 
 // @retail 0x55520
-void voice_xhv_record_voice_mail(c_voice_xhv *xhv, DWORD port, DWORD maximum_time, BYTE *buffer, DWORD buffer_size, DWORD *size, DWORD *duration)
+void voice_xhv_record_voice_mail(DWORD port, c_voice_xhv *xhv, DWORD maximum_time, BYTE *buffer, DWORD buffer_size, DWORD *size, DWORD *duration)
 {
 	*size = 0;
 	*duration = 0;
@@ -801,7 +805,7 @@ void voice_start_engine(void)
 }
 
 // @retail 0x53550
-void voice_stop_engine(void)
+inline void voice_stop_engine(void)
 {
 	if (voice_available())
 	{
@@ -810,13 +814,23 @@ void voice_stop_engine(void)
 	}
 }
 
+PRIVATE __forceinline s_loop_allocator *function_53421(c_memory_source *arg_0, long arg_1, const char *arg_2)
+{
+	if (!arg_0)
+		arg_0 = (c_memory_source *)g_468758;
+	s_loop_allocator *local_0 = (s_loop_allocator *)arg_0->allocate(arg_1 + 0x50);
+	if (local_0)
+		function_18e250(local_0, arg_1, arg_2, arg_0);
+	return local_0;
+}
+
 // @retail 0x53420
 void voice_initialize_menu_pool(void)
 {
 	if (g_4c9878.type == 1)
 	{
 		g_4c9878.use_pool2 = true;
-		g_4c9878.pool2 = function_18e1f0(g_46dd54, 0x61800, "voice y menu pool");
+		g_4c9878.pool2 = function_53421(g_46dd54, 0x61800, "voice y menu pool");
 		if (g_4c9878.pool2)
 		{
 			g_4c9878.pool2->field3c = true;
@@ -827,6 +841,13 @@ void voice_initialize_menu_pool(void)
 	}
 }
 
+PRIVATE __forceinline void function_534a1(s_loop_allocator *arg_0)
+{
+ c_memory_source *local_0 = arg_0->source;
+ memset(arg_0, 0, sizeof(*arg_0));
+ local_0->release(arg_0);
+}
+
 // @retail 0x534a0
 void voice_dispose_menu_pool(void)
 {
@@ -835,7 +856,7 @@ void voice_dispose_menu_pool(void)
 		if (g_4c9878.pool2)
 		{
 			voice_stop_engine();
-			function_18e230(g_4c9878.pool2);
+			function_534a1(g_4c9878.pool2);
 			g_4c9878.pool2 = NULL;
 		}
 		g_4c9878.use_pool2 = false;
@@ -899,7 +920,7 @@ void voice_play_voice_mail(long port, const long *data, long size)
 		if (state == 1 || !voice_port_can_talk(port))
 			force = true;
 		if (state != 3 && data && size > 0)
-			voice_xhv_play_voice_mail(&g_476fc8, port, data, size, force);
+			voice_xhv_play_voice_mail(port, &g_476fc8, data, size, force);
 	}
 }
 
@@ -907,7 +928,7 @@ void voice_play_voice_mail(long port, const long *data, long size)
 void voice_record_voice_mail(long port, DWORD maximum_time, DWORD buffer_size, BYTE *buffer, DWORD *size, DWORD *duration)
 {
 	if (voice_available())
-		voice_xhv_record_voice_mail(&g_476fc8, port, maximum_time, buffer, buffer_size, size, duration);
+		voice_xhv_record_voice_mail(port, &g_476fc8, maximum_time, buffer, buffer_size, size, duration);
 }
 
 /* ---- the players of the voice session ---- */
@@ -968,7 +989,10 @@ long voice_find_player(long unknown14)
 			for (long i = 0; i < 16; i++)
 			{
 				if ((mask & (1 << i)) && players[i].member_index == member && players[i].unknown14 == unknown14)
-					return i;
+				{
+					result = i;
+					break;
+				}
 			}
 		}
 	}
@@ -1263,12 +1287,18 @@ long function_55c40(s_voice_queue *queue, long player, byte *cursor, byte *outpu
 	if (*(bool *)&queue->unknown00)
 	{
 		dword player_bit = 1 << player;
-		if (!(*(word *)queue->unknown08 & player_bit))
-			return NONE;
+		if (!voice_channel_has_player((s_voice_channel const *)queue, player))
+		{
+			result = NONE;
+			goto done;
+		}
 		long clamped = player < 0 ? 0 : player > 15 ? 15 : player;
 		if (clamped != player)
-			return NONE;
-		dword kept = (1 << queue->count) - 1;
+		{
+			result = NONE;
+			goto done;
+		}
+		volatile dword kept = (1 << queue->count) - 1;
 		long written = 0;
 		long entry_size = include_mask ? 13 : 11;
 		capacity -= 2;
@@ -1311,6 +1341,7 @@ long function_55c40(s_voice_queue *queue, long player, byte *cursor, byte *outpu
 				*(word *)queue->unknown08 |= *(word *)((byte *)&queue->entries[i] + 6);
 		}
 	}
+done:
 	return result;
 }
 
@@ -1334,7 +1365,7 @@ long function_56380(byte *output, s_voice_channels *channels, long player, long 
 		for (long i = 0; i < 16; i++)
 		{
 			s_voice_channel *channel = &channels->channels[i];
-			if (channel->active && (channel->player_mask & (1 << player)) && capacity > 0)
+			if (voice_channel_has_player(channel, player) && capacity > 0)
 			{
 				cursor += 2;
 				long written = function_55c40((s_voice_queue *)channel, player, cursor, header, capacity, include_mask);
@@ -1368,11 +1399,14 @@ s_voice_routing g_527104;
 long voice_player_settings_get_active_value(s_voice_player_settings *settings, long player);
 dword function_56c60(s_voice_player_settings *settings, long player);
 
+static __forceinline bool function_57d63(long arg_0, long arg_1);
+
 // @retail 0x55990
 void function_55990(s_voice_player_values *values)
 {
 	if (values->enabled)
 	{
+		long i = 0;
 		dword players = 0;
 		if (voice_available())
 		{
@@ -1386,9 +1420,9 @@ void function_55990(s_voice_player_values *values)
 		if (voice_available())
 			active = g_4c9878.unknownEE;
 		memset(values->values, 0, sizeof(values->values));
-		for (long i = 0; i < 16; i++)
+		for (; i < 16; i++)
 		{
-			dword bit = 1 << i;
+			word bit = 1 << i;
 			if ((local & bit) && (active & bit))
 			{
 				dword muted = 0;
@@ -1397,16 +1431,18 @@ void function_55990(s_voice_player_values *values)
 				dword mask = remote & ~muted;
 				if (voice_available())
 				{
+					dword policy = ~0UL;
 					if (g_4c9878.mode == 1)
-						mask &= voice_player_settings_get_active_value(&g_527104.settings, i);
+						policy = voice_player_settings_get_active_value(&g_527104.settings, i);
 					else if (g_4c9878.mode == 2 || g_4c9878.mode == 3)
-						mask &= function_56c60(&g_527104.settings, i);
+						policy = function_56c60(&g_527104.settings, i);
+					mask &= policy;
 				}
 				for (long j = 0; j < 16; j++)
 				{
 					dword target = 1 << j;
 					if ((mask & target) &&
-						(voice_test_unknownF0(j, i) || voice_port_flag1(j) || voice_port_flag2(j)))
+						(function_57d63(j, i) || voice_port_flag1(j) || voice_port_flag2(j)))
 						mask &= ~target;
 				}
 				values->values[i] = mask;
@@ -1538,6 +1574,14 @@ static inline dword voice_get_player_mask_inlined(void)
 		if (membership)
 			result = *(dword *)(membership + 0x10d0);
 	}
+	return result;
+}
+
+static inline bool voice_has_remote_talker_inlined(long id)
+{
+	bool result = false;
+	if (voice_available())
+		result = voice_xhv_has_remote_talker(&g_476fc8, id);
 	return result;
 }
 
@@ -1879,8 +1923,8 @@ long voice_player_settings_get_active_value(s_voice_player_settings *settings, l
 	return result;
 }
 
-/* src/unknown_138800_2.cpp, src/unknown_067e10.cpp */
-bool function_138800();
+/* src/game_loop_status.cpp, src/unknown_067e10.cpp */
+bool game_loop_running();
 bool function_68250(void);
 
 /* chooses the voice mode from the session manager's state */
@@ -1893,10 +1937,13 @@ void voice_update_mode(void)
 	switch (state)
 	{
 	case 3:
-		if (!function_138800() || !function_68250())
+		if (!game_loop_running() || !function_68250())
+		{
 			g_4c9878.mode = 2;
-		else
-			g_4c9878.mode = 1;
+			break;
+		}
+local_0:
+		g_4c9878.mode = 1;
 		break;
 	case 1:
 	case 2:
@@ -1907,10 +1954,9 @@ void voice_update_mode(void)
 		g_4c9878.mode = 2;
 		break;
 	case 8:
-		if (function_138800() && function_68250())
+		if (game_loop_running() && function_68250())
 		{
-			g_4c9878.mode = 1;
-			break;
+			goto local_0;
 		}
 	case 7:
 		{
@@ -1932,20 +1978,21 @@ void voice_update_mode(void)
 // @retail 0x57b60
 long voice_players_share_team(long other, long player)
 {
-	if (voice_available() && g_4c9878.mode == 3)
+	if (!voice_available() || g_4c9878.mode != 3)
+		return true;
+	s_network_session_player *players = NULL;
+	byte *membership = (byte *)voice_get_membership();
+	if (membership)
+		players = (s_network_session_player *)(membership + 0x10d4);
+	dword mask = voice_get_player_mask_inlined();
+	if ((mask & (1 << other)) && (mask & (1 << player)))
 	{
-		s_network_session_player *players = voice_get_players_inlined();
-		dword mask = voice_get_player_mask_inlined();
-		if ((mask & (1 << other)) && (mask & (1 << player)))
-		{
-			long other_team = (char)players[other].propertiesa8[0x7c];
-			long team = (char)players[player].propertiesa8[0x7c];
-			if (other_team != NONE && team != NONE && other_team == team)
-				return true;
-		}
-		return false;
+		long other_team = (char)players[other].propertiesa8[0x7c];
+		long team = (char)players[player].propertiesa8[0x7c];
+		if (other_team != NONE && team != NONE && other_team == team)
+			return true;
 	}
-	return true;
+	return false;
 }
 
 // @retail 0x56c60
@@ -2024,8 +2071,10 @@ real function_57a80(long player, long other)
 		byte *datum = voice_get_world_player(player);
 		if (datum)
 		{
-			long unit = *(long *)(datum + 0x2c);
-			if (unit == NONE)
+			long unit = NONE;
+			if (*(long *)(datum + 0x2c) != NONE)
+				unit = *(long *)(datum + 0x2c);
+			else if (*(long *)(datum + 0x30) != NONE)
 				unit = *(long *)(datum + 0x30);
 			if (unit != NONE)
 			{
@@ -2039,7 +2088,10 @@ real function_57a80(long player, long other)
 						double x = (double)second.x - first.x;
 						double y = (double)second.y - first.y;
 						double z = (double)second.z - first.z;
-						result = (real)sqrt(z * z + x * x + y * y);
+						double sum = z * z + x * x;
+						sum += y * y;
+						double const &distance = sqrt(sum);
+						result = (real)distance;
 					}
 				}
 			}
@@ -2050,11 +2102,16 @@ real function_57a80(long player, long other)
 
 #include "unknown_0662e0.h"
 
+#pragma inline_depth(0)
+static __forceinline long function_53e31(c_class_58d20 *session)
+{
+ return session->get_value_5e20();
+}
+#pragma inline_depth(255)
+
 // @retail 0x53e30
 void function_53e30(void)
 {
-	long selected = NONE;
-	long best = 0;
 	g_4c9878.unknown00 = NONE;
 	if (voice_available())
 	{
@@ -2068,28 +2125,29 @@ void function_53e30(void)
 			{
 				if (current == host)
 				{
+					long best = 0;
+					long selected = NONE;
 					long count = *(long *)(membership + 8);
 					for (long i = 0; i < count; i++)
 					{
 						byte *member = membership + 0xc + i * 0x10c;
-						long quality = *(long *)(member + 0x94);
-						if (i != current && *(long *)(member + 0x98) != 3 &&
+						if (current != i && *(long *)(member + 0x98) != 3 &&
 							*(long *)(member + 0x90) >= g_network_configuration.valuee4 &&
-							quality >= g_network_configuration.valuee0 &&
-							*(dword *)(member + 0x9c) == (1U << count) - 1 && quality > best)
+							*(long *)(member + 0x94) >= g_network_configuration.valuee0 &&
+							*(dword *)(member + 0x9c) == (1U << count) - 1 && *(long *)(member + 0x94) > best)
 						{
 							selected = i;
-							best = quality;
+							best = *(long *)(member + 0x94);
 						}
 					}
 					if (selected == NONE && !voice_mode_is_1())
 						selected = current;
-					if (session->get_value_5e20() != selected)
+					if (function_53e31(session) != selected)
 						session->set_value_5e20(selected);
 					g_4c9878.unknown00 = selected;
 				}
 				else
-					g_4c9878.unknown00 = session->get_value_5e20();
+					g_4c9878.unknown00 = function_53e31(session);
 			}
 		}
 	}
@@ -2134,19 +2192,42 @@ done:
 	return result;
 }
 
-static __forceinline bool voice_test_unknown110(long player, long other)
+static __forceinline bool voice_test_unknownF0_inlined(long player, long other)
 {
 	bool result = false;
 	if (voice_available())
-		result = (g_4c9878.unknown110[player] & (1 << other)) != 0;
+		result = (g_4c9878.unknownF0[player] & (1 << other)) != 0;
 	return result;
+}
+
+static __forceinline bool function_57d63(long arg_0, long arg_1)
+{
+    bool local_0 = false;
+    if (g_4c9878.initialized && g_476fc8.initialized)
+        local_0 = (g_4c9878.unknownF0[arg_0] & (1 << arg_1)) != 0;
+    return local_0;
+}
+
+static __forceinline long function_57d64(long other, long result)
+{
+    if (result == 2 || result == 3)
+    {
+        dword local_mask = voice_get_local_player_mask();
+        for (long local = 0; local < 16; local++)
+            if ((local_mask & (1 << local)) && voice_test_unknownF0_inlined(local, other))
+            {
+                result = 0;
+                return result;
+            }
+    }
+    return result;
 }
 
 // @retail 0x57d60
 long function_57d60(long mode, long player, long other)
 {
 	long result = 0;
-	if (!voice_test_unknown110(player, other) && !voice_test_unknown110(other, player))
+	if (function_57d63(player, other) || function_57d63(other, player)) goto failed;
 	{
 		switch (mode)
 		{
@@ -2154,25 +2235,22 @@ long function_57d60(long mode, long player, long other)
 		case 1: result = (voice_get_unknownEE() & (1 << player)) ? 1 : 2; break;
 		case 2: result = 2; break;
 		case 3: result = 3; break;
-		default: return result;
+		default: goto done;
 		}
 		long controller = voice_get_player_unknown14(player);
 		if (controller == NONE)
 			{ result = 0; goto done; }
 		switch (voice_get_port_state(controller))
 		{
-		case 1: if (result != 3) result = 2; break;
+		case 1: if (result == 3) { __assume(result == 3); } else result = 2; break;
 		case 2: { result = 1; goto done; }
 		case 3: { result = 0; goto done; }
 		}
-		if (result == 2 || result == 3)
-		{
-			dword local_mask = voice_get_local_player_mask();
-			for (long local = 0; local < 16; local++)
-				if ((local_mask & (1 << local)) && voice_test_unknown110(local, other))
-					{ result = 0; goto done; }
-		}
+		result = function_57d64(other, result);
 	}
+	goto done;
+failed:
+	result = 0;
 done:
 	return result;
 }
@@ -2195,19 +2273,20 @@ void __stdcall function_577d0(s_voice_player_settings *settings)
 					if ((mask & (1 << other)) && !(local_mask & (1 << other)) &&
 						function_54df0(other) && !function_589e0(other))
 					{
-						bool allowed;
 						if (!function_53d40())
-							allowed = true;
+							settings->unknown84[local] |= 1 << other;
 						else if (function_53d90())
-							allowed = !juggernaut_is((short)local) && !juggernaut_is((short)other);
+						{
+							if (!juggernaut_is((short)local) && !juggernaut_is((short)other))
+								settings->unknown84[local] |= 1 << other;
+						}
 						else
 						{
 							long team = (char)players[local].propertiesa8[0x7c];
 							long other_team = (char)players[other].propertiesa8[0x7c];
-							allowed = team != NONE && other_team != NONE && team == other_team;
+							if (team != NONE && other_team != NONE && team == other_team)
+								settings->unknown84[local] |= 1 << other;
 						}
-						if (allowed)
-							settings->unknown84[local] |= 1 << other;
 					}
 				}
 			}
@@ -2219,27 +2298,30 @@ void __stdcall function_577d0(s_voice_player_settings *settings)
 void function_583c0(s_voice_player_settings *settings, dword players, long talker)
 {
 	dword ports = 0;
-	dword talker_bit = 1 << talker;
 	for (long player = 0; player < 16; player++)
 	{
-		long port = voice_get_player_unknown14(player);
+		long port = NONE;
+		if (voice_available() && (voice_get_local_player_mask() & (1 << player)))
+		{
+			s_network_session_player *session_players = voice_get_players_inlined();
+			if (session_players)
+				port = session_players[player].unknown14;
+		}
 		if (players & (1 << player))
 		{
-			settings->unknown108[player] |= talker_bit;
+			settings->unknown108[player] |= 1 << talker;
 			if (port != NONE)
 				ports |= 1 << port;
 		}
 		else
-			settings->unknown108[player] &= ~talker_bit;
+			settings->unknown108[player] &= ~(1 << talker);
 	}
 	for (long port = 0; port != NONE; port = voice_port_next_index(port))
 	{
 		if (ports & (1 << port))
 		{
-			DSMIXBINVOLUMEPAIR pair;
-			memset(&pair, 0, sizeof(pair));
-			DSMIXBINS bins;
-			memset(&bins, 0, sizeof(bins));
+			DSMIXBINVOLUMEPAIR pair = {0};
+			DSMIXBINS bins = {0};
 			bins.dwMixBinCount = 1;
 			bins.lpMixBinVolumePairs = &pair;
 			pair.dwMixBin = 2;
@@ -2271,6 +2353,8 @@ static __forceinline long voice_proximity_object(long player_index)
 	return object_index;
 }
 
+/* the players each local player hears by distance; retail calls
+   function_caf90 at both positions, so those calls are kept out of line */
 // @retail 0x57080
 void __stdcall function_57080(s_voice_player_values *values)
 {
@@ -2291,7 +2375,9 @@ void __stdcall function_57080(s_voice_player_values *values)
 			if (object != NONE)
 			{
 				point3f position;
+#pragma inline_depth(0)
 				function_caf90(object, &position);
+#pragma inline_depth()
 				for (long j = 0; j < 16; j++)
 				{
 					dword bit = 1 << j;
@@ -2301,15 +2387,19 @@ void __stdcall function_57080(s_voice_player_values *values)
 						if (other != NONE)
 						{
 							point3f other_position;
+#pragma inline_depth(0)
 							function_caf90(other, &other_position);
-							real z = other_position.z - position.z;
+#pragma inline_depth()
 							real x = other_position.x - position.x;
 							real y = other_position.y - position.y;
-							real squared = z * z + x * x + y * y;
+							real z = other_position.z - position.z;
+							real squared = z * z;
+							squared += x * x;
+							squared += y * y;
 							real range = 8.0f;
 							if (g_510c94)
 								range = g_510c94->motion_sensor_range;
-							if (range + 1.5f >= sqrtf(squared))
+							if (sqrtf(squared) <= range + 1.5f)
 								values->values[i] |= bit;
 						}
 					}
@@ -2350,6 +2440,9 @@ void function_56790(long *capacity, dword *remaining, dword allowed, word *selec
 }
 
 // @retail 0x53b00
+// score 4 (was 4): retail calls function_56380 with the output pointer in eax and
+// the channels, player and capacity on the stack; our callee takes them in another
+// order, so the call and its two pushes differ.
 long __stdcall function_53b00(long player, byte *output, long capacity)
 {
  long result = 0;
@@ -2358,15 +2451,11 @@ long __stdcall function_53b00(long player, byte *output, long capacity)
  return result;
 }
 
-// Disabled pending a source-shape fix: enabling this removes a required
-// caller-local initialization in the matched 0x54890.
-#if 0
-// Retail address: 0x565c0 (disabled).
+// @retail 0x565c0
 void __stdcall function_565c0(s_voice_routing *routing, dword remaining, s_voice_route *output)
 {
- output->unknown02 = 0;
- output->members = 0;
- if (!routing->enabled || !remaining)
+ output->members = output->unknown02 = 0;
+ if (routing->enabled == 0 || !remaining)
   return;
  long capacity = voice_get_mode_value();
  if (capacity <= 0)
@@ -2379,29 +2468,31 @@ void __stdcall function_565c0(s_voice_routing *routing, dword remaining, s_voice
  if (g_4c9878.initialized)
   mode = g_4c9878.session_kind;
  dword eligible = voice_get_current_member_value();
- dword preferred_bit = 1 << preferred;
- word selected = 0;
- word deferred = 0;
+ dword preferred_bit = 1 << (long)preferred;
  bool blocked = false;
+ word selected = output->members;
+ dword deferred = output->unknown02;
  if (!(eligible & preferred_bit))
-  preserve = false;
- if (!(eligible & preferred_bit) || !preserve)
  {
+  preserve = false;
   if (mode == 2)
    capacity = 1;
  }
- else if (mode == 1 || mode == 2)
+ else if (preserve && (mode == 1 || mode == 2))
  {
   blocked = true;
   goto finish;
  }
+ else if (mode == 2)
+  capacity = 1;
  {
   long kind = voice_get_session_kind();
-  deferred = (word)(remaining & ~eligible);
+  long tmp0 = (remaining & ~eligible);
+  deferred = (word)tmp0;
   remaining &= eligible;
-  if (deferred)
+  if ((dword)deferred)
    blocked = true;
-  if (kind == 2)
+  if ((long)kind == 2)
    function_56790(&capacity, &remaining, function_53c70(), &selected, preserve, preferred, &blocked);
   if (capacity != 1 || !preserve || !blocked)
    function_56790(&capacity, &remaining, (dword)-1, &selected, preserve, preferred, &blocked);
@@ -2411,13 +2502,13 @@ finish:
  {
   if (blocked)
   {
-   selected |= (word)preferred_bit;
    deferred |= (word)remaining;
+   selected |= (word)preferred_bit;
   }
-  else if (remaining & preferred_bit)
+  else if ((remaining & preferred_bit) != 0)
   {
    selected |= (word)preferred_bit;
-   deferred |= (word)preferred_bit;
+   deferred = deferred | (word)preferred_bit;
   }
  }
  else
@@ -2426,7 +2517,24 @@ finish:
  output->unknown02 = deferred;
 }
 
-#endif
+PRIVATE __forceinline byte *function_54592(void *arg_0, const s_network_session_player *arg_1, dword arg_2, long arg_3, const dword *arg_4)
+{
+ dword *local_0 = (dword *)arg_0;
+ if (arg_2 & (1 << arg_3))
+ {
+  const dword *local_1 = (const dword *)&arg_1[arg_3];
+  local_0[0] = local_1[0];
+  local_0[1] = local_1[1];
+  local_0[2] = local_1[2];
+ }
+ else
+ {
+  local_0[0] = *(const volatile dword *)&arg_4[0];
+  local_0[1] = *(const volatile dword *)&arg_4[1];
+  local_0[2] = arg_4[2];
+ }
+ return (byte *)arg_0;
+}
 
 // @retail 0x54590
 void function_54590(void)
@@ -2455,10 +2563,12 @@ void function_54590(void)
   voice_sprintf(reason, "player identifier change");
  }
  g_4c9878.unknown20 = mask;
- for (long i = 0; i < 16; i++)
+ for (long i = 0; i < 16; i += 4)
  {
-  const void *identity = mask & (1 << i) ? (const void *)&players[i] : empty;
-  memcpy(&g_4c9878.unknown24[i * 3], identity, sizeof(empty));
+  byte *local_0 = function_54592(&g_4c9878.unknown24[i * 3], players, mask, i, empty);
+  function_54592(local_0 + 0xc, players, mask, i + 1, empty);
+  function_54592(local_0 + 0x18, players, mask, i + 2, empty);
+  function_54592(local_0 + 0x24, players, mask, i + 3, empty);
  }
  voice_channels_reset(&g_525a00);
 }
@@ -2508,10 +2618,11 @@ void __stdcall function_541a0(long player)
    g_4c9878.unknown110[player] &= ~4;
   if (TEST_FIELD_BIT(g_54e8e0[port].flag5))
   {
+   XONLINE_MUTELISTUSER *users = 0;
    long count = g_4c99c0.user_counts[port];
    if (count != NONE)
    {
-    XONLINE_MUTELISTUSER *users = g_4c99c0.users[port];
+    users = g_4c99c0.users[port];
     if (!users)
      goto publish_properties;
     dword player_mask = voice_get_player_mask();
@@ -2550,14 +2661,14 @@ void function_54030(void)
  if (voice_get_players_inlined())
  {
   dword local = voice_get_local_player_mask();
-  dword players = voice_get_player_mask();
+  dword players = voice_get_player_mask_inlined();
   for (long i = 0; i < 16; i++)
   {
    if (players & (1 << i))
    {
     if (local & (1 << i))
     {
-     if (voice_has_remote_talker(i) &&
+     if (voice_has_remote_talker_inlined(i) &&
       g_476fc8.initialized && (g_476fc8.unknown0c & 4))
       g_476fc8.engine->UnregisterRemoteTalker(voice_xuid(i));
      function_541a0(i);
@@ -2567,7 +2678,7 @@ void function_54030(void)
    }
    else
    {
-    if (voice_has_remote_talker(i) &&
+    if (voice_has_remote_talker_inlined(i) &&
      g_476fc8.initialized && (g_476fc8.unknown0c & 4))
      g_476fc8.engine->UnregisterRemoteTalker(voice_xuid(i));
     g_4c9878.unknownEE &= ~(1 << i);
@@ -2612,8 +2723,8 @@ void function_58590(long mode, long talker, c_voice_observer *observer, long pla
 			if (world_player && *(long *)(world_player + 0x2c) != NONE)
 			{
 				function_caf90(*(long *)(world_player + 0x2c), &position);
-				DSMIXBINVOLUMEPAIR pairs[4] = {0};
 				DSMIXBINS bins = {0};
+				DSMIXBINVOLUMEPAIR pairs[4] = {0};
 				bins.lpMixBinVolumePairs = pairs;
 				function_586f0(player, observer, (long *)&bins.dwMixBinCount, pairs, &position);
 				voice_xhv_set_mix_bins(&g_476fc8, talker, 4, &bins);
@@ -2635,7 +2746,7 @@ struct s_voice_route_choice
 void function_57eb0(s_voice_player_settings *settings, long talker,
 	const s_voice_route_choice *choices, long count)
 {
-	bool radio = false;
+	long radio = 0;
 	long nearest = NONE;
 	dword headset = 0;
 	for (long i = 0; i < count; i++)
@@ -2682,6 +2793,8 @@ void function_57eb0(s_voice_player_settings *settings, long talker,
 		g_476fc8.engine->SetPlaybackPriority(voice_xuid(talker), 4, (XHV_PLAYBACK_PRIORITY)-1);
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x57960
 void __stdcall function_57960(s_voice_player_settings *settings)
 {
@@ -2697,22 +2810,27 @@ void __stdcall function_57960(s_voice_player_settings *settings)
 			voice_xhv_has_remote_talker(&g_476fc8, talker))
 		{
 			s_voice_route_choice choices[16] = {0};
-			for (long player = 0; player < 16; player++)
+			long *local_0 = &choices[0].mode;
+			for (long player = 0; player < 16;)
 			{
 				long mode = 0;
 				if (local & (1 << player))
 				{
 					mode = voice_players_share_team(player, talker);
+					_ReadWriteBarrier();
 					mode = function_57d60(mode, player, talker);
 					if (mode) settings->unknownc4 |= bit;
 				}
-				choices[player].player = player;
-				choices[player].mode = mode;
+				local_0[-1] = player;
+				local_0[0] = mode;
+				local_0 += 3;
+				player++;
 			}
 			function_57eb0(settings, talker, choices, 16);
 		}
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x56df0
 void __stdcall function_56df0(s_voice_player_settings *settings, long talker, long mode)
@@ -2733,13 +2851,14 @@ void __stdcall function_56df0(s_voice_player_settings *settings, long talker, lo
 			if ((local & (1 << player)) && function_54df0(player) && valid)
 			{
 				long requested = function_57c20(settings, player, talker, mode);
-				route = function_57d60(requested, player, talker);
+				long result = function_57d60(requested, player, talker);
 				if (requested == 1) settings->unknown148[talker] = g_510c54->game_time;
-				if (route == 3) choices[player].distance = function_57a80(player, talker);
+				if (result == 3) choices[player].distance = function_57a80(player, talker);
+				route = result;
 				if (route) settings->unknownc4 |= 1 << talker;
 			}
-			choices[player].player = player;
 			choices[player].mode = route;
+			choices[player].player = player;
 		}
 		function_57eb0(settings, talker, choices, 16);
 	}
@@ -2870,11 +2989,11 @@ void function_564c0(s_voice_channels *channels, byte *data, long size)
 {
  if (channels->initialized)
  {
-  byte *packet = data + 2;
   bool relay = (data[0] & 1) != 0;
   size -= 2;
   if (relay && !voice_current_member_is_unknown00()) return;
   if (voice_packet_clamp_count(data[1], 1, 15) != data[1]) return;
+  byte *packet = data + 2;
   for (long i = 0; i < data[1]; i++)
   {
    if (voice_packet_clamp_count(packet[0], 0, 15) != packet[0]) return;

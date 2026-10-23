@@ -4,11 +4,13 @@
    object (g_55e4d0), and the time text the engines draw */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
 #include "engine_peer.h"
 #include <string.h>
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+#define FLOOR(n, floor) ((n) < (floor) ? (floor) : (n))
 
 /* the multiplayer globals' fields read here that globals.h does not name */
 struct s_mp_globals_view
@@ -281,7 +283,8 @@ struct s_game_engine_player_info
 // @retail 0x162a30
 void function_162a30(long player_index)
 {
-	s_game_engine_player_info *info = (s_game_engine_player_info *)&g_4e9ae8->players[player_index & 0xffff];
+	long index = player_index & 0xffff;
+	s_game_engine_player_info *info = (s_game_engine_player_info *)&g_4e9ae8->players[index];
 
 	if (g_4e6948->mode != 4)
 	{
@@ -312,7 +315,7 @@ void function_162a30(long player_index)
 		}
 		if (previous != info->state && game_engine_get())
 		{
-			long slot = g_4e9ae8->slots[(short)player_index];
+			long slot = g_4e9ae8->slots[(short)index];
 
 			if (slot != NONE)
 			{
@@ -360,6 +363,7 @@ byte *record_pool_lookup(s_record_pool *data, long datum_index);
 // @retail 0x162c50
 bool function_162c50(long player_index, long *spectated_player_index)
 {
+	bool result = false;
 	s_game_engine_respawn_player *player = game_engine_player_get(player_index);
 
 	if (player->unit_index == NONE)
@@ -382,15 +386,16 @@ bool function_162c50(long player_index, long *spectated_player_index)
 				if (g_510c54->game_time - player->respawn_time < ticks)
 				{
 					*spectated_player_index = other_index;
-					return true;
+					result = true;
 				}
-				return false;
+				goto done;
 			}
 		}
 	}
 	player->flags &= ~0x1000;
 	player->respawn_time = 0;
-	return false;
+	done:
+	return result;
 }
 
 /* an iterator over the players (0x19f240 skips the inactive ones) */
@@ -402,7 +407,7 @@ struct s_game_engine_player_iterator
 	long index;
 };
 
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 
 short g_4e9b38[8][16];
 
@@ -416,7 +421,7 @@ long function_162fd0(long index)
 	iterator.data = g_4e8c24;
 	iterator.index = NONE;
 	iterator.datum_index = NONE;
-	while (function_19f240((long *)&iterator))
+	while (player_iterator_next((long *)&iterator))
 	{
 		long value = g_4e9b38[index][iterator.datum_index & 0xffff];
 
@@ -435,12 +440,14 @@ extern bool g_4c99b8;
 extern bool g_476fcc;
 bool function_53750(long player_index);
 
-static inline long local_user_next(long user_index)
+
+
+static inline long local_user_next_162de0(long user_index)
 {
 	long result = NONE;
-	long i;
+	long start = user_index == NONE ? 0 : user_index + 1;
 
-	for (i = user_index == NONE ? 0 : user_index + 1; i < 4; i++)
+	for (long i = start; i < 4; i++)
 	{
 		if (g_4e8c20->entries[i] != NONE)
 		{
@@ -451,67 +458,82 @@ static inline long local_user_next(long user_index)
 	return result;
 }
 
-static inline bool voice_player_hears(long listener_index, long talker_index)
+static inline bool voice_hears_mask_162de0(long listener_index, long talker_index)
 {
-	dword muted = g_527104.settings.initialized ? g_527104.settings.unknownc8[listener_index] : 0;
-	dword heard = g_527104.settings.initialized ? g_527104.settings.unknown108[listener_index] : 0;
+	dword muted = 0;
 
+	if (g_527104.settings.initialized)
+		muted = g_527104.settings.unknownc8[listener_index];
+
+	dword heard = 0;
+
+	if (g_527104.settings.initialized)
+		heard = g_527104.settings.unknown108[listener_index];
 	return ((muted | heard) & (1 << talker_index)) != 0;
 }
 
+static inline bool voice_talker_heard_162de0(long listener_index, long talker_index)
+{
+	if (!g_4c99b8 || !g_476fcc)
+		return false;
+	if (!function_53750(talker_index))
+		return false;
+	return voice_hears_mask_162de0(listener_index, talker_index);
+}
 /* counts, per local user, the frames each other player has been talking */
 // @retail 0x162de0
 void function_162de0(void)
 {
-	dword users = 0;
+	struct { dword talking; dword users; s_game_engine_player_iterator iterator; } state;
 	long user_index;
 
-	for (user_index = local_user_next(NONE); user_index != NONE; user_index = local_user_next(user_index))
+	state.users = 0;
+
+	for (user_index = local_user_next_162de0(NONE); user_index != NONE; user_index = local_user_next_162de0(user_index))
 	{
-		long player_index = g_4e8c20->entries[user_index];
-
-		if (user_index != NONE && player_index != NONE)
+		if (user_index != NONE)
 		{
-			s_game_engine_player_iterator iterator;
-			dword talking;
-			long other_index;
+			long player_index = g_4e8c20->entries[user_index];
 
-			iterator.index = NONE;
-			iterator.datum_index = NONE;
-			talking = 0;
-			iterator.data = g_4e8c24;
-			while (function_19f240((long *)&iterator))
+			if (player_index != NONE)
 			{
-				long talker = iterator.datum_index;
+				long other_index;
 
-				if (talker != player_index && *(short *)(iterator.datum + 0x28) == NONE)
+				state.iterator.index = NONE;
+				state.iterator.datum_index = NONE;
+				state.talking = 0;
+				state.iterator.data = g_4e8c24;
+				while (player_iterator_next((long *)&state.iterator))
 				{
-					long talker_index = talker & 0xffff;
-					long listener_index = player_index & 0xffff;
+					long talker = state.iterator.datum_index;
 
-					if (g_4c99b8 && g_476fcc && function_53750(talker_index) &&
-						voice_player_hears(listener_index, talker_index))
+					if (talker != player_index && *(short *)(state.iterator.datum + 0x28) == NONE)
 					{
-						g_4e9b38[user_index][talker_index]++;
-						talking |= 1 << talker_index;
+						if (voice_talker_heard_162de0(player_index & 0xffff, talker & 0xffff))
+						{
+							g_4e9b38[user_index][talker & 0xffff]++;
+							state.talking |= 1 << (talker & 0xffff);
+						}
 					}
 				}
-			}
-			for (other_index = 0; other_index < 16; other_index++)
-			{
-				if (!(talking & (1 << other_index)))
+				for (other_index = 0; other_index < 16; other_index++)
 				{
-					g_4e9b38[user_index][other_index] = 0;
+					if (!((word)state.talking & (1 << other_index)))
+					{
+						g_4e9b38[user_index][other_index] = 0;
+					}
 				}
+				state.users |= 1 << user_index;
 			}
-			users |= 1 << user_index;
 		}
 	}
-	for (user_index = 0; user_index < 4; user_index++)
+	short (*row)[16];
+
+	for (user_index = 0, row = g_4e9b38; user_index < 4; user_index++, row++)
 	{
-		if (!(users & (1 << user_index)))
+		if (!((word)state.users & (1 << user_index)))
 		{
-			memset(g_4e9b38[user_index], 0, sizeof(g_4e9b38[user_index]));
+			memset(row, 0, sizeof(*row));
 		}
 	}
 }
@@ -537,32 +559,20 @@ bool g_55e754;
 long function_162470(bool flag)
 {
 	long time_limit = ((s_game_options_time_view *)g_4e6948)->time_limit;
-	s_mp_globals *globals = g_4e9ae8;
-	long elapsed = g_510c54->game_time - ((s_mp_globals_time_view *)globals)->start_time;
-	long time_left;
-	long result;
+	long elapsed = FLOOR(g_510c54->game_time - ((s_mp_globals_time_view *)g_4e9ae8)->start_time, 0);
+	long time_left = FLOOR(g_510c54->field_2_3 * time_limit - elapsed, 0);
+	long previous_time_left = time_left;
 
-	elapsed = elapsed < 0 ? 0 : elapsed;
-	time_left = g_510c54->field_2_3 * time_limit - elapsed;
-	time_left = time_left < 0 ? 0 : time_left;
-	result = g_55e4d0[globals->engine_index]->p25(time_left, flag, true);
+	time_left = g_55e4d0[g_4e9ae8->engine_index]->p25(time_left, flag, true);
 	if (flag)
 	{
-		if (result != time_left)
+		if (time_left != previous_time_left)
 		{
 			if (!g_55e754)
 			{
 				s_event event;
 
-				event.type = 0;
-				event.subtype = 0x25;
-				event.a = NONE;
-				event.cause_player_index = NONE;
-				event.cause_team = NONE;
-				event.effect_player_index = NONE;
-				event.effect_team = NONE;
-				event.f = 0;
-				event.g = NONE;
+				game_engine_event_initialize_inline(&event, 0, 0x25);
 				if (g_4e6948->mode != 4)
 				{
 					function_a7c50(&event);
@@ -576,12 +586,12 @@ long function_162470(bool flag)
 			g_55e754 = false;
 		}
 	}
-	return result;
+	return time_left;
 }
 
 point3f *function_b9dd0(long object_index, point3f *result);
 real function_11ce20(vector3f const *a, vector3f const *b);
-bool function_19f300(long *iterator);
+bool player_iterator_next_with_unit(long *iterator);
 long function_187450(long player_index);
 
 struct s_game_engine_unit_view
@@ -601,7 +611,7 @@ bool function_161cd0(long object_index)
 	iterator.data = g_4e8c24;
 	iterator.index = NONE;
 	iterator.datum_index = NONE;
-	while (function_19f300((long *)&iterator))
+	while (player_iterator_next_with_unit((long *)&iterator))
 	{
 		long unit_index = ((s_game_engine_respawn_player *)iterator.datum)->unit_index;
 		s_game_engine_unit_view *unit = (s_game_engine_unit_view *)((s_game_engine_object_header *)g_4e0300->data)[unit_index & 0xffff].object;
@@ -665,20 +675,13 @@ void function_161f30(long player_index)
 	}
 	if (player->target_index != target_index)
 	{
-
-		int time;
-
 		if (player->target_time > 0 && target_index == NONE)
 		{
-			time = player->target_time - rounding.slow_ticks;
-			time = time > 0 ? time : 0;
-			player->target_time = time;
+			player->target_time = player->target_time - rounding.slow_ticks > 0 ? player->target_time - rounding.slow_ticks : 0;
 		}
 		else if (player->target_time > 0 && target_index != NONE)
 		{
-			time = player->target_time - rounding.fast_ticks;
-			time = time > 0 ? time : 0;
-			player->target_time = time;
+			player->target_time = player->target_time - rounding.fast_ticks > 0 ? player->target_time - rounding.fast_ticks : 0;
 		}
 		if (player->target_time == 0)
 		{
@@ -703,13 +706,12 @@ void function_161f30(long player_index)
 // @retail 0x1628f0
 void function_1628f0(long player_index, char state)
 {
-	s_game_engine_player_info *info = (s_game_engine_player_info *)&g_4e9ae8->players[player_index & 0xffff];
+	long index = player_index & 0xffff;
+	s_game_engine_player_info *info = (s_game_engine_player_info *)&g_4e9ae8->players[index];
 
 	if (g_4e6948->mode != 4)
 	{
 		long previous = info->state;
-		real ticks;
-		long ticks_long;
 
 		if (state == 0)
 		{
@@ -720,13 +722,14 @@ void function_1628f0(long player_index, char state)
 		else if (info->state == 0)
 		{
 			info->state = state;
-			ticks = g_510c54->field_2_3 * 0.5f;
+			real duration_0 = g_510c54->field_2_3 * 0.5f;
+			long converted_0;
 			__asm
 			{
-				fld ticks
-				fistp ticks_long
+				fld duration_0
+				fistp converted_0
 			}
-			info->state_ticks = (byte)ticks_long;
+			info->state_ticks = (byte)converted_0;
 		}
 		else if (state != info->state)
 		{
@@ -741,13 +744,14 @@ void function_1628f0(long player_index, char state)
 					if (info->state != 3)
 					{
 						info->state = info->next_state;
-						ticks = g_510c54->field_2_3 * 0.5f;
+						real duration_1 = g_510c54->field_2_3 * 0.5f;
+			long converted_1;
 						__asm
 						{
-							fld ticks
-							fistp ticks_long
+							fld duration_1
+							fistp converted_1
 						}
-						info->state_ticks = (byte)ticks_long;
+						info->state_ticks = (byte)converted_1;
 					}
 					info->next_state = state;
 				}
@@ -755,17 +759,18 @@ void function_1628f0(long player_index, char state)
 		}
 		else if (state == 3 || info->next_state != 3)
 		{
-			ticks = g_510c54->field_2_3 * 0.5f;
+			real duration_2 = g_510c54->field_2_3 * 0.5f;
+			long converted_2;
 			__asm
 			{
-				fld ticks
-				fistp ticks_long
+				fld duration_2
+				fistp converted_2
 			}
-			info->state_ticks = (byte)ticks_long;
+			info->state_ticks = (byte)converted_2;
 		}
 		if (previous != info->state && game_engine_get())
 		{
-			long slot = g_4e9ae8->slots[(short)player_index];
+			long slot = g_4e9ae8->slots[(short)index];
 
 			if (slot != NONE)
 			{
@@ -983,6 +988,7 @@ struct s_player_row_columns
 
 void function_159130(long seconds, word *buffer);
 void function_22d2ee(word *string, long maximum_length);
+void unicode_string_copy(word *destination, const word *source, long maximum_count);
 bool function_15b2f0(void);
 struct s_68a90_entry;
 bool function_68a90(s_68a90_entry *entry, long *quality);
@@ -1068,11 +1074,10 @@ void game_engine_player_row_build(short const *position, real alpha, long player
 	}
 
 	name_text[0] = 0;
-	wcsncpy((wchar_t *)name_text, (const wchar_t *)name, 0xff);
-	parsed_name[0] = 0;
-	wcsncpy((wchar_t *)parsed_name, (const wchar_t *)name_text, 0xff);
+	unicode_string_copy(name_text, name, 0x100);
+	unicode_string_copy(parsed_name, name_text, 0x100);
 	function_22d2ee(parsed_name, 0x100);
-	wcsncpy((wchar_t *)name_text, (const wchar_t *)parsed_name, 0xff);
+	unicode_string_copy(name_text, parsed_name, 0x100);
 	bounds.left = position[0] + 0x2d;
 	bounds.top = position[1];
 	bounds.right = bounds.left + (short)name_width;
@@ -1131,8 +1136,6 @@ void game_engine_player_row_build(short const *position, real alpha, long player
 #include "unknown_07f720.h"
 #include <xtl.h>
 
-extern short_rectangle2d g_4b9dd8;
-extern short g_4b9dd0, g_4b9dd2;
 long function_11ca80(long value);
 long function_19fd00(long team_index);
 void utf8_string_to_utf16_string(char const *source, word *destination, long count);
@@ -1247,7 +1250,7 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 		(real &)g_4e9af0.unknown04[4 + local_player->local_user_index * 4] =
 			PIN(scroll, 0.0f, (real)(height - screen_height));
 	}
-	short y = (short)(g_4b9dd8.top -
+	long y = (short)(g_4b9dd8.top -
 		(long)(real &)g_4e9af0.unknown04[4 + local_player->local_user_index * 4] - g_4b9dd0);
 	struct
 	{
@@ -1287,7 +1290,7 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 	long name_width = 0xec - score_width - time_width;
 	word text[0x100];
 	text[0] = 0;
-	y += 0x18;
+	y = (short)(y + 0x18);
 	work.position[1] = y;
 	work.bounds.top = y;
 	work.bounds.left = x;
@@ -1352,12 +1355,15 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 		color3f color;
 		color = *function_7f720(&color, (short)team);
 		byte *entry = scores + team * 0x12;
-		short seconds = *(short *)(entry + (g_4e6948->flag1128 ? 0x1c6 : 0x1c4));
+		short seconds;
+		if (g_4e6948->flag1128)
+			seconds = *(short *)(entry + 0x1c6);
+		else
+			seconds = *(short *)(entry + 0x1c4);
 		bool active = false;
 		if (game_engine_get())
 		{
 			byte teams = ((byte *)g_4e6948)[0x184] & 1;
-			volatile byte observed_teams = teams;
 			if (teams && team >= 0 && team < 8)
 				active = (g_4e9ae8->wc & (1 << team)) != 0;
 		}
@@ -1399,7 +1405,11 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 		work.position[1] += 0x14;
 		bool show_icon = team != NONE && *(long *)(player + 0x2c) == NONE && !(flags & 2);
 		byte *entry = scores + (index & 0xffff) * 0x1c;
-		short seconds = *(short *)(entry + (g_4e6948->flag1128 ? 6 : 4));
+		short seconds;
+		if (g_4e6948->flag1128)
+			seconds = *(short *)(entry + 6);
+		else
+			seconds = *(short *)(entry + 4);
 		s_player_row_columns *columns = (s_player_row_columns *)panel;
 		game_engine_player_row_build(work.position, row_alpha, index, (word *)(player + 0x44), place,
 			*(short *)(entry + 0x12), seconds, (bool)((flags >> 1) & 1), show_icon, team == NONE,
@@ -1408,3 +1418,110 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 	}
 	panel->player_count = display.player_count;
 }
+
+
+#include "font_loading.h"
+class c_1fa50
+{
+public:
+    void function_1fa50(short_rectangle2d const *, void const *, void const *, long, real, long, void const *) const;
+    void function_1fb10(short_rectangle2d const *, real) const;
+};
+void function_163400(s_text_widget_a const *widget);
+void connection_widget_draw(s_text_widget_c const *widget);
+struct s_engine_border_state;
+void function_15ff80(s_engine_border_state const *state);
+void function_36580(void);
+void function_36880(color4f const *color, s_short_rectangle const *rectangle);
+void function_13ec70(color4f const *color);
+struct s_33a0b_default;
+extern s_33a0b_default *g_4686d4;
+
+
+PRIVATE __forceinline void score_background_161420(byte const *widget, long valid)
+{
+    if (widget[valid])
+        function_36880((color4f const *)(widget + 0x14), (s_short_rectangle const *)widget);
+}
+
+PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
+{
+    if (widget[valid])
+    {
+        g_4e73a0.style = NONE;
+        g_4e73a0.flags = 0;
+        g_4e73a0.justification = widget[8] ? 2 : 0;
+        function_13ec70((color4f const *)(widget + 0x24));
+        ((c_1fa50 const *)(widget + 0x38))->function_1fa50((short_rectangle2d const *)(widget + 0xa), NULL, NULL, 0, 1.0f, 0, NULL);
+    }
+}
+
+// @retail 0x161420
+void function_161420(long player_index, real alpha)
+{
+    s_score_panel_1608e0 panel;
+    function_1608e0(player_index, &panel, alpha);
+    for (long i = 0; i < panel.player_count; ++i)
+        function_163400(&panel.players[i].row.icon);
+    function_36580();
+    byte const *data = (byte const *)&panel;
+    score_background_161420(data + 0xe0, 0x60);
+score_background_161420(data + 0x144, 0x60);
+score_background_161420(data + 0x1a8, 0x60);
+score_background_161420(data + 0x20c, 0x60);
+score_background_161420(data + 0x270, 0x60);
+    for (long team = 0; team < panel.team_count; ++team)
+    {
+        score_background_161420((byte const *)&panel.teams[team].place, 0x44);
+        score_background_161420((byte const *)&panel.teams[team].name, 0x60);
+        score_background_161420((byte const *)&panel.teams[team].score, 0x44);
+        score_background_161420((byte const *)&panel.teams[team].time, 0x44);
+    }
+    for (long player = 0; player < panel.player_count; ++player)
+    {
+        byte const *row = (byte const *)&panel.players[player];
+        if (*(short *)(row + 0x80) == 2) score_background_161420(row + 0x48, 0x44);
+        score_background_161420(row, 0x44);
+        score_background_161420(row + 0x90, 0x60);
+        score_background_161420(row + 0xf4, 0x44);
+        score_background_161420(row + 0x13c, 0x44);
+        score_background_161420(row + 0x184, 0x3c);
+        connection_widget_draw((s_text_widget_c const *)(row + 0x184));
+        if (row[0x1c4]) function_15ff80((s_engine_border_state const *)row);
+    }
+    s_33a0b_default const *backdrop_tint = g_4686d4;
+    color4f const *label_tint = g_4686cc;
+    font_get(g_4e28f4[6]);
+    g_4e73a0.font = 6;
+    function_13ec70(label_tint);
+    if (backdrop_tint)
+    {
+        g_4e73a0.shadow = true;
+        g_4e73a0.field_24 = *(color4f const *)backdrop_tint;
+    }
+    else g_4e73a0.shadow = false;
+    g_4e73a0.style = NONE;
+    g_4e73a0.justification = 0;
+    g_4e73a0.flags = 0;
+    score_text_161420(data + 4, 0xd8);
+    score_text_161420(data + 0xe0, 0x60);
+score_text_161420(data + 0x144, 0x60);
+score_text_161420(data + 0x1a8, 0x60);
+score_text_161420(data + 0x20c, 0x60);
+    for (long team = 0; team < panel.team_count; ++team)
+    {
+        score_text_161420((byte const *)&panel.teams[team].place, 0x44);
+        score_text_161420((byte const *)&panel.teams[team].name, 0x60);
+        score_text_161420((byte const *)&panel.teams[team].score, 0x44);
+        score_text_161420((byte const *)&panel.teams[team].time, 0x44);
+    }
+    for (long player = 0; player < panel.player_count; ++player)
+    {
+        score_text_161420((byte const *)&panel.players[player].row.place, 0x44);
+        score_text_161420((byte const *)&panel.players[player].row.name, 0x60);
+        score_text_161420((byte const *)&panel.players[player].row.score, 0x44);
+        score_text_161420((byte const *)&panel.players[player].row.time, 0x44);
+        score_text_161420((byte const *)&panel.players[player].row.connection, 0x3c);
+    }
+}
+

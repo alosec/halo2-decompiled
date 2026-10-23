@@ -1,4 +1,4 @@
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_199560.CPP: compressed data blocks (lane H) */
 
 #include "unknown_11c920.h"
@@ -47,50 +47,39 @@ static __forceinline s_loop_allocator *compression_pool_allocate(long size)
     if (g_4e6464->page_count > 0)
     {
         long retries = 0;
-        for (;;)
+        do
         {
             result = (s_loop_allocator *)function_12d2f0(size, 0, 0, 0);
-            if (result)
-                break;
-            if (retries < 90)
+            if (!result)
             {
-                retries++;
-                function_12c600();
-                continue;
+                if (retries < 90)
+                {
+                    retries++;
+                    function_12c600();
+                }
+                else
+                {
+                    __int64 elapsed = read_tsc() - start;
+                    if (elapsed < 0)
+                        elapsed = 0;
+                    if (!((real)timing_ticks_to_seconds(elapsed) < 1.0f))
+                        break;
+                    D3DDevice_KickPushBuffer();
+                    D3DDevice_IsBusy();
+                    SwitchToThread();
+                }
             }
-            __int64 elapsed = read_tsc() - start;
-            if (elapsed < 0)
-                elapsed = 0;
-            if (!((real)timing_ticks_to_seconds(elapsed) < 1.0f))
-                break;
-            D3DDevice_KickPushBuffer();
-            D3DDevice_IsBusy();
-            SwitchToThread();
-        }
+        } while (!result);
     }
     return result;
 }
 
-// @retail 0x199740
-bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
-{
-    s_loop_allocator *pool = compression_pool_allocate(0x10000);
-    bool result = false;
-    if (pool)
-    {
-        function_18e250(pool, 0xffb0, "zlib pool", NULL);
-        pool->field3c = true;
-        pool->field3d = true;
-        *decompressed_size = function_199560(buffer, size);
-        if (function_2cb5b0(destination, decompressed_size, buffer + 4, size, loop_allocator_zalloc, loop_allocator_zfree, &pool) == 0)
-            result = true;
-        function_12d520((long)pool);
-    }
-    return result;
-}
-
+bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size);
 
 // @retail 0x1995a0
+// score 63 (was 63): retail hands the compressor the source and its size in
+// the first two registers and the destination and its size in the next two, so
+// its frame is four bytes smaller than ours
 bool function_1995a0(byte const *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level)
 {
     bool result = false;
@@ -103,8 +92,9 @@ bool function_1995a0(byte const *source, dword source_size, byte *destination, l
             pool->field3c = true;
             pool->field3d = true;
             *(dword *)destination = BYTE_SWAP_LONG(source_size);
+            s_loop_allocator *allocator = pool;
             *compressed_size = capacity - 4;
-            if (function_2cb510(destination + 4, compressed_size, source, source_size, level, loop_allocator_zalloc, loop_allocator_zfree, &pool) == 0)
+            if (function_2cb510(destination + 4, compressed_size, source, source_size, level, loop_allocator_zalloc, loop_allocator_zfree, &allocator) == 0)
             {
                 *compressed_size += 4;
                 result = true;

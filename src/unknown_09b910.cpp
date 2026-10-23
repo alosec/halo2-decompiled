@@ -1,3 +1,5 @@
+#include "unit_requests.h"
+#include "effects.h"
 // @flags /O2 /Gr
 /* UNKNOWN_09B910.CPP: the item, projectile, weapon and device object types
    and the small projectile, weapon and game engine event definitions */
@@ -7,6 +9,24 @@
 #include "unknown_0a58d0.h"
 #include "object_types_21_2.h"
 #include <string.h>
+#include <xmmintrin.h>
+
+/* Retail keeps these definition objects in data. Their vtables retain all
+   overrides even when a particular method has no indirect caller yet. */
+c_item_type g_47980c;
+c_projectile_type g_479818;
+c_projectile_attached_event g_47981c;
+c_projectile_effect_event g_479820;
+c_projectile_impact_effect_event g_479824;
+c_weapon_type g_47982c;
+c_weapon_fire_event g_479830;
+c_weapon_pickup_event g_479838;
+c_weapon_put_away_event g_47983c;
+c_weapon_drop_event g_479840;
+c_weapon_effect_event g_479844;
+c_device_type g_47984c;
+c_game_engine_event g_479854;
+c_game_engine_request_boot_player_event g_479858;
 
 #define OBJECT_FROM_INDEX(index) \
 	((byte *)((s_object_header *)g_4e0300->data)[(index) & 0xffff].object)
@@ -630,10 +650,14 @@ void c_game_engine_event::v8(long a, long b, long c, long size, char *buffer)
 class c_device_touch_event : public c_event_definition
 {
 public:
+	virtual bool v11(long a, long const *entities, long c, void const *data);
+	virtual bool v10(long, void *, s_bitstream *) { return true; }
 	virtual real v7(long a, long b, long c);
 	virtual const char *v1();
 	virtual void v8(long a, long b, long c, long size, char *buffer);
 };
+
+c_device_touch_event g_479850;
 
 // @retail 0xa44a0
 const char *c_device_touch_event::v1()
@@ -667,7 +691,8 @@ bool c_game_engine_request_boot_player_event::v10(long a, void *data, s_bitstrea
 // @retail 0xa04b0
 void c_item_type::v11(long a, long b, long c)
 {
-	long flags_address = b;
+	long const volatile *flags_parameter = &b;
+	long flags_address = *flags_parameter;
 	((s_flags_a6900 const *)flags_address)->function_a6900(&b, this);
 	long result = b + 1;
 	if (*(dword const *)flags_address & 0x400)
@@ -707,7 +732,7 @@ void c_weapon_type::v11(long a, long b, long c)
 }
 
 
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside);
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside);
 void simulation_read_position(s_bitstream *stream, real *position, long bits);
 void scenario_object_name_encode(long object_name, s_bitstream *stream);
 
@@ -722,7 +747,7 @@ void c_weapon_effect_event::v9(long a, void const *data, s_bitstream *stream)
 {
 	s_weapon_effect_payload const *event = (s_weapon_effect_payload const *)data;
 	stream_write_checked(stream, event->kind, 1);
-	simulation_write_position(12, stream, event->position, true);
+	simulation_write_position(stream, event->position, 12, true);
 }
 
 // @retail 0xa3660
@@ -807,8 +832,9 @@ void c_weapon_drop_event::v9(long a, void const *data, s_bitstream *stream)
 	scenario_object_name_encode(event->object_name, stream);
 }
 
+// score 11 (was 11): the event pointer is kept in esi and the sentinel in ebx, retail keeps the event pointer in ebx and the sentinel in esi
 // @retail 0xa3010
-bool c_weapon_drop_event::v10(long a, void *data, s_bitstream *stream)
+bool c_weapon_object_event::v10(long a, void *data, s_bitstream *stream)
 {
 	s_weapon_drop_payload *event = (s_weapon_drop_payload *)data;
 	event->field_0 = (short)function_1959c0(stream, 1);
@@ -834,7 +860,7 @@ void c_projectile_attached_event::v9(long a, void const *data, s_bitstream *stre
 	stream_write_bit(stream, event->field_0);
 	if (event->field_0)
 		stream_write_checked(stream, event->field_2, 8);
-	simulation_write_position(13, stream, event->position, false);
+	simulation_write_position(stream, event->position, 13, false);
 	function_1955d0(stream, event->payload, 64);
 }
 
@@ -881,7 +907,7 @@ void c_projectile_effect_event::v9(long a, void const *data, s_bitstream *stream
  s_z_projectile_effect_payload const *event = (s_z_projectile_effect_payload const *)data;
  stream_write_checked(stream, event->flags, 4);
  scenario_object_name_encode(event->object_name, stream);
- simulation_write_position(12, stream, event->position, true);
+ simulation_write_position(stream, event->position, 12, true);
  function_194bc0(stream, (vector3f const *)event->direction);
  if (event->flags & 4)
  {
@@ -946,13 +972,14 @@ bool c_projectile_effect_event::v10(long a, void *data, s_bitstream *stream)
 }
 
 struct s_effect_owner;
-void *function_122c10(long group_tag, long tag_index);
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_fcbc0(point3f const *point, vector3f const *normal, long definition_index,
  s_effect_owner const *owner, bool attached, bool airburst);
 void function_fcdd0(long definition_index, point3f const *point, vector3f const *forward);
 void function_fcea0(long effects_index, point3f const *point, vector3f const *direction,
  s_effect_owner const *owner, long index, vector3f const *normal);
 
+// score 22 (was 22): the effect call passes the definition index in ecx where retail uses edx, and the effect setup sets its arguments up in another order and zero-extends the word field with a 16-bit move where ours uses movzx; both calls follow the conventions of the callees in src/projectiles.cpp
 // @retail 0xa17d0
 bool c_projectile_effect_event::v11(long a, long const *entities, long c, void const *data)
 {
@@ -973,26 +1000,45 @@ bool c_projectile_effect_event::v11(long a, long const *entities, long c, void c
 
 void game_engine_boot_player(long player_index);
 
+/* the datum index of the player at an absolute index; false when the index
+   is out of range or that player slot is free */
+static inline bool event_absolute_player_to_datum_index(long index, long *player_index)
+{
+ if (index == NONE || index < 0 || index >= g_4e8c24->high_water_index)
+  return false;
+ byte *player = g_4e8c24->data + g_4e8c24->size * index;
+ if (!*(short *)player)
+  return false;
+ *player_index = (*(short *)player << 16) | index;
+ return true;
+}
+
+/* the datum at an absolute index, or null when the index is out of range or
+   the datum is free (the same test as datum_get_absolute in unknown_16b570.cpp,
+   which retail inlines here) */
+static inline byte *event_used_datum_at(s_record_pool *data, long index)
+{
+ byte *result = 0;
+ if (index != NONE && index >= 0 && index < data->high_water_index)
+ {
+  byte *datum = data->data + data->size * index;
+  if (*(short *)datum != 0)
+   result = datum;
+ }
+ return result;
+}
+
 // @retail 0xa5850
 bool c_game_engine_request_boot_player_event::v11(long a, long const *entities, long c, void const *data)
 {
  long const *values = (long const *)data;
- volatile bool result = false;
- long first = values[0];
- if (first != NONE && first >= 0 && first < g_4e8c24->high_water_index)
+ bool result = false;
+ long player_index;
+ if (event_absolute_player_to_datum_index(values[0], &player_index) &&
+  event_used_datum_at(g_4e8c24, values[1]))
  {
-  short salt = *(short *)(g_4e8c24->data + g_4e8c24->size * first);
-  if (salt)
-  {
-   long identifier = data_datum_index(g_4e8c24, first);
-   long second = values[1];
-   if (second != NONE && second >= 0 && second < g_4e8c24->high_water_index &&
-    *(short *)(g_4e8c24->data + g_4e8c24->size * second))
-   {
-    game_engine_boot_player(identifier);
-    result = true;
-   }
-  }
+  game_engine_boot_player(player_index);
+  result = true;
  }
  return result;
 }
@@ -1041,12 +1087,26 @@ PRIVATE __forceinline bool z_event_restore_player(long *identifier, long index)
 // @retail 0xa5650
 bool c_game_engine_event::v11(long a, long const *entities, long c, void const *data)
 {
+ struct s_player_restore
+ {
+  __forceinline bool restore(long *identifier, long index)
+  {
+   if (index != NONE)
+   {
+    if (index < 0 || index >= g_4e8c24->high_water_index) return false;
+    byte *player = g_4e8c24->data + g_4e8c24->size * index;
+    if (!*(short *)player) return false;
+    *identifier = (*(short *)player << 16) | index;
+   }
+   return true;
+  }
+ } restore;
  bool result = true;
  s_event const *source = (s_event const *)data;
  s_event event = *source;
- if (z_event_restore_player(&event.a, source->a) &&
-  z_event_restore_player(&event.cause_player_index, source->cause_player_index) &&
-  z_event_restore_player(&event.effect_player_index, source->effect_player_index))
+ if (restore.restore(&event.a, source->a) &&
+  restore.restore(&event.cause_player_index, source->cause_player_index) &&
+  restore.restore(&event.effect_player_index, source->effect_player_index))
   function_19eb30(&event);
  else
   result = false;
@@ -1093,10 +1153,10 @@ struct s_z_fire_payload
  long attachment;
 };
 void simulation_write_relative_position(s_bitstream *stream, long bits, real const *position);
-void simulation_read_relative_position(long bits, real *position, s_bitstream *stream);
+void simulation_read_relative_position(s_bitstream *stream, long bits, real *position);
 void function_ab5e0(s_z_blend_state const *state, s_bitstream *stream);
 bool function_ab700(s_bitstream *stream, s_z_blend_state *state);
-void function_b5650(long identifier, s_bitstream *stream);
+void simulation_write_entity_identifier(long identifier, s_bitstream *stream);
 
 // @retail 0xa28e0
 void c_weapon_fire_event::v9(long a, void const *data, s_bitstream *stream)
@@ -1117,7 +1177,7 @@ void c_weapon_fire_event::v9(long a, void const *data, s_bitstream *stream)
  if (event->attached)
  {
   stream_write_checked(stream, event->attachment, 5);
-  function_b5650(event->identifier, stream);
+  simulation_write_entity_identifier(event->identifier, stream);
  }
 }
 
@@ -1135,7 +1195,7 @@ bool c_weapon_fire_event::v10(long a, void *data, s_bitstream *stream)
  if (event->relative)
  {
   event->node = (short)function_1959c0(stream, 8);
-  simulation_read_relative_position(12, event->position, stream);
+  simulation_read_relative_position(stream, 12, event->position);
  }
  bool blend_valid = function_ab700(stream, &event->blend);
  result = result && blend_valid;
@@ -1153,3 +1213,243 @@ bool c_weapon_fire_event::v10(long a, void *data, s_bitstream *stream)
 }
 
 
+
+
+bool function_e68c0(long type, long unit_index);
+void function_a8dd0(long unit_index);
+void function_107840(long device_index, long unit_index);
+bool __stdcall function_cd4e0(long unit_index, short hand, bool flag);
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
+void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
+    point3f const *point, vector3f const *normal, long index, bool attached, long object_index,
+    short node_index, bool alternate);
+void function_fd560(long projectile_index, long object_index, short node_index,
+    point3f const *point, vector3f const *forward);
+
+struct s_z_event_header
+{
+    word identifier;
+    byte flags, type;
+    dword unknown04;
+    byte *object;
+};
+
+struct s_z_event_unit_bits { byte unknown000[0x10a]; byte flags; };
+
+// @retail 0xa2e90
+bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const *data)
+{
+    struct s_unit_flags
+    {
+        byte unknown000[0x10a];
+        word unknown0 : 2;
+        word suppressed : 1;
+        word unknown3 : 13;
+    };
+    bool result = false;
+    long index = function_a58d0(entities[0]);
+    if (index != NONE)
+    {
+        s_z_event_header *header = (s_z_event_header *)g_4e0300->data + (index & 0xffff);
+        if (((1 << header->type) & 3) && !((bool)((s_unit_flags *)header->object)->suppressed))
+        {
+            function_e68c0(0, index);
+            function_e68c0(10, index);
+            function_a8dd0(index);
+            result = true;
+        }
+    }
+    return result;
+}
+
+// @retail 0xa4540
+bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
+{
+    struct s_unit_flags
+    {
+        byte unknown000[0x10a];
+        word unknown0 : 2;
+        word suppressed : 1;
+        word unknown3 : 13;
+    };
+    long unit;
+    long device = function_a58d0(entities[0]);
+    unit = function_a58d0(entities[1]);
+    if (unit != NONE && device != NONE)
+    {
+        byte *headers = g_4e0300->data;
+        long device_offset = (device & 0xffff) * 12;
+        if ((1 << *(byte *)(headers + device_offset + 3)) & 0x380)
+        {
+            long unit_offset = (unit & 0xffff) * 12;
+            if (((1 << *(byte *)(headers + unit_offset + 3)) & 3) &&
+                !((bool)((s_unit_flags *)*(byte **)(headers + unit_offset + 8))->suppressed))
+                function_107840(device, unit);
+        }
+    }
+    return false;
+}
+
+// @retail 0xa1520
+bool c_projectile_attached_event::v11(long a, long const *entities, long c, void const *data)
+{
+    bool result = false;
+    long projectile = function_a58d0(entities[0]);
+    long target = function_a58d0(entities[1]);
+    if (projectile != NONE)
+    {
+        s_z_event_header *header = (s_z_event_header *)g_4e0300->data + (projectile & 0xffff);
+        if (header->type == 5 && *(long *)(header->object + 0x14) == NONE)
+        {
+            byte const *event = (byte const *)data;
+            vector3f const *forward = (vector3f const *)(event + 0x10);
+            if (*(short const *)(event + 0x14) == NONE && *(long const *)(event + 0x10) == NONE) forward = 0;
+            if ((event[0] && *(short const *)(event + 2) != NONE) || (!event[0] && *(short const *)(event + 2) == NONE))
+            {
+                function_fd560(projectile, target, *(short const *)(event + 2), (point3f const *)(event + 4), forward);
+                result = true;
+            }
+        }
+    }
+    return result;
+}
+
+// @retail 0xa31c0
+bool c_weapon_put_away_event::v11(long a, long const *entities, long c, void const *data)
+{
+    struct s_unit_flags
+    {
+        byte unknown000[0x10a];
+        word unknown0 : 2;
+        word suppressed : 1;
+        word unknown3 : 13;
+    };
+    long unit = function_a58d0(entities[0]);
+    if (unit != NONE)
+    {
+        s_z_event_header *headers = (s_z_event_header *)g_4e0300->data;
+        s_z_event_header *header = headers + (unit & 0xffff);
+        if (((1 << header->type) & 3) && !((bool)((s_unit_flags *)header->object)->suppressed))
+        {
+            byte const *event = (byte const *)data;
+            short hand = *(short const *)event, slot = *(short const *)(event + 2);
+            if (slot == ((signed char *)header->object)[0x212 + hand])
+            {
+                long weapon = *(long *)(header->object + 0x218 + slot * 4);
+                if (weapon != NONE && *(long *)(event + 4) == *(long *)headers[weapon & 0xffff].object)
+                    function_cd4e0(unit, hand, false);
+            }
+        }
+    }
+    return false;
+}
+
+// @retail 0xa30b0
+bool c_weapon_drop_event::v11(long a, long const *entities, long c, void const *data)
+{
+    struct s_unit_flags
+    {
+        byte unknown000[0x10a];
+        word unknown0 : 2;
+        word suppressed : 1;
+        word unknown3 : 13;
+    };
+    long unit = function_a58d0(entities[0]);
+    if (unit != NONE)
+    {
+        s_z_event_header *headers = (s_z_event_header *)g_4e0300->data;
+        s_z_event_header *header = headers + (unit & 0xffff);
+        if (((1 << header->type) & 3) && !((bool)((s_unit_flags *)header->object)->suppressed))
+        {
+            byte const *event = (byte const *)data;
+            short hand = *(short const *)event, slot = *(short const *)(event + 2);
+            if (slot == ((signed char *)header->object)[0x212 + hand])
+            {
+                long weapon = *(long *)(header->object + 0x218 + slot * 4);
+                if (weapon != NONE && *(long *)(event + 4) == *(long *)headers[weapon & 0xffff].object)
+                    function_e68c0(hand ? 19 : 9, unit);
+            }
+        }
+    }
+    return false;
+}
+
+
+
+bool __stdcall function_cd7b0(long unit_index, long weapon_index, bool *modes);
+void function_d0930(long unit_index, vector3f *direction);
+void __stdcall function_102fb0(long weapon_index, short barrel);
+void function_103e60(long weapon_index, short barrel);
+void __stdcall function_fd980(long weapon_index);
+transform4x3f *function_b8c00(long object_index, long *count);
+point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *result);
+long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
+extern vector3f *g_4687b0;
+extern vector3f *g_4687bc;
+struct s_object_relevance_source
+{
+    long object_index, identifier;
+    byte unknown08[0x1c - 8];
+    real first, second;
+};
+struct s_object_relevance_result
+{
+    real first, second;
+    long object_index, identifier;
+};
+void function_82b30(s_object_relevance_result const *source, s_object_relevance_source *result);
+
+// @retail 0xa3420
+bool c_weapon_pickup_event::v11(long a, long const *entities, long c, void const *data)
+{
+    struct s_unit_flags
+    {
+        byte unknown000[0x10a];
+        word unknown0 : 2;
+        word suppressed : 1;
+        word unknown3 : 13;
+    };
+    bool result = false;
+    long unit = function_a58d0(entities[0]);
+    long weapon = function_a58d0(entities[1]);
+    if (unit != NONE && weapon != NONE)
+    {
+        s_z_event_header *headers = (s_z_event_header *)g_4e0300->data;
+        if (((1 << headers[unit & 0xffff].type) & 3) && ((1 << headers[weapon & 0xffff].type) & 4))
+        {
+            byte *unit_object = ((s_z_event_header *)g_4e0300->data)[unit & 0xffff].object;
+            byte *weapon_object = ((s_z_event_header *)g_4e0300->data)[weapon & 0xffff].object;
+            if (!((bool)((s_unit_flags *)unit_object)->suppressed) && *(long *)(weapon_object + 0x14c) != unit &&
+                !(weapon_object[0x12c] & 1))
+            {
+                // the event's data, read from the parameter's stack slot once the unit and weapon pass
+                long const *event = (long const *)*(void const *const volatile *)&data;
+                if (*(long *)(unit_object + 0x210) == event[0])
+                {
+                    bool modes[4];
+                    if (function_cd7b0(unit, weapon, modes))
+                    {
+                        bool allowed = false;
+                        switch (event[1])
+                        {
+                        case 3: allowed = modes[0]; break;
+                        case 4: allowed = modes[2]; break;
+                        case 5: allowed = modes[1]; break;
+                        case 6: allowed = modes[3]; break;
+                        }
+                        if (allowed)
+                        {
+                            s_unit_request request;
+                            memset(&request, 0, sizeof(request));
+                            request.type = 0x14;
+                            *(long *)request.arguments = weapon;
+                            *(short *)(request.arguments + 4) = (short)event[1];
+                            if (function_e6900(unit, &request)) result = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}

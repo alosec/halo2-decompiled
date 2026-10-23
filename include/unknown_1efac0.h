@@ -35,7 +35,7 @@ struct c_a : c_b
 	virtual long v1(long, long) { return 0; }
 	virtual void v2(bool enable);
 	virtual void *v3() { return 0; }
-	virtual void v4() {}
+	virtual void v4(dword unused) {}
 };
 
 /* the object's tag chain (0x1efb40) */

@@ -40,7 +40,7 @@ struct s_18e962
 };
 char const g_453060[] = "application/x-halo2campaign";
 void packed_clc_write(s_clc_source const *arg_0, s_packed_clc *arg_1);
-void __stdcall function_b3ed0(s_packed_clc const *arg_0, long arg_1, char const *arg_2);
+bool __stdcall function_b3ed0(s_packed_clc const *arg_0, long arg_1, char const *arg_2);
 void function_152450(s_player_settings_snapshot *arg_0);
 void function_152660(s_tail_transfer_options *arg_0);
 bool network_session_interface_set_value4d08(long arg_0, long arg_1, char const *arg_2);
@@ -80,8 +80,7 @@ void function_18e960(void)
                     local_1.field_0.field_1c[sizeof(local_1.field_0.field_1c) - 1] = 0;
                     local_1.field_0.field_12d = false;
                     long local_5 = time(NULL);
-                    long local_6 = rand();
-                    local_6 ^= GetTickCount();
+                    long local_6 = rand() ^ GetTickCount();
                     local_6 ^= local_5;
                     local_1.field_0.field_10 = local_6;
                     function_152450((s_player_settings_snapshot *)&local_1.field_0);

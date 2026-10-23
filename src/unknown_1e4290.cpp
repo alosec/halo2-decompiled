@@ -74,15 +74,24 @@ void function_1e4260(long actor_index)
 // @retail 0x1e4290
 void function_1e4290(long actor_index, bool value)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool *enable = &value;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (*enable)
 	{
-		if (!actor->unknown229 && actor->unknown26c != NONE)
-			*enable = !ai_object_get(actor->unknown26c)->unknown34c;
-		if (*enable)
-			actor->flags810 |= 0x800;
+		byte unknown229 = actor->unknown229;
+		if (!unknown229)
+			{
+			long target_index = *(volatile long *)&actor->unknown26c;
+			if (NONE != target_index)
+			{
+	   bool allowed = 0 >= *(byte *)&ai_object_get(target_index)->unknown34c;
+	   *enable = allowed;
+	   if (!(bool)allowed) return;
+	  }
+		}
+		dword flags = actor->flags810;
+		actor->flags810 = flags | 0x800;
 	}
 	else
 	{
@@ -114,16 +123,21 @@ void function_1e4500(long actor_index, short mode)
 	}
 }
 
+/* a request with no arguments, written out where it is used */
+static __forceinline bool unit_request_simple(long type, long unit_index)
+{
+	s_unit_request request;
+	memset(&request, 0, sizeof(request));
+	request.type = type;
+	return function_e6900(unit_index, &request);
+}
+
 // @retail 0x1e4310
 bool function_1e4310(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	s_unit_request request;
-	memset(&request, 0, sizeof(request));
-	long unit_index = actor->unknown018;
 	bool result = false;
-	request.type = 0x16;
-	if (function_e6900(unit_index, &request))
+	if (unit_request_simple(0x16, actor->unknown018))
 	{
 		*(long *)((byte *)actor + 0x7c8) = g_510c54->game_time;
 		result = true;
@@ -185,8 +199,8 @@ PRIVATE inline long actor_query_root(long index)
 
 PRIVATE inline bool actor_query_enabled(long index)
 {
-	dword flags = actor_query_object(index)->flags;
-	return !((bool)((flags >> 18) & 1)) && !((bool)((flags >> 7) & 1));
+	s_actor_object_query *object = actor_query_object(index);
+	return !((bool)((object->flags >> 18) & 1)) && !((bool)((object->flags >> 7) & 1));
 }
 
 long function_baf80(long object_index);
@@ -194,12 +208,12 @@ long function_baf80(long object_index);
 // @retail 0x1e13f0
 bool function_1e13f0(long actor_index)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
+	s_actor_view *actor = actor_get(actor_index);
 	if (actor->unknown018 != NONE)
 	{
 		if (actor_query_enabled(function_baf80(actor->unknown018)))
-			return true;
+			result = true;
 	}
 	else
 	{
@@ -207,14 +221,14 @@ bool function_1e13f0(long actor_index)
 		if (perception_index != NONE)
 		{
 			long object_index = perception_get(perception_index)->object_index;
-			while (object_index != NONE)
+			while (!result && object_index != NONE)
 			{
 				s_actor_object_query *object = actor_query_object(object_index);
 				long current = object_index;
 				byte *links = object->flags134 == 0 ? (byte *)object + object->link_offset : NULL;
 				object_index = links ? *(long *)(links + 0xc) : NONE;
 				if (actor_query_enabled(actor_query_root(current)))
-					return true;
+					result = true;
 			}
 		}
 	}
@@ -255,7 +269,6 @@ bool function_1e11b0(long actor_index, bool active)
 // @retail 0x1e12b0
 bool function_1e12b0(long actor_index, const dword *clusters)
 {
- const dword *const *cluster_reference = &clusters;
  s_actor_view *actor = actor_get(actor_index);
  bool result = false;
  if (function_1e13f0(actor_index))
@@ -266,7 +279,7 @@ bool function_1e12b0(long actor_index, const dword *clusters)
    if (perception_index != NONE)
    {
     long object_index = perception_get(perception_index)->object_index;
-    while (object_index != NONE)
+    while (!result && object_index != NONE)
     {
      s_actor_object_query *object = actor_query_object(object_index);
      long current = object_index;
@@ -274,10 +287,7 @@ bool function_1e12b0(long actor_index, const dword *clusters)
      object_index = links ? *(long *)(links + 0xc) : NONE;
      long cluster = *(short *)((byte *)actor_query_object(actor_query_root(current)) + 0x2c);
      if (cluster != NONE)
-     {
-      result = ((*cluster_reference)[cluster >> 5] & (1 << (cluster & 31))) != 0;
-      if (result) break;
-     }
+      result = (clusters[cluster >> 5] & (1 << (cluster & 31))) != 0;
     }
    }
   }
@@ -285,7 +295,7 @@ bool function_1e12b0(long actor_index, const dword *clusters)
   {
    long cluster = *(short *)((byte *)actor_query_object(function_baf80(actor->unknown018)) + 0x2c);
    if (cluster != NONE)
-    result = ((*cluster_reference)[cluster >> 5] & (1 << (cluster & 31))) != 0;
+    result = (clusters[cluster >> 5] & (1 << (cluster & 31))) != 0;
   }
  }
  return result;

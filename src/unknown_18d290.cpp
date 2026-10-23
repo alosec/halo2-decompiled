@@ -129,10 +129,7 @@ struct s_player_view
 long function_155760(long index);
 bool function_bafb0(long object_index, long ancestor_index);
 
-static inline bool local_player_exists(long index)
-{
-	return index != NONE && g_4e8c20->entries[index] != NONE;
-}
+bool function_14ddc0(long local_player_index);
 
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
@@ -146,8 +143,13 @@ void function_18d4f0(long object_index, char *audible, long *local_player_index)
 	{
 		for (long i = 0; i < 4; i++)
 		{
-			bool exists = local_player_exists(i);
-			if (exists && ((1 << function_155760(i)) & 3) && exists)
+			bool exists = function_14ddc0(i);
+			bool split = false;
+			if (exists)
+			{
+				split = ((1 << function_155760(i)) & 3) != 0;
+			}
+			if (split && exists)
 			{
 				long unit_index = ((s_player_view *)g_4e8c24->data)[g_4e8c20->entries[i] & 0xffff].unit_index;
 				if (unit_index != NONE && (function_bafb0(object_index, unit_index) || function_bafb0(unit_index, object_index)))

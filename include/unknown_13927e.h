@@ -45,7 +45,7 @@ struct s_marker_list
 extern color4f g_468c80[2];
 
 /* the color of a player's markers (unknown_13927e.cpp) */
-s_color_bits *function_13927e(long player_index);
+__declspec(noinline) s_color_bits *function_13927e(long player_index);
 
 /* the marker list over a player (unknown_162550.cpp) */
 bool function_162550(long player_index, s_marker_list *list);

@@ -31,6 +31,7 @@ struct s_f5dc0_globals_view
 	s_f5dc0_settings *settings;
 };
 
+__declspec(noinline)
 // @retail 0xf5dc0
 bool function_f5dc0(long object_index)
 {

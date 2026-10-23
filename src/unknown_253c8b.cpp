@@ -25,7 +25,7 @@ struct s_bitmap_group_view_2541
 	byte unknown00[0x44];
 	long bitmap_count;
 };
-void function_1496f6(long type, word *buffer);
+void ui_definition_get_subtitle_text(long type, word *buffer);
 
 // @retail 0x253c8b
 c_class_19b8b1::c_class_19b8b1(short valuef8, word user_flags) :
@@ -51,11 +51,15 @@ void c_class_19b8b1::function_253b1a(long string_handle)
 
 	if (screen)
 	{
-		word buffer[0x100];
+		struct s_string_buffer
+		{
+			word text[0x100];
+			void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+		} buffer;
 
-		buffer[0] = 0;
-		((c_widget *)screen)->function_230134(string_handle, buffer);
-		function_22f52e()->set_text(buffer);
+		buffer.text[0] = 0;
+		buffer.load((c_widget *)screen, string_handle);
+		function_22f52e()->set_text(buffer.text);
 	}
 }
 
@@ -66,41 +70,46 @@ void c_class_19b8b1::function_253b1a(long string_handle)
 void function_253765(c_text_widget_45a5e0 *widget, short index, s_text_block const *definition)
 {
 	c_class_1473c9 *screen = widget->get_screen();
-	word buffer[0x100];
-	long value14 = 0;
+	struct s_string_buffer
+	{
+		word text[0x100];
+		void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+	} buffer;
 	long justification;
-	long font = 1;
+	long font;
 
 	widget->value0a = index;
 	widget->value70 = definition->value06;
-	buffer[0] = 0;
-	if (definition->flags & 1)
+	buffer.text[0] = 0;
+	long value14 = 0;
+	dword flags = definition->flags;
+
+	if (flags & 1)
 	{
 		justification = 0;
 	}
 	else
 	{
-		justification = (definition->flags & 2) ? 1 : 2;
+		justification = ((byte)flags & 2) ? 1 : 2;
 	}
-	if (definition->flags & 4)
+	if (flags & 4)
 	{
 		value14 = 1;
 	}
 	widget->value68 = definition->value04 - 1;
 	widget->value6a = definition->value28;
-	if (!(definition->flags & 8))
-	{
-		font = definition->font;
-	}
+	font = (definition->flags & 8) ? 1 : definition->font;
 	color3f color = definition->color;
-	((c_widget *)screen)->function_230134(definition->string_handle, buffer);
+	buffer.load((c_widget *)screen, definition->string_handle);
 	widget->bounds = definition->bounds;
-	widget->function_22f52e()->setup(buffer, font, &color, (short)value14, NONE, justification, NONE);
+	widget->function_22f52e()->setup(buffer.text, font, &color, (short)value14, NONE, justification, NONE);
 	if (definition->flags & 8)
 	{
-		s_type_954545 *globals = function_148350();
+		s_type_954545 *globals = ui_definition_get();
+		short text_flags = widget->function_22f52e()->value14;
 
-		widget->function_22f52e()->value14 = widget->function_22f52e()->value14 | 4;
+		text_flags |= 4;
+		widget->function_22f52e()->value14 = text_flags;
 		if (globals)
 		{
 			real value = globals->value4c;
@@ -132,12 +141,12 @@ void function_2538a6(c_text_widget_45a5e0 *widget, short value04, short font, sh
 // @retail 0x253bc9
 void function_253bc9(c_text_widget_458940 *widget, long subtitle_type)
 {
-	if (function_148350())
+	if (ui_definition_get())
 	{
 		word buffer[0x100];
 
 		buffer[0] = 0;
-		function_1496f6(subtitle_type, buffer);
+		ui_definition_get_subtitle_text(subtitle_type, buffer);
 		widget->function_22f52e()->set_text(buffer);
 	}
 }
@@ -196,15 +205,14 @@ void c_class_19b8b1::v4(long screen_rect_address)
         s_float_rect from, to;
         real width = element->width;
         real height = element->height;
-        from.y0 = 0.0f;
-        from.x0 = 0.0f;
+        from.x0 = from.y0 = 0.0f;
         from.x1 = width;
         from.y1 = height;
         get_real_bounds((box2f *)&to);
         real px = *(short *)definition->unknown2c + to.x0;
-        real py = to.y0 - *(short *)(definition->unknown2c + 2);
         to.x0 = x + px;
         to.x1 = x + (width + px);
+        real py = to.y0 - *(short *)(definition->unknown2c + 2);
         to.y0 = y + py;
         to.y1 = y + (py - height);
         function_23618e(&to, depth, screen);
@@ -215,8 +223,9 @@ void c_class_19b8b1::v4(long screen_rect_address)
         c_user_interface_text_buffer_32 label;
         word buffer[16];
         unicode_string_snprintf(buffer, 16, (word const *)L"%d", value0a);
-        label.setup(buffer, 0, g_468724, 0, NONE, 0, NONE);
-        function_22cd48(&label, &rectangle, &rectangle, depth, alpha, screen);
+        c_class_22cc8e *label_text = &label;
+        label_text->setup(buffer, 0, g_468724, 0, NONE, 0, NONE);
+        function_22cd48(label_text, &rectangle, &rectangle, depth, alpha, screen);
         function_235d69(&rectangle, depth, screen, g_4686e0);
     }
     else
@@ -307,7 +316,7 @@ void c_class_19b8b1::v3()
 
 	if (is_in_window())
 	{
-		s_type_954545 *globals = function_148350();
+		s_type_954545 *globals = ui_definition_get();
 
 		if (globals)
 		{
@@ -342,49 +351,56 @@ void c_class_19b8b1::v3()
 // @retail 0x2540e8
 bool c_class_19b8b1::v10(s_widget_event *event)
 {
+	long sound;
+
 	if (event->type == 5 && (event->param == 0 || event->param == 12))
 	{
 		function_24c7e4(&handlers, (s_event **)&event, (long *)&valuef8);
-		function_236299(1);
-		return true;
+		sound = 1;
 	}
 	else if (event->type == 3)
 	{
-		if (!(valuef4 & 1))
+		if (valuef4 & 1)
 		{
-			v8();
-			function_236299(0);
-			return true;
+			goto not_handled;
 		}
+		v8();
+		sound = 0;
 	}
 	else if (event->type == 1)
 	{
-		if (!(valuef4 & 1))
+		if (valuef4 & 1)
 		{
-			v9();
-			function_236299(0);
-			return true;
+			goto not_handled;
 		}
+		v9();
+		sound = 0;
 	}
 	else if (event->type == 4)
 	{
-		if (!(valuef4 & 2))
+		if (valuef4 & 2)
 		{
-			v8();
-			function_236299(0);
-			return true;
+			goto not_handled;
 		}
+		v8();
+		sound = 0;
 	}
 	else if (event->type == 2)
 	{
-		if (!(valuef4 & 2))
+		if (valuef4 & 2)
 		{
-			v9();
-			function_236299(0);
-			return true;
+			goto not_handled;
 		}
+		v9();
+		sound = 0;
 	}
-	return c_class_1a2c81::v10(event);
+	else
+	{
+	not_handled:
+		return c_class_1a2c81::v10(event);
+	}
+	function_236299(sound);
+	return true;
 }
 
 // @retail 0x254173

@@ -1,10 +1,19 @@
 // @flags /O2 /arch:SSE /Gr
+#include "reset_storage.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 #include <xmmintrin.h>
 #include <string.h>
 #include <math.h>
 #include "effects.h"
+#include "sampler_state.h"
+
+struct s_packed_shader_range
+{
+    word packed;
+    __forceinline dword count() const { return (dword)packed >> 9; }
+    __forceinline long index() const { return packed & 0x1ff; }
+};
 
 struct input_mapping_entry
 {
@@ -53,8 +62,8 @@ void function_17420(byte *state, long stage, long group, long pass, long variant
 void function_1ae70(byte *state);
 void __stdcall function_19be0(byte *state, word const *range);
 void function_19ca0(byte *state, word const *range);
-void __stdcall function_1a170(byte *state, word const *range);
-void __stdcall function_1ab50(byte *state, word const *range);
+void __stdcall function_1a170(byte *state, s_packed_shader_range const *range);
+void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range);
 void __stdcall function_18ee0(byte *state);
 
 PRIVATE inline byte const *material_parameters(long tag)
@@ -84,7 +93,8 @@ void __stdcall function_16b90(byte *state, long tag, long first, long second,
     bool different_tag = tag != previous;
     *(long *)(state + 4) = previous;
     *(long *)state = tag;
-    real inverse = scale > 0.0f ? 1.0f / scale : 100000.0f;
+    real inverse = 100000.0f;
+    if (scale > 0.0f) inverse = 1.0f / scale;
     *(real *)(state + 0x28) = inverse;
     *(real *)(state + 0x2c) = (real)(log((double)inverse) * 0.6931471824645996f);
     *(dword *)(state + 0x58) = 0;
@@ -144,8 +154,8 @@ void __stdcall function_16b90(byte *state, long tag, long first, long second,
     function_18a90(state, (word const *)record);
     function_19be0(state, (word const *)(record + 0x124));
     function_19ca0(state, (word const *)(record + 0x122));
-    function_1a170(state, (word const *)(record + 0x11e));
-    function_1ab50(state, (word const *)(record + 0x120));
+    function_1a170(state, (s_packed_shader_range const *)(record + 0x11e));
+    function_1ab50(state, (s_packed_shader_range const *)(record + 0x120));
     function_17420(state, first, second, third, fourth);
     function_18d70((s_18d70_state *)state);
     function_18e80((s_shader_constant_state *)state);
@@ -204,6 +214,7 @@ word g_485ac0;
 dword g_467014, g_467018;
 __int64 g_485aa0;
 
+__declspec(noinline) void function_0169f0();
 // @retail 0x169f0
 void function_0169f0()
 {
@@ -224,28 +235,37 @@ struct short_rect_pair
 	short_rect a, b;
 };
 
-short_rect_pair g_485a8a;
+// One object: the display setup's done flag, then the two screen rectangles.
+struct s_unknown_485a88
+{
+	byte flag;
+	short_rect_pair rects;
+};
+s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
 
 // @retail 0x17000
 void function_17000(byte *context, word const *range)
 {
-	word const *const *range_reference = &range;
-	dword *banks[2] = { (dword *)(context + 0x1530), (dword *)(context + 0x1630) };
-	dword *masks[2] = { (dword *)(context + 0x1730), (dword *)(context + 0x1734) };
+	struct { dword *banks[2]; dword *masks[2]; } tables_r16 = {
+        { (dword *)(context + 0x1530), (dword *)(context + 0x1630) },
+        { (dword *)(context + 0x1730), (dword *)(context + 0x1734) }
+    };
+	
 	byte *definition = *(byte **)(context + 0xc);
 	byte *instance = *(byte **)(context + 0x10);
 	dword *values = *(dword **)(definition + 0x18);
-	byte *record = *(byte **)(instance + 0x24) + (**range_reference & 0x1ff) * 4;
-	for (long i = 0; i < (**range_reference >> 9); ++i, record += 4)
+	byte *record = *(byte **)(instance + 0x24) + (*range & 0x1ff) * 4;
+	for (long i = 0; i < (*range >> 9); record += 4, ++i)
 	{
 		word packed = *(word *)record;
-		long bank = (packed >> 4) & 1;
-		dword *base = banks[bank];
-		dword *mask = masks[bank];
+		long bank = packed >> 4;
 		long slot = packed & 15;
+		dword *base = tables_r16.banks[bank & 1];
 		dword *out = base + slot * 4;
-		*mask |= 1 << slot;
 		dword *source = values + record[3] * 4;
+		dword *mask = tables_r16.masks[bank & 1];
+		*mask |= 1 << slot;
 		switch (((dword)*(word *)record >> 5) & 31)
 		{
 		case 0: case 5: out[0] = source[0]; break;
@@ -285,7 +305,7 @@ void function_2f6b0(s_2f6b0_point const *position, s_2f6b0_point const *grid,
 	s_2f6b0_point step;
 	step.x = (bounds.v3 - bounds.v1) / grid->x;
 	step.y = (bounds.v2 - bounds.v0) / grid->y;
-	short x = bounds.v1;
+	long x = bounds.v1;
 	short y = bounds.v0;
 	bounds.v1 = x + (word)position->x * step.x;
 	bounds.v3 = x + (word)(span->x + position->x) * step.x;
@@ -311,6 +331,7 @@ void function_2f6b0(s_2f6b0_point const *position, s_2f6b0_point const *grid,
 		inner->v2 -= 4;
 }
 
+__declspec(noinline) void function_016a30(real scale, short y, short x);
 // @retail 0x16a30
 void function_016a30(real scale, short y, short x)
 {
@@ -343,6 +364,8 @@ bool function_016ac0()
 	return g_485898 >= 5 && g_485898 <= 7;
 }
 
+inline __declspec(noinline) long function_016ae0(real value);
+
 // @retail 0x16ae0
 long function_016ae0(real value)
 {
@@ -358,7 +381,6 @@ long function_016ae0(real value)
 	}
 }
 
-dword g_485b78[5];
 
 // @retail 0x1bdf0
 void function_1bdf0(void)
@@ -404,6 +426,8 @@ void function_1bd50(void *state)
 
 
 #include <math.h>
+
+#define PIN(value, minimum, maximum) ((value) < (minimum) ? (minimum) : ((value) > (maximum) ? (maximum) : (value)))
 
 struct s_1b230_callback
 {
@@ -488,10 +512,15 @@ void function_174d0(byte *context, long group, long stage, long pass, long entry
 			word range = *(word *)(record + 4);
 			if (stage < (range >> 9))
 			{
-				range = (*(word **)(definition + 0x28))[(range & 0x1ff) + stage];
+				// Keep each range address separate from its word load.
+				word *stage_range = *(word **)(definition + 0x28) + (range & 0x1ff) + stage;
+				word *const *stage_range_reference = &stage_range;
+				range = **stage_range_reference;
 				if (pass < (range >> 9))
 				{
-					range = (*(word **)(definition + 0x30))[(range & 0x1ff) + pass];
+					word *pass_range = *(word **)(definition + 0x30) + (range & 0x1ff) + pass;
+					word *const *pass_range_reference = &pass_range;
+					range = **pass_range_reference;
 					if (entry < (range >> 9))
 					{
 						word const *selected = (word *)(*(byte **)(definition + 0x38) + ((range & 0x1ff) + entry) * 10);
@@ -510,22 +539,20 @@ bool function_1b790(byte const *state, long index, real *out, long mode)
     real sx = values[7];
     real sy = values[8];
     transform4x3f matrix;
-    memset(&matrix, 0, sizeof(matrix));
     real sine = 0.0f;
     real cosine = 1.0f;
+    memset(&matrix, 0, sizeof(matrix));
     if (!(fabs(values[13]) < 0.0001f))
     {
-        volatile real rounded_angle = values[13] * 6.2831854820251465f;
-        real angle = rounded_angle;
-        sine = sinf(angle);
-        cosine = cosf(angle);
+        sine = sinf(values[13] * 6.2831854820251465f);
+        cosine = cosf(values[13] * 6.2831854820251465f);
     }
-    matrix.forward.i = sx * cosine;
     matrix.forward.j = 0.0f - sx * sine;
-    matrix.left.i = sy * sine;
-    matrix.left.j = sy * cosine;
     matrix.position.x = (1.0f - cosine + sine) * sx * 0.5f + values[10];
+    matrix.left.i = sy * sine;
     matrix.position.y = (1.0f - cosine - sine) * values[8] * 0.5f + values[11];
+    matrix.forward.i = sx * cosine;
+    matrix.left.j = sy * cosine;
     matrix.up.k = values[9];
     matrix.position.z = values[12];
     switch (mode)
@@ -570,6 +597,8 @@ color3f *unpack_color3f(dword pixel, color3f *color);
 // @retail 0x1b580
 bool function_1b580(byte const *definition, long component, long unused, long mode, real *out)
 {
+    long const *unused_reference = &unused;
+    (void)unused_reference;
     s_1b230_function const *curve = (s_1b230_function const *)(definition + 0xc);
     real value = function_1b230(curve, *(long const *)definition,
         *(long const *)(definition + 4), *(real const *)(definition + 8));
@@ -580,32 +609,23 @@ bool function_1b580(byte const *definition, long component, long unused, long mo
         {
             real low = *(real *)(data + 4);
             real high = *(real *)(data + 8);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN(value, 0.0f, 1.0f);
             value = (high - low) * value + low;
         }
         switch (mode)
         {
         case 1: value = 1.0f - value; break;
         case 2:
-            value = (real)((cos(value * 6.2831854820251465f) + 1.0f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)((cos(value * 6.2831854820251465f) + 1.0f) * 0.5f), 0.0f, 1.0f);
             break;
         case 3:
-            value = (real)(0.5f - cos(value * 6.2831854820251465f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)(0.5f - cos(value * 6.2831854820251465f) * 0.5f), 0.0f, 1.0f);
             break;
         case 4:
-            value = (real)((sin(value * 6.2831854820251465f) + 1.0f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)((sin(value * 6.2831854820251465f) + 1.0f) * 0.5f), 0.0f, 1.0f);
             break;
         case 5:
-            value = (real)(0.5f - sin(value * 6.2831854820251465f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)(0.5f - sin(value * 6.2831854820251465f) * 0.5f), 0.0f, 1.0f);
             break;
         }
         out[component] = value;
@@ -625,28 +645,40 @@ bool function_1b580(byte const *definition, long component, long unused, long mo
     return true;
 }
 
+/* one 4-byte entry of the value list that function_17960 walks */
+struct s_shader_value_entry
+{
+    word output : 4;
+    word group : 1;
+    word mode : 5;
+    word kind : 3;
+    word unused : 3;
+    byte unknown2;
+    byte parameter;
+};
+
 // @retail 0x17960
 void __stdcall function_17960(byte *state, word const *range)
 {
-    if (*range & 0xfe00)
+    dword initial_range = *range;
+    s_packed_shader_range const *range_view = (s_packed_shader_range const *)range;
+    if (range_view->count() > 0)
     {
         byte const *definition = *(byte **)(state + 0xc);
-        byte const *entry = *(byte **)(definition + 0x58) + (*range & 0x1ff) * 4;
+        s_shader_value_entry const *entry = (s_shader_value_entry const *)(*(byte **)(definition + 0x58) + (initial_range & 0x1ff) * 4);
         real *outputs[2] = { (real *)(state + 0x1530), (real *)(state + 0x1630) };
         dword *changed[2] = { (dword *)(state + 0x1730), (dword *)(state + 0x1734) };
-        for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+        for (long i = 0; i < (*range >> 9); ++i)
         {
             definition = *(byte **)(state + 0xc);
-            long range_index = ((word const *)*(byte **)(definition + 0x50))[entry[3]] & 0x1ff;
+            long range_index = ((word const *)*(byte **)(definition + 0x50))[entry->parameter] & 0x1ff;
             long index = ((short const *)*(byte **)(definition + 0x48))[range_index * 2];
             byte const *parameter = *(byte **)(definition + 0x40) + index * 20;
-            word packed = *(word const *)entry;
-            long group = (packed >> 4) & 1;
-            real *out = outputs[group] + (packed & 15) * 4;
-            long mode = (packed >> 5) & 31;
-            if (mode < 5)
+            real *out = outputs[entry->group] + entry->output * 4;
+            if (entry->mode < 5)
             {
                 s_1b230_function const *curve = (s_1b230_function const *)(parameter + 12);
+                long mode = entry->mode;
                 real value = function_1b230(curve, *(long const *)parameter,
                     *(long const *)(parameter + 4), *(real const *)(parameter + 8));
                 if (mode != 4)
@@ -674,9 +706,9 @@ void __stdcall function_17960(byte *state, word const *range)
                 }
             }
             else
-                function_1b790(state, (packed >> 10) & 7, out, mode);
-            packed = *(word const *)entry;
-            *changed[(packed >> 4) & 1] |= 1 << (packed & 15);
+                function_1b790(state, entry->kind, out, entry->mode);
+            *changed[entry->group] |= 1 << entry->output;
+            ++entry;
         }
     }
 }
@@ -746,13 +778,22 @@ void function_17170(byte *state, word const *range)
 
 dword __cdecl pack_color4f(color4f const *color);
 
-// @retail 0x176a0
-void function_176a0(byte *state, word const *range)
+static inline real unit_clamp_176a0(real value)
 {
-    if (*range & 0xfe00)
+    if (0.0f > value)
+        value = 0.0f;
+    else if (value > 1.0f)
+        value = 1.0f;
+    return value;
+}
+
+// @retail 0x176a0
+void function_176a0(byte *state, s_packed_shader_range const *range)
+{
+    if (range->count() > 0)
     {
-        byte const *entry = *(byte **)(*(byte **)(state + 0xc) + 0x58) + (*range & 0x1ff) * 4;
-        for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+        byte const *entry = *(byte **)(*(byte **)(state + 0xc) + 0x58) + range->index() * 4;
+        for (long i = 0; i < (long)range->count(); ++i, entry += 4)
         {
             byte const *definition = *(byte **)(state + 0xc);
             long range_index = ((word const *)*(byte **)(definition + 0x50))[entry[3]] & 0x1ff;
@@ -761,14 +802,14 @@ void function_176a0(byte *state, word const *range)
             real values[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
             function_1b580(parameter, entry[2] & 7, (long)state, (entry[2] >> 3) & 7, values);
             color4f color;
-            color.red = 0.0f > values[0] ? 0.0f : values[0] > 1.0f ? 1.0f : values[0];
-            color.green = 0.0f > values[1] ? 0.0f : values[1] > 1.0f ? 1.0f : values[1];
-            color.blue = 0.0f > values[2] ? 0.0f : values[2] > 1.0f ? 1.0f : values[2];
-            color.alpha = 0.0f > values[3] ? 0.0f : values[3] > 1.0f ? 1.0f : values[3];
+            color.red = unit_clamp_176a0(values[0]);
+            color.green = unit_clamp_176a0(values[1]);
+            color.blue = unit_clamp_176a0(values[2]);
+            color.alpha = unit_clamp_176a0(values[3]);
             dword value = pack_color4f(&color);
             word packed = *(word const *)entry;
             long slot = packed & 7;
-            word remapping = *(word *)(*(byte **)(state + 0x24) + 0xf6);
+            long remapping = *(word *)(*(byte **)(state + 0x24) + 0xf6);
             byte const *mapping = *(byte **)(*(byte **)(state + 0x20) + 0x24) + ((remapping & 0x1ff) + slot) * 4;
             short source = *(short const *)mapping;
             if (!(remapping & 0xfe00) || source == NONE || ((packed >> 3) & 7) == *(long *)(state + 0x300 + source * 4))
@@ -792,27 +833,20 @@ bool function_1b2c0(byte const *state, long index, long component, long texture,
         {
         case 1: value = 1.0f - value; break;
         case 2:
-            value = (real)((cos(value * 6.2831854820251465f) + 1.0f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)((cos(value * 6.2831854820251465f) + 1.0f) * 0.5f), 0.0f, 1.0f);
             break;
         case 3:
-            value = (real)(0.5f - cos(value * 6.2831854820251465f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)(0.5f - cos(value * 6.2831854820251465f) * 0.5f), 0.0f, 1.0f);
             break;
         case 4:
-            value = (real)((sin(value * 6.2831854820251465f) + 1.0f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)((sin(value * 6.2831854820251465f) + 1.0f) * 0.5f), 0.0f, 1.0f);
             break;
         case 5:
-            value = (real)(0.5f - sin(value * 6.2831854820251465f) * 0.5f);
-            if (0.0f > value) value = 0.0f;
-            else if (value > 1.0f) value = 1.0f;
+            value = PIN((real)(0.5f - sin(value * 6.2831854820251465f) * 0.5f), 0.0f, 1.0f);
             break;
         }
         out[component] = value;
+        return true;
     }
     else if (component == 4)
         *(color3f *)out = ((color3f const *)(state + 0x108))[index];
@@ -895,14 +929,13 @@ const s_texture_stage_parameter g_467020[7] = {
 };
 
 // @retail 0x1a170
-void __stdcall function_1a170(byte *state, word const *range)
+void __stdcall function_1a170(byte *state, s_packed_shader_range const *range)
 {
-    if ((*range & 0xfe00) == 0) return;
-    byte const *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + (*range & 0x1ff) * 4;
-    for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+    if (range->count() <= 0) return;
+    byte const *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + range->index() * 4;
+    for (long i = 0; i < (long)range->count(); entry += 4, ++i)
     {
         s_texture_stage_parameter const *parameter = &g_467020[entry[0]];
-        D3DRENDERSTATETYPE setting = (D3DRENDERSTATETYPE)parameter->state;
         if (entry[1] == 1)
         {
             real value = ((real *)(state + 0x5c))[entry[3]];
@@ -911,42 +944,46 @@ void __stdcall function_1a170(byte *state, word const *range)
             case 0:
                 {
                     dword alpha = (dword)rounded_shader_alpha(value) << 24;
-                    dword old;
-                    D3DDevice_GetRenderState(setting, &old);
-                    D3DDevice_SetRenderState(setting, (old & 0xffffff) | alpha);
+                    dword old = 0;
+                    D3DDevice_GetRenderState((D3DRENDERSTATETYPE)parameter->state, &old);
+                    D3DDevice_SetRenderState((D3DRENDERSTATETYPE)parameter->state, alpha ^ ((old ^ alpha) & 0xffffff));
                 }
                 break;
-            case 1: D3DDevice_SetRenderState(setting, *(dword *)&value); break;
-            case 2: D3DDevice_SetRenderState(setting, rounded_shader_integer(value)); break;
+            case 1: D3DDevice_SetRenderState((D3DRENDERSTATETYPE)parameter->state, *(dword *)&value); break;
+            case 2:
+                {
+                    dword integer_value = rounded_shader_integer(value);
+                    D3DDevice_SetRenderState((D3DRENDERSTATETYPE)parameter->state, integer_value);
+                }
+                break;
             }
         }
         else
         {
             dword color = pack_color3f((color3f *)(state + 0x108) + entry[3]);
-            dword old;
-            D3DDevice_GetRenderState(setting, &old);
-            D3DDevice_SetRenderState(setting, (old & 0xff000000) | (color & 0xffffff));
+            dword old = 0;
+            D3DDevice_GetRenderState((D3DRENDERSTATETYPE)parameter->state, &old);
+            D3DDevice_SetRenderState((D3DRENDERSTATETYPE)parameter->state, (old & 0xff000000) | (color & 0xffffff));
         }
     }
 }
 
 // @retail 0x17b60
-void __stdcall function_17b60(byte *context, word const *range)
+void __stdcall function_17b60(byte *context, s_packed_shader_range const *range)
 {
-    if ((*range & 0xfe00) == 0) return;
+    if (range->count() <= 0) return;
     byte *definition = *(byte **)(context + 0xc);
-    byte const *entry = *(byte **)(definition + 0x58) + (*range & 0x1ff) * 4;
-    for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+    byte const *entry = *(byte **)(definition + 0x58) + range->index() * 4;
+    for (long i = 0; i < (long)range->count(); ++i)
     {
         definition = *(byte **)(context + 0xc);
         word selection = (*(word **)(definition + 0x50))[entry[3]];
         short index = (*(short **)(definition + 0x48))[(selection & 0x1ff) * 2];
         byte *parameter = *(byte **)(definition + 0x40) + index * 20;
-        s_1b230_function const *curve = (s_1b230_function *)(parameter + 12);
         s_texture_stage_parameter const *setting = &g_467020[entry[0]];
-        D3DRENDERSTATETYPE type = (D3DRENDERSTATETYPE)setting->state;
         if (entry[1] == 1)
         {
+            s_1b230_function const *curve = (s_1b230_function *)(parameter + 12);
             real value = function_1b230(curve, *(long *)parameter, *(long *)(parameter + 4), *(real *)(parameter + 8));
             byte *data = curve->data;
             if (!(data[1] & 0xf0))
@@ -962,35 +999,44 @@ void __stdcall function_17b60(byte *context, word const *range)
                 {
                     dword alpha = (dword)rounded_shader_alpha(value) << 24;
                     dword previous;
-                    D3DDevice_GetRenderState(type, &previous);
-                    D3DDevice_SetRenderState(type, (previous & 0xffffff) | alpha);
+                    D3DDevice_GetRenderState((D3DRENDERSTATETYPE)setting->state, &previous);
+                    D3DDevice_SetRenderState((D3DRENDERSTATETYPE)setting->state, alpha ^ ((previous ^ alpha) & 0xffffff));
                 }
                 break;
-            case 1: D3DDevice_SetRenderState(type, *(dword *)&value); break;
-            case 2: D3DDevice_SetRenderState(type, rounded_shader_integer(value)); break;
+            case 1: D3DDevice_SetRenderState((D3DRENDERSTATETYPE)setting->state, *(dword *)&value); break;
+            case 2:
+                {
+                    dword integer_value = rounded_shader_integer(value);
+                    D3DDevice_SetRenderState((D3DRENDERSTATETYPE)setting->state, integer_value);
+                }
+                break;
             }
         }
         else
         {
+            s_1b230_function const *curve = (s_1b230_function *)(parameter + 12);
             real value = function_1b230(curve, *(long *)parameter, *(long *)(parameter + 4), *(real *)(parameter + 8));
             dword color = function_13bc00((s_tag_data const *)curve, value);
             dword previous;
-            D3DDevice_GetRenderState(type, &previous);
-            D3DDevice_SetRenderState(type, (previous & 0xff000000) | (color & 0xffffff));
+            D3DDevice_GetRenderState((D3DRENDERSTATETYPE)setting->state, &previous);
+            D3DDevice_SetRenderState((D3DRENDERSTATETYPE)setting->state, (previous & 0xff000000) | (color & 0xffffff));
         }
+        entry += 4;
     }
 }
 
+// score 51 (was 51): the switch on the procedure id is compiled to a different table: retail
+// reads the entry with movzx ecx from a table at another base, ours uses
+// esi and another table.
 // @retail 0x1ab50
-void __stdcall function_1ab50(byte *state, word const *range)
+void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range)
 {
-    if ((*range & 0xfe00) == 0)
+    if (range->count() <= 0)
         return;
-    byte *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + (*range & 0x1ff) * 4;
-    for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+    byte *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + range->index() * 4;
+    for (long i = 0; i < (long)range->count(); ++i)
     {
         s_texture_stage_parameter const *parameter = &g_46703c[entry[1]];
-        D3DTEXTURESTAGESTATETYPE setting = (D3DTEXTURESTAGESTATETYPE)parameter->state;
         if (entry[2] == 1)
         {
             real value = ((real *)(state + 0x5c))[entry[3]];
@@ -1000,15 +1046,18 @@ void __stdcall function_1ab50(byte *state, word const *range)
                 {
                     dword alpha = (dword)rounded_shader_alpha(value) << 24;
                     dword old;
-                    D3DDevice_GetTextureStageState(entry[0], setting, &old);
-                    D3DDevice_SetTextureStageState(entry[0], setting, (old & 0xffffff) | alpha);
+                    D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, &old);
+                    sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, alpha ^ ((old ^ alpha) & 0xffffff));
                 }
                 break;
             case 1:
-                D3DDevice_SetTextureStageState(entry[0], setting, *(dword *)&value);
+                sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, *(dword *)&value);
                 break;
             case 2:
-                D3DDevice_SetTextureStageState(entry[0], setting, rounded_shader_integer(value));
+                {
+                    dword integer_value = rounded_shader_integer(value);
+                    sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, integer_value);
+                }
                 break;
             }
         }
@@ -1016,46 +1065,52 @@ void __stdcall function_1ab50(byte *state, word const *range)
         {
             dword color = pack_color3f((color3f *)(state + 0x108) + entry[3]);
             dword old;
-            D3DDevice_GetTextureStageState(entry[0], setting, &old);
-            D3DDevice_SetTextureStageState(entry[0], setting, (old & 0xff000000) | (color & 0xffffff));
+            D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, &old);
+            sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, (old & 0xff000000) | (color & 0xffffff));
         }
+        entry += 4;
     }
 }
 
 
-// @retail 0x19be0
+// score 54 (was 54): the two arguments land in different registers (retail uses ebp for the
+// second and ecx for the first) and the bit-field extraction order differs.
+// @retail 0x19be0 standard
 void __stdcall function_19be0(byte *state, word const *range)
 {
     real *values[2] = { (real *)(state + 0x1530), (real *)(state + 0x1630) };
     dword *masks[2] = { (dword *)(state + 0x1730), (dword *)(state + 0x1734) };
     byte const *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + (*range & 0x1ff) * 4;
-    for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+    for (unsigned long i = 0; i < (*range >> 9); ++i)
     {
         word packed = *(word const *)entry;
         function_1b2c0(state, entry[3], (packed >> 5) & 31, packed >> 13, 0,
             values[(packed >> 4) & 1] + (packed & 15) * 4);
         packed = *(word const *)entry;
         *masks[(packed >> 4) & 1] |= 1 << (packed & 15);
+        entry += 4;
     }
 }
 
 
 
+// score 39 (was 39): the jump table's targets and the shifts around it differ: retail shifts
+// the word at esp+0x18 and keeps the index in ecx, ours keeps it in esi
+// and shifts later.
 // @retail 0x18560
-void __stdcall function_18560(byte *context, word const *range)
+void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 {
-    if ((*range & 0xfe00) == 0) return;
+    if (range->count() <= 0) return;
     byte *definition = *(byte **)(context + 0xc);
-    byte *entry = *(byte **)(definition + 0x58) + (*range & 0x1ff) * 4;
-    for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+    byte *entry = *(byte **)(definition + 0x58) + range->index() * 4;
+    for (long i = 0; i < (long)range->count(); ++i)
     {
         definition = *(byte **)(context + 0xc);
         word selection = (*(word **)(definition + 0x50))[entry[3]];
         short index = (*(short **)(definition + 0x48))[(selection & 0x1ff) * 2];
         byte *parameter = *(byte **)(definition + 0x40) + index * 20;
-        s_1b230_function const *curve = (s_1b230_function *)(parameter + 12);
         s_texture_stage_parameter const *setting = &g_46703c[entry[1]];
-        D3DTEXTURESTAGESTATETYPE type = (D3DTEXTURESTAGESTATETYPE)setting->state;
+        s_1b230_function const *curve = (s_1b230_function *)(parameter + 12);
         if (entry[2] == 1)
         {
             real value = function_1b230(curve, *(long *)parameter, *(long *)(parameter + 4), *(real *)(parameter + 8));
@@ -1073,12 +1128,17 @@ void __stdcall function_18560(byte *context, word const *range)
                 {
                     dword alpha = (dword)rounded_shader_alpha(value) << 24;
                     dword previous;
-                    D3DDevice_GetTextureStageState(entry[0], type, &previous);
-                    D3DDevice_SetTextureStageState(entry[0], type, (previous & 0xffffff) | alpha);
+                    D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, &previous);
+                    sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, alpha ^ ((previous ^ alpha) & 0xffffff));
                 }
                 break;
-            case 1: D3DDevice_SetTextureStageState(entry[0], type, *(dword *)&value); break;
-            case 2: D3DDevice_SetTextureStageState(entry[0], type, rounded_shader_integer(value)); break;
+            case 1: sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, *(dword *)&value); break;
+            case 2:
+                {
+                    dword integer_value = rounded_shader_integer(value);
+                    sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, integer_value);
+                }
+                break;
             }
         }
         else
@@ -1086,9 +1146,10 @@ void __stdcall function_18560(byte *context, word const *range)
             real value = function_1b230(curve, *(long *)parameter, *(long *)(parameter + 4), *(real *)(parameter + 8));
             dword color = function_13bc00((s_tag_data const *)curve, value);
             dword previous;
-            D3DDevice_GetTextureStageState(entry[0], type, &previous);
-            D3DDevice_SetTextureStageState(entry[0], type, (previous & 0xff000000) | (color & 0xffffff));
+            D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, &previous);
+            sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, (previous & 0xff000000) | (color & 0xffffff));
         }
+        entry += 4;
     }
 }
 
@@ -1105,15 +1166,18 @@ void function_19ca0(byte *state, word const *range)
     {
         for (long i = 0; i < (*range >> 9); ++i, entry += 4)
         {
-            dword mask = g_467068[entry[2] & 7];
+            long component = entry[2] & 7;
             function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
             if (*(word const *)entry & 0x800)
                 for (long j = 0; j < 4; ++j) values[j] = (values[j] + 1.0f) * 0.5f;
-            for (long k = 0; k < 4; ++k)
-                values[k] = values[k] < 0.0f ? 0.0f : values[k] > 1.0f ? 1.0f : values[k];
+            values[0] = values[0] < 0.0f ? 0.0f : values[0] > 1.0f ? 1.0f : values[0];
+            values[1] = values[1] < 0.0f ? 0.0f : values[1] > 1.0f ? 1.0f : values[1];
+            values[2] = values[2] < 0.0f ? 0.0f : values[2] > 1.0f ? 1.0f : values[2];
+            values[3] = values[3] < 0.0f ? 0.0f : values[3] > 1.0f ? 1.0f : values[3];
             color4f color;
             color.red = values[0]; color.green = values[1]; color.blue = values[2]; color.alpha = values[3];
             dword value = pack_color4f(&color);
+            dword mask = g_467068[component];
             word packed = *(word const *)entry;
             store_shader_mask(state, packed, (packed >> 6) & 15, mask, value);
         }
@@ -1127,15 +1191,18 @@ void function_19ca0(byte *state, word const *range)
             long slot = packed & 7;
             short source = *(short const *)(mapping + slot * 4);
             if (source != NONE && ((packed >> 3) & 7) != *(long *)(state + 0x300 + source * 4)) continue;
-            dword mask = g_467068[entry[2] & 7];
+            long component = entry[2] & 7;
             function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
             if (*(word const *)entry & 0x800)
                 for (long j = 0; j < 4; ++j) values[j] = (values[j] + 1.0f) * 0.5f;
-            for (long k = 0; k < 4; ++k)
-                values[k] = values[k] < 0.0f ? 0.0f : values[k] > 1.0f ? 1.0f : values[k];
+            values[0] = values[0] < 0.0f ? 0.0f : values[0] > 1.0f ? 1.0f : values[0];
+            values[1] = values[1] < 0.0f ? 0.0f : values[1] > 1.0f ? 1.0f : values[1];
+            values[2] = values[2] < 0.0f ? 0.0f : values[2] > 1.0f ? 1.0f : values[2];
+            values[3] = values[3] < 0.0f ? 0.0f : values[3] > 1.0f ? 1.0f : values[3];
             color4f color;
             color.red = values[0]; color.green = values[1]; color.blue = values[2]; color.alpha = values[3];
             dword value = pack_color4f(&color);
+            dword mask = g_467068[component];
             packed = *(word const *)entry;
             long index = (packed >> 6) & 15;
             if ((packed & 0x3c0) != 0x200) index += *(signed char *)(state + 0x1520 + (packed & 7));
@@ -1184,19 +1251,21 @@ void function_17420(byte *state, long stage, long group, long pass, long variant
         if ((*(dword const *)stage_entry & (1 << group)) &&
             group < (*(word const *)(stage_entry + 4) >> 9))
         {
-            word packed = ((word const *)*(byte **)(definition + 0x28))[
-                (*(word const *)(stage_entry + 4) & 0x1ff) + group];
-            if (pass < (packed >> 9))
+            s_packed_shader_range const *group_range =
+                (s_packed_shader_range const *)*(byte **)(definition + 0x28) +
+                (*(word const *)(stage_entry + 4) & 0x1ff) + group;
+            if (pass < (long)group_range->count())
             {
-                packed = ((word const *)*(byte **)(definition + 0x30))[(packed & 0x1ff) + pass];
-                if (variant < (packed >> 9))
+                s_packed_shader_range const *pass_range =
+                    (s_packed_shader_range const *)*(byte **)(definition + 0x30) + group_range->index() + pass;
+                if (variant < (long)pass_range->count())
                 {
                     word const *entry = (word const *)(*(byte **)(definition + 0x38) +
-                        ((packed & 0x1ff) + variant) * 10);
-                    function_176a0(state, entry + 3);
+                        (pass_range->index() + variant) * 10);
+                    function_176a0(state, (s_packed_shader_range const *)(entry + 3));
                     function_17960(state, entry + 4);
-                    function_17b60(state, entry + 1);
-                    function_18560(state, entry + 2);
+                    function_17b60(state, (s_packed_shader_range const *)(entry + 1));
+                    function_18560(state, (s_packed_shader_range const *)(entry + 2));
                 }
             }
         }
@@ -1211,39 +1280,43 @@ long function_34060(long mode, dword flags);
 void function_1ae70(byte *state)
 {
     *(dword *)(state + 0x58) = 0;
-    dword pending[5];
-    for (long mask = 0; mask < 5; ++mask)
-        pending[mask] = ((dword *)(state + 0x30))[mask] & ((dword *)(state + 0x44))[mask];
-    for (long base = 0; base < 64; base += 32)
+    dword scalar_pending[2];
+    dword vector_pending[2];
+    dword last_pending;
+    for (long mask = 0; mask < 2; ++mask)
+        scalar_pending[mask] = ((dword *)(state + 0x30))[mask] & ((dword *)(state + 0x44))[mask];
+    for (long mask = 0; mask < 2; ++mask)
+        vector_pending[mask] = ((dword *)(state + 0x38))[mask] & ((dword *)(state + 0x4c))[mask];
+    last_pending = *(dword *)(state + 0x40) & *(dword *)(state + 0x54);
+    for (long mask = 0; mask < 2; ++mask)
     {
-        dword remaining = pending[base >> 5];
+        dword remaining = scalar_pending[mask];
         while (remaining)
         {
             long bit;
             __asm { bsf ecx, remaining }
             __asm { mov bit, ecx }
-            long index = base + bit;
-            real value = function_336f0(index);
+            long index = mask * 32 + bit;
+            ((real *)(state + 0x5c))[index] = function_336f0(index);
             remaining &= ~(1 << bit);
-            ((real *)(state + 0x5c))[index] = value;
             ((dword *)(state + 0x30))[index >> 5] &= ~(1 << (index & 31));
         }
     }
-    for (long base = 0; base < 64; base += 32)
+    for (long mask = 0; mask < 2; ++mask)
     {
-        dword remaining = pending[2 + (base >> 5)];
+        dword remaining = vector_pending[mask];
         while (remaining)
         {
             long bit;
             __asm { bsf ecx, remaining }
             __asm { mov bit, ecx }
-            long index = base + bit;
+            long index = mask * 32 + bit;
             function_33980(index, (vector3f *)(state + 0x108 + index * 12));
             remaining &= ~(1 << bit);
             ((dword *)(state + 0x38))[index >> 5] &= ~(1 << (index & 31));
         }
     }
-    dword remaining = pending[4];
+    dword remaining = last_pending;
     while (remaining)
     {
         long bit;

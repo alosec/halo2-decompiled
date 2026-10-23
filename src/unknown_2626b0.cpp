@@ -35,7 +35,7 @@ struct s_262b40_scenario_view
 };
 
 s_262b40_result *__stdcall function_26e030(s_reference reference);
-void __stdcall function_1f4280(long actor_index);
+bool __stdcall function_1f4280(long actor_index);
 bool __stdcall function_1f46f0(long actor_index, short type, s_reference reference, byte *scratch, bool unknown2);
 void __stdcall function_2628f0(long actor_index, s_reference reference);
 
@@ -207,7 +207,7 @@ hash_node *function_13e2d0(hash_table *table, void *key);
 PRIVATE inline bool reference_table_find(hash_table *table, void *key, void *data)
 {
 	hash_node *node = function_13e2d0(table, key);
-	if (node && data)
+	if (node && NULL != data)
 	{
 		memcpy(data, node->data, table->data_size);
 		return true;

@@ -4,6 +4,8 @@
 #include "unknown_0259a0.h"
 #include <math.h>
 
+__forceinline s_firing_position *firing_position_get(long reference);
+
 /* slot handler 0x82 (g_47ef58), and the firing position search it uses */
 
 struct s_slot_82
@@ -52,7 +54,7 @@ struct s_vehicle_tag_view
 /* the farthest a firing position may be from the actor */
 real g_46fbdc = 25.0f;
 
-PRIVATE inline s_vehicle_tag_view *vehicle_tag_get(long object_index)
+PRIVATE __forceinline s_vehicle_tag_view *vehicle_tag_get(long object_index)
 {
 	return (s_vehicle_tag_view *)g_4e3b44[object_get(object_index)->tag_index & 0xffff].bytes;
 }
@@ -67,6 +69,9 @@ PRIVATE inline void actor_point_target_position(s_actor_point_target const *targ
 	}
 }
 
+// score 300 (was 300): our stack frame is 4 bytes smaller than retail's, so
+// every local offset is shifted and the two nested zone loops are laid out
+// differently.
 // @retail 0x1c0b80
 bool function_1c0b80(long actor_index, long const *excluded, short excluded_count,
 	s_actor_point_target *target, long *unknown, long *reference)
@@ -106,6 +111,7 @@ bool function_1c0b80(long actor_index, long const *excluded, short excluded_coun
 					{
 						long position_reference = (zone_index << 16) | (word)position_index;
 						s_firing_position *position;
+						s_actor_point_target const *position_target;
 						point3f point;
 						vector3f vector;
 						real path_distance;
@@ -115,33 +121,40 @@ bool function_1c0b80(long actor_index, long const *excluded, short excluded_coun
 						{
 							if (excluded[i] == position_reference)
 							{
-								break;
+								goto next_position;
 							}
 						}
-						if (i < excluded_count)
-						{
-							continue;
-						}
 						position = &zone->positions[position_index];
-						actor_point_target_position(&position->target, &point);
-						vector3d_from_points3d(&point, &actor->position, &vector);
-						if (!(g_46fbdc * g_46fbdc > length_sq3f(&vector)))
+						position_target = &position->target;
+						if (position_target->output_index == NONE)
+							vector3d_from_points3d(&position_target->point, &actor->position, &vector);
+						else
+						{
+							actor_point_target_position(position_target, &point);
+							vector3d_from_points3d(&point, &actor->position, &vector);
+						}
+						if (!(length_sq3f(&vector) < g_46fbdc * g_46fbdc))
 						{
 							continue;
 						}
-						function_270750(buffer, position->unknown30, &position->target, &path_distance, 0, 0);
+						function_270750(buffer, position->unknown30, position_target, &path_distance, 0, 0);
 						if (3.4028235e38f > path_distance)
 						{
 							real distance;
 							real cost;
 							vector3f direction;
+							point3f cost_point, direction_point;
 
-							actor_point_target_position(&position->target, &point);
-							vector3d_from_points3d(&point, prop_position, &vector);
+							actor_point_target_position(position_target, &cost_point);
+							vector3d_from_points3d(&cost_point, prop_position, &vector);
 							distance = (real)sqrt(length_sq3f(&vector)) + path_distance;
-							actor_point_target_position(&position->target, &point);
-							vector3d_from_points3d(prop_position, &point, &direction);
-							cost = 3.4028235e38f;
+							if (position_target->output_index == NONE)
+								vector3d_from_points3d(prop_position, &position_target->point, &direction);
+							else
+							{
+								actor_point_target_position(position_target, &direction_point);
+								vector3d_from_points3d(prop_position, &direction_point, &direction);
+							}
 							if (normalize_inline(&direction) > 0.0f)
 							{
 								vector3f facing;
@@ -155,6 +168,14 @@ bool function_1c0b80(long actor_index, long const *excluded, short excluded_coun
 								{
 									cost = (2.0f - alignment) * distance;
 								}
+								else
+								{
+									cost = 3.4028235e38f;
+								}
+							}
+							else
+							{
+								cost = 3.4028235e38f;
 							}
 							if (best_cost > cost)
 							{
@@ -165,6 +186,7 @@ bool function_1c0b80(long actor_index, long const *excluded, short excluded_coun
 								result = true;
 							}
 						}
+					next_position:;
 					}
 				}
 			}
@@ -197,6 +219,8 @@ short __stdcall function_1c10a0(long actor_index)
 	return result;
 }
 
+// score 2 (was 2): the pool pointer is loaded into ECX here and into EDX in
+// retail, the rest of the function matches.
 // @retail 0x1c10f0
 bool __stdcall function_1c10f0(long actor_index, s_slot *slot)
 {
@@ -221,6 +245,9 @@ bool __stdcall function_1c10f0(long actor_index, s_slot *slot)
 	return true;
 }
 
+// score 63 (was 63): g_46fbe8 and g_46fbe4 are read as bytes here but as
+// dwords in retail - they are declared short in include/globals.h, which is not
+// mine to change - and the actor is fetched in a different order.
 // @retail 0x1c1160
 short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 {
@@ -230,13 +257,14 @@ short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 
 	if (actor->unknown504 == 2)
 	{
+		s_unit_request action;
+		long unit_index = actor->unknown018;
+
 		if (actor->unknown22a)
 		{
-			if (!function_110ab0(actor->unknown018) &&
+			if (!function_110ab0(unit_index) &&
 				(!state->unknown20 || dot3f((vector3f *)&state->unknown14, &actor->unknown290) > 0.9f))
 			{
-				s_unit_request action;
-
 				action.type = 0x35;
 				action.type35.has_vector = state->unknown20;
 				if (state->unknown20)
@@ -246,7 +274,7 @@ short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 				state->unknown0c = function_e6900(actor->unknown018, &action);
 			}
 		}
-		else if (!function_110ab0(actor->unknown018))
+		else if (!function_110ab0(unit_index))
 		{
 			long vehicle_index = state->unknown10;
 
@@ -262,8 +290,6 @@ short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 					{
 						if (seat_index != NONE && function_c8f60(vehicle_index, seat_index) == NONE)
 						{
-							s_unit_request action;
-
 							action.type = 0x1c;
 							action.type1c.object_index = vehicle_index;
 							action.type1c.seat_index = seat_index;
@@ -280,18 +306,21 @@ short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// score 17 (was 17): our stack frame is 4 bytes bigger than retail's, so one
+// of the two longs lands in the frame here and in a dead argument slot there.
 // @retail 0x1c1320
 bool __stdcall function_1c1320(long actor_index, s_slot *slot)
 {
 	s_slot_82 *state = (s_slot_82 *)slot;
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = true;
 
-	if (actor->unknown040 && !(actor->unknown50c && actor->unknown504 == 1) && actor->unknown504 != 2)
+	if (actor_get(actor_index)->unknown040 &&
+		!(actor_get(actor_index)->unknown50c && actor_get(actor_index)->unknown504 == 1) &&
+		actor_get(actor_index)->unknown504 != 2)
 	{
 		s_actor_point_target target;
-		long unknown = NONE;
 		long reference = NONE;
+		long unknown = NONE;
 
 		if (state->unknown21)
 		{
@@ -308,7 +337,8 @@ bool __stdcall function_1c1320(long actor_index, s_slot *slot)
 		}
 		if (reference == NONE)
 		{
-			return false;
+			result = false;
+			goto done;
 		}
 		if (function_1f4460(actor_index, &target, unknown, NONE, false))
 		{
@@ -318,14 +348,19 @@ bool __stdcall function_1c1320(long actor_index, s_slot *slot)
 			state->unknown14.y = (real)sin(position->facing);
 			state->unknown14.z = 0.0f;
 			state->unknown20 = true;
-			return true;
+			result = true;
+			goto done;
 		}
-		if (state->unknown38 >= 4)
+		if (state->unknown38 < 4)
 		{
-			return false;
+			state->unknown28[state->unknown38++] = reference;
 		}
-		state->unknown28[state->unknown38++] = reference;
+		else
+		{
+			result = false;
+		}
 	}
+done:
 	return result;
 }
 

@@ -1,18 +1,18 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_0497A0.CPP: view parameter computation */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include <math.h>
 #include "unknown_0494b0.h"
 #include "globals.h"
 
-point3f g_4b9da0;
-vector3f g_4b9dac;
-vector3f g_4b9db8;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
+#include "vector_products.h"
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -30,30 +30,28 @@ void function_0497a0(
 	s_view_shape_0 * shape0 = 0;
 	s_view_shape_1 * shape1;
 	shape1 = 0;
-	if (!(0 == source->type_low))
+	if (0 == source->type_low)
 	{
-		shape1 = &source->shape1;
+		shape0 = &source->shape0;
 	}
 	else
 	{
-		shape0 = &source->shape0;
+		shape1 = &source->shape1;
 	}
 
 	bool special = ((0x20 & flags->flags)) && (0x40000 & flags->flags);
 	point3f v1 = special ? g_4b9da0 : source->v2c;
-	vector3f v2 = special ? g_4b9dac : camera->v28;
-	vector3f v3 = special ? g_4b9dac : (shape1 ? shape1->v4 : camera->v28);
-	vector3f v4 = special ? g_4b9db8 : camera->v34;
+	vector3f v2 = special ? g_4b9dac : (*(s_view_camera *volatile *)&camera)->v28;
+	vector3f v3 = special ? g_4b9dac : (shape1 ? shape1->v4 : (*(s_view_camera *volatile *)&camera)->v28);
+	vector3f v4 = special ? g_4b9db8 : (*(s_view_camera *volatile *)&camera)->v34;
 	vector3f w;
 
 	if (special)
 	{
 		vector3f c;
-		c.i = v4.j * v2.k - v4.k * v2.j;
+		cross3f(&v4, &v2, &c);
 		real s1 = (real)sin(g_4b9da0.x * 5.6f + g_4b9da0.y);
-		c.j = v4.k * v2.i - v4.i * v2.k;
 		real s0 = (real)((sin(g_4b9da0.x * 8.2f) * cos(g_4b9da0.y * 7.8f) * sin(g_4b9da0.x) + cos(g_4b9da0.y * 7.75f)) * 0.5f);
-		c.k = v4.i * v2.j - v4.j * v2.i;
 		real amp = s0 * 0.03f;
 		v1.x = (v4.i * amp) + v1.x;
 		v1.y += amp * v4.j;
@@ -62,9 +60,7 @@ void function_0497a0(
 		v1.x = (c.i * k) + v1.x;
 		v1.y += k * c.j;
 		v1.z = (k * c.k) + v1.z;
-		w.i = v2.j * v4.k - v2.k * v4.j;
-		w.j = v2.k * v4.i - v2.i * v4.k;
-		w.k = v2.i * v4.j - v2.j * v4.i;
+		cross3f(&v2, &v4, &w);
 	}
 	else
 	{
@@ -99,9 +95,9 @@ void function_0497a0(
 		result->v20.i = source->v1c.i * inv;
 		result->v20.j = (inv * source->v1c.j);
 		result->v20.k = inv * source->v1c.k;
-		result->v30.i = camera->v34.i * inv;
-		result->v30.j = inv * camera->v34.j;
-		result->v30.k = inv * camera->v34.k;
+		result->v30.i = (*(s_view_camera *volatile *)&camera)->v34.i * inv;
+		result->v30.j = inv * (*(s_view_camera *volatile *)&camera)->v34.j;
+		result->v30.k = inv * (*(s_view_camera *volatile *)&camera)->v34.k;
 		result->f2c = 0.0f;
 		result->f3c = 0.0f;
 		break;
@@ -113,14 +109,10 @@ void function_0497a0(
 	default:
 	{
 		vector3f r;
-		r.i = v3.j * v4.k - v3.k * v4.j;
-		r.j = v3.k * v4.i - v3.i * v4.k;
 		vector3f s;
-		r.k = v4.j * v3.i - v3.j * v4.i;
-		s.i = v3.j * w.k - v3.k * w.j;
-		s.j = v3.k * w.i - w.k * v3.i;
+		cross3f(&v3, &v4, &r);
+		cross3f(&v3, &w, &s);
 		real sx = -1.0f / shape1->f14;
-		s.k = w.j * v3.i - v3.j * w.i;
 		real sy = -1.0f / shape1->f18;
 		real k = inv * 0.5f;
 		result->v20.i = k * (r.i * sx + v2.i);
@@ -150,7 +142,7 @@ void function_0497a0(
 
 	case 1:
 	{
-		vector3f const * up = special ? &g_4b9dac : &camera->v28;
+		vector3f const * up = special ? &g_4b9dac : &(*(s_view_camera *volatile *)&camera)->v28;
 		if (source->type != 1)
 		{
 			result->v40.i = up->i * inv;
@@ -161,9 +153,7 @@ void function_0497a0(
 			{
 				real h = (shape1->f2c - shape1->f28) * 0.025f * 0.5f;
 				result->v50.i = h * result->v40.i;
-				int tmp0;
-				tmp0 = result->v40.j * h;
-				result->v50.j = tmp0;
+				result->v50.j = h * result->v40.j;
 				result->v50.k = result->v40.k * h;
 				result->f5c = (source->f28 + 0.0078125f) * h * inv + 0.5f;
 			}
@@ -179,12 +169,12 @@ void function_0497a0(
 
 	*old20 = *(vector4f *)&result->v20;
 	*old30 = *(vector4f *)&result->v30;
-	result->v20.i = result->v20.i + (camera->f6c * result->v40.i);
-	result->v20.j = (result->v40.j * camera->f6c) + result->v20.j;
-	result->v20.k += camera->f6c * result->v40.k;
-	result->v30.i += result->v40.i * camera->f70;
-	result->v30.j = (result->v40.j * camera->f70) + result->v30.j;
-	result->v30.k = (result->v30.k + (camera->f70 * result->v40.k));
+	result->v20.i = result->v20.i + ((*(s_view_camera *volatile *)&camera)->f6c * result->v40.i);
+	result->v20.j = (result->v40.j * (*(s_view_camera *volatile *)&camera)->f6c) + result->v20.j;
+	result->v20.k += (*(s_view_camera *volatile *)&camera)->f6c * result->v40.k;
+	result->v30.i += result->v40.i * (*(s_view_camera *volatile *)&camera)->f70;
+	result->v30.j = (result->v40.j * (*(s_view_camera *volatile *)&camera)->f70) + result->v30.j;
+	result->v30.k = (result->v30.k + ((*(s_view_camera *volatile *)&camera)->f70 * result->v40.k));
 
 	vector3f c = *c_in;
 	vector3f d = *d_in;
@@ -422,7 +412,9 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
         vertices[0].u = vertices[1].u = u;
         vertices[0].v = v;
         vertices[1].v = v_width;
-        point3f first = point->position, second = point->position;
+        point3f first, second;
+        first.x = point->position.x; first.y = point->position.y; first.z = point->position.z;
+        second.x = point->position.x; second.y = point->position.y; second.z = point->position.z;
         vector3f normal;
         switch (definition->mode)
         {
@@ -432,8 +424,17 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
             if (input->normal)
             {
                 s_ribbon_point *neighbor = previous ? previous : (s_ribbon_point *)(g_4ea940->data + (point->next & 0xffff) * 0x38);
-                real dx = previous ? point->position.x - neighbor->position.x : neighbor->position.x - point->position.x;
-                real dy = previous ? neighbor->position.y - point->position.y : point->position.y - neighbor->position.y;
+                real dx, dy;
+                if (previous)
+                {
+                    dx = point->position.x - neighbor->position.x;
+                    dy = neighbor->position.y - point->position.y;
+                }
+                else
+                {
+                    dx = neighbor->position.x - point->position.x;
+                    dy = point->position.y - neighbor->position.y;
+                }
                 normal.i = dy; normal.j = dx; normal.k = 0.0f;
                 real length = (real)sqrt(dx * dx + dy * dy);
                 if (!(fabs(length) < 0.0001f))
@@ -447,8 +448,17 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
         case 2:
             {
                 s_ribbon_point *neighbor = previous ? previous : (s_ribbon_point *)(g_4ea940->data + (point->next & 0xffff) * 0x38);
-                real dx = previous ? point->position.x - neighbor->position.x : neighbor->position.x - point->position.x;
-                real dy = previous ? neighbor->position.y - point->position.y : point->position.y - neighbor->position.y;
+                real dx, dy;
+                if (previous)
+                {
+                    dx = point->position.x - neighbor->position.x;
+                    dy = neighbor->position.y - point->position.y;
+                }
+                else
+                {
+                    dx = neighbor->position.x - point->position.x;
+                    dy = point->position.y - neighbor->position.y;
+                }
                 real length = (real)sqrt(dx * dx + dy * dy);
                 if (!(fabs(length) < 0.0001f))
                 {
@@ -463,9 +473,9 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
         case 4:
             {
                 s_ribbon_point *neighbor = previous ? previous : (s_ribbon_point *)(g_4ea940->data + (point->next & 0xffff) * 0x38);
-                point3f origin = previous ? neighbor->position : point->position;
+                point3f const *origin = previous ? &neighbor->position : &point->position;
                 vector3f view, direction, side;
-                view.i = g_4b9da0.x - origin.x; view.j = g_4b9da0.y - origin.y; view.k = g_4b9da0.z - origin.z;
+                view.i = g_4b9da0.x - origin->x; view.j = g_4b9da0.y - origin->y; view.k = g_4b9da0.z - origin->z;
                 direction.i = previous ? point->position.x - neighbor->position.x : neighbor->position.x - point->position.x;
                 direction.j = previous ? point->position.y - neighbor->position.y : neighbor->position.y - point->position.y;
                 direction.k = previous ? point->position.z - neighbor->position.z : neighbor->position.z - point->position.z;
@@ -520,8 +530,8 @@ long function_137590(long group_index, short frame_index, short sequence_index);
 struct D3DTexture;
 struct s_bitmap_view;
 D3DTexture *function_12360(s_bitmap_view *bitmap, real priority);
-void function_52d40(long bitmap_index, byte *shader, long count, bool mode);
-bool function_1e5e0(point3f const *position, long size, long a, long b, long c,
+void function_52d40(long bitmap_index, byte *shader, long tag, dword flags);
+bool function_1e5e0(long size, point3f const *position, long a, long b, long c,
     long d, long e, long f, long g, void const *data);
 
 struct s_43740_input
@@ -537,6 +547,7 @@ void __stdcall function_43720(s_43740_input *input)
     function_52d40(input->bitmap, input->vertices.shader, input->tag, false);
 }
 
+// score 63 (was 63): retail reads the object's field before the frame is set up and compares it with -1, ours loads it into ebp and compares ebp
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {
@@ -545,7 +556,7 @@ void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, sh
     long tag = *(long *)(bytes + 0x34);
     if (tag != NONE)
     {
-        long bitmap = function_137590(tag, *(short *)((byte *)source + 0x18), *(short *)((byte *)source + 0x1a));
+        long bitmap = function_137590(tag, *(short *)((byte *)source + 0x1a), *(short *)((byte *)source + 0x18));
         byte *group = g_4e3b44[tag & 0xffff].bytes;
         s_bitmap_view *image = (s_bitmap_view *)(*(byte **)(group + 0x48) + bitmap * 0x74);
         if (function_12360(image, 0.0f))
@@ -560,7 +571,7 @@ void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, sh
             input.tag = tag;
             input.bitmap = bitmap;
             point3f const *position = (point3f *)(g_4ea940->data + (source->point_index[slot] & 0xffff) * 0x38 + 0x1c);
-            function_1e5e0(position, 0x20, (long)function_43720, (long)function_42cf0,
+            function_1e5e0(0x20, position, (long)function_43720, (long)function_42cf0,
                 0, 4, 0x28, 0x18, input.vertices.vertex_count, &input);
         }
     }
@@ -586,3 +597,5 @@ void __stdcall function_42b20(dword mask)
             data_find_index(g_4ea944, index == NONE ? 0 : (index & 0xffff) + 1));
     }
 }
+
+s_camera_storage g_camera_storage;

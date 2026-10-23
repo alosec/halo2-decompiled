@@ -93,19 +93,30 @@ struct s_247145
     byte : 1;
 };
 
+/* the same flags read as a word */
+struct s_247146
+{
+    word field_0 : 1;
+    word : 2;
+    word field_3 : 1;
+    word : 2;
+    word field_6 : 1;
+    word : 9;
+};
+
 // @retail 0x247140
 void function_247140(s_247143 const *arg_0, s_247141 *arg_1,
     s_particle_system_datum *arg_2, byte *arg_3,
     s_effect_particle_system_definition const *arg_4, real arg_5, s_247144 *arg_6)
 {
-    s_247144 *const *local_15 = &arg_6;
     s_247145 const *local_20 = (s_247145 const *)((byte const *)arg_2 + 0xc);
+    s_247146 const *local_21 = (s_247146 const *)((byte const *)arg_2 + 0xc);
     byte *local_0 = arg_0->field_4 != NONE ? g_4e3b44[arg_0->field_4 & 0xffff].bytes : 0;
     c_247140 *local_1 = (c_247140 *)function_137bd0(arg_4->tag_index);
-    if (TEST_FIELD_BIT(local_20->field_3))
+    if (TEST_FIELD_BIT(local_21->field_3))
     {
         long local_2 = arg_1->field_4;
-        s_247142 *volatile local_3 = 0;
+        s_247142 *local_3 = 0;
         bool local_4 = false;
         while (local_2 != NONE)
         {
@@ -114,7 +125,7 @@ void function_247140(s_247143 const *arg_0, s_247141 *arg_1,
             local_5->field_8 += local_5->field_c * arg_5;
             if (local_5->field_8 > 1.0f)
             {
-                if (TEST_FIELD_BIT(local_20->field_6) && local_20->field_0)
+                if (TEST_FIELD_BIT(local_21->field_6) && local_20->field_0)
                 {
                     local_5->field_8 -= (real)real_truncate(local_5->field_8);
                 }
@@ -131,30 +142,30 @@ void function_247140(s_247143 const *arg_0, s_247141 *arg_1,
             if (!(local_5->field_2 & 9) && local_5->field_8 <= 1.0f)
             {
                 if ((local_5->field_2 & 0x10) &&
-                    local_5->field_28.i * local_5->field_28.i +
+                    !(local_5->field_28.i * local_5->field_28.i +
                     local_5->field_28.j * local_5->field_28.j +
-                    local_5->field_28.k * local_5->field_28.k <= 0.0625f)
+                    local_5->field_28.k * local_5->field_28.k > 0.0625f))
                     local_5->field_2 |= 8;
                 else
                 {
                     local_5->field_1c.x += local_5->field_28.i * arg_5;
                     local_5->field_1c.y += local_5->field_28.j * arg_5;
                     local_5->field_1c.z += local_5->field_28.k * arg_5;
-                    local_5->field_38 += local_5->field_34 * arg_5;
                     local_5->field_2 &= ~0x10;
+                    local_5->field_38 += local_5->field_34 * arg_5;
                 }
             }
             else if ((bool)((local_5->field_2 >> 3) & 1) && local_1->function_247157())
                 local_5->field_2 |= 1;
             if (!(local_5->field_2 & 1))
             {
-                (*local_15)->field_0 = (*local_15)->field_0 > local_5->field_1c.x ? local_5->field_1c.x : (*local_15)->field_0;
-                (*local_15)->field_8 = (*local_15)->field_8 > local_5->field_1c.y ? local_5->field_1c.y : (*local_15)->field_8;
-                (*local_15)->field_10 = (*local_15)->field_10 > local_5->field_1c.z ? local_5->field_1c.z : (*local_15)->field_10;
-                (*local_15)->field_4 = (*local_15)->field_4 > local_5->field_1c.x ? (*local_15)->field_4 : local_5->field_1c.x;
-                (*local_15)->field_c = (*local_15)->field_c > local_5->field_1c.y ? (*local_15)->field_c : local_5->field_1c.y;
-                (*local_15)->field_14 = (*local_15)->field_14 > local_5->field_1c.z ? (*local_15)->field_14 : local_5->field_1c.z;
                 local_3 = local_5;
+                arg_6->field_0 = arg_6->field_0 > local_5->field_1c.x ? local_5->field_1c.x : arg_6->field_0;
+                arg_6->field_8 = arg_6->field_8 > local_5->field_1c.y ? local_5->field_1c.y : arg_6->field_8;
+                arg_6->field_10 = arg_6->field_10 > local_5->field_1c.z ? local_5->field_1c.z : arg_6->field_10;
+                arg_6->field_4 = arg_6->field_4 > local_5->field_1c.x ? arg_6->field_4 : local_5->field_1c.x;
+                arg_6->field_c = arg_6->field_c > local_5->field_1c.y ? arg_6->field_c : local_5->field_1c.y;
+                arg_6->field_14 = arg_6->field_14 > local_5->field_1c.z ? arg_6->field_14 : local_5->field_1c.z;
             }
             else
             {
@@ -168,7 +179,7 @@ void function_247140(s_247143 const *arg_0, s_247141 *arg_1,
             local_2 = local_6;
         }
         if (local_0 && arg_1->field_4 != NONE)
-            function_2ba3a0((s_particle_entry_group_2ba *)local_0, arg_1->field_4, arg_2, arg_4, arg_5);
+            function_2ba3a0((s_particle_entry_group_2ba *)local_0, arg_1->field_4, arg_2, arg_3, arg_5);
         if (((byte const *)arg_4)[0x16] & 1 && local_4)
             arg_2->flag3 = false;
     }
@@ -213,8 +224,9 @@ public:
     virtual real function_248763() = 0;
 };
 
-PRIVATE __forceinline real function_248765(s_248751 const *arg_0)
+PRIVATE __forceinline real function_248765(byte const *arg_1)
 {
+    s_248751 const *arg_0 = *(s_248751 const *const *)(arg_1 + 4);
     real local_0;
     if (!(arg_0->field_1 >> 4))
         local_0 = arg_0->field_4;
@@ -223,8 +235,9 @@ PRIVATE __forceinline real function_248765(s_248751 const *arg_0)
     return local_0;
 }
 
-PRIVATE __forceinline real function_248766(s_248751 const *arg_0)
+PRIVATE __forceinline real function_248766(byte const *arg_1)
 {
+    s_248751 const *arg_0 = *(s_248751 const *const *)(arg_1 + 4);
     real local_0;
     if (!(arg_0->field_1 >> 4))
         local_0 = arg_0->field_8;
@@ -256,15 +269,13 @@ void c_248767::function_248750(s_particle_system_datum *arg_2, real arg_3, byte 
         if (local_2 < arg_0->unknown30)
         {
             s_247143 const *local_5 = &(*(s_247143 const **)arg_0->unknown34)[local_2];
-            s_248751 const *local_6 = *(s_248751 const **)((byte const *)local_5 + 0x54);
-            real local_8 = function_248765(local_6);
-            real local_9 = function_248766(local_6);
+            real local_8 = function_248765((byte const *)local_5 + 0x50);
+            real local_9 = function_248766((byte const *)local_5 + 0x50);
             real local_10 = local_8 > local_9 ? local_8 : local_9;
             if (local_10 > local_0)
                 local_0 = local_10;
         }
-        s_247143 const *local_16 = *(s_247143 const *const volatile *)arg_0->unknown34;
-        function_247140(&local_16[local_2], local_4, arg_2, arg_1, arg_0, arg_3, &local_1);
+        function_247140(&(*(s_247143 const **)arg_0->unknown34)[local_2], local_4, arg_2, arg_1, arg_0, arg_3, &local_1);
         local_3 = local_4->field_8;
         ++local_2;
     }

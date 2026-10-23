@@ -5,10 +5,6 @@
 #include "unknown_0259d0.h"
 #include "screen_widgets.h"
 
-// @stub 0x254200
-void function_254200(void)
-{
-}
 
 
 struct s_slot;
@@ -26,9 +22,3 @@ struct s_slot;
 #include "slot_handler.h"
 #include "unknown_0259a0.h"
 struct s_follow_search_state;
-
-// @stub 0x2613d0
-bool function_2613d0(long arg_0, s_reference arg_1, s_prop_search *arg_2)
-{
-    return false;
-}

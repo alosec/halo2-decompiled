@@ -1,30 +1,15 @@
+#include "unknown_4e8c38.h"
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_155760.CPP: entry classification */
 
 #include "unknown_11c920.h"
 #include "globals.h"
 #include <string.h>
 
-struct s_entry_155760
-{
-	byte unknown00[4];
-	real value;
-	byte unknown08[4];
-	void *proc;
-	real value10;
-	real value14;
-	byte unknown18[0x58 - 0x18];
-	word word58;
-	byte unknown5a[0x108 - 0x5a];
-	byte flag108;
-	byte unknown109[3];
-	real value10c;
-	byte unknown110[0x140 - 0x110];
-};
 
-s_entry_155760 g_4e8c44[4];
+
 byte g_51ec10;
-long g_4e8c3c;
 
 struct s_observer_command;
 void __stdcall function_23c110(void *state, void *input, s_observer_command *command);
@@ -38,9 +23,9 @@ void function_155710(long index)
 {
 	if (g_4e8c3c == 0)
 	{
-		g_4e8c44[index].word58 = 0;
-		g_4e8c44[index].value10 = 0.0f;
-		g_4e8c44[index].value14 = 0.0f;
+		(volatile word &)g_4e8c44[index].word58 = 0;
+		(volatile real &)g_4e8c44[index].value10 = 0.0f;
+		(volatile real &)g_4e8c44[index].value14 = 0.0f;
 		g_4e8c44[index].proc = function_23c110;
 		g_4e8c44[index].value10c = 1.0f;
 		g_4e8c44[index].flag108 = 0;
@@ -173,6 +158,9 @@ bool function_0c7070(long object_index);
 long function_10f5f0(long object_index);
 
 // @retail 0x155810
+// score 78 (was 78): retail pushes esi and edi at the top and keeps a zero in
+// esi for the mode, and it pushes ebp only around the call that needs it;
+// ours pushes ebp at the top and stores the literal zero
 short function_155810(long unit_index, short *mode)
 {
 	short result = 0;
@@ -190,7 +178,7 @@ short function_155810(long unit_index, short *mode)
 			s_camera_seat *seat = &definition->seats[unit->seat_index];
 			bool flag6 = seat->flag6;
 
-			if (seat->flag4)
+			if (TEST_FIELD_BIT(seat->flag4))
 			{
 				result = 1;
 			}
@@ -274,12 +262,12 @@ void function_155920(long local_index, bool force)
 				state->value12 = 0;
 				state->value13 = 0;
 				state->value16 = 0;
-				state->value14 = 0;
-				state->value24 = 0.0f;
-				state->value20 = 0.0f;
 				state->value18 = NONE;
 				state->value1c = NONE;
+				state->value24 = 0.0f;
+				state->value20 = 0.0f;
 				state->value28 = 1.0f;
+				state->value14 = 0;
 				function_155dd0(local_index, function_23cbb0, !force);
 			}
 		}
@@ -312,35 +300,7 @@ void __stdcall function_155a30(byte value)
 		}
 		else
 		{
-			long unit_index;
-			short mode;
-			if (local_player_exists(index))
-				unit_index = ((s_camera_player *)g_4e8c24->data)[g_4e8c20->entries[index] & 0xffff].unit_index;
-			else
-				unit_index = NONE;
-			if (function_155810(unit_index, &mode) == 1)
-			{
-				s_camera_state_23cbb0 *state = (s_camera_state_23cbb0 *)&entry->value10;
-				state->value10 = 0;
-				state->value11 = 0;
-				state->value12 = 0;
-				state->value13 = 0;
-				state->value16 = 0;
-				state->value18 = NONE;
-				state->value1c = NONE;
-				state->value24 = 0.0f;
-				state->value20 = 0.0f;
-				state->value28 = 1.0f;
-				state->value14 = 0;
-				function_155dd0(index, function_23cbb0, false);
-			}
-			else
-			{
-				entry->value10 = 0.0f;
-				entry->value14 = 0.0f;
-				function_155dd0(index, function_23c110, false);
-			}
-			entry->word58 = mode;
+			function_155920(index, true);
 		}
 		((byte *)g_510c6c)[0] = *value_reference;
 		((byte *)g_510c6c)[1] = 1;
@@ -438,8 +398,6 @@ void function_155b60(long unit_index)
     }
 }
 
-extern dword g_4e8c38[0x143];
-bool g_4e8c40;
 dword g_47fca0[4][8] =
 {
     { 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -466,37 +424,54 @@ void function_155380(void)
         s_entry_155760 *entry = &g_4e8c44[index];
         if (!entry->unknown00[0])
         {
-            ((byte *)entry)[0x54] = 0;
-            *(long *)((byte *)entry + 0x50) = 0;
+            long *field = (long *)((byte *)entry + 0x50);
+            ((byte *)field)[4] = 0;
+            *field = 0;
             entry->value = 0.0f;
             switch (g_4e8c3c)
             {
             case 0:
             case 1:
-            case 4:
+            {
+                real *value14 = &entry->value14;
+                *value14 = 0.0f;
                 entry->value10 = 0.0f;
-                entry->value14 = 0.0f;
                 function_155dd0(index, function_23c110, false);
                 break;
+            }
             case 2:
                 function_23cea0((s_view_state *)&entry->value10, index);
                 function_155dd0(index, function_23d090, false);
                 break;
+            case 4:
+            {
+                real *value14 = &entry->value14;
+                *value14 = 0.0f;
+                entry->value10 = 0.0f;
+                function_155dd0(index, function_23c110, false);
+                break;
+            }
             case 3:
                 break;
             }
-            s_camera_slot_155380 *slot = (s_camera_slot_155380 *)((byte *)entry + 0x110);
-            for (long i = 0; i < 4; i++)
+            dword const *value = g_47fca0[0];
+            real *target = (real *)((byte *)entry + 0x118);
+            long remaining = 4;
+            do
             {
-                slot[i].value = g_47fca0[i][0];
-                slot[i].target = 0.0f;
-                slot[i].current = 0.0f;
-            }
+                *(dword *)(target - 2) = *value;
+                *target = 0.0f;
+                target[-1] = 0.0f;
+                value += 8;
+                target += 3;
+            } while (--remaining);
             entry->unknown00[0] = 1;
         }
     }
-    *(word *)((byte *)g_510c6c + 2) = 0;
-    *(long *)((byte *)g_510c6c + 0x3c) = NONE;
+    short *mode = (short *)((byte *)g_510c6c + 2);
+    long *object = (long *)((byte *)g_510c6c + 0x3c);
+    *mode = 0;
+    *object = NONE;
 }
 
 struct s_observer_command
@@ -518,6 +493,8 @@ struct s_camera_update_input
 };
 
 __declspec(noinline) void function_16f190(long user_index, s_observer_command *command);
+// retail calls 0x155d80 from function_1554b0; the build would inline it there
+__declspec(noinline) void function_155d80(long local_index, bool force);
 
 // @retail 0x1554b0
 void function_1554b0(real elapsed)
@@ -526,12 +503,15 @@ void function_1554b0(real elapsed)
     for (long index = 0; index < 4; index++)
     {
         s_entry_155760 *entry = &g_4e8c44[index];
-        if (index != NONE && g_4e8c20->entries[index] != NONE)
+        bool valid = false;
+        if (index != NONE)
+            valid = g_4e8c20->entries[index] != NONE;
+        if (valid)
         {
             s_camera_update_input input;
-            memset(&input, 0, sizeof(input));
             ((byte *)entry)[0x55] = 0;
             ((byte *)entry)[0x56] = 0;
+            memset(&input, 0, sizeof(input));
             input.local_index = index;
             input.elapsed = *(real *)g_4e8c38;
             switch (g_4e8c3c)
@@ -577,7 +557,6 @@ void function_1554b0(real elapsed)
                 ((void (__stdcall *)(void *, void *, s_observer_command *))entry->proc)(&entry->value10, &input, &command);
             }
         command_ready:
-            s_observer_command *stored = (s_observer_command *)((byte *)entry + 0x5c);
             if (command.flags & 1)
             {
                 if (entry->value != 0.0f)
@@ -596,11 +575,11 @@ void function_1554b0(real elapsed)
                     if (remaining < 0.0f) remaining = 0.0f;
                     entry->value = remaining;
                 }
-                *stored = command;
+                *(s_observer_command *)((byte *)entry + 0x5c) = command;
             }
             else
-                stored->flags &= ~1;
-            function_16f190(index, stored);
+                ((s_observer_command *)((byte *)entry + 0x5c))->flags &= ~1;
+            function_16f190(index, (s_observer_command *)((byte *)entry + 0x5c));
         }
     }
 }

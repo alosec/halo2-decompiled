@@ -1,5 +1,5 @@
 /* OBJECT_LIST.H: g_5107f0, the list of moving objects whose velocity carries
-   the objects attached to them (defined in src/unknown_108fd0.cpp, queried in
+   the objects attached to them (defined in src/object_list.cpp, queried in
    src/unknown_109e00.cpp) */
 
 #ifndef OBJECT_LIST_H

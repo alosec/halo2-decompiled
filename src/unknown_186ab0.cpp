@@ -1,14 +1,14 @@
+#include "unknown_4e8c38.h"
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "unknown_11cc90.h"
 #include "network_message_types.h"
 #include <math.h>
 #include <string.h>
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
 struct s_unknown_13bf00;
-struct s_entry_155760;
 extern s_unknown_13bf00 *g_510c50;
-extern s_entry_155760 g_4e8c44[4];
 struct s_186ab0
 {
     byte field_0[0x24];
@@ -24,8 +24,7 @@ struct s_186ab1
     byte field_a[6];
     real field_10;
     real field_14;
-    real field_18;
-    real field_1c;
+    vector2f field_18; /* a pair of angles */
     real field_20;
     real field_24;
     short field_28;
@@ -62,8 +61,7 @@ struct s_186ab2
 };
 struct s_186ab3
 {
-    real field_0;
-    real field_4;
+    vector2f field_0; /* a pair of angles */
     real field_8;
     real field_c;
     real field_10;
@@ -96,7 +94,7 @@ struct s_186ab5
     char field_23d;
     char field_23e[2];
     byte field_240[0x348 - 0x240];
-    byte field_348;
+    word field_348;
 };
 struct s_186ab6
 {
@@ -160,11 +158,11 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
     s_186ab4 local_2;
     s_186ab3 local_3;
     byte *local_5 = (byte *)g_4e034c;
-    local_2.field_4 = *(byte *volatile *)(local_5 + 0xf4);
+    local_2.field_4 = *(byte **)(local_5 + 0xf4);
     local_2.field_0 = NULL;
     function_185be0(local_0->field_24, local_0->field_28, arg_1, arg_2, &local_2, &local_3);
-    if (function_148fff(local_0->field_24) | function_12be90() |
-        ((byte *)g_4e8c44)[local_0->field_28 * 0x140 + 0x56])
+    byte reset = function_148fff(local_0->field_24) | function_12be90() | ((byte *)g_4e8c44)[local_0->field_28 * 0x140 + 0x56];
+    if (reset)
     {
         bool local_4 = (local_3.field_20 >> 8) & 1;
         memset(&local_3, 0, sizeof(local_3));
@@ -184,7 +182,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         s_186ab5 *local_4 = ((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8;
         if (local_1->field_28 != local_4->field_214)
             *(long *)&local_1->field_28 = *(long *)&local_4->field_214;
-        bool local_5 = (local_3.field_1c & 1) != 0;
+        short local_5 = (local_3.field_1c & 1) != 0;
         char local_6 = local_1->field_2a;
         if (local_4->field_213 != NONE)
             local_5 = false;
@@ -200,10 +198,12 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         }
         if (local_1->field_2a == local_1->field_2b && local_1->field_2a != NONE)
             local_1->field_2b = NONE;
-        if (local_1->field_2c == NONE || !local_4->field_23e[local_1->field_2c])
+        if (local_1->field_2c == NONE ||
+            !(short)((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8->field_23e[local_1->field_2c])
             local_1->field_2c = local_4->field_23d;
         if ((local_3.field_1c & 2) || local_1->field_2c == NONE || !function_cdff0(local_1->field_0, local_1->field_2c))
         {
+            s_186ab5 *local_11 = ((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8;
             short local_8 = local_1->field_2c;
             short local_9 = NONE;
             if (local_8 == NONE)
@@ -211,7 +211,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
             short local_10 = local_8;
             do
             {
-                if (local_4->field_23e[local_10] > 0)
+                if (local_11->field_23e[local_10] > 0)
                 {
                     local_9 = local_10;
                     if (local_10 != local_8)
@@ -256,10 +256,11 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
             function_187510(local_0->field_28, local_3.field_10, local_3.field_14);
         if (local_4->field_14 == NONE)
         {
-            byte *local_8 = (byte *)&g_54e8e0[local_0->field_24];
-            if ((bool)((*(dword *)local_8 >> 4) & 1) &&
-                (bool)((*(dword *)(local_8 + 0x114) >> 3) & 1) &&
-                fabs(local_1->field_18) > 0.5f && local_3.field_14 < 0.0001f && !local_1->field_68)
+            bool local_14 = false;
+            if ((bool)((*(dword *)&g_54e8e0[local_0->field_24] >> 4) & 1))
+                local_14 = (bool)((*(dword *)((byte *)&g_54e8e0[local_0->field_24] + 0x114) >> 3) & 1);
+            if (local_14 &&
+                (real)fabs((double)local_1->field_18.i) > 0.5f && local_3.field_14 < 0.0001f && !local_1->field_68)
             {
                 long local_9 = local_1->field_31 + 1;
                 if (local_9 < 0) local_9 = 0;
@@ -281,13 +282,13 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
             {
                 if (!local_1->field_92)
                 {
-                    local_1->field_91 = !local_1->field_91;
                     local_1->field_92 = true;
+                    local_1->field_91 = !local_1->field_91;
                 }
             }
             else
                 local_1->field_92 = false;
-            if ((local_3.field_18 & 0x60) || (local_3.field_18 & 0x4630200))
+            if (local_3.field_18 & 0x4630260)
                 local_1->field_91 = false;
             if (local_1->field_91 && local_4->field_14 == NONE)
                 local_3.field_18 |= 0x4000;
@@ -298,7 +299,6 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
     memcpy(local_1->field_44, &local_3.field_28, sizeof(local_1->field_44));
     local_1->field_4 = local_3.field_18;
     local_1->field_18 = local_3.field_0;
-    local_1->field_1c = local_3.field_4;
     local_1->field_20 = local_3.field_8;
     local_1->field_24 = local_3.field_c;
     if (local_1->field_0 != NONE)
@@ -307,7 +307,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         if ((1 << local_4->field_3) & 1)
         {
             s_186ab5 *local_5 = local_4->field_8;
-            if ((bool)(((dword)local_5->field_348 >> 5) & 1))
+            if ((bool)((local_5->field_348 >> 5) & 1))
             {
                 local_1->field_10 = (real)atan2((double)local_5->field_16c, (double)local_5->field_168);
                 local_1->field_14 = (real)atan2((double)local_5->field_170,
@@ -327,8 +327,8 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
     local_4->field_1e = *(long *)&local_1->field_28;
     local_4->field_22 = local_1->field_2c;
     local_4->field_24 = local_1->field_2e;
-    local_4->field_c = local_1->field_18;
-    local_4->field_10 = local_1->field_1c;
+    local_4->field_c = local_1->field_18.i;
+    local_4->field_10 = local_1->field_18.j;
     local_4->field_14 = local_1->field_20;
     local_4->field_18 = local_1->field_24;
     s_186ab8 const *local_11 = (s_186ab8 const *)local_1->field_6c;

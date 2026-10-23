@@ -13,7 +13,7 @@ void *function_1e5280(long actor_index, long key);
 bool function_25d970(s_prop_datum *datum);
 
 bool weapon_barrel_aim(long weapon_index, short barrel_index, point3f const *origin, point3f const *target,
-	real const *unknown3, bool unknown5, vector3f *direction, real *speed_out, real *time, real *distance, bool *linear);
+	real const *unknown3, bool unknown5, vector3f *direction, real *time, real *speed_out, real *distance, bool *linear);
 
 struct s_weapon_aim_ranges
 {
@@ -40,8 +40,8 @@ bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 		if (barrel_index >= 0 && barrel_index < *(long *)(definition + 0x2d0))
 		{
 			byte *barrel = *(byte **)(definition + 0x2d4) + barrel_index * 0xec;
-			s_actor_view *actor = actor_get(actor_index);
 			long projectile_index = *(long *)(barrel + 0x90);
+			s_actor_view *actor = actor_get(actor_index);
 			byte *projectile;
 			if (projectile_index != NONE &&
 				((*(long *)((projectile = g_4e3b44[projectile_index & 0xffff].bytes) + 0xbc) >> 1) & 1) &&
@@ -64,10 +64,10 @@ bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 				point3f adjusted_origin = actor->position;
 				adjusted_origin.z = origin->z;
 				return weapon_barrel_aim(weapon_index, barrel_index, &adjusted_origin, target, NULL, flag,
-					direction, (real *)unknown0, (real *)unknown1, (real *)unknown2, (bool *)unknown3);
+					direction, (real *)unknown1, (real *)unknown0, (real *)unknown2, (bool *)unknown3);
 			}
 			result = weapon_barrel_aim(weapon_index, barrel_index, origin, target, use_fraction ? &fraction : NULL, flag,
-				direction, (real *)unknown0, (real *)unknown1, (real *)unknown2, (bool *)unknown3);
+				direction, (real *)unknown1, (real *)unknown0, (real *)unknown2, (bool *)unknown3);
 		}
 	}
 	return result;
@@ -93,21 +93,22 @@ struct s_projectile_choices
 
 PRIVATE inline s_projectile_choice *projectile_choice_get(short type)
 {
-	s_projectile_choices *globals = (s_projectile_choices *)g_4e034c;
 	s_projectile_choice *result;
-	if (globals->count)
-		result = &globals->choices[type];
+	if (((s_projectile_choices *)g_4e034c)->count)
+		result = &((s_projectile_choices *)g_4e034c)->choices[type];
 	else
 		result = NULL;
 	return result;
 }
 
 // @retail 0x1ff200
+// score 51 (was 51): ours clears the low byte of the flags register where retail clears DL, and loads
+// the record pool's pointer into EDI where retail uses EDX; the arguments of the
+// call are pushed in a different order.
 bool function_1ff200(short type, point3f const *origin, real speed, point3f const *target,
 	real const *limit, bool alternate, vector3f *direction, real *speed_out, real *time,
 	vector3f *velocity, real *gravity)
 {
-	real *const *speed_reference = &speed_out;
 	s_projectile_choice *choice = projectile_choice_get(type);
 	bool result = false;
 	if (choice && choice->definition_index != NONE)
@@ -116,15 +117,15 @@ bool function_1ff200(short type, point3f const *origin, real speed, point3f cons
 		real adjusted_speed;
 		bool linear = false;
 		if (function_fa6a0(definition_index, &speed, origin, target, &adjusted_speed, limit, NULL,
-			alternate, direction, *speed_reference, time, NULL, &linear) ||
+			alternate, direction, speed_out, time, NULL, &linear) ||
 			(adjusted_speed > 0.0f && speed > adjusted_speed &&
 			function_fa6a0(definition_index, &(adjusted_speed += 0.01f), origin, target, NULL, limit, NULL,
-			alternate, direction, *speed_reference, time, NULL, &linear)))
+			alternate, direction, speed_out, time, NULL, &linear)))
 		{
 			result = true;
 			if (velocity)
 			{
-				real scale = **speed_reference;
+				real scale = *speed_out;
 				velocity->i = direction->i * scale;
 				velocity->j = direction->j * scale;
 				velocity->k = direction->k * scale;
@@ -166,13 +167,34 @@ struct s_50241c_element_1ff
 // @retail 0x1ff6c0
 bool function_1ff6c0(long actor_index, long prop_index, point3f const *point, long *target)
 {
+	/* retail squares i, then k, then j here */
+	struct distance_1ff6c0
+	{
+		static inline vector3f *sub(point3f const *a, point3f const *b, vector3f *result)
+		{
+			result->i = b->x - a->x;
+			result->j = b->y - a->y;
+			result->k = b->z - a->z;
+			return result;
+		}
+		static inline real root(real x)
+		{
+			return (real)sqrt(x);
+		}
+		static inline real get(point3f const *a, point3f const *b)
+		{
+			vector3f v;
+			sub(a, b, &v);
+			return root(v.j*v.j + v.k*v.k + v.i*v.i);
+		}
+	};
 	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
 	s_character_variant_ranges *ranges = (s_character_variant_ranges *)function_1e5380(actor_index);
 
 	if (ranges)
 	{
-		real distance = distance3d(&actor->position, point);
+		real distance = distance_1ff6c0::get(&actor->position, point);
 
 		if (distance > ranges->minimum_distance && ranges->maximum_distance > distance)
 		{
@@ -182,13 +204,17 @@ bool function_1ff6c0(long actor_index, long prop_index, point3f const *point, lo
 				s_prop_state_1ff *state = (s_prop_state_1ff *)function_25d690((s_prop_datum *)node);
 				s_50241c_element_1ff *element = (s_50241c_element_1ff *)(g_50241c->data + (node->unknown08 & 0xffff) * sizeof(s_50241c_element_1ff));
 
-				if (!element->unknown23 || state->unknown5e)
-					return result;
-				if ((node->unknown24 < 1 || node->unknown24 > 2) && !function_25d970((s_prop_datum *)node))
-					return result;
-				*target = state->unknown3c;
+				if (element->unknown23 && !state->unknown5e &&
+					((node->unknown24 >= 1 && node->unknown24 <= 2) || function_25d970((s_prop_datum *)node)))
+				{
+					*target = state->unknown3c;
+					result = true;
+				}
 			}
-			return true;
+			else
+			{
+				result = true;
+			}
 		}
 	}
 	return result;
@@ -229,7 +255,9 @@ bool function_1ff7d0(long actor_index, point3f const *point, real enemy_radius, 
 	bool result = true;
 	short count = 0;
 	s_actor_point_request request;
+#pragma inline_depth(0)
 	function_1e4770(&request, actor->unknown024, point, 2, radius);
+#pragma inline_depth()
 	s_actor_view *other = (s_actor_view *)function_1e47d0(&request);
 	while (other)
 	{
@@ -245,53 +273,64 @@ bool function_1ff7d0(long actor_index, point3f const *point, real enemy_radius, 
 			}
 		}
 		else if (friendly_squared > request.squared_distance)
-			goto blocked;
+		{
+			result = false;
+			break;
+		}
 		other = (s_actor_view *)function_1e47d0(&request);
 	}
+	if (result)
 	{
-		s_record_pool *players = g_4e8c24;
-		long index = NONE;
-		for (;;)
+		s_record_pool_iterator player_cursor;
+		player_cursor.data = g_4e8c24;
+		player_cursor.index = NONE;
+		player_cursor.datum_index = NONE;
+		byte *player;
+		while ((player = data_iterator_next_inlined(&player_cursor)) != NULL)
 		{
-			index = data_next_absolute_index_inlined(players, index + 1);
-			if (index == NONE)
-				break;
-			byte *player = players->data + players->size * index;
-			if (!player)
-				break;
 			long object_index = *(long *)(player + 0x2c);
 			if (object_index != NONE)
 			{
 				s_moving_object *object = moving_object_get(object_index);
 				vector3f delta;
-				delta.i = ((point3f *)((byte *)object + 0x30))->x - point->x;
-				delta.j = ((point3f *)((byte *)object + 0x30))->y - point->y;
-				delta.k = ((point3f *)((byte *)object + 0x30))->z - point->z;
-				real squared_distance = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
+				vector3d_from_points3d(point, (point3f const *)((byte *)object + 0x30), &delta);
+				real distance_i = delta.i;
+				real distance_j = delta.j;
+				real distance_k = delta.k;
+				real squared_distance = distance_k * distance_k + distance_j * distance_j + distance_i * distance_i;
 				if (actor->unknown024 != 1 && team_is_enemy(actor->unknown024, 1))
 				{
 					if (enemy_squared > squared_distance)
 						count++;
 				}
 				else if (friendly_squared > squared_distance)
-					goto blocked;
+				{
+					result = false;
+					break;
+				}
 			}
 		}
 	}
-	goto finished;
-blocked:
-	result = false;
-finished:
 	if (count_out)
 		*count_out = count;
 	return result;
 }
 
 long function_1e1f20(long actor_index);
+void *function_1e5240(long actor_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 void function_1fc710(long actor_index, point3f *position);
 real function_30bf0(vector3f *v);
 real function_11ce20(vector3f const *a, vector3f const *b);
+
+/* an object's per-region state: 8 bytes each, +0x120 bytes of them at the
+   object's +0x122 offset; the byte at +2 is 0xff for a region that is gone */
+struct s_object_region_1ff
+{
+    byte unknown00[2];
+    byte unknown02;
+    byte unknown03[5];
+};
 
 // @retail 0x1ffe00
 bool __stdcall function_1ffe00(long actor_index, long object_index)
@@ -300,10 +339,7 @@ bool __stdcall function_1ffe00(long actor_index, long object_index)
     s_slot_object_view *object = object_get(object_index);
     byte *definition = g_4e3b44[object->tag_index & 0xffff].bytes;
     bool result = false;
-    byte *weapon_settings = NULL;
-    long weapon_index = function_1e1f20(actor_index);
-    if (weapon_index != NONE)
-        weapon_settings = (byte *)function_1e5280(actor_index, object_get(weapon_index)->tag_index);
+    byte *weapon_settings = (byte *)function_1e5240(actor_index);
     real best_score = 0.0f;
     long best = NONE;
     if (object->type != 0 || object->player_index == NONE)
@@ -312,11 +348,14 @@ bool __stdcall function_1ffe00(long actor_index, long object_index)
         function_b9dd0(object_index, &center);
         if (weapon_settings)
         {
-            real z = center.z - actor->position.z;
             real x = center.x - actor->position.x;
             real y = center.y - actor->position.y;
+            real z = center.z - actor->position.z;
             real range = *(real *)(weapon_settings + 0x20);
-            if (z * z + x * x + y * y < range * range)
+            real distance_squared = z * z;
+            distance_squared += x * x;
+            distance_squared += y * y;
+            if (distance_squared < range * range)
             {
                 long model_index = *(long *)(definition + 0x38);
                 if (model_index != NONE)
@@ -334,10 +373,10 @@ bool __stdcall function_1ffe00(long actor_index, long object_index)
                             if (region >= 0)
                             {
                                 byte *current = (byte *)object_get(object_index);
-                                if (region >= (*(short *)(current + 0x120) >> 3))
+                                if (region >= (long)(*(short *)(current + 0x120) / sizeof(s_object_region_1ff)))
                                     continue;
-                                byte *regions = current + *(short *)(current + 0x122);
-                                if (regions[region * 8 + 2] == 0xff)
+                                s_object_region_1ff *regions = (s_object_region_1ff *)(current + *(short *)(current + 0x122));
+                                if (regions[region].unknown02 == 0xff)
                                     continue;
                             }
                             s_object_marker marker;
@@ -349,7 +388,7 @@ bool __stdcall function_1ffe00(long actor_index, long object_index)
                                 direction.k = origin.z - marker.matrix.position.z;
                                 if (function_30bf0(&direction) != 0.0f)
                                 {
-                                    real angle = function_11ce20(&direction, &marker.matrix.forward);
+                                    real angle = function_11ce20(&marker.matrix.forward, &direction);
                                     if (angle < 1.5707963705062866f && angle < *(real *)(entry + 8))
                                     {
                                         real score = 1.0f - angle * 0.6366197466850281f;
@@ -364,17 +403,18 @@ bool __stdcall function_1ffe00(long actor_index, long object_index)
                                 }
                             }
                         }
-                        if (best != NONE)
-                        {
-                            *(long *)((byte *)actor + 0x33c) = best;
-                            return true;
-                        }
                     }
                 }
             }
         }
     }
-    *(long *)((byte *)actor + 0x33c) = 0;
+    if (best != NONE)
+    {
+        *(long *)((byte *)actor + 0x33c) = best;
+        result = true;
+    }
+    else
+        *(long *)((byte *)actor + 0x33c) = 0;
     return result;
 }
 
@@ -386,11 +426,11 @@ real normalize2d(point2f *arg_0);
 bool __stdcall function_1ff010(long arg_0, point3f const *arg_1)
 {
     bool local_0 = false;
-    long const *local_1 = &arg_0;
-    point3f const *const *local_2 = &arg_1;
-    s_actor_view *local_3 = actor_get(*local_1);
-    byte *local_4 = (byte *)function_1e5380(*local_1);
-    if (local_4)
+    s_actor_view *local_3 = actor_get(arg_0);
+    byte *local_4 = (byte *)function_1e5380(arg_0);
+    /* without a weapon the shared exit returns the false result */
+    if (!local_4)
+        goto done;
     {
         point3f local_5;
         function_210850((s_type_c3b527 const *)((byte *)local_3 + 0x7d0), &local_5);
@@ -402,33 +442,97 @@ bool __stdcall function_1ff010(long arg_0, point3f const *arg_1)
         real local_9;
         real local_10;
         bool local_11;
-        if (function_fa6a0(local_7, NULL, *local_2, &local_5, NULL, NULL,
+        if (function_fa6a0(local_7, NULL, arg_1, &local_5, NULL, NULL,
             (real const *)((byte *)local_3 + 0x7f4), *(bool *)((byte *)local_3 + 0x7c6),
             &local_8, &local_9, &local_10, NULL, &local_11))
         {
-            point2f local_13;
-            local_13.x = local_8.i;
-            local_13.y = local_8.j;
-            if (!(normalize2d(&local_13) > 0.0f &&
-                local_3->unknown290.j * local_13.y + local_3->unknown290.i * local_13.x > 0.8660253882408142f))
-                return false;
-            vector3f local_14;
-            local_14.i = local_8.i * local_9;
-            local_14.j = local_8.j * local_9;
-            local_14.k = local_8.k * local_9;
-            real local_12;
-            if (local_11)
-                local_12 = 0.0f;
-            else
-                local_12 = function_fa170(local_7);
-            if (function_1c9290(*local_1, *local_2, &local_14, local_10, local_12,
-                *(long *)((byte *)local_3 + 0x7e4), local_3->unknown26c != NONE))
+            point2f local_13 = *(point2f *)&local_8;
+            point2f *local_13_ptr = &local_13;
+            vector3f *unknown290_ptr = &local_3->unknown290;
+            if (normalize2d(&local_13) > 0.0f &&
+                local_13_ptr->x * unknown290_ptr->i + unknown290_ptr->j * local_13_ptr->y > 0.8660253882408142f)
             {
-                *(vector3f *)((byte *)local_3 + 0x7e8) = local_8;
-                *(real *)((byte *)local_3 + 0x7f4) = local_9;
-                local_0 = true;
+                vector3f local_14;
+                local_14.i = local_8.i * local_9;
+                local_14.j = local_8.j * local_9;
+                local_14.k = local_8.k * local_9;
+                real local_12;
+                if (local_11)
+                    local_12 = 0.0f;
+                else
+                    local_12 = function_fa170(local_7);
+                if (function_1c9290(arg_0, arg_1, &local_14, local_10, local_12,
+                    *(long *)((byte *)local_3 + 0x7e4), local_3->unknown26c != NONE))
+                {
+                    *(vector3f *)((byte *)local_3 + 0x7e8) = local_8;
+                    *(real *)((byte *)local_3 + 0x7f4) = local_9;
+                    local_0 = true;
+                }
             }
         }
     }
+done:
     return local_0;
+}
+
+#include "props.h"
+
+void __stdcall function_26c2d0(long prop_index);
+bool function_1fef40(s_type_c3b527 const *target, long actor_index);
+extern vector3f *g_4687b0;
+void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
+
+// @retail 0x1ff360
+long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
+{
+	s_actor_view *actor = actor_get(actor_index);
+	long object_index = NONE;
+	long prop_index = *(long *)((byte *)actor + 0x7e0);
+	if (prop_index != NONE)
+	{
+		s_prop_node_view *node = prop_node_get(prop_index);
+		if (node->unknown24 >= 1)
+			object_index = node->object_index;
+		if (node->unknown24 > 0 && *(bool *)((byte *)actor + 0x7cc))
+		{
+			s_type_5cfb45 *state = function_25d690((s_prop_datum *)node);
+			function_26c2d0(prop_index);
+			s_type_c3b527 point = *(s_type_c3b527 const *)&state->unknown48;
+			point.point.z += 0.2f;
+			function_1fef40(&point, actor_index);
+		}
+	}
+	function_1ff010(actor_index, target);
+	vector3f direction = *(vector3f *)((byte *)actor + 0x7e8);
+	if (actor->unknown26c == NONE)
+	{
+		point2f horizontal;
+		horizontal.x = direction.i;
+		horizontal.y = direction.j;
+		real magnitude = normalize2d(&horizontal);
+		if (magnitude > 0.0f && actor->unknown290.j * horizontal.y + actor->unknown290.i * horizontal.x < 0.0f)
+		{
+			bool left = actor->unknown290.i * horizontal.y - actor->unknown290.j * horizontal.x > 0.0f;
+			vector3f turned = actor->unknown290;
+			real sine = (left ? 1 : -1) * 0.5f;
+			rotate_direction(&turned, g_4687b0, sine, 0.0f);
+			if (normalize2d((point2f *)&turned) > 0.0f)
+			{
+				turned.i *= magnitude;
+				turned.j *= magnitude;
+			}
+			else
+			{
+				turned.i = direction.i;
+				turned.j = direction.j;
+			}
+			turned.k = direction.k;
+			direction = turned;
+		}
+	}
+	real speed = *(real *)((byte *)actor + 0x7f4);
+	velocity->i = direction.i * speed;
+	velocity->j = direction.j * speed;
+	velocity->k = direction.k * speed;
+	return object_index;
 }

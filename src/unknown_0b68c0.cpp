@@ -1,10 +1,14 @@
 // @flags /O2 /Gr
+#include "object_masks_storage.h"
+#include "partition_colliding_storage.h"
+#include "partition_noncolliding_storage.h"
 /* UNKNOWN_0B68C0.CPP: function_b68c0 (entry 27, dispose) */
 
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "data_array.h"
 #include "object_list.h"
+#include "effects.h"
 #include "unknown_0b68c0.h"
 #include <string.h>
 
@@ -23,17 +27,9 @@ struct s_data_header_40
 
 s_callback_entry g_4674ac[3];
 s_callback_node *g_4e0330;
-void *g_4e0310;
-void *g_4e0314;
-void *g_4e0318;
+s_cluster_partition g_4e0310_partition;
 bool g_4de2f0;
 s_data_header_40 *g_4de2ec;
-void *g_4de2e0;
-void *g_4de2e4;
-void *g_4de2e8;
-void *g_4de2d4;
-void *g_4de2d8;
-void *g_4de2dc;
 
 // @retail 0xb68c0
 void function_b68c0(void)
@@ -120,7 +116,7 @@ struct s_object_visibility_header_ab
     byte unknown06[2];
     byte *object;
 };
-bool function_108d30(long object_index, long a, long b);
+bool object_dispatch_test_cluster_visibility(long object_index, long a, long b);
 
 static __forceinline bool object_cluster_contains_ab(dword const *clusters, long index)
 {
@@ -139,7 +135,7 @@ bool function_b6d60(long object_index, dword const *clusters)
     bool result = false;
     if ((bool)((*(dword *)(object + 4) >> 1) & 1))
         return true;
-    if (((1 << header->type) & 0x80) && function_108d30(object_index, (long)clusters, (long)&result))
+    if (((1 << header->type) & 0x80) && object_dispatch_test_cluster_visibility(object_index, (long)clusters, (long)&result))
         return result;
     if (header->cluster != NONE)
         return object_cluster_contains_ab(clusters, header->cluster);
@@ -171,19 +167,11 @@ void function_b69d0(void)
     record_pool_release_all(pool);
     memset(g_4de2d0, 0xff, 0x280 * sizeof(long));
     memset(g_4de2e0, 0xff, 0x200 * sizeof(long));
-    pool = (s_record_pool *)g_4de2e8;
-    pool->valid = true;
-    record_pool_release_all(pool);
-    pool = (s_record_pool *)g_4de2e4;
-    pool->valid = true;
-    record_pool_release_all(pool);
+    data_make_valid_inlined((s_record_pool *)g_4de2e8);
+    data_make_valid_inlined((s_record_pool *)g_4de2e4);
     memset(g_4de2d4, 0xff, 0x200 * sizeof(long));
-    pool = (s_record_pool *)g_4de2dc;
-    pool->valid = true;
-    record_pool_release_all(pool);
-    pool = (s_record_pool *)g_4de2d8;
-    pool->valid = true;
-    record_pool_release_all(pool);
+    data_make_valid_inlined((s_record_pool *)g_4de2dc);
+    data_make_valid_inlined((s_record_pool *)g_4de2d8);
     byte *state = (byte *)g_4de2f4;
     state[3] = 0;
     *(short *)(state + 4) = 0;
@@ -243,6 +231,7 @@ void __stdcall function_bc820(long object_index);
 void function_109660(long object_index, long entry_index);
 void function_fd910();
 
+// score 2 (was 2): the two values are copied into EAX and ECX in the opposite order.
 // @retail 0xb7060
 void function_b7060()
 {
@@ -280,6 +269,8 @@ void __stdcall function_b83b0(long object_index, bool flag);
 void __stdcall function_b8460(long object_index, bool flag);
 void function_bf380();
 
+// score 78 (was 78): ours is ten bytes shorter: the mask is applied to a copy in ECX, retail clears
+// the high bits in place and masks it there.
 // @retail 0xb6f10
 void function_b6f10()
 {
@@ -419,29 +410,29 @@ s_object_lifecycle_ab g_4411a4 =
 
 bool object_or_parent_hidden(long object_index);
 bool function_b9d20(long object_index);
-void __stdcall function_bef30(long object_index, long remove, long add, long siblings, long own_flags);
+void __stdcall function_bef30(long object_index, long remove, long add, long siblings, bool own_flags);
 void function_b8b70(long object_index);
 void function_bf090(long object_index);
 void __stdcall function_10a250(long object_index);
 void function_15b220(long object_index, long index);
-void __stdcall function_109400(long object_index);
+void __stdcall object_list_erase(long object_index);
 void function_bb950(long object_index, bool add, long delta);
 void function_a7a60(long object_index);
-void function_10ace0(long object_index);
+void object_interpolated_values_clear_all(long object_index);
 
-void function_1ca130(long unit_index, long value, long priority);
+void function_1ca130(long unit_index, long priority, long value);
 
 // @retail 0xbfc30
-void function_bfc30(long unit_index, long value, bool active)
+void function_bfc30(long unit_index, long value, long priority)
 {
-    bool const *active_reference = &active;
+    long const *priority_reference = &priority;
     if (unit_index != NONE)
     {
         struct s_header { word identifier; byte flags; byte type; dword unknown04; byte *object; };
         s_header *header = &((s_header *)g_4e0300->data)[unit_index & 0xffff];
         long type_mask = 1;
         if ((type_mask << header->type) & 3)
-            function_1ca130(unit_index, value, *active_reference);
+            function_1ca130(unit_index, *priority_reference, value);
     }
     if (value == 2)
         *(long *)((byte *)g_4de2f4 + 0x14) = g_510c54->game_time;
@@ -456,3 +447,39 @@ struct s_remove_object_header
     byte *object;
 };
 
+
+
+void function_d4830();
+void function_1088e0();
+void function_bffa0();
+struct s_loop_allocator;
+__declspec(noinline) s_loop_allocator *game_state_loop_allocator_new(long size, char const *name);
+void *function_123d40(char const *name, char const *type, long size);
+void function_1cabc0(s_cluster_partition *partition, char const *name, long payload_size);
+
+s_record_pool *data_new(char const *name, long maximum_count, long size, long alignment_bits, c_data_allocator *allocator);
+
+// @retail 0xb67c0
+void function_b67c0()
+{
+    function_d4830();
+    function_1088e0();
+    function_bffa0();
+    g_4e0300 = data_new("object", 0x800, 12, 0, g_510c2c);
+    g_4de2ec = (s_data_header_40 *)game_state_loop_allocator_new(0x100000, "objects");
+    g_4de2f0 = false;
+    byte *state = (byte *)function_123d40(NULL, NULL, 0x84);
+    memset(state, 0, 0x84);
+    memset(&g_object_masks_storage, 0, sizeof(g_object_masks_storage));
+    g_4de2f4 = (s_object_list *)state;
+    g_4de2d0 = (long *)function_123d40(NULL, NULL, 0xa00);
+    function_1cabc0(&g_partition_colliding_storage, "collideable object", 0x14);
+    function_1cabc0(&g_partition_noncolliding_storage, "noncollideable object", 0x14);
+}
+
+
+
+
+s_partition_noncolliding_storage g_partition_noncolliding_storage;
+
+s_partition_colliding_storage g_partition_colliding_storage;

@@ -30,26 +30,23 @@ void function_2157c0(long selection)
 
 extern bool g_55c14c;
 extern bool g_55c14d;
-extern dword g_51e9f8;
-extern dword g_51e9fc;
+struct s_51e9f8
+{
+    dword field_0;
+    dword field_4;
+};
+extern s_51e9f8 g_51e9f8;
 void function_125d60(void);
 void function_215810(void);
+void function_120d50(bool volatile *done, bool idle);
 
 // @retail 0x215730
 void function_215730(void)
 {
     if (g_55c14d)
     {
-        if (!g_55c14c)
-        {
-            while (!g_55c14c)
-            {
-                SwitchToThread();
-                function_125d60();
-            }
-        }
-        g_51e9f8 = 0;
-        g_51e9fc = 0;
+        function_120d50(&g_55c14c, true);
+        memset(&g_51e9f8, 0, sizeof(g_51e9f8));
         g_55c14d = false;
         g_55c158 = NONE;
     }

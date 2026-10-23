@@ -22,7 +22,7 @@ struct s_24dc61
 	long field_c;
 };
 
-bool function_19f240(long *arg_0);
+bool player_iterator_next(long *arg_0);
 
 PRIVATE __forceinline bool function_24dc61(short arg_0, short arg_1)
 {
@@ -54,7 +54,7 @@ void c_24dc60::function_24dc60(long arg_0)
 				local_2.field_4 = g_4e8c24;
 				local_2.field_c = NONE;
 				local_2.field_8 = NONE;
-				while (function_19f240((long *)&local_2))
+				while (player_iterator_next((long *)&local_2))
 				{
 					if (local_2.field_8 != local_0)
 					{

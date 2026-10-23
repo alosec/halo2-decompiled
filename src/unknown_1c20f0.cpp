@@ -36,11 +36,17 @@ short g_47ffa8 = 3;
 
 real function_30bf0(vector3f *v);
 extern vector3f *g_4687bc;
-void __stdcall function_1c22c0(long object_index, long unused);
+void __stdcall actor_behavior_81_update48(long object_index, long unused);
 
+static __forceinline long real_to_long(real value);
+
+// score 81 (was 81): our stack frame is 16 bytes smaller than retail's, so
+// every local
+// offset is shifted and the loop is laid out differently.
 // @retail 0x1c19b0
 bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_type_f17a25 *path)
 {
+	vector3f const *const *direction_slot = &direction;
 	s_actor_view *actor = actor_get(actor_index);
 	s_structure_bsp_pathfinding_view *bsp = (s_structure_bsp_pathfinding_view *)g_4e0348;
 	s_pathfinding_data *pathfinding = NULL;
@@ -55,15 +61,15 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 	{
 		pathfinding = bsp->pathfinding;
 	}
-	collision.unknown24 = NONE;
-	origin = actor->position;
 	height = actor->position.z;
+	collision.unknown24 = NONE;
 	distance = 0.0f;
+	origin = actor->position;
 	if (actor->unknown27c.unknown10 != NONE)
 	{
 		s_path_trace_result trace;
 
-		function_26c590(pathfinding, &actor->position, actor->unknown27c.unknown10, NONE, direction, 5.0f, NULL, &trace);
+		function_26c590(pathfinding, &actor->position, actor->unknown27c.unknown10, NONE, *direction_slot, 5.0f, NULL, &trace);
 		origin = trace.point;
 		distance = trace.distance;
 		if (function_1697c0(0x1808c2d, &origin, g_4687bc, actor->unknown018, NONE, &collision))
@@ -80,7 +86,7 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 		point3f end;
 		vector3f delta;
 		long node_index;
-		long unknown;
+		s_type_c3b527 location;
 
 		end.x = g_4687b0->i * 0.4f + (direction->i * scale + origin.x);
 		end.y = g_4687b0->j * 0.4f + (direction->j * scale + origin.y);
@@ -92,7 +98,7 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 		{
 			break;
 		}
-		node_index = function_26d100(g_4687b0, &collision, &unknown, &end);
+		node_index = function_26d100(g_4687b0, (long *)&location, &collision, &end);
 		if (!(height + 0.1f > collision.point.z) || !(2.0f > origin.z - collision.point.z))
 		{
 			break;
@@ -108,18 +114,10 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 				real seconds = g_510c54->field_2_3;
 				real seconds_extra;
 
-				__asm
-				{
-					fld seconds
-					fistp ticks
-				}
+				ticks = real_to_long(seconds);
 				seconds_extra = g_510c54->field_2_3 * 1.5f;
-				__asm
-				{
-					fld seconds_extra
-					fistp ticks_extra
-				}
-				return function_1f34b0(actor_index, direction, &actor->position,
+				ticks_extra = real_to_long(seconds_extra);
+				return function_1f34b0(actor_index, &actor->position, direction,
 					(i + 1) * 0.25f + distance + 0.5f, (short)((real)ticks * distance + (real)ticks_extra));
 			}
 		}
@@ -128,12 +126,15 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 	return false;
 }
 
+// score 80 (was 80): the actor index is taken from the stack into EDX in
+// retail and from a
+// global into ESI here, so the whole prologue is a different length.
 // @retail 0x1c1d50
 bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 {
+	long closest_index = NONE;
 	s_actor_view *actor = actor_get(actor_index);
 	real closest = 3.4028235e38f;
-	long closest_index = NONE;
 	long prop_index;
 
 	for (prop_index = actor->first_prop_index; prop_index != NONE; )
@@ -161,15 +162,18 @@ bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 			direction = actor->unknown290;
 		}
 		function_1c19b0(actor_index, &direction, path);
-		return true;
 	}
-	return false;
+	return closest_index != NONE;
 }
+
+void scripted_vector_scale(vector3f const *vector, real scale, vector3f *result);
+void scripted_vector_add_scaled(vector3f const *a, vector3f const *b, real scale, vector3f *result);
 
 // @retail 0x1c1e70
 bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 {
-	vector3f facing = actor_get(actor_index)->unknown290;
+	s_actor_view *actor = actor_get(actor_index);
+	vector3f facing = actor->unknown290;
 	vector3f perpendicular;
 	vector3f directions[8];
 	short i;
@@ -186,22 +190,22 @@ bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 	perpendicular.j = facing.i;
 	perpendicular.k = facing.k;
 	directions[0] = facing;
-	directions[1].i = facing.i * 0.70710677f + perpendicular.i * 0.70710677f;
-	directions[1].j = facing.j * 0.70710677f + perpendicular.j * 0.70710677f;
-	directions[1].k = facing.k * 0.70710677f + perpendicular.k * 0.70710677f;
-	directions[2].i = facing.i * 0.70710677f - perpendicular.i * 0.70710677f;
-	directions[2].j = facing.j * 0.70710677f - perpendicular.j * 0.70710677f;
-	directions[2].k = facing.k * 0.70710677f - perpendicular.k * 0.70710677f;
+	scripted_vector_scale(&facing, 0.70710677f, &directions[1]);
+	scripted_vector_add_scaled(&directions[1], &perpendicular, 0.70710677f, &directions[1]);
+	scripted_vector_scale(&facing, 0.70710677f, &directions[2]);
+	directions[2].i = directions[2].i - perpendicular.i * 0.70710677f;
+	directions[2].j = directions[2].j - perpendicular.j * 0.70710677f;
+	directions[2].k = directions[2].k - perpendicular.k * 0.70710677f;
 	directions[3] = perpendicular;
 	directions[4].i = perpendicular.i * -1.0f;
 	directions[4].j = perpendicular.j * -1.0f;
 	directions[4].k = perpendicular.k * -1.0f;
-	directions[5].i = perpendicular.i * 0.70710677f + facing.i * -0.70710677f;
-	directions[5].j = perpendicular.j * 0.70710677f + facing.j * -0.70710677f;
-	directions[5].k = perpendicular.k * 0.70710677f + facing.k * -0.70710677f;
-	directions[6].i = facing.i * -0.70710677f - perpendicular.i * 0.70710677f;
-	directions[6].j = facing.j * -0.70710677f - perpendicular.j * 0.70710677f;
-	directions[6].k = facing.k * -0.70710677f - perpendicular.k * 0.70710677f;
+	scripted_vector_scale(&facing, -0.70710677f, &directions[5]);
+	scripted_vector_add_scaled(&directions[5], &perpendicular, 0.70710677f, &directions[5]);
+	scripted_vector_scale(&facing, -0.70710677f, &directions[6]);
+	directions[6].i = directions[6].i - perpendicular.i * 0.70710677f;
+	directions[6].j = directions[6].j - perpendicular.j * 0.70710677f;
+	directions[6].k = directions[6].k - perpendicular.k * 0.70710677f;
 	directions[7].i = facing.i * -1.0f;
 	directions[7].j = facing.j * -1.0f;
 	directions[7].k = facing.k * -1.0f;
@@ -243,6 +247,9 @@ bool __stdcall function_1c2120(long actor_index, s_slot *slot)
 	return true;
 }
 
+// score 64 (was 64): the object pointer is kept in ESI here and reloaded from
+// the stack
+// there, and the flag byte is written as a constant 0 here.
 // @retail 0x1c2130
 bool __stdcall function_1c2130(long actor_index, s_slot *slot)
 {
@@ -254,15 +261,15 @@ bool __stdcall function_1c2130(long actor_index, s_slot *slot)
 		bool flag;
 		byte *buffer;
 		long unknown;
-		s_prop_search search;
+		s_2605d0_request request;
 
 		actor->unknown5e8 = 1;
 		buffer = ai_scratch_buffer_get();
-		memset(&search, 0, sizeof(search));
-		search.unknown19 = true;
+		memset(&request, 0, sizeof(request));
+		request.unknown015 = true;
 		flag = false;
-		search.type = 4;
-		function_2605d0(actor_index, (s_2605d0_request *)&search, 0, (long)&unknown, buffer, &flag);
+		request.type = 4;
+		function_2605d0(actor_index, &request, 0, (long)&unknown, buffer, &flag);
 		if (actor->unknown5e8 == 0)
 		{
 			state->unknown10 = true;
@@ -270,26 +277,27 @@ bool __stdcall function_1c2130(long actor_index, s_slot *slot)
 		ai_scratch_buffer_release(buffer);
 		if (!state->unknown10)
 		{
-			s_path_query query;
-			s_type_f17a25 *path;
+			s_path_settings settings;
+			s_path_source source;
+			bool valid;
 			bool found = false;
 
 			function_26c180(actor_index);
-			function_1f9240(actor_index, &query.settings);
-			function_1f90f0(actor_index, &query.source);
-			query.source.unknown45 = true;
-			query.source.unknown48 = 20.0f;
+			function_1f9240(actor_index, &settings);
+			function_1f90f0(actor_index, &source);
+			source.unknown45 = true;
+			source.unknown48 = 20.0f;
 			buffer = ai_scratch_buffer_get();
-			function_271300((s_type_f17a25 *)buffer, NULL, &query.settings, &query.source, 0);
-			path = function_2715a0(buffer) ? (s_type_f17a25 *)buffer : NULL;
+			function_271300((s_type_f17a25 *)buffer, NULL, &settings, &source, 0);
+			valid = function_2715a0(buffer);
 			if (!(state->flags & 1))
 			{
-				found = function_1c1d50(actor_index, path);
+				found = function_1c1d50(actor_index, valid ? (s_type_f17a25 *)buffer : NULL);
 				state->flags |= 1;
 			}
 			if (!found && !(state->flags & 4))
 			{
-				found = function_1c1e70(actor_index, path);
+				found = function_1c1e70(actor_index, valid ? (s_type_f17a25 *)buffer : NULL);
 				state->flags |= 4;
 			}
 			if (!found)
@@ -309,5 +317,5 @@ s_slot_handler_2 g_47eff8 =
 		function_1c20f0, function_1c2100, function_1c2120, 0, NONE, {0},
 		0, 0, 0, 0, 0, 0, 0
 	},
-	(t_slot_proc)function_1c2130, 0, (t_slot_proc)function_1c22c0
+	(t_slot_proc)function_1c2130, 0, (t_slot_proc)actor_behavior_81_update48
 };

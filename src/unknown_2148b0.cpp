@@ -20,29 +20,6 @@ extern s_cache_copy_request g_55be24[2];
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
-__forceinline real cache_copy_fraction(void)
-{
-	real fraction = 0.0f;
-	if (g_55bd04 < 11)
-	{
-		fraction = 0.0f;
-	}
-	else if (g_55bd04 > 12)
-	{
-		fraction = 1.0f;
-	}
-	else if (g_55bcf8.total > 0)
-	{
-		fraction = (real)g_55bcf8.completed / (real)g_55bcf8.total;
-	}
-	return fraction;
-}
-
-__forceinline void cache_copy_fraction_clamp(real *fraction)
-{
-	*fraction = PIN(*fraction, 0.0f, 1.0f);
-}
-
 // @retail 0x2148b0
 bool function_2148b0(long progress)
 {
@@ -51,15 +28,26 @@ bool function_2148b0(long progress)
 
 	if (g_55bd04)
 	{
-		fraction = cache_copy_fraction();
+		if (g_55bd04 < 11)
+		{
+			fraction = 0.0f;
+		}
+		else if (g_55bd04 > 12)
+		{
+			fraction = 1.0f;
+		}
+		else if (g_55bcf8.total > 0)
+		{
+			fraction = (real)g_55bcf8.completed / (real)g_55bcf8.total;
+		}
 		result = true;
-		cache_copy_fraction_clamp(&fraction);
 	}
 	else if (g_55be24[1].map_name[0])
 	{
 		fraction = 0.0f;
 		result = true;
 	}
+	fraction = PIN(fraction, 0.0f, 1.0f);
 	if (progress)
 	{
 		*(real *)progress = fraction;

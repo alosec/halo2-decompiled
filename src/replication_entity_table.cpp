@@ -48,9 +48,8 @@ long replication_table_allocate(s_handle_peers *peers)
 {
 	long first = peers->next_free;
 	long result = NONE;
-	long i;
 
-	for (i = first; i < 1024; i++)
+	for (long i = first; i < 1024; i++)
 	{
 		if (!(peers->peers[i].flags & 1))
 		{
@@ -60,7 +59,7 @@ long replication_table_allocate(s_handle_peers *peers)
 	}
 	if (result == NONE)
 	{
-		for (i = 0; i < peers->next_free; i++)
+		for (long i = 0; i < peers->next_free; i++)
 		{
 			if (!(peers->peers[i].flags & 1))
 			{
@@ -98,6 +97,7 @@ long replication_table_create(s_handle_peers *peers, long index)
 // @retail 0x89470
 bool replication_table_create_chain(s_handle_peers *peers, long count, long *handles)
 {
+	bool result = true;
 	long indices[4];
 	long i;
 
@@ -105,7 +105,10 @@ bool replication_table_create_chain(s_handle_peers *peers, long count, long *han
 	{
 		indices[i] = replication_table_allocate(peers);
 		if (indices[i] == NONE)
-			return false;
+		{
+			result = false;
+			goto local_0;
+		}
 	}
 	for (i = count - 1; i >= 0; i--)
 	{
@@ -117,7 +120,8 @@ bool replication_table_create_chain(s_handle_peers *peers, long count, long *han
 			peer->flags |= 0x10;
 		peer->unknown04 = i + 1 < count ? handles[i + 1] : NONE;
 	}
-	return true;
+local_0:
+	return result;
 }
 
 // @retail 0x89660
@@ -314,6 +318,8 @@ void function_89a20(s_handle_peers *peers)
 	((c_handle_owner_with_mask *)peers->owner)->slot14();
 }
 
+// score 66 (was 66): the prologue and the first store differ: retail saves ebx/ebp/esi/edi
+// and stores the sender pointer into the table, ours uses edx and ecx.
 // @retail 0x898c0
 void replication_table_attach_sender(s_handle_peers *peers, long index, c_handle_table_450cd0 *sender)
 {

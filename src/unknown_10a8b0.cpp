@@ -39,19 +39,24 @@ long function_10a8b0(s_scenery_location *location, long value)
 	if (g_4e0344 && g_4e0344->count > 0)
 	{
 		s_bsp_locations *locations = g_4e0344->locations;
+		long i = 0;
 		long count = locations->count;
 
-		for (long i = 0; i < count; i++)
+		for (; i < count; i++)
 		{
 			s_bsp_location_entry *entry = &locations->entries[i];
-			bool match = (entry->value_06 == location->value_06) & (entry->value_07 == location->value_07) & (entry->value_00 == location->value_00);
+			byte match = (entry->value_06 == location->value_06) & (entry->value_07 == location->value_07) & (entry->value_00 == location->value_00);
 
+			match &= 1;
 			if (match && !entry->value_07)
 				match &= entry->value_04 == location->value_04;
 			if (match && entry->value_08 == value)
-				return i;
+			{
+				result = i;
+				goto done;
+			}
 		}
-		result = NONE;
 	}
+done:
 	return result;
 }

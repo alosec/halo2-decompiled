@@ -101,6 +101,15 @@ public:
 	bool found;
 };
 
+/* the entity behind the last node of a hit's chain, if that node is one */
+static __forceinline hkEntity *query_node_entity(s_node *node)
+{
+	s_query_node *last = (s_query_node *)node->get_last();
+	if (last->type == 1)
+		return last->entity;
+	return 0;
+}
+
 // @retail 0x1829b0
 void c_nearest_query_callback::query(s_node *node, s_query_hit const *hit)
 {
@@ -111,15 +120,12 @@ void c_nearest_query_callback::query(s_node *node, s_query_hit const *hit)
 		s_query_result *query_result = result;
 		if (query_result->fraction > distance)
 		{
-			hkEntity *entity = 0;
 			excluded = excluded_component;
-			if (excluded != NONE)
-			{
-				s_query_node *last = (s_query_node *)node->get_last();
-				if (last->type == 1)
-					entity = last->entity;
-			}
-			if (!entity || havok_entity_component_index_get(entity) != excluded)
+			hkEntity *entity = excluded != NONE ? query_node_entity(node) : 0;
+			bool include = true;
+			if (entity && havok_entity_component_index_get(entity) == excluded)
+				include = false;
+			if (include)
 			{
 				vector3f normal;
 				normal.i = hit->normal.i;
@@ -143,11 +149,14 @@ struct s_query_batch_result
 	byte unknown01[3];
 	real fraction;
 	short material;
-	byte unknown0a[0x24 - 0xa];
+	byte unknown0a[2];
+	point3f position;
+	vector3f normal;
 	long index;
 	long other_index;
 	bool flag2c;
-	byte unknown2d[0x3c - 0x2d];
+	byte unknown2d[3];
+	vector3f surface_vector;
 };
 
 class c_query_batch_collector : public c_query_collector
@@ -198,14 +207,15 @@ void __stdcall function_1821d0(long component_index, real scale,
 	s_query_batch_result *results, long count)
 {
 	s_query_component *component = &((s_query_component *)g_51e9b8->data)[component_index & 0xffff];
-	c_query_shape *shape = TEST_FIELD_BIT(component->flags.has_shape) ? component->shape : 0;
+	c_query_shape *shape = TEST_FIELD_BIT(component->flags.has_shape) ? component->shape : NULL;
 	for (long i = 0; i < count; i++)
 	{
 		results[i].found = false;
 		results[i].fraction = FLT_MAX;
 		results[i].index = NONE;
 		results[i].other_index = NONE;
-		results[i].material = g_54e898;
+		// read through a pointer: retail reloads the default material on every pass
+		results[i].material = *(short const *)&g_54e898;
 		results[i].flag2c = false;
 	}
 	if (shape)
@@ -248,6 +258,11 @@ static inline real query_coordinate_pin(real value, real lower, real upper)
 
 struct s_vehicle_ray;
 
+__forceinline real function_182801(real arg_0, real const *arg_1, real const *arg_2)
+{
+    return *arg_1 > arg_0 ? *arg_1 : (arg_0 > *arg_2 ? *arg_2 : arg_0);
+}
+
 // @retail 0x182800
 bool function_182800(s_vehicle_ray *ray_data, long excluded_component, void *world_data)
 {
@@ -257,20 +272,24 @@ bool function_182800(s_vehicle_ray *ray_data, long excluded_component, void *wor
 	end.x = result->origin.x + result->direction.i;
 	end.y = result->origin.y + result->direction.j;
 	end.z = result->origin.z + result->direction.k;
+	s_bounded_ray ray;
+	ray.flag = false;
 	c_nearest_query_callback collector;
 	collector.fraction = 1.0f;
 	collector.result = result;
 	collector.excluded_component = excluded_component;
-	collector.found = false;
-	result->fraction = FLT_MAX;
-	s_bounded_ray ray;
-	ray.flag = false;
+	collector.result->fraction = FLT_MAX;
+	point3f origin;
+	origin.x = result->origin.x;
+	origin.y = result->origin.y;
+	origin.z = result->origin.z;
 	ray.from.m128_f32[3] = 0.0f;
 	ray.to.m128_f32[3] = 0.0f;
+	collector.found = false;
 	for (long i = 0; i < 3; i++)
 	{
-		ray.from.m128_f32[i] = query_coordinate_pin(result->origin.n[i], world->lower.m128_f32[i], world->upper.m128_f32[i]);
-		ray.to.m128_f32[i] = query_coordinate_pin(end.n[i], world->lower.m128_f32[i], world->upper.m128_f32[i]);
+		ray.from.m128_f32[i] = function_182801(origin.n[i], &world->lower.m128_f32[i], &world->upper.m128_f32[i]);
+		ray.to.m128_f32[i] = function_182801(end.n[i], &world->lower.m128_f32[i], &world->upper.m128_f32[i]);
 	}
 	_control87(0x9001f, 0x8001f);
 	_mm_setcsr(_mm_getcsr() | 0x1f80);
@@ -348,6 +367,19 @@ class hkWorld;
 extern hkWorld *g_51e9a4;
 void voice_fpu_enter();
 
+__forceinline void function_183672(point3f *arg_0, point3f const *arg_1, __m128 const *arg_2, real arg_3)
+{
+    vector3f local_0;
+    local_0.i = arg_2->m128_f32[0];
+    local_0.j = arg_2->m128_f32[1];
+    local_0.k = arg_2->m128_f32[2];
+    arg_0->x = local_0.i * arg_3 + arg_1->x;
+    arg_0->y = local_0.j * arg_3 + arg_1->y;
+    arg_0->z = local_0.k * arg_3 + arg_1->z;
+}
+
+// score 8 (was 8): the three values of the query loop are kept in the stack slots in the
+// opposite order.
 // @retail 0x183670
 bool __stdcall function_183670(long component_a, long component_b, point3f *a, point3f *b, real *distance)
 {
@@ -368,17 +400,19 @@ bool __stdcall function_183670(long component_a, long component_b, point3f *a, p
 				{
 					__declspec(align(16)) c_query_array_collector collector;
 					s_distance_query_contact buffer[8];
-					*(dword volatile *)&collector.entries.capacity_and_flags = 0x80000008;
+					collector.entries.capacity_and_flags = 0x80000008;
 					collector.maximum = FLT_MAX;
 					collector.entries.data = buffer;
 					collector.entries.count = 0;
 					s_distance_query_body *body_a = first->bodies[i].body;
 					s_distance_query_body *body_b = second->bodies[j].body;
-					c_distance_query_shape *body_a_shape = body_a->shape;
-					c_distance_query_shape *body_b_shape = body_b->shape;
+					c_distance_query_shape **local_0 = &body_a->shape;
+					c_distance_query_shape **local_1 = &body_b->shape;
+					c_distance_query_shape *body_a_shape = *local_0;
+					c_distance_query_shape *body_b_shape = *local_1;
 					long type_b = body_b_shape->shape_kind();
 					long type_a = body_a_shape->shape_kind();
-					context.dispatch->query[type_a][type_b](&body_a->shape, &body_b->shape, &context, &collector);
+					context.dispatch->query[type_a][type_b](local_0, local_1, &context, &collector);
 					s_distance_query_contact *contacts = (s_distance_query_contact *)collector.entries.data;
 					for (long k = 0; k < collector.entries.count; k++)
 					{
@@ -386,18 +420,12 @@ bool __stdcall function_183670(long component_a, long component_b, point3f *a, p
 						{
 							*distance = contacts[k].position_distance.m128_f32[3];
 							real px = contacts[k].position_distance.m128_f32[0];
-							real py = contacts[k].position_distance.m128_f32[1];
 							real pz = contacts[k].position_distance.m128_f32[2];
+							real py = contacts[k].position_distance.m128_f32[1];
 							b->x = px;
-							b->y = py;
 							b->z = pz;
-							real scale = *distance;
-							real x = contacts[k].normal.m128_f32[0];
-							real y = contacts[k].normal.m128_f32[1];
-							real z = contacts[k].normal.m128_f32[2];
-							a->x = x * scale + b->x;
-							a->y = y * scale + b->y;
-							a->z = z * scale + b->z;
+							b->y = py;
+							function_183672(a, b, &contacts[k].normal, *distance);
 							result = true;
 						}
 					}
@@ -417,7 +445,7 @@ extern s_slot_entry_list *g_4e0340;
 struct s_lookup_source;
 struct s_bsp3d;
 plane3f *bsp3d_get_plane(s_bsp3d const *bsp, short plane_index, plane3f *plane);
-void function_1ee410(s_lookup_source const *source, short *result);
+short *function_1ee410(s_lookup_source const *source, short *result);
 void function_182b90(c_material_shape *shape, hkEntity const *entity, real *friction, real *restitution, short *material);
 long havok_entity_property_2002_get(hkEntity const *entity);
 bool function_181db0(long index, vector3f *result);
@@ -505,7 +533,9 @@ void c_query_batch_collector::collect(s_batch_contact const *contact)
 	long limited = key < 0 ? 0 : (key > count - 1 ? count - 1 : key);
 	if (limited != key) return;
 	point3f origin = *(point3f *)(first->transform + 0x50);
-	point3f position = contact->position;
+	real hit_x = contact->position.x;
+	real hit_y = contact->position.y;
+	real hit_z = contact->position.z;
 	real distance = contact->distance + first->shape->radius;
 	if (!(results[key].fraction > distance)) return;
 	bool valid = true;
@@ -525,7 +555,7 @@ void c_query_batch_collector::collect(s_batch_contact const *contact)
 				byte *record = *(byte **)((byte *)g_4e0340 + 0x2c) + entry * 8;
 				bsp3d_get_plane((s_bsp3d *)g_4e0340, *(short *)record, &plane);
 				if (record[4] & 0x20)
-					results[key].flag2c = function_181db0(*(short *)(record + 6), (vector3f *)((byte *)&results[key] + 0x30));
+					results[key].flag2c = function_181db0(*(short *)(record + 6), &results[key].surface_vector);
 				side = plane.n.j * origin.y + plane.n.k * origin.z + plane.n.i * origin.x - plane.d;
 			}
 			else
@@ -544,7 +574,7 @@ void c_query_batch_collector::collect(s_batch_contact const *contact)
 				plane.n = normal;
 				side = plane.n.k * origin.z + plane.n.j * origin.y + plane.n.i * origin.x - plane.d;
 			}
-			if (side > 0.0f) *(vector3f *)((byte *)&results[key] + 0x18) = plane.n;
+			if (side > 0.0f) results[key].normal = plane.n;
 			else valid = false;
 		}
 		short material;
@@ -566,8 +596,8 @@ void c_query_batch_collector::collect(s_batch_contact const *contact)
 	if (valid && contact->normal.k > scale)
 	{
 		results[key].found = true;
-		*(point3f *)((byte *)&results[key] + 0xc) = position;
-		*(vector3f *)((byte *)&results[key] + 0x18) = contact->normal;
+		real_point3d_set(&results[key].position, hit_x, hit_y, hit_z);
+		real_point3d_set((point3f *)&results[key].normal, contact->normal.i, contact->normal.j, contact->normal.k);
 		results[key].fraction = distance;
 		results[key].index = index;
 		results[key].other_index = other_index;

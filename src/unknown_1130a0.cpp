@@ -33,13 +33,10 @@ struct s_object_header_1130a0
 void function_1130a0(long unit_index, bool flag)
 {
 	s_unit_1130a0 *unit = ((s_object_header_1130a0 *)g_4e0300->data)[unit_index & 0xffff].object;
-	bool enable = flag;
-	if (enable && (unit->index1f6 == NONE || unit->index1f7 == NONE))
-		enable = false;
-	if (enable)
-		unit->unit_flags |= 0x1000000;
-	else
-		unit->unit_flags &= ~0x1000000;
+	if (flag && (unit->index1f6 == NONE || unit->index1f7 == NONE))
+		flag = false;
+	dword *flags = &unit->unit_flags;
+	flag ? (*flags |= 0x1000000) : (*flags &= ~0x1000000);
 }
 
 // @retail 0x114480
@@ -59,7 +56,7 @@ long function_114440(long unit_index)
 {
 	long result = 0;
 	s_unit_1130a0 *unit = ((s_object_header_1130a0 *)g_4e0300->data)[unit_index & 0xffff].object;
-	long index = *unit_state_handle_114440(unit);
+	long const &index = *unit_state_handle_114440(unit);
 	if (index != NONE)
 		result = *(long *)(g_4e3b44[index & 0xffff].bytes + 0x14);
 	return result;
@@ -84,7 +81,7 @@ bool function_20b5c0(long definition_index);
 bool function_1144a0(long unit_index, short entry_index, long *tag_index)
 {
 	s_unit_1130a0 *unit = ((s_object_header_1130a0 *)g_4e0300->data)[unit_index & 0xffff].object;
-	long index = *unit_state_handle_114440(unit);
+	long const &index = *unit_state_handle_114440(unit);
 	long found = NONE;
 	bool result = false;
 	if (index != NONE)
@@ -129,7 +126,7 @@ struct s_model_114ec0
 	long value;
 };
 
-PRIVATE __forceinline void unit_state_tag_set_114ec0(long unit_index, long index)
+PRIVATE __forceinline void unit_state_tag_set_114ec0(long unit_index, long const &index)
 {
 	long value = *(long *)(g_4e3b44[index & 0xffff].bytes + 0x14);
 	s_unit_1130a0 *unit = ((s_object_header_1130a0 *)g_4e0300->data)[unit_index & 0xffff].object;

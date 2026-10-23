@@ -1,8 +1,10 @@
 // @flags /O2 /arch:SSE /Gr
+#include "handles_storage.h"
 /* UNKNOWN_17D2A0.CPP: the decals (entry 37 of the lifecycle table) */
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "object_queries.h"
 #include "unknown_123b30.h"
 #include "physical_memory.h"
 #include <string.h>
@@ -61,11 +63,10 @@ struct s_decal_globals
 s_decal_globals *g_4ea94c;
 
 /* the first decal of each decal definition (unknown_03d380.cpp) */
-extern dword g_4c8798[256];
 
 void function_163ba0(dword *crc_reference, void const *buffer, long buffer_size);
 void function_43890(void);
-void function_43990(void);
+__declspec(noinline) void function_43990(void);
 void function_23aa70(void);
 void __stdcall function_23aad0(long a, long b, long c);
 void function_17d5f0(bool permanent);
@@ -73,7 +74,7 @@ void function_17d860(long decal_index);
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 struct s_decal_structure_leaf
 {
@@ -193,13 +194,17 @@ void decals_update_locations(void)
 
 			if (g_4686c4 != NONE)
 			{
-				long leaf_index = function_14a280(g_4e033c, &decal->position, 0);
+				long leaf_index = function_14a280(g_4e033c, 0, &decal->position);
 
 				if (leaf_index != NONE)
 				{
-					short cluster_index = ((s_decal_structure_bsp *)g_4e0348)->leaves[leaf_index].cluster_index;
+					s_location cluster_location;
+					cluster_location.leaf_index = leaf_index;
+					volatile short &cluster_index = cluster_location.cluster_index;
+					short cluster_value = ((s_decal_structure_bsp *)g_4e0348)->leaves[leaf_index].cluster_index;
+					cluster_index = cluster_value;
 
-					if (cluster_index != NONE)
+					if (cluster_value != NONE)
 					{
 						if (next_index != NONE)
 							DECAL(next_index)->previous_index = decal->previous_index;
@@ -341,8 +346,8 @@ bool function_17ce60(void)
 		if (globals->fading_count <= 0x80)
 			return true;
 		s_decal_datum *decal = data_step_17ce60(&iterator);
-		if (!decal)
-		{
+		if (!(!decal))
+		{} else {
 			iterator.data = g_4ea950;
 			iterator.index = NONE;
 			attempts++;
@@ -377,21 +382,22 @@ bool function_17ce60(void)
 }
 
 // @retail 0x17cfa0
-long function_17cfa0(long first_index, long definition_index, short cell_x, short cell_y, bool permanent)
+long function_17cfa0(long first_index, long definition_index, short cluster_index, short decal_type, bool permanent)
 {
+	bool first = false;
+	long *first_index_reference = &first_index;
 	s_record_pool *decals = g_4ea950;
 	long decal_index = record_pool_allocate(decals);
 
 	if (decal_index != NONE)
 	{
 		s_decal_datum *decal = DECAL(decal_index);
-		bool first = false;
 
 		decal->definition_index = definition_index;
-		if (first_index != NONE)
+		if ((*first_index_reference) != NONE)
 		{
-			decal->first_index = first_index;
-			if (DECAL(first_index)->flag0)
+			decal->first_index = (*first_index_reference);
+			if (DECAL((*first_index_reference))->flag0)
 			{
 				decal->flag0 = true;
 				g_4ea94c->fading_count++;
@@ -414,7 +420,7 @@ long function_17cfa0(long first_index, long definition_index, short cell_x, shor
 			decal->flags = 2;
 			g_4ea94c->permanent_count++;
 		}
-		else if ((long)(random_next(&g_4e7408->seed) * 100) / 0xffff < 10 && first)
+		else if (random_next(&g_4e7408->seed) * 100 < 10 * 0xffff && first)
 		{
 			decal->flags = 1;
 			g_4ea94c->fading_count++;
@@ -428,7 +434,7 @@ long function_17cfa0(long first_index, long definition_index, short cell_x, shor
 			record_pool_release(decals, decal_index);
 			return NONE;
 		}
-		decal_link(cell_y, cell_x, decal_index);
+		decal_link(cluster_index, decal_type, decal_index);
 	}
 	else if (definition_index != NONE)
 	{
@@ -497,7 +503,7 @@ void function_17cc60(long decal_index)
 		long index = decal->next_in_group_index;
 		long alpha = decal->alpha;
 
-		if (!function_17ccd0(decal_index))
+		if (!function_17ccd0(decal->first_index))
 		{
 			while (index != NONE)
 			{

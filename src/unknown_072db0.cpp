@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Gr
 #include <string.h>
 #include "unknown_11c920.h"
@@ -109,10 +110,10 @@ public:
 void c_helper_a::v0(long a, long b)
 {
 	source = (s_helper_source *)a;
+	ba = 0;
 	lc = NONE;
 	l14 = NONE;
 	l1c = NONE;
-	ba = 0;
 	l10 = 0;
 	l18 = 0;
 	l20 = 0;
@@ -225,7 +226,7 @@ struct s_xnet_registry_entry
 	XNKEY key;
 };
 
-extern s_xnet_registry_entry g_4cf7d4[8];
+
 
 // @retail 0x72df0
 void function_72df0(c_helper_a *helper)
@@ -465,18 +466,33 @@ struct s_match_rating_collection
 	s_match_rating_entry entries[16];
 };
 
+#pragma optimize("g", off)
+static __forceinline long function_74721(const s_match_rating_entry *arg_0, long *arg_1, long *arg_2)
+{
+	long local_0 = arg_0->skill;
+	long local_2 = arg_0->value;
+	long local_1 = arg_0->rank;
+	*arg_1 = local_0;
+	*arg_2 = local_2;
+	return local_1;
+}
+#pragma optimize("g", on)
+
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x74720
 long __stdcall function_74720(const s_match_rating_collection *collection, long selected)
 {
 	const s_match_rating_entry *current = &collection->entries[selected];
-	long rank;
-	long skill;
-	long value;
+	struct s_74720
+	{
+		long field_0;
+		long field_4;
+		long field_8;
+	} local_0;
 	long count = 0;
 	long total = 0;
-	skill = current->skill;
-	rank = current->rank;
-	value = current->value;
+	local_0.field_4 = function_74721(current, &local_0.field_0, &local_0.field_8);
 	for (long i = 0; i < 16; i++)
 	{
 		const s_match_rating_entry *entry = &collection->entries[i];
@@ -485,20 +501,25 @@ long __stdcall function_74720(const s_match_rating_collection *collection, long 
 			long other_skill = entry->skill;
 			if (entry->active && other_skill != NONE)
 			{
-				total += function_746b0(other_skill, skill, rank, entry->rank);
+				long local_1 = entry->rank;
+				_ReadWriteBarrier();
+				long local_2 = *(volatile long *)&local_0.field_0;
+				long local_3 = *(volatile long *)&local_0.field_4;
+				total += function_746b0(other_skill, local_2, local_3, local_1);
 				count++;
 			}
 		}
 	}
 	if (count > 0)
 		total /= count;
-	if (total + value < 0)
-		total = -value;
-	if (total + value > 0x3fffffff)
-		total = 0x3fffffff - value;
+	if (total + local_0.field_8 < 0)
+		total = -local_0.field_8;
+	if (total + local_0.field_8 > 0x3fffffff)
+		total = 0x3fffffff - local_0.field_8;
 	return total < g_network_configuration.valuec7c ? g_network_configuration.valuec7c :
 		(total > g_network_configuration.valuec78 ? g_network_configuration.valuec78 : total);
 }
+#pragma function(_ReadWriteBarrier)
 
 struct s_match_player_rating_entry
 {
@@ -527,15 +548,16 @@ struct s_match_player_rating_collection
 };
 
 // @retail 0x74800
+// score 16 (was 22): retail holds the entry skill sign-extended in ESI (movsx at the load, mov ebx,esi for the call); a 32-bit local gives that movsx but MSVC then picks EBX for it and moves the team-mode byte to CL, so the whole frame shifts.
 long __stdcall function_74800(const s_match_player_rating_collection *collection, long selected)
 {
 	long key = collection->key;
-	bool team_mode = collection->team_mode;
 	const s_match_player_rating_entry *current = &collection->players[selected];
+	long count = 0;
 	long skill = current->skill;
 	long team = current->team;
 	long value = current->value;
-	long count = 0;
+	bool team_mode = collection->team_mode;
 	long total = 0;
 	long rank;
 	if (team_mode)
@@ -547,7 +569,7 @@ long __stdcall function_74800(const s_match_player_rating_collection *collection
 		const s_match_player_rating_entry *entry = &collection->players[i];
 		if (entry->key == key)
 		{
-			long other_skill = entry->skill;
+			short other_skill = entry->skill;
 			if (entry->active && entry->team != NONE && !(entry->flags & 3) && other_skill != NONE)
 			{
 				long other_team = entry->team;
@@ -652,7 +674,7 @@ long online_round_register(bool free_for_all, XNKID const *session_id, ULONGLONG
 
 // @retail 0x73bc0
 void function_73bc0(const s_session_id *session_id, const s_session_id *round_key,
-	long first, long second, bool free_for_all)
+	__int64 arg_2, bool free_for_all)
 {
 	if (g_510518)
 	{
@@ -667,9 +689,8 @@ void function_73bc0(const s_session_id *session_id, const s_session_id *round_ke
 	long task = online_round_register(free_for_all, (const XNKID *)session_id,
 		(const ULONGLONG *)round_key, g_network_configuration.value374);
 	g_510528 = *session_id;
-	g_510520 = *round_key;
-	g_510540.a = first;
-	g_510540.b = second;
+	memcpy(&g_510520, round_key, sizeof(g_510520));
+	g_510540 = *(const s_session_id *)&arg_2;
 	g_510514 = 4;
 	g_510534 = 0;
 	g_510538 = NONE;
@@ -791,7 +812,17 @@ struct s_search_value_group
 	s_search_player_values players[16];
 };
 
-s_search_value_group g_509454[5];
+/* the search value globals (0x509450, 0x70f8 bytes): set by the network
+   initialize, cleared by the network dispose */
+struct s_search_value_globals
+{
+	bool initialized;
+	byte unknown01[3];
+	s_search_value_group groups[5];
+	byte unknown3010[0x70f8 - 0x3010];
+};
+s_search_value_globals g_509450;
+#define g_509454 g_509450.groups
 #pragma pack(push, 1)
 struct s_session_interface_user
 {
@@ -1068,11 +1099,10 @@ static inline void query_reference_set(s_query_operation *operation, const s_que
 }
 
 // @retail 0x73e00
-void function_73e00(s_query_batch *batch, const s_query_identity *identity, long value1,
-	long value4, long value5, long value6, long lower, long upper, long count, const long *players)
+s_query_batch *function_73e00(long lower, s_query_batch *batch, const s_query_identity *identity, long value1,
+	long value4, long value5, long value6, long upper, long count, const long *players)
 {
 	long attribute_count = batch->attribute_count;
-	long operation_count = batch->operation_count;
 	s_query_attribute *first = &batch->attributes[attribute_count];
 	first[0].id = 0xfffe;
 	first[0].type = 2;
@@ -1087,7 +1117,7 @@ void function_73e00(s_query_batch *batch, const s_query_identity *identity, long
 	s_query_attribute *second = &batch->attributes[attribute_count];
 	second[0].id = 0xfffe;
 	second[0].type = 2;
-	second[0].wide = value1;
+	second[0].wide = first[0].wide;
 	query_attribute_set(&second[1], 1, value1);
 	query_attribute_set(&second[2], 4, value4);
 	query_attribute_set(&second[3], 5, value5);
@@ -1097,25 +1127,35 @@ void function_73e00(s_query_batch *batch, const s_query_identity *identity, long
 	query_attribute_set(upper_first, 2, upper);
 	s_query_attribute *upper_second = &batch->attributes[attribute_count++];
 	query_attribute_set(upper_second, 3, upper);
+	long operation_count = batch->operation_count;
+	s_query_operation *local_0 = &batch->operations[operation_count];
 	for (long i = 0; i < count; i++)
 	{
 		long player = players[i];
 		if (player != NONE)
 		{
-			query_compare_set(&batch->operations[operation_count++], identity, player, 7, first);
-			long first_reference = operation_count;
-			query_compare_set(&batch->operations[operation_count++], identity, player, 6, upper_first);
-			long second_reference = operation_count;
-			query_compare_set(&batch->operations[operation_count++], identity, player, 4, upper_second);
-			long third_reference = operation_count;
-			query_reference_set(&batch->operations[operation_count++], identity, player, 0x8001, first_reference, 7, first);
-			query_reference_set(&batch->operations[operation_count++], identity, player, 0x8001, second_reference, 1, upper_first);
-			query_reference_set(&batch->operations[operation_count++], identity, player, 0x8001, third_reference, 1, upper_second);
-			query_reference_set(&batch->operations[operation_count++], identity, player, 0x8003, second_reference, 5, second);
+			long first_reference = operation_count + 1;
+			long second_reference = operation_count + 2;
+			long third_reference = operation_count + 3;
+			query_compare_set(local_0++, identity, player, 7, first);
+			operation_count++;
+			query_compare_set(local_0++, identity, player, 6, upper_first);
+			operation_count++;
+			query_compare_set(local_0++, identity, player, 4, upper_second);
+			operation_count++;
+			query_reference_set(local_0++, identity, player, 0x8001, first_reference, 7, first);
+			operation_count++;
+			query_reference_set(local_0++, identity, player, 0x8001, second_reference, 1, upper_first);
+			operation_count++;
+			query_reference_set(local_0++, identity, player, 0x8001, third_reference, 1, upper_second);
+			operation_count++;
+			query_reference_set(local_0++, identity, player, 0x8003, second_reference, 5, second);
+			operation_count++;
 		}
 	}
 	batch->operation_count = operation_count;
 	batch->attribute_count = attribute_count;
+	return batch;
 }
 
 // @retail 0x737a0
@@ -1185,6 +1225,7 @@ void function_73530(c_helper_a *helper, void *description)
 		variant_index = *(long *)((byte *)session + 0x49c8);
 	s_surface_description *variant = function_192e60(variant_index);
 	byte *output = (byte *)description;
+	volatile long *local_1 = (long *)output;
 	memset(output, 0, 0x14c);
 	*(word *)(output + 2) = 0;
 	*(long *)(output + 8) = 0x2651;
@@ -1222,12 +1263,12 @@ void function_73530(c_helper_a *helper, void *description)
 		if (session->state > 2 && session->state <= 8)
 			available = *(long *)((byte *)session + 0x4994);
 		available -= ratings[3];
-		*(long *)(output + 0x78) = ratings[0];
-		*(long *)(output + 0x68) = ratings[0x35c / 4];
-		*(long *)(output + 0x60) = available;
-		*(long *)(output + 0x7c) = ratings[1];
-		*(long *)(output + 0x80) = local_0;
-		*(long *)(output + 0x6c) = ratings[0x360 / 4];
+		local_1[0x78 / 4] = ratings[0];
+		local_1[0x68 / 4] = ratings[0x35c / 4];
+		local_1[0x60 / 4] = available;
+		local_1[0x7c / 4] = ratings[1];
+		local_1[0x80 / 4] = local_0;
+		local_1[0x6c / 4] = ratings[0x360 / 4];
 		if (local_0 != NONE)
 			*(long *)(output + 0x84) = local_0 > function_1931a0(ratings[1], variant) ? local_0 : function_1931a0(ratings[1], variant);
 		else
@@ -1293,7 +1334,7 @@ long c_helper_b::v5(long size, void *data)
 struct s_address_table;
 long function_199250(s_address_table *table, byte const *address);
 long function_199290(byte *results);
-char *function_1537a0(byte const *address);
+char *__stdcall function_1537a0(byte const *address);
 
 struct s_rating_summary
 {
@@ -1302,6 +1343,7 @@ struct s_rating_summary
     char name[64];
 };
 
+#pragma inline_depth(0)
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {
@@ -1312,20 +1354,22 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
     long players[3] = { variant->field_8, variant->field_8 + 32, variant->field_8 + 64 };
     if (variant->type != 5)
     {
-        for (long i = 0; i < 16; i++)
+        for (long i = 0; i < 16; ++i)
         {
-            const s_match_player_rating_entry *player = &collection->players[i];
+            const byte *local_0 = (const byte *)collection + 0x41e + i * sizeof(s_match_player_rating_entry);
+            const byte *local_1 = (const byte *)collection + 0xf44 + i * 0x36a;
+            const s_match_player_rating_entry *player = (const s_match_player_rating_entry *)(local_0 - 0x9a);
+            if (!player->active || player->team == NONE || (*(const dword *)((const byte *)player + 0xa) & 3)) continue;
             long skill = player->unknown9a;
             long value = player->value;
-            if (player->active && player->team != NONE && !(player->flags & 3) &&
-                *(const dword *)((const byte *)player + 0xa) != 0xbad00000 &&
+            if (*(const dword *)((const byte *)player + 0xa) != 0xbad00000 &&
                 player->key == key && skill != NONE && value != NONE)
             {
                 long change = function_74800(collection, i);
                 value += change;
                 long level = function_74970(value, skill);
                 long lower = value >= 0 ? function_74970(value, 0) : 0;
-                const byte *stats = (const byte *)collection + 0xf44 + i * 0x36a;
+                const byte *stats = local_1;
                 long third = *(const word *)(stats + 8) & 0x7fff;
                 long first = *(const word *)stats & 0x7fff;
                 long second = *(const word *)(stats + 6) & 0x7fff;
@@ -1344,7 +1388,10 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                         function_739a0(group, key);
                     }
                 }
-                s_rating_summary summary = { 0 };
+                s_rating_summary summary;
+                summary.values[0] = 0;
+                summary.values[1] = 0;
+                memset((byte *)&summary + 8, 0, sizeof(summary) - 8);
                 summary.values[2] = function_199290((byte *)collection);
                 summary.values[3] = function_199250((s_address_table *)collection, g_4cf7cc);
                 summary.values[0] = *(long *)((byte *)collection + 0x130);
@@ -1358,9 +1405,14 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 word character;
                 do
                 {
-                    character = *source++;
-                    *destination++ = remaining == 1 ? 0 : (character <= 127 ? (char)character : '?');
-                } while (character && --remaining > 0);
+                    character = *source;
+                    if (remaining == 1) *destination = 0;
+                    else if (character <= 127) *destination = (char)character;
+                    else *destination = '?';
+                    source++;
+                    destination++;
+                    remaining--;
+                } while (character && remaining > 0);
                 summary.values[5] = *(const short *)((const byte *)player + 0xa2);
                 summary.values[6] = player->rank;
                 summary.values[7] = value;
@@ -1372,15 +1424,30 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 summary.values[13] = player->team;
                 summary.values[14] = collection->teams[player->team].unknown02;
                 summary.values[15] = collection->teams[player->team].rank;
-                function_73e00(batch, identity, change, first, second, third, lower, level, 3, players);
+                function_73e00(lower, batch, identity, change, first, second, third, level, 3, players);
             }
         }
     }
     else
     {
-        for (long i = 0; i < variant->width; i++)
+        for (long i = 0; ; ++i)
         {
-            const s_match_rating_entry *team = &collection->teams[i];
+            const byte *local_2 = (const byte *)collection + 0xdc8 + i * sizeof(s_match_rating_entry);
+            const byte *local_3 = (const byte *)collection + 0x49e4 + i * 0x5a;
+            long count = NONE;
+            switch (variant->type)
+            {
+            case 1: case 2:
+                break;
+            case 3: case 4: case 5:
+                count = variant->width;
+                break;
+            default:
+                __assume(0);
+            }
+            if (i >= count)
+                break;
+            const s_match_rating_entry *team = (const s_match_rating_entry *)(local_2 - 4);
             const s_query_identity *identity = (const s_query_identity *)team->unknown0c;
             if (team->active && memcmp(identity, g_440070, 12) != 0 &&
                 team->skill != NONE && team->value != NONE)
@@ -1389,15 +1456,16 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 long value = team->value + change;
                 long level = function_74970(value, team->skill);
                 long lower = value >= 0 ? function_74970(value, 0) : 0;
-                const byte *stats = (const byte *)collection + 0x49e4 + i * 0x5a;
-                function_73e00(batch, identity, change,
+                const byte *stats = local_3;
+                function_73e00(lower, batch, identity, change,
                     *(const word *)stats & 0x7fff, *(const word *)(stats + 6) & 0x7fff,
-                    *(const word *)(stats + 8) & 0x7fff, lower, level, 3, players);
+                    *(const word *)(stats + 8) & 0x7fff, level, 3, players);
             }
         }
     }
     function_739a0(NONE, key);
 }
+#pragma inline_depth(255)
 
 struct s_cache_property
 {
@@ -1413,11 +1481,11 @@ struct s_cache_property_record
     long count;
     s_cache_property *properties;
 };
-void function_80940(s_cache_property_record *records, long record_capacity,
-    s_cache_property *properties, long property_capacity, long buffer_capacity,
+void function_80940(long record_capacity, s_cache_property_record *records,
+    long property_capacity, s_cache_property *properties, long buffer_capacity,
     byte *buffers, long *record_count, long *property_count, long *buffer_count);
-void function_80bf0(s_cache_property_record *records, long record_capacity,
-    s_cache_property *properties, long property_capacity, byte *buffers,
+void function_80bf0(long record_capacity, s_cache_property_record *records,
+    long property_capacity, s_cache_property *properties, byte *buffers,
     long *record_count, long *property_count, long *buffer_count);
 void function_80aa0(s_cache_property_record *records, long count);
 void function_80d70(s_cache_property_record *records, long count);
@@ -1445,6 +1513,8 @@ long g_50f50c;
 s_cache_property g_50f510[128];
 byte g_50fd14[2048];
 
+static __forceinline long query_time_now();
+
 static inline long query_time_now()
 {
     return g_510548 ? g_51054c : GetTickCount();
@@ -1464,6 +1534,15 @@ static inline bool query_variant_available(long index)
     return g_47d8f4.count && (g_47d8f4.flags & 2) && function_1934f0(&g_551ae8[index]);
 }
 
+#pragma optimize("g", off)
+static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *arg_0)
+{
+    s_player_slot_flags *local_0 = NULL;
+    if (arg_0) local_0 = arg_0;
+    return local_0;
+}
+#pragma optimize("", on)
+
 // @retail 0x74aa0
 void function_074aa0(void)
 {
@@ -1471,17 +1550,17 @@ void function_074aa0(void)
     {
         for (long group = 0; group < 4; group++)
         {
-            s_session_interface_user *user = &g_4cd868.users[group];
             s_search_value_group *values = &g_509454[group];
+            s_session_interface_user *user = &g_4cd868.users[group];
             bool valid = false;
             bool team = false;
             if (user->valid)
             {
-                byte properties[0x90];
                 XUID identity = user->xuid;
+                byte properties[0x90];
                 memcpy(properties, user->properties, sizeof(properties));
-                s_player_slot_flags *slot = (s_player_slot_flags *)
-                    ((byte *)&g_54e8e0[user->unknown10] + 0x470);
+                s_player_slot_flags *slot = function_74aa1((s_player_slot_flags *)
+                    ((byte *)&g_54e8e0[user->unknown10] + 0x470));
                 if (!(slot->flags & 3) && !(*(dword *)((byte *)&identity + 8) & 3) &&
                     *(dword *)((byte *)&identity + 8) != 0xbad00000)
                 {
@@ -1531,19 +1610,20 @@ void function_074aa0(void)
                         query_variant_available(i))
                     {
                         const byte *identity = (const byte *)&g_509454[group] + (g_551ae8[i].type == 5 ? 0x10 : 4);
-                        bool duplicate = false;
+                        s_cache_property_record *candidate = g_50c474 + records_used;
                         if (g_551ae8[i].type == 5)
-                            for (long j = 0; j < records_used; j++)
-                                if (!memcmp(g_50c474[j].identity, identity, 12) &&
-                                    g_50c474[j].type == g_551ae8[i].field_8)
-                                { duplicate = true; break; }
-                        if (!duplicate)
+                            for (candidate = g_50c474; candidate < g_50c474 + records_used; candidate++)
+                                if (!memcmp(candidate->identity, identity, 12) &&
+                                    candidate->type == g_551ae8[i].field_8)
+                                    break;
+                        if (candidate == g_50c474 + records_used)
                         {
-                            s_cache_property_record *record = &g_50c474[records_used++];
+                            s_cache_property_record *record = &g_50c474[records_used];
                             memcpy(record->identity, identity, 12);
                             record->type = g_551ae8[i].field_8;
                             record->count = 6;
                             record->properties = &g_50cbf8[properties_used];
+                            records_used++;
                             for (long j = 0; j < 6; j++)
                             {
                                 *(word *)&record->properties[j].unknown00 = (word)(j + 1);
@@ -1559,8 +1639,8 @@ void function_074aa0(void)
             if (records_used < 80 && properties_used < 480)
             {
                 long records = 0, properties = 0, buffers;
-                function_80940(&g_50c474[records_used], 80 - records_used,
-                    &g_50cbf8[properties_used], 480 - properties_used, 32, g_50e9fc,
+                function_80940(80 - records_used, &g_50c474[records_used],
+                    480 - properties_used, &g_50cbf8[properties_used], 32, g_50e9fc,
                     &records, &properties, &buffers);
                 records_used += records;
                 properties_used += properties;
@@ -1654,7 +1734,7 @@ void function_074aa0(void)
         if (!g_50f1fc && (!g_50f200 || query_time_now() - g_50f200 > 300000))
         {
             long records = 0, properties = 0, buffers;
-            function_80bf0(g_50f20c, 32, g_50f510, 128, g_50fd14, &records, &properties, &buffers);
+            function_80bf0(32, g_50f20c, 128, g_50f510, g_50fd14, &records, &properties, &buffers);
             if (records > 0 && properties > 0)
             {
                 long task = online_stats_write((XONLINE_STAT_SPEC *)g_50f20c, (word)records);
@@ -1701,8 +1781,8 @@ long online_round_report(XNKID const *session_id, ULONGLONG const *round_key,
 void function_73ca0(byte *results)
 {
     byte storage[0xc090];
-    bool local_host = false;
     bool valid = true;
+    bool local_host = false;
     if (results)
     {
         s_surface_description *variant = function_192e60(*(long *)(results + 4));
@@ -1727,9 +1807,7 @@ void function_73ca0(byte *results)
         count = batch->operation_count;
         procedures = (const XONLINE_STAT_PROC *)batch->operations;
     }
-    s_session_id session_id = g_510528;
-    s_session_id round_key = g_510520;
-    long task = online_round_report((const XNKID *)&session_id, (const ULONGLONG *)&round_key,
+    long task = online_round_report((const XNKID *)&g_510528, (const ULONGLONG *)&g_510520,
         count, procedures, local_host, g_51051d);
     if (task != NONE)
     {
@@ -1741,81 +1819,98 @@ void function_73ca0(byte *results)
 }
 
 bool online_task_service_unavailable(long task_index);
-long online_round_extend(ULONGLONG const *round_key, XNKID const *session_id, word seconds);
+long online_round_extend(XNKID const *session_id, ULONGLONG const *round_key, word seconds);
 
 // @retail 0x755d0
 void function_755d0(void)
 {
-    if (g_467214 == NONE || online_task_get_logon_status(g_467214) != 1)
+    if (g_467214 == NONE)
         return;
-    if (g_510518 == 2 && g_51051c)
-        function_73ca0(NULL);
-    long state = g_510518;
-    if (state == 3 || state == 1)
+    switch (online_task_get_logon_status(g_467214))
     {
-        long task = g_510530;
-        long status = online_task_poll(task);
-        if (status == 2)
-        {
-            switch (state)
-            {
-            case 1:
-                g_510518 = 2;
-                g_510534 = function_75870();
-                break;
-            case 3:
-                g_510518 = 0;
-                g_510514 = 0;
-                break;
-            }
-            function_6b640(g_510530);
-            g_510530 = NONE;
-        }
-        else if (status < 0 || status > 1)
-        {
-            function_6b640(task);
-            g_510530 = NONE;
-            switch (g_510518)
-            {
-            case 1: function_73dc0(1); break;
-            case 3: function_73dc0(2); break;
-            }
-        }
-    }
-    if (g_510518 == 2)
+    case 1:
     {
-        long task = g_510538;
-        if (task == NONE)
+        if (g_510518 == 2 && g_51051c)
+            function_73ca0(NULL);
+        if (g_510518 == 3 || g_510518 == 1)
         {
-            long interval = g_network_configuration.value374 * 1000 / 3;
-            long last = g_510534;
-            if (query_time_now() - last >= interval)
-            {
-                s_session_id session_id = g_510528;
-                s_session_id round_key = g_510520;
-                long created = online_round_extend((const ULONGLONG *)&round_key,
-                    (const XNKID *)&session_id, (word)g_network_configuration.value374);
-                if (created != NONE)
-                    g_510538 = created;
-            }
-        }
-        else
-        {
+            long state = g_510518;
+            long task = g_510530;
             long status = online_task_poll(task);
-            if (status >= 0 && status <= 1)
-                return;
-            long time;
-            if (status == 2)
-                time = function_75870();
+            if (status < 0)
+                goto poll_failed;
+            if (status > 1)
+            {
+                if (status == 2)
+                {
+                    switch (state)
+                    {
+                    case 1:
+                        g_510518 = 2;
+                        g_510534 = function_75870();
+                        function_6b640(g_510530);
+                        g_510530 = NONE;
+                        break;
+                    case 3:
+                        g_510518 = 0;
+                        g_510514 = 0;
+                        function_6b640(g_510530);
+                        g_510530 = NONE;
+                        break;
+                    }
+                }
+                else
+                {
+                poll_failed:
+                    function_6b640(task);
+                    g_510530 = NONE;
+                    switch (g_510518)
+                    {
+                    case 1: function_73dc0(1); break;
+                    case 3: function_73dc0(2); break;
+                    }
+                }
+            }
+        }
+        if (g_510518 == 2)
+        {
+            long task = g_510538;
+            if (task == NONE)
+            {
+                long interval = g_network_configuration.value374 * 1000 / 3;
+                long last = g_510534;
+                if (query_time_now() - last >= interval)
+                {
+                    word seconds = (word)g_network_configuration.value374;
+                    long created = online_round_extend((const XNKID *)&g_510528,
+                        (const ULONGLONG *)&g_510520, seconds);
+                    if (created != NONE)
+                        g_510538 = created;
+                }
+            }
             else
             {
-                if (status != 3 || !online_task_service_unavailable(task))
-                    function_73dc0(3);
-                time = query_time_now();
+                long status = online_task_poll(task);
+                long time;
+                if (status < 0)
+                    goto extension_failed;
+                if (status <= 1)
+                    return;
+                if (status == 2)
+                    time = function_75870();
+                else
+                {
+                extension_failed:
+                    if (status != 3 || !online_task_service_unavailable(task))
+                        function_73dc0(3);
+                    time = query_time_now();
+                }
+                g_510534 = time;
+                function_6b640(g_510538);
+                g_510538 = NONE;
             }
-            g_510534 = time;
-            function_6b640(g_510538);
-            g_510538 = NONE;
         }
+        break;
+    }
     }
 }

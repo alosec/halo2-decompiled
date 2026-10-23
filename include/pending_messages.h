@@ -19,7 +19,7 @@ struct s_pending_message_header
 {
 	dword unknown00;
 	word flags;
-	short unknown06;
+	word unknown06;
 	short kind;
 	short state;
 	long unknown0c;

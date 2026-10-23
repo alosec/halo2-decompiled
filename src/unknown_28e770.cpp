@@ -2,6 +2,7 @@
 #include "unknown_2551c0.h"
 #include "globals.h"
 #include "object_markers.h"
+#include "normalize3d.h"
 
 struct s_28e770
 {
@@ -80,15 +81,15 @@ struct s_28e773
 struct s_object_ai_data;
 struct s_28f0e0;
 void *function_1e4b50(long arg_0);
-void function_28e5c0(long arg_0, s_object_ai_data *arg_1);
-bool function_28e4b0(long arg_0, short arg_1, long *arg_2, point3f *arg_3, vector3f *arg_4);
+void swarm_creature_update_countdown(long arg_0, s_object_ai_data *arg_1);
+bool swarm_target_get_location(long arg_0, short arg_1, long *arg_2, point3f *arg_3, vector3f *arg_4);
 real function_30bf0(vector3f *arg_0);
 bool function_2900b0(long arg_0, point3f const *arg_1, real arg_2, real arg_3, vector3f *arg_4);
 long function_1469f0(real arg_0);
 byte function_118f70(long arg_0);
 void function_b9a90(long arg_0);
 point3f *function_b9dd0(long arg_0, point3f *arg_1);
-bool function_28f0e0(vector3f const *arg_0, s_28f0e0 const *arg_1, long arg_2, long arg_3);
+bool function_28f0e0(long arg_2, s_28f0e0 const *arg_1, vector3f const *arg_0, long arg_3);
 bool function_28f290(long arg_0, vector3f *arg_1, vector3f *arg_2);
 void function_28e600(long arg_0, s_28e600 *arg_1);
 vector3f *g_4687b4;
@@ -112,7 +113,7 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 		if (local_3 && local_2)
 		{
 			s_28e771 *local_4 = (s_28e771 *)perception_get(local_0->field_1c);
-			function_28e5c0(arg_1, (s_object_ai_data *)local_3);
+			swarm_creature_update_countdown(arg_1, (s_object_ai_data *)local_3);
 			short local_5 = local_0->field_4a4;
 			short local_6 = local_0->field_4a5;
 			long local_7 = local_0->field_4a8;
@@ -129,11 +130,14 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 				local_7 = local_3->field_50;
 			}
 			point3f local_8;
-			vector3f local_9;
+			vector3f direction;
 			long local_10;
-			bool local_11 = function_28e4b0(local_7, local_6, &local_10, &local_8, &local_9);
+			vector3f target_velocity;
+			bool local_11 = swarm_target_get_location(local_7, local_6, &local_10, &local_8, &target_velocity);
 			s_28e772 *local_12 = (s_28e772 *)local_1;
-			local_3->field_80 = local_12->field_70;
+			vector3f *local_14 = &local_12->field_70;
+			vector3f *local_29 = &local_3->field_80;
+			*local_29 = *local_14;
 			local_3->field_8c = local_12->field_7c;
 			local_3->field_98 = *g_4687a4;
 			if (local_5 != local_3->field_24)
@@ -161,10 +165,10 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 						local_3->field_56 = false;
 					else
 					{
-						function_28e774(&local_4->field_24, &local_3->field_14, &local_9);
-						if (function_30bf0(&local_9) > 0.0f)
+						function_28e774(&local_4->field_24, &local_3->field_14, &direction);
+						if (function_30bf0(&direction) > 0.0f)
 						{
-							local_3->field_80 = local_9;
+							*local_29 = direction;
 							local_3->field_98 = *g_4687a8;
 						}
 						local_3->field_56 = true;
@@ -181,11 +185,11 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 					{
 						if (local_3->field_4c > 0)
 							goto local_21;
-						local_3->field_80 = local_13;
+						*local_29 = local_13;
 						local_3->field_98 = *g_4687a8;
-						if (local_3->field_80.k * local_12->field_70.k + local_3->field_80.j * local_12->field_70.j + local_12->field_70.i * local_3->field_80.i > 0.95f)
+						if (local_29->k * local_14->k + local_29->j * local_14->j + local_14->i * local_29->i > 0.95f)
 						{
-							if (function_2900b0(arg_1, &local_8, 0.9f, 2.7f, (vector3f *)&local_3->field_58))
+							if (function_2900b0(arg_1, (point3f const *)&target_velocity, 0.9f, 2.7f, (vector3f *)&local_3->field_58))
 							{
 								real local_20 = function_259d0((dword *)g_4e7408, NULL, 0, 1.0f, 3.0f);
 								local_3->field_57 = true;
@@ -203,7 +207,7 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 					real local_22 = function_30bf0(&local_13);
 					if (local_22 > 0.0f)
 					{
-						local_3->field_80 = local_13;
+						*local_29 = local_13;
 						if (local_22 > local_2->field_10)
 						{
 							local_3->field_98 = *g_4687a8;
@@ -225,15 +229,16 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 					function_b9a90(arg_1);
 					if (local_11)
 					{
-						function_b9dd0(arg_1, (point3f *)&local_9);
-						local_13.i = local_9.i - local_8.x;
-						local_13.j = local_9.j - local_8.y;
+						point3f placed_point;
+						function_b9dd0(arg_1, &placed_point);
+						local_13.i = placed_point.x - local_8.x;
+						local_13.j = placed_point.y - local_8.y;
 						local_13.k = 0.0f;
 						if (function_30bf0(&local_13) > 0.0f)
 						{
-							local_8.x = local_13.i + local_9.i;
-							local_8.y = local_9.j + local_13.j;
-							local_8.z = local_9.k + local_13.k;
+							local_8.x = local_13.i + placed_point.x;
+							local_8.y = placed_point.y + local_13.j;
+							local_8.z = placed_point.z + local_13.k;
 							if (function_2900b0(arg_1, &local_8, 0.9f, 2.7f, (vector3f *)&local_3->field_58))
 								local_3->field_57 = true;
 						}
@@ -251,18 +256,19 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 					}
 					if (local_23 > 0)
 					{
-						function_b9dd0(arg_1, (point3f *)&local_9);
-						function_28e774(&local_15.matrix.position, (point3f *)&local_9, &local_9);
-						real local_24 = function_30bf0(&local_9);
+						point3f placed_point;
+						function_b9dd0(arg_1, &placed_point);
+						function_28e774(&local_15.matrix.position, &placed_point, &direction);
+						real local_24 = function_30bf0(&direction);
 						if (local_24 > 0.0f)
 						{
-							local_3->field_80 = local_9;
+							*local_29 = direction;
 							local_3->field_98 = *g_4687a8;
 							if (local_24 < 0.2f)
-								function_28f0e0(&local_9, (s_28f0e0 const *)&local_15, arg_1, local_10);
+								function_28f0e0(arg_1, (s_28f0e0 const *)&local_15, &direction, local_10);
 							else if (local_12->field_17c == 1 && !(bool)local_12->field_12c)
 							{
-								real local_25 = local_12->field_1f0.j * local_9.j + local_12->field_1f0.i * local_9.i + local_9.k * local_12->field_1f0.k;
+								real local_25 = dot3f(&local_12->field_1f0, &direction);
 								if (local_25 < -0.99f || (local_12->field_1f0.k > 0.70710677f && local_25 > 0.99f))
 									local_3->field_50 = NONE;
 							}
@@ -280,33 +286,35 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 					{
 						if (local_26 < local_2->field_4)
 						{
-							local_3->field_80 = local_13;
+							*local_29 = local_13;
 							local_3->field_98 = *g_4687a8;
-							function_28e774(&local_3->field_14, &local_4->field_8, &local_9);
-							if (function_30bf0(&local_9) > 0.0f)
+							function_28e774(&local_3->field_14, &local_4->field_8, &direction);
+							if (function_30bf0(&direction) > 0.0f)
 							{
 								real local_27 = (real)local_3->field_26 * g_510c54->rate;
 								local_27 = local_27 < 0.0f ? 0.0f : local_27 > 5.0f ? 5.0f : local_27;
 								real local_28 = (1.0f - local_27 * (1.0f / 3.0f)) * 2.0f;
-								local_3->field_80.i += local_28 * local_9.i;
-								local_3->field_80.j += local_9.j * local_28;
-								local_3->field_80.k += local_9.k * local_28;
-								if (function_30bf0(&local_3->field_80) == 0.0f)
-									local_3->field_80 = local_13;
+								vector3f contribution;
+								vector3f_scale(&direction, local_28, &contribution);
+								local_29->i += contribution.i;
+								local_29->j += contribution.j;
+								local_29->k += contribution.k;
+								if (function_30bf0(local_29) == 0.0f)
+									*local_29 = local_13;
 							}
 						}
 						else
 						{
-							local_3->field_80.i = local_13.i * -1.0f;
-							local_3->field_80.j = local_13.j * -1.0f;
-							local_3->field_80.k = local_13.k * -1.0f;
+							local_29->i = local_13.i * -1.0f;
+							local_29->j = local_13.j * -1.0f;
+							local_29->k = local_13.k * -1.0f;
 							local_3->field_98 = *g_4687a4;
 						}
 					}
 				}
 				break;
 			case 7:
-				function_28f290(arg_1, &local_3->field_80, &local_3->field_98);
+				function_28f290(arg_1, local_29, &local_3->field_98);
 				break;
 			}
 			local_3->field_24 = local_5;

@@ -61,7 +61,7 @@ long function_11ca80(long value);
 void function_2186f0(void); /* unknown_218850.cpp */
 void texture_cache_dispose_from_old_map(void); /* unknown_12c0d0.cpp */
 void geometry_cache_dispose_from_old_map(void); /* unknown_12de70.cpp */
-void function_1233f0(void);
+void animation_cache_deactivate(void);
 void cache_files_dispose_map(void);
 
 struct s_bsp3d;
@@ -116,7 +116,7 @@ void function_18ed00(bool unload)
 			local_1->data = NULL;
 			local_1->loaded = false;
 		}
-		function_1233f0();
+		animation_cache_deactivate();
 		cache_files_dispose_map();
 		g_4686c0 = NONE;
 		g_4e0350 = NULL;
@@ -257,6 +257,34 @@ struct s_game_options
 	byte unknown268[0x1118 - 0x268];
 };
 
+struct s_session_options;
+void function_138110(s_game_options *options);
+void __stdcall function_138640(long count, s_session_options *options);
+void __stdcall function_1483c3(long value);
+void function_18e790(s_game_options const *options);
+
+#pragma inline_depth(0)
+// @retail 0x18f1c0
+void __stdcall function_18f1c0(long reason)
+{
+	s_game_options options;
+	if (!g_4e6948 || !g_4e6948->flag1120 || g_4e6948->state != 3)
+	{
+		function_138110(&options);
+		options.field_0_2 = 3;
+		strncpy(options.field_1c_2, "scenarios\\ui\\mainmenu\\mainmenu", sizeof(options.field_1c_2));
+		options.field_1c_2[sizeof(options.field_1c_2) - 1] = 0;
+		options.difficulty = reason;
+		function_138640(1, (s_session_options *)&options);
+		function_18e790(&options);
+	}
+	else
+	{
+		function_1483c3(reason);
+	}
+}
+#pragma inline_depth(255)
+
 /* unknown_12be90.cpp */
 extern bool g_4ed39d;
 extern bool g_4ed39e;
@@ -310,7 +338,7 @@ void function_18f170(s_game_options *options, long value)
 
 struct s_string_table;
 bool string_table_load(s_string_table *table);
-void function_1233a0(void);
+void animation_cache_activate(void);
 void geometry_cache_initialize_for_new_map(void);
 void texture_cache_load_shared_data(void);
 extern bool g_4e647b;
@@ -324,7 +352,7 @@ void function_18ec60(bool keep, char const *map_name)
 {
 	if (!keep)
 	{
-		function_1233a0();
+		animation_cache_activate();
 		string_table_load((s_string_table *)&((s_main_game_string_tables *)g_4e034c)->tables[current_language()]);
 		geometry_cache_initialize_for_new_map();
 		g_4e647b = false;
@@ -340,3 +368,4 @@ void function_18ec60(bool keep, char const *map_name)
 	g_4ed294 = 2;
 	function_x91aa57(g_4ed298, map_name, sizeof(g_4ed298));
 }
+

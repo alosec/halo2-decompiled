@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_16E290.CPP: requests for the geometry blocks of the structure bsp
    and of render models (geometry_cache.h), and two small initializers */
 
@@ -233,10 +234,7 @@ struct s_16f120_state
 struct s_unknown_13bf00;
 extern s_unknown_13bf00 *g_510c50;
 
-static inline bool local_user_in_use(long user_index)
-{
-	return g_4e8c20->entries[user_index] != NONE;
-}
+bool function_14ddc0(long local_player_index);
 
 // @retail 0x16f120
 void function_16f120(void)
@@ -245,11 +243,11 @@ void function_16f120(void)
 
 	for (user_index = 0; user_index < 4; user_index++)
 	{
-		if (user_index != NONE && local_user_in_use(user_index))
+		if (function_14ddc0(user_index))
 		{
-			s_player_state *state = &g_4e9bd4[user_index].state;
-
-			function_11bed0((s_location *)state->unknown0c, &state->position);
+#pragma inline_depth(0)
+			function_11bed0((s_location *)g_4e9bd4[user_index].state.unknown0c, &g_4e9bd4[user_index].state.position);
+#pragma inline_depth()
 		}
 	}
 	if ((!g_510c50 || !((s_16f120_state *)g_510c50)->active) && g_510c54->game_time > 0)
@@ -349,9 +347,8 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // @retail 0x16de20
 void function_16de20(short index, s_16e150_bits const *table, dword *output)
 {
-	long word_count = (table->count + 31) >> 5;
-	long bytes = word_count * sizeof(dword);
-	dword const *base = table->bits + index * word_count;
+	long bytes = ((table->count + 31) & ~31) >> 3;
+	dword const *base = table->bits + index * ((table->count + 31) >> 5);
 	if (table->clusters[index].flags & 2)
 	{
 		dword portal_bits[16];
@@ -360,6 +357,7 @@ void function_16de20(short index, s_16e150_bits const *table, dword *output)
 		memcpy(output, function_16e150(table, index), bytes);
 		memcpy(expanded, output, bytes);
 		memset(visited, 0, ((table->portal_count + 31) >> 5) * sizeof(dword));
+		long word_count = (table->count + 31) >> 5;
 		for (;;)
 		{
 			s_word_bit_iterator iterator;
@@ -375,8 +373,7 @@ void function_16de20(short index, s_16e150_bits const *table, dword *output)
 				{
 					long portal_index = cluster->portals[i];
 					dword bit = 1 << (portal_index & 31);
-					dword *visited_word = &visited[portal_index >> 5];
-					if (!(*visited_word & bit))
+					if (!(visited[portal_index >> 5] & bit))
 					{
 						s_portal_16de20 const *portal = &table->portals[portal_index];
 						if ((portal->flags & 4) && (((dword *)g_4f93a4)[portal_index >> 5] & bit))
@@ -391,7 +388,7 @@ void function_16de20(short index, s_16e150_bits const *table, dword *output)
 							for (j = word_count - 1; j >= 0; --j)
 								expanded[j] |= portal_bits[j];
 						}
-						*visited_word |= bit;
+						visited[portal_index >> 5] |= bit;
 					}
 				}
 			}
@@ -551,6 +548,11 @@ struct s_16e290_bitmap_group
 
 bool texture_cache_bitmap_request(s_bitmap_data *bitmap);
 
+static inline s_bitmap_data *bitmap_group_get_bitmap(s_16e290_bitmap_group *group, short bitmap_index)
+{
+	return (s_bitmap_data *)(group->bitmaps + bitmap_index * 0x74);
+}
+
 // @retail 0x16e7b0
 bool function_16e7b0(long index)
 {
@@ -560,15 +562,15 @@ bool function_16e7b0(long index)
 	{
 		s_16e290_bsp *bsp = g_4e0344->bsp;
 
-		if (bsp->unknown1c != NONE && bsp->checksum == ((s_16e290_match_view *)g_4e0348)->checksum)
+		if (*(volatile long *)&bsp->unknown1c != NONE && bsp->checksum == ((s_16e290_match_view *)g_4e0348)->checksum)
 		{
-			short bitmap_index = bsp->bitmaps2c[index].bitmap_index;
+			long bitmap_index = bsp->bitmaps2c[index].bitmap_index;
 
 			if (bitmap_index != NONE)
 			{
 				s_16e290_bitmap_group *group = (s_16e290_bitmap_group *)g_4e3b44[bsp->unknown1c & 0xffff].bytes;
 
-				s_bitmap_data *bitmap = (s_bitmap_data *)(group->bitmaps + bitmap_index * 0x74);
+				s_bitmap_data *bitmap = bitmap_group_get_bitmap(group, (short)bitmap_index);
 
 				result = texture_cache_bitmap_request(bitmap);
 			}
@@ -586,7 +588,7 @@ bool function_16e820(long index)
 	{
 		s_16e290_bsp *bsp = g_4e0344->bsp;
 
-		if (bsp->unknown1c != NONE && bsp->checksum == ((s_16e290_match_view *)g_4e0348)->checksum)
+		if (*(volatile long *)&bsp->unknown1c != NONE && bsp->checksum == ((s_16e290_match_view *)g_4e0348)->checksum)
 		{
 			long bitmap_index = bsp->bitmaps4c[index].bitmap_index;
 
@@ -594,7 +596,7 @@ bool function_16e820(long index)
 			{
 				s_16e290_bitmap_group *group = (s_16e290_bitmap_group *)g_4e3b44[bsp->unknown1c & 0xffff].bytes;
 
-				s_bitmap_data *bitmap = (s_bitmap_data *)(group->bitmaps + bitmap_index * 0x74);
+				s_bitmap_data *bitmap = bitmap_group_get_bitmap(group, (short)bitmap_index);
 
 				result = texture_cache_bitmap_request(bitmap);
 			}
@@ -711,24 +713,23 @@ extern s_sound_globals *g_51ebd4;
 bool function_16ea60(long sound_index)
 {
 	s_16ea60_sound *sound = (s_16ea60_sound *)g_4e3b44[sound_index & 0xffff].bytes;
-	long pitch_range_count = sound->pitch_range_count;
 	bool result = true;
-	long pitch_range_index;
+	long pitch_range_index = 0;
+	long pitch_range_count = sound->pitch_range_count;
 
-	for (pitch_range_index = 0; pitch_range_index < pitch_range_count; pitch_range_index++)
+	for (; pitch_range_index < pitch_range_count; pitch_range_index++)
 	{
-		s_16ea60_tables *tables = (s_16ea60_tables *)g_51ebd4;
-		s_16ea60_pitch_range *arg_58ecd0 = &tables->pitch_ranges[sound->first_pitch_range + pitch_range_index];
+		s_16ea60_pitch_range *arg_58ecd0 = &((s_16ea60_tables *)g_51ebd4)->pitch_ranges[sound->first_pitch_range + pitch_range_index];
 		long permutation_count = arg_58ecd0->permutation_count;
 		long permutation_index;
 
 		for (permutation_index = 0; permutation_index < permutation_count; permutation_index++)
 		{
-			s_16ea60_permutation *permutation = &tables->permutations[arg_58ecd0->first_permutation + permutation_index];
-			dword flags = function_218850(sound_index, &tables->chunks[permutation->first_chunk], 8);
+			s_16ea60_tables *tables = (s_16ea60_tables *)g_51ebd4;
+			s_sound_chunk *chunk = &tables->chunks[tables->permutations[arg_58ecd0->first_permutation + permutation_index].first_chunk];
+			dword flags = function_218850(sound_index, chunk, 8);
 
 			result = result && (flags & 2);
-			tables = (s_16ea60_tables *)g_51ebd4;
 		}
 	}
 	return result;
@@ -1054,7 +1055,12 @@ void function_16e330(long tag_index, long section_index)
 
 							for (bitmap_index = 0; bitmap_index < group->bitmap_count; bitmap_index++)
 							{
-								bitmap_predict_inline(&group->bitmaps[bitmap_index], 0xe);
+								s_bitmap_predict_view *bitmap = &group->bitmaps[bitmap_index];
+
+								if (bitmap)
+								{
+									bitmap_predict_inline(bitmap, 0xe);
+								}
 							}
 						}
 					}
@@ -1071,9 +1077,15 @@ void function_16e330(long tag_index, long section_index)
 /* a list of bitmap tags to predict (8 bytes each) */
 struct s_16eb20_entry
 {
-	byte unknown00[4];
+	dword group_tag;
 	long bitmap_tag_index;
 };
+
+/* a tag's definition from its group and index (the group is not checked here) */
+static inline void *tag_get_16eb20(dword group_tag, long tag_index)
+{
+	return g_4e3b44[tag_index & 0xffff].bytes;
+}
 
 struct s_16eb20_block
 {
@@ -1088,11 +1100,11 @@ void function_16eb20(s_16eb20_block const *block)
 
 	for (i = 0; i < block->count; i++)
 	{
-		long bitmap_tag_index = block->entries[i].bitmap_tag_index;
+		s_16eb20_entry const *entry = &block->entries[i];
 
-		if (bitmap_tag_index != NONE)
+		if (entry->bitmap_tag_index != NONE)
 		{
-			s_16e330_bitmap_group *group = (s_16e330_bitmap_group *)g_4e3b44[bitmap_tag_index & 0xffff].bytes;
+			s_16e330_bitmap_group *group = (s_16e330_bitmap_group *)tag_get_16eb20(entry->group_tag, entry->bitmap_tag_index);
 			long bitmap_index;
 
 			for (bitmap_index = 0; bitmap_index < group->bitmap_count; bitmap_index++)
@@ -1164,7 +1176,7 @@ struct s_16e2c0_definition
 	s_16e2c0_entry *entries;
 };
 
-void function_246c60(void *block, long unknown);
+void function_246c60(long unknown, void *block);
 
 // @retail 0x16e2c0
 void function_16e2c0(long tag_index)
@@ -1178,7 +1190,7 @@ void function_16e2c0(long tag_index)
 
 		if (entry->count > 0)
 		{
-			function_246c60(entry->unknown70, entry->unknownb4);
+			function_246c60(entry->unknownb4, entry->unknown70);
 		}
 	}
 }
@@ -1215,6 +1227,9 @@ struct s_motion_channels_16ff10
 void function_16ff10(long user_index)
 {
 	s_motion_channels_16ff10 *state = (s_motion_channels_16ff10 *)g_4e9bd4 + user_index;
+	real *acceleration = state->second_derivative;
+	real *delta = state->delta;
+	real *velocity = state->first_derivative;
 	real *fifth = state->fifth;
 	real *fourth = state->fourth;
 	real *third = state->third;
@@ -1222,11 +1237,8 @@ void function_16ff10(long user_index)
 	real *first = state->first;
 	real *constant = state->constant;
 	real *time = state->times;
-	real *acceleration = state->second_derivative;
-	real *delta = state->delta;
-	real *velocity = state->first_derivative;
 	function_172520((s_observer_command *)((byte *)state + 8));
-	for (short group = 0; group < 6; ++group, ++time)
+	for (short group = 0; group < 6; ++time, ++group)
 	{
 		if ((state->flags & 1) && *time > g_4e9bd0)
 		{
@@ -1237,7 +1249,7 @@ void function_16ff10(long user_index)
 			real inverse5 = inverse4 * inverse;
 			for (short i = 0; i < g_468d3c[group]; ++i)
 			{
-				fifth[i] = acceleration[i] * inverse3 * 0.5f - (delta[i] * inverse5 * 6.0f + velocity[i] * inverse4 * 3.0f);
+				fifth[i] = acceleration[i] * inverse3 * 0.5f - ((real)(delta[i] * inverse5 * 6.0f) + (real)(velocity[i] * inverse4 * 3.0f));
 				fourth[i] = delta[i] * inverse4 * 15.0f + velocity[i] * inverse3 * 7.0f - acceleration[i] * inverse2;
 				third[i] = acceleration[i] * inverse * 0.5f - (delta[i] * inverse3 * 10.0f + velocity[i] * inverse2 * 4.0f);
 				second[i] = 0.0f;
@@ -1259,16 +1271,17 @@ void function_16ff10(long user_index)
 		third += count;
 		second += count;
 		first += count;
-		constant += count;
+		real *next_constant = constant + count;
 		acceleration += count;
 		delta += count;
 		velocity += count;
+		constant = next_constant;
 	}
 }
 real g_468d28 = 1.0f;
 
 struct s_bsp3d;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 extern s_bsp3d *g_4e033c;
 extern short g_4686c4;
 struct s_unknown_13bf00;
@@ -1373,7 +1386,7 @@ void __stdcall function_16f570(long user_index)
 }
 void function_16fe90(long user_index);
 
-void function_170bb0(real const *first, real const *second, real *out);
+void function_170bb0(real *out, real const *second, real const *first);
 void function_1701f0(long player_index);
 void function_1703f0(long player_index);
 void function_170630(long player_index);
@@ -1381,11 +1394,12 @@ void function_170630(long player_index);
 // @retail 0x16fe90
 void function_16fe90(long user_index)
 {
-	byte *state = (byte *)&g_4e9bd4[user_index];
+	s_16f190_observer *observers = (s_16f190_observer *)g_4e9bd4;
+	byte *state = (byte *)&observers[user_index];
 	real *time = (real *)(state + 0x9c);
-	if (!((*(s_observer_command **)(state + 4))->flags & 0x20))
+	if (!(observers[user_index].command->flags & 0x20))
 	{
-		function_170bb0((real *)(state + 0xc), (real *)(state + 0x10c), (real *)(state + 0x320));
+		function_170bb0((real *)(state + 0x320), (real *)(state + 0x10c), (real *)(state + 0xc));
 		function_16ff10(user_index);
 		function_1701f0(user_index);
 		function_1703f0(user_index);
@@ -1435,7 +1449,10 @@ void function_16ebf0(long user_index)
 			{
 			case 0:
 			case 2:
-				function_1546f0(user_index, &adjustment);
+				{
+					void (__stdcall *const adjust_view)(long, transform4x3f *) = function_1546f0;
+					adjust_view(user_index, &adjustment);
+				}
 				break;
 			}
 		}
@@ -1443,8 +1460,14 @@ void function_16ebf0(long user_index)
 	vector3f *original_forward = (vector3f *)(state + 0xd8);
 	vector3f *original_up = (vector3f *)(state + 0xe4);
 	point3f *original_position = (point3f *)(state + 0xb8);
-	vector3f forward = *original_forward;
-	vector3f up = *original_up;
+	vector3f forward;
+	forward.i = original_forward->i;
+	forward.j = original_forward->j;
+	forward.k = original_forward->k;
+	vector3f up;
+	up.i = original_up->i;
+	up.j = original_up->j;
+	up.k = original_up->k;
 	transform4x3f matrix;
 	matrix.scale = 1.0f;
 	matrix.forward = *original_forward;
@@ -1524,20 +1547,27 @@ struct s_16f280_flags
 	bool active;
 };
 
-static inline s_16f190_observer *function_xd356b3(long user_index)
-{
-	s_16f190_observer *result = NULL;
-
-	if (user_index != NONE)
-	{
-		result = &((s_16f190_observer *)g_4e9bd4)[user_index];
-	}
-	return result;
-}
-
 static inline bool local_user_exists(long user_index)
 {
 	return g_4e8c20->entries[user_index] != NONE;
+}
+
+/* the location of a point, as 0x11bed0 computes it */
+static inline void location_from_point_16f280(s_location *location, point3f *point)
+{
+	if (g_4686c4 == NONE)
+	{
+		location->cluster_index = g_4686c4;
+		location->bsp_index = g_4686c4;
+		location->leaf_index = NONE;
+	}
+	else
+	{
+		long leaf_index = function_14a280(g_4e033c, 0, point);
+		location->leaf_index = leaf_index;
+		location->cluster_index = leaf_index != NONE ? ((s_16f280_leaves_view *)g_4e0348)->leaves[leaf_index].cluster_index : NONE;
+		location->bsp_index = g_4686c4;
+	}
 }
 
 /* updates the local players' observers and predicts the cluster each looks from */
@@ -1549,10 +1579,13 @@ void __stdcall function_16f280(real dt)
 	g_4e9bd0 = g_468d28 * dt;
 	for (user_index = 0; user_index < 4; user_index++)
 	{
-		s_16f190_observer *observer = function_xd356b3(user_index);
+		bool available = false;
 
-		if (observer && local_user_exists(user_index))
+		if (user_index != NONE)
+			available = local_user_exists(user_index);
+		if (available)
 		{
+			s_16f190_observer *observer = &((s_16f190_observer *)g_4e9bd4)[user_index];
 			short cluster_index;
 
 			observer->unknown0b4 = true;
@@ -1563,20 +1596,10 @@ void __stdcall function_16f280(real dt)
 			}
 			function_170fd0(user_index);
 			function_16ebf0(user_index);
-			cluster_index = NONE;
-			if (g_4686c4 != NONE)
-			{
-				long leaf_index = function_14a280(g_4e033c, &g_4e9bd4[user_index].state.position, 0);
+			s_location location;
 
-				if (leaf_index != NONE)
-				{
-					cluster_index = ((s_16f280_leaves_view *)g_4e0348)->leaves[leaf_index].cluster_index;
-				}
-				else
-				{
-					cluster_index = NONE;
-				}
-			}
+			location_from_point_16f280(&location, (point3f *)((byte *)observer + 0xb8));
+			cluster_index = location.cluster_index;
 			if (!g_510c50 || !((s_16f280_flags *)g_510c50)->active)
 			{
 				if (g_4ea934)

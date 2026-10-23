@@ -32,9 +32,9 @@ void function_194710(s_bitstream *stream, bool discard)
 	{
 		if (stream->mode == 1 && saved < stream->bit_position)
 		{
+			stream->unknown30++;
 			stream->unknown2c = stream->bit_position - saved;
 			long byte_index = saved / 8;
-			stream->unknown30++;
 			if (byte_index < stream->size_in_bytes)
 				stream->data[byte_index] &= (byte)((1 << (saved % 8)) - 1);
 			long count = stream->size_in_bytes - byte_index - 1;
@@ -89,14 +89,10 @@ PRIVATE __forceinline void vector_basis_cross(vector3f const *v, vector3f const 
 // @retail 0x194870
 real function_194870(vector3f const *v, vector3f *a, vector3f *b)
 {
-	vector3f const *r0 = g_4687a8;
-	vector3f const *r1 = g_4687ac;
-	real d0 = (real)fabs(r0->i * v->i + r0->j * v->j + r0->k * v->k);
-	real d1 = (real)fabs(r1->i * v->i + r1->j * v->j + r1->k * v->k);
-	if (d0 < d1)
-		vector_basis_cross(v, r0, a);
+	if ((real)fabs(g_4687a8->i * v->i + g_4687a8->j * v->j + g_4687a8->k * v->k) < (real)fabs(g_4687ac->i * v->i + g_4687ac->j * v->j + g_4687ac->k * v->k))
+		vector_basis_cross(v, g_4687a8, a);
 	else
-		vector_basis_cross(r1, v, a);
+		vector_basis_cross(g_4687ac, v, a);
 	function_30bf0(a);
 	vector_basis_cross(v, a, b);
 	return function_30bf0(b);
@@ -119,12 +115,12 @@ real function_194a10(vector3f const *axis, real angle, vector3f *out)
 	*out = a;
 	real c = (real)cos(angle);
 	real k = (axis->i * out->i + axis->k * out->k + axis->j * out->j) * (1.f - c);
-	real x = axis->i * k + out->i * c - (axis->k * out->j - out->k * axis->j) * s;
-	real y = out->j * c + axis->j * k - (out->k * axis->i - axis->k * out->i) * s;
-	real z = out->k * c + axis->k * k - (axis->j * out->i - out->j * axis->i) * s;
-	out->i = x;
-	out->j = y;
-	out->k = z;
+	real cross_j = out->k * axis->i - axis->k * out->i;
+	real cross_k = axis->j * out->i - out->j * axis->i;
+	real cross_i = axis->k * out->j - out->k * axis->j;
+	out->i = axis->i * k + out->i * c - cross_i * s;
+	out->j = out->j * c + axis->j * k - cross_j * s;
+	out->k = out->k * c + axis->k * k - cross_k * s;
 	return function_30bf0(out);
 }
 
@@ -181,16 +177,20 @@ real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 	long value = (long)function_1959c0(stream, bits);
 	if (value != 0)
 	{
-		long n = (1 << bits) - 1;
-		if (value >= n)
+		if (value >= (1 << bits) - 1)
 			return hi;
-		lo = (real)exp(((real)(n - value) * (real)log(lo) + (real)value * (real)log(hi)) / (real)n);
+		long n = (1 << bits) - 1;
+		real log_lo = (real)log(lo);
+		real log_hi = (real)log(hi);
+		real weight_lo = (real)(n - value);
+		real weight_hi = (real)value;
+		lo = (real)exp((weight_lo * log_lo + weight_hi * log_hi) / (real)n);
 	}
 	return lo;
 }
 
 // @retail 0x195240
-void function_195240(s_bitstream *stream, vector3f *forward, vector3f *up)
+void function_195240(s_bitstream *stream, vector3f *up, vector3f *forward)
 {
 	if (function_1957d0(stream))
 		*forward = *g_4687b0;
@@ -221,7 +221,7 @@ bool function_1952f0(real a1, real a2, real a3, real a4, long bits)
 }
 
 // @retail 0x195560
-bool function_195560(vector3f const *a, vector3f const *b, vector3f const *up_a, vector3f const *up_b)
+bool function_195560(vector3f const *up_a, vector3f const *a, vector3f const *up_b, vector3f const *b)
 {
 	bool result = false;
 	if (a->quantized_equal(b))
@@ -285,19 +285,19 @@ void function_1955d0(s_bitstream *stream, void const *source, long bits)
 // @retail 0x195720
 void function_195720(s_bitstream *stream, dword value, long count)
 {
-	long position = stream->bit_position;
-	long remaining = (stream->size_in_bytes << 3) - position;
+	long remaining = (stream->size_in_bytes << 3) - stream->bit_position;
 	long n;
 	if (remaining > count)
 		n = count;
 	else
 		n = remaining;
-	if (n > 0)
+	if (0 < n)
 	{
 		value &= 0xffffffff >> (32 - n);
-		long first = position >> 5;
-		long last = (position + n - 1) >> 5;
-		long offset = position & 0x1f;
+		long first;
+		first = stream->bit_position >> 5;
+		long last = (stream->bit_position + n - 1) >> 5;
+		long offset = stream->bit_position & 0x1f;
 		value &= 0xffffffff >> (32 - n);
 		if (first == last)
 			stream->buffer[first] |= value << offset;

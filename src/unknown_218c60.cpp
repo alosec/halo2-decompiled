@@ -102,6 +102,12 @@ real function_218d30(long definition_index)
 
 struct s_sound_definition;
 
+/* a gain in decibels, copied as a whole */
+struct s_decibels_view
+{
+	real value;
+};
+
 /* the sum of two gains in decibels, held as real bits */
 static inline long decibels_add(long a, long b)
 {
@@ -111,21 +117,20 @@ static inline long decibels_add(long a, long b)
 }
 
 /* the lower bound of a sound's gain in decibels: its class's and its
-   playback parameters'. Near: retail keeps the class's gain in a register
-   until the playback gain is stored */
+   playback parameters'. The class's gain is copied as a whole (in a
+   register) and stored only once the playback gain is loaded */
 // @retail 0x218d70
 long sound_definition_gain_lower(s_sound_definition const *definition)
 {
 	s_sound_definition_view const *view = (s_sound_definition_view const *)definition;
-	long local_0;
+	s_decibels_view local_0;
 	long local_1;
-	long local_2 = ((volatile s_sound_promotion_view *)sound_class_definition_get(view->promotion_index))->gain_lower;
-	s_sound_globals *local_4 = g_51ebd4;
-	local_1 = ((volatile s_sound_playback_gain_view *)((s_sound_globals_playback_view *)local_4)->playback_parameters)[view->playback_index].gain_lower;
-	real const volatile *local_3 = (real const *)&local_1;
+	s_decibels_view local_2 = *(s_decibels_view const *)&((s_sound_promotion_view *)sound_class_definition_get(view->promotion_index))->gain_lower;
+	local_1 = ((s_sound_playback_gain_view *)((s_sound_globals_playback_view *)g_51ebd4)->playback_parameters)[view->playback_index].gain_lower;
+	real const *local_3 = (real const *)&local_1;
 	local_0 = local_2;
-	*(real *)&local_0 = *local_3 + *(real *)&local_0;
-	return local_0;
+	local_0.value = *local_3 + local_0.value;
+	return *(long *)&local_0;
 }
 
 /* the upper bound of a sound's gain in decibels */
@@ -133,13 +138,12 @@ long sound_definition_gain_lower(s_sound_definition const *definition)
 long sound_definition_gain_upper(s_sound_definition const *definition)
 {
 	s_sound_definition_view const *view = (s_sound_definition_view const *)definition;
-	long local_0;
+	s_decibels_view local_0;
 	long local_1;
-	long local_2 = ((volatile s_sound_promotion_view *)sound_class_definition_get(view->promotion_index))->gain_upper;
-	s_sound_globals *local_4 = g_51ebd4;
-	local_1 = ((volatile s_sound_playback_gain_view *)((s_sound_globals_playback_view *)local_4)->playback_parameters)[view->playback_index].gain_upper;
-	real const volatile *local_3 = (real const *)&local_1;
+	s_decibels_view local_2 = *(s_decibels_view const *)&((s_sound_promotion_view *)sound_class_definition_get(view->promotion_index))->gain_upper;
+	local_1 = ((s_sound_playback_gain_view *)((s_sound_globals_playback_view *)g_51ebd4)->playback_parameters)[view->playback_index].gain_upper;
+	real const *local_3 = (real const *)&local_1;
 	local_0 = local_2;
-	*(real *)&local_0 = *local_3 + *(real *)&local_0;
-	return local_0;
+	local_0.value = *local_3 + local_0.value;
+	return *(long *)&local_0;
 }

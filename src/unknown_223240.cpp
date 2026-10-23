@@ -36,13 +36,19 @@ struct s_223241
 };
 s_223241 g_4e9c8c[4];
 extern s_unknown_13bf00 *g_510c50;
-extern short_rect_pair g_485a8a;
+struct s_unknown_485a88
+{
+    byte flag;
+    short_rect_pair rects;
+};
+extern s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
 extern long g_4e6470, g_4e64a0;
 extern byte g_485ac2;
 extern real g_5234dc;
 s_223240 g_47f0f8[6];
 
-void function_2f800(s_2f800_source const *, s_2f800_size const *, s_2f800_size const *, s_2f800_view *);
+void function_2f800(s_2f800_view *, s_2f800_source const *, s_2f800_size const *, s_2f800_size const *);
 void __stdcall function_2c8a0(byte const *);
 void function_2b5d0(long, long, long, long, s_223240 const *);
 void function_223080(long, long, long, s_223080 *, long, long, s_223081 const *);
@@ -57,7 +63,7 @@ PRIVATE __forceinline s_223240 *function_2232a1(s_223240 *arg_0)
 	arg_0->field_b0 = g_485a8a.a;
 	arg_0->field_b8 = g_485a8a.b;
 	arg_0->field_0 = 1;
-	function_2f800(0, 0, 0, (s_2f800_view *)arg_0->field_80);
+	function_2f800((s_2f800_view *)arg_0->field_80, 0, 0, 0);
 	memcpy(arg_0->field_c, arg_0->field_80, 0x74);
 	return arg_0;
 }
@@ -71,10 +77,9 @@ void function_2232a0(void)
 // @retail 0x2234e0
 void function_2234e0(void)
 {
-	long local_0 = 0;
 	long local_1 = NONE;
 	long local_2;
-	long local_3;
+	volatile long local_3;
 	if (g_4e6470 > 0)
 		--g_4e6470;
 	if (g_4e64a0 > 0)
@@ -84,7 +89,13 @@ void function_2234e0(void)
 	else
 	{
 		short local_4 = *(short const *)((byte const *)g_4e8c20 + 8);
-		local_2 = local_4 < 1 ? 1 : local_4 > 4 ? 4 : local_4;
+		local_2 = 1;
+		if (local_4 >= 1)
+		{
+			local_2 = 4;
+			if (local_4 <= 4)
+				local_2 = local_4;
+		}
 	}
 	if (local_2 > 1)
 	{
@@ -96,7 +107,8 @@ void function_2234e0(void)
 	}
 	else
 		local_3 = 0;
-	for (; local_0 < local_2; ++local_0)
+	long local_0 = 0;
+	do
 	{
 		byte const *local_5 = 0;
 		for (++local_1; local_1 < 4; ++local_1)
@@ -110,7 +122,8 @@ void function_2234e0(void)
 			local_5 = g_4e9c8c[local_1].field_0;
 		function_223080(0, local_0, local_1, (s_223080 *)&g_47f0f8[local_0 + 1],
 			local_2, local_3, (s_223081 const *)local_5);
-	}
+		++local_0;
+	} while (local_0 < local_2);
 	s_223240 *local_6 = &g_47f0f8[local_2 + 1];
 	function_2232a1(local_6);
 	function_2b5d0(local_2 + 1, 3, local_2, local_3, &g_47f0f8[1]);

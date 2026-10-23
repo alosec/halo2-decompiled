@@ -1,3 +1,4 @@
+#include "unknown_0b68c0.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
@@ -8,6 +9,12 @@
 #endif
 
 // @flags /O2 /Ob1 /arch:SSE /Gr
+#include "object_masks_storage.h"
+#include "sample_mask_storage.h"
+#include "matrices_storage.h"
+#include "orientations_storage.h"
+#include "partition_colliding_storage.h"
+#include "partition_noncolliding_storage.h"
 
 struct s_object_transform_view
 {
@@ -33,6 +40,8 @@ __declspec(noinline) void function_1420f0(transform4x3f *out, point3f const *pos
 	vector3f const *forward, vector3f const *up);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b,
 	transform4x3f *result);
+
+inline transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 
 // @retail 0xba160
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix)
@@ -69,27 +78,34 @@ struct s_velocity_object_header
 
 void function_b58c0(long index, dword mask);
 
+static __forceinline dword object_velocity_write(s_velocity_object *object, vector3f const *linear, vector3f const *angular)
+{
+    dword mask = 0;
+    if (linear)
+    {
+        object->linear_velocity = *linear;
+        mask |= 0x10;
+    }
+    if (angular)
+    {
+        object->angular_velocity = *angular;
+        mask |= 0x20;
+    }
+    return mask;
+}
+
 // @retail 0xb7740
 void function_b7740(long object_index, vector3f const *linear_velocity,
 	vector3f const *angular_velocity, bool skip_update)
 {
-	dword update_mask = 0;
 	object_index &= 0xffff;
 	s_record_pool *objects = g_4e0300;
-	s_velocity_object *object = ((s_velocity_object_header *)objects->data)[object_index].object;
-	if (linear_velocity)
-	{
-		object->linear_velocity = *linear_velocity;
-		update_mask |= 0x10;
-	}
-	if (angular_velocity)
-	{
-		object->angular_velocity = *angular_velocity;
-		update_mask |= 0x20;
-	}
+	byte *volatile const *header_data = &objects->data;
+    s_velocity_object *object = ((s_velocity_object_header *)*header_data)[object_index].object;
+	dword update_mask = object_velocity_write(object, linear_velocity, angular_velocity);
 	if (!skip_update && update_mask)
 	{
-		long index = ((s_velocity_object_header *)objects->data)[object_index].object->synchronization_index;
+		long index = ((s_velocity_object_header *)*header_data)[object_index].object->synchronization_index;
 		if (index != NONE)
 			function_b58c0(index, update_mask);
 	}
@@ -239,7 +255,10 @@ struct s_object_partition_header_ab
 
 word collision_object_flags(long object_index);
 
-#ifndef H2_NATIVE_PORT
+#ifdef H2_NATIVE_PORT
+/* native: defined in unknown_0b88e0_native.cpp */
+void function_b88e0(long object_index, s_object_partition_record_ab *record);
+#else
 // @retail 0xb88e0
 void function_b88e0(long object_index, s_object_partition_record_ab *record)
 {
@@ -254,10 +273,28 @@ void function_b88e0(long object_index, s_object_partition_record_ab *record)
 }
 #endif
 
-extern void *g_4de2e0;
-extern void *g_4de2e4;
-extern void *g_4de2d4;
-extern void *g_4de2d8;
+
+
+
+
+void function_1cadf0(s_cluster_partition *partition, long reference_index, long data_index, long payload_size, void const *payload);
+
+inline void function_b8b70(long object_index);
+
+// @retail 0xb8b70
+void function_b8b70(long object_index)
+{
+    s_object_partition_header_ab *header = &((s_object_partition_header_ab *)g_4e0300->data)[object_index & 0xffff];
+    s_object_partition_view_ab *object = header->object;
+    if ((*((byte *)header + 2) & 0x40) && (bool)((object->flags >> 9) & 1))
+    {
+        s_object_partition_record_ab record;
+        function_b88e0(object_index, &record);
+        // The existing whole partition storage has the same three-pointer layout.
+        function_1cadf0((s_cluster_partition *)&g_partition_colliding_storage,
+            *(long *)((byte *)object + 0x60), object_index, sizeof(record), &record);
+    }
+}
 
 struct s_partition_object_link_ab
 {
@@ -321,7 +358,7 @@ long function_b8940(short cluster_index, s_object_cluster_reference **record, s_
 // @retail 0xb89b0
 long function_b89b0(s_object_cluster_reference **record, s_object_cluster_iterator *iterator)
 {
-	return object_cluster_next_ab((s_record_pool *)g_4de2e4, iterator, record);
+    return object_cluster_next_ab((s_record_pool *)g_4de2e4, iterator, record);
 }
 
 // @retail 0xb8a10
@@ -332,13 +369,18 @@ long function_b8a10(short cluster_index, s_object_cluster_reference **record, s_
 	return object_cluster_next_ab((s_record_pool *)g_4de2d8, iterator, record);
 }
 
+struct s_scenario_identifier_ab
+{
+	long unique_id;
+	short origin_bsp;
+	char type;
+	char source;
+};
+
 struct s_placement_defaults_ab
 {
 	long tag_index;
-	long unique_id;
-	short bsp_index;
-	char type;
-	char source;
+	s_scenario_identifier_ab identifier;
 	long field_0c;
 	long scenario_index;
 	byte bsp_policy;
@@ -367,8 +409,8 @@ struct s_placement_source_ab
 	byte unknown00[0xaa];
 	byte type;
 	byte unknownab[0xc0 - 0xab];
-	byte flags_c0;
-	byte unknownc1[0x138 - 0xc1];
+	word flags_c0;
+	byte unknownc2[0x138 - 0xc2];
 	short team;
 	byte unknown13a[2];
 	long player_index;
@@ -377,6 +419,9 @@ struct s_placement_source_ab
 struct s_object;
 s_object *function_badc0(long object_index, dword type_mask);
 
+#define FLAG(bit) (1 << (bit))
+#define SET_FLAG(flags, bit, value) ((value) ? ((flags) |= FLAG(bit)) : ((flags) &= ~FLAG(bit)))
+
 // @retail 0xb7930
 void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner)
 {
@@ -384,25 +429,21 @@ void function_b7930(void *data, long tag_index, long object_index, s_effect_owne
 	memset(placement, 0, sizeof(*placement));
 	placement->tag_index = tag_index;
 	placement->field_0c = 0;
-	placement->flags = 0;
+	memset(&placement->flags, 0, sizeof(placement->flags));
 	placement->forward = *g_4687a8;
 	placement->up = *g_4687b0;
 	placement->scale = 1.0f;
 	placement->field_74 = 0;
-	placement->field_b4 = NONE;
+	short *unknown_b4 = &placement->field_b4;
+	*unknown_b4 = NONE;
 	placement->bsp_policy = 0;
 	s_placement_source_ab *object = (s_placement_source_ab *)function_badc0(object_index, NONE);
 	placement->team = NONE;
 	placement->player_index = NONE;
 	if (object)
 	{
-		dword flags = *(volatile dword *)&placement->flags;
 		placement->object_index = object_index;
-		if ((bool)(((dword)object->flags_c0 >> 2) & 1))
-			flags |= 0x20;
-		else
-			flags &= ~0x20;
-		placement->flags = flags;
+		SET_FLAG(placement->flags, 5, (bool)((object->flags_c0 >> 2) & 1));
 		if ((1 << object->type) & 3)
 		{
 			placement->player_index = object->player_index;
@@ -410,9 +451,7 @@ void function_b7930(void *data, long tag_index, long object_index, s_effect_owne
 		}
 	}
 	else
-	{
 		placement->object_index = NONE;
-	}
 	if (owner)
 		placement->owner = *owner;
 	else
@@ -421,21 +460,14 @@ void function_b7930(void *data, long tag_index, long object_index, s_effect_owne
 		placement->owner.unknown0 = NONE;
 		placement->owner.unknown8 = NONE;
 	}
-	placement->type = NONE;
-	placement->source = NONE;
-	placement->bsp_index = NONE;
-	placement->unique_id = NONE;
+	s_scenario_identifier_ab *identifier = &placement->identifier;
+	identifier->type = NONE;
+	identifier->source = NONE;
+	identifier->origin_bsp = NONE;
+	identifier->unique_id = NONE;
 	placement->scenario_index = NONE;
 	placement->field_b8 = 0;
 }
-
-struct s_scenario_identifier_ab
-{
-	long unique_id;
-	short origin_bsp;
-	char type;
-	char source;
-};
 
 struct s_scenario_type_ab
 {
@@ -451,32 +483,37 @@ struct s_scenario_block_ab
 	byte *elements;
 };
 
+#define SCENARIO_TYPE_AB(type) ((s_scenario_type_ab *)g_468630[type])
+
 // @retail 0xb7a40
 void *__stdcall function_b7a40(s_scenario_identifier_ab const *identifier, long *index_out)
 {
-	void *result = 0;
 	char source = identifier->source;
-	if (source == 1 || source == 0)
+	void *result = NULL;
+	long source_kind = source;
+	if (source_kind == 1 || source_kind == 0)
 	{
 		char type = identifier->type;
-		s_scenario_type_ab *definition = (s_scenario_type_ab *)g_468630[type];
-		if (definition->block_offset != NONE)
+		if (SCENARIO_TYPE_AB(type)->block_offset != NONE)
 		{
-			long size = definition->element_size;
-			s_scenario_block_ab *block = (s_scenario_block_ab *)((byte *)g_4e0350 + definition->block_offset);
-			long count = block->count;
-			byte *element = block->elements;
-			for (long i = 0; i < count; i++, element += size)
+			long size = SCENARIO_TYPE_AB(type)->element_size;
+			s_scenario_block_ab *block = (s_scenario_block_ab *)((byte *)g_4e0350 + SCENARIO_TYPE_AB(type)->block_offset);
+			for (long i = 0; i < block->count; i++)
 			{
+				byte *element = block->elements + i * size;
 				s_scenario_identifier_ab *current = (s_scenario_identifier_ab *)(element + 0x28);
-				bool match = (current->unique_id == identifier->unique_id) & (current->type == type) & (current->source == source);
+				bool match = true;
+				match &= current->unique_id == identifier->unique_id;
+				match &= current->type == type;
+				match &= current->source == source;
 				if (match && current->source == 0)
 					match &= current->origin_bsp == identifier->origin_bsp;
 				if (match)
 				{
 					if (index_out)
 						*index_out = i;
-					return element;
+					result = element;
+					break;
 				}
 			}
 		}
@@ -511,7 +548,8 @@ void function_bdc40(point3f const *position, vector3f const *forward, vector3f c
     translation.position = *position;
     rotation.scale = 1.0f;
     rotation.forward = *forward;
-    rotation.left.i = up->j * forward->k - forward->j * up->k;
+    vector3f const *f = forward; /* the first row reads the forward axis through its own pointer */
+    rotation.left.i = up->j * f->k - f->j * up->k;
     rotation.left.j = forward->i * up->k - up->i * forward->k;
     rotation.left.k = forward->j * up->i - forward->i * up->j;
     rotation.up = *up;
@@ -526,11 +564,21 @@ void function_bdc40(point3f const *position, vector3f const *forward, vector3f c
     }
     if (scale != 1.0f)
     {
-        identity_transform_ab(&temporary);
         temporary.scale = scale;
+        temporary.forward.i = 1.0f;
+        temporary.forward.j = 0.0f;
+        temporary.forward.k = 0.0f;
+        temporary.left.i = 0.0f;
+        temporary.left.j = 1.0f;
+        temporary.left.k = 0.0f;
+        temporary.up.i = 0.0f;
+        temporary.up.j = 0.0f;
+        temporary.up.k = 1.0f;
+        temporary.position.x = 0.0f;
+        temporary.position.y = 0.0f;
+        temporary.position.z = 0.0f;
         function_142a60(&rotation, &temporary, &rotation);
     }
-    transform4x3f const *base;
     if (parent)
     {
         if (parent->scale != 1.0f || parent_mirrored)
@@ -552,19 +600,14 @@ void function_bdc40(point3f const *position, vector3f const *forward, vector3f c
             parent = &temporary;
         }
         function_142a60(parent, &translation, out);
-        base = out;
+        function_142a60(out, &rotation, out);
     }
     else
-        base = &translation;
-    function_142a60(base, &rotation, out);
+        function_142a60(&translation, &rotation, out);
 }
 
-extern long g_4e7414;
-extern bool g_4e7411;
-extern long g_4de2fc;
-extern bool g_4de2f8;
-extern long g_4de300[0x800];
-short __stdcall function_14a5b0(short cluster_index, point3f const *point, real radius, long maximum_count, short *clusters);
+#include "cluster_marks_storage.h"
+short __stdcall function_14a5b0(short cluster_index, point3f const *point, real radius, short maximum_count, short *clusters);
 
 static inline bool cluster_sphere_accept_ab(long object, s_object_cluster_reference const *record, dword type_mask, point3f const *position, real radius)
 {
@@ -611,34 +654,37 @@ short __stdcall function_bb050(long mask, dword type_mask, void const *location,
     }
     ++g_4de2fc;
     g_4de2f8 = true;
-    for (short i = 0; i < cluster_count; ++i)
+    for (long i = 0; i < cluster_count; ++i)
     {
         short cluster = clusters[i];
-        s_object_cluster_reference *record = 0;
+        struct search_slots { s_object_cluster_reference *record; s_object_cluster_iterator second, first; } search;
         if (mask & 1)
         {
-            s_object_cluster_iterator iterator;
-            for (long object = function_b8940(cluster, &record, &iterator); object != NONE;
-                 object = object_cluster_next_ab((s_record_pool *)g_4de2e4, &iterator, &record))
+            search.record = 0;
+            s_object_cluster_iterator &iterator = search.first;
+            for (long object = function_b8940(cluster, &search.record, &iterator); object != NONE;
+                 object = object_cluster_next_ab((s_record_pool *)g_4de2e4, &iterator, &search.record))
             {
-                if (cluster_sphere_accept_ab(object, record, type_mask, position, radius))
+                if (cluster_sphere_accept_ab(object, search.record, type_mask, position, radius))
                 {
                     if (count >= maximum_count) goto done;
-                    objects[count++] = object;
+                    objects[count] = object;
+                    ++count;
                 }
             }
         }
-        record = 0;
         if (mask & 2)
         {
-            s_object_cluster_iterator iterator;
-            for (long object = function_b8a10(cluster, &record, &iterator); object != NONE;
-                 object = object_cluster_next_ab((s_record_pool *)g_4de2d8, &iterator, &record))
+            search.record = 0;
+            s_object_cluster_iterator &iterator = search.second;
+            for (long object = function_b8a10(cluster, &search.record, &iterator); object != NONE;
+                 object = object_cluster_next_ab((s_record_pool *)g_4de2d8, &iterator, &search.record))
             {
-                if (cluster_sphere_accept_ab(object, record, type_mask, position, radius))
+                if (cluster_sphere_accept_ab(object, search.record, type_mask, position, radius))
                 {
                     if (count >= maximum_count) goto done;
-                    objects[count++] = object;
+                    objects[count] = object;
+                    ++count;
                 }
             }
         }
@@ -649,12 +695,13 @@ done:
 }
 
 #include "unknown_1cafc0.h"
+#include "channel_start_out_of_line.h"
 #include <math.h>
 struct s_16760c_render_model;
 bool __stdcall function_bab40(long object_index, long name, real *value);
 
-// @retail 0xbd970
-void function_bd970(long object_index, s_16760c_render_model *render_model, s_animation_state *state, long node_mask, long node_count, byte *orientations)
+// @retail 0xbd970 standard
+void __stdcall function_bd970(long object_index, s_16760c_render_model *render_model, s_animation_state *state, long node_mask, long node_count, byte *orientations)
 {
     short index = NONE;
     c_animation_channel channel;
@@ -671,7 +718,8 @@ void function_bd970(long object_index, s_16760c_render_model *render_model, s_an
         short kind = *(short *)(entry->unknown08 + 2);
         if (animation_id.index != NONE)
             function_1dd9d0(graph, animation_id);
-        if (name && state->graph_tag_index != NONE && state->channel_start(&channel, animation_id, NONE, NONE, NONE, NONE, 0x7f))
+        if (name && state->graph_tag_index != NONE &&
+            channel_start_out_of_line(state, &channel, animation_id, NONE, NONE, NONE, NONE, 0x7f))
         {
             s_animation *animation = 0;
             if (channel.animation_id.index != NONE)
@@ -693,12 +741,7 @@ void function_bd970(long object_index, s_16760c_render_model *render_model, s_an
     }
 }
 
-struct rigid_transform_scaled
-{
-    quaternionf rotation;
-    point3f position;
-    real scale;
-};
+
 transform4x3f *function_b8bd0(long object_index, short node_index);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
@@ -717,19 +760,19 @@ void function_bfa40(long object_index, long node_mask)
     byte *model = g_4e3b44[model_index & 0xffff].bytes;
     if (*(long *)(model + 4) == NONE)
         return;
-    transform4x3f *matrices = (transform4x3f *)(object + *(short *)(object + 0x116));
-    rigid_transform_scaled *orientations = (rigid_transform_scaled *)(object + *(short *)(object + 0x112));
-    long count = (dword)(long)*(short *)(object + 0x110) / sizeof(rigid_transform_scaled);
-    long parent_index = *(long *)(object + 0x14);
     transform4x3f *parent = 0;
     bool parent_mirrored = false;
+    transform4x3f *matrices = (transform4x3f *)(object + *(short *)(object + 0x116));
+    rigid_transform_scaled *orientations = (rigid_transform_scaled *)(object + *(short volatile *)(object + 0x112));
+    long count = (dword)(long)*(short *)(object + 0x110) / sizeof(rigid_transform_scaled);
+    long parent_index = *(long *)(object + 0x14);
     if (parent_index != NONE)
     {
         parent = function_b8bd0(parent_index, *(char *)(object + 0x18));
         byte *local_be682a = (byte *)((s_object_transform_header *)g_4e0300->data)[parent_index & 0xffff].object;
         parent_mirrored = (*(dword *)(local_be682a + 4) >> 10) & 1;
     }
-    transform4x3f root, inverse_root, inverse_parent, relative;
+    transform4x3f relative, root, inverse_parent, inverse_root;
     function_bdc40((point3f *)(object + 0x64), (vector3f *)(object + 0x70), (vector3f *)(object + 0x7c),
         *(real *)(object + 0xa0), (*(dword *)(object + 4) >> 10) & 1, parent, parent_mirrored, &root);
     function_141590(&root, &inverse_root);
@@ -738,7 +781,7 @@ void function_bfa40(long object_index, long node_mask)
         if (!node_mask || (((dword *)node_mask)[i >> 5] & (1 << (i & 31))))
         {
             short node_parent = *(short *)(*(byte **)(model + 0x7c) + i * 0x5c + 4);
-            if (node_parent != NONE)
+            if ((dword)(long)node_parent != (dword)NONE)
             {
                 function_141590(&matrices[node_parent], &inverse_parent);
                 function_142a60(&inverse_parent, &matrices[i], &relative);
@@ -756,9 +799,9 @@ void function_bfa40(long object_index, long node_mask)
 }
 
 long bit_vector_highest_set_bit(dword const *bits, long bit_count);
-void function_109050(long object_index, long a, long b, long c);
+void object_dispatch_adjust_node_orientations(long object_index, long a, long b, long c);
 struct s_1d9240;
-void function_1d9470(s_1d9240 const *p, s_blend_orientation const *targets, long count, dword const *mask,
+void function_1d9470(s_1d9240 const *p, long count, dword const *mask, s_blend_orientation const *targets,
     s_blend_orientation *orientations);
 
 // @retail 0xbdb60
@@ -781,13 +824,13 @@ void function_bdb60(long object_index, s_16760c_render_model *render_model, s_an
                 (real_quaternion_transform *)orientations, 0, object_index, node_count);
         }
         function_bd970(object_index, render_model, state, node_mask, node_count, orientations);
-        function_109050(object_index, node_mask, node_count, (long)orientations);
+        object_dispatch_adjust_node_orientations(object_index, node_mask, node_count, (long)orientations);
         if (state->unknown64.unknown1 && !(state->unknown64.unknown3 & 2))
         {
             byte *object = (byte *)((s_object_transform_header *)g_4e0300->data)[object_index & 0xffff].object;
             s_blend_orientation *targets = (s_blend_orientation *)(object + *(short *)(object + 0x10e));
-            function_1d9470((s_1d9240 const *)&state->unknown64, targets, (short)node_count,
-                (dword const *)node_mask, (s_blend_orientation *)orientations);
+            function_1d9470((s_1d9240 const *)&state->unknown64, (short)node_count, (dword const *)node_mask, targets,
+                (s_blend_orientation *)orientations);
         }
     }
 }
@@ -819,7 +862,7 @@ void __stdcall function_b7880(long object_index, long node_index, point3f const 
 
 
 struct s_location;
-void function_109290(long object_index, long position, long forward, long up);
+void object_dispatch_moved(long object_index, long position, long forward, long up);
 bool __stdcall function_b7430(long object_index, point3f const *position, vector3f const *forward, vector3f const *up,
     s_location const *location, bool a, bool b, bool c, bool d);
 void __stdcall function_b8540(long object_index);
@@ -849,7 +892,7 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
         saved_up = *up;
         up_copy = &saved_up;
     }
-    function_109290(object_index, (long)position_copy, (long)forward_copy, (long)up_copy);
+    object_dispatch_moved(object_index, (long)position_copy, (long)forward_copy, (long)up_copy);
     if (!function_b7430(object_index, position_copy, forward_copy, up_copy, location, true, true, unknown, false))
     {
         bool attached = false;
@@ -870,7 +913,7 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
 #if 0
 
 __declspec(noinline) bool function_0bfe60(dword const *mask, long node);
-bool function_10db60(long object_index);
+bool unit_animation_periodic_layer_active(long object_index);
 bool function_10edd0(long object_index);
 __declspec(noinline) void function_10ec00(long object_index, s_animation_state *state, long unused,
 	dword const *node_mask, long count, real_quaternion_transform *orientations, byte *mask);
@@ -879,19 +922,18 @@ __declspec(noinline) void function_10e530(long object_index, s_animation_state *
 void function_1132f0(long object_index, dword const *node_mask, long count, transform4x3f *matrices);
 void __stdcall function_1421f0(transform4x3f *out, rigid_transform_scaled const *orientation);
 
-rigid_transform_scaled g_4dc2f0[255];
-transform4x3f g_4d8f20[255];
 
 __declspec(noinline) transform4x3f const *__stdcall function_bd610(long object_index,
 	byte const *nodes, transform4x3f const *input_matrices);
 
-// Retail 0xbd610; its original stub remains in src/stubs/lane_p.cpp.
+// Retail 0xbd610
 transform4x3f const *__stdcall function_bd610(long object_index, byte const *nodes,
 	transform4x3f const *input_matrices)
 {
-	s_object_transform_header *header = &((s_object_transform_header *)g_4e0300->data)[object_index & 0xffff];
-	byte *object = (byte *)header->object;
 	transform4x3f *result = (transform4x3f *)input_matrices;
+	word header_index = (word)object_index;
+	s_object_transform_header *header = &((s_object_transform_header *)g_4e0300->data)[header_index];
+	byte *object = (byte *)header->object;
 	transform4x3f *matrices = 0;
 	rigid_transform_scaled *orientations = 0;
 	if (*(short *)(object + 0x112) == NONE)
@@ -934,7 +976,7 @@ transform4x3f const *__stdcall function_bd610(long object_index, byte const *nod
 		}
 	}
 	if (((1 << ((byte *)header)[3]) & 3) &&
-		(function_10db60(object_index) || function_10edd0(object_index)))
+		(unit_animation_periodic_layer_active(object_index) || function_10edd0(object_index)))
 	{
 		memcpy(g_4dc2f0, object_orientations, node_count * sizeof(rigid_transform_scaled));
 		memcpy(g_4d8f20, input_matrices, node_count * sizeof(transform4x3f));
@@ -965,3 +1007,253 @@ transform4x3f const *__stdcall function_bd610(long object_index, byte const *nod
 }
 
 #endif
+
+#include <math.h>
+/* the point and direction 0xbc070 sets in the list at g_4de2f4 */
+struct s_direction_state_bc070
+{
+	byte unknown00[0x54];
+	point3f point;
+	vector3f direction;
+};
+
+PRIVATE __forceinline void vector3f_negate(vector3f const *vector, vector3f *result)
+{
+	result->i = 0.0f - vector->i;
+	result->j = 0.0f - vector->j;
+	result->k = 0.0f - vector->k;
+}
+
+/* sets the direction to the reverse of the one two angles in degrees give,
+   and sets the point */
+// @retail 0xbc070
+void __stdcall function_bc070(real a, real b, real c, real d, real e)
+{
+    s_direction_state_bc070 *state = (s_direction_state_bc070 *)g_4de2f4;
+    real vertical = a * 0.01745329238474369f;
+    real horizontal = b * 0.01745329238474369f;
+    state->direction.i = (real)(cos(horizontal) * cos(vertical));
+    state->direction.j = (real)(sin(horizontal) * cos(vertical));
+    state->direction.k = (real)sin(vertical);
+    vector3f_negate(&state->direction, &state->direction);
+    real_point3d_set(&state->point, c, d, e);
+}
+
+
+/* the second point and direction 0xbbfc0 sets in the same list */
+struct s_direction_state_bbfc0
+{
+	byte unknown00[0x28];
+	vector3f direction_copy;
+	real value34;
+	real value38;
+	point3f point;
+	vector3f direction;
+	byte unknown54[0x6c - 0x54];
+	short unknown6c;
+};
+
+/* the same for the second direction, which it also copies to 0x28; sets the
+   floats at 0x34 and 0x38 to 0.8 and the word at 0x6c to NONE */
+// @retail 0xbbfc0
+void __stdcall function_bbfc0(real a, real b, real c, real d, real e)
+{
+    s_direction_state_bbfc0 *state = (s_direction_state_bbfc0 *)g_4de2f4;
+    real vertical = a * 0.01745329238474369f;
+    real horizontal = b * 0.01745329238474369f;
+    state->direction.i = (real)(cos(horizontal) * cos(vertical));
+    state->direction.j = (real)(sin(horizontal) * cos(vertical));
+    state->direction.k = (real)sin(vertical);
+    vector3f_negate(&state->direction, &state->direction);
+    real_point3d_set(&state->point, c, d, e);
+    state->direction_copy = state->direction;
+    state->value34 = 0.8f;
+    state->value38 = 0.8f;
+    state->unknown6c = NONE;
+}
+
+void function_1c4b00(long object_index, void *linear, void *angular, long force);
+void __stdcall function_b9b90(long object_index, bool disabled);
+// @retail 0xb77d0
+void __stdcall function_b77d0(long object_index, vector3f const *linear_velocity, vector3f const *angular_velocity)
+{
+    // Retail keeps the linear velocity parameter on the stack.
+    vector3f const *const *linear_reference = &linear_velocity;
+    linear_velocity = *linear_reference;
+    function_b7740(object_index, linear_velocity, angular_velocity, false);
+    function_1c4b00(object_index, (void *)linear_velocity, (void *)angular_velocity, 1);
+    if ((linear_velocity && linear_velocity->i * linear_velocity->i + linear_velocity->j * linear_velocity->j + linear_velocity->k * linear_velocity->k > 0.0001f) ||
+        (angular_velocity && angular_velocity->i * angular_velocity->i + angular_velocity->j * angular_velocity->j + angular_velocity->k * angular_velocity->k > 0.0001f))
+    {
+        function_b9b90(object_index, false);
+        function_b7360(object_index);
+        function_bba20(object_index);
+    }
+}
+
+
+// Disabled: retail passes persistent shared orientation/mask storage and reaches 0x142a60's unbound inputs.
+#if 1
+#include "unknown_1cafc0.h"
+#include "unknown_11cb00.h"
+
+dword g_55eed4;
+extern real_quaternion_transform *g_4687d8;
+void __stdcall function_1d3920(byte *component, dword *mask, real amount);
+real function_e1670(long object_index);
+struct s_render_model_definition;
+void render_model_get_default_orientations(s_render_model_definition const *definition, rigid_transform_scaled *orientations);
+bool function_bf5a0(long object_index);
+bool function_bfc90(long object_index);
+struct s_bit_vector
+{
+    dword bits[8];
+    bool is_empty() const;
+};
+void function_0bfe80(dword *mask);
+void function_0bfed0(long node_count, dword *mask);
+struct s_index_triple;
+bool function_0b6780(s_index_triple const *triple);
+
+void object_dispatch_adjust_root_matrix(long object_index, long matrices);
+
+void __stdcall function_1421f0(transform4x3f *out, rigid_transform_scaled const *orientation);
+bool function_a98b0(long index, vector3f *position);
+bool function_a9940(long index, vector3f *up, vector3f *forward);
+
+// @retail 0xbd090
+void __stdcall function_bd090(long object_index)
+{
+    s_tag_instance *tags = g_4e3b44;
+    s_object_transform_header *header = &((s_object_transform_header *)g_4e0300->data)[object_index & 0xffff];
+    byte *object = (byte *)header->object;
+    byte *definition = tags[*(long *)object & 0xffff].bytes;
+    long node_count = (dword)*(short *)(object + 0x114) / sizeof(transform4x3f);
+    transform4x3f *matrices = (transform4x3f *)(object + *(short *)(object + 0x116));
+    *(dword *)(object + 4) &= ~0x40000000;
+    bool stored = true;
+    if (((1 << definition[0]) & 1) && ((byte *)((s_object_transform_header *)g_4e0300->data)[object_index & 0xffff].object)[0x34b] == 2) return;
+    dword mask[8];
+    memset(mask, 0, ((node_count + 31) >> 5) * sizeof(dword));
+    long component_index = *(long *)(object + 0xb4);
+    if (component_index != NONE && (bool)(((dword)object[0xc0] >> 6) & 1))
+    {
+        byte *component = g_51e9b8->data + (component_index & 0xffff) * 0xa0;
+        real amount = ((1 << definition[0]) & 1) ? function_e1670(object_index) : 0.0f;
+        function_1d3920(component, mask, amount);
+        tags = g_4e3b44;
+    }
+    byte *current = (byte *)((s_object_transform_header *)g_4e0300->data)[object_index & 0xffff].object;
+    rigid_transform_scaled *orientations;
+    if (*(short *)(current + 0x112) != NONE)
+        orientations = (rigid_transform_scaled *)(object + *(short *)(object + 0x112));
+    else
+    {
+        orientations = g_4dc2f0;
+        stored = false;
+    }
+    long model_index = *(long *)(definition + 0x38);
+    byte *model = model_index == NONE ? 0 : tags[model_index & 0xffff].bytes;
+    long render_index = model ? *(long *)(model + 4) : NONE;
+    if (render_index != NONE)
+    {
+        byte *render_model = tags[render_index & 0xffff].bytes;
+        transform4x3f const *parent = 0;
+        bool parent_mirrored = false;
+        bool root_absolute = false;
+        long parent_index = *(long *)(object + 0x14);
+        if (parent_index != NONE)
+        {
+            parent = function_b8bd0(parent_index, *(signed char *)(object + 0x18));
+            byte *local_be682a_3 = (byte *)((s_object_transform_header *)g_4e0300->data)[parent_index & 0xffff].object;
+            parent_mirrored = (bool)((*(dword *)(local_be682a_3 + 4) >> 10) & 1);
+        }
+        if (!((bool)((*(dword *)(current + 4) >> 29) & 1))
+            && (!((1 << definition[0]) & 1) || !current[0x34b]))
+        {
+            render_model_get_default_orientations((s_render_model_definition const *)render_model, orientations);
+            if (function_bf5a0(object_index) && !function_bfc90(object_index))
+            {
+                s_animation_state *state = (s_animation_state *)(object + *(short *)(object + 0x12a));
+                if (*(long *)((byte *)state + 0x68) != NONE)
+                {
+                    if (!(g_55eed4 & 1)) g_55eed4 |= 1;
+                    dword *sample_mask = 0;
+                    if (stored && !((s_bit_vector const *)(model + 0xa4))->is_empty())
+                    {
+                        memcpy(g_55eeb4, model + 0xa4, sizeof(g_55eeb4));
+                        function_0bfe80(g_55eeb4);
+                        function_0bfed0(node_count, g_55eeb4);
+                        sample_mask = g_55eeb4;
+                    }
+                    function_bdb60(object_index, (s_16760c_render_model *)render_model, state,
+                        (long)sample_mask, node_count, (byte *)orientations);
+                    if (sample_mask) *(dword *)(object + 4) |= 0x40000000;
+                    else *(dword *)(object + 4) &= ~0x40000000;
+                    if (*(long *)((byte *)state + 0x68) != NONE && function_0b6780((s_index_triple const *)state))
+                        root_absolute = (bool)((*(byte *)((byte *)state->channels[0].function_1c6440() + 0x16) >> 1) & 1);
+                }
+            }
+        }
+        if (!*(long *)(render_model + 0x48)) orientations[0] = *(rigid_transform_scaled *)g_4687d8;
+        if (!(mask[0] & 1))
+        {
+            if (root_absolute)
+                function_1421f0(matrices, &orientations[0]);
+            else
+            {
+                point3f position = *(point3f *)(object + 0x64);
+                vector3f forward = *(vector3f *)(object + 0x70);
+                vector3f up = *(vector3f *)(object + 0x7c);
+                if (*(long *)(object + 0xd4) != NONE && (object[0xd8] & 1))
+                {
+                    point3f position_result;
+                    if (function_a98b0(object_index, (vector3f *)&position_result)) position = position_result;
+                    vector3f forward_result, up_result;
+                    if (function_a9940(object_index, &up_result, &forward_result))
+                    {
+                        forward = forward_result;
+                        up = up_result;
+                    }
+                }
+                transform4x3f base, root;
+                function_bdc40(&position, &forward, &up, *(real *)(object + 0xa0),
+                    (bool)((*(dword *)(object + 4) >> 10) & 1), parent, parent_mirrored, &base);
+                function_1421f0(&root, &orientations[0]);
+                function_142a60(&base, &root, matrices);
+            }
+            object_dispatch_adjust_root_matrix(object_index, (long)matrices);
+        }
+        for (long node = 1; node < *(long *)(render_model + 0x48); node++)
+        {
+            byte *render_node = *(byte **)(render_model + 0x4c) + node * 0x60;
+            if (!(mask[node >> 5] & (1 << (node & 31))))
+            {
+                function_1421f0(&matrices[node], &orientations[node]);
+                function_142a60(&matrices[*(short *)(render_node + 4)], &matrices[node], &matrices[node]);
+            }
+        }
+    }
+    else
+    {
+        transform4x3f const *parent = 0;
+        bool parent_mirrored = false;
+        long parent_index = *(long *)(object + 0x14);
+        if (parent_index != NONE)
+        {
+            byte *local_be682a_3 = (byte *)((s_object_transform_header *)g_4e0300->data)[parent_index & 0xffff].object;
+            parent = (transform4x3f *)(local_be682a_3 + *(short *)(local_be682a_3 + 0x116)) + *(signed char *)(object + 0x18);
+            parent_mirrored = (bool)((*(dword *)(local_be682a_3 + 4) >> 10) & 1);
+        }
+        function_bdc40((point3f *)(object + 0x64), (vector3f *)(object + 0x70), (vector3f *)(object + 0x7c),
+            *(real *)(object + 0xa0), (bool)((*(dword *)(object + 4) >> 10) & 1), parent, parent_mirrored, matrices);
+    }
+}
+#endif
+
+
+s_orientations_storage g_orientations_storage;
+
+s_matrices_storage g_matrices_storage;
+
+s_sample_mask_storage g_sample_mask_storage;

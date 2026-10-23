@@ -92,6 +92,9 @@ void function_1c2690()
  g_5021bc.iterator.datum_index = NONE;
 }
 
+// score 4 (was 4): retail loads the three pointers before the two writes of
+// the valid flag and pushes the deleted one after both writes, ours pushes it
+// between them.
 // @retail 0x1c27a0
 void function_1c27a0()
 {
@@ -101,9 +104,9 @@ void function_1c27a0()
  function_1c2b10();
  if (!g_510c58)
   g_479890 = 1;
- ((hkEntityApi *)g_47f048)->removeEntityListener((hkEntityListener *)g_51ecac);
+ ((c_physics_body_island_view *)g_47f048)->entity_observer_detach((c_havok_entity_observer *)g_51ecac);
  --g_47f050;
- g_51e9a4->removeEntity((hkEntity *)g_47f048);
+ g_51e9a4->entity_world_remove((hkEntity *)g_47f048);
  function_278f00();
  function_1c34a0();
  function_1c2890();

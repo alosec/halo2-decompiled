@@ -37,15 +37,23 @@ PRIVATE __forceinline s_292e00 *function_292e30(s_292e04 *arg_0)
 }
 PRIVATE __forceinline void function_292ea2(long arg_0)
 {
-    while (arg_0 != NONE)
+    bool done = false;
+    while (!done)
     {
         long local_0 = arg_0;
-        s_292e01 *local_1 = ((s_292e02 *)g_4e0300->data)[arg_0 & 0xffff].field_8;
-        s_292e03 *local_2 = function_292ed3(local_1);
-        arg_0 = local_2 ? local_2->field_8 : NONE;
-        local_2 = function_292ed3(local_1);
-        if (local_2) local_2->field_0 = NONE;
-        function_b8540(local_0);
+        if (local_0 == NONE)
+        {
+            done = true;
+        }
+        else
+        {
+            s_292e01 *local_1 = ((s_292e02 *)g_4e0300->data)[arg_0 & 0xffff].field_8;
+            s_292e03 *local_2 = function_292ed3(local_1);
+            arg_0 = local_2 ? local_2->field_8 : NONE;
+            local_2 = function_292ed3(local_1);
+            if (local_2) local_2->field_0 = NONE;
+            function_b8540(local_0);
+        }
     }
 }
 
@@ -53,7 +61,6 @@ PRIVATE __forceinline void function_292ea2(long arg_0)
 void function_292e00()
 {
     s_292e04 local_0;
-    (void)&local_0.field_4.index;
     function_292e19(&local_0);
     while (function_292e30(&local_0))
         function_292ea2(((s_292e00 *)g_51ecb4->data)[local_0.field_10 & 0xffff].field_4);

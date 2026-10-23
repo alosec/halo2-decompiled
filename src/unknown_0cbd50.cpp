@@ -69,12 +69,10 @@ bool function_ee8a0(long unit_index, long field_x11c898)
 
 		if (weapon_object_index != NONE)
 		{
-			s_weapon_flags_view *weapon = ((s_weapon_flags_header *)g_4e0300->data)[weapon_object_index & 0xffff].weapon;
+			/* retail rereads the pool's data field for the weapon lookup */
+			s_weapon_flags_view *weapon = ((s_weapon_flags_header *)((s_record_pool volatile *)g_4e0300)->data)[weapon_object_index & 0xffff].weapon;
 
-			if (TEST_FIELD_BIT(weapon->unknown_bit1) && !TEST_FIELD_BIT(weapon->unknown_bit2))
-			{
-				result = true;
-			}
+			result = TEST_FIELD_BIT(weapon->unknown_bit1) && !TEST_FIELD_BIT(weapon->unknown_bit2);
 		}
 	}
 	return result;

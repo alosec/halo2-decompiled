@@ -142,7 +142,9 @@ void object_lists_garbage_collect(void)
   s_mutable_object_list *list = &((s_mutable_object_list *)lists->data)[index & 0xffff];
   if (list->users == 0 && index != NONE)
   {
+   #pragma inline_depth(0)
    function_2963b0(g_4f55d4, list->first);
+   #pragma inline_depth()
    record_pool_release(lists, index);
   }
   index = data_datum_index(lists, data_next_absolute_index_inlined(lists, index == NONE ? 0 : (index & 0xffff) + 1));

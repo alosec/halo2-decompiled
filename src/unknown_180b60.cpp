@@ -38,10 +38,9 @@ struct s_cluster_reference
 	long next;
 };
 
-long g_4e7414;
-bool g_4e7411;
+#include "cluster_marks_storage.h"
 
-short __stdcall function_14a5b0(short cluster_index, point3f const *point, real radius, long maximum_count, short *clusters);
+short __stdcall function_14a5b0(short cluster_index, point3f const *point, real radius, short maximum_count, short *clusters);
 long __stdcall function_17d100(long cluster_index, long datum_index);
 
 // @retail 0x180b60
@@ -59,10 +58,6 @@ void __stdcall function_180b60(s_cluster_query const *query, real radius_squared
 			g_4e7411 = true;
 			count = function_14a5b0(query->cluster_index, &query->point, radius, 0x200, clusters);
 			g_4e7411 = false;
-			if (count > 0x200)
-			{
-				count = 0x200;
-			}
 		}
 		else
 		{
@@ -71,9 +66,12 @@ void __stdcall function_180b60(s_cluster_query const *query, real radius_squared
 		}
 	}
 
-	s_record_pool *references = g_4ea950;
-	s_cluster_reference *reference = (s_cluster_reference *)references->data + (datum_index & 0xffff);
-	for (long i = 0; i < count; i++)
+	if (count > 0x200)
+		count = 0x200;
+
+	long cluster_count = count;
+	s_cluster_reference *reference = (s_cluster_reference *)g_4ea950->data + (datum_index & 0xffff);
+	for (long i = 0; i < cluster_count; i++)
 	{
 		long cluster_index = clusters[i];
 		if (cluster_index != query->cluster_index)
@@ -84,7 +82,7 @@ void __stdcall function_180b60(s_cluster_query const *query, real radius_squared
 				break;
 			}
 			reference->next = next;
-			reference = (s_cluster_reference *)references->data + (next & 0xffff);
+			reference = (s_cluster_reference *)g_4ea950->data + (next & 0xffff);
 		}
 	}
 }

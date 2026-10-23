@@ -78,13 +78,13 @@ static __forceinline real function_12e5e1(real arg_0)
 }
 
 // @retail 0x12e5e0
-void function_12e5e0(byte *arg_6, long arg_1, point3f const *arg_2, vector3f const *arg_3, byte arg_4, bool arg_5)
+void function_12e5e0(long arg_1, byte *arg_6, point3f const *arg_2, vector3f const *arg_3, byte arg_4, bool arg_5)
 {
 	s_12e5e0 *arg_0 = (s_12e5e0 *)arg_6;
 	memset(arg_0, 0, sizeof(*arg_0));
-	arg_0->field_10 = arg_4;
 	arg_0->field_6c = NONE;
 	arg_0->field_9c = NONE;
+	arg_0->field_10 = arg_4;
 	if (g_4e0348 && g_4e0350 && arg_1 != NONE && arg_5)
 	{
 		g_4e64bc = *arg_2;
@@ -104,8 +104,8 @@ void function_12e5e0(byte *arg_6, long arg_1, point3f const *arg_2, vector3f con
 			}
 			else
 			{
-				arg_0->field_4 = arg_0->field_5c;
 				arg_0->field_10 = false;
+				arg_0->field_4 = arg_0->field_5c;
 				arg_0->field_58 = 1.0f;
 			}
 		}
@@ -125,17 +125,17 @@ void function_12e5e0(byte *arg_6, long arg_1, point3f const *arg_2, vector3f con
 			}
 			else if (arg_0->field_28 == 1.0f || arg_0->field_40 == 1.0f)
 			{
-				real local_2 = arg_0->field_40;
 				real local_3 = arg_0->field_28;
-				real local_6 = arg_0->field_11c;
-				real local_7 = 1.0f - arg_0->field_11c;
-				local_7 *= local_2;
-				local_6 *= local_3;
+				real local_2 = arg_0->field_40;
+				real local_7 = (1.0f - arg_0->field_11c) * local_2;
+				real local_6 = arg_0->field_11c * local_3;
 				real local_4 = (1.0f - local_7) * local_3;
 				real local_5 = (1.0f - local_6) * local_2;
-				arg_0->field_4.red = function_12e5e1(local_4 * arg_0->field_1c.red + arg_0->field_34.red * local_5);
-				arg_0->field_4.green = function_12e5e1(local_4 * arg_0->field_1c.green + arg_0->field_34.green * local_5);
-				arg_0->field_4.blue = function_12e5e1(local_4 * arg_0->field_1c.blue + arg_0->field_34.blue * local_5);
+				color3f const &first = arg_0->field_1c;
+				color3f const &second = arg_0->field_34;
+				arg_0->field_4.red = function_12e5e1(local_4 * first.red + second.red * local_5);
+				arg_0->field_4.green = function_12e5e1(local_4 * first.green + second.green * local_5);
+				arg_0->field_4.blue = function_12e5e1(local_4 * first.blue + second.blue * local_5);
 				arg_0->field_14 = arg_0->field_30 > arg_0->field_48 ? arg_0->field_30 : arg_0->field_48;
 				arg_0->field_18 = true;
 			}

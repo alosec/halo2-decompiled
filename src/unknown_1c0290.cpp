@@ -3,6 +3,7 @@
 #include "slot_handler.h"
 #include "unknown_0259a0.h"
 #include <math.h>
+#include "unknown_1f4460.h"
 
 /* slot handler 0x7c (g_47ef08) */
 
@@ -155,25 +156,30 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 		s_prop_node_view *node = prop_node_get(actor->prop_index);
 		s_prop_state_position *prop = (s_prop_state_position *)prop_node_state(node);
 
-		if (function_110ab0(actor->unknown018))
+		long local_4 = actor->unknown018;
+		if (function_110ab0(local_4))
 		{
 			result = g_46fbe8;
 		}
 		else if (prop->unknown3c != NONE || object_header_type(node->object_index) == 1)
 		{
 			s_actor_tag_entry_1e4f90 *entry = (s_actor_tag_entry_1e4f90 *)function_1e4f90(actor_index);
+			s_slot_7c *local_3 = (s_slot_7c *)*(s_slot *const volatile *)&slot;
+            bool local_0 = *(volatile bool const *)&local_3->unknown18;
 			real distance = distance2d(&prop->position, (point2f *)&actor->position);
 
 			result = g_46fbe8;
-			if (state->unknown18)
+			if (local_0)
 			{
-				if (g_510c54->game_time - state->unknown14 > game_seconds_to_ticks_round(4.0f))
+				int local_1 = g_510c54->game_time;
+                long local_2 = game_seconds_to_ticks_round(4.0f);
+                if (local_1 - local_3->unknown14 > local_2)
 				{
 					result = g_46fbe4;
 				}
 			}
 			else if (distance > entry->unknown10 ||
-				function_1c04f1(state, entry))
+				function_1c04f1(local_3, entry))
 			{
 				result = g_46fbe4;
 			}
@@ -186,6 +192,9 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// score 143 (was 143): retail inlines function_1f4460, which lives in a file
+// that is not mine,
+// so our frame is 16 bytes smaller and the call is still there.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {
@@ -237,58 +246,25 @@ bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 		{
 			long object_index = function_baf80(node->object_index);
 			s_actor_point_target target;
-			bool result = true;
 
-			target.point.x = g_4687b0->i * 2.5f + collision.point.x;
-			target.point.y = g_4687b0->j * 2.5f + collision.point.y;
-			target.point.z = g_4687b0->k * 2.5f + collision.point.z;
+			point3f point;
+
+			point.x = g_4687b0->i * 2.5f + collision.point.x;
+			point.y = g_4687b0->j * 2.5f + collision.point.y;
+			point.z = g_4687b0->k * 2.5f + collision.point.z;
+			target.point = point;
 			target.output_index = NONE;
-			actor = actor_get(actor_index);
-			if (!actor->unknown229)
-			{
-				function_1f86a0(actor_index);
-				result = false;
-			}
-			else
-			{
-				function_2628f0(actor_index, g_470fa0);
-				if (actor->unknown4ac != 2 || actor->unknown4c8 != NONE ||
-					function_210a30(&target, &actor->unknown4b8) > 0.1f * 0.1f)
-				{
-					function_1f86a0(actor_index);
-					actor->unknown4ac = 0;
-					actor->unknown4ae = false;
-					actor->unknown4b0 = 0.0f;
-					actor->unknown4b4 = 0.0f;
-					actor->unknown4cc = 0.0f;
-					actor->unknown4d0 = 0.0f;
-					actor->unknown4d4 = false;
-					actor->unknown4d5 = false;
-					actor->unknown4e8 = false;
-					actor->unknown4e4 = NONE;
-					actor->unknown4b8 = target;
-					actor->unknown4c8 = NONE;
-					actor->unknown4ac = 2;
-					actor->unknown4ae = true;
-					actor->unknown4e4 = object_index;
-					if (actor->unknown229)
-					{
-						actor->unknown656 = 0;
-					}
-					result = function_1f8a70(actor_index, false);
-				}
-				else if (actor->unknown040 && !actor->unknown506)
-				{
-					result = function_1f8a70(actor_index, false);
-				}
-			}
-			return result;
+			return function_1f4460(actor_index, &target, NONE, object_index, true);
 		}
 		return false;
 	}
 	return true;
 }
 
+// score 26 (was 26): the slot pointer and the actor index are loaded into the
+// opposite
+// registers here, and the shared actor_reset_state helper stores its fields in
+// another order.
 // @retail 0x1c0430
 bool __stdcall function_1c0430(long actor_index, s_slot *slot)
 {
@@ -310,12 +286,16 @@ void __stdcall function_1c04c0(long actor_index, s_slot *slot)
 	actor_get(actor_index)->times[3] = g_510c54->game_time;
 }
 
-#pragma optimize("g", off)
 PRIVATE __forceinline bool function_1c0a31(point2f *arg_0)
 {
-	return normalize2d(arg_0) > g_45dbd8;
+	return normalize2d(arg_0) > 0.0f;
 }
-#pragma optimize("g", on)
+
+PRIVATE __forceinline void vector2d_from_points2d_1c0a30(point2f const *a, point2f const *b, point2f *out)
+{
+	out->x = b->x - a->x;
+	out->y = b->y - a->y;
+}
 
 // @retail 0x1c0a30
 void __stdcall function_1c0a30(long actor_index, s_slot *slot)
@@ -325,25 +305,22 @@ void __stdcall function_1c0a30(long actor_index, s_slot *slot)
 	if (state->unknown0c)
 	{
 		s_actor_view *local_0 = actor_get(actor_index);
-		volatile dword *local_1 = &local_0->flags810;
-		*local_1 = *local_1 | 0x2000;
+		local_0->flags810 = local_0->flags810 | 0x2000;
 	}
 	else
 	{
-		s_actor_view *actor = actor_get(actor_index);
-
-		if (actor->unknown50c && actor->unknown504 == 1)
+		if (actor_get(actor_index)->unknown50c && actor_get(actor_index)->unknown504 == 1)
 		{
+			s_actor_view *actor = actor_get(actor_index);
 			s_prop_state_position *prop = (s_prop_state_position *)prop_node_state(prop_node_get(actor->prop_index));
 			point2f direction;
 			point2f facing;
 
-			direction.x = prop->position.x - actor->position.x;
-			direction.y = prop->position.y - actor->position.y;
+			vector2d_from_points2d_1c0a30((point2f const *)&actor->position, &prop->position, &direction);
 			if (function_1c0a31(&direction))
 			{
 				facing = *(point2f *)&actor->unknown290;
-				if (function_1c0a31(&facing) && facing.y * direction.y + facing.x * direction.x > 0.9f)
+				if (function_1c0a31(&facing) && direction.y * facing.y + direction.x * facing.x > 0.9f)
 				{
 					actor->unknown482 = true;
 				}

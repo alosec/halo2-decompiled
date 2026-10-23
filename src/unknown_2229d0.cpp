@@ -100,7 +100,7 @@ PRIVATE inline bool simulation_world_is_remote(void)
 	return result;
 }
 
-PRIVATE inline word real_to_word_round(real value)
+PRIVATE __forceinline word real_to_word_round(real value)
 {
 	long result;
 
@@ -190,6 +190,18 @@ void rumble_player_play_effect(
 	}
 }
 
+PRIVATE __forceinline void function_222e91(real *arg_0, real arg_1)
+{
+	if (0.0f > arg_1)
+		*(real volatile *)arg_0 = 0.0f;
+	else
+	{
+		*(real volatile *)arg_0 = 1.0f;
+		if (!(arg_1 > 1.0f))
+			*(real volatile *)arg_0 = arg_1;
+	}
+}
+
 // @retail 0x222e90
 s_rumble_state rumble_player_evaluate(
 	s_speed_table_entry *entry)
@@ -222,7 +234,7 @@ s_rumble_state rumble_player_evaluate(
 					{
 						real fraction = time / motor->duration;
 
-						fraction = PIN(fraction, 0.0f, 1.0f);
+						function_222e91(&fraction, fraction);
 						motors[motor_index] += function_13b390(motor->function, fraction, 1.0f) * item->scale;
 					}
 				}
@@ -251,19 +263,21 @@ void function_222a70(
 
 	if (!g_509340 && !simulation_world_is_remote())
 	{
-		long i;
-		s_speed_table_entry *local_0 = g_502120->entries;
+		long i = 0;
+		real *local_0 = g_502120->entries[0].timers + 1;
 		long const *local_1 = g_4e8c20->entries;
 
-		for (i = 0; i < 4; i++, local_0++, local_1++)
+		for (; i < 4; i++, local_1++, local_0 += sizeof(s_speed_table_entry) / sizeof(real))
 		{
-			s_speed_table_entry *entry = local_0;
+			s_speed_table_entry *entry = (s_speed_table_entry *)((byte *)local_0 - 0x64);
 			s_rumble_state state = rumble_player_evaluate(entry);
-			long player_index = i != NONE ? *local_1 : NONE;
+			long player_index = NONE;
+			if (i != NONE)
+				player_index = *local_1;
 			long j;
 
 			for (j = 0; j < 8; j++)
-				entry->timers[j] += seconds;
+				local_0[j - 1] = j == 1 ? seconds + local_0[j - 1] : local_0[j - 1] + seconds;
 
 			if (player_index != NONE)
 			{

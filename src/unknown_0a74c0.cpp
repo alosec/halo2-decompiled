@@ -5,8 +5,8 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 
-bool function_a0190(vector3f const *vector);
-bool function_a0200(real a, real b);
+inline bool function_a0190(vector3f const *vector);
+__declspec(noinline) bool function_a0200(real a, real b);
 
 // @retail 0xa74c0
 bool function_a74c0(vector3f const *forward, vector3f const *up)

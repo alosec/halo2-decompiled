@@ -29,18 +29,19 @@ struct s_type_99af70
 bool function_7af40(s_type_99af70 const *address);
 
 /* an IPv4 address in host byte order whose last octet is zero */
+// score 55 (was 55): retail pushes esi after the first branch, ours pushes it first, and the
+// two comparisons of the field value are ordered differently.
 // @retail 0x7aec0
 bool function_07aec0(s_type_99af70 const *address, dword *ipv4_address)
 {
+	dword &output = *ipv4_address;
 	bool result = false;
 
-	if (function_7af40(address) && address->address_length == k_ipv4_address_length)
+	short length = address ? address->address_length : 0;
+	if (function_7af40(address) && length == k_ipv4_address_length)
 	{
-		dword value = address->ipv4_address;
-
-		value = (((value & 0xff0000) | (value >> 16)) >> 8) | (((value << 16) | (value & 0xff00)) << 8);
-		*ipv4_address = value;
-		if (!(byte)value)
+		output = (((address->ipv4_address & 0xff0000) | (address->ipv4_address >> 16)) >> 8) | (((address->ipv4_address << 16) | (address->ipv4_address & 0xff00)) << 8);
+		if (!(byte)output)
 			result = true;
 	}
 	return result;

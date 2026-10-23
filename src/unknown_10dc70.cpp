@@ -99,11 +99,11 @@ static inline s_vibration_state *vibration_state(long object_index)
 // @retail 0x10dc70
 bool function_10dc70(long object_index)
 {
-	bool result;
 	s_object *object = OBJECT_FROM_INDEX(object_index);
-	s_tag_data_1e8 *tag = (s_tag_data_1e8 *)g_4e3b44[object->tag_index & 0xFFFF].bytes;
-
 	s_vibration_state *state = VIBRATION_STATE(object);
+	s_tag_data_1e8 *tag = (s_tag_data_1e8 *)g_4e3b44[object->tag_index & 0xFFFF].bytes;
+	bool result = false;
+
 	if (vibration_state(object_index)->d38 != NONE)
 	{
 		if (state->r40 < 0.0001f)
@@ -124,11 +124,10 @@ bool function_10dc70(long object_index)
 			}
 			state->r40 = value;
 		}
-		return true;
+		result = true;
 	}
 	else
 	{
-		result = false;
 		real value = state->r40 - 0.075f;
 		if (!(value > 0.0f))
 		{
@@ -137,7 +136,11 @@ bool function_10dc70(long object_index)
 		state->r40 = value;
 		for (long i = 0; i < 12; i++)
 		{
-			real scale = tag->value > 0.0f ? tag->value : 0.9f;
+			real scale = 0.9f;
+			if (tag->value > 0.0f)
+			{
+				scale = tag->value;
+			}
 			signed char v = real_to_signed_byte((real)state->c50[i] * g_547648 * scale * 128.0f);
 			state->c50[i] = v;
 			if (v)
@@ -145,22 +148,21 @@ bool function_10dc70(long object_index)
 				result = true;
 			}
 		}
-	}
-
-	if (vibration_state(object_index)->s36 != NONE)
-	{
-		if (state->r40 != 0.0f)
+		if (vibration_state(object_index)->s36 != NONE)
 		{
-			state->countdown = 0xFF;
-		}
-		else if (state->countdown)
-		{
-			state->countdown--;
-		}
-		else
-		{
-			g_4e7408->seed = g_4e7408->seed * 0x19660d + 0x3c6ef35f;
-			state->countdown = (byte)(((g_4e7408->seed >> 16) * 225 >> 16) + 30);
+			if (state->r40 != 0.0f)
+			{
+				state->countdown = 0xFF;
+			}
+			else if (!state->countdown)
+			{
+				g_4e7408->seed = g_4e7408->seed * 0x19660d + 0x3c6ef35f;
+				state->countdown = (byte)(((g_4e7408->seed >> 16) * 225 >> 16) + 30);
+			}
+			else
+			{
+				state->countdown--;
+			}
 		}
 	}
 	return result;
@@ -202,12 +204,12 @@ struct s_vibration_output
 	signed char values[12];
 };
 
-real function_10e8e0(real t);
+inline real function_10e8e0(real t);
 
 #define VIBRATION_VERSION 0x96c
 
 // @retail 0x10de40
-void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real time, real blend, bool skip_special)
+void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real volatile time, real blend, bool skip_special)
 {
 	output->time = time;
 	if (set->size > 0x10)
@@ -215,6 +217,7 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 		s_vibration_curves *curves = set->curves;
 		if (curves && curves->version == VIBRATION_VERSION)
 		{
+			long used = 0;
 			real previous[24];
 			memset(previous, 0, sizeof(previous));
 			for (long i = 0; i < 12; i++)
@@ -234,14 +237,13 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 			memset(output->values, 0, sizeof(output->values));
 
 			long channel_count = curves->channel_count;
-			long used = 0;
 			s_vibration_channel *channel = curves->channels;
 			s_vibration_key *keys_base = (s_vibration_key *)(channel + channel_count);
 			real t_first, v_first, t_last, v_last, t_key, t0, v0, t1, v1;
 			for (long c = 0; c < channel_count; c++, channel++)
 			{
 				s_vibration_key *keys = keys_base + channel->key_offset;
-				real result = 0.0f;
+				volatile real  result = 0.0f;
 				bool skip = skip_special && (c == 0x12 || c == 0x13 || c == 0x14);
 				short key_count = channel->key_count;
 				if (key_count > 0 && !skip)
@@ -308,7 +310,8 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 					}
 				}
 
-				result = (result - previous[c]) * blend + previous[c];
+				real prior_value = previous[c];
+				result = (result - prior_value) * blend + prior_value;
 				real magnitude = (real)fabs(result);
 				if (!(magnitude < 0.0001f))
 				{
@@ -349,7 +352,7 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 }
 
 // @retail 0x10e8e0
-real function_10e8e0(real t)
+inline real function_10e8e0(real t)
 {
 	real result = t * t * 3.0f - t * t * t * 2.0f;
 
@@ -539,11 +542,15 @@ struct s_weapon_state
 
 #define WEAPON_STATE(object) ((s_weapon_state *)((byte *)(object) + (object)->offset33e))
 
-static inline void trigger_initialize(s_trigger_state *trigger)
+static inline void trigger_head_initialize(s_trigger_state *trigger)
 {
 	trigger->unknown00 = NONE;
 	trigger->unknown04 = NONE;
 	trigger->unknown06 = NONE;
+}
+
+static inline void trigger_body_initialize(s_trigger_state *trigger)
+{
 	trigger->unknown1c = 0.0f;
 	trigger->unknown18 = 1.0f;
 	trigger->unknown08 = NONE;
@@ -564,9 +571,12 @@ void function_10f040(long object_index)
 
 	state->unknown98 = NONE;
 	state->unknown94 = NONE;
-	trigger_initialize(&state->triggers[0]);
-	trigger_initialize(&state->triggers[1]);
-	trigger_initialize(&state->triggers[2]);
+	trigger_head_initialize(&state->triggers[0]);
+	trigger_body_initialize(&state->triggers[0]);
+	trigger_head_initialize(&state->triggers[1]);
+	trigger_body_initialize(&state->triggers[1]);
+	trigger_head_initialize(&state->triggers[2]);
+	trigger_body_initialize(&state->triggers[2]);
 	state->unknown03 = 0;
 	s_short_pair *pair = &state->pairs0fc[0];
 	for (long i = 0; i < 7; i++)

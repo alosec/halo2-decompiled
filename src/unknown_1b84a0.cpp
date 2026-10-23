@@ -77,24 +77,29 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 
 /* slot type 0x23, update: once the actor stands at its prop's position, it
    turns to face it; then it lets the prop go */
+// score 81 (was 81): retail reads the pool before the registers are pushed,
+// ours reads it
+// afterwards, so the prologue differs.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
+	long prop_index = actor_get(actor_index)->prop_index;
 	s_slot_23 *state = (s_slot_23 *)slot;
 
-	if (actor->prop_index != NONE)
+	if (prop_index != NONE)
 	{
-		s_prop_node_view *node = prop_node_get(actor->prop_index);
+		s_prop_node_view *node = prop_node_get(prop_index);
 		s_prop_view_fields *view = prop_node_view(node);
 
 		if (view)
 		{
+			s_actor_view *actor = actor_get(actor_index);
 			if (state->unknown0c)
 				return;
 
-			state->unknown0c = state->unknown0d && function_1f86f0(actor_index);
-			if (state->unknown0c)
+			bool ready = state->unknown0d && function_1f86f0(actor_index);
+			state->unknown0c = ready;
+			if (ready)
 			{
 				if (!state->unknown1b || !state->unknown1d || state->unknown1c)
 					return;
@@ -114,6 +119,9 @@ void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 	state->unknown0c = true;
 }
 
+// score 41 (was 41): retail reads a different global and keeps the record
+// count in EBP,
+// ours uses ESI and another pool.
 // @retail 0x1b8ae0
 void __stdcall function_1b8ae0(long actor_index, s_slot *slot)
 {
@@ -130,7 +138,8 @@ void __stdcall function_1b8ae0(long actor_index, s_slot *slot)
 		else if (state->unknown0e > 0)
 			state->unknown0e--;
 
-		if (actor_get(actor_index)->unknown50c && actor_get(actor_index)->unknown504 == 1 &&
+		s_actor_view *current = actor_get(actor_index);
+		if (current->unknown50c && current->unknown504 == 1 &&
 			function_1f8940(actor_index) >= 2.0f && state->unknown0e <= 0)
 		{
 			actor->unknown41c = 3;
@@ -188,10 +197,13 @@ bool __stdcall function_1ac610(long actor_index, point3f const *point,
 short __stdcall function_272af0(s_match_globals *structure, point3f const *point);
 struct s_1f4a20_entry;
 struct s_1f4a20_source;
-bool function_1f4a20(long actor_index, s_reference reference, s_1f4a20_entry const *entries,
+bool function_1f4a20(s_1f4a20_entry const *entries, long actor_index, s_reference reference, s_1f4a20_source const *source,
     bool alternate, s_type_c3b527 *point, vector3f *facing,
-    signed char *type, bool *available, s_1f4a20_source const *source);
+    signed char *type, bool *available);
 
+// score 323 (was 323): the size we use is 0x1634 where retail uses 0x162c,
+// and the index is
+// scaled in EAX here and in ESI there, so the loop is a different length.
 // @retail 0x1b85a0
 bool __stdcall function_1b85a0(long actor_index, s_slot *slot)
 {
@@ -282,9 +294,9 @@ bool __stdcall function_1b85a0(long actor_index, s_slot *slot)
             *(long *)((byte *)location + 0x14) != NONE &&
             *(long *)((byte *)location + 0x14) != 0xffff)
         {
-            success = function_1f4a20(actor_index, reference,
-                (s_1f4a20_entry const *)scratch, true, &state->point, &state->facing,
-                (signed char *)&state->unknown1d, &available, (s_1f4a20_source const *)&entry);
+            success = function_1f4a20((s_1f4a20_entry const *)&entry, actor_index, reference,
+                (s_1f4a20_source const *)scratch, true, &state->point, &state->facing,
+                (signed char *)&state->unknown1d, &available);
             if (success)
             {
                 state->unknown1b = true;

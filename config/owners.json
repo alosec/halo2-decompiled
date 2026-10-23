@@ -12,7 +12,7 @@
       "start": "0x22c390",
       "end": "0x22cbc1",
       "owner": "third:havok",
-      "note": "Havok memory manager (hkPoolMemory), found by decompiling"
+      "note": "Havok memory manager (c_havok_page_pool_allocator), found by decompiling"
     }
   ]
 }

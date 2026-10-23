@@ -31,7 +31,7 @@ struct s_respawn_player_iterator
 	long index;
 };
 
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 
 static inline s_respawn_player *respawn_player_get(long player_index)
 {
@@ -75,10 +75,12 @@ bool function_15d770(long player_index)
 		s_respawn_player_iterator iterator;
 		long living_count = 0;
 
+		result = true;
+
 		iterator.data = players;
 		iterator.index = NONE;
 		iterator.datum_index = NONE;
-		while (function_19f240((long *)&iterator))
+		while (player_iterator_next((long *)&iterator))
 		{
 			s_respawn_player *other = iterator.player;
 
@@ -94,27 +96,26 @@ bool function_15d770(long player_index)
 			long needed_count = g_4e6948->value1b4 - living_count;
 			long waiting_count = 0;
 
-			iterator.data = players;
+			iterator.data = g_4e8c24;
 			iterator.index = NONE;
 			iterator.datum_index = NONE;
-			while (function_19f240((long *)&iterator))
+			while (player_iterator_next((long *)&iterator))
 			{
 				s_respawn_player *other = iterator.player;
 
 				if ((!function_x340af0() || player->team == other->team) &&
 					other->unit_index == NONE && other != player &&
 					!function_15db30(iterator.datum_index) &&
-					(other->respawn_time < player->respawn_time ||
-					other->respawn_time == player->respawn_time && absolute_index >= (iterator.datum_index & 0xffff)))
+					other->respawn_time <= player->respawn_time &&
+					(other->respawn_time != player->respawn_time || absolute_index >= (iterator.datum_index & 0xffff)))
 				{
 					waiting_count++;
 				}
 			}
 
 			if (waiting_count < needed_count)
-				return false;
+				result = false;
 		}
-		result = true;
 	}
 	return result;
 }
@@ -130,64 +131,67 @@ bool function_161e10(long team);
 // @retail 0x15d920
 bool function_15d920(long player_index)
 {
-	dword flags = ((s_respawn_options *)g_4e6948)->flags;
 	s_record_pool *players = g_4e8c24;
 	long index = player_index & 0xffff;
-	s_respawn_player *player = (s_respawn_player *)players->data + index;
-	volatile bool result = false;
-	if ((bool)((flags >> 14) & 1) && function_x340af0() && player->unit_index == NONE)
+	s_respawn_player *player = (s_respawn_player *)(players->data + (player_index & 0xffff) * sizeof(s_respawn_player));
+	bool result = false;
+	if ((bool)((((s_respawn_options *)g_4e6948)->flags >> 14) & 1))
 	{
-		result = true;
-		char counts[8];
-		memset(counts, 0, sizeof(counts));
-		s_respawn_player_iterator iterator;
-		iterator.data = players;
-		iterator.index = NONE;
-		iterator.datum_index = NONE;
-		while (function_19f240((long *)&iterator))
+		if (function_x340af0())
 		{
-			s_respawn_player *other = iterator.player;
-			if (other->team != NONE && (other->unit_index != NONE ||
-				!function_15db30(iterator.datum_index) && !function_15d770(iterator.datum_index)))
-				counts[other->team]++;
-		}
-		volatile long minimum = 16;
-		for (long team = 0; team < 8; team++)
-		{
-			if (function_161e10(team) && counts[team] < minimum)
-				minimum = counts[team];
-		}
-		if (minimum < 2)
-			minimum = 2;
-		if (counts[player->team] > minimum)
-		{
-			long living_count = 0;
-			long waiting_count = 0;
-			iterator.data = players;
-			iterator.index = NONE;
-			iterator.datum_index = NONE;
-			while (function_19f240((long *)&iterator))
+			if (player->unit_index == NONE)
 			{
-				s_respawn_player *other = iterator.player;
-				if (other->team == player->team && other != player)
+				result = true;
+				char counts[8];
+				memset(counts, 0, sizeof(counts));
+				s_respawn_player_iterator iterator;
+				iterator.data = players;
+				iterator.index = NONE;
+				iterator.datum_index = NONE;
+				while (player_iterator_next((long *)&iterator))
 				{
-					long unit_index = other->unit_index;
-					if (unit_index != NONE || !function_15db30(iterator.datum_index))
-					{
-						if (unit_index != NONE)
-							living_count++;
-						else if (other->respawn_time < player->respawn_time ||
-							other->respawn_time == player->respawn_time && index >= (iterator.datum_index & 0xffff))
-							waiting_count++;
-					}
+					s_respawn_player *other = iterator.player;
+					if (other->team != NONE && (other->unit_index != NONE ||
+						!function_15db30(iterator.datum_index) && !function_15d770(iterator.datum_index)))
+						counts[other->team]++;
 				}
+				long minimum = 16;
+				for (long team = 0; team < 8; team++)
+				{
+					if (function_161e10(team) && minimum > counts[team])
+						minimum = counts[team];
+				}
+				if (minimum <= 2)
+					minimum = 2;
+				if (minimum < counts[player->team])
+				{
+					long living_count = 0;
+					long waiting_count = 0;
+					iterator.data = g_4e8c24;
+					iterator.index = NONE;
+					iterator.datum_index = NONE;
+					while (player_iterator_next((long *)&iterator))
+					{
+						s_respawn_player *other = iterator.player;
+						if (player->team == other->team && other != player)
+						{
+							if (other->unit_index == NONE && function_15db30(iterator.datum_index))
+								continue;
+							if (other->unit_index != NONE)
+								living_count++;
+							else if (other->respawn_time <= player->respawn_time &&
+								(other->respawn_time != player->respawn_time || index >= (iterator.datum_index & 0xffff)))
+								waiting_count++;
+						}
+					}
+					long needed = minimum - living_count;
+					if (needed > 0 && waiting_count < needed)
+						result = false;
+				}
+				else
+					result = false;
 			}
-			long needed = minimum - living_count;
-			if (needed > 0 && waiting_count < needed)
-				return false;
 		}
-		else
-			return false;
 	}
 	return result;
 }

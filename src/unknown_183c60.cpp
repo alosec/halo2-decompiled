@@ -129,7 +129,6 @@ s_flag_byte *s_flag_byte::set(byte new_value)
 }
 
 byte *g_4ed280;
-long g_4ea95c;
 
 // @retail 0x183e40
 void function_183e40()
@@ -140,7 +139,7 @@ void function_183e40()
 	game_state_globals.cpu_allocation_size += 0x4204;
 	function_163ba0(&game_state_globals.allocation_size_checksum, &size, 4);
 	g_4ed280 = base;
-	g_4ea95c = 0;
+	g_4ea958.active_slot_count = 0;
 	for (long i = 0; i < 8; i++)
 	{
 		g_4eca60[i] = NONE;

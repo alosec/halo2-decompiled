@@ -44,15 +44,15 @@ c_window_manager::c_window_manager()
 
 long g_47ff54;
 
-void *function_1482e8(void);
+struct s_user_interface_shared_globals *ui_mode_definition_get(void);
 
 void function_236299(long sound);
 
 s_profile_edit g_54e5d0;
 
-struct s_player_profile; /* unknown_18f576.cpp */
+struct s_player_profile; /* player_slots.cpp */
 void player_slot_get_profile(long index, s_player_profile *profile, long *profile_index);
-void __stdcall function_18fd20(long player, s_player_profile_settings *settings, long profile_index);
+void __stdcall player_slot_store_profile(long player, s_player_profile_settings *settings, long profile_index);
 void __stdcall function_215367(long player, long profile_index, void *data, long flags);
 void __stdcall function_2153dd(long player, long profile_index, s_player_profile_settings *settings, long flags);
 
@@ -136,7 +136,7 @@ long function_147f4f()
 // @retail 0x148098
 long function_148098(long screen_id)
 {
-	s_screen_references *references = (s_screen_references *)function_1482e8();
+	s_screen_references *references = (s_screen_references *)ui_mode_definition_get();
 	long result = NONE;
 
 	if (references)
@@ -234,9 +234,9 @@ bool function_147d13()
 
 #define NUMBEROF(array) (sizeof(array) / sizeof((array)[0]))
 
-bool window_manager_window_has_pause_screen_for_user(long channel, long index, long user_index);
+bool window_manager_window_has_dialog(long channel, long index, long dialog_id);
 void function_23538b(c_window_channel *channel);
-void function_14935c(void);
+void window_manager_window_2_start_animation(void);
 void function_236299(long sound);
 
 /* closes the dialog window, the windows of channel 3 and the channel 1
@@ -263,7 +263,7 @@ void function_148523()
 			{
 				for (dword j = 0; j < NUMBEROF(screen_ids); j++)
 				{
-					if (window_manager_window_has_pause_screen_for_user(1, i, screen_ids[j]))
+					if (window_manager_window_has_dialog(1, i, screen_ids[j]))
 					{
 						function_23538b(&g_54d598.windows_1[i]);
 						break;
@@ -274,25 +274,25 @@ void function_148523()
 		function_23538b(&g_54d598.window_4);
 		function_236299(4);
 	}
-	function_14935c();
+	window_manager_window_2_start_animation();
 }
 
-bool function_138800();
+bool game_loop_running();
 bool function_138820();
 void function_199e2e(bool close);
-bool __stdcall function_236917(long controller_index);
-bool __stdcall function_236926(long controller_index);
-bool __stdcall function_236937(long controller);
-bool __stdcall function_236953(long controller);
-bool __stdcall function_2323ab(long controller_index);
+bool __stdcall dialog_callback_dashboard_network_configuration(long controller_index);
+bool __stdcall dialog_callback_leave_sessions(long controller_index);
+bool __stdcall dialog_callback_dashboard_online_menu(long controller);
+bool __stdcall dialog_callback_sign_out_to_main_menu(long controller);
+bool __stdcall pause_game_quit_confirmed(long controller_index);
 
 /* shows the dialog of a lost connection or failed sign in (by the error),
    unless one shows already, and leaves the game for most of them */
 // @retail 0x1486b8
 void function_1486b8(long error, bool keep)
 {
-	dialog_choice_callback first = function_236953;
-	dialog_choice_callback second = function_236953;
+	dialog_choice_callback first = dialog_callback_sign_out_to_main_menu;
+	dialog_choice_callback second = dialog_callback_sign_out_to_main_menu;
 	bool choice = false;
 	bool leave = false;
 	long dialog_id;
@@ -304,13 +304,13 @@ void function_1486b8(long error, bool keep)
 		return;
 	case 3:
 		dialog_id = 0x24;
-		first = function_236926;
+		first = dialog_callback_leave_sessions;
 		choice = true;
 		leave = true;
 		break;
 	case 2:
 		dialog_id = 0x27;
-		first = function_236937;
+		first = dialog_callback_dashboard_online_menu;
 		choice = true;
 		if (keep)
 		{
@@ -323,22 +323,20 @@ void function_1486b8(long error, bool keep)
 		break;
 	case 4:
 		dialog_id = 0x23;
-		first = function_236917;
+		first = dialog_callback_dashboard_network_configuration;
 		choice = true;
 		leave = true;
 		break;
 	case 6:
 		dialog_id = 0x9a;
-		first = function_236937;
+		first = dialog_callback_dashboard_online_menu;
 		choice = true;
 		if (keep)
 		{
 			second = NULL;
+			break;
 		}
-		else
-		{
-			leave = true;
-		}
+		leave = true;
 		break;
 	case 7:
 		dialog_id = 0x26;
@@ -350,36 +348,36 @@ void function_1486b8(long error, bool keep)
 		break;
 	case 5:
 		dialog_id = 0x38;
-		first = function_236917;
+		first = dialog_callback_dashboard_network_configuration;
 		choice = true;
 		leave = true;
 		break;
 	case 9:
 		dialog_id = 0x38;
-		first = function_236917;
+		first = dialog_callback_dashboard_network_configuration;
 		choice = true;
 		leave = true;
 		break;
 	default:
 		dialog_id = 0x38;
-		first = function_236917;
+		first = dialog_callback_dashboard_network_configuration;
 		choice = true;
 		leave = true;
 		break;
 	}
 
-	bool in_game = function_138800() && g_4e6948->state == 1 && !function_138820();
+	bool in_game = game_loop_running() && g_4e6948->state == 1 && !function_138820();
 	if (dialog_id == 0x38 && in_game)
 	{
 		choice = false;
 		dialog_id = 0xb8;
-		first = function_2323ab;
+		first = pause_game_quit_confirmed;
 	}
-	if (!window_manager_window_has_pause_screen_for_user(1, 4, dialog_id))
+	if (!window_manager_window_has_dialog(1, 4, dialog_id))
 	{
 		if (choice)
 		{
-			dialog_choice_show(1, dialog_id, 4, 0xffff, first, second, 0);
+			dialog_choice_show(1, dialog_id, 4, (long)NONE, first, second, 0);
 		}
 		else
 		{
@@ -596,8 +594,8 @@ const char *function_148956(s_window_manager_text *text)
 // @retail 0x14896e
 void function_14896e(s_window_manager_754 *a, s_window_manager_df6 *b)
 {
-	*a = g_54d598.m754;
-	*b = g_54d598.mdf6;
+	*a = g_54d598.team_details;
+	*b = g_54d598.team_member_details;
 }
 
 // @retail 0x148995
@@ -634,24 +632,24 @@ void function_148a8d()
 	memset(g_54d598.mf08, 0, sizeof(g_54d598.mf08));
 }
 
-bool __stdcall function_236964(long controller);
-bool __stdcall function_236989(long controller);
+bool __stdcall dialog_callback_dashboard_memory(long controller);
+bool __stdcall dialog_callback_dashboard_memory_for_game_variant(long controller);
 bool __stdcall function_2523b7(long controller);
 
 /* tells the controllers why a game variant could not be saved */
 // @retail 0x148aa3
-void function_148aa3(long error, dword controller_flags)
+void function_148aa3(long error, word controller_flags)
 {
 	switch (error)
 	{
 	case 1:
-		dialog_choice_show(3, 0x4b, 4, controller_flags, function_236964, function_2523b7, 0);
+		dialog_choice_show(3, 0x4b, 4, controller_flags, dialog_callback_dashboard_memory, function_2523b7, 0);
 		break;
 	case 2:
-		dialog_choice_show(3, 0x4f, 4, controller_flags, function_236989, function_2523b7, 0);
+		dialog_choice_show(3, 0x4f, 4, controller_flags, dialog_callback_dashboard_memory_for_game_variant, function_2523b7, 0);
 		break;
 	default:
-		dialog_choice_show(3, 0xd, 4, controller_flags, function_236989, function_2523b7, 0);
+		dialog_choice_show(3, 0xd, 4, controller_flags, dialog_callback_dashboard_memory_for_game_variant, function_2523b7, 0);
 		break;
 	}
 }
@@ -684,7 +682,7 @@ void profile_edit_save()
 			player_slot_get_profile(player, (s_player_profile *)profile, &found_index);
 			if (found_index == profile_index)
 			{
-				function_18fd20(player, &g_54e5d0.settings, found_index);
+				player_slot_store_profile(player, &g_54e5d0.settings, found_index);
 				return;
 			}
 		}
@@ -721,12 +719,7 @@ long saved_film_size_in_blocks()
 long minimal_storage_size_in_blocks()
 {
 	long profile = saved_game_file_type_size_in_blocks(1);
-	long variant = saved_game_file_type_size_in_blocks(0);
-	long film = saved_film_size_in_blocks();
-	long total = profile;
-	total += variant;
-	total += film;
-	return total + 1;
+	return saved_game_file_type_size_in_blocks(0) + profile + saved_film_size_in_blocks() + 1;
 }
 
 void function_236299(long sound);
@@ -926,7 +919,7 @@ static inline s_selection_xuid *selection_get_xuid(s_name_request *selection)
 }
 
 struct _XUID;
-long function_18fa4d(long mode);
+long player_slot_find_signed_in(long mode);
 long function_abc70(long controller_index, _XUID const *xuid);
 
 /* selects the player the online screens act on (mode 2 keeps the clan
@@ -941,13 +934,13 @@ void __stdcall function_148893(s_name_request *request, long mode)
 			function_6b640(g_54d598.team_task);
 			g_54d598.team_task = NONE;
 		}
-		if (g_54d598.task750 != NONE)
+		if (g_54d598.team_members_task != NONE)
 		{
-			function_6b640(g_54d598.task750);
-			g_54d598.task750 = NONE;
+			function_6b640(g_54d598.team_members_task);
+			g_54d598.team_members_task = NONE;
 		}
-		memset(&g_54d598.m754, 0, sizeof(g_54d598.m754));
-		memset(&g_54d598.mdf6, 0, sizeof(g_54d598.mdf6));
+		memset(&g_54d598.team_details, 0, sizeof(g_54d598.team_details));
+		memset(&g_54d598.team_member_details, 0, sizeof(g_54d598.team_member_details));
 	}
 	if (request)
 	{
@@ -960,7 +953,7 @@ void __stdcall function_148893(s_name_request *request, long mode)
 
 			if (xuid && xuid->id && !(xuid->flags & 3))
 			{
-				long controller_index = function_18fa4d(1);
+				long controller_index = player_slot_find_signed_in(1);
 
 				if (controller_index >= 0 && controller_index < 4)
 				{
@@ -976,7 +969,7 @@ void __stdcall function_148893(s_name_request *request, long mode)
 }
 
 void function_19987f(void);
-void function_14a152(void);
+void window_manager_reset_all_windows(void);
 void function_1a479a(void);
 
 /* the user interface's dispose (the subsystem table at 0x4414e0) */
@@ -984,7 +977,7 @@ void function_1a479a(void);
 void function_14783f(void)
 {
 	function_19987f();
-	function_14a152();
+	window_manager_reset_all_windows();
 	function_1a479a();
 }
 
@@ -995,7 +988,7 @@ void function_147920(void)
 	long i;
 
 	g_54d598.default_window.dispose();
-	g_54d598.m10 = NONE;
+	g_54d598.shell_mode = NONE;
 	for (i = 0; i < 5; i++)
 	{
 		((c_window_channel *)&g_54d598.windows_5[i])->dispose();
@@ -1010,30 +1003,30 @@ void function_147920(void)
 	}
 	g_54d598.mf04 = NONE;
 	g_54e5d0.profile_index = NONE;
-	g_54d598.m1248.m10 = NONE;
+	g_54d598.main_menu_music.m10 = NONE;
 	g_54d598.active = false;
-	g_54d598.m1248.m0 = 0;
-	g_54d598.m1248.m4 = 0;
-	g_54d598.m1248.mc = 0;
-	g_54d598.m1248.m8 = 0;
+	g_54d598.main_menu_music.m0 = 0;
+	g_54d598.main_menu_music.m4 = 0;
+	g_54d598.main_menu_music.mc = 0;
+	g_54d598.main_menu_music.m8 = 0;
 }
 
-bool __stdcall function_236973(long controller);
+bool __stdcall dialog_callback_dashboard_memory_for_profile(long controller);
 
 /* tells the controllers why a game variant could not be loaded */
 // @retail 0x148ca8
-void function_148ca8(long error, dword controller_flags)
+void function_148ca8(long error, short controller_flags)
 {
 	switch (error)
 	{
 	case 1:
-		dialog_choice_show(3, 0x4a, 4, controller_flags, function_236964, function_2523b7, 0);
+		dialog_choice_show(3, 0x4a, 4, controller_flags, dialog_callback_dashboard_memory, function_2523b7, 0);
 		break;
 	case 2:
-		dialog_choice_show(3, 0x4e, 4, controller_flags, function_236973, function_2523b7, 0);
+		dialog_choice_show(3, 0x4e, 4, controller_flags, dialog_callback_dashboard_memory_for_profile, function_2523b7, 0);
 		break;
 	case 4:
-		dialog_choice_show(3, 0xc, 4, controller_flags, function_236973, function_2523b7, 0);
+		dialog_choice_show(3, 0xc, 4, controller_flags, dialog_callback_dashboard_memory_for_profile, function_2523b7, 0);
 		break;
 	}
 }
@@ -1103,7 +1096,7 @@ void function_147ebe(void)
 // @retail 0x147f1e
 void function_147f1e(void)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 
 	if (globals)
 	{
@@ -1234,6 +1227,9 @@ bool __stdcall function_148f36(long controller)
 }
 
 /* whether the user's frontmost screen takes the user's input */
+// score 73 (was 73): the two global checks come before the address is computed
+// in retail and after it in ours, retail keeps the address in esi and calls the
+// helper with it while ours calls the helper with the index
 // @retail 0x148fff
 bool __stdcall function_148fff(long user_index)
 {
@@ -1246,16 +1242,18 @@ bool __stdcall function_148fff(long user_index)
 	}
 	for (;;)
 	{
-		if (index == 4 && function_1473b6(&g_54d598.window_0))
-			result = g_54d598.window_0.function_235276(user_index);
+		c_window_channel *window;
+
+		if (index == 4 && function_1473b6(window = &g_54d598.window_0))
+			result = window->function_235276(user_index);
 		else if (function_1473b6(&g_54d598.windows_1[index]))
 			result = g_54d598.windows_1[index].function_235276(user_index);
 		else if (index == 4 && function_1473b6(&g_54d598.window_2))
 			result = g_54d598.window_2.function_235276(user_index);
 		else if (function_1473b6(&g_54d598.windows_3[index]))
 			result = g_54d598.windows_3[index].function_235276(user_index);
-		else if (index == 4 && function_1473b6(&g_54d598.window_4))
-			result = g_54d598.window_4.function_235276(user_index);
+		else if (index == 4 && function_1473b6(window = &g_54d598.window_4))
+			result = window->function_235276(user_index);
 		else if (function_1473b6(&g_54d598.windows_5[index]))
 			result = g_54d598.windows_5[index].function_235276(user_index);
 		if (index == 4)
@@ -1271,14 +1269,14 @@ bool __stdcall function_148fff(long user_index)
 	return result;
 }
 
-long player_slot_find_controller(long controller_id);
+long player_slot_find_session_user(long controller_id);
 
 /* whether the controller's player slot is signed in to its user */
 // @retail 0x147da5
 bool function_147da5(long controller_id)
 {
 	bool result = false;
-	long user = player_slot_find_controller(controller_id);
+	long user = player_slot_find_session_user(controller_id);
 
 	if (user != NONE)
 	{
@@ -1287,23 +1285,23 @@ bool function_147da5(long controller_id)
 	return result;
 }
 
-void function_18f5e3(void);
+void player_slots_refresh_profile_indices(void);
 short player_slot_count_active(void);
 bool function_6c7e0();
 void function_1906b4(void);
 bool function_199df9(bool offline, bool system_link);
 void function_199a57(void);
 void function_199a03(long mode);
-c_class_1473c9 *__stdcall function_22f11e(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_14741b(s_screen_parameters *parameters);
-c_class_1473c9 *__stdcall function_14752c(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall press_start_screen_open(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall legalese_open(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall main_menu_open(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_2310b7(s_screen_parameters *parameters);
 extern dword g_54d5b8;
 extern dword g_54d5bc;
 
 struct s_controller_event;
 bool function_155f60(void);
-void function_14954a(s_event const *event);
+void window_manager_handle_event(s_event const *event);
 bool function_23515d(c_window_channel *channel, s_event *event);
 
 /* sends input to the shared windows, then the controller's windows */
@@ -1314,7 +1312,7 @@ void function_147dbe(s_controller_event *event)
 
 	if (function_155f60())
 	{
-		function_14954a(message);
+		window_manager_handle_event(message);
 	}
 	else
 	{
@@ -1343,15 +1341,15 @@ void function_147dbe(s_controller_event *event)
 				if (index != NONE)
 					continue;
 			}
-			function_14954a(message);
+			window_manager_handle_event(message);
 			break;
 		}
 	}
 	g_54d5bc = g_54d5b8;
 }
 
-/* unknown_14741b.cpp */
-extern bool g_54e7cd;
+/* main_menu.cpp */
+extern bool g_main_menu_campaign_chosen;
 /* the legal screen shows once */
 bool g_55e734;
 
@@ -1371,7 +1369,7 @@ void __stdcall function_1483c3(long reason)
 {
 	if (!g_54d598.active)
 	{
-		function_18f5e3();
+		player_slots_refresh_profile_indices();
 		g_54d5bc = g_54d5b8;
 	}
 	g_54d598.active = true;
@@ -1406,21 +1404,21 @@ void __stdcall function_1483c3(long reason)
 		parameters.type = 4;
 		parameters.b = 4;
 		memset(parameters.id, NONE, sizeof(parameters.id));
-		parameters.load = function_22f11e;
+		parameters.load = press_start_screen_open;
 		if (count == 0)
 		{
 			if (g_54d598.value08 && !g_55e734)
 			{
-				parameters.load = function_14741b;
+				parameters.load = legalese_open;
 				g_55e734 = true;
 			}
 		}
 		else if (function_6c7e0() && reason != 1)
 		{
 			parameters.user_flags = function_1901fc();
-			if (count == 1 && g_54e7cd)
+			if (count == 1 && g_main_menu_campaign_chosen)
 			{
-				parameters.load = function_14752c;
+				parameters.load = main_menu_open;
 			}
 			else
 			{
@@ -1430,12 +1428,12 @@ void __stdcall function_1483c3(long reason)
 		else if (count == 1)
 		{
 			parameters.user_flags = function_1901fc();
-			parameters.load = function_14752c;
+			parameters.load = main_menu_open;
 		}
 		parameters.load(&parameters);
 	}
 done:
-	g_54e7cd = false;
+	g_main_menu_campaign_chosen = false;
 }
 
 extern bool g_54d5a0;
@@ -1443,8 +1441,10 @@ extern char g_54d5a8;
 extern real g_54d5ac, g_54d5b0, g_54d5b4;
 extern bool g_54e7cc;
 extern dword g_54e7fc;
-void function_18f58c();
+void player_slots_initialize();
 
+// score 19 (was 19): the globals are cleared in the other order, ours writes
+// the byte flags after the blocks it fills while retail writes them before
 // @retail 0x1476c7
 void function_1476c7()
 {
@@ -1454,7 +1454,7 @@ void function_1476c7()
     g_54d598.unknown05[1] = false;
     g_54d598.unknown05[2] = false;
     g_54d5a0 = false;
-    g_54d598.m0c = 0;
+    g_54d598.pending_join_type = 0;
     g_54d5a8 = (char)0xff;
     g_54d5ac = 0.f;
     g_54d5b0 = 0.f;
@@ -1478,12 +1478,12 @@ void function_1476c7()
             g_54d598.window_2.m4 = i;
         }
     }
-    function_18f58c();
+    player_slots_initialize();
     memset(&g_54d598.settings, 0, sizeof(g_54d598.settings));
     g_54d598.team_task = NONE;
-    g_54d598.task750 = NONE;
-    memset(&g_54d598.m754, 0, sizeof(g_54d598.m754));
-    memset(&g_54d598.mdf6, 0, sizeof(g_54d598.mdf6));
+    g_54d598.team_members_task = NONE;
+    memset(&g_54d598.team_details, 0, sizeof(g_54d598.team_details));
+    memset(&g_54d598.team_member_details, 0, sizeof(g_54d598.team_member_details));
     memset(g_54d598.unknowne88, 0, sizeof(g_54d598.unknowne88));
     g_54d598.m1220 = false;
     g_54e7cc = false;
@@ -1509,7 +1509,7 @@ struct s_13c051
     short field_6;
 };
 
-void function_13c050(s_13c051 const *bounds, dword color);
+void interface_rectangle_fill(short_rectangle2d const *bounds, dword color);
 
 // @retail 0x147cbc
 void function_147cbc(s_13c051 const *window, dword color)
@@ -1517,7 +1517,7 @@ void function_147cbc(s_13c051 const *window, dword color)
     s_13c051 bounds = *window;
     /* The color argument stays in its stack slot. */
     dword const *color_reference = &color;
-    function_13c050(&bounds, *color_reference);
+    interface_rectangle_fill((short_rectangle2d const *)&bounds, *color_reference);
 }
 
 // @retail 0x147cdb
@@ -1530,12 +1530,12 @@ void c_render_window::function_147cdb(dword color)
     bounds.field_4 += top;
     bounds.field_2 += left;
     bounds.field_6 += left;
-    function_13c050(&bounds, color);
+    interface_rectangle_fill((short_rectangle2d const *)&bounds, color);
 }
 
 void __stdcall function_215e60(long file_index);
 long function_217300(long file_index, long removed_index);
-void __stdcall function_18fb34(long index, s_player_profile_settings *settings, long profile_index);
+void __stdcall player_slot_set_profile(long index, s_player_profile_settings *settings, long profile_index);
 
 PRIVATE inline long next_controller_148b27(long index)
 {
@@ -1563,7 +1563,7 @@ void __stdcall function_148b27(long index)
             long updated_index = function_217300(current_index, removed_index);
             if (updated_index != profile_index)
             {
-                function_18fb34(controller, &profile, updated_index);
+                player_slot_set_profile(controller, &profile, updated_index);
             }
         }
         controller = next_controller_148b27(controller);
@@ -1573,12 +1573,12 @@ void __stdcall function_148b27(long index)
 
 void function_2133a1();
 void function_199893();
-void function_149570();
+void window_manager_update_online();
 void function_18f62b();
 void function_199b08();
-bool function_223976();
-void function_223a21();
-bool function_14a224();
+bool attract_movie_due();
+void attract_mode_play_movie();
+bool window_manager_main_menu_focused();
 struct s_main_menu_music;
 void main_menu_music_update(s_main_menu_music *music);
 
@@ -1589,7 +1589,7 @@ void __stdcall function_1479c3(real elapsed)
     function_2133a1();
     function_199893();
     function_147f1e();
-    function_149570();
+    window_manager_update_online();
     function_18f62b();
     for (dword i = 0; i < 0x23; i++)
     {
@@ -1613,17 +1613,17 @@ void __stdcall function_1479c3(real elapsed)
     }
     function_199b08();
     if (g_54d5a8 == 2 && g_4e0350 && !function_155f60() &&
-        !g_54d598.windows_1[4].current && !g_54d598.windows_1[4].next)
+        !g_54d598.windows_5[4].current && !g_54d598.windows_5[4].next)
     {
         function_1483c3(0);
     }
     function_1482c4();
-    if (function_223976())
+    if (attract_movie_due())
     {
-        function_223a21();
+        attract_mode_play_movie();
     }
-    main_menu_music_update((s_main_menu_music *)&g_54d598.m1248);
-    if (function_138800() && g_4e6948->state == 3 && function_14a224())
+    main_menu_music_update((s_main_menu_music *)&g_54d598.main_menu_music);
+    if (game_loop_running() && g_4e6948->state == 3 && window_manager_main_menu_focused())
     {
         g_54e7fc = g_54d5b8;
     }
@@ -1688,7 +1688,7 @@ void function_147af1(long index, long fallback_index, c_render_window *window)
             }
             else
                 color = 0;
-            if (function_138800() && (g_4e6948->state == 1 || g_4e6948->state == 2))
+            if (game_loop_running() && (g_4e6948->state == 1 || g_4e6948->state == 2))
                 color = 0;
             if (color)
                 (*window_reference)->function_147cdb(color);
@@ -1729,15 +1729,14 @@ struct s_ui_initial_screen
 };
 
 void function_2157c0(long selection);
-void __stdcall function_149f88(void *screen);
-void function_14a08f();
-extern bool g_4ee4e0;
+void __stdcall game_variant_settings_add_presets(void *screen);
+void window_manager_send_pending_join();
 
 // @retail 0x14784e
 void function_14784e()
 {
     s_scenario_ui_type *scenario = (s_scenario_ui_type *)g_4e0350;
-    if (!g_54d598.m0c)
+    if (!g_54d598.pending_join_type)
         function_148893(NULL, 1);
     long type = scenario ? *(volatile short *)&scenario->type : NONE;
     g_54d5a8 = (char)type;
@@ -1751,15 +1750,15 @@ void function_14784e()
     }
     if (g_54d5a8 == 2)
     {
-        s_ui_initial_selection *globals = (s_ui_initial_selection *)function_148350();
+        s_ui_initial_selection *globals = (s_ui_initial_selection *)ui_definition_get();
         if (globals)
             function_2157c0(globals->selection);
-        s_ui_initial_screen *screen = (s_ui_initial_screen *)function_1482e8();
+        s_ui_initial_screen *screen = (s_ui_initial_screen *)ui_mode_definition_get();
         if (screen && screen->tag_index != NONE)
-            function_149f88(g_4e3b44[screen->tag_index & 0xffff].bytes);
+            game_variant_settings_add_presets(g_4e3b44[screen->tag_index & 0xffff].bytes);
     }
     g_4ee4e0 = false;
     g_4ee4c4.session_booted = false;
-    function_14a08f();
+    window_manager_send_pending_join();
     g_54e7fc = 0;
 }

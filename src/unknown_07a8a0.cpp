@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Ob1 /arch:SSE /Gr
 /* UNKNOWN_07A8A0.CPP: the registered XNet keys and the secure addresses
    they give (lane D, outside its regions: the network session and observer
@@ -18,32 +19,34 @@ struct s_xnet_registry_entry
 	XNKEY key;
 };
 
-extern s_xnet_registry_entry g_4cf7d4[8];
+
 
 #define BYTE_SWAP_LONG(v) ((((v) & 0xff0000) | ((v) >> 16)) >> 8 | ((((v) << 16) | ((v) & 0xff00)) << 8))
 
 // @retail 0x7a920
 bool transport_security_register_key(long index, long local, bool host, const XNKID *kid, const XNKEY *key)
 {
+	bool local_2 = false;
+	const volatile long *local_3 = &local;
 	const XNKID *const *local_0 = &kid;
 	const XNKID *local_1 = *local_0;
 	s_xnet_registry_entry *entry = &g_4cf7d4[index];
 
-	if (entry->valid && entry->valid)
+	if (entry->valid && g_4cf7d4[index].valid)
 	{
 		XNetUnregisterKey(&entry->kid);
-		entry->valid = false;
+		entry->valid = local_2;
 	}
-	if (local || XNetRegisterKey(local_1, key) == 0)
+	if (*local_3 || XNetRegisterKey(local_1, key) == 0)
 	{
+		local_2 = true;
 		entry->kid = *local_1;
 		entry->key = *key;
 		entry->host = host;
-		entry->local = local;
-		entry->valid = true;
-		return true;
+		entry->local = *local_3;
+		entry->valid = local_2;
 	}
-	return false;
+	return local_2;
 }
 
 // @retail 0x7a8a0

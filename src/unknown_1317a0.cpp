@@ -18,7 +18,7 @@ struct s_weighted_accumulator
 };
 
 // @retail 0x1317a0
-void function_1317a0(s_weighted_accumulator *acc, const real *a, const real *b, real c0, real c1, real c2, real c3, real t)
+void function_1317a0(const real *a, const real *b, real c0, real c1, real c2, real c3, real t, s_weighted_accumulator *acc)
 {
 	if (t < 0.0f)
 	{
@@ -124,8 +124,8 @@ color3f *function_131a00(const hsv3f *hsv, color3f *rgb)
 			sector--;
 		}
 		f = h - (real)sector;
-		real q = (1.0f - hsv->saturation * f) * hsv->value;
 		real p = (1.0f - hsv->saturation) * hsv->value;
+		real q = (1.0f - hsv->saturation * f) * hsv->value;
 		real t = (1.0f - (1.0f - f) * hsv->saturation) * hsv->value;
 
 		switch (sector)

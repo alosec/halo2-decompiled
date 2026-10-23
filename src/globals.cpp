@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 
@@ -21,9 +22,6 @@ vector3f *g_4687b0;
 c_data_allocator *g_46875c;
 real g_5476c4;
 s_record_pool *g_4cf78c;
-s_record_pool *g_502418;
-s_record_pool *g_50241c;
-long g_4eca60[8];
 s_record_pool *g_4e8c24;
 s_mp_globals *g_4e9ae8;
 c_engine_peer *g_55e4d0[256];
@@ -43,7 +41,7 @@ byte g_510cb1;
 dword g_510e2c;
 dword g_510e30;
 s_input_counters g_511bf4;
-s_input_entry_state g_511000[4];
+s_input_device_globals g_511000;
 s_creation_weight g_4cef68[1];
 s_sound_globals *g_51ebd4;
 short g_4686c4;
@@ -66,8 +64,8 @@ s_game_proc_table_557c6c *g_557c6c;
 c_data_allocator *g_510c2c;
 s_record_pool *g_4e0338;
 s_record_pool *g_4e0320;
-s_record_pool *g_4cf8d8;
-bool g_4cf8d4;
+
+
 s_record_pool *g_502414;
 s_player_slot g_54e8e0[16];
 s_random_globals *g_4e7408;
@@ -88,3 +86,5 @@ s_record_pool *g_51e9b8;
 long *g_51e9a0;
 bool g_47f058;
 long g_47ff38 = NONE;
+
+s_prop_pool_storage g_prop_pool_storage;

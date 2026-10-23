@@ -33,18 +33,3 @@ long function_216b00(long type)
 	default: __assume(0);
 	}
 }
-
-// @retail 0x216bd0
-long function_216bd0(long type)
-{
-	long result = 0;
-	long names[11] =
-	{
-		0x1b0006e9, 0x130006ea, 0x110006eb, 0x110006ec,
-		0x140006ed, 0x170006ee, 0x170006ef, 0x100006f0,
-		0x140006f1, 0x180006f2, 0x150006f3
-	};
-	if (type >= 0 && type < sizeof(names) / sizeof(names[0]))
-		result = names[type];
-	return result;
-}

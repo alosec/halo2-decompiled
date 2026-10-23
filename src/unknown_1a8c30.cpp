@@ -19,11 +19,15 @@ struct s_1a8c30
 };
 
 #pragma inline_depth(0)
+// score 4 (was 67): the radius square now happens after the call to
+// function_11e000, the flag is set before it and the second switch assigns
+// the flag from the condition, as in retail; what is left is the order of the
+// register setup in the calls to function_11e6f0 and function_1a8a10.
 // @retail 0x1a8c30
 short __stdcall function_1a8c30(long arg_0, s_slot *arg_1)
 {
+    volatile short local_1 = g_46fbe4;
     s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
-    volatile long local_1 = g_46fbe4;
     if (local_0->unknown358 == 0 ||
         ((s_prop_node_view *)g_502418->data)[local_0->unknown368 & 0xffff].unknown24 < 1 || local_0->unknown35e)
         return (short)local_1;
@@ -31,39 +35,39 @@ short __stdcall function_1a8c30(long arg_0, s_slot *arg_1)
     if (local_0->unknown398 > local_2 * local_2 || function_1f50e0(arg_0) || local_0->unknown018 == NONE)
         return (short)local_1;
     vector3f local_3;
-    local_3.i = *(real *)((byte *)local_0 + 0x388) - local_0->unknown370.x;
-    local_3.j = *(real *)((byte *)local_0 + 0x38c) - local_0->unknown370.y;
-    local_3.k = *(real *)((byte *)local_0 + 0x390) - local_0->unknown370.z;
-    volatile real local_4 = local_0->unknown36c;
-    real local_15 = function_11e000(&local_0->position, &local_0->unknown370, &local_3);
-    real local_16 = local_4;
-    bool local_5 = local_16 * local_16 > local_15;
+    point3f *local_17 = &local_0->unknown370;
+    local_3.i = *(real *)((byte *)local_0 + 0x388) - local_17->x;
+    local_3.j = *(real *)((byte *)local_0 + 0x38c) - local_17->y;
+    local_3.k = *(real *)((byte *)local_0 + 0x390) - local_17->z;
+    real local_4 = local_0->unknown36c;
+    real local_15 = function_11e000(&local_0->position, local_17, &local_3);
+    bool local_5 = local_15 < local_4 * local_4;
     function_1a8fa0(arg_0, 0.0f, NULL, &local_5, NULL);
     if (local_5)
     {
-        real local_6 = function_11e6f0(&local_0->position, &local_0->unknown370, &local_3, local_0->unknown36c);
         bool local_7 = false;
+        real local_6 = function_11e6f0(&local_0->unknown370, &local_0->position, &local_3, local_0->unknown36c);
         if (local_6 < 3.402823466e38f)
             local_6 *= 1.5f;
         switch (local_0->unknown358)
         {
-        case 1:
-            if (local_6 <= 0.0f && *(short *)((byte *)local_0 + 0x3ac) != NONE &&
-                1.0f > (real)*(short *)((byte *)local_0 + 0x3ac) * g_510c54->rate)
-                local_7 = true;
-            break;
         case 2:
             if (local_6 <= 0.0f && *(short *)((byte *)local_0 + 0x3ac) != NONE &&
                 0.66f > (real)*(short *)((byte *)local_0 + 0x3ac) * g_510c54->rate)
                 local_7 = true;
             break;
-        case 3:
-            if (1.0f > local_6)
-                local_7 = true;
-            break;
         case 4:
             if (local_6 <= 0.0f && *(short *)((byte *)local_0 + 0x3ac) != NONE &&
                 0.66f > (real)*(short *)((byte *)local_0 + 0x3ac) * g_510c54->rate)
+                local_7 = true;
+            break;
+        case 1:
+            if (local_6 <= 0.0f && *(short *)((byte *)local_0 + 0x3ac) != NONE &&
+                1.0f > (real)*(short *)((byte *)local_0 + 0x3ac) * g_510c54->rate)
+                local_7 = true;
+            break;
+        case 3:
+            if (1.0f > local_6)
                 local_7 = true;
             break;
         }
@@ -77,31 +81,30 @@ short __stdcall function_1a8c30(long arg_0, s_slot *arg_1)
             bool local_13 = false;
             switch (local_0->unknown358)
             {
+            case 2:
+            case 4:
+                local_13 = (local_12 || local_11) && 0.25f > local_6;
+                break;
             case 1:
                 if ((local_12 || local_11) && local_6 <= 0.0f)
                     local_13 = true;
                 break;
-            case 2:
-                if ((local_12 || local_11) && 0.25f > local_6)
-                    local_13 = true;
-                break;
             case 3:
                 break;
-            case 4:
-                if ((local_12 || local_11) && 0.25f > local_6)
-                    local_13 = true;
-                break;
+            default:
+                goto local_done;
             }
             if ((local_13 || local_7) && function_1a8a10(&local_10, arg_0, (short)local_8, local_9, 0.0f))
             {
                 s_1a8c30 *local_14 = (s_1a8c30 *)function_1e4c70(arg_0);
-                function_1fb7e0(arg_0, 0x24, NULL, NONE, NONE);
+                function_1fb7e0(0x24, arg_0, NULL, NONE, NONE);
                 if (local_14 && local_14->field_10 > 0.0f &&
                     local_14->field_10 > function_259a0(&g_4e7408->unknown0))
                     local_1 = 0x38;
             }
         }
     }
+local_done:
     return (short)local_1;
 }
 #pragma inline_depth(255)

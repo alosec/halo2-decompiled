@@ -17,7 +17,7 @@ static hkVector4 rotate_vector(hkRotation const &rotation,
 
 // Scalar native reconstruction of retail 0x2da5d0. Havok transforms are
 // column-major: this = this * b, including rotated child translation.
-void hkTransform::setMulEq(hkTransform const &b)
+void hkTransform::transform_compose_in_place(hkTransform const &b)
 {
     hkTransform left = *this;
     m_rotation.m_col0 = rotate_vector(left.m_rotation, b.m_rotation.m_col0);

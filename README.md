@@ -9,20 +9,39 @@ the same bytes. That check is what makes the recreated code verifiable. A
 longer-term research goal is to study how the game's code could run on other
 platforms, using game data that each user supplies from their own copy.
 
+Alongside the game's own code, the project also decompiles **Havok**, the
+physics library linked into the game, because Halo 2's vehicles, ragdolls and
+projectiles have to behave exactly as they do on the Xbox. The executable's
+other libraries (the Xbox SDK's, Bink video and so on) are not decompiled; a
+port would replace them.
+
 The project is non-commercial and is not affiliated with or endorsed by
 Microsoft, Bungie or 343 Industries. **Read [LEGAL.md](LEGAL.md)** for the
 project's scope, what it does not contain, and its rules for contributions,
 and [PROVENANCE.md](PROVENANCE.md) for where its information comes from.
 
+**This is a community-driven decompilation.** It is built in the open by many
+people: contributors who claim a range and send pull requests, and maintainers
+who review, merge and keep the build honest. Many of the people working on it,
+the maintainer included, work alongside AI coding agents such as Claude and
+Codex, and every change still has to pass the same byte-for-byte check and
+review. Everyone who has helped is credited in
+[The community](#the-community).
+
 **Contributors are welcome.** No prior decompilation experience is needed,
-only patience and some C. Read [How to help](#how-to-help) and
-[CONTRIBUTING.md](CONTRIBUTING.md).
+only patience and some C. **New here? Start with
+[docs/START_HERE.md](docs/START_HERE.md):** the setup checklist, how to claim
+a range, and a prompt you can paste into an AI coding agent. Then see
+[How to help](#how-to-help) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What this repository does not contain
 
 - No Halo 2 game assets: no maps, textures, models, audio or cinematics.
 - No game executable (XBE) and no disc image.
 - No Microsoft Xbox SDK/XDK: no compiler, libraries or headers.
+- No Havok SDK material: no headers, documentation, samples or source. The
+  Havok code here is recreated from the retail executable and named by what it
+  does.
 - No original or leaked Halo 2 source code.
 - No leaked symbols, PDBs or linker maps. Names that came from such sources
   through a third-party dataset have been removed from the inventory, and
@@ -46,12 +65,13 @@ Analysis, documentation and review do not need it.
 
 ## Status
 
-Decompilation is under way, and 7144 retail functions now match byte for
+Decompilation is under way, and 9510 retail functions now match byte for
 byte. The checker reports:
 
 ```
-matched 7144 of 11318 game functions (804185 of 2784283 bytes, 28.88%)
-matched 7144 of 17216 functions in scope (804185 of 3739273 bytes, 21.51%)
+matched 9510 of 11321 game functions (1487689 of 2784283 bytes, 53.43%)
+matched 927 of 1041 Havok functions (132952 of 234536 bytes, 56.69%)
+matched 10471 of 17654 functions in scope (1623256 of 3904218 bytes, 41.58%)
 ```
 
 Matched code so far includes:
@@ -63,7 +83,8 @@ Matched code so far includes:
 - sound sources, looping sounds and Bink movie playback;
 - the game's data arrays, object lists and hash tables;
 - geometry, quaternion and matrix maths;
-- input, file paths, localized strings, random numbers and game state.
+- input, file paths, localized strings, random numbers and game state;
+- the first functions of the Havok physics library.
 
 Every function is checked automatically on every build, so a match stays a
 match. Refer to [docs/PROGRESS.md](docs/PROGRESS.md), which is updated as work
@@ -105,8 +126,20 @@ So the work runs in stages:
    decisions all reproduce. The test sources are in `spike/`.
 2. **Project set-up (done).** The function inventory, the build with each
    source file's flags, the checker and the ready queue.
-3. **Decompilation (in progress)**, from the leaf functions up.
-4. **Native port.**
+3. **Decompilation (in progress)**, from the leaf functions up. What has
+   worked best on this build, such as fixing a callee's calling convention so
+   its callers match, and the pitfalls (aligned locals, link order), is
+   collected in [docs/DECOMPILING.md](docs/DECOMPILING.md).
+4. **Readability (in progress, alongside 3).** Once a group of functions
+   matches, it gets names from what the code does, structs for the data it
+   reads, and a source file named after its subsystem, without changing a byte
+   of the build.
+5. **Havok (started, alongside 3).** The physics library is decompiled the
+   same way. It was a prebuilt library compiled without LTCG, so it matches
+   with plain per-file flags; see
+   [docs/DECOMPILING.md](docs/DECOMPILING.md#havok).
+6. **Native port.** The game and Havok code from stages 3 and 5, with the Xbox
+   SDK, Bink and the other libraries replaced.
 
 ## Build and check
 
@@ -145,7 +178,8 @@ So the work runs in stages:
 | `tools/libsig.py` | Recognises library code by byte signature from the SDK's `.lib` files. |
 | `tools/build.py` | Builds the whole game as one LTCG image, with each source file's flags. |
 | `tools/check.py` | Compares our functions with retail and records progress. Needs the SDK and capstone. |
-| `tools/ready.py` | Lists the functions that are ready to decompile next. `--claims` drops addresses from a saved copy of the Active claims table. |
+| `tools/ready.py` | Lists the functions that are ready to decompile next. `--claims` drops addresses from a saved copy of the Active claims table; `--owner third:havok` lists Havok functions instead of the game's. |
+| `tools/open_work.py` | Lists work a contributor can claim (source files with functions left, and functions ready to write) outside every person's claim, with the claim line to use. Takes a saved copy of issue #9. |
 | `tools/permute.py` | Searches variants of a source function for ones that turn a near-miss into a match. |
 | `tools/near.py` | Counts the near-misses in the csv by source file (functions, bytes). No XBE. `--list` prints each function. |
 | `tools/masked.py` | Lists what `check.py` cannot see because it masks address fields: float constants one step away from the source's literals, strings, and script function definitions that differ from retail. Needs the retail XBE and capstone. |
@@ -155,19 +189,78 @@ So the work runs in stages:
 ## How to help
 
 Halo 2 has about 11,300 game functions, so there is room for many people.
+[docs/START_HERE.md](docs/START_HERE.md) walks through these steps and has a
+ready-made prompt for AI coding agents.
 1. Get set up as in [Build and check](#build-and-check), with your own
    lawfully owned copy of Halo 2 (see [Requirements](#requirements)).
-2. Pick a source file or an address range nobody has claimed (the pinned
-   [Active claims](https://github.com/kirklandsig/halo2-decompiled/issues/9)
-   issue lists them), and open a draft pull request saying what you are
-   taking.
+2. Pick a source file or an address range that no other person holds (the
+   pinned [Active claims](https://github.com/kirklandsig/halo2-decompiled/issues/9)
+   issue lists claims; the maintainers' automated lanes make way for
+   contributors), and open a draft pull request saying what you are taking.
+   `python tools/open_work.py` lists what is open.
 3. Decompile, run `python tools/check.py`, and push as functions match.
    [docs/DECOMPILING.md](docs/DECOMPILING.md) explains the conventions and
    the compiler's quirks.
 
+Havok functions are open too, and they are a gentle start: no whole-program
+optimisation, and many small ones. `python tools/ready.py --owner third:havok`
+lists the ready ones; claim a range the same way.
+
+Not ready to write code? Analysis helps too: several contributors have
+mapped a function or a subsystem in a `docs/` note that the next person then
+decompiled.
+
 Details are in [CONTRIBUTING.md](CONTRIBUTING.md), including the
 [contribution provenance policy](CONTRIBUTING.md#contribution-provenance).
 Questions are welcome as issues.
+
+## The community
+
+Thank you to everyone who has contributed to this project so far:
+
+- [@Banshee64](https://github.com/Banshee64), the first contributor: input,
+  team allegiances, Bink playback, looping sounds, damage, projectiles, unit
+  actions, vehicles, path search, cloth, recorded animations and devices, and
+  then the match-tuning of all of it.
+- [@coldspear](https://github.com/coldspear): much of the tooling (the
+  permuter's mutations, `masked.py`, the near-miss report, claim-aware
+  `ready.py`, the ByteMatch report (then decomp.dev) and the hardening of the disc and XBE
+  readers), and analysis documents for the object core, weapons, surface
+  lighting, Havok, the Xbox Live logon and more.
+- [@BirchWoodGod](https://github.com/BirchWoodGod): matched ranges all over
+  the game, from units and bipeds to network voice, team balancing, map paths,
+  animation channels and lights, analysis of the network channel and session
+  search code, and the published analysis credited below.
+- [@BrassMonkey71](https://github.com/BrassMonkey71): matched functions in the
+  unit and biped code, AI and elsewhere.
+- [@mjshfrvstj-sys](https://github.com/mjshfrvstj-sys): the CI that runs the
+  Python tests on every pull request, and disc-image tests.
+- [@mrv777](https://github.com/mrv777): an analysis of the capture the flag and
+  assault objects.
+- [@RWayne93](https://github.com/RWayne93): online messages, and a documented
+  near miss.
+- [@andrewnakas](https://github.com/andrewnakas): the inventory fix that took
+  WMADEC's data tables out of the function list.
+- [@Roasted-Codes](https://github.com/Roasted-Codes): the first contributor
+  matches in Havok, the physics library: its collision-pair dispatch and
+  child-agent code.
+- [@ccgman123](https://github.com/ccgman123): a careful diagnosis of seven
+  near misses, and the cleanup that removed an in-body pragma from 0x9d1c0.
+- [@marioag0412](https://github.com/marioag0412): the match of 0x1e3480,
+  an object's actor index.
+
+[@kirklandsig](https://github.com/kirklandsig) maintains the project: runs the
+build, reviews and merges every pull request, and keeps the
+[Active claims](https://github.com/kirklandsig/halo2-decompiled/issues/9)
+table. Much of the maintainer's own decompilation runs in automated lanes
+driven by **Claude** (Anthropic) and **Codex** (OpenAI): AI coding agents that
+write and tune the source under the same checks and provenance rules as
+everyone else, with each batch reviewed before it lands. Many contributors use
+the same tools. The techniques in [docs/DECOMPILING.md](docs/DECOMPILING.md)
+were worked out by all of them, people and agents alike, and the commit
+history credits each change to its author.
+
+Want to be on this list? See [How to help](#how-to-help).
 
 ## Credits
 

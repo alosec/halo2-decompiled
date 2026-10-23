@@ -1,44 +1,17 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 #include "unknown_11c920.h"
+#include "visibility_storage.h"
+#include "camera_storage.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
 #include "object_queries.h"
 #include <math.h>
 
 class c_entry_list;
-struct s_bit_vector_pool_sizes
-{
-	short unknown0;
-	short list_sizes[4];
-	short record_count;
-};
 
-struct s_bit_vector_pool
-{
-	void *context;
-	s_location location;
-	c_entry_list *lists[4];
-	long indices[0x80];
-	dword flags[0x10];
-	dword pool[0x200];
-	word pool_used;
-	word entry_count;
-	dword entries[0x200][4];
-	dword flags2a60;
-	short frustum_count;
-	byte unknown2a66[2];
-	point3f center;
-	real radius;
-	long mode;
-	long query_type;
-	byte unknown2a80[4];
-	real plane_offset;
-	plane3f plane;
-	long counters[13];
-	byte *records;
-	void *filter;
-	s_bit_vector_pool_sizes sizes;
-};
+
+
 
 struct s_133f70
 {
@@ -97,7 +70,7 @@ struct s_133721
     long field_0;
     short field_4;
     byte field_6[2];
-    word *field_8;
+    short *field_8;
     long *field_c;
     long *field_10;
     short *field_14;
@@ -122,19 +95,23 @@ struct s_133792
     s_133791 *field_8;
 };
 
-extern real g_4b9e20, g_4b9e2c, g_4b9e38, g_4b9e44, g_4b9ed0;
-extern point3f g_4b9da0;
-extern vector3f g_4b9dac;
-extern real g_4b9dcc, g_4ba028;
+extern real g_4ba028;
 void function_134240(s_bit_vector_pool *arg_1);
 dword function_1332f0(s_bit_vector_pool const *arg_1, word arg_2);
 void function_133f70(s_133f70 const *arg_1, bool arg_2);
 void function_4baf0(long arg_1, real arg_2, byte *arg_3, byte *arg_4);
-void function_4b5d0(long, long, real, byte *, byte *, bool, real, bool);
-typedef void (*t_function_4b5d0_133790)(long arg_1, long arg_2, bool arg_3, real arg_4, real arg_5,
+void function_4b5d0(bool, long, long, real, real, s_133f70 *, point3f const *, bool);
+typedef void (*t_function_4b5d0_133790)(bool arg_1, long arg_2, long arg_3, real arg_4, real arg_5,
     s_133f70 *arg_6, point3f const *arg_7, bool arg_8);
-void function_133ab0(s_bit_vector_pool *arg_1, s_133f70 *arg_2, bool arg_3, bool arg_4, bool arg_5);
 bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *arg_4, long arg_5, bool arg_6);
+
+PRIVATE __forceinline real function_133791(point3f const *arg_1, point3f const *arg_2)
+{
+    double local_1 = (double)arg_1->x - arg_2->x;
+    double local_2 = (double)arg_1->y - arg_2->y;
+    double local_3 = (double)arg_1->z - arg_2->z;
+    return (real)sqrt(local_3 * local_3 + local_2 * local_2 + local_1 * local_1);
+}
 
 #pragma inline_depth(0)
 // @retail 0x133720
@@ -158,31 +135,39 @@ void function_133720(s_bit_vector_pool *arg_1, bool arg_2)
 }
 #pragma inline_depth(255)
 
+// score 95 (was 95): the float multiply reads its operands from the other two globals and the sum is added in the other order
 // @retail 0x133790
 bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *arg_4, long arg_5, bool arg_6)
 {
-    (void)&arg_2;
     bool local_1 = arg_1->mode == 2 || arg_3;
     s_133721 *local_2 = (s_133721 *)arg_1->lists[2];
-    long local_3 = local_2->field_c[arg_2];
+    long local_11 = arg_2;
+    long local_3 = local_2->field_c[local_11];
     s_133791 const *local_4 = ((s_133792 *)g_4e0300->data)[local_3 & 0xffff].field_8;
     s_133f70 local_5;
     local_5.field_0 = local_3;
     local_5.field_194 = local_4->field_30;
     local_5.field_1a0 = local_4->field_3c;
-    real local_6 = local_5.field_194.z * g_4b9e38 + local_5.field_194.y * g_4b9e2c
-        + local_5.field_194.x * g_4b9e20 + g_4b9e44;
+    // retail does these in SSE single precision: every product and sum is rounded to float
+    point3f const *local_16 = &local_5.field_194;
+    real local_13 = local_16->y * g_4b9e2c;
+    real local_6 = local_16->z * g_4b9e38;
+    local_6 += local_13;
+    real local_14 = local_16->x * g_4b9e20;
+    local_6 += local_14;
+    local_6 += g_4b9e44;
     if (!(local_6 >= 0.0f)) local_6 = 0.0f - local_6;
     if (!(local_6 > 0.1f)) local_6 = 0.1f;
-    local_5.field_1b4 = (g_4b9ed0 / local_6) * local_5.field_1a0 * 2.0f * g_4ba028;
-    double local_7 = (double)local_5.field_194.x - g_4b9da0.x;
-    double local_8 = (double)local_5.field_194.y - g_4b9da0.y;
-    double local_9 = (double)local_5.field_194.z - g_4b9da0.z;
-    *(real *)local_5.field_1b8 = (real)(sqrt(local_9 * local_9 + local_8 * local_8 + local_7 * local_7) * g_4b9dcc);
-    function_4baf0(local_3, *(real *)local_5.field_1b8, (byte *)&local_1, &local_5.field_1bc);
+    real local_7 = g_4b9ed0 / local_6;
+    real local_8 = local_7 * local_5.field_1a0;
+    local_5.field_1b4 = local_8 * 2.0f * g_4ba028;
+    *(real *)local_5.field_1b8 = function_133791(&local_5.field_194, &g_4b9da0) * g_4b9dcc;
+    byte local_15;
+    function_4baf0(local_3, *(real *)local_5.field_1b8, &local_5.field_1bc, &local_15);
     local_2 = (s_133721 *)arg_1->lists[2];
-    local_5.field_1ac = function_1332f0(arg_1, local_2->field_8[arg_2]);
-    bool local_10 = (bool)((local_2->field_8[arg_2] >> 9) & 1);
+    long local_12 = local_2->field_8[local_11];
+    local_5.field_1ac = function_1332f0(arg_1, local_12);
+    *(bool *)(local_5.field_1a4 + 4) = (local_12 & 0x200) != 0;
     local_5.field_1c0 = arg_5;
     *(long **)local_5.field_1c8 = arg_4;
     local_5.field_1cc = false;
@@ -191,16 +176,20 @@ bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *ar
     local_5.field_1d8 = 0.0f;
     local_5.field_1dc = 0.0f;
     local_5.field_1e0 = 0.0f;
-    *(long *)(local_5.field_1a4 + 4) = 0;
+    *(long *)local_5.field_1a4 = 0;
     local_5.field_1be = NONE;
-    if (!(local_2->field_8[arg_2] & 0x800) && local_2->field_14[arg_2] != NONE)
+    local_5.field_1b0 = 1;
+    if (!(local_12 & 0x800))
     {
-        local_5.field_1b0 = 0x40;
-        local_5.field_1be = local_2->field_14[arg_2];
+        short marker = local_2->field_14[local_11];
+        if (marker != NONE)
+        {
+            local_5.field_1be = marker;
+            local_5.field_1b0 = 0x40;
+        }
     }
-    else local_5.field_1b0 = 1;
-    ((t_function_4b5d0_133790)function_4b5d0)(local_3, arg_1->mode, local_1, *(real *)local_5.field_1b8,
-        local_5.field_1b4, &local_5, &local_5.field_194, local_10);
+    ((t_function_4b5d0_133790)function_4b5d0)(local_1, arg_1->mode, local_5.field_0, *(real *)local_5.field_1b8,
+        local_5.field_1b4, (s_133f70 *)((byte *)&local_5 + 4), &local_5.field_194, (local_12 & 0x200) != 0);
     local_5.field_1b0 |= 0x208;
     if (arg_3)
     {
@@ -209,87 +198,93 @@ bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *ar
     }
     else if (local_5.field_16c && arg_1->mode == 1)
         local_5.field_1ac &= ~4;
+    bool local_18 = local_5.field_16c;
     if (local_5.field_1bc > 0)
     {
         if (!(local_5.field_170 & 2) || arg_1->mode == 0)
         {
-            function_133ab0(arg_1, &local_5, arg_6, false, local_1);
-            return local_5.field_16c;
+            arg_1->function_133ab0(&local_5, arg_6, false, local_1);
+            local_18 = local_5.field_16c;
         }
     }
-    else local_2->field_8[arg_2] |= 1;
-    return false;
+    else ((s_133721 *)arg_1->lists[2])->field_8[local_11] |= 1;
+    return local_18;
 }
 
 // @retail 0x133ab0
-void function_133ab0(s_bit_vector_pool *arg_1, s_133f70 *arg_2, bool arg_3, bool arg_4, bool arg_5)
+void s_bit_vector_pool::function_133ab0(s_133f70 *arg_2, bool arg_3, bool arg_4, bool arg_5)
 {
-    (void)&arg_2;
+    long local_7;
     if (arg_2->field_166 > 0)
     {
         bool local_1 = false;
         if (!arg_4)
         {
-            if ((signed char)arg_2->field_170 < 0)
+            if (arg_2->field_170 & 0x80)
             {
-                arg_2->field_1e0 = (arg_2->field_194.z - arg_1->center.z) * g_4b9dac.k
-                    + (arg_2->field_194.y - arg_1->center.y) * g_4b9dac.j
-                    + (arg_2->field_194.x - arg_1->center.x) * g_4b9dac.i;
+                vector3f delta;
+                vector3d_from_points3d(&this->center, &arg_2->field_194, &delta);
+                arg_2->field_1e0 = dot3f(&delta, &g_4b9dac);
+                local_1 = false;
                 if (!arg_2->field_1cc)
                 {
+                    long *counter = *(long **)arg_2->field_1c8;
                     arg_2->field_1cc = true;
-                    arg_2->field_1c0 = **(long **)arg_2->field_1c8;
-                    ++**(long **)arg_2->field_1c8;
+                    arg_2->field_1c0 = (*counter)++;
                     arg_2->field_1c4 = 3;
                 }
                 s_133f70 local_2 = *arg_2;
-                local_2.field_1ac = arg_2->field_1b0;
+                local_2.field_1ac = local_2.field_1b0;
                 local_2.field_1b0 = 0;
-                local_2.field_1d0 = *(long *)((byte *)arg_2 + 0x180);
-                local_2.field_1dc = *(real *)((byte *)arg_2 + 0x190);
-                function_133ab0(arg_1, &local_2, true, true, arg_5);
+                local_2.field_1d0 = *(long *)((byte *)&local_2 + 0x180);
+                local_2.field_1dc = *(real *)((byte *)&local_2 + 0x190);
+                function_133ab0(&local_2, true, true, arg_5);
             }
             if (arg_2->field_170 & 2)
             {
-                real local_3 = (arg_2->field_194.z - arg_1->center.z) * g_4b9dac.k
-                    + (arg_2->field_194.y - arg_1->center.y) * g_4b9dac.j
-                    + (arg_2->field_194.x - arg_1->center.x) * g_4b9dac.i;
+                vector3f delta;
+                vector3d_from_points3d(&this->center, &arg_2->field_194, &delta);
+                real local_3 = dot3f(&delta, &g_4b9dac);
                 local_1 = true;
                 if (!arg_2->field_1cc)
                 {
+                    long *counter = *(long **)arg_2->field_1c8;
                     arg_2->field_1cc = true;
-                    arg_2->field_1c0 = **(long **)arg_2->field_1c8;
-                    ++**(long **)arg_2->field_1c8;
+                    arg_2->field_1c0 = (*counter)++;
                     arg_2->field_1c4 = 1;
                 }
                 s_133f70 local_4 = *arg_2;
                 local_4.field_1ac = arg_2->field_1b0;
                 local_4.field_1b0 = 0;
-                local_4.field_1d0 = *(long *)((byte *)arg_2 + 0x178);
+                local_4.field_1d0 = *(long *)((byte *)&local_4 + 0x178);
                 local_4.field_1d4 = true;
-                local_4.field_1d8 = *(real *)((byte *)arg_2 + 0x188);
+                local_4.field_1d8 = *(real *)((byte *)&local_4 + 0x188);
                 local_4.field_1e0 = local_3;
-                function_133ab0(arg_1, &local_4, true, true, arg_5);
+                function_133ab0(&local_4, true, true, arg_5);
             }
-            if (arg_2->field_170 & 1)
+            dword entry_flags = arg_2->field_170;
+            if (entry_flags & 1)
             {
+                entry_flags &= ~1;
                 s_133f70 local_5 = *arg_2;
-                arg_2->field_170 &= ~1;
-                local_1 = (bool)((arg_2->field_170 >> 1) & 1);
                 local_5.field_1ac |= 0x8000;
-                local_5.field_1d0 = *(long *)((byte *)arg_2 + 0x174);
-                local_5.field_1dc = *(real *)((byte *)arg_2 + 0x184);
-                function_133ab0(arg_1, &local_5, false, true, arg_5);
+                local_5.field_1d0 = *(long *)((byte *)&local_5 + 0x174);
+                local_5.field_1dc = *(real *)((byte *)&local_5 + 0x184);
+                arg_2->field_170 = entry_flags;
+                local_1 = (bool)((entry_flags >> 1) & 1);
+                function_133ab0(&local_5, false, true, arg_5);
             }
-            if (arg_2->field_170 & 0x20)
+            dword entry_flags_2 = arg_2->field_170;
+            if (entry_flags_2 & 0x20)
             {
+                entry_flags_2 &= ~0x20;
                 s_133f70 local_6 = *arg_2;
-                arg_2->field_170 &= ~0x20;
-                local_1 = (bool)((arg_2->field_170 >> 1) & 1);
                 local_6.field_1ac |= 0x8000;
-                local_6.field_1d0 = *(long *)((byte *)arg_2 + 0x17c);
-                local_6.field_1dc = *(real *)((byte *)arg_2 + 0x18c);
-                function_133ab0(arg_1, &local_6, false, true, arg_5);
+                local_6.field_1d0 = *(long *)((byte *)&local_6 + 0x17c);
+                local_6.field_1dc = *(real *)((byte *)&local_6 + 0x18c);
+                arg_2->field_170 = entry_flags_2;
+                local_1 = (bool)((entry_flags_2 >> 1) & 1);
+                function_133ab0(&local_6, false, true, arg_5);
             }
         }
         if (arg_4 || !local_1)
@@ -297,7 +292,7 @@ void function_133ab0(s_bit_vector_pool *arg_1, s_133f70 *arg_2, bool arg_3, bool
     }
     if (arg_3 && !arg_2->field_16c)
     {
-        long local_7 = ((s_133792 *)g_4e0300->data)[arg_2->field_0 & 0xffff].field_8->field_10;
+        local_7 = ((s_133792 *)g_4e0300->data)[arg_2->field_0 & 0xffff].field_8->field_10;
         while (local_7 != NONE)
         {
             s_133f70 local_8 = *arg_2;
@@ -305,21 +300,21 @@ void function_133ab0(s_bit_vector_pool *arg_1, s_133f70 *arg_2, bool arg_3, bool
             if (local_8.field_1c4 == 1)
             {
                 s_133791 const *local_9 = ((s_133792 *)g_4e0300->data)[local_7 & 0xffff].field_8;
-                if (local_9->field_aa == 2 && *(short *)(g_4e3b44[local_9->field_0 & 0xffff].bytes + 0x290))
+                if (local_9->field_aa == 2 ? (bool)*(short *)(g_4e3b44[local_9->field_0 & 0xffff].bytes + 0x290) : false)
                 {
+                    local_8.field_1cc = false;
                     local_8.field_1c0 = 0x1f;
                     local_8.field_1c4 = NONE;
-                    local_8.field_1cc = false;
                     local_8.field_1d0 = NONE;
                     local_8.field_1d4 = false;
                     local_8.field_1d8 = 0.0f;
                 }
             }
-            local_8.field_1be = NONE;
             local_8.field_1b0 = (local_8.field_1b0 & ~0x40) | 1;
-            ((t_function_4b5d0_133790)function_4b5d0)(local_7, arg_1->mode, arg_5, *(real *)local_8.field_1b8,
-                local_8.field_1b4, &local_8, &local_8.field_194, (bool)local_8.field_1a4[4]);
-            function_133ab0(arg_1, &local_8, true, arg_4, arg_5);
+            local_8.field_1be = NONE;
+            ((t_function_4b5d0_133790)function_4b5d0)(arg_5, this->mode, local_7, *(real *)local_8.field_1b8,
+                local_8.field_1b4, (s_133f70 *)((byte *)&local_8 + 4), &local_8.field_194, *(bool *)(local_8.field_1a4 + 4));
+            function_133ab0(&local_8, true, arg_4, arg_5);
             local_7 = ((s_133792 *)g_4e0300->data)[local_7 & 0xffff].field_8->field_c;
         }
     }

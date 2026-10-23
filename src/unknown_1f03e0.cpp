@@ -4,7 +4,9 @@
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "unknown_1cec30.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 #include "data_array.h"
 #include <math.h>
 #include "object_list.h"
@@ -64,22 +66,22 @@ bool __stdcall function_1f0230(s_lookup *lookup, point3f const *point, real radi
         transform4x3f const *matrix = (transform4x3f const *)lookup->pointer_b + (position & 0xff);
         transform4x3f inverse;
         function_141590(matrix, &inverse);
-        point3f scaled;
-        scaled.x = point->x;
-        scaled.y = point->y;
-        scaled.z = point->z;
-        if (inverse.scale != 1.0f)
+        real scale = inverse.scale;
+        real scaled_x = point->x;
+        real scaled_y = point->y;
+        real scaled_z = point->z;
+        if (scale != 1.0f)
         {
-            scaled.x *= inverse.scale;
-            scaled.y *= inverse.scale;
-            scaled.z *= inverse.scale;
+            scaled_x *= scale;
+            scaled_y *= scale;
+            scaled_z *= scale;
         }
         point3f local;
-        local.x = inverse.up.i * scaled.z + inverse.left.i * scaled.y + inverse.forward.i * scaled.x + inverse.position.x;
-        local.y = inverse.up.j * scaled.z + inverse.left.j * scaled.y + inverse.forward.j * scaled.x + inverse.position.y;
-        local.z = inverse.up.k * scaled.z + inverse.left.k * scaled.y + inverse.forward.k * scaled.x + inverse.position.z;
+        local.x = inverse.up.i * scaled_z + inverse.left.i * scaled_y + inverse.forward.i * scaled_x + inverse.position.x;
+        local.y = inverse.up.j * scaled_z + inverse.left.j * scaled_y + inverse.forward.j * scaled_x + inverse.position.y;
+        local.z = inverse.up.k * scaled_z + inverse.left.k * scaled_y + inverse.forward.k * scaled_x + inverse.position.z;
         s_1de2c2 hits;
-        if (function_1dde10((s_bsp3d *)iterator.current, 0, NULL, &local, inverse.scale * radius, &hits))
+        if (function_1dde10((s_bsp3d *)iterator.current, 0, NULL, &local, scale * radius, &hits))
         {
             function_245aa0((s_245aa0 *)&hits, (s_source_245400 *)iterator.current,
                 matrix, height, thickness, lookup->handle, position, collection);
@@ -115,16 +117,16 @@ extern short g_54e898;
 // @retail 0x1f03e0
 void function_1f03e0(s_shape_state *state)
 {
-	state->unknown0c = NONE;
+	*(volatile long *)&state->unknown0c = NONE;
 	state->point = *(point3f *)g_4687a4;
-	state->unknown62 = false;
+	*(volatile bool *)&state->unknown62 = false;
 	state->normal = *g_4687b0;
-	state->material = g_47d8e0;
-	state->unknown58 = NONE;
-	state->unknown5c = NONE;
-	state->unknown1c = NONE;
-	state->unknown20 = NONE;
-	state->unknown70 = 0.0f;
+	*(volatile short *)&state->material = g_47d8e0;
+	*(volatile long *)&state->unknown58 = NONE;
+	*(volatile long *)&state->unknown5c = NONE;
+	*(volatile long *)&state->unknown1c = NONE;
+	*(volatile long *)&state->unknown20 = NONE;
+	*(volatile real *)&state->unknown70 = 0.0f;
 	state->matrix = *g_4687d0;
 }
 
@@ -178,18 +180,21 @@ struct s_component
 	byte unknown8c[0xa0 - 0x8c];
 };
 
+// score 3 (was 3): retail loads the fallback material into cx with the
+// seven-byte form, ours loads it into ax with the six-byte form
 // @retail 0x1f1df0
 void function_1f1df0(long component_index, long material_index, vector3f const *normal, s_shape_state *state)
 {
-	short local_0 = 0;
+	union { short field_0; word field_2; } local_0;
+	local_0.field_0 = 0;
 	s_component *component = (s_component *)(g_51e9b8->data + (component_index & 0xffff) * sizeof(s_component));
 
 	state->normal = *normal;
 	if (material_index != NONE)
-		local_0 = component->materials[material_index].material;
+		local_0.field_0 = component->materials[material_index].material;
 	else
-		local_0 = g_54e898;
-	state->material = local_0;
+		local_0.field_0 = g_54e898;
+	state->material = (short)local_0.field_2;
 }
 
 struct s_shape_carrier_contact
@@ -248,39 +253,40 @@ struct s_shape_ground
 };
 
 // @retail 0x1f2e60
-bool function_1f2e60(bool moving, s_shape_ground const *ground, vector3f const *velocity, bool stepping, point3f const *base, real height)
+bool function_1f2e60(s_shape_ground const *ground, bool moving, vector3f const *velocity, bool stepping, point3f const *base, real height)
 {
-	real top = base->z + height;
+	point3f const *const *base_reference = &base;
+	real base_height = (*base_reference)->z;
+	real top = base_height + height;
 
-	if (top - 0.001f > base->z)
+	if (top - 0.001f > base_height)
 	{
 		point3f point = ground->point;
 		point3f center;
 		vector3f v;
 		real distance;
-		real lower, upper;
 
 		if (moving)
 		{
-			point.x = velocity->i * g_510c54->rate + point.x;
-			point.y = velocity->j * g_510c54->rate + point.y;
-			point.z = velocity->k * g_510c54->rate + point.z;
+			real rate = g_510c54->rate;
+			point.x = velocity->i * rate + point.x;
+			point.y = velocity->j * rate + point.y;
+			point.z = velocity->k * rate + point.z;
 		}
-		center.x = base->x;
-		center.y = base->y;
-		center.z = height + base->z;
+		center.x = (*base_reference)->x;
+		center.y = (*base_reference)->y;
+		center.z = height + (*base_reference)->z;
 		vector3d_from_points3d(&center, &point, &v);
-		distance = (real)sqrt(v.k * v.k + v.j * v.j + v.i * v.i) - height;
-		lower = moving ? -0.25f : -0.1f;
-		upper = stepping ? 0.1f : 0.2f;
-		return PIN(distance, lower, upper) == distance;
+		distance = (real)sqrt(v.i * v.i + v.j * v.j + v.k * v.k) - height;
+		bool result = PIN(distance, moving ? -0.25f : -0.1f, stepping ? 0.1f : 0.2f) == distance;
+		return result;
 	}
 
-	return PIN(ground->height, -0.1f, 0.0328f) == ground->height;
+	bool result = PIN(ground->height, -0.1f, 0.0328f) == ground->height;
+	return result;
 }
 
 struct s_havok_component;
-void havok_component_rigid_body_matrix_get(long rigid_body_index, s_havok_component *component, transform4x3f *matrix);
 void havok_component_rigid_body_point_velocity_get(long rigid_body_index, s_havok_component *component, point3f const *point, vector3f *velocity);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
@@ -318,8 +324,7 @@ bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *stat
                     delta.j = point.y - contact->point.y;
                     delta.k = point.z - (contact->point.z + height);
                     real distance = (real)sqrt(delta.k * delta.k + delta.j * delta.j + delta.i * delta.i) - height;
-                    real upper = stepping ? 0.1f : 0.2f;
-                    valid = PIN(distance, -0.1f, upper) == distance;
+                    valid = PIN(distance, -0.1f, (stepping ? 0.1f : 0.2f)) == distance;
                 }
                 else
                 {
@@ -348,7 +353,7 @@ bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *stat
                 s_havok_component *other = (s_havok_component *)(components + (component_index & 0xffff) * 0xa0);
                 transform4x3f matrix;
                 long body_index = *(signed char *)(entry + 0x46);
-                havok_component_rigid_body_matrix_get(body_index, other, &matrix);
+                other->rigid_body_matrix_get(body_index, &matrix);
                 if (component_index == *(long *)(data + 0x54))
                 {
                     long object_index = *(long *)(entry + 0x18);
@@ -378,27 +383,26 @@ bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *stat
 
 real function_30bf0(vector3f *v);
 
-PRIVATE inline vector3f contact_cross(vector3f const &a, vector3f const &b)
+PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f *out)
 {
-    vector3f result;
-    result.i = a.j * b.k - a.k * b.j;
-    result.j = a.k * b.i - a.i * b.k;
-    result.k = a.i * b.j - a.j * b.i;
-    return result;
+    out->i = a->j * b->k - a->k * b->j;
+    out->j = a->k * b->i - a->i * b->k;
+    out->k = a->i * b->j - a->j * b->i;
 }
 
 // @retail 0x1f2a80
-void function_1f2a80(vector3f const *velocity, byte const *request, bool moving,
-    vector3f const *desired, long const *indices, long count, vector3f *out)
+void function_1f2a80(byte const *request, bool moving,
+    vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
 {
-    byte *component = g_51e9b8->data + (*(long *)(request + 0x40) & 0xffff) * 0xa0;
+    long component_index = *(long *)(request + 0x40) & 0xffff;
+    byte *component = g_51e9b8->data + component_index * 0xa0;
     long selected = NONE;
     real lowest = 0.0f;
     for (long i = 0; i < count; i++)
     {
         byte *entry = *(byte **)(component + 0x88) + indices[i] * 0x48;
-        real z = *(real *)(entry + 0x30);
-        if (lowest > z && z > -0.999f && function_1f2e60(moving, (s_shape_ground *)entry,
+        real const &z = *(real *)(entry + 0x30);
+        if (lowest > z && z > -0.999f && function_1f2e60((s_shape_ground *)entry, moving,
             velocity, ((*(dword *)(request + 0x18) >> 1) & 1) != 0,
             (point3f const *)(request + 0x1c), *(real *)(*(byte *const *)request + 0xc)))
         {
@@ -407,24 +411,24 @@ void function_1f2a80(vector3f const *velocity, byte const *request, bool moving,
         }
     }
     *out = *g_4687b0;
-    byte *contacts = *(byte **)(component + 0x88);
     switch (count)
     {
     case 1:
-        *out = *(vector3f *)(contacts + indices[0] * 0x48 + 0x28);
+        *out = *(vector3f *)(*(byte **)(component + 0x88) + indices[0] * 0x48 + 0x28);
         break;
     case 2:
         {
-            vector3f const *a = (vector3f *)(contacts + indices[0] * 0x48 + 0x28);
-            vector3f const *b = (vector3f *)(contacts + indices[1] * 0x48 + 0x28);
+            vector3f const *a = (vector3f *)(*(byte **)(component + 0x88) + indices[0] * 0x48 + 0x28);
+            vector3f const *b = (vector3f *)(*(byte **)(component + 0x88) + indices[1] * 0x48 + 0x28);
             if (selected != NONE)
             {
-                vector3f axis = contact_cross(*a, *b);
-                vector3f const *normal = (vector3f *)(contacts + indices[selected] * 0x48 + 0x28);
+                vector3f const *normal = (vector3f *)(*(byte **)(component + 0x88) + indices[selected] * 0x48 + 0x28);
+                vector3f axis;
+                contact_cross(a, b, &axis);
                 if (selected == 0)
-                    *out = contact_cross(axis, *normal);
+                    contact_cross(&axis, normal, out);
                 else
-                    *out = contact_cross(*normal, axis);
+                    contact_cross(normal, &axis, out);
             }
             else
             {
@@ -435,14 +439,17 @@ void function_1f2a80(vector3f const *velocity, byte const *request, bool moving,
                 function_30bf0(&average);
                 real dot_a = a->i * desired->i + desired->k * a->k + a->j * desired->j;
                 real dot_average = desired->i * average.i + desired->k * average.k + desired->j * average.j;
-                *out = dot_average > dot_a ? *a : average;
+                if (dot_average > dot_a)
+                    *out = *a;
+                else
+                    *out = average;
             }
         }
         break;
     case 3:
         if (selected != NONE)
         {
-            vector3f const *normal = (vector3f *)(contacts + indices[selected] * 0x48 + 0x28);
+            vector3f const *normal = (vector3f *)(*(byte **)(component + 0x88) + indices[selected] * 0x48 + 0x28);
             real scale = -normal->k;
             out->i = normal->i * scale + g_4687b0->i;
             out->j = normal->j * scale + g_4687b0->j;
@@ -464,20 +471,36 @@ void function_1f2a80(vector3f const *velocity, byte const *request, bool moving,
         *out = *g_4687b0;
 }
 
-// @retail 0x1f1460
-void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *arg_9650d9, vector3f *arg_3a7661)
+PRIVATE __forceinline void function_1f1461(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
-    byte *settings = *(byte **)(state + 8);
-    vector3f const *old_forward = (vector3f const *)(state + 0xf4);
-    vector3f const *old_up = (vector3f const *)(state + 0x100);
-    if ((*(dword *)settings >> 3) & 1)
+	arg_2->i = arg_0->j * arg_1->k - arg_0->k * arg_1->j;
+	arg_2->j = arg_0->k * arg_1->i - arg_0->i * arg_1->k;
+	arg_2->k = arg_0->i * arg_1->j - arg_0->j * arg_1->i;
+}
+
+PRIVATE __forceinline byte function_1f1462(dword arg_0)
+{
+	return (arg_0 >> 3) & 1;
+}
+
+// @retail 0x1f1460
+void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *up_result, vector3f *forward_result)
+{
+    struct s_1f1466 { vector3f *field_0; byte const *field_4; vector3f *field_8; } local_0;
+    local_0.field_8 = forward_result;
+    local_0.field_0 = up_result;
+    local_0.field_4 = state;
+    byte *settings = *(byte **)(local_0.field_4 + 8);
+    if (function_1f1462(*(dword *)settings))
     {
+        vector3f const *old_up = (vector3f const *)(local_0.field_4 + 0x100);
         vector3f up = ground->normal;
-        vector3f axis = contact_cross(*old_up, up);
+        vector3f axis;
+        function_1f1461(old_up, &up, &axis);
         bool rotate = true;
         if (function_30bf0(&axis) == 0.0f)
         {
-            real dot = old_up->k * up.k + old_up->j * up.j + old_up->i * up.i;
+            real dot = old_up->j * up.j + old_up->k * up.k + old_up->i * up.i;
             if (dot > 0.0f)
                 rotate = false;
             else
@@ -486,40 +509,44 @@ void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *a
         if (rotate)
         {
             vector3f limited = *old_up;
-            double angle = (double)g_510c54->rate * 5.235987663269043f;
+            real angle = g_510c54->rate * 5.235987663269043f;
             real sine = (real)sin(angle);
             real cosine = (real)cos(angle);
             real dot = (limited.k * axis.k + limited.j * axis.j + limited.i * axis.i) * (1.0f - cosine);
-            vector3f cross = contact_cross(limited, axis);
+            vector3f cross;
+            function_1f1461(&limited, &axis, &cross);
+            limited.k = axis.k * dot + limited.k * cosine - cross.k * sine;
             limited.i = dot * axis.i + limited.i * cosine - cross.i * sine;
             limited.j = axis.j * dot + limited.j * cosine - cross.j * sine;
-            limited.k = axis.k * dot + limited.k * cosine - cross.k * sine;
-            cross = contact_cross(limited, up);
+            function_1f1461(&limited, &up, &cross);
             if (cross.k * axis.k + cross.j * axis.j + cross.i * axis.i > 0.0f)
                 up = limited;
         }
-        vector3f cross = contact_cross(*old_forward, up);
-        vector3f forward = contact_cross(up, cross);
+        vector3f const *old_forward = (vector3f const *)(local_0.field_4 + 0xf4);
+        vector3f cross;
+        function_1f1461(old_forward, &up, &cross);
+        vector3f forward;
+        function_1f1461(&up, &cross, &forward);
         if (function_30bf0(&forward) == 0.0f)
         {
-            cross = contact_cross(up, *old_up);
-            forward = contact_cross(up, cross);
+            function_1f1461(&up, old_up, &cross);
+            function_1f1461(&up, &cross, &forward);
             if (function_30bf0(&forward) == 0.0f)
             {
                 up = *g_4687b0;
                 forward = *g_4687a8;
             }
         }
-        *arg_9650d9 = forward;
-        *arg_3a7661 = up;
+        *local_0.field_8 = forward;
+        *local_0.field_0 = up;
     }
     else
     {
-        *arg_9650d9 = *old_forward;
-        *arg_3a7661 = *g_4687b0;
-        arg_9650d9->k = 0.0f;
-        if (function_30bf0(arg_9650d9) == 0.0f)
-            *arg_9650d9 = *g_4687a8;
+        *local_0.field_8 = *(vector3f const *)(local_0.field_4 + 0xf4);
+        *local_0.field_0 = *g_4687b0;
+        local_0.field_8->k = 0.0f;
+        if (function_30bf0(local_0.field_8) == 0.0f)
+            *local_0.field_8 = *g_4687a8;
     }
 }
 
@@ -546,36 +573,104 @@ PRIVATE inline real shape_dot(vector3f const &a, vector3f const &b)
     return a.k * b.k + a.j * b.j + a.i * b.i;
 }
 
-// @retail 0x1f0870
-void function_1f0870(byte const *state, byte *out, byte *history, vector3f const *current)
+#pragma optimize("s", on)
+PRIVATE __forceinline void function_1f087c(vector3f *arg_0, vector3f const *arg_1, vector3f const *arg_2)
 {
-    byte *settings = *(byte **)(state + 8);
-    dword flags = *(dword *)(state + 0x14);
-    bool flying = ((*(dword *)settings >> 3) & 1) != 0;
-    bool gravity = ((flags >> 3) & 1) != 0;
+    real local_0 = arg_1->i + arg_2->i;
+    real local_1 = arg_1->j + arg_2->j;
+    real local_2 = arg_1->k + arg_2->k;
+    arg_0->i = local_0;
+    arg_0->j = local_1;
+    arg_0->k = local_2;
+}
+PRIVATE __forceinline void function_1f087d(vector3f *arg_0, vector3f const *arg_1, real arg_2, vector3f const *arg_3)
+{
+    real local_0 = arg_1->i * arg_2 - arg_3->i;
+    real local_1 = arg_1->j * arg_2 - arg_3->j;
+    real local_2 = arg_1->k * arg_2 - arg_3->k;
+    arg_0->i = local_0;
+    arg_0->j = local_1;
+    arg_0->k = local_2;
+}
+PRIVATE __forceinline void function_1f087e(vector3f *arg_0, real arg_1)
+{
+    arg_0->i *= arg_1;
+    arg_0->j *= arg_1;
+    arg_0->k *= arg_1;
+}
+PRIVATE __forceinline void function_1f087f(vector3f *arg_0, vector3f const *arg_1, vector3f const *arg_2, real arg_3)
+{
+    real local_0 = arg_1->i - arg_2->i * arg_3;
+    real local_1 = arg_1->j - arg_2->j * arg_3;
+    real local_2 = arg_1->k - arg_2->k * arg_3;
+    arg_0->i = local_0;
+    arg_0->j = local_1;
+    arg_0->k = local_2;
+}
+
+PRIVATE __forceinline void function_1f087b(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
+{
+    real local_0 = arg_0->j * arg_1->k - arg_0->k * arg_1->j;
+    real local_1 = arg_0->k * arg_1->i - arg_0->i * arg_1->k;
+    real local_2 = arg_0->i * arg_1->j - arg_0->j * arg_1->i;
+    arg_2->i = local_0;
+    arg_2->j = local_1;
+    arg_2->k = local_2;
+}
+
+PRIVATE __forceinline vector3f function_1f0873(vector3f const &arg_0, vector3f const &arg_1)
+{
+    vector3f local_0;
+    local_0.i = arg_0.j * arg_1.k - arg_0.k * arg_1.j;
+    local_0.j = arg_0.k * arg_1.i - arg_0.i * arg_1.k;
+    local_0.k = arg_0.i * arg_1.j - arg_0.j * arg_1.i;
+    return local_0;
+}
+
+#pragma optimize("", on)
+PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f const *arg_2, byte const *arg_3)
+{
+#define settings (*(byte **)(arg_3 + 8))
+    dword mode = *(dword *)settings;
+    bool flying = ((mode >> 3) & 1) != 0;
+    dword flags = *(dword *)(arg_3 + 0x14);
     bool damping = ((flags >> 4) & 1) != 0;
-    vector3f const &input = *(vector3f const *)(state + 0x138);
-    vector3f const &facing = *(vector3f const *)(state + 0x9c);
-    vector3f const &up = *(vector3f const *)(state + 0x100);
-    vector3f const &normal = *(vector3f const *)(state + 0x8c);
-    vector3f const &basis = *(vector3f const *)(state + 0x118);
-    vector3f *velocity = (vector3f *)(out + 0xc);
-    real scale = *(real *)(state + 0x20);
+    bool direct = ((flags >> 2) & 1) != 0;
+    volatile bool gravity = ((flags >> 3) & 1) != 0;
+    vector3f const &input = *(vector3f const *)(arg_3 + 0x138);
+    vector3f const &facing = *(vector3f const *)(arg_3 + 0x9c);
+    vector3f const &up = *(vector3f const *)(arg_3 + 0x100);
+    vector3f const &normal = *(vector3f const *)(arg_3 + 0x8c);
+    vector3f const &basis = *(vector3f const *)(arg_3 + 0x118);
+    vector3f *velocity = (vector3f *)(arg_0 + 0xc);
     if (!(flags & 1))
     {
-        vector3f left = contact_cross(up, facing);
-        *velocity = shape_scale(facing, input.i * scale);
-        *velocity = shape_add(*velocity, shape_scale(left, input.j * scale));
-        *velocity = shape_add(*velocity, shape_scale(up, input.k * scale));
+        vector3f left;
+        left.i = facing.k * up.j - up.k * facing.j;
+        left.j = up.k * facing.i - up.i * facing.k;
+        left.k = up.i * facing.j - up.j * facing.i;
+        real scale = *(real *)(arg_3 + 0x20);
+        real local_0 = input.i * scale;
+        real local_1 = input.j * scale;
+        real local_2 = input.k * scale;
+        (*(real volatile *)&velocity->i) = facing.i * local_0;
+        (*(real volatile *)&velocity->j) = facing.j * local_0;
+        (*(real volatile *)&velocity->k) = facing.k * local_0;
+        (*(real volatile *)&velocity->i) += left.i * local_1;
+        (*(real volatile *)&velocity->j) += left.j * local_1;
+        (*(real volatile *)&velocity->k) += left.k * local_1;
+        (*(real volatile *)&velocity->i) += up.i * local_2;
+        (*(real volatile *)&velocity->j) += up.j * local_2;
+        (*(real volatile *)&velocity->k) += up.k * local_2;
         gravity = false;
     }
-    else if (flags & 4)
+    else if (direct)
     {
         vector3f delta;
-        delta.i = scale * (facing.i * input.i - facing.j * input.j) - current->i;
-        delta.j = scale * (facing.j * input.i + facing.i * input.j) - current->j;
+        delta.i = (*(real *)(arg_3 + 0x20)) * (facing.i * input.i - facing.j * input.j) - arg_2->i;
+        delta.j = (*(real *)(arg_3 + 0x20)) * (facing.j * input.i + facing.i * input.j) - arg_2->j;
         point2f limited = { delta.i, delta.j };
-        real step = *(real *)(state + 0x148) * g_510c54->rate;
+        real step = *(real *)(arg_3 + 0x148) * g_510c54->rate;
         if (normalize2d(&limited) > step)
         {
             limited.x *= step;
@@ -586,9 +681,9 @@ void function_1f0870(byte const *state, byte *out, byte *history, vector3f const
             limited.x = delta.i;
             limited.y = delta.j;
         }
-        velocity->i = current->i + limited.x;
-        velocity->j = current->j + limited.y;
-        velocity->k = current->k - *(real *)(state + 0x130) * g_510c54->rate;
+        velocity->i = arg_2->i + limited.x;
+        velocity->j = arg_2->j + limited.y;
+        velocity->k = arg_2->k - *(real *)(arg_3 + 0x130) * g_510c54->rate;
     }
     else
     {
@@ -596,19 +691,23 @@ void function_1f0870(byte const *state, byte *out, byte *history, vector3f const
         vector3f desired;
         if (flying)
         {
-            vector3f left = contact_cross(normal, basis);
+            vector3f left;
+            function_1f087b(&normal, &basis, &left);
             if (function_30bf0(&left) == 0.0f)
             {
-                left = contact_cross(normal, *g_4687b0);
+                function_1f087b(&normal, g_4687b0, &left);
                 if (function_30bf0(&left) == 0.0f)
                 {
-                    left = contact_cross(normal, *g_4687a8);
+                    function_1f087b(&normal, g_4687a8, &left);
                     function_30bf0(&left);
                 }
             }
-            vector3f forward = contact_cross(left, normal);
+            vector3f forward;
+            function_1f087b(&left, &normal, &forward);
             function_30bf0(&forward);
-            desired = shape_add(shape_scale(left, input.j), shape_scale(forward, input.i));
+            desired.i = left.i * input.j + forward.i * input.i;
+            desired.j = left.j * input.j + forward.j * input.i;
+            desired.k = left.k * input.j + forward.k * input.i;
             desired.k += input.k;
             function_30bf0(&desired);
         }
@@ -622,11 +721,21 @@ void function_1f0870(byte const *state, byte *out, byte *history, vector3f const
             }
             else
             {
-                vector3f left = contact_cross(*g_4687b0, basis);
+                vector3f left;
+                function_1f087b(g_4687b0, &basis, &left);
                 function_30bf0(&left);
-                vector3f forward = shape_add(basis, shape_scale(normal, -shape_dot(normal, basis)));
-                left = shape_add(left, shape_scale(normal, -shape_dot(normal, left)));
-                desired = shape_add(shape_scale(left, input.j), shape_scale(forward, input.i));
+                real local_3 = -shape_dot(normal, basis);
+                vector3f forward;
+                forward.i = basis.i + normal.i * local_3;
+                forward.j = basis.j + normal.j * local_3;
+                forward.k = basis.k + normal.k * local_3;
+                real local_4 = -shape_dot(normal, left);
+                left.i += normal.i * local_4;
+                left.j += normal.j * local_4;
+                left.k += normal.k * local_4;
+                desired.i = left.i * input.j + forward.i * input.i;
+                desired.j = left.j * input.j + forward.j * input.i;
+                desired.k = left.k * input.j + forward.k * input.i;
                 desired.k = (desired.k + input.k) * 5.0f;
             }
             function_30bf0(&desired);
@@ -641,51 +750,56 @@ void function_1f0870(byte const *state, byte *out, byte *history, vector3f const
                 magnitude *= 1.0f + (desired.k - *(real *)(settings + 0x60)) * (*(real *)(settings + 0x50) - 1.0f) /
                     (*(real *)(settings + 0x64) - *(real *)(settings + 0x60));
         }
-        vector3f delta = shape_subtract(shape_scale(desired, scale * magnitude), *current);
+        vector3f delta;
+        function_1f087d(&delta, &desired, (*(real *)(arg_3 + 0x20)) * magnitude, arg_2);
         vector3f limited = delta;
-        real step = *(real *)(state + 0x144) * g_510c54->rate;
-        if (function_30bf0(&limited) > step)
-        {
-            limited = shape_scale(limited, step);
-            if (flying)
-                gravity = false;
-        }
+        real step = *(real *)(arg_3 + 0x144) * g_510c54->rate;
+        bool limited_step = function_30bf0(&limited) > step;
+        if (limited_step)
+            function_1f087e(&limited, step);
         else
-        {
             limited = delta;
+        if (!limited_step || flying)
             gravity = false;
-        }
-        if (!state[0xa8] && *(long *)((byte *)g_51e9c4 + 0x18) - g_510c54->game_time <= 0)
-            limited = shape_subtract(limited, shape_scale(normal, 0.234f));
+        if (!arg_3[0xa8] && *(long *)((byte *)g_51e9c4 + 0x18) - g_510c54->game_time <= 0)
+            function_1f087f(&limited, &limited, &normal, 0.234f);
         if (damping)
         {
-            real fraction = 1.0f - *(real *)(state + 0x98);
+            real fraction = 1.0f - *(real *)(arg_3 + 0x98);
             limited.i *= fraction;
             limited.j *= fraction;
         }
         if (gravity)
-            limited.k -= *(real *)(state + 0x130) * g_510c54->rate;
-        *velocity = shape_add(*current, limited);
+            limited.k -= *(real *)(arg_3 + 0x130) * g_510c54->rate;
+        function_1f087c(velocity, arg_2, &limited);
     }
-    if (!((*(dword *)settings >> 2) & 1) && !(flags & 4))
+    if (!((*(dword *)settings >> 2) & 1) && !(*(dword const *)(arg_3 + 0x14) & 4))
     {
-        if (*(long *)(history + 0xc) != NONE && *(long *)(history + 0xc) == g_510c54->game_time - 1)
+        if (*(long *)(arg_1 + 0xc) != NONE && *(long *)(arg_1 + 0xc) == g_510c54->game_time - 1)
         {
-            vector3f change = shape_add(shape_subtract(input, *(vector3f *)(history + 0x10)), *(vector3f *)(out + 0x64));
+            vector3f change = shape_add(shape_subtract(input, *(vector3f *)(arg_1 + 0x10)), *(vector3f *)(arg_0 + 0x64));
             real maximum = (real)sqrt(change.k * change.k + change.j * change.j + change.i * change.i) + g_47ffb0;
-            vector3f offset = shape_subtract(*(vector3f const *)(state + 0x124), *(vector3f *)(out + 0x64));
+            vector3f offset = shape_subtract(*(vector3f const *)(arg_3 + 0x124), *(vector3f *)(arg_0 + 0x64));
             vector3f relative = shape_subtract(*velocity, offset);
             function_a75d0(&relative, maximum);
-            *velocity = shape_add(relative, offset);
+            function_1f087c(velocity, &relative, &offset);
         }
-        *(vector3f *)(history + 0x10) = input;
-        *(long *)(history + 0xc) = g_510c54->game_time;
+        *(vector3f *)(arg_1 + 0x10) = input;
+        *(long *)(arg_1 + 0xc) = g_510c54->game_time;
     }
     if (gravity)
-        *(dword *)out |= 1;
+        *(dword *)arg_0 |= 1;
     else
-        *(dword *)out &= ~1;
+        *(dword *)arg_0 &= ~1;
 }
+#undef settings
+
+// @retail 0x1f0870
+void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
+{
+    function_1f087a(out, history, current, state);
+}
+#pragma optimize("", on)
 
 
 PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const *input, vector3f *out)
@@ -696,9 +810,12 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
         copy = *input;
         input = &copy;
     }
-    out->i = input->j * matrix->left.i + input->k * matrix->up.i + input->i * matrix->forward.i;
-    out->j = input->i * matrix->forward.j + input->j * matrix->left.j + input->k * matrix->up.j;
-    out->k = input->i * matrix->forward.k + input->j * matrix->left.k + input->k * matrix->up.k;
+    real i = input->i;
+    real j = input->j;
+    real k = input->k;
+    out->i = j * matrix->left.i + k * matrix->up.i + i * matrix->forward.i;
+    out->j = i * matrix->forward.j + j * matrix->left.j + k * matrix->up.j;
+    out->k = i * matrix->forward.k + j * matrix->left.k + k * matrix->up.k;
 }
 
 // @retail 0x1f0450
@@ -730,7 +847,8 @@ void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrie
     }
     if (override_velocity)
     {
-        *(vector3f *)(out + 0x64) = *(vector3f *)(*(byte **)(component + 0x70) + 0x30);
+        vector3f const *velocity_source = (vector3f const *)(*(byte **)(component + 0x70) + 0x30);
+        real_point3d_set((point3f *)(out + 0x64), velocity_source->i, velocity_source->j, velocity_source->k);
         current.i -= *(real *)(out + 0x64);
         current.j -= *(real *)(out + 0x68);
         current.k -= *(real *)(out + 0x6c);
@@ -749,7 +867,7 @@ void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrie
             current.k += delta_velocity.k;
         }
     }
-    function_1f0870(data, out, (byte *)history, &current);
+    function_1f0870((byte *)history, &current, data, out);
     if (override_velocity)
     {
         *(real *)(out + 0xc) += *(real *)(out + 0x64);
@@ -786,67 +904,79 @@ PRIVATE inline real contact_normalize(vector3f *vector)
 }
 
 // @retail 0x1f2250
-long function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
+bool function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
     bool moving, vector3f *out, long *surface, real *speed, long *object_index)
 {
     byte *component = g_51e9b8->data + (*(long *)(request + 0x40) & 0xffff) * 0xa0;
-    byte *settings = *(byte **)request;
     vector3f relative = *input;
     *speed = 0.0f;
     *out = *g_4687b0;
     *surface = NONE;
     *object_index = NONE;
-    long count = 0;
+    volatile long count = 0;
     long indices[3];
-    if (moving)
+    if (!moving)
+    {
+        if (*(long *)(request + 4) != NONE)
+        {
+            vector3f object_velocity;
+            if (function_109fd0(*(long *)(request + 4), &object_velocity))
+            {
+                relative.i -= object_velocity.i;
+                relative.j -= object_velocity.j;
+                relative.k -= object_velocity.k;
+            }
+        }
+    }
+    else
     {
         relative.i -= velocity->i;
         relative.j -= velocity->j;
         relative.k -= velocity->k;
     }
-    else if (*(long *)(request + 4) != NONE)
-    {
-        vector3f object_velocity;
-        if (function_109fd0(*(long *)(request + 4), &object_velocity))
-        {
-            relative.i -= object_velocity.i;
-            relative.j -= object_velocity.j;
-            relative.k -= object_velocity.k;
-        }
-    }
     vector3f desired = relative;
-    bool stepping = ((*(dword *)(request + 0x18) >> 1) & 1) != 0;
     if (*(long *)(request + 0x44) != NONE)
     {
-        for (long i = 0; i < *(long *)(component + 0x8c); ++i)
+        long contacts = *(long *)(component + 0x8c);
+        for (long i = 0; i < contacts; ++i)
         {
             byte *contact = *(byte **)(component + 0x88) + i * 0x48;
-            if (*(long *)(contact + 0x14) == *(long *)(request + 0x44) &&
-                *(real *)(contact + 0x30) > *(real *)(settings + 0x54) &&
-                function_1f2e60(moving, (s_shape_ground *)contact, velocity, stepping,
-                    (point3f const *)(request + 0x1c), *(real *)(settings + 0xc)))
+            if (*(long *)(request + 0x44) == *(long *)(contact + 0x14) &&
+                *(real *)(contact + 0x30) > *(real *)((*(byte **)request) + 0x54) &&
+                function_1f2e60((s_shape_ground *)contact, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
+                    (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)))
             {
-                desired = shape_scale(*(vector3f *)(contact + 0x28), -1.0f);
+                desired.i = *(real *)(contact + 0x28) * -1.0f;
+                desired.j = *(real *)(contact + 0x2c) * -1.0f;
+                desired.k = *(real *)(contact + 0x30) * -1.0f;
                 break;
             }
         }
     }
-    if ((*(dword *)settings >> 3) & 1)
+    if ((*(dword *)(*(byte **)request) >> 3) & 1)
     {
-        if (stepping)
-            desired = shape_subtract(desired, *(vector3f *)((byte *)velocity + 0x64));
+        if (((*(dword *)(request + 0x18) & 2) != 0))
+            {
+                desired.i -= *(real *)((byte *)velocity + 0x64);
+                desired.j -= *(real *)((byte *)velocity + 0x68);
+                desired.k -= *(real *)((byte *)velocity + 0x6c);
+            }
     }
     else
     {
-        if (!stepping)
+        if (!((*(dword *)(request + 0x18) & 2) != 0))
         {
             if (*(long *)(request + 8) == *(long *)(request + 4))
                 desired = *g_4687bc;
             else if (desired.k < 0.0f)
                 desired.k *= 30.0f;
         }
-        if (stepping)
-            desired = shape_subtract(desired, *(vector3f *)((byte *)velocity + 0x64));
+        if (((*(dword *)(request + 0x18) & 2) != 0))
+            {
+                desired.i -= *(real *)((byte *)velocity + 0x64);
+                desired.j -= *(real *)((byte *)velocity + 0x68);
+                desired.k -= *(real *)((byte *)velocity + 0x6c);
+            }
         else if (length_sq3f((vector3f const *)(request + 0x34)) == 0.0f)
             desired = *g_4687bc;
     }
@@ -861,9 +991,9 @@ long function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             for (long i = 0; i < contacts; ++i)
             {
                 byte *contact = *(byte **)(component + 0x88) + i * 0x48;
-                if (function_1f2e60(moving, (s_shape_ground *)contact, velocity, stepping,
-                    (point3f const *)(request + 0x1c), *(real *)(settings + 0xc)) &&
-                    (!stepping || *(long *)(request + 0x44) == NONE || *(long *)(request + 0x44) == *(long *)(contact + 0x14)))
+                if (function_1f2e60((s_shape_ground *)contact, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
+                    (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)) &&
+                    (!((*(dword *)(request + 0x18) & 2) != 0) || *(long *)(request + 0x44) == NONE || *(long *)(request + 0x44) == *(long *)(contact + 0x14)))
                 {
                     real dot = dot3f(&direction, (vector3f *)(contact + 0x28));
                     if (dot < -0.025f && dot < minimum)
@@ -875,9 +1005,12 @@ long function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             }
             if (selected == NONE)
             {
-                if (count || !((*(dword *)settings >> 3) & 1) || !contacts)
+                if (count || !((*(dword *)(*(byte **)request) >> 3) & 1) || !contacts)
                     break;
-                desired = shape_scale(*(vector3f *)(*(byte **)(component + 0x88) + 0x28), -1.0f);
+                byte *first = *(byte **)(component + 0x88);
+                desired.i = *(real *)(first + 0x28) * -1.0f;
+                desired.j = *(real *)(first + 0x2c) * -1.0f;
+                desired.k = *(real *)(first + 0x30) * -1.0f;
                 direction = desired;
                 minimum = -1.0f;
                 selected = 0;
@@ -894,30 +1027,31 @@ long function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             else if (count == 2)
             {
                 byte *contacts = *(byte **)(component + 0x88);
-                vector3f tangent = contact_cross(*(vector3f *)(contacts + indices[0] * 0x48 + 0x28),
-                    *(vector3f *)(contacts + indices[1] * 0x48 + 0x28));
+                vector3f tangent;
+                contact_cross((vector3f *)(contacts + indices[0] * 0x48 + 0x28),
+                    (vector3f *)(contacts + indices[1] * 0x48 + 0x28), &tangent);
                 contact_normalize(&tangent);
-                direction = shape_scale(tangent, dot3f(&tangent, &desired));
+                vector3f_scale(&tangent, dot3f(&tangent, &desired), &direction);
             }
         }
-        function_1f2a80(velocity, request, moving, &desired, indices, count, out);
+        function_1f2a80(request, moving, &desired, indices, count, out, velocity);
     }
-    real height = *(real *)(request + 0x24) + *(real *)(settings + 0xc);
+    real height = *(real *)(request + 0x24) + *(real *)((*(byte **)request) + 0xc);
     for (long i = 0; i < *(long *)(component + 0x8c); ++i)
     {
         byte *contact = *(byte **)(component + 0x88) + i * 0x48;
-        if (function_1f2e60(moving, (s_shape_ground *)contact, velocity, stepping,
-            (point3f const *)(request + 0x1c), *(real *)(settings + 0xc)))
+        if (function_1f2e60((s_shape_ground *)contact, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
+            (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)))
         {
             real projection = 0.0f - shape_dot(*(vector3f *)(contact + 0x28), relative);
-            if (stepping && height - 0.001f > *(real *)(contact + 0x24) && projection > *speed)
+            if (((*(dword *)(request + 0x18) & 2) != 0) && height - 0.001f > *(real *)(contact + 0x24) && projection > *speed)
                 *speed = projection;
         }
         long object = *(long *)(contact + 0x18);
         if (object != NONE && (*object_index == NONE || ((1 << g_4e0300->data[(object & 0xffff) * 12 + 3]) & 1)))
             *object_index = object;
     }
-    return count && out->k > *(real *)(settings + 0x54) ? 1 : 0;
+    return count && out->k > *(real *)((*(byte **)request) + 0x54);
 }
 
 
@@ -930,7 +1064,8 @@ void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
     byte *component = g_51e9b8->data + (*(long *)(request + 0x40) & 0xffff) * 0xa0;
     dword flags = *(dword *)(request + 0x18);
     bool preserve = (flags & 4) || ((flags & 1) && !(flags & 2)) || (flags & 0x18);
-    bool moving = sqrt(history->point.x * history->point.x + history->point.y * history->point.y + history->point.z * history->point.z) != 0.0f;
+    double movement = sqrt(history->point.x * history->point.x + history->point.y * history->point.y + history->point.z * history->point.z);
+    bool moving = movement != 0.0f;
     *(dword *)(out + 4) &= ~1;
     if (!preserve)
     {
@@ -963,25 +1098,30 @@ void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
             }
             if (*(long *)(contact + 0x14) != NONE || speed > 0.0f)
             {
-                bool accept;
                 if (supported)
                 {
-                    accept = (flying || normal->j * velocity->j + normal->i * velocity->i <= 0.5f) &&
-                        (!best_supported || speed > best_speed) && !(fabs(*(real *)(contact + 0x38)) < 0.0001f);
+                    if (!flying && normal->j * velocity->j + normal->i * velocity->i > 0.5f)
+                        goto local_10;
+                    if (best_supported && !(speed > best_speed))
+                        goto local_10;
+                    if (fabs(*(real *)(contact + 0x38)) < 0.0001f)
+                        goto local_10;
                 }
                 else if (flag)
-                    accept = !best_flag || normal->k > best_height;
-                else
-                    accept = !best_supported && !best_flag && normal->k > best_height;
-                if (accept)
                 {
-                    selected = i;
-                    best_height = normal->k;
-                    best_supported = supported;
-                    best_speed = speed;
-                    best_flag = flag;
+                    if (best_flag && !(normal->k > best_height))
+                        goto local_10;
                 }
+                else if (best_supported || best_flag || !(normal->k > best_height))
+                    goto local_10;
+                selected = i;
+                best_height = normal->k;
+                best_supported = supported;
+                best_speed = speed;
+                best_flag = flag;
             }
+local_10:
+            ;
         }
         if ((short)selected != NONE && best_supported)
         {
@@ -1011,6 +1151,7 @@ void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
     }
     else
     {
+        flags = *(dword *)(request + 0x18);
         bool airborne = (flags & 0x18) != 0;
         if ((flags & 2) || airborne)
         {

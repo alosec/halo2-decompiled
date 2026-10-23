@@ -47,26 +47,13 @@ struct s_slot_3a_request
 	bool unknown20;
 };
 
-/* the unit request of type 0x19 (s_unit_request of slot_handler.h) */
-struct s_unit_request_19
-{
-	long type;
-	byte unknown4;
-	byte unknown5[3];
-	long unknown8;
-	bool unknownc;
-	byte unknownd[3];
-	point2f direction;
-	byte unknown18[8];
-};
-
 short g_470c58 = -1;
 short g_470c5c = -2;
 
 real function_30bf0(vector3f *v);
 real normalize2d(point2f *v);
 bool actor_has_joint_invitation(long actor_index, short type);
-void __stdcall function_1f4280(long actor_index);
+bool __stdcall function_1f4280(long actor_index);
 
 short __stdcall function_257630(long actor_index);
 short __stdcall function_2576c0(long actor_index, s_slot *slot, s_slot *next);
@@ -101,6 +88,9 @@ PRIVATE __forceinline s_clump_7f_view *function_257632(long arg_0)
 	return (s_clump_7f_view *)(g_502420->data + (arg_0 & 0xffff) * sizeof(s_502420_element));
 }
 
+// score 19 (was 19): the pool lookup starts in the other register (ours
+// mov eax,[esp+4], retail mov ecx,[esp+4]); the callee's body decides
+// that and it lives in src/unknown_26e370.cpp, outside this lane.
 // @retail 0x257630
 short __stdcall function_257630(long actor_index)
 {
@@ -126,6 +116,8 @@ short __stdcall function_257630(long actor_index)
 	return result;
 }
 
+bool function_1f57f0(long actor_index, long animation, long const *target);
+
 // @retail 0x2576c0
 short __stdcall function_2576c0(long actor_index, s_slot *slot, s_slot *next)
 {
@@ -133,10 +125,18 @@ short __stdcall function_2576c0(long actor_index, s_slot *slot, s_slot *next)
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_7f_state *state = (s_slot_7f_state *)slot;
 	s_502424_element *joint = element_502424_get(state->joint_index);
+	long leader_index = joint->target.unknown0;
 
-	if (joint->target.unknown0 == NONE || joint->target.unknown4 == NONE)
+	if (leader_index == NONE)
 	{
-		return g_470c58;
+		result = g_470c58;
+		goto local_9;
+	}
+	long target_index = joint->target.unknown4;
+	if (target_index == NONE)
+	{
+		result = g_470c58;
+		goto local_9;
 	}
 
 	if (state->following)
@@ -144,36 +144,51 @@ short __stdcall function_2576c0(long actor_index, s_slot *slot, s_slot *next)
 		if (((s_joint_7f_view *)joint)->started)
 		{
 			s_slot_3a_request *request = (s_slot_3a_request *)next;
+			long timer = g_510c54->field_2_3 * 3;
 
 			request->unknown20 = true;
-			request->target_index = joint->target.unknown4;
-			request->timer = g_510c54->field_2_3 * 3;
-			return 0x3a;
+			request->target_index = target_index;
+			request->timer = (short)timer;
+			result = 0x3a;
+			goto local_9;
 		}
 	}
 	else
 	{
-		point3f *leader_position = &actor_get(joint->target.unknown0)->position;
+		point3f *leader_position = &actor_get(leader_index)->position;
 		point2f direction;
 
 		direction.x = leader_position->x - actor->position.x;
 		direction.y = leader_position->y - actor->position.y;
 		normalize2d(&direction);
-		if (direction.y * actor->unknown290.j + direction.x * actor->unknown290.i > 0.8 && actor->unknown26c == NONE)
+		if (direction.y * actor->unknown290.j + direction.x * actor->unknown290.i > 0.8 &&
+			function_1f57f0(actor_index, 0x700002c, (long const *)&direction))
 		{
-			s_unit_request_19 request = {0};
-
-			request.type = 0x19;
-			request.unknown4 = 2;
-			request.unknown8 = 0x700002c;
-			request.unknownc = true;
-			request.direction = direction;
-			if (function_e6900(actor->unknown018, (s_unit_request *)&request))
-			{
-				((s_joint_7f_view *)joint)->started = true;
-				return g_470c58;
-			}
+			((s_joint_7f_view *)joint)->started = true;
+			result = g_470c58;
+			goto local_9;
 		}
+	}
+local_9:
+	return result;
+}
+
+struct s_actor_iterator_257870
+{
+	long index;
+	long next;
+};
+
+static __forceinline s_actor_view *actor_iterator_next_257870(s_actor_iterator_257870 *iterator)
+{
+	s_actor_view *result = NULL;
+	long index = iterator->next;
+
+	if (index != NONE)
+	{
+		result = actor_get(index);
+		iterator->index = index;
+		iterator->next = result->next_index;
 	}
 	return result;
 }
@@ -191,25 +206,23 @@ long __stdcall function_257870(long actor_index, s_slot *slot)
 			s_502420_element *clump = element_502420_get(actor->unknown07c);
 			real best_distance = 3.4028235e38f;
 			long best_index = NONE;
-			long index = clump->first_actor_index;
+			s_actor_iterator_257870 iterator;
+			s_actor_view *other;
 
-			while (index != NONE)
+			iterator.next = clump->first_actor_index;
+			while ((other = actor_iterator_next_257870(&iterator)) != NULL)
 			{
-				s_actor_view *other = actor_get(index);
-				long other_index = index;
-
-				index = other->next_index;
 				if (other != actor && other->unknown004 == 0)
 				{
 					vector3f delta;
 					real distance;
 
 					vector3d_from_points3d(&actor->position, &other->position, &delta);
-					distance = (real)sqrt(length_sq3f(&delta));
+					distance = (real)sqrt(delta.j * delta.j + delta.i * delta.i + delta.k * delta.k);
 					if (distance < 1.f && distance < best_distance)
 					{
 						best_distance = distance;
-						best_index = other_index;
+						best_index = iterator.index;
 					}
 				}
 			}
@@ -230,9 +243,8 @@ long __stdcall function_257870(long actor_index, s_slot *slot)
 					joint->target.unknown0 = actor_index;
 					((s_clump_7f_view *)clump)->time = g_510c54->game_time;
 				}
-				return joint_index;
+				result = joint_index;
 			}
-			return NONE;
 		}
 	}
 	else if (actor->unknown004 == 0)
@@ -246,10 +258,10 @@ long __stdcall function_257870(long actor_index, s_slot *slot)
 		{
 			if (function_26ecc0(actor_index, iterator.reference.unknown0, (s_joint_behavior_state *)slot))
 			{
-				return entry->unknown4;
+				result = entry->unknown4;
+				break;
 			}
 		}
-		return NONE;
 	}
 	return result;
 }
@@ -330,9 +342,10 @@ void __stdcall function_257b60(long actor_index, s_slot *slot, s_slot_target_lis
 // @retail 0x257c60
 short __stdcall function_257c60(long actor_index, long joint_index, s_slot *slot, long unknown)
 {
+	s_502424_element *joint = element_502424_get(joint_index);
 	short result = 0;
 
-	if (function_26eae0(joint_index, element_502424_get(joint_index)->target.unknown4, 3, 1.0f))
+	if (function_26eae0(joint_index, joint->target.unknown4, 3, 1.0f))
 	{
 		result = 1;
 	}

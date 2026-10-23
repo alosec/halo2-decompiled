@@ -1,5 +1,5 @@
 /* SLOT_OWNER.H: the elements (0x888 bytes) of the actor slot-owner data array
-   g_4f55f0, as seen by unknown_1a8080.cpp (the slots and their entries),
+   g_4f55f0, as seen by actor_behavior.cpp (the slots and their entries),
    unknown_1f8640.cpp (the owner state) and unknown_26e370.cpp (the joint
    invitations). Only the fields they touch are
    named. */

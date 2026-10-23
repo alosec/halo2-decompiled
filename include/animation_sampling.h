@@ -28,7 +28,7 @@ struct s_animation_sampling_settings
 	bool interpolated_decompressors;
 	long node_count;
 	long destination_node_count;
-	dword frame_index;
+	long frame_index;
 	long next_frame_index;
 	real frame_fraction;
 	real blend_weight;

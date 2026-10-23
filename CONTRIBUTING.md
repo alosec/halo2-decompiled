@@ -5,7 +5,8 @@ when the original compiler turns our source back into the retail XBE's exact
 bytes, and `tools/check.py` decides that automatically.
 
 Please read [LEGAL.md](LEGAL.md) and [PROVENANCE.md](PROVENANCE.md) before
-contributing.
+contributing. For a step-by-step start, including a prompt to paste into an AI
+coding agent, see [docs/START_HERE.md](docs/START_HERE.md).
 
 ## Contribution provenance
 
@@ -21,7 +22,11 @@ symbols, names, strings, comments or other material from:
 - confidential or internal documentation;
 - material obtained in breach of a non-disclosure agreement;
 - stolen development material;
-- proprietary SDK/XDK files.
+- proprietary SDK/XDK files;
+- Havok SDK material: headers, documentation, samples or source, including
+  versions that were once free to download. The project's Havok code is
+  written from the retail executable, and must not contain or copy Havok
+  SDK material.
 
 Sources that are acceptable, where appropriate:
 
@@ -65,13 +70,29 @@ address range or by source file:
    [Active claims](https://github.com/kirklandsig/halo2-decompiled/issues/9)
    issue, which lists every range being worked on (contributors' and our
    own), and the open pull requests, each of which names its range.
-2. Pick something unclaimed. A group of related functions, for example one
-   object type's callbacks found through its type table in the executable,
-   is a good unit. Small leaf functions are the easiest start;
-   `python tools/ready.py` lists functions whose callees are already done.
-   Save this issue's Active claims table and pass it as
-   `python tools/ready.py --claims claims.md` to leave those addresses out.
-   That does not read GitHub, and it does not treat the Finished section as
+2. Pick something nobody else holds. The maintainers' automated lanes cover
+   the whole game, but **they make way for contributors**:
+   - You may claim one source file, or an address range of up to 0x2000
+     bytes, inside any maintainer lane, and the lanes then leave it alone.
+   - Only another person's claim (an `@user` row) is off limits.
+   - A claim with no activity for two weeks lapses.
+   - Havok, the physics library (rows with `owner` `third:havok`, mostly
+     `0x2d0000`–`0x31ffff`), is open for claims the same way.
+     `python tools/ready.py --owner third:havok` lists the ready functions,
+     and [docs/DECOMPILING.md](docs/DECOMPILING.md#havok) has its flags and
+     conventions.
+   - Merged work is open for follow-up, but ask its author first, on the
+     issue or on their pull request. If they haven't answered within 7 days,
+     others may go ahead. The author's work and credit stay, and the change
+     is noted on the issue.
+
+   `python tools/open_work.py --claims claims.md` lists what is open, with
+   the claim line to use. It takes a saved copy of the issue. A group of
+   related functions, for example one object type's callbacks found through
+   its type table in the executable, is a good unit. Small leaf functions
+   are the easiest start; `python tools/ready.py` lists functions whose
+   callees are already done, and `--claims` leaves every claimed address out.
+   Neither tool reads GitHub, and neither treats the Finished section as
    claimed.
 3. Open a **draft pull request** early with the range in its description,
    for example "Retail range claimed: `0xd5990`–`0xd9fff` (damage code)".
@@ -89,6 +110,11 @@ address range or by source file:
 - Near-misses are fine to commit with their markers; the checker re-tests
   them on every build, and they often match once their callers or callees
   land. `python tools/near.py` counts those near-misses from the csv, with no XBE.
+- If a near miss gets a call's argument registers wrong, the callee probably
+  doesn't match yet (see
+  [Calling conventions under LTCG](docs/DECOMPILING.md#calling-conventions-under-ltcg)).
+  If someone else holds that callee, say so in your pull request or on the
+  Active claims issue, and we'll sort it out with them.
 - You don't need to commit `config/functions.csv`; we regenerate its
   statuses when we merge.
 
@@ -103,6 +129,12 @@ address range or by source file:
 - Mark the pull request ready when you want it merged. We check it against
   current `main` and merge it with a merge commit, so your authorship stays
   in the history.
+- Every merge also runs the provenance checks described in
+  [PROVENANCE.md](PROVENANCE.md). Now and then they flag a name that happens
+  to match one the project excludes, even though you chose it from the code.
+  We'll ask you to rename it. If you'd rather we did it, say so, and with
+  "Allow edits by maintainers" on we push the rename to your branch before
+  merging.
 
 ## Licence
 

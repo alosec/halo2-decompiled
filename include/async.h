@@ -60,7 +60,19 @@ unsigned long __stdcall async_thread_proc(void *parameter);
 long function_1a0b40(char const *path, dword access_flags, long disposition, dword file_flags, long category, long priority, s_file_handle *file, bool volatile *done);
 bool async_copy_file(s_file_handle source, s_file_handle destination, long category);
 long function_1a0f10(s_file_handle file, void *buffer, dword size, dword offset, long category, long priority, dword *bytes_read, bool volatile *done);
-long function_1a1050(s_file_handle file, void const *buffer, dword size, dword offset, dword flags, long category, long priority, dword *bytes_written, bool volatile *done);
+/* the options of a positioned write (bit 0: flush the file once the data is
+   written). 0x1a1050 takes them by value as one object, so every retail caller
+   builds them in a register before pushing them (`xor ecx, ecx; push ecx`,
+   `mov eax, 1; push eax`) where a plain dword would be pushed as a constant */
+struct s_file_write_flags
+{
+	dword bits;
+
+	s_file_write_flags(dword value) { bits = value; }
+};
+
+long function_1a1050(s_file_handle file, void const *buffer, dword size, dword offset, s_file_write_flags flags, long category, long priority, dword *bytes_written, bool volatile *done);
+
 long async_copy_position(s_file_handle source, s_file_handle destination, void *buffer, dword size, dword source_offset, dword destination_offset, long category, long priority, dword *bytes_copied, bool volatile *done);
 long function_1a1310(s_file_handle file, dword size, long category, long priority, bool *success, bool volatile *done);
 long function_1a1480(char const *path, void *buffer, dword buffer_size, long category, long priority, bool *success, dword *size, bool volatile *done);

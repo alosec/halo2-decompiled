@@ -48,8 +48,8 @@ void function_194b60(s_bitstream *stream, real value, real lo, real hi, long bit
 void function_194bc0(s_bitstream *stream, vector3f const *direction);
 void function_194fa0(s_bitstream *stream, word *buffer, long count);
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits);
-void function_195240(s_bitstream *stream, vector3f *forward, vector3f *up);
+void function_195240(s_bitstream *stream, vector3f *up, vector3f *forward);
 bool function_1952f0(real a1, real a2, real a3, real a4, long bits);
-bool function_195560(vector3f const *a, vector3f const *b, vector3f const *up_a, vector3f const *up_b);
+bool function_195560(vector3f const *up_a, vector3f const *a, vector3f const *up_b, vector3f const *b);
 
 #endif

@@ -105,7 +105,7 @@ def main() -> int:
             args, args.root / "src/unknown_1cec30.cpp", rigid_state,
             ["?havok_component_rigid_body_state_update@@YAXJPAUs_havok_component@@@Z"])
         compile_slice(args, args.root / "src/unknown_2da5d0_native.cpp", transform,
-                      ["?setMulEq@hkTransform@@QAAXABU1@@Z"])
+                      ["?transform_compose_in_place@hkTransform@@QAAXABU1@@Z"])
         compile_slice(args, args.root / "src/unknown_0b58c0.cpp", object_wake,
                       ["?function_b7360@@YAXJ@Z"])
         compile_slice(args, args.root / "src/unknown_1cec30.cpp", contact_impulse,
@@ -115,11 +115,11 @@ def main() -> int:
         compile_slice(args, args.root / "src/unknown_1d8dd0.cpp", point_impulse,
                       ["?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z"])
         compile_slice(args, args.root / "src/unknown_30bc40_native.cpp", rigid_body_active,
-                      ["?isActive@hkRigidBody@@QBA?AVhkBool@@XZ",
+                      ["?body_is_simulating@hkRigidBody@@QBA?AVhkBool@@XZ",
                        "?activate@hkRigidBody@@QAAXXZ"])
         compile_slice(args, args.root / "src/unknown_3123a0_native.cpp", entity_properties,
-                      ["?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
-                       "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z"])
+                      ["?entity_property_erase@hkEntity@@QAA?AVs_havok_property_word@@K@Z",
+                       "?entity_property_put@hkEntity@@QAAXKVs_havok_property_word@@@Z"])
         compile_slice(args, args.root / "src/unknown_1c55b0_native.cpp", contact_shape_key,
                       ["?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z"])
         run([args.lld, "-r", "--allow-multiple-definition", "-o", args.output,

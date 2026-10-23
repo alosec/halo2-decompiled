@@ -80,87 +80,10 @@ struct s_partition_location
 	short cluster_index;
 };
 
-extern long g_4e7414;
-extern bool g_4e7411;
-short structure_clusters_from_bit_vector(dword const *bits, short *count, short maximum_count, short *clusters);
-short __stdcall function_14a5b0(short cluster_index, point3f const *point, real radius, long maximum_count, short *clusters);
-
-// @retail 0x1cac60
+/* in src/unknown_1cac60.cpp, which retail builds with SSE */
 void function_1cac60(dword const *bits, s_cluster_partition *partition, long data_index,
 	long *first_cluster_reference, point3f const *point, real radius, s_partition_location const *location,
-	long payload_size, void const *payload, bool *overflow)
-{
-	(void)&partition;
-	(void)&data_index;
-	(void)&first_cluster_reference;
-	(void)&point;
-	(void)&radius;
-	(void)&location;
-	(void)&payload_size;
-	(void)&payload;
-	(void)&overflow;
-	short clusters[0x100];
-	short total;
-	short count;
-	if (bits)
-		count = structure_clusters_from_bit_vector(bits, &total, 0x100, clusters);
-	else
-	{
-		count = 0;
-		short cluster = location->cluster_index;
-		if (cluster != NONE)
-		{
-			if (radius > 0.0f)
-			{
-				++g_4e7414;
-				g_4e7411 = true;
-				count = function_14a5b0(cluster, point, radius, 0x100, clusters);
-				g_4e7411 = false;
-			}
-			else
-			{
-				count = 1;
-				clusters[0] = cluster;
-			}
-		}
-		total = count;
-		if (count > 0x100)
-			count = 0x100;
-	}
-	*overflow = total > count;
-	if (count > 0)
-	{
-	short *current = clusters;
-	long remaining = (word)count;
-	do
-	{
-		short cluster = *current;
-		s_record_pool *cluster_references = partition->cluster_references;
-		long reference_index = record_pool_allocate(cluster_references);
-		if (reference_index != NONE)
-		{
-			s_data_reference *reference = (s_data_reference *)cluster_partition_datum(cluster_references, reference_index);
-			reference->data_index = cluster;
-			reference->next_reference_index = *first_cluster_reference;
-			*first_cluster_reference = reference_index;
-		}
-		long *link = &partition->cluster_first_data_references[cluster];
-		s_record_pool *data_references = partition->data_references;
-		long index = record_pool_allocate(data_references);
-		if (index != NONE)
-		{
-			s_data_reference *reference = (s_data_reference *)cluster_partition_datum(data_references, index);
-			reference->data_index = data_index;
-			reference->next_reference_index = *link;
-			*link = index;
-			if (payload)
-				memcpy(reference + 1, payload, payload_size);
-		}
-		++current;
-	} while (--remaining);
-	}
-}
-
+	long payload_size, void const *payload, bool *overflow);
 
 void function_2962e0(s_record_pool *pool, long *head, long key, long size, void const *value);
 
@@ -180,6 +103,11 @@ void *function_123d40(char const *name, char const *type, long size);
 char *function_11c9c0(char *buffer, long maximum_count, char const *format, ...);
 s_record_pool *function_296270(char const *name, long size, long count);
 
+PRIVATE __forceinline s_record_pool *function_1cabc1(long arg_0, long arg_1, char *arg_2, char const *arg_3, char const *arg_4)
+{
+ return function_296270(function_11c9c0(arg_2, 0x100, arg_3, arg_4), arg_0, arg_1);
+}
+
 // @retail 0x1cabc0
 void function_1cabc0(s_cluster_partition *partition, char const *name, long payload_size)
 {
@@ -188,8 +116,6 @@ void function_1cabc0(s_cluster_partition *partition, char const *name, long payl
 	(void)&payload_size;
 	char label[256];
 	partition->cluster_first_data_references = (long *)function_123d40(NULL, NULL, 0x800);
-	function_11c9c0(label, sizeof(label), "cluster %s", name);
-	partition->data_references = function_296270(label, payload_size, 0x800);
-	function_11c9c0(label, sizeof(label), "%s cluster", name);
-	partition->cluster_references = function_296270(label, 0, 0x800);
+	partition->data_references = function_1cabc1(payload_size, 0x800, label, "cluster %s", name);
+	partition->cluster_references = function_1cabc1(0, 0x800, label, "%s cluster", name);
 }

@@ -32,6 +32,6 @@ struct s_visibility_storage
 	dword bitsets[3][16];
 };
 
-extern s_visibility_storage g_51f40c;
 
+#include "render_state_storage.h"
 #endif

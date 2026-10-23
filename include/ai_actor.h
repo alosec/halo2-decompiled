@@ -61,7 +61,7 @@ struct s_slot_type_bits
 #define SLOT_TYPE_BITS ((s_slot_type_bits *)g_557c40)
 
 /* the actor helpers (unknown_1e1f20.cpp, unknown_1e4290.cpp,
-   unknown_1e5240.cpp, unknown_1e9700.cpp) */
+   character_tag_accessors.cpp, unknown_1e9700.cpp) */
 long function_1e1f20(long actor_index);
 bool function_1e2030(long actor_index);
 void function_1e4290(long actor_index, bool value);

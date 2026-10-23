@@ -59,12 +59,11 @@ byte const g_44178c[k_number_of_function_types] = { 0, 1, 2, 4, 6, 20, 32, 12, 4
 real function_17c900(short function_type, real input);
 real function_17ca10(real x, short curve);
 
-/* sqrt(a) / sqrt(b), approximately: the square root of a from its bits,
-   times rsqrtss of b */
+/* sqrt(a) / sqrt(b), approximately: the square root of a from its bits (built in a's own
+   storage), times rsqrtss of b */
 static __forceinline real square_root_ratio_approximate(real a, real b)
 {
-	long bits = (*(long *)&a >> 1) + 0x1fc00000;
-	real square_root = *(real *)&bits;
+	*(long *)&a = (*(long *)&a >> 1) + 0x1fc00000;
 	real reciprocal;
 
 	__asm
@@ -72,7 +71,7 @@ static __forceinline real square_root_ratio_approximate(real a, real b)
 		rsqrtss xmm0, b
 		movss reciprocal, xmm0
 		fld reciprocal
-		fmul square_root
+		fmul a
 	}
 }
 
@@ -81,15 +80,15 @@ struct vector2f
 	real i, j;
 };
 
-static inline void vector_from_points2d(point2f const *p0, point2f const *p1, vector2f *out)
-{
-	out->i = p1->x - p0->x;
-	out->j = p1->y - p0->y;
-}
-
 static inline real length_sq2f(vector2f const *v)
 {
 	return v->i * v->i + v->j * v->j;
+}
+
+/* a squared plus b squared, from two coordinate differences */
+static inline real length_squared_components(real a, real b)
+{
+	return a * a + b * b;
 }
 
 static inline real interpolate_linear(real a, real b, real t)
@@ -109,6 +108,10 @@ point2f *function_13bec0(s_tag_data const *function, byte range_index, byte poin
 	return NULL;
 }
 
+// score 11 (was 364): the remaining differences are in square_root_ratio_approximate, in both
+// spline2 ranges (7 instructions in the low range, 4 in the high): retail spills the numerator into
+// the slot rsqrtss then reuses for its operand and stores the shifted root before that operand;
+// ours uses other slots and emits the two stores in the opposite order.
 // @retail 0x13b390
 real function_13b390(void const *function, real input, real range)
 {
@@ -231,13 +234,10 @@ real function_13b390(void const *function, real input, real range)
 				point2f const *p1 = function_13bec0(field_4_7, 0, 1);
 				point2f const *p2 = function_13bec0(field_4_7, 0, 2);
 				point2f const *p3 = function_13bec0(field_4_7, 0, 3);
-				vector2f vector;
-				vector_from_points2d(p3, p2, &vector);
-				real end_length_squared = length_sq2f(&vector);
+				real end_length_squared = length_squared_components(p2->x - p3->x, p2->y - p3->y);
 				if (end_length_squared > 0.0001f)
 				{
-					vector_from_points2d(p1, p0, &vector);
-					real start_length_squared = length_sq2f(&vector);
+					real start_length_squared = length_squared_components(p0->x - p1->x, p0->y - p1->y);
 					if (fabs(start_length_squared) < 0.0001f)
 					{
 						t = 1.0f;
@@ -263,12 +263,14 @@ real function_13b390(void const *function, real input, real range)
 					point2f const *p1 = function_13bec0(field_4_7, 1, 1);
 					point2f const *p2 = function_13bec0(field_4_7, 1, 2);
 					point2f const *p3 = function_13bec0(field_4_7, 1, 3);
-					vector2f vector;
-					vector_from_points2d(p3, p2, &vector);
-					real end_length_squared = length_sq2f(&vector);
+					/* the differences are passed y first here, which is the order retail evaluates them in the high range */
+					real end_length_squared = length_squared_components(p2->y - p3->y, p2->x - p3->x);
 					if (end_length_squared > 0.0001f)
 					{
-						vector_from_points2d(p1, p0, &vector);
+						/* also y first; the length is still x squared plus y squared */
+						vector2f vector;
+						vector.j = p0->y - p1->y;
+						vector.i = p0->x - p1->x;
 						real start_length_squared = length_sq2f(&vector);
 						if (fabs(start_length_squared) < 0.0001f)
 						{
@@ -290,20 +292,12 @@ real function_13b390(void const *function, real input, real range)
 			break;
 		}
 		default:
-			return result;
-		}
-
-		if (0.0f > result)
-		{
-			return 0.0f;
-		}
-		if (result > 1.0f)
-		{
-			return 1.0f;
+			goto done;
 		}
 	}
 
-	return result;
+done:
+	return 0.0f > result ? 0.0f : (result > 1.0f ? 1.0f : result);
 }
 
 // @retail 0x13bb40
@@ -315,7 +309,7 @@ real function_13bb40(s_tag_data const *function, real value)
 		real lo = header->bounds.lo;
 		real hi = header->bounds.hi;
 		real t = 0.0f > value ? 0.0f : (value > 1.0f ? 1.0f : value);
-		value = (hi - lo) * t + lo;
+		return (hi - lo) * t + lo;
 	}
 	return value;
 }
@@ -344,15 +338,15 @@ long function_016ae0(real value);
 real const g_47ff50 = 16384.0f;
 
 /* interpolates two colours channel by channel in fixed point (MMX) */
-static __forceinline dword pixel32_interpolate(dword a, dword b, real t)
+static __forceinline dword pixel32_interpolate(real t, dword second, dword first)
 {
-	__m64 zero = _mm_setzero_si64();
+	__int64 zero = 0;
 	__int64 rounding = 0x0001000100010001;
 
 	__asm
 	{
-		movd mm0, a
-		movd mm1, b
+		movd mm0, first
+		movd mm1, second
 		punpcklbw mm0, zero
 		punpcklbw mm1, zero
 		movss xmm2, t
@@ -380,6 +374,8 @@ enum
 	_function_output_color_4
 };
 
+/* retail keeps the frame pointer here (an ebp frame, nothing aligned) */
+#pragma optimize("y", off)
 // @retail 0x13bc00
 dword function_13bc00(s_tag_data const *function, real input)
 {
@@ -415,19 +411,20 @@ dword function_13bc00(s_tag_data const *function, real input)
 			result = header->colors[0];
 			goto local_1;
 		case _function_output_color_2:
-			result = pixel32_interpolate(header->colors[0], header->colors[3], input);
+			result = pixel32_interpolate(input, header->colors[3], header->colors[0]);
 			goto local_1;
 		case _function_output_color_3:
 		{
 			input *= 2.0;
 			long index = function_016ae0(input);
 			input -= index;
+			dword a;
+			dword b;
 			if (index >= 2)
 			{
 				input = 1.0f;
+				goto upper;
 			}
-			dword a;
-			dword b;
 			if (index == 0)
 			{
 				a = header->colors[0];
@@ -435,10 +432,11 @@ dword function_13bc00(s_tag_data const *function, real input)
 			}
 			else
 			{
+			upper:
 				a = header->colors[1];
 				b = header->colors[3];
 			}
-			result = pixel32_interpolate(a, b, input);
+			result = pixel32_interpolate(input, b, a);
 			goto local_1;
 		}
 		case _function_output_color_4:
@@ -451,7 +449,7 @@ dword function_13bc00(s_tag_data const *function, real input)
 				input = 1.0f;
 				index = 2;
 			}
-			result = pixel32_interpolate(header->colors[index], header->colors[index + 1], input);
+			result = pixel32_interpolate(input, header->colors[index + 1], header->colors[index]);
 			goto local_1;
 		}
 		}
@@ -460,6 +458,7 @@ dword function_13bc00(s_tag_data const *function, real input)
 local_1:
 	return result;
 }
+#pragma optimize("y", on)
 
 color3f *unpack_color3f(dword pixel, color3f *color);
 

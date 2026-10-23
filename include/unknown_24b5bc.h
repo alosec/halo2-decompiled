@@ -26,6 +26,7 @@ struct s_player_slot_profile
 	void sign_out();
 	void signed_out();
 	void task_succeeded();
+	void show_task_text(class c_online_task_screen *screen);
 
 	long player;
 	long profile_index;

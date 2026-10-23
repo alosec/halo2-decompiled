@@ -8,8 +8,6 @@ int __stdcall BinkSetMemory(void *(__stdcall *allocate)(unsigned long), void (__
 }
 
 /* called by unknown_01e930.cpp with 0 */
-// @stub 0x18f1c0
-void __stdcall function_18f1c0(long a) { }
 /* Bink library functions called by unknown_01e930.cpp */
 // @stub 0x3e2330
 int __stdcall function_3e2330(void *movie) { return 0; }

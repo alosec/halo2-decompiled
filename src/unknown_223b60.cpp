@@ -33,6 +33,9 @@ __int64 timing_counter_resume(timing_counter *c)
 	return total;
 }
 
+// score 4: identical body and length; our prologue stores the first delta
+// zero before pushing esi, while retail pushes esi first and then stores both
+// zero dwords. The permuter found no better variant.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {
@@ -68,6 +71,10 @@ __int64 timing_counter_peek(timing_counter *c)
 	return total;
 }
 
+// score 28: the conversion is correct, but our compiler keeps the union local
+// in registers (`movzx eax`; `shr ax`) while retail keeps it in memory
+// (`xor ecx, ecx`; `mov cx, [eax]`; `shr word ptr [esp + 4], 5`) and puts the
+// blue channel in dl. No source shape or annealed permuter run reproduced it.
 // @retail 0x223e70
 void function_223e70(const word *rgb, S3TC_COLOR *out)
 {
@@ -77,14 +84,16 @@ void function_223e70(const word *rgb, S3TC_COLOR *out)
 		word w;
 		byte bytes[4];
 	} u;
-	dword c = *rgb;
+	word w = *rgb;
+	dword c = w;
 	byte b = (byte)(c << 3);
 	b |= b >> 5;
 	u.d = c;
 	u.w >>= 5;
 	byte g = (byte)(u.bytes[0] << 2);
 	g |= g >> 6;
-	byte r = (byte)((u.d >> 6) << 3);
+	byte r = (byte)(u.d >> 6);
+	r <<= 3;
 	r |= r >> 5;
 	u.bytes[0] = b;
 	u.bytes[1] = g;
@@ -146,9 +155,13 @@ void fixup_group_apply(s_fixup_group *group, byte *base)
 	}
 }
 
-PRIVATE inline bool fixup_resource_is_busy(D3DResource *resource)
+PRIVATE inline bool fixup_element_busy_223d80(s_fixup_element *element)
 {
-	return resource->IsBusy() > 0;
+	D3DResource *resource = (D3DResource *)element->trailer;
+	bool busy = false;
+	if (resource)
+		busy = resource->IsBusy() > 0;
+	return busy;
 }
 
 // @retail 0x223d80
@@ -161,14 +174,10 @@ bool fixup_group_has_resource(s_fixup_group *group, byte *base)
 		s_fixup_entry *entry = &group->entries[i];
 		if (entry->offset != NONE && entry->type == 2)
 		{
-			D3DResource *resource = (D3DResource *)fixup_entry_target(entry, base8)->trailer;
-			if (resource)
+			if (fixup_element_busy_223d80(fixup_entry_target(entry, base8)))
 			{
-				if (fixup_resource_is_busy(resource))
-				{
-					result = true;
-					break;
-				}
+				result = true;
+				break;
 			}
 		}
 	}

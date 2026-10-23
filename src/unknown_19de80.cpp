@@ -7,6 +7,7 @@
 #include <string.h>
 
 // @flags /O2 /Ob1 /arch:SSE /Gr
+#include "view_context_storage.h"
 
 /* UNKNOWN_19DE80.CPP: the game engine events. An event names a cause (a
    player and a team) and an effect (a player and a team); each player is
@@ -103,7 +104,7 @@ struct s_player_iterator
 	long absolute_index;
 };
 
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining);
 void function_19e890(long player_index, s_event_response *response, s_event *event);
 void function_19ea60(long player_index, word *buffer);
@@ -126,7 +127,6 @@ void function_24caac(long player_index, word const *text, word const *plural_tex
 void function_24cbee(long player_index, word const *text);
 void function_24cc73(long player_index, word const *text, long value);
 
-extern long g_4b9ed8;
 
 inline long game_seconds_to_ticks_round(real seconds)
 {
@@ -277,10 +277,11 @@ void function_19e0f0(word const *string, long size, word *buffer, s_event *event
 			if (prefix_length > remaining)
 				prefix_length = remaining;
 			wcsncpy(destination, source, prefix_length);
-			remaining -= prefix_length;
 			destination += prefix_length;
+			remaining -= prefix_length;
 
-			written = function_19e1c0(event, token_length, token, destination, remaining);
+			long (__fastcall *const expand_token)(s_event *, long, word const *, word *, long) = function_19e1c0;
+			written = expand_token(event, token_length, token, destination, remaining);
 			destination += written;
 			remaining -= written;
 			source = end;
@@ -291,18 +292,26 @@ void function_19e0f0(word const *string, long size, word *buffer, s_event *event
 
 	{
 		long length = wcslen(source);
-		if (remaining > length)
-			remaining = length;
-		wcsncpy(destination, source, remaining);
+		wcsncpy(destination, source, length <= remaining ? length : remaining);
 		destination[length] = 0;
 	}
+}
+
+/* whether the current game engine plays with teams */
+static inline bool teams_enabled_19e1c0()
+{
+	bool result = false;
+
+	if (g_55e4d0[g_4e9ae8->engine_index])
+		result = TEST_FIELD_BIT(g_4e6948->flags184.bit0);
+	return result;
 }
 
 /* writes the text of one token for the event, returning its length */
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {
-	long result = 0;
+	long volatile result = 0;
 	word text[0x100];
 
 	if (!wcsncmp(L"#cause_player", token, token_length) && event && event->cause_player_index != NONE)
@@ -355,14 +364,14 @@ long function_19e1c0(s_event *event, long token_length, word const *token, word 
 		if (result < 0)
 			result = remaining;
 	}
-	else if (!wcsncmp(L"#cause_team_opponent_score", token, token_length) &&
-		g_55e4d0[g_4e9ae8->engine_index] && TEST_FIELD_BIT(g_4e6948->flags184.bit0))
+	else if (!wcsncmp(L"#cause_team_opponent_score", token, token_length) && teams_enabled_19e1c0())
 	{
-		long best_score = 0x80000000;
+		long best_score;
 		long team;
 		long mode;
 
 		text[0] = 0;
+		best_score = 0x80000000;
 		for (team = 0; team < 8; team++)
 		{
 			if (function_161e10(team) && team != event->cause_team && function_1587f0(team) >= best_score)
@@ -589,7 +598,7 @@ void function_19eb30(s_event *event)
 		iterator.data = g_4e8c24;
 		iterator.absolute_index = NONE;
 		iterator.index = NONE;
-		while (function_19f240((long *)&iterator))
+		while (player_iterator_next((long *)&iterator))
 			function_19de80(event, iterator.index);
 	}
 	else
@@ -605,9 +614,10 @@ void function_19eb90(s_event *event)
 }
 
 // @retail 0x19ebb0
-void game_engine_event_initialize(s_event *event, long type, long subtype)
+s_event *game_engine_event_initialize(long type, long subtype, s_event *event)
 {
 	game_engine_event_initialize_inline(event, type, subtype);
+	return event;
 }
 
 // @retail 0x19ebe0

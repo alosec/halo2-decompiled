@@ -67,7 +67,7 @@ struct s_portal_path_bsp
 struct s_structure_bsp_view;
 struct s_14b240_owner;
 struct s_bsp3d_disk;
-real function_249d60(long cluster_a, long cluster_b, s_structure_bsp_view *bsp);
+real function_249d60(s_structure_bsp_view *bsp, long cluster_a, long cluster_b);
 real function_14b240(s_14b240_owner const *owner, s_bsp3d_disk const *disk, point3f const *point);
 long function_2197f0(real gain);
 long __stdcall function_18ae50(long a, long b, real const *values);
@@ -143,7 +143,7 @@ void __stdcall function_18d730(s_portal_path_bsp *bsp, long cluster_index, point
 		s_portal_path_cluster *other = &bsp->clusters[other_index];
 		if (!(portal->flags & 0x28) && other->sound_index != cluster->sound_index)
 		{
-			real travel = function_249d60(cluster_index, other_index, (s_structure_bsp_view *)bsp);
+			real travel = function_249d60((s_structure_bsp_view *)bsp, cluster_index, other_index);
 			real distance = function_14b240((s_14b240_owner *)bsp, (s_bsp3d_disk *)portal, point) + travel;
 			if (nearest_distance >= distance && cluster->sound_index != NONE)
 			{
@@ -232,34 +232,33 @@ void __stdcall function_18dc90(s_portal_path_bsp *bsp, long cluster_index, point
 	for (long i = 0; i < paths->count; i++)
 	{
 		short encoded = paths->portals[i];
-		long portal_index = (short)(encoded & 0x7fff);
+		short portal_index = (short)(encoded & 0x7fff);
 		s_portal_path_portal *portal = &bsp->portals[portal_index];
 		long other_index = portal->clusters[(encoded >> 15) & 1];
+		if (portal->flags & 0x28) continue;
 		s_portal_path_cluster *other = &bsp->clusters[other_index];
-		if (!(portal->flags & 0x28) && other->environment_index != cluster->environment_index)
+		if (other->environment_index == cluster->environment_index) continue;
+		real travel = function_249d60((s_structure_bsp_view *)bsp, cluster_index, other_index);
+		real distance = function_14b240((s_14b240_owner *)bsp, (s_bsp3d_disk *)portal, point) + travel;
+		if (nearest_distance >= distance && cluster->environment_index != NONE)
 		{
-			real travel = function_249d60(cluster_index, other_index, (s_structure_bsp_view *)bsp);
-			real distance = function_14b240((s_14b240_owner *)bsp, (s_bsp3d_disk *)portal, point) + travel;
-			if (nearest_distance >= distance && cluster->environment_index != NONE)
+			nearest_portals[cluster->environment_index] = portal_index;
+			nearest_distance = distance;
+		}
+		if (other->environment_index != NONE)
+		{
+			s_portal_path_environment *environment = &bsp->environments[other->environment_index];
+			real limit = environment ? environment->range : maximum_range;
+			if (limit >= travel)
 			{
-				nearest_portals[cluster->environment_index] = portal_index;
-				nearest_distance = distance;
-			}
-			if (other->environment_index != NONE)
-			{
-				s_portal_path_environment *environment = &bsp->environments[other->environment_index];
-				real limit = environment ? environment->range : maximum_range;
-				if (limit >= travel)
+				if (valid[other->environment_index >> 5] & (1 << (other->environment_index & 31)))
+					limit = distances[other->environment_index];
+				if (limit >= distance)
 				{
-					if (valid[other->environment_index >> 5] & (1 << (other->environment_index & 31)))
-						limit = distances[other->environment_index];
-					if (limit >= distance)
-					{
-						distances[other->environment_index] = distance;
-						nearest_clusters[other->environment_index] = other_index;
-						nearest_portals[other->environment_index] = portal_index;
-						portal_path_set_bit(valid, other->environment_index);
-					}
+					distances[other->environment_index] = distance;
+					nearest_clusters[other->environment_index] = other_index;
+					nearest_portals[other->environment_index] = portal_index;
+					portal_path_set_bit(valid, other->environment_index);
 				}
 			}
 		}

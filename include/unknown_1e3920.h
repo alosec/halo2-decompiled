@@ -172,7 +172,7 @@ bool function_1f3100(long actor_index);
 void function_1f3190(long actor_index);
 bool function_1f3230(long actor_index, real radius);
 bool function_1f3430(long actor_index);
-bool function_1f34b0(long actor_index, vector3f const *normal, point3f const *point, real distance, short ticks);
+bool function_1f34b0(long actor_index, point3f const *point, vector3f const *normal, real distance, short ticks);
 bool function_1f3540(long actor_index, vector3f *normal);
 bool function_1f3610(long actor_index, short value);
 

@@ -144,8 +144,8 @@ def main() -> int:
                       ["?function_ba1d0@@YAXJPATvector3f@@0@Z"])
         compile_slice(
             args, args.root / "src/unknown_1cec30.cpp", rigid_velocity,
-            ["?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
-             "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"])
+            ["?havok_component_rigid_body_linear_velocity_get@@YAXPAUs_havok_component@@JPATvector3f@@@Z",
+             "?havok_component_rigid_body_angular_velocity_get@@YAXPAUs_havok_component@@JPATvector3f@@@Z"])
         compile_slice(args, args.root / "src/unknown_277ec0.cpp", combine,
                       ["?function_277ec0@@YAXPAM0PAF1PAUs_277ec0@@2JJ@Z"])
         compile_slice(
@@ -187,7 +187,7 @@ def main() -> int:
         compile_slice(args, args.root / "src/unknown_0dc3a0.cpp", contact_properties,
                       ["?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z"])
         compile_slice(args, args.root / "src/unknown_1cec30.cpp", rigid_body_matrix,
-                      ["?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z"])
+                      ["?rigid_body_matrix_get@s_havok_component@@QAAXJPAUtransform4x3f@@@Z"])
         compile_slice(args, args.root / "src/unknown_11c050.cpp", structure_location,
                       ["?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z"])
         compile_slice(args, args.root / "src/unknown_175bd0.cpp", effect_state,
@@ -332,7 +332,7 @@ def main() -> int:
         compile_slice(
             args, args.root / "src/unknown_131c20.cpp", light_color_interpolation,
             ["?function_131c20@@YAPAUcolor3f@@PBU1@0KMPAU1@@Z",
-             "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPBU1@PAU1@@Z"])
+             "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPAU1@PBU1@@Z"])
         compile_slice(
             args, args.root / "src/unknown_0b8bd0.cpp", light_object_visibility,
             ["?object_or_parent_hidden@@YA_NJ@Z"])
@@ -349,15 +349,15 @@ def main() -> int:
             args, args.root / "src/light_curve_lookup_native.cpp", light_curve_lookup,
             ["?function_17ca10@@YAMMF@Z"])
         compile_slice(
-            args, args.root / "src/unknown_1e4990.cpp", inherited_ai_effect_flags,
+            args, args.root / "src/character_tag_accessors.cpp", inherited_ai_effect_flags,
             ["?function_1e4990@@YAJJ@Z"])
         compile_slice(
             args, args.root / "src/unknown_0bad50.cpp", object_function_evaluation,
             ["?function_ba8c0@@YA_NPBUs_object_function_ab@@JPAM@Z",
              "?function_bab40@@YA_NJJPAM@Z"])
         compile_slice(
-            args, args.root / "src/unknown_108a90.cpp", object_function_handlers,
-            ["?function_108d90@@YA_NJJPAMPA_N@Z"])
+            args, args.root / "src/object_dispatch_sse.cpp", object_function_handlers,
+            ["?object_dispatch_query_function_value@@YA_NJJPAMPA_N@Z"])
         compile_slice(
             args, args.root / "src/unknown_10aac0.cpp", object_interpolated_values,
             ["?function_10aac0@@YA_NJJPAMPAJ@Z"])

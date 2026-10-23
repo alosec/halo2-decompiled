@@ -2,7 +2,7 @@
 #define __UNKNOWN_1E46C0_H__
 
 /* UNKNOWN_1E46C0.H: iterating the actors (g_4f55f0); function_1e46c0 is
-   0x1e46c0 (unknown_1e46c0.cpp), function_x66da2b is inlined everywhere */
+   0x1e46c0 (actors.cpp), function_x66da2b is inlined everywhere */
 
 #include "unknown_11c920.h"
 #include "data_array.h"

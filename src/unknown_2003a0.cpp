@@ -1,4 +1,5 @@
 #include "unknown_11c920.h"
+#include "slot_handler.h"
 #include "globals.h"
 #include "squads.h"
 #include "unknown_1a58b0.h"
@@ -42,7 +43,8 @@ long function_201330(short placement_index)
 extern s_flag_bits g_557c74;
 
 long function_1e4990(long index);
-PRIVATE short const g_44aee8[20] =
+/* external linkage: machine 1's 0x1e0160 reads this table too */
+extern short const g_44aee8[20] =
 {
 	3, 7, 3, 3, 3, 3, 1, 2, 2, 4, 4, 4, 5, 5, -1, 3, 7, 7, 7, 4
 };
@@ -157,8 +159,7 @@ struct s_squad_activity_flags
 // @retail 0x200930
 void function_200930(void)
 {
-	for (long i = 0; i < 5; i++)
-		g_557c74.d[i] = NONE;
+	memset(&g_557c74, 0xff, sizeof(g_557c74));
 	g_51e9d8 = data_new_inlined("squad", 335, sizeof(s_squad_datum), 0, g_510c2c);
 	g_51e9dc = data_new_inlined("squad group", 100, sizeof(s_squad_group_datum), 0, g_510c2c);
 }
@@ -180,7 +181,7 @@ void __stdcall function_202420(long group_index)
 	for (long index = group->first_squad_index; index != NONE; )
 	{
 		s_squad_datum *squad = squad_get(index);
-		active |= TEST_FIELD_BIT(((s_squad_activity_flags *)squad)->active);
+		active |= (bool)((((dword)*(short *)((byte *)squad + 2)) >> 7) & 1);
 		index = squad->next_squad_index;
 	}
 	if (active && !*(bool *)((byte *)group + 0x22))
@@ -249,7 +250,7 @@ void __stdcall function_202570(long group_index)
 		s_squad_datum *squad = squad_get(squad_index);
 		count += squad->count_a;
 		remaining_count += squad->value16;
-		active |= ((s_squad_count_flags *)((byte *)squad + 2))->active;
+		active |= (*(signed char const *)((byte const *)squad + 2) & 0x10) != 0;
 		group->actor_count += squad->actor_count;
 		if (squad->actor_count > 0)
 			weighted_sum += squad->actor_count * squad->value10;
@@ -271,28 +272,25 @@ void __stdcall function_202570(long group_index)
 	group->active = active;
 }
 
-PRIVATE __forceinline s_squad_group_datum *next_group_record(s_group_record_iterator *iterator)
+/* the group walk of 0x202370 and 0x2024c0 */
+PRIVATE __forceinline s_squad_group_datum *next_group_record_202370(s_group_record_iterator *iterator)
 {
-	s_squad_group_datum *result = NULL;
-	if (g_4f55d0->active)
-	{
-		result = (s_squad_group_datum *)data_iterator_next_inlined(&iterator->records);
-		iterator->group = result;
-	}
-	return result;
+	return iterator->group = g_4f55d0->active ? (s_squad_group_datum *)data_iterator_next_inlined(&iterator->records) : NULL;
 }
 
 // @retail 0x202370
+// score 62 (was 62): the record pool's pointer is kept in EBX where retail keeps it in EDI, so the
+// count and the bit mask take the other two registers.
 void function_202370(void)
 {
-	s_group_record_iterator iterator;
+	s_group_record_iterator iterator = {0};
 	if (g_4f55d0->active)
 	{
 		iterator.records.data = g_51e9dc;
 		iterator.records.index = NONE;
 	}
 	s_squad_group_datum *group;
-	while ((group = next_group_record(&iterator)) != NULL)
+	while ((group = next_group_record_202370(&iterator)) != NULL)
 	{
 		if (group->parent_index == NONE)
 			function_202420(iterator.records.datum_index);
@@ -300,6 +298,8 @@ void function_202370(void)
 }
 
 // @retail 0x2024c0
+// score 62 (was 62): the record pool's pointer is kept in EBX where retail keeps it in EDI, so the
+// count and the bit mask take the other two registers.
 void function_2024c0(void)
 {
 	s_group_record_iterator iterator;
@@ -309,7 +309,7 @@ void function_2024c0(void)
 		iterator.records.index = NONE;
 	}
 	s_squad_group_datum *group;
-	while ((group = next_group_record(&iterator)) != NULL)
+	while ((group = next_group_record_202370(&iterator)) != NULL)
 	{
 		if (group->parent_index == NONE)
 			function_202570(iterator.records.datum_index);
@@ -435,65 +435,70 @@ void function_204ec0(s_squad_iterator *iterator, short squad_index, short flags,
 {
 	(void)&flags;
 	(void)&mode;
-	if (squad_index == NONE)
+	if (squad_index != NONE)
 	{
-		iterator->next = NONE;
-		return;
-	}
-	s_squad_datum *squad;
-	s_squad_definition_entry *definition;
-	for (;;)
-	{
-		squad = squad_get((word)squad_index);
-		short index = ((s_squad_definition_view *)squad)->definition_index;
-		definition = index == NONE ? NULL : &((s_squad_definition_table_view *)g_4e0350)->entries[index];
-		if (!definition || !(definition->data[0x24] & 0x20) || *(short *)(definition->data + 0x4e) == NONE)
-			break;
-		squad_index = *(short *)(definition->data + 0x4e);
-	}
-	iterator->definition = definition;
-	iterator->current = NONE;
-	iterator->next = 0;
-	iterator->squad_index = squad_index;
-	if (definition)
-	{
-		iterator->palette_index = NONE;
-		if ((flags & 4) && !(flags & 1))
+		s_squad_datum *squad;
+		s_squad_definition_entry *definition;
+		for (;;)
 		{
-			bool alternate = *(bool *)((byte *)squad + 0x60);
-			long count = *(long *)(definition->data + (alternate ? 0x5c : 0x54));
-			short index = 0;
-			for (; index < count; index++)
-			{
-				byte *entries = *(byte **)(definition->data + (alternate ? 0x60 : 0x58));
-				if (*(short *)(entries + index * 8) == 2)
-					break;
-			}
-			if (index >= count)
-				flags |= 1;
+			squad = squad_get((word)squad_index);
+			short index = ((s_squad_definition_view *)squad)->definition_index;
+			definition = index == NONE ? NULL : &((s_squad_definition_table_view *)g_4e0350)->entries[index];
+			if (!definition || !(definition->data[0x24] & 0x20) || *(short *)(definition->data + 0x4e) == NONE)
+				break;
+			squad_index = *(short *)(definition->data + 0x4e);
 		}
-	}
-	else
-	{
-		byte *scenario = (byte *)g_4e0350;
-		byte *entry = *(byte **)(scenario + 0x164) + (word)squad_index * 0x74;
-		iterator->palette_index = *(short *)(entry + 0x38);
-		if (*(short *)(entry + 0x38) == NONE)
-			iterator->next = NONE;
+		iterator->definition = definition;
+		iterator->current = NONE;
+		iterator->next = 0;
+		iterator->squad_index = squad_index;
+		if (definition)
+		{
+			iterator->palette_index = NONE;
+			if ((flags & 4) && !(flags & 1))
+			{
+				bool alternate = *(bool *)((byte *)squad + 0x60);
+				long *count_slot;
+				if (alternate) count_slot = (long *)(definition->data + 0x5c);
+				else count_slot = (long *)(definition->data + 0x54);
+				long count = *count_slot;
+				short index = 0;
+				for (; index < count; index++)
+				{
+					byte *entries;
+					if (alternate) entries = *(byte **)(definition->data + 0x60);
+					else entries = *(byte **)(definition->data + 0x58);
+					if (*(short *)(entries + index * 8) == 2)
+						break;
+				}
+				if (index >= count)
+					flags |= 1;
+			}
+		}
 		else
 		{
-			byte *palette = *(byte **)(scenario + 0x16c) + (word)iterator->palette_index * 0x38;
-			iterator->next = (*(long *)(palette + 0x30) > 0) - 1;
+			byte *scenario = (byte *)g_4e0350;
+			byte *entry = *(byte **)(scenario + 0x164) + (word)squad_index * 0x74;
+			iterator->palette_index = *(short *)(entry + 0x38);
+			if (*(short *)(entry + 0x38) == NONE)
+				iterator->next = NONE;
+			else
+			{
+				byte *palette = *(byte **)(scenario + 0x16c) + (word)iterator->palette_index * 0x38;
+				iterator->next = (*(long *)(palette + 0x30) > 0) - 1;
+			}
 		}
+		iterator->flags = (word)flags;
+		iterator->flag_b = false;
+		iterator->flag_a = false;
+		iterator->flag_c = false;
+		if (mode == 2)
+			iterator->flag_c = true;
+		else if (mode == 1)
+			iterator->flag_a = true;
 	}
-	iterator->flags = (word)flags;
-	iterator->flag_b = false;
-	iterator->flag_a = false;
-	iterator->flag_c = false;
-	if (mode == 2)
-		iterator->flag_c = true;
-	else if (mode == 1)
-		iterator->flag_a = true;
+	else
+		iterator->next = NONE;
 }
 
 struct s_squad_object_state
@@ -603,7 +608,8 @@ bool function_204390(long squad_index)
 	}
 	for (long index = g_4f55d0->unknown14; index != NONE; )
 	{
-		s_actor_datum *actor = &((s_actor_datum *)(*(byte *volatile *)&g_4f55f0->data))[index & 0xffff];
+		s_record_pool *local_0 = g_4f55f0;
+		s_actor_datum *actor = &((s_actor_datum *)local_0->data)[index & 0xffff];
 		long source_squad = *(volatile long *)((byte *)actor + 0x34);
 		if (source_squad == squad_index && function_1e13f0(index))
 		{
@@ -672,26 +678,42 @@ PRIVATE inline short placement_priority(s_squad_placement_entry *entry)
 	return (*((byte *)entry + 0x1c) & 8) ? 100 : *(short *)((byte *)entry + 0x2a);
 }
 
+/* bit index of a placement in a squad's bit vector */
+static inline bool placement_bit_2039d0(dword const *bits, long index)
+{
+	return (bits[index >> 5] & (1 << (index & 31))) != 0;
+}
+
+/* a placement's priority, as an if/else */
+static inline short placement_priority_2039d0(s_squad_placement_entry *entry)
+{
+	if (*((byte *)entry + 0x1c) & 8)
+		return 100;
+	return *(short *)((byte *)entry + 0x2a);
+}
+
 // @retail 0x2039d0
-short function_2039d0(short squad_index, dword *available, dword const *blocked)
+short function_2039d0(long squad_index, dword *available, dword const *blocked)
 {
 	(void)&available;
 	(void)&blocked;
+	short result = NONE;
 	s_squad_placement_definition *squad;
 	short maximum;
 	short maximum_count;
+	long index = squad_index & 0xffff;
 	for (;;)
 	{
-		squad = &((s_squad_placement_table *)g_4e0350)->squads[(word)squad_index];
+		squad = &((s_squad_placement_table *)g_4e0350)->squads[index];
 		maximum = NONE;
 		maximum_count = 0;
 		short available_count = 0;
 		short blocked_count = 0;
 		for (short i = 0; i < squad->count; i++)
 		{
-			if (placement_bit(blocked, i))
+			if (placement_bit_2039d0(blocked, i))
 				blocked_count++;
-			else if (placement_bit(available, i))
+			else if (placement_bit_2039d0(available, i))
 			{
 				short priority = placement_priority(&squad->entries[i]);
 				available_count++;
@@ -705,34 +727,38 @@ short function_2039d0(short squad_index, dword *available, dword const *blocked)
 			}
 		}
 		if (blocked_count == squad->count)
-			return NONE;
+			goto done;
 		if (!available_count && squad->count > 0)
 			memset(available, 0xff, ((squad->count + 31) >> 5) * sizeof(dword));
 		else
 			break;
 	}
 	if (!maximum_count)
-		return NONE;
-	short choice = 0;
+		goto done;
+	short choice;
 	if (maximum_count > 1)
 	{
 		g_4e7408->unknown0 = g_4e7408->unknown0 * 0x19660d + 0x3c6ef35f;
 		choice = (short)(((g_4e7408->unknown0 >> 16) * maximum_count) >> 16);
 	}
+	else
+		choice = 0;
 	short found = 0;
 	for (short i = 0; i < squad->count; i++)
 	{
-		if (placement_bit(available, i) && !placement_bit(blocked, i) && placement_priority(&squad->entries[i]) == maximum)
+		if (placement_bit_2039d0(available, i) && !placement_bit_2039d0(blocked, i) && placement_priority_2039d0(&squad->entries[i]) == maximum)
 		{
 			if (found == choice)
 			{
 				available[i >> 5] &= ~(1 << (i & 31));
-				return i;
+				result = i;
+				goto done;
 			}
 			found++;
 		}
 	}
-	return NONE;
+done:
+	return result;
 }
 
 // @retail 0x205010
@@ -767,7 +793,7 @@ short function_205010(s_squad_iterator *iterator)
 		else if (iterator->definition)
 		{
 			byte *definition = iterator->definition->data;
-			long *block = (long *)(definition + (squad[0x60] ? 0x5c : 0x54));
+			long *block = squad[0x60] ? (long *)(definition + 0x5c) : (long *)(definition + 0x54);
 			if (*block > 0)
 			{
 				do
@@ -829,14 +855,15 @@ short function_205010(s_squad_iterator *iterator)
 	return result;
 }
 
-long function_257ed0(long thread_index, long actor_index, short script_index);
+long function_257ed0(long actor_index, short script_index, long thread_index);
 
 PRIVATE __forceinline short squad_valid_command_script(s_squad_placement_table *scenario, short index, char const *name)
 {
 	if (index >= 0 && index < scenario->script_count)
 	{
+		char const *string = name;
 		unsigned long length = 0;
-		while (length < 32 && *name++)
+		while (length < 32 && *string++)
 			length++;
 		if (length > 0 && *(short *)(scenario->scripts + index * 0x28 + 0x20) == 5)
 			return index;
@@ -845,17 +872,18 @@ PRIVATE __forceinline short squad_valid_command_script(s_squad_placement_table *
 }
 
 // @retail 0x201b70
+// score 69 (was 69): the record's field is read into SI where retail reads it into BP, so the two
+// values are exchanged and the compare uses the other register.
 void function_201b70(long squad_index, short entry_index, long actor_index)
 {
 	(void)&actor_index;
-	s_squad_placement_table *scenario = (s_squad_placement_table *)g_4e0350;
-	s_squad_placement_definition *squad = &scenario->squads[squad_index & 0xffff];
+	s_squad_placement_definition *squad = &((s_squad_placement_table *)g_4e0350)->squads[squad_index & 0xffff];
 	s_squad_placement_entry *entry = &squad->entries[entry_index];
-	short script_index = squad_valid_command_script(scenario, entry->command_script_index, entry->command_script_name);
+	short script_index = squad_valid_command_script((s_squad_placement_table *)g_4e0350, entry->command_script_index, entry->command_script_name);
 	if (script_index == NONE)
-		script_index = squad_valid_command_script(scenario, squad->command_script_index, squad->command_script_name);
+		script_index = squad_valid_command_script((s_squad_placement_table *)g_4e0350, squad->command_script_index, squad->command_script_name);
 	if (script_index != NONE)
-		function_257ed0(NONE, actor_index, script_index);
+		function_257ed0(actor_index, script_index, NONE);
 }
 
 PRIVATE __forceinline s_squad_placement_entry *squad_placement_entry(s_squad_placement_definition *squad, long index)
@@ -870,10 +898,10 @@ bool function_201400(long squad_index, short entry_index)
 	bool result = true;
 	if (entry_index >= 0 && entry_index < squad->count)
 	{
-		word placement_index = squad_placement_entry(squad, entry_index)->placement_index;
-		if (placement_index != (word)NONE)
+		s_squad_placement_entry *entry = &squad->entries[entry_index];
+		if (entry->placement_index != NONE)
 		{
-			long object_index = function_201330((short)placement_index);
+			long object_index = function_201330(entry->placement_index);
 			if (object_index != NONE)
 				result = function_2013c0(object_index);
 			else
@@ -890,10 +918,10 @@ void function_201460(long squad_index, dword *unavailable)
 	s_squad_placement_definition *squad = &((s_squad_placement_table *)g_4e0350)->squads[squad_index & 0xffff];
 	for (short i = 0; i < squad->count; i++)
 	{
-		long placement_index = squad_placement_entry(squad, i)->placement_index;
-		if ((short)placement_index != NONE)
+		s_squad_placement_entry *entry = &squad->entries[i];
+		if (entry->placement_index != NONE)
 		{
-			long object_index = function_201330((short)placement_index);
+			long object_index = function_201330(entry->placement_index);
 			if (object_index == NONE || !function_2013c0(object_index))
 				unavailable[i >> 5] |= 1 << (i & 0x1f);
 		}
@@ -1067,7 +1095,7 @@ void function_2009d0(void)
 		s_squad_group_datum *group = &((s_squad_group_datum *)groups->data)[(word)i];
 		if (group->parent_index != NONE)
 		{
-			s_squad_group_datum *parent = &((s_squad_group_datum *)groups->data)[group->parent_index & 0xffff];
+			s_squad_group_datum *parent = squad_group_get(group->parent_index);
 			long child = parent->first_child_index;
 			if (child == NONE)
 				parent->first_child_index = i;
@@ -1087,7 +1115,11 @@ void function_2009d0(void)
 	{
 		long parent = *(long *)(&((s_squad_datum *)squads->data)[(word)i])->unknown6c;
 		if (parent != NONE)
+		{
+			#pragma inline_depth(0)
 			function_205280(parent, i);
+			#pragma inline_depth()
+		}
 	}
 }
 
@@ -1172,17 +1204,18 @@ void __stdcall function_205320(long group_index)
 }
 
 // @retail 0x201ad0
+// score 18 (was 18): the record pool's pointer is loaded into EAX where retail keeps it in ECX, so the
+// index and the pointer take the other two registers.
 void function_201ad0(long squad_index, long object_index)
 {
-	long const *object_reference = &object_index;
-	s_squad_vehicle_view *object = ((s_squad_vehicle_header *)g_4e0300->data)[*object_reference & 0xffff].object;
+	s_squad_vehicle_view *object = ((s_squad_vehicle_header *)g_4e0300->data)[object_index & 0xffff].object;
 	if (object->squad_index != NONE)
-		function_201a50(object->squad_index, *object_reference);
+		function_201a50(object->squad_index, object_index);
 	if (squad_index != NONE)
 	{
 		s_squad_datum *squad = (s_squad_datum *)(g_51e9d8->data + (squad_index & 0xffff) * sizeof(s_squad_datum));
-		((s_squad_vehicle_header *)g_4e0300->data)[*object_reference & 0xffff].object->next = squad->first_vehicle_index;
-		squad->first_vehicle_index = *object_reference;
+		((s_squad_vehicle_header *)g_4e0300->data)[object_index & 0xffff].object->next = squad->first_vehicle_index;
+		squad->first_vehicle_index = object_index;
 		if (!(squad_index & 0xffff0000))
 			object->squad_index = (*(short *)squad << 16) | squad_index;
 		else
@@ -1265,24 +1298,6 @@ bool function_203900(short squad_index, real probability)
 	return result;
 }
 
-PRIVATE __forceinline s_actor_datum *next_active_squad_actor(s_squad_actor_iterator *iterator)
-{
-	s_actor_datum *result = NULL;
-	while (g_4f55d0->active && iterator->next_actor_index != NONE)
-	{
-		long current = iterator->next_actor_index;
-		s_actor_datum *actor = actor_datum_get(current);
-		iterator->actor_index = current;
-		iterator->next_actor_index = actor->next_actor_index;
-		if (*(bool *)((byte *)actor + 9))
-		{
-			result = actor_datum_get(current);
-			break;
-		}
-	}
-	return result;
-}
-
 // @retail 0x203cc0
 void function_203cc0(long squad_index)
 {
@@ -1291,13 +1306,17 @@ void function_203cc0(long squad_index)
 	s_squad_actor_iterator iterator;
 	squad_actor_begin_inline(&iterator, squad_index);
 	s_actor_datum *actor;
-	while ((actor = next_active_squad_actor(&iterator)) != NULL)
+	while ((actor = squad_actor_next_inline(&iterator)) != NULL)
 	{
 		if (*(bool *)((byte *)actor + 9))
 		{
-			*(bool *)((byte *)actor + 9) = false;
-			*(long *)((byte *)actor + 0x10) = g_510c54->game_time;
-			(*(short *)((byte *)g_4f55d0 + 0x36a))--;
+			actor = actor_datum_get(iterator.actor_index);
+			if (*(bool *)((byte *)actor + 9))
+			{
+				*(bool *)((byte *)actor + 9) = false;
+				*(long *)((byte *)actor + 0x10) = g_510c54->game_time;
+				(*(short *)((byte *)g_4f55d0 + 0x36a))--;
+			}
 		}
 	}
 }
@@ -1310,7 +1329,7 @@ struct s_squad_difficulty_values
 	real values_c[4];
 };
 
-long function_1e49d0(long index);
+long character_get_difficulty_values(long index);
 bool g_4f55df;
 
 // @retail 0x2036c0
@@ -1318,7 +1337,7 @@ void function_2036c0(long definition_index, short mode, bool *enabled, bool *for
 {
 	(void)&mode;
 	(void)&forced;
-	s_squad_difficulty_values *data = (s_squad_difficulty_values *)function_1e49d0(definition_index);
+	s_squad_difficulty_values *data = (s_squad_difficulty_values *)character_get_difficulty_values(definition_index);
 	if (data)
 	{
 		short difficulty = g_4e6948->state == 1 ? g_4e6948->difficulty : 1;
@@ -1415,33 +1434,29 @@ real function_204950(long actor_index, long squad_index, short mode)
 }
 
 
+PRIVATE __forceinline s_squad_datum *function_200d83(s_squad_record_iterator *arg_0);
+
 // @retail 0x204b20
+// score 2 (was 2): the record pool's pointer is reloaded after the branch on the index,
+// retail reloads it before, so the jump lands on the shared reload.
 long function_204b20(long actor_index, short mode)
 {
-    (void)&actor_index;
-    (void)&mode;
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
     real best = 15.0f;
     long result = NONE;
-    s_record_pool_iterator iterator;
+    s_squad_record_iterator iterator;
     if (g_4f55d0->active)
     {
-        iterator.data = g_51e9d8;
-        iterator.index = NONE;
+        iterator.records.data = g_51e9d8;
+        iterator.records.index = NONE;
     }
     for (;;)
     {
-        byte *squad = NULL;
-        long squad_index = NONE;
-        if (g_4f55d0->active)
-        {
-            squad = data_iterator_next_inlined(&iterator);
-            squad_index = iterator.datum_index;
-        }
-        squad_index &= 0xffff;
+        byte *squad = (byte *)function_200d83(&iterator);
         if (!squad)
             break;
-        if ((signed char)squad[2] >= 0)
+        long squad_index = iterator.squad_index;
+        if (!(squad[2] & 0x80))
             continue;
         short team = (signed char)squad[0x76];
         short actor_team = *(short *)(actor + 0x24);
@@ -1509,16 +1524,35 @@ PRIVATE __forceinline bool squad_transfer_request(long unit_index, long object_i
     bool result = definition->perform(unit_index, &request);
     if (unit_index != NONE)
     {
-        long player_index = *(long *)(squad_transfer_object(unit_index) + 0x13c);
+        byte *const &object = squad_transfer_object(unit_index);
+        long player_index = *(long *)(object + 0x13c);
         if (player_index != NONE)
         {
-            short controller = *(short *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x28);
+            byte *const &player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+            short controller = *(short *)(player + 0x28);
             if (controller != NONE)
+            {
+/* retail calls the controller update out of line */
+#pragma inline_depth(0)
                 function_1e6980((s_time_entry *)((byte *)g_51e9c0 + controller * 0x1b0 + 0x150),
                     (short)request.type, result);
+#pragma inline_depth(255)
+            }
         }
     }
     return result;
+}
+
+/* the next actor of a squad walk (the walk's current index is not kept) */
+PRIVATE inline s_actor_datum *next_actor_204010(s_squad_actor_iterator *iterator)
+{
+    s_actor_datum *actor = NULL;
+    if (g_4f55d0->active && iterator->next_actor_index != NONE)
+    {
+        actor = actor_datum_get(iterator->next_actor_index);
+        iterator->next_actor_index = actor->next_actor_index;
+    }
+    return actor;
 }
 
 // @retail 0x204010
@@ -1535,8 +1569,9 @@ void function_204010(long squad_index, long other_squad_index)
             for (long target = squad->first_vehicle_index; target != NONE; )
             {
                 byte *target_vehicle = squad_transfer_object(target);
+                short mode = 4 + (*(short *)(definition + 0x244) != 0);
                 long selected = NONE;
-                short seat = function_200ee0(target, 4 + (*(short *)(definition + 0x244) != 0), &selected, NULL);
+                short seat = function_200ee0(target, mode, &selected, NULL);
                 if (seat != NONE && squad_transfer_request(vehicle_index, selected, seat))
                     break;
                 target = *(long *)(target_vehicle + 0x3a4);
@@ -1545,10 +1580,9 @@ void function_204010(long squad_index, long other_squad_index)
         }
         s_squad_actor_iterator iterator;
         function_204d30(&iterator, other_squad_index);
-        while (g_4f55d0->active && iterator.next_actor_index != NONE)
+        s_actor_datum *actor;
+        while ((actor = next_actor_204010(&iterator)) != NULL)
         {
-            s_actor_datum *actor = actor_datum_get(iterator.next_actor_index);
-            iterator.next_actor_index = actor->next_actor_index;
             long unit_index = actor->unit_index;
             byte *unit = squad_transfer_object(unit_index);
             long parent_index = *(long *)(unit + 0x14);
@@ -1562,8 +1596,8 @@ void function_204010(long squad_index, long other_squad_index)
             {
                 for (long target = squad->first_vehicle_index; target != NONE; )
                 {
-                    byte *target_vehicle = squad_transfer_object(target);
                     long selected = NONE;
+                    byte *target_vehicle = squad_transfer_object(target);
                     short seat = function_200ee0(target, 0, &selected, NULL);
                     if (seat != NONE && squad_transfer_request(actor->unit_index, selected, seat))
                         break;
@@ -1580,7 +1614,7 @@ extern s_reference g_471004;
 point3f *function_b9dd0(long object_index, point3f *point);
 void __stdcall function_2628f0(long actor_index, s_reference reference);
 
-PRIVATE inline byte *squad_area_get(short palette_index, short area_index)
+PRIVATE __forceinline byte *squad_area_get(short palette_index, short area_index)
 {
     byte *scenario = (byte *)g_4e0350;
     if (palette_index >= 0 && palette_index < *(long *)(scenario + 0x168))
@@ -1592,7 +1626,7 @@ PRIVATE inline byte *squad_area_get(short palette_index, short area_index)
     return NULL;
 }
 
-PRIVATE inline void squad_area_consider(byte *squad, byte const *definition, byte *area,
+PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definition, byte *area,
     short palette_index, short area_index, point3f const *point, real *nearest, s_reference *best)
 {
     real distance = function_210ac0((s_type_c3b527 const *)(area + 0x24), point);
@@ -1721,6 +1755,8 @@ bool function_1e11b0(long actor_index, bool active);
 #if !H2_NATIVE_PORT
 #pragma inline_depth(0)
 // @retail 0x203bf0
+// score 64 (was 64): the record's address is computed from the index in EBX where retail keeps the
+// index in EAX, so the flag byte is read into AL instead of into CL.
 bool function_203bf0(long squad_index)
 {
     (void)&squad_index;
@@ -1790,7 +1826,10 @@ void function_203360(long squad_index)
         *(short *)(squad + 0xa) += count;
         *(real *)(squad + 0x10) += health;
         *(short *)(squad + 0xc) += *((byte *)actor + 7) * count;
+        /* retail calls the actor test here */
+#pragma inline_depth(0)
         *(short *)(squad + 0x16) += function_1e1de0(iterator.actor_index) * count;
+#pragma inline_depth()
         long tracking_index = *(long *)((byte *)actor + 0x338);
         if (tracking_index != NONE)
         {
@@ -1860,14 +1899,15 @@ void function_203d70(long actor_index, short squad_index, bool keep_team)
             {
                 s_squad_actor_iterator iterator;
                 function_204d30(&iterator, squad_index);
-                while (g_4f55d0->active && iterator.next_actor_index != NONE)
+                s_actor_datum *previous;
+                while ((previous = squad_actor_next_inline(&iterator)) != NULL)
                 {
-                    long previous_index = iterator.next_actor_index;
-                    s_actor_datum *previous = actor_datum_get(previous_index);
-                    iterator.next_actor_index = previous->next_actor_index;
+                    long previous_index = iterator.actor_index;
                     *(long *)((byte *)previous + 0x34) = squad_index;
                     function_203ed0(previous_index, false);
+                    #pragma inline_depth(0)
                     function_203f60(previous_index);
+                    #pragma inline_depth()
                 }
                 *(short *)((byte *)squad_get((word)squad_index) + 0x7e) = g_4686c4;
             }
@@ -1878,12 +1918,12 @@ void function_203d70(long actor_index, short squad_index, bool keep_team)
         actor->next_actor_index = squad->first_actor_index;
         squad->first_actor_index = actor_index;
         actor->squad_index = squad_index;
-        function_1e11b0(actor_index, (bool)((((dword)((byte *)squad)[2]) >> 7) & 1));
+        function_1e11b0(actor_index, (bool)((((dword)*(short *)((byte *)squad + 2)) >> 7) & 1));
         short team = (signed char)((byte *)squad)[0x76];
         if (*(short *)((byte *)actor + 0x24) != team && !keep_team)
             function_1e1150(actor_index, team);
         squad->actor_count++;
-        ((byte *)squad)[3] |= 1;
+        *(word *)((byte *)squad + 2) |= 0x100;
     }
 }
 #endif
@@ -1892,7 +1932,7 @@ void function_203d70(long actor_index, short squad_index, bool keep_team)
 #include "object_queries.h"
 void function_11bed0(s_location *location, point3f const *point);
 
-PRIVATE inline long squad_tick_round(real ticks)
+PRIVATE __forceinline long squad_tick_round(real ticks)
 {
     long result;
     __asm
@@ -1906,19 +1946,19 @@ PRIVATE inline long squad_tick_round(real ticks)
 // @retail 0x201ea0
 void function_201ea0(void)
 {
-    long elapsed = squad_tick_round((real)g_510c54->field_2_3);
+    long elapsed = (short)squad_tick_round((real)g_510c54->field_2_3);
     dword const *clusters = (dword const *)((byte *)g_4e6948 + 0x1138);
     byte *structure = (byte *)g_4e0348;
-    s_record_pool_iterator squads;
+    s_squad_record_iterator squads;
     if (g_4f55d0->active)
     {
-        squads.data = g_51e9d8;
-        squads.index = NONE;
+        squads.records.data = g_51e9d8;
+        squads.records.index = NONE;
     }
     while (g_4f55d0->active)
     {
-        byte *squad = data_iterator_next_inlined(&squads);
-        short squad_index = (word)squads.datum_index;
+        byte *squad = (byte *)function_200d83(&squads);
+        short squad_index = (word)squads.squad_index;
         if (!squad)
             break;
         bool wake = false;
@@ -2014,31 +2054,49 @@ void function_201ea0(void)
 }
 
 
-// @retail 0x201df0
-void function_201df0(void)
+PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0);
+
+PRIVATE __forceinline s_squad_datum *squad_iterator_next_201df0(s_squad_record_iterator *arg_0)
 {
-    s_squad_record_iterator iterator;
+    s_squad_datum *local_0 = NULL;
     if (g_4f55d0->active)
     {
-        iterator.records.data = g_51e9d8;
-        iterator.records.index = NONE;
-    }
-    for (;;)
-    {
-        byte *squad = NULL;
-        if (g_4f55d0->active)
+        s_record_pool *local_1 = arg_0->records.data;
+        long local_2 = data_next_absolute_index_inlined(local_1, arg_0->records.index + 1);
+        if (local_2 != NONE)
         {
-            squad = data_iterator_next_inlined(&iterator.records);
-            iterator.squad_index = iterator.records.datum_index & 0xffff;
-            iterator.squad = (s_squad_datum *)squad;
+            local_0 = (s_squad_datum *)(local_1->data + local_1->size * local_2);
+            arg_0->records.index = local_2;
+            arg_0->records.datum_index = (*(short *)local_0 << 16) | local_2;
         }
-        if (!squad)
-            break;
-        if (squad[3] & 1)
-            function_203360(iterator.squad_index);
+        else
+        {
+            arg_0->records.index = local_1->maximum_count;
+            arg_0->records.datum_index = NONE;
+        }
+        arg_0->squad_index = arg_0->records.datum_index & 0xffff;
+        arg_0->squad = local_0;
     }
+    return local_0;
 }
 
+// @retail 0x201df0
+// score 12 (was 12): the record pool's pointer is kept in EDI where retail keeps it in
+// EBX, so the count and the bit mask take the other two registers instead.
+void function_201df0(void)
+{
+    s_squad_record_iterator local_0;
+    if (g_4f55d0->active)
+    {
+        local_0.records.data = g_51e9d8;
+        local_0.records.index = NONE;
+    }
+    while (squad_iterator_next_201df0(&local_0))
+    {
+        if (*((byte *)local_0.squad + 3) & 1)
+            function_203360(local_0.squad_index);
+    }
+}
 
 void function_1e3400(long actor_index, long squad_index);
 void function_26def0(long actor_index, long owner_index);
@@ -2076,69 +2134,63 @@ struct s_actor_options;
 void function_1e4570(long arg_0, s_actor_options const *arg_1);
 void function_26b290(long arg_0);
 
+// score 2 (was 3): the squad flag bit is turned into a 0/1 value by
+// shifting first and masking after, retail masks first and shifts.
 // @retail 0x202e90
-void __stdcall function_202e90(long arg_0, long arg_1, long arg_2)
+void __stdcall function_202e90(long arg_0, short arg_1, long arg_2)
 {
-    long const *local_0 = &arg_0;
-    long const *local_1 = &arg_2;
+    struct s_entry_view
+    {
+        long field_0;
+        long field_4;
+    };
     long local_2 = g_510c54->game_time;
-    byte *local_3 = (byte *)squad_get(*local_0);
+    byte *local_3 = (byte *)squad_get(arg_0);
     *(long *)(local_3 + 0x2c) = local_2;
     *(short *)(local_3 + 0x62) = NONE;
     *(short *)(local_3 + 0x64) = NONE;
     local_3[0x60] = false;
     if (*(short *)(local_3 + 0x2a) != (short)arg_1 ||
-        (byte)(((dword)local_3[2] & 0x40) >> 6) != (byte)*local_1)
+        ((*(word *)(local_3 + 2) & 0x40) >> 6) != (byte)arg_2)
     {
         byte *local_4 = NULL;
         if ((short)arg_1 >= 0 && (short)arg_1 < *(long *)((byte *)g_4e0350 + 0x240))
             local_4 = *(byte **)((byte *)g_4e0350 + 0x244) + (short)arg_1 * 0x7c;
         *(short *)(local_3 + 0x2a) = (short)arg_1;
-        if ((byte)*local_1)
-            local_3[2] |= 0x40;
+        if ((byte)arg_2)
+            *(word *)(local_3 + 2) |= 0x40;
         else
-            local_3[2] &= ~0x40;
+            *(word *)(local_3 + 2) &= ~0x40;
         *(long *)(local_3 + 0x80) = NONE;
         s_squad_actor_iterator local_5;
-        if (g_4f55d0->active)
-        {
-            if (*local_0 == NONE)
-                local_5.next_actor_index = g_4f55d0->unknown14;
-            else
-                local_5.next_actor_index = squad_get(*local_0)->first_actor_index;
-        }
-        while (g_4f55d0->active && local_5.next_actor_index != NONE)
-        {
-            long local_6 = local_5.next_actor_index;
-            s_actor_datum *local_7 = actor_datum_get(local_6);
-            local_5.next_actor_index = local_7->next_actor_index;
-            function_1e4570(local_6, (s_actor_options const *)local_4);
-        }
+        squad_actors_begin(&local_5, arg_0);
+        s_actor_datum *actor;
+        while ((actor = squad_actors_next(&local_5)) != NULL)
+            function_1e4570(local_5.actor_index, (s_actor_options const *)local_4);
         if (local_4)
         {
             if (local_4[0x24] & 0x10)
-                function_204450((short)arg_1, *local_0);
-            function_291740((short)arg_1, *local_0 & 0xffff);
+                function_204450((short)arg_1, arg_0);
+            function_291740((short)arg_1, arg_0 & 0xffff);
             short local_8 = *(short *)(local_4 + 0x20);
             if (local_8 == NONE)
             {
-                for (long local_9 = 0; local_9 < 5; local_9++)
-                    ((s_flag_bits *)(local_3 + 0x84))->d[local_9] = NONE;
+                memset(local_3 + 0x84, 0xff, sizeof(s_flag_bits));
             }
             else if (local_8 >= 0 && local_8 < *(long *)((byte *)g_4e0350 + 0x150))
             {
-                long local_10 = *(long *)(*(byte **)((byte *)g_4e0350 + 0x154) + local_8 * 8 + 4);
+                s_entry_view const *const &entry = (s_entry_view const *)*(byte **)((byte *)g_4e0350 + 0x154) + local_8;
+                long local_10 = entry->field_4;
                 if (local_10 != NONE)
-                    *(s_flag_bits *)(local_3 + 0x84) = *(s_flag_bits *)(g_4e3b44[local_10 & 0xffff].bytes + 0x38);
+                    *(s_flag_bits *)(local_3 + 0x84) = *(s_flag_bits const *)(g_4e3b44[local_10 & 0xffff].bytes + 0x38);
             }
             if (*(short *)(local_4 + 0x28) > 0)
             {
-                function_204d30(&local_5, *local_0);
                 long local_11 = NONE;
-                while (g_4f55d0->active && local_5.next_actor_index != NONE)
+                function_204d30(&local_5, arg_0);
+                s_actor_datum *local_12;
+                while ((local_12 = squad_actors_next(&local_5)) != NULL)
                 {
-                    s_actor_datum *local_12 = actor_datum_get(local_5.next_actor_index);
-                    local_5.next_actor_index = local_12->next_actor_index;
                     long local_13 = local_12->clump_object_index;
                     if (local_13 != NONE && local_13 != local_11)
                     {
@@ -2156,7 +2208,7 @@ void __stdcall function_202e90(long arg_0, long arg_1, long arg_2)
     }
 }
 
-void function_201520(short arg_0, word arg_1, long arg_2, long arg_3, long arg_4);
+void function_201520(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4);
 
 struct s_200d80
 {
@@ -2177,6 +2229,30 @@ PRIVATE __forceinline s_squad_datum *function_200db0(s_squad_record_iterator *ar
     return local_0;
 }
 
+PRIVATE __forceinline s_squad_datum *function_200d83(s_squad_record_iterator *arg_0)
+{
+    s_squad_datum *local_0 = NULL;
+    if (g_4f55d0->active)
+    {
+        s_record_pool *local_1 = arg_0->records.data;
+        long local_2 = data_next_absolute_index_inlined(local_1, arg_0->records.index + 1);
+        if (local_2 != NONE)
+        {
+            local_0 = (s_squad_datum *)(local_1->data + local_1->size * local_2);
+            arg_0->records.index = local_2;
+            arg_0->records.datum_index = (*(short *)local_0 << 16) | local_2;
+        }
+        else
+        {
+            arg_0->records.index = local_1->maximum_count;
+            arg_0->records.datum_index = NONE;
+        }
+        arg_0->squad_index = arg_0->records.datum_index & 0xffff;
+        arg_0->squad = local_0;
+    }
+    return local_0;
+}
+
 // @retail 0x200d80
 void function_200d80(void)
 {
@@ -2186,34 +2262,28 @@ void function_200d80(void)
         local_0.records.data = g_51e9d8;
         local_0.records.index = NONE;
     }
-    while (function_200db0(&local_0))
+    while (function_200d83(&local_0))
     {
         long local_1 = local_0.squad_index;
-        dword local_2 = *(dword *)(*(byte **)((byte *)g_4e0350 + 0x164) + (word)local_1 * 0x74 + 0x20);
+        dword local_2 = *(dword *)(*(byte **)((byte *)g_4e0350 + 0x164) + (local_1 & 0xffff) * 0x74 + 0x20);
         if ((bool)((local_2 >> 12) & 1))
-            function_201520(NONE, (word)local_1, NONE, 0, 0);
+            function_201520(NONE, local_1, NONE, 0, 0);
     }
 }
 
-void __stdcall function_203120(long arg_0, long arg_1, long arg_2);
+void __stdcall function_203120(long arg_0, short arg_1, long arg_2);
 
 // @retail 0x201100
 void __stdcall function_201100(long arg_0, dword *arg_1)
 {
-    long local_0 = arg_0;
-    (void)&arg_0;
-    dword *local_1;
-    (void)&arg_1;
-    byte *local_2 = *(byte **)((byte *)g_4e0350 + 0x15c) + (local_0 & 0xffff) * 0x24;
+    byte *local_2 = *(byte **)((byte *)g_4e0350 + 0x15c) + (arg_0 & 0xffff) * 0x24;
     s_record_pool *local_10 = g_51e9dc;
-    byte *local_3 = local_10->data + (local_0 & 0xffff) * 0x38;
+    byte *local_3 = local_10->data + (arg_0 & 0xffff) * 0x38;
     if (!local_3[0x23])
     {
-        arg_0 = 1 << (local_0 & 0x1f);
-        volatile long const *local_4 = &arg_0;
-        local_1 = arg_1;
-        arg_1 += local_0 >> 5;
-        if (!(*arg_1 & *local_4))
+        dword mask = 1 << (arg_0 & 0x1f);
+        dword *bits = &arg_1[arg_0 >> 5];
+        if (!(*bits & mask))
         {
             long local_6 = *(short *)(local_2 + 0x20);
             byte *local_7 = NULL;
@@ -2222,29 +2292,33 @@ void __stdcall function_201100(long arg_0, dword *arg_1)
             {
                 local_7 = local_10->data + (local_6 & 0xffff) * 0x38;
                 if (!local_7[0x23])
-                    function_201100(local_6, local_1);
+                    function_201100(local_6, arg_1);
             }
             short local_8 = *(short *)(local_2 + 0x22);
             if (local_8 >= 0 && local_8 < *(long *)((byte *)g_4e0350 + 0x240))
-                function_203120(local_0, local_8, true);
+                function_203120(arg_0, local_8, true);
             else if (*(short *)(local_3 + 0x14) != NONE && local_7 && local_7[0x23])
             {
-                long local_9 = *(short *)(local_7 + 0x14);
-                if ((short)local_9 != NONE)
-                    function_203120(local_0, local_9, false);
+                short const *inherited = (short const *)(local_7 + 0x14);
+                long local_9 = *inherited;
+                if (*inherited != NONE)
+                    function_203120(arg_0, local_9, false);
             }
-            *arg_1 |= *local_4;
+            *bits |= mask;
         }
     }
 }
 
 // @retail 0x203120
-void __stdcall function_203120(long arg_0, long arg_1, long arg_2)
+// score 26 (was 26): the squad group's record is looked up in ECX where retail uses EAX, so the flag
+// byte is read into AL instead of into the record pointer.
+void __stdcall function_203120(long arg_0, short arg_1, long arg_2)
 {
     long const *local_0 = &arg_0;
-    long const *local_1 = &arg_1;
+    short const *local_1 = &arg_1;
     long *local_2 = &arg_2;
     byte *local_3 = (byte *)squad_group_get(*local_0);
+    long initial_flag = arg_2;
     if (!(byte)*local_2 && local_3[0x16] && *(short *)(local_3 + 0x14) != NONE)
     {
         byte *local_4 = *(byte **)((byte *)g_4e0350 + 0x244) + *(short *)(local_3 + 0x14) * 0x7c;
@@ -2255,7 +2329,7 @@ void __stdcall function_203120(long arg_0, long arg_1, long arg_2)
                 return;
         }
     }
-    function_202e30((short)*local_1, *local_0, (byte)*local_2);
+    function_202e30((short)*local_1, *local_0, (byte)initial_flag);
     for (long local_5 = *(long *)(local_3 + 4); local_5 != NONE; )
     {
         byte *local_6 = (byte *)squad_group_get(local_5);
@@ -2287,11 +2361,13 @@ bool function_1fb8a0(long arg_0, short arg_1);
 void function_202be0(long arg_0, long arg_1)
 {
     long const *local_0 = &arg_1;
+    long selected_choice = arg_0;
+    long const *choice = &selected_choice;
     byte *local_1 = (byte *)squad_get(*local_0);
-    if (arg_0 != NONE && (!(local_1[2] & 0x40) ||
+    if (*choice != NONE && (!(local_1[2] & 0x40) ||
         *(short *)(local_1 + 0x2a) == NONE ||
         !((*(byte **)((byte *)g_4e0350 + 0x244) + *(short *)(local_1 + 0x2a) * 0x7c)[0x24] & 1)))
-        function_202e90(*local_0, (short)arg_0, false);
+        function_202e90(*local_0, (short)*choice, false);
     else if ((local_1[2] & 0x40) && *(short *)(local_1 + 0x2a) != NONE)
     {
         long local_2 = NONE;
@@ -2368,7 +2444,7 @@ local_16:
 }
 
 struct s_1fb7e0_data;
-bool __stdcall function_20ba60(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4, s_1fb7e0_data const *arg_5);
+bool __stdcall function_20ba60(short arg_0, long arg_1, long arg_2, long arg_3, short arg_4, s_1fb7e0_data const *arg_5);
 
 // @retail 0x202a00
 void __stdcall function_202a00(long arg_0, long arg_1)
@@ -2446,6 +2522,8 @@ PRIVATE __forceinline byte *function_202752(s_record_pool_iterator *arg_0)
     return local_0;
 }
 
+static __forceinline long real_to_long(real value);
+
 // @retail 0x202720
 void function_202720(void)
 {
@@ -2456,17 +2534,13 @@ void function_202720(void)
         local_0.records.data = g_51e9dc;
         local_0.records.index = NONE;
     }
-    while ((local_0.group = (s_squad_group_datum *)function_202752(&local_0.records)) != NULL)
+    while (next_group_record_202370(&local_0) != NULL)
     {
         if (*(short *)((byte *)local_0.group + 0x1e) > 0)
         {
             real local_2 = (real)g_510c54->field_2_3 * 2.0f;
             long local_3;
-            __asm
-            {
-                fld local_2
-                fistp local_3
-            }
+            local_3 = real_to_long(local_2);
             *(short *)((byte *)local_0.group + 0x1e) -= (short)local_3;
         }
     }
@@ -2481,11 +2555,7 @@ void function_202720(void)
         {
             real local_2 = (real)g_510c54->field_2_3 * 2.0f;
             long local_3;
-            __asm
-            {
-                fld local_2
-                fistp local_3
-            }
+            local_3 = real_to_long(local_2);
             *(short *)((byte *)local_1.field_0 + 0x64) -= (short)local_3;
         }
     }
@@ -2494,7 +2564,7 @@ void function_202720(void)
         local_0.records.data = g_51e9dc;
         local_0.records.index = NONE;
     }
-    while ((local_0.group = (s_squad_group_datum *)function_202752(&local_0.records)) != NULL)
+    while (next_group_record_202370(&local_0) != NULL)
     {
         if (*(long *)((byte *)local_0.group + 0x10) == NONE)
             function_202a00(local_0.records.datum_index, NONE);
@@ -2511,39 +2581,66 @@ void function_202720(void)
     }
 }
 
+PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0)
+{
+    s_squad_datum *local_0 = NULL;
+    if (g_4f55d0->active)
+    {
+        s_record_pool *local_1 = arg_0->records.data;
+        long local_2 = data_next_absolute_index_inlined(local_1, arg_0->records.index + 1);
+        if (local_2 == NONE)
+        {
+            arg_0->records.index = local_1->maximum_count;
+            arg_0->records.datum_index = NONE;
+        }
+        else
+        {
+            byte *local_3 = local_1->data + local_1->size * local_2;
+            arg_0->records.index = local_2;
+            arg_0->records.datum_index = (*(short *)local_3 << 16) | local_2;
+            local_0 = (s_squad_datum *)local_3;
+        }
+        arg_0->squad_index = arg_0->records.datum_index & 0xffff;
+        arg_0->squad = local_0;
+    }
+    return local_0;
+}
+
 // @retail 0x201c80
+// score 43 (was 43): the record's index is combined with the pool's base before the test, retail keeps
+// the two apart until the compare and the division.
 void function_201c80(void)
 {
     long local_0 = g_510c54->game_time;
-    volatile long local_7 = local_0;
-    long local_1;
-    long local_2;
-    long local_3;
+    long period_once;
+    long period_twice;
+    long time_copy = local_0;
+    long period_half;
     real local_6 = (real)g_510c54->field_2_3;
     __asm
     {
         fld local_6
-        fistp local_1
+        fistp period_once
     }
     local_6 = (real)g_510c54->field_2_3 * 2.0f;
     __asm
     {
         fld local_6
-        fistp local_2
+        fistp period_twice
     }
     local_6 = (real)g_510c54->field_2_3 * 0.5f;
     __asm
     {
         fld local_6
-        fistp local_3
+        fistp period_half
     }
-    if (local_0 % local_1 == 0)
+    if (local_0 % period_once == 0)
     {
         function_201df0();
         function_201ea0();
         function_202370();
     }
-    if (local_0 % local_2 == 10)
+    if (local_0 % period_twice == 10)
     {
         function_2024c0();
         function_202720();
@@ -2554,10 +2651,10 @@ void function_201c80(void)
         local_4.records.data = g_51e9d8;
         local_4.records.index = NONE;
     }
-    while (function_200db0(&local_4))
+    while (function_201c83(&local_4))
     {
-        long local_5 = (word)local_4.squad_index;
-        if (((word)local_5 + local_7) % local_3 == 0 && *(signed char *)((byte *)local_4.squad + 2) < 0)
+        long local_5 = local_4.squad_index;
+        if (((word)local_5 + time_copy) % period_half == 0 && (*((byte *)local_4.squad + 2) & 0x80))
             function_203360(local_5);
     }
     function_201df0();
@@ -2565,7 +2662,7 @@ void function_201c80(void)
 
 struct s_effect_owner;
 void function_b7930(void *arg_0, long arg_1, long arg_2, s_effect_owner const *arg_3);
-long function_b7b40(void *arg_0);
+long __stdcall function_b7b40(void *arg_0);
 void __stdcall function_a7870(long arg_0);
 void function_11dfb0(vector2f const *arg_0, vector3f *arg_1, vector3f *arg_2);
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3);
@@ -2573,9 +2670,9 @@ long function_201010(long arg_0, short arg_1, short arg_2, short *arg_3);
 void function_2011f0(long arg_0);
 
 // @retail 0x201520
-void function_201520(short arg_0, word arg_1, long arg_2, long arg_3, long arg_4)
+void function_201520(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4)
 {
-    word const *local_0 = &arg_1;
+    word const *local_0 = (word const *)&arg_1;
     long const *local_1 = &arg_2;
     long const *local_2 = &arg_3;
     long const *local_3 = &arg_4;

@@ -14,9 +14,9 @@ struct s_20d0c0
 struct s_node_owner;
 struct s_audio_queue;
 extern s_audio_queue *g_4f939c;
-long function_20f040(short arg_0);
+long __declspec(noinline) function_20f040(short arg_0);
 void sound_choose_permutation(long arg_0, s_sound_permutation_reference *arg_1, bool *arg_2);
-void function_20b450(long arg_0, real arg_1);
+bool function_20b450(long arg_0, real arg_1);
 short function_20afb0(long arg_0, dword *arg_1);
 bool function_20b050(long arg_0, dword arg_1);
 short function_1145f0(long arg_0, s_sound_permutation_reference const *arg_1, short arg_2);
@@ -74,8 +74,8 @@ long function_20f2d0(short arg_1, long arg_0, long arg_2, long arg_3, long arg_4
         sound_choose_permutation(arg_0, local_9, &local_7);
         if (local_7)
         {
-            function_20b450(arg_0, *(real *)(local_5 + 0x1c) * 60.0f);
             dword local_10 = 0;
+            function_20b450(arg_0, *(real *)(local_5 + 0x1c) * 60.0f);
             short local_11 = function_20afb0(arg_0, &local_10);
             if (((~local_10) & ((1 << local_11) - 1)) && *(short *)(local_5 + 0xa) < 10)
             {
@@ -93,8 +93,8 @@ long function_20f2d0(short arg_1, long arg_0, long arg_2, long arg_3, long arg_4
         if (arg_4 != NONE && !local_4[0xe])
             *(short *)(local_4 + 0x1e) = (short)function_20f2d1(g_510c54->field_2_3 * 0.25f);
         *(long *)(local_4 + 0x4c) = function_114440(arg_2);
-        short local_12 = (short)function_20f040(*(short *)(local_6 + 0x138));
-        s_node_owner *local_13 = (s_node_owner *)((byte *)g_4f939c + local_12 * 0x7dc);
+        short local_14 = *(short *)(local_6 + 0x138);
+        s_node_owner *local_13 = (s_node_owner *)((byte *)g_4f939c + (short)function_20f040(local_14) * 0x7dc);
         if (function_20f6a0(local_13, local_0))
         {
             goto local_20;

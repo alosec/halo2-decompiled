@@ -35,7 +35,7 @@ struct s_presence_name_cache
 void online_teams_enumerate_get_results(long task_index, DWORD *count, XUID *teams);
 void online_team_get_details(long task_index, XUID const *team, XONLINE_TEAM *details);
 long function_abc70(long controller_index, XUID const *xuid);
-long function_18fa4d(long mode);
+long player_slot_find_signed_in(long mode);
 
 // @retail 0x8bf70
 void function_8bf70(s_presence_name_cache *cache)
@@ -89,19 +89,18 @@ void function_8bf70(s_presence_name_cache *cache)
 	}
 	if (cache->task_index == NONE)
 	{
-		long controller = function_18fa4d(1);
+		long controller = player_slot_find_signed_in(1);
 		if (controller >= 0 && controller < 4)
 		{
 			for (long i = 0; i < 150; i++)
 			{
 				if (cache->entries[i].state == 1)
 				{
-					s_presence_name_cache_entry *entry = &cache->entries[i];
-					cache->task_index = function_abc70(controller, (XUID *)entry);
+					cache->task_index = function_abc70(controller, &cache->entries[i].user);
 					if (cache->task_index != NONE)
 					{
-						cache->pending = entry;
-						entry->state = 2;
+						cache->pending = &cache->entries[i];
+						cache->entries[i].state = 2;
 					}
 					break;
 				}
@@ -114,28 +113,31 @@ void function_8bf70(s_presence_name_cache *cache)
 bool __stdcall function_8c150(void *cache, long allow_stale, unsigned __int64 *user_id,
 	void *name, unsigned __int64 *team_id)
 {
-	unsigned __int64 *const *user_reference = &user_id;
 	s_presence_name_cache_entry *entries = (s_presence_name_cache_entry *)cache;
 	bool found = false;
 	bool result = false;
 	s_presence_name_cache_entry *oldest = 0;
 	*(wchar_t *)name = 0;
-	for (long i = 0; i < 150; i++)
+	long i = 0;
+	do
 	{
 		s_presence_name_cache_entry *entry = &entries[i];
 		if ((!oldest || entry->time < oldest->time) && (entry->state == 3 || entry->state == 0))
 			oldest = entry;
-		if (*user_reference && **user_reference == entry->user.qwUserID)
+		if (user_id && *user_id == entry->user.qwUserID)
 		{
 			found = true;
 			if (entry->state == 3)
 			{
 				long duration = g_network_configuration.value1728 * 1000;
-				dword time = entry->time;
-				if (!allow_stale && (long)(presence_cache_time() - time) > duration)
+				if (!allow_stale)
 				{
-					entry->state = 1;
-					return result;
+					dword time = entry->time;
+					if ((long)(presence_cache_time() - time) > duration)
+					{
+						entry->state = 1;
+						break;
+					}
 				}
 				wcsncpy((wchar_t *)name, entry->name, 15);
 				((wchar_t *)name)[15] = 0;
@@ -144,10 +146,11 @@ bool __stdcall function_8c150(void *cache, long allow_stale, unsigned __int64 *u
 			}
 			break;
 		}
-	}
+		i++;
+	} while (i < 150);
 	if (!allow_stale && !found && oldest)
 	{
-		oldest->user = *(XUID *)*user_reference;
+		oldest->user = *(XUID *)user_id;
 		oldest->state = 1;
 	}
 	return result;
@@ -221,10 +224,23 @@ long online_presence_task_new(DWORD controller_index)
 	return task_index;
 }
 
+PRIVATE __forceinline s_type_9df9da *function_8c3a4(long arg_0, s_record_pool *arg_1)
+{
+ s_type_9df9da *local_0 = 0;
+ long local_1 = arg_0 & 0xffff;
+ if (local_1 < arg_1->high_water_index)
+ {
+  byte *local_2 = arg_1->data + arg_1->size * local_1;
+  short local_3 = *(short *)local_2;
+  if (local_3 != 0 && local_3 == (arg_0 >> 16)) local_0 = (s_type_9df9da *)local_2;
+ }
+ return local_0;
+}
 // @retail 0x8c3a0
 void online_presence_add(long task_index, DWORD group_id, DWORD user_count, XUID *users)
 {
-	s_type_9df9da *task = online_task_try_get(task_index);
+	s_type_9df9da *task = 0;
+	if (task_index != NONE) task = function_8c3a4(task_index, g_4cf78c);
 
 	if (task && online_logon_connected())
 		XOnlinePresenceAdd((XONLINETASK_HANDLE)task->handle, group_id, user_count, users);

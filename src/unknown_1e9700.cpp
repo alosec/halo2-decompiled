@@ -1,14 +1,19 @@
 // @flags /O2 /arch:SSE /Gr
+#include "view_context_storage.h"
 /* UNKNOWN_1E9700.CPP: a value of the difficulty table for the current
    campaign difficulty (lane M; called by the behaviors of 0x1a8000..0x1affff) */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
+#include "data_array.h"
 #include <string.h>
+#include <float.h>
 #ifndef H2_NATIVE_PORT
 #include <xmmintrin.h>
 #endif
 #include "slot_handler.h"
+#include "input_record.h"
 
 real function_1e96a0(short column, short row);
 
@@ -30,6 +35,261 @@ struct s_object_values
 };
 
 void function_b58c0(long index, dword mask);
+struct s_statborg;
+void function_1968b0(long index, long team, long counter, long value);
+void function_1e9df0(long field, long counter, long team, s_statborg *statistics, short delta);
+long function_196ef0(byte code);
+void function_196e60(long player_index, long counter, long code, long delta);
+void function_225880(long player_index);
+void function_162bf0(long player_index, long arg_1f407d_2);
+void function_1e9ce0(long player_index, long counter, s_statborg *statistics, long field, long delta, bool by_team);
+
+// @retail 0x1ea770
+void function_1ea770(byte code, long player_index, s_statborg *statistics, long arg_1f407d_2, bool self, bool friendly)
+{
+	long kind = function_196ef0(code);
+	s_statborg *const volatile *statistics_reference = &statistics;
+	long volatile other = arg_1f407d_2 & 0xffff;
+	long index = player_index & 0xffff;
+	s_statborg *first_statistics = *statistics_reference;
+	function_1e9ce0(player_index, 9, first_statistics, 3, 1, true);
+	function_196e60(index, 1, kind, 1);
+	if (self)
+	{
+		function_1e9ce0(player_index, 11, statistics, 4, 1, true);
+		function_196e60(index, 3, kind, 1);
+	}
+	else if (friendly && arg_1f407d_2 != NONE)
+	{
+		if (*(short *)(g_4e8c24->data + other * 0x21c + 0x28) != NONE) function_225880(arg_1f407d_2);
+		function_1e9ce0(arg_1f407d_2, 10, statistics, 5, 1, true);
+		function_196e60(other, 2, kind, 1);
+		function_162bf0(player_index, arg_1f407d_2);
+	}
+	*(short *)((byte *)statistics + index * 0x1c + 0x16) = 0;
+	*(short *)((byte *)statistics + index * 0x1c + 0x18) = 0;
+	*(long *)((byte *)statistics + index * 0x1c + 0x1c) = NONE;
+	*(dword *)g_4e9ae8 |= 0x20;
+}
+
+// score 115 (was 115): the byte of the global is loaded into DL here and into
+// AL in retail, and the -1 is held in EAX instead of ECX; ours is eighteen
+// bytes shorter than retail.
+// @retail 0x1ea5b0
+void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, byte code)
+{
+	long kind = function_196ef0(code);
+	long index = player_index & 0xffff;
+	struct s_team_player { byte before[0xc0]; char team; byte after[0x21c - 0xc1]; };
+	s_team_player *player = ((s_team_player *)g_4e8c24->data) + index;
+	function_1e9ce0(player_index, 7, statistics, 2, 1, true);
+	function_196e60(index, 0, kind, 1);
+	if ((code & 0xc0) == 0x40) function_196e60(index, 6, kind, 1);
+	long old_maximum = NONE;
+	if (g_510ca0 && index != NONE) old_maximum = g_511bf4.groups[index][12].value;
+	byte *row = (byte *)statistics + index * 0x1c;
+	short consecutive = ++*(short *)(row + 0x16);
+	if ((short)old_maximum < consecutive && g_510ca0 && !g_510ca1 && index != NONE)
+	{
+		long minimum = g_46ddc0[12].minimum;
+		long maximum = g_46ddc0[12].maximum;
+		long value = consecutive;
+		if (value < minimum) value = minimum;
+		else if (value > maximum) value = maximum;
+		g_511bf4.groups[index][12].value = (word)value;
+	}
+	if (g_55e4d0[g_4e9ae8->engine_index])
+	{
+		code = (byte)g_4e6948->flags184.bit0;
+	}
+	else code = 0;
+	if (code && player->team != NONE)
+	{
+		long team = player->team;
+		long team_maximum = g_510ca0 && team != NONE ? g_511bf4.counters[team][12].value : NONE;
+		if ((short)team_maximum < *(short *)(row + 0x16)) function_1968b0(NONE, team, 12, *(short *)(row + 0x16));
+	}
+	if (*(long *)(row + 0x1c) >= threshold) ++*(short *)(row + 0x18);
+	else *(short *)(row + 0x18) = 1;
+	*(long *)(row + 0x1c) = g_510c54->game_time;
+	*(dword *)g_4e9ae8 |= 0x20;
+}
+
+struct s_object;
+s_object *function_badc0(long object_index, dword types);
+bool function_1df560(short team, short other_team);
+void function_197160(long player_index, long arg_1f407d_2, long code);
+long function_baf80(long object_index);
+void function_15ce70(long attacker_index, long victim_index, bool betrayal, byte damage);
+void function_196dd0(long player_index, long counter, long arg_1f407d_2, long delta);
+void function_1ea880(long first_player, long player_index, s_object_values *table);
+
+// @retail 0x1e9fa0
+void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
+{
+	if (!*(byte *)engine_globals) return;
+	s_statborg *statistics = (s_statborg *)engine_globals;
+	byte *unit = (byte *)function_badc0(object_index, 3);
+	long victim = unit ? *(long *)(unit + 0x13c) : NONE;
+	long victim_team = victim == NONE ? NONE : (char)g_4e8c24->data[(victim & 0xffff) * 0x21c + 0xc0];
+	long killer_team = NONE;
+	long cutoff = g_510c54->game_time - real_to_long((real)g_510c54->field_2_3 * 4.0f);
+	long recent = g_510c54->game_time - real_to_long((real)g_510c54->field_2_3 * 6.0f);
+	byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+	bool consider_team = !(reported_player != NONE && function_1df560((short)victim_team, (short)reported_team));
+	long selected = NONE, reported_slot = NONE;
+	real best = -FLT_MAX;
+	byte *history = object + 0x2f0;
+	for (short i = 0; i < 4; ++i)
+	{
+		byte *entry = history + i * 0x10;
+		long player_index = *(long *)(entry + 0xc);
+		if (player_index == NONE) continue;
+		if (player_index == reported_player) reported_slot = i;
+		else
+		{
+			if (!consider_team) continue;
+			byte *player = record_pool_lookup(g_4e8c24, player_index);
+			if (!player || !function_1df560((short)victim_team, (char)player[0xc0])) continue;
+		}
+		if (*(dword *)entry > (dword)recent && *(real *)(entry + 4) > best)
+		{
+			selected = i;
+			best = *(real *)(entry + 4);
+		}
+	}
+	if (selected == NONE) selected = reported_slot;
+	long killer = NONE;
+	real assist_threshold = 0.0f;
+	bool hostile = false;
+	byte damage_code = code;
+	if (selected != NONE)
+	{
+		byte *entry = history + selected * 0x10;
+		damage_code = object[0x330 + selected];
+		long player_index = *(long *)(entry + 0xc);
+		if (datum_get_inlined(g_4e8c24, player_index))
+		{
+			killer = player_index;
+			assist_threshold = *(real *)(entry + 4) * 0.4f;
+			if (killer == reported_player) damage_code = code;
+		}
+	}
+	if (killer == NONE && datum_get_inlined(g_4e8c24, reported_player)) { killer = reported_player; damage_code = code; }
+	if (killer != NONE)
+	{
+		byte *player = g_4e8c24->data + (killer & 0xffff) * 0x21c;
+		killer_team = (char)player[0xc0];
+		if (function_1df560((short)victim_team, (short)killer_team) && victim != NONE)
+		{
+			function_197160(killer, victim, damage_code);
+			function_1ea5b0(killer, statistics, cutoff, damage_code);
+		}
+		else { ++*(short *)(player + 0x1c4); hostile = true; }
+	}
+	long assists[5], other_assists[4];
+	long assist_count = 0, other_count = 0;
+	if (assist_threshold > 0.0f && victim != NONE)
+		for (long i = 0; i < 4; ++i)
+		{
+			byte *entry = history + i * 0x10;
+			long player_index = *(long *)(entry + 0xc);
+			byte *player = datum_get_inlined(g_4e8c24, player_index);
+			if (!player || player_index == killer ||
+				(player_index != reported_player && !(*(real *)(entry + 4) > assist_threshold))) continue;
+			if (function_1df560((short)victim_team, (char)player[0xc0])) assists[assist_count++] = player_index;
+			else other_assists[other_count++] = player_index;
+		}
+	if (killer != NONE && victim != NONE)
+	{
+		byte *player = g_4e8c24->data + (killer & 0xffff) * 0x21c;
+		if (function_1df560((short)victim_team, (char)player[0xc0]))
+		{
+			long killer_unit = *(long *)(player + 0x2c);
+			if (killer_unit != NONE)
+			{
+				long root = function_baf80(killer_unit);
+				byte *header = g_4e0300->data + (root & 0xffff) * 12;
+				if ((1 << header[3]) & 3)
+				{
+					byte *root_unit = *(byte **)(header + 8);
+					long related = *(long *)(root_unit + 0x248);
+					if (related != NONE && related != killer_unit)
+					{
+						byte *related_unit = *(byte **)(g_4e0300->data + (related & 0xffff) * 12 + 8);
+						long related_player = *(long *)(related_unit + 0x13c);
+						if (related_player != NONE)
+						{
+							byte *other = g_4e8c24->data + (related_player & 0xffff) * 0x21c;
+							if (function_1df560((short)victim_team, (char)other[0xc0]) && (dword)assist_count < 5)
+								assists[assist_count++] = related_player;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (victim != NONE)
+	{
+		function_15ce70(killer, victim, hostile, damage_code);
+		if (killer != NONE)
+		{
+			function_196dd0(killer & 0xffff, 0, victim & 0xffff, 1);
+			function_196dd0(victim & 0xffff, 1, killer & 0xffff, 1);
+		}
+	}
+	for (long i = 0; i < assist_count; ++i)
+	{
+		long j = 0;
+		while (j < i && assists[j] != assists[i]) ++j;
+		if (j == i) { function_1e9ce0(assists[i], 8, statistics, 6, 1, true); *(dword *)g_4e9ae8 |= 0x20; }
+	}
+	for (long i = 0; i < other_count; ++i)
+	{
+		long j = 0;
+		while (j < i && other_assists[j] != other_assists[i]) ++j;
+		if (j == i) function_1ea880(victim, other_assists[i], (s_object_values *)statistics);
+	}
+	if (victim != NONE)
+	{
+		bool self = reported_player == victim;
+		bool friendly = g_55e4d0[g_4e9ae8->engine_index] && g_4e6948->flags184.bit0 &&
+			victim_team != NONE && killer_team != NONE && victim_team == killer_team;
+		function_1ea770(damage_code, victim, statistics, killer, self, friendly);
+	}
+}
+
+// score 13 (was 13): retail reads the field argument into EDX before the
+// prologue pushes and adds it there; here the load happens after the pushes
+// and goes into ECX, which forces the counter to be moved out first.
+// @retail 0x1e9ce0
+void function_1e9ce0(long player_index, long counter, s_statborg *statistics,
+	long field, long volatile delta, bool by_team)
+{
+	long const volatile *field_reference = &field;
+	long stored_field = *field_reference;
+	long index = player_index & 0xffff;
+	short *entry = &((s_object_values *)statistics)->values[index][stored_field];
+	long value = *entry + (short)delta;
+	if (value < -30000) value = -30000;
+	else if (value > 30000) value = 30000;
+	*entry = (short)value;
+	if (g_55e4d0[g_4e9ae8->engine_index] && g_4e9ae8->value28 != NONE)
+		function_b58c0(g_4e9ae8->value28, 1 << index);
+	if (counter != NONE) function_1968b0(index, NONE, counter, *entry);
+	if (by_team)
+	{
+		by_team = false;
+		if (g_55e4d0[g_4e9ae8->engine_index]) by_team = g_4e6948->flags184.bit0;
+	}
+	if (by_team &&
+		index != NONE && index >= 0 && index < g_4e8c24->high_water_index)
+	{
+		byte *player = g_4e8c24->data + index * g_4e8c24->size;
+		if (*(short *)player && (char)player[0xc0] != NONE)
+			function_1e9df0(field, counter, (char)player[0xc0], statistics, delta);
+	}
+}
 
 // @retail 0x1e9c90
 void function_1e9c90(long object_index, long column, s_object_values *table)
@@ -101,15 +361,16 @@ struct s_team_value_row
 PRIVATE __forceinline bool update_team_value_row(s_team_value_row *destination, const short *source)
 {
 	bool same = true;
+    short *values = destination->values;
 	if (destination->first != source[0]) { destination->first = source[0]; same = false; }
-	if (destination->values[0] != source[1]) { destination->values[0] = source[1]; same = false; }
-	if (destination->values[1] != source[2]) { destination->values[1] = source[2]; same = false; }
-	if (destination->values[2] != source[3]) { destination->values[2] = source[3]; same = false; }
-	if (destination->values[3] != source[4]) { destination->values[3] = source[4]; same = false; }
-	if (destination->values[4] != source[5]) { destination->values[4] = source[5]; same = false; }
-	if (destination->values[5] != source[6]) { destination->values[5] = source[6]; same = false; }
-	if (destination->values[6] != source[7]) { destination->values[6] = source[7]; same = false; }
-	if (destination->values[7] != source[8]) { destination->values[7] = source[8]; same = false; }
+	if (values[0] != source[1]) { values[0] = source[1]; same = false; }
+	if (values[1] != source[2]) { values[1] = source[2]; same = false; }
+	if (values[2] != source[3]) { values[2] = source[3]; same = false; }
+	if (values[3] != source[4]) { values[3] = source[4]; same = false; }
+	if (values[4] != source[5]) { values[4] = source[5]; same = false; }
+	if (values[5] != source[6]) { values[5] = source[6]; same = false; }
+	if (values[6] != source[7]) { values[6] = source[7]; same = false; }
+	if (values[7] != source[8]) { values[7] = source[8]; same = false; }
 	return same;
 }
 
@@ -140,22 +401,33 @@ void __stdcall function_1e98e0(void *state, long mask_address, void *data)
 	dword changed = 0;
 	for (long i = 0; i < 16; i++)
 	{
-		if ((1 << i) & *mask)
+		dword selected = 1u << i;
+		if (selected & *mask)
 		{
 			if (!update_value_row(packet->values[i], table->values[i]))
-				changed |= 1 << i;
+				changed |= selected;
 			else
-				changed &= ~(1 << i);
+				changed &= ~selected;
 		}
 	}
-	for (long team = 0; team < 8; team++)
+	short const *source = table->team_values[0] + 2;
+	for (long team = 0; team < 8; source += 9, team++)
 	{
 		if (*mask & (1 << (team + 16)))
 		{
-			if (!update_team_value_row((s_team_value_row *)packet->team_values[team], table->team_values[team]))
-				changed |= 1 << (team + 16);
-			else
-				changed &= ~(1 << (team + 16));
+			short *destination = packet->team_values[team] + 8;
+			bool same = true;
+			if (destination[-8] != source[-2]) { destination[-8] = source[-2]; same = false; }
+			if (destination[-7] != source[-1]) { destination[-7] = source[-1]; same = false; }
+			if (destination[-6] != source[0]) { destination[-6] = source[0]; same = false; }
+			if (destination[-5] != source[1]) { destination[-5] = source[1]; same = false; }
+			if (destination[-4] != source[2]) { destination[-4] = source[2]; same = false; }
+			if (destination[-3] != source[3]) { destination[-3] = source[3]; same = false; }
+			if (destination[-2] != source[4]) { destination[-2] = source[4]; same = false; }
+			if (destination[-1] != source[5]) { destination[-1] = source[5]; same = false; }
+			if (destination[0] != source[6]) { destination[0] = source[6]; same = false; }
+			if (!same) changed |= 1 << (team + 16);
+			else changed &= ~(1 << (team + 16));
 		}
 	}
 	*mask = changed;
@@ -167,29 +439,23 @@ void function_225910(long player_index);
 // @retail 0x1e9ad0
 bool __stdcall function_1e9ad0(void *state, long mask, void *data)
 {
-	void *const *state_reference = &state;
-	const long *mask_reference = &mask;
-	void *const *data_reference = &data;
-	s_object_values *table = (s_object_values *)*state_reference;
-	s_object_values_packet *packet = (s_object_values_packet *)*data_reference;
+	s_object_values *table = (s_object_values *)state;
+	s_object_values_packet *packet = (s_object_values_packet *)data;
 	for (long i = 0; i < 16; i++)
 	{
-		if (*mask_reference & (1 << i))
+		short *row = table->values[i];
+		if (mask & (1 << i))
 		{
 			for (long column = 0; column < 9; column++)
 			{
 				if (column == 5 || column == 8)
 				{
-					long count = packet->values[i][column] - table->values[i][column];
+					long count = packet->values[i][column] - row[column];
 					if (count > 0)
 					{
 						long player_index = NONE;
-						if (i != NONE && i >= 0 && i < g_4e8c24->high_water_index)
-						{
-							short salt = *(short *)(g_4e8c24->data + i * g_4e8c24->size);
-							if (salt)
-								player_index = (salt << 16) | i;
-						}
+						if (datum_get_absolute_inlined(g_4e8c24, i))
+							player_index = data_datum_index(g_4e8c24, i);
 						if (player_index != NONE)
 						{
 							byte *player = NULL;
@@ -213,16 +479,17 @@ bool __stdcall function_1e9ad0(void *state, long mask, void *data)
 						}
 					}
 				}
-				table->values[i][column] = packet->values[i][column];
+				row[column] = packet->values[i][column];
 			}
 		}
 	}
 	for (long team = 0; team < 8; team++)
 	{
-		if (*mask_reference & (1 << (team + 16)))
+		if (mask & (1 << (team + 16)))
 		{
+			short *destination = &table->team_values[team][0];
 			for (long column = 0; column < 9; column++)
-				table->team_values[team][column] = packet->team_values[team][column];
+				destination[column] = packet->team_values[team][column];
 		}
 	}
 	return true;
@@ -302,7 +569,7 @@ void function_1e9e80(long first, s_object_values *table, long second)
 }
 
 /* The 35 short entries beginning at retail 0x445580. */
-const short g_445580[35] =
+const unsigned short g_445580[35] =
 {
 	4, 5, 6, 7, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -310,30 +577,31 @@ const short g_445580[35] =
 	-1, -1, -1, -1, -1
 };
 
+// score 1 (was 8): the table entry is read as an unsigned 16 bit value and
+// copied into the 32 bit kind, so the copy is a plain register move like
+// retail's; retail still loads the entry with a 16 bit mov ax, this loads it
+// with movzx.
 // @retail 0x1e9720
 real function_1e9720(long kind, short team)
 {
-	short row = (short)kind;
 	short difficulty;
 	if (g_4e6948->state == 1)
 		difficulty = g_4e6948->difficulty;
 	else
 		difficulty = 1;
 	if (g_4e6948->state == 2)
-		difficulty = 1;
-	else if (g_4e6948->state == 1 && team != NONE && team >= 0 && team < 16)
 	{
-		bool enemy = !function_0bfe60(((s_allegiance_view *)g_4f55ec)->peace_bits, team + 16);
-		if (!enemy)
-		{
-			short alternate = g_445580[row];
-			if (alternate == NONE)
-				difficulty = 1;
-			else
-				row = alternate;
-		}
+		difficulty = 1;
 	}
-	return function_1e96a0(difficulty, row);
+	else if (g_4e6948->state == 1 && !team_is_enemy(1, team))
+	{
+		unsigned long alternate = g_445580[(short)kind];
+		if ((short)alternate == NONE)
+			difficulty = 1;
+		else
+			kind = alternate;
+	}
+	return function_1e96a0(difficulty, (short)kind);
 }
 
 void function_225910(long player_index);
@@ -369,17 +637,15 @@ void function_1ea880(long arg_1f407d, long player_index, s_object_values *table)
 }
 
 struct s_statborg;
-void function_1968b0(long team, long index, long counter, long value);
+void function_1968b0(long index, long team, long counter, long value);
 
 struct s_request_screen_bounds
 {
 	short top, left, bottom, right;
 };
 
-void function_1e90b0(long first, s_request_screen_bounds const *bounds, point2f *points);
+void function_1e90b0(s_request_screen_bounds const *bounds, point2f *points, long first);
 
-extern long g_4b9ed8;
-extern short g_4b9dd0, g_4b9dd2;
 struct s_bitmap_data;
 struct D3DTexture;
 struct s_widget_quad_2b11;
@@ -388,11 +654,11 @@ D3DTexture *function_3bcb0(s_bitmap_data *bitmap);
 void function_22a664(s_widget_quad_2b11 const *quad, s_float_rect const *coordinates,
 	long bitmap_index, long sequence, long color);
 
+// score 2 (was 2): the two words are read in the other order: retail loads the
+// global into CX before it reads the word of the record into AX.
 // @retail 0x1e9140
-bool __stdcall function_1e9140(s_request_screen_bounds const *volatile bounds)
+bool __stdcall function_1e9140(s_request_screen_bounds const *bounds)
 {
-	// Retail keeps the bounds argument on the stack through the texture lookups.
-	s_request_screen_bounds const *volatile const *bounds_reference = &bounds;
 	byte *definition = (byte *)g_510c94;
 	long color = *(long *)(definition + 0x444);
 	bool result = true;
@@ -403,8 +669,8 @@ bool __stdcall function_1e9140(s_request_screen_bounds const *volatile bounds)
 		long player_index = g_4e8c20->entries[g_4b9ed8];
 		if (player_index != NONE)
 		{
-			byte state = g_4e8c24->data[(player_index & 0xffff) * 0x21c + 0x88];
-			alternate = state == 1 || state == 3;
+			byte *player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+			alternate = player[0x88] == 1 || player[0x88] == 3;
 		}
 	}
 	if (alternate)
@@ -434,84 +700,272 @@ bool __stdcall function_1e9140(s_request_screen_bounds const *volatile bounds)
 		if (!function_3bcb0(edge_bitmap))
 			result = false;
 		if (!function_3bcb0(center_bitmap))
-			return false;
+			result = false;
 		if (result)
 		{
-			s_request_screen_bounds const *input = *bounds_reference;
-			__declspec(align(8)) s_request_screen_bounds inner;
-			inner.left = input->left + 8 + g_4b9dd2;
-			inner.right = input->right - 8 + g_4b9dd2;
-			inner.bottom = input->bottom - 8 + g_4b9dd0;
-			inner.top = input->top + 8 + g_4b9dd0;
+			s_request_screen_bounds const *input = bounds;
+			s_request_screen_bounds inner;
+			inner.left = input->left + 8;
+			inner.top = input->top + 8;
+			inner.right = input->right - 8;
+			inner.bottom = input->bottom - 8;
+			inner.left += g_4b9dd2;
+			inner.right += g_4b9dd2;
+			inner.bottom += g_4b9dd0;
+			inner.top += g_4b9dd0;
 			s_request_screen_bounds piece = inner;
 			real coordinates[4];
-#ifdef H2_NATIVE_PORT
 			coordinates[0] = 0.0f;
 			coordinates[1] = 1.0f;
 			coordinates[2] = 0.0f;
 			coordinates[3] = 1.0f;
-#else
-			_mm_store_ss(&coordinates[0], _mm_setzero_ps());
-			_mm_store_ss(&coordinates[1], _mm_set_ss(1.0f));
-			_mm_store_ss(&coordinates[2], _mm_setzero_ps());
-			_mm_store_ss(&coordinates[3], _mm_set_ss(1.0f));
-#endif
 			point2f points[4];
-			function_1e90b0(0, &piece, points);
+			function_1e90b0(&piece, points, 0);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, center, 0, color);
 			short top = inner.top - 10;
 			piece.top = top;
 			piece.left = inner.left;
 			piece.right = inner.right;
 			piece.bottom = inner.top;
-			function_1e90b0(0, &piece, points);
+			function_1e90b0(&piece, points, 0);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, edge, 0, color);
-			short bottom = inner.bottom + 10;
 			piece.top = inner.bottom;
+			short bottom = inner.bottom + 10;
 			piece.bottom = bottom;
 			piece.left = inner.left;
 			piece.right = inner.right;
-			function_1e90b0(2, &piece, points);
+			function_1e90b0(&piece, points, 2);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, edge, 0, color);
 			short left = inner.left - 10;
 			piece.left = left;
 			piece.bottom = inner.bottom;
 			piece.top = inner.top;
 			piece.right = inner.left;
-			function_1e90b0(1, &piece, points);
+			function_1e90b0(&piece, points, 1);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, edge, 0, color);
 			short right = inner.right + 10;
 			piece.right = right;
 			piece.bottom = inner.bottom;
 			piece.left = inner.right;
 			piece.top = inner.top;
-			function_1e90b0(3, &piece, points);
+			function_1e90b0(&piece, points, 3);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, edge, 0, color);
 			piece.left = left;
 			piece.top = top;
 			piece.right = inner.left;
 			piece.bottom = inner.top;
-			function_1e90b0(0, &piece, points);
+			function_1e90b0(&piece, points, 0);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, corner, 0, color);
 			piece.top = inner.bottom;
 			piece.right = right;
 			piece.bottom = bottom;
 			piece.left = inner.right;
-			function_1e90b0(2, &piece, points);
+			function_1e90b0(&piece, points, 2);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, corner, 0, color);
 			piece.left = inner.right;
 			piece.top = top;
 			piece.right = right;
 			piece.bottom = inner.top;
-			function_1e90b0(0, &piece, points);
+			function_1e90b0(&piece, points, 0);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, diagonal, 0, color);
 			piece.left = left;
 			piece.top = inner.bottom;
 			piece.bottom = bottom;
 			piece.right = inner.left;
-			function_1e90b0(2, &piece, points);
+			function_1e90b0(&piece, points, 2);
 			function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)coordinates, diagonal, 0, color);
 		}
 	}
 	return result;
+}
+
+// The new statistic callers allow this body without the earlier LTCG regressions.
+// @retail 0x1e9df0
+void function_1e9df0(long field, long counter, long team, s_statborg *statistics, short volatile delta)
+{
+ short *entry = &((s_object_values *)statistics)->team_values[team][field];
+ long value = *entry + delta;
+ if (value < -30000)
+  value = -30000;
+ else if (value > 30000)
+  value = 30000;
+ *entry = (short)value;
+ if (g_55e4d0[g_4e9ae8->engine_index] && g_4e9ae8->value28 != NONE)
+  function_b58c0(g_4e9ae8->value28, 1 << (team + 16));
+ if (counter != NONE)
+  function_1968b0(NONE, team, counter, *entry);
+}
+
+
+
+#include "unknown_0259d0.h"
+#include "unknown_030290.h"
+#include <wchar.h>
+struct s_510c4c;
+extern s_510c4c *g_510c4c;
+struct s_unknown_1e6a40;
+extern s_unknown_1e6a40 *g_51e9c0;
+struct s_33a0b_default;
+extern s_33a0b_default *g_4686d4;
+extern real g_4e69c0[4];
+extern long g_4ba04c;
+void function_13925f(long string_handle, word *buffer);
+void function_1a0180(long tag_index, long string_handle, word *buffer);
+void function_22d2ee(word *string, long maximum_length);
+bool function_162c50(long player_index, long *spectated_player_index);
+bool function_2259f0(long player_index);
+bool function_22acb4(long local_player_index);
+void function_13edb0(long font, long style, long justification, dword flags, color4f const *color, color4f const *field_24);
+void function_13ec70(color4f const *color);
+void function_13e9c0(word const *text, short_rectangle2d const *bounds, short_rectangle2d *a, short_rectangle2d *b, real scale);
+long function_1e8cb0(long index);
+struct s_entry_420;
+s_entry_420 *function_1e8d50(long index);
+class c_1fa50
+{
+public:
+ void function_1fa50(short_rectangle2d const *bounds, void const *clip, void const *position,
+  long line_gap, real scale, long color, void const *shadow) const;
+ void function_1fb10(short_rectangle2d const *bounds, real scale) const;
+};
+
+/* the fade of the given view, opaque outside the four views */
+PRIVATE inline real view_alpha_1e6fe0(long index)
+{
+ real result;
+ if (index >= 0 && index < 4)
+  result = g_4e69c0[index];
+ else
+  result = 1.0f;
+ return result;
+}
+
+struct s_transition_1e6fe0
+{
+ short state;
+ short ticks;
+};
+
+/* a local player's block (0x1b0 bytes) of g_51e9c0 as 0x1e6fe0 reads it */
+struct s_local_player_state_1e6fe0
+{
+ s_transition_1e6fe0 transitions[32];
+ long current;
+ long time;
+ byte unknown088[0x1b0 - 0x88];
+};
+typedef char assert_local_player_state_1e6fe0_size[(sizeof(s_local_player_state_1e6fe0) == 0x1b0) ? 1 : -1];
+
+// @retail 0x1e6fe0
+void function_1e6fe0(long local_player_index)
+{
+ byte *globals = (byte *)g_51e9c0;
+ if (!globals[0x6c5])
+  return;
+ word text[256];
+ word temporary[256];
+ text[0] = 0;
+ bool spectating = false;
+ if (local_player_index != NONE)
+ {
+  long player_index = g_4e8c20->entries[local_player_index];
+  long spectated_player;
+  if (player_index != NONE && function_162c50(player_index, &spectated_player))
+  {
+   *(long *)((byte *)g_510c4c + 0x1b8) = spectated_player;
+   temporary[0] = 0;
+   if (function_2259f0(player_index))
+    function_13925f(*(long *)((byte *)g_510c94 + 0x438), temporary);
+   else
+    function_13925f(*(long *)((byte *)g_510c94 + 0x43c), temporary);
+   wcsncpy((wchar_t *)text, (wchar_t const *)temporary, 255);
+   text[255] = 0;
+   function_22d2ee(text, 256);
+   *(long *)((byte *)g_510c4c + 0x1b8) = NONE;
+   spectating = true;
+  }
+ }
+ if (!spectating)
+ {
+  long string_handle;
+  if (globals[0x6c4] && *(long *)(globals + 0x6c0) != 0 && *(long *)(globals + 0x6c0) != NONE)
+   string_handle = *(long *)(globals + 0x6c0);
+  else
+  {
+   s_local_player_state_1e6fe0 *players = (s_local_player_state_1e6fe0 *)globals;
+   long index = players[local_player_index].current;
+   s_local_player_state_1e6fe0 *state = &players[local_player_index];
+   if (index == NONE)
+    return;
+   s_transition_1e6fe0 *transition = &players[local_player_index].transitions[index];
+   if (transition->state != 2 && transition->state != 3)
+    return;
+   byte *entry = (byte *)function_1e8d50(index);
+   if (!entry)
+    return;
+   word delay = *(word *)(entry + 4);
+   if (delay && g_510c54->field_2_3 * delay <= state->time)
+    return;
+   string_handle = function_1e8cb0(state->current);
+  }
+  temporary[0] = 0;
+  if (g_510c94 && g_510c94->string_list != NONE)
+   function_1a0180(g_510c94->string_list, string_handle, temporary);
+  wcsncpy((wchar_t *)text, (wchar_t const *)temporary, 255);
+  text[255] = 0;
+  function_22d2ee(text, 256);
+ }
+ if (!text[0])
+  return;
+ color4f default_color = *(color4f const *)g_4686d4;
+ long font = g_4ba04c <= 1 ? 6 : 5;
+ color4f color;
+ bool alternate = function_22acb4(g_4b9ed8);
+ if (alternate)
+ {
+  color.alpha = view_alpha_1e6fe0(g_4b9ed8);
+  color.red = 0.9647058844566345f;
+  color.green = 0.8627451062202454f;
+ }
+ else
+ {
+  color.alpha = view_alpha_1e6fe0(g_4b9ed8);
+  color.red = 0.7137255072593689f;
+  color.green = 0.8588235378265381f;
+ }
+ color.blue = 1.0f;
+ default_color.alpha = view_alpha_1e6fe0(g_4b9ed8);
+ function_13edb0(font, NONE, 2, 0, &color, &default_color);
+ function_13ec70(&color);
+ short_rectangle2d limits;
+ limits.left = -32768; limits.top = -32768; limits.right = 32767; limits.bottom = 32767;
+ short_rectangle2d bounds, measured;
+ function_13e9c0(text, &limits, &bounds, &measured, 1.0f);
+ long center_x = (g_4b9dd8.left + g_4b9dd8.right) / 2 - g_4b9dd2;
+ long center_y = (g_4b9dd8.top + g_4b9dd8.bottom) / 2 - g_4b9dd0;
+ long half_width = (short)(bounds.right - bounds.left) / 2 + 5;
+ long half_height = (short)(bounds.bottom - bounds.top) / 2 + 1;
+ limits.left = (short)(center_x - half_width);
+ limits.top = (short)(center_y - half_height);
+ limits.right = (short)(center_x + half_width);
+ limits.bottom = (short)(center_y + half_height);
+ if (function_1e9140((s_request_screen_bounds const *)&limits))
+  ((c_1fa50 const *)text)->function_1fa50(&limits, NULL, NULL, 0, 1.0f, 0, NULL);
+}
+
+// @retail 0x1e90b0
+void function_1e90b0(const s_request_screen_bounds *bounds, point2f *points, long first)
+{
+	real left = (real)bounds->left;
+	real right = (real)bounds->right;
+	real top = (real)bounds->top;
+	real bottom = (real)bounds->bottom;
+	points[first % 4].x = left;
+	points[first % 4].y = top;
+	points[(first + 1) % 4].x = right;
+	points[(first + 1) % 4].y = top;
+	points[(first + 2) % 4].x = right;
+	points[(first + 2) % 4].y = bottom;
+	points[(first + 3) % 4].x = left;
+	points[(first + 3) % 4].y = bottom;
 }

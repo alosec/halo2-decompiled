@@ -5,19 +5,26 @@ retail, so the caller can match), belongs to a library, or is part of the same
 mutual recursion. Smallest first, one line per function: va, size, name (a
 library signature's, else "-"), calls.
 
-    python tools/ready.py [N] [--claims FILE]
+    python tools/ready.py [N] [--claims FILE] [--owner third:havok]
+
+--owner third:havok lists Havok functions instead, by the same rule: their
+Havok callees decompiled; calls back into the game never block.
 
 --claims FILE is a saved copy of the Active claims table on issue #9
 (markdown). A function is left out when its address sits in one of those
 ranges. The Finished section is not claimed. A parenthetical "(except ...)"
 is a hole, claimed only if another row lists it. Without --claims, the list
 is unchanged. The tool does not read GitHub.
+
+A function whose draft is disabled in the source (inside an `#if 0` block,
+see tools/drafts.py) is not ready to write either, so it is left out.
 """
 import argparse
 import bisect
 import re
 import sys
 
+from drafts import disabled_addresses
 from inventory import read_rows
 from xbe import FUNCTIONS_CSV
 
@@ -137,15 +144,15 @@ def _active_section(lines):
     return lines[start:]
 
 
-def parse_claims(text, warn=None):
-    """Merged inclusive ranges from an issue #9 Active claims table.
+def claim_rows(text, warn=None):
+    """(who, spans) for each row of an issue #9 Active claims table: the row's
+    first cell and its inclusive address spans, holes removed.
 
     Stops at the next heading of the same or a higher level, so the Finished
-    section is ignored. Returns [] when the table has no addresses. warn, if
-    given, is called for each code span that mentions 0x but is not read as
-    an address or range."""
+    section is ignored. warn, if given, is called for each code span that
+    mentions 0x but is not read as an address or range."""
     text = text.replace('\r\n', '\n').replace('\r', '\n')
-    spans = []
+    rows = []
     for line in _active_section(text.split('\n')):
         raw = line.strip()
         if not raw.startswith('|'):
@@ -162,8 +169,14 @@ def parse_claims(text, warn=None):
             holes += _span_list(m.group(1), warn)
         # A hole applies only to this row. Another row may claim the same
         # addresses (lane I's "except the UI screens", which the UI lane lists).
-        spans += _subtract(_span_list(_EXCEPT.sub(' ', cell), warn), holes)
-    return _merge(spans)
+        rows.append((cells[0], _subtract(_span_list(_EXCEPT.sub(' ', cell), warn), holes)))
+    return rows
+
+
+def parse_claims(text, warn=None):
+    """Merged inclusive ranges from an issue #9 Active claims table (every
+    row; see claim_rows). Returns [] when the table has no addresses."""
+    return _merge([s for _, spans in claim_rows(text, warn) for s in spans])
 
 
 def covers(claims, va):
@@ -180,7 +193,11 @@ def _by_size(r):
     return int(r['size']), r['va']
 
 
-def ready(rows):
+def ready(rows, owner='game', disabled=()):
+    """The functions of one owner (the game by default; 'third:havok' for
+    Havok) whose callees of that same owner are all decompiled. Calls to other
+    owners never block: for the game those are libraries; for Havok, the game's
+    callbacks. An address in disabled has a draft already, so it is left out."""
     def calls(va):
         text = rows[va]['calls']
         return {int(c, 16) for c in text.split()} if text else set()
@@ -188,16 +205,16 @@ def ready(rows):
     def done(va):  # decompiled: matched, or has source the checker re-tests
         return rows[va]['status'] == 'matched' or bool(rows[va].get('source'))
 
-    game = {va for va, r in rows.items() if r['owner'] == 'game'}
-    graph = {va: calls(va) & game for va in game}
+    mine = {va for va, r in rows.items() if r['owner'] == owner}
+    graph = {va: calls(va) & mine for va in mine}
     result = []
     for group in components(graph):
         if all(done(va) for va in group):
             continue
         outside = set().union(*(calls(va) for va in group)) - group
-        if all(c not in rows or rows[c]['owner'] != 'game' or done(c) for c in outside):
+        if all(c not in rows or rows[c]['owner'] != owner or done(c) for c in outside):
             result += [rows[va] for va in group if not done(va)]
-    return sorted(result, key=_by_size)
+    return sorted((r for r in result if int(r['va'], 16) not in disabled), key=_by_size)
 
 
 def line(r):
@@ -209,9 +226,11 @@ def main():
     ap.add_argument('count', nargs='?', type=int, default=20)
     ap.add_argument('--claims', metavar='FILE',
                     help='markdown copy of the issue #9 Active claims table')
+    ap.add_argument('--owner', default='game',
+                    help="the functions to list: 'game' (default) or 'third:havok' for Havok")
     args = ap.parse_args()
     rows = read_rows(FUNCTIONS_CSV)
-    found = ready(rows)
+    found = ready(rows, args.owner, disabled=disabled_addresses())
     if args.claims:
         with open(args.claims, encoding='utf-8') as fh:
             claims = parse_claims(fh.read(), warn=lambda msg: print(f'warning: {msg}', file=sys.stderr))

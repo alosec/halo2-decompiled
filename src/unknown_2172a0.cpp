@@ -12,26 +12,31 @@ struct s_55c164
 	byte unknown04[0x40];
 };
 
-extern long g_55c160;
-extern s_55c164 g_55c164[16];
+/* the count and the entries are one structure (unknown_2157e0.cpp) */
+struct s_55c160
+{
+	long count;
+	s_55c164 entries[16];
+};
+extern s_55c160 g_55c160_table;
 
 // @retail 0x2172a0
 void function_2172a0(long handle)
 {
-	long count = g_55c160;
+	long count = g_55c160_table.count;
 	long i;
 
 	for (i = 0; i < count; i++)
 	{
-		long entry = (long)g_55c164[i].field0;
+		long entry = (long)g_55c160_table.entries[i].field0;
 
 		if (entry != NONE && entry == handle)
 		{
 			long last = count - 1;
 
 			if (i != last)
-				g_55c164[i] = g_55c164[last];
-			g_55c160--;
+				g_55c160_table.entries[i] = g_55c160_table.entries[last];
+			g_55c160_table.count--;
 			return;
 		}
 	}

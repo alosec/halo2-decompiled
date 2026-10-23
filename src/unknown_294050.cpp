@@ -26,23 +26,26 @@ struct s_294051
 point3f *function_b9dd0(long arg_0, point3f *arg_1);
 real function_30bf0(vector3f *arg_0);
 
-__forceinline real function_2941a7(real arg_0, real arg_1, real arg_2)
+__forceinline real function_2941a7(vector3f const *vector)
 {
-	return (real)sqrt(arg_2 * arg_2 + arg_1 * arg_1 + arg_0 * arg_0);
+	return (real)sqrt(vector->k * vector->k + vector->j * vector->j + vector->i * vector->i);
 }
 
 __forceinline real function_29419d(vector3f *arg_0)
 {
-	real local_0 = function_2941a7(arg_0->i, arg_0->j, arg_0->k);
+	real local_0 = function_2941a7(arg_0);
+	real local_2;
 	if (!(fabs(local_0) < 0.0001f))
 	{
+		local_2 = local_0;
 		real local_1 = 1.0f / local_0;
 		arg_0->i = local_1 * arg_0->i;
 		arg_0->j = local_1 * arg_0->j;
 		arg_0->k = arg_0->k * local_1;
-		return local_0;
 	}
-	return 0.0f;
+	else
+		local_2 = 0.0f;
+	return local_2;
 }
 
 __forceinline void function_294240(vector3f *arg_0, real arg_1, vector3f const *arg_2)
@@ -75,9 +78,7 @@ void function_294050(s_294050 const *arg_0, s_294051 const *arg_1, point3f const
 				point3f local_5;
 				function_b9dd0(local_4, &local_5);
 				vector3f local_6;
-				local_6.i = local_5.x - arg_2->x;
-				local_6.j = local_5.y - arg_2->y;
-				local_6.k = local_5.z - arg_2->z;
+				vector3d_from_points3d(arg_2, &local_5, &local_6);
 				real local_7 = function_29419d(&local_6);
 				real local_8;
 				if (local_1 > local_7)
@@ -98,9 +99,7 @@ void function_294050(s_294050 const *arg_0, s_294051 const *arg_1, point3f const
 	if (arg_0->field_24 > 0)
 	{
 		vector3f local_9;
-		local_9.i = arg_0->field_14.x - arg_2->x;
-		local_9.j = arg_0->field_14.y - arg_2->y;
-		local_9.k = arg_0->field_14.z - arg_2->z;
+		vector3d_from_points3d(arg_2, &arg_0->field_14, &local_9);
 		real local_10 = function_30bf0(&local_9);
 		real local_11 = arg_0->field_20 * local_1;
 		real local_12 = 0.0f;

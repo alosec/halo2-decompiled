@@ -14,8 +14,8 @@ void function_b3db0(void);
 void __stdcall function_b3d30(long stage);
 void function_21ebe0(void);
 void __stdcall function_21ebc0(long stage);
-void function_1232e0(void);
-void __stdcall function_123230(long stage);
+void animation_cache_memory_dispose(void);
+void __stdcall animation_cache_memory_initialize(long stage);
 void function_12dad0(void);
 void __stdcall function_12d9f0(long stage);
 
@@ -33,6 +33,6 @@ s_callback_pair g_453c00[8] =
 	{ function_533e0, function_53310 },
 	{ function_b3db0, function_b3d30 },
 	{ function_21ebe0, function_21ebc0 },
-	{ function_1232e0, function_123230 },
+	{ animation_cache_memory_dispose, animation_cache_memory_initialize },
 	{ function_12dad0, function_12d9f0 },
 };

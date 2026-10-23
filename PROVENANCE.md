@@ -5,8 +5,8 @@ contributions may and may not contain, and known provenance issues that are
 being worked on. The aim is that everything in the repository can be checked
 by another researcher who has a retail copy of Halo 2 they are entitled to
 use and the project's public tools: every recreated function is compared byte
-for byte with the retail executable, and nothing in the repository depends on
-leaked or internal material.
+for byte with the retail executable, and nothing in the repository is copied
+from leaked or internal material.
 
 ## Sources contributions may use
 
@@ -119,8 +119,12 @@ and remediated as described below; item 3 is still under review.
    - Strings that are data in the retail executable (object type names such
      as `"light_fixture"`) were left alone.
 
-   The comparison is by exact name, so a name that was altered slightly
-   before it was committed is not caught; please report any such name.
+   Since 2026-10-16 every merge is also checked for close variants of those
+   names: the same name with a prefix or suffix added or dropped, the same
+   words in another order, or mostly the same words. Names already in the
+   repository are being reviewed against the same check, and renamed from
+   what the code does as each part of the code is reworked for readability.
+   Please report any name the checks have missed.
 3. **Halo CE reference names.** Some names follow the public Halo: Combat
    Evolved decompilation (punpckhdq/halo). How that project derived its names
    is being reviewed.

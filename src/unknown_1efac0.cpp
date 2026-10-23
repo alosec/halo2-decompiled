@@ -95,8 +95,8 @@ bool s_lookup::initialize(long object_handle)
 		{
 			s_tag_ref_data *b = tags[a->ref0c & 0xffff].data;
 
+			void *pa = (byte *)object + *(short volatile const *)&object->offset11a;
 			void *pb = (byte *)object + object->offset116;
-			void *pa = (byte *)object + object->offset11a;
 
 			pointer_a = pa;
 			handle = object_handle;
@@ -113,7 +113,7 @@ bool s_lookup::initialize(long object_handle)
 /* ---- a three-level table of items, walked by a packed position ---- */
 struct s_item
 {
-	byte first;
+	signed char first;
 	byte unknown01[3];
 	byte data[0x40];
 };
@@ -180,17 +180,21 @@ struct s_iterator
 // @retail 0x1efca0
 bool s_iterator::advance()
 {
-	long g = group;
-	long sub_index = sub;
+	long g = NONE;
+	long sub_index;
 	long item_index;
 	s_sub *s = 0;
 	bool next = true;
 
 	if (position != NONE)
 	{
+  g = group;
+  sub_index = sub;
 		s = &table->groups[g].subs[sub_index];
 
-		if (s && item + 1 < s->count)
+		long sub_count = 0;
+		if (s) sub_count = s->count;
+		if (item + 1 < sub_count)
 		{
 			item_index = item + 1;
 			next = false;
@@ -312,10 +316,10 @@ void function_1efbd0(dword id, s_mix_output *output, s_mix_source *source, signe
 			if (entry->id != 0xff && index >= 0 && index < entry->count)
 			{
 				s_mix_item *item = &entry->items[index];
-				byte value = item->value;
+				
 
-				if (value != 0xff)
-					output->values.values[(signed char)entry->id] = value;
+				if (item->value != 0xff)
+					output->values.values[(signed char)entry->id] = item->value;
 			}
 		}
 	}
@@ -325,7 +329,7 @@ struct s_slot_entry_list;
 extern s_slot_entry_list *g_4e0340;
 extern byte *g_4ed280;
 extern long *g_51e9cc;
-long function_184000(long bit, long index);
+long function_184000(long index, long bit);
 
 struct s_surface_flags
 {
@@ -372,19 +376,23 @@ struct s_surface_object_header
 	s_object_view *object;
 };
 
+// score 8 (was 8): the record address is computed in ECX; retail computes it in EDX and reads
+// the flags from it.
+/* the first argument is the caller's shape owner (or its object reference); the body
+   never reads it, but every retail caller still computes it before the call */
 // @retail 0x1ef3e0
-bool function_1ef3e0(dword key)
+bool function_1ef3e0(void const *owner, dword key)
 {
-	long surface_index = (key >> 16) & 0x1fff;
-	long object_index = key & 0xffff;
 	bool result = true;
+	long object_index = key & 0xffff;
+	long surface_index = (key >> 16) & 0x1fff;
 	switch (key >> 29)
 	{
 	case 5:
 		{
 			s_surface_globals *globals = (s_surface_globals *)g_4e0348;
 			s_surface_flags *surface = &globals->owners[globals->instances[object_index].owner].surfaces[surface_index];
-			if ((surface->flags & 8) && !(byte)function_184000(surface->bit, object_index))
+			if ((surface->flags & 8) && !(byte)function_184000(object_index, surface->bit))
 				result = false;
 		}
 		break;
@@ -435,15 +443,15 @@ struct s_surface_key_array
 };
 
 // @retail 0x1eece0
-void function_1eece0(s_surface_key_array *array, void *volatile owner)
+void function_1eece0(s_surface_key_array *array, void *owner)
 {
  long index = 0;
  if (array->count > 0)
  {
-  owner = (byte *)owner + 0x14;
   do
   {
-   if (!function_1ef3e0(array->keys[index]))
+   /* the owner's object reference, c_shape_owner::object */
+   if (!function_1ef3e0((byte *)owner + 0x14, array->keys[index]))
    {
     array->count--;
     for (long i = index; i < array->count; i++)
@@ -455,41 +463,9 @@ void function_1eece0(s_surface_key_array *array, void *volatile owner)
 }
 
 struct s_bsp3d;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
-// @retail 0x1efdc0
-bool function_1efdc0(s_lookup *lookup, const point3f *point)
-{
- s_lookup *const *lookup_reference = &lookup;
- s_iterator iterator;
- function_1efbd0((dword)(*lookup_reference)->tag_b, (s_mix_output *)&iterator,
-  (s_mix_source *)(*lookup_reference)->tag_a, (signed char *)(*lookup_reference)->pointer_a);
- while (iterator.advance())
- {
-  const transform4x3f *matrix = (const transform4x3f *)(*lookup_reference)->pointer_b + iterator.first;
-  point3f local;
-  if (matrix->scale != 0.0f)
-  {
-   real x = point->x - matrix->position.x;
-   real y = point->y - matrix->position.y;
-   real z = point->z - matrix->position.z;
-   if (matrix->scale != 1.0f)
-   {
-    real inverse = 1.0f / matrix->scale;
-    x *= inverse;
-    y *= inverse;
-    z *= inverse;
-   }
-   local.x = matrix->forward.k * z + matrix->forward.j * y + matrix->forward.i * x;
-   local.y = matrix->left.k * z + matrix->left.j * y + matrix->left.i * x;
-   local.z = matrix->up.k * z + matrix->up.j * y + matrix->up.i * x;
-  }
-  else local.x = local.y = local.z = 0.0f;
-  if (function_14a280((s_bsp3d *)iterator.current, &local, 0) == NONE)
-   return true;
- }
- return false;
-}
+bool function_1efdc0(s_lookup *lookup, const point3f *point);
 
 struct s_type_1a7926
 {
@@ -501,7 +477,7 @@ struct s_type_1a7926
  transform4x3f *field_50;
 };
 
-bool function_20a9a0(long object_index, s_type_1a7926 *matrices);
+bool function_20a9a0(s_type_1a7926 *matrices, long object_index);
 
 struct s_model_choice
 {
@@ -532,7 +508,7 @@ struct s_model_regions
 PRIVATE inline bool surface_object_has_physics(long object_index)
 {
  s_type_1a7926 info;
- return function_20a9a0(object_index, &info);
+ return function_20a9a0(&info, object_index);
 }
 
 // @retail 0x1ef500
@@ -554,7 +530,7 @@ long function_1ef500(long object_index, long position)
  if (surface_object_has_physics(object_index))
  {
   s_type_1a7926 info;
-  function_20a9a0(object_index, &info);
+  function_20a9a0(&info, object_index);
   s_model_regions *model = *(s_model_regions **)&info.unknown3c[8];
   byte *physics = (byte *)info.node_indices;
   for (; result == NONE && region_index < model->count; ++region_index)
@@ -666,16 +642,19 @@ long function_1ef810(long index)
  return index;
 }
 
+// score 22 (was 53): retail reads the globals pointer inside the branch that uses it, where
+// ours reads it before the surface count is checked, and retail copies the count into a second
+// register before the flag test.
 // @retail 0x1ef6d0
-dword function_1ef6d0(dword key)
+dword c_shape_global_owner::next_key(dword key)
 {
- // Retail keeps the key on the stack while traversing the surface groups.
- const dword *key_reference = &key;
+ s_surface_globals *globals = (s_surface_globals *)g_4e0348;
  s_surface_list *world = (s_surface_list *)g_4e0340;
  long count = *(long *)((byte *)world + 0x28);
- if (count > 0 && (world->surfaces[count - 1].flags & 0x10)) --count;
+ long last = count;
+ if (count > 0 && (world->surfaces[last - 1].flags & 0x10)) --count;
  long *objects = g_51e9cc;
- long index = *key_reference & 0xffff;
+ long index = key & 0xffff;
  long position = (key >> 16) & 0x1fff;
  long kind = key >> 29;
  if (kind == 1)
@@ -685,7 +664,6 @@ dword function_1ef6d0(dword key)
  }
  if (kind == 1 || kind == 2)
  {
-  s_surface_globals *globals = (s_surface_globals *)g_4e0348;
   if (globals->count > 0)
   {
    for (; index < globals->count - 1; ++index)
@@ -717,7 +695,7 @@ dword function_1ef6d0(dword key)
  if (index != NONE)
  {
   s_type_1a7926 info;
-  long next_kind = function_20a9a0(object_index, &info) ? 3 : 4;
+  long next_kind = function_20a9a0(&info, object_index) ? 3 : 4;
   return (((next_kind << 13) | next_position) << 16) | index;
  }
  return (dword)NONE;
@@ -769,68 +747,3 @@ struct s_lookup_ray_result
 
 void function_141590(const transform4x3f *matrix, transform4x3f *inverse);
 bool __stdcall function_1de6d0(s_1de6d0 *query, long root, real start, real end);
-
-// @retail 0x1eff40
-bool function_1eff40(s_lookup *lookup, long flags, const point3f *point,
- const vector3f *direction, s_lookup_ray_result *result)
-{
- (void)&lookup; (void)&flags; (void)&point; (void)&direction; (void)&result;
- s_lookup_ray_result *const *result_reference = &result;
- bool found = false;
- s_iterator iterator;
- (*result_reference)->hit.field_0 = 1.0f;
- function_1efbd0((dword)lookup->tag_b, (s_mix_output *)&iterator,
-  (s_mix_source *)lookup->tag_a, (signed char *)lookup->pointer_a);
- while (iterator.advance())
- {
-  dword position = iterator.position;
-  long node = iterator.first;
-  transform4x3f inverse;
-  function_141590((const transform4x3f *)lookup->pointer_b + node, &inverse);
-  point3f local_point;
-  real x = point->x, y = point->y, z = point->z;
-  if (inverse.scale != 1.0f)
-  {
-   x = inverse.scale * x;
-   y = inverse.scale * y;
-   z = inverse.scale * z;
-  }
-  local_point.x = inverse.up.i * z + inverse.left.i * y + inverse.forward.i * x + inverse.position.x;
-  local_point.y = inverse.up.j * z + inverse.left.j * y + inverse.forward.j * x + inverse.position.y;
-  local_point.z = inverse.up.k * z + inverse.left.k * y + inverse.forward.k * x + inverse.position.z;
-  vector3f local_direction;
-  x = direction->i; y = direction->j; z = direction->k;
-  if (inverse.scale != 1.0f)
-  {
-   x *= inverse.scale;
-   y *= inverse.scale;
-   z *= inverse.scale;
-  }
-  local_direction.i = inverse.up.i * z + inverse.left.i * y + inverse.forward.i * x;
-  local_direction.j = inverse.up.j * z + inverse.left.j * y + inverse.forward.j * x;
-  local_direction.k = inverse.up.k * z + inverse.left.k * y + inverse.forward.k * x;
-  s_1de6d0 query;
-  query.field_0 = flags;
-  query.field_4 = (s_1de6d2 const *)iterator.current;
-  query.field_8 = 0;
-  query.field_c = NULL;
-  query.field_10 = &local_point;
-  query.field_14 = &local_direction;
-  query.field_18 = &(*result_reference)->hit;
-  query.field_1c = NONE;
-  query.field_20 = 0;
-  query.field_24 = NONE;
-  real fraction = (*result_reference)->hit.field_0;
-  (*result_reference)->hit.field_0 = fraction < 0.0f ? 0.0f : fraction;
-  (*result_reference)->hit.field_18 = 0;
-  real bounded = fraction < 0.0f ? 0.0f : fraction > 1.0f ? 1.0f : fraction;
-  if (function_1de6d0(&query, 0, 0.0f, bounded))
-  {
-   (*result_reference)->position = position;
-   (*result_reference)->node = (short)node;
-   (*result_reference)->item = iterator.group;
-   found = true;
-  }
- }
- return found;
-}

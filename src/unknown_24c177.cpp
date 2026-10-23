@@ -158,11 +158,11 @@ void *c_class_1474e8::get_item_animation(long index)
 
 	if (definition)
 	{
-		skin = function_14837a(definition->skin_index);
+		skin = ui_definition_get_skin(definition->skin_index);
 	}
 	else
 	{
-		skin = function_14837a(0);
+		skin = ui_definition_get_skin(0);
 	}
 	return skin->item_animations + index * 16;
 }
@@ -206,11 +206,16 @@ long c_class_1474e8::count_filled_items()
 // @retail 0x24c5f2
 void *c_class_1474e8::function_24c5f2(long datum)
 {
+	void *result;
 	if (data && datum != NONE)
 	{
-		return data->data + (datum & 0xffff) * data->size;
+		result = data->data + (datum & 0xffff) * data->size;
 	}
-	return 0;
+	else
+	{
+		result = 0;
+	}
+	return result;
 }
 
 // @retail 0x24c1a4
@@ -433,18 +438,14 @@ void function_24c1c5(c_widget *widget, char direction)
 						datum = data_last_index(list->data);
 						if (datum != NONE)
 						{
-							while (focused)
+							do
 							{
+								if (!focused) break;
 								c_class_1a2c81 *previous = focused->previous;
-
 								((c_class_14750b *)focused)->value70 = datum;
 								focused = previous;
 								datum = function_16bcc0(list->data, datum);
-								if (datum == NONE)
-								{
-									break;
-								}
-							}
+							} while (datum != NONE);
 						}
 						moved = true;
 					}
@@ -469,7 +470,8 @@ void function_24c1c5(c_widget *widget, char direction)
 			{
 				for (c_class_1a2c81 *item = list->child; item; item = item->next)
 				{
-					list_item(item)->value70 = step_proc(list->data, list_item(item)->value70);
+					long next_datum = step_proc(list->data, list_item(item)->value70);
+					list_item(item)->value70 = next_datum;
 				}
 			}
 		}
@@ -519,7 +521,7 @@ void c_class_1474e8::assign_items(long datum)
 				if (focused_datum != NONE)
 				{
 					/* 0x230427 reads the datum's low word */
-					screen->function_230427((short *)&focused_datum);
+					screen->select_pane((short *)&focused_datum);
 				}
 			}
 		}
@@ -623,7 +625,7 @@ void function_24c102(c_class_1474e8 *list, c_class_1a2c81 *item)
 
 	list->remove_child(item);
 	function_24c0c4((c_widget *)list);
-	if (list->is_in_window())
+	if (item->is_in_window())
 	{
 		if (next)
 		{
@@ -649,31 +651,30 @@ void function_24bc12(c_class_1474e8 *list, bool remove_extra)
 {
 	s_list_definition *definition;
 	c_class_1a2c81 *item;
-	short width = 0;
 
 	list->v17();
 	definition = list->function_1751d0();
 	item = list->child;
-	list->value7c = definition ? (bool)(definition->flags & 1) : false;
+	list->value7c = (bool)(definition ? (definition->flags & 1) : 0);
 	list->value68 = definition ? definition->value0c - 1 : 0;
 	list->value78 = definition ? definition->value0e : 0;
 	if (definition)
 	{
+		short width = 0;
 		short height = 0;
-		s_widget_group_definition *skin = (s_widget_group_definition *)function_14837a(definition->skin_index);
+		s_widget_group_definition *skin = (s_widget_group_definition *)ui_definition_get_skin(definition->skin_index);
 		s_widget_point point;
 		s_widget_bounds bounds;
 		long i;
 
-		point.x = definition->x;
-		point.y = definition->y;
+		point = *(s_widget_point const *)&definition->x;
 		for (i = 0; i < definition->item_count && item; i++)
 		{
 			s_widget_bounds local_50a200;
 
 			function_2bacbc(item, skin, &point);
 			item->value68 = list->value68;
-			list_item(item)->value74 = list->value78;
+			((c_class_14750b *)item)->value74 = list->value78;
 			function_2bafa4(item, &local_50a200);
 			height = local_50a200.top - local_50a200.bottom;
 			point.y -= height;
@@ -682,8 +683,8 @@ void function_24bc12(c_class_1474e8 *list, bool remove_extra)
 		}
 		bounds.left = point.x;
 		bounds.right = point.x + width;
-		bounds.bottom = (short)(i * height) + point.y;
 		bounds.top = point.y;
+		bounds.bottom = (short)(i * height) + point.y;
 		list->bounds = bounds;
 	}
 	if (remove_extra)
@@ -793,12 +794,13 @@ bool function_24c63e(c_widget *widget)
 bool function_24c676(c_widget *widget)
 {
 	c_class_1474e8 *list = (c_class_1474e8 *)widget;
-	c_class_1a2c81 *last = list->child;
-	s_record_pool *data = list->data;
 	bool result = false;
 
-	if (last && data)
+	if (list->child && list->data)
 	{
+		s_record_pool *data = list->data;
+		c_class_1a2c81 *last = list->child;
+
 		while (last->next)
 		{
 			last = last->next;

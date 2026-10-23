@@ -164,36 +164,80 @@ void sound_cache_initialize(void)
 
 /* 0x2186b0, the cache's dispose, is in src/sound_cache_dispose.cpp (/Ob1) */
 
+PRIVATE __forceinline bool function_2186f1(s_data_datum_iterator *arg_0, s_record_pool *volatile *arg_1)
+{
+	long local_1 = *(long volatile *)&arg_0->index + 1;
+	byte *local_2 = NULL;
+	if (local_1 >= 0)
+	{
+		s_record_pool *local_0 = *(s_record_pool *volatile *)&arg_0->data;
+		local_1 = data_next_absolute_index_inlined(local_0, local_1);
+		if (local_1 != NONE)
+		{
+			s_record_pool *local_3 = *arg_1;
+			local_2 = local_3->data + local_3->size * local_1;
+			*(long volatile *)&arg_0->index = local_1;
+			arg_0->datum_index = (*(short *)local_2 << 16) | local_1;
+		}
+	}
+	arg_0->datum = local_2;
+	return local_2 != NULL;
+}
+
+PRIVATE __forceinline bool function_2186f2(long arg_0, s_record_pool *arg_1)
+{
+	s_sound_cache_entry *local_0 = &((s_sound_cache_entry *)arg_1->data)[arg_0 & 0xffff];
+	bool local_1;
+	if (local_0->lock_count || local_0->reference_count)
+		local_1 = true;
+	else
+	{
+		local_1 = false;
+		if (!local_0->loaded)
+			local_1 = true;
+	}
+	return local_1;
+}
+
+PRIVATE __forceinline bool function_2186f3(dword arg_0, dword arg_1, dword arg_2)
+{
+	return arg_0 - arg_1 >= arg_2;
+}
+
 // @retail 0x2186f0
 void function_2186f0(void)
 {
-	dword start_time = GetTickCount();
-	s_record_pool_iterator iterator;
-	s_sound_cache_entry *entry;
+	dword volatile start_time = GetTickCount();
+	s_data_datum_iterator local_0;
+	s_record_pool *local_1 = g_502104;
+	s_record_pool *volatile local_2;
 
-	iterator.data = g_502104;
-	iterator.index = NONE;
-	iterator.datum_index = NONE;
-	while ((entry = (s_sound_cache_entry *)data_iterator_next_inlined(&iterator)) != NULL)
+	local_0.data = local_1;
+	local_0.index = NONE;
+	local_0.datum_index = NONE;
+	local_2 = local_1;
+	while (function_2186f1(&local_0, &local_2))
 	{
-		while (SOUND_CACHE_ENTRY(iterator.datum_index)->lock_count ||
-			SOUND_CACHE_ENTRY(iterator.datum_index)->reference_count ||
-			!SOUND_CACHE_ENTRY(iterator.datum_index)->loaded)
+		while (function_2186f2(local_0.datum_index, local_1))
 		{
 			async_globals.tasks_added = function_120bf0();
-			if (GetTickCount() - start_time >= 5000)
+			dword local_2 = GetTickCount();
+			local_1 = g_502104;
+			if (function_2186f3(local_2, start_time, 5000))
 			{
 				break;
 			}
 		}
 
-		long cache_index = entry->chunk->cache_index;
+		local_0.datum = (byte *)((s_sound_cache_entry *)local_0.datum)->chunk;
+		long cache_index = ((s_sound_chunk *)local_0.datum)->cache_index;
 		if (cache_index != NONE)
 		{
 			sound_cache_pages()->block_delete(cache_index);
+			local_1 = g_502104;
 		}
 	}
-	g_502104->valid = false;
+	local_1->valid = false;
 }
 
 // @retail 0x218810

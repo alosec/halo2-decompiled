@@ -117,17 +117,18 @@ void function_22fba9(c_class_1473c9 *screen)
 
 /* the widgets of the current pane: bitmaps, groups, texts and models */
 // @retail 0x22fc08
+// score 23 (was 66): the two results are masked into the slot with AND where retail stores them, so
+// the slot keeps the old value instead of the new one.
 void __stdcall function_22fc08(c_class_1473c9 *screen)
 {
 	s_screen_pane *pane = screen->get_current_pane();
+	long i = 0;
 
 	if (pane)
 	{
-		long i;
-
 		bool animating = function_22f0ff((c_widget *)screen);
 
-		for (i = 0; i < pane->bitmap_count; i++)
+		for (; i < pane->bitmap_count; i++)
 		{
 			c_class_1a2c81 *bitmap = function_22fa30(screen, &pane->bitmaps[i]);
 
@@ -205,7 +206,7 @@ void function_22facd(c_class_1473c9 *screen, short set_index)
 
 	if (set_index >= 0 && set_index < 0x20)
 	{
-		s_type_954545 *globals = function_148350();
+		s_type_954545 *globals = ui_definition_get();
 
 		if (globals && set_index < globals->widget_set_count)
 		{
@@ -310,7 +311,7 @@ configure_list:
 // @retail 0x22fda6
 void __stdcall function_22fda6(c_class_1473c9 *screen)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 	s_screen_definition *definition = function_22f871(screen);
 	word name[0x100];
 	short pane_value;
@@ -374,7 +375,7 @@ void __stdcall function_22fda6(c_class_1473c9 *screen)
 // @retail 0x22ff53
 void __stdcall function_22ff53(c_class_1473c9 *screen)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 	s_screen_definition *definition = function_22f871(screen);
 	short pane_value = screen->get_first_pane_value();
 	word name[0x100];

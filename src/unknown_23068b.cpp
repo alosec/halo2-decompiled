@@ -24,7 +24,7 @@ c_class_1473c9 *__stdcall function_230691(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_2310b7(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_2312c2(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_2313a8(s_screen_parameters *request);
-c_class_1473c9 *__stdcall function_231995(s_screen_parameters *request);
+c_class_1473c9 *__stdcall online_y_menu_open(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_2320c4(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_231db5(s_screen_parameters *request);
 c_class_1473c9 *__stdcall function_23252e(s_screen_parameters *request);
@@ -358,7 +358,7 @@ void function_199a03(long mode);
 bool network_session_interface_set_value49a4(long value);
 void function_148cfc(long value);
 void function_19a0af(long value);
-c_class_1473c9 *function_149f1e(word user_flags, long load);
+c_class_1473c9 *window_manager_open_channel_5_screen(short user_flags, long load);
 c_class_1473c9 *__stdcall function_230c8d(s_screen_parameters *parameters);
 void function_22387b(void);
 
@@ -412,7 +412,7 @@ void c_xbox_live_menu_list::handle_item(s_controller_reference **controller, lon
 		case 1:
 			if (function_193f50())
 			{
-				function_149f1e(1 << (*controller)->controller_index, (long)function_230c8d);
+				window_manager_open_channel_5_screen(1 << (*controller)->controller_index, (long)function_230c8d);
 			}
 			else
 			{
@@ -911,8 +911,8 @@ struct s_objectives_scenario_view
 	long objectives_string_list_index;
 };
 
-long function_22c075(long index);
-long function_232371(long item);
+long mission_objectives_state(long index);
+long mission_objectives_text_id(long item);
 void function_1a0180(long tag_index, long string_handle, word *buffer);
 word *unicode_string_append(word *destination, const word *source, long maximum_count);
 
@@ -921,16 +921,18 @@ word *unicode_string_append(word *destination, const word *source, long maximum_
 // @retail 0x23223d
 void function_23223d(c_pause_game_screen *screen)
 {
-	c_pause_game_screen **screen_reference = &screen;
-	c_class_1a2c81 *text = screen->find_child(6, 2, false);
+	c_pause_game_screen * volatile *screen_reference = &screen;
+	c_class_1a2c81 *text = (*screen_reference)->find_child(6, 2, false);
 
 	s_text_object_view *text_object;
 
 	if (text && (text_object = (s_text_object_view *)text->function_22f52e()) != NULL)
 	{
-		word *buffer = screen->text.text;
+		long size = sizeof(text_object->layout);
+		memcpy(&text_object->layout, &g_459130, size);
 
-		memcpy(&text_object->layout, &g_459130, sizeof(text_object->layout));
+		word *buffer = (*screen_reference)->text.text;
+
 		text_object->value38 = 1;
 		buffer[0] = 0;
 
@@ -939,7 +941,7 @@ void function_23223d(c_pause_game_screen *screen)
 		{
 			for (long i = 0; i < 5; i++)
 			{
-				long state = function_22c075(i);
+				long state = mission_objectives_state(i);
 
 				if (state)
 				{
@@ -959,7 +961,7 @@ void function_23223d(c_pause_game_screen *screen)
 						unicode_string_append(buffer, checked_box, 0x100);
 					}
 					buffer[0xff] = 0;
-					function_1a0180(string_list_index, function_232371(i), objective);
+					function_1a0180(string_list_index, mission_objectives_text_id(i), objective);
 					unicode_string_append(buffer, objective, 0x100);
 					buffer[0xff] = 0;
 					unicode_string_append(buffer, (word const *)L"\r\n", 0x100);

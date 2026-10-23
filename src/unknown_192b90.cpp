@@ -11,13 +11,13 @@ real function_12aff0(real a, real b, real c, bool flag);
 // @retail 0x192d70
 real function_192d70(real a, real b, real c)
 {
-	real value = function_12aff0(b, a, c, false);
+	real pre_ratio_scale = function_12aff0(b, a, c, false);
 	real maximum = c;
 
 	if (a > maximum)
 		maximum = a;
 
-	return value * (a / maximum);
+	return pre_ratio_scale * (a / maximum);
 }
 
 /* the five speaker directions: front left, front right, back left, back
@@ -43,13 +43,10 @@ real function_192b90(point3f const *direction, long speaker, bool linear)
 
 		if (linear)
 		{
-			delta.i = direction->x - g_444c84[speaker].x;
-			delta.j = direction->y - g_444c84[speaker].y;
-			delta.k = direction->z - g_444c84[speaker].z;
-			delta.i *= 0.5f;
-			delta.j *= 0.5f;
-			delta.k *= 0.5f;
-			attenuation = length_sq3f(&delta);
+			real x = (direction->x - g_444c84[speaker].x) * 0.5f;
+			real y = (direction->y - g_444c84[speaker].y) * 0.5f;
+			real z = (direction->z - g_444c84[speaker].z) * 0.5f;
+			attenuation = (z * z + y * y) + x * x;
 			if (attenuation < 0.0f)
 				attenuation = 0.0f;
 			else if (attenuation > 1.0f)

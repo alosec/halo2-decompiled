@@ -9,8 +9,8 @@
 #include "online_tasks.h"
 #include "online_attributes.h"
 
-long function_0b4a90(s_entry_pair *out, const s_range_input *in);
-long function_0b4b80(long count, s_property_entry *out, const s_property_input *in);
+long online_match_search_build_parameters(s_entry_pair *out, const s_range_input *in);
+long online_match_session_build_attributes(long count, s_property_entry *out, const s_property_input *in);
 
 /* the attributes of a search result: seven integers */
 const XONLINE_ATTRIBUTE_SPEC g_44050c[7] =
@@ -50,7 +50,7 @@ struct s_long7
 {
 	long values[7];
 };
-void function_0b4a40(s_long7 *out, const __int64 *in);
+void online_match_properties_from_attributes(s_long7 *out, const __int64 *in);
 
 struct s_online_match_result
 {
@@ -77,23 +77,24 @@ void function_8fb30(long task_index, s_online_match_result *output, word *capaci
 			if (*capacity <= count)
 				count = *capacity;
 			long written = 0;
+			s_online_match_result *local_0 = output;
 			for (DWORD i = 0; i < count; i++)
 			{
-				output->key = results[i]->KeyExchangeKey;
-				output->id = results[i]->SessionID;
-				output->address = results[i]->HostAddress;
-				output->public_filled = results[i]->dwPublicFilled;
-				output->public_open = results[i]->dwPublicOpen;
-				output->private_filled = results[i]->dwPrivateFilled;
-				output->private_open = results[i]->dwPrivateOpen;
+				local_0->key = results[i]->KeyExchangeKey;
+				local_0->id = results[i]->SessionID;
+				local_0->address = results[i]->HostAddress;
+				local_0->public_filled = results[i]->dwPublicFilled;
+				local_0->public_open = results[i]->dwPublicOpen;
+				local_0->private_filled = results[i]->dwPrivateFilled;
+				local_0->private_open = results[i]->dwPrivateOpen;
 				if (results[i]->dwNumAttributes == 7)
 				{
 					__int64 properties[7];
 					if (SUCCEEDED(XOnlineMatchSearchParse(results[i], results[i]->dwNumAttributes, g_44050c, properties)))
 					{
-						function_0b4a40(&output->properties, properties);
+						online_match_properties_from_attributes(&local_0->properties, properties);
 						written++;
-						output++;
+						local_0++;
 					}
 				}
 			}
@@ -117,7 +118,7 @@ long online_match_search(const s_range_input *input)
 	if (task)
 	{
 		s_entry_pair attributes[12];
-		long attribute_count = function_0b4a90(attributes, input);
+		long attribute_count = online_match_search_build_parameters(attributes, input);
 		DWORD results_size = XOnlineMatchSearchResultsLen(50, 7, g_44050c);
 		if (SUCCEEDED(XOnlineMatchSearch(1, 50, attribute_count, (PXONLINE_ATTRIBUTE)attributes, results_size, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 		{
@@ -137,31 +138,35 @@ long online_match_search(const s_range_input *input)
 // @retail 0x8fcc0
 long online_match_session_create(const s_online_match_session *session)
 {
-	long task_index = NONE;
+	long local_0 = NONE;
 
-	if (online_task_exists(7, 0xff) <= 2)
+	if (online_task_exists(7, 0xff) > 2) goto local_1;
 	{
-		task_index = online_task_new_if_logged_on();
+		long task_index = online_task_new_if_logged_on();
+		local_0 = task_index;
 		s_type_9df9da *task = function_6b910(task_index);
 		if (task)
 		{
 			s_property_entry attributes[15];
-			long attribute_count = function_0b4b80(15, attributes, &session->properties);
+			long attribute_count = online_match_session_build_attributes(15, attributes, &session->properties);
 			if (SUCCEEDED(XOnlineMatchSessionCreate(session->public_filled, session->public_open, session->private_filled, session->private_open,
 				attribute_count, (PXONLINE_ATTRIBUTE)attributes, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 			{
+				long local_2 = *(volatile long *)&task_index;
 				task->flags = 1;
 				task->type = 7;
 				task->controller_index = NONE;
+				local_0 = local_2;
 			}
 			else
 			{
 				function_6b640(task_index);
-				return NONE;
+				local_0 = NONE;
 			}
 		}
 	}
-	return task_index;
+local_1:
+	return local_0;
 }
 
 // @retail 0x8fd90
@@ -195,31 +200,35 @@ bool online_match_session_get_info(long task_index, s_online_match_session_info 
 // @retail 0x8fe20
 long online_match_session_update(const s_online_match_session *session)
 {
-	long task_index = NONE;
+	long local_3 = NONE;
 
-	if (*(const __int64 *)&session->session_id != 0 && online_task_exists(10, 0xff) <= 2)
+	if (*(const __int64 *)&session->session_id == 0 || online_task_exists(10, 0xff) > 2) goto local_4;
 	{
-		task_index = online_task_new_if_logged_on();
+		long task_index = online_task_new_if_logged_on();
+		local_3 = task_index;
 		s_type_9df9da *task = function_6b910(task_index);
 		if (task)
 		{
 			s_property_entry attributes[15];
-			long attribute_count = function_0b4b80(15, attributes, &session->properties);
+			long attribute_count = online_match_session_build_attributes(15, attributes, &session->properties);
 			if (SUCCEEDED(XOnlineMatchSessionUpdate(session->session_id, session->public_filled, session->public_open, session->private_filled, session->private_open,
 				attribute_count, (PXONLINE_ATTRIBUTE)attributes, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 			{
+				long local_2 = *(volatile long *)&task_index;
 				task->flags = 1;
 				task->type = 10;
 				task->controller_index = NONE;
+				local_3 = local_2;
 			}
 			else
 			{
 				function_6b640(task_index);
-				return NONE;
+				local_3 = NONE;
 			}
 		}
 	}
-	return task_index;
+local_4:
+	return local_3;
 }
 
 /* whether a task finished; succeeded tells whether it did without failing */
@@ -229,10 +238,9 @@ bool online_task_get_finished(long task_index, bool *succeeded)
 	s_type_9df9da *task = online_task_try_get(task_index);
 	bool success = false;
 
+	bool result;
 	if (task && online_logon_connected())
 	{
-		bool result;
-
 		if (task->flag_bits.finished)
 		{
 			success = !task->flag_bits.failed;
@@ -242,11 +250,13 @@ bool online_task_get_finished(long task_index, bool *succeeded)
 		{
 			result = false;
 		}
-		*succeeded = success;
-		return result;
+	}
+	else
+	{
+		result = true;
 	}
 	*succeeded = success;
-	return true;
+	return result;
 }
 
 HRESULT online_task_continue(s_type_9df9da *task);

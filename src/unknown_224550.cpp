@@ -99,34 +99,46 @@ PRIVATE inline void function_x0ec080(box2f const *bounds,long flip,real *out)
 	out[0]=x; out[1]=y; out[2]=dx; out[3]=dy;
 }
 
-// @retail 0x224550
-void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
-	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
+PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
+	s_draw_value_cache *arg_1, color4f const *arg_2, s_draw_sprite_definition const *arg_3)
 {
-	s_draw_value_cache *const *values_reference=&values;
-	real blend=0.0f;
-	s_draw_sprite_definition const *definition=context->definition;
-	dword mask=definition->field_98&0xf80f;
-	function_173ba0(~values->field_44&mask,values->field_48,values->field_4c,values->field_50,(*values_reference)->values);
-	values->field_44|=mask;
-	real angle=function_246cd0(&definition->angle,values->values)*6.2831854820251465f;
 	color4f tint;
-	function_246d80(&definition->color,values->values,(color3f *)&tint.red);
-	tint.alpha=function_246cd0(&definition->alpha,values->values)*color->alpha;
-	if(definition->flags&0x180)
+	function_246d80(&arg_3->color,arg_1->values,(color3f *)&tint.red);
+	tint.alpha=function_246cd0(&arg_3->alpha,arg_1->values)*arg_2->alpha;
+	if(arg_3->flags&0x180)
 	{
 		color3f seed_color;
-		unpack_color3f(seed->color,&seed_color);
+		unpack_color3f(arg_0->color,&seed_color);
 		tint.red=tint.red*seed_color.red*2.0f;
 		tint.green=tint.green*seed_color.green*2.0f;
 		tint.blue=tint.blue*seed_color.blue*2.0f;
 	}
-	tint.red=color->red*tint.red;
-	tint.green=color->green*tint.green;
-	tint.blue=color->blue*tint.blue;
-	tint.alpha=sprite_pin(tint.alpha); tint.red=sprite_pin(tint.red);
-	tint.green=sprite_pin(tint.green); tint.blue=sprite_pin(tint.blue);
-	dword packed=pack_color4f(&tint);
+	tint.red=arg_2->red*tint.red;
+	tint.green=arg_2->green*tint.green;
+	tint.blue=arg_2->blue*tint.blue;
+	if(tint.alpha<0.0f) tint.alpha=0.0f;
+	else if(tint.alpha>1.0f) tint.alpha=1.0f;
+	if(tint.red<0.0f) tint.red=0.0f;
+	else if(tint.red>1.0f) tint.red=1.0f;
+	if(tint.green<0.0f) tint.green=0.0f;
+	else if(tint.green>1.0f) tint.green=1.0f;
+	if(tint.blue<0.0f) tint.blue=0.0f;
+	else if(tint.blue>1.0f) tint.blue=1.0f;
+	dword local_0=pack_color4f(&tint);
+	return local_0;
+}
+
+// @retail 0x224550
+void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
+	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
+{
+	real blend=0.0f;
+	s_draw_sprite_definition const *definition=context->definition;
+	dword mask=definition->field_98&0xf80f;
+	function_173ba0(~values->field_44&mask,values->field_48,values->field_4c,values->field_50,values->values);
+	values->field_44|=mask;
+	real angle=function_246cd0(&definition->angle,values->values)*6.2831854820251465f;
+	dword packed=function_224551(seed,values,color,definition);
 	real geometry[4];
 	s_draw_sprite_uv uv_a,uv_b;
 	if(definition->flags&0x10000)
@@ -172,15 +184,16 @@ void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache
 				}
 			}
 		}
+		real remaining_blend=1.0f-blend;
 		real ax=a.x1-a.x0,ay=a.y1-a.y0,bx=b.x1-b.x0,by=b.y1-b.y0;
 		real inv_ax=1.0f/ax,inv_ay=1.0f/ay,inv_bx=1.0f/bx,inv_by=1.0f/by;
 		long flip=sprite_flip(definition,seed);
 		real aspect_x=1.0f,aspect_y=1.0f;
 		if(ax>ay) aspect_y=ay*inv_ax; else aspect_x=ax*inv_ay;
-		if(bx>by) aspect_y=by*inv_bx*blend+(1.0f-blend)*aspect_y;
-		else aspect_x=bx*inv_by*blend+(1.0f-blend)*aspect_x;
-		real inv_x=(1.0f-blend)*inv_ax+inv_bx*blend;
-		real inv_y=(1.0f-blend)*inv_ay+inv_by*blend;
+		if(bx>by) aspect_y=by*inv_bx*blend+remaining_blend*aspect_y;
+		else aspect_x=bx*inv_by*blend+remaining_blend*aspect_x;
+		real inv_x=remaining_blend*inv_ax+inv_bx*blend;
+		real inv_y=remaining_blend*inv_ay+inv_by*blend;
 		real width=context->width*aspect_x;
 		function_x0ec080(&a,flip,uv_a.values); function_x0ec080(&b,flip,uv_b.values);
 		real x=inv_x*pivot.x*2.0f-1.0f,y=inv_y*pivot.y*2.0f-1.0f;
@@ -190,5 +203,5 @@ void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache
 	}
 	if(definition->flags&0x2000) angle+=1.5707963705062866f;
 	function_23ed30(position,direction,function_246cd0(&definition->size,values->values)*scale,
-		angle,packed,blend,geometry,uv_a.values,uv_b.values);
+		angle,packed,blend,uv_a.values,uv_b.values,geometry);
 }

@@ -1,4 +1,5 @@
 // @flags /O1 /Ob1 /arch:SSE /Gr
+#include "view_context_storage.h"
 /* UNKNOWN_24D6C7.CPP: the navigation points of the HUD (g_5023f8): four
    points for each local user, each naming an object, a type and a team */
 
@@ -231,7 +232,6 @@ void __stdcall function_24d8d3(long local_player_index)
 
 #include "unknown_13927e.h"
 
-extern long g_4b9ed8;
 
 // @retail 0x24da7d
 void function_24da7d(long arg_0)

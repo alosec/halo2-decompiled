@@ -81,7 +81,7 @@ struct s_data_datum_iterator
 	long index;
 };
 
-__declspec(noinline) bool data_datum_iterator_next(s_data_datum_iterator *iterator);
+inline __declspec(noinline) bool data_datum_iterator_next(s_data_datum_iterator *iterator);
 long record_pool_next_used(s_record_pool *data, long datum_index);
 long function_16bc00(s_record_pool *data, long index);
 
@@ -186,6 +186,25 @@ static inline byte *datum_get_inlined(s_record_pool *data, long datum_index)
 			{
 				result = datum;
 			}
+		}
+	}
+
+	return result;
+}
+
+/* likewise datum_get_absolute (the datum at an absolute index, or NULL when
+   it is free), which retail inlines into callers such as unknown_1e9700.cpp's */
+static inline byte *datum_get_absolute_inlined(s_record_pool *data, long index)
+{
+	byte *result = 0;
+
+	if (index != NONE && index >= 0 && index < data->high_water_index)
+	{
+		byte *datum = data->data + data->size * index;
+
+		if (*(short *)datum != 0)
+		{
+			result = datum;
 		}
 	}
 

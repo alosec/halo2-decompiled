@@ -2,6 +2,7 @@
 /* UNKNOWN_11CB00.CPP: language and region codes, quaternion and ray math */
 
 #include "unknown_11c920.h"
+#include "segment_sphere.h"
 #include "globals.h"
 #include "unknown_11cb00.h"
 #include "unknown_11cc90.h"
@@ -96,6 +97,17 @@ void function_11d950(
 	function_11d610(out);
 }
 
+struct s_11da11
+{
+	real field_0;
+	real field_4;
+	union
+	{
+		real field_8;
+		long field_08;
+	};
+};
+
 // @retail 0x11da10
 void function_11da10(
 	quaternionf const *a,
@@ -103,70 +115,66 @@ void function_11da10(
 	quaternionf *out,
 	real t)
 {
-	real omega;
-	real s = 1.f - t;
-	real dot = a->j * b->j + a->k * b->k + b->i * a->i + a->w * b->w;
+	s_11da11 local_0;
+	local_0.field_4 = 1.f - t;
+	local_0.field_0 = a->j * b->j + a->k * b->k + b->i * a->i + a->w * b->w;
 	real sin_omega;
 	real ta;
-	real tb;
 
-	if (dot > 1.f)
-		dot = 1.f;
-	else if (-1.f > dot)
-		dot = -1.f;
-	omega = (real)acos(dot);
-	sin_omega = (real)sin(omega);
+	if (local_0.field_0 > 1.f)
+		local_0.field_0 = 1.f;
+	else if (-1.f > local_0.field_0)
+		local_0.field_0 = -1.f;
+	local_0.field_8 = (real)acos(local_0.field_0);
+	sin_omega = (real)sin(local_0.field_8);
 	if (!(0.0001f > (real)fabs(sin_omega)))
 	{
 		real inv = 1.f / sin_omega;
 
-		ta = (real)sin(omega * t) * inv;
-		tb = (real)sin(omega * s) * inv;
-		if (dot < 0.f)
+		ta = (real)sin(local_0.field_8 * t) * inv;
+		local_0.field_4 = (real)sin(local_0.field_8 * local_0.field_4) * inv;
+		if (local_0.field_0 < 0.f)
 			ta = 0.f - ta;
 	}
 	else
 	{
-		long q;
 
 		__asm
 		{
 			fld t
-			fistp q
+			fistp local_0.field_08
 		}
-		if (0.f > (real)q)
+		if (0.f > (real)local_0.field_08)
 		{
 			ta = 0.f;
-			tb = 1.f - ta;
 		}
 		else
 		{
 			__asm
 			{
 				fld t
-				fistp q
+				fistp local_0.field_08
 			}
-			if ((real)q > 1.f)
+			if ((real)local_0.field_08 > 1.f)
 			{
 				ta = 1.f;
-				tb = 1.f - ta;
 			}
 			else
 			{
 				__asm
 				{
 					fld t
-					fistp q
+					fistp local_0.field_08
 				}
-				ta = (real)q;
-				tb = 1.f - ta;
+				ta = (real)local_0.field_08;
 			}
 		}
+		local_0.field_4 = 1.f - ta;
 	}
-	out->i = b->i * tb + a->i * ta;
-	out->j = a->j * ta + tb * b->j;
-	out->k = a->k * ta + tb * b->k;
-	out->w = a->w * ta + b->w * tb;
+	out->i = a->i * local_0.field_4 + b->i * ta;
+	out->j = b->j * ta + local_0.field_4 * a->j;
+	out->k = b->k * ta + local_0.field_4 * a->k;
+	out->w = b->w * ta + a->w * local_0.field_4;
 }
 
 // rotates a point by a unit quaternion
@@ -175,9 +183,9 @@ __inline void quaternion_rotate_point(
 	point3f const *v,
 	point3f *out)
 {
-	real d = (q->j * v->y + v->x * q->i + v->z * q->k) * 2.f;
 	real w2 = q->w * 2.f;
 	real m = q->w * q->w * 2.f - 1.f;
+	real d = (q->j * v->y + v->x * q->i + v->z * q->k) * 2.f;
 	real cx = q->j * v->z - v->y * q->k;
 	real cy = v->x * q->k - q->i * v->z;
 	real cz = q->i * v->y - q->j * v->x;
@@ -223,39 +231,33 @@ void function_11dbb0(
 	out->position.z = a->position.z + out->position.z;
 }
 
+/* p scaled by s into result (p and result may be the same point) */
+static __inline point3f *point3f_scale(point3f const *p, real s, point3f *result)
+{
+	result->x = s * p->x;
+	result->y = s * p->y;
+	result->z = s * p->z;
+	return result;
+}
+
 // @retail 0x11dd80
 void function_11dd80(
-	real_quaternion_transform *out,
-	real_quaternion_transform const *in)
+	real_quaternion_transform const *in,
+	real_quaternion_transform *out)
 {
-	real inv = 1.f;
+	real inv;
 
 	out->rotation = in->rotation;
 	out->rotation.w = out->rotation.w * -1.f;
-	{
-		quaternionf const *q = &out->rotation;
-		point3f const *v = &in->position;
-		real d = (v->x * q->i + v->y * q->j + q->k * v->z) * 2.f;
-		real m = q->w * q->w * 2.f - 1.f;
-		real w2 = q->w * 2.f;
-		real cy = q->k * v->x - q->i * v->z;
-		real cz = v->y * q->i - v->x * q->j;
-		real cx = q->j * v->z - v->y * q->k;
-
-		out->position.x = cx * w2 + v->x * m + q->i * d;
-		out->position.y = v->y * m + q->j * d + cy * w2;
-		out->position.z = q->k * d + cz * w2 + m * v->z;
-	}
+	quaternion_rotate_point(&out->rotation, &in->position, &out->position);
 	if (0.f == in->scale)
 		inv = 10000.f;
-	else if (1.f != in->scale)
+	else if (1.f == in->scale)
+		inv = 1.f;
+	else
 		inv = 1.f / in->scale;
-	out->position.x = out->position.x * inv;
-	out->position.y = out->position.y * inv;
-	out->position.z = out->position.z * inv;
-	out->position.x = out->position.x * -1.f;
-	out->position.y = out->position.y * -1.f;
-	out->position.z = out->position.z * -1.f;
+	point3f_scale(&out->position, inv, &out->position);
+	point3f_scale(&out->position, -1.f, &out->position);
 	out->scale = inv;
 }
 
@@ -310,33 +312,38 @@ real function_11e000(
 	}
 }
 
+PRIVATE inline real function_11e5e1(vector3f const *arg_0, vector3f const *arg_1)
+{
+	return arg_0->k * arg_1->k + arg_0->j * arg_1->j + arg_0->i * arg_1->i;
+}
+
 // @retail 0x11e5e0
 bool function_11e5e0(
-	point3f const *origin,
-	point3f const *center,
+	point3f const *segment_start,
 	vector3f const *direction,
+	point3f const *arg_28f920,
 	real radius)
 {
 	vector3f delta;
 	real c;
 
-	delta.i = origin->x - center->x;
-	delta.j = origin->y - center->y;
-	delta.k = origin->z - center->z;
-	c = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i - radius * radius;
+	delta.i = segment_start->x - arg_28f920->x;
+	delta.j = segment_start->y - arg_28f920->y;
+	delta.k = segment_start->z - arg_28f920->z;
+	c = function_11e5e1(&delta, &delta) - radius * radius;
 
 	if (c < 0.f)
 		return true;
 	else
 	{
 		vector3f d = *direction;
-		real b = d.k * delta.k + d.j * delta.j + d.i * delta.i;
+		real b = function_11e5e1(&d, &delta);
 
 		if (b >= 0.f)
 			return false;
 		else
 		{
-			real a = d.k * d.k + d.j * d.j + d.i * d.i;
+			real a = function_11e5e1(&d, &d);
 			real disc = b * b - a * c;
 
 			if (disc <= 0.f)
@@ -408,8 +415,8 @@ long function_11ea30(point3f const *a, vector3f const *u, point3f const *b, vect
 				endpoint_a = point_11ea30(a, u, ta < 0.0f ? 0.0f : 1.0f);
 			if (outside_b)
 				endpoint_b = point_11ea30(b, v, tb < 0.0f ? 0.0f : 1.0f);
-			if ((outside_a && function_11e5e0(&endpoint_a, b, v, radius)) ||
-				(outside_b && function_11e5e0(&endpoint_b, a, u, radius)))
+			if ((outside_a && function_11e5e0(b, v, &endpoint_a, radius)) ||
+				(outside_b && function_11e5e0(a, u, &endpoint_b, radius)))
 				return 1;
 			return 0;
 		}

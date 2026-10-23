@@ -5,7 +5,7 @@
 struct s_saved_game_file;
 struct s_saved_game_file_location;
 extern void *g_51ea14;
-bool function_216800(void *arg_0, long arg_1);
+bool function_216800(long arg_1, void *arg_0);
 bool function_216060(long arg_0, word const *arg_1);
 void __stdcall function_217370(long arg_0, bool **arg_1);
 s_saved_game_file *saved_game_file_new(s_saved_game_file *arg_0, long arg_1, s_saved_game_file_location const *arg_2);
@@ -32,7 +32,7 @@ bool function_2173d0(long arg_0, wchar_t const *arg_1, void *arg_2, dword arg_3,
     s_2173d0 local_1;
     local_1.field_0[0] = 0;
     local_1.field_14[0] = 0;
-    if (function_216800(&local_1, arg_0))
+    if (function_216800(arg_0, &local_1))
     {
         s_saved_game_file *local_5;
         if (function_216060(arg_0, (word const *)arg_1))

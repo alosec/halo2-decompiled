@@ -47,6 +47,9 @@ short __stdcall function_1afde0(long actor_index)
 	return result;
 }
 
+// score 9 (was 9): retail keeps the actor's unknown344 in ebp where ours keeps
+// it in esi, and retail loads the actor pointer before it saves edi, so the
+// loads and the comparison against NONE differ.
 // @retail 0x1afe50
 bool __stdcall function_1afe50(long actor_index, s_slot *slot)
 {

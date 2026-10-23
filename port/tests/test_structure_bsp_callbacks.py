@@ -140,7 +140,7 @@ def main() -> int:
     particle_unique = set(particle_methods)
     if particle_unique - functions.keys():
         raise RuntimeError("particle provider method is absent from functions.csv")
-    if any(functions[method]["source"] != "src/unknown_224240.cpp"
+    if any(functions[method]["source"] != "src/visual_effects_particle_interfaces.cpp"
            for method in particle_unique):
         raise RuntimeError("particle provider source coverage changed")
 
@@ -377,10 +377,10 @@ def main() -> int:
                     "??0c_interface_277890@@QAA@XZ",
                     "?function_1d0770@@YAXPAUs_1d0770@@PAUs_havok_component@@JJJJ@Z",
                     "?function_1d8ec0@s_1d8e40@@QAAXABUhkVector4@@0@Z",
-                    "?isActive@hkRigidBody@@QBA?AVhkBool@@XZ",
+                    "?body_is_simulating@hkRigidBody@@QBA?AVhkBool@@XZ",
                     "?activate@hkRigidBody@@QAAXXZ",
-                    "?removeProperty@hkEntity@@QAA?AVhkPropertyValue@@K@Z",
-                    "?addProperty@hkEntity@@QAAXKVhkPropertyValue@@@Z",
+                    "?entity_property_erase@hkEntity@@QAA?AVs_havok_property_word@@K@Z",
+                    "?entity_property_put@hkEntity@@QAAXKVs_havok_property_word@@@Z",
                     "?havok_cd_body_shape_key_get@@YAJPBUs_havok_cd_body@@@Z",
                     "?havok_entity_component_index_get@@YAJPBVhkEntity@@@Z",
                     "?havok_entity_property_2002_get@@YAJPBVhkEntity@@@Z"}):
@@ -405,8 +405,8 @@ def main() -> int:
             "?impacts_last_sorted@@YAJXZ",
             "?impact_distance_squared_to_nearest_player@@YAMPBTpoint3f@@J@Z",
             "?g_55c2d0@@3MA",
-            "?havok_component_rigid_body_linear_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z",
-            "?havok_component_rigid_body_angular_velocity_get@@YAXJPAUs_havok_component@@PATvector3f@@@Z"}:
+            "?havok_component_rigid_body_linear_velocity_get@@YAXPAUs_havok_component@@JPATvector3f@@@Z",
+            "?havok_component_rigid_body_angular_velocity_get@@YAXPAUs_havok_component@@JPATvector3f@@@Z"}:
         if symbol not in contact_candidate_defined:
             raise RuntimeError(f"contact-processing candidate lacks {symbol}")
 
@@ -539,7 +539,7 @@ def main() -> int:
     }:
         raise RuntimeError("structure-BSP retained data globals changed")
     required_light_symbols = {
-        "?function_c1720@@YAXJ_N0@Z",
+        "?function_c1720@@YAJJJJ@Z",
         "?function_c2d00@@YAXJ@Z",
     }
     if not required_light_symbols.issubset(closure_symbols):
@@ -547,20 +547,20 @@ def main() -> int:
     required_actor_reference_symbols = {
         "?function_13e2d0@@YAPAUhash_node@@PAUhash_table@@PAX@Z",
         "?hash_table_remove@@YA_NPAUhash_table@@PAX@Z",
-        "?function_1e1500@@YA_NJ@Z",
+        "?actor_update_bsp_locations@@YA_NJ@Z",
         "?function_1e22d0@@YAXJ_N@Z",
         "?function_1f86a0@@YAXJ@Z",
         "?function_25d690@@YAPAUs_type_5cfb45@@PAUs_prop_datum@@@Z",
         "?function_2628f0@@YAXJUs_reference@@@Z",
         "?function_26dc20@@YAXJ@Z",
-        "?function_28fdf0@@YAXJ@Z",
+        "?swarm_creatures_clear_index20@@YAXJ@Z",
     }
     if not required_actor_reference_symbols.issubset(closure_symbols):
         raise RuntimeError("actor-reference refresh left outside BSP closure")
     required_geometry_symbols = {
         "?function_16a8e0@@YA_NJPBTpoint3f@@MJJPAT1@PAM@Z",
         "?function_1f0230@@YA_NPAUs_lookup@@PBTpoint3f@@MMMPAUs_collection_245270@@@Z",
-        "?function_244ca0@@YAXMMPAUs_line_list@@JJJEEFPBTpoint3f@@@Z",
+        "?function_244ca0@@YAXMMPAUs_line_list@@JJJEEPBTpoint3f@@F@Z",
         "?function_245aa0@@YAXPBUs_245aa0@@PBUs_source_245400@@PBUtransform4x3f@@MMJJPAUs_collection_245270@@@Z",
         "?function_2469b0@@YA_NPBUs_shapes@@PBTpoint3f@@PBTvector3f@@PAUs_ray_shape_result@@@Z",
     }
@@ -788,7 +788,7 @@ def main() -> int:
             "?function_1201a0@@YAMPATvector3f@@PBT1@@Z" not in impact_defined or
             "?vector3d_compress@@YAKPBTvector3f@@@Z" not in impact_defined or
             "?havok_component_contact_properties_get@@YAXPBUs_havok_component@@JPAJ1@Z" not in impact_defined or
-            "?havok_component_rigid_body_matrix_get@@YAXJPAUs_havok_component@@PAUtransform4x3f@@@Z" not in impact_defined or
+            "?rigid_body_matrix_get@s_havok_component@@QAAXJPAUtransform4x3f@@@Z" not in impact_defined or
             "?function_11c120@@YA_NPBUs_location@@PBTpoint3f@@PAF@Z" not in impact_defined or
             "?function_17b030@@YA_NJPBTvector3f@@MMPBUtransform4x3f@@PBM@Z" not in impact_defined or
             "?function_172750@@YA_NJPBTpoint3f@@M@Z" not in impact_defined or
@@ -3396,7 +3396,7 @@ def main() -> int:
                     "production_controller_configured_upload_requesters_still_dormant",
                 "recovered_sources": [
                     "src/unknown_13d170.cpp:function_13d370/physical_memory_flush",
-                    "src/unknown_13d320.cpp:function_13d320",
+                    "src/physical_memory_candidates.cpp:function_13d320",
                     "src/unknown_16b570.cpp:record_pool_allocate/datum_new_at_index_with_salt/record_pool_release",
                     "src/particle_texture_cache_request_native.cpp:function_12d5a0/function_12d6d0",
                     "src/particle_texture_mip_math_native.cpp:bitmap_get_mipmap_count/log2_floor",
@@ -3901,7 +3901,7 @@ def main() -> int:
             "?function_1318d0@@YAPAUhsv3f@@PBUcolor3f@@PAU1@@Z" not in effect_defined or
             "?function_131a00@@YAPAUcolor3f@@PBUhsv3f@@PAU1@@Z" not in effect_defined or
             "?function_131c20@@YAPAUcolor3f@@PBU1@0KMPAU1@@Z" not in effect_defined or
-            "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPBU1@PAU1@@Z" not in effect_defined or
+            "?function_131d60@@YAPAUcolor3f@@PBUcolor4f@@0KMPAU1@PBU1@@Z" not in effect_defined or
             "?object_or_parent_hidden@@YA_NJ@Z" not in effect_defined or
             "?function_b9d20@@YA_NJ@Z" not in effect_defined or
             "?function_baf80@@YAJJ@Z" not in effect_defined or
@@ -3910,7 +3910,7 @@ def main() -> int:
             "?function_1e4990@@YAJJ@Z" not in effect_defined or
             "?function_ba8c0@@YA_NPBUs_object_function_ab@@JPAM@Z" not in effect_defined or
             "?function_bab40@@YA_NJJPAM@Z" not in effect_defined or
-            "?function_108d90@@YA_NJJPAMPA_N@Z" not in effect_defined or
+            "?object_dispatch_query_function_value@@YA_NJJPAMPA_N@Z" not in effect_defined or
             "?function_10aac0@@YA_NJJPAMPAJ@Z" not in effect_defined or
             "?function_13bb90@@YAMPBUs_tag_data@@MM@Z" not in effect_defined or
             "?function_1ca290@@YAXJJJJMMPBUtransform4x3f@@@Z" not in effect_defined or

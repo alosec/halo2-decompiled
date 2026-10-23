@@ -59,14 +59,16 @@ real function_246cd0(s_particle_property const *property, real const *values)
 void function_246d80(s_particle_property const *property, real const *values, color3f *color)
 {
 	s_particle_property_header const *header = (s_particle_property_header const *)property->function.address;
-	real input = 0.f;
 	real range;
 	if (header->flags & 1)
 		range = values[property->range_index];
 	else
-		range = input;
+		range = 0.f;
+	real input;
 	if (header->type != 1)
 		input = values[property->input_index];
+	else
+		input = 0.f;
 	real result = function_13b390(&property->function, input, range);
 	short index = property->modifier_index;
 	if (index != NONE && index >= 0)

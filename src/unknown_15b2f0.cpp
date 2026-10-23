@@ -16,17 +16,21 @@ struct s_engine_state_globals
 	long engine_index;
 };
 
+/* retail calls this out of line everywhere except 0x15ba20, which inlines
+   its own copy */
+__declspec(noinline) bool function_15b2f0();
+
 /* true while the engine runs the game (always on a client) */
 // @retail 0x15b2f0
 bool function_15b2f0()
 {
 	s_engine_state_globals *g = (s_engine_state_globals *)g_4e9ae8;
-	bool result = false;
+	bool mode_gate_open = false;
 
 	if (g_55e4d0[g->engine_index] && g->w6c == 1 && (g_4e6948->mode == 4 || g->lc04 == 1))
-		result = true;
+		mode_gate_open = true;
 
-	return result;
+	return mode_gate_open;
 }
 
 /* true when the game has teams */

@@ -32,6 +32,9 @@ float logf(float value);
 float sinf(float value);
 float sqrtf(float value);
 
+static inline float tanf(float value) { return (float)tan(value); }
+static inline float powf(float base, float exponent) { return (float)pow(base, exponent); }
+
 #ifdef __cplusplus
 }
 #endif

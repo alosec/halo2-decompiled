@@ -34,8 +34,8 @@ long function_1e1f20(long actor_index)
 	s_actor_view *actor = actor_get(actor_index);
 	long result = NONE;
 
-	if (actor->unknown268 && actor->unknown274 != NONE)
-		result = unit_get_current_weapon(actor->unknown274);
+	if (actor->unknown268 && *(long volatile *)&actor->unknown274 != NONE)
+		result = unit_get_current_weapon(*(long volatile *)&actor->unknown274);
 	if (result == NONE && actor->unknown018 != NONE)
 		result = unit_get_current_weapon(actor->unknown018);
 	return result;
@@ -112,11 +112,17 @@ void function_c6de0(long object_index, void *control);
 void function_118e80(long object_index, vector3f *forward);
 void __stdcall function_cbf60(long unit_index, bool active);
 
-// @retail 0x1e1250
-void function_1e1250(long actor_index)
+/* the standard marker (docs/DECOMPILING.md): (1) with it this body matches
+   byte for byte (`ret 4`); without it LTCG passes the actor in eax, and
+   when 0x2902b0 and 0xb7b40 are built it passes it in ecx even with the
+   actor's address taken. (2) retail holds no reference to 0x1e1250's
+   address, and its one caller (0x1e0d50) is LTCG code that pushes the
+   argument (`push edi; call 0x1e1250`). (3) tried: taking the argument's
+   address (matches alone, lost once the object cycle is built). */
+// @retail 0x1e1250 standard
+void __stdcall function_1e1250(long actor_index)
 {
-	long const *index_reference = &actor_index;
-	s_actor_view *actor = actor_get(*index_reference);
+	s_actor_view *actor = actor_get(actor_index);
 	long unit_index = actor->unknown018;
 	if (unit_index != NONE)
 	{
@@ -228,6 +234,7 @@ struct s_actor_object_sample
 void function_1e3a00(long object_index, s_actor_object_sample *sample)
 {
 	s_actor_object_sample *const *sample_reference = &sample;
+	point3f *point_output = &(*sample_reference)->point;
 	s_actor_object_query *object = actor_query_object(object_index);
 	function_b9dd0(object_index, &(*sample_reference)->center);
 	(*sample_reference)->direction = object->direction;
@@ -235,13 +242,14 @@ void function_1e3a00(long object_index, s_actor_object_sample *sample)
 	{
 		s_object_marker marker;
 		function_b8d30(object_index, 0x4000095, &marker, 1, false);
-		memcpy(&(*sample_reference)->point, &marker.matrix.position, sizeof(point3f));
+		memcpy(point_output, &marker.matrix.position, sizeof(point3f));
 	}
 	else
-		memcpy(&(*sample_reference)->point, &(*sample_reference)->center, sizeof(point3f));
+		memcpy(point_output, &point_output[1], sizeof(point3f)); /* the sample's center follows its point */
 	function_ba1d0(object_index, &(*sample_reference)->velocity, NULL);
 	s_actor_object_query *root = actor_query_object(actor_query_root(object_index));
-	memcpy((*sample_reference)->location, root->location, sizeof(root->location));
+	struct location_pair { long first; long second; };
+	*(location_pair *)(*sample_reference)->location = *(location_pair *)root->location;
 }
 
 struct s_actor_variant_entry
@@ -261,10 +269,13 @@ struct s_actor_variant_definition
 // @retail 0x1e06b0
 long function_1e06b0(long tag_index)
 {
-	s_actor_variant_definition *definition = (s_actor_variant_definition *)g_4e3b44[tag_index & 0xffff].bytes;
 	long result = 0;
+	s_actor_variant_definition *definition = (s_actor_variant_definition *)g_4e3b44[tag_index & 0xffff].bytes;
 	if (definition->count == 1)
-		return definition->entries[0].value;
+	{
+		result = definition->entries[0].value;
+		goto done;
+	}
 	if (definition->count > 1)
 	{
 		signed char counts[64];
@@ -308,11 +319,12 @@ long function_1e06b0(long tag_index)
 			result = definition->entries[choices[choice]].value;
 		}
 	}
+done:
 	return result;
 }
 
-void function_290bf0(long perception_index, short team);
-void function_290040(long perception_index);
+void swarm_set_team(long perception_index, short team);
+void swarm_reset_orientations(long perception_index);
 
 // @retail 0x1e1150
 void function_1e1150(long actor_index, short team)
@@ -320,7 +332,7 @@ void function_1e1150(long actor_index, short team)
  s_actor_view *actor = actor_get(actor_index);
  actor->unknown024 = team;
  if (actor->unknown007)
-  function_290bf0(*(long *)actor->unknown01c, team);
+  swarm_set_team(*(long *)actor->unknown01c, team);
  else if (actor->unknown018 != NONE)
   *(short *)((byte *)ai_object_get(actor->unknown018) + 0x138) = team;
 }
@@ -334,7 +346,7 @@ void function_1e3240(void)
  {
   s_actor_view *actor = actor_get(iterator.actor_index);
   if (actor->unknown007 && *(long *)actor->unknown01c != NONE)
-   function_290040(*(long *)actor->unknown01c);
+   swarm_reset_orientations(*(long *)actor->unknown01c);
   else
    function_1e31b0(actor->unknown018);
   actor->unknown008 = 1;
@@ -371,7 +383,7 @@ void function_1e22d0(long actor_index, bool conditional)
  }
 }
 
-void function_28fd90(long perception_index, long index);
+void swarm_forget_prop(long perception_index, long index);
 
 // @retail 0x1e2150
 void function_1e2150(long actor_index, long object_index)
@@ -409,7 +421,7 @@ void function_1e2150(long actor_index, long object_index)
  if (*(short *)((byte *)actor + 0x6b0) == 1 && *(long *)((byte *)actor + 0x6b4) == object_index)
   *(long *)((byte *)actor + 0x6b4) = NONE;
  if (actor->unknown007 && *(long *)actor->unknown01c != NONE)
-  function_28fd90(*(long *)actor->unknown01c, object_index);
+  swarm_forget_prop(*(long *)actor->unknown01c, object_index);
  for (short i = 0; i <= actor->current; ++i)
  {
   s_slot *slot = &actor->slots[i];
@@ -418,52 +430,64 @@ void function_1e2150(long actor_index, long object_index)
  }
 }
 
-void function_28fdf0(long perception_index);
+void swarm_creatures_clear_index20(long perception_index);
+
+/* empties a location: no leaf or cluster, in the current structure bsp */
+PRIVATE inline void location_make_empty(s_location *location)
+{
+ location->leaf_index = NONE;
+ location->cluster_index = NONE;
+ location->bsp_index = g_4686c4;
+}
+
+/* the actor's next prop in its list, or NULL at the end */
+PRIVATE inline s_prop_node_view *prop_list_take_next(long *prop_index)
+{
+ s_prop_node_view *prop = NULL;
+ if (*prop_index != NONE)
+ {
+  prop = prop_node_get(*prop_index);
+  *prop_index = prop->next_index;
+ }
+ return prop;
+}
 
 // @retail 0x1e23c0
 void function_1e23c0(long actor_index)
 {
  const long *index_reference = &actor_index;
  s_actor_view *actor = actor_get(*index_reference);
- *(long *)((byte *)actor + 0x250) = NONE;
- *(short *)((byte *)actor + 0x254) = NONE;
- *(short *)((byte *)actor + 0x256) = g_4686c4;
+ location_make_empty((s_location *)((byte *)actor + 0x250));
  *(bool *)((byte *)actor + 0x278) = false;
  *(long *)((byte *)actor + 0x28c) = NONE;
- s_actor_view *state = actor_get(*index_reference);
- *(bool *)((byte *)state + 0x50c) = false;
- *(long *)((byte *)state + 0x5ac) = NONE;
- *(short *)((byte *)state + 0x5b0) = NONE;
- *(short *)((byte *)state + 0x5b4) = 0;
- *(short *)((byte *)state + 0x5b6) = 0;
- state->unknown4ac = 0;
- *(short *)((byte *)state + 0x504) = 0;
+ actor_reset_state(*index_reference);
  if (actor->unknown4ac == 2)
   *(long *)((byte *)actor + 0x4c8) = NONE;
  *(long *)((byte *)actor + 0x4fc) = NONE;
  if (actor->unknown007 && *(long *)actor->unknown01c != NONE)
-  function_28fdf0(*(long *)actor->unknown01c);
+  swarm_creatures_clear_index20(*(long *)actor->unknown01c);
  for (short i = 0; i <= actor->current; ++i)
  {
   s_slot *slot = &actor->slots[i];
   t_slot_proc callback = g_46eeb8[slot->type]->proc30;
-  if (callback) callback(*index_reference, i < 4 ? slot : NULL);
+  if (callback)
+   callback(*index_reference, i < 4 ? &actor->slots[i] : NULL);
  }
  long prop_index = actor_get(*index_reference)->first_prop_index;
- while (prop_index != NONE)
+ s_prop_node_view *prop;
+ while ((prop = prop_list_take_next(&prop_index)) != NULL)
  {
-  s_prop_node_view *prop = (s_prop_node_view *)(g_502418->data + (prop_index & 0xffff) * 0x3c);
-  prop_index = prop->next_index;
+  /* retail calls 0x25d690 here rather than inlining it */
+#pragma inline_depth(0)
   byte *prop_block = (byte *)function_25d690((s_prop_datum *)prop);
+#pragma inline_depth()
   byte *view = NULL;
   if (prop->view_index != NONE)
   {
    byte *entry = g_502414->data + (prop->view_index & 0xffff) * 0x124;
    if (entry) view = entry + 0x70;
   }
-  *(long *)(prop_block + 0x28) = NONE;
-  *(short *)(prop_block + 0x2c) = NONE;
-  *(short *)(prop_block + 0x2e) = g_4686c4;
+  location_make_empty((s_location *)(prop_block + 0x28));
   *(long *)(prop_block + 0x44) = NONE;
   if (view && *(short *)(view + 0x70) == 1)
   {
@@ -560,7 +584,7 @@ void function_26dc20(long actor_index);
 void function_11bed0(s_location *location, point3f const *point);
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 struct s_actor_leaf_view
 {
@@ -573,75 +597,7 @@ struct s_actor_bsp_view
  s_actor_leaf_view *leaves;
 };
 
-// @retail 0x1e1500
-bool function_1e1500(long actor_index)
-{
- const long *index_reference = &actor_index;
- s_actor_view *actor = actor_get(*index_reference);
- function_1e23c0(*index_reference);
- function_1e22d0(*index_reference, false);
- s_actor_view *state = actor_get(*index_reference);
- if (*(long *)((byte *)state + 0x3f8) != NONE)
- {
-  if (*(long *)((byte *)state + 0x3f4) != NONE)
-   function_26dc20(*index_reference);
-  *(long *)((byte *)state + 0x3f8) = NONE;
-  *(short *)((byte *)state + 0x3fc) = 0;
- }
- bool result = function_1e13f0(*index_reference);
- if (result)
- {
-  *(short *)((byte *)actor + 0x3e) = g_4686c4;
-  point3f point;
-  point.x = *(real *)((byte *)actor + 0x238) + g_4687b0->i * 0.1f;
-  point.y = *(real *)((byte *)actor + 0x23c) + g_4687b0->j * 0.1f;
-  point.z = *(real *)((byte *)actor + 0x240) + g_4687b0->k * 0.1f;
-  function_11bed0((s_location *)((byte *)actor + 0x250), &point);
-  long prop_index = actor_get(*index_reference)->first_prop_index;
-  while (prop_index != NONE)
-  {
-   s_prop_node_view *prop = (s_prop_node_view *)(g_502418->data + (prop_index & 0xffff) * 0x3c);
-   prop_index = prop->next_index;
-   byte *block = (byte *)function_25d690((s_prop_datum *)prop);
-   byte *view = NULL;
-   if (prop->view_index != NONE)
-   {
-    byte *entry = g_502414->data + (prop->view_index & 0xffff) * 0x124;
-    if (entry) view = entry + 0x70;
-   }
-   point.x = *(real *)(block + 4) + g_4687b0->i * 0.1f;
-   point.y = *(real *)(block + 8) + g_4687b0->j * 0.1f;
-   point.z = *(real *)(block + 12) + g_4687b0->k * 0.1f;
-   short bsp_index = g_4686c4;
-   if (bsp_index == NONE)
-   {
-    *(long *)(block + 0x28) = NONE;
-    *(short *)(block + 0x2c) = NONE;
-   }
-   else
-   {
-    long leaf = function_14a280(g_4e033c, &point, 0);
-    *(long *)(block + 0x28) = leaf;
-    *(short *)(block + 0x2c) = leaf == NONE ? NONE : ((s_actor_bsp_view *)g_4e0348)->leaves[leaf].cluster;
-   }
-   *(short *)(block + 0x2e) = bsp_index;
-   *(long *)(block + 0x44) = NONE;
-   if (view && *(short *)(view + 0x70) == 1)
-   {
-    view[0x68] = false;
-    view[0x69] = false;
-    view[0x4c] = false;
-    *(short *)(view + 0x70) = 0;
-    view[0x6c] = true;
-    view[0x6d] = true;
-    view[0x88] = false;
-    *(short *)(view + 0x90) = 0;
-    *(short *)(view + 0x8a) = 0;
-   }
-  }
- }
- return result;
-}
+bool actor_update_bsp_locations(long actor_index);
 
 extern void *g_5047f4;
 void function_258600(long actor_index);
@@ -649,21 +605,26 @@ void function_2694d0(long clump_index, long actor_index);
 void record_pool_release(s_record_pool *pool, long index);
 void function_1e1740(long actor_index, long object_index);
 void function_26dc20(long actor_index);
-void function_28e160(long actor_index);
+void swarm_leader_detach(long actor_index);
 
 // @retail 0x1e1a00
 void __stdcall function_1e1a00(long actor_index, long value)
 {
 	long const *index_reference = &actor_index;
 	long const *value_reference = &value;
-	s_actor_view *actor = actor_get(*index_reference);
+	struct { s_actor_view *actor; s_actor_iterator iterator; } cleanup_state;
+	s_actor_view *&actor = cleanup_state.actor;
+	unsigned short actor_slot = (unsigned short)*index_reference;
+	actor = actor_get(actor_slot);
 	for (short slot_index = 0; slot_index <= actor->current; ++slot_index)
 	{
-		t_slot_proc stop = g_46eeb8[actor->slots[slot_index].type]->stop;
-		if (stop)
-			stop(*index_reference, slot_index < 4 ? &actor->slots[slot_index] : NULL);
+		struct { t_slot_proc stop; s_slot *slot; } dispatch;
+		dispatch.stop = g_46eeb8[actor->slots[slot_index].type]->stop;
+		dispatch.slot = slot_index < 4 ? &actor->slots[slot_index] : NULL;
+		if (dispatch.stop)
+			dispatch.stop(*index_reference, dispatch.slot);
 	}
-	actor->current = NONE;
+	*(word *)&actor->current = 0xffff;
 	function_258600(*index_reference);
 	long memory_index = 0;
 	do
@@ -707,7 +668,7 @@ void __stdcall function_1e1a00(long actor_index, long value)
 		if (*(long *)(prop + 0x1c) == *index_reference)
 			*(long *)(prop + 0x1c) = NONE;
 	}
-	s_actor_iterator iterator;
+	s_actor_iterator &iterator = cleanup_state.iterator;
 	function_x66da2b(&iterator, false);
 	s_actor_view *other;
 	while ((other = (s_actor_view *)function_1e46c0(&iterator)) != NULL)
@@ -721,7 +682,7 @@ void __stdcall function_1e1a00(long actor_index, long value)
 	if (actor->unknown007)
 	{
 		if (*(long *)((byte *)actor + 0x1c) != NONE)
-			function_28e160(*index_reference);
+			swarm_leader_detach(*index_reference);
 	}
 	else
 	{
@@ -777,25 +738,13 @@ void __stdcall function_1e1a00(long actor_index, long value)
 long __stdcall function_1dfb90(long definition_index);
 void function_1e3b60(long actor_index);
 
-PRIVATE inline short actor_initial_team(short type)
-{
-	switch (type)
-	{
-	case 0: case 2: case 3: case 4: case 5: case 15: return 3;
-	case 1: case 16: case 17: case 18: return 7;
-	case 6: return 1;
-	case 7: case 8: return 2;
-	case 9: case 10: case 11: case 19: return 4;
-	case 12: case 13: return 5;
-	case 14: return NONE;
-	default: __assume(0);
-	}
-}
+/* the initial team of each actor type */
+extern short const g_44aee8[20];
 
 // @retail 0x1e0160
 long __stdcall function_1e0160(long squad_index, long entry_index, long unit_index, bool flag)
 {
-	long result = NONE;
+	long actor_index = NONE;
 	long resolved_squad = squad_index;
 	long const *unit_reference = &unit_index;
 	bool const *flag_reference = &flag;
@@ -804,7 +753,7 @@ long __stdcall function_1e0160(long squad_index, long entry_index, long unit_ind
 		squad = g_51e9d8->data + (squad_index & 0xffff) * 0x98;
 	if (*unit_reference != NONE && entry_index != NONE)
 	{
-		long actor_index = function_1dfb90(entry_index);
+		actor_index = function_1dfb90(entry_index);
 		if (actor_index != NONE)
 		{
 			s_actor_view *actor = actor_get(actor_index);
@@ -818,22 +767,20 @@ long __stdcall function_1e0160(long squad_index, long entry_index, long unit_ind
 				function_203d70(actor_index, (short)resolved_squad, false);
 			}
 			byte *unit = (byte *)ai_object_get(*unit_reference);
-			short team = 0;
+			short entry_team = 0;
 			if (resolved_squad != NONE)
 			{
 				byte *entry = *(byte **)((byte *)g_4e0350 + 0x164) + (resolved_squad & 0xffff) * 0x74;
 				if (entry)
-					team = *(short *)(entry + 0x24);
+					entry_team = *(short *)(entry + 0x24);
 			}
-			if (team == 0 && unit)
-			{
-				short unit_team = *(short *)(unit + 0x138);
-				if (unit_team != NONE && unit_team != 0)
-					team = unit_team;
-			}
-			if (team == 0)
-				team = actor_initial_team(actor->unknown004);
-			function_1e1150(actor_index, team);
+			short unit_team;
+			if (entry_team != 0)
+				function_1e1150(actor_index, entry_team);
+			else if (unit && (unit_team = *(short *)(unit + 0x138)) != NONE && unit_team != 0)
+				function_1e1150(actor_index, unit_team);
+			else
+				function_1e1150(actor_index, g_44aee8[actor->unknown004]);
 			if (squad && !squad[0x76] && actor->unknown024 != 0)
 				squad[0x76] = (byte)actor->unknown024;
 			actor->unknown084 = *flag_reference ? 0 : 3;
@@ -841,23 +788,21 @@ long __stdcall function_1e0160(long squad_index, long entry_index, long unit_ind
 			if (*(short *)((byte *)actor + 0x254) == NONE)
 			{
 				if (*(long *)((byte *)actor + 0x1c) != NONE)
-					function_28e160(actor_index);
+					swarm_leader_detach(actor_index);
 				function_1e1a00(actor_index, 0);
+				actor_index = NONE;
 			}
-			else
-				result = actor_index;
 		}
 	}
-	return result;
+	return actor_index;
 }
 
-void __stdcall function_28e090(long actor_index, long perception_index);
+void __stdcall swarm_leader_attach(long actor_index, long perception_index);
 
 // @retail 0x1e02f0
 long __stdcall function_1e02f0(long squad_index, long entry_index, long unit_index, long perception_index, bool flag)
 {
-	long result = NONE;
-	long resolved_squad = squad_index;
+	long actor_index = NONE;
 	long const *unit_reference = &unit_index;
 	long const *perception_reference = &perception_index;
 	bool const *flag_reference = &flag;
@@ -866,39 +811,37 @@ long __stdcall function_1e02f0(long squad_index, long entry_index, long unit_ind
 		squad = g_51e9d8->data + (squad_index & 0xffff) * 0x98;
 	if ((*unit_reference != NONE || *perception_reference != NONE) && entry_index != NONE)
 	{
-		long actor_index = function_1dfb90(entry_index);
+		actor_index = function_1dfb90(entry_index);
 		if (actor_index != NONE)
 		{
 			s_actor_view *actor = actor_get(actor_index);
 			if (*unit_reference != NONE)
 				function_1e0d50(actor_index, *unit_reference);
 			else if (*perception_reference != NONE)
-				function_28e090(actor_index, *perception_reference);
+				swarm_leader_attach(actor_index, *perception_reference);
 			if (squad_index == NONE)
 				function_203f60(actor_index);
 			else
 			{
 				if (!(squad_index & 0xffff0000))
-					resolved_squad = (*(short *)squad << 16) | (squad_index & 0xffff);
-				function_203d70(actor_index, (short)resolved_squad, false);
+					squad_index = (*(short *)squad << 16) | (squad_index & 0xffff);
+				function_203d70(actor_index, (short)squad_index, false);
 			}
-			byte *unit = *unit_reference == NONE ? NULL : (byte *)ai_object_get(*unit_reference);
-			short team = 0;
-			if (resolved_squad != NONE)
+			byte *unit = *unit_reference != NONE ? (byte *)ai_object_get(*unit_reference) : NULL;
+			short entry_team = 0;
+			if (squad_index != NONE)
 			{
-				byte *entry = *(byte **)((byte *)g_4e0350 + 0x164) + (resolved_squad & 0xffff) * 0x74;
+				byte *entry = *(byte **)((byte *)g_4e0350 + 0x164) + (squad_index & 0xffff) * 0x74;
 				if (entry)
-					team = *(short *)(entry + 0x24);
+					entry_team = *(short *)(entry + 0x24);
 			}
-			if (team == 0 && unit)
-			{
-				short unit_team = *(short *)(unit + 0x138);
-				if (unit_team != NONE && unit_team != 0)
-					team = unit_team;
-			}
-			if (team == 0)
-				team = actor_initial_team(actor->unknown004);
-			function_1e1150(actor_index, team);
+			short unit_team;
+			if (entry_team != 0)
+				function_1e1150(actor_index, entry_team);
+			else if (unit && (unit_team = *(short *)(unit + 0x138)) != NONE && unit_team != 0)
+				function_1e1150(actor_index, unit_team);
+			else
+				function_1e1150(actor_index, g_44aee8[actor->unknown004]);
 			if (squad && !squad[0x76] && actor->unknown024 != 0)
 				squad[0x76] = (byte)actor->unknown024;
 			actor->unknown084 = *flag_reference ? 0 : 3;
@@ -906,14 +849,13 @@ long __stdcall function_1e02f0(long squad_index, long entry_index, long unit_ind
 			if (*(short *)((byte *)actor + 0x254) == NONE)
 			{
 				if (*(long *)((byte *)actor + 0x1c) != NONE)
-					function_28e160(actor_index);
+					swarm_leader_detach(actor_index);
 				function_1e1a00(actor_index, 0);
+				actor_index = NONE;
 			}
-			else
-				result = actor_index;
 		}
 	}
-	return result;
+	return actor_index;
 }
 
 #include "unit_requests.h"
@@ -926,183 +868,13 @@ bool function_1df5d0(short first, short second);
 bool function_1e11b0(long actor_index, bool active);
 bool function_114b60(short entry_index, short fallback_index, long unit_index, long priority, void const *extra);
 
-// @retail 0x1e0dc0
-long function_1e0dc0(short team, long unit_index, short request_value, short squad_index)
-{
-	const long *unit_reference = &unit_index;
-	const short *request_reference = &request_value;
-	const short *squad_reference = &squad_index;
-	byte *unit = (byte *)ai_object_get(*unit_reference);
-	function_caf00(*unit_reference);
-	real *limits = (real *)function_1e4a10(*(long *)(unit + 0x3d8));
-	if (limits)
-	{
-		short difficulty = g_4e6948->state == 1 ? g_4e6948->difficulty : 1;
-		real body, shield;
-		switch (difficulty)
-		{
-		case 3:
-			body = limits[3];
-			shield = limits[4];
-			if (body <= 0.0f && shield <= 0.0f)
-			{
-				body = limits[1];
-				shield = limits[2];
-			}
-			break;
-		case 2:
-			if (limits[3] > 0.0f || limits[4] > 0.0f)
-			{
-				body = (limits[1] + limits[3]) * 0.5f;
-				shield = (limits[4] + limits[2]) * 0.5f;
-			}
-			else
-			{
-				body = limits[1];
-				shield = limits[2];
-			}
-			break;
-		default:
-			body = limits[1];
-			shield = limits[2];
-			break;
-		}
-		if (g_4e6948->state == 1 && g_4f55e8)
-		{
-			body *= 2.0f;
-			shield *= 2.0f;
-		}
-		if (body > 0.0f || shield > 0.0f)
-			function_d5c90(*unit_reference, &body, &shield);
-	}
-	long definition_index;
-	short unit_team = *(short *)(unit + 0x138);
-	if (*(long *)(unit + 0x3d8) != NONE &&
-		(unit_team == team || function_1df5d0(unit_team, team)))
-		definition_index = *(long *)(unit + 0x3d8);
-	else
-		definition_index = *(long *)(g_4e3b44[*(long *)unit & 0xffff].bytes + 0x304);
-	long result = NONE;
-	if (definition_index != NONE)
-	{
-		result = function_1e0160(*squad_reference, definition_index, *unit_reference, false);
-		if (result != NONE)
-		{
-			if (*squad_reference == NONE)
-				function_1e11b0(result, true);
-			s_unit_request request;
-			request.type = 0x31;
-			*(short *)(request.arguments + 0) = g_510c54->field_2_3 * 3;
-			*(short *)(request.arguments + 2) = *request_reference;
-			if (function_e6900(*unit_reference, &request))
-				function_114b60(0x15, NONE, actor_get(result)->unknown018, 0xd, NULL);
-		}
-	}
-	return result;
-}
-
 extern bool g_4f55e5;
 bool g_4f55e0;
 real function_259a0(dword *seed);
 long function_1469f0(real seconds);
-void *function_1e53e0(long character_index, short key);
+void *character_grenade_settings_get(long character_index, short key);
 long function_cbd50(long unit_index, short weapon_index);
 void __stdcall function_c6f80(long unit_index, long ticks, long flags);
 void function_101a10(long weapon_index, real fraction);
 void function_1018b0(long weapon_index, short const *rounds);
 
-// @retail 0x1e2a90
-void function_1e2a90(long actor_index)
-{
-	long const *index_reference = &actor_index;
-	s_actor_view *actor = actor_get(*index_reference);
-	byte *actor_bytes = (byte *)actor;
-	byte *weapon_options = NULL;
-	long weapon_index = function_1e1f20(*index_reference);
-	if (weapon_index != NONE)
-		weapon_options = (byte *)function_1e5280(*index_reference,
-			ai_object_get(weapon_index)->definition_index);
-	if (*(short *)(actor_bytes + 0x84) == 4 && *(short *)(actor_bytes + 0x86) >= 3 &&
-		actor->unknown018 != NONE)
-	{
-		byte *unit = (byte *)ai_object_get(actor->unknown018);
-		if ((unit[0x134] & 1) && *(signed char *)(unit + 0x1f5) > 0 &&
-			(function_cbd50(actor->unknown018, *(signed char *)(unit + 0x212)) != NONE ||
-			function_cbd50(actor->unknown018, *(signed char *)(unit + 0x213)) != NONE))
-		{
-			real probability = 0.1f;
-			if (weapon_options)
-			{
-				real value = *(real *)(weapon_options + 0x58);
-				probability = value < 0.1f ? 0.1f : (value > 0.6f ? 0.6f : value);
-			}
-			if (actor_bytes[0x225] || (*(short *)(actor_bytes + 0x722) > 0 &&
-				*(real *)(actor_bytes + 0x764) < 3.0f))
-			{
-				real increased = probability * 4.0f;
-				if (increased > 0.6f) increased = 0.6f;
-				if (probability <= increased) probability = increased;
-			}
-			if (probability > function_259a0(&g_4e7408->unknown0))
-			{
-				real delay;
-				if (weapon_options && *(real *)(weapon_options + 0x5c) != 0.0f)
-				{
-					real value = *(real *)(weapon_options + 0x5c);
-					delay = value < 0.8f ? 0.8f : (value > 1.3f ? 1.3f : value);
-				}
-				else
-					delay = function_259d0(&g_4e7408->unknown0, NULL, 0, 0.8f, 1.3f);
-				long ticks = function_1469f0(delay);
-				function_c6f80(actor->unknown018, (short)ticks, 0x210000);
-				unit[0x1f5] = (byte)ticks;
-			}
-		}
-	}
-	if (actor->unknown018 != NONE)
-	{
-		byte *unit = (byte *)ai_object_get(actor->unknown018);
-		byte *grenade_options = (byte *)function_1e53e0(actor->unknown054,
-			*(signed char *)(unit + 0x23c));
-		long weapons[2];
-		weapons[0] = unit_get_current_weapon(actor->unknown018);
-		weapons[1] = secondary_weapon_get(actor->unknown018);
-		if (!(g_4e6948->state == 1 && g_4f55e5) &&
-			(!*((byte *)g_4f55d0 + 0x340) || (grenade_options &&
-			*(real *)(grenade_options + 0x38) > function_x82e52f(&g_4e7408->unknown0, NULL, 0))))
-			*(short *)(unit + 0x23e) = 0;
-		if (weapon_options)
-		{
-			long i = 0;
-			do
-			{
-				if (weapons[i] != NONE)
-				{
-					real lower = *(real *)(weapon_options + 0x8c);
-					real upper = *(real *)(weapon_options + 0x90);
-					if (lower > 0.0f || upper > 0.0f)
-					{
-						real fraction = lower + (upper - lower) *
-							function_x82e52f(&g_4e7408->unknown0, NULL, 0);
-						if (g_4e6948->state == 1 && g_4f55e0) fraction *= 0.5f;
-						function_101a10(weapons[i], fraction);
-					}
-					short minimum = *(short *)(weapon_options + 0x94);
-					short maximum = *(short *)(weapon_options + 0x96);
-					if (minimum > 0 || maximum > 0)
-					{
-						dword random = _random(&g_4e7408->unknown0, NULL, 0);
-						long range = (short)(maximum + 1) - minimum;
-						short rounds[2] = { (short)(((random * range) >> 16) + minimum), 0 };
-						if (g_4e6948->state == 1 && g_4f55e0)
-							rounds[0] = (short)(rounds[0] * 0.5f);
-						function_1018b0(weapons[i], rounds);
-					}
-				}
-			} while (++i < 2);
-		}
-	}
-	if (actor->unknown07c != NONE)
-		++*(short *)(g_502420->data + (actor->unknown07c & 0xffff) * 0x50 + 0x3e);
-	function_1e1a00(*index_reference, 1);
-}

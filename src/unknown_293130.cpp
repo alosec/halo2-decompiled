@@ -52,6 +52,7 @@ struct s_293134
 	byte field_5c[0x58];
 	word field_b4;
 	word field_b6;
+	byte field_b8[0xc];
 };
 
 struct s_293135
@@ -75,7 +76,7 @@ struct s_293135
 struct s_effect_owner;
 extern s_record_pool *g_51ecb4;
 void function_b7930(void *arg_0, long arg_1, long arg_2, s_effect_owner const *arg_3);
-long function_b7b40(void *arg_0);
+long __stdcall function_b7b40(void *arg_0);
 void __stdcall function_b8540(long arg_0);
 bool function_2936b0(long arg_0, long arg_1);
 
@@ -95,19 +96,20 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	real local_0 = (real)sin(arg_0);
 	real local_1 = (real)cos(arg_0);
 	real local_2 = dot3f(arg_1, arg_2) * (1.0f - local_1);
-	vector3f local_3;
-	local_3.i = arg_1->k * arg_2->j - arg_2->k * arg_1->j;
-	local_3.j = arg_2->k * arg_1->i - arg_1->k * arg_2->i;
-	local_3.k = arg_2->i * arg_1->j - arg_1->i * arg_2->j;
-	arg_2->i = arg_2->i * local_1 + arg_1->i * local_2 - local_3.i * local_0;
-	arg_2->j = arg_2->j * local_1 + arg_1->j * local_2 - local_3.j * local_0;
-	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_3.k * local_0;
+	real local_3 = arg_1->k * arg_2->j - arg_2->k * arg_1->j;
+	real local_4 = arg_2->k * arg_1->i - arg_1->k * arg_2->i;
+	real local_5 = arg_2->i * arg_1->j - arg_1->i * arg_2->j;
+	arg_2->i = arg_2->i * local_1 + arg_1->i * local_2 - local_3 * local_0;
+	arg_2->j = arg_2->j * local_1 + arg_1->j * local_2 - local_4 * local_0;
+	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_5 * local_0;
 }
 
+// score 68 (was 68): every local of the frame sits 4 bytes higher in ours
+// ([esp+0x14] where retail has [esp+0x10]).
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {
-	long const *local_1 = &arg_0;
+	s_293134 local_13;
 	s_293130 *local_2 = &((s_293130 *)g_51ecb4->data)[arg_0 & 0xffff];
 	s_293132 *local_3 = &((s_293133 *)g_4e0350)->field_354[local_2->field_2];
 	long local_0 = NONE;
@@ -117,6 +119,8 @@ long __stdcall function_293130(long arg_0)
 		real local_4 = 0.0f;
 		short local_6 = 0;
 		short local_7;
+		short local_16;
+		short local_17;
 		short local_8 = NONE;
 		for (local_7 = 0; local_7 < local_3->field_c; local_7++)
 		{
@@ -128,15 +132,16 @@ long __stdcall function_293130(long arg_0)
 		}
 		if (local_4 > 0.0f)
 		{
-			local_4 *= (real)function_293131() * (1.0f / 65535.0f);
-			for (local_7 = 0; local_7 < local_3->field_c; local_7++)
+			real random_fraction = (real)function_293131() * (1.0f / 65535.0f);
+			local_4 *= random_fraction;
+			for (local_16 = 0; local_16 < local_3->field_c; local_16++)
 			{
-				if (local_2->field_10 & (1 << local_7))
+				if (local_2->field_10 & (1 << local_16))
 				{
-					local_5 += local_3->field_10[local_7].field_18;
+					local_5 += local_3->field_10[local_16].field_18;
 					if (local_5 >= local_4)
 					{
-						local_8 = local_7;
+						local_8 = local_16;
 						break;
 					}
 				}
@@ -146,13 +151,13 @@ long __stdcall function_293130(long arg_0)
 		{
 			short local_9 = (short)((function_293131() * local_6) >> 16);
 			short local_10 = 0;
-			for (local_7 = 0; local_7 < local_3->field_c; local_7++)
+			for (local_17 = 0; local_17 < local_3->field_c; local_17++)
 			{
-				if (local_2->field_10 & (1 << local_7))
+				if (local_2->field_10 & (1 << local_17))
 				{
-					if (local_10 == local_9)
+					if (local_9 == local_10)
 					{
-						local_8 = local_7;
+						local_8 = local_17;
 						break;
 					}
 					local_10++;
@@ -163,7 +168,6 @@ long __stdcall function_293130(long arg_0)
 		{
 			s_293131 *local_11 = &local_3->field_10[local_8];
 			bool local_12 = !((*(dword *)(g_4e3b44[local_3->field_2c & 0xffff].bytes + 0xd4) >> 4) & 1);
-			s_293134 local_13;
 			function_b7930(&local_13, local_3->field_2c, NONE, NULL);
 			local_13.field_b4 = 1;
 			local_13.field_b6 = 0x34;
@@ -175,8 +179,9 @@ long __stdcall function_293130(long arg_0)
 				local_13.field_1c.z = local_11->field_0.z;
 			else
 				local_13.field_1c.z = function_293132(-local_11->field_14, local_11->field_14) + local_11->field_0.z;
+			real local_18 = local_11->field_c;
 			local_13.field_28 = *g_4687a8;
-			function_293133(local_11->field_c, g_4687b0, &local_13.field_28);
+			function_293133(local_18, g_4687b0, &local_13.field_28);
 			local_0 = function_b7b40(&local_13);
 			if (local_0 != NONE)
 			{
@@ -195,9 +200,12 @@ long __stdcall function_293130(long arg_0)
 					local_15->field_18 = NONE;
 					local_15->field_1a = 0;
 					local_15->field_28 = *g_468788;
-					function_2936b0(*local_1, local_0);
+					function_2936b0(arg_0, local_0);
 					if (local_3->field_14 > 0)
-						local_15->field_4 = (short)((function_293131() * (short)local_3->field_14) >> 16);
+					{
+						short count = (short)local_3->field_14;
+						local_15->field_4 = (short)((function_293131() * count) >> 16);
+					}
 				}
 				else
 				{

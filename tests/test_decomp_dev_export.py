@@ -1,4 +1,4 @@
-"""decomp.dev export from the function inventory. No retail XBE and no XDK."""
+"""ByteMatch export from the function inventory. No retail XBE and no XDK."""
 import json
 
 import pytest
@@ -42,7 +42,7 @@ def test_game_scope_counts_matched_bytes_and_leaves_near_unmatched():
     assert measures['complete_code'] == '0'
     assert measures['total_data'] == '0'
     assert measures['matched_data'] == '0'
-    # data is not compared, so it must not read as 100% matched on decomp.dev
+    # data is not compared, so it must not read as 100% matched on ByteMatch
     assert measures['matched_data_percent'] == 0.0
     assert measures['complete_data_percent'] == 0.0
     assert isinstance(measures['total_code'], str)
@@ -83,27 +83,29 @@ def test_complete_unit_when_every_function_matches():
     assert report['measures']['complete_code'] == '8'
 
 
-def test_in_scope_keeps_xdk_and_drops_third_and_eh():
+def test_in_scope_keeps_xdk_and_havok_and_drops_other_third_and_eh():
     rows = _rows(
         _row(0x10, 10, status='matched'),
         _row(0x40, 100, owner='xdk:libcmt', status='todo'),
         _row(0x50, 4, owner='third:havok', status='matched'),
         _row(0x60, 3, owner='eh'),
         _row(0x70, 9, owner='other:library', status='todo'),
+        _row(0x80, 6, owner='third:bink', status='todo'),
     )
-    assert [in_scope(r, 'in-scope') for r in rows.values()] == [True, True, False, False, True]
+    assert [in_scope(r, 'in-scope') for r in rows.values()] == [True, True, True, False, True, False]
     report, info = build_report(rows, 'in-scope')
-    assert info['matched'] == 1 and info['todo'] == 2
-    assert report['measures']['total_code'] == '119'
-    assert report['measures']['matched_code'] == '10'
+    assert info['matched'] == 2 and info['todo'] == 2
+    assert report['measures']['total_code'] == '123'
+    assert report['measures']['matched_code'] == '14'
     names = {unit['name'] for unit in report['units']}
     assert 'asm/0x000000 [game]' in names
     assert 'asm/0x000000 [xdk]' in names
     assert 'asm/0x000000 [other]' in names
-    assert all('havok' not in name and 'eh' not in name for name in names)
+    assert 'asm/0x000000 [third]' in names
+    assert all('bink' not in name and '[eh]' not in name for name in names)
     cats = {c['id'] for c in report['categories']}
-    assert {'game', 'xdk', 'other', 'no-source'} <= cats
-    assert 'third' not in cats and 'eh' not in cats
+    assert {'game', 'xdk', 'third', 'other', 'no-source'} <= cats
+    assert 'eh' not in cats
 
 
 def test_empty_totals_report_zero_percent():

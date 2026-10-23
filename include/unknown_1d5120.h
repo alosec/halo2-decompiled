@@ -27,7 +27,7 @@ struct c_contact_query_bounds_info
  byte unknown18[8];
  hkVector4 lower, upper;
  c_contact_query_bounds_info();
- ~c_contact_query_bounds_info()
+ __forceinline ~c_contact_query_bounds_info()
  {
   if (!(properties.capacity_and_flags & 0x80000000))
    g_480118->allocate((long)properties.data, (properties.capacity_and_flags & 0x7fffffff) * 8, 0x12);
@@ -42,7 +42,7 @@ struct c_contact_query_transform_info
  byte unknown18[8];
  hkTransform transform;
  c_contact_query_transform_info();
- ~c_contact_query_transform_info()
+ __forceinline ~c_contact_query_transform_info()
  {
   if (!(properties.capacity_and_flags & 0x80000000))
    g_480118->allocate((long)properties.data, (properties.capacity_and_flags & 0x7fffffff) * 8, 0x12);
@@ -63,7 +63,8 @@ class c_contact_query_transform_volume
 {
 public:
  c_contact_query_transform_volume(c_contact_query_transform_info const *info);
- byte unknown00[0xd0];
+ virtual ~c_contact_query_transform_volume();
+ byte unknown04[0xd0 - 4];
  static void *operator new(size_t size) { return contact_query_allocate(size); }
 };
 class c_contact_callback
@@ -103,6 +104,6 @@ public:
 class c_contact_query_world
 {
 public:
- void add(void *volume);
+ void *add(void *volume);
  void remove(void *volume);
 };

@@ -14,6 +14,18 @@
 #include <math.h>
 #include <string.h>
 
+c_breakable_surface_group_entity_definition g_4797dc;
+c_breakable_surface_damage_event_definition g_4797d8;
+c_damage_section_response_event_definition g_4797d4;
+
+c_game_engine_player_entity_definition g_4797c8;
+
+c_vehicle_flip_event_definition g_479800;
+c_unit_exit_vehicle_event_definition g_4797e8;
+c_unit_melee_damage_event_definition g_4797fc;
+
+c_vehicle_trick_event_definition g_479804;
+
 #define OBJECT_HEADER(index) (&((s_object_header *)g_4e0300->data)[(index) & 0xFFFF])
 #define OBJECT(index) (OBJECT_HEADER(index)->object)
 #define UNIT_OBJECT(index) ((s_unit_object_view *)OBJECT(index))
@@ -209,7 +221,7 @@ void c_unit_type::v26(long index, long b, s_entity_state *state)
 	s_unit_object_view *first = UNIT_OBJECT(index);
 	s_unit_object_view *object;
 
-	unit_state_clear(unit_state);
+	memset(unit_state, 0, sizeof(*unit_state));
 
 	object = UNIT_OBJECT(index);
 	unit_state->field4 = object->definition_index;
@@ -217,7 +229,7 @@ void c_unit_type::v26(long index, long b, s_entity_state *state)
 	unit_state->field8 = object->field_af;
 	unit_state->fieldc = object->field24;
 
-	long4_clear(&unit_state->field10);
+	memset(&unit_state->field10, 0, sizeof(unit_state->field10));
 	if (first->field13c != NONE)
 	{
 		s_long4 *element = (s_long4 *)(g_4e8c24->data + (first->field13c & 0xffff) * 0x21c + 0x84);
@@ -343,9 +355,9 @@ bool c_game_engine_player_entity_definition::v19(long a, short *b, long c, long 
 // @retail 0x9aff0
 bool c_game_engine_player_entity_definition::v20(s_entity_slot *entity, long b, long c, long d)
 {
-	long id = entity->id;
-	c_engine_peer *manager = g_55e4d0[g_4e9ae8->engine_index];
 	bool result = false;
+	long const &id = entity->id;
+	c_engine_peer *manager = g_55e4d0[g_4e9ae8->engine_index];
 	long index;
 
 	for (index = 0; index < 16; index++)
@@ -378,11 +390,12 @@ void c_game_engine_player_entity_definition::v21(s_entity_slot *entity)
 	{
 		long *slot = &g_4e9ae8->slots[(short)index];
 
-		if (*slot != NONE)
+		long local_0 = *slot;
+		if (local_0 != NONE)
 		{
 			long id = entity->id;
-
-			if (((id ^ *slot) & 0x3ff) == 0)
+			local_0 ^= id;
+			if ((local_0 & 0x3ff) == 0)
 				*slot = id;
 		}
 	}
@@ -392,13 +405,9 @@ void c_game_engine_player_entity_definition::v21(s_entity_slot *entity)
 bool c_game_engine_player_entity_definition::v22(s_entity_slot *entity, long b, short *slot, long d, long e, long f)
 {
 	short index = *slot;
-	c_engine_peer *manager = g_55e4d0[g_4e9ae8->engine_index];
 
-	if (manager)
-	{
-		if (g_4e9ae8->slots[index] != NONE)
-			g_4e9ae8->slots[index] = NONE;
-	}
+	if (slot_identifier(index) != NONE)
+		g_4e9ae8->slots[index] = NONE;
 	g_4e9ae8->slots[index] = entity->id;
 	return true;
 }
@@ -428,14 +437,14 @@ bool c_game_engine_player_entity_definition::v23(s_entity_slot *entity, long b, 
 bool c_game_engine_player_entity_definition::v24(s_entity_slot *entity)
 {
 	bool result = false;
+	long index = 0;
 	s_mp_globals *local_0 = g_4e9ae8;
 	c_engine_peer *manager = g_55e4d0[*(volatile long *)&local_0->engine_index];
 	s_entity_slot *volatile *local_2 = &entity;
 	s_entity_slot *local_3 = *local_2;
 	long local_1 = local_3->id;
-	long index;
 
-	for (index = 0; index < 16; index++)
+	for (; index < 16; index++)
 	{
 		if (slot_of(manager, index) == local_1)
 			break;
@@ -542,6 +551,8 @@ bool c_breakable_surface_group_entity_definition::v24(s_entity_slot *entity)
 	return true;
 }
 
+// score 11 (was 11): ours holds -1 in a register for the compare and the
+// clear because of the two stores to one address; retail uses immediates.
 // @retail 0x9d1c0
 bool c_breakable_surface_group_entity_definition::v25(s_entity_slot *entity)
 {
@@ -549,12 +560,11 @@ bool c_breakable_surface_group_entity_definition::v25(s_entity_slot *entity)
 
 	if (slot >= 0 && slot < 8)
 	{
-		if (g_4eca60[slot] != NONE)
-		{
+		long id = g_4eca60[slot];
+
+		if (id != NONE)
 			g_4eca60[slot] = NONE;
-		}
-		long id = entity->id;
-		g_4eca60[slot] = id;
+		g_4eca60[slot] = entity->id;
 	}
 	return true;
 }
@@ -694,24 +704,25 @@ struct s_typed_object_header
 /* 0xe68c0, src/unknown_0e68c0.cpp */
 bool function_e68c0(long type, long unit_index);
 
+// score 75 (was 85): the prologue saves EBX and EBP where retail saves ECX and EBX, so the saved
+// register set and the order of the body differ.
 // @retail 0x9ee20
 bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
-	bool result = false;
+	long result = false;
 	long unit_index = function_a58d0(entities[0]);
 	long vehicle_index = function_a58d0(entities[1]);
-	if (unit_index != NONE && vehicle_index != NONE)
+	if (unit_index == NONE || vehicle_index == NONE)
+		return result;
+	s_record_pool *local_1 = g_4e0300;
+	if (((1 << ((s_typed_object_header *)local_1->data)[unit_index & 0xffff].type) & 3) && ((1 << ((s_typed_object_header *)local_1->data)[vehicle_index & 0xffff].type) & 3))
 	{
-		s_typed_object_header *headers = (s_typed_object_header *)g_4e0300->data;
-		if (((1 << headers[unit_index & 0xffff].type) & 3) && ((1 << headers[vehicle_index & 0xffff].type) & 3))
+		s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)((s_typed_object_header *)local_1->data)[unit_index & 0xffff].object;
+		if (unit->parent_index != NONE && unit->parent_index == vehicle_index &&
+			unit->seat_index != NONE && unit->seat_index == *(long const *)data)
 		{
-			s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)headers[unit_index & 0xffff].object;
-			if (unit->parent_index != NONE && unit->parent_index == vehicle_index &&
-				unit->seat_index != NONE && unit->seat_index == *(long const *)data)
-			{
-				function_e68c0(0x1d, unit_index);
-				result = true;
-			}
+			function_e68c0(0x1d, unit_index);
+			result = true;
 		}
 	}
 	return result;
@@ -725,7 +736,7 @@ static inline long pin(long value, long lo, long hi)
 	else
 	{
 		result = hi;
-		if (value <= hi)
+		if (value <= 3)
 			result = value;
 	}
 	return result;
@@ -734,6 +745,16 @@ static inline long pin(long value, long lo, long hi)
 /* 0xf47d0, src/unknown_0f47d0.cpp */
 bool function_f47d0(long unit_index, long trick);
 
+static __forceinline void function_9fdb1(long &local_0, long arg_0, long arg_1, long arg_2)
+{
+	if (arg_0 < arg_1)
+		local_0 = arg_1;
+	else if (arg_0 > arg_2)
+		local_0 = arg_2;
+	else
+		local_0 = arg_0;
+}
+
 // @retail 0x9fdb0
 bool c_vehicle_trick_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
@@ -741,8 +762,10 @@ bool c_vehicle_trick_event_definition::v11(long a, long const *entities, long c,
 	long unit_index = function_a58d0(entities[0]);
 	if (unit_index != NONE && ((1 << ((s_typed_object_header *)g_4e0300->data)[unit_index & 0xffff].type) & 2))
 	{
-		long trick = *(long const *)data;
-		if (pin(trick, 0, 3) == trick)
+		long const &trick = *(long const *)data;
+		long local_0;
+		function_9fdb1(local_0, trick, 0, 3);
+		if (local_0 == trick)
 			result = function_f47d0(unit_index, trick);
 	}
 	return result;
@@ -1050,6 +1073,8 @@ bool c_unit_melee_initiate_event_definition::v11(long a, long const *entities, l
 	return false;
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x9fbf0
 bool c_vehicle_flip_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
@@ -1059,28 +1084,27 @@ bool c_vehicle_flip_event_definition::v11(long a, long const *entities, long c, 
 	if (vehicle_index != NONE && unit_index != NONE)
 	{
 		s_typed_object_header *headers = (s_typed_object_header *)g_4e0300->data;
-		if ((1 << headers[vehicle_index & 0xffff].type) & 2)
+		if (!((1 << headers[vehicle_index & 0xffff].type) & 2)) goto done;
 		{
-			if (!((1 << headers[unit_index & 0xffff].type) & 3))
+			if (!((1 << headers[unit_index & 0xffff].type) & 3)) goto done;
 			{
-			}
-			else if (TEST_FIELD_BIT(((s_object_view *)OBJECT(unit_index))->flag2))
-			{
-			}
-			else if (TEST_FIELD_BIT(((s_object_view *)OBJECT(vehicle_index))->flag2))
-			{
-			}
-			else
-			{
-				s_unit_flip_request request;
-				request.type = 0x21;
-				request.unit_index = unit_index;
-				result = function_e6900(vehicle_index, (s_unit_request *)&request);
+				_ReadWriteBarrier();
+				s_typed_object_header *current_headers = (s_typed_object_header *)g_4e0300->data;
+				if (!TEST_FIELD_BIT(((s_object_view *)OBJECT(unit_index))->flag2) &&
+					!TEST_FIELD_BIT(((s_object_view *)current_headers[vehicle_index & 0xffff].object)->flag2))
+				{
+					s_unit_flip_request request;
+					request.type = 0x21;
+					request.unit_index = unit_index;
+					result = function_e6900(vehicle_index, (s_unit_request *)&request);
+				}
 			}
 		}
 	}
+done:
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x9f550
 long c_unit_melee_damage_event_definition::v0()
@@ -1321,18 +1345,9 @@ bool c_damage_section_response_event_definition::v10(long a, void *data, s_bitst
 
 // ---- the encodings of the "game-engine-player" and "breakable-surface-group" entities ----
 
-/* the pairs of structure bsp and bit that map to the breakable surface slots
-   (src/unknown_183ee0.cpp) */
-struct s_slot_pair
-{
-	long a;
-	long b;
-};
-
-extern s_slot_pair g_4eca80[0x100];
 extern byte *g_4ed280;
 byte *function_183fc0(long index);
-long function_184000(long bit, long index);
+long function_184000(long index, long bit);
 
 // @retail 0x9ae30
 void c_game_engine_player_entity_definition::v12(long a, void const *data, long c, s_bitstream *stream)
@@ -1578,15 +1593,19 @@ bool c_breakable_surface_group_entity_definition::v20(s_entity_slot *entity, dwo
 	if (*flags & 1)
 	{
 		dword old_mask = *mask;
-		long index = entity->slot * 32;
-		s_slot_pair *pair = &g_4eca80[index];
-		for (long i = 0; i < 32; i++, pair++, index++)
+		long const &local_4 = entity->slot;
+		long i = 0;
+		long index = local_4 * 32;
+		long *local_1 = (long *)((byte *)g_4eca80 + (local_4 << 8) + 4);
+		for (; i < 32; i++, local_1 += 2, index++)
 		{
 			if (index != NONE && index < 0x100)
 			{
-				if (pair->a != NONE || pair->b != pair->a)
+				long local_2 = local_1[-1];
+				long local_3 = *local_1;
+				if (local_2 != NONE || local_3 != local_2)
 				{
-					if (!function_184000(pair->b, pair->a))
+					if (!(byte)function_184000(local_2, local_3))
 					{
 						dword local_0 = *mask;
 						*mask = local_0 | (1 << i);
@@ -1620,7 +1639,7 @@ bool c_breakable_surface_group_entity_definition::v23(s_entity_slot *entity, lon
 				long bit = g_4eca80[index].b;
 				if (bsp != NONE || bit != bsp)
 				{
-					if ((byte)function_184000(bit, bsp) && *g_4ed280)
+					if ((byte)function_184000(bsp, bit) && *g_4ed280)
 					{
 						dword *bits = (dword *)function_183fc0(bsp);
 						bits[bit >> 5] &= ~(1 << (bit & 31));
@@ -1722,7 +1741,7 @@ static inline void event_write_direction(s_bitstream *stream, vector3f const *di
 	function_194bc0(stream, direction);
 }
 
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside);
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside);
 void simulation_read_position(s_bitstream *stream, real *position, long bits);
 
 struct s_surface_damage_event_data
@@ -1750,7 +1769,7 @@ void c_breakable_surface_damage_event_definition::v9(long a, void const *data, s
 		function_194bc0(stream, &event->direction);
 	real const *local_0 = &event->position.i;
 	real const *const *local_1 = &local_0;
-	simulation_write_position(13, stream, *local_1, false);
+	simulation_write_position(stream, *local_1, 13, false);
 	scenario_object_name_encode(event->object_name, stream);
 }
 
@@ -1761,7 +1780,7 @@ void c_unit_grenade_release_event_definition::v9(long a, void const *data, s_bit
 	stream_write_checked(stream, event->type, 1);
 	real const *local_0 = &event->position.i;
 	real const *const *local_1 = &local_0;
-	simulation_write_position(16, stream, *local_1, false);
+	simulation_write_position(stream, *local_1, 16, false);
 	function_194bc0(stream, &event->velocity);
 }
 
@@ -1903,6 +1922,18 @@ void c_damage_aftermath_event_definition::v9(long a, void const *data, s_bitstre
 	stream_write_checked(stream, event->unknown34, 8);
 }
 
+static __forceinline real function_9c351(long arg_0, long arg_1, real arg_2, real arg_3)
+{
+	real local_0;
+	if (arg_0 == 0)
+		local_0 = arg_2;
+	else if (arg_0 >= arg_1)
+		local_0 = arg_3;
+	else
+		local_0 = (arg_2 * (arg_1 - arg_0) + arg_3 * arg_0) / arg_1;
+	return local_0;
+}
+
 // @retail 0x9c350
 bool c_damage_aftermath_event_definition::v10(long a, void *data, s_bitstream *stream)
 {
@@ -1918,8 +1949,8 @@ bool c_damage_aftermath_event_definition::v10(long a, void *data, s_bitstream *s
 	}
 	else
 		event->direction = *g_4687a4;
-	event->unknown18 = event_dequantize_real(function_1959c0(stream, 5), 31, 0.0f, 2.0f);
-	event->unknown1c = event_dequantize_real(function_1959c0(stream, 5), 31, 0.0f, 2.0f);
+	event->unknown18 = function_9c351(function_1959c0(stream, 5), 31, 0.0f, 2.0f);
+	event->unknown1c = function_9c351(function_1959c0(stream, 5), 31, 0.0f, 2.0f);
 	event->flags = 0;
 	SET_FLAG(event->flags, 1, function_1957d0(stream));
 	SET_FLAG(event->flags, 2, function_1957d0(stream));
@@ -2019,13 +2050,14 @@ struct s_9d450
 static __forceinline real function_9d452(real const *arg_0)
 {
 	real local_0;
-	if (*(volatile real const *)arg_0 < 0.0f)
+	volatile real local_1 = *arg_0;
+	if (local_1 < 0.0f)
 		local_0 = 0.0f;
 	else
 	{
 		local_0 = 1.0f;
-		if (!(*(volatile real const *)arg_0 > 1.0f))
-			local_0 = *(volatile real const *)arg_0;
+		if (!(local_1 > 1.0f))
+			local_0 = local_1;
 	}
 	return local_0;
 }
@@ -2046,7 +2078,7 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 {
 	c_unit_type *volatile local_0 = this;
 	s_9d450 *local_2 = (s_9d450 *)arg_3;
-	byte *local_1 = (byte *)((s_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
+	byte *local_1 = *(byte **)(((arg_0 & 0xffff) * 12) + (long)g_4e0300->data + 8);
 	dword local_3 = (dword)arg_1;
 	long local_4 = function_a5e70(arg_0, local_3 & 0x3ff, arg_3);
 	if (local_3 & 0x400)
@@ -2055,8 +2087,11 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 		long local_5 = *(long *)(local_1 + 0x13c);
 		short local_7 = *(short *)(local_1 + 0x130);
 		if (local_5 != NONE)
+		{
 			local_6 = (short)local_5;
-		if (local_5 == NONE || local_6 == NONE || local_7 == NONE)
+			if (local_6 != NONE && local_7 != NONE)
+				goto local_18;
+		}
 		{
 			if (local_2->field_90 != local_6 || local_2->field_92 != local_7)
 			{
@@ -2066,6 +2101,7 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 			}
 		}
 	}
+local_18:
 	if (local_3 & 0x800)
 	{
 		long local_5 = NONE;
@@ -2107,7 +2143,7 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 	}
 	long local_5 = 18;
 	long local_16 = 4;
-	s_9d451 *local_17 = local_2->field_ac;
+	short *local_17 = &local_2->field_ac[0].field_4;
 	do
 	{
 		dword local_6 = 1 << (local_5 - 4);
@@ -2117,7 +2153,7 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 			long local_9 = NONE;
 			short local_10 = NONE;
 			long local_11 = 0;
-			long local_12 = 0;
+			short local_12 = 0;
 			real local_13 = 0.0f;
 			if (local_8 != NONE)
 			{
@@ -2132,23 +2168,23 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 					local_12 = *(short *)(local_14 + 0x22a);
 				}
 			}
-			s_9d451 *local_14 = local_17;
-			if ((local_3 & local_6) && (local_14->field_0 != local_9 || local_14->field_4 != local_10))
+			short *local_14 = local_17;
+			if ((local_3 & local_6) && ((*(long *)(local_14 - 2)) != local_9 || local_14[0] != local_10))
 			{
 				local_4 |= local_6;
-				local_14->field_0 = local_9;
-				local_14->field_4 = local_10;
+				(*(long *)(local_14 - 2)) = local_9;
+				local_14[0] = local_10;
 			}
 			dword local_7 = 1 << local_5;
-			if ((local_3 & local_7) && (local_14->field_6 != local_11 || local_14->field_8 != local_12 || local_14->field_c != local_13))
+			if ((local_3 & local_7) && (local_14[1] != local_11 || local_14[2] != local_12 || (*(real *)(local_14 + 4)) != local_13))
 			{
 				local_4 |= local_7;
-				local_14->field_6 = (short)local_11;
-				local_14->field_8 = (short)local_12;
-				local_14->field_c = local_13;
+				local_14[1] = (short)local_11;
+				local_14[2] = (short)local_12;
+				(*(real *)(local_14 + 4)) = local_13;
 			}
 		}
-		local_17++;
+		local_17 += 8;
 		local_5++;
 	}
 	while (--local_16);
@@ -2163,7 +2199,7 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 		real local_6 = function_9d452((real *)(local_1 + 0x2b8));
 		byte local_7 = (byte)((*(dword *)(local_1 + 0x134) >> 3) & 1);
 		bool local_8 = false;
-		bool local_9 = false;
+		volatile bool local_9 = false;
 		bool local_10 = false;
 		if (local_2->field_ee != local_7)
 		{
@@ -2185,4 +2221,3 @@ long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 	}
 	return local_4;
 }
-

@@ -105,7 +105,7 @@ struct s_storage_request
 
 extern dword g_54d5b8;
 extern long g_51ea10;
-bool function_138800(void);
+bool game_loop_running(void);
 long function_1910b8(long controller);
 void *__stdcall function_1a47fd(unsigned int size);
 class c_campaign_options_list;
@@ -146,7 +146,7 @@ void function_2154cd(long controller, s_storage_request *request, long title)
 	(void)&title;
 	request->controller = (char)controller;
 	long index;
-	if (function_138800() && g_4e6948->state == 3)
+	if (game_loop_running() && g_4e6948->state == 3)
 		index = 4;
 	else
 		index = function_1910b8(controller);
@@ -160,7 +160,7 @@ s_storage_request *__stdcall function_215454(c_slots_215541 *slots, byte option)
 	(void)&slots;
 	(void)&option;
 	s_storage_request *request = NULL;
-	if (function_138800())
+	if (game_loop_running())
 	{
 		request = (s_storage_request *)function_1a47fd(sizeof(s_storage_request));
 		if (request)

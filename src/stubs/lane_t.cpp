@@ -16,10 +16,6 @@ struct s_16760c_render_model;
 
 
 /* lane R's region */
-// @stub 0x170fd0
-void __stdcall function_170fd0(long user_index)
-{
-}
 
 /* unowned */
 
@@ -29,10 +25,7 @@ void __stdcall function_170fd0(long user_index)
 
 
 
-// @stub 0x12b6f0
-void function_12b6f0(real progress)
-{
-}
+/* lane O's region */
 
 /* lane D's region: a machine's connection quality */
 struct s_68a90_entry;

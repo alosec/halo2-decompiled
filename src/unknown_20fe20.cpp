@@ -9,9 +9,12 @@
 #include "object_iterator.h"
 #include "unknown_1428b0.h"
 #include "unknown_20fe20.h"
+#include "unknown_11cc90.h"
+#include "vector_angles.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+static __forceinline long real_to_long(real value);
 
 void function_210e20(void);
 void function_210f00(void);
@@ -97,7 +100,7 @@ void function_20f5a0(s_audio_priority_record *current, s_audio_priority_record c
 struct s_audio_queue;
 extern s_audio_queue *g_4f939c;
 extern s_record_pool *g_4f9398;
-long function_20f040(short team);
+long __declspec(noinline) function_20f040(short team);
 struct s_object;
 s_object *function_badc0(long object_index, dword type_mask);
 
@@ -109,70 +112,101 @@ struct s_audio_object_state
 	byte unused1 : 5;
 };
 
+/* the object flag word at +0x10a as 0x20f960 reads it */
+struct s_audio_object_state_20f960
+{
+	byte unknown000[0x10a];
+	word unused0 : 2;
+	word blocked : 1;
+	word unused1 : 13;
+};
+
 // @retail 0x20f960
 long function_20f960(long index, s_audio_priority_table *table, bool *expired)
 {
-	(void)&expired;
-	volatile bool result = false;
-	byte *record = g_4f9398->data + (index & 0xffff) * 0x54;
-	s_audio_priority_definition *definition = &table->entries[*(short *)(record + 2)];
+	bool result = false;
+	s_record_pool *records = g_4f9398;
+	byte *record = records->data + (index & 0xffff) * 0x54;
 	long time = g_510c54->game_time;
+	s_audio_priority_definition *definition = &table->entries[*(short *)(record + 2)];
 	if (expired)
 		*expired = false;
-	if (!*((byte *)g_4f55d0 + 0x20) || *(short *)((byte *)g_4f55d0 + 0x22) > 0)
-		goto rejected;
+	if (*((byte *)g_4f55d0 + 0x20) && *(short *)((byte *)g_4f55d0 + 0x22) <= 0)
 	{
 		real seconds = g_510c54->field_2_3 * *(real *)((byte *)definition + 0x20);
-		long ticks;
-		__asm
+		long ticks = real_to_long(seconds);
+		long start = *(long *)(record + 0x10);
+		if (time - start <= ticks)
 		{
-			fld seconds
-			fistp ticks
-		}
-		if (time - *(long *)(record + 0x10) > ticks)
-			goto report_expiration;
-	}
-	{
-		byte *object = *(byte **)(g_4e0300->data + (*(long *)(record + 4) & 0xffff) * 12 + 8);
-		result = true;
-		if (TEST_FIELD_BIT(((s_audio_object_state *)object)->blocked))
-			goto rejected;
-		long actor_index = *(long *)(object + 0x12c);
-		if (actor_index == NONE)
-			goto done;
-		byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
-		if (*(short *)(actor + 0x86) > *(short *)((byte *)definition + 0x16) ||
-			time - *(long *)(actor + 0x4c) < g_510c54->field_2_3 * 3)
-			goto rejected;
-		short type = *(short *)(record + 0x24);
-		if (type >= 0 && type < 200 && *(long *)(record + 0x28) != NONE)
-		{
-			switch (type)
+			byte *object = *(byte **)(g_4e0300->data + (*(long *)(record + 4) & 0xffff) * 12 + 8);
+			result = true;
+			if (TEST_FIELD_BIT(((s_audio_object_state_20f960 *)object)->blocked))
 			{
-			case 138:
-			case 142:
-			case 150:
-			case 159:
-			case 194:
-			case 196:
-			case 198:
+				result = false;
+			}
+			else
+			{
+				long actor_index = *(long *)(object + 0x12c);
+				if (actor_index != NONE)
 				{
-					s_audio_object_state *target = (s_audio_object_state *)function_badc0(*(long *)(record + 0x28), NONE);
-					if (!target || TEST_FIELD_BIT(target->blocked))
-						goto rejected;
+					byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+					if (*(short *)(actor + 0x86) > *(short *)((byte *)definition + 0x16) ||
+						time - *(long *)(actor + 0x4c) < g_510c54->field_2_3 * 3)
+					{
+						result = false;
+					}
+					else
+					{
+						short type = *(short *)(record + 0x24);
+						if (type >= 0 && type < 200 && *(long *)(record + 0x28) != NONE)
+						{
+							switch (type)
+							{
+							case 138:
+							case 142:
+							case 150:
+							case 159:
+							case 194:
+							case 196:
+							case 198:
+								{
+									s_audio_object_state_20f960 *target = (s_audio_object_state_20f960 *)function_badc0(*(long *)(record + 0x28), NONE);
+									if (!target || TEST_FIELD_BIT(target->blocked))
+										result = false;
+								}
+								break;
+							}
+						}
+					}
 				}
-				break;
 			}
 		}
-		goto done;
 	}
-rejected:
-	result = false;
-report_expiration:
-	if (expired)
-		*expired = *(long *)(g_4f9398->data + (index & 0xffff) * 0x54 + 0x2c) != 0;
-done:
+	else
+	{
+		result = false;
+	}
+	if (!result && expired)
+	{
+		bool value = false;
+		if (*(long *)(g_4f9398->data + (index & 0xffff) * 0x54 + 0x2c))
+			value = true;
+		*expired = value;
+	}
 	return result;
+}
+
+PRIVATE __forceinline long function_20f1a3(byte const *arg_0, real arg_1)
+{
+    long local_0 = *(long const *)(arg_0 + 8);
+    real local_1 = *(short const *)(arg_0 + 2) * arg_1;
+    long local_2;
+    __asm
+    {
+        fld local_1
+        fistp local_2
+    }
+    return local_0 + local_2;
 }
 
 // @retail 0x20f1a0
@@ -188,15 +222,7 @@ real function_20f1a0(long object_index, short type)
 		short side = (short)function_20f040(team);
 		byte *queue = (byte *)g_4f939c + side * 0x7dc;
 		long index = *(volatile long *)(queue + 0x7d0);
-		long time = g_510c54->game_time;
-		real seconds = g_510c54->field_2_3 * *(real *)((byte *)&table->entries[type] + 0x24);
-		long delay;
-		__asm
-		{
-			fld seconds
-			fistp delay
-		}
-		time += delay;
+		long time = function_20f1a3((byte const *)g_510c54, *(real *)((byte *)&table->entries[type] + 0x24));
 		long found = NONE;
 		for (; index != NONE; )
 		{
@@ -232,9 +258,9 @@ bool __stdcall function_20c2f0(long object_index, long type, real *scale)
 			goto found;
 		if ((1 << *(byte *)(object + 0xaa)) & 3)
 		{
+			long parent = *(long *)(object + 0x14);
 			if (*(short *)(object + 0x1fc) != NONE)
 			{
-				long parent = *(long *)(object + 0x14);
 				if (*(byte *)(g_4e0300->data + (parent & 0xffff) * 12 + 3) == 1)
 				{
 					long related = function_1caa10(parent);
@@ -255,12 +281,13 @@ bool __stdcall function_20c2f0(long object_index, long type, real *scale)
 					goto found;
 			}
 		}
-		return false;
+		goto local_0;
 		found:
+		result = true;
 		if (scale)
 			*scale *= 2.0f;
-		return true;
 	}
+local_0:
 	return result;
 }
 
@@ -269,6 +296,11 @@ struct s_audio_weighted_entry
 	byte unknown00[0x10];
 	real weight;
 };
+
+static inline void accumulate_20f0a0(real *sum, real value)
+{
+	*sum += value;
+}
 
 // @retail 0x20f0a0
 short function_20f0a0(s_audio_weighted_entry *entries, short count)
@@ -290,7 +322,7 @@ short function_20f0a0(s_audio_weighted_entry *entries, short count)
 		for (short j = 0; j < count; j++)
 		{
 			if (entries[j].weight >= maximum * 0.8f)
-				total += entries[j].weight;
+				accumulate_20f0a0(&total, entries[j].weight);
 			else
 				entries[j].weight = 0.0f;
 		}
@@ -301,9 +333,7 @@ short function_20f0a0(s_audio_weighted_entry *entries, short count)
 		{
 			if (entries[k].weight > 0.0f)
 			{
-				real weight = entries[k].weight;
-				weight += cumulative;
-				cumulative = weight;
+				cumulative += entries[k].weight;
 				if (cumulative >= choice)
 				{
 					result = k;
@@ -375,9 +405,10 @@ void function_20fe20(s_node_owner *owner)
 		{
 			long next = node->next;
 
-			if (NODE(node_index)->object_index != NONE)
+			s_node &linked = *NODE(*link);
+			if (linked.object_index != NONE)
 			{
-				s_node_object *object = (s_node_object *)OBJECT_FROM_INDEX(NODE(node_index)->object_index);
+				s_node_object *object = (s_node_object *)OBJECT_FROM_INDEX(linked.object_index);
 				s_node_link *object_link = (s_node_link *)((byte *)object + object->link_offset);
 
 				if (object_link->node_index == node_index)
@@ -414,9 +445,7 @@ PRIVATE inline long audio_queue_delay(void)
 // @retail 0x20f6a0
 bool function_20f6a0(s_node_owner *owner, long node_index)
 {
-	(void)&owner;
-	(void)&node_index;
-	volatile bool result = false;
+	bool result = false;
 	byte *record = (byte *)NODE(node_index);
 	long filter = *(long *)((byte *)owner + 0x7d8);
 	if (filter == NONE || *(long *)(record + 4) == filter || *(long *)(record + 0x28) == filter)
@@ -850,12 +879,17 @@ void function_210e80(void)
 		object->value1dc = 0;
 	}
 }
-struct s_object_mapping_entry
+struct s_object_mapping_key
 {
 	long identifier;
 	short index;
 	byte type;
 	byte source;
+};
+
+struct s_object_mapping_entry
+{
+	s_object_mapping_key key;
 	short value1da;
 	short value1dc;
 };
@@ -875,10 +909,7 @@ struct s_object_mapping_root
 struct s_mapped_object_view
 {
 	byte unknown000[0xa4];
-	long identifier;
-	short index;
-	byte type;
-	byte source;
+	s_object_mapping_key key;
 	byte unknown0ac[0x1da - 0xac];
 	short value1da;
 	short value1dc;
@@ -901,14 +932,15 @@ void function_210f00(void)
 		while ((state.object = function_baeb0(&state.iterator)) != NULL)
 		{
 			s_mapped_object_view *object = (s_mapped_object_view *)OBJECT_FROM_INDEX(state.iterator.object_index);
+			s_object_mapping_key const *key = &object->key;
 			bool matches = true;
-			matches &= entry->identifier == object->identifier;
-			matches &= entry->source == object->source;
-			matches &= entry->type == object->type;
+			matches &= entry->key.type == key->type;
+			matches &= entry->key.source == key->source;
+			matches &= entry->key.identifier == key->identifier;
 			if (matches)
 			{
-				if (entry->source == 0)
-					matches &= entry->index == object->index;
+				if (entry->key.source == 0)
+					matches &= entry->key.index == key->index;
 				if (matches)
 				{
 					object->value1da = entry->value1da;
@@ -962,7 +994,7 @@ short g_4f9cbc;
 s_cell g_4f9cc0[8];
 vector3f g_4f93bc[24][8];
 
-void function_211fd0(vector3f *out, real const *position, real time, real scale);
+void function_211fd0(vector3f *out, real const *position, real scale, real time);
 
 struct s_cell_effect_tag
 {
@@ -1012,7 +1044,7 @@ bool function_211b30(byte const *location, real const *position, byte flags, vec
 {
 	(void)&position;
 	(void)&flags;
-	long index = NONE;
+	short index = NONE;
 	short cluster = *(short const *)(location + 4);
 	if (cluster != NONE)
 	{
@@ -1023,24 +1055,18 @@ bool function_211b30(byte const *location, real const *position, byte flags, vec
 	return false;
 }
 
-PRIVATE real random_step(void)
+/* retail inlines the random step and the clamp into 0x2118c0 */
+static inline real random_step(void)
 {
 	return random_index(&g_4e7408->seed, 2) ? 0.01f : -0.01f;
 }
 
-PRIVATE real pin_real(real x, real lower, real upper)
+static inline real pin_real(real x, real lower, real upper)
 {
-	if (x < lower)
-	{
-		x = lower;
-	}
-	else if (x > upper)
-	{
-		x = upper;
-	}
-
-	return x;
+	return x < lower ? lower : (x > upper ? upper : x);
 }
+
+vector2f *function_11df30(vector2f *angles, vector3f const *v);
 
 // @retail 0x2118c0
 void function_2118c0(void)
@@ -1058,10 +1084,9 @@ void function_2118c0(void)
 		if (source->tag_index != NONE)
 		{
 			s_cell_tag *tag = (s_cell_tag *)g_4e3b44[source->tag_index & 0xffff].bytes;
-			real azimuth;
-			real elevation;
+			vector3f const &direction = source->direction;
+			vector2f angles;
 			real scale;
-			long j;
 
 			cell->value4 += random_step();
 			cell->value4 = pin_real(cell->value4, 0.0f, 1.0f);
@@ -1074,20 +1099,15 @@ void function_2118c0(void)
 
 			cell->interpolation = (tag->value4 - tag->value0) * cell->value4 + tag->value0;
 
-			azimuth = (real)atan2(source->direction.j, source->direction.i);
-			elevation = (real)atan2(source->direction.k, sqrt(source->direction.j * source->direction.j + source->direction.i * source->direction.i));
-			elevation += tag->valuec * cell->valuec * 0.5f;
-			azimuth += cell->value8 * tag->value8 * 0.5f;
+			function_11df30(&angles, &direction);
+			angles.j += tag->valuec * cell->valuec * 0.5f;
 
-			cell->direction.i = (real)cos(azimuth) * (real)cos(elevation);
-			cell->direction.j = (real)sin(azimuth) * (real)cos(elevation);
-			cell->direction.k = (real)sin(elevation);
+			direction_from_angles(&cell->direction, angles.i + cell->value8 * tag->value8 * 0.5f, angles.j);
 
 			scale = source->scale * cell->interpolation;
-			for (j = 0; j < 3; j++)
-			{
-				cell->direction.n[j] *= scale;
-			}
+			cell->direction.i *= scale;
+			cell->direction.j *= scale;
+			cell->direction.k *= scale;
 
 			cell->active = true;
 		}
@@ -1099,6 +1119,9 @@ void function_2118c0(void)
 
 	g_4f9cbc = (short)globals->count;
 }
+// score 14 (was 14): the two locals are kept in the other stack slots: the
+// float is stored at [esp+0x30] here and at [esp+0x38] in retail, so every
+// slot of the frame is at another offset.
 // @retail 0x211cc0
 void function_211cc0(void)
 {
@@ -1127,12 +1150,16 @@ void function_211cc0(void)
 
 	do
 	{
+		word w0 = (word)((k - 1) & 7);
+		word w2 = (word)((k + 1) & 7);
+		word w3 = (word)((k + 2) & 7);
+
 		m = 1;
 
 		do
 		{
-			real previous = (real)(k - 1);
 			real t = (real)m * 0.125f + (real)k;
+			real previous = (real)(k - 1);
 			real ta = t - (previous + 2.0f);
 			real tb = t - (previous + 1.0f);
 			real tc = t - previous;
@@ -1141,21 +1168,29 @@ void function_211cc0(void)
 
 			do
 			{
-				vector3f *p3 = &g_4f93bc[b * 8 + ((k + 2) & 7)][0];
-				vector3f *p2 = &g_4f93bc[b * 8 + ((k + 1) & 7)][0];
+				long row = b << 3;
+				vector3f *p3 = g_4f93bc[row + w3];
+				vector3f *p2 = g_4f93bc[row + w2];
 				vector3f *p1 = &g_4f93bc[b * 8 + k][0];
-				vector3f *p0 = &g_4f93bc[b * 8 + ((k - 1) & 7)][0];
+				vector3f *p0 = g_4f93bc[row + w0];
+				vector3f *out = &g_4f93bc[b * 8 + k][m];
 				long i;
 
 				for (i = 0; i < 3; i++)
 				{
-					real s0 = p3->n[i] - p2->n[i];
-					real s1 = p2->n[i] - p1->n[i];
-					real s2 = p1->n[i] - p0->n[i];
-					real d2 = s1 - s2;
-					real d3 = (s0 - s1) - d2;
+					real v3 = p3->n[i];
+					real v2 = p2->n[i];
+					real v1 = p1->n[i];
+					real v0 = p0->n[i];
 
-					g_4f93bc[b * 8 + k][m].n[i] = ((d3 * ta * (1.0f / 3.0f) + d2) * tb * 0.5f + s2) * tc + p0->n[i];
+					/* the forward differences, in place */
+					v3 -= v2;
+					v2 -= v1;
+					v1 -= v0;
+					v3 -= v2;
+					v2 -= v1;
+					v3 -= v2;
+					out->n[i] = ((v3 * ta * (1.0f / 3.0f) + v2) * tb * 0.5f + v1) * tc + v0;
 				}
 
 				b++;
@@ -1171,14 +1206,17 @@ void function_211cc0(void)
 	while (k < 8);
 }
 
+// score 61 (was 61): retail's prologue saves EBP as well and pushes EBP, ESI
+// and EDI; ours pushes only ESI and EDI, so the frame is seven bytes longer.
 // @retail 0x211fd0
-void function_211fd0(vector3f *out, real const *position, real time, real scale)
+void function_211fd0(vector3f *out, real const *position, real scale, real time)
 {
 	real frequencies[3] = { 0.1f, 0.2f, 0.07f };
-	short i = 0;
+	long i = 0;
 
 	*out = *g_4687a4;
 	scale *= 1.0f / 3.0f;
+    real local_1 = time;
 
 	do
 	{
@@ -1186,7 +1224,12 @@ void function_211fd0(vector3f *out, real const *position, real time, real scale)
 		short index;
 		vector3f *noise;
 
-		value = ((real)g_4fa0c0 * frequencies[i] * time + position[i]) * 8.0f;
+        __asm
+        {
+            cvtsi2ss xmm4, g_4fa0c0
+            movss value, xmm4
+        }
+        value = (value * frequencies[i] * local_1 + position[i]) * 8.0f;
 		*(dword *)&value &= 0x7fffffff;
 		value += 8388608.0f;
 		index = *(byte *)&value;
@@ -1205,80 +1248,74 @@ void function_211fd0(vector3f *out, real const *position, real time, real scale)
 	out->k *= scale;
 }
 // @retail 0x212100
-void function_212100(point3f const *p3, point3f const *p2, point3f const *p1, point3f const *p0, point3f *out, real a, real b, real c)
+void function_212100(point3f *out, point3f const *p0, point3f const *p1, point3f const *p2, point3f const *p3, real a, real b, real c)
 {
-	real two_b = b * 2.0f;
-	real three_b = b * 3.0f;
-	real inverse_b = 1.0f / b;
-	real t0 = c - a;
-	real t1 = c - (a + b);
-	real t2 = c - (two_b + a);
 	long i;
 
 	for (i = 0; i < 3; i++)
 	{
-		real s0 = p3->n[i] - p2->n[i];
-		real s1 = p2->n[i] - p1->n[i];
-		real s2 = p1->n[i] - p0->n[i];
-		real d2 = s1 - s2;
-		real d3 = (s0 - s1) - d2;
-
-		out->n[i] = ((d3 * t2 / three_b + d2) * t1 / two_b + s2) * inverse_b * t0 + p0->n[i];
+		real x3 = p3->n[i];
+		real x2 = p2->n[i];
+		real x1 = p1->n[i];
+		real x0 = p0->n[i];
+		x3 -= x2;
+		x2 -= x1;
+		x1 -= x0;
+		x3 -= x2;
+		x2 -= x1;
+		x3 -= x2;
+		out->n[i] = ((x3 * (c - (b * 2.0f + a)) / (b * 3.0f) + x2) * (c - (a + b)) / (b * 2.0f) + x1) * (1.0f / b) * (c - a) + x0;
 	}
 }
 
 // @retail 0x210a30
 real function_210a30(s_type_c3b527 const *a, s_type_c3b527 const *b)
 {
-	real local_0;
-	real local_1;
-	real local_2;
+	real distance_squared;
 
 	if (a->output_index == b->output_index)
 	{
-		local_0 = b->point.x - a->point.x;
-		local_1 = b->point.y - a->point.y;
-		local_2 = b->point.z - a->point.z;
+		vector3f v;
+		vector3d_from_points3d(&a->point, &b->point, &v);
+		distance_squared = (v.k * v.k + v.i * v.i) + v.j * v.j;
 	}
 	else
 	{
+		vector3f v;
 		point3f pa;
 		point3f pb;
 
 		function_210850(a, &pa);
 		function_210850(b, &pb);
-		local_1 = pb.x - pa.x;
-		local_2 = pb.y - pa.y;
-		local_0 = pb.z - pa.z;
+		vector3d_from_points3d(&pa, &pb, &v);
+		distance_squared = (v.j * v.j + v.k * v.k) + v.i * v.i;
 	}
 
-	return local_0 * local_0 + local_2 * local_2 + local_1 * local_1;
+	return distance_squared;
 }
 
 // @retail 0x210b60
 real function_210b60(s_type_c3b527 const *a, point3f const *b)
 {
-	real local_0;
-	real local_1;
-	real local_2;
+	real distance_squared;
 
 	if (a->output_index == NONE)
 	{
-		local_0 = b->x - a->point.x;
-		local_1 = b->y - a->point.y;
-		local_2 = b->z - a->point.z;
+		vector3f v;
+		vector3d_from_points3d(&a->point, b, &v);
+		distance_squared = (v.k * v.k + v.i * v.i) + v.j * v.j;
 	}
 	else
 	{
 		point3f point;
+		vector3f v;
 
 		function_210850(a, &point);
-		local_1 = b->x - point.x;
-		local_2 = b->y - point.y;
-		local_0 = b->z - point.z;
+		vector3d_from_points3d(&point, b, &v);
+		distance_squared = (v.j * v.j + v.k * v.k) + v.i * v.i;
 	}
 
-	return local_0 * local_0 + local_2 * local_2 + local_1 * local_1;
+	return distance_squared;
 }
 
 /* ---- vectors and distances between node points ---- */
@@ -1412,24 +1449,16 @@ bool function_210770(short output_index, vector3f const *vector, vector3f *out)
 	return success;
 }
 
-PRIVATE __forceinline real function_210ac1(real arg_0)
-{
-	__asm
-	{
-		fld arg_0
-		fsqrt
-	}
-}
-
 // @retail 0x210970
 real function_210970(s_type_c3b527 const *a, s_type_c3b527 const *b)
 {
+	real distance_squared;
 
 	if (a->output_index == b->output_index)
 	{
 		vector3f v;
 		vector3d_from_points3d(&a->point, &b->point, &v);
-		return function_210ac1(v.j * v.j + (v.i * v.i + v.k * v.k));
+		distance_squared = (v.k * v.k + v.i * v.i) + v.j * v.j;
 	}
 	else
 	{
@@ -1440,30 +1469,34 @@ real function_210970(s_type_c3b527 const *a, s_type_c3b527 const *b)
 		function_210850(a, &pa);
 		function_210850(b, &pb);
 		vector3d_from_points3d(&pa, &pb, &v);
-		return function_210ac1(v.j * v.j + (v.i * v.i + v.k * v.k));
+		distance_squared = (v.j * v.j + v.k * v.k) + v.i * v.i;
 	}
 
+	return (real)sqrt(distance_squared);
 }
 
 
 // @retail 0x210ac0
 real function_210ac0(s_type_c3b527 const *a, point3f const *b)
 {
-	vector3f v;
+	real distance_squared;
 
 	if (a->output_index == NONE)
 	{
+		vector3f v;
 		vector3d_from_points3d(&a->point, b, &v);
+		distance_squared = (v.k * v.k + v.i * v.i) + v.j * v.j;
 	}
 	else
 	{
 		point3f point;
-
+		vector3f v;
 		function_210850(a, &point);
 		vector3d_from_points3d(&point, b, &v);
+		distance_squared = (v.i * v.i + v.k * v.k) + v.j * v.j;
 	}
 
-	return node_point_magnitude3d(&v);
+	return (real)sqrt(distance_squared);
 }
 
 
@@ -1488,7 +1521,7 @@ void function_210be0(s_type_c3b527 const *a, s_type_c3b527 const *b, vector3f *o
 }
 
 // @retail 0x210c90
-void function_210c90(s_type_c3b527 const *a, point3f const *b, vector3f *out)
+void function_210c90(point3f const *b, s_type_c3b527 const *a, vector3f *out)
 {
 	if (a->output_index == NONE)
 	{
@@ -1536,12 +1569,40 @@ point3f *function_b9dd0(long object_index, point3f *result);
 real function_30bf0(vector3f *vector);
 long function_25d810(long object_index, long actor_index, bool create);
 
+/* the datum iterator's step, which retail inlines here around a call to function_16bc00 */
+static __forceinline byte *datum_iterator_next_20e190(s_data_datum_iterator *iterator)
+{
+    s_record_pool *data = iterator->data;
+    long index = function_16bc00(data, iterator->index + 1);
+    byte *result;
+
+    if (index != NONE)
+    {
+        result = data->data + data->size * index;
+        iterator->index = index;
+        iterator->datum_index = (*(short *)result << 16) | index;
+    }
+    else
+    {
+        iterator->index = data->maximum_count;
+        iterator->datum_index = NONE;
+        result = 0;
+    }
+    iterator->datum = result;
+    return result;
+}
+
+static inline real clamp_20e190(real value, real lower, real upper)
+{
+    return value < lower ? lower : value > upper ? upper : value;
+}
+
 // @retail 0x20e190
 real function_20e190(long object_index)
 {
+    real result = 0.0f;
     byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
     long actor_index = *(long *)(object + 0x12c);
-    real result = 0.0f;
     if (actor_index != NONE)
     {
         byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
@@ -1549,14 +1610,13 @@ real function_20e190(long object_index)
             return *(real *)(actor + 0x2e4);
         real maximum = 0.0f;
         bool found = false;
-        s_record_pool *players = g_4e8c24;
-        long index = NONE;
+        s_data_datum_iterator iterator;
+        iterator.data = g_4e8c24;
+        iterator.datum_index = NONE;
+        iterator.index = NONE;
         for (;;)
         {
-            index = record_pool_next_used(players, index + 1);
-            if (index == NONE)
-                break;
-            byte *player = players->data + index * players->size;
+            byte *player = datum_iterator_next_20e190(&iterator);
             if (!player)
                 break;
             long unit_index = *(long *)(player + 0x2c);
@@ -1567,16 +1627,15 @@ real function_20e190(long object_index)
                 point3f position;
                 function_b9dd0(unit_index, &position);
                 point3f *actor_position = (point3f *)(actor + 0x238);
-                real y = position.y - actor_position->y;
                 real x = position.x - actor_position->x;
+                real y = position.y - actor_position->y;
                 real z = position.z - actor_position->z;
                 real squared = z * z + y * y + x * x;
                 if (squared > 64.0f)
                     result = 0.0f;
                 else
                 {
-                    byte *unit = *(byte **)(g_4e0300->data + (unit_index & 0xffff) * 12 + 8);
-                    vector3f forward = *(vector3f *)(unit + 0x168);
+                    vector3f forward = *(vector3f *)(*(byte **)(g_4e0300->data + (unit_index & 0xffff) * 12 + 8) + 0x168);
                     vector3f direction;
                     direction.i = actor_position->x - position.x;
                     direction.j = actor_position->y - position.y;
@@ -1587,9 +1646,7 @@ real function_20e190(long object_index)
                         real dot = forward.k * direction.k + forward.j * direction.j + forward.i * direction.i;
                         if (dot < 0.0f)
                         {
-                            real fraction = dot + 1.0f;
-                            fraction = fraction < 0.0f ? 0.0f : fraction > 1.0f ? 1.0f : fraction;
-                            weight = (fraction + 1.0f) * weight * 0.5f;
+                            weight = (clamp_20e190(dot + 1.0f, 0.0f, 1.0f) + 1.0f) * weight * 0.5f;
                         }
                         long reference_index = function_25d810(unit_index, *(long *)(object + 0x12c), false);
                         if (reference_index != NONE && (signed char)g_502418->data[(reference_index & 0xffff) * 0x3c + 0x27] < 1)
@@ -1597,9 +1654,9 @@ real function_20e190(long object_index)
                     }
                     result = weight * 0.3f + 0.7f;
                 }
-                if (result > maximum)
-                    maximum = result;
             }
+            if (result > maximum)
+                maximum = result;
         }
         if (!found)
             maximum = 1.0f;
@@ -1723,7 +1780,7 @@ struct s_game_allegiance_globals;
 extern s_game_allegiance_globals *g_4f55ec;
 bool function_0bfe60(dword const *flags, long bit);
 bool function_15e020(short a, short b);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 dword function_1a7ad0(long owner_index);
 long function_114440(long unit_index);
 bool function_1144a0(long unit_index, short entry_index, long *tag_index);
@@ -1821,7 +1878,7 @@ short function_20d8c0(long source_index, s_audio_priority_table *table, byte con
         {
             actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
             if (actor && (actor[0x223] ||
-                ((actor[0x225] || function_1a6fe0(actor_index, 0x38) != NONE) && priority < 13)))
+                ((actor[0x225] || actor_behavior_find_level(actor_index, 0x38) != NONE) && priority < 13)))
                 eligible = false;
         }
         if ((bool)((*(dword *)(object + 0x134) >> 3) & 1))
@@ -1888,8 +1945,8 @@ short function_20d8c0(long source_index, s_audio_priority_table *table, byte con
                 goto ineligible;
             flags = *(word const *)(request + 0xa);
             if ((flags & 0x40) && (!actor ||
-                (function_1a6fe0(*(long *)(object + 0x12c), 0x22) == NONE &&
-                 function_1a6fe0(*(long *)(object + 0x12c), 0x1b) == NONE)))
+                (actor_behavior_find_level(*(long *)(object + 0x12c), 0x22) == NONE &&
+                 actor_behavior_find_level(*(long *)(object + 0x12c), 0x1b) == NONE)))
                 goto ineligible;
             if (flags & 0x80)
             {
@@ -2043,17 +2100,26 @@ long function_20e460(long ai_index, s_audio_priority_table *table, byte const *r
     return chosen;
 }
 
+static inline bool clump_actor_step_20eeb0(long *index, byte **actor)
+{
+    if (*index == NONE)
+        return false;
+    *actor = g_4f55f0->data + (*index & 0xffff) * 0x888;
+    *index = *(long *)(*actor + 0x80);
+    return true;
+}
+
 // @retail 0x20eeb0
 long function_20eeb0(s_audio_priority_table *table, byte const *request, long target_index,
     long source_index, long previous_index, long *tag_index, short *type, real *weight, real *distance_weight)
 {
     (void)&table; (void)&request; (void)&target_index; (void)&source_index; (void)&previous_index;
     (void)&tag_index; (void)&type; (void)&weight; (void)&distance_weight;
-    real best = 0.0f;
     long chosen = NONE;
+    real best = 0.0f;
     real chosen_weight = 0.0f;
     real chosen_distance = 0.0f;
-    long chosen_type = NONE;
+    short chosen_type = NONE;
     long chosen_tag = NONE;
     if (target_index != NONE)
     {
@@ -2066,11 +2132,9 @@ long function_20eeb0(s_audio_priority_table *table, byte const *request, long ta
             if (clump_index != NONE)
             {
                 long index = *(long *)(g_502420->data + (clump_index & 0xffff) * 0x50 + 0x18);
-                while (index != NONE)
+                while (clump_actor_step_20eeb0(&index, &actor))
                 {
-                    actor = g_4f55f0->data + (index & 0xffff) * 0x888;
                     long unit_index = *(long *)(actor + 0x18);
-                    index = *(long *)(actor + 0x80);
                     if (unit_index != NONE)
                     {
                         real candidate_weight;
@@ -2168,6 +2232,7 @@ long function_20e580(long ai_index, s_audio_priority_table *table, byte const *r
 
 #include "units.h"
 #include "slot_handler.h"
+#include "slot_owner.h"
 long function_1b8c80(long object_index);
 bool function_277790(long actor_index, long other_actor_index);
 
@@ -2241,13 +2306,11 @@ long function_20ec80(long target_index, s_audio_priority_table *table, byte cons
     long source_index, long previous_index, bool require_related, long *tag_index,
     short *type, real *weight, real *distance_weight)
 {
-    (void)&table; (void)&request; (void)&source_index; (void)&previous_index; (void)&require_related;
-    (void)&tag_index; (void)&type; (void)&weight; (void)&distance_weight;
     long chosen = NONE;
     real best = 0.0f;
     real chosen_weight = 0.0f;
     real chosen_distance = 0.0f;
-    long chosen_type = NONE;
+    short chosen_type = NONE;
     long chosen_tag = NONE;
     if (target_index != NONE)
     {
@@ -2255,29 +2318,32 @@ long function_20ec80(long target_index, s_audio_priority_table *table, byte cons
         long actor_index = *(long *)(object + 0x12c);
         if (actor_index != NONE)
         {
-            byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
-            short slot = *(short *)(actor + 0x190);
-            while (slot >= 0)
+            s_slot_owner_entry *owner = (s_slot_owner_entry *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_slot_owner_entry));
+            /* the highest slot whose handler is of kind 1 or 2 and enabled */
+            short slot = NONE;
+            for (short i = owner->current; i >= 0; i--)
             {
-                short handler_type = *(short *)(actor + 0x90 + slot * 0x40);
-                if (handler_type != NONE)
+                s_slot *candidate_slot = &owner->slots[i];
+                if (candidate_slot->type != NONE)
                 {
-                    s_slot_handler *handler = g_46eeb8[handler_type];
+                    s_slot_handler *handler = g_46eeb8[candidate_slot->type];
                     if ((handler->kind == 2 || handler->kind == 1) && *(byte *)&handler->unknown3c)
+                    {
+                        slot = i;
                         break;
+                    }
                 }
-                --slot;
             }
-            if (slot >= 0)
+            if (slot != NONE)
             {
-                long action_index = *(long *)(actor + 0xa0 + slot * 0x40);
-                byte *entry = g_502424->data + (action_index & 0xffff) * 0xbc + 4;
-                long remaining = 10;
-                do
+                long action_index = *(long *)((byte *)&owner->slots[slot] + 0x10);
+                byte *element = (byte *)element_502424_get(action_index);
+                for (long i = 0; i < 10; i++)
                 {
+                    byte *entry = element + 4 + i * 0xc;
                     long index = *(long *)entry;
                     if (index != NONE && *(short *)(entry + 4) == 3 && index != *(long *)(object + 0x12c) &&
-                        (!require_related || function_277790(index, *(long *)(object + 0x12c))))
+                        (!require_related || function_277790(*(long *)(object + 0x12c), index)))
                     {
                         byte *candidate_actor = g_4f55f0->data + (index & 0xffff) * 0x888;
                         long candidate_index = *(long *)(candidate_actor + 0x18);
@@ -2303,8 +2369,7 @@ long function_20ec80(long target_index, s_audio_priority_table *table, byte cons
                             }
                         }
                     }
-                    entry += 0xc;
-                } while (--remaining);
+                }
             }
         }
     }
@@ -2344,28 +2409,26 @@ long function_20e720(bool same_team, long ai_index, s_audio_priority_table *tabl
     long target_index, long source_index, long previous_index, bool require_related, bool same_type,
     long *tag_index, short *type, real *weight, real *distance_weight)
 {
-    (void)&table; (void)&request; (void)&target_index; (void)&source_index; (void)&previous_index;
-    (void)&require_related; (void)&same_type;
-    (void)&tag_index; (void)&type; (void)&weight; (void)&distance_weight;
-    long chosen = NONE;
+    long result = NONE;
     if (target_index == NONE)
     {
         if (ai_index != NONE)
         {
             if (same_team)
-                chosen = function_20e460(ai_index, table, request, previous_index, tag_index, type, weight, distance_weight);
+                return function_20e460(ai_index, table, request, previous_index, tag_index, type, weight, distance_weight);
             else
-                chosen = function_20e580(ai_index, table, request, previous_index, tag_index, type, weight, distance_weight);
+                return function_20e580(ai_index, table, request, previous_index, tag_index, type, weight, distance_weight);
         }
     }
     else
     {
-        byte *object = *(byte **)(g_4e0300->data + (target_index & 0xffff) * 12 + 8);
+        long chosen = NONE;
         real best = 0.0f;
         real chosen_weight = 0.0f;
         real chosen_distance = 0.0f;
-        long chosen_type = NONE;
+        short chosen_type = NONE;
         long chosen_tag = NONE;
+        byte *object = *(byte **)(g_4e0300->data + (target_index & 0xffff) * 12 + 8);
         byte *actor = NULL;
         long actor_index = *(long *)(object + 0x12c);
         if (actor_index != NONE)
@@ -2382,12 +2445,12 @@ long function_20e720(bool same_team, long ai_index, s_audio_priority_table *tabl
                 continue;
             if (actor)
             {
+                bool related = true;
                 if (require_related)
-                {
-                    if (!function_277790(iterator.result_index, *(long *)(object + 0x12c)))
-                        continue;
-                }
-                else if (same_type && *(short *)(actor + 4) != *(short *)(candidate_actor + 4))
+                    related = function_277790(*(long *)(object + 0x12c), iterator.result_index);
+                else if (same_type)
+                    related = *(short *)(actor + 4) == *(short *)(candidate_actor + 4);
+                if (!related)
                     continue;
             }
             long tag;
@@ -2400,8 +2463,8 @@ long function_20e720(bool same_team, long ai_index, s_audio_priority_table *tabl
                 real x = position.x - *(real *)(candidate_actor + 0x238);
                 real y = position.y - *(real *)(candidate_actor + 0x23c);
                 real z = position.z - *(real *)(candidate_actor + 0x240);
-                real squared = z * z + x * x + y * y;
                 real score = distance * candidate_weight;
+                real squared = (z * z + x * x) + y * y;
                 if (squared < 0.0f)
                     squared = 0.0f;
                 else if (squared > 64.0f)
@@ -2419,11 +2482,12 @@ long function_20e720(bool same_team, long ai_index, s_audio_priority_table *tabl
             }
         }
         *tag_index = chosen_tag;
-        *type = (short)chosen_type;
+        *type = chosen_type;
         *weight = chosen_weight;
         *distance_weight = chosen_distance;
+        result = chosen;
     }
-    return chosen;
+    return result;
 }
 
 bool __stdcall function_20bbb0(short condition, long object_index, real *weight);
@@ -2438,15 +2502,26 @@ struct s_audio_selection
     real weight;
 };
 
+static inline real distance_squared3d_20c440(point3f const *a, point3f const *b)
+{
+	real dz = a->z - b->z;
+	real dx = a->x - b->x;
+	real dy = a->y - b->y;
+	real sum = dz * dz;
+	sum += dy * dy;
+	sum += dx * dx;
+	return sum;
+}
+
+// score 3 (was 3): the y value is loaded into XMM1 before the call here and
+// after it in retail, so the load of the z value sits on the other side of
+// the call as well.
 // @retail 0x20c440
 void function_20c440(byte const *request, s_audio_priority_table *table, long target_index,
     long source_index, long previous_index, long ai_index, short category, short first_state,
     short second_state, short other_category, s_audio_selection *results, short *count)
 {
-    long const *source_reference = &source_index;
-    (void)&table; (void)&target_index; (void)&(*source_reference); (void)&previous_index; (void)&ai_index;
-    (void)&category; (void)&first_state; (void)&second_state; (void)&other_category;
-    (void)&results; (void)&count;
+    long source = source_index;
     long chosen = NONE;
     short chosen_type = NONE;
     long tag = NONE;
@@ -2455,60 +2530,77 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
     real weight = 0.0f;
     real distance = 0.0f;
     long source_unit = NONE;
-    if ((*source_reference) != NONE && ((1 << g_4e0300->data[((*source_reference) & 0xffff) * 12 + 3]) & 3))
-        source_unit = (*source_reference);
+    if (source != NONE && ((1 << g_4e0300->data[(source & 0xffff) * 12 + 3]) & 3))
+        source_unit = source;
+    bool eligible;
+    byte *definition;
     short entry = *(short const *)(request + 2);
     if (entry < 0 || entry >= table->count)
-        return;
-    byte *definition = (byte *)&table->entries[entry];
-    base_weight = *(real *)(definition + 0x34);
-    short required = *(short const *)(request + 0x14);
-    if (!required)
+        eligible = false;
+    else
     {
-        if (category != 0 && category != NONE)
-            scale = 0.8f;
+        definition = (byte *)&table->entries[entry];
+        base_weight = *(real *)(definition + 0x34);
+        eligible = true;
+        short required = *(short const *)(request + 0x14);
+        if (!required)
+        {
+            if (category != 0 && category != NONE)
+                scale = 0.8f;
+        }
+        else if (required != category)
+            eligible = false;
+        if (eligible)
+        {
+            required = *(short const *)(request + 0x16);
+            if (!required)
+            {
+                if (other_category != NONE && other_category != 0)
+                    scale *= 0.8f;
+            }
+            else if (other_category != required)
+                eligible = false;
+        }
+        if (eligible)
+        {
+            required = *(short const *)(request + 0x20) - 1;
+            short other_required = *(short const *)(request + 0x22) - 1;
+            if (first_state != NONE && required == NONE)
+                scale *= 0.6f;
+            else if (first_state != required)
+                eligible = false;
+            if (eligible)
+            {
+                if (second_state != NONE && other_required == NONE)
+                    scale *= 0.6f;
+                else if (second_state != other_required)
+                    eligible = false;
+            }
+        }
+        if (eligible)
+            eligible = function_20bbb0(*(short const *)(request + 0x24), source, &scale);
     }
-    else if (required != category)
-        return;
-    required = *(short const *)(request + 0x16);
-    if (!required)
-    {
-        if (other_category != NONE && other_category != 0)
-            scale *= 0.8f;
-    }
-    else if (required != other_category)
-        return;
-    required = *(short const *)(request + 0x20) - 1;
-    short other_required = *(short const *)(request + 0x22) - 1;
-    if (first_state != NONE && required == NONE)
-        scale *= 0.6f;
-    else if (first_state != required)
-        return;
-    if (second_state != NONE && other_required == NONE)
-        scale *= 0.6f;
-    else if (second_state != other_required)
-        return;
-    bool eligible = function_20bbb0(*(short const *)(request + 0x24), (*source_reference), &scale);
     if (eligible)
         eligible = function_20bbb0(*(short const *)(request + 0x26), target_index, &scale);
     if (eligible && *(long const *)(request + 0x28))
-        eligible = function_20c2f0((*source_reference), *(long const *)(request + 0x28), &scale);
+        eligible = function_20c2f0(source, *(long const *)(request + 0x28), &scale);
     if (eligible && *(long const *)(request + 0x30))
         eligible = function_20c2f0(target_index, *(long const *)(request + 0x30), &scale);
     if (eligible && *(short const *)(request + 0x2c))
     {
         eligible = false;
-        if (target_index != NONE && (*source_reference) != NONE)
+        if (target_index != NONE && source != NONE)
         {
             point3f target_position;
             point3f source_position;
             function_b9dd0(target_index, &target_position);
-            function_b9dd0((*source_reference), &source_position);
+            function_b9dd0(source, &source_position);
+            short distance_test = *(short const *)(request + 0x2c);
+            real squared = distance_squared3d_20c440(&source_position, &target_position);
+            real x = source_position.x - target_position.x;
             real y = source_position.y - target_position.y;
             real z = source_position.z - target_position.z;
-            real x = source_position.x - target_position.x;
-            real squared = z * z + y * y + x * x;
-            switch (*(short const *)(request + 0x2c))
+            switch (distance_test)
             {
             case 1: eligible = squared <= 1.0f; break;
             case 2: eligible = squared <= 6.25f && squared > 1.0f; break;
@@ -2519,7 +2611,8 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
                 if (squared < 9.0f)
                 {
                     byte *object = *(byte **)(g_4e0300->data + (target_index & 0xffff) * 12 + 8);
-                    real dot = *(real *)(object + 0x78) * z + *(real *)(object + 0x74) * y + *(real *)(object + 0x70) * x;
+                    vector3f *forward = (vector3f *)(object + 0x70);
+                    real dot = forward->k * z + forward->j * y + forward->i * x;
                     eligible = dot > 0.0f;
                 }
                 break;
@@ -2527,7 +2620,8 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
                 if (squared < 9.0f)
                 {
                     byte *object = *(byte **)(g_4e0300->data + (target_index & 0xffff) * 12 + 8);
-                    real dot = *(real *)(object + 0x78) * z + *(real *)(object + 0x74) * y + x * *(real *)(object + 0x70);
+                    vector3f *forward = (vector3f *)(object + 0x70);
+                    real dot = forward->k * z + forward->j * y + x * forward->i;
                     eligible = dot < 0.0f;
                 }
                 break;
@@ -2541,11 +2635,12 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
     base_weight = scale * base_weight;
     if (eligible && base_weight > 0.0f && definition)
     {
-        long response_target = NONE;
+        long response_target;
         switch (*(short const *)(request + 0xc))
         {
         case 0: response_target = target_index; break;
-        case 1: response_target = (*source_reference); break;
+        case 1: response_target = source; break;
+        default: response_target = NONE; break;
         }
         switch (*(short const *)(request + 8))
         {
@@ -2553,7 +2648,7 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
             if (target_index != NONE)
             {
                 chosen = target_index;
-                chosen_type = function_20d8c0((*source_reference), table, request, target_index, target_index, previous_index, &tag, &weight);
+                chosen_type = function_20d8c0(source, table, request, target_index, target_index, previous_index, &tag, &weight);
                 if (weight > 0.0f)
                     distance = function_20e190(target_index);
             }
@@ -2562,46 +2657,46 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
             if (source_unit != NONE)
             {
                 chosen = source_unit;
-                chosen_type = function_20d8c0((*source_reference), table, request, source_unit, target_index, previous_index, &tag, &weight);
+                chosen_type = function_20d8c0(source, table, request, source_unit, target_index, previous_index, &tag, &weight);
                 if (weight > 0.0f)
                     distance = function_20e190(source_unit);
             }
             break;
         case 2:
-            chosen = function_20e720(true, ai_index, table, request, target_index, (*source_reference), previous_index,
+            chosen = function_20e720(true, ai_index, table, request, target_index, source, previous_index,
                 false, false, &tag, &chosen_type, &weight, &distance);
+            break;
+        case 11:
+            chosen = function_20e720(true, ai_index, table, request, target_index, source, previous_index,
+                false, true, &tag, &chosen_type, &weight, &distance);
             break;
         case 3:
             break;
         case 4:
-            chosen = function_20e720(false, ai_index, table, request, target_index, (*source_reference), previous_index,
+            chosen = function_20e720(false, ai_index, table, request, target_index, source, previous_index,
                 false, false, &tag, &chosen_type, &weight, &distance);
             break;
         case 5:
             if (target_index != NONE)
-                chosen = function_20ea60(table, request, target_index, (*source_reference), previous_index, &tag, &chosen_type, &weight, &distance);
+                chosen = function_20ea60(table, request, target_index, source, previous_index, &tag, &chosen_type, &weight, &distance);
             break;
         case 6:
             if (target_index != NONE)
-                chosen = function_20ec80(target_index, table, request, (*source_reference), previous_index, false, &tag, &chosen_type, &weight, &distance);
+                chosen = function_20ec80(target_index, table, request, source, previous_index, false, &tag, &chosen_type, &weight, &distance);
             break;
         case 7:
             if (ai_index != NONE)
                 chosen = function_20e460(ai_index, table, request, previous_index, &tag, &chosen_type, &weight, &distance);
             break;
         case 8:
-            chosen = function_20e720(true, ai_index, table, request, target_index, (*source_reference), previous_index,
+            chosen = function_20e720(true, ai_index, table, request, target_index, source, previous_index,
                 true, false, &tag, &chosen_type, &weight, &distance);
             break;
         case 9:
-            chosen = function_20ec80(target_index, table, request, (*source_reference), previous_index, true, &tag, &chosen_type, &weight, &distance);
+            chosen = function_20ec80(target_index, table, request, source, previous_index, true, &tag, &chosen_type, &weight, &distance);
             break;
         case 10:
-            chosen = function_20eeb0(table, request, target_index, (*source_reference), previous_index, &tag, &chosen_type, &weight, &distance);
-            break;
-        case 11:
-            chosen = function_20e720(true, ai_index, table, request, target_index, (*source_reference), previous_index,
-                false, true, &tag, &chosen_type, &weight, &distance);
+            chosen = function_20eeb0(table, request, target_index, source, previous_index, &tag, &chosen_type, &weight, &distance);
             break;
         }
         real final_weight = distance * weight * base_weight;
@@ -2619,6 +2714,9 @@ void function_20c440(byte const *request, s_audio_priority_table *table, long ta
 
 bool function_1df640(short team_a, short team_b);
 
+// score 6 (was 6): the address of the entry is built in EAX here and in ECX
+// in retail, and the two words of the group are read into the registers the
+// other way round after the call.
 // @retail 0x20cbd0
 void function_20cbd0(short group_index, s_audio_priority_table *table, long target_index,
     long source_index, long previous_index, long ai_index, short category,
@@ -2679,16 +2777,20 @@ void function_20cbd0(short group_index, s_audio_priority_table *table, long targ
         *count = 0;
 }
 
-void __stdcall function_20d570(long arg_0, short arg_1, long arg_2, void *arg_3);
+void __stdcall function_20d570(short arg_1, long arg_0, long arg_2, void *arg_3);
 void function_20fda0(long arg_0);
 
+// score 19 (was 19): the short that comes back from the call is sign extended
+// here after the call and in retail before it, and the global is read into
+// EDX here and into EAX in retail.
 // @retail 0x20fec0
 void function_20fec0(long arg_0, long arg_1)
 {
     if (arg_1 != NONE)
     {
         byte *local_0 = *(byte **)(g_4e0300->data + (arg_0 & 0xffff) * 12 + 8);
-        long local_1 = (short)function_20f040(*(short *)(local_0 + 0x138));
+        long local_9 = *(short *)(local_0 + 0x138);
+        short local_1 = (short)function_20f040((short)local_9);
         s_node_owner *local_2 = (s_node_owner *)((byte *)g_4f939c + local_1 * 0x7dc);
         byte *local_3 = g_4f9398->data + (arg_1 & 0xffff) * 0x54;
         if (!local_3[0x41])
@@ -2726,11 +2828,9 @@ void function_20fb30(void)
 {
     s_audio_priority_table *local_0 = audio_priority_table();
     long local_1 = g_510c54->game_time;
-    long local_2 = 0;
-    long local_3 = 2;
-    do
+    for (short local_2 = 0; local_2 < 2; local_2++)
     {
-        s_node_owner *local_4 = (s_node_owner *)((byte *)g_4f939c + local_2);
+        s_node_owner *local_4 = (s_node_owner *)((byte *)g_4f939c + local_2 * 0x7dc);
         for (long local_5 = local_4->first; local_5 != NONE; )
         {
             byte *local_6 = g_4f9398->data + (local_5 & 0xffff) * 0x54;
@@ -2747,7 +2847,7 @@ void function_20fb30(void)
                         byte *local_9 = *(byte **)(g_4e0300->data + (*(long *)(local_6 + 4) & 0xffff) * 12 + 8);
                         byte *local_10 = local_9 + *(short *)(local_9 + 0x342);
                         short local_11 = *(short *)(local_6 + 0x22);
-                        if (TEST_FIELD_BIT(((s_audio_object_state *)local_9)->blocked) && local_11 != 15)
+                        if (TEST_FIELD_BIT(((s_audio_object_state_20f960 *)local_9)->blocked) && local_11 != 15)
                             goto local_18;
                         short local_12 = *(short *)(local_10 + 0xc);
                         if (local_12)
@@ -2795,7 +2895,5 @@ local_18:
             local_5 = *(long *)(local_6 + 0x50);
         }
         function_20fe20(local_4);
-        local_2 += 0x7dc;
     }
-    while (--local_3);
 }

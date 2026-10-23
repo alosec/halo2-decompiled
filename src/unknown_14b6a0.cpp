@@ -5,6 +5,7 @@
 #include <string.h>
 
 // @flags /O2 /arch:SSE /Gr
+#include "object_masks_storage.h"
 
 struct s_player_creation_record;
 class c_class_6a600;
@@ -29,7 +30,7 @@ struct s_player_creation_record
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record);
 void function_694c0(c_class_6a600 *world, long index);
 void ai_player_add(long index);
-void function_157be0(long index);
+void function_157be0(dword index);
 void function_157ed0(long index);
 void function_152df0(long index);
 point3f *function_b9dd0(long object_index, point3f *point);
@@ -43,9 +44,16 @@ void function_1c7e70(long player_index, short value);
 void __stdcall function_14e0f0(long player_index, long target_index, point3f const *position,
 	point3f const *alternate);
 void function_152340();
-extern bool g_4de2f8;
-extern long g_4de2fc;
-extern long g_4de300[0x800];
+
+// @retail 0x14bf80
+void __stdcall function_14bf80(long player_index, s_player_creation_record const *record)
+{
+	function_14c090(player_index, false, record);
+	++*(long *)g_4e8c20;
+	if (g_4cf770 && !g_4cf77b)
+		function_694c0((c_class_6a600 *)g_4cf77c, player_index);
+	function_157ed0(player_index);
+}
 
 // @retail 0x14bc00
 long function_14bc00(long player_index, s_player_creation_record const *record)
@@ -67,19 +75,19 @@ long function_14bc00(long player_index, s_player_creation_record const *record)
 	return index;
 }
 
-// @retail 0x14bac0
-void function_14bac0()
+void function_14bac0();
+
+static __forceinline void players_pending_creation_process(s_record_pool_iterator * iterator_reference)
 {
-	s_record_pool_iterator iterator;
-	iterator.data = g_4e8c24;
-	iterator.index = NONE;
-	byte *player;
-	while ((player = data_iterator_next_inlined(&iterator)) != NULL)
+	long absolute_index;
+	while ((absolute_index = data_next_absolute_index_inlined(iterator_reference->data, iterator_reference->index + 1)) != NONE)
 	{
-		long index = iterator.datum_index;
+		byte *player = iterator_reference->data->data + iterator_reference->data->size * absolute_index;
+		long index = (*(short *)player << 16) | absolute_index;
+		iterator_reference->index = absolute_index;
 		if (!(player[2] & 2))
 		{
-			__declspec(align(8)) s_player_creation_record record;
+			s_player_creation_record record;
 			memset(&record, 0, sizeof(record));
 			record.machine = *(s_machine_address *)(player + 0x14);
 			record.controller_index = *(short *)(player + 0x1c);
@@ -99,6 +107,17 @@ void function_14bac0()
 	}
 }
 
+// @retail 0x14bac0
+void function_14bac0()
+{
+	s_record_pool_iterator iterator;
+	iterator.data = g_4e8c24;
+	iterator.index = NONE;
+	
+	s_record_pool_iterator *iterator_reference = &iterator;
+	players_pending_creation_process(iterator_reference);
+}
+
 // @retail 0x14b6a0
 void function_14b6a0()
 {
@@ -107,13 +126,14 @@ void function_14b6a0()
 	short request = *(short *)(globals + 0xa4);
 	if (request != NONE)
 	{
+		s_record_pool_iterator iterator;
 		long player_index = *(long *)(globals + 0xa8);
 		byte *player = players->data + (player_index & 0xffff) * 0x21c;
 		byte *scenario = (byte *)g_4e0350;
 		byte *record = *(byte **)(scenario + 0x134) + request * 14;
-		byte *markers = *(byte **)(scenario + 0x1e4);
 		if (*(short *)(record + 8) != NONE)
 		{
+			byte *markers = *(byte **)(scenario + 0x1e4);
 			point3f const *destination = (point3f *)(markers + *(short *)(record + 8) * 0x38 + 0x24);
 			point3f const *origin;
 			if (*(short *)(record + 6) != NONE)
@@ -126,16 +146,11 @@ void function_14b6a0()
 			offset.k = destination->z - origin->z;
 			++g_4de2fc;
 			g_4de2f8 = true;
-			s_record_pool_iterator iterator;
 			iterator.data = players;
 			iterator.index = NONE;
-			for (;;)
+			byte *current;
+			while ((current = data_iterator_next_calling(&iterator)) != 0)
 			{
-				long index = function_16bc00(iterator.data, iterator.index + 1);
-				if (index == NONE) break;
-				byte *current = iterator.data->data + iterator.data->size * index;
-				iterator.index = index;
-				if (!current) break;
 				long unit = *(long *)(current + 0x2c);
 				if (unit != NONE)
 				{
@@ -157,8 +172,6 @@ void function_14b6a0()
 						position.z += offset.k;
 						function_b75a0(root, &position, NULL, NULL, NULL, false);
 					}
-					player = players->data + (player_index & 0xffff) * 0x21c;
-					scenario = (byte *)g_4e0350;
 					players = g_4e8c24;
 				}
 			}
@@ -197,11 +210,10 @@ void function_14b6a0()
 			}
 			if (have_destination)
 			{
-				s_data_datum_iterator iterator;
 				iterator.data = g_4e8c24;
 				iterator.datum_index = NONE;
 				iterator.index = NONE;
-				while (data_datum_iterator_next(&iterator))
+				while (data_iterator_next_calling(&iterator))
 				{
 					if (iterator.datum_index != *(long *)((byte *)g_4e8c20 + 0xa8))
 					{
@@ -215,8 +227,8 @@ void function_14b6a0()
 		}
 		*(short *)((byte *)g_4e8c20 + 0xa4) = NONE;
 	}
-	for (long index = data_next_absolute_index_inlined(players, 0); index != NONE;
-		index = data_next_absolute_index_inlined(players, index + 1))
+	long index = NONE;
+	while ((index = data_next_absolute_index_inlined(players, index + 1)) != NONE)
 	{
 		byte *player = players->data + players->size * index;
 		if (!player) break;

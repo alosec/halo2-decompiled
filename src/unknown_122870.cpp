@@ -93,7 +93,7 @@ struct s_cache_file
 extern s_cache_file g_557c90[3];
 
 long cache_file_find(char const *map_name);
-bool function_122d60(s_cache_file_location location, long size, void *buffer);
+bool function_122d60(unsigned __int64 location, long size, void *buffer);
 bool __stdcall version_is_compatible(char const *version);
 
 /* set when a map fails to load (the main loop shows the error) */
@@ -117,8 +117,8 @@ static __forceinline void *physical_memory_malloc_low(long size, dword protect)
 	void *result = NULL;
 	long stage = g_global_f9ae07.field_0;
 	long *bottom = &g_global_f9ae07.field_c_6[stage];
-	long address = g_global_f9ae07.field_c_6[stage];
 	long aligned_size = (size + 0xfff) & 0xfffff000;
+	long address = g_global_f9ae07.field_c_6[stage];
 	long top = address + aligned_size;
 
 	if (top <= g_global_f9ae07.field_20[stage])
@@ -149,22 +149,20 @@ static inline long cache_file_sector_align(long size)
 // @retail 0x1228f0
 bool cache_files_load_map(char const *map_name)
 {
-	bool result = false;
 	long scenario_index = NONE;
+	bool result = false;
 
 	g_55aca8 = cache_file_find(map_name);
-	cache_file_globals.header = *(s_cache_header *)g_557c90[g_55aca8].unknown04;
+	s_cache_file *file = &g_557c90[g_55aca8];
+	cache_file_globals.header = *(s_cache_header *)file->unknown04;
 	if (cache_header_verify(&cache_file_globals.header) && version_is_compatible(cache_file_globals.header.build_version))
 	{
 		cache_file_globals.field_4_7 = physical_memory_malloc_low(cache_file_globals.header.unknown1c, PAGE_READWRITE);
 		result = cache_file_globals.field_4_7 != NULL;
 		if (result)
 		{
-			s_cache_file_location location;
-
-			location.file_index = NONE;
-			location.offset = cache_file_globals.header.tag_data_offset;
-			result = function_122d60(location, cache_file_sector_align(cache_file_globals.header.tag_data_size), cache_file_globals.field_4_7);
+			result = function_122d60(cache_file_location_make(NONE, cache_file_globals.header.tag_data_offset),
+				cache_file_sector_align(cache_file_globals.header.tag_data_size), cache_file_globals.field_4_7);
 			if (!result)
 			{
 				g_510a08 = 0;
@@ -172,31 +170,33 @@ bool cache_files_load_map(char const *map_name)
 			}
 			else
 			{
-				location.file_index = NONE;
-				location.offset = cache_file_globals.header.tag_data_offset + cache_file_globals.header.tag_data_size;
-				result = function_122d60(location, cache_file_sector_align(cache_file_globals.header.unknown18),
+				result = function_122d60(cache_file_location_make(NONE, cache_file_globals.header.tag_data_offset + cache_file_globals.header.tag_data_size),
+					cache_file_sector_align(cache_file_globals.header.unknown18),
 					(byte *)cache_file_globals.field_4_7 - cache_file_globals.header.unknown18 + cache_file_globals.header.unknown1c);
-				if (result)
-				{
-					s_cache_tags_header *tags = (s_cache_tags_header *)cache_file_globals.field_4_7;
-
-					if (tags->instances && tags->instance_count > 0 && tags->signature == 'tags')
-					{
-						cache_file_globals.tags = tags;
-						result = true;
-						cache_file_globals.loaded = result;
-						scenario_index = tags->scenario_index;
-						g_4e3b44 = (s_tag_instance *)tags->instances;
-					}
-					else
-					{
-						result = false;
-					}
-				}
 				if (!result)
 				{
 					g_510a08 = 0;
 					g_510819 = true;
+				}
+				else
+				{
+					s_cache_tags_header *tags = (s_cache_tags_header *)cache_file_globals.field_4_7;
+
+					if (!tags->instances || tags->instance_count <= 0 || tags->signature != 'tags')
+						result = false;
+					if (result)
+					{
+						cache_file_globals.tags = tags;
+						g_4e3b44 = (s_tag_instance *)tags->instances;
+						result = true;
+						cache_file_globals.loaded = result;
+						scenario_index = tags->scenario_index;
+					}
+					else
+					{
+						g_510a08 = 0;
+						g_510819 = true;
+					}
 				}
 			}
 		}
@@ -210,12 +210,16 @@ bool cache_files_load_map(char const *map_name)
 			function_213890();
 			g_55aca8 = NONE;
 		}
+		/* a statement the release build compiles out: retail keeps the
+		   close's join as its own block (the instance table is reloaded there) */
+		do {} while (false);
 	}
 	g_4686c0 = scenario_index;
 	if (scenario_index != NONE)
 	{
 		g_4e0350 = (s_palette_source_globals *)CACHE_TAG_INSTANCES[scenario_index & 0xffff].address;
 		g_4e034c = (s_tag_header_globals *)CACHE_TAG_INSTANCES[cache_file_globals.tags->globals_index & 0xffff].address;
+		return true;
 	}
 	return result;
 }
@@ -236,7 +240,7 @@ void cache_files_dispose_map(void)
 	cache_file_globals.bsp = NULL;
 }
 
-bool function_122d60(s_cache_file_location location, long size, void *buffer);
+bool function_122d60(unsigned __int64 location, long size, void *buffer);
 
 // @retail 0x122b40
 bool cache_files_load_structure_bsp(s_structure_bsp_reference *bsp)
@@ -246,16 +250,13 @@ bool cache_files_load_structure_bsp(s_structure_bsp_reference *bsp)
 
 	if (size & 0x1ff)
 		size = (size | 0x1ff) + 1;
-	s_cache_file_location location;
-
-	location.file_index = NONE;
-	location.offset = bsp->offset;
-	if (function_122d60(location, size, bsp->address) && bsp->address->signature == 'sbsp')
+	if (function_122d60(cache_file_location_make(NONE, bsp->offset), size, bsp->address) && bsp->address->signature == 'sbsp')
 	{
 		cache_file_globals.bsp = bsp->address;
 		CACHE_TAG_INSTANCES[(short)bsp->bsp_tag_index].address = cache_file_globals.bsp->bsp_address;
-		if (bsp->lightmap_tag_index != NONE)
-			CACHE_TAG_INSTANCES[(short)bsp->lightmap_tag_index].address = cache_file_globals.bsp->lightmap_address;
+		long lightmap_tag_index = bsp->lightmap_tag_index;
+		if (lightmap_tag_index != NONE)
+			CACHE_TAG_INSTANCES[(short)lightmap_tag_index].address = cache_file_globals.bsp->lightmap_address;
 		result = true;
 	}
 	return result;
@@ -264,9 +265,10 @@ bool cache_files_load_structure_bsp(s_structure_bsp_reference *bsp)
 /* geometry_cache: forgets the streamed blocks of a tag (unknown_12de70.cpp) */
 void function_12e150(long tag_index);
 
-static inline void cache_files_unload_tag(long tag_index)
+static inline void cache_files_unload_tag(long const &tag_index)
 {
-	s_cache_tag_instance *instance = &CACHE_TAG_INSTANCES[(short)tag_index];
+	long index = tag_index;
+	s_cache_tag_instance *instance = &CACHE_TAG_INSTANCES[(short)index];
 
 	function_12e150(tag_index);
 	instance->address = NULL;
@@ -291,14 +293,26 @@ static inline bool cache_tag_group_is(s_cache_tag_group const *group, long group
 	return group->group_tag == group_tag || group->parent_group_tags[0] == group_tag || group->parent_group_tags[1] == group_tag;
 }
 
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
+
 // @retail 0x122c10
 void *function_122c10(long group_tag, long tag_index)
 {
-	s_cache_tag_instance *instance = cache_tag_instance_get(tag_index);
+	s_cache_tag_instance *instance = NULL;
+	if ((short)tag_index >= 0)
+	{
+		long count = cache_file_globals.tags->instance_count;
+		long index = (short)tag_index;
+		if (index < count)
+		{
+			if (tag_index == CACHE_TAG_INSTANCES[index].datum_index)
+				instance = &CACHE_TAG_INSTANCES[index];
+		}
+	}
 	void *result = NULL;
 
 	if (instance && cache_tag_group_is(cache_tag_group_get(instance->group_tag), group_tag))
-		return instance->address;
+		result = instance->address;
 	return result;
 }
 
@@ -354,15 +368,19 @@ s_cache_tag_group *cache_tag_group_get(long group_tag)
 }
 
 // @retail 0x122d60
-bool function_122d60(s_cache_file_location location, long size, void *buffer)
+bool function_122d60(unsigned __int64 location, long size, void *buffer)
 {
 #ifdef H2_NATIVE_PORT
-	return host_h2_cache_read(location.offset, size, buffer) != 0;
+	return host_h2_cache_read(((s_cache_file_location *)&location)->offset, size, buffer) != 0;
 #else
+	/* the read's completion flag lives in the offset's half once the offset
+	   is read */
+	s_cache_file_location *parts = (s_cache_file_location *)&location;
+	bool *done = (bool *)&parts->offset;
 	bool result = false;
 	dword bytes_read;
-	function_213760(location.offset, size, buffer, &bytes_read, (bool *)&location.offset, 2, 6);
-	function_120d50((bool volatile *)&location.offset, false);
+	function_213760(parts->offset, size, buffer, &bytes_read, done, 2, 6);
+	function_120d50(done, false);
 	if (bytes_read == size)
 		result = true;
 	return result;
@@ -378,23 +396,22 @@ extern char const *g_468800;
 extern char const *g_468804;
 extern char const *g_468808;
 
-static __forceinline real cache_map_progress(char const *name)
+static __forceinline void cache_map_progress(char const *name, real *output)
 {
-	real progress = 0.0f;
+	*output = 0.0f;
 	long location = map_location_get(name);
-	switch (location)
+	if (location == 3)
 	{
-	case 3:
-		progress = 1.0f;
-		break;
-	case 2:
-		if (map_names_equal(g_55bd21, name))
-			function_2148b0((long)&progress);
-		break;
-	default:
-		progress = 0.0f;
+		*output = 1.0f;
 	}
-	return progress;
+	else if (location == 2 && map_names_equal(g_55bd21, name))
+	{
+		function_2148b0((long)output);
+	}
+	else
+	{
+		*output = 0.0f;
+	}
 }
 
 // @retail 0x122dd0
@@ -405,10 +422,15 @@ real __stdcall function_122dd0(byte *map_name, long mode, long type)
 	real map_weight = 100.0f;
 	real progress = 0.0f;
 	long location = map_location_get((char const *)map_name);
-	real map_progress = cache_map_progress((char const *)map_name);
-	real menu_progress = cache_map_progress(g_468804);
-	real shared_progress = cache_map_progress(g_4687fc);
-	real campaign_progress = cache_map_progress(g_468800);
+	real query_progress;
+	cache_map_progress((char const *)map_name, &query_progress);
+	real map_progress = query_progress;
+	cache_map_progress(g_468804, &query_progress);
+	real menu_progress = query_progress;
+	cache_map_progress(g_4687fc, &query_progress);
+	real shared_progress = query_progress;
+	cache_map_progress(g_468800, &query_progress);
+	real campaign_progress = query_progress;
 	if (!strcmp((char const *)map_name, g_468808))
 		map_weight = 90.0f;
 	else if (type == 0)
@@ -444,17 +466,23 @@ real __stdcall function_122dd0(byte *map_name, long mode, long type)
 			goto done;
 		}
 	}
-	switch (mode)
+	if (mode != 0)
 	{
-	case 0:
+		progress = weight - progress;
+	}
+	else
+	{
 		progress /= weight;
 		if (progress < 0.0f) progress = 0.0f;
 		else if (progress > 1.0f) progress = 1.0f;
-		break;
-	default:
-		progress = weight - progress;
 	}
 done:
 	if (location == 4) progress = 0.0f;
 	return progress;
+}
+
+// @retail 0x122db0
+long function_122db0(long type, char const *map_name)
+{
+	return ((long)function_122dd0((byte *)map_name, 1, type) / 4) * 1000;
 }

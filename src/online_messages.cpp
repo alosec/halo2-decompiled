@@ -152,14 +152,15 @@ long online_message_download_attachment(long details_task_index, long property, 
 				if (SUCCEEDED(XOnlineMessageDownloadAttachmentToMemory((XONLINETASK_HANDLE)local_c5a52a->handle, (WORD)function_8eda0(property),
 					(PBYTE)buffer, size, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 				{
+					long local_0 = local_c5a52a->controller_index;
 					task->flags = 1;
 					task->type = 39;
-					task->controller_index = local_c5a52a->controller_index;
+					task->controller_index = local_0;
 				}
 				else
 				{
 					function_6b640(task_index);
-					return NONE;
+					task_index = NONE;
 				}
 			}
 		}
@@ -213,12 +214,12 @@ void online_message_block_set_text(s_state_block *block, const wchar_t *text)
 // @retail 0x8ef60
 void online_message_block_set_values(s_state_block *block, long value210, long value214, long value20c)
 {
-	if (value210 < 0x499a)
-	{
-		block->unknown210 = value210;
-		block->unknown20c = value20c;
-		*(long *)block->unknown214 = value214;
-	}
+ if (0x499a > value210)
+ {
+  block->unknown20c = (long)value214;
+  block->unknown210 = value210;
+  *(long *)block->unknown214 = value20c;
+ }
 }
 
 /* the message property tag of each of the game's message properties */
@@ -282,7 +283,7 @@ bool online_message_property_size_valid(long property, DWORD size)
 }
 
 // @retail 0x8f4b0
-void online_message_block_set_property(s_state_block *block, long property, DWORD size, const void *value)
+void online_message_block_set_property(s_state_block *block, long property, const void *value, DWORD size)
 {
 	long tag = online_message_property_get_tag(property);
 
@@ -378,9 +379,9 @@ s_long_pair *network_session_interface_get_data_4999(void);
 HRESULT online_task_continue(s_type_9df9da *task);
 
 /* unknown_0b49a0.cpp: the error string of a Live result */
-dword function_0b4a20(dword key);
+dword online_result_get_error_string(dword key);
 
-/* unknown_18f576.cpp */
+/* player_slots.cpp */
 bool player_slot_get_identity(long index, s_player_identity *identity);
 
 /* unknown_147f6d.cpp */
@@ -536,6 +537,29 @@ static inline s_long_pair *network_session_interface_get_data_4999_inline2(void)
 	return result;
 }
 
+#pragma optimize("g", off)
+PRIVATE __forceinline s_long_pair *function_8f174(c_class_58d20 *arg_0, long arg_1)
+{
+ s_long_pair *local_0 = 0;
+ if (arg_1 > 2 && arg_1 <= 8)
+ {
+  bool local_1 = arg_0->flag4998;
+  if (local_1) local_0 = &arg_0->data4999;
+ }
+ return local_0;
+}
+#pragma optimize("", on)
+PRIVATE __forceinline s_long_pair *function_8f175(void)
+{
+ s_long_pair *local_0 = 0;
+ if (g_527330.initialized)
+ {
+  c_class_58d20 *local_1 = (c_class_58d20 *)g_527330.session_a;
+  long local_2 = local_1->state;
+  if (local_2) local_0 = function_8f174(local_1, local_2);
+ }
+ return local_0;
+}
 // @retail 0x8f170
 void online_message_block_set_properties(s_state_block *block, long controller_index)
 {
@@ -547,29 +571,34 @@ void online_message_block_set_properties(s_state_block *block, long controller_i
 	{
 		long length = wcslen(text);
 		value = XGetLanguage();
-		online_message_block_set_property(block, 3, (length + 1) * sizeof(wchar_t), text);
-		online_message_block_set_property(block, 4, sizeof(value), &value);
+		long local_0 = (length + 1) * sizeof(wchar_t);
+		online_message_block_set_property(block, 3, text, local_0);
+		online_message_block_set_property(block, 4, &value, sizeof(value));
 	}
 	if (block->unknown210 > 0)
 	{
 		value = 1;
-		online_message_block_set_property(block, 0, block->unknown210, (const void *)block->unknown20c);
-		online_message_block_set_property(block, 1, sizeof(word), &value);
-		online_message_block_set_property(block, 2, sizeof(long), block->unknown214);
+		online_message_block_set_property(block, 0, (const void *)block->unknown20c, block->unknown210);
+		online_message_block_set_property(block, 1, &value, sizeof(word));
+		online_message_block_set_property(block, 2, block->unknown214, sizeof(long));
 	}
 	if (block->unknown4 == 3)
 	{
 		s_long_pair *session_id;
-		session_id = network_session_interface_get_data_4999_inline2();
+		session_id = function_8f175();
 		if (session_id)
-			online_message_block_set_property(block, 5, 8, session_id);
+			online_message_block_set_property(block, 5, session_id, 8);
 		else
 			block->unknown8 = 4;
 	}
 	else if (block->unknown4 == 2)
 	{
 		if (player_slot_get_identity(controller_index, (s_player_identity *)&identity))
-			online_message_block_set_property(block, 6, (wcslen(identity.name) + 1) * sizeof(wchar_t), identity.name);
+		{
+			long local_1 = wcslen(identity.name);
+			long local_2 = (local_1 + 1) * sizeof(wchar_t);
+			online_message_block_set_property(block, 6, identity.name, local_2);
+		}
 		else
 			block->unknown8 = 4;
 	}
@@ -649,16 +678,19 @@ HRESULT online_message_block_send_team_recruit(s_state_block *block, long contro
 				task->flags = 1;
 				task->controller_index = controller_index;
 				task->type = by_xuid ? 0x1b : 0x1c;
-				return result;
+				goto local_0;
 			}
 		failed:
 			function_6b640(block->unknown218);
 			block->unknown218 = NONE;
-			return result;
+			goto local_0;
 		}
 		function_6b640(task_index);
+		block->unknown218 = NONE;
+		goto local_0;
 	}
 	block->unknown218 = NONE;
+local_0:
 	return result;
 }
 
@@ -719,9 +751,9 @@ HRESULT online_message_block_send_message(long controller_index, s_state_block *
 void __stdcall online_message_block_send_finished(c_online_task_screen *screen)
 {
 	s_message_task_screen *view = (s_message_task_screen *)screen;
-	bool failed = false;
-	long error = 0x39;
 	long task_index = view->task_index;
+	bool local_0 = false;
+	long error = 0x39;
 
 	if (task_index != NONE)
 	{
@@ -732,16 +764,16 @@ void __stdcall online_message_block_send_finished(c_online_task_screen *screen)
 				return;
 			s_type_9df9da *task = function_6b910(task_index);
 			if (task)
-				error = function_0b4a20(online_task_continue(task));
-			failed = true;
+				error = online_result_get_error_string(online_task_continue(task));
+			local_0 = true;
 		}
 	}
 	s_state_block *block = view->block;
 	if (block && block->unknown4 == 2)
 		friend_request_clear();
 	function_08fa30(block);
-	online_task_screen_finish_inline(screen);
-	if (failed && error != 0x90)
+	online_task_screen_finish_inline((c_online_task_screen *)view);
+	if (local_0 && error != 0x90)
 		dialog_ok_show(1, error, 4, view->user_flags, 0, 0);
 }
 
@@ -770,7 +802,7 @@ void online_message_block_send(s_state_block *block, long controller_index, cons
 	}
 	if (block->unknown218 == NONE)
 	{
-		dialog_ok_show(1, function_0b4a20(result), 4, 1 << controller_index, 0, 0);
+		dialog_ok_show(1, online_result_get_error_string(result), 4, 1 << controller_index, 0, 0);
 	}
 	else
 	{

@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "font_loading_storage.h"
 /* FONT_LOADING.CPP: the fonts: the font table (font_table[_<language>].txt)
    names up to 11 font files, which are copied from the DVD (d:\maps\fonts\)
    to the utility drive (z:\fonts\) when the language or the files change, and
@@ -41,7 +42,6 @@ long g_4687f8 = NONE;
 char const *g_55e718;
 
 long g_4e28f4[11];
-s_font_cache_entry g_4e2920[k_maximum_font_count];
 bool g_4e3b40;
 
 static inline void csstrncpy(char *destination, char const *source, long size)
@@ -117,7 +117,7 @@ void fonts_get_source_directory(s_type_acf665 *reference)
 	function_137320(reference->path, directory);
 }
 
-bool function_136df0(s_type_acf665 *file, FILETIME *time);
+bool file_ref_modified_time(s_type_acf665 *file, FILETIME *time);
 
 /* when the font table on the DVD was last written */
 // @retail 0x1219b0
@@ -133,7 +133,7 @@ bool font_table_get_time(FILETIME *time)
 	memcpy(&reference, &directory, offsetof(s_type_acf665, unknown108));
 	font_table_get_name(name, sizeof(name));
 	function_x73bce5(&reference, name);
-	return function_136df0(&reference, time);
+	return file_ref_modified_time(&reference, time);
 }
 
 static inline char *function_xe9ecc4(char *string, char const *delimiters, char **next)
@@ -193,7 +193,7 @@ void async_create_file_blocking(file_reference_data const *s_type_acf665, dword 
 /* reads a small text file (the font table) into a string; false when it
    is missing or empty */
 // @retail 0x121a40
-bool file_read_string(s_type_acf665 const *reference, char *buffer, long size)
+bool file_read_string(s_type_acf665 const *reference, long size, char *buffer)
 {
 	bool result = false;
 	s_file_handle file;
@@ -259,9 +259,9 @@ long font_table_parse(char const *text, s_type_acf665 const *directory, s_type_a
 	return count;
 }
 
-long function_136770(file_reference_data *directory, dword flags, long maximum_count, file_reference_data *files);
+long function_136770(dword flags, file_reference_data *directory, long maximum_count, file_reference_data *files);
 bool function_1367d0(s_type_acf665 *file);
-bool function_136860(s_type_acf665 *file);
+bool file_ref_delete(s_type_acf665 *file);
 
 static inline void font_copy_wait(bool volatile *done)
 {
@@ -270,6 +270,9 @@ static inline void font_copy_wait(bool volatile *done)
 			SwitchToThread();
 }
 
+// score 4 (was 4): the three font file arrays sit in the frame in another
+// order: retail puts the old directory's files first, then the source's,
+// ours puts the source's first and the old ones in the middle.
 // @retail 0x121b00
 bool function_121b00(void)
 {
@@ -277,20 +280,16 @@ bool function_121b00(void)
 	s_type_acf665 destination;
 	s_type_acf665 table;
 	s_type_acf665 output;
-	struct
-	{
-		s_type_acf665 old_files[11];
-		s_type_acf665 source_files[11];
-		s_type_acf665 destination_files[11];
-	} files;
+	s_type_acf665 source_files[11];
+	s_type_acf665 destination_files[11];
 	char name[256];
 	char path[256];
 	char table_name[256];
 	char text[0x800];
 	FILETIME time;
-	bool volatile done;
+	FILETIME saved_time;
+	bool done;
 	s_file_handle input;
-	s_file_handle target;
 	dword bytes_written;
 	bool result;
 	fonts_get_source_directory(&source);
@@ -303,7 +302,6 @@ bool function_121b00(void)
 	if (result)
 	{
 		{
-			FILETIME saved_time;
 			long language = global_preferences_globals.current.unknown1c;
 			memcpy(&saved_time, global_preferences_globals.current.unknown24, sizeof(saved_time));
 			if (CompareFileTime(&saved_time, &time) == 0)
@@ -319,15 +317,16 @@ bool function_121b00(void)
 			global_preferences_flush();
 		}
 		global_preferences_flush();
-		result = file_read_string(&table, text, sizeof(text));
+		result = file_read_string(&table, sizeof(text), text);
 		if (result)
 		{
-			long count = font_table_parse(text, &source, files.source_files, 11);
-			font_table_parse(text, &destination, files.destination_files, 11);
+			long count = font_table_parse(text, &source, source_files, 11);
+			font_table_parse(text, &destination, destination_files, 11);
 			if (function_1368f0(&destination))
 			{
-				long old_count = function_136770((file_reference_data *)&destination, 0, 11, (file_reference_data *)files.old_files);
-				for (long i = 0; i < old_count; i++) function_136860(&files.old_files[i]);
+				s_type_acf665 old_files[11];
+				long old_count = function_136770(0, (file_reference_data *)&destination, 11, (file_reference_data *)old_files);
+				for (long i = 0; i < old_count; i++) file_ref_delete(&old_files[i]);
 			}
 			else function_1367d0(&destination);
 			path[0] = 0;
@@ -337,17 +336,21 @@ bool function_121b00(void)
 			function_x454397(&output);
 			function_x73bce5(&output, path);
 			async_create_file_blocking((file_reference_data *)&output, 2, 2, 4, 7, &input);
-			function_1a1050(input, text, strlen(text) + 1, 0, 0, 7, 6, &bytes_written, &done);
+			dword text_size = strlen(text) + 1;
+			s_file_write_flags write_flags(0);
+			function_1a1050(input, text, text_size, 0, write_flags, 7, 6, &bytes_written, &done);
 			font_copy_wait(&done);
 			async_flush_file_blocking(input, 7);
 			function_1a1550(input, 7, 6, &done);
 			font_copy_wait(&done);
 			for (long i = 0; i < count; i++)
 			{
-				async_create_file_blocking((file_reference_data *)&files.source_files[i], 1, 0, 4, 7, &input);
+				s_file_handle target;
+
+				async_create_file_blocking((file_reference_data *)&source_files[i], 1, 0, 4, 7, &input);
 				result = input.handle != INVALID_HANDLE_VALUE;
 				if (!result) goto failed;
-				async_create_file_blocking((file_reference_data *)&files.destination_files[i], 2, 2, 4, 7, &target);
+				async_create_file_blocking((file_reference_data *)&destination_files[i], 2, 2, 4, 7, &target);
 				result = target.handle != INVALID_HANDLE_VALUE;
 				if (!result) goto failed;
 				result = async_copy_file(input, target, 7);
@@ -471,32 +474,33 @@ short function_122570(s_font_header const *header, dword first_character, dword 
 		do
 		{
 			if (header->kerning_pairs[index].first_character >= first_character)
+			{
+				if (header->kerning_pairs[index].first_character == first_character)
+				{
+					do
+					{
+						if (header->kerning_pairs[index].second_character >= second_character)
+						{
+							if (header->kerning_pairs[index].second_character == second_character)
+								result = header->kerning_pairs[index].offset;
+							break;
+						}
+						index++;
+					}
+					while (index < header->kerning_pair_count && header->kerning_pairs[index].first_character == first_character);
+				}
 				break;
+			}
 			index++;
 		}
 		while (index < header->kerning_pair_count);
-		if (index < header->kerning_pair_count && header->kerning_pairs[index].first_character == first_character)
-		{
-			do
-			{
-				if (header->kerning_pairs[index].second_character >= second_character)
-					break;
-				index++;
-			}
-			while (index < header->kerning_pair_count && header->kerning_pairs[index].first_character == first_character);
-			if (index < header->kerning_pair_count && header->kerning_pairs[index].first_character == first_character &&
-				header->kerning_pairs[index].second_character == second_character)
-			{
-				result = header->kerning_pairs[index].offset;
-			}
-		}
 	}
 	return result;
 }
 
 /* a pixel of a character: 3 bits of alpha (widened to 4) over a 12 bit
    color */
-static inline long font_character_pixel(long alpha, long color)
+static inline word font_character_pixel(long alpha, long color)
 {
 	return (((alpha << 1) | ((byte)alpha & 1)) << 12) | color;
 }
@@ -504,20 +508,21 @@ static inline long font_character_pixel(long alpha, long color)
 /* decodes a character's run-length coded pixels to 16 bit pixels; returns
    how many pixels there are (with no destination it only counts them) */
 // @retail 0x122610
-long function_122610(long size, void *destination, void const *pixels)
+long function_122610(long size, void const *pixels, void *destination)
 {
+	long remaining = size;
+	long count = 0;
 	byte const *source = (byte const *)pixels;
 	word *output = (word *)destination;
-	long count = 0;
 	long color = 0xfff;
 
-	while (size > 0)
+	while (remaining > 0)
 	{
 		dword code = *source;
 		dword type = code >> 6;
 		long length;
 
-		if (type > 1)
+		if ((long)type > 1)
 		{
 			long run = 2;
 
@@ -541,11 +546,18 @@ long function_122610(long size, void *destination, void const *pixels)
 				{
 				case 0:
 					run = 0;
-					count += run;
-					break;
+					goto counted;
+				case 4:
+					run = 5;
+					pixel = color;
+					goto fill;
 				case 1:
 					run = 4;
 					pixel = color | 0xf000;
+					goto fill;
+				case 6:
+					run = 3;
+					pixel = color;
 					goto fill;
 				case 2:
 					run = 3;
@@ -554,16 +566,8 @@ long function_122610(long size, void *destination, void const *pixels)
 				case 3:
 					pixel = color | 0xf000;
 					goto fill;
-				case 4:
-					run = 5;
-					pixel = color;
-					goto fill;
 				case 5:
 					run = 4;
-					pixel = color;
-					goto fill;
-				case 6:
-					run = 3;
 					pixel = color;
 					goto fill;
 				case 7:
@@ -575,6 +579,7 @@ long function_122610(long size, void *destination, void const *pixels)
 							output[i] = (word)pixel;
 						output += run;
 					}
+				counted:
 					count += run;
 					break;
 				default:
@@ -601,18 +606,21 @@ long function_122610(long size, void *destination, void const *pixels)
 			{
 				if (output)
 				{
-					word pixel = (word)font_character_pixel((type == 0 ? 0 : 0xff) & 7, color);
+					byte alpha = type == 0 ? 0 : 7;
+					long pixel = font_character_pixel(alpha, color);
 
 					for (long i = 0; i < run; i++)
-						output[i] = pixel;
+						output[i] = (word)pixel;
 					output += run;
 				}
 				count += run;
 				length = 1;
 			}
 		}
-		size -= length;
+		remaining -= length;
 		source += length;
 	}
 	return count;
 }
+
+s_font_loading_storage g_font_loading_storage;

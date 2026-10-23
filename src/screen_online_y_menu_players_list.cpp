@@ -13,12 +13,12 @@
 #include "unknown_2312b4.h"
 
 struct s_message;
-void function_149f49(s_message *message, word a, dword *id, word b, long c, long d, long e);
+void function_149f49(s_message *message, word a, dword *id, short b, long c, long d, long e);
 void function_238c21(long controller, long type, word *name, long maximum_count);
 void function_236299(long sound);
 struct s_friend;
 void friend_get_online_friend(s_friend const *player, XONLINE_FRIEND *result);
-bool function_18ff64(long index);
+bool player_slot_live_tasks_pending(long index);
 c_class_1473c9 *__stdcall function_2b7201(s_screen_parameters *parameters);
 
 #pragma pack(push, 2)
@@ -147,7 +147,7 @@ void c_y_menu_players_list::handle_item(s_controller_reference **controller, lon
 						dialog_ok_show(1, 0x5d, 4, 1 << controller_index, 0, 0);
 					}
 				}
-				else if (!function_18ff64(controller_index))
+				else if (!player_slot_live_tasks_pending(controller_index))
 				{
 					function_238c21(controller_index, 0x10, 0, 0);
 				}
@@ -188,7 +188,7 @@ void c_y_menu_tab_bar::v1()
 // @retail 0x2b41ea
 bool c_y_menu_tab_bar::v10(s_widget_event *event)
 {
-	bool result;
+	bool result = false;
 
 	switch (event->type)
 	{
@@ -248,10 +248,9 @@ bool c_y_menu_tab_bar::v10(s_widget_event *event)
 		function_236299(9);
 		result = true;
 		break;
-	default:
-		result = c_class_1a2c81::v10(event);
-		break;
 	}
+	if (!result)
+		result = c_class_1a2c81::v10(event);
 	return result;
 }
 

@@ -52,7 +52,7 @@ void function_18ef00(s_saved_game_header const *arg_0);
 void function_18f170(s_game_options *arg_0, long arg_1);
 void function_12bf00(void);
 bool main_play_intro_movie(void);
-bool window_manager_has_pause_screen(void);
+bool window_manager_has_listed_dialog(void);
 void function_14bac0(void);
 bool __stdcall function_11c1b0(short arg_0, bool arg_1);
 void function_137da0(void);
@@ -62,7 +62,7 @@ void function_137e40(void);
 void function_d5560(bool arg_0);
 void function_c09c0(long arg_0);
 void function_158530(void);
-void function_138f10(void);
+void game_launch_file_wake_script(void);
 void function_200d80(void);
 bool function_18eaa0(s_18eaa0 const *arg_0);
 void __stdcall function_18f0a0(s_18f0a0 const *arg_0);
@@ -79,14 +79,17 @@ bool function_18f000(s_18e700 const *arg_0)
     function_d5560(false);
     function_c09c0(g_4e6948->state);
     function_137e40();
-    if (function_11c1b0(arg_0->field_120, true))
+    short local_1 = arg_0->field_120;
+    if (function_11c1b0(local_1, true))
     {
         g_4e6948->flag1120 = true;
         if (g_4cf770 && !((s_18e701 *)g_4cf77c)->field_2f)
             ((s_18e701 *)g_4cf77c)->field_2f = true;
         function_158530();
-        function_138f10();
-        if (g_4e6948->mode != 4 && (g_4e6948->state == 1 || g_4e6948->state == 2))
+        game_launch_file_wake_script();
+        long local_2 = g_4e6948->mode;
+        long local_3 = g_4e6948->state;
+        if (local_2 != 4 && (local_3 == 1 || local_3 == 2))
             function_200d80();
         local_0 = true;
     }
@@ -183,7 +186,7 @@ void function_18e810(void)
     bool local_0 = g_4ed39d;
     if (g_4ed39d && !g_4ed39e && g_51ea10 > 0)
         local_0 = false;
-    if (!window_manager_has_pause_screen() && local_0)
+    if (!window_manager_has_listed_dialog() && local_0)
     {
         if (g_4ed39e)
         {

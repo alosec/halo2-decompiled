@@ -13,6 +13,8 @@
 
 real function_30bf0(vector3f *v);
 
+void function_2922b1(vector3f const *a, vector3f const *b, vector3f *out);
+
 /* ---- globals ---- */
 
 extern short const g_440b94[6][3] =
@@ -24,6 +26,18 @@ extern short const g_440b94[6][3] =
 	{ 1, 0, 2 },
 	{ 0, 1, 2 },
 };
+
+PRIVATE __forceinline void function_11fc81(point3f *arg_0, point3f const *arg_1, vector3f const *arg_2, real arg_3)
+{
+	real local_0 = arg_2->i * arg_3;
+	local_0 += arg_1->x;
+	arg_0->x = local_0;
+	local_0 = arg_3 * arg_2->j;
+	local_0 += arg_1->y;
+	arg_0->y = local_0;
+	arg_3 *= arg_2->k;
+	arg_0->z = arg_3 + arg_1->z;
+}
 
 // @retail 0x11fc80
 long function_11fc80(
@@ -41,13 +55,22 @@ long function_11fc80(
 	{
 		real offset = keep_inside ? tolerance : 0.f - tolerance;
 		point3f const *previous = &points[point_count - 1];
-		real previous_distance = plane->i * previous->x + plane->j * previous->y + plane->k * previous->z - plane->d - offset;
+		// retail evaluates the distances in SSE single precision: every product and sum is rounded to float
+		real previous_z = plane->k * previous->z;
+		real previous_y = plane->j * previous->y;
+		real previous_distance = previous_z + previous_y;
+		real previous_x = plane->i * previous->x;
+		previous_distance += previous_x;
+		previous_distance -= plane->d;
+		previous_distance -= offset;
 		bool previous_inside = previous_distance >= 0.f;
 
 		for (long i = 0; i < point_count; i++)
 		{
 			point3f const *current = &points[i];
-			real distance = plane->i * current->x + plane->j * current->y + plane->k * current->z - plane->d - offset;
+			real distance = (plane->i * current->x + plane->k * current->z) + plane->j * current->y;
+			distance -= plane->d;
+			distance -= offset;
 			bool inside = distance >= 0.f;
 
 			if (inside != previous_inside)
@@ -55,13 +78,10 @@ long function_11fc80(
 				if (count >= maximum_count)
 					break;
 				vector3f delta;
-				delta.i = current->x - previous->x;
-				delta.j = current->y - previous->y;
-				delta.k = current->z - previous->z;
-				real t = previous_distance / (previous_distance - distance);
-				out[count].x = delta.i * t + previous->x;
-				out[count].y = t * delta.j + previous->y;
-				out[count].z = t * delta.k + previous->z;
+				vector3d_from_points3d(previous, current, &delta);
+				real span = previous_distance - distance;
+				real t = previous_distance / span;
+				function_11fc81(&out[count], previous, &delta, t);
 				count++;
 			}
 			if (inside == keep_inside)
@@ -93,10 +113,10 @@ static inline real distance_squared(point3f const *a, point3f const *b)
    root and middle axes and copies the target into the end node */
 // @retail 0x120220
 void function_120220(
-	transform4x3f *mid,
-	transform4x3f *root,
 	transform4x3f *target,
-	transform4x3f *end)
+	transform4x3f *end,
+	transform4x3f *root,
+	transform4x3f *mid)
 {
 	real mid_root_squared = distance_squared(&mid->position, &root->position);
 	real end_mid_squared = distance_squared(&end->position, &mid->position);
@@ -124,15 +144,11 @@ void function_120220(
 		u.k = delta.k * inverse;
 
 		vector3f normal;
-		normal.i = u.j * to_mid.k - u.k * to_mid.j;
-		normal.j = u.k * to_mid.i - u.i * to_mid.k;
-		normal.k = u.i * to_mid.j - u.j * to_mid.i;
+		function_2922b1(&u, &to_mid, &normal);
 		function_30bf0(&normal);
 
 		vector3f e;
-		e.i = normal.j * u.k - normal.k * u.j;
-		e.j = normal.k * u.i - normal.i * u.k;
-		e.k = normal.i * u.j - normal.j * u.i;
+		function_2922b1(&normal, &u, &e);
 
 		real distance = root_target;
 		real limit = (end_mid + mid_root) * 0.98f;
@@ -158,38 +174,38 @@ void function_120220(
 		lift.j = e.j * height;
 		lift.k = e.k * height;
 
-		root->forward.i = along * u.i + lift.i;
-		root->forward.j = along * u.j + lift.j;
-		root->forward.k = along * u.k + lift.k;
-		function_30bf0(&root->forward);
+		vector3f *root_left = &root->left;
+		vector3f *mid_left = &mid->left;
+		vector3f *root_forward = &root->forward;
+		vector3f *root_up = &root->up;
 
-		root->up.i = root->forward.j * root->left.k - root->forward.k * root->left.j;
-		root->up.j = root->forward.k * root->left.i - root->forward.i * root->left.k;
-		root->up.k = root->left.j * root->forward.i - root->forward.j * root->left.i;
-		function_30bf0(&root->up);
+		root_forward->i = along * u.i + lift.i;
+		root_forward->j = along * u.j + lift.j;
+		root_forward->k = along * u.k + lift.k;
+		function_30bf0(root_forward);
 
-		root->left.i = root->forward.k * root->up.j - root->up.k * root->forward.j;
-		root->left.j = root->up.k * root->forward.i - root->forward.k * root->up.i;
-		root->left.k = root->forward.j * root->up.i - root->up.j * root->forward.i;
+		function_2922b1(root_forward, root_left, root_up);
+		function_30bf0(root_up);
+
+		function_2922b1(root_up, root_forward, root_left);
 
 		point3f new_mid;
-		new_mid.x = mid_root * root->forward.i + root->position.x;
-		new_mid.y = root->forward.j * mid_root + root->position.y;
-		new_mid.z = root->forward.k * mid_root + root->position.z;
+		new_mid.x = mid_root * root_forward->i + root->position.x;
+		new_mid.y = root_forward->j * mid_root + root->position.y;
+		new_mid.z = root_forward->k * mid_root + root->position.z;
 
-		mid->forward.i = remaining * u.i - lift.i;
-		mid->forward.j = remaining * u.j - lift.j;
-		mid->forward.k = remaining * u.k - lift.k;
-		function_30bf0(&mid->forward);
+		vector3f *mid_forward = &mid->forward;
+		vector3f *mid_up = &mid->up;
 
-		mid->up.i = mid->forward.j * mid->left.k - mid->forward.k * mid->left.j;
-		mid->up.j = mid->forward.k * mid->left.i - mid->forward.i * mid->left.k;
-		mid->up.k = mid->forward.i * mid->left.j - mid->left.i * mid->forward.j;
-		function_30bf0(&mid->up);
+		mid_forward->i = remaining * u.i - lift.i;
+		mid_forward->j = remaining * u.j - lift.j;
+		mid_forward->k = remaining * u.k - lift.k;
+		function_30bf0(mid_forward);
 
-		mid->left.i = mid->forward.k * mid->up.j - mid->up.k * mid->forward.j;
-		mid->left.j = mid->up.k * mid->forward.i - mid->forward.k * mid->up.i;
-		mid->left.k = mid->forward.j * mid->up.i - mid->up.j * mid->forward.i;
+		function_2922b1(mid_forward, mid_left, mid_up);
+		function_30bf0(mid_up);
+
+		function_2922b1(mid_up, mid_forward, mid_left);
 
 		mid->position = new_mid;
 		*end = *target;
@@ -212,19 +228,33 @@ real function_1201a0(vector3f *v, vector3f const *fallback)
 	return 0.f;
 }
 
-// @retail 0x120790
-void function_120790(real *out, real const *plane, real const *point, short axis, byte side)
+struct s_120791
 {
-	short const *entry = g_440b94[side + axis * 2];
-	short a = entry[0];
-	short b = entry[1];
+    real field_0;
+};
+
+static __forceinline s_120791 function_120791(real const *arg_0, real const *arg_1, short arg_2, short arg_3, short arg_4)
+{
+    s_120791 local_0;
+    local_0.field_0 = arg_0[3] - arg_0[arg_2] * arg_1[0] - arg_0[arg_3] * arg_1[1];
+    local_0.field_0 /= arg_0[arg_4];
+    return local_0;
+}
+
+// @retail 0x120790
+real *function_120790(real *out, real const *plane, real const *point, short axis, byte side)
+{
+	long local_0 = side + axis * 2;
+	short a = g_440b94[local_0][0];
+	short b = g_440b94[local_0][1];
 
 	out[a] = point[0];
 	out[b] = point[1];
 	if (fabs(plane[axis]) < k_real_epsilon)
 		out[axis] = 0.f;
 	else
-		out[axis] = (plane[3] - plane[a] * point[0] - plane[b] * point[1]) / plane[axis];
+		out[axis] = function_120791(plane, point, a, b, axis).field_0;
+	return out;
 }
 
 // @retail 0x120810

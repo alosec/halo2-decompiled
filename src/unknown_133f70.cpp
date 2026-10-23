@@ -56,7 +56,7 @@ struct s_133f70
 
 typedef char c_133f70[sizeof(s_133f70) == 0x1e4 ? 1 : -1];
 
-short function_2cbf0(long arg_1, byte arg_2, long arg_3, dword arg_4,
+short function_2cbf0(long arg_1, long arg_2, short arg_3, dword arg_4,
 	long arg_5, dword arg_6, long arg_7, byte *arg_8, short arg_9, byte arg_10,
 	void *arg_11, long arg_12, real arg_13, long arg_14, long arg_15,
 	bool arg_16, bool arg_17, bool arg_18, real arg_19, real arg_20,
@@ -65,9 +65,9 @@ short function_2cbf0(long arg_1, byte arg_2, long arg_3, dword arg_4,
 // @retail 0x133f70
 void function_133f70(s_133f70 const *arg_1, bool arg_2)
 {
-	long local_1 = 0;
-	s_133f70 const *local_12 = arg_1;
-	if (local_12->field_166 > 0)
+	volatile long local_1 = 0;
+	s_133f70 const *volatile local_12 = arg_1;
+	if (arg_1->field_166 > 0)
 	{
 		long local_13 = 0x18;
 		long local_14 = 0;
@@ -75,19 +75,20 @@ void function_133f70(s_133f70 const *arg_1, bool arg_2)
 		do
 		{
 			s_133f70 const *local_2 = local_12;
-			if (local_13 <= 0x18 || !arg_2 || *(long *)local_12->field_48[local_1] == *(long *)local_12->field_48[0])
+			byte *const *source_cursor = &local_2->field_48[local_1];
+			if (local_13 <= 0x18 || !arg_2 || *(long *)*source_cursor == *(long *)local_12->field_48[0])
 			{
 				s_133f70 local_3;
 				if (local_2->field_1c4 == 1)
 				{
-					long local_4 = *(long *)*(byte *const *)((byte const *)local_2 + local_13 + 0x30);
+					long local_4 = *(long *)*source_cursor;
 					byte const *local_5 = *(byte **)(g_4e0300->data + (local_4 & 0xffff) * 12 + 8);
 					if (local_5[0xaa] == 2)
 					{
 						byte const *local_6 = g_4e3b44[*(long *)local_5 & 0xffff].bytes;
 						if (*(short const *)(local_6 + 0x290) != 0)
 						{
-							local_3 = *local_12;
+							memcpy(&local_3, local_12, sizeof(local_3));
 							local_3.field_1c0 = 0x1f;
 							local_3.field_1c4 = NONE;
 							local_3.field_1cc = false;
@@ -103,16 +104,14 @@ void function_133f70(s_133f70 const *arg_1, bool arg_2)
 					| local_2->field_1ac | local_2->field_1b0;
 				for (long local_8 = 0; local_8 < *(long const *)((byte const *)local_2 + local_13); local_8++)
 				{
-					long local_9 = *((byte const *)local_2 + 0x75 + local_14 + local_8);
-					if (local_9 == 0xff)
-					local_9 = NONE;
-					bool local_10 = false;
-					bool local_11 = false;
-					if (local_2->field_170 & 2)
-					{
-						local_10 = (bool)((local_2->field_170 >> 3) & 1);
-						local_11 = (bool)((local_2->field_170 >> 4) & 1);
-					}
+					byte selected = *((byte const *)local_2 + 0x75 + local_14 + local_8);
+					long local_9;
+					if (selected == 0xff)
+						local_9 = NONE;
+					else
+						local_9 = selected;
+					bool local_10 = (local_2->field_170 & 2) && (bool)((local_2->field_170 >> 3) & 1);
+					bool local_11 = (local_2->field_170 & 2) && (bool)((local_2->field_170 >> 4) & 1);
 					function_2cbf0(local_9, local_2->field_2c[local_1], local_2->field_16a, local_7,
 						*(long const *)((byte const *)local_2 + local_13 + 0x44), *(dword const *)((byte const *)local_2 + local_13 - 0x14), local_8,
 						*(byte *const *)((byte const *)local_2 + local_13 + 0x30), local_2->field_1be, local_2->field_1bc,

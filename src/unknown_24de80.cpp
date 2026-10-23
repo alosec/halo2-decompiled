@@ -25,7 +25,12 @@ struct s_24de80
 struct s_24de81
 {
 	short field_0;
-	word field_2;
+	word field_2_0 : 1;
+	word : 10;
+	word field_2_b : 1;
+	word : 2;
+	word field_2_e : 1;
+	word : 1;
 	byte field_4[0x16c - 4];
 	long field_16c;
 	long field_170;
@@ -61,10 +66,10 @@ void c_24de80::function_24de80(short arg_0, dword *arg_1, long arg_2, s_24de80 *
 	if (local_1)
 	{
 		long local_4 = data_datum_index(g_4e8c24, local_0);
-		long local_5 = (short)g_4e9ae8->players[local_0].w10;
-		point3f local_6 = g_4e9ae8->players[local_0].v;
 		real local_7 = local_1->field_19c;
 		byte local_8 = g_4e9ae8->players[local_0].b14;
+		long local_5 = (short)g_4e9ae8->players[local_0].w10;
+		point3f local_6 = g_4e9ae8->players[local_0].v;
 		bool local_9 = local_1->field_16c > 0;
 		short local_10 = local_1->field_1ac;
 		long local_11 = local_1->field_1b0 == NONE ? NONE : local_1->field_1b0 & 0xffff;
@@ -93,8 +98,9 @@ void c_24de80::function_24de80(short arg_0, dword *arg_1, long arg_2, s_24de80 *
 		{
 			if (function_688c0(local_4, (s_68a90_entry *)arg_3->field_26))
 			{
+				long *local_13 = &g_4e9ae8->l6dc[local_0 * 4];
 				for (long local_12 = 0; local_12 < 4; ++local_12)
-					g_4e9ae8->l6dc[local_0 * 4 + local_12] = ((long *)arg_3->field_26)[local_12];
+					local_13[local_12] = ((long *)arg_3->field_26)[local_12];
 				local_3 |= 0x10;
 			}
 		}
@@ -113,19 +119,19 @@ void c_24de80::function_24de80(short arg_0, dword *arg_1, long arg_2, s_24de80 *
 			arg_3->field_20 = (word)local_1->field_170;
 			local_3 |= 0x80;
 		}
-		if ((*arg_1 & 0x100) && arg_3->field_22 != (bool)((local_1->field_2 >> 11) & 1))
+		if ((*arg_1 & 0x100) && arg_3->field_22 != local_1->field_2_b)
 		{
-			arg_3->field_22 = (bool)((local_1->field_2 >> 11) & 1);
+			arg_3->field_22 = local_1->field_2_b;
 			local_3 |= 0x100;
 		}
-		if ((*arg_1 & 0x200) && arg_3->field_23 != (bool)(local_1->field_2 & 1))
+		if ((*arg_1 & 0x200) && arg_3->field_23 != local_1->field_2_0)
 		{
-			arg_3->field_23 = (bool)(local_1->field_2 & 1);
+			arg_3->field_23 = local_1->field_2_0;
 			local_3 |= 0x200;
 		}
-		if ((*arg_1 & 0x400) && arg_3->field_24 != (bool)((local_1->field_2 >> 14) & 1))
+		if ((*arg_1 & 0x400) && arg_3->field_24 != local_1->field_2_e)
 		{
-			arg_3->field_24 = (bool)((local_1->field_2 >> 14) & 1);
+			arg_3->field_24 = local_1->field_2_e;
 			local_3 |= 0x400;
 		}
 	}

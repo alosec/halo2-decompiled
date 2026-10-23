@@ -57,6 +57,8 @@ static inline void cross3f(vector3f const *a, vector3f const *b, vector3f *resul
 	result->k = a->i * b->j - a->j * b->i;
 }
 
+// score 37 (was 37): the blocks are laid out in another order and the float
+// registers are used in the other order.
 // @retail 0x109e00
 bool function_109e00(long object_index, vector3f *velocity, bool definition_flag_required)
 {
@@ -98,18 +100,19 @@ bool function_109e00(long object_index, vector3f *velocity, bool definition_flag
 // @retail 0x109fd0
 bool function_109fd0(long object_index, vector3f *velocity)
 {
+	long const *object_index_reference = &object_index;
 	bool result = false;
 
-	if (object_index != NONE)
+	if ((*object_index_reference) != NONE)
 	{
-		s_object_list_state *state = g_5107f0;
-
-		for (long i = 0; i < state->object_count; i++)
+		for (long i = 0; i < g_5107f0->object_count; i++)
 		{
-			if (state->object_indices[i] == object_index)
+			if (g_5107f0->object_indices[i] == (*object_index_reference))
 			{
-				*velocity = state->entries[i].linear_velocity;
-				return true;
+				s_object_list_entry const *entry = g_5107f0->entries + i;
+				*velocity = entry->linear_velocity;
+				result = true;
+				break;
 			}
 		}
 	}

@@ -68,8 +68,11 @@ struct s_47f048_object;
 extern s_47f048_object *g_47f048;
 volatile byte g_47f06d = 1;
 c_shape_owner *function_1c3b20(c_havok_reference_counted *arg_0);
-void havok_entity_component_index_set(hkEntity *entity, hkPropertyValue component_index);
+void havok_entity_component_index_set(hkEntity *entity, s_havok_property_word component_index);
 
+// score 71 (was 71): the -1 is built with OR here and pushed as a constant
+// there, and the
+// global it is stored to is a different one.
 // @retail 0x1c3b70
 void function_1c3b70()
 {
@@ -99,8 +102,8 @@ void function_1c3b70()
  local_4->field_4 = 0xa0;
  local_4 = new (local_4) c_311ba0(&local_3);
  g_47f048 = (s_47f048_object *)local_4;
- hkPropertyValue local_5;
- havok_entity_component_index_set((hkEntity *)local_4, local_5 = hkPropertyValue(-1));
+ s_havok_property_word local_5;
+ havok_entity_component_index_set((hkEntity *)local_4, local_5 = s_havok_property_word(-1));
  havok_reference_remove((c_havok_reference_counted *)local_1);
  havok_reference_remove((c_havok_reference_counted *)local_0);
  if (g_47f06d) havok_reference_remove((c_havok_reference_counted *)local_2);

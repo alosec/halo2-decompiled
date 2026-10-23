@@ -5,12 +5,18 @@
 #include "unknown_19b510.h"
 #include "unknown_19b516.h"
 #include "unknown_2b116a.h"
+#if defined(H2_NATIVE_PORT)
+#define c_list_24a64d c_list_24a64d_shared
+#endif
 #include "loop_allocator.h"
+#if defined(H2_NATIVE_PORT)
+#undef c_list_24a64d
+#endif
 #include <wchar.h>
 #include <string.h>
-#include <new>
 
 #if defined(H2_NATIVE_PORT)
+#include <new>
 extern "C" wchar_t *wcsncat(wchar_t *, wchar_t const *, unsigned int);
 #endif
 
@@ -27,6 +33,12 @@ struct s_entry_24a64d
 	word field_1e4[50];
 };
 
+#if defined(H2_NATIVE_PORT)
+/* The native port links this list as a self-contained view: one object of
+   0xa8 bytes followed by the four item widgets and four profile records that
+   retail's derived c_unknown_249fa3 (loop_allocator.h) appends. The shared
+   header's c_list_24a64d is renamed on include above so this view keeps the
+   symbol names the port's object extraction expects. */
 class c_list_24a64d : public c_list_widget_26
 {
 public:
@@ -51,23 +63,20 @@ public:
 	c_list_item_handler field_90;
 };
 
-#if defined(H2_NATIVE_PORT)
 static_assert(sizeof(c_list_24a64d) == 0xa8, "profile list base layout");
 #endif
-
 short player_slot_count_active(void);
 bool function_148c3e(long controller, long type);
+#if defined(H2_NATIVE_PORT)
 void function_24a190(void *arg_0);
 void function_249fcc(c_unknown_249fa3 *arg_0);
 void function_24bc12(c_class_1474e8 *list, bool remove_extra);
 extern long g_470a60;
-#if defined(H2_NATIVE_PORT)
 extern "C" int h2_native_profile_list(unsigned int *identifiers, unsigned int capacity);
 extern "C" int h2_native_profile_read(unsigned int identifier, void *record,
                                       unsigned int size);
-#endif
 
-// @retail 0x249fa3
+/* native view of retail 0x249fa3 (c_unknown_249fa3::v1, unknown_249fa3.cpp) */
 void c_list_24a64d::v1()
 {
 	g_470a60 = NONE;
@@ -123,6 +132,7 @@ void *c_list_24a64d::get_items(long *count)
 	*count = 4;
 	return (byte *)this + 0x2a8;
 }
+#endif
 
 // @retail 0x24a2e7
 bool c_list_24a64d::function_24a2e7(long controller)
@@ -308,29 +318,27 @@ word const *c_list_24a64d::function_24a691(long index, bool append)
 			return entries[item].field_0c;
 	return 0;
 #else
-	word const *result = (word const *)L"";
-	long local_0 = 0;
 	long count;
 	s_entry_24a64d *entries = (s_entry_24a64d *)get_items(&count);
-	s_entry_24a64d *volatile local_entries = entries;
-	for (; local_0 < count; ++local_0)
+	word const *result = (word const *)L"";
+	for (long i = 0; i < count; ++i)
 	{
-		if (entries[local_0].index == index)
+		if (entries[i].index == index)
 		{
-			if (append && entries[local_0].field_4c[0])
+			if (append && entries[i].field_4c[0])
 			{
 				word suffix[16] = { 0 };
-				ascii_string_to_unicode(entries[local_0].field_4c, suffix, 15);
-				word *buffer = entries[local_0].field_1e4;
-				unicode_string_copy(buffer, entries[local_0].field_0c, 0x31);
+				ascii_string_to_unicode(entries[i].field_4c, suffix, 15);
+				word *buffer = entries[i].field_1e4;
+				unicode_string_copy(buffer, entries[i].field_0c, 0x31);
 				wcsncat((wchar_t *)buffer, L" (", 0x31);
 				wcsncat((wchar_t *)buffer, (wchar_t *)suffix, 0x31);
 				wcsncat((wchar_t *)buffer, L")", 0x31);
-				local_entries[local_0].field_1e4[49] = 0;
+				buffer[49] = 0;
 				result = buffer;
 			}
 			else
-				result = entries[local_0].field_0c;
+				result = entries[i].field_0c;
 			break;
 		}
 	}
@@ -339,7 +347,7 @@ word const *c_list_24a64d::function_24a691(long index, bool append)
 }
 
 void function_1630b0(long *values, long value);
-bool function_1a0540(s_player_profile_settings *settings, long file_index);
+bool player_profile_load(long file_index, s_player_profile_settings *settings);
 word *function_215b50(long file_index, word *name);
 
 // @retail 0x24a52b
@@ -392,14 +400,15 @@ void c_list_24a64d::v24()
 					break;
 			if (j >= 0 && j < capacity)
 			{
-				entries[j].index = index;
-				s_player_profile_settings *settings = (s_player_profile_settings *)((byte *)&entries[j] + 4);
+				s_entry_24a64d *entry = entries + j;
+				entry->index = index;
+				s_player_profile_settings *settings = (s_player_profile_settings *)((byte *)entry + 4);
 				if (index == g_54e5d0.profile_index)
 					*settings = g_54e5d0.settings;
-				else if (!function_1a0540(settings, index))
+				else if (!player_profile_load(index, settings))
 				{
 					memset(settings, 0, sizeof(*settings));
-					function_215b50(entries[j].index, entries[j].field_0c);
+					function_215b50(entry->index, entry->field_0c);
 				}
 			}
 		}
@@ -409,8 +418,15 @@ void c_list_24a64d::v24()
 
 // @retail 0x249f0d
 c_list_24a64d::c_list_24a64d(word arg_0) :
+#if defined(H2_NATIVE_PORT)
 	c_list_widget_26(arg_0),
-	field_88(0), field_89(false), field_8a(false), field_8c(NONE),
+#else
+	c_list_widget_with_items(arg_0),
+#endif
+	field_88(0),
+	field_89(false),
+	field_8a(false),
+	field_8c(NONE),
 	field_90(this, (list_item_method)&c_list_24a64d::function_24a30e)
 {
 	data = user_interface_data_new("player profile list", 0x1001, 8);
@@ -418,6 +434,7 @@ c_list_24a64d::c_list_24a64d(word arg_0) :
 	delegate_register(&item_handlers, &field_90);
 }
 
+#if defined(H2_NATIVE_PORT)
 /* Native integration wrapper for the exact retail 0x18f372 construction
    sequence. The list base occupies 0xa8 bytes, followed by four 0x80-byte
    item widgets and four 0x248-byte profile records. */
@@ -434,9 +451,10 @@ extern "C" void h2_profile_list_construct(void *storage, word user_flags)
 		memset(profile + 4, 0, 0x1e0);
 	}
 }
+#endif
 
 void function_24c166(c_class_1474e8 *arg_0);
-void __stdcall function_215900(long arg_0, long arg_1, word *arg_2, long *arg_3, long arg_4);
+void __stdcall function_215900(long arg_0, long arg_1, word *arg_2, long *arg_3, bool arg_4);
 bool player_slot_profile_in_use(long arg_0);
 
 // @retail 0x24a190
@@ -508,11 +526,14 @@ void function_24a190(void *arg_0)
 			++local_4;
 		}
 	}
-	s_entry_24a64d *local_9 = (s_entry_24a64d *)local_0->get_items(&local_7);
-	for (long local_10 = 0; local_10 < local_7; ++local_10)
 	{
-		local_9[local_10].index = NONE;
-		memset((byte *)&local_9[local_10] + 4, 0, 0x1e0);
+		long local_11;
+		s_entry_24a64d *local_9 = (s_entry_24a64d *)local_0->get_items(&local_11);
+		for (long local_10 = 0; local_10 < local_11; ++local_10)
+		{
+			local_9[local_10].index = NONE;
+			memset((byte *)&local_9[local_10] + 4, 0, 0x1e0);
+		}
 	}
 	function_24c0c4((c_widget *)local_0);
 #endif
@@ -546,7 +567,7 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 	if (!field_89)
 	{
 		s_player_profile_settings settings;
-		if (!function_1a0540(&settings, datum->index))
+		if (!player_profile_load(datum->index, &settings))
 			return;
 		s_player_slot_profile *slot = (s_player_slot_profile *)g_54eae8[controller];
 		slot->initialize(controller);
@@ -567,7 +588,7 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 		else
 		{
 			s_player_profile_settings local_1;
-			if (function_1a0540(&local_1, local_0->index))
+			if (player_profile_load(local_0->index, &local_1))
 			{
 				if (field_89)
 				{
@@ -590,15 +611,21 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 					function_120df0((*arg_0)->controller_index, (wchar_t const *)local_1.name);
 					if (field_88)
 					{
-						if (!function_8d7c0())
+						if (function_8d7c0())
 						{
-							function_14800c(v11(), v12());
-							return;
-						}
-						XONLINE_USER local_5 = {0};
-						if (function_24ab0c((*arg_0)->controller_index, &local_5, (char const *)&local_1 + 0x48))
-						{
-							local_4->user = local_5;
+							XONLINE_USER local_5 = {0};
+							if (function_24ab0c((*arg_0)->controller_index, &local_5, (char const *)&local_1 + 0x48))
+							{
+								local_4->user = local_5;
+							}
+							else
+							{
+								s_screen_parameters local_6;
+								local_6.field_c = 0;
+								function_149f49((s_message *)&local_6, 6, 0, 1 << (*arg_0)->controller_index, 3, 4, (long)function_24b4a9);
+								local_6.load(&local_6);
+								return;
+							}
 							if (online_user_requires_passcode(&local_5))
 							{
 								s_screen_parameters local_6;
@@ -610,10 +637,7 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 						}
 						else
 						{
-							s_screen_parameters local_6;
-							local_6.field_c = 0;
-							function_149f49((s_message *)&local_6, 6, 0, 1 << (*arg_0)->controller_index, 3, 4, (long)function_24b4a9);
-							local_6.load(&local_6);
+							function_14800c(v11(), v12());
 							return;
 						}
 					}
@@ -632,7 +656,7 @@ void c_list_24a64d::function_24a30e(s_controller_reference **arg_0, long *arg_1)
 #endif
 }
 
-void function_120e20(long arg_0, long *arg_1);
+void function_120e20(long *arg_1, long arg_0);
 
 // @retail 0x249fcc
 void function_249fcc(c_unknown_249fa3 *arg_0)
@@ -640,18 +664,19 @@ void function_249fcc(c_unknown_249fa3 *arg_0)
 #if defined(H2_NATIVE_PORT)
 	(void)arg_0;
 #else
-	c_list_24a64d *local_0 = (c_list_24a64d *)arg_0;
 	long local_1;
-	function_120e20(local_0->get_controller_index(), &local_1);
-	if (local_1 != NONE)
+	c_list_24a64d *local_0 = (c_list_24a64d *)arg_0;
+	function_120e20(&local_1, local_0->get_controller_index());
+	if (NONE != (long)local_1)
 	{
 		s_list_item_iterator local_2;
 		local_2.iterator.data = local_0->data;
-		local_2.iterator.datum_index = NONE;
 		local_2.iterator.index = NONE;
+		local_2.iterator.datum_index = NONE;
 		while (function_2b2327(&local_2))
 		{
-			if (((s_datum_24a763 *)local_2.item)->index == local_1)
+			byte *local_3 = local_2.item;
+			if (((s_datum_24a763 *)local_3)->index == local_1)
 			{
 				local_0->select_datum(local_2.iterator.datum_index);
 				break;
@@ -682,10 +707,10 @@ void function_24a7ec(dword const *arg_0, c_class_2b0b5e *arg_1, long arg_2, bool
 	}
 }
 
-struct s_key_set;
+struct s_player_profile;
 struct s_entry_b;
 struct s_localized_name;
-void function_1a06f0(s_key_set *arg_0, long *arg_1, long *arg_2);
+void player_profile_get_highest_key(s_player_profile *arg_0, long *arg_1, long *arg_2);
 long function_19c4e0(long arg_0);
 long function_19c440(long arg_0, long arg_1);
 s_entry_b *function_19c1f0(long arg_0);
@@ -756,7 +781,7 @@ void c_screen_24a7bf::v3()
 		if (!local_0)
 		{
 			long local_5, local_6;
-			function_1a06f0((s_key_set *)((byte *)local_1 + 4), &local_5, &local_6);
+			player_profile_get_highest_key((s_player_profile *)((byte *)local_1 + 4), &local_5, &local_6);
 			if (local_5 != function_19c4e0(1))
 				local_5 = function_19c440(1, local_5);
 			if (local_5 != NONE)
@@ -770,7 +795,8 @@ void c_screen_24a7bf::v3()
 				}
 			}
 		}
-		local_4->function_253b1a(function_253c06(local_4)->string_handle);
+		long local_10 = function_253c06(local_4)->string_handle;
+		local_4->function_253b1a(local_10);
 	}
 local_9:
 	local_4 = (c_text_widget_45a5e0 *)find_child(6, 7, false);
@@ -780,11 +806,11 @@ local_9:
 		if (!local_0)
 		{
 			long local_6, local_7;
-			function_1a06f0((s_key_set *)((byte *)local_1 + 4), &local_6, &local_7);
+			player_profile_get_highest_key((s_player_profile *)((byte *)local_1 + 4), &local_6, &local_7);
 			switch (local_7)
 			{
 			case 0: local_5 = 0x400028e; break;
-			case 1: break;
+			case 1: local_5 = 0x60000b8; break;
 			case 2: local_5 = 0x600028f; break;
 			case 3: local_5 = 0x9000290; break;
 			}

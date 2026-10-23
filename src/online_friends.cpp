@@ -23,9 +23,9 @@ long online_friends_startup(void)
 	{
 		task = online_task_get_unchecked(task_index);
 		if (!task)
-			return task_index;
+			goto local_0;
 		if (!(task->flags & 0x24))
-			return task_index;
+			goto local_0;
 		online_task_restart(task_index);
 		task = online_task_get_unchecked(task_index);
 	}
@@ -33,7 +33,7 @@ long online_friends_startup(void)
 	{
 		task_index = online_task_new_if_logged_on();
 		if (task_index == NONE)
-			return NONE;
+			goto local_0;
 		task = online_task_get_unchecked(task_index);
 	}
 
@@ -48,9 +48,10 @@ long online_friends_startup(void)
 		else
 		{
 			function_6b640(task_index);
-			return NONE;
+			task_index = NONE;
 		}
 	}
+local_0:
 	return task_index;
 }
 
@@ -242,12 +243,35 @@ static inline s_long_pair *online_session_get_data_4999(void)
 
 /* invites a friend to the current game session (retail reads the session
    id even when there is no session) */
+#pragma optimize("g", off)
+PRIVATE __forceinline s_long_pair *function_8cfe2(c_class_58d20 *arg_0, long arg_1)
+{
+ s_long_pair *local_0 = 0;
+ if (arg_1 > 2 && arg_1 <= 8)
+ {
+  bool local_1 = arg_0->flag4998;
+  if (local_1) local_0 = &arg_0->data4999;
+ }
+ return local_0;
+}
+#pragma optimize("", on)
+PRIVATE __forceinline s_long_pair *function_8cfe3(void)
+{
+ s_long_pair *local_0 = 0;
+ if (g_527330.initialized)
+ {
+  c_class_58d20 *local_1 = (c_class_58d20 *)g_527330.session_a;
+  long local_2 = local_1->state;
+  if (local_2) local_0 = function_8cfe2(local_1, local_2);
+ }
+ return local_0;
+}
 // @retail 0x8cfe0
 void online_friends_game_invite(DWORD controller_index, XONLINE_FRIEND *friend_)
 {
 	if (online_logon_connected())
 	{
-		XNKID *session_id = (XNKID *)online_session_get_data_4999();
+		XNKID *session_id = (XNKID *)function_8cfe3();
 		XOnlineFriendsGameInvite(controller_index, *session_id, 1, friend_);
 	}
 }
@@ -348,17 +372,17 @@ struct s_friend_presence_status
 // @retail 0x8d230
 bool function_8d230(const XONLINE_FRIEND *friend_, s_friend_presence_status *status)
 {
-	memset(status, 0, sizeof(*status));
 	bool result = false;
+	memset(status, 0, sizeof(*status));
 	if ((online_friend_state_get_flags(friend_->dwFriendState, friend_->dwTitleID) & 1) &&
 		online_logon_connected() && XOnlineTitleIdIsSameTitle(friend_->dwTitleID) &&
 		friend_->StateDataSize >= 4)
 	{
 		const byte *data = friend_->StateData;
 		long signature = 0xfcf1;
-		if (*(const word *)data == *(word *)&signature)
+		if (!memcmp(data, &signature, sizeof(word)))
 		{
-			byte time = data[2];
+			byte time = friend_->StateData[2];
 			result = true;
 			if (time <= 59)
 				status->time0c = (word)time + 1;
@@ -376,13 +400,15 @@ bool function_8d230(const XONLINE_FRIEND *friend_, s_friend_presence_status *sta
 				status->time0e = ((word)time - 192) * 10;
 			else
 				status->time0e = 600;
-			byte flags = data[3];
+			byte flags = friend_->StateData[3];
 			if (flags & 1)
 				status->state = (flags & 2) ? 6 : 5;
 			else if (flags & 4)
 				status->state = (flags & 8) ? 4 : 2;
+			else if (flags & 8)
+				status->state = 3;
 			else
-				status->state = (((dword)flags & 8) | 4) >> 2;
+				status->state = 1;
 			if (friend_->StateDataSize == 4)
 			{
 				status->value04 = (*(const dword *)data >> 28) & 3;

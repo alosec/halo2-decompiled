@@ -26,12 +26,6 @@ struct s_1c4261
  long field_6c;
 };
 
-PRIVATE __forceinline hkRigidBody *function_1c4261(byte *arg_0)
-{
- long local_0 = *(long *)(arg_0 + 8);
- byte *local_1 = arg_0 - 0x10;
- return local_0 == 1 ? *(hkRigidBody **)(local_1 + 0x20) : NULL;
-}
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -110,6 +104,8 @@ real c_world_contact_update::evaluate(void const *body, void const *query)
 class c_contact_callback
 {
 public:
+	__forceinline c_contact_callback() {}
+	__forceinline c_contact_callback(bool value) : found(value) {}
 	virtual ~c_contact_callback() {}
 	virtual void hit(void const *query, s_contact_body_view const *body) = 0;
 	bool found;
@@ -131,6 +127,7 @@ public:
 class c_contact_exclusion : public c_contact_callback
 {
 public:
+	__forceinline c_contact_exclusion() : c_contact_callback(false) {}
 	virtual void hit(void const *query, s_contact_body_view const *body);
 	bool found_other;
 	byte unknown09[3];
@@ -149,18 +146,41 @@ PRIVATE __forceinline bool contact_shape_has_material(s_contact_body_view const 
 	long metadata = body->shape->metadata;
 	if (!metadata)
 		return false;
-	if (contact_metadata_pin(metadata, 1, 16) == metadata)
+	if (contact_metadata_pin(body->shape->metadata, 1, 16) == metadata)
 		return false;
 	return *(byte *)(metadata + 0x1e) != 0xff;
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+PRIVATE __forceinline long function_1d4884(long arg_0)
+{
+ return arg_0 < 1 ? 1 : arg_0 > 16 ? 16 : arg_0;
+}
+
+PRIVATE __forceinline bool function_1d4885(s_contact_body_view const *arg_0)
+{
+ if (arg_0->shape->type() == 0x18)
+  return false;
+ long local_0 = arg_0->shape->metadata;
+ if (!local_0)
+  return false;
+ long bounded = function_1d4884(local_0);
+ _ReadWriteBarrier();
+ if (bounded == local_0)
+  return false;
+ return *(byte *)(local_0 + 0x1e) != 0xff;
+}
+
+
+#pragma function(_ReadWriteBarrier)
 // @retail 0x1d4880
 void c_contact_presence::hit(void const *query, s_contact_body_view const *body)
 {
 	s_contact_body_view const *root = body;
 	while (root->parent)
 		root = root->parent;
-	if (root->type == 1 && root->entity && !contact_shape_has_material(body))
+	if (root->type == 1 && root->entity && !function_1d4885(body))
 		found = true;
 }
 
@@ -182,7 +202,6 @@ void c_contact_exclusion::hit(void const *query, s_contact_body_view const *body
 }
 
 bool havok_component_any_rigid_body_active(s_havok_component *component);
-bool havok_component_rigid_body_keyframed(long rigid_body_index, s_havok_component *component);
 void havok_component_rigid_body_linear_velocity_set(long rigid_body_index, s_havok_component *component, vector3f const *velocity);
 void havok_component_rigid_body_angular_velocity_set(long rigid_body_index, s_havok_component *component, vector3f const *velocity);
 void havok_component_rigid_bodies_activate(s_havok_component *component);
@@ -199,17 +218,17 @@ struct s_velocity_object_header
 // @retail 0x1c4b00
 void function_1c4b00(long object_index, void *linear, void *angular, long force)
 {
-	long component_index = *(volatile long const *)&havok_object_get(object_index)->havok_component_index;
-	if (component_index != NONE)
+	s_havok_object *object = havok_object_get(object_index);
+	if (object->havok_component_index != NONE)
 	{
-		s_havok_component *component = havok_component_get(component_index);
+		s_havok_component *component = havok_component_get(object->havok_component_index);
 		if ((byte)force || havok_component_any_rigid_body_active(component))
 		{
 			if ((1 << ((s_velocity_object_header *)g_4e0300->data)[object_index & 0xffff].type) & 2)
 			{
 				long index = havok_component_main_rigid_body_index_get(component);
 				if (index != NONE && !havok_component_rigid_body_get(index, component)->m_fixed &&
-					!havok_component_rigid_body_keyframed(index, component))
+					!component->rigid_body_keyframed(index))
 				{
 					if (linear)
 						havok_component_rigid_body_linear_velocity_set(index, component, (vector3f *)linear);
@@ -222,7 +241,7 @@ void function_1c4b00(long object_index, void *linear, void *angular, long force)
 				for (long index = 0; index < component->rigid_bodies.size; index++)
 				{
 					hkRigidBody *body = havok_component_rigid_body_get(index, component);
-					if (!body->m_fixed && body->m_motion->getType() != 6)
+					if (!body->m_fixed && body->m_motion->kind_code() != 6)
 					{
 						if (linear)
 							havok_component_rigid_body_linear_velocity_set(index, component, (vector3f *)linear);
@@ -641,6 +660,8 @@ PRIVATE __forceinline void function_1c2891(short *arg_0, c_havok_reference_count
 	}
 }
 
+// score 45 (was 45): ours loads the havok reference from a different global
+// and clears it in EDI, retail loads it into ESI and clears it in EBX.
 // @retail 0x1c2890
 void function_1c2890(void)
 {
@@ -657,9 +678,9 @@ void function_1c2890(void)
 // @retail 0x1c29d0
 void function_1c29d0(void)
 {
-	((hkEntityApi *)g_47f048)->removeEntityListener((hkEntityListener *)g_51ecac);
+	((c_physics_body_island_view *)g_47f048)->entity_observer_detach((c_havok_entity_observer *)g_51ecac);
 	g_47f050--;
-	g_51e9a4->removeEntity((hkEntity *)g_47f048);
+	g_51e9a4->entity_world_remove((hkEntity *)g_47f048);
 	function_278f00();
 }
 
@@ -671,9 +692,10 @@ void __stdcall function_1c35f0(long object_index)
 	if (((1 << header->type) & 0x1883) && !(header->flags & 0x10))
 	{
 		long root_index = function_baf80(object_index);
+		s_physics_object_header *root = physics_object_header_get(root_index);
 
-		header->object->bit12 = false;
-		if (physics_object_header_get(root_index)->cluster_index != NONE)
+		function_0bfe40(&header->object->flags, 0xc, false);
+		if (root->cluster_index != NONE)
 		{
 			s_physics_object *object = header->object;
 
@@ -688,8 +710,10 @@ void __stdcall function_1c35f0(long object_index)
 				{
 					function_1d1540((s_havok_component *)component);
 				}
+#pragma inline_depth(0)
 				function_0bfe40(&header->object->flags, 0xc,
 					TEST_FIELD_BIT(component->bit14) || TEST_FIELD_BIT(component->bit20));
+#pragma inline_depth()
 			}
 			havok_object_count(object_index);
 		}
@@ -724,19 +748,11 @@ void __stdcall function_1c36f0(long parent_index, long object_index)
 
 /* sets the flags of the object's havok component and rebuilds it, with the
    component's active state handled around the change.
-   Standard convention (see docs/DECOMPILING.md):
-   1. Retail keeps it __stdcall (both arguments on the stack, ret 8). With the
-      marker this body matches byte for byte; without it LTCG passes the
-      object index in eax.
-   2. No data or code in retail holds its address. Its twelve callers
-      (0xdbc80 0xe0c70 0xe0ef0 0xe16b0 0xe18d0 0xe24f0 0x1c38a0 0x1c4040
-      0x1d2460 0x1e54d0 0x1ec690 0x278f00) all push both arguments; 0x1d2460
-      itself takes its component in ecx, a register convention.
-   3. Tried: declaring it __stdcall alone does nothing under LTCG; /GL- on
-      the file would break the register convention of its callee 0x1cf120,
-      which takes the component index in eax. */
+   Retail keeps both arguments on the stack (ret 8). With the attachment
+   helper call at 0xb93b0 -> 0xb7300 kept out of line, the code-reference
+   cycle preserves this convention without an address-escape marker. */
 #ifndef H2_NATIVE_PORT
-// @retail 0x1c3770 standard
+// @retail 0x1c3770
 void __stdcall function_1c3770(long object_index, dword flags)
 {
 	s_physics_object *object = physics_object_get(object_index);
@@ -781,7 +797,7 @@ PRIVATE inline char model_permutation_region_get(s_model_region_view const *regi
 }
 
 // @retail 0x1c54b0
-void function_1c54b0(long object_index, char const *variants)
+void function_1c54b0(char const *variants, long object_index)
 {
 	s_physics_object *object = physics_object_get(object_index);
 
@@ -791,16 +807,27 @@ void function_1c54b0(long object_index, char const *variants)
 		s_object_definition_view *definition = (s_object_definition_view *)g_4e3b44[object->tag_index & 0xffff].bytes;
 		s_model_view *model = (s_model_view *)g_4e3b44[definition->model_tag_index & 0xffff].bytes;
 		char const *current = (char const *)object + object->region_variants_offset;
+		long count = model->region_count;
+		s_model_region_view const *region = model->regions;
+		long offset = current - variants;
 		long i;
 
-		for (i = 0; i < model->region_count; i++)
+		for (i = 0; i < count; i++, region++, variants++)
 		{
-			if (variants[i] != current[i] &&
-				model_permutation_region_get(&model->regions[i], variants[i]) != model_permutation_region_get(&model->regions[i], current[i]))
+			char variant = *variants;
+			char current_variant = variants[offset];
+
+			if (variant == current_variant)
+				continue;
+			if (variant == NONE || current_variant == NONE)
 			{
-				function_1c3770(object_index, 0);
-				break;
+				if (region->permutations[variant == NONE ? current_variant : variant].region == NONE)
+					continue;
 			}
+			else if (region->permutations[variant].region == region->permutations[current_variant].region)
+				continue;
+			function_1c3770(object_index, 0);
+			break;
 		}
 	}
 }
@@ -813,10 +840,10 @@ void function_1c50c0(void)
 
 	for (island_index = 0; island_index < g_51e9a4->m_island_count; )
 	{
-		hkSimulationIsland *island = g_51e9a4->m_islands[island_index];
+		c_havok_body_group *island = g_51e9a4->m_islands[island_index];
 		long entity_count = island->m_entity_count;
 		long count = 0;
-		volatile bool removed = false;
+		bool removed = false;
 		long i;
 
 		for (i = 0; i < entity_count; i++)
@@ -831,8 +858,8 @@ void function_1c50c0(void)
 		}
 		if (count == entity_count)
 		{
-			g_51e9a4->removeSimulationIsland(island);
 			removed = true;
+			g_51e9a4->world_island_discard(island);
 		}
 		island_index += !removed;
 	}
@@ -841,17 +868,21 @@ void function_1c50c0(void)
 // @retail 0x1c2a10
 void function_1c2a10(void)
 {
-	s_type_f1af8e iterator;
+	struct
+	{
+		s_object *object;
+		s_type_f1af8e iterator;
+	} state;
 
-	function_bae80(&iterator, 0, 0);
-	while (function_baeb0(&iterator))
+	function_bae80(&state.iterator, 0, 0);
+	while ((state.object = function_baeb0(&state.iterator)) != NULL)
 	{
-		physics_object_get(iterator.object_index)->havok_component_index = NONE;
+		physics_object_get(state.iterator.object_index)->havok_component_index = NONE;
 	}
-	function_bae80(&iterator, 0, 0);
-	while (function_baeb0(&iterator))
+	function_bae80(&state.iterator, 0, 0);
+	while ((state.object = function_baeb0(&state.iterator)) != NULL)
 	{
-		long object_index = iterator.object_index;
+		long object_index = state.iterator.object_index;
 
 		if (physics_object_get(object_index)->havok_component_index == NONE)
 		{
@@ -917,7 +948,7 @@ struct s_tag_header_globals_physics_view
 /* an hkArray of simulation islands */
 struct s_simulation_island_array
 {
-	hkSimulationIsland **data;
+	c_havok_body_group **data;
 	long count;
 	dword capacity_and_flags;
 };
@@ -928,7 +959,7 @@ struct s_physics_world_view
 	s_simulation_island_array active_islands;
 	s_simulation_island_array inactive_islands;
 	byte unknown20[0x2c - 0x20];
-	hkSimulationIsland *fixed_island;
+	c_havok_body_group *fixed_island;
 };
 
 struct s_physics_object_detach_view
@@ -1015,100 +1046,110 @@ local_3:
 	return result;
 }
 
+struct s_1c4040
+{
+	byte field_0[3];
+	volatile bool field_3;
+	volatile long field_4;
+	long field_8;
+	s_simulation_island_array *field_c;
+	long field_10;
+};
+
 // @retail 0x1c4040
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index)
 {
+	s_1c4040 local_0;
 	s_physics_world_view *world = (s_physics_world_view *)g_51e9a4;
-	s_simulation_island_array *islands = active ? &world->active_islands : &world->inactive_islands;
-	volatile long best_priority = 0x80000000;
-	long best_object_index = NONE;
-	volatile bool result = false;
-	long island_index;
+	*(s_simulation_island_array *volatile *)&local_0.field_c = active ? &world->active_islands : &world->inactive_islands;
+	local_0.field_4 = 0x80000000;
+	local_0.field_8 = NONE;
+	local_0.field_3 = false;
 	long i;
 
 	if (!active)
 	{
-		hkSimulationIsland *island = world->fixed_island;
+		c_havok_body_group *island = world->fixed_island;
 
 		for (i = 0; i < island->m_entity_count; i++)
 		{
 			hkEntity *entity = island->m_entities[i];
 			long priority = ((s_physics_entity_view *)entity)->priority;
 
-			if (priority > best_priority)
+			if (priority > local_0.field_4)
 			{
 				long object_index = function_1c3f30(entity, attempt, any_object, even_if_unknown, excluded_component_index);
 
 				if (object_index != NONE)
 				{
-					best_priority = priority;
-					best_object_index = object_index;
+					local_0.field_4 = priority;
+					local_0.field_8 = object_index;
 				}
 			}
 		}
 	}
-	for (island_index = 0; island_index < islands->count; island_index++)
+	for (local_0.field_10 = 0; local_0.field_10 < local_0.field_c->count; local_0.field_10++)
 	{
-		hkSimulationIsland *island = islands->data[island_index];
+		c_havok_body_group *island = local_0.field_c->data[local_0.field_10];
 
 		for (i = 0; i < island->m_entity_count; i++)
 		{
 			hkEntity *entity = island->m_entities[i];
 			long priority = ((s_physics_entity_view *)entity)->priority;
 
-			if (priority > best_priority)
+			if (priority > local_0.field_4)
 			{
 				long object_index = function_1c3f30(entity, attempt, any_object, even_if_unknown, excluded_component_index);
 
 				if (object_index != NONE)
 				{
-					best_priority = priority;
-					best_object_index = object_index;
+					local_0.field_4 = priority;
+					local_0.field_8 = object_index;
 				}
 			}
 		}
 	}
-	if (best_object_index != NONE)
+	if (local_0.field_8 != NONE)
 	{
 		s_physics_effect_globals *effect = ((s_tag_header_globals_physics_view *)g_4e034c)->effect;
 		s_physics_object *object;
 		bool unknown;
 
-		if (g_4e6948->mode == 4 && ((s_physics_object_detach_view *)physics_object_get(best_object_index))->unknownd4 != NONE)
+		if (g_4e6948->mode == 4 && ((s_physics_object_detach_view *)physics_object_get(local_0.field_8))->unknownd4 != NONE)
 		{
-			physics_object_get(best_object_index)->flags |= 0x20;
-			function_1c3770(best_object_index, 0);
-			result = true;
+			physics_object_get(local_0.field_8)->flags |= 0x20;
+			function_1c3770(local_0.field_8, 0);
+			local_0.field_3 = true;
 			goto local_0;
 		}
-		object = physics_object_get(best_object_index);
+		object = physics_object_get(local_0.field_8);
 		if (effect->effect_index != NONE)
 		{
 			function_1765e0(&((s_physics_object_detach_view *)object)->position, &((s_physics_object_detach_view *)object)->velocity,
 				g_4687b0, effect->effect_index, 0, true);
 		}
-		object = physics_object_get(best_object_index);
+		object = physics_object_get(local_0.field_8);
 		if (object->havok_component_index != NONE)
 		{
 			function_1d1260((s_havok_component *)havok_component_flags_get(object->havok_component_index));
 		}
 		object->bit6 = false;
-		unknown = TEST_FIELD_BIT(physics_object_get(best_object_index)->bit6);
+		unknown = TEST_FIELD_BIT(physics_object_get(local_0.field_8)->bit6);
 		if (unknown)
 		{
 			function_146bf0();
 		}
-		havok_object_detach(best_object_index);
+		havok_object_detach(local_0.field_8);
 		if (unknown)
 		{
 			function_278f00();
 			function_146bf0();
 		}
-		function_b8540(best_object_index);
-		result = true;
+		function_b8540(local_0.field_8);
+		local_0.field_3 = true;
 	}
 local_0:
-	return result;
+	return local_0.field_3;
 }
 
 
@@ -1140,33 +1181,45 @@ PRIVATE __forceinline void function_1c4262(long arg_0)
  }
 }
 
+/* the rigid body owning a collidable (0x1c4260): the owner sits 0x10 bytes
+   before the collidable, and retail reads the type through the owner */
+PRIVATE __forceinline hkRigidBody *collidable_rigid_body_1c4260(byte *arg_0)
+{
+ byte *local_1 = arg_0 - 0x10;
+ long local_0 = *(long *)(local_1 + 0x18);
+ return local_0 == 1 ? *(hkRigidBody **)(local_1 + 0x20) : NULL;
+}
+
 // @retail 0x1c4260
 void function_1c4260()
 {
- if (g_51e9a4 && !g_47f05b)
+ /* read through a const pointer, as retail keeps the flag store ahead of the
+    island count load */
+ if (g_51e9a4 && !*(bool const *)&g_47f05b)
  {
   g_47f05b = true;
   for (long local_0 = 0; local_0 < g_51e9a4->m_island_count; ++local_0)
   {
-   hkSimulationIsland *local_1 = g_51e9a4->m_islands[local_0];
+   c_havok_body_group *local_1 = g_51e9a4->m_islands[local_0];
    long local_2 = ((s_1c4261 *)local_1)->field_6c;
    if (local_2 > 24)
    {
     for (long local_3 = 0; local_3 < ((s_1c4261 *)local_1)->field_6c; ++local_3)
     {
      s_1c4260 *local_4 = &((s_1c4261 *)local_1)->field_68[local_3];
-     hkRigidBody *local_5 = function_1c4261(local_4->field_0);
-     hkRigidBody *local_6 = function_1c4261(local_4->field_4);
-     if (local_5->m_motion->getType() == 7 || local_5->m_motion->getType() == 6 ||
-         local_6->m_motion->getType() == 7 || local_6->m_motion->getType() == 6)
+     hkRigidBody *local_5 = collidable_rigid_body_1c4260(local_4->field_0);
+     hkRigidBody *local_6 = collidable_rigid_body_1c4260(local_4->field_4);
+     if (local_5->m_motion->kind_code() == 7 || local_5->m_motion->kind_code() == 6 ||
+         local_6->m_motion->kind_code() == 7 || local_6->m_motion->kind_code() == 6)
       --local_2;
     }
     if (local_2 > 24)
     {
-     long local_7 = NONE;
-     for (long local_8 = 0; local_8 < 3 && local_7 == NONE; ++local_8)
+     long local_7;
+     for (long local_8 = 0; local_8 < 3; ++local_8)
      {
       long local_9 = 0x80000000;
+      local_7 = NONE;
       for (long local_10 = 0; local_10 < local_1->m_entity_count; ++local_10)
       {
        hkEntity *local_11 = local_1->m_entities[local_10];
@@ -1181,6 +1234,8 @@ void function_1c4260()
         }
        }
       }
+      if (local_7 != NONE)
+       break;
      }
      if (local_7 != NONE)
      {
@@ -1318,6 +1373,9 @@ public:
   c_contact_shape_container *container, long key);
 };
 
+// score 24 (was 24): retail keeps the contact shape in EAX where the two
+// branches meet and copies it into ESI there, ours keeps it in ESI; retail
+// also computes the metadata flag in CL, ours in EAX.
 // @retail 0x1c32d0
 hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
  c_contact_shape_container *container, long key)
@@ -1336,16 +1394,16 @@ hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view con
   if (shape->type() != 0x18 && function_182180((hkShape *)shape))
   {
    long metadata = shape->metadata;
-   if (metadata && contact_metadata_pin(metadata, 1, 16) != metadata)
+   if (metadata && contact_metadata_pin(shape->metadata, 1, 16) != metadata)
    {
-    byte flag = *(byte *)(metadata + 0x1f) & 1;
+    dword flag = *(byte *)(metadata + 0x1f) & 1;
     volatile byte saved_flag = flag;
     if (flag)
     {
      root = a;
      while (root->parent)
       root = root->parent;
-     if (root->type == 1 && root->entity && ((hkRigidBody *)root->entity)->m_motion->getType() == 7)
+     if (root->type == 1 && root->entity && ((hkRigidBody *)root->entity)->m_motion->kind_code() == 7)
      {
       hkBool result;
       result.m_bool = 0;
@@ -1393,18 +1451,9 @@ PRIVATE inline void contact_motion_vector(vector3f *out, hkVector4 const *value)
 bool __stdcall function_1c4c50(long object_index, long node_index, point3f const *point,
  vector3f const *change_a, vector3f const *change_b, long *result_object, vector3f *linear, vector3f *angular)
 {
- // Retail keeps all eight inputs on the stack.
- (void)&object_index;
- (void)&node_index;
- (void)&point;
- (void)&change_a;
- (void)&change_b;
- (void)&result_object;
- (void)&linear;
- (void)&angular;
  s_velocity_object_header *headers = (s_velocity_object_header *)g_4e0300->data;
  s_havok_object *object = headers[object_index & 0xffff].object;
- volatile bool result = false;
+ bool result = false;
  if (object->havok_component_index != NONE)
  {
   long root_index = function_baf80(object_index);
@@ -1453,25 +1502,23 @@ bool __stdcall function_1c4c50(long object_index, long node_index, point3f const
      goto selected;
     }
    }
-   count = component->rigid_bodies.size;
-   for (long i = 0; i < count; ++i)
+   long local_1;
+   local_1 = component->rigid_bodies.size;
+   for (long i = 0; i < local_1; ++i)
     indices[i] = i;
+   count = local_1;
 selected:
-   for (long i = 0; i < count; ++i)
+   volatile long local_0 = 0;
+   for (long i = 0; i < count;)
    {
     long index = indices[i];
     hkRigidBody *body = havok_component_rigid_body_get(index, component);
-    if (!body->m_fixed && body->m_motion->getType() != 6)
+    if (!body->m_fixed && body->m_motion->kind_code() != 6)
     {
-     if (point)
+     if (point && change_a && !TEST_FIELD_BIT(component->flag1))
      {
-      if (change_a)
-      {
-       if (!TEST_FIELD_BIT(component->flag1))
-        havok_component_rigid_body_point_impulse_apply(index, component, point, &a);
-       else
-        havok_component_rigid_body_linear_velocity_change(index, component, &a);
-      }
+      havok_component_rigid_body_point_impulse_apply(index, component, point, &a);
+      i = local_0;
      }
      else if (change_a)
       havok_component_rigid_body_linear_velocity_change(index, component, &a);
@@ -1493,6 +1540,8 @@ selected:
       result = true;
      }
     }
+    ++i;
+    local_0 = i;
    }
   }
  }
@@ -1551,7 +1600,7 @@ struct c_contact_query_bounds_info
     byte unknown18[8];
     hkVector4 lower, upper;
     c_contact_query_bounds_info();
-    ~c_contact_query_bounds_info()
+    __forceinline ~c_contact_query_bounds_info()
     {
         if (!(properties.capacity_and_flags & 0x80000000))
             g_480118->allocate((long)properties.data, (properties.capacity_and_flags & 0x7fffffff) * 8, 0x12);
@@ -1589,7 +1638,8 @@ class c_contact_query_transform_volume
 {
 public:
     c_contact_query_transform_volume(c_contact_query_transform_info const *info);
-    byte unknown00[0xd0];
+    virtual ~c_contact_query_transform_volume();
+    byte unknown04[0xd0 - 4];
     static void *operator new(size_t size) { return contact_query_allocate(size); }
 };
 
@@ -1614,7 +1664,7 @@ public:
 class c_contact_query_world
 {
 public:
-    void add(void *volume);
+    void *add(void *volume);
     void remove(void *volume);
 };
 
@@ -1637,9 +1687,9 @@ void function_1c5710(long object_index)
 {
     c_contact_query_bounds_info info;
     s_contact_query_object *object = (s_contact_query_object *)havok_object_get(object_index);
-    real radius = g_47f05c * 2.0f + object->radius;
     point3f center;
     contact_query_center(object, &center);
+    real radius = g_47f05c * 2.0f + object->radius;
     info.lower.set(center.x - radius, center.y - radius, center.z - radius);
     info.upper.set(center.x + radius, center.y + radius, center.z + radius);
     c_contact_query_bounds_volume *volume = new c_contact_query_bounds_volume(&info);
@@ -1661,16 +1711,15 @@ bool function_1c5210(transform4x3f const *matrix, void *shape, long excluded_com
     (void)&excluded_component;
     (void)&filter;
     c_contact_query_transform_info info;
+    c_contact_exclusion callback;
+    callback.found_other = false;
+    callback.excluded_component = excluded_component;
+    info.shape = shape;
     info.transform.m_rotation.m_col0.set(matrix->forward.i, matrix->forward.j, matrix->forward.k);
     info.transform.m_rotation.m_col1.set(matrix->left.i, matrix->left.j, matrix->left.k);
     info.transform.m_rotation.m_col2.set(matrix->up.i, matrix->up.j, matrix->up.k);
     hkVector4 position;
     position.set(matrix->position.x, matrix->position.y, matrix->position.z);
-    info.shape = shape;
-    c_contact_exclusion callback;
-    callback.found = false;
-    callback.found_other = false;
-    callback.excluded_component = excluded_component;
     info.filter = filter;
     info.transform.m_translation = position;
     c_contact_query_transform_volume *volume = new c_contact_query_transform_volume(&info);
@@ -1687,9 +1736,9 @@ bool function_1c5210(transform4x3f const *matrix, void *shape, long excluded_com
     return result;
 }
 
-class hkMemory;
-extern hkMemory *g_479894;
-extern hkMemory *g_479898;
+class c_havok_abstract_allocator;
+extern c_havok_abstract_allocator *g_479894;
+extern c_havok_abstract_allocator *g_479898;
 extern c_havok_fixed_memory *g_4798a0;
 short g_51ecb0;
 
@@ -1736,11 +1785,11 @@ public:
 bool function_2797a0(s_2797a0_iterator *iterator);
 void fixed_memory_get_statistics(c_havok_fixed_memory *memory, s_fixed_memory_statistics *statistics);
 void fixed_memory_get_statistics_16(c_havok_fixed_memory *memory, s_fixed_memory_statistics_16 *statistics);
-void function_22c390(hkMemory *memory, s_fixed_memory_statistics_16 *statistics);
-void function_22cb00(hkMemory *memory, s_physics_pool_statistics *statistics);
-long function_1d3880(s_havok_component const *component, long *constraints, long *contacts, long *other, long *bodies);
+void function_22c390(c_havok_abstract_allocator *memory, s_fixed_memory_statistics_16 *statistics);
+void function_22cb00(c_havok_abstract_allocator *memory, s_physics_pool_statistics *statistics);
+long function_1d3880(s_havok_component const *component, long *constraints, long *bodies, long *contacts, long *other);
 
-// @retail 0x1c4590
+// @retail 0x1c4590 standard
 void __stdcall function_1c4590(long flags)
 {
     byte *world = (byte *)g_51e9a4;
@@ -1792,17 +1841,14 @@ void __stdcall function_1c4590(long flags)
     }
     long contacts_total = 0, bodies_total = 0, constraints_total = 0, other_total = 0;
     long contacts_maximum = 0, bodies_maximum = 0, constraints_maximum = 0, other_maximum = 0;
-    long index = NONE;
-    for (;;)
+    s_record_pool_iterator iterator2;
+    iterator2.data = g_51e9b8;
+    iterator2.index = NONE;
+    s_havok_component *component;
+    while ((component = (s_havok_component *)data_iterator_next_inlined(&iterator2)) != NULL)
     {
-        index = data_next_absolute_index_inlined(g_51e9b8, index + 1);
-        if (index == NONE)
-            break;
-        s_havok_component *component = (s_havok_component *)(g_51e9b8->data + g_51e9b8->size * index);
-        if (!component)
-            break;
         long contacts, constraints, other, bodies;
-        function_1d3880(component, &contacts, &constraints, &other, &bodies);
+        function_1d3880(component, &contacts, &bodies, &constraints, &other);
         contacts_total += contacts;
         bodies_total += bodies;
         constraints_total += constraints;

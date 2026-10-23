@@ -53,7 +53,7 @@ struct s_loop_allocator
 	bool debug_headers;
 };
 
-s_loop_allocator *function_18e1f0(c_memory_source *source, long size, const char *name);
+s_loop_allocator *function_18e1f0(long size, c_memory_source *source, const char *name);
 void function_18e250(s_loop_allocator *loop, long size, const char *name, c_memory_source *source);
 void function_18e230(s_loop_allocator *loop);
 bool function_18eea0(long stage);
@@ -64,22 +64,38 @@ bool function_18eea0(long stage);
 /* the list's item widgets (screen_widgets.h) */
 typedef c_class_14750b c_unknown_249fa3_entry;
 
-class c_unknown_249fa3_base : public c_list_widget_26
+class c_list_24a64d : public c_list_widget_with_items
 {
 public:
-	virtual ~c_unknown_249fa3_base();
-	byte field88;
-	byte field89;
-	bool field8a;
+	c_list_24a64d(word arg_0);
+	virtual void v20(c_class_1a2c81 *item, long);
+	virtual void *function_24a64d(long index);
+	virtual void v24();
+	virtual word const *function_24a691(long index, bool append);
+	bool function_24a2e7(long controller);
+	void function_24a30e(s_controller_reference **arg_0, long *arg_1);
+	union { byte field_88; byte field88; };
+	union { bool field_89; byte field89; };
+	union { bool field_8a; bool field8a; };
 	byte unknown8b;
-	long field8c;
-	c_list_item_handler handler;
+	union { long field_8c; long field8c; };
+	c_list_item_handler field_90;
+};
+
+typedef c_list_24a64d c_unknown_249fa3_base;
+
+struct s_profile_list_entry
+{
+	s_profile_list_entry();
+	long profile_index;
+	s_player_profile_settings settings;
+	byte unknown1e4[0x248 - 0x1e4];
 };
 
 class c_unknown_249fa3 : public c_unknown_249fa3_base
 {
 public:
-	virtual ~c_unknown_249fa3();
+	c_unknown_249fa3(word user_flags);
 	virtual void v1();
 	virtual void v2();
 	virtual void v3();
@@ -87,7 +103,18 @@ public:
 	virtual void *get_items(long *count);
 
 	c_unknown_249fa3_entry entries[4];
-	byte profiles[4][0x248];
+	s_profile_list_entry profiles[4];
+};
+
+class c_profile_mode_screen : public c_screen_with_menu
+{
+public:
+	c_profile_mode_screen(long a, long b, word user_flags);
+	virtual void v17();
+	virtual screen_load_proc get_load_proc();
+	c_unknown_249fa3 menu;
+	/* choosing a profile also signs it in online */
+	bool sign_in_online;
 };
 
 #endif

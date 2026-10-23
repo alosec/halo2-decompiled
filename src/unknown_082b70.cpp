@@ -1,10 +1,12 @@
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_082B70.CPP: object queries of the simulation's entity code
    (lane D) */
 
 #include "unknown_11c920.h"
 #include "globals.h"
 #include <string.h>
+
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
 /* the object fields read here */
 struct s_082b70_object
@@ -47,10 +49,10 @@ long function_cbd50(long unit_index, short weapon_index);
 // @retail 0x82b70
 void function_82b70(long object_index, long *weapons)
 {
-	if (object_index != NONE)
+	long index = object_index;
+	if (index != NONE)
 	{
 		long root;
-		long index = object_index;
 		do
 		{
 			root = index;
@@ -78,6 +80,8 @@ static __forceinline long object_query_weapon(long unit_index, short slot)
 	return result;
 }
 
+// score 65 (was 65): the value at [edx+0x10] is compared in a different register: retail
+// loads it into edx and keeps eax for the index, ours loads it into eax.
 // @retail 0x82c10
 void __stdcall function_82c10(long object_index, long *weapons)
 {
@@ -123,19 +127,30 @@ struct s_player_object_motion
 	vector3f angular;
 };
 
+/* a player (0x21c bytes, the g_4e8c24 data) */
+struct s_082b70_player
+{
+	byte unknown000[0x2c];
+	long unit_index;
+	byte unknown030[0x21c - 0x30];
+};
+
+// score 48 (was 48): retail reads another global for the record pointer and keeps it in edx,
+// ours reads a different global and keeps the pointer in eax.
 // @retail 0x828b0
 bool function_828b0(long player_index, s_player_object_motion *result)
 {
+	s_082b70_player *player = (s_082b70_player *)g_4e8c24->data + (player_index & 0xffff);
 	bool valid = false;
-	long unit_index = *(long *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x2c);
-	if (unit_index != NONE)
+	if (player->unit_index != NONE)
 	{
+		long unit_index = player->unit_index;
 		long parent = object_get_082b70(unit_index)->parent;
 		if (parent != NONE)
 		{
 			s_082b70_object *object = object_get_082b70(parent);
 			if (!((1 << object->type) & 3) || object->occupant != unit_index)
-				return false;
+				goto local_0;
 			unit_index = parent;
 		}
 		if (unit_index != NONE)
@@ -148,11 +163,12 @@ bool function_828b0(long player_index, s_player_object_motion *result)
 				function_b9dd0(unit_index, &result->position);
 				function_b9fc0(unit_index, &result->forward, &result->up);
 				function_ba1d0(unit_index, &result->linear, &result->angular);
-				return true;
+				valid = true;
 			}
 		}
-		return false;
+		goto local_0;
 	}
+local_0:
 	return valid;
 }
 
@@ -230,7 +246,7 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
    {
     s_weapon_trigger_view *trigger = &definition->triggers[trigger_index];
     long barrel = trigger->barrel;
-    if (barrel >= 0 && barrel < definition->barrel_count)
+    if (definition->barrel_count > 0 && PIN(barrel, 0, definition->barrel_count - 1) == barrel)
     {
      byte *state = (byte *)object_get_082b70(weapon_index) + 0x1a4 + barrel * 0x34;
      word flags = *(word *)(state + 4);
@@ -265,20 +281,24 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
 
 bool motion_sensor_object_moving(long object_index);
 
+// score 57 (was 57): the prologue differs: retail pushes ebp and reads the second argument
+// into ebp, ours copies it into ebx and pushes ebp and edi later.
 // @retail 0x823d0
 void function_823d0(s_weapon_activity_result *output, const byte *input, long object_index)
 {
+ /* retail keeps object_index on the stack (ret 8) */
+ long const *object_index_reference = &object_index;
  byte *result = (byte *)output;
  memset(output, 0, 0x34);
  *(long *)(result + 0) = *(const long *)(input + 4);
  *(long *)(result + 4) = *(const long *)(input + 8);
  *(long *)(result + 8) = *(const long *)(input + 0xc);
  *(long *)(result + 0xc) = *(const long *)(input + 0x10);
- if (*(const dword *)input & 1) result[0x10] |= 1; else result[0x10] &= ~1;
- if (*(const dword *)input & 2) result[0x10] |= 2; else result[0x10] &= ~2;
- if (*(const dword *)input & 0x800) result[0x10] |= 4; else result[0x10] &= ~4;
- if (*(const dword *)input & 0x4000) result[0x10] |= 8; else result[0x10] &= ~8;
- if (object_index != NONE)
+ if (*(const dword *)input & 1) *(word *)(result + 0x10) |= 1; else result[0x10] &= ~1;
+ if (*(const dword *)input & 2) *(word *)(result + 0x10) |= 2; else result[0x10] &= ~2;
+ if (*(const dword *)input & 0x800) *(word *)(result + 0x10) |= 4; else result[0x10] &= ~4;
+ if (*(const dword *)input & 0x4000) *(word *)(result + 0x10) |= 8; else result[0x10] &= ~8;
+ if (*object_index_reference != NONE)
  {
   byte *object = (byte *)object_get_082b70(object_index);
   *(long *)(result + 0x12) = *(long *)(object + 0x210);
@@ -303,62 +323,13 @@ void function_823d0(s_weapon_activity_result *output, const byte *input, long ob
 
 #include <math.h>
 
-// @retail 0x824d0
-void function_824d0(const byte *input, s_weapon_activity_result *output, long object_index)
-{
- byte *object = (byte *)object_get_082b70(object_index);
- byte *result = (byte *)output;
- memset(output, 0, 0x34);
- real x = *(const real *)(input + 0x34);
- real y = *(const real *)(input + 0x38);
- real z = *(const real *)(input + 0x3c);
- *(real *)result = (real)atan2(y, x);
- *(real *)(result + 4) = (real)atan2(z, sqrt(x * x + y * y));
- if (*(real *)result < 0.0f)
-  *(real *)result += 6.2831855f;
- *(long *)(result + 8) = *(const long *)(input + 0x14);
- *(long *)(result + 0xc) = *(const long *)(input + 0x18);
- if (*(const dword *)(input + 0x10) & 1) *(word *)(result + 0x10) |= 1; else result[0x10] &= ~1;
- if (*(const dword *)(input + 0x10) & 2) *(word *)(result + 0x10) |= 2; else result[0x10] &= ~2;
- if (*(const dword *)(input + 0x10) & 0x800) result[0x10] |= 4; else result[0x10] &= ~4;
- if (*(const dword *)(input + 0x10) & 0x4000) result[0x10] |= 8; else result[0x10] &= ~8;
- *(long *)(result + 0x12) = *(long *)(object + 0x210);
- if (*(const short *)(input + 6) == *(short *)(result + 0x12))
-  *(long *)(result + 0x12) = *(const long *)(input + 6);
- *(short *)(result + 0x16) = *(const short *)(input + 0xc);
- function_82d20(object_index, (s_object_relevance_source *)(input + 0x58), output);
-}
+void function_824d0(const byte *input, s_weapon_activity_result *output, long object_index);
 
 struct s_player_action;
 void player_action_initialize(s_player_action *action);
 void function_82b30(const s_object_relevance_result *source, s_object_relevance_source *result);
 
-// @retail 0x825e0
-void function_825e0(const s_weapon_activity_result *input, s_player_action *action)
-{
- const byte *source = (const byte *)input;
- byte *result = (byte *)action;
- void (*initialize)(s_player_action *) = player_action_initialize;
- initialize(action);
- *(long *)(result + 4) = *(const long *)source;
- *(long *)(result + 8) = *(const long *)(source + 4);
- *(long *)(result + 0xc) = *(const long *)(source + 8);
- *(long *)(result + 0x10) = *(const long *)(source + 0xc);
- if (source[0x10] & 1) *(dword *)result |= 1; else *(dword *)result &= ~1;
- if (source[0x10] & 2) *(dword *)result |= 2; else *(dword *)result &= ~2;
- if (source[0x10] & 4) *(dword *)result |= 0x800; else *(dword *)result &= ~0x800;
- if (source[0x10] & 8) *(dword *)result |= 0x4000; else *(dword *)result &= ~0x4000;
- *(long *)(result + 0x1e) = *(const long *)(source + 0x12);
- *(word *)(result + 0x24) = *(const word *)(source + 0x16);
- if (source[0x18]) *(dword *)result |= 0x40000; else *(dword *)result &= ~0x40000;
- if (source[0x19]) *(dword *)result |= 0x80000; else *(dword *)result &= ~0x80000;
- if (source[0x1a]) *(dword *)result |= 0x800000; else *(dword *)result &= ~0x800000;
- if (source[0x1b]) *(dword *)result |= 0x1000000; else *(dword *)result &= ~0x1000000;
- function_82b30((const s_object_relevance_result *)(source + 0x20), (s_object_relevance_source *)(result + 0x34));
- if (source[0x30]) *(dword *)result |= 0x40000000; else *(dword *)result &= ~0x40000000;
- if (source[0x31]) *(dword *)result |= 0x80000000; else *(dword *)result &= ~0x80000000;
- result[0x58] = source[0x32];
-}
+
 
 
 struct s_unit_state_c6ef0;
@@ -376,8 +347,8 @@ void function_82740(const s_weapon_activity_result *input, s_unit_state_c6ef0 *s
  direction->i = pitch_cos * (real)cos(*(const real *)source);
  direction->j = pitch_cos * (real)sin(*(const real *)source);
  direction->k = (real)sin(*(const real *)(source + 4));
- *(vector3f *)(result + 0x28) = *direction;
- *(vector3f *)(result + 0x40) = *direction;
+ *(vector3f *)(result + 0x28) = *(vector3f *)(result + 0x34);
+ *(vector3f *)(result + 0x40) = *(vector3f *)(result + 0x34);
  *(long *)(result + 0x14) = *(const long *)(source + 8);
  *(long *)(result + 0x18) = *(const long *)(source + 0xc);
  *(real *)(result + 0x1c) = 0.0f;
@@ -409,12 +380,12 @@ void function_82740(const s_weapon_activity_result *input, s_unit_state_c6ef0 *s
 }
 
 
-void __stdcall function_a9f70(long object_index, long mode, const point3f *position);
-void __fastcall function_aa260(const vector3f *linear, long object_index, long mode,
+long __stdcall function_a9f70(long object_index, long mode, const point3f *position);
+void function_aa260(long selection, long object_index, const vector3f *linear, long mode,
  const point3f *position, const vector3f *forward, const vector3f *up, const vector3f *angular);
 
 // @retail 0x82980
-void function_82980(s_player_object_motion *motion, long player_index)
+void function_82980(long player_index, s_player_object_motion *motion)
 {
  long object_index = function_a58d0(motion->object_index);
  if (object_index != NONE)
@@ -426,13 +397,12 @@ void function_82980(s_player_object_motion *motion, long player_index)
     (object->occupant != NONE && object_get_082b70(object->occupant)->controller == player_index)) &&
     object->parent == NONE)
    {
-    const vector3f *up = &motion->up;
-    const vector3f *forward = &motion->forward;
+    const vector3f *local_0[2] = { &motion->up, &motion->forward };
     const vector3f *angular = &motion->angular;
     const vector3f *linear = &motion->linear;
     const point3f *position = &motion->position;
-    function_a9f70(object_index, 2, position);
-    function_aa260(linear, object_index, 2, position, forward, up, angular);
+    long selection = function_a9f70(object_index, 2, position);
+    function_aa260(selection, object_index, linear, 2, position, *(const vector3f *volatile *)&local_0[1], *(const vector3f *volatile *)&local_0[0], angular);
    }
   }
  }

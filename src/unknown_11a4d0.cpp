@@ -71,10 +71,10 @@ struct s_unit_11a4d0
 	short offset33e;
 	byte unknown340[0x346 - 0x340];
 	short offset346;
-	struct
+	struct s_flags348_11a4d0
 	{
-		byte bit0 : 1;
-		byte : 7;
+		word bit0 : 1;
+		word : 15;
 	} flags348;
 };
 
@@ -136,7 +136,7 @@ inline void object_set_maximum_vitality(long object_index, real maximum_body_vit
 void function_11a220(long list_index, real maximum_body_vitality, real maximum_shield_vitality)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		object_set_maximum_vitality(object_index, maximum_body_vitality, maximum_shield_vitality);
@@ -200,27 +200,28 @@ void function_11a430(long list_index, real body_vitality, real shield_vitality)
 }
 
 /* whether the unit holds a weapon of the given definition */
+// score 45 (was 45): retail loads the global once into esi and keeps it there, ours loads it into edx and
+// re-reads the array base; ours ends with an extra xor al,al and four int3s.
 // @retail 0x11a4d0
 bool function_11a4d0(long unit_index, long definition_index)
 {
+	if (unit_index == NONE || definition_index == NONE)
+		return false;
 	bool result = false;
-	if (unit_index != NONE && definition_index != NONE)
+	s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
+	short weapon_index = unit->weapon_index_a;
+	if (weapon_index != NONE)
 	{
-		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
-		short weapon_index = unit->weapon_index_a;
-		if (weapon_index != NONE)
-		{
-			long weapon_object_index = unit->weapon_object_indices[weapon_index];
-			if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
-				result = true;
-		}
-		weapon_index = unit->weapon_index_b;
-		if (weapon_index != NONE)
-		{
-			long weapon_object_index = unit->weapon_object_indices[weapon_index];
-			if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
-				result = true;
-		}
+		long weapon_object_index = unit->weapon_object_indices[weapon_index];
+		if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
+			result = true;
+	}
+	weapon_index = unit->weapon_index_b;
+	if (weapon_index != NONE)
+	{
+		long weapon_object_index = unit->weapon_object_indices[weapon_index];
+		if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
+			result = true;
 	}
 	return result;
 }
@@ -230,7 +231,7 @@ bool function_11a4d0(long unit_index, long definition_index)
 void function_11a570(long list_index, bool flag)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		s_unit_11a4d0 *unit = (s_unit_11a4d0 *)function_badc0(object_index, 3);
@@ -250,7 +251,7 @@ void function_11a570(long list_index, bool flag)
 void function_11a680(long list_index)
 {
 	long reference_index;
-	long object_index = function_1dee50(list_index, &reference_index);
+	long object_index = script_list_head_object(list_index, &reference_index);
 	while (object_index != NONE)
 	{
 		s_unit_11a4d0 *unit = (s_unit_11a4d0 *)function_badc0(object_index, 3);
@@ -269,7 +270,10 @@ void function_11a770(long unit_index, bool flag)
 		SET_FLAG(unit->unit_flags, 20, flag);
 		unit->vector88 = *g_4687a4;
 		if (unit->object_type == 0)
-			unit_get_11a4d0(unit_index)->flags348.bit0 = false;
+		{
+			s_unit_11a4d0::s_flags348_11a4d0 *flags = &unit_get_11a4d0(unit_index)->flags348;
+			flags->bit0 = false;
+		}
 	}
 }
 
@@ -457,7 +461,7 @@ bool function_11ac30(long vehicle_index, long label, long list_index)
 					if (iterator.unit->parent_index == object_index && iterator.unit->parent_seat_index == seat_index)
 					{
 						long reference_index;
-						long list_object_index = function_1dee50(list_index, &reference_index);
+						long list_object_index = script_list_head_object(list_index, &reference_index);
 						while (list_object_index != NONE && iterator.iterator.object_index != list_object_index)
 							list_object_index = function_x457076(&reference_index);
 						if (iterator.iterator.object_index == list_object_index)
@@ -512,10 +516,10 @@ void function_11af10(long unit_index, long label)
 {
 	if (label)
 	{
-		long parent_index = unit_get_11a4d0(unit_index)->parent_index;
-		if (parent_index != NONE)
+		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
+		if (unit->parent_index != NONE)
 		{
-			s_unit_11a4d0 *parent = unit_get_11a4d0(parent_index);
+			s_unit_11a4d0 *parent = unit_get_11a4d0(unit->parent_index);
 			if (parent->object_type == 1)
 			{
 				s_unit_definition_11a4d0 *definition = unit_definition_get_11a4d0(parent);
@@ -570,8 +574,10 @@ void function_11af90(long unit_index, short mode)
 
 /* puts the units of an object list into the free seats (passing a filter) of
    the vehicle; returns how many got in */
+// score 2 (was 2): the two copies are made in the opposite order: retail copies esi into eax first and ebx
+// into ecx, ours does it the other way round.
 // @retail 0x11b0c0
-short function_11b0c0(long vehicle_index, long filter_range, long list_index)
+short function_11b0c0(long vehicle_index, long filter_range, long volatile list_index)
 {
 	long result = 0;
 	if (vehicle_index != NONE && !TEST_FIELD_BIT(unit_get_11a4d0(vehicle_index)->flag10a_2))
@@ -581,7 +587,9 @@ short function_11b0c0(long vehicle_index, long filter_range, long list_index)
 		if (seat_count > 0)
 		{
 			long reference_index;
-			long object_index = function_1dee50(list_index, &reference_index);
+#pragma inline_depth(0)
+			long object_index = script_list_head_object(list_index, &reference_index);
+#pragma inline_depth()
 			while (object_index != NONE)
 			{
 				s_unit_11a4d0 *unit = unit_get_11a4d0(object_index);
@@ -602,8 +610,8 @@ short function_11b0c0(long vehicle_index, long filter_range, long list_index)
 							request.type1c.unknownb = false;
 							if (function_e6900(object_index, &request))
 							{
-								result++;
 								seat->object_index = NONE;
+								result++;
 								break;
 							}
 						}
@@ -750,7 +758,7 @@ void function_ba3d0(long unit_index);
 /* plays a scripted animation (by graph and name) on a unit, optionally
    relative to another object */
 // @retail 0x11b520
-bool function_11b520(long animation_graph_index, long unit_index, long animation_name, bool interpolate,
+bool function_11b520(long unit_index, long animation_graph_index, long animation_name, bool interpolate,
 	long attached_object_index, bool flag)
 {
 	bool result = false;
@@ -758,15 +766,19 @@ bool function_11b520(long animation_graph_index, long unit_index, long animation
 	if (unit_index != NONE && animation_graph_index != NONE)
 	{
 		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
-		if (function_1101e0(animation_graph_index, unit_index, animation_name, flag,
-			((s_object_globals_11a4d0 *)g_4de2f4)->flag80))
+		bool global_flag = ((s_object_globals_11a4d0 *)g_4de2f4)->flag80;
+		if (function_1101e0(animation_graph_index, unit_index, animation_name, flag, global_flag))
 		{
-			s_unit_flags_11a4d0 *flags = (s_unit_flags_11a4d0 *)unit_get_11a4d0(unit_index);
+			struct s_flags_view
+			{
+				byte unknown000[4];
+				dword flags;
+			} *flags = (s_flags_view *)unit_get_11a4d0(unit_index);
 			s_unit_scripted_animation_11a4d0 *animation =
 				(s_unit_scripted_animation_11a4d0 *)((byte *)unit + unit->offset33e);
-			if (!TEST_FIELD_BIT(flags->flag1))
+			if (!(bool)((*(dword volatile *)&flags->flags >> 1) & 1))
 			{
-				flags->flag1 = true;
+				flags->flags |= 2;
 				function_b7360(unit_index);
 				function_b7290(unit_index);
 			}
@@ -774,10 +786,32 @@ bool function_11b520(long animation_graph_index, long unit_index, long animation
 				function_ba350(unit_index, 0.267f);
 			else
 				function_ba3d0(unit_index);
-			animation->flags |= 0x11;
+			*(word *)&animation->flags |= 0x11;
 			animation->attached_object_index = attached_object_index;
 			if (attached_object_index != NONE)
-				object_reset_default_placement(unit_index, (s_object_default_placement_view *)unit, true);
+			{
+				function_b9a50(unit_index);
+				/* the flags word at +0xc0: a word bitfield, which retail tests
+				   with a byte load and shift */
+				struct s_c0_view
+				{
+					byte unknown000[0xc0];
+					word pad0 : 6;
+					word flag_c0_6 : 1;
+					word pad1 : 9;
+				};
+				if (TEST_FIELD_BIT(((s_c0_view *)unit)->flag_c0_6))
+					function_b8840(unit_index);
+				function_b75a0(unit_index, g_468788, g_4687a8, g_4687b0, NULL, false);
+				function_b77d0(unit_index, g_4687a4, g_4687a4);
+				function_b7360(unit_index);
+
+				s_object_default_placement_view *placed = object_default_placement_get(unit_index);
+				placed->hidden = false;
+				if (!TEST_FIELD_BIT(placed->flag8) && g_4de2f4 && *(byte *)g_4de2f4)
+					function_b8600(unit_index, 0);
+				function_b7290(unit_index);
+			}
 			function_b9b90(unit_index, true);
 			function_bd020(unit_index);
 			result = true;
@@ -798,7 +832,7 @@ bool function_11a9a0(long list_index, long animation_graph_index, long animation
 	while (object_index != NONE)
 	{
 		if (function_badc0(object_index, 3))
-			result = result && function_11b520(animation_graph_index, object_index, animation_name, interpolate, NONE, false);
+			result = result && function_11b520(object_index, animation_graph_index, animation_name, interpolate, NONE, false);
 		object_index = function_x457076(&reference_index);
 	}
 
@@ -811,12 +845,13 @@ bool function_11b4a0(long unit_index, long animation_graph_index, long animation
 {
 	bool result = false;
 
-	if (function_11b520(animation_graph_index, unit_index, animation_name, interpolate, NONE, false))
+	if (function_11b520(unit_index, animation_graph_index, animation_name, interpolate, NONE, false))
 	{
 		real seconds = (real)frame * (1.0f / 30.0f);
 		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
 		s_unit_animation_11a4d0 *animation = (s_unit_animation_11a4d0 *)((byte *)unit + unit->animation_offset);
-		if (animation->index68 != NONE && animation->index0 != NONE && animation->index6 != NONE)
+		bool valid = animation->index68 != NONE && animation->index0 != NONE && animation->index6 != NONE;
+		if (valid)
 			((c_animation_channel *)animation)->set_frame_position(seconds * 30.0f);
 		result = true;
 	}
@@ -842,6 +877,14 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 bool function_cd660(long unit_index);
 
+/* the unit's flags word at +0xc0, seen as bits */
+struct s_unit_flags_c0_11b710
+{
+	byte unknown000[0xc0];
+	word : 7;
+	word flag7 : 1;
+};
+
 /* ends a unit's scripted animation: back to its weapons' idle states, and
    placed at its root node when the animation was attached */
 // @retail 0x11b710
@@ -850,6 +893,7 @@ void function_11b710(long unit_index, long field_7c)
 	if (unit_index != NONE)
 	{
 		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
+		s_unit_flags_c0_11b710 *object = (s_unit_flags_c0_11b710 *)unit_get_11a4d0(unit_index);
 		s_unit_scripted_animation_11a4d0 *animation =
 			(s_unit_scripted_animation_11a4d0 *)((byte *)unit + unit->offset33e);
 		if (TEST_FIELD_BIT(animation->active))
@@ -862,7 +906,7 @@ void function_11b710(long unit_index, long field_7c)
 
 			s_unit_flags_11a4d0 *flags = (s_unit_flags_11a4d0 *)unit_get_11a4d0(unit_index);
 			if (TEST_FIELD_BIT(flags->flag1))
-				flags->flag1 = false;
+				((s_unit_flags_11a4d0 *)unit_get_11a4d0(unit_index))->flag1 = false;
 			function_10f1e0(unit_index);
 			if (field_7c == 0x7000101)
 				field_7c = 0x6000085;
@@ -880,7 +924,8 @@ void function_11b710(long unit_index, long field_7c)
 					weapon_name = *(long *)(definition + 0x28c);
 				}
 			}
-			((s_unit_animation_11a4d0 *)((byte *)unit + unit->animation_offset))->flags6c &= ~1;
+			s_unit_animation_11a4d0 *animation_state = (s_unit_animation_11a4d0 *)((byte *)unit + unit->animation_offset);
+			animation_state->flags6c &= ~1;
 			function_10f430(unit_index, field_7c, state_name, weapon_name, 0x400000c, 0.0f, true, 2);
 
 			if (unit->weapon_index_b != NONE)
@@ -901,7 +946,7 @@ void function_11b710(long unit_index, long field_7c)
 				byte *model = (byte *)render_model_get_model_definition(
 					*(long *)(g_4e3b44[unit->definition_index & 0xffff].bytes + 0x38));
 				function_142a60(function_b8bd0(unit_index, 0), (transform4x3f *)(*(byte **)(model + 0x4c) + 0x28), &matrix);
-				((s_unit_c0_11a4d0 *)unit)->flag_c0_7 = false;
+				object->flag7 = false;
 				if (unit->parent_index == NONE)
 				{
 					function_b75a0(unit_index, &matrix.position, &matrix.forward, &matrix.up, NULL, false);

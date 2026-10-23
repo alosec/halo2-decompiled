@@ -17,67 +17,29 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
 	long count = 0;
-	long index = unknown5024;
-	s_entry_450c94 *out = (s_entry_450c94 *)output;
-	if (unknown09 && index != NONE)
+	if (unknown09)
 	{
-		do
+		long index = unknown5024;
+		if (index != NONE)
 		{
-			if (count >= max_count)
-				break;
-			s_handle_entry *entry = &entries[index];
-			if (entry->state)
+			while (index != NONE && count < max_count)
 			{
-				long handle = entry->handle;
-				s_handle_peer *peer = &table->peers[handle & 0x3ff];
-				long type;
-				long handles_count;
-				real priority;
-				long size;
-				if (entry->state == 1)
+				s_handle_entry *entry = &entries[index];
+				if (entry->state)
 				{
-					if (peer->flags & 8)
-					{
-						long handles[4];
-						bool blocked = false;
-						type = 3;
-						handles_count = replication_table_get_chain(table, handle, handles);
-						priority = 0.0f;
-						size = 0;
-						if (handles_count <= 0)
-							goto next;
-						for (long i = 0; i < handles_count; i++)
-						{
-							real item_priority;
-							long item_size;
-							table->owner->v3(handles[i], entries[handles[i] & 0x3ff].unknown04, a1, &item_priority, &item_size);
-							if (item_priority > 0.0f)
-								priority = priority > item_priority ? priority : item_priority;
-							else
-								blocked = true;
-							size += item_size;
-						}
-						if (blocked)
-							goto next;
-					}
-					else
-					{
-						if (peer->flags & 0x10)
-							goto next;
-						type = 1;
-						handles_count = 1;
-						table->owner->v3(handle, entry->unknown04, a1, &priority, &size);
-					}
-				}
-				else if (entry->state == 3)
-				{
-					if (peer->mask & (1 << shift))
+					long handle = entry->handle;
+					s_handle_peer *peer = &table->peers[handle & 0x3ff];
+					long type;
+					long handles_count;
+					real priority;
+					long size;
+					if (entry->state == 1)
 					{
 						if (peer->flags & 8)
 						{
 							long handles[4];
 							bool blocked = false;
-							type = 4;
+							type = 3;
 							handles_count = replication_table_get_chain(table, handle, handles);
 							priority = 0.0f;
 							size = 0;
@@ -86,50 +48,91 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 							for (long i = 0; i < handles_count; i++)
 							{
 								real item_priority;
-								table->owner->v9(handles[i], a1, &item_priority);
+								long item_size;
+								table->owner->v3(handles[i], entries[handles[i] & 0x3ff].unknown04, a1, &item_priority, &item_size);
 								if (item_priority > 0.0f)
 									priority = priority > item_priority ? priority : item_priority;
 								else
 									blocked = true;
+								size += item_size;
 							}
 							if (blocked)
-								goto next;
+								priority = 0.0f;
 						}
 						else
 						{
 							if (peer->flags & 0x10)
 								goto next;
-							type = 2;
+							type = 1;
 							handles_count = 1;
-							table->owner->v9(handle, a1, &priority);
-							size = 0;
+							table->owner->v3(handle, entry->unknown04, a1, &priority, &size);
+						}
+					}
+					else if (entry->state == 3)
+					{
+						if (peer->mask & (1 << shift))
+						{
+							if (peer->flags & 8)
+							{
+								long handles[4];
+								bool blocked = false;
+								type = 4;
+								handles_count = replication_table_get_chain(table, handle, handles);
+								priority = 0.0f;
+								size = 0;
+								if (handles_count <= 0)
+									goto next;
+								for (long i = 0; i < handles_count; i++)
+								{
+									real item_priority;
+									table->owner->v9(handles[i], a1, &item_priority);
+									if (item_priority > 0.0f)
+										priority = priority > item_priority ? priority : item_priority;
+									else
+										blocked = true;
+								}
+								if (blocked)
+									goto next;
+							}
+							else
+							{
+								if (peer->flags & 0x10)
+									goto next;
+								type = 2;
+								handles_count = 1;
+								table->owner->v9(handle, a1, &priority);
+								size = 0;
+							}
+						}
+						else
+						{
+							if (!entry->unknown04)
+								goto next;
+							type = 5;
+							handles_count = 1;
+							table->owner->v8(handle, entry->unknown04, entry->unknown0c, a1, &priority, &size);
 						}
 					}
 					else
+						goto next;
+					if (priority > 0.0f)
 					{
-						if (!entry->unknown04)
-							goto next;
-						type = 5;
-						handles_count = 1;
-						table->owner->v8(handle, entry->unknown04, entry->unknown0c, a1, &priority, &size);
+						s_entry_450c94 *out = (s_entry_450c94 *)output;
+						out->unknown00 = *(long *)unknown04;
+						out->index = index;
+						out->unknown04 = priority;
+						out->unknown0c = type;
+						out->size = size + 14 * handles_count + 3;
+						if (handles_count > 1)
+							out->size += 2;
+						output = out + 1;
+						count++;
 					}
 				}
-				else
-					goto next;
-				if (priority > 0.0f)
-				{
-					out->unknown00 = *(long *)unknown04;
-					out->unknown04 = priority;
-					out->size = (handles_count > 1 ? 2 : 0) + size + 14 * handles_count + 3;
-					out->unknown0c = type;
-					out->index = index;
-					out++;
-					count++;
-				}
+			next:
+				index = entry->unknown0a;
 			}
-		next:
-			index = entry->unknown0a;
-		} while (index != NONE);
+		}
 	}
 	return count;
 }
@@ -150,12 +153,11 @@ bool function_991d0(c_handle_table_450cd0 *self, long handle, long size, void co
 			self->table->owner->v11(old_handle, handle, size, data);
 			s_handle_peers *peers = self->table;
 			byte flags = peers->peers[old_handle & 0x3ff].flags;
-			result = (bool)((flags >> 3) & 1);
-			if (result || (flags & 0x10))
+			if ((bool)((flags >> 3) & 1) || (flags & 0x10))
 			{
 				long handles[4];
 				long count;
-				if (result)
+				if ((bool)((flags >> 3) & 1))
 					count = replication_table_get_chain(peers, old_handle, handles);
 				else
 					count = replication_table_find_in_chains(peers, handles, old_handle);
@@ -197,12 +199,12 @@ const char *function_99820()
 // @retail 0x98480
 long function_98480(long handle, c_handle_table_450cd0 *self)
 {
-	long result = NONE;
 	long i;
 	if (handle == NONE)
 		i = 0;
 	else
 		i = (handle & 0x3ff) + 1;
+	long result = NONE;
 	for (; i < 0x400; i++)
 	{
 		s_handle_entry *entry = &self->entries[i];
@@ -214,6 +216,8 @@ long function_98480(long handle, c_handle_table_450cd0 *self)
 	}
 	return result;
 }
+__declspec(noinline) bool function_99640(c_handle_table_450cd0 *self, long handle);
+
 // @retail 0x99640
 bool function_99640(c_handle_table_450cd0 *self, long handle)
 {
@@ -221,18 +225,8 @@ bool function_99640(c_handle_table_450cd0 *self, long handle)
 	bool result = false;
 	if (index >= 0 && (dword)index < 0x400)
 	{
-		s_handle_entry *entry = &self->entries[index];
-		if (entry->handle == handle)
-		{
-			byte flags = self->table->peers[index].flags;
-			if (flags & 4)
-			{
-				if (entry->state == 3 && !(flags & 2))
-					result = true;
-			}
-			else
-				result = true;
-		}
+		if (self->entries[index].handle == handle)
+			result = !self->table->peers[index].flag2 || (self->entries[index].state == 3 && !self->table->peers[index].flag1);
 	}
 	return result;
 }
@@ -521,19 +515,20 @@ static inline void stream_initialize(s_bitstream *stream, void *buffer, long siz
 
 /* retail inlines the end of a stream here: its size is rounded up to the
    alignment, and its bits are appended to the output */
-static inline void stream_finish(s_bitstream *stream, s_bitstream *out)
+static __forceinline void function_97ab1(s_bitstream *arg_0, s_bitstream *arg_1)
 {
-	long bits = stream->bit_position;
-	long alignment = stream->unknown08;
-	long bytes = (bits + 7) / 8;
-	stream->size_in_bytes = bytes;
-	long remainder = bytes % alignment;
-	if (remainder != 0)
-		stream->size_in_bytes = bytes - remainder + alignment;
-	stream->mode = 2;
-	function_1955d0(out, stream->data, bits);
-	out->unknown2c += stream->unknown2c;
-	out->unknown30 += stream->unknown30;
+	long *local_0 = &arg_0->size_in_bytes;
+	long local_1 = local_0[3];
+	long local_2 = local_0[1];
+	long local_3 = (local_1 + 7) / 8;
+	local_0[0] = local_3;
+	long local_4 = local_3 % local_2;
+	if (local_4)
+		local_0[0] = local_3 - local_4 + local_2;
+	local_0[2] = 2;
+	function_1955d0(arg_1, (void *)local_0[-1], local_1);
+	arg_1->unknown2c += local_0[10];
+	arg_1->unknown30 += local_0[11];
 }
 
 // @retail 0x97ab0
@@ -575,16 +570,16 @@ bool c_aggregate_450cf4::v4(long a1, s_bitstream *out, long a3, long reserved_bi
 	{
 		for (long i = 0; i < total; i++)
 		{
-			s_priority_entry *entry = &list[i];
-			long which = entry->child;
-			if (entry->size <= budget)
+			long *local_0 = &list_raw[i].v[1];
+			long which = local_0[-1];
+			if (local_0[1] <= budget)
 			{
 				c_handle_table_450cd0 *child = children[which];
 				s_bitstream *stream = &streams[which];
 				if (child != 0)
 				{
 					long before = stream->bit_position;
-					child->v3(entry->index, entry->unknown0c, source_value, a1, (long)stream, (stream->size_in_bytes << 3) - before - budget);
+					child->v3(local_0[3], local_0[2], source_value, a1, (long)stream, (stream->size_in_bytes << 3) - before - budget);
 					budget += before - stream->bit_position;
 					if (budget <= 0)
 						break;
@@ -597,14 +592,15 @@ bool c_aggregate_450cf4::v4(long a1, s_bitstream *out, long a3, long reserved_bi
 
 	for (long i = 0; i < 3; i++)
 	{
-		if (children[i] != 0)
-			children[i]->v4(a1, &streams[i]);
+		c_handle_table_450cd0 *local_1 = children[i];
+		if (local_1)
+			local_1->v4(a1, &streams[i]);
 	}
 
 	for (long i = 0; i < 3; i++)
 	{
 		if (children[i] != 0)
-			stream_finish(&streams[i], out);
+			function_97ab1(&streams[i], out);
 	}	return overflowed;
 }
 /* the part of 0x992d0 that points the records of earlier nodes, which referred
@@ -631,100 +627,99 @@ static inline void records_relink(s_handle_node *head, s_handle_node *stop, long
 void c_handle_table_450cd0::v8(long handle, bool flag)
 {
 	s_handle_node **head_link = &head;
-	s_handle_node **link = head_link;
+	s_handle_node **link = &head;
 	s_handle_node *node = *link;
-	if (node != 0)
+	while (node != 0)
 	{
-		while (node->handle != handle)
+		if (node->handle == handle)
 		{
-			link = &node->next;
-			node = *link;
-			if (node == 0)
-				return;
-		}
-
-		s_handle_record *record = node->records;
-		if (record != 0)
-		{
-			do
+			s_handle_record *record = node->records;
+			if (record != 0)
 			{
-				long record_handle = record->handle;
-				s_handle_record *next_record = record->next;
-				long index = record_handle & 0x3ff;
-				s_handle_peer *peer = &table->peers[index];
-				if (!flag)
+				do
 				{
-					dword mask = record->mask;
-					for (s_handle_node *other = node->next; other != 0; other = other->next)
-					{
-						for (s_handle_record *candidate = other->records; candidate != 0; candidate = candidate->next)
-						{
-							if (candidate->handle == record_handle)
-								mask &= ~candidate->mask;
-						}
-					}
-					if (mask != 0 && entries[index].unknown04 == 0 && entries[index].state == 3)
-					{
-						if (!(peer->mask & (1 << shift)))
-							unknown5034++;
-					}
-					entries[index].unknown04 |= mask;
-				}
-				else
-					unknown5030++;
-				records_relink(*head_link, node, record_handle, record);
-				free_block(record);
-				record = next_record;
-			}
-			while (record != 0);
-		}
-
-		s_handle_item *item = node->items;
-		if (item != 0)
-		{
-			do
-			{
-				long item_handle = item->handle;
-				s_handle_item *next_item = item->next;
-				long index = item_handle & 0x3ff;
-				s_handle_peer *peer = &table->peers[index];
-				if (item->kind == 1)
-				{
+					long record_handle = record->handle;
+					s_handle_record *next_record = record->next;
+					long index = record_handle & 0x3ff;
+					s_handle_peer *peer = &table->peers[index];
 					if (!flag)
 					{
-						if (peer->mask & (1 << shift))
-							function_99690(this, item_handle, 3);
-						else
-							function_99690(this, item_handle, 1);
+						dword mask = record->mask;
+						for (s_handle_node *other = node->next; other != 0; other = other->next)
+						{
+							for (s_handle_record *candidate = other->records; candidate != 0; candidate = candidate->next)
+							{
+								if (candidate->handle == record_handle)
+									mask &= ~candidate->mask;
+							}
+						}
+						if (mask != 0 && entries[index].unknown04 == 0 && entries[index].state == 3)
+						{
+							if (!(peer->mask & (1 << shift)))
+								unknown5034++;
+						}
+						entries[index].unknown04 |= mask;
 					}
 					else
-					{
-						function_99690(this, item_handle, 3);
-						unknown5028++;
-					}
+						unknown5030++;
+					records_relink(*head_link, node, record_handle, record);
+					free_block(record);
+					record = next_record;
 				}
-				else if (!flag)
-					function_99690(this, item_handle, 3);
-				else
-				{
-					function_99690(this, item_handle, 0);
-					peer->mask &= ~(1 << shift);
-					s_handle_peers *peers = table;
-					if (peers->peers[index].mask == 0)
-					{
-						peers->owner->v12(item_handle);
-						peers->peers[index].flag0 = 0;
-					}
-					unknown5038++;
-				}
-				free_block(item);
-				item = next_item;
+				while (record != 0);
 			}
-			while (item != 0);
-		}
 
-		*link = node->next;
-		free_block(node);
+			s_handle_item *item = node->items;
+			if (item != 0)
+			{
+				do
+				{
+					long item_handle = item->handle;
+					s_handle_item *next_item = item->next;
+					long offset = (item_handle & 0x3ff) * sizeof(s_handle_peer);
+					s_handle_peer *peer = (s_handle_peer *)((byte *)table->peers + offset);
+					if (item->kind == 1)
+					{
+						if (!flag)
+						{
+							if (peer->mask & (1 << shift))
+								function_99690(this, item_handle, 3);
+							else
+								function_99690(this, item_handle, 1);
+						}
+						else
+						{
+							function_99690(this, item_handle, 3);
+							unknown5028++;
+						}
+					}
+					else if (!flag)
+						function_99690(this, item_handle, 3);
+					else
+					{
+						function_99690(this, item_handle, 0);
+						peer->mask &= ~(1 << shift);
+						s_handle_peers *peers = table;
+						if (((s_handle_peer *)((byte *)peers->peers + offset))->mask == 0)
+						{
+							peers->owner->v12(item_handle);
+							byte *flags = (byte *)peers->peers + offset;
+							*flags &= 0xfe;
+						}
+						unknown5038++;
+					}
+					free_block(item);
+					item = next_item;
+				}
+				while (item != 0);
+			}
+
+			*link = node->next;
+			free_block(node);
+			return;
+		}
+		link = &node->next;
+		node = *link;
 	}
 }
 // @retail 0x98cf0
@@ -739,7 +734,7 @@ long c_handle_table_450cd0::v5(dword a1, s_bitstream *stream, long max_blocks, s
 		s_handle_block *cursor = blocks;
 		do
 		{
-			dword type = function_1959c0(stream, 3);
+			byte type = (byte)function_1959c0(stream, 3);
 			long n;
 			if (type >= 6)
 			{

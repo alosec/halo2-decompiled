@@ -3,7 +3,3 @@
 #include "unknown_08b110.h"
 
 
-// @stub 0x82a40
-void __stdcall function_82a40(long handle, long a2, real *a3)
-{
-}

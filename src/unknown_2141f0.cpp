@@ -4,12 +4,6 @@
 #include "unknown_122870.h"
 #include <string.h>
 
-struct s_cache_file
-{
-	HANDLE handle;
-	byte unknown04[0x800];
-};
-
 struct s_cache_copy_request
 {
 	char map_name[256];
@@ -43,6 +37,12 @@ struct s_copy_header_view
 	byte unknown2d4[0x800 - 0x2d4];
 };
 
+struct s_cache_file
+{
+	s_file_handle file;
+	s_copy_header_view header;
+};
+
 extern s_cache_file g_557c90[3];
 extern s_cache_copy_request g_55be24[2];
 extern s_cache_copy_progress g_55bcf8;
@@ -66,7 +66,7 @@ long const g_448fd4[7] = {0, 2, 2, 2, 2, 2, 2};
 long const g_448ff0[7] = {0x40000, 0x100000, 0x100000, 0x100000, 0x100000, 0x100000, 0x100000};
 
 bool cache_header_verify(s_cache_header const *header);
-void function_136e70(FILETIME *time);
+void file_ref_clock_time(FILETIME *time);
 dword __stdcall checksum_buffer_mmx(void const *buffer, dword buffer_size);
 bool cache_copy_complete(char const *map_name);
 long map_location_get(char const *map_name);
@@ -78,11 +78,6 @@ void cache_copy_buffer_release(void);
 void cache_copy_forget(char const *map_name);
 bool map_copy_request(char const *map_name, long priority);
 void __stdcall cache_copy_record_use(char const *map_name);
-
-__forceinline s_file_handle copy_slot_handle(long index)
-{
-	return *(s_file_handle *)&g_557c90[index].handle;
-}
 
 // @retail 0x2141f0
 bool function_2141f0(void)
@@ -106,7 +101,7 @@ bool function_2141f0(void)
 		g_55bd08 = 0;
 		break;
 	case 1:
-		g_55bd00 = function_1a0b40(g_55bd21, 1, 1, 0, 1, priority, &g_55bd14, &g_55bd0c);
+		g_55bd00 = function_1a0b40(g_55bd21, 1, 0, 1, 1, priority, &g_55bd14, &g_55bd0c);
 		state = 2;
 		break;
 	case 2:
@@ -120,7 +115,7 @@ bool function_2141f0(void)
 		break;
 	case 4:
 		{
-			function_136e70(&g_55b4f0.last_used);
+			file_ref_clock_time(&g_55b4f0.last_used);
 			strncpy(g_55b4f0.path, g_55bd21, 0x100);
 			g_55b4f0.path[0xff] = 0;
 			success = g_55bcf0 == 0x800 && cache_header_verify((s_cache_header const *)&g_55b4f0);
@@ -130,8 +125,10 @@ bool function_2141f0(void)
 				{
 					if (g_55b4f0.dependencies_required[type])
 					{
-						s_copy_header_view const *header = (s_copy_header_view const *)g_557c90[cache_file_slot_from_type(type)].unknown04;
-						if (!header->path[0] || CompareFileTime(&header->source_time, &g_55b4f0.dependency_times[type]) != 0)
+						long slot = cache_file_slot_from_type(type);
+
+						if (!g_557c90[slot].header.path[0] ||
+							CompareFileTime(&g_557c90[slot].header.source_time, &g_55b4f0.dependency_times[type]) != 0)
 						{
 							success = false;
 						}
@@ -146,7 +143,11 @@ bool function_2141f0(void)
 		state = 6;
 		break;
 	case 6:
-		success = g_55bcf8.total != (dword)NONE && g_55bcf8.total > 0x800;
+		{
+			bool size_known = g_55bcf8.total != (dword)NONE;
+
+			success = size_known && g_55bcf8.total > 0x800;
+		}
 		g_55c02c = 0;
 		state = 7;
 		break;
@@ -155,9 +156,11 @@ bool function_2141f0(void)
 			long slot = cache_file_choose_slot(g_55b4f0.type, g_55b4f0.size);
 			if (slot != NONE)
 			{
+				s_cache_file *file = &g_557c90[slot];
+
 				g_55bd10 = slot;
-				memset(g_557c90[slot].unknown04, 0, 0x800);
-				g_55bd00 = function_1a1050(copy_slot_handle(slot), g_557c90[slot].unknown04, 0x800, 0, 0, 1, priority, &g_55bcf0, &g_55bd0c);
+				memset(&file->header, 0, sizeof(file->header));
+				g_55bd00 = function_1a1050(file->file, &file->header, 0x800, 0, 0, 1, priority, &g_55bcf0, &g_55bd0c);
 				state = 8;
 			}
 		}
@@ -167,7 +170,11 @@ bool function_2141f0(void)
 		state = 9;
 		break;
 	case 9:
-		g_55bd00 = async_flush_file(copy_slot_handle(g_55bd10), 1, priority, &g_55bd0c);
+		{
+			s_cache_file *file = &g_557c90[g_55bd10];
+
+			g_55bd00 = async_flush_file(file->file, 1, priority, &g_55bd0c);
+		}
 		state = 10;
 		break;
 	case 10:
@@ -180,14 +187,14 @@ bool function_2141f0(void)
 		if (g_55bd18)
 		{
 			long remaining = g_55bcf8.total - g_55bcf8.completed;
-			g_55bcf4 = g_55bd1c < remaining ? g_55bd1c : remaining;
-			g_55bd00 = async_copy_position(g_55bd14, copy_slot_handle(g_55bd10), (void *)g_55bd18,
+			g_55bcf4 = g_55bd1c > remaining ? remaining : g_55bd1c;
+			g_55bd00 = async_copy_position(g_55bd14, g_557c90[g_55bd10].file, (void *)g_55bd18,
 				g_55bcf4, g_55bcf8.completed, g_55bcf8.completed, 1, priority, &g_55bcf0, &g_55bd0c);
 			state = 12;
 		}
 		break;
 	case 12:
-		success = g_55bcf0 == (dword)g_55bcf4;
+		success = (dword)g_55bcf4 == g_55bcf0;
 		g_55c02c ^= checksum_buffer_mmx((void const *)g_55bd18, g_55bcf0);
 		if (success)
 		{
@@ -209,14 +216,18 @@ bool function_2141f0(void)
 		}
 		break;
 	case 13:
-		g_55bd00 = async_flush_file(copy_slot_handle(g_55bd10), 1, priority, &g_55bd0c);
+		{
+			s_cache_file *file = &g_557c90[g_55bd10];
+
+			g_55bd00 = async_flush_file(file->file, 1, priority, &g_55bd0c);
+		}
 		state = 14;
 		break;
 	case 14:
 		{
 			s_cache_file *file = &g_557c90[g_55bd10];
-			function_136e70(&g_55b4f0.last_used);
-			g_55bd00 = function_1a1050(*(s_file_handle *)&file->handle, &g_55b4f0, 0x800, 0, 0, 1, 0, &g_55bcf0, &g_55bd0c);
+			file_ref_clock_time(&g_55b4f0.last_used);
+			g_55bd00 = function_1a1050(file->file, &g_55b4f0, 0x800, 0, 0, 1, 0, &g_55bcf0, &g_55bd0c);
 			state = 15;
 		}
 		break;
@@ -225,7 +236,7 @@ bool function_2141f0(void)
 		state = 16;
 		break;
 	case 16:
-		memcpy(g_557c90[g_55bd10].unknown04, &g_55b4f0, 0x800);
+		memcpy(&g_557c90[g_55bd10].header, &g_55b4f0, sizeof(g_55b4f0));
 		memset(&g_55b4f0, 0, sizeof(g_55b4f0));
 		g_55bd08 = 1;
 		state = 17;
@@ -243,6 +254,7 @@ bool function_2141f0(void)
 	case 19:
 		{
 			s_cache_copy_request request = g_55be24[0];
+
 			cache_copy_buffer_release();
 			g_55bd10 = NONE;
 			memset(&g_55b4f0, 0, sizeof(g_55b4f0));

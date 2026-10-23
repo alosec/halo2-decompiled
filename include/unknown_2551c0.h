@@ -65,6 +65,6 @@ struct s_ai_object_iterator
 	long index;
 };
 
-s_handler_object_view *function_290c80(s_ai_object_iterator *iterator);
+s_handler_object_view *swarm_creature_iterator_next(s_ai_object_iterator *iterator);
 
 #endif

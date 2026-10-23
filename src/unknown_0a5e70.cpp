@@ -208,12 +208,12 @@ long function_a5e70(long object_index, long flags, long state_pointer)
 	if (flags & 0x100)
 	{
 		s_object_a5e70 *current = OBJECT(object_index);
-		signed char *entry = (signed char *)current + current->offset11a;
-		long count = current->count118 / 10;
+		signed char *entry = (signed char *)current + *(short volatile *)&current->offset11a;
+		long count = *(short volatile *)&current->count118 / 10;
 		if (state->count == count && count > 0)
 		{
-			entry += count * 2 + 1;
 			byte *bytes = state->bytes;
+			entry += count * 2 + 1;
 			for (long n = count; n > 0; n--)
 			{
 				if (*bytes != *entry)
@@ -256,9 +256,9 @@ long function_a5e70(long object_index, long flags, long state_pointer)
 	return changed;
 }
 
-bool simulation_positions_close(long bits, real const *a, real const *b);
-bool function_195560(vector3f const *a, vector3f const *b, vector3f const *up_a, vector3f const *up_b);
-bool function_195370(vector3f const *a, vector3f const *b, real lo, real hi, long bits);
+byte simulation_positions_close(long bits, real const *a, real const *b);
+bool function_195560(vector3f const *up_a, vector3f const *a, vector3f const *up_b, vector3f const *b);
+bool __fastcall function_195370(vector3f const *a, vector3f const *b, real lo, real hi, long bits);
 
 // @retail 0xa7180
 bool function_a7180(long state_a, long state_b)
@@ -268,7 +268,7 @@ bool function_a7180(long state_a, long state_b)
     bool result = simulation_positions_close(16, (real const *)&a->position, (real const *)&b->position);
     b->position = *g_468788;
     a->position = b->position;
-    result = result && function_195560(&a->up, &b->up, &a->forward, &b->forward);
+    result = result && function_195560(&a->forward, &a->up, &b->forward, &b->up);
     b->forward = *g_4687a4;
     a->forward = *g_4687a4;
     b->up = *g_4687a4;

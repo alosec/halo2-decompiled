@@ -1,11 +1,18 @@
 // @flags /O2 /arch:SSE /Gr
+#include "palette_storage.h"
+#include "shader_storage.h"
+#include "render_state_storage.h"
+#include "view_context_storage.h"
 /* UNKNOWN_020560.CPP: the timed effect values, the table of visibility
    slots, a pixel shader and the render state wrappers */
 
 #include "unknown_11c920.h"
+#include "frame_storage.h"
+#include "depth_parameters_storage.h"
 #include <string.h>
 #include <math.h>
 #include <xtl.h>
+#include "sampler_state.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "timed_effect.h"
@@ -16,21 +23,40 @@
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
+namespace D3D
+{
+	struct CDevice
+	{
+		static dword m_PushSegmentSize;
+	};
+
+	dword WINAPI SetFence(dword flags);
+	dword volatile *WINAPI MakeRequestedSpace(dword fallback_size, dword requested_size);
+}
+
 extern bool g_4ba019;
 bool function_143c0(long tag, short index, short stage, real priority);
 
+/* Rounds toward negative infinity: truncates, then subtracts one when the
+   value was negative and not already whole. */
 PRIVATE __forceinline long texture_floor(real value)
 {
-    long result = (long)value;
-    if (value < 0.0f && value != (real)result)
-        result--;
-    return result;
+    __asm
+    {
+        movss xmm0, value
+        cvttss2si eax, xmm0
+        cvtsi2ss xmm1, eax
+        cmpneqss xmm1, xmm0
+        cmpltss xmm0, g_45dbd8
+        andps xmm0, xmm1
+        movmskps ecx, xmm0
+        sub eax, ecx
+    }
 }
 
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {
-    (void)&state;
     dword remaining = *(dword *)(state + 0x1420);
     while (remaining)
     {
@@ -41,25 +67,28 @@ void __stdcall function_1b0a0(byte *state)
             mov index, ecx
         }
         byte *entry = state + 0x1320 + index * 0x40;
-        long tag = *(long *)entry;
-        if (tag != NONE)
+        if (*(long *)entry != NONE)
         {
             long bitmap = 0;
-            real time = *(real *)(entry + 0x18);
-            if (fabs(time) >= 0.0001f)
-            {
-                long count = *(long *)(g_4e3b44[tag & 0xffff].bytes + 0x44);
-                bitmap = texture_floor((real)fmod(time, count));
-            }
             real bias = 0.0f;
-            if (!(entry[4] & 1) && !g_4ba019)
-                bias = PIN(*(real *)(entry + 0x14) + *(real *)(state + 0x2c) - 0.5f, 0.0f, 4.0f);
+            if (!(fabs(*(real *)(entry + 0x18)) < 0.0001f))
+            {
+                long count = *(long *)(g_4e3b44[*(long *)entry & 0xffff].bytes + 0x44);
+                bitmap = texture_floor((real)fmod(*(real *)(entry + 0x18), count));
+            }
+            if (!(entry[4] & 1))
+            {
+                real adjusted = 0.0f;
+                if (!g_4ba019)
+                    adjusted = PIN(*(real *)(entry + 0x14) + *(real *)(state + 0x2c) - 0.5f, 0.0f, 4.0f);
+                bias = adjusted;
+            }
             real level = (real)texture_floor(bias);
             level = PIN(level, 0.0f, 2.0f);
             level = (real)(long)level;
             if (*(real *)(entry + 0x10) > level)
             {
-                function_143c0(tag, (short)bitmap, (short)index, bias);
+                function_143c0(*(long *)entry, (short)bitmap, (short)index, bias);
                 *(real *)(entry + 0x10) = level;
             }
         }
@@ -94,22 +123,12 @@ void hash_table_initialize(hash_table *table);
 void function_20e50(long index);
 
 
-byte g_51f408;
-byte g_51f409;
 hash_table *g_51f400;
-long g_5234c4;
-long g_5234b4[4];
 extern __int64 g_485aa0;
-byte g_485607;
-dword g_4850c8;
+s_depth_parameters_13450 g_depth_parameters_storage;
 real g_5234c8;
-word g_485648;
-word g_48564a;
-word g_48564c;
-word g_48564e;
 dword g_4b81fc[0xa6];
 D3DPIXELSHADERDEF g_484f68;
-long g_5234b0;
 extern long g_485898;
 short g_467010 = NONE;
 
@@ -174,16 +193,15 @@ extern byte *g_485a80;
 // @retail 0x16f60
 void function_16f60(byte *state, word const *range)
 {
-    (void)&range;
     long i = 0;
     byte *values = *(byte **)(*(byte **)(state + 0xc) + 8);
     byte *entry = *(byte **)(*(byte **)(state + 0x10) + 0x24) + (*range & 0x1ff) * 4;
     for (; i < (*range >> 9); entry += 4, ++i)
     {
         byte *slot = state + 0x320 + entry[0] * 0x40;
-        long *source = (long *)(values + entry[3] * 12);
-        if (source[0] != NONE)
+        if (*(long *)(values + entry[3] * 12) != NONE)
         {
+            long *source = (long *)(values + entry[3] * 12);
             *(long *)slot = source[0];
             *(real *)(slot + 0x18) = (real)source[1];
             *(long *)(slot + 0x14) = source[2];
@@ -205,7 +223,8 @@ void function_15370(short mode)
 	{
 	case 0:
 		function_0222d0(D3DRS_STENCILENABLE, FALSE);
-		break;
+		g_467010 = mode;
+		return;
 	case 1: case 2:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
@@ -215,27 +234,19 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILREF, mode == 1 ? 0 : 255);
 		function_0222d0(D3DRS_STENCILMASK, 255);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 255);
-		break;
-	case 3:
+		g_467010 = mode;
+		return;
+	case 3: case 4:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
+		function_0222d0(D3DRS_STENCILFUNC, mode == 3 ? D3DCMP_EQUAL : D3DCMP_NOTEQUAL);
 		function_0222d0(D3DRS_STENCILREF, 0);
 		function_0222d0(D3DRS_STENCILMASK, 1);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
-		break;
-	case 4:
-		function_0222d0(D3DRS_STENCILENABLE, TRUE);
-		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_NOTEQUAL);
-		function_0222d0(D3DRS_STENCILREF, 0);
-		function_0222d0(D3DRS_STENCILMASK, 1);
-		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
-		break;
+		g_467010 = mode;
+		return;
 	case 5:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
@@ -245,7 +256,8 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILREF, 2);
 		function_0222d0(D3DRS_STENCILMASK, 1);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 2);
-		break;
+		g_467010 = mode;
+		return;
 	case 6:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
@@ -255,7 +267,8 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILREF, 0);
 		function_0222d0(D3DRS_STENCILMASK, 3);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
-		break;
+		g_467010 = mode;
+		return;
 	}
 	g_467010 = mode;
 }
@@ -476,33 +489,45 @@ long function_0209b0(s_slot_key *key, const void *data, long size)
 
 	long index;
 	s_slot *slot;
+	bool found = false;
 
 	for (index = 0; index < g_51f40c.count; index++)
 	{
 		slot = &g_51f40c.slots[index];
 		if (slot->used && key->a == slot->a && key->b == slot->b && key->c == slot->c && key->d == slot->d && key->e == slot->e)
-			goto found;
+		{
+			found = true;
+			break;
+		}
 	}
 
-	for (index = 0; index < 511; index++)
+	if (!found)
 	{
-		slot = &g_51f40c.slots[index];
-		if (!slot->used)
-			goto create;
+		for (index = 0; index < 511; index++)
+		{
+			slot = &g_51f40c.slots[index];
+			if (!slot->used)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found)
+		{
+			function_20e50(index);
+			slot->a = key->a != 0;
+			slot->b = key->b;
+			slot->c = key->c;
+			slot->d = key->d;
+			slot->e = key->e;
+			if (index + 1 > g_51f40c.count)
+				g_51f40c.count = index + 1;
+		}
 	}
-	return NONE;
 
-create:
-	function_20e50(index);
-	slot->a = key->a != 0;
-	slot->b = key->b;
-	slot->c = key->c;
-	slot->d = key->d;
-	slot->e = key->e;
-	if (index + 1 > g_51f40c.count)
-		g_51f40c.count = index + 1;
+	if (!found)
+		return NONE;
 
-found:
 	slot = &g_51f40c.slots[index];
 	if (!slot->valid)
 	{
@@ -567,96 +592,102 @@ real function_020d80(s_slot *slot, bool skip)
 	return result;
 }
 
-// @retail 0x20f30
-void function_020f30(real a, real b)
+PRIVATE __forceinline dword function_20f32(dword inputs, dword stage_outputs)
 {
-	dword count;
-	dword full;
-	dword half = 0xc00;
+    dword outputs = 0x30c00;
+    g_484f68.PSAlphaInputs[0] = 0x18201920;
+    g_484f68.PSAlphaOutputs[0] = outputs;
+    g_484f68.PSAlphaInputs[1] = 0x1a201b20;
+    g_484f68.PSAlphaOutputs[1] = 0x30d00;
+    g_484f68.PSAlphaInputs[2] = inputs;
+    g_484f68.PSAlphaOutputs[2] = stage_outputs;
+    g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+    return outputs;
+}
 
-	memset(&g_484f68, 0, sizeof(g_484f68));
-	g_484f68.PSTextureModes = 0x8421;
+// @retail 0x20f30
+void function_020f30(real b, real a)
+{
+    dword count;
+    dword outputs;
+    dword half = 0xc00;
 
-	b = PIN(b, 0.0f, 1.0f);
-	a = PIN(a, 0.0f, 1.0f);
+    memset(&g_484f68, 0, sizeof(g_484f68));
+    g_484f68.PSTextureModes = 0x8421;
 
-	if (a > 0.0f)
-	{
-		real x = (a + 1.0f) * 0.5f;
-		real scale = 255.0f;
-		long v = 0;
+    b = PIN(b, 0.0f, 1.0f);
+    a = PIN(a, 0.0f, 1.0f);
 
-		x = PIN(x, 0.0f, 1.0f);
-		__asm
-		{
-			fld x
-			fld scale
-			fmulp st(1), st
-			fistp v
-			shl v, 24
-		}
-		g_484f68.PSConstant1[2] = v;
-		full = 0x30c00;
-		g_484f68.PSAlphaInputs[2] = 0x1c121d12;
-		g_484f68.PSAlphaOutputs[2] = half;
-	}
-	else
-	{
-		full = 0x30c00;
-		g_484f68.PSAlphaInputs[2] = 0x1c201d20;
-		g_484f68.PSAlphaOutputs[2] = full;
-	}
+    if (a > 0.0f)
+    {
+        real value = (a + 1.0f) * 0.5f;
+        real x;
+        if (value < 0.0f) x = 0.0f;
+        else
+        {
+            x = 1.0f;
+            if (!(value > 1.0f)) x = value;
+        }
+        real scale = 255.0f;
+        long v = 0;
+        __asm
+        {
+            fld x
+            fld scale
+            fmulp st(1), st
+            fistp v
+            shl v, 24
+        }
+        g_484f68.PSConstant1[2] = v;
+        outputs = function_20f32(0x1c121d12, half);
+    }
+    else
+        outputs = function_20f32(0x1c201d20, 0x30c00);
 
-	g_484f68.PSAlphaInputs[0] = 0x18201920;
-	g_484f68.PSAlphaOutputs[0] = full;
-	g_484f68.PSAlphaInputs[1] = 0x1a201b20;
-	g_484f68.PSAlphaOutputs[1] = 0x30d00;
-	g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+    count = 3;
 
-	count = 3;
+    if (b > 0.0f)
+    {
+        color3f color;
+        color.red = b;
+        color.green = b;
+        color.blue = b;
+        dword pixel = pack_color3f(&color);
+        g_484f68.PSConstant0[1] = pixel;
+        g_484f68.PSConstant0[4] = pixel;
+        g_484f68.PSConstant0[7] = pixel;
+        g_484f68.PSRGBInputs[0] = 0x8200940;
+        g_484f68.PSRGBOutputs[0] = 0x20c00;
+        g_484f68.PSRGBInputs[1] = 0xcc012020;
+        g_484f68.PSRGBOutputs[1] = outputs;
+        g_484f68.PSRGBInputs[2] = 0xc082c09;
+        g_484f68.PSRGBOutputs[2] = half;
+        g_484f68.PSRGBInputs[3] = 0xa200b40;
+        g_484f68.PSRGBOutputs[3] = 0x20d00;
+        g_484f68.PSRGBInputs[4] = 0xcd012020;
+        g_484f68.PSRGBOutputs[4] = 0x30d00;
+        g_484f68.PSRGBInputs[5] = 0xd0a2d0b;
+        g_484f68.PSRGBOutputs[5] = 0xd00;
+        g_484f68.PSRGBInputs[6] = 0xc200d40;
+        g_484f68.PSRGBOutputs[6] = 0x20400;
+        g_484f68.PSRGBInputs[7] = 0xc4012020;
+        g_484f68.PSRGBOutputs[7] = 0x30400;
+        g_484f68.PSFinalCombinerInputsABCD = 0x40c0d00;
+        count = 8;
+    }
+    else
+    {
+        g_484f68.PSRGBInputs[0] = 0x8200920;
+        g_484f68.PSRGBOutputs[0] = outputs;
+        g_484f68.PSRGBInputs[1] = 0xa200b20;
+        g_484f68.PSRGBOutputs[1] = 0x30d00;
+        g_484f68.PSRGBInputs[2] = 0xc200d20;
+        g_484f68.PSRGBOutputs[2] = outputs;
+        g_484f68.PSFinalCombinerInputsABCD = 0xc;
+    }
 
-	if (b > 0.0f)
-	{
-		color3f color;
-		color.red = b;
-		color.green = b;
-		color.blue = b;
-		dword pixel = pack_color3f(&color);
-		g_484f68.PSConstant0[1] = pixel;
-		g_484f68.PSConstant0[4] = pixel;
-		g_484f68.PSConstant0[7] = pixel;
-		g_484f68.PSRGBInputs[0] = 0x8200940;
-		g_484f68.PSRGBOutputs[0] = 0x20c00;
-		g_484f68.PSRGBInputs[1] = 0xcc012020;
-		g_484f68.PSRGBOutputs[1] = full;
-		g_484f68.PSRGBInputs[2] = 0xc082c09;
-		g_484f68.PSRGBOutputs[2] = half;
-		g_484f68.PSRGBInputs[3] = 0xa200b40;
-		g_484f68.PSRGBOutputs[3] = 0x20d00;
-		g_484f68.PSRGBInputs[4] = 0xcd012020;
-		g_484f68.PSRGBOutputs[4] = 0x30d00;
-		g_484f68.PSRGBInputs[5] = 0xd0a2d0b;
-		g_484f68.PSRGBOutputs[5] = 0xd00;
-		g_484f68.PSRGBInputs[6] = 0xc200d40;
-		g_484f68.PSRGBOutputs[6] = 0x20400;
-		g_484f68.PSRGBInputs[7] = 0xc4012020;
-		g_484f68.PSRGBOutputs[7] = 0x30400;
-		g_484f68.PSFinalCombinerInputsABCD = 0x40c0d00;
-		count = 8;
-	}
-	else
-	{
-		g_484f68.PSRGBInputs[0] = 0x8200920;
-		g_484f68.PSRGBOutputs[0] = full;
-		g_484f68.PSRGBInputs[1] = 0xa200b20;
-		g_484f68.PSRGBOutputs[1] = 0x30d00;
-		g_484f68.PSRGBInputs[2] = 0xc200d20;
-		g_484f68.PSRGBOutputs[2] = full;
-		g_484f68.PSFinalCombinerInputsABCD = 0xc;
-	}
-
-	g_484f68.PSCombinerCount = count | 0x11000;
-	D3DDevice_SetPixelShaderProgram(&g_484f68);
+    g_484f68.PSCombinerCount = count | 0x11000;
+    D3DDevice_SetPixelShaderProgram(&g_484f68);
 }
 
 // @retail 0x222d0
@@ -693,6 +724,7 @@ struct s_0226d0_structure
 	long checksum;
 };
 
+__declspec(noinline)
 // @retail 0x226d0
 bool function_0226d0(void)
 {
@@ -730,20 +762,25 @@ void function_022750(const real *a, long size, const real *b, real *out, real t)
 real function_022c30(const point3f *a, const point3f *c, const point3f *b)
 {
 	vector3f v1, v2;
-	real result = 0.0f;
+	vector3f *v1_reference = &v1;
+	real result;
 
 	v2.i = a->x - c->x;
 	v2.j = a->y - c->y;
 	v2.k = a->z - c->z;
-	v1.i = a->x - b->x;
-	v1.j = a->y - b->y;
-	v1.k = a->z - b->z;
+	result = 0.0f;
+	v1_reference->i = a->x - b->x;
+	v1_reference->j = a->y - b->y;
+	v1_reference->k = a->z - b->z;
 
-	real length = (real)sqrt(v1.k * v1.k + v1.j * v1.j + v1.i * v1.i);
+	real length = (real)sqrt(v1_reference->k * v1_reference->k + v1_reference->j * v1_reference->j + v1_reference->i * v1_reference->i);
 	if (length > 0.0001f)
 	{
 		real inverse = 1.0f / length;
-		result = ((v1.k * inverse) * v2.k + (v1.j * inverse) * v2.j + (v1.i * inverse) * v2.i) * inverse;
+		v1_reference->i *= inverse;
+		v1_reference->j *= inverse;
+		v1_reference->k *= inverse;
+		result = (v1_reference->k * v2.k + v1_reference->j * v2.j + v1_reference->i * v2.i) / length;
 	}
 
 	return result;
@@ -868,7 +905,6 @@ void __stdcall function_22cf0(s_light_sample_source const *source, real *red, re
 real g_4b8494;
 long g_467130;
 long g_4858b4;
-extern D3DPalette *g_484dbc;
 extern long g_484dc0[4];
 dword *function_1c290(real value);
 void function_0496a0(void);
@@ -894,9 +930,10 @@ void function_445d0(void)
 	case 11:
 		function_049740();
 		break;
-	case 16: break;
-	case 17: break;
+	case 16: goto reset;
+	case 17: goto reset;
 	}
+reset:
 	g_467130 = 0;
 	g_4858b4 = NONE;
 }
@@ -938,7 +975,17 @@ void function_1ef70(void)
 	if (g_4b6298)
 	{
 		real size = 1.0f;
-		D3DDevice::End();
+		dword *device = (dword *)D3D__pDevice;
+		dword *push = (dword *)device[0];
+		if (push >= (dword *)device[1])
+			push = D3DDevice_MakeSpace();
+		push[0] = D3DPUSH_ENCODE(D3DPUSH_SET_BEGIN_END, 1);
+		push[1] = 0;
+		device[0] = (dword)(push + 2);
+		dword flags = device[2];
+		device[2] = flags & ~0x1800;
+		if (flags & 0x1000)
+			D3D::SetFence(1);
 		D3DDevice_SetRenderState(D3DRS_LINEWIDTH, *(dword *)&size);
 		g_4b6298 = 0;
 	}
@@ -1028,17 +1075,37 @@ struct s_1ed70_point
 // @retail 0x1ed70
 void function_1ed70(color4f const *color, s_1ed70_point const *points, short count)
 {
+    s_1ed70_point const *const *points_reference = &points;
+    short const *count_reference = &count;
+    short vertex_count = *count_reference;
     dword packed = pack_color4f(color);
     function_1ee60(2);
-    D3DDevice_SetVertexDataColor(9, packed);
-    for (short i = 0; i < count; ++i)
-        D3DDevice_SetVertexData2s(0, points[i].x, points[i].y);
+    dword *device = (dword *)D3D__pDevice;
+    dword volatile *push = (dword *)device[0];
+    if (push >= (dword *)device[1])
+        push = D3DDevice_MakeSpace();
+    dword swapped = (packed & 0xff00ff00) | ((packed & 0xff) << 16) | ((packed >> 16) & 0xff);
+    push[0] = 0x41964;
+    push[1] = swapped;
+    device[0] = (dword)(push + 2);
+    if (vertex_count > 0)
+    {
+        s_1ed70_point const *point = *points_reference;
+        long remaining = (word)vertex_count;
+        do
+        {
+            D3DDevice_SetVertexData2s(0, point->x, point->y);
+            ++point;
+        }
+        while (--remaining);
+    }
     function_1ef70();
 }
 
 // @retail 0x1ba00
 void function_1ba00(byte *state)
 {
+    unsigned long output = 0;
     byte *definition = *(byte **)(state + 0x20);
     byte *blocks = *(byte **)(definition + 0x2c);
     dword *values = *(dword **)(definition + 0x34);
@@ -1046,23 +1113,19 @@ void function_1ba00(byte *state)
     *(dword *)(state + 0x14fc) = *(dword *)(selection + 0xde);
     *(dword *)(state + 0x1504) = *(dword *)(selection + 0xe6);
     *(dword *)(state + 0x1500) = *(dword *)(selection + 0xe2);
-    unsigned long output = 0;
     bool final = false;
-    long i = 0;
-    if ((*(word *)(*(byte **)(state + 0x24) + 0xf6) >> 9) > 0)
-    do
+    for (long i = 0; i < (*(word *)(*(byte **)(state + 0x24) + 0xf6) >> 9); ++i)
     {
-        word range = *(word *)(*(byte **)(state + 0x24) + 0xf6);
-        short *entry = *(short **)(*(byte **)(state + 0x20) + 0x24) + ((range & 0x1ff) + i) * 2;
+        short *entry = *(short **)(*(byte **)(state + 0x20) + 0x24) + ((*(word *)(*(byte **)(state + 0x24) + 0xf6) & 0x1ff) + i) * 2;
         state[0x1520 + i] = (byte)output;
-        long block_index = (word)entry[1] & 0x1ff;
+        short source = entry[0];
         byte *block;
-        if (entry[0] == NONE)
-            block = blocks + block_index * 6;
+        if (source == NONE)
+            block = blocks + ((word)entry[1] & 0x1ff) * 6;
         else
-            block = blocks + (block_index + *(long *)(state + 0x300 + entry[0] * 4)) * 6;
+            block = blocks + (((word)entry[1] & 0x1ff) + *(long *)(state + 0x300 + source * 4)) * 6;
         dword *value = values + (*(word *)(block + 4) & 0x1ff) * 8;
-        for (long j = 0; j < (*(word *)(block + 4) >> 9); ++j, value += 8)
+        for (long j = 0; j < (*(word *)(block + 4) >> 9); value += 8, ++j)
         {
             if ((block[2] & 1) && j + 1 == (*(word *)(block + 4) >> 9))
             {
@@ -1081,8 +1144,7 @@ void function_1ba00(byte *state)
             *(dword *)(state + 0x146c + output * 4) = value[5];
             ++output;
         }
-        ++i;
-    } while (i < (*(word *)(*(byte **)(state + 0x24) + 0xf6) >> 9));
+    }
     if (!final)
     {
         *(dword *)(state + 0x1444) = 0xc;
@@ -1094,7 +1156,6 @@ void function_1ba00(byte *state)
 struct s_shader_cache;
 void function_1c590(s_shader_cache *state, long tag, long index);
 void __stdcall function_1c710(void *state);
-extern byte g_51f0f0[0x2d8];
 
 // @retail 0x246a0
 bool __stdcall function_246a0(void *context)
@@ -1106,17 +1167,17 @@ bool __stdcall function_246a0(void *context)
     function_0222d0(D3DRS_ZWRITEENABLE, 0);
     function_0222d0(D3DRS_CULLMODE, 0);
     function_0222d0(D3DRS_STENCILENABLE, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_BORDER);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_BORDER);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSW, D3DTADDRESS_BORDER);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
+    sampler_state_write(0, D3DTSS_ADDRESSU, D3DTADDRESS_BORDER);
+    sampler_state_write(0, D3DTSS_ADDRESSV, D3DTADDRESS_BORDER);
+    sampler_state_write(0, D3DTSS_ADDRESSW, D3DTADDRESS_BORDER);
+    sampler_state_write(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+    sampler_state_write(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+    sampler_state_write(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+    sampler_state_write(0, D3DTSS_MAXANISOTROPY, 0);
+    sampler_state_write(0, D3DTSS_MIPMAPLODBIAS, 0);
+    sampler_state_write(0, D3DTSS_MAXMIPLEVEL, 0);
+    sampler_state_write(0, D3DTSS_COLORSIGN, 0);
+    sampler_state_write(0, D3DTSS_ALPHAKILL, 0);
     memset(&g_484f68, 0, sizeof(g_484f68));
     g_484f68.PSTextureModes = 1;
     g_484f68.PSCombinerCount = 0x1001;
@@ -1132,6 +1193,7 @@ bool __stdcall function_246a0(void *context)
 }
 
 typedef long (__stdcall *visibility_draw_callback)(s_slot *slot, byte *data);
+bool function_0bfe60(dword const *flags, long bit);
 
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
@@ -1152,7 +1214,8 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
                 {
                     long test = index * 3 + set;
                     HRESULT status = S_OK;
-                    if (g_51f40c.bitsets[set][index >> 5] & (1 << (index & 31)))
+                    dword *bitset = g_51f40c.bitsets[set];
+                    if (function_0bfe60(bitset, index))
                     {
                         UINT pixels;
                         ULONGLONG timestamp;
@@ -1163,14 +1226,24 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
                     long total = 0;
                     if (status == S_OK)
                     {
-                        D3DDevice_BeginVisibilityTest();
+                        dword *device = (dword *)D3D__pDevice;
+                        dword volatile *push = (dword volatile *)device[0];
+                        if (push >= (dword volatile *)device[1])
+                        {
+                            dword full_size = D3D::CDevice::m_PushSegmentSize;
+                            push = D3D::MakeRequestedSpace(full_size >> 1, full_size);
+                        }
+                        push[0] = 0x817c8;
+                        push[1] = 1;
+                        push[2] = 1;
+                        device[0] = (dword)(push + 3);
                         total = draw(slot, slot->data);
                         status = D3DDevice_EndVisibilityTest(test);
                         total = PIN(total, 0, 65535);
                     }
                     slot->k = total;
                     if (status == S_OK)
-                        g_51f40c.bitsets[set][index >> 5] |= 1 << (index & 31);
+                        bitset[index >> 5] |= 1 << (index & 31);
                 }
                 else
                     draw(slot, slot->data);
@@ -1180,7 +1253,6 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 }
 
 
-extern long g_4b9ed4;
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
 // @retail 0x3c270
@@ -1196,9 +1268,10 @@ bool __stdcall function_3c270(dword value)
     key.e = 0;
     long index = function_0209b0(&key, &value, 4);
     if (index == NONE) return false;
-    bool valid = false;
+    byte &valid = *(byte *)&value;
+    valid = false;
     bool available;
-    real amount;
+    real &amount = *(real *)&key.b;
     if (g_51f408 && g_51f40c.slots[index].valid)
     {
         long frame = ((long)g_485aa0 + 1) % 3;
@@ -1234,135 +1307,133 @@ void function_226a0(void)
 extern long g_4858b8;
 void function_14f60(short stage, short index);
 bool function_1ccf0(D3DPIXELSHADERDEF const *program);
-void __stdcall function_34a90(long target, short blend, dword color_write,
+void __stdcall function_34a90(long target, long blend, dword color_write,
     bool use_depth, bool depth_write, real depth, real distortion, real scale,
     long count, bool full_surface, bool viewport_textures);
 
 // @retail 0x22070
 void __stdcall function_22070(real strength, real exponent)
 {
+    strength = strength > 0.0f ? PIN(pow(strength > 1.0f ? 1.0f : strength,
+        exponent > 0.0f ? exponent : 0.0f), 0.0f, 1.0f) : 0.0f;
     if (strength > 0.0f)
     {
-        strength = (real)PIN(pow((double)(strength > 1.0f ? 1.0f : strength),
-            (double)(exponent > 0.0f ? exponent : 0.0f)), 0.0, 1.0);
-        if (strength > 0.0f)
+        function_14f60(0, 18);
+        sampler_state_write(0, D3DTSS_MAXANISOTROPY, 0);
+        sampler_state_write(0, D3DTSS_MIPMAPLODBIAS, 0);
+        sampler_state_write(0, D3DTSS_MAXMIPLEVEL, 0);
+        sampler_state_write(0, D3DTSS_COLORSIGN, 0);
+        sampler_state_write(0, D3DTSS_ALPHAKILL, 0);
+        sampler_state_write(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+        sampler_state_write(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+        sampler_state_write(0, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
+        sampler_state_write(0, D3DTSS_MAGFILTER, D3DTEXF_POINT);
+        sampler_state_write(0, D3DTSS_MINFILTER, D3DTEXF_POINT);
+        sampler_state_write(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+        memset(&g_484f68, 0, sizeof(g_484f68));
+        g_484f68.PSTextureModes = 1;
+        g_484f68.PSCombinerCount = 0x11001;
+        real alpha_scale = 255.0f;
+        long alpha = 0;
+        __asm
         {
-            function_14f60(0, 18);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_POINT);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_POINT);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
-            memset(&g_484f68, 0, sizeof(g_484f68));
-            g_484f68.PSTextureModes = 1;
-            g_484f68.PSCombinerCount = 0x11001;
-            real alpha_scale = 255.0f;
-            long alpha = 0;
-            __asm
-            {
-                fld strength
-                fld alpha_scale
-                fmulp st(1), st(0)
-                fistp alpha
-            }
-            g_484f68.PSFinalCombinerConstant0 = (dword)alpha << 24;
-            g_484f68.PSFinalCombinerInputsABCD = 0x8110000;
-            g_484f68.PSFinalCombinerInputsEFG = 0x1100;
-            function_1ccf0(&g_484f68);
-            function_34a90(g_4858b8, 7, 0x1010101, false, false,
-                1.0f, 0.0f, 1.0f, 1, false, false);
+            fld strength
+            fld alpha_scale
+            fmulp st(1), st(0)
+            fistp alpha
+            shl alpha, 24
         }
+        g_484f68.PSFinalCombinerConstant0 = (dword)alpha;
+        g_484f68.PSFinalCombinerInputsABCD = 0x8110000;
+        g_484f68.PSFinalCombinerInputsEFG = 0x1100;
+        function_1ccf0(&g_484f68);
+        function_34a90(g_4858b8, 7, 0x1010101, false, false,
+            1.0f, 0.0f, 1.0f, 1, false, false);
     }
 }
 
 typedef bool (__stdcall *t_211a0_vertex)(long, real const *, real const *, real *, long);
-void function_34d90(long target, real const *weights, short blend, dword color_write,
+void function_34d90(long target, real const *weights, long blend, dword color_write,
     bool use_depth, bool depth_write, real depth, real low, real high,
     bool full_surface, t_211a0_vertex vertex);
 void __stdcall function_351a0(long texture, long target);
 
-PRIVATE __forceinline void configure_filter_textures(long source)
+PRIVATE __forceinline void configure_filter_textures(long const &source)
 {
     for (long stage = 0; stage < 4; ++stage)
     {
         function_14f60(stage, (short)source);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+        sampler_state_write(stage, D3DTSS_MAXANISOTROPY, 0);
+        sampler_state_write(stage, D3DTSS_MIPMAPLODBIAS, 0);
+        sampler_state_write(stage, D3DTSS_MAXMIPLEVEL, 0);
+        sampler_state_write(stage, D3DTSS_COLORSIGN, 0);
+        sampler_state_write(stage, D3DTSS_ALPHAKILL, 0);
+        sampler_state_write(stage, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+        sampler_state_write(stage, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+        sampler_state_write(stage, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
+        sampler_state_write(stage, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+        sampler_state_write(stage, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+        sampler_state_write(stage, D3DTSS_MIPFILTER, D3DTEXF_NONE);
     }
 }
 
 // @retail 0x21360
 long function_21360(long source, real radius, real low, real high, long target,
-    long alternate, long passes, long unused, bool configure, bool full_surface, real scale)
+    long alternate, long passes, long output, bool configure, bool full_surface, real scale)
 {
-    (void)&unused;
-    radius *= 0.01666f;
+    real current_radius = radius * 0.01666f;
     if (alternate == NONE)
         alternate = source;
     if (configure)
-        function_020f30(0.0f, scale);
+        function_020f30(scale, 0.0f);
     for (long pass = 0; pass < passes; ++pass)
     {
         real weights[4];
-        weights[0] = radius;
-        weights[1] = radius * 0.33f;
-        weights[2] = radius * -0.33f;
-        weights[3] = 0.0f - radius;
+        weights[0] = current_radius;
+        weights[1] = current_radius * 0.33f;
+        weights[2] = current_radius * -0.33f;
+        weights[3] = 0.0f - current_radius;
         configure_filter_textures(source);
         function_34d90(target, weights, 10, 0x1010101, false, false,
             1.0f, low, high, full_surface, NULL);
         source = target;
         target = alternate;
         alternate = source;
-        radius *= 2.0f;
+        current_radius *= 2.0f;
     }
-    if (alternate != NONE && alternate != source)
+    /* Copy the final pass to the requested output buffer. */
+    if (output != NONE && output != source)
     {
-        function_351a0(source, alternate);
-        source = alternate;
+        function_351a0(source, output);
+        source = output;
     }
     return source;
 }
 
 // @retail 0x211a0
 long function_211a0(long source, real passes, real distortion, real falloff,
-    long target, long alternate, long unused, long configure, long full_surface,
+    long target, long alternate, long output, long configure, long full_surface,
     real scale, real offset)
 {
-    (void)&unused;
+    (void)&output;
     real pass = 0.0f;
     if (alternate == NONE)
         alternate = source;
     if ((byte)configure)
-        function_020f30(offset, scale);
+        function_020f30(scale, offset);
     if (passes > 0.0f)
     {
         real growth = (1.0f - falloff) + falloff * 2.0f;
         do
         {
-            real fraction = passes - pass;
-            if (fraction < 0.0f) fraction = 0.0f;
-            else if (fraction > 1.0f) fraction = 1.0f;
+            real fraction = PIN(passes - pass, 0.0f, 1.0f);
             if (fraction > 0.0f)
             {
                 configure_filter_textures(source);
+                /* callers pass full_surface as a bool in its dword slot;
+                   0x34a90 gets that bool as it is */
                 function_34a90(target, 10, 0x1010101, false, false,
-                    1.0f, fraction * distortion, 1.0f, 4, (bool)(byte)full_surface, false);
+                    1.0f, fraction * distortion, 1.0f, 4, *(bool const *)&full_surface, false);
                 source = target;
                 target = alternate;
                 alternate = source;
@@ -1371,10 +1442,11 @@ long function_211a0(long source, real passes, real distortion, real falloff,
             pass += 1.0f;
         } while (pass < passes);
     }
-    if (alternate != NONE && alternate != source)
+    /* Copy the final pass to the requested output buffer. */
+    if (output != NONE && output != source)
     {
-        function_351a0(source, alternate);
-        source = alternate;
+        function_351a0(source, output);
+        source = output;
     }
     return source;
 }
@@ -1412,32 +1484,34 @@ void __stdcall function_21a80(real first, real second, real depth)
         if (first > 0.0f)
         {
             function_14f60(0, 18);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
-            D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
+            sampler_state_write(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+            sampler_state_write(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+            sampler_state_write(0, D3DTSS_ADDRESSW, D3DTADDRESS_CLAMP);
+            sampler_state_write(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+            sampler_state_write(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+            sampler_state_write(0, D3DTSS_MAXANISOTROPY, 0);
+            sampler_state_write(0, D3DTSS_MIPMAPLODBIAS, 0);
+            sampler_state_write(0, D3DTSS_MAXMIPLEVEL, 0);
+            sampler_state_write(0, D3DTSS_COLORSIGN, 0);
+            sampler_state_write(0, D3DTSS_ALPHAKILL, 0);
+            sampler_state_write(0, D3DTSS_MIPFILTER, D3DTEXF_NONE);
             configure_filter_copy();
             function_34a90(5, 10, 0x1010101, false, false, 1.0f, 0.0f, 1.0f, 1, false, false);
             long filtered = function_211a0(5, first, 1.0f, 0.0f, 6, NONE, NONE, 1, 0, 0.0f, 0.0f);
-            first = (real)PIN(pow((double)(first > 1.0f ? 1.0f : first), 0.33000001311302185), 0.0, 1.0);
+            real amount = PIN(pow(first > 1.0f ? 1.0f : first, 0.33f), 0.0f, 1.0f);
             function_14f60(0, (short)filtered);
             function_15780(0, 4);
-            if (first < 1.0f)
+#pragma inline_depth(0)
+            if (amount < 1.0f)
             {
                 function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
                 function_0222d0(D3DRS_SRCBLEND, D3DBLEND_CONSTANTALPHA);
                 function_0222d0(D3DRS_DESTBLEND, D3DBLEND_INVCONSTANTALPHA);
-                function_0222d0(D3DRS_BLENDCOLOR, function_131fc0(first));
+                function_0222d0(D3DRS_BLENDCOLOR, function_131fc0(amount));
                 function_0222d0(D3DRS_BLENDOP, D3DBLENDOP_ADD);
             }
             else function_0222d0(D3DRS_ALPHABLENDENABLE, 0);
+#pragma inline_depth(255)
             configure_filter_copy();
             function_34a90(18, NONE, 0x1010101, false, false, 1.0f, 0.0f, 1.0f, 1, false, false);
         }
@@ -1448,18 +1522,20 @@ void __stdcall function_21a80(real first, real second, real depth)
             configure_filter_copy();
             function_34a90(5, 10, 0x1010101, false, false, 1.0f, 0.0f, 1.0f, 1, false, false);
             long filtered = function_211a0(5, second, 1.0f, 0.0f, 6, NONE, NONE, 1, 0, 0.0f, 0.0f);
-            first = (real)PIN(pow((double)(second > 1.0f ? 1.0f : second), 0.33000001311302185), 0.0, 1.0);
+            real amount = PIN(pow(second > 1.0f ? 1.0f : second, 0.33f), 0.0f, 1.0f);
             function_14f60(0, (short)filtered);
             function_15780(0, 4);
-            if (first < 1.0f)
+#pragma inline_depth(0)
+            if (amount < 1.0f)
             {
                 function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
                 function_0222d0(D3DRS_SRCBLEND, D3DBLEND_CONSTANTALPHA);
                 function_0222d0(D3DRS_DESTBLEND, D3DBLEND_INVCONSTANTALPHA);
-                function_0222d0(D3DRS_BLENDCOLOR, function_131fc0(first));
+                function_0222d0(D3DRS_BLENDCOLOR, function_131fc0(amount));
                 function_0222d0(D3DRS_BLENDOP, D3DBLENDOP_ADD);
             }
             else function_0222d0(D3DRS_ALPHABLENDENABLE, 0);
+#pragma inline_depth(255)
             configure_filter_copy();
             function_34a90(g_4858b8, NONE, 0x1010101, false, false, 1.0f, 0.0f, 1.0f, 1, false, false);
         }
@@ -1479,9 +1555,10 @@ void function_14bc0(short index, short element, bool use_depth);
 void __stdcall function_214f0(real passes, real distortion, real strength, real falloff,
     real scale, bool blend, bool preserve)
 {
-    struct { real first, second, alpha_scale, alpha; color4f color; } values;
-    values.first = 1.0f;
-    values.second = 0.4f;
+    real first_factor, second_factor, alpha;
+    color4f color;
+    first_factor = 1.0f;
+    second_factor = 0.4f;
     if (g_510c50 && ((byte *)g_510c50)[5])
     {
         s_5093e4 *state = g_5093e4;
@@ -1509,8 +1586,8 @@ void __stdcall function_214f0(real passes, real distortion, real strength, real 
             if (state->value14 != -1.0f) scale = state->value14;
             blend = state->flag18;
             preserve = state->flag19;
-            if (state->value1c != -1.0f) values.first = state->value1c;
-            if (state->value20 != -1.0f) values.second = state->value20;
+            if (state->value1c != -1.0f) first_factor = state->value1c;
+            if (state->value20 != -1.0f) second_factor = state->value20;
         }
     }
     passes = passes > 0.0f ? passes : 0.0f;
@@ -1518,74 +1595,80 @@ void __stdcall function_214f0(real passes, real distortion, real strength, real 
     strength = PIN(strength, 0.0f, 1.0f);
     falloff = PIN(falloff, 0.0f, 1.0f);
     scale = PIN(scale, 0.0f, 1.0f);
-    real first_input = values.first;
-    if (first_input < 0.0f) *(volatile real *)&values.first = 0.0f;
-    else if (first_input > 1.0f) *(volatile real *)&values.first = 1.0f;
-    values.second = PIN(values.second, 0.0f, 1.0f);
-    if (strength > 0.0f || values.first > 0.0f)
+    real first_input = first_factor;
+    if (first_input < 0.0f) first_factor = 0.0f;
+    else if (first_input > 1.0f) first_factor = 1.0f;
+    second_factor = PIN(second_factor, 0.0f, 1.0f);
+    if (strength > 0.0f || first_factor > 0.0f)
     {
         configure_filter_textures(g_4858b8);
         memset(&g_484f68, 0, sizeof(g_484f68));
         g_484f68.PSTextureModes = 0x8421;
         g_484f68.PSCombinerCount = 0x11004;
         g_484f68.PSAlphaInputs[0] = 0x18201920;
-        g_484f68.PSAlphaInputs[1] = 0x1a201b20;
-        g_484f68.PSAlphaInputs[2] = 0x1c201d20;
         g_484f68.PSAlphaOutputs[0] = 0x30c00;
+        g_484f68.PSAlphaInputs[1] = 0x1a201b20;
         g_484f68.PSAlphaOutputs[1] = 0x30d00;
+        g_484f68.PSAlphaInputs[2] = 0x1c201d20;
         g_484f68.PSAlphaOutputs[2] = 0x30c00;
         g_484f68.PSRGBInputs[0] = 0x8200920;
-        g_484f68.PSRGBInputs[1] = 0xa200b20;
-        g_484f68.PSRGBInputs[2] = 0xc200d20;
         g_484f68.PSRGBOutputs[0] = 0x30c00;
+        g_484f68.PSRGBInputs[1] = 0xa200b20;
         g_484f68.PSRGBOutputs[1] = 0x30d00;
+        g_484f68.PSRGBInputs[2] = 0xc200d20;
         g_484f68.PSRGBOutputs[2] = 0x30c00;
-        values.color.alpha = 0.125f;
-        values.color.red = distortion;
-        values.color.green = distortion;
-        values.color.blue = distortion;
-        g_484f68.PSConstant0[3] = pack_color4f(&values.color);
+        color.alpha = 0.125f;
+        color.red = distortion;
+        color.green = distortion;
+        color.blue = distortion;
+        g_484f68.PSConstant0[3] = pack_color4f(&color);
         g_484f68.PSRGBInputs[3] = 0xc200140;
         g_484f68.PSRGBOutputs[3] = 0x20d00;
         g_484f68.PSAlphaInputs[3] = 0x1c110000;
         g_484f68.PSAlphaOutputs[3] = 0x10d00;
-        // Retail clears the values.alpha conversion slot before rounding.
-        values.alpha = 0.0f;
-        values.alpha_scale = 255.0f;
+        // Retail clears the alpha conversion slot before rounding.
+        alpha = 0.0f;
+        real alpha_scale = 255.0f;
         long &packed = *(long *)&distortion;
         packed = 0;
         __asm
         {
-            fld values.alpha
-            fld values.alpha_scale
+            fld alpha
+            fld alpha_scale
             fmulp st(1), st(0)
             fistp distortion
+            shl distortion, 24
         }
-        g_484f68.PSFinalCombinerConstant1 = (dword)packed << 24;
+        g_484f68.PSFinalCombinerConstant0 = (dword)packed;
         g_484f68.PSFinalCombinerInputsABCD = ((g_485a74 ? 0x1c : 0) << 24) | 0xf000d;
         g_484f68.PSFinalCombinerInputsEFG = ((g_485a74 ? 0x1d : 0) | 0xc1100) << 8;
         function_1ccf0(&g_484f68);
         function_34a90(7, 10, 0x1010101, false, false, 1.0f, 0.5f, 1.0f, 4, false, false);
-        long filtered = function_211a0(7, passes, 1.0f, falloff, 8, NONE, NONE, 1, 0, scale, values.second);
+        long filtered = function_211a0(7, passes, 1.0f, falloff, 8, NONE, NONE, 1, 0, scale, second_factor);
         function_14f60(0, (short)filtered);
         function_15780(0, 4);
+#pragma inline_depth(0)
         function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
         function_0222d0(D3DRS_SRCBLEND, blend ? 0x307 : 1);
         function_0222d0(D3DRS_DESTBLEND, !preserve);
         function_0222d0(D3DRS_BLENDOP, 0x8006);
+#pragma inline_depth(255)
         memset(&g_484f68, 0, sizeof(g_484f68));
         g_484f68.PSTextureModes = 1;
         g_484f68.PSCombinerCount = 0x11001;
-        values.color.alpha = values.first;
-        values.color.red = strength;
-        values.color.green = strength;
-        values.color.blue = strength;
-        g_484f68.PSConstant0[0] = pack_color4f(&values.color);
+        color.alpha = first_factor;
+        color.red = strength;
+        color.green = strength;
+        color.blue = strength;
+        g_484f68.PSConstant0[0] = pack_color4f(&color);
         g_484f68.PSRGBOutputs[0] = 0x10c00;
         g_484f68.PSFinalCombinerInputsABCD = 0xc;
         g_484f68.PSRGBInputs[0] = (g_485a74 ? 0x11 : 0) | 0x8011800;
         function_1ccf0(&g_484f68);
         function_34a90(g_4858b8, NONE, 0x1010101, false, false, 1.0f, 0.0f, 1.0f, 1, false, false);
-        function_14bc0((short)(g_4858b4 != NONE ? g_4858b4 : g_4858b8), 0, true);
+        if (g_4858b4 != NONE)
+            function_14bc0((short)g_4858b4, 0, true);
+        else
+            function_14bc0((short)g_4858b8, 0, true);
     }
 }

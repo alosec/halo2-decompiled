@@ -73,6 +73,13 @@ void __stdcall function_10af80(long object_index, real scale, short ticks)
 	}
 }
 
+PRIVATE __forceinline void scripted_cross_product(vector3f const *a, vector3f const *b, vector3f *result)
+{
+	result->i = a->j * b->k - a->k * b->j;
+	result->j = a->k * b->i - a->i * b->k;
+	result->k = a->i * b->j - a->j * b->i;
+}
+
 PRIVATE __forceinline void scripted_vector_scale(vector3f const *vector, real scale, vector3f *result)
 {
 	result->i = vector->i * scale;
@@ -91,22 +98,28 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 /* sets an object's linear velocity from speeds along its forward, left and up
    axes */
 // @retail 0x10b010
+// score 76 (was 80): retail keeps the three components of the velocity in
+// registers and stores them only just before the two calls, so its frame is
+// twelve bytes smaller than ours, and it emits the scaled products in a
+// different order
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {
-	(void)&left_speed;
-	(void)&up_speed;
 	if (object_index != NONE)
 	{
 		s_scripted_object *object = SCRIPTED_OBJECT_GET(object_index);
 		vector3f left;
+		vector3f scaled;
 		vector3f velocity;
 
-		left.i = object->forward.k * object->up.j - object->up.k * object->forward.j;
-		left.j = object->up.k * object->forward.i - object->up.i * object->forward.k;
-		left.k = object->up.i * object->forward.j - object->forward.i * object->up.j;
-		scripted_vector_scale(&object->forward, forward_speed, &velocity);
-		scripted_vector_add_scaled(&velocity, &left, left_speed, &velocity);
-		scripted_vector_add_scaled(&velocity, &object->up, up_speed, &velocity);
+		scripted_cross_product(&object->up, &object->forward, &left);
+		scripted_vector_scale(&object->forward, forward_speed, &scaled);
+		scaled.j = scaled.j + left.j * left_speed;
+		scaled.k = scaled.k + left.k * left_speed;
+		scaled.i = scaled.i + left.i * left_speed;
+		scripted_vector_add_scaled(&scaled, &object->up, up_speed, &scaled);
+		velocity.i = scaled.i;
+		velocity.j = scaled.j;
+		velocity.k = scaled.k;
 		function_b7740(object_index, &velocity, NULL, false);
 		function_1c4b00(object_index, &velocity, NULL, true);
 		if (velocity.i * velocity.i + velocity.j * velocity.j + velocity.k * velocity.k > 0.0001f)

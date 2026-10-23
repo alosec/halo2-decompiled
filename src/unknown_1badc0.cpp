@@ -13,9 +13,11 @@ struct s_1badc0
 real normalize2d(point2f *arg_0);
 
 // @retail 0x1badc0
-bool __stdcall function_1badc0(point3f const *arg_2, long arg_1, long arg_0,
+bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6)
 {
+    s_type_c3b527 *const *output_reference = &arg_3;
+    arg_3 = *output_reference;
     s_actor_view *local_0 = actor_get(arg_0);
     if (arg_6)
         *arg_6 = false;
@@ -83,8 +85,7 @@ bool __stdcall function_1badc0(point3f const *arg_2, long arg_1, long arg_0,
             local_15 = *(long *)(local_14 + 0xc8);
         s_1badc0 local_16;
         local_16.field_24 = NONE;
-        long local_17 = function_26d100(g_4687b0, (s_collision_result_1697c0 *)&local_16,
-            (long *)arg_3, &local_1);
+        long local_17 = function_26d100(g_4687b0, (long *)arg_3, (s_collision_result_1697c0 *)&local_16, &local_1);
         if (local_17 != NONE)
         {
             if (arg_4)

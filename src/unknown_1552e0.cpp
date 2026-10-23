@@ -1,3 +1,4 @@
+#include "unknown_4e8c38.h"
 // @flags /O2 /Gr
 /* UNKNOWN_1552E0.CPP: the lifecycle callbacks of entry 35 */
 
@@ -11,7 +12,7 @@ struct s_unknown_78
 	byte unknown00[0x78];
 };
 
-dword g_4e8c38[0x143];
+s_storage_4e8c38 g_storage_4e8c38;
 s_unknown_78 *g_510c6c;
 
 // @retail 0x1552e0

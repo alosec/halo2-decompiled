@@ -22,8 +22,7 @@ struct s_type_b56524
 struct file_reference_data
 {
 	dword signature;
-	byte flags;
-	byte unknown05;
+	word flags;
 	word unknown06;
 	char path[256];
 	byte unknown108[8];
@@ -35,7 +34,7 @@ struct s_file_time
 	dword high;
 };
 
-void function_1374c0(char *dest, const char *path);
+void function_1374c0(const char *path, char *dest);
 void function_137320(char *path, const char *name);
 void function_1373c0(char *path);
 
@@ -108,21 +107,20 @@ void function_136fc0(s_type_b56524 *find)
 // @retail 0x137000
 bool function_137000(s_type_b56524 *find, file_reference_data *file, s_file_time *time)
 {
-	char buffer[256] = {0};
 	short depth = find->depth;
+	char buffer[256] = {0};
+	bool result = false;
 	char *path = find->path;
+	WIN32_FIND_DATA *data = &find->data;
 
 	while (depth >= 0)
 	{
 		HANDLE *handle = &find->handles[depth];
 		if (*handle == INVALID_HANDLE_VALUE)
 		{
-			function_1374c0(buffer, path);
-			if (find->root[0])
-			{
-				find_files_path_append(buffer, find->root);
-			}
-			*handle = FindFirstFileA(buffer, &find->data);
+			function_1374c0(path, buffer);
+			find_files_path_append(buffer, find->root);
+			*handle = FindFirstFileA(buffer, data);
 			if (*handle == INVALID_HANDLE_VALUE)
 			{
 				find_files_path_truncate(path);
@@ -130,7 +128,7 @@ bool function_137000(s_type_b56524 *find, file_reference_data *file, s_file_time
 				continue;
 			}
 		}
-		else if (!FindNextFileA(*handle, &find->data))
+		else if (!FindNextFileA(*handle, data))
 		{
 			CloseHandle(*handle);
 			*handle = INVALID_HANDLE_VALUE;
@@ -139,18 +137,18 @@ bool function_137000(s_type_b56524 *find, file_reference_data *file, s_file_time
 			continue;
 		}
 
-		if (find->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		if (data->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
-			if (!strcmp(find->data.cFileName, ".") || !strcmp(find->data.cFileName, ".."))
+			if (!strcmp(data->cFileName, ".") || !strcmp(data->cFileName, ".."))
 			{
 				continue;
 			}
 			bool descended = false;
 			if (find->flags & 1)
 			{
-				function_137320(path, find->data.cFileName);
-				depth++;
+				function_137320(path, data->cFileName);
 				descended = true;
+				depth++;
 			}
 			if (find->flags & 6)
 			{
@@ -161,15 +159,15 @@ bool function_137000(s_type_b56524 *find, file_reference_data *file, s_file_time
 				function_137320(file->path, path);
 				if (!descended)
 				{
-					function_137320(file->path, find->data.cFileName);
+					function_137320(file->path, data->cFileName);
 				}
 				if (time)
 				{
-					time->low = find->data.ftLastWriteTime.dwLowDateTime;
-					time->high = find->data.ftLastWriteTime.dwHighDateTime;
+					time->low = data->ftLastWriteTime.dwLowDateTime;
+					time->high = data->ftLastWriteTime.dwHighDateTime;
 				}
-				find->depth = depth;
-				return true;
+				result = true;
+				goto done;
 			}
 		}
 		else if ((find->flags & 4) || !(find->flags & 2))
@@ -183,19 +181,20 @@ bool function_137000(s_type_b56524 *find, file_reference_data *file, s_file_time
 			{
 				function_1373c0(file->path);
 			}
-			function_137320(file->path, find->data.cFileName);
+			function_137320(file->path, data->cFileName);
 			file->flags |= 1;
 			if (time)
 			{
-				time->low = find->data.ftLastWriteTime.dwLowDateTime;
-				time->high = find->data.ftLastWriteTime.dwHighDateTime;
+				time->low = data->ftLastWriteTime.dwLowDateTime;
+				time->high = data->ftLastWriteTime.dwHighDateTime;
 			}
-			find->depth = depth;
-			return true;
+			result = true;
+			goto done;
 		}
 	}
+done:
 	find->depth = depth;
-	return false;
+	return result;
 }
 
 // @retail 0x137320
@@ -249,39 +248,34 @@ void function_1373c0(char *path)
 void function_137400(char *path, char **a, char **b, char **c, char **d, bool flag)
 {
 	short length = (short)strlen(path);
-	char *p = path + length;
-	*c = p;
-	*d = p;
-	*a = p;
-	*b = p;
-	if (length > 0)
+	char *end = path + length;
+	*c = end;
+	*d = end;
+	*a = end;
+	*b = end;
+	for (short i = length; i > 0; i--)
 	{
-		dword n = (word)length;
-		do
+		char *p = &path[i];
+		if (*p == '.')
 		{
-			if (*p == '.')
+			if (flag && **a == 0 && **b == 0)
 			{
-				if (flag && **a == 0 && **b == 0)
-				{
-					*b = p + 1;
-					*p = 0;
-				}
+				*p = 0;
+				*b = p + 1;
 			}
-			else if (*p == '\\')
+		}
+		else if (*p == '\\')
+		{
+			if (flag && **a == 0)
 			{
-				if (flag && **a == 0)
-				{
-					*a = p + 1;
-					*p = 0;
-				}
-				else if (**d == 0)
-				{
-					*d = p + 1;
-				}
+				*p = 0;
+				*a = p + 1;
 			}
-			p--;
-			n--;
-		} while (n);
+			else if (**d == 0)
+			{
+				*d = p + 1;
+			}
+		}
 	}
 	if (flag && **a == 0)
 	{
@@ -296,7 +290,7 @@ void function_137400(char *path, char **a, char **b, char **c, char **d, bool fl
 char g_453588[256];
 
 // @retail 0x1374c0
-void function_1374c0(char *dest, const char *path)
+void function_1374c0(const char *path, char *dest)
 {
 	dest[0] = 0;
 	char c = path[0];
@@ -319,7 +313,7 @@ void function_1374c0(char *dest, const char *path)
 }
 
 // @retail 0x136770
-long function_136770(file_reference_data *directory, dword flags, long maximum_count, file_reference_data *files)
+long function_136770(dword flags, file_reference_data *directory, long maximum_count, file_reference_data *files)
 {
 	s_type_b56524 find;
 	long count = 0;

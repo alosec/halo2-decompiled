@@ -21,6 +21,20 @@ struct s_slot_05
 
 bool __stdcall function_1b1f70(long actor_index, s_slot *slot);
 
+PRIVATE __forceinline void function_1b1eb2(long arg_0)
+{
+	s_actor_view *local_0 = actor_get(arg_0);
+	*(bool volatile *)&local_0->unknown50c = false;
+	*(long volatile *)&local_0->unknown5ac = NONE;
+	*(short volatile *)&local_0->unknown5b0 = NONE;
+	*(short volatile *)&local_0->unknown5b4 = 0;
+	*(short volatile *)&local_0->unknown5b6 = 0;
+	local_0->unknown4ac = 0;
+	*(short volatile *)&local_0->unknown504 = 0;
+}
+
+// score 14 (was 14): ours keeps the scaled actor index in ECX and the actor pointer in EAX,
+// retail keeps the index in EAX and the pointer in ECX.
 // @retail 0x1b1eb0
 bool __stdcall function_1b1eb0(long actor_index, s_slot *slot)
 {
@@ -31,7 +45,7 @@ bool __stdcall function_1b1eb0(long actor_index, s_slot *slot)
 		state->unknown10 = 3;
 	state->reference = actor->unknown418;
 	actor->unknown3f2 = false;
-	actor_reset_state(actor_index);
+	function_1b1eb2(actor_index);
 	return true;
 }
 
@@ -70,6 +84,9 @@ void __stdcall function_1b21f0(long actor_index, s_slot *slot)
 			actor->unknown41c = 2;
 			actor->unknown420 = 2;
 		}
+		actor->unknown484 = true;
+		actor->unknown4a1 = true;
+		return;
 	}
 	actor->unknown484 = true;
 	actor->unknown4a1 = true;
@@ -101,7 +118,7 @@ s_slot_handler_2 g_47dfd0 =
 {
 	{
 		5, 2, NONE, -2, 0,
-		function_1a8370, function_1b1f30, function_1b1eb0, 0, NONE, {0},
+		actor_behavior_priority_minimum, function_1b1f30, function_1b1eb0, 0, NONE, {0},
 		0, 0, 0, 0, function_1b22e0, 0, 0
 	},
 	(t_slot_proc)function_1b1f70, 0, function_1b21f0
@@ -126,7 +143,7 @@ s_slot_handler_1 g_47e030 =
 {
 	{
 		0x6a, 1, 0, -2, 0,
-		function_1a8370, function_1bced0, function_1b2310, 0, NONE, {0},
+		actor_behavior_priority_minimum, function_1bced0, function_1b2310, 0, NONE, {0},
 		0, 0, 0, 0, 0, 0, 0
 	},
 	function_1a79e0, 5, g_46f670
@@ -170,7 +187,7 @@ bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
         {
             long other_index = NONE;
             if (!state->unknown0d)
-                *(short *)state->unknown0e = actor->unknown086 < 2 ? 2 : 0xff;
+                *(short *)state->unknown0e = actor->unknown086 >= 2 ? 2 : 0xff;
             s_2605d0_request request;
             memset(&request, 0, sizeof(request));
             request.type = 4;
@@ -181,7 +198,7 @@ bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
             *((byte *)&request + 0x59) = true;
             byte *scratch = ai_scratch_buffer_get();
             bool unknown = false;
-            s_reference reference;
+            s_reference reference = actor->unknown418;
             if (state->unknown0c)
             {
                 reference = function_2605d0(actor_index, &request, 0, (long)&other_index, scratch, &unknown);
@@ -194,8 +211,6 @@ bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
                         state->reference = reference;
                 }
             }
-            else
-                reference = actor->unknown418;
             if (!REFERENCE_EQUAL(function_2626b0(actor_index, reference, other_index, scratch, unknown, true), g_470fa0))
             {
                 state->unknown0c = false;

@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "bitstream.h"
 #include "unknown_1946f0.h"
+#include "normalize3d.h"
 #include <math.h>
 #include <string.h>
 
@@ -15,25 +16,11 @@
 
 s_direction_face g_475480[32];
 
-static __inline real normalize3d(vector3f *v)
-{
-	real m = (real)sqrt(v->i * v->i + v->j * v->j + v->k * v->k);
-	if (!(fabs(m) < k_real_epsilon))
-	{
-		real inv = 1.f / m;
-		v->i = inv * v->i;
-		v->j = inv * v->j;
-		v->k = v->k * inv;
-		return m;
-	}
-	return 0.f;
-}
-
-// Decode normalization uses the rounded local components in double products.
+/* the decode path's normalization: the length of the stored components,
+   then each component scaled by its inverse */
 static __forceinline real normalize_decoded_direction(vector3f *v)
 {
-	vector3f const volatile *stored = v;
-	real m = (real)sqrt((double)stored->i * stored->i + (double)stored->k * stored->k + (double)stored->j * stored->j);
+	real m = (real)sqrt(v->i * v->i + v->k * v->k + v->j * v->j);
 	if (!(fabs(m) < k_real_epsilon))
 	{
 		real inv = 1.f / m;
@@ -70,20 +57,35 @@ void function_194c10(s_bitstream *stream, vector3f const *vector, real lo, real 
 		function_194830(stream, true);
 }
 
+/* the direction an index names: a 64 x 64 grid point on one face of the
+   direction table */
+static __forceinline void decode_direction_194d30(long index, vector3f *direction)
+{
+	real x = (real)(index & 0x3f) * (1.f / 63.f);
+	real y = (real)((index >> 6) & 0x3f) * (1.f / 63.f);
+	x = x * 2.f;
+	y = y * 2.f;
+	real z = 0.f;
+	s_direction_face const *face = &g_475480[index >> 12];
+	if (face->scale != 1.f)
+	{
+		x = face->scale * x;
+		y = face->scale * y;
+		z = face->scale * z;
+	}
+	direction->i = z * face->axes[2].i + y * face->axes[1].i + x * face->axes[0].i + face->origin.i;
+	direction->j = z * face->axes[2].j + y * face->axes[1].j + x * face->axes[0].j + face->origin.j;
+	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
+}
+
 // @retail 0x194d30
-void function_194d30(s_bitstream *stream, vector3f const *forward, vector3f const *up)
+void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
 	vector3f direction;
-	vector3f const *default_forward = g_4687b0;
-	if (fabs(forward->i - default_forward->i) < k_real_epsilon && fabs(forward->j - default_forward->j) < k_real_epsilon && fabs(forward->k - default_forward->k) < k_real_epsilon)
+	if (!(fabs(forward->i - g_4687b0->i) < k_real_epsilon && fabs(forward->j - g_4687b0->j) < k_real_epsilon && fabs(forward->k - g_4687b0->k) < k_real_epsilon))
 	{
-		function_194830(stream, true);
-		direction = *default_forward;
-	}
-	else
-	{
-		function_194830(stream, false);
 		long index = function_24f590(forward);
+		function_194830(stream, false);
 		if ((dword)index >= k_direction_limit)
 		{
 			char message[256];
@@ -91,22 +93,13 @@ void function_194d30(s_bitstream *stream, vector3f const *forward, vector3f cons
 			csprintf_256(message, "%u exceeds max value of %u", index, k_direction_limit);
 		}
 		function_195720(stream, index, k_direction_bits);
-		{
-			s_direction_face const *face = &g_475480[index >> 12];
-			real x = (real)(index & 0x3f) * (1.f / 63.f) * 2.f;
-			real y = (real)((index >> 6) & 0x3f) * (1.f / 63.f) * 2.f;
-			real z = 0.f;
-			if (face->scale != 1.f)
-			{
-				x = face->scale * x;
-				y = face->scale * y;
-				z = face->scale * z;
-			}
-			direction.i = z * face->axes[2].i + y * face->axes[1].i + x * face->axes[0].i + face->origin.i;
-			direction.j = z * face->axes[2].j + y * face->axes[1].j + x * face->axes[0].j + face->origin.j;
-			direction.k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
-		}
+		decode_direction_194d30(index, &direction);
 		normalize3d(&direction);
+	}
+	else
+	{
+		function_194830(stream, true);
+		direction = *g_4687b0;
 	}
 	real angle = function_1949b0(&direction, up);
 	real v = (angle - -k_pi) * 40.42535400390625f;
@@ -120,6 +113,10 @@ void function_194d30(s_bitstream *stream, vector3f const *forward, vector3f cons
 }
 
 // @retail 0x195070
+// score 96 (was 96): retail multiplies the two scale factors in the other
+// order, by two first, and keeps them in xmm2 and xmm3 with the two components
+// in xmm0 and xmm1; ours keeps the first factor in xmm0 and the components in
+// xmm1 and xmm2
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {
 	if (!function_1957d0(stream))
@@ -127,11 +124,11 @@ void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long 
 		long index = (long)function_1959c0(stream, k_direction_bits);
 		vector3f direction;
 		{
-			s_direction_face const *face = &g_475480[index >> 12];
 			real x = (real)(index & 0x3f) * (1.f / 63.f);
 			real y = (real)((index >> 6) & 0x3f) * (1.f / 63.f);
 			x = x * 2.f;
 			y = y * 2.f;
+			s_direction_face const *face = &g_475480[index >> 12];
 			real z = 0.f;
 			if (face->scale != 1.f)
 			{
@@ -139,9 +136,9 @@ void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long 
 				y = face->scale * y;
 				z = face->scale * z;
 			}
-			direction.i = (double)face->axes[2].i * z + (double)face->axes[1].i * y + (double)face->axes[0].i * x + face->origin.i;
-			direction.j = (double)face->axes[2].j * z + (double)face->axes[1].j * y + (double)face->axes[0].j * x + face->origin.j;
-			direction.k = (double)face->axes[2].k * z + (double)face->axes[1].k * y + (double)face->axes[0].k * x + face->origin.k;
+			direction.i = z * face->axes[2].i + y * face->axes[1].i + x * face->axes[0].i + face->origin.i;
+			direction.j = z * face->axes[2].j + y * face->axes[1].j + x * face->axes[0].j + face->origin.j;
+			direction.k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 		}
 		normalize_decoded_direction(&direction);
 		real magnitude = function_194ff0(stream, lo, hi, bits);
@@ -154,33 +151,26 @@ void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long 
 }
 
 // @retail 0x195370
-bool function_195370(vector3f const *a, vector3f const *b, real lo, real hi, long bits)
+bool __fastcall function_195370(vector3f const *a, vector3f const *b, real lo, real hi, long bits)
 {
-	vector3f direction_b = *b;
-	real magnitude_b = normalize3d(&direction_b);
 	vector3f direction_a = *a;
+	vector3f direction_b = *b;
 	real magnitude_a = normalize3d(&direction_a);
-	bool short_b = lo > magnitude_b;
+	real magnitude_b = normalize3d(&direction_b);
 	bool short_a = lo > magnitude_a;
-	bool near_b = false;
-	if (!short_b)
-		near_b = function_1952f0(magnitude_b, lo, lo, hi, bits);
-	bool near_a = false;
-	if (!short_a)
-		near_a = function_1952f0(magnitude_a, lo, lo, hi, bits);
-	if (short_b)
+	bool short_b = lo > magnitude_b;
+	bool near_a = !short_a && function_1952f0(magnitude_a, lo, lo, hi, bits);
+	bool near_b = !short_b && function_1952f0(magnitude_b, lo, lo, hi, bits);
+	if (!short_a || !short_b)
 	{
-		if (short_a)
-			return true;
-		if (!near_a)
+		if (short_a || short_b)
+		{
+			bool other_near = short_a ? near_b : near_a;
+			if (!other_near)
+				return false;
+		}
+		if (!direction_a.quantized_equal(&direction_b) || !function_1952f0(magnitude_a, magnitude_b, lo, hi, bits))
 			return false;
 	}
-	else if (short_a)
-	{
-		if (!near_b)
-			return false;
-	}
-	if (!direction_b.quantized_equal(&direction_a))
-		return false;
-	return function_1952f0(magnitude_b, magnitude_a, lo, hi, bits);
+	return true;
 }

@@ -157,18 +157,14 @@ c_button_widget_45d5d0::c_button_widget_45d5d0(short valuef8, word user_flags) :
 static __forceinline c_class_1a2c81 *widget_get_next_wrapped(c_class_1a2c81 *widget)
 {
 	c_class_1a2c81 *result = widget->next;
-
-	if (result == 0)
+	if (result) return result;
+	result = widget;
+step:
+	c_class_1a2c81 *cursor = result->previous;
+	if (cursor)
 	{
-		c_class_1a2c81 *previous;
-
-		result = widget;
-		previous = widget->previous;
-		while (previous != 0)
-		{
-			result = previous;
-			previous = previous->previous;
-		}
+		result = cursor;
+		goto step;
 	}
 	return result;
 }
@@ -177,17 +173,14 @@ static __forceinline c_class_1a2c81 *widget_get_next_wrapped(c_class_1a2c81 *wid
 static __forceinline c_class_1a2c81 *widget_get_previous_wrapped(c_class_1a2c81 *widget)
 {
 	c_class_1a2c81 *result = widget->previous;
-
-	if (!result)
+	if (result) return result;
+	result = widget;
+step:
+	c_class_1a2c81 *cursor = result->next;
+	if (cursor)
 	{
-		c_class_1a2c81 *next = widget->next;
-
-		result = widget;
-		while (next)
-		{
-			result = next;
-			next = result->next;
-		}
+		result = cursor;
+		goto step;
 	}
 	return result;
 }
@@ -195,9 +188,19 @@ static __forceinline c_class_1a2c81 *widget_get_previous_wrapped(c_class_1a2c81 
 // @retail 0x2c8f56
 void c_button_widget_45d5d0::v8()
 {
-	c_class_1a2c81 *widget = widget_get_next_wrapped(this);
-
-	while (widget)
+	c_class_1a2c81 *candidate = next;
+	if (!candidate)
+	{
+		c_class_1a2c81 *cursor = previous;
+		candidate = this;
+		while (cursor)
+		{
+			candidate = cursor;
+			cursor = candidate->previous;
+		}
+	}
+	c_class_1a2c81 *widget;
+	while ((widget = candidate) != 0)
 	{
 		if (widget->has_valid_type() && widget->value6e)
 		{
@@ -205,16 +208,36 @@ void c_button_widget_45d5d0::v8()
 			widget->function_22ecb4_2(true);
 			return;
 		}
-		widget = widget_get_next_wrapped(widget);
+		candidate = widget->next;
+		if (!candidate)
+		{
+			c_class_1a2c81 *cursor = widget->previous;
+			candidate = widget;
+			while (cursor)
+			{
+				candidate = cursor;
+				cursor = candidate->previous;
+			}
+		}
 	}
 }
 
 // @retail 0x2c8fb4
 void c_button_widget_45d5d0::v9()
 {
-	c_class_1a2c81 *widget = widget_get_previous_wrapped(this);
-
-	while (widget)
+	c_class_1a2c81 *candidate = previous;
+	if (!candidate)
+	{
+		c_class_1a2c81 *cursor = next;
+		candidate = this;
+		while (cursor)
+		{
+			candidate = cursor;
+			cursor = candidate->next;
+		}
+	}
+	c_class_1a2c81 *widget;
+	while ((widget = candidate) != 0)
 	{
 		if (widget->has_valid_type() && widget->value6e)
 		{
@@ -222,7 +245,17 @@ void c_button_widget_45d5d0::v9()
 			widget->function_22ecb4_2(true);
 			return;
 		}
-		widget = widget_get_previous_wrapped(widget);
+		candidate = widget->previous;
+		if (!candidate)
+		{
+			c_class_1a2c81 *cursor = widget->next;
+			candidate = widget;
+			while (cursor)
+			{
+				candidate = cursor;
+				cursor = candidate->next;
+			}
+		}
 	}
 }
 

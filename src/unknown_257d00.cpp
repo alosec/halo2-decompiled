@@ -7,7 +7,9 @@
 #include "globals.h"
 #include "data_array.h"
 #include "slot_handler.h"
+static __forceinline long real_to_long(real value);
 #include "unknown_2551c0.h"
+#include "swarm.h"
 #include <string.h>
 
 /* a command script (0xd4 bytes) */
@@ -213,7 +215,7 @@ long function_257e70(long script_index);
 long function_257fa0(long actor_index, short script_index, long thread_index);
 long function_258040(long actor_index, short script_index, long thread_index);
 
-void __stdcall function_1f4280(long actor_index);
+bool __stdcall function_1f4280(long actor_index);
 long function_209520(short script_index);
 void function_267770(long prop_index, long actor_index);
 
@@ -226,30 +228,6 @@ void function_259e70(long cs_index);
 void function_258540(long actor_index, long cs_index);
 void function_258480(long joint_index, long actor_index);
 void function_2583e0(long joint_index);
-
-/* a copy of function_290c80 (unknown_290c80.cpp), which retail inlines here */
-static inline s_handler_object_view *ai_object_iterator_next(s_ai_object_iterator *iterator)
-{
-	s_handler_object_view *object = NULL;
-
-	if (iterator->next_index != NONE)
-	{
-		object = handler_object_get(iterator->next_index);
-		iterator->index = iterator->next_index;
-
-		byte *data;
-		if (!object->flags134 && (data = (byte *)object + object->ai_offset) != NULL)
-		{
-			iterator->next_index = *(long *)(data + 0xc);
-		}
-		else
-		{
-			iterator->next_index = NONE;
-		}
-	}
-
-	return object;
-}
 
 inline s_cs_datum *cs_get(long cs_index)
 {
@@ -352,15 +330,17 @@ long function_257e70(long script_index)
 }
 
 // @retail 0x257ed0
-long function_257ed0(long thread_index, long actor_index, short script_index)
+long function_257ed0(long actor_index, short script_index, long thread_index)
 {
 	s_actor_cs_view *actor = actor_cs_get(actor_index);
 
-	if (g_502428 != NONE && function_272b70(g_502428) == actor_index)
+	if (g_502428 != NONE && actor_index == function_272b70(g_502428))
 	{
-		for (long cs_index = actor->first_cs_index; cs_index != NONE; cs_index = cs_get(cs_index)->next_index)
+		for (long cs_index = actor->first_cs_index; cs_index != NONE; )
 		{
-			cs_get(cs_index)->unknown7e = true;
+			s_cs_datum *cs = cs_get(cs_index);
+			cs->unknown7e = true;
+			cs_index = cs->next_index;
 		}
 		return function_258040(actor_index, script_index, thread_index);
 	}
@@ -437,62 +417,68 @@ long function_258040(long actor_index, short script_index, long thread_index)
 // @retail 0x2580c0
 bool function_2580c0(short squad_index, short script_index, long *actor_indices, short count)
 {
+	bool result;
+	s_joint_cs_datum *joint;
+	bool first;
+	s_cs_squad *squad;
 	long joint_index = function_257e70(script_index);
 
-	if (joint_index == NONE)
+	if (joint_index != NONE)
 	{
-		return false;
-	}
+		joint = joint_cs_get(joint_index);
+		first = true;
+		squad = NULL;
 
-	s_joint_cs_datum *joint = joint_cs_get(joint_index);
-	bool first = true;
-	s_cs_squad *squad = NULL;
-
-	if (squad_index != NONE)
-	{
-		squad = &((s_cs_squad_scenario_view *)g_4e0350)->squads[squad_index];
-	}
-
-	joint->participant_count = count > 10 ? 10 : count;
-	joint->unknown08 = squad_index;
-	joint->unknown8a = false;
-	for (short i = 0; i < joint->participant_count; i++)
-	{
-		long cs_index = function_257fa0(actor_indices[i], script_index, joint->thread_index);
-
-		if (cs_index != NONE)
+		if (squad_index != NONE)
 		{
-			s_cs_datum *cs = cs_get(cs_index);
+			squad = &((s_cs_squad_scenario_view *)g_4e0350)->squads[squad_index];
+		}
 
-			cs->joint_index = joint_index;
-			if (squad)
+		joint->participant_count = count > 10 ? (short)10 : count;
+		joint->unknown08 = squad_index;
+		joint->unknown8a = false;
+		for (short i = 0; i < joint->participant_count; i++)
+		{
+			long cs_index = function_257fa0(actor_indices[i], script_index, joint->thread_index);
+
+			if (cs_index != NONE)
 			{
-				cs->unknown83 = !TEST_FIELD_BIT(squad->flags.flag1);
-			}
-			if (first)
-			{
-				first = false;
-				joint->leader = i;
+				s_cs_datum *cs = cs_get(cs_index);
+
+				cs->joint_index = joint_index;
+				if (squad)
+				{
+					cs->unknown83 = !TEST_FIELD_BIT(squad->flags.flag1);
+				}
+				if (first)
+				{
+					first = false;
+					joint->leader = i;
+				}
+				else
+				{
+					cs->unknown44 = true;
+				}
+				joint->participants[i].actor_index = actor_indices[i];
+				joint->participants[i].cs_index = cs_index;
+				joint->participants[i].unknown8 = i;
 			}
 			else
 			{
-				cs->unknown44 = true;
+				actor_indices[i] = NONE;
 			}
-			joint->participants[i].cs_index = cs_index;
-			joint->participants[i].actor_index = actor_indices[i];
-			joint->participants[i].unknown8 = i;
 		}
-		else
+
+		result = joint->leader != NONE;
+
+		if (!result)
 		{
-			actor_indices[i] = NONE;
+			function_2583e0(joint_index);
 		}
 	}
-
-	bool result = joint->leader != NONE;
-
-	if (!result)
+	else
 	{
-		function_2583e0(joint_index);
+		result = false;
 	}
 	return result;
 }
@@ -500,52 +486,53 @@ bool function_2580c0(short squad_index, short script_index, long *actor_indices,
 // @retail 0x258230
 bool function_258230(long cs_index, short mode, long actor_index, long new_actor_index)
 {
+	s_cs_datum *new_cs;
 	s_cs_datum *cs = cs_get(cs_index);
 	long new_cs_index;
+	long thread_index = cs->thread_index;
 
 	switch (mode)
 	{
 	case 0:
-		new_cs_index = function_257ed0(cs->thread_index, new_actor_index, (short)cs->script_index);
+		new_cs_index = function_257ed0(new_actor_index, (short)cs->script_index, thread_index);
 		break;
 	case 1:
-		new_cs_index = function_257fa0(new_actor_index, (short)cs->script_index, cs->thread_index);
+		new_cs_index = function_257fa0(new_actor_index, (short)cs->script_index, thread_index);
 		break;
 	case 2:
-		new_cs_index = function_258040(new_actor_index, (short)cs->script_index, cs->thread_index);
+		new_cs_index = function_258040(new_actor_index, (short)cs->script_index, thread_index);
 		break;
 	default:
 		return false;
 	}
 
-	if (new_cs_index == NONE)
+	if (new_cs_index != NONE)
 	{
-		return false;
-	}
+		new_cs = cs_get(new_cs_index);
 
-	s_cs_datum *new_cs = cs_get(new_cs_index);
-
-	if (cs->joint_index != NONE)
-	{
-		s_joint_cs_datum *joint = joint_cs_get(cs->joint_index);
-
-		for (short i = 0; i < joint->participant_count; i++)
+		if (cs->joint_index != NONE)
 		{
-			if (joint->participants[i].actor_index == actor_index)
+			s_joint_cs_datum *joint = joint_cs_get(cs->joint_index);
+
+			for (short i = 0; i < joint->participant_count; i++)
 			{
-				joint->participants[i].actor_index = new_actor_index;
-				joint->participants[i].cs_index = new_cs_index;
-				break;
+				if (joint->participants[i].actor_index == actor_index)
+				{
+					joint->participants[i].actor_index = new_actor_index;
+					joint->participants[i].cs_index = new_cs_index;
+					break;
+				}
 			}
 		}
-	}
 
-	new_cs->state = 1;
-	new_cs->unknown44 = cs->unknown44;
-	cs->joint_index = NONE;
-	cs->thread_index = NONE;
-	cs->type = 0x17;
-	return true;
+		new_cs->state = 1;
+		new_cs->unknown44 = cs->unknown44;
+		cs->joint_index = NONE;
+		cs->thread_index = NONE;
+		cs->type = 0x17;
+		return true;
+	}
+	return false;
 }
 
 PRIVATE __forceinline s_joint_cs_datum *function_258341(long arg_0)
@@ -614,7 +601,7 @@ void function_258480(long joint_index, long actor_index)
 {
 	long const *local_0 = &joint_index;
 	s_joint_cs_datum *joint = joint_cs_get(*local_0);
-	volatile bool remaining = false;
+	byte local_1 = 0;
 
 	for (short i = 0; i < joint->participant_count; i++)
 	{
@@ -632,13 +619,13 @@ void function_258480(long joint_index, long actor_index)
 			}
 			else if (joint->participants[i].actor_index != NONE)
 			{
-				remaining = true;
-				cs->unknown7e = true;
+				local_1 = 1;
+				cs->unknown7e = (bool)local_1;
 			}
 		}
 	}
 
-	if (!remaining)
+	if (!local_1)
 	{
 		if (joint->thread_index != NONE)
 		{
@@ -709,33 +696,30 @@ inline s_actor_cs_run_view *actor_cs_run_get(long actor_index)
 extern long g_50240c;
 extern long g_502410;
 long g_50242c;
-short function_209580(long thread_index); /* unknown_209520.cpp */
+short hs_thread_run_if_due(long thread_index); /* unknown_209520.cpp */
 
 /* runs the command script's thread for the actor, again while it ends in
    type 0x16: 0 when it is done, 1 while it sleeps, 2 while it waits, 3 when
    it has no thread */
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x258880
 short function_258880(long actor_index, long cs_index)
 {
+	short result;
 	s_cs_datum *cs = cs_get(cs_index);
 	s_actor_cs_run_view *actor = actor_cs_run_get(actor_index);
-	short result;
 
-	if (cs->thread_index == NONE)
-	{
-		cs->state = 4;
-		result = 3;
-		return result;
-	}
-	for (;;)
+	while (cs->thread_index != NONE)
 	{
 		if (cs->unknown44)
 		{
 			cs->state = 1;
 			result = 2;
-			return result;
+			goto local_9;
 		}
 		g_502428 = (actor_index & 0xffff) | 0x80000000;
+		_ReadWriteBarrier();
 		if (actor->unknown30 != NONE)
 		{
 			g_50242c = actor->unknown30 & 0xffff;
@@ -749,48 +733,49 @@ short function_258880(long actor_index, long cs_index)
 		cs->unknown28 = NONE;
 		cs->unknown2c = NONE;
 		g_502410 = cs_index;
-		result = function_209580(cs->thread_index);
+		_ReadWriteBarrier();
+		result = hs_thread_run_if_due(cs->thread_index);
 		g_502428 = NONE;
+		_ReadWriteBarrier();
 		g_50240c = NONE;
 		g_502410 = NONE;
 		if (cs->unknown44)
 		{
 			cs->state = 1;
 			result = 2;
-			return result;
+			goto local_9;
 		}
 		if (cs->type != 0x16)
 		{
-			break;
+			if (cs->type == 0x17)
+			{
+				cs->state = 2;
+				result = 0;
+			}
+			else if (result == 2)
+			{
+				cs->state = 1;
+			}
+			else if (result == 0)
+			{
+				cs->state = 2;
+			}
+			else if (result == 1)
+			{
+				cs->state = 0;
+			}
+			goto local_9;
 		}
 		cs = cs_get(cs_index);
 		actor = actor_cs_run_get(actor_index);
-		if (cs->thread_index == NONE)
-		{
-			cs->state = 4;
-			result = 3;
-			return result;
-		}
 	}
-	if (cs->type == 0x17)
-	{
-		cs->state = 2;
-		result = 0;
-	}
-	else if (result == 2)
-	{
-		cs->state = 1;
-	}
-	else if (result == 0)
-	{
-		cs->state = 2;
-	}
-	else if (result == 1)
-	{
-		cs->state = 0;
-	}
+	cs->state = 4;
+	result = 3;
+	goto local_9;
+local_9:
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
 
 /* the actor fields the command scripts' update reads */
 struct s_actor_cs_update_view
@@ -818,29 +803,26 @@ inline s_actor_cs_update_view *actor_cs_update_get(long actor_index)
 void function_258660(long actor_index)
 {
 	s_actor_cs_update_view *actor = actor_cs_update_get(actor_index);
-	bool again = true;
+	byte again = true;
 
-	while (actor->first_cs_index != NONE)
+	while (actor->first_cs_index != NONE && again)
 	{
-		if (!again)
-		{
-			break;
-		}
-
 		long cs_index = actor->first_cs_index;
-		s_cs_datum *cs = cs_get(cs_index);
-		bool finish = false;
+		s_cs_datum *cs;
+		byte finish;
 
 		again = false;
-		if (cs->unknown79 && actor->unknown086 >= 2)
+		cs = cs_get(cs_index);
+		finish = false;
+		if (cs->unknown79)
 		{
-			finish = true;
+			finish = actor->unknown086 >= 2;
 		}
-		else if (cs->unknown7a && (actor->unknown2d8 > 0.f || actor->unknown2dc > 0.f))
+		if (!finish && cs->unknown7a)
 		{
-			finish = true;
+			finish = actor->unknown2d8 > 0.f || actor->unknown2dc > 0.f;
 		}
-		else if (cs->unknown7c < 10)
+		if (!finish && cs->unknown7c < 10)
 		{
 			finish = actor->unknown086 >= cs->unknown7c;
 		}
@@ -851,41 +833,11 @@ void function_258660(long actor_index)
 
 		switch (cs->state)
 		{
-		case 0:
-			actor->current_cs_index = cs_index;
-			break;
-		case 1:
-			{
-				short result = function_258880(actor_index, cs_index);
-
-				if (result == 1)
-				{
-					short next = function_258b60(actor_index, function_258cf0, cs_index);
-
-					if (next == 0)
-					{
-						actor->current_cs_index = cs_index;
-						break;
-					}
-					again = true;
-					if (next == 2)
-					{
-						cs->state = 1;
-					}
-					else
-					{
-						cs->state = 2;
-					}
-				}
-				else if (result == 0 || result == 3)
-				{
-					again = true;
-				}
-				if (!cs->unknown78)
-				{
-					actor->current_cs_index = NONE;
-				}
-			}
+		case 4:
+			function_258540(actor_index, cs_index);
+			actor->current_cs_index = NONE;
+			function_258b60(actor_index, function_258cc0, cs_index);
+			again = true;
 			break;
 		case 2:
 			if (cs->joint_index != NONE)
@@ -900,14 +852,43 @@ void function_258660(long actor_index)
 			function_258b60(actor_index, function_258cc0, cs_index);
 			again = true;
 			break;
+		case 1:
+			{
+				short result = function_258880(actor_index, cs_index);
+
+				if (result == 1)
+				{
+					short next = function_258b60(actor_index, function_258cf0, cs_index);
+
+					if (next == 0)
+					{
+						actor->current_cs_index = cs_index;
+						break;
+					}
+					if (next == 2)
+					{
+						again = true;
+						cs->state = 1;
+					}
+					else
+					{
+						again = true;
+						cs->state = 2;
+					}
+				}
+				else if (result == 0 || result == 3)
+				{
+					again = true;
+				}
+				if (!cs->unknown78)
+				{
+					actor->current_cs_index = NONE;
+				}
+			}
+			break;
+		case 0:
 		case 3:
 			actor->current_cs_index = cs_index;
-			break;
-		case 4:
-			function_258540(actor_index, cs_index);
-			actor->current_cs_index = NONE;
-			function_258b60(actor_index, function_258cc0, cs_index);
-			again = true;
 			break;
 		}
 	}
@@ -1054,6 +1035,17 @@ PRIVATE __forceinline void function_25a1b3(vector3f const *arg_0, vector3f *arg_
 
 /* sets the facing from the object's forward: along it (0), against it (1),
    or to its side (2, 3 the other side) */
+PRIVATE __forceinline void function_25a131(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
+{
+	vector3f const &first = *arg_0;
+	arg_2->i = arg_1->k * first.j;
+	arg_2->i -= first.k * arg_1->j;
+	arg_2->j = arg_1->i * first.k;
+	arg_2->j -= first.i * arg_1->k;
+	arg_2->k = arg_1->j * first.i;
+	arg_2->k -= first.j * arg_1->i;
+}
+
 // @retail 0x25a130
 void function_25a130(long actor_index, long object_index, s_cs_facing *facing)
 {
@@ -1084,14 +1076,12 @@ void function_25a130(long actor_index, long object_index, s_cs_facing *facing)
 		{
 			vector3f side;
 
-			cs_cross_product3d(g_4687b0, &forward, &side);
+			function_25a131(g_4687b0, &forward, &side);
 			if (function_30bf0(&side) == 0.f)
 			{
 				s_cs_facing_object *object = ((s_cs_facing_object_header *)g_4e0300->data)[object_index & 0xffff].object;
 
-				side.i = object->up.j * forward.k - object->up.k * forward.j;
-				side.j = object->up.k * forward.i - forward.k * object->up.i;
-				side.k = forward.j * object->up.i - object->up.j * forward.i;
+				cs_cross_product3d(&object->up, &forward, &side);
 				if (function_30bf0(&side) == 0.f)
 				{
 					side = *g_4687a8;
@@ -1147,15 +1137,19 @@ void function_259e70(long cs_index)
 #define cs_point_get(reference) \
 	(&((s_cs_scenario_view *)g_4e0350)->script_data->point_sets[((reference) >> 16) & 0xffff].points[(reference) & 0xffff])
 
+/* the point set a command script reference's high word names */
+#define cs_point_set_get(set_index) \
+	(&((s_cs_scenario_view *)g_4e0350)->script_data->point_sets[(set_index)])
+
 #pragma inline_depth(0)
 // @retail 0x259ec0
 bool function_259ec0(long actor_index, long cs_index)
 {
-	volatile bool result = true;
 	s_record_pool *local_1 = g_502408;
 	s_record_pool *local_2 = g_4f55f0;
-	s_cs_datum *cs = (s_cs_datum *)(local_1->data + (cs_index & 0xffff) * sizeof(s_cs_datum));
 	s_actor_view *actor = (s_actor_view *)(local_2->data + (actor_index & 0xffff) * sizeof(s_actor_view));
+	s_cs_datum *cs = (s_cs_datum *)(local_1->data + (cs_index & 0xffff) * sizeof(s_cs_datum));
+	volatile bool result = true;
 	s_cs_point *point = cs_point_get(cs->unknown28);
 
 	if (actor->unknown018 == NONE)
@@ -1173,12 +1167,11 @@ bool function_259ec0(long actor_index, long cs_index)
 	case 17:
 		{
 			bool local_0 = function_1f4460(actor_index, &point->point, NONE, actor->unknown018, exact);
+			result = local_0;
 			if (!local_0)
 			{
-				result = local_0;
 				return result;
 			}
-			result = local_0;
 		}
 		actor->unknown4cc = cs->unknown08;
 		break;
@@ -1186,24 +1179,26 @@ bool function_259ec0(long actor_index, long cs_index)
 	case 2:
 	case 3:
 	case 19:
-		if (point->unknown30 == NONE)
+		if (point->unknown30 != NONE)
+		{
+			exact |= cs->unknown08 != 0.f;
+			{
+				bool local_0 = function_1f4460(actor_index, &point->point, point->unknown30, NONE, exact);
+				result = local_0;
+				if (!local_0)
+				{
+					return result;
+				}
+			}
+			if (exact)
+			{
+				actor->unknown4b0 = cs->unknown08;
+			}
+		}
+		else
 		{
 			result = false;
 			return result;
-		}
-		exact |= cs->unknown08 != 0.f;
-		{
-			bool local_0 = function_1f4460(actor_index, &point->point, point->unknown30, NONE, exact);
-			if (!local_0)
-			{
-				result = local_0;
-				return result;
-			}
-			result = local_0;
-		}
-		if (exact)
-		{
-			actor->unknown4b0 = cs->unknown08;
 		}
 		break;
 
@@ -1293,19 +1288,12 @@ bool function_25ab50(long reference)
 		{
 			long set_index = (reference >> 16) & 0xffff;
 
-			if (set_index >= 0)
+			if (set_index >= 0 && set_index < scenario->script_data->point_set_count)
 			{
-				s_cs_scenario_data *data = scenario->script_data;
+				long point_index = reference & 0xffff;
 
-				if (set_index < data->point_set_count)
-				{
-					long point_index = reference & 0xffff;
-
-					if (point_index >= 0 && point_index < data->point_sets[set_index].point_count)
-					{
-						result = true;
-					}
-				}
+				if (point_index >= 0 && point_index < cs_point_set_get(set_index)->point_count)
+					result = true;
 			}
 		}
 	}
@@ -1384,28 +1372,32 @@ void function_25a380(long arg_0)
 	}
 	if (local_2->unknown46)
 	{
+		bool target_set = false;
 		switch (local_2->unknown48)
 		{
 		case 1:
 			local_0->unknown430 = 2;
 			local_0->unknown434 = 6;
 			local_0->unknown438.object_index = local_2->unknown4c;
+			target_set = true;
 			break;
 		case 2:
 			if (function_25ab50(local_2->unknown4c))
 			{
 				point3f local_3;
 				function_210850(&cs_point_get(local_2->unknown4c)->point, &local_3);
-				local_0->unknown438.point = local_3;
 				local_0->unknown434 = 3;
+				local_0->unknown438.point = local_3;
 				local_0->unknown430 = 2;
-				break;
+				target_set = true;
 			}
-		default:
+			break;
+		}
+		if (!target_set)
+		{
 			local_0->unknown438.vector = local_0->unknown290;
 			local_0->unknown434 = 4;
 			local_0->unknown430 = 2;
-			break;
 		}
 		local_0->unknown444 = NONE;
 	}
@@ -1425,13 +1417,13 @@ void function_25a380(long arg_0)
 		case 2:
 			if (function_25ab50(local_2->unknown58))
 			{
-				s_type_c3b527 *local_6 = &cs_point_get(local_2->unknown58)->point;
+				s_cs_point *local_6 = cs_point_get(local_2->unknown58);
 				point3f local_7;
-				function_210850(local_6, &local_7);
+				function_210850(&local_6->point, &local_7);
 				local_0->unknown41c = 3;
 				local_0->unknown420 = 3;
 				local_0->unknown424.point = local_7;
-				local_4 = *local_6;
+				local_4 = local_6->point;
 				local_5 = true;
 			}
 			break;
@@ -1451,36 +1443,50 @@ void function_25a380(long arg_0)
 		{
 			if (local_2->unknown45)
 			{
-				local_0->unknown490_point = local_4;
 				local_0->unknown48c = true;
+				local_0->unknown490_point = local_4;
 				local_0->unknown4a0 = true;
 				local_0->unknown489[2] = true;
 			}
 		}
 		else
 		{
-			local_0->unknown424.vector = local_0->unknown290;
 			local_0->unknown41c = 3;
 			local_0->unknown420 = 4;
+			local_0->unknown424.vector = local_0->unknown290;
 		}
 		local_0->unknown44d = *(bool *)&local_2->unknown50;
 	}
 	else if (local_2->state == 1 && !local_2->unknown80)
 	{
-		local_0->unknown424.vector = local_0->unknown290;
 		local_0->unknown41c = 3;
 		local_0->unknown420 = 4;
+		local_0->unknown424.vector = local_0->unknown290;
 	}
 	else if (local_2->unknown7f)
 	{
-		local_0->unknown41c = local_2->unknown45 ? 3 : 2;
-		local_0->unknown420 = 2;
+		if (local_2->unknown45)
+		{
+			local_0->unknown41c = 3;
+			local_0->unknown420 = 2;
+		}
+		else
+		{
+			local_0->unknown41c = 2;
+			local_0->unknown420 = 2;
+		}
 	}
 	((s_actor_cs_move_view *)local_0)->unknown478 = local_2->unknown75;
 	if (local_2->unknown78)
 	{
-		local_2->unknown78 = function_1f8660(arg_0) ||
-			(actor_get(arg_0)->unknown504 == 3 && !local_2->unknown76);
+		if (function_1f8660(arg_0) || (actor_get(arg_0)->unknown504 == 3 && !local_2->unknown76))
+		{
+			local_2->unknown78 = true;
+		}
+		else
+		{
+			local_2->unknown78 = false;
+		}
 	}
 	if (local_2->state == 1 && !local_2->unknown81 && !local_2->unknown78)
 	{
@@ -1517,12 +1523,12 @@ void function_25a380(long arg_0)
 			vector3f local_13;
 			function_210850(&local_8->field_c0, &local_12);
 			vector3d_from_points3d(&local_12, &local_9, &local_13);
-			if (length_sq3f(&local_13) <= local_11 && local_0->unknown040)
+			if (!(length_sq3f(&local_13) > local_11) && local_0->unknown040)
 			{
 				long local_14;
-				s_location_view local_15;
-				function_26bfa0(local_2->unknownb0, &local_14, &local_15);
-				if (function_1f4460(arg_0, &local_15.point, local_14, local_2->unknownb0, false) && local_8->field_b4 > 0.f)
+				s_type_c3b527 local_15; /* 0x26bfa0 fills only the point */
+				function_26bfa0(local_2->unknownb0, &local_14, (s_location_view *)&local_15);
+				if (function_1f4460(arg_0, &local_15, local_14, local_2->unknownb0, false) && local_8->field_b4 > 0.f)
 				{
 					local_0->unknown4cc = (real)sqrt(local_8->field_b4) * 0.75f;
 				}
@@ -1533,20 +1539,28 @@ void function_25a380(long arg_0)
 	}
 	if (local_2->unknown83)
 	{
-		real local_16 = g_510c54->field_2_3 * 2.f;
-		long local_17;
-		__asm
-		{
-			fld local_16
-			fistp local_17
-		}
+		long local_17 = real_to_long(g_510c54->field_2_3 * 2.f);
 		if ((short)local_17 > g_4f55d0->unknown22)
 		{
 			g_4f55d0->unknown22 = (short)local_17;
 		}
 	}
-	*(real *)&local_0->unknown478[4] = local_2->unknown6c ? *(real *)&local_2->unknown6d[3] : 0.f;
-	local_0->unknown4b4 = local_2->unknown64 ? *(real *)&local_2->unknown65[3] : 0.f;
+	if (local_2->unknown6c)
+	{
+		*(real *)&local_0->unknown478[4] = *(real *)&local_2->unknown6d[3];
+	}
+	else
+	{
+		*(real *)&local_0->unknown478[4] = 0.f;
+	}
+	if (local_2->unknown64)
+	{
+		local_0->unknown4b4 = *(real *)&local_2->unknown65[3];
+	}
+	else
+	{
+		local_0->unknown4b4 = 0.f;
+	}
 	if (local_2->unknown94 != NONE)
 	{
 		local_0->unknown450 = local_2->unknown94;
@@ -1575,13 +1589,14 @@ short function_cccd0(long unit_index, short grenade_type, char delta);
 bool function_1fb360(long unit_index, short recording_index, long flags);
 void function_b7360(long object_index);
 
+#pragma inline_depth(0)
 // @retail 0x258cf0
 short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
-	s_actor_view *local_0 = actor_get(arg_0);
-	s_cs_datum *local_1 = cs_get(arg_3);
+	s_actor_view *local_0 = ((s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view)));
+	s_cs_datum *local_1 = ((s_cs_datum *)(g_502408->data + (arg_3 & 0xffff) * sizeof(s_cs_datum)));
 	s_258cf0 *local_2 = (s_258cf0 *)arg_2;
-	if (actor_perception_index(arg_0) != NONE)
+	if (((s_handler_actor_view *)local_0)->perception_index != NONE)
 	{
 		switch (local_1->type)
 		{
@@ -1811,6 +1826,7 @@ short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long 
 	}
 	return 2;
 }
+#pragma inline_depth(255)
 
 // @retail 0x25aba0
 void function_25aba0(long actor_index)
@@ -1838,59 +1854,91 @@ void function_25aba0(long actor_index)
 	while (--local_1);
 }
 
+/* swarm_creature_iterator_next, inlined; this copy reads the next creature
+   before it records the current one, which keeps the current index in ebx
+   and the actor index in ebp as retail does (with the shared one,
+   function_258b60 takes the actor index in ebx and its callers stop
+   matching) */
+__forceinline s_handler_object_view *cs_creature_iterator_next(s_ai_object_iterator *iterator)
+{
+	s_handler_object_view *object = NULL;
+
+	if (iterator->next_index != NONE)
+	{
+		s_object_ai_data *creature;
+		long next_index;
+
+		object = handler_object_get(iterator->next_index);
+		next_index = NONE;
+		if (!object->flags134 && (creature = (s_object_ai_data *)((byte *)object + object->ai_offset)) != NULL)
+		{
+			next_index = creature->next_creature_index;
+		}
+		iterator->index = iterator->next_index;
+		iterator->next_index = next_index;
+	}
+
+	return object;
+}
+
+/* runs a command script step on an actor, or on each creature of its
+   perception; with creatures, the result is 0 unless at least 80% of them
+   finished or failed, then 2 when more finished than failed, else 1 */
+// score 21 (was 100): the loop keeps the next index in esi and the creature data in edi where retail swaps them,
+// and ours steps the next index through edx where retail writes edi directly.
 // @retail 0x258b60
 short function_258b60(long actor_index, cs_iterate_proc proc, long cs_index)
 {
-	long const *local_0 = &actor_index;
-	s_actor_view *actor = actor_get(*local_0);
+	s_actor_view *actor = actor_get(actor_index);
+	short result = 2;
 
 	if (actor->unknown007)
 	{
 		long perception_index = ((s_handler_actor_view *)actor)->perception_index;
-		if (perception_index == NONE)
+		if (perception_index != NONE)
 		{
-			return 2;
-		}
+			short succeeded = 0;
+			short failed = 0;
+			short count = 0;
+			s_ai_object_iterator iterator;
+			s_handler_object_view *object;
 
-		short succeeded = 0;
-		short failed = 0;
-		short count = 0;
-		s_ai_object_iterator iterator;
-		s_handler_object_view *object;
-
-		iterator.next_index = perception_get(perception_index)->object_index;
-		iterator.index = NONE;
-		while ((object = ai_object_iterator_next(&iterator)) != NULL)
-		{
-			byte *data;
-			if (!object->flags134 && (data = (byte *)object + object->ai_offset) != NULL)
+			iterator.next_index = perception_get(perception_index)->object_index;
+			while ((object = cs_creature_iterator_next(&iterator)) != NULL)
 			{
-				short result = proc(actor_index, iterator.index, (s_cs_state *)(data + 0x28), cs_index);
-				*(short *)(data + 0x2c) = result;
-				if (result == 2)
+				byte *data;
+				if (!object->flags134 && (data = (byte *)object + object->ai_offset) != NULL)
 				{
-					succeeded++;
+					short outcome = proc(actor_index, iterator.index, (s_cs_state *)(data + 0x28), cs_index);
+					*(short *)(data + 0x2c) = outcome;
+					if (outcome == 2)
+					{
+						succeeded++;
+					}
+					else if (outcome == 1)
+					{
+						failed++;
+					}
+					count++;
 				}
-				else if (result == 1)
-				{
-					failed++;
-				}
-				count++;
+			}
+
+			if ((real)(failed + succeeded) >= (real)count * 0.8f)
+			{
+				result = (succeeded > failed) + 1;
+			}
+			else
+			{
+				result = 0;
 			}
 		}
-
-		if ((real)(failed + succeeded) >= (real)count * 0.8f)
-		{
-			return (succeeded > failed) + 1;
-		}
-		return 0;
 	}
 	else
 	{
-		short result = proc(actor_index, actor->unknown018, (s_cs_state *)((byte *)actor + 0x864), cs_index);
+		result = proc(actor_index, actor->unknown018, (s_cs_state *)((byte *)actor + 0x864), cs_index);
 		*(short *)((byte *)actor + 0x868) = result;
-		return result;
 	}
+	return result;
 }
 
 // @retail 0x259d90
@@ -1934,15 +1982,13 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
+	short local_30;
 	s_actor_view *local_0 = actor_get(arg_0);
 	s_cs_datum *local_1 = cs_get(arg_3);
 	s_258cf0 *local_2 = (s_258cf0 *)arg_2;
-	bool local_3 = true;
+	byte local_3 = 1;
 	switch (local_1->type)
 	{
-	case 0:
-		local_3 = local_2->field_0 == 0;
-		break;
 	case 1:
 		if (*(long *)((byte *)local_0 + 0x1c) != NONE)
 		{
@@ -1987,7 +2033,7 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 						local_1->unknown78 = true;
 					else
 						function_1f4280(arg_0);
-					return 1;
+					{ local_30 = 1; goto local_31; }
 				}
 			}
 			if (!function_1f86f0(arg_0) && !function_1f8660(arg_0) && !function_1f8720(arg_0))
@@ -2004,6 +2050,18 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 				(local_7.x - local_2->field_18.x) * local_2->field_c.i > local_1->unknown08;
 		}
 		break;
+	case 7: case 8:
+		if (local_2->field_3 & 4)
+		{
+			bool local_9 = arg_1 != local_0->unknown018 || local_0->unknown264;
+			if ((local_2->field_3 & 8) && local_9)
+				local_2->field_0 = 0;
+			local_3 = local_2->field_0 == 0;
+		}
+		break;
+	case 0:
+		local_3 = local_2->field_0 == 0;
+		break;
 	case 5:
 		if (arg_1 == local_0->unknown018)
 		{
@@ -2015,43 +2073,12 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			local_3 = local_2->field_0 == 0;
 		}
 		break;
-	case 6:
-		if (!(local_2->field_3 & 0x20) && arg_1 == local_0->unknown018)
-		{
-			byte *local_8 = (byte *)g_5023fc;
-			*(long *)(local_8 + 0x1c) = local_1->unknown28;
-			*(short *)(local_8 + 0x20) = NONE;
-			*(real *)(local_8 + 0x28) = 1000.f;
-			*(real *)(local_8 + 0x2c) = 1000.f;
-			local_8[0x22] |= 0x29;
-			local_8[0x22] |= 0x48;
-			local_2->field_3 |= 0x20;
-			*(short *)g_502400 = 0x4c;
-			local_3 = false;
-		}
-		break;
-	case 7: case 8:
-		if (local_2->field_3 & 4)
-		{
-			bool local_9 = arg_1 != local_0->unknown018 || local_0->unknown264;
-			if ((local_2->field_3 & 8) && local_9)
-				local_2->field_0 = 0;
-			local_3 = local_2->field_0 == 0;
-		}
-		break;
 	case 9:
 		if (arg_1 == local_0->unknown018)
 			local_3 = !recorded_animation_playing(arg_1);
 		break;
 	case 10:
 		local_3 = !local_1->unknown8c;
-		break;
-	case 11:
-		if (arg_1 == local_0->unknown018)
-		{
-			byte *local_10 = (byte *)object_get(arg_1);
-			local_3 = *(short *)(local_10 + *(short *)(local_10 + 0x342) + 0xc) != 14;
-		}
 		break;
 	case 12:
 		switch (*(short *)((byte *)local_1 + 6))
@@ -2069,11 +2096,25 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			break;
 		}
 		break;
-	case 14:
-		if (!(local_2->field_3 & 0x20))
+	case 11:
+		if (arg_1 == local_0->unknown018)
 		{
+			byte *local_10 = (byte *)object_get(arg_1);
+			local_3 = *(short *)(local_10 + *(short *)(local_10 + 0x342) + 0xc) != 14;
+		}
+		break;
+	case 6:
+		if (!(local_2->field_3 & 0x20) && arg_1 == local_0->unknown018)
+		{
+			byte *local_8 = (byte *)g_5023fc;
+			*(long *)(local_8 + 0x1c) = local_1->unknown28;
+			*(short *)(local_8 + 0x20) = NONE;
+			*(real *)(local_8 + 0x28) = 1000.f;
+			*(real *)(local_8 + 0x2c) = 1000.f;
+			local_8[0x22] |= 0x29;
+			local_8[0x22] |= 0x48;
 			local_2->field_3 |= 0x20;
-			*(short *)g_502400 = *(short *)((byte *)local_1 + 6);
+			*(short *)g_502400 = 0x4c;
 			local_3 = false;
 		}
 		break;
@@ -2088,6 +2129,23 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			*(long *)(local_11 + 0x2c) = local_1->unknown2c;
 			local_2->field_3 |= 0x20;
 			*(short *)g_502400 = 0x7e;
+			local_3 = false;
+		}
+		break;
+	case 21:
+		if (!(local_2->field_3 & 0x20) && function_25ab50(local_1->unknown28))
+		{
+			function_1c1080((s_slot_82 *)g_5023fc, local_1->unknown28);
+			local_2->field_3 |= 0x20;
+			*(short *)g_502400 = 0x82;
+			local_3 = false;
+		}
+		break;
+	case 14:
+		if (!(local_2->field_3 & 0x20))
+		{
+			local_2->field_3 |= 0x20;
+			*(short *)g_502400 = *(short *)((byte *)local_1 + 6);
 			local_3 = false;
 		}
 		break;
@@ -2143,23 +2201,15 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 		else if (local_1->unknownb0 != NONE)
 			local_3 = local_1->unknownd1;
 		break;
-	case 21:
-		if (!(local_2->field_3 & 0x20) && function_25ab50(local_1->unknown28))
-		{
-			function_1c1080((s_slot_82 *)g_5023fc, local_1->unknown28);
-			local_2->field_3 |= 0x20;
-			*(short *)g_502400 = 0x82;
-			local_3 = false;
-		}
-		break;
+
 	}
 	if (local_3)
-		return 1;
+		{ local_30 = 1; goto local_31; }
 	if (local_2->field_0 > 0)
 		local_2->field_0--;
 	if ((local_2->field_3 & 4) && local_2->field_8 > 0)
 		local_2->field_8--;
-	if ((local_2->field_3 & 3) == 3)
+	if ((local_2->field_3 & 1) && (local_2->field_3 & 2))
 		function_25a130(arg_0, arg_1, (s_cs_facing *)arg_2);
 	if (!*((byte *)local_0 + 7))
 	{
@@ -2200,14 +2250,7 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 					local_2->field_3 |= 8;
 					if (!(local_2->field_3 & 0x10))
 					{
-						real local_23 = g_510c54->field_2_3 * 0.5f;
-						long local_24;
-						__asm
-						{
-							fld local_23
-							fistp local_24
-						}
-						local_2->field_8 = (short)local_24;
+						local_2->field_8 = (short)real_to_long(g_510c54->field_2_3 * 0.5f);
 					}
 				}
 			}
@@ -2219,5 +2262,7 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			}
 		}
 	}
-	return 0;
+	{ local_30 = 0; goto local_31; }
+local_31:
+	return local_30;
 }

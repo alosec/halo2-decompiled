@@ -44,7 +44,7 @@ struct s_1d5944
  struct { char field_0[64]; long field_40; } field_4[257];
 };
 
-bool function_20a9a0(long arg_0, s_type_1a7926 *arg_1);
+bool function_20a9a0(s_type_1a7926 *arg_1, long arg_0);
 s_section_lists *function_181a80(s_section_lists *arg_0, long arg_1, bool arg_2);
 bool function_1d5bf0(s_havok_component *arg_0, s_physics_model_owner *arg_1, char const *arg_2,
  bool arg_3, long arg_4, long *arg_5, dword *arg_6, s_physics_body_groups *arg_7, s_1d5bf0 *arg_8);
@@ -53,10 +53,11 @@ void function_1d0080(hkRigidBody *arg_0, s_havok_component *arg_1, byte const *a
 void function_1d6ad0(s_havok_component *arg_0, s_physics_model_owner *arg_1);
 
 #pragma inline_depth(0)
+// score 9 (was 9): retail zeroes the eight words of the mask with eax and
+// ours with ecx, so the zeroing and the eight stores differ.
 // @retail 0x1d5940
-signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long arg_2, long arg_3)
+long __stdcall function_1d5940(s_havok_component *arg_0, bool arg_1, bool arg_2, bool arg_3)
 {
- (void)&arg_0; (void)&arg_1; (void)&arg_2; (void)&arg_3;
  long local_0 = 0;
  long local_1;
  dword local_2[8];
@@ -66,8 +67,8 @@ signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long
  s_1d5944 local_6;
  byte *local_7 = (byte *)g_4e0300->data + (arg_0->object_index & 0xffff) * 12;
  if (!(local_7[2] & 1) && !((1 << local_7[3]) & 0x80))
-  *(byte *)&arg_1 = 1;
- if (function_20a9a0(arg_0->object_index, (s_type_1a7926 *)&local_3))
+  arg_1 = true;
+ if (function_20a9a0((s_type_1a7926 *)&local_3, arg_0->object_index))
  {
   function_181a80((s_section_lists *)&local_6, arg_0->object_index, false);
   s_1d5943 *local_8 = (s_1d5943 *)local_3.field_48;
@@ -86,16 +87,16 @@ signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long
    case 5: local_11 = 7; break;
    default: __assume(0);
    }
-   if ((byte)arg_1)
+   if (arg_1)
     local_11 = 7;
-   if ((byte)arg_2 && local_11 != 7 &&
+   if (arg_2 && local_11 != 7 &&
        (local_10->field_0 == NONE || !(local_8->field_cc[local_10->field_0 * 12 + 4] & 1)))
     local_11 = 6;
    local_4[local_9] = (char)local_11;
   }
-  long local_12 = 0;
   local_1 = 0;
-  if (function_1d5bf0(arg_0, (s_physics_model_owner *)&local_3, local_4, (byte)arg_3 != 0,
+  long local_12 = 0;
+  if (function_1d5bf0(arg_0, (s_physics_model_owner *)&local_3, local_4, arg_3,
        NONE, &local_1, local_2, (s_physics_body_groups *)&local_6, &local_5[local_12]))
    local_12 = 1;
   if (local_1 >= 0)
@@ -105,7 +106,7 @@ signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long
    if (!(local_2[local_13 >> 5] & (1 << (local_13 & 31))))
    {
     local_1 = 0;
-    if (function_1d5bf0(arg_0, (s_physics_model_owner *)&local_3, local_4, (byte)arg_3 != 0,
+    if (function_1d5bf0(arg_0, (s_physics_model_owner *)&local_3, local_4, arg_3,
          local_13, &local_1, local_2, (s_physics_body_groups *)&local_6, &local_5[local_12]))
      ++local_12;
     if (local_0 <= local_1)
@@ -114,8 +115,9 @@ signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long
   }
   if (local_12 > 0)
   {
-   if ((arg_0->rigid_bodies.capacity_and_flags & 0x7fffffff) < local_12)
-    function_2d9160(&arg_0->rigid_bodies, local_12, 0x60);
+   s_havok_array60 *local_15 = &arg_0->rigid_bodies;
+   if ((local_15->capacity_and_flags & 0x7fffffff) < local_12)
+    function_2d9160(local_15, local_12, 0x60);
    for (long local_14 = 0; local_14 < local_12; ++local_14)
     function_1d0080((hkRigidBody *)local_5[local_14].field_0, arg_0,
      (byte const *)local_5[local_14].field_4, local_5[local_14].field_44, local_5[local_14].field_48);
@@ -123,7 +125,46 @@ signed char __stdcall function_1d5940(s_havok_component *arg_0, long arg_1, long
   function_1d6ad0(arg_0, (s_physics_model_owner *)&local_3);
   arg_0->unknown04 |= 0x800;
  }
- return (signed char)local_0;
+ return local_0;
+}
+
+void __stdcall function_1d77d0(s_havok_component *arg_0, s_physics_model_owner *arg_1);
+
+/* picks the rigid body that drives the lowest node of the model (unknown18)
+   and that node (unknown19); a lone body without a node sets flag 0x200 */
+// @retail 0x1d6ad0
+void function_1d6ad0(s_havok_component *arg_0, s_physics_model_owner *arg_1)
+{
+ s_1d5941 *owner = (s_1d5941 *)arg_1;
+ long count = arg_0->rigid_bodies.size;
+ arg_0->unknown18 = NONE;
+ arg_0->unknown19 = NONE;
+ long lowest = 0x7fffffff;
+ for (long i = 0; i < arg_0->rigid_bodies.size; i++)
+ {
+  s_havok_component_rigid_body const *body = &arg_0->rigid_bodies.data[i];
+  if (body->node_count > 0)
+  {
+   s_1d5942 *node = &((s_1d5943 *)owner->field_48)->field_3c[body->nodes[0]];
+   if (node->field_0 == NONE)
+   {
+    arg_0->unknown18 = (char)i;
+    arg_0->unknown19 = (char)node->field_0;
+    break;
+   }
+   if (node->field_0 < lowest)
+   {
+    arg_0->unknown18 = (char)i;
+    lowest = node->field_0;
+    arg_0->unknown19 = (char)lowest;
+   }
+  }
+ }
+ if (count == 1 && arg_0->unknown19 == NONE)
+  arg_0->unknown04 |= 0x200;
+ else
+  arg_0->unknown04 &= ~0x200;
+ function_1d77d0(arg_0, arg_1);
 }
 
 #pragma inline_depth(255)

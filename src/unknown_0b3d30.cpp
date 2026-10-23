@@ -1,4 +1,6 @@
 // @flags /O2 /Gr
+#include "transaction_storage.h"
+#include "upload_storage.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_053310.h"
@@ -7,11 +9,6 @@
 #include <xonline.h>
 #include <wchar.h>
 
-dword g_547610;
-long g_547614;
-long g_547618;
-byte g_54761c;
-long g_547620;
 byte g_546a8c[1];
 
 bool __stdcall function_b5e40(void *block);
@@ -70,24 +67,8 @@ void function_b4020(void)
 	g_510580 = false;
 }
 
-// @retail 0xb4050
-void function_b4050(void)
-{
-	g_547620++;
-	long count = g_510580 ? g_5107d8 : 0;
-	if (g_547620 >= 3 * count)
-	{
-		online_result_registration_clear();
-		long task_index = g_510584;
-		if (task_index != NONE)
-		{
-			function_6b640(task_index);
-			g_510584 = NONE;
-		}
-		g_510580 = false;
-		g_54761c = 0;
-	}
-}
+/* built with SSE in its own file, unknown_0b4050.cpp */
+void online_result_upload_record_failure(void);
 
 
 // @retail 0xb45f0
@@ -108,9 +89,13 @@ wchar_t const *g_4672dc = L"test";
 void unicode_string_snprintf(word *buffer, long maximum_count, word const *format, ...);
 
 // @retail 0xb4120
+// score 88 (was 88): retail puts the three case values in ebp and starts from
+// a value of three, ours puts them in ebx and clears ebp first, and the stack
+// slots of the locals are in another order
 bool function_b4120(long kind, struct _XUID owner, wchar_t const *filename, wchar_t *arg_d4faef, dword *path_size)
 {
     long facility;
+    unsigned long length = 0;
     switch (kind)
     {
     case 0: facility = 4; break;
@@ -136,7 +121,6 @@ bool function_b4120(long kind, struct _XUID owner, wchar_t const *filename, wcha
         wcsncpy(prefix, L"", 0xff);
         prefix[0xff] = 0;
     }
-    unsigned long length = 0;
     for (; length < 0x100; length++)
         if (!prefix[length]) break;
     if (length > 0)
@@ -198,7 +182,6 @@ bool function_b40b0()
     return result;
 }
 
-dword g_547624;
 bool function_b5e90(s_http_connection_ab *connection, bool *complete);
 
 // @retail 0xb3fc0
@@ -207,13 +190,13 @@ void function_b3fc0()
     if (!((s_http_connection_ab *)g_546a8c)->state)
     {
         if (!g_510580 || !function_b40b0())
-            function_b4050();
+            online_result_upload_record_failure();
     }
     else
     {
         bool complete = false;
         if (!function_b5e90((s_http_connection_ab *)g_546a8c, &complete) || GetTickCount() >= g_547624)
-            function_b4050();
+            online_result_upload_record_failure();
         else if (complete)
             function_b4020();
     }
@@ -249,12 +232,12 @@ void function_b3de0()
             if (g_510584 != NONE || g_510580)
                 return;
         }
-        function_b4050();
+        online_result_upload_record_failure();
     }
     else if (g_54761c)
     {
         if (!connected)
-            function_b4050();
+            online_result_upload_record_failure();
         else if (!g_510580)
             online_result_cache_start();
         else
@@ -302,8 +285,8 @@ static __forceinline long storage_error_ab(HRESULT error)
 long function_b4810(long kind, long controller, struct _XUID owner, wchar_t const *filename, char const *directory, long *task_out)
 {
     (void)&controller;
-    long result = 1;
     *task_out = NONE;
+    long result = 1;
     long facility = storage_facility_ab(kind);
     wchar_t path[0x100];
     dword path_size = 0x100;
@@ -317,15 +300,17 @@ long function_b4810(long kind, long controller, struct _XUID owner, wchar_t cons
             if (status >= 0)
             {
                 *task_out = task_index;
+                result = 0;
                 task->flags = 1;
                 task->type = 0x2c;
                 task->controller_index = controller;
-                return 0;
+                goto done;
             }
             result = storage_error_ab(status);
             function_6b640(task_index);
         }
     }
+done:
     return result;
 }
 
@@ -333,8 +318,8 @@ long function_b4810(long kind, long controller, struct _XUID owner, wchar_t cons
 long function_b4450(long kind, long controller, struct _XUID owner, wchar_t const *filename, byte *buffer, dword size, long *task_out)
 {
     (void)&controller;
-    long result = 1;
     *task_out = NONE;
+    long result = 1;
     long facility = storage_facility_ab(kind);
     wchar_t path[0x100];
     dword path_size = 0x100;
@@ -348,15 +333,17 @@ long function_b4450(long kind, long controller, struct _XUID owner, wchar_t cons
             if (status >= 0)
             {
                 *task_out = task_index;
+                result = 0;
                 task->flags = 1;
                 task->type = 0x2a;
                 task->controller_index = controller;
-                return 0;
+                goto done;
             }
             result = storage_error_ab(status);
             function_6b640(task_index);
         }
     }
+done:
     return result;
 }
 
@@ -364,8 +351,8 @@ long function_b4450(long kind, long controller, struct _XUID owner, wchar_t cons
 long function_b4670(long kind, long controller, struct _XUID owner, wchar_t const *filename, char const *directory, long *task_out)
 {
     (void)&controller;
-    long result = 1;
     *task_out = NONE;
+    long result = 1;
     long facility = storage_facility_ab(kind);
     wchar_t path[0x100];
     dword path_size = 0x100;
@@ -375,18 +362,22 @@ long function_b4670(long kind, long controller, struct _XUID owner, wchar_t cons
         s_type_9df9da *task = function_6b910(task_index);
         if (task)
         {
-            FILETIME expiration = { 0, 0 };
+            FILETIME expiration;
+            memset(&expiration, 0, sizeof(expiration));
             HRESULT status = XOnlineStorageUploadByServerPath(facility, controller, path, expiration, directory, 0, 0, (XONLINETASK_HANDLE *)&task->handle);
             if (status >= 0)
             {
                 *task_out = task_index;
+                result = 0;
                 task->flags = 1;
                 task->type = 0x2c;
                 task->controller_index = controller;
-                return 0;
             }
-            result = storage_error_ab(status);
-            function_6b640(task_index);
+            else
+            {
+                result = storage_error_ab(status);
+                function_6b640(task_index);
+            }
         }
     }
     return result;
@@ -395,7 +386,6 @@ long function_b4670(long kind, long controller, struct _XUID owner, wchar_t cons
 // @retail 0xb42b0
 long function_b42b0(long kind, long controller, struct _XUID owner, wchar_t const *filename, byte *buffer, dword size, long *task_out)
 {
-    (void)&controller;
     long result = 1;
     *task_out = NONE;
     long facility = storage_facility_ab(kind);
@@ -412,27 +402,115 @@ long function_b42b0(long kind, long controller, struct _XUID owner, wchar_t cons
             if (status >= 0)
             {
                 *task_out = task_index;
+                result = 0;
                 task->flags = 1;
                 task->type = 0x29;
                 task->controller_index = controller;
-                return 0;
             }
-            switch (status)
+            else
             {
-            case 0x8007000e:
-            case 0x80150002:
-            case 0x80150003:
-            case 0x80150005:
-            case 0x80150006:
-            case 0x80150008: result = 2; break;
-            case 0x80150004:
-            case 0x8015c002: result = 3; break;
-            case 0x8015c006:
-            case 0x8015c008:
-            case 0x8015c009: result = 4; break;
-            default: result = 1; break;
+                switch (status)
+                {
+                case 0x8007000e:
+                case 0x80150002:
+                case 0x80150003:
+                case 0x80150005:
+                case 0x80150006:
+                case 0x80150008: result = 2; break;
+                case 0x80150004:
+                case 0x8015c002: result = 3; break;
+                case 0x8015c006:
+                case 0x8015c008:
+                case 0x8015c009: result = 4; break;
+                default: result = 1; break;
+                }
+                function_6b640(task_index);
             }
-            function_6b640(task_index);
+        }
+    }
+    return result;
+}
+
+
+// Disabled: retail passes shared upload-state addresses to the serializer and publisher.
+#if 0
+extern byte g_546a88;
+bool __stdcall function_1995a0(void const *data, void *buffer, long *size, long capacity, long mode, long kind);
+void function_b6570(long *state);
+
+// Retail 0xb3ed0
+bool __stdcall function_b3ed0(s_packed_clc const *data, long kind, char const *name)
+{
+    bool result = false;
+    if (g_547610 && !g_54761c && !g_546a88)
+    {
+        if (function_1995a0(data, (void *)(g_547610 + 8), &g_547618, g_547614 - 8, 3, kind))
+        {
+            *(long *)g_547610 = g_547618 + 8;
+            *(long *)(g_547610 + 4) = 1;
+            g_547618 += 8;
+            g_546abc = 1;
+            g_5473f0 = g_547610;
+            g_5473f8 = g_547618;
+            function_b6570(&g_546abc);
+            strncpy(g_5470cc, name, 32);
+            g_5470cc[31] = 0;
+            g_547620 = 0;
+            g_547624 = GetTickCount() + 120000;
+            g_54761c = true;
+            result = true;
+        }
+    }
+    return result;
+}
+#endif
+
+
+
+struct s_grs_source;
+struct s_packed_grs;
+struct s_packed_clc;
+void packed_grs_write(s_grs_source const *source, s_packed_grs *packed);
+bool __stdcall function_b3ed0(s_packed_clc const *data, long kind, char const *name);
+
+// @retail 0xb3e90
+void __stdcall function_b3e90(byte *results)
+{
+    byte packed[0x150bc];
+    packed_grs_write((s_grs_source const *)results, (s_packed_grs *)packed);
+    function_b3ed0((s_packed_clc const *)packed, sizeof(packed), "application/x-halo2pcr");
+}
+
+s_upload_storage g_upload_storage;
+
+s_transaction_storage g_transaction_storage;
+
+byte g_546a88;
+bool function_1995a0(byte const *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
+bool function_b6570(s_upload_ab *upload);
+
+// @retail 0xb3ed0
+bool __stdcall function_b3ed0(s_packed_clc const *data, long kind, char const *name)
+{
+    bool result = false;
+    if (g_547610 && !g_54761c && !g_546a88)
+    {
+        if (function_1995a0((byte const *)data, (dword)kind, (byte *)(g_547610 + 8), &g_547618, g_547614 - 8, 3))
+        {
+            long *header = (long *)g_547610;
+            header[0] = g_547618 + 8;
+            header[1] = 1;
+            g_547618 += 8;
+            g_546abc = 1;
+            g_5473f0 = (byte *)g_547610;
+            g_5473f8 = g_547618;
+            function_b6570((s_upload_ab *)&g_546abc);
+            strncpy(g_5470cc, name, 32);
+            g_5470cc[31] = 0;
+            g_547620 = 0;
+            g_547624 = GetTickCount() + 120000;
+            g_54761c = true;
+            result = true;
         }
     }
     return result;

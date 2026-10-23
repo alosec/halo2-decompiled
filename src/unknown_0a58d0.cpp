@@ -5,16 +5,19 @@
 #include "globals.h"
 #include "unknown_0a58d0.h"
 #include "unknown_xa19f52.h"
+#include <string.h>
 
-// The callers currently omit the stream and initial-state output arguments.
-// Keep these bodies disabled until those caller interfaces can be completed.
+// The serializer and initializer now use the complete stream and state-output
+// interfaces at their definitions, declarations, and callers.
 #if 0
 void scenario_object_name_encode(long object_name, s_bitstream *stream);
-void *function_122c10(long group_tag, long tag_index);
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_11df60(vector3f const *rotation, vector3f *forward, vector3f *up);
 
-// Retail 0xa6660; the active stub remains in unknown_09a9f0.cpp.
-void function_a6660(s_entity_info const *info, s_bitstream *stream)
+#endif
+void scenario_object_name_encode(long object_name, s_bitstream *stream);
+// @retail 0xa6660
+void __stdcall function_a6660(s_entity_info const *info, s_bitstream *stream)
 {
 	scenario_object_name_encode(info->definition_index, stream);
 	stream_write_bit(stream, info->field0 != NONE);
@@ -22,16 +25,24 @@ void function_a6660(s_entity_info const *info, s_bitstream *stream)
 		stream_write_checked(stream, info->field0, 13);
 	stream_write_checked(stream, (signed char)info->byte8 + 1, 7);
 	byte const *fields = (byte const *)info;
-	bool present = fields[0xc] || fields[0xd] || fields[0xe];
-	stream_write_bit(stream, present);
-	if (present)
-	{
+	if (!fields[0xc] && !fields[0xd] && !fields[0xe])
+    {
+        stream_write_bit(stream, false);
+        return;
+    }
+    stream_write_bit(stream, true);
+    {
 		stream_write_checked(stream, fields[0xc], 6);
 		stream_write_checked(stream, fields[0xd], 6);
 		stream_write_checked(stream, fields[0xe], 4);
 	}
 }
+#if 0
 
+
+#endif
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
+void function_11df60(vector3f const *rotation, vector3f *forward, vector3f *up);
 struct s_z_initial_placement_type
 {
 	byte unknown00[0xa];
@@ -72,10 +83,10 @@ struct s_z_initial_state
 	byte value61;
 };
 
-// Retail 0xa5bd0; the active stub remains in unknown_09a9f0.cpp.
+// @retail 0xa5bd0
 bool function_a5bd0(s_entity_info const *info, s_z_initial_state *state)
 {
-	bool result = false;
+    bool result = false;
 	if (function_122c10(0x6f626a65, info->definition_index))
 	{
 		byte *definition = g_4e3b44[info->definition_index & 0xffff].bytes;
@@ -88,18 +99,12 @@ bool function_a5bd0(s_entity_info const *info, s_z_initial_state *state)
 			s_z_initial_placement_type *type = (s_z_initial_placement_type *)g_468630[*(short *)definition];
 			if (type->placements_offset != NONE && type->palette_offset != NONE)
 			{
-				s_z_initial_placement_block *block = (s_z_initial_placement_block *)(g_4e0350 + type->placements_offset);
-				long index = info->field0;
-				long clamped;
-				if (index < 0)
-					clamped = 0;
-				else if (index > block->count - 1)
-					clamped = block->count - 1;
-				else
-					clamped = index;
-				if (clamped == index)
+				long placement_size = ((s_z_initial_placement_type *)g_468630[*(short *)definition])->placement_size;
+				s_z_initial_placement_block *block = (s_z_initial_placement_block *)((byte *)g_4e0350 + ((s_z_initial_placement_type *)g_468630[*(short *)definition])->placements_offset);
+				long clamped = info->field0 < 0 ? 0 : (block->count - 1 < info->field0 ? block->count - 1 : info->field0);
+				if (clamped == info->field0)
 				{
-					s_z_initial_placement *placement = (s_z_initial_placement *)(block->data + index * type->placement_size);
+					s_z_initial_placement *placement = (s_z_initial_placement *)(block->data + info->field0 * placement_size);
 					state->position = placement->position;
 					function_11df60(&placement->rotation, &state->forward, &state->up);
 					state->scale = placement->scale > 0.0f ? placement->scale : 1.0f;
@@ -123,14 +128,15 @@ bool function_a5bd0(s_entity_info const *info, s_z_initial_state *state)
 					state->value48 = 1.0f;
 				state->value61 = settings[0xe0];
 			}
-			long value = *(long *)(model + 0x70);
-			if (value > 0)
-				state->value50 = (byte)value;
+			if (*(long *)(model + 0x70) > 0)
+				state->value50 = (byte)*(long *)(model + 0x70);
 		}
 		result = true;
 	}
 	return result;
 }
+#if 0
+
 #endif
 
 /* the entity an index stands for, or none when its salt is stale; retail
@@ -139,9 +145,8 @@ bool function_a5bd0(s_entity_info const *info, s_z_initial_state *state)
 s_simulation_entity *simulation_entity_try_get(s_simulation_entity_table *table, long entity_index)
 {
 	s_simulation_entity *result = 0;
-	long absolute_index = entity_index & 0x3ff;
-	if (table->entities[absolute_index].identifier == entity_index)
-		result = table->entities + absolute_index;
+	if (table->entities[entity_index & 0x3ff].identifier == entity_index)
+		result = &table->entities[entity_index & 0x3ff];
 	return result;
 }
 
@@ -151,7 +156,10 @@ s_simulation_entity *simulation_entity_try_get(s_simulation_entity_table *table,
    0xa3a20. With simulation_entity_try_get as it is now, the body is otherwise
    the same as retail's (the null test after the identifier comparison
    included). */
+// Disabled: round 18 reactivation after new event callers still breaks a3a20 and other matched entity callers; EDX input versus retail ECX
+// Disabled: round 35: five new fruitless trials, 15 differences; EDX input versus retail ECX loses eleven matched callers
 #if 0
+// Retail 0xa58d0
 long function_a58d0(long entity_index)
 {
 	long object_index = NONE;
@@ -169,6 +177,7 @@ long function_a58d0(long entity_index)
 	return object_index;
 }
 #endif
+
 
 struct s_z_entity_flags
 {
@@ -276,6 +285,8 @@ struct s_z_state_world
 	long state;
 };
 
+// score 11 (was 11): the entity pointer is materialised in EAX and the record is read through it;
+// retail folds the address into the load itself.
 // @retail 0xa9820
 bool function_a9820(long *block, long index)
 {
@@ -286,7 +297,8 @@ bool function_a9820(long *block, long index)
 		long identifier = ((s_object_header *)g_4e0300->data)[index & 0xffff].object->field_d4;
 		if (identifier != NONE)
 		{
-			s_z_entity_record *entity = &world->database->entities[identifier & 0x3ff];
+			// Preserve the later world-pointer read when selecting the record.
+			s_z_entity_record *entity = &((s_z_state_world *)*(void * const *)&g_4cf77c)->database->entities[identifier & 0x3ff];
 			if (entity->active)
 			{
 				long type = entity->type;
@@ -308,6 +320,8 @@ void function_a99f0(long index, long *block)
 		long identifier = ((s_object_header *)g_4e0300->data)[index & 0xffff].object->field_d4;
 		if (identifier != NONE)
 		{
+			// Read the shared world through its const pointer at the later use.
+			world = (s_z_state_world *)*(s_simulation_world *const *)&g_4cf77c;
 			s_z_entity_record *entity = &world->database->entities[identifier & 0x3ff];
 			if (entity->active)
 			{
@@ -510,14 +524,18 @@ void function_a7cd0(long index)
 void function_a9a70(long index, s_z_copy_state *state)
 {
 	byte *object = (byte *)((s_object_header *)g_4e0300->data)[index & 0xffff].object;
+	struct { vector3f difference; } geometry;
 	vector3f const *position = (vector3f const *)(object + 0x64);
 	vector3f *saved = &state->position;
-	vector3f difference;
-	vector3d_from_points3d((point3f const *)saved, (point3f const *)position, &difference);
+	vector3f &difference = geometry.difference;
+	difference.i = *(real const *)(object + 0x64) - state->position.i;
+	difference.j = position->j - saved->j;
+	difference.k = position->k - saved->k;
 	if (sqrt(difference.i * difference.i + (difference.j * difference.j + difference.k * difference.k)) > 0.05000000074505806f)
 	{
-		saved->i = saved->i * 0.550000011920929f + position->i * 0.44999998807907104f;
-		saved->j = saved->j * 0.550000011920929f + position->j * 0.44999998807907104f;
+		saved->i = ((real volatile *)saved)[0] * 0.550000011920929f + ((real const volatile *)position)[0] * 0.44999998807907104f;
+		real const *component = &saved->j;
+		saved->j = *component * 0.550000011920929f + position->j * 0.44999998807907104f;
 		saved->k = saved->k * 0.550000011920929f + position->k * 0.44999998807907104f;
 	}
 	else
@@ -600,42 +618,53 @@ bool function_aa970(long index)
 }
 
 #include "unknown_0d0690.h"
+#include "unknown_0259d0.h"
 
+// score 37 (was 37): the float is added into the accumulator and stored back; retail loads it into
+// a separate register, adds and stores that.
 // @retail 0xaa9e0
 void function_aa9e0(long index, point3f const *previous_position, vector3f const *velocity)
 {
- s_record_pool *objects = g_4e0300;
- s_object_header *header = &((s_object_header *)objects->data)[index & 0xffff];
+ s_object_header *header = &((s_object_header *)g_4e0300->data)[index & 0xffff];
  if (header->unknown03[0] == 1)
  {
+  s_record_pool *objects = g_4e0300;
   byte *object = (byte *)header->object;
   real elapsed = g_510c54->rate;
+  vector3f velocity_change;
+  s_object_child_iterator iterator;
+
   if (previous_position)
   {
-   real x = *(real *)(object + 0x64) - previous_position->x;
-   real y = *(real *)(object + 0x68) - previous_position->y;
-   real z = *(real *)(object + 0x6c) - previous_position->z;
-   *(real *)(object + 0x270) += x;
-   *(real *)(object + 0x274) += y;
-   *(real *)(object + 0x278) += z;
+   vector3f *accumulated = (vector3f *)(object + 0x270);
+   vector3f displacement;
+
+   vector3d_from_points3d(previous_position, (point3f const *)(object + 0x64), &displacement);
+   accumulated->i += displacement.i;
+   accumulated->j += displacement.j;
+   accumulated->k += displacement.k;
   }
-  vector3f difference;
   if (velocity)
   {
-   difference.i = (velocity->i - *(real *)(object + 0x88)) * elapsed;
-   difference.j = (velocity->j - *(real *)(object + 0x8c)) * elapsed;
-   difference.k = (velocity->k - *(real *)(object + 0x90)) * elapsed;
+   velocity_change.i = velocity->i - *(real *)(object + 0x88);
+   velocity_change.j = velocity->j - *(real *)(object + 0x8c);
+   velocity_change.k = velocity->k - *(real *)(object + 0x90);
+   velocity_change.i *= elapsed;
+   velocity_change.j *= elapsed;
+   velocity_change.k *= elapsed;
   }
-  s_object_child_iterator iterator;
   function_d0620(index, &iterator);
   while (function_d0690(&iterator))
   {
    byte *child = (byte *)((s_object_header *)objects->data)[iterator.child_index & 0xffff].object;
+
    if (velocity)
    {
-    *(real *)(child + 0x270) += difference.i;
-    *(real *)(child + 0x274) += difference.j;
-    *(real *)(child + 0x278) += difference.k;
+    vector3f *accumulated = (vector3f *)(child + 0x270);
+
+    accumulated->i += velocity_change.i;
+    accumulated->j += velocity_change.j;
+    accumulated->k += velocity_change.k;
    }
    *(dword *)(child + 0x134) |= 0x10000000;
   }
@@ -645,9 +674,10 @@ void function_aa9e0(long index, point3f const *previous_position, vector3f const
 
 long function_b5990(long tag_index, bool flag);
 void function_b5920(long identifier);
-void function_108e80(long object_index);
+void object_dispatch_detach_simulation_entity(long object_index);
 struct s_effect_object_placement;
 
+__declspec(noinline)
 // @retail 0xa7640
 bool function_a7640(s_effect_object_placement *data)
 {
@@ -671,7 +701,7 @@ void function_a7a60(long index)
  {
   function_b5920(identifier);
   s_object_view *object = ((s_object_header *)g_4e0300->data)[index & 0xffff].object;
-  function_108e80(index);
+  object_dispatch_detach_simulation_entity(index);
   object->field_d4 = NONE;
   object->field_d8 = 0;
  }
@@ -818,7 +848,7 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
 {
  s_bitstream *const *stream_reference = &stream;
  stream = *stream_reference;
- bool result = true;
+ volatile bool result = true;
  long *flags = (long *)flags_address;
  byte *state = (byte *)state_address;
  if (function_1957d0(stream))
@@ -834,57 +864,57 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
  }
  if (function_1957d0(stream))
  {
-  function_195240(stream, (vector3f *)(state + 0xc), (vector3f *)(state + 0x18));
+  function_195240(stream, (vector3f *)(state + 0x18), (vector3f *)(state + 0xc));
   *flags |= 4;
-  result = result && function_a74c0((vector3f *)(state + 0xc), (vector3f *)(state + 0x18));
+  if (result && (function_a74c0((vector3f *)(state + 0xc), (vector3f *)(state + 0x18)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   *(real *)(state + 0x24) = z_decode_state_scalar(stream, 7, 127, 0.0f, 10.0f);
   *flags |= 8;
-  result = result && z_state_real_valid(*(real *)(state + 0x24));
+  if (result && (z_state_real_valid(*(real *)(state + 0x24)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   function_195070(stream, (vector3f *)(state + 0x28), 0.03f, 350.0f, 10);
   *flags |= 0x10;
-  result = result && function_a7570((vector3f *)(state + 0x28));
+  if (result && (function_a7570((vector3f *)(state + 0x28)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   function_195070(stream, (vector3f *)(state + 0x34), 0.03f, 30.0f, 8);
   *flags |= 0x20;
-  result = result && function_a7570((vector3f *)(state + 0x34));
+  if (result && (function_a7570((vector3f *)(state + 0x34)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   *(real *)(state + 0x40) = z_decode_state_scalar(stream, 8, 254, -1.0f, 1.0f);
   *(bool *)(state + 0x44) = function_1957d0(stream);
   *flags |= 0x40;
-  result = result && z_state_real_valid(*(real *)(state + 0x40));
+  if (result && (z_state_real_valid(*(real *)(state + 0x40)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   *(real *)(state + 0x48) = z_decode_state_scalar(stream, 8, 254, 0.0f, 3.0f);
   *(bool *)(state + 0x4c) = function_1957d0(stream);
   *flags |= 0x80;
-  result = result && z_state_real_valid(*(real *)(state + 0x48));
+  if (result && (z_state_real_valid(*(real *)(state + 0x48)))) result = true; else result = false;
  }
  if (function_1957d0(stream))
  {
   state[0x50] = (byte)function_1959c0(stream, 4);
-  result = result && state[0x50] <= 16;
+  if (result && (state[0x50] <= 16)) result = true; else result = false;
   for (long i = 0; i < 16; ++i)
   {
    state[0x51 + i] = (byte)function_1959c0(stream, 3);
-   result = result && state[0x51 + i] < 12;
+   if (result && (state[0x51 + i] < 12)) result = true; else result = false;
   }
   *flags |= 0x100;
  }
  if (stream_read_bit(stream))
  {
   state[0x61] = (byte)function_1959c0(stream, 5);
-  result = result && state[0x61] <= 16;
+  if (result && (state[0x61] <= 16)) result = true; else result = false;
   if (state[0x61] > 0)
   {
    *(word *)(state + 0x62) = (word)function_1959c0(stream, state[0x61]);
@@ -892,8 +922,9 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
   }
   *flags |= 0x200;
  }
- if (result && stream->bit_position <= (stream->size_in_bytes << 3)) return true;
- return false;
+ long valid = result;
+ if (!valid) return false;
+ return stream->bit_position <= (stream->size_in_bytes << 3);
 }
 
 
@@ -946,9 +977,9 @@ void __stdcall function_a7870(long index)
 
 
 #include "flags_writer.h"
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside);
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside);
 void function_194830(s_bitstream *stream, bool value);
-void function_194d30(s_bitstream *stream, vector3f const *forward, vector3f const *up);
+void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward);
 void function_194c10(s_bitstream *stream, vector3f const *vector, real lo, real hi, long bits);
 void function_1947e0(s_bitstream *stream, dword value, long bits);
 
@@ -991,7 +1022,10 @@ bool function_a69a0(long a, long b, long c, long d, long e, bool f, long g)
   function_194830(stream, *(bool const *)(state + 0x4d));
  flags_writer_end(&writer);
  if (flags_writer_begin(&writer, 1, "position-exists"))
-  simulation_write_position(16, stream, (real const *)state, (byte)a != 0 || f);
+ {
+  bool absolute = (byte)a != 0 || f;
+  simulation_write_position(stream, (real const *)state, 16, absolute);
+ }
  flags_writer_end(&writer);
  if (flags_writer_begin(&writer, 2, "forward-and-up-exists"))
   function_194d30(stream, (vector3f const *)(state + 0xc), (vector3f const *)(state + 0x18));
@@ -1046,10 +1080,11 @@ matrix3x3 *function_141e10(matrix3x3 *out, quaternionf const *q);
 
 PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const *up, matrix3x3 *matrix)
 {
- matrix->left.i = up->j * forward->k - forward->j * up->k;
- matrix->left.j = forward->i * up->k - forward->k * up->i;
- matrix->left.k = up->i * forward->j - forward->i * up->j;
+ vector3f *left = &matrix->left;
  matrix->forward = *forward;
+ left->i = up->j * forward->k - forward->j * up->k;
+ left->j = forward->i * up->k - forward->k * up->i;
+ left->k = up->i * forward->j - forward->i * up->j;
  matrix->up = *up;
 }
 
@@ -1061,49 +1096,34 @@ void function_a9b40(long index, s_z_copy_state *state)
  real current_angle = 0.0f;
  matrix3x3 saved_matrix, current_matrix;
  quaternionf saved_rotation, current_rotation, blended;
- vector3f axis;
- vector3f *saved_up = &state->forward;
- vector3f *saved_forward = &state->up;
- vector3f const *current_forward = (vector3f const *)(object + 0x70);
+ vector3f saved_axis, current_axis;
+ z_orientation_matrix(&state->up, &state->forward, &saved_matrix);
  vector3f const *current_up = (vector3f const *)(object + 0x7c);
- z_orientation_matrix(saved_forward, saved_up, &saved_matrix);
- z_orientation_matrix(current_forward, current_up, &current_matrix);
+ z_orientation_matrix((vector3f const *)(object + 0x70), current_up, &current_matrix);
+ vector3f const *current_forward = (vector3f const *)(object + 0x70);
  function_141f60(&saved_matrix, &saved_rotation);
  function_141f60(&current_matrix, &current_rotation);
- function_11d790(&saved_rotation, &axis, &saved_angle);
- function_11d790(&current_rotation, &axis, &current_angle);
+ function_11d790(&saved_rotation, &saved_axis, &saved_angle);
+ function_11d790(&current_rotation, &current_axis, &current_angle);
  if (current_angle - saved_angle > 0.0001f)
  {
   real weight = 0.35f;
-  real dot = current_rotation.w * saved_rotation.w + current_rotation.k * saved_rotation.k +
-   current_rotation.j * saved_rotation.j + current_rotation.i * saved_rotation.i;
+  real dot = saved_rotation.i * current_rotation.i + saved_rotation.j * current_rotation.j +
+   saved_rotation.k * current_rotation.k + saved_rotation.w * current_rotation.w;
   if (dot < 0.0f) weight = -0.35f;
   blended.i = current_rotation.i * weight + saved_rotation.i * 0.65f;
   blended.j = current_rotation.j * weight + saved_rotation.j * 0.65f;
   blended.k = current_rotation.k * weight + saved_rotation.k * 0.65f;
   blended.w = current_rotation.w * weight + saved_rotation.w * 0.65f;
-  real squared = blended.w * blended.w + blended.k * blended.k + blended.j * blended.j + blended.i * blended.i;
-  if (squared > 0.0f)
-  {
-   double scale = 1.0f / sqrt(squared);
-   blended.i = (real)(blended.i * scale);
-   blended.j = (real)(blended.j * scale);
-   blended.k = (real)(blended.k * scale);
-   blended.w = (real)(blended.w * scale);
-  }
-  else
-  {
-   blended.i = blended.j = blended.k = 0.0f;
-   blended.w = 1.0f;
-  }
+  quaternion_unit_or_identity(&blended);
   function_141e10(&current_matrix, &blended);
-  *saved_forward = current_matrix.forward;
-  *saved_up = current_matrix.up;
+  state->up = current_matrix.forward;
+  state->forward = current_matrix.up;
  }
  else
  {
-  *saved_forward = *current_forward;
-  *saved_up = *current_up;
+  state->up = *current_forward;
+  state->forward = *current_up;
   state->flags &= ~2;
  }
 }
@@ -1118,10 +1138,10 @@ void function_a9570(long index)
    function_a9640(index);
   else
   {
-   s_z_copy_state state;
-   memset(&state, 0, sizeof(state));
-   function_a9820((long *)&state, index);
    bool changed = false;
+   s_z_copy_state state;
+   z_copy_state_clear(&state);
+   function_a9820((long *)&state, index);
    if (state.flags & 1)
    {
     function_a9a70(index, &state);
@@ -1192,6 +1212,8 @@ void function_a7b30(long index)
  }
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0xa7ab0
 void function_a7ab0(long index)
 {
@@ -1199,11 +1221,13 @@ void function_a7ab0(long index)
  long identifier = object->field_d4;
  if (identifier != NONE)
  {
-  function_108e80(index);
+  object_dispatch_detach_simulation_entity(index);
   object->field_d4 = NONE;
   object->field_d8 = 0;
+  _ReadWriteBarrier();
+  long state = ((s_z_state_world *)g_4cf77c)->state;
   s_z_state_world *world = (s_z_state_world *)g_4cf77c;
-  if (world->state == 4 || world->state == 5)
+  if (state == 4 || state == 5)
   {
    s_z_entity_record *entity = &world->database->entities[identifier & 0x3ff];
    entity->active = false;
@@ -1211,4 +1235,70 @@ void function_a7ab0(long index)
   }
   function_b8540(index);
  }
+}
+#pragma function(_ReadWriteBarrier)
+
+
+PRIVATE inline long creation_definition_lookup(byte *globals, long index)
+{
+    long result = NONE;
+    if (globals)
+    {
+        long count = *(long *)(globals + 0x3d8);
+        if (count > 0 && (index < 0 ? 0 : index > count - 1 ? count - 1 : index) == index)
+            result = (*(long **)(globals + 0x3dc))[index];
+    }
+    return result;
+}
+
+// @retail 0xa6810
+bool function_a6810(s_entity_info *info, s_bitstream *stream)
+{
+    long definition_index = NONE;
+    long index = function_1959c0(stream, 9) - 1;
+    byte *globals = (byte *)g_4e0350;
+    if (index != NONE)
+        definition_index = creation_definition_lookup(globals, index);
+    info->definition_index = definition_index;
+    if (function_1957d0(stream))
+        info->field0 = function_1959c0(stream, 13);
+    else
+        info->field0 = NONE;
+    info->byte8 = (byte)(function_1959c0(stream, 7) - 1);
+    if (function_1957d0(stream))
+    {
+        ((byte *)info)[0xc] = (byte)function_1959c0(stream, 6);
+        ((byte *)info)[0xd] = (byte)function_1959c0(stream, 6);
+        ((byte *)info)[0xe] = (byte)function_1959c0(stream, 4);
+    }
+    else
+    {
+        ((byte *)info)[0xc] = 0;
+        ((byte *)info)[0xd] = 0;
+        ((byte *)info)[0xe] = 0;
+    }
+    bool valid = stream->bit_position <= stream->size_in_bytes * 8 && info->definition_index != NONE;
+    if (info->byte8 != 0xff)
+        valid = valid && (char)info->byte8 >= 0 && (char)info->byte8 < *(long *)(globals + 0x120);
+    return valid;
+}
+
+
+bool __stdcall function_14f2e0(long player_index);
+
+// @retail 0xa9440
+bool function_a9440(long unit_index, long player_index)
+{
+    byte *player = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+    bool result = false;
+    if (!(player[2] & 2) && *(long *)(player + 0x2c) == NONE)
+    {
+        byte *unit = *(byte **)(g_4e0300->data + (unit_index & 0xffff) * 12 + 8);
+        if (*(long *)(unit + 0x130) != NONE)
+            function_a7bc0(unit_index);
+        function_14cad0(player_index, unit_index);
+        function_14f2e0(player_index);
+        result = true;
+    }
+    return result;
 }

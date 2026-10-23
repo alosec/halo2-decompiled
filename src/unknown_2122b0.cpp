@@ -3,7 +3,7 @@
 
 // @flags /O2 /Gr
 
-void function_246c60(void *arg_0, long arg_1);
+void function_246c60(long arg_1, void *arg_0);
 
 struct s_212300
 {
@@ -38,7 +38,11 @@ void function_2122b0(long arg_0)
         {
             s_212300 *local_4 = &local_2->field_8[local_3];
             for (long local_5 = 0; local_5 < local_4->field_c; local_5++)
-                function_246c60(local_4->field_8 + local_5 * 0x44 + 4, (long)(local_4->field_10 + local_5 * 0x70));
+            {
+                byte *blocks = local_4->field_8;
+
+                function_246c60((long)(local_4->field_10 + local_5 * 0x70), blocks + local_5 * 0x44 + 4);
+            }
         }
     }
 }

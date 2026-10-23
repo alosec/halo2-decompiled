@@ -124,9 +124,41 @@ static inline void vector3d_from_points3d(point3f const *p0, point3f const *p1, 
 	out->k = p1->z - p0->z;
 }
 
+__inline point3f *real_point3d_set(point3f *point, real x, real y, real z)
+{
+	point->x = x;
+	point->y = y;
+	point->z = z;
+	return point;
+}
+
 static inline real plane_distance_to_point(plane3f const *plane, point3f const *point)
 {
 	return plane->i * point->x + plane->j * point->y + plane->k * point->z - plane->d;
+}
+
+/* q scaled to unit length, or the identity rotation when it has no length;
+   the inverse length is kept in double precision */
+static __forceinline void quaternion_unit_or_identity(quaternionf *q)
+{
+	real length_squared = q->w * q->w + q->k * q->k + q->j * q->j + q->i * q->i;
+
+	if (length_squared > 0.0f)
+	{
+		double scale = 1.0f / sqrt(length_squared);
+
+		q->i = (real)(q->i * scale);
+		q->j = (real)(q->j * scale);
+		q->k = (real)(q->k * scale);
+		q->w = (real)(q->w * scale);
+	}
+	else
+	{
+		q->i = 0.0f;
+		q->j = 0.0f;
+		q->k = 0.0f;
+		q->w = 1.0f;
+	}
 }
 
 /* the global random generator step (146240) and the 16 bit scaling of it */

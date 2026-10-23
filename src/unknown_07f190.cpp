@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_07F190.CPP: the trimmed mean of a set of samples (lane D: called
    by the session's member latency summary and the observer) */
@@ -11,30 +12,24 @@
 #include <string.h>
 
 /* the fraction of the samples dropped at each end */
-real *g_4cf8e8;
+
 
 struct s_network_observer;
 void network_observer_reset_bandwidth(s_network_observer *observer);
 
-bool g_4cf8e0;
-s_network_observer *g_4cf8e4;
-bool g_4cf8ec;
-long g_4cf8f0[27];
-extern bool g_4cf95c;
-bool g_4cf95d;
-long g_4cf960;
-bool g_4cf964;
-extern long g_4cf968;
-extern long g_4cf96c;
+
+
+
+
+
+
+
+
+
+
 
 /* sorts the samples, drops the given fraction of them at each end and returns
    the mean of the rest */
-PRIVATE __forceinline void function_7f190(long *arg_0, const long *arg_1, long arg_2)
-{
-	memcpy(arg_0, arg_1, arg_2 * sizeof(long));
-}
-
-#pragma function(memcpy)
 // @retail 0x7f190
 long samples_trimmed_mean(const long *samples, long count)
 {
@@ -46,24 +41,24 @@ long samples_trimmed_mean(const long *samples, long count)
 
 	if (trim > 0)
 	{
-		for (i = 0; i < count; i++)
+		for (used = 0; used < count; used++)
 		{
-			for (long j = i; j >= 0; j--)
+			for (long j = used; j >= 0; j--)
 			{
-				if (j <= 0 || sorted[j - 1] <= samples[i])
+				if (j <= 0 || sorted[j - 1] <= samples[used])
 				{
-					sorted[j] = samples[i];
+					sorted[j] = samples[used];
 					break;
 				}
 				sorted[j] = sorted[j - 1];
 			}
 		}
-		used = i + (-trim) * 2;
-		memcpy(sorted, &sorted[trim], used * sizeof(long));
+		used -= trim * 2;
+		memmove(sorted, &sorted[trim], used * sizeof(long));
 	}
 	else
 	{
-		function_7f190(sorted, samples, count);
+		memcpy(sorted, samples, count * sizeof(long));
 		used = count;
 	}
 	total = 0;
@@ -71,7 +66,6 @@ long samples_trimmed_mean(const long *samples, long count)
 		total += sorted[i];
 	return total / used;
 }
-#pragma intrinsic(memcpy)
 
 // @retail 0x7f020
 bool function_7f020(s_network_observer *observer, real *trim)
@@ -248,9 +242,8 @@ void function_7f410(void)
 			single = samples_trimmed_mean(g_4cf8f0 + 1, g_4cf8f0[0]);
 		if (sent > 0)
 		{
-			estimate = received - ((s_estimate_configuration *)g_4cf8e8)->reserve;
-			if (sent <= estimate)
-				estimate = sent;
+			estimate = sent <= received - ((s_estimate_configuration *)g_4cf8e8)->reserve ?
+				sent : received - ((s_estimate_configuration *)g_4cf8e8)->reserve;
 			long minimum = ((s_estimate_configuration *)g_4cf8e8)->minimum;
 			if (estimate <= minimum)
 				estimate = minimum;
@@ -258,7 +251,8 @@ void function_7f410(void)
 			if (single > estimate && g_4cf8f0[26] > ((s_estimate_configuration *)g_4cf8e8)->threshold)
 			{
 				long grown = (g_4cf8f0[26] - ((s_estimate_configuration *)g_4cf8e8)->threshold) * ((s_estimate_configuration *)g_4cf8e8)->step + estimate;
-				estimate = grown > single ? single : grown;
+				if (grown > single) grown = single;
+				estimate = grown;
 			}
 		}
 		else if (single > 0)

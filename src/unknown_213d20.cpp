@@ -58,6 +58,8 @@ enum
 	_map_location_copied
 };
 
+__declspec(noinline) void cache_copy_hurry(void);
+
 // @retail 0x214d40
 void map_name_from_path(char const *path, char *name)
 {
@@ -132,7 +134,8 @@ long cache_file_find(char const *map_name)
 	{
 		if (!function_11c920(path, cache_file_map_name(index)))
 		{
-			return index;
+			result = index;
+			break;
 		}
 	}
 	return result;
@@ -307,6 +310,9 @@ long cache_copy_queued_priority(char const *map_name)
 	}
 	return result;
 }
+
+/* retail calls this out of line from its one caller, 0x163680 */
+__declspec(noinline) long cache_copy_priority(char const *map_name);
 
 // @retail 0x213ef0
 long cache_copy_priority(char const *map_name)

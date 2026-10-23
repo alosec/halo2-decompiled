@@ -24,7 +24,7 @@ struct s_1c4a80
 };
 
 // @retail 0x1c4a80
-void function_1c4a80(long arg_0, long arg_1, long arg_2)
+void function_1c4a80(long arg_0, bool arg_1, bool arg_2)
 {
  long local_0 = havok_object_get(arg_0)->havok_component_index;
  if (local_0 != NONE)

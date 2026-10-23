@@ -68,6 +68,14 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
+PRIVATE __forceinline vector3f *function_249171(real arg_0, vector3f *arg_1)
+{
+	arg_1->i = arg_0 * arg_1->i;
+	arg_1->j = *(real const volatile *)&arg_1->j * arg_0;
+	arg_1->k = *(real const volatile *)&arg_1->k * arg_0;
+	return arg_1;
+}
+
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {
@@ -112,7 +120,9 @@ void function_249170(real const *values, s_particle_spawn_state *particle, s_par
 	{
 		real radius = function_246cd0(&definition->radius, values);
 		random_unit_vector(&particle->velocity, &g_4e7408->seed);
-		particle_scale_position(radius, &particle->velocity, &particle->position);
+		particle->position.x = particle->velocity.i * radius;
+		particle->position.y = particle->velocity.j * radius;
+		particle->position.z = particle->velocity.k * radius;
 		break;
 	}
 	case 3:
@@ -254,8 +264,8 @@ normalize:
 	vector3f *velocity = &particle->velocity;
 	real speed_squared = velocity->i * velocity->i + velocity->j * velocity->j + velocity->k * velocity->k;
 	if (speed_squared != 0.f)
-		particle_scale_vector(particle_inverse_sqrt(speed_squared), velocity);
-	particle_scale_vector(function_246cd0(&definition->speed, values), velocity);
+		function_249171(particle_inverse_sqrt(speed_squared), velocity);
+	function_249171(function_246cd0(&definition->speed, values), velocity);
 }
 
 // @retail 0x249aa0

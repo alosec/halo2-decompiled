@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Ob1 /Gr
 /* UNKNOWN_054FE0.CPP: the session interface globals (0x4cd868)
    and the queries on the current game session (the manager's session_a) (lane D) */
@@ -182,7 +183,7 @@ bool network_session_parameters_set_value4dac(c_class_58d20 *session, long value
 
 static inline bool session_interface_stop_countdown(c_class_58d20 *session)
 {
-	return network_session_start_countdown(session, 0, false, 0, 0);
+	return network_session_start_countdown(session, false, 0, 0, 0);
 }
 
 // @retail 0x64060
@@ -253,7 +254,7 @@ void network_session_interface_clear_user(long index)
 }
 
 struct s_type_fb9815;
-void machine_identifier_build(s_type_fb9815 *identifier, long index);
+inline void machine_identifier_build(s_type_fb9815 *identifier, long index);
 
 // @retail 0x64610
 long __stdcall function_64610(dword *xuid)
@@ -292,20 +293,18 @@ long network_session_interface_get_user_state(c_class_58d20 *session, long user_
 		if (SESSION_STATE_IS_LIVE(session->state))
 		{
 			long player_index = session->members[session->current_member].player_indices[user_index];
-			if (player_index != NONE)
-			{
-				s_network_session_player *player = &session->players[player_index];
-				if (player->unknown14 != NONE)
-				{
-					if (player->unknown14 == g_4cd868.users[user_index].unknown10 &&
-						memcmp(player->properties18, g_4cd868.users[user_index].properties, sizeof(player->properties18)) == 0 &&
-						player->unknown138 == g_4cd868.users[user_index].unknowna4)
-						return 6;
-					return 5;
-				}
+			if (player_index == NONE)
+				return g_4cd868.users[user_index].unknowncc[session->value10] ? 3 : 2;
+			s_network_session_player *player = &session->players[player_index];
+			if (player->unknown14 == NONE)
 				return 4;
-			}
-			return g_4cd868.users[user_index].unknowncc[session->value10] ? 3 : 2;
+			if (player->unknown14 != g_4cd868.users[user_index].unknown10)
+				return 5;
+			if (memcmp(player->properties18, g_4cd868.users[user_index].properties, sizeof(player->properties18)) != 0)
+				return 5;
+			if (player->unknown138 != g_4cd868.users[user_index].unknowna4)
+				return 5;
+			return 6;
 		}
 		return 1;
 	}
@@ -355,8 +354,8 @@ void network_session_interface_set_user_properties(long index, long unknown10, c
 	g_4cd868.users[index].unknowna4 = unknowna4;
 }
 
-long g_4cf968;
-long g_4cf96c;
+
+
 
 // @retail 0x64870
 void network_session_interface_set_unknown64(const byte *data, long unknown84)
@@ -414,8 +413,16 @@ byte *network_session_interface_get_data_4db0(void)
 {
 	byte *result = 0;
 	c_class_58d20 *session = 0;
-	if (network_session_get(&session) && SESSION_STATE_IS_LIVE(session->state))
-		result = session_get_data_4db0(session);
+	bool found = network_session_get(&session);
+	if (found)
+	{
+		long state = session->state;
+		if (state > 2)
+		{
+			if (state <= 8)
+				result = session_get_data_4db0(session);
+		}
+	}
 	return result;
 }
 
@@ -432,8 +439,16 @@ short network_session_interface_get_value_5dd0(void)
 {
 	c_class_58d20 *session = 0;
 	short result = NONE;
-	if (network_session_get(&session) && SESSION_STATE_IS_LIVE(session->state))
-		result = session_get_value_5dd0(session);
+	bool found = network_session_get(&session);
+	if (found)
+	{
+		long state = session->state;
+		if (state > 2)
+		{
+			if (state <= 8)
+				result = session_get_value_5dd0(session);
+		}
+	}
 	return result;
 }
 
@@ -486,7 +501,10 @@ long network_session_interface_find_player_49b8(void)
 			for (long i = 0; i < 16; i++)
 			{
 				if ((session->player_mask & (1 << i)) && !memcmp(&session->players[i], key, 12))
-					return i;
+				{
+					result = i;
+					break;
+				}
 			}
 		}
 	}
@@ -554,6 +572,8 @@ static inline s_network_session_player *session_get_player(c_class_58d20 *sessio
 // @retail 0x64c70
 bool network_session_interface_has_user(const XUID *xuid)
 {
+	union { byte field_0; bool field_1; } local_0;
+ local_0.field_0 = 0;
 	c_class_58d20 *session = 0;
 	if (network_session_get(&session) && SESSION_STATE_IS_LIVE(session->state))
 	{
@@ -561,10 +581,11 @@ bool network_session_interface_has_user(const XUID *xuid)
 		{
 			s_network_session_player *player = session_get_player(session, i);
 			if (player && xuid && player->user_id == xuid->qwUserID && XOnlineUserGuestNumber(player->user_flags) == XOnlineUserGuestNumber(xuid->dwUserFlags))
-				return true;
+				{ local_0.field_0 = 1; goto local_1; }
 		}
 	}
-	return false;
+local_1:
+	return local_0.field_1;
 }
 
 static inline s_long_pair *session_get_data_4999(c_class_58d20 *session)
@@ -579,9 +600,13 @@ static inline s_long_pair *session_get_data_4999(c_class_58d20 *session)
 s_long_pair *network_session_interface_get_data_4999(void)
 {
 	s_long_pair *result = 0;
-	c_class_58d20 *session = network_session_get_live();
-	if (session)
-		result = session_get_data_4999(session);
+	if (g_527330.initialized)
+	{
+		long state = ((c_class_58d20 *)g_527330.session_a)->state;
+		c_class_58d20 *session = (c_class_58d20 *)g_527330.session_a;
+		if (state && SESSION_STATE_IS_LIVE(state) && session->flag4998)
+			result = &session->data4999;
+	}
 	return result;
 }
 
@@ -596,17 +621,24 @@ struct s_sort_key
 // @retail 0x64d30
 bool __stdcall sort_key_less_than(const s_sort_key *a, const s_sort_key *b, void *context)
 {
-	if (a->high < b->high)
-		return true;
-	if (a->high > b->high)
-		return false;
-	if (a->middle < b->middle)
-		return true;
-	if (a->middle > b->middle)
-		return false;
-	if (a->low < b->low)
-		return false;
-	return a->low > b->low;
+ if (a->high < b->high)
+  return true;
+ else if (a->high > b->high)
+  return false;
+ else
+ {
+  if (a->middle < b->middle)
+   return true;
+  else if (a->middle > b->middle)
+   return false;
+  else if (a->low < b->low)
+   return false;
+  else
+  {
+   byte local_0 = a->low > b->low;
+   return local_0;
+  }
+ }
 }
 
 // @retail 0x65280
@@ -620,37 +652,44 @@ long network_session_interface_get_value_90(long *value94)
 // @retail 0x652a0
 long network_session_interface_get_members_status(long *progress)
 {
+	c_class_58d20 *session = 0;
 	long status = 0;
 	long lowest = 0;
-	c_class_58d20 *session = 0;
 	if (network_session_get(&session) && SESSION_STATE_IS_LIVE(session->state))
 	{
 		long member_count = session->member_count;
 		status = 4;
 		lowest = 100;
-		for (long i = 0; i < member_count; i++)
+		long i = 0;
+		if (member_count > 0)
 		{
-			long member_status = session->members[i].unknown88;
-			if (member_status == 1)
+			long *local_0 = &session->members[0].unknown88;
+			do
 			{
-				status = 1;
-				lowest = 0;
-				break;
-			}
-			if (member_status != 4)
-			{
-				if (member_status == 3)
+				long member_status = local_0[0];
+				if (member_status == 1)
 				{
-					if (status == 4)
+					status = 1;
+					lowest = 0;
+					break;
+				}
+				if (member_status != 4)
+				{
+					if (member_status == 3)
+					{
+						if (status == 4)
+							status = member_status;
+					}
+					else if (member_status == 2)
+					{
 						status = member_status;
+						if (lowest > local_0[1])
+							lowest = local_0[1];
+					}
 				}
-				else if (member_status == 2)
-				{
-					status = member_status;
-					if (lowest > session->members[i].unknown8c)
-						lowest = session->members[i].unknown8c;
-				}
-			}
+				i++;
+				local_0 = (long *)((byte *)local_0 + 0x10c);
+			} while (i < member_count);
 		}
 	}
 	if (progress)
@@ -682,21 +721,32 @@ static inline short session_get_value_5dd0_inline(c_class_58d20 *session)
 	return result;
 }
 
+// score 32 (was 32): retail keeps the three temporary values (value498c, the
+// maximum player count and the global state) in eax, ours keeps them in esi
+// and saves esi around the body; the checks and the exits match.
 // @retail 0x63e00
 bool network_session_interface_can_add_player(void)
 {
+	bool result = false;
 	c_class_58d20 *session = network_session_get_live();
 	if (!session)
-		return false;
+		goto done;
 	if (session_get_value_498c(session) != 0)
-		return false;
+		goto done;
 	if (session->player_count >= session_get_maximum_player_count(session))
-		return false;
+		goto done;
 	if (g_527330.state == 6 || g_527330.state == 7 || g_527330.state == 8 || g_527330.state == 9)
-		return false;
-	if (session_get_value_5dd0_inline(session) != NONE)
-		return false;
-	return true;
+		goto done;
+	{
+		short local_0 = NONE;
+		if (SESSION_STATE_IS_LIVE(session->state))
+			local_0 = session->value5dd0;
+		if (local_0 != NONE)
+			goto done;
+	}
+	result = true;
+done:
+	return result;
 }
 
 // @retail 0x656e0
@@ -731,36 +781,64 @@ bool network_session_get_membership(c_class_58d20 *session, long *value4c, long 
 }
 
 
+struct s_64310
+{
+	long field_0;
+	long field_4;
+	dword field_8;
+	s_session_member *field_c;
+	s_network_session_player *field_10;
+};
+
+// score 43 (was 43), as 0x643f0: retail keeps the player mask in ebp and the
+// address of the players array in edi (lea edi, [eax + 0x1120]), then reads a
+// player's member index through it; ours folds the array into the load
+// ([ecx + eax + 0x112c]), needs no ebp and is 6 bytes shorter. Plain locals,
+// the struct's fields in another order or layout, const references to the
+// players or members pointer, an inline function filling the struct and a
+// player pointer score 43 to 53; the 600 s permutation run found no match.
 // @retail 0x64310
 bool network_session_interface_kick_player(long player_index)
 {
-	bool result = false;
+	volatile bool result = false;
 	c_class_58d20 *session = network_session_get_live();
 	if (session)
 	{
-		long host_member = session->current_member;
-		if (host_member == session->value50 && (session->player_mask & (1 << player_index)))
+		s_64310 local_0;
+		local_0.field_0 = session->current_member;
+		local_0.field_4 = session->value50;
+		local_0.field_8 = session->player_mask;
+		local_0.field_c = session->members;
+		local_0.field_10 = session->players;
+		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
 		{
-			long member_index = session->players[player_index].member_index;
-			if (member_index != host_member && network_session_delegate_leader(session, (const s_session_member_identity *)session->members[member_index].words))
+			long member_index = local_0.field_10[player_index].member_index;
+			if (member_index != local_0.field_0 && network_session_delegate_leader(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
 				result = true;
 		}
 	}
 	return result;
 }
 
+// score 43 (was 43): the same as 0x64310 above, which differs only in the
+// function it calls.
 // @retail 0x643f0
 bool network_session_interface_ban_player(long player_index)
 {
-	bool result = false;
+	volatile bool result = false;
 	c_class_58d20 *session = network_session_get_live();
 	if (session)
 	{
-		long host_member = session->current_member;
-		if (host_member == session->value50 && (session->player_mask & (1 << player_index)))
+		s_64310 local_0;
+		local_0.field_0 = session->current_member;
+		local_0.field_4 = session->value50;
+		local_0.field_8 = session->player_mask;
+		local_0.field_c = session->members;
+		local_0.field_10 = session->players;
+		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
 		{
-			long member_index = session->players[player_index].member_index;
-			if (member_index != host_member && network_session_boot_machine(session, (const s_session_member_identity *)session->members[member_index].words))
+			long member_index = local_0.field_10[player_index].member_index;
+			if (member_index != local_0.field_0 && network_session_boot_machine(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
 				result = true;
 		}
 	}
@@ -804,11 +882,12 @@ bool network_session_interface_set_value4d08(long value4d08, long value4d0c, con
 {
 	bool result = false;
 	c_class_58d20 *session = network_session_get_current();
-	if (session && session_is_established(session))
+	if (session && session_state_is_live(session))
 	{
-		if (session_is_leader(session))
-			return network_session_parameters_set_value4d08(session, string, value4d08, value4d0c);
-		result = true;
+		if (function_058d50(session))
+			result = network_session_parameters_set_value4d08(session, value4d08, value4d0c, string);
+		else
+			result = true;
 	}
 	return result;
 }
@@ -829,9 +908,7 @@ bool network_session_interface_set_value4d08_and_stop_countdown(long value4d08, 
 	if (network_session_interface_local_machine_is_host())
 	{
 		c_class_58d20 *session = network_session_get_current();
-		if (network_session_parameters_set_value4d08(session, string, value4d08, value4d0c) && network_session_start_countdown(session, 0, false, 0, 0))
-			return true;
-		return false;
+		result = network_session_parameters_set_value4d08(session, value4d08, value4d0c, string) && network_session_start_countdown(session, false, 0, 0, 0);
 	}
 	return result;
 }
@@ -843,9 +920,8 @@ bool network_session_interface_set_value5dd0(short value)
 	if (network_session_interface_local_machine_is_host())
 	{
 		c_class_58d20 *session = network_session_get_current();
-		if (network_session_parameters_set_value5dd0(session, value) && network_session_start_countdown(session, 0, false, 0, 0))
-			return true;
-		return false;
+		result = network_session_parameters_set_value5dd0(session, value) &&
+			network_session_start_countdown(session, false, 0, 0, 0);
 	}
 	return result;
 }
@@ -895,8 +971,8 @@ bool network_session_interface_set_value49c4(void)
 	if (g_527330.initialized && g_527330.state == 3)
 	{
 		c_class_58d20 *session = (c_class_58d20 *)g_527330.session_a;
-		if (session->state && session_is_established(session) && session_is_leader(session) && network_session_parameters_set_value49c4(session))
-			return true;
+		if (session->state && function_058d50(session) && network_session_parameters_set_value49c4(session))
+			result = true;
 	}
 	return result;
 }
@@ -911,7 +987,7 @@ bool network_session_interface_start_countdown(long user_index, bool start, long
 		s_session_interface_user *user = &g_4cd868.users[user_index];
 		if (user->valid)
 		{
-			if (network_session_start_countdown(session, countdown, start, mode, (const long *)&user->xuid))
+			if (network_session_start_countdown(session, start, countdown, mode, (const long *)&user->xuid))
 				result = true;
 		}
 	}
@@ -920,7 +996,7 @@ bool network_session_interface_start_countdown(long user_index, bool start, long
 
 /* ---- the local users' players in a session (lane D, round 4) ---- */
 
-bool network_session_player_add(c_class_58d20 *session, const byte *properties, const dword *identity, long slot, long unknown18, long unknownac);
+bool network_session_player_add(c_class_58d20 *session, long slot, const dword *identity, long unknown18, const byte *properties, long unknownac);
 bool network_session_player_set_properties(c_class_58d20 *session, const byte *properties, long slot, long volatile unknown0c, long unknowna0);
 bool network_session_player_remove(c_class_58d20 *session, long slot);
 
@@ -956,15 +1032,15 @@ void network_session_interface_add_user(c_class_58d20 *session, long user_index)
 	}
 	else if (elapsed >= g_network_configuration.valuec84)
 	{
-		if (network_session_player_add(session, user->properties, (const dword *)&user->xuid, user_index, user->unknown10, user->unknowna4))
+		if (network_session_player_add(session, user_index, (const dword *)&user->xuid, user->unknown10, user->properties, user->unknowna4))
 			user->unknowna8[owner] = session_interface_time_get();
 		else
 			user->unknowncc[owner] = true;
 	}
 	else
 	{
-		s_session_user_reservation *reservation = &((s_session_user_reservation *)session->data761c)[user_index];
-		if (reservation->valid && !memcmp(&user->xuid, &reservation->xuid, sizeof(XUID)))
+		if (((s_session_user_reservation *)session->data761c)[user_index].valid &&
+			!memcmp(&user->xuid, &((s_session_user_reservation *)session->data761c)[user_index].xuid, sizeof(XUID)))
 			user->unknowncc[owner] = true;
 	}
 }
@@ -1062,9 +1138,12 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 	return result;
 }
 
+// score 67 (was 67): the frame is four bytes smaller than retail's and the locals
+// (the count, the minimum and the maximum) are set up in another order.
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {
+	long host = session->current_member;
 	s_network_observer *observer = 0;
 	long count = 0;
 	long maximum = 0x80000000;
@@ -1072,22 +1151,14 @@ void network_session_get_member_latency(s_session_member_latency *latency, c_cla
 	long times[16];
 	if (g_527330.initialized)
 		observer = (s_network_observer *)g_527330.unknown48;
-	long host = session->current_member;
-
 	memset(latency, 0, sizeof(*latency));
 	for (long i = 0; i < session->member_count; i++)
 	{
 		if (i != host)
 		{
-			if (i < 0 || i >= session->member_count)
+			s_qos_result qos;
+			if (!session_member_get_qos(observer, session, i, &qos))
 				continue;
-			s_network_session_member_state *member = &session->member_states[i];
-			if (!member->flag1 || member->unknown04 == NONE)
-				continue;
-			s_network_observer_channel *channel = &observer->channels[member->unknown04];
-			if (channel->state != 7 || !(channel->flags & 0x10))
-				continue;
-			s_qos_result qos = channel->field_x31a738;
 			long time = qos.rtt_median;
 			if (time < 50)
 				time = 50;
@@ -1109,10 +1180,10 @@ void network_session_get_member_latency(s_session_member_latency *latency, c_cla
 	}
 }
 
-static inline long network_session_time_matches(long a, long b)
+static inline long network_session_time_matches(s_session_id key)
 {
 	long result = 0;
-	if (g_510520.a == a && g_510520.b == b)
+	if (*(__int64 *)&g_510520 == *(__int64 *)&key)
 		result = function_73b10(g_510540.a, g_510540.b);
 	return result;
 }
@@ -1121,13 +1192,18 @@ static inline long session_get_value_49f0(c_class_58d20 *session)
 {
 	long result = 0;
 	if (SESSION_STATE_IS_LIVE(session->state) && session->flag49e8)
-		result = network_session_time_matches(session->value49f0, session->value49f4);
+	{
+		s_session_id key;
+		key.a = session->value49f0;
+		key.b = session->value49f4;
+		result = network_session_time_matches(key);
+	}
 	return result;
 }
 
 /* sends the local machine's properties to the session when they change */
 // @retail 0x658c0
-void network_session_interface_update_local_properties(c_class_58d20 *session, s_session_member *member)
+static void network_session_interface_update_local_properties(c_class_58d20 *session, s_session_member *member)
 {
 	long owner = session->value10;
 	long last = g_4cd868.unknown3e8[owner];
@@ -1192,11 +1268,8 @@ void network_session_interface_update_player_properties(c_class_58d20 *session)
 
 	long owner = session->value10;
 	byte *parameters = session_get_data_4db0(session);
-	if (!parameters)
-	{
-		memset(g_4cd868.data400[owner], 0, sizeof(g_4cd868.data400[owner]));
-		return;
-	}
+	if (parameters)
+    {
 	byte *previous = g_4cd868.data400[owner];
 	if (!memcmp(previous, parameters, sizeof(g_4cd868.data400[owner])) && g_4cd868.value3f4[owner] == session->value4c)
 		return;
@@ -1287,6 +1360,11 @@ void network_session_interface_update_player_properties(c_class_58d20 *session)
 	}
 	g_4cd868.value3f4[owner] = session->value4c;
 	memcpy(previous, parameters, sizeof(g_4cd868.data400[owner]));
+    }
+	else
+	{
+		memset(g_4cd868.data400[owner], 0, sizeof(g_4cd868.data400[owner]));
+	}
 }
 
 /* the periodic update of one session: the local users' players, the local
@@ -1409,12 +1487,15 @@ struct s_cached_player_source;
 void function_80490(const s_cached_player_identity *identity, const s_cached_player_source *source,
  bool local, bool recent);
 
+// score 45 (was 45): the user struct is reached through a pointer, so ours adds the
+// base of the global to the scaled index; retail leaves the whole offset in the
+// displacement of the store.
 // @retail 0x65530
 void __stdcall function_65530(long user_index)
 {
+ long maximum = NONE;
  long levels[16];
  memset(levels, NONE, sizeof(levels));
- long maximum = NONE;
  for (long i = 0; i < 16; i++)
  {
   if (game_variant_get_map_status(i) == 1)
@@ -1465,53 +1546,46 @@ void __stdcall function_65530(long user_index)
    (const s_cached_player_source *)user->properties, true, false);
 }
 
-bool function_138800(void);
+bool game_loop_running(void);
 long map_location_progress_get(char const *map_name);
 real __stdcall function_122dd0(byte *map_name, long mode, long type);
 bool __stdcall function_163890(char const *map_name, long mode);
 
+static __forceinline bool function_65341(c_class_58d20 **out)
+{
+ bool result = false;
+ long state = g_527330.initialized ? g_527330.state : 0;
+ switch (state)
+ {
+ case 1: case 2: case 3: case 4:
+  if (g_527330.initialized)
+  {
+   c_class_58d20 *current = (c_class_58d20 *)g_527330.session_a;
+   if (current->state) { *out = current; result = true; }
+  }
+  break;
+ case 6: case 7: case 8: case 9:
+  if (g_527330.initialized)
+  {
+   c_class_58d20 *current = (c_class_58d20 *)g_527330.session_b;
+   if (current->state) { *out = current; result = true; }
+  }
+  break;
+ default: break;
+ }
+ return result;
+}
+
+// score 114 (was 120): retail picks the observer pointer with a conditional move
+// after the flag test; ours computes the same value with a negation and a test.
 // @retail 0x65340
 void function_065340(void)
 {
-	long status = 0;
 	real progress = 0.0f;
-	long variant_index = NONE;
 	c_class_58d20 *session = 0;
-	bool found = false;
-	long state = g_527330.initialized ? g_527330.state : 0;
-	switch (state)
-	{
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-		if (g_527330.initialized)
-		{
-			c_class_58d20 *current = (c_class_58d20 *)g_527330.session_a;
-			if (current->state)
-			{
-				session = current;
-				found = true;
-			}
-		}
-		break;
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-		if (g_527330.initialized)
-		{
-			c_class_58d20 *current = (c_class_58d20 *)g_527330.session_b;
-			if (current->state)
-			{
-				session = current;
-				found = true;
-			}
-		}
-		break;
-	default:
-		break;
-	}
+	bool found = function_65341(&session);
+	long status = 0;
+	long variant_index = NONE;
 	if (found && session && SESSION_STATE_IS_LIVE(session->state))
 	{
 		long first_id;
@@ -1520,7 +1594,7 @@ void function_065340(void)
 		if (session->get_values_4d08(&first_id, &second_id, &name) &&
 			second_id != NONE && name[0])
 		{
-			if (function_138800() && g_4e6948->position_a == first_id &&
+			if (game_loop_running() && g_4e6948->position_a == first_id &&
 				g_4e6948->position_b == second_id &&
 				!strncmp((char const *)name, g_4e6948->name, 0x104))
 			{
@@ -1549,9 +1623,12 @@ void function_065340(void)
 	g_4cd868.unknown94 = (long)(progress * 100.0f);
 	g_4cd868.unknown98 = variant_index;
 	s_session_interface_user *user = g_4cd868.users;
-	for (long i = 0; i < 4; i++, user++)
+	for (long i = 0; i < 4; i++)
+	{
 		if (user->valid)
 			function_65530(i);
+		user++;
+	}
 }
 
 struct s_message_identities;
@@ -1560,79 +1637,114 @@ bool function_7ed20(const s_message_identities *message, s_message_identity *com
 s_surface_description *function_192e60(long index);
 long function_193250(s_surface_description *variant);
 
+struct s_66050
+{
+    byte field_0[8];
+    long field_8;
+    s_session_member field_c[16];
+    long field_10cc;
+    dword field_10d0;
+    s_network_session_player field_10d4[16];
+};
+
+#pragma optimize("t", on)
+#pragma inline_depth(0)
+struct s_type_66052
+{
+ byte unknown00[0xac];
+ long field_ac[16];
+ byte unknownec[0x20];
+};
 // @retail 0x66050
 long function_66050(c_class_58d20 *session, long variant_index)
 {
- bool missing = false;
+ long result;
+ long local_1 = variant_index;
+ bool different;
  bool compatible;
+ bool missing;
  long current = session->member_index;
- compatible = function_7ed20((const s_message_identities *)&session->value4c, 0, &missing, &compatible);
- s_surface_description *variant = function_192e60(variant_index);
- volatile long result = 0;
+ missing = false;
+ s_66050 *local_0 = (s_66050 *)&session->value4c;
+ compatible = function_7ed20((const s_message_identities *)local_0, 0, &missing, &different);
+ s_surface_description *variant = function_192e60(local_1);
+ result = 0;
  if (!variant)
  {
   result = 2;
-  return result;
+  goto local_66050;
  }
+ {
  if (variant->type == 5 || variant->type == 2 || variant->type == 4)
  {
   for (long i = 0; i < 16; i++)
-   if ((session->player_mask & (1 << i)) && (session->players[i].user_flags & 3))
+   if ((local_0->field_10d0 & (1 << i)) && (local_0->field_10d4[i].user_flags & 3))
    {
     result = 12;
-    return result;
+    goto local_66050;
    }
  }
+ dword mask = local_0->field_10d0;
  for (long i = 0; i < 16; i++)
-  if ((session->player_mask & (1 << i)) && session->players[i].user_flags == 0xbad00000)
+  if ((mask & (1 << i)) && local_0->field_10d4[i].user_flags == 0xbad00000)
   {
    result = 13;
-   return result;
+   goto local_66050;
   }
- for (long member = 0; member < session->member_count; member++)
+ for (long member = 0; member < local_0->field_8; member++)
  {
-  long state = *(long *)((byte *)&session->members[member] + 0xac + variant_index * 4);
-  if (state != 1)
+  const s_type_66052 *entry = (const s_type_66052 *)&local_0->field_c[member];
+  if (entry->field_ac[local_1] != 1)
   {
+   long state = entry->field_ac[local_1];
    if (!state)
     result = 14;
    else
-    result = state == 3 ? 2 : 11;
-   return result;
+    {
+     long outcome = state == 3 ? 2 : 11;
+     result = outcome;
+     goto local_66050;
+    }
+   goto local_66050;
   }
  }
  for (long i = 0; i < 16; i++)
-  if ((session->player_mask & (1 << i)) && (signed char)session->players[i].propertiesa8[0x81] < variant->field5e4)
+  if ((mask & (1 << i)) && (signed char)local_0->field_10d4[i].propertiesa8[0x81] < variant->field5e4)
   {
    result = 15;
-   return result;
+   goto local_66050;
   }
- if (variant->type == 5 && !compatible)
+ const long &type = variant->type;
+ if (type == 5 && !compatible)
  {
-  result = missing ? 8 : 9;
-  return result;
+  long outcome = missing ? 8 : 9;
+  result = outcome;
+  goto local_66050;
  }
  long minimum;
- if (variant->type <= 3)
-  minimum = 1;
- else if (variant->type == 4)
-  minimum = variant->field5fc;
+ if (type > 3)
+ {
+  if (type != 4)
+   minimum = variant->field5f0;
+  else
+   minimum = variant->field5fc;
+ }
  else
-  minimum = variant->field5f0;
- long count = session->player_count;
+  minimum = 1;
+ long count = local_0->field_10cc;
  if (count < minimum)
  {
   result = 6;
-  return result;
+  goto local_66050;
  }
  if (count > function_193250(variant))
  {
   result = 7;
-  return result;
+  goto local_66050;
  }
- if (variant->type == 5)
+ if (type == 5)
  {
-  function_7e100(current, (const s_member_quality_collection *)&session->value4c, 0, 0, 0, &current);
+  function_7e100(current, (const s_member_quality_collection *)local_0, 0, 0, 0, &current);
   long required;
   switch (variant->type)
   {
@@ -1646,8 +1758,12 @@ long function_66050(c_class_58d20 *session, long variant_index)
   if (current < required)
    result = 10;
  }
+ }
+local_66050:
  return result;
 }
+#pragma inline_depth(8)
+#pragma optimize("", on)
 
 // @retail 0x63e90
 long __stdcall function_63e90(long index)
@@ -1728,8 +1844,15 @@ bool __stdcall function_64d70(s_session_browser_summary *output)
  if (g_527330.initialized)
  {
   c_class_58d20 *session = (c_class_58d20 *)g_527330.session_a;
-  if (session->state && session->value18 && SESSION_STATE_IS_LIVE(session->state))
+  long state = session->state;
+  if (state)
   {
+   if (session->value18)
+   {
+    if (state > 2)
+    {
+     if (state <= 8)
+     {
    long map = NONE;
    long map_variant = NONE;
    byte *map_data;
@@ -1789,7 +1912,7 @@ bool __stdcall function_64d70(s_session_browser_summary *output)
    output->option = option;
    output->map_variant = map_variant;
    output->teams = (variant[0x48] & 1) != 0;
-   if (g_4e6948 && g_4e6948->flag1120 && g_4e6948->index == 2 && state == 3)
+   if (g_4e6948 && g_4e6948->flag1120 && g_4e6948->state == 2 && state == 3)
    {
     statistics = true;
     function_158850(&output->score_type, &output->score_limit);
@@ -1821,14 +1944,14 @@ bool __stdcall function_64d70(s_session_browser_summary *output)
    }
    function_13da70(entries, count, sizeof(entries[0]), (t_session_summary_compare)sort_key_less_than, 0);
    output->player_count = (short)count;
-   for (long j = 0; j < count; j++)
+   s_summary_player_sort_entry *sorted_entry = entries;
+   for (long j = 0; j < count; j++, sorted_entry++)
    {
-    s_summary_player_sort_entry *entry = &entries[j];
-    memcpy(output->player_keys[j], entry->key, sizeof(entry->key));
-    memcpy(output->player_names[j], entry->properties, sizeof(output->player_names[j]));
-    output->scores[j] = entry->sort.middle;
-    output->player_teams[j] = *(signed char *)(entry->properties + 0x7c);
-    memcpy(output->field_5e0[j], entry->properties + 0x40, sizeof(output->field_5e0[j]));
+    memcpy(output->player_keys[j], sorted_entry->key, sizeof(sorted_entry->key));
+    memcpy(output->player_names[j], sorted_entry->properties, sizeof(output->player_names[j]));
+    output->scores[j] = sorted_entry->sort.middle;
+    output->player_teams[j] = *(signed char *)(sorted_entry->properties + 0x7c);
+    memcpy(output->field_5e0[j], sorted_entry->properties + 0x40, sizeof(output->field_5e0[j]));
    }
    if ((variant[0x48] & 1) && statistics)
    {
@@ -1841,6 +1964,10 @@ bool __stdcall function_64d70(s_session_browser_summary *output)
     }
    }
    result = true;
+
+     }
+    }
+   }
   }
  }
  return result;

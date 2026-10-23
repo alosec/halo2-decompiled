@@ -119,7 +119,7 @@ void __stdcall message_broadcast_reply_encode(s_bitstream *stream, long size, s_
 {
 	stream_write_checked(stream, message->id, 16);
 	function_1955d0(stream, &message->nonce, 64);
-	function_07ba10(stream, &message->session);
+	session_description_encode(stream, &message->session);
 }
 
 // @retail 0x000ac7a0
@@ -127,7 +127,7 @@ bool __stdcall message_broadcast_reply_decode(s_bitstream *stream, long size, s_
 {
 	message->id = (word)function_1959c0(stream, 16);
 	function_195820(stream, &message->nonce, 64);
-	if (function_07c110(stream, &message->session) && !stream_overflowed(stream))
+	if (session_description_decode(stream, &message->session) && !stream_overflowed(stream))
 		return true;
 	return false;
 }

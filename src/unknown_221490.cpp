@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "pool_storage.h"
 #include "unknown_11c920.h"
 #include <xtl.h>
 #include <string.h>
@@ -87,45 +88,44 @@ PRIVATE inline long sound_gain_to_volume(real gain)
 	return volume;
 }
 
-dword g_510800_pool_base;
-long g_510804_pool_size;
-dword g_510808_pool_checksum;
 
 s_sound_class_fade *g_502118;
 bool g_50211c;
 char const *g_470090[k_sound_class_count];
 
-// @retail 0x221490
-void function_221490(
-	LPDIRECTSOUNDBUFFER *buffer_reference)
+PRIVATE __forceinline void function_221491(long arg_0, long arg_1, LPDIRECTSOUNDBUFFER *arg_2)
 {
-	DSBUFFERDESC description = {0};
-	s_wave_format format = {0};
+	s_wave_format format;
+	DSBUFFERDESC description;
 	DSMIXBINVOLUMEPAIR pair;
 	DSMIXBINS mixbins;
-	LPDIRECTSOUNDBUFFER buffer = NULL;
 	long aligned_size;
 	byte *memory;
 	byte *top;
 
-	format.format_tag = WAVE_FORMAT_PCM;
-	format.channels = 1;
+	memset(&format, 0, 0x12);
+	memset(&description, 0, sizeof(description));
+
+	LPDIRECTSOUNDBUFFER buffer = (LPDIRECTSOUNDBUFFER)arg_1;
+
+	format.format_tag = (word)arg_0;
+	format.channels = (word)arg_0;
 	format.samples_per_second = k_silence_buffer_size;
 	format.average_bytes_per_second = k_silence_buffer_size;
-	format.block_align = 1;
+	format.block_align = (word)arg_0;
 	format.bits_per_sample = 8;
-	format.extra_size = 0;
+	format.extra_size = (word)arg_1;
 
 	description.dwSize = sizeof(description);
-	description.dwBufferBytes = 0;
+	description.dwBufferBytes = (DWORD)arg_1;
 	description.lpwfxFormat = (LPWAVEFORMATEX)&format;
 	description.lpMixBins = &mixbins;
-	description.dwInputMixBin = 0;
 
-	mixbins.dwMixBinCount = 1;
+	mixbins.dwMixBinCount = (DWORD)arg_0;
 	mixbins.lpMixBinVolumePairs = &pair;
 	pair.dwMixBin = 0xe;
-	pair.lVolume = 0;
+	pair.lVolume = arg_1;
+
 
 	DirectSoundCreateBuffer(&description, &buffer);
 
@@ -137,13 +137,23 @@ void function_221490(
 
 	memset(memory, 0, k_silence_buffer_size);
 	IDirectSoundBuffer_SetBufferData(buffer, memory, k_silence_buffer_size);
-	IDirectSoundBuffer_SetHeadroom(buffer, 0);
+	IDirectSoundBuffer_SetHeadroom(buffer, (DWORD)arg_1);
 	IDirectSoundBuffer_SetVolume(buffer, -10000);
-	IDirectSoundBuffer_Play(buffer, 0, 0, DSBPLAY_LOOPING);
+	IDirectSoundBuffer_Play(buffer, (DWORD)arg_1, (DWORD)arg_1, (DWORD)arg_0);
 
-	*buffer_reference = buffer;
+	*arg_2 = buffer;
 }
 
+// @retail 0x221490
+void function_221490(
+	LPDIRECTSOUNDBUFFER *buffer_reference)
+{
+    function_221491(1, 0, buffer_reference);
+}
+
+// score 83 (was 83): the prologue and the loop's registers differ: retail pushes ebp, esi
+// and edi first and keeps the pair count in ebp and the pair pointer in ebx, ours loads the
+// pointer into ebx before the pushes and counts in ecx.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -156,15 +166,19 @@ void function_2215d0(
 	long out_count = 0;
 	dword changed_mask = 0;
 	dword seen_mask = 0;
-	bool changed = false;
+	bool changed;
 	long i;
 
 	out_mixbins.dwMixBinCount = 0;
 	out_mixbins.lpMixBinVolumePairs = out_pairs;
 
-	if (list && list->count == (long)settings->mixbins.dwMixBinCount)
+	if (!list)
+		goto set_all;
+	if (list->count != (long)settings->mixbins.dwMixBinCount)
+		goto set_all;
 	{
 		long count = list->count;
+		changed = false;
 
 		for (i = 0; i < count; i++)
 		{
@@ -211,6 +225,9 @@ set_all:
 	IDirectSoundStream_SetMixBins(stream, &settings->mixbins);
 }
 
+// score 83 (was 83): the prologue and the loop's registers differ: retail pushes ebp, esi
+// and edi first and keeps the pair count in ebp and the pair pointer in ebx, ours loads the
+// pointer into ebx before the pushes and counts in ecx.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,
@@ -221,9 +238,9 @@ void function_2216f0(
 	DSMIXBINVOLUMEPAIR out_pairs[8];
 	long values[32];
 	long out_count = 0;
-	dword changed_mask = 0;
+	volatile dword changed_mask = 0;
 	dword seen_mask = 0;
-	bool changed = false;
+	bool changed;
 	long i;
 
 	out_mixbins.dwMixBinCount = 0;
@@ -232,6 +249,7 @@ void function_2216f0(
 	if (list && list->count == (long)settings->mixbins.dwMixBinCount)
 	{
 		long count = list->count;
+		changed = false;
 
 		for (i = 0; i < count; i++)
 		{
@@ -325,31 +343,29 @@ void function_2218f0(void)
 void function_221900(
 	real delta)
 {
-	s_sound_class_fade *fade;
-	long i;
-
 	if (delta > 0.0f)
 	{
-		fade = g_502118;
-		real *local_0 = &fade->time;
-		for (i = 0; i < k_sound_class_count; i++, local_0 += 4)
+		real volatile *class_fade_time = &g_502118->time;
+		for (long i = 0; i < k_sound_class_count; i++, class_fade_time += 4)
 		{
-			if (*local_0 > delta)
+			real time_left = *class_fade_time;
+			if (time_left > delta)
 			{
-				dword target_bits = ((dword *)local_0)[-2];
-				dword current_bits = ((dword *)local_0)[-1];
+				dword target_bits = ((dword *)class_fade_time)[-2];
+				dword current_bits = ((dword *)class_fade_time)[-1];
 				real target = *(real *)&target_bits;
 				real current = *(real *)&current_bits;
-				real local_1 = delta / *local_0;
-				real result = (target - current) * local_1 + current;
-
-				((dword *)local_0)[-1] = *(dword *)&result;
-				*local_0 = *local_0 - delta;
+				/* the same local holds this step's fraction */
+				time_left = delta / time_left;
+				real result = (target - current) * time_left + current;
+				((dword *)class_fade_time)[-1] = *(dword *)&result;
+				time_left = *class_fade_time - delta;
+				*class_fade_time = time_left;
 			}
 			else
 			{
-				((dword *)local_0)[-1] = ((dword *)local_0)[-2];
-				*local_0 = 0.0f;
+				((dword *)class_fade_time)[-1] = ((dword *)class_fade_time)[-2];
+				*class_fade_time = 0.0f;
 			}
 		}
 	}
@@ -361,15 +377,16 @@ void __stdcall function_221980(
 	long value_bits,
 	real time)
 {
+	char const *local_0 = name;
 	long i;
 
 	for (i = 0; i < k_sound_class_count; i++)
 	{
-		if (*g_470090[i] && strstr(g_470090[i], name))
+		if (*g_470090[i] && strstr(g_470090[i], local_0))
 		{
 			s_sound_class_fade *fade = &g_502118[i];
-			long bits = value_bits;
-			real value = *(real *)&bits;
+			*(long volatile *)&name = value_bits;
+			real value = *(real *)&name;
 			dword target;
 
 			if (value < -64.0f)
@@ -389,8 +406,9 @@ void __stdcall function_221980(
 
 struct s_221a20
 {
-	word field_0 : 1;
-	word field_1 : 15;
+	byte field_0[0xc];
+	word field_c : 1;
+	word field_d : 15;
 };
 
 PRIVATE inline void set_fade_flag(
@@ -398,9 +416,9 @@ PRIVATE inline void set_fade_flag(
 	bool arg_1)
 {
 	if (arg_1)
-		arg_0.field_0 = true;
+		arg_0.field_c = true;
 	else
-		arg_0.field_0 = false;
+		arg_0.field_c = false;
 }
 
 // @retail 0x221a20
@@ -413,7 +431,10 @@ void function_221a20(
 	for (i = 0; i < k_sound_class_count; ++i)
 	{
 		if (*g_470090[i] && strstr(g_470090[i], name))
-			set_fade_flag(*(s_221a20 *)&g_502118[i].flags, !set);
+			{
+			s_221a20 *local_0 = (s_221a20 *)&g_502118[i];
+			set_fade_flag(*local_0, !set);
+		}
 	}
 }
 
@@ -426,13 +447,15 @@ void (__stdcall *const g_221980_callbacks[])(char const *, long, real) =
 bool sound_driver_voice_create_buffer(
 	long voice_index)
 {
+	bool result = false;
 	s_sound_driver_voice *voice = &SOUND_DRIVER_GLOBALS->voices[voice_index];
-	DSBUFFERDESC description = {0};
-	bool result;
+	LPDIRECTSOUND local_0 = SOUND_DRIVER_GLOBALS->direct_sound;
+	DSBUFFERDESC description;
+	memset(&description, 0, sizeof(description));
 
 	description.dwSize = sizeof(description);
 	description.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_MIXIN;
-	if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &description, &voice->buffer, NULL)))
+	if (SUCCEEDED(IDirectSound_CreateSoundBuffer(local_0, &description, &voice->buffer, NULL)))
 	{
 		DSMIXBINVOLUMEPAIR pairs[5];
 		DSMIXBINS mixbins;
@@ -458,10 +481,6 @@ bool sound_driver_voice_create_buffer(
 		IDirectSoundBuffer_SetConeOutsideVolume(voice->buffer, 0, DS3D_DEFERRED);
 		result = true;
 	}
-	else
-	{
-		result = false;
-	}
 	voice->submix = NULL;
 	return result;
 }
@@ -471,6 +490,7 @@ short sound_driver_voice_new(
 	dword flags,
 	dword input_mixbin)
 {
+	short result = NONE;
 	s_sound_driver_globals *globals = SOUND_DRIVER_GLOBALS;
 	short voice_index = globals->voice_count;
 
@@ -479,7 +499,15 @@ short sound_driver_voice_new(
 		bool three_d = flags & 1;
 		bool play = (flags >> 1) & 1;
 		s_sound_driver_voice *voice;
-		DSBUFFERDESC description = {0};
+		struct
+		{
+			DSMIXBINS mixbins;
+			union { DSBUFFERDESC first; DSMIXBINVOLUMEPAIR pairs_second[5]; };
+			DSBUFFERDESC second;
+			DSMIXBINVOLUMEPAIR pairs_first[6];
+		} storage;
+		DSBUFFERDESC &description = storage.first;
+		memset(&description, 0, sizeof(description));
 
 		globals->voice_count = voice_index + 1;
 		voice = &globals->voices[voice_index];
@@ -488,8 +516,8 @@ short sound_driver_voice_new(
 		description.dwInputMixBin = input_mixbin;
 		if (SUCCEEDED(IDirectSound_CreateSoundBuffer(globals->direct_sound, &description, &voice->submix, NULL)))
 		{
-			DSMIXBINVOLUMEPAIR pairs[6];
-			DSMIXBINS mixbins;
+			DSMIXBINVOLUMEPAIR (&pairs)[6] = storage.pairs_first;
+			DSMIXBINS &mixbins = storage.mixbins;
 
 			IDirectSoundBuffer_SetVolume(voice->submix, 0);
 			pairs[0].dwMixBin = 0;
@@ -511,20 +539,16 @@ short sound_driver_voice_new(
 		}
 		if (three_d)
 		{
-			DSBUFFERDESC buffer_description = {0};
+			DSBUFFERDESC &buffer_description = storage.second;
+			memset(&buffer_description, 0, sizeof(buffer_description));
 
 			buffer_description.dwSize = sizeof(buffer_description);
 			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : 0) + DSBCAPS_FXIN | DSBCAPS_CTRL3D;
 			buffer_description.dwInputMixBin = input_mixbin;
-			if (FAILED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice->buffer, NULL)))
+			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice->buffer, NULL)))
 			{
-				SOUND_DRIVER_GLOBALS->voice_count--;
-				return NONE;
-			}
-			else
-			{
-				DSMIXBINVOLUMEPAIR pairs[5];
-				DSMIXBINS mixbins;
+				DSMIXBINVOLUMEPAIR (&pairs)[5] = storage.pairs_second;
+				DSMIXBINS &mixbins = storage.mixbins;
 
 				pairs[0].dwMixBin = 6;
 				pairs[0].lVolume = 0;
@@ -545,28 +569,30 @@ short sound_driver_voice_new(
 				if (play)
 					IDirectSoundBuffer_Play(voice->buffer, 0, 0, 0);
 			}
+			else
+			{
+				SOUND_DRIVER_GLOBALS->voice_count--;
+				return result;
+			}
 		}
 		else
 		{
 			voice->buffer = NULL;
 		}
+		result = voice_index;
 	}
-	else
-	{
-		voice_index = NONE;
-	}
-	return voice_index;
+	return result;
 }
 
 // @retail 0x220fd0
 void function_220fd0(
 	s_sound_driver_volumes const *volumes)
 {
-	s_sound_driver_globals *globals = SOUND_DRIVER_GLOBALS;
+	s_sound_driver_globals *globals;
 	long volume;
 	long i;
 
-	globals->volume_a = PIN(volumes->volume_a, 0.0f, 1.0f);
+	(globals = SOUND_DRIVER_GLOBALS)->volume_a = PIN(volumes->volume_a, 0.0f, 1.0f);
 	globals->volume_b = PIN(volumes->volume_b, 0.0f, 1.0f);
 	globals->volume_c = PIN(volumes->volume_c, 0.0f, 1.0f);
 	globals->volume_d = PIN(volumes->volume_d, 0.0f, 1.0f);
@@ -588,6 +614,10 @@ void function_220fd0(
 	g_47005c.dirty = true;
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+// score 21 (was 21): the truncated float is kept in ecx where retail keeps it in edx, and
+// the flag byte follows it.
 // @retail 0x2211e0
 void sound_driver_voice_environment_set(
 	long voice_index,
@@ -595,20 +625,25 @@ void sound_driver_voice_environment_set(
 {
 	s_sound_driver_globals *globals = SOUND_DRIVER_GLOBALS;
 	s_sound_driver_voice *voice = &globals->voices[voice_index];
-	DSI3DL2BUFFER parameters = {0};
+	DSI3DL2BUFFER parameters;
 	DSFILTERDESC filter;
 	real attenuation;
 
+	memset(&parameters, 0, sizeof(parameters));
+
 	parameters.lDirect = sound_gain_to_volume(globals->volume_a);
 	parameters.lDirectHF = sound_gain_to_volume(globals->volume_b);
+	_ReadWriteBarrier();
 	parameters.flRoomRolloffFactor = 0.0f;
 	parameters.Obstruction.flLFRatio = 0.0f;
 	parameters.Occlusion.flLFRatio = 0.25f;
 	attenuation = function_12aff0(-64.0f, 0.0f, decibels, true);
-	parameters.lRoom = PIN(sound_gain_to_volume(globals->volume_c) - (long)(6400.0f - attenuation * 6400.0f), -10000, 0);
+	long room = sound_gain_to_volume(globals->volume_c) - (long)(6400.0f - attenuation * 6400.0f);
+	parameters.lRoom = PIN(room, -10000, 0);
 	parameters.lRoomHF = parameters.lRoom;
 	parameters.Obstruction.lHFLevel = sound_gain_to_volume(1.0f - voice->unknown30);
 	parameters.Occlusion.lHFLevel = sound_gain_to_volume(1.0f - voice->unknown2c);
+	_ReadWriteBarrier();
 	IDirectSoundBuffer_SetI3DL2Source(voice->buffer, &parameters, DS3D_DEFERRED);
 	filter.dwMode = DSFILTER_MODE_DLS2;
 	filter.dwQCoefficient = 0;
@@ -618,6 +653,7 @@ void sound_driver_voice_environment_set(
 	filter.adwCoefficients[3] = 0;
 	IDirectSoundBuffer_SetFilter(voice->buffer, &filter);
 }
+#pragma function(_ReadWriteBarrier)
 
 /* what the game asks of a voice each update */
 struct s_sound_driver_voice_parameters
@@ -631,6 +667,19 @@ struct s_sound_driver_voice_parameters
 	real occlusion_rate;
 	real obstruction_rate;
 };
+
+/* the voice's flag byte as 0x220e00 writes it */
+struct s_voice_flags_220e00
+{
+	byte bit0 : 1;
+	byte unknown_1 : 7;
+};
+
+/* a change limited to plus or minus a rate (0x220e00) */
+static __forceinline real pin_rate_220e00(real delta, real rate)
+{
+	return PIN(delta, -rate, rate);
+}
 
 // @retail 0x220e00
 void sound_driver_voice_update(
@@ -649,33 +698,36 @@ void sound_driver_voice_update(
 		!(fabs(parameters->position.y - voice->position.y) < 0.05f) ||
 		!(fabs(parameters->position.z - voice->position.z) < 0.05f))
 	{
-		IDirectSoundBuffer_SetPosition(voice->buffer, parameters->position.x, parameters->position.y, parameters->position.z, DS3D_DEFERRED);
+		/* DirectSound's y axis is up */
+		IDirectSoundBuffer_SetPosition(voice->buffer, parameters->position.x, parameters->position.z, parameters->position.y, DS3D_DEFERRED);
 		voice->position = parameters->position;
 	}
-	else if (fabs(occlusion - voice->unknown2c) < 0.001f &&
+	if (!force && fabs(occlusion - voice->unknown2c) < 0.001f &&
 		fabs(obstruction - voice->unknown30) < 0.001f &&
 		(voice->flags & 1) == flag)
 	{
-		voice->flags |= 2;
-		return;
+		goto local_0;
 	}
-	if (!force && (voice->flags & 1) == flag && parameters->obstruction_rate > 0.0f)
+	if (!force && (voice->flags & 1) == flag && !(0.0f >= parameters->obstruction_rate))
 	{
-		voice->unknown30 += PIN(obstruction - voice->unknown30, -parameters->obstruction_rate, parameters->obstruction_rate);
+		real rate = parameters->obstruction_rate;
+		real *value = &voice->unknown30;
+		*value += PIN(obstruction - *value, -rate, rate);
 	}
 	else
 	{
 		voice->unknown30 = obstruction;
 	}
-	if (!force && (voice->flags & 1) == flag && parameters->occlusion_rate > 0.0f)
+	if (!force && (voice->flags & 1) == flag && !(0.0f >= parameters->occlusion_rate))
 	{
-		voice->unknown2c += PIN(occlusion - voice->unknown2c, -parameters->occlusion_rate, parameters->occlusion_rate);
+		voice->unknown2c += pin_rate_220e00(occlusion - voice->unknown2c, parameters->occlusion_rate);
 	}
 	else
 	{
 		voice->unknown2c = occlusion;
 	}
-	voice->flags ^= (voice->flags ^ flag) & 1;
+	((s_voice_flags_220e00 *)&voice->flags)->bit0 = flag;
 	sound_driver_voice_environment_set(voice_index, parameters->decibels);
+local_0:
 	voice->flags |= 2;
 }

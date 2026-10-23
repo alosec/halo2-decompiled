@@ -71,20 +71,21 @@ void function_26def0(long actor_index, long owner_index)
 long function_26d3f0(long object_index, short type)
 {
 	long const volatile *object_reference = &object_index;
+	long result = NONE;
 	long location_index = NONE;
 	s_type_c3b527 location;
 	vector3f up, forward;
 	function_26bfa0(object_index, &location_index, (s_location_view *)&location);
 	if (location_index != NONE)
 	{
-		long result = record_pool_allocate(g_51eca4);
+		result = record_pool_allocate(g_51eca4);
 		if (result != NONE)
 		{
 			s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
 			record->owner = object_index;
 			record->count = 0;
 			record->users = 0;
-			record->type = type;
+			*(volatile short *)&record->type = type;
 			record->active[0] = 0;
 			function_b9fc0(*object_reference, &forward, &up);
 			record->point = location;
@@ -94,9 +95,8 @@ long function_26d3f0(long object_index, short type)
 			record->valid = true;
 			record->time = g_510c54->game_time;
 		}
-		return result;
 	}
-	return NONE;
+	return result;
 }
 
 // @retail 0x26d500
@@ -125,6 +125,7 @@ PRIVATE inline real record_dot3f(vector3f const *a, vector3f const *b)
 bool function_26dc90(long record_index)
 {
 	s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (record_index & 0xffff) * sizeof(s_location_record_view));
+	bool result;
 	if (g_510c54->game_time > record->time)
 	{
 		long owner = record->owner;
@@ -142,13 +143,15 @@ bool function_26dc90(long record_index)
 				if (location_index != NONE && function_210a30(&location, &record->point) <= threshold)
 				{
 					record->valid = true;
-					record->time = g_510c54->game_time;
-					return true;
+					result = true;
+					goto update_time;
 				}
 			}
 		}
+		result = false;
+update_time:
 		record->time = g_510c54->game_time;
-		return false;
+		return result;
 	}
 	return record->valid;
 }
@@ -168,8 +171,8 @@ bool function_26d290(point3f const *origin, point3f const *target, long sector_i
 bool function_26e180(long record_index, s_record_motion_view const *motion, short mode, point3f *reported_point,
 	s_type_c3b527 *output, long *output_sector)
 {
-	s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (record_index & 0xffff) * sizeof(s_location_record_view));
 	bool result = false;
+	s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (record_index & 0xffff) * sizeof(s_location_record_view));
 	if (record->type == 1)
 	{
 		vector3f direction = motion->direction;
@@ -177,20 +180,24 @@ bool function_26e180(long record_index, s_record_motion_view const *motion, shor
 		if (function_30bf0(&direction) > 0.0f)
 		{
 			point3f point;
+			real x, y, z;
 			switch (mode)
 			{
 			case 1:
-				point.x = direction.i * 0.25f + motion->position.x;
-				point.y = direction.j * 0.25f + motion->position.y;
-				point.z = direction.k * 0.25f + motion->position.z;
+				x = direction.i * 0.25f + motion->position.x;
+				y = direction.j * 0.25f + motion->position.y;
+				z = direction.k * 0.25f + motion->position.z;
 				break;
 			case 2:
-				point.x = motion->position.x - direction.i * 0.25f;
-				point.y = motion->position.y - direction.j * 0.25f;
-				point.z = motion->position.z - direction.k * 0.25f;
+				x = motion->position.x - direction.i * 0.25f;
+				y = motion->position.y - direction.j * 0.25f;
+				z = motion->position.z - direction.k * 0.25f;
 				break;
 			case 3:
 				point = motion->position;
+				x = point.x;
+				y = point.y;
+				z = point.z;
 				break;
 			default:
 				mode = NONE;
@@ -199,8 +206,9 @@ bool function_26e180(long record_index, s_record_motion_view const *motion, shor
 			if (mode != NONE)
 			{
 				vector3f side = motion->side;
-				point.x += side.i * 0.15f;
-				point.y += side.j * 0.15f;
+				point.x = side.i * 0.15f + x;
+				point.y = side.j * 0.15f + y;
+				point.z = z;
 				short index = record->point.output_index;
 				if (function_210690(index, &point, &output->point))
 				{
@@ -211,10 +219,15 @@ bool function_26e180(long record_index, s_record_motion_view const *motion, shor
 							*reported_point = point;
 						result = true;
 					}
+					else
+						goto failed;
 				}
+				else
+					goto failed;
 			}
 		}
 	}
+failed:
 	return result;
 }
 
@@ -323,7 +336,7 @@ struct s_record_sector_map
 struct s_bsp3d;
 struct s_slot_entry_list;
 extern s_slot_entry_list *g_4e0340;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 vector2f *function_11df30(vector2f *angles, vector3f const *vector);
 
 PRIVATE __forceinline bool location_entry_active(dword const *bits, long index)
@@ -351,7 +364,7 @@ bool function_26d9c0(long record_index, s_type_c3b527 const *point, short entry_
 			position.x = g_4687b0->i * 0.05f + position.x;
 			position.y = g_4687b0->j * 0.05f + position.y;
 			position.z = g_4687b0->k * 0.05f + position.z;
-			long sector_index = function_14a280((s_bsp3d *)g_4e0340, &position, 0);
+			long sector_index = function_14a280((s_bsp3d *)g_4e0340, 0, &position);
 			if (sector_index == NONE)
 				goto done;
 			entry->sector = ((s_record_sector_map *)g_4e0348)->entries[sector_index].sector;
@@ -420,7 +433,7 @@ struct s_collision_result_1697c0;
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,
 	s_path_trace_result *trace);
-long function_26d100(vector3f const *up, s_collision_result_1697c0 *collision, long *location, point3f const *point);
+long function_26d100(vector3f const *up, long *location, s_collision_result_1697c0 *collision, point3f const *point);
 
 struct s_record_pathfinding_view
 {
@@ -455,7 +468,8 @@ long function_26d570(long object_index)
 		s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
 		vector3f const *up = g_4687b0;
 		long sector_index = record->location_index;
-		real radius = *(real *)((byte *)object_get(object_index) + 0x3c);
+		real radius_value = *(real *)((byte *)object_get(object_index) + 0x3c);
+		real const &radius = radius_value;
 		long ring = 0;
 		long rings_remaining = 2;
 		do
@@ -464,10 +478,10 @@ long function_26d570(long object_index)
 			real phase = (real)ring * 0.39269909262657166f;
 			for (short spoke = 0; spoke < 8; spoke++)
 			{
-				vector3f direction = *g_4687a8;
 				real angle = (real)spoke * 0.7853981852531433f + phase;
 				real sine = (real)sin(angle);
 				real cosine = (real)cos(angle);
+				vector3f direction = *g_4687a8;
 				record_rotate_vector(&direction, up, sine, cosine);
 				s_record_pathfinding_view *structure = (s_record_pathfinding_view *)g_4e0348;
 				s_pathfinding_data *pathfinding = NULL;
@@ -495,12 +509,12 @@ long function_26d570(long object_index)
 					structure = (s_record_pathfinding_view *)g_4e0348;
 					if (structure->count > 0)
 						saved_pathfinding = structure->pathfinding;
-					entry->owner = function_26d100(up, (s_collision_result_1697c0 *)&collision, (long *)&entry->location, &world);
+					entry->owner = function_26d100(up, (long *)&entry->location, (s_collision_result_1697c0 *)&collision, &world);
 					up = g_4687b0;
 					point.x = up->i * 0.1f + collision.point.x;
 					point.y = up->j * 0.1f + collision.point.y;
 					point.z = up->k * 0.1f + collision.point.z;
-					long sector = function_14a280((s_bsp3d *)g_4e0340, &point, 0);
+					long sector = function_14a280((s_bsp3d *)g_4e0340, 0, &point);
 					if (sector != NONE)
 						entry->sector = ((s_record_sector_map *)g_4e0348)->entries[sector].sector;
 					if (entry->sector != (word)NONE)
@@ -521,4 +535,54 @@ long function_26d570(long object_index)
 		while (--rings_remaining);
 	}
 	return result;
+}
+
+
+// @retail 0x26dde0
+void __stdcall function_26dde0(long actor_index)
+{
+ long const *input_reference = &actor_index;
+ byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+ long owner = *(long *)(actor + 0x3f8);
+ if (owner != NONE)
+ {
+  if (*(long *)(actor + 0x26c) != NONE)
+  {
+   function_26def0(actor_index, NONE);
+   return;
+  }
+  bool has_record = *(long *)(actor + 0x3f4) != NONE;
+  bool valid = function_26df40(*input_reference, owner, has_record);
+  if (valid)
+  {
+   long record_index = *(long *)(actor + 0x3f4);
+   *(short *)(actor + 0x3fc) = 0;
+   if (record_index == NONE)
+   {
+    record_index = function_26db50(*(long volatile *)(actor + 0x3f8), 0);
+    if (record_index == NONE)
+     record_index = function_26d570(*(long volatile *)(actor + 0x3f8));
+    if (record_index != NONE)
+    {
+     function_26dbd0(record_index, actor_index);
+     *(short *)(actor + 0x2c) += g_510c54->field_2_3 * 8;
+    }
+    else
+     goto failure;
+   }
+   else
+    valid = function_26dc90(record_index);
+   if (valid)
+    return;
+  }
+ failure:
+  if (*(long *)(actor + 0x3f4) != NONE)
+   function_26dc20(actor_index);
+  ++*(short *)(actor + 0x3fc);
+  if ((real)*(short *)(actor + 0x3fc) * g_510c54->rate > 5.0f)
+  {
+   function_26def0(actor_index, NONE);
+   *(short *)(actor + 0x2c) = 0;
+  }
+ }
 }

@@ -8,7 +8,7 @@
 #include <xmmintrin.h>
 
 /* the first object of an object list; reference_index then walks the rest */
-long function_1dee50(long list_index, long *reference_index);
+long script_list_head_object(long list_index, long *reference_index);
 long function_1dee80(long *reference_index);
 
 /* the object references of the object lists (g_4f55d4, unknown_1dee80.cpp) */
@@ -30,7 +30,7 @@ struct s_object_list_1dee50
 
 extern s_record_pool *g_4f55d8;
 
-/* the inline copy of function_1dee50 (0x1dee50) that retail places in
+/* the inline copy of script_list_head_object (0x1dee50) that retail places in
    callers in other files */
 inline long object_list_get_first_inlined(long list_index, long *reference_index)
 {

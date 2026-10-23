@@ -40,8 +40,8 @@ struct s_font_cache_entry
 
 /* the font indices of the font table */
 extern long g_4e28f4[11];
-extern s_font_cache_entry g_4e2920[k_maximum_font_count];
 
 s_font_header *font_get(long font_index);
 
+#include "font_loading_storage.h"
 #endif

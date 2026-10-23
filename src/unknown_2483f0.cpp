@@ -3,6 +3,7 @@
    emitters chained to each (g_51ec88) */
 
 #include "unknown_11c920.h"
+#include "frame_storage.h"
 #include "unknown_0259d0.h"
 #include "data_array.h"
 #include "globals.h"
@@ -71,7 +72,8 @@ void function_2483b0(s_particle_emitter_datum *emitter)
 
 PRIVATE __forceinline void function_2483f1(s_particle_emitter_datum *arg_0, long *arg_1, long *arg_2, s_record_pool *arg_3, long arg_4)
 {
-	long local_0 = (arg_4 << 16) | (arg_0 - (s_particle_emitter_datum *)arg_3->data);
+	long const &ordinal = (arg_0 - (s_particle_emitter_datum *)arg_3->data);
+	long local_0 = (arg_4 << 16) | ordinal;
 	arg_0->next_index = NONE;
 	if (*arg_1 == NONE)
 		*arg_1 = local_0;
@@ -82,7 +84,8 @@ PRIVATE __forceinline void function_2483f1(s_particle_emitter_datum *arg_0, long
 
 PRIVATE __forceinline void function_248d91(s_particle_location_datum *arg_0, long *arg_1, long *arg_2, s_record_pool *arg_3, long arg_4)
 {
-	long local_0 = (arg_4 << 16) | (arg_0 - (s_particle_location_datum *)arg_3->data);
+	long const &ordinal = (arg_0 - (s_particle_location_datum *)arg_3->data);
+	long local_0 = (arg_4 << 16) | ordinal;
 	arg_0->next_index = NONE;
 	if (*arg_1 == NONE)
 		*arg_1 = local_0;
@@ -119,20 +122,14 @@ struct s_particle_frame
 
 /* the offset of first person particles: a point, then a forward and an up
    vector */
-struct s_frame_offset
-{
-	point3f position;
-	vector3f forward;
-	vector3f up;
-};
 
-s_frame_offset g_485618;
 
-matrix3x3 *function_142eb0(matrix3x3 const *a, matrix3x3 const *b, matrix3x3 *out);
+
+matrix3x3 *function_142eb0(matrix3x3 const *right, matrix3x3 const *left, matrix3x3 *out);
 
 static inline void particle_cross_product3d(vector3f const *a, vector3f const *b, vector3f *result)
 {
-	result->i = a->j * b->k - a->k * b->j;
+	result->i = a->j * b->k - b->j * a->k;
 	result->j = a->k * b->i - a->i * b->k;
 	result->k = a->i * b->j - a->j * b->i;
 }
@@ -149,15 +146,15 @@ void function_248450(matrix3x3 *rotation, s_particle_frame const *frame, point3f
 
 		*rotation = frame->rotation;
 		*position = frame->position;
+		particle_cross_product3d(&g_485618.up, &g_485618.forward, &offset.left);
 		offset.forward = g_485618.forward;
 		offset.up = g_485618.up;
-		particle_cross_product3d(&g_485618.up, &g_485618.forward, &offset.left);
-		function_142eb0(rotation, &offset, rotation);
+		function_142eb0(&offset, rotation, rotation);
 
 		point = *position;
-		position->x = point.y * offset.left.i + point.z * offset.up.i + point.x * offset.forward.i;
-		position->y = point.x * offset.forward.j + point.y * offset.left.j + point.z * offset.up.j;
-		position->z = point.x * offset.forward.k + point.y * offset.left.k + point.z * offset.up.k;
+		position->x = point.y * offset.left.i + offset.up.i * point.z + offset.forward.i * point.x;
+		position->y = offset.forward.j * point.x + point.y * offset.left.j + offset.up.j * point.z;
+		position->z = offset.forward.k * point.x + point.y * offset.left.k + offset.up.k * point.z;
 		position->x += g_485618.position.x;
 		position->y += g_485618.position.y;
 		position->z += g_485618.position.z;

@@ -23,14 +23,17 @@ struct plane2f
 PRIVATE __forceinline bool polygon_clip_intersection_23a430(plane2f const *plane,
 	point2f const *first, point2f const *second, long count, short capacity, point2f *output)
 {
-	real dx = first->x - second->x;
 	real dy = first->y - second->y;
-	real denominator = plane->n.i * dx + plane->n.j * dy;
+	real dx = first->x - second->x;
+	real denominator = plane->n.i * dx;
+	denominator += plane->n.j * dy;
 	if ((denominator < -0.0001f || denominator > 0.0001f) && count < capacity)
 	{
 		real fraction = (plane->n.j * first->y + plane->n.i * first->x - plane->d) / denominator;
-		output->x = first->x - dx * fraction;
-		output->y = first->y - dy * fraction;
+		dx *= fraction;
+		output->x = first->x - dx;
+		dy *= fraction;
+		output->y = first->y - dy;
 		return true;
 	}
 	return false;
@@ -227,15 +230,22 @@ short function_239e50(short count, point2f const *points, short *indices)
 		real lowest_y = FLT_MAX;
 		short current = count;
 
-		for (short i = 0; i < count; i++)
 		{
-			if (lowest_y - k_real_epsilon > points[i].y ||
-				lowest_y > points[i].y && lowest_x + k_real_epsilon > points[i].x ||
-				lowest_y + k_real_epsilon > points[i].y && lowest_x - k_real_epsilon > points[i].x)
+			short i = 0;
+			if (i < count)
 			{
-				lowest_x = points[i].x;
-				lowest_y = points[i].y;
-				current = i;
+				do
+				{
+					if (lowest_y - k_real_epsilon > points[i].y ||
+						lowest_y > points[i].y && lowest_x + k_real_epsilon > points[i].x ||
+						lowest_y + k_real_epsilon > points[i].y && lowest_x - k_real_epsilon > points[i].x)
+					{
+						lowest_x = points[i].x;
+						lowest_y = points[i].y;
+						current = i;
+					}
+					i++;
+				} while (i < count);
 			}
 		}
 
@@ -273,13 +283,13 @@ short function_239e50(short count, point2f const *points, short *indices)
 			current = next;
 			previous_angle = best_angle;
 			if (next == NONE)
-				return hull_count;
+				goto finished;
 			if (!left_start)
 				left_start = !points2d_equal(&points[next], &points[(*indices_reference)[0]]);
 			if (next == (*indices_reference)[0])
-				return hull_count;
+				goto finished;
 			if (left_start && points2d_equal(&points[next], &points[(*indices_reference)[0]]))
-				return hull_count;
+				goto finished;
 		}
 
 		for (short i = 0; i < (short)hull_count; i++)
@@ -299,6 +309,7 @@ short function_239e50(short count, point2f const *points, short *indices)
 		}
 	}
 
+finished:
 	return hull_count;
 }
 
@@ -311,8 +322,8 @@ PRIVATE __forceinline void polygon_difference_23a220(point2f const *a, point2f c
 // @retail 0x23a160
 bool function_23a160(point2f const *point, real radius, short volatile count, point2f const *points)
 {
-	bool result = true;
 	real radius_squared = radius * radius;
+	bool result = true;
 	for (short i = 0; i < count; i++)
 	{
 		vector2f offset;
@@ -320,7 +331,7 @@ bool function_23a160(point2f const *point, real radius, short volatile count, po
 		long next = (i + 1 >= count) ? 0 : i + 1;
 		vector2f edge;
 		polygon_difference_23a220(&points[next], &points[i], &edge);
-		real length_squared = edge.j * edge.j + edge.i * edge.i;
+		real length_squared = (real)(edge.i * edge.i) + (real)(edge.j * edge.j);
 		if (length_squared != 0.f)
 		{
 			real cross = edge.j * offset.i - edge.i * offset.j;

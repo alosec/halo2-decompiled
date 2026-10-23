@@ -7,7 +7,7 @@
 #include <xonline.h>
 #include "files.h"
 
-s_type_acf665 *function_136710(s_type_acf665 *file, bool replace, const char *name);
+s_type_acf665 *file_ref_create(s_type_acf665 *file, bool replace, const char *name);
 bool function_1368f0(s_type_acf665 *file);
 
 void function_12bf40(void);
@@ -40,7 +40,7 @@ bool function_223784(void)
 	{
 		s_type_acf665 file;
 
-		if (function_136710(&file, false, "d:\\XDemos\\XDemos.xbe") && function_1368f0(&file))
+		if (file_ref_create(&file, false, "d:\\XDemos\\XDemos.xbe") && function_1368f0(&file))
 		{
 			g_55e782 = true;
 		}
@@ -74,7 +74,7 @@ bool function_22382b(void)
 	{
 		s_type_acf665 file;
 
-		if (function_136710(&file, false, "d:\\Downloader.xbe") && function_1368f0(&file))
+		if (file_ref_create(&file, false, "d:\\Downloader.xbe") && function_1368f0(&file))
 		{
 			g_55e781 = true;
 		}

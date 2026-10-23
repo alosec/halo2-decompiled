@@ -1,5 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
-/* UNKNOWN_1470F0.CPP: the game's hkMemory (vtable 0x45378c), which Havok
+/* UNKNOWN_1470F0.CPP: the game's c_havok_abstract_allocator (vtable 0x45378c), which Havok
    allocates through: it takes memory from the fixed buffer while only that
    exists (g_479890 is 1), otherwise from the pool, then the ai's scratch
    buffers, then the buffer in physical memory, and frees an address to the
@@ -9,13 +9,13 @@
 #include "unknown_146a20.h"
 
 extern long g_479890;
-extern hkMemory *g_479894;
-extern hkMemory *g_479898;
+extern c_havok_abstract_allocator *g_479894;
+extern c_havok_abstract_allocator *g_479898;
 extern c_havok_fixed_memory *g_47989c;
 
-hkMemory *function_146e30(void);
+c_havok_abstract_allocator *function_146e30(void);
 
-class c_game_havok_memory : public hkMemory
+class c_game_havok_memory : public c_havok_abstract_allocator
 {
 public:
 	virtual void *allocate(long size, long memory_class);
@@ -55,16 +55,19 @@ void *c_game_havok_memory::allocate(long size, long memory_class)
 	return result;
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x147160
 void c_game_havok_memory::deallocate(void *address)
 {
 	if (address)
 	{
-		if (ADDRESS_IN_BLOCK(address, (byte *)g_479898 + 0x4340, (byte *)g_479898 + 0xf0340))
+		if (((long)((byte *)g_479898 + 0x4340) <= (long)address && ((long)((byte *)g_479898 + 0xf0340) > (long)address || (byte *)g_479898 + 0xf0340 == address)))
 		{
+			_ReadWriteBarrier();
 			g_479898->deallocate(address);
 		}
-		else if (ADDRESS_IN_BLOCK(address, (byte *)g_479894 + 0x30, (byte *)g_479894 + 0x15030))
+		else if (((long)((byte *)g_479894 + 0x30) <= (long)address && ((long)((byte *)g_479894 + 0x15030) > (long)address || (byte *)g_479894 + 0x15030 == address)))
 		{
 			g_479894->deallocate(address);
 		}
@@ -78,6 +81,7 @@ void c_game_havok_memory::deallocate(void *address)
 		}
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x1471e0
 void *c_game_havok_memory::allocate_aligned(long alignment, long size, long memory_class)
@@ -101,16 +105,18 @@ void *c_game_havok_memory::allocate_aligned(long alignment, long size, long memo
 	return result;
 }
 
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x147240
 void c_game_havok_memory::deallocate_aligned(void *address)
 {
 	if (address)
 	{
-		if (ADDRESS_IN_BLOCK(address, (byte *)g_479898 + 0x4340, (byte *)g_479898 + 0xf0340))
+		if (((long)((byte *)g_479898 + 0x4340) <= (long)address && ((long)((byte *)g_479898 + 0xf0340) > (long)address || (byte *)g_479898 + 0xf0340 == address)))
 		{
+			_ReadWriteBarrier();
 			g_479898->deallocate_aligned(address);
 		}
-		else if (ADDRESS_IN_BLOCK(address, (byte *)g_479894 + 0x30, (byte *)g_479894 + 0x15030))
+		else if (((long)((byte *)g_479894 + 0x30) <= (long)address && ((long)((byte *)g_479894 + 0x15030) > (long)address || (byte *)g_479894 + 0x15030 == address)))
 		{
 			g_479894->deallocate_aligned(address);
 		}
@@ -124,6 +130,7 @@ void c_game_havok_memory::deallocate_aligned(void *address)
 		}
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x1472c0
 void *c_game_havok_memory::allocate16(long size, long memory_class)
@@ -152,13 +159,14 @@ void c_game_havok_memory::deallocate16(void *address, long size, long memory_cla
 {
 	if (address)
 	{
+		c_havok_abstract_allocator *fixed = g_479894;
 		if (ADDRESS_IN_BLOCK(address, (byte *)g_479898 + 0x4340, (byte *)g_479898 + 0xf0340))
 		{
 			g_479898->deallocate16(address, size, memory_class);
 		}
-		else if (ADDRESS_IN_BLOCK(address, (byte *)g_479894 + 0x30, (byte *)g_479894 + 0x15030))
+		else if (ADDRESS_IN_BLOCK(address, (byte *)fixed + 0x30, (byte *)fixed + 0x15030))
 		{
-			g_479894->deallocate16(address, size, memory_class);
+			fixed->deallocate16(address, size, memory_class);
 		}
 		else if (ADDRESS_IN_BLOCK(address, g_47989c->m_buffer, (byte *)g_47989c->m_buffer + g_47989c->m_size))
 		{
@@ -171,11 +179,11 @@ void c_game_havok_memory::deallocate16(void *address, long size, long memory_cla
 	}
 }
 
-/* the game's hkMemory, which Havok's code asks for */
+/* the game's c_havok_abstract_allocator, which Havok's code asks for */
 c_game_havok_memory g_4798b0;
 
 // @retail 0x1473b0
-hkMemory *function_1473b0(void)
+c_havok_abstract_allocator *function_1473b0(void)
 {
 	return &g_4798b0;
 }

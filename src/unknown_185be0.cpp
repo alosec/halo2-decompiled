@@ -1,5 +1,6 @@
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "unknown_1cec30.h"
 #include "unknown_11cb00.h"
 #include "unknown_11cc90.h"
 #include <math.h>
@@ -100,7 +101,6 @@ short function_0b67a0(s_small_index const *arg_0);
 bool function_e4050(long arg_0);
 bool function_100f70(long arg_0);
 vector2f *function_11df30(vector2f *arg_0, vector3f const *arg_1);
-void havok_component_rigid_body_matrix_get(long arg_0, s_havok_component *arg_1, transform4x3f *arg_2);
 void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2);
 void player_control_update_action_flags(s_player_action *arg_0, s_player_action_triggers const *arg_1);
 
@@ -232,18 +232,17 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             vector3f local_15;
             function_1a4900(arg_1, &arg_5->field_28, &local_15);
             local_1->field_68 = local_15.k > 0.0f;
-            real local_16;
-            real local_17;
+            real local_16 = local_13.field_0[0];
+            real local_17 = local_13.field_0[1];
             if (local_1->field_68 && arg_2 > 0.0f && (fabs(local_13.field_0[0]) > 0.0001f || fabs(local_13.field_0[1]) > 0.0001f ||
                 fabs(arg_5->field_0) > 0.0001f || fabs(arg_5->field_4) > 0.0001f))
             {
                 real local_18 = arg_3 / arg_2;
-                real local_19 = function_185be1(*(real *)arg_4->field_4, 0.0f, 1.0f) * local_15.k;
-                real local_20 = function_185be1(*(real *)(arg_4->field_4 + 4), 0.0f, 1.0f) * local_15.k;
+                real local_19 = function_185be1(*(real *)local_0, 0.0f, 1.0f) * local_15.k;
+                real local_20 = function_185be1(*(real *)(local_0 + 4), 0.0f, 1.0f) * local_15.k;
                 local_16 = function_185be1(local_15.i * local_18, -3.1415927410125732f, 3.1415927410125732f) * local_20 + (1.0f - local_19) * local_13.field_0[0];
                 local_17 = function_185be1(local_15.j * local_18, -1.5707963705062866f, 1.5707963705062866f) * local_20 + (1.0f - local_19) * local_13.field_0[1];
             }
-            else { local_16 = local_13.field_0[0]; local_17 = local_13.field_0[1]; }
             arg_5->field_10 = local_16 * arg_2;
             arg_5->field_14 = local_17 * arg_2;
             *(real *)((byte *)arg_5 + 0x24) = local_2.field_48;
@@ -260,7 +259,7 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
                         if (local_24 != NONE)
                         {
                             transform4x3f local_21;
-                            havok_component_rigid_body_matrix_get(local_24, local_20, &local_21);
+                            local_20->rigid_body_matrix_get(local_24, &local_21);
                             local_15 = *(vector3f *)((byte *)&local_21 + 4);
                             if (local_18 == local_1->field_40)
                             {
@@ -282,15 +281,20 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             arg_5->field_14 = 0.0f;
             *(real *)((byte *)arg_5 + 0x24) = 0.0f;
         }
-        dword local_8 = local_1->field_e & local_1->field_c;
+        word local_8 = local_1->field_e & local_1->field_c;
         if (local_8)
         {
-            for (long local_9 = 0; local_9 < 16; local_9++)
-                if ((local_8 & (1 << local_9)) && !local_2.field_0[local_9])
+            long local_9 = 0;
+            dword mask = 1;
+            do
+            {
+                if ((local_8 & mask) && !local_2.field_0[local_9])
                 {
-                    local_1->field_c &= ~(1 << local_9);
-                    local_1->field_e &= ~(1 << local_9);
+                    local_1->field_c &= ~mask;
+                    local_1->field_e &= ~mask;
                 }
+                mask <<= 1;
+            } while (++local_9 < 16);
         }
         local_8 = local_1->field_c;
         for (long local_24 = 0; local_24 < 16; local_24++)
@@ -321,8 +325,7 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
         arg_5->field_c = local_2.field_4e ? local_2.field_34 : local_2.field_30;
         long local_11 = local_3[local_2.field_4c];
         byte *local_12 = &local_3[local_2.field_4c];
-        byte *local_13 = local_1->field_0 != NONE ? function_185be2(local_1->field_0) : NULL;
-        if (local_13 && local_13[0x212] != 0xff && local_13[0x213] != 0xff)
+        if (local_1->field_0 != NONE && function_185be2(local_1->field_0)[0x212] != 0xff && function_185be2(local_1->field_0)[0x213] != 0xff)
         {
             *local_12 = 0;
             local_1->field_90 = local_11 > 0;
@@ -332,18 +335,20 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             if (local_11 > 0) { local_11 = 0; *local_12 = 0; }
             else local_1->field_90 = 0;
         }
+        bool selected_active = local_11 != 0;
         function_185be4(&arg_5->field_18, 0x10000, local_3[7] != 0);
-        function_185be4(&arg_5->field_18, 0x200000, local_11 != 0);
-        function_185be4(&arg_5->field_18, 0x20000, local_11 != 0);
+        function_185be4(&arg_5->field_18, 0x200000, selected_active);
+        function_185be4(&arg_5->field_18, 0x20000, selected_active);
         if (g_4e6948->state != 2) function_185be4(&arg_5->field_18, 0x20000000, local_3[local_2.field_4d] != 0);
-        function_185be4(&arg_5->field_18, 0x800, local_11 != 0);
-        function_185be4(&arg_5->field_18, 0x4000, local_11 != 0);
+        function_185be4(&arg_5->field_18, 0x800, selected_active);
+        function_185be4(&arg_5->field_18, 0x4000, selected_active);
         function_185be4(&arg_5->field_18, 0x4000000, local_3[6] != 0);
         function_185be4(&arg_5->field_18, 0x80, local_3[12] != 0);
         function_185be4(&arg_5->field_18, 0x100, local_3[13] != 0);
-        function_185be4(&arg_5->field_18, 4, local_3[5] != 0);
-        function_185be4(&arg_5->field_18, 0x100000, local_3[5] != 0);
-        function_185be4(&arg_5->field_18, 0x2000000, local_3[5] != 0);
+        bool action_active = local_3[5] != 0;
+        function_185be4(&arg_5->field_18, 4, action_active);
+        function_185be4(&arg_5->field_18, 0x100000, action_active);
+        function_185be4(&arg_5->field_18, 0x2000000, action_active);
         local_1->field_93 = local_3[0] && ((g_510c50 && ((byte *)g_510c50)[5]) || local_1->field_93);
         function_185be4(&arg_5->field_18, 2, local_3[0] && !local_1->field_93);
         function_185be4(&arg_5->field_18, 0x10, local_3[4] != 0);

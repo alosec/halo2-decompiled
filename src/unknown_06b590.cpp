@@ -1,4 +1,5 @@
-// @flags /O2 /Gr
+#include "unknown_4cf790.h"
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_06B590.CPP: Xbox Live logon users, services and passcodes
    (lane D) */
 
@@ -11,6 +12,7 @@
 #include "globals.h"
 #include "unknown_075870.h"
 #include "unknown_0662e0.h"
+#include "pending_messages.h"
 
 /* the services the logon asks for; the last one is not a Live service */
 struct s_online_service
@@ -59,21 +61,7 @@ void online_get_logon_users(XONLINE_USER *users)
 		memcpy(users, logon_users, sizeof(XONLINE_USER) * XONLINE_MAX_LOGON_USERS);
 }
 
-static inline XUID *online_user_get_xuid(XONLINE_USER *user)
-{
-	XUID *xuid = 0;
-	if (user)
-		xuid = &user->xuid;
-	return xuid;
-}
-
-static inline long controller_index_next(long index)
-{
-	long next = NONE;
-	if (index >= 0 && index < XONLINE_MAX_LOGON_USERS - 1)
-		next = index + 1;
-	return next;
-}
+#include "unknown_06c1d0.h"
 
 /* the mute lists (unknown_058cb0.cpp) */
 void online_mutelist_startup(long controller_index);
@@ -89,7 +77,7 @@ void online_mutelists_refresh(XONLINE_USER *users)
 		XONLINE_USER *user = &users[i];
 		if (user->xuid.qwUserID != 0 && user->szGamertag[0] && SUCCEEDED(user->hr))
 		{
-			XUID *xuid = online_user_get_xuid(user);
+			XUID *xuid = online_user_get_xuid(users + i);
 			if (!XOnlineIsUserGuest(xuid->dwUserFlags))
 			{
 				online_mutelist_dispose(i);
@@ -100,34 +88,7 @@ void online_mutelists_refresh(XONLINE_USER *users)
 	}
 }
 
-/* publishes an empty presence for every signed-in, non-guest user */
-// @retail 0x6c1d0
-void online_presence_clear(XONLINE_USER *users)
-{
-	for (long i = 0; i != NONE; i = controller_index_next(i))
-	{
-		XONLINE_USER *user = &users[i];
-		if (user->xuid.qwUserID != 0 && user->szGamertag[0] && SUCCEEDED(user->hr))
-		{
-			XUID *xuid = online_user_get_xuid(user);
-			if (!XOnlineIsUserGuest(xuid->dwUserFlags))
-			{
-				s_online_presence presence;
-				XNKID session_id = { 0 };
-				s_online_presence_source source;
-
-				source.state = 1;
-				source.minutes_a = 0;
-				source.minutes_b = 0x7fff;
-				source.unknown04 = 0;
-				source.unknown08 = 0;
-				online_presence_build(&presence, &source);
-				if (online_logon_connected())
-					XOnlineNotificationSetState(i, 0, session_id, sizeof(presence), (BYTE *)&presence);
-			}
-		}
-	}
-}
+void online_presence_clear(XONLINE_USER *users);
 
 // @retail 0x6c6c0
 long online_get_logon_users_status(void)
@@ -138,7 +99,7 @@ long online_get_logon_users_status(void)
 	online_get_logon_users(users);
 	for (long i = 0; i < XONLINE_MAX_LOGON_USERS; i++)
 	{
-		XONLINE_USER *user = &users[i];
+		XONLINE_USER *const &user = &users[i];
 		HRESULT hr = user->hr;
 		if (user && user->xuid.qwUserID != 0 && hr != S_OK)
 		{
@@ -310,16 +271,16 @@ void online_connect_to_service_20(void)
 extern bool g_50944f;
 
 // @retail 0x6c8b0
-long function_6c8b0(XONLINE_USER *user, long controller)
+long function_6c8b0(long controller, XONLINE_USER *user)
 {
  long result = NONE;
  if (g_transport_globals.initialized && g_transport_globals.started)
  {
-  XONLINE_USER users[XONLINE_MAX_LOGON_USERS];
-  memset(users, 0, sizeof(users));
-  users[controller] = *user;
   if (g_467214 == NONE)
   {
+   XONLINE_USER users[XONLINE_MAX_LOGON_USERS];
+   memset(users, 0, sizeof(users));
+   users[controller] = *user;
    g_467214 = online_task_new();
    s_type_9df9da *task = function_6b910(g_467214);
    if (task)
@@ -344,6 +305,9 @@ long function_6c8b0(XONLINE_USER *user, long controller)
   }
   else
   {
+   XONLINE_USER users[XONLINE_MAX_LOGON_USERS];
+   memset(users, 0, sizeof(users));
+   users[controller] = *user;
    for (long i = 0; i < XONLINE_MAX_LOGON_USERS; i++)
    {
     if (i != controller && (bool)((*(dword *)&g_54e8e0[i] >> 5) & 1))
@@ -370,21 +334,16 @@ long function_6c8b0(XONLINE_USER *user, long controller)
  return result;
 }
 
-extern s_network_observer *g_4cf8e4;
-extern bool g_4cf95c;
-struct s_message_of_the_day_globals
-{
- dword flags;
- short length;
-};
+
+
 struct s_game_variant_globals
 {
  dword unknown0;
- dword flags;
+ union { dword flags; word field_4; };
  word count;
  word state;
 };
-extern s_message_of_the_day_globals g_479784;
+extern s_pending_message_header g_479780;
 extern s_game_variant_globals g_47d8f4;
 void __stdcall function_8e0f0(long index, long result);
 void online_tasks_dispose_all(void);
@@ -409,9 +368,9 @@ void function_6cb60(void)
  for (long i = 0; i < g_transport_globals.transition_function_count; i++)
   if (g_transport_globals.reset_functions[i])
    g_transport_globals.reset_functions[i](g_transport_globals.contexts[i]);
- g_479784.flags &= ~2;
- g_47d8f4.flags &= ~2;
- g_477058.flags &= ~2;
+ g_479780.flags &= (word)~2;
+ g_47d8f4.field_4 &= (word)~2;
+ g_477058.field_4 &= (word)~2;
 }
 
 void function_8e5e0(long status, long task_index);
@@ -448,31 +407,48 @@ void function_6c4a0(long result, long task_index)
 
 void function_190d0a(long index);
 
+#pragma inline_depth(0)
+static __forceinline void function_6cc12(long controller)
+{
+ function_190d0a(controller);
+}
+#pragma inline_depth(255)
+
+static __forceinline s_type_9df9da *function_6cc14(long index)
+{
+ return online_task_try_get(index);
+}
+
 // @retail 0x6cc10
 long __stdcall function_6cc10(long controller)
 {
  long const *controller_reference = &controller;
  controller = *controller_reference;
  long result = NONE;
- if (g_467214 != NONE)
+ if (g_467214 != result)
  {
   long previous = online_task_find(3, controller);
-  if (previous != NONE)
+  if (previous != result)
    function_6b640(previous);
-  function_190d0a(controller);
+  function_6cc12(controller);
   XONLINE_USER users[XONLINE_MAX_LOGON_USERS];
   memset(users, 0, sizeof(users));
   long count = 0;
-  for (long i = 0; i < XONLINE_MAX_LOGON_USERS; i++)
-   if (i != controller && (bool)((*(dword *)&g_54e8e0[i] >> 5) & 1))
+  long i = 0;
+  do
+  {
+   const s_player_slot &slot = g_54e8e0[i];
+   if (i != controller && (bool)((*(const dword *)&slot >> 5) & 1))
    {
-    users[i] = *(const XONLINE_USER *)((const byte *)&g_54e8e0[i] + 0x470);
+    users[i] = *(const XONLINE_USER *)((const byte *)&slot + 0x470);
     count++;
    }
+   i++;
+  } while (i < XONLINE_MAX_LOGON_USERS);
   if (count > 0)
   {
    long index = online_task_new_if_logged_on();
-   s_type_9df9da *task = online_task_try_get(index);
+   s_type_9df9da *task = function_6cc14(index);
    if (task)
    {
     online_connect_to_service_20();
@@ -481,7 +457,8 @@ long __stdcall function_6cc10(long controller)
      task->flags = 1;
      task->type = 1;
      task->controller_index = controller;
-     return index;
+     result = index;
+     goto done;
     }
     function_6b640(index);
    }
@@ -489,5 +466,6 @@ long __stdcall function_6cc10(long controller)
   else
    function_6cb60();
  }
+done:
  return result;
 }

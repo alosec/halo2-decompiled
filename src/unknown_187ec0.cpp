@@ -56,6 +56,8 @@ static inline s_player_datum *player_get(long player_index)
 	return (s_player_datum *)g_4e8c24->data + (player_index & 0xffff);
 }
 
+// score 3 (was 3): ours computes the record address in ecx and copies it into esi, retail computes it in esi
+// directly; ours is padded with three int3s.
 // @retail 0x187ec0
 bool function_187ec0(void)
 {
@@ -85,14 +87,17 @@ real function_187f30(void)
 	if (index != NONE)
 	{
 		long player_index = g_4e8c20->entries[index];
-		bool valid = player_index != NONE;
+		bool const &valid = player_index != NONE;
 		if (valid)
 		{
 			long unit_index = player_get(player_index)->unit_index;
 			if (unit_index != NONE)
 			{
 				vector3f vector = ((s_object_header *)g_4e0300->data)[unit_index & 0xffff].object->vector;
-				result = (real)atan2(vector.k, sqrt(vector.i * vector.i + vector.j * vector.j));
+				real const &i = vector.i;
+				real const &j = vector.j;
+				real const &k = vector.k;
+				result = (real)atan2(k, sqrt(i * i + j * j));
 			}
 		}
 	}
@@ -202,30 +207,31 @@ struct s_seat_animations
 	s_seat_animation *animations;
 };
 
+// score 63 (was 63): retail uses ebp as a frame pointer and keeps a word index in di, ours uses stack slots and
+// 32-bit registers.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, short element_index)
 {
 	bool first = type == 0;
 	s_seat_animation_entry *result = NULL;
 	long count = first ? animation->first_count : animation->second_count;
+	short index = element_index;
 	s_globals_element *element;
 
-	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, element_index)) != NULL)
+	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, index)) != NULL)
 	{
-		for (long i = 0; i < count; i++)
+		for (long i = 0; i < count && !result; i++)
 		{
-			s_seat_animation_entry *entry = (first ? animation->first_entries : animation->second_entries) + i;
-			if (entry->element_index == element_index)
+			s_seat_animation_entry *entries = first ? animation->first_entries : animation->second_entries;
+			if (entries[i].element_index == index)
 			{
-				result = entry;
+				result = &entries[i];
 				break;
 			}
 		}
-		element_index = element->parent_index;
+		index = element->parent_index;
 		if (result)
-		{
 			break;
-		}
 	}
 	return result;
 }
@@ -243,16 +249,25 @@ long function_188090(long tag_index, long index, long type)
 			if (index < animations->count)
 			{
 				s_seat_animation *animation = &animations->animations[index];
-				long local_0;
 				if (type == 0)
-					local_0 = animation->first_count;
-				else
-					local_0 = animation->second_count;
-				if (local_0 > 0)
 				{
-					result = index;
-					break;
+					if (animation->first_count > 0)
+					{
+						goto local_0;
+					}
 				}
+				else
+				{
+					if (animation->second_count > 0)
+					{
+						goto local_0;
+					}
+				}
+				goto local_1;
+local_0:
+				result = index;
+				break;
+local_1:;
 			}
 
 			long next = NONE;
@@ -302,17 +317,19 @@ s_seat_animation_entry *function_188130(long tag_index, long index, long type, s
 // @retail 0x1882d0
 s_seat_animation_entry *function_1882d0(long type, short element_index, long index, short entry_element_index)
 {
+	short const *element_reference = &element_index;
+	short local_0 = *element_reference;
 	s_seat_animation_entry *result = NULL;
 	s_globals_element *element;
 
-	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, element_index)) != NULL)
+	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, local_0)) != NULL)
 	{
 		long tag_index = element->tag_index;
 		if (tag_index != NONE)
 		{
 			result = seat_animation_entry_find(tag_index, index, type, entry_element_index);
 		}
-		element_index = element->parent_index;
+		local_0 = element->parent_index;
 		if (result)
 		{
 			break;
@@ -377,11 +394,14 @@ real function_188370(long type)
 
 bool function_172750(long mode, point3f const *point, real radius);
 
+/* element_index starts the parent walk of 0x1882d0's fallback lookup, and
+   entry_element_index (the fifth argument, which retail reads into esi) is
+   the element whose values and seat entries are looked up */
 // @retail 0x1883e0
-void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long unused, long index, long variant,
+void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long entry_element_index, long index, long variant,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c, long *second_value0c)
 {
-	s_globals_element *element = globals_element_get((s_globals_element_block_view *)g_4e034c, element_index);
+	s_globals_element *element = globals_element_get((s_globals_element_block_view *)g_4e034c, (short)entry_element_index);
 	long first_index = index == 13 ? 14 : index;
 	long first04 = NONE;
 	long second04 = NONE;
@@ -397,16 +417,16 @@ void function_1883e0(long tag_index, bool ignore_distance, point3f const *point,
 
 		if (tag_index != NONE)
 		{
-			first_entry = function_188130(tag_index, first_index, 0, element_index);
-			second_entry = function_188130(tag_index, index, 1, element_index);
+			first_entry = function_188130(tag_index, first_index, 0, (short)entry_element_index);
+			second_entry = function_188130(tag_index, index, 1, (short)entry_element_index);
 		}
 		if (!first_entry)
 		{
-			first_entry = function_1882d0(0, element_index, first_index, element_index);
+			first_entry = function_1882d0(0, element_index, first_index, (short)entry_element_index);
 		}
 		if (!second_entry)
 		{
-			second_entry = function_1882d0(1, element_index, index, element_index);
+			second_entry = function_1882d0(1, element_index, index, (short)entry_element_index);
 		}
 
 		if (first_entry)
@@ -486,7 +506,7 @@ long function_189400(s_sound_position const *position, long object_index, long t
 
 // @retail 0x188180
 void function_188180(point3f const *point, vector3f const *forward, long tag_index, long object_index, long index, long variant,
-	long unused, long effect_value, s_location const *location, real scale)
+	long entry_element_index, long effect_value, s_location const *location, real scale)
 {
 	long first_values[3];
 	long second_values[3];
@@ -502,7 +522,7 @@ void function_188180(point3f const *point, vector3f const *forward, long tag_ind
 	first_values[0] = NONE;
 	first_values[1] = NONE;
 	first_values[2] = NONE;
-	function_1883e0(tag_index, false, point, g_47d8e0, unused, index, variant,
+	function_1883e0(tag_index, false, point, g_47d8e0, entry_element_index, index, variant,
 		&first_values[0], &second_values[0], &first_values[1], &second_values[1], &first_values[2], &second_values[2]);
 
 	for (dword i = 0; i < sizeof(second_values) / sizeof(second_values[0]); i++)
@@ -565,24 +585,25 @@ struct s_unit_material_model
 // @retail 0x1886d0
 short *function_1886d0(long object_index, short *material_type)
 {
+	struct s_1886d4 { signed short field_0 : 16; };
+	s_1886d4 local_1;
+	local_1.field_0 = g_47d8e0;
 	s_unit_material_object *object = ((s_unit_material_object_header *)g_4e0300->data)[object_index & 0xffff].object;
 	s_unit_material_definition *definition = (s_unit_material_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
-	short result = g_47d8e0;
 
 	if (function_badc0(object_index, 1))
 	{
 		if (TEST_FIELD_BIT(object->flag2))
 		{
-			result = definition->alternate_material_type;
+			local_1.field_0 = definition->alternate_material_type;
 		}
 		else
 		{
-			result = definition->material_type;
+			local_1.field_0 = definition->material_type;
 		}
-		if (result != g_47d8e0)
+		if (local_1.field_0 != g_47d8e0)
 		{
-			*material_type = result;
-			return material_type;
+			goto local_0;
 		}
 	}
 	if (definition->model_index != NONE)
@@ -590,10 +611,10 @@ short *function_1886d0(long object_index, short *material_type)
 		s_unit_material_model *model = (s_unit_material_model *)g_4e3b44[definition->model_index & 0xffff].bytes;
 		if (model->count)
 		{
-			*material_type = model->entries->material_type;
-			return material_type;
+			local_1.field_0 = model->entries->material_type;
 		}
 	}
-	*material_type = result;
+local_0:
+	*material_type = local_1.field_0;
 	return material_type;
 }

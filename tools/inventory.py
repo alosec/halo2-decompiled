@@ -66,6 +66,62 @@ NOT_STARTS = {
     0x231c00,
 }
 
+# Function starts that discovery cannot find: nothing calls these functions,
+# and the function laid out just before each one reaches it only by a jmp, so
+# tracing takes it for part of that function. A row seeds discovery, so each
+# start stays once its row exists; the list keeps the retail evidence.
+KNOWN_STARTS = {
+    # 0x2382d6 jumps to it (at 0x23842b); it follows an unconditional jmp out
+    # and opens by saving its own registers (push ebx ; push esi)
+    0x238459: 'tail jump target of 0x2382d6',
+    # 0x2b8da0 jumps to it (at 0x2b8dbf); it follows 0x2b8da0's jump table and
+    # opens its own frame (sub esp, 0x6c) over its own stack arguments
+    0x2b8e10: 'tail jump target of 0x2b8da0',
+    # 0x2b557a ends `jmp 0x2b55ae ; ... ; ret`, and it opens a full frame
+    # (push ebp ; lea ebp, [esp - 0x78] ; sub esp, 0x844)
+    0x2b55ae: 'tail jump target of 0x2b557a',
+}
+
+# Data inside code sections: [start, end) ranges that hold no functions, each with
+# its evidence. Discovery takes their bytes for code (they are reached by nothing,
+# so the gaps pass fill them), so the rows it finds there are dropped.
+DATA_RANGES = {
+    # WMADEC's tables, from after 0x392447 (ends `ret 0x14` at 0x39250c) to the end
+    # of the section. The decoder's code reads them as data, never as code: for
+    # example `mov edx, dword ptr [edi*4 + 0x392830]` at 0x38d2be, `mov esi,
+    # 0x39259c` at 0x388da4 (one of a run of 16-byte strided table rows) and
+    # `push 0x3929b8` at 0x390027; no call or jump from code lands inside, and
+    # decoded as code the bytes are full of retf, iretd, into, in and out.
+    (0x392510, 0x3a061c): 'WMADEC tables',
+    # DSOUND's constants, tables and variables, from after 0x385614 (ends `ret 4`
+    # at 0x385743) to the end of the section. Its code reads and writes them, for
+    # example `cmp dword ptr [0x386b0c], 0` at 0x37a154, `inc dword ptr
+    # [0x386b34]` at 0x379cd8 and `fmul qword ptr [0x385760]` at 0x37a058, and
+    # calls through a pointer table in them (`call dword ptr [0x3871cc]` at
+    # 0x379dc0); no direct call or jump lands inside.
+    (0x385748, 0x387384): 'DSOUND data',
+    # XNET's tables, from after 0x3dffcc (ends `ret 0x10` at 0x3e0127, then int3
+    # padding) to the end of the section: runs of 0xff, a zero-filled block and
+    # byte tables, read by `cmp esi, dword ptr [0x3e02e8]` at 0x3d9907 and `push
+    # 0x3e0190` at 0x3a4165; no call or jump lands inside.
+    (0x3e0130, 0x3e0400): 'XNET tables',
+    # D3D's tables, from after 0x403400 (ends `ret 8` at 0x40395e, then its jump
+    # table to 0x4039cc and int3 padding) to the end of the section's raw data.
+    # Read by `cmp eax, dword ptr [ecx*4 + 0x4039e8]` at 0x3fd840 and `fmul dword
+    # ptr [eax*4 + 0x404238]` at 0x3fd756, and called through as pointers (`call
+    # dword ptr [0x403af8]` at 0x3f937e); no direct call or jump lands inside.
+    (0x4039d0, 0x404dc4): 'D3D tables',
+    # XPP: the dword 0xff and zero padding in front of 0x408940 (push ebp ;
+    # mov ebp, esp); nothing refers to it
+    (0x408933, 0x408940): 'padding before 0x408940',
+}
+
+
+def in_data(va):
+    """Whether va lies in one of DATA_RANGES."""
+    return any(start <= va < end for start, end in DATA_RANGES)
+
+
 EH_MAX_SIZE = 32
 MIN_HANDLER_THUNKS = 8
 
@@ -169,6 +225,17 @@ def style(before, start, first):
     return kind, ' '.join(evidence)
 
 
+HAVOK = 'third:havok'
+
+
+def in_scope_owner(owner):
+    """Owners the decompilation covers: the game, the SDK libraries it was
+    linked with, and Havok, whose physics must stay exactly as retail. The
+    exception-handling stubs and the other third-party libraries (Bink, which
+    a port replaces) are left out."""
+    return owner != 'eh' and (not owner.startswith('third:') or owner == HAVOK)
+
+
 def read_rows(path):
     if not os.path.exists(path):
         return {}
@@ -225,7 +292,9 @@ def main():
     for section in image.sections:
         if section.name not in CODE_SECTIONS and not (section.name.startswith('BINK') and section.name != 'BINKDATA'):
             continue
-        found = discover(image, seeds=old_rows, text=section, not_starts=NOT_STARTS)
+        seeds = {va for va in old_rows.keys() | KNOWN_STARTS.keys() if not in_data(va)}
+        found = discover(image, seeds=seeds, text=section, not_starts=NOT_STARTS)
+        found = {va: fn for va, fn in found.items() if not in_data(va)}
         lib_hits = {}
         if section.name == '.text':
             lib_hits = library_hits(

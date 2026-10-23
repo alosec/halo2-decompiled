@@ -59,14 +59,14 @@ long function_11ca80(long value)
     }
 }
 
-void function_18f5e3();
-void function_215790();
+void player_slots_refresh_profile_indices();
+void saved_game_storage_update(void);
 
 extern "C" int h2_main_menu_guest_entry()
 {
     /* Phase one owns only deterministic offline profile/save bootstrap. */
-    function_18f5e3();
-    function_215790();
+    player_slots_refresh_profile_indices();
+    saved_game_storage_update();
     return 0;
 }
 
@@ -97,7 +97,7 @@ extern "C" int h2_native_profile_delete(unsigned int identifier)
     return host_h2_profile_delete(identifier);
 }
 
-long __stdcall function_1a03a0(long controller, word *name);
+long __stdcall player_profile_make(long controller_index, word *name);
 bool __stdcall function_215f40(long type, unsigned char *buffer);
 bool function_216120(word *name, long type);
 
@@ -109,7 +109,7 @@ extern "C" int h2_native_profile_round_trip()
     word name[] = { 'H', 'a', 'l', 'o', '0', '0', '0', '1', 0 };
     if (h2_native_profile_list(identifiers, 2) != 0)
         return 1;
-    int identifier = function_1a03a0(0, name);
+    int identifier = player_profile_make(0, name);
     if (identifier < 0)
         return 2;
     int result = 0;
@@ -500,9 +500,6 @@ static_assert(sizeof(s_native_local_player_entry) == 0xe4,
               "local player entry layout");
 void function_23643f();
 void function_23654b(void *entries, void *address, void *count);
-extern long g_54e7c0;
-extern long g_54e7c4;
-extern long g_54e7c8;
 
 static char const *g_native_expected_campaign_map;
 static long g_native_campaign_options_status = NONE;
@@ -768,6 +765,11 @@ void c_1fa50::function_1fa50(short_rectangle2d const *bounds, void const *clip,
 extern "C" DWORD __stdcall GetTickCount(void)
 {
     return host_h2_get_milliseconds();
+}
+
+__int64 h2_native_time_stamp(void)
+{
+    return static_cast<__int64>(host_h2_get_milliseconds()) * 733333;
 }
 
 struct s_save_list_2164c0;

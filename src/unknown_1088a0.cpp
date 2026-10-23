@@ -51,9 +51,10 @@ struct s_tag_group_1088a0
 #define OBJECT_TYPE_DEFINITION_1088a0(index) (OBJECT_TYPE_DEFINITIONS[((s_object_header_1088a0 *)g_4e0300->data)[(index) & 0xFFFF].object->type])
 
 // @retail 0x1088a0
-long function_1088a0(short tag_index)
+long function_1088a0(long tag_index)
 {
-	dword group_tag = ((s_tag_group_1088a0 *)&g_4e3b44[tag_index])->group_tag;
+	long const *tag_index_ptr = &tag_index;
+	dword group_tag = ((s_tag_group_1088a0 *)&g_4e3b44[(short)*tag_index_ptr])->group_tag;
 
 	long result = NONE;
 
@@ -138,7 +139,7 @@ void function_1089d0(long object_index)
 // @retail 0x108a40
 void function_108a40(long *placement)
 {
-	s_object_type_definition_1088a0 *definition = OBJECT_TYPE_DEFINITIONS[function_1088a0((short)*placement)];
+	s_object_type_definition_1088a0 *definition = OBJECT_TYPE_DEFINITIONS[function_1088a0(*placement)];
 	short i = 0;
 	s_object_type_definition_1088a0 **slot = &definition->handlers[0];
 	while (definition->handlers[i])

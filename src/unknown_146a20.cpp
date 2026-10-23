@@ -3,7 +3,7 @@
    memory (g_479888) holds the allocators, built in place: a fixed buffer, a
    Havok pool, and two fixed buffers made when the pool runs short, one in
    the ai's scratch buffers (g_47989c) and one in physical memory
-   (g_4798a0). The game's own hkMemory (vtable 0x45378c, 0x147110 and on)
+   (g_4798a0). The game's own c_havok_abstract_allocator (vtable 0x45378c, 0x147110 and on)
    allocates from them. */
 
 #include "unknown_11c920.h"
@@ -11,6 +11,7 @@
 #include "unknown_146a20.h"
 #include "physical_memory.h"
 #include "unknown_223b60.h"
+#include "unknown_080e10.h"
 #include <xtl.h>
 #include <new.h>
 
@@ -51,30 +52,31 @@ bool g_479880;
 long g_479884;
 long g_47988c;
 long g_479890;
-hkMemory *g_479894;
-hkMemory *g_479898;
+c_havok_abstract_allocator *g_479894;
+c_havok_abstract_allocator *g_479898;
 long g_4798b4;
 bool g_47f05a;
 bool g_47f05b;
 
-static __int64 read_tsc(void)
-{
-	volatile __int64 t = 0;
-	__asm rdtsc
-}
-
 #ifndef H2_NATIVE_PORT
+// score 34 (was 34): the vtable slot at [eax] is never filled in, so the two stores that follow
+// start one field too late; retail stores the vtable there first.
 // @retail 0x146a20
 void function_146a20(void)
 {
+	void *block = g_479888;
+
 	g_479884 = NONE;
 	g_479890 = 1;
 	g_479880 = true;
-	g_479894 = new (g_479888) c_havok_fixed_memory((byte *)g_479888 + 0x30, 0x15000);
-	g_479898 = new ((byte *)g_479888 + 0x15040) hkPoolMemory;
+	g_479894 = new (block) c_havok_fixed_memory((byte *)block + 0x30, 0x15000);
+	g_479898 = new ((byte *)g_479888 + 0x15040) c_havok_page_pool_allocator;
 	g_4798b4++;
 }
 #endif
+
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 
 // @retail 0x146ac0
 void function_146ac0(void)
@@ -85,22 +87,27 @@ void function_146ac0(void)
 	}
 	if (g_4798a0)
 	{
-		((hkMemory *)g_4798a0)->~hkMemory();
+		((c_havok_abstract_allocator *)g_4798a0)->~c_havok_abstract_allocator();
 		g_4798a0 = NULL;
 		function_12d520(g_47988c);
 		g_47988c = 0;
 	}
-	g_479894->~hkMemory();
+	g_479894->~c_havok_abstract_allocator();
+	c_havok_abstract_allocator *last = g_479898;
+	_ReadWriteBarrier();
 	g_479894 = NULL;
-	g_479898->~hkMemory();
+	_ReadWriteBarrier();
+	last->~c_havok_abstract_allocator();
 	g_479898 = NULL;
 	g_479890 = 0;
 	g_479880 = false;
 }
 
+#pragma function(_ReadWriteBarrier)
+
 /* a page aligned block of virtual memory: its size and the offset back to
    the allocation sit before it */
-static void *virtual_memory_allocate_aligned(long size)
+static void virtual_memory_allocate_aligned(void **block_out, long size)
 {
 	void *result = NULL;
 	byte *block = (byte *)VirtualAlloc(result, size + 0x1000, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
@@ -117,13 +124,13 @@ static void *virtual_memory_allocate_aligned(long size)
 		((long *)aligned)[-1] = aligned - block;
 		result = aligned;
 	}
-	return result;
+	*block_out = result;
 }
 
 // @retail 0x146b30
 void function_146b30(void)
 {
-	g_479888 = virtual_memory_allocate_aligned(0x105470);
+	virtual_memory_allocate_aligned(&g_479888, 0x105470);
 }
 
 #ifndef H2_NATIVE_PORT
@@ -145,12 +152,17 @@ void function_146b80(void)
 }
 #endif
 
+// score 5 (was 5): retail's function_1c4040 takes the active flag in AL and reads
+// it after the other arguments are pushed; here the callee takes it in DL, so the
+// byte is loaded into DL before the other byte is stored. The callee lives in
+// src/unknown_1c25a0.cpp and is far from retail.
 // @retail 0x146bf0
 void function_146bf0(void)
 {
 	if (!g_47f05b)
 	{
 		long level = function_146fd0();
+		long last_time = g_479884;
 		long attempt;
 
 		g_47f05b = true;
@@ -162,29 +174,35 @@ void function_146bf0(void)
 			if (level >= 3)
 			{
 				function_1c4590(1);
+				last_time = g_479884;
 			}
 			level = function_146fd0();
 			for (pass = 0; pass < 3 && level >= 2; pass++)
 			{
+				bool active = pass == 2;
+				bool any_object = pass > 1;
 				long tries = 0;
 
 				do
 				{
-					bool recent = g_479884 != NONE && g_510c54->game_time - g_479884 < 10;
+					bool recent = last_time != NONE && g_510c54->game_time - last_time < 10;
 
-					if (!function_1c4040(attempt, pass == 2, pass > 1, recent, NONE))
+					if (!function_1c4040(attempt, active, any_object, recent, NONE))
 					{
 						if (!attempt && !recent)
 						{
 							function_146da0();
 							level = function_146fd0();
-							g_479884 = g_510c54->game_time;
+							g_479884 = last_time = g_510c54->game_time;
+							break;
 						}
+						last_time = g_479884;
 						break;
 					}
 					level = function_146fd0();
 					if (level < 2)
 					{
+						last_time = g_479884;
 						break;
 					}
 					tries++;
@@ -192,7 +210,11 @@ void function_146bf0(void)
 					{
 						function_146da0();
 						level = function_146fd0();
-						g_479884 = g_510c54->game_time;
+						g_479884 = last_time = g_510c54->game_time;
+					}
+					else
+					{
+						last_time = g_479884;
 					}
 				}
 				while (tries <= 50);
@@ -222,13 +244,13 @@ void function_146de0(void)
 {
 	if (g_47989c)
 	{
-		((hkMemory *)g_47989c)->~hkMemory();
+		((c_havok_abstract_allocator *)g_47989c)->~c_havok_abstract_allocator();
 		g_47989c = NULL;
 		g_510c48 = false;
 	}
 	if (g_4798a0)
 	{
-		((hkMemory *)g_4798a0)->~hkMemory();
+		((c_havok_abstract_allocator *)g_4798a0)->~c_havok_abstract_allocator();
 		g_4798a0 = NULL;
 		function_12d520(g_47988c);
 		g_47988c = 0;
@@ -236,7 +258,7 @@ void function_146de0(void)
 }
 
 // @retail 0x146e30
-hkMemory *function_146e30(void)
+c_havok_abstract_allocator *function_146e30(void)
 {
 	if (!g_4798a0)
 	{
@@ -246,42 +268,14 @@ hkMemory *function_146e30(void)
 
 		do
 		{
-			__int64 start = read_tsc();
-
-			block = NULL;
-			if (size > 0 && g_4e6464->page_count > 0)
-			{
-				long retries = 0;
-
-				for (;;)
-				{
-					block = (byte *)function_12d2f0(size, 0, 0, 0);
-					if (block)
-					{
-						break;
-					}
-					if (retries < 90)
-					{
-						retries++;
-						function_12c600();
-						continue;
-					}
-
-					__int64 elapsed = read_tsc() - start;
-					if (elapsed < 0)
-						elapsed = 0;
-					if (!((real)timing_ticks_to_seconds(elapsed) < 1.0f))
-						break;
-					D3DDevice_KickPushBuffer();
-					D3DDevice_IsBusy();
-					SwitchToThread();
-				}
-			}
+			block = (byte *)function_80e14(size, 0, 0, 0, 90, 1.0f);
 			g_47988c = (long)block;
 		}
-		while (!block && (size >>= 1) >= 0x100000);
+		while (!block && ((size >>= 1) >= 0x100000));
 
-		adjustment = (((dword)block + 0xf) & ~0xf) - (dword)block;
+		adjustment = (dword)block & 0xf;
+		if (adjustment)
+			adjustment = 0x10 - adjustment;
 		g_4798a0 = new ((byte *)g_479888 + 0x105440) c_havok_fixed_memory(block, size - adjustment);
 		function_1c4590(1);
 	}
@@ -292,39 +286,41 @@ hkMemory *function_146e30(void)
 long function_146fd0(void)
 {
 	long physical_level = 0;
-	long scratch_level = 0;
 	long pool_level;
 
 	if (g_4798a0 && g_4798a0->m_count > 0)
 	{
 		physical_level = 3;
 	}
+	long scratch_level = 0;
 	if (g_47989c && g_47989c->m_count > 0)
 	{
 		scratch_level = 3;
 	}
 	if (g_479898)
 	{
-		hkPoolMemory *pool = (hkPoolMemory *)g_479898;
+		long level;
+		c_havok_page_pool_allocator *pool = (c_havok_page_pool_allocator *)g_479898;
 
-		pool_level = 3;
+		level = 3;
 		if ((real)pool->page_count * (1.0f / 118.0f) < 0.8f)
 		{
 			real used = pool->get_used_fraction();
 
 			if (used < 0.85f)
 			{
-				pool_level = 2;
+				level = 2;
 				if (used < 0.75f)
 				{
-					pool_level = 1;
+					level = 1;
 					if (used < 0.65f)
 					{
-						pool_level = 0;
+						level = 0;
 					}
 				}
 			}
 		}
+		pool_level = level;
 	}
 	else
 	{

@@ -126,6 +126,15 @@ void function_120df0(long index, wchar_t const *name)
 	global_preferences_globals.dirty = true;
 }
 
+struct s_player_profile_settings;
+bool player_profile_find_by_name(wchar_t const *name, s_player_profile_settings *settings, long *file_index);
+
+// @retail 0x120e20
+void function_120e20(long *profile_index, long controller_index)
+{
+	player_profile_find_by_name(global_preferences_globals.current.names[controller_index], NULL, profile_index);
+}
+
 // @retail 0x120e40
 void function_120e40(wchar_t const *name)
 {
@@ -188,12 +197,17 @@ void function_121100(long *value)
 		(global_preferences_globals.current.unknown178 > 3 ? 3 : global_preferences_globals.current.unknown178);
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+
 // @retail 0x121120
 void function_121120(void)
 {
 	if (global_preferences_globals.dirty && global_preferences_globals.done)
 	{
-		if (function_xf5684f(PREFERENCES_DATA(&global_preferences_globals.current), PREFERENCES_DATA(&global_preferences_globals.saved), k_preferences_data_size) != 0)
+		long difference = function_xf5684f(PREFERENCES_DATA(&global_preferences_globals.current), PREFERENCES_DATA(&global_preferences_globals.saved), k_preferences_data_size);
+		_ReadWriteBarrier();
+		if (difference != 0)
 		{
 			XCALCSIG_SIGNATURE signature;
 			bool signed_data;
@@ -208,13 +222,16 @@ void function_121120(void)
 			}
 			if (global_preferences_globals.file.handle != INVALID_HANDLE_VALUE && signed_data)
 			{
+				s_file_write_flags flags(1);
+
 				global_preferences_globals.saved.signature = signature;
-				global_preferences_globals.write_task = function_1a1050(global_preferences_globals.file, &global_preferences_globals.saved, sizeof(global_preferences_globals.saved), 0, 1, 8, 2, NULL, &global_preferences_globals.done);
+				global_preferences_globals.write_task = function_1a1050(global_preferences_globals.file, &global_preferences_globals.saved, sizeof(global_preferences_globals.saved), 0, flags, 8, 2, NULL, &global_preferences_globals.done);
 			}
 		}
 		global_preferences_globals.dirty = false;
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x121220
 void global_preferences_set_defaults(void)
@@ -264,13 +281,12 @@ void global_preferences_initialize(void)
 			s_global_preferences preferences;
 			XCALCSIG_SIGNATURE signature;
 			dword bytes_read;
-			bool signed_data;
 			bool valid;
 
 			function_1a0f10(global_preferences_globals.file, &preferences, sizeof(preferences), 0, 8, 6, &bytes_read, &global_preferences_globals.done);
 			function_120d50(&global_preferences_globals.done, false);
 
-			signed_data = false;
+			bool signed_data = false;
 			g_470024 = XCalculateSignatureBegin(XCALCSIG_FLAG_NON_ROAMABLE);
 			if (g_470024 != INVALID_HANDLE_VALUE &&
 				XCalculateSignatureUpdate(g_470024, (BYTE const *)PREFERENCES_DATA(&preferences), k_preferences_data_size) == ERROR_SUCCESS)
@@ -279,8 +295,9 @@ void global_preferences_initialize(void)
 			}
 			valid = true;
 			valid &= preferences.version == k_preferences_version;
-			valid &= signed_data && memcmp(&preferences.signature, &signature, sizeof(signature)) == 0;
-			valid &= bytes_read == sizeof(preferences);
+			valid &= signed_data && memcmp(&signature, &preferences.signature, sizeof(signature)) == 0;
+			bool const &header_checked = valid;
+			valid = header_checked & (bytes_read == sizeof(preferences));
 			if (valid)
 			{
 				global_preferences_verify(&preferences);

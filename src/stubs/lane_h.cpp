@@ -22,11 +22,6 @@ class c_class_1473c9;
 
 
 
-// @stub 0x59570
-long function_59570(void)
-{
-	return 0;
-}
 
 
 
@@ -34,10 +29,7 @@ long function_59570(void)
 
 
 
-// @stub 0xb3e90
-void __stdcall function_b3e90(unsigned char *results)
-{
-}
+
 
 
 struct s_network_session_player;
@@ -60,12 +52,4 @@ long __stdcall function_2cb510(unsigned char *destination, long *destination_siz
 }
 
 
-// @stub 0x13954b
-void function_13954b(void)
-{
-}
 
-// @stub 0x191fd8
-void function_191fd8(long player_index)
-{
-}

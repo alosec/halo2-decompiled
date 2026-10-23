@@ -1,4 +1,6 @@
 // @flags /O1 /Oi /arch:SSE /Gr
+#include "orientations_storage.h"
+#include "view_context_storage.h"
 /* UNKNOWN_165CE5.CPP: the first person weapons of the four local
    users (0x165ce5..0x1689a6, built for size; the same object as
    unknown_165cc3.cpp, unknown_16658d.cpp and lane R's unknown_166244.cpp).
@@ -8,6 +10,7 @@
    matrices last built for it. */
 
 #include "unknown_11c920.h"
+#include "camera_storage.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "unknown_1c62f0.h"
@@ -73,7 +76,7 @@ struct s_animation_state
 	bool animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long unknown);
 	void reset();
 	bool initialize(long graph_tag_index, long model_tag_index, bool flag);
-	void channels_clear_partial();
+	__declspec(noinline) void channels_clear_partial();
 	s_graph_entry *entry_get(long index);
 	long node_find(long name);
 	bool node_map_build(long render_model_tag_index, long *node_count, long *node_map);
@@ -81,7 +84,7 @@ struct s_animation_state
 	c_type_709360 overlay_get(long set);
 	short node_count_get();
 	bool pairs_iterate(s_graph_pair_iterator *iterator);
-	bool channel_play(c_animation_channel *channel, c_type_709360 animation_id, word channel_flags);
+	bool channel_play(c_animation_channel *channel, c_type_709360 animation_id, dword channel_flags);
 	void sample(long unused1, real weight, dword const *node_mask, real_quaternion_transform *transforms, long unused5,
 		long unused6, long node_count);
 	void orientations_blend(s_blend_orientation const *targets, short count, dword const *mask,
@@ -93,7 +96,7 @@ struct s_animation_state
 	bool blend_counters_update();
 	bool update(animation_event_callback callback, long user, long node_count, s_blend_orientation *orientations,
 		s_blend_orientation const *targets);
-	bool overlay_play(c_animation_channel *channel, word channel_flags, long set, long weapon_class, long weapon_type);
+	bool overlay_play(c_animation_channel *channel, dword channel_flags, long set, long weapon_class, long weapon_type);
 	c_type_709360 overlay_find(long set, long weapon_class, long weapon_type);
 };
 
@@ -110,14 +113,24 @@ struct s_first_person_indices
 	real unknown10;
 };
 
+/* the indices are three animation ids (two shorts each) at +4, +8 and +0 */
+struct s_first_person_short_pair
+{
+	short first;
+	short second;
+};
+
+static inline void first_person_short_pair_reset(s_first_person_short_pair *pair)
+{
+	pair->first = NONE;
+	pair->second = NONE;
+}
+
 static inline void first_person_indices_reset(s_first_person_indices *indices)
 {
-	indices->unknown4 = NONE;
-	indices->unknown6 = NONE;
-	indices->unknown8 = NONE;
-	indices->unknowna = NONE;
-	indices->unknown0 = NONE;
-	indices->unknown2 = NONE;
+	first_person_short_pair_reset((s_first_person_short_pair *)&indices->unknown4);
+	first_person_short_pair_reset((s_first_person_short_pair *)&indices->unknown8);
+	first_person_short_pair_reset((s_first_person_short_pair *)&indices->unknown0);
 }
 
 /* the first person weapon (0x1010 bytes) */
@@ -283,11 +296,6 @@ extern void *g_165cc3_aligned_data;
 #define first_person_orientations ((byte *)g_165cc3_aligned_data)
 
 extern transform4x3f *g_4687d0;
-extern long g_4b9ed8;
-extern point3f g_4b9da0;
-extern vector3f g_4b9dac;
-extern vector3f g_4b9db8;
-real g_4b9db4;
 
 /* callees in other files */
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
@@ -312,7 +320,7 @@ long function_166244(long key);
 /* 0x1d9430 is in unknown_1d9240.cpp and 0x14de90 in unknown_14b560.cpp; 0x1cba80 is in
    unknown_1cafc0.cpp (state, weapon_class, weapon_type, set) */
 real function_1d9430(s_1d9240 const *p);
-s_animation const *function_1cba80(s_animation_state *state, long mode, long weapon_class, long name);
+s_animation const *function_1cba80(s_animation_state *state, long weapon_class, long weapon_type, long name);
 long unit_get_player_index(long unit_index);
 void function_1776e0(long user_index, long object_index, bool add); /* unknown_175bd0.cpp */
 short function_1d90b0(long render_model_index, long marker_name, byte const *unknown0, long model_index, long const *node_map,
@@ -372,10 +380,12 @@ void first_person_nodes_remap(transform4x3f const *base, transform4x3f *out, lon
 	transform4x3f const *nodes, long const *node_map, long render_model_index)
 {
 	s_first_person_render_model *model = (s_first_person_render_model *)g_4e3b44[render_model_index & 0xffff].bytes;
-	long count = MIN(model->node_count, out_count);
+	long count = model->node_count;
 	long i;
+	if (count > out_count)
+		count = out_count;
 
-	for (i = 0; i < count; i++, out++)
+	for (i = 0; i < count; i++)
 	{
 		long node_index = node_map[i];
 
@@ -383,11 +393,11 @@ void first_person_nodes_remap(transform4x3f const *base, transform4x3f *out, lon
 		{
 			if (base)
 			{
-				function_142a60(base, &nodes[node_index], out);
+				function_142a60(base, &nodes[node_index], &out[i]);
 			}
 			else
 			{
-				*out = nodes[node_index];
+				out[i] = nodes[node_index];
 			}
 		}
 	}
@@ -671,14 +681,14 @@ s_animation const *first_person_weapon_animation_get(long weapon_index, long ani
 
 					if (state.initialize(interface->animation_graph_index, NONE, true))
 					{
-						long mode = 0x7000101;
-						long weapon_class = mode;
+						long weapon_type = 0x7000101;
+						long weapon_class = weapon_type;
 
 						if (function_cd660(weapon->unit_index))
 						{
 							weapon_class = 0x400054b;
 						}
-						result = function_1cba80(&state, mode, weapon_class, animation_name);
+						result = function_1cba80(&state, weapon_class, weapon_type, animation_name);
 						if (result && (short)function_1dae80(result) != NONE && frame_out)
 						{
 							*frame_out = *(long *)((byte *)state.entry_get((short)function_1dae80(result)) + 4);
@@ -706,11 +716,14 @@ short first_person_weapon_animation_ticks(long weapon_index, long animation_name
 
 		switch (type)
 		{
+		case 1:
+			if (event_frame != NONE && frame_count > event_frame)
+			{
+				frame = event_frame;
+				break;
+			}
 		case 0:
 			frame = frame_count;
-			break;
-		case 1:
-			frame = event_frame != NONE ? MIN(frame_count, event_frame) : frame_count;
 			break;
 		case 2:
 			frame = function_1dae20(animation);
@@ -1173,6 +1186,8 @@ static inline void transform4x3f_set_identity(transform4x3f *matrix)
 /* rebuilds a weapon of a user from the unit's current weapon in that slot:
    its animation state, the node maps of the weapon and the arms, the
    overlays it plays */
+// score 231 (was 50): the stack frame is four bytes smaller than retail's, so every stack offset
+// inside the function is shifted.
 // @retail 0x167e86
 void __stdcall function_167e86(long user_index, long field_x11c898)
 {
@@ -1355,7 +1370,7 @@ real function_0bff60(real a, real b);
 bool function_13cb40(void);
 real function_187420(long player_index);
 short function_187a40(long player_index);
-bool function_11eed0(real *velocity, real *position, real dt, bool wrap, real target, real a, real b, real lo, real hi);
+bool function_11eed0(real *position, real *velocity, real target, real time_step, real speed, real acceleration, bool wrap, real lower, real upper);
 bool function_c8a10(long unit_index);
 bool function_d03b0(long unit_index);
 void __stdcall function_16760c(long user_index, long field_x11c898);
@@ -1368,6 +1383,8 @@ point2f *g_4687c4;
 
 /* the per frame update of a local user's first person weapons: the view's
    sway springs, the weapons' animations, zoom overlays and idles */
+static __forceinline real function_x82e52f(dword *seed, char const *file, long line);
+
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {
@@ -1377,10 +1394,10 @@ void __stdcall function_166d75(long user_index)
 	{
 		s_166d75_unit *unit = (s_166d75_unit *)first_person_object_get(user->unit_index);
 		long mode = first_person_weapon_mode_name(user_index);
-		real spring_a = 72.0f;
 		real spring_b = 15.0f;
-		real spring_c = 27.0f;
+		real spring_a = 72.0f;
 		real spring_d = 6.0f;
+		real spring_c = 27.0f;
 		s_first_person_weapon *first_weapon = &user->weapons[0];
 		real look_yaw;
 		real look_pitch;
@@ -1410,18 +1427,14 @@ void __stdcall function_166d75(long user_index)
 				spring_d = definition->unknown2ec;
 			}
 		}
-		function_11eed0((real *)&user->unknown2030[0x0], (real *)&user->unknown2030[0x8], g_510c54->rate, false,
-			unit->aiming_velocity.i, spring_a, spring_b, -1.0f, 1.0f);
-		function_11eed0((real *)&user->unknown2030[0x4], (real *)&user->unknown2030[0xc], g_510c54->rate, false,
-			unit->aiming_velocity.j, spring_a, spring_b, -1.0f, 1.0f);
+		function_11eed0((real *)&user->unknown2030[0x0], (real *)&user->unknown2030[0x8], unit->aiming_velocity.i, g_510c54->rate, spring_a, spring_b, false, -1.0f, 1.0f);
+		function_11eed0((real *)&user->unknown2030[0x4], (real *)&user->unknown2030[0xc], unit->aiming_velocity.j, g_510c54->rate, spring_a, spring_b, false, -1.0f, 1.0f);
 		look_yaw = *(real *)&user->unknown2030[0x28] / g_510c54->rate;
 		look_yaw = PIN(look_yaw, -1.0f, 1.0f);
 		look_pitch = -1.0f / g_510c54->rate * *(real *)&user->unknown2030[0x2c];
 		look_pitch = PIN(look_pitch, -1.0f, 1.0f);
-		function_11eed0((real *)&user->unknown2030[0x10], (real *)&user->unknown2030[0x18], g_510c54->rate, false,
-			look_yaw, spring_c, spring_d, -1.0f, 1.0f);
-		function_11eed0((real *)&user->unknown2030[0x14], (real *)&user->unknown2030[0x1c], g_510c54->rate, false,
-			look_pitch, spring_c, spring_d, -1.0f, 1.0f);
+		function_11eed0((real *)&user->unknown2030[0x10], (real *)&user->unknown2030[0x18], look_yaw, g_510c54->rate, spring_c, spring_d, false, -1.0f, 1.0f);
+		function_11eed0((real *)&user->unknown2030[0x14], (real *)&user->unknown2030[0x1c], look_pitch, g_510c54->rate, spring_c, spring_d, false, -1.0f, 1.0f);
 
 		look = (point2f *)&g_4ed284->entries[user_index].yaw;
 		flags = user->flags;
@@ -1447,11 +1460,8 @@ void __stdcall function_166d75(long user_index)
 			{
 				weapon->unknownf2--;
 			}
-			active = false;
-			if (user->unit_index != NONE && weapon->weapon_index != NONE)
-			{
-				active = !function_155760(user_index) && function_0b6780((s_index_triple *)&weapon->animation);
-			}
+			active = user->unit_index != NONE && weapon->weapon_index != NONE &&
+				!function_155760(user_index) && function_0b6780((s_index_triple *)&weapon->animation);
 			first_person_weapon_set_active(user_index, field_x11c898, active);
 
 			if (weapon->weapon_index != NONE)
@@ -1472,16 +1482,8 @@ void __stdcall function_166d75(long user_index)
 					first_person_weapon_animation_finished(user_index, field_x11c898);
 				}
 				zoom = magnitude3d(&unit->aiming_velocity);
-				if (zoom > 0.1f)
-				{
-					zoomed = true;
-					scoped = function_c8a10(user->unit_index);
-				}
-				else
-				{
-					zoomed = false;
-					scoped = false;
-				}
+				zoomed = zoom > 0.1f;
+				scoped = zoomed && function_c8a10(user->unit_index);
 				if (function_d03b0(user->unit_index))
 				{
 					zoomed = false;
@@ -1533,7 +1535,7 @@ void __stdcall function_166d75(long user_index)
 				if ((zoomed || scoped) && !function_0b6760((s_index_pair *)channel))
 				{
 					long set;
-					word channel_flags;
+					dword channel_flags;
 
 					if (scoped)
 					{
@@ -1567,8 +1569,7 @@ overlay:
 					}
 				}
 
-				function_11eed0(&weapon->indices.unknownc, &weapon->indices.unknown10, g_510c54->rate, false, 0.0f, 9.0f,
-					6.0f, 0.0f, 1.0f);
+				function_11eed0(&weapon->indices.unknownc, &weapon->indices.unknown10, 0.0f, g_510c54->rate, 9.0f, 6.0f, false, 0.0f, 1.0f);
 				if (weapon->indices.unknownc == 1.0f)
 				{
 					weapon->indices.unknown10 = 0.0f;
@@ -1688,21 +1689,22 @@ struct s_16760c_orientation
 
 extern real_quaternion_transform *g_4687d8;
 
-void function_bd970(long weapon_index, s_16760c_render_model *render_model, s_animation_state *state, long unknown,
+void __stdcall function_bd970(long weapon_index, s_16760c_render_model *render_model, s_animation_state *state, long unknown,
 	long node_count, byte *orientations);
 long function_100b40(long magazine_index, long weapon_index, bool weapon_only);
 void function_1416c0(point3f const *position, transform4x3f *out);
 real function_1d9370(s_1d9240 const *p);
 
-static inline void first_person_orientations_from_model(s_16760c_render_model const *render_model, long const *node_map,
+
+static __forceinline void first_person_orientations_from_model_16760c(s_16760c_render_model const *render_model, long const *node_map,
 	s_16760c_orientation *orientations)
 {
 	short node_index;
 
 	for (node_index = 0; node_index < render_model->node_count; node_index++)
 	{
-		short graph_node_index = (short)node_map[node_index];
 		s_16760c_render_model_node const *node = &render_model->nodes[node_index];
+		short graph_node_index = (short)node_map[node_index];
 
 		if (graph_node_index != NONE)
 		{
@@ -1715,18 +1717,19 @@ static inline void first_person_orientations_from_model(s_16760c_render_model co
 	}
 }
 
-static inline void first_person_channel_sample_sway(c_animation_channel *channel, real value, real positive_frame,
-	real negative_frame, real weight, long node_count, byte *orientations)
+
+static __forceinline void first_person_channel_sample_sway_16760c(c_animation_channel *channel, real const *value,
+	real positive_frame, real negative_frame, real weight, long node_count, byte *orientations)
 {
-	if (value > 0.0f)
+	if (*value > 0.0f)
 	{
 		channel->set_frame_position(positive_frame);
-		channel->sample(weight * value, NULL, node_count, (real_quaternion_transform *)orientations);
+		channel->sample(weight * *value, NULL, node_count, (real_quaternion_transform *)orientations);
 	}
-	else if (0.0f > value)
+	else if (0.0f > *value)
 	{
 		channel->set_frame_position(negative_frame);
-		channel->sample(0.0f - weight * value, NULL, node_count, (real_quaternion_transform *)orientations);
+		channel->sample(0.0f - weight * *value, NULL, node_count, (real_quaternion_transform *)orientations);
 	}
 }
 
@@ -1749,8 +1752,8 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 			g_4e3b44[definition->interfaces[interface_index].render_model_index & 0xffff].bytes;
 		s_16760c_render_model *arms_model = (s_16760c_render_model *)
 			g_4e3b44[((s_first_person_globals_view *)g_4e034c)->representations[user->character_index].arms_render_model_index & 0xffff].bytes;
-		c_animation_channel channel;
 		s_animation_state *state = &weapon->animation;
+		c_animation_channel channel;
 		byte *orientations;
 		transform4x3f root;
 		long node_index;
@@ -1765,27 +1768,20 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 		{
 			((s_16760c_orientation *)orientations)[node_index] = *(s_16760c_orientation *)g_4687d8;
 		}
-		first_person_orientations_from_model(arg_2f82bc, weapon->weapon_node_map, (s_16760c_orientation *)orientations);
-		first_person_orientations_from_model(arms_model, weapon->arms_node_map, (s_16760c_orientation *)orientations);
+		first_person_orientations_from_model_16760c(arg_2f82bc, weapon->weapon_node_map, (s_16760c_orientation *)orientations);
+		first_person_orientations_from_model_16760c(arms_model, weapon->arms_node_map, (s_16760c_orientation *)orientations);
 
 		if (function_0b6780((s_index_triple *)state))
 		{
-			bool full_blend = true;
+			bool full_blend;
 			s_animation *animation;
 			real blend_time;
 
 			state->sample(0, 1.0f, NULL, (real_quaternion_transform *)orientations, 0, 0, weapon->orientation_count);
 			function_bd970(weapon_index, arg_2f82bc, state, 0, weapon->orientation_count, orientations);
 			animation = state->channels[0].function_1c6440();
-			if (animation && (((byte *)animation)[0x18] & 0x10))
-			{
-				blend_time = 0.2f;
-				full_blend = false;
-			}
-			else
-			{
-				blend_time = 0.4f;
-			}
+			full_blend = !(animation && (((byte *)animation)[0x18] & 0x10));
+			blend_time = full_blend ? 0.4f : 0.2f;
 			function_1d9240((s_1d9240 *)&user->unknown202c, full_blend, blend_time);
 			if (user->unknown202c.unknown1)
 			{
@@ -1815,22 +1811,17 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 					if (weapon->indices.unknown6 != NONE &&
 						state->channel_play(&channel, *(c_type_709360 *)&weapon->indices.unknown4, 0))
 					{
-						if (channel.function_1c6440()->frame_count < 9)
+						if (channel.function_1c6440()->frame_count >= 9)
 						{
-							weapon->indices.unknown4 = NONE;
-							weapon->indices.unknown6 = NONE;
-						}
-						else
-						{
-							first_person_channel_sample_sway(&channel, *(real *)&user->unknown2030[0x0], 0.0f, 1.0f, weight,
+							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x0], 0.0f, 1.0f, weight,
 								weapon->orientation_count, orientations);
-							first_person_channel_sample_sway(&channel, *(real *)&user->unknown2030[0x4], 3.0f, 2.0f, weight,
+							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x4], 3.0f, 2.0f, weight,
 								weapon->orientation_count, orientations);
 							if (!aimed)
 							{
-								first_person_channel_sample_sway(&channel, *(real *)&user->unknown2030[0x10], 4.0f, 5.0f, weight,
+								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x10], 4.0f, 5.0f, weight,
 									weapon->orientation_count, orientations);
-								first_person_channel_sample_sway(&channel, *(real *)&user->unknown2030[0x14], 7.0f, 6.0f, weight,
+								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x14], 7.0f, 6.0f, weight,
 									weapon->orientation_count, orientations);
 							}
 							if (weapon->indices.unknownc > 0.0f)
@@ -1839,6 +1830,11 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 								channel.sample(weapon->indices.unknownc * weight, NULL, weapon->orientation_count,
 									(real_quaternion_transform *)orientations);
 							}
+						}
+						else
+						{
+							weapon->indices.unknown4 = NONE;
+							weapon->indices.unknown6 = NONE;
 						}
 					}
 				}
@@ -1951,8 +1947,8 @@ struct s_168644_marker
 	byte unknown00[2];
 	byte node_index;
 	byte unknown03;
-	quaternionf rotation;
 	point3f position;
+	quaternionf rotation;
 };
 
 struct s_168644_marker_group
@@ -1972,12 +1968,14 @@ struct s_168644_render_model
 
 bool function_cd660(long unit_index);
 long function_1d8f00(long render_model_index, long marker_name);
-void function_1d90e0(long render_model_index, transform4x3f *nodes, long node_index, transform4x3f const *marker_matrix,
+void function_1d90e0(long render_model_index, long node_index, transform4x3f *nodes, transform4x3f const *marker_matrix,
 	transform4x3f const *target_matrix, real weight, long node_count);
 void function_1421b0(transform4x3f *out, point3f const *position, quaternionf const *rotation);
 void function_1dd7a0(long *reference);
 
 /* attaches the arms to the weapon's markers while the unit's aiming blends */
+// score 9 (was 9): the object pointer and the entry index are kept in swapped registers in the
+// second lookup.
 // @retail 0x168644
 void function_168644(long user_index, s_first_person_model *arms, s_first_person_model *arg_2f82bc)
 {
@@ -2028,8 +2026,8 @@ void function_168644(long user_index, s_first_person_model *arms, s_first_person
 
 								if (arms_group->marker_count > 0 && weapon_group->marker_count > 0)
 								{
-									s_168644_marker *arms_marker = arms_group->markers;
 									s_168644_marker *weapon_marker = weapon_group->markers;
+									s_168644_marker *arms_marker = arms_group->markers;
 									transform4x3f arms_matrix;
 									transform4x3f weapon_matrix;
 
@@ -2037,7 +2035,7 @@ void function_168644(long user_index, s_first_person_model *arms, s_first_person
 									function_1421b0(&weapon_matrix, &weapon_marker->position,
 										&weapon_marker->rotation);
 									function_142a60(&arg_2f82bc->nodes[weapon_marker->node_index], &weapon_matrix, &weapon_matrix);
-									function_1d90e0(arms_render_model_index, arms->nodes, arms_marker->node_index, &arms_matrix,
+									function_1d90e0(arms_render_model_index, arms_marker->node_index, arms->nodes, &arms_matrix,
 										&weapon_matrix, weight, arms_definition->node_count);
 								}
 							}
@@ -2054,6 +2052,8 @@ extern bool g_4f55e2;
 
 /* the render models a user's first person view draws: the arms, each
    active weapon and the unit's own body; returns how many */
+// score 20 (was 20): the game state check is tested as a byte here and and-ed with the flag mask
+// in retail, and the second condition is combined with it as a word here and as a byte in retail.
 // @retail 0x165f16
 long __stdcall first_person_weapons_get_models(long user_index, long unit_index, long maximum_count,
 	s_first_person_model *models)
@@ -2063,7 +2063,7 @@ long __stdcall first_person_weapons_get_models(long user_index, long unit_index,
 	if (!(g_4e6948->state == 1 ? g_4f55e2 : false) && user_index != NONE)
 	{
 		s_first_person_user *user = &first_person_users[user_index];
-		bool active = false;
+		long active = 0;
 		bool armed = false;
 		long field_x11c898;
 
@@ -2074,7 +2074,7 @@ long __stdcall first_person_weapons_get_models(long user_index, long unit_index,
 			active |= TEST_FLAG(weapon->flags, _first_person_weapon_active_bit);
 			armed |= weapon->weapon_index != NONE;
 		}
-		if (active && armed && user->unit_index == unit_index && unit_index != NONE && user->character_index >= 0 &&
+		if (active && armed && user->unit_index == unit_index && user->unit_index != NONE && user->character_index >= 0 &&
 			user->character_index < ((s_first_person_globals_view *)g_4e034c)->representation_count)
 		{
 			s_player_representation *representation =
@@ -2146,9 +2146,9 @@ long __stdcall first_person_weapons_get_models(long user_index, long unit_index,
 			}
 			if (count < maximum_count && body_render_model_index != NONE && unit_render_model_index != NONE && unit_nodes)
 			{
-				s_first_person_render_model *body = (s_first_person_render_model *)g_4e3b44[body_render_model_index & 0xffff].bytes;
 				s_first_person_render_model *unit_model =
 					(s_first_person_render_model *)g_4e3b44[unit_render_model_index & 0xffff].bytes;
+				s_first_person_render_model *body = (s_first_person_render_model *)g_4e3b44[body_render_model_index & 0xffff].bytes;
 
 				if (body->node_count == unit_model->node_count &&
 					*(long *)((byte *)body + 0x44) == *(long *)((byte *)unit_model + 0x44) &&

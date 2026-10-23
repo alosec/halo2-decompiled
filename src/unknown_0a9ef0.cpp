@@ -15,7 +15,6 @@ void function_aab40(long index, point3f const *position, vector3f const *forward
 
 // Keep this draft disabled: its matrix-query caller changes 0xba160's
 // nested 0x1420f0 convention and loses the existing 0xba160 match.
-#if 0
 point3f *function_b9dd0(long index, point3f *result);
 bool function_1c5210(transform4x3f const *matrix, void *shape, long excluded_component, long filter);
 
@@ -31,8 +30,8 @@ struct s_part_table
 	s_single_element *singles;
 	long pair_b_count;
 	s_pair_element *pairs_b;
-	void function_1c2390();
-	c_part *function_1c2460(long index);
+	void construct_shapes();
+	c_part *get_shape(long index);
 };
 
 class c_z_shape_view
@@ -46,16 +45,14 @@ public:
 	virtual long v5() = 0;
 };
 
-class __declspec(align(16)) c_z_capsule_temp
-{
-public:
-	c_z_capsule_temp(void const *first, void const *second, real radius);
-	~c_z_capsule_temp();
-	byte unknown00[0x30];
-};
+#include "unknown_0a9f20.h"
 
 extern real g_47f05c;
 
+// Disabled: the best round-36 draft has 179 differences/736 bytes, but activation
+// loses matched ba160 and b92d0 through the nested 1420f0 convention.
+#if 0
+// Retail 0xa9f70
 long __stdcall function_a9f70(long object_index, long mode, point3f const *position)
 {
 	byte *header = g_4e0300->data + (object_index & 0xffff) * 12;
@@ -115,7 +112,7 @@ collision:
 		{
 			object = *(byte **)(header + 8);
 			byte *definition = *(byte **)((byte *)g_4e3b44 + (*(long *)object & 0xffff) * 16 + 8);
-			c_z_shape_view *shape = (c_z_shape_view *)((s_part_table *)(definition + 0x264))->function_1c2460(0);
+			c_z_shape_view *shape = (c_z_shape_view *)((s_part_table *)(definition + 0x264))->get_shape(0);
 			if (shape->v5() == 7)
 			{
 				real radius = *(real *)((byte *)shape + 0xc) - (g_47f05c + 0.001f);
@@ -124,9 +121,10 @@ collision:
 				{
 					c_z_capsule_temp capsule((byte *)shape + 0x10, (byte *)shape + 0x20, radius);
 					transform4x3f matrix_storage;
-					transform4x3f *matrix = function_ba160(object_index, &matrix_storage);
-					matrix->position = *position;
-					hit = function_1c5210(matrix, &capsule, *(long *)(object + 0xb4), 9);
+					// retail: index in eax, matrix pushed; the returned pointer is unused
+					function_ba160(object_index, &matrix_storage);
+					matrix_storage.position = *position;
+					hit = function_1c5210(&matrix_storage, &capsule, *(long *)(object + 0xb4), 9);
 				}
 				if (hit) selection = 2;
 			}
@@ -136,10 +134,10 @@ collision:
 }
 #endif
 
+
 // The selection result must be supplied by the caller in addition to mode.
-// Keep this candidate disabled until the caller's interface supplies it.
-#if 0
-void function_aa260(long selection, vector3f const *linear, long object_index, long mode,
+// @retail 0xaa260
+void function_aa260(long selection, long object_index, vector3f const *linear, long mode,
 	point3f const *position, vector3f const *forward, vector3f const *up, vector3f const *angular)
 {
 	switch (selection)
@@ -166,8 +164,8 @@ void function_aa260(long selection, vector3f const *linear, long object_index, l
 					difference.i = linear->i - desired_linear.i;
 					difference.j = linear->j - desired_linear.j;
 					difference.k = linear->k - desired_linear.k;
-					if (mode == 2 && difference.k * difference.k + difference.i * difference.i +
-						difference.j * difference.j <= 0.06f)
+					if (mode == 2 && !(difference.j * difference.j +
+						(difference.i * difference.i + difference.k * difference.k) > 0.06f))
 						change_linear = false;
 					else desired_linear = *linear;
 				}
@@ -177,22 +175,68 @@ void function_aa260(long selection, vector3f const *linear, long object_index, l
 					difference.i = angular->i - desired_angular.i;
 					difference.j = angular->j - desired_angular.j;
 					difference.k = angular->k - desired_angular.k;
-					if (mode == 2 && difference.k * difference.k + difference.j * difference.j +
-						difference.i * difference.i <= 0.01f)
+					if (mode == 2 && !(difference.k * difference.k + difference.j * difference.j +
+						difference.i * difference.i > 0.01f))
 						change_angular = false;
 					else desired_angular = *angular;
 				}
 				vector3f adjusted_linear, adjusted_angular;
 				function_aaca0(object_index, &local_010335, &local_de61cc, &local_523673,
 					&desired_linear, &desired_angular, &adjusted_linear, &adjusted_angular);
+				if (!change_linear && !change_angular)
+					return;
 				if (change_linear)
 					function_aa9e0(object_index, NULL, &adjusted_linear);
-				if (change_linear || change_angular)
-					function_b77d0(object_index, change_linear ? &adjusted_linear : NULL,
-						change_angular ? &adjusted_angular : NULL);
+				function_b77d0(object_index, change_linear ? &adjusted_linear : NULL,
+					change_angular ? &adjusted_angular : NULL);
 			}
 		}
 		break;
 	}
 }
-#endif
+
+
+
+bool function_a76b0(long object_index, long flag);
+struct s_location;
+void function_a96d0(long object_index, vector3f const *position);
+void function_a9770(long object_index, vector3f const *up, vector3f const *forward);
+void function_a9640(long object_index);
+void function_b75a0(long object_index, point3f const *position, vector3f const *forward,
+    vector3f const *up, s_location const *location, bool unknown);
+
+// @retail 0xaab40
+void function_aab40(long object_index, point3f const *position, vector3f const *forward,
+    vector3f const *up, vector3f const *linear, vector3f const *angular)
+{
+    bool update = true;
+    byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+    if (position)
+    {
+        bool type_zero = g_4e0300->data[(object_index & 0xffff) * 12 + 3] == 0;
+        vector3f delta;
+        vector3d_from_points3d((point3f *)(object + 0x64), position, &delta);
+        bool moved = (real)(delta.j * delta.j) + (real)(delta.k * delta.k) +
+            (real)(delta.i * delta.i) > 1.0f;
+        bool parent = *(long *)(object + 0x14) != NONE;
+        bool flag = function_a76b0(object_index, false);
+        update = !moved && !parent && !flag && type_zero;
+    }
+    function_aa9e0(object_index, position, linear);
+    if (update)
+    {
+        if (position)
+        {
+            byte *current = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+            function_a96d0(object_index, (vector3f *)(current + 0x64));
+        }
+        if (forward && up)
+        {
+            byte *current = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+            function_a9770(object_index, (vector3f *)(current + 0x70), (vector3f *)(current + 0x7c));
+        }
+    }
+    else function_a9640(object_index);
+    function_b75a0(object_index, position, forward, up, NULL, false);
+    function_b77d0(object_index, linear, angular);
+}

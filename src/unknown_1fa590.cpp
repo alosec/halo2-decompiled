@@ -8,8 +8,9 @@
 #include "unknown_1fa590.h"
 #include <math.h>
 #include "slot_handler.h"
+#include "normalize3d.h"
 
-void function_11d180(vector3f *left, vector3f const *in, vector3f *out, vector3f const *up, vector3f *forward);
+void function_11d180(vector3f const *in, vector3f const *up, vector3f *forward, vector3f *left, vector3f *out);
 
 struct s_motion_adjustment
 {
@@ -36,15 +37,21 @@ void __stdcall function_1fa810(long *ticks, s_motion_adjustment_result *out, s_m
 	vector3f left;
 	vector3f up;
 	vector3f forward;
-	function_11d180(&left, &state->forward, &up, g_4687b0, &forward);
+	function_11d180(&state->forward, g_4687b0, &forward, &left, &up);
 	vector3f target;
-	target.i = state->target.i * state->scale;
-	target.j = state->target.j * state->scale;
-	target.k = state->target.k * state->scale;
+	vector3f_scale(&state->target, state->scale, &target);
+	vector3f desired;
+	vector3f_scale(&state->forward, target.i, &desired);
+	desired.i += target.j * left.i;
+	desired.j += target.j * left.j;
+	desired.k += target.j * left.k;
+	desired.i += target.k * up.i;
+	desired.j += target.k * up.j;
+	desired.k += target.k * up.k;
 	vector3f offset;
-	offset.i = state->forward.i * target.i + left.i * target.j + up.i * target.k - state->current.i;
-	offset.j = state->forward.j * target.i + left.j * target.j + up.j * target.k - state->current.j;
-	offset.k = state->forward.k * target.i + left.k * target.j + up.k * target.k - state->current.k;
+	offset.i = desired.i - state->current.i;
+	offset.j = desired.j - state->current.j;
+	offset.k = desired.k - state->current.k;
 	vector3f normalized = offset;
 	real length = (real)sqrt(normalized.i * normalized.i + (normalized.j * normalized.j + normalized.k * normalized.k));
 	if (!(fabs(length) < 0.0001f))
@@ -369,11 +376,14 @@ short function_296230(long object_index);
 long function_1fa3a0(long structure_index, long surface_index, long object_index,
     long node_index, point3f const *point)
 {
+    long const *node_reference = &node_index;
     long result = NONE;
     long type = object_index != NONE ? 4 : (structure_index != NONE ? 3 : 1);
+    byte *globals = (byte *)g_4e0348;
+    long table_count = *(long *)(globals + 0xc4);
     s_contact_surface_table *table = NULL;
-    if (*(long *)((byte *)g_4e0348 + 0xc4) > 0)
-        table = *(s_contact_surface_table **)((byte *)g_4e0348 + 0xc8);
+    if (table_count > 0)
+        table = *(s_contact_surface_table **)(globals + 0xc8);
     if (table)
     {
         switch (type)
@@ -387,7 +397,7 @@ long function_1fa3a0(long structure_index, long surface_index, long object_index
                     for (short i = 0; i < owner->range_count; i++)
                     {
                         s_contact_surface_range *range = &owner->ranges[i];
-                        if (range->key == node_index)
+                        if (range->key == *node_reference)
                         {
                             result = range->first;
                             if (result == NONE || surface_index < 0 || surface_index > range->last - result)
@@ -412,7 +422,9 @@ long function_1fa3a0(long structure_index, long surface_index, long object_index
                 {
                     s_contact_surface_owner *owner = &table->owners[owner_index];
                     long first = owner->first;
-                    if (first != NONE && surface_index >= 0 && surface_index <= owner->last - first)
+                    if (first == NONE || surface_index < 0 || surface_index > owner->last - first)
+                        result = NONE;
+                    else
                     {
                         result = first + surface_index;
                         if (result < 0 || result >= table->count)
@@ -451,17 +463,19 @@ real function_30bf0(vector3f *v);
 void function_c7840(vector3f const *desired, vector3f *current, transform4x3f const *frame, real rate,
     vector3f *velocity, real const *limits, real max_speed, real acceleration);
 
+// score 8 (was 8): the last term of the dot product and the first product of
+// the cross product keep their operands in the other order, so retail loads
+// the forward vector's component into the register and ours the facing one
 // @retail 0x1faf80
 bool function_1faf80(vector3f *facing, long object_index, void const *settings_pointer,
     vector3f const *control, real threshold, real *turn)
 {
     s_slot_object_view *object = object_get(object_index);
     real const *settings = (real const *)settings_pointer;
-    vector3f *angular = (vector3f *)((byte *)object + 0x94);
     vector3f desired;
     if (object->velocity.i * object->velocity.i + object->velocity.j * object->velocity.j +
         object->velocity.k * object->velocity.k < 0.25f &&
-        angular->i * angular->i + angular->j * angular->j + angular->k * angular->k < g_557c70 * g_557c70 &&
+        ((vector3f *)object->unknown094)->i * ((vector3f *)object->unknown094)->i + ((vector3f *)object->unknown094)->j * ((vector3f *)object->unknown094)->j + ((vector3f *)object->unknown094)->k * ((vector3f *)object->unknown094)->k < g_557c70 * g_557c70 &&
         control->i * control->i + control->j * control->j + control->k * control->k < 0.0001f &&
         object->forward.k * facing->k + object->forward.j * facing->j + object->forward.i * facing->i > threshold)
         desired = object->forward;
@@ -476,12 +490,15 @@ bool function_1faf80(vector3f *facing, long object_index, void const *settings_p
                 desired = *facing;
         }
     }
+    vector3f *forward = &object->forward;
     vector3f const *up = (vector3f const *)((byte *)object + 0x7c);
     vector3f left;
-    left.i = object->forward.j * up->k - up->j * object->forward.k;
+    left.i = object->forward.j * up->k - *(real const *)((byte *)object + 0x80) * object->forward.k;
     left.j = up->i * object->forward.k - up->k * object->forward.i;
-    left.k = up->j * object->forward.i - up->i * object->forward.j;
-    real value = (facing->k * left.k + facing->j * left.j + facing->i * left.i) * 3.3333332538604736f * control->i - control->j;
+    left.k = up->j * object->forward.i - up->i * forward->j;
+    real value = (facing->k * left.k + facing->j * left.j + facing->i * left.i) * 3.3333332538604736f;
+    value *= control->i;
+    value -= control->j;
     if (value > 1.5f)
         value = 1.5f;
     real target = settings[0] * value;
@@ -501,23 +518,21 @@ bool function_1faf80(vector3f *facing, long object_index, void const *settings_p
     *turn = target;
     real limits[4] = { -3.1415927410125732f, 3.1415927410125732f, -1.5707963705062866f, 1.5707963705062866f };
     if (settings[9] == 0.0f)
-        object->forward = desired;
+        *forward = desired;
     else
-        function_c7840(&desired, &object->forward, NULL, g_510c54->rate, angular, limits, settings[8], settings[9]);
+        function_c7840(&desired, forward, NULL, g_510c54->rate, (vector3f *)object->unknown094, limits, settings[8], settings[9]);
     return true;
 }
 
-PRIVATE inline vector3f motion_cross(vector3f const &a, vector3f const &b)
+PRIVATE __forceinline void motion_cross(vector3f const &a, vector3f const &b, vector3f *result)
 {
-    vector3f result;
-    result.i = a.j * b.k - a.k * b.j;
-    result.j = a.k * b.i - a.i * b.k;
-    result.k = a.i * b.j - a.j * b.i;
-    return result;
+    result->i = a.j * b.k - a.k * b.j;
+    result->j = a.k * b.i - a.i * b.k;
+    result->k = a.i * b.j - a.j * b.i;
 }
 
 // @retail 0x1faa20
-void function_1faa20(byte const *state, vector3f *up, vector3f *forward, long *ticks)
+void function_1faa20(vector3f *up, byte const *state, vector3f *forward, long *ticks)
 {
     if (*ticks > 0)
     {
@@ -533,12 +548,11 @@ void function_1faa20(byte const *state, vector3f *up, vector3f *forward, long *t
         real cosine = (real)cos(angle);
         real sine = (real)sin(angle);
         real dot = (up->j * axis.j + up->k * axis.k + up->i * axis.i) * (1.0f - cosine);
-        vector3f cross = motion_cross(*up, axis);
-        vector3f rotated;
-        rotated.i = up->i * cosine + axis.i * dot - cross.i * sine;
-        rotated.j = up->j * cosine + axis.j * dot - cross.j * sine;
-        rotated.k = up->k * cosine + axis.k * dot - cross.k * sine;
-        *up = rotated;
+        vector3f cross;
+        motion_cross(*up, axis, &cross);
+        up->i = up->i * cosine + axis.i * dot - cross.i * sine;
+        up->j = up->j * cosine + axis.j * dot - cross.j * sine;
+        up->k = up->k * cosine + axis.k * dot - cross.k * sine;
         real projection = up->k * forward->k + up->j * forward->j + forward->i * up->i;
         forward->i -= up->i * projection;
         forward->j -= up->j * projection;
@@ -553,8 +567,10 @@ void function_1faa20(byte const *state, vector3f *up, vector3f *forward, long *t
     }
     else
     {
-        vector3f axis = motion_cross(*forward, *g_4687b0);
-        vector3f base = motion_cross(axis, *forward);
+        vector3f axis;
+        motion_cross(*forward, *g_4687b0, &axis);
+        vector3f base;
+        motion_cross(axis, *forward, &base);
         if (function_30bf0(&base) == 0.0f)
         {
             base = *g_4687a8;

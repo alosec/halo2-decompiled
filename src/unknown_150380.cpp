@@ -28,19 +28,18 @@ struct s_unit_motion_header
 bool function_e4050(long object_index);
 
 // @retail 0x150380
-bool function_150380(long player_index)
+byte function_150380(long player_index)
 {
 	s_player_unit_state *player = (s_player_unit_state *)g_4e8c24->data + (player_index & 0xffff);
-	bool result = false;
-	long unit_index = player->unit_index;
+	byte result = 0;
 
-	if (unit_index != NONE)
+	if (player->unit_index != NONE)
 	{
-		s_unit_motion_header *header = (s_unit_motion_header *)g_4e0300->data + (unit_index & 0xffff);
+		s_unit_motion_header *header = (s_unit_motion_header *)g_4e0300->data + (player->unit_index & 0xffff);
 		if ((1 << header->type) & 1)
 		{
 			s_unit_motion_state *unit = header->unit;
-			result = unit->parent_index == NONE && unit->state == 1 && !function_e4050(unit_index);
+			result = unit->parent_index == NONE && unit->state == 1 && !function_e4050(player->unit_index);
 		}
 	}
 	return result;

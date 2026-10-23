@@ -82,32 +82,25 @@ bool havok_component_impact_make_room(long rigid_body_index, s_havok_component *
 
 	if (rigid_body_index == NONE || (component->rigid_bodies.data[rigid_body_index].flags45 & 1))
 	{
-		long list_index = component->unknown20;
-
-		if (list_index != NONE)
+		if (havok_component_impact_count(component) == MAXIMUM_IMPACTS_PER_COMPONENT)
 		{
-			s_havok_impact_list *list = havok_impact_list_get(list_index);
+			long i;
 
-			if (list->count == MAXIMUM_IMPACTS_PER_COMPONENT)
+			for (i = 0; i < havok_component_impact_count(component); i++)
 			{
-				long i;
-
-				for (i = 0; i < list->count; i++)
+				if (havok_impact_get(havok_impact_list_get(component->unknown20)->impact_indices[i])->unknown04 > strength)
 				{
-					if (havok_impact_get(list->impact_indices[i])->unknown04 > strength)
-					{
-						weakest = i;
-					}
+					weakest = i;
 				}
 			}
 		}
-		if (list_index != NONE && havok_impact_list_get(list_index)->count >= MAXIMUM_IMPACTS_PER_COMPONENT && weakest == NONE)
+		if (havok_component_impact_count(component) >= MAXIMUM_IMPACTS_PER_COMPONENT && weakest == NONE)
 		{
-			return false;
+			goto done;
 		}
 		if (weakest != NONE)
 		{
-			function_2266a0(havok_impact_list_get(list_index)->impact_indices[weakest]);
+			function_2266a0(havok_impact_list_get(component->unknown20)->impact_indices[weakest]);
 		}
 		else if (g_51ebfc->actual_count == MAXIMUM_IMPACTS)
 		{
@@ -126,15 +119,9 @@ bool havok_component_impact_make_room(long rigid_body_index, s_havok_component *
 				}
 			}
 		}
-		if (g_51ebfc->actual_count >= MAXIMUM_IMPACTS)
-		{
-			return false;
-		}
-		if (component->unknown20 != NONE && havok_impact_list_get(component->unknown20)->count >= MAXIMUM_IMPACTS_PER_COMPONENT)
-		{
-			return false;
-		}
-		return true;
+		result = g_51ebfc->actual_count < MAXIMUM_IMPACTS &&
+			havok_component_impact_count(component) < MAXIMUM_IMPACTS_PER_COMPONENT;
 	}
+done:
 	return result;
 }

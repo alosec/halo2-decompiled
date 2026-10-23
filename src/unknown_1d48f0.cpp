@@ -48,8 +48,6 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,
  point3f const *arg_9, long arg_10)
 {
- (void)&arg_0; (void)&arg_1; (void)&arg_2; (void)&arg_3; (void)&arg_4; (void)&arg_5;
- (void)&arg_6; (void)&arg_7; (void)&arg_8; (void)&arg_9; (void)&arg_10;
  c_contact_query_bounds_volume *local_1 = NULL;
  long local_2 = NONE;
  _control87(0x9001f, 0x8001f);
@@ -72,7 +70,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   ((c_contact_query_world *)g_51e9a4)->add(local_1);
   if (arg_10 != NONE) local_2 = havok_object_get(arg_10)->havok_component_index;
  }
- long local_6 = *(byte const volatile *)&arg_8 ? 27 : 18;
+ long local_6 = 18 + 9 * arg_8;
  bool local_0 = false;
  hkTransform local_7;
  c_contact_query_transform_volume *local_8;
@@ -117,7 +115,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   arg_11->z = local_14.k * arg_7 + arg_3->z;
   local_7.m_translation.set(arg_11->x, arg_11->y, arg_11->z);
   local_12.found = false;
-  ((hkRigidBody *)local_8)->setTransform(local_7);
+  ((hkRigidBody *)local_8)->pose_write(local_7);
   ((c_contact_query_dispatch *)local_8)->query(&local_12);
   if (local_12.found) continue;
   point3f local_19 = *arg_11;

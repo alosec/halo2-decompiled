@@ -1,4 +1,5 @@
 // @flags /O2 /Gr
+#include "render_state_storage.h"
 /* UNKNOWN_020670.CPP: the compiler's vector constructor iterator, and a
    bitmap slot release */
 
@@ -19,7 +20,6 @@ void __stdcall vector_constructor_iterator(void *array, unsigned size, int count
 	}
 }
 
-s_visibility_storage g_51f40c;
 
 // @retail 0x20e50
 void function_20e50(long index)
@@ -55,3 +55,5 @@ void function_2e1e0(long object_index)
         }
     }
 }
+
+s_render_state_storage g_render_state_storage;

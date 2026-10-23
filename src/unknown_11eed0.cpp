@@ -9,73 +9,69 @@ real function_30bf0(vector3f *v);
 
 // @retail 0x11eed0
 bool function_11eed0(
-	real *velocity,
 	real *position,
-	real dt,
-	bool wrap,
+	real *velocity,
 	real target,
-	real a,
-	real b,
+	real time_step,
+	real speed_limit,
+	real acceleration_limit,
+	bool wrap,
 	real lo,
 	real hi)
 {
 	real v0 = *velocity;
 	real p0 = *position;
-	real dt2 = dt * dt;
-	real orig = target;
+	real speed_limit_squared = speed_limit * speed_limit;
+	real distance = target - p0;
 	bool reached = false;
-	real d = target - p0;
 	real limit;
 	real accel;
 	real newv;
 	real newp;
-	real half;
 
-	target = d;
 	if (wrap)
 	{
-		half = (hi - lo) * 0.5f;
-		if (d > half)
-			d -= half * 2.f;
-		else if (0.f - half > d)
-			d = half * 2.f + d;
-		target = d;
+		real half = (hi - lo) * 0.5f;
+		if (distance > half)
+			distance -= half * 2.f;
+		else if (0.f - half > distance)
+			distance = half * 2.f + distance;
 	}
 
-	limit = a * dt;
-	if (!(a * a * b > limit))
-		limit = a * a * b;
+	real local_0 = time_step * time_step * acceleration_limit;
+	limit = time_step * speed_limit;
+	if (!(local_0 > limit))
+		limit = local_0;
 
-	if (limit >= (real)fabs(target - v0 * a))
+	if (limit >= (real)fabs(distance - v0 * time_step))
 	{
-		real c = orig;
-		if (lo > c)
-			c = lo;
-		else if (c > hi)
-			c = hi;
+		newv = 0.f;
+		newp = target;
+		if (lo > newp)
+			newp = lo;
+		else if (newp > hi)
+			newp = hi;
 		reached = true;
-		*velocity = 0.f;
-		*position = c;
 	}
 	else
 	{
-		real x = (real)fabs(target) * b;
+		double x = fabs(distance) * acceleration_limit;
 		x = x + x;
-		target = x >= dt2 ? dt : (real)sqrt(x);
-		if (0.f > d)
-			target = 0.f - target;
+		real speed = x >= speed_limit_squared ? speed_limit : (real)sqrt(x);
+		if (0.f > distance)
+			speed = 0.f - speed;
 
-		accel = (target - v0) / a;
-		if ((real)fabs(accel) > b)
+		accel = (speed - v0) / time_step;
+		if ((real)fabs(accel) > acceleration_limit)
 		{
-			long s = accel == 0.f ? 0 : (0.f > accel ? -1 : 1);
-			accel = (real)s * b;
+			long s = accel != 0.f ? (0.f > accel ? -1 : 1) : 0;
+			accel = (real)s * acceleration_limit;
 		}
 
 		{
-			real dv = accel * a;
+			real dv = accel * time_step;
 			newv = dv + v0;
-			newp = (dv * 0.5f + newv) * a + p0;
+			newp = (dv * 0.5f + newv) * time_step + p0;
 		}
 		if (wrap)
 		{
@@ -88,12 +84,19 @@ bool function_11eed0(
 			newp = lo;
 		else if (newp > hi)
 			newp = hi;
-		*velocity = newv;
-		*position = newp;
 	}
+	*velocity = newv;
+	*position = newp;
 	return reached;
 }
 
+PRIVATE __forceinline double function_11f0d1(real arg_0)
+{
+	return acos(arg_0 < -1.0f ? -1.0f : arg_0 > 1.0f ? 1.0f : arg_0);
+}
+
+// score 2 (was 2): one product of the cross product has its factors in the opposite order:
+// ours keeps the forward vector's k field in the register, retail the target's i field.
 // @retail 0x11f0d0
 void function_11f0d0(
 	vector3f *position,
@@ -106,7 +109,7 @@ void function_11f0d0(
 	vector3f axis;
 	vector3f diff;
 	real d;
-	real angle;
+	double angle;
 	real step;
 	real dist2;
 	real theta;
@@ -118,31 +121,30 @@ void function_11f0d0(
 		return;
 	}
 
-	d = target->k * forward->k + target->j * forward->j + forward->i * target->i;
-	d = d < -1.f ? -1.f : d;
-	d = d > 1.f ? 1.f : d;
-	angle = (real)acos(d);
+	d = forward->i * target->i + (target->j * forward->j + target->k * forward->k);
+	d = d < -1.f ? -1.f : d > 1.f ? 1.f : d;
+	angle = function_11f0d1(d);
 	angle = angle * scale;
 	angle = angle + angle;
-	max_angle = angle >= max_angle * max_angle ? max_angle : (real)sqrt(angle);
+	real limit = angle >= max_angle * max_angle ? max_angle : (real)sqrt(angle);
 
 	axis.i = target->k * forward->j - forward->k * target->j;
 	axis.j = target->i * forward->k - target->k * forward->i;
 	axis.k = forward->i * target->j - target->i * forward->j;
 	function_30bf0(&axis);
 
-	axis.j = axis.j * max_angle;
-	diff.j = axis.j - position->j;
-	axis.k = axis.k * max_angle;
-	axis.i = axis.i * max_angle;
-	diff.k = axis.k - position->k;
+	axis.i = axis.i * limit;
+	axis.j = axis.j * limit;
+	axis.k = axis.k * limit;
 	diff.i = axis.i - position->i;
-	step = rate * scale;
+	diff.j = axis.j - position->j;
+	diff.k = axis.k - position->k;
 	dist2 = diff.k * diff.k + diff.j * diff.j + diff.i * diff.i;
+	step = rate * scale;
 
 	if (step * step * 5.f > dist2)
 	{
-		if (step > max_angle)
+		if (step > limit)
 		{
 			*position = *g_4687a4;
 			*forward = *target;
@@ -152,28 +154,26 @@ void function_11f0d0(
 	}
 	else
 	{
-		real s = step / (real)sqrt(dist2);
+		double s = step / sqrt(dist2);
 		position->i = diff.i * s + position->i;
 		position->j = diff.j * s + position->j;
 		position->k = diff.k * s + position->k;
 	}
 
-	axis = *position;
-	theta = function_30bf0(&axis) * rate;
+	vector3f rotation_axis = *position;
+	theta = function_30bf0(&rotation_axis) * rate;
 	if (theta != 0.f)
 	{
 		real s = (real)sin(theta);
 		real c = (real)cos(theta);
-		real dot = (forward->k * axis.k + forward->j * axis.j + forward->i * axis.i) * (1.f - c);
-		real cx = forward->k * axis.i - forward->i * axis.k;
-		real cy = forward->i * axis.j - forward->j * axis.i;
-		real cz = forward->j * axis.k - forward->k * axis.j;
-		real nx = forward->i * c + axis.i * dot - cz * s;
-		real ny = forward->j * c + axis.j * dot - cx * s;
-		real nz = forward->k * c + axis.k * dot - cy * s;
-		forward->i = nx;
-		forward->j = ny;
-		forward->k = nz;
+		real dot = (forward->i * rotation_axis.i +
+			(forward->j * rotation_axis.j + forward->k * rotation_axis.k)) * (1.f - c);
+		real cx = forward->k * rotation_axis.i - forward->i * rotation_axis.k;
+		real cy = forward->i * rotation_axis.j - forward->j * rotation_axis.i;
+		real cz = forward->j * rotation_axis.k - forward->k * rotation_axis.j;
+		forward->i = forward->i * c + rotation_axis.i * dot - cz * s;
+		forward->j = forward->j * c + rotation_axis.j * dot - cx * s;
+		forward->k = forward->k * c + rotation_axis.k * dot - cy * s;
 		function_30bf0(forward);
 	}
 }
@@ -205,13 +205,12 @@ byte function_11f470(real lo, real hi, real value)
 
 // @retail 0x11f4f0
 void function_11f4f0(
-	long bits,
 	real const *in,
 	real_bounds const *ranges,
+	long bits,
 	long *out)
 {
 	long i = 0;
-	long max = (1 << bits) - 1;
 
 	do
 	{
@@ -228,7 +227,7 @@ void function_11f4f0(
 			v = in[i];
 		lo = ranges[i].lo;
 		hi = ranges[i].hi;
-		v = (v - lo) / ((hi - lo) / (real)max);
+		v = (v - lo) / ((hi - lo) / (real)((1 << bits) - 1));
 		__asm
 		{
 			fld v
@@ -242,9 +241,9 @@ void function_11f4f0(
 
 // @retail 0x11f580
 void function_11f580(
+	real const *ranges,
 	long bits,
 	real *out,
-	real const *ranges,
 	long const *in)
 {
 	long i = 0;

@@ -1,4 +1,5 @@
 // @flags /O2 /Ob1 /Gr
+#include "pool_storage.h"
 /* UNKNOWN_12C040.CPP: the block the 0x82 allocator (XMemAlloc,
    unknown_012280.cpp) hands out: 0xcc bytes taken from the static memory pool
    at startup, handed out whole to the one object of type 1 that asks */
@@ -9,9 +10,6 @@
 #include <string.h>
 
 /* the static memory pool (defined with the sound code, unknown_221490.cpp) */
-extern dword g_510800_pool_base;
-extern long g_510804_pool_size;
-extern dword g_510808_pool_checksum;
 
 /* unknown_012280.cpp */
 extern void *g_510c3c;

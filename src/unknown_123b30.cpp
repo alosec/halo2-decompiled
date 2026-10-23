@@ -1,3 +1,4 @@
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_123B30.CPP: the game state allocator
 
 Retail inlines function_123d40 into callers optimized for speed and calls
@@ -10,7 +11,9 @@ it from callers optimized for size.
   lea eax, [ecx + ebx]. */
 
 #include "unknown_11c920.h"
+#include "counters_storage.h"
 #include "unknown_123b30.h"
+#include "unknown_5020dc_storage.h"
 #include "crc.h"
 #include "data_array.h"
 #include "loop_allocator.h"
@@ -18,12 +21,13 @@ it from callers optimized for size.
 #include "unknown_0820f0.h"
 #include "unknown_059ad0.h"
 #include "files.h"
+#include "unknown_080e10.h"
 #include <new>
 #include <string.h>
 
 void function_18e250(s_loop_allocator *loop, long size, const char *name, c_memory_source *source);
 
-s_game_state_globals game_state_globals;
+s_allocator_storage g_allocator_storage;
 
 // @retail 0x123d40
 void *function_123d40(
@@ -48,18 +52,14 @@ void *game_state_malloc_aligned(
 	long alignment_bits)
 {
 	long alignment = 1 << alignment_bits;
-	long aligned_size = (size + alignment + 3) & ~3;
-	byte *result = game_state_globals.base_address + game_state_globals.cpu_allocation_size;
-	long mask;
+	byte *result = (byte *)function_123d40(name, type, size + alignment);
+	long mask = alignment - 1;
 
-	game_state_globals.cpu_allocation_size += aligned_size;
-	function_163ba0(&game_state_globals.allocation_size_checksum, &aligned_size, sizeof(aligned_size));
-
-	mask = alignment - 1;
 	return (void *)((dword)(result + mask) & ~mask);
 }
 
 /* a loop allocator whose header and pool are in the game state */
+__declspec(noinline) s_loop_allocator *game_state_loop_allocator_new(long size, char const *name);
 // @retail 0x123dd0
 s_loop_allocator *game_state_loop_allocator_new(long size, char const *name)
 {
@@ -98,7 +98,6 @@ void game_state_cache_write(short slot);
 extern bool g_5020d8;
 
 /* the time of the last save (copied to the network connection timers) */
-s_connection_counter g_485ab0;
 extern s_connection_counter g_4e6398;
 
 // @retail 0x123b30
@@ -255,20 +254,18 @@ bool game_state_core_read(char const *name, void *buffer, dword size)
 	game_state_core_get_file(name, &reference);
 	if (function_136970(&reference, 1, &error))
 	{
-		result = function_136ca0(&reference, buffer, size, false);
+		result = file_ref_read(&reference, size, buffer, false);
 		function_136bb0(&reference);
 	}
 	return result;
 }
 
 #include "main_globals.h"
-extern long g_5020e4;
-extern bool g_5020f2[2];
 void __stdcall game_state_cache_lock_release(void *arg_0, long arg_1);
 bool game_state_cache_read(short arg_0);
 bool __stdcall function_11c1b0(short arg_0, bool arg_1);
-void function_199520(dword arg_0);
-void function_199540(dword arg_0);
+void game_state_modules_call_before_load(dword arg_0);
+void game_state_modules_call_after_load(dword arg_0);
 
 // @retail 0x123f60
 void function_123f60(dword arg_0)
@@ -291,17 +288,20 @@ void function_123f60(dword arg_0)
 					function_11c1b0((short)*(long *)((byte *)&local_0 + 0x1248), true) &&
 					game_state_headers_match(&local_0, game_state_globals.arena))
 				{
-					dword local_2 = ((byte)arg_0 & 1) << 5;
-					if ((bool)((arg_0 >> 1) & 1)) local_2 |= 0x40;
+					bool local_3 = (arg_0 >> 1) & 1;
+					dword local_2;
+					if (arg_0 & 1) local_2 = 0x20;
+					else local_2 = 0;
+					if (local_3) local_2 |= 0x40;
 					else local_2 &= ~0x40;
-					function_199520(local_2);
+					game_state_modules_call_before_load(local_2);
 					for (;;)
 					{
 						game_state_cache_read(game_state_globals.slot);
 						if (game_state_headers_match(&local_0, game_state_globals.arena))
 							break;
 					}
-					function_199540(local_2);
+					game_state_modules_call_after_load(local_2);
 					return;
 				}
 			}
@@ -328,9 +328,9 @@ void function_1240b0(long arg_0)
 			function_11c1b0((short)*(long *)((byte *)&local_0 + 0x1248), true) &&
 			game_state_headers_match(&local_0, game_state_globals.arena))
 		{
-			function_199520(0xc);
+			game_state_modules_call_before_load(0xc);
 			function_124800(arg_0, game_state_globals.base_address, 0x3fe000);
-			function_199540(0xc);
+			game_state_modules_call_after_load(0xc);
 			function_123e20();
 			game_state_globals.arena_flag = true;
 		}
@@ -363,9 +363,9 @@ void function_124380(char const *arg_0)
 		if (function_11c1b0((short)*(long *)((byte *)&local_0 + 0x1248), true) &&
 			game_state_headers_match(&local_0, game_state_globals.arena))
 		{
-			function_199520(0xc);
+			game_state_modules_call_before_load(0xc);
 			game_state_core_read(arg_0, game_state_globals.base_address, 0x3fe000);
-			function_199540(0xc);
+			game_state_modules_call_after_load(0xc);
 			return;
 		}
 		if (local_1)
@@ -376,21 +376,11 @@ void function_124380(char const *arg_0)
 #include "physical_memory.h"
 #include "unknown_2b116a.h"
 #include <xtl.h>
-extern s_physical_object *g_4e6464;
 long player_slot_get_single_profile(void);
 long player_slot_get_single_profile_index(void);
 void function_19048c(long arg_0);
-long __stdcall function_12d2f0(long arg_0, long arg_1, long arg_2, long arg_3);
-void function_12c600(void);
-double timing_ticks_to_seconds(__int64 arg_0);
 bool __stdcall function_217520(long arg_0, void const *arg_1, long arg_2, void const *arg_3, long arg_4, s_saved_game_read *arg_5);
 bool function_124840(long arg_0, void const *arg_1, long arg_2, long arg_3);
-
-PRIVATE __int64 function_12421c(void)
-{
-	volatile __int64 local_0 = 0;
-	__asm rdtsc
-}
 
 // @retail 0x1241b0
 void function_1241b0(s_saved_game_read *arg_0)
@@ -400,37 +390,12 @@ void function_1241b0(s_saved_game_read *arg_0)
 	long local_0 = player_slot_get_single_profile();
 	long local_1 = player_slot_get_single_profile_index();
 	function_123f60(0);
-	long local_2 = 0;
-	__int64 local_3 = function_12421c();
-	if (g_4e6464->page_count > 0)
-	{
-		long local_4 = 0;
-		do
-		{
-			local_2 = function_12d2f0(0x3fe000, 0, 0, (long)game_state_cache_block_release);
-			if (!local_2)
-			{
-				if (local_4 < 90)
-				{
-					local_4++;
-					function_12c600();
-				}
-				else
-				{
-					__int64 local_5 = function_12421c() - local_3;
-					if (local_5 < 0) local_5 = 0;
-					if (!(timing_ticks_to_seconds(local_5) < 1.0)) break;
-					D3DDevice_KickPushBuffer();
-					D3DDevice_IsBusy();
-					SwitchToThread();
-				}
-			}
-		} while (!local_2);
-	}
+	long local_2 = function_80e14(0x3fe000, 0, 0, (long)game_state_cache_block_release, 90, 1.0f);
 	if (local_2)
 	{
 		memcpy((void *)local_2, game_state_globals.base_address, 0x3fe000);
-		if (function_217520(local_1, (void *)local_2, 0x1288, (void *)(local_2 + 0x1288), 0x3fcd78, arg_0))
+		void const *local_3 = buffer_after_header((void *)local_2, 0x1288);
+		if (function_217520(local_1, (void *)local_2, 0x1288, local_3, 0x3fcd78, arg_0))
 			function_19048c(local_0);
 	}
 	else if (function_124840(local_1, game_state_globals.base_address, 0x1288, 0x3fe000))
@@ -441,3 +406,5 @@ void function_1241b0(s_saved_game_read *arg_0)
 		function_19048c(local_0);
 	}
 }
+
+s_counters_storage g_counters_storage;

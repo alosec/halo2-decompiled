@@ -50,7 +50,7 @@ void game_engine_globals_describe_update(c_game_engine_entity_definition const *
 bool game_engine_globals_write_update(c_game_engine_entity_definition const *definition, long reserve_bits, dword requested, dword *written,
 	s_game_engine_globals_update const *update, s_bitstream *stream)
 {
-	bool result = false;
+	bool update_space_available = false;
 	s_flags_writer writer;
 	flags_writer_initialize(&writer, stream, 0, 5, requested, reserve_bits);
 	if (writer.space)
@@ -82,9 +82,9 @@ bool game_engine_globals_write_update(c_game_engine_entity_definition const *def
 			stream_write_checked(stream, update->round_timer + 1, 16);
 		flags_writer_end(&writer);
 		*written |= writer.written;
-		result = true;
+		update_space_available = true;
 	}
-	return result;
+	return update_space_available;
 }
 
 // @retail 0xa4e20
@@ -132,9 +132,20 @@ bool game_engine_globals_read_update(c_game_engine_entity_definition const *defi
 		update->field_c_4 = (byte)function_1959c0(stream, 2);
 		mask |= 2;
 	}
-	if (stream_read_bit(stream))
+	long end = stream->size_in_bytes << 3;
+	long position = stream->bit_position;
+	bool present = false;
+	if (position <= end)
+		present = (stream->data[position / 8] & (1 << (position % 8))) != 0;
+	stream->bit_position = position + 1;
+	if (present)
 	{
-		update->game_finished = stream_read_bit(stream);
+		position = stream->bit_position;
+		bool finished = false;
+		if (position <= end)
+			finished = (stream->data[position / 8] & (1 << (position % 8))) != 0;
+		stream->bit_position = position + 1;
+		update->game_finished = finished;
 		mask |= 4;
 	}
 	if (stream_read_bit(stream))

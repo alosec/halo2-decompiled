@@ -194,7 +194,7 @@ short __stdcall function_bb050(long a, dword type_mask, void const *location, po
 void function_b9fc0(long object_index, vector3f *forward, vector3f *up);
 void __stdcall function_bd020(long object_index);
 void function_bba20(long object_index);
-bool function_20a9a0(long object_index, s_type_1a7926 *matrices);
+bool function_20a9a0(s_type_1a7926 *matrices, long object_index);
 void havok_component_rigid_body_linear_velocity_set(long rigid_body_index, s_havok_component *component,
 	vector3f const *velocity);
 void havok_component_rigid_body_angular_velocity_set(long rigid_body_index, s_havok_component *component,
@@ -305,18 +305,31 @@ void __stdcall machine_place(long machine_index, s_type_181dea *scenario_machine
 	}
 }
 
+struct s_115191
+{
+	byte field_0[0x11e];
+	word : 2;
+	word field_11e : 1;
+	word : 13;
+};
+
+PRIVATE inline void function_115192(dword *arg_0)
+{
+	*arg_0 |= 0x800;
+}
+
 // @retail 0x115190
 bool __stdcall machine_new(long machine_index, void const *data, long unused)
 {
 	s_machine *machine = MACHINE_GET(machine_index);
 	s_machine_definition *definition = MACHINE_DEFINITION_GET(machine->definition_index);
 
-	*(dword *)&machine->object_flags |= 0x800;
-	if ((*(byte *)&definition->flags >> 2) & 1)
+	function_115192((dword *)&machine->object_flags);
+	if (TEST_FIELD_BIT(((s_115191 *)definition)->field_11e))
 		machine->object_flags.static_lighting = true;
 	else
 		machine->object_flags.static_lighting = false;
-	if ((*(byte *)&definition->flags >> 2) & 1)
+	if (TEST_FIELD_BIT(((s_115191 *)definition)->field_11e))
 		machine->object_flags.static_lighting_sideways = true;
 	else
 		machine->object_flags.static_lighting_sideways = false;
@@ -580,14 +593,14 @@ PRIVATE void machine_keyframe_rigid_bodies(long machine_index, bool keyframed)
 	s_machine *machine = MACHINE_GET(machine_index);
 	s_type_1a7926 matrices;
 
-	if (machine->havok_component_index == NONE || !function_20a9a0(machine_index, &matrices))
+	if (machine->havok_component_index == NONE || !function_20a9a0(&matrices, machine_index))
 		return;
 
 	s_havok_component *component = havok_component_get(machine->havok_component_index);
 
 	for (long i = 0; i < component->rigid_bodies.size; i++)
 	{
-		if (havok_component_rigid_body_get(i, component)->m_motion->getType() == 6 &&
+		if (havok_component_rigid_body_get(i, component)->m_motion->kind_code() == 6 &&
 			component->rigid_bodies[i].node_count > 0)
 		{
 			short const *node_index = &matrices.node_indices[component->rigid_bodies[i].nodes[0] * 0x48];
@@ -624,7 +637,7 @@ PRIVATE void machine_release_rigid_bodies(long machine_index)
 
 		for (long i = 0; i < component->rigid_bodies.size; i++)
 		{
-			if (havok_component_rigid_body_get(i, component)->m_motion->getType() == 6)
+			if (havok_component_rigid_body_get(i, component)->m_motion->kind_code() == 6)
 			{
 				havok_component_rigid_body_linear_velocity_set(i, component, g_4687a4);
 				havok_component_rigid_body_angular_velocity_set(i, component, g_4687a4);
@@ -644,8 +657,15 @@ struct s_component_property_view
 	bool function_1d3550(long key, bool *positive, real *value) const;
 };
 
+// score 13 (was 13): retail reads value into edx before it looks up the
+// component and reads key into ecx last, just before the call; ours reads key
+// first, value last, and loads g_51e9b8 through ecx (93 bytes against 92).
+// Locals or const references for the value pointer or the component offset,
+// a volatile read of the parameters, the call inline in the test, early
+// returns and the havok_component_get form score 13 to 23; the 600 s
+// permutation run found no improvement.
 // @retail 0x11bd60
-bool __stdcall function_11bd60(long object_index, long key, long positive, long value)
+bool __stdcall function_11bd60(long object_index, long key, long value, long positive)
 {
 	long index = MACHINE_GET(object_index)->havok_component_index;
 	bool result = false;
@@ -694,3 +714,51 @@ s_machine_type_definition g_468310 =
 	function_115a40,
 	function_11bd60
 };
+
+
+#include "effects.h"
+struct s_object;
+s_object *function_badc0(long object_index, dword mask);
+long function_189060(long object_index, short node, real scale, point3f const *position,
+    vector3f const *direction, long tag_index);
+void __stdcall function_e5040(long object_index, s_animation_frame_event const *event);
+
+// @retail 0xbf600
+void __stdcall function_bf600(long user, real frame, s_animation_frame_event const *event)
+{
+    if (event->category == 1 && event->tag_index != NONE)
+    {
+        byte *header = g_4e0300->data + (user & 0xffff) * 12;
+        byte *object = *(byte **)(header + 8);
+        dword type_mask = 1u << object[0xaa];
+        long player;
+        if (type_mask & 3)
+        {
+            byte *unit = (byte *)function_badc0(user, 3);
+            if (unit) player = *(long *)(unit + 0x13c);
+            else player = NONE;
+        }
+        else player = NONE;
+        if ((event->flags & 1) || player == NONE)
+        {
+            s_object_marker marker;
+            if (event->marker_name == NONE || event->marker_name == 0x0600008a
+                || !function_b8d30(user, event->marker_name, &marker, 1, false))
+            {
+                marker.node_index = 0;
+                marker.node_matrix.position = *g_468788;
+                marker.node_matrix.forward = *g_4687a8;
+            }
+            function_189060(user, marker.node_index, 1.0f, &marker.node_matrix.position,
+                &marker.node_matrix.forward, event->tag_index);
+        }
+    }
+    else if (event->category == 2 && event->tag_index != NONE)
+        function_176780(user, 0, 0.0f, event->tag_index, 0.0f, 0, 0);
+    else
+    {
+        byte *header = g_4e0300->data + (user & 0xffff) * 12;
+        if (!header[3]) function_e5040(user, event);
+    }
+}
+

@@ -1,220 +1,237 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL- /GX
+// Havok (third-party physics library): casting a segment against a capsule.
+// A segment starting inside misses; otherwise the closest points of the
+// segment's line and the capsule's axis decide between the side, hit where
+// the line comes within the radius, and an end cap, cast as a sphere about
+// the nearer end point. (Its own file: it needs /GX for the sphere it
+// unwinds.)
+#include <math.h>
+#include <xmmintrin.h>
+#include "unknown_0a9f20.h"
 
-// @flags /O2 /Gr
+static __declspec(align(16)) const float g_412420[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-struct s_physics_capsule_segment
+// a value in the first term of a vector (src/unknown_1c58f0.cpp)
+struct s_1c58f0
 {
-    float start[4];
-    float end[4];
+	__m128 field_0;
+	s_1c58f0(real arg_0);
 };
-static_assert(sizeof(s_physics_capsule_segment) == 0x20,
-    "capsule segment layout");
 
-struct s_physics_capsule_hit
+// the sphere an end cap is cast as (src/unknown_2def90.cpp; its base's
+// destructor is 0xdc370)
+class c_2def90 : public c_reference_a9f20
 {
-    float normal[4];
-    dword key;
-    float fraction;
-};
-static_assert(sizeof(s_physics_capsule_hit) == 0x18,
-    "capsule hit layout");
-
-class c_physics_capsule_shape
-{
-    byte field_4[8];
-    float radius;
-    float endpoints[2][4];
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void v6();
-    virtual void v7();
-    virtual bool *function_2de1b0(bool *accepted,
-        const s_physics_capsule_segment *segment, s_physics_capsule_hit *hit);
+	c_2def90(real arg_0);
+
+	long user_value;
+	float radius;
 };
-static_assert(sizeof(c_physics_capsule_shape) == 0x30,
-    "capsule shape layout");
 
-static float physics_capsule_dot(const float *a, const float *b)
+// the one-byte answer of a cast, returned through a hidden pointer
+// (src/unknown_2deda0.cpp)
+struct answer_2deda0
 {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	char value;
+
+	answer_2deda0(bool value_) : value((char)value_) {}
+};
+
+struct segment_2deda0
+{
+	__m128 start;
+	__m128 end;
+};
+
+// where a cast hit: the surface normal, the part hit and the fraction of the
+// segment travelled
+struct hit_2deda0
+{
+	__m128 normal;
+	long part;
+	float fraction;
+};
+
+class sphere_2deda0
+{
+public:
+	answer_2deda0 function_2deda0(segment_2deda0 const *segment, hit_2deda0 *hit) const;
+};
+
+// the point of a segment closest to a point (src/unknown_2ddfc0.cpp)
+class segment_2ddfc0
+{
+public:
+	void function_2ddfc0(__m128 const &point, __m128 const &start, __m128 const &end, __m128 &out);
+};
+
+// the closest points of two lines (src/unknown_2dddf0.cpp)
+class line_query_2dddf0
+{
+public:
+	void function_2dddf0(__m128 const *first_point, __m128 const *first_direction, __m128 const *second_point, __m128 const *second_direction,
+		float *distance_squared, float *first_fraction, float *second_fraction, __m128 *first_closest, __m128 *second_closest);
+};
+
+// a segment cast at an end cap, as the sphere's cast takes it
+struct cap_segment_2de1b0
+{
+	__m128 start;
+	__m128 end;
+	long unknown20;
+	long unknown24;
+};
+
+// the three-term sum of a vector's squares
+__forceinline __m128 length_squared_2de1b0(__m128 const &value)
+{
+	__m128 const product = _mm_mul_ps(value, value);
+	return _mm_add_ss(_mm_shuffle_ps(product, product, 0xaa), _mm_add_ss(_mm_shuffle_ps(product, product, 0x55), product));
 }
 
-static float physics_capsule_sqrt(float value)
+__forceinline float dot3_2de1b0(__m128 const &a, __m128 const &b)
 {
-    if (!(value > 0.0f))
-        return 0.0f;
-    union
-    {
-        float real;
-        dword bits;
-    } estimate;
-    estimate.real = value;
-    estimate.bits = (estimate.bits >> 1) + 0x1fc00000;
-    for (long iteration = 0; iteration < 6; iteration++)
-        estimate.real = 0.5f * (estimate.real + value / estimate.real);
-    return estimate.real;
+	__m128 const product = _mm_mul_ps(a, b);
+	float result;
+	_mm_store_ss(&result, _mm_add_ss(_mm_shuffle_ps(product, product, 0xaa), _mm_add_ss(_mm_shuffle_ps(product, product, 0x55), product)));
+	return result;
 }
 
-static void physics_capsule_closest(const float *point, const float *a,
-    const float *axis, float axis_length_squared, float *closest)
+// one over the square root of the first term, refined by a Newton step
+__forceinline __m128 inverse_sqrt_2de1b0(__m128 const &value)
 {
-    float relative[3] = {
-        point[0] - a[0], point[1] - a[1], point[2] - a[2]
-    };
-    float scale = axis_length_squared > 0.0f
-        ? physics_capsule_dot(relative, axis) / axis_length_squared : 0.0f;
-    if (scale < 0.0f)
-        scale = 0.0f;
-    if (scale > 1.0f)
-        scale = 1.0f;
-    closest[0] = a[0] + axis[0] * scale;
-    closest[1] = a[1] + axis[1] * scale;
-    closest[2] = a[2] + axis[2] * scale;
+	__m128 const estimate = _mm_rsqrt_ss(value);
+	__m128 const half = _mm_set_ss(0.5f);
+	__m128 const three = _mm_set_ss(3.0f);
+	return _mm_mul_ss(_mm_mul_ss(half, estimate), _mm_sub_ss(three, _mm_mul_ss(_mm_mul_ss(value, estimate), estimate)));
 }
+
+// the point a fraction of the way from a to b
+__forceinline __m128 interpolate_2de1b0(__m128 const &a, __m128 const &b, float fraction)
+{
+	__m128 scale = _mm_load_ss(&fraction);
+	scale = _mm_shuffle_ps(scale, scale, 0);
+	return _mm_add_ps(_mm_mul_ps(_mm_sub_ps(*(__m128 const *)g_412420, scale), a), _mm_mul_ps(scale, b));
+}
+
+class capsule_2de1b0
+{
+public:
+	char unknown0[0xc];
+	float radius;
+	__m128 vertices[2];
+
+	answer_2deda0 function_2de1b0(segment_2deda0 const *segment, hit_2deda0 *hit);
+};
 
 // @retail 0x2de1b0
-bool *c_physics_capsule_shape::function_2de1b0(bool *accepted,
-    const s_physics_capsule_segment *segment, s_physics_capsule_hit *hit)
+answer_2deda0 capsule_2de1b0::function_2de1b0(segment_2deda0 const *segment, hit_2deda0 *hit)
 {
-    float axis[3] = {
-        endpoints[1][0] - endpoints[0][0],
-        endpoints[1][1] - endpoints[0][1],
-        endpoints[1][2] - endpoints[0][2]
-    };
-    float direction[3] = {
-        segment->end[0] - segment->start[0],
-        segment->end[1] - segment->start[1],
-        segment->end[2] - segment->start[2]
-    };
-    float start_relative[3] = {
-        segment->start[0] - endpoints[0][0],
-        segment->start[1] - endpoints[0][1],
-        segment->start[2] - endpoints[0][2]
-    };
-    float axis_length_squared = physics_capsule_dot(axis, axis);
-    float direction_length_squared = physics_capsule_dot(direction, direction);
+	__m128 start;
+	{
+		__m128 closest;
+		((segment_2ddfc0 *)this)->function_2ddfc0(segment->start, vertices[0], vertices[1], closest);
+		start = segment->start;
+		float distance;
+		_mm_store_ss(&distance, _mm_sqrt_ss(length_squared_2de1b0(_mm_sub_ps(start, closest))));
+		if (distance < radius)
+		{
+			return answer_2deda0(false);
+		}
+	}
 
-    float start_closest[3];
-    physics_capsule_closest(segment->start, endpoints[0], axis,
-        axis_length_squared, start_closest);
-    float start_offset[3] = {
-        segment->start[0] - start_closest[0],
-        segment->start[1] - start_closest[1],
-        segment->start[2] - start_closest[2]
-    };
-    if (physics_capsule_dot(start_offset, start_offset) <= radius * radius ||
-        !(direction_length_squared > 0.0f))
-    {
-        *accepted = false;
-        return accepted;
-    }
+	__m128 end = segment->end;
+	__m128 const a = vertices[0];
+	__m128 const b = vertices[1];
+	__m128 ray = _mm_sub_ps(end, start);
+	__m128 axis = _mm_sub_ps(b, a);
+	float distance_squared = 3.40282347e+38f;
+	float ray_fraction;
+	{
+		float axis_fraction;
+		__m128 ray_closest;
+		__m128 axis_closest;
+		((line_query_2dddf0 *)this)->function_2dddf0(&segment->start, &ray, &vertices[0], &axis,
+			&distance_squared, &ray_fraction, &axis_fraction, &ray_closest, &axis_closest);
+	}
+	if (distance_squared > radius * radius)
+	{
+		return answer_2deda0(false);
+	}
 
-    float best_fraction = hit->fraction;
-    bool found = false;
-    float best_closest[3] = {};
+	// the axis's direction and length
+	float axis_length;
+	__m128 normal;
+	float axis_length_squared = dot3_2de1b0(axis, axis);
+	if (axis_length_squared > 1.1920929e-07f)
+	{
+		__m128 const sum = length_squared_2de1b0(axis);
+		__m128 scale = inverse_sqrt_2de1b0(sum);
+		scale = _mm_shuffle_ps(scale, scale, 0);
+		float length;
+		_mm_store_ss(&length, _mm_mul_ss(sum, scale));
+		axis_length = length;
+		normal = _mm_mul_ps(scale, axis);
+	}
+	else
+	{
+		axis_length = 0.0f;
+		normal = _mm_setzero_ps();
+	}
 
-    if (axis_length_squared > 0.0f)
-    {
-        float axis_direction = physics_capsule_dot(axis, direction);
-        float axis_start = physics_capsule_dot(axis, start_relative);
-        float direction_start = physics_capsule_dot(direction, start_relative);
-        float start_squared = physics_capsule_dot(start_relative, start_relative);
-        float quadratic_a = axis_length_squared * direction_length_squared -
-            axis_direction * axis_direction;
-        float quadratic_b = axis_length_squared * direction_start -
-            axis_start * axis_direction;
-        float quadratic_c = axis_length_squared * start_squared -
-            axis_start * axis_start - radius * radius * axis_length_squared;
-        float discriminant = quadratic_b * quadratic_b -
-            quadratic_a * quadratic_c;
-        if (quadratic_a > 0.0f && discriminant >= 0.0f)
-        {
-            float fraction = (-quadratic_b - physics_capsule_sqrt(discriminant)) /
-                quadratic_a;
-            float axis_position = axis_start + fraction * axis_direction;
-            if (fraction >= 0.0f && fraction <= best_fraction &&
-                axis_position >= 0.0f && axis_position <= axis_length_squared)
-            {
-                best_fraction = fraction;
-                found = true;
-                float scale = axis_position / axis_length_squared;
-                best_closest[0] = endpoints[0][0] + axis[0] * scale;
-                best_closest[1] = endpoints[0][1] + axis[1] * scale;
-                best_closest[2] = endpoints[0][2] + axis[2] * scale;
-            }
-        }
-    }
+	// back along the ray to where it enters the infinite cylinder
+	float const along = -dot3_2de1b0(ray, normal);
+	ray = _mm_add_ps(ray, _mm_mul_ps(_mm_set_ps1(along), normal));
+	float inverse_length;
+	_mm_store_ss(&inverse_length, inverse_sqrt_2de1b0(length_squared_2de1b0(ray)));
+	ray_fraction -= (float)sqrt(radius * radius - distance_squared) * inverse_length;
+	if (ray_fraction > 1.0f)
+	{
+		return answer_2deda0(false);
+	}
 
-    for (long endpoint = 0; endpoint < 2; endpoint++)
-    {
-        float offset[3] = {
-            segment->start[0] - endpoints[endpoint][0],
-            segment->start[1] - endpoints[endpoint][1],
-            segment->start[2] - endpoints[endpoint][2]
-        };
-        float linear = physics_capsule_dot(offset, direction);
-        float constant = physics_capsule_dot(offset, offset) - radius * radius;
-        float discriminant = linear * linear - direction_length_squared * constant;
-        if (discriminant < 0.0f)
-            continue;
-        float fraction = (-linear - physics_capsule_sqrt(discriminant)) /
-            direction_length_squared;
-        if (fraction < 0.0f || fraction > best_fraction)
-            continue;
-        float point[3] = {
-            segment->start[0] + direction[0] * fraction,
-            segment->start[1] + direction[1] * fraction,
-            segment->start[2] + direction[2] * fraction
-        };
-        float from_a[3] = {
-            point[0] - endpoints[0][0],
-            point[1] - endpoints[0][1],
-            point[2] - endpoints[0][2]
-        };
-        float axis_position = physics_capsule_dot(from_a, axis);
-        if ((endpoint == 0 && axis_position > 0.0f) ||
-            (endpoint == 1 && axis_position < axis_length_squared))
-            continue;
-        best_fraction = fraction;
-        found = true;
-        best_closest[0] = endpoints[endpoint][0];
-        best_closest[1] = endpoints[endpoint][1];
-        best_closest[2] = endpoints[endpoint][2];
-    }
+	float const a_along = dot3_2de1b0(a, normal);
+	__m128 const entry = interpolate_2de1b0(start, end, ray_fraction);
+	float const entry_along = dot3_2de1b0(entry, normal) - a_along;
+	if (ray_fraction >= 0.0f && entry_along > 0.0f && entry_along < axis_length)
+	{
+		// the side
+		s_1c58f0 const fraction(entry_along / axis_length);
+		__m128 const scale = _mm_shuffle_ps(fraction.field_0, fraction.field_0, 0);
+		__m128 const on_axis = _mm_add_ps(_mm_mul_ps(_mm_sub_ps(*(__m128 const *)g_412420, scale), a), _mm_mul_ps(scale, b));
+		__m128 const outward = _mm_sub_ps(entry, on_axis);
+		__m128 const inverse = inverse_sqrt_2de1b0(length_squared_2de1b0(outward));
+		hit->normal = _mm_mul_ps(_mm_shuffle_ps(inverse, inverse, 0), outward);
+		hit->fraction = ray_fraction;
+		hit->part = -1;
+		return answer_2deda0(true);
+	}
 
-    if (!found)
-    {
-        *accepted = false;
-        return accepted;
-    }
-
-    float point[3] = {
-        segment->start[0] + direction[0] * best_fraction,
-        segment->start[1] + direction[1] * best_fraction,
-        segment->start[2] + direction[2] * best_fraction
-    };
-    float normal[3] = {
-        point[0] - best_closest[0],
-        point[1] - best_closest[1],
-        point[2] - best_closest[2]
-    };
-    float normal_length = physics_capsule_sqrt(physics_capsule_dot(normal, normal));
-    if (!(normal_length > 0.0f))
-    {
-        *accepted = false;
-        return accepted;
-    }
-    hit->normal[0] = normal[0] / normal_length;
-    hit->normal[1] = normal[1] / normal_length;
-    hit->normal[2] = normal[2] / normal_length;
-    hit->normal[3] = 0.0f;
-    hit->key = 0xffffffff;
-    hit->fraction = best_fraction;
-    *accepted = true;
-    return accepted;
+	// an end cap: none when the start is outside the capsule's radius and
+	// the line entered behind it
+	float const start_fraction = (dot3_2de1b0(start, normal) - a_along) / axis_length;
+	__m128 const start_on_axis = interpolate_2de1b0(a, b, start_fraction);
+	float start_distance;
+	_mm_store_ss(&start_distance, _mm_sqrt_ss(length_squared_2de1b0(_mm_sub_ps(start, start_on_axis))));
+	if (start_distance > radius && ray_fraction < 0.0f)
+	{
+		return answer_2deda0(false);
+	}
+	cap_segment_2de1b0 cap;
+	cap.unknown24 = 0;
+	if (entry_along <= 0.0f)
+	{
+		start = _mm_sub_ps(start, a);
+		end = _mm_sub_ps(end, a);
+	}
+	else
+	{
+		start = _mm_sub_ps(start, b);
+		end = _mm_sub_ps(end, b);
+	}
+	cap.start = start;
+	cap.end = end;
+	c_2def90 sphere(radius);
+	return ((sphere_2deda0 const *)&sphere)->function_2deda0((segment_2deda0 const *)&cap, hit);
 }

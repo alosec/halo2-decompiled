@@ -40,11 +40,7 @@ long function_2960e0(s_2960e0_counts *counts, long *objects, long maximum_count)
 		s_object *object;
 		s_type_f1af8e iterator;
 	} state;
-	state.iterator.signature = 0x86868686;
-	state.iterator.type_mask = 0x40;
-	state.iterator.flags = 0;
-	state.iterator.index = 0;
-	state.iterator.object_index = NONE;
+	function_bae80(&state.iterator, 0x40, 0);
 	while ((state.object = function_baeb0(&state.iterator)) != NULL)
 	{
 		long index = NONE;
@@ -56,17 +52,14 @@ long function_2960e0(s_2960e0_counts *counts, long *objects, long maximum_count)
 			objects[slot] = state.iterator.object_index;
 		}
 	}
-	state.iterator.signature = 0x86868686;
-	state.iterator.type_mask = 0x80;
-	state.iterator.flags = 0;
-	state.iterator.index = 0;
-	state.iterator.object_index = NONE;
+	s_2960e0_counts const *base_counts = counts;
+	function_bae80(&state.iterator, 0x80, 0);
 	while ((state.object = function_baeb0(&state.iterator)) != NULL)
 	{
 		long index = NONE;
 		if (function_b7a40((s_scenario_identifier_ab const *)((byte *)state.object + 0xa4), &index))
 		{
-			short slot = (short)(counts->first_count + (short)index);
+			short slot = (short)(base_counts->first_count + (short)index);
 			if (slot >= maximum_count)
 				break;
 			objects[slot] = state.iterator.object_index;
@@ -89,7 +82,7 @@ s_graph_weapon_type *graph_weapon_type_iterate(s_graph_weapon_type_iterator *ite
 {
 	s_graph_weapon_type *result = NULL;
 
-	do
+	while (!result)
 	{
 		if (iterator->step >= 8)
 		{
@@ -176,7 +169,6 @@ s_graph_weapon_type *graph_weapon_type_iterate(s_graph_weapon_type_iterator *ite
 			iterator->class_entry = NULL;
 		}
 	}
-	while (!result);
 	return result;
 }
 
@@ -293,7 +285,7 @@ struct s_2959c1
 	s_2959c0 *field_cc;
 };
 
-bool function_114b60(short entry_index, short fallback_index, long unit_index, long priority, void const *extra);
+bool unit_submit_entry_request(short fallback_index, short entry_index, long unit_index, long priority, void const *extra);
 void function_295bd0(bool prefer_selected);
 
 __forceinline long function_295a34(real arg_0)
@@ -310,7 +302,7 @@ __forceinline long function_295a34(real arg_0)
 #pragma inline_depth(0)
 PRIVATE __forceinline bool function_2959c1(short arg_0, short arg_1, long arg_2, long arg_3, void const *arg_4)
 {
-    return function_114b60(arg_0, arg_1, arg_2, arg_3, arg_4);
+    return unit_submit_entry_request(arg_1, arg_0, arg_2, arg_3, arg_4);
 }
 #pragma inline_depth(255)
 
@@ -318,7 +310,7 @@ PRIVATE __forceinline bool function_2959c1(short arg_0, short arg_1, long arg_2,
 void function_2959c0()
 {
 	s_2959c1 *local_0 = (s_2959c1 *)g_4e034c;
-	long local_1 = *(volatile long *)&g_510c54->game_time;
+	long local_1 = g_510c54->game_time;
 	if (local_0->field_c8 > 0 && local_0->field_cc->field_120 > 0)
 	{
 		real *local_2 = local_0->field_cc->field_124;
@@ -329,7 +321,7 @@ void function_2959c0()
 		if (local_3->field0c != NONE)
         {
             long local_9 = function_295a34(g_510c54->field_2_3 * 10.0f);
-            if (local_1 - *(volatile long *)&local_3->field0c > local_9)
+            if (local_1 - local_3->field0c > local_9)
             {
                 local_3->field0c = NONE;
                 local_3->field08 = 0;
@@ -601,5 +593,115 @@ void function_295bd0(bool prefer_selected)
 			state->counts[i] = (short)ticks_295bd0(time * clock->field_2_3);
 			state->indices[i] = indices[i];
 		}
+	}
+}
+
+struct s_295e60_object
+{
+	long definition_index;
+	dword flags;
+	byte unknown008[0x130 - 8];
+	short field_130;
+	byte unknown132[0x1d4 - 0x132];
+	short field_1d4;
+};
+
+struct s_295e60_entry
+{
+	short field_0;
+	short value;
+};
+
+struct s_295e60_placement
+{
+	byte unknown00[0x40];
+	long count_40;
+	s_295e60_entry *entries_44;
+	byte unknown48[8];
+	long count_50;
+	s_295e60_entry *entries_54;
+};
+
+struct s_scenery_placement;
+short __fastcall function_10a040(long definition_index, s_scenery_placement *placement);
+inline void function_b8b70(long object_index);
+
+// @retail 0x295e60
+void function_295e60(short arg_0)
+{
+	struct
+	{
+		s_295e60_object *object;
+		s_type_f1af8e iterator;
+	} state;
+	function_bae80(&state.iterator, 0x40, 0);
+	while ((state.object = (s_295e60_object *)function_baeb0(&state.iterator)) != NULL)
+	{
+		s_295e60_placement *placement = (s_295e60_placement *)function_b7a40((s_scenario_identifier_ab const *)((byte *)state.object + 0xa4), NULL);
+		dword *flags = &state.object->flags;
+		*flags &= ~0x400000;
+		state.object->field_130 = NONE;
+		if (placement)
+		{
+			switch (function_10a040(state.object->definition_index, (s_scenery_placement *)placement))
+			{
+			case 0:
+			case 3:
+				*flags |= 0x800000;
+				break;
+			case 1:
+				if (arg_0 < placement->count_50)
+				{
+					s_295e60_entry *entry = &placement->entries_54[arg_0];
+					state.object->field_130 = entry->value;
+					if (entry->value != NONE)
+						*flags |= 0x400000;
+				}
+				*flags |= 0x800000;
+				break;
+			}
+		}
+		function_b8b70(state.iterator.object_index);
+	}
+	function_bae80(&state.iterator, 0x80, 0);
+	while ((state.object = (s_295e60_object *)function_baeb0(&state.iterator)) != NULL)
+	{
+		s_295e60_placement *placement = (s_295e60_placement *)function_b7a40((s_scenario_identifier_ab const *)((byte *)state.object + 0xa4), NULL);
+		dword *flags = &state.object->flags;
+		*flags &= ~0x400000;
+		state.object->field_1d4 = NONE;
+		if (placement)
+		{
+			short mode = 3;
+			if (state.object->definition_index != NONE)
+			{
+				byte *definition = g_4e3b44[state.object->definition_index & 0xffff].bytes;
+				switch (*(short *)(definition + 0x130))
+				{
+				case 0: mode = 2; break;
+				case 1: mode = 1; break;
+				case 2: mode = 0; break;
+				default: mode = 3; break;
+				}
+			}
+			switch (mode)
+			{
+			case 0:
+			case 3:
+				*flags |= 0x800000;
+				break;
+			case 1:
+				if (arg_0 < placement->count_40)
+				{
+					s_295e60_entry *entry = &placement->entries_44[arg_0];
+					state.object->field_1d4 = entry->value;
+					if (entry->value != NONE)
+						*flags |= 0x400000;
+				}
+				*flags |= 0x800000;
+				break;
+			}
+		}
+		function_b8b70(state.iterator.object_index);
 	}
 }

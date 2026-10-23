@@ -7,6 +7,7 @@
 #include "data_array.h"
 #include "unknown_1cec30.h"
 #include "impacts.h"
+#include "unknown_2055f0.h"
 
 /* a component's impacts (g_51ec00, 0x40 bytes) */
 struct s_havok_component_impacts
@@ -19,7 +20,7 @@ struct s_havok_component_impacts
 extern s_record_pool *g_51ec00;
 
 // @retail 0x2055f0
-void impact_data_set(
+inline void impact_data_set(
 	s_impact_data *data,
 	bool unknown00,
 	long component_a,
@@ -78,27 +79,6 @@ struct s_impact;
 extern s_record_pool *g_51ebfc;
 void impact_release(long impact_index, s_impact *impact);
 
-struct s_impact_object_view
-{
-	byte unknown00[0xb4];
-	long component_index;
-};
-
-struct s_impact_object_header
-{
-	byte unknown00[8];
-	s_impact_object_view *object;
-};
-
-struct s_component_impact_view
-{
-	byte unknown00[8];
-	short count;
-	byte unknown0a[3];
-	char type;
-	byte unknown0e[0xa0 - 0xe];
-};
-
 struct s_havok_impact_contact;
 long havok_component_impact_find(s_havok_component *component, s_havok_impact_contact const *contact, bool check_position);
 real impact_distance_squared_to_nearest_player(point3f const *point, long type);
@@ -107,35 +87,7 @@ long impact_new(s_impact_data const *data, long type);
 void impact_set_contact(s_impact *impact, s_impact_data const *data, vector3f const *vector, real unknown44, bool unknownf);
 void function_2079f0(long const *object_index, long type, bool preserve);
 
-// @retail 0x2078f0
-long function_2078f0(long const *object_index, s_impact_data const *data, vector3f const *vector, real scale, bool flag)
-{
-	(void)&object_index;
-	(void)&data;
-	(void)&vector;
-	(void)&scale;
-	(void)&flag;
-	s_impact_object_view *object = ((s_impact_object_header *)g_4e0300->data)[*object_index & 0xffff].object;
-	s_havok_component *component = havok_component_get(object->component_index);
-	long index = havok_component_impact_find(component, (s_havok_impact_contact const *)data, false);
-	if (index == NONE)
-	{
-		real strength = impact_distance_squared_to_nearest_player(&data->position, 1);
-		function_2079f0(object_index, data->type, data->unknown38);
-		if (!havok_component_impact_make_room(NONE, component, strength))
-			return index;
-		index = impact_new(data, 1);
-		s_component_impact_view *impact = &((s_component_impact_view *)g_51ebfc->data)[index & 0xffff];
-		havok_component_impact_add(component, index);
-		impact->count++;
-	}
-	if (index != NONE && !data->unknown38)
-	{
-		s_component_impact_view *impact = &((s_component_impact_view *)g_51ebfc->data)[index & 0xffff];
-		impact_set_contact((s_impact *)impact, data, vector, scale, flag);
-	}
-	return index;
-}
+long function_2078f0(long const *object_index, s_impact_data const *data, vector3f const *vector, real scale, bool flag);
 
 // @retail 0x2079f0
 void function_2079f0(long const *object_index, long type, bool preserve)
@@ -159,3 +111,8 @@ void function_2079f0(long const *object_index, long type, bool preserve)
 		}
 	}
 }
+
+#if H2_NATIVE_PORT
+/* native: emit the inline definition so the guest image can link it */
+__attribute__((used)) static void *h2_emit_impact_data_set = (void *)&impact_data_set;
+#endif

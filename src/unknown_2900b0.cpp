@@ -11,6 +11,9 @@ bool function_fa1a0(real arg_0, real arg_1, point3f const *arg_2, point3f const 
 	real *arg_9, real *arg_10, real *arg_11, real *arg_12, real *arg_13);
 real function_30bf0(vector3f *arg_0);
 
+// score 13 (was 13): our call to the ray/sphere helper hands the high_arc
+// argument over in edx instead of on the stack; the callee's body decides
+// the registers and it lives in src/projectiles.cpp, outside this lane.
 // @retail 0x2900b0
 bool function_2900b0(long arg_0, point3f const *arg_1, real arg_2, real arg_3, vector3f *arg_4)
 {
@@ -58,7 +61,7 @@ bool function_28f290(long arg_0, vector3f *arg_1, vector3f *arg_2)
 			point3f local_3;
 			vector3f local_4;
 			function_b9dd0(arg_0, &local_3);
-			function_210c90((s_type_c3b527 const *)(local_2 + 0x30), &local_3, &local_4);
+			function_210c90(&local_3, (s_type_c3b527 const *)(local_2 + 0x30), &local_4);
 			if (function_30bf0(&local_4) > 0.0f)
 			{
 				*arg_1 = local_4;
@@ -98,29 +101,31 @@ struct s_28e601
 void function_b9fc0(long arg_0, vector3f *arg_1, vector3f *arg_2);
 vector3f *function_11d090(vector3f const *arg_0, vector3f *arg_1);
 
-__forceinline void function_28e65d(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
+__forceinline void function_28e65d(vector3f const *a, vector3f const *b, vector3f *out)
 {
-	real local_0 = arg_1->j * arg_0->i - arg_1->i * arg_0->j;
-	real local_1 = arg_1->i * arg_0->k - arg_1->k * arg_0->i;
-	real local_2 = arg_1->k * arg_0->j - arg_1->j * arg_0->k;
-	arg_2->i = local_2;
-	arg_2->j = local_1;
-	arg_2->k = local_0;
+	real k = a->i * b->j - a->j * b->i;
+	real j = a->k * b->i - a->i * b->k;
+	real i = a->j * b->k - a->k * b->j;
+	out->i = i;
+	out->j = j;
+	out->k = k;
 }
 
 // @retail 0x28e600
 void function_28e600(long arg_0, s_28e600 *arg_1)
 {
-	s_28e601 *local_0 = (s_28e601 *)handler_object_get(arg_0);
+	s_28e601 *local_0 = (s_28e601 *)object_get(arg_0);
 	if (local_0->field_17c == 1 && !(bool)local_0->field_12c_5)
 	{
-		arg_1->field_8c = local_0->field_1f0;
+		vector3f const *new_up = &local_0->field_1f0;
+		arg_1->field_8c = *new_up;
 		vector3f local_1;
 		function_28e65d(&arg_1->field_8c, &arg_1->field_80, &local_1);
 		if (function_30bf0(&local_1) > 0.0f)
 		{
-			function_28e65d(&local_1, &arg_1->field_8c, &arg_1->field_80);
-			if (function_30bf0(&arg_1->field_80) != 0.0f)
+			vector3f *forward = &arg_1->field_80;
+			function_28e65d(&local_1, &arg_1->field_8c, forward);
+			if (function_30bf0(forward) != 0.0f)
 				return;
 		}
 		function_b9fc0(arg_0, &arg_1->field_80, &arg_1->field_8c);
@@ -173,6 +178,17 @@ __forceinline void function_28f521(vector3f const *arg_0, vector3f const *arg_1,
 	arg_2->k = arg_0->k + arg_1->k;
 }
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
+PRIVATE __forceinline void function_28f5b7(vector3f *arg_0)
+{
+    arg_0->i = PIN(arg_0->i, -1.0f, 1.0f);
+    arg_0->j = PIN(arg_0->j, -1.0f, 1.0f);
+    arg_0->k = PIN(arg_0->k, -1.0f, 1.0f);
+}
+
+// score 60 (was 56): the function is the same length but the first branch's
+// block is laid out differently.
 // @retail 0x28f3b0
 void function_28f3b0(long arg_0, long arg_1)
 {
@@ -196,7 +212,8 @@ void function_28f3b0(long arg_0, long arg_1)
 				vector3f *local_5 = (vector3f *)((byte *)local_1 + 0x98);
 				if (*(short *)((byte *)local_1 + 0x24) == 0)
 				{
-					if (function_30bf0(&local_3) > 0.0f)
+					real magnitude = function_30bf0(&local_3);
+					if (magnitude > 0.0f)
 					{
 						local_1->field_80 = local_3;
 						function_28e600(arg_1, local_1);
@@ -210,12 +227,7 @@ void function_28f3b0(long arg_0, long arg_1)
 					function_28f500(&local_3, local_2->field_14);
 					function_28f521(local_5, &local_3, local_5);
 				}
-				real local_6 = function_28f594(local_5->i);
-				real local_7 = function_28f594(local_5->j);
-				real local_8 = function_28f594(local_5->k);
-				local_5->i = local_6;
-				local_5->j = local_7;
-				local_5->k = local_8;
+				function_28f5b7(local_5);
 			}
 		}
 	}
@@ -223,7 +235,7 @@ void function_28f3b0(long arg_0, long arg_1)
 
 struct s_object_ai_data;
 struct s_actor_object_sample;
-void function_28f890(long arg_0, s_object_ai_data *arg_1);
+void swarm_creature_reset_position(long arg_0, s_object_ai_data *arg_1);
 void function_1e3a00(long arg_0, s_actor_object_sample *arg_1);
 
 __forceinline void function_28f998(point3f const *arg_0, point3f const *arg_1, point3f *arg_2)
@@ -240,6 +252,40 @@ __forceinline void function_28f9e1(point3f *arg_0, real const &arg_1)
 	arg_0->z *= arg_1;
 }
 
+PRIVATE __forceinline void copy_point_28f8d0(point3f const *source, point3f *destination)
+{
+	struct words { dword x, y, z; };
+	*(words *)destination = *(words const *)source;
+}
+
+/* the perception's centre: the origin plus every creature's position, averaged */
+PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
+{
+	copy_point_28f8d0(g_468788, &arg_0->field_8);
+	arg_0->field_14 = 0;
+	long local_2 = arg_0->field_18;
+	while (local_2 != NONE)
+	{
+		s_handler_object_view *local_3 = handler_object_get(local_2);
+		s_28e600 *local_4;
+		if (!local_3->flags134)
+			local_4 = (s_28e600 *)((byte *)local_3 + local_3->ai_offset);
+		else
+			local_4 = NULL;
+		swarm_creature_reset_position(local_2, (s_object_ai_data *)local_4);
+		function_28f998(&arg_0->field_8, &local_4->field_14, &arg_0->field_8);
+		arg_0->field_14++;
+		local_2 = local_4->field_c;
+	}
+	if (arg_0->field_14 > 0)
+	{
+		real local_5 = 1.0f / arg_0->field_14;
+		function_28f9e1(&arg_0->field_8, local_5);
+	}
+}
+
+// score 38 (was 38): the loop head: retail tests the iterator before saving
+// ebp, ours saves ebp first and loads the pool global later.
 // @retail 0x28f8d0
 void function_28f8d0(long arg_0)
 {
@@ -247,27 +293,7 @@ void function_28f8d0(long arg_0)
 	if (local_0->field_4 != NONE)
 	{
 		byte *local_1 = (byte *)actor_get(local_0->field_4);
-		local_0->field_8 = *g_468788;
-		local_0->field_14 = 0;
-		long local_2 = local_0->field_18;
-		while (local_2 != NONE)
-		{
-			s_handler_object_view *local_3 = handler_object_get(local_2);
-			s_28e600 *local_4;
-			if (!local_3->flags134)
-				local_4 = (s_28e600 *)((byte *)local_3 + local_3->ai_offset);
-			else
-				local_4 = NULL;
-			function_28f890(local_2, (s_object_ai_data *)local_4);
-			function_28f998(&local_0->field_8, &local_4->field_14, &local_0->field_8);
-			local_0->field_14++;
-			local_2 = local_4->field_c;
-		}
-		if (local_0->field_14 > 0)
-		{
-			real local_5 = 1.0f / local_0->field_14;
-			function_28f9e1(&local_0->field_8, local_5);
-		}
+		center_update_28f8d0(local_0);
 		memset(local_1 + 0x22c, 0, 0xbc);
 		*(long *)(local_1 + 0x26c) = NONE;
 		*(long *)(local_1 + 0x274) = NONE;

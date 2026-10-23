@@ -121,7 +121,7 @@ public:
 	void handle_item(s_controller_reference **controller, long *item);
 
 	c_class_14750b items[6];
-	/* the online Y menu's tab fills these in (unknown_2312b4.cpp) */
+	/* the online Y menu's tab fills these in (online_y_menu_screen.cpp) */
 	word *name;
 	void *entries;
 	long entry_count;
@@ -189,7 +189,7 @@ public:
 	void handle_item(s_controller_reference **controller, long *item);
 
 	c_class_14750b items[4];
-	/* the online Y menu's tab fills these in (unknown_2312b4.cpp) */
+	/* the online Y menu's tab fills these in (online_y_menu_screen.cpp) */
 	word *name;
 	void *entries;
 	long entry_count;
@@ -484,7 +484,7 @@ public:
 	long mode;
 };
 
-/* "legalese acceptance list" (vtable 0x458988; unknown_14741b.cpp) */
+/* "legalese acceptance list" (vtable 0x458988; main_menu.cpp) */
 class c_legalese_acceptance_list : public c_class_1474e8
 {
 public:
@@ -499,7 +499,7 @@ public:
 	bool accepted;
 };
 
-/* "main menu list" (vtable 0x458a70; unknown_14741b.cpp) */
+/* "main menu list" (vtable 0x458a70; main_menu.cpp) */
 class c_main_menu_list : public c_class_1474e8
 {
 public:
@@ -525,7 +525,7 @@ public:
 	virtual bool v10(s_widget_event *event);
 };
 
-/* "mp pause game list" (vtable 0x459298; unknown_14741b.cpp) */
+/* "mp pause game list" (vtable 0x459298; mp_pause_game.cpp) */
 class c_mp_pause_game_list : public c_class_1474e8
 {
 public:
@@ -651,7 +651,7 @@ class c_clan_member_privileges_list : public c_class_1474e8
 {
 public:
 	c_clan_member_privileges_list(word user_flags);
-	~c_clan_member_privileges_list();
+	virtual ~c_clan_member_privileges_list();
 
 	/* focuses the member's current privilege */
 	virtual void v1();
@@ -712,6 +712,7 @@ public:
 	virtual void v2();
 	virtual void v18(void *parameters);
 	c_level_select_screen(long a, long b, word user_flags, bool alternate);
+ __forceinline c_level_select_screen(long a, long b, word user_flags);
 
 	/* shows the focused level's picture and description */
 	virtual void v3();

@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_07A9A0.CPP: the transport layer's local address cache, address
    resolution against the XNet key registry, and the QoS handle pool */
@@ -21,18 +22,18 @@ struct s_xnet_registry_entry
 };
 
 /* 0x4cf791: the cached title address and the flag for its state */
-bool g_4cf791;
-bool g_4cf792;
-XNADDR g_4cf793;
-s_type_99af70 g_4cf7b8;
-byte g_4cf7cc[6];
-s_xnet_registry_entry g_4cf7d4[8];
+
+
+
+
+
+
 
 /* 0x46725c: points at the eight zero bytes of g_440070 (globals.h) */
 const byte *g_46725c = g_440070;
 
 void qos_release(long handle);
-void function_07ad80(long count, byte *buffer);
+void transport_get_random_bytes(long count, byte *buffer);
 
 /* 0x468758: the allocator the QoS pool and the online tasks
    (online_tasks.cpp) are built through. Retail's .data holds 0x479860, an
@@ -58,33 +59,33 @@ bool function_07a9b0(void)
 		flags = XNetGetTitleXnAddr(&xna);
 		if (flags != XNET_GET_XNADDR_PENDING)
 		{
-			if (flags == XNET_GET_XNADDR_NONE)
-			{
-				g_4cf792 = false;
-			}
-			else
+			if (flags != XNET_GET_XNADDR_NONE)
 			{
 				g_4cf792 = true;
 				g_4cf793 = xna;
 				if (flags & (XNET_GET_XNADDR_STATIC | XNET_GET_XNADDR_DHCP | XNET_GET_XNADDR_PPPOE))
 				{
 					g_4cf7b8.address_length = k_ipv4_address_length;
-					g_4cf7b8.ipv4_address = byte_swap_long(xna.ina.s_addr);
+					g_4cf7b8.ipv4_address = (((xna.ina.s_addr & 0xff0000) | (xna.ina.s_addr >> 16)) >> 8) | (((xna.ina.s_addr << 16) | (xna.ina.s_addr & 0xff00)) << 8);
 					g_4cf7b8.port = 0;
 				}
-				return g_4cf791 = true;
+				g_4cf791 = true;
 			}
+			else
+				g_4cf792 = false;
 		}
 	}
 	return g_4cf791;
 }
 
-// @retail 0x7ab60
-bool function_07ab60(const s_type_99af70 *address, bool local, long *index_out, XNKID *kid_out, XNKEY *key_out, XNADDR *xnaddr_out)
+// score 65 (was 65): the stack set-up at the top differs: retail takes the value at esp+0x38
+// into esi and stores ebp at esp+0x1c, ours the other way round.
+// @retail 0x7ab60 standard
+bool function_07ab60(const s_type_99af70 *address, long local, long *index_out, XNKID *kid_out, XNKEY *key_out, XNADDR *xnaddr_out)
 {
 	bool result = false;
 	long index = NONE;
-	dword ina = 0;
+	dword ina;
 	XNKID kid;
 	XNKEY key;
 
@@ -95,8 +96,9 @@ bool function_07ab60(const s_type_99af70 *address, bool local, long *index_out, 
 	{
 		if (local)
 		{
+			ina = byte_swap_long(address->ipv4_address);
 			memset(xnaddr_out, 0, sizeof(*xnaddr_out));
-			xnaddr_out->ina.s_addr = byte_swap_long(address->ipv4_address);
+			xnaddr_out->ina.s_addr = ina;
 			result = true;
 		}
 		else if (function_07aec0(address, &ina))
@@ -139,6 +141,8 @@ bool function_07ab60(const s_type_99af70 *address, bool local, long *index_out, 
 	return result;
 }
 
+__declspec(noinline) bool function_07acc0(const s_type_99af70 *address);
+
 // @retail 0x7acc0
 bool function_07acc0(const s_type_99af70 *address)
 {
@@ -150,7 +154,8 @@ bool function_07acc0(const s_type_99af70 *address)
 		IN_ADDR in_addr;
 
 		in_addr.s_addr = ina;
-		result = XNetConnect(in_addr) == 0;
+		if (XNetConnect(in_addr) == 0)
+			result = true;
 	}
 
 	return result;
@@ -187,7 +192,7 @@ void function_07ad50(byte *buffer)
 {
 	do
 	{
-		function_07ad80(8, buffer);
+		transport_get_random_bytes(8, buffer);
 	}
 	while (memcmp(g_46725c, buffer, 8) == 0);
 }
@@ -209,48 +214,9 @@ void function_07b3e0(void)
 	g_4cf8d8 = data_new_inlined("transport qos attempts", 0x20, 8, 0, g_468758);
 }
 
-/* retail inlines the absolute-index walk of function_16bc00 here */
-static __inline long next_absolute_index(s_record_pool *data, long index)
-{
-	long result = NONE;
-
-	if (index >= 0)
-	{
-		for (; index < data->high_water_index; index++)
-		{
-			if (data->bitmap[index >> 5] & (1 << (index & 0x1f)))
-			{
-				result = index;
-				break;
-			}
-		}
-	}
-
-	return result;
-}
-
-static __inline byte *iterator_next(s_record_pool_iterator *iterator)
-{
-	s_record_pool *data = iterator->data;
-	long index = next_absolute_index(data, iterator->index + 1);
-	byte *result;
-
-	if (index != NONE)
-	{
-		result = data->data + data->size * index;
-		iterator->index = index;
-		iterator->datum_index = (*(short *)result << 16) | index;
-	}
-	else
-	{
-		iterator->index = data->maximum_count;
-		iterator->datum_index = NONE;
-		result = 0;
-	}
-
-	return result;
-}
-
+// score 58 (was 58): retail keeps the pool in two registers (ebx for the
+// bitmap scan, ebp for the datum address) and aligns the scan loop; ours uses
+// one register and no loop padding (the 11 missing bytes).
 // @retail 0x7b430
 void function_07b430(void)
 {
@@ -261,7 +227,7 @@ void function_07b430(void)
 		iterator.data = g_4cf8d8;
 		iterator.datum_index = NONE;
 		iterator.index = NONE;
-		while (iterator_next(&iterator))
+		while (data_iterator_next_inlined(&iterator))
 		{
 			qos_release(iterator.datum_index);
 		}
@@ -447,7 +413,7 @@ struct s_player_message_properties
 };
 
 // @retail 0x7ca70
-bool function_07ca70(s_bitstream *stream, void *destination)
+byte function_07ca70(s_bitstream *stream, void *destination)
 {
 	s_player_message_properties *properties = (s_player_message_properties *)destination;
 	read_word_string(stream, properties->name, 32);
@@ -592,13 +558,15 @@ bool function_7df00(s_bitstream *stream, s_session_message_values *values)
 	return false;
 }
 
+// score 40 (was 40): retail keeps the data pointer in esi and pushes it in the prologue,
+// ours keeps it in eax and pushes esi later.
 // @retail 0x7e080
 bool function_7e080(const byte *data, long size, s_session_message_values *values)
 {
 	const byte *buffer = data;
 	bool result = false;
 	s_session_message_values *const *values_reference = &values;
-	if (size > 0 && buffer)
+	if (buffer && size > 0)
 	{
 		s_bitstream stream;
 		stream.unknown08 = 1;
@@ -924,7 +892,7 @@ bool function_07d520(s_bitstream *stream, void *part)
 		{
 			s_game_variant checked;
 			memcpy(&checked, packet, sizeof(checked));
-			return function_19d650(&checked);
+			result = function_19d650(&checked);
 		}
 	}
 	else
@@ -1103,13 +1071,14 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
 	long variant_index = NONE;
-	if (session->state > 2 && session->state <= 8) variant_index = session->value49c8;
+	long local_0 = session->state;
+	if (local_0 > 2 && local_0 <= 8) variant_index = session->value49c8;
 	s_surface_description *variant = function_192e60(variant_index);
 	const s_ratings_summary *summary = NULL;
-	if (session->state > 2 && session->state <= 8 && session->flag49fd)
+	if (local_0 > 2 && local_0 <= 8 && session->flag49fd)
 		summary = (const s_ratings_summary *)session->data4a00;
 	long capacity = 16;
-	if (session->state > 2 && session->state <= 8) capacity = session->value4994;
+	if (local_0 > 2 && local_0 <= 8) capacity = session->value4994;
 	volatile bool result = true;
 	memset(out, 0, sizeof(*out));
 	if (!summary || summary->player_count > capacity || !variant ||

@@ -8,6 +8,7 @@
 // @flags /O2 /arch:SSE /Gr
 
 real function_30bf0(vector3f *arg_0);
+real function_11cc90(vector2f const *a, vector2f const *b);
 
 struct s_29c860
 {
@@ -26,29 +27,28 @@ __forceinline real function_29c8b1(real arg_0)
 
 __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1, real arg_2, vector3f *arg_3)
 {
+	vector3f const *local_4 = arg_1;
 	real local_0 = (real)sin(arg_2);
 	real local_1 = (real)cos(arg_2);
-	real local_2 = (arg_1->i * arg_0->i + arg_0->j * arg_1->j + arg_1->k * arg_0->k) * (1.0f - local_1);
+	real local_2 = (local_4->i * arg_0->i + arg_0->j * arg_1->j + arg_1->k * arg_0->k) * (1.0f - local_1);
 	vector3f local_3;
+	local_3.k = arg_0->i * arg_1->j - local_4->i * arg_0->j;
+	local_3.j = local_4->i * arg_0->k - arg_1->k * arg_0->i;
 	local_3.i = arg_1->k * arg_0->j - arg_1->j * arg_0->k;
-	local_3.j = arg_1->i * arg_0->k - arg_1->k * arg_0->i;
-	local_3.k = arg_0->i * arg_1->j - arg_1->i * arg_0->j;
-	arg_3->i = arg_1->i * local_2 + local_1 * arg_0->i - local_3.i * local_0;
+	arg_3->i = local_4->i * local_2 + local_1 * arg_0->i - local_3.i * local_0;
 	arg_3->j = local_1 * arg_0->j + local_2 * arg_1->j - local_3.j * local_0;
 	arg_3->k = arg_1->k * local_2 + local_1 * arg_0->k - local_3.k * local_0;
 }
 
+// score 67 (was 67): the SSE registers differ (retail xmm1/xmm4/xmm6, ours
+// xmm0/xmm4/xmm1).
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)
 {
-	real *local_9 = &arg_4;
 	s_actor_view *local_0 = actor_get(arg_0);
 	s_29c860 const *local_1 = (s_29c860 const *)function_1e5450(arg_0, *(long *)object_get(arg_1));
-	real local_2 = function_29c8b1(arg_2->x * arg_3->x + arg_3->y * arg_2->y);
-	real local_3 = (real)acos(function_29c8b1(local_2));
-	if (arg_3->y * arg_2->x - arg_2->y * arg_3->x < 0.0f)
-		local_3 = -local_3;
+	real local_3 = function_11cc90((vector2f const *)arg_2, (vector2f const *)arg_3);
 	local_3 += arg_4;
 	if (local_1->field_38 > 0.0f)
 		local_3 *= local_1->field_38;
@@ -65,10 +65,10 @@ void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 		arg_4 = -local_4;
 	else if (arg_4 > local_4)
 		arg_4 = local_4;
-	*local_9 += *(real *)((byte *)local_0 + 0x654);
+	arg_4 += *(real *)((byte *)local_0 + 0x654);
 	vector3f local_7;
 	vector3f local_8 = { arg_2->x, arg_2->y, 0.0f };
-	function_29c9ee(&local_8, g_4687b0, *local_9, &local_7);
+	function_29c9ee(&local_8, g_4687b0, arg_4, &local_7);
 	*(real *)((byte *)local_0 + 0x65c) = arg_4;
 	*arg_5 = local_7;
 }
@@ -331,6 +331,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 				local_27 = -local_34;
 			else if (local_27 > local_34)
 				local_27 = local_34;
+			local_12.i = 1.0f;
 		}
 		local_12.i *= local_27;
 		local_12.j *= local_27;

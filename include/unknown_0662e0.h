@@ -373,8 +373,19 @@ struct s_online_file_definition
 struct s_online_file
 {
 	s_online_file_definition const *definition;
-	byte flags;
-	byte unknown5[3];
+	union
+	{
+		struct
+		{
+			byte flags;
+			byte unknown5[3];
+		};
+		struct
+		{
+			word field_4;
+			word field_6;
+		};
+	};
 	long unknown8;
 	long unknownc;
 	long unknown10;

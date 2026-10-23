@@ -5,6 +5,8 @@
 #include <math.h>
 
 // @flags /O2 /Ob1 /Gr /arch:SSE
+#include "flags_storage.h"
+#include "projection_storage.h"
 
 #define k_real_epsilon 0.0001f
 #define k_real_max 3.4028234663852886e+38f
@@ -65,14 +67,13 @@ void __stdcall function_31f50(long index, point3f const *origin, vector3f const 
 /* ---- globals ---- */
 #define BIT(n) ((bool)((g_4ba014 >> (n)) & 1))
 byte *g_4858c4;
-s_flag_entry g_4ba074[16];
 long g_4ba134;
-s_camera g_4b9e14;
-point2f g_4b9ecc;
 
 // @retail 0x30290
 void function_30290(point3f const *p, s_view const *view, s_camera const *camera, real radius, box2f *bounds)
 {
+	real const *radius_home = &radius;
+	real const &radius_value = *radius_home;
 	real dx = p->x - view->position.x;
 	real dy = p->y - view->position.y;
 	real dz = p->z - view->position.z;
@@ -88,30 +89,30 @@ void function_30290(point3f const *p, s_view const *view, s_camera const *camera
 	real cy = camera->forward.j * sz + camera->up.j * sy + camera->right.j * sx;
 	real cz = (camera->forward.k * sz + camera->up.k * sy + camera->right.k * sx) * -1.f;
 
-	if (cz + radius > 0.01f)
+	if (cz + radius_value > 0.01f)
 	{
 		real m78 = camera->unknown78;
 		real m98 = camera->unknown98;
 		real m8c = camera->unknown8c;
 		real m9c = camera->unknown9c;
 		real left = view->bounds.left * 0.5f;
-		real right = view->bounds.right * 0.5f;
 		real top = view->bounds.top * 0.5f;
+		real right = view->bounds.right * 0.5f;
 		real bottom = view->bounds.bottom * 0.5f;
 
 		real xz = cx * cx + cz * cz;
-		real r2 = radius * radius;
+		real r2 = radius_value * radius_value;
 		real disc = xz - r2;
 		if (disc > k_real_epsilon)
 		{
 			real root = (real)sqrt(disc);
-			real k = radius / xz;
-			real za = cz - (cz * radius + root * cx) * k;
-			real xa = cx - (cx * radius + root * cz) * k;
-			real zb = cz - (cz * radius - root * cx) * k;
-			real xb = cx - (cx * radius - root * cz) * k;
+			real k = radius_value / xz;
+			real za = cz - (cz * radius_value + root * cx) * k;
+			real zb = cz - (cz * radius_value - root * cx) * k;
+			real xb = cx - (cx * radius_value - root * cz) * k;
 			if (za > 0.01f)
 			{
+				real xa = cx - (cx * radius_value + root * cz) * k;
 				real n = xa / za * m78 + m98;
 				bounds->x0 = (1.f - n) * left + (n + 1.f) * right;
 			}
@@ -136,13 +137,13 @@ void function_30290(point3f const *p, s_view const *view, s_camera const *camera
 		if (disc2 > k_real_epsilon)
 		{
 			real root = (real)sqrt(disc2);
-			real k = radius / yz;
-			real za = cz - (cz * radius + root * cy) * k;
-			real ya = cy - (cy * radius + root * cz) * k;
-			real zb = cz - (cz * radius - root * cy) * k;
-			real yb = cy - (cy * radius - root * cz) * k;
+			real k = radius_value / yz;
+			real za = cz - (cz * radius_value + root * cy) * k;
+			real zb = cz - (cz * radius_value - root * cy) * k;
+			real yb = cy - (cy * radius_value - root * cz) * k;
 			if (za > 0.01f)
 			{
+				real ya = cy - (cy * radius_value + root * cz) * k;
 				real n = ya / za * m8c + m9c;
 				bounds->y0 = (1.f - n) * top + (n + 1.f) * bottom;
 			}
@@ -172,20 +173,24 @@ void function_30290(point3f const *p, s_view const *view, s_camera const *camera
 }
 
 // @retail 0x30710
-bool function_30710(s_camera const *camera, vector3f const *v, short_rectangle2d const *rect, point2f *out, s_view const *view)
+bool function_30710(s_camera const *camera, short_rectangle2d const *rect, vector3f const *v, point2f *out, s_view const *view)
 {
 	bool result = false;
 	if (!rect)
 		rect = &view->bounds;
 	if (v->k < 0.f)
 	{
+		real width = (real)(rect->right - rect->left);
+		real height = (real)(rect->bottom - rect->top);
 		real inv = -1.f / v->k;
 		out->x = (camera->unknown78 * v->i + camera->unknown98 * v->k) * inv;
 		out->y = 0.f - (camera->unknown8c * v->j + camera->unknown9c * v->k) * inv;
 		if (out->x >= -1.f && 1.f >= out->x && out->y >= -1.f && 1.f >= out->y)
 			result = true;
-		out->x = (out->x + 1.f) * 0.5f * (real)(rect->right - rect->left) + (real)rect->left;
-		out->y = (out->y + 1.f) * 0.5f * (real)(rect->bottom - rect->top) + (real)rect->top;
+		real scaled_x = (out->x + 1.f) * 0.5f;
+		out->x = scaled_x * width + (real)rect->left;
+		real scaled_y = (out->y + 1.f) * 0.5f;
+		out->y = scaled_y * height + (real)rect->top;
 	}
 	else
 	{
@@ -327,26 +332,23 @@ long function_30cd0(bool a, bool b)
 // @retail 0x30d10
 long function_30d10(bool a, bool b, bool c)
 {
-	if (BIT(0))
-		return -1;
-	if (!(*g_4858c4 & 0x20))
+	if (BIT(0)) return NONE;
+	if (*g_4858c4 & 0x20) return 2;
+	if (!BIT(2) || !b)
 	{
-		if (!BIT(2) || !b)
-		{
-			if (BIT(1) && a)
-				return 2;
-			return -1;
-		}
-		if (!c)
-		{
-			if (BIT(6))
-				return 6;
-			if (BIT(4))
-				return BIT(5) ? 3 : 4;
-			return (byte)(g_4ba014 >> 3) & 1;
-		}
+		if (BIT(1) && a) return 2;
+		return NONE;
 	}
-	return 2;
+	if (c) return 2;
+	if (BIT(6)) return 6;
+	if (BIT(4)) return BIT(5) ? 3 : 4;
+	dword bit;
+	switch ((byte)(g_4ba014 >> 3) & 1)
+	{
+	case 0: bit = 0; break;
+	default: bit = 1; break;
+	}
+	return (long)bit;
 }
 
 // @retail 0x30da0
@@ -415,25 +417,32 @@ PRIVATE __forceinline void normalize_cross_vector(vector3f *v)
 	if (!(fabs(length) < k_real_epsilon))
 	{
 		real inverse = 1.0f / length;
-		v->i = inverse * v->i;
-		v->j = v->j * inverse;
-		v->k = v->k * inverse;
+		for (long component = 0; component < 3; ++component)
+			v->n[component] *= inverse;
 	}
 }
 
+static __forceinline void cross_product_31b40(vector3f const *a, vector3f const *b, vector3f *out)
+{
+	out->i = a->j * b->k - b->j * a->k;
+	out->j = b->i * a->k - a->i * b->k;
+	out->k = b->j * a->i - a->j * b->i;
+}
+
+// score 61 (was 61): the float products are evaluated in a different order and end up in
+// different xmm registers: retail keeps the sums in the x87 stack and
+// divides at the end.
 // @retail 0x31b40
 real function_31b40(vector3f *vector, vector3f const *axis)
 {
 	vector3f cross;
-	cross.i = axis->k * vector->j - vector->k * axis->j;
-	cross.j = vector->k * axis->i - axis->k * vector->i;
-	cross.k = axis->j * vector->i - axis->i * vector->j;
+	cross_product_31b40(vector, axis, &cross);
 	normalize_cross_vector(&cross);
 	vector3f result;
-	result.i = axis->j * cross.k - cross.j * axis->k;
-	result.j = cross.i * axis->k - axis->i * cross.k;
-	result.k = axis->i * cross.j - axis->j * cross.i;
-	*vector = result;
+	cross_product_31b40(axis, &cross, &result);
+	vector->i = result.i;
+	vector->j = result.j;
+	vector->k = result.k;
 	return function_30bf0(vector);
 }
 
@@ -471,10 +480,6 @@ struct s_index_state_31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)
 {
-    long const *first_reference = &first_group;
-    long const *second_reference = &second_group;
-    bool const *skip_reference = &skip;
-    bool *const *output_reference = &output;
     s_render_entry_110 *entry = &((s_render_entry_110 *)g_4e030c->data)[index & 0xffff];
     dword const *definition = (dword const *)g_4e3b44[tag & 0xffff].bytes;
     if (*definition & 0x10000)
@@ -513,17 +518,20 @@ void function_31660(long index, long tag, s_index_state_31660 *state,
         byte flag12 = (flag11 | flag13_source) & 1;
         byte flag13 = (flag12_source | flag13_source) & 1;
         for (long i = 0; i < state->second->count; ++i)
-            if (*first_reference == NONE || state->second->groups[(short)i] == *first_reference)
+            if (first_group == NONE || state->second->groups[(short)i] == first_group)
             {
                 word *value = &state->second->values[(short)i];
                 long flags = *value;
-                if (flag13) flags |= 0x2000; else flags &= ~0x2000;
+                if (!(flag13))
+                    flags &= ~0x2000;
+                else
+                    flags |= 0x2000;
                 if (flag12) flags |= 0x1000; else flags &= ~0x1000;
                 *value = (word)flags;
             }
-        if (*first_reference != *second_reference)
+        if (first_group != second_group)
             for (long i = 0; i < state->second->count; ++i)
-                if (*second_reference == NONE || state->second->groups[(short)i] == *second_reference)
+                if (second_group == NONE || state->second->groups[(short)i] == second_group)
                 {
                     word *value = &state->second->values[(short)i];
                     long flags = *value;
@@ -536,11 +544,15 @@ void function_31660(long index, long tag, s_index_state_31660 *state,
     {
         *(real *)((byte *)entry + 0xf8) = 1.0f;
         // Retail's final store is reached only with a null output argument.
-        if (!*output_reference && !*skip_reference)
+        if (!output && !skip)
         {
             for (long i = 0; i < state->first->count; ++i)
                 state->first->values[(short)i] |= 0x3000;
-            **output_reference = true;
+            *output = true;
         }
     }
 }
+
+s_projection_storage g_projection_storage;
+
+s_flags_storage g_flags_storage;

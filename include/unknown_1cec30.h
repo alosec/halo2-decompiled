@@ -16,19 +16,19 @@ struct __declspec(align(16)) h2_native_vector4_storage
 #include <xmmintrin.h>
 #endif
 
-class hkPropertyValue
+class s_havok_property_word
 {
 public:
-	hkPropertyValue() {}
-	hkPropertyValue(long value) : m_data(value) {}
+	s_havok_property_word() {}
+	s_havok_property_word(long value) : m_data(value) {}
 
 	long m_data;
 };
 
-struct hkProperty
+struct s_havok_entity_property
 {
 	dword m_key;
-	hkPropertyValue m_value;
+	s_havok_property_word m_value;
 };
 
 /* an hkArray: data, size, capacity (the top bit set when the array does
@@ -43,11 +43,11 @@ struct s_havok_array
 class hkEntity
 {
 public:
-	hkPropertyValue removeProperty(dword key);
-	void addProperty(dword key, hkPropertyValue value);
+	s_havok_property_word entity_property_erase(dword key);
+	void entity_property_put(dword key, s_havok_property_word value);
 
 	byte unknown00[0x30];
-	hkProperty *m_properties;
+	s_havok_entity_property *m_properties;
 	long m_property_count;
 	dword m_property_capacity;
 };
@@ -108,8 +108,8 @@ struct hkTransform
 	}
 
 	/* this = this * b */
-	void setMulEq(hkTransform const &b);
-	void setInverse(hkTransform const &t);
+	void transform_compose_in_place(hkTransform const &b);
+	void transform_set_to_inverse(hkTransform const &t);
 
 	hkRotation m_rotation;
 	hkVector4 m_translation;
@@ -126,7 +126,7 @@ public:
 
 /* Havok's motion of a rigid body: the virtual slots the game calls (the
    others are placeholders), its inverse mass, velocities and transform */
-class hkMotion
+class c_havok_body_motion_state
 {
 public:
 	virtual void slot00(void) {}
@@ -135,7 +135,7 @@ public:
 	virtual void slot03(void) {}
 	virtual void slot04(void) {}
 	virtual void slot05(void) {}
-	virtual long getType(void) const { return 0; }
+	virtual long kind_code(void) const { return 0; }
 	virtual void slot07(void) {}
 	virtual void slot08(void) {}
 	virtual void getInertiaWorld(hkRotation &inertia) const {}
@@ -148,7 +148,7 @@ public:
 	virtual void slot10(void) {}
 	virtual void slot11(void) {}
 	virtual void slot12(void) {}
-	virtual void setTransform(hkTransform const &transform) {}
+	virtual void pose_write(hkTransform const &transform) {}
 	virtual void setLinearVelocity(hkVector4 const &velocity) {}
 	virtual void setAngularVelocity(hkVector4 const &velocity) {}
 	virtual void getPointVelocity(hkVector4 const &point, hkVector4 &velocity) const {}
@@ -176,44 +176,44 @@ public:
 	hkTransform m_transform;
 };
 
-class hkSimulationIsland;
+class c_havok_body_group;
 
 class hkRigidBody
 {
 public:
-	void setTransform(hkTransform const &transform);
-	hkBool isActive(void) const;
+	void pose_write(hkTransform const &transform);
+	hkBool body_is_simulating(void) const;
 	void activate(void);
-	void motion_transform_set(hkTransform const &transform);
+	inline void motion_transform_set(hkTransform const &transform);
 
 	byte unknown00[0x8];
 	void *m_world;
 	byte unknown0c[0x3c - 0xc];
-	hkMotion *m_motion;
+	c_havok_body_motion_state *m_motion;
 	bool m_fixed;
 	byte unknown41[3];
-	hkSimulationIsland *m_simulation_island;
+	c_havok_body_group *m_simulation_island;
 };
 
-class hkEntityListener;
+class c_havok_entity_observer;
 
 /* the parts of Havok's entity, simulation island and world the game's
    physics code calls */
-class hkEntityApi
+class c_physics_body_island_view
 {
 public:
-	void removeEntityListener(hkEntityListener *listener);
+	void entity_observer_detach(c_havok_entity_observer *listener);
 	void activate(void);
 
 	byte unknown00[0x44];
-	struct hkMotionView
+	struct s_havok_motion_type_view
 	{
 		byte unknown00[0x40];
 		long m_type;
 	} *m_motion;
 };
 
-class hkSimulationIsland
+class c_havok_body_group
 {
 public:
 	byte unknown00[0x3c];
@@ -224,12 +224,12 @@ public:
 class hkWorld
 {
 public:
-	hkBool removeEntity(hkEntity *entity);
-	void addEntity(hkEntity *entity);
-	void removeSimulationIsland(hkSimulationIsland *island);
+	hkBool entity_world_remove(hkEntity *entity);
+	hkEntity *entity_world_insert(hkEntity *entity);
+	void world_island_discard(c_havok_body_group *island);
 
 	byte unknown00[8];
-	hkSimulationIsland **m_islands;
+	c_havok_body_group **m_islands;
 	long m_island_count;
 };
 
@@ -260,7 +260,7 @@ void havok_object_count(long object_index);
 
 /* the havok components (src/unknown_1cec30.cpp): a data array of 0x200
    components of 0xa0 bytes, one per object with Havok rigid bodies.
-   Their hkArrays: data, size, capacity (the top bit set when the array does
+   Their arrays: data, size, capacity (the top bit set when the array does
    not own its storage); Havok's thread memory (g_480118) frees the storage */
 struct s_havok_component_rigid_body
 {
@@ -389,6 +389,8 @@ struct s_havok_array08
 	}
 };
 
+struct rigid_transform_scaled;
+
 struct s_havok_component
 {
 	short identifier;
@@ -436,6 +438,11 @@ struct s_havok_component
 
 	~s_havok_component();
 	void initialize(long object_index);
+	void function_1d3d20(long node_index, dword *updated, dword const *restore,
+		rigid_transform_scaled *orientations, long unknown);
+
+	bool rigid_body_keyframed(long rigid_body_index);
+	void rigid_body_matrix_get(long rigid_body_index, struct transform4x3f *matrix);
 };
 
 inline s_havok_component *havok_component_get(long component_index)
@@ -446,6 +453,18 @@ inline s_havok_component *havok_component_get(long component_index)
 inline hkRigidBody *havok_component_rigid_body_get(long rigid_body_index, s_havok_component const *component)
 {
 	return component->rigid_bodies[rigid_body_index].rigid_body;
+}
+
+/* the free-function spelling of s_havok_component::rigid_body_matrix_get */
+inline void havok_component_rigid_body_matrix_get(long rigid_body_index, s_havok_component *component, struct transform4x3f *matrix)
+{
+	component->rigid_body_matrix_get(rigid_body_index, matrix);
+}
+
+/* the free-function spelling of s_havok_component::rigid_body_keyframed */
+inline bool havok_component_rigid_body_keyframed(long rigid_body_index, s_havok_component *component)
+{
+	return component->rigid_body_keyframed(rigid_body_index);
 }
 
 /* the component's main rigid body (unknown18), NONE when it has none */

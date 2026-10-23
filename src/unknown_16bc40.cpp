@@ -79,15 +79,8 @@ long function_16c2b0(void)
 	long result = NONE;
 	s_16c2b0_state *state = (s_16c2b0_state *)g_510c6c;
 
-	if (state->active && state->mode == 4)
-	{
-		long object_index = state->object_index;
-
-		if (function_badc0(object_index, 3))
-		{
-			result = object_index;
-		}
-	}
+	if (state->active && state->mode == 4 && function_badc0(state->object_index, 3))
+		result = state->object_index;
 	return result;
 }
 

@@ -62,12 +62,21 @@ dword vector3d_compress(vector3f const *vector)
 	return (((qk << 11) | qj) << 11) | qi;
 }
 
+__forceinline real function_188ea1(long arg_0, real arg_1, real arg_2, long arg_3)
+{
+    real local_0;
+    if (arg_0 == 0) local_0 = arg_1;
+    else if (arg_0 >= arg_3) local_0 = arg_2;
+    else local_0 = ((real)arg_0 * arg_2 + (real)(arg_3 - arg_0) * arg_1) * (1.0f / arg_3);
+    return local_0;
+}
+
 // @retail 0x188ea0
 vector3f *vector3d_decompress(dword compressed, vector3f *vector)
 {
-	vector->i = dequantize_real(compressed & 0x7ff, -1.0f, 1.0f, 0x7ff);
-	vector->j = dequantize_real((compressed >> 11) & 0x7ff, -1.0f, 1.0f, 0x7ff);
-	vector->k = dequantize_real(compressed >> 22, -1.0f, 1.0f, 0x3ff);
+	vector->i = function_188ea1(compressed & 0x7ff, -1.0f, 1.0f, 0x7ff);
+	vector->j = function_188ea1((compressed >> 11) & 0x7ff, -1.0f, 1.0f, 0x7ff);
+	vector->k = function_188ea1(compressed >> 22, -1.0f, 1.0f, 0x3ff);
 	function_30bf0(vector);
 	return vector;
 }

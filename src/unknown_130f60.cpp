@@ -117,11 +117,15 @@ struct s_fog_direction_sample
 	real angle_end;
 	real weights[3];
 };
+struct s_fog_angles
+{
+	real yaw;
+	real pitch;
+};
 struct s_fog_direction
 {
 	vector3f direction;
-	real yaw;
-	real pitch;
+	s_fog_angles angles;
 	byte unknown14[8];
 	long forward_count;
 	s_fog_direction_sample *forward;
@@ -164,6 +168,8 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 	out->remaining *= 1.0f - weight;
 }
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
+
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {
@@ -181,12 +187,12 @@ void function_131030(long tag_index, vector3f const *view_direction, s_fog_accum
 		vector3f opposite;
 		if (direction.i == 0.0f && direction.j == 0.0f && direction.k == 0.0f)
 		{
-			real angles[2] = { source->yaw, source->pitch };
-			double yaw = (double)angles[0] + 3.1415927410125732422f;
-			double pitch_cosine = cos(source->pitch);
-			direction.i = (real)(cos(source->yaw) * pitch_cosine);
-			direction.j = (real)(sin(source->yaw) * pitch_cosine);
-			direction.k = (real)sin(source->pitch);
+			s_fog_angles angles = source->angles;
+			double yaw = angles.yaw + 3.1415927410125732422f;
+			double pitch_cosine = cos(source->angles.pitch);
+			direction.i = (real)(cos(source->angles.yaw) * pitch_cosine);
+			direction.j = (real)(sin(source->angles.yaw) * pitch_cosine);
+			direction.k = (real)sin(source->angles.pitch);
 			opposite.i = (real)(cos(yaw) * cos(0.0));
 			opposite.j = (real)(sin(yaw) * cos(0.0));
 			opposite.k = (real)sin(0.0);
@@ -207,8 +213,7 @@ void function_131030(long tag_index, vector3f const *view_direction, s_fog_accum
 		}
 		if (direction.k * direction.k + direction.j * direction.j + direction.i * direction.i > 0.0f)
 		{
-			long j = 0;
-			do
+			for (long j = 0; j < 2; j++)
 			{
 				s_fog_direction_sample *sample;
 				vector3f const *axis;
@@ -216,20 +221,17 @@ void function_131030(long tag_index, vector3f const *view_direction, s_fog_accum
 				{
 				case 0: sample = source->forward_count > 0 ? source->forward : NULL; axis = &direction; break;
 				case 1: sample = source->opposite_count > 0 ? source->opposite : NULL; axis = &opposite; break;
-				default: __assume(0);
+				default: continue;
 				}
 				real angle = function_11ce20(view_direction, axis);
 				if (sample && sample->angle_end > sample->angle_start)
 				{
-					real weight = (angle - sample->angle_end) / (sample->angle_start - sample->angle_end);
-					weight = weight < 0.0f ? 0.0f : (weight > 1.0f ? 1.0f : weight);
+					real weight = PIN((angle - sample->angle_end) / (sample->angle_start - sample->angle_end), 0.0f, 1.0f);
 					fog_accumulate(first, &sample->color, sample->intensity, sample->distance, sample->height, sample->weights[0] * weight);
 					fog_accumulate(second, &sample->color, sample->intensity, sample->distance, sample->height, sample->weights[1] * weight);
 					fog_accumulate(third, &sample->color, sample->intensity, sample->distance, sample->height, sample->weights[2] * weight);
 				}
-				j++;
 			}
-			while (j < 2);
 		}
 	}
 	real remaining = first->remaining * second->remaining;

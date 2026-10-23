@@ -48,7 +48,7 @@ struct s_audio_object_link
 
 struct s_node_owner;
 void function_20fe20(s_node_owner *owner);
-long function_20f040(short team);
+long __declspec(noinline) function_20f040(short team);
 extern s_record_pool *g_4f9398;
 s_audio_queue *g_4f939c;
 
@@ -197,7 +197,7 @@ void function_20ff50(long object_index)
 	long const *object_reference = &object_index;
 	s_audio_linked_object *object = ((s_audio_linked_header *)g_4e0300->data)[*object_reference & 0xffff].object;
 	long team = object->team;
-	long queue_index = (short)function_20f040(team);
+	short queue_index = function_20f040(team);
 	s_audio_queue *queue = &g_4f939c[queue_index];
 	for (long index = queue->first; index != NONE; )
 	{

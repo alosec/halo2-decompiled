@@ -21,7 +21,7 @@ struct s_1fbac0_event
 
 /* has the unit of an actor start an event of the given type (or, with no
    type, the event in data); false when the actor has no unit */
-bool __stdcall function_20ba60(short type, long unit_index, long target_index, long unknown, long unknown2, s_1fb7e0_data const *data);
-bool function_1fb7e0(long actor_index, short type, s_1fb7e0_data const *data, long target_index, long unknown);
+bool __stdcall function_20ba60(short type, long unit_index, long target_index, long unknown, short unknown2, s_1fb7e0_data const *data);
+bool function_1fb7e0(short type, long actor_index, s_1fb7e0_data const *data, long target_index, long unknown);
 
 #endif

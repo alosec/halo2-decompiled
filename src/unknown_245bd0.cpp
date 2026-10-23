@@ -14,8 +14,8 @@
 real function_30bf0(vector3f *v);
 void record_pool_release(s_record_pool *data, long datum_index);
 matrix3x3 *function_142da0(real yaw, real pitch, real roll, matrix3x3 *out);
-matrix3x3 *function_142eb0(matrix3x3 const *a, matrix3x3 const *b, matrix3x3 *out);
-vector3f *function_143070(vector3f const *v, matrix3x3 const *m, vector3f *out);
+matrix3x3 *function_142eb0(matrix3x3 const *right, matrix3x3 const *left, matrix3x3 *out);
+vector3f *function_143070(matrix3x3 const *m, vector3f const *v, vector3f *out);
 
 /* what a shape belongs to (copied into a test's result) */
 struct s_shape_header
@@ -233,6 +233,9 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 	out->unknown0e = source->unknown0e;
 }
 
+// score 61 (was 61): the first float of the pair is loaded into XMM2 here and
+// into XMM1 in retail, so the registers of the following subtractions are
+// swapped as well.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -280,50 +283,51 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 	return a->k * b->k + a->j * b->j + a->i * b->i;
 }
 
-PRIVATE __forceinline bool shape_sphere_ray_interval(vector3f const *d, vector3f const *direction, real radius, real *t)
-{
-	real radius_squared = radius * radius;
-	real c = d->k * d->k;
-	c += d->i * d->i;
-	c += d->j * d->j;
-	c -= radius_squared;
-	if (0.f >= c)
-	{
-		*t = 0.f;
-		return true;
-	}
-	real b = dot3f(direction, d);
-	if (b > 0.f)
-	{
-		real a = length_sq3f(direction);
-		real discriminant = b * b - a * c;
-		if (discriminant >= g_45dbd8)
-		{
-			real root = b - (real)sqrt(discriminant);
-			if (a >= root)
-			{
-				*t = root / a;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
+// score 40 (was 40): the float is loaded into XMM1 and moved to XMM0; retail loads it into XMM0 and
+// moves XMM5 into XMM1.
 // @retail 0x2461a0
 bool function_2461a0(
-	real *t,
 	s_sphere const *sphere,
+	point3f const *point,
 	plane3f *plane,
 	vector3f const *direction,
-	point3f const *point)
+	real *t)
 {
 	bool result = false;
 	vector3f d;
 	vector3d_from_points3d(point, &sphere->center, &d);
-	if (shape_sphere_ray_interval(&d, direction, sphere->radius, t))
+	real radius_squared = sphere->radius * sphere->radius;
+	real c = d.k * d.k;
+	c += d.i * d.i;
+	c += d.j * d.j;
+	c -= radius_squared;
+	if (0.f >= c)
 	{
+		*t = 0.f;
 		result = true;
+	}
+	else
+	{
+		/* retail sums these in this order */
+		real b = direction->i * d.i + d.k * direction->k + d.j * direction->j;
+		if (b > 0.f)
+		{
+			real a = direction->j * direction->j + direction->k * direction->k + direction->i * direction->i;
+			real discriminant = b * b - a * c;
+			if (discriminant >= g_45dbd8)
+			{
+				/* retail compares the unrounded root and divides the rounded one */
+				real root = b - sqrt(discriminant);
+				if (a >= root)
+				{
+					*t = root / a;
+					result = true;
+				}
+			}
+		}
+	}
+	if (result)
+	{
 		vector3f scaled;
 		shape_scale3d(direction, *t, &scaled);
 		plane->i = scaled.i - d.i;
@@ -351,7 +355,7 @@ bool function_246360(
 	vector3f const *u = direction;
 	vector3f const *v = &capsule->vector;
 	real a = length_sq3f(v);
-	real uv = dot3f(v, u);
+	real uv = (v->k * u->k + v->j * u->j) + v->i * u->i;
 	real uu = length_sq3f(u);
 	real den = uu * a - uv * uv;
 	if (den == g_45dbd8)
@@ -361,9 +365,9 @@ bool function_246360(
 	vector3f w;
 	vector3d_from_points3d(&capsule->origin, start, &w);
 	real uw = dot3f(u, &w);
-	real vw = dot3f(v, &w);
+	real vw = v->k * w.k + v->j * w.j + v->i * w.i;
 	real b = vw * uv - uw * a;
-	real c = (length_sq3f(&w) - capsule->radius * capsule->radius) * a - vw * vw;
+	real c = (w.k * w.k + w.j * w.j + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
 	real disc = b * b - c * den;
 	if (0.f > disc)
 	{
@@ -385,14 +389,7 @@ bool function_246360(
 	{
 		t_exit = 1.f;
 	}
-	if (uv == 0.f)
-	{
-		if (0.f > vw || vw > a)
-		{
-			return false;
-		}
-	}
-	else
+	if (uv != 0.f)
 	{
 		real inv_uv = 1.f / uv;
 		real s0 = 0.f - inv_uv * vw;
@@ -424,6 +421,13 @@ bool function_246360(
 			return false;
 		}
 	}
+	else
+	{
+		if (0.f > vw || vw > a)
+		{
+			return false;
+		}
+	}
 	*t = t_enter;
 	vector3f q;
 	q.i = u->i * t_enter + w.i;
@@ -444,19 +448,21 @@ bool function_246360(
 	return true;
 }
 
+// score 53 (was 53): the multiplier is kept in XMM1 and multiplied into XMM0; retail loads the
+// multiplier into XMM0 and multiplies by XMM1.
 // @retail 0x2466b0
 bool function_2466b0(
-	real *t,
-	plane3f *out,
 	point3f const *start,
 	vector3f const *direction,
-	s_prism const *prism)
+	s_prism const *prism,
+	real *t,
+	plane3f *out)
 {
-	real a = shape_dot_reverse(&prism->plane.n, direction);
 	real b = plane_distance_to_point(&prism->plane, start);
+	real a;
 	real t0 = 0.f;
 	real t1 = 1.f;
-	if (!(fabs(a) < k_real_epsilon))
+	if (!(fabs(a = shape_dot_reverse(&prism->plane.n, direction)) < k_real_epsilon))
 	{
 		real inv = 1.f / a;
 		real s0 = 0.f - inv * b;
@@ -507,24 +513,22 @@ bool function_2466b0(
 	point2f d2;
 	prism_project(q1, prism->axis, prism->side, &d2);
 	long count = prism->point_count;
-	long i = 0;
 	if (count > 0)
 	{
+		long i = 1;
+		point2f const *local_0 = prism->points;
 		do
 		{
-			long next = i + 1;
-			if (next >= count)
-			{
-				next = 0;
-			}
-			point2f const *cur = &prism->points[i];
-			point2f const *nxt = &prism->points[next];
+			long next = i >= count ? 0 : i;
+			point2f const *cur = local_0;
 			point2f offset;
-			shape_difference2d(&s2, cur, &offset);
+			offset.y = s2.y - cur->y;
+			offset.x = s2.x - cur->x;
 			point2f edge;
-			shape_difference2d(nxt, cur, &edge);
-			real denom = shape_cross2d(&d2, &edge);
-			real num = shape_cross2d(&edge, &offset);
+			edge.y = prism->points[next].y - cur->y;
+			edge.x = prism->points[next].x - cur->x;
+			real denom = edge.y * d2.x - d2.y * edge.x;
+			real num = offset.y * edge.x - edge.y * offset.x;
 			if (!(fabs(denom) < k_real_epsilon))
 			{
 				real r = num / denom;
@@ -551,8 +555,9 @@ bool function_2466b0(
 			{
 				return false;
 			}
+			local_0++;
 			i++;
-		} while (i < count);
+		} while (i - 1 < count);
 	}
 	*t = t0;
 	out->n = prism->plane.n;
@@ -582,9 +587,9 @@ bool function_2469b0(s_shapes const *shapes, point3f const *start,
 		{
 			real time;
 			plane3f plane;
-			if (((type == 0 && function_2461a0(&time, &shapes->spheres[index], &plane, direction, start)) ||
+			if (((type == 0 && function_2461a0(&shapes->spheres[index], start, &plane, direction, &time)) ||
 				(type == 1 && function_246360(direction, &shapes->capsules[index], start, &time, &plane)) ||
-				(type == 2 && function_2466b0(&time, &plane, start, direction, &shapes->prisms[index]))) &&
+				(type == 2 && function_2466b0(start, direction, &shapes->prisms[index], &time, &plane))) &&
 				best_time > time && dot3f(direction, &plane.n) < -0.0001f)
 			{
 				best_time = time;
@@ -597,9 +602,10 @@ bool function_2469b0(s_shapes const *shapes, point3f const *start,
 	if (best_type != NONE)
 	{
 		result->time = best_time;
-		result->position.x = direction->i * best_time + start->x;
-		result->position.y = direction->j * best_time + start->y;
-		result->position.z = direction->k * best_time + start->z;
+		point3f *position = &result->position;
+		position->x = direction->i * best_time + start->x;
+		position->y = direction->j * best_time + start->y;
+		position->z = direction->k * best_time + start->z;
 		result->plane = best_plane;
 		switch (best_type)
 		{
@@ -694,6 +700,32 @@ struct s_frame_2477b0
 	point3f position;
 };
 
+PRIVATE __forceinline vector3f *function_2477b1(
+	vector3f const *arg_0, matrix3x3 const *arg_1, vector3f *arg_2)
+{
+	vector3f local_0;
+	if (arg_0 == arg_2)
+	{
+		local_0 = *arg_0;
+		arg_0 = &local_0;
+	}
+	real local_1 = arg_1->left.i * arg_0->j;
+	local_1 += arg_1->up.i * arg_0->k;
+	local_1 += arg_1->forward.i * arg_0->i;
+	arg_2->i = local_1;
+	real local_2 = arg_1->left.j * arg_0->j;
+	local_2 += arg_1->forward.j * arg_0->i;
+	local_2 += arg_1->up.j * arg_0->k;
+	arg_2->j = local_2;
+	real local_3 = arg_1->left.k * arg_0->j;
+	local_3 += arg_1->forward.k * arg_0->i;
+	local_3 += arg_1->up.k * arg_0->k;
+	arg_2->k = local_3;
+	return arg_2;
+}
+
+// score 27 (was 27): ours is twelve bytes longer and the float is added into the accumulator with
+// addss; retail adds the value from the record into the accumulator.
 // @retail 0x2477b0
 void function_2477b0(
 	s_object_2470e0 *object,
@@ -707,12 +739,12 @@ void function_2477b0(
 		frame->rotation.up = source->up;
 		frame->position = source->position;
 		vector3f offset;
-		function_143070(&object->vector9c, &frame->rotation, &offset);
+		function_2477b1(&object->vector9c, &frame->rotation, &offset);
 		if (!(fabs(object->unknownac) < k_real_epsilon) || !(fabs(object->unknowna8) < k_real_epsilon))
 		{
 			matrix3x3 rotation;
 			function_142da0(object->unknowna8, object->unknownac, 0.f, &rotation);
-			function_142eb0(&rotation, &frame->rotation, &frame->rotation);
+			function_142eb0(&frame->rotation, &rotation, &frame->rotation);
 		}
 		real local_0 = offset.i + frame->position.x;
 		real local_1 = offset.j + frame->position.y;

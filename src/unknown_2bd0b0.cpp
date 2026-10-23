@@ -66,15 +66,14 @@ static inline s_player_2bd0 *player_get_2bd0(long player_index)
 long function_2bd0b0(long excluded)
 {
 	dword *seed = &g_4e7408->unknown0;
-	short count = g_5092e8;
 	long result = NONE;
 
 	*seed = *seed * 0x19660d + 0x3c6ef35f;
-	short first = (short)(((*seed >> 16) * count) >> 16);
+	short first = (short)(((*seed >> 16) * g_5092e8) >> 16);
 
-	for (short i = 0; i < count; i++)
+	for (short i = 0; i < g_5092e8; i++)
 	{
-		short index = (short)((first + i) % count);
+		short index = (short)((first + i) % g_5092e8);
 
 		if (excluded != g_5092f0[index])
 		{
@@ -96,7 +95,9 @@ bool c_game_engine_45c878::v23()
 	g_5092e8 = 0;
 	for (short i = 0; i < globals->marker_count; i++)
 	{
-		short type = globals->marker_entries[i].key_a;
+		s_marker_entry const *const entry = &globals->marker_entries[i];
+        s_marker_entry const *const *entry_reference = &entry;
+        short type = (*entry_reference)->key_a;
 
 		if (type >= 11 && type <= 18)
 		{
@@ -150,7 +151,7 @@ void c_game_engine_45c878::v28(long a)
 }
 
 void hill_marker(long local_player, s_polygon_2be *hill);
-bool function_19f240(long *iterator);
+bool player_iterator_next(long *iterator);
 
 /* a player iterator: the current player before the iterator (0x19f240) */
 struct s_player_iterator_2bd0
@@ -197,7 +198,7 @@ void c_game_engine_45c878::v36(long local_player)
 			iterator.data = g_4e8c24;
 			iterator.absolute_index = NONE;
 			iterator.index = NONE;
-			while (function_19f240((long *)&iterator))
+			while (player_iterator_next((long *)&iterator))
 			{
 				long other = iterator.index;
 
@@ -255,58 +256,76 @@ long function_2bd330(word player_mask)
 	return team_mask;
 }
 
-bool function_19f300(long *iterator);
+bool player_iterator_next_with_unit(long *iterator);
 bool function_15eaf0();
 
-PRIVATE __forceinline long find_hill_team_player_2bd(word team_mask)
-{
-    s_player_iterator_2bd0 iterator;
-    iterator.data = g_4e8c24;
-    iterator.absolute_index = NONE;
-    iterator.index = NONE;
-    while (function_19f300((long *)&iterator))
-    {
-        if (iterator.player->time_inside && iterator.player->team != NONE &&
-            (team_mask & (1 << iterator.player->team)))
-            return iterator.index;
-    }
-    return NONE;
-}
-
+/* announces a change of the teams on the hill: one team alone on it, or a
+   team that was alone there joined by others */
 // @retail 0x2bd460
 void function_2bd460(long before_players, long after_players)
 {
-    word before = (word)function_2bd330(before_players);
-    word after = (word)function_2bd330(after_players);
-    if (before != after && after != 0)
-    {
-        long multiple = (after - 1) & after;
-        if (!multiple)
-        {
-            long player = find_hill_team_player_2bd(after);
-            s_event event;
-            game_engine_event_initialize_inline(&event, 6, function_15eaf0() ? 5 : 1);
-            if (player != NONE)
-            {
-                event.cause_player_index = player;
-                event.cause_team = player_get_2bd0(player)->team;
-            }
-            game_engine_event_send_inline(&event);
-        }
-        if (multiple && before && !((before - 1) & before))
-        {
-            word added = before ^ after;
-            if (added)
-            {
-                long player = find_hill_team_player_2bd(added);
-                s_event event;
-                game_engine_event_initialize_inline(&event, 6, function_15eaf0() ? 6 : 2);
-                if (player != NONE)
-                    game_engine_event_set_cause_player(&event, player);
-                function_19eb90(&event);
-            }
-        }
-    }
+	word before = (word)function_2bd330((word)before_players);
+	word after = (word)function_2bd330((word)after_players);
+
+	if (before != after && after)
+	{
+		if (!((after - 1) & after))
+		{
+			s_player_iterator_2bd0 iterator;
+			long player_index = NONE;
+			s_event event;
+
+			iterator.data = g_4e8c24;
+			iterator.absolute_index = NONE;
+			iterator.index = NONE;
+			while (player_iterator_next_with_unit((long *)&iterator))
+			{
+				if (iterator.player->time_inside && iterator.player->team != NONE &&
+					(after & (1 << iterator.player->team)))
+				{
+					player_index = iterator.index;
+					break;
+				}
+			}
+			game_engine_event_initialize_inline(&event, 6, function_15eaf0() ? 5 : 1);
+			if (player_index != NONE)
+			{
+				event.cause_player_index = player_index;
+				event.cause_team = player_get_2bd0(player_index)->team;
+			}
+			game_engine_event_send_inline(&event);
+		}
+		if (((after - 1) & after) && before && !((before - 1) & before))
+		{
+			word added = before ^ after;
+
+			if (added)
+			{
+				s_player_iterator_2bd0 iterator;
+				long player_index = NONE;
+				s_event event;
+
+				iterator.data = g_4e8c24;
+				iterator.absolute_index = NONE;
+				iterator.index = NONE;
+				while (player_iterator_next_with_unit((long *)&iterator))
+				{
+					if (iterator.player->time_inside && iterator.player->team != NONE &&
+						(added & (1 << iterator.player->team)))
+					{
+						player_index = iterator.index;
+						break;
+					}
+				}
+				game_engine_event_initialize_inline(&event, 6, function_15eaf0() ? 6 : 2);
+				if (player_index != NONE)
+				{
+					game_engine_event_set_cause_player(&event, player_index);
+				}
+				function_19eb90(&event);
+			}
+		}
+	}
 }
 
 void function_2be670(s_polygon_2be *hill);
@@ -332,7 +351,7 @@ void c_game_engine_45c878::v40()
         iterator.data = g_4e8c24;
         iterator.absolute_index = NONE;
         iterator.index = NONE;
-        while (function_19f300((long *)&iterator))
+        while (player_iterator_next_with_unit((long *)&iterator))
         {
             if (iterator.player->time_inside)
                 occupants |= 1 << (byte)iterator.index;

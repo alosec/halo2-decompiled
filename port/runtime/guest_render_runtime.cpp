@@ -237,7 +237,7 @@ long function_211a0(long source, float, float, float, long, long, long, long,
 }
 
 #ifdef H2_MS_ABI_FRONTEND
-void function_2360c3(short_rectangle2d const *, point3f *);
+void function_2360c3(point3f *point, short_rectangle2d const *bounds);
 #endif
 
 static unsigned int h2_pack_color4f(color4f const *color)
@@ -268,7 +268,7 @@ void function_235d69(short_rectangle2d const *rectangle, float depth,
     for (auto &point : points) {
         point.n[2] = depth;
 #ifdef H2_MS_ABI_FRONTEND
-        function_2360c3(screen, &point);
+        function_2360c3(&point, screen);
 #else
         (void)screen;
 #endif

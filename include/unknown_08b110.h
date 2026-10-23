@@ -216,10 +216,7 @@ struct s_datums_450cb8
 
 inline s_datum_450cb8 *datum_try_get_450cb8(s_datums_450cb8 *datums, long handle)
 {
-	s_datum_450cb8 *datum = &datums->data[handle & 0x3ff];
-	if (datum->handle != handle)
-		return 0;
-	return datum;
+	return datums->data[handle & 0x3ff].handle == handle ? &datums->data[handle & 0x3ff] : 0;
 }
 
 class c_vtable_450cb8
@@ -249,15 +246,8 @@ struct s_definition_4ced60
 
 extern s_definition_4ced60 g_4ced60[];
 
-/* the global tunables of 0x450c94 and the time source */
+/* a global tunable of 0x450c94 and the time source */
 extern long g_4cf474;
-extern real g_4cf478;
-extern long g_4cf47c;
-extern real g_4cf480;
-extern real g_4cf484;
-extern real g_4cf488;
-extern real g_4cf48c;
-extern real g_4cf490;
 
 
 inline long time_now()
@@ -319,7 +309,7 @@ struct s_owner_450d1c
 	s_node_450d1c *head;
 };
 
-void function_89e70(s_node_450d1c *node, s_owner_450d1c *owner);
+void function_89e70(s_owner_450d1c *owner, s_node_450d1c *node);
 s_node_450d1c *function_89eb0(s_node_450d1c *node, long flags);
 class c_vtable_450d1c;
 
@@ -488,7 +478,7 @@ struct s_match_450d14
 
 s_match_450d14 *__stdcall function_6a3b0(void *table, s_key_450d14 *key, long index);
 long function_699a0(long index, void *table);
-void __stdcall function_82a40(long handle, long a2, real *a3);
+void __stdcall function_82a40(long object_index, struct s_relevance_observers const *observers, real *relevance, long *value);
 
 
 

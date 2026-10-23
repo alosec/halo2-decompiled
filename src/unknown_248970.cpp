@@ -53,7 +53,8 @@ public:
 void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s_particle_system_datum *arg_2,
 	real *arg_3, transform4x3f const *arg_4)
 {
-	s_248970 *local_20 = (s_248970 *)arg_0;
+	s_particle_location_datum *const *location_reference = &arg_0;
+	s_248970 *local_20 = (s_248970 *)*location_reference;
 	long local_0 = local_20->field_4;
 	s_248971 *local_1 = (s_248971 *)arg_2->function_1751d0();
 	long local_2 = local_1->field_30;

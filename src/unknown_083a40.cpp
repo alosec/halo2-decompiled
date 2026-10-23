@@ -1,4 +1,4 @@
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_083A40.CPP: the simulation watcher (g_4cf780), which tracks the
    game's players for the simulation world (lane D) */
 
@@ -50,6 +50,12 @@ static inline s_watcher_membership *watcher_session_membership(c_class_58d20 *se
 	return result;
 }
 
+static inline void function_83001(c_class_6a600 *world, const s_machine_address *address)
+{
+	world->local_address = *address;
+	world->unknown0c = 1;
+}
+
 // @retail 0x83000
 void function_83000(s_simulation_world_owner *watcher)
 {
@@ -65,12 +71,12 @@ void function_83000(s_simulation_world_owner *watcher)
 	{
 		s_watcher_membership *members = 0;
 		long local = NONE;
-		if (watcher_session_membership(watcher->session))
-		{
-			members = watcher_session_membership(watcher->session);
-			local = watcher->session->current_member;
-		}
 		s_watcher_session_link *link = 0;
+		if (watcher->session->state && watcher->session->value4c != NONE)
+		{
+			local = watcher->session->current_member;
+			members = (s_watcher_membership *)&watcher->session->value4c;
+		}
 		if (g_527330.initialized)
 			link = (s_watcher_session_link *)g_527330.unknown48;
 		*(s_watcher_session_link **)watcher->unknown08 = link;
@@ -87,8 +93,7 @@ void function_83000(s_simulation_world_owner *watcher)
 		watcher->unknown1c = mask;
 		watcher->unknown20 = local;
 		memcpy(watcher->unknown24, machines, sizeof(machines));
-		watcher->world->local_address = ((s_machine_address *)watcher->unknown24)[local];
-		watcher->world->unknown0c = 1;
+		function_83001(watcher->world, &((s_machine_address *)watcher->unknown24)[local]);
 		*(long *)(watcher->world->unknown13 + 1) = watcher->unknown20;
 		watcher->unknown84 = true;
 		watcher->unknownc30 = true;
@@ -110,8 +115,7 @@ void function_83000(s_simulation_world_owner *watcher)
 		}
 		if (watcher->unknown20 != NONE)
 		{
-			watcher->world->local_address = ((s_machine_address *)watcher->unknown24)[watcher->unknown20];
-			watcher->world->unknown0c = 1;
+			function_83001(watcher->world, &((s_machine_address *)watcher->unknown24)[watcher->unknown20]);
 			*(long *)(watcher->world->unknown13 + 1) = watcher->unknown20;
 		}
 	}
@@ -144,20 +148,22 @@ long function_83db0(s_simulation_world_owner *watcher)
 			{
 				switch (world->unknown18)
 				{
-				case 3: result = 4; goto done;
-				case 4: result = 3; goto done;
-				case 5: result = 5; goto done;
-				case 6: result = 6; goto done;
+				case 3: result = 4; break;
+				case 5: result = 5; break;
+				case 6: result = 6; break;
+				case 4: result = 3; break;
 				}
+				if (result) goto done;
 			}
 			else
 			{
 				switch (world->unknown18)
 				{
-				case 3: result = 10; goto done;
-				case 4: result = 3; goto done;
-				case 6: result = 13; goto done;
+				case 6: result = 13; break;
+				case 4: result = 3; break;
+				case 3: result = 10; break;
 				}
+				if (result) goto done;
 			}
 			if (watcher->session)
 			{
@@ -173,6 +179,7 @@ long function_83db0(s_simulation_world_owner *watcher)
 				case 8: result = 7; break;
 				case 9: result = 8; break;
 				}
+				if (result) goto done;
 			}
 		}
 	}
@@ -248,20 +255,24 @@ bool simulation_player_changed(const s_machine_address *machines, dword player_m
 
 /* the slot a player goes in: the slot of a player with its key, else a free
    slot, else the slot of the player that left the game first */
+// score 27 (was 27): the table pointer is read from a different stack slot and the counter starts
+// in EAX; retail reads it from [esp+0x18] and starts the counter in EBX.
 // @retail 0x83c90
 void simulation_player_collection_find_slot(const s_type_c67652 *collection, long player_index, const t_player_key *key, long *slot, bool *occupied)
 {
-	dword bit = 1 << player_index;
-	*occupied = (collection->player_mask & bit) != 0;
+	long local_2;
+	long found = NONE;
+	*occupied = (collection->player_mask & (1 << player_index)) != 0;
 	*slot = NONE;
 
-	long found = NONE;
+	dword bit = 1 << player_index;
+	local_2 = 0;
 	dword player_mask = collection->player_mask;
-	for (long i = 0; i < 16; i++)
+	for (; local_2 < 16; local_2++)
 	{
-		const s_simulation_owner_player *player = &collection->players[i];
-		if ((player_mask & (1 << i)) && player->flag0c && !memcmp(player, key, sizeof(t_player_key)))
-			found = i;
+		const s_simulation_owner_player *player = &collection->players[local_2];
+		if ((player_mask & (1 << local_2)) && player->flag0c && !memcmp(player, key, sizeof(t_player_key)))
+			found = local_2;
 	}
 	if (found == player_index)
 	{
@@ -304,6 +315,19 @@ static __forceinline bool watcher_machine_present(const s_simulation_world_owner
 
 /* the players whose machines have gone leave the game; then the machine
    table becomes the current one */
+#pragma optimize("g", off)
+static __forceinline s_simulation_world_player *function_84272(c_class_6a600 *arg_0, long arg_1)
+{
+ s_simulation_world_player *local_0 = 0;
+ if (arg_1 >= 0 && arg_1 < sizeof(arg_0->players) / sizeof(arg_0->players[0]))
+ {
+  s_simulation_world_player *local_1 = &arg_0->players[arg_1];
+  if (local_1->player_index != NONE)
+   local_0 = local_1;
+ }
+ return local_0;
+}
+#pragma optimize("", on)
 // @retail 0x84270
 void simulation_watcher_update_machines(s_simulation_world_owner *watcher)
 {
@@ -322,7 +346,7 @@ void simulation_watcher_update_machines(s_simulation_world_owner *watcher)
 			if (world->state != 3 && world->state != 5)
 			{
 				long index = i & 0xffff;
-				if (index >= 0 && index < sizeof(world->players) / sizeof(world->players[0]) && world->players[index].player_index != NONE)
+				if (function_84272(world, index) != 0)
 				{
 					s_simulation_world_player *world_player = &world->players[i];
 					if (world_player->flag25)
@@ -382,6 +406,7 @@ struct s_watcher_machines
 };
 
 /* rebuilds the watcher's players from the game's */
+#pragma auto_inline(off)
 // @retail 0x83510
 void simulation_watcher_rebuild_players(s_simulation_world_owner *watcher)
 {
@@ -396,6 +421,7 @@ void simulation_watcher_rebuild_players(s_simulation_world_owner *watcher)
 	if (world->state != 3 && world->state != 5)
 		function_69610(world);
 }
+#pragma auto_inline(on)
 
 #define NUMBEROF(array) (sizeof(array) / sizeof((array)[0]))
 
@@ -451,23 +477,22 @@ bool function_84630(long channel_index, s_simulation_world_owner *watcher, long 
  if (world->unknown2f && channel_index != NONE &&
   network_session_channel_has_member(watcher->session, channel_index))
  {
-  s_network_observer *observer = *(s_network_observer **)watcher->unknown08;
-  s_network_observer_channel *channel = &observer->channels[channel_index];
+  s_network_observer_channel *channel = &(*(s_network_observer **)watcher->unknown08)->channels[channel_index];
   if (channel->state == 7)
   {
-   s_network_connection *connection = &((s_network_connection *)g_4d87d4)[channel->connection_index];
+   s_link_connection *connection = &((s_link_connection *)g_4d87d4)[channel->connection_index];
    if (connection->state == 5)
    {
     short type;
     switch (world->state)
     {
     case 2: type = 2; break;
-    case 3: type = 1; break;
     case 4: type = 4; break;
+    case 3: type = 1; break;
     case 5: type = 3; break;
     default: __assume(0);
     }
-    s_machine_address machine = *(const s_machine_address *)((const byte *)address + 0xa);
+    s_machine_address machine = *(const s_machine_address *)((const byte *)*(const XNADDR *const volatile *)&address + 0xa);
     function_68580(type, &machine, value, 0);
     world = watcher->world;
     c_simulation_view *view;
@@ -527,6 +552,8 @@ bool function_84560(s_simulation_world_owner *watcher)
 
 void simulation_player_collection_swap(s_type_c67652 *collection, long player_index, long other_index, s_simulation_player_update *update);
 
+// score 32 (was 32): the address of the record is computed in EDX and the zero kept in EBX;
+// retail computes it in ECX and stores it first, so the block order differs.
 // @retail 0x83610
 void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_simulation_player_update *updates)
 {
@@ -543,7 +570,7 @@ void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_
    if ((watcher->players.player_mask & (1 << i)) && !player->flag0c &&
     simulation_player_changed(machines, session->player_mask, (const s_simulation_session_player *)session->players, i, player))
    {
-    s_simulation_player_update *update = &updates[(*count)++];
+    s_simulation_player_update *update = &updates[++*count - 1];
     update->type = 0;
     update->player_index = i;
     memcpy(update->key, player->key, sizeof(update->key));
@@ -555,18 +582,21 @@ void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_
   {
    if (!(session->player_mask & (1 << i)))
     continue;
+   s_type_c67652 *collection = &watcher->players;
    const s_simulation_session_player *source = (const s_simulation_session_player *)&session->players[i];
    const void *configuration = (const byte *)source + 0xa8;
    s_simulation_owner_player *player = &watcher->players.players[i];
    s_simulation_player_update *update;
    if ((watcher->players.player_mask & (1 << i)) && !player->flag0c)
    {
-    if (!memcmp(player->configuration, configuration, sizeof(player->configuration)))
+    if (!memcmp(configuration, player->configuration, sizeof(player->configuration)))
      continue;
-    update = &updates[(*count)++];
+    update = &updates[++*count - 1];
     update->player_index = i;
     update->type = 4;
     memcpy(update->key, source->key, sizeof(update->key));
+    memcpy(update->configuration, configuration, sizeof(update->configuration));
+    simulation_player_collection_apply_update(collection, update);
    }
    else
    {
@@ -589,28 +619,30 @@ void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_
      continue;
     long slot;
     bool occupied;
-    simulation_player_collection_find_slot(&watcher->players, i, &source->key, &slot, &occupied);
+    simulation_player_collection_find_slot(collection, i, &source->key, &slot, &occupied);
     if (slot != NONE && slot != i)
-     simulation_player_collection_swap(&watcher->players, i, slot, &updates[(*count)++]);
+     simulation_player_collection_swap(collection, i, slot, &updates[++*count - 1]);
     if (occupied)
     {
-     update = &updates[(*count)++];
+     update = &updates[++*count - 1];
      update->type = 2;
      update->player_index = i;
-     memcpy(update->key, watcher->players.players[i].key, sizeof(update->key));
-     simulation_player_collection_apply_update(&watcher->players, update);
+     memcpy(update->key, collection->players[i].key, sizeof(update->key));
+     simulation_player_collection_apply_update(collection, update);
     }
-    update = &updates[(*count)++];
+    update = &updates[++*count - 1];
+    long unknown14 = source->unknown14;
+    long controller_index = source->controller_index;
     update->player_index = i;
     update->type = 3;
     memcpy(update->key, source->key, sizeof(update->key));
     update->machine = *machine;
-    update->controller_index = source->controller_index;
-    update->unknown20 = source->unknown14;
     update->field_2_2 = false;
+    update->controller_index = controller_index;
+    update->unknown20 = unknown14;
+    memcpy(update->configuration, (const byte *)source + 0xa8, sizeof(update->configuration));
+    simulation_player_collection_apply_update(collection, update);
    }
-   memcpy(update->configuration, configuration, sizeof(update->configuration));
-   simulation_player_collection_apply_update(&watcher->players, update);
   }
   watcher->unknown18 = watcher->session->update7618;
   watcher->unknownc30 = *count > initial_count;
@@ -629,10 +661,12 @@ void __stdcall function_83370(void *watcher_, dword flags)
  {
   s_watcher_machines *source = (s_watcher_machines *)g_4e8c20;
   dword mask = source->count;
+  const dword *machines = source->machines;
+  c_class_6a600 *world = watcher->world;
   s_machine_address addresses[16];
-  s_machine_address local = watcher->world->local_address;
+  s_machine_address local = world->local_address;
   long index = NONE;
-  memcpy(addresses, source->machines, sizeof(addresses));
+  memcpy(addresses, machines, sizeof(addresses));
   for (long i = 0; i < 16; i++)
    if ((mask & (1 << i)) && !memcmp(&addresses[i], &local, sizeof(local)))
     index = i;
@@ -655,8 +689,7 @@ void __stdcall function_83370(void *watcher_, dword flags)
   memset(watcher->unknown24, 0, sizeof(watcher->unknown24));
   if (valid)
    ((s_machine_address *)watcher->unknown24)[watcher->unknown20] = local;
-  watcher->world->local_address = ((s_machine_address *)watcher->unknown24)[watcher->unknown20];
-  watcher->world->unknown0c = 1;
+  function_83001(watcher->world, &((s_machine_address *)watcher->unknown24)[watcher->unknown20]);
   *(long *)(watcher->world->unknown13 + 1) = watcher->unknown20;
   function_14c630(watcher->unknown1c, (s_machine_address *)watcher->unknown24);
   players_set_local_machine(&((s_machine_address *)watcher->unknown24)[watcher->unknown20]);
@@ -727,7 +760,7 @@ bool __stdcall function_843f0(s_simulation_world_owner *watcher, long current_me
  return false;
 }
 
-static inline long watcher_find_current_machine(dword mask, const s_machine_address *machines, s_machine_address address)
+static __forceinline long watcher_find_current_machine(dword mask, const s_machine_address *machines, s_machine_address address)
 {
  for (long i = 0; i < 16; i++)
   if ((mask & (1 << i)) && !memcmp(&machines[i], &address, sizeof(address))) return i;
@@ -738,77 +771,88 @@ void function_12d520(long address);
 // @retail 0x83f00
 bool __stdcall function_83f00(s_simulation_world_owner *watcher, long update, long count, long host, const s_session_member *members)
 {
- if (watcher->unknown10 == update) return true;
- dword mask = (1 << count) - 1;
- s_machine_address machines[16];
- memset(machines, 0, sizeof(machines));
- for (long i = 0; i < count; i++) machines[i] = *(const s_machine_address *)((const byte *)&members[i] + 10);
- c_class_6a600 *world = watcher->world;
- long local = watcher_find_current_machine(mask, machines, world->local_address);
- if (local == NONE) return false;
- if (local != *(long *)((byte *)world + 0x14)) *(long *)((byte *)world + 0x14) = local;
- c_simulation_view *view;
- s_view_iterator iterator;
- iterator.mask = NONE;
- iterator.index = 0;
- while (world_next_view(watcher->world, &iterator, &view))
+
+ bool local_2 = true;
+ if (!(watcher->unknown10 == update))
  {
-  long member = watcher_find_current_machine(mask, machines, view->address);
-  if (member == NONE)
+
+  dword mask = (1 << count) - 1;
+  s_machine_address machines[16];
+  memset(machines, 0, sizeof(machines));
+  for (long i = 0; i < count; i++) machines[i] = *(const s_machine_address *)((const byte *)&members[i] + 10);
+  c_class_6a600 *world = watcher->world;
+  long local = watcher_find_current_machine(mask, machines, world->local_address);
+  if (local == NONE) { local_2 = false; goto local_3; }
+  if (local != *(long *)((byte *)world + 0x14)) *(long *)((byte *)world + 0x14) = local;
+  c_simulation_view *view;
+  s_view_iterator iterator;
+  iterator.mask = NONE;
+  iterator.index = 0;
+  while (world_next_view(watcher->world, &iterator, &view))
   {
-   if (view->type)
+   long member = watcher_find_current_machine(mask, machines, view->address);
+   if (member == NONE)
    {
-    if (view->channel_index != NONE) function_85880(view);
-    if (view->world)
+    if (view->type)
     {
-     if (view->type == 2 && view->buffer)
+     if (view->channel_index != NONE) function_85880(view);
+     if (view->world)
      {
-      view->unknown9c = 0;
-      view->unknowna0 = 0;
-      function_12d520((long)view->buffer);
-      view->buffer = 0;
-      view->unknown98 = 0;
+      if (view->type == 2 && view->buffer)
+      {
+       view->unknown9c = 0;
+       view->unknowna0 = 0;
+       function_12d520((long)view->buffer);
+       view->buffer = 0;
+       view->unknown98 = 0;
+      }
+      c_class_6a600 *local_0 = view->world;
+      local_0->views[view->world_index] = 0;
+      local_0->view_count--;
+      view->world_index = NONE;
+      view->world = 0;
      }
-     view->world->views[view->world_index] = 0;
-     view->world->view_count--;
-     view->world_index = NONE;
-     view->world = 0;
+     view->type = 0;
     }
-    view->type = 0;
+    c_replication_view_storage *storage = (c_replication_view_storage *)view->data;
+    long index = view->unknown04;
+    record_pool_release((s_record_pool *)g_4d87ec, index);
+    if (storage)
+    {
+     storage->~c_replication_view_storage();
+     record_pool_release((s_record_pool *)g_4d87f0, index);
+    }
    }
-   c_replication_view_storage *storage = (c_replication_view_storage *)view->data;
-   long index = view->unknown04;
-   record_pool_release((s_record_pool *)g_4d87ec, index);
-   if (storage)
-   {
-    storage->~c_replication_view_storage();
-    record_pool_release((s_record_pool *)g_4d87f0, index);
-   }
+   else if (member != view->unknown1c) view->unknown1c = member;
   }
-  else if (member != view->unknown1c) view->unknown1c = member;
- }
- if (watcher->world->state != 3 && watcher->world->state != 5)
- {
-  for (long i = 0; i < 16; i++)
+  world = watcher->world;
+  if (world->state != 3 && world->state != 5)
   {
-   c_class_6a600 *world = watcher->world;
-   s_simulation_world_player *player = &world->players[i & 0xffff];
-   if (player->player_index != NONE && player->flag25 &&
-    watcher_find_current_machine(mask, machines, *(const s_machine_address *)world->players[i].unknown18) == NONE)
+   for (long i = 0; i < 16; i++)
    {
-    if (world->players[i].flag25) world->players[i].flag25 = false;
-    world->players[i].flag24 = true;
+    world = watcher->world;
+    s_simulation_world_player *player = &world->players[i & 0xffff];
+    if (player->player_index != NONE && player->flag25 &&
+     watcher_find_current_machine(mask, machines, *(const s_machine_address *)world->players[i].unknown18) == NONE)
+    {
+     if (world->players[i].flag25) world->players[i].flag25 = false;
+     world->players[i].flag24 = true;
+    }
    }
   }
+  long local_5 = *(volatile long *)&host;
+  watcher->unknown10 = update;
+  watcher->unknown1c = mask;
+  watcher->unknown14 = local_5;
+  watcher->unknown20 = *(long *)((byte *)watcher->world + 0x14);
+  memcpy(watcher->unknown24, machines, sizeof(machines));
+  watcher->unknown84 = true;
+  watcher->unknownc30 = true;
+
+
  }
- watcher->unknown10 = update;
- watcher->unknown1c = mask;
- watcher->unknown14 = host;
- watcher->unknown20 = *(long *)((byte *)watcher->world + 0x14);
- memcpy(watcher->unknown24, machines, sizeof(machines));
- watcher->unknown84 = true;
- watcher->unknownc30 = true;
- return true;
+local_3:
+ return local_2;
 }
 
 struct s_network_session_membership;
@@ -820,6 +864,8 @@ bool function_6aee0(c_class_6a600 *world);
 void function_6b310(c_class_6a600 *world);
 void function_6b350(c_class_6a600 *world);
 
+// score 2 (was 2): the member index that function_5a680 wrote is reloaded into
+// EDX and pushed for the call; retail loads it into EAX.
 // @retail 0x83220
 bool function_83220(s_simulation_world_owner *watcher)
 {
@@ -859,7 +905,7 @@ bool function_83220(s_simulation_world_owner *watcher)
   }
   else function_6b040(world);
  }
- goto done;
+ return result;
 failed:
  result = false;
 done:

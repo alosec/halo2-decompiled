@@ -162,6 +162,8 @@ struct s_aim_definition
 };
 
 // @retail 0x1fe120
+// score 41 (was 41): the target index stays in EAX where retail keeps it in EBX, so
+// the moving object header's address is recomputed and its type byte is read into BL.
 void function_1fe120(long actor_index, vector3f *direction)
 {
 	s_actor_moving *actor = actor_moving_get(actor_index);
@@ -171,8 +173,8 @@ void function_1fe120(long actor_index, vector3f *direction)
 		long target_index = actor->unknown274;
 		if (target_index != NONE)
 		{
+			s_moving_object_header *header = &((s_moving_object_header *)g_4e0300->data)[target_index & 0xffff];
 			object_index = target_index;
-			s_moving_object_header *header = &((s_moving_object_header *)g_4e0300->data)[object_index & 0xffff];
 			if (header->type == 1)
 			{
 				s_moving_object *object = (s_moving_object *)header->object;
@@ -216,7 +218,7 @@ struct s_combat_blend_block
 	s_combat_blend_values *values;
 };
 
-void *function_1e5300(long actor_index, long key);
+void *actor_get_character_weapon_extra(long actor_index, long key);
 
 // @retail 0x1fe1e0
 bool function_1fe1e0(long actor_index, real blend, s_combat_blend_values *out)
@@ -225,7 +227,7 @@ bool function_1fe1e0(long actor_index, real blend, s_combat_blend_values *out)
 	long weapon_index = function_1e1f20(actor_index);
 	if (weapon_index != NONE)
 	{
-		s_combat_blend_block *block = (s_combat_blend_block *)function_1e5300(actor_index, moving_object_get(weapon_index)->tag_index);
+		s_combat_blend_block *block = (s_combat_blend_block *)actor_get_character_weapon_extra(actor_index, moving_object_get(weapon_index)->tag_index);
 		if (block && block->count > 0)
 		{
 			s_combat_blend_values const *lower = &block->values[0];
@@ -294,23 +296,34 @@ bool function_1fdce0(long actor_index, short type)
 // @retail 0x1fef40
 bool function_1fef40(s_type_c3b527 const *target, long actor_index)
 {
+	bool result = false;
 	s_actor_view *actor = actor_get(actor_index);
 	byte *ranges = (byte *)function_1e5380(actor_index);
 	point3f point;
-	if (target->output_index == NONE || !function_2104b0(target->output_index, &target->point, &point))
+	if (target->output_index != NONE)
+	{
+		if (!function_2104b0(target->output_index, &target->point, &point))
+			point = target->point;
+	}
+	else
+	{
 		point = target->point;
+	}
 	if (ranges && function_1ff7d0(actor_index, &point, *(real *)(ranges + 0xc), *(real *)(ranges + 0x20), NULL))
 	{
 		*(s_type_c3b527 *)((byte *)actor + 0x7d0) = *target;
-		return true;
+		result = true;
 	}
-	return false;
+	return result;
 }
 
 real function_30bf0(vector3f *v);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
 // @retail 0x1fddd0
+// score 57 (was 57): the two components of the direction are loaded into the float registers in the
+// opposite order, so the products of the rotation end up in different registers;
+// our code is three bytes longer than retail's.
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
 {
@@ -345,14 +358,16 @@ bool function_1fddd0(long actor_index, point3f const *origin, vector3f *directio
         }
         vector3f forward;
         function_1fe120(actor_index, &forward);
-        real dot = direction->k * forward.k + direction->j * forward.j + direction->i * forward.i;
+        real dot = direction->k * forward.k;
+        dot += direction->j * forward.j;
+        dot += direction->i * forward.i;
         if (dot < 0.8660253882408142f)
         {
             vector3f axis;
+            bool valid = true;
             axis.i = direction->k * forward.j - direction->j * forward.k;
             axis.j = direction->i * forward.k - direction->k * forward.i;
             axis.k = direction->j * forward.i - direction->i * forward.j;
-            bool valid = true;
             if (function_30bf0(&axis) == 0.0f)
             {
                 function_11d000(&forward, &axis);
@@ -362,15 +377,13 @@ bool function_1fddd0(long actor_index, point3f const *origin, vector3f *directio
             *direction = forward;
             if (valid)
             {
-                real amount = (direction->k * axis.k + direction->j * axis.j + direction->i * axis.i) * 0.1339746117591858f;
-                vector3f rotated;
-                rotated.i = amount * axis.i + direction->i * 0.8660253882408142f -
-                    (direction->j * axis.k - direction->k * axis.j) * 0.5f;
-                rotated.j = axis.j * amount + direction->j * 0.8660253882408142f -
-                    (direction->k * axis.i - direction->i * axis.k) * 0.5f;
-                rotated.k = axis.k * amount + direction->k * 0.8660253882408142f -
-                    (direction->i * axis.j - direction->j * axis.i) * 0.5f;
-                *direction = rotated;
+                real local_0 = (direction->k * axis.k + direction->j * axis.j + direction->i * axis.i) * 0.1339746117591858f;
+                real local_1 = direction->j * axis.k - direction->k * axis.j;
+                real local_2 = direction->k * axis.i - direction->i * axis.k;
+                real local_3 = direction->i * axis.j - direction->j * axis.i;
+                direction->i = direction->i * 0.8660253882408142f + local_0 * axis.i - local_1 * 0.5f;
+                direction->j = local_0 * axis.j + direction->j * 0.8660253882408142f - local_2 * 0.5f;
+                direction->k = local_0 * axis.k + direction->k * 0.8660253882408142f - local_3 * 0.5f;
             }
         }
         *arg_c9241c = *(real *)(actor + 0x7bc);
@@ -396,38 +409,41 @@ bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const 
 extern vector3f *g_4687b0;
 
 // @retail 0x1fe410
+// score 2 (was 42): the cosine is loaded onto the x87 stack before the register that
+// holds the point is pushed, retail pushes it first.
 void function_1fe410(point3f *point, real distance)
 {
-    (void)&distance;
     point3f start;
     start.x = g_4687b0->i * 1.5f + point->x;
     start.y = g_4687b0->j * 1.5f + point->y;
     start.z = g_4687b0->k * 1.5f + point->z;
-    real angle = slot_random() * 6.2831854820251465f - 3.1415927410125732f;
+    real angle = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f;
+    angle *= 6.2831854820251465f;
+    angle -= 3.1415927410125732f;
+    vector3f radial;
+    radial.i = (real)cos(angle);
+    radial.j = (real)sin(angle);
+    radial.k = 0.0f;
     point3f destination;
-    destination.x = (real)cos(angle) * distance + start.x;
-    destination.y = (real)sin(angle) * distance + start.y;
-    destination.z = 0.0f * distance + start.z;
+    destination.x = radial.i * distance + start.x;
+    destination.y = radial.j * distance + start.y;
+    destination.z = radial.k * distance + start.z;
     vector3f direction;
-    direction.i = start.x - point->x;
-    direction.j = start.y - point->y;
-    direction.k = start.z - point->z;
+    vector3d_from_points3d(point, &start, &direction);
     s_point_collision collision;
     collision.material = NONE;
     if (function_1697c0(0x15808c2f, point, &direction, NONE, NONE,
         (s_collision_result_1697c0 *)&collision))
         start = *point;
-    direction.i = destination.x - start.x;
-    direction.j = destination.y - start.y;
-    direction.k = destination.z - start.z;
+    vector3d_from_points3d(&start, &destination, &direction);
     if (function_1697c0(0x5808c2f, &start, &direction, NONE, NONE,
         (s_collision_result_1697c0 *)&collision))
     {
-        real fraction = collision.fraction * distance - 0.1f;
-        if (fraction < 0.0f) fraction = 0.0f;
-        destination.x = direction.i * fraction + start.x;
-        destination.y = direction.j * fraction + start.y;
-        destination.z = 0.0f * fraction + start.z;
+        distance = collision.fraction * distance - 0.1f;
+        if (distance < 0.0f) distance = 0.0f;
+        destination.x = radial.i * distance + start.x;
+        destination.y = radial.j * distance + start.y;
+        destination.z = radial.k * distance + start.z;
     }
     *point = destination;
 }

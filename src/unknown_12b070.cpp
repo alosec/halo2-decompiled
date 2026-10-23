@@ -1,4 +1,6 @@
 // @flags /O2 /arch:SSE /Gr
+#include "counters_storage.h"
+#include "device_setup_storage.h"
 /* UNKNOWN_12B070.CPP: the main loop's timing: the time it started, and the
    lengths of the last 15 vertical blanks reported by the rasterizer */
 
@@ -15,7 +17,17 @@ extern byte g_4e6388;
 extern byte g_4e6389;
 
 /* the tick count, carried past its wrap to 64 bits */
-__int64 g_4e6390;
+union u_tick_count
+{
+	__int64 value;
+	struct
+	{
+		dword low;
+		dword high;
+	} parts;
+};
+
+u_tick_count g_4e6390;
 /* the lengths of the last vertical blanks, a ring of 15 */
 struct s_vblank_history
 {
@@ -23,8 +35,22 @@ struct s_vblank_history
 	short counts[15];
 };
 
-s_vblank_history g_4e6400;
-short g_485aca;
+/* the frame's interval in vertical blanks, the interval the game asks for,
+   whether a frame is due, and the vertical blank history */
+struct s_frame_timing
+{
+	short frame_interval;
+	short requested_interval;
+	bool frame_due;
+	byte unknown05[0x43];
+	s_vblank_history history;
+};
+
+s_frame_timing g_frame_timing;
+#define g_4e63b8 (g_frame_timing.frame_interval)
+#define g_4e63ba (g_frame_timing.requested_interval)
+#define g_4e63bc (g_frame_timing.frame_due)
+#define g_4e6400 (g_frame_timing.history)
 
 // @retail 0x12b2a0
 void __cdecl main_vblank_callback(D3DVBLANKDATA *data)
@@ -41,7 +67,8 @@ void __cdecl main_vblank_callback(D3DVBLANKDATA *data)
 // @retail 0x12b070
 void function_12b070(void)
 {
-	g_4e6390 = GetTickCount();
+	g_4e6390.parts.low = GetTickCount();
+	g_4e6390.parts.high = 0;
 	g_4e6398.low = 0;
 	g_4e6398.high = 0;
 	D3DDevice_SetVerticalBlankCallback(main_vblank_callback);
@@ -50,15 +77,12 @@ void function_12b070(void)
 }
 
 /* the vertical blank count (unknown_123b30.cpp) and the one of the last frame */
-extern s_connection_counter g_485ab0;
 
 #define VBLANK_COUNT (*(__int64 volatile *)&g_485ab0)
 #define LAST_FRAME_VBLANK_COUNT (*(__int64 *)&g_4e6398)
 
 __int64 g_4e63a8;
 __int64 g_4e63b0;
-short g_4e63b8;
-bool g_4e63bc;
 
 /* waits for the vertical blank before the one the last frame asked for, and
    notes whether a frame is due */
@@ -95,25 +119,32 @@ bool function_12b3c0(void)
 
 	if (!g_485aca)
 	{
-		return false;
+		result = false;
 	}
-	if (!g_4e6948 || !g_4e6948->flag1120)
+	else
 	{
-		return false;
-	}
-	if (g_4e6388)
-	{
-		result = *(bool *)&g_4e6389;
+		if (!g_4e6948)
+		{
+			return false;
+		}
+		short local_0 = g_4e6948->flag1120;
+		if (!local_0)
+		{
+			return false;
+		}
+		if (g_4e6388)
+		{
+			result = *(bool *)&g_4e6389;
+		}
 	}
 	return result;
 }
 
 short g_485ac0;
-short g_4e63ba;
 long g_4e638c;
 __int64 g_4e63a0;
 
-bool function_14a224(void);
+bool window_manager_main_menu_focused(void);
 
 /* the frame's timing: the vertical blank it ends on (no earlier than the
    one the last frame asked for, plus the interval the game asks for), the
@@ -123,15 +154,13 @@ real function_12b0e0(void)
 {
 	real local_0;
 	dword now = GetTickCount();
-	__int64 target = g_4e63b0;
+	__int64 target = LAST_FRAME_VBLANK_COUNT > g_4e63b0 ? LAST_FRAME_VBLANK_COUNT : g_4e63b0;
 	__int64 next;
 	__int64 ticks;
 	long game_time;
 	long rate;
 	real elapsed;
 
-	if (LAST_FRAME_VBLANK_COUNT > target)
-		target = LAST_FRAME_VBLANK_COUNT;
 	if (g_4e6948 && g_4e6948->flag1120)
 		game_time = g_510c54->game_time;
 	else
@@ -140,25 +169,27 @@ real function_12b0e0(void)
 	if (function_12b3c0())
 	{
 		g_4e63ba = g_485aca;
-		if (g_4e6948->flag1120 && (g_4e6948->state != 3 || function_14a224()))
+		if (g_4e6948->flag1120 && (g_4e6948->state != 3 || window_manager_main_menu_focused()))
 			g_4e63ba = g_4e63ba > 2 ? g_4e63ba : 2;
 		g_4e63b8 = g_4e63ba;
 		next = target + g_4e63b8;
 	}
 	now = GetTickCount();
-	ticks = (g_4e6390 & 0xffffffff00000000) | now;
-	if (ticks < g_4e6390)
+	ticks = now;
+	ticks |= g_4e6390.value & 0xffffffff00000000;
+	if (ticks < g_4e6390.value)
 		ticks += 0x100000000;
 	if (VBLANK_COUNT > next)
 		next = VBLANK_COUNT;
 	rate = g_485ac0;
 	if (rate <= 0)
 		rate = 60;
-	elapsed = (real)(next - LAST_FRAME_VBLANK_COUNT) / rate;
+	real frequency = rate;
+	elapsed = (real)(next - LAST_FRAME_VBLANK_COUNT) / frequency;
 	local_0 = 0.0f > elapsed ? 0.0f : (elapsed > 10.0f ? 10.0f : elapsed);
-	LAST_FRAME_VBLANK_COUNT = next;
-	g_4e6390 = ticks;
 	g_4e638c = game_time;
+	LAST_FRAME_VBLANK_COUNT = next;
+	g_4e6390.value = ticks;
 	g_4e63a0 = VBLANK_COUNT;
 	return local_0;
 }

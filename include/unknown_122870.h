@@ -52,6 +52,13 @@ struct s_cache_file_location
 	dword offset;
 };
 
+/* a cache file location as the cache file reader takes it: one 64-bit value
+   with the file index in the low half and the offset in the high half */
+static inline unsigned __int64 cache_file_location_make(long file_index, dword offset)
+{
+	return ((unsigned __int64)offset << 32) | (dword)file_index;
+}
+
 /* 0x5476f8 */
 struct s_cache_file_globals
 {

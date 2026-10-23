@@ -3,6 +3,9 @@
 
 struct s_184251
 {
+	s_184251(bool value) : field_0(value) {}
+	s_184251(s_184251 const &other) : field_0(other.field_0) {}
+
 	bool field_0;
 };
 

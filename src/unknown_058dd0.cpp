@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Gr
 /* UNKNOWN_058DD0.CPP: the game-session state machine states */
 
@@ -11,7 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-void function_07ad80(long count, byte *buffer);
+void transport_get_random_bytes(long count, byte *buffer);
 bool network_session_host_leave_to_peer(c_class_58d20 *session, long peer_index);
 struct s_surface_description;
 s_surface_description *function_192e60(long index);
@@ -145,15 +146,8 @@ bool c_session_state_pre_game::update()
 				function_06df60(o, 0, 0, 0);
 			}
 			break;
-		case 1:
-			if (function_058d50(a))
-			{
-				result = function_06e360();
-			}
-			if (a->function_058d20())
-			{
-				result = function_06e410();
-			}
+		case 5:
+			function_06df60(o, 4, 0, 0);
 			break;
 		case 2:
 		case 3:
@@ -167,8 +161,18 @@ bool c_session_state_pre_game::update()
 				}
 			}
 			break;
-		case 5:
-			function_06df60(o, 4, 0, 0);
+		case 1:
+			if (function_058d50(a))
+			{
+				result = function_06e360();
+			}
+			if (a->function_058d20())
+			{
+				result = function_06e410();
+			}
+			break;
+		case 15:
+			function_06df60(o, 5, 0, 0);
 			break;
 		case 6:
 		case 7:
@@ -179,9 +183,6 @@ bool c_session_state_pre_game::update()
 		case 12:
 		case 13:
 			function_06df60(o, 6, 0, 0);
-			break;
-		case 15:
-			function_06df60(o, 5, 0, 0);
 			break;
 		default:
 			__assume(0);
@@ -219,15 +220,14 @@ bool c_session_state_start_game::update()
 		if (a->type == 4)
 		{
 			function_06df60(o, 3, 0, 0);
-			return result;
 		}
-		if (a->type == 2)
+		else if (a->type == 2)
 		{
-			if (a->function_058d20() && function_06e720(a) && function_06e6b0(a, &flag10))
+			result = a->function_058d20() && function_06e720(a) && function_06e6b0(a, &flag10);
+			if (result)
 			{
 				network_session_stop_countdown(a);
 				network_session_set_mode(a, 4);
-				result = true;
 			}
 		}
 		else
@@ -278,21 +278,21 @@ bool c_session_state_in_game::update()
 					network_session_leave(a, false);
 					result = true;
 				}
-				return result;
+				goto local_6ea21;
 			}
 			if (a->function_058d20())
 			{
-				if (function_138a10())
+				if (game_finish_countdown_done())
 				{
 					network_session_set_mode(a, 5);
 					result = true;
 				}
 				else if (a->get_value_49c4())
 				{
-					function_1388e0();
+					game_finish();
 				}
 			}
-			if (function_138800())
+			if (game_loop_running())
 			{
 				s_game_options_view *options = g_4e6948;
 				if (options->id_a == id_a && options->id_b == id_b)
@@ -312,9 +312,13 @@ bool c_session_state_in_game::update()
 		}
 		else
 		{
-			function_06df60(o, a->type == 5 ? 4 : 1, 0, 0);
+			if (a->type == 5)
+				function_06df60(o, 4, 0, 0);
+			else
+				function_06df60(o, 1, 0, 0);
 		}
 	}
+local_6ea21:
 	return result;
 }
 
@@ -367,18 +371,21 @@ bool c_session_state_in_match::update()
 				{
 					network_session_leave(a, false);
 				}
-				return true;
+				result = true;
+				goto local_0;
 			}
-			if (function_138a10() && b->function_058d20())
+			if (game_finish_countdown_done() && b->function_058d20())
 			{
 				network_session_set_mode(b, 5);
-				return true;
+				result = true;
+				goto local_0;
 			}
 		}
 		else if (b->type == 5)
 		{
 			function_06df60(o, 9, 0, 0);
-			return true;
+			result = true;
+			goto local_0;
 		}
 		else
 		{
@@ -386,6 +393,7 @@ bool c_session_state_in_match::update()
 			result = true;
 		}
 	}
+local_0:
 	return result;
 }
 
@@ -468,6 +476,9 @@ void c_session_state_start_match::leave(long a)
 }
 #pragma inline_depth(255)
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+
 /* ---- matchmaking ---- */
 
 // @retail 0x70a20
@@ -547,18 +558,18 @@ void c_session_state_matchmaking::leave(long a)
 // @retail 0x72b50
 bool c_session_state_post_match::update()
 {
+	bool result;
 	s_session_owner *o = owner;
 	c_class_58d20 *a = o->session_a;
 	c_class_58d20 *b = o->session_b;
-	bool result = function_06dfa0();
+	result = function_06dfa0();
+	volatile bool local_0 = result;
 	if (!result && !o->failed)
 	{
 		if (b->type == 5 && (a->type == 13 || a->type == 12))
 		{
 			if (!SESSION_STATE_IS_LIVE(b->state) || !a->function_058d20())
-			{
-				return result;
-			}
+				goto local_1;
 			long index = b->member_index;
 			s_session_snapshot snapshot;
 			s_session_snapshot compare;
@@ -567,14 +578,16 @@ bool c_session_state_post_match::update()
 			network_session_get_key(b, (s_session_id *)snapshot.unknown04, snapshot.unknown0c, NULL, &snapshot.unknown00);
 			memcpy(snapshot.words, b->members[index].words, sizeof(snapshot.words));
 			if (!network_session_get_data5ddc(a, (s_parameters_part *)&compare) || memcmp(&compare, &snapshot, sizeof(snapshot)) != 0)
-			{
 				network_session_host_set_data5ddc(a, (const s_parameters_part *)&snapshot);
-			}
-			return result;
+			result = local_0;
 		}
-		network_session_leave(b, false);
-		return true;
+		else
+		{
+			network_session_leave(b, false);
+			result = true;
+		}
 	}
+local_1:
 	return result;
 }
 
@@ -586,34 +599,25 @@ bool c_session_state_joining::update()
 	s_session_owner *o = owner;
 	c_class_58d20 *c = o->session_c;
 	c_class_58d20 *a = o->session_a;
-	if (unknown104 == 0)
+	if (unknown104 == 0 && flag10)
 	{
-		if (flag10)
+		function_06f4b0(this);
+	}
+	if (unknown104 == 0 && !flag10)
+	{
+		if (a->state != 0)
 		{
-			function_06f4b0(this);
+			function_06f700(this);
 		}
-		if (unknown104 == 0)
+		else
 		{
-			if (!flag10)
-			{
-				if (a->state != 0)
-				{
-					function_06f700(this);
-				}
-				else
-				{
-					function_06fcc0(this);
-				}
-			}
+			function_06fcc0(this);
 		}
 	}
 	if (unknown104 != 0)
 	{
-		long state = a->state;
-		if (state == 5 || state == 6 || state == 7 || state == 8)
-		{
+		if (a->function_058d20())
 			network_session_set_mode(a, 1);
-		}
 	}
 	if (flagf8)
 	{
@@ -663,6 +667,7 @@ void c_session_state_joining::leave(long a)
 
 /* ---- post-game ---- */
 
+#pragma inline_depth(0)
 // @retail 0x6f050
 bool c_session_state_post_game::update()
 {
@@ -676,6 +681,8 @@ bool c_session_state_post_game::update()
 	}
 	return result;
 }
+#pragma inline_depth(255)
+
 
 /* ---- the session client ---- */
 
@@ -695,6 +702,9 @@ bool c_session_client::function_06daa0(long a)
 	return result;
 }
 
+struct s_session_join_request;
+bool function_630f0(c_class_58d20 *session, long address, const s_session_join_request *request, long reason);
+
 // @retail 0x6dae0
 void c_session_client::function_06dae0(long a, s_session_remote *remote)
 {
@@ -708,20 +718,13 @@ void c_session_client::function_06dae0(long a, s_session_remote *remote)
 			{
 				return;
 			}
-			byte has_address = remote->has_address;
-			if (has_address)
+			if (remote->has_address && function_0632e0(address, remote->address144) != NONE)
 			{
-				if (function_0632e0(address, remote->address144) != NONE)
-				{
-					return;
-				}
+				return;
 			}
-			if (has_address)
+			if (remote->has_address && function_063510(address, remote->address04, remote->id))
 			{
-				if (function_063510(remote->address04, address, remote->id))
-				{
-					goto fallback;
-				}
+				goto fallback;
 			}
 			if (function_06dd00(a, remote))
 			{
@@ -730,15 +733,7 @@ void c_session_client::function_06dae0(long a, s_session_remote *remote)
 		}
 	}
 fallback:
-	s = session;
-	long local[3];
-	local[0] = 0;
-	local[1] = 0;
-	local[0] = s->unknown1c;
-	local[2] = 0;
-	local[1] = s->unknown20;
-	local[2] = 3;
-	function_07b140(s->unknown04, a, 10, 12, local);
+	function_630f0(session, a, (const s_session_join_request *)remote, 3);
 }
 
 // @retail 0x6dbc0
@@ -764,11 +759,6 @@ void c_session_client::function_06dbd0(const s_session_id *id)
 	case 6:
 		return;
 	case 7:
-		if (s->flag7420)
-		{
-			return;
-		}
-		break;
 	case 8:
 		if (s->flag7420)
 		{
@@ -788,7 +778,7 @@ void c_session_client::function_06dbd0(const s_session_id *id)
 /* ---- shared by the states (lane D, round 4) ---- */
 
 /* ends the hosted game early (network configuration) */
-bool g_4cf95c;
+
 
 static inline long session_time_get(void)
 {
@@ -804,7 +794,14 @@ static inline long session_time_get(void)
 	return time;
 }
 
-// @retail 0x6dfa0
+#pragma inline_depth(0)
+PRIVATE __forceinline void function_6dfa1(s_session_owner *arg_0)
+{
+ function_06df60(arg_0, 1, 0, 0);
+}
+#pragma inline_depth(255)
+
+// @retail 0x6dfa0 standard
 bool c_session_state::function_06dfa0()
 {
 	s_session_owner *o = owner;
@@ -833,11 +830,11 @@ bool c_session_state::function_06dfa0()
 	{
 		if (b->state == 0)
 		{
-			function_06df60(o, 1, 0, 0);
+			function_06df60(owner, 1, 0, 0);
 		}
 		else if (function_058d90(b))
 		{
-			function_06df60(o, 1, 0, 0);
+			function_6dfa1(owner);
 		}
 	}
 	else
@@ -852,7 +849,7 @@ bool c_session_state::function_06dfa0()
 	{
 		if (a->state == 0 || function_058d90(a))
 		{
-			function_06df60(o, 0, 0, 0);
+			function_06df60(owner, 0, 0, 0);
 		}
 	}
 	return result;
@@ -878,11 +875,15 @@ bool c_session_state_pre_game::function_06e360()
 		unknown14 = session_time_get();
 		unknown18 = countdown;
 	}
-	if (countdown >= 0 && session_time_get() - unknown14 >= 1000 && countdown > 0)
+	if (countdown >= 0)
 	{
-		unknown14 = session_time_get();
-		unknown18 = --countdown;
-		network_session_start_countdown(session, countdown, true, 0, NULL);
+		long local_0 = unknown14;
+		if (session_time_get() - local_0 >= 1000 && countdown > 0)
+		{
+			unknown14 = session_time_get();
+			unknown18 = --countdown;
+			network_session_start_countdown(session, true, countdown, 0, NULL);
+		}
 	}
 	return false;
 }
@@ -895,7 +896,7 @@ void function_06e620(c_class_58d20 *s)
 		long now = time(NULL);
 		long seed = rand() ^ GetTickCount() ^ now;
 		long id[2];
-		function_07ad80(sizeof(id), (byte *)id);
+		transport_get_random_bytes(sizeof(id), (byte *)id);
 		s->set_values_4da0(id[0], id[1]);
 		s->set_value_4da8(seed);
 		s->clear_value_49c4();
@@ -911,7 +912,8 @@ bool function_06e6b0(c_class_58d20 *s, byte *p)
 		*p = false;
 		return false;
 	}
-	if (g_4cf95c)
+	if (!g_4cf95c)
+		goto local_0;
 	{
 		if (s->state == 7 && !s->flag7420)
 		{
@@ -923,24 +925,31 @@ bool function_06e6b0(c_class_58d20 *s, byte *p)
 		}
 		if (*p)
 		{
-			return true;
+			goto local_0;
 		}
 		*p = true;
 		return network_session_host_leave_to_peer(s, NONE) ? false : true;
 	}
+local_0:
 	return true;
 }
 
+#pragma inline_depth(0)
 // @retail 0x6dcc0
 bool c_session_client::function_06dcc0(s_session_remote *remote)
 {
 	bool result = true;
-	if (!function_192e60(session->get_value_49c8()) || remote->unknown170 > remote->unknown16c)
+	c_class_58d20 *current = session;
+	long index = NONE;
+	if (current->state > 2 && current->state <= 8)
+		index = current->value49c8;
+	if (!function_192e60(index) || remote->unknown170 > remote->unknown16c)
 	{
 		result = false;
 	}
 	return result;
 }
+#pragma inline_depth(255)
 
 // @retail 0x70160
 long function_70160(c_class_58d20 *session)
@@ -1027,7 +1036,7 @@ extern bool g_51051c;
 extern bool g_51051d;
 long __stdcall function_73b10(long a, long b);
 void function_73bc0(const s_session_id *session_id, const s_session_id *round_key,
-	long first, long second, bool free_for_all);
+	__int64 arg_2, bool free_for_all);
 
 #pragma inline_depth(0)
 PRIVATE __forceinline __int64 function_72170(c_class_58d20 *arg_0)
@@ -1035,6 +1044,11 @@ PRIVATE __forceinline __int64 function_72170(c_class_58d20 *arg_0)
 	return arg_0->get_values_4da0();
 }
 #pragma inline_depth(255)
+
+PRIVATE __forceinline bool function_72170(s_session_id arg_0, s_session_id arg_1)
+{
+	return *(__int64 *)&arg_0 != *(__int64 *)&arg_1;
+}
 
 // @retail 0x72170
 void function_72170(c_session_state_matchmaking *state)
@@ -1047,15 +1061,17 @@ void function_72170(c_session_state_matchmaking *state)
 			s_session_id key;
 			key.a = session->value49f0;
 			key.b = session->value49f4;
-			if (g_510520.a != key.a || g_510520.b != key.b ||
+			if (function_72170(g_510520, key) ||
 				!function_73b10(g_510540.a, g_510540.b))
 			{
-				byte *variant = session_state_is_live(session) ? session->data4db0 : NULL;
+				byte *variant = NULL;
+				if (session_state_is_live(session))
+					variant = session->data4db0;
 				bool free_for_all = (variant[0x48] & 1) != 0;
-				const s_session_id *id = session->state && session->flag24 ?
-					(const s_session_id *)&session->unknown1c : NULL;
-				__int64 values = function_72170(session);
-				function_73bc0(id, &key, (long)values, (long)(values >> 32), free_for_all);
+				const s_session_id *id = NULL;
+				if (session->state && session->flag24)
+					id = (const s_session_id *)&session->unknown1c;
+				function_73bc0(id, &key, function_72170(session), free_for_all);
 			}
 		}
 		else if (g_510518)
@@ -1101,6 +1117,7 @@ struct s_player_rating_properties
 
 long __stdcall function_063190(void *summary, long user);
 
+#pragma optimize("s", on)
 // @retail 0x72540
 void function_72540(c_session_state_matchmaking *state)
 {
@@ -1164,7 +1181,8 @@ void function_72540(c_session_state_matchmaking *state)
 			long total = 0;
 			long count = 0;
 			long minimum = 127;
-			for (long i = 0; i < ratings->player_count; i++)
+			long i = 0;
+			if (ratings->player_count > 0) do
 			{
 				long rank = ratings->ranks[i];
 				if (rank != NONE)
@@ -1175,6 +1193,7 @@ void function_72540(c_session_state_matchmaking *state)
 					count++;
 				}
 			}
+			while (++i < ratings->player_count);
 			if (count > 0)
 			{
 				ratings->minimum = minimum;
@@ -1186,6 +1205,7 @@ void function_72540(c_session_state_matchmaking *state)
 		}
 	}
 }
+#pragma optimize("", on)
 
 bool network_session_host_clear_flag49fc(c_class_58d20 *session);
 struct s_member_quality_collection;
@@ -1200,18 +1220,17 @@ long function_193340(s_surface_description *variant);
 long function_193370(s_surface_description *variant);
 long function_193440(s_surface_description *variant);
 
-static inline long matchmaking_variant_width(s_surface_description *variant)
+#pragma inline_depth(0)
+static __forceinline void function_72349(c_class_58d20 *arg_0)
 {
-	switch (*(long *)variant)
-	{
-	case 1: return NONE;
-	case 2: return NONE;
-	case 3: return *(long *)((byte *)variant + 0x5ec);
-	case 4: return *(long *)((byte *)variant + 0x5ec);
-	case 5: return *(long *)((byte *)variant + 0x5ec);
-	default: __assume(0);
-	}
+	network_session_host_clear_flag49fc(arg_0);
 }
+
+static __forceinline long function_72458(s_surface_description *arg_0)
+{
+	return function_193340(arg_0);
+}
+#pragma inline_depth(255)
 
 // @retail 0x72330
 void function_72330(c_session_state_matchmaking *state)
@@ -1220,7 +1239,7 @@ void function_72330(c_session_state_matchmaking *state)
 	long member = session->member_index;
 	s_member_quality_collection *members = (s_member_quality_collection *)&session->value4c;
 	s_matchmaking_player_values *values = (s_matchmaking_player_values *)state;
-	network_session_host_clear_flag49fc(session);
+	function_72349(session);
 	if (state->mode == 3)
 	{
 		const byte *summary = session_state_is_live(session) && session->flag49fd ? session->data4a00 : NULL;
@@ -1250,23 +1269,36 @@ void function_72330(c_session_state_matchmaking *state)
 		values->limit = NONE;
 		s_surface_description *variant = (s_surface_description *)values->unknown1c;
 		long type = *(long *)variant;
-		if (type == 5 || type == 3 || type == 4)
+		if (type == 5) goto local_special;
+		switch (type)
 		{
-			if (matchmaking_variant_width(variant) > 0 && function_193340(variant) > 0)
+		case 3:
+		case 4:
+			break;
+		default:
+			goto local_default;
+		}
+	local_special:
+		{
+			_ReadWriteBarrier();
+			if (function_193440(variant) > 0 && function_72458(variant) > 0)
 			{
 				long count = level / function_193440(variant);
-				if (count >= function_193340(variant))
+				if (count >= function_72458(variant))
 				{
 					if (count > function_193370(variant)) count = function_193370(variant);
 					values->limit = function_193440(variant) * count;
 				}
 			}
 		}
-		else if (level >= function_1932c0(variant))
+		goto local_done;
+	local_default:
+		if (level >= function_1932c0(variant))
 		{
 			if (level > function_193300(variant)) level = function_193300(variant);
 			values->limit = level;
 		}
+	local_done:;
 	}
 	if (state->mode == 3)
 	{
@@ -1276,6 +1308,7 @@ void function_72330(c_session_state_matchmaking *state)
 		if (state->mode == 3) *(bool *)state->unknown14 = true;
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x70570
 long function_70570(c_session_state_matchmaking *state)
@@ -1319,20 +1352,23 @@ bool function_71f80(c_session_state_matchmaking *state)
 	{
 		if (!function_058d90(session) && current > 2 && current <= 8)
 		{
-			long next;
-			long type = session->type;
-			if (type >= 2 && type <= 4)
-				next = 7;
-			else if (type == 5)
-				next = 9;
-			else
-				goto local_1;
-			function_06df60(owner, next, 0, 0);
-			state->mode = 2;
-			local_0 = true;
+			switch (session->type)
+			{
+			case 2:
+			case 3:
+			case 4:
+				function_06df60(owner, 7, 0, 0);
+				state->mode = 2;
+				local_0 = true;
+				break;
+			case 5:
+				function_06df60(owner, 9, 0, 0);
+				state->mode = 2;
+				local_0 = true;
+				break;
+			}
 		}
 	}
-local_1:
 	return local_0;
 }
 
@@ -1458,8 +1494,9 @@ void function_72950(c_class_58d20 *session)
 	{
 		time_t now = time(NULL);
 		seed = rand();
-		seed ^= GetTickCount();
-		seed ^= (long)now;
+		long &value = seed;
+		value ^= GetTickCount();
+		value ^= (long)now;
 		session->set_value_4da8(seed);
 		session->clear_value_49c4();
 	}
@@ -1517,15 +1554,14 @@ bool network_session_parameters_set_data4db0(c_class_58d20 *session, const s_ses
 // @retail 0x71480
 bool function_71480(c_session_state_matchmaking *state)
 {
+	bool result = false;
 	s_session_owner *owner = state->owner;
 	c_class_58d20 *session = owner->session_a;
 	c_class_58d20 *other = owner->session_b;
-	bool result = false;
 	if (session->type == 10)
 	{
 		function_70b70(state);
-		long current = session->state;
-		if (current == 5 || current == 6 || current == 7 || current == 8)
+		if (session->function_058d20())
 		{
 			if (other->state == 0)
 			{
@@ -1574,12 +1610,13 @@ bool function_71480(c_session_state_matchmaking *state)
 						network_session_parameters_set_value49c8(other, *(long *)((byte *)state + 0x18));
 						network_session_parameters_set_language(other, network_session_get_language(session));
 						other->set_value_4994(*(long *)((byte *)state + 0x938));
-						network_session_parameters_set_value4d08(other, (const char *)map + 0xb4c, NONE, map_id);
+						network_session_parameters_set_value4d08(other, NONE, map_id, (const char *)map + 0xb4c);
 						network_session_host_set_summary(other, (const s_session_summary *)((byte *)state + 0x630));
 						network_session_parameters_set_value4dac(other, value);
 						network_session_parameters_set_data4db0(other, (const s_session_data4db0 *)settings);
-						function_07ad80(8, (byte *)&original);
-						other->set_values_4da0(original.a, original.b);
+						s_session_id random_id;
+						transport_get_random_bytes(8, (byte *)&random_id);
+						other->set_values_4da0(random_id.a, random_id.b);
 						if (*(long *)(manager + 8)) *(long *)(manager + 8) = 0;
 						network_session_set_mode(session, 11);
 						result = true;
@@ -1591,10 +1628,6 @@ bool function_71480(c_session_state_matchmaking *state)
 					}
 				}
 			}
-		}
-		else
-		{
-			volatile long unused = current;
 		}
 	}
 	return result;
@@ -1622,25 +1655,31 @@ struct s_matchmaking_summary
 bool network_session_parameters_set_summary(c_class_58d20 *session, const s_session_summary *summary);
 bool network_session_parameters_set_mode(c_class_58d20 *session, long mode);
 
+static __forceinline void function_702c0(byte *arg_0, s_matchmaking_summary *arg_1)
+{
+	arg_1->player_count = 0;
+	dword local_0 = *(dword *)(arg_0 + 0x10d0);
+	for (long local_1 = 0; local_1 < 16; local_1++)
+	{
+		if (local_0 & (1 << local_1))
+		{
+			arg_1->player_users[arg_1->player_count] = *(s_matchmaking_identity *)(arg_0 + 0x10d4 + local_1 * 0x13c);
+			arg_1->first[arg_1->player_count] = NONE;
+			arg_1->second[arg_1->player_count] = NONE;
+			arg_1->third[arg_1->player_count] = 0;
+			arg_1->player_count++;
+		}
+	}
+}
+
 // @retail 0x70280
 void function_70280(c_session_state_matchmaking *state)
 {
 	c_class_58d20 *session = state->owner->session_a;
+	byte *local_0 = (byte *)&session->value4c;
 	s_matchmaking_summary summary;
 	memset(&summary, 0, sizeof(summary));
-	dword player_mask = session->player_mask;
-	summary.player_count = 0;
-	for (long i = 0; i < 16; i++)
-	{
-		if (player_mask & (1 << i))
-		{
-			summary.player_users[summary.player_count] = *(s_matchmaking_identity *)&session->players[i].user_id;
-			summary.first[summary.player_count] = NONE;
-			summary.second[summary.player_count] = NONE;
-			summary.third[summary.player_count] = 0;
-			summary.player_count++;
-		}
-	}
+	function_702c0(local_0, &summary);
 	summary.machine_count = 1;
 	const s_session_id *id = NULL;
 	if (session->state && session->flag24)
@@ -1649,8 +1688,7 @@ void function_70280(c_session_state_matchmaking *state)
 	function_7ed20((const s_message_identities *)&session->value4c,
 		(s_message_identity *)&summary.machine_users[0], NULL, NULL);
 	state->mode = 1;
-	long current = session->state;
-	if (current == 5 || current == 6 || current == 7 || current == 8)
+	if (session->function_058d20())
 	{
 		network_session_host_set_summary(session, (const s_session_summary *)&summary);
 		network_session_set_mode(session, 6);
@@ -1658,7 +1696,6 @@ void function_70280(c_session_state_matchmaking *state)
 	}
 	else
 	{
-		volatile long unused = current;
 		if (network_session_parameters_set_summary(session, (const s_session_summary *)&summary) &&
 			network_session_parameters_set_mode(session, 6))
 			state->mode = 3;
@@ -1669,56 +1706,50 @@ long g_55e6fc;
 long online_get_nat_type(void);
 long function_75890(long time);
 
+/* once the live session's search is done, picks hosting or joining and
+   starts it: true when it made the choice */
 // @retail 0x70d60
 bool function_70d60(c_session_state_matchmaking *state)
 {
 	c_class_58d20 *session = state->owner->session_a;
 	bool result = false;
 	function_70b70(state);
-	long current = session->state;
-	if (current == 5 || current == 6 || current == 7 || current == 8)
+	if (session->function_058d20() && state->mode == 3)
 	{
-		if (state->mode == 3)
+		if (!*(bool *)((byte *)state + 0x954))
 		{
-			if (!*(bool *)((byte *)state + 0x954))
-			{
-				long started = state->time;
-				if (session_time_get() - started >= 5000)
-					state->mode = 18;
-			}
-			if (state->mode == 3 && *(bool *)((byte *)state + 0x954))
-			{
-				bool host = false;
-				if (!state->unknowna7c || function_75890(state->unknowna7c) >= function_75890(state->unknowna68))
-					host = true;
-				else
-				{
-					bool restricted = g_network_configuration.flag1ac;
-					if (*(long *)((byte *)state + 0x938) == NONE)
-						host = true;
-					else if (restricted && online_get_nat_type() == 3)
-					{
-						if (g_55e6fc++ < g_network_configuration.value1b0)
-							host = true;
-						else
-							g_55e6fc = 0;
-					}
-				}
-				if (state->flaga78)
-					state->flaga78 = false;
-				if (state->flaga64)
-					state->flaga64 = false;
-				if (host)
-					function_70c00(state);
-				else
-					function_70c90(state);
-				result = true;
-			}
+			long started = state->time;
+			if (session_time_get() - started >= 5000)
+				state->mode = 18;
 		}
-	}
-	else
-	{
-		volatile long unused = current;
+		if (state->mode == 3 && *(bool *)((byte *)state + 0x954))
+		{
+			bool host = false;
+			if (!state->unknowna7c || function_75890(state->unknowna7c) >= function_75890(state->unknowna68))
+				host = true;
+			if (!host)
+			{
+				bool restricted = g_network_configuration.flag1ac;
+				if (*(long *)((byte *)state + 0x938) == NONE)
+					host = true;
+				if (!host && restricted && online_get_nat_type() == 3)
+				{
+					if (g_55e6fc++ < g_network_configuration.value1b0)
+						host = true;
+					else
+						g_55e6fc = 0;
+				}
+			}
+			if (state->flaga78)
+				state->flaga78 = false;
+			if (state->flaga64)
+				state->flaga64 = false;
+			if (host)
+				function_70c00(state);
+			else
+				function_70c90(state);
+			result = true;
+		}
 	}
 	return result;
 }
@@ -1790,7 +1821,6 @@ long function_75890(long time);
 
 bool network_session_host_become_leader(c_class_58d20 *session);
 
-#pragma inline_depth(0)
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {
@@ -1812,11 +1842,10 @@ bool c_session_state_start_match::update()
             {
                 if (!unknown18)
                     unknown18 = function_75870();
-                long remaining = 10000 - function_75890(unknown18);
-                if (remaining < 0)
-                    remaining = 0;
+                long remaining_raw = 10000 - function_75890(unknown18);
+                long remaining = ((long)(remaining_raw < 0) - 1) & remaining_raw;
                 network_session_host_become_leader(b);
-                network_session_start_countdown(b, (remaining + 999) / 1000, true, 0, NULL);
+                network_session_start_countdown(b, true, (remaining + 999) / 1000, 0, NULL);
                 ready = remaining == 0;
             }
             else
@@ -1847,29 +1876,28 @@ bool c_session_state_start_match::update()
             mode = 1;
         }
     }
-    long state = a->state;
-    if (state == 5 || state == 6 || state == 7 || state == 8)
+    if (a->function_058d20())
         network_session_host_set_value49f8(a, mode);
-    else
-    {
-        volatile long unused = state;
-    }
     return result;
 }
-#pragma inline_depth(255)
 
 long function_66050(c_class_58d20 *session, long variant_index);
+bool network_session_members_ready(c_class_58d20 *session, dword *unready_mask);
 
 // @retail 0x6e410
 bool c_session_state_pre_game::function_06e410()
 {
  c_class_58d20 *session = owner->session_a;
- if (SESSION_STATE_IS_LIVE(session->state) && session->flag49a8 && !session->value49ac)
+ long countdown = session_get_countdown(session);
+ if (!countdown)
  {
-  if (SESSION_STATE_IS_LIVE(session->state) && session->value49a4 > 1)
+  long remaining = NONE;
+  if (SESSION_STATE_IS_LIVE(session->state))
+   remaining = session->value49a4;
+  if (remaining > 1)
   {
    network_session_stop_countdown(session);
-   if (session->type == 2)
+   if (session->value18 == 2)
    {
     long variant = NONE;
     if (SESSION_STATE_IS_LIVE(session->state))
@@ -1880,18 +1908,10 @@ bool c_session_state_pre_game::function_06e410()
   }
   else
   {
-   bool ready = true;
-   dword mask = 0;
-   for (long i = 0; i < session->member_count; i++)
-    if (session->members[i].unknown88 <= 2)
-    {
-     mask |= 1 << i;
-     ready = false;
-    }
-   if (ready)
+   if (network_session_members_ready(session, NULL))
     network_session_set_mode(session, 2);
    else
-    network_session_start_countdown(session, 1, true, 2, 0);
+    network_session_start_countdown(session, true, 1, 2, 0);
   }
  }
  return false;

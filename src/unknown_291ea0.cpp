@@ -84,7 +84,7 @@ struct s_object_header_291ea0
 	s_unit_291ea0 *object;
 };
 
-inline void dialogue_name_override(long *name, long value)
+inline void dialogue_name_override(long volatile *name, long value)
 {
 	if (value != 0 && value != NONE)
 		*name = value;
@@ -94,22 +94,24 @@ inline void dialogue_name_override(long *name, long value)
 
 /* plays the actor's variant of a vocalization; returns whether it found one */
 // @retail 0x291ea0
-bool function_291ea0(long actor_index, long script_index, long arg_80f1d4, real *duration)
+bool function_291ea0(long arg_80f1d4, long actor_index, long script_index, real *duration)
 {
 	s_scenario_ai_dialogue_view *scenario = (s_scenario_ai_dialogue_view *)g_4e0350;
-	volatile bool result = false;
+	bool result = false;
 
 	if (duration)
 		*duration = 0.0f;
 	if (scenario->ai_dialogue_globals_count > 0)
 	{
 		s_actor_datum *actor = actor_datum_get(actor_index);
-		if (actor->unit_index != NONE)
+		long unit_index = actor->unit_index;
+		if (unit_index != NONE)
 		{
 			long globals_index = scenario->field_3b4[0].index;
 			if (globals_index != NONE)
 			{
-				s_ai_dialogue_globals *globals = TAG_GET_291EA0(s_ai_dialogue_globals, globals_index);
+				s_tag_instance *tags = g_4e3b44;
+				s_ai_dialogue_globals *globals = (s_ai_dialogue_globals *)tags[globals_index & 0xffff].bytes;
 				for (short i = 0; i < globals->vocalization_count; i++)
 				{
 					s_vocalization *vocalization = &globals->vocalizations[i];
@@ -120,8 +122,11 @@ bool function_291ea0(long actor_index, long script_index, long arg_80f1d4, real 
 						if (globals_tag && globals_tag->count > 0)
 							default_name = *(long *)(globals_tag->elements + 0x68);
 
-						long name = vocalization->default_name;
-						if (name == 0 || name == NONE)
+						long local_dn = vocalization->default_name;
+						long name;
+						if (local_dn != 0)
+							name = local_dn;
+						if (local_dn == 0 || local_dn == NONE)
 							name = default_name;
 
 						s_unit_291ea0 *unit = ((s_object_header_291ea0 *)g_4e0300->data)[actor->unit_index & 0xffff].object;
@@ -130,7 +135,7 @@ bool function_291ea0(long actor_index, long script_index, long arg_80f1d4, real 
 							break;
 
 						long unit_name = dialogue->name;
-						s_dialogue_definition_view *definition = TAG_GET_291EA0(s_dialogue_definition_view, dialogue->dialogue_definition_index);
+						s_dialogue_definition_view *definition = (s_dialogue_definition_view *)tags[dialogue->dialogue_definition_index & 0xffff].bytes;
 						dialogue_name_override(&name, unit_name);
 						if (name == NONE || name == 0)
 							name = unit_name;

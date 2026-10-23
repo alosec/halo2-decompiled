@@ -79,7 +79,7 @@ extern s_record_pool *g_502114;
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 struct s_structure_leaf_view
 {
@@ -124,7 +124,6 @@ bool sound_voices_initialize(s_sound_voice_settings const *settings)
 // @retail 0x21dde0
 void sound_voices_update_locations(void)
 {
-	short bsp_index = g_4686c4;
 	s_record_pool_iterator iterator;
 	s_sound_voice *voice;
 
@@ -135,19 +134,18 @@ void sound_voices_update_locations(void)
 	{
 		s_sound_position *local_0 = &voice->position;
 
-		if (bsp_index == NONE)
+		if (g_4686c4 == NONE)
 		{
 			local_0->location.leaf_index = NONE;
 			local_0->location.cluster_index = NONE;
-			local_0->location.bsp_index = bsp_index;
 		}
 		else
 		{
-			long leaf_index = function_14a280(g_4e033c, &local_0->position, 0);
+			long leaf_index = function_14a280(g_4e033c, 0, &local_0->position);
 			local_0->location.leaf_index = leaf_index;
 			local_0->location.cluster_index = leaf_index != NONE ? ((s_structure_bsp_leaves_view_21dde0 *)g_4e0348)->leaves[leaf_index].cluster_index : NONE;
-			local_0->location.bsp_index = bsp_index;
 		}
+		local_0->location.bsp_index = g_4686c4;
 	}
 }
 
@@ -167,6 +165,9 @@ long sound_classes_match(long class_a, long class_b)
 #pragma inline_depth(255)
 
 /* whether a playing sound can share a voice */
+// score 2 (was 2): retail loads the source's compare callback into ebp after
+// the object index test, ours loads it before the test, so the load and the
+// branch that follows it differ.
 // @retail 0x21e0b0
 long sound_voice_matches(s_voice_playing_sound const *sound, s_sound_voice const *voice)
 {
@@ -174,7 +175,7 @@ long sound_voice_matches(s_voice_playing_sound const *sound, s_sound_voice const
 
 	if (source == sound->source &&
 		voice->ambient == TEST_BIT(sound->location.flags, 0) &&
-		sound_classes_match((char)voice->sound_class, ((s_sound_tag_class_view *)g_4e3b44[sound->definition_index & 0xffff].bytes)->sound_class))
+		(byte)sound_classes_match((char)voice->sound_class, ((s_sound_tag_class_view *)g_4e3b44[sound->definition_index & 0xffff].bytes)->sound_class))
 	{
 		if (source)
 		{

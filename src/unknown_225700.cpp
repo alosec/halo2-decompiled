@@ -72,28 +72,23 @@ void function_225700(void)
 	g_502124.unknown8 = NONE;
 }
 
-#pragma inline_depth(0)
+long players_first_active_local_player(void);
+long function_14de10(long index);
+long function_14de70(long local_player_index);
+
+/* lowers both levels once their intervals have passed, for the first active
+   local player with a gamepad */
 // @retail 0x225730
 void function_225730(void)
 {
 	dword time = GetTickCount();
-	long index = NONE;
-	s_unknown_225700_player *player;
-	for (long local_0 = 0; local_0 < 4; local_0++)
-	{
-		if (g_4e8c20->entries[local_0] != NONE)
-		{
-			index = local_0;
-			break;
-		}
-	}
 
-	while (index != NONE)
+	for (long local_player = players_first_active_local_player(); local_player != NONE; local_player = function_14de10(local_player))
 	{
-		long player_index = index != NONE ? g_4e8c20->entries[index] : NONE;
+		long player_index = function_14de70(local_player);
+		s_unknown_225700_player *player = unknown_225700_player_get(player_index);
 
-		player = (s_unknown_225700_player *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c);
-		if (player_index != NONE && player->gamepad_index != NONE)
+		if (unknown_225700_get(player_index))
 		{
 			bool changed = true;
 
@@ -123,48 +118,29 @@ void function_225730(void)
 			g_502124.update_time = time;
 			return;
 		}
-
-		{
-			long next = index != NONE ? index + 1 : 0;
-
-			long local_1 = NONE;
-			for (; next < 4; next++)
-			{
-				if (g_4e8c20->entries[next] != NONE)
-				{
-					local_1 = next;
-					break;
-				}
-			}
-			index = local_1;
-		}
 	}
 }
-#pragma inline_depth(255)
 
 // @retail 0x225880
 void function_225880(
 	long player_index)
 {
-	if (player_index != NONE)
+	s_unknown_225700 *state = unknown_225700_get(player_index);
+
+	if (state)
 	{
 		s_unknown_225700_player *player = unknown_225700_player_get(player_index);
+		long level;
 
-		if (player->gamepad_index != NONE)
+		state->level_time = GetTickCount();
+		level = (long)((long)g_510a0c + 1.0f);
+		if ((real)level >= g_4cf754)
 		{
-			s_unknown_225700 *state = &g_502124;
-			real level;
-
-			state->level_time = GetTickCount();
-			level = (real)(long)((long)g_510a0c + 1.0f);
-			if (level >= g_4cf754)
-			{
-				((s_unknown_225700_slot *)g_54e8e0)[player->gamepad_index].level_reached = true;
-				function_18fe9e(player->gamepad_index);
-			}
-			g_510a0c = level;
-			global_preferences_globals.dirty = true;
+			((s_unknown_225700_slot *)g_54e8e0)[player->gamepad_index].level_reached = true;
+			function_18fe9e(player->gamepad_index);
 		}
+		g_510a0c = (real)level;
+		global_preferences_globals.dirty = true;
 	}
 }
 
@@ -172,25 +148,22 @@ void function_225880(
 void function_225910(
 	long player_index)
 {
-	if (player_index != NONE)
+	s_unknown_225700 *state = unknown_225700_get(player_index);
+
+	if (state)
 	{
 		s_unknown_225700_player *player = unknown_225700_player_get(player_index);
+		long level;
 
-		if (player->gamepad_index != NONE)
+		state->level_time = GetTickCount();
+		level = (long)((long)g_510a0c + g_4cf75c);
+		if ((real)level >= g_4cf754)
 		{
-			s_unknown_225700 *state = &g_502124;
-			real level;
-
-			state->level_time = GetTickCount();
-			level = (real)(long)((long)g_510a0c + g_4cf75c);
-			if (level >= g_4cf754)
-			{
-				((s_unknown_225700_slot *)g_54e8e0)[player->gamepad_index].level_reached = true;
-				function_18fe9e(player->gamepad_index);
-			}
-			g_510a0c = level;
-			global_preferences_globals.dirty = true;
+			((s_unknown_225700_slot *)g_54e8e0)[player->gamepad_index].level_reached = true;
+			function_18fe9e(player->gamepad_index);
 		}
+		g_510a0c = (real)level;
+		global_preferences_globals.dirty = true;
 	}
 }
 
@@ -210,6 +183,7 @@ void function_2259a0(
 	}
 }
 
+__declspec(noinline)
 // @retail 0x2259f0
 bool function_2259f0(
 	long player_index)

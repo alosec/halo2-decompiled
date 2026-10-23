@@ -1,6 +1,6 @@
 /* FLAGS_WRITER.H: writes a block of optional fields to a bitstream: each
    field is preceded by a bit telling whether it follows, and a field that
-   no longer fits is rewound (src/unknown_0b5650.cpp) */
+   no longer fits is rewound (src/flags_writer.cpp) */
 
 #ifndef FLAGS_WRITER_H
 #define FLAGS_WRITER_H

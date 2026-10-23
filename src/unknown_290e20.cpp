@@ -61,18 +61,26 @@ struct s_291746
 	s_291740 *field_244;
 };
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x291740
 void function_291740(short arg_0, long arg_1)
 {
 	long const *local_2 = &arg_1;
 	s_291746 *local_0 = (s_291746 *)g_4e0350;
 	s_291740 *local_1 = &local_0->field_244[arg_0];
-	if (local_1->field_4c != NONE)
+	switch (local_1->field_4c)
 	{
+	case NONE:
+		break;
+	default:
 		g_50242c = *local_2;
+		_ReadWriteBarrier();
 		function_2093d0(local_0->field_1bc[local_1->field_4c].field_24, false);
+		break;
 	}
 }
+#pragma function(_ReadWriteBarrier)
 
 bool __stdcall function_2912c0(s_ai_trigger_condition *condition, long squad_group_index, bool *result);
 bool function_290f60(s_ai_trigger_condition *condition, bool *result, long squad_index);
@@ -124,7 +132,8 @@ real function_291800(long arg_0, s_291800 const *arg_1, s_291801 const *arg_2,
 	local_2 = actor_get(arg_0);
 	if (local_2->unknown018 == NONE)
 		goto local_16;
-	if (arg_1->field_8 > 0)
+	long local_17 = arg_1->field_8;
+	if (local_17 > 0)
 	{
 		byte *local_4 = (byte *)object_get(local_2->unknown018);
 		long *local_5 = (long *)(local_4 + *(short *)(local_4 + 0x342));
@@ -135,7 +144,7 @@ real function_291800(long arg_0, s_291800 const *arg_1, s_291801 const *arg_2,
 			if (arg_2->field_50[local_6] == local_5[1])
 				goto local_8;
 		}
-		for (short local_7 = 0; local_7 < arg_1->field_8; local_7++)
+		for (short local_7 = 0; local_7 < local_17; local_7++)
 		{
 			if (arg_1->field_c[local_7] == local_5[1])
 			{
@@ -146,21 +155,24 @@ real function_291800(long arg_0, s_291800 const *arg_1, s_291801 const *arg_2,
 local_8:
 		{
 			s_291803 *local_9 = (s_291803 *)g_4e3b44[(*(long *)((byte *)local_2 + 0x54)) & 0xffff].bytes;
-			if (local_9->field_2c <= 0)
+			long local_20 = local_9->field_2c;
+			if (local_20 <= 0)
 				goto local_16;
-			for (short local_10 = 0; local_10 < arg_1->field_8; local_10++)
+			for (short local_10 = 0; local_10 < local_17; local_10++)
 			{
+				long const *local_21 = &arg_1->field_c[local_10];
 				for (short local_11 = 0; local_11 < arg_3; local_11++)
 				{
-					if (arg_2->field_50[local_11] == arg_1->field_c[local_10])
-					goto local_13;
+					if (arg_2->field_50[local_11] == *local_21)
+						goto local_13;
 				}
-				for (short local_12 = 0; local_12 < local_9->field_2c; local_12++)
+				for (short local_12 = 0; local_12 < local_20; local_12++)
 				{
-					if (local_9->field_30[local_12].field_8 == arg_1->field_c[local_10])
+					s_291802 const *local_19 = &local_9->field_30[local_12];
+					if (local_19->field_8 == *local_21)
 					{
-						*arg_4 = local_9->field_30[local_12].field_8;
-						*arg_5 = local_9->field_30[local_12].field_4;
+						*arg_4 = local_19->field_8;
+						*arg_5 = local_19->field_4;
 						local_3 = false;
 						goto local_15;
 					}
@@ -291,11 +303,14 @@ short ai_trigger_find_by_name(char const *name)
 	return result;
 }
 
+// score 24 (was 24): retail sinks the zero store of the count past the
+// early return and loads the global into ECX, ours stores it in the entry
+// block and uses EAX.
 // @retail 0x290e20
 bool function_290e20(short trigger_index, long squad_index, long squad_group_index)
 {
 	s_ai_trigger *trigger = &((s_scenario_ai_triggers_view *)g_4e0350)->triggers[trigger_index];
-	short count;
+	short count = 0;
 	short needed;
 	short i;
 	bool result;
@@ -303,7 +318,6 @@ bool function_290e20(short trigger_index, long squad_index, long squad_group_ind
 	if ((trigger->flags & 1) && (((dword *)g_5044cc)[trigger_index >> 5] & (1 << (trigger_index & 0x1f))))
 		return true;
 
-	count = 0;
 	result = false;
 	if (trigger->combine_mode == 0)
 		needed = 1;
@@ -313,18 +327,10 @@ bool function_290e20(short trigger_index, long squad_index, long squad_group_ind
 	for (i = 0; i < trigger->condition_count; i++)
 	{
 		s_ai_trigger_condition *condition = &trigger->conditions[i];
-		bool holds;
 
-		if (squad_group_index != NONE && function_2912c0(condition, squad_group_index, &result))
-			holds = true;
-		else if (squad_index != NONE)
-			holds = function_290f60(condition, &result, squad_index);
-		else if (squad_group_index == NONE)
-			holds = function_290f60(condition, &result, NONE);
-		else
-			holds = false;
-
-		if (holds)
+		if ((squad_group_index != NONE && function_2912c0(condition, squad_group_index, &result)) ||
+			(squad_index != NONE && function_290f60(condition, &result, squad_index)) ||
+			(squad_index == NONE && squad_group_index == NONE && function_290f60(condition, &result, NONE)))
 		{
 			count++;
 			if (count >= needed)
@@ -332,11 +338,16 @@ bool function_290e20(short trigger_index, long squad_index, long squad_group_ind
 		}
 	}
 
-	if (count < needed)
-		return false;
-	if (trigger->flags & 1)
-		((dword *)g_5044cc)[trigger_index >> 5] |= 1 << (trigger_index & 0x1f);
-	return true;
+	bool triggered;
+	if (count >= needed)
+	{
+		triggered = true;
+		if (trigger->flags & 1)
+			((dword *)g_5044cc)[trigger_index >> 5] |= 1 << (trigger_index & 0x1f);
+	}
+	else
+		triggered = false;
+	return triggered;
 }
 
 /* the scenario's scenes (0x18 bytes each at +0x174 of g_4e0350): a name, the
@@ -384,6 +395,9 @@ struct s_ai_scene_assignment
 	short variant_indices[10];
 };
 
+// score 56 (was 56): the maximum count is kept in a 32 bit register here
+// and in a 16 bit one in retail, and the calls set their arguments up with
+// other registers.
 // @retail 0x2919e0
 void __stdcall function_2919e0(s_ai_scene *arg_0, s_ai_scene_assignment *arg_1, short *arg_2, short arg_3,
 	short arg_4, short arg_5, long arg_6, long arg_7, long arg_8)
@@ -487,10 +501,12 @@ void __stdcall function_2919e0(s_ai_scene *scene, s_ai_scene_assignment *assignm
 
 /* starts a scene (by name) with the actors the ai indices name when its
    trigger conditions hold */
+// score 83 (was 79): the score loop and the final stores pick other
+// registers, and the branches into the shared helpers land elsewhere.
 // @retail 0x291b40
 bool function_291b40(long name, short command_script_index, long ai_index, long ai_index2, long ai_index3)
 {
-	volatile bool result = false;
+	bool result = false;
 	s_scenario_ai_scenes_view *scenario = (s_scenario_ai_scenes_view *)g_4e0350;
 	short scene_index;
 
@@ -503,7 +519,7 @@ bool function_291b40(long name, short command_script_index, long ai_index, long 
 			short assignment_count = 0;
 
 			if (!(scene->flags & 1) && (((dword *)g_5044d0)[scene_index >> 5] & (1 << (scene_index & 0x1f))))
-				return result;
+				goto done;
 
 			if (scene->trigger_count > 0 && scene->triggers->condition_count > 0)
 			{
@@ -546,11 +562,11 @@ bool function_291b40(long name, short command_script_index, long ai_index, long 
 					}
 					else if (!any)
 					{
-						return result;
+						goto done;
 					}
 				}
 				if (!all)
-					return result;
+					goto done;
 			}
 
 		assign:
@@ -582,9 +598,9 @@ bool function_291b40(long name, short command_script_index, long ai_index, long 
 					for (k = 0; k < scene->role_count; k++)
 					{
 						s_ai_scene_actor *actor = &((s_ai_scene_actor *)g_4f55f0->data)[assignment->actor_indices[k] & 0xffff];
-						s_ai_scene_unit *unit = ((s_ai_scene_unit_header *)g_4e0300->data)[actor->unit_index & 0xffff].unit;
 						short variant_index = assignment->variant_indices[k];
 						long local_dbe893 = assignment->variant_names[k];
+						s_ai_scene_unit *unit = ((s_ai_scene_unit_header *)g_4e0300->data)[actor->unit_index & 0xffff].unit;
 						if (((s_ai_scene_unit_variant *)((byte *)unit + unit->variant_offset))->local_dbe893 != local_dbe893 &&
 							local_dbe893 && variant_index != NONE)
 						{
@@ -604,10 +620,11 @@ bool function_291b40(long name, short command_script_index, long ai_index, long 
 						((dword *)g_5044d0)[scene_index >> 5] |= 1 << (scene_index & 0x1f);
 				}
 			}
-			return result;
+			goto done;
 		}
 	}
 
+	done:
 	return result;
 }
 
@@ -652,10 +669,11 @@ bool function_291670(short trigger_volume_index, bool all_players)
 			result &= inside;
 		else if (inside)
 		{
-			result = true;
-			break;
+			result = inside;
+			goto local_0;
 		}
 	}
+local_0:
 	return result;
 }
 
@@ -676,8 +694,8 @@ struct s_290f60
 struct s_290f61
 {
 	byte field_0[2];
-	byte field_2;
-	byte field_3[7];
+	short field_2;
+	byte field_4[6];
 	short field_a;
 	byte field_c[4];
 	real field_10;
@@ -705,51 +723,86 @@ bool function_290f60(s_ai_trigger_condition *arg_0, bool *arg_1, long arg_2)
 		arg_2 = local_0->field_2;
 	else if (local_0->field_4 != NONE)
 		return function_2912c0(arg_0, NONE, arg_1);
-	s_290f61 *local_2 = arg_2 == NONE ? NULL : (s_290f61 *)(g_51e9d8->data + (arg_2 & 0xffff) * 0x98);
+	s_290f61 *local_2 = arg_2 != NONE ? (s_290f61 *)(g_51e9d8->data + (arg_2 & 0xffff) * 0x98) : NULL;
 	switch (local_0->field_0)
 	{
 	case 0: case 1: case 2: case 3: case 4: case 6:
 	case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18:
 		if (!local_2 || !(local_2->field_2 & 4))
-			return false;
+			goto local_6;
 		break;
 	}
 	switch (local_0->field_0)
 	{
 	case 0:
-		local_1 = local_2 && local_2->field_a >= local_0->field_6;
+		if (local_2 && local_2->field_a >= local_0->field_6)
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 1:
-		local_1 = local_2 && local_2->field_a <= local_0->field_6;
+		if (local_2 && local_2->field_a <= local_0->field_6)
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 2:
-		local_1 = local_2 && local_2->field_10 >= local_0->field_8;
+		if (local_2 && local_2->field_10 >= local_0->field_8)
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 3:
-		local_1 = local_2 && local_2->field_10 <= local_0->field_8;
+		if (local_2 && local_2->field_10 <= local_0->field_8)
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 4:
-		local_1 = local_2 && (local_2->field_2 & 0x10);
+		if (local_2 && (local_2->field_2 & 0x10))
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 5:
-		local_1 = local_2 && g_510c54->game_time > local_2->field_2c + local_0->field_6;
+		if (local_2 && g_510c54->game_time > local_2->field_2c + local_0->field_6)
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
 	case 6:
 		break;
-	case 7: case 8:
+	case 7:
 		if (local_2 && local_0->field_30 != NONE)
 		{
-			s_291746 *local_3 = (s_291746 *)g_4e0350;
+			s_291769 *local_3 = &((s_291746 *)g_4e0350)->field_1bc[local_0->field_30];
 			g_50242c = arg_2 & 0xffff;
-			long local_4 = function_209490(local_3->field_1bc[local_0->field_30].field_24);
+			long local_4 = function_209490(local_3->field_24);
 			local_1 = *(bool *)&local_4;
-			if (local_0->field_0 == 8)
-				local_1 = !local_1;
 		}
+		else
+			local_1 = false;
 		break;
-	case 9: case 10:
+	case 8:
+		if (local_2 && local_0->field_30 != NONE)
+		{
+			s_291769 *local_3 = &((s_291746 *)g_4e0350)->field_1bc[local_0->field_30];
+			g_50242c = arg_2 & 0xffff;
+			long local_4 = function_209490(local_3->field_24);
+			local_1 = !*(bool *)&local_4;
+		}
+		else
+			local_1 = false;
+		break;
+	case 9:
 		if (local_0->field_c != NONE)
-			local_1 = function_291670(local_0->field_c, local_0->field_0 == 10);
+			local_1 = function_291670(local_0->field_c, false);
+		else
+			*arg_1 = true;
+		break;
+	case 10:
+		if (local_0->field_c != NONE)
+			local_1 = function_291670(local_0->field_c, true);
 		else
 			*arg_1 = true;
 		break;
@@ -771,7 +824,7 @@ bool function_290f60(s_ai_trigger_condition *arg_0, bool *arg_1, long arg_2)
 		break;
 	case 15:
 		if (local_2)
-			local_1 = (local_2->field_2 >> 3) & 1;
+			local_1 = (local_2->field_2 & 8) != 0;
 		break;
 	case 16:
 		if (local_2)
@@ -786,8 +839,14 @@ bool function_290f60(s_ai_trigger_condition *arg_0, bool *arg_1, long arg_2)
 			local_1 = function_2765e0(arg_2 & 0xffff, local_0->field_8);
 		break;
 	case 19:
-		local_1 = g_4f55d0->unknown36c == NONE || g_510c54->game_time - g_4f55d0->unknown36c > function_1469f0(local_0->field_8);
+	{
+		long local_5;
+		if (g_4f55d0->unknown36c == NONE || (local_5 = g_510c54->game_time, local_5 - g_4f55d0->unknown36c > function_1469f0(local_0->field_8)))
+			local_1 = true;
+		else
+			local_1 = false;
 		break;
+	}
 	case 20:
 		local_1 = function_226190();
 		break;
@@ -797,6 +856,7 @@ bool function_290f60(s_ai_trigger_condition *arg_0, bool *arg_1, long arg_2)
 	}
 	if (local_0->field_34 & 1)
 		local_1 = !local_1;
+local_6:
 	return local_1;
 }
 
@@ -850,18 +910,24 @@ bool __stdcall function_2912c0(s_ai_trigger_condition *arg_0, long arg_1, bool *
 	case 7:
 		if (local_1->field_30 != NONE)
 		{
+			s_291769 *local_12 = &((s_291746 *)g_4e0350)->field_1bc[local_1->field_30];
 			g_50242c = (local_2 & 0xffff) | 0x40000000;
-			long local_5 = function_209490(((s_291746 *)g_4e0350)->field_1bc[local_1->field_30].field_24);
+			long local_5 = function_209490(local_12->field_24);
 			local_0 = *(bool *)&local_5;
 		}
+		else
+			local_0 = false;
 		break;
 	case 8:
 		if (local_1->field_30 != NONE)
 		{
+			s_291769 *local_12 = &((s_291746 *)g_4e0350)->field_1bc[local_1->field_30];
 			g_50242c = (local_2 & 0xffff) | 0x40000000;
-			long local_6 = function_209490(((s_291746 *)g_4e0350)->field_1bc[local_1->field_30].field_24);
+			long local_6 = function_209490(local_12->field_24);
 			local_0 = !*(bool *)&local_6;
 		}
+		else
+			local_0 = false;
 		break;
 	case 9:
 		if (local_1->field_c != NONE) local_0 = function_291670(local_1->field_c, false);
@@ -878,11 +944,8 @@ bool __stdcall function_2912c0(s_ai_trigger_condition *arg_0, long arg_1, bool *
 		{
 			function_204db0(&local_4, local_2);
 			local_0 = true;
-			while (function_204e10(&local_4))
-			{
+			while (local_0 && function_204e10(&local_4))
 				local_0 &= function_203240(local_4.squad_index);
-				if (!local_0) break;
-			}
 		}
 		break;
 	case 14:
@@ -890,11 +953,8 @@ bool __stdcall function_2912c0(s_ai_trigger_condition *arg_0, long arg_1, bool *
 		{
 			function_204db0(&local_4, local_2);
 			local_0 = true;
-			while (function_204e10(&local_4))
-			{
+			while (local_0 && function_204e10(&local_4))
 				local_0 &= function_2032b0(local_4.squad_index);
-				if (!local_0) break;
-			}
 		}
 		break;
 	case 15:
@@ -913,8 +973,11 @@ bool __stdcall function_2912c0(s_ai_trigger_condition *arg_0, long arg_1, bool *
 		if (local_3) local_0 = function_2765e0((local_2 & 0xffff) | 0x40000000, local_1->field_8);
 		break;
 	case 19:
-		local_0 = g_4f55d0->unknown36c == NONE || g_510c54->game_time - g_4f55d0->unknown36c > function_1469f0(local_1->field_8);
+	{
+		long local_13;
+		local_0 = g_4f55d0->unknown36c == NONE || (local_13 = g_510c54->game_time, local_13 - g_4f55d0->unknown36c > function_1469f0(local_1->field_8));
 		break;
+	}
 	case 20: local_0 = function_226190(); break;
 	default: local_0 = false; break;
 	}

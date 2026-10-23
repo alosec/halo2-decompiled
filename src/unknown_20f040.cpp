@@ -17,6 +17,7 @@ struct s_20f040_allegiance_view
 	dword ally_bits[8];
 };
 
+__declspec(noinline)
 // @retail 0x20f040
 long function_20f040(short team)
 {

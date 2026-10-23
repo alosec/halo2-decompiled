@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "projection_storage.h"
 /* UNKNOWN_16BD10.CPP: the scripted camera (0x16bd10..0x16c6ea): the
    velocity profile of a camera pan, cutscene camera points, animated
    cameras. The state lives at g_510c6c (unknown_1552e0.cpp); its mode
@@ -131,44 +132,46 @@ void function_16c6f0(long object_index, transform4x3f *matrix);
 long function_16c2b0(void);
 s_animation *function_1daea0(s_graph_tag *graph, c_type_709360 animation_id);
 extern point3f *g_468788;
-c_type_709360 function_1dd0b0(s_graph_tag *graph, long name);
 void function_3f660(transform4x3f const *matrix);
 void function_1554b0(real elapsed);
 void __stdcall function_16f280(real dt);
 
+#include "slot_handler.h"
+static __forceinline long real_to_long(real value);
+
 static inline long camera_seconds_to_ticks_round(real seconds)
 {
-	real ticks_real = (real)g_510c54->field_2_3 * seconds;
-	long ticks;
-	__asm
-	{
-		fld ticks_real
-		fistp ticks
-	}
-	return ticks;
+	return real_to_long((real)g_510c54->field_2_3 * seconds);
 }
 
 static inline void cross3f(vector3f const *a, vector3f const *b, vector3f *out)
 {
-	out->i = a->j * b->k - a->k * b->j;
-	out->j = a->k * b->i - a->i * b->k;
-	out->k = a->i * b->j - a->j * b->i;
+	real k = a->i * b->j - a->j * b->i;
+	real j = a->k * b->i - a->i * b->k;
+	real i = b->k * a->j - b->j * a->k;
+
+	out->i = i;
+	out->j = j;
+	out->k = k;
 }
 
 // @retail 0x16bd10
 bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_seconds, real acceleration_seconds,
 	real deceleration_seconds, real start_rate, real end_rate)
 {
+	bool result = false;
 	short total_ticks = (short)camera_seconds_to_ticks_round(total_seconds);
 	short acceleration_ticks = (short)camera_seconds_to_ticks_round(acceleration_seconds);
 	short deceleration_ticks = (short)camera_seconds_to_ticks_round(deceleration_seconds);
-	bool result = false;
 
 	profile->valid = false;
 	if (total_ticks > 0)
 	{
-		real distance = (start_rate - 1.0f) * (real)acceleration_ticks + (real)(total_ticks * 2) +
-			(real)deceleration_ticks * (end_rate - 1.0f);
+		real ramp_down_span = (real)deceleration_ticks;
+		real ramp_up_span = (real)acceleration_ticks;
+
+		end_rate -= 1.0f;
+		real distance = (start_rate - 1.0f) * ramp_up_span + (real)(total_ticks * 2) + ramp_down_span * end_rate;
 
 		if (distance > 0.001f)
 		{
@@ -178,7 +181,7 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 			profile->start_rate = peak_rate * start_rate;
 			if (acceleration_ticks > 0)
 			{
-				profile->acceleration = (peak_rate - profile->start_rate) / ((real)acceleration_ticks * 2.0f);
+				profile->acceleration = (peak_rate - profile->start_rate) / (ramp_up_span * 2.0f);
 			}
 			else
 			{
@@ -186,7 +189,7 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 			}
 			if (deceleration_ticks > 0)
 			{
-				profile->deceleration = peak_rate * (end_rate - 1.0f) / ((real)deceleration_ticks * 2.0f);
+				profile->deceleration = peak_rate * end_rate / (ramp_down_span * 2.0f);
 			}
 			else
 			{
@@ -215,6 +218,7 @@ real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, 
 		long acceleration_ticks;
 		long hold_ticks;
 		long deceleration_ticks;
+		real a, b, c;
 
 		rates[0] = profile->start_rate;
 		rates[1] = profile->peak_rate;
@@ -223,19 +227,17 @@ real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, 
 		accelerations[1] = 0.0f;
 		accelerations[2] = profile->deceleration;
 
-		if (ticks < 0)
+		acceleration_ticks = ticks;
+		if (acceleration_ticks < 0)
 		{
 			acceleration_ticks = 0;
 		}
-		else if (ticks > profile->acceleration_ticks)
+		else if (acceleration_ticks > profile->acceleration_ticks)
 		{
 			acceleration_ticks = profile->acceleration_ticks;
 		}
-		else
-		{
-			acceleration_ticks = ticks;
-		}
 
+		a = (real)acceleration_ticks;
 		if (ticks - profile->acceleration_ticks < 0)
 		{
 			hold_ticks = 0;
@@ -250,6 +252,7 @@ real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, 
 			hold_ticks = ticks - profile->acceleration_ticks;
 		}
 
+		b = (real)hold_ticks;
 		if (ticks - (profile->total_ticks - profile->deceleration_ticks) < 0)
 		{
 			deceleration_ticks = 0;
@@ -263,11 +266,8 @@ real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, 
 			deceleration_ticks = ticks - (profile->total_ticks - profile->deceleration_ticks);
 		}
 
+		c = (real)deceleration_ticks;
 		{
-			real a = (real)acceleration_ticks;
-			real b = (real)hold_ticks;
-			real c = (real)deceleration_ticks;
-
 			result = c * c * accelerations[2] + a * a * accelerations[0] + c * rates[2] + b * rates[1] + a * rates[0] +
 				b * b * accelerations[1];
 		}
@@ -290,13 +290,12 @@ void function_16bf70(long animation_graph_index, long animation_name, long unit_
 	if (animation_graph_index != NONE)
 	{
 		s_animation_state state;
-		c_type_709360 animation_id;
 
 		state.initialize(animation_graph_index, NONE, true);
-		animation_id = function_1dd0b0(graph_tag_get(state.graph_tag_index), animation_name);
-		if (animation_id.index != NONE)
+		c_type_709360 id = graph_tag_get(state.graph_tag_index)->animation_by_name(animation_name);
+		if (id.index != NONE)
 		{
-			s_animation *animation = function_1daea0(graph_tag_get(state.graph_tag_index), animation_id);
+			s_animation *animation = function_1daea0(graph_tag_get(state.graph_tag_index), id);
 
 			if (animation)
 			{
@@ -304,11 +303,12 @@ void function_16bf70(long animation_graph_index, long animation_name, long unit_
 
 				camera->mode = _camera_scripting_mode_animation;
 				camera->active = true;
+				short frame_count = animation->frame_count;
 				camera->animation.cutscene_flag_index = cutscene_flag_index;
 				camera->animation.graph_tag_index = animation_graph_index;
 				camera->animation.animation_name = animation_name;
 				camera->animation.start_time = g_510c54->game_time;
-				camera->ticks = camera_seconds_to_ticks_round(((real)animation->frame_count - 1.0f) * (1.0f / 30.0f));
+				camera->ticks = camera_seconds_to_ticks_round(((real)frame_count - 1.0f) * (1.0f / 30.0f));
 				if (unit_index != NONE && function_badc0(unit_index, 3) && function_11b930(unit_index))
 				{
 					camera->object_index = unit_index;
@@ -353,8 +353,10 @@ void function_16c2f0(short camera_point_index, short ticks, long object_index)
 		camera->mode = _camera_scripting_mode_point;
 		camera->active = true;
 		seconds = (real)ticks * (1.0f / 30.0f);
-		camera->point.type = point->type;
-		camera->point.point_index = camera_point_index;
+		long point_type = point->type;
+		s_camera_point_state *state = &camera->point;
+		camera->point.type = (short)point_type;
+		state->point_index = camera_point_index;
 		camera->position = point->position;
 		function_11df60((vector3f const *)point->orientation, &camera->forward, &camera->up);
 		camera->ticks = camera_seconds_to_ticks_round(seconds);
@@ -362,7 +364,8 @@ void function_16c2f0(short camera_point_index, short ticks, long object_index)
 		{
 			transform4x3f matrix;
 
-			switch (camera->point.type)
+			point_type = camera->point.type;
+			switch (point_type)
 			{
 			case 0:
 				break;
@@ -372,21 +375,31 @@ void function_16c2f0(short camera_point_index, short ticks, long object_index)
 				function_142640(&matrix, &camera->up, &camera->up);
 				function_142640(&matrix, (vector3f *)&camera->position, (vector3f *)&camera->position);
 				break;
-			case 2:
-				function_16c6f0(object_index, &matrix);
-				function_142640(&matrix, &camera->forward, &camera->forward);
-				function_142640(&matrix, &camera->up, &camera->up);
-				function_142640(&matrix, (vector3f *)&camera->position, (vector3f *)&camera->position);
-				camera->point.offset = *(vector3f *)&matrix.position;
-				cross3f(&camera->forward, &camera->up, &camera->point.left);
-				function_30bf0(&camera->point.left);
-				break;
 			case 3:
 				function_16c6f0(object_index, &matrix);
 				transform4x3f_apply_point(&matrix, &camera->position, &camera->position);
 				function_142640(&matrix, &camera->forward, &camera->forward);
 				function_142640(&matrix, &camera->up, &camera->up);
 				object_index = NONE;
+				break;
+			case 2:
+				function_16c6f0(object_index, &matrix);
+				function_142640(&matrix, &camera->forward, &camera->forward);
+				function_142640(&matrix, &camera->up, &camera->up);
+				function_142640(&matrix, (vector3f *)&camera->position, (vector3f *)&camera->position);
+			{
+				/* retail derives the left vector's address from the offset's
+				   (left directly follows offset in s_camera_point_state) */
+				vector3f *offset = &camera->point.offset;
+				vector3f *left;
+
+				*offset = *(vector3f *)&matrix.position;
+				left = offset + 1;
+				vector3f const *up = &camera->up;
+				vector3f const *forward = &camera->forward;
+				cross3f(forward, up, left);
+				function_30bf0(left);
+			}
 				break;
 			default:
 				__assume(0);
@@ -415,8 +428,8 @@ void function_16c4f0(short camera_point_index, short ticks)
 		pan->position = point->position;
 		function_141ce0(point->orientation[0], point->orientation[1], point->orientation[2], &matrix);
 		rotation.forward = matrix.forward;
-		rotation.left = matrix.left;
 		rotation.up = matrix.up;
+		rotation.left = matrix.left;
 		function_141f60(&rotation, &pan->rotation);
 		pan->start_time = g_510c54->game_time;
 		camera_velocity_profile_new(&pan->profile, (real)ticks * (1.0f / 30.0f), 0.0f, 0.0f, 1.0f, 1.0f);
@@ -435,8 +448,8 @@ void function_16c5f0(short camera_point_index, short target_point_index, short t
 
 	function_16c2f0(camera_point_index, 0, NONE);
 	camera = camera_scripting_state;
-	camera->mode = _camera_scripting_mode_pan;
-	camera->active = true;
+	*(volatile short *)&camera->mode = _camera_scripting_mode_pan;
+	*(volatile bool *)&camera->active = true;
 	if (camera_velocity_profile_new(&camera->pan.profile, (real)ticks * (1.0f / 30.0f),
 		(real)acceleration_ticks * (1.0f / 30.0f), (real)deceleration_ticks * (1.0f / 30.0f), start_rate, end_rate))
 	{
@@ -484,19 +497,22 @@ void function_16c110(long animation_graph_index, long animation_name, long objec
 	if (animation_graph_index != NONE)
 	{
 		s_animation_state state;
-		c_type_709360 animation_id;
 
 		state.initialize(animation_graph_index, NONE, true);
-		animation_id = function_1dd0b0(graph_tag_get(state.graph_tag_index), animation_name);
+		c_type_709360 animation_id = graph_tag_get(state.graph_tag_index)->animation_by_name(animation_name);
 		if (animation_id.index != NONE)
 		{
 			transform4x3f matrix;
 			transform4x3f transform;
 
+			/* retail keeps object_index on the stack: reading it through its
+			   address keeps it there */
+			long const *object_index_reference = &object_index;
+
 			state.animation_matrix_get(animation_id, (real)frame * (1.0f / 30.0f), 0, &matrix);
-			if (object_index != NONE)
+			if (*object_index_reference != NONE)
 			{
-				s_camera_object *object = ((s_camera_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+				s_camera_object *object = ((s_camera_object_header *)g_4e0300->data)[*object_index_reference & 0xffff].object;
 				byte *object_definition = (byte *)camera_tag_get(object->definition_index);
 				byte *model = (byte *)camera_tag_get(*(long *)(object_definition + 0x38));
 				byte *render_model = (byte *)camera_tag_get(*(long *)(model + 0x4));
@@ -515,7 +531,8 @@ void function_16c110(long animation_graph_index, long animation_name, long objec
 				forward.i = (real)cos(flag->facing[0]) * (real)cos(flag->facing[1]);
 				forward.j = (real)sin(flag->facing[0]) * (real)cos(flag->facing[1]);
 				forward.k = (real)sin(flag->facing[1]);
-				function_1420f0(&transform, &flag->position, &forward, function_11d090(&forward, &up));
+				function_11d090(&forward, &up);
+				function_1420f0(&transform, &flag->position, &forward, &up);
 				function_142a60(&transform, &matrix, &matrix);
 			}
 			function_3f660(&matrix);
@@ -548,6 +565,18 @@ struct s_camera_unit_header
 
 bool function_172350(point3f const *point);
 
+/* the seconds a unit is into its animation, 0 when it has none */
+static inline real camera_unit_animation_seconds(s_camera_unit_animation const *unit_animation)
+{
+	real result = 0.0f;
+
+	if (unit_animation->graph_tag_index != NONE && unit_animation->animation_index != NONE)
+	{
+		result = unit_animation->frame * (1.0f / 30.0f);
+	}
+	return result;
+}
+
 /* the animated camera's matrix and the seconds it is into its animation */
 // @retail 0x16cfa0
 bool camera_scripting_animation_matrix_get(transform4x3f *matrix, real *seconds_out)
@@ -555,10 +584,9 @@ bool camera_scripting_animation_matrix_get(transform4x3f *matrix, real *seconds_
 	bool result = false;
 	s_camera_animation_state *camera_animation = &camera_scripting_state->animation;
 	s_animation_state state;
-	c_type_709360 animation_id;
 
 	state.initialize(camera_animation->graph_tag_index, NONE, true);
-	animation_id = function_1dd0b0(graph_tag_get(state.graph_tag_index), camera_animation->animation_name);
+	c_type_709360 animation_id = graph_tag_get(state.graph_tag_index)->animation_by_name(camera_animation->animation_name);
 	if (animation_id.index != NONE)
 	{
 		long unit_index;
@@ -572,11 +600,7 @@ bool camera_scripting_animation_matrix_get(transform4x3f *matrix, real *seconds_
 			s_camera_unit *unit = ((s_camera_unit_header *)g_4e0300->data)[unit_index & 0xffff].unit;
 			s_camera_unit_animation *unit_animation = (s_camera_unit_animation *)((byte *)unit + unit->animation_offset);
 
-			seconds = 0.0f;
-			if (unit_animation->graph_tag_index != NONE && unit_animation->animation_index != NONE)
-			{
-				seconds = unit_animation->frame * (1.0f / 30.0f);
-			}
+			seconds = camera_unit_animation_seconds(unit_animation);
 		}
 		else
 		{
@@ -598,7 +622,8 @@ bool camera_scripting_animation_matrix_get(transform4x3f *matrix, real *seconds_
 			forward.i = (real)cos(flag->facing[0]) * (real)cos(flag->facing[1]);
 			forward.j = (real)sin(flag->facing[0]) * (real)cos(flag->facing[1]);
 			forward.k = (real)sin(flag->facing[1]);
-			function_1420f0(&flag_matrix, &flag->position, &forward, function_11d090(&forward, &up));
+			function_11d090(&forward, &up);
+			function_1420f0(&flag_matrix, &flag->position, &forward, &up);
 			function_142a60(&flag_matrix, &animation_matrix, &animation_matrix);
 		}
 		*matrix = animation_matrix;
@@ -610,7 +635,7 @@ bool camera_scripting_animation_matrix_get(transform4x3f *matrix, real *seconds_
 }
 
 struct s_bsp3d;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 long structure_leaf_cluster_get(long leaf_index);
 extern s_bsp3d *g_4e033c;
 void function_23bc90(long object_index, point3f *position, vector3f *forward);
@@ -629,7 +654,7 @@ struct s_camera_leaves_view
 
 static __forceinline long camera_cluster_from_point(point3f *point)
 {
-	long leaf_index = function_14a280(g_4e033c, point, 0);
+	long leaf_index = function_14a280(g_4e033c, 0, point);
 	long result;
 
 	if (leaf_index != NONE)
@@ -647,10 +672,11 @@ static __forceinline long camera_cluster_from_point(point3f *point)
 // @retail 0x16cee0
 long camera_scripting_cluster_get(void)
 {
+	long mode = camera_scripting_state->mode;
 	s_camera_scripting_state *camera = camera_scripting_state;
 	long result = NONE;
 
-	switch (camera->mode)
+	switch (mode)
 	{
 	case _camera_scripting_mode_point:
 		result = camera_cluster_from_point(&camera->position);
@@ -665,7 +691,7 @@ long camera_scripting_cluster_get(void)
 
 			if (camera_scripting_animation_matrix_get(&matrix, &seconds))
 			{
-				result = structure_leaf_cluster_get(function_14a280(g_4e033c, &matrix.position, 0));
+				result = structure_leaf_cluster_get(function_14a280(g_4e033c, 0, &matrix.position));
 			}
 		}
 		break;
@@ -679,7 +705,7 @@ long camera_scripting_cluster_get(void)
 				vector3f forward;
 
 				function_23bc90(object_index, &position, &forward);
-				result = structure_leaf_cluster_get(function_14a280(g_4e033c, &position, 0));
+				result = structure_leaf_cluster_get(function_14a280(g_4e033c, 0, &position));
 			}
 		}
 		break;
@@ -728,6 +754,11 @@ void function_172520(s_observer_command *command);
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
+PRIVATE inline real game_ticks_to_seconds(long ticks)
+{
+	return (real)ticks * g_510c54->rate;
+}
+
 /* the camera director of scripted cameras: fills the observer's command */
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
@@ -765,28 +796,29 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 				{
 				case 2:
 					{
-						vector3f left;
-						real position_distance;
+						plane3f plane;
 						real length_squared;
 						real t;
+						vector3f const *direction;
 
 						command->object_matrix.forward = *g_4687a8;
 						command->object_matrix.up = *g_4687b0;
 						command->object_matrix.left = *g_4687ac;
-						left = camera->point.left;
-						position_distance = dot3f((vector3f *)&command->object_matrix.position, &left);
-						length_squared = dot3f(&left, &left);
+						direction = &camera->point.left;
+						plane.n = *direction;
+						plane.d = dot3f((vector3f *)&command->object_matrix.position, &plane.n);
+						length_squared = (plane.n.k * direction->k + plane.n.j * direction->j) + plane.n.i * direction->i;
 						if (length_squared != 0.0f)
 						{
-							t = 0.0f - (dot3f(&camera->point.offset, &left) - position_distance) / length_squared;
+							t = 0.0f - plane_distance_to_point(&plane, (point3f *)&camera->point.offset) / length_squared;
 						}
 						else
 						{
 							t = 0.0f;
 						}
-						command->object_matrix.position.x = camera->point.left.i * t + camera->point.offset.i;
-						command->object_matrix.position.y = camera->point.left.j * t + camera->point.offset.j;
-						command->object_matrix.position.z = camera->point.left.k * t + camera->point.offset.k;
+						command->object_matrix.position.x = direction->i * t + camera->point.offset.i;
+						command->object_matrix.position.y = direction->j * t + camera->point.offset.j;
+						command->object_matrix.position.z = direction->k * t + camera->point.offset.k;
 						command->flags |= 0x40;
 					}
 					break;
@@ -799,14 +831,7 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 					break;
 				}
 			}
-			if (time_scale != 0.0f)
-			{
-				command->timer = (real)camera->ticks * game_time->rate / time_scale;
-			}
-			else
-			{
-				command->timer = 0.0f;
-			}
+			command->timer = time_scale != 0.0f ? game_ticks_to_seconds(camera->ticks) / time_scale : 0.0f;
 			command->forward = camera->forward;
 			command->up = camera->up;
 			if (camera->object_index != NONE)
@@ -845,38 +870,26 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 		{
 			real t = camera_velocity_profile_evaluate(&camera->pan.profile, g_510c54->game_time - camera->pan.start_time);
 			quaternionf rotation;
-			matrix3x3 matrix;
-			real length_squared;
 
 			command->timer = 0.0f;
 			t = PIN(t, 0.0f, 1.0f);
-			function_141f60(function_142d10(&camera->up, &camera->forward, &matrix), &rotation);
-			function_11da10(&rotation, &camera->pan.rotation, &rotation, t);
-			length_squared = rotation.i * rotation.i + rotation.j * rotation.j + rotation.k * rotation.k + rotation.w * rotation.w;
-			if (length_squared > 0.0f)
 			{
-				real inverse = 1.0f / (real)sqrt(length_squared);
+				matrix3x3 matrix;
 
-				rotation.i *= inverse;
-				rotation.j *= inverse;
-				rotation.k *= inverse;
-				rotation.w *= inverse;
+				function_141f60(function_142d10(&camera->up, &camera->forward, &matrix), &rotation);
 			}
-			else
-			{
-				rotation.i = 0.0f;
-				rotation.j = 0.0f;
-				rotation.k = 0.0f;
-				rotation.w = 1.0f;
-			}
-			function_141e10(&matrix, &rotation);
-			command->forward = matrix.forward;
-			command->up = matrix.up;
-			t = PIN(t, 0.0f, 1.0f);
+			function_11da10(&rotation, &camera->pan.rotation, &rotation, t);
+			quaternion_unit_or_identity(&rotation);
+			transform4x3f transform;
+
+			function_141e10(&transform.rotation, &rotation);
+			command->forward = transform.forward;
+			command->up = transform.up;
+			real fraction = PIN(t, 0.0f, 1.0f);
 			camera = camera_scripting_state;
-			command->position.x = camera->position.x * (1.0f - t) + camera->pan.position.x * t;
-			command->position.y = camera->position.y * (1.0f - t) + camera->pan.position.y * t;
-			command->position.z = camera->position.z * (1.0f - t) + camera->pan.position.z * t;
+			command->position.x = camera->position.x * (1.0f - fraction) + camera->pan.position.x * fraction;
+			command->position.y = camera->position.y * (1.0f - fraction) + camera->pan.position.y * fraction;
+			command->position.z = camera->position.z * (1.0f - fraction) + camera->pan.position.z * fraction;
 			command->flags |= 1;
 		}
 		break;
@@ -912,18 +925,22 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 	camera = camera_scripting_state;
 	field_of_view = g_54e854;
 	camera->active = false;
-	if (g_510c50 && ((s_camera_field_of_view_flags *)g_510c50)->active && camera->field_of_view_target != 0.0f)
+	if (g_510c50 && ((s_camera_field_of_view_flags *)g_510c50)->active)
 	{
-		if (camera->field_of_view_time >= camera->field_of_view_duration)
+		real target = camera->field_of_view_target;
+		if (target != 0.0f)
 		{
-			field_of_view = camera->field_of_view_target;
-		}
-		else
-		{
-			real t = camera->field_of_view_time / camera->field_of_view_duration;
+			if (camera->field_of_view_time >= camera->field_of_view_duration)
+			{
+				field_of_view = target;
+			}
+			else
+			{
+				real t = camera->field_of_view_time / camera->field_of_view_duration;
 
-			t = PIN(t, 0.0f, 1.0f);
-			field_of_view = (camera->field_of_view_target - camera->field_of_view_start) * t + camera->field_of_view_start;
+				t = PIN(t, 0.0f, 1.0f);
+				field_of_view = (target - camera->field_of_view_start) * t + camera->field_of_view_start;
+			}
 		}
 	}
 	command->field_of_view = field_of_view;

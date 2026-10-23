@@ -29,7 +29,7 @@ short __stdcall function_1b70f0(long actor_index, s_slot *slot);
 short __stdcall function_1b7210(long actor_index, s_slot *slot);
 short __stdcall function_1b73b0(long actor_index, s_slot *slot);
 short __stdcall function_1b74c0(long actor_index, s_slot *slot);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 
 /* the block of the actor's character tag function_1e4d10 returns */
 struct s_character_d10
@@ -80,18 +80,21 @@ struct s_slot_2b
 // @retail 0x1b6930
 bool __stdcall function_1b6930(long actor_index, s_slot *slot)
 {
+	bool result = true;
 	s_actor_view *actor = actor_get(actor_index);
 
-	if (actor->prop_index == NONE)
-		return false;
+	if (actor->prop_index != NONE)
+	{
+		s_prop_node_view *node = prop_node_get(actor->prop_index);
+		s_prop_view_fields *view = prop_node_view(node);
 
-	s_prop_node_view *node = prop_node_get(actor->prop_index);
-	s_prop_view_fields *view = prop_node_view(node);
-
-	function_1b6010(node->unknown08);
-	if (view && view->unknown70 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
-		function_1fb7e0(actor_index, 0x4c, NULL, node->object_index, NONE);
-	return true;
+		function_1b6010(node->unknown08);
+		if (view && view->unknown70 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
+			function_1fb7e0(0x4c, actor_index, NULL, node->object_index, NONE);
+	}
+	else
+		result = false;
+	return result;
 }
 
 struct s_1b69e0_choice
@@ -106,16 +109,18 @@ bool function_1b60d0(long index, short type, short level);
 void function_25d420(long prop_index, short type, long actor_index);
 short __stdcall function_272af0(s_match_globals *structure, point3f const *point);
 
-// @retail 0x1b69e0
-bool __stdcall function_1b69e0(long actor_index, long prop_index)
+PRIVATE __forceinline bool function_1b69e6(long arg_0, long arg_1)
 {
-    s_actor_view *actor = actor_get(actor_index);
-    s_prop_node_view *node = prop_node_get(prop_index);
-    s_prop_view_fields *view = prop_node_view(node);
+    bool unknown;
+    long level;
+    s_261d20_entry entry;
+    s_2605d0_request request;
     bool result = false;
+    s_actor_view *actor = actor_get(arg_1);
+    s_prop_node_view *node = prop_node_get(arg_0);
+    s_prop_view_fields *view = prop_node_view(node);
     if (view)
     {
-        s_2605d0_request request;
         memset(&request, 0, sizeof(request));
         request.type = 5;
         *((bool *)&request + 4) = true;
@@ -143,10 +148,7 @@ bool __stdcall function_1b69e0(long actor_index, long prop_index)
         }
         *(real *)((byte *)&request + 0x1c) = 20.0f;
         byte *scratch = ai_scratch_buffer_get();
-        bool unknown;
-        long level;
-        s_261d20_entry entry;
-        s_reference reference = function_2605d0(actor_index, &request, (long)&entry, (long)&level, scratch, &unknown);
+        s_reference reference = function_2605d0(arg_1, &request, (long)&entry, (long)&level, scratch, &unknown);
         if (!REFERENCE_EQUAL(reference, g_470fa0) && reference.unknown2 >= 0)
         {
             s_1b69e0_choice *choice = *(s_1b69e0_choice **)&entry;
@@ -156,17 +158,26 @@ bool __stdcall function_1b69e0(long actor_index, long prop_index)
             *(long *)((byte *)view + 0x74) = choice->field_14;
             s_262b40_result *target = function_262b40(reference);
             short type = target ? target->unknown10 : NONE;
-            function_1b60d0(node->unknown08, type, reference.unknown2);
+            function_1b60d0(node->unknown08, reference.unknown2, type);
             result = true;
         }
         else
         {
-            function_25d420(prop_index, 2, actor_index);
+            function_25d420(arg_0, 2, arg_1);
             view->unknown4c = true;
+            result = false;
         }
         ai_scratch_buffer_release(scratch);
     }
     return result;
+}
+
+// score 80 (was 80): the frame is eight bytes bigger than retail's, so every local offset and the
+// whole body layout differ.
+// @retail 0x1b69e0
+bool __stdcall function_1b69e0(long actor_index, long prop_index)
+{
+    return function_1b69e6(prop_index, actor_index);
 }
 
 // @retail 0x1b6c90
@@ -182,37 +193,51 @@ short __stdcall function_1b6c90(long actor_index, s_slot *slot, bool active)
 		if (node->unknown24 >= 3 && prop_node_view(node))
 		{
 			if (!actor->unknown040)
-				return g_46fbe8;
-			function_1b69e0(actor_index, actor->prop_index);
-			actor_get(actor_index)->unknown040 = false;
+				result = g_46fbe8;
+			else
+			{
+				function_1b69e0(actor_index, actor->prop_index);
+				actor_get(actor_index)->unknown040 = false;
+			}
 		}
 	}
 	return result;
+}
+
+PRIVATE __forceinline long function_1b6e55(void)
+{
+	long local_0 = 0;
+	return local_0;
 }
 
 // @retail 0x1b6e50
 short function_1b6e50(long actor_index)
 {
 	short result = 0x7fff;
-	short level = function_1a6fe0(actor_index, 0x2a);
+	short level = actor_behavior_find_level(actor_index, 0x2a);
 
 	if (level != NONE)
 	{
 		s_actor_view *actor = actor_get(actor_index);
 
 		if (((s_slot_2a *)&actor->slots[level])->unknown0d)
-			return 0;
-		level = function_1a6fe0(actor_index, 0x2b);
+		{
+			result = (short)function_1b6e55();
+			goto local_1;
+		}
+		level = actor_behavior_find_level(actor_index, 0x2b);
 		if (level == NONE)
-			level = function_1a6fe0(actor_index, 0x2c);
+			level = actor_behavior_find_level(actor_index, 0x2c);
 		if (level != NONE)
 		{
-			s_slot_2b *state = (s_slot_2b *)&actor->slots[level];
+			struct s_1b6e51 { bool field_0; byte field_1; short field_2; };
+			s_1b6e51 const *local_0 = (s_1b6e51 const *)((byte *)&actor->slots[level] + 0xc);
 
-			if (state->unknown0c)
-				result = state->ticks;
+			if (local_0->field_0)
+				result = local_0->field_2;
 		}
 	}
+local_1:
 	return result;
 }
 
@@ -287,6 +312,11 @@ short __stdcall function_1b7190(long actor_index, s_slot *slot)
 	return result;
 }
 
+PRIVATE __forceinline byte function_1b7211(long arg_0)
+{
+	return (g_557c40[arg_0 >> 5] >> (arg_0 & 31)) & 1;
+}
+
 // @retail 0x1b7210
 short __stdcall function_1b7210(long actor_index, s_slot *slot)
 {
@@ -296,39 +326,56 @@ short __stdcall function_1b7210(long actor_index, s_slot *slot)
 	if (actor->prop_index != NONE && !actor->unknown225)
 	{
 		s_character_d10 *character = (s_character_d10 *)function_1e4d10(actor_index);
+		s_game_time_globals *local_1 = g_510c54;
 
-		if ((actor->times[9] == NONE || (real)(g_510c54->game_time - actor->times[9]) * g_510c54->rate > character->unknown14) &&
+		if ((actor->times[9] == NONE || (real)(local_1->game_time - actor->times[9]) * local_1->rate > character->unknown14) &&
 			actor->unknown3d8 >= character->unknown1c &&
 			character->unknown0c >= actor->unknown2d0 &&
 			character->unknown10 >= actor->unknown2d4)
 		{
 			s_prop_node_view *node = prop_node_get(actor->prop_index);
 
-			if ((!(character->unknown30 > node->unknown28) || node->unknown27 < 1) && slot_type_enabled(0x2a))
+			if (!(character->unknown30 > node->unknown28) || node->unknown27 < 1)
 			{
-				real t;
+				s_slot_handler *local_0 = g_46eeb8[0x2a];
+				if (local_0->unknown8 != g_46f348 && (local_0->mask & g_4ee4ec) == g_4ee4ec && function_1b7211(0x2a) != 0)
+				{
+					real t;
 
-				if (actor->unknown3d8 > character->unknown20)
-				{
-					t = 1.0f;
-				}
-				else
-				{
-					real range = character->unknown20 - character->unknown1c;
+					if (actor->unknown3d8 > character->unknown20)
+					{
+						t = 1.0f;
+					}
+					else
+					{
+						real range = character->unknown20 - character->unknown1c;
 
-					t = 0.0f;
-					if (range > 0.0f)
-						t = (actor->unknown3d8 - character->unknown1c) / range;
-				}
-				if (function_1c9ee0(character->unknown24 + (character->unknown28 - character->unknown24) * t) > function_259a0(&g_4e7408->unknown0))
-				{
-					actor->times[9] = g_510c54->game_time;
-					result = 0x2a;
+						t = 0.0f;
+						if (!(0.0f >= range))
+							t = (actor->unknown3d8 - character->unknown1c) / range;
+					}
+					if (function_1c9ee0(character->unknown24 + (character->unknown28 - character->unknown24) * t) > function_259a0(&g_4e7408->unknown0))
+					{
+						actor->times[9] = local_1->game_time;
+						result = 0x2a;
+					}
 				}
 			}
 		}
 	}
 	return result;
+}
+
+PRIVATE __forceinline real function_1b74c1(vector3f const *arg_0, vector3f const *arg_1)
+{
+	return *(real const volatile *)&arg_0->i * arg_1->i + arg_0->j * arg_1->j + arg_0->k * arg_1->k;
+}
+
+PRIVATE __forceinline bool function_1b74c3(long arg_0)
+{
+	bool local_0 = false;
+	local_0 = function_110ab0(arg_0);
+	return local_0;
 }
 
 // @retail 0x1b74c0
@@ -337,13 +384,13 @@ short __stdcall function_1b74c0(long actor_index, s_slot *slot)
 	s_actor_view *actor = actor_get(actor_index);
 	short result = g_46fbe4;
 
-	if (actor->prop_index != NONE && !function_110ab0(actor->unknown018))
+	if (actor->prop_index != NONE && !function_1b74c3(actor->unknown018))
 	{
 		s_prop_node_view *node = prop_node_get(actor->prop_index);
 		s_prop_view_fields *view = prop_node_view(node);
 
 		if (view && node->unknown28 < 20.0f && view->unknown00 >= 9 &&
-			dot3f(&actor->unknown290, &view->unknown2c) < -0.1f)
+			function_1b74c1(&view->unknown2c, &actor->unknown290) < -0.1f)
 		{
 			result = 0x2a;
 		}
@@ -355,6 +402,11 @@ short __stdcall function_1b74c0(long actor_index, s_slot *slot)
 short __stdcall function_1b75a0(long actor_index)
 {
 	return 0;
+}
+
+PRIVATE __forceinline byte function_1b75b1(long arg_0)
+{
+	return (g_557c40[arg_0 >> 5] >> (arg_0 & 31)) & 1;
 }
 
 // @retail 0x1b75b0
@@ -372,7 +424,7 @@ short __stdcall function_1b75b0(long actor_index, s_slot *slot, bool active)
 			s_slot_handler *handler = g_46eeb8[0x36];
 
 			if (handler->unknown8 != g_46f348 && (handler->mask & g_4ee4ec) == g_4ee4ec &&
-				(((byte *)g_557c40)[0x36 >> 3] & (1 << (0x36 & 7))) != 0)
+				function_1b75b1(0x36) != 0)
 			{
 				result = 0x36;
 			}
@@ -528,16 +580,17 @@ short __stdcall function_1b7000(long actor_index, s_slot *slot)
 				long time = actor->times[3];
 
 				if (time == NONE || (g_510c54->game_time - time) * g_510c54->rate > delay)
-					return 0x10;
+				{
+					result = 0x10;
+				}
 			}
 		}
-
-		return g_46fbe4;
 	}
-
 	return result;
 }
 
+// score 33 (was 33): the address of the argument is copied into ECX and pushed; retail loads it
+// into EBX directly.
 // @retail 0x1b73b0
 short __stdcall function_1b73b0(long actor_index, s_slot *slot)
 {
@@ -554,7 +607,10 @@ short __stdcall function_1b73b0(long actor_index, s_slot *slot)
 			s_slot_object_view *object = object_get(iterator.child_index);
 
 			if (object->player_index != NONE && object->unknownf0 < 0.25f)
-				return 0x2a;
+			{
+				result = 0x2a;
+				break;
+			}
 		}
 	}
 

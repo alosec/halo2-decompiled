@@ -9,13 +9,13 @@
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *bsp, point3f *point, long index);
+long function_14a280(s_bsp3d *bsp, long index, point3f *point);
 
 // @retail 0x11bf90
 long function_11bf90(long object_index, point3f *point)
 {
 	short attempts = 0;
-	while (function_14a280(g_4e033c, point, 0) == NONE && attempts++ < 150)
+	while (function_14a280(g_4e033c, 0, point) == NONE && attempts++ < 150)
 		point->z += 0.05f;
 	return attempts == 0;
 }
@@ -48,17 +48,24 @@ struct s_11c120_bsp
 	byte *entries;
 };
 
+struct s_entry_11bf30
+{
+	byte unknown00[0x24];
+	long tag_index;
+	byte unknown28[0x64 - 0x28];
+};
+
 // @retail 0x11bf30
 bool function_11bf30(s_location const *location)
 {
 	s_11c120_bsp *bsp = (s_11c120_bsp *)g_4e0348;
-	short index = bsp->clusters[location->cluster_index].entry_index;
+	s_11c120_cluster *cluster = &bsp->clusters[location->cluster_index];
 	bool result = false;
-	if (index != NONE && index < bsp->entry_count)
+	if (cluster->entry_index != NONE && cluster->entry_index < bsp->entry_count)
 	{
-		long tag_index = *(long *)(bsp->entries + index * 0x64 + 0x24);
-		if (tag_index != NONE)
-			result = (*g_4e3b44[tag_index & 0xffff].bytes & 1) != 0;
+		s_entry_11bf30 *entry = (s_entry_11bf30 *)bsp->entries + cluster->entry_index;
+		if (entry->tag_index != NONE)
+			result = (*g_4e3b44[entry->tag_index & 0xffff].bytes & 1) != 0;
 	}
 	return result;
 }
@@ -79,9 +86,11 @@ struct s_name_table_11c0b0
 // @retail 0x11c0b0
 short function_11c0b0(char const *name, s_name_table_11c0b0 *table)
 {
+	s_named_entry_11c0b0 *entries;
 	for (short i = 0; i < table->count; i++)
 	{
-		if (!strcmp(table->entries[i].name, name))
+		entries = table->entries;
+		if (!strcmp(entries[i].name, name))
 			return i;
 	}
 	return NONE;
@@ -89,6 +98,7 @@ short function_11c0b0(char const *name, s_name_table_11c0b0 *table)
 
 #define CLUSTER_BITS(offset) ((dword *)((byte *)g_4e6948 + (offset)))
 
+__declspec(noinline)
 // @retail 0x11c050
 bool function_11c050(s_location const *location)
 {
@@ -97,6 +107,7 @@ bool function_11c050(s_location const *location)
 	return (CLUSTER_BITS(0x1178)[cluster_index >> 5] & (1 << (cluster_index & 31))) != 0;
 }
 
+__declspec(noinline)
 // @retail 0x11c080
 bool function_11c080(s_location const *location)
 {
@@ -104,6 +115,9 @@ bool function_11c080(s_location const *location)
 
 	return (CLUSTER_BITS(0x1138)[cluster_index >> 5] & (1 << (cluster_index & 31))) != 0;
 }
+
+/* retail calls this from every caller */
+__declspec(noinline) bool function_11c120(s_location const *location, point3f const *point, short *zone_index);
 
 // @retail 0x11c120
 bool function_11c120(s_location const *location, point3f const *point, short *zone_index)
@@ -114,16 +128,16 @@ bool function_11c120(s_location const *location, point3f const *point, short *zo
 	if (cluster_index != NONE)
 	{
 		s_11c120_bsp *bsp = (s_11c120_bsp *)g_4e0348;
-		byte zone = bsp->clusters[cluster_index].zone;
+		s_11c120_cluster *cluster = &bsp->clusters[cluster_index];
 
-		if (zone != 0xff)
+		if (cluster->zone != 0xff)
 		{
-			s_11c120_zone *entry = &bsp->zones[zone & 0x7f];
+			s_11c120_zone *entry = &bsp->zones[cluster->zone & 0x7f];
 			short index = entry->index;
 
 			if (index != NONE)
 			{
-				if (!(zone & 0x80) || 0.0f > entry->plane.k * point->z + entry->plane.j * point->y + entry->plane.i * point->x - entry->plane.d)
+				if (!(cluster->zone & 0x80) || 0.0f > entry->plane.k * point->z + entry->plane.j * point->y + entry->plane.i * point->x - entry->plane.d)
 				{
 					result = true;
 					if (zone_index)

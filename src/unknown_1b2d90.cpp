@@ -14,7 +14,7 @@ s_slot_handler_2 g_47e120 =
 {
 	{
 		3, 2, NONE, -2, 0,
-		function_1a8370, function_1b2d90, 0, 0, NONE, {0},
+		actor_behavior_priority_minimum, function_1b2d90, 0, 0, NONE, {0},
 		0, 0, 0, 0, 0, 0, 0
 	},
 	0, 0, 0

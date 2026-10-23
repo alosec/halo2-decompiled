@@ -3,7 +3,6 @@
 #include "globals.h"
 #include "unknown_1cec30.h"
 
-void havok_component_rigid_body_matrix_get(long rigid_body_index, s_havok_component *component, transform4x3f *matrix);
 void havok_component_rigid_body_point_velocity_get(long rigid_body_index, s_havok_component *component,
 	point3f const *point, vector3f *velocity);
 void function_141590(transform4x3f const *in, transform4x3f *out);
@@ -35,7 +34,7 @@ bool function_182020(long component_index, vector3f *previous_velocity, point3f 
 			transform4x3f inverse;
 			transform4x3f relative;
 			vector3f velocity_sample;
-			havok_component_rigid_body_matrix_get(body_index, component, &body_matrix);
+			component->rigid_body_matrix_get(body_index, &body_matrix);
 			function_141590(&body_matrix, &inverse);
 			function_142a60(transform, &inverse, &relative);
 			function_141590(&relative, &relative);
@@ -108,6 +107,11 @@ struct s_material_object_header
 	s_material_object *object;
 };
 
+static inline s_material_object_header *material_object_header_get(long object_index)
+{
+	return &((s_material_object_header *)g_4e0300->data)[object_index & 0xffff];
+}
+
 struct s_entity_material_view
 {
 	byte unknown00[0x4c];
@@ -116,9 +120,18 @@ struct s_entity_material_view
 };
 
 struct s_lookup_source;
-void function_1ee410(s_lookup_source const *source, short *result);
+short *function_1ee410(s_lookup_source const *source, short *result);
 long havok_entity_component_index_get(hkEntity const *entity);
 extern short g_54e898;
+
+/* the material index of a shape with its own material table */
+static inline short shape_material_index_get(c_material_shape *shape)
+{
+	short index;
+	return *function_1ee410((s_lookup_source *)shape, &index);
+}
+
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
 // @retail 0x182b90
 void function_182b90(c_material_shape *shape, hkEntity const *entity,
@@ -128,8 +141,7 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 		shape = shape->child;
 	if (shape->shape_kind() == 0x18)
 	{
-		short index;
-		function_1ee410((s_lookup_source *)shape, &index);
+		short index = shape_material_index_get(shape);
 		s_material_properties *properties = 0;
 		if (index != NONE && index >= 0)
 		{
@@ -137,18 +149,14 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 			if (index < globals->count)
 				properties = &globals->materials[index];
 		}
-		short output_index;
-		function_1ee410((s_lookup_source *)shape, &output_index);
-		*material = output_index;
+		*material = shape_material_index_get(shape);
 		*friction = properties->friction;
 		*restitution = properties->restitution;
 		return;
 	}
-	s_shape_material *properties = shape->material;
-	long value = (long)properties;
-	long pinned = value < 1 ? 1 : (value > 16 ? 16 : value);
-	if (properties && pinned != value)
+	if (shape->material && PIN((long)shape->material, 1, 16) != (long)shape->material)
 	{
+		s_shape_material *properties = shape->material;
 		*material = properties->material;
 		*friction = properties->friction;
 		*restitution = properties->restitution;
@@ -159,11 +167,11 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 		long component_index = havok_entity_component_index_get(entity);
 		if (component_index != NONE)
 		{
-			long object_index = havok_component_get(component_index)->object_index;
-			s_material_object_header *header = &((s_material_object_header *)g_4e0300->data)[object_index & 0xffff];
-			if (header->type == 0)
+			long const &object_index = havok_component_get(component_index)->object_index;
+			long type = material_object_header_get(object_index)->type;
+			if (type == 0)
 			{
-				s_material_object *object = header->object;
+				s_material_object *object = material_object_header_get(object_index)->object;
 				byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
 				bool alternate = (bool)((object->flags >> 2) & 1);
 				*friction = ((s_entity_material_view const *)entity)->friction;
@@ -172,9 +180,9 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 				*material = *selected;
 				return;
 			}
-			else if (header->type == 12)
+			else if (type == 12)
 			{
-				s_material_object *object = header->object;
+				s_material_object *object = material_object_header_get(object_index)->object;
 				byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
 				bool alternate = (bool)((object->flags >> 2) & 1);
 				*friction = ((s_entity_material_view const *)entity)->friction;
@@ -183,6 +191,13 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 				*material = *selected;
 				return;
 			}
+		}
+		else
+		{
+			*material = g_54e898;
+			*friction = 1.0f;
+			*restitution = 0.0f;
+			return;
 		}
 	}
 	*material = g_54e898;

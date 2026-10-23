@@ -34,7 +34,7 @@ class c_havok_world_activation_listener
 {
 public:
     virtual void function_0(void) = 0;
-    virtual void simulation_island_activated(hkSimulationIsland *island) = 0;
+    virtual void simulation_island_activated(c_havok_body_group *island) = 0;
 };
 
 class c_havok_entity_activation_listener
@@ -60,8 +60,8 @@ struct s_havok_entity_activation_view
 struct s_havok_world_activation_view
 {
     byte unknown00[8];
-    s_havok_array_view<hkSimulationIsland *> active_islands;
-    s_havok_array_view<hkSimulationIsland *> inactive_islands;
+    s_havok_array_view<c_havok_body_group *> active_islands;
+    s_havok_array_view<c_havok_body_group *> inactive_islands;
     byte unknown20[0x78 - 0x20];
     s_havok_array_view<c_havok_world_activation_listener *> listeners;
     byte unknown84[0x108 - 0x84];
@@ -122,7 +122,7 @@ static void havok_world_activation_notify(
     {
         c_havok_world_activation_listener *listener = world->listeners.data[i];
         if (listener)
-            listener->simulation_island_activated((hkSimulationIsland *)island);
+            listener->simulation_island_activated((c_havok_body_group *)island);
     }
     compact_null_listeners(&world->listeners);
 
@@ -212,14 +212,14 @@ static bool havok_world_simulation_island_activate(
 
     if (world->active_islands.size ==
         (long)(world->active_islands.capacity_and_flags & 0x7fffffffU))
-        function_2d91d0(&world->active_islands, sizeof(hkSimulationIsland *));
+        function_2d91d0(&world->active_islands, sizeof(c_havok_body_group *));
     if (!world->active_islands.data)
         return false;
 
     world->active_islands.data[world->active_islands.size++] =
-        (hkSimulationIsland *)island;
+        (c_havok_body_group *)island;
 
-    hkSimulationIsland *moved = world->inactive_islands.data[inactive_count - 1];
+    c_havok_body_group *moved = world->inactive_islands.data[inactive_count - 1];
     world->inactive_islands.data[storage_index] = moved;
     ((s_havok_simulation_island_active_view *)moved)->storage_index = storage_index;
     --world->inactive_islands.size;
@@ -234,7 +234,7 @@ static bool havok_world_simulation_island_activate(
 }
 
 // @retail 0x30bc40
-hkBool hkRigidBody::isActive(void) const
+hkBool hkRigidBody::body_is_simulating(void) const
 {
     hkBool result;
     result.m_bool = m_simulation_island

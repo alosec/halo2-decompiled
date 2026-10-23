@@ -40,13 +40,13 @@ struct s_z_transform_state
 {
  long identifier;
  vector3f position;
- vector3f forward;
  vector3f up;
+ vector3f forward;
  vector3f linear_velocity;
  vector3f angular_velocity;
 };
 
-bool function_ab9f0(s_z_transform_state const *state);
+__declspec(noinline) bool function_ab9f0(s_z_transform_state const *state);
 void simulation_read_position(s_bitstream *stream, real *position, long bits);
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits);
 
@@ -57,10 +57,13 @@ bool function_ab960(s_bitstream *stream, s_z_transform_state *state)
  byte salt = (byte)function_1959c0(stream, 4);
  state->identifier = index | ((dword)salt << 28);
  simulation_read_position(stream, (real *)&state->position, 16);
- function_195240(stream, &state->forward, &state->up);
+ function_195240(stream, &state->up, &state->forward);
  function_195070(stream, &state->linear_velocity, 0.03f, 350.0f, 10);
  function_195070(stream, &state->angular_velocity, 0.03f, 30.0f, 8);
- return function_ab9f0(state) != false;
+ bool result;
+ if (function_ab9f0(state)) result = true;
+ else result = false;
+ return result;
 }
 
 #include <string.h>
@@ -115,7 +118,7 @@ PRIVATE inline void z_write_blend_fraction(s_bitstream *stream, real value)
  function_195720(stream, quantized, 4);
 }
 
-void function_b5650(long identifier, s_bitstream *stream);
+void simulation_write_entity_identifier(long identifier, s_bitstream *stream);
 void function_194830(s_bitstream *stream, bool value);
 
 // @retail 0xab5e0
@@ -128,7 +131,7 @@ void function_ab5e0(s_z_blend_state const *state, s_bitstream *stream)
   real second = state->second > 0.0f ? state->second : 0.0f;
   z_write_blend_fraction(stream, first);
   z_write_blend_fraction(stream, second);
-  function_b5650(state->identifier, stream);
+  simulation_write_entity_identifier(state->identifier, stream);
   function_194830(stream, state->slot != NONE);
   if (state->slot != NONE)
    stream_write_checked(stream, state->slot, 5);
@@ -137,22 +140,45 @@ void function_ab5e0(s_z_blend_state const *state, s_bitstream *stream)
   stream_write_bit(stream, false);
 }
 
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside);
-void function_194d30(s_bitstream *stream, vector3f const *forward, vector3f const *up);
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside);
+void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward);
 void function_194c10(s_bitstream *stream, vector3f const *vector, real lo, real hi, long bits);
 bool __stdcall function_a75d0(vector3f *vector, real maximum);
+
+PRIVATE __forceinline void transform_angular_cap(vector3f *vector, real maximum)
+{
+ real squared = length_sq3f(vector);
+ if (squared > maximum * maximum)
+ {
+  double scale = maximum / sqrt(squared);
+  vector->i = (real)(scale * vector->i);
+  vector->j = (real)(scale * vector->j);
+  vector->k = (real)(scale * vector->k);
+ }
+}
 
 // @retail 0xab7f0
 void function_ab7f0(s_bitstream *stream, s_z_transform_state const *state)
 {
- function_b5650(state->identifier, stream);
- simulation_write_position(16, stream, (real const *)&state->position, false);
- function_194d30(stream, &state->forward, &state->up);
+ simulation_write_entity_identifier(state->identifier, stream);
+ simulation_write_position(stream, (real const *)&state->position, 16, false);
+ function_194d30(stream, &state->up, &state->forward);
  vector3f velocity = state->linear_velocity;
- function_a75d0(&velocity, 350.0f);
+ {
+  real first_squared = velocity.i * velocity.i;
+  real second_squared = velocity.j * velocity.j;
+  real length_squared = (first_squared + second_squared) + velocity.k * velocity.k;
+  if (length_squared > 122500.0f)
+  {
+   real inverse = 350.0f / (real)sqrt(length_squared);
+   velocity.i *= inverse;
+   velocity.j *= inverse;
+   velocity.k *= inverse;
+  }
+ }
  function_194c10(stream, &velocity, 0.03f, 350.0f, 10);
  velocity = state->angular_velocity;
- function_a75d0(&velocity, 30.0f);
+ transform_angular_cap(&velocity, 30.0f);
  function_194c10(stream, &velocity, 0.03f, 30.0f, 8);
 }
 
@@ -256,6 +282,7 @@ void function_aaef0(s_bitstream *stream, s_z_input_packet const *state)
 
 
 #include <math.h>
+#include "vector_products.h"
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_1420f0(transform4x3f *out, point3f const *position, vector3f const *forward, vector3f const *up);
 void function_141590(transform4x3f const *in, transform4x3f *out);
@@ -268,10 +295,7 @@ PRIVATE inline void z_limit_correction(vector3f *value, real maximum)
  real squared = value->k * value->k + value->j * value->j + value->i * value->i;
  if (squared > maximum * maximum)
  {
-  double scale = maximum / sqrt(squared);
-  value->i = (real)(value->i * scale);
-  value->j = (real)(value->j * scale);
-  value->k = (real)(value->k * scale);
+  scale_vector_by_double(value, maximum / sqrt(squared), value);
  }
 }
 
@@ -295,14 +319,18 @@ void function_aaca0(long index, point3f const *position, vector3f const *forward
  correction.j *= angular_scale;
  correction.k *= angular_scale;
  z_limit_correction(&correction, 1.0f);
- vector3f angular = correction;
- correction.i = difference.position.x * 0.9f;
- correction.j = difference.position.y * 0.9f;
- correction.k = difference.position.z * 0.9f;
- z_limit_correction(&correction, 0.05f);
- linear_result->i = linear_velocity->i + correction.i;
- linear_result->j = linear_velocity->j + correction.j;
- linear_result->k = linear_velocity->k + correction.k;
+ vector3f angular;
+ angular.i = correction.i;
+ angular.j = correction.j;
+ angular.k = correction.k;
+ vector3f translation;
+ translation.i = difference.position.x * 0.9f;
+ translation.j = difference.position.y * 0.9f;
+ translation.k = difference.position.z * 0.9f;
+ z_limit_correction(&translation, 0.05f);
+ linear_result->i = linear_velocity->i + translation.i;
+ linear_result->j = linear_velocity->j + translation.j;
+ linear_result->k = linear_velocity->k + translation.k;
  angular_result->i = angular_velocity->i + angular.i;
  angular_result->j = angular_velocity->j + angular.j;
  angular_result->k = angular_velocity->k + angular.k;

@@ -1,4 +1,5 @@
-// @flags /O2 /Gr
+#include "unknown_4cf790.h"
+// @flags /O2 /arch:SSE /Gr
 /* UNKNOWN_0805E0.CPP: the cache of the configurations of the
    players met recently (entries of 0x68 bytes at 0x4cf98c, chained through
    their next index). Most of the file is outside lane D's region
@@ -24,7 +25,7 @@ struct s_player_configuration_cache_entry
 	};
 };
 
-s_player_configuration_cache_entry g_4cf98c[350];
+
 
 /* whether a XUID is an offline (machine-local) one */
 static inline bool xuid_is_offline(unsigned __int64 xuid)
@@ -56,33 +57,31 @@ bool player_configuration_cache_next_recent_player(s_recent_player *player, long
 {
 	bool result = false;
 	long index = *iterator;
-	if (index != NONE)
+	while (index != NONE)
 	{
-		do
-		{
-			s_player_configuration_cache_entry *entry = &g_4cf98c[index];
-			index = entry->next;
-			*iterator = index;
-			if (!(entry->flags & 4) && (entry->flags & 0x10) &&
+		s_player_configuration_cache_entry *entry = &g_4cf98c[index];
+		index = entry->next;
+		*iterator = index;
+		if (!(entry->flags & 4) && (entry->flags & 0x10) &&
 			*(unsigned __int64 *)entry->player.xuid != 0 &&
 			!xuid_is_offline(*(unsigned __int64 *)entry->player.xuid) &&
 			!player_configuration_is_excluded(&entry->player) &&
 			*(word *)&entry->player.unknown08[4] != 0)
-			{
-				if (player)
-					memcpy(player, &entry->player, sizeof(s_recent_player));
-				return true;
-			}
-		} while (index != NONE);
+		{
+			if (player)
+				memcpy(player, &entry->player, sizeof(s_recent_player));
+			result = true;
+			break;
+		}
 	}
 	return result;
 }
 
-long g_4cf97c;
-long g_4cf980;
-extern long g_4cf984;
-long g_4cf988;
-long g_4cf978;
+
+
+
+
+
 
 long __stdcall function_7fc80(const void *identity, long *position);
 
@@ -103,10 +102,12 @@ struct s_cache_property_record
 };
 
 // @retail 0x80940
-void function_80940(s_cache_property_record *records, long record_capacity,
-	s_cache_property *properties, long property_capacity, long buffer_capacity,
+void function_80940(long record_capacity, s_cache_property_record *records,
+	long property_capacity, s_cache_property *properties, long buffer_capacity,
 	byte *buffers, long *record_count, long *property_count, long *buffer_count)
 {
+	/* retail passes the records on the stack */
+	s_cache_property_record *const *records_reference = &records;
 	long records_used = 0;
 	long properties_used = 0;
 	long buffers_used = 0;
@@ -250,7 +251,7 @@ struct s_cached_player_view
 };
 
 // @retail 0x7f8b0
-void function_7f8b0(const s_cached_player_identity *identity, s_cached_player_view *result,
+void function_7f8b0(s_cached_player_view *result, const s_cached_player_identity *identity,
 	const s_cached_player_source *source, const s_cached_player_view *previous)
 {
 	memset(result, 0, sizeof(*result));
@@ -298,8 +299,8 @@ void function_7fe40(long index)
 	}
 }
 
-long g_4cf970;
-long g_4cf974;
+
+
 
 struct s_player_appearance;
 bool function_153750(s_player_appearance *appearance);
@@ -307,13 +308,15 @@ bool function_153750(s_player_appearance *appearance);
 // @retail 0x80660
 bool function_80660(void)
 {
-	bool valid = g_4cf970 == 8;
+	bool valid = true;
+	if (g_4cf970 != 8)
+		valid = false;
 	if (g_4cf978 < 0 || g_4cf978 > 350)
 		valid = false;
 	for (long i = 0; valid && i < g_4cf978; i++)
 	{
 		s_player_configuration_cache_entry *entry = &g_4cf98c[i];
-		if (entry > g_4cf98c && memcmp(&entry[-1].player, &entry->player, 12) >= 0)
+		if (i > 0 && memcmp(&entry[-1].player, &entry->player, 12) >= 0)
 			valid = false;
 		if (valid)
 		{
@@ -349,15 +352,18 @@ bool function_80660(void)
 		long index = g_4cf97c;
 		for (long j = 0; valid && j < g_4cf978; j++)
 		{
-			dword bit = 1 << (index & 31);
-			if (visited[index >> 5] & bit)
+			if (visited[index >> 5] & (1 << (index & 31)))
 				valid = false;
 			else
 			{
-				visited[index >> 5] |= bit;
+				visited[index >> 5] |= 1 << (index & 31);
 				s_player_configuration_cache_entry *entry = &g_4cf98c[index];
-				if (j == 0 ? entry->previous_other != NONE :
-					entry->previous_other < 0 || entry->previous_other >= g_4cf978)
+				if (j == 0)
+				{
+					if (entry->previous_other != NONE)
+						valid = false;
+				}
+				else if (entry->previous_other < 0 || entry->previous_other >= g_4cf978)
 					valid = false;
 				if (j + 1 == g_4cf978)
 				{
@@ -383,15 +389,18 @@ bool function_80660(void)
 		long index = g_4cf984;
 		for (long j = 0; valid && j < g_4cf978; j++)
 		{
-			dword bit = 1 << (index & 31);
-			if (visited[index >> 5] & bit)
+			if (visited[index >> 5] & (1 << (index & 31)))
 				valid = false;
 			else
 			{
-				visited[index >> 5] |= bit;
+				visited[index >> 5] |= 1 << (index & 31);
 				s_player_configuration_cache_entry *entry = &g_4cf98c[index];
-				if (j == 0 ? entry->unknown58 != NONE :
-					entry->unknown58 < 0 || entry->unknown58 >= g_4cf978)
+				if (j == 0)
+				{
+					if (entry->unknown58 != NONE)
+						valid = false;
+				}
+				else if (entry->unknown58 < 0 || entry->unknown58 >= g_4cf978)
 					valid = false;
 				if (j + 1 == g_4cf978)
 				{
@@ -437,16 +446,97 @@ void function_7f930(void)
 		source.field78 = 0;
 		source.field7f = 0xff;
 		s_player_configuration_cache_entry *entry = &g_4cf98c[i];
-		function_7f8b0(&identity, (s_cached_player_view *)&entry->player, &source, NULL);
+		function_7f8b0((s_cached_player_view *)&entry->player, &identity, &source, NULL);
 		entry->next = entry->next_other = entry->unknown58 = entry->previous_other = NONE;
 		entry->flags = 0;
 		*(long *)entry->unknown64 = 0;
 	}
 }
 
+#include "files.h"
+#include "crc.h"
+#include "async.h"
+
+struct file_reference_data;
+void async_create_file_blocking(file_reference_data const *s_type_acf665, dword access_flags, long disposition, dword file_flags, long category, s_file_handle *file);
+bool function_1368f0(s_type_acf665 *file);
+
+char const g_450c68[] = "z:\\player_configuration_cache.dat";
+bool g_467260 = true;
+s_file_handle g_467264 = { INVALID_HANDLE_VALUE };
+
+/* loads the cache from its file; true when the file has the cache's size,
+   its checksum and a consistent cache */
+// @retail 0x7fa40
+bool function_7fa40(void)
+{
+	bool local_0 = false;
+	s_type_acf665 local_1;
+	memset(&local_1, 0, sizeof(local_1));
+	local_1.signature = FILE_REFERENCE_SIGNATURE;
+	local_1.location = NONE;
+	if ((byte)local_1.flags & 1)
+		function_1373c0(local_1.path);
+	function_137320(local_1.path, g_450c68);
+	*(byte *)&local_1.flags |= 1;
+	if (function_1368f0(&local_1))
+	{
+		dword local_2 = 0;
+		if (file_ref_size(&local_1, &local_2) && local_2 == 0x8e4c)
+		{
+			dword local_3;
+			if (function_136970(&local_1, 1, &local_3))
+			{
+				if (file_ref_read(&local_1, 0x8e4c, &g_4cf970, true))
+				{
+					dword local_4 = NONE;
+					function_163ba0(&local_4, &g_4cf978, 0x8e44);
+					if (local_4 == (dword)g_4cf974 && function_80660())
+						local_0 = true;
+				}
+				function_136bb0(&local_1);
+			}
+		}
+	}
+	return local_0;
+}
+
+/* starts writing the cache to its file, opening the file the first time;
+   false when the file can't be opened */
+// @retail 0x7fb50
+bool function_7fb50(void)
+{
+	bool local_0 = false;
+	s_type_acf665 local_1;
+	memset(&local_1, 0, sizeof(local_1));
+	local_1.signature = FILE_REFERENCE_SIGNATURE;
+	local_1.location = NONE;
+	if (local_1.flags & 1)
+		function_1373c0(local_1.path);
+	function_137320(local_1.path, g_450c68);
+	local_1.flags |= 1;
+	if (g_467264.handle == INVALID_HANDLE_VALUE)
+	{
+		async_create_file_blocking((file_reference_data const *)&local_1, 2, 4, 4, 2, &g_467264);
+		g_467260 = true;
+		if (g_467264.handle != INVALID_HANDLE_VALUE)
+			function_1a1310(g_467264, 0, 2, 6, NULL, &g_467260);
+	}
+	if (g_467264.handle != INVALID_HANDLE_VALUE)
+	{
+		g_4cf974 = NONE;
+		function_163ba0((dword *)&g_4cf974, &g_4cf978, 0x8e44);
+		g_4cf970 = 8;
+		function_120d50(&g_467260, false);
+		function_1a1050(g_467264, &g_4cf970, 0x8e4c, 0, 0, 2, 6, NULL, &g_467260);
+		local_0 = true;
+	}
+	return local_0;
+}
+
 // @retail 0x80bf0
-void function_80bf0(s_cache_property_record *records, long record_capacity,
-	s_cache_property *properties, long property_capacity, byte *buffers,
+void function_80bf0(long record_capacity, s_cache_property_record *records,
+	long property_capacity, s_cache_property *properties, byte *buffers,
 	long *record_count, long *property_count, long *buffer_count)
 {
 	long records_used = 0;
@@ -503,15 +593,18 @@ void function_80bf0(s_cache_property_record *records, long record_capacity,
 void function_80aa0(s_cache_property_record *records, long count)
 {
 	long position;
-	for (long i = 0; i < count; i++)
+	if (count <= 0) return;
+ s_cache_property *const *local_0 = &records->properties;
+ long local_2 = count;
+ do
 	{
-		s_cache_property_record *record = &records[i];
-		if (record->type == 0x61 && record->count == 4)
+		const s_cached_player_identity *local_1 = (const s_cached_player_identity *)((byte const *)local_0 - 0x14);
+		if (*(long const *)((byte const *)local_0 - 8) == 0x61 && *(long const *)((byte const *)local_0 - 4) == 4)
 		{
-			long index = function_7fc80(record->identity, &position);
+			long index = function_7fc80(local_1, &position);
 			if (index != NONE)
 			{
-				s_cache_property *properties = record->properties;
+				s_cache_property *properties = *local_0;
 				long values[3];
 				long present = 0;
 				long absent = 0;
@@ -547,7 +640,8 @@ void function_80aa0(s_cache_property_record *records, long count)
 				}
 			}
 		}
-	}
+  local_0 = (s_cache_property *const *)((byte const *)local_0 + 0x18);
+	} while (--local_2);
 }
 
 bool g_51055c;
@@ -556,6 +650,12 @@ struct s_profile_record;
 void function_1537f0(s_profile_record *record);
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source);
 
+#pragma inline_depth(0)
+static __forceinline void function_80491(long arg_0)
+{
+ function_7fe40(arg_0);
+}
+#pragma inline_depth(8)
 // @retail 0x80490
 void function_80490(const s_cached_player_identity *identity, const s_cached_player_source *source,
 	bool local, bool recent)
@@ -573,7 +673,7 @@ void function_80490(const s_cached_player_identity *identity, const s_cached_pla
 	{
 		s_player_configuration_cache_entry *entry = &g_4cf98c[index];
 		s_cached_player_view player;
-		function_7f8b0(identity, &player, source, (const s_cached_player_view *)&entry->player);
+		function_7f8b0(&player, identity, source, (const s_cached_player_view *)&entry->player);
 		changed = memcmp(&entry->player, &player, sizeof(entry->player)) != 0;
 		if (changed)
 			memcpy(&entry->player, &player, sizeof(entry->player));
@@ -599,13 +699,14 @@ void function_80490(const s_cached_player_identity *identity, const s_cached_pla
 		changed = changed || !(entry->flags & 16);
 		entry->flags |= 16;
 	}
-	function_7fe40(index);
+	function_80491(index);
 	if (changed || time_changed)
 		g_51055c = true;
 }
 
+#pragma inline_depth(0)
 // @retail 0x80330
-long function_80330(const s_cached_player_identity *identity, long position)
+long __stdcall function_80330(const s_cached_player_identity *identity, long position)
 {
 	s_cached_player_source source;
 	function_1537f0((s_profile_record *)&source);
@@ -617,9 +718,13 @@ long function_80330(const s_cached_player_identity *identity, long position)
 	((byte *)&source.field40)[1] = 10;
 	long index = function_7fe90(identity, position, &source);
 	if (index != NONE)
-		g_4cf98c[index].flags |= 10;
+ {
+  s_player_configuration_cache_entry *local_0 = g_4cf98c + index;
+  local_0->flags |= 10;
+ }
 	return index;
 }
+#pragma inline_depth(8)
 
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
@@ -631,11 +736,12 @@ long function_7fe90(const s_cached_player_identity *identity, long position, con
 		function_7fd10(removed);
 		function_7fd80(removed);
 	}
-	long lower, upper;
+	long lower = 0;
+	long upper = 0;
 	bool downward = false;
 	if (removed != NONE)
 	{
-		lower = removed < position ? removed : position;
+		lower = removed > position ? position : removed;
 		upper = removed > position ? removed : position;
 		if (removed < position)
 		{
@@ -644,7 +750,7 @@ long function_7fe90(const s_cached_player_identity *identity, long position, con
 			downward = true;
 		}
 	}
-	else
+	else if (position < g_4cf978)
 	{
 		lower = position;
 		upper = g_4cf978;
@@ -716,6 +822,12 @@ void __fastcall function_805d0(s_network_session_player *player)
   (const s_cached_player_source *)((const byte *)player + 0xa8), false, true);
 }
 
+#pragma inline_depth(0)
+static __forceinline void function_80441(long arg_0)
+{
+ function_7fdf0(arg_0);
+}
+#pragma inline_depth(8)
 // @retail 0x80440
 void function_80440(const s_cached_player_identity *identity, s_recent_player *player)
 {
@@ -724,7 +836,7 @@ void function_80440(const s_cached_player_identity *identity, s_recent_player *p
  if (index == NONE)
   index = function_80330(identity, position);
  memcpy(player, &g_4cf98c[index].player, sizeof(*player));
- function_7fdf0(index);
+ function_80441(index);
 }
 
 bool g_510554;
@@ -747,9 +859,18 @@ void function_80390(void)
  unsigned __int64 local_1 = 0;
  GetSystemTimeAsFileTime((FILETIME *)&local_1);
  dword local_2 = (dword)(local_1 / 3600000000ULL);
- for (long local_3 = 0; local_3 < g_4cf978; ++local_3)
+ long local_3 = 0;
+ s_player_configuration_cache_entry *local_4 = g_4cf98c;
+ if (g_4cf978 > 0)
  {
-  if (local_2 - g_4cf98c[local_3].field_64 > 72)
-   g_4cf98c[local_3].flags |= 2;
+  do
+  {
+   if (local_2 - local_4->field_64 > 72)
+    local_4->flags |= 2;
+   local_3++;
+   local_4++;
+  } while (local_3 < g_4cf978);
  }
 }
+
+s_4cf790 g_4cf790_storage;

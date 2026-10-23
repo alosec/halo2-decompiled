@@ -326,7 +326,10 @@ void online_team_member_get_details(long task_index, XUID const *arg_9da427, XON
 			}
 			else
 			{
-				member->TeamMemberProperties.dwPrivileges = (privileges >> 4) & 1;
+				if (privileges & 0x10)
+					member->TeamMemberProperties.dwPrivileges = 1;
+				else
+					member->TeamMemberProperties.dwPrivileges = 0;
 			}
 		}
 		else

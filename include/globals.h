@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 /* GLOBALS.H: globals shared by more than one source file (defined in
 src/globals.cpp) */
 
@@ -6,6 +7,8 @@ src/globals.cpp) */
 
 #include "unknown_0259d0.h"
 #include "data_array.h"
+#include <stddef.h>
+#include <string.h>
 
 /* the game time globals (0x24 bytes); field_2_3 is read by
    firing position code; scale is 1.0 once initialized */
@@ -110,24 +113,44 @@ struct s_game_options_view
 	byte flag1120;
 	bool flag1121;
 	byte unknown1122[2];
-	long ticks1124;
+	long revert_ticks_left;
 	bool flag1128;
-	bool flag1129;
+	bool finish_sound_faded;
 	byte unknown112a[2];
-	long ticks112c;
+	long finish_ticks_left;
 	long value1130;
-	byte unknown1134[0x11f8 - 0x1134];
+	byte unknown1134[4];
+	/* the cluster masks game_clusters_update (game_loop.cpp) keeps: the clusters
+	   every player sees, those the local players see, and the first with
+	   the actors' clusters and the focus cluster's view added */
+	dword visible_clusters[16];
+	dword locally_visible_clusters[16];
+	dword active_clusters[16];
 	bool flag11f8;
 	byte unknown11f9;
 	short value11fa;
 	union
 	{
 		long value11fc;
-		short cluster11fc;
+		short focus_cluster_index;
 	};
 };
+typedef char assert_game_options_view_revert_ticks[((long)&((s_game_options_view *)0)->revert_ticks_left == 0x1124) ? 1 : -1];
+typedef char assert_game_options_view_visible_clusters[((long)&((s_game_options_view *)0)->visible_clusters == 0x1138) ? 1 : -1];
+typedef char assert_game_options_view_active_clusters[((long)&((s_game_options_view *)0)->active_clusters == 0x11b8) ? 1 : -1];
+typedef char assert_game_options_view_flag11f8[((long)&((s_game_options_view *)0)->flag11f8 == 0x11f8) ? 1 : -1];
 
 extern s_game_options_view *g_4e6948;
+
+/* the timed message's colour and its two tick counts (+0xcc of the HUD
+   globals) */
+struct s_hud_timed_message_definition
+{
+	dword color;
+	byte unknown04[0x1c - 0x4];
+	short value_1c;
+	short value_1e;
+};
 
 /* the hud globals definition (g_510c94): message timing and colors, the
    motion sensor's range at +0x290 and the string list at +0x3fc */
@@ -144,10 +167,7 @@ struct s_hud_globals_definition
 	byte unknownac[0xb6 - 0xac];
 	byte flags_b6;
 	byte unknownb7[0xcc - 0xb7];
-	dword color_cc;
-	byte unknownd0[0xe8 - 0xd0];
-	short value_e8;
-	short value_ea;
+	s_hud_timed_message_definition timed_message;
 	byte unknownec[0x290 - 0xec];
 	real motion_sensor_range;
 	real motion_sensor_minimum_speed;
@@ -181,14 +201,43 @@ struct s_stats
 	long l[9];
 };
 
-/* the markers of types 7 and 8 found for one key (19cb20) */
-struct s_marker_pair
+/* a multiplayer teleporter (teleporters.cpp): the entrance and exit markers
+   (types 7 and 8) found for one key */
+struct s_teleporter
 {
-	long first;
-	long second;
-	long unknown08;
-	long unknown0c;
+	long entrance_marker_index;
+	long exit_marker_index;
+	long recharge_ticks;        /* ticks until the teleporter works again */
+	long blocked_message_ticks; /* ticks until the blocked message shows again */
 };
+typedef char assert_teleporter_size[(sizeof(s_teleporter) == 0x10) ? 1 : -1];
+
+/* a player's entry (0x1c bytes) in the multiplayer globals' scores */
+struct s_game_engine_player_points
+{
+	byte unknown00[4];
+	short score;
+	byte unknown06[0x1c - 0x6];
+};
+
+/* a team's entry (0x12 bytes) in the multiplayer globals' scores */
+struct s_game_engine_team_points
+{
+	byte unknown00[4];
+	short score;
+	byte unknown06[0x12 - 0x6];
+};
+
+/* the multiplayer globals' scores (at +0x304) */
+struct s_game_engine_scores
+{
+	s_game_engine_player_points players[16];
+	s_game_engine_team_points teams[8];
+	byte unknown250[0x254 - 0x250];
+};
+typedef char assert_game_engine_player_points_size[(sizeof(s_game_engine_player_points) == 0x1c) ? 1 : -1];
+typedef char assert_game_engine_team_points_size[(sizeof(s_game_engine_team_points) == 0x12) ? 1 : -1];
+typedef char assert_game_engine_scores_size[(sizeof(s_game_engine_scores) == 0x254) ? 1 : -1];
 
 struct s_mp_globals
 {
@@ -209,13 +258,14 @@ struct s_mp_globals
 	word we0;
 	byte unknowne2[0xfc - 0xe2];
 	s_stats stats;
-	byte unknown120[0x558 - 0x120];
+	byte unknown120[0x304 - 0x120];
+	s_game_engine_scores scores;
 	s_player_info players[1];
 	byte unknown570[0x6dc - 0x570];
 	long l6dc[4];
 	byte unknown6ec[0xafc - 0x6ec];
-	s_marker_pair marker_pairs[16];
-	long marker_pair_count;
+	s_teleporter teleporters[16];
+	long teleporter_count;
 	byte unknownc00[4];
 	long lc04;
 	bool bc08;
@@ -223,6 +273,10 @@ struct s_mp_globals
 	long engine_index;
 	byte unknownc18[0x84];
 };
+typedef char assert_mp_globals_scores[(offsetof(s_mp_globals, scores) == 0x304) ? 1 : -1];
+typedef char assert_mp_globals_players[(offsetof(s_mp_globals, players) == 0x558) ? 1 : -1];
+typedef char assert_mp_globals_teleporters[(offsetof(s_mp_globals, teleporters) == 0xafc) ? 1 : -1];
+typedef char assert_mp_globals_engine_index[(offsetof(s_mp_globals, engine_index) == 0xc14) ? 1 : -1];
 
 extern s_mp_globals *g_4e9ae8;
 
@@ -425,8 +479,11 @@ extern vector3f *g_4687a4;
 /* the rasterizer state flags, shared by 030290 and 0494b0 */
 extern dword g_4ba014;
 
-/* the animation sampling state, shared by the channel decoders of 28c510
-   and 28cdb0 (each defines its own view of the animation data and output) */
+/* the animation sampling state, shared by the samplers and the codecs' channel
+   decoders (src/animation_channel_decoders.cpp, src/animation_keyframe_decoders.cpp; the
+   data layouts are in animation_channel_decoders.h): g_5044b4, g_5044b8 and g_5044bc
+   index the current rotation, translation and scale channel, and the
+   decoders write the node to *g_5044c0 */
 struct s_animation_data;
 struct s_animation_output;
 extern long g_5044b4;
@@ -453,9 +510,6 @@ extern real g_5476c4;
    (26bda0), g_4e8c24 (the players; 0699a0, 072c70, 096e90) and the arrays of
    03d380 */
 extern s_record_pool *g_4cf78c;
-extern s_record_pool *g_502418;
-extern s_record_pool *g_50241c;
-
 /* g_4e8c24: the players (elements of 0x21c bytes) */
 extern s_record_pool *g_4e8c24;
 
@@ -499,9 +553,31 @@ struct s_allocator_globals
 
 extern s_allocator_globals *g_4d87f8;
 
-/* g_4eca60: the identifiers in the slots of the multiplayer globals' slot
-   table (09a5e0, 183c60) */
-extern long g_4eca60[8];
+/* the pairs of structure bsp and bit that map to the breakable surface slots
+   (183ee0, 09a5e0) */
+struct s_slot_pair
+{
+	long a;
+	long b;
+};
+
+/* g_4ea958: the slot tables that map entries to those slots (183c60, 183ee0),
+   the identifiers in the slots of the multiplayer globals' slot table
+   (g_4eca60: 09a5e0, 183c60) and the structure bsp and bit of each slot
+   index (g_4eca80) */
+struct s_slot_table_globals
+{
+	long assigned_entry_count;
+	long active_slot_count;
+	byte entry_slots[0x100];
+	byte owner_entry_slots[0x400][8];
+	long slot_identifiers[8];
+	s_slot_pair slot_pairs[0x100];
+};
+
+extern s_slot_table_globals g_4ea958;
+#define g_4eca60 (g_4ea958.slot_identifiers)
+#define g_4eca80 (g_4ea958.slot_pairs)
 
 /* g_480118: another allocator (1efac0) */
 extern c_allocator *g_480118;
@@ -607,10 +683,11 @@ struct s_player_4e9bd4
 
 extern s_player_4e9bd4 g_4e9bd4[4];
 
-/* input-device state, shared by 196d20 (the whole array) and 1969d0.
-   g_511000 holds 4 entries of 0xa4 bytes. 1969d0 reads the array from
-   0x511034 (g_511000 + 0x34) with its own layout (s_input_device_view,
-   which runs past the entry into the next one), through input_device(). */
+/* input-device state, shared by 196d20 (the entries) and 1969d0.
+   g_511000 (0xa74 bytes) holds 16 entries of 0xa4 bytes from +0x30.
+   1969d0 reads them from 0x511034 (g_511000 + 0x34) with its own layout
+   (s_input_device_view, which runs past the entry into the next one),
+   through input_device(). */
 struct s_input_vector
 {
 	dword v[4];
@@ -675,11 +752,19 @@ extern s_input_counters g_511bf4;
 #define g_511c4e (&g_511bf4.groups[0][0x2d])
 #define g_511c90 (&g_511bf4.groups[0][0x4e])
 #define g_515294 (&g_511bf4.pairs[0][0][0])
-extern s_input_entry_state g_511000[4];
+struct s_input_device_globals
+{
+	byte unknown00[0x30];
+	s_input_entry_state entries[16];
+	byte unknowna70[4];
+};
+typedef char assert_input_device_globals_size[(sizeof(s_input_device_globals) == 0xa74) ? 1 : -1];
+
+extern s_input_device_globals g_511000;
 
 inline s_input_device_view *input_device(long index)
 {
-	return (s_input_device_view *)((byte *)g_511000 + 0x34) + index;
+	return (s_input_device_view *)((byte *)g_511000.entries + 4) + index;
 }
 
 /* g_4cef68: the creation weights of the object types, 0x4c bytes per entry (turret and vehicle entity definitions) */
@@ -732,16 +817,7 @@ extern short g_4686c4;
    stages, each with the lowest allowed address and the current top of its
    heap; allocations take memory from the top (0b3d30, and the
    PHYSICAL_MEMORY_ALLOCATE macro of unknown_053310.h) */
-struct s_physical_memory_globals
-{
-	long field_0;
-	long base_address;
-	long field_8_3;
-	long field_c_6[5];
-	long field_20[5];
-};
-
-extern s_physical_memory_globals g_global_f9ae07;
+#include "launch_stack_storage.h"
 
 /* the time source: when g_510548 is set, g_51054c is the current time
    (otherwise GetTickCount is used); read by 058dd0 and 08b110 */
@@ -752,8 +828,8 @@ extern long g_51054c;
 extern c_data_allocator *g_510c2c;
 extern s_record_pool *g_4e0338;
 extern s_record_pool *g_4e0320;
-extern s_record_pool *g_4cf8d8;
-extern bool g_4cf8d4;
+
+
 extern s_record_pool *g_502414;
 
 /* the 16 player slots of 0xc70 bytes (058cb0, 1900a5, and the vibration
@@ -859,10 +935,10 @@ struct s_ai_index_pair
 	long unknown0;
 	long unknown4;
 
+	/* both to NONE, as one fill of the pair */
 	void clear()
 	{
-		unknown0 = NONE;
-		unknown4 = NONE;
+		memset(this, NONE, sizeof(*this));
 	}
 };
 
@@ -945,7 +1021,7 @@ extern byte g_4cf771; /* defined in unknown_03d380.cpp */
 extern byte g_4cf772; /* defined in unknown_03d380.cpp */
 typedef void (__stdcall *game_module_proc)(dword);
 extern game_module_proc g_46e320[30]; /* the game module table (unknown_03d380.cpp) */
-extern byte g_4cf7cc[6]; /* the local machine's address (unknown_07a9a0.cpp) */
+
 /* the transport globals (0x4d8b18, src/transport.cpp): whether the transport
    is initialized and started, the link state, and the transition functions
    the network modules register (startup, shutdown, reset, with a context) */
@@ -1113,11 +1189,25 @@ struct s_185ab0_flags
 	dword : 7;
 };
 
+/* a view's facing angles */
+struct s_view_angles
+{
+	real yaw;
+	real pitch;
+};
+
 struct s_unknown_185ab0_entry
 {
 	byte unknown00[0x10];
-	real yaw;
-	real pitch;
+	union
+	{
+		struct
+		{
+			real yaw;
+			real pitch;
+		};
+		s_view_angles angles;
+	};
 	byte unknown18[0x2e - 0x18];
 	short index;
 	byte unknown30[0x89 - 0x30];
@@ -1170,12 +1260,15 @@ struct s_peer_list_globals
 	short presence_minutes;
 	short unknown16;
 	dword presence_start_time;
-	byte unknown1c;
+	bool unknown1c;
 	bool session_booted; /* set when a session the states drop had been booted (unknown_058dd0.cpp) */
 	byte unknown1e[0x20 - 0x1e];
 };
 
 extern s_peer_list_globals g_4ee4c4;
+/* the flag at 0x4ee4e0 is a member of the peer list's state, which is
+   cleared as a whole, so its stores may alias other memory */
+#define g_4ee4e0 (g_4ee4c4.unknown1c)
 
 /* g_4686cc: the global colours, white first (defined in unknown_13b390.cpp;
    read by the tag function evaluators and the text drawing state) */
@@ -1229,7 +1322,15 @@ extern s_structure_bsp_globals *g_4e0344;
 struct s_local_engine_player
 {
 	long index;
-	byte unknown04[8];
+	union
+	{
+		byte unknown04[8];
+		struct
+		{
+			long value04;
+			long value08;
+		};
+	};
 };
 
 struct s_local_engine_state
@@ -1273,5 +1374,14 @@ struct s_voice_routing
 };
 
 extern s_voice_routing g_527104;
+
+struct s_prop_pool_storage
+{
+	s_record_pool *field_2418;
+	s_record_pool *field_241c;
+};
+extern s_prop_pool_storage g_prop_pool_storage;
+#define g_502418 (g_prop_pool_storage.field_2418)
+#define g_50241c (g_prop_pool_storage.field_241c)
 
 #endif

@@ -33,7 +33,7 @@ short g_470be8 = -1;
 short g_470bec = -2;
 
 void *function_1e4b50(long actor_index);
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 s_type_5cfb45 *function_25d670(long prop_ref_index);
 short __stdcall function_1ad550(long actor_index);
 
@@ -98,7 +98,7 @@ s_slot_handler_1 g_47f958 =
 {
 	{
 		0x72, 1, NONE, -2, 0,
-		function_1a8370, 0, 0, 0, NONE, {0},
+		actor_behavior_priority_minimum, 0, 0, 0, NONE, {0},
 		0, 0, 0, 0, 0, 0, 0
 	},
 	function_256af0, 6, g_470b70
@@ -129,13 +129,17 @@ void __stdcall function_2562c0(long actor_index, s_slot *slot)
 	}
 }
 
+#pragma inline_depth(0)
+// score 19 (was 19): retail loads the pointer into ecx and the byte into dl, ours uses eax and cl; retail
+// compares the two floats with comiss against memory where ours compares registers. Ours is
+// padded with five int3s.
 // @retail 0x256300
 short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 {
-	s_actor_view *actor = actor_get(actor_index);
+	s_actor_view *actor = ((s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view)));
 	s_slot_76_state *state = (s_slot_76_state *)slot;
 
-	if (actor->prop_index != NONE && actor_perception_index(actor_index) != NONE)
+	if (actor->prop_index != NONE && ((s_handler_actor_view *)actor)->perception_index != NONE)
 	{
 		s_character_76_view *character = (s_character_76_view *)function_1e4b50(actor_index);
 
@@ -144,10 +148,11 @@ short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 			if (state->started)
 			{
 				state->timer++;
-				if (state->timer * g_510c54->rate < character->duration)
+				if (!(state->timer * g_510c54->rate < character->duration))
 				{
-					return g_470bec;
+					return g_470be8;
 				}
+				return g_470bec;
 			}
 			else
 			{
@@ -156,16 +161,24 @@ short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 				s_ai_object_iterator iterator;
 				s_handler_object_view *object;
 
-				iterator.next_index = perception_get(actor_perception_index(actor_index))->object_index;
 				iterator.index = NONE;
+				iterator.next_index = ((s_perception_datum *)(g_5044c8->data + (((s_handler_actor_view *)actor)->perception_index & 0xffff) * sizeof(s_perception_datum)))->object_index;
 
-				while ((object = function_290c80(&iterator)) != NULL)
+				while ((object = swarm_creature_iterator_next(&iterator)) != NULL)
 				{
 					byte *data;
-					if (!object->flags134 && (data = (byte *)object + object->ai_offset) != NULL &&
-						range > distance3d(&prop->position, (point3f *)(data + 0x14)))
+					if (!object->flags134 && (data = (byte *)object + object->ai_offset) != NULL)
 					{
-						return g_470bec;
+						double local_0 = (double)prop->position.x - *(real *)(data + 0x14);
+						double local_1 = (double)prop->position.y - *(real *)(data + 0x18);
+						double local_2 = (double)prop->position.z - *(real *)(data + 0x1c);
+						double local_4 = local_2 * local_2;
+						local_4 += local_0 * local_0;
+						local_4 += local_1 * local_1;
+						if (range > (real)sqrt(local_4))
+						{
+							return g_470bec;
+						}
 					}
 				}
 
@@ -179,6 +192,7 @@ short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 
 	return g_470be8;
 }
+#pragma inline_depth(255)
 
 // @retail 0x256460
 void __stdcall function_256460(long actor_index, s_slot *slot)
@@ -212,29 +226,47 @@ void __stdcall function_2564e0(long actor_index, s_slot *slot)
 	actor->unknown4a8 = actor->prop_index;
 }
 
+struct s_member_iterator_256520
+{
+	long next_index;
+	long index;
+};
+
+static inline s_actor_view *member_iterator_next_256520(s_member_iterator_256520 *iterator)
+{
+	s_actor_view *member = 0;
+
+	if (iterator->next_index != NONE)
+	{
+		member = actor_get(iterator->next_index);
+		iterator->index = iterator->next_index;
+		iterator->next_index = member->next_index;
+	}
+	return member;
+}
+
 // @retail 0x256520
 bool function_256520(long actor_index, real range)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = false;
+	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE && actor->unknown07c != NONE)
 	{
 		s_prop_datum *prop = prop_ref_get(actor->prop_index);
-		long member_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_member_iterator_256520 iterator;
+		s_actor_view *member;
 
-		while (member_index != NONE)
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		iterator.index = NONE;
+		while ((member = member_iterator_next_256520(&iterator)) != 0)
 		{
-			s_actor_view *member = actor_get(member_index);
-			long current_index = member_index;
-			member_index = member->next_index;
-
 			if (member != actor && !member->unknown007 && member->prop_index != NONE)
 			{
 				s_prop_datum *other = prop_ref_get(member->prop_index);
 
 				if (other->prop_index == prop->prop_index &&
-					function_1a6fe0(current_index, 0xe) != NONE &&
+					actor_behavior_find_level(iterator.index, 0xe) != NONE &&
 					range > other->unknown28)
 				{
 					result = true;
@@ -384,25 +416,47 @@ bool function_256790(long prop_ref_index)
 	return result;
 }
 
+struct s_prop_ref_iterator_256810
+{
+	long next_index;
+	long index;
+};
+
+static inline s_prop_datum *prop_ref_iterator_next_256810(s_prop_ref_iterator_256810 *iterator)
+{
+	s_prop_datum *prop_ref = 0;
+
+	if (iterator->next_index != NONE)
+	{
+		prop_ref = prop_ref_get(iterator->next_index);
+		iterator->index = iterator->next_index;
+		iterator->next_index = prop_ref->next_index;
+	}
+	return prop_ref;
+}
+
+// score 107 (was 107): retail takes the actor array from g_4f55f0 and keeps the element pointer in a stack slot,
+// ours reads another global and keeps it in ebp; our frame is eight bytes smaller.
 // @retail 0x256810
 short __stdcall function_256810(long actor_index, s_slot *slot)
 {
 	if (g_4f55d0->active && ((s_ai_globals_256810_view *)g_4f55d0)->unknown36a <= 0xd)
 	{
-		s_actor_view *actor = actor_get(actor_index);
 		long best_prop_ref_index = NONE;
+		bool front;
+		s_actor_view *actor = actor_get(actor_index);
 		real best_distance = 3.4028235e38f;
-		short front = 0;
-		long prop_ref_index = actor->first_prop_index;
+		s_prop_ref_iterator_256810 prop_iterator;
+		s_prop_datum *prop_ref;
 
-		while (prop_ref_index != NONE)
+		prop_iterator.next_index = actor->first_prop_index;
+		prop_iterator.index = NONE;
+		while ((prop_ref = prop_ref_iterator_next_256810(&prop_iterator)) != 0)
 		{
-			s_prop_datum *prop_ref = prop_ref_get(prop_ref_index);
-			long index = prop_ref_index;
+			long index = prop_iterator.index;
 			s_object_marker markers[1];
 			bool facing;
 
-			prop_ref_index = prop_ref->next_index;
 			if (function_256790(index) && !prop_get(prop_ref->prop_index)->unknown36 &&
 				function_2566c0(markers, prop_ref->object_index, &facing))
 			{
@@ -427,12 +481,13 @@ short __stdcall function_256810(long actor_index, s_slot *slot)
 			s_ai_object_iterator iterator;
 			s_handler_object_view *object;
 			point3f origin;
-			long best_object_index = NONE;
+			long best_object_index;
 			real nearest = 3.4028235e38f;
 
-			iterator.next_index = perception_get(actor_perception_index(actor_index))->object_index;
+			iterator.next_index = perception_get(((s_handler_actor_view *)actor)->perception_index)->object_index;
 			function_b9dd0(prop_ref->object_index, &origin);
-			while ((object = function_290c80(&iterator)) != NULL)
+			best_object_index = NONE;
+			while ((object = swarm_creature_iterator_next(&iterator)) != NULL)
 			{
 				s_object_ai_256810_view *data;
 
@@ -455,7 +510,7 @@ short __stdcall function_256810(long actor_index, s_slot *slot)
 			if (best_object_index != NONE)
 			{
 				s_handler_object_view *best = handler_object_get(best_object_index);
-				s_object_ai_256810_view *data = (s_object_ai_256810_view *)(best->flags134 ? NULL : (byte *)best + best->ai_offset);
+				s_object_ai_256810_view *data = (s_object_ai_256810_view *)(!best->flags134 ? (byte *)best + best->ai_offset : NULL);
 
 				data->prop_ref_index = best_prop_ref_index;
 				data->unknown54 = front == 0;

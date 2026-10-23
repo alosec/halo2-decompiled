@@ -32,17 +32,19 @@ short __stdcall function_1bcc90(long actor_index)
 	return result;
 }
 
+// score 35 (was 35): retail tests the value at 0x328 before it clears the
+// block, ours clears
+// the block first and tests it afterwards, so the setle lands in another place.
 // @retail 0x1bcd00
 bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	bool result = true;
 
-	if (actor->unknown040)
+	if (actor_get(actor_index)->unknown040)
 	{
+		s_actor_view *actor = actor_get(actor_index);
 		byte *scratch;
 		s_2605d0_request request;
-		s_reference reference;
 		long other_index;
 		bool unknown;
 
@@ -58,7 +60,7 @@ bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 		request.unknown05b = true;
 		request.unknown69c = actor->unknown328 <= 2;
 		scratch = ai_scratch_buffer_get();
-		reference = function_2605d0(actor_index, &request, 0, (long)&other_index, scratch, &unknown);
+		s_reference reference = function_2605d0(actor_index, &request, 0, (long)&other_index, scratch, &unknown);
 		if (REFERENCE_EQUAL(reference, g_470fa0))
 		{
 			actor_get(actor_index)->unknown040 = false;

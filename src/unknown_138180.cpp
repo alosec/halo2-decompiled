@@ -31,132 +31,155 @@ static inline dword string_length_bounded(const char *string, dword maximum_leng
 // @retail 0x138180
 bool __stdcall function_138180(const s_session_options *options)
 {
-	dword i = 0;
-	if (options->type < 0 || options->type >= 6)
+	bool local_1 = false;
 	{
-		return false;
-	}
-	if (options->unknown4 < 0 || options->unknown4 >= 6)
-	{
-		return false;
-	}
-	if (options->unknown6 <= 0 || options->unknown6 > 300)
-	{
-		return false;
-	}
-	if (string_length_bounded(options->name, sizeof(options->name)) == 0)
-	{
-		return false;
-	}
-	if (options->unknown120 < 0 || options->unknown120 >= 16)
-	{
-		return false;
-	}
-
-	dword mask = options->machine_mask;
-	bool ok = (mask & 0xffff0000) == 0;
-	for (; i < MAXIMUM_PLAYERS_PER_SESSION; i++)
-	{
-		if ((1 << i) & mask)
+		dword i = 0;
+		if (options->type < 0 || options->type >= 6)
 		{
-			for (long j = i + 1; j < MAXIMUM_PLAYERS_PER_SESSION; j++)
+			local_1 = false;
+			goto local_2;
+		}
+		if (options->unknown4 < 0 || options->unknown4 >= 6)
+		{
+			local_1 = false;
+			goto local_2;
+		}
+		if (options->unknown6 <= 0 || options->unknown6 > 300)
+		{
+			local_1 = false;
+			goto local_2;
+		}
+		if (string_length_bounded(options->name, sizeof(options->name)) <= 0)
+		{
+			local_1 = false;
+			goto local_2;
+		}
+		if (options->unknown120 < 0 || options->unknown120 >= 16)
+		{
+			local_1 = false;
+			goto local_2;
+		}
+
+		dword mask = options->machine_mask;
+		bool ok = (mask & 0xffff0000) == 0;
+		for (; i < MAXIMUM_PLAYERS_PER_SESSION; i++)
+		{
+			if ((1 << i) & mask)
 			{
-				if ((1 << j) & mask)
+				for (long j = i + 1; j < MAXIMUM_PLAYERS_PER_SESSION; j++)
 				{
-					ok = ok && memcmp(&options->machines[i], &options->machines[j], sizeof(s_session_machine)) != 0;
+					if ((1 << j) & mask)
+					{
+						ok = ok && memcmp(&options->machines[i], &options->machines[j], sizeof(s_session_machine)) != 0;
+					}
 				}
 			}
 		}
-	}
 
-	dword count = 0;
-	for (i = 0; i < MAXIMUM_PLAYERS_PER_SESSION; i++)
-	{
-		const s_session_player *player = &options->players[i];
-		if (player->active)
+		dword count = 0;
+		for (i = 0; i < MAXIMUM_PLAYERS_PER_SESSION; i++)
 		{
-			bool unique = ok && player->index >= 0 && player->index < MAXIMUM_CONTROLLERS && memcmp(&player->id, g_440070, sizeof(player->id)) != 0;
-			count++;
-			for (long j = i + 1; j < MAXIMUM_PLAYERS_PER_SESSION; j++)
+			if (options->players[i].active)
 			{
-				if (options->players[j].active)
+				bool unique = ok && options->players[i].index >= 0 && options->players[i].index < MAXIMUM_CONTROLLERS && memcmp(&options->players[i].id, g_440070, sizeof(options->players[i].id)) != 0;
+				count++;
+				for (long j = i + 1; j < MAXIMUM_PLAYERS_PER_SESSION; j++)
 				{
-					unique = unique && memcmp(&player->id, &options->players[j].id, sizeof(player->id)) != 0;
+					if (options->players[j].active)
+					{
+						unique = unique && memcmp(&options->players[i].id, &options->players[j].id, sizeof(options->players[i].id)) != 0;
+					}
+				}
+				if (options->players[i].flag1)
+				{
+					ok = unique && memcmp(&options->players[i].machine, g_440070, sizeof(options->players[i].machine)) == 0;
+				}
+				else
+				{
+					long found = NONE;
+					for (long m = 0; m < MAXIMUM_PLAYERS_PER_SESSION; m++)
+					{
+						if (((1 << m) & mask) && memcmp(&options->machines[m], &options->players[i].machine, sizeof(s_session_machine)) == 0)
+						{
+							found = m;
+							break;
+						}
+					}
+					ok = unique && found != NONE;
 				}
 			}
-			if (player->flag1)
+		}
+
+		switch (options->type)
+		{
+		case 1:
+			ok = ok && options->unknown12a >= 0 && options->unknown12a < 4;
+			if (options->unknown12c)
 			{
-				ok = unique && memcmp(&player->machine, g_440070, sizeof(player->machine)) == 0;
+				if (!ok)
+				{
+					local_1 = false;
+					goto local_2;
+				}
+				if (count >= 2 && count <= 2)
+				{
+					local_1 = options->local_machine_valid != 0;
+					goto local_2;
+				}
+				local_1 = false;
+				goto local_2;
 			}
 			else
 			{
-				long found = NONE;
-				for (long m = 0; m < MAXIMUM_PLAYERS_PER_SESSION; m++)
+				if (!ok || count != 1)
 				{
-					if (((1 << m) & mask) && memcmp(&options->machines[m], &player->machine, sizeof(s_session_machine)) == 0)
-					{
-						found = m;
-						break;
-					}
+					local_1 = false;
+					goto local_2;
 				}
-				ok = unique && found != NONE;
-			}
-		}
-	}
+				local_1 = options->local_machine_valid != 0;
+				goto local_2;
 
-	switch (options->type)
-	{
-	case 1:
-		ok = ok && options->unknown12a >= 0 && options->unknown12a < 4;
-		if (options->unknown12c)
-		{
+			}
+		case 2:
 			if (!ok)
 			{
-				return false;
+				local_1 = false;
+				goto local_2;
 			}
-			if (count >= 2 && count <= 2)
+			if (count >= 1 && count <= 16)
 			{
-				return options->local_machine_valid != 0;
+				local_1 = options->local_machine_valid != 0;
+				goto local_2;
 			}
-			return false;
-		}
-		else
-		{
-			if (!ok || count != 1)
+			local_1 = false;
+			goto local_2;
+		case 3:
+			if (!ok)
 			{
-				return false;
+				local_1 = false;
+				goto local_2;
 			}
-			return options->local_machine_valid != 0;
+			if (count >= 1)
+			{
+				local_1 = options->local_machine_valid != 0;
+				goto local_2;
 
+			}
+			local_1 = false;
+			goto local_2;
+		case 4:
+			local_1 = ok;
+			goto local_2;
+		case 5:
+			local_1 = ok;
+			goto local_2;
+		default:
+			local_1 = false;
+			goto local_2;
 		}
-	case 2:
-		if (!ok)
-		{
-			return false;
-		}
-		if (count >= 1 && count <= 16)
-		{
-			return options->local_machine_valid != 0;
-		}
-		return false;
-	case 3:
-		if (!ok)
-		{
-			return false;
-		}
-		if (count >= 1)
-		{
-			return options->local_machine_valid != 0;
-
-		}
-		return false;
-	case 4:
-		return ok;
-	case 5:
-		return ok;
-	default:
-		return false;
 	}
+local_2:
+	return local_1;
 }
 
 // @retail 0x1384a0
@@ -280,27 +303,26 @@ void __stdcall function_138640(long count, s_session_options *options)
 	memset(options->players, 0, sizeof(options->players));
 	for (long i = 0; i < count; i++)
 	{
-		s_session_player *player = &options->players[i];
-		player->active = 1;
-		player->flag1 = 0;
-		player->machine = options->local_machine;
-		player->controller = order[i];
-		player->index = (short)i;
-		memset(&player->id, 0, 12);
-		player->id.index = (byte)i;
-		player->id.unknown1 = 0xff;
-		player->id.unknown2 = 0xff;
-		player->id.unknown3 = 0xff;
-		wcsncpy(player->name, L"", 0x1f);
-		player->name[0x1f] = 0;
-		memset(player->unknown5c, 0, sizeof(player->unknown5c));
+		options->players[i].active = 1;
+		options->players[i].flag1 = 0;
+		options->players[i].machine = options->local_machine;
+		options->players[i].controller = order[i];
+		options->players[i].index = (short)i;
+		memset(&options->players[i].id, 0, 12);
+		options->players[i].id.index = (byte)i;
+		options->players[i].id.unknown1 = 0xff;
+		options->players[i].id.unknown2 = 0xff;
+		options->players[i].id.unknown3 = 0xff;
+		wcsncpy(options->players[i].name, L"", 0x1f);
+		options->players[i].name[0x1f] = 0;
+		memset(options->players[i].unknown5c, 0, sizeof(options->players[i].unknown5c));
 		if (options->type == 2)
 		{
-			player->flag98 = (byte)i;
+			options->players[i].flag98 = (byte)i;
 		}
 		else
 		{
-			player->flag98 = 1;
+			options->players[i].flag98 = 1;
 		}
 	}
 }

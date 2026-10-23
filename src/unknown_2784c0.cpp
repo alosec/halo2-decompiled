@@ -23,7 +23,7 @@ struct c_contact_query_bounds_info
     byte unknown18[8];
     hkVector4 lower, upper;
     c_contact_query_bounds_info();
-    ~c_contact_query_bounds_info()
+    __forceinline ~c_contact_query_bounds_info()
     {
         if (!(properties.capacity_and_flags & 0x80000000))
             g_480118->allocate((long)properties.data, (properties.capacity_and_flags & 0x7fffffff) * 8, 0x12);
@@ -50,7 +50,7 @@ public:
 class c_contact_query_world
 {
 public:
-    void add(void *);
+    void *add(void *);
     void remove(void *);
 };
 
@@ -93,7 +93,7 @@ PRIVATE __forceinline void function_278575(c_2784c4 *arg_0,
 {
     c_contact_query_bounds_volume *local_0 = new c_contact_query_bounds_volume(arg_2);
     ((c_2784c5 *)local_0)->function_315910(arg_1);
-    ((c_contact_query_world *)arg_0)->add(local_0);
+    local_0 = (c_contact_query_bounds_volume *)((c_contact_query_world *)arg_0)->add(local_0);
     havok_reference_remove((c_havok_reference_counted *)local_0);
 }
 

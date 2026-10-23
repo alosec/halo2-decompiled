@@ -10,12 +10,12 @@ extern bool g_510c48;
 extern bool g_479880;
 extern long g_479884;
 extern long g_479890;
-extern hkMemory *g_479894;
-extern hkMemory *g_479898;
+extern c_havok_abstract_allocator *g_479894;
+extern c_havok_abstract_allocator *g_479898;
 extern long g_4798b4;
 extern "C" c_havok_fixed_memory *h2_native_havok_fixed_memory_construct(
     void *storage, void *buffer, long size);
-extern "C" hkPoolMemory *h2_native_havok_pool_memory_construct(void *storage);
+extern "C" c_havok_page_pool_allocator *h2_native_havok_pool_memory_construct(void *storage);
 
 // Portable construction of the exact recovered allocator objects at 0x146a20.
 void function_146a20(void)
@@ -30,7 +30,7 @@ void function_146a20(void)
 }
 
 // Portable cache-owned teardown of the recovered scratch allocator at 0x146de0.
-// hkMemory's destructor is empty and the next placement construction replaces
+// c_havok_abstract_allocator's destructor is empty and the next placement construction replaces
 // the table pointer, so native ownership only clears the live pointer.
 void function_146de0(void)
 {

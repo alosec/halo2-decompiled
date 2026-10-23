@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "orientations_storage.h"
 /* UNKNOWN_16D280.CPP: render model queries (0x16d280..0x16e2b3), the rest of
    the models file that unknown_16d180.cpp starts: node lookups, default
    orientations and node matrices built down the node hierarchy */
@@ -52,12 +53,7 @@ struct s_render_model_definition
 
 /* an orientation: a quaternion, a translation and a scale (0x20 bytes;
    unknown_141590.cpp) */
-struct rigid_transform_scaled
-{
-	quaternionf rotation;
-	point3f position;
-	real scale;
-};
+
 
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 
@@ -85,7 +81,7 @@ long render_model_find_marker_group(long render_model_index, long index)
 }
 
 // @retail 0x16d8d0
-void render_model_build_child_node_matrices(s_render_model_definition const *definition, transform4x3f const *parent_matrix,
+void __stdcall render_model_build_child_node_matrices(s_render_model_definition const *definition, transform4x3f const *parent_matrix,
 	long node_index, long node_count, transform4x3f *field_50)
 {
 	long child_index = definition->nodes[node_index].first_child_node_index;
@@ -97,7 +93,7 @@ void render_model_build_child_node_matrices(s_render_model_definition const *def
 		function_142a60(parent_matrix, &field_50[child_index], &field_50[child_index]);
 		if (child->first_child_node_index != NONE)
 		{
-			render_model_build_child_node_matrices(definition, &field_50[child_index], child_index, node_count, field_50);
+			render_model_build_child_node_matrices(definition, parent_matrix, child_index, node_count, field_50);
 		}
 		child_index = child->next_sibling_node_index;
 	}
@@ -117,6 +113,9 @@ void render_model_get_default_orientations(s_render_model_definition const *defi
 		orientations[i].scale = 1.0f;
 	}
 }
+
+/* retail calls this out of line from both of its callers (0x10f260, 0x11c380) */
+__declspec(noinline) long render_model_find_named_entry(long render_model_index, long name);
 
 // @retail 0x16da90
 long render_model_find_named_entry(long render_model_index, long name)
@@ -140,6 +139,9 @@ long render_model_find_named_entry(long render_model_index, long name)
 	return result;
 }
 
+/* retail keeps this out of line where it is called */
+__declspec(noinline) void *render_model_get_model_definition(long render_model_index);
+
 // @retail 0x16ddf0
 void *render_model_get_model_definition(long render_model_index)
 {
@@ -149,7 +151,7 @@ void *render_model_get_model_definition(long render_model_index)
 void function_1420f0(transform4x3f *out, point3f const *position, vector3f const *forward, vector3f const *up);
 void __stdcall function_1421f0(transform4x3f *out, rigid_transform_scaled const *orientation);
 
-#define MACRO_D9C4AE 253
+#define MACRO_D9C4AE 255
 #define NUMBEROF(array) (sizeof(array) / sizeof((array)[0]))
 
 // @retail 0x16d9c0
@@ -164,9 +166,10 @@ void render_model_build_node_matrices(vector3f const *forward, vector3f const *u
 	if (definition->node_count > 0)
 	{
 		long read_index = 0;
-		long write_index = 1;
+		long write_index;
 
 		local_03e996[0] = 0;
+		write_index = 1;
 		do
 		{
 			long node_index = local_03e996[read_index++];
@@ -277,7 +280,7 @@ struct s_type_f83fc7
    alternative of each */
 // @retail 0x16dad0
 void model_variant_region_get_choices(s_type_f83fc7 const *region, long permutation_index, long name, long value,
-	bool random, long maximum_count, s_16dce0_choice *choices, long *count)
+	bool random, long maximum_count, long *count, s_16dce0_choice *choices)
 {
 	long passes = 1;
 
@@ -310,9 +313,9 @@ void model_variant_region_get_choices(s_type_f83fc7 const *region, long permutat
 
 						if (next_sum > random_value)
 						{
-							unknown10 = alternative->unknown10;
 							choice_permutation_index = alternative->permutation_index;
 							unknown0c = alternative->unknown0c;
+							unknown10 = alternative->unknown10;
 							choice_name = alternative->name;
 							choice_value = alternative->unknown05;
 							goto found;
@@ -335,9 +338,9 @@ void model_variant_region_get_choices(s_type_f83fc7 const *region, long permutat
 
 						if (alternative->name == name && alternative->unknown05 == value)
 						{
-							unknown10 = alternative->unknown10;
 							choice_permutation_index = alternative->permutation_index;
 							unknown0c = alternative->unknown0c;
+							unknown10 = alternative->unknown10;
 							goto found;
 						}
 					}
@@ -443,15 +446,20 @@ void render_model_choose_permutations(long render_model_index, long variant_inde
 		s_16dce0_choice choices[32];
 		long count = 0;
 
-		if (variant_index != NONE && render_model_index != NONE && region_index != NONE)
+		if (variant_index != NONE)
 		{
-			s_model_variant *variant = &((s_16d280_render_model *)g_4e3b44[render_model_index & 0xffff].bytes)->variants[variant_index];
-			long variant_region_index = variant->region_indices[region_index];
+			s_model_variant *variant = &definition->variants[variant_index];
+			long variant_region_index = NONE;
 
+			if (render_model_index != NONE && variant_index != NONE && region_index != NONE)
+			{
+				variant_region_index = ((s_16d280_render_model *)g_4e3b44[render_model_index & 0xffff].bytes)->
+					variants[variant_index].region_indices[region_index];
+			}
 			if (variant_region_index != NONE)
 			{
-				model_variant_region_get_choices(&definition->variants[variant_index].regions[variant_region_index], NONE, 0, 0,
-					true, NUMBEROF(choices), choices, &count);
+				model_variant_region_get_choices(&variant->regions[variant_region_index], NONE, 0, 0, true,
+					NUMBEROF(choices), &count, choices);
 			}
 		}
 		if (count == 0)
@@ -462,7 +470,14 @@ void render_model_choose_permutations(long render_model_index, long variant_inde
 			{
 				if (!(region->permutations[permutation_index].flags & 1))
 				{
-					permutation_choice_add_default(&choices[count++], permutation_index);
+					choices[count].permutation_index = permutation_index;
+					choices[count].index = NONE;
+					choices[count].name = 0;
+					choices[count].unknown0c = 0;
+					choices[count].unknown10 = NONE;
+					choices[count].unknown14 = 0;
+					choices[count].weight = 1.0f;
+					count++;
 				}
 			}
 			if (count == 0 && region->permutation_count > 0)
@@ -488,7 +503,7 @@ void render_model_choose_permutations(long render_model_index, long variant_inde
 	}
 }
 
-void effect_parameters_initialize(s_effect_parameters *parameters);
+__declspec(noinline) void effect_parameters_initialize(s_effect_parameters *parameters);
 long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 void function_177260(long effect_index, bool flag);
 
@@ -545,7 +560,7 @@ bool object_change_region_permutations(long object_index, long render_model_inde
 			if (variant_region_index != NONE)
 			{
 				model_variant_region_get_choices(&definition->variants[variant_index].regions[variant_region_index],
-					region_choice->permutation_index, wanted_name, value, false, NUMBEROF(choices), choices, &count);
+					region_choice->permutation_index, wanted_name, value, false, NUMBEROF(choices), &count, choices);
 			}
 			choice_index = function_16dce0(count, choices);
 			if (choice_index != NONE)
@@ -565,9 +580,9 @@ bool object_change_region_permutations(long object_index, long render_model_inde
 						s_effect_parameters parameters;
 
 						effect_parameters_initialize(&parameters);
-						parameters.unknown30 = choice->unknown14;
 						parameters.tag_index = choice->unknown10;
 						parameters.object_index = object_index;
+						parameters.unknown30 = choice->unknown14;
 						parameters.unknown34 = 0x30005a6;
 						parameters.unknown38 = 0x30005a6;
 						parameters.flags = 3;

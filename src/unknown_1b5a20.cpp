@@ -80,13 +80,13 @@ short __stdcall function_1b5aa0(long actor_index, s_slot *slot, bool active)
 				{
 					if (state->unknown10 != NONE && state->unknown14 + state->unknown10 == g_510c54->game_time &&
 						function_26ba60(node->unknown08, actor_index, actor->unknown07c))
-						function_1fb7e0(actor_index, 0x2c, NULL, node->object_index, NONE);
+						function_1fb7e0(0x2c, actor_index, NULL, node->object_index, NONE);
 					result = g_46fbe8;
 				}
 			}
 			if (view->unknown69 && g_46eeb8[0x27]->unknown8 != g_46f348 &&
 				(g_46eeb8[0x27]->mask & g_4ee4ec) == g_4ee4ec &&
-				((g_557c40[0x27 >> 5] >> (0x27 & 31)) & 1))
+				(bool)((g_557c40[0x27 >> 5] >> (0x27 & 31)) & 1))
 				result = 0x27;
 		}
 	}
@@ -98,14 +98,13 @@ bool __stdcall function_1b5c00(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_22 *state = (s_slot_22 *)slot;
-	real delay = 8.0f;
+	real ticks = 8.0f;
 	s_character_db0_delays *character = (s_character_db0_delays *)function_1e4db0(actor_index);
-	real ticks;
 	long value;
 
 	if (character)
-		delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->unknown4, character->unknown8);
-	ticks = g_510c54->field_2_3 * delay;
+		ticks = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->unknown4, character->unknown8);
+	ticks = g_510c54->field_2_3 * ticks;
 	__asm
 	{
 		fld ticks
@@ -126,10 +125,11 @@ bool __stdcall function_1b5c00(long actor_index, s_slot *slot)
 
 		if (view && view->unknown10 >= 0)
 		{
-			ticks = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 2.0f, 4.0f) * g_510c54->field_2_3;
+			real draw = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+			real second_ticks = (2.0f + (draw + draw)) * g_510c54->field_2_3;
 			__asm
 			{
-				fld ticks
+				fld second_ticks
 				fistp value
 			}
 			state->unknown10 = (short)value;
@@ -298,8 +298,8 @@ void function_25d420(long prop_ref_index, short type, long actor_index);
 // @retail 0x1b5e00
 short __stdcall function_1b5e00(long actor_index, short level, bool active)
 {
-	s_actor_view *actor = actor_get(actor_index);
 	short result = g_46fbe4;
+	s_actor_view *actor = actor_get(actor_index);
 	s_slot_22 *state = (s_slot_22 *)&actor->slots[level];
 
 	if (actor->prop_index != NONE)

@@ -60,173 +60,178 @@ void function_20a2e0(short global_index)
 		{
 		case _hs_type_boolean:
 			value->value.b = global->address ? *(byte *)global->address : (byte)0;
-			break;
+			goto done;
 		case _hs_type_real:
 			value->value.r = global->address ? *(real *)global->address : 0.f;
-			break;
+			goto done;
 		case _hs_type_short_integer:
 			value->value.s = global->address ? *(short *)global->address : (short)0;
-			break;
-		case _hs_type_string:
-			value->value.d = global->address ? *(dword *)global->address : (dword)g_470010;
-			break;
+			goto done;
 		case _hs_type_long_integer:
 			value->value.d = global->address ? *(dword *)global->address : 0;
-			break;
+			goto done;
+		case _hs_type_string:
+			value->value.d = global->address ? *(dword *)global->address : (dword)g_470010;
+			goto done;
 		case _hs_type_script:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_string_id:
 			value->value.d = global->address ? *(dword *)global->address : 0;
-			break;
+			goto done;
 		case _hs_type_unit_seat_mapping:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_trigger_volume:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_cutscene_flag:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_cutscene_camera_point:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_cutscene_title:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_cutscene_recording:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_device_group:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_ai:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_ai_command_list:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_ai_command_script:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_ai_behavior:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_ai_orders:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_starting_profile:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_conversation:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_structure_bsp:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_navpoint:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_point_reference:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_style:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_hud_message:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_object_list:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_sound:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_effect:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_damage:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_looping_sound:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_animation_graph:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_damage_effect:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_object_definition:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_bitmap:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_shader:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_render_model:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_structure_definition:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_lightmap_definition:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_game_difficulty:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_team:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_actor_type:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_hud_corner:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_model_state:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_network_event:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		case _hs_type_object:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_unit:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_vehicle:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_weapon:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_device:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_scenery:
 			value->value.d = global->address ? *(dword *)global->address : NONE;
-			break;
+			goto done;
 		case _hs_type_object_name:
 			value->value.s = global->address ? *(short *)global->address : (short)NONE;
-			break;
+			goto done;
 		}
+done:
+		;
 	}
 }
 
 // @retail 0x20a490
+// score 48 (was 48): the index is kept in ESI where retail keeps it in EAX, so the two halves of the
+// split value and the jump table's index take the other registers.
 void function_20a490(short global_index)
 {
+	long slot = (word)global_index & 0x7fff;
+	word external = global_index & 0x8000;
 	long index = global_index;
-	long slot = index & 0x7fff;
-	short type = (index & 0x8000) ? g_473468[slot]->type : *(short *)(*(byte **)((byte *)g_4e0350 + 0x1c4) + slot * 0x28 + 0x20);
-	long runtime_index = (index & 0x8000) ? slot : slot + 0x41d;
+	short type = external ? g_473468[slot]->type : *(short *)(*(byte **)((byte *)g_4e0350 + 0x1c4) + slot * 0x28 + 0x20);
+	long runtime_index = (index & 0x8000) ? (index & 0x7fff) : (index & 0x7fff) + 0x41d;
 	s_hs_global_value *value = &((s_hs_global_value *)g_4f9380->data)[runtime_index];
-	if (index & 0x8000)
+	if (external)
 	{
 		s_hs_external_global *global = g_473468[slot];
 		switch (type)
@@ -447,8 +452,8 @@ void function_20a490(short global_index)
 		long object_index = value->value.d;
 		if (object_index != NONE)
 		{
-			byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
-			*(dword *)(object + 4) |= 0x10000000;
+			dword *flags = (dword *)(*(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8) + 4);
+			*flags |= 0x10000000;
 		}
 	}
 	else if (type == _hs_type_object_list)
@@ -456,8 +461,8 @@ void function_20a490(short global_index)
 		long reference_index;
 		for (long object_index = object_list_get_first_inlined(value->value.d, &reference_index); object_index != NONE; object_index = function_x457076(&reference_index))
 		{
-			byte *object = *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
-			*(dword *)(object + 4) |= 0x10000000;
+			dword *flags = (dword *)(*(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8) + 4);
+			*flags |= 0x10000000;
 		}
 	}
 }

@@ -11,7 +11,6 @@ void function_1d1540(s_havok_component *arg_0);
 transform4x3f *function_ba160(long arg_0, transform4x3f *arg_1);
 bool __stdcall function_e0d70(long arg_0, real *arg_1);
 void havok_component_rigid_body_matrix_set(long arg_0, s_havok_component *arg_1, transform4x3f const *arg_2);
-void havok_component_rigid_body_matrix_get(long arg_0, s_havok_component *arg_1, transform4x3f *arg_2);
 void function_1d4360(s_havok_component *arg_0, transform4x3f *volatile arg_1);
 void function_141590(transform4x3f const *arg_0, transform4x3f *arg_1);
 int __fastcall function_142a60(transform4x3f const *arg_0, transform4x3f const *arg_1, transform4x3f *arg_2);
@@ -31,7 +30,6 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
 // @retail 0x1d3fc0
 void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
 {
- (void)&arg_0;
  real local_0;
  transform4x3f local_1[6];
  if (TEST_FIELD_BIT(arg_1->flag10))
@@ -62,21 +60,24 @@ void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
   function_142a60(&local_1[2], &local_1[1], &local_1[5]);
   for (long local_9 = 0; local_9 < arg_1->rigid_bodies.size; ++local_9)
   {
-   havok_component_rigid_body_matrix_get(local_9, arg_1, &local_1[3]);
+   arg_1->rigid_body_matrix_get(local_9, &local_1[3]);
    function_142a60(&local_1[5], &local_1[3], &local_1[0]);
    if (arg_1->unknown04 & 0x10000)
    {
-    function_1d3fc1(&local_1[0].forward);
-    function_1d3fc1(&local_1[0].up);
-    real local_10 = dot3f(&local_1[0].forward, &local_1[0].up);
-    local_1[0].up.i -= local_1[0].forward.i * local_10;
-    local_1[0].up.j -= local_1[0].forward.j * local_10;
-    local_1[0].up.k -= local_1[0].forward.k * local_10;
-    function_1d3fc1(&local_1[0].up);
-    local_1[0].left.i = local_1[0].up.j * local_1[0].forward.k - local_1[0].up.k * local_1[0].forward.j;
-    local_1[0].left.j = local_1[0].up.k * local_1[0].forward.i - local_1[0].up.i * local_1[0].forward.k;
-    local_1[0].left.k = local_1[0].forward.j * local_1[0].up.i - local_1[0].up.j * local_1[0].forward.i;
-    function_1d3fc1(&local_1[0].left);
+    vector3f *forward = &local_1[0].forward;
+    vector3f *up = &local_1[0].up;
+    vector3f *left = &local_1[0].left;
+    function_1d3fc1(forward);
+    function_1d3fc1(up);
+    real local_10 = dot3f(forward, up);
+    up->i -= forward->i * local_10;
+    up->j -= forward->j * local_10;
+    up->k -= forward->k * local_10;
+    function_1d3fc1(up);
+    left->i = up->j * forward->k - up->k * forward->j;
+    left->j = up->k * forward->i - up->i * forward->k;
+    left->k = forward->j * up->i - up->j * forward->i;
+    function_1d3fc1(left);
    }
    havok_component_rigid_body_matrix_set(local_9, arg_1, &local_1[0]);
   }

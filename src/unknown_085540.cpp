@@ -1,4 +1,4 @@
-// @flags /O2 /Ob1 /Gr
+// @flags /O2 /Ob1 /arch:SSE /Gr
 /* UNKNOWN_085540.CPP: a simulation world's view onto one remote machine:
    its establishment state machine (states 0..5, each with an id, mirrored by
    the remote end), its replication baseline and its buffered join data
@@ -42,7 +42,7 @@ void function_85880(c_simulation_view *view)
 {
 	if (view->state)
 		view->set_state(0, NONE);
-	((s_network_connection *)g_4d87d4)[view->unknown3c].callback = 0;
+	((s_link_connection *)g_4d87d4)[view->unknown3c].callback = 0;
 	view->unknown44[0] = 0;
 	if (view->type == 3 || view->type == 4)
 	{
@@ -158,21 +158,23 @@ inline void c_simulation_view::fail(long reason)
 	}
 }
 
-#pragma optimize("a", on)
+static __forceinline void function_8659e(long *arg_0)
+{
+	arg_0[0] = 0;
+	arg_0[1] = 0;
+}
+
 // @retail 0x86590
 inline void c_simulation_view::release_buffer(void)
 {
 	if (buffer)
 	{
-		c_simulation_view *local_0 = this;
-		*(volatile long *)&local_0->unknown9c = 0;
-		*(volatile long *)&local_0->unknowna0 = 0;
-		function_12d520((long)*(byte *volatile *)&local_0->buffer);
+		function_8659e(&unknown9c);
+		function_12d520((long)buffer);
 		buffer = 0;
 		unknown98 = 0;
 	}
 }
-#pragma optimize("", on)
 
 /* the callback a buffer's owner calls when it goes away */
 // @retail 0x86aa0
@@ -187,8 +189,10 @@ void c_simulation_view::detach(void)
 {
 	if (type == 2 && buffer)
 		release_buffer();
-	world->views[world_index] = 0;
-	world->view_count--;
+	c_class_6a600 *local_0 = world;
+	long local_1 = world_index;
+	local_0->views[local_1] = 0;
+	local_0->view_count--;
 	world = 0;
 	world_index = NONE;
 }
@@ -264,6 +268,16 @@ void simulation_view_baseline_set_active(s_simulation_view_baseline *baseline, b
 	}
 }
 
+#pragma optimize("g", off)
+static __forceinline bool function_861c3(const c_simulation_view *arg_0)
+{
+ bool local_0 = false;
+ long local_1 = arg_0->unknown3c;
+ if (local_1 != NONE)
+  local_0 = *(const bool *)&arg_0->flag75;
+ return local_0;
+}
+#pragma optimize("", on)
 // @retail 0x861c0
 void c_simulation_view::update_established(void)
 {
@@ -275,7 +289,7 @@ void c_simulation_view::update_established(void)
 		now_established = state >= 2 && remote_state >= 2;
 		synchronized = state >= 5 && remote_state >= 5;
 	}
-	if (now_established != established())
+	if (now_established != function_861c3(this))
 	{
 		flag75 = now_established;
 		if (!now_established)
@@ -425,12 +439,15 @@ bool c_simulation_view::has_pending_entity(void)
 	{
 		s_simulation_entity_database *database = &world->distribution->field_2098;
 		long handle = NONE;
-		while ((handle = function_98480(handle, (c_handle_table_450cd0 *)data->handles)) != NONE)
+		s_simulation_entity *entity;
+		do
 		{
-			s_simulation_entity *entity = &database->entities[handle & 0x3ff];
-			if (database->definitions->definitions[entity->type]->v6(entity))
-				return true;
-		}
+			handle = function_98480(handle, (c_handle_table_450cd0 *)data->handles);
+			if (handle == NONE)
+				return false;
+			entity = &database->entities[handle & 0x3ff];
+		} while (!database->definitions->definitions[entity->type]->v6(entity));
+		return true;
 	}
 	return false;
 }
@@ -439,20 +456,16 @@ bool c_simulation_view::has_pending_entity(void)
 bool c_simulation_view::function_85cb0(void)
 {
 	bool result = false;
-	if (type == 3)
-	{
-		if (!has_pending_entity())
-			result = true;
-	}
-	else if (type == 4)
-	{
-		if (!has_pending_entity())
-			result = true;
-	}
-	else if (!buffer || unknownac <= 0)
-	{
-		result = true;
-	}
+ if (type == 3)
+  goto local_0;
+ if (type == 4)
+ {
+local_0:
+  if (!has_pending_entity())
+   result = true;
+ }
+ else if (!buffer || unknownac <= 0)
+  result = true;
 	return result;
 }
 /* the input update message (type 0x2b) */
@@ -489,7 +502,7 @@ void simulation_view_baseline_send(s_simulation_view_baseline *baseline)
 // @retail 0x86bc0
 void simulation_view_baseline_update(s_simulation_view_baseline *baseline)
 {
-	if ((baseline->view->type == 3 || baseline->view->type == 4) && baseline->view->established() && baseline->active && g_510ca0)
+	if ((baseline->view->type == 3 || baseline->view->type == 4) && function_861c3(baseline->view) && baseline->active && g_510ca0)
 	{
 		if (baseline->time == NONE || !baseline->state.flag0 && g_510cb1 || function_75890(baseline->time) > g_network_configuration.valued00)
 		{
@@ -599,9 +612,10 @@ bool c_simulation_view::join_data_begin(long field_0_4)
 				}
 				world->flag24 = true;
 				function_69350(this->world, true);
-				return true;
+				result = true;
 			}
-			fail(5);
+			else
+				fail(5);
 		}
 	}
 	return result;
@@ -666,7 +680,7 @@ long network_observer_attach_channel(s_network_observer *observer, long owner_in
 void function_97f60(s_handle_peers *peers, long index, c_handle_table_450cd0 *table);
 void replication_table_attach_sender(s_handle_peers *peers, long index, c_handle_table_450cd0 *table);
 void __stdcall function_68550(c_simulation_view *view);
-void network_connection_callback_initialize(s_connection_callback *callback, c_connection_client *const *clients,
+void link_connection_callback_initialize(s_connection_callback *callback, c_connection_client *const *clients,
  void *context, void (__stdcall *function)(void *), long count, const dword *types, bool active);
 
 static __forceinline void view_add_child(c_vtable_450cf4 *aggregate, long index, c_interface_450c94 *child)
@@ -678,12 +692,23 @@ static __forceinline void view_add_child(c_vtable_450cf4 *aggregate, long index,
  *((long *)child + 1) = index;
 }
 
+struct s_85650
+{
+ void *field_00;
+ void *field_04;
+ dword field_08;
+ s_sender *field_0c[15];
+};
+
+// score 112 (was 116): the frame is four bytes smaller than retail's
+// (sub esp,0x24 against sub esp,0x28), so every stack slot sits at another
+// offset and the record pointer is kept in EBP here and in EDX in retail.
 // @retail 0x85650
 void function_85650(c_simulation_view *view, s_network_observer *observer, const XNADDR *address, long channel_index)
 {
  network_observer_attach_channel(observer, 3, address);
  long connection_index = observer->channels[channel_index].connection_index;
- s_network_connection *connection = &((s_network_connection *)g_4d87d4)[connection_index];
+ s_link_connection *connection = &((s_link_connection *)g_4d87d4)[connection_index];
  view->unknown3c = connection_index;
  view->observer = observer;
  view->channel_index = channel_index;
@@ -713,10 +738,11 @@ void function_85650(c_simulation_view *view, s_network_observer *observer, const
   sender->pending = 0;
   sender->unknown1c = 0;
   sender->unknown24 = 0;
-  sender->owner = (s_owner_450d1c *)((byte *)distribution + 0x2048);
+  s_85650 *owner = (s_85650 *)((byte *)distribution + 0x2048);
+  sender->owner = (s_owner_450d1c *)owner;
   view_add_child(&((c_replication_view_storage *)view->data)->aggregate, 0, sender);
-  distribution->sender_mask |= 1 << view->world_index;
-  distribution->senders[view->world_index] = (s_sender *)&((c_replication_view_storage *)view->data)->sender;
+  owner->field_08 |= 1 << view->world_index;
+  owner->field_0c[view->world_index] = (s_sender *)&((c_replication_view_storage *)view->data)->sender;
   function_97f60(&distribution->handles, view->world_index, &((c_replication_view_storage *)view->data)->handles);
   view_add_child(&((c_replication_view_storage *)view->data)->aggregate, 1,
    (c_interface_450c94 *)&((c_replication_view_storage *)view->data)->handles);
@@ -734,16 +760,18 @@ void function_85650(c_simulation_view *view, s_network_observer *observer, const
  }
  dword types[4];
  c_connection_client *clients[4];
- long count = 0;
+ long count;
  if (view->type == 3 || view->type == 4)
  {
   types[0] = 0x1a;
   clients[0] = (c_connection_client *)&((c_replication_view_storage *)view->data)->aggregate;
   count = 1;
  }
+ else
+  count = 0;
  bool active = view->world->state != 3 && view->world->state != 5;
  s_connection_callback *callback = (s_connection_callback *)view->unknown44;
- network_connection_callback_initialize(callback, clients, view,
+ link_connection_callback_initialize(callback, clients, view,
   (void (__stdcall *)(void *))function_68550, count, types, active);
  connection->callback = callback;
  view->flag78 = false;
@@ -774,11 +802,16 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
+// score 90 (was 90): ours is seven bytes longer: the running total is zeroed
+// in a stack slot here and in a register in retail, and the two stack slots
+// that hold the count and the flag are at other offsets.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {
+ c_simulation_view *const *view_argument = &view;
+ bool result;
  long compressed_size;
- bool result = function_1995a0(game_state_globals.base_address, source_size, destination, &compressed_size, capacity, 9);
+ result = function_1995a0(game_state_globals.base_address, source_size, destination, &compressed_size, capacity, 9);
  if (result)
  {
   long offset = 0;
@@ -790,72 +823,45 @@ bool function_86800(dword capacity, c_simulation_view *view, dword source_size, 
    if (compressed_size > 0)
    {
     header.size = (short)(compressed_size > 1024 ? 1024 : compressed_size);
-    s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
+    s_ring_buffer *buffer = (s_ring_buffer *)&(*view_argument)->unknown9c;
     header.offset = offset;
     if (view_buffer_write(buffer, sizeof(header), &header) == NONE ||
      view_buffer_write(buffer, header.size, destination + offset) == NONE)
-     return false;
+     { result = false; goto local_0; }
     compressed_size -= header.size;
     offset += header.size;
-    view->unknownac++;
+    (*view_argument)->unknownac++;
    }
    else
    {
     header.size = 0;
-    s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
+    s_ring_buffer *buffer = (s_ring_buffer *)&(*view_argument)->unknown9c;
     header.offset = offset;
     if (view_buffer_write(buffer, sizeof(header), &header) == NONE)
-     return false;
-    view->unknownac++;
+     { result = false; goto local_0; }
+    (*view_argument)->unknownac++;
     break;
    }
   }
  }
+local_0:
  return result;
 }
 
-#include "physical_memory.h"
-#include <d3d8.h>
+#include "unknown_080e10.h"
 extern s_physical_object *g_4e6464;
 long __stdcall function_12d2f0(long size, long user_data, long update, long release);
 void function_12c600(void);
 double timing_ticks_to_seconds(__int64 ticks);
 void function_6a860(c_class_6a600 *world, long *size);
 
-static inline __int64 view_read_ticks(void)
-{
- volatile __int64 value = 0;
- __asm rdtsc
-}
-
 static __forceinline byte *view_allocate_buffer(long size, long owner, long release)
 {
- __int64 start = view_read_ticks();
- byte *memory = 0;
- if (g_4e6464->page_count > 0)
- {
-  long attempts = 0;
-  while (!(memory = (byte *)function_12d2f0(size, owner, 0, release)))
-  {
-   if (attempts < 30)
-   {
-    attempts++;
-    function_12c600();
-   }
-   else
-   {
-    __int64 elapsed = view_read_ticks() - start;
-    if (elapsed < 0) elapsed = 0;
-    if (timing_ticks_to_seconds(elapsed) >= 0.1f) break;
-    D3DDevice_KickPushBuffer();
-    D3DDevice_IsBusy();
-    SwitchToThread();
-   }
-  }
- }
- return memory;
+ return (byte *)function_80e14(size, owner, 0, release, 30, 0.1f);
 }
 
+// score 22 (was 22): the dword local is written before the byte local; retail writes the byte
+// first and then the dword into the structure.
 // @retail 0x862e0
 bool function_862e0(c_simulation_view *view)
 {
@@ -881,9 +887,7 @@ bool function_862e0(c_simulation_view *view)
    header.kind = 0;
    header.size = 0;
    header.value = view->world->unknown28;
-   if (view_buffer_write(buffer, sizeof(header), &header) == NONE)
-    result = false;
-   else
+   if (view_buffer_write(buffer, sizeof(header), &header) != NONE)
    {
     view->unknownac++;
     long size;
@@ -892,6 +896,8 @@ bool function_862e0(c_simulation_view *view)
     view->world->flag11fc = 0;
     g_46e320[4](0);
    }
+   else
+    result = false;
    if (!result) view->release_buffer();
   }
   else
@@ -904,14 +910,16 @@ bool function_862e0(c_simulation_view *view)
 
 bool function_685f0(void *block, long *size, byte *destination, long capacity);
 
+// score 2 (was 2): the constant 0xffff is loaded before the address of the buffer; retail loads
+// the address first. The registers that carry the destination and the capacity are the
+// callee's choice, and function_685f0 in src/unknown_067e10.cpp is three instructions
+// off retail.
 // @retail 0x869a0
 bool function_869a0(c_simulation_view *view, void *block)
 {
  byte encoded[0xffff];
  long encoded_size;
  bool result = false;
- volatile bool local_0 = result;
- c_simulation_view *const *local_1 = &view;
  if (function_685f0(block, &encoded_size, encoded, sizeof(encoded)))
  {
   struct { short kind; short size; long sequence; } header;
@@ -926,7 +934,6 @@ bool function_869a0(c_simulation_view *view, void *block)
    view->unknownac++;
    result = true;
   }
-  else return local_0;
  }
  return result;
 }
@@ -934,19 +941,21 @@ bool function_869a0(c_simulation_view *view, void *block)
 
 bool function_68670(byte *source, long size, void *block);
 
+// score 97 (was 97): the two fields of the record are read into the registers in the opposite
+// order (+0x1c before +0x18), so the rest of the block follows differently.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {
  // Keep the retail stack argument under whole-program optimization.
  c_simulation_view *const *view_reference = &view;
+ struct { short kind; short size; long value; } header;
+ byte payload[1024];
  while (view->established() && view->unknownac != 0)
  {
-  s_network_connection *connection = function_x7665e0(view->unknown3c);
+  s_link_connection *connection = link_connection_get(view->unknown3c);
   if (connection->state != 5 || !(connection->flags & 0x10)) break;
   s_network_stream_header *stream = network_stream_get(connection->stream_index);
   if ((512 - (stream->window.next - stream->window.end)) * 32 < 0x600) break;
-  struct { short kind; short size; long value; } header;
-  byte payload[1024];
   s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
   buffer->read_wrapped(buffer->start, sizeof(header), &header);
   buffer->start = (buffer->start + (long)sizeof(header)) % buffer->size;
@@ -968,7 +977,7 @@ void __stdcall function_865d0(c_simulation_view *view)
    break;
   case 1:
    {
-    struct { long offset; long size; byte bytes[0x10000]; } message;
+    struct { long offset; long size; byte bytes[0xfff8]; } message;
     message.offset = 0;
     message.size = 0;
     message.offset = header.value;

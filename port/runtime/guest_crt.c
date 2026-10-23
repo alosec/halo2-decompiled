@@ -468,3 +468,4 @@ int _wcsicmp(const wchar_t* first, const wchar_t* second) {
     }
     return (int)guest_lower(*first) - (int)guest_lower(*second);
 }
+unsigned int h2_sse_emulated_csr = 0x1f80u;

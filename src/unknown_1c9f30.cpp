@@ -40,7 +40,7 @@ void function_210020(long object_index);
 void function_2103d0(long object_index);
 void joint_clear_references(long joint_index);
 void function_1e17d0(long actor_index, long object_index);
-void function_290b90(long key);
+void swarm_spawn_slots_clear_object(long key);
 void ai_players_unit_deleted(long unit_index);
 extern s_record_pool *g_502414;
 
@@ -50,7 +50,7 @@ void __stdcall function_1c9f30(long arg_0)
  if (g_4f55d0->active)
  {
   s_1c9f30 *local_0 = (s_1c9f30 *)object_get(arg_0);
-  short local_1 = local_0->field_aa;
+  long local_1 = local_0->field_aa;
   long local_2 = 1 << local_1;
   if ((local_2 & 0x1003) || (local_0->field_b2 & 2))
   {
@@ -91,7 +91,7 @@ void __stdcall function_1c9f30(long arg_0)
     }
     function_205320(arg_0);
    }
-   else if (local_1 == 12)
+   else if ((short)local_1 == 12)
     function_211640(arg_0);
    function_210020(arg_0);
   }
@@ -100,13 +100,13 @@ void __stdcall function_1c9f30(long arg_0)
    function_2103d0(arg_0);
    joint_clear_references(arg_0);
   }
-  if (local_1 != 5 || (local_0->field_b2 & 2))
+  if ((short)local_1 != 5 || (local_0->field_b2 & 2))
   {
    s_actor_iterator local_9;
    function_x66da2b(&local_9, false);
    while (function_1e46c0(&local_9))
     function_1e17d0(local_9.actor_index, arg_0);
-   function_290b90(arg_0);
+   swarm_spawn_slots_clear_object(arg_0);
   }
   ai_players_unit_deleted(arg_0);
  }

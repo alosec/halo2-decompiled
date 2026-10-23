@@ -74,25 +74,36 @@ bool function_11c380(long trigger_volume_index, transform4x3f *matrix)
 			s_object_11c380 *object = OBJECT_GET_11C380(object_index);
 			s_object_definition_11c380 *definition = (s_object_definition_11c380 *)g_4e3b44[object->definition_index & 0xffff].bytes;
 			long node_index = render_model_find_named_entry(definition->model_index, trigger_volume->node_name);
-			if (node_index == NONE)
-				return false;
-
-			function_1420f0(matrix, &trigger_volume->position, &trigger_volume->forward, &trigger_volume->up);
-			object = OBJECT_GET_11C380(object_index);
-			transform4x3f *field_50 = (transform4x3f *)((byte *)object + object->node_matrices_offset);
-			function_142a60(&field_50[(short)node_index], matrix, matrix);
-			return true;
+			if (node_index != NONE)
+			{
+				function_1420f0(matrix, &trigger_volume->position, &trigger_volume->forward, &trigger_volume->up);
+				object = OBJECT_GET_11C380(object_index);
+				transform4x3f *field_50 = (transform4x3f *)((byte *)object + object->node_matrices_offset);
+				function_142a60(&field_50[(short)node_index], matrix, matrix);
+				result = true;
+			}
 		}
 	}
 	else
 	{
 		function_1420f0(matrix, &trigger_volume->position, &trigger_volume->forward, &trigger_volume->up);
-		return true;
+		result = true;
 	}
 	return result;
 }
 
+PRIVATE __forceinline vector3f *function_11c471(real arg_0, vector3f const *arg_1, vector3f *arg_2)
+{
+	arg_2->i = arg_0 * arg_1->i;
+	arg_2->j = arg_0 * arg_1->j;
+	arg_2->k = arg_0 * arg_1->k;
+	return arg_2;
+}
+
 /* whether a point is inside a trigger volume */
+// score 62 (was 62): the three dot products are scheduled differently: retail copies the
+// factor into xmm4 with movaps and interleaves the products with the sums, ours multiplies
+// each factor in place.
 // @retail 0x11c470
 bool function_11c470(long trigger_volume_index, point3f const *point)
 {
@@ -109,18 +120,13 @@ bool function_11c470(long trigger_volume_index, point3f const *point)
 			if (matrix.scale != 1.0f)
 			{
 				real inverse_scale = 1.0f / matrix.scale;
-				vector.i *= inverse_scale;
-				vector.j *= inverse_scale;
-				vector.k *= inverse_scale;
+				function_11c471(inverse_scale, &vector, &vector);
 			}
 			real x = dot3f(&vector, &matrix.forward);
 			real y = dot3f(&vector, &matrix.left);
 			real z = dot3f(&vector, &matrix.up);
-			if (x > 0.0f && y > 0.0f && z > 0.0f &&
-				trigger_volume->extents.i > x && trigger_volume->extents.j > y && trigger_volume->extents.k > z)
-			{
-				return true;
-			}
+			result = x > 0.0f && y > 0.0f && z > 0.0f &&
+				trigger_volume->extents.i > x && trigger_volume->extents.j > y && trigger_volume->extents.k > z;
 		}
 	}
 	return result;
@@ -153,7 +159,10 @@ static inline point3f *transform4x3f_apply_point(transform4x3f const *matrix, po
 		y = matrix->scale * y;
 		z = matrix->scale * z;
 	}
-	out->x = matrix->up.i * z + matrix->left.i * y + matrix->forward.i * x + matrix->position.x;
+	real result_x = matrix->left.i * y;
+	result_x += matrix->forward.i * x;
+	result_x += matrix->up.i * z;
+	out->x = result_x + matrix->position.x;
 	out->y = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x + matrix->position.y;
 	out->z = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x + matrix->position.z;
 	return out;
@@ -173,9 +182,7 @@ long function_11c5f0(long trigger_volume_index, long type_mask)
 		point3f center;
 		s_location location;
 
-		center.x = trigger_volume->extents.i * 0.5f;
-		center.y = trigger_volume->extents.j * 0.5f;
-		center.z = trigger_volume->extents.k * 0.5f;
+		function_11c471(0.5f, &trigger_volume->extents, (vector3f *)&center);
 		transform4x3f_apply_point(&matrix, &center, &center);
 		function_11bed0(&location, &center);
 		if (location.cluster_index != NONE)

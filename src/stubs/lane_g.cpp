@@ -25,11 +25,6 @@
 
 /* callees of the screen widget code */
 
-// @stub 0x219070
-byte __stdcall function_219070(long set_index)
-{
-	return 0;
-}
 
 
 struct s_bitmap_view;
@@ -37,10 +32,7 @@ struct s_bitmap_view;
 
 /* UI lane round 2: the custom game profile list (unknown_2c9ddb.cpp) */
 
-// @stub 0x2ca284
-void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
-{
-}
+
 
 
 /* unknown_2b116a.cpp's list (only the member the stub defines) */
@@ -64,10 +56,7 @@ public:
 struct _XONLINE_USER;
 
 /* my own, not written yet */
-// @stub 0x24b869
-void __stdcall function_24b869(c_class_1473c9 *screen)
-{
-}
+
 
 
 /* lane D */
@@ -85,3 +74,4 @@ class c_class_1a2c81;
 struct s_saved_game_header;
 struct s_saved_game_read;
 class c_campaign_options_list;
+

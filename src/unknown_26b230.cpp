@@ -1,4 +1,5 @@
 // @flags /O2 /Gr /arch:SSE
+#include "object_masks_storage.h"
 #include "unknown_11c920.h"
 #include "props.h"
 #include <float.h>
@@ -13,6 +14,207 @@
 #include <string.h>
 #include "object_iterator.h"
 #include "unknown_1e46c0.h"
+#include "unknown_0d0690.h"
+
+void function_1e2a90(long actor_index);
+void __stdcall function_b83b0(long object_index, bool flag);
+void __stdcall function_b8460(long object_index, bool flag);
+void __stdcall function_b8540(long object_index);
+void __stdcall swarm_delete(long index);
+bool function_bba80(long object_index);
+point3f *function_b9dd0(long object_index, point3f *position);
+void function_2691b0(long clump_index);
+void function_2687a0(long clump_index);
+void function_268900(long clump_index);
+void function_2689d0();
+__declspec(noinline) void function_268c90();
+void function_268700(long clump_index);
+void function_269870(long clump_index);
+void function_26a210(long clump_index);
+void function_26b290(long clump_index);
+__declspec(noinline) void function_268840();
+
+static __forceinline long real_to_long(real value);
+
+// @retail 0x268510
+void function_268510()
+{
+	short interval = (short)real_to_long((real)g_510c54->field_2_3);
+	short slice_interval = (short)real_to_long((real)g_510c54->field_2_3 * 0.1f);
+	s_record_pool_iterator iterator;
+	if (g_4f55d0->active)
+	{
+		iterator.data = g_502420;
+		iterator.index = iterator.datum_index = NONE;
+	}
+	for (;;)
+	{
+		byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&iterator) : NULL;
+		if (!clump) break;
+		if (clump[0x1c]) function_268700(iterator.datum_index);
+	}
+	long time = g_510c54->game_time;
+	if (time % interval == 0) function_268840();
+	else if (time % slice_interval == 0)
+	{
+		struct slice_budget { short maximum; bool updated; } budget = { 0, false };
+		short &maximum = budget.maximum;
+		bool &updated = budget.updated;
+		if (g_4f55d0->active)
+		{
+			iterator.data = g_502420;
+			iterator.index = iterator.datum_index = NONE;
+		}
+		for (;;)
+		{
+			byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&iterator) : NULL;
+			if (!clump) break;
+			if (clump[0x1c])
+			{
+				if (*(short *)(clump + 0x1e) == *(long *)((byte *)g_4f55d0 + 0x18) && !updated)
+				{
+					function_269870(iterator.datum_index);
+					function_26a210(iterator.datum_index);
+					function_26b290(iterator.datum_index);
+					*(short *)(clump + 0x1e) = 0;
+					updated = true;
+				}
+				else
+				{
+					short count = ++*(short *)(clump + 0x1e);
+					if (count > maximum) maximum = count;
+				}
+			}
+			else *(short *)(clump + 0x1e) = 0;
+		}
+		*(long *)((byte *)g_4f55d0 + 0x18) = maximum;
+	}
+}
+
+// @retail 0x268840
+void function_268840()
+{
+	struct { byte *current; s_record_pool_iterator pool; long datum_index; } iterator;
+	if (g_4f55d0->active)
+	{
+		iterator.pool.data = g_502420;
+		iterator.pool.index = NONE;
+	}
+	for (;;)
+	{
+		iterator.current = g_4f55d0->active ? data_iterator_next_inlined(&iterator.pool) : NULL;
+		byte *clump = iterator.current;
+		iterator.datum_index = clump ? iterator.pool.datum_index : NONE;
+		if (!clump) break;
+		if (clump[0x1c])
+		{
+			function_2687a0(iterator.datum_index);
+			function_268900(iterator.datum_index);
+		}
+	}
+	function_2689d0();
+	function_268c90();
+}
+
+// @retail 0x268c90
+void function_268c90()
+{
+	s_record_pool_iterator clumps;
+	if (g_4f55d0->active)
+	{
+		clumps.data = g_502420;
+		clumps.index = NONE;
+	}
+	for (;;)
+	{
+		byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&clumps) : NULL;
+		if (!clump) break;
+		bool expired = false;
+		if (clump[0x3c])
+		{
+			if (*(long *)(clump + 0x38) == NONE) expired = true;
+			else
+			{
+				real interval = (real)g_510c54->field_2_3 * 10.0f;
+				long ticks = real_to_long(interval);
+				expired = *(long *)(clump + 0x38) + ticks < g_510c54->game_time;
+			}
+		}
+		if (expired)
+		{
+			clump[0x3c] = 0;
+			long next_actor = *(long *)(clump + 0x18);
+			while (next_actor != NONE)
+			{
+				long actor_index = next_actor;
+				byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+				next_actor = *(long *)(actor + 0x80);
+				if (!actor[0xc]) continue;
+				long keep = false;
+				if (actor[9])
+				{
+					s_record_pool *players = g_4e8c24;
+					long player_index = NONE;
+					for (;;)
+					{
+						player_index = data_next_absolute_index_inlined(players, player_index + 1);
+						if (player_index == NONE) break;
+						byte *player = players->data + players->size * player_index;
+						if (!player) break;
+						long unit = *(long *)(player + 0x2c);
+						if (unit != NONE)
+						{
+							point3f point;
+							function_b9dd0(unit, &point);
+							real z = point.z - *(real *)(actor + 0x240);
+							real y = point.y - *(real *)(actor + 0x23c);
+							real x = point.x - *(real *)(actor + 0x238);
+							if (225.0f > z * z + y * y + x * x) { keep = true; break; }
+						}
+					}
+					if (!keep && *(long *)(actor + 0x18) != NONE)
+						keep = function_bba80(*(long *)(actor + 0x18));
+				}
+				if (keep) { clump[0x3c] = 1; continue; }
+				long extra = *(long *)(actor + 0x26c);
+				if (extra == *(long *)(actor + 0x18)) extra = NONE;
+				byte *current = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+				long unit = *(long *)(current + 0x18);
+				long proxy = *(long *)(current + 0x1c);
+				function_1e2a90(actor_index);
+				if (unit != NONE)
+				{
+					function_b83b0(unit, true);
+					function_b8460(unit, true);
+				}
+				else if (proxy != NONE) swarm_delete(proxy);
+				if (extra != NONE)
+				{
+					byte *object = NULL;
+					if ((extra & 0xffff) < g_4e0300->high_water_index)
+					{
+						byte *header = g_4e0300->data + (extra & 0xffff) * g_4e0300->size;
+						if (*(short *)header && *(short *)header == (extra >> 16) &&
+							(1 << header[3])) object = *(byte **)(header + 8);
+					}
+					if (object)
+					{
+						s_object_child_iterator children;
+						function_d0620(extra, &children);
+						bool held = false;
+						while (function_d0690(&children))
+						{
+							byte *child = *(byte **)(g_4e0300->data + (children.child_index & 0xffff) * 12 + 8);
+							if (!child[0xaa]) { held = true; break; }
+						}
+						if (!held) function_b8540(extra);
+					}
+				}
+			}
+		}
+		if (!*(short *)(clump + 0x10)) function_2691b0(clumps.datum_index);
+	}
+}
 
 
 typedef bool (__stdcall *t_transition_test)(long, real *, real *);
@@ -62,30 +264,28 @@ long function_26b230(long clump_index, long prop_index)
 	return result;
 }
 
+PRIVATE __forceinline s_actor_view *clump_next_actor(s_iterator *iterator);
+
 // @retail 0x26b290
 void function_26b290(long clump_index)
 {
 	s_clump *clump = (s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump));
 	real a[13];
 	real b[13];
-	long object_index = clump->first_object;
+	s_iterator objects;
 	long i;
 
 	for (i = 0; i < 13; i++)
 	{
-		a[i] = 0.0f;
 		b[i] = 0.0f;
+		a[i] = 0.0f;
 	}
 
-	for (;;)
+	function_26bda0(clump_index, &objects);
+	s_actor_view *actor;
+	while ((actor = clump_next_actor(&objects)) != NULL)
 	{
-		if (object_index == NONE)
-		{
-			break;
-		}
-		s_clump_object *object = (s_clump_object *)(g_4f55f0->data + (object_index & 0xffff) * sizeof(s_clump_object));
-		object_index = object->next;
-		short count = object->count;
+		short count = ((s_clump_object *)actor)->count;
 
 		for (i = 0; i <= count; i++)
 		{
@@ -103,9 +303,9 @@ void function_26b290(long clump_index)
 		}
 	}
 
-	short state;
+	long state;
 	short new_state = NONE;
-	for (state = 3; clump->state < state; state--)
+	for (state = 3; state > clump->state; state--)
 	{
 		t_transition_test test = g_470fac[state].test;
 		if (test && test(clump_index, b, a))
@@ -160,7 +360,7 @@ short __stdcall function_26b6b0(long clump_index, real *b, real *a)
 // @retail 0x26b6e0
 bool __stdcall function_26b6e0(long clump_index, real *b, real *a)
 {
-	return a[3] > 0.5;
+	return a[3] > 0.0;
 }
 
 /* ---- whether a clump may use a prop ---- */
@@ -233,104 +433,90 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
 	bool result = function_26b8a0(prop_index, actor_index);
-	volatile bool saved_result = result;
-
 	if (!result)
 	{
 		s_clump *clump = (s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump));
-		s_clump *const *clump_reference = &clump;
-		long team = ((s_clump volatile *)*clump_reference)->team;
-		long side = function_20f040((short)team);
+		short side = (short)function_20f040(clump->team);
 		s_clump_prop *prop = (s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop));
 		s_clump_pool_iterator iterator;
-		s_clump *other;
-
 		if (g_4f55d0->active)
 		{
 			iterator.pool.data = g_502420;
 			iterator.pool.index = NONE;
 		}
-
 		while (next_clump_in_pool(&iterator))
 		{
-			other = iterator.current;
-			if (clump_index != iterator.pool.datum_index && (short)side == (short)function_20f040(other->team))
+			if (clump_index != iterator.pool.datum_index && side == (short)function_20f040(iterator.current->team))
 			{
 				long other_prop_index = function_26b230(iterator.pool.datum_index, prop->type);
-				if (other_prop_index != NONE)
+				if (other_prop_index != NONE && function_26b8a0(other_prop_index, NONE))
 				{
-					if (function_26b8a0(other_prop_index, NONE))
-					{
-						result = true;
-						goto done;
-					}
-					result = saved_result;
+					result = true;
+					break;
 				}
 			}
 		}
 	}
-
-done:
 	return result;
 }
 
 // @retail 0x26ba60
 bool function_26ba60(long prop_index, long actor_index, long clump_index)
 {
-	s_clump_prop *prop = (s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop));
 	bool result = false;
+	s_clump_prop *prop = (s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop));
 
-	if (prop->unknown34)
-		return result;
-
-	if (TEST_FIELD_BIT(((s_clump_prop_object_header *)g_4e0300->data)[prop->type & 0xffff].object->flag10a_2))
-		return result;
-
-	if (clump_index == NONE)
-		return result;
-
-	s_clump *clump = (s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump));
-	if (!team_is_enemy(clump->team, 1))
+	if (!prop->unknown34)
 	{
-		s_game_time_globals *game_time_globals = g_510c54;
-		long game_time = game_time_globals->game_time;
-		s_data_datum_iterator players;
-		bool ready = true;
-
-		players.data = g_4e8c24;
-		players.index = NONE;
-		players.datum_index = NONE;
-		while (data_datum_iterator_next(&players))
+		if (TEST_FIELD_BIT(((s_clump_prop_object_header *)g_4e0300->data)[prop->type & 0xffff].object->flag10a_2))
+			result = false;
+		else if (clump_index != NONE)
 		{
-			s_ai_player *player = ai_player_get(players.datum_index);
-			if (player && game_time - player->unknown0c < game_time_globals->field_2_3)
-				ready = false;
-		}
-
-		if (ready)
-		{
-			s_iterator actors;
-
-			function_26bda0(clump_index, &actors);
-			while (actors.next != NONE)
+			s_clump *clump = (s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump));
+			if (!team_is_enemy(clump->team, 1))
 			{
-				s_clump_object *actor = (s_clump_object *)(g_4f55f0->data + (actors.next & 0xffff) * sizeof(s_clump_object));
-				actors.next = actor->next;
-				if (actor->node_index != NONE)
-				{
-					s_clump_node *node = (s_clump_node *)(g_502418->data + (actor->node_index & 0xffff) * sizeof(s_clump_node));
-					if (node->state < 1 || node->state > 2)
-						continue;
+				s_game_time_globals *game_time_globals = g_510c54;
+				long game_time = game_time_globals->game_time;
+				s_data_datum_iterator players;
 
-					return false;
+				/* true unless a player's time stamp is too recent or an actor's prop node is in state 1 or 2 */
+				result = true;
+				players.data = g_4e8c24;
+				players.index = NONE;
+				players.datum_index = NONE;
+				while (data_datum_iterator_next(&players))
+				{
+					s_ai_player *player = ai_player_get(players.datum_index);
+					if (player && game_time - player->unknown0c < game_time_globals->field_2_3)
+						result = false;
+				}
+
+				if (result)
+				{
+					s_iterator actors;
+					s_actor_view *actor;
+
+					function_26bda0(clump_index, &actors);
+					while ((actor = clump_next_actor(&actors)) != NULL)
+					{
+						if (actor->prop_index != NONE)
+						{
+							s_clump_node *node = (s_clump_node *)(g_502418->data + (actor->prop_index & 0xffff) * sizeof(s_clump_node));
+							if (node->state < 1 || node->state > 2)
+								continue;
+
+							result = false;
+							break;
+						}
+					}
 				}
 			}
+			else
+				result = !function_26b900(prop_index, actor_index, clump_index);
 		}
-
-		return ready;
 	}
 
-	return !function_26b900(prop_index, actor_index, clump_index);
+	return result;
 }
 
 
@@ -393,18 +579,22 @@ void function_2687a0(long clump_index)
 	if (clump->active)
 	{
 		s_iterator iterator;
-		iterator.next = clump->first_actor;
+		iterator.next = ((s_clump_activity_view *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump_activity_view)))->first_actor;
 		s_actor_view *actor;
 		while ((actor = clump_next_actor(&iterator)) != NULL)
 		{
 			if (actor->unknown009)
-			{
-				clump->active_time = g_510c54->game_time;
-				return;
-			}
+				break;
 		}
-		clump->active = false;
-		clump->active_time = g_510c54->game_time - 1;
+		if (!actor)
+		{
+			clump->active = false;
+			clump->active_time = g_510c54->game_time - 1;
+		}
+		else
+		{
+			clump->active_time = g_510c54->game_time;
+		}
 	}
 }
 
@@ -620,9 +810,6 @@ struct s_object;
 s_object *function_badc0(long object_index, dword type_mask);
 point3f *function_b9dd0(long object_index, point3f *result);
 bool function_bec70(long object_index);
-extern long g_4de2fc;
-extern long g_4de300[0x800];
-extern bool g_4de2f8;
 bool function_26add0(long prop_index);
 
 struct s_prop_candidate_view
@@ -644,17 +831,20 @@ short function_269e60(long object_index, s_clump_activity_view const *clump, lon
 	long const *prop_reference = &prop_index;
 	s_prop_candidate_view *const *candidate_reference = &candidate;
 	bool const *force_reference = &force;
-	bool unsupported = false;
-	short type = 0;
-	short priority = 0;
+	short type;
+	short priority;
+	bool unsupported;
+	type = priority = 0;
+	unsupported = false;
 	s_slot_object_view *object = (s_slot_object_view *)function_badc0(object_index, (dword)NONE);
 	if (object)
 	{
 		if (candidate)
 		{
-			if (g_4de300[object_index & 0xffff] == g_4de2fc)
+			long object_slot = object_index & 0xffff;
+			if (g_4de300[object_slot] == g_4de2fc)
 				goto done;
-			g_4de300[object_index & 0xffff] = g_4de2fc;
+			g_4de300[object_slot] = g_4de2fc;
 		}
 		if (prop_index != NONE)
 			force = prop_get(prop_index)->unknown10 > g_510c54->game_time;
@@ -728,7 +918,7 @@ short function_269e60(long object_index, s_clump_activity_view const *clump, lon
 						s_ai_object_iterator iterator;
 						iterator.index = NONE;
 						iterator.next_index = perception_get(index)->object_index;
-						while (function_290c80(&iterator))
+						while (swarm_creature_iterator_next(&iterator))
 							function_bec70(iterator.index);
 					}
 				}
@@ -793,7 +983,9 @@ void __stdcall function_269de0(long object_index, s_clump_activity_view const *c
 bool function_26add0(long prop_index)
 {
 	bool result = false;
-	s_clump_prop *prop = &((s_clump_prop *)g_50241c->data)[prop_index & 0xffff];
+	s_clump_prop *const props = (s_clump_prop *)g_50241c->data;
+    s_clump_prop *const *props_reference = &props;
+    s_clump_prop *prop = &(*props_reference)[prop_index & 0xffff];
 	if (*(short *)((byte *)prop + 4) >= 1)
 	{
 		result = true;
@@ -820,7 +1012,7 @@ done:
 short __stdcall function_26b700(long clump_index, real *b, real *a)
 {
 	short result = NONE;
-	if (a[2] == 0.5)
+	if (a[2] == 0.0)
 		result = 1;
 	else if (a[5] == 0.0f)
 		result = 2;
@@ -830,7 +1022,7 @@ short __stdcall function_26b700(long clump_index, real *b, real *a)
 // @retail 0x26b750
 bool __stdcall function_26b750(long clump_index, real *b, real *a)
 {
-	return a[5] > 0.5;
+	return a[5] > 0.0;
 }
 
 // @retail 0x26b770
@@ -946,16 +1138,17 @@ void function_26a310(s_prop_copy_view *prop, short type, long object_index, s_cl
 	prop->state = g_470f10[type].unknown4 == 0;
 	prop->field10 = NONE;
 	prop->field18 = NONE;
-	s_slot_object_view *object = object_get(object_index);
+	s_slot_object_view volatile *object = object_get(object_index);
 	object->unknownb2 |= 2;
-	long type_mask = 1 << object->type;
+	unsigned long type_mask = 1 << object->type;
 	if (type_mask & 3)
 	{
-		prop->actor_index = object->actor_index;
+		long actor_index = object->actor_index;
+		prop->actor_index = actor_index;
 		prop->team = object->team;
 		prop->field23 = function_1df560(clump->team, prop->team);
 		prop->field24 = !prop->field23;
-		prop->field25 = object->player_index != NONE;
+		prop->field25 = NONE != object->player_index;
 		prop->field22 = false;
 	}
 	else if (type_mask & 0x1000)
@@ -1092,9 +1285,9 @@ PRIVATE __forceinline long clump_object_actor_index(long object_index)
 {
 	s_clump_owner_object_view *object = (s_clump_owner_object_view *)((s_object_header_view *)g_4e0300->data)[object_index & 0xffff].object;
 	long result = NONE;
-	if (object->type == 0xc && object->owner_kind == 0)
+	if (object->type == 0xc)
 	{
-		byte *owner = (byte *)object + object->owner_offset;
+		byte *owner = object->owner_kind == 0 ? (byte *)object + object->owner_offset : NULL;
 		if (owner)
 			result = *(long *)(owner + 4);
 	}
@@ -1115,7 +1308,7 @@ PRIVATE __forceinline s_type_76cf92 *clump_next_prop(s_iterator *iterator)
 }
 
 // @retail 0x26b120
-long function_26b120(long object_index, long clump_index)
+long function_26b120(long clump_index, long object_index)
 {
 	long result = NONE;
 	long actor_index = clump_object_actor_index(object_index);
@@ -1124,13 +1317,12 @@ long function_26b120(long object_index, long clump_index)
 	s_type_76cf92 *prop;
 	while ((prop = clump_next_prop(&iterator)) != NULL)
 	{
-		if (*(long *)((byte *)prop + 8) == object_index)
+		if (*(long *)((byte *)prop + 8) == object_index ||
+			(prop->unknown22 && actor_index != NONE && actor_index == prop->actor_index))
 		{
 			result = iterator.index;
 			break;
 		}
-		if (prop->unknown22 && actor_index != NONE && actor_index == prop->actor_index)
-			return iterator.index;
 	}
 	return result;
 }
@@ -1210,34 +1402,40 @@ void function_26a960(s_clump *clump, long prop_index)
 long function_26bc60(long clump_index)
 {
 	s_clump *clump = (s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump));
-	real count = 0.0f;
-	real value = 0.0f;
-	long team = ((s_clump volatile *)clump)->team;
-	long side = function_20f040((short)team);
-	s_clump_pool_iterator iterator;
+	struct
+	{
+		real count;
+		real value;
+		s_clump_pool_iterator iterator;
+		long team;
+	} state;
+	state.count = 0.0f;
+	state.value = 0.0f;
+	state.team = ((s_clump volatile *)clump)->team;
+	long side = function_20f040((short)state.team);
 	if (g_4f55d0->active)
 	{
-		iterator.pool.data = g_502420;
-		iterator.pool.index = NONE;
+		state.iterator.pool.data = g_502420;
+		state.iterator.pool.index = NONE;
 	}
 	for (;;)
 	{
 		s_clump *other = NULL;
 		if (g_4f55d0->active)
-			other = (s_clump *)data_iterator_next_inlined(&iterator.pool);
-		iterator.current = other;
+			other = (s_clump *)data_iterator_next_inlined(&state.iterator.pool);
+		state.iterator.current = other;
 		if (!other)
 			break;
 		long other_side = function_20f040(other->team);
 		if ((short)other_side == (short)side)
 		{
-			count += other->divisor;
-			value += (short)other->unknown3e;
+			state.count += other->divisor;
+			state.value += (short)other->unknown3e;
 		}
 	}
-	if (count * 0.2f > value)
+	if (state.count * 0.2f > state.value)
 		return 1;
-	if (count * 0.8f > value)
+	if (state.count * 0.8f > state.value)
 		return 0;
 	return 2;
 }
@@ -1245,8 +1443,6 @@ long function_26bc60(long clump_index)
 // @retail 0x269040
 long function_269040(point3f const *center, short team)
 {
-	point3f const *const *center_reference = &center;
-	short const *team_reference = &team;
 	long result = record_pool_allocate(g_502420);
 	if (result == NONE)
 	{
@@ -1256,10 +1452,14 @@ long function_269040(point3f const *center, short team)
 			iterator.pool.data = g_502420;
 			iterator.pool.index = NONE;
 		}
-		long oldest = NONE;
-		long oldest_time = 0x7fffffff;
-		while (next_clump_in_pool(&iterator))
+		bool active = g_4f55d0->active;
+  long volatile oldest_time = 0x7fffffff;
+		long volatile oldest = NONE;
+		for (;;)
 		{
+			iterator.current = NULL;
+			if (active) iterator.current = (s_clump *)data_iterator_next_calling(&iterator.pool);
+			if (!iterator.current) break;
 			long time = ((s_clump_activity_view *)iterator.current)->active_time;
 			if (time < oldest_time)
 			{
@@ -1276,8 +1476,8 @@ long function_269040(point3f const *center, short team)
 	if (result != NONE)
 	{
 		s_clump_activity_view *clump = (s_clump_activity_view *)(g_502420->data + (result & 0xffff) * sizeof(s_clump_activity_view));
-		clump->center = **center_reference;
-		clump->team = *team_reference;
+		clump->center = *center;
+		clump->team = team;
 		clump->count = 0;
 		clump->first_actor = NONE;
 		clump->first_prop = NONE;
@@ -1301,8 +1501,6 @@ long function_269040(point3f const *center, short team)
 // @retail 0x26a4f0
 long function_26a4f0(s_clump_activity_view *clump, short priority)
 {
-	s_clump_activity_view *const *clump_reference = &clump;
-	short const *priority_reference = &priority;
 	long result = NONE;
 	if (priority >= clump->update_state)
 	{
@@ -1314,9 +1512,9 @@ long function_26a4f0(s_clump_activity_view *clump, short priority)
 			long selected;
 			do
 			{
-				selected = NONE;
-				real best_score = 0.0f;
 				s_clump_pool_iterator iterator;
+				real best_score = 0.0f;
+				selected = NONE;
 				if (g_4f55d0->active)
 				{
 					iterator.pool.data = g_502420;
@@ -1329,7 +1527,7 @@ long function_26a4f0(s_clump_activity_view *clump, short priority)
 						iterator.current = (s_clump *)data_iterator_next_inlined(&iterator.pool);
 					s_clump_activity_view *other = (s_clump_activity_view *)iterator.current;
 					if (!other) break;
-					if (other->update_state >= 4 || (other == *clump_reference && *priority_reference <= other->update_state + 1))
+					if (other->update_state >= 4 || (other == clump && priority <= other->update_state + 1))
 						continue;
 					real score;
 					if (!other->active)
@@ -1406,9 +1604,9 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {
+	g_4de2fc++;
 	s_clump_activity_view *destination = (s_clump_activity_view *)(g_502420->data + (destination_index & 0xffff) * sizeof(s_clump_activity_view));
 	s_clump_activity_view *source = (s_clump_activity_view *)(g_502420->data + (source_index & 0xffff) * sizeof(s_clump_activity_view));
-	g_4de2fc++;
 	g_4de2f8 = true;
 	s_iterator iterator;
 	iterator.next = destination->first_prop;
@@ -1416,13 +1614,7 @@ void function_269580(long destination_index, long source_index)
 	while ((prop = clump_next_prop(&iterator)) != NULL)
 	{
 		long object_index = *(long *)((byte *)prop + 8);
-		byte *object = NULL;
-		if (object_index != NONE && (object_index & 0xffff) < g_4e0300->high_water_index)
-		{
-			s_object_header_view *header = (s_object_header_view *)(g_4e0300->data + g_4e0300->size * (object_index & 0xffff));
-			if (header->salt && header->salt == (object_index >> 16) && ((1 << header->type) & -1))
-				object = header->object;
-		}
+		byte *object = (byte *)function_badc0(object_index, (dword)NONE);
 		if (!object) continue;
 		if (*(char *)(object + 0xaa) == 12 && *(long *)(object + 0x134) == 0)
 		{
@@ -1482,31 +1674,33 @@ void function_269580(long destination_index, long source_index)
 // @retail 0x26ace0
 long function_26ace0(long object_index, long actor_index, short type)
 {
-	long const *actor_reference = &actor_index;
-	short const *type_reference = &type;
 	s_actor_view *actor = actor_get(actor_index);
 	long result = NONE;
-	long clump_index = actor->unknown07c;
-	if (clump_index != NONE)
+	if (actor->unknown07c != NONE)
 	{
-		s_clump_activity_view *clump = (s_clump_activity_view *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump_activity_view));
-		long prop_index = function_26b120(object_index, clump_index);
+		s_clump_activity_view *clump = (s_clump_activity_view *)(g_502420->data + (actor->unknown07c & 0xffff) * sizeof(s_clump_activity_view));
+		long prop_index = function_26b120(actor->unknown07c, object_index);
 		if (prop_index == NONE)
 		{
 			prop_index = function_26a740(object_index, clump);
-			if (prop_index == NONE) return NONE;
-			((s_prop_copy_view *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_prop_copy_view)))->field0c = *type_reference;
-			function_26a960((s_clump *)clump, prop_index);
-		}
-		long next = ((s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop)))->first_node;
-		while (next != NONE)
-		{
-			long index = next;
-			s_clump_link_view *node = (s_clump_link_view *)(g_502418->data + (index & 0xffff) * sizeof(s_clump_link_view));
-			next = node->next;
-			if (node->actor_index == *actor_reference)
+			if (prop_index != NONE)
 			{
-				result = index;
+				((s_prop_copy_view *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_prop_copy_view)))->field0c = type;
+				function_26a960((s_clump *)clump, prop_index);
+			}
+			else
+			{
+				return NONE;
+			}
+		}
+		s_iterator nodes;
+		nodes.next = ((s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop)))->first_node;
+		s_clump_node *node;
+		while ((node = clump_next_node(&nodes)) != NULL)
+		{
+			if (node->actor_index == actor_index)
+			{
+				result = nodes.index;
 				break;
 			}
 		}
@@ -1580,8 +1774,6 @@ void function_2689d0(void)
 // @retail 0x269250
 void function_269250(long clump_index, long actor_index)
 {
-	long const *clump_reference = &clump_index;
-	long const *actor_reference = &actor_index;
 	s_actor_view *actor = actor_get(actor_index);
 	s_clump_activity_view *clump = (s_clump_activity_view *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump_activity_view));
 	clump->count++;
@@ -1607,7 +1799,7 @@ void function_269250(long clump_index, long actor_index)
 		long object_slot = node->object_index & 0xffff;
 		if (g_4de300[object_slot] != g_4de2fc)
 			g_4de300[object_slot] = g_4de2fc;
-		long prop_index = function_26b120(node->object_index, *clump_reference);
+		long prop_index = function_26b120(clump_index, node->object_index);
 		if (prop_index != NONE)
 		{
 			s_clump_prop *prop = (s_clump_prop *)(g_50241c->data + (prop_index & 0xffff) * sizeof(s_clump_prop));
@@ -1646,7 +1838,7 @@ void function_269250(long clump_index, long actor_index)
 				link->next = first;
 				current->first_node = index;
 				link->prop_index = props.index;
-				function_26aa40(*actor_reference, index);
+				function_26aa40(actor_index, index);
 			}
 		}
 	}
@@ -1656,10 +1848,10 @@ void function_269250(long clump_index, long actor_index)
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {
-	long const *object_reference = &object_index;
+	bool unit = false;
+	bool group_object = false;
 	s_slot_object_view *object = object_get(object_index);
 	short type = (char)object->type;
-	bool group_object = false, unit = false;
 	long replacement = NONE;
 	if (type == 12)
 	{
@@ -1712,7 +1904,7 @@ void function_26ae30(long object_index)
 		s_type_76cf92 *prop;
 		while ((prop = clump_next_prop(&props)) != NULL)
 		{
-			if (*(long *)((byte *)prop + 8) == *object_reference)
+			if (*(long *)((byte *)prop + 8) == object_index)
 			{
 				changed = true;
 				if (replacement != NONE)
@@ -1768,18 +1960,18 @@ bool function_25ccd0(s_type_5cfb45 *state, long object_index, short value, s_264
 // @retail 0x26a210
 void function_26a210(long clump_index)
 {
-    long index = clump_get(clump_index)->first_prop;
-    while (index != NONE)
+    s_iterator iterator;
+    iterator.next = clump_get(clump_index)->first_prop;
+    s_type_76cf92 *prop;
+    while ((prop = clump_next_prop(&iterator)) != NULL)
     {
-        s_type_76cf92 *prop = prop_get(index);
-        index = *(long *)((byte *)prop + 0x14);
         long object_index = *(long *)((byte *)prop + 8);
-        s_object_header_view *header = (s_object_header_view *)datum_get_inlined(g_4e0300, object_index);
-        if (header && ((1 << header->type) & 3) && header->object)
+        s_object *object = function_badc0(object_index, 3);
+        if (object)
         {
-            prop->unknown26[0] = (bool)((*(dword *)(header->object + 0x134) >> 7) & 1);
+            prop->unknown26[0] = (bool)((*(dword *)((byte *)object + 0x134) >> 7) & 1);
             if (prop->unknown23)
-                *((bool *)prop + 0xbf) = (bool)((*(dword *)(header->object + 0x134) >> 8) & 1);
+                *((bool *)prop + 0xbf) = (bool)((*(dword *)((byte *)object + 0x134) >> 8) & 1);
         }
         if (g_470f10[*(short *)((byte *)prop + 2)].kind == 0 && prop->unknown04 == 1)
             function_25ccd0(&prop->state, object_index, NONE, NULL);
@@ -1787,20 +1979,20 @@ void function_26a210(long clump_index)
 }
 
 int __cdecl function_269da0(void const *a, void const *b);
-void *function_1e51a0(long actor_index);
+void *actor_get_character_situation_entry(long actor_index);
 
 // @retail 0x269870
 void function_269870(long clump_index)
 {
     s_clump_activity_view *clump = (s_clump_activity_view *)clump_get(clump_index);
     byte *structure = (byte *)g_4e0348;
-    short count = 0, selected = 0, cursor = 0;
+    short count = 0, cursor = 0, selected = 0;
     real distance = 50.0f;
     s_iterator actors;
     actors.next = clump->first_actor;
     while (clump_next_actor(&actors) != NULL)
     {
-        byte *settings = (byte *)function_1e51a0(actors.index);
+        byte *settings = (byte *)actor_get_character_situation_entry(actors.index);
         if (settings && *(real *)(settings + 4) > distance)
             distance = *(real *)(settings + 4);
     }
@@ -1907,28 +2099,37 @@ void function_269870(long clump_index)
                 if (existing->type != candidate->type)
                 {
                     s_type_5cfb45 *state = NULL;
-                    if (g_470f10[candidate->type].unknown4 == 0)
-                        existing->state = 1;
-                    else if (g_470f10[candidate->type].unknown4 == 1)
+                    switch (g_470f10[candidate->type].unknown4)
                     {
-                        s_iterator nodes;
-                        nodes.next = ((s_clump_prop *)prop_get(candidate->prop_index))->first_node;
-                        s_clump_node *node;
-                        while ((node = clump_next_node(&nodes)) != NULL)
+                    case 0:
+                        break;
+                    case 1:
                         {
-                            if (node->state >= 1)
+                            s_iterator nodes;
+                            nodes.next = ((s_clump_prop *)prop_get(candidate->prop_index))->first_node;
+                            s_clump_node *node;
+                            while ((node = clump_next_node(&nodes)) != NULL)
                             {
-                                if (*(long *)((byte *)node + 0x14) != NONE)
-                                    state = function_25d690((s_prop_datum *)node);
-                                break;
+                                if (node->state >= 1)
+                                {
+                                    if (*(long *)((byte *)node + 0x14) != NONE)
+                                        state = function_25d690((s_prop_datum *)node);
+                                    break;
+                                }
                             }
+                            if (!node)
+                                goto type_ready;
                         }
-                        existing->state = 1;
+                        break;
+                    default:
+                        goto type_ready;
                     }
+                    existing->state = 1;
                     if (state)
                         existing->observed = *state;
-                    else if (g_470f10[candidate->type].unknown4 == 0 || g_470f10[candidate->type].unknown4 == 1)
+                    else
                         function_25ccd0(&existing->observed, existing->object_index, NONE, NULL);
+                type_ready:
                     existing->type = candidate->type;
                 }
                 ++selected;

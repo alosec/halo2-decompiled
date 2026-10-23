@@ -83,12 +83,12 @@ struct s_effect_particle_system_definition
 	short unknown10;
 	word location_mode;
 	byte unknown14[2];
-	byte flag0 : 1;
-	byte flag1 : 1;
-	byte flag2 : 1;
-	byte flag3 : 1;
-	byte : 4;
-	byte unknown17[0x30 - 0x17];
+	word flag0 : 1;
+	word flag1 : 1;
+	word flag2 : 1;
+	word flag3 : 1;
+	word : 12;
+	byte unknown18[0x30 - 0x18];
 	long unknown30;
 	byte unknown34[4];
 };
@@ -287,8 +287,7 @@ struct s_particle_system_datum
 	long effect_index;
 	s_location location;
 	long unknown24;
-	real random_a;
-	real random_b;
+	real random[2];
 	long location_index;
 	long unknown34;
 	long next_index;
@@ -416,7 +415,7 @@ void function_173de0(void);
 void particle_systems_update_locations(void);
 void __stdcall function_174180(long particle_system_index);
 void particle_system_unlink(s_particle_system_datum *particle_system, long *first_index, long *last_index);
-void particle_system_link(s_particle_system_datum *particle_system, long *last_index, long *first_index);
+void particle_system_link(s_particle_system_datum *particle_system, long *first_index, long *last_index);
 long function_173fd0(struct s_effect_particle_system_definition *definition, long effect_index, long tag_index, short definition_index, long event_index);
 void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_system_datum *particle_system, bool multiplied);
 void function_175270(s_particle_system_datum *particle_system, s_particle_system_spawn *spawn, transform4x3f const *matrix, bool field_b4);
@@ -424,6 +423,11 @@ void function_175270(s_particle_system_datum *particle_system, s_particle_system
 /* effects (src/unknown_175bd0.cpp) */
 void function_1774f0(long effect_index);
 void effect_remove_event_slot(long effect_index, long value);
-long function_176780(long object_index, s_effect_owner const *owner, real scale_a, long tag_index, real scale_b, point3f const *origin, vector3f const *direction);
+long function_176780(s_effect_owner const *owner, long object_index, real scale_a, long tag_index, real scale_b, point3f const *origin, vector3f const *direction);
+/* the object-first argument order; the definition takes the owner first, as retail passes it */
+inline long function_176780(long object_index, s_effect_owner const *owner, real scale_a, long tag_index, real scale_b, point3f const *origin, vector3f const *direction)
+{
+	return function_176780(owner, object_index, scale_a, tag_index, scale_b, origin, direction);
+}
 
 #endif

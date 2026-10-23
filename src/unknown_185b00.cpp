@@ -717,15 +717,21 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 			s_object_marker marker;
 			function_b8d30(camera.unit_index, seat->field_8, &marker, 1, false);
 			real yaw = (real)atan2(marker.matrix.forward.j, marker.matrix.forward.i);
-			real lower = seat->minimum + yaw;
 			real upper = seat->maximum + yaw;
+			real lower = seat->minimum + yaw;
 			real range = control_turn_difference(upper, lower);
 			real to_upper = control_turn_difference(upper, entry->facing.yaw);
 			real from_lower = control_turn_difference(entry->facing.yaw, lower);
-			real positive_range = range < 0.0f ? range + 6.2831855f : range;
+			real positive_range = range + 6.2831855f;
+			if (!(range < 0.0f)) positive_range = range;
 			if (!(to_upper >= 0.0f && positive_range > to_upper) &&
 				!(from_lower >= 0.0f && positive_range > from_lower))
-				entry->facing.yaw = fabs(to_upper) > fabs(from_lower) ? lower : upper;
+			{
+				if (fabs(to_upper) > fabs(from_lower))
+					entry->facing.yaw = lower;
+				else
+					entry->facing.yaw = upper;
+			}
 		}
 	}
 	while (entry->facing.yaw < 0.0f) entry->facing.yaw += 6.2831855f;

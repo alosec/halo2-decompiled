@@ -32,6 +32,10 @@ struct s_connection_quality_members
 	long count;
 };
 
+real g_45dc68 = 0.1f;
+
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x68a90
 bool function_68a90(s_68a90_entry *entry, long *quality)
 {
@@ -49,14 +53,15 @@ bool function_68a90(s_68a90_entry *entry, long *quality)
 				result = true;
 		}
 	}
+	real local_0 = g_45dc68;
 	for (dword i = 0; i < 4; i++)
 	{
 		real value;
 		switch (i)
 		{
 		case 0: value = (real)entry->values[0]; break;
-		case 1: value = (real)entry->values[1] * 0.1f; break;
-		case 2: value = (real)entry->values[2] * 0.1f * 1024.0f; break;
+		case 1: value = (real)entry->values[1] * local_0; break;
+		case 2: value = (real)entry->values[2] * local_0 * 1024.0f; break;
 		case 3: value = (real)entry->values[3]; break;
 		default: __assume(0);
 		}
@@ -67,13 +72,13 @@ bool function_68a90(s_68a90_entry *entry, long *quality)
 		{
 			if (value >= (real)best) fraction = 1.0f;
 			else if (value <= (real)worst) fraction = 0.0f;
-			else fraction = (value - (real)worst) / (real)(best - worst);
+			else { _ReadWriteBarrier(); worst = g_network_configuration.quality_ranges[i][1]; fraction = (value - (real)worst) / (real)(best - worst); }
 		}
 		else
 		{
 			if (value <= (real)best) fraction = 1.0f;
 			else if (value >= (real)worst) fraction = 0.0f;
-			else fraction = ((real)worst - value) / (real)(worst - best);
+			else { _ReadWriteBarrier(); worst = g_network_configuration.quality_ranges[i][1]; fraction = ((real)worst - value) / (real)(worst - best); }
 		}
 		real scaled = (real)(g_network_configuration.valuecdc - 1) * fraction;
 		long rounded;
@@ -85,6 +90,8 @@ bool function_68a90(s_68a90_entry *entry, long *quality)
 	*quality = minimum;
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
+
 
 #define SIMULATION_WORLD ((c_class_6a600 *)g_4cf77c)
 #define NUMBEROF(array) (sizeof(array) / sizeof((array)[0]))
@@ -105,7 +112,7 @@ void function_c6ef0(s_unit_state_c6ef0 *state);
 
 struct s_simulation_controller;
 void simulation_controller_initialize(s_simulation_controller *controller, c_class_6a600 *world,
-	long field_00, long field_04, long field_08, const s_machine_address *machine, const t_player_key *key);
+	long field_00, long field_04, long field_08, const t_player_key *key, const s_machine_address *machine);
 void function_155710(long index);
 bool function_78a10(long index, s_network_observer *observer, long *delay, real *rate, long *received_rate, long *loss_percent);
 
@@ -118,19 +125,24 @@ bool function_68800(c_simulation_view *view, long *delay, long *rate, long *rece
 	real measured_rate;
 	long measured_received;
 	long measured_loss;
-	if (view && observer && function_78a10(view->channel_index, observer,
-		&measured_delay, &measured_rate, &measured_received, &measured_loss))
+	if (view && observer)
 	{
-		*delay = measured_delay;
-		real scaled = measured_rate * 10.0f;
-		long rounded;
-		REAL_TO_LONG(scaled, rounded);
-		*rate = rounded;
-		*received_rate = measured_received * 10 / 1024;
-		scaled = (real)measured_loss;
-		REAL_TO_LONG(scaled, rounded);
-		*loss_percent = rounded;
-		result = true;
+		long local_0 = view->channel_index;
+		if (function_78a10(local_0, observer,
+			&measured_delay, &measured_rate, &measured_received, &measured_loss))
+		{
+			*delay = measured_delay;
+			real scaled = measured_rate * 10.0f;
+			long local_1;
+			REAL_TO_LONG(scaled, local_1);
+			*rate = local_1;
+			*received_rate = measured_received * 10 / 1024;
+			scaled = (real)measured_loss;
+			long local_2;
+			REAL_TO_LONG(scaled, local_2);
+			*loss_percent = local_2;
+			result = true;
+		}
 	}
 	return result;
 }
@@ -146,11 +158,12 @@ struct s_world_player_input
 	byte unknown2a[0x21c - 0x2a];
 };
 
+// Retail calls both initializers out of line.
+#pragma inline_depth(0)
 // @retail 0x694c0
 void function_694c0(c_class_6a600 *world, long player_index)
 {
-	long const *player_reference = &player_index;
-	long index = (word)*player_reference;
+	long index = player_index & 0xffff;
 	s_world_player_input *player = &((s_world_player_input *)g_4e8c24->data)[index];
 	short local_index = player->local_index;
 	bool local = local_index != NONE;
@@ -158,7 +171,7 @@ void function_694c0(c_class_6a600 *world, long player_index)
 	switch (g_4e6948->mode)
 	{
 	case 1: kind = 0; break;
-	case 2: kind = local ? 0 : 3; break;
+	case 2:
 	case 3: kind = local ? 0 : 3; break;
 	case 4: kind = local ? 1 : 5; break;
 	case 5: kind = local ? 0 : 4; break;
@@ -167,8 +180,9 @@ void function_694c0(c_class_6a600 *world, long player_index)
 	if (local)
 		function_155710(local_index);
 	simulation_controller_initialize((s_simulation_controller *)&world->players[index], world,
-		index, player_index, kind, &player->machine, &player->key);
+		index, player_index, kind, &player->key, &player->machine);
 }
+#pragma inline_depth()
 
 // @retail 0x6a690
 long function_6a690(long index, c_class_6a600 *world, long value)
@@ -302,7 +316,7 @@ void function_690d0(c_class_6a600 *world, long actor_index, const dword *state)
 // @retail 0x69580
 void function_69580(c_class_6a600 *world, long player_index)
 {
-	long absolute_index = (word)player_index;
+	long absolute_index = player_index & 0xffff;
 	s_simulation_world_player *player = &world->players[absolute_index];
 	player->unknown20 = 0;
 	player->player_index = NONE;
@@ -437,19 +451,31 @@ bool world_buffer_append(c_class_6a600 *world, long size, const void *data, long
 /* the texture cache lends its memory (unknown_12c0d0.cpp) */
 long function_12d400(long type, long size, long user_data, long update, long release);
 void function_12bf00(void);
-void function_199520(dword flags);
-void function_199540(dword flags);
+void game_state_modules_call_before_load(dword flags);
+void game_state_modules_call_after_load(dword flags);
 
 /* decompresses the join data into the game state (not decompiled yet:
    src/stubs/lane_d.cpp) */
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size);
+
+#ifndef H2_NATIVE_PORT
+#include "unknown_080e10.h"
+#else
+/* unknown_080e10.h pulls in the Xbox D3D headers and an rdtsc time stamp; the
+   native host has no physical-memory pump to retry against, so one attempt */
+long __stdcall function_12d2f0(long size, long user_data, long update, long release);
+#endif
 
 // @retail 0x6a8a0
 bool world_buffer_allocate(c_class_6a600 *world)
 {
 	bool result = false;
 	byte *buffer;
-	buffer = (byte *)function_12d400(1, 0x40000, 0, 0, 0);
+#ifdef H2_NATIVE_PORT
+	buffer = (byte *)function_12d2f0(0x40000, 0, 0, 0);
+#else
+	buffer = (byte *)function_80e14(0x40000, 0, 0, 0, 30, 0.1f);
+#endif
 	world->buffer = buffer;
 	if (buffer != NULL)
 	{
@@ -457,6 +483,12 @@ bool world_buffer_allocate(c_class_6a600 *world)
 		result = true;
 	}
 	return result;
+}
+
+static __forceinline void function_6ab11(s_allocator_globals *arg_0, s_simulation_block *arg_1)
+{
+ arg_0->allocator->release(arg_1, NONE);
+ arg_0->count--;
 }
 
 // @retail 0x6ab10
@@ -469,9 +501,7 @@ void function_6ab10(c_class_6a600 *world)
 		long info;
 		if (!g_4d87f8->allocator->get_info(block, &info))
 			info = NONE;
-		s_allocator_globals *globals = g_4d87f8;
-		globals->allocator->release(block, NONE);
-		globals->count--;
+		function_6ab11(g_4d87f8, block);
 		block = next;
 	}
 	world->first_block = 0;
@@ -484,6 +514,7 @@ void function_6ab10(c_class_6a600 *world)
 // @retail 0x6ab90
 bool function_6ab90(c_class_6a600 *world, const s_simulation_block_data *data)
 {
+	bool result = false;
 	s_allocator_globals *globals = g_4d87f8;
 	s_simulation_block *block = (s_simulation_block *)globals->allocator->allocate(sizeof(s_simulation_block), 0, 0);
 	if (!block)
@@ -493,19 +524,20 @@ bool function_6ab90(c_class_6a600 *world, const s_simulation_block_data *data)
 	}
 	if (block)
 		globals->count++;
-	if (!block)
-		return false;
-
-	if (world->last_block)
-		world->last_block->next = block;
-	else
-		world->first_block = block;
-	block->next = 0;
-	world->block_count++;
-	world->last_block = block;
-	block->data = *data;
-	world->unknown1210 = data->size;
-	return true;
+	if (block)
+	{
+		if (!world->last_block)
+			world->first_block = block;
+		else
+			world->last_block->next = block;
+		block->next = 0;
+		world->block_count++;
+		world->last_block = block;
+		block->data = *data;
+		world->unknown1210 = data->size;
+		result = true;
+	}
+	return result;
 }
 
 // @retail 0x6ac30
@@ -628,13 +660,14 @@ void function_6a2e0(c_class_6a600 *world)
 		s_simulation_world_player *player = &world->players[i];
 		if (player->player_index != NONE && !player->flag25)
 		{
-			s_simulation_owner_player *owner_player = &world->owner->players.players[i];
 			dword key[3];
-			key[0] = player->key[0];
-			key[1] = player->key[1];
-			key[2] = player->key[2];
-			if ((world->owner->players.player_mask & (1 << i)) && !memcmp(key, owner_player->key, sizeof(key)) && !owner_player->flag0c && (established & (1 << i)) && !player->flag24)
-				player->flag25 = true;
+			memcpy(key, player->key, sizeof(key));
+			if (world->owner->players.player_mask & (1 << i))
+			{
+				s_simulation_owner_player *owner_player = &world->owner->players.players[i];
+				if (!memcmp(key, owner_player->key, sizeof(key)) && !owner_player->flag0c && (established & (1 << i)) && !player->flag24)
+					player->flag25 = true;
+			}
 		}
 	}
 }
@@ -704,10 +737,11 @@ struct s_key_450d14;
 // @retail 0x6a3b0
 s_match_450d14 *__stdcall function_6a3b0(void *table, s_key_450d14 *key, long index)
 {
+	s_match_450d14 *result = 0;
 	c_class_6a600 *world = (c_class_6a600 *)table;
+	s_machine_address machines[16];
 	s_machine_table *machine_table = (s_machine_table *)g_4e8c20;
 	dword machine_mask = machine_table->machine_mask;
-	s_machine_address machines[16];
 	memcpy(machines, machine_table->machines, sizeof(machines));
 
 	long machine_index = NONE;
@@ -727,11 +761,11 @@ s_match_450d14 *__stdcall function_6a3b0(void *table, s_key_450d14 *key, long in
 			{
 				s_player_datum *datum = (s_player_datum *)g_4e8c24->data + (world->players[j].unknown04 & 0xffff);
 				if (datum->machine_index == machine_index && datum->controller_index == index)
-					return (s_match_450d14 *)&world->players[j];
+					{ result = (s_match_450d14 *)&world->players[j]; break; }
 			}
 		}
 	}
-	return 0;
+	return result;
 }
 
 // @retail 0x6a7f0
@@ -776,7 +810,7 @@ struct s_simulation_watcher_state
 void simulation_watcher_update_machines(s_simulation_world_owner *watcher);
 
 // @retail 0x68350
-void function_68350(s_simulation_watcher_state *state, bool *valid)
+void function_68350(bool *valid, s_simulation_watcher_state *state)
 {
 	s_simulation_watcher *watcher = (s_simulation_watcher *)g_4cf780;
 	*valid = false;
@@ -810,12 +844,12 @@ bool world_buffer_complete(c_class_6a600 *world, long size)
 	{
 		long decompressed_size;
 		byte *destination = game_state_globals.base_address;
-		function_199520(0);
+		game_state_modules_call_before_load(0);
 		if (function_199740(world->buffer, *size_reference, destination, &decompressed_size) && decompressed_size == 0x3fe000)
 			result = true;
 		else
 			function_12bf00();
-		function_199540(0);
+		game_state_modules_call_after_load(0);
 		function_12d520((long)world->buffer);
 		world->buffer = 0;
 		world->buffer_size = NONE;
@@ -993,10 +1027,10 @@ void simulation_world_view_established(c_class_6a600 *world, c_simulation_view *
 		if (g_4cf778)
 		{
 			g_4cf778 = false;
-			function_6a560(world, true);
-			return;
+			
 		}
-		g_4cf779 = true;
+		else
+            g_4cf779 = true;
 		function_6a560(world, true);
 	}
 }
@@ -1069,7 +1103,7 @@ void function_69fe0(c_class_6a600 *world)
 }
 
 /* the game's main update (not decompiled yet: src/stubs/lane_d.cpp) */
-void function_137fe0(void);
+void game_loop_tick(void);
 
 long g_4cf774;
 
@@ -1156,19 +1190,23 @@ void function_69350(c_class_6a600 *world, bool value)
 	{
 		bool buffered;
 		while (function_69300(world, &buffered) > 0)
-			function_137fe0();
+			game_loop_tick();
 	}
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x680c0
 long function_680c0(bool *buffered)
 {
 	*buffered = false;
+	_ReadWriteBarrier();
 	long result = 0x7fffffff;
 	if (g_4cf770 && SIMULATION_WORLD->state)
 		result = function_69300(SIMULATION_WORLD, buffered);
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
 
 static inline void world_reset_to_substate_1(c_class_6a600 *world)
 {
@@ -1284,31 +1322,38 @@ bool simulation_world_queue_block(c_class_6a600 *world, const s_simulation_block
 	bool result = false;
 	long expected = world->unknown1210 + 1;
 
-	if (!world_receiving_join_data(world))
-	{
-		if (data->size < expected)
-			return result;
-		if (data->size == expected && (world->unknown18 == 4 || world->flag25))
-		{
-			if (function_6ab90(world, data))
-			{
-				while (world->flag25 && g_4e6948 && g_4e6948->flag1120 && !(g_4cf770 && g_4cf772) && !world->flag2c)
-				{
-					bool buffered;
-					if (function_69300(world, &buffered) <= 0)
-						break;
-					function_137fe0();
-				}
-				result = true;
-			}
-			else
-			{
-				g_4cf771 = true;
-			}
-			return result;
-		}
-	}
+	if (world_receiving_join_data(world))
+		goto invalid;
+	if (expected > data->size)
+		goto done;
+	if (data->size != expected)
+		goto invalid;
+	if (world->unknown18 == 4 || world->flag25)
+		goto valid;
+
+invalid:
 	world->flag2c = true;
+	goto done;
+
+valid:
+	if (function_6ab90(world, data))
+	{
+		bool flag25 = world->flag25;
+		while (flag25 && g_4e6948 && g_4e6948->flag1120 && !(g_4cf770 && g_4cf772) && !world->flag2c)
+		{
+			bool buffered;
+			if (function_69300(world, &buffered) <= 0)
+				break;
+			game_loop_tick();
+		}
+		result = true;
+	}
+	else
+	{
+		g_4cf771 = true;
+	}
+
+done:
 	return result;
 }
 
@@ -1533,7 +1578,8 @@ static __forceinline bool view_needs_join_buffer(short type)
 long function_6a040(c_class_6a600 *world, c_simulation_view *view)
 {
  long result = 0;
- if (view->state < 3)
+ long state = view->state;
+ if (state < 3)
  {
   bool ready = view_needs_join_buffer(view->type);
   if (!ready)
@@ -1544,7 +1590,8 @@ long function_6a040(c_class_6a600 *world, c_simulation_view *view)
   }
   if (ready) view->set_state(3, view->state_id);
  }
- if (view->state == 3)
+ state = view->state;
+ if (state == 3)
  {
   if (!view_needs_join_buffer(view->type))
   {
@@ -1578,12 +1625,14 @@ long function_6a040(c_class_6a600 *world, c_simulation_view *view)
  }
  if (view->state == 4)
  {
-  if (!view->function_85cb0()) return 0;
-  dword current = view->player_mask;
-  dword players = function_696f0(world);
-  bool ready = (current & players) == players;
-  if (!ready) return 0;
-  result = 1;
+  result = 0;
+  if (view->function_85cb0())
+  {
+   dword current = view->player_mask;
+   dword players = function_696f0(world);
+   if ((current & players) == players)
+    result = 1;
+  }
  }
  if (result == 1)
  {
@@ -1707,19 +1756,20 @@ void function_68f30(c_class_6a600 *world)
 
 
 void function_69a00(const byte *input, c_class_6a600 *world, dword mask);
-void function_69b50(const byte *input, c_class_6a600 *world, dword mask);
+void function_69b50(c_class_6a600 *world, dword mask, const byte *input);
 
 // @retail 0x684e0
 void function_684e0(byte *block)
 {
- c_class_6a600 *world = SIMULATION_WORLD;
- if (world->state != 3 && world->state != 5)
+ long state = SIMULATION_WORLD->state;
+ if (state != 3 && state != 5)
  {
-  if (world->state == 2) function_69880(world, block);
-  else if (world->state == 4)
+  c_class_6a600 *world = SIMULATION_WORLD;
+  if (state == 2) function_69880(world, block);
+  else if (state == 4)
   {
-   function_69a00(block + 0xc, world, *(dword *)(block + 8));
-   function_69b50(block + 0x610, world, *(dword *)(block + 0x5cc));
+   function_69a00(block + 0xc, SIMULATION_WORLD, *(dword *)(block + 8));
+   function_69b50(world, *(dword *)(block + 0x5cc), block + 0x610);
   }
  }
  SIMULATION_WORLD->unknown28 = *(long *)block + 1;
@@ -1794,6 +1844,12 @@ void function_195e90(void);
 void function_68c00(s_simulation_world_owner *owner, void *definitions,
  s_simulation_distribution *distribution, c_class_6a600 *world);
 
+// score 35 (was 35): retail keeps the watcher in edx and the address of its
+// +8 field in eax, tests the flag with test al, al and clears with immediate
+// zeros; ours folds +8 into the stores and keeps zero in edx (55 bytes against
+// 73). Other forms of the link and the watcher, an early return, inline
+// functions, const references, a barrier and volatile stores all stay at
+// score 35; the permutation runs found no semantics-preserving improvement.
 // @retail 0x67f60
 void function_67f60(void)
 {
@@ -1816,7 +1872,7 @@ void function_67f60(void)
 // @retail 0x6ae20
 bool function_6ae20(c_class_6a600 *world)
 {
- long mode = world->state == 2 ? 2 : 4;
+ long mode = 4 - 2 * (world->state == 2);
  s_simulation_world_owner *owner = world->owner;
  s_simulation_distribution *distribution = world->distribution;
  long local = *(long *)((byte *)world + 0x14);
@@ -1844,6 +1900,8 @@ void __stdcall function_162060(void *engine);
 void function_196470(void);
 void function_196780(void);
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x6aee0
 bool function_6aee0(c_class_6a600 *world)
 {
@@ -1859,7 +1917,8 @@ bool function_6aee0(c_class_6a600 *world)
   s_machine_address address = world->local_address;
   byte preserve = world->unknown2f;
   function_68e20(world);
-  *(volatile byte *)&g_4e6948->mode = 3;
+  *(byte *)&g_4e6948->mode = 3;
+  _ReadWriteBarrier();
   function_68c00(owner, (void *)g_4cf784, distribution, world);
   world->local_address = address;
   world->unknown0c = true;
@@ -1900,6 +1959,7 @@ bool function_6aee0(c_class_6a600 *world)
  }
  return result;
 }
+#pragma function(_ReadWriteBarrier)
 
 byte g_4cf77a;
 void simulation_world_reset_replication(c_class_6a600 *world);
@@ -1918,7 +1978,7 @@ void function_687b0(void)
 
 bool function_83220(s_simulation_world_owner *watcher);
 bool function_138860(void);
-bool function_138a10(void);
+bool game_finish_countdown_done(void);
 bool function_138840(void);
 void __stdcall function_18f1c0(long value);
 
@@ -1941,8 +2001,9 @@ void function_680f0(void)
  function_68f30((c_class_6a600 *)g_4cf77c);
  if (g_4cf772) goto done;
  {
+  long state = ((c_class_6a600 *)g_4cf77c)->state;
   c_class_6a600 *world = (c_class_6a600 *)g_4cf77c;
-  if ((world->state == 3 || world->state == 5) && world->flag2c)
+  if ((state == 3 || state == 5) && world->flag2c)
   {
    function_068750();
    if (g_4cf772) goto done;
@@ -1950,7 +2011,7 @@ void function_680f0(void)
  }
  {
   bool (*query_mode)(void) = function_138860;
-  bool (*query_pending)(void) = function_138a10;
+  bool (*query_pending)(void) = game_finish_countdown_done;
   bool (*query_network)(void) = function_138840;
   if (query_mode() && query_pending() && !query_network()) function_18f1c0(6);
  }
@@ -1965,6 +2026,7 @@ void simulation_watcher_reset(s_simulation_world_owner *watcher);
 void function_83000(s_simulation_world_owner *watcher);
 void function_195a40(void);
 
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x67ee0
 void function_67ee0(void)
 {
@@ -1972,6 +2034,7 @@ void function_67ee0(void)
  {
   g_4cf771 = false;
   g_4cf772 = false;
+  _ReadWriteBarrier();
   long mode = g_4e6948->mode;
   s_simulation_distribution *distribution = 0;
   if (mode >= 4 && mode <= 5)
@@ -1988,6 +2051,7 @@ void function_67ee0(void)
   g_4cf778 = true;
  }
 }
+#pragma function(_ReadWriteBarrier)
 
 
 struct s_player_object_motion
@@ -2000,8 +2064,8 @@ struct s_player_object_motion
  vector3f angular;
 };
 struct s_z_transform_state;
-bool function_ab9f0(const s_z_transform_state *state);
-void function_82980(s_player_object_motion *motion, long player_index);
+__declspec(noinline) bool function_ab9f0(const s_z_transform_state *state);
+void function_82980(long player_index, s_player_object_motion *motion);
 bool __stdcall function_84990(s_simulation_controller *controller, s_player_action *output);
 bool __stdcall function_8b660(s_simulation_world_actor *actor, long *index, s_unit_state_c6ef0 *state);
 c_simulation_view *function_6ad40(c_class_6a600 *world, const s_machine_address *address);
@@ -2021,17 +2085,18 @@ void __stdcall function_69110(c_class_6a600 *world, s_simulation_input_69110 *in
 {
  input->player_mask = 0;
  input->actor_mask = 0;
- for (long i = 0; i < 16; i++)
+ s_simulation_world_player *player = world->players;
+ for (long i = 0; i < 16; i++, player++)
  {
-  s_simulation_world_player *player = &world->players[i];
   if (player->player_index != NONE &&
    function_84990((s_simulation_controller *)player, &input->field_c_10[i]))
    input->player_mask |= 1 << i;
  }
- for (long j = 0; j < 16; j++)
+ const long *state_cursor = &world->players[0].unknown08;
+ for (long j = 0; j < 16; j++, state_cursor = (const long *)((const byte *)state_cursor + sizeof(s_simulation_world_player)))
  {
-  s_simulation_world_player *player = &world->players[j];
-  if (player->player_index != NONE && player->unknown08 == 4)
+  s_simulation_world_player *player = (s_simulation_world_player *)((byte *)state_cursor - 8);
+  if (player->player_index != NONE && *state_cursor == 4)
   {
    c_simulation_view *view = function_6ad40((c_class_6a600 *)player->unknown20,
     (const s_machine_address *)player->unknown18);
@@ -2046,17 +2111,17 @@ void __stdcall function_69110(c_class_6a600 *world, s_simulation_input_69110 *in
       s_player_object_motion motion;
       memcpy(&motion, &source->data720[player->player_index], sizeof(motion));
       source->mask71c &= ~bit;
-      bool (*validate)(const s_z_transform_state *) = function_ab9f0;
-      if (validate((const s_z_transform_state *)&motion))
-       function_82980(&motion, player->unknown04);
+      if (function_ab9f0((const s_z_transform_state *)&motion))
+       function_82980(player->unknown04, &motion);
      }
     }
    }
   }
  }
- for (long k = 0; k < 16; k++)
+ long k = 0;
+ s_simulation_world_actor *actor = world->actors;
+ for (; k < 16; k++, actor++)
  {
-  s_simulation_world_actor *actor = &world->actors[k];
   if (actor->actor_index != NONE &&
    function_8b660(actor, &input->actor_indices[k], (s_unit_state_c6ef0 *)input->actor_states[k]))
    input->actor_mask |= 1 << k;
@@ -2076,7 +2141,7 @@ void function_69260(c_class_6a600 *world, s_simulation_block_data *block)
 		bool *valid = (bool *)(data + 0xdd0);
 		s_simulation_watcher_state *state = (s_simulation_watcher_state *)(data + 0xdd4);
 		*(dword *)(data + 0x4044) = g_4e7408->unknown0;
-		function_68350(state, valid);
+		function_68350(valid, state);
 		function_83610((s_simulation_world_owner *)g_4cf780, (long *)(data + 0xe38), (s_simulation_player_update *)(data + 0xe3c));
 		bool active = function_68250();
 		*(bool *)(data + 4) = active;
@@ -2121,6 +2186,7 @@ bool simulation_player_remove_if_left(const s_simulation_player_identity *identi
 bool __stdcall function_85140(const s_simulation_player_update *update);
 bool __stdcall function_854c0(const s_simulation_player_update *update);
 
+#pragma inline_depth(0)
 // @retail 0x683a0
 void __stdcall function_683a0(byte *block)
 {
@@ -2129,17 +2195,15 @@ void __stdcall function_683a0(byte *block)
 	{
 		if (input->actor_mask & (1 << i))
 		{
-			long index = input->actor_indices[i];
-			if (function_badc0(index, 3))
-				function_c6de0(index, input->actor_states[i]);
+			if (function_badc0(input->actor_indices[i], 3))
+				function_c6de0(input->actor_indices[i], input->actor_states[i]);
 		}
 	}
 	if (*(bool *)(block + 0xdd0))
 		function_14c630(*(dword *)(block + 0xdd4), (const s_machine_address *)(block + 0xdd8));
-	long count = *(long *)(block + 0xe38);
-	s_simulation_player_update *update = (s_simulation_player_update *)(block + 0xe3c);
-	for (long j = 0; j < count; j++, update++)
+	for (long j = 0; j < *(long *)(block + 0xe38); j++)
 	{
+		s_simulation_player_update *update = (s_simulation_player_update *)(block + 0xe3c) + j;
 		bool result;
 		switch (update->type)
 		{
@@ -2171,11 +2235,12 @@ void __stdcall function_683a0(byte *block)
 	if (*(bool *)(block + 0x403c) &&
 		(SIMULATION_WORLD->state == 3 || SIMULATION_WORLD->state == 5))
 	{
-		for (long k = 0; k < 4; k++)
+		for (short k = 0; k < 4; k++)
 			g_46e320[k](0);
 		g_46e320[4](0);
 	}
 }
+#pragma inline_depth(255)
 
 bool simulation_watcher_changed(s_simulation_world_owner *watcher);
 

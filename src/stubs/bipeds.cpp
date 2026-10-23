@@ -13,20 +13,6 @@ struct s_biped_ground_collision;
 
 
 
-// @stub 0x1e5a60
-void function_1e5a60(s_biped_physics_result *result, s_biped_physics_input const *input, void *physics) { }
-
-
-
-
-// @stub 0xe5d50
-void __stdcall function_e5d50(long arg_159e6d, long target_index, vector3f *offset, point3f *point) { }
-
-// @stub 0xe57e0
-void __stdcall function_e57e0(long arg_159e6d) { }
-
-// @stub 0x1ed340
-void __stdcall function_1ed340(void *physics, long arg_159e6d) { }
 
 
 
@@ -37,16 +23,13 @@ void __stdcall function_1ed340(void *physics, long arg_159e6d) { }
 
 
 
-// @stub 0xe63b0
-bool function_e63b0(vector3f const *aim, bool flag) { return 0; }
 
 
 
 
-// @stub 0xe5790
-void function_e5790(long arg_159e6d) { }
 
-// @stub 0x1e55d0
-void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output) { }
 
+struct s_state_c570;
+// @stub 0x1ec690
+void function_1ec690(byte const *input, s_state_c570 *state, byte *output) {}
 

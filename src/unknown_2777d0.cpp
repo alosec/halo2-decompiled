@@ -504,10 +504,9 @@ void c_interface_278b40::slot2(s_278da0_group *group)
 {
 	for (long i = 0; i < group->count; i++)
 	{
-		s_278da0_entry *entry = &group->entries[i];
-		if (body_278da0(entry->first)->m_fixed || body_278da0(entry->second)->m_fixed)
+		if (body_278da0(group->entries[i].first)->m_fixed || body_278da0(group->entries[i].second)->m_fixed)
 		{
-			c_278da0_resource *resource = entry->resource;
+			c_278da0_resource *resource = group->entries[i].resource;
 			if (resource)
 			{
 				c_278da0_resource *owner = resource->owner;
@@ -693,19 +692,17 @@ void c_interface_278b40::slot1(s_278da0_group *group)
 		if (!entry->resource)
 		{
 			s_278a70_body *first = (s_278a70_body *)(entry->first - 0x10);
-			s_278a70_body *second = (s_278a70_body *)(entry->second - 0x10);
+			s_278a70_body *second = (s_278a70_body *)(group->entries[i].second - 0x10);
 			hkRigidBody *first_body = first->type == 1 ? (hkRigidBody *)first->entity : NULL;
 			hkRigidBody *second_body = second->type == 1 ? (hkRigidBody *)second->entity : NULL;
-			s_278b60_filter *filter = group->context->filter_object;
-			if (filter && !((c_278b60_filter *)filter->interface08)->test0(first, second).m_bool)
+			c_library_30c190 *context = group->context;
+			if (context->filter_object && !((c_278b60_filter *)context->filter_object->interface08)->test0(first, second).m_bool)
 			{
 				group->entries[i].resource = NULL;
 				continue;
 			}
 			s_278b60_dispatch *dispatch = group->context->dispatch;
-			long first_type = *((char *)first_body + 0x48);
-			long second_type = *((char *)second_body + 0x48);
-			c_278da0_resource *owner = dispatch->table->factories[first_type * 8 + second_type]->create(first, second, dispatch);
+			c_278da0_resource *owner = dispatch->table->factories[*((char *)first_body + 0x48) * 8 + *((char *)second_body + 0x48)]->create(first, second, dispatch);
 			dispatch = group->context->dispatch;
 			s_278b60_table *table = dispatch->table;
 			long first_shape = (*(c_278b60_shape **)first)->type();
@@ -718,8 +715,8 @@ void c_interface_278b40::slot1(s_278da0_group *group)
 			{
 				hkRigidBody *active_first = first->type == 1 ? (hkRigidBody *)first->entity : NULL;
 				hkRigidBody *active_second = second->type == 1 ? (hkRigidBody *)second->entity : NULL;
-				if ((active_first->m_motion->getType() != 6 && !active_first->m_fixed) ||
-					(active_second->m_motion->getType() != 6 && !active_second->m_fixed))
+				if ((active_first->m_motion->kind_code() != 6 && !active_first->m_fixed) ||
+					(active_second->m_motion->kind_code() != 6 && !active_second->m_fixed))
 				{
 					if (group->context->filter()->test1(first, second).m_bool)
 						group->entries[i].unknown0c = 0;
@@ -978,10 +975,10 @@ void c_interface_277890::event0(void *arg_0)
 			real local_3 = 1.0f;
 			real local_4 = 1.0f;
 			if (*((byte *)local_1 + 0x48) == 1 && *((byte *)local_2 + 0x48) == 1 &&
-				((hkRigidBody *)local_1)->m_motion->getType() != 6 &&
-				((hkRigidBody *)local_1)->m_motion->getType() != 7 &&
-				((hkRigidBody *)local_2)->m_motion->getType() != 6 &&
-				((hkRigidBody *)local_2)->m_motion->getType() != 7 &&
+				((hkRigidBody *)local_1)->m_motion->kind_code() != 6 &&
+				((hkRigidBody *)local_1)->m_motion->kind_code() != 7 &&
+				((hkRigidBody *)local_2)->m_motion->kind_code() != 6 &&
+				((hkRigidBody *)local_2)->m_motion->kind_code() != 7 &&
 				function_181e90(((s_scale_owner *)local_1)->get_inverse_scale(),
 					((s_scale_owner *)local_2)->get_inverse_scale()))
 			{

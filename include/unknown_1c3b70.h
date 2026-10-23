@@ -27,7 +27,7 @@ struct c_shape_global_owner : c_shape_counted_base
  virtual void v9() {}
  virtual void v10() {}
  virtual void v11() {}
- virtual void v12() {}
+ virtual dword next_key(dword key);
  virtual void *make_shape(dword key, void *storage);
 	void operator delete(void *block)
 	{

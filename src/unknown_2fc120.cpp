@@ -1,59 +1,51 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): a list of shapes' bounding box: the
+// union of every child's box.
+#include <xmmintrin.h>
 
-// @flags /O2 /Gr
-
-struct __declspec(align(16)) s_physics_aabb
+struct aabb_2fc120
 {
-    float minimum[4];
-    float maximum[4];
+	__m128 minimum;
+	__m128 maximum;
 };
-static_assert(sizeof(s_physics_aabb) == 0x20, "physics AABB layout");
 
-class c_physics_shape_query
+class shape_2fc120
 {
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void get_aabb(void *transform, void *tolerance, s_physics_aabb *result);
+	virtual void slot_0() {}
+	virtual void slot_1() {}
+	virtual void slot_2() {}
+	virtual void slot_3() {}
+	virtual void slot_4() {}
+	virtual void slot_5() {}
+	virtual void box_around(void const *transform, float tolerance, aabb_2fc120 *out) const {}
 };
 
-struct s_physics_shape_collection_entry
+struct child_2fc120
 {
-    c_physics_shape_query *shape;
-    long key;
+	shape_2fc120 *shape;
+	long field_4;
 };
-static_assert(sizeof(s_physics_shape_collection_entry) == 8, "shape collection entry layout");
 
-class c_physics_shape_collection
+class list_shape_2fc120
 {
-    byte field_0[0x0c];
-    s_physics_shape_collection_entry *entries;
-    long count;
 public:
-    void function_2fc120(void *transform, void *tolerance, s_physics_aabb *result);
+	char pad_0[0xc];
+	child_2fc120 *children;
+	long child_count;
+
+	void box_around(void const *transform, float tolerance, aabb_2fc120 *out) const;
 };
 
 // @retail 0x2fc120
-void c_physics_shape_collection::function_2fc120(
-    void *transform,
-    void *tolerance,
-    s_physics_aabb *result)
+void list_shape_2fc120::box_around(void const *transform, float tolerance, aabb_2fc120 *out) const
 {
-    entries[0].shape->get_aabb(transform, tolerance, result);
-    for (long index = 1; index < count; index++)
-    {
-        s_physics_aabb child;
-        entries[index].shape->get_aabb(transform, tolerance, &child);
-        for (long component = 0; component < 4; component++)
-        {
-            if (child.minimum[component] < result->minimum[component])
-                result->minimum[component] = child.minimum[component];
-            if (child.maximum[component] > result->maximum[component])
-                result->maximum[component] = child.maximum[component];
-        }
-    }
+	children[0].shape->box_around(transform, tolerance, out);
+	for (long i = 1; i < child_count; i++)
+	{
+		aabb_2fc120 child;
+		children[i].shape->box_around(transform, tolerance, &child);
+		out->minimum = _mm_min_ps(out->minimum, child.minimum);
+		out->maximum = _mm_max_ps(out->maximum, child.maximum);
+	}
 }

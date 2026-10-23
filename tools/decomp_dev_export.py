@@ -1,6 +1,7 @@
-"""Writes an objdiff progress report for decomp.dev from config/functions.csv.
+"""Writes an objdiff progress report for ByteMatch from config/functions.csv.
 
-decomp.dev charts a project from an objdiff report (report.proto version 2)
+ByteMatch (bytematch.dev, formerly decomp.dev) charts a project from an objdiff
+report (report.proto version 2)
 uploaded as a GitHub Actions artifact named ``<version>_report``. This repo's
 checker does not emit that file: tools/check.py writes build/report.json as a
 map of retail addresses, and it needs orig/default.xbe. The committed inventory
@@ -23,7 +24,8 @@ without one are grouped by 64 KB address range (``asm/0x1e0000``). The csv's
         [--check-report build/report.json]
 
 ``--scope game`` is the README headline (owner ``game``). ``in-scope`` is
-check.py's second line: everything except ``eh`` and ``third:``. ``--check-report``
+check.py's last line: everything except ``eh`` and the third-party libraries
+other than Havok (``inventory.in_scope_owner``). ``--check-report``
 overlays statuses from check.py's build/report.json when one is already on disk.
 It does not read the XBE and does not invent fuzzy-match bytes.
 """
@@ -34,7 +36,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 
-from inventory import read_rows
+from inventory import in_scope_owner, read_rows
 from xbe import FUNCTIONS_CSV
 
 # objdiff objdiff_core::bindings::report::REPORT_VERSION
@@ -60,7 +62,7 @@ def in_scope(row, scope):
     if scope == 'game':
         return owner == 'game'
     if scope == 'in-scope':
-        return owner != 'eh' and not owner.startswith('third:')
+        return in_scope_owner(owner)
     if scope == 'all':
         return True
     raise SystemExit(f'unknown scope {scope!r} (expected {"|".join(SCOPES)})')

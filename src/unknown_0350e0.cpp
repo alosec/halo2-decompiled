@@ -1,8 +1,24 @@
+#include "filter_storage.h"
+#include "material_records_storage.h"
+#include "render_source_storage.h"
+#include "visibility_storage.h"
+#include "camera_storage.h"
+#include "frame_storage.h"
+#include "reset_storage.h"
 // @flags /O2 /arch:SSE /Gr
+#include "flags_storage.h"
+#include "filter_buffer_storage.h"
+#include "light_visibility_storage.h"
+#include "light_definition_storage.h"
+#include "light_frame_storage.h"
+#include "orientations_storage.h"
+#include "projection_storage.h"
+#include "view_context_storage.h"
 /* UNKNOWN_0350E0.CPP: format conversion and geometry helpers */
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "depth_groups_storage.h"
 #include <string.h>
 #include <math.h>
 #include <xtl.h>
@@ -12,20 +28,14 @@
 #include "unknown_0494b0.h"
 
 
-struct s_frame_offset
-{
-    point3f position;
-    vector3f forward;
-    vector3f up;
-};
-extern s_frame_offset g_485618;
+
 matrix3x3 g_467104 = {
     { 1.0f, 0.0f, 0.0f },
     { 0.0f, 1.0f, 0.0f },
     { 0.0f, 0.0f, 1.0f }
 };
 
-PRIVATE __forceinline void rotation_from_axis(vector3f const *axis, double angle, matrix3x3 *matrix)
+PRIVATE __forceinline void rotation_from_axis(vector3f const *axis, real angle, matrix3x3 *matrix)
 {
     real sine = (real)sin(angle);
     real cosine = (real)cos(angle);
@@ -59,11 +69,16 @@ PRIVATE __forceinline vector3f rotate_axis_vector(matrix3x3 const *matrix, vecto
 // @retail 0x39e50
 void __stdcall function_39e50(real step)
 {
-    vector3f axis0 = g_485618.forward;
+    real axis0_i = g_485618.forward.i, axis0_j = g_485618.forward.j, axis0_k = g_485618.forward.k;
+    vector3f axis0;
+    axis0.i = axis0_i;
+    axis0.j = axis0_j;
+    axis0.k = axis0_k;
     vector3f axis1 = g_485618.up;
     matrix3x3 first, second;
-    rotation_from_axis(&axis0, (double)step * 0.5f, &first);
-    rotation_from_axis(&axis1, (double)step * 0.30000001192092896f, &second);
+    rotation_from_axis(&axis0, step * 0.5f, &first);
+    axis0 = axis1;
+    rotation_from_axis(&axis0, step * 0.30000001192092896f, &second);
     vector3f forward = g_467104.forward;
     vector3f left = g_467104.left;
     vector3f up = g_467104.up;
@@ -83,7 +98,7 @@ void __stdcall function_39e50(real step)
 
 struct s_frustum_1648d0;
 struct s_camera_163db0;
-bool function_163db0(s_frustum_1648d0 *result, box2f const *rectangle, s_camera_163db0 const *camera, long identifier);
+bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 real function_30bf0(vector3f *vector);
 
@@ -101,11 +116,28 @@ struct s_motion_state_groups
 // @retail 0x39880
 inline void function_39880(s_motion_state_groups *state)
 {
-	long i;
-	for (i = 0; i < state->large_count; ++i)
-		function_36f50(state->large_entries + i * 0x3a8);
-	for (i = 0; i < state->count; ++i)
-		function_39a80(state->entries + i * 0x8c);
+    long i = 0;
+    if (state->large_count > 0)
+    {
+        long offset = 0;
+        do
+        {
+            function_36f50(state->large_entries + offset);
+            ++i;
+            offset += 0x3a8;
+        } while (i < state->large_count);
+    }
+    i = 0;
+    if (state->count > 0)
+    {
+        long offset = 0;
+        do
+        {
+            function_39a80(state->entries + offset);
+            ++i;
+            offset += 0x8c;
+        } while (i < state->count);
+    }
 }
 
 real g_4670e4 = 0.85f;
@@ -207,6 +239,11 @@ extern real g_4670fc, g_467100, g_509428;
 void function_398d0(real seconds)
 {
 	real const *time_reference = &seconds;
+	/* referenced first in the order the path without a record loads them */
+	(void)g_509424;
+	(void)g_4670fc;
+	(void)g_509428;
+	(void)g_467100;
 	s_fade_record *record = g_50942c;
 	if (record && record->marker == 0xdeadbeef)
 	{
@@ -464,27 +501,11 @@ real function_33670(long index)
     return result;
 }
 
-union s_transition_scalar
-{
-	real value;
-	long bits;
-};
 
-struct s_transition_state
-{
-	union
-	{
-		long flags;
-		struct { byte active; byte changed; word unknown02; };
-	};
-	long index;
-	long unknown08;
-	s_transition_scalar start;
-	s_transition_scalar elapsed;
-	s_transition_scalar output;
-};
 
-s_transition_state g_4670cc = {0, 0, 0, {0.0f}, {-1.0f}, {0.0f}};
+
+
+s_filter_storage g_filter_storage = {{0, 0, 0, {0.0f}, {-1.0f}, {0.0f}}};
 struct s_transition_filter
 {
 	long unknown00;
@@ -492,7 +513,6 @@ struct s_transition_filter
 	s_transition_scalar delta;
 };
 s_transition_filter g_4b99a0;
-byte g_4b99b0[0x4c];
 
 // @retail 0x28950
 void function_28950(void)
@@ -518,8 +538,6 @@ void function_28980(long index)
 	g_4670cc.output.value = 0.0f;
 }
 
-extern bool g_4b9ee9;
-extern long g_4b9eec;
 
 struct s_cluster_tag_entry
 {
@@ -534,27 +552,30 @@ struct s_cluster_tag_table
 	s_cluster_tag_entry *entries;
 };
 
-struct rigid_transform_scaled
-{
-	quaternionf rotation;
-	point3f position;
-	real scale;
-};
+
 
 struct s_render_model_definition;
 void render_model_get_default_orientations(s_render_model_definition const *definition, rigid_transform_scaled *orientations);
 void render_model_build_node_matrices(vector3f const *forward, vector3f const *up, point3f const *position,
 	s_render_model_definition const *definition, transform4x3f *matrices, rigid_transform_scaled const *orientations);
 
-bool g_4c5038;
-long g_4c503c;
-transform4x3f g_4c5040[255];
+// The flag, the count and the matrices are one block: the matrices are passed by address.
+struct s_node_matrix_cache
+{
+	bool valid;
+	long count;
+	transform4x3f matrices[255];
+};
+s_node_matrix_cache g_4c5038;
 
 void function_4c690(long tag, transform4x3f const *nodes);
 bool __stdcall function_3ebd0(vector3f const *offset, transform4x3f const *matrices, transform4x3f *out, long count);
 void function_14bc0(short index, short element, bool use_depth);
 extern long g_4858b8;
 
+// score 17 (was 17): the three calls are set up differently: retail passes the globals
+// in ECX and the word in EAX where ours uses EDX, and the last call's argument order
+// differs (the callees' conventions are fixed in their own files).
 // @retail 0x3ede0
 void function_3ede0(void)
 {
@@ -569,15 +590,15 @@ void function_3ede0(void)
 		if (index != NONE) data = g_4e3b44[index & 0xffff].bytes;
 		byte *definition = g_4e3b44[*(long *)(data + 4) & 0xffff].bytes;
 		long count = *(long *)(definition + 0x48);
-		if (count != g_4c503c)
+		if (count != g_4c5038.count)
 		{
-			g_4c503c = count;
-			g_4c5038 = false;
+			g_4c5038.count = count;
+			g_4c5038.valid = false;
 			return;
 		}
-		if (g_4c5038)
+		if (g_4c5038.valid)
 		{
-			function_3ebd0(g_4687a4, g_4c5040, matrices, count);
+			function_3ebd0(g_4687a4, g_4c5038.matrices, matrices, count);
 			function_14bc0((short)g_4858b8, 0, true);
 			function_4c690(*(long *)(data + 4), matrices);
 		}
@@ -604,12 +625,14 @@ void function_3ea60(void)
 		byte *definition = g_4e3b44[*(long *)(data + 4) & 0xffff].bytes;
 		scratch.count = *(long *)(definition + 0x48);
 		render_model_get_default_orientations((s_render_model_definition *)definition, scratch.orientations);
-		g_4c5038 = true;
-		g_4c503c = *(long *)(definition + 0x48);
+		g_4c5038.valid = true;
+		g_4c5038.count = *(long *)(definition + 0x48);
 		render_model_build_node_matrices(g_4687a8, g_4687b0, g_468788,
-			(s_render_model_definition *)definition, g_4c5040, scratch.orientations);
+			(s_render_model_definition *)definition, g_4c5038.matrices, scratch.orientations);
 	}
 }
+
+__declspec(noinline) real function_3eb70(void);
 
 // @retail 0x3eb70
 real function_3eb70(void)
@@ -630,7 +653,7 @@ real function_3eb70(void)
 }
 
 // @retail 0x350e0
-void function_350e0(real *out, real const *a, real const *b, real x)
+void function_350e0(real const *a, real const *b, real *out, real x)
 {
 	real scale;
 	real v;
@@ -840,6 +863,7 @@ struct s_format_block_table
 	s_format_block *blocks;
 };
 
+__declspec(noinline)
 // @retail 0x4cbb0
 long function_4cbb0(long tag_index, dword block_index)
 {
@@ -948,7 +972,7 @@ real function_288e0(real value)
 }
 
 // @retail 0x36a40
-real function_36a40(real mean, real spread, real minimum, real maximum)
+inline real function_36a40(real mean, real spread, real minimum, real maximum)
 {
     real const *mean_reference = &mean;
     real const *spread_reference = &spread;
@@ -983,9 +1007,11 @@ void function_3e4e0(dword *current, dword const *target, real step)
 	color3f a, b;
 	unpack_color3f(*current, &a);
 	unpack_color3f(*target, &b);
-	a.red += color_delta(b.red - a.red, 0.0f - step, step);
-	a.green += color_delta(b.green - a.green, 0.0f - step, step);
-	a.blue += color_delta(b.blue - a.blue, 0.0f - step, step);
+	real red_delta = b.red - a.red;
+	real lower = 0.0f - step;
+	a.red += color_delta(red_delta, lower, step);
+	a.green += color_delta(b.green - a.green, lower, step);
+	a.blue += color_delta(b.blue - a.blue, lower, step);
 	*current = pack_color3f(&a);
 }
 
@@ -1005,27 +1031,40 @@ void function_4b160(long first, s_4b160_entry *entries, long mode, long last)
 {
 	(void)&entries;
 	(void)&mode;
-	long const *last_reference = &last;
-	long begin = first + 1;
-	for (long i = first; i <= *last_reference; ++i)
+	long const volatile *last_reference = &last;
+    long bound = *last_reference;
+	volatile long begin;
 	{
-		for (long j = begin; j <= *last_reference; ++j)
+    long i = first;
+    if (i <= bound)
+    {
+        begin = first + 1;
+        do
+        {
+		for (long j = begin; j <= bound; ++j)
 		{
+			s_4b160_entry *previous = &entries[j - 1];
+			s_4b160_entry *current = &entries[j];
 			bool swap;
 			switch (mode)
 			{
-			case 0: swap = entries[j].distance > entries[j - 1].distance; break;
-			case 1: swap = entries[j - 1].key < entries[j].key; break;
-			default: swap = entries[j].depth > entries[j - 1].depth; break;
+			case 0: swap = current->distance > previous->distance; break;
+			case 1: swap = previous->key < current->key; break;
+			default: swap = current->depth > previous->depth; break;
 			}
 			if (swap)
 			{
-				s_4b160_entry temporary = entries[j - 1];
-				entries[j - 1] = entries[j];
-				entries[j] = temporary;
+				s_4b160_entry temporary = *previous;
+				*previous = *current;
+				*current = temporary;
+                bound = *last_reference;
 			}
 		}
-	}
+	
+            ++i;
+        } while (i <= bound);
+    }
+    }
 }
 
 real g_509418;
@@ -1057,44 +1096,49 @@ struct s_vector_perturbation
 	real step;
 };
 
+extern "C" void _ReadWriteBarrier(void);
+__declspec(noinline)
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x4b3d0
 void function_4b3d0(s_vector_perturbation *state)
 {
 	state->speed_fraction = function_36a40(state->speed_fraction, state->speed_spread * g_509418, 0.0f, 1.0f);
 	real speed = (state->speed_maximum - state->speed_minimum) * state->speed_fraction + state->speed_minimum;
-	state->velocity.i = state->direction.i * speed;
-	state->velocity.j = state->direction.j * speed;
-	state->velocity.k = state->direction.k * speed;
+	vector3f *velocity = &state->velocity;
+	velocity->i = state->direction.i * speed;
+	velocity->j = state->direction.j * speed;
+	velocity->k = state->direction.k * speed;
 	state->first_fraction = function_36a40(state->first_fraction, state->direction_spread * g_509418, -1.0f, 1.0f);
 	state->second_fraction = function_36a40(state->second_fraction, state->direction_spread * g_509418, -1.0f, 1.0f);
 	state->magnitude_fraction = function_36a40(state->magnitude_fraction, state->magnitude_spread * g_509418, 0.0f, 1.0f);
+	_ReadWriteBarrier();
 	real first = state->first_fraction * state->direction_scale;
-	state->perturbation.i = state->first_axis.i * first + state->base_direction.i;
-	state->perturbation.j = state->first_axis.j * first + state->base_direction.j;
-	state->perturbation.k = state->first_axis.k * first + state->base_direction.k;
+	state->perturbation.i = (real)(state->first_axis.i * first) + state->base_direction.i;
+	state->perturbation.j = (real)(state->first_axis.j * first) + state->base_direction.j;
+	vector3f *perturbation = &state->perturbation;
+	perturbation->k = (real)(state->first_axis.k * first) + state->base_direction.k;
+	_ReadWriteBarrier();
 	real second = state->second_fraction * state->direction_scale;
-	state->perturbation.i = state->second_axis.i * second + state->perturbation.i;
-	state->perturbation.j = state->second_axis.j * second + state->perturbation.j;
-	state->perturbation.k = state->second_axis.k * second + state->perturbation.k;
-	function_30bf0(&state->perturbation);
+	perturbation->i = (real)(state->second_axis.i * second) + perturbation->i;
+	perturbation->j = (real)(state->second_axis.j * second) + perturbation->j;
+	perturbation->k = (real)(state->second_axis.k * second) + perturbation->k;
+	function_30bf0(perturbation);
 	real magnitude = state->magnitude * state->magnitude_fraction;
-	state->perturbation.i *= magnitude;
-	state->perturbation.j *= magnitude;
-	state->perturbation.k *= magnitude;
-	state->velocity.i += state->perturbation.i;
-	state->velocity.j += state->perturbation.j;
-	state->velocity.k += state->perturbation.k;
+	perturbation->i *= magnitude;
+	perturbation->j *= magnitude;
+	perturbation->k *= magnitude;
+	_ReadWriteBarrier();
+	velocity->i += state->perturbation.i;
+	velocity->j += state->perturbation.j;
+	velocity->k += state->perturbation.k;
 	state->step = state->step_scale * g_509418;
 }
+#pragma function(_ReadWriteBarrier)
 
 struct s_33a0b_view;
 extern s_33a0b_view *g_485a58;
-extern real g_485774, g_485a6c;
-extern long g_4b9ed8;
-real g_485a30, g_4857f8, g_485864, g_485858;
-real g_48578c, g_485868, g_4857a4;
-long g_4b9f5c;
-real g_4b9f84, g_4b9f80;
+extern real g_485a6c;
+real g_485a30;
 real g_4e69c0[4];
 real g_4c19b0, g_4c19b4;
 
@@ -1112,10 +1156,11 @@ real function_336f0(long selector)
         if (g_485a58)
         {
             real const *values = (real const *)g_485a58;
-            real red = values[4] + values[12];
-            real green = values[5] + values[13];
-            real blue = values[6] + values[14];
-            real value = blue * 0.114f + green * 0.587f + red * 0.299f;
+            color3f summed;
+            summed.red = values[4] + values[12];
+            summed.green = values[5] + values[13];
+            summed.blue = values[6] + values[14];
+            real value = summed.blue * 0.114f + summed.green * 0.587f + summed.red * 0.299f;
             return 0.0f > value ? 0.0f : value > 1.0f ? 1.0f : value;
         }
         return 1.0f;
@@ -1164,34 +1209,31 @@ struct s_slot_key
 };
 long function_0209b0(s_slot_key *key, void const *data, long size);
 void function_020b40(long value, long index);
-extern point3f g_4b9da0;
-extern vector3f g_4b9dac;
-long g_4b9ed4;
 
 // @retail 0x2dba0
-bool function_2dba0(long tag, vector3f const *direction, bool alternate,
-    long c, long d, long e, point3f const *position, color3f const *color,
-    real alpha, real amount, real scale)
+bool function_2dba0(long tag, vector3f const *direction, long c, long d, long e, point3f const *position, color3f const *color, real alpha, real amount, real scale, bool alternate)
 {
-    bool result = false;
+    bool const volatile *alternate_input = &alternate;
+    bool result_value = 0;
+    bool volatile result = false;
     if (g_4b9ed4 != NONE && tag != NONE && alpha > 0.0f)
     {
         byte *definition = g_4e3b44[tag & 0xffff].bytes;
         if ((amount > 0.0f || !(definition[0x2a] & 1)) &&
-            !(definition[0x28] & (alternate ? 8 : 4)))
+            !(definition[0x28] & (*alternate_input ? 8 : 4)))
         {
-            vector3f delta;
-            delta.i = position->x - g_4b9da0.x;
-            delta.j = position->y - g_4b9da0.y;
-            delta.k = position->z - g_4b9da0.z;
+            real delta_i, delta_j, delta_k;
+            delta_i = position->x - g_4b9da0.x;
+            delta_j = position->y - g_4b9da0.y;
+            delta_k = position->z - g_4b9da0.z;
             real near_distance = *(real *)(definition + 0x18);
             real far_distance = *(real *)(definition + 0x1c);
             if (near_distance == far_distance || far_distance >
-                delta.k * g_4b9dac.k + g_4b9dac.j * delta.j + g_4b9dac.i * delta.i)
+                delta_k * g_4b9dac.k + g_4b9dac.j * delta_j + g_4b9dac.i * delta_i)
             {
                 s_slot_key key;
                 memset(&key, 0, sizeof(key));
-                key.a = alternate;
+                key.a = *alternate_input;
                 key.b = g_4b9ed4;
                 key.c = c;
                 key.d = d;
@@ -1213,7 +1255,10 @@ bool function_2dba0(long tag, vector3f const *direction, bool alternate,
             }
         }
     }
-    return result;
+    { result_value = result; goto return_exit; }
+
+return_exit:
+    return result_value;
 }
 
 extern bool g_4ba019;
@@ -1240,7 +1285,8 @@ void function_4baf0(long object_index, real distance, byte *first, byte *second)
         long parent = function_baf80(object_index);
         if (parent != object_index)
         {
-            byte *local_be682a_2 = ((s_scalar_object_header *)g_4e0300->data)[parent & 0xffff].object;
+            word parent_slot = (word)parent;
+            byte *local_be682a_2 = ((s_scalar_object_header *)g_4e0300->data)[parent_slot].object;
             byte *parent_definition = g_4e3b44[*(long *)local_be682a_2 & 0xffff].bytes;
             long parent_model = *(long *)(parent_definition + 0x38);
             if (parent_model != NONE)
@@ -1295,10 +1341,10 @@ bool __stdcall function_3ebd0(vector3f const *offset, transform4x3f const *matri
         byte *definition = NULL;
         if (index != NONE)
             definition = g_4e3b44[index & 0xffff].bytes;
-        real heading = *(real *)(definition + 0x80);
+        real const &heading = *(real *)(definition + 0x80);
         vector3f forward;
-        forward.i = (real)(cos(heading) * cos(0.0));
-        forward.j = (real)(sin(heading) * cos(0.0));
+        forward.i = (real)(cos(heading));
+        forward.j = (real)(sin(heading));
         forward.k = (real)sin(0.0);
         vector3f left;
         left.i = forward.k * g_4687b0->j - forward.j * g_4687b0->k;
@@ -1314,16 +1360,17 @@ bool __stdcall function_3ebd0(vector3f const *offset, transform4x3f const *matri
         transform.position.z = *(real *)(definition + 0x18) * g_4b9da0.z;
         /* The existing assembly callee reads its first matrix through ECX.
            Keep these local stores visible across that assembly boundary. */
-        transform4x3f applied;
         for (long component = 0; component < 13; ++component)
-            ((volatile real *)&applied)[component] = ((real const *)&transform)[component];
-        for (long i = 0; i < count; ++i)
+            ((volatile real *)&transform)[component] = ((real const *)&transform)[component];
+        transform4x3f const *source = matrices;
+        transform4x3f *destination = out;
+        for (long i = 0; i < count; ++i, ++source, ++destination)
         {
-            out[i] = matrices[i];
-            out[i].position.x += offset->i;
-            out[i].position.y += offset->j;
-            out[i].position.z += offset->k;
-            function_142a60(&applied, &out[i], &out[i]);
+            *destination = *source;
+            destination->position.x += offset->i;
+            destination->position.y += offset->j;
+            destination->position.z += offset->k;
+            function_142a60(&transform, destination, destination);
         }
         result = true;
     }
@@ -1346,31 +1393,8 @@ bool function_3d480(long object_index, long count, transform4x3f const *matrices
 
 #include "unknown_11cb00.h"
 struct c_entry_list;
-struct s_bit_vector_pool_sizes
-{
-    short unknown0;
-    short list_sizes[4];
-    short record_count;
-};
-struct s_bit_vector_pool
-{
-    void *context;
-    byte unknown004[8];
-    c_entry_list *lists[4];
-    long indices[0x80];
-    dword flags[0x10];
-    dword pool[0x200];
-    word pool_used, entry_count;
-    dword entries[0x200][4];
-    dword flags2a60;
-    byte unknown2a64[0x2a88 - 0x2a64];
-    plane3f plane;
-    byte unknown2a98[0x2acc - 0x2a98];
-    byte *records;
-    byte unknown2ad0[4];
-    s_bit_vector_pool_sizes sizes;
-};
-extern s_bit_vector_pool g_547f88;
+
+
 struct s_view;
 struct s_bounds3d { real x0, x1, y0, y1, z0, z1; };
 typedef point3f rectangle3d_edge[2];
@@ -1386,6 +1410,7 @@ struct s_320b0_box
 // @retail 0x320b0
 bool function_320b0(s_320b0_box const *box)
 {
+    real const volatile *box_scale = &box->matrix.scale;
     byte *context = (byte *)g_547f88.context;
     box3f bounds;
     bounds.x0 = 0.0f - box->radius.i;
@@ -1399,21 +1424,40 @@ bool function_320b0(s_320b0_box const *box)
     function_11fa40(&bounds, 12, edges);
     for (long edge = 0; edge < 12; ++edge)
     {
-        for (long endpoint = 0; endpoint < 2; ++endpoint)
         {
-            long i = edge * 2 + endpoint;
-            point3f point = ((point3f *)edges)[i];
-            if (box->matrix.scale != 1.0f)
+            long i = edge * 2;
+            real x = ((point3f *)edges)[i].x;
+            real y = ((point3f *)edges)[i].y;
+            real z = ((point3f *)edges)[i].z;
+            real scale = *box_scale;
+            if (scale != 1.0f)
             {
-                point.x = box->matrix.scale * point.x;
-                point.y = box->matrix.scale * point.y;
-                point.z = box->matrix.scale * point.z;
+                x = scale * x;
+                y = *box_scale * y;
+                z = *box_scale * z;
             }
             real const *m = (real const *)&box->matrix;
-            transformed[i].x = m[1] * point.x + m[7] * point.z + m[4] * point.y + m[10];
-            transformed[i].y = m[2] * point.x + m[8] * point.z + m[5] * point.y + m[11];
-            transformed[i].z = m[3] * point.x + m[9] * point.z + m[6] * point.y + m[12];
-        }
+            transformed[i].x = m[1] * x + m[7] * z + m[4] * y + m[10];
+            transformed[i].y = m[2] * x + m[8] * z + m[5] * y + m[11];
+            transformed[i].z = m[3] * x + m[9] * z + m[6] * y + m[12];
+                }
+        {
+            long i = edge * 2 + 1;
+            real x = ((point3f *)edges)[i].x;
+            real y = ((point3f *)edges)[i].y;
+            real z = ((point3f *)edges)[i].z;
+            real scale = *box_scale;
+            if (scale != 1.0f)
+            {
+                x = scale * x;
+                y = *box_scale * y;
+                z = *box_scale * z;
+            }
+            real const *m = (real const *)&box->matrix;
+            transformed[i].x = m[1] * x + m[7] * z + m[4] * y + m[10];
+            transformed[i].y = m[2] * x + m[8] * z + m[5] * y + m[11];
+            transformed[i].z = m[3] * x + m[9] * z + m[6] * y + m[12];
+                }
     }
     s_bounds3d projected;
     bool visible = function_1652e0((s_view *)(context + 4), *(real *)(context + 0x74), transformed,
@@ -1433,46 +1477,68 @@ PRIVATE __forceinline real random_signed_value(s_random_globals *random)
 // @retail 0x36f50
 void function_36f50(byte *state)
 {
+    struct signed_fraction {
+        static __forceinline real evaluate(s_random_globals *state) {
+            real fraction = (real)random_next(&state->seed) * (1.0f / 65535.0f);
+            return fraction * 2.0f - 1.0f;
+        }
+    };
     s_random_globals *random = g_4e7408;
-    byte *entry = state + 0xc8;
+    byte *entry = state + 0xec;
     for (long i = 0; i < 4; ++i, entry += 0xb8)
     {
-        for (long j = 0; j < 9; ++j) ((dword *)entry)[j] = 0;
-        for (long k = 0; k < 9; ++k) ((dword *)(entry + 0x24))[k] = 0;
-        *(vector3f *)(entry + 0x3c) = *(vector3f *)entry;
-        *(vector3f *)(entry + 0x48) = *(vector3f *)entry;
-        *(real *)(entry + 0x80) = 1.0f;
-        *(real *)(entry + 0x84) = 1.0f;
-        *(real *)(entry + 0x78) = 0.0f;
+        dword *clear = (dword *)(entry - 0x24);
+        for (long n = 0; n < 9; ++n) *clear++ = 0;
+        clear = (dword *)((entry - 0x24) + 0x24);
+        for (long n = 0; n < 9; ++n) *clear++ = 0;
+        clear = (dword *)((entry - 0x24) + 0x3c);
+        for (long n = 0; n < 3; ++n) *clear++ = 0;
+        clear = (dword *)((entry - 0x24) + 0x48);
+        for (long n = 0; n < 3; ++n) *clear++ = 0;
+        *(real *)((entry - 0x24) + 0x80) = 1.0f;
+        *(real *)((entry - 0x24) + 0x84) = 1.0f;
+        *(real *)((entry - 0x24) + 0x78) = 0.0f;
         vector3f const *a = (vector3f const *)(state + 0x24);
         vector3f const *b = (vector3f const *)(state + 0x30);
         vector3f const *c = (vector3f const *)(state + 0x3c);
-        *(real *)(entry + 0xac) = (real)sqrt((double)a->i * a->i + (double)a->j * a->j + (double)a->k * a->k);
-        *(real *)(entry + 0xb0) = (real)sqrt((double)b->i * b->i + (double)b->j * b->j + (double)b->k * b->k);
-        *(real *)(entry + 0xb4) = (real)sqrt((double)c->i * c->i + (double)c->j * c->j + (double)c->k * c->k);
-        *(real *)(entry + 0x88) = random_signed_value(random);
-        *(real *)(entry + 0x8c) = random_signed_value(random);
-        *(real *)(entry + 0x90) = random_signed_value(random);
-        *(real *)(entry + 0x94) = random_signed_value(random);
-        *(real *)(entry + 0x98) = random_signed_value(random);
-        *(real *)(entry + 0x9c) = random_signed_value(random);
-        *(real *)(entry + 0xa0) = random_signed_value(random);
-        *(real *)(entry + 0xa4) = random_signed_value(random);
-        *(real *)(entry + 0xa8) = random_signed_value(random);
+        *(real *)((entry - 0x24) + 0xac) = (real)sqrt((real)(a->i * a->i) + (real)(a->j * a->j) + (real)(a->k * a->k));
+        *(real *)((entry - 0x24) + 0xb0) = (real)sqrt((real)(b->i * b->i) + (real)(b->j * b->j) + (real)(b->k * b->k));
+        *(real *)((entry - 0x24) + 0xb4) = (real)sqrt((real)(c->i * c->i) + (real)(c->j * c->j) + (real)(c->k * c->k));
+        *(real *)((entry - 0x24) + 0x88) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0x8c) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0x90) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0x94) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0x98) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0x9c) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0xa0) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0xa4) = signed_fraction::evaluate(random);
+        *(real *)((entry - 0x24) + 0xa8) = signed_fraction::evaluate(random);
     }
 }
 
+#ifndef PIN
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+#endif
+
+// score 127 (was 323): clamping the squared distance and the fraction with
+// PIN, which reevaluates the clamped expression, and squaring the y offset
+// in place gives retail's size and its repeated loads. What still differs:
+// the floating-point registers (retail keeps 0.5 in xmm3 and the y centre in
+// xmm2), the y centre's stack slot, and the operand order of the mode 0
+// scaling (retail loads out[0] and multiplies by parameters[24]). Clamping
+// with if/else on locals, a y local inside PIN and reordered products score
+// 135 to 323.
 // @retail 0x34100
 bool __stdcall function_34100(long mode, real const *rectangle, real const *coordinates,
     real *out, real const *parameters)
 {
-    real center_y = (rectangle[2] + rectangle[3]) * 0.5f;
     real center_x = (rectangle[0] + rectangle[1]) * 0.5f;
+    real center_y = (rectangle[2] + rectangle[3]) * 0.5f;
     long index = mode - 1;
     switch (mode)
     {
     case 0:
-        function_350e0(out, rectangle, coordinates, parameters[0]);
+        function_350e0(rectangle, coordinates, out, parameters[0]);
         out[0] *= parameters[24];
         out[1] *= parameters[24];
         return true;
@@ -1492,18 +1558,16 @@ bool __stdcall function_34100(long mode, real const *rectangle, real const *coor
             if (parameters[22] != parameters[23])
             {
                 real x = coordinates[0] * 2.0f - 1.0f;
-                real y = coordinates[1] * 2.0f - 1.0f;
-                real distance_squared = y * y + x * x;
-                if (distance_squared < 0.0f) distance_squared = 0.0f;
-                else if (distance_squared > 1.0f) distance_squared = 1.0f;
-                real radius = (real)sqrt(distance_squared);
-                real fraction = (radius - parameters[22]) / (parameters[23] - parameters[22]);
-                if (fraction < 0.0f) fraction = 0.0f;
-                else if (fraction > 1.0f) fraction = 1.0f;
+                real radius = (real)sqrt(PIN((coordinates[1] * 2.0f - 1.0f) * (coordinates[1] * 2.0f - 1.0f) + x * x, 0.0f, 1.0f));
+                real fraction = PIN((radius - parameters[22]) / (parameters[23] - parameters[22]), 0.0f, 1.0f);
                 weight *= fraction;
             }
-            real x_sign = (index & 1) ? 0.5f : -0.5f;
-            real y_sign = (index & ~1) ? 0.5f : -0.5f;
+            real x_sign = -0.5f;
+            if (index & 1)
+                x_sign = 0.5f;
+            real y_sign = -0.5f;
+            if (index & ~1)
+                y_sign = 0.5f;
             out[0] = (parameters[1] * x_sign + weight * center_x + (1.0f - weight) * out[0]) * parameters[10 + index * 2];
             out[1] = ((1.0f - weight) * out[1] + parameters[1] * y_sign + weight * center_y) * parameters[11 + index * 2];
         }
@@ -1526,8 +1590,19 @@ bool __stdcall function_34100(long mode, real const *rectangle, real const *coor
     }
 }
 
-vector3f g_4b9e4c;
-vector3f g_4b9e64;
+
+/* the direction's component across the camera's up vector:
+   (direction x up) x direction */
+PRIVATE inline void direction_perpendicular_to_up(vector3f const *direction, vector3f *perpendicular)
+{
+    vector3f cross;
+    cross.i = direction->j * g_4b9e4c.k - direction->k * g_4b9e4c.j;
+    cross.j = direction->k * g_4b9e4c.i - direction->i * g_4b9e4c.k;
+    cross.k = direction->i * g_4b9e4c.j - direction->j * g_4b9e4c.i;
+    perpendicular->i = direction->k * cross.j - direction->j * cross.k;
+    perpendicular->j = direction->i * cross.k - direction->k * cross.i;
+    perpendicular->k = direction->j * cross.i - direction->i * cross.j;
+}
 
 // @retail 0x2f2d0
 real function_2f2d0(vector3f const *direction, point3f const *position, long mode, real scale)
@@ -1535,46 +1610,37 @@ real function_2f2d0(vector3f const *direction, point3f const *position, long mod
     real result = 0.0f;
     real y;
     real x;
+    vector3f perpendicular;
     vector3f reference;
     switch (mode)
     {
+    case 0:
+        return result;
     case 1:
-    case 3:
-        {
-            vector3f cross;
-            cross.i = direction->j * g_4b9e4c.k - direction->k * g_4b9e4c.j;
-            cross.j = direction->k * g_4b9e4c.i - direction->i * g_4b9e4c.k;
-            cross.k = direction->i * g_4b9e4c.j - direction->j * g_4b9e4c.i;
-            vector3f perpendicular;
-            perpendicular.i = direction->k * cross.j - direction->j * cross.k;
-            perpendicular.j = direction->i * cross.k - direction->k * cross.i;
-            perpendicular.k = direction->j * cross.i - direction->i * cross.j;
-            if (mode == 1)
-                reference = g_4b9dac;
-            else
-            {
-                reference.i = position->x - g_4b9da0.x;
-                reference.j = position->y - g_4b9da0.y;
-                reference.k = position->z - g_4b9da0.z;
-            }
-            y = reference.j * perpendicular.j + reference.k * perpendicular.k + reference.i * perpendicular.i;
-            x = 0.0f - (direction->k * reference.k + direction->j * reference.j + direction->i * reference.i);
-        }
+        direction_perpendicular_to_up(direction, &perpendicular);
+        reference = g_4b9dac;
+        y = reference.j * perpendicular.j + reference.k * perpendicular.k + reference.i * perpendicular.i;
+        x = 0.0f - (direction->k * reference.k + direction->j * reference.j + direction->i * reference.i);
         break;
     case 2:
+        reference.i = 0.0f - direction->i;
+        reference.j = 0.0f - direction->j;
+        reference.k = 0.0f - direction->k;
+        y = g_4b9e4c.k * reference.k + g_4b9e4c.j * reference.j + g_4b9e4c.i * reference.i;
+        x = 0.0f - (g_4b9e64.k * reference.k + g_4b9e64.j * reference.j + g_4b9e64.i * reference.i);
+        break;
+    case 3:
+        direction_perpendicular_to_up(direction, &perpendicular);
+        reference.i = position->x - g_4b9da0.x;
+        reference.j = position->y - g_4b9da0.y;
+        reference.k = position->z - g_4b9da0.z;
+        y = reference.j * perpendicular.j + reference.k * perpendicular.k + reference.i * perpendicular.i;
+        x = 0.0f - (direction->k * reference.k + direction->j * reference.j + direction->i * reference.i);
+        break;
     case 4:
-        if (mode == 2)
-        {
-            reference.i = 0.0f - direction->i;
-            reference.j = 0.0f - direction->j;
-            reference.k = 0.0f - direction->k;
-        }
-        else
-        {
-            reference.i = position->x - g_4b9da0.x;
-            reference.j = position->y - g_4b9da0.y;
-            reference.k = position->z - g_4b9da0.z;
-        }
+        reference.i = position->x - g_4b9da0.x;
+        reference.j = position->y - g_4b9da0.y;
+        reference.k = position->z - g_4b9da0.z;
         y = g_4b9e4c.k * reference.k + g_4b9e4c.j * reference.j + g_4b9e4c.i * reference.i;
         x = 0.0f - (g_4b9e64.k * reference.k + g_4b9e64.j * reference.j + g_4b9e64.i * reference.i);
         break;
@@ -1587,9 +1653,6 @@ real function_2f2d0(vector3f const *direction, point3f const *position, long mod
 }
 
 extern real g_5234c8;
-extern point3f g_4b9da0;
-extern vector3f g_4b9dac;
-vector3f g_4b9e58;
 byte g_4c19c0, g_55e6c6;
 struct s_2e9e0_saved { long tag; point3f position; };
 s_2e9e0_saved g_4c19c4[4];
@@ -1610,8 +1673,8 @@ PRIVATE inline real clamp_2e9e0(real value)
 // @retail 0x2e9e0
 long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
 {
-    real time = g_510c54 && g_510c54->active ? g_510c54->game_time * g_510c54->rate : 0.0f;
     long tag = NONE;
+    real time = g_510c54 && g_510c54->active ? g_510c54->game_time * g_510c54->rate : 0.0f;
     point3f position;
     vector3f direction;
     color3f color;
@@ -1657,7 +1720,7 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
         dword seed = (dword)context >> 5;
         dword hash = 0xffffffff;
         function_163ba0(&hash, &seed, 4);
-        time += (hash & 0xff) * (1.0f / 256.0f) + ((hash >> 8) & 0xff);
+        time = (hash & 0xff) * (1.0f / 256.0f) + time + ((hash >> 8) & 0xff);
     }
     if (*(long *)(definition + 0x4c) > 0)
         attenuation *= function_13bb90((s_tag_data *)*(byte **)(definition + 0x50), time, 0.0f);
@@ -1665,8 +1728,8 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
     {
         real base_angle = function_2f2d0(&direction, &position,
             *(short *)(definition + 0x2c), *(real *)(definition + 0x30));
-        real camera_angle = (real)atan2(delta.j * g_4b9e4c.j + delta.i * g_4b9e4c.i + delta.k * g_4b9e4c.k,
-            delta.j * g_4b9e58.j + delta.i * g_4b9e58.i + delta.k * g_4b9e58.k);
+        real camera_angle = (real)atan2((double)delta.j * g_4b9e4c.j + (double)delta.i * g_4b9e4c.i + (double)delta.k * g_4b9e4c.k,
+            (double)delta.j * g_4b9e58.j + (double)delta.i * g_4b9e58.i + (double)delta.k * g_4b9e58.k);
         color3f animated = { 1.0f, 1.0f, 1.0f };
         if (*(long *)(definition + 0x54) > 0)
         {
@@ -1724,8 +1787,8 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
                         g_4c19c0 = false;
                     }
                     D3DDevice_SetVertexData2f(8, clamp_2e9e0(1.0f - *(real *)(entry + 0x20)), 0.0f);
-                    real sine = angle == 0.0f ? 0.0f : (real)sin(angle);
-                    real cosine = angle == 0.0f ? 1.0f : (real)cos(angle);
+                    real sine = angle == 0.0f ? 0.0f : (real)sin((double)angle);
+                    real cosine = angle == 0.0f ? 1.0f : (real)cos((double)angle);
                     function_480a0(&point, cosine * size, sine * size, x_scale, y_scale,
                         function_131f40(opacity, &selected));
                 }
@@ -1746,9 +1809,6 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
 }
 
 
-extern real g_48568c[46];
-extern word g_485648, g_48564a, g_48564c, g_48564e;
-extern real g_48565c;
 
 // @retail 0x48b00
 bool function_48b00(point3f const *point, real radius, real *screen, real *extent)
@@ -1770,7 +1830,7 @@ bool function_48b00(point3f const *point, real radius, real *screen, real *exten
         real vz = g_48568c[9] * z + g_48568c[6] * y + g_48568c[3] * x + g_48568c[12];
         real py = g_48568c[39] * vz + g_48568c[35] * vy + g_48568c[31] * vx + g_48568c[43];
         real pz = g_48568c[40] * vz + g_48568c[36] * vy + g_48568c[32] * vx + g_48568c[44];
-        real pw = g_48568c[41] * vz + g_48568c[37] * vy + g_48568c[33] * vx + g_48568c[45];
+        real pw = (real)(g_48568c[37] * vy + g_48568c[41] * vz) + g_48568c[33] * vx + g_48568c[45];
         real rx = g_48568c[30] * radius;
         real ry = g_48568c[35] * radius;
         if (pz > 0.0f)
@@ -1780,7 +1840,7 @@ bool function_48b00(point3f const *point, real radius, real *screen, real *exten
             screen[0] = ((px * inverse + 1.0f) * width + (short)g_48564a * 2.0f - 1.0f) * 0.5f;
             screen[1] = ((1.0f - py * inverse) * height + (short)g_485648 * 2.0f - 1.0f) * 0.5f;
             real depth = pz * inverse;
-            screen[2] = (1.0f < depth ? 1.0f : depth) * 16777215.0f;
+            screen[2] = (depth < 1.0f ? depth : 1.0f) * 16777215.0f;
             screen[3] = pw / g_48565c * 16777215.0f;
             extent[0] = width * inverse * rx * 0.5f;
             extent[1] = height * inverse * ry * 0.5f;
@@ -1793,16 +1853,14 @@ bool function_48b00(point3f const *point, real radius, real *screen, real *exten
 
 
 extern byte g_4670bc;
-extern byte g_485b48[0x1fc0];
 struct s_render_reset_state;
 void function_16b10(s_render_reset_state *state);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
-real g_4b9f58;
 
 // @retail 0x3eec0
 void function_3eec0()
 {
-    if (g_4b9ee9 && g_4b9eec != NONE && g_4c5038)
+    if (g_4b9ee9 && g_4b9eec != NONE && g_4c5038.valid)
     {
         s_cluster_tag_table *table = (s_cluster_tag_table *)g_4e0350;
         long index = NONE;
@@ -1848,8 +1906,7 @@ void function_3eec0()
                 basis[0].k = 0.0f - direction.k;
                 function_11d000(&basis[0], &basis[2]);
                 function_30bf0(&basis[2]);
-                function_2dba0(tag, basis, false, 3, 0, i, &position,
-                    (color3f const *)((byte const *)g_4686cc + 4), 1.0f - g_4b9f58, 1.0f, 1.0f);
+                function_2dba0(tag, basis, 3, 0, i, &position, (color3f const *)((byte const *)g_4686cc + 4), 1.0f - g_4b9f58, 1.0f, 1.0f, false);
             }
         }
     }
@@ -1866,7 +1923,11 @@ struct s_octree_output
 };
 s_octree_output g_4c5700[256];
 
-void function_3f970(byte const *tree, short index, plane3f const *planes, real const *bounds, point3f const *center, real radius);
+class c_octree_radius_view_ab
+{
+public:
+    void function_3f970(short index, plane3f const *planes, real const *bounds, point3f const *center, real radius) const;
+};
 real g_525930;
 
 // @retail 0x3f830
@@ -1891,15 +1952,18 @@ void __stdcall function_3f830(byte const *tree, point3f const *center)
     g_509438 = NULL;
     if (*(long const *)(tree + 0x20) > 0)
     {
-        real tree_radius = (real)*(long const *)(tree + 0xc) * 8.0f * 0.5f;
-        function_3f970(tree, 0, (plane3f *)(context + 0x10c), (real *)&bounds,
+        real scaled_radius = (real)*(long const *)(tree + 0xc) * 8.0f;
+        dword scaled_bits = *(dword const *)&scaled_radius;
+        real tree_radius = *(real const *)&scaled_bits * 0.5f;
+        ((c_octree_radius_view_ab const *)tree)->function_3f970( 0, (plane3f *)(context + 0x10c), (real *)&bounds,
             (point3f const *)tree, tree_radius);
     }
 }
 
 // @retail 0x3f970
-void function_3f970(byte const *tree, short index, plane3f const *planes, real const *bounds, point3f const *center, real radius)
+void c_octree_radius_view_ab::function_3f970(short index, plane3f const *planes, real const *bounds, point3f const *center, real radius) const
 {
+    byte const *tree = (byte const *)this;
     if (index == NONE) return;
     short const *children = (short const *)(*(byte *const *)(tree + 0x24) + index * 24);
     if (bounds[0] > center->x + radius || center->x - radius > bounds[1] ||
@@ -1918,47 +1982,47 @@ void function_3f970(byte const *tree, short index, plane3f const *planes, real c
         }
         return;
     }
-    radius *= 0.5f;
+    real child_radius = radius * 0.5f;
     point3f child;
-    child.x = center->x - radius;
-    child.y = center->y - radius;
-    child.z = center->z - radius;
-    function_3f970(tree, children[0], planes, bounds, &child, radius);
-    child.x = center->x - radius;
-    child.y = center->y - radius;
-    child.z = center->z + radius;
-    function_3f970(tree, children[1], planes, bounds, &child, radius);
-    child.x = center->x - radius;
-    child.y = center->y + radius;
-    child.z = center->z - radius;
-    function_3f970(tree, children[2], planes, bounds, &child, radius);
-    child.x = center->x - radius;
-    child.y = center->y + radius;
-    child.z = center->z + radius;
-    function_3f970(tree, children[3], planes, bounds, &child, radius);
-    child.x = center->x + radius;
-    child.y = center->y - radius;
-    child.z = center->z - radius;
-    function_3f970(tree, children[4], planes, bounds, &child, radius);
-    child.x = center->x + radius;
-    child.y = center->y - radius;
-    child.z = center->z + radius;
-    function_3f970(tree, children[5], planes, bounds, &child, radius);
-    child.x = center->x + radius;
-    child.y = center->y + radius;
-    child.z = center->z - radius;
-    function_3f970(tree, children[6], planes, bounds, &child, radius);
-    child.x = center->x + radius;
-    child.y = center->y + radius;
-    child.z = center->z + radius;
-    function_3f970(tree, children[7], planes, bounds, &child, radius);
+    child.x = center->x - child_radius;
+    child.y = center->y - child_radius;
+    child.z = center->z - child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[0], planes, bounds, &child, child_radius);
+    child.x = center->x - child_radius;
+    child.y = center->y - child_radius;
+    child.z = center->z + child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[1], planes, bounds, &child, child_radius);
+    child.x = center->x - child_radius;
+    child.y = center->y + child_radius;
+    child.z = center->z - child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[2], planes, bounds, &child, child_radius);
+    child.x = center->x - child_radius;
+    child.y = center->y + child_radius;
+    child.z = center->z + child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[3], planes, bounds, &child, child_radius);
+    child.x = center->x + child_radius;
+    child.y = center->y - child_radius;
+    child.z = center->z - child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[4], planes, bounds, &child, child_radius);
+    child.x = center->x + child_radius;
+    child.y = center->y - child_radius;
+    child.z = center->z + child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[5], planes, bounds, &child, child_radius);
+    child.x = center->x + child_radius;
+    child.y = center->y + child_radius;
+    child.z = center->z - child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[6], planes, bounds, &child, child_radius);
+    child.x = center->x + child_radius;
+    child.y = center->y + child_radius;
+    child.z = center->z + child_radius;
+    ((c_octree_radius_view_ab const *)tree)->function_3f970( children[7], planes, bounds, &child, child_radius);
 }
 
 
 
-PRIVATE __forceinline double random_unit_fraction(s_random_globals *random)
+PRIVATE __forceinline real random_unit_fraction(s_random_globals *random)
 {
-    return (double)random_next(&random->seed) * (1.0f / 65535.0f);
+    return (real)random_next(&random->seed) * (1.0f / 65535.0f);
 }
 
 // @retail 0x39a80
@@ -2024,8 +2088,8 @@ bool function_39a80(byte *state)
 // @retail 0x3e5a0
 void function_3e5a0(vector3f *current, vector3f const *target, real step)
 {
-    real current_size = (real)sqrt((double)current->i * current->i + (double)current->j * current->j + (double)current->k * current->k);
-    real a = current_size < 0.0001f ? 0.0001f : current_size > 10.0f ? 10.0f : current_size;
+    real const &name_734d0c = (real)sqrt((double)current->i * current->i + (double)current->j * current->j + (double)current->k * current->k);
+    real a = name_734d0c < 0.0001f ? 0.0001f : name_734d0c > 10.0f ? 10.0f : name_734d0c;
     real target_size = (real)sqrt((double)target->i * target->i + (double)target->j * target->j + (double)target->k * target->k);
     real b = target_size < 0.0001f ? 0.0001f : target_size > 10.0f ? 10.0f : target_size;
     vector3f first, second;
@@ -2091,7 +2155,6 @@ struct s_cached_input_list
 };
 
 struct s_masked_list;
-extern s_masked_list *g_547f98;
 struct s_light_shape_ab;
 bool function_31590(long index, s_light_shape_ab *shape);
 bool function_3e9c0(long object_index);
@@ -2099,7 +2162,6 @@ extern s_record_pool *g_4e030c;
 void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, long count);
 long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output, long limit, real step);
 s_cached_input_list g_5234e8[4];
-real g_4b9e20, g_4b9e2c, g_4b9e38, g_4b9e44, g_4b9ed0;
 
 // @retail 0x31910
 long __stdcall function_31910(s_cached_input *output)
@@ -2147,15 +2209,16 @@ long __stdcall function_31910(s_cached_input *output)
 // @retail 0x4a7c0
 void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, long count)
 {
-    dword used = 0;
+    dword volatile used = 0;
     for (long i = 0; i < state->count; ++i)
     {
+        s_cached_input_entry *entry = &state->entries[i];
         for (long j = 0; j < count; ++j)
         {
-            if (state->entries[i].input.data[1] == inputs[j].data[1])
+            if (entry->input.data[1] == inputs[j].data[1])
             {
-                state->entries[i].input = inputs[j];
-                state->entries[i].last_seen = g_4ba034;
+                entry->input = inputs[j];
+                entry->last_seen = g_4ba034;
                 used |= 1 << j;
                 break;
             }
@@ -2170,7 +2233,51 @@ void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, lo
             --k;
         }
     }
-    for (long n = 0; n < count; ++n)
+    long n = 0;
+    for (long center = 2; n < count - 3; n += 4, center += 4)
+    {
+        if (state->count < 32 && !(used & (1 << (n + 0))))
+        {
+            state->entries[state->count].input = inputs[n + 0];
+            state->entries[state->count].last_seen = g_4ba034;
+            state->entries[state->count].created = g_4ba034;
+            state->entries[state->count].initial = state->entries[state->count].input.data[3];
+            state->entries[state->count].elapsed = 0.0f;
+            ++state->count;
+            used |= 1 << (n + 0);
+        }
+        if (state->count < 32 && !(used & (1 << (center - 1))))
+        {
+            state->entries[state->count].input = inputs[center - 1];
+            state->entries[state->count].last_seen = g_4ba034;
+            state->entries[state->count].created = g_4ba034;
+            state->entries[state->count].initial = state->entries[state->count].input.data[3];
+            state->entries[state->count].elapsed = 0.0f;
+            ++state->count;
+            used |= 1 << (center - 1);
+        }
+        if (state->count < 32 && !(used & (1 << center)))
+        {
+            state->entries[state->count].input = inputs[center];
+            state->entries[state->count].last_seen = g_4ba034;
+            state->entries[state->count].created = g_4ba034;
+            state->entries[state->count].initial = state->entries[state->count].input.data[3];
+            state->entries[state->count].elapsed = 0.0f;
+            ++state->count;
+            used |= 1 << center;
+        }
+        if (state->count < 32 && !(used & (1 << (center + 1))))
+        {
+            state->entries[state->count].input = inputs[center + 1];
+            state->entries[state->count].last_seen = g_4ba034;
+            state->entries[state->count].created = g_4ba034;
+            state->entries[state->count].initial = state->entries[state->count].input.data[3];
+            state->entries[state->count].elapsed = 0.0f;
+            ++state->count;
+            used |= 1 << (center + 1);
+        }
+    }
+    for (; n < count; ++n)
     {
         if (state->count < 32 && !(used & (1 << n)))
         {
@@ -2210,10 +2317,10 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 {
 	if (state->count > 0 && (!g_510c50 || !((byte *)g_510c50)[5]))
 	{
-		long requested = limit;
-		if (limit > state->count) limit = state->count;
 		long first = 0;
 		long last = state->count - 1;
+		long requested = limit;
+		if (limit > state->count) limit = state->count;
 		bool found = false;
 		long i;
 		for (i = 0; i <= last; ++i)
@@ -2277,16 +2384,19 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 				else entry->elapsed = 0.0f;
 			}
 		}
-		for (i = 0; i < limit; ++i)
+		if (limit > 0)
 		{
-			s_cached_input_entry *entry = &state->entries[i];
-			if (*(real *)&entry->input.data[3] > *(real *)&entry->initial)
+			s_cached_input_entry *end = state->entries + limit;
+			for (s_cached_input_entry *entry = state->entries; entry != end; ++entry)
 			{
-				entry->elapsed += step;
-				*(real *)&entry->initial += entry->elapsed;
-				clamp_cached_input(entry);
+				if (*(real *)&entry->input.data[3] > *(real *)&entry->initial)
+				{
+					entry->elapsed += step;
+					*(real *)&entry->initial += entry->elapsed;
+					clamp_cached_input(entry);
+				}
+				else entry->elapsed = 0.0f;
 			}
-			else entry->elapsed = 0.0f;
 		}
 	}
 	for (long i = 0; i < state->count; ++i)
@@ -2297,8 +2407,6 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 	return state->count;
 }
 
-extern real g_485640;
-short g_485600;
 
 PRIVATE __forceinline real motion_random_step(real value, real step)
 {
@@ -2461,7 +2569,8 @@ void function_36ab0(void)
         do
         {
             s_motion_material_entry *entry = (s_motion_material_entry *)((byte *)map->entries + i * 0x88);
-            long index = entry->state_index;
+            // Keep the entry address addition separate from the index read.
+            long index = *(long const volatile *)&entry->state_index;
             if (index != NONE)
                 function_39880((s_motion_state_groups *)g_4e3b44[index & 0xffff].bytes);
             ++i;
@@ -2495,22 +2604,25 @@ struct s_attached_render_entry
     byte unknown0e[10];
 };
 
-void __stdcall function_d4cf0(long object_index, short value);
+void __stdcall function_d4cf0(long object_index, short group, dword flags);
 void __stdcall function_41980(short type, long object_index);
 
 // @retail 0x41c20
-void __stdcall function_41c20(short type, long object_index, short value)
+void __stdcall function_41c20(short type, long object_index, long value)
 {
-    do
+    while (true)
     {
         byte *object = ((s_scalar_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-        function_d4cf0(object_index, value);
+        function_d4cf0(object_index, type, (dword)value);
         function_41980(type, object_index);
         long next = *(long *)(object + 0x10);
         if (next != NONE)
             function_41c20(type, next, value);
-        object_index = *(long *)(object + 0xc);
-    } while (object_index != NONE);
+        long sibling = *(long *)(object + 0xc);
+        if (sibling == NONE)
+            return;
+        object_index = sibling;
+    }
 }
 
 struct s_41c80_objects
@@ -2531,14 +2643,25 @@ struct s_41c80_state
 // @retail 0x41c80
 void function_41c80(short type, s_41c80_state const *state)
 {
-    for (short i = 0; i < state->objects->count; ++i)
-        function_41c20(type, state->objects->indices[i], state->objects->values[i]);
+    s_41c80_objects const *objects = state->objects;
+    long i = 0;
+    if (objects->count > 0)
+    {
+        do
+        {
+            function_41c20(type, objects->indices[(short)i], objects->values[(short)i]);
+            objects = state->objects;
+            ++i;
+        } while (i < objects->count);
+    }
 }
 
 // @retail 0x41980
 void __stdcall function_41980(short type, long object_index)
 {
-    s_object_marker markers[65];
+    struct s_attachment_scratch_r16 { long count; color3f color; real amount; s_object_marker markers[65]; };
+    s_attachment_scratch_r16 scratch_r16;
+    
     if (type == 0)
     {
         byte *object = (byte *)((s_scalar_object_header *)g_4e0300->data)[object_index & 0xffff].object;
@@ -2549,22 +2672,21 @@ void __stdcall function_41980(short type, long object_index)
             s_attached_render_entry *entry = ((s_attached_render_entry *)*(byte **)(definition + 0x98)) + i;
             if ((entry->type == 0x6c656e73 || entry->type == 0x4d475332 || entry->type == 0x7464746c) && entry->tag != NONE)
             {
-                long count = function_b8d30(object_index, entry->marker, markers, 65, false);
-                real amount = function_be6d0(object_index, i);
-                color3f color = *(color3f const *)g_468710;
+                scratch_r16.count = function_b8d30(object_index, entry->marker, scratch_r16.markers, 65, false);
+                scratch_r16.amount = function_be6d0(object_index, i);
+                scratch_r16.color = *(color3f const *)g_468710;
                 if (entry->color_index)
-                    function_bad50(object_index, entry->color_index, (point3f *)&color);
-                for (long j = 0; j < count; ++j)
+                    function_bad50(object_index, entry->color_index, (point3f *)&scratch_r16.color);
+                for (long j = 0; j < scratch_r16.count; ++j)
                 {
-                    transform4x3f *matrix = &markers[j].matrix;
+                    transform4x3f *matrix = &scratch_r16.markers[j].matrix;
                     if (entry->type == 0x6c656e73)
                     {
                         if (added < 64)
                         {
                             byte *tag = g_4e3b44[entry->tag & 0xffff].bytes;
                             real scale = (tag[0x28] & 0x40) ? matrix->scale : 1.0f;
-                            function_2dba0(entry->tag, &matrix->forward, function_3e9c0(object_index),
-                                0, object_index & 0xffff, added, &matrix->position, &color, 1.0f, amount, scale);
+                            function_2dba0(entry->tag, &matrix->forward, 0, object_index & 0xffff, added, &matrix->position, &scratch_r16.color, 1.0f, scratch_r16.amount, scale, function_3e9c0(object_index));
                             ++added;
                         }
                         else if (!g_55e6c7)
@@ -2576,8 +2698,8 @@ void __stdcall function_41980(short type, long object_index)
                         real scale = 1.0f;
                         if (*(long *)(tag + 8) > 0 && (**(byte **)(tag + 12) & 0x20))
                             scale = matrix->scale;
-                        function_42850(object_index, entry->tag, &matrix->position, (vector3f *)&color,
-                            &matrix->forward, scale, amount, &matrix->up);
+                        function_42850(object_index, entry->tag, &matrix->position, (vector3f *)&scratch_r16.color,
+                            &matrix->forward, scale, scratch_r16.amount, &matrix->up);
                     }
                     else if (entry->type == 0x7464746c)
                         function_429a0(0, object_index, entry->tag, NONE, &matrix->position,
@@ -2589,9 +2711,8 @@ void __stdcall function_41980(short type, long object_index)
 }
 
 void function_30c60(dword handle, point3f *position, long *out);
-real g_4b9dcc;
 
-PRIVATE inline real object_view_distance(point3f const *position)
+PRIVATE __forceinline real object_view_distance(point3f const *position)
 {
     double x = (double)position->x - g_4b9da0.x;
     double y = (double)position->y - g_4b9da0.y;
@@ -2602,12 +2723,12 @@ PRIVATE inline real object_view_distance(point3f const *position)
 // @retail 0x3d7f0
 bool __stdcall function_3d7f0(long object_index, real *out_alpha, bool *out_special)
 {
+    bool result = false;
     s_scalar_object_header *header = &((s_scalar_object_header *)g_4e0300->data)[object_index & 0xffff];
     byte *object = header->object;
     byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
-    long kind = *(signed char *)(object + 0xaa);
+    volatile long kind = *(signed char *)(object + 0xaa);
     real alpha = 0.0f;
-    bool result = false;
     if (!(object[6] & 1))
     {
         byte opacity, second;
@@ -2674,9 +2795,9 @@ s_cached_input_list g_5246f8[4];
 // @retail 0x33400
 long function_33400(byte const *list, s_cached_input *output, long mode)
 {
-    long selected = 0;
+    long volatile selected = 0;
     long view = g_4b9ed4 < 0 ? 0 : g_4b9ed4 > 3 ? 3 : g_4b9ed4;
-    long count = *(short const *)(list + 4);
+    long volatile count = *(short const *)(list + 4);
     for (long i = 0; i < count; ++i)
     {
         long object_index = (*(long const **)(list + 0xc))[(short)i];
@@ -2720,7 +2841,7 @@ void __stdcall function_4e260(long, long, long, long, long, dword, byte *);
 void __stdcall function_4ebd0(long, long, long, long, long, dword, byte *);
 void __stdcall function_4ede0(long, long, long, long, long, dword, byte *);
 void __stdcall function_4efa0(long, long, long, long, long, dword, byte *);
-void function_40e30(short group, long tag, real distance, long level, word kind,
+void function_40e30(short group, long tag, real distance, long level, short kind,
     dword and_mask, dword or_mask, t_41640_fill fill, dword value, void *context);
 point3f *function_3f220(dword a, dword b, dword c, point3f *out);
 struct s_frustum_set_view;
@@ -2732,18 +2853,24 @@ real g_525980[3];
 // @retail 0x41640
 void function_41640(void)
 {
-    t_41640_draw draw[6] = { function_4e260, function_4ebd0, function_4ebd0,
-        function_4ede0, function_4efa0, function_4efa0 };
     t_41640_fill fill[6] = { (t_41640_fill)function_4de20, (t_41640_fill)function_4dfa0,
         (t_41640_fill)function_4dfa0, (t_41640_fill)function_4e0d0,
         (t_41640_fill)function_4e0d0, (t_41640_fill)function_4e0d0 };
+    t_41640_draw draw[6] = { function_4e260, function_4ebd0, function_4ebd0,
+        function_4ede0, function_4efa0, function_4efa0 };
     byte *table = *(byte **)((byte *)g_4e0348 + 0x238);
     if (!g_4ba025) return;
     byte *definitions = (byte *)g_4e0350;
+    union
+    {
+        dword value;
+        struct { dword view : 8; dword record : 22; dword distance : 2; } fields;
+    } handle;
     for (long view = 0; view < (long)g_509438; ++view)
     {
         s_octree_output *node = &g_4c5700[view];
         byte *range = *(byte **)(table + 0x24) + node->node * 24;
+        handle.fields.view = view;
         for (long i = 0; i < *(short *)(range + 0x12); ++i)
         {
             long record_index = *(long *)(range + 0x14) + i;
@@ -2753,7 +2880,7 @@ void function_41640(void)
             long definition_index = (signed char)record[0];
             if (definition_index < 0 || definition_index >= *(long *)(definitions + 0x378)
                 || *(short *)(record + 0xa) <= 0 || !function_12de70(block, 3)) continue;
-            long tag = (*(long **)(definitions + 0x37c))[definition_index * 2 + 1];
+            long tag = (*(long **)(definitions + 0x37c))[(signed char)record[0] * 2 + 1];
             if (tag == NONE) continue;
             byte *definition = g_4e3b44[tag & 0xffff].bytes;
             long part_index = record[1];
@@ -2784,10 +2911,13 @@ void function_41640(void)
                 point3f camera = g_4b9da0;
                 if (g_525980[distance_class] > distance3d(&camera, &position) - radius)
                 {
-                    dword handle = (view & 0xff) | ((record_index << 8) & 0x3fffff00)
-                        | (distance_class << 30);
+                    handle.fields.record = *(long *)(range + 0x14) + i;
+                    handle.fields.distance = distance_class;
+                    long callback_index = part[4];
+                    t_41640_fill selected_fill = fill[callback_index];
+                    t_41640_draw selected_draw = draw[callback_index];
                     function_40e30(0, material, 10000.0f, 0, 0xffff, NONE, 0,
-                        fill[part[4]], (dword)draw[part[4]], (void *)handle);
+                        selected_fill, (dword)selected_draw, (void *)handle.value);
                 }
             }
         }
@@ -2800,7 +2930,13 @@ void function_0497a0(s_view_source *source, s_view_result *result, s_view_camera
 bool function_1650a0(s_view const *view, point3f const *point, s_bounds3d *bounds, real radius);
 struct short_rect { short v0, v1, v2, v3; };
 struct short_rect_pair { short_rect a, b; };
-extern short_rect_pair g_485a8a;
+struct s_unknown_485a88
+{
+    byte flag;
+    short_rect_pair rects;
+};
+extern s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
 
 PRIVATE __forceinline real clamp_4a1e0(real value, real lower, real upper)
 {
@@ -2825,8 +2961,8 @@ void function_32ce0(long object_index, real opacity)
 {
     (void)&opacity;
     s_collision_result_1697c0 collision;
-    collision.unknown24 = NONE;
     byte const *object = ((s_scalar_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+    collision.unknown24 = NONE;
     if (opacity > 0.05f && function_1697c0(0x4800001, (point3f const *)(object + 0x30),
             g_4687bc, NONE, NONE, &collision))
     {
@@ -2870,13 +3006,20 @@ void function_32ce0(long object_index, real opacity)
 void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_index,
     s_view_flags *flags, real unused_scale, bool enabled, real scale)
 {
-    byte *resource = 0;
-    if (resource_index != NONE)
+    /* the unused scale stays on the stack */
+    real *unused_scale_reference = &unused_scale;
+    byte *resource;
+    if (resource_index == NONE)
+        resource = 0;
+    else
         resource = g_4e030c->data + (resource_index & 0xffff) * 0x110;
     byte *context = (byte *)g_547f88.context;
     g_4858bc = true;
     g_4858c4 = (byte *)flags;
-    g_4858cc = resource && *(short *)(resource + 0x54) != NONE ? *(long *)(resource + 0x4c) : NONE;
+    if (resource && *(short *)(resource + 0x54) != NONE)
+        g_4858cc = *(long *)(resource + 0x4c);
+    else
+        g_4858cc = NONE;
     byte *input = (byte *)source;
     g_485944 = *(vector3f *)(input + 0x50);
     g_485950 = *(vector3f *)(input + 0x5c);
@@ -2899,45 +3042,45 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
         g_485a30 = g_485a34 = g_485a38 = g_485a3c = 1.0f;
         g_485a40 = 0.0f;
     }
-    vector3f first = g_485944;
-    vector3f second = g_485950;
-    real input_scale = g_48595c;
-    long mode = g_485a2c;
-    vector4f old_first, old_second;
-    memcpy(&old_first, g_485a0c, sizeof(old_first));
-    memcpy(&old_second, g_485a0c + 4, sizeof(old_second));
-    s_view_result result;
-    memcpy(&result, g_48597c, sizeof(result));
-    function_0497a0(source, &result, camera, flags, &first, &second, input_scale,
-        &mode, &old_first, &old_second);
-    memcpy(g_48597c, &result, sizeof(result));
-    memcpy(g_485a0c, &old_first, sizeof(old_first));
-    memcpy(g_485a0c + 4, &old_second, sizeof(old_second));
-    g_485a2c = mode;
+    function_0497a0(source, (s_view_result *)g_48597c, camera, flags, &g_485944, &g_485950, g_48595c,
+        &g_485a2c, (vector4f *)g_485a0c, (vector4f *)(g_485a0c + 4));
     s_bounds3d bounds;
-    bool clipped = false;
-    if (resource && function_1650a0((s_view const *)(context + 4),
-        (point3f const *)(resource + 0x28), &bounds, *(real *)(resource + 0x34)))
+    if (resource)
     {
-        real x0 = *(real *)(context + 0xa4), x1 = *(real *)(context + 0xa8);
-        real y0 = *(real *)(context + 0xac), y1 = *(real *)(context + 0xb0);
-        if (x0 != x1 && y0 != y1 && x1 >= bounds.x0 && bounds.x1 >= x0
-            && y1 >= bounds.y0 && bounds.y1 >= y0)
+        real const *clip_rect = (real const *)(context + 0xa4);
+        if (function_1650a0((s_view const *)(context + 4),
+                (point3f const *)(resource + 0x28), &bounds, *(real *)(resource + 0x34))
+            && clip_rect[1] != clip_rect[0] && clip_rect[3] != clip_rect[2]
+            && clip_rect[1] >= bounds.x0 && bounds.x1 >= clip_rect[0]
+            && clip_rect[3] >= bounds.y0 && bounds.y1 >= clip_rect[2])
         {
-            real left = clamp_4a1e0(bounds.x0, x0, x1);
-            real right = clamp_4a1e0(bounds.x1, x0, x1);
-            real top = clamp_4a1e0(0.0f - bounds.y1, y0, y1);
-            real bottom = clamp_4a1e0(0.0f - bounds.y0, y0, y1);
-            g_485964[0] = (g_485a8a.a.v3 - g_485a8a.a.v1) * (left - x0) / (x1 - x0) + g_485a8a.a.v1;
-            g_485964[1] = (g_485a8a.a.v3 - g_485a8a.a.v1) * (right - x0) / (x1 - x0) + g_485a8a.a.v1;
-            g_485964[2] = (g_485a8a.a.v2 - g_485a8a.a.v0) * (top - y0) / (y1 - y0) + g_485a8a.a.v0;
-            g_485964[3] = (g_485a8a.a.v2 - g_485a8a.a.v0) * (bottom - y0) / (y1 - y0) + g_485a8a.a.v0;
-            g_485964[4] = bounds.z0;
-            g_485964[5] = bounds.z1;
-            clipped = true;
+            real left = bounds.x0, right = bounds.x1;
+            real top = 0.0f - bounds.y1, bottom = 0.0f - bounds.y0;
+            if (clip_rect[0] > left) left = clip_rect[0]; else if (left > clip_rect[1]) left = clip_rect[1];
+            if (clip_rect[0] > right) right = clip_rect[0]; else if (right > clip_rect[1]) right = clip_rect[1];
+            if (clip_rect[2] > top) top = clip_rect[2]; else if (top > clip_rect[3]) top = clip_rect[3];
+            if (clip_rect[2] > bottom) bottom = clip_rect[2]; else if (bottom > clip_rect[3]) bottom = clip_rect[3];
+            short screen_left = g_485a8a.a.v1, screen_right = g_485a8a.a.v3;
+            bounds.x0 = (screen_right - screen_left) * (left - clip_rect[0]) / (clip_rect[1] - clip_rect[0]) + screen_left;
+            bounds.x1 = (screen_right - screen_left) * (right - clip_rect[0]) / (clip_rect[1] - clip_rect[0]) + screen_left;
+            short screen_top = g_485a8a.a.v0, screen_bottom = g_485a8a.a.v2;
+            bounds.y0 = (screen_bottom - screen_top) * (top - clip_rect[2]) / (clip_rect[3] - clip_rect[2]) + screen_top;
+            bounds.y1 = (screen_bottom - screen_top) * (bottom - clip_rect[2]) / (clip_rect[3] - clip_rect[2]) + screen_top;
+            memcpy(g_485964, &bounds, sizeof(g_485964));
         }
+        else
+        {
+            g_485964[0] = g_485a8a.a.v1;
+            g_485964[1] = g_485a8a.a.v3;
+            g_485964[2] = g_485a8a.a.v0;
+            g_485964[3] = g_485a8a.a.v2;
+            g_485964[4] = 0.0f - *(real *)(context + 0x8c);
+            g_485964[5] = 0.0f - *(real *)(context + 0x74);
+        }
+        g_4858d0 = true;
+        memcpy(g_485934, resource + 0x18, sizeof(g_485934));
     }
-    if (!clipped)
+    else
     {
         g_485964[0] = g_485a8a.a.v1;
         g_485964[1] = g_485a8a.a.v3;
@@ -2945,9 +3088,1145 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
         g_485964[3] = g_485a8a.a.v2;
         g_485964[4] = 0.0f - *(real *)(context + 0x8c);
         g_485964[5] = 0.0f - *(real *)(context + 0x74);
+        g_4858d0 = false;
     }
-    g_4858d0 = resource != 0;
-    if (resource) memcpy(g_485934, resource + 0x18, sizeof(g_485934));
     g_485a44 = enabled;
     function_3a550();
+}
+
+
+extern double g_4858a0;
+struct s_masked_list;
+bool __stdcall function_38450(byte *state, byte const *definition, real remaining);
+bool __stdcall function_37a60(void *state);
+bool __stdcall function_391f0(void *state);
+
+// @retail 0x36b50
+void function_36b50()
+{
+    long frame = g_485600;
+    if (frame == 0)
+    {
+        double now = g_4858a0;
+        if (g_50941c != 0.0f)
+        {
+            g_509418 = (real)(now - g_50941c);
+            if (g_509418 < 0.0f) g_509418 = 0.0f;
+        }
+        else g_509418 = 0.0f;
+        g_50941c = (real)now;
+        function_398d0(g_509418);
+    }
+    if (g_509420) return;
+    byte *structure = (byte *)g_4e0348;
+    real distance[16];
+    bool selected[16];
+    memset(selected, 0, sizeof(selected));
+    for (long i = 0; i < 16; ++i) distance[i] = 32767.0f;
+    if (*(long *)(structure + 0x84) <= 0 || g_547f88.location.cluster_index == NONE) return;
+    byte *clusters = *(byte **)(structure + 0xa0);
+    byte *current = clusters + g_547f88.location.cluster_index * 0xb0;
+    byte *visible = (byte *)g_547f94;
+    short count = *(short *)(visible + 4);
+    long *indices = *(long **)(visible + 0xc);
+    real camera_x = g_485618.position.x;
+    real camera_y = g_485618.position.y;
+    real camera_z = g_485618.position.z;
+    for (long i = 0; i < count; ++i)
+    {
+        long cluster = indices[(short)i];
+        long fog = *(short *)(clusters + cluster * 0xb0 + 0x76);
+        if (fog == NONE || *(long *)(*(byte **)(structure + 0x88) + fog * 0x88 + 0x24) == NONE) continue;
+        selected[fog] = true;
+        if (cluster == g_547f88.location.cluster_index) distance[fog] = -1.0f;
+        else
+        {
+            real minimum = 32767.0f;
+            short *portals = *(short **)(current + 0x90);
+            volatile long remaining = *(long *)(current + 0x8c);
+            for (; remaining > 0; --remaining, ++portals)
+            {
+                if (*portals == NONE) continue;
+                byte *portal = *(byte **)(structure + 0x60) + *portals * 0x24;
+                if (*(short *)portal != cluster && *(short *)(portal + 2) != cluster) continue;
+                real *plane = (real *)(*(byte **)(*(byte **)(structure + 0x18) + 0xc) + *(long *)(portal + 4) * 16);
+                real value = 0.0f - (camera_y * plane[1] + camera_z * plane[2] + camera_x * plane[0] - plane[3]);
+                if (0.0f > value) value = 0.0f - value;
+                if (minimum > value) minimum = value;
+            }
+            if (distance[fog] > minimum) distance[fog] = minimum;
+        }
+    }
+    for (long i = 0; i < 16; ++i)
+    {
+        if (!selected[i]) continue;
+        long tag = *(long *)(*(byte **)(structure + 0x88) + i * 0x88 + 0x24);
+        if (tag == NONE) continue;
+        byte *definition = g_4e3b44[tag & 0xffff].bytes;
+        if (frame == 0) function_4b3d0((s_vector_perturbation *)(definition + 0x10));
+        real fog_distance = distance[i];
+        real step = g_509418;
+        bool updated = true;
+        for (long j = 0; j < *(long *)(definition + 8); ++j)
+        {
+            byte *state = *(byte **)(definition + 0xc) + j * 0x3a8;
+            updated = updated && function_37260(state, step, definition);
+        }
+        for (long j = 0; j < *(long *)definition; ++j)
+            updated = updated && function_38450(*(byte **)(definition + 4) + j * 0x8c, definition, fog_distance);
+        bool rendered = true;
+        for (long j = 0; j < *(long *)(definition + 8); ++j)
+            rendered = rendered && function_37a60(*(byte **)(definition + 0xc) + j * 0x3a8);
+        for (long j = 0; j < *(long *)definition; ++j)
+            rendered = rendered && function_391f0(*(byte **)(definition + 4) + j * 0x8c);
+    }
+}
+
+
+
+// Disabled: render-clear 14b60 still has a protected bool-only interface; filter callbacks also need shared state addresses.
+#if 0
+PRIVATE inline real transition_time_r18()
+{
+    return g_510c54 && g_510c54->active ? g_510c54->game_time * g_510c54->rate : 0.0f;
+}
+// Retail 0x289e0
+
+#endif
+
+
+
+__declspec(noinline) bool function_0226d0();
+__declspec(noinline) byte function_335c0();
+void function_01ddd0(long index, dword width, dword height);
+bool __stdcall function_32350(long index, real alpha);
+extern byte g_485a46;
+byte g_509413;
+
+// @retail 0x335e0
+void __stdcall function_335e0(long mode)
+{
+    bool enabled = function_0226d0();
+    if (enabled) enabled = function_335c0() != 0;
+    if (!enabled) return;
+    s_cached_input records[32];
+    g_485a46 = enabled;
+    function_01ddd0(9, 0x100, 0x100);
+    g_509413 = enabled;
+    long count = function_33400((byte const *)g_547f88.lists[2], records, mode);
+    for (long i = 0; i < count; ++i)
+        function_32350(records[i].data[2], *(real *)(records[i].data + 3));
+    g_509413 = 0;
+    g_485a46 = 0;
+}
+
+
+
+// Disabled: these passes publish persistent addresses of shared record-source groups; clear 14b60 also retains its incomplete protected interface.
+#if 0
+struct s_record_source;
+
+extern s_record_sources *g_467138;
+extern long g_467130, g_467134;
+extern byte g_485a75, g_485a76, g_4ba022, g_4ba023;
+void __stdcall function_352e0(long target, bool multiple);
+void __stdcall function_44c90(long group, dword selection, long level, dword mask, dword value, dword fallback_mask, dword fallback_value, bool force);
+
+PRIVATE inline void draw_source_pass_r18(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+{
+    bool enabled = (g_4c1a48[group].flags & (1 << mode)) && extra_enabled;
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = group;
+        g_467138 = &g_4c1a48[group];
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
+        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
+        if (filter) function_496f0();
+    }
+    else g_467130 = 0;
+    function_15370(depth ? 1 : 0);
+    if (enabled) { function_44550(); function_445d0(); }
+}
+PRIVATE inline void draw_configured_pass_r18(long mode)
+{
+    if (function_44370(mode)) { function_44550(); function_445d0(); }
+}
+PRIVATE inline bool fog_pass_enabled_r18()
+{
+    real maximum = g_4b9f78 > g_4b9f7c ? g_4b9f78 : g_4b9f7c;
+    return g_4b9f5c != NONE && !g_4b9f88 && maximum > 0.0f;
+}
+
+// Retail 0x423c0
+
+
+// Retail 0x41cc0
+
+
+
+
+// Retail 0x31170
+
+#endif
+
+
+
+
+
+// Disabled: shadow rendering requires persistent shared light-frame/definition storage and visibility/global-source addresses.
+#if 0
+PRIVATE inline vector3f shadow_cross_r18(vector3f const &a, vector3f const &b)
+{
+    vector3f c;
+    c.i = a.j * b.k - a.k * b.j;
+    c.j = a.k * b.i - a.i * b.k;
+    c.k = a.i * b.j - a.j * b.i;
+    return c;
+}
+
+// Retail 0x32350
+
+#endif
+
+
+
+// Disabled: render orchestration takes persistent shared pool/source addresses and calls the blocked clear/frame bodies.
+#if 0
+// Retail 0x2bcd0
+
+#endif
+
+
+extern s_record_pool *g_509434;
+extern long g_4ba050;
+long __stdcall function_3ddd0(long object_index);
+
+// @retail 0x4c450
+long function_4c450(long object_index, real distance, real const *definition, real *fraction)
+{
+    (void)&object_index;
+    real defaults[6] = { 10.0f, 8.0f, 6.0f, 4.0f, 2.0f, 0.0f };
+    real thresholds[6];
+    real upper;
+    *fraction = 0.9999f;
+    if (definition && definition[3] > 0.0f && definition[3] >= definition[4]
+        && definition[4] >= definition[5] && definition[5] >= definition[6]
+        && definition[6] >= definition[7] && definition[8] == 0.0f)
+    {
+        memcpy(thresholds, definition + 3, sizeof(thresholds));
+        upper = definition[0];
+    }
+    else
+    {
+        memcpy(thresholds, defaults, sizeof(thresholds));
+        upper = 0.0f;
+    }
+    long level = 0;
+    while (level < 6)
+    {
+        real lower = thresholds[level];
+        if (distance > lower || lower == 0.0f)
+        {
+            if (level == 0)
+            {
+                if (!(upper > lower))
+                {
+                    *fraction = 0.9999f;
+                    break;
+                }
+            }
+            else upper = thresholds[level - 1];
+            real value = (upper - distance) / (upper - lower);
+            if (value < 0.0f) value = 0.0f;
+            else if (value > 0.9999f) value = 0.9999f;
+            *fraction = value;
+            break;
+        }
+        ++level;
+    }
+    signed char previous = -1;
+    if (g_4ba050 >= 0 && g_4ba050 < 4)
+    {
+        byte *slot = NULL;
+        long cache = function_3ddd0(object_index);
+        if (cache != NONE)
+            slot = g_509434->data + (cache & 0xffff) * 0x100 + 0xbc;
+        previous = (signed char)slot[g_4ba050];
+    }
+    long previous_level = previous;
+    if (previous_level != -1)
+    {
+        long difference = previous_level - level;
+        long absolute = abs(difference);
+        if (absolute == 1)
+        {
+            if (difference == absolute && *fraction < 0.8f)
+                ++level;
+            else if (difference == -1 && *fraction > 0.2f)
+                --level;
+        }
+    }
+    return level;
+}
+
+
+struct s_camera;
+real function_50650(real cosine);
+long function_30830(point3f const *a, s_camera const *camera, vector3f const *d,
+    point2f const *scale, bool perspective, bool negate, point2f *out);
+
+// @retail 0x4ff50
+void function_4ff50(byte const *definition, byte const *state, bool facing, real time,
+    real cosine, real *strength, real *horizontal, real *vertical, real *out)
+{
+    if (*(long const *)(definition + 0x38) > 0)
+    {
+        byte const *curve = *(byte **)(definition + 0x3c);
+        if (facing)
+        {
+            real angle = function_50650(cosine) * 0.6366197466850281f;
+            if (angle < 0.0f) angle = 0.0f;
+            else if (angle > 1.0f) angle = 1.0f;
+            real lower = curve ? *(real const *)(curve + 0x14) * 0.6366197466850281f : 0.0f;
+            if (0.0f > lower) lower = 0.0f;
+            else if (lower > 0.9998999834060669f) lower = 0.9998999834060669f;
+            real value = (angle - lower) / (1.0f - lower);
+            if (0.0f > value) value = 0.0f;
+            else if (value > 1.0f) value = 1.0f;
+            *strength = value;
+            if (value > 0.0f)
+            {
+                if (curve && *(real const *)(curve + 0x18) > 0.0f)
+                    *strength = (real)pow(value, *(real const *)(curve + 0x18));
+                else
+                    *strength = 1.0f;
+            }
+            if (*strength > 0.0f)
+            {
+                point2f projected;
+                if (function_30830((point3f const *)(state + 8), &g_4b9e14, (vector3f const *)(state + 0x14),
+                    &g_4b9ecc, true, true, &projected) && (projected.x != 0.0f || projected.y != 0.0f))
+                {
+                    double direction = atan2(projected.y, projected.x);
+                    *horizontal = (real)cos(direction);
+                    *vertical = (real)sin(direction);
+                }
+            }
+        }
+        if (curve)
+        {
+            real base = *(real const *)(curve + 0x10);
+            if (*strength > 0.0f)
+            {
+                real value = function_13bb90((s_tag_data const *)curve, time, 0.0f);
+                out[0] = base - (base - value) * *strength;
+                value = function_13bb90((s_tag_data const *)(curve + 8), time, 0.0f);
+                out[1] = base - (base - value) * *strength;
+            }
+            else
+            {
+                out[0] = base;
+                out[1] = base;
+            }
+        }
+    }
+}
+
+s_frame_storage g_frame_storage;
+
+s_light_frame_storage g_light_frame_storage;
+
+s_light_definition_storage g_light_definition_storage;
+
+s_filter_buffer_storage g_filter_buffer_storage;
+
+extern byte g_485a75, g_485a76;
+extern long g_485898;
+void function_15680(short mode);
+void function_15370(short mode);
+extern s_record_sources *g_467138;
+extern long g_467130, g_4858b4;
+extern void *g_467134;
+void function_0496f0();
+void function_44550();
+void function_445d0();
+bool __stdcall function_44370(long mode);
+void __stdcall function_14b60(dword flags, dword color, real depth, byte stencil);
+bool function_133790(s_bit_vector_pool *state, short index, bool flag, long *bounds, long context, bool final);
+void __stdcall function_44ac0(long group, dword selection_mask, long level);
+void function_0494b0(real const *bounds, real const *clip);
+void function_40e90(long mode);
+
+extern long g_4ba134;
+
+PRIVATE __forceinline void draw_source_pass_r18(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+{
+    bool enabled = (g_4c1a48[group].flags & (1 << mode)) && extra_enabled;
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = (void *)group;
+        g_467138 = &g_4c1a48[group];
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
+        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
+        if (filter) function_0496f0();
+    }
+    else g_467130 = 0;
+    function_15370(depth ? 1 : 0);
+    if (enabled) { function_44550(); function_445d0(); }
+}
+PRIVATE __forceinline void draw_configured_pass_r18(long mode)
+{
+    if (function_44370(mode)) { function_44550(); function_445d0(); }
+}
+
+PRIVATE __forceinline void draw_light_source_pass(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+{
+    byte enabled = (byte)(g_4c1a48[group].flags >> mode) & extra_enabled;
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = (void *)group;
+        g_467138 = &g_4c1a48[group];
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
+        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
+        if (filter) function_0496f0();
+    }
+    else g_467130 = 0;
+    function_15370(depth ? 1 : 0);
+    if (enabled) { function_44550(); function_445d0(); }
+}
+
+/* the index of key in the list's keys, or NONE */
+PRIVATE inline short key_list_find_index(byte const *list, long key)
+{
+    long i;
+    for (i = 0; i < *(word const *)(list + 4); i++)
+    {
+        if ((*(long const *const *)(list + 0xc))[i] == key)
+        {
+            return (short)i;
+        }
+    }
+    return NONE;
+}
+
+// @retail 0x30ed0
+void function_30ed0()
+{
+    bool rendered = false;
+    byte *state = (byte *)g_4c0b78.state;
+    byte *list = *(byte **)(state + 0x14);
+    long first_group = g_4c19ac;
+    for (long i = 0; i < g_4ba134; ++i)
+    {
+        s_flag_entry const *entry = &g_4ba074[i];
+        long index = key_list_find_index(list, entry->key);
+        if (index == NONE || !(*(word *)(*(byte **)(list + 8) + (short)index * 2) & 0x1000))
+            continue;
+        s_object_marker marker;
+        byte *frustum = *(byte **)state + 4;
+        if (function_b8d30(entry->key, entry->value, &marker, 1, false) <= 0)
+            continue;
+        s_bounds3d bounds3d;
+        if (!function_1650a0((s_view *)frustum, &marker.matrix.position, &bounds3d, entry->x))
+            continue;
+        s_record_sources &group = g_4c1a48[1];
+        group.unknown10 = group.flags;
+        group.flags = 0;
+        group.first = group.count;
+        real *r = (real *)&bounds3d;
+        real *clip = (real *)(frustum + 0xa0);
+        if (!(r[0] > clip[0])) r[0] = clip[0];
+        if (r[1] > *(real *)(frustum + 0xa4)) r[1] = *(real *)(frustum + 0xa4);
+        if (!(r[2] > *(real *)(frustum + 0xa8))) r[2] = *(real *)(frustum + 0xa8);
+        if (r[3] > *(real *)(frustum + 0xac)) r[3] = *(real *)(frustum + 0xac);
+        function_133790((s_bit_vector_pool *)state, index, false, (long *)&bounds3d, first_group + i, true);
+        function_44ac0(3, 2, first_group + i);
+        function_0494b0(clip, (real const *)&bounds3d);
+        draw_configured_pass_r18(10);
+        draw_light_source_pass(1, 11, true, false, false, g_4858b8, true);
+        group.flags = group.unknown10;
+        group.first = 0;
+        rendered = true;
+    }
+    g_4c19ac = first_group;
+    if (rendered) function_40e90(0);
+}
+
+
+#include "index_cache_storage.h"
+extern bool g_4ba010;
+long function_b8c40(long object, short node);
+struct s_light_frame_ab;
+struct s_light_shape_ab;
+struct s_light_projection_ab;
+struct s_index_state_31660;
+struct s_view_camera;
+struct s_view_source;
+extern long g_509440;
+bool function_c17f0(long light, s_light_shape_ab *shape, bool respect_engine);
+void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab const *shape, s_light_projection_ab *entries, short *count);
+s_bit_vector_pool *function_1320f0(long kind, long count, bool flag, long mask, byte const *projections,
+    byte const *origin, real radius, void *filter, real plane_offset, long bsp);
+bool first_person_weapon_get_marker(long object, long marker, point3f *position, vector3f *forward, vector3f *up);
+real function_31b40(vector3f *direction, vector3f const *up);
+void function_31660(long light, long tag, s_index_state_31660 *visibility, long parent, long root, bool flag, bool *special);
+void function_31c20(s_bit_vector_pool *visibility, bool flag, long parent);
+void function_2cb30();
+void function_133390(s_bit_vector_pool const *visibility);
+void __stdcall function_133520(s_bit_vector_pool *visibility);
+void function_133720(s_bit_vector_pool *visibility, bool enabled);
+void function_44720();
+void function_31170(long tag, s_view_camera *camera, long resource, s_view_source *source, bool special, real weight);
+
+// @retail 0x31c80
+void function_31c80()
+{
+    s_cached_input records[128];
+    long count = function_31910(records);
+    for (long i = 0; i < count; ++i)
+    {
+        long const &light_index = *(long const *)(records[i].data + 1);
+        real weight = *(real *)(records[i].data + 3);
+        if (!(weight > 0.07000000029802322f)) continue;
+        byte *light = g_4e030c->data + (light_index & 0xffff) * 0x110;
+        byte *definition = g_4e3b44[*(long *)(light + 4) & 0xffff].bytes;
+        long parent = NONE, root = NONE;
+        if (*(short *)(light + 0x54) != NONE)
+        {
+            parent = *(long *)(light + 0x4c);
+            for (long current = parent; current != NONE; current = *(long *)(((s_scalar_object_header *)g_4e0300->data)[current & 0xffff].object + 0x14))
+                root = current;
+            if ((definition[0] & 0x20) && !(*(dword *)definition & 0x40000))
+            {
+                long node = function_b8c40(parent, *(short *)(light + 0x54));
+                first_person_weapon_get_marker(parent, node, (point3f *)(light + 0x84), (vector3f *)(light + 0xac), (vector3f *)(light + 0xb8));
+                point3f *position = (point3f *)(light + 0x84);
+                vector3f *offset = (vector3f *)(light + 0xac);
+                point3f *endpoint = (point3f *)(light + 0x90);
+                endpoint->x = position->x + offset->i;
+                endpoint->y = position->y + offset->j;
+                endpoint->z = position->z + offset->k;
+                function_31b40(offset, (vector3f *)(light + 0xb8));
+            }
+        }
+        byte shape[0x7c], projections[6 * 0x1bc];
+        function_c17f0(light_index, (s_light_shape_ab *)shape, true);
+        if (g_509440 < 8) g_4c6b00[g_509440++].index = light_index;
+        s_bit_vector_pool *parent_visibility = g_4ba010 ? 0 : &g_547f88;
+        bool special = !(definition[0] & 8) && g_4ba020 && *(real *)(light + 0xf8) > 0.0f && *(short *)shape != 0;
+        long bsp = *(short *)(light + 0x48);
+        if (bsp == NONE && (definition[0] & 0x20) && (*(dword *)definition & 0x40000)) bsp = g_4b9ee4;
+        long mask = (*(dword *)definition >> 12) & 0x400;
+        short projection_count;
+        function_c1d90((s_light_frame_ab *)(light + 0x84), (s_light_shape_ab *)shape, (s_light_projection_ab *)projections, &projection_count);
+        s_bit_vector_pool *visibility = function_1320f0(1, projection_count, false, mask, projections,
+            (byte const *)(light + 0x18), *(real *)(light + 0x24), parent_visibility, 0.0f, bsp);
+        function_31660(light_index, *(long *)(light + 4), (s_index_state_31660 *)visibility, parent, root, *(short *)shape == 0, &special);
+        if (*(dword *)definition & 0x400000) function_31c20(visibility, special, parent);
+        s_bit_vector_pool *state = (s_bit_vector_pool *)g_4c0b78.state;
+        function_2cb30();
+        function_133390(state);
+        function_133520(state);
+        function_133720(state, true);
+        function_44720();
+        function_31170(*(long *)(light + 4), (s_view_camera *)shape, light_index,
+            (s_view_source *)(light + 0x84), special, weight);
+    }
+}
+
+void __stdcall function_352e0(long target, bool multiple);
+void __stdcall function_44c90(long group, dword selection_mask, long level,
+    dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force);
+
+PRIVATE __forceinline void draw_selected_source_pass(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+{
+    bool enabled;
+    *(volatile bool *)&enabled = (bool)((g_4c1a48[group].flags >> mode) & 1) && extra_enabled;
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = (void *)group;
+        g_467138 = &g_4c1a48[group];
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
+        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
+        if (filter) function_0496f0();
+    }
+    else g_467130 = 0;
+    function_15370(depth ? 1 : 0);
+    if (enabled) { function_44550(); function_445d0(); }
+}
+
+// @retail 0x423c0
+void __stdcall function_423c0(void *payload)
+{
+    dword const *selection = (dword const *)payload;
+    dword selection_mask = selection[1] | 0xffffffcf;
+    long level = (long)selection[0];
+    s_record_sources &group = g_4c1a48[0];
+    group.unknown10 = group.flags;
+    group.flags = 0;
+    group.first = group.count;
+    function_352e0(NONE, true);
+    function_44c90(0, selection_mask, level, NONE, 0, NONE, 0, true);
+    draw_selected_source_pass(0, 1, true, true, true, 1, false);
+    draw_selected_source_pass(0, 3, true, true, true, g_4858b8, false);
+    draw_selected_source_pass(0, 8, g_4ba022 != 0, false, false, g_4858b8, false);
+    draw_selected_source_pass(0, 7, true, false, false, g_4858b8, false);
+    draw_selected_source_pass(0, 2, g_4ba023 != 0, false, true, g_4858b8, false);
+    draw_selected_source_pass(0, 16, true, false, false, g_4858b8, false);
+    draw_configured_pass_r18(15);
+    draw_configured_pass_r18(21);
+    group.first = 0;
+    group.flags = group.unknown10;
+}
+
+void function_48ee0(byte const *state, byte const *matrix, byte const *tag);
+void __stdcall function_15720(real x, real y);
+
+extern byte g_4ba018;
+extern dword g_4b843c;
+
+// @retail 0x31170
+void function_31170(long tag, s_view_camera *camera, long resource, s_view_source *source, bool special, real scale)
+{
+    bool &enabled = special;
+    byte *definition = g_4e3b44[tag & 0xffff].bytes;
+    function_40e90(0);
+    if (enabled) enabled = (g_4c1a48[2].flags & 0x400) != 0;
+    function_4a1e0(source, camera, resource, (s_view_flags *)definition, 1024.0f, enabled, scale);
+    g_4ba018 = 1;
+    g_4ba014 = 0;
+    if ((!g_510c50 || !((byte *)g_510c50)[5]) && *(short *)(definition + 4) == 0)
+        g_485950.i = g_485950.j = g_485950.k = 0.0f;
+    s_view_camera *const *camera_home = &camera;
+    g_4ba014 = *(short *)*camera_home == 0 ? 1 : 0;
+    if (g_485950.i > 0.009999999776482582f || g_485950.j > 0.009999999776482582f || g_485950.k > 0.009999999776482582f) g_4ba014 |= 2;
+    else g_4ba014 &= ~2;
+    if (enabled && !(g_4ba014 & 1))
+    {
+        g_4ba014 |= 0x24;
+        if (g_485a40 > 0.0f && *(short *)(definition + 0x14) != 2) g_4ba014 |= 8;
+        else g_4ba014 &= ~8;
+    }
+    else g_4ba014 &= ~0x2c;
+    g_4ba014 = g_4ba014 & ~0x10;
+    if ((bool)((g_4ba014 >> 2) & 1))
+    {
+        function_48ee0((byte const *)source, (byte const *)camera, definition);
+        draw_configured_pass_r18(10);
+    }
+    if ((bool)((g_4ba014 >> 2) & 1) || (bool)((g_4ba014 >> 1) & 1) || (definition[0] & 0x20))
+        draw_light_source_pass(1, 11, true, false, false, g_4858b8, true);
+    if (g_510c50 && ((byte *)g_510c50)[5] && (g_4ba014 & 4) && g_4ba134 > 0) function_30ed0();
+    draw_light_source_pass(1, 14, true, false, false, 1, false);
+    draw_light_source_pass(1, 12, true, false, false, g_4858b8, false);
+    if ((g_4ba014 & 3) == 3) draw_light_source_pass(1, 13, true, false, false, g_4858b8, false);
+    g_4858bc = 0;
+    g_4b843c = 0;
+    D3DDevice_SetRenderState(D3DRS_STENCILENABLE, FALSE);
+    D3DDevice_SetScissors(0, false, 0);
+    function_15720(0, 0);
+    function_14bc0((short)g_4858b8, 0, true);
+    g_4ba018 = 0;
+    g_4ba014 = 0;
+}
+
+PRIVATE __forceinline bool fog_pass_enabled_41cc0()
+{
+    if (g_4b9f5c != NONE && !g_4b9f88)
+    {
+        real maximum = g_4b9f78 > g_4b9f7c ? g_4b9f78 : g_4b9f7c;
+        return maximum > 0.0f;
+    }
+    return false;
+}
+
+// @retail 0x41cc0
+void __stdcall function_41cc0(void *payload)
+{
+    byte const *levels = (byte const *)payload;
+    long level_count = levels[0];
+    dword mask = 0x40000;
+    if (fog_pass_enabled_41cc0()) mask = 0xc0000;
+    s_record_sources &group = g_4c1a48[0];
+    g_485a75 = 1;
+    group.unknown10 = group.flags;
+    group.flags = 0;
+    group.first = group.count;
+    function_352e0(NONE, true);
+    for (long i = 0; i < level_count; ++i)
+        function_44c90(0, NONE, levels[i + 1], 0x11818e, mask, 0x8000, 0x40000, false);
+    draw_source_pass_r18(0, 1, true, true, true, 1, false);
+    draw_source_pass_r18(0, 3, true, true, true, g_4858b8, false);
+    draw_source_pass_r18(0, 8, g_4ba022 != 0, false, false, g_4858b8, false);
+    draw_source_pass_r18(0, 20, true, false, false, g_4858b8, false);
+    draw_source_pass_r18(0, 7, true, false, false, g_4858b8, false);
+    draw_configured_pass_r18(2);
+    draw_configured_pass_r18(16);
+    draw_configured_pass_r18(18);
+    if (fog_pass_enabled_41cc0()) draw_configured_pass_r18(19);
+    draw_configured_pass_r18(15);
+    group.first = 0;
+    g_485a75 = 0;
+    group.flags = group.unknown10;
+}
+
+#include "depth_parameters_storage.h"
+extern long g_4ba03c;
+extern byte g_509430;
+byte g_48575c;
+bool function_13450(s_depth_parameters_13450 const *parameters);
+bool function_289e0();
+bool function_159610();
+void function_2c370(long mode);
+void __stdcall function_335e0(long mode);
+void function_25d50();
+void function_25dc0(bool first, bool second);
+long function_3ba90(long bit, s_record_sources const *data);
+bool __stdcall function_3c3c0(bool render, bool clear);
+void function_2c340(bool enabled);
+void function_c3e90();
+void function_1595d0();
+void __stdcall function_42b20(dword mask);
+void function_1e370();
+long function_155760(long local_player);
+bool function_14ddc0(long local_player);
+long function_14de70(long local_player);
+long function_cbd50(long unit, short slot);
+void function_2afa0(point2f const *scale);
+bool function_3fdf0(long mode, bool single_pass);
+bool function_404b0(long mode);
+bool function_40870();
+void function_2dd30();
+void function_020770();
+void __stdcall function_13870(bool finish, bool blur);
+bool function_13630();
+
+PRIVATE __forceinline void draw_orchestration_source_pass(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+{
+    bool enabled = (g_4c1a48[group].flags & (1 << mode)) && extra_enabled;
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = (void *)group;
+        g_467138 = &g_4c1a48[group];
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
+        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
+        if (filter) function_0496f0();
+        function_15370(depth ? 1 : 0);
+        function_44550();
+        function_445d0();
+    }
+    else
+    {
+        g_467130 = 0;
+        function_15370(depth ? 1 : 0);
+    }
+}
+
+PRIVATE __forceinline s_depth_parameters_13450 zero_orchestration_parameters()
+{
+    s_depth_parameters_13450 parameters = {0};
+    return parameters;
+}
+
+// @retail 0x2bcd0
+void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects, long finish,
+    long context_mode, long filter_mode, real transition)
+{
+    s_depth_parameters_13450 parameters = zero_orchestration_parameters();
+    parameters.distance = transition;
+    parameters.mode = filter_mode;
+    parameters.identifier = ++g_4ba03c;
+    function_13450(&parameters);
+    if (!function_289e0() && !function_159610())
+    {
+        function_40e90(context_mode);
+        if (frame_mode != 5)
+        {
+            if (frame_mode != 1 && frame_mode != 2)
+            {
+                draw_configured_pass_r18(1);
+                draw_configured_pass_r18(3);
+                draw_configured_pass_r18(5);
+                draw_configured_pass_r18(2);
+            }
+            else
+            {
+                draw_orchestration_source_pass(0, 1, true, true, true, 1, false);
+                draw_orchestration_source_pass(0, 3, true, true, true, g_4858b8, false);
+                draw_orchestration_source_pass(0, 5, true, false, false, g_4858b8, false);
+                draw_orchestration_source_pass(0, 8, g_4ba022 != 0, false, false, g_4858b8, false);
+                draw_orchestration_source_pass(0, 20, true, false, false, g_4858b8, false);
+                function_2c370(0);
+                function_335e0(filter_mode);
+                draw_configured_pass_r18(7);
+                function_31c80();
+                function_2c370(1);
+                draw_configured_pass_r18(2);
+                for (long pass = 2; pass <= 6; ++pass) function_2c370(pass);
+            }
+            if (frame_mode != 2)
+            {
+                if (g_48575c && filter_mode != 2)
+                {
+                    function_15370(2);
+                    function_3ede0();
+                    function_15370(0);
+                }
+                if (filter_mode != 2)
+                {
+                    function_25d50();
+                    draw_configured_pass_r18(16);
+                }
+                g_509430 = 0;
+                if (!((byte)g_4b9fe0 & 0x10))
+                {
+                    long last = function_3ba90(6, &g_4c1a48[0]);
+                    draw_configured_pass_r18(6);
+                    function_3c3c0(true, last != 0);
+                }
+                else function_3c3c0(false, false);
+                if (filter_mode != 2)
+                {
+                    if (g_4b9f88) function_25dc0(true, true);
+                    else if (g_4c19ac > 0) function_25dc0(true, false);
+                    function_2c340(world_effects);
+                }
+            }
+            function_c3e90();
+            function_36b50();
+            draw_configured_pass_r18(15);
+            function_1595d0();
+            function_42b20(-13);
+            if ((byte)draw_ui) function_1e370();
+            if (frame_mode != 2)
+            {
+                if (filter_mode != 2 && !g_4b9f88) function_25dc0(g_4c19ac <= 0, true);
+                g_485a76 = 1;
+                long local_player = g_4b9ed8;
+                if (local_player != NONE && !function_155760(local_player) && function_14ddc0(local_player))
+                {
+                    long player = function_14de70(local_player);
+                    long unit = *(long *)(g_4e8c24->data + (player & 0xffff) * 0x21c + 0x2c);
+                    if (unit != NONE)
+                    {
+                        byte *unit_data = ((s_scalar_object_header *)g_4e0300->data)[unit & 0xffff].object;
+                        long weapon = function_cbd50(unit, (signed char)unit_data[0x212]);
+                        if (weapon != NONE)
+                        {
+                            byte *local_ec1b9c = ((s_scalar_object_header *)g_4e0300->data)[weapon & 0xffff].object;
+                            long tag = *(long *)local_ec1b9c;
+                            if (tag != NONE)
+                            {
+                                point2f *scale = (point2f *)(g_4e3b44[tag & 0xffff].bytes + 0x314);
+                                if (scale->x != 0.0f && scale->y != 0.0f) function_2afa0(scale);
+                            }
+                        }
+                    }
+                }
+                function_3fdf0(context_mode, false);
+                function_404b0(context_mode);
+                function_3fdf0(context_mode, true);
+                if ((byte)draw_ui) function_40870();
+                g_485a76 = 0;
+                if (filter_mode != 2 && world_effects) function_2dd30();
+                if (filter_mode != 2)
+                {
+                    if ((byte)finish) draw_configured_pass_r18(17);
+                    function_020770();
+                    function_13870(world_effects, (byte)finish != 0);
+                }
+            }
+        }
+    }
+    function_13630();
+}
+
+extern byte *g_485a80;
+real game_time_get_seconds();
+typedef bool (__stdcall *t_34770_begin)(long);
+typedef bool (__stdcall *t_34770_vertex)(long, real const *, real const *, real *, long);
+typedef void (__stdcall *t_34770_end)(long);
+void function_34420(t_34770_begin begin, real const *bounds, t_34770_vertex vertex, t_34770_end end, long user);
+bool __stdcall function_29080(long context);
+bool __stdcall function_296c0(long context);
+bool __stdcall function_29370(long context);
+bool __stdcall function_298f0(long mode, real const *bounds, real const *t, real *out, long unused);
+void __stdcall function_2a8d0(long tag, long bitmap, real const *source, real const *destination, long mask, color3f const *color, real strength, bool blend, bool inverse, bool alternate_target, bool screen_target, bool simple, bool preserve_alpha);
+void __stdcall function_29b00(long tag, long first_bitmap, real first_alpha, real first_angle, real first_scale, long second_bitmap, real second_alpha, real second_angle, real second_scale, bool screen_target);
+void __stdcall function_2a2f0(volatile long tag, volatile real alpha);
+PRIVATE __forceinline real filter_transition_time_289e0()
+{
+    return g_510c54 && g_510c54->active ? (real)g_510c54->game_time * g_510c54->rate : 0.0f;
+}
+
+void function_14ac0();
+
+#if 0
+// Retail 0x289e0
+bool function_289e0()
+{
+    byte active = g_4670cc.changed; // Retail's active flag is at +1 in the current canonical declaration.
+    if (active && g_485a80)
+    {
+        byte *settings = (byte *)g_485a80;
+        long first_tag = *(long *)(settings + 0x1c), rings_tag = *(long *)(settings + 0x24);
+        long last_tag = *(long *)(settings + 0x2c), slide_tag = *(long *)(settings + 0x3c);
+        long overlay_tag = *(long *)(settings + 0x44);
+        color3f const *color = (color3f const *)((byte *)g_4686cc + 4);
+        g_4b99b0[0] = 1;
+        g_4b99b0[1] = 0;
+        *(color3f *)(g_4b99b0 + 4) = *color;
+        *(real *)(g_4b99b0 + 0x10) = *(real *)(g_4b99b0 + 0x14) = *(real *)(g_4b99b0 + 0x18) = 0.699999988079071f;
+        *(real *)(g_4b99b0 + 0x1c) = *(real *)(g_4b99b0 + 0x20) = 0.05000000074505806f;
+        *(real *)(g_4b99b0 + 0x24) = *(real *)(g_4b99b0 + 0x28) = 0.0f;
+        if (g_4670cc.active)
+        {
+            *(long *)(g_4b99b0 + 0x34) = 1;
+            *(long *)(g_4b99b0 + 0x38) = 3;
+            function_14bc0(1, 0, false);
+            function_14b60(1, 0, 1.0f, 0);
+            if (g_4b99b0[1])
+            {
+                function_14bc0(*(short *)(g_4b99b0 + 0x38), 0, false);
+                if (g_485607 && !g_4858b8) function_14ac0();
+                D3DDevice_Clear(0, 0, 0xf0, 0x8080ff, 1.0f, 0);
+            }
+        }
+        real fraction = 0.0f;
+        real *override_value = (real *)g_4670cc.index;
+        if (override_value) fraction = *override_value < 0.0f ? 0.0f : *override_value > 1.0f ? 1.0f : *override_value;
+        else if (g_4670cc.output.value > 0.0f)
+        {
+            real elapsed = filter_transition_time_289e0() - g_4670cc.start.value;
+            if (elapsed < 0.0f) elapsed = 0.0f;
+            else elapsed = game_time_get_seconds() - g_4670cc.start.value;
+            fraction = elapsed / g_4670cc.output.value;
+            fraction = fraction < 0.0f ? 0.0f : fraction > 1.0f ? 1.0f : fraction;
+        }
+        real progress = function_288e0(fraction);
+        *(real *)(g_4b99b0 + 0x48) = progress;
+        if (progress > 0.15000000596046448f && g_4670cc.elapsed.value == 0.0f) g_4670cc.elapsed.value = filter_transition_time_289e0();
+        real fade = 1.0f - progress * progress;
+        fade = fade < 0.0f ? 0.0f : fade > 1.0f ? 1.0f : fade;
+        real rectangle[4] = {0.0f, 640.0f, 0.0f, 480.0f};
+        real sliding[4] = {(1.0f - progress) * 640.0f, (1.0f - progress) * 640.0f + 640.0f, 0.0f, 480.0f};
+        *(real *)(g_4b99b0 + 0x2c) = (real)pow((double)progress, 3.0) - 0.25f;
+        real center = progress * 2.0f - 1.0f;
+        center = 1.0f - center * center;
+        *(real *)(g_4b99b0 + 0x30) = 1.0f - center * center * 0.6600000262260437f;
+        function_2a8d0(first_tag, 0, rectangle, rectangle, 0, color, 1.0f, false, false, false, false, false, false);
+        real first_angle = fade * 0.2666666805744171f, second_angle = fade * 0.20392157137393951f;
+        for (long i = 0; i < 3; ++i)
+        {
+            real phase = 0.0f;
+            real started = g_4670cc.elapsed.value;
+            if (started != 0.0f)
+            {
+                real elapsed = filter_transition_time_289e0() - started;
+                if (elapsed < 0.0f) elapsed = 0.0f;
+                else elapsed = filter_transition_time_289e0() - started;
+                real period = (started - g_4670cc.start.value) * 1.100000023841858f + (real)i * 0.5f;
+                if (period > 0.0f)
+                    phase = period >= elapsed ? (real)pow((double)elapsed / period, 2.0) : (elapsed - period) / period * 2.0f + 1.0f;
+                else phase = elapsed * 2.0f;
+            }
+            real size = 0.7199999690055847f / (1.0f - progress * 0.699999988079071f) / (1.0f + (real)i * progress * 2.0f);
+            real first_alpha = phase * -0.6283185482025146f * ((real)i + 1.0f) * 1.100000023841858f;
+            real second_alpha = phase * 0.41887903213500977f * ((real)i + 1.0f) * 1.100000023841858f;
+            function_29b00(last_tag, 0, second_angle, second_alpha, size, 1, first_angle, first_alpha, size, false);
+        }
+        function_2a8d0(rings_tag, 0, sliding, rectangle, 0, color, 1.0f, false, true, false, false, false, false);
+        if (g_4b99b0[0] || g_4b99b0[1])
+        {
+            *(real *)(g_4b99b0 + 0x3c) = 0.0f;
+            g_4b99b0[0x40] = 0;
+            g_4b99b0[0x41] = g_4b99b0[1];
+            *(long *)(g_4b99b0 + 0x44) = *(long *)(g_4b99b0 + 0x34);
+            function_34420(function_29080, 0, function_298f0, 0, 0);
+            *(real *)(g_4b99b0 + 0x3c) = 0.0f;
+            g_4b99b0[0x40] = g_4b99b0[0x41] = 0;
+            *(long *)(g_4b99b0 + 0x44) = 0;
+            function_34420(function_296c0, 0, function_298f0, 0, 0);
+            function_2a8d0(slide_tag, 0, 0, 0, -14, color, fade, true, false, false, true, true, false);
+            function_2a2f0(overlay_tag, fade);
+            if (g_4b99b0[0])
+            {
+                *(real *)(g_4b99b0 + 0x3c) = 1.0f;
+                g_4b99b0[0x40] = g_4b99b0[0x41] = 0;
+                *(long *)(g_4b99b0 + 0x44) = *(long *)(g_4b99b0 + 0x38);
+                function_34420(function_296c0, 0, function_298f0, 0, 0);
+                *(real *)(g_4b99b0 + 0x3c) = 2.0f;
+                g_4b99b0[0x40] = 1;
+                g_4b99b0[0x41] = 0;
+                *(long *)(g_4b99b0 + 0x44) = *(long *)(g_4b99b0 + 0x34);
+                function_34420(function_29370, 0, function_298f0, 0, 0);
+            }
+        }
+        active = g_4670cc.changed;
+        g_4670cc.active = 0;
+    }
+    if (!g_4670cc.index && *(real *)(g_4b99b0 + 0x48) == 1.0f)
+    {
+        memset(&g_4670cc, 0, sizeof(g_4670cc));
+        memset(g_4b99b0, 0, sizeof(g_4b99b0));
+        return g_4670cc.changed != 0;
+    }
+    return active;
+}
+#endif
+
+byte g_509414;
+byte *g_4c5008;
+extern vector3f *g_4687b4;
+bool function_3d7c0(long object_index, bool *out);
+byte *__stdcall function_3dc90(long object_index);
+bool function_32ac0();
+void __stdcall function_31f50(long index, point3f const *origin, vector3f const *axis, real *radial, real *axial);
+struct s_light_definition_ab;
+void function_30ca0(bool flag, long mode);
+void function_c1930(s_light_definition_ab const *definition, s_light_shape_ab *shape);
+void function_c1a80(s_light_frame_ab const *frame, s_light_shape_ab *shape, s_light_definition_ab const *definition);
+struct s_visibility_object_lists;
+void visibility_object_lists_update_flags(s_visibility_object_lists *lists, long object, bool value, dword flags);
+void __stdcall function_2cbc0(bool enabled);
+void function_222a0();
+void function_4a780();
+PRIVATE __forceinline void shadow_cross_32350(vector3f const &a, vector3f const &b, vector3f *out)
+{
+    real x = a.j * b.k - a.k * b.j;
+    real y = a.k * b.i - a.i * b.k;
+    real z = a.i * b.j - a.j * b.i;
+    out->i = x;
+    out->j = y;
+    out->k = z;
+}
+
+// @retail 0x32350
+bool __stdcall function_32350(long index, real input_alpha)
+{
+    byte *object = ((s_scalar_object_header *)g_4e0300->data)[index & 0xffff].object;
+    real alpha = 0.0f;
+    bool special = false;
+    bool eligible = function_3d7f0(index, &alpha, &special);
+    alpha *= input_alpha;
+    if (!eligible || *(long *)(object + 0x14) != NONE || !g_4ba020) return special;
+    bool object_flag;
+    if (!function_3d7c0(index, &object_flag)) return special;
+    if (special)
+    {
+        if (g_509413)
+        {
+            if (function_32ac0())
+            {
+                g_509414 = 1;
+                g_509413 = 0;
+                function_32ce0(index, alpha);
+            }
+            else g_509414 = 0;
+        }
+        else if (g_509414) function_32ce0(index, alpha);
+        return special;
+    }
+    real radial = *(real *)(object + 0x3c) > 0.00019999999494757503f ? *(real *)(object + 0x3c) : 0.00019999999494757503f;
+    real axial = radial;
+    byte *lighting = function_3dc90(index);
+    bool object_type = object[0xaa] != 1;
+    if (!lighting || !(*(real *)(lighting + 0x1c) > 0.0f)) goto failed;
+    alpha *= *(real *)(lighting + 0x1c);
+    if (!(alpha > 0.09000000357627869f)) goto failed;
+    {
+        vector3f const *light_direction = (vector3f *)(lighting + 0xc);
+        point3f const *origin = (point3f *)(object + 0x30);
+        function_31f50(index, origin, light_direction, &radial, &axial);
+        *(point3f *)(g_47fd18 + 0xc) = *origin;
+        *(point3f *)g_47fd18 = *origin;
+        vector3f &forward = *(vector3f *)(g_47fd18 + 0x28);
+        forward = *light_direction;
+        function_30bf0(&forward);
+        real abs_x = forward.i >= 0.0f ? forward.i : 0.0f - forward.i;
+        real abs_y = forward.j >= 0.0f ? forward.j : 0.0f - forward.j;
+        real largest = abs_x > abs_y ? abs_x : abs_y;
+        real depth = radial * 2.0f + largest;
+        *(real *)(g_47fda0 + 0x2c) = depth - radial;
+        *(real *)(g_47fda0 + 0x30) = depth + radial - radial;
+        *(real *)(g_47fda0 + 0x20) = axial * 2.0f;
+        vector3f const *axis = g_4687ac;
+        if (!(fabs(forward.k * axis->k + forward.i * axis->i + forward.j * axis->j) < 0.8999999761581421f)) axis = g_4687b4;
+        vector3f &up = *(vector3f *)(g_47fd18 + 0x34);
+        shadow_cross_32350(forward, *axis, &up);
+        function_30bf0(&up);
+        byte shape[0x74];
+        function_c1930((s_light_definition_ab *)g_47fda0, (s_light_shape_ab *)shape);
+        function_c1a80((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_definition_ab *)g_47fda0);
+        s_320b0_box box;
+        box.matrix.scale = 1.0f;
+        box.matrix.forward = forward;
+        shadow_cross_32350(up, forward, &box.matrix.left);
+        box.matrix.up = up;
+        box.radius.i = *(real *)(g_47fda0 + 0x30) * 0.5f;
+        box.radius.j = *(real *)(shape + 0x58) * 0.5f;
+        box.radius.k = *(real *)(shape + 0x5c) * 0.5f;
+        point3f center;
+        center.x = origin->x + forward.i * (0.0f - box.radius.i);
+        center.y = origin->y + forward.j * (0.0f - box.radius.i);
+        center.z = origin->z + forward.k * (0.0f - box.radius.i);
+        box.matrix.position.x = *(real *)(g_47fd18) - center.x + origin->x;
+        box.matrix.position.y = *(real *)(g_47fd18 + 4) - center.y + origin->y;
+        box.matrix.position.z = *(real *)(g_47fd18 + 8) - center.z + origin->z;
+        if (!function_320b0(&box)) goto failed;
+        byte projections[6 * 0x1bc];
+        short projection_count;
+        g_4858bc = 0;
+        *(real *)(g_47fd18 + 0x74) = alpha;
+        function_c1d90((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_projection_ab *)projections, &projection_count);
+        real radius = (real)sqrt(box.radius.k * box.radius.k + box.radius.j * box.radius.j + box.radius.i * box.radius.i);
+        function_1320f0(2, projection_count, false, 0, projections, (byte const *)&box.matrix.position, radius, &g_547f88, 0, *(short *)(object + 0x2c));
+        visibility_object_lists_update_flags((s_visibility_object_lists *)&g_54aa68, index, false, 0);
+        function_2cbc0(object_type);
+        function_44720();
+        g_4ba018 = 1;
+        g_4ba014 = 0;
+        if (*(short *)((byte *)g_54aa68.lists[0] + 4) > 0)
+        {
+            g_4c5008 = g_47fda0;
+            g_4ba014 = 0x14;
+            function_30ca0(false, 5);
+            function_4a1e0((s_view_source *)g_47fd18, (s_view_camera *)shape, NONE,
+                (s_view_flags *)g_47fda0, 1.0f, true, 1.0f);
+            function_48ee0(g_47fd18, shape, g_47fda0);
+            g_485a30 = alpha;
+            function_40e90(0);
+            if ((g_4c1a48[2].flags & 0x400) && (g_4c1a48[1].flags & 0x800))
+            {
+                draw_configured_pass_r18(10);
+                function_222a0();
+                draw_source_pass_r18(1, 11, true, false, false, g_4858b8, true);
+            }
+            function_4a780();
+        }
+        g_4ba018 = 0;
+        g_4ba014 = 0;
+        g_509413 = 1;
+        g_509414 = 0;
+        return true;
+    }
+failed:
+    g_509413 = 1;
+    g_509414 = 0;
+    return special;
 }

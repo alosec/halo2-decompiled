@@ -93,7 +93,7 @@ void function_278f00()
 								if (local_1[local_16] == local_12)
 									break;
 							}
-							if (local_16 == local_8 && !local_15)
+							if (!local_15 && local_16 == local_8)
 							{
 								if (local_14)
 									local_0[local_7++] = local_12;
@@ -131,7 +131,7 @@ void function_278f00()
 							s_havok_object *local_17 = havok_object_get(local_16);
 							if (*((byte *)local_17 + 0xc0) & 1)
 							{
-								*((byte *)local_17 + 0xc0) &= 0xfe;
+								local_17->havok_flag = false;
 								(*g_51e9a0)--;
 							}
 							local_12->havok_component_index = NONE;
@@ -139,7 +139,7 @@ void function_278f00()
 						local_12 = havok_object_get(local_11);
 						if (*((byte *)local_12 + 0xc0) & 1)
 						{
-							*((byte *)local_12 + 0xc0) &= 0xfe;
+							local_12->havok_flag = false;
 							(*g_51e9a0)--;
 						}
 						if (local_13)
@@ -150,9 +150,10 @@ void function_278f00()
 						function_b8540(local_11);
 					}
 				}
+				long const *cleanup_cursor = local_1;
 				for (long local_10 = 0; local_10 < local_8; local_10++)
 				{
-					long local_11 = local_1[local_10];
+					long local_11 = *cleanup_cursor++;
 					s_havok_object *local_12 = havok_object_get(local_11);
 					if (local_12->havok_component_index != NONE)
 						function_1d1260(havok_component_get(local_12->havok_component_index));

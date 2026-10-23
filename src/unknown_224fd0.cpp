@@ -1,4 +1,5 @@
 #include "unknown_11c920.h"
+#include "frame_storage.h"
 #include "globals.h"
 #include <xtl.h>
 #include <math.h>
@@ -43,15 +44,14 @@ struct s_draw_mesh_definition
 };
 struct s_draw_mesh_context { s_draw_mesh_definition const *definition; long constant_index; };
 struct s_draw_mesh_seed { byte field_0[0x1a]; word field_1a; };
-struct s_frame_offset { point3f position; vector3f forward; vector3f up; };
-extern s_frame_offset g_485618;
+
 typedef char check_draw_mesh_mask[offsetof(s_draw_mesh_definition, field_d8)==0xd8?1:-1];
 
 void __stdcall function_173ba0(dword mask, void *a, void *b, void const *c, real *values);
 real function_246cd0(s_particle_property const *property, real const *values);
 real function_30bf0(vector3f *v);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
-matrix3x3 *function_142eb0(matrix3x3 const *a, matrix3x3 const *b, matrix3x3 *out);
+matrix3x3 *function_142eb0(matrix3x3 const *right, matrix3x3 const *left, matrix3x3 *out);
 void function_1cf50();
 
 PRIVATE inline void draw_cross(vector3f const *a, vector3f const *b, vector3f *out)
@@ -63,7 +63,9 @@ PRIVATE inline void draw_cross(vector3f const *a, vector3f const *b, vector3f *o
 
 PRIVATE __forceinline void draw_rotation(vector3f const *axis, real sine, real cosine, matrix3x3 *out)
 {
-	real i2=axis->i*axis->i, j2=axis->j*axis->j, k2=axis->k*axis->k;
+	real k2=axis->k*axis->k;
+	real i2=axis->i*axis->i;
+	real j2=axis->j*axis->j;
 	real ij=(1.0f-cosine)*axis->i*axis->j;
 	real ik=(1.0f-cosine)*axis->k*axis->i;
 	real jk=(1.0f-cosine)*axis->k*axis->j;
@@ -83,19 +85,16 @@ void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache 
 	point3f const *position, vector3f const *direction, real scale, color4f const *color,
 	s_draw_mesh_context const *context)
 {
-	s_draw_mesh_seed const *const *seed_reference=&seed;
-	s_draw_value_cache *const *values_reference=&values;
 	s_draw_mesh_definition const *definition=context->definition;
-	s_draw_index_span const *span=&definition->spans[(*seed_reference)->field_1a%definition->span_count];
+	s_draw_index_span const *span=&definition->spans[seed->field_1a%definition->span_count];
 	dword mask=definition->field_d8&0xf80f;
-	function_173ba0(~values->field_44&mask,values->field_48,values->field_4c,values->field_50,(*values_reference)->values);
+	function_173ba0(~values->field_44&mask,values->field_48,values->field_4c,values->field_50,values->values);
 	values->field_44|=mask;
 	real angle=function_246cd0(&definition->angle,values->values)*6.2831854820251465f;
 	real sine=(real)sin(angle), cosine=(real)cos(angle);
-	vector3f scaling;
-	scaling.i=function_246cd0(&definition->scale_x,values->values)*scale;
-	scaling.j=function_246cd0(&definition->scale_y,values->values)*scale;
-	scaling.k=function_246cd0(&definition->scale_z,values->values)*scale;
+	real scale_i=function_246cd0(&definition->scale_x,values->values)*scale;
+	real scale_j=function_246cd0(&definition->scale_y,values->values)*scale;
+	real scale_k=function_246cd0(&definition->scale_z,values->values)*scale;
 	matrix3x3 rotation, basis;
 #ifdef H2_NATIVE_PORT
 	/* Avoid retaining a compiler-emitted switch table as a false external
@@ -116,9 +115,9 @@ void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache 
 	default: __assume(0);
 	}
 #endif
-	rotation.forward.i*=scaling.i; rotation.forward.j*=scaling.i; rotation.forward.k*=scaling.i;
-	rotation.left.i*=scaling.j; rotation.left.j*=scaling.j; rotation.left.k*=scaling.j;
-	rotation.up.i*=scaling.k; rotation.up.j*=scaling.k; rotation.up.k*=scaling.k;
+	rotation.forward.i*=scale_i; rotation.forward.j*=scale_i; rotation.forward.k*=scale_i;
+	rotation.left.i*=scale_j; rotation.left.j*=scale_j; rotation.left.k*=scale_j;
+	rotation.up.i*=scale_k; rotation.up.j*=scale_k; rotation.up.k*=scale_k;
 	switch(definition->orientation)
 	{
 	case 0:
@@ -143,7 +142,7 @@ void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache 
 		draw_cross(&basis.left,&basis.up,&basis.forward);
 		break;
 	}
-	function_142eb0(&rotation,&basis,&rotation);
+	function_142eb0(&basis,&rotation,&rotation);
 	word *indices=definition->indices;
 	D3DDevice_SetVertexData4f(12,rotation.forward.i,rotation.left.i,rotation.up.i,position->x);
 	D3DDevice_SetVertexData4f(13,rotation.forward.j,rotation.left.j,rotation.up.j,position->y);

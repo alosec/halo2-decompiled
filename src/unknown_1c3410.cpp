@@ -6,12 +6,35 @@
 class c_1c3450;
 void function_1c3450(c_1c3450 *arg_0);
 
-class c_1c3410
+class c_1c3410;
+
+/* the object's three bases each reach its deleting destructor (0x1c3410)
+   through slot 0 of their vtable: the bases at +0xc and +0x10 through the
+   compiler's this-adjustor thunks (0x1c58d0, 0x1c58e0) */
+class c_1c3410_base
+{
+public:
+ virtual c_1c3410 *function_1c3410(dword arg_0) { return 0; }
+ word field_4;
+ dword field_8;
+};
+
+class c_1c3410_interface_c
+{
+public:
+ virtual c_1c3410 *function_1c3410(dword arg_0) { return 0; }
+};
+
+class c_1c3410_interface_10
+{
+public:
+ virtual c_1c3410 *function_1c3410(dword arg_0) { return 0; }
+};
+
+class c_1c3410 : public c_1c3410_base, public c_1c3410_interface_c, public c_1c3410_interface_10
 {
 public:
  c_1c3410 *function_1c3410(dword arg_0);
- dword field_0;
- word field_4;
 };
 
 // @retail 0x1c3410
@@ -22,26 +45,5 @@ c_1c3410 *c_1c3410::function_1c3410(dword arg_0)
  return this;
 }
 
-class c_1c58d0
-{
-public:
- c_1c3410 *function_1c58d0(dword arg_0);
-};
-
-// @retail 0x1c58d0
-c_1c3410 *c_1c58d0::function_1c58d0(dword arg_0)
-{
- return ((c_1c3410 *)((dword)this - 0xc))->function_1c3410(arg_0);
-}
-
-class c_1c58e0
-{
-public:
- c_1c3410 *function_1c58e0(dword arg_0);
-};
-
-// @retail 0x1c58e0
-c_1c3410 *c_1c58e0::function_1c58e0(dword arg_0)
-{
- return ((c_1c3410 *)((dword)this - 0x10))->function_1c3410(arg_0);
-}
+// @retail 0x1c58d0 adjustor c_1c3410::function_1c3410 0xc
+// @retail 0x1c58e0 adjustor c_1c3410::function_1c3410 0x10

@@ -99,14 +99,14 @@ bool pending_message_request_get_progress(s_pending_message_header *header, real
 
 /* queues a request to receive a message */
 // @retail 0x80f70
-bool pending_message_request_receive(s_pending_message_header *header, long value10, s_pending_message_values values, short value06)
+bool pending_message_request_receive(s_pending_message_header *header, long value10, s_pending_message_values values, long value06)
 {
 	bool result = false;
 	if (header->state == 0)
 	{
 		header->unknown10 = value10;
 		header->values = values;
-		header->unknown06 = value06;
+		header->unknown06 = (word)value06;
 		if (header->kind != 0 && (header->flags & 2) && !(header->flags & 8))
 		{
 			result = true;
@@ -128,14 +128,14 @@ bool pending_message_request_receive(s_pending_message_header *header, long valu
 
 /* queues a request to send a message */
 // @retail 0x80ff0
-bool pending_message_request_send(s_pending_message_header *header, long value10, s_pending_message_values values, short value06)
+bool pending_message_request_send(s_pending_message_header *header, long value10, s_pending_message_values values, long value06)
 {
 	bool result = false;
 	if (header->state == 0)
 	{
 		header->unknown10 = value10;
 		header->values = values;
-		header->unknown06 = value06;
+		header->unknown06 = (word)value06;
 		header->pending_index = pending_message_add(header->size, header, header->data);
 		if (header->pending_index != NONE)
 		{
@@ -148,15 +148,23 @@ bool pending_message_request_send(s_pending_message_header *header, long value10
 
 long g_55e700;
 
+static __forceinline void function_81051(word *arg_0, word arg_1, bool arg_2)
+{
+	if (arg_2)
+		*arg_0 |= arg_1;
+	else
+		*arg_0 &= ~arg_1;
+}
+
 // @retail 0x81050
-void function_81050(long result, s_pending_message_header *header)
+void function_81050(s_pending_message_header *header, long result)
 {
 	*(short *)&header->unknown0c = header->state;
-	dword old_flags = header->flags;
 	bool completed = false;
 	((short *)&header->unknown0c)[1] = (short)result;
 	header->state = 0;
 	header->pending_index = NONE;
+	dword old_flags = header->flags;
 	if (result == 1)
 	{
 		completed = true;
@@ -177,13 +185,20 @@ void function_81050(long result, s_pending_message_header *header)
 	s_pending_definition *definition = (s_pending_definition *)header->unknown00;
 	if (definition)
 	{
+		short local_0 = *(short *)&header->unknown0c;
 		old_flags |= header->flags & 4;
-		bool (__stdcall *callback)(s_pending_message_header *) = 0;
-		if (*(short *)&header->unknown0c == 2)
-			callback = definition->sent;
-		else if (*(short *)&header->unknown0c == 1)
-			callback = definition->received;
-		if (callback && !callback(header))
+		bool rejected = false;
+		if (local_0 == 2)
+		{
+			if (definition->sent && !definition->sent(header))
+				rejected = true;
+		}
+		else if (local_0 == 1)
+		{
+			if (definition->received && !definition->received(header))
+				rejected = true;
+		}
+		if (rejected)
 		{
 			header->flags = old_flags;
 			goto retry;
@@ -195,28 +210,28 @@ retry:
 	if (!(header->unknown06 & 2))
 	{
 		definition = (s_pending_definition *)header->unknown00;
+		bool handled = false;
 		if (definition && definition->retry)
 		{
-			bool handled = definition->retry(header);
-			if (handled) header->flags |= 2;
-			else header->flags &= ~2;
-			if (handled) header->flags |= 8;
-			else header->flags &= ~8;
-			if (handled)
-				return;
+			handled = definition->retry(header);
+			function_81051(&header->flags, 2, handled);
+			function_81051(&header->flags, 8, handled);
 		}
-		if (*(short *)&header->unknown0c == 1)
+		if (!handled)
 		{
-			g_55e700++;
-			pending_message_request_receive(header, header->unknown10, header->values, header->unknown06);
+			if (*(short *)&header->unknown0c == 1)
+			{
+				g_55e700++;
+				pending_message_request_receive(header, header->unknown10, header->values, header->unknown06);
+			}
+			else if (*(short *)&header->unknown0c == 2)
+			{
+				g_55e700++;
+				pending_message_request_send(header, header->unknown10, header->values, header->unknown06);
+			}
+			else
+				g_55e700++;
 		}
-		else if (*(short *)&header->unknown0c == 2)
-		{
-			g_55e700++;
-			pending_message_request_send(header, header->unknown10, header->values, header->unknown06);
-		}
-		else
-			g_55e700++;
 	}
 }
 
@@ -247,6 +262,8 @@ static inline __int64 pending_read_ticks(void)
  __asm rdtsc
 }
 
+#include "unknown_080e10.h"
+
 struct s_pending_message_storage : s_pending_message_header
 {
  long capacity;
@@ -256,34 +273,11 @@ struct s_pending_message_storage : s_pending_message_header
 bool function_80e10(s_pending_message_storage *request, void **output, long *size)
 {
  long capacity = request->capacity;
+ long const *local_0 = &capacity;
  bool result = false;
  if ((dword)capacity >= 16 && !request->data)
  {
-  __int64 start = pending_read_ticks();
-  void *allocation = 0;
-  if (capacity > 0 && g_4e6464->page_count > 0)
-  {
-   long attempts = 0;
-   while (!(allocation = (void *)function_12d2f0(capacity, (long)request, 0, (long)function_812d0)))
-   {
-    if (attempts < 90)
-    {
-     attempts++;
-     function_12c600();
-    }
-    else
-    {
-     __int64 elapsed = pending_read_ticks() - start;
-     if (elapsed < 0)
-      elapsed = 0;
-     if (timing_ticks_to_seconds(elapsed) >= 1.0f)
-      break;
-     D3DDevice_KickPushBuffer();
-     D3DDevice_IsBusy();
-     SwitchToThread();
-    }
-   }
-  }
+  void *allocation = (void *)function_80e14(capacity, (long)request, 0, (long)function_812d0, 90, 1.0f);
   request->data = allocation;
   if (allocation)
   {

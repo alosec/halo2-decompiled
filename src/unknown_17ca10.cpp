@@ -419,6 +419,8 @@ byte const g_468d48[12][1024] =
 	},
 };
 
+__declspec(noinline) real function_17c900(short function_type, real input);
+
 // @retail 0x17c900
 real function_17c900(short function_type, real input)
 {
@@ -426,7 +428,7 @@ real function_17c900(short function_type, real input)
 		return 1.0f;
 
 	real scaled = input * 36.57143f;
-	real fraction = (real)fmod((double)scaled, 1.0);
+	real fraction = fmod(scaled, 1.0f);
 	scaled -= fraction;
 	long q;
 
@@ -467,7 +469,7 @@ real function_17ca10(real x, short curve)
 	{
 		byte const *table = g_46bd48[curve];
 		real scaled = x * 1023.0f;
-		real fraction = (real)fmod((double)scaled, 1.0);
+		real fraction = fmod(scaled, 1.0f);
 		real rounded = scaled - 0.1f;
 		long q;
 		short i;

@@ -40,16 +40,21 @@ real g_547634;
 real g_547638;
 
 // @retail 0xbfd20
-void function_0bfd20(word object_index)
+void function_0bfd20(long object_index)
 {
-	s_object_hdr *object = ((s_object_header *)g_4e0300->data)[object_index].object;
+	s_object_header *headers = (s_object_header *)g_4e0300->data;
 	s_match_globals *globals = g_4e0348;
+	long header_index = object_index & 0xffff;
+	s_object_hdr *object = headers[header_index].object;
 	if (TEST_FIELD_BIT(g_4e3b44[(object->tag_index & 0xffff)].flags->flag0))
 	{
-		s_match_entry *entry = globals->match_entries;
-		for (long i = 0; i < globals->count; i++, entry++)
+		for (long i = 0; i < globals->count; i++)
 		{
-			bool match = (entry->byte_06 == object->byte_aa) & (entry->byte_07 == object->byte_ab) & (entry->key == object->key);
+			s_match_entry const *entry = &globals->match_entries[i];
+			bool match = true;
+			match &= entry->byte_06 == object->byte_aa;
+			match &= entry->byte_07 == object->byte_ab;
+			match &= entry->key == object->key;
 			if (match && entry->byte_07 == 0)
 				match &= entry->subkey == object->subkey;
 			if (match)
@@ -58,12 +63,16 @@ void function_0bfd20(word object_index)
 				return;
 			}
 		}
+		object->match_index = NONE;
 	}
-	object->match_index = NONE;
+	else
+	{
+		object->match_index = NONE;
+	}
 }
 
 // @retail 0xbfe20
-void function_0bfe20(dword *flags, long bit, bool value)
+inline void function_0bfe20(dword *flags, long bit, bool value)
 {
 	if (value)
 		*flags |= 1 << bit;
@@ -81,8 +90,11 @@ void function_0bfe40(word *flags, long bit, bool value)
 		*flags &= (word)~(1 << bit);
 }
 
+/* retail never inlines this bit test */
+__declspec(noinline) bool function_0bfe60(const dword *flags, long bit);
+
 // @retail 0xbfe60
-bool function_0bfe60(const dword *flags, long bit)
+inline bool function_0bfe60(const dword *flags, long bit)
 {
 	return (flags[bit >> 5] & (1 << (bit & 31))) != 0;
 }
@@ -131,7 +143,7 @@ bool s_bit_vector::is_empty() const
 }
 
 // @retail 0xbff60
-real function_0bff60(real a, real b)
+inline real function_0bff60(real a, real b)
 {
 	real d = a - b;
 	if (d >= g_547638)
@@ -153,10 +165,11 @@ bool function_bfc90(long object_index)
 	return result;
 }
 
-static __forceinline void object_short_set_ab(s_record_pool *objects, long index, short value)
+static __forceinline void object_short_set_ab(long object_index, short value)
 {
-    s_object_hdr *object = ((s_object_header *)objects->data)[index].object;
     long clamped = value;
+    s_record_pool *objects = g_4e0300;
+    s_object_hdr *object = ((s_object_header *)objects->data)[object_index & 0xffff].object;
     if (clamped < 0) clamped = 0;
     else if (clamped > 0x7ffe) clamped = 0x7ffe;
     object->value104 = (short)clamped;
@@ -166,9 +179,8 @@ static __forceinline void object_short_set_ab(s_record_pool *objects, long index
 void function_bf830(long object_index, real shield, short value)
 {
     s_record_pool *objects = g_4e0300;
-    object_index &= 0xffff;
-    ((s_object_header *)objects->data)[object_index].object->shield = shield;
-    object_short_set_ab(objects, object_index, value);
+    ((s_object_header *)objects->data)[object_index & 0xffff].object->shield = shield;
+    object_short_set_ab(object_index, value);
 }
 
 // @retail 0xbfcc0
@@ -181,7 +193,7 @@ void function_bfcc0(void)
 	} state;
 	function_bae80(&state.iterator, 0, 0);
 	while ((state.object = function_baeb0(&state.iterator)) != 0)
-		function_0bfd20((word)state.iterator.object_index);
+		function_0bfd20(state.iterator.object_index);
 }
 
 

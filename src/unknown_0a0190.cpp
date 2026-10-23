@@ -14,12 +14,14 @@ static inline bool function_x41b793(real value)
 }
 
 // @retail 0xa0190
-bool function_a0190(vector3f const *vector)
+inline bool function_a0190(vector3f const *vector)
 {
 	real difference = length_sq3f(vector) - 1.0f;
 
 	return function_x41b793(difference) && fabs(difference) < k_real_tolerance;
 }
+
+__declspec(noinline) bool function_a0200(real a, real b);
 
 // @retail 0xa0200
 bool function_a0200(real a, real b)
@@ -69,19 +71,31 @@ struct s_z_transform_state
 {
 	long identifier;
 	vector3f position;
-	vector3f forward;
 	vector3f up;
+	vector3f forward;
 	vector3f linear_velocity;
 	vector3f angular_velocity;
 };
 
+__declspec(noinline) bool function_ab9f0(s_z_transform_state const *state);
+
 // @retail 0xab9f0
 bool function_ab9f0(s_z_transform_state const *state)
 {
-	if (state && state->identifier != NONE && function_a7570(&state->position) &&
-		function_a74c0(&state->forward, &state->up) && function_a7570(&state->linear_velocity) &&
-		function_a7570(&state->angular_velocity))
-		return true;
+	if (state && state->identifier != NONE)
+	{
+		if (function_a7570(&state->position))
+		{
+			if (function_a74c0(&state->up, &state->forward))
+			{
+				if (function_a7570(&state->linear_velocity))
+				{
+					if (function_a7570(&state->angular_velocity))
+						return true;
+				}
+			}
+		}
+	}
 	return false;
 }
 

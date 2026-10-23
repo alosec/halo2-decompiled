@@ -1,3 +1,4 @@
+#include "unknown_4cf790.h"
 // @flags /O2 /Ob1 /Gr
 /* ONLINE_TASKS.CPP: the online tasks (the data array g_4cf78c, 24 tasks of
    0x14 bytes) (lane D) */
@@ -49,7 +50,10 @@ long online_task_poll(long task_index)
 	else if (task->flag_bits.running)
 		status = 1;
 	else
-		status = task->flag_bits.started ? 0 : 4;
+		if (task->flag_bits.started)
+			status = 0;
+		else
+			status = 4;
 	return status;
 }
 
@@ -100,6 +104,40 @@ long online_task_find(long type, long controller_index)
 
 /* counts the matching tasks, but stops at the first (callers compare the
    count with 2) */
+PRIVATE __forceinline long function_6b892(s_record_pool *arg_0, long arg_1)
+{
+ long local_0 = NONE;
+ if (arg_1 >= 0)
+ {
+  for (; arg_1 < *(const volatile long *)&arg_0->high_water_index; arg_1++)
+  {
+   if (arg_0->bitmap[arg_1 >> 5] & (1 << (arg_1 & 0x1f)))
+   { local_0 = arg_1; break; }
+  }
+ }
+ return local_0;
+}
+
+PRIVATE __forceinline byte *function_6b891(s_record_pool_iterator *arg_0)
+{
+ s_record_pool *local_0 = arg_0->data;
+ long local_1 = function_6b892(local_0, arg_0->index + 1);
+ byte *local_2;
+ if (local_1 != NONE)
+ {
+  local_2 = local_0->data + local_0->size * local_1;
+  arg_0->index = local_1;
+  arg_0->datum_index = (*(short *)local_2 << 16) | local_1;
+ }
+ else
+ {
+  arg_0->index = local_0->maximum_count;
+  arg_0->datum_index = NONE;
+  local_2 = 0;
+ }
+ return local_2;
+}
+
 // @retail 0x6b890
 long online_task_exists(long type, long controller_index)
 {
@@ -108,7 +146,7 @@ long online_task_exists(long type, long controller_index)
 	long count = 0;
 
 	online_task_iterator_new(&iterator);
-	while (count == 0 && (task = (s_type_9df9da *)data_iterator_next_inlined(&iterator)) != 0)
+	while (count == 0 && (task = (s_type_9df9da *)function_6b891(&iterator)) != 0)
 	{
 		if (task->type == type && (task->controller_index == controller_index || controller_index == NONE || controller_index == 0xff))
 			count++;
@@ -129,7 +167,7 @@ void online_tasks_dispose_all(void)
 		online_task_iterator_new(&iterator);
 		while ((task = (s_type_9df9da *)data_iterator_next_inlined(&iterator)) != 0)
 		{
-			bool dispose;
+			short dispose = true;
 
 			switch (task->type)
 			{
@@ -149,10 +187,8 @@ void online_tasks_dispose_all(void)
 				dispose = g_4cf78c->actual_count <= 4;
 				break;
 			case 44:
-				dispose = true;
 				break;
 			default:
-				dispose = true;
 				break;
 			}
 			if (dispose)
@@ -183,8 +219,8 @@ s_type_9df9da *function_6b910(long task_index)
 // @retail 0x6ba80
 long online_task_get_title(long task_index)
 {
-	s_type_9df9da *task = online_task_try_get(task_index);
 	long result = 0;
+	s_type_9df9da *task = online_task_try_get(task_index);
 
 	if (task)
 	{
@@ -336,8 +372,8 @@ long online_task_get_title(long task_index)
 // @retail 0x6bd10
 long online_task_get_description(long task_index)
 {
-	s_type_9df9da *task = online_task_try_get(task_index);
 	long result = 0;
+	s_type_9df9da *task = online_task_try_get(task_index);
 
 	if (task)
 	{
@@ -513,71 +549,57 @@ long g_467214 = NONE;
 long g_467218 = 10;
 bool g_50944f;
 
+static __forceinline long function_6cd53(s_type_9df9da *task, void *handle)
+{
+ long result;
+		if (!handle || handle == (void *)NONE)
+		{
+			result = 10;
+			goto local_1;
+		}
+		if (!function_8d7c0())
+		{
+			task->flag_bits.failed = true;
+			result = 5;
+			task->result = 5;
+			goto local_1;
+		}
+		switch (XOnlineLogonTaskGetResults((XONLINETASK_HANDLE)handle))
+		{
+		case XONLINE_E_LOGON_CANNOT_ACCESS_SERVICE: result = 4; break;
+		case XONLINE_E_LOGON_CONNECTION_LOST: result = 5; break;
+		case XONLINE_E_LOGON_INVALID_USER: result = 6; break;
+		case XONLINE_E_LOGON_KICKED_BY_DUPLICATE_LOGON: result = 7; break;
+		case XONLINE_E_LOGON_SERVERS_TOO_BUSY: result = 8; break;
+		case XONLINE_E_LOGON_UPDATE_REQUIRED: result = 3; break;
+		case XONLINE_E_LOGON_USER_ACCOUNT_REQUIRES_MANAGEMENT: result = 2; break;
+		case XONLINE_S_LOGON_USER_HAS_MESSAGE: g_50944f = true;
+		default: result = 10; break;
+		case XONLINE_S_LOGON_CONNECTION_ESTABLISHED: result = 1; goto local_1;
+		case S_OK: result = 0; goto local_1;
+		}
+		task->flag_bits.failed = true;
+		task->result = result;
+local_1:
+ return result;
+}
+
 // @retail 0x6cd50
 long online_task_get_logon_status(long task_index)
 {
+	long result;
 	s_type_9df9da *task;
 	if (task_index == NONE || (task = function_6b910(task_index)) == 0)
 		return g_467218;
-	if (task->type == 1 || task->flag_bits.failed)
-		return task->result;
-
-	void *handle = task->handle;
-	if (!handle || handle == (void *)NONE)
+	if (task->type == 1) return task->result;
+	if (task->flag_bits.failed) return task->result;
 	{
-		g_467218 = 10;
-		return 10;
+		void *handle = task->handle;
+		result = function_6cd53(task, handle);
 	}
-	if (!function_8d7c0())
-	{
-		task->flag_bits.failed = true;
-		task->result = 5;
-		g_467218 = 5;
-		return 5;
-	}
-
-	long result;
-
-	switch (XOnlineLogonTaskGetResults((XONLINETASK_HANDLE)handle))
-	{
-	case XONLINE_E_LOGON_CANNOT_ACCESS_SERVICE:
-		result = 4;
-		break;
-	case XONLINE_E_LOGON_CONNECTION_LOST:
-		result = 5;
-		break;
-	case XONLINE_E_LOGON_INVALID_USER:
-		result = 6;
-		break;
-	case XONLINE_E_LOGON_KICKED_BY_DUPLICATE_LOGON:
-		result = 7;
-		break;
-	case XONLINE_E_LOGON_SERVERS_TOO_BUSY:
-		result = 8;
-		break;
-	case XONLINE_E_LOGON_UPDATE_REQUIRED:
-		result = 3;
-		break;
-	case XONLINE_E_LOGON_USER_ACCOUNT_REQUIRES_MANAGEMENT:
-		result = 2;
-		break;
-	case XONLINE_S_LOGON_USER_HAS_MESSAGE:
-		g_50944f = true;
-	default:
-		result = 10;
-		break;
-	case XONLINE_S_LOGON_CONNECTION_ESTABLISHED:
-		result = 1;
-		g_467218 = result;
-		return result;
-	case S_OK:
-		result = 0;
-		g_467218 = result;
-		return result;
-	}
-	task->flag_bits.failed = true;
-	task->result = result;
+local_1:
 	g_467218 = result;
+local_0:
 	return result;
 }
 
@@ -601,10 +623,20 @@ HRESULT online_task_update(s_type_9df9da *task)
 	HRESULT result = online_task_continue(task);
 	if (SUCCEEDED(result))
 	{
-		if (result == XONLINETASK_S_RESULTS_AVAIL)
+		switch (result)
+		{
+		case XONLINETASK_S_RUNNING:
+		case XONLINETASK_S_RUNNING_IDLE:
+			break;
+		case XONLINETASK_S_RESULTS_AVAIL:
 			task->flags |= 2;
-		else if (result != XONLINETASK_S_RUNNING && result != XONLINETASK_S_RUNNING_IDLE)
+			break;
+		case XONLINETASK_S_SUCCESS:
+			{} // falls through; the separate case keeps retail's binary-search switch
+		default:
 			task->flags = (task->flags & ~1) | 4;
+			break;
+		}
 	}
 	else
 	{
@@ -728,8 +760,7 @@ void __stdcall online_messages_enumerate(DWORD controller_index, s_entry *entrie
 bool function_6d080(long controller, s_channel_message *result)
 {
 	bool found = false;
-	s_player_slot_flags *slot = &g_54e8e0[controller];
-	if (!(slot->flags & 3) && online_logon_connected())
+	if (!(g_54e8e0[controller].s_player_slot_flags::flags & 3) && online_logon_connected())
 	{
 		XONLINE_NOTIFICATION_EX_INFO notification;
 		DWORD state_flags;
@@ -738,6 +769,7 @@ bool function_6d080(long controller, s_channel_message *result)
 		{
 			switch (notification.bMessageType)
 			{
+			case 1: result->type = 0; break;
 			case 2: result->type = 1; break;
 			case 3: result->type = 2; break;
 			case 4: result->type = 3; break;
@@ -770,8 +802,8 @@ bool function_6d080(long controller, s_channel_message *result)
 
 #include "unknown_075870.h"
 
-extern s_network_observer *g_4cf8e4;
-extern bool g_4cf95c;
+
+
 void function_7f410(void);
 void transport_reset(void);
 long online_task_get_change_logon_status(s_type_9df9da *task);
@@ -851,27 +883,21 @@ bool function_6c360(s_type_9df9da *task)
 			long status = online_task_get_change_logon_status(task);
 			task->result = 10;
 			if (status == 2)
-			{
-				task->flag_bits.finished = true;
-				task->flag_bits.failed = true;
 				task->result = status;
-			}
-			else
-			{
-				task->flag_bits.finished = true;
-				task->flag_bits.failed = true;
-			}
+			task->flag_bits.finished = true;
+			task->flag_bits.failed = true;
 		}
 		break;
 	case 0:
 	case 0x1513f0:
 		task->result = 0;
-		return true;
+		result = true;
+		break;
 	case 0x1513f1:
 		task->flag_bits.finished = true;
 		task->result = 1;
 		if (function_6bff0(task))
-			return true;
+			result = true;
 		else
 		{
 			task->flag_bits.failed = true;

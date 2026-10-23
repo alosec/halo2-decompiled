@@ -1,0 +1,25 @@
+{
+  "game": "Halo 2",
+  "system": "Xbox",
+  "type": "decomp",
+  "project": "halo2-decompiled",
+  "status": "in-progress",
+  "approach": "Matching decompilation of the retail Xbox executable: each function is rebuilt with the period-correct compiler and must produce exactly the same bytes.",
+  "notes": "An independent, non-commercial preservation project, not affiliated with or endorsed by Microsoft, Bungie or 343 Industries. Source only: the repository contains no game assets and no SDK files. Progress is tracked in README.md and docs/PROGRESS.md. New contributors: start with docs/START_HERE.md, and claim a range in issue #9 before you begin.",
+  "help": [
+    "Matching near-miss functions",
+    "Writing unwritten functions",
+    "Naming types and structure fields",
+    "Documenting game systems"
+  ],
+  "tags": ["matching", "msvc", "cpp"],
+  "maintainers": [
+    { "name": "kirklandsig", "link": "https://github.com/kirklandsig" }
+  ],
+  "links": [
+    { "label": "Start here", "url": "https://github.com/kirklandsig/halo2-decompiled/blob/main/docs/START_HERE.md" },
+    { "label": "Progress", "url": "https://github.com/kirklandsig/halo2-decompiled/blob/main/docs/PROGRESS.md" },
+    { "label": "Active claims", "url": "https://github.com/kirklandsig/halo2-decompiled/issues/9" },
+    { "label": "Legal and scope", "url": "https://github.com/kirklandsig/halo2-decompiled/blob/main/LEGAL.md" }
+  ]
+}

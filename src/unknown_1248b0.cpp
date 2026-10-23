@@ -102,6 +102,8 @@ void input_update_device_changes(void)
 	dword device_changes = 0;
 	dword insertions;
 	dword removals;
+	dword memory_unit_insertions;
+	dword memory_unit_removals;
 
 	if (XGetDeviceChanges(XDEVICE_TYPE_GAMEPAD, &insertions, &removals))
 	{
@@ -151,7 +153,7 @@ void input_update_device_changes(void)
 			device_changes |= 0x8000;
 	}
 
-	if (XGetDeviceChanges(XDEVICE_TYPE_MEMORY_UNIT, &insertions, &removals))
+	if (XGetDeviceChanges(XDEVICE_TYPE_MEMORY_UNIT, &memory_unit_insertions, &memory_unit_removals))
 		g_4e61b8.memory_unit_change_time = GetTickCount();
 
 	function_2184a0(device_changes);
@@ -191,17 +193,18 @@ void function_124c00(long milliseconds)
 			gamepad->analog_button_frames_down[j] = down ? MIN(gamepad->analog_button_frames_down[j] + 1, 0xff) : 0;
 			gamepad->analog_button_msec_down[j] = down ? MIN(gamepad->analog_button_msec_down[j] + milliseconds, 0xffff) : 0;
 
+			byte value = gamepad->analog_buttons[j];
 			if (down)
 			{
-				threshold = gamepad->analog_buttons[j] < k_analog_button_release_margin ? 0 :
-					gamepad->analog_buttons[j] - k_analog_button_release_margin;
+				threshold = value < k_analog_button_release_margin ? 0 :
+					value - k_analog_button_release_margin;
 				if (threshold > gamepad->analog_button_thresholds[j])
 					gamepad->analog_button_thresholds[j] = threshold;
 			}
 			else
 			{
-				threshold = gamepad->analog_buttons[j] > 0xff - k_analog_button_press_margin ? 0xff :
-					gamepad->analog_buttons[j] + k_analog_button_press_margin;
+				threshold = value > 0xff - k_analog_button_press_margin ? 0xff :
+					value + k_analog_button_press_margin;
 				if (threshold < gamepad->analog_button_thresholds[j])
 					gamepad->analog_button_thresholds[j] = threshold;
 			}

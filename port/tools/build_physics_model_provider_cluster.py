@@ -42,7 +42,7 @@ def main() -> int:
         if provider.get("kind") != "source":
             continue
         method = int(address, 0)
-        source = functions.get(method, {}).get("source")
+        source = provider.get("source") or functions.get(method, {}).get("source")
         if not source:
             raise RuntimeError(f"recovered provider lacks source: {method:#x}")
         units[source].append(provider["symbol"])

@@ -10,40 +10,24 @@ struct s_sound_play_state;
 struct s_sound_effect_definition;
 struct s_type_99c531;
 
-// @stub 0x137d00
-void function_137d00(void) { }
 
 struct s_game_options;
-// @stub 0x137ca0
-void __stdcall function_137ca0(s_game_options const *arg_0) { }
-// @stub 0x137e40
-void function_137e40(void) { }
-// @stub 0xc09c0
-void function_c09c0(long arg_0) { }
-// @stub 0x158530
-void function_158530(void) { }
 
 struct s_1870a0;
 struct s_player_action;
 
 struct s_packed_clc;
-// @stub 0xb3ed0
-void __stdcall function_b3ed0(s_packed_clc const *arg_0, long arg_1, char const *arg_2) { }
 
-// @stub 0x151110
-void __stdcall function_151110(long arg_0, void *arg_1) { }
+
 
 struct s_186ab2;
-// @stub 0x1a4900
-void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2) { }
 
 struct s_cluster_query;
 
-class c_18f4bb
+class c_2def90
 {
 public:
-    c_18f4bb(long arg_0, long arg_1, word arg_2);
+ c_2def90(real arg_0);
 };
 
-// @stub 0x18f4bb
-c_18f4bb::c_18f4bb(long arg_0, long arg_1, word arg_2) { }
+#include "contact_volume_30bb50.h"

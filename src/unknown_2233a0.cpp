@@ -17,7 +17,13 @@ struct short_rect_pair
 struct s_33a0b_default;
 struct short_rectangle2d;
 extern s_33a0b_default *g_4686d4;
-extern short_rect_pair g_485a8a;
+struct s_unknown_485a88
+{
+    byte flag;
+    short_rect_pair rects;
+};
+extern s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
 
 class c_1fa50
 {
@@ -32,7 +38,7 @@ wchar_t const *loading_text_get(void);
 wchar_t *ustrnzcatf(wchar_t *, wchar_t const *, ...);
 
 // @retail 0x2233a0
-void function_2233a0(real const *arg_0)
+void __stdcall function_2233a0(real const *arg_0)
 {
 	real const *const *local_5 = &arg_0;
 	long local_4 = (long)(**local_5 * 100.0f);

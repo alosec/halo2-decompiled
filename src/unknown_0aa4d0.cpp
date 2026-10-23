@@ -10,6 +10,7 @@
 #include "unknown_0a58d0.h"
 #include "unknown_xa19f52.h"
 #include "entity_relevance.h"
+#include "unknown_0662e0.h"
 #include <float.h>
 #include <xtl.h>
 
@@ -33,11 +34,8 @@ struct s_relevance_observers
 	s_relevance_observer observers[1];
 };
 
-/* the facing thresholds and relevances of the two observer types */
-real g_4cece8;
-real g_4cecec;
-real g_4cecf0;
-real g_4cecf4;
+/* the facing thresholds and relevances of the two observer types are
+   g_network_configuration.realca8 to realcb4 */
 
 /* the object an entity stands for (0xa58d0, inlined) */
 static inline long simulation_entity_get_object_index(long entity_index)
@@ -49,8 +47,7 @@ static inline long simulation_entity_get_object_index(long entity_index)
 		s_simulation_entity *entity = simulation_entity_try_get(&world->database->table, entity_index);
 		if (entity)
 		{
-			s_entity_definitions *definitions = (s_entity_definitions *)g_4cf784;
-			if (definitions->definitions[entity->type]->v7((s_entity *)entity) && entity->object_index != NONE)
+			if (((s_entity_definitions *)g_4cf784)->definitions[entity->type]->v7((s_entity *)entity) && entity->object_index != NONE)
 				object_index = entity->object_index;
 		}
 	}
@@ -126,12 +123,12 @@ real function_aa4d0(long count, long const *entity_indices, real maximum_distanc
 						switch (observer->type)
 						{
 						case 0:
-							threshold = g_4cece8;
-							facing_relevance = g_4cecf0;
+							threshold = g_network_configuration.realca8;
+							facing_relevance = g_network_configuration.realcb0;
 							break;
 						case 1:
-							threshold = g_4cecec;
-							facing_relevance = g_4cecf4;
+							threshold = g_network_configuration.realcac;
+							facing_relevance = g_network_configuration.realcb4;
 							break;
 						}
 						if (dot3f(&observer->forward, &direction) >= threshold)
@@ -141,13 +138,13 @@ real function_aa4d0(long count, long const *entity_indices, real maximum_distanc
 			}
 		}
 	}
-	relevance = 0.0f;
-	if (maximum_distance > relevance)
+	if (maximum_distance > 0.0f)
 	{
 		real distance_relevance = (maximum_distance - (real)sqrt(minimum_distance_squared)) / maximum_distance;
-		if (!(0.0f > distance_relevance))
-			relevance = distance_relevance;
+		relevance = 0.0f > distance_relevance ? 0.0f : distance_relevance;
 	}
+	else
+		relevance = 0.0f;
 	if (facing && !(relevance > facing_relevance))
 		relevance = facing_relevance;
 done:
@@ -279,7 +276,16 @@ real function_aa7c0(s_relevance_observers const *observers, point3f const *posit
   s_relevance_observer const *observer = &observers->observers[index];
   vector3f direction;
   vector3d_from_points3d(&observer->position, position, &direction);
-  real distance = z_relevance_normalize(&direction);
+  real distance = (real)sqrt(direction.i * direction.i + direction.j * direction.j + direction.k * direction.k);
+  if (!(fabs(distance) < 0.0001f))
+  {
+   real inverse = 1.0f / distance;
+   direction.i = inverse * direction.i;
+   direction.j = inverse * direction.j;
+   direction.k = *(real volatile *)&direction.k * inverse;
+  }
+  else
+   distance = 0.0f;
   if (distance < g_4ced0c)
    return 1.0f;
   real facing = dot3f(&observer->forward, &direction);

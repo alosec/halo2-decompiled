@@ -1331,7 +1331,7 @@
     "?function_1462b0@@YAKXZ",
     "?function_16b5f0@@YAXPAUs_record_pool@@PBDJJJPAVc_data_allocator@@@Z",
     "?function_16bc00@@YAJPAUs_record_pool@@J@Z",
-    "?function_18e1f0@@YAPAUs_loop_allocator@@PAVc_memory_source@@JPBD@Z",
+    "?function_18e1f0@@YAPAUs_loop_allocator@@JPAVc_memory_source@@PBD@Z",
     "?function_18e230@@YAXPAUs_loop_allocator@@@Z",
     "?function_18e250@@YAXPAUs_loop_allocator@@JPBDPAVc_memory_source@@@Z",
     "?function_53a20@@YGXKPAXK@Z",
@@ -2842,7 +2842,7 @@
       "?g_510c90@@3PAUs_voice_effects@@A",
       "?g_4e6948@@3PAUs_game_options_view@@A",
       "?g_46dd54@@3PAVc_memory_source@@A",
-      "?function_18e1f0@@YAPAUs_loop_allocator@@PAVc_memory_source@@JPBD@Z",
+      "?function_18e1f0@@YAPAUs_loop_allocator@@JPAVc_memory_source@@PBD@Z",
       "?function_18e230@@YAXPAUs_loop_allocator@@@Z",
       "?function_18e250@@YAXPAUs_loop_allocator@@JPBDPAVc_memory_source@@@Z",
       "XPhysicalProtect"

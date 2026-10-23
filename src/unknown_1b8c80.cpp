@@ -4,6 +4,10 @@
 #include "unknown_26e370.h"
 #include "unknown_11cc90.h"
 #include "units.h"
+#include "unknown_26b230.h"
+#include "unknown_0259a0.h"
+#include "unknown_1f9240.h"
+#include <string.h>
 #include "unknown_0d0690.h"
 #include <float.h>
 
@@ -209,33 +213,34 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 	return result;
 }
 
+// score 109 (was 117): the loop body matches, but retail pushes ebp and esi
+// after the loop's entry check while ours saves them in the prologue, and
+// retail reads the second argument before the pushes.
 // @retail 0x1b8f30
 bool function_1b8f30(long actor_index, long object_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	short count = 0;
-	bool result = false;
+	byte result = 0;
 	long last_object_index = NONE;
 	s_object_seat seats[0x40];
 
 	function_c8a40(object_index, seats, &count, 0x40);
 	for (short i = 0; i < count; i++)
 	{
-		s_object_seat *seat = &seats[i];
-		long seat_object_index = seat->object_index;
-		s_seat_definition_flags *definition = &seat->definition->flags;
+		s_seat_definition_flags *definition = &seats[i].definition->flags;
 
-		if (seat_object_index != last_object_index)
+		if (seats[i].object_index != last_object_index)
 		{
-			s_slot_object_view *object = object_get(seat_object_index);
+			s_slot_object_view *object = object_get(seats[i].object_index);
 
 			if (object->type == 1 && object->unknown3b4)
 				return false;
-			last_object_index = seat_object_index;
+			last_object_index = seats[i].object_index;
 		}
 		if (!TEST_FIELD_BIT(definition->bit11))
 		{
-			long occupant = function_c8f60(seat_object_index, seat->seat_index);
+			long occupant = function_c8f60(seats[i].object_index, seats[i].seat_index);
 
 			if (occupant != NONE)
 			{
@@ -244,8 +249,8 @@ bool function_1b8f30(long actor_index, long object_index)
 				if (team != actor->unknown024 && function_1df560(team, actor->unknown024))
 					return false;
 			}
-			else if (!function_1b8d80(actor_index, seat_object_index, seat->seat_index, false) &&
-				function_c8200(seat->object_index, seat->seat_index, actor->unknown018))
+			else if (!function_1b8d80(actor_index, seats[i].object_index, seats[i].seat_index, false) &&
+				function_c8200(seats[i].object_index, seats[i].seat_index, actor->unknown018))
 			{
 				result = true;
 			}
@@ -286,8 +291,8 @@ bool function_1b90b0(long actor_index, long object_index)
 // @retail 0x1b9190
 long function_1b9190(long object_index, long *rider_index)
 {
-	s_slot_object_view *object = object_get(object_index);
 	long result = NONE;
+	s_slot_object_view *object = object_get(object_index);
 
 	if (rider_index)
 		*rider_index = NONE;
@@ -297,15 +302,29 @@ long function_1b9190(long object_index, long *rider_index)
 
 		if (child->type == 0 && child->player_index != NONE)
 		{
+			result = child->player_index;
 			if (rider_index)
 				*rider_index = child_index;
-			return child->player_index;
+			break;
 		}
 		child_index = child->next_object_index;
 	}
 	return result;
 }
 
+PRIVATE __forceinline void function_1b9201(long arg_0, vector3f *arg_1)
+{
+	s_slot_object_view *local_0 = object_get(arg_0);
+
+	if (local_0->parent_index == NONE)
+		*arg_1 = local_0->forward;
+	else
+		matrix_transform_vector(object_node_matrix(object_get(local_0->parent_index), local_0->parent_node), &local_0->forward, arg_1);
+}
+
+// score 11 (was 11): the seat loop keeps the seat count in EBP and the index
+// in ESI here, retail keeps the count in ESI and the index in EBP, so the loop
+// preamble is laid out differently.
 // @retail 0x1b9200
 bool function_1b9200(long object_index, long prop_index)
 {
@@ -332,7 +351,7 @@ bool function_1b9200(long object_index, long prop_index)
 				vector3f forward;
 
 				function_b9dd0(object_index, &position);
-				object_get_forward(object_index, &forward);
+				function_1b9201(object_index, &forward);
 				forward.k = 0.0f;
 				if (function_30bf0(&forward) > 0.0f)
 				{
@@ -343,7 +362,7 @@ bool function_1b9200(long object_index, long prop_index)
 					direction.k = 0.0f;
 					if (function_30bf0(&direction) > g_45dbd8)
 					{
-						real angle = function_11cc90((vector2f *)&direction, (vector2f *)&forward);
+						real angle = function_11cc90((vector2f *)&forward, (vector2f *)&direction);
 
 						if (angle <= seat->unknown88 || angle > seat->unknown8c)
 							result = false;
@@ -355,11 +374,14 @@ bool function_1b9200(long object_index, long prop_index)
 	return result;
 }
 
+// score 32 (was 32): retail passes the child iterator in EBX, the register
+// argument of function_d0620 under LTCG, ours passes it on the stack; the
+// declaration in include/unknown_0d0690.h is not mine to change.
 // @retail 0x1b9420
 bool function_1b9420(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	bool result = false;
+	bool volatile result = false;
 
 	if (actor->unknown086 >= 3)
 		return true;
@@ -367,11 +389,13 @@ bool function_1b9420(long actor_index)
 	s_object_child_iterator iterator;
 
 	function_d0620(actor->unknown26c, &iterator);
-	while (function_d0690(&iterator))
+	if (!function_d0690(&iterator))
+		return result;
+	do
 	{
 		if (object_get(iterator.child_value)->player_index != NONE)
 			return true;
-	}
+	} while (function_d0690(&iterator));
 	return result;
 }
 
@@ -492,22 +516,34 @@ void __stdcall function_1ba3f0(long actor_index, s_slot *slot, s_slot_target_lis
 		s_object_seat seats[0x40];
 
 		function_c8a40(element->object_index, seats, &count, 0x40);
-		for (short i = 0; i < count; i++)
+		if (count > 0)
 		{
-			s_object_seat *seat = &seats[i];
-			s_object_header_view *header = object_header_get(seat->object_index);
+			s_object_seat *seat = seats;
+			long local_0 = (word)count;
+			do
+			{
+				s_object_header_view *header = object_header_get(seat->object_index);
 
-			if (header->type == 1)
-				object_seat_unreserve((s_slot_object_view *)header->object, seat->seat_index);
+				if (header->type == 1)
+					object_seat_unreserve((s_slot_object_view *)header->object, seat->seat_index);
+				seat++;
+			}
+			while (--local_0);
 		}
 	}
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+// score 6 (was 6): retail loads the slot pointer into ECX before the actor
+// index is masked, ours loads it after the actor lookup and after the branch
+// that tests the actor, so the two builds are one instruction out of step.
 // @retail 0x1ba8c0
 void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_list *list)
 {
 	s_slot_4c *state = (s_slot_4c *)slot;
 	s_actor_view *actor = actor_get(actor_index);
+	_ReadWriteBarrier();
 
 	if (actor->unknown26c == NONE)
 	{
@@ -532,6 +568,7 @@ void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_lis
 	}
 	actor->unknown450 = 0x6000086;
 }
+#pragma function(_ReadWriteBarrier)
 
 /* the unit fields function_1ba990 reads */
 struct s_unit_1ba990
@@ -598,7 +635,7 @@ bool function_1ba990(long actor_index, long unit_index, bool force, real near_ra
 	return result;
 }
 
-bool function_f5dc0(long object_index);
+__declspec(noinline) bool function_f5dc0(long object_index);
 long function_25d810(long object_index, long actor_index, bool create);
 bool __stdcall function_25c230(long actor_index, long prop_ref_index, short unknown);
 
@@ -609,12 +646,155 @@ struct s_player_unit_view
 	long unit_index;
 };
 
-short function_1a6fe0(long owner_index, short type);
+short actor_behavior_find_level(long owner_index, short type);
 struct s_object;
 s_object *function_badc0(long object_index, dword type_mask);
 
 /* slot test 0x4d: the actor boards the vehicle of a friendly player near
    enough to it */
+struct s_1b99d0_unit_flags
+{
+	byte bit0 : 1;
+	byte bit1 : 1;
+	byte bit2 : 1;
+	byte remaining : 5;
+};
+
+struct s_1b99d0_tag_flags
+{
+	dword lower : 18;
+	dword bit18 : 1;
+	dword upper : 13;
+};
+
+struct s_node_view;
+void function_26be00(long actor_index, s_iterator *iterator);
+s_node_view *function_26be30(s_iterator *iterator);
+bool function_26c120(long actor_index);
+long function_1e4a50(long character_index);
+void __stdcall function_26c2d0(long prop_index);
+void function_270590(s_path_source *source, s_type_c3b527 const *point, long node_index);
+
+// score 225 (was 225): ours sign extends g_46fbe4, which is declared short in
+// include/globals.h, where retail reads the same global as a dword; the frame
+// offsets differ as well.
+// @retail 0x1b99d0
+short __stdcall function_1b99d0(long actor_index, s_slot *slot)
+{
+	s_actor_view *actor = actor_get(actor_index);
+	long result = g_46fbe4;
+	if (actor->unknown224 || actor->unknown225 || !actor->unknown040 || actor->unknown858 != NONE ||
+		!function_26c120(actor_index) || actor->prop_index == NONE)
+		return (short)result;
+
+	s_prop_node_view *base = prop_node_get(actor->prop_index);
+	long selected = NONE;
+	real best_score = 10.0f;
+	real range_low;
+	real range_high;
+	byte *properties = (byte *)function_1e4a50(actor->unknown054);
+	s_iterator iterator;
+	function_26be00(actor_index, &iterator);
+	function_26c180(actor_index);
+	if (properties && actor->unknown27c.unknown10 != NONE && actor->unknown278[0])
+	{
+		bool prepared = false;
+		byte *buffer = ai_scratch_buffer_get();
+		s_prop_node_view *node = (s_prop_node_view *)function_26be30(&iterator);
+		while (node)
+		{
+			if (node->type == 4 && node->unknown24 >= 1 && node->unknown24 <= 2)
+			{
+				s_slot_object_view *vehicle = object_get(node->object_index);
+				s_vehicle_tag_view *tag = (s_vehicle_tag_view *)g_4e3b44[vehicle->tag_index & 0xffff].bytes;
+				if (!TEST_FIELD_BIT(((s_1b99d0_unit_flags *)((byte *)vehicle + 0x10a))->bit2) &&
+					!TEST_FIELD_BIT(((s_1b99d0_tag_flags *)((byte *)tag + 0x1ec))->bit18) &&
+					vehicle->unknown3a0 != NONE && function_1b8f30(actor_index, node->object_index))
+				{
+					if (tag->unknown1f0 != 6 || function_1b9200(node->object_index, actor->prop_index))
+					{
+						real ownership_weight = vehicle->unknown3a0 == actor->unknown030 ? 0.75f : 1.2f;
+						real type_weight = tag->unknown1f0 == 6 ? 1.5f : 1.0f;
+						real state_weight = 1.0f;
+						if (actor->unknown086 >= 8)
+							state_weight = 1.5f;
+						else if (actor->unknown086 < 6)
+							state_weight = 0.75f;
+						real score = node->unknown28 * state_weight * type_weight * ownership_weight;
+						if (score < best_score)
+						{
+							s_prop_state_view *state = prop_node_state(node);
+							function_26c2d0(iterator.index);
+							if (*(long *)((byte *)state + 0x44) != NONE)
+							{
+								if (!prepared)
+								{
+									s_path_source source;
+									s_path_settings settings;
+									memset(&source, 0, sizeof(source));
+									source.radius = *(real *)(properties + 4);
+									source.unknown04 = 1;
+									source.object_index = NONE;
+									source.unknown0c = NONE;
+									source.unknown4c = 0.0f;
+									function_270590(&source, &actor->unknown27c.point, actor->unknown27c.unknown10);
+									source.unknown45 = true;
+									source.unknown48 = 15.0f;
+									source.unknown28[0] = 1;
+									*(point3f *)((byte *)&source + 0x2c) = prop_node_state(base)->position;
+									*(long *)((byte *)&source + 0x38) = base->object_index;
+									*(real *)((byte *)&source + 0x3c) = 1.0f;
+									*(real *)((byte *)&source + 0x40) = 0.0f;
+									source.unknown44 = false;
+									function_1f9240(actor_index, &settings);
+									function_271300((s_type_f17a25 *)buffer, NULL, &settings, &source, 0);
+									function_2715a0(buffer);
+									prepared = true;
+								}
+								real closest_distance;
+								real path_distance;
+								function_270750(buffer, *(long *)((byte *)state + 0x44), &state->unknown48,
+									&path_distance, (long)&closest_distance, 0);
+								if (path_distance < 15.0f && closest_distance > base->unknown28 * 0.5f)
+								{
+									best_score = score;
+									selected = node->object_index;
+									range_low = ownership_weight * 13.0f;
+									range_high = ownership_weight * 16.0f;
+								}
+							}
+						}
+					}
+				}
+			}
+			node = (s_prop_node_view *)function_26be30(&iterator);
+		}
+		if (selected != NONE)
+		{
+			if (function_f5dc0(selected))
+			{
+				byte *output = (byte *)slot;
+				*(word *)(output + 0x1c) |= 1;
+				*(long *)(output + 0x20) = selected;
+				result = 0x5d;
+			}
+			else
+			{
+				s_slot_4c *output = (s_slot_4c *)slot;
+				output->unknown28 = range_low;
+				output->unknown2c = range_high;
+				output->seat_index = NONE;
+				output->unknown1c = selected;
+				output->flags |= 0x29;
+				result = 0x4c;
+			}
+		}
+		ai_scratch_buffer_release(buffer);
+	}
+	return (short)result;
+}
+
+
 // @retail 0x1b9640
 short __stdcall function_1b9640(long actor_index, s_slot *slot)
 {
@@ -631,8 +811,7 @@ short __stdcall function_1b9640(long actor_index, s_slot *slot)
 		iterator.data = g_4e8c24;
 		iterator.index = NONE;
 		iterator.datum_index = NONE;
-		if (data_datum_iterator_next(&iterator))
-		do
+		while (data_datum_iterator_next(&iterator))
 		{
 			s_player_unit_view *player = (s_player_unit_view *)iterator.datum;
 
@@ -661,7 +840,6 @@ short __stdcall function_1b9640(long actor_index, s_slot *slot)
 				}
 			}
 		}
-		while (data_datum_iterator_next(&iterator));
 
 		if (vehicle_index != NONE)
 		{
@@ -670,8 +848,9 @@ short __stdcall function_1b9640(long actor_index, s_slot *slot)
 
 			if (prop_index != NONE && prop_node_get(prop_index)->unknown24 < 1)
 				function_25c230(actor_index, prop_index, 3);
-			slot_index = function_1a6fe0(actor_index, 0x4c);
-			if (slot_index == NONE || function_1b8c80(((s_slot_4c *)&actor->slots[slot_index])->unknown1c) != vehicle_index)
+			slot_index = actor_behavior_find_level(actor_index, 0x4c);
+			bool already_assigned = slot_index != NONE && function_1b8c80(((s_slot_4c *)&actor->slots[slot_index])->unknown1c) == vehicle_index;
+			if (!already_assigned)
 			{
 				s_slot_4c *state = (s_slot_4c *)slot;
 
@@ -721,18 +900,22 @@ short __stdcall function_1b9890(long actor_index, s_slot *slot)
 
 /* invites the clump members to the joint, the nearest first, when the
    object has more than one seat to take */
+// score 17 (was 17): retail loads the element pool data into EDX before the
+// actor is fetched and keeps the element record in ECX, ours loads the data
+// later into ESI and the record in EAX.
 // @retail 0x1bb3a0
 short __stdcall function_1bb3a0(long actor_index, long joint_index, long a, long b)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_4c_element *element = (s_4c_element *)element_502424_get(joint_index);
+	long local_0 = element->object_index;
 	long count = 0;
 	short seat_count = 0;
 	short free_count = 0;
 	point3f position;
 	s_object_seat seats[0x40];
 
-	function_c8a40(element->object_index, seats, &seat_count, 0x40);
+	function_c8a40(local_0, seats, &seat_count, 0x40);
 	for (short i = 0; i < seat_count; i++)
 	{
 		if (!TEST_FIELD_BIT(seats[i].definition->flags.bit11))
@@ -741,14 +924,15 @@ short __stdcall function_1bb3a0(long actor_index, long joint_index, long a, long
 	function_b9dd0(element->object_index, &position);
 	if (free_count > 1 && actor->unknown07c != NONE)
 	{
-		long index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_element_502420_member_iterator iterator;
+		s_actor_view *other;
 
-		while (index != NONE)
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		iterator.index = NONE;
+		while ((other = element_502420_member_next(&iterator)) != 0)
 		{
-			s_actor_view *other = actor_get(index);
-			long other_index = index;
+			long other_index = iterator.index;
 
-			index = other->next_index;
 			if (actor != other &&
 				(other->unknown26c == NONE || other->unknown26c == element->object_index && other->unknown266))
 			{
@@ -820,13 +1004,16 @@ s_slot_handler_2x g_47e9d0 =
 	1, 10, 1.5f, 0x5b
 };
 
+// score 47 (was 47): g_46fbe4 and g_46fbe8 are read as bytes here but as
+// dwords in retail; they are declared short in include/globals.h, which is not
+// mine to change.
 // @retail 0x1ba4e0
 short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_4c *state = (s_slot_4c *)slot;
 	s_4c_element *element = (s_4c_element *)element_502424_get(state->element_index);
-	short result = g_46fbe8;
+	long result = g_46fbe8;
 
 	state->unknown24++;
 	if (element->object_index != NONE && state->unknown1c != NONE)
@@ -850,7 +1037,7 @@ short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 					if (actor->unknown266)
 						result = g_46fbe8;
 					if (!element->unknown84)
-						function_1fb7e0(actor_index, 0x39, NULL, NONE, NONE);
+						function_1fb7e0(0x39, actor_index, NULL, NONE, NONE);
 				}
 			}
 			return result;
@@ -875,6 +1062,9 @@ struct s_seat_approach_result
 	bool approaching;
 };
 
+// score 176 (was 176): retail computes the seat differences in x87 and keeps
+// them unrounded, ours computes them in single precision, and our stack frame
+// is 4 bytes smaller than retail's, so every local offset is shifted.
 // @retail 0x1baae0
 bool function_1baae0(long actor_index, long object_index, short seat_index, bool ignore_bonus,
 	bool ignore_reserved, bool vertical, s_seat_approach_result *out)
@@ -895,11 +1085,11 @@ bool function_1baae0(long actor_index, long object_index, short seat_index, bool
 			if (normalize2d((point2f *)&direction) == 0.0f)
 				direction = actor->unknown290;
 			real distance;
-			double dx = (double)position.x - actor->position.x;
-			double dy = (double)position.y - actor->position.y;
+			real dx = position.x - actor->position.x;
+			real dy = position.y - actor->position.y;
 			if (vertical)
 			{
-				double dz = (double)position.z - actor->position.z;
+				real dz = position.z - actor->position.z;
 				distance = (real)sqrt(dx * dx + dy * dy + dz * dz);
 			}
 			else
@@ -907,8 +1097,8 @@ bool function_1baae0(long actor_index, long object_index, short seat_index, bool
 				real mx = marker.x - actor->position.x;
 				real my = marker.y - actor->position.y;
 				point3f const *nearest = sqrt(dx * dx + dy * dy) > sqrt(mx * mx + my * my) ? &marker : &position;
-				double nx = (double)nearest->x - actor->position.x;
-				double ny = (double)nearest->y - actor->position.y;
+				real nx = nearest->x - actor->position.x;
+				real ny = nearest->y - actor->position.y;
 				distance = (real)sqrt(nx * nx + ny * ny);
 			}
 			s_slot_object_view *object = object_get(object_index);
@@ -964,8 +1154,8 @@ short function_1bb1d0(long actor_index, long object_index, s_object_seat const *
     }
     else
     {
-        real best_score = 0.0f;
         long best_object = NONE;
+        real best_score = 0.0f;
         short eligible = 0;
         s_seat_approach_result best;
         for (short i = 0; i < count; i++)
@@ -974,13 +1164,14 @@ short function_1bb1d0(long actor_index, long object_index, s_object_seat const *
             if (!TEST_FIELD_BIT(seat->definition->flags.bit11))
             {
                 s_seat_approach_result approach;
-                if (function_1baae0(actor_index, seat->object_index, seat->seat_index, false, false, false, &approach))
+                short seat_index = seat->seat_index;
+                if (function_1baae0(actor_index, seat->object_index, seat_index, false, false, false, &approach))
                 {
                     eligible++;
                     if (approach.score > best_score)
                     {
                         best_object = seat->object_index;
-                        result = seat->seat_index;
+                        result = (short)seat_index;
                         best = approach;
                         best_score = approach.score;
                     }
@@ -988,8 +1179,8 @@ short function_1bb1d0(long actor_index, long object_index, s_object_seat const *
             }
         }
         if (reject_single && eligible == 1)
-            return NONE;
-        if (result != NONE)
+            result = NONE;
+        else if (result != NONE)
         {
             if (chosen_object)
                 *chosen_object = best_object;
@@ -1010,20 +1201,22 @@ struct s_seat_selection
 
 bool function_2676d0(long actor_index);
 bool function_1e2030(long actor_index);
+short __stdcall function_c8b80(long object_index, s_object_seat *seats, short maximum_count);
 
 // @retail 0x1b9e70
 bool function_1b9e70(long actor_index, s_seat_selection *selection, bool reserved,
     s_4c_element const *element, s_seat_approach_result *out)
 {
-    bool search = false;
     bool result = false;
+    bool search = false;
     if (selection->seat_index != NONE)
     {
         if (function_1baae0(actor_index, selection->object_index, selection->seat_index, false, !reserved, false, out))
             result = true;
         else
         {
-            object_seat_unreserve(object_get(selection->object_index), selection->seat_index);
+            long seat_index = selection->seat_index;
+            object_seat_unreserve(object_get(selection->object_index), seat_index);
             search = ((selection->flags >> 3) & 1) != 0;
             selection->seat_index = NONE;
             selection->object_index = NONE;
@@ -1034,9 +1227,8 @@ bool function_1b9e70(long actor_index, s_seat_selection *selection, bool reserve
     if (selection->seat_index == NONE && search)
     {
         s_object_seat seats[0x40];
-        short count = 0;
+        short count = function_c8b80(element->object_index, seats, 0x40);
         long object_index;
-        function_c8a40(element->object_index, seats, &count, 0x40);
         bool reject_single = element->unknown85 && (!function_2676d0(actor_index) || !function_1e2030(actor_index));
         selection->seat_index = function_1bb1d0(actor_index, element->object_index, seats, count,
             reject_single, &object_index, out);
@@ -1055,6 +1247,15 @@ bool __stdcall function_f5d10(long vehicle_index, long bit, bool set);
 void function_26ee40(s_joint_behavior_state *behavior);
 void function_1f86a0(long actor_index);
 
+struct s_1ba091
+{
+    s_slot_memory_entry *field_0;
+    s_slot_entry_iterator field_4;
+};
+
+// score 198 (was 198): retail keeps the actor record count in ESI, loaded from
+// the pool at 0x4e0300 before the slot state is touched, ours reloads it from
+// the stack; the frame offsets differ as well.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
@@ -1064,22 +1265,21 @@ long __stdcall function_1ba090(long actor_index, s_slot *slot)
     s_seat_selection *selection = (s_seat_selection *)&state->unknown1c;
     if (*(long *)((byte *)unit + 0x14) != NONE)
         return NONE;
-    s_slot_entry_iterator iterator;
-    iterator.actor_index = actor_index;
-    iterator.reference.unknown2 = 0x4c;
-    iterator.reference.unknown0 = NONE;
-    s_slot_memory_entry *entry;
+    s_1ba091 local_0;
+    local_0.field_4.actor_index = actor_index;
+    local_0.field_4.reference.unknown2 = 0x4c;
+    local_0.field_4.reference.unknown0 = NONE;
     long joint_index = NONE;
-    while ((entry = function_26f0c0(&iterator)) != NULL)
+    while ((local_0.field_0 = function_26f0c0(&local_0.field_4)) != NULL)
     {
-        s_4c_element *element = (s_4c_element *)element_502424_get(entry->unknown4);
+        s_4c_element *element = (s_4c_element *)element_502424_get(local_0.field_0->unknown4);
         bool specified = (selection->flags & 0x20) != 0;
         bool same = specified && function_baf40(element->object_index) == function_baf40(selection->object_index);
         if ((element->unknown86 ? !(selection->flags & 0x40) || !same : specified && !same))
-            joint_decline(actor_index, iterator.reference.unknown0);
-        else if (function_26ecc0(actor_index, iterator.reference.unknown0, (s_joint_behavior_state *)slot))
+            joint_decline(actor_index, local_0.field_4.reference.unknown0);
+        else if (function_26ecc0(actor_index, local_0.field_4.reference.unknown0, (s_joint_behavior_state *)slot))
         {
-            joint_index = entry->unknown4;
+            joint_index = local_0.field_0->unknown4;
             break;
         }
     }
@@ -1133,7 +1333,7 @@ long __stdcall function_1ba090(long actor_index, s_slot *slot)
                 if (TEST_FIELD_BIT(seat->flags.bit2)) type = 0x65;
                 else if (TEST_FIELD_BIT(seat->flags.bit3)) type = 0x67;
                 else type = 0x68;
-                function_1fb7e0(actor_index, type, 0, selection->object_index, NONE);
+                function_1fb7e0(type, actor_index, 0, selection->object_index, NONE);
                 function_f5d10(selection->object_index, selection->seat_index, true);
             }
         }
@@ -1161,6 +1361,9 @@ s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 void function_1e3400(long actor_index, long squad_index);
 void function_201ad0(long squad_index, long object_index);
 
+// score 218 (was 218): ours spills the cleared flag byte to a stack temporary
+// and branches around it, retail writes the byte straight into the actor, so
+// the whole chain of branches in this function is laid out differently.
 // @retail 0x1bb570
 void __stdcall function_1bb570(long vehicle_index, long actor_index)
 {
@@ -1172,10 +1375,11 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
             *((bool *)actor + 0x3c) = false;
         else if (actor->unknown030 != NONE)
             *(long *)((byte *)actor + 0x28) = actor->unknown030;
-        long root_index = function_baf40(vehicle_index);
+        long root_vehicle = vehicle_index;
+        long root_index = function_baf40(root_vehicle);
         if (g_4e0300->data[(root_index & 0xffff) * 12 + 3] == 1)
-            vehicle_index = root_index;
-        byte *vehicle = (byte *)object_get(vehicle_index);
+            root_vehicle = root_index;
+        byte *vehicle = (byte *)object_get(root_vehicle);
         long squad_index = *(long *)(vehicle + 0x3a0);
         if (actor->unknown030 != squad_index)
         {
@@ -1189,7 +1393,7 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
                 if (actor->unknown030 == NONE && *(long *)((byte *)actor + 0x28) != NONE)
                     function_1e3400(actor_index, *(word *)((byte *)actor + 0x28));
                 if (actor->unknown030 != NONE)
-                    function_201ad0(actor->unknown030, vehicle_index);
+                    function_201ad0(actor->unknown030, root_vehicle);
             }
             else
             {
@@ -1216,7 +1420,7 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
             s_object_seat seats[0x40];
             long count = 0;
             long previous = NONE;
-            function_c8a40(vehicle_index, seats, (short *)&count, 0x40);
+            function_c8a40(root_vehicle, seats, (short *)&count, 0x40);
             for (short i = 0; i < (short)count; ++i)
             {
                 if (seats[i].object_index != previous)
@@ -1250,7 +1454,7 @@ event:
             {
                 s_vehicle_tag_view *definition = (s_vehicle_tag_view *)g_4e3b44[*(long *)vehicle & 0xffff].bytes;
                 if (!TEST_FIELD_BIT(definition->seats[seat_index].flags.bit11))
-                    function_1fb7e0(actor_index, 0x66, 0, vehicle_index, NONE);
+                    function_1fb7e0(0x66, actor_index, 0, root_vehicle, NONE);
             }
         }
 done:
@@ -1258,7 +1462,14 @@ done:
         actor->unknown2ec = NONE;
         *(short *)actor->unknown2ee = NONE;
         actor->unknown2f0 = false;
-        *(short *)((byte *)actor + 0x2f4) = (short)real_to_long((real)g_510c54->field_2_3 * 10.0f);
+        real ticks = (real)g_510c54->field_2_3 * 10.0f;
+        long rounded_ticks;
+        __asm
+        {
+            fld ticks
+            fistp rounded_ticks
+        }
+        *(short *)((byte *)actor + 0x2f4) = (short)rounded_ticks;
         actor = actor_get(actor_index);
         *((bool *)actor + 0x5d4) = false;
         *(dword *)((byte *)actor + 0x810) &= ~1;
@@ -1267,7 +1478,7 @@ done:
 
 struct joint_state;
 long joint_count_invited_participants(joint_state const *arg_0);
-bool __stdcall function_1badc0(point3f const *arg_2, long arg_1, long arg_0,
+bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6);
 real function_1f8940(long arg_0);
 bool function_1f8660(long arg_0);
@@ -1280,7 +1491,10 @@ bool __stdcall function_1ba5c0(long arg_0, s_slot *arg_1, long arg_2)
     s_4c_element *local_3 = (s_4c_element *)arg_2;
     volatile bool local_4 = true;
     if (local_2->object_index == NONE || local_3->object_index == NONE)
-        return false;
+    {
+        local_4 = false;
+        return local_4;
+    }
     if (local_0->unknown26c != NONE || (local_2->flags & 2))
         return local_4;
     if (*(short *)((byte *)local_3 + 2) <= 0 &&
@@ -1289,22 +1503,29 @@ bool __stdcall function_1ba5c0(long arg_0, s_slot *arg_1, long arg_2)
     if (*((byte *)local_0 + 0x5d8) || !function_1b90b0(arg_0, local_3->object_index) ||
         !function_1ba990(arg_0, local_3->object_index, !(local_2->flags & 1),
             ((s_slot_4c *)((byte *)local_2 - 0x1c))->unknown28, ((s_slot_4c *)((byte *)local_2 - 0x1c))->unknown2c, true))
-        return false;
+    {
+        local_4 = false;
+        return local_4;
+    }
     s_seat_approach_result local_5;
     if (!function_1b9e70(arg_0, local_2, false, local_3, &local_5))
-        return false;
+    {
+        local_4 = false;
+        return local_4;
+    }
     function_f5d10(local_2->object_index, local_2->seat_index, true);
     ((s_slot_4c *)((byte *)local_2 - 0x1c))->point = *(point3f *)&local_5.direction;
-    bool local_6 = false;
     if (local_5.approaching)
     {
         ++*(short *)((byte *)((s_slot_4c *)((byte *)local_2 - 0x1c)) + 0x30);
-        local_6 = (real)*(short *)((byte *)((s_slot_4c *)((byte *)local_2 - 0x1c)) + 0x30) * g_510c54->rate >= 1.0f;
+        if ((real)*(short *)((byte *)((s_slot_4c *)((byte *)local_2 - 0x1c)) + 0x30) * g_510c54->rate >= 1.0f)
+            goto submit_request;
     }
     else
         *(short *)((byte *)((s_slot_4c *)((byte *)local_2 - 0x1c)) + 0x30) = 0;
-    if (local_6 || (local_5.close && local_5.facing))
+    if (local_5.close && local_5.facing)
     {
+submit_request:
         s_unit_request local_7;
         local_7.type = 0x1c;
         local_7.type1c.object_index = local_2->object_index;
@@ -1320,38 +1541,49 @@ bool __stdcall function_1ba5c0(long arg_0, s_slot *arg_1, long arg_2)
         s_type_c3b527 local_8;
         long local_9;
         bool local_10;
-        if (function_1badc0(&local_5.point, local_2->object_index, arg_0,
+        bool local_14;
+        if (!function_1badc0(arg_0, local_2->object_index, &local_5.point,
             &local_8, &local_9, false, &local_10))
+            goto reset_attempts;
+        local_14 = function_1f4460(arg_0, &local_8, local_9,
+            local_10 ? NONE : local_2->object_index, false);
+        local_4 = local_14;
+        if (local_14)
         {
-            bool local_14 = function_1f4460(arg_0, &local_8, local_9,
-                local_10 ? NONE : local_2->object_index, false);
-            local_4 = local_14;
-            if (!local_14)
-            {
-                ++local_2->unknown7;
-                short local_11 = (local_2->flags & 1) ? 5 : 50;
-                if ((short)local_2->unknown7 > local_11)
-                {
-                    local_4 = false;
-                    actor_get(arg_0)->unknown040 = false;
-                }
-                else
-                    local_4 = true;
-            }
-            else
-                local_2->unknown7 = 0;
+reset_attempts:
+            local_2->unknown7 = 0;
         }
         else
-            local_2->unknown7 = 0;
+        {
+            ++local_2->unknown7;
+            short local_11 = (local_2->flags & 1) ? 5 : 50;
+            if ((short)local_2->unknown7 > local_11)
+            {
+                local_4 = false;
+                actor_get(arg_0)->unknown040 = false;
+            }
+            else
+                local_4 = true;
+        }
     }
     bool local_12;
     if (function_1f8660(arg_0))
+    {
         local_12 = 1.0f > function_1f8940(arg_0);
+        if (local_12)
+            local_2->flags |= 4;
+        else
+            local_2->flags &= ~4;
+        return local_4;
+    }
     else
     {
         vector3f local_13;
         vector3d_from_points3d(&local_0->position, &local_5.point, &local_13);
-        local_12 = 1.0f > local_13.k * local_13.k + local_13.i * local_13.i + local_13.j * local_13.j;
+        real square = local_13.k * local_13.k;
+        square += local_13.i * local_13.i;
+        square += local_13.j * local_13.j;
+        local_12 = 1.0f > square;
     }
     if (local_12)
         local_2->flags |= 4;

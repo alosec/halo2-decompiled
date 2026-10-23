@@ -83,7 +83,12 @@ void function_2ae1d0(s_47f0d0 *codec_view)
 
 	PHYSICAL_MEMORY_ALLOCATE(buffer, 2 * WMA_PACKET_SIZE);
 	codec->m_buffer = (byte *)buffer;
-	memset(codec->m_packet_status, 0, sizeof(codec->m_packet_status));
+	long packet = 0;
+	do
+	{
+		codec->m_packet_status[packet] = 0;
+		++packet;
+	} while (packet < 2);
 }
 
 // @retail 0x2ae230
@@ -412,16 +417,14 @@ bool c_pcm_codec::get_packet(s_sound_stream *stream, XMEDIAPACKET *packet)
 {
 	s_sound_chunk *chunk = stream->chunks[stream->started_count];
 	byte *data = sound_cache_chunk_get_data(chunk);
-	long size = (long)SOUND_CHUNK_SIZE(chunk) - 0x48;
-	long offset = stream->offset;
 
-	offset = MIN(offset, MAX(size, 0));
+	long offset = MIN(stream->offset, MAX((long)SOUND_CHUNK_SIZE(chunk) - 0x48, 0));
 
-	packet->pvBuffer = data + offset;
-	packet->hCompletionEvent = (HANDLE)chunk;
 	packet->pdwCompletedSize = NULL;
 	packet->pdwStatus = NULL;
 	packet->prtTimestamp = NULL;
+	packet->pvBuffer = data + offset;
+	packet->hCompletionEvent = (HANDLE)chunk;
 	packet->dwMaxSize = SOUND_CHUNK_SIZE(chunk) - offset;
 
 	return true;
@@ -506,7 +509,17 @@ struct s_sound_i3dl2_parameters
 
 struct s_sound_send_parameters
 {
-	dword flags;
+	union
+	{
+		dword flags;
+		struct
+		{
+			dword flag0 : 1;
+			dword : 3;
+			dword flag4 : 1;
+			dword : 27;
+		};
+	};
 	real level;
 	real level_offset;
 	real gain0c;
@@ -558,35 +571,43 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 void c_sound_effects::initialize(s_sound_effect_settings *settings, s_sound_effect_buffers *buffers, bool rear)
 {
 	s_mixbin_settings mixbins;
+	s_mixbin_settings second;
+	s_mixbin_settings third;
 
 	m_buffers = buffers;
 	m_settings = *settings;
 
 	sound_mixbins_initialize(&mixbins);
 	sound_stream_append_mixbin(&mixbins, 6, m_settings.level00);
-	sound_stream_append_mixbin(&mixbins, 8, rear ? m_settings.level04 : -64.0f);
+	if (rear)
+		sound_stream_append_mixbin(&mixbins, 8, m_settings.level04);
+	else
+		sound_stream_append_mixbin(&mixbins, 8, -64.0f);
 	sound_stream_append_mixbin(&mixbins, 7, -64.0f);
 	sound_stream_append_mixbin(&mixbins, 9, -64.0f);
 	IDirectSoundBuffer_SetMixBinVolumes(m_buffers->buffer0c, &mixbins.mixbins);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer0c, 0);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer18, -6400);
 
-	sound_mixbins_initialize(&mixbins);
-	sound_stream_append_mixbin(&mixbins, 6, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 8, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 7, m_settings.level00);
-	sound_stream_append_mixbin(&mixbins, 9, rear ? m_settings.level04 : -64.0f);
-	IDirectSoundBuffer_SetMixBinVolumes(m_buffers->buffer10, &mixbins.mixbins);
+	sound_mixbins_initialize(&second);
+	sound_stream_append_mixbin(&second, 6, -64.0f);
+	sound_stream_append_mixbin(&second, 8, -64.0f);
+	sound_stream_append_mixbin(&second, 7, m_settings.level00);
+	if (rear)
+		sound_stream_append_mixbin(&second, 9, m_settings.level04);
+	else
+		sound_stream_append_mixbin(&second, 9, -64.0f);
+	IDirectSoundBuffer_SetMixBinVolumes(m_buffers->buffer10, &second.mixbins);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer10, 0);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer1c, -6400);
 
-	sound_mixbins_initialize(&mixbins);
-	sound_stream_append_mixbin(&mixbins, 6, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 8, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 7, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 9, -64.0f);
-	sound_stream_append_mixbin(&mixbins, 10, 0.0f);
-	IDirectSoundBuffer_SetMixBinVolumes(m_buffers->buffer20, &mixbins.mixbins);
+	sound_mixbins_initialize(&third);
+	sound_stream_append_mixbin(&third, 6, -64.0f);
+	sound_stream_append_mixbin(&third, 8, -64.0f);
+	sound_stream_append_mixbin(&third, 7, -64.0f);
+	sound_stream_append_mixbin(&third, 9, -64.0f);
+	sound_stream_append_mixbin(&third, 10, 0.0f);
+	IDirectSoundBuffer_SetMixBinVolumes(m_buffers->buffer20, &third.mixbins);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer20, 0);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer14, -6400);
 }
@@ -600,13 +621,15 @@ inline real const &sound_effects_send_level(c_sound_effects *effects, s_sound_se
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
-	if (TEST_FLAG(parameters->flags, 2))
+	if ((bool)((parameters->flags >> 2) & 1))
 	{
 		bool alternate = TEST_FLAG(parameters->flags, 3) != 0;
-		real level = rear ? m_settings.level1c : m_settings.level24;
+		long left = alternate ? 0 : 6;
+		long right = alternate ? 1 : 7;
+		real const &level = rear ? m_settings.level1c : m_settings.level24;
 		real level2 = rear ? m_settings.level20 : m_settings.level28;
-		sound_stream_append_mixbin(mixbins, alternate ? 0 : 6, level + parameters->level);
-		sound_stream_append_mixbin(mixbins, alternate ? 1 : 7, parameters->level + level);
+		sound_stream_append_mixbin(mixbins, left, level + parameters->level);
+		sound_stream_append_mixbin(mixbins, right, parameters->level + level);
 		add_send(2, mode, level2 + parameters->level, mixbins);
 		add_send(10, mode, parameters->level_offset, mixbins);
 	}
@@ -616,9 +639,19 @@ void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameter
 		real offset = parameters->level_offset + parameters->level;
 		if (!TEST_FLAG(parameters->flags, 3))
 		{
-			sound_mixbins_add(mixbins, m_buffers->mixbin00, parameters->gain0c + (send_level + parameters->level));
-			sound_mixbins_add(mixbins, m_buffers->mixbin04, parameters->gain10 + (parameters->level + send_level));
-			c_sound_effects::add_send(m_buffers->mixbin08, mode, offset, mixbins);
+			sound_stream_append_mixbin(mixbins, m_buffers->mixbin00, parameters->gain0c + (send_level + parameters->level));
+			sound_stream_append_mixbin(mixbins, m_buffers->mixbin04, parameters->gain10 + (parameters->level + send_level));
+			long mixbin08 = m_buffers->mixbin08;
+			switch (mode)
+			{
+			case 0:
+				sound_mixbins_add(mixbins, mixbin08, offset);
+				break;
+			case 1:
+				sound_mixbins_add(mixbins, mixbin08, offset + m_settings.gain);
+				sound_mixbins_add(mixbins, mixbin08, offset + m_settings.gain);
+				break;
+			}
 		}
 		else
 		{
@@ -651,12 +684,12 @@ void c_sound_effects::add_effect_sends_split(s_sound_send_parameters *parameters
 {
 	real send_level = sound_effects_send_level(this, parameters, mode);
 	real offset = parameters->level_offset;
-	real level = parameters->level;
 	bool alternate = TEST_FLAG(parameters->flags, 3) != 0;
 	long left = alternate ? 0 : 6;
-	long right = alternate ? 1 : 7;
-	long rear_left = alternate ? 4 : 8;
-	long rear_right = alternate ? 5 : 9;
+	volatile long right = alternate ? 1 : 7;
+	volatile long rear_left = alternate ? 4 : 8;
+	volatile long rear_right = alternate ? 5 : 9;
+	real level = parameters->level;
 
 	if (m_settings.level08 > -64.0f)
 	{
@@ -683,9 +716,9 @@ void c_sound_effects::add_effect_sends_split(s_sound_send_parameters *parameters
 // @retail 0x2af7b0
 void c_sound_effects::add_effect_sends(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
-	if (TEST_FLAG(parameters->flags, 0))
+	if (TEST_FIELD_BIT(parameters->flag0))
 	{
-		if (!TEST_FLAG(parameters->flags, 4))
+		if (!TEST_FIELD_BIT(parameters->flag4))
 			add_effect_sends_direct(parameters, rear, mode, mixbins);
 		else
 			add_effect_sends_split(parameters, rear, mode, mixbins);
@@ -708,6 +741,10 @@ void c_sound_effects::set_i3dl2(s_sound_i3dl2_parameters *parameters, long unuse
 	IDirectSoundBuffer_SetFilter(m_buffers->buffer10, &filter);
 }
 
+// score 55 (was 55): our body is 12 bytes shorter: retail adds the gain with
+// SSE (the gain's bits copied through ebx into a stack temp) while our
+// union pun makes MSVC use x87; five more rewrites of the pun scored 55 or
+// worse.
 // @retail 0x2af800
 __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, s_mixbin_settings *mixbins)
 {
@@ -724,14 +761,12 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 			long bits;
 		};
 		long gain_bits = *(long *)&gain;
-		volatile s_send_level first;
+		s_send_level first;
 		first.bits = gain_bits;
-		first.value = m_settings.gain + first.value;
-		sound_stream_append_mixbin(mixbins, mixbin, first.value);
-		volatile s_send_level second;
+		sound_stream_append_mixbin(mixbins, mixbin, m_settings.gain + first.value);
+		s_send_level second;
 		second.bits = gain_bits;
-		second.value = m_settings.gain + second.value;
-		sound_stream_append_mixbin(mixbins, mixbin, second.value);
+		sound_stream_append_mixbin(mixbins, mixbin, m_settings.gain + second.value);
 		break;
 	}
 	}
@@ -748,18 +783,16 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 	long rear_left = alternate ? 4 : 8;
 	long rear_right = alternate ? 5 : 9;
 
-	switch (source->speaker_mode)
+	if (source->speaker_mode == 1)
 	{
-	case 0:
-		break;
-	case 1:
 		if (remaining >= 2)
 		{
 			sound_mixbins_add(mixbins, left, gain);
 			sound_mixbins_add(mixbins, right, gain);
 		}
-		break;
-	case 2:
+	}
+	else if (source->speaker_mode == 2)
+	{
 		if (remaining >= 2)
 		{
 			if (rear)
@@ -773,8 +806,9 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 				sound_mixbins_add(mixbins, right, gain);
 			}
 		}
-		break;
-	case 3:
+	}
+	else if (source->speaker_mode == 3)
+	{
 		if (rear)
 		{
 			if (remaining >= 2)
@@ -790,9 +824,6 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 			sound_mixbins_add(mixbins, right, gain - 6.0206f);
 			sound_mixbins_add(mixbins, right, g_44f710);
 		}
-		break;
-	default:
-		break;
 	}
 
 	if (source->mixbin != NONE)
@@ -805,11 +836,12 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 void c_sound_effects::add_sends(s_sound_send_parameters *parameters, long unused, long mode, s_mixbin_settings *mixbins)
 {
 	bool alternate = TEST_FLAG(parameters->flags, 3) != 0;
-	real level = parameters->level_offset + parameters->level;
+	real level_offset = parameters->level_offset;
+	real base_level = parameters->level;
 
 	sound_stream_append_mixbin(mixbins, alternate ? 0 : 6, parameters->left_gain);
 	sound_stream_append_mixbin(mixbins, alternate ? 1 : 7, parameters->right_gain);
 	sound_stream_append_mixbin(mixbins, alternate ? 4 : 8, parameters->rear_left_gain);
 	sound_stream_append_mixbin(mixbins, alternate ? 5 : 9, parameters->rear_right_gain);
-	c_sound_effects::add_send(10, mode, level, mixbins);
+	c_sound_effects::add_send(10, mode, level_offset + base_level, mixbins);
 }

@@ -19,9 +19,7 @@ struct s_ring_buffer
 // @retail 0x1a1940
 void s_ring_buffer::write_wrapped(long count, long offset, const void *src)
 {
-	long first = count;
-	if (first > size - offset)
-		first = size - offset;
+	long first = size - offset > count ? count : size - offset;
 	long local_0 = count - first;
 	if (first > 0)
 		memcpy(data + offset, src, first);
@@ -32,9 +30,7 @@ void s_ring_buffer::write_wrapped(long count, long offset, const void *src)
 // @retail 0x1a19a0
 void s_ring_buffer::read_wrapped(long offset, long count, void *dst)
 {
-	long first = count;
-	if (first > size - offset)
-		first = size - offset;
+	long first = size - offset > count ? count : size - offset;
 	long local_0 = count - first;
 	if (first > 0)
 		memcpy(dst, data + offset, first);
@@ -92,6 +88,8 @@ long c_page_heap::get_page_size()
 // @retail 0x1a1a90
 void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 {
+	void *result = NULL;
+
 	switch (alignment_mask)
 	{
 	case 0xfff: alignment_mask = 0; break;
@@ -99,7 +97,7 @@ void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 	case 0x3fff: alignment_mask = 2; break;
 	case 0x7fff: alignment_mask = 3; break;
 	case 0xffff: alignment_mask = 4; break;
-	default: return NULL;
+	default: goto local_0;
 	}
 	long pages = (size + 0xfff) / 0x1000;
 	long step_mask = (1 << (alignment_mask + 12)) - 1;
@@ -112,23 +110,29 @@ void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 		bool free_run = true;
 		long page = index;
 		long checked = index;
-		for (; page < end && free_run; page++, checked++)
+		for (; page < end && free_run; page++)
+		{
 			free_run = !(bits[page >> 5] & (1 << (page & 0x1f)));
+			checked = page + 1;
+		}
 		if (free_run)
 			break;
-		long next = index + 1;
-		if (next <= checked)
-			next = checked;
+		++index;
+		if (index <= checked)
+			index = checked;
 		long align_mask = (1 << alignment_mask) - 1;
-		index = first + ((next - first + align_mask) & ~align_mask);
+		index = first + ((index - first + align_mask) & ~align_mask);
 		end = index + pages;
 	}
-	if (index + pages > page_count)
-		return NULL;
-	for (long p = index; p < index + pages; p++)
-		bits[p >> 5] |= 1 << (p & 0x1f);
-	*used_pages += pages;
-	return base + (index << 12);
+	if (index + pages <= page_count)
+	{
+		for (long p = index; p < index + pages; p++)
+			bits[p >> 5] |= 1 << (p & 0x1f);
+		result = base + (index << 12);
+		*used_pages += pages;
+	}
+local_0:
+	return result;
 }
 
 // @retail 0x1a1c20 deleting c_page_heap

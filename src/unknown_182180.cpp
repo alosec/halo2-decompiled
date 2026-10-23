@@ -13,7 +13,7 @@ public:
 	virtual void slot02(void) {}
 	virtual void slot03(void) {}
 	virtual void slot04(void) {}
-	virtual long getType(void) const { return 0; }
+	virtual long kind_code(void) const { return 0; }
 };
 
 // @retail 0x182180
@@ -21,7 +21,7 @@ bool function_182180(hkShape const *shape)
 {
 	bool result = false;
 
-	switch (shape->getType())
+	switch (shape->kind_code())
 	{
 	case 1:
 	case 4:

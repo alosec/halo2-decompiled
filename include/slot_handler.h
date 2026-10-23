@@ -1,6 +1,6 @@
 /* SLOT_HANDLER.H: the actor slot handlers of 0x1b0000..0x1bffff (lane B).
 
-   g_46eeb8 (unknown_1a8080.cpp) points at one handler per slot type. Each
+   g_46eeb8 (actor_behavior.cpp) points at one handler per slot type. Each
    handler is a static struct in the data of its own source file, next to
    its callbacks; all callbacks take the actor index first and are called
    through these structs, so they keep the standard __stdcall convention.
@@ -16,6 +16,7 @@
 
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
+#include "matrix_transform.h"
 #include "globals.h"
 #include "slot_owner.h"
 #include "unit_requests.h"
@@ -93,7 +94,7 @@ struct s_slot_handler
 	long unknown3c;
 };
 
-/* the handlers by slot type (unknown_1a8080.cpp) and what enables a type:
+/* the handlers by slot type (actor_behavior.cpp) and what enables a type:
    its handler's unknown8 differs from g_46f348, its mask covers g_4ee4ec,
    and its bit in g_557c40 is set (globals.h) */
 enum
@@ -109,7 +110,7 @@ inline bool slot_type_enabled(short type)
 
 	return handler->unknown8 != g_46f348 &&
 		(handler->mask & g_4ee4ec) == g_4ee4ec &&
-		((g_557c40[type >> 5] >> (type & 31)) & 1) != 0;
+		(bool)((g_557c40[type >> 5] >> (type & 31)) & 1);
 }
 
 /* the game's deterministic random (g_4e7408), inlined as Bungie's macros do */
@@ -147,7 +148,7 @@ static inline long real_to_long(real value)
 real magnitude3d(vector3f const *v);
 
 /* an element (0xb4 bytes) of the block of the actor's tag, found by
-   function_1e5450 (unknown_1e5450.cpp) */
+   function_1e5450 (character_tag_accessors.cpp) */
 struct s_tag_element
 {
 	byte unknown00[4];
@@ -307,7 +308,7 @@ static void __stdcall slot_release_nothing(long actor_index, s_slot *slot, long 
 }
 
 /* callbacks shared by several handlers (identical functions folded) */
-short __stdcall function_1a8370(long actor_index);
+short __stdcall actor_behavior_priority_minimum(long actor_index);
 short __stdcall function_1bced0(long actor_index, s_slot *slot, bool active);
 short __stdcall function_1b2d90(long actor_index, s_slot *slot, bool active);
 short __stdcall function_1a79e0(long actor_index, short level, bool active);
@@ -464,17 +465,6 @@ inline s_slot_object_view *object_get(long object_index)
 inline transform4x3f *object_node_matrix(s_slot_object_view *object, long node)
 {
 	return (transform4x3f *)((byte *)object + object->node_matrices_offset) + node;
-}
-
-inline void matrix_transform_vector(transform4x3f const *matrix, vector3f const *vector, vector3f *result)
-{
-	real i = vector->i;
-	real j = vector->j;
-	real k = vector->k;
-
-	result->i = matrix->forward.i * i + matrix->left.i * j + matrix->up.i * k;
-	result->j = matrix->forward.j * i + matrix->left.j * j + matrix->up.j * k;
-	result->k = matrix->forward.k * i + matrix->left.k * j + matrix->up.k * k;
 }
 
 /* the object's forward vector in world space */
@@ -738,7 +728,8 @@ struct s_actor_view
 	real unknown3d8;
 	byte unknown3dc[0x3e0 - 0x3dc];
 	short unknown3e0;
-	byte unknown3e2[0x3e8 - 0x3e2];
+	short unknown3e2;
+	byte unknown3e4[0x3e8 - 0x3e4];
 	long unknown3e8;
 	byte unknown3ec[0x3f0 - 0x3ec];
 	bool unknown3f0;
@@ -839,17 +830,49 @@ struct s_actor_view
 	short unknown5b6;
 	byte unknown5b8[0x5d0 - 0x5b8];
 	bool unknown5d0;
-	byte unknown5d1[0x5d4 - 0x5d1];
+	byte unknown5d1;
+	bool unknown5d2;
+	bool unknown5d3;
 	bool unknown5d4;
-	byte unknown5d5[0x5e8 - 0x5d5];
+	byte unknown5d5;
+	short unknown5d6;
+	bool unknown5d8;
+	byte unknown5d9;
+	short unknown5da;           /* ticks the actor has stayed near unknown5dc */
+	point3f unknown5dc;
 	short unknown5e8;
 	byte unknown5ea[0x5ec - 0x5ea];
 	vector3f unknown5ec;
-	byte unknown5f8[0x605 - 0x5f8];
+	vector3f unknown5f8;
+	bool unknown604;
 	bool unknown605;
-	byte unknown606[0x656 - 0x606];
+	byte unknown606[0x61e - 0x606];
+	short unknown61e;
+	short unknown620;
+	bool unknown622;
+	byte unknown623;
+	real unknown624;
+	real unknown628;
+	real unknown62c;
+	real unknown630;
+	long unknown634;
+	s_type_c3b527 unknown638;
+	vector3f unknown648;
+	byte unknown654[0x656 - 0x654];
 	short unknown656;
-	byte unknown658[0x6fc - 0x658];
+	byte unknown658[0x684 - 0x658];
+	short unknown684;
+	short unknown686;
+	byte unknown688[0x6c8 - 0x688];
+	long unknown6c8;
+	bool unknown6cc;
+	byte unknown6cd[0x6d1 - 0x6cd];
+	bool unknown6d1;
+	bool unknown6d2;
+	byte unknown6d3;
+	vector3f unknown6d4;
+	byte unknown6e0[0x6fa - 0x6e0];
+	short unknown6fa;
 	dword unknown6fc;
 	byte unknown700[0x70a - 0x700];
 	short unknown70a;
@@ -857,7 +880,10 @@ struct s_actor_view
 	long unknown710;
 	byte unknown714[0x7c0 - 0x714];
 	real unknown7c0;
-	byte unknown7c4[0x810 - 0x7c4];
+	byte unknown7c4[0x7f8 - 0x7c4];
+	long unknown7f8;
+	long unknown7fc;
+	byte unknown800[0x810 - 0x800];
 	union
 	{
 		struct
@@ -868,9 +894,10 @@ struct s_actor_view
 		} unknown810;
 		dword flags810;
 	};
-	byte unknown814[0x858 - 0x814];
+	vector3f unknown814;
+	byte unknown820[0x858 - 0x820];
 	long unknown858;
-	long unknown85c;
+	long command_script_index;  /* the command script it runs (actor_behavior_x87.cpp), or NONE */
 	byte unknown860[0x888 - 0x860];
 	// END s_actor_view
 };
@@ -885,6 +912,28 @@ void ai_scratch_buffer_release(byte *address);
 inline s_actor_view *actor_get(long actor_index)
 {
 	return (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
+}
+
+/* walks the actors of an element of 0x502420 from its first_actor_index
+   through each actor's next_index; retail tests the next index at the loop
+   head (0x1bb3a0) and keeps index below next_index on the stack (0x1b6740) */
+struct s_element_502420_member_iterator
+{
+	long index;
+	long next_index;
+};
+
+inline s_actor_view *element_502420_member_next(s_element_502420_member_iterator *iterator)
+{
+	s_actor_view *member = 0;
+
+	if (iterator->next_index != NONE)
+	{
+		member = actor_get(iterator->next_index);
+		iterator->index = iterator->next_index;
+		iterator->next_index = member->next_index;
+	}
+	return member;
 }
 
 /* clears the actor's state at 0x4ac..0x5b6 (inlined by several start
@@ -907,7 +956,7 @@ inline void actor_reset_state(long actor_index)
 
 long function_c8f60(long unit_index, short seat_index);
 bool __stdcall function_110ab0(long unit_index);
-bool __stdcall function_1f4810(long actor_index, long prop_index, real distance, long unknown);
+bool __stdcall function_1f4810(long actor_index, long prop_index, real distance, bool unknown);
 bool function_25ab50(long reference);
 void __stdcall function_2628f0(long actor_index, s_reference reference);
 void function_26c180(long actor_index);

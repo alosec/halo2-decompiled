@@ -29,36 +29,25 @@ static inline s_type_9df9da *online_task_try_and_get(long task_index)
 	return task;
 }
 
-/* online_task_new (src/online_tasks.cpp), which retail inlines here */
-static inline long online_task_new_inline(void)
-{
-	long task_index = record_pool_allocate(g_4cf78c);
-	if (task_index != NONE)
-	{
-		s_type_9df9da *task = (s_type_9df9da *)g_4cf78c->data + (task_index & 0xffff);
-		task->handle = 0;
-		task->type = NONE;
-		task->controller_index = NONE;
-		task->flags = 0;
-	}
-	return task_index;
-}
+static __forceinline long function_925c2();
 
 /* starts reading the given statistics */
+// score 46 (was 46): the prologue differs: retail loads the count into ebx and the record
+// pointer into esi, ours pushes esi and edi first and loads the count
+// later.
 // @retail 0x92220
 long online_stats_read(word count, XONLINE_STAT_SPEC *specs)
 {
+	long result = NONE;
 	for (long i = 0; i < count; i++)
 	{
-		if (specs[i].xuidUser.dwUserFlags == 0xbad00000 || (specs[i].xuidUser.dwUserFlags & 3))
-			return NONE;
+		dword flags = specs[i].xuidUser.dwUserFlags;
+		if (flags == 0xbad00000 || (flags & 3))
+			goto done;
 	}
-	long task_index = NONE;
-	if (online_logon_connected())
-		task_index = online_task_new_inline();
-	if (task_index != NONE)
 	{
-		s_type_9df9da *task = online_task_try_and_get(task_index);
+		long task_index = function_925c2();
+		s_type_9df9da *task = (s_type_9df9da *)datum_get_inlined(g_4cf78c, task_index);
 		if (task)
 		{
 			if (SUCCEEDED(XOnlineStatRead(count, specs, NULL, (PXONLINETASK_HANDLE)&task->handle)))
@@ -73,17 +62,19 @@ long online_stats_read(word count, XONLINE_STAT_SPEC *specs)
 				return NONE;
 			}
 		}
+		result = task_index;
 	}
-	return task_index;
+done:
+	return result;
 }
 
 /* retrieves the requested statistics */
 // @retail 0x92330
 bool online_stats_read_result(long task_index, XONLINE_STAT_SPEC *specs, word count, byte *extra_buffer, word extra_size)
 {
-	s_type_9df9da *task = online_task_try_and_get(task_index);
+	s_type_9df9da *task = (s_type_9df9da *)datum_get_inlined(g_4cf78c, task_index);
 	bool result = false;
-	if (task && online_logon_connected() && (task->flags & 6))
+	if (task && online_logon_connected() && (task->flag_bits.running || task->flag_bits.finished))
 	{
 		if (SUCCEEDED(XOnlineStatReadGetResult((XONLINETASK_HANDLE)task->handle, count, specs, extra_size, extra_buffer)))
 			result = true;
@@ -98,23 +89,31 @@ long online_stats_write(XONLINE_STAT_SPEC const *specs, word count)
 	long task_index = online_task_new_if_logged_on();
 	if (task_index != NONE)
 	{
-		s_type_9df9da *task = online_task_try_and_get(task_index);
-		if (task)
+		s_record_pool *local_0 = g_4cf78c;
+		long local_1 = task_index & 0xffff;
+		if (local_1 < local_0->high_water_index)
 		{
-			if (SUCCEEDED(XOnlineStatWrite(count, specs, NULL, (PXONLINETASK_HANDLE)&task->handle)))
+			byte *local_2 = local_0->data;
+			long local_3 = local_0->size;
+			s_type_9df9da *task = (s_type_9df9da *)(local_2 + local_3 * local_1);
+			if (task->salt != 0 && task->salt == (task_index >> 16))
 			{
-				task->flags = 1;
-				task->type = 0x13;
-				task->controller_index = NONE;
-			}
-			else
-			{
-				function_6b640(task_index);
-				return NONE;
+				HRESULT status = XOnlineStatWrite(count, specs, NULL, (PXONLINETASK_HANDLE)&task->handle);
+				if (SUCCEEDED(status))
+				{
+					task->flags = 1;
+					task->type = 0x13;
+					task->controller_index = NONE;
+				}
+				else
+				{
+					function_6b640(task_index);
+					task_index = NONE;
+				}
 			}
 		}
-	}
-	return task_index;
+    }
+    return task_index;
 }
 
 // @retail 0x92450
@@ -145,7 +144,7 @@ long online_round_register(bool free_for_all, XNKID const *session_id, ULONGLONG
 			XONLINE_ARB_ID id;
 			id.SessionID = *session_id;
 			id.qwRoundID = *round_key;
-			dword flags = free_for_all ? 0x1c : 0x0c;
+			dword flags = (free_for_all ? 0x10 : 0) | 0x0c;
 			if (SUCCEEDED(XOnlineArbitrationRegister(&id, seconds, flags, NULL, (PXONLINETASK_HANDLE)&task->handle)))
 			{
 				task->flags = 1;
@@ -155,7 +154,7 @@ long online_round_register(bool free_for_all, XNKID const *session_id, ULONGLONG
 			else
 			{
 				function_6b640(task_index);
-				return NONE;
+				task_index = NONE;
 			}
 		}
 	}
@@ -163,6 +162,27 @@ long online_round_register(bool free_for_all, XNKID const *session_id, ULONGLONG
 }
 
 /* submits the completed round's statistics */
+static __forceinline long function_925c2()
+{
+    long local_0;
+    if (online_logon_connected())
+    {
+        local_0 = record_pool_allocate(g_4cf78c);
+        if (local_0 != NONE)
+        {
+            s_type_9df9da *local_1 = (s_type_9df9da *)g_4cf78c->data + (local_0 & 0xffff);
+            local_1->handle = 0;
+            local_1->type = NONE;
+            local_1->controller_index = NONE;
+            local_1->flags = 0;
+        }
+    }
+    else
+        local_0 = NONE;
+    return local_0;
+}
+
+// score 14 (was 14): the user flags are loaded into eax in ours and into ecx in retail.
 // @retail 0x925c0
 long online_round_report(XNKID const *session_id, ULONGLONG const *round_key, long count, XONLINE_STAT_PROC const *procedures, bool flag0, bool flag1)
 {
@@ -178,8 +198,7 @@ long online_round_report(XNKID const *session_id, ULONGLONG const *round_key, lo
 	}
 	if (count <= 1000)
 	{
-		if (online_logon_connected())
-			task_index = online_task_new_inline();
+		task_index = function_925c2();
 		s_type_9df9da *task = online_task_try_and_get(task_index);
 		if (task)
 		{
@@ -216,9 +235,10 @@ bool online_task_service_unavailable(long task_index)
 }
 
 // @retail 0x927b0
-long online_round_extend(ULONGLONG const *round_key, XNKID const *session_id, word seconds)
+long online_round_extend(XNKID const *session_id, ULONGLONG const *round_key, word seconds)
 {
 	long task_index = online_task_new_if_logged_on();
+	long local_0 = task_index;
 	if (task_index != NONE)
 	{
 		s_type_9df9da *task = online_task_try_and_get(task_index);
@@ -236,9 +256,9 @@ long online_round_extend(ULONGLONG const *round_key, XNKID const *session_id, wo
 			else
 			{
 				function_6b640(task_index);
-				return NONE;
+				local_0 = NONE;
 			}
 		}
 	}
-	return task_index;
+	return local_0;
 }

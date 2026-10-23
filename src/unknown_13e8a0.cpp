@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "font_loading.h"
 #include "unknown_030290.h"
+#include "text_style_clear.h"
 #include <string.h>
 
 
@@ -108,19 +109,12 @@ void function_13ec70(color4f const *color)
 // @retail 0x13e8a0
 void function_13e8a0()
 {
-	memset(&g_4e73a0, 0, sizeof(g_4e73a0));
-	g_4e73a0.font = 0;
-	g_4e73a0.tab_stop_count = 0;
-	g_4e73a0.flags = 0;
-	g_4e73a0.justification = 0;
-	g_4e73a0.unknown5e = 0;
-	g_4e73a0.unknown60 = 0;
-	function_13ec70(g_4686cc);
+	text_style_clear();
 }
 
 #ifndef H2_NATIVE_PORT
 // @retail 0x13eb20
-void function_13eb20(short count, short const *tab_stops)
+void function_13eb20(short const *tab_stops, short count)
 {
 	g_4e73a0.tab_stop_count = count > 16 ? 16 : count;
 	if (g_4e73a0.tab_stop_count > 0)
@@ -210,7 +204,7 @@ void function_13edb0(long font, long style, long justification, dword flags, col
 
 bool font_cache_predict_character(s_13eeb1 font_index, s_13eeb1 character);
 long unicode_escape_character_lookup(word character, bool *found);
-bool function_13fd20(utf32 previous, utf32 character);
+bool unicode_line_break_allowed(utf32 previous, utf32 character);
 
 enum
 {
@@ -328,7 +322,7 @@ void function_13f5a0(s_text_iterator *iterator)
 				utf32 previous = { iterator->character };
 				utf32 next = { character };
 #endif
-				iterator->can_break = function_13fd20(previous, next);
+				iterator->can_break = unicode_line_break_allowed(previous, next);
 			}
 			else
 			{
@@ -403,7 +397,8 @@ static __forceinline void unicode_string_to_characters(long maximum_count, word 
 		if (c == '|')
 		{
 			bool found = false;
-			character = unicode_escape_character_lookup(*next, &found);
+			word local_1 = *next;
+			character = unicode_escape_character_lookup(local_1, &found);
 			if (found)
 			{
 				next++;
@@ -507,9 +502,14 @@ struct s_text_cached_character
 };
 
 extern s_record_pool *g_54d574;
-long font_cache_get_character(long font_index, long character, dword flags);
-bool font_cache_character_load_pixels(long datum_index, dword flags);
-s_font_character_header *font_cache_get_character_header(long font_index, long character, dword flags);
+struct s_font_cache_flags
+{
+	dword wait : 1;
+	dword create : 1;
+};
+long font_cache_get_character(long font_index, long character, s_font_cache_flags flags);
+bool font_cache_character_load_pixels(long datum_index, s_font_cache_flags flags);
+s_font_character_header *font_cache_get_character_header(long font_index, long character, s_font_cache_flags flags);
 short function_122570(s_font_header const *header, dword first_character, dword second_character);
 
 struct s_text_line_measurement
@@ -519,12 +519,15 @@ struct s_text_line_measurement
 };
 
 // @retail 0x13ef40
+// score 77 (was 77): retail loads the width into xmm4 before the multiply
+// chain and accumulates the four terms in xmm3; ours reloads the width into
+// xmm3 after the multiplies and accumulates in xmm0
 s_text_line_measurement function_13ef40(s_text_iterator *iterator, point2f const *position, box2f const *bounds, real scale)
 {
+	long index = 0;
 	real width = 0.0f;
-	volatile long index = 0;
-	volatile long count = 0;
 	long break_index = 0;
+	long count = 0;
 	real break_width;
 	bool done = false;
 	do
@@ -533,19 +536,13 @@ s_text_line_measurement function_13ef40(s_text_iterator *iterator, point2f const
 		function_13f5a0(iterator);
 		if (iterator->token == _text_token_character)
 		{
-			long glyph_index = font_cache_get_character(iterator->font, iterator->character, 3);
-			s_font_character_header *header = NULL;
-			if (glyph_index != NONE && font_cache_character_load_pixels(glyph_index, 3))
-			{
-				s_text_cached_character *glyph = &((s_text_cached_character *)g_54d574->data)[glyph_index & 0xffff];
-				if (glyph->state == 4)
-					header = &glyph->header;
-			}
+			s_font_cache_flags flags = { true, true };
+			s_font_character_header *header = font_cache_get_character_header(iterator->font, iterator->character, flags);
 			if (header)
 			{
-				real kerning = function_122570(iterator->field_4_3, iterator->character, iterator->previous_character) * scale;
-				real advance = (short)header->unknown00 * scale;
+				real kerning = function_122570(iterator->field_4_3, iterator->previous_character, iterator->character) * scale;
 				real offset = *(short *)header->unknown08 * scale;
+				real advance = (short)header->unknown00 * scale;
 				if (iterator->can_break)
 				{
 					break_index = index;
@@ -617,14 +614,15 @@ void function_13f700(box2f const *bounds, box2f const *clip, short first,
 					break;
 				if (iterator.token == _text_token_character && ((long)iterator.character < 0 || (long)iterator.character > 31))
 				{
-					s_font_character_header *header = font_cache_get_character_header(iterator.font, iterator.character, 3);
+					s_font_cache_flags flags = { true, true };
+					s_font_character_header *header = font_cache_get_character_header(iterator.font, iterator.character, flags);
 					if (header)
 					{
-						real width = header->width;
-						real height = header->height;
 						real source_x = 0.0f;
 						real source_y = 0.0f;
-						real kerning = function_122570(iterator.field_4_3, iterator.character, iterator.previous_character) * scale;
+						real width = header->width;
+						real height = header->height;
+						real kerning = function_122570(iterator.field_4_3, iterator.previous_character, iterator.character) * scale;
 						real offset = *(short *)header->unknown08 * scale;
 						real x = position->x + offset + kerning;
 						real y = position->y - *(short *)(header->unknown08 + 2) * scale;
@@ -667,89 +665,103 @@ void function_13f700(box2f const *bounds, box2f const *clip, short first,
 void __stdcall function_13f0e0(text_glyph_callback callback, short_rectangle2d const *bounds,
 	short *arg_c5cac5, short_rectangle2d const *clip, short line_gap, real scale, dword const *text)
 {
-	point2f position = { (real)bounds->left, (real)bounds->top };
 	long tab = 0;
 	long line = 0;
 	long maximum_lines = 0;
 	long wrapped_line = 0;
+	point2f position = { (real)bounds->left, (real)bounds->top };
 	s_text_iterator iterator;
-	if (function_13f470(&iterator, g_4e73a0.font, (short)g_4e73a0.justification, text,
+	if (!function_13f470(&iterator, g_4e73a0.font, (short)g_4e73a0.justification, text,
 		(short)g_4e73a0.style, &g_4e73a0.color, &g_4e73a0.shadow, &g_4e73a0.field_24))
+		goto done;
+	do
 	{
-		for (;;)
+		long first = iterator.index;
+		long justification = iterator.justification;
+		box2f line_bounds = { (real)bounds->left, (real)bounds->right, (real)bounds->top, (real)bounds->bottom };
+		if (g_4e73a0.tab_stop_count > 0)
 		{
-			long first = iterator.index;
-			long justification = iterator.justification;
-			box2f line_bounds = { (real)bounds->left, (real)bounds->right, (real)bounds->top, (real)bounds->bottom };
-			if (g_4e73a0.tab_stop_count > 0)
+			if ((short)tab != 0)
+				line_bounds.x0 = g_4e73a0.tab_stops[(short)tab - 1] * scale;
+			else
 			{
-				if ((short)tab != 0)
-					line_bounds.x0 = g_4e73a0.tab_stops[(short)tab - 1] * scale;
+				if ((short)line != 0)
+					line_bounds.x0 += g_4e73a0.unknown60 * scale;
 				else
-					line_bounds.x0 += ((short)line == 0 ? g_4e73a0.unknown5e : g_4e73a0.unknown60) * scale;
-				if ((short)tab < g_4e73a0.tab_stop_count)
-					line_bounds.x1 = g_4e73a0.tab_stops[(short)tab] * scale;
+					line_bounds.x0 += g_4e73a0.unknown5e * scale;
+			}
+			if ((short)tab < g_4e73a0.tab_stop_count)
+				line_bounds.x1 = g_4e73a0.tab_stops[(short)tab] * scale;
+		}
+		else
+		{
+			if ((short)line != 0)
+				line_bounds.x0 += g_4e73a0.unknown60 * scale;
+			else
+				line_bounds.x0 += g_4e73a0.unknown5e * scale;
+		}
+		s_font_header *header = iterator.field_4_3;
+		position.x = *(short *)header->unknown0a * scale + line_bounds.x0;
+		long height = header->descending_height + line_gap;
+		height += header->leading_height;
+		long ascent = header->ascending_height;
+		height += ascent;
+		position.y = (ascent + height * ((short)wrapped_line + (short)line)) * scale + line_bounds.y0;
+		s_text_line_measurement measured = function_13ef40(&iterator, &position, &line_bounds, scale);
+		header = iterator.field_4_3;
+		switch (justification)
+		{
+		case 1:
+			position.x = line_bounds.x1 - line_bounds.x0 + line_bounds.x0 - measured.width - *(short *)header->unknown0a;
+			break;
+		case 2:
+			position.x = (line_bounds.x1 - line_bounds.x0 - measured.width) * 0.5f + line_bounds.x0;
+			break;
+		}
+		if (line_bounds.y1 > position.y)
+		{
+			box2f clip_bounds;
+			box2f const *clipping;
+			if (clip)
+			{
+				clip_bounds.x0 = clip->left;
+				clip_bounds.x1 = clip->right;
+				clip_bounds.y0 = clip->top;
+				clip_bounds.y1 = clip->bottom;
+				clipping = &clip_bounds;
 			}
 			else
-				line_bounds.x0 += ((short)line == 0 ? g_4e73a0.unknown5e : g_4e73a0.unknown60) * scale;
-			s_font_header *header = iterator.field_4_3;
-			position.x = *(short *)header->unknown0a * scale + line_bounds.x0;
-			position.y = (header->ascending_height +
-				(header->leading_height + line_gap + header->descending_height + header->ascending_height) * ((short)wrapped_line + (short)line)) * scale + line_bounds.y0;
-			s_text_line_measurement measured = function_13ef40(&iterator, &position, &line_bounds, scale);
-			header = iterator.field_4_3;
-			switch (justification)
-			{
-			case 1:
-				position.x = line_bounds.x1 - line_bounds.x0 + line_bounds.x0 - measured.width - *(short *)header->unknown0a;
-				break;
-			case 2:
-				position.x = (line_bounds.x1 - line_bounds.x0 - measured.width) * 0.5f + line_bounds.x0;
-				break;
-			}
-			if (line_bounds.y1 > position.y)
-			{
-				box2f clip_bounds;
-				box2f const *clipping = NULL;
-				if (clip)
-				{
-					clip_bounds.x0 = clip->left;
-					clip_bounds.x1 = clip->right;
-					clip_bounds.y0 = clip->top;
-					clip_bounds.y1 = clip->bottom;
-					clipping = &clip_bounds;
-				}
-				function_13f700(&line_bounds, clipping, (short)first, callback, &position, iterator.color, iterator.field_24, text, (short)measured.index, scale);
-			}
-			iterator.index = (short)measured.index;
-			switch (iterator.token)
-			{
-			case _text_token_end:
-				goto done;
-			case _text_token_newline:
-				line += maximum_lines + 1;
-				tab = 0;
-				maximum_lines = 0;
-				wrapped_line = 0;
-				break;
-			case _text_token_tab:
-				if ((short)tab < g_4e73a0.tab_stop_count)
-				{
-					tab++;
-					wrapped_line = 0;
-				}
-				break;
-			case _text_token_justification:
-				wrapped_line = 0;
-				break;
-			case _text_token_character:
-				wrapped_line++;
-				if ((short)wrapped_line > (short)maximum_lines)
-					maximum_lines = wrapped_line;
-				break;
-			}
+				clipping = NULL;
+			function_13f700(&line_bounds, clipping, (short)first, callback, &position, iterator.color, iterator.field_24, text, (short)measured.index, scale);
 		}
-	}
+		iterator.index = (short)measured.index;
+		switch (iterator.token)
+		{
+		case _text_token_character:
+			wrapped_line++;
+			if ((short)wrapped_line > (short)maximum_lines)
+				maximum_lines = wrapped_line;
+			break;
+		case _text_token_tab:
+			if ((short)tab < g_4e73a0.tab_stop_count)
+			{
+				tab++;
+				wrapped_line = 0;
+			}
+			break;
+		case _text_token_newline:
+			tab = 0;
+			line += maximum_lines + 1;
+			maximum_lines = 0;
+			wrapped_line = 0;
+			break;
+		case _text_token_justification:
+			wrapped_line = 0;
+			break;
+		case _text_token_end:
+			goto done;
+		}
+	} while (iterator.token != _text_token_end);
 done:
 	if (arg_c5cac5)
 	{

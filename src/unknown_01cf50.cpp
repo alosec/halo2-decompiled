@@ -1,7 +1,31 @@
+#include "filter_storage.h"
+#include "render_source_storage.h"
+#include "visibility_storage.h"
+#include "camera_storage.h"
+#include "frame_storage.h"
+#include "depth_parameters_storage.h"
+#include "reset_storage.h"
 // @flags /O2 /Ob1 /arch:SSE /Gr
+#include "pool_storage.h"
+#include "render_modes_storage.h"
+#include "material_records_storage.h"
+#include "palette_cache_storage.h"
+#include "device_setup_storage.h"
+#include "palette_storage.h"
+#include "counters_storage.h"
+#include "launch_stack_storage.h"
+#include "font_loading_storage.h"
+#include "shader_storage.h"
+#include "render_state_storage.h"
+#include "glyphs_storage.h"
+#include "saved_frames_storage.h"
+#include "projection_storage.h"
+#include "view_context_storage.h"
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "index_cache_storage.h"
+#include "depth_groups_storage.h"
+#include "unknown_11cb00.h"
 #include <xtl.h>
 #include <string.h>
 #include <math.h>
@@ -14,7 +38,7 @@
 
 extern D3DPIXELSHADERDEF g_484f68;
 extern byte *g_485a80;
-extern byte g_4670bc, g_485b48[];
+extern byte g_4670bc;
 extern long g_4858b8;
 extern dword g_4b8448, g_4b8308, g_4b82e0, g_4b8438, g_4b8450;
 extern dword g_4b82fc, g_4b843c, g_4b82e8, g_4b82ec, g_4b82f4;
@@ -32,16 +56,15 @@ short g_4858c8;
 long g_4e6978, g_4e697c;
 long g_485a78[2];
 extern byte *g_4858c4;
-extern byte g_485a76, g_485607;
-extern IDirect3DBaseTexture8 *g_51f3c8[2][4];
+extern byte g_485a76;
+#include "texture_stage_storage.h"
 struct s_type_7ba8e9;
 s_type_7ba8e9 *function_137550(long tag, short bitmap);
 bool function_14390(short stage, s_type_7ba8e9 *bitmap, real priority);
-void function_144f0(long tag, short stage, short fallback, short fallback_index, short index, real priority);
+void function_144f0(long tag, short stage, long fallback, short fallback_index, short index, real priority);
 bool function_01dd60(long index, long *width, long *height);
 long function_25960(void);
 struct s_shader_cache;
-extern byte g_51f0f0[0x2d8];
 void function_1c590(s_shader_cache *state, long tag, long index);
 void __stdcall function_1c710(void *state);
 
@@ -105,9 +128,13 @@ void __stdcall function_46230(short target, real const *bounds)
     D3DDevice_SetVertexData4f(0, 0.53125f, 0.53125f, 16777215.0f, 16777215.0f);
     D3DDevice_SetVertexData2s(3, 1, 0);
     D3DDevice_SetVertexData4f(0, 64.53125f, 0.53125f, 16777215.0f, 16777215.0f);
+#pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 1, 1);
+#pragma inline_depth()
     D3DDevice_SetVertexData4f(0, 64.53125f, 64.53125f, 16777215.0f, 16777215.0f);
+#pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 0, 1);
+#pragma inline_depth()
     D3DDevice_SetVertexData4f(0, 0.53125f, 64.53125f, 16777215.0f, 16777215.0f);
     D3DDevice_End();
     function_14bc0((short)g_4858b8, 0, true);
@@ -116,8 +143,9 @@ void __stdcall function_46230(short target, real const *bounds)
 // @retail 0x32ac0
 bool function_32ac0(void)
 {
+    byte result = 0;
     if (function_14480(*(long *)(g_485a80 + 0x34), 0, 0))
-        return false;
+        return result;
     g_4670bc = true;
     function_16b10((s_render_reset_state *)g_485b48);
     D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, 3);
@@ -197,15 +225,18 @@ PRIVATE __forceinline void write_texture_corners(real u, real v)
 // @retail 0x15ec0
 void __stdcall function_15ec0(long index)
 {
-    long width = 0, height = 0;
+    long width = 0;
+    long height = 0;
     long count;
-    if (g_4b4b58[index].data && !g_4b4b58[index].flag95)
-        count = g_4b4b58[index].element_count;
+    s_unknown_01dcc0 *entry = &g_4b4b58[index];
+    if (entry->data && !entry->flag95)
+        count = entry->element_count;
     else count = index == 0 || index == 3 ? 1 : 0;
     function_01dd60(index, &width, &height);
     for (long level = 0; level < count; ++level)
     {
-        real x = (real)width, y = (real)height;
+        real x = (real)width;
+        real y = (real)height;
         real ratio = g_485ad4.hi / (g_485ad4.hi - g_485ad4.lo);
         real z = (ratio - g_485ad4.lo * ratio) * 16777215.0f;
         if (z < 0.0f) z = 0.0f;
@@ -232,7 +263,7 @@ void __stdcall function_15ec0(long index)
     }
 }
 
-bool function_015b10(long index, D3DPalette **out);
+__declspec(noinline) bool function_015b10(long index, D3DPalette **out);
 const long g_43e8e8[4] = { 32, 64, 128, 256 };
 
 // @retail 0x1d3f0
@@ -317,7 +348,7 @@ void *g_5093b0;
 
 short bitmap_get_mipmap_count(short width, short height, short depth, short format,
 	bool linear, short maximum_levels);
-bool function_0158f0(byte linear, short format, long width, long height,
+bool function_0158f0(short format, byte linear, long width, long height,
 	long levels, long usage_index, D3DTexture **out);
 bool function_0159b0(long edge, short format, long levels, long usage_index,
 	D3DCubeTexture **out);
@@ -327,11 +358,11 @@ bool function_015a60(short format, long width, long height, long depth,
 // @retail 0x1d000
 bool function_1d000(byte *bitmap)
 {
-	short width = *(short *)(bitmap + 4);
-	short height = *(short *)(bitmap + 6);
-	char depth = *(char *)(bitmap + 8);
-	short format = *(short *)(bitmap + 0xc);
+	volatile short height = *(short *)(bitmap + 6);
 	bool linear = (bitmap[0xe] & 0x10) != 0;
+	char depth = *(char *)(bitmap + 8);
+	short width = *(short *)(bitmap + 4);
+	short format = *(short *)(bitmap + 0xc);
 	void **texture = (void **)(bitmap + 0x50);
 	*texture = NULL;
 	short levels = bitmap_get_mipmap_count(width, height, depth, format, linear,
@@ -342,7 +373,7 @@ bool function_1d000(byte *bitmap)
 		switch (*(short *)(bitmap + 0xa))
 		{
 		case 0:
-			return function_0158f0(linear, format, width, height, levels, 0,
+			return function_0158f0(format, linear, width, height, levels, 0,
 				(D3DTexture **)texture);
 		case 1:
 			return function_015a60(format, width, height, depth, levels, 0,
@@ -457,21 +488,16 @@ void function_13d50(s_buffer_pair const *values, long mode, long count)
 
 /* the texture stages: [0] the textures set on the device (0x51f3c8), [1] the
    textures wanted (0x51f3d8) */
-IDirect3DBaseTexture8 *g_51f3c8[2][4];
+s_texture_stage_storage g_texture_stage_storage;
 long g_5093d8;
-dword g_487288[17][32];
-D3DSurface *g_51f3f4;
-D3DSurface *g_51f3f8;
-byte g_51f3fc;
 
-extern D3DResource *g_509374, *g_509378, *g_50937c, *g_509380;
+#include "surface_resource_pairs.h"
 D3DTexture *g_509354[2];
-D3DSurface *g_50935c, *g_509360, *g_509364, *g_509370;
+D3DSurface *g_50935c[2], *g_509364, *g_509370;
 D3DTexture *g_509368, *g_50936c;
 D3DSurface *g_509384;
 D3DTexture *g_50938c;
 D3DSurface *g_509390, *g_509394, *g_509398, *g_50939c, *g_5093a0, *g_5093a4, *g_5093a8;
-short g_485602;
 
 void function_1cf50(void);
 
@@ -502,7 +528,8 @@ void __stdcall function_363a0(void *vertices)
 // @retail 0x36880
 void function_36880(color4f const *color, s_short_rectangle const *rectangle)
 {
-	(void)&rectangle;
+	// Retail callers keep the rectangle argument on the stack.
+	s_short_rectangle const *const *rectangle_reference = &rectangle;
 	function_1cf50();
 	D3DDevice::Begin(D3DPT_TRIANGLEFAN);
 	D3DDevice_SetVertexData4f(9, color->red, color->green, color->blue, color->alpha);
@@ -510,8 +537,8 @@ void function_36880(color4f const *color, s_short_rectangle const *rectangle)
 	{
 		bool top = i < 2;
 		bool right = i == 1 || i == 2;
-		short y = top ? rectangle->top : rectangle->bottom;
-		short x = right ? rectangle->right : rectangle->left;
+		short y = top ? (*rectangle_reference)->top : (*rectangle_reference)->bottom;
+		short x = right ? (*rectangle_reference)->right : (*rectangle_reference)->left;
 		D3DDevice_SetVertexData2f(0, (real)x, (real)y);
 	}
 	D3DDevice::End();
@@ -520,15 +547,15 @@ void function_36880(color4f const *color, s_short_rectangle const *rectangle)
 // @retail 0x14980
 void function_14980(void)
 {
-	if (g_50935c)
+	if (g_50935c[0])
 	{
-		D3DResource_Release(g_50935c);
-		g_50935c = NULL;
+		D3DResource_Release(g_50935c[0]);
+		g_50935c[0] = NULL;
 	}
-	if (g_509360)
+	if (g_50935c[1])
 	{
-		D3DResource_Release(g_509360);
-		g_509360 = NULL;
+		D3DResource_Release(g_50935c[1]);
+		g_50935c[1] = NULL;
 	}
 	if (g_509364)
 	{
@@ -562,21 +589,28 @@ void function_14980(void)
 	}
 }
 real g_4670c8 = 1.0f;
-extern byte g_485607, g_5093fc;
-extern word g_485648, g_48564a, g_48564c, g_48564e;
+extern byte g_5093fc;
 extern __int64 g_485aa0;
-long g_485af4[4], g_485b04[4];
+#include "texture_stage_dimensions.h"
+s_texture_stage_dimensions g_texture_stage_dimensions;
 
 #include "unknown_03bcb0.h"
 struct s_bitmap_view;
 extern byte *g_485a80;
 
-PRIVATE __forceinline D3DTexture *fetch_bitmap_texture(s_bitmap_view *bitmap, dword flags, real priority)
+PRIVATE inline D3DTexture *cached_bitmap_texture(s_bitmap_view *bitmap)
 {
     s_bitmap_predict_view *view = (s_bitmap_predict_view *)bitmap;
     D3DTexture *texture = NULL;
     if (view->last_frame > g_4e6488)
         texture = view->texture;
+    return texture;
+}
+
+PRIVATE __forceinline D3DTexture *fetch_bitmap_texture(s_bitmap_view *bitmap, dword flags, real priority)
+{
+    s_bitmap_predict_view *view = (s_bitmap_predict_view *)bitmap;
+    D3DTexture *texture = cached_bitmap_texture(bitmap);
     if (!texture)
     {
         _mm_prefetch((char const *)&view->flags, _MM_HINT_T0);
@@ -617,9 +651,12 @@ bool function_14390(short stage, s_type_7ba8e9 *bitmap, real priority)
 {
     if (bitmap)
     {
-        g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, priority);
-        g_485af4[stage] = *(short *)((byte *)bitmap + 4);
-        g_485b04[stage] = *(short *)((byte *)bitmap + 6);
+        long slot = stage;
+        g_51f3c8[1][slot] = function_12310((s_bitmap_view *)bitmap, priority);
+        long width = *(short *)((byte *)bitmap + 4);
+        long height = *(short *)((byte *)bitmap + 6);
+        g_485af4[slot] = width;
+        g_485b04[slot] = height;
     }
     return true;
 }
@@ -627,18 +664,20 @@ bool function_14390(short stage, s_type_7ba8e9 *bitmap, real priority)
 // @retail 0x14480
 bool function_14480(long tag, short stage, short index)
 {
+    // Keep the stage in its stack slot across the bitmap lookup.
+    short const *stage_reference = &stage;
     bool result = false;
     if (tag != NONE)
     {
         byte *group = g_4e3b44[tag & 0xffff].bytes;
-        long count = *(long *)(group + 0x44);
+        long count = *(long const volatile *)(group + 0x44);
         if (count > 0)
         {
             s_type_7ba8e9 *bitmap = function_137550(tag, (short)(index % count));
             if (bitmap)
             {
                 if (function_12360((s_bitmap_view *)bitmap, 0.0f))
-                    function_14390(stage, bitmap, 0.0f);
+                    function_14390(*stage_reference, bitmap, 0.0f);
                 else result = true;
             }
         }
@@ -647,33 +686,37 @@ bool function_14480(long tag, short stage, short index)
 }
 
 // @retail 0x144f0
-void function_144f0(long tag, short stage, short fallback, short fallback_index, short index, real priority)
+void function_144f0(long tag, short stage, long fallback, short fallback_index, short index, real priority)
 {
-    s_type_7ba8e9 *bitmap = NULL;
+    long const *fallback_reference = &fallback;
+    s_type_7ba8e9 *bitmap;
     if (tag != NONE)
     {
         byte *group = g_4e3b44[tag & 0xffff].bytes;
-        long count = *(long *)(group + 0x44);
+        long count = *(long const volatile *)(group + 0x44);
         if (count > 0)
+        {
             bitmap = function_137550(tag, (short)(index % count));
+            if ((long)*(short *)((byte *)bitmap + 0xa) == *fallback_reference)
+                goto selected;
+        }
     }
-    if (!bitmap || *(short *)((byte *)bitmap + 0xa) != fallback)
-    {
-        tag = *(long *)(g_485a80 + fallback * 8 + 0x64);
-        if (tag == NONE) return;
-        bitmap = function_137550(tag, fallback_index);
-    }
-    if (bitmap)
-        function_14390(stage, bitmap, priority);
+    tag = *(long *)(g_485a80 + *fallback_reference * 8 + 0x64);
+    if (tag == NONE) return;
+    bitmap = function_137550(tag, fallback_index);
+    if (!bitmap) return;
+selected:
+    real selected_priority = priority;
+    function_14390(stage, bitmap, selected_priority);
 }
 
 short g_55ece0, g_55ece2;
 
 // @retail 0x14560
-bool function_14560(long tag, short stage, short fallback, short fallback_index, short index)
+bool function_14560(long tag, short stage, long fallback, short fallback_index, short index)
 {
     bool result = false;
-    s_type_7ba8e9 *bitmap = NULL;
+    s_type_7ba8e9 *bitmap;
     if (tag != NONE)
     {
         byte *group = g_4e3b44[tag & 0xffff].bytes;
@@ -681,37 +724,44 @@ bool function_14560(long tag, short stage, short fallback, short fallback_index,
         if (count > 0)
         {
             bitmap = function_137550(tag, (short)(index % count));
-            if (!function_12360((s_bitmap_view *)bitmap, 0.0f))
+            if (function_12360((s_bitmap_view *)bitmap, 0.0f))
+            {
+                if (*(short *)((byte *)bitmap + 0xa) == fallback)
+                    goto selected;
+            }
+            else
+            {
                 result = true;
+                goto done;
+            }
         }
     }
-    if (!result)
-    {
-        if (!bitmap || *(short *)((byte *)bitmap + 0xa) != fallback)
-        {
-            tag = *(long *)(g_485a80 + fallback * 8 + 0x64);
-            if (tag == NONE) return result;
-            bitmap = function_137550(tag, fallback_index);
-        }
-        if (bitmap)
-        {
-            function_14390(stage, bitmap, 0.0f);
-            g_55ece0 = *(short *)((byte *)bitmap + 4);
-            g_55ece2 = *(short *)((byte *)bitmap + 6);
-        }
-    }
+    tag = *(long *)(g_485a80 + fallback * 8 + 0x64);
+    if (tag == NONE)
+        goto done;
+    bitmap = function_137550(tag, fallback_index);
+    if (!bitmap)
+        goto done;
+selected:
+    function_14390(stage, bitmap, 0.0f);
+    g_55ece0 = *(short *)((byte *)bitmap + 4);
+    g_55ece2 = *(short *)((byte *)bitmap + 6);
+done:
     return result;
 }
 
 // @retail 0x1d5e0
-void *function_1d5e0(s_bitmap_view *bitmap, bool wait, long *pitch)
+void *function_1d5e0(s_bitmap_view *bitmap, long wait, long *pitch)
 {
     void *result = NULL;
     D3DTexture *texture = function_1cfb0(bitmap);
     if (texture)
     {
         D3DLOCKED_RECT rectangle;
-        D3DTexture_LockRect(texture, 0, &rectangle, NULL, wait ? 0 : D3DLOCK_NOOVERWRITE);
+        dword flags = 0;
+        if (!wait)
+            flags = D3DLOCK_NOOVERWRITE;
+        D3DTexture_LockRect(texture, 0, &rectangle, NULL, flags);
         *pitch = rectangle.Pitch;
         result = rectangle.pBits;
     }
@@ -722,30 +772,33 @@ void *function_1d5e0(s_bitmap_view *bitmap, bool wait, long *pitch)
 bool function_143c0(long tag, short index, short stage, real priority)
 {
     bool result = false;
+    short slot = stage;
     if (tag == NONE)
     {
         tag = *(long *)(g_485a80 + 0x64);
         index = 0;
-        if (tag == NONE) return result;
     }
-    byte *group = g_4e3b44[tag & 0xffff].bytes;
-    _mm_prefetch((char const *)(*(byte **)(group + 0x48) + index * 0x74), _MM_HINT_T0);
-    _mm_prefetch((char const *)g_485af4, _MM_HINT_T0);
-    if (index < 0 || index >= *(long *)(group + 0x44))
+    if (tag != NONE)
     {
-        tag = *(long *)(g_485a80 + 0x64);
-        index = 0;
-        group = g_4e3b44[tag & 0xffff].bytes;
-    }
-    if (group && *(long *)(group + 0x44) > 0)
-    {
-        s_type_7ba8e9 *bitmap = function_137550(tag, index);
-        if (bitmap)
+        byte *group = g_4e3b44[tag & 0xffff].bytes;
+        _mm_prefetch((char const *)(*(byte **)(group + 0x48) + index * 0x74), _MM_HINT_T0);
+        _mm_prefetch((char const *)g_485af4, _MM_HINT_T0);
+        if (index < 0 || index >= *(long *)(group + 0x44))
         {
-            g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, priority);
-            g_485af4[stage] = *(short *)((byte *)bitmap + 4);
-            g_485b04[stage] = *(short *)((byte *)bitmap + 6);
-            result = true;
+            tag = *(long *)(g_485a80 + 0x64);
+            index = 0;
+            group = g_4e3b44[tag & 0xffff].bytes;
+        }
+        if (group && *(long *)(group + 0x44) > 0)
+        {
+            byte *bitmap = (byte *)function_137550(tag, index);
+            if (bitmap)
+            {
+                g_51f3c8[1][slot] = function_12310((s_bitmap_view *)bitmap, priority);
+                g_485af4[slot] = *(short *)(bitmap + 4);
+                g_485b04[slot] = *(short *)(bitmap + 6);
+                result = true;
+            }
         }
     }
     return result;
@@ -766,8 +819,8 @@ void function_14bc0(short index, short element, bool use_depth)
 	bool flag = false;
 	switch (index)
 	{
-	case 0: target = g_50935c; depth = g_509364; flag = true; break;
-	case 4: target = g_509360; flag = true; break;
+	case 0: target = g_50935c[0]; depth = g_509364; flag = true; break;
+	case 4: target = g_50935c[1]; flag = true; break;
 	case 16: case 29: target = (D3DSurface *)g_509378; break;
 	case 17: target = (D3DSurface *)g_509380; break;
 	case 3: target = g_509370; depth = g_509364; flag = true; break;
@@ -847,10 +900,11 @@ viewport_ready:
 void function_14f60(short stage, short index)
 {
 	D3DBaseTexture *texture = NULL;
-	long width = 0, height = 0;
-	function_01dd60(index, &width, &height);
-	g_485af4[stage] = width;
-	g_485b04[stage] = height;
+	struct { long width; long height; } dimensions = { 0, 0 };
+	function_01dd60(index, &dimensions.width, &dimensions.height);
+	long local_c270bf = stage;
+	g_485af4[local_c270bf] = dimensions.width;
+	g_485b04[local_c270bf] = dimensions.height;
 	switch (index)
 	{
 	case 0: texture = g_509354[(g_485aa0 - 1) % 2]; break;
@@ -871,7 +925,7 @@ void function_14f60(short stage, short index)
 	case 14: break;
 	default: __assume(0);
 	}
-	g_51f3c8[1][stage] = texture;
+	g_51f3c8[1][local_c270bf] = texture;
 }
 
 struct s_mask_offset
@@ -904,7 +958,8 @@ void function_1c1b0(void)
 				for (long i = 0; i < count; i++)
 				{
 					long bit = g_43f188[i].y * 32 + base + g_43f188[i].x;
-					mask[bit / 32] = mask[bit / 32] | (1 << (bit % 32));
+					long word_index = bit / 32;
+					mask[word_index] |= 1 << (bit % 32);
 				}
 			}
 		}
@@ -1197,6 +1252,8 @@ struct s_shader_cache
 	long stream_count;
 	bool streams_changed;
 	byte field_2d5[3];
+
+	s_shader_cache();
 };
 
 // @retail 0x1c710
@@ -1227,25 +1284,25 @@ void __stdcall function_1c710(void *memory)
 }
 
 // @retail 0x1c4a0
-void function_1c4a0(s_shader_cache *state)
+s_shader_cache::s_shader_cache()
 {
-	state->streams_changed = false;
-	state->descriptors_changed = false;
-	state->stream_count = 0;
+	streams_changed = false;
+	descriptors_changed = false;
+	stream_count = 0;
 	for (long i = 0; i < 8; i++)
 	{
-		state->bindings[i].field_0c = NONE;
-		state->bindings[i].tag = NONE;
-		state->bindings[i].index = NONE;
+		bindings[i].field_0c = NONE;
+		bindings[i].tag = NONE;
+		bindings[i].index = NONE;
 	}
-	state->active = NONE;
+	active = NONE;
 	for (long j = 0; j < 16; j++)
-		state->wanted[j] = NULL;
+		wanted[j] = NULL;
 	for (long k = 0; k < 16; k++)
 	{
-		state->streams[k].field_08 = 0;
-		state->streams[k].field_04 = 0;
-		state->streams[k].field_00 = 0;
+		streams[k].field_08 = 0;
+		streams[k].field_04 = 0;
+		streams[k].field_00 = 0;
 	}
 }
 
@@ -1296,7 +1353,7 @@ void function_1c590(s_shader_cache *state, long tag, long index)
 }
 
 // @retail 0x1c620
-void function_1c620(s_shader_cache *state, long a, long b, long c, byte const *descriptor)
+inline void function_1c620(s_shader_cache *state, long a, long b, long c, byte const *descriptor)
 {
 	long index = state->stream_count;
 	if (state->streams[index].field_04 != b || state->streams[index].field_00 != a || state->streams[index].field_08 != c)
@@ -1314,7 +1371,6 @@ void function_1c620(s_shader_cache *state, long a, long b, long c, byte const *d
 
 byte g_485af1;
 
-extern byte g_51f0f0[0x2d8];
 extern byte *g_485a80;
 
 struct s_shader_slot
@@ -1364,7 +1420,6 @@ void __stdcall function_1c7f0(long index)
 
 #include "physical_memory.h"
 
-byte g_51f3f0;
 s_physical_object *g_487b08;
 
 PRIVATE bool __stdcall shader_block_busy(long index)
@@ -1498,6 +1553,43 @@ s_cache_record *function_1e2d0(void)
 	return result;
 }
 
+/* 0x1e2d0's work written out where a record builder inlines it */
+static __forceinline s_cache_record *cache_record_new(void)
+{
+	s_cache_record *result = 0;
+	if (g_4b6280.count < 1024)
+	{
+		g_4b6280.records[g_4b6280.count].count = 0;
+		result = &g_4b6280.records[g_4b6280.count];
+		g_4b6280.count++;
+		result->active = 0;
+	}
+	else if (g_4b6280.available)
+		g_4b6280.available = false;
+	return result;
+}
+
+/* 0x1e2d0's work in its own order, where 0x1e5e0 inlines it */
+static __forceinline s_cache_record *cache_record_take(void)
+{
+	s_cache_record *result = 0;
+	if (g_4b6280.count < 1024)
+	{
+		result = &g_4b6280.records[g_4b6280.count];
+		result->count = 0;
+		g_4b6280.count++;
+		result->active = 0;
+	}
+	else if (g_4b6280.available)
+		g_4b6280.available = false;
+	return result;
+}
+
+PRIVATE inline real render_bounds_midpoint(real const *pair)
+{
+    return (pair[0] + pair[1]) * 0.5f;
+}
+
 // @retail 0x1cdd0
 void function_1cdd0(real const *bounds, byte flags)
 {
@@ -1527,7 +1619,7 @@ void function_1cdd0(real const *bounds, byte flags)
 			constants[2] = (bounds[5] - bounds[4]) * 0.5f;
 			constants[3] = 1.0f;
 			constants[4] = (bounds[1] + bounds[0]) * 0.5f;
-			constants[5] = (bounds[2] + bounds[3]) * 0.5f;
+			constants[5] = (*(real const volatile *)(bounds + 2) + bounds[3]) * 0.5f;
 			constants[6] = (bounds[4] + bounds[5]) * 0.5f;
 			constants[7] = 0.0f;
 		}
@@ -1536,7 +1628,7 @@ void function_1cdd0(real const *bounds, byte flags)
 			constants[8] = (bounds[7] - bounds[6]) * 0.5f;
 			constants[9] = (bounds[9] - bounds[8]) * 0.5f;
 			constants[10] = (bounds[6] + bounds[7]) * 0.5f;
-			constants[11] = (bounds[9] + bounds[8]) * 0.5f;
+			constants[11] = render_bounds_midpoint(bounds + 8);
 		}
 	}
 	if (active || g_485af1)
@@ -1643,8 +1735,8 @@ void function_123b0(void)
     dword flags = XGetVideoFlags();
     if (standard == 3)
         g_485ac0 = (byte)flags & 0x40 ? 60 : 50;
-    byte wide = (byte)((flags >> 4) & 1);
     byte low = (byte)(flags & 1);
+    byte wide = (byte)((flags >> 4) & 1);
     flags &= 8;
     g_485ac2 = low;
     g_485ac3 = wide;
@@ -1714,6 +1806,21 @@ void function_14ac0(void)
 }
 
 long g_4858b8;
+
+#if 0
+// Retail 0x14b60. The additional clear call changes matched 0x14ac0's stack frame.
+// Retail 0x14b60
+void __stdcall function_14b60(dword flags, dword color, real depth, byte stencil)
+{
+    dword clear_flags = (flags & 1 ? 0xf0 : 0) | ((flags & 0x1e) << 3) | ((flags >> 5) & 3);
+    if (clear_flags)
+    {
+        if (g_485607 && !g_4858b8)
+            function_14ac0();
+        D3DDevice_Clear(0, NULL, clear_flags, color, depth, stencil);
+    }
+}
+#endif
 
 // @retail 0x1d4b0
 void function_1d4b0(long format, bool alternate, long *result, bool *linear)
@@ -1795,15 +1902,18 @@ void __stdcall function_15720(real x, real y)
 {
     (void)&x;
     (void)&y;
-    x = g_485adc;
-    y = g_485ae0;
+    struct { real near_value; real far_value; } planes;
+    planes.near_value = g_485adc;
+    planes.far_value = g_485ae0;
+    x = planes.near_value;
+    y = planes.far_value;
     real const *near_plane = &x;
     real const *far_plane = &y;
     D3DDevice_SetDepthClipPlanes(*near_plane, *far_plane, D3DSDCP_SET_VERTEXPROGRAM_PLANES);
 }
 
 byte g_4b6290;
-extern dword g_4850c8;
+
 
 // @retail 0x13630
 bool function_13630(void)
@@ -1834,7 +1944,6 @@ void function_4a780(void)
     function_14bc0((short)g_4858b8, 0, true);
 }
 
-byte g_485b48[0x1fc0];
 byte g_4670bc = true;
 struct s_render_reset_state;
 void function_16b10(s_render_reset_state *state);
@@ -1863,13 +1972,7 @@ void __stdcall function_48e40(s_render_pair_request const *request)
     request->callback(request->first, request->second);
 }
 
-struct s_frame_offset
-{
-    point3f position;
-    vector3f forward;
-    vector3f up;
-};
-extern s_frame_offset g_485618;
+
 byte g_55e6c8;
 
 // @retail 0x47870
@@ -1954,7 +2057,7 @@ void function_18e80(s_shader_constant_state *state)
 }
 
 extern s_record_pool *g_509434;
-extern long g_4c1bd0;
+#include "target_cache_storage.h"
 
 // @retail 0x3d270
 void function_3d270(void)
@@ -1965,7 +2068,7 @@ void function_3d270(void)
 
 typedef dword (__stdcall *t_cache_hash)(void const *);
 typedef bool (__stdcall *t_cache_compare)(void const *, void const *);
-hash_table *function_13e1a0(char const *name, long data_size, long bucket_count,
+__declspec(noinline) hash_table *function_13e1a0(char const *name, long data_size, long bucket_count,
     t_cache_hash hash, t_cache_compare compare, long maximum_count, c_data_allocator *allocator);
 
 // @retail 0x1e110
@@ -2081,7 +2184,6 @@ struct s_1e4e0_record
 	point3f position;
 };
 
-extern point3f g_4b9da0;
 extern dword g_4b8348;
 extern real g_4b8494;
 void function_35aa0(void);
@@ -2113,11 +2215,10 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 			real point = b->position.z * a->plane.k;
 			point += b->position.y * a->plane.j;
 			point += b->position.x * a->plane.i;
-			// Retail rereads these record fields in camera-dot-product order.
-			plane3f const volatile *camera_plane = &a->plane;
+			plane3f const *camera_plane = &a->plane;
 			real camera = camera_plane->k * g_4b9da0.z;
 			camera = camera_plane->j * g_4b9da0.y + camera;
-			camera = camera_plane->i * g_4b9da0.x + camera;
+			camera = camera + camera_plane->i * g_4b9da0.x;
 			long camera_side = a->plane.d > camera ? 1 : 0;
 			long point_side = a->plane.d > point ? 1 : 0;
 			comparison = camera_side != point_side ? 1 : -1;
@@ -2127,10 +2228,10 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 			real point = a->position.z * b->plane.k;
 			point += a->position.y * b->plane.j;
 			point += a->position.x * b->plane.i;
-			plane3f const volatile *camera_plane = &b->plane;
+			plane3f const *camera_plane = &b->plane;
 			real camera = camera_plane->k * g_4b9da0.z;
 			camera = camera_plane->j * g_4b9da0.y + camera;
-			camera = camera_plane->i * g_4b9da0.x + camera;
+			camera = camera + camera_plane->i * g_4b9da0.x;
 			long camera_side = b->plane.d > camera ? 1 : 0;
 			long point_side = b->plane.d > point ? 1 : 0;
 			comparison = camera_side == point_side ? 1 : -1;
@@ -2148,13 +2249,15 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 // @retail 0x1e370
 void function_1e370(void)
 {
-	long scratch;
 	function_35aa0();
 	long first = g_4b6280.unknown04;
 	word *indices = (word *)g_4b6280.buffer;
 	for (long i = first; i < g_4b6280.count; ++i)
 		indices[i - first] = (word)i;
-	sort_2byte(indices, g_4b6280.count - first, &scratch, function_1e700, g_4b6280.records);
+	{
+		long scratch;
+		sort_2byte(indices, g_4b6280.count - first, &scratch, function_1e700, g_4b6280.records);
+	}
 	for (long i = 0; i < g_4b6280.count - (long)g_4b6280.unknown04; ++i)
 	{
 		s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[((word *)g_4b6280.buffer)[i]];
@@ -2165,7 +2268,18 @@ void function_1e370(void)
 	D3DDevice_SetRenderState(D3DRS_STIPPLEENABLE, 0);
 	if (!(fabs(g_4b8494 - 1.0f) < 0.0001f))
 	{
-		D3DDevice_SetStipple(function_1c290(1.0f));
+		real scaled = 1.0f * 16.0f;
+		long index;
+		__asm
+		{
+			fld scaled
+			fistp index
+		}
+		if (index < 0)
+			index = 0;
+		else if (index > 16)
+			index = 16;
+		D3DDevice_SetStipple(g_487288[index]);
 		g_4b8494 = 1.0f;
 	}
 }
@@ -2176,16 +2290,13 @@ bool function_1e4e0(point3f const *position, t_1e4e0_callback callback, void con
 	(void)&callback;
 	(void)&data;
 	bool result = false;
-	if (g_4b6280.count < 1024)
+	s_1e4e0_record *record = (s_1e4e0_record *)cache_record_new();
+	if (record)
 	{
-		g_4b6280.records[g_4b6280.count].count = 0;
-		s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count];
-		record->active = false;
 		vector3f delta;
 		delta.i = position->x - g_485618.position.x;
 		delta.j = position->y - g_485618.position.y;
 		delta.k = position->z - g_485618.position.z;
-		++g_4b6280.count;
 		if (size)
 			memcpy(record->payload, data, size);
 		record->type = 3;
@@ -2198,26 +2309,22 @@ bool function_1e4e0(point3f const *position, t_1e4e0_callback callback, void con
 		record->position = *position;
 		result = true;
 	}
-	else if (g_4b6280.available)
-		g_4b6280.available = false;
 	return result;
 }
 
 
 void __stdcall function_35b00(void *payload);
 
-// @retail 0x1e5e0
-bool function_1e5e0(point3f const *position, long size, long a, long b, long c,
+// @retail 0x1e5e0 standard
+bool function_1e5e0(long size, point3f const *position, long a, long b, long c,
 	long d, long e, long f, long g, void const *data)
 {
 	(void)&a; (void)&b; (void)&c; (void)&d;
 	(void)&e; (void)&f; (void)&g; (void)&data;
 	bool result = false;
-	if (g_4b6280.count < 1024)
+	s_1e4e0_record *record = (s_1e4e0_record *)cache_record_take();
+	if (record)
 	{
-		s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count++];
-		record->type = 0;
-		record->active = false;
 		long *payload = (long *)record->payload;
 		payload[0] = a;
 		payload[1] = b;
@@ -2232,18 +2339,14 @@ bool function_1e5e0(point3f const *position, long size, long a, long b, long c,
 		record->flags = 0;
 		record->callback = function_35b00;
 		vector3f delta;
-		delta.k = position->z - g_485618.position.z;
-		delta.j = position->y - g_485618.position.y;
 		delta.i = position->x - g_485618.position.x;
-		real depth = g_485618.forward.k * delta.k;
-		depth += g_485618.forward.j * delta.j;
-		depth += g_485618.forward.i * delta.i;
+		delta.j = position->y - g_485618.position.y;
+		delta.k = position->z - g_485618.position.z;
+		real depth = (real)(g_485618.forward.k * delta.k) + (real)(g_485618.forward.j * delta.j) + (real)(g_485618.forward.i * delta.i);
 		record->depth = 0.0f - depth;
 		record->position = *position;
 		result = true;
 	}
-	else if (g_4b6280.available)
-		g_4b6280.available = false;
 	return result;
 }
 
@@ -2252,7 +2355,7 @@ bool g_47fe85 = true;
 typedef void (__stdcall *t_4b220_fill)(void *, long, void *);
 
 // @retail 0x4b220
-long function_4b220(long mode, long primitive, long stride, t_4b220_fill fill, void *context, long count)
+long function_4b220(long count, long mode, long primitive, long stride, t_4b220_fill fill, void *context)
 {
 	long result = NONE;
 	long const *mode_reference = &mode;
@@ -2347,21 +2450,24 @@ void function_4d830(s_render_transform_record const *record)
 		constants[9] = matrix[6];
 		constants[10] = matrix[9];
 		constants[11] = matrix[12];
-		D3DDevice_SetVertexShaderConstant(-46, constants, 3);
+		D3DDevice_SetVertexShaderConstantFast(-46, constants, 3);
 		g_5093d8 = 0;
 	}
 	else if (record->handle != NONE)
 	{
 		byte *data = (byte *)table_entry_data(record->handle);
+		long entry_count = *(word *)data;
 		long size = 0;
-		if (*(word *)data > 0)
-			size = *(word *)data * 48 + 0x44;
+		if (entry_count > 0)
+			size = entry_count * 48 + 0x44;
 		for (long i = size / 32; i > 0; --i, data += 32)
 			_mm_prefetch((char const *)data, _MM_HINT_T0);
 		dword flags = record->flags;
 		if ((flags & 0xe0000000) == 0x20000000)
 		{
+#pragma inline_depth(0)
 			long index = function_4cb80((flags >> 9) & 0x1ff, record->tag);
+#pragma inline_depth()
 			if (index != NONE)
 			{
 				s_shader_transform_table *table = (s_shader_transform_table *)table_entry_data(record->handle);
@@ -2372,7 +2478,7 @@ void function_4d830(s_render_transform_record const *record)
 					constants = table->transforms[index];
 				if (constants)
 				{
-					D3DDevice_SetVertexShaderConstant(-46, constants, 3);
+					D3DDevice_SetVertexShaderConstantFast(-46, constants, 3);
 					g_5093d8 = 0;
 					return;
 				}
@@ -2382,7 +2488,6 @@ void function_4d830(s_render_transform_record const *record)
 	}
 }
 
-real g_4b9fa4, g_4b9ff8, g_4b9f18, g_4b9f9c;
 
 PRIVATE __forceinline real maximum_25ca0(real first, real second)
 {
@@ -2395,22 +2500,22 @@ PRIVATE __forceinline real maximum_25ca0(real first, real second)
 // @retail 0x25ca0
 void function_25ca0(bool enabled)
 {
-    real divisor = maximum_25ca0(0.0001f, g_4b9fa4);
-    real value = g_4b9ff8;
-    value *= 1.0f / divisor;
-    value = 0.0f - value;
     real constants[4];
+    *(volatile real *)&constants[3] = maximum_25ca0(0.0001f, g_4b9fa4);
+    real value = g_4b9ff8;
+    value *= 1.0f / *(volatile real *)&constants[3];
+    value = 0.0f - value;
     constants[0] = value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value;
     constants[1] = 0.0f;
     constants[2] = g_4b9f18;
-    if (enabled)
+    if (!(enabled))
     {
-        constants[3] = g_4b9f9c;
+        constants[3] = 0.0f;
         D3DDevice_SetVertexShaderConstant(-81, constants, 1);
     }
     else
     {
-        constants[3] = 0.0f;
+        constants[3] = g_4b9f9c;
         D3DDevice_SetVertexShaderConstant(-81, constants, 1);
     }
 }
@@ -2458,10 +2563,10 @@ struct s_queued_material_payload
 	void (__stdcall *begin)(void *);
 	t_4b220_fill fill;
 	void (__stdcall *end)(void *);
-	long stride;
-	long format;
 	long primitive;
+	long format;
 	long count;
+	long stride;
 	byte data[1];
 };
 
@@ -2476,7 +2581,7 @@ void __stdcall function_35b00(void *payload)
 	select_immediate_descriptor(request->format);
 	function_1c710(g_51f0f0);
 	function_1cf50();
-	function_4b220(0, request->primitive, request->stride, request->fill, request->data, request->count);
+	function_4b220(request->count, 0, request->primitive, request->stride, request->fill, request->data);
 	if (request->end)
 		request->end(request->data);
 }
@@ -2507,18 +2612,35 @@ void function_1f3a0(short const *rectangle, real x, real y, long width, long hei
 void __stdcall function_423c0(void *payload);
 void __stdcall function_4f010(void *payload);
 void __stdcall function_508d0(void *payload);
-extern vector3f g_4b9dac;
 
-struct s_42760_entry
+s_depth_groups_storage g_depth_groups_storage;
+
+/* Takes the next free record and clears its type and active flag, as
+   0x1e2d0 does, with the count advanced first. */
+PRIVATE inline s_cache_record *cache_record_push(void)
 {
-    real depth;
-    point3f position;
-    byte unknown10[0x10];
-    long type;
-};
-s_42760_entry g_4c152c[32];
-long g_4c19ac;
+    s_cache_record *result = 0;
+    if (g_4b6280.count < 1024)
+    {
+        result = &g_4b6280.records[g_4b6280.count++];
+        result->count = 0;
+        result->active = 0;
+    }
+    else if (g_4b6280.available)
+        g_4b6280.available = false;
+    return result;
+}
 
+/* Copies a depth group's depth and position to whichever outputs are given. */
+PRIVATE inline void depth_group_get(s_42760_entry const *group, real *depth, point3f *position)
+{
+    if (depth)
+        *depth = group->depth;
+    if (position)
+        *position = group->position;
+}
+
+/* Queues one record per type-3 depth group, drawn by 0x423c0. */
 // @retail 0x42760
 void function_42760(long flags)
 {
@@ -2526,33 +2648,25 @@ void function_42760(long flags)
     long i = 0;
     if (count > 0)
     {
-      do
-      {
-        s_42760_entry *entry = &g_4c152c[i];
-        if (entry->type == 3)
+        do
         {
-            if (g_4b6280.count < 1024)
+            s_42760_entry const *entry = &g_4c152c[i];
+            if (entry->type == 3)
             {
-                s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count];
-                record->type = 0;
-                record->active = false;
-                ++g_4b6280.count;
-                record->type = 3;
-                record->flags = 0;
-                record->callback = function_423c0;
-                real *depth = &record->depth;
-                point3f *position = &record->position;
-                if (depth) *depth = entry->depth;
-                if (position) *position = entry->position;
-                ((long *)record->payload)[0] = i;
-                ((long *)record->payload)[1] = flags;
-                *depth = 0.0f - *depth;
+                s_1e4e0_record *record = (s_1e4e0_record *)cache_record_push();
+                if (record)
+                {
+                    record->type = 3;
+                    record->flags = 0;
+                    record->callback = function_423c0;
+                    real *depth = &record->depth;
+                    depth_group_get(entry, depth, &record->position);
+                    ((long *)record->payload)[0] = i;
+                    ((long *)record->payload)[1] = flags;
+                    *depth = 0.0f - *depth;
+                }
             }
-            else if (g_4b6280.available)
-                g_4b6280.available = false;
-        }
-        ++i;
-      } while (i < count);
+        } while (++i < count);
     }
 }
 
@@ -2570,11 +2684,9 @@ void function_42850(long a, long b, point3f const *position,
     vector3f const *first, vector3f const *second, real scale, real width,
     vector3f const *third)
 {
-    if (g_4b6280.count < 1024)
+    s_1e4e0_record *record = (s_1e4e0_record *)cache_record_take();
+    if (record)
     {
-        s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count++];
-        record->type = 0;
-        record->active = false;
         s_42850_payload *payload = (s_42850_payload *)record->payload;
         payload->a = a;
         payload->b = b;
@@ -2597,9 +2709,8 @@ void function_42850(long a, long b, point3f const *position,
         record->depth = 0.0f - depth;
         record->position = *position;
     }
-    else if (g_4b6280.available)
-        g_4b6280.available = false;
 }
+
 
 struct s_429a0_payload
 {
@@ -2614,11 +2725,9 @@ struct s_429a0_payload
 void function_429a0(byte type, long a, long b, long c, point3f const *position,
     point3f const *endpoint, vector3f const *first, vector3f const *second, real opacity)
 {
-    if (g_4b6280.count < 1024)
+    s_1e4e0_record *record = (s_1e4e0_record *)cache_record_take();
+    if (record)
     {
-        s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count++];
-        record->type = 0;
-        record->active = false;
         s_429a0_payload *payload = (s_429a0_payload *)record->payload;
         payload->type = type;
         payload->a = a;
@@ -2629,7 +2738,12 @@ void function_429a0(byte type, long a, long b, long c, point3f const *position,
         payload->first = *first;
         payload->second = *second;
         long value = (long)(opacity * 256.0f);
-        payload->opacity = (byte)(value < 0 ? 0 : value > 255 ? 255 : value);
+        long clamped;
+        if (value < 0)
+            clamped = 0;
+        else
+            clamped = value > 255 ? 255 : value;
+        payload->opacity = (byte)clamped;
         vector3f delta;
         delta.i = position->x - g_4b9da0.x;
         delta.j = position->y - g_4b9da0.y;
@@ -2643,8 +2757,6 @@ void function_429a0(byte type, long a, long b, long c, point3f const *position,
         record->depth = 0.0f - depth;
         record->position = *position;
     }
-    else if (g_4b6280.available)
-        g_4b6280.available = false;
 }
 
 struct s_1c8c0_stream
@@ -2713,9 +2825,10 @@ bool function_1c8c0(byte const *definition, dword mask,
 bool function_1caa0(long tag, byte const *selection, word const *kind, byte const *definition,
     s_1c8c0_stream const *third, s_1c8c0_stream const *second, s_1c8c0_stream const *first)
 {
-    long mode = *(word const *)(selection + 0x14);
+    word type = *kind;
+    word mode = *(word const *)(selection + 0x14);
     signed char index;
-    switch (*kind)
+    switch (type)
     {
     case 1: index = (signed char)selection[0x10]; break;
     case 2: index = (signed char)selection[0x10]; break;
@@ -2749,13 +2862,13 @@ bool function_12490()
     D3DPRESENT_PARAMETERS parameters;
     memset(&parameters, 0, sizeof(parameters));
     g_509350 = 1;
+    parameters.FullScreen_RefreshRateInHz = (short)g_485ac0;
     parameters.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
     parameters.Windowed = false;
     parameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
     parameters.EnableAutoDepthStencil = true;
     parameters.AutoDepthStencilFormat = D3DFMT_D24S8;
     parameters.BackBufferFormat = D3DFMT_A8R8G8B8;
-    parameters.FullScreen_RefreshRateInHz = (short)g_485ac0;
     parameters.BackBufferWidth = 640;
     parameters.BackBufferHeight = 480;
     parameters.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
@@ -2763,15 +2876,14 @@ bool function_12490()
         parameters.Flags |= D3DPRESENTFLAG_WIDESCREEN;
     if (g_485ac6)
         parameters.Flags |= D3DPRESENTFLAG_PROGRESSIVE;
-    D3DDevice *device = NULL;
-    Direct3D_CreateDevice(0, D3DDEVTYPE_HAL, NULL, D3DCREATE_HARDWARE_VERTEXPROCESSING, &parameters, &device);
-    g_5093b0 = device;
+    Direct3D_CreateDevice(0, D3DDEVTYPE_HAL, NULL, D3DCREATE_HARDWARE_VERTEXPROCESSING, &parameters, (D3DDevice **)&g_5093b0);
     if (!g_5093b0)
     {
         g_5093b0 = NULL;
-        return false;
+        result = false;
     }
-    memcpy(g_484ce8, g_47ffd8, sizeof(g_484ce8));
+    else
+        memcpy(g_484ce8, g_47ffd8, sizeof(g_484ce8));
     return result;
 }
 
@@ -2817,14 +2929,11 @@ D3DSurface g_484f50;
 // @retail 0x14850
 bool function_14850()
 {
-    volatile bool result = true;
-    D3DTexture *texture;
-    function_0158f0(0, 11, 64, 64, 0, 1, &texture);
-    g_509374 = texture;
-    g_509378 = D3DTexture_GetSurfaceLevel2(texture, 0);
-    function_0158f0(0, 11, 64, 64, 0, 1, &texture);
-    g_50937c = texture;
-    g_509380 = D3DTexture_GetSurfaceLevel2(texture, 0);
+    bool result = true;
+    function_0158f0(11, 0, 64, 64, 0, 1, &g_surface_resource_pairs.pairs[0].texture);
+    g_509378 = D3DTexture_GetSurfaceLevel2(g_509374, 0);
+    function_0158f0(11, 0, 64, 64, 0, 1, &g_surface_resource_pairs.pairs[1].texture);
+    g_509380 = D3DTexture_GetSurfaceLevel2(g_50937c, 0);
     if (!g_509374 || !g_509378 || !g_50937c || !g_509380)
         result = false;
     g_484f50.Common = 0x50001;
@@ -2841,27 +2950,23 @@ struct short_rect_pair
 {
     struct { short v0, v1, v2, v3; } a, b;
 };
-extern short_rect_pair g_485a8a;
-extern short g_485aca;
-struct s_128c0_settings
+struct s_unknown_485a88
 {
-    byte depth_format, interval_flag;
-    short interval;
-    long quality, extra;
+    byte flag;
+    short_rect_pair rects;
 };
-word g_485ac8;
-long g_485acc, g_485ad0;
+extern s_unknown_485a88 g_unknown_485a88;
+#define g_485a8a (g_unknown_485a88.rects)
+
+s_runtime_device_configuration g_runtime_device_configuration;
 long g_467008, g_46700c;
 bool g_5093bc;
 
 // @retail 0x128c0
 bool function_128c0(s_128c0_settings const *settings)
 {
-    g_485ac8 = *(word const *)settings;
-    g_485aca = settings->interval;
-    g_485acc = settings->quality;
-    g_485ad0 = settings->extra;
-    volatile bool result = true;
+    g_runtime_device_configuration = *(s_runtime_device_configuration const *)settings;
+    bool result = true;
     D3DPRESENT_PARAMETERS parameters;
     memset(&parameters, 0, sizeof(parameters));
     parameters.Windowed = false;
@@ -2893,24 +2998,23 @@ bool function_128c0(s_128c0_settings const *settings)
     }
     parameters.FullScreen_RefreshRateInHz = (short)g_485ac0;
     if (!g_5093b0)
-    {
-        D3DDevice *device = NULL;
-        Direct3D_CreateDevice(0, D3DDEVTYPE_HAL, NULL, D3DCREATE_HARDWARE_VERTEXPROCESSING, &parameters, &device);
-        g_5093b0 = device;
-    }
+        Direct3D_CreateDevice(0, D3DDEVTYPE_HAL, NULL, D3DCREATE_HARDWARE_VERTEXPROCESSING, &parameters, (D3DDevice **)&g_5093b0);
     else
         D3DDevice_Reset(&parameters);
     if (!g_5093b0)
     {
         g_5093b0 = NULL;
-        return false;
+        result = false;
     }
-    memcpy(g_484ce8, g_47ffd8, sizeof(g_484ce8));
-    if (g_485acc < 0 || g_485acc > 5)
-        g_485acc = 3;
-    g_467008 = NONE;
-    g_46700c = NONE;
-    g_5093bc = true;
+    else
+    {
+        memcpy(g_484ce8, g_47ffd8, sizeof(g_484ce8));
+        if (g_485acc < 0 || g_485acc > 5)
+            g_485acc = 3;
+        g_467008 = NONE;
+        g_46700c = NONE;
+        g_5093bc = true;
+    }
     return result;
 }
 
@@ -2926,14 +3030,15 @@ void function_13d80()
         if (description.Size == description.Width * description.Height * 4)
         {
             D3DLOCKED_RECT locked;
-            D3DSurface_LockRect(surface, &locked, NULL, 0);
-            locked.pBits = (void *)((dword)locked.pBits | 0xf0000000);
-            if (locked.pBits)
+            D3DLOCKED_RECT *locked_result = &locked;
+            D3DSurface_LockRect(surface, locked_result, NULL, 0);
+            locked_result->pBits = (void *)((dword)locked_result->pBits | 0xf0000000);
+            if (locked_result->pBits)
             {
                 long width = (short)(g_5093c0.second >> 16) - (short)(g_5093c0.first >> 16);
                 long height = (short)g_5093c0.second - (short)g_5093c0.first;
                 byte const *source = (byte const *)g_5093c8;
-                byte *row = (byte *)locked.pBits + (short)g_5093c0.first * locked.Pitch;
+                byte *row = (byte *)locked_result->pBits + (short)g_5093c0.first * locked_result->Pitch;
                 for (long y = 0; y < height; ++y)
                 {
                     dword *pixel = (dword *)row + (short)(g_5093c0.first >> 16);
@@ -2943,7 +3048,7 @@ void function_13d80()
                         byte level = (byte)(value < 0 ? 0 : value > 255 ? 255 : value);
                         *pixel++ = (((((dword)level << 8) | level) << 8 | level) << 8) | level;
                     }
-                    row += locked.Pitch;
+                    row += locked_result->Pitch;
                     source += width;
                 }
             }
@@ -2958,47 +3063,54 @@ extern D3DResource *g_485ae4, *g_485ae8, *g_485aec;
 // @retail 0x1d0e0
 bool function_1d0e0()
 {
-    D3DTexture *texture;
-    if (!function_0158f0(0, 9, 4, 4, 0, 0, &texture))
+    bool result = function_0158f0(9, 0, 4, 4, 0, 0, (D3DTexture **)&g_485ae4) &&
+        function_015a60(9, 4, 4, 4, 0, 0, (D3DVolumeTexture **)&g_485ae8) &&
+        function_0159b0(4, 9, 0, 0, (D3DCubeTexture **)&g_485aec);
+    if (result)
     {
-        g_485ae4 = texture;
-        return false;
-    }
-    g_485ae4 = texture;
-    D3DVolumeTexture *volume;
-    if (!function_015a60(9, 4, 4, 4, 0, 0, &volume))
-    {
-        g_485ae8 = volume;
-        return false;
-    }
-    g_485ae8 = volume;
-    D3DCubeTexture *cube;
-    if (!function_0159b0(4, 9, 0, 0, &cube))
-    {
-        g_485aec = cube;
-        return false;
-    }
-    g_485aec = cube;
-    bool result = true;
-    if (!g_485ae4 || !g_485ae8 || !g_485aec)
-        return false;
-    word colors[2] = { 0x0f00, 0xf0f0 };
-    D3DLOCKED_RECT rectangle;
-    D3DTexture_LockRect((D3DTexture *)g_485ae4, 0, &rectangle, NULL, 0);
-    for (long i = 0; i < 16; ++i)
-        ((word *)rectangle.pBits)[i] = colors[i & 1];
-    D3DTexture_UnlockRect((D3DTexture *)g_485ae4, 0);
-    D3DLOCKED_BOX box;
-    D3DVolumeTexture_LockBox((D3DVolumeTexture *)g_485ae8, 0, &box, NULL, 0);
-    for (long j = 0; j < 64; ++j)
-        ((word *)box.pBits)[j] = colors[j & 1];
-    D3DVolumeTexture_UnlockBox((D3DVolumeTexture *)g_485ae8, 0);
-    for (long face = 0; face < 6; ++face)
-    {
-        D3DCubeTexture_LockRect((D3DCubeTexture *)g_485aec, (D3DCUBEMAP_FACES)face, 0, &rectangle, NULL, 0);
-        for (long k = 0; k < 16; ++k)
-            ((word *)rectangle.pBits)[k] = colors[k & 1];
-        D3DCubeTexture_UnlockRect((D3DCubeTexture *)g_485aec, (D3DCUBEMAP_FACES)face, 0);
+        if (!g_485ae4 || !g_485ae8 || !g_485aec)
+            result = false;
+        else
+        {
+            word colors[2] = { 0x0f00, 0xf0f0 };
+            D3DLOCKED_RECT rectangle;
+            D3DTexture_LockRect((D3DTexture *)g_485ae4, 0, &rectangle, NULL, 0);
+            long i = 0;
+            word *i_out = (word *)rectangle.pBits;
+            for (long i_remaining = 16; i_remaining; --i_remaining)
+            {
+                *i_out = colors[i & 1];
+                ++i;
+                ++i_out;
+            }
+            D3DTexture_UnlockRect((D3DTexture *)g_485ae4, 0);
+            D3DLOCKED_BOX box;
+            D3DVolumeTexture_LockBox((D3DVolumeTexture *)g_485ae8, 0, &box, NULL, 0);
+            long j = 0;
+            word *j_out = (word *)box.pBits;
+            for (long j_remaining = 64; j_remaining; --j_remaining)
+            {
+                *j_out = colors[j & 1];
+                ++j;
+                ++j_out;
+            }
+            D3DVolumeTexture_UnlockBox((D3DVolumeTexture *)g_485ae8, 0);
+            long face = 0;
+            for (long faces_left = 6; faces_left; --faces_left)
+            {
+                D3DCubeTexture_LockRect((D3DCubeTexture *)g_485aec, (D3DCUBEMAP_FACES)face, 0, &rectangle, NULL, 0);
+                long k = 0;
+                word *k_out = (word *)rectangle.pBits;
+                for (long k_remaining = 16; k_remaining; --k_remaining)
+                {
+                    *k_out = colors[k & 1];
+                    ++k;
+                    ++k_out;
+                }
+                D3DCubeTexture_UnlockRect((D3DCubeTexture *)g_485aec, (D3DCUBEMAP_FACES)face, 0);
+                ++face;
+            }
+        }
     }
     return result;
 }
@@ -3033,8 +3145,10 @@ void __stdcall function_1e930(long opaque)
         function_0222d0(D3DRS_ALPHATESTENABLE, 0);
         function_0222d0(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
         function_0222d0(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-        function_0222d0(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-        function_0222d0(D3DRS_ZWRITEENABLE, 0);
+        opaque = D3DRS_BLENDOP;
+        function_0222d0(*(D3DRENDERSTATETYPE const *)&opaque, D3DBLENDOP_ADD);
+        opaque = D3DRS_ZWRITEENABLE;
+        function_0222d0(*(D3DRENDERSTATETYPE const *)&opaque, 0);
         g_484f68.PSFinalCombinerInputsEFG = 0x1400;
     }
     function_1c590((s_shader_cache *)g_51f0f0, *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x14), 0);
@@ -3046,32 +3160,34 @@ void __stdcall function_1e930(long opaque)
     g_4b6294 = true;
 }
 
-extern real g_48565c;
-real g_48568c[46];
 bool g_55e6bc;
 
 // @retail 0x12d50
-void function_12d50(real const *projection, bool scaled, real *output)
+void function_12d50(bool scaled, real const *projection, real *output)
 {
     real constants[16];
-    D3DDevice_SetDepthClipPlanes((scaled ? 0.15f : 1.0f) * g_485adc, g_485ae0,
+    real near_plane = scaled ? 0.15f : 1.0f;
+    real far_plane = g_485ae0;
+    near_plane *= g_485adc;
+    D3DDevice_SetDepthClipPlanes(near_plane, far_plane,
         D3DSDCP_SET_VERTEXPROGRAM_PLANES);
     if (!projection)
         projection = g_48568c;
     if (!output)
         output = constants;
     real scale = 16777215.0f / g_48565c;
+    real *next = output;
     for (long i = 0; i < 4; ++i)
     {
-        output[i * 4] = (projection[38 + i] * projection[3] + projection[1] * projection[30 + i]
+        *next++ = (projection[38 + i] * projection[3] + projection[1] * projection[30 + i]
             + projection[34 + i] * projection[2]) * scale;
-        output[i * 4 + 1] = (projection[38 + i] * projection[6] + projection[30 + i] * projection[4]
+        *next++ = (projection[38 + i] * projection[6] + projection[30 + i] * projection[4]
             + projection[34 + i] * projection[5]) * scale;
-        output[i * 4 + 2] = (projection[38 + i] * projection[9] + projection[8] * projection[34 + i]
+        *next++ = (projection[38 + i] * projection[9] + projection[8] * projection[34 + i]
             + projection[30 + i] * projection[7]) * scale;
-        output[i * 4 + 3] = (projection[38 + i] * projection[12] + projection[11] * projection[34 + i]
+        *next++ = (projection[38 + i] * projection[12] + projection[11] * projection[34 + i]
             + projection[30 + i] * projection[10]) * scale;
-        output[i * 4 + 3] += projection[42 + i] * scale;
+        next[-1] += projection[42 + i] * scale;
     }
     if (scaled)
         for (long j = 0; j < 16; ++j)
@@ -3086,11 +3202,11 @@ void function_12d50(real const *projection, bool scaled, real *output)
 // @retail 0x14600
 bool function_14600()
 {
-    volatile bool result = true;
-    g_50935c = D3DDevice_GetBackBuffer2(0);
-    g_509360 = D3DDevice_GetBackBuffer2(1);
-    g_509364 = D3DDevice_GetDepthStencilSurface2();
-    if (g_50935c && g_509360 && g_509364)
+    bool result = true;
+    D3DDevice_GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &g_50935c[0]);
+    D3DDevice_GetBackBuffer(-1, D3DBACKBUFFER_TYPE_MONO, &g_50935c[1]);
+    D3DDevice_GetDepthStencilSurface(&g_509364);
+    if (g_50935c[0] && g_50935c[1] && g_509364)
     {
         void *memory = VirtualAlloc(NULL, 20, 0x101000, PAGE_READWRITE);
         if (!memory) GetLastError();
@@ -3100,11 +3216,11 @@ bool function_14600()
         g_509354[1] = (D3DTexture *)memory;
         if (g_509354[0] && g_509354[1])
         {
-            for (long i = 0; i < 2; ++i)
+            for (short i = 0; i < 2; ++i)
             {
                 D3DTexture *texture = g_509354[i];
                 texture->Common = 0x40001;
-                texture->Data = (i ? g_509360 : g_50935c)->Data;
+                texture->Data = g_50935c[i]->Data;
                 texture->Lock = 0;
                 texture->Size = 0x271df27f;
                 texture->Format = 0x11229;
@@ -3120,7 +3236,7 @@ bool function_14600()
     g_509370 = (D3DSurface *)memory;
     if (g_509370)
     {
-        *g_509370 = *g_50935c;
+        *g_509370 = *g_50935c[0];
         g_509370->Data = g_509364->Data;
     }
     else
@@ -3165,13 +3281,13 @@ void function_1eb00()
     function_1c590((s_shader_cache *)g_51f0f0, *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x6c), 0);
     function_1c710(g_51f0f0);
     real x = 1.0f / (short)(g_48564e - g_48564a);
-    real y = 1.0f / (short)(g_48564c - g_485648);
     real constants[20];
     constants[0] = x * 2.0f;
     constants[1] = 0.0f;
     constants[2] = 0.0f;
     constants[3] = -1.0f - x;
     constants[4] = 0.0f;
+    real y = 1.0f / (short)(g_48564c - g_485648);
     constants[5] = y * -2.0f;
     constants[6] = 0.0f;
     constants[7] = y + 1.0f;
@@ -3212,6 +3328,7 @@ void function_36580()
     function_0222d0(D3DRS_CULLMODE, 0);
     real x = 1.0f / (short)(g_48564e - g_48564a);
     real y = 1.0f / (short)(g_48564c - g_485648);
+    real extra[24] = { 0.0f };
     real constants[20];
     constants[0] = x * 2.0f;
     constants[1] = 0.0f;
@@ -3235,19 +3352,17 @@ void function_36580()
     constants[19] = 1.0f;
     D3DDevice_SetVertexShaderConstant(81, constants, 5);
 
-    real extra[24];
-    memset(extra, 0, sizeof(extra));
     D3DDevice_SetVertexShaderConstant(86, extra, 6);
     memset(&g_484f68, 0, sizeof(g_484f68));
+    g_484f68.PSRGBOutputs[0] = 0xc0;
+    g_484f68.PSAlphaOutputs[0] = 0xc0;
     g_484f68.PSTextureModes = 0;
     g_484f68.PSCombinerCount = 1;
     g_484f68.PSRGBInputs[0] = 0x20040000;
     g_484f68.PSAlphaInputs[0] = 0x20140000;
-    g_484f68.PSRGBOutputs[0] = 0xc0;
-    g_484f68.PSAlphaOutputs[0] = 0xc0;
     g_484f68.PSFinalCombinerInputsABCD = 0xc;
     g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
-    D3DDevice_SetPixelShaderProgram(&g_484f68);
+    function_1ccf0(&g_484f68);
     function_1cc60(0);
 }
 
@@ -3264,6 +3379,8 @@ void function_36560()
     }
 }
 
+__declspec(noinline) bool function_12420();
+
 // @retail 0x12420
 bool function_12420()
 {
@@ -3274,7 +3391,7 @@ bool function_12420()
         D3DDevice_Swap(0);
         if (g_5093b0)
         {
-            D3DDevice_Release();
+            ((D3DDevice *)g_5093b0)->Release();
             g_5093b0 = NULL;
         }
     }
@@ -3283,7 +3400,6 @@ bool function_12420()
 
 
 
-extern s_44940_entry g_4ba138[850];
 extern byte g_485a75, g_485a76;
 void function_15370(short mode);
 
@@ -3329,21 +3445,21 @@ short __stdcall function_467c0(short first, short second, short count)
         D3DDevice_SetPixelShaderProgram(&program);
         for (short i = 0; i < count; ++i)
         {
-            short source = i & 1 ? second : first;
-            short target = i & 1 ? first : second;
+            volatile short source = i & 1 ? second : first;
+            volatile short target = i & 1 ? first : second;
             for (short stage = 0; stage < 4; ++stage)
             {
                 function_14f60(stage, source);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, 4);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, 4);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, 2);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, 2);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, 1);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
-                D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_ADDRESSU, 4);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_ADDRESSV, 4);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MAGFILTER, 2);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MINFILTER, 2);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MIPFILTER, 1);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
+                D3DDevice::SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
             }
             function_14bc0(target, 0, false);
             program.PSConstant0[0] = (i > 0 ? 0x7fu : 0xffu) << 24;
@@ -3369,8 +3485,8 @@ short __stdcall function_467c0(short first, short second, short count)
 // @retail 0x4d640
 void __stdcall function_4d640(short index, long mode, bool setup)
 {
-    (void)&index;
-    s_44940_entry *entry = &g_4ba138[index];
+    /* read from the stack: retail passes index there, and mode in edi */
+    s_44940_entry *entry = &g_4ba138[*(short const volatile *)&index];
     if (entry->unknown10[10] != 0xff)
     {
         real opacity = (real)entry->unknown10[10] * (1.0f / 255.0f);
@@ -3381,7 +3497,7 @@ void __stdcall function_4d640(short index, long mode, bool setup)
         }
     }
     if (entry->unknown00 & 0x800)
-        function_12d50(NULL, true, NULL);
+        function_12d50(true, NULL, NULL);
     if (mode == 1 || mode == 3)
     {
         if (g_485a75 || g_485a76)
@@ -3404,14 +3520,15 @@ void __stdcall function_4d640(short index, long mode, bool setup)
 // @retail 0x4d720
 void function_4d720(short index, long mode)
 {
-    s_44940_entry *entry = &g_4ba138[index];
+    /* read from the stack: retail passes index there, and mode in edi */
+    s_44940_entry *entry = &g_4ba138[*(short const volatile *)&index];
     if (entry->unknown10[10] != 0xff && !(fabs(g_4b8494 - 1.0f) < 0.0001f))
     {
         D3DDevice_SetStipple(function_1c290(1.0f));
         g_4b8494 = 1.0f;
     }
     if (entry->unknown00 & 0x800)
-        function_12d50(NULL, false, NULL);
+        function_12d50(false, NULL, NULL);
     if ((mode == 1 || mode == 3) && ((entry->unknown00 & 0x4000) || g_485a75 || g_485a76))
         function_15370(1);
 }
@@ -3422,9 +3539,7 @@ void function_4d720(short index, long mode)
 typedef long (__stdcall *visibility_draw_callback)(s_slot *slot, byte *data);
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw);
 long __stdcall function_2e540(s_slot *slot, byte *data);
-extern long g_4b9ed4;
 extern long g_485898;
-extern vector3f g_4b9dac;
 
 // @retail 0x2e540
 long __stdcall function_2e540(s_slot *slot, byte *data)
@@ -3437,8 +3552,10 @@ long __stdcall function_2e540(s_slot *slot, byte *data)
     offset.j = data[0x11] * (2.0f / 255.0f) - 1.0f;
     offset.k = data[0x12] * (2.0f / 255.0f) - 1.0f;
     byte *definition = g_4e3b44[tag & 0xffff].bytes;
-    real scale = definition[0x28] & 0x40 ? *(real *)(data + 0x14) : 1.0f;
-    if (tag != NONE && !(definition[0x28] & 2))
+    real scale = 1.0f;
+    if (definition[0x28] & 0x40)
+        scale = *(real *)(data + 0x14);
+    if (tag != NONE && !(g_4e3b44[tag & 0xffff].bytes[0x28] & 2))
     {
         real radius = *(real *)(definition + 0x10) * scale;
         if ((*(dword *)slot & 0x38) == 0x20)
@@ -3449,9 +3566,12 @@ long __stdcall function_2e540(s_slot *slot, byte *data)
         switch (*(short *)(definition + 0x14))
         {
         case 0:
-            position.x += -radius * g_4b9dac.i;
-            position.y += -radius * g_4b9dac.j;
-            position.z += -radius * g_4b9dac.k;
+            {
+            real negative_radius = -radius;
+            position.x += negative_radius * g_4b9dac.i;
+            position.y += negative_radius * g_4b9dac.j;
+            position.z += negative_radius * g_4b9dac.k;
+            }
             break;
         case 1:
             position.x += offset.i * (radius * 1.4142135381698608f);
@@ -3477,12 +3597,12 @@ long __stdcall function_2e540(s_slot *slot, byte *data)
                 else if (screen[2] > 16777215.0f) screen[2] = 16777215.0f;
                 if (screen[3] < 0.0f) screen[3] = 0.0f;
                 else if (screen[3] > 16777215.0f) screen[3] = 16777215.0f;
-                D3DDevice_Begin(D3DPT_TRIANGLEFAN);
-                D3DDevice_SetVertexData4f(0, left, top, screen[2], screen[3]);
-                D3DDevice_SetVertexData4f(0, right, top, screen[2], screen[3]);
-                D3DDevice_SetVertexData4f(0, right, bottom, screen[2], screen[3]);
-                D3DDevice_SetVertexData4f(0, left, bottom, screen[2], screen[3]);
-                D3DDevice_End();
+                D3DDevice::Begin(D3DPT_TRIANGLEFAN);
+                D3DDevice::SetVertexData4f(0, left, top, screen[2], screen[3]);
+                D3DDevice::SetVertexData4f(0, right, top, screen[2], screen[3]);
+                D3DDevice::SetVertexData4f(0, right, bottom, screen[2], screen[3]);
+                D3DDevice::SetVertexData4f(0, left, bottom, screen[2], screen[3]);
+                D3DDevice::End();
                 result = (long)area;
             }
         }
@@ -3502,23 +3622,25 @@ void function_2dd30()
         D3DDevice_SetStipple(function_1c290(1.0f));
         g_4b8494 = 1.0f;
     }
-    function_0222d0(D3DRS_ALPHABLENDENABLE, 0);
+    function_0222d0(D3DRS_CULLMODE, 0);
     function_0222d0(D3DRS_COLORWRITEENABLE, 0);
+    function_0222d0(D3DRS_ALPHABLENDENABLE, 0);
     function_0222d0(D3DRS_ALPHATESTENABLE, 0);
-    function_0222d0(D3DRS_ZWRITEENABLE, 0);
     function_0222d0(D3DRS_ZENABLE, 2);
     function_0222d0(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-    function_0222d0(D3DRS_CULLMODE, 0);
-    function_0222d0(D3DRS_STENCILENABLE, 0);
+    function_0222d0(D3DRS_ZWRITEENABLE, 0);
     function_0222d0(D3DRS_ZBIAS, 0);
+    function_0222d0(D3DRS_SAMPLEALPHA, 0);
+    g_51f3c8[1][0] = NULL;
+    g_51f3c8[1][1] = NULL;
+    g_51f3c8[1][2] = NULL;
+    g_51f3c8[1][3] = NULL;
     function_1cf50();
-    D3DPIXELSHADERDEF program;
-    memset(&program, 0, sizeof(program));
-    program.PSCombinerCount = 0x11001;
-    program.PSFinalCombinerInputsABCD = 0;
-    program.PSFinalCombinerInputsEFG = 0;
-    g_484f68 = program;
-    D3DDevice_SetPixelShaderProgram(&program);
+    memset(&g_484f68, 0, sizeof(g_484f68));
+    g_484f68.PSCombinerCount = 0x11001;
+    g_484f68.PSFinalCombinerInputsABCD = 0;
+    g_484f68.PSFinalCombinerInputsEFG = 0;
+    D3DDevice_SetPixelShaderProgram(&g_484f68);
     function_1c590((s_shader_cache *)g_51f0f0, *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x54), 0);
     function_1c710(g_51f0f0);
     if (g_485898 < 4 || g_485898 > 7)
@@ -3532,10 +3654,10 @@ void *function_135a30(s_type_7ba8e9 const *bitmap, short mipmap_index, short x, 
 void function_13f10(long bitmap_value, long front_value)
 {
     byte *bitmap = (byte *)bitmap_value;
-    bool front = (byte)front_value != 0;
     if (bitmap && *(void **)(bitmap + 0x54))
     {
-        short_rect_pair rectangle_pair = g_485a8a;
+        short_rect_pair rectangle_pair;
+        rectangle_pair.a = g_485a8a.a;
         short right = (short)(rectangle_pair.a.v1 + *(short *)(bitmap + 4));
         if (rectangle_pair.a.v3 <= right) right = rectangle_pair.a.v3;
         short bottom = (short)(rectangle_pair.a.v0 + *(short *)(bitmap + 6));
@@ -3545,7 +3667,11 @@ void function_13f10(long bitmap_value, long front_value)
         short format = *(short *)(bitmap + 0xc);
         if ((format == 11 || format == 10) && *(short *)(bitmap + 0x14) == 0)
         {
-            D3DSurface *surface = front ? D3DDevice_GetRenderTarget2() : D3DDevice_GetBackBuffer2(0);
+            D3DSurface *surface;
+            if ((byte)front_value != 0)
+                D3DDevice::GetRenderTarget(&surface);
+            else
+                D3DDevice::GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surface);
             D3DSURFACE_DESC description;
             D3DSurface_GetDesc(surface, &description);
             if (description.Size == description.Width * description.Height * 4)
@@ -3584,25 +3710,28 @@ void function_13f10(long bitmap_value, long front_value)
 
 
 // @retail 0x12fa0
-void function_12fa0(real const *projection, byte const *camera, bool scaled, long mode)
+void function_12fa0(byte const *camera, real const *projection, bool scaled, long mode)
 {
     real width = (real)(*(short const *)(camera + 0x36) - *(short const *)(camera + 0x32));
     real height = (real)(*(short const *)(camera + 0x34) - *(short const *)(camera + 0x30));
     real left = (real)*(short const *)(camera + 0x32);
     real top = (real)*(short const *)(camera + 0x30);
-    real scale = 1.0f;
+    real scale;
     if (scaled && !g_5093fc)
+    {
         scale = g_4670c8 < 0.0625f ? 0.0625f : g_4670c8 > 1.0f ? 1.0f : g_4670c8;
+    }
+    else scale = 1.0f;
     real bias = 0.03125f;
     if (mode == 2)
     {
-        width = height = 128.0f;
-        left = top = 0.0f;
+        height = width = 128.0f;
+        top = left = 0.0f;
         scale = 1.0f;
         bias = 0.0f;
     }
     real constants[48];
-    function_12d50(projection, false, constants);
+    function_12d50(false, projection, constants);
     constants[16] = projection[14];
     constants[17] = projection[15];
     constants[18] = projection[16];
@@ -3613,25 +3742,26 @@ void function_12fa0(real const *projection, byte const *camera, bool scaled, lon
     constants[23] = 0.5f;
     constants[24] = projection[20];
     constants[25] = projection[21];
+    constants[33] = 0.0f;
     constants[26] = projection[22];
     constants[27] = 2.0f;
     constants[28] = ((real const *)camera)[0];
     constants[29] = ((real const *)camera)[1];
     constants[30] = ((real const *)camera)[2];
     constants[31] = 767.8125f;
-    constants[32] = width * 0.5f * scale;
-    constants[33] = 0.0f;
+    real half_width = width * 0.5f;
+    constants[32] = half_width * scale;
     constants[34] = 0.0f;
     constants[35] = ((width + 1.0f) * 0.5f + left) * scale + bias;
     constants[36] = 0.0f;
-    constants[37] = height * -0.5f * scale;
+    constants[37] = scale * (height * -0.5f);
     constants[38] = 0.0f;
     constants[39] = ((height + 1.0f) * 0.5f + top) * scale + bias;
-    constants[40] = width * 0.5f * scale;
-    constants[41] = height * -0.5f * scale;
+    constants[40] = half_width * scale;
+    constants[41] = scale * (height * -0.5f);
     constants[42] = 16777215.0f;
     constants[43] = 0.0f;
-    constants[44] = (width * 0.5f + left) * scale + 0.5f;
+    constants[44] = (half_width + left) * scale + 0.5f;
     constants[45] = (height * 0.5f + top) * scale + 0.5f;
     constants[46] = 0.0f;
     constants[47] = 0.0f;
@@ -3640,11 +3770,12 @@ void function_12fa0(real const *projection, byte const *camera, bool scaled, lon
 
 
 real *table_entry_data(long handle);
-long function_184000(long bit, long index);
+long function_184000(long index, long bit);
 
 // @retail 0x45ce0
 bool function_45ce0(short index, byte *out, short part, short transform_index)
 {
+    out = *(byte *volatile *)&out;
     s_44940_entry *entry = &g_4ba138[index];
     byte *definition;
     if (entry->tag != NONE)
@@ -3680,7 +3811,7 @@ bool function_45ce0(short index, byte *out, short part, short transform_index)
         long instance = (entry->flags >> 18) & 0x7ff;
         if (instance == 0x7ff) instance = NONE;
         long bit = material[0x1c] == 0xff ? NONE : material[0x1c];
-        visible = (byte)function_184000(bit, instance) != 0;
+        visible = (byte)function_184000(instance, bit) != 0;
     }
     *(long *)out = *(long *)(material + 0xc);
     out[0x14] = false;
@@ -3736,48 +3867,77 @@ bool function_45ce0(short index, byte *out, short part, short transform_index)
 
 
 
-long g_485870;
-real g_485874, g_485878, g_48587c, g_485880, g_485884;
-dword __cdecl pack_color4f(color4f const *color);
+__declspec(noinline) dword __cdecl pack_color4f(color4f const *color);
 
+#pragma inline_depth(0)
 // @retail 0x40890
 void function_40890(void)
 {
 	if (!g_485870) return;
 	color4f color, inverse;
-	color.alpha = inverse.alpha = g_485878 * g_485874;
-	color.red = g_48587c * g_485874;
-	color.green = g_485880 * g_485874;
-	color.blue = g_485884 * g_485874;
+	color.red = g_485874 * g_48587c;
+	real alpha = g_485878 * g_485874;
+	color.green = g_485874 * g_485880;
+	color.alpha = alpha;
+	inverse.alpha = alpha;
+	color.blue = g_485874 * g_485884;
 	inverse.red = (1.0f - g_48587c) * g_485874;
 	inverse.green = (1.0f - g_485880) * g_485874;
 	inverse.blue = (1.0f - g_485884) * g_485874;
 	dword packed = pack_color4f(&color);
 	dword constant = pack_color4f(&inverse);
+#pragma inline_depth(255)
 	function_0222d0(D3DRS_CULLMODE, 0x901);
 	function_0222d0(D3DRS_COLORWRITEENABLE, 0x10101);
 	function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
 	dword local_617c45, rgb_inputs;
 	switch (g_485870)
 	{
-	case 1: case 2:
+	case 1:
 		function_0222d0(D3DRS_SRCBLEND, 1);
-		function_0222d0(D3DRS_DESTBLEND, g_485870 == 1 ? 0x303 : 1);
-		function_0222d0(D3DRS_BLENDOP, g_485870 == 1 ? 0x8006 : 0x800b);
+		function_0222d0(D3DRS_DESTBLEND, 0x303);
+		function_0222d0(D3DRS_BLENDOP, 0x8006);
 		constant = packed;
 		rgb_inputs = 0x1200000;
 		local_617c45 = 0x11200000;
 		break;
-	case 3: case 4: case 5:
+	case 2:
+		function_0222d0(D3DRS_SRCBLEND, 1);
+		function_0222d0(D3DRS_DESTBLEND, 1);
+		function_0222d0(D3DRS_BLENDOP, 0x800b);
+		constant = packed;
+		rgb_inputs = 0x1200000;
+		local_617c45 = 0x11200000;
+		break;
+	case 3:
 		function_0222d0(D3DRS_SRCBLEND, 0x307);
 		function_0222d0(D3DRS_DESTBLEND, 0x8002);
-		function_0222d0(D3DRS_BLENDOP, g_485870 == 3 ? 0x8008 : g_485870 == 4 ? 0x8007 : 0x8006);
+		function_0222d0(D3DRS_BLENDOP, 0x8008);
 		function_0222d0(D3DRS_BLENDCOLOR, packed);
 		constant = packed;
-		rgb_inputs = g_485870 == 3 ? 0x1201140 : g_485870 == 4 ? 0x1201120 : 0x1411120;
+		rgb_inputs = 0x1201140;
 		local_617c45 = 0;
 		break;
-	default:
+	case 4:
+		function_0222d0(D3DRS_SRCBLEND, 0x307);
+		function_0222d0(D3DRS_DESTBLEND, 0x8002);
+		function_0222d0(D3DRS_BLENDOP, 0x8007);
+#pragma inline_depth(0)
+		function_0222d0(D3DRS_BLENDCOLOR, packed);
+		constant = packed;
+		rgb_inputs = 0x1201120;
+		local_617c45 = 0;
+		break;
+	case 5:
+		function_0222d0(D3DRS_SRCBLEND, 0x307);
+		function_0222d0(D3DRS_DESTBLEND, 0x8002);
+		function_0222d0(D3DRS_BLENDOP, 0x8006);
+		function_0222d0(D3DRS_BLENDCOLOR, packed);
+		constant = packed;
+		rgb_inputs = 0x1411120;
+		local_617c45 = 0;
+		break;
+	case 6:
 		function_0222d0(D3DRS_SRCBLEND, 1);
 		function_0222d0(D3DRS_DESTBLEND, 0x8002);
 		function_0222d0(D3DRS_BLENDOP, 0x8006);
@@ -3785,44 +3945,50 @@ void function_40890(void)
 		rgb_inputs = 0x11200000;
 		local_617c45 = 0;
 		break;
+	default:
+		__assume(0);
 	}
 	function_0222d0(D3DRS_ALPHATESTENABLE, 0);
-	function_0222d0(D3DRS_ZENABLE, 0);
-	function_0222d0(D3DRS_ZBIAS, 0);
+	{
+		/* retail has function_0222d0 inlined here, the library call left out of line */
+		extern dword g_4b81fc[];
+		g_4b81fc[D3DRS_ZENABLE] = 0;
+		D3DDevice_SetRenderState_ZEnable(0);
+		g_4b81fc[D3DRS_ZBIAS] = 0;
+		D3DDevice_SetRenderState_ZBias(0);
+	}
 	function_1cc30(13);
 	function_1c710(g_51f0f0);
 	real x = 1.0f / (short)(g_48564e - g_48564a);
-	real y = 1.0f / (short)(g_48564c - g_485648);
 	real constants[20] = {
 		2.0f * x, 0, 0, -1.0f - x,
-		0, -2.0f * y, 0, 1.0f + y,
+		0, -2.0f * (1.0f / (short)(g_48564c - g_485648)), 0, 1.0f + 1.0f / (short)(g_48564c - g_485648),
 		0, 0, 0, 0.5f,
 		0, 0, 0, 1.0f,
 		0, 0, 0, 1.0f
 	};
-	D3DDevice_SetVertexShaderConstant(81, constants, 5);
-	D3DPIXELSHADERDEF program;
-	memset(&program, 0, sizeof(program));
-	program.PSAlphaInputs[0] = local_617c45;
-	program.PSRGBInputs[0] = rgb_inputs;
-	program.PSCombinerCount = 1;
-	program.PSConstant0[0] = constant;
-	program.PSAlphaOutputs[0] = 0xc00;
-	program.PSRGBOutputs[0] = 0xc00;
-	program.PSFinalCombinerInputsABCD = 0xc;
-	program.PSFinalCombinerInputsEFG = 0x1c00;
-	g_484f68 = program;
-	function_15180(&program);
-	short width = g_48564e - g_48564a;
+	D3DDevice_SetVertexShaderConstantNotInline(81 + 96, constants, 4 * 5);
+	memset(&g_484f68, 0, sizeof(g_484f68));
+	g_484f68.PSAlphaInputs[0] = local_617c45;
+	g_484f68.PSRGBInputs[0] = rgb_inputs;
+	g_484f68.PSCombinerCount = 1;
+	g_484f68.PSConstant0[0] = constant;
+	g_484f68.PSAlphaOutputs[0] = 0xc00;
+	g_484f68.PSRGBOutputs[0] = 0xc00;
+	g_484f68.PSFinalCombinerInputsABCD = 0xc;
+	g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+	function_15180(&g_484f68);
 	short height = g_48564c - g_485648;
+	short width = g_48564e - g_48564a;
 	function_1cf50();
-	D3DDevice_Begin(D3DPT_QUADLIST);
+	D3DDevice_Begin(D3DPT_TRIANGLEFAN);
 	D3DDevice_SetVertexData2s(0, 0, 0);
 	D3DDevice_SetVertexData2s(0, width, 0);
 	D3DDevice_SetVertexData2s(0, width, height);
 	D3DDevice_SetVertexData2s(0, 0, height);
 	D3DDevice_End();
 }
+#pragma inline_depth()
 
 bool function_48b00(point3f const *point, real radius, real *screen, real *extent);
 void function_1cf50();
@@ -3841,37 +4007,29 @@ void __stdcall function_484b0(point3f const *point, real depth, real width, real
         if (w < 0.0f) w = 0.0f;
         else if (w > 16777215.0f) w = 16777215.0f;
         function_1cf50();
-        D3DDevice_Begin(D3DPT_TRIANGLEFAN);
-        D3DDevice_SetVertexDataColor(5, color);
-        D3DDevice_SetVertexData2f(2, 1.0f, 0.0f);
+        D3DDevice::Begin(D3DPT_TRIANGLEFAN);
+        D3DDevice::SetVertexDataColor(5, color);
+        D3DDevice::SetVertexData2f(2, 1.0f, 0.0f);
         real wc = width * cosine;
         real hs = height * sine;
         real ws = width * sine;
         real hc = height * cosine;
         real a = (wc - hs) * extent[0];
         real b = (ws + hc) * extent[1];
-        real x = screen[0] + a;
-        real y = screen[1] - b;
-        D3DDevice_SetVertexData2f(1, x, y);
-        D3DDevice_SetVertexData4f(0, x, y, z, w);
+        D3DDevice::SetVertexData2f(1, screen[0] + a, screen[1] - b);
+        D3DDevice::SetVertexData4f(0, screen[0] + a, screen[1] - b, z, w);
         real c = (hs + wc) * extent[0];
         real d = (ws - hc) * extent[1];
-        D3DDevice_SetVertexData2f(2, 1.0f, 1.0f);
-        x = screen[0] + c;
-        y = screen[1] - d;
-        D3DDevice_SetVertexData2f(1, x, y);
-        D3DDevice_SetVertexData4f(0, x, y, z, w);
-        D3DDevice_SetVertexData2f(2, 0.0f, 1.0f);
-        x = screen[0] - a;
-        y = screen[1] + b;
-        D3DDevice_SetVertexData2f(1, x, y);
-        D3DDevice_SetVertexData4f(0, x, y, z, w);
-        D3DDevice_SetVertexData2f(2, 0.0f, 0.0f);
-        x = screen[0] - c;
-        y = screen[1] + d;
-        D3DDevice_SetVertexData2f(1, x, y);
-        D3DDevice_SetVertexData4f(0, x, y, z, w);
-        D3DDevice_End();
+        D3DDevice::SetVertexData2f(2, 1.0f, 1.0f);
+        D3DDevice::SetVertexData2f(1, screen[0] + c, screen[1] - d);
+        D3DDevice::SetVertexData4f(0, screen[0] + c, screen[1] - d, z, w);
+        D3DDevice::SetVertexData2f(2, 0.0f, 1.0f);
+        D3DDevice::SetVertexData2f(1, screen[0] - a, screen[1] + b);
+        D3DDevice::SetVertexData4f(0, screen[0] - a, screen[1] + b, z, w);
+        D3DDevice::SetVertexData2f(2, 0.0f, 0.0f);
+        D3DDevice::SetVertexData2f(1, screen[0] - c, screen[1] + d);
+        D3DDevice::SetVertexData4f(0, screen[0] - c, screen[1] + d, z, w);
+        D3DDevice::End();
     }
 }
 
@@ -3882,25 +4040,25 @@ void __stdcall function_480a0(point3f const *point, real width, real height, rea
     if (width > 0.0f && height > 0.0f && function_48b00(point, 1.0f, screen, extent))
     {
         function_1cf50();
-        D3DDevice_Begin(D3DPT_TRIANGLEFAN);
-        D3DDevice_SetVertexDataColor(9, color);
+        D3DDevice::Begin(D3DPT_TRIANGLEFAN);
+        D3DDevice::SetVertexDataColor(9, color);
+        D3DDevice::SetVertexData2s(3, 1, 0);
         real wc = width * cosine;
-        real hs = height * sine;
-        real ws = width * sine;
         real hc = height * cosine;
+        real ws = width * sine;
+        real hs = height * sine;
         real a = (wc - hs) * extent[0];
         real b = (ws + hc) * extent[1];
-        D3DDevice_SetVertexData2s(3, 1, 0);
-        D3DDevice_SetVertexData4f(0, screen[0] + a, screen[1] - b, screen[2], screen[3]);
+        D3DDevice::SetVertexData4f(0, screen[0] + a, screen[1] - b, screen[2], screen[3]);
         real c = (hs + wc) * extent[0];
         real d = (ws - hc) * extent[1];
-        D3DDevice_SetVertexData2s(3, 1, 1);
-        D3DDevice_SetVertexData4f(0, screen[0] + c, screen[1] - d, screen[2], screen[3]);
-        D3DDevice_SetVertexData2s(3, 0, 1);
-        D3DDevice_SetVertexData4f(0, screen[0] - a, screen[1] + b, screen[2], screen[3]);
-        D3DDevice_SetVertexData2s(3, 0, 0);
-        D3DDevice_SetVertexData4f(0, screen[0] - c, screen[1] + d, screen[2], screen[3]);
-        D3DDevice_End();
+        D3DDevice::SetVertexData2s(3, 1, 1);
+        D3DDevice::SetVertexData4f(0, screen[0] + c, screen[1] - d, screen[2], screen[3]);
+        D3DDevice::SetVertexData2s(3, 0, 1);
+        D3DDevice::SetVertexData4f(0, screen[0] - a, screen[1] + b, screen[2], screen[3]);
+        D3DDevice::SetVertexData2s(3, 0, 0);
+        D3DDevice::SetVertexData4f(0, screen[0] - c, screen[1] + d, screen[2], screen[3]);
+        D3DDevice::End();
     }
 }
 
@@ -3908,72 +4066,79 @@ byte g_4b6291;
 
 void __stdcall function_41cc0(void *payload);
 
+/* Gathers type-1 depth groups whose screen bounds do not overlap into
+   records drawn by 0x41cc0, each placed at the centre of its groups. */
 // @retail 0x420a0
 void function_420a0(void)
 {
-    dword used[2] = { 0, 0 };
     long count = g_4c19ac;
-    for (long i = 0; i < count; ++i)
+    dword used[1] = { 0 };
+    long i = 0;
+    if (count > 0)
     {
-        s_42760_entry *entry = &g_4c152c[i];
-        if (entry->type != 1 || (used[i >> 5] & (1 << (i & 31))))
-            continue;
-        if (g_4b6280.count >= 1024)
+        do
         {
-            if (g_4b6291)
-                g_4b6291 = false;
-            continue;
-        }
-        s_1e4e0_record *record = (s_1e4e0_record *)&g_4b6280.records[g_4b6280.count++];
-        record->type = 0;
-        record->active = false;
-        record->type = 3;
-        record->flags = 0;
-        record->callback = function_41cc0;
-        used[i >> 5] |= 1 << (i & 31);
-        byte indices[32];
-        indices[0] = (byte)i;
-        long selected = 1;
-        point3f minimum = entry->position;
-        point3f maximum = entry->position;
-        real depth = entry->depth;
-        for (long j = 0; j < count; ++j)
-        {
-            if (used[j >> 5] & (1 << (j & 31)))
-                continue;
-            s_42760_entry *candidate = &g_4c152c[j];
-            box2f bounds = *(box2f *)candidate->unknown10;
-            bool intersects = false;
-            for (long k = 0; k < selected; ++k)
+            s_42760_entry const *entry = &g_4c152c[i];
+            if (entry->type == 1 && !(used[i >> 5] & (1 << (i & 31))))
             {
-                box2f previous = *(box2f *)g_4c152c[(signed char)indices[k]].unknown10;
-                if (bounds.x1 > previous.x0 && bounds.y1 > previous.y0 &&
-                    previous.x1 > bounds.x0 && previous.y1 > bounds.y0)
+                s_1e4e0_record *record = (s_1e4e0_record *)cache_record_push();
+                if (record)
                 {
-                    intersects = true;
-                    break;
+                    byte indices[32];
+                    indices[0] = (byte)i;
+                    long selected = 1;
+                    record->type = 3;
+                    record->flags = 0;
+                    record->callback = function_41cc0;
+                    real depth = entry->depth;
+                    used[i >> 5] |= 1 << (i & 31);
+                    point3f position = entry->position;
+                    box3f bounds;
+                    bounds.x0 = bounds.x1 = position.x;
+                    bounds.y0 = bounds.y1 = position.y;
+                    bounds.z0 = bounds.z1 = position.z;
+                    long j = 0;
+                    do
+                    {
+                        if (used[j >> 5] & (1 << (j & 31)))
+                            continue;
+                        s_42760_entry const *candidate = &g_4c152c[j];
+                        point3f candidate_position = candidate->position;
+                        box2f candidate_bounds = *(box2f const *)candidate->unknown10;
+                        bool overlaps = false;
+                        for (long k = 0; k < selected; ++k)
+                        {
+                            s_42760_entry const *other = &g_4c152c[(signed char)indices[k]];
+                            box2f previous = *(box2f const *)other->unknown10;
+                            if (candidate_bounds.x1 > previous.x0 && candidate_bounds.y1 > previous.y0 &&
+                                previous.x1 > candidate_bounds.x0 && previous.y1 > candidate_bounds.y0)
+                            {
+                                overlaps = true;
+                                break;
+                            }
+                        }
+                        if (overlaps)
+                            continue;
+                        indices[selected++] = (byte)j;
+                        used[j >> 5] |= 1 << (j & 31);
+                        if (!(candidate_position.x > bounds.x0)) bounds.x0 = candidate_position.x;
+                        if (!(candidate_position.y > bounds.y0)) bounds.y0 = candidate_position.y;
+                        if (!(candidate_position.z > bounds.z0)) bounds.z0 = candidate_position.z;
+                        if (candidate_position.x > bounds.x1) bounds.x1 = candidate_position.x;
+                        if (candidate_position.y > bounds.y1) bounds.y1 = candidate_position.y;
+                        if (candidate_position.z > bounds.z1) bounds.z1 = candidate_position.z;
+                        real candidate_depth = candidate->depth;
+                        if (depth > candidate_depth) depth = candidate_depth;
+                    } while (++j < count);
+                    record->payload[0] = (byte)selected;
+                    memcpy(record->payload + 1, indices, selected);
+                    record->depth = 0.0f - depth;
+                    record->position.x = (bounds.x0 + bounds.x1) * 0.5f;
+                    record->position.y = (bounds.y0 + bounds.y1) * 0.5f;
+                    record->position.z = (bounds.z0 + bounds.z1) * 0.5f;
                 }
             }
-            if (!intersects)
-            {
-                used[j >> 5] |= 1 << (j & 31);
-                indices[selected++] = (byte)j;
-                point3f position = candidate->position;
-                if (!(position.x > minimum.x)) minimum.x = position.x;
-                if (!(position.y > minimum.y)) minimum.y = position.y;
-                if (!(position.z > minimum.z)) minimum.z = position.z;
-                if (position.x > maximum.x) maximum.x = position.x;
-                if (position.y > maximum.y) maximum.y = position.y;
-                if (position.z > maximum.z) maximum.z = position.z;
-                if (depth > candidate->depth) depth = candidate->depth;
-            }
-        }
-        record->payload[0] = (byte)selected;
-        memcpy(record->payload + 1, indices, selected);
-        record->depth = 0.0f - depth;
-        record->position.x = (minimum.x + maximum.x) * 0.5f;
-        record->position.y = (minimum.y + maximum.y) * 0.5f;
-        record->position.z = (minimum.z + maximum.z) * 0.5f;
+        } while (++i < count);
     }
 }
 
@@ -4008,30 +4173,40 @@ void function_47930(word flags, long format, long mode)
         D3DDevice_SetStipple(function_1c290(1.0f));
         g_4b8494 = 1.0f;
     }
-    if (format == 1)
-    {
+    if (!(format == 1)) {
+        function_1c590((s_shader_cache *)g_51f0f0,
+            *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x54), 0);
+        function_1ccb0(39);
+    } else {
         function_1c590((s_shader_cache *)g_51f0f0,
             *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x24), 0);
         function_1ccb0(40);
         real identity[12] = { 1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f };
-        D3DDevice_SetVertexShaderConstantFast(78, identity, 3);
-    }
-    else
-    {
-        function_1c590((s_shader_cache *)g_51f0f0,
-            *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x54), 0);
-        function_1ccb0(39);
+        D3DDevice_SetVertexShaderConstant(78, identity, 3);
     }
     function_1c710(g_51f0f0);
-    if (mode)
-    {
-        if (mode == 1 || mode == 2 || mode == 3)
+    if (!(mode)) {
+        g_4b82e8 = 0;
+        D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+        g_4b82ec = 0;
+        D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+        memset(&g_484f68, 0, sizeof(g_484f68));
+        g_484f68.PSCombinerCount = 1;
+        g_484f68.PSFinalCombinerInputsABCD = 0x20;
+    } else {
+        switch (mode)
+        {
+        case 1:
+        case 2:
+        case 3:
         {
             g_4b82e8 = 0;
             D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
         }
-        else if (mode == 4 || mode == 5)
+        break;
+        case 4:
+        case 5:
         {
             g_4b82e8 = 1;
             D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
@@ -4041,12 +4216,15 @@ void function_47930(word flags, long format, long mode)
             D3DDevice_SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
             function_0222d0(D3DRS_BLENDOP, D3DBLENDOP_ADD);
         }
-        else
+        break;
+        default:
         {
             function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
             function_0222d0(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
             function_0222d0(D3DRS_DESTBLEND, D3DBLEND_ONE);
             function_0222d0(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+        }
+        break;
         }
         function_0222d0(D3DRS_ALPHATESTENABLE, 0);
         memset(&g_484f68, 0, sizeof(g_484f68));
@@ -4096,22 +4274,14 @@ void function_47930(word flags, long format, long mode)
             }
         }
     }
-    else
-    {
-        g_4b82e8 = 0;
-        D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
-        g_4b82ec = 0;
-        D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
-        memset(&g_484f68, 0, sizeof(g_484f68));
-        g_484f68.PSCombinerCount = 1;
-        g_484f68.PSFinalCombinerInputsABCD = 0x20;
-    }
     D3DDevice_SetPixelShaderProgram(&g_484f68);
 }
 
 byte g_46713c = true;
 extern dword g_4b8324;
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x4fe20
 void function_4fe20(void)
 {
@@ -4119,8 +4289,13 @@ void function_4fe20(void)
     {
         function_47930(2, 0, 6);
         g_4b82ec = 0;
-        D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
-        D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
+        /* alpha test off and stage 0's colour sign cleared, written out: the
+           barrier keeps the stage's two dirty-flag updates apart */
+        D3DDevice_SetRenderState_Simple(D3DSIMPLERENDERSTATEENCODE[D3DRS_ALPHATESTENABLE], 0);
+        D3D__DirtyFlags |= D3DDIRTYFLAG_TEXTURE_STATE_0;
+        _ReadWriteBarrier();
+        D3D__RenderState[D3DRS_ALPHATESTENABLE] = 0;
+        D3D__TextureState[0][D3DTSS_COLORSIGN] = 0;
         D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
         g_4b82e8 = 1;
         D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
@@ -4140,8 +4315,9 @@ void function_4fe20(void)
         g_46713c = false;
     }
 }
+#pragma function(_ReadWriteBarrier)
 
-PRIVATE inline void texture_surface_dimensions(long index, long *width, long *height)
+PRIVATE __forceinline void texture_surface_dimensions(long index, long *width, long *height)
 {
     if (g_4b4b58[index].data && !g_4b4b58[index].flag95)
     {
@@ -4156,27 +4332,28 @@ PRIVATE inline void texture_surface_dimensions(long index, long *width, long *he
 }
 
 // @retail 0x19530
-void function_19530(long mode, byte const *context, short stage, long *width, long *height)
+void function_19530(long mode, byte const *context, long stage, long *width, long *height)
 {
-    (void)&context; (void)&stage; (void)&width; (void)&height;
+    long const *stage_reference = &stage;
+    (void)&context; (void)&width; (void)&height;
 again:
     *width = 1;
     *height = 1;
     switch (mode)
     {
-    case 1: function_143c0(*(long *)(g_485a80 + 0xc), 0, stage, 0.0f); return;
-    case 2: function_14f60(stage, 1); return;
+    case 1: function_143c0(*(long *)(g_485a80 + 0xc), 0, *stage_reference, 0.0f); return;
+    case 2: function_14f60(*stage_reference, 1); return;
     case 3:
-        function_14f60(stage, 1);
+        function_14f60(*stage_reference, 1);
         texture_surface_dimensions(1, width, height);
         return;
-    case 4: g_51f3c8[1][stage] = NULL; return;
+    case 4: g_51f3c8[1][*stage_reference] = NULL; return;
     case 5:
-        function_14f60(stage, (short)g_4858b8);
+        function_14f60(*stage_reference, (short)g_4858b8);
         function_01dd60(g_4858b8, width, height);
         return;
     case 6:
-        function_14f60(stage, 3);
+        function_14f60(*stage_reference, 3);
         if (g_4b4b58[3].data && !g_4b4b58[3].flag95)
         {
             *width = g_4b4b58[3].width;
@@ -4185,18 +4362,18 @@ again:
         else { *width = 640; *height = 480; }
         return;
     case 8:
-        function_14f60(stage, 10);
+        function_14f60(*stage_reference, 10);
         texture_surface_dimensions(10, width, height);
         return;
-    case 9: function_143c0(*(long *)(g_485a80 + 4), 0, stage, 0.0f); return;
+    case 9: function_143c0(*(long *)(g_485a80 + 4), 0, *stage_reference, 0.0f); return;
     case 10:
         if (g_4858c8 && g_4858c4)
         {
             if (*(dword *)g_4858c4 & 0x80000) { mode = 18; goto again; }
             if (*(long *)(g_4858c4 + 0xe0) != NONE && !g_485a77)
-                function_14f60(stage, 13);
+                function_14f60(*stage_reference, 13);
             else
-                function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 1, 0, 0, 0.0f);
+                function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 1, 0, 0, 0.0f);
         }
         else
         {
@@ -4205,22 +4382,22 @@ again:
             if (tag != NONE)
             {
                 s_type_7ba8e9 *bitmap = function_137550(tag, 1);
-                if (bitmap) function_14390(stage, bitmap, 0.0f);
+                if (bitmap) function_14390(*stage_reference, bitmap, 0.0f);
             }
         }
         return;
     case 12:
-        if (!g_4858c8) function_143c0(*(long *)(g_485a80 + 4), 0, stage, 0.0f);
-        else function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 1, 0, 0, 0.0f);
+        if (!g_4858c8) function_143c0(*(long *)(g_485a80 + 4), 0, *stage_reference, 0.0f);
+        else function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 1, 0, 0, 0.0f);
         return;
     case 13:
-        function_14f60(stage, 9);
+        function_14f60(*stage_reference, 9);
         texture_surface_dimensions(9, width, height);
         return;
-    case 14: function_143c0(*(long *)(g_485a80 + 0x14), 0, stage, 0.0f); return;
-    case 15: function_143c0(*(long *)(g_485a80 + 0x14), 1, stage, 0.0f); return;
+    case 14: function_143c0(*(long *)(g_485a80 + 0x14), 0, *stage_reference, 0.0f); return;
+    case 15: function_143c0(*(long *)(g_485a80 + 0x14), 1, *stage_reference, 0.0f); return;
     case 16:
-        function_143c0(g_4e6978, (short)g_4e697c, stage, 0.0f);
+        function_143c0(g_4e6978, (short)g_4e697c, *stage_reference, 0.0f);
         if (g_4e6978 != NONE)
         {
             byte *definition = g_4e3b44[g_4e6978 & 0xffff].bytes;
@@ -4234,7 +4411,7 @@ again:
         }
         return;
     case 17:
-        function_14f60(stage, 19);
+        function_14f60(*stage_reference, 19);
         texture_surface_dimensions(19, width, height);
         return;
     case 18:
@@ -4243,25 +4420,29 @@ again:
             long surface = function_25960();
             if (surface != NONE)
             {
-                function_14f60(stage, (short)surface);
+                function_14f60(*stage_reference, (short)surface);
                 function_01dd60(surface, width, height);
                 return;
             }
         }
-        function_143c0(*(long *)(g_485a80 + 0x64), 0, stage, 0.0f);
+        function_143c0(*(long *)(g_485a80 + 0x64), 0, *stage_reference, 0.0f);
         return;
-    case 19: function_14f60(stage, 21); texture_surface_dimensions(21, width, height); return;
-    case 20: function_14f60(stage, 22); texture_surface_dimensions(22, width, height); return;
-    case 21: function_14f60(stage, 13); texture_surface_dimensions(13, width, height); return;
-    case 22: function_14f60(stage, 17); texture_surface_dimensions(17, width, height); return;
-    case 23: function_14f60(stage, 23); texture_surface_dimensions(23, width, height); return;
+    case 19: function_14f60(*stage_reference, 21); texture_surface_dimensions(21, width, height); return;
+    case 20: function_14f60(*stage_reference, 22); texture_surface_dimensions(22, width, height); return;
+    case 21: function_14f60(*stage_reference, 13); texture_surface_dimensions(13, width, height); return;
+    case 22: function_14f60(*stage_reference, 17); texture_surface_dimensions(17, width, height); return;
+    case 23: function_14f60(*stage_reference, 23); texture_surface_dimensions(23, width, height); return;
     case 24:
     case 25:
         {
             long surface = mode == 24 ? g_485a78[0] : g_485a78[1];
-            function_14f60(stage, (short)surface);
             if (surface == 25 || surface == 26 || surface == 27)
+            {
+                function_14f60(*stage_reference, (short)surface);
                 function_01dd60(surface, width, height);
+            }
+            else
+                function_14f60(*stage_reference, (short)surface);
             return;
         }
     case 26:
@@ -4276,13 +4457,13 @@ again:
                 index = *(short *)(*(byte **)(parameters + 0x60) + 0x10);
             }
             byte *bitmap = *(byte **)(parameters + 8) + index * 12;
-            function_143c0(*(long *)bitmap, *(short *)(bitmap + 4), stage, 0.0f);
+            function_143c0(*(long *)bitmap, *(short *)(bitmap + 4), *stage_reference, 0.0f);
             return;
         }
     case 27:
         if (g_485a76)
         {
-            function_14f60(stage, 16);
+            function_14f60(*stage_reference, 16);
             texture_surface_dimensions(16, width, height);
         }
         else
@@ -4291,7 +4472,7 @@ again:
             if (tag != NONE)
             {
                 s_type_7ba8e9 *bitmap = function_137550(tag, 0);
-                if (bitmap) function_14390(stage, bitmap, 0.0f);
+                if (bitmap) function_14390(*stage_reference, bitmap, 0.0f);
             }
             *width = 4;
             *height = 4;
@@ -4435,45 +4616,44 @@ void function_1bbf0(long tag, long first, long second, long third, long fourth, 
 bool __stdcall function_16610(long tag, long stage, long wanted_pass, long variant,
     long target, bool copy)
 {
-    volatile bool result = false;
+    bool result = false;
     if (tag != NONE)
     {
         byte *definition = g_4e3b44[tag & 0xffff].bytes;
         byte *shader = g_4e3b44[*(long *)(definition + 4) & 0xffff].bytes;
         byte *tables = *(byte **)(shader + 0x5c);
-        if (*(long *)tables > 0)
+        // the first entry, its index clamped to the entry count
+        long entry_index = 0;
+        if (entry_index > *(long *)tables - 1)
+            entry_index = *(long *)tables - 1;
+        if (entry_index == 0)
         {
             byte *entry = *(byte **)(tables + 4);
             if (*(dword *)(entry + 2) & (1 << stage))
             {
                 word *passes = (word *)*(byte **)(tables + 0xc) + (*(word *)entry & 0x1ff) + stage;
-                long pass = 0;
-                if ((*passes >> 9) > 0)
+                for (long pass = 0; pass < (*passes >> 9); ++pass)
                 {
-                    do
+                    if (wanted_pass == NONE || wanted_pass == pass)
                     {
-                        if (wanted_pass == NONE || wanted_pass == pass)
+                        byte *pass_entry = *(byte **)(tables + 0x14) + ((*passes & 0x1ff) + pass) * 10;
+                        byte *pass_definition = g_4e3b44[*(long *)(pass_entry + 4) & 0xffff].bytes;
+                        byte *record = *(byte **)(*(byte **)(pass_definition + 0x20) + 4) + variant * 0x132;
+                        if (*(long *)(record + 0x100) != NONE)
                         {
-                            byte *pass_entry = *(byte **)(tables + 0x14) + ((*passes & 0x1ff) + pass) * 10;
-                            byte *pass_definition = g_4e3b44[*(long *)(pass_entry + 4) & 0xffff].bytes;
-                            byte *record = *(byte **)(*(byte **)(pass_definition + 0x20) + 4) + variant * 0x132;
-                            if (*(long *)(record + 0x100) != NONE)
-                            {
-                                g_4670bc = true;
-                                function_16b10((s_render_reset_state *)g_485b48);
-                                function_1bbf0(tag, 0, stage, pass, variant, 0.0f);
-                                function_1c590((s_shader_cache *)g_51f0f0, *(long *)(record + 0x100), 0);
-                                function_1c710(g_51f0f0);
-                                function_1cf50();
-                                g_4b8448 = 0;
-                                D3DDevice_SetRenderState(D3DRS_CULLMODE, 0);
-                                if (copy) function_15ec0(target);
-                                else function_14bc0((short)target, 0, false);
-                                result = true;
-                            }
+                            g_4670bc = true;
+                            function_16b10((s_render_reset_state *)g_485b48);
+                            function_1bbf0(tag, 0, stage, pass, variant, 0.0f);
+                            function_1c590((s_shader_cache *)g_51f0f0, *(long *)(record + 0x100), 0);
+                            function_1c710(g_51f0f0);
+                            function_1cf50();
+                            g_4b8448 = 0;
+                            D3DDevice_SetRenderState(D3DRS_CULLMODE, 0);
+                            if (copy) function_15ec0(target);
+                            else function_14bc0((short)target, 0, false);
+                            result = true;
                         }
-                        ++pass;
-                    } while (pass < (*passes >> 9));
+                    }
                 }
             }
         }
@@ -4528,6 +4708,8 @@ void function_1c0d0(long tag, long stage)
 
 extern real g_4670e4;
 
+extern dword g_4b8340, g_4b8334, g_4b8330;
+
 // @retail 0x4d9c0
 void function_4d9c0(byte const *source, long tag, byte value, short index,
     long first, long second, long third, long fourth)
@@ -4537,18 +4719,20 @@ void function_4d9c0(byte const *source, long tag, byte value, short index,
     real scale = value * *(real const *)(source + 0x2c) * g_4670e4 * 4.0f;
     if (tag == 10)
     {
+        g_4b8340 = 1;
         D3DDevice_SetRenderState(D3DRS_SOLIDOFFSETENABLE, 1);
         real offset = 550.0f;
+        g_4b8334 = *(dword *)&offset;
         D3DDevice_SetRenderState(D3DRS_POLYGONOFFSETZOFFSET, *(dword *)&offset);
         real slope = 2.0f;
+        g_4b8330 = *(dword *)&slope;
         D3DDevice_SetRenderState(D3DRS_POLYGONOFFSETZSLOPESCALE, *(dword *)&slope);
     }
     function_1bd50(*(void **)entry->unknown10);
-    function_1bbf0(first, tag, second, third, fourth, scale);
+    function_1bbf0(first, second, tag, third, fourth, scale);
 }
 
-extern real g_4c19b0, g_4c19b4, g_4b9de4;
-extern short g_4b9dd0, g_4b9dd2, g_4b9dd4, g_4b9dd6;
+extern real g_4c19b0, g_4c19b4;
 real g_4c19b8, g_4c19bc;
 byte g_55e6c5;
 struct s_filter_vector { real x, y, z, w; };
@@ -4577,6 +4761,7 @@ void function_2d140(long tag, real const *weights, long columns, long rows, s_fi
     g_4c19bc = weights[3];
     if (tag == NONE || g_4b9dd2 >= g_4b9dd6 || g_4b9dd0 >= g_4b9dd4 || g_4858b8)
         return;
+    long width = g_4b9dd6 - g_4b9dd2, height = g_4b9dd4 - g_4b9dd0;
     byte const *definition = g_4e3b44[tag & 0xffff].bytes;
     long material = *(long const *)(definition + 0x44);
     dword group = ((dword *)g_4e3b44)[(short)material * 4];
@@ -4597,7 +4782,6 @@ void function_2d140(long tag, real const *weights, long columns, long rows, s_fi
     }
     real left = (real)g_4b9dd2, right = (real)g_4b9dd6;
     real top = (real)g_4b9dd0, bottom = (real)g_4b9dd4;
-    long width = g_4b9dd6 - g_4b9dd2, height = g_4b9dd4 - g_4b9dd0;
     for (long record_index = 0; record_index < *(long const *)(definition + 0x88); ++record_index)
     {
         byte const *record = *(byte **)(definition + 0x8c) + record_index * 0xac;
@@ -4640,7 +4824,11 @@ void function_2d140(long tag, real const *weights, long columns, long rows, s_fi
                         if (coordinates)
                         {
                             real const *offset = (real const *)&coordinates->offsets[attribute];
-                            for (long component = 0; component < 4; ++component) value[component] += offset[component];
+                            
+                            value[0] += offset[0];
+                            value[1] += offset[1];
+                            value[2] += offset[2];
+                            value[3] += offset[3];
                             if (coordinates->flags[attribute] & 1)
                             {
                                 value[0] *= g_4b9de4;
@@ -4656,7 +4844,7 @@ void function_2d140(long tag, real const *weights, long columns, long rows, s_fi
                         x = (x - left) * scale;
                         y = (y - top) * scale;
                     }
-                    D3DDevice_SetVertexData4f(D3DVSDE_VERTEX, x, y, 16777215.0f, 16777215.0f);
+                    D3DDevice_SetVertexData4f(D3DVSDE_POSITION, x, y, 16777215.0f, 16777215.0f);
                 }
             }
             D3DDevice_End();
@@ -4716,6 +4904,7 @@ void function_4b2d0(long tag, long first, long second, long third, long fourth)
 {
     (void)&third; (void)&fourth;
     long selected = tag == NONE ? *(long *)(g_485a80 + 0xd0) : tag;
+    long first_offset = first * 10;
     dword group = ((dword *)g_4e3b44)[(short)tag * 4];
     byte const *parameters;
     if (group == 0x5052544d || group == 0x70727433)
@@ -4723,7 +4912,7 @@ void function_4b2d0(long tag, long first, long second, long third, long fourth)
     else parameters = *(byte **)(g_4e3b44[tag & 0xffff].bytes + 0x24);
     byte *definition = g_4e3b44[*(long const *)parameters & 0xffff].bytes;
     byte *tables = *(byte **)(definition + 0x5c);
-    byte *entry = *(byte **)(tables + 4) + first * 10;
+    byte *entry = *(byte **)(tables + 4) + first_offset;
     word range = ((word *)*(byte **)(tables + 0xc))[(*(word *)entry & 0x1ff) + second];
     byte *pass = *(byte **)(tables + 0x14) + ((range & 0x1ff) + fourth) * 10;
     byte *pass_definition = g_4e3b44[*(long *)(pass + 4) & 0xffff].bytes;
@@ -4745,7 +4934,7 @@ struct s_4ca40_colors;
 void function_4ca00(s_4ca40_colors const *settings, byte const *data, color3f *light, color3f *color);
 vector3f *function_4dd70(vector3f *out, dword packed);
 vector3f *function_4dcd0(vector3f *out, dword packed);
-vector3f *function_4efb0(vector3f *vector);
+inline vector3f *function_4efb0(vector3f *vector);
 point3f *function_3f220(dword first, dword second, dword third, point3f *out);
 vector3f *function_11d000(vector3f const *vector, vector3f *perpendicular);
 void function_141ce0(real first, real second, real third, transform4x3f *out);
@@ -4777,8 +4966,8 @@ void __stdcall function_4e260(long tag, long context, long first, long second,
     if (function_12de70((s_geometry_block_info *)block, 3)
         && function_12de70((s_geometry_block_info *)(definition + 0x38), 3))
     {
-        real opacity_min = *(real *)(definition + 8);
-        real opacity_scale = *(real *)(definition + 0xc);
+        real local_0 = *(real *)(definition + 8);
+        real local_1 = *(real *)(definition + 0xc);
         real constants[4] = {g_52598c[handle >> 30], g_525998[handle >> 30], 0.0f, 1.0f};
         D3DDevice_SetVertexShaderConstant(-43, constants, 1);
         point3f center;
@@ -4805,13 +4994,13 @@ void __stdcall function_4e260(long tag, long context, long first, long second,
             if (variant >= *(long *)(definition + 0x18)) continue;
             byte *draw = *(byte **)(definition + 0x1c) + variant * 8;
             if (!*(word *)(draw + 6)) continue;
-            vector3f packed_vector;
-            function_4dd70(&packed_vector, *(dword *)(vertex + 0x10));
+            vector3f decoded_vector;
+            vector3f packed_vector = *function_4dd70(&decoded_vector, *(dword *)(vertex + 0x10));
             dword coordinates = *(dword *)(vertex + 4);
-            point3f position;
-            function_3f220(coordinates & 0x3ff, (coordinates >> 10) & 0x3ff, coordinates >> 20, &position);
+            point3f decoded_position;
+            point3f position = *function_3f220(coordinates & 0x3ff, (coordinates >> 10) & 0x3ff, coordinates >> 20, &decoded_position);
             real fraction = ((packed >> 16) & 0xf) * (1.0f / 15.0f);
-            real alpha = (*(real *)(vertex + 0x14) - opacity_min) * opacity_scale;
+            real alpha = (*(real *)(vertex + 0x14) - local_0) * local_1;
             color3f light, color;
             function_4ca00((s_4ca40_colors *)settings, vertex, &light, &color);
             light.red *= color.red; light.green *= color.green; light.blue *= color.blue;
@@ -4822,7 +5011,8 @@ void __stdcall function_4e260(long tag, long context, long first, long second,
             if (settings[8] & 1)
             {
                 real sine = (real)sin(angle), cosine = (real)cos(angle);
-                function_4dcd0(&direction, packed >> 20);
+                vector3f decoded_direction;
+                direction = *function_4dcd0(&decoded_direction, packed >> 20);
                 vector3f perpendicular, cross;
                 function_11d000(&direction, &perpendicular);
                 cross.i = direction.j * perpendicular.k - direction.k * perpendicular.j;
@@ -4845,11 +5035,11 @@ void __stdcall function_4e260(long tag, long context, long first, long second,
                 direction = rotation.up;
             }
             alpha = alpha < 0.0f ? 0.0f : alpha > 1.0f ? 1.0f : alpha;
-            D3DDevice_SetVertexData4f(7, packed_vector.i, packed_vector.j, packed_vector.k, alpha);
-            D3DDevice_SetVertexData4f(8, horizontal.i * size, vertical.i * size, direction.i * size, position.x);
-            D3DDevice_SetVertexData4f(9, horizontal.j * size, vertical.j * size, direction.j * size, position.y);
-            D3DDevice_SetVertexData4f(10, horizontal.k * size, vertical.k * size, direction.k * size, position.z);
-            D3DDevice_SetVertexData4f(11, light.red, light.green, light.blue, 1.0f);
+            D3DDevice::SetVertexData4f(7, packed_vector.i, packed_vector.j, packed_vector.k, alpha);
+            D3DDevice::SetVertexData4f(8, horizontal.i * size, vertical.i * size, direction.i * size, position.x);
+            D3DDevice::SetVertexData4f(9, horizontal.j * size, vertical.j * size, direction.j * size, position.y);
+            D3DDevice::SetVertexData4f(10, horizontal.k * size, vertical.k * size, direction.k * size, position.z);
+            D3DDevice::SetVertexData4f(11, light.red, light.green, light.blue, 1.0f);
             long count = *(word *)(draw + 6);
             word const *vertices = indices + *(word *)(draw + 4);
             function_1cf50();
@@ -4916,6 +5106,10 @@ void __stdcall function_4efa0(long tag, long context, long first, long second,
 }
 
 // @retail 0x4ebd0
+// score 54 (was 54): retail reads the block base out of the table before it
+// reads the record tag and keeps that tag in a register, ours spills the tag
+// to a stack slot and reloads it, and adds the table's base pointer in after
+// the definition lookup instead of before it
 void __stdcall function_4ebd0(long tag, long context, long first, long second,
     long third, dword handle, byte *material)
 {
@@ -4935,10 +5129,11 @@ void __stdcall function_4ebd0(long tag, long context, long first, long second,
     }
     byte *table = *(byte **)((byte *)g_4e0348 + 0x238);
     byte *record = *(byte **)(table + 0x1c) + ((handle >> 8) & 0x3fffff) * 24;
-    byte *block = *(byte **)(table + 0x14) + *(short *)(record + 6) * 0x2c;
-    long record_tag = (*(long **)((byte *)g_4e0350 + 0x37c))[(signed char)record[0] * 2 + 1];
+    long block_offset = *(short *)(record + 6) * 0x2c;
+    volatile long record_tag = (*(long **)((byte *)g_4e0350 + 0x37c))[(signed char)record[0] * 2 + 1];
     byte *definition = g_4e3b44[record_tag & 0xffff].bytes;
     byte *part = *(byte **)(definition + 0x14) + record[1] * 20;
+    byte *block = *(byte **)(table + 0x14) + block_offset;
     if (function_12de70((s_geometry_block_info *)block, 3))
     {
         byte *geometry = *(byte **)(block + 0x28);
@@ -5007,13 +5202,14 @@ void __stdcall function_35b90(void *material)
     real *offset = *(real **)(source + 4);
     real x = offset ? offset[0] * 2.0f / width : 0.0f;
     real y = offset ? offset[1] * -2.0f / height : 0.0f;
-    real inverse_x = 1.0f / width, inverse_y = 1.0f / height;
+    real inverse_x = 1.0f / width;
     real transform[20];
     transform[0] = inverse_x * 2.0f;
     transform[1] = 0.0f;
     transform[2] = 0.0f;
     transform[3] = x - (inverse_x + 1.0f);
     transform[4] = 0.0f;
+    real inverse_y = 1.0f / height;
     transform[5] = inverse_y * -2.0f;
     transform[6] = 0.0f;
     transform[7] = inverse_y + y + 1.0f;
@@ -5030,20 +5226,37 @@ void __stdcall function_35b90(void *material)
     transform[18] = 0.0f;
     transform[19] = 1.0f;
     real constants[24];
-    memcpy(constants, source + 0x48, 16);
+    constants[0] = *(real *)(source + 0x48);
+    constants[1] = *(real *)(source + 0x4c);
+    constants[2] = *(real *)(source + 0x50);
+    constants[3] = *(real *)(source + 0x54);
     constants[4] = source[8] ? 1.0f : 0.0f;
     constants[5] = source[8] ? 0.0f : 1.0f;
     constants[6] = source[9] ? 1.0f : 0.0f;
     constants[7] = source[9] ? 0.0f : 1.0f;
     constants[8] = source[0xa] ? 1.0f : 0.0f;
     constants[9] = source[0xa] ? 0.0f : 1.0f;
-    for (long pair = 0; pair < 3; ++pair)
     {
-        real *coordinates = *(real **)(source + 0x1c + pair * 4);
-        constants[10 + pair * 2] = coordinates ? coordinates[0] : 0.0f;
-        constants[11 + pair * 2] = coordinates ? coordinates[1] : 0.0f;
+        real *coordinates = *(real **)(source + 0x1c);
+        constants[10] = coordinates ? coordinates[0] : 0.0f;
+        constants[11] = coordinates ? coordinates[1] : 0.0f;
     }
-    memcpy(constants + 16, source + 0x28, 24);
+    {
+        real *coordinates = *(real **)(source + 0x20);
+        constants[12] = coordinates ? coordinates[0] : 0.0f;
+        constants[13] = coordinates ? coordinates[1] : 0.0f;
+    }
+    {
+        real *coordinates = *(real **)(source + 0x24);
+        constants[14] = coordinates ? coordinates[0] : 0.0f;
+        constants[15] = coordinates ? coordinates[1] : 0.0f;
+    }
+    constants[16] = *(real *)(source + 0x28);
+    constants[17] = *(real *)(source + 0x2c);
+    constants[18] = *(real *)(source + 0x30);
+    constants[19] = *(real *)(source + 0x34);
+    constants[20] = *(real *)(source + 0x38);
+    constants[21] = *(real *)(source + 0x3c);
     constants[22] = constants[23] = 0.0f;
     D3DDevice_SetVertexShaderConstant(81, transform, 5);
     D3DDevice_SetVertexShaderConstant(86, constants, 6);
@@ -5053,8 +5266,10 @@ void __stdcall function_35b90(void *material)
         byte *bitmap = *(byte **)(source + 0xc + stage * 4);
         if (!bitmap) break;
         g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, 0.0f);
-        g_485af4[stage] = *(short *)(bitmap + 4);
-        g_485b04[stage] = *(short *)(bitmap + 6);
+        short texture_width = *(short *)(bitmap + 4);
+        short texture_height = *(short *)(bitmap + 6);
+        g_485af4[stage] = texture_width;
+        g_485b04[stage] = texture_height;
         D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, source[0x18 + stage] ? 1 : 3);
         D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, source[0x18 + stage] ? 1 : 3);
         D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, source[0x96] ? 1 : 2);
@@ -5076,10 +5291,10 @@ void __stdcall function_35b90(void *material)
         for (long i = 0; i < 3; ++i)
         {
             color3f const *color = *(color3f **)(source + 0x58 + i * 8);
-            color3f selected_color = color ? *color : *(color3f *)g_468710;
-            colors[i].red = selected_color.red;
-            colors[i].green = selected_color.green;
-            colors[i].blue = selected_color.blue;
+            *(color3f *)&colors[i].red = color ? *color : *(color3f *)g_468710;
+        }
+        for (long i = 0; i < 3; ++i)
+        {
             real *alpha = *(real **)(source + 0x84 + i * 4);
             colors[i].alpha = alpha ? *alpha : 1.0f;
         }
@@ -5106,11 +5321,8 @@ void __stdcall function_35b90(void *material)
     function_1cc60(0);
 }
 
-byte g_51080c, g_4b62a0;
-s_bitmap_view *g_4b62ac;
+byte g_51080c;
 short g_4670c0;
-extern short g_4b9dd0, g_4b9dd2, g_4b9dd4, g_4b9dd6;
-extern short_rectangle2d g_4b9dd8;
 typedef void (__stdcall *t_1f070_glyph)(long, long, long, long, long,
     real, real, real, real, real, real, real, long, long);
 void __stdcall function_1f490(long, long, long, long, long,
@@ -5118,6 +5330,15 @@ void __stdcall function_1f490(long, long, long, long, long,
 void __stdcall function_13f0e0(t_1f070_glyph callback, short_rectangle2d const *bounds,
     short *position, short_rectangle2d const *clip, short line_gap, real scale, dword const *text);
 void function_36560(void);
+
+/* moves a rectangle by (dx, dy) */
+static __forceinline void offset_rectangle_1f070(short_rectangle2d *rectangle, short dx, short dy)
+{
+    rectangle->top += dy;
+    rectangle->left += dx;
+    rectangle->bottom += dy;
+    rectangle->right += dx;
+}
 
 // @retail 0x1f070
 void function_1f070(short_rectangle2d const *bounds, short_rectangle2d const *clip,
@@ -5130,32 +5351,36 @@ void function_1f070(short_rectangle2d const *bounds, short_rectangle2d const *cl
     ++g_4670c0;
     s_bitmap_view *bitmap = g_4b62a0 ? g_4b62ac : 0;
     if (!bitmap || !*text) return;
+    /* the window rectangle: g_4b9dd0 .. g_4b9dd6 are one rectangle of the camera storage */
+    short_rectangle2d const *window = (short_rectangle2d const *)&g_4b9dd0;
     short_rectangle2d wanted_bounds;
-    if (bounds) wanted_bounds = *bounds;
-    else
+    if (!bounds)
     {
         wanted_bounds = g_4b9dd8;
-        wanted_bounds.top -= g_4b9dd0;
-        wanted_bounds.left -= g_4b9dd2;
-        wanted_bounds.bottom -= g_4b9dd0;
-        wanted_bounds.right -= g_4b9dd2;
-    }
-    short_rectangle2d wanted_clip;
-    if (clip)
-    {
-        long right = g_4b9dd6 - g_4b9dd2;
-        long bottom = g_4b9dd4 - g_4b9dd0;
-        wanted_clip.left = clip->left < 0 ? 0 : clip->left;
-        wanted_clip.top = clip->top < 0 ? 0 : clip->top;
-        wanted_clip.right = (short)(right > clip->right ? clip->right : right);
-        wanted_clip.bottom = (short)(bottom > clip->bottom ? clip->bottom : bottom);
+        offset_rectangle_1f070(&wanted_bounds, -window->left, -window->top);
     }
     else
     {
-        wanted_clip.left = 0;
-        wanted_clip.top = 0;
-        wanted_clip.right = g_4b9dd6 - g_4b9dd2;
-        wanted_clip.bottom = g_4b9dd4 - g_4b9dd0;
+        wanted_bounds = *bounds;
+    }
+    short_rectangle2d wanted_clip;
+    if (!clip)
+    {
+        wanted_clip = *window;
+        offset_rectangle_1f070(&wanted_clip, -window->left, -window->top);
+    }
+    else
+    {
+        long bottom = window->bottom - window->top;
+        if (bottom > clip->bottom) bottom = clip->bottom;
+        long right = window->right - window->left;
+        if (right > clip->right) right = clip->right;
+        long top = clip->top < 0 ? 0 : clip->top;
+        short left = clip->left < 0 ? 0 : clip->left;
+        wanted_clip.left = (short)left;
+        wanted_clip.top = (short)top;
+        wanted_clip.right = (short)right;
+        wanted_clip.bottom = (short)bottom;
     }
     byte material[0x98];
     memset(material, 0, sizeof(material));
@@ -5172,6 +5397,9 @@ void function_1f070(short_rectangle2d const *bounds, short_rectangle2d const *cl
     *(s_bitmap_view **)(material + 0xc) = bitmap;
     *(real *)(material + 0x2c) = 1.0f;
     *(real *)(material + 0x28) = 1.0f;
+    *(long *)(material + 0) = 0;
+    material[0x96] = 0;
+    *(word *)(material + 0x94) = 0;
     material[0x97] = preserve;
     if (color) *(void const **)(material + 0x58) = color;
     if (shadow) *(void const **)(material + 0x5c) = shadow;
@@ -5202,10 +5430,10 @@ extern dword g_4e6494;
 // @retail 0x4c690
 void function_4c690(long tag, transform4x3f const *nodes)
 {
-    byte context[0x74];
+    byte context[0x78];
     signed char indices[16];
     long node_count;
-    byte *definition = g_4e3b44[tag & 0xffff].bytes;
+    byte *volatile definition = g_4e3b44[tag & 0xffff].bytes;
     D3DDevice_SetRenderState(D3DRS_DEPTHCLIPCONTROL, 16);
     function_2c3b0((s_interface_function_context *)context);
     function_3e420(tag, NONE, indices, 4);
@@ -5226,7 +5454,7 @@ void function_4c690(long tag, transform4x3f const *nodes)
                 if (section_index == 255) continue;
                 byte *section = *(byte **)(definition + 0x28) + section_index * 0x5c;
                 if (!*(word *)(section + 4) || !*(word *)(section + 6) || !*(word *)(section + 8)) continue;
-                byte *geometry = 0;
+                byte *volatile geometry = 0;
                 if (!g_4e6494 || function_12de70((s_geometry_block_info *)(section + 0x38), 0))
                     geometry = *(byte **)(section + 0x34);
                 short transform = *(short *)(section + 0x2c);
@@ -5300,7 +5528,8 @@ PRIVATE __forceinline void convert_1fa50_text(word const *text, dword *out)
         if (first == 0x7c)
         {
             bool recognized = false;
-            value = unicode_escape_character_lookup(*next, &recognized);
+            word local_1 = *next;
+            value = unicode_escape_character_lookup(local_1, &recognized);
             if (recognized) ++next;
         }
         else value = first;
@@ -5424,7 +5653,6 @@ void function_12a50(s_frame_parameters_12a50 const *parameters)
 
 bool function_48b00(point3f const *point, real radius, real *screen, real *extent);
 real function_30bf0(vector3f *vector);
-extern real g_4857b4;
 void function_0224f0(dword stage, D3DTEXTURESTAGESTATETYPE type, dword value);
 
 PRIVATE __forceinline void draw_filter_quad(real left, real right, real top, real bottom)
@@ -5488,7 +5716,7 @@ void function_46ea0(long tag, point3f const *position)
     g_484f68.PSFinalCombinerInputsEFG = 0x1100;
     function_1ccf0(&g_484f68);
     function_1cf50();
-    D3DDevice::Begin(D3DPT_QUADLIST);
+    D3DDevice::Begin(D3DPT_TRIANGLEFAN);
     D3DDevice_SetVertexData4f(0, left, top, 16777215.0f, 16777215.0f);
     D3DDevice_SetVertexData4f(0, right, top, 16777215.0f, 16777215.0f);
     D3DDevice_SetVertexData4f(0, right, bottom, 16777215.0f, 16777215.0f);
@@ -5525,7 +5753,7 @@ void function_46ea0(long tag, point3f const *position)
     g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
     function_1ccf0(&g_484f68);
     function_1cf50();
-    D3DDevice::Begin(D3DPT_QUADLIST);
+    D3DDevice::Begin(D3DPT_TRIANGLEFAN);
     draw_filter_quad(left, right, top, bottom);
     D3DDevice::End();
     function_46230(16, bounds);
@@ -5574,7 +5802,7 @@ void function_46ea0(long tag, point3f const *position)
     {
         real offset = (real)i * 0.0625f * 80.0f - 4.0f;
         function_1cf50();
-        D3DDevice::Begin(D3DPT_QUADLIST);
+        D3DDevice::Begin(D3DPT_TRIANGLEFAN);
         ++i;
         D3DDevice_SetVertexData4f(9, 0.0f, 0.0f, 0.0f, strength / i);
         D3DDevice_SetVertexData2s(3, 0, 0);
@@ -5591,42 +5819,13 @@ void function_46ea0(long tag, point3f const *position)
 
 
 extern long g_50943c, g_509440;
-struct s_2cb30_state
-{
-	byte unknown00[0x2a78];
-	long active;
-};
 
-struct s_2cb30_entry
-{
-	dword values[9];
-};
 
-struct s_2cb30_globals
-{
-	long current;
-	long previous;
-	s_2cb30_state *state;
-	union
-	{
-		byte unknown0c[0x9b0 - 0xc];
-		struct
-		{
-			byte weights[850];
-			byte material_indices[850];
-			long materials[192];
-		};
-	};
-	long count;
-	s_2cb30_entry entries[32];
-	long entry_count;
-};
-extern s_2cb30_globals g_4c0b78;
 struct s_render_part_context;
 void function_41040(short index, long part_index, long group, byte weight,
     s_render_part_context const *context, long material_override, bool force,
     dword and_mask, dword or_mask);
-void *function_449e0(short index, bool load, bool instance);
+__declspec(noinline) void *function_449e0(short index, bool load, bool instance);
 s_index_cache_storage g_4c62f8;
 bool function_460d0(dword const *mask, short index, long part_index);
 
@@ -5662,7 +5861,7 @@ void __stdcall function_44ac0(long group, dword selection_mask, long level)
         }
         if (!((entry->unknown00 & selection_mask) & 0x1fffff) ||
             ((entry->flags >> 4) & 0x1f) != level || !(entry->unknown00 & 1) ||
-            !entry->unknown10[0xa]) continue;
+            entry->unknown10[0xa] <= 0u) continue;
         byte weight = g_4c0b78.weights[index];
         long transform_index = entry->flags & 0xf;
         byte material_index = g_4c0b78.material_indices[(short)index];
@@ -5688,24 +5887,19 @@ void __stdcall function_44ac0(long group, dword selection_mask, long level)
 }
 
 #if 0 // Preserve the existing exact SDK Clear callers.
-struct s_depth_parameters_13450
-{
-    long identifier, mode;
-    real distance;
-};
-s_depth_parameters_13450 g_4850c4;
+
 extern bool g_485a74;
-extern byte g_485607;
 extern dword g_4b8344;
 real g_4b893c;
 
-// Disabled retail 0x13450; SDK Clear activation changes matched 0x14ac0.
+// Retail 0x13450
 bool function_13450(s_depth_parameters_13450 const *parameters)
 {
-    real inverse = 1.0f / g_485ad4.hi;
+    real high = g_485ad4.hi;
+    real inverse = 1.0f / high;
     g_4850c4 = *parameters;
     real lower = inverse * g_485ad4.lo * 16777215.0f;
-    real upper = inverse * g_485ad4.hi * 16777215.0f;
+    real upper = inverse * high * 16777215.0f;
     g_485a74 = false;
     if (lower < 0.0f) lower = 0.0f;
     else if (lower > 16777215.0f) lower = 16777215.0f;
@@ -5740,3 +5934,2090 @@ bool function_13450(s_depth_parameters_13450 const *parameters)
     return true;
 }
 #endif
+
+extern dword g_4b82f8, g_4b8324;
+dword g_4b8474;
+extern byte g_4c19c0;
+extern dword g_4c1a04;
+struct s_2e9e0_saved { long tag; point3f position; };
+extern s_2e9e0_saved g_4c19c4[4];
+struct s_2e3f0_record;
+long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record);
+void function_46ea0(long tag, point3f const *position);
+
+// @retail 0x2df00
+void function_2df00()
+{
+    g_4670bc = true;
+    function_16b10((s_render_reset_state *)g_485b48);
+    function_14bc0(g_485602, 0, true);
+    function_15370(0);
+    if (!(fabs(g_4b8494 - 1.0f) < 0.0001f))
+    {
+        D3DDevice_SetStipple(function_1c290(1.0f));
+        g_4b8494 = 1.0f;
+    }
+    g_4b8448 = 0; D3DDevice_SetRenderState(D3DRS_CULLMODE, 0);
+    g_4b8308 = 0x10101; D3DDevice_SetRenderState(D3DRS_COLORWRITEENABLE, 0x10101);
+    g_4b82e8 = 1; D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+    g_4b82f4 = 0x302; D3DDevice_SetRenderState(D3DRS_SRCBLEND, 0x302);
+    g_4b82f8 = 1; D3DDevice_SetRenderState(D3DRS_DESTBLEND, 1);
+    g_4b8324 = 0x8006; D3DDevice_SetRenderState(D3DRS_BLENDOP, 0x8006);
+    g_4b82ec = 0; D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+    g_4b8438 = 0; D3DDevice_SetRenderState(D3DRS_ZENABLE, 0);
+    g_4b82e0 = 0x203; D3DDevice_SetRenderState(D3DRS_ZFUNC, 0x203);
+    g_4b82fc = 0; D3DDevice_SetRenderState(D3DRS_ZWRITEENABLE, 0);
+    g_4b8450 = 0; D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
+    g_4b8474 = 0; D3DDevice_SetVertexShader(0);
+    g_51f3c8[1][0] = NULL;
+    g_51f3c8[1][1] = NULL;
+    g_51f3c8[1][2] = NULL;
+    g_51f3c8[1][3] = NULL;
+    function_1cf50();
+    memset(&g_484f68, 0, sizeof(g_484f68));
+    dword *fields = (dword *)&g_484f68;
+    fields[0xd8 / 4] = 1;
+    fields[0xd4 / 4] = 0x11002;
+    fields[0x88 / 4] = 0x8081524;
+    fields[0xb4 / 4] = 0xc5;
+    fields[0x8c / 4] = 0xc0c0408;
+    fields[0xb8 / 4] = 0xd4;
+    fields[0x20 / 4] = 0x50f0004;
+    fields[0x24 / 4] = 0xc0d1400;
+    function_1ccf0(&g_484f68);
+    function_1c590((s_shader_cache *)g_51f0f0, *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x54), 0);
+    function_1c710(g_51f0f0);
+    g_4c19c0 = false;
+    g_4c1a04 = 0;
+    function_20bb0(g_4b9ed4, 0xf, NULL, 0, false, (visibility_draw_callback)function_2e9e0);
+    long saved_count = (long)g_4c1a04;
+    for (long i = 0; i < saved_count; ++i)
+        function_46ea0(g_4c19c4[i].tag, &g_4c19c4[i].position);
+}
+
+struct s_501e0
+{
+    point3f field_0;
+    real field_c;
+    real field_10;
+    dword field_14;
+};
+void function_501e0(s_501e0 const *a, bool perspective, s_501e0 *out);
+long function_30830(point3f const *point, s_camera const *camera, vector3f const *direction,
+    point2f const *scale, bool perspective, bool negate, point2f *out);
+bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
+    bool center, bool shift, bool clip, bool skip_state, real *depth_out);
+void function_47ea0(short stage, byte flags);
+extern dword g_4b8474;
+
+// @retail 0x4f7e0
+bool __stdcall function_4f7e0(long tag, s_501e0 const *points, long count, short bitmap,
+    real cosine, real sine, bool segments, bool perspective, bool filtered)
+{
+    short const volatile *bitmap_reference = &bitmap;
+    short bitmap_index = *bitmap_reference;
+    point2f rotations[256];
+    s_501e0 midpoints[256];
+    if (filtered)
+    {
+        if (!g_46713c)
+        {
+            g_4b8474 = 0;
+            D3DDevice_SetVertexShader(0);
+        }
+        g_46713c = true;
+    }
+    else
+        function_4fe20();
+    short stage = filtered ? 1 : 0;
+    bool skip = tag != NONE ? function_14560(tag, stage, 0, 1, bitmap_index) :
+        function_14480(*(long *)(g_485a80 + 0x34), stage, bitmap_index);
+    if (!skip)
+    {
+        function_47ea0(stage, 0);
+        if (segments)
+        {
+            long total = count - 1;
+            for (long i = 0; i < total; ++i)
+            {
+                function_501e0(points + i, perspective, midpoints + i);
+                vector3f direction;
+                direction.i = points[i + 1].field_0.x - points[i].field_0.x;
+                direction.j = points[i + 1].field_0.y - points[i].field_0.y;
+                direction.k = points[i + 1].field_0.z - points[i].field_0.z;
+                real length = (real)sqrt((double)direction.i * direction.i + (double)direction.k * direction.k + (double)direction.j * direction.j);
+                if (!(fabs(length) < 0.0001f))
+                {
+                    real reciprocal = 1.0f / length;
+                    direction.i *= reciprocal;
+                    direction.j *= reciprocal;
+                    direction.k *= reciprocal;
+                }
+                point2f screen;
+                if (function_30830(&midpoints[i].field_0, NULL, &direction, NULL, true, true, &screen))
+                {
+                    double angle = atan2(screen.y, screen.x);
+                    rotations[i].x = (real)cos(angle);
+                    rotations[i].y = (real)sin(angle);
+                }
+                else
+                {
+                    rotations[i].x = 1.0f;
+                    rotations[i].y = 0.0f;
+                }
+            }
+            s_501e0 const *volatile selected = midpoints;
+            points = selected;
+            count = total;
+        }
+        else
+        {
+            for (long i = 0; i < count; ++i)
+            {
+                rotations[i].x = cosine;
+                rotations[i].y = sine;
+            }
+        }
+        for (long i = 0; i < count; ++i)
+        {
+            real width = points[i].field_c > points[i].field_10 ? points[i].field_c : points[i].field_10;
+            if (filtered)
+            {
+                vector3f delta;
+                delta.i = g_4b9da0.x - points[i].field_0.x;
+                delta.j = g_4b9da0.y - points[i].field_0.y;
+                delta.k = g_4b9da0.z - points[i].field_0.z;
+                real depth = 0.0f - (g_4b9dac.i * delta.i + g_4b9dac.k * delta.k + g_4b9dac.j * delta.j);
+                point3f position = points[i].field_0;
+                real low = depth - points[i].field_10;
+                if (low < g_4b9de0) low = g_4b9de0;
+                else if (low > g_4b9de4) low = g_4b9de4;
+                real high = depth + points[i].field_10;
+                if (high < g_4b9de0) high = g_4b9de0;
+                else if (high > g_4b9de4) high = g_4b9de4;
+                if (high > low && depth != 0.0f)
+                {
+                    real adjusted_depth;
+                    if (function_3a5c0((byte const *)NONE, low, high, 0, true, true, true, false, &adjusted_depth) && depth != adjusted_depth)
+                    {
+                        real scale = (adjusted_depth / depth) * 0.0f + 1.0f;
+                        real shift = 0.0f - (depth - adjusted_depth) * points[i].field_10;
+                        position.x = delta.i * shift + points[i].field_0.x;
+                        position.y = delta.j * shift + points[i].field_0.y;
+                        position.z = delta.k * shift + points[i].field_0.z;
+                        function_1c590((s_shader_cache *)g_51f0f0, *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x84), 0);
+                        function_1c710(g_51f0f0);
+                        function_1cf50();
+                        real constants[32];
+                        constants[0] = 1.0f;
+                        constants[1] = 0.0f;
+                        constants[2] = 0.0f;
+                        constants[3] = 0.0f;
+                        constants[4] = 0.0f;
+                        constants[5] = 1.0f;
+                        constants[6] = 0.0f;
+                        constants[7] = 0.0f;
+                        constants[8] = 0.0f;
+                        constants[9] = 0.0f;
+                        constants[10] = 1.0f;
+                        constants[11] = 0.0f;
+                        constants[12] = 0.0f;
+                        constants[13] = 0.0f;
+                        constants[14] = 0.0f;
+                        constants[15] = 1.0f;
+                        constants[16] = 1.0f;
+                        constants[17] = 0.0f;
+                        constants[18] = 0.0f;
+                        constants[19] = 0.0f;
+                        constants[20] = 0.0f;
+                        constants[21] = 1.0f;
+                        constants[22] = 0.0f;
+                        constants[23] = 0.0f;
+                        constants[24] = 0.0f;
+                        constants[25] = 0.0f;
+                        constants[26] = 1.0f;
+                        constants[27] = 0.0f;
+                        constants[28] = 0.0f;
+                        constants[29] = 0.0f;
+                        constants[30] = 0.0f;
+                        constants[31] = 1.0f;
+                        D3DDevice_SetVertexShaderConstant(-78, constants, 8);
+                        function_484b0(&position, adjusted_depth, width * scale, points[i].field_10 * scale,
+                            rotations[i].x, rotations[i].y, points[i].field_14);
+                    }
+                }
+            }
+            else
+                function_480a0(&points[i].field_0, width, points[i].field_10,
+                    rotations[i].x, rotations[i].y, points[i].field_14);
+        }
+    }
+    return !skip;
+}
+
+extern dword g_4b82f8, g_4b8324;
+bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
+    bool center, bool shift, bool clip, bool skip_state, real *depth_out);
+void function_1cf80();
+
+// @retail 0x37a60
+bool __stdcall function_37a60(void *context)
+{
+    long view_span_x = (short)g_48564e - (short)g_48564a;
+    long view_span_y = (short)g_48564c - (short)g_485648;
+    byte *input = (byte *)context;
+    byte *view = input + g_485600 * 0xb8;
+    struct s_filter_vertex { real x, y; byte unknown08[0x10]; point2f coordinates[3]; };
+    s_filter_vertex vertices[4];
+    void (WINAPI *volatile vertex2f)(INT, float, float) = D3DDevice_SetVertexData2f;
+    {
+
+        real extent = *(real *)(view + 0x134 + 0 * 4);
+        vertices[0].coordinates[0].x = extent * -1.0f;
+        vertices[0].coordinates[0].y = extent * -1.0f;
+        vertices[1].coordinates[0].x = extent;
+        vertices[1].coordinates[0].y = extent * -1.0f;
+        vertices[2].coordinates[0].x = extent * -1.0f;
+        vertices[2].coordinates[0].y = extent;
+        vertices[3].coordinates[0].x = extent;
+        vertices[3].coordinates[0].y = extent;
+        }
+    {
+
+        real extent = *(real *)(view + 0x134 + 1 * 4);
+        vertices[0].coordinates[1].x = extent * -1.0f;
+        vertices[0].coordinates[1].y = extent * -1.0f;
+        vertices[1].coordinates[1].x = extent;
+        vertices[1].coordinates[1].y = extent * -1.0f;
+        vertices[2].coordinates[1].x = extent * -1.0f;
+        vertices[2].coordinates[1].y = extent;
+        vertices[3].coordinates[1].x = extent;
+        vertices[3].coordinates[1].y = extent;
+        }
+    {
+
+        real extent = *(real *)(view + 0x134 + 2 * 4);
+        vertices[0].coordinates[2].x = extent * -1.0f;
+        vertices[0].coordinates[2].y = extent * -1.0f;
+        vertices[1].coordinates[2].x = extent;
+        vertices[1].coordinates[2].y = extent * -1.0f;
+        vertices[2].coordinates[2].x = extent * -1.0f;
+        vertices[2].coordinates[2].y = extent;
+        vertices[3].coordinates[2].x = extent;
+        vertices[3].coordinates[2].y = extent;
+        }
+    for (long stage = 0; stage < 3; ++stage)
+    {
+        real constants[4];
+        constants[0] = *(real *)(view + 0x11c + stage * 8) * *(real *)(input + 0x48 + stage * 4);
+        constants[1] = *(real *)(view + 0x120 + stage * 8) * *(real *)(input + 0x48 + stage * 4);
+        constants[2] = 0.0f;
+        constants[3] = 0.0f;
+        D3DDevice_SetVertexShaderConstantFast(-75 + stage, constants, 1);
+    }
+    byte configuration[0x34] = { 0 };
+    configuration[0] = true;
+    real gain = *(real *)(view + 0x14c) * *(real *)(view + 0x148);
+    real red = *(real *)(view + 0xec) * gain;
+    real green = *(real *)(view + 0xf0) * gain;
+    real blue = *(real *)(view + 0xf4) * gain;
+    *(real *)(configuration + 8) = red < 0.0f ? 0.0f : (red > 1.0f ? 1.0f : red);
+    *(real *)(configuration + 0x14) = green < 0.0f ? 0.0f : (green > 1.0f ? 1.0f : green);
+    *(real *)(configuration + 0x20) = blue < 0.0f ? 0.0f : (blue > 1.0f ? 1.0f : blue);
+    real r = *(real *)(input + 0x98);
+    real g = *(real *)(input + 0x9c);
+    real b = *(real *)(input + 0xa0);
+    *(real *)(configuration + 0x28) = r < 0.0f ? 0.0f : (r > 1.0f ? 1.0f : r);
+    *(real *)(configuration + 0x2c) = g < 0.0f ? 0.0f : (g > 1.0f ? 1.0f : g);
+    *(real *)(configuration + 0x30) = b < 0.0f ? 0.0f : (b > 1.0f ? 1.0f : b);
+    real depth;
+    if (function_3a5c0(configuration, *(real *)(input + 0x80), *(real *)(input + 0x84), 3,
+        false, false, true, true, &depth))
+    {
+        real ratio = g_485ad4.hi / (g_485ad4.hi - g_485ad4.lo);
+        real z = ((ratio * depth - ratio * g_485ad4.lo) / depth) * 16777215.0f;
+        if (z < 0.0f) z = 0.0f;
+        else if (z > 16777215.0f) z = 16777215.0f;
+        real w = (depth / g_485ad4.hi) * 16777215.0f;
+        if (w < 0.0f) w = 0.0f;
+        else if (w > 16777215.0f) w = 16777215.0f;
+        real x = (real)(short)g_48564a;
+        real y = (real)(short)g_485648;
+        real width = (real)view_span_x;
+        real height = (real)view_span_y;
+        g_4670bc = true;
+        function_16b10((s_render_reset_state *)g_485b48);
+        vertices[0].x = x - 0.5f; vertices[0].y = y - 0.5f;
+        vertices[1].x = width + x - 0.5f; vertices[1].y = y - 0.5f;
+        vertices[2].x = x - 0.5f; vertices[2].y = height + y - 0.5f;
+        vertices[3].x = width + x - 0.5f; vertices[3].y = height + y - 0.5f;
+        function_14bc0((short)g_4858b8, 0, true);
+        function_14f60(0, 3);
+        D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, 3);
+        D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, 3);
+        D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSW, 3);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, 1);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, 1);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, 0);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
+        D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
+        D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
+        D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
+        g_4b8308 = 0x10101; D3DDevice_SetRenderState(D3DRS_COLORWRITEENABLE, 0x10101);
+        g_4b82e8 = 1; D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+        g_4b82f4 = 1; D3DDevice_SetRenderState(D3DRS_SRCBLEND, 1);
+        g_4b82f8 = 0x303; D3DDevice_SetRenderState(D3DRS_DESTBLEND, 0x303);
+        g_4b8324 = 0x8006; D3DDevice_SetRenderState(D3DRS_BLENDOP, 0x8006);
+        function_0222d0(D3DRS_BLENDCOLOR, 0xffffff);
+        g_4b82ec = 1; D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 1);
+        function_0222d0(D3DRS_ALPHAFUNC, 0x204);
+        function_0222d0(D3DRS_ALPHAREF, 0);
+        g_4b8448 = 0; D3DDevice_SetRenderState(D3DRS_CULLMODE, 0);
+        g_4b843c = 0; D3DDevice_SetRenderState(D3DRS_STENCILENABLE, 0);
+        g_4b8438 = depth > g_485658 ? 2 : 0; D3DDevice_SetRenderState(D3DRS_ZENABLE, g_4b8438);
+        function_0222d0(D3DRS_ZWRITEENABLE, 0);
+        function_0222d0(D3DRS_ZFUNC, 0x203);
+        g_4b8450 = 0; D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
+        for (long stage = 1; stage < 4; ++stage)
+        {
+            function_143c0(*(long *)(input + 4 + (stage - 1) * 8), 0, (short)stage, 0.0f);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, 1);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, 1);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSW, 1);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, 2);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, 2);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, 2);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
+            D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
+        }
+        function_1cf80();
+        function_1cbe0(0x15, 0, 0);
+        function_1c710(g_51f0f0);
+        D3DDevice_Begin((D3DPRIMITIVETYPE)9);
+        vertex2f(1, vertices[0].x, vertices[0].y);
+        vertex2f(2, vertices[0].coordinates[0].x, vertices[0].coordinates[0].y);
+        vertex2f(3, vertices[0].coordinates[1].x, vertices[0].coordinates[1].y);
+        vertex2f(4, vertices[0].coordinates[2].x, vertices[0].coordinates[2].y);
+        #pragma inline_depth(0)
+        D3DDevice_SetVertexData4f(0, vertices[0].x, vertices[0].y, z, w);
+        #pragma inline_depth(255)
+        vertex2f(1, vertices[1].x, vertices[1].y);
+        vertex2f(2, vertices[1].coordinates[0].x, vertices[1].coordinates[0].y);
+        vertex2f(3, vertices[1].coordinates[1].x, vertices[1].coordinates[1].y);
+        vertex2f(4, vertices[1].coordinates[2].x, vertices[1].coordinates[2].y);
+        #pragma inline_depth(0)
+        D3DDevice_SetVertexData4f(0, vertices[1].x, vertices[1].y, z, w);
+        #pragma inline_depth(255)
+        vertex2f(1, vertices[2].x, vertices[2].y);
+        vertex2f(2, vertices[2].coordinates[0].x, vertices[2].coordinates[0].y);
+        vertex2f(3, vertices[2].coordinates[1].x, vertices[2].coordinates[1].y);
+        vertex2f(4, vertices[2].coordinates[2].x, vertices[2].coordinates[2].y);
+        #pragma inline_depth(0)
+        D3DDevice_SetVertexData4f(0, vertices[2].x, vertices[2].y, z, w);
+        #pragma inline_depth(255)
+        vertex2f(1, vertices[3].x, vertices[3].y);
+        vertex2f(2, vertices[3].coordinates[0].x, vertices[3].coordinates[0].y);
+        vertex2f(3, vertices[3].coordinates[1].x, vertices[3].coordinates[1].y);
+        vertex2f(4, vertices[3].coordinates[2].x, vertices[3].coordinates[2].y);
+        #pragma inline_depth(0)
+        D3DDevice_SetVertexData4f(0, vertices[3].x, vertices[3].y, z, w);
+        #pragma inline_depth(255)
+        D3DDevice_End();
+        D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+        D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+        D3DDevice_SetRenderState(D3DRS_ZENABLE, 2);
+        D3DDevice_SetPixelShader(0);
+    }
+    return true;
+}
+
+
+struct s_245c0_state
+{
+    real range[6];
+    real *histogram;
+    long index;
+    dword frame_count;
+};
+real g_51ecf0[256];
+extern long g_485898;
+__declspec(noinline) void function_245c0(s_245c0_state *state, real *histogram, short mode);
+void __stdcall function_214f0(real passes, real distortion, real strength, real falloff,
+    real scale, bool blend, bool preserve);
+bool function_022710();
+real scenario_ramp_evaluate_current(long index);
+
+// @retail 0x13870
+void __stdcall function_13870(bool finish, bool blur)
+{
+    g_4670bc = true;
+    function_16b10((s_render_reset_state *)g_485b48);
+    if (g_485890)
+    {
+        g_485890->index = g_485600;
+        function_245c0(g_485890, g_51ecf0, 0);
+    }
+    s_245c0_state *state = g_485890;
+    if (blur)
+    {
+        real strength = 0.0f;
+        real extra = 0.0f;
+        function_137a0(&strength, &extra);
+        real distortion = 0.9f;
+        if (state)
+            distortion = (1.0f - (1.0f - state->range[4])) * 0.9f;
+        if (strength > 0.0f)
+        {
+            strength = (extra + 1.0f) * strength * 0.5f;
+            strength = 0.0f > strength ? 0.0f : strength > 1.0f ? 1.0f : strength;
+            if (g_4b9fd0 > 0.0f)
+            {
+                distortion = (g_4b9fd4 - distortion) * g_4b9fd0 + distortion;
+                strength = (g_4b9fd8 - strength) * g_4b9fd0 + strength;
+            }
+            function_214f0(3.992000102996826f, distortion, strength, 0.25f, 0.0f, true, g_485898 == 6);
+        }
+    }
+    if (g_4e0350 && !(g_485898 >= 5 && g_485898 <= 7) && !g_485607 && !g_4850c8 && function_022710())
+    {
+        struct { real weights[4]; s_filter_vector grid[4]; } scratch;
+        s_filter_vector *grid = scratch.grid;
+        real left = (real)g_4b9dd2;
+        real top = (real)g_4b9dd0;
+        real right = (real)g_4b9dd6;
+        real bottom = (real)g_4b9dd4;
+        grid[0].x = left; grid[0].y = top; grid[0].z = 0.0f; grid[0].w = 0.0f;
+        grid[1].x = right; grid[1].y = top; grid[1].z = 1.0f; grid[1].w = 0.0f;
+        grid[2].x = left; grid[2].y = bottom; grid[2].z = 0.0f; grid[2].w = 1.0f;
+        grid[3].x = right; grid[3].y = bottom; grid[3].z = 1.0f; grid[3].w = 1.0f;
+        dword byte_offset = 0;
+        for (long i = 0; i < *(long *)((byte *)g_4e0350 + 0x3d0); ++i, byte_offset += 0x24)
+        {
+                byte *entry = *(byte **)((byte *)g_4e0350 + 0x3d4) + byte_offset;
+                if (*(long *)(entry + 0x14) != NONE &&
+                    (*(short *)(entry + 0x20) != NONE || *(short *)(entry + 0x22) != NONE))
+                {
+                    real *weights = scratch.weights;
+                    weights[0] = 0.0f; weights[1] = 0.0f; weights[2] = 0.0f; weights[3] = 0.0f;
+                    if (*(short *)(entry + 0x20) != NONE)
+                        weights[0] = scenario_ramp_evaluate_current(*(short *)(entry + 0x20));
+                    if (*(short *)(entry + 0x22) != NONE)
+                        weights[1] = scenario_ramp_evaluate_current(*(short *)(entry + 0x22));
+                    if (weights[0] != 0.0f || weights[1] != 0.0f)
+                        function_2d140(*(long *)(entry + 0x14), weights, 2, 2, grid);
+                }
+        }
+    }
+    if (finish) function_2df00();
+}
+
+
+struct s_tag_data;
+real function_13b390(void const *function, real input, real range);
+real function_13bb90(s_tag_data const *function, real input, real range);
+dword function_13bc00(s_tag_data const *function, real input);
+color3f *unpack_color3f(dword pixel, color3f *color);
+dword __cdecl pack_color4f(color4f const *color);
+void function_4ff50(byte const *definition, byte const *state, bool facing, real time,
+    real cosine, real *strength, real *horizontal, real *vertical, real *out);
+
+PRIVATE __forceinline real clamp_callback(real x, real low, real high)
+{
+    return low > x ? low : x > high ? high : x;
+}
+PRIVATE __forceinline real callback_curve(byte const *curve, real time, real range)
+{
+    if (!*(byte *const *)(curve + 4) || *(long const *)curve <= 0) return 0.0f;
+    real value = function_13b390(curve, time, range);
+    byte *data = *(byte **)(curve + 4);
+    if (!(data[1] & 0xf0))
+    {
+        real low = *(real *)(data + 4);
+        real high = *(real *)(data + 8);
+        value = low + (high - low) * clamp_callback(value, 0.0f, 1.0f);
+    }
+    return value;
+}
+
+// @retail 0x4f010
+void __stdcall function_4f010(void *payload)
+{
+    s_501e0 points[256];
+    s_42850_payload *state = (s_42850_payload *)payload;
+    if (state->b == NONE) return;
+    byte *definition = g_4e3b44[state->b & 0xffff].bytes;
+    if (*(long *)(definition + 8) <= 0) return;
+    real fade = 1.0f;
+    vector3f direction;
+    direction.i = g_4b9da0.x - state->position.x;
+    direction.j = g_4b9da0.y - state->position.y;
+    direction.k = g_4b9da0.z - state->position.z;
+    real distance = function_30bf0(&direction);
+    if (*(real *)(definition + 4) > *(real *)definition)
+    {
+        if (0.0f > ((*(real *)(definition + 4) - distance) / (*(real *)(definition + 4) - *(real *)definition))) fade = 0.0f;
+        else if (((*(real *)(definition + 4) - distance) / (*(real *)(definition + 4) - *(real *)definition)) > 1.0f) fade = 1.0f;
+        else fade = ((*(real *)(definition + 4) - distance) / (*(real *)(definition + 4) - *(real *)definition));
+    }
+    fade *= state->width;
+    if (!(fade > 0.0f)) return;
+    g_46713c = true;
+    g_4670bc = true;
+    function_16b10((s_render_reset_state *)g_485b48);
+    for (long group = 0; group < *(long *)(definition + 8); ++group)
+    {
+        byte *entry = *(byte **)(definition + 0xc) + group * 0x98;
+        if (*(long *)(entry + 0xc) > 0)
+        {
+            bool filtered = (bool)((*(dword *)entry >> 3) & 1);
+            real facing = (real)fabs((double)direction.k * state->first.k +
+                (double)direction.j * state->first.j + (double)direction.i * state->first.i);
+            real angle = clamp_callback(1.0f - facing, 0.0f, 1.0f);
+            real time = 1.0f - function_13b390(entry + 0x30, angle, 0.0f);
+            long count = *(long *)(entry + 0xc);
+            real step = 1.0f / (real)(count - 1);
+            real strength = 0.0f, horizontal = 1.0f, vertical = 0.0f;
+            real output[2] = {1.0f, 1.0f};
+            real start = 1.0f, multiplier = 1.0f, inverse = 1.0f, offset = 0.0f;
+            byte *positions = *(long *)(entry + 0x60) == count ? *(byte **)(entry + 0x64) : NULL;
+            if (*(dword *)(entry + 0x5c) & 1)
+            {
+                real first = function_13bb90((s_tag_data *)(entry + 0x18), 0.0f, time);
+                real second = function_13bb90((s_tag_data *)(entry + 0x18), 1.0f, time);
+                if (second > first)
+                {
+                    if (!(first > second * (1.0f / 256.0f))) first = second * (1.0f / 256.0f);
+                }
+                else if (!(second > first * (1.0f / 256.0f))) second = first * (1.0f / 256.0f);
+                if (!(fabs(first) < 0.0001f)) multiplier = (real)pow((double)second / first, (double)step);
+                start = first;
+                if (!(fabs(first - second) < 0.0001f)) inverse = 1.0f / (second - first);
+                offset = 0.0f - first * inverse;
+            }
+            for (long i = 0; i < *(long *)(entry + 0xc); ++i)
+            {
+                s_501e0 *out_point = points + i;
+                real position;
+                if (*(dword *)(entry + 0x5c) & 2) position = (real)i * step;
+                else if (*(dword *)(entry + 0x5c) & 1)
+                {
+                    position = inverse * start + offset;
+                    start *= multiplier;
+                }
+                else if (positions)
+                    position = (1.0f - time) * *(real *)(positions + i * 8) +
+                        *(real *)(positions + i * 8 + 4) * time;
+                else position = 0.0f;
+                real length = state->scale * callback_curve(entry + 0x10, position, time);
+                real width = state->scale * callback_curve(entry + 0x18, position, time);
+                real opacity = callback_curve(entry + 0x20, position, time);
+                function_4ff50(entry, (byte const *)state, i == 0, position, facing, &strength, &horizontal, &vertical, output);
+                real colour_time = function_13b390(entry + 0x28, position, time);
+                color4f colour;
+                if (*(byte **)(entry + 0x2c) && *(long *)(entry + 0x28) > 0)
+                    unpack_color3f(function_13bc00((s_tag_data *)(entry + 0x28), colour_time), (color3f *)&colour.red);
+                else *(color3f *)&colour.red = *(color3f *)&g_4686cc->red;
+                real red = state->third.i * colour.red;
+                colour.red = clamp_callback(red, 0.0f, 1.0f);
+                real green = state->third.j * colour.green;
+                colour.green = clamp_callback(green, 0.0f, 1.0f);
+                real blue = state->third.k * colour.blue;
+                colour.blue = clamp_callback(blue, 0.0f, 1.0f);
+                colour.alpha = clamp_callback(opacity * fade, 0.0f, 1.0f);
+                point3f point;
+                point.x = state->first.i * length + state->position.x;
+                point.y = state->first.j * length + state->position.y;
+                point.z = state->first.k * length + state->position.z;
+                out_point->field_0 = point;
+                out_point->field_c = width * output[0];
+                out_point->field_10 = width * output[1];
+                out_point->field_14 = pack_color4f(&colour);
+            }
+            function_4f7e0(*(long *)(entry + 8), points, *(long *)(entry + 0xc), 0,
+                horizontal, vertical, false, false, filtered);
+        }
+    }
+    if (!g_46713c)
+    {
+        g_4b8474 = 0;
+        D3DDevice_SetVertexShader(0);
+    }
+    g_46713c = true;
+}
+
+
+bool __stdcall function_52020(void *destination, long unknown, void const *source);
+
+// @retail 0x52040
+void __stdcall function_52040(void const *request, void const *vertices)
+{
+    byte const *source = (byte const *)request;
+    if (g_485602 != 0) return;
+    function_0222d0(D3DRS_CULLMODE, 0);
+    function_0222d0(D3DRS_COLORWRITEENABLE, 0x10101);
+    function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
+    function_0222d0(D3DRS_ALPHATESTENABLE, 0);
+    function_0222d0(D3DRS_ZENABLE, 0);
+    function_0222d0(D3DRS_ZBIAS, 0);
+    function_142f0(*(short const *)(source + 0x94));
+    {
+    short width = (short)(g_48564e - g_48564a);
+    short height = (short)(g_48564c - g_485648);
+    real *offset = *(real **)(source + 4);
+    real x = offset ? offset[0] * 2.0f / width : 0.0f;
+    real y = offset ? offset[1] * -2.0f / height : 0.0f;
+    real inverse_x = 1.0f / width, inverse_y = 1.0f / height;
+    real transform[20];
+    transform[0] = inverse_x * 2.0f;
+    transform[1] = 0.0f;
+    transform[2] = 0.0f;
+    transform[3] = x - (inverse_x + 1.0f);
+    transform[4] = 0.0f;
+    transform[5] = inverse_y * -2.0f;
+    transform[6] = 0.0f;
+    transform[7] = inverse_y + y + 1.0f;
+    transform[8] = 0.0f;
+    transform[9] = 0.0f;
+    transform[10] = 0.0f;
+    transform[11] = 0.5f;
+    transform[12] = 0.0f;
+    transform[13] = 0.0f;
+    transform[14] = 0.0f;
+    transform[15] = 1.0f;
+    transform[16] = *(real *)(source + 0x40);
+    transform[17] = *(real *)(source + 0x44);
+    transform[18] = 0.0f;
+    transform[19] = 1.0f;
+    real constants[24];
+    constants[0] = *(real const *)(source + 0x48);
+    constants[1] = *(real const *)(source + 0x4c);
+    constants[2] = *(real const *)(source + 0x50);
+    constants[3] = *(real const *)(source + 0x54);
+    constants[4] = source[8] ? 1.0f : 0.0f;
+    constants[5] = source[8] ? 0.0f : 1.0f;
+    constants[6] = source[9] ? 1.0f : 0.0f;
+    constants[7] = source[9] ? 0.0f : 1.0f;
+    constants[8] = source[0xa] ? 1.0f : 0.0f;
+    constants[9] = source[0xa] ? 0.0f : 1.0f;
+    {
+        real const *coordinates = *(real const *const *)(source + 0x1c);
+        constants[10] = coordinates ? coordinates[0] : 0.0f;
+        constants[11] = coordinates ? coordinates[1] : 0.0f;
+    }
+    {
+        real const *coordinates = *(real const *const *)(source + 0x20);
+        constants[12] = coordinates ? coordinates[0] : 0.0f;
+        constants[13] = coordinates ? coordinates[1] : 0.0f;
+    }
+    {
+        real const *coordinates = *(real const *const *)(source + 0x24);
+        constants[14] = coordinates ? coordinates[0] : 0.0f;
+        constants[15] = coordinates ? coordinates[1] : 0.0f;
+    }
+    constants[16] = *(real const *)(source + 0x28);
+    constants[17] = *(real const *)(source + 0x2c);
+    constants[18] = *(real const *)(source + 0x30);
+    constants[19] = *(real const *)(source + 0x34);
+    constants[20] = *(real const *)(source + 0x38);
+    constants[21] = *(real const *)(source + 0x3c);
+    constants[22] = constants[23] = 0.0f;
+    D3DDevice_SetVertexShaderConstant(81, transform, 5);
+    D3DDevice_SetVertexShaderConstant(86, constants, 6);
+    }
+    short stage = 0;
+    do
+    {
+        byte *bitmap = *(byte **)(source + 0xc + stage * 4);
+        if (!bitmap) break;
+        g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, 0.0f);
+        g_485af4[stage] = *(short *)(bitmap + 4);
+        g_485b04[stage] = *(short *)(bitmap + 6);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, source[0x18 + stage] ? 1 : 3);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, source[0x18 + stage] ? 1 : 3);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, source[0x96] ? 1 : 2);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, source[0x96] ? 1 : 2);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, source[0x96] ? 1 : 2);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
+        D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
+        ++stage;
+    } while (stage < 3);
+    function_1c590((s_shader_cache *)g_51f0f0,
+        *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x74), 0);
+    // Retail expands descriptor selection here, but calls 1ccb0 at the draw tail.
+    function_1c6b0(g_51f0f0);
+    byte const *descriptor = g_43f408[36];
+    *(byte const **)(g_51f0f0 + 0x8c) = descriptor;
+    if (*(byte const **)(g_51f0f0 + 0xcc) != descriptor)
+        g_51f0f0[0x20c] = 1;
+    function_1c710(g_51f0f0);
+    function_1c710(g_51f0f0);
+    byte const *record = *(byte const *const *)source;
+    if (record)
+    {
+        function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
+        function_0222d0(D3DRS_SRCBLEND, 0x8001);
+        function_0222d0(D3DRS_DESTBLEND, 0x302);
+        function_0222d0(D3DRS_BLENDCOLOR, *(dword const *)(record + 0x14));
+        function_0222d0(D3DRS_BLENDOP, 0x8006);
+        memset(&g_484f68, 0, sizeof(g_484f68));
+        D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 4);
+        g_484f68.PSTextureModes = 1;
+        g_484f68.PSCombinerCount = 0x11104;
+        g_484f68.PSConstant0[0] = *(dword const *)record;
+        real scaled = *(real const *)(record + 0x18) * 8.0f;
+        real denominator = scaled > 1.0f ? scaled : 1.0f;
+        real alpha = 1.0f / denominator;
+        real alpha_scale = 255.0f;
+        long quantized;
+        __asm { fld alpha }
+        __asm { fld alpha_scale }
+        __asm { fmulp st(1), st(0) }
+        __asm { fistp quantized }
+        g_484f68.PSConstant1[0] = (*(dword const *)(record + 4) & 0xffffff) | ((dword)quantized << 24);
+        g_484f68.PSAlphaInputs[0] = 0x12081208;
+        g_484f68.PSRGBInputs[0] = 0x1120e820;
+        g_484f68.PSAlphaOutputs[0] = g_484f68.PSRGBOutputs[0] = 0x20c00;
+        g_484f68.PSConstant0[1] = *(dword const *)record;
+        g_484f68.PSConstant1[1] = *(dword const *)(record + 4);
+        g_484f68.PSAlphaInputs[1] = 0x6c200000;
+        g_484f68.PSAlphaOutputs[1] = 0xc0;
+        g_484f68.PSRGBInputs[1] = 0x3c011c02;
+        g_484f68.PSRGBOutputs[1] = 0xc00;
+        g_484f68.PSConstant0[2] = *(dword const *)record;
+        g_484f68.PSConstant1[2] = *(dword const *)(record + 0xc);
+        g_484f68.PSAlphaInputs[2] = 0x0820b220;
+        g_484f68.PSAlphaOutputs[2] = 0xc00;
+        g_484f68.PSRGBInputs[2] = 0x0c201c02 | (record[0x10] ? 0xe0 : 0);
+        g_484f68.PSRGBOutputs[2] = 0xc00;
+        g_484f68.PSConstant0[3] = *(dword const *)(record + 8);
+        g_484f68.PSConstant1[3] = *(dword const *)(record + 0x14);
+        g_484f68.PSAlphaInputs[3] = 0x12201120;
+        g_484f68.PSAlphaOutputs[3] = 0x4c00;
+        g_484f68.PSRGBInputs[3] = 0x0c200120;
+        g_484f68.PSRGBOutputs[3] = 0x4c00;
+        g_484f68.PSFinalCombinerInputsABCD = 0x0c180000;
+        g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+    }
+    else if (*(void const *const *)(source + 0xc))
+    {
+        memset(&g_484f68, 0, sizeof(g_484f68));
+        g_484f68.PSTextureModes = (((*(void **)(source + 0x14) != 0) << 5) |
+            (*(void **)(source + 0x10) != 0)) << 5 | (*(void **)(source + 0xc) != 0);
+        color4f colors[3];
+        color3f const *color0 = *(color3f const *const *)(source + 0x58);
+        memcpy(&colors[0].red, color0 ? color0 : (color3f const *)g_468710, sizeof(color3f));
+        color3f const *color1 = *(color3f const *const *)(source + 0x60);
+        memcpy(&colors[1].red, color1 ? color1 : (color3f const *)g_468710, sizeof(color3f));
+        color3f const *color2 = *(color3f const *const *)(source + 0x68);
+        memcpy(&colors[2].red, color2 ? color2 : (color3f const *)g_468710, sizeof(color3f));
+        real const *alpha0 = *(real const *const *)(source + 0x84);
+        colors[0].alpha = alpha0 ? *alpha0 : 1.0f;
+        real const *alpha1 = *(real const *const *)(source + 0x88);
+        colors[1].alpha = alpha1 ? *alpha1 : 1.0f;
+        real const *alpha2 = *(real const *const *)(source + 0x8c);
+        colors[2].alpha = alpha2 ? *alpha2 : 1.0f;
+        g_484f68.PSConstant0[0] = pack_color4f(&colors[0]);
+        g_484f68.PSConstant1[0] = pack_color4f(&colors[1]);
+        g_484f68.PSConstant0[1] = pack_color4f(&colors[2]);
+        g_484f68.PSConstant0[4] = pack_color4f((color4f *)(source + 0x70));
+        g_484f68.PSConstant0[5] = pack_color4f((color4f *)(source + 0x70));
+        g_484f68.PSConstant0[6] = pack_color4f((color4f *)(source + 0x70));
+        g_484f68.PSConstant0[7] = pack_color4f((color4f *)(source + 0x70));
+        g_484f68.PSRGBOutputs[0] = 0x89;
+        g_484f68.PSAlphaOutputs[0] = 0x89;
+        g_484f68.PSRGBInputs[0] = 0x8010902;
+        g_484f68.PSAlphaInputs[0] = 0x18111912;
+        g_484f68.PSRGBInputs[1] = 0xa010804;
+        g_484f68.PSRGBOutputs[1] = 0xac;
+        g_484f68.PSAlphaInputs[1] = 0x1a111814;
+        g_484f68.PSAlphaOutputs[1] = 0xac;
+        short count = 2;
+        if (*(void const *const *)(source + 0x10))
+        {
+            switch (*(short const *)(source + 0x90))
+            {
+            case 0:
+                g_484f68.PSRGBInputs[2] = 0xc200920;
+                g_484f68.PSAlphaInputs[2] = 0x1c201920;
+                g_484f68.PSRGBOutputs[2] = 0xc00;
+                g_484f68.PSAlphaOutputs[2] = 0xc00;
+                break;
+            case 1:
+                g_484f68.PSRGBInputs[2] = 0xc090000;
+                g_484f68.PSAlphaInputs[2] = 0x1c190000;
+                g_484f68.PSRGBOutputs[2] = 0xc0;
+                g_484f68.PSAlphaOutputs[2] = 0xc0;
+                break;
+            case 2:
+                g_484f68.PSRGBInputs[2] = 0xc20e920;
+                g_484f68.PSAlphaInputs[2] = 0x1c20f920;
+                g_484f68.PSRGBOutputs[2] = 0xc00;
+                g_484f68.PSAlphaOutputs[2] = 0xc00;
+                break;
+            case 3:
+                g_484f68.PSRGBInputs[2] = 0xc090000;
+                g_484f68.PSAlphaInputs[2] = 0x1c190000;
+                g_484f68.PSRGBOutputs[2] = 0x100c0;
+                g_484f68.PSAlphaOutputs[2] = 0x100c0;
+                break;
+            case 4:
+                g_484f68.PSRGBInputs[2] = 0xc090000;
+                g_484f68.PSAlphaInputs[2] = 0x1c190000;
+                g_484f68.PSRGBOutputs[2] = 0x20c0;
+                g_484f68.PSAlphaOutputs[2] = 0xc0;
+                break;
+            case 5:
+                g_484f68.PSRGBInputs[2] = 0x1920b820;
+                g_484f68.PSAlphaInputs[2] = 0x820a920;
+                g_484f68.PSRGBOutputs[2] = 0xc00;
+                g_484f68.PSAlphaOutputs[2] = 0xc00;
+                g_484f68.PSAlphaInputs[3] = 0x1c1c0c0c;
+                g_484f68.PSAlphaOutputs[3] = 0x24c00;
+                g_484f68.PSRGBInputs[3] = 0x0;
+                g_484f68.PSRGBOutputs[3] = 0x0;
+                g_484f68.PSAlphaInputs[4] = 0x5c5c;
+                g_484f68.PSAlphaOutputs[4] = 0x4d00;
+                g_484f68.PSRGBInputs[4] = 0x0;
+                g_484f68.PSRGBOutputs[4] = 0x0;
+                g_484f68.PSAlphaInputs[5] = 0x0;
+                g_484f68.PSAlphaOutputs[5] = 0xc00;
+                g_484f68.PSRGBInputs[5] = 0x1ca01da0;
+                g_484f68.PSRGBOutputs[5] = 0xc00;
+                count = 5;
+                break;
+            }
+            ++count;
+        }
+        if (*(void const *const *)(source + 0x14))
+        {
+            switch (*(short const *)(source + 0x92))
+            {
+            case 0:
+                g_484f68.PSRGBInputs[count] = (*(short const *)(source + 0x90) == 5 ? (0x0c010a00 | (source[0x80] ? 4 : 0x20)) : 0x0c200a20);
+                g_484f68.PSAlphaInputs[count] = 0x1c201a20;
+                g_484f68.PSRGBOutputs[count] = 0xc00;
+                g_484f68.PSAlphaOutputs[count] = 0xc00;
+                break;
+            case 1:
+                g_484f68.PSRGBInputs[count] = 0xc0a0000;
+                g_484f68.PSAlphaInputs[count] = 0x1c1a0000;
+                g_484f68.PSRGBOutputs[count] = 0xc0;
+                g_484f68.PSAlphaOutputs[count] = 0xc0;
+                break;
+            case 2:
+                g_484f68.PSRGBInputs[count] = 0xc20ea20;
+                g_484f68.PSAlphaInputs[count] = 0x1c20fa20;
+                g_484f68.PSRGBOutputs[count] = 0xc00;
+                g_484f68.PSAlphaOutputs[count] = 0xc00;
+                break;
+            case 3:
+                g_484f68.PSRGBInputs[count] = 0xc0a0000;
+                g_484f68.PSAlphaInputs[count] = 0x1c1a0000;
+                g_484f68.PSRGBOutputs[count] = 0x100c0;
+                g_484f68.PSAlphaOutputs[count] = 0x100c0;
+                break;
+            case 4:
+                g_484f68.PSRGBInputs[count] = 0xc0a0000;
+                g_484f68.PSAlphaInputs[count] = 0x1c1a0000;
+                g_484f68.PSRGBOutputs[count] = 0x20c0;
+                g_484f68.PSAlphaOutputs[count] = 0xc0;
+                break;
+            }
+            ++count;
+        }
+        g_484f68.PSCombinerCount = 0x11100 | count;
+        g_484f68.PSFinalCombinerInputsABCD = 0xc;
+        g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+    }
+    D3DDevice_SetPixelShaderProgram(&g_484f68);
+    function_0222d0(D3DRS_CULLMODE, 0x901);
+    function_1c590((s_shader_cache *)g_51f0f0,
+        *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x74), 0);
+    function_1ccb0(36);
+    function_1c710(g_51f0f0);
+    function_1cf50();
+    function_4b220(20, 0, 3, 4, (t_4b220_fill)function_52020, (void *)vertices);
+    D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
+}
+
+
+// @retail 0x52d40
+void function_52d40(long bitmap_index, byte *shader, long tag, dword flags)
+{
+    switch (*(short *)(shader + 0x24))
+    {
+    case 1:
+        break;
+    default:
+        return;
+    }
+    bool extra_combiners = (shader[0x28] & 2) != 0;
+    function_143c0(tag, (short)bitmap_index, 0, 0.0f);
+    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, (shader[0x2e] & 2) | 1);
+    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, ((shader[0x2e] & 4) | 2) >> 1);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, shader[0x2e] & 1 ? 1 : 2);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, shader[0x2e] & 1 ? 1 : 2);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, shader[0x2e] & 1 ? 1 : 2);
+    function_0222d0(D3DRS_CULLMODE, 0);
+    function_0222d0(D3DRS_COLORWRITEENABLE, 0x10101);
+    function_0222d0(D3DRS_ALPHABLENDENABLE, 1);
+    function_0222d0(D3DRS_ALPHATESTENABLE, 0);
+    function_0222d0(D3DRS_STENCILENABLE, 0);
+    function_0222d0(D3DRS_ZENABLE, 2);
+    function_0222d0(D3DRS_ZWRITEENABLE, 0);
+    function_0222d0(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+    function_0222d0(D3DRS_ZBIAS, 0);
+    function_142f0(*(short *)(shader + 0x2a));
+    if (!(fabs(g_4b8494 - 1.0f) < 0.0001f))
+    {
+        D3DDevice_SetStipple(function_1c290(1.0f));
+        g_4b8494 = 1.0f;
+    }
+    function_1c590((s_shader_cache *)g_51f0f0,
+        *(long *)(*(byte **)(g_485a80 + 0x5c) + 0x24), 0);
+    real transform[12] = {1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    if (flags & 0x20)
+    {
+        transform[0] = g_4856c4[0];
+        transform[1] = g_4856c4[3];
+        transform[2] = g_4856c4[6];
+        transform[3] = g_485618.position.x;
+        transform[4] = g_4856c4[1];
+        transform[5] = g_4856c4[4];
+        transform[6] = g_4856c4[7];
+        transform[7] = g_485618.position.y;
+        transform[8] = g_4856c4[2];
+        transform[9] = g_4856c4[5];
+        transform[10] = g_4856c4[8];
+        transform[11] = g_485618.position.z;
+    }
+    D3DDevice_SetVertexShaderConstant(78, transform, 3);
+    memset(&g_484f68, 0, sizeof(g_484f68));
+    g_484f68.PSAlphaInputs[0] = 0x18202015;
+    g_484f68.PSAlphaOutputs[0] = 0xc4;
+    g_484f68.PSFinalCombinerInputsABCD = 0xc;
+    g_484f68.PSFinalCombinerInputsEFG = 0x1c00;
+    short count;
+    if (extra_combiners)
+    {
+        g_484f68.PSRGBInputs[0] = 0x08080000;
+        g_484f68.PSRGBOutputs[0] = 0xc0;
+        g_484f68.PSRGBInputs[1] = 0x0c0c0000;
+        g_484f68.PSRGBOutputs[1] = 0xc0;
+        g_484f68.PSRGBInputs[2] = 0x250c0508;
+        g_484f68.PSRGBOutputs[2] = 0xc00;
+        count = 3;
+    }
+    else
+    {
+        g_484f68.PSRGBInputs[0] = 0x08050000;
+        g_484f68.PSRGBOutputs[0] = 0xc0;
+        count = 1;
+    }
+    g_484f68.PSTextureModes = 1;
+    if (!(flags & 4))
+    {
+        switch (*(short *)(shader + 0x2a))
+        {
+        case 0:
+            g_484f68.PSAlphaInputs[count] = 0x1c140000;
+            g_484f68.PSAlphaOutputs[count] = 0xc00;
+            break;
+        case 1: case 5:
+            g_484f68.PSRGBInputs[count] = 0x0c142034;
+            g_484f68.PSRGBOutputs[count] = 0xc00;
+            break;
+        case 2:
+            g_484f68.PSRGBInputs[count] = 0x0c14a034;
+            g_484f68.PSRGBOutputs[count] = 0xc00;
+            break;
+        case 7:
+            g_484f68.PSAlphaInputs[count] = 0x1c140000;
+            g_484f68.PSAlphaOutputs[count] = 0xc00;
+        case 3: case 4: case 6:
+            g_484f68.PSRGBInputs[count] = 0x0c140000;
+            g_484f68.PSRGBOutputs[count] = 0xc00;
+            break;
+        }
+        ++count;
+    }
+    g_484f68.PSCombinerCount = count;
+    function_15180(&g_484f68);
+}
+// Disabled: prior callback activation loses matched 0x12b2a0; counter storage is shared.
+#if 0
+extern dword g_55e6b8;
+
+// Retail 0x14280
+long __fastcall function_14280(void const *data)
+{
+    if (++g_485ab0.low == 0)
+        ++g_485ab0.high;
+    long result = 0;
+    if (((dword const *)data)[1] != g_55e6b8)
+    {
+        result = g_485ab0.low - g_485ab8.low;
+        g_485ab8 = g_485ab0;
+        g_55e6b8 = ((dword const *)data)[1];
+    }
+    return result;
+}
+
+struct s_font_cache_entry_1eff0
+{
+    long character_index;
+    long value;
+};
+struct s_font_cache_state_1eff0
+{
+    byte active;
+    byte unknown01[5];
+    short value06;
+    short value08;
+    byte unknown0a[2];
+    byte *bitmap;
+    s_font_cache_entry_1eff0 entries[512];
+};
+byte *function_1358e0(short width, short height, short depth, short levels, short format, word flags);
+
+// Retail 0x1eff0
+bool function_1eff0()
+{
+    bool result = true;
+    byte *bitmap = function_1358e0(256, 256, 1, 0, 9, 0x810);
+    if (bitmap)
+    {
+        memset(&g_4b62a0, 0, sizeof(g_4b62a0));
+        if (function_1d000(bitmap))
+        {
+            g_4b62a0.bitmap = bitmap;
+            g_4b62a0.active = true;
+            g_4b62a0.value06 = 1;
+            g_4b62a0.value08 = 1;
+        }
+        else
+            result = false;
+    }
+    else
+        result = false;
+    long index = 0;
+    do
+    {
+        memset(&g_4b62a0.entries[index], 0, sizeof(g_4b62a0.entries[index]));
+        g_4b62a0.entries[index].character_index = NONE;
+        index++;
+    } while (index < 512);
+    return result;
+}
+#endif
+
+
+
+#include "font_render_cache.h"
+extern s_record_pool *g_54d574;
+
+// @retail 0x1f2b0
+void function_1f2b0()
+{
+    if (g_4b62a0)
+        for (long i = 0; i < 512; i += 4)
+        {
+            if ((dword)g_4b62b0[i].character_index != 0xffffffffu)
+            {
+                long index = i;
+                if (index != NONE)
+                {
+                    long character = g_4b62b0[index].character_index;
+                    if (character != NONE)
+                        *(long *)(g_54d574->data + (character & 0xffff) * 0x38 + 0x34) = NONE;
+                    g_4b62b0[index].character_index = NONE;
+                }
+            }
+            if ((dword)g_4b62b0[i + 1].character_index != 0xffffffffu)
+            {
+                long index = i + 1;
+                if (index != NONE)
+                {
+                    long character = g_4b62b0[index].character_index;
+                    if (character != NONE)
+                        *(long *)(g_54d574->data + (character & 0xffff) * 0x38 + 0x34) = NONE;
+                    g_4b62b0[index].character_index = NONE;
+                }
+            }
+            if ((dword)g_4b62b0[i + 2].character_index != 0xffffffffu)
+            {
+                long index = i + 2;
+                if (index != NONE)
+                {
+                    long character = g_4b62b0[index].character_index;
+                    if (character != NONE)
+                        *(long *)(g_54d574->data + (character & 0xffff) * 0x38 + 0x34) = NONE;
+                    g_4b62b0[index].character_index = NONE;
+                }
+            }
+            if ((dword)g_4b62b0[i + 3].character_index != 0xffffffffu)
+            {
+                long index = i + 3;
+                if (index != NONE)
+                {
+                    long character = g_4b62b0[index].character_index;
+                    if (character != NONE)
+                        *(long *)(g_54d574->data + (character & 0xffff) * 0x38 + 0x34) = NONE;
+                    g_4b62b0[index].character_index = NONE;
+                }
+            }
+        }
+}
+
+
+
+struct s_record_source;
+
+struct s_41c80_state;
+void function_41c80(short type, s_41c80_state const *state);
+void function_176bb0();
+void __stdcall function_174220(bool value);
+void function_176cb0();
+void function_41640();
+
+// @retail 0x40e90
+void function_40e90(long mode)
+{
+    long mask;
+    if (!mode) mask = NONE;
+    else mask = mode == 2 ? 0x10 : 0x20;
+    s_2cb30_state *state = g_4c0b78.state;
+    long group = state->active;
+    if (!group)
+    {
+        g_4c1a48[0].count = 0;
+        g_4c1a48[0].flags = 0;
+        g_4c1a48[0].first = 0;
+        g_4b6280.count = 0;
+        g_4b6280.unknown04 = 0;
+    }
+    else
+    {
+        g_4c1a48[1].count = 0;
+        g_4c1a48[1].flags = 0;
+        g_4c1a48[1].first = 0;
+        g_4c1a48[2].count = 0;
+        g_4c1a48[2].flags = 0;
+        g_4c1a48[2].first = 0;
+    }
+    function_41c80((short)group, (s_41c80_state const *)state);
+    function_44ac0(group, mask, 0x1f);
+    if (!group)
+    {
+        if (g_4e6948->state != 3)
+        {
+            function_176bb0();
+            function_174220(false);
+            function_420a0();
+            function_42760(mask);
+            function_41640();
+        }
+        else
+        {
+            function_176cb0();
+            function_420a0();
+            function_42760(mask);
+            function_41640();
+        }
+    }
+}
+
+
+
+struct s_glyph_header_1f5c0
+{
+    word value00, pixels_size;
+    short width, height;
+    byte unknown08[8];
+};
+// The two words share the full-width cursor read used before masking the ring index.
+
+
+bool font_cache_character_copy_pixels(long character, void *pixels);
+
+PRIVATE inline void glyph_remove_first_1f5c0(bool *removed)
+{
+    long first = g_4b62a2;
+    *removed = true;
+    if (first != NONE)
+    {
+        long character = g_4b62b0[first].character_index;
+        if (character != NONE)
+            *(long *)(g_54d574->data + (character & 0xffff) * 0x38 + 0x34) = NONE;
+        g_4b62b0[first].character_index = NONE;
+    }
+    g_4b62a2 = (g_4b62a2 + 1) & 0x1ff;
+}
+
+// @retail 0x1f5c0
+void __stdcall function_1f5c0(long character_index)
+{
+    word pixels[4096];
+    if (character_index != NONE
+        && *(long *)(g_54d574->data + (character_index & 0xffff) * 0x38 + 0x34) != NONE)
+        return;
+    byte *character = g_54d574->data + (character_index & 0xffff) * 0x38;
+    s_glyph_header_1f5c0 *volatile header = 0;
+    if (*(long *)(character + 0x10) == 4)
+        header = (s_glyph_header_1f5c0 *)(character + 0x1c);
+    bool removed = false;
+    if (header->width + g_4b62a4.fields.x > 256)
+    {
+        g_4b62a8 += g_4b62aa;
+        g_4b62a4.fields.x = 1;
+        g_4b62aa = 0;
+    }
+    if (header->height + g_4b62a8 > 256)
+    {
+        g_4b62a8 = 1;
+        g_4b62a4.fields.x = 1;
+        g_4b62aa = 0;
+        while (g_4b62a2 != g_4b62a4.fields.next && g_4b62b0[g_4b62a2].position.y > 0)
+            glyph_remove_first_1f5c0(&removed);
+    }
+    if (header->height + 1 > g_4b62aa)
+    {
+        long old_end = g_4b62a8 + g_4b62aa;
+        long new_end = g_4b62a8 + header->height;
+        while (g_4b62a2 != g_4b62a4.fields.next
+            && g_4b62b0[g_4b62a2].position.y >= old_end
+            && g_4b62b0[g_4b62a2].position.y < new_end)
+            glyph_remove_first_1f5c0(&removed);
+        g_4b62aa = header->height + 1;
+    }
+    if (((g_4b62a4.pair + 1) & 0x1ff) == g_4b62a2)
+        glyph_remove_first_1f5c0(&removed);
+    long slot = g_4b62a4.fields.next;
+    if (character_index != NONE)
+        *(long *)(g_54d574->data + (character_index & 0xffff) * 0x38 + 0x34) = slot;
+    g_4b62b0[slot].character_index = character_index;
+    g_4b62b0[slot].position.x = g_4b62a4.fields.x;
+    g_4b62b0[slot].position.y = g_4b62a8;
+    font_cache_character_copy_pixels(character_index, pixels);
+    long pitch;
+    byte *destination = (byte *)function_1d5e0(g_4b62ac, removed ? 1 : 0, &pitch);
+    if (destination)
+    {
+        long left = (long)g_4b62b0[slot].position.x - 1;
+        short first_x = (short)(left > 0 ? left : 0);
+        long top = (long)g_4b62b0[slot].position.y - 1;
+        short first_y = (short)(top > 0 ? top : 0);
+        long right = (long)g_4b62b0[slot].position.x + header->width + 1;
+        long width = (long)*(short *)((byte *)g_4b62ac + 4) - 1;
+        short end_x = (short)(right <= width ? right : width);
+        long bottom = (long)g_4b62b0[slot].position.y + header->height + 1;
+        long height = (long)*(short *)((byte *)g_4b62ac + 6) - 1;
+        short end_y = (short)(bottom <= height ? bottom : height);
+        for (long y = first_y; y < end_y; y++)
+            for (long x = first_x; x < end_x; x++)
+                *(word *)(destination + y * pitch + x * 2) = 0x0fff;
+        long source = 0;
+        for (long y = 0; y < header->height; y++)
+        {
+            word *row = (word *)(destination + (g_4b62b0[slot].position.y + y) * pitch + g_4b62b0[slot].position.x * 2);
+            for (long x = 0; x < header->width; x++) row[x] = pixels[source + x];
+            source += header->width;
+        }
+        bitmap_predict_inline((s_bitmap_predict_view *)g_4b62ac, 7);
+    }
+    g_4b62a4.fields.x += header->width + 1;
+    g_4b62a4.fields.next = (g_4b62a4.pair + 1) & 0x1ff;
+}
+
+
+
+
+void function_1f2b0();
+
+// @retail 0x226c0
+void function_226c0()
+{
+    function_1f2b0();
+    g_485a80 = 0;
+}
+
+
+
+extern byte g_4b569d;
+void function_014a60();
+void function_01d2a0();
+struct s_type_7ba8e9;
+void function_1359d0(s_type_7ba8e9 *bitmap);
+void texture_cache_dispose();
+void geometry_cache_dispose();
+
+// @retail 0x141c0
+void function_141c0()
+{
+    if (g_5093e0)
+    {
+        memset(g_5093e0, 0, 0x3fc);
+        if (g_4b5690 && !g_4b569d) g_4b569d = 1;
+    }
+    function_14980();
+    function_014a60();
+    function_01d2a0();
+    function_1e310();
+    if (g_4b62a0)
+    {
+        function_1f2b0();
+        function_1359d0((s_type_7ba8e9 *)g_4b62ac);
+        g_4b62a0 = 0;
+    }
+    texture_cache_dispose();
+    geometry_cache_dispose();
+    if (g_5093b0)
+    {
+        D3DDevice_Release();
+        g_5093b0 = 0;
+    }
+    if (g_509350) g_509350 = 0;
+}
+
+
+// Disabled: retail clears the contiguous 0x40c0-byte state at 0x51f408; its owner declares split globals.
+#if 0
+struct s_5093e4;
+extern s_5093e4 *g_5093e4;
+struct s_33a0b_view;
+extern s_33a0b_view *g_485a58;
+void function_20e50(long index);
+
+// Retail 0x22590
+void function_22590()
+{
+    byte *globals = (byte *)g_4e034c;
+    g_485a80 = *(long *)(globals + 0x108) ? *(byte **)(globals + 0x10c) : 0;
+    function_1f2b0();
+    s_timed_effect_globals *effects = g_5093e0;
+    if (effects)
+    {
+        memset(effects, 0, 0x3fc);
+        effects->unknown180[0] = 1.0f;
+        effects->unknown180[1] = 1.0f;
+        effects->unknown180[2] = 1.0f;
+        effects->unknown180[3] = 1.0f;
+        effects->unknown3f8 = 1.0f;
+    }
+    *(long *)g_50934c = 0;
+    *(real *)(g_50934c + 0x10) = 0.5f;
+    *(real *)(g_50934c + 0x18) = 0.5f;
+    *(real *)(g_50934c + 0x28) = 0.5f;
+    *(real *)(g_50934c + 0x30) = 0.5f;
+    byte *view = (byte *)g_5093e4;
+    view[0] = view[1] = 0;
+    for (long i = 4; i <= 0x14; i += 4) *(real *)(view + i) = -1.0f;
+    view[0x18] = 1;
+    view[0x19] = 0;
+    *(real *)(view + 0x1c) = -1.0f;
+    *(real *)(view + 0x20) = -1.0f;
+    view[0x1a] = 0;
+    memset(&g_51f408, 0, sizeof(g_render_state_storage));
+    for (long i = 0; i < 0x1ff; ++i) function_20e50(i);
+    if (effects) *(real *)effects->unknown190 = 0.0f;
+    g_485a58 = 0;
+}
+#endif
+
+// Disabled: passing the shared glyph rectangle address to 1f3a0 is prohibited.
+#if 0
+extern long g_4e28f4[11];
+extern s_record_pool *g_54d574;
+long function_140b20(long font_index, long character);
+void function_140900(long character, long font, long priority);
+void __stdcall function_1f5c0(long character);
+
+// Retail 0x1f490
+void __stdcall function_1f490(long unused, long font, long character, long color, long shadow,
+    real x, real y, real u, real v, real width, real height, real scale, long callback, long context)
+{
+    long index = function_140b20(g_4e28f4[font], character);
+    if (index == NONE)
+    {
+        function_140900(character, font, 3);
+        index = function_140b20(g_4e28f4[font], character);
+        if (index == NONE) return;
+    }
+    function_1f5c0(index);
+    if (index == NONE) return;
+    long entry = *(long *)(g_54d574->data + (index & 0xffff) * 0x38 + 0x34);
+    if (entry == NONE) return;
+    s_font_render_entry *rectangle = &g_4b62b0[entry];
+    bool draw_shadow = ((dword)shadow & 0xff000000) > 0;
+    do
+    {
+        real offset = draw_shadow ? scale : 0.0f;
+        function_1f3a0((short const *)rectangle, x + offset, y + offset, (long)width, (long)height,
+            (short)(long)u, (short)(long)v, scale, draw_shadow ? shadow : color,
+            (t_1f3a0_callback)callback, (void *)context);
+        if (!draw_shadow) break;
+        draw_shadow = false;
+    } while (true);
+}
+#endif
+
+
+extern dword g_5093b4;
+dword g_5093b8;
+dword __cdecl pack_color3f(color3f const *color);
+void function_25a10(vector3f const *direction, point3f const *position, byte const *state);
+void __stdcall function_14b60(dword flags, dword color, real depth, byte stencil);
+
+// @retail 0x132d0
+void __stdcall function_132d0(s_frame_view_2c560 const *frame)
+{
+    memcpy(g_frame_storage.data, frame, sizeof(*frame));
+    switch (frame->mode)
+    {
+    case 0: g_4858b8 = 0; break;
+    case 1: g_4858b8 = 18; break;
+    default: g_4858b8 = 0; break;
+    }
+    function_15370(0);
+    g_5093b4 = 0x901;
+    g_5093b8 = 0x900;
+    function_12fa0(frame->view, (real const *)frame->projection, frame->scaled, frame->mode);
+    if (*(short *)(g_frame_storage.data + 8))
+    {
+        dword color = 0;
+        dword flags = 1;
+        if (!g_4670cd)
+        {
+            flags = 0x61;
+            color = pack_color3f((color3f const *)(g_frame_storage.data + 0xc));
+        }
+        function_14bc0((short)g_4858b8, 0, true);
+        function_14b60(flags, color, 1.0f, 0);
+    }
+    else function_14bc0((short)g_4858b8, 0, true);
+    D3DDevice_SetVertexData4f(15, 0.0f, 0.5f, 1.0f, 42.0f);
+    function_0222d0(D3DRS_FILLMODE, D3DFILL_SOLID);
+    g_4670bc = 1;
+    function_16b10((s_render_reset_state *)g_485b48);
+    if (((byte const *)frame)[0x26c])
+    {
+        memcpy(&g_48574c, ((byte const *)frame) + 0x14c, 0x120);
+        function_25a10(&g_4b9dac, &g_4b9da0, (byte const *)&g_48574c);
+    }
+}
+
+
+
+// Disabled: retail publishes the persistent shared render-source address and needs the blocked 14b60 flags interface.
+
+extern byte g_4ba022, g_4ba023, g_4ba024;
+extern long g_467130, g_4858b4;
+extern void *g_467134;
+extern s_record_sources *g_467138;
+extern dword g_4ba014;
+void function_15680(short mode);
+void function_0495e0();
+void function_0496f0();
+
+extern bool g_485a74;
+
+// @retail 0x44370
+bool __stdcall function_44370(long mode)
+{
+    long group = g_43fa1c[mode].group;
+    s_render_mode_44370 const *settings = &g_43fa1c[mode];
+    s_record_sources *sources = &g_4c1a48[group];
+    bool enabled = true;
+    if ((1 << mode) & 0xbffdee) enabled = (sources->flags & (1 << mode)) != 0;
+    if (enabled)
+    {
+        if (mode == 2) enabled = g_4ba023 != 0;
+        else if (mode == 8) enabled = g_4ba022 != 0;
+        else if (mode == 17) enabled = g_4ba024 != 0;
+    }
+    if (enabled)
+    {
+        g_467130 = mode;
+        g_467134 = (void *)group;
+        g_467138 = sources;
+        long target = settings->target;
+        if (target == NONE)
+            target = mode == 10 ? ((bool)((g_4ba014 >> 4) & 1) && !(bool)((g_4ba014 >> 5) & 1) ? 10 : 9) : g_4858b8;
+        g_4858b4 = target;
+        function_14bc0((short)target, 0, true);
+        if (settings->clear_flags)
+        {
+            if (!g_485a75 && !g_485a76)
+                function_14b60(settings->clear_flags, settings->field_8_7, settings->clear_depth, settings->clear_stencil);
+        }
+        else if (mode == 10)
+        {
+            if ((bool)((g_4ba014 >> 4) & 1) && !(bool)((g_4ba014 >> 5) & 1)) function_14b60(1, 0xffffff, 0.0f, 0);
+            else function_14b60(0x60, 0, 1.0f, 0);
+        }
+        function_15680(g_485898 >= 4 && g_485898 <= 7 ? 0 : settings->cull_mode);
+        switch (mode)
+        {
+        case 3: case 16: enabled = true; break;
+        case 10: enabled = true; function_0495e0(); break;
+        case 11: enabled = true; function_0496f0(); break;
+        case 17: g_485a74 = 1; enabled = true; break;
+        }
+    }
+    else g_467130 = 0;
+    function_15370(mode == 3 || mode == 1);
+    return enabled;
+}
+
+
+
+
+// Disabled: retail clears split shared render globals and passes their addresses into allocation/reset helpers.
+#if 0
+// Retail 0x12560
+void function_12560()
+{
+    if (g_485a88) return;
+    function_169f0();
+    function_16a30(g_485ac5 && g_485ac6 ? 0x20 : 0x30,
+        g_485ac5 && g_485ac6 ? 0x18 : 0x24, 1.0f);
+    D3D__CommandBufferSize = 0x100000;
+    D3D__SegmentSize = 0x8000;
+    bool success = function_128c0(&g_43ed80);
+    if (success)
+    {
+        g_4670bc = 1;
+        function_16b10((s_render_reset_state *)g_485b48);
+        function_1c1b0();
+        function_1c810();
+        success = function_1d3f0(3, (long)g_468848, (long *)&g_484dbc);
+        if (success)
+            for (long i = 0; i < 4; ++i) D3DDevice_SetPalette(i, (D3DPalette *)g_484dbc);
+        memset(g_484dd0, 0, 0x180);
+        if (success)
+        {
+            D3DDevice_SetVertexShader(0x11);
+            D3DDevice_SetRenderState(D3DRS_CULLMODE, 2);
+            D3DDevice_SetRenderState(D3DRS_ZWRITEENABLE, 1);
+            D3DDevice_SetRenderState(D3DRS_ZFUNC, 0x203);
+            D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
+            D3DDevice_SetRenderState(D3DRS_STENCILENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHAFUNC, 0x204);
+            D3DDevice_SetRenderState(D3DRS_ALPHAREF, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_SRCBLEND, 1);
+            D3DDevice_SetRenderState(D3DRS_DESTBLEND, 0);
+            D3DDevice_SetRenderState(D3DRS_BLENDOP, 0x8006);
+            D3DDevice_SetRenderState(D3DRS_FOGENABLE, 1);
+            D3DDevice_SetRenderState(D3DRS_LIGHTING, 0);
+            D3DDevice_SetRenderState(D3DRS_SPECULARENABLE, 1);
+            for (long i = 0; i < 4; ++i) D3DDevice_SetTextureStageState(i, D3DTSS_TEXCOORDINDEX, i);
+        }
+    }
+    function_1d660();
+    if (success && function_14600() && function_14850() && function_1d770() && function_1d0e0() && function_1e110())
+    {
+        g_4670f8 = 0x24;
+        if (function_1eff0())
+        {
+            g_4b72b4 = *g_468788;
+            g_4b72c0 = NONE;
+            success = true;
+        }
+        else success = false;
+    }
+    else success = false;
+    function_1fbb0();
+    function_12d8b0();
+    function_12c0d0();
+    memset(g_51f408, 0, 0x40c0);
+    for (long i = 0; i < 0x1ff; ++i) function_20e50(i);
+    byte *allocated = g_4e6080 + g_4e6084;
+    g_4e6084 += 0x34;
+    long size = 0x34;
+    crc32(4, &size, &g_4e608c);
+    g_50934c = allocated;
+    function_20eb0();
+    if (success) g_485a88 = 1;
+}
+#endif
+
+
+
+#include "async.h"
+#include <float.h>
+bool function_12200();
+void global_preferences_initialize();
+void function_120a90();
+void function_121fc0();
+void function_2136c0();
+void animation_cache_initialize();
+void function_123b30();
+void function_12560();
+bool function_1248b0();
+void function_1253d0();
+
+// @retail 0x12000
+bool function_12000()
+{
+    bool result = false;
+    XMountSecondaryUtilityDrive();
+    g_510800_pool_base = (dword)VirtualAlloc(0, 0x23000, MEM_COMMIT, PAGE_READWRITE);
+    g_510804_pool_size = 0;
+    if (function_12200())
+    {
+    _control87(0x9001f, 0xfffff);
+    function_120a90();
+    global_preferences_initialize();
+    function_121fc0();
+    function_2136c0();
+    animation_cache_initialize();
+    function_123b30();
+    function_12560();
+    if (g_5093b0)
+    {
+        function_1248b0();
+        function_1253d0();
+        result = true;
+    }
+    }
+    return result;
+}
+
+
+
+// Disabled: shutdown clears two shared aggregate ranges currently split into independent globals.
+#if 0
+// Retail 0x12080
+void function_12080()
+{
+    if (*(byte *)&g_4e3b60)
+    {
+        g_5020d8 = 0;
+        function_2150f0();
+        memset(&g_4e3b60, 0, 0x2540);
+    }
+    function_125600();
+    function_124920();
+    function_141c0();
+    animation_cache_dispose();
+    function_141190();
+    function_140aa0();
+    memset(&g_4e2920, 0, 0x1220);
+    CloseHandle(g_4e0354);
+    CloseHandle(g_4e0360);
+    CloseHandle(g_4e035c);
+    CloseHandle(g_4e0358);
+    if (g_510800_pool_base)
+    {
+        VirtualFree((void *)g_510800_pool_base, 0, MEM_RELEASE);
+        g_5107fc = g_510800_pool_base = g_510804_pool_size = g_510808 = 0;
+    }
+}
+#endif
+
+// Disabled: retail restores a 0x74-byte camera and 0x120-byte projection across split shared declarations.
+void __stdcall function_132d0(s_frame_view_2c560 const *frame);
+extern long g_46701c;
+struct s_2f970_view;
+struct s_2f800_view;
+bool function_2f970(s_2f970_view const *view, real *out);
+void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
+
+// @retail 0x13c20
+void function_13c20()
+{
+    if (g_4ba04c > 1) IDirect3DDevice8_Clear(NULL, 0, 0, 0x80, 0, 1.0f, 0);
+    --g_46701c;
+    if (g_46701c >= 0)
+    {
+        function_132d0(&g_4850d0[g_46701c]);
+        g_4b9ed4 = g_4850d0[g_46701c].index;
+        memcpy(&g_4b9ef0, g_4850d0[g_46701c].records, 0x120);
+        memcpy(&g_4b9da0, g_4850d0[g_46701c].view, 0x74);
+        real bounds[4];
+        function_2f970((s_2f970_view const *)&g_4b9da0, bounds);
+        function_2fd90((s_2f800_view const *)&g_4b9da0, (box2f const *)bounds, (byte *)&g_4b9e14);
+    }
+}
+
+
+// Disabled: launch stack reset takes a new address of shared global g_4e6420; its aggregate is not yet canonical.
+#if 0
+// Retail 0x12190
+void function_12190()
+{
+    function_12420();
+    function_12b400();
+    long depth = g_4e6420;
+    g_4e642c[depth + 1] = g_4e642c[depth];
+    g_4e6440[depth + 1] = g_4e6440[depth];
+    g_4e6420 = depth + 1;
+    if (function_12000())
+    {
+        function_12b690();
+        function_12080();
+    }
+    memset(&g_4e6420, 0, 0x34);
+    MmFreeContiguousMemory((void *)0x80061000);
+    __debugbreak();
+}
+#endif
+
+
+
+// Draw the timed UI/world effect passes for the current frame.
+void function_1bdf0();
+bool function_016ac0();
+bool function_022710();
+void __stdcall function_2bcd0(long, long, bool, long, long, long, real);
+void __stdcall function_21a80(real, real, real);
+
+// @retail 0x13680
+void function_13680(bool skip_effects)
+{
+    function_1bdf0();
+    s_timed_effect_globals *effect = function_01fd20(0);
+    if (g_485602 == 2)
+    {
+        function_2bcd0(1, 1, false, 0, 0, 0, 0.0f);
+        return;
+    }
+    bool draw_ui = !skip_effects && g_485898 != 6;
+    bool world_effects = false;
+    if (!skip_effects && g_485898 != 7 && function_022710()) world_effects = true;
+    if (!function_016ac0() && !skip_effects && effect && effect->unknown3c &&
+        effect->unknown40 > 0.0f && function_022710() && function_01de20(18))
+    {
+        function_2bcd0(1, 1, false, world_effects, 1, 1, effect->unknown40);
+        g_4c0b78.state = (s_2cb30_state *)&g_547f88;
+        function_2bcd0(1, 1, false, world_effects, 2, 2, effect->unknown40);
+        function_21a80(effect->unknown44, effect->unknown48, effect->unknown40);
+    }
+    else function_2bcd0(1, 1, draw_ui, world_effects, 0, 0, 0.0f);
+}
+
+
+s_reset_storage g_reset_storage;
+
+s_glyphs_storage g_glyphs_storage;
+
+struct s_5093e4;
+extern s_5093e4 *g_5093e4;
+struct s_33a0b_view;
+extern s_33a0b_view *g_485a58;
+void function_20e50(long index);
+
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+// @retail 0x22590
+void function_22590()
+{
+    byte *globals = (byte *)g_4e034c;
+    g_485a80 = *(long *)(globals + 0x108) ? *(byte **)(globals + 0x10c) : 0;
+    function_1f2b0();
+    s_timed_effect_globals *effects = g_5093e0;
+    if (effects)
+    {
+        memset(effects, 0, 0x3fc);
+        effects->unknown180[0] = 1.0f;
+        effects->unknown180[1] = 1.0f;
+        effects->unknown180[2] = 1.0f;
+        effects->unknown180[3] = 1.0f;
+        effects->unknown3f8 = 1.0f;
+    }
+    *(volatile long *)g_50934c = 0;
+    *(volatile real *)(g_50934c + 0x10) = 0.5f;
+    *(volatile real *)(g_50934c + 0x18) = 0.5f;
+    *(volatile real *)(g_50934c + 0x28) = 0.5f;
+    *(volatile real *)(g_50934c + 0x30) = 0.5f;
+    ((byte *)g_5093e4)[0] = 0;
+    ((byte *)g_5093e4)[1] = 0;
+    real *value = (real *)(((byte *)g_5093e4) + 4);
+    for (long i = 0; i < 5; ++i) value[i] = -1.0f;
+    ((byte *)g_5093e4)[0x18] = 1;
+    ((byte *)g_5093e4)[0x19] = 0;
+    *(real *)(((byte *)g_5093e4) + 0x1c) = -1.0f;
+    *(real *)(((byte *)g_5093e4) + 0x20) = -1.0f;
+    ((byte *)g_5093e4)[0x1a] = 0;
+    memset(&g_render_state_storage, 0, sizeof(g_render_state_storage));
+    for (long i = 0; i < 0x1ff; ++i) function_20e50(i);
+    if (effects) *(real *)effects->unknown190 = 0.0f;
+    // Keep the effect write before the pointer clear.
+    _ReadWriteBarrier();
+    g_485a58 = 0;
+}
+#pragma function(_ReadWriteBarrier)
+
+#include "allocator_storage.h"
+#include "font_loading_storage.h"
+extern bool g_5020d8;
+void game_state_cache_files_close();
+void function_125600();
+void function_124920();
+void animation_cache_dispose();
+void font_cache_pixels_dispose();
+void font_cache_dispose();
+HANDLE g_4e0354, g_4e0358, g_4e035c, g_4e0360;
+
+// @retail 0x12080
+void function_12080()
+{
+    if (*(byte *)&g_4e3b60)
+    {
+        g_5020d8 = 0;
+        game_state_cache_files_close();
+        memset(&g_4e3b60, 0, 0x2540);
+    }
+    function_125600();
+    function_124920();
+    function_141c0();
+    animation_cache_dispose();
+    font_cache_pixels_dispose();
+    font_cache_dispose();
+    memset(&g_4e2920, 0, 0x1220);
+    CloseHandle(g_4e0354);
+    CloseHandle(g_4e0360);
+    CloseHandle(g_4e035c);
+    CloseHandle(g_4e0358);
+    if (g_510800_pool_base)
+    {
+        VirtualFree((void *)g_510800_pool_base, 0, MEM_RELEASE);
+        memset(&g_pool_storage, 0, sizeof(g_pool_storage));
+    }
+}
+
+#include "launch_stack_storage.h"
+extern "C" void __stdcall MmFreeContiguousMemory(void *base);
+void function_12b400();
+void function_12b690();
+
+#include "unknown_12b400.h"
+// @retail 0x12190
+void function_12190()
+{
+    function_12420();
+    function_12b400();
+    int depth = g_4e6420;
+    long next = depth + 1;
+    g_4e642c[depth + 1] = g_4e642c[depth];
+    // Retail reloads the stage before reading the second bound.
+    long later = *(long const *)&g_4e6420;
+    g_4e6440[later + 1] = g_4e6440[later];
+    g_4e6420 = next;
+    if (function_12000())
+    {
+        function_12b690();
+        function_12080();
+    }
+    memset(&g_4e6420, 0, 0x34);
+    MmFreeContiguousMemory((void *)0x80061000);
+    __assume(0);
+}
+
+dword g_55e6b8;
+
+// @retail 0x14280
+long __fastcall function_14280(void const *data)
+{
+    volatile unsigned __int64 *current = (volatile unsigned __int64 *)&g_485ab0;
+    volatile unsigned __int64 *previous = (volatile unsigned __int64 *)&g_485ab8;
+    long result = 0;
+    ++*current;
+    if (((dword const *)data)[1] != g_55e6b8)
+    {
+        result = (long)(*current - *previous);
+        *previous = *current;
+        g_55e6b8 = ((dword const *)data)[1];
+    }
+    return result;
+}
+
+
+
+s_device_setup_storage g_device_setup_storage = {{{0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0}}};
+
+s_render_modes_storage g_render_modes_storage = {{{255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 255, 255, 255, 255, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 10, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 11, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 12, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 13, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 14, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 15, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 255, 255, 255, 255, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 183, 209, 56}}};
+
+s_type_7ba8e9 *function_1358e0(short width, short height, short levels, short format, word flags);
+// @retail 0x1eff0
+bool function_1eff0()
+{
+    bool result = true;
+    byte *bitmap = (byte *)function_1358e0(256, 256, 0, 9, 0x810);
+    if (bitmap)
+    {
+        memset(&g_glyphs_storage, 0, sizeof(g_glyphs_storage));
+        if (function_1d000(bitmap))
+        {
+            g_4b62ac = (s_bitmap_view *)bitmap;
+            g_4b62a0 = true;
+            g_4b62a4.fields.x = 1;
+            g_4b62a8 = 1;
+        }
+        else result = false;
+    }
+    else result = false;
+    s_font_render_entry *entry = g_4b62b0;
+    long count = 512;
+    do { memset(entry, 0, sizeof(*entry)); entry->character_index = NONE; ++entry; } while (--count);
+    return result;
+}
+
+
+extern long g_4e28f4[11];
+struct s_font_character_header;
+long font_cache_find_character(long font_index, long character);
+struct s_font_cache_flags
+{
+    dword wait : 1;
+    dword create : 1;
+};
+s_font_character_header *font_cache_get_character_header(long font_index, long character, s_font_cache_flags flags);
+void __stdcall function_1f5c0(long character);
+
+// @retail 0x1f490
+void __stdcall function_1f490(long unused, long font, long character, long color, long shadow,
+    real x, real y, real u, real v, real width, real height, real scale, long callback, long context)
+{
+    volatile real positions[2];
+    long index = font_cache_find_character(g_4e28f4[font], character);
+    if (index == NONE)
+    {
+        s_font_cache_flags flags = { true, true };
+        font_cache_get_character_header(font, character, flags);
+        index = font_cache_find_character(g_4e28f4[font], character);
+        if (index == NONE) return;
+    }
+    function_1f5c0(index);
+    if (index == NONE) return;
+    long entry = *(long *)(g_54d574->data + (index & 0xffff) * 0x38 + 0x34);
+    if (entry == NONE) return;
+    s_font_render_entry *rectangle = &g_4b62b0[entry];
+    bool draw_shadow = ((dword)shadow & 0xff000000) > 0;
+    do
+    {
+        positions[0] = x + (draw_shadow ? scale : 0.0f);
+        positions[1] = y + (draw_shadow ? scale : 0.0f);
+        real const *position_values = (real const *)positions;
+        function_1f3a0((short const *)rectangle, position_values[0], position_values[1], (long)width, (long)height,
+            (short)(long)u, (short)(long)v, scale, draw_shadow ? shadow : color,
+            (t_1f3a0_callback)callback, (void *)context);
+        if (!draw_shadow) break;
+        draw_shadow = false;
+    } while (true);
+}
+
+#include "allocator_storage.h"
+#include "crc.h"
+void function_0169f0();
+void function_016a30(real scale, short y, short x);
+void function_01d660();
+bool function_1d770();
+void function_01fbb0();
+void geometry_cache_initialize();
+void texture_cache_initialize();
+void function_020eb0();
+extern dword g_468848[256];
+extern long g_4b72c0;
+#define g_485a88 (g_unknown_485a88.flag)
+long g_4670f8;
+point3f g_4b72b4;
+
+__declspec(noinline) bool function_1d3f0(long index, void const *colors, D3DPalette **out);
+__declspec(noinline) void function_0169f0();
+__declspec(noinline) void function_016a30(real scale, short y, short x);
+// @retail 0x12560
+void function_12560()
+{
+    if (g_485a88) return;
+    function_0169f0();
+    short x, y;
+    if (g_485ac5 && g_485ac6) { x = 0x20; y = 0x18; }
+    else { x = 0x30; y = 0x24; }
+    function_016a30(1.0f, y, x);
+    Direct3D_SetPushBufferSize(0x100000, 0x8000);
+    volatile bool success = function_128c0(&g_43ed80);
+    if (success)
+    {
+        g_4670bc = 1;
+        function_16b10((s_render_reset_state *)g_485b48);
+        function_1c1b0();
+        function_1c810();
+        D3DPalette *palette = NULL;
+        success = function_1d3f0(3, g_468848, &palette);
+        g_484dbc = palette;
+        if (success)
+            {
+                D3DDevice_SetPalette(0, (D3DPalette *)g_484dbc);
+                D3DDevice_SetPalette(1, (D3DPalette *)g_484dbc);
+                D3DDevice_SetPalette(2, (D3DPalette *)g_484dbc);
+                D3DDevice_SetPalette(3, (D3DPalette *)g_484dbc);
+            }
+        memset(g_484dd0, 0, 0x180);
+        if (success)
+        {
+            D3DDevice_SetVertexShader(0x11);
+            D3DDevice_SetRenderState(D3DRS_CULLMODE, 2);
+            D3DDevice_SetRenderState(D3DRS_ZWRITEENABLE, 1);
+            D3DDevice_SetRenderState(D3DRS_ZFUNC, 0x203);
+            D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
+            D3DDevice_SetRenderState(D3DRS_STENCILENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHAFUNC, 0x204);
+            D3DDevice_SetRenderState(D3DRS_ALPHAREF, 0);
+            D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
+            D3DDevice_SetRenderState(D3DRS_SRCBLEND, 1);
+            D3DDevice_SetRenderState(D3DRS_DESTBLEND, 0);
+            D3DDevice_SetRenderState(D3DRS_BLENDOP, 0x8006);
+            D3DDevice_SetRenderState(D3DRS_FOGENABLE, 1);
+            D3DDevice_SetRenderState(D3DRS_LIGHTING, 0);
+            D3DDevice_SetRenderState(D3DRS_SPECULARENABLE, 1);
+                        D3DDevice_SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, 0);
+            D3DDevice_SetTextureStageState(1, D3DTSS_TEXCOORDINDEX, 1);
+            D3DDevice_SetTextureStageState(2, D3DTSS_TEXCOORDINDEX, 2);
+            D3DDevice_SetTextureStageState(3, D3DTSS_TEXCOORDINDEX, 3);
+        }
+    }
+    function_01d660();
+    if (success && function_14600() && function_14850() && function_1d770() && function_1d0e0() && function_1e110())
+    {
+        g_4670f8 = 0x24;
+        if (function_1eff0())
+        {
+            g_4b72b4.x = g_468788->x;
+            g_4b72b4.y = g_468788->y;
+            g_4b72b4.z = g_468788->z;
+            g_4b72c0 = NONE;
+            success = true;
+        }
+        else success = false;
+    }
+    else success = false;
+    function_01fbb0();
+    geometry_cache_initialize();
+    texture_cache_initialize();
+    memset(&g_render_state_storage, 0, sizeof(g_render_state_storage));
+    for (long i = 0; i < 0x1ff; ++i) function_20e50(i);
+    byte *allocated = g_4e6080 + g_4e6084;
+    g_4e6084 += 0x34;
+    long size = 0x34;
+    function_163ba0(&g_4e608c, &size, 4);
+    g_50934c = allocated;
+    function_020eb0();
+    if (success) g_485a88 = 1;
+}

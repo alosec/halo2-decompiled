@@ -12,7 +12,7 @@
    and its list of what the squad's leader can change */
 
 struct s_message;
-void function_149f49(s_message *message, word a, dword *id, word b, long c, long d, long e);
+void function_149f49(s_message *message, word a, dword *id, short b, long c, long d, long e);
 byte *network_session_interface_get_data_4db0(void);
 long function_19989d(void);
 long function_1480ff(long screen_id);
@@ -24,7 +24,7 @@ bool function_19a76d(short index);
 void function_121100(long *value);
 void function_148d42(long value);
 void dialog_ok_show(long a, long dialog_id, long b, short user_flags, dialog_choice_callback chosen, dialog_closed_callback closed);
-void function_2c83e6(long type, long a, long b, word user_flags);
+void __stdcall function_2c83e6(long type, long a, long b, word user_flags);
 
 /* the squad settings that open a screen (unknown_2b116a.cpp) */
 void function_2bb8ac(s_controller_reference **controller);
@@ -250,7 +250,7 @@ void c_squad_settings_screen::v3()
 				function_2b0a7b(bitmap, function_137550(definition->bitmap_tag_index, 0));
 			}
 		}
-		break;
+		goto done;
 	case 3:
 	{
 		short privacy;
@@ -282,7 +282,7 @@ void c_squad_settings_screen::v3()
 			}
 			function_2b0ad3(0, bitmap, index);
 		}
-		break;
+		goto done;
 	}
 	case 4:
 		name = 0x120005df;
@@ -534,17 +534,7 @@ bool c_squad_setting_list::v10(s_widget_event *event)
 	return ((c_widget *)this)->c_widget::v18((s_event *)event);
 }
 
-/* 0x2bb801, the list's handler, matches but is left out below: it makes
-   the screens that 0x2bb8ac..0x2bb945 load live, and with them more callers
-   of function_19a76d (unknown_19987f.cpp), which then takes its argument in
-   ecx instead of retail's eax and breaks 0x199a92 and 0x2c9d38. The
-   placeholder keeps the handler's slot. */
 // @retail 0x2bb801
-void c_squad_setting_list::handle_item(s_controller_reference **controller, long *item)
-{
-}
-
-#if 0
 void c_squad_setting_list::handle_item(s_controller_reference **controller, long *item)
 {
 	if (*item != NONE)
@@ -585,4 +575,5 @@ void c_squad_setting_list::handle_item(s_controller_reference **controller, long
 		}
 	}
 }
-#endif
+
+

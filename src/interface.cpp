@@ -8,7 +8,7 @@
 
 void function_19170f(void);
 void game_state_initialize_165cc3(void);
-void function_22c033();
+void mission_objectives_init();
 void function_19173e(void);
 void function_13e8a0();
 void function_165ce5(void);
@@ -27,7 +27,7 @@ void function_13e5c7(void)
 {
 	function_19170f();
 	game_state_initialize_165cc3();
-	function_22c033();
+	mission_objectives_init();
 }
 
 // @retail 0x13e5d6

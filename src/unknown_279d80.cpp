@@ -15,31 +15,31 @@
 #include <xmmintrin.h>
 
 
-/* the codecs' channel decoders (unknown_28c470.cpp, unknown_28c510.cpp,
-   unknown_28cdb0.cpp, unknown_2c4d60.cpp) */
-void function_28c470(void);
-void function_28c4e0(void);
-void function_28c510(void);
-void function_28c530(void);
-void function_28c5d0(void);
-void function_28c6b0(void);
-void function_28c710(void);
-void function_28c750(void);
-void function_28c790(void);
-void function_28c880(void);
-void function_28c960(void);
-void function_28c9e0(void);
-void function_28cb70(void);
-void function_28ccc0(void);
-void function_28cdb0(void);
-void function_28cf40(void);
-void function_28d090(void);
-void function_28d180(void);
-void function_28d320(void);
-void function_28d470(void);
-void function_28d560(void);
-void function_28d6f0(void);
-void function_28d840(void);
+/* the codecs' channel decoders (animation_channel_decoders.cpp,
+   animation_keyframe_decoders.cpp, unknown_2c4d60.cpp) */
+void animation_codec_static_rotation_sample(void);
+void animation_codec_static_translation_sample(void);
+void animation_codec_static_scale_sample(void);
+void animation_codec_blend_screen_rotation_interpolate(void);
+void animation_codec_blend_screen_translation_interpolate(void);
+void animation_codec_scale_interpolate(void);
+void animation_codec_blend_screen_rotation_sample(void);
+void animation_codec_translation_sample(void);
+void animation_codec_quantized_rotation_interpolate(void);
+void animation_codec_quantized_translation_interpolate(void);
+void animation_codec_quantized_rotation_sample(void);
+void animation_codec_byte_keyframe_rotation_interpolate(void);
+void animation_codec_byte_keyframe_translation_interpolate(void);
+void animation_codec_byte_keyframe_scale_interpolate(void);
+void animation_codec_byte_keyframe_rotation_sample(void);
+void animation_codec_byte_keyframe_translation_sample(void);
+void animation_codec_byte_keyframe_scale_sample(void);
+void animation_codec_word_keyframe_rotation_interpolate(void);
+void animation_codec_word_keyframe_translation_interpolate(void);
+void animation_codec_word_keyframe_scale_interpolate(void);
+void animation_codec_word_keyframe_rotation_sample(void);
+void animation_codec_word_keyframe_translation_sample(void);
+void animation_codec_word_keyframe_scale_sample(void);
 void function_2c4d60(void);
 void function_2c4da0(void);
 void function_2c4de0(void);
@@ -49,28 +49,28 @@ s_animation_codec const g_47fb18[9] =
 {
 	{ "_no_compression_codec", 1, 0, { { NULL, NULL, NULL }, { NULL, NULL, NULL } }, function_28d170 },
 	{ "_uncompressed_static_data_codec", 0, 0,
-		{ { function_28c470, function_28c4e0, function_28c510 }, { function_28c470, function_28c4e0, function_28c510 } },
+		{ { animation_codec_static_rotation_sample, animation_codec_static_translation_sample, animation_codec_static_scale_sample }, { animation_codec_static_rotation_sample, animation_codec_static_translation_sample, animation_codec_static_scale_sample } },
 		function_28d170 },
 	{ "_uncompressed_animated_data_codec", 1, 0,
 		{ { function_2c4d60, function_2c4da0, function_2c4de0 }, { function_2c4d60, function_2c4da0, function_2c4de0 } },
 		function_28d170 },
 	{ "_8byte_quantized_rotation_only_codec", 1, 0,
-		{ { function_28c960, function_28c750, function_2c4de0 }, { function_28c790, function_28c880, function_28c6b0 } },
+		{ { animation_codec_quantized_rotation_sample, animation_codec_translation_sample, function_2c4de0 }, { animation_codec_quantized_rotation_interpolate, animation_codec_quantized_translation_interpolate, animation_codec_scale_interpolate } },
 		function_28d170 },
 	{ "byte_keyframe_lightly_quantized", 2, 1,
-		{ { function_28cdb0, function_28cf40, function_28d090 }, { function_28c9e0, function_28cb70, function_28ccc0 } },
+		{ { animation_codec_byte_keyframe_rotation_sample, animation_codec_byte_keyframe_translation_sample, animation_codec_byte_keyframe_scale_sample }, { animation_codec_byte_keyframe_rotation_interpolate, animation_codec_byte_keyframe_translation_interpolate, animation_codec_byte_keyframe_scale_interpolate } },
 		function_28d170 },
 	{ "word_keyframe_lightly_quantized", 2, 2,
-		{ { function_28d560, function_28d6f0, function_28d840 }, { function_28d180, function_28d320, function_28d470 } },
+		{ { animation_codec_word_keyframe_rotation_sample, animation_codec_word_keyframe_translation_sample, animation_codec_word_keyframe_scale_sample }, { animation_codec_word_keyframe_rotation_interpolate, animation_codec_word_keyframe_translation_interpolate, animation_codec_word_keyframe_scale_interpolate } },
 		function_28d170 },
 	{ "reverse_byte_keyframe_lightly_quantized", 2, 1,
-		{ { function_28cdb0, function_28cf40, function_28d090 }, { function_28c9e0, function_28cb70, function_28ccc0 } },
+		{ { animation_codec_byte_keyframe_rotation_sample, animation_codec_byte_keyframe_translation_sample, animation_codec_byte_keyframe_scale_sample }, { animation_codec_byte_keyframe_rotation_interpolate, animation_codec_byte_keyframe_translation_interpolate, animation_codec_byte_keyframe_scale_interpolate } },
 		function_28d170 },
 	{ "reverse_word_keyframe_lightly_quantized", 2, 2,
-		{ { function_28d560, function_28d6f0, function_28d840 }, { function_28d180, function_28d320, function_28d470 } },
+		{ { animation_codec_word_keyframe_rotation_sample, animation_codec_word_keyframe_translation_sample, animation_codec_word_keyframe_scale_sample }, { animation_codec_word_keyframe_rotation_interpolate, animation_codec_word_keyframe_translation_interpolate, animation_codec_word_keyframe_scale_interpolate } },
 		function_28d170 },
 	{ "_blend_screen_codec", 1, 0,
-		{ { function_28c710, function_28c750, function_2c4de0 }, { function_28c530, function_28c5d0, function_28c6b0 } },
+		{ { animation_codec_blend_screen_rotation_sample, animation_codec_translation_sample, function_2c4de0 }, { animation_codec_blend_screen_rotation_interpolate, animation_codec_blend_screen_translation_interpolate, animation_codec_scale_interpolate } },
 		function_28d170 },
 };
 
@@ -101,14 +101,13 @@ PRIVATE inline long animation_data_size(s_animation_data_sizes const *sizes)
 
 PRIVATE inline void node_mask_clear(dword *mask)
 {
-	long i;
-
-	for (i = 0; i < 8; i++)
-	{
-		mask[i] = 0;
-	}
+	memset(mask, 0, 8 * sizeof(dword));
 }
 
+/* whether a bit is set in a bit vector */
+#define BIT_VECTOR_TEST(vector, bit) ((((dword const *)(vector))[(bit) >> 5] & (1 << ((bit) & 31))) != 0)
+
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define PIN(value, minimum, maximum) ((value) < (minimum) ? (minimum) : ((value) > (maximum) ? (maximum) : (value)))
 
 // @retail 0x2798a0
@@ -129,13 +128,11 @@ void function_2798a0(s_animation_data *data, real frame, real weight, s_graph_ta
 		frame_index = PIN(frame_index, 0, last_frame);
 		g_sampling_settings.inheritance = inheritance;
 		g_sampling_settings.destination_node_mask = node_mask;
-		g_sampling_settings.decompressors.rotation = NULL;
-		g_sampling_settings.decompressors.translation = NULL;
-		g_sampling_settings.decompressors.scale = NULL;
-		g_sampling_settings.blend_weight = 1.0f;
+		memset(&g_sampling_settings.decompressors, 0, sizeof(g_sampling_settings.decompressors));
 		g_sampling_settings.frame_index = frame_index;
 		g_sampling_settings.next_frame_index = frame_index;
 		g_sampling_settings.frame_fraction = 0.0f;
+		g_sampling_settings.blend_weight = 1.0f;
 		g_sampling_settings.animation = animation;
 		g_sampling_settings.field_30 = NULL;
 		g_sampling_settings.rotation_bit_flags = NULL;
@@ -159,17 +156,15 @@ void function_2798a0(s_animation_data *data, real frame, real weight, s_graph_ta
 			if (frame_index != last_frame)
 			{
 				long next_frame_index = frame_index + 1;
-				real fraction;
 
 				g_sampling_settings.next_frame_index = PIN(next_frame_index, 0, last_frame);
-				fraction = frame - (real)frame_index;
-				g_sampling_settings.frame_fraction = fraction;
-				if (fraction < 0.0001f)
+				g_sampling_settings.frame_fraction = frame - (real)frame_index;
+				if (g_sampling_settings.frame_fraction < 0.0001f)
 				{
 					g_sampling_settings.frame_fraction = 0.0f;
 					interpolate = false;
 				}
-				else if (fraction > 0.9999f)
+				else if (g_sampling_settings.frame_fraction > 0.9999f)
 				{
 					g_sampling_settings.frame_index = next_frame_index;
 					g_sampling_settings.frame_fraction = 0.0f;
@@ -190,32 +185,31 @@ void function_2798a0(s_animation_data *data, real frame, real weight, s_graph_ta
 		else
 		{
 			g_sampling_settings.node_count = g_sampling_settings.animation->node_count;
-			if (g_sampling_settings.destination_node_count <= g_sampling_settings.animation->node_count)
+			if (g_sampling_settings.destination_node_count <= g_sampling_settings.node_count)
 			{
 				g_sampling_settings.node_count = g_sampling_settings.destination_node_count;
 			}
 		}
 		g_sampling_settings.blend_method = 0;
+		bool full_weight = weight > 0.9999f;
+		if (animation->type == 1)
 		{
-			bool full = weight > 0.9999f ? true : false;
-
-			if (animation->type == 1)
-			{
-				g_sampling_settings.blend_method = full ? 2 : 3;
-				g_sampling_settings.blend_weight = weight;
-			}
-			else if (!full)
-			{
-				g_sampling_settings.blend_method = 1;
-				g_sampling_settings.blend_weight = weight;
-			}
+			g_sampling_settings.blend_method = full_weight ? 2 : 3;
+			g_sampling_settings.blend_weight = weight;
+		}
+		else if (!full_weight)
+		{
+			g_sampling_settings.blend_method = 1;
+			g_sampling_settings.blend_weight = weight;
 		}
 		if (animation->type == 0 && data->sizes->static_data_size != 0)
 		{
 			long flags_size;
 
-			g_sampling_settings.field_30 = (struct s_animation_data *)data->data;
-			g_sampling_settings.decompressors = g_47fb18[*data->data].samplers[0];
+			byte *static_data = data->data;
+
+			g_sampling_settings.field_30 = (struct s_animation_data *)static_data;
+			g_sampling_settings.decompressors = g_47fb18[*static_data].samplers[0];
 			g_sampling_settings.rotation_bit_flags = data->data + data->sizes->static_data_size + data->sizes->animated_data_size;
 			flags_size = ((data->node_count + 31) >> 3) & ~3;
 			g_sampling_settings.translation_bit_flags = data->data + data->sizes->static_data_size + data->sizes->animated_data_size + flags_size;
@@ -277,22 +271,22 @@ dword const *node_masks_combine(dword const *mask, dword const *other)
 }
 #pragma inline_depth(255)
 
+// score 31 (was 31): the three values are rotated between registers: ours keeps the pointer in
+// ECX and the accumulator in EAX, retail keeps the pointer in EAX and the
+// accumulator in EDX.
 // @retail 0x279d80
 void function_279d80(s_graph_tag *graph, c_type_709360 animation_id, long node_count, real frame, real weight,
 	s_graph_inheritance *inheritance, dword const *node_mask, real_quaternion_transform *transforms, bool interpolate)
 {
-	s_animation *volatile animation = function_1daea0(graph, animation_id);
+	s_animation *animation = function_1daea0(graph, animation_id);
 	s_animation_data data;
 	long size;
 	byte *address;
 
 	function_1ddb40(&data, graph, animation_id);
-	size = animation_data_size(data.sizes);
-	if (size > 0x400)
-	{
-		size = 0x400;
-	}
-	for (address = data.data; address < data.data + size; address += 0x20)
+	address = data.data;
+	size = MIN(animation_data_size(data.sizes), 0x400);
+	for (; address < data.data + size; address += 0x20)
 	{
 		_mm_prefetch((char const *)address, _MM_HINT_T0);
 	}
@@ -325,11 +319,11 @@ void function_279e40(s_aiming_screen const *screen, s_graph_tag *graph, c_type_7
 	real fraction;
 
 	function_1ddb40(&data, graph, animation_id);
-	right_frame_count = screen->right_frame_count;
 	left_frame_count = screen->left_frame_count;
+	right_frame_count = screen->right_frame_count;
 	yaw_frame_count = right_frame_count + left_frame_count + 1;
-	down_frame_count = screen->down_frame_count;
 	up_frame_count = screen->up_frame_count;
+	down_frame_count = screen->down_frame_count;
 
 	yaw_per_frame = yaw < 0.0f ? screen->right_yaw_per_frame : screen->left_yaw_per_frame;
 	yaw_frames = yaw_per_frame < 0.0001f ? 0.0f : yaw / yaw_per_frame;
@@ -372,13 +366,12 @@ void function_27a060(s_graph_tag *graph, c_type_709360 animation_id, long node_c
 	s_animation *animation = function_1daea0(graph, animation_id);
 	s_animation_data data;
 	real last_frame;
-	real frame;
 
 	function_1ddb40(&data, graph, animation_id);
 	last_frame = (real)(animation->frame_count - 1) + 0.0001f;
-	frame = last_frame * ratio;
-	frame = PIN(frame, 0.0f, last_frame);
-	function_2798a0(&data, frame, weight, graph, animation, node_count, inheritance, node_mask, transforms, true,
+	real const frame = PIN(last_frame * ratio, 0.0f, last_frame);
+	function_2798a0(&data, frame, weight, graph, animation, node_count,
+		inheritance, node_mask, transforms, true,
 		false, 0.0f, 0.0f);
 }
 
@@ -442,7 +435,7 @@ real_quaternion_transform g_502430[255];
 /* the transform helpers (unknown_11cb00.cpp) */
 void function_11dbb0(real_quaternion_transform *out, real_quaternion_transform const *a,
 	real_quaternion_transform const *b);
-void function_11dd80(real_quaternion_transform *out, real_quaternion_transform const *in);
+void function_11dd80(real_quaternion_transform const *in, real_quaternion_transform *out);
 
 #define NODE_MASK_SET(mask, index, value) \
 	if (value) \
@@ -458,9 +451,11 @@ void function_11dd80(real_quaternion_transform *out, real_quaternion_transform c
 bool __stdcall function_27a100(s_graph_tag *graph, s_animation *animation, s_graph_inheritance *inheritance,
 	long node_count, real_quaternion_transform *transforms)
 {
-	long i;
 	bool result = false;
+	long i;
 
+	if (animation->object_space_parent_node_count <= 0)
+		goto done;
 	for (i = 0; i < animation->object_space_parent_node_count; i++)
 	{
 		s_object_space_parent_node *entry = &animation->object_space_parent_nodes[i];
@@ -489,7 +484,7 @@ bool __stdcall function_27a100(s_graph_tag *graph, s_animation *animation, s_gra
 				function_11dbb0(&parent, &transforms[parent_index], &parent);
 				parent_index = graph->nodes[parent_index].parent_index;
 			}
-			function_11dd80(&inverse, &parent);
+			function_11dd80(&parent, &inverse);
 			quantized_transform_decompress(&entry->transform, &local);
 			function_11dbb0(&object_space, &inverse, &local);
 			for (child_index = node->first_child_index; child_index >= 0;
@@ -506,6 +501,7 @@ bool __stdcall function_27a100(s_graph_tag *graph, s_animation *animation, s_gra
 			}
 		}
 	}
+	done:
 	return result;
 }
 
@@ -1055,8 +1051,8 @@ void function_279860(void)
 
 /* the two decoded orientations of an interpolation: the second frame's, and
    the first frame's when the method blends */
-static __declspec(align(16)) s_animation_output g_504410;
-static __declspec(align(16)) s_animation_output g_504430;
+PRIVATE __declspec(align(16)) s_animation_output g_504410;
+PRIVATE __declspec(align(16)) s_animation_output g_504430;
 
 /* the sign bit of the first lane */
 static __declspec(align(16)) dword const g_47ffc0[4] = { 0x80000000, 0, 0, 0 };
@@ -1135,19 +1131,10 @@ __forceinline void quaternion_multiply(quaternionf const *a, quaternionf const *
 	}
 }
 
-/* scales a rotation toward the identity (the one on the same side as the
-   rotation): the offset from the identity, scaled, added back to it */
-__forceinline void quaternion_scale(quaternionf *quaternion, real fraction)
+/* the value a fraction of the way from a to b */
+__forceinline real interpolate_real(real a, real b, real fraction)
 {
-	real one = 1.0f;
-
-	*(dword *)&one |= *(dword *)&quaternion->w & 0x80000000;
-	quaternion->w -= one;
-	quaternion->i *= fraction;
-	quaternion->j *= fraction;
-	quaternion->k *= fraction;
-	quaternion->w *= fraction;
-	quaternion->w += one;
+	return (b - a) * fraction + a;
 }
 
 /* the linear blends of translations and scales */
@@ -1219,7 +1206,9 @@ __forceinline void component_interpolate(long component)
 	}
 	else if (component == 1)
 	{
-		orientation_vector_blend(&g_504430, &g_504410, g_sampling_settings.blend_fraction);
+		g_504430.vector.i = interpolate_real(g_504430.vector.i, g_504410.vector.i, g_sampling_settings.blend_fraction);
+		g_504430.vector.j = interpolate_real(g_504430.vector.j, g_504410.vector.j, g_sampling_settings.blend_fraction);
+		g_504430.vector.k = interpolate_real(g_504430.vector.k, g_504410.vector.k, g_sampling_settings.blend_fraction);
 	}
 	else
 	{
@@ -1276,7 +1265,19 @@ __forceinline void component_apply(long blend_method, long component, s_animatio
 	{
 		if (component == 0)
 		{
-			quaternion_scale(&g_504430.rotation, g_sampling_settings.blend_weight);
+			/* scales the decoded rotation toward the identity (the one on
+			   the same side as the rotation): the offset from the identity,
+			   scaled, added back to it */
+			real one = 1.0f;
+			real fraction = g_sampling_settings.blend_weight;
+
+			*(dword *)&one |= *(dword *)&g_504430.rotation.w & 0x80000000;
+			g_504430.rotation.w -= one;
+			g_504430.rotation.i *= fraction;
+			g_504430.rotation.j *= fraction;
+			g_504430.rotation.k *= fraction;
+			g_504430.rotation.w *= fraction;
+			g_504430.rotation.w += one;
 			quaternion_multiply(&destination->rotation, &g_504430.rotation, &destination->rotation);
 		}
 		else if (component == 1)
@@ -1322,9 +1323,7 @@ __forceinline void component_apply(long blend_method, long component, s_animatio
 	}
 }
 
-__forceinline void compute_component_orientations(long blend_method, long node_kind, bool destination_mask,
-	bool interpolate, long component, long &node_index, byte const *&bit_flags, long node_count,
-	s_graph_inheritance const *const &inheritance)
+__forceinline void compute_component_orientations(long blend_method, long node_kind, bool destination_mask, bool interpolate, long component, byte const *&bit_flags, long &node_index, long node_count, s_graph_inheritance const *const &inheritance)
 {
 	bool in_place = blend_method == 0 || blend_method == 4;
 	s_animation_output *destination = (s_animation_output *)g_sampling_settings.field_4c;
@@ -1376,12 +1375,15 @@ __forceinline void compute_component_orientations(long blend_method, long node_k
 						{
 							root_offset_scale(node_kind, component, node_index);
 						}
+						long frame_index;
+						long frame_index2;
+						real frame_fraction;
+
 						if (interpolate)
 						{
-							dword frame_index = g_sampling_settings.frame_index;
-							long frame_index2 = g_sampling_settings.next_frame_index;
-							real frame_fraction = g_sampling_settings.frame_fraction;
-
+							frame_index = g_sampling_settings.frame_index;
+							frame_index2 = g_sampling_settings.next_frame_index;
+							frame_fraction = g_sampling_settings.frame_fraction;
 							g_sampling_settings.frame_index = g_sampling_settings.blend_frame_index;
 							g_sampling_settings.next_frame_index = g_sampling_settings.blend_next_frame_index;
 							g_sampling_settings.frame_fraction = g_sampling_settings.blend_frame_fraction;
@@ -1396,15 +1398,14 @@ __forceinline void compute_component_orientations(long blend_method, long node_k
 							{
 								__assume(0);
 							}
-							component_apply(blend_method, component, destination, node_kind == 0 ? node_index : destination_index);
+						}
+						component_apply(blend_method, component, destination, node_kind == 0 ? node_index : destination_index);
+						if (interpolate)
+						{
 							g_sampling_settings.frame_index = frame_index;
 							g_sampling_settings.next_frame_index = frame_index2;
 							g_sampling_settings.frame_fraction = frame_fraction;
 							g_5044c0 = &g_504430;
-						}
-						else
-						{
-							component_apply(blend_method, component, destination, node_kind == 0 ? node_index : destination_index);
 						}
 					}
 					if (component == 0)
@@ -1446,33 +1447,246 @@ __forceinline void compute_orientations(long blend_method, long node_kind, bool 
 	g_5044b4 = 0;
 	g_5044b8 = 0;
 	g_5044bc = 0;
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, node_index, bit_flags, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, bit_flags, node_index, node_count, g_sampling_settings.inheritance);
 	if (node_kind == 2 && node_count > 1)
 	{
 		node_count = 1;
 	}
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, node_index, bit_flags, node_count, g_sampling_settings.inheritance);
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, node_index, bit_flags, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, bit_flags, node_index, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, bit_flags, node_index, node_count, g_sampling_settings.inheritance);
 }
 
-/* compute_orientations with the inheritance read once */
-__forceinline void compute_orientations_inheritance(long blend_method, long node_kind, bool destination_mask, bool interpolate)
+__forceinline void function_288573(long arg_0, long arg_1, s_animation_output *arg_2, long arg_3)
 {
-	s_graph_inheritance const *inheritance = g_sampling_settings.inheritance;
-	long node_index;
-	byte const *bit_flags;
-	long node_count = g_sampling_settings.node_count;
+	if (arg_0 == 1)
+	{
+		if (arg_1 == 0)
+		{
+			quaternion_blend(&arg_2->rotation, &g_504430.rotation, g_sampling_settings.blend_weight);
+		}
+		else if (arg_1 == 1)
+		{
+			orientation_vector_blend(arg_2, &g_504430, g_sampling_settings.blend_weight);
+		}
+		else
+		{
+			orientation_scale_blend(arg_2, &g_504430, g_sampling_settings.blend_weight);
+		}
+	}
+	else if (arg_0 == 2)
+	{
+		if (arg_1 == 0)
+		{
+			quaternion_multiply(&arg_2->rotation, &g_504430.rotation, &arg_2->rotation);
+		}
+		else if (arg_1 == 1)
+		{
+			arg_2->vector.i = arg_2->vector.i + g_504430.vector.i;
+			arg_2->vector.j = arg_2->vector.j + g_504430.vector.j;
+			arg_2->vector.k = arg_2->vector.k + g_504430.vector.k;
+		}
+		else
+		{
+			arg_2->scale = arg_2->scale * g_504430.scale;
+		}
+	}
+	else if (arg_0 == 3)
+	{
+		if (arg_1 == 0)
+		{
+			/* scales the decoded rotation toward the identity (the one on
+			   the same side as the rotation): the offset from the identity,
+			   scaled, added back to it */
+			real one = 1.0f;
+			real fraction = g_sampling_settings.blend_weight;
+
+			*(dword *)&one |= *(dword *)&g_504430.rotation.w & 0x80000000;
+			g_504430.rotation.w -= one;
+			g_504430.rotation.i *= fraction;
+			g_504430.rotation.j *= fraction;
+			g_504430.rotation.k *= fraction;
+			g_504430.rotation.w *= fraction;
+			g_504430.rotation.w += one;
+			quaternion_multiply(&arg_2->rotation, &g_504430.rotation, &arg_2->rotation);
+		}
+		else if (arg_1 == 1)
+		{
+			arg_2->vector.i = g_sampling_settings.blend_weight * g_504430.vector.i + arg_2->vector.i;
+			arg_2->vector.j = g_sampling_settings.blend_weight * g_504430.vector.j + arg_2->vector.j;
+			arg_2->vector.k = g_sampling_settings.blend_weight * g_504430.vector.k + arg_2->vector.k;
+		}
+		else
+		{
+			arg_2->scale = ((g_504430.scale - 1.0f) * g_sampling_settings.blend_weight + 1.0f) * arg_2->scale;
+		}
+	}
+	else if (arg_0 == 4)
+	{
+		if (arg_1 == 0)
+		{
+			if (node_flags_test(g_55e530, arg_3))
+			{
+				quaternion_multiply(&g_502430[arg_3].rotation, &g_5044c0->rotation, &g_5044c0->rotation);
+			}
+		}
+		else if (arg_1 == 1)
+		{
+			if (node_flags_test(g_55e550, arg_3))
+			{
+				s_animation_output *local_0 = g_5044c0;
+
+				local_0->vector.i = g_502430[arg_3].position.x + local_0->vector.i;
+				local_0->vector.i = g_502430[arg_3].position.y + local_0->vector.i;
+				local_0->vector.i = g_502430[arg_3].position.z + local_0->vector.i;
+			}
+		}
+		else
+		{
+			if (node_flags_test(g_55e570, arg_3))
+			{
+				s_animation_output *local_0 = g_5044c0;
+				real local_1 = g_502430[arg_3].scale;
+
+				local_0->scale = local_0->scale * local_1;
+			}
+		}
+	}
+}
+
+__forceinline void function_288572(long arg_0, long arg_1, bool arg_2,
+	bool arg_3, long arg_4, long &arg_5, byte const *&arg_6, long arg_7,
+	s_graph_inheritance const *const &arg_8)
+{
+	bool local_0 = arg_0 == 0 || arg_0 == 4;
+	s_animation_output *local_1 = (s_animation_output *)g_sampling_settings.field_4c;
+
+	g_5044c0 = local_0 ? local_1 : &g_504430;
+	arg_6 = arg_4 == 0 ? g_sampling_settings.rotation_bit_flags : (arg_4 == 1 ? g_sampling_settings.translation_bit_flags : g_sampling_settings.scale_bit_flags);
+	for (arg_5 = 0; arg_5 < arg_7; )
+	{
+		long local_2 = *arg_6++;
+
+		if (local_2 == 0)
+		{
+			arg_5 += 8;
+			if (arg_1 == 0)
+			{
+				if (local_0)
+				{
+					g_5044c0 += 8;
+				}
+				else
+				{
+					local_1 += 8;
+				}
+			}
+		}
+		else
+		{
+			long local_3 = arg_5 + 8 > arg_7 ? arg_7 : arg_5 + 8;
+
+			for (; arg_5 < local_3; arg_5++)
+			{
+				if (local_2 & 1)
+				{
+					long local_4;
+
+					if (node_destination_get(arg_8, arg_1, arg_5, &local_4) &&
+						(!arg_2 || node_flags_test(g_sampling_settings.destination_node_mask, local_4)))
+					{
+						if (arg_1 != 0)
+						{
+							local_1 = (s_animation_output *)g_sampling_settings.field_4c + local_4;
+							if (local_0)
+							{
+								g_5044c0 = local_1;
+							}
+						}
+						component_decompress(arg_4);
+						if (!arg_3 && !local_0)
+						{
+							root_offset_scale(arg_1, arg_4, arg_5);
+						}
+						if (arg_3)
+						{
+							dword local_5 = g_sampling_settings.frame_index;
+							long local_6 = g_sampling_settings.next_frame_index;
+							real local_7 = g_sampling_settings.frame_fraction;
+
+							g_sampling_settings.frame_index = g_sampling_settings.blend_frame_index;
+							g_sampling_settings.next_frame_index = g_sampling_settings.blend_next_frame_index;
+							g_sampling_settings.frame_fraction = g_sampling_settings.blend_frame_fraction;
+							g_5044c0 = &g_504410;
+							component_decompress(arg_4);
+							component_interpolate(arg_4);
+							if (arg_0 != 4)
+							{
+								root_offset_scale(arg_1, arg_4, arg_5);
+							}
+							if (arg_0 == 0)
+							{
+								__assume(0);
+							}
+							function_288573(arg_0, arg_4, local_1, arg_1 == 0 ? arg_5 : local_4);
+							g_sampling_settings.frame_index = local_5;
+							g_sampling_settings.next_frame_index = local_6;
+							g_sampling_settings.frame_fraction = local_7;
+							g_5044c0 = &g_504430;
+						}
+						else
+						{
+							function_288573(arg_0, arg_4, local_1, arg_1 == 0 ? arg_5 : local_4);
+						}
+					}
+					if (arg_4 == 0)
+					{
+						g_5044b4++;
+					}
+					else if (arg_4 == 1)
+					{
+						g_5044b8++;
+					}
+					else
+					{
+						g_5044bc++;
+					}
+				}
+				if (arg_1 == 0)
+				{
+					if (local_0)
+					{
+						g_5044c0++;
+					}
+					else
+					{
+						local_1++;
+					}
+				}
+				local_2 >>= 1;
+			}
+		}
+	}
+}
+
+/* compute_orientations with the decoded orientation applied in each arm of
+   the interpolation test (compute_component_orientations applies it once,
+   after the test) */
+__forceinline void function_288571(long arg_0, long arg_1, bool arg_2, bool arg_3)
+{
+	long local_0;
+	byte const *local_1;
+	long local_2 = g_sampling_settings.node_count;
 
 	g_5044b4 = 0;
 	g_5044b8 = 0;
 	g_5044bc = 0;
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, node_index, bit_flags, node_count, inheritance);
-	if (node_kind == 2 && node_count > 1)
+	function_288572(arg_0, arg_1, arg_2, arg_3, 0, local_0, local_1, local_2, g_sampling_settings.inheritance);
+	if (arg_1 == 2 && local_2 > 1)
 	{
-		node_count = 1;
+		local_2 = 1;
 	}
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, node_index, bit_flags, node_count, inheritance);
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, node_index, bit_flags, node_count, inheritance);
+	function_288572(arg_0, arg_1, arg_2, arg_3, 1, local_0, local_1, local_2, g_sampling_settings.inheritance);
+	function_288572(arg_0, arg_1, arg_2, arg_3, 2, local_0, local_1, local_2, g_sampling_settings.inheritance);
 }
 
 /* compute_orientations with a node index for each component pass */
@@ -1487,13 +1701,13 @@ __forceinline void compute_orientations_split(long blend_method, long node_kind,
 	g_5044b4 = 0;
 	g_5044b8 = 0;
 	g_5044bc = 0;
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, rotation_index, bit_flags, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, bit_flags, rotation_index, node_count, g_sampling_settings.inheritance);
 	if (node_kind == 2 && node_count > 1)
 	{
 		node_count = 1;
 	}
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, translation_index, bit_flags, node_count, g_sampling_settings.inheritance);
-	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, scale_index, bit_flags, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, bit_flags, translation_index, node_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, bit_flags, scale_index, node_count, g_sampling_settings.inheritance);
 }
 
 /* compute_component_orientations with every loop variable passed by
@@ -1637,53 +1851,24 @@ __forceinline void compute_orientations_split_index_last(long blend_method, long
 	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 2, node_count, scale_node_index, bit_flags, destination_index, flags, scale_last);
 }
 
-__forceinline void compute_orientations_split_flags(long blend_method, long node_kind, bool destination_mask, bool interpolate)
+/* compute_orientations with the node count of the translation and scale
+   passes (only the root's for kind 2) in its own variable */
+__forceinline void compute_orientations_component_count(long blend_method, long node_kind, bool destination_mask, bool interpolate)
 {
 	long node_index;
 	byte const *bit_flags;
-	long destination_index;
-	long rotation_flags;
-	long translation_flags;
-	long scale_flags;
-	long last;
 	long node_count = g_sampling_settings.node_count;
 
 	g_5044b4 = 0;
 	g_5044b8 = 0;
 	g_5044bc = 0;
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 0, node_count, node_index, bit_flags, destination_index, rotation_flags, last);
-	if (node_kind == 2 && node_count > 1)
-	{
-		node_count = 1;
-	}
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 1, node_count, node_index, bit_flags, destination_index, translation_flags, last);
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 2, node_count, node_index, bit_flags, destination_index, scale_flags, last);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 0, bit_flags, node_index, node_count, g_sampling_settings.inheritance);
+	long component_count = node_kind == 2 && node_count > 1 ? 1 : node_count;
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 1, bit_flags, node_index, component_count, g_sampling_settings.inheritance);
+	compute_component_orientations(blend_method, node_kind, destination_mask, interpolate, 2, bit_flags, node_index, component_count, g_sampling_settings.inheritance);
 }
 
-__forceinline void compute_orientations_split_bit_flags(long blend_method, long node_kind, bool destination_mask, bool interpolate)
-{
-	long node_index;
-	byte const *rotation_bit_flags;
-	byte const *translation_bit_flags;
-	byte const *scale_bit_flags;
-	long destination_index;
-	long rotation_flags;
-	long translation_flags;
-	long scale_flags;
-	long last;
-	long node_count = g_sampling_settings.node_count;
-
-	g_5044b4 = 0;
-	g_5044b8 = 0;
-	g_5044bc = 0;
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 0, node_count, node_index, rotation_bit_flags, destination_index, rotation_flags, last);
-	if (node_kind == 2 && node_count > 1)
-	{
-		node_count = 1;
-	}
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 1, node_count, node_index, translation_bit_flags, destination_index, translation_flags, last);
-	compute_component_orientations_shared(blend_method, node_kind, destination_mask, interpolate, 2, node_count, node_index, scale_bit_flags, destination_index, scale_flags, last);
-}
+__forceinline void compute_orientations_inheritance_mapping(long blend_method, long node_kind, bool destination_mask, bool interpolate);
 
 // @retail 0x27a6e0
 void function_27a6e0(void)
@@ -1712,7 +1897,7 @@ void function_27b020(void)
 // @retail 0x27b1d0
 void function_27b1d0(void)
 {
-	compute_orientations(0, 1, true, true);
+	compute_orientations_inheritance_mapping(0, 1, true, true);
 }
 
 // @retail 0x27b660
@@ -1724,7 +1909,7 @@ void function_27b660(void)
 // @retail 0x27b920
 void function_27b920(void)
 {
-	compute_orientations_inheritance(0, 1, false, true);
+	compute_orientations_inheritance_mapping(0, 1, false, true);
 }
 
 // @retail 0x27bd60
@@ -1736,7 +1921,7 @@ void function_27bd60(void)
 // @retail 0x27bfe0
 void function_27bfe0(void)
 {
-	compute_orientations(0, 2, true, true);
+	compute_orientations_inheritance_mapping(0, 2, true, true);
 }
 
 // @retail 0x27c490
@@ -1748,7 +1933,7 @@ void function_27c490(void)
 // @retail 0x27c750
 void function_27c750(void)
 {
-	compute_orientations_inheritance(0, 2, false, true);
+	compute_orientations_inheritance_mapping(0, 2, false, true);
 }
 
 // @retail 0x27cb90
@@ -1781,10 +1966,11 @@ void function_27dd10(void)
 	compute_orientations(1, 0, false, false);
 }
 
+// score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
 // @retail 0x27dff0
 void function_27dff0(void)
 {
-	compute_orientations(1, 1, true, true);
+	function_288571(1, 1, true, true);
 }
 
 // @retail 0x27e6b0
@@ -1832,45 +2018,32 @@ void function_2806e0(void)
 // @retail 0x280ac0
 void function_280ac0(void)
 {
-	compute_orientations(2, 0, true, true);
+	compute_orientations_component_count(2, 0, true, true);
 }
 
 // @retail 0x281090
 void function_281090(void)
 {
-	compute_orientations_split_bit_flags(2, 0, true, false);
+	compute_orientations_component_count(2, 0, true, false);
 }
 
 // @retail 0x281370
 void function_281370(void)
 {
-	compute_orientations_split_flags(2, 0, false, true);
+	compute_orientations_component_count(2, 0, false, true);
 }
 
-/* compute_orientations(2, 0, false, false), with a node index for each
-   component pass: with the shared index, VC loads the translation add's
-   operands in the other order */
 // @retail 0x2818e0
 void function_2818e0(void)
 {
-	long rotation_index;
-	long translation_index;
-	long scale_index;
-	byte const *bit_flags;
-	long node_count = g_sampling_settings.node_count;
-
-	g_5044b4 = 0;
-	g_5044b8 = 0;
-	g_5044bc = 0;
-	compute_component_orientations(2, 0, false, false, 0, rotation_index, bit_flags, node_count, g_sampling_settings.inheritance);
-	compute_component_orientations(2, 0, false, false, 1, translation_index, bit_flags, node_count, g_sampling_settings.inheritance);
-	compute_component_orientations(2, 0, false, false, 2, scale_index, bit_flags, node_count, g_sampling_settings.inheritance);
+	compute_orientations_component_count(2, 0, false, false);
 }
 
+// score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
 // @retail 0x281b60
 void function_281b60(void)
 {
-	compute_orientations(2, 1, true, true);
+	function_288571(2, 1, true, true);
 }
 
 // @retail 0x2821f0
@@ -1903,10 +2076,32 @@ void function_283600(void)
 	compute_orientations_split_index_last(2, 2, true, false);
 }
 
+/* compute_orientations(2, 2, false, true) with the flags and the last node of
+   each group of eight kept per component pass */
 // @retail 0x2839d0
 void function_2839d0(void)
 {
-	compute_orientations(2, 2, false, true);
+	long node_index;
+	byte const *bit_flags;
+	long destination_index;
+	long rotation_flags;
+	long translation_flags;
+	long scale_flags;
+	long rotation_last;
+	long translation_last;
+	long scale_last;
+	long node_count = g_sampling_settings.node_count;
+
+	g_5044b4 = 0;
+	g_5044b8 = 0;
+	g_5044bc = 0;
+	compute_component_orientations_shared(2, 2, false, true, 0, node_count, node_index, bit_flags, destination_index, rotation_flags, rotation_last);
+	if (node_count > 1)
+	{
+		node_count = 1;
+	}
+	compute_component_orientations_shared(2, 2, false, true, 1, node_count, node_index, bit_flags, destination_index, translation_flags, translation_last);
+	compute_component_orientations_shared(2, 2, false, true, 2, node_count, node_index, bit_flags, destination_index, scale_flags, scale_last);
 }
 
 // @retail 0x284010
@@ -1918,7 +2113,7 @@ void function_284010(void)
 // @retail 0x2843a0
 void function_2843a0(void)
 {
-	compute_orientations_inheritance(3, 0, true, true);
+	compute_orientations_component_count(3, 0, true, true);
 }
 
 // @retail 0x284a20
@@ -1942,7 +2137,7 @@ void function_285400(void)
 // @retail 0x285750
 void function_285750(void)
 {
-	compute_orientations(3, 1, true, true);
+	function_288571(3, 1, true, true);
 }
 
 // @retail 0x285e90
@@ -1990,7 +2185,7 @@ void function_288120(void)
 // @retail 0x288570
 void function_288570(void)
 {
-	compute_orientations(4, 0, true, true);
+	function_288571(4, 0, true, true);
 }
 
 // @retail 0x288bd0
@@ -2008,9 +2203,10 @@ void function_288f80(void)
 // @retail 0x289580
 void function_289580(void)
 {
-	compute_orientations_split(4, 0, false, false);
+	function_288571(4, 0, false, false);
 }
 
+// score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
 // @retail 0x2898b0
 void function_2898b0(void)
 {
@@ -2032,7 +2228,7 @@ void function_28a3e0(void)
 // @retail 0x28aaa0
 void function_28aaa0(void)
 {
-	compute_orientations(4, 1, false, false);
+	function_288571(4, 1, false, false);
 }
 
 // @retail 0x28ae70
@@ -2057,4 +2253,161 @@ void function_28b9c0(void)
 void function_28c090(void)
 {
 	compute_orientations(4, 2, false, false);
+}
+
+
+__forceinline bool node_destination_mapping_get(s_graph_inheritance const *inheritance, long node_kind, long node_index, long *destination_index)
+{
+	if (node_kind == 0)
+	{
+		*destination_index = node_index;
+		return true;
+	}
+	dword const *flags = (dword const *)inheritance->node_map_flags;
+	short const *mapping = (short const *)inheritance->node_map;
+	if (flags[node_index >> 5] & (1 << (node_index & 31)))
+	{
+		long index = mapping[node_index];
+
+		if (index >= 0 && index < g_sampling_settings.destination_node_count)
+		{
+			*destination_index = index;
+			return true;
+		}
+	}
+	return false;
+}
+
+__forceinline void compute_component_orientations_mapping(long blend_method, long node_kind, bool destination_mask, bool interpolate, long component, byte const *&bit_flags, long &node_index, long node_count, s_graph_inheritance const *const &inheritance)
+{
+	bool in_place = blend_method == 0 || blend_method == 4;
+	s_animation_output *destination = (s_animation_output *)g_sampling_settings.field_4c;
+
+	g_5044c0 = in_place ? destination : &g_504430;
+	bit_flags = component == 0 ? g_sampling_settings.rotation_bit_flags : (component == 1 ? g_sampling_settings.translation_bit_flags : g_sampling_settings.scale_bit_flags);
+	for (node_index = 0; node_index < node_count; )
+	{
+		long flags = *bit_flags++;
+
+		if (flags == 0)
+		{
+			node_index += 8;
+			if (node_kind == 0)
+			{
+				if (in_place)
+				{
+					g_5044c0 += 8;
+				}
+				else
+				{
+					destination += 8;
+				}
+			}
+		}
+		else
+		{
+			long last = node_index + 8 > node_count ? node_count : node_index + 8;
+
+			for (; node_index < last; node_index++)
+			{
+				if (flags & 1)
+				{
+					long destination_index;
+
+					/* the destination mask tested in place: through node_flags_test, VC keeps
+					   the test's result in a register when the sampler ends in __assume */
+					if (node_destination_mapping_get(inheritance, node_kind, node_index, &destination_index) &&
+						(!destination_mask || BIT_VECTOR_TEST(g_sampling_settings.destination_node_mask, destination_index)))
+					{
+						if (node_kind != 0)
+						{
+							destination = (s_animation_output *)g_sampling_settings.field_4c + destination_index;
+							if (in_place)
+							{
+								g_5044c0 = destination;
+							}
+						}
+						component_decompress(component);
+						if (!interpolate && !in_place)
+						{
+							root_offset_scale(node_kind, component, node_index);
+						}
+						if (interpolate)
+						{
+							dword frame_index = g_sampling_settings.frame_index;
+							long frame_index2 = g_sampling_settings.next_frame_index;
+							real frame_fraction = g_sampling_settings.frame_fraction;
+
+							g_sampling_settings.frame_index = g_sampling_settings.blend_frame_index;
+							g_sampling_settings.next_frame_index = g_sampling_settings.blend_next_frame_index;
+							g_sampling_settings.frame_fraction = g_sampling_settings.blend_frame_fraction;
+							g_5044c0 = &g_504410;
+							component_decompress(component);
+							component_interpolate(component);
+							if (blend_method != 4)
+							{
+								root_offset_scale(node_kind, component, node_index);
+							}
+							if (blend_method == 0)
+							{
+								__assume(0);
+							}
+							component_apply(blend_method, component, destination, node_kind == 0 ? node_index : destination_index);
+							g_sampling_settings.frame_index = frame_index;
+							g_sampling_settings.next_frame_index = frame_index2;
+							g_sampling_settings.frame_fraction = frame_fraction;
+							g_5044c0 = &g_504430;
+						}
+						else
+						{
+							component_apply(blend_method, component, destination, node_kind == 0 ? node_index : destination_index);
+						}
+					}
+					if (component == 0)
+					{
+						g_5044b4++;
+					}
+					else if (component == 1)
+					{
+						g_5044b8++;
+					}
+					else
+					{
+						g_5044bc++;
+					}
+				}
+				if (node_kind == 0)
+				{
+					if (in_place)
+					{
+						g_5044c0++;
+					}
+					else
+					{
+						destination++;
+					}
+				}
+				flags >>= 1;
+			}
+		}
+	}
+}
+
+__forceinline void compute_orientations_inheritance_mapping(long blend_method, long node_kind, bool destination_mask, bool interpolate)
+{
+	s_graph_inheritance const *inheritance = g_sampling_settings.inheritance;
+	long node_index;
+	byte const *bit_flags;
+	long node_count = g_sampling_settings.node_count;
+
+	g_5044b4 = 0;
+	g_5044b8 = 0;
+	g_5044bc = 0;
+	compute_component_orientations_mapping(blend_method, node_kind, destination_mask, interpolate, 0, bit_flags, node_index, node_count, inheritance);
+	if (node_kind == 2 && node_count > 1)
+	{
+		node_count = 1;
+	}
+	compute_component_orientations_mapping(blend_method, node_kind, destination_mask, interpolate, 1, bit_flags, node_index, node_count, inheritance);
+	compute_component_orientations_mapping(blend_method, node_kind, destination_mask, interpolate, 2, bit_flags, node_index, node_count, inheritance);
 }

@@ -1,4 +1,4 @@
-// @flags /O2 /Gr
+// @flags /O2 /Gr /arch:SSE
 #include "unknown_11c920.h"
 #include <xtl.h>
 #include <string.h>
@@ -294,32 +294,32 @@ upper_place:
 	return variant_upper_place(p);
 }
 
-bool function_193560(s_surface_description *p);
-byte function_193610(s_surface_description *p);
-byte function_193630(s_surface_description *p);
-byte function_1936a0(s_surface_description *p);
-byte function_1936a0_type5(s_surface_description *p);
+bool matchmaking_hopper_verify_common(s_surface_description *p);
+byte matchmaking_hopper_verify_players(s_surface_description *p);
+byte matchmaking_hopper_verify_teams_party_limits(s_surface_description *p);
+byte matchmaking_hopper_verify_teams(s_surface_description *p);
+byte matchmaking_hopper_verify_teams_party_of_team(s_surface_description *p);
 __declspec(noinline) bool function_1934f0(s_surface_description *p);
 
 // @retail 0x1934f0
 bool function_1934f0(s_surface_description *p)
 {
-	if (!function_193560(p))
+	if (!matchmaking_hopper_verify_common(p))
 	{
 		return false;
 	}
 	switch (p->type)
 	{
 	case 1:
-		return function_193610(p);
+		return matchmaking_hopper_verify_players(p);
 	case 2:
-		return function_193610(p);
+		return matchmaking_hopper_verify_players(p);
 	case 4:
-		return function_193630(p);
+		return matchmaking_hopper_verify_teams_party_limits(p);
 	case 3:
-		return function_1936a0(p);
+		return matchmaking_hopper_verify_teams(p);
 	case 5:
-		return function_1936a0_type5(p);
+		return matchmaking_hopper_verify_teams_party_of_team(p);
 	default:
 		__assume(0);
 	}
@@ -431,7 +431,7 @@ struct s_game_variant_map
 {
 	long unknown000;
 	long map_id;
-	byte unknown008[0x248 - 8];
+	char names[9][64];  /* UTF-16 text, the same name in each language */
 	long weight;
 	byte settings[0x130];
 };
@@ -449,6 +449,12 @@ struct s_game_variants_file
 	s_game_variant_block blocks[16];
 };
 
+/* size before buffer: the order the arguments are set up in */
+PRIVATE inline bool file_write_sized(s_type_acf665 *file, dword size, void const *buffer)
+{
+	return function_136d00(file, buffer, size);
+}
+
 // @retail 0x193ff0
 bool game_variants_file_write(s_game_variants_file *variants_file)
 {
@@ -462,13 +468,13 @@ bool game_variants_file_write(s_game_variants_file *variants_file)
 
 		if (function_136970(&file, 2, &error))
 		{
-			if (function_136d00(&file, variants_file, sizeof(*variants_file)))
+			if (file_write_sized(&file, sizeof(*variants_file), variants_file))
 				result = true;
 			function_136bb0(&file);
 		}
 
 		if (!result)
-			function_136860(&file);
+			file_ref_delete(&file);
 		else
 			memcpy(g_551ae8, variants_file->variants, sizeof(g_551ae8));
 	}
@@ -489,8 +495,8 @@ bool game_variant_block_read(long index, s_game_variant_block *block)
 		function_193fa0(&file);
 		if (function_136970(&file, 1, &error))
 		{
-			if (function_136bf0(&file, sizeof(g_551ae8) + index * sizeof(s_game_variant_block), true) &&
-				function_136ca0(&file, block, sizeof(*block), true))
+			if (file_ref_seek(&file, sizeof(g_551ae8) + index * sizeof(s_game_variant_block), true) &&
+				file_ref_read(&file, sizeof(*block), block, true))
 			{
 				result = true;
 			}
@@ -739,11 +745,26 @@ PRIVATE s_map_preset_193010 const g_445258[6] = {
 
 void function_212f40(long preset, s_game_variant *variant);
 
+/* sets or clears one bit of a flags word */
+static inline void flags_set_bit(dword *flags, long bit, bool value)
+{
+	if (value)
+		*flags |= 1 << bit;
+	else
+		*flags &= ~(1 << bit);
+}
+
+/* memcpy, with its arguments set up source first, the order retail uses */
+static __forceinline void *copy_bytes(void *destination, void const *source, long size)
+{
+	return memcpy(destination, source, size);
+}
+
 // @retail 0x193010
 void function_193010(s_game_variant_block *block, long type)
 {
-    s_map_preset_193010 const *presets;
-    long count;
+    s_map_preset_193010 const *presets = NULL;
+    long count = 0;
     memset(block, 0, sizeof(*block));
     if (type == 2)
     {
@@ -770,10 +791,8 @@ void function_193010(s_game_variant_block *block, long type)
         presets = g_445218;
         count = 5;
     }
-    else
+    if (presets)
     {
-        goto fallback;
-    }
     block->map_count = count;
     for (long i = 0; i < count; i++)
     {
@@ -789,21 +808,25 @@ void function_193010(s_game_variant_block *block, long type)
             }
         }
         map->map_id = presets[i].map_id;
-        memcpy(map->unknown008, name, sizeof(name));
-        memcpy(map->unknown008 + 64, map->unknown008, 512);
+        /* the name in every language */
+        char *names = map->names[0];
+        memcpy(names, name, sizeof(name));
+        copy_bytes(names + sizeof(name), names, 8 * sizeof(name));
         map->weight = presets[i].weight;
         function_212f40(presets[i].preset, (s_game_variant *)map->settings);
-        *(dword *)(map->settings + 0x48) &= ~0x10;
-        *(dword *)(map->settings + 0x48) &= ~0x20;
+        flags_set_bit((dword *)(map->settings + 0x48), 4, false);
+        flags_set_bit((dword *)(map->settings + 0x48), 5, false);
         *(long *)(map->settings + 0x58) = 0;
     }
-    return;
-fallback:
+    }
+    else
+    {
     block->maps[0].map_id = 30000;
     block->map_count = 1;
     function_19d220((s_game_variant *)block->maps[0].settings, 4);
     *(long *)(block->maps[0].settings + 0x50) = 5;
-    *(dword *)(block->maps[0].settings + 0x48) &= ~0x10;
+    flags_set_bit((dword *)(block->maps[0].settings + 0x48), 4, false);
+    }
 }
 
 struct s_built_variant;
@@ -872,11 +895,17 @@ static __forceinline s_game_variants_file *variants_buffer_allocate(void)
 	return result;
 }
 
+/* the result 0x81050 recorded for a request's last message */
+static inline short pending_request_last_result(s_pending_message_header const *header)
+{
+	return ((short const *)&header->unknown0c)[1];
+}
+
 // @retail 0x194260
 bool __stdcall game_variants_received(s_pending_message_header *header)
 {
 	bool result = false;
-	if (header->kind && (header->flags & 2) && *((short *)((byte *)header + 0xe)) == 1)
+	if (header->kind && (header->flags & 2) && pending_request_last_result(header) == 1)
 	{
 		byte *data = NULL;
 		if (header->data && (dword)header->size > 16)

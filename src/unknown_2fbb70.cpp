@@ -1,136 +1,112 @@
-#include "unknown_11c920.h"
+// @flags /O2 /GL-
+// Havok (third-party physics library): a ray cast against a container of
+// parts: every part (or every part a filter on the ray accepts) is cast
+// against, and each hit records the part's key; bracketed by two marks in the
+// timing stream.
+#include "timer_mark_2ebc80.h"
 
-// @flags /O2 /Gr
-
-class c_physics_collection_shape;
-
-struct s_physics_collection_query;
-
-class c_physics_collection_filter
+// the one-byte answer of a test, returned through a hidden pointer
+class answer_2fbb70
 {
 public:
-    virtual bool *accept(bool *accepted, s_physics_collection_query *query,
-        c_physics_collection_shape *collection, long key);
+	answer_2fbb70() {}
+
+	char value;
 };
 
-struct s_physics_collection_query
+class container_2fbb70;
+struct ray_2fbb70;
+
+// what a cast fills in; the key of the part hit at +0x10
+struct hit_2fbb70
 {
-    byte field_0[0x24];
-    c_physics_collection_filter *filter;
+	char unknown0[0x10];
+	long key;
 };
-static_assert(sizeof(s_physics_collection_query) == 0x28,
-    "collection query layout");
 
-struct s_physics_collection_hit
-{
-    float direction[4];
-    dword key;
-    dword value;
-};
-static_assert(sizeof(s_physics_collection_hit) == 0x18,
-    "collection hit layout");
-
-struct s_physics_collection_context
-{
-    void *shape;
-    dword key;
-    void *matrix;
-    s_physics_collection_context *parent;
-};
-static_assert(sizeof(s_physics_collection_context) == 0x10,
-    "collection context layout");
-
-class c_physics_collection_child
+// whether one part of a container may be cast against
+class ray_filter_2fbb70
 {
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void v6();
-    virtual void v7();
-    virtual bool *intersect(bool *accepted, s_physics_collection_query *query,
-        s_physics_collection_hit *hit);
-    virtual void forward(s_physics_collection_query *query,
-        s_physics_collection_context *context, void *collector);
+	virtual answer_2fbb70 accepts(ray_2fbb70 const *ray, container_2fbb70 const *container, long key) const = 0;
 };
 
-class c_physics_collection_shape
+struct ray_2fbb70
+{
+	char unknown0[0x24];
+	ray_filter_2fbb70 *filter;
+};
+
+class part_2fbb70
 {
 public:
-    virtual void v0();
-    virtual void v1();
-    virtual void v2();
-    virtual void v3();
-    virtual void v4();
-    virtual void v5();
-    virtual void v6();
-    virtual void v7();
-    virtual bool *function_2fbb70(bool *accepted,
-        s_physics_collection_query *query, s_physics_collection_hit *hit);
-    virtual void function_2fbe90(s_physics_collection_query *query,
-        s_physics_collection_context *context, void *collector);
-    virtual void v10();
-    virtual long first_key();
-    virtual long next_key(long key);
-    virtual c_physics_collection_child *child(long key, void *storage);
+	virtual void slot_0() {}
+	virtual void slot_1() {}
+	virtual void slot_2() {}
+	virtual void slot_3() {}
+	virtual void slot_4() {}
+	virtual void slot_5() {}
+	virtual void slot_6() {}
+	virtual void slot_7() {}
+	// a ray cast against the part
+	virtual answer_2fbb70 cast_ray(ray_2fbb70 const *ray, hit_2fbb70 *hit) const { return answer_2fbb70(); }
 };
 
-static bool physics_collection_accept(c_physics_collection_shape *collection,
-    s_physics_collection_query *query, long key)
+class container_2fbb70
 {
-    if (!query->filter)
-        return true;
-    bool accepted;
-    query->filter->accept(&accepted, query, collection, key);
-    return accepted;
-}
+public:
+	virtual void slot_0() {}
+	virtual void slot_1() {}
+	virtual void slot_2() {}
+	virtual void slot_3() {}
+	virtual void slot_4() {}
+	virtual void slot_5() {}
+	virtual void slot_6() {}
+	virtual void slot_7() {}
+	virtual void slot_8() {}
+	virtual void slot_9() {}
+	virtual void slot_10() {}
+	// the part keys, ending with -1
+	virtual long first_key() const { return -1; }
+	virtual long next_key(long key) const { return -1; }
+	// a part, built in the buffer given when it must be
+	virtual part_2fbb70 const *part(long key, char *buffer) const { return 0; }
+
+	answer_2fbb70 function_2fbb70(ray_2fbb70 const *ray, hit_2fbb70 *hit) const;
+};
 
 // @retail 0x2fbb70
-bool *c_physics_collection_shape::function_2fbb70(bool *accepted,
-    s_physics_collection_query *query, s_physics_collection_hit *hit)
+answer_2fbb70 container_2fbb70::function_2fbb70(ray_2fbb70 const *ray, hit_2fbb70 *hit) const
 {
-    bool any_hit = false;
-    long key = first_key();
-    while (key != NONE)
-    {
-        if (physics_collection_accept(this, query, key))
-        {
-            byte child_storage[0x100];
-            c_physics_collection_child *shape = child(key, child_storage);
-            bool child_hit;
-            shape->intersect(&child_hit, query, hit);
-            if (child_hit)
-            {
-                any_hit = true;
-                hit->key = key;
-            }
-        }
-        key = next_key(key);
-    }
-    *accepted = any_hit;
-    return accepted;
-}
-
-// @retail 0x2fbe90
-void c_physics_collection_shape::function_2fbe90(
-    s_physics_collection_query *query,
-    s_physics_collection_context *context, void *collector)
-{
-    long key = first_key();
-    while (key != NONE)
-    {
-        if (physics_collection_accept(this, query, key))
-        {
-            byte child_storage[0x100];
-            c_physics_collection_child *shape = child(key, child_storage);
-            s_physics_collection_context local = {
-                shape, (dword)key, context->matrix, context
-            };
-            shape->forward(query, &local, collector);
-        }
-        key = next_key(key);
-    }
+	timer_add_2ebc80("TthkShapeCollection::castRay");
+	__declspec(align(16)) char buffer[0x100];
+	answer_2fbb70 result;
+	result.value = 0;
+	if (ray->filter == 0)
+	{
+		for (long key = first_key(); key != -1; key = next_key(key))
+		{
+			if (part(key, buffer)->cast_ray(ray, hit).value)
+			{
+				result.value = 1;
+				hit->key = key;
+			}
+		}
+	}
+	else
+	{
+		for (long key = first_key(); key != -1; key = next_key(key))
+		{
+			if (ray->filter->accepts(ray, this, key).value)
+			{
+				if (part(key, buffer)->cast_ray(ray, hit).value)
+				{
+					result.value = 1;
+					hit->key = key;
+				}
+			}
+		}
+	}
+	timer_add_2ebc80("Et");
+	return result;
 }

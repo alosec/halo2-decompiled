@@ -8,28 +8,12 @@
 #include "unknown_1fa590.h"
 #include "slot_handler.h"
 
-// @stub 0x25d020
-bool __stdcall function_25d020(long arg_0, long arg_1, long arg_2, long arg_3, long arg_4, long arg_5)
-{
-	return false;
-}
-
-// @stub 0x256bd0
-short __stdcall function_256bd0(long actor_index, s_slot *slot, bool active)
-{
-	return 0;
-}
 
 
 
 
 
-// @stub 0x29d7b0
-bool function_29d7b0(s_pathfinding_data *pathfinding, s_type_d4fbfa *definition, vector3f const *direction,
-	point3f *point, vector3f *normal, char *side)
-{
-	return false;
-}
+
 
 
 
@@ -40,13 +24,5 @@ struct s_cs_state;
 
 struct s_2640c0;
 struct s_2641c0;
-
-
-// @stub 0x26c2d0
-void __stdcall function_26c2d0(long arg_0)
-{
-}
-
-
 
 

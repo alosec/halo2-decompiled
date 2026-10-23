@@ -47,11 +47,11 @@ public:
 };
 
 
-struct c_contact_query_world { void add(void *arg_0); };
+struct c_contact_query_world { void *add(void *arg_0); };
 struct s_47f048_object { void function_30be40(long arg_0); };
 struct s_1d1542 { byte field_0 : 1; byte field_1 : 7; };
 struct s_1d1540 { void function_30be00(void *arg_0); };
-struct s_1d1541 { void function_30d2b0(void *arg_0); };
+struct s_1d1541 { void *function_30d2b0(void *arg_0); };
 struct s_314320
 {
  long field_0;
@@ -80,10 +80,9 @@ void function_1d1540(s_havok_component *arg_0)
  byte *local_0 = (byte *)havok_object_get(arg_0->object_index);
  for (long local_1 = 0; local_1 < arg_0->rigid_bodies.size; ++local_1)
  {
-  (void)&local_1;
-  hkRigidBody *local_2 = arg_0->rigid_bodies.data[local_1].rigid_body;
+  __declspec(align(16)) hkRigidBody *local_2 = arg_0->rigid_bodies.data[local_1].rigid_body;
   ((s_1d1540 *)local_2)->function_30be00(g_51eca8);
-  if ((arg_0->unknown04 & 1) && !local_2->m_fixed && local_2->m_motion->getType() != 6)
+  if ((arg_0->unknown04 & 1) && !local_2->m_fixed && local_2->m_motion->kind_code() != 6)
   {
    ((s_47f048_object *)local_2)->function_30be40((long)(g_51eca8 ? g_51eca8 + 4 : NULL));
    *(word *)((byte *)local_2 + 0x5c) = 0;

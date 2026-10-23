@@ -72,20 +72,23 @@ short __stdcall function_2551c0(long actor_index)
 	return local_0;
 }
 
+// score 117 (was 117): our frame is four bytes larger than retail's and the
+// inlined rotation helper runs on a different SSE schedule.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_0c_state *state = (s_slot_0c_state *)slot;
+	bool result = false;
 
 	if (actor->unknown018 == NONE)
 	{
-		return false;
+		goto done;
 	}
 
 	state->timer = g_510c54->field_2_3 * 10;
 	*(vector3f *)&state->point = actor->unknown290;
-	state->unknown1c = 0.f;
+	state->point.z = 0.f;
 	if (function_30bf0((vector3f *)&state->point) > 0.f)
 	{
 		if (function_26bf10(actor->unknown018))
@@ -100,7 +103,7 @@ bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 				vector3f best_direction;
 
 				function_210770(actor->unknown27c.point.output_index, &actor->unknown290, &forward);
-				for (long i = 0; i < 8; i++)
+				for (short i = 0; i < 8; i++)
 				{
 					real angle = (real)i * 0.7853982f;
 					vector3f direction = forward;
@@ -132,9 +135,10 @@ bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 		{
 			function_e68c0(0x27, actor->unknown018);
 		}
-		return true;
+		result = true;
 	}
-	return false;
+done:
+	return result;
 }
 
 // @retail 0x255520
@@ -223,6 +227,8 @@ struct s_2556c0
 	byte field_6[10];
 };
 
+// score 1 (was 1): the byte test uses the other SIB base and index slot;
+// the address is the same.
 // @retail 0x2556b0
 long function_2556b0(point3f const *arg_0, vector3f const *arg_1, long arg_2, real *arg_3)
 {
@@ -270,13 +276,13 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // @retail 0x255d60
 bool function_255d60(long arg_0, point3f const *arg_1, real arg_2, real arg_3, short *arg_4)
 {
+	bool local_3 = false;
+	long local_4 = 0;
+	s_record_pool_iterator local_5;
 	real local_20 = arg_2 > arg_3 ? arg_2 : arg_3;
 	s_actor_view *local_0 = actor_get(arg_0);
 	real local_1 = local_20 * local_20;
 	real local_2 = arg_2 * arg_2;
-	bool local_3 = false;
-	long local_4 = 0;
-	s_record_pool_iterator local_5;
 	if (g_4f55d0->active)
 	{
 		local_5.data = g_502420;
@@ -394,6 +400,7 @@ bool __stdcall function_1ffa30(s_type_c3b527 const *arg_0, long arg_4, long arg_
 bool function_255b10(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool arg_3)
 {
 	s_actor_view *local_0 = actor_get(arg_0);
+	bool result = false;
 	long local_2 = NONE;
 	point3f local_3;
 	if (arg_1->output_index == NONE || !function_2104b0(arg_1->output_index, &arg_1->point, &local_3))
@@ -410,29 +417,35 @@ bool function_255b10(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool ar
 	}
 	c_type_709360 local_8 = ((s_graph_tag *)g_4e3b44[local_6->field_68 & 0xffff].bytes)->overlay_get(
 		local_7, local_6->field_74, local_6->field_78, 0xd000021, NULL, NULL, NULL);
-	if ((local_8.index == NONE && !function_10f340(local_4, 0x7000101, 0xd000021)) || local_0->unknown07c == NONE)
-		return false;
-	point2f local_9;
-	local_9.x = local_3.x - local_0->position.x;
-	local_9.y = local_3.y - local_0->position.y;
-	if (!(normalize2d(&local_9) > 0.f &&
-		local_0->unknown290.i * local_9.x + local_0->unknown290.j * local_9.y >= 0.f))
-		return false;
-	byte *local_10 = (byte *)function_1e5380(arg_0);
-	if (!local_10 || !function_1ff6c0(arg_0, arg_2, &local_3, &local_2))
-		return false;
-	short local_11;
-	if (function_255d60(arg_0, &local_3, *(real *)(local_10 + 0xc), *(real *)(local_10 + 0x20), &local_11))
-		return false;
-	return function_1ffa30(arg_1, arg_0, arg_2, local_2, arg_3);
+	if ((local_8.index != NONE || function_10f340(local_4, 0x7000101, 0xd000021)) && local_0->unknown07c != NONE)
+	{
+		point2f local_9;
+		local_9.x = local_3.x - local_0->position.x;
+		local_9.y = local_3.y - local_0->position.y;
+		if (normalize2d(&local_9) > 0.f &&
+			local_0->unknown290.i * local_9.x + local_0->unknown290.j * local_9.y >= 0.f)
+		{
+			byte *local_10 = (byte *)function_1e5380(arg_0);
+			if (local_10 && function_1ff6c0(arg_0, arg_2, &local_3, &local_2))
+			{
+				short local_11;
+				if (!function_255d60(arg_0, &local_3, *(real *)(local_10 + 0xc), *(real *)(local_10 + 0x20), &local_11) &&
+					function_1ffa30(arg_1, arg_0, arg_2, local_2, arg_3))
+				{
+					result = true;
+				}
+			}
+		}
+	}
+	return result;
 }
 
 // @retail 0x255ce0
 bool function_255ce0(long arg_0)
 {
+	bool local_2 = false;
 	s_actor_view *local_0 = actor_get(arg_0);
 	byte *local_1 = (byte *)object_get(local_0->unknown018);
-	bool local_2 = false;
 	if (!function_110ab0(local_0->unknown018) && *(real *)(local_1 + 0xf8) == 0.f)
 	{
 		s_255ce0 *local_3 = (s_255ce0 *)local_0;
@@ -443,10 +456,18 @@ bool function_255ce0(long arg_0)
 
 long function_1e4a50(long arg_0);
 void function_26bfa0(long object_index, long *location_index, s_location_view *location);
-bool function_10fa80(long unit_index, long mode, long set, short *event_ticks, real *distance, short *duration_ticks, real *event_distance);
+bool unit_animation_get_timing(long unit_index, long mode, long set, short *event_ticks, real *distance, short *duration_ticks, real *event_distance);
 short __stdcall function_255740(long arg_0, s_slot *arg_1);
 
 s_slot_handler_0 g_47f7dc = {8, 0, 0, -2, 0, function_255740};
+
+PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const *arg_1)
+{
+	real local_0 = arg_0->i * arg_1->i;
+	local_0 += arg_0->j * arg_1->j;
+	local_0 += arg_0->k * arg_1->k;
+	return local_0;
+}
 
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
@@ -458,19 +479,19 @@ short __stdcall function_255740(long arg_0, s_slot *arg_1)
 		long local_1 = local_0->unknown5ac;
 		s_slot_object_view *local_2 = object_get(local_1);
 		vector3f local_3 = local_0->unknown5ec;
-		vector3f local_4 = local_0->unknown290;
 		local_3.k = 0.f;
+		vector3f local_4 = local_0->unknown290;
 		local_4.k = 0.f;
 		real local_5 = function_30bf0(&local_3);
 		if (local_5 > 0.f && function_30bf0(&local_4) > 0.f)
 		{
 			real local_6 = *(real *)((byte *)function_1e4a50(local_0->unknown054) + 4);
+			real local_9 = local_2->unknown03c + local_6;
 			vector3f local_7;
 			vector3d_from_points3d(&local_0->position, &local_2->unknown030, &local_7);
-			real local_8 = local_7.i * local_3.i + local_7.j * local_3.j + local_7.k * local_3.k;
+			real local_8 = function_255741(&local_7, &local_3);
 			if (local_8 > 0.f)
 			{
-				real local_9 = local_2->unknown03c + local_6;
 				if (local_9 + local_5 > local_8)
 				{
 					vector3f local_10;
@@ -486,23 +507,26 @@ short __stdcall function_255740(long arg_0, s_slot *arg_1)
 						local_8 -= local_2->unknown03c;
 						if (local_4.i * local_3.i + local_4.j * local_3.j + local_4.k * local_3.k > 0.95f)
 						{
-							real local_13 = 0.f;
-							real local_14 = 0.f;
-							long local_15;
-							s_location_view local_16;
-							function_26bfa0(local_1, &local_15, &local_16);
-							local_4.i = local_10.i * -1.f;
-							local_4.j = local_10.j * -1.f;
-							local_4.k = -0.f;
 							short local_17;
-							if (function_2556b0(&local_16.point.point, &local_10, local_15, &local_13) && local_11 > 0.f)
-								local_17 = 1;
-							else if (function_2556b0(&local_16.point.point, &local_4, local_15, &local_14) && local_11 < 0.f)
-								local_17 = 2;
-							else if ((local_13 > local_14 ? local_13 : local_14) > 0.5f)
-								local_17 = local_13 + local_11 > local_14 - local_11 ? 1 : 2;
-							else
-								local_17 = 0;
+							{
+								real local_13 = 0.f;
+								real local_14 = 0.f;
+								long local_15;
+								s_location_view local_16;
+								function_26bfa0(local_1, &local_15, &local_16);
+								vector3f local_25;
+								local_25.i = local_10.i * -1.f;
+								local_25.j = local_10.j * -1.f;
+								local_25.k = local_10.k * -1.f;
+								if (function_2556b0(&local_16.point.point, &local_10, local_15, &local_13) && local_11 > 0.f)
+									local_17 = 1;
+								else if (function_2556b0(&local_16.point.point, &local_25, local_15, &local_14) && local_11 < 0.f)
+									local_17 = 2;
+								else if ((local_13 > local_14 ? local_13 : local_14) > 0.5f)
+									local_17 = local_13 + local_11 > local_14 - local_11 ? 1 : 2;
+								else
+									local_17 = 0;
+							}
 							long local_18;
 							switch (local_17)
 							{
@@ -517,7 +541,7 @@ short __stdcall function_255740(long arg_0, s_slot *arg_1)
 							short local_19, local_21;
 							real local_20, local_22;
 							real local_23;
-							if (function_10fa80(local_0->unknown018, local_18, 0x7000101, &local_19, &local_20, &local_21, &local_22))
+							if (unit_animation_get_timing(local_0->unknown018, 0x7000101, local_18, &local_19, &local_20, &local_21, &local_22))
 								local_23 = local_20 * 1.33f;
 							else
 								local_23 = 0.4f;

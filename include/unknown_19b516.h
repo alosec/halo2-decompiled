@@ -23,7 +23,7 @@ struct s_message
 	void (__stdcall *callback)(s_message *message);
 };
 
-void function_149f49(s_message *message, word a, dword *id, word b, long c, long d, long e);
+void function_149f49(s_message *message, word type, dword *id, short user_flags, long channel, long window_slot, long load_proc);
 
 struct s_event
 {
@@ -255,11 +255,21 @@ void function_2363d4(short_rectangle2d const *bounds, short *x, short *y);
 bool function_22f0ff(c_widget *widget);
 /* the list's get_skin_index (unknown_24c177.cpp) */
 inline long function_24c0b3(c_widget *widget) { return ((c_class_1474e8 *)(void *)widget)->get_skin_index(); }
-s_sprite_placement *function_14837a(short index);
+s_sprite_placement *ui_definition_get_skin(short index);
 /* the base class's get_depth (unknown_22e27b.cpp) */
 inline real function_22e9aa(c_widget *widget) { return ((c_class_1a2c81 *)(void *)widget)->get_depth(); }
 struct short_rectangle2d;
 s_float_rect *function_23618e(s_float_rect *rect, real depth, short_rectangle2d const *bounds);
 void function_235e5e(s_sprite_element *element, s_float_rect *from, s_float_rect *to, dword color, long a, long b);
+
+/* a string of the user interface globals' string list (unknown_236299.cpp) */
+void function_23620d(long string_handle, word *buffer);
+
+/* a buffer that strings of the user interface globals' string list load into */
+struct s_global_string_buffer
+{
+	word text[256];
+	void load(long string_handle) { function_23620d(string_handle, text); }
+};
 
 #endif

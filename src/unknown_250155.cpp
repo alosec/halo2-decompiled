@@ -16,7 +16,7 @@
 #include "unknown_07f720.h"
 #include "globals.h"
 
-#pragma intrinsic(memset, memcpy)
+#pragma intrinsic(memset, memcpy, memcmp)
 
 bool function_1999b3(void);
 long function_19a161(void);
@@ -24,18 +24,18 @@ long function_19a161(void);
 #include "unknown_24fa12.h"
 
 struct s_session_screen_state;
-long function_24fa23(s_session_screen_state const *screen);
+long session_lobby_screen_any_team_valid(s_session_screen_state const *screen);
 bool function_592f0(void);
 bool function_19a902(void);
 bool network_session_interface_local_machine_is_host(void);
 
 // @retail 0x250dae
-void function_250dae(c_screen_24fd74 *screen)
+void function_250dae(c_session_lobby_screen *screen)
 {
     if (ANIMATION_FLAG(screen->animation, 1))
         return;
     bool connected = function_592f0();
-    bool enabled = function_592f0() && !(byte)function_24fa23((s_session_screen_state *)screen) &&
+    bool enabled = function_592f0() && !(byte)session_lobby_screen_any_team_valid((s_session_screen_state *)screen) &&
         !function_19a902() && network_session_interface_local_machine_is_host();
     c_class_1a2c81 *text = 0;
     switch (screen->mode)
@@ -83,11 +83,11 @@ void function_250dae(c_screen_24fd74 *screen)
     }
 }
 
-struct s_reference_list;
-struct s_indexed_block;
-struct s_indexed_entry;
-s_reference_list *function_236a3a(long id);
-s_indexed_entry *function_236aa9(s_indexed_block *block, long id);
+struct s_game_variant_setting_category;
+struct s_game_variant_setting_definition;
+struct s_game_variant_setting_option;
+s_game_variant_setting_category *game_variant_settings_find_category(long category_id);
+s_game_variant_setting_option *game_variant_setting_find_option(s_game_variant_setting_definition *setting, long value);
 long function_2374f0(void *base, long index);
 void function_1a0180(long tag_index, long string_handle, word *buffer);
 dword function_217b70(word const *text);
@@ -127,14 +127,14 @@ void function_25092c(s_game_variant *variant, long index, c_class_1a2c81 *widget
     case 9: group = 30; break;
     default: group = NONE; break;
     }
-    s_setting_reference_list_view *list = (s_setting_reference_list_view *)function_236a3a(group);
+    s_setting_reference_list_view *list = (s_setting_reference_list_view *)game_variant_settings_find_category(group);
     if (list && index >= 0 && index < list->count)
     {
         s_setting_reference_list_view::s_reference const *reference = &list->references[index];
         if (reference->index != NONE)
         {
             s_setting_definition_view *definition = (s_setting_definition_view *)g_4e3b44[reference->index & 0xffff].bytes;
-            s_indexed_entry *option = function_236aa9((s_indexed_block *)definition, function_2374f0(variant, definition->field_index));
+            s_game_variant_setting_option *option = game_variant_setting_find_option((s_game_variant_setting_definition *)definition, function_2374f0(variant, definition->field_index));
             function_1a0180(definition->string_list, definition->title, title);
             if (option)
                 function_1a0180(definition->string_list, *(long *)((byte *)option + 8), value);
@@ -150,7 +150,7 @@ void function_25092c(s_game_variant *variant, long index, c_class_1a2c81 *widget
 
 /* shows the network connection's state in the mode's text */
 // @retail 0x250155
-void c_screen_24fd74::function_250155()
+void c_session_lobby_screen::function_250155()
 {
 	long index;
 
@@ -520,7 +520,7 @@ struct s_0b35e0_entry
 	byte unknown00[0x44];
 	bool value44;
 };
-s_0b35e0_entry *function_b35e0(long index);
+s_0b35e0_entry *session_search_results_get(long index);
 struct s_type_99af70;
 bool function_07aaa0(XNADDR *xnaddr, s_type_99af70 *address);
 
@@ -572,7 +572,7 @@ void __stdcall function_252ed8(c_class_252b72 *list)
 				if (function_199ba5(index))
 				{
 					squad = (s_network_squad_address_view *)function_199bbf(index);
-					entry = function_b35e0(index);
+					entry = session_search_results_get(index);
 				}
 				else
 				{
@@ -875,7 +875,7 @@ void function_19a864(void);
 bool function_199967(void);
 long function_199d7c(void);
 long network_session_manager_get_value49ac(void);
-short function_18f93a(void);
+short player_slot_count_signed_in_non_guests(void);
 short player_slot_count_active(void);
 bool function_1900a5(long player);
 void function_199e3c(long controller);
@@ -883,7 +883,7 @@ short function_1900ff(long controller);
 long function_199f34(void);
 bool function_19a179(long player_index);
 bool function_19a7e9(long controller, long value);
-c_class_1473c9 *function_149ef3(word user_flags, long load);
+c_class_1473c9 *window_manager_open_channel_3_screen(word user_flags, long load);
 c_class_1473c9 *__stdcall function_2b8536(s_screen_parameters *parameters);
 
 /* a session entry: per-mode counts at +0xc54 */
@@ -1038,7 +1038,7 @@ bool __stdcall function_251345(long controller)
 // @retail 0x251242
 void function_251242(long controller)
 {
-	if (function_18f93a() == 1 && !function_1900a5(controller))
+	if (player_slot_count_signed_in_non_guests() == 1 && !function_1900a5(controller))
 	{
 		function_199e3c(controller);
 	}
@@ -1056,7 +1056,7 @@ void function_251284(long controller)
 {
 	if (player_slot_count_active() == 1)
 	{
-		dialog_choice_show(3, 0x8b, 4, (word)(1 << controller), function_25132e, 0, 0);
+		dialog_choice_show(3, 0x8b, 4, (1 << controller), function_25132e, 0, 0);
 	}
 	else
 	{
@@ -1069,26 +1069,28 @@ void function_2512f8(long controller, bool choice)
 {
 	if (choice)
 	{
-		dialog_choice_show(3, 0x8b, 4, (word)(1 << controller), function_251345, 0, 0);
+		dialog_choice_show(3, 0x8b, 4, (1 << controller), function_251345, 0, 0);
 	}
 	else
 	{
-		function_149ef3((word)(1 << controller), (long)function_2b8536);
+		window_manager_open_channel_3_screen((word)(1 << controller), (long)function_2b8536);
 	}
 }
 
 // @retail 0x2511b6
 void function_2511b6(long controller)
 {
-	long count = function_18f93a();
+	long count = player_slot_count_signed_in_non_guests();
 	long players = function_199f34();
 
-	if (function_1900a5(controller) || count == 1 && players <= count)
+	if (function_1900a5(controller))
 	{
 		function_251242(controller);
 	}
 	else if (count == 1)
 	{
+		if (players > count)
+		{
 			if (function_592f0())
 			{
 				function_2512f8(controller, players == 2);
@@ -1098,13 +1100,18 @@ void function_2511b6(long controller)
 				function_25122f(controller);
 				if (function_1900ff(controller) > 0)
 				{
-						function_2512d3(controller);
+					function_2512d3(controller);
 				}
 				else
 				{
-						function_251284(controller);
+					function_251284(controller);
 				}
 			}
+		}
+		else
+		{
+			function_251242(controller);
+		}
 	}
 	else if (function_1900ff(controller) > 0)
 	{
@@ -1143,8 +1150,11 @@ void function_251f8d(c_matchmaking_screen *screen)
 {
     long maximum = 0;
     long player_count = 0;
-    long unused;
-    bool capacity = function_199dc9((long)&player_count, (long)&unused, (long)&maximum);
+    bool capacity;
+    {
+        long unused;
+        capacity = function_199dc9((long)&player_count, (long)&unused, (long)&maximum);
+    }
     c_text_widget_45a5e0 *title = (c_text_widget_45a5e0 *)screen->find_child(6, 2, false);
     c_text_widget_45a5e0 *status = (c_text_widget_45a5e0 *)screen->find_child(6, 5, false);
     c_text_widget_45a5e0 *message = (c_text_widget_45a5e0 *)screen->find_child(6, 7, false);
@@ -1169,19 +1179,24 @@ void function_251f8d(c_matchmaking_screen *screen)
     {
         if (capacity)
         {
-            if (player_count >= maximum)
+            long limit = maximum;
+            if (player_count >= limit)
             {
                 status->function_253b1a(0x11000762);
                 status->value6e = true;
             }
             else
             {
+                struct s_string_buffer
+                {
+                    word text[0x100];
+                    void load(c_widget *screen, long handle) { screen->function_230134(handle, text); }
+                } format;
                 word buffer[0x100];
-                word format[0x100];
                 buffer[0] = 0;
-                format[0] = 0;
-                ((c_widget *)screen)->function_230134(0xe000761, format);
-                function_1630e0(buffer, format, maximum - player_count);
+                format.text[0] = 0;
+                format.load((c_widget *)screen, 0xe000761);
+                function_1630e0(buffer, format.text, limit - player_count);
                 status->function_22f52e()->set_text(buffer);
                 status->value6e = true;
             }
@@ -1228,7 +1243,7 @@ byte *function_19ab0e(long player_index);
 void function_24c0c4(c_widget *widget);
 void function_2b01a2(long value, s_widget_item *item);
 void function_2b01b5(s_widget_item *item, short value);
-long function_149ead(long value);
+long ui_definition_find_range(long value);
 void function_22f042(s_widget_item *items, c_class_1a2c81 *widget, long count);
 
 /* a player as the matchmaking list shows it */
@@ -1373,10 +1388,7 @@ void c_matchmaking_list::v3()
 				indices[index_count++] = i;
 			}
 		}
-		for (i = index_count; i < 16; i++)
-		{
-			indices[i] = NONE;
-		}
+		memset(indices + index_count, 0xff, (16 - index_count) * sizeof(long));
 	}
 	else
 	{
@@ -1388,10 +1400,7 @@ void c_matchmaking_list::v3()
 				indices[index_count++] = i;
 			}
 		}
-		for (i = index_count; i < 16; i++)
-		{
-			indices[i] = NONE;
-		}
+		memset(indices + index_count, 0xff, (16 - index_count) * sizeof(long));
 		if (mode == 1)
 		{
 			long count = 0;
@@ -1531,7 +1540,7 @@ void show_player(c_matchmaking_list *list, c_class_1a2c81 *item, long player_ind
 		}
 		else
 		{
-			function_2b01b5(&definition, (short)function_149ead(NONE));
+			function_2b01b5(&definition, (short)ui_definition_find_range(NONE));
 		}
 		memcpy(definition.value48, player->value40, sizeof(definition.value48));
 		definition.flags |= 2;
@@ -1665,12 +1674,13 @@ bool __stdcall function_252166(c_class_1473c9 *screen, long dialog_id)
 // @retail 0x25217b
 void function_25217b(c_matchmaking_screen *screen, s_widget_event *event)
 {
-	if (function_25142f() < 2 || function_75890(screen->value614) >= 60000)
+	bool show_dialog = function_25142f() < 2 || function_75890(screen->value614) >= 60000;
+	if (show_dialog)
 	{
 		long dialog_id = (function_199ebc() <= function_199f6d()) + 0x8c;
 		long user_flags = event ? 1 << event->controller_index : (short)function_1901fc();
 
-		dialog_choice_show(3, dialog_id, 4, (word)user_flags, function_252150, 0, function_252166);
+		dialog_choice_show(3, dialog_id, 4, user_flags, function_252150, 0, function_252166);
 	}
 	else
 	{
@@ -1705,8 +1715,8 @@ bool c_matchmaking_screen::v10(s_widget_event *event)
 long function_148222(long channel, long index, long screen_id);
 void function_148241(long channel, long index, long screen_id);
 bool function_19a902(void);
-long player_slot_get_value1fc(long index);
-long function_190262(long value);
+long player_slot_get_team(long index);
+long player_slot_iterate_next(long value);
 long function_19aa17(long value);
 void function_18fe9e(long index);
 
@@ -1760,7 +1770,7 @@ void function_250a43(byte *data, c_class_1a2c81 *bitmap)
 
 /* closes channel 3's settings screens (10, 0x14, 0x15) while 0x19a902 holds */
 // @retail 0x250eb7
-void c_screen_24fd74::function_250eb7()
+void c_session_lobby_screen::function_250eb7()
 {
 	if (function_19a902() && ((byte)function_148222(3, 4, 10) || (byte)function_148222(3, 4, 0x14) || (byte)function_148222(3, 4, 0x15)))
 	{
@@ -1780,7 +1790,7 @@ void c_screen_24fd74::function_250eb7()
 }
 
 // @retail 0x250cda
-void c_screen_24fd74::function_250cda(long index, bool update)
+void c_session_lobby_screen::function_250cda(long index, bool update)
 {
 	byte *data = network_session_interface_get_data_4db0();
 
@@ -1830,7 +1840,7 @@ struct s_session_flags_view
 /* steps a valid slot's team by delta, wrapping around the team count (to no
    team as well when the session allows it) */
 // @retail 0x250d5c
-void c_screen_24fd74::change_team(long index, long delta)
+void c_session_lobby_screen::change_team(long index, long delta)
 {
 	if (teams[index].valid)
 	{
@@ -1857,7 +1867,7 @@ void c_screen_24fd74::change_team(long index, long delta)
 }
 
 // @retail 0x250f3a
-void c_screen_24fd74::function_250f3a(byte *data)
+void c_session_lobby_screen::function_250f3a(byte *data)
 {
 	if (value812 != (byte)function_251364((s_session_player_view *)data))
 	{
@@ -1875,9 +1885,9 @@ void c_screen_24fd74::function_250f3a(byte *data)
 					team_count = *(long *)(data + 0xb4);
 				}
 			}
-			teams[index].team = (short)(player_slot_get_value1fc(index) % team_count);
+			teams[index].team = (short)(player_slot_get_team(index) % team_count);
 			function_250cda(index, false);
-			index = function_190262(index);
+			index = player_slot_iterate_next(index);
 		}
 		while (index != NONE);
 	}
@@ -1891,8 +1901,11 @@ extern dword g_54d5b8;
 
 /* shows the session's state in a dialog once; a live session leaves it three
    seconds later */
+// score 36 (was 36): the cases' blocks sit in the other order, ours tests the
+// state's value before the call while retail calls first and tests after, and
+// the argument of the call is built in the other registers
 // @retail 0x250804
-void c_screen_24fd74::show_session_state()
+void c_session_lobby_screen::show_session_state()
 {
 	long state = network_session_manager_get_value49f8();
 	dword shown_time = state_shown_time;
@@ -1943,7 +1956,7 @@ bool function_19a78e(long controller, long countdown, long minimum);
 /* follows the countdown's stage (with a sound at each new one) and, when
    asked, signs the first player with a slot in */
 // @retail 0x250a8b
-void c_screen_24fd74::update_countdown(bool signed_in_needed)
+void c_session_lobby_screen::update_countdown(bool signed_in_needed)
 {
 	if (function_19a902())
 	{
@@ -1969,7 +1982,7 @@ void c_screen_24fd74::update_countdown(bool signed_in_needed)
 
 		if (state != 4 && (state <= 8 || state > 10))
 		{
-			for (long controller = 0; controller != NONE; controller = function_190262(controller))
+			for (long controller = 0; controller != NONE; controller = player_slot_iterate_next(controller))
 			{
 				if (((s_player_slot_view_04 *)g_54e8e0)[controller].value04 != NONE)
 				{
@@ -2006,7 +2019,7 @@ bool network_session_interface_local_machine_is_host(void);
 c_class_1473c9 *__stdcall function_2bbacb(s_screen_parameters *parameters);
 
 // @retail 0x250fb3
-void c_screen_24fd74::handle_lobby_choice(s_controller_reference **controller, long *item)
+void c_session_lobby_screen::handle_lobby_choice(s_controller_reference **controller, long *item)
 {
 	/* the callback's controller reference stays on the stack */
 	s_controller_reference ***controller_reference = &controller;
@@ -2043,103 +2056,104 @@ long function_199fd6(void);
 long function_19a279(void);
 void function_1905bf(long controller, bool flag);
 
+// score 93 (was 93): the call at the top of the function goes to another
+// helper in ours and to retail's 0x14917c, and the branches around it land in
+// the other order
 // @retail 0x250b1e
-bool c_screen_24fd74::v10(s_widget_event *event)
+bool c_session_lobby_screen::v10(s_widget_event *event)
 {
-	bool unready = network_session_manager_session_unready();
-	bool result = true;
+	if (!network_session_manager_session_unready() || window_manager_channel_in_use(1))
+		return true;
+	long result = 1;
 
-	if (unready && !window_manager_channel_in_use(1))
+	long controller = event->controller_index;
+
+	if (TEST_FIELD_BIT(((s_player_slot_sign_in_view *)g_54e8e0)[controller].signed_in))
 	{
-		long controller = event->controller_index;
-
-		if (TEST_FIELD_BIT(((s_player_slot_sign_in_view *)g_54e8e0)[controller].signed_in))
+		switch (event->type)
 		{
-			switch (event->type)
+		case 2:
+			if (teams[controller].valid)
 			{
+				change_team(controller, NONE);
+				return result;
+			}
+			break;
+		case 4:
+			if (teams[controller].valid)
+			{
+				change_team(controller, 1);
+				return result;
+			}
+			break;
+		case 5:
+			switch (event->param)
+			{
+			case 0:
+			case 0xc:
+				if (teams[controller].valid)
+				{
+					function_250cda(controller, false);
+					return result;
+				}
+				if (function_19a902())
+				{
+					function_25106c(event->controller_index);
+				}
+				break;
+			case 1:
+			case 0xd:
+				if (teams[controller].valid)
+				{
+					teams[event->controller_index].valid = false;
+					teams[event->controller_index].team = NONE;
+				}
+				else if (function_592f0() && function_19a902())
+				{
+					function_25122f(event->controller_index);
+				}
+				else
+				{
+					function_2511b6(event->controller_index);
+				}
+				return result;
 			case 2:
 				if (teams[controller].valid)
 				{
-					change_team(controller, NONE);
-					return result;
+					function_250cda(controller, false);
 				}
-				break;
-			case 4:
-				if (teams[controller].valid)
+				else
 				{
-					change_team(controller, 1);
-					return result;
-				}
-				break;
-			case 5:
-				switch (event->param)
-				{
-				case 0:
-				case 0xc:
-					if (teams[controller].valid)
-					{
-						function_250cda(controller, false);
-						return result;
-					}
 					if (function_19a902())
 					{
-						function_25106c(event->controller_index);
-					}
-					break;
-				case 1:
-				case 0xd:
-					if (teams[controller].valid)
-					{
-						teams[event->controller_index].valid = false;
-						teams[event->controller_index].team = NONE;
-					}
-					else if (function_592f0() && function_19a902())
-					{
-						function_25122f(event->controller_index);
-					}
-					else
-					{
-						function_2511b6(event->controller_index);
-					}
-					return result;
-				case 2:
-					if (teams[controller].valid)
-					{
-						function_250cda(controller, false);
-					}
-					else
-					{
-						if (function_19a902())
+						function_199f34();
+						if (function_19a7e9(event->controller_index, 10))
 						{
-							function_199f34();
-							if (function_19a7e9(event->controller_index, 10))
-							{
-								return result;
-							}
+							return result;
 						}
-						function_250cda(event->controller_index, true);
 					}
-					return result;
-				case 5:
-					function_2510aa(controller);
-					break;
+					function_250cda(event->controller_index, true);
 				}
+				return result;
+			case 5:
+				function_2510aa(controller);
 				break;
 			}
-			result = c_class_1473c9::v10(event);
+			break;
 		}
-		else if (event->type == 5 && (event->param == 0 || event->param == 0xc))
+		result = c_class_1473c9::v10(event);
+	}
+	else if (event->type == 5 && (event->param == 0 || event->param == 0xc))
+	{
+		if (function_199fd6() > 0 && !function_19a902() && function_19a279() == 3)
 		{
-			if (function_199fd6() > 0 && !function_19a902() && function_19a279() == 3)
-			{
-				bool online = function_6c7e0();
+			bool online = function_6c7e0();
 
-				function_1905bf(event->controller_index, online);
-			}
-			else
-			{
-				function_236299(2);
-			}
+			function_1905bf(event->controller_index, online);
+		}
+		else
+		{
+			function_236299(2);
 		}
 	}
 	return result;
@@ -2261,7 +2275,7 @@ void function_250332(c_class_1a2c81 *screen)
 
 /* a text by the mode, shown with a value block by 0x19a161 */
 // @retail 0x2508a8
-void c_screen_24fd74::function_2508a8()
+void c_session_lobby_screen::function_2508a8()
 {
 	long index;
 
@@ -2288,21 +2302,15 @@ void c_screen_24fd74::function_2508a8()
 		text->value6e = show;
 		if (show)
 		{
-			long value;
-
-			switch (function_19a161())
-			{
-			case 2:
-				value = 0;
-				break;
-			case 1:
-				value = 1;
-				break;
-			default:
-				value = function_19989d() == 6 ? 3 : 2;
-				break;
-			}
-			function_253c3a(1, value, text);
+			long state = function_19a161();
+			if (state == 2)
+				function_253c3a(1, 0, text);
+			else if (state == 1)
+				function_253c3a(1, 1, text);
+			else if (function_19989d() != 6)
+				function_253c3a(1, 2, text);
+			else
+				function_253c3a(1, 3, text);
 		}
 	}
 }
@@ -2362,8 +2370,12 @@ static __forceinline long local_player_find(long const *local_list, long player)
 
 /* fills the lobby's player list (players, count of them), with the local
    players' chosen teams; hides the slots past the count */
+// score 118 (was 118): the locals live in the other stack slots, ours keeps
+// the count at ebp-8 and the flags byte at ebp-0xc while retail keeps them at
+// ebp-0xc and ebp-8, and the switch's table and the words it loads sit in
+// the other order
 // @retail 0x25042d
-void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
+void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {
 	long shown_count = count;
 	bool in_matchmaking = function_199994();
@@ -2376,8 +2388,7 @@ void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *
 		for (i = 0; i < count; i++)
 		{
 			s_widget_item *item = &list.items[i];
-			long *player_index = &players[i];
-			s_matchmaking_player *player = (s_matchmaking_player *)function_19aaa5(*player_index);
+			s_matchmaking_player *player = (s_matchmaking_player *)function_19aaa5(players[i]);
 			long local;
 
 			item->flags = 0;
@@ -2407,7 +2418,7 @@ void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *
 			}
 			for (local = 0; local < 4; local++)
 			{
-				if (*player_index == local_list[local])
+				if (players[i] == local_list[local])
 				{
 					if (screen->teams[local].valid)
 					{
@@ -2467,8 +2478,7 @@ void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *
 
 	for (i = 0; i < shown_count; i++)
 	{
-		long *player_index = &players[i];
-		s_matchmaking_player *player = (s_matchmaking_player *)function_19aaa5(*player_index);
+		s_matchmaking_player *player = (s_matchmaking_player *)function_19aaa5(players[i]);
 		short text_a;
 		short text_b;
 		short bitmap_a;
@@ -2479,7 +2489,7 @@ void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *
 		long local;
 		c_class_1a2c81 *bitmap;
 
-		local = local_player_find(local_list, *player_index);
+		local = local_player_find(local_list, players[i]);
 		lobby_slot_widget_indices(screen->mode, i, &text_a, &text_b, &bitmap_a, &bitmap_b);
 		if (!in_matchmaking && session && TEST_FIELD_BIT(session->flag0))
 		{
@@ -2512,9 +2522,9 @@ void function_25042d(c_screen_24fd74 *screen, long valid, s_session_flags_view *
 		{
 			short state;
 
-			if (voice_port_flag0_only(*player_index))
+			if (voice_port_flag0_only(players[i]))
 			{
-				state = !function_53750(*player_index);
+				state = !function_53750(players[i]);
 			}
 			else
 			{
@@ -2553,7 +2563,7 @@ void function_2520ff(c_class_1a2c81 *screen)
 
 		if (entry)
 		{
-			long s_type_b8a6a0 = entry->s_type_b8a6a0;
+			long s_type_b8a6a0 = *(long const volatile *)&entry->s_type_b8a6a0;
 			c_class_1a2c81 *bitmap = screen->find_child(8, 10, false);
 
 			if (bitmap)
@@ -2593,13 +2603,9 @@ byte *function_2530a4(c_class_252b72 *list)
 
 /* whether the list has no squads */
 // @retail 0x252b5e
-long function_252b5e(c_class_252b72 *list)
+bool function_252b5e(c_class_252b72 *list)
 {
-	if (list->data && list->data->actual_count)
-	{
-		return 0;
-	}
-	return 1;
+	return !list->data || !list->data->actual_count;
 }
 
 // @retail 0x253319
@@ -2695,6 +2701,26 @@ struct s_localized_short_name;
 wchar_t *localized_name_get(s_localized_name *definition);
 wchar_t *localized_short_name_get(s_localized_short_name *definition);
 
+/* the player list's items: a player's name, appearance and team, each with
+   the flag that says the item has it */
+PRIVATE inline void squad_item_set_name(s_widget_item *item, word const *name)
+{
+	item->flags |= 1;
+	item->value4 = (long)name;
+}
+
+PRIVATE inline void squad_item_set_appearance(s_widget_item *item, dword const *appearance)
+{
+	item->flags |= 2;
+	memcpy(item->value48, appearance, sizeof(item->value48));
+}
+
+PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
+{
+	item->flags |= 4;
+	item->value5c = team;
+}
+
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {
@@ -2706,20 +2732,20 @@ void c_network_squad_browser_screen::v3()
 
 	if (squad)
 	{
+		/* retail constructs the items with the out-of-line constructor */
+#pragma inline_depth(0)
 		s_widget_item items[16];
+#pragma inline_depth()
 
 		for (i = 0; i < squad->player_count; i++)
 		{
-			items[i].flags |= 1;
-			items[i].value4 = (long)squad->player_names[i];
+			squad_item_set_name(&items[i], squad->player_names[i]);
 			if (has_game)
 			{
-				items[i].flags |= 2;
-				memcpy(items[i].value48, squad->player_appearances[i], sizeof(items[i].value48));
+				squad_item_set_appearance(&items[i], squad->player_appearances[i]);
 				if (squad->has_teams)
 				{
-					items[i].flags |= 4;
-					items[i].value5c = squad->player_teams[i];
+					squad_item_set_team(&items[i], squad->player_teams[i]);
 				}
 			}
 		}
@@ -2840,35 +2866,37 @@ void c_network_squad_browser_screen::v3()
 	{
 		if (squad)
 		{
-			wchar_t *name = NULL;
-
 			if (has_game)
 			{
 				s_localized_short_name *entry = (s_localized_short_name *)function_19c5f0(squad->map_key);
 
-				if (entry)
+				if (!entry)
 				{
-					name = localized_short_name_get(entry);
+					goto no_map_name;
 				}
+				wchar_t *name = localized_short_name_get(entry);
+
+				text->function_22f52e()->set_text((word *)name);
 			}
 			else
 			{
 				s_localized_name *entry = (s_localized_name *)function_19c1f0(squad->map_key);
 
-				if (entry)
+				if (!entry)
 				{
-					name = localized_name_get(entry);
+					goto no_map_name;
 				}
-			}
-			if (name)
-			{
+				wchar_t *name = localized_name_get(entry);
+
 				text->function_22f52e()->set_text((word *)name);
-				goto map_shown;
 			}
 		}
-		((c_text_widget_45a5e0 *)text)->function_253b1a(0x7000180);
+		else
+		{
+		no_map_name:
+			((c_text_widget_45a5e0 *)text)->function_253b1a(0x7000180);
+		}
 	}
-map_shown:
 	if (bitmap)
 	{
 		function_2b0a7b((s_widget_view_2b0a *)bitmap, 0);
@@ -2900,7 +2928,7 @@ map_shown:
 		}
 	}
 bitmap_shown:
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < sizeof(squad->player_names) / sizeof(squad->player_names[0]); i++)
 	{
 		text = find_child(6, (short)(i + 4), false);
 		bitmap = find_child(8, (short)(i + 5), false);
@@ -2928,7 +2956,13 @@ bitmap_shown:
 			}
 		}
 	}
-	list.searching = !(ANIMATION_FLAG(animation, 1) || network_session_manager_session_unready() || network_session_manager_is_joining());
+	bool searching = true;
+
+	if (ANIMATION_FLAG(animation, 1) || network_session_manager_session_unready() || network_session_manager_is_joining())
+	{
+		searching = false;
+	}
+	list.searching = searching;
 	c_class_1a2c81::v3();
 }
 
@@ -2936,7 +2970,7 @@ long function_230195(s_screen_definition *definition, long block_index, long ind
 bool function_19a107(void);
 
 // @retail 0x2501c0
-void function_2501c0(c_screen_24fd74 *screen, s_game_variant *variant)
+void function_2501c0(c_session_lobby_screen *screen, s_game_variant *variant)
 {
     short indices[5];
     long extra;
@@ -2989,6 +3023,11 @@ void function_2501c0(c_screen_24fd74 *screen, s_game_variant *variant)
 // @retail 0x251d84
 void function_251d84(c_matchmaking_screen *screen)
 {
+    struct s_local_text
+    {
+        word text[0x100];
+        word *data() { return text; }
+    };
     byte *variant=network_session_interface_get_data_4db0();
     c_class_1a2c81 *title=screen->find_child(6, 2, false);
     c_class_1a2c81 *teams=screen->find_child(6, 13, false);
@@ -3003,10 +3042,10 @@ void function_251d84(c_matchmaking_screen *screen)
     if (caption) caption->function_253b1a(0xf0001df);
     if (function_19a107())
     {
-        word buffer[0x100];
-        buffer[0]=0;
-        function_251c91(screen, buffer);
-        teams->function_22f52e()->set_text(buffer);
+        s_local_text buffer;
+        buffer.text[0]=0;
+        function_251c91(screen, buffer.text);
+        teams->function_22f52e()->set_text(buffer.data());
     }
     if (variant && setting5)
     {
@@ -3014,16 +3053,16 @@ void function_251d84(c_matchmaking_screen *screen)
         function_250a43(variant, bitmap);
         if (definition)
         {
-            word separator[0x100];
-            separator[0]=0;
+            s_local_text separator;
+            separator.text[0]=0;
             if (definition->string_list_index!=NONE)
-                function_1a0180(definition->string_list_index, function_230195(definition, 0, 0), separator);
-            function_25092c((s_game_variant *)variant, 0, setting0, separator, screen->texts[0].text);
-            function_25092c((s_game_variant *)variant, 1, setting1, separator, screen->texts[1].text);
-            function_25092c((s_game_variant *)variant, 2, setting2, separator, screen->texts[2].text);
-            function_25092c((s_game_variant *)variant, 3, setting3, separator, screen->texts[3].text);
-            function_25092c((s_game_variant *)variant, 4, setting4, separator, screen->texts[4].text);
-            function_25092c((s_game_variant *)variant, 5, setting5, separator, screen->texts[5].text);
+                function_1a0180(definition->string_list_index, function_230195(definition, 0, 0), separator.text);
+            function_25092c((s_game_variant *)variant, 0, setting0, separator.text, screen->texts[0].text);
+            function_25092c((s_game_variant *)variant, 1, setting1, separator.text, screen->texts[1].text);
+            function_25092c((s_game_variant *)variant, 2, setting2, separator.text, screen->texts[2].text);
+            function_25092c((s_game_variant *)variant, 3, setting3, separator.text, screen->texts[3].text);
+            function_25092c((s_game_variant *)variant, 4, setting4, separator.text, screen->texts[4].text);
+            function_25092c((s_game_variant *)variant, 5, setting5, separator.text, screen->texts[5].text);
         }
     }
     if (title) title->value6e=network_session_manager_get_value49ac()!=NONE;
@@ -3041,7 +3080,7 @@ void c_matchmaking_screen::v3()
         if (value618!=state)
         {
             long delta=state;
-            function_230427((short *)&delta);
+            select_pane((short *)&delta);
             value610=function_199d7c();
             value618=state;
             value614=function_75870();
@@ -3055,9 +3094,10 @@ void c_matchmaking_screen::v3()
         {
         case 0: function_251c68(this); break;
         case 1: function_251f8d(this); break;
-        case 2: break;
+        case 2: goto poll_members;
         case 3: function_251d84(this); break;
         }
+    poll_members:
         if (!function_6c7e0() || !player_slot_count_active())
         {
             value610=1;

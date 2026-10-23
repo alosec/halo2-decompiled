@@ -26,49 +26,44 @@ long function_19ec40(
 	real radius_squared = radius * radius;
 	real best = 0.0f;
 	long count = 0;
-	short i = 0;
 
-	if (globals->marker_count > 0)
+	for (short i = 0; i < globals->marker_count; i++)
 	{
-		do
+		short key = key_a;
+		s_marker_entry *entry = &globals->marker_entries[i];
+
+		if (key == -1 || key == entry->key_a)
 		{
-			short key = *(short const volatile *)&key_a;
-			s_marker_entry *entry = &globals->marker_entries[i];
-
-			if (key == -1 || key == entry->key_a)
+			key = key_b;
+			if (key == -1 || key == entry->key_b)
 			{
-				key = key_b;
-				if (key == -1 || key == entry->key_b)
+				key = key_c;
+				if (key == -1 || key == entry->key_c)
 				{
-					key = key_c;
-					if (key == -1 || key == entry->key_c)
+					real distance_squared;
+
+					if (*point_reference)
 					{
-						real distance_squared = 0.0f;
+						point3f position = g_4e0350->marker_entries[i].position;
+						distance_squared = distance_sq3f(&position, point);
+						if (radius >= 0.0f && distance_squared > radius_squared)
+							continue;
+						if (height > 0.0f && fabs(entry->position.z - point->z) > height)
+							continue;
+					}
+					else
+						distance_squared = 0.0f;
 
-						if (*point_reference)
-						{
-							point3f position = g_4e0350->marker_entries[i].position;
-							distance_squared = distance_sq3f(&position, point);
-							if (radius >= 0.0f && distance_squared > radius_squared)
-								goto next;
-							if (height > 0.0f && fabs(entry->position.z - point->z) > height)
-								goto next;
-						}
-
-						if (count < maximum_count)
-							results[count++] = i;
-						else if (count == 1 && best > distance_squared)
-						{
-							results[0] = i;
-							best = distance_squared;
-						}
+					if (count < maximum_count)
+						results[count++] = i;
+					else if (count == 1 && best > distance_squared)
+					{
+						results[0] = i;
+						best = distance_squared;
 					}
 				}
 			}
-next:
-			i++;
 		}
-		while (i < globals->marker_count);
 	}
 
 	return count;

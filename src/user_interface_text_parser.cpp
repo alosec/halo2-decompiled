@@ -1,4 +1,5 @@
 // @flags /O1 /Oi /arch:SSE /Gr
+#include "view_context_storage.h"
 /* USER_INTERFACE_TEXT_PARSER.CPP: the user interface's text parser. A
    string's private use characters (0xe000..0xf8ff) are either glyphs (the
    controller buttons) or stand for a value the parser fills in: the map
@@ -32,7 +33,7 @@ void ascii_string_to_unicode(const char *source, word *destination, long maximum
 word *function_1630e0(word *buffer, const word *format, ...);
 void function_23620d(long string_handle, word *buffer);
 void function_1a0180(long tag_index, long string_handle, word *buffer);
-bool function_140420(word c);
+bool unicode_character_is_private_use(word c);
 
 byte *network_session_interface_get_data_4db0(void);
 long network_session_interface_get_value_49c8(void);
@@ -97,7 +98,7 @@ void title_name_get(wchar_t *name, long name_length, dword title_id);
 
 /* ---- data ---- */
 
-s_game_variant g_54e4a0;
+s_54e49c g_54e49c_storage;
 
 struct s_510c4c;
 extern s_510c4c *g_510c4c;
@@ -123,7 +124,6 @@ struct s_button_layout
 
 /* the input users' button layouts (unknown_217c20.cpp) */
 extern byte g_51ea18[];
-extern long g_4b9ed8;
 
 /* a player (0x21c bytes) */
 struct s_player_view
@@ -133,9 +133,8 @@ struct s_player_view
 	byte unknown028[0x21c - 0x28];
 };
 
-/* the session's last map and the strings the procedures keep */
-extern long g_54e7c0;
-extern long g_54e7c4;
+/* the strings the procedures keep (the session's last map, g_54e7c0 and
+   g_54e7c4, is in unknown_234c64.h) */
 wchar_t g_55c2e4[k_parse_buffer_length];
 wchar_t g_55c4e4[k_parse_buffer_length];
 wchar_t g_55c6e4[k_parse_buffer_length];
@@ -192,7 +191,7 @@ void parse_replace_missing_characters(word *string, long count)
 {
 	while (count > 0 && *string)
 	{
-		if (function_140420(*string))
+		if (unicode_character_is_private_use(*string))
 		{
 			*string = 0x25a1;
 		}
@@ -262,7 +261,7 @@ done:
 // @retail 0x22d456
 void __stdcall parse_gametype(long string_handle, word *buffer)
 {
-	s_type_954545 *globals = function_148350();
+	s_type_954545 *globals = ui_definition_get();
 
 	if (globals)
 	{
@@ -396,8 +395,8 @@ void __stdcall parse_player_profile_name(long string_handle, word *buffer)
 	switch (string_handle)
 	{
 	default:
-		parse_copy(buffer, (wchar_t *)g_54e5d0.settings.name);
-		return;
+		player = NONE;
+		break;
 	case 0xe40f:
 		player = 0;
 		break;
@@ -410,6 +409,11 @@ void __stdcall parse_player_profile_name(long string_handle, word *buffer)
 	case 0xe412:
 		player = 3;
 		break;
+	}
+	if (player == NONE)
+	{
+		parse_copy(buffer, (wchar_t *)g_54e5d0.settings.name);
+		return;
 	}
 	player_slot_get_profile(player, &profile, &string_handle);
 	parse_copy(buffer, (wchar_t *)&profile.data[2]);
@@ -713,6 +717,9 @@ void __stdcall parse_target_player_gamertag(long string_handle, word *buffer)
 	}
 }
 
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+
 // @retail 0x22dad1
 void __stdcall parse_game_player_count(long string_handle, word *buffer)
 {
@@ -736,7 +743,17 @@ void __stdcall parse_game_player_count(long string_handle, word *buffer)
 	names[14] = 0x2000318;
 	names[15] = 0x2000319;
 	names[16] = 0x200031a;
-	count = function_199ebc() > function_199ef8() ? function_199ebc() : function_199ef8();
+	count = function_199ef8();
+	// Keep the session-count reads ordered through whole-program optimization.
+	_ReadWriteBarrier();
+	if (function_199ebc() > count)
+	{
+		count = function_199ebc();
+	}
+	else
+	{
+		count = function_199ef8();
+	}
 	if (count >= 0)
 	{
 		if (count > 0x10)
@@ -750,6 +767,8 @@ void __stdcall parse_game_player_count(long string_handle, word *buffer)
 	}
 	function_23620d(names[g_55cae4], buffer);
 }
+
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x22db96
 void __stdcall parse_coop_level_name(long string_handle, word *buffer)
@@ -899,12 +918,11 @@ void __stdcall parse_animating_thumbstick(long string_handle, word *buffer)
 
 PRIVATE __forceinline long selected_button_22dcbc(s_button_layout const *layout, char index)
 {
-	long result = 7;
 	if (index != NONE)
-		result = layout->buttons[index];
+		return layout->buttons[index];
 	else if (layout->buttons[7] == 7)
-		result = 6;
-	return result;
+		return 6;
+	return 7;
 }
 
 // @retail 0x22dcbc
@@ -1157,7 +1175,7 @@ void __stdcall parse_target_player_clan_name(long string_handle, word *buffer)
 selected:
 	{
 		s_player_identity_view identity;
-		s_clan_view clan;
+		s_window_manager_df6 clan;
 
 		function_14896e((s_window_manager_754 *)&identity, (s_window_manager_df6 *)&clan);
 		if (identity.xuid)
@@ -1261,12 +1279,13 @@ void __stdcall parse_live_ui_driver_clan_level(long string_handle, word *buffer)
 void __stdcall parse_hour(long string_handle, word *buffer)
 {
 	short hour = g_54e7ce.wHour;
+	short shown = hour;
 
 	if (string_handle == 0xe43e && (word)hour > 12)
 	{
-		hour -= 12;
+		shown = hour - 12;
 	}
-	function_1630e0(buffer, (const word *)L"%d", (word)hour);
+	function_1630e0(buffer, (const word *)L"%d", (word)shown);
 }
 
 // @retail 0x22e179
@@ -1508,8 +1527,9 @@ void function_22d2ee(word *string, long maximum_length)
 		for (i = 0; i < NUMBEROF(g_44a3f0); i++)
 		{
 			long text_length = wcslen(g_44a3f0[i].text);
+			wchar_t const *text = g_44a3f0[i].text;
 
-			if (!wcsncmp(g_44a3f0[i].text, character, text_length))
+			if (!wcsncmp(text, character, text_length))
 			{
 				word glyph[2];
 
@@ -1523,14 +1543,13 @@ void function_22d2ee(word *string, long maximum_length)
 replace:
 		{
 			long replacement_length = wcslen(replacement);
-			long new_length = replacement_length - replaced_length + length;
 
-			if (new_length < maximum_length)
+			if (replacement_length - replaced_length + length < maximum_length)
 			{
-				memcpy(character + replacement_length, character + replaced_length, (length - (character - string)) * sizeof(word));
+				memmove(character + replacement_length, character + replaced_length, (length - (character - string)) * sizeof(word));
 				memcpy(character, replacement, replacement_length * sizeof(word));
-				string[new_length] = 0;
-				length = new_length;
+				string[replacement_length - replaced_length + length] = 0;
+				length = replacement_length - replaced_length + length;
 			}
 		}
 		character++;

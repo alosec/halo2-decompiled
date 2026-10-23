@@ -40,21 +40,18 @@ void function_13ca80(void)
 	players->unknown00[6] = false;
 	g_4f55d0->unknown20 = true;
 	interface_state->flag5 = false;
-	s_timed_effect_globals *effects = g_5093e0;
-	if (effects)
+	if (g_5093e0)
 	{
-		memset(effects, 0, sizeof(*effects));
-		effects->unknown180[0] = 1.0f;
-		effects->unknown180[1] = 1.0f;
-		effects->unknown180[2] = 1.0f;
-		effects->unknown180[3] = 1.0f;
-		effects->unknown3f8 = 1.0f;
-		*(real *)effects->unknown190 = 0.0f;
+		memset(g_5093e0, 0, sizeof(*g_5093e0));
+		g_5093e0->unknown180[0] = 1.0f;
+		g_5093e0->unknown180[1] = 1.0f;
+		g_5093e0->unknown180[2] = 1.0f;
+		g_5093e0->unknown180[3] = 1.0f;
+		g_5093e0->unknown3f8 = 1.0f;
+		*(real *)g_5093e0->unknown190 = 0.0f;
 	}
 	*g_50934c = false;
-	long *camera_values = (long *)((byte *)g_510c6c + 4);
-	for (long i = 0; i < 4; i++)
-		camera_values[i] = 0;
+	memset((byte *)g_510c6c + 4, 0, 4 * sizeof(long));
 	g_509415 = false;
 }
 

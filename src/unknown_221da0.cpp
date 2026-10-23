@@ -7,19 +7,14 @@
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "local_cameras.h"
+#include "unknown_246cd0.h"
 #include <math.h>
 #include <string.h>
 
 #define PIN(n, floor, ceiling) ((n) < (floor) ? (floor) : ((n) > (ceiling) ? (ceiling) : (n)))
 
-/* a tag's data block, as the function evaluator reads it */
-struct s_tag_data_view
-{
-	long size;
-	byte *address;
-};
-
 real function_13b390(void const *function, real input, real range);
+real function_13bb90(s_tag_data const *function, real input, real range);
 
 /* rounds as the x87 does (unknown_0259d0's fld/fistp idiom) */
 static __forceinline long real_to_long(real value)
@@ -35,7 +30,7 @@ static __forceinline long real_to_long(real value)
 }
 
 struct s_structure_bsp_view;
-real function_249d60(long cluster_a, long cluster_b, s_structure_bsp_view *bsp);
+real function_249d60(s_structure_bsp_view *bsp, long cluster_a, long cluster_b);
 
 /* a sound as the transmission test reads it */
 struct s_sound_transmission_view
@@ -60,18 +55,16 @@ bool function_221da0(long listener_index, s_sound_transmission_view const *sound
 		byte type = sound->type;
 		if (type == 1)
 		{
-			s_local_camera *listener = local_camera_get(listener_index);
-			short sound_cluster = sound->cluster_index;
 			result = type;
-			if (sound_cluster != NONE)
+			s_local_camera *camera = local_camera_get(listener_index);
+			short cluster_index = sound->cluster_index;
+			if (cluster_index != NONE)
 			{
-				short listener_cluster = listener->index;
-				if (listener_cluster != NONE &&
-					(*(long *)listener->unknown00 == sound->bsp_index || listener_cluster == sound_cluster ||
-					function_249d60(listener_cluster, sound_cluster, (s_structure_bsp_view *)g_4e0348) * scale < 256.0f))
-				{
+				short camera_cluster = camera->index;
+				if (camera_cluster != NONE &&
+					(*(long *)camera->unknown00 == sound->bsp_index || camera_cluster == cluster_index ||
+					 function_249d60((s_structure_bsp_view *)g_4e0348, camera_cluster, cluster_index) * scale < 256.0f))
 					result = false;
-				}
 			}
 		}
 	}
@@ -149,7 +142,7 @@ struct s_effect_function
 {
 	short input;
 	short range_input;
-	s_tag_data_view function;
+	s_tag_data function;
 	real period;
 };
 
@@ -186,8 +179,8 @@ dword function_191660(long string_handle, long index);
 
 /* fills the data block of one component of a sound effect */
 // @retail 0x2222c0
-void function_2222c0(s_effect_data_block *block, s_effect_component const *component, s_effect_component_overrides const *overrides,
-	s_effect_inputs const *inputs, long speaker)
+void function_2222c0(s_effect_component const *component, s_effect_component_overrides const *overrides,
+	s_effect_inputs const *inputs, long speaker, s_effect_data_block *block)
 {
 	long source_index = 0;
 	long i;
@@ -248,23 +241,7 @@ void function_2222c0(s_effect_data_block *block, s_effect_component const *compo
 						y *= function_222250(&inputs->direction, speaker);
 					}
 				}
-				if (function->function.address && function->function.size > 0)
-				{
-					value = function_13b390(&function->function, x, y);
-					byte const *field_30 = function->function.address;
-
-					if (!(field_30[1] & 0xf0))
-					{
-						real lower = *(real const *)(field_30 + 4);
-						real upper = *(real const *)(field_30 + 8);
-
-						value = lower + (upper - lower) * PIN(value, 0.0f, 1.0f);
-					}
-				}
-				else
-				{
-					value = 0.0f;
-				}
+				value = function_13bb90(&function->function, x, y);
 			}
 			else
 			{
@@ -333,7 +310,7 @@ void function_2225a0(s_effect_overrides const *overrides, s_effect_components co
 		speaker_count = by_speaker ? 4 : 0;
 		for (speaker = by_speaker ? 0 : NONE; speaker < speaker_count; speaker++)
 		{
-			function_2222c0((s_effect_data_block *)&buffer[offset + 1], component, component_overrides, inputs, speaker);
+			function_2222c0(component, component_overrides, inputs, speaker, (s_effect_data_block *)&buffer[offset + 1]);
 			*buffer_size += ((s_effect_data_block *)&buffer[offset + 1])->header.size + 0xc;
 			offset += (((s_effect_data_block *)&buffer[offset + 1])->header.size + 0xf) >> 2;
 		}
@@ -505,9 +482,15 @@ static inline void *tag_block_get_first(long count, void *elements)
 	return NULL;
 }
 
-static inline bool playback_sound_effect_valid(s_playback_sound_effect const *effect)
+static inline s_playback_sound_effect const *playback_sound_effect_valid(s_playback_sound_effect const *effect)
 {
-	return effect && effect->definition_tag_index != NONE && effect->override_count > 0;
+	s_playback_sound_effect const *result = effect;
+	if (effect)
+	{
+		if (effect->definition_tag_index == NONE || effect->override_count <= 0)
+			result = NULL;
+	}
+	return result;
 }
 
 static inline s_effect_components *sound_effect_tag_get_components(long tag_index)
@@ -519,10 +502,11 @@ static inline s_effect_components *sound_effect_tag_get_components(long tag_inde
 // @retail 0x222770
 void function_222770(long tag_index, long handle, s_effect_inputs const *inputs, s_sound_playback_effects *effects)
 {
-	s_platform_playback_view *source = NULL;
+	s_platform_playback_view *source;
 	s_platform_playback_view *playback = (s_platform_playback_view *)function_18d090(tag_index, handle);
 	s_platform_playback_view *class_playback = (s_platform_playback_view *)sound_get_class(tag_index);
 
+	source = NULL;
 	if (class_playback)
 	{
 		void *filter = tag_block_get_first(class_playback->filter_count, class_playback->filters);
@@ -620,7 +604,7 @@ struct s_sound_environment_bsp_view
    a cluster: 0 at its disk, approaching 1 far away; and a value of the
    source */
 // @retail 0x222150
-void function_222150(long cluster_index, point3f const *point, real const *values, point3f const *listener, long index, real *result)
+void function_222150(long cluster_index, real const *values, point3f const *point, point3f const *listener, long index, real *result)
 {
 	s_sound_environment_bsp_view *bsp = (s_sound_environment_bsp_view *)g_4e0348;
 	real distance;
@@ -666,60 +650,52 @@ struct s_221e32
 	byte field_7c[0x34];
 };
 
-struct s_221e33
-{
-	union
-	{
-		struct { vector3f field_0, field_c; } field_0;
-		real field_18[2];
-	};
-};
-
 struct s_collision_bsp_test_vector_result;
 struct s_slot_entry_list;
 extern s_slot_entry_list *g_4e0340;
 extern byte *g_4ed280;
 bool function_1de630(dword arg_0, s_slot_entry_list *arg_1, s_collision_bsp_test_vector_result *arg_2,
 	real arg_3, long arg_4, byte const *arg_5, point3f const *arg_6, vector3f const *arg_7);
-void function_222150(long arg_0, point3f const *arg_1, real const *arg_2,
+void function_222150(long arg_0, real const *arg_2, point3f const *arg_1,
 	point3f const *arg_3, long arg_4, real *arg_5);
+
+void vector3f_negate(vector3f const *vector, vector3f *result); /* forced inline in src/unknown_0b7740.cpp */
+
+PRIVATE inline void point_along_vector_221e30(point3f const *point, vector3f const *vector, real t, point3f *result)
+{
+	result->x = vector->i * t + point->x;
+	result->y = vector->j * t + point->y;
+	result->z = vector->k * t + point->z;
+}
 
 // @retail 0x221e30
 void function_221e30(s_221e30 *arg_0, real const *arg_1, s_local_camera const *arg_2)
 {
-	(void)&arg_1; (void)&arg_2;
 	if (*(long const *)arg_2->unknown00 != arg_0->field_40)
 	{
-		s_221e33 local_10;
-		s_structure_bsp_view *local_13 = (s_structure_bsp_view *)g_4e0348;
 		real local_0 = 0.0f;
+		s_structure_bsp_view *local_13 = (s_structure_bsp_view *)g_4e0348;
 		if (!arg_0->field_47)
 		{
 			s_221e31 local_1, local_2;
+			vector3f ray, reverse_ray;
 			byte const *local_5 = g_4ed280 + g_4686c4 * 0x20 + 1;
-			local_10.field_0.field_0.i = arg_0->field_24.x - arg_2->position.x;
-			local_10.field_0.field_0.j = arg_0->field_24.y - arg_2->position.y;
-			local_10.field_0.field_0.k = arg_0->field_24.z - arg_2->position.z;
+			vector3d_from_points3d(&arg_2->position, &arg_0->field_24, &ray);
 			if (function_1de630(1, g_4e0340, (s_collision_bsp_test_vector_result *)&local_1,
-				1.0f, 0x100, local_5, &arg_2->position, &local_10.field_0.field_0))
+				1.0f, 0x100, local_5, &arg_2->position, &ray))
 			{
-				local_10.field_0.field_c.i = 0.0f - local_10.field_0.field_0.i;
-				local_10.field_0.field_c.j = 0.0f - local_10.field_0.field_0.j;
-				local_10.field_0.field_c.k = 0.0f - local_10.field_0.field_0.k;
+				vector3f_negate(&ray, &reverse_ray);
 				if (function_1de630(1, g_4e0340, (s_collision_bsp_test_vector_result *)&local_2,
-					1.0f, 0x100, local_5, &arg_0->field_24, &local_10.field_0.field_c))
+					1.0f, 0x100, local_5, &arg_0->field_24, &reverse_ray))
 				{
-					local_0 = PIN(1.0f - local_2.field_0 - local_1.field_0, 0.0f, 1.0f);
+					local_0 = 1.0f - local_2.field_0 - local_1.field_0;
+					local_0 = PIN(local_0, 0.0f, 1.0f);
 					if (local_0 > 0.0f)
 					{
 						arg_0->field_45 = true;
-						arg_0->field_4.x = local_10.field_0.field_0.i * local_1.field_0 + arg_2->position.x;
-						arg_0->field_4.y = local_10.field_0.field_0.j * local_1.field_0 + arg_2->position.y;
-						arg_0->field_4.z = local_10.field_0.field_0.k * local_1.field_0 + arg_2->position.z;
+						point_along_vector_221e30(&arg_2->position, &ray, local_1.field_0, &arg_0->field_4);
 						arg_0->field_1c = local_1.field_0;
-						arg_0->field_10.x = local_10.field_0.field_c.i * local_2.field_0 + arg_0->field_24.x;
-						arg_0->field_10.y = local_10.field_0.field_c.j * local_2.field_0 + arg_0->field_24.y;
-						arg_0->field_10.z = local_10.field_0.field_c.k * local_2.field_0 + arg_0->field_24.z;
+						point_along_vector_221e30(&arg_0->field_24, &reverse_ray, local_2.field_0, &arg_0->field_10);
 						arg_0->field_20 = local_2.field_0;
 					}
 				}
@@ -729,8 +705,8 @@ void function_221e30(s_221e30 *arg_0, real const *arg_1, s_local_camera const *a
 		}
 		else if (!arg_0->field_44 && arg_2->index != arg_0->field_3c)
 		{
-			real local_6 = function_249d60(arg_2->index, arg_0->field_3c, local_13);
-			real local_7 = distance3d(&arg_0->field_24, &arg_2->position);
+			real local_6 = function_249d60(local_13, arg_2->index, arg_0->field_3c);
+			real local_7 = distance3d(&arg_2->position, &arg_0->field_24);
 			local_0 = 1.0f - local_7 / ((local_7 + local_6) > 0.001f ? (local_7 + local_6) : 0.001f);
 		}
 		if (arg_2->index != NONE && arg_0->field_3c != NONE && arg_2->index != arg_0->field_3c)
@@ -742,13 +718,15 @@ void function_221e30(s_221e30 *arg_0, real const *arg_1, s_local_camera const *a
 			}
 			else
 			{
-				function_222150(arg_0->field_3c, &arg_0->field_24, arg_1,
-					&arg_2->position, arg_0->field_3c, local_10.field_18);
-				s_221e32 const *local_9 = *(s_221e32 const **)((byte *)g_4e0348 + 0xa0);
-				if (local_9[arg_2->index].field_7a == local_9[arg_0->field_3c].field_7a)
-					local_10.field_18[0] = 0.0f;
-				arg_0->field_34 = local_10.field_18[0];
-				arg_0->field_38 = local_10.field_18[1];
+				real values[2];
+				function_222150(arg_2->index, arg_1, &arg_2->position,
+					&arg_0->field_24, arg_0->field_3c, values);
+				s_221e32 const *local_9 = *(s_221e32 const **)((byte *)local_13 + 0xa0);
+				if (local_9[arg_2->index].field_7a != local_9[arg_0->field_3c].field_7a)
+					arg_0->field_34 = values[0];
+				else
+					arg_0->field_34 = 0.0f;
+				arg_0->field_38 = values[1];
 			}
 		}
 		arg_0->field_30 += local_0;
@@ -781,13 +759,13 @@ real function_18cac0(long arg_0);
 // @retail 0x221a70
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 {
-	(void)&arg_0; (void)&arg_1;
 	s_local_camera *local_0 = local_camera_get(arg_0);
 	if (local_0 && local_0->index != NONE)
 	{
 		s_structure_bsp_view *local_1 = (s_structure_bsp_view *)g_4e0348;
-		real local_2[0x200];
-		memset(local_2, 0, sizeof(local_2));
+		dword local_13[0x200];
+		real *local_2 = (real *)local_13;
+		memset(local_13, 0, sizeof(local_13));
 		if (local_1->audibility_count > 0)
 		{
 			s_structure_audibility *local_3 = local_1->audibility;
@@ -815,7 +793,12 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 						for (long local_11 = 0; local_11 < local_1->cluster_count; local_11++)
 						{
 							if (local_11 != local_10 && (local_8[local_9][local_11 >> 5] & (1 << (local_11 & 31))))
-								local_2[local_11] = local_2[local_11] > local_7 ? local_2[local_11] : local_7;
+							{
+								real gain = local_7;
+								if (local_2[local_11] > local_7)
+									gain = local_2[local_11];
+								local_2[local_11] = gain;
+							}
 						}
 					}
 				}

@@ -26,8 +26,9 @@ long __stdcall function_120e70(byte *buffer);
 word *function_215b50(long variant, word *buffer);
 
 /* the variant being edited and the one chosen last */
-long g_54e49c;
 long g_50933c;
+
+
 
 /* an item of the list's data */
 struct s_variant_item
@@ -37,6 +38,102 @@ struct s_variant_item
 	long variant;
 	long string_handle;
 };
+
+#include "unknown_19b510.h"
+#include "unknown_13fd90.h"
+
+bool function_212bc0(long file_index, s_game_variant *variant);
+bool __stdcall function_215f40(long type, byte *buffer);
+long function_212380(long type, long controller_index, byte *buffer);
+void ui_game_variant_build_default(long type, s_game_variant *variant);
+void function_148aa3(long error, word controller_flags);
+long saved_game_file_type_from_variant(s_game_variant *variant);
+void function_238c69(long mode, long type, word *name, long maximum_count, long controller);
+bool __stdcall function_19a728(s_game_variant *variant);
+bool __stdcall function_2cb001(long controller_index);
+c_class_1473c9 *__stdcall function_2baae7(s_screen_parameters *parameters);
+c_class_1473c9 *__stdcall function_2bb31d(s_screen_parameters *parameters);
+extern long g_55c154;
+
+// @retail 0x2ca284
+void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
+{
+	struct s_variant_flags { unsigned long pad : 21; unsigned long bit21 : 1; };
+	if (*item == NONE) return;
+
+	s_variant_item *entry = &((s_variant_item *)data->data)[*item & 0xffff];
+	s_game_variant variant;
+	byte name[0x100];
+	long selected = entry->variant;
+	if (selected != NONE && !(flag_a && TEST_FIELD_BIT(((s_variant_flags const *)&entry->variant)->bit21)))
+	{
+		if (entry->value2 != NONE)
+		{
+			if (function_212bc0(selected, &variant))
+			{
+				s_screen_parameters parameters;
+				if (flag_a)
+				{
+					g_54e49c = entry->variant;
+					g_54e4a0 = variant;
+					parameters.field_c = 0;
+					function_149f49((s_message *)&parameters, 0, 0, 1 << (*controller)->controller_index,
+						3, 4, (long)function_2baae7);
+					parameters.load(&parameters);
+				}
+				else if (flag_b)
+				{
+					parameters.field_c = 0;
+					function_149f49((s_message *)&parameters, 0, 0, 1 << (*controller)->controller_index,
+						5, 4, (long)function_2bb31d);
+					parameters.load(&parameters);
+				}
+				else
+				{
+					function_19a728(&variant);
+					get_screen()->start_animation(3);
+				}
+				return;
+			}
+			flag_c = true;
+			g_50933c = entry->variant;
+		}
+		else g_50933c = selected;
+		dialog_choice_show(1, 0x79, 4, 1 << (*controller)->controller_index, function_2cb001, 0, 0);
+		return;
+	}
+	g_55c154 = 0;
+	if (function_215f40(game_type, name))
+	{
+		long saved = function_212380(game_type, (*controller)->controller_index, name);
+		if (saved != NONE)
+		{
+			selected = entry->variant;
+			long source_index = selected == NONE ? saved : selected;
+			if (function_212bc0(source_index, &variant))
+			{
+				g_54e49c = saved;
+				g_54e4a0 = variant;
+				if (selected == NONE)
+				{
+					ui_game_variant_build_default(game_type, &g_54e4a0);
+					unicode_string_copy(g_54e4a0.name, variant.name, 0x20);
+					function_238c69(5, saved_game_file_type_from_variant(&g_54e4a0),
+						g_54e4a0.name, 0x20, (*controller)->controller_index);
+				}
+				else
+				{
+					g_54e49c_storage.variant_bytes[0] &= 0xfe;
+					function_238c69(7, saved_game_file_type_from_variant(&g_54e4a0),
+						g_54e4a0.name, 0x20, (*controller)->controller_index);
+				}
+				return;
+			}
+		}
+	}
+	function_148aa3(g_55c154, user_flags);
+}
+
 
 /* the custom game profile screen (vtable 0x45d6f8) */
 class c_custom_game_profile_screen : public c_screen_with_menu
@@ -157,7 +254,7 @@ void c_class_2c9e69::select_last_variant()
 void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 {
 	long datum = ((c_class_14750b *)item)->value70;
-	c_text_widget_45a5e0 *text = (c_text_widget_45a5e0 *)item->find_child(6, 0, false);
+	c_text_widget_45a5e0 *volatile text = (c_text_widget_45a5e0 *)item->find_child(6, 0, false);
 	c_class_1a2c81 *icon = item->find_child(8, 2, false);
 
 	if (datum != NONE)
@@ -166,9 +263,10 @@ void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 
 		if (entry->variant == NONE)
 		{
-			if (text)
+			c_text_widget_45a5e0 *empty_text = text;
+			if (empty_text)
 			{
-				text->function_253b1a(0x120001db);
+				empty_text->function_253b1a(0x120001db);
 			}
 		}
 		else if (text)
@@ -224,112 +322,45 @@ void c_class_2c9e69::fill_and_keep_focus()
 // @retail 0x2cac1a
 screen_load_proc c_custom_game_profile_screen::get_load_proc()
 {
-	screen_load_proc result;
-
-	switch (game_type)
-	{
-	case 1:
-		if (flag_a)
-		{
-			result = function_2ca4cd;
-		}
-		else if (flag_b)
-		{
-			result = function_2ca580;
-		}
-		else
-		{
-			result = function_2ca525;
-		}
-		break;
-	case 2:
-		if (flag_a)
-		{
-			result = function_2ca5d8;
-		}
-		else if (flag_b)
-		{
-			result = function_2ca68b;
-		}
-		else
-		{
-			result = function_2ca630;
-		}
-		break;
-	case 4:
-		if (flag_a)
-		{
-			result = function_2ca6e3;
-		}
-		else if (flag_b)
-		{
-			result = function_2ca796;
-		}
-		else
-		{
-			result = function_2ca73b;
-		}
-		break;
-	case 5:
-		if (flag_a)
-		{
-			result = function_2ca7ee;
-		}
-		else if (flag_b)
-		{
-			result = function_2ca8a1;
-		}
-		else
-		{
-			result = function_2ca846;
-		}
-		break;
-	case 7:
-		if (flag_a)
-		{
-			result = function_2ca8f9;
-		}
-		else if (flag_b)
-		{
-			result = function_2ca9ac;
-		}
-		else
-		{
-			result = function_2ca951;
-		}
-		break;
-	case 8:
-		if (flag_a)
-		{
-			result = function_2caa04;
-		}
-		else if (flag_b)
-		{
-			result = function_2caab7;
-		}
-		else
-		{
-			result = function_2caa5c;
-		}
-		break;
-	case 9:
-		if (flag_a)
-		{
-			result = function_2cab0f;
-		}
-		else if (flag_b)
-		{
-			result = function_2cabc2;
-		}
-		else
-		{
-			result = function_2cab67;
-		}
-		break;
-	default:
-		__assume(0);
-	}
-	return result;
+    if (game_type != 1) {
+        if (game_type != 2) {
+            if (game_type > 4) {
+                if (game_type != 5) {
+                    if (game_type > 7) {
+                        if (game_type != 8) {
+                            if (flag_a) return function_2cab0f;
+                            if (flag_b) return function_2cabc2;
+                            return function_2cab67;
+                        } else {
+                            if (flag_a) return function_2caa04;
+                            if (flag_b) return function_2caab7;
+                            return function_2caa5c;
+                        }
+                    } else {
+                        if (flag_a) return function_2ca8f9;
+                        if (flag_b) return function_2ca9ac;
+                        return function_2ca951;
+                    }
+                } else {
+                    if (flag_a) return function_2ca7ee;
+                    if (flag_b) return function_2ca8a1;
+                    return function_2ca846;
+                }
+            } else {
+                if (flag_a) return function_2ca6e3;
+                if (flag_b) return function_2ca796;
+                return function_2ca73b;
+            }
+        } else {
+            if (flag_a) return function_2ca5d8;
+            if (flag_b) return function_2ca68b;
+            return function_2ca630;
+        }
+    } else {
+        if (flag_a) return function_2ca4cd;
+        if (flag_b) return function_2ca580;
+        return function_2ca525;
+    }
 }
 
 /* the create functions: the screen for one game type */
@@ -610,7 +641,7 @@ c_class_1473c9 *__stdcall function_2cabc2(s_screen_parameters *parameters)
 
 #include <string.h>
 #include "unknown_19d220.h"
-void __stdcall function_215900(long controller, long type, word *capacity, long *indices, long include_cached);
+void __stdcall function_215900(long controller, long type, word *capacity, long *indices, bool include_cached);
 bool function_212bc0(long file_index, s_game_variant *variant);
 long function_19fd00(long index);
 void function_24c0c4(c_widget *widget);
@@ -620,7 +651,7 @@ void c_class_2c9e69::fill()
 {
     long indices[0x1065];
     word count = 0x1065;
-    function_215900(get_controller_index(), game_type, &count, indices, 1);
+    function_215900(get_controller_index(), game_type, &count, indices, true);
     record_pool_release_all(data);
     memset(variants, 0xff, sizeof(variants));
     if (flag_a)
@@ -659,6 +690,9 @@ void __stdcall function_148b27(long index);
 // @retail 0x2cb001
 bool __stdcall function_2cb001(long unused)
 {
+    /* retail keeps the unused argument, so it returns with ret 4 */
+    long const *unused_reference = &unused;
+    (void)unused_reference;
     function_148b27(g_50933c);
     g_50933c = NONE;
     return true;

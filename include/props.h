@@ -15,13 +15,16 @@
 #include "globals.h"
 #include "data_array.h"
 #include "slot_handler.h"
+#include "object_queries.h"
 
 /* the state of a prop as an actor perceives it (0x6c bytes) */
 struct s_type_5cfb45
 {
 	long unknown00;
 	point3f position;
-	byte unknown10[0x3c - 0x10];
+	byte unknown10[0x28 - 0x10];
+	s_location location;
+	byte unknown30[0x3c - 0x30];
 	long unknown3c;
 	long unknown40;
 	long unknown44;
@@ -44,6 +47,7 @@ struct s_type_5cfb45
 	bool unknown69;
 	byte unknown6a[2];
 };
+typedef char assert_type_5cfb45_size[(sizeof(s_type_5cfb45) == 0x6c) ? 1 : -1];
 
 /* the view of a tracked prop (0xb4 bytes) */
 struct s_type_f95cd3

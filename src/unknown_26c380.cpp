@@ -149,17 +149,17 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 	s_path_trace_result *trace)
 {
 	s_sector_trace_result *result = (s_sector_trace_result *)trace;
-	bool success = false;
+	long success = false;
 	long current_sector_index = sector_index;
 	short count = 0;
 	real last_distance = -0.1f;
 	s_pathfinding_edge *edge = NULL;
 
-	result->distance = distance;
 	result->unknown20 = 3.4028235e38f;
 	result->blocked = false;
 	result->sector_index = NONE;
 	result->edge_index = (word)NONE;
+	result->distance = distance;
 	result->unknown1c = false;
 	if (pathfinding && sector_index != target_sector_index && sector_index >= 0 && sector_index < pathfinding->node_count)
 	{
@@ -202,9 +202,12 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 				edge = function_1fa720(&iterator);
 				if (!edge)
 				{
-					result->blocked = true;
 					result->sector_index = current_sector_index;
-					success = true;
+					result->blocked = true;
+					result->edge_index = (word)NONE;
+					result->distance = distance;
+					function_x697631(origin, direction, distance, &result->point);
+					success = result->blocked;
 					goto done;
 				}
 				do
@@ -265,7 +268,7 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 								result->edge_index = (word)NONE;
 								result->distance = distance;
 								function_x697631(origin, direction, distance, &result->point);
-								success = false;
+								goto done;
 							}
 							else
 							{
@@ -273,7 +276,8 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 								result->blocked = true;
 								result->edge_index = (word)NONE;
 								function_x697631(origin, direction, distance, &result->point);
-								success = true;
+								success = result->blocked;
+								goto done;
 							}
 						}
 						else
@@ -282,21 +286,20 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 							result->edge_index = (word)NONE;
 							result->distance = distance;
 							function_x697631(origin, direction, distance, &result->point);
-							success = false;
+							goto done;
 						}
-						return success;
 					}
 					if (result->blocked)
 					{
-						success = true;
-						return success;
+						success = result->blocked;
+						goto done;
 					}
 					if (location && (((s_sector_edge const *)edge)->flags & 0x80) &&
 						function_270600(location, iterator.edge_index))
 					{
-						success = true;
 						result->blocked = true;
-						return success;
+						success = result->blocked;
+						goto done;
 					}
 					if (count > 200)
 					{
@@ -306,20 +309,23 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 				}
 				else
 				{
-					result->blocked = true;
 					result->sector_index = current_sector_index;
-					success = true;
+					result->blocked = true;
+					result->edge_index = (word)NONE;
+					result->distance = distance;
+					function_x697631(origin, direction, distance, &result->point);
+					success = result->blocked;
 					goto done;
 				}
 			}
 		}
 	}
 	result->blocked = false;
-	result->sector_index = current_sector_index;
-done:
 	result->edge_index = (word)NONE;
+	result->sector_index = current_sector_index;
 	result->distance = distance;
 	function_x697631(origin, direction, distance, &result->point);
+done:
 	return success;
 }
 
@@ -558,17 +564,17 @@ short function_210310(long object_index, long a);
 bool function_210690(short output_index, point3f const *point, point3f *out);
 
 // @retail 0x26d100
-long function_26d100(vector3f const *up, s_collision_result_1697c0 *collision, long *unknown, point3f const *point)
+long function_26d100(vector3f const *up, long *unknown, s_collision_result_1697c0 *collision, point3f const *point)
 {
-    (void)&point;
-    point3f start;
-    start.x = up->i * 0.5f + point->x;
-    start.y = up->j * 0.5f + point->y;
-    start.z = up->k * 0.5f + point->z;
+    point3f const *const *point_reference = &point;
     vector3f direction;
     direction.i = up->i * -4.0f;
     direction.j = up->j * -4.0f;
     direction.k = up->k * -4.0f;
+    point3f start;
+    start.x = up->i * 0.5f + (*point_reference)->x;
+    start.y = up->j * 0.5f + (*point_reference)->y;
+    start.z = up->k * 0.5f + (*point_reference)->z;
     s_path_collision *hit = (s_path_collision *)collision;
     s_path_node_point *output = (s_path_node_point *)unknown;
     long result = NONE;
@@ -603,7 +609,7 @@ long function_26d100(vector3f const *up, s_collision_result_1697c0 *collision, l
     }
     else if (output)
     {
-        output->point = *point;
+        output->point = **point_reference;
         output->output_index = NONE;
     }
     return result;
@@ -619,7 +625,9 @@ struct s_downward_collision_result
 long __stdcall function_26d0e0(point3f const *point, s_type_c3b527 *output, long unused)
 {
     s_downward_collision_result collision;
+    // retail keeps the unused third parameter, so it returns with ret 4
+    long const *unused_reference = &unused;
+    (void)unused_reference;
     *(short *)((byte *)&collision + 0x24) = NONE;
-    return function_26d100(g_4687b0, (s_collision_result_1697c0 *)&collision,
-        (long *)output, point);
+    return function_26d100(g_4687b0, (long *)output, (s_collision_result_1697c0 *)&collision, point);
 }

@@ -7,7 +7,7 @@
 #include "hs.h"
 
 /* script_return_store: stores a script function's value in the calling frame */
-void function_209ae0(long thread_index, long value);
+void hs_thread_return_value(long thread_index, long value);
 
 /* evaluates a script function's arguments one per call; returns the
    arguments once they are all evaluated, NULL until then */
@@ -23,12 +23,12 @@ long function_15e730(void);
 void function_277380(void);
 void function_13bff0(void);
 void function_13ca80(void);
-void function_1388e0(void);
+void game_finish(void);
 bool function_226190(void);
 void function_24cdaf(void);
 bool function_187ec0(void);
-void function_135750(void);
-void function_135790(void);
+void scenario_ramps_stop_all(void);
+void scenario_ramps_resume_all(void);
 void function_1915f0(void);
 void function_29f5b0(short trigger_volume_index, short cutscene_flag_index);
 long function_11c5f0(long trigger_volume_index, long type_mask);
@@ -38,7 +38,7 @@ short __stdcall function_d88f0(long object_index, long name);
 void __stdcall function_bbfc0(real a, real b, real c, real d, real e);
 void __stdcall function_bc070(real a, real b, real c, real d, real e);
 void __stdcall function_29ffb0(long object_index, short cutscene_flag_index, bool a, bool b);
-void __stdcall function_bb670(short name_index, bool flag);
+long __stdcall function_bb670(short name_index, bool flag);
 void __stdcall function_ba6f0(long object_index, long region_index, long state, bool flag);
 bool __stdcall function_bbec0(long object_index, bool value);
 void __stdcall function_ba410(long object_index, long a, long b);
@@ -70,7 +70,7 @@ bool __stdcall function_fa9a0(long *value);
 void __stdcall function_24d7ac(short navpoint_index, short team_index, short is_object, long target, real value);
 void __stdcall function_24d877(short team_index, short is_object, long target);
 void __stdcall function_187df0(bool value);
-void function_135820(void);
+void scenario_ramps_toggle_last_used(void);
 void __stdcall function_13c250(long object_index, long a, long b);
 bool __stdcall function_beb30(long object_index);
 

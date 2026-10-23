@@ -75,7 +75,7 @@ long function_137590(long group_index, short frame_index, short sequence_index)
 }
 
 // @retail 0x137610
-struct s_type_7ba8e9 *function_137610(long group_index, short frame_index, short sequence_index)
+struct s_type_7ba8e9 *function_137610(long group_index, short sequence_index, short frame_index)
 {
 	s_type_7ba8e9 *result = 0;
 	long bitmap_index = function_137590(group_index, frame_index, sequence_index);

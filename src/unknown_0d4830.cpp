@@ -21,7 +21,7 @@ typedef bool (__stdcall *t_record_fill)(long, void *, long, long, long, void *, 
 typedef void (__stdcall *t_41490_callback)(void *);
 
 long function_15d70(long tag, long stage, long pass, bool first, bool second);
-void function_41490(long tag, short group, short kind, real distance, t_record_fill fill,
+void function_41490(short group, long tag, short kind, real distance, t_record_fill fill,
 	dword value, t_41490_callback callback, void *context, point3f const *position);
 
 // @flags /O2 /Gr
@@ -231,56 +231,48 @@ void object_widgets_delete(long object_index)
 // @retail 0xd4ae0
 void object_widget_delete(long object_index, long handle)
 {
-	if (handle != NONE)
-	{
-		s_widget_object_header *header = (s_widget_object_header *)(g_4e0300->data + (object_index & 0xffff) * 12);
-		s_widget_object *object = (s_widget_object *)header->object;
-		long widget_index = object->widget_head;
+    if (handle != NONE)
+    {
+        s_widget_object_header *header = (s_widget_object_header *)(g_4e0300->data + (object_index & 0xffff) * 12);
+        s_widget_object *object = (s_widget_object *)header->object;
+        long widget_index = object->widget_head;
 
-		if (widget_index != NONE)
-		{
-			s_widget *widget = (s_widget *)(g_4e0320->data + (widget_index & 0xffff) * 12);
+        if (widget_index != NONE)
+        {
+            s_widget *widget = (s_widget *)(g_4e0320->data + (widget_index & 0xffff) * 12);
 
-			if (widget->handle == handle)
-			{
-				object->widget_head = widget->next;
+            if (widget->handle == handle)
+            {
+                s_widget_type *widget_type = &g_467498[widget->type];
+                object->widget_head = widget->next;
 
-				if (widget->handle != NONE)
-					g_467498[widget->type].dispose(widget->handle);
+                if (widget->handle != NONE)
+                    widget_type->dispose(widget->handle);
 
-				record_pool_release(g_4e0320, widget_index);
-			}
-			else
-			{
-				long previous_index = widget_index;
-
-				do
-				{
-					s_widget *previous = (s_widget *)(g_4e0320->data + (previous_index & 0xffff) * 12);
-					long next_index = previous->next;
-
-					if (next_index == NONE)
-						break;
-
-					widget = (s_widget *)(g_4e0320->data + (next_index & 0xffff) * 12);
-
-					if (widget->handle == handle)
-					{
-						previous->next = widget->next;
-
-						if (widget->handle != NONE)
-							g_467498[widget->type].dispose(widget->handle);
-
-						record_pool_release(g_4e0320, next_index);
-						break;
-					}
-
-					previous_index = next_index;
-				}
-				while (true);
-			}
-		}
-	}
+                record_pool_release(g_4e0320, widget_index);
+            }
+            else
+            {
+                while (widget_index != NONE)
+                {
+                    s_widget *previous = (s_widget *)(g_4e0320->data + (widget_index & 0xffff) * 12);
+                    long next_index = previous->next;
+                    if (next_index == NONE)
+                        break;
+                    widget = (s_widget *)(g_4e0320->data + (next_index & 0xffff) * 12);
+                    if (widget->handle == handle)
+                    {
+                        previous->next = widget->next;
+                        if (widget->handle != NONE)
+                            g_467498[widget->type].dispose(widget->handle);
+                        record_pool_release(g_4e0320, next_index);
+                        break;
+                    }
+                    widget_index = next_index;
+                }
+            }
+        }
+    }
 }
 
 // @retail 0xd4bc0
@@ -317,3 +309,31 @@ bool __stdcall function_d4bc0(long tag, long context, long pass, long stage,
 	return result;
 }
 
+
+
+// @retail 0xd4cf0
+void __stdcall function_d4cf0(long object_index, short group, dword flags)
+{
+    dword const *flags_reference = &flags;
+    s_widget_object_header *header = (s_widget_object_header *)(g_4e0300->data + (object_index & 0xffff) * 12);
+    s_widget_object *object = (s_widget_object *)header->object;
+    long index = object->widget_head;
+    while (index != NONE)
+    {
+        s_widget *widget = (s_widget *)(g_4e0320->data + (index & 0xffff) * 12);
+        s_widget_type *type = &g_467498[widget->type];
+        if ((group != 2 || (*flags_reference & 0x2000)) &&
+            (group != 1 || (*flags_reference & 0x1000)))
+        {
+            if (type->tag_index)
+            {
+                function_41490(group, type->get_kind(widget->handle), NONE, 640.0f,
+                    (t_record_fill)function_d4bc0, type->tag_index, type->callback,
+                    (void *)widget->handle, (point3f const *)((byte *)object + 0x30));
+            }
+            if (type->draw)
+                type->draw(group, widget->handle);
+        }
+        index = widget->next;
+    }
+}

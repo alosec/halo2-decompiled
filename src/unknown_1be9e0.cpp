@@ -50,24 +50,27 @@ void function_26edb0(long joint_index, short participant_index);
 bool function_1be9e0(long actor_index, long other_index, real *distance, short *ticks);
 
 
+PRIVATE __forceinline real function_1be9e2(point3f const *arg_1, point3f const *arg_0)
+{
+	vector3f v;
+
+	vector3d_from_points3d(arg_1, arg_0, &v);
+	return (real)sqrt(v.k * v.k + v.j * v.j + v.i * v.i);
+}
+
 // @retail 0x1be9e0
 bool function_1be9e0(long actor_index, long other_index, real *distance, short *ticks)
 {
-	s_actor_view *actor = actor_get(actor_index);
-	s_actor_view *other = actor_get(other_index);
-	vector3f delta;
 	bool result = false;
 	short slot_ticks = 0x7fff;
+	s_actor_view *actor = actor_get(actor_index);
+	s_actor_view *other = actor_get(other_index);
 
-	delta.i = actor->position.x - other->position.x;
-	delta.j = actor->position.y - other->position.y;
-	delta.k = actor->position.z - other->position.z;
-
-	real magnitude = magnitude3d(&delta);
+	real magnitude = function_1be9e2(&actor->position, &other->position);
 
 	if (magnitude < 4.0f)
 	{
-		slot_ticks = function_1b6e50(actor_index);
+		slot_ticks = function_1b6e50(other_index);
 		if (slot_ticks * g_510c54->rate < 4.0f)
 			result = true;
 	}
@@ -100,26 +103,31 @@ long __stdcall function_1bead0(long actor_index, s_slot *slot)
 			joint_decline(actor_index, iterator.reference.unknown0);
 		}
 	}
-	if (result != NONE)
-		return result;
-
-	long element_index = function_26e940(actor_index);
-
-	if (element_index != NONE)
+	if (result == NONE)
 	{
-		state->unknown0c = true;
-		state->element_index = element_index;
+		long element_index = function_26e940(actor_index);
+
+		if (element_index != NONE)
+		{
+			state->unknown0c = true;
+			state->element_index = element_index;
+		}
+		result = element_index;
 	}
-	return element_index;
+	return result;
 }
 
 /* invites the actor's clump members near enough, the nearest first */
+static __forceinline long real_to_long(real value);
+
+// score 88 (was 88): retail loads the pool pointer first and keeps the record
+// count in ECX,
+// ours reads a different global before the pool.
 // @retail 0x1beb70
 short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 {
 	s_slot_36 *state = (s_slot_36 *)slot;
 	s_joint_36 *joint = (s_joint_36 *)element_502424_get(state->element_index);
-	long accepted = 0;
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE)
@@ -136,6 +144,7 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 			}
 			else
 			{
+				long accepted = 0;
 				long declined = 0;
 				short i;
 
@@ -165,14 +174,10 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 					real seconds = g_510c54->field_2_3 * 1.5f;
 					long ticks;
 
-					__asm
-					{
-						fld seconds
-						fistp ticks
-					}
+					ticks = real_to_long(seconds);
 					state->unknown1c = (short)ticks;
 					if ((short)declined > 1)
-						function_1fb7e0(actor_index, 0x86, NULL, NONE, NONE);
+						function_1fb7e0(0x86, actor_index, NULL, NONE, NONE);
 					return result;
 				}
 				if (joint->participant_count + (short)accepted >= 2)
@@ -183,6 +188,9 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 	return g_46fbe4;
 }
 
+// score 70 (was 70): the record count is loaded into EDX before the index is
+// masked here and
+// into EDI after it in retail, so the two blocks are out of step.
 // @retail 0x1bee40
 short __stdcall function_1bee40(long actor_index, long leader_index, long a, long b)
 {

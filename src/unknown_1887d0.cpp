@@ -74,10 +74,7 @@ void object_looping_sounds_initialize_for_new_map(void)
 		data_make_valid_inlined(data);
 
 		s_looping_sound_globals *globals = g_4ed288;
-		for (long i = 0; i < 8; i++)
-		{
-			globals->indices[i] = NONE;
-		}
+		memset(globals->indices, 0xff, sizeof(globals->indices));
 		globals->value20 = 0;
 		globals->value24 = 0;
 
@@ -141,7 +138,8 @@ void function_188cd0(void)
 	{
 		long local_0 = function_2197f0(0.0f);
 		_ReadWriteBarrier();
-		function_221980("", local_0, 1.0f);
+		long const &value = local_0;
+		function_221980("", value, 1.0f);
 		local_0 = function_2197f0(g_45dc5c);
 		_ReadWriteBarrier();
 		function_221980("ambient_nature", local_0, 1.0f);
@@ -161,7 +159,8 @@ void function_188d60(void)
 	{
 		long local_0 = function_2197f0(0.0f);
 		_ReadWriteBarrier();
-		function_221980("", local_0, 0.0f);
+		long const &value = local_0;
+		function_221980("", value, 0.0f);
 		local_0 = function_2197f0(g_45dbc0);
 		_ReadWriteBarrier();
 		function_221980("", local_0, 2.0f);

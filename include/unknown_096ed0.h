@@ -13,9 +13,8 @@
 
 /* the allocation retail inlines into every place that makes a node, item or
    record (function_96e90, built /Ob1, is the out-of-line copy) */
-inline void *handle_allocate(long size)
+inline void *allocator_globals_allocate(s_allocator_globals *globals, long size)
 {
-	s_allocator_globals *globals = g_4d87f8;
 	void *block = globals->allocator->allocate(size, 0, 0);
 	if (block == 0)
 	{
@@ -25,6 +24,12 @@ inline void *handle_allocate(long size)
 	if (block != 0)
 		globals->count++;
 	return block;
+}
+
+/* the same allocation from the shared allocator globals */
+inline void *handle_allocate(long size)
+{
+	return allocator_globals_allocate(g_4d87f8, size);
 }
 
 /* a 12-byte item of a node: a handle and what is pending for it (1 or 2) */
@@ -203,6 +208,8 @@ public:
 
 /* the vtable at 0x450cf4 (8 slots): an aggregate of three handle tables.
    v2 is 0x97a30, v3 0x97a70 and v4 0x97ab0 */
+struct s_request;
+
 class c_aggregate_450cf4
 {
 public:
@@ -211,7 +218,7 @@ public:
 	virtual bool v2(bool *a1) { return false; }
 	virtual long v3(long a1, long a2) { return 0; }
 	virtual bool v4(long a1, s_bitstream *stream, long a3, long reserved_bits);
-	virtual void v5() {}
+	virtual long function_97d80(dword *source, s_request *request);
 	virtual void v6() {}
 	virtual void v7() {}
 

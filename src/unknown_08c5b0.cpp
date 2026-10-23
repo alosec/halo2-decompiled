@@ -81,6 +81,8 @@ static inline long bungienet_user_voice_setting(short kind)
 	return 1;
 }
 
+// score 11 (was 11): retail keeps the request pointer in ECX and reads the kind with a
+// 16-bit load; ours keeps the pointer in EAX, so the kind test becomes a memory compare.
 // @retail 0x8c5f0
 bool __stdcall bungienet_user_voice_apply(s_bungienet_user_request *request)
 {
@@ -119,7 +121,7 @@ s_pending_message_header g_479750 =
 };
 
 bool pending_message_request_receive(s_pending_message_header *header, long controller,
- s_pending_message_values values, short value06);
+ s_pending_message_values values, long value06);
 
 static inline XUID *user_settings_identity(XONLINE_USER *user)
 {
@@ -130,14 +132,16 @@ static inline XUID *user_settings_identity(XONLINE_USER *user)
 
 static __forceinline long user_settings_next_controller(long index)
 {
+ long result;
  switch (index + 1)
  {
- case 0: return 0;
- case 1: return 1;
- case 2: return 2;
- case 3: return 3;
- default: return NONE;
+ case 0: result = 0; break;
+ case 1: result = 1; break;
+ case 2: result = 2; break;
+ case 3: result = 3; break;
+ default: result = NONE; break;
  }
+ return result;
 }
 
 static __forceinline void user_settings_request(long controller, XUID *identity)
@@ -159,15 +163,14 @@ void function_8c660(void)
  if (signed_in) memcpy(users, signed_in, sizeof(users));
  for (long controller = 0; controller != NONE; controller = user_settings_next_controller(controller))
  {
-  XONLINE_USER *user = &users[controller];
-  HRESULT status = user->hr;
-  XUID *identity = user_settings_identity(user);
+  HRESULT status = users[controller].hr;
+  XUID *identity = user_settings_identity(&users[controller]);
   if (identity && identity->qwUserID && SUCCEEDED(status))
   {
-   if (!XOnlineIsUserGuest(identity->dwUserFlags))
+   if (!XOnlineIsUserGuest(users[controller].xuid.dwUserFlags))
    {
     if (controller_voice_view_get(controller)->voice_setting == 0)
-     user_settings_request(controller, identity);
+     user_settings_request(controller, user_settings_identity(&users[controller]));
    }
    else
    {

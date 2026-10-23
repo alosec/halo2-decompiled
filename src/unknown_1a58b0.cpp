@@ -1,4 +1,5 @@
 // @flags /O2 /arch:SSE /Gr
+#include "object_masks_storage.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,7 @@
 #include "globals.h"
 #include "unknown_1a58b0.h"
 #include "object_markers.h"
+#include "vector_products.h"
 
 /* ---- views of the data used below ---- */
 
@@ -30,7 +32,12 @@ struct s_player_view
 {
 	byte unknown00[0x2c];
 	long unit_index;
-	byte unknown30[0x21c - 0x30];
+	byte unknown30[0xc0 - 0x30];
+	char field_c0;
+	byte unknownc1[0x174 - 0xc1];
+	long field_174;
+	long field_178;
+	byte unknown17c[0x21c - 0x17c];
 };
 
 struct s_unit_view
@@ -69,7 +76,7 @@ struct s_sort_element
 
 /* ---- callees ---- */
 
-void function_1c2330(long bit_count, dword *a, dword *b, dword *result);
+void bit_vector_intersect(long bit_count, dword *a, dword *b, dword *result);
 
 /* ---- globals ---- */
 
@@ -83,48 +90,16 @@ s_flag_bits g_557c74;
 
 #define ACTION_ID_VALID(id) ((id) >= 0 && (id) < 0x83)
 
+/* whether the type's bit is set in the enabled set g_557c40 */
+PRIVATE __forceinline bool action_type_bit_set(short id)
+{
+	return (g_557c40[id >> 5] & (1 << (id & 0x1f))) != 0;
+}
+
 /* whether the handler is enabled in this build */
 #define ACTION_HANDLER_ENABLED(id) \
-	(g_46eeb8[id]->unknown8 != g_46f348 && (g_46eeb8[id]->mask & g_4ee4ec) == g_4ee4ec && (g_557c40[(id) >> 5] & (1 << ((id) & 0x1f))))
+	(g_46eeb8[id]->unknown8 != g_46f348 && (g_46eeb8[id]->mask & g_4ee4ec) == g_4ee4ec && action_type_bit_set(id))
 
-/* link a node in after an element */
-#define ACTION_NODE_INSERT(element, node) \
-	do \
-	{ \
-		(node)->next = (element)->next; \
-		(element)->next = (node); \
-		(node)->order = 0; \
-	} \
-	while (0)
-
-/* link a node into the list of an element, after the nodes of a lower order */
-#define ACTION_NODE_INSERT_SORTED(element, node, order_value) \
-	do \
-	{ \
-		s_action_node *previous = (element); \
-		\
-		if (!previous->next) \
-		{ \
-			(node)->next = 0; \
-			previous->next = (node); \
-		} \
-		else \
-		{ \
-			do \
-			{ \
-				if (!previous->next || previous->next->order >= (order_value)) \
-				{ \
-					(node)->next = previous->next; \
-					previous->next = (node); \
-					break; \
-				} \
-				previous = previous->next; \
-			} \
-			while (previous); \
-		} \
-		(node)->order = (order_value); \
-	} \
-	while (0)
 /* ---- functions ---- */
 
 // @retail 0x1a58b0
@@ -141,48 +116,41 @@ bool function_1a58b0(long object_index)
 	return false;
 }
 void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long object_index, real *radius);
-void function_1a6340(vector3f const *a, vector3f const *b, point3f *out, point3f const *c, point3f const *p, real radius);
+void function_1a6340(vector3f const *b, vector3f const *a, point3f *out, point3f const *c, point3f const *p, real radius);
 
+// score 32 (was 32): the arguments are pushed in a different order and one of the values is passed
+// in a register here and on the stack in retail.
 // @retail 0x1a62e0
-bool function_1a62e0(long object_index, point3f *out, vector3f const *direction, point3f const *origin)
+bool function_1a62e0(long object_index, point3f const *origin, vector3f const *direction, point3f *out)
 {
+	struct s_1a62e1 { real field_0; point3f field_4; vector3f field_10; };
+	s_1a62e1 local_0;
+	function_df6c0(&local_0.field_4, &local_0.field_10, object_index, &local_0.field_0);
 	bool result = false;
-	real radius;
-	point3f bottom;
-	vector3f axis;
-
-	function_df6c0(&bottom, &axis, object_index, &radius);
-	if (radius > 0.0001f)
+	if (local_0.field_0 > 0.0001f)
 	{
-		function_1a6340(&axis, direction, out, &bottom, origin, radius);
+		function_1a6340(&local_0.field_10, direction, out, origin, &local_0.field_4, local_0.field_0);
 		result = true;
 	}
 	return result;
 }
 
-PRIVATE inline vector3f *local_scale_vector(vector3f const *input, double scale, vector3f *output);
-
 // @retail 0x1a6340
-void function_1a6340(vector3f const *a, vector3f const *b, point3f *out, point3f const *c, point3f const *p, real radius)
+void function_1a6340(vector3f const *b, vector3f const *a, point3f *out, point3f const *c, point3f const *p, real radius)
 {
-	real ni = a->k * b->j - b->k * a->j;
-	real nj = b->k * a->i - b->i * a->k;
-	real nk = b->i * a->j - a->i * b->j;
-	real m = nj * nj;
-	m += nk * nk;
-	m += ni * ni;
+	vector3f n;
+	cross3f(b, a, &n);
+	real m = n.i * n.i + n.k * n.k + n.j * n.j;
 
 	if (m > 0.0f)
 	{
-		real dz = c->z - p->z;
-		real dy = c->y - p->y;
-		real dx = c->x - p->x;
-		real ci = a->k * dy - dz * a->j;
-		real cj = a->i * dz - a->k * dx;
-		real ck = dx * a->j - dy * a->i;
-		real t = cj * nj;
-		t += ck * nk;
-		t += ci * ni;
+		vector3f d;
+		vector3d_from_points3d(p, c, &d);
+		vector3f e;
+		cross3f(&d, a, &e);
+		real t = e.j * n.j;
+		t += e.k * n.k;
+		t += e.i * n.i;
 		t /= m;
 
 		t = 0.0f > t ? 0.0f : t > 1.0f ? 1.0f : t;
@@ -211,19 +179,11 @@ void function_1a6340(vector3f const *a, vector3f const *b, point3f *out, point3f
 
 	if (wm > radius * radius)
 	{
-		local_scale_vector(&w, radius / sqrt(wm), &w);
+		scale_vector_by_double(&w, radius / sqrt(wm), &w);
 	}
 	out->x = out->x - w.i;
 	out->y = out->y - w.j;
 	out->z = out->z - w.k;
-}
-
-PRIVATE inline vector3f *local_scale_vector(vector3f const *input, double scale, vector3f *output)
-{
-	output->i = scale * input->i;
-	output->j = scale * input->j;
-	output->k = scale * input->k;
-	return output;
 }
 
 // @retail 0x1a65b0
@@ -246,7 +206,7 @@ void function_1a65b0(vector3f const *a, point3f *out, point3f const *p, point3f 
 
 	if (wm > radius * radius)
 	{
-		local_scale_vector(&w, radius / sqrt(wm), &w);
+		scale_vector_by_double(&w, radius / sqrt(wm), &w);
 	}
 	out->x = out->x - w.i;
 	out->y = out->y - w.j;
@@ -332,7 +292,7 @@ short function_1a6ea0(s_action_node **out, s_candidate_list *list, s_action_node
 	if (list)
 		count = list->count;
 
-	for (;;)
+	do
 	{
 		s_candidate_entry *entry = 0;
 
@@ -346,14 +306,14 @@ short function_1a6ea0(s_action_node **out, s_candidate_list *list, s_action_node
 			case 1:
 				entry = 0;
 				break;
+			case 3:
+				if (current != entry->key)
+					entry = 0;
+				break;
 			case 2:
 				if (nodes[j].key == entry->key)
 					j++;
 				else
-					entry = 0;
-				break;
-			case 3:
-				if (current != entry->key)
 					entry = 0;
 				break;
 			case 4:
@@ -374,15 +334,15 @@ short function_1a6ea0(s_action_node **out, s_candidate_list *list, s_action_node
 		else
 		{
 			if (j >= node_count)
-				return out_count;
+				break;
 			out[out_count] = &nodes[j];
 			current = nodes[j].key;
 			j++;
 		}
 		out_count++;
-		if (out_count >= 0x32)
-			return out_count;
 	}
+	while (out_count < 0x32);
+	return out_count;
 }
 
 // @retail 0x1a6f70
@@ -406,28 +366,18 @@ void function_1a6f70(long owner_index)
 	}
 }
 
-/* a slot and the one after it, seen from the owner base (the slots start at +0x90) */
-struct s_slot_pair_view
-{
-	byte unknown00[0x94];
-	short unknown94;
-	byte unknown96[0x3a];
-	s_slot next;
-};
-
 // @retail 0x1a7030
 short function_1a7030(long owner_index, short slot_index, long argument, short *out)
 {
 	s_actor_view *owner = actor_get(owner_index);
-	s_slot_pair_view *slot = (s_slot_pair_view *)((byte *)owner + slot_index * sizeof(s_slot));
-	s_slot *next = &slot->next;
+	s_slot *slot = &owner->slots[slot_index];
+	s_slot *next = &owner->slots[slot_index + 1];
 	short result = g_46fbe4;
 	short selected = NONE;
-	short type = next->type;
 
-	if (next->state == 0 && ACTION_ID_VALID(type) && slot->unknown94 != NONE && ACTION_HANDLER_ENABLED(type))
+	if (next->state == 0 && ACTION_ID_VALID(next->type) && slot->unknown4 != NONE && ACTION_HANDLER_ENABLED(next->type))
 	{
-		s_slot_handler *handler = g_46eeb8[type];
+		s_slot_handler *handler = g_46eeb8[next->type];
 		short code;
 
 		if (handler->evaluate_argument)
@@ -452,13 +402,13 @@ short function_1a7030(long owner_index, short slot_index, long argument, short *
 				}
 				else
 				{
-					slot->unknown94 = NONE;
+					slot->unknown4 = NONE;
 					result = g_46fbe4;
 				}
 			}
 			else
 			{
-				slot->unknown94 = NONE;
+				slot->unknown4 = NONE;
 				if (code == g_46fbec)
 					result = code;
 				else
@@ -468,62 +418,97 @@ short function_1a7030(long owner_index, short slot_index, long argument, short *
 	}
 	else
 	{
-		slot->unknown94 = NONE;
+		slot->unknown4 = NONE;
 	}
 
 	*out = selected;
 	return result;
 }
+
+/* link a node in after an element */
+PRIVATE __forceinline void function_1a71f1(s_action_node *arg_0, s_action_node *arg_1)
+{
+	arg_1->next = arg_0->next;
+	arg_0->next = arg_1;
+	arg_1->order = 0;
+}
+
+/* link a node into the list of an element, after the nodes of a lower order */
+PRIVATE __forceinline void function_1a71f2(s_action_node *arg_0, s_action_node *arg_1, short arg_2)
+{
+	if (arg_0->next)
+	{
+		do
+		{
+			if (!arg_0->next || arg_0->next->order >= arg_2)
+			{
+				arg_1->next = arg_0->next;
+				arg_0->next = arg_1;
+				break;
+			}
+			arg_0 = arg_0->next;
+		}
+		while (arg_0);
+	}
+	else
+	{
+		arg_1->next = 0;
+		arg_0->next = arg_1;
+	}
+	arg_1->order = arg_2;
+}
+
 // @retail 0x1a71f0
 bool function_1a71f0(short count, short id, s_action_node **list)
 {
-	if (!(g_4f0a4c[id >> 5] & (1 << (id & 0x1f))))
-		return false;
+	bool result = false;
 
-	short i;
-
-	for (i = 0; i < count; i++)
-		list[i]->next = 0;
-
-	long row;
-
-	for (row = 0; row < g_4f09c8[id]; row++)
+	if (g_4f0a4c[id >> 5] & (1 << (id & 0x1f)))
 	{
-		s_candidate_entry *entry = &g_4ee4f0[row].entries[id];
-		s_action_node *node = &entry->node;
+		result = true;
+		short i;
 
-		if (entry->kind == 0)
-		{
-			ACTION_NODE_INSERT(list[0], node);
-		}
-		else if (entry->kind == 4)
-		{
-			ACTION_NODE_INSERT_SORTED(list[count - 1], node, 2);
-		}
-		else
-		{
-			short j = 0;
+		for (i = 0; i < count; i++)
+			list[i]->next = 0;
 
-			while (j < count)
+		long row;
+
+		for (row = 0; row < g_4f09c8[id]; row++)
+		{
+			s_candidate_entry *entry = &g_4ee4f0[row].entries[id];
+			s_action_node *node = &entry->node;
+
+			if (entry->kind == 0)
 			{
-				if (list[j]->key == entry->key)
-					break;
-				j++;
+				function_1a71f1(list[0], node);
 			}
-			if (j < count)
+			else if (entry->kind == 4)
 			{
-				s_action_node *element = list[j];
+				function_1a71f2(list[count - 1], node, 2);
+			}
+			else
+			{
+				short j;
 
-				if (entry->kind == 1)
-					ACTION_NODE_INSERT(element, node);
-				else if (entry->kind == 2)
-					ACTION_NODE_INSERT_SORTED(element, node, 1);
-				else if (entry->kind == 3)
-					ACTION_NODE_INSERT_SORTED(element, node, 2);
+				for (j = 0; j < count; j++)
+				{
+					s_action_node *element = list[j];
+
+					if (element->key == entry->key)
+					{
+						if (entry->kind == 1)
+							function_1a71f1(element, &entry->node);
+						else if (entry->kind == 2)
+							function_1a71f2(element, &entry->node, 1);
+						else if (entry->kind == 3)
+							function_1a71f2(element, &entry->node, 2);
+						break;
+					}
+				}
 			}
 		}
 	}
-	return true;
+	return result;
 }
 
 /* where each handler's nodes start in g_4f0a60 and how many there are, by
@@ -641,15 +626,17 @@ void function_1a6d80(void)
 	}
 }
 
+// score 6 (was 6): the two output pointers are loaded one after the other here and both before the
+// first store in retail, and the word is written after the stack is restored in retail.
 // @retail 0x1a73c0
 s_action_node **function_1a73c0(long owner_index, short id, bool *valid, short *count)
 {
 	s_actor_view *owner = actor_get(owner_index);
-	s_action_table_entry *entry = &g_4f2cc0[id][owner->unknown004];
-	s_action_node **nodes = &g_4f0a60[entry->index];
-	short node_count = entry->count;
+	long local_2 = g_46eeb8[id]->index;
+	s_action_node **nodes = &g_4f0a60[g_4f2cc0[id][owner->unknown004].index];
+	short node_count = g_4f2cc0[id][owner->unknown004].count;
 
-	*valid = function_1a71f0(node_count, g_46eeb8[id]->index, nodes);
+	*valid = function_1a71f0(node_count, (short)local_2, nodes);
 	*count = node_count;
 	return nodes;
 }
@@ -692,7 +679,7 @@ void function_1a7430(long owner_index, s_action_request *request, short *out_id,
 		if (timer == -2 && context->time == time->game_time)
 		{
 		}
-		else if (timer >= 0 && timer < 14)
+		else if (request->timer >= 0 && request->timer < 14)
 		{
 			long last = owner->times[timer];
 
@@ -748,11 +735,11 @@ void function_1a7b30(s_flag_bits *result, long owner_index)
 	s_actor_view *owner = actor_get(owner_index);
 	s_tag_instance *tags = g_4e3b44;
 	s_flag_bits *source;
+	s_definition_view *definition;
 	long index = owner->unknown858;
 
-	if (index != NONE && ((s_definition_view *)(g_502408->data + (index & 0xffff) * sizeof(s_definition_view)))->unknown86)
+	if (index != NONE && (definition = (s_definition_view *)(g_502408->data + (index & 0xffff) * sizeof(s_definition_view)))->unknown86)
 	{
-		s_definition_view *definition = (s_definition_view *)(g_502408->data + (index & 0xffff) * sizeof(s_definition_view));
 
 		source = (s_flag_bits *)(tags[definition->tag_index88 & 0xffff].bytes + 0x38);
 		*result = *source;
@@ -774,7 +761,7 @@ void function_1a7b30(s_flag_bits *result, long owner_index)
 
 		if (element && element->tag_index != NONE)
 		{
-			function_1c2330(0x83, result->d, (dword *)(tags[element->tag_index & 0xffff].bytes + 0x38), result->d);
+			bit_vector_intersect(0x83, (dword *)(tags[element->tag_index & 0xffff].bytes + 0x38), result->d, result->d);
 			return;
 		}
 	}
@@ -783,11 +770,151 @@ void function_1a7b30(s_flag_bits *result, long owner_index)
 
 	if (other != NONE)
 	{
-		s_flag_bits *mask = (s_flag_bits *)(tags[other & 0xffff].bytes + 0x38);
-		long k;
+		bit_vector_intersect(0x83, result->d, (dword *)(tags[other & 0xffff].bytes + 0x38), result->d);
+	}
+}
 
-		for (k = 0; k < 5; k++)
-			result->d[k] &= mask->d[k];
+short actor_behavior_get_insert_level(short type, short slot, s_slot_owner_entry *entry);
+bool function_1a80e0(long index, short type, s_slot *data, short slot);
+void function_25aba0(long actor_index);
+
+
+
+// @retail 0x1a7cc0
+void __stdcall function_1a7cc0(long actor_index)
+{
+	s_actor_view *owner = actor_get(actor_index);
+	short level = 0;
+	long i;
+
+	g_46f348++;
+	function_1a7b30((s_flag_bits *)g_557c40, actor_index);
+	g_4ee4ec = function_1a7ad0(actor_index);
+	memset(g_4f0a4c, 0, sizeof(g_4f0a4c));
+	i = 0;
+	do
+	{
+		s_slot_entry *entry = &((s_slot_owner_entry *)owner)->entries[i];
+
+		if (entry->type != NONE)
+		{
+			if (!(g_4f0a4c[entry->field4 >> 5] & (1 << (entry->field4 & 0x1f))))
+			{
+				g_4f0a4c[entry->field4 >> 5] |= 1 << (entry->field4 & 0x1f);
+				g_4f09c8[entry->field4] = 0;
+			}
+			s_candidate_entry *candidate = &g_4ee4f0[g_4f09c8[entry->field4]].entries[entry->field4];
+			candidate->kind = entry->field2;
+			candidate->key = entry->field6;
+			candidate->node.key = entry->type;
+			candidate->node.field_2 = true;
+			candidate->node.unknown4 = NONE;
+			candidate->node.unknown8 = 0.0f;
+			candidate->node.next = NULL;
+			g_4f09c8[entry->field4]++;
+		}
+		i++;
+	}
+	while (i < 3);
+	if (owner->unknown222)
+		g_46eeb8[0x38]->unknown8 = g_46f348;
+
+	for (;;)
+	{
+		bool valid = false;
+		if (level >= 0)
+			valid = true;
+		if (!valid)
+			break;
+		s_slot *slot = &owner->slots[level];
+		short type = slot->type;
+
+		if (!ACTION_ID_VALID(type))
+		{
+			type = owner->unknown007 ? 0x72 : 1;
+			if (!function_1a80e0(actor_index, type, NULL, 0))
+			{
+				level--;
+				continue;
+			}
+		}
+
+		s_slot_handler *handler = g_46eeb8[type];
+		s_slot *current = level < 4 ? slot : NULL;
+
+		if (!ACTION_HANDLER_ENABLED(type))
+		{
+			level--;
+			continue;
+		}
+		if (current->state == 1)
+		{
+			handler->unknown8 = g_46f348;
+			level--;
+			continue;
+		}
+		if (handler->kind == 2)
+		{
+			t_slot_start check = (t_slot_start)((s_slot_handler_2 *)handler)->update40;
+
+			if (!check || check(actor_index, current))
+			{
+				function_25aba0(actor_index);
+				function_1a6f70(actor_index);
+				return;
+			}
+			handler->unknown8 = g_46f348;
+			current->state = 2;
+			level--;
+			continue;
+		}
+
+		s_slot data;
+		memset(&data, 0, sizeof(data));
+		short choice = ((short (__stdcall *)(long, short, s_slot *))((s_slot_handler_1 *)handler)->choose)(actor_index, level, &data);
+
+		if (choice == g_46fbe4)
+		{
+			handler->unknown8 = g_46f348;
+			level--;
+			continue;
+		}
+
+		short next_type;
+		s_slot_handler *next_handler;
+
+		if (choice == g_46fbe8)
+		{
+			next_type = owner->slots[level + 1].type;
+			next_handler = g_46eeb8[next_type];
+		}
+		else
+		{
+			next_type = choice;
+			next_handler = g_46eeb8[choice];
+		}
+		if (next_handler->unknown8 == g_46f348 || (next_handler->mask & g_4ee4ec) != g_4ee4ec ||
+			!(g_557c40[next_type >> 5] & (1 << (next_type & 0x1f))))
+		{
+			handler->unknown8 = g_46f348;
+			level--;
+			continue;
+		}
+		if (choice == g_46fbe8)
+		{
+			level++;
+			continue;
+		}
+
+		short local_0 = actor_behavior_get_insert_level(choice, level, (s_slot_owner_entry *)owner);
+
+		if (local_0 != NONE && function_1a80e0(actor_index, choice, &data, local_0))
+		{
+			level = local_0;
+			continue;
+		}
+		next_handler->unknown8 = g_46f348;
+		(local_0 < 4 ? &owner->slots[local_0] : NULL)->state = 2;
 	}
 }
 
@@ -890,26 +1017,24 @@ done:
 // @retail 0x1a77a0
 short function_1a77a0(long actor_index, long argument, short level)
 {
-	s_slot *slot = actor_slot_get(actor_index, level);
-	short state = slot->unknown4;
+	short probe;
+	short score;
 	short count = 0;
 	short index = NONE;
-	short out;
-	short result = function_1a7030(actor_index, level, argument, &out);
+	long local_0 = actor_index;
+	s_slot *slot = actor_slot_get(local_0, level);
+	short state = slot->unknown4;
+	short result = function_1a7030(local_0, level, argument, &probe);
 
 	if (result == g_46fbec)
-		return g_46fbe4;
-	if (result == g_46fbe4)
+		result = g_46fbe4;
+	else if (result == g_46fbe4)
 	{
 		bool valid;
-		s_action_node **nodes = function_1a73c0(actor_index, slot->type, &valid, &count);
+		s_action_node **nodes = function_1a73c0(local_0, slot->type, &valid, &count);
 
 		if (state < count - 1)
-		{
-			short score;
-
-			result = function_1a75f0(actor_index, nodes, state == NONE ? 0 : state, count, slot, argument, NONE, valid, state != NONE, &score, &index);
-		}
+			result = function_1a75f0(local_0, nodes, state == NONE ? 0 : state, count, slot, argument, NONE, valid, state != NONE, &score, &index);
 		if (result != g_46fbe4)
 			slot->unknown4 = index;
 	}
@@ -921,25 +1046,25 @@ short function_1a77a0(long actor_index, long argument, short level)
 // @retail 0x1a78a0
 short function_1a78a0(long actor_index, long argument, short level)
 {
-	s_slot *slot = actor_slot_get(actor_index, level);
+    long local_0 = actor_index;
+	s_slot *slot = actor_slot_get(local_0, level);
 	short state = slot->unknown4;
 	short count = 0;
 	short index = NONE;
-	short out;
-	short result = function_1a7030(actor_index, level, argument, &out);
+	short result = function_1a7030(local_0, level, argument, (short *)&actor_index);
 
 	if (result == g_46fbec)
-		return g_46fbe4;
-	if (result == g_46fbe4)
+		result = g_46fbe4;
+	else if (result == g_46fbe4)
 	{
 		bool valid;
 		short score;
-		s_action_node **nodes = function_1a73c0(actor_index, slot->type, &valid, &count);
+		s_action_node **nodes = function_1a73c0(local_0, slot->type, &valid, &count);
 
 		if (state < count - 1)
-			result = function_1a75f0(actor_index, nodes, state == NONE ? 0 : state, count, slot, argument, NONE, valid, state != NONE, &score, &index);
+			result = function_1a75f0(local_0, nodes, state == NONE ? 0 : state, count, slot, argument, NONE, valid, state != NONE, &score, &index);
 		if (result == g_46fbe4 && state > 0)
-			result = function_1a75f0(actor_index, nodes, 0, state, slot, argument, NONE, valid, false, &score, &index);
+			result = function_1a75f0(local_0, nodes, 0, state, slot, argument, NONE, valid, false, &score, &index);
 		if (result != g_46fbe4)
 			slot->unknown4 = index;
 	}
@@ -952,7 +1077,8 @@ short __stdcall function_1a79e0(long actor_index, short level, bool active)
 {
 	short count = 0;
 	s_slot *slot = actor_slot_get(actor_index, level);
-	short result = function_1a7030(actor_index, level, *(long *)&active, &level);
+	short local_0;
+	short result = function_1a7030(actor_index, level, *(long *)&active, &local_0);
 
 	if (result == g_46fbec)
 		return g_46fbe4;
@@ -961,7 +1087,7 @@ short __stdcall function_1a79e0(long actor_index, short level, bool active)
 	short score;
 	short index;
 	s_action_node **nodes = function_1a73c0(actor_index, slot->type, &valid, &count);
-	short choice = function_1a75f0(actor_index, nodes, 0, level == NONE ? count : slot->unknown4, slot, active, level, valid, false, &score, &index);
+	short choice = function_1a75f0(actor_index, nodes, 0, local_0 == NONE ? count : slot->unknown4, slot, *(long *)&active, local_0, valid, false, &score, &index);
 
 	if ((result == g_46fbe4 && score > 0) || score > 1)
 	{
@@ -1009,6 +1135,13 @@ bool function_e4050(long object_index);
 bool function_109e00(long object_index, vector3f *velocity, bool definition_flag_required);
 void havok_component_rigid_body_point_velocity_get(long rigid_body_index, s_havok_component *component, point3f const *point, vector3f *velocity);
 
+PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, vector3f *arg_2)
+{
+    arg_2->i = arg_0->i * arg_1;
+    arg_2->j = arg_0->j * arg_1;
+    arg_2->k = arg_0->k * arg_1;
+}
+
 // @retail 0x1a68a0
 void function_1a68a0(long object_index, vector3f *velocity)
 {
@@ -1019,10 +1152,10 @@ void function_1a68a0(long object_index, vector3f *velocity)
 		if (unit->parent_index == NONE && !(unit->flags_c1 & 1) && unit->movement_type == 1 && !function_e4050(object_index))
 		{
 			/* The queried support velocity uses a separate scratch vector in retail. */
-			vector3f reference = *g_4687a4;
-			point3f position;
-			vector3f support_velocity;
-			if (!function_109e00(object_index, &support_velocity, false) && unit->support_index != NONE)
+			struct s_1a68a1 { vector3f field_0; point3f field_c; vector3f field_18; };
+			s_1a68a1 local_3;
+			local_3.field_0 = *g_4687a4;
+			if (!function_109e00(object_index, &local_3.field_18, false) && unit->support_index != NONE)
 			{
 				s_surface_support_view *support = (s_surface_support_view *)function_badc0(unit->support_index, NONE);
 				if (support && support->component_index != NONE)
@@ -1032,21 +1165,22 @@ void function_1a68a0(long object_index, vector3f *velocity)
 					long clamped = body_index < 0 ? 0 : body_index > component->body_count - 1 ? component->body_count - 1 : body_index;
 					if (clamped == body_index)
 					{
-						function_b9dd0(object_index, &position);
-						havok_component_rigid_body_point_velocity_get(unit->body_index, (s_havok_component *)component, &position, &support_velocity);
+						function_b9dd0(object_index, &local_3.field_c);
+						havok_component_rigid_body_point_velocity_get(unit->body_index, (s_havok_component *)component, &local_3.field_c, &local_3.field_18);
 					}
 				}
 			}
 			function_ba1d0(object_index, velocity, NULL);
 			vector3f relative;
-			relative.i = velocity->i - reference.i;
-			relative.j = velocity->j - reference.j;
-			relative.k = velocity->k - reference.k;
-			real projection = unit->normal.i * relative.i + unit->normal.k * relative.k + unit->normal.j * relative.j;
+			relative.i = velocity->i - local_3.field_0.i;
+			relative.j = velocity->j - local_3.field_0.j;
+			relative.k = velocity->k - local_3.field_0.k;
+			real along_i = unit->normal.i * relative.i;
+			real along_k = unit->normal.k * relative.k;
+			real along_j = unit->normal.j * relative.j;
+			real projection = (along_i + along_k) + along_j;
 			vector3f projected;
-			projected.i = unit->normal.i * projection;
-			projected.j = unit->normal.j * projection;
-			projected.k = unit->normal.k * projection;
+			function_1a68a2(&unit->normal, projection, &projected);
 			velocity->i -= projected.i;
 			velocity->j -= projected.j;
 			velocity->k -= projected.k;
@@ -1060,8 +1194,12 @@ struct s_object_marker_target
 {
 	long object_index;
 	long marker_index;
-	byte unknown08[0x10];
+	byte unknown08[4];
+	point3f point;
 	byte flags;
+	byte unknown19[3];
+	real field_1c;
+	real field_20;
 };
 
 struct s_target_marker
@@ -1340,22 +1478,23 @@ struct s_target_link_definition
 bool function_1a59f0(long object_index, long excluded_index, short team, bool *has_hostile);
 bool function_1a5b00(long object_index, short team, bool *has_hostile);
 
+// score 32 (was 32): the helper is called with a different register and the return value is built
+// with a different order of the pops.
 // @retail 0x1a5910
 bool __stdcall function_1a5910(long object_index, long excluded_index, short team, bool *has_hostile)
 {
-	/* Keep the recursive entry arguments in their stack slots. */
-	long const *local_object = &object_index;
-	long const *local_excluded = &excluded_index;
 	bool result;
 	*has_hostile = false;
-	if (*local_object != *local_excluded)
+	if (object_index != excluded_index)
 	{
-		s_object_header *header = OBJECT_HEADER(object_index);
 		result = true;
+		s_object_header *header = OBJECT_HEADER(object_index);
 		if ((1 << header->type) & 3)
 		{
 			s_target_link_view *object = (s_target_link_view *)header->object;
-			s_target_link_definition *definition = (s_target_link_definition *)((s_tag_instance volatile *)g_4e3b44)[object->definition_index & 0xffff].bytes;
+			s_target_link_definition *definition;
+			s_target_link_definition **local_2 = &definition;
+			*local_2 = (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 			short object_team = object->field_138;
 			result = !(bool)object->field_10a.field_2 && !(bool)((definition->field_bc >> 21) & 1);
 			if (result)
@@ -1403,34 +1542,46 @@ bool function_1a59f0(long object_index, long excluded_index, short team, bool *h
 }
 
 
+#pragma optimize("g", off)
+PRIVATE __forceinline s_object_header *function_1a5b01(long arg_0)
+{
+    long local_0 = arg_0 & 0xffff;
+    byte *local_1 = (byte *)g_4e0300->data;
+    return (s_object_header *)(local_1 + local_0 * sizeof(s_object_header));
+}
+#pragma optimize("", on)
+
 // @retail 0x1a5b00
 bool function_1a5b00(long object_index, short team, bool *has_hostile)
 {
 	long object_offset = (object_index & 0xffff) * sizeof(s_object_header);
-	s_target_seats_definition *definition = (s_target_seats_definition *)g_4e3b44[((s_object_header *)(object_offset + (byte *)g_4e0300->data))->object->definition_index & 0xffff].bytes;
+	s_target_seats_definition *definition = (s_target_seats_definition *)g_4e3b44[function_1a5b01(object_index)->object->definition_index & 0xffff].bytes;
 	bool result = false;
 	s_unit_child_iterator iterator;
 	*has_hostile = false;
 	iterator.object_index = object_index;
 	iterator.unit_index = NONE;
 	iterator.seat_index = NONE;
-	iterator.next_index = ((s_target_occupant_view *)((s_object_header *)(object_offset + (byte *)g_4e0300->data))->object)->first_child_index;
+	iterator.next_index = ((s_target_occupant_view *)function_1a5b01(object_index)->object)->first_child_index;
 	while (function_d05c0(&iterator))
 	{
-		s_target_occupant_view *occupant = (s_target_occupant_view *)OBJECT_HEADER(iterator.unit_index)->object;
+		s_target_occupant_view *occupant = (s_target_occupant_view *)function_1a5b01(iterator.unit_index)->object;
 		if (iterator.seat_index != NONE)
 		{
 			if (!function_1df560(team, occupant->team))
 			{
 				if (!(bool)((definition->seats[iterator.seat_index].flags >> 11) & 1))
 				{
-					return *has_hostile = true;
+					result = true;
+					*has_hostile = result;
+					goto local_0;
 				}
 			}
 			else
 				result = true;
 		}
 	}
+local_0:
 	return result;
 }
 
@@ -1451,8 +1602,8 @@ struct s_candidate_unit_definition
 };
 
 // @retail 0x1a5e40
-bool function_1a5e40(long object_index, long marker_index, s_target_marker const *marker,
-	transform4x3f const *first, transform4x3f const *second, bool alternate,
+bool function_1a5e40(long object_index, bool alternate, long marker_index, s_target_marker const *marker,
+	transform4x3f const *first, transform4x3f const *second,
 	point3f const *origin, vector3f const *direction, s_sort_candidate_view *candidate)
 {
 	s_candidate_object_view *object = (s_candidate_object_view *)OBJECT_HEADER(object_index)->object;
@@ -1463,22 +1614,24 @@ bool function_1a5e40(long object_index, long marker_index, s_target_marker const
 	candidate->flags = 0;
 	if (marker_index == NONE)
 	{
-		if (!((1 << object->type) & 1))
-			return result;
-		if (!function_1a62e0(object_index, &candidate->point, direction, origin))
-			return false;
-		s_candidate_unit_definition *definition = (s_candidate_unit_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
-		if (definition->flags & 1)
-			candidate->flags |= 1;
-		else
-			candidate->flags &= ~1;
-		if (definition->flags & 6)
-			candidate->flags |= 2;
-		else
-			candidate->flags &= ~2;
-		candidate->maximum_distance = definition->maximum_distance;
-		candidate->radius = object->radius;
-		candidate->maximum_facing_angle = 0.0f;
+		if ((1 << object->type) & 1)
+		{
+			if (!function_1a62e0(object_index, origin, direction, &candidate->point))
+				return false;
+			s_candidate_unit_definition *definition = (s_candidate_unit_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
+			if (definition->flags & 1)
+				candidate->flags |= 1;
+			else
+				candidate->flags &= ~1;
+			if (definition->flags & 6)
+				candidate->flags |= 2;
+			else
+				candidate->flags &= ~2;
+			candidate->maximum_distance = definition->maximum_distance;
+			candidate->radius = object->radius;
+			candidate->maximum_facing_angle = 0.0f;
+			result = true;
+		}
 	}
 	else
 	{
@@ -1486,10 +1639,10 @@ bool function_1a5e40(long object_index, long marker_index, s_target_marker const
 		{
 			vector3f axis;
 			vector3d_from_points3d(&first->position, &second->position, &axis);
-			function_1a6340(&axis, direction, &candidate->point, &first->position, origin, marker->radius);
+			function_1a6340(&axis, direction, &candidate->point, origin, &first->position, marker->radius);
 		}
 		else
-			function_1a65b0(direction, &candidate->point, origin, &first->position, marker->radius);
+			function_1a65b0(direction, &candidate->point, &first->position, origin, marker->radius);
 		if (marker->flags & 1)
 			candidate->flags |= 1;
 		else
@@ -1502,15 +1655,20 @@ bool function_1a5e40(long object_index, long marker_index, s_target_marker const
 		candidate->radius = marker->radius;
 		candidate->maximum_facing_angle = marker->maximum_facing_angle;
 		candidate->facing = first->forward;
+		result = true;
 	}
-	vector3d_from_points3d(origin, &candidate->point, &candidate->offset);
-	candidate->direction = candidate->offset;
-	candidate->distance = function_30bf0(&candidate->direction);
-	candidate->alternate = alternate;
-	real cosine = dot3f(&candidate->direction, direction);
-	cosine = -1.0f > cosine ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
-	candidate->angle = function_50650(cosine);
-	result = true;
+	if (result)
+	{
+		vector3d_from_points3d(origin, &candidate->point, &candidate->offset);
+		candidate->direction = candidate->offset;
+		candidate->distance = function_30bf0(&candidate->direction);
+		candidate->alternate = alternate;
+		real cosine = dot3f(&candidate->direction, direction);
+		if (-1.0f > cosine)
+			candidate->angle = function_50650(-1.0f);
+		else
+			candidate->angle = function_50650(cosine > 1.0f ? 1.0f : cosine);
+	}
 	return result;
 }
 
@@ -1529,40 +1687,43 @@ bool function_1a60f0(s_sort_candidate_view *candidate, s_sort_weight_view const 
 		if (!(function_50650(cosine) <= candidate->maximum_facing_angle))
 			result = false;
 	}
-	if (result && scale != 0.0f)
+	if (result)
 	{
-		if (weights->flags & 8)
+		if (scale != 0.0f)
 		{
-			if (!(candidate->flags & 1) || candidate->distance >
+			if (weights->flags & 8)
+			{
+				if (!(candidate->flags & 1) || candidate->distance >
+					(candidate->maximum_distance == 0.0f ? weights->maximum_distance : candidate->maximum_distance))
+					result = false;
+			}
+			if ((candidate->flags & 2) && candidate->distance >
 				(candidate->maximum_distance == 0.0f ? weights->maximum_distance : candidate->maximum_distance))
-				result = false;
-		}
-		if ((candidate->flags & 2) && candidate->distance >
-			(candidate->maximum_distance == 0.0f ? weights->maximum_distance : candidate->maximum_distance))
-			candidate->flags &= ~2;
-		if (result)
-		{
-			if (!candidate->alternate)
+				candidate->flags &= ~2;
+			if (result)
 			{
-				candidate->score = function_1a4870(candidate->angle, weights->distance, candidate->distance, weights->angle);
-				candidate->secondary_score = function_1a4870(candidate->angle, weights->secondary_distance, candidate->distance, weights->secondary_angle);
-				candidate->scaled_score = scale * function_1a4870(candidate->angle, weights->scaled_distance, candidate->distance, weights->scaled_angle);
-				if (candidate->score == 0.0f && candidate->secondary_score == 0.0f && candidate->scaled_score == 0.0f)
-					result = false;
-			}
-			else
-			{
-				real score = function_1a4870(candidate->angle, weights->distance, candidate->distance, weights->angle);
-				candidate->score = 0.0f;
-				candidate->secondary_score = 0.0f;
-				candidate->scaled_score = 0.0f;
-				if (score < 1.0f)
-					result = false;
+				if (!candidate->alternate)
+				{
+					candidate->score = function_1a4870(candidate->angle, weights->distance, candidate->distance, weights->angle);
+					candidate->secondary_score = function_1a4870(candidate->angle, weights->secondary_distance, candidate->distance, weights->secondary_angle);
+					candidate->scaled_score = scale * function_1a4870(candidate->angle, weights->scaled_distance, candidate->distance, weights->scaled_angle);
+					if (candidate->score == 0.0f && candidate->secondary_score == 0.0f && candidate->scaled_score == 0.0f)
+						result = false;
+				}
+				else
+				{
+					real score = function_1a4870(candidate->angle, weights->distance, candidate->distance, weights->angle);
+					candidate->score = 0.0f;
+					candidate->secondary_score = 0.0f;
+					candidate->scaled_score = 0.0f;
+					if (score < 1.0f)
+						result = false;
+				}
 			}
 		}
+		else
+			result = false;
 	}
-	else
-		result = false;
 	return result;
 }
 
@@ -1578,24 +1739,32 @@ struct s_candidate_scale_globals
 	s_candidate_scale_view *field_f4;
 };
 
+PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_index)
+{
+	s_target_link_view *object = (s_target_link_view *)OBJECT_HEADER(object_index)->object;
+	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
+}
+
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)
 {
+	long &local_0 = count;
 	s_target_link_view *object = (s_target_link_view *)OBJECT_HEADER(object_index)->object;
 	byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
 	real scale = 1.0f;
 	if (((1 << object->field_aa) & 3) &&
-		(bool)((((s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes)->field_bc >> 19) & 1))
+		(bool)((function_1a5c01(object_index)->field_bc >> 19) & 1))
 		scale = ((s_candidate_scale_globals *)g_4e034c)->field_f4->field_8;
-	if (count < 64 && function_1a5e40(object_index, NONE, NULL, NULL, NULL, alternate,
-		origin, direction, &candidates[count]) && function_1a60f0(&candidates[count], weights, scale))
-		count++;
+	if (local_0 < 64 && function_1a5e40(object_index, alternate, NONE, NULL, NULL, NULL,
+		origin, direction, &candidates[local_0]) && function_1a60f0(&candidates[local_0], weights, scale))
+		local_0++;
 	long marker_tag = *(long *)(definition + 0x38);
 	if (marker_tag != NONE)
 	{
 		s_target_marker_table *table = (s_target_marker_table *)g_4e3b44[marker_tag & 0xffff].bytes;
-		s_sort_candidate_view *candidate = &candidates[count];
+		s_sort_candidate_view *candidate = &candidates[local_0];
+		long volatile &local_1 = count;
 		for (long marker_index = 0; marker_index < table->count; marker_index++)
 		{
 			s_target_marker *marker = &table->markers[marker_index];
@@ -1604,18 +1773,18 @@ long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool 
 			if (marker_count != 0)
 			{
 				s_object_marker *second = marker_count == 2 ? &markers[1] : NULL;
-				if (count < 64 && function_1a5e40(object_index, marker_index, marker,
-					&markers[0].matrix, second ? &second->matrix : NULL, alternate,
+				if (local_1 < 64 && function_1a5e40(object_index, alternate, marker_index, marker,
+					&markers[0].matrix, second ? &second->matrix : NULL,
 					origin, direction, candidate) &&
 					function_1a60f0(candidate, weights, marker->field_10 * scale))
 				{
-					count++;
+					local_1++;
 					candidate++;
 				}
 			}
 		}
 	}
-	return count;
+	return local_0;
 }
 
 struct s_1a56c0
@@ -1674,9 +1843,6 @@ long __stdcall function_1a56c0(s_sort_weight_view const *weights, long object_in
 	return count;
 }
 
-extern bool g_4de2f8;
-extern long g_4de2fc;
-extern long g_4de300[0x800];
 
 short function_14a6d0(short arg_0, real arg_1, point3f const *arg_2, vector3f const *arg_3,
 	real arg_4, real arg_5, short arg_6, short *arg_7, short *arg_8);
@@ -1691,23 +1857,21 @@ long __stdcall function_1a54a0(s_sort_weight_view const *arg_0, short arg_1,
 	long local_2[0x800];
 	real local_3 = arg_0->angle > (arg_0->secondary_angle > arg_0->scaled_angle ? arg_0->secondary_angle : arg_0->scaled_angle) ? arg_0->angle : (arg_0->secondary_angle > arg_0->scaled_angle ? arg_0->secondary_angle : arg_0->scaled_angle);
 	real local_4 = arg_0->distance > (arg_0->secondary_distance > arg_0->scaled_distance ? arg_0->secondary_distance : arg_0->scaled_distance) ? arg_0->distance : (arg_0->secondary_distance > arg_0->scaled_distance ? arg_0->secondary_distance : arg_0->scaled_distance);
-	if (local_3 > 0.0f && local_4 > 0.0f)
+	if (!(local_3 > 0.0f && local_4 > 0.0f))
+		goto done;
 	{
 		real local_5 = sin(local_4);
 		real local_6 = cos(local_4);
-		short local_7 = function_14a6d0(arg_1, local_6, arg_2, arg_3, local_3, local_5, 0x200, local_1, NULL);
+		long local_7 = function_14a6d0(arg_1, local_6, arg_2, arg_3, local_3, local_5, 0x200, local_1, NULL);
 		long local_8 = function_bb430(1, local_7, local_1, 0x800, local_2);
-		s_record_pool *local_9 = g_4e8c24;
+		s_record_pool_iterator local_9;
 		g_4de2f8 = true;
-		long local_10 = NONE;
-		for (;;)
+		local_9.data = g_4e8c24;
+		local_9.datum_index = NONE;
+		local_9.index = NONE;
+		s_player_view *local_11;
+		while ((local_11 = (s_player_view *)data_iterator_next_calling(&local_9)) != 0)
 		{
-			local_10 = function_16bc00(local_9, local_10 + 1);
-			if (local_10 == NONE)
-				break;
-			s_player_view *local_11 = (s_player_view *)(local_9->data + local_10 * local_9->size);
-			if (!local_11)
-				break;
 			long local_12 = local_11->unit_index;
 			if (local_12 != NONE)
 			{
@@ -1718,9 +1882,10 @@ long __stdcall function_1a54a0(s_sort_weight_view const *arg_0, short arg_1,
 					local_12 = ((s_target_link_view *)OBJECT_HEADER(local_12)->object)->field_14;
 				}
 				while (local_12 != NONE);
-				if (g_4de300[local_13 & 0xffff] != g_4de2fc)
+				long local_16 = local_13 & 0xffff;
+				if (g_4de300[local_16] != g_4de2fc)
 				{
-					g_4de300[local_13 & 0xffff] = g_4de2fc;
+					g_4de300[local_16] = g_4de2fc;
 					local_2[local_8++] = local_13;
 				}
 			}
@@ -1734,6 +1899,7 @@ long __stdcall function_1a54a0(s_sort_weight_view const *arg_0, short arg_1,
 				break;
 		}
 	}
+	done:
 	return local_0;
 }
 
@@ -1764,8 +1930,8 @@ byte function_1a67f0(point3f const *arg_0, point3f const *arg_1, long arg_2, lon
 {
 	s_1a67f0 local_0;
 	local_0.field_24 = NONE;
-	long local_1 = function_1a67f1(arg_2);
-	long local_2 = function_1a67f1(arg_3);
+	long local_1 = function_1a67f1(arg_3);
+	long local_2 = function_1a67f1(arg_2);
 	vector3f local_3;
 	vector3d_from_points3d(arg_0, arg_1, &local_3);
 	return !function_1697c0(0x16808c2d, arg_0, &local_3, local_2, local_1, (s_collision_result_1697c0 *)&local_0);
@@ -1773,7 +1939,7 @@ byte function_1a67f0(point3f const *arg_0, point3f const *arg_1, long arg_2, lon
 
 struct s_bsp3d;
 extern s_bsp3d *g_4e033c;
-long function_14a280(s_bsp3d *arg_0, point3f *arg_1, long arg_2);
+long function_14a280(s_bsp3d *arg_0, long arg_2, point3f *arg_1);
 
 struct s_1a5371
 {
@@ -1787,33 +1953,362 @@ struct s_1a5370
 	s_1a5371 *field_30;
 };
 
+// score 10 (was 10): the local record sits at a different stack address and its fields are read
+// from different offsets.
 // @retail 0x1a5370
 bool __stdcall function_1a5370(s_sort_weight_view const *arg_0, point3f const *arg_1,
 	vector3f const *arg_2, long arg_3, short arg_4, s_sort_candidate_view *arg_5)
 {
+	/* the weights stay in their stack slot, as in retail */
+	s_sort_weight_view const *const *local_9 = &arg_0;
 	bool local_0 = false;
 	s_sort_candidate_view local_1[0x40];
-	long local_2 = function_14a280(g_4e033c, (point3f *)arg_1, 0);
+	long local_2 = function_14a280(g_4e033c, 0, (point3f *)arg_1);
 	if (local_2 != NONE)
 	{
 		short local_3 = ((s_1a5370 *)g_4e0348)->field_30[local_2].field_0;
 		if (local_3 != NONE)
 		{
-			long local_4 = function_1a54a0(arg_0, local_3, arg_1, arg_2, arg_3, arg_4, local_1);
+			long local_4 = function_1a54a0(*local_9, local_3, arg_1, arg_2, arg_3, arg_4, local_1);
 			if (local_4 > 0)
 			{
 				g_51e99c = (s_sort_globals *)arg_0;
 				qsort(local_1, local_4, sizeof(s_sort_candidate_view), (int (__cdecl *)(void const *, void const *))function_1a66f0);
 				for (long local_5 = 0; local_5 < local_4; local_5++)
 				{
-					if (function_1a67f0(arg_1, &local_1[local_5].point, local_1[local_5].object_index, arg_3))
+					s_sort_candidate_view *local_8 = &local_1[local_5];
+					if (function_1a67f0(arg_1, &local_8->point, arg_3, local_8->object_index))
 					{
 						*arg_5 = local_1[local_5];
-						return true;
+						local_0 = true;
+						break;
 					}
 				}
 			}
 		}
 	}
 	return local_0;
+}
+
+// @retail 0x1a6a80
+bool function_1a6a80(s_object_marker_target const *target, point3f const *origin, vector3f const *direction,
+	long excluded_index, short team, s_sort_candidate_view *candidate)
+{
+	bool result = false;
+
+	if (target->field_1c > 0.0f || target->field_20 > 0.0f)
+	{
+		long object_index;
+		long marker_index;
+		s_target_marker *definition;
+		transform4x3f first;
+		transform4x3f second;
+		bool has_second;
+
+		if (function_1a6bf0(target, &object_index, &marker_index, &definition, &first, &second, &has_second))
+		{
+			bool has_hostile = false;
+
+			if (function_1a5910(object_index, excluded_index, team, &has_hostile) && function_1a58b0(object_index))
+			{
+				if (function_1a5e40(object_index, has_hostile, marker_index,
+					marker_index != NONE ? definition : NULL,
+					marker_index != NONE ? &first : NULL,
+					marker_index != NONE && has_second ? &second : NULL,
+					origin, direction, candidate))
+				{
+					if (!has_hostile)
+					{
+						candidate->score = target->field_1c;
+						candidate->secondary_score = target->field_20;
+					}
+					else
+					{
+						candidate->score = 0.0f;
+						candidate->secondary_score = 0.0f;
+					}
+					candidate->scaled_score = 0.0f;
+					if (function_1a67f0(origin, &candidate->point, excluded_index, candidate->object_index))
+						result = true;
+				}
+			}
+		}
+	}
+	return result;
+}
+
+struct s_186ab2
+{
+	long field_0;
+	long field_4;
+	long field_8;
+	byte field_c[0xc];
+	short field_18;
+	byte field_1a[2];
+	real field_1c;
+	real field_20;
+};
+
+struct s_223241
+{
+	byte field_0[0x358];
+};
+
+extern s_223241 g_4e9c8c[4];
+
+struct s_1a4900
+{
+	byte field_0[0x13c];
+	long field_13c;
+};
+
+long function_155760(long index);
+long function_cb6d0(long unit_index);
+bool function_cb810(long unit_index, vector3f *vector);
+long function_baf40(long object_index);
+
+// @retail 0x1a4900
+void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2)
+{
+	short local_0 = (short)function_155760(arg_0);
+
+	memset(arg_2, 0, sizeof(*arg_2));
+	arg_1->field_1c = 0.0f;
+	arg_1->field_20 = 0.0f;
+	arg_1->field_0 = NONE;
+	arg_1->field_4 = NONE;
+	arg_1->field_8 = NONE;
+	arg_1->field_18 = 0;
+	if (local_0 == 0 || local_0 == 1)
+	{
+		long local_19 = NONE;
+
+		if (arg_0 != NONE)
+			local_19 = g_4e8c20->entries[arg_0];
+
+		s_player_view *local_1 = &((s_player_view *)g_4e8c24->data)[local_19 & 0xffff];
+		long local_2 = function_cb6d0(local_1->unit_index);
+		short local_20 = NONE;
+
+		if (arg_0 != NONE)
+			local_20 = g_4ed284->entries[arg_0].index;
+
+		s_sort_weight_view local_3;
+
+		if (function_1a50a0(local_2, local_20, &local_3))
+		{
+			point3f const *local_4 = NULL;
+
+			if (arg_0 != NONE && g_4686c4 != NONE)
+				local_4 = (point3f const *)&g_4e9c8c[arg_0];
+
+			long local_5 = function_baf40(local_2);
+			long local_21 = NONE;
+
+			if (arg_0 != NONE)
+				local_21 = g_4e8c20->entries[arg_0];
+
+			s_player_view *local_6 = &((s_player_view *)g_4e8c24->data)[local_21 & 0xffff];
+			s_view_angles const *local_7 = &g_4ed284->entries[arg_0].angles;
+			real local_8 = (real)cos(local_7->pitch);
+			vector3f local_9;
+
+			local_9.i = (real)cos(local_7->yaw) * local_8;
+			local_9.j = (real)sin(local_7->yaw) * local_8;
+			local_9.k = (real)sin(local_7->pitch);
+			if (local_6->unit_index != NONE)
+				function_cb810(local_6->unit_index, &local_9);
+
+			s_sort_candidate_view local_10;
+
+			if (function_1a5370(&local_3, local_4, &local_9, local_5, local_1->field_c0, &local_10))
+			{
+				arg_1->field_1c = local_10.score;
+				arg_1->field_20 = local_10.secondary_score;
+				arg_2->k = (local_3.flags & 2) ? 1.0f : local_10.scaled_score;
+
+				vector3f local_11;
+				vector3f local_12;
+
+				function_1a68a0(local_1->unit_index, &local_11);
+				function_1a68a0(local_10.object_index, &local_12);
+
+				real local_13 = local_12.k - local_11.k;
+				real local_14 = local_12.i - local_11.i;
+				real local_15 = local_12.j - local_11.j;
+				real local_16 = local_10.offset.i * local_10.offset.i + local_10.offset.j * local_10.offset.j;
+
+				if (local_16 > 0.0001f)
+				{
+					real local_17 = (real)sqrt(local_16);
+
+					arg_2->i = (local_10.offset.i * local_15 - local_10.offset.j * local_14) / local_16;
+					arg_2->j = (local_13 * local_17 - (local_10.offset.j * local_15 + local_10.offset.i * local_14) / local_17 * local_10.offset.k) /
+						(local_10.offset.k * local_10.offset.k + local_16);
+				}
+				else
+				{
+					arg_2->i = 0.0f;
+					arg_2->j = 0.0f;
+				}
+				if (arg_1->field_1c > 0.0f || arg_1->field_20 > 0.0f || local_10.alternate)
+				{
+					arg_1->field_0 = local_10.object_index;
+					arg_1->field_4 = local_10.marker_index;
+				}
+				if (arg_1->field_0 != NONE)
+				{
+					s_object_header *local_18 = OBJECT_HEADER(arg_1->field_0);
+
+					if ((1 << local_18->type) & 3)
+						arg_1->field_8 = ((s_1a4900 *)local_18->object)->field_13c;
+				}
+			}
+		}
+	}
+}
+
+struct s_entry_pair;
+#include "unknown_11cc90.h"
+bool function_11d3b0(vector3f const *a, vector3f *out, vector3f const *b, real sine, real cosine);
+short function_1557c0(long unit_index, point3f *position, vector3f *forward);
+long function_baf80(long object_index);
+
+struct s_1a4c00
+{
+	byte field_0[0x240];
+	char field_240;
+};
+
+struct s_1a4c01
+{
+	byte field_0[8];
+	point3f point;
+	byte field_14[0x24 - 0x14];
+	short field_24;
+	byte field_26[0x5c - 0x26];
+};
+
+// score 36 (was 116): the target index and the unit index sit in each other's stack slots, the
+// interpolation loads forward.i where retail copies 1 - fraction, and the closing stores use
+// other registers.
+// @retail 0x1a4c00
+bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector3f *direction, point3f *point)
+{
+	bool result = false;
+	s_object_marker_target const *target = (s_object_marker_target const *)pair;
+	s_player_view *player = &((s_player_view *)g_4e8c24->data)[player_index & 0xffff];
+	long unit_index = function_cb6d0(player->unit_index);
+	long mode = g_4e6948->mode;
+
+	if (mode >= 4 && mode <= 5 && (target->flags & 2))
+	{
+		vector3d_from_points3d(point, &target->point, direction);
+		function_30bf0(direction);
+		result = true;
+		goto done;
+	}
+
+	{
+		real distance;
+		s_sort_weight_view weights;
+
+		short selection = ((s_1a4c00 *)OBJECT_HEADER(unit_index)->object)->field_240;
+		if (!function_1a50a0(unit_index, selection, &weights))
+			goto done;
+
+		point3f position;
+		vector3f forward;
+
+#pragma inline_depth(0)
+		function_1557c0(player->unit_index, &position, &forward);
+#pragma inline_depth()
+
+		vector3f target_direction = *direction;
+		real fraction = 0.0f;
+		long target_index = NONE;
+
+		{
+			s_sort_candidate_view candidate;
+
+			if (function_1a6a80(target, &position, &forward, player->unit_index, player->field_c0, &candidate) && !candidate.alternate)
+			{
+				vector3d_from_points3d(point, &candidate.point, &target_direction);
+				if (function_30bf0(&target_direction) == 0.0f)
+					target_direction = *direction;
+				fraction = primary ? candidate.score : candidate.secondary_score;
+				target_index = candidate.object_index;
+			}
+		}
+		{
+			s_1a4c01 collision;
+
+			collision.field_24 = NONE;
+			{
+				point3f unit_position;
+
+				function_b9dd0(unit_index, &unit_position);
+				real dx = unit_position.x - position.x;
+				real dy = unit_position.y - position.y;
+				real dz = unit_position.z - position.z;
+				distance = (real)sqrt(dz * dz + dy * dy + dx * dx);
+			}
+			{
+				vector3f offset = forward;
+
+				function_30bf0(&offset);
+				offset.i *= distance;
+				offset.j *= distance;
+				offset.k *= distance;
+				position.x += offset.i;
+				position.y += offset.j;
+				position.z += offset.k;
+			}
+
+			vector3f ray;
+
+			ray.i = forward.i * 128.0f;
+			ray.j = forward.j * 128.0f;
+			ray.k = forward.k * 128.0f;
+			function_1697c0(0x2480000f, &position, &ray, function_baf80(unit_index), NONE, (s_collision_result_1697c0 *)&collision);
+			vector3d_from_points3d(point, &collision.point, &forward);
+		}
+		if (function_30bf0(&forward) == 0.0f)
+			forward = *direction;
+
+		bool accepted;
+		{
+			vector3f result_direction;
+			distance = 1.0f - fraction;
+
+			result_direction.i = distance * forward.i + target_direction.i * fraction;
+			result_direction.j = forward.j * distance + target_direction.j * fraction;
+			result_direction.k = forward.k * distance + target_direction.k * fraction;
+
+			real length_squared = result_direction.k * result_direction.k + result_direction.j * result_direction.j +
+				result_direction.i * result_direction.i;
+
+			if (length_squared != 0.0f)
+			{
+				scale_vector_by_double(&result_direction, 1.0f / sqrt(length_squared), &result_direction);
+			}
+			if (function_1a6d30(player_index))
+			{
+				accepted = !function_11d3b0(&result_direction, direction, direction, (real)sin(weights.outer_distance), (real)cos(weights.outer_distance));
+			}
+			else
+			{
+				*direction = result_direction;
+				accepted = true;
+			}
+		}
+		if (fraction >= 1.0f && accepted)
+		{
+			player->field_174 = target_index;
+			player->field_178 = g_510c54->game_time;
+			result = true;
+		}
+	}
+done:
+	return result;
 }

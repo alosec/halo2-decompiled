@@ -71,7 +71,18 @@ inline s_path_squad_definition *path_squad_definition_get(short index)
 	{
 		result = &((s_path_scenario_view *)g_4e0350)->squad_definitions[index];
 	}
+	else
+	{
+		result = NULL;
+	}
 	return result;
+}
+
+PRIVATE __forceinline dword function_1f924a(dword arg_0, long const *arg_1)
+{
+    dword local_0 = arg_0;
+    local_0 &= arg_1[0] << 1;
+    return local_0;
 }
 
 // @retail 0x1f9240
@@ -107,12 +118,13 @@ bool function_1f9240(long actor_index, s_path_settings *settings)
 	if (actor->unknown858 != NONE && (script = command_script_get(actor->unknown858))->flag86 &&
 		(script_style = (s_path_mask_tag *)g_4e3b44[script->style88 & 0xffff].bytes)->mask_count > 0)
 	{
-		settings->flags &= script_style->masks[0] << 1;
+		s_path_settings *local_0 = settings;
+		*(dword volatile *)&local_0->flags = function_1f924a(settings->flags, script_style->masks);
 	}
 	else if (actor->unknown030 != NONE)
 	{
 		s_path_squad_view *squad = &((s_path_squad_view *)g_51e9d8->data)[actor->unknown030 & 0xffff];
-		s_path_squad_definition *definition = path_squad_definition_get(squad->definition_index);
+		s_path_squad_definition *definition = path_squad_definition_get(*(short const volatile *)&squad->definition_index);
 
 		if (definition)
 		{

@@ -1,7 +1,8 @@
 #include "unknown_11c920.h"
+#include "unknown_0a58d0.h"
 #include "globals.h"
 
-// @flags /O2 /Gr
+// @flags /O2 /arch:SSE /Gr
 
 struct s_audio_object_header
 {
@@ -78,13 +79,10 @@ PRIVATE inline byte *audio_condition_object(long index)
     return (byte *)((s_audio_object_header *)g_4e0300->data)[index & 0xffff].object;
 }
 
-PRIVATE inline byte *audio_condition_parent(byte *unit)
+PRIVATE __forceinline bool audio_condition_parent(byte *unit)
 {
-    if (*(short *)(unit + 0x1fc) == NONE)
-        return NULL;
-    long parent = *(long *)(unit + 0x14);
-    byte *header = g_4e0300->data + (parent & 0xffff) * 12;
-    return header[3] == 1 ? *(byte **)(header + 8) : NULL;
+    return *(short *)(unit + 0x1fc) != NONE &&
+        (g_4e0300->data + (*(long *)(unit + 0x14) & 0xffff) * 12)[3] == 1;
 }
 
 // @retail 0x20bbb0
@@ -119,10 +117,10 @@ bool __stdcall function_20bbb0(short condition, long object_index, real *weight)
             result = actor != NULL;
             break;
         case 3:
-            result = object[0xaa] == 0 && !(bool)((object[0x10a] >> 2) & 1);
+            result = object[0xaa] == 0 && !TEST_FIELD_BIT(((s_object_view *)object)->flag2);
             break;
         case 4:
-            result = object[0xaa] == 0 && (bool)((object[0x10a] >> 2) & 1);
+            result = object[0xaa] == 0 && TEST_FIELD_BIT(((s_object_view *)object)->flag2);
             break;
         case 5:
             result = object[0xaa] == 1 && !function_20bb70(object_index);
@@ -149,25 +147,31 @@ bool __stdcall function_20bbb0(short condition, long object_index, real *weight)
         case 11:
             if (unit)
             {
-                byte *parent = audio_condition_parent(unit);
-                if (parent)
+                if (audio_condition_parent(unit))
+                {
+                    byte *parent = audio_condition_object(*(long *)(unit + 0x14));
                     result = *(long *)(parent + 0x248) == object_index;
+                }
             }
             break;
         case 12:
             if (unit)
             {
-                byte *parent = audio_condition_parent(unit);
-                if (parent)
+                if (audio_condition_parent(unit))
+                {
+                    byte *parent = audio_condition_object(*(long *)(unit + 0x14));
                     result = *(long *)(parent + 0x24c) == object_index;
+                }
             }
             break;
         case 13:
             if (unit)
             {
-                byte *parent = audio_condition_parent(unit);
-                if (parent)
+                if (audio_condition_parent(unit))
+                {
+                    byte *parent = audio_condition_object(*(long *)(unit + 0x14));
                     result = *(long *)(parent + 0x248) != object_index && *(long *)(parent + 0x24c) != object_index;
+                }
             }
             break;
         case 14:
@@ -221,8 +225,10 @@ bool __stdcall function_20bbb0(short condition, long object_index, real *weight)
         case 21:
             if (unit)
             {
-                byte *parent = audio_condition_parent(unit);
-                if (parent && (*(long *)(parent + 0x24c) == object_index || *(long *)(parent + 0x248) == object_index))
+                byte *parent;
+                if (audio_condition_parent(unit) &&
+                    (parent = audio_condition_object(*(long *)(unit + 0x14)),
+                    *(long *)(parent + 0x24c) == object_index || *(long *)(parent + 0x248) == object_index))
                 {
                     s_object_seat seats[64];
                     result = true;
@@ -262,8 +268,8 @@ bool __stdcall function_20bbb0(short condition, long object_index, real *weight)
         case 24:
             if (object[0xaa] == 5)
             {
-                byte type = g_4e3b44[*(long *)object & 0xffff].bytes[0x128];
-                if (type == 0x15 || type == 0x16)
+                byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
+                if (definition[0x128] == 0x15 || definition[0x128] == 0x16)
                     result = true;
             }
             break;

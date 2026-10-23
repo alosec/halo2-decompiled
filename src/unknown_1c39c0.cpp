@@ -14,8 +14,8 @@ void __stdcall function_1c39c0(void *arg_0, long arg_1)
  if (g_47f050 >= 0x352)
   function_1c51c0(havok_entity_property_get((hkEntity *)*local_0, 0x2001));
  ++g_47f050;
- g_51e9a4->addEntity((hkEntity *)*local_0);
- if ((byte)arg_1 && ((hkEntityApi *)*local_0)->m_motion->m_type == 1)
-  ((hkEntityApi *)*local_0)->activate();
+ g_51e9a4->entity_world_insert((hkEntity *)*local_0);
+ if ((byte)arg_1 && ((c_physics_body_island_view *)*local_0)->m_motion->m_type == 1)
+  ((c_physics_body_island_view *)*local_0)->activate();
  function_278f00();
 }

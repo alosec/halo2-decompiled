@@ -5,14 +5,16 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_0a58d0.h"
+#include "object_types_21_2.h"
+#include "unknown_xa19f52.h"
 #include <string.h>
 
 #define OBJECT_HEADER(index) (&((s_object_header *)g_4e0300->data)[(index) & 0xFFFF])
 #define OBJECT(index) (OBJECT_HEADER(index)->object)
 
-void function_108e10(long object_index);
-void function_108e80(long object_index);
-void function_bb7b0(long object_index);
+void object_dispatch_attach_simulation_entity(long object_index);
+void object_dispatch_detach_simulation_entity(long object_index);
+__declspec(noinline) void function_bb7b0(long object_index);
 // @retail 0x9f9d0
 long c_turret_entity_definition::v0()
 {
@@ -103,7 +105,8 @@ void c_object_type_definition::v11(long a, long b, long c)
 // @retail 0xa3b90
 void c_turret_entity_definition::v12(long a, s_entity_info *info, long c, s_bitstream *stream)
 {
-	function_a6660(info);
+	c_turret_entity_definition *volatile self = this;
+	function_a6660(info, stream);
 	if (stream->size_in_bytes * 8 - stream->bit_position >= 1 && info->identifier != NONE)
 	{
 		stream->data[stream->bit_position / 8] |= (byte)(1 << (stream->bit_position % 8));
@@ -111,14 +114,15 @@ void c_turret_entity_definition::v12(long a, s_entity_info *info, long c, s_bits
 	stream->bit_position++;
 	if (info->identifier != NONE)
 	{
-		function_b5650(info->identifier, stream);
+		simulation_write_entity_identifier(info->identifier, stream);
 	}
 }
 
 // @retail 0xa3c00
 bool c_turret_entity_definition::v13(long a, s_entity_info *info, s_bitstream *stream)
 {
-	bool valid = function_a6810(stream);
+    c_turret_entity_definition const *volatile unused_this = this;
+	bool valid = function_a6810(info, stream);
 	if (function_1957d0(stream))
 	{
 		long index = function_1959c0(stream, 10);
@@ -128,7 +132,11 @@ bool c_turret_entity_definition::v13(long a, s_entity_info *info, s_bitstream *s
 	{
 		info->identifier = NONE;
 	}
-	return stream->bit_position <= stream->size_in_bytes * 8 && valid;
+	if (stream->bit_position <= stream->size_in_bytes * 8 && valid)
+    {
+        return true;
+    }
+    return false;
 }
 
 // @retail 0xa3cd0
@@ -145,6 +153,7 @@ bool c_object_type_definition::v14(long a1, long a2, long a3, long a4, long a5, 
 // @retail 0xa0960
 bool c_object_type_definition::v15(long a, long b, long c, long d, s_bitstream *stream)
 {
+	c_object_type_definition const *volatile saved_definition = this;
 	if (function_a6d50(b, d, stream) && stream->bit_position <= stream->size_in_bytes * 8)
 	{
 		return true;
@@ -174,9 +183,11 @@ void c_object_type_definition::v18(s_entity *entity, long b, s_entity_state *sta
 // @retail 0xa07b0
 bool c_object_type_definition::v19(long a, long b, long c, s_entity_data *data)
 {
+    c_object_type_definition *volatile self = this;
+    (void)&self;
 	bool result = false;
 	memset(data, 0, sizeof(s_entity_data));
-	if (function_a5bd0(b))
+	if (function_a5bd0((s_entity_info const *)b, (s_z_initial_state *)data))
 	{
 		result = true;
 	}
@@ -219,26 +230,28 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {
-	bool result = false;
-	entity->object_index = v29(b, info, &d, e, f);
-	if (entity->object_index != NONE)
-	{
-		if (!(OBJECT_HEADER(entity->object_index)->flags & 0x10))
-		{
-			OBJECT(entity->object_index)->field_d4 = entity->field0;
-			function_108e10(entity->object_index);
-			result = true;
-			if (d)
-			{
-				v31(entity->object_index, d, e, f);
-			}
-		}
-		else
-		{
-			entity->object_index = NONE;
-		}
-	}
-	return result;
+    bool result = false;
+    long value = d;
+    long object_index = v29(b, info, &value, e, f);
+    entity->object_index = object_index;
+    if (object_index != NONE)
+    {
+        if (!(OBJECT_HEADER(object_index)->flags & 0x10))
+        {
+            OBJECT(object_index)->field_d4 = entity->field0;
+            object_dispatch_attach_simulation_entity(object_index);
+            result = true;
+            if (value)
+            {
+                v31(entity->object_index, value, e, f);
+            }
+        }
+        else
+        {
+            entity->object_index = NONE;
+        }
+    }
+    return result;
 }
 
 // @retail 0xa5b10
@@ -277,7 +290,8 @@ bool c_object_type_definition::v25(s_entity *entity)
 	bool result = false;
 	if (index != NONE)
 	{
-		result = v32(entity->object_index);
+		// Retail reloads the object index for the virtual call.
+		result = v32(*(long volatile *)&entity->object_index);
 	}
 	return result;
 }
@@ -298,6 +312,7 @@ void c_turret_entity_definition::v26(long index, long b, s_entity_state *state)
 // @retail 0xa3a00
 long c_object_type_definition::v27(long a, long b, long c, long d)
 {
+	c_object_type_definition const *volatile saved_definition = this;
 	return function_a5e70(a, b & 0x3ff, d);
 }
 
@@ -347,7 +362,7 @@ bool c_turret_entity_definition::v30(long index)
 	long field14 = object->field14;
 	if (field14 != NONE)
 	{
-		function_108e80(index);
+		object_dispatch_detach_simulation_entity(index);
 		object->field_d4 = NONE;
 		object->field_d8 = 0;
 		result = true;
@@ -501,7 +516,7 @@ long c_projectile_type::v27(long a, long b, long c, long d)
 }
 
 class c_handle_table_450cd0;
-bool function_99640(c_handle_table_450cd0 *self, long handle);
+__declspec(noinline) bool function_99640(c_handle_table_450cd0 *self, long handle);
 
 // @retail 0xa0e50
 bool c_projectile_type::v8(long a, long b)
@@ -511,12 +526,14 @@ bool c_projectile_type::v8(long a, long b)
  if (identifier != NONE)
  {
   byte *table = *(byte **)(*(long *)(*(long *)b + 4) + 8);
-  if (!function_99640((c_handle_table_450cd0 *)(table + 0x30), identifier))
-   return false;
+  if (!function_99640((c_handle_table_450cd0 *)(table + 0x30), identifier)) result = false;
  }
  return result;
 }
 
+// score 5 (was 5): retail masks the 16-bit index with and eax, 0xffff, ours
+// truncates it with movzx eax, ax; masking explicitly gives the right
+// instruction but re-schedules the whole prologue
 // @retail 0xa3df0
 long c_device_type::v27(long a, long b, long c, long d)
 {
@@ -532,10 +549,10 @@ long c_device_type::v27(long a, long b, long c, long d)
  }
  if (flags & 0x800)
  {
-  long index = *(long *)(object + 0x13c);
+  long const &index = *(long const *)(object + 0x13c);
   if (index != NONE)
   {
-   byte *entry = g_4e0328.groups->data + (index & 0xffff) * 12;
+   byte *entry = g_4e0328.groups->data + (word)index * 12;
    if (*(real *)(d + 0x94) != *(real *)(entry + 4))
    {
     *(real *)(d + 0x94) = *(real *)(entry + 4);
@@ -547,7 +564,9 @@ long c_device_type::v27(long a, long b, long c, long d)
 }
 
 #include "unknown_1946f0.h"
-void simulation_write_position(long bits, s_bitstream *stream, real const *position, bool keep_inside);
+#include "slot_handler.h"
+static __forceinline long real_to_long(real value);
+void simulation_write_position(s_bitstream *stream, real const *position, long bits, bool keep_inside);
 void simulation_read_position(s_bitstream *stream, real *position, long bits);
 void scenario_object_name_encode(long object_name, s_bitstream *stream);
 
@@ -567,14 +586,7 @@ struct s_z_impact_payload
 
 PRIVATE inline void z_write_impact_scale(s_bitstream *stream, real value)
 {
- real scaled = value * 126.0f;
- long quantized;
- __asm
- {
-  fld scaled
-  fistp quantized
- }
- function_195720(stream, quantized, 7);
+ function_195720(stream, real_to_long(value * 126.0f), 7);
 }
 
 PRIVATE inline real z_read_impact_scale(s_bitstream *stream)
@@ -617,7 +629,7 @@ void c_projectile_impact_effect_event::v9(long a, void const *data, s_bitstream 
  z_write_impact_scale(stream, event->scale_a);
  z_write_impact_scale(stream, event->scale_b);
  function_194bc0(stream, &event->direction);
- simulation_write_position(12, stream, (real const *)&event->position, true);
+ simulation_write_position(stream, (real const *)&event->position, 12, true);
  function_194bc0(stream, &event->normal);
  function_1955d0(stream, &event->field_30, 16);
 }
@@ -630,7 +642,7 @@ void c_projectile_object_impact_effect_event::v9(long a, void const *data, s_bit
  z_write_impact_scale(stream, event->scale_a);
  z_write_impact_scale(stream, event->scale_b);
  function_194bc0(stream, &event->direction);
- simulation_write_position(12, stream, (real const *)&event->position, true);
+ simulation_write_position(stream, (real const *)&event->position, 12, true);
  function_194bc0(stream, &event->normal);
  function_1955d0(stream, &event->field_30, 16);
  stream_write_checked(stream, event->field_38, 8);
@@ -701,39 +713,48 @@ void function_a3fd0(long index, bool immediate, bool set_position, real position
  }
 }
 
-void *function_122c10(long group_tag, long tag_index);
+__declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
  point3f const *point, vector3f const *normal, long index, bool attached, long object_index,
  short node_index, bool alternate);
 
+// score 28 (was 28): the effect call's arguments are pushed in the other order
+// and the field is loaded into the low half of a cleared register instead of
+// being zero extended
 // @retail 0xa1a80
 bool c_projectile_impact_effect_event::v11(long a, long const *entities, long c, void const *data)
 {
  s_z_impact_payload const *event = (s_z_impact_payload const *)data;
  if (event->object_name != NONE && function_122c10(0x70726f6a, event->object_name) &&
   !(event->scale_a < 0.0f || event->scale_a > 1.0f || event->scale_b < 0.0f || event->scale_b > 1.0f))
+ {
   function_fd0e0(event->object_name, event->scale_a, event->scale_b, &event->direction,
    (point3f const *)&event->position, &event->normal, event->field_30, false, NONE, NONE, false);
+ }
  return true;
 }
 
 
 bool function_100f00(long weapon_index);
 
+// score 93 (was 93): the flags word is kept in the other register and the
+// result in the other one, so retail tests the flag bits in the high byte of
+// the word and keeps the result in edx while ours keeps them in dx and eax
 // @retail 0xa1f70
 long c_weapon_type::v27(long a, long b, long c, long d)
 {
- byte *object = (byte *)OBJECT(a);
- long result = ((c_item_type *)this)->c_item_type::v27(a, b & 0x7ff, 0x94, d);
+ long object_offset = (a & 0xffff) * 12;
+ byte *object = *(byte **)(object_offset + g_4e0300->data + 8);
+ volatile long result = ((c_item_type *)this)->c_item_type::v27(a, b & 0x7ff, 0x94, d);
  dword requested = b;
  s_object_view *updated_object = OBJECT(a);
  s_tag_instance *tags = g_4e3b44;
- byte *definition = tags[updated_object->definition_index & 0xffff].bytes;
+ byte *definition = tags[*(volatile long *)&updated_object->definition_index & 0xffff].bytes;
  if (*(short *)(definition + 0x290))
  {
   if (requested & 0x800)
   {
-   dword source_flags = *(word *)(object + 0x16c);
+   word source_flags = *(word *)(object + 0x16c);
    byte flags = (byte)((source_flags >> 8) & 1);
    if (source_flags & 0x200) flags |= 2; else flags &= ~2;
    if (source_flags & 0x400) flags |= 4; else flags &= ~4;
@@ -775,9 +796,17 @@ long c_weapon_type::v27(long a, long b, long c, long d)
 }
 
 
+// Retail calls this decoder out of line and still passes its two unused inputs.
+__declspec(noinline) bool function_a0640(c_object_type_definition *definition, long a, long *flags, long state, s_bitstream *stream);
+
 // @retail 0xa0640
 bool function_a0640(c_object_type_definition *definition, long a, long *flags, long state, s_bitstream *stream)
 {
+ // Keep the two unused parameters in their retail stack slots.
+ c_object_type_definition *const *definition_reference = &definition;
+ long const *a_reference = &a;
+ (void)*definition_reference;
+ (void)*a_reference;
  bool result = function_a6d50((long)flags, state, stream);
  if (function_1957d0(stream))
  {
@@ -951,6 +980,27 @@ bool c_device_type::v14(long a1, long a2, long a3, long a4, long a5, long a6, lo
  return result;
 }
 
+// @retail 0xa4170
+bool c_device_type::v13(long a, s_entity_info *info, s_bitstream *stream)
+{
+ c_object_type_definition const *volatile definition = this;
+ bool valid = function_a6810(info, stream);
+ if (stream->bit_position <= (stream->size_in_bytes << 3) && valid)
+  return true;
+ return false;
+}
+
+// @retail 0xa23a0
+bool c_weapon_type::v13(long a, s_entity_info *info, s_bitstream *stream)
+{
+ c_object_type_definition const *volatile definition = this;
+ bool valid = function_a6810(info, stream);
+ valid = stream->bit_position <= (stream->size_in_bytes << 3) && valid;
+ if (stream->bit_position <= (stream->size_in_bytes << 3) && valid)
+  return true;
+ return false;
+}
+
 // @retail 0xa04f0
 bool c_item_type::v14(long a1, long a2, long a3, long a4, long a5, long a6, long a7, long a8)
 {
@@ -959,14 +1009,7 @@ bool c_item_type::v14(long a1, long a2, long a3, long a4, long a5, long a6, long
 
 PRIVATE inline void z_write_weapon_fraction(s_bitstream *stream, real value)
 {
- real scaled = value * 126.0f;
- long quantized;
- __asm
- {
-  fld scaled
-  fistp quantized
- }
- function_195720(stream, quantized, 7);
+ function_195720(stream, real_to_long(value * 126.0f), 7);
 }
 
 // @retail 0xa2470
@@ -1097,10 +1140,13 @@ struct s_z_weapon_update_object
  short field22c;
 };
 
+// score 22 (was 22): the first argument is stored to the stack and reloaded in
+// retail and kept in a register in ours, retail masks the second argument
+// before the first call while ours masks it after, and ours makes an extra
+// call before the two calls that read the item's definition
 // @retail 0xa2140
 void c_weapon_type::v31(long a, long b, long c, long d)
 {
- c_object_type_definition *volatile definition = this;
  long mask = b & 0x7ff;
  s_z_weapon_update_object *object = (s_z_weapon_update_object *)OBJECT(a);
  if (mask)
@@ -1154,4 +1200,224 @@ void c_weapon_type::v31(long a, long b, long c, long d)
    }
   }
  }
+}
+
+// @retail 0xa1120
+bool c_projectile_type::v13(long a, s_entity_info *info, s_bitstream *stream)
+{
+    c_object_type_definition const *volatile definition = this;
+    bool valid = (unsigned char)function_a6810(info, stream) != 0;
+    long *fields = (long *)info->vehicle_data;
+    if (function_1957d0(stream))
+    {
+        fields[0] = function_1959c0(stream, 4);
+        valid = valid && fields[0] >= 0 && fields[0] < 16;
+    }
+    else
+        fields[0] = NONE;
+    if (function_1957d0(stream))
+    {
+        long index = function_1959c0(stream, 10);
+        byte salt = (byte)function_1959c0(stream, 4);
+        fields[1] = index | ((dword)salt << 28);
+        if (function_1957d0(stream))
+            fields[2] = function_1959c0(stream, 5);
+        else
+            fields[2] = NONE;
+    }
+    else
+    {
+        fields[1] = NONE;
+        fields[2] = NONE;
+    }
+    info->vehicle_data[12] = function_1957d0(stream);
+    info->vehicle_data[13] = function_1957d0(stream);
+    if (valid && stream->bit_position <= (stream->size_in_bytes << 3))
+        return true;
+    return false;
+}
+
+
+struct s_z_initial_state;
+void __stdcall function_a6660(s_entity_info const *, s_bitstream *);
+bool function_a5bd0(s_entity_info const *, s_z_initial_state *);
+
+// @retail 0xa3db0
+bool c_device_type::v19(long a, long info, long c, s_entity_data *data)
+{
+    c_device_type *volatile self = this;
+    memset(data, 0, 0x98);
+    bool result = false;
+    if (function_a5bd0((s_entity_info *)info, (s_z_initial_state *)data)) result = true;
+    return result;
+}
+
+// @retail 0xa02a0
+bool c_item_type::v19(long a, long info, long c, s_entity_data *data)
+{
+    c_item_type *volatile self = this;
+    memset(data, 0, 0x94);
+    bool result = false;
+    if (function_a5bd0((s_entity_info *)info, (s_z_initial_state *)data))
+    {
+        ((byte *)data)[0x90] = 0;
+        result = true;
+    }
+    return result;
+}
+
+// @retail 0xa1f10
+bool c_weapon_type::v19(long a, long info, long c, s_entity_data *data)
+{
+    c_weapon_type *volatile self = this;
+    memset(data, 0, 0xa0);
+    memset(data, 0, 0x94);
+    bool result = false;
+    if (function_a5bd0((s_entity_info *)info, (s_z_initial_state *)data))
+    {
+        ((byte *)data)[0x90] = 0;
+        ((byte *)data)[0x94] = 0;
+        *(short *)((byte *)data + 0x96) = NONE;
+        result = true;
+    }
+    return result;
+}
+
+// @retail 0xa2380
+void c_item_type::v12(long a, s_entity_info *info, long c, s_bitstream *stream)
+{
+    c_item_type *volatile self = this;
+    function_a6660(info, stream);
+}
+
+
+
+// @retail 0xa0f50
+void c_projectile_type::v12(long a, s_entity_info *info, long c, s_bitstream *stream)
+{
+    c_projectile_type *volatile self = this;
+    function_a6660(info, stream);
+    byte const *data = (byte const *)info;
+    stream_write_bit(stream, *(long const *)(data + 0x10) != NONE);
+    long first = *(long const *)(data + 0x10);
+    if (first != NONE) stream_write_checked(stream, first, 4);
+    stream_write_bit(stream, *(long const *)(data + 0x14) != NONE);
+    if (*(long const *)(data + 0x14) != NONE)
+    {
+        simulation_write_entity_identifier(*(long const *)(data + 0x14), stream);
+        stream_write_bit(stream, *(long const *)(data + 0x18) != NONE);
+        long third = *(long const *)(data + 0x18);
+        if (third != NONE) stream_write_checked(stream, third, 5);
+    }
+    stream_write_bit(stream, data[0x1c] != 0);
+    stream_write_bit(stream, data[0x1d] != 0);
+}
+
+
+
+// @retail 0xa0350
+long c_item_type::v29(long a, s_entity_info *info, long *flags, long size, long state)
+{
+    c_item_type *volatile self = this;
+    byte creation[0xc4];
+    function_a5d90(creation, info, flags, state);
+    long index;
+    if (info->field0 != NONE) index = function_a73b0(info);
+    else index = function_b7b40(creation);
+    if (index != NONE) ((byte *)((s_object_header *)g_4e0300->data)[index & 0xffff].object)[0xaf] = info->byte8;
+    return index;
+}
+
+// @retail 0xa3eb0
+long c_device_type::v29(long a, s_entity_info *info, long *flags, long size, long state)
+{
+    c_device_type *volatile self = this;
+    byte creation[0xc4];
+    function_a5d90(creation, info, flags, state);
+    long index;
+    if (info->field0 != NONE) index = function_a73b0(info);
+    else index = function_b7b40(creation);
+    if (index != NONE)
+    {
+        ((byte *)((s_object_header *)g_4e0300->data)[index & 0xffff].object)[0xaf] = info->byte8;
+        if (*flags & 0xc00)
+        {
+            function_a3fd0(index, true, (*flags & 0x400) != 0, *(real *)(state + 0x90),
+                (*flags & 0x800) != 0, *(real *)(state + 0x94));
+            *flags &= ~0xc00;
+        }
+    }
+    return index;
+}
+
+struct s_projectile_target
+{
+    long object_index;
+    short node_index;
+    byte unknown06[2];
+};
+void projectile_set_target(long index, s_projectile_target const *target);
+
+void function_0bfe20(dword *flags, long bit, bool value);
+
+// @retail 0xa0c50
+long c_projectile_type::v29(long a, s_entity_info *info, long *flags, long size, long state)
+{
+    c_projectile_type *volatile self = this;
+    byte creation[0xc4];
+    function_a5d90(creation, info, flags, state);
+    byte *fields = (byte *)info;
+    if (*(long *)(fields + 0x10) != NONE)
+    {
+        byte *record = datum_get_absolute_inlined(g_4e8c24, *(long *)(fields + 0x10));
+        if (record)
+        {
+            long player_index = data_datum_index(g_4e8c24, *(long *)(fields + 0x10));
+            *(long *)(creation + 0x60) = *(long *)(record + 0x2c);
+            *(long *)(creation + 0x5c) = player_index;
+            *(long *)(creation + 0x64) = (signed char)record[0xc0];
+            *(long *)(creation + 0x6c) = *(long *)(record + 0x2c);
+            *(long *)(creation + 0x68) = player_index;
+            *(short *)(creation + 0x70) = (signed char)record[0xc0];
+        }
+    }
+    long index;
+    if (info->field0 != NONE) index = function_a73b0(info);
+    else index = function_b7b40(creation);
+    if (index != NONE)
+    {
+        long offset = (index & 0xffff) * 12;
+        byte *object = *(byte **)(g_4e0300->data + offset + 8);
+        object[0xaf] = info->byte8;
+        if (fields[0x1d])
+        {
+            object = *(byte **)(g_4e0300->data + offset + 8);
+            function_0bfe20((dword *)(object + 0x12c), 8, true);
+        }
+        long target = *(long *)(fields + 0x14);
+        if (target != NONE)
+        {
+            s_simulation_world_view *world = (s_simulation_world_view *)g_4cf77c;
+            s_simulation_entity *entity = simulation_entity_try_get(&world->database->table, target);
+            if (entity && entity->object_index != NONE)
+            {
+                s_projectile_target request;
+                request.object_index = entity->object_index;
+                request.node_index = *(short *)(fields + 0x18);
+                projectile_set_target(index, &request);
+            }
+        }
+        if (!fields[0x1c])
+        {
+            object = *(byte **)(g_4e0300->data + offset + 8);
+            function_0bfe20((dword *)(object + 0x12c), 1, false);
+        }
+    }
+    return index;
+}
+
+// @retail 0xa2120
+long c_weapon_type::v29(long a, s_entity_info *info, long *flags, long size, long state)
+{
+    return ((c_item_type *)this)->c_item_type::v29(0x10, info, flags, 0x94, state);
 }

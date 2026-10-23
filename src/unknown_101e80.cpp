@@ -128,13 +128,12 @@ long function_101e80(long object_index)
 long function_101ec0(long object_index)
 {
 	s_object_header *header = OBJECT_HEADER(object_index);
+	byte flags = header->flags;
 	s_object *object = header->object;
 	s_object_tag *tag = OBJECT_TAG(object);
-	bool a = (header->flags & 0x10) != 0;
-	bool b = (object->flags04 & 1) != 0;
-	bool c = tag->field_38 == NONE;
+	s_object_tag *const &selected = tag;
 
-	if (a || b || c)
+	if ((flags & 0x10) || (object->flags04 & 1) || selected->field_38 == NONE)
 	{
 		if (object->parent_index != NONE)
 			object_index = object->parent_index;
@@ -196,16 +195,19 @@ long function_101fb0(long object_index)
 		if (parent)
 		{
 			s_object_tag *tag = OBJECT_TAG(parent);
-			if (TEST_FIELD_BIT(tag->flagbc_26) && parent->parent_index != NONE
-				&& ((1 << OBJECT_HEADER(parent->parent_index)->type) & 3))
+			if (!(TEST_FIELD_BIT(tag->flagbc_26) && parent->parent_index != NONE
+				&& ((1 << OBJECT_HEADER(parent->parent_index)->type) & 3)))
 			{
-				result = OBJECT_HEADER(parent->parent_index)->object->field_24c;
+				result = parent->field_24c;
 				if (result == NONE)
-					result = parent->parent_index;
+					result = parent_index;
 			}
 			else
 			{
-				result = parent->field_24c;
+				parent_index = ((volatile s_object *)parent)->parent_index;
+				s_object *ancestor = OBJECT_HEADER(parent_index)->object;
+				s_object *const &selected = ancestor;
+				result = selected->field_24c;
 				if (result == NONE)
 					result = parent_index;
 			}
@@ -215,14 +217,13 @@ long function_101fb0(long object_index)
 }
 
 // @retail 0x102100
-bool function_102100(long link_arg, long object_index, bool *out_a, bool *out_b)
+bool function_102100(short link_index, long object_index, bool *out_a, bool *out_b)
 {
-	short link_index = (short)link_arg;
 	s_object *object = OBJECT_HEADER(object_index)->object;
-	s_object_tag *tag = OBJECT_TAG(object);
 	s_object_link *link = &object->links[link_index];
-	s_tag_link *tag_link = &tag->links[link_index];
+	s_object_tag *tag = OBJECT_TAG(object);
 	bool result = false;
+	s_tag_link *tag_link = &tag->links[link_index];
 	bool blocked = false;
 	real rate;
 
@@ -239,11 +240,10 @@ bool function_102100(long link_arg, long object_index, bool *out_a, bool *out_b)
 	if ((flag9 || TEST_FIELD_BIT(tag_link->flag10)) && tag->link_count > 1)
 	{
 		s_object_link *other = &object->links[link_index == 0];
-		byte state = other->state;
 
-		if (state == 1 && flag9)
+		if (other->state == 1 && flag9)
 			blocked = true;
-		if ((state == 3 || state == 2) && TEST_FIELD_BIT(tag_link->flag10))
+		if ((other->state == 3 || other->state == 2) && TEST_FIELD_BIT(tag_link->flag10))
 			blocked = true;
 	}
 
@@ -272,21 +272,21 @@ bool function_102100(long link_arg, long object_index, bool *out_a, bool *out_b)
 
 	if (link->flags & 0x40)
 	{
+		result = false;
 		*out_b = true;
-		return false;
 	}
-
-	if (result)
+	else if (result)
 	{
-		if ((object->flags12c & 1) && object->child_index != NONE)
+		s_object *holder = OBJECT_HEADER(object_index)->object;
+		if ((holder->flags12c & 1) && holder->child_index != NONE)
 		{
-			s_object *child = OBJECT_HEADER(object->child_index)->object;
+			s_object *child = OBJECT_HEADER(holder->child_index)->object;
 			short first = child->attachments.first;
 			long first_index = NONE;
 			if (first != NONE)
 				first_index = child->attachments.objects[first];
 
-			child = OBJECT_HEADER(object->child_index)->object;
+			child = OBJECT_HEADER(holder->child_index)->object;
 			short second = child->attachments.second;
 			long second_index = NONE;
 			if (second != NONE)

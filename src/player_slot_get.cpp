@@ -7,7 +7,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 
-/* the slot (0xc70 bytes; unknown_18f576.cpp) */
+/* the slot (0xc70 bytes; player_slots.cpp) */
 struct s_player_slot_view;
 
 // @retail 0x18f576

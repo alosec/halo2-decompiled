@@ -27,8 +27,8 @@ extern void *g_51ea14;
 extern long g_55c154;
 
 void function_125d60(void);
-bool function_216800(void *location, long file_index);
-const char *function_216b60(long type);
+bool function_216800(long file_index, void *location);
+const char *saved_game_type_get_storage_name(long type);
 char *function_122810(char *path, const char *suffix);
 bool saved_game_file_read_begin(void *buffer, dword size, bool non_roamable, s_saved_game_file_task *task, const char *path);
 bool function_2162b0(long file_index, void *buffer, long size, s_saved_game_file_task *task);
@@ -87,12 +87,12 @@ bool function_2162b0(long file_index, void *buffer, long size, s_saved_game_file
 		local_0.field_0.name[0] = 0;
 		local_0.field_0.display_name[0] = 0;
 		local_0.field_44[0] = 0;
-		if (function_216800(&local_0.field_0, file_index) && local_0.field_0.language != -1)
+		if (function_216800(file_index, &local_0.field_0) && local_0.field_0.language != -1)
 		{
 			long type = local_0.field_0.type;
 			strncpy(local_0.field_44, local_0.field_0.name, sizeof(local_0.field_44));
 			local_0.field_44[sizeof(local_0.field_44) - 1] = 0;
-			function_122810(local_0.field_44, function_216b60(type));
+			function_122810(local_0.field_44, saved_game_type_get_storage_name(type));
 			result = saved_game_file_read_begin(buffer, size, false, task, local_0.field_44);
 		}
 	}

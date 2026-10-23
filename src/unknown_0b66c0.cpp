@@ -1,4 +1,5 @@
 // @flags /O2 /Ob1 /Gr
+#include "transaction_storage.h"
 #include "unknown_11c920.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -75,8 +76,10 @@ bool function_0b6780(const s_index_triple *triple)
 	return triple->index3 != NONE && triple->index != NONE && triple->index2 != NONE;
 }
 
+__declspec(noinline) short function_0b67a0(const s_small_index *data);
+
 // @retail 0x000b67a0
-short function_0b67a0(const s_small_index *data)
+inline short function_0b67a0(const s_small_index *data)
 {
 	signed char index = data->index;
 	if (index >= 0 && index < data->count)
@@ -122,6 +125,15 @@ long s_text512_ab::find(long start, char const *substring) const
 	return result;
 }
 
+static __forceinline char *upload_copy_ab(char *destination, char const *source, long size)
+{
+	strncpy(destination, source, size);
+	destination[size - 1] = 0;
+	return destination;
+}
+
+// score 40 (was 40): the string pointer and the character counter are kept in different registers
+// here, and an extra register is pushed and restored around the copy loop.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -132,8 +144,7 @@ bool function_b6220(char const *volatile string, long start, long count, char *d
 		if (count > 0x200)
 			count = 0x200;
 		start += (long)string;
-		strncpy(destination, (char const *)start, count);
-		destination[count - 1] = 0;
+		upload_copy_ab(destination, (char const *)start, count);
 		result = true;
 	}
 	return result;
@@ -157,45 +168,30 @@ struct s_upload_file_ab
     dword position;
 };
 
-struct s_upload_ab
-{
-    long kind;
-    char path[0x80];
-    char header[0x400];
-    char part[0x100];
-    char ending[0x80];
-    long header_length;
-    long part_length;
-    long ending_length;
-    char content_type[0x20];
-    char filename[0x104];
-    char extra_headers[0x200];
-    byte const *memory;
-    s_upload_file_ab *file;
-    long file_length;
-    long position;
-};
 
-static __forceinline char *upload_copy_ab(char *destination, char const *source, long size)
-{
-    strncpy(destination, source, size);
-    destination[size - 1] = 0;
-    return destination;
-}
 
 // @retail 0xb62b0
 s_upload_ab *function_b62b0(s_upload_ab *upload)
 {
-    *(volatile char *)upload->path = 0;
-    *(volatile char *)upload->header = 0;
-    *(volatile char *)upload->part = 0;
-    *(volatile char *)upload->ending = 0;
-    *(volatile char *)upload->content_type = 0;
-    *(volatile char *)upload->filename = 0;
-    *(volatile char *)upload->extra_headers = 0;
+    char *content_type = upload->content_type;
+    char *filename = upload->filename;
+    char volatile &path = upload->path[0];
+    path = 0;
+    char volatile &header = upload->header[0];
+    header = 0;
+    char volatile &part = upload->part[0];
+    part = 0;
+    char volatile &ending = upload->ending[0];
+    ending = 0;
+    char volatile &type_prefix = content_type[0];
+    type_prefix = 0;
+    char volatile &filename_prefix = filename[0];
+    filename_prefix = 0;
+    char volatile &extra_prefix = upload->extra_headers[0];
+    extra_prefix = 0;
     upload->kind = 0;
-    upload_copy_ab(upload->content_type, "text/plain", sizeof(upload->content_type));
-    upload_copy_ab(upload->filename, "blob", sizeof(upload->filename));
+    upload_copy_ab(content_type, "text/plain", sizeof(upload->content_type));
+    upload_copy_ab(filename, "blob", sizeof(upload->filename));
     return upload;
 }
 
@@ -273,8 +269,8 @@ bool function_b5f10(char const *response, bool *complete)
                 long size = atoi(length_text);
                 if (function_b6220(buffer, end + 4, size, body))
                 {
-                    *complete = function_b6190(body, "DONE");
                     result = true;
+                    *(byte *)complete = function_b6190(body, "DONE");
                 }
             }
         }
@@ -308,17 +304,11 @@ struct s_http_connection_ab
 
 bool function_b51b0(s_transport_endpoint *endpoint, s_type_99af70 const *address);
 
-static __forceinline bool http_address_valid_ab(s_type_99af70 const *address)
-{
-    long length = address->address_length;
-    if (length == NONE || length == 4)
-        return address->ipv4_address != 0;
-    if (length == 16)
-        for (long i = 0; i < 8; i++)
-            if (address->ipv6_address[i]) return true;
-    return false;
-}
+bool function_7af40(s_type_99af70 const *address);
 
+// score 32 (was 32): the connection state is cleared with the three field stores in a different
+// order here, the flag is written as a word here and or-ed into the field in retail, and the two
+// calls take their arguments in a different order.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {
@@ -328,14 +318,14 @@ bool s_http_connection_ab::connect(long address, word port, char const *path, bo
     connection->address.port = htons(port);
     connection->hostname[0] = 0;
     function_b6290(connection->hostname, "%d.%d.%d.%d", (byte)address, (byte)(address >> 8), (byte)(address >> 16), (byte)(address >> 24));
-    if (http_address_valid_ab(&connection->address))
+    if (function_7af40(&connection->address))
     {
         s_transport_endpoint *endpoint = connection->endpoint;
         endpoint->socket = NONE;
         endpoint->flags = 0;
         endpoint->type = 4;
-        if (flag) connection->endpoint->flags |= 0x40;
-        if (function_b51b0(connection->endpoint, &connection->address))
+        if (flag) endpoint->flags |= 0x40;
+        if (function_b51b0(endpoint, &connection->address))
         {
             connection->attempt_count++;
             connection->state = 1;
@@ -380,20 +370,26 @@ struct s_http_callbacks_ab
 
 s_http_callbacks_ab g_4d8b1c;
 
+// score 20 (was 20): the two zeroed endpoint words are written through a register here and through
+// memory in retail, the registry entry stores the state field instead of zero, and the count is
+// incremented in place instead of being read, incremented and written back.
 // @retail 0xb5cd0
 s_http_connection_ab *function_b5cd0(s_http_connection_ab *connection)
 {
-    *(volatile char *)connection->hostname = 0;
+    connection->hostname[0] = 0;
     function_b62b0((s_upload_ab *)((byte *)connection + 0x30));
     s_transport_endpoint *endpoint = &connection->internal_endpoint;
-    memset(endpoint, 0, sizeof(*endpoint));
+    ((dword *)endpoint)[0] = 0;
+    ((dword *)endpoint)[1] = 0;
     connection->endpoint = endpoint;
-    connection->state = 0;
-    g_4d8b1c.values[g_4d8b1c.count] = 0;
+    long *state = &connection->state;
+    *state = 0;
+    g_4d8b1c.values[g_4d8b1c.count] = *state;
     g_4d8b1c.callbacks[g_4d8b1c.count] = function_b6180;
-    g_4d8b1c.stages[g_4d8b1c.count] = 0;
+    g_4d8b1c.stages[g_4d8b1c.count] = *state;
     g_4d8b1c.blocks[g_4d8b1c.count] = connection;
-    g_4d8b1c.count++;
+    // Keep the final registry count read at its later use.
+    g_4d8b1c.count = *(long const *)&g_4d8b1c.count + 1;
     return connection;
 }
 
@@ -427,119 +423,45 @@ bool s_http_connection_ab::receive(bool *complete)
     return result;
 }
 
-static inline bool upload_read_ab(s_upload_file_ab *file, long position, void *buffer, long count)
-{
-    if (file->position != position)
-    {
-        file->position = SetFilePointer(file->handle, position, 0, FILE_BEGIN);
-        if (file->position == 0xffffffff)
-            return false;
-    }
-    dword received;
-    bool result = false;
-    if (ReadFile(file->handle, buffer, count, &received, 0))
-    {
-        if (received == count)
-            result = true;
-        else
-            SetLastError(0x26);
-    }
-    file->position += received;
-    return result;
-}
-
-// @retail 0xb6320
-bool function_b6320(s_upload_ab *upload, byte *buffer, long maximum, long *written)
-{
-    byte *out = buffer;
-    long remaining = maximum;
-    bool result = false;
-    bool valid = upload->kind == 2 || upload->kind == 1;
-    unsigned long length = 0;
-    char const *path = upload->path;
-    for (; length < 0x7f; ++length)
-        if (!*path++) break;
-    if (length && valid)
-    {
-        if (!upload->position)
-            function_b65f0(upload);
-        result = true;
-        while (upload->position != upload->ending_length + upload->file_length + upload->part_length + upload->header_length && remaining > 0)
-        {
-            long position = upload->position;
-            long count;
-            if (position < upload->header_length)
-            {
-                count = remaining < upload->header_length - position ? remaining : upload->header_length - position;
-                memcpy(out, upload->header + position, count);
-            }
-            else if ((position -= upload->header_length) < upload->part_length)
-            {
-                count = remaining < upload->part_length - position ? remaining : upload->part_length - position;
-                memcpy(out, upload->part + position, count);
-            }
-            else if ((position -= upload->part_length) < upload->file_length)
-            {
-                count = remaining < upload->file_length - position ? remaining : upload->file_length - position;
-                if (upload->kind == 1)
-                    memcpy(out, upload->memory + position, count);
-                else if (!upload_read_ab(upload->file, position, out, count))
-                {
-                    GetLastError();
-                    SetLastError(0);
-                    result = false;
-                }
-            }
-            else if ((position -= upload->file_length) < upload->ending_length)
-            {
-                count = remaining < upload->ending_length - position ? remaining : upload->ending_length - position;
-                memcpy(out, upload->ending + position, count);
-            }
-            else
-            {
-                result = false;
-                break;
-            }
-            upload->position += count;
-            out += count;
-            remaining = maximum - (out - buffer);
-        }
-        *written = out - buffer;
-    }
-    return result;
-}
+bool function_b6320(s_upload_ab *upload, byte *buffer, long maximum, long *written);
 
 short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short length);
 
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {
+    bool result;
     byte buffer[0x518];
-    for (;;)
+    do
     {
         long position = upload_position;
         long written = 0;
-        bool result = false;
+        result = false;
         if (!function_b6320((s_upload_ab *)((byte *)this + 0x30), buffer, sizeof(buffer), &written))
-            return result;
-        short sent = written ? function_b5000(endpoint, buffer, (short)written) : 0;
+            goto return_exit;
+        short sent;
+        if (!written)
+            sent = 0;
+        else
+            sent = function_b5000(endpoint, buffer, (short)written);
         if (sent < 0)
         {
             if (sent == -2)
             {
                 upload_position = position;
-                return true;
+                result = true;
             }
-            return result;
+            goto return_exit;
         }
+        result = true;
         if (sent < written)
             upload_position = position + sent;
-        if (upload_position == upload_file_length + upload_ending_length + upload_part_length + upload_header_length)
-            break;
-    }
+    } while (upload_position != upload_file_length + upload_ending_length + upload_part_length + upload_header_length);
     response_length = 0;
     state = 3;
-    return true;
+
+return_exit:
+    return result;
 }
 
 bool transport_endpoint_test_connection(s_transport_endpoint *endpoint, bool *connected);
