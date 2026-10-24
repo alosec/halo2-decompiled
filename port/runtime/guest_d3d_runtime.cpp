@@ -1616,6 +1616,10 @@ extern "C" void __stdcall D3DDevice_EndPush(DWORD *push)
         return;
     }
     d->push_put = push;
+    /* what the game pushed draws with the state it set before pushing: parsed
+       later, a draw's texture could already be the next caller's (the
+       interface sprites of function_52040 drew with the glyph cache) */
+    push_submit(d);
 }
 
 void D3D::CDevice::LazySetStateVB(DWORD value)

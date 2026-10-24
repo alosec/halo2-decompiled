@@ -690,11 +690,13 @@ void function_23675a(s_bitmap_view *bitmap, s_texture_rect const *texture, dword
 	request.scale2c = 1.0f;
 	request.scale28 = 1.0f;
 	request.bitmap = bitmap;
-#ifdef H2_NATIVE_PORT
+#if defined(H2_NATIVE_PORT) && !H2_WHOLE_IMAGE
 	/* The native host owns texture availability.  Always forward recovered
 	   geometry and bitmap metadata instead of consulting the Xbox texture cache. */
 	function_52040(&request, vertices);
 #else
+	/* the whole image runs the Xbox texture cache: a bitmap that is not
+	   resident yet is skipped, not drawn with the last texture bound */
 	if (function_12360(bitmap, 0.0f))
 	{
 		function_52040(&request, vertices);
