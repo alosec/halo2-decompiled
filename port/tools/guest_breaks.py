@@ -7,10 +7,11 @@ usage: /usr/bin/python3 port/tools/guest_breaks.py [--hits N] [--seconds S]
 SYMBOL is a guest symbol or the start of one ('?map_location_get' matches the
 full mangled name). FORMAT per argument register x0..x3, e.g. 'sx' prints x0
 as a guest C string and x1 as hex: s string, w wide string, x hex, d decimal,
-f float (from s0..s3). --watch ADDRESS prints the guest dword there at
+f float (from s0..s3), r report the return value. --watch ADDRESS prints the guest dword there at
 every hit. Needs the system Python, which Xcode's lldb module is
 built for."""
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -72,6 +73,7 @@ def main():
     parser.add_argument("--break", dest="breaks", action="append", default=[])
     parser.add_argument("--watch", action="append", default=[], type=lambda text: int(text, 0))
     parser.add_argument("--hits", type=int, default=40)
+    parser.add_argument("--skip", type=int, default=0, help="ignore the first N hits")
     parser.add_argument("--explain", action="store_true",
                         help="at each hit, name the vtables of objects in registers")
     parser.add_argument("--seconds", type=float, default=60)
@@ -88,11 +90,14 @@ def main():
     error = lldb.SBError()
     info = lldb.SBLaunchInfo(host[1:])
     info.SetWorkingDirectory(".")
+    # the game reads its scripted input and traces from the environment
+    info.SetEnvironmentEntries(["%s=%s" % item for item in os.environ.items()], True)
     process = target.Launch(info, error)
     if not error.Success():
         sys.exit("launch failed: %s" % error)
     listener = debugger.GetListener()
     formats = {}
+    returns = {}
     table = []
     deadline = time.time() + args.seconds
     hits = 0
@@ -119,6 +124,10 @@ def main():
                 formats[BIAS + symbols[match[0]]] = (match[0], fmt or "x")
             process.Continue()
             continue
+        if reason == lldb.eStopReasonBreakpoint and pc in formats and args.skip > 0:
+            args.skip -= 1
+            process.Continue()
+            continue
         if reason == lldb.eStopReasonBreakpoint and pc in formats:
             name, fmt = formats[pc]
             frame = thread.GetFrameAtIndex(0)
@@ -141,6 +150,11 @@ def main():
                 word = process.ReadUnsignedFromMemory(BIAS + address, 4, error)
                 values.append("[0x%x]=%s" % (address, "0x%x" % word if error.Success() else "?"))
             caller = frame.FindRegister("lr").GetValueAsUnsigned()
+            if "r" in fmt:
+                # report the return value: a one-shot stop at the return address
+                returning = target.BreakpointCreateByAddress(caller)
+                returning.SetOneShot(True)
+                returns[caller] = name
             print("%s(%s) from 0x%x" % (name[:50], ", ".join(values), caller & 0xffffffff), flush=True)
             if args.explain:
                 if not table:
@@ -151,6 +165,11 @@ def main():
                     if caller_frame.IsValid():
                         print("    frame %d pc 0x%x" % (depth, caller_frame.GetPC() & 0xffffffff))
             hits += 1
+            process.Continue()
+            continue
+        if reason == lldb.eStopReasonBreakpoint and pc in returns:
+            print("  %s returned 0x%x" % (returns.pop(pc)[:50],
+                  thread.GetFrameAtIndex(0).FindRegister("x0").GetValueAsUnsigned() & 0xffffffff), flush=True)
             process.Continue()
             continue
         if reason in (lldb.eStopReasonException, lldb.eStopReasonSignal):

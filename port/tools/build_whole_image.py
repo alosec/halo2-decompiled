@@ -618,9 +618,20 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
         retail function nobody recovered (a compiler-generated destructor
         without a tag, an SDK class's method the port's shim implements)."""
         result[symbol] = start
+        owner = re.match(r'\?\?_7([A-Za-z_]\w*)@@6B', symbol)
         for index, slot in enumerate(slots):
             word = word_at.get(start + 4 * index)
-            if slot and word is not None and 0x12000 <= word < 0x379c4c and word not in mapped:
+            if not slot or word is None or not 0x12000 <= word < 0x379c4c or word in mapped:
+                continue
+            # only the class's own functions stand in: a base class's default
+            # in a slot the class overrides would quietly do the wrong thing,
+            # where the retail address traps with its name
+            slot_class = qualified_name(slot)
+            slot_class = slot_class.split("::")[-2] if slot_class and "::" in slot_class else None
+            deleting = re.match(r'\?\?_[EG]([A-Za-z_]\w*)@@', slot)
+            if deleting:
+                slot_class = deleting.group(1)
+            if owner and slot_class == owner.group(1):
                 bind_retail_vtables.patches.append((start + 4 * index, slot))
 
     for symbol, slots in seen.items():

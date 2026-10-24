@@ -31,6 +31,8 @@ IDIOMS = [
     (rb"\xb0\x01\xc2.\x00", "1", "mov al, 1; ret n"),
     (rb"\x83\xc8\xff\xc3", "-1", "or eax, -1; ret"),
     (rb"\x83\xc8\xff\xc2.\x00", "-1", "or eax, -1; ret n"),
+    (rb"\x6a(.)\x58\xc3", "imm8", "push imm8; pop eax; ret"),
+    (rb"\x6a(.)\x58\xc2.\x00", "imm8", "push imm8; pop eax; ret n"),
     (rb"\xb8(....)\xc3", "imm", "mov eax, imm; ret"),
     (rb"\xb8(....)\xc2.\x00", "imm", "mov eax, imm; ret n"),
 ]
@@ -64,6 +66,8 @@ def main():
                 m = re.fullmatch(pattern, body, re.S)
                 if not m:
                     continue
+                if value == "imm8":
+                    value = str(struct.unpack('<b', m.group(1))[0])
                 if value == "imm":
                     value = f"0x{struct.unpack('<I', m.group(1))[0]:x}"
                 found.append((address, value, idiom, row["owner"]))

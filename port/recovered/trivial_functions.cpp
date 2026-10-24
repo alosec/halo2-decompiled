@@ -92,6 +92,10 @@ long function_333120(void) { return 0x80004005; }
 // @retail 0x333128
 long function_333128(void) { return 0x80004005; }
 
+/* push imm8; pop eax; ret (xdk:xvoice) */
+// @retail 0x334304
+long function_334304(void) { return 4; }
+
 /* ret (xdk:xvoice) */
 // @retail 0x3361a4
 void function_3361a4(void) {}
