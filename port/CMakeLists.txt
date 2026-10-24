@@ -3511,10 +3511,22 @@ target_compile_options(h2_gpu PRIVATE -Wall -Wextra -Werror
 target_link_libraries(h2_gpu PUBLIC h2_port_support "-framework Metal" "-framework QuartzCore"
                       "-framework Foundation")
 
+# The mixer behind the guest DirectSound runtime's voice commands
+# (src/audio/, h2/audio_protocol.h).
+add_library(h2_audio STATIC
+    src/audio/audio_host.cpp
+    src/audio/mixer.cpp
+    src/audio/xbox_adpcm.cpp
+)
+target_include_directories(h2_audio PUBLIC src include)
+target_compile_features(h2_audio PUBLIC cxx_std_20)
+target_compile_options(h2_audio PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(h2_audio PUBLIC h2_port_support SDL3::SDL3)
+
 add_executable(halo2-port src/main.cpp)
 target_compile_features(halo2-port PRIVATE cxx_std_20)
 target_compile_options(halo2-port PRIVATE -Wall -Wextra -Wpedantic -Werror)
-target_link_libraries(halo2-port PRIVATE h2_port_support h2_gpu SDL3::SDL3)
+target_link_libraries(halo2-port PRIVATE h2_port_support h2_gpu h2_audio SDL3::SDL3)
 
 if(APPLE)
     set_target_properties(halo2-port PROPERTIES OSX_ARCHITECTURES arm64)

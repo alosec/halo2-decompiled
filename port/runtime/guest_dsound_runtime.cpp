@@ -1,29 +1,34 @@
-/* DirectSound, the WMA in-memory decoder and the XHV voice engine as a silent
- * native device for whole images.
+/* DirectSound, the WMA in-memory decoder and the XHV voice engine for whole
+ * images, played by the host mixer.
  *
  * Every object keeps the state the game sets (volumes, mix bins, pitch, 3D
  * parameters, play/pause state, effect data) and reports it back, so the
- * recovered sound driver runs its normal logic; nothing is mixed or output.
- * A host audio backend can attach through h2_dsound_attach_backend: its hooks
- * receive buffer data, stream packets and state changes at the points where a
- * real mixer would consume them.
+ * recovered sound driver runs its normal logic. Each audible change is also
+ * sent to the host mixer as an h2_audio_command (h2/audio_protocol.h,
+ * host_h2_audio_command), which decodes and mixes buffer data and stream
+ * packets straight from guest memory.
  *
- * Timing (chosen so the driver's streaming logic progresses as on hardware):
- *  - stream packets play back in order, each taking the time its frames need
- *    at the stream's rate (the format's rate until SetPitch, then 48 kHz
- *    scaled by pitch/4096 octaves, the convention the driver's pitch offsets
- *    use). They complete only in DirectSoundDoWork, which the driver calls
- *    every frame, so completion callbacks never re-enter Process or GetStatus.
- *    A gap between DoWork calls counts at most k_max_step_ns, so a stall
- *    (loading) does not complete a burst of packets at once.
- *  - a non-looping buffer with data stops after its remaining frames have
- *    played; looping buffers and buffers without data (mix-in and effect-input
+ * Timing is the host's: the mixer reports how far each voice has played
+ * (host_h2_audio_status), in real time even headless.
+ *  - stream packets complete once the mixer has read the last of their data;
+ *    the completions (and their callbacks) run only in DirectSoundDoWork,
+ *    which the driver calls every frame, so callbacks never re-enter Process
+ *    or GetStatus. Flush drops the mixer's queue before the packets complete
+ *    with E_ABORT.
+ *  - a non-looping buffer with data stops when the mixer reaches its end;
+ *    looping buffers and buffers without data (mix-in and effect-input
  *    buffers) play until stopped.
+ * Without a host voice (an older host), packets complete at the next DoWork.
+ *
+ * Not sent (kept only for the game to read back): filters, LFOs, envelopes,
+ * I3DL2 source settings, cone and doppler settings, DSP effect data; the WMA
+ * decoder is a silent stand-in.
  *
  * Written from public DirectSound/XMediaObject semantics and the recovered
  * call sites (src/unknown_21e330.cpp, src/unknown_2ae170.cpp, src/network_voice.cpp
  * and their *_native.cpp replacements); see port/include/xdk/dsound.h. */
 #include "h2/host_abi.h"
+#include "h2/audio_protocol.h"
 #include <xtl.h>
 #include <dsound.h>
 #include <xhv.h>
@@ -31,26 +36,8 @@
 #include <new>
 #include <string.h>
 
-/* ---- the backend attachment point ---- */
-
-struct h2_dsound_backend
-{
-    /* buffer play state, volume, mix bins, position or data changed */
-    void (*buffer_changed)(IDirectSoundBuffer *buffer);
-    /* a stream accepted a packet; the data stays valid only until the packet
-     * completes, so a backend must copy or consume it before then */
-    void (*stream_packet)(IDirectSoundStream *stream, const WAVEFORMATEX *format,
-                          const void *data, DWORD size);
-    /* a stream dropped its queued packets (Flush/FlushEx/Release) */
-    void (*stream_flushed)(IDirectSoundStream *stream);
-    /* stream volume, pitch, mix bins, filter or envelope changed */
-    void (*stream_changed)(IDirectSoundStream *stream);
-    /* listener or DSP effect state changed */
-    void (*device_changed)(void);
-};
-
 /* the library's count of mixer deadline misses (function_21ec00 compares it
- * each frame); with no mixer it never moves */
+ * each frame); the host mixer never misses one */
 extern "C" DWORD g_dwDirectSoundDeltaPanicCount;
 DWORD g_dwDirectSoundDeltaPanicCount = 0;
 
@@ -67,15 +54,43 @@ constexpr DWORD k_max_decoders = 64;
 constexpr DWORD k_effect_count = 15;      /* function_191420 expects a 15-effect image */
 constexpr DWORD k_effect_state_dwords = 0x100;
 constexpr DWORD k_buffer_arena_size = 0x40000;
-constexpr double k_ns_per_second = 1000000000.0;
-constexpr unsigned long long k_max_step_ns = 250000000ull;
 constexpr double k_pitch_base_rate = 48000.0;
+constexpr DWORD k_buffer_voice_base = 1;       /* host voice ids: buffers */
+constexpr DWORD k_stream_voice_base = 0x1000;  /* host voice ids: streams */
+constexpr DWORD k_flags_3d = 0x00000010;       /* DSBCAPS_CTRL3D */
+constexpr DWORD k_flags_mixin = 0x00003000;    /* DSBCAPS_FXIN | DSBCAPS_MIXIN */
 
-const h2_dsound_backend *g_backend = nullptr;
+/* ---- the host mixer ---- */
 
-unsigned long long now_ns()
+h2_audio_u32 guest_address(const void *pointer)
 {
-    return host_h2_performance_counter();
+    return static_cast<h2_audio_u32>(reinterpret_cast<DWORD>(pointer));
+}
+
+void audio_begin(h2_audio_command *command, DWORD kind, DWORD voice)
+{
+    memset(command, 0, sizeof(*command));
+    command->kind = kind;
+    command->voice = voice;
+}
+
+void audio_send(const h2_audio_command *command)
+{
+    host_h2_audio_command(command);
+}
+
+void audio_simple(DWORD kind, DWORD voice, DWORD flags)
+{
+    h2_audio_command command;
+    audio_begin(&command, kind, voice);
+    command.flags = flags;
+    audio_send(&command);
+}
+
+bool audio_status(DWORD voice, h2_audio_status *status)
+{
+    memset(status, 0, sizeof(*status));
+    return host_h2_audio_status(voice, status) != 0;
 }
 
 struct mixbin_state
@@ -92,6 +107,32 @@ void mixbins_set(mixbin_state *state, LPCDSMIXBINS mixbins)
     DWORD count = mixbins->dwMixBinCount < k_max_mixbins ? mixbins->dwMixBinCount : k_max_mixbins;
     memcpy(state->pairs, mixbins->lpMixBinVolumePairs, count * sizeof(DSMIXBINVOLUMEPAIR));
     state->count = count;
+}
+
+/* A voice created without mix bins gets the default assignment the game's
+ * startup relies on: c_sound_effects::initialize (src/unknown_2ae170.cpp)
+ * only sets the volumes of bins 6..9 (and 10 on a 3D voice) on effect
+ * buffers it created without mix bins, so a mono voice starts on the four 3D
+ * speaker bins (and the I3DL2 send when 3D); a stereo voice starts on front
+ * left and right. */
+void mixbins_default(mixbin_state *state, DWORD channels, bool spatial)
+{
+    static const DWORD k_mono[5] = { 6, 7, 8, 9, 10 };
+    state->count = 0;
+    if (channels == 2)
+    {
+        state->pairs[0].dwMixBin = 0;
+        state->pairs[1].dwMixBin = 1;
+        state->count = 2;
+    }
+    else
+    {
+        state->count = spatial ? 5 : 4;
+        for (DWORD i = 0; i < state->count; i++)
+            state->pairs[i].dwMixBin = k_mono[i];
+    }
+    for (DWORD i = 0; i < state->count; i++)
+        state->pairs[i].lVolume = 0;
 }
 
 /* SetMixBinVolumes changes the volume of bins already assigned, by bin */
@@ -113,6 +154,33 @@ void mixbins_get(const mixbin_state *state, LPDSVOICEPROPS props)
     memset(props, 0, sizeof(*props));
     props->dwMixBinCount = state->count;
     memcpy(props->MixBinVolumePairs, state->pairs, state->count * sizeof(DSMIXBINVOLUMEPAIR));
+}
+
+void audio_fill_mixbins(h2_audio_command *command, const mixbin_state *state)
+{
+    command->mixbin_count = state->count;
+    for (DWORD i = 0; i < state->count; i++)
+    {
+        command->mixbins[i].bin = state->pairs[i].dwMixBin;
+        command->mixbins[i].volume = state->pairs[i].lVolume;
+    }
+}
+
+void audio_send_mixbins(DWORD voice, const mixbin_state *state)
+{
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_MIXBINS, voice);
+    audio_fill_mixbins(&command, state);
+    audio_send(&command);
+}
+
+void audio_send_volume(DWORD voice, LONG volume, DWORD headroom)
+{
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_VOLUME, voice);
+    command.volume = volume;
+    command.headroom = (h2_audio_s32)headroom;
+    audio_send(&command);
 }
 
 /* the playback clock of one voice: frames per second and bytes per frame */
@@ -139,6 +207,8 @@ struct voice_format
         }
     }
 
+    /* the format's rate until SetPitch, then 48 kHz scaled by pitch/4096
+       octaves, the convention the driver's pitch offsets use */
     double frames_per_second() const
     {
         if (pitch_set)
@@ -146,22 +216,24 @@ struct voice_format
         return (double)wfx.nSamplesPerSec;
     }
 
-    double frames_in(DWORD bytes) const
+    void describe(h2_audio_format *format) const
     {
-        if (!wfx.nBlockAlign)
-            return 0.0;
-        return (double)bytes * (double)samples_per_block / (double)wfx.nBlockAlign;
-    }
-
-    /* frames played in elapsed nanoseconds; an unknown rate plays instantly */
-    double frames_after(unsigned long long elapsed) const
-    {
-        double rate = frames_per_second();
-        if (rate <= 0.0)
-            return 1e300;
-        return (double)elapsed * rate / k_ns_per_second;
+        format->tag = wfx.wFormatTag;
+        format->channels = wfx.nChannels;
+        format->samples_per_second = wfx.nSamplesPerSec;
+        format->block_align = wfx.nBlockAlign;
+        format->bits_per_sample = wfx.wBitsPerSample;
+        format->samples_per_block = samples_per_block;
     }
 };
+
+void audio_send_frequency(DWORD voice, const voice_format &format)
+{
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_FREQUENCY, voice);
+    command.frequency = (float)format.frames_per_second();
+    audio_send(&command);
+}
 
 struct voice_3d
 {
@@ -188,8 +260,6 @@ struct h2_ds_buffer : IDirectSoundBuffer
     BYTE *data;
     DWORD data_size;
     DWORD cursor;
-    double frames_left;           /* non-looping playback still to play */
-    unsigned long long last_ns;
     bool playing;
     bool looping;
     bool paused;
@@ -212,39 +282,40 @@ h2_ds_buffer *buffer_from(LPDIRECTSOUNDBUFFER pointer)
     return buffer;
 }
 
-void buffer_changed(h2_ds_buffer *buffer)
+DWORD buffer_voice(const h2_ds_buffer *buffer)
 {
-    if (g_backend && g_backend->buffer_changed)
-        g_backend->buffer_changed(buffer);
+    return k_buffer_voice_base + (DWORD)(buffer - g_buffers);
 }
 
-bool buffer_plays_forever(const h2_ds_buffer *buffer)
+void buffer_send_data(h2_ds_buffer *buffer)
 {
-    return buffer->looping || !buffer->data || !buffer->data_size;
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_DATA, buffer_voice(buffer));
+    command.address = guest_address(buffer->data);
+    command.size = buffer->data ? buffer->data_size : 0;
+    audio_send(&command);
 }
 
-void buffer_advance(h2_ds_buffer *buffer)
+void buffer_send_3d(h2_ds_buffer *buffer)
 {
-    unsigned long long now = now_ns();
-    unsigned long long elapsed = now - buffer->last_ns;
-    buffer->last_ns = now;
-    if (!buffer->playing || buffer->paused || buffer_plays_forever(buffer))
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_3D, buffer_voice(buffer));
+    memcpy(command.position, buffer->spatial.position, sizeof(command.position));
+    command.min_distance = buffer->spatial.min_distance;
+    command.max_distance = buffer->spatial.max_distance;
+    command.rolloff = buffer->spatial.rolloff_factor;
+    audio_send(&command);
+}
+
+/* the host's view of whether the buffer still plays (a non-looping buffer
+ * stops at its end) and where its cursor is */
+void buffer_sync(h2_ds_buffer *buffer)
+{
+    h2_audio_status status;
+    if (!audio_status(buffer_voice(buffer), &status))
         return;
-    buffer->frames_left -= buffer->format.frames_after(elapsed);
-    if (buffer->frames_left <= 0.0)
-    {
-        buffer->frames_left = 0.0;
-        buffer->playing = false;
-        buffer->cursor = 0;
-        buffer_changed(buffer);
-    }
-}
-
-void buffer_rewind_clock(h2_ds_buffer *buffer)
-{
-    buffer->last_ns = now_ns();
-    DWORD left = buffer->cursor < buffer->data_size ? buffer->data_size - buffer->cursor : 0;
-    buffer->frames_left = buffer->format.frames_in(left);
+    buffer->playing = (status.flags & H2_AUDIO_STATUS_PLAYING) != 0;
+    buffer->cursor = status.cursor;
 }
 
 HRESULT buffer_create(LPCDSBUFFERDESC description, LPDIRECTSOUNDBUFFER *result)
@@ -282,14 +353,30 @@ HRESULT buffer_create(LPCDSBUFFERDESC description, LPDIRECTSOUNDBUFFER *result)
     buffer->format.set(description->lpwfxFormat);
     buffer->data = data;
     buffer->data_size = size;
-    buffer->last_ns = now_ns();
     buffer->spatial.max_distance = 1000000000.0f;
     buffer->spatial.min_distance = 1.0f;
     buffer->spatial.rolloff_factor = 1.0f;
     buffer->spatial.doppler_factor = 1.0f;
-    mixbins_set(&buffer->mixbins, description->lpMixBins);
+    bool spatial = (buffer->flags & k_flags_3d) != 0;
+    if (description->lpMixBins)
+        mixbins_set(&buffer->mixbins, description->lpMixBins);
+    else
+        mixbins_default(&buffer->mixbins, buffer->format.wfx.nChannels, spatial);
     *result = buffer;
-    buffer_changed(buffer);
+
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_CREATE, buffer_voice(buffer));
+    command.flags = H2_AUDIO_VOICE_BUFFER | (spatial ? H2_AUDIO_VOICE_3D : 0) |
+                    ((buffer->flags & k_flags_mixin) ? H2_AUDIO_VOICE_MIXIN : 0);
+    command.input_mixbin = buffer->input_mixbin;
+    buffer->format.describe(&command.format);
+    command.frequency = (float)buffer->format.frames_per_second();
+    audio_fill_mixbins(&command, &buffer->mixbins);
+    audio_send(&command);
+    if (data)
+        buffer_send_data(buffer);
+    if (spatial)
+        buffer_send_3d(buffer);
     return S_OK;
 }
 
@@ -298,7 +385,6 @@ HRESULT buffer_create(LPCDSBUFFERDESC description, LPDIRECTSOUNDBUFFER *result)
 struct queued_packet
 {
     XMEDIAPACKET packet;
-    double frames_left;
 };
 
 struct h2_ds_stream final : IDirectSoundStream
@@ -321,7 +407,8 @@ struct h2_ds_stream final : IDirectSoundStream
     queued_packet queue[k_max_packets];
     DWORD queue_head;
     DWORD queue_count;
-    unsigned long long last_ns;
+    DWORD submitted;        /* packets sent to the host */
+    DWORD retired;          /* packets completed here; trails the host's count */
     bool paused;
     bool synch_paused;      /* DSSTREAMPAUSE_SYNCHPLAYBACK: waits for SynchPlayback */
     bool flush_pending;     /* FlushEx(ASYNC): packets drop at the next DoWork */
@@ -353,10 +440,10 @@ h2_ds_stream *stream_from(LPDIRECTSOUNDSTREAM pointer)
     return stream_slot(index);
 }
 
-void stream_changed(h2_ds_stream *stream)
+DWORD stream_voice(h2_ds_stream *stream)
 {
-    if (g_backend && g_backend->stream_changed)
-        g_backend->stream_changed(stream);
+    unsigned char *address = reinterpret_cast<unsigned char *>(stream);
+    return k_stream_voice_base + (DWORD)(address - g_stream_storage[0]) / sizeof(h2_ds_stream);
 }
 
 /* Callers pop the packet before completing it: the driver's callback
@@ -385,41 +472,36 @@ bool stream_pop(h2_ds_stream *stream, XMEDIAPACKET *packet)
     return true;
 }
 
+/* the host stops reading the packets first: their data may be released by
+ * the completion callbacks */
 void stream_flush_now(h2_ds_stream *stream, bool notify)
 {
     stream->flush_pending = false;
-    if (stream->queue_count && g_backend && g_backend->stream_flushed)
-        g_backend->stream_flushed(stream);
+    if (stream->queue_count)
+        audio_simple(H2_AUDIO_FLUSH, stream_voice(stream), 0);
+    stream->retired = stream->submitted;
     XMEDIAPACKET packet;
     while (stream->in_use && stream_pop(stream, &packet))
         stream_complete(stream, packet, k_e_abort, notify);
-    if (stream->in_use)
-        stream->last_ns = now_ns();
 }
 
-void stream_advance(h2_ds_stream *stream, unsigned long long now)
+/* completes the packets the host has finished playing */
+void stream_advance(h2_ds_stream *stream)
 {
     if (stream->flush_pending)
         stream_flush_now(stream, true);
-    unsigned long long elapsed = now - stream->last_ns;
-    stream->last_ns = now;
-    if (stream->paused || !stream->queue_count)
+    if (!stream->queue_count)
         return;
-    if (elapsed > k_max_step_ns)
-        elapsed = k_max_step_ns;
-
-    double frames = stream->format.frames_after(elapsed);
-    while (stream->in_use && !stream->paused && stream->queue_count)
+    h2_audio_status status;
+    DWORD completed = audio_status(stream_voice(stream), &status) ? status.packets_completed
+                                                                  : stream->submitted;
+    /* a callback may submit (the count grows) or flush (retired jumps to
+       submitted); either way stop at the host's count */
+    while (stream->in_use && stream->queue_count && (LONG)(completed - stream->retired) > 0)
     {
-        queued_packet &head = stream->queue[stream->queue_head];
-        if (head.frames_left > frames)
-        {
-            head.frames_left -= frames;
-            break;
-        }
-        frames -= head.frames_left;
         XMEDIAPACKET packet;
         stream_pop(stream, &packet);
+        stream->retired++;
         stream_complete(stream, packet, S_OK, true);
     }
 }
@@ -464,7 +546,9 @@ HRESULT h2_ds_stream::Flush()
 /* Silent stand-in: it pulls the compressed data through the title's read
  * callback as a decoder would (the callback also drops cache references) and
  * returns silence at an assumed 128 kbit/s against 16-bit 44.1 kHz stereo,
- * so music lasts roughly its real length and ends when the data does. */
+ * so music lasts roughly its real length and ends when the data does. The
+ * data is WMA in ASF (it starts with the ASF header object GUID); decoding it
+ * needs a WMA decoder, and there is no permissively licensed one to use. */
 constexpr DWORD k_wma_expansion = 11;
 
 struct h2_wma_decoder final : XMediaObject
@@ -616,10 +700,17 @@ bool device_valid(LPDIRECTSOUND pointer)
     return pointer == &g_device && g_device.created;
 }
 
-void device_changed()
+/* the listener, as the mixer positions 3D voices against it */
+void device_send_listener()
 {
-    if (g_backend && g_backend->device_changed)
-        g_backend->device_changed();
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_LISTENER, 0);
+    memcpy(command.position, g_device.position, sizeof(command.position));
+    memcpy(command.front, g_device.orientation, sizeof(command.front));
+    memcpy(command.top, g_device.orientation + 3, sizeof(command.top));
+    command.distance_factor = g_device.distance_factor;
+    command.rolloff = g_device.rolloff_factor;
+    audio_send(&command);
 }
 
 LPDSEFFECTMAP effect_map(DWORD index)
@@ -666,11 +757,6 @@ long xhv_find_remote(const XUID &xuid)
 
 } // namespace
 
-extern "C" void h2_dsound_attach_backend(const h2_dsound_backend *backend)
-{
-    g_backend = backend;
-}
-
 /* ---- DirectSound entry points ---- */
 
 extern "C" HRESULT WINAPI DirectSoundCreate(const void *, LPDIRECTSOUND *ppDS, LPVOID)
@@ -686,6 +772,7 @@ extern "C" HRESULT WINAPI DirectSoundCreate(const void *, LPDIRECTSOUND *ppDS, L
         g_device.rolloff_factor = 1.0f;
         g_device.orientation[2] = 1.0f;
         g_device.orientation[4] = 1.0f;
+        device_send_listener();
     }
     g_device.references++;
     *ppDS = &g_device;
@@ -697,17 +784,14 @@ extern "C" HRESULT WINAPI DirectSoundCreateBuffer(LPCDSBUFFERDESC pdsbd, LPDIREC
     return buffer_create(pdsbd, ppBuffer);
 }
 
-/* The mixer's periodic work: retires played stream packets (running their
- * completion callbacks) and ends non-looping buffers. */
+/* The mixer's periodic work: retires the stream packets the host has played
+ * (running their completion callbacks); buffers report the host's state when
+ * asked. */
 extern "C" void WINAPI DirectSoundDoWork(void)
 {
-    unsigned long long now = now_ns();
     for (DWORD i = 0; i < k_max_streams; i++)
         if (g_stream_constructed[i] && stream_slot(i)->in_use)
-            stream_advance(stream_slot(i), now);
-    for (DWORD i = 0; i < k_max_buffers; i++)
-        if (g_buffers[i].in_use)
-            buffer_advance(&g_buffers[i]);
+            stream_advance(stream_slot(i));
 }
 
 extern "C" ULONG WINAPI IDirectSound_Release(LPDIRECTSOUND pDirectSound)
@@ -770,19 +854,30 @@ extern "C" HRESULT WINAPI IDirectSound_CreateSoundStream(LPDIRECTSOUND pDirectSo
     stream->format.set(pdssd->lpwfxFormat);
     stream->queue_head = 0;
     stream->queue_count = 0;
-    stream->last_ns = now_ns();
+    stream->submitted = 0;
+    stream->retired = 0;
     stream->paused = false;
     stream->synch_paused = false;
     stream->flush_pending = false;
     stream->volume = 0;
     stream->headroom = 0;
-    mixbins_set(&stream->mixbins, pdssd->lpMixBins);
+    if (pdssd->lpMixBins)
+        mixbins_set(&stream->mixbins, pdssd->lpMixBins);
+    else
+        mixbins_default(&stream->mixbins, stream->format.wfx.nChannels, false);
     memset(&stream->filter, 0, sizeof(stream->filter));
     memset(stream->lfo, 0, sizeof(stream->lfo));
     memset(stream->envelope, 0, sizeof(stream->envelope));
     stream->output_buffer = nullptr;
     *ppStream = stream;
-    stream_changed(stream);
+
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_CREATE, stream_voice(stream));
+    command.flags = H2_AUDIO_VOICE_STREAM;
+    stream->format.describe(&command.format);
+    command.frequency = (float)stream->format.frames_per_second();
+    audio_fill_mixbins(&command, &stream->mixbins);
+    audio_send(&command);
     return S_OK;
 }
 
@@ -801,7 +896,11 @@ extern "C" HRESULT WINAPI IDirectSound_SetMixBinHeadroom(LPDIRECTSOUND pDirectSo
     if (!device_valid(pDirectSound) || dwMixBin >= k_mixbin_count)
         return E_INVALIDARG;
     g_device.mixbin_headroom[dwMixBin] = dwHeadroom;
-    device_changed();
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_MIXBIN_HEADROOM, 0);
+    command.offset = dwMixBin;
+    command.headroom = (h2_audio_s32)dwHeadroom;
+    audio_send(&command);
     return S_OK;
 }
 
@@ -814,7 +913,6 @@ extern "C" HRESULT WINAPI IDirectSound_SetEffectData(LPDIRECTSOUND pDirectSound,
     if (!map || !pvData || dwOffset > map->dwStateSize * 4 || dwDataSize > map->dwStateSize * 4 - dwOffset)
         return E_INVALIDARG;
     memcpy(static_cast<BYTE *>(map->lpvStateSegment) + dwOffset, pvData, dwDataSize);
-    device_changed();
     return S_OK;
 }
 
@@ -837,7 +935,7 @@ extern "C" HRESULT WINAPI IDirectSound_SetPosition(LPDIRECTSOUND pDirectSound, F
     g_device.position[0] = x;
     g_device.position[1] = y;
     g_device.position[2] = z;
-    device_changed();
+    device_send_listener();
     return S_OK;
 }
 
@@ -848,7 +946,7 @@ extern "C" HRESULT WINAPI IDirectSound_SetOrientation(LPDIRECTSOUND pDirectSound
         return E_INVALIDARG;
     FLOAT values[6] = { xFront, yFront, zFront, xTop, yTop, zTop };
     memcpy(g_device.orientation, values, sizeof(values));
-    device_changed();
+    device_send_listener();
     return S_OK;
 }
 
@@ -857,7 +955,7 @@ extern "C" HRESULT WINAPI IDirectSound_SetDistanceFactor(LPDIRECTSOUND pDirectSo
     if (!device_valid(pDirectSound))
         return E_INVALIDARG;
     g_device.distance_factor = flDistanceFactor;
-    device_changed();
+    device_send_listener();
     return S_OK;
 }
 
@@ -866,7 +964,6 @@ extern "C" HRESULT WINAPI IDirectSound_SetDopplerFactor(LPDIRECTSOUND pDirectSou
     if (!device_valid(pDirectSound))
         return E_INVALIDARG;
     g_device.doppler_factor = flDopplerFactor;
-    device_changed();
     return S_OK;
 }
 
@@ -875,11 +972,11 @@ extern "C" HRESULT WINAPI IDirectSound_SetRolloffFactor(LPDIRECTSOUND pDirectSou
     if (!device_valid(pDirectSound))
         return E_INVALIDARG;
     g_device.rolloff_factor = flRolloffFactor;
-    device_changed();
+    device_send_listener();
     return S_OK;
 }
 
-/* deferred 3D settings apply at once: there is no mixer to batch them for */
+/* deferred 3D settings apply at once (the mixer takes each as it comes) */
 extern "C" HRESULT WINAPI IDirectSound_CommitDeferredSettings(LPDIRECTSOUND pDirectSound)
 {
     return device_valid(pDirectSound) ? S_OK : E_INVALIDARG;
@@ -890,7 +987,6 @@ extern "C" HRESULT WINAPI IDirectSound_SynchPlayback(LPDIRECTSOUND pDirectSound)
 {
     if (!device_valid(pDirectSound))
         return E_INVALIDARG;
-    unsigned long long now = now_ns();
     for (DWORD i = 0; i < k_max_streams; i++)
     {
         h2_ds_stream *stream = stream_slot(i);
@@ -898,8 +994,7 @@ extern "C" HRESULT WINAPI IDirectSound_SynchPlayback(LPDIRECTSOUND pDirectSound)
         {
             stream->synch_paused = false;
             stream->paused = false;
-            stream->last_ns = now;
-            stream_changed(stream);
+            audio_simple(H2_AUDIO_PAUSE, stream_voice(stream), 0);
         }
     }
     return S_OK;
@@ -915,7 +1010,8 @@ extern "C" ULONG WINAPI IDirectSoundBuffer_Release(LPDIRECTSOUNDBUFFER pBuffer)
     if (--buffer->references)
         return buffer->references;
     buffer->playing = false;
-    buffer_changed(buffer);
+    /* the host lets go of the data (and of the streams routed here) first */
+    audio_simple(H2_AUDIO_RELEASE, buffer_voice(buffer), 0);
     /* arena memory is not reused: the title creates its buffers once */
     buffer->in_use = false;
     return 0;
@@ -929,8 +1025,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetBufferData(LPDIRECTSOUNDBUFFER p
     buffer->data = static_cast<BYTE *>(pvBufferData);
     buffer->data_size = pvBufferData ? dwBufferBytes : 0;
     buffer->cursor = 0;
-    buffer_rewind_clock(buffer);
-    buffer_changed(buffer);
+    buffer_send_data(buffer);
     return S_OK;
 }
 
@@ -939,10 +1034,11 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetCurrentPosition(LPDIRECTSOUNDBUF
     h2_ds_buffer *buffer = buffer_from(pBuffer);
     if (!buffer)
         return E_INVALIDARG;
-    buffer_advance(buffer);
     buffer->cursor = dwPlayCursor < buffer->data_size ? dwPlayCursor : 0;
-    buffer_rewind_clock(buffer);
-    buffer_changed(buffer);
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_CURSOR, buffer_voice(buffer));
+    command.offset = buffer->cursor;
+    audio_send(&command);
     return S_OK;
 }
 
@@ -982,12 +1078,9 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_Play(LPDIRECTSOUNDBUFFER pBuffer, D
     h2_ds_buffer *buffer = buffer_from(pBuffer);
     if (!buffer)
         return E_INVALIDARG;
-    buffer_advance(buffer);
     buffer->looping = (dwFlags & DSBPLAY_LOOPING) != 0;
-    if (!buffer->playing)
-        buffer_rewind_clock(buffer);
     buffer->playing = true;
-    buffer_changed(buffer);
+    audio_simple(H2_AUDIO_PLAY, buffer_voice(buffer), buffer->looping ? H2_AUDIO_PLAY_LOOPING : 0);
     return S_OK;
 }
 
@@ -997,21 +1090,19 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_Pause(LPDIRECTSOUNDBUFFER pBuffer, 
     h2_ds_buffer *buffer = buffer_from(pBuffer);
     if (!buffer)
         return E_INVALIDARG;
-    buffer_advance(buffer);
     buffer->paused = dwPause == DSBPAUSE_PAUSE;
-    buffer_changed(buffer);
+    audio_simple(H2_AUDIO_PAUSE, buffer_voice(buffer), buffer->paused ? 1 : 0);
     return S_OK;
 }
 
-/* stops at once; the timestamp and envelope-release flags need a mixer */
+/* stops at once; the timestamp and envelope-release flags are not modelled */
 extern "C" HRESULT WINAPI IDirectSoundBuffer_StopEx(LPDIRECTSOUNDBUFFER pBuffer, REFERENCE_TIME, DWORD)
 {
     h2_ds_buffer *buffer = buffer_from(pBuffer);
     if (!buffer)
         return E_INVALIDARG;
     buffer->playing = false;
-    buffer->last_ns = now_ns();
-    buffer_changed(buffer);
+    audio_simple(H2_AUDIO_STOP, buffer_voice(buffer), 0);
     return S_OK;
 }
 
@@ -1020,7 +1111,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_GetStatus(LPDIRECTSOUNDBUFFER pBuff
     h2_ds_buffer *buffer = buffer_from(pBuffer);
     if (!buffer || !pdwStatus)
         return E_INVALIDARG;
-    buffer_advance(buffer);
+    buffer_sync(buffer);
     *pdwStatus = buffer->playing ? k_buffer_status_playing : 0;
     return S_OK;
 }
@@ -1031,7 +1122,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetVolume(LPDIRECTSOUNDBUFFER pBuff
     if (!buffer)
         return E_INVALIDARG;
     buffer->volume = lVolume;
-    buffer_changed(buffer);
+    audio_send_volume(buffer_voice(buffer), buffer->volume, buffer->headroom);
     return S_OK;
 }
 
@@ -1041,7 +1132,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetHeadroom(LPDIRECTSOUNDBUFFER pBu
     if (!buffer)
         return E_INVALIDARG;
     buffer->headroom = dwHeadroom;
-    buffer_changed(buffer);
+    audio_send_volume(buffer_voice(buffer), buffer->volume, buffer->headroom);
     return S_OK;
 }
 
@@ -1051,7 +1142,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetMixBins(LPDIRECTSOUNDBUFFER pBuf
     if (!buffer)
         return E_INVALIDARG;
     mixbins_set(&buffer->mixbins, pMixBins);
-    buffer_changed(buffer);
+    audio_send_mixbins(buffer_voice(buffer), &buffer->mixbins);
     return S_OK;
 }
 
@@ -1061,7 +1152,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetMixBinVolumes(LPDIRECTSOUNDBUFFE
     if (!buffer)
         return E_INVALIDARG;
     mixbins_set_volumes(&buffer->mixbins, pMixBins);
-    buffer_changed(buffer);
+    audio_send_mixbins(buffer_voice(buffer), &buffer->mixbins);
     return S_OK;
 }
 
@@ -1071,7 +1162,6 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetFilter(LPDIRECTSOUNDBUFFER pBuff
     if (!buffer || !pFilterDesc)
         return E_INVALIDARG;
     buffer->filter = *pFilterDesc;
-    buffer_changed(buffer);
     return S_OK;
 }
 
@@ -1081,7 +1171,6 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetI3DL2Source(LPDIRECTSOUNDBUFFER 
     if (!buffer || !pds3db)
         return E_INVALIDARG;
     buffer->spatial.i3dl2 = *pds3db;
-    buffer_changed(buffer);
     return S_OK;
 }
 
@@ -1093,7 +1182,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetPosition(LPDIRECTSOUNDBUFFER pBu
     buffer->spatial.position[0] = x;
     buffer->spatial.position[1] = y;
     buffer->spatial.position[2] = z;
-    buffer_changed(buffer);
+    buffer_send_3d(buffer);
     return S_OK;
 }
 
@@ -1103,7 +1192,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetMaxDistance(LPDIRECTSOUNDBUFFER 
     if (!buffer)
         return E_INVALIDARG;
     buffer->spatial.max_distance = flMaxDistance;
-    buffer_changed(buffer);
+    buffer_send_3d(buffer);
     return S_OK;
 }
 
@@ -1113,7 +1202,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetMinDistance(LPDIRECTSOUNDBUFFER 
     if (!buffer)
         return E_INVALIDARG;
     buffer->spatial.min_distance = flMinDistance;
-    buffer_changed(buffer);
+    buffer_send_3d(buffer);
     return S_OK;
 }
 
@@ -1123,7 +1212,7 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetRolloffFactor(LPDIRECTSOUNDBUFFE
     if (!buffer)
         return E_INVALIDARG;
     buffer->spatial.rolloff_factor = flRolloffFactor;
-    buffer_changed(buffer);
+    buffer_send_3d(buffer);
     return S_OK;
 }
 
@@ -1133,7 +1222,6 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetDopplerFactor(LPDIRECTSOUNDBUFFE
     if (!buffer)
         return E_INVALIDARG;
     buffer->spatial.doppler_factor = flDopplerFactor;
-    buffer_changed(buffer);
     return S_OK;
 }
 
@@ -1143,7 +1231,6 @@ extern "C" HRESULT WINAPI IDirectSoundBuffer_SetConeOutsideVolume(LPDIRECTSOUNDB
     if (!buffer)
         return E_INVALIDARG;
     buffer->spatial.cone_outside_volume = lConeOutsideVolume;
-    buffer_changed(buffer);
     return S_OK;
 }
 
@@ -1168,6 +1255,7 @@ extern "C" ULONG WINAPI IDirectSoundStream_Release(LPDIRECTSOUNDSTREAM pStream)
     if (--stream->references)
         return stream->references;
     stream_flush_now(stream, false);
+    audio_simple(H2_AUDIO_RELEASE, stream_voice(stream), 0);
     stream->in_use = false;
     return 0;
 }
@@ -1197,19 +1285,19 @@ extern "C" HRESULT WINAPI IDirectSoundStream_Process(LPDIRECTSOUNDSTREAM pStream
     if (stream->queue_count >= k_max_packets)
         return E_OUTOFMEMORY;
 
-    /* an idle stream starts its clock with its first packet */
-    if (!stream->queue_count)
-        stream->last_ns = now_ns();
     queued_packet &slot = stream->queue[(stream->queue_head + stream->queue_count) % k_max_packets];
     slot.packet = *pInputPacket;
-    slot.frames_left = stream->format.frames_in(pInputPacket->dwMaxSize);
     stream->queue_count++;
+    stream->submitted++;
     if (pInputPacket->pdwCompletedSize)
         *pInputPacket->pdwCompletedSize = 0;
     if (pInputPacket->pdwStatus)
         *pInputPacket->pdwStatus = (DWORD)XMEDIAPACKET_STATUS_PENDING;
-    if (g_backend && g_backend->stream_packet)
-        g_backend->stream_packet(stream, &stream->format.wfx, pInputPacket->pvBuffer, pInputPacket->dwMaxSize);
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SUBMIT, stream_voice(stream));
+    command.address = guest_address(pInputPacket->pvBuffer);
+    command.size = pInputPacket->dwMaxSize;
+    audio_send(&command);
     return S_OK;
 }
 
@@ -1248,32 +1336,18 @@ extern "C" HRESULT WINAPI IDirectSoundStream_Pause(LPDIRECTSOUNDSTREAM pStream, 
     h2_ds_stream *stream = stream_from(pStream);
     if (!stream)
         return E_INVALIDARG;
-    unsigned long long now = now_ns();
     if (dwPause == DSSTREAMPAUSE_RESUME)
     {
-        if (stream->paused)
-            stream->last_ns = now;
         stream->paused = false;
         stream->synch_paused = false;
     }
     else
     {
-        /* time already played still counts; completions wait for DoWork */
-        if (!stream->paused && stream->queue_count)
-        {
-            unsigned long long elapsed = now - stream->last_ns;
-            if (elapsed > k_max_step_ns)
-                elapsed = k_max_step_ns;
-            queued_packet &head = stream->queue[stream->queue_head];
-            head.frames_left -= stream->format.frames_after(elapsed);
-            if (head.frames_left < 0.0)
-                head.frames_left = 0.0;
-        }
-        stream->last_ns = now;
+        /* what already played still completes at the next DoWork */
         stream->paused = true;
         stream->synch_paused = dwPause == DSSTREAMPAUSE_SYNCHPLAYBACK;
     }
-    stream_changed(stream);
+    audio_simple(H2_AUDIO_PAUSE, stream_voice(stream), stream->paused ? 1 : 0);
     return S_OK;
 }
 
@@ -1283,7 +1357,7 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetHeadroom(LPDIRECTSOUNDSTREAM pSt
     if (!stream)
         return E_INVALIDARG;
     stream->headroom = dwHeadroom;
-    stream_changed(stream);
+    audio_send_volume(stream_voice(stream), stream->volume, stream->headroom);
     return S_OK;
 }
 
@@ -1293,7 +1367,7 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetVolume(LPDIRECTSOUNDSTREAM pStre
     if (!stream)
         return E_INVALIDARG;
     stream->volume = lVolume;
-    stream_changed(stream);
+    audio_send_volume(stream_voice(stream), stream->volume, stream->headroom);
     return S_OK;
 }
 
@@ -1304,7 +1378,7 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetPitch(LPDIRECTSOUNDSTREAM pStrea
         return E_INVALIDARG;
     stream->format.pitch = lPitch;
     stream->format.pitch_set = true;
-    stream_changed(stream);
+    audio_send_frequency(stream_voice(stream), stream->format);
     return S_OK;
 }
 
@@ -1314,7 +1388,7 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetMixBins(LPDIRECTSOUNDSTREAM pStr
     if (!stream)
         return E_INVALIDARG;
     mixbins_set(&stream->mixbins, pMixBins);
-    stream_changed(stream);
+    audio_send_mixbins(stream_voice(stream), &stream->mixbins);
     return S_OK;
 }
 
@@ -1324,7 +1398,7 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetMixBinVolumes(LPDIRECTSOUNDSTREA
     if (!stream)
         return E_INVALIDARG;
     mixbins_set_volumes(&stream->mixbins, pMixBins);
-    stream_changed(stream);
+    audio_send_mixbins(stream_voice(stream), &stream->mixbins);
     return S_OK;
 }
 
@@ -1334,7 +1408,6 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetFilter(LPDIRECTSOUNDSTREAM pStre
     if (!stream || !pFilterDesc)
         return E_INVALIDARG;
     stream->filter = *pFilterDesc;
-    stream_changed(stream);
     return S_OK;
 }
 
@@ -1344,7 +1417,6 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetLFO(LPDIRECTSOUNDSTREAM pStream,
     if (!stream || !pLFODesc || pLFODesc->dwLFO > 1)
         return E_INVALIDARG;
     stream->lfo[pLFODesc->dwLFO] = *pLFODesc;
-    stream_changed(stream);
     return S_OK;
 }
 
@@ -1355,7 +1427,6 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetEG(LPDIRECTSOUNDSTREAM pStream, 
         return E_INVALIDARG;
     /* the title only sets the amplitude envelope (DSEG_AMPLITUDE == 1) */
     stream->envelope[pEnvelopeDesc->dwEG == DSEG_AMPLITUDE ? 0 : 1] = *pEnvelopeDesc;
-    stream_changed(stream);
     return S_OK;
 }
 
@@ -1365,7 +1436,11 @@ extern "C" HRESULT WINAPI IDirectSoundStream_SetOutputBuffer(LPDIRECTSOUNDSTREAM
     if (!stream)
         return E_INVALIDARG;
     stream->output_buffer = pOutputBuffer;
-    stream_changed(stream);
+    h2_ds_buffer *target = buffer_from(pOutputBuffer);
+    h2_audio_command command;
+    audio_begin(&command, H2_AUDIO_SET_OUTPUT, stream_voice(stream));
+    command.offset = target ? buffer_voice(target) : 0;
+    audio_send(&command);
     return S_OK;
 }
 
@@ -1397,7 +1472,6 @@ extern "C" HRESULT WINAPI XAudioDownloadEffectsImage(LPCSTR, LPDSEFFECTIMAGELOC,
     }
     g_device.effect_image = reinterpret_cast<LPDSEFFECTIMAGEDESC>(&g_effect_image);
     *ppImageDesc = g_device.effect_image;
-    device_changed();
     return S_OK;
 }
 
@@ -1405,9 +1479,8 @@ extern "C" HRESULT WINAPI XAudioSetEffectData(DWORD dwEffectIndex, LPCDSFX_HIGH_
 {
     if (!pDesc || dwEffectIndex >= k_effect_count)
         return E_INVALIDARG;
-    /* kept for a backend's reverb; the I3DL2 listener is the only kind sent */
+    /* kept for a future reverb; the I3DL2 listener is the only kind sent */
     g_effect_high_level[dwEffectIndex] = *pDesc;
-    device_changed();
     return S_OK;
 }
 

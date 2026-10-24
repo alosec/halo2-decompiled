@@ -110,6 +110,10 @@ void host_h2_frame(void);
  * (h2/gpu_protocol.h) in guest memory */
 void host_h2_gpu_draw(const void* packet);
 void host_h2_gpu_clear(const void* packet);
+/* the mixer (port/src/audio/): an h2_audio_command (h2/audio_protocol.h), and
+ * a voice's playback progress as an h2_audio_status (0: unknown voice) */
+void host_h2_audio_command(const void* command);
+int host_h2_audio_status(unsigned int voice, void* status);
 /* H2_TRACE: "d3d" = bit 0 */
 unsigned int host_h2_trace_flags(void);
 int host_h2_input_state(unsigned int port, void* state);

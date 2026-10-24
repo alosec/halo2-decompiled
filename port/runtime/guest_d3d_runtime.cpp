@@ -548,10 +548,18 @@ DWORD hardware_format(D3DFORMAT format)
    aligned, so index by method / 4 within the 3D class's 0x2000 range */
 DWORD g_trace_method_counts[0x800];
 
+void h2_d3d_draw_pushed_array(DWORD primitive, DWORD const *data, DWORD words);
+
+/* NV2A methods the game pushes itself (src/unknown_01cf50.cpp function_4b220,
+   src/unknown_23d970.cpp): begin/end (0x17fc) around an inline vertex array
+   (0x1818, sent without incrementing the method) is a draw */
+constexpr DWORD k_method_begin_end = 0x17fc;
+constexpr DWORD k_method_inline_array = 0x1818;
+
 void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
 {
-    if (!(host_h2_trace_flags() & 1))
-        return;
+    const bool trace = host_h2_trace_flags() & 1;
+    DWORD primitive = 0;
     for (DWORD const *word = begin; word < end;)
     {
         const DWORD header = *word++;
@@ -559,7 +567,12 @@ void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
             break; /* a jump or call: nothing the game writes yet */
         const DWORD count = (header >> 18) & 0x7ff;
         const DWORD method = header & 0x1ffc;
-        ++g_trace_method_counts[method / 4];
+        if (trace)
+            ++g_trace_method_counts[method / 4];
+        if (method == k_method_begin_end && count >= 1)
+            primitive = word[0];
+        else if (method == k_method_inline_array && primitive && count)
+            h2_d3d_draw_pushed_array(primitive, word, count);
         word += count;
     }
 }
@@ -922,6 +935,47 @@ void h2_d3d_draw_inline(h2_d3d_device *d, DWORD primitive, void const *vertices,
     p->inline_vertex_count = static_cast<h2_gpu_u32>(count);
     for (long index = 0; index < k_vertex_attribute_count; ++index)
         p->vertex_arrays[index].format = 0x02;
+    host_h2_gpu_draw(p);
+}
+
+/* an inline array: interleaved vertices laid out as the selected attribute
+   formats say, the stride being the end of the furthest attribute */
+void h2_d3d_draw_pushed_array(DWORD primitive, DWORD const *data, DWORD words)
+{
+    h2_d3d_device *d = device();
+    h2_d3d_attribute_input const *inputs =
+        static_cast<h2_d3d_attribute_input const *>(d->vertex_attribute_formats);
+    if (!inputs)
+        return;
+    static DWORD const element_bytes[16] = {1, 2, 4, 0, 1, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    DWORD stride = 0;
+    for (long index = 0; index < k_vertex_attribute_count; ++index) {
+        DWORD const format = inputs[index].format & 0xff;
+        DWORD const components = format >> 4;
+        DWORD const type = format & 0xf;
+        if (!components)
+            continue;
+        DWORD const size = type == 6 ? 4 : element_bytes[type] * components;
+        if (inputs[index].offset + size > stride)
+            stride = inputs[index].offset + size;
+    }
+    if (!stride)
+        return;
+    ++d->draw_calls;
+    h2_gpu_draw *p = &g_draw_packet;
+    fill_draw_state(d, p);
+    p->primitive = primitive;
+    p->first_vertex = 0;
+    p->vertex_count = words * 4 / stride;
+    p->index_data = 0;
+    p->vertex_source = H2_GPU_VERTICES_ARRAYS;
+    for (long index = 0; index < k_vertex_attribute_count; ++index) {
+        h2_gpu_vertex_array *array = &p->vertex_arrays[index];
+        DWORD const format = inputs[index].format & 0xff;
+        array->address = (format >> 4) ? guest_address(data) + inputs[index].offset : 0;
+        array->stride = stride;
+        array->format = (format >> 4) ? format : 0x02;
+    }
     host_h2_gpu_draw(p);
 }
 

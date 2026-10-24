@@ -15,6 +15,7 @@
 #include "h2/retail_data.hpp"
 #include "h2/texture_decode.hpp"
 #include "gpu/metal_renderer.hpp"
+#include "audio/audio_host.hpp"
 
 #include <array>
 #include <charconv>
@@ -1173,6 +1174,11 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
         std::cerr << "renderer setup failed: " << error << '\n';
         return false;
     }
+    /* headless: a silent mixer clock, no audio device */
+    if (!h2::audio::open_session(*arena, !headless, error)) {
+        std::cerr << "audio setup failed: " << error << '\n';
+        return false;
+    }
     if (headless)
         return true;
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
@@ -1369,6 +1375,8 @@ int main(int argc, char** argv) {
                 {"host_h2_trace_flags", reinterpret_cast<std::uintptr_t>(&host_h2_trace_flags)},
                 {"host_h2_gpu_draw", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_draw)},
                 {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},
+                {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
+                {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
             };
             for (const auto& [symbol, target] : session_imports) {
                 if (guest_image->symbol_address(std::string("h2_host_slot_") + symbol) &&
