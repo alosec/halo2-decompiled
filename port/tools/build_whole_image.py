@@ -197,7 +197,7 @@ FLOOR_BLOCK = re.compile(r'__asm\s*\{\s*movss\s+xmm0\s*,\s*' + OPERAND +
                          r'\s*\n\s*cvttss2si\s+eax\s*,\s*xmm0[^}]*?cmpneqss[^}]*?movmskps[^}]*\}')
 
 
-REWRITE_VERSION = "8"
+REWRITE_VERSION = "8+dtors"
 
 
 def native_source(text):
@@ -290,7 +290,12 @@ def frontend_mode(unit, args, header_stamp, native):
     for include in args.include:
         command.append(f"-I{include}")
     source = unit.source
-    rewritten = native_source(unit.source.read_text(errors="replace"))
+    original = unit.source.read_text(errors="replace")
+    rewritten = native_source(original)
+    if not native and unit.source.suffix == ".cpp":
+        emitters = destructor_emitters(original)
+        if emitters:
+            rewritten = (rewritten if rewritten is not None else original) + emitters
     if rewritten is not None:
         source = unit.ir.with_suffix(unit.source.suffix)
         source.parent.mkdir(parents=True, exist_ok=True)
@@ -462,6 +467,16 @@ def symbol_addresses(units, tag="retail"):
                                   int(adjustor.group(1), 16))
                 pending = None
                 continue
+            destructor = re.search(r'@retail 0x([0-9a-f]+) destructor ([A-Za-z_]\w*)', line)
+            if destructor:
+                # the class's compiler-generated (implicit) destructor, and the
+                # function destructor_emitters adds to run it
+                result.setdefault((unit.relative, f"{destructor.group(2)}::~{destructor.group(2)}"),
+                                  int(destructor.group(1), 16))
+                result.setdefault((unit.relative, f"h2_destructor_{destructor.group(1)}"),
+                                  int(destructor.group(1), 16))
+                pending = None
+                continue
             deleting = re.search(r'@retail 0x([0-9a-f]+) deleting ([A-Za-z_]\w*)', line)
             if deleting:
                 # the compiler-generated deleting destructor of the class
@@ -485,6 +500,19 @@ def symbol_addresses(units, tag="retail"):
         if len(addresses) == 1:
             result.setdefault(key, next(iter(addresses)))
     return result
+
+
+def destructor_emitters(text):
+    """Out-of-line functions for '@retail 0x... destructor c_x' tags: a class's
+    implicit destructor is emitted only where something uses it, so callers
+    reaching it by retail address (deleting destructors, generated idioms)
+    would trap. Each tag gets a tagged function that runs it."""
+    lines = []
+    for m in re.finditer(r'@retail 0x([0-9a-f]+) destructor ([A-Za-z_]\w*)', text):
+        address, name = m.group(1), m.group(2)
+        lines += [f"// @retail 0x{address}",
+                  f'extern "C" void h2_destructor_{address}({name} *self) {{ self->~{name}(); }}']
+    return "\n#if H2_WHOLE_IMAGE\n" + "\n".join(lines) + "\n#endif\n" if lines else ""
 
 
 def qualified_name(symbol):

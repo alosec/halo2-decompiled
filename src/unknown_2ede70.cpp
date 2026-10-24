@@ -31,6 +31,7 @@ public:
 // @retail 0x2ede70 destructor array_owner_2ede70
 // @retail 0x2ee070 deleting array_owner_2ede70
 
+
 // a kind derived from it that adds nothing
 class derived_2ee1c0 : public array_owner_2ede70
 {
