@@ -166,9 +166,16 @@ struct hkbool_2d7fe0
 };
 
 // stream slots that are one-line functions shared with other classes
+// as src/unknown_2fe820.cpp declares it (its name is part of the symbol)
+struct hkbool_2fe820
+{
+	char value;
+	hkbool_2fe820() {}
+};
+
 struct class_2fe820
 {
-	void function_2fe820(bool *result);
+	hkbool_2fe820 function_2fe820();
 };
 
 struct class_2d9840
@@ -299,9 +306,7 @@ public:
 	}
 	virtual hkbool_2d7fe0 seek_tell_supported()
 	{
-		bool result;
-		((class_2fe820 *)this)->function_2fe820(&result);
-		return hkbool_2d7fe0(result);
+		return hkbool_2d7fe0(((class_2fe820 *)this)->function_2fe820().value != 0);
 	}
 	// fails (1)
 	virtual long seek(long offset, long origin)

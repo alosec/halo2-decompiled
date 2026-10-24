@@ -751,7 +751,7 @@ public:
 	virtual void slot_4() = 0;
 	virtual void slot_5() = 0;
 	virtual void slot_6() = 0;
-	virtual void is_valid(bool *result) = 0;
+	virtual hkbool_3128d0 is_valid() = 0;
 };
 
 // a hinge snapshot (c_component_joint_snapshot_0)
@@ -804,8 +804,7 @@ void hinge_3128d0::write(snapshot_3128d0 const *snapshot)
 	perpendicular2_a = hinge->data[4];
 	pivot_b = hinge->data[1];
 	axis_b = hinge->data[2];
-	bool valid;
-	((hinge_slots_3128d0 *)this)->is_valid(&valid);
+	bool valid = ((hinge_slots_3128d0 *)this)->is_valid().value != 0;
 }
 
 // @retail 0x313c40

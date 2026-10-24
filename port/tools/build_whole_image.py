@@ -787,7 +787,48 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
         if not (best >= 2 or start in anchored):
             continue
         bind(symbol, slots, start)
+    # Last, classes with no constructor of their own to anchor by (no
+    # virtuals of their own, built inline): a tagged factory whose body makes
+    # only that class with `new` stores the table in its retail code.
+    for name, table in factory_vtables(xbe_path, compiled).items():
+        symbol = f"??_7{name}@@6B@"
+        if symbol in seen and symbol not in result:
+            bind(symbol, seen[symbol], table)
     return result
+
+
+def factory_vtables(xbe_path, compiled):
+    """{class: retail table} for tagged functions whose body makes exactly one
+    class with `new` and whose retail code stores exactly one table (or the
+    same last table in every such factory) into a fresh object."""
+    xbe = xbe_path.read_bytes()
+    base = struct.unpack_from("<I", xbe, 0x104)[0]
+    headers = struct.unpack_from("<I", xbe, 0x120)[0] - base
+    _, text_va, _, text_raw, text_size = struct.unpack_from("<IIIII", xbe, headers)
+    sizes = {}
+    with (Path(__file__).resolve().parents[2] / "config/functions.csv").open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            sizes[int(row["va"], 16)] = int(row["size"])
+    store = re.compile(rb"\xc7(?:[\x00-\x03\x06\x07]|[\x40-\x43\x45-\x47]\x00)(....)", re.S)
+    found = {}
+    for unit in compiled:
+        text = unit.source.read_text(errors="replace")
+        tags = list(re.finditer(r'// @retail 0x([0-9a-f]+)\s*\n', text))
+        for index, tag in enumerate(tags):
+            body = text[tag.end():tags[index + 1].start() if index + 1 < len(tags) else len(text)]
+            made = set(re.findall(r'\bnew\s*(?:\([^)]*\)\s*)?([A-Za-z_]\w*)\s*\(', body))
+            if len(made) != 1:
+                continue
+            address = int(tag.group(1), 16)
+            size = sizes.get(address)
+            if not size or not text_va <= address < text_va + text_size:
+                continue
+            code = xbe[text_raw + address - text_va:text_raw + address - text_va + size]
+            tables = [struct.unpack("<I", m.group(1))[0] for m in store.finditer(code)]
+            tables = [t for t in tables if 0x411520 <= t < 0x461180]
+            if tables:
+                found.setdefault(made.pop(), set()).add(tables[-1])
+    return {name: tables.pop() for name, tables in found.items() if len(tables) == 1}
 
 
 def structor_vtables(xbe_path, tag_addresses):

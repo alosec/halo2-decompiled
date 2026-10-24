@@ -122,6 +122,15 @@ struct solver_info_312b30
 	long field_c;
 };
 
+// an hkBool returned by value: a class, so through the hidden pointer
+// retail's callers pass (x8 on the port's ARM guest)
+struct hkbool_312920
+{
+	char value;
+	hkbool_312920() {}
+	hkbool_312920(bool value) : value(value) {}
+};
+
 class constraint_31bbd0;
 
 // the world-side owner of a constraint, told how much room it needs
@@ -145,7 +154,7 @@ public:
 	virtual void slot_4() = 0;
 	virtual void slot_5() = 0;
 	virtual void slot_6() = 0;
-	virtual void is_valid(bool *result) = 0;
+	virtual hkbool_312920 is_valid() = 0;
 	virtual void slot_8() = 0;
 	virtual void slot_9() = 0;
 	virtual void solver_info(solver_info_312b30 *info) = 0;
@@ -328,7 +337,7 @@ class c_component_joint_0 : public constraint_31bbd0
 {
 public:
 	c_component_joint_0(c_component_joint_snapshot_0 const *info);
-	void is_valid(bool *result);
+	hkbool_312920 is_valid();
 
 	vector_312920 v20;
 	vector_312920 v30;
@@ -344,7 +353,7 @@ class c_component_joint_1 : public constraint_31bbd0
 public:
 	c_component_joint_1(c_component_joint_snapshot_1 const *info);
 	void take_info(c_component_joint_snapshot_1 const *info);
-	void is_valid(bool *result);
+	hkbool_312920 is_valid();
 
 	vector_312920 v20;
 	vector_312920 v30;
@@ -408,7 +417,7 @@ class c_component_joint_5 : public constraint_31bbd0
 public:
 	c_component_joint_5(c_component_joint_snapshot_5 const *info);
 	void take_info(c_component_joint_snapshot_5 const *info);
-	void is_valid(bool *result);
+	hkbool_312920 is_valid();
 
 	vector_312920 v20;
 	vector_312920 v30;
@@ -479,14 +488,13 @@ c_component_joint_0::c_component_joint_0(c_component_joint_snapshot_0 const *inf
 	v40 = info->data[4];
 	v50 = info->data[1];
 	v60 = info->data[2];
-	bool valid;
-	slots()->is_valid(&valid);
+	bool valid = slots()->is_valid().value != 0;
 }
 
 // @retail 0x313cc0
-void c_component_joint_0::is_valid(bool *result)
+hkbool_312920 c_component_joint_0::is_valid()
 {
-	*result = near_zero_312920(dot3_312920(v30, v40)) && unit_312920(v30) && unit_312920(v40) && unit_312920(v60);
+	return hkbool_312920(near_zero_312920(dot3_312920(v30, v40)) && unit_312920(v30) && unit_312920(v40) && unit_312920(v60));
 }
 
 // @retail 0x313c50
@@ -527,18 +535,16 @@ void c_component_joint_1::take_info(c_component_joint_snapshot_1 const *info)
 	v70 = info->data[3];
 	v80 = info->data[6];
 	field_d4 = 0;
-	bool valid;
-	slots()->is_valid(&valid);
+	bool valid = slots()->is_valid().value != 0;
 }
 
 // @retail 0x3135f0
-void c_component_joint_1::is_valid(bool *result)
+hkbool_312920 c_component_joint_1::is_valid()
 {
 	if (!near_zero_312920(dot3_312920(v40, v50)) || !near_zero_312920(dot3_312920(v70, v80)) ||
 		!unit_312920(v40) || !unit_312920(v50) || !unit_312920(v70) || !unit_312920(v30))
 	{
-		*result = false;
-		return;
+		return hkbool_312920(false);
 	}
 	// the angle range, at most a full turn
 	float range;
@@ -550,7 +556,7 @@ void c_component_joint_1::is_valid(bool *result)
 	{
 		range = maximum_angle - minimum_angle;
 	}
-	*result = !(range > 6.28318548f); // 0x40c90fdb at 0x4123e8
+	return hkbool_312920(!(range > 6.28318548f)); // 0x40c90fdb at 0x4123e8
 }
 
 // @retail 0x3134a0
@@ -713,17 +719,15 @@ void c_component_joint_5::take_info(c_component_joint_snapshot_5 const *info)
 	v80 = info->data[6];
 	v90 = info->data[7];
 	value = info->value;
-	bool valid;
-	slots()->is_valid(&valid);
+	bool valid = slots()->is_valid().value != 0;
 }
 
 // @retail 0x314e00
-void c_component_joint_5::is_valid(bool *result)
+hkbool_312920 c_component_joint_5::is_valid()
 {
 	if (!near_zero_312920(dot3_312920(v50, v60)) || !unit_312920(v60) || !unit_312920(v50))
 	{
-		*result = false;
-		return;
+		return hkbool_312920(false);
 	}
-	*result = !(minimum > maximum);
+	return hkbool_312920(!(minimum > maximum));
 }
