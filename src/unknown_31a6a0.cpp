@@ -30,6 +30,10 @@ public:
 	char unknown80[0xd0 - 0x80];
 };
 
+#if H2_WHOLE_IMAGE
+extern "C" void h2_retail_319740(void *self, float value);
+#endif
+
 class class_31a6b0 : public class_3193c0
 {
 public:
@@ -41,6 +45,15 @@ class_31a6b0::class_31a6b0(void const *position, void const *orientation)
 	: class_3193c0(position, orientation)
 {
 	field_10 = 0;
+#if H2_WHOLE_IMAGE
+	/* the retail slot takes a float (port/recovered/havok_motion_3193c0.cpp) */
+	h2_retail_319740(this, 0.0f);
+#else
 	function_319740(0);
+#endif
 	field_7c = 1.0f;
+#if H2_WHOLE_IMAGE
+	/* retail installs the class's own table last (0x31a6e7) */
+	*(unsigned int *)this = 0x4151b0;
+#endif
 }

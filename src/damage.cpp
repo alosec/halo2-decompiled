@@ -2386,7 +2386,12 @@ struct s_damage_report
 };
 
 void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_damage_report const *report);
+#if H2_WHOLE_IMAGE
+/* retail also takes the report, in ebx (port/recovered/creature_damaged_119280.cpp) */
+void function_119280(long object_index, dword flags, s_damage_report const *report);
+#else
 void function_119280(long object_index, dword flags);
+#endif
 
 /* reports damage to the object it hit (units and type 12 objects) */
 // @retail 0xd9490
@@ -2441,7 +2446,11 @@ void function_d9490(s_damage_report *report, s_type_1e6529 const *data, s_damage
 	if ((1 << object->type) & 3)
 		function_c9e70(object_index, accumulator->flags, data, report);
 	else if ((1 << object->type) & 0x1000)
+#if H2_WHOLE_IMAGE
+		function_119280(object_index, accumulator->flags, report);
+#else
 		function_119280(object_index, accumulator->flags);
+#endif
 }
 
 long function_cbd50(long unit_index, short field_x11c898);

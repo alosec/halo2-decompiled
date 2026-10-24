@@ -346,7 +346,7 @@ static inline s_502420_element *clump_walk_step(s_clump_walk *iterator)
    members of the event's joint, mode 1 the actor's own clump, mode 2 and up
    every clump within reach (30 units, 40 for events other than type 0, plus
    6), skipping clumps of other teams below mode 3 */
-// Retail 0x1fbac0, disabled with its blocker above.
+// @retail 0x1fbac0
 void __stdcall function_1fbac0(long actor_index, long unit_index, short mode, bool filter,
 	s_1fbac0_event *event)
 {

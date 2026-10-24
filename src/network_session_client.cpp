@@ -1010,7 +1010,7 @@ bool __stdcall function_5c720(c_class_58d20 *session, const s_session_member_ide
  long player_count, const dword *identities, const long *values, bool reserve,
  long timeout, const s_session_id *id, long *reason);
 
-// Disabled implementation for 0x6d4c0.
+// @retail 0x6d4c0
 void function_6d4c0(c_session_client *client)
 {
  c_class_58d20 *session = client->session;

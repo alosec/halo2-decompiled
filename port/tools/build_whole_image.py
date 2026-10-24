@@ -973,6 +973,16 @@ def main():
         bindings.setdefault(symbol, address)
         report.setdefault("storage_bound", {})[symbol] = f"0x{address:08x}"
 
+    xbe_words_at = {}
+    xbe_file = args.xbe or root / "orig/game/default.xbe"
+    if xbe_file.exists():
+        for word, addresses in xbe_data_words(xbe_file).items():
+            for at in addresses:
+                xbe_words_at[at] = word
+
+    def retail_word(address):
+        return xbe_words_at.get(address)
+
     global_owners = {}
     delete_globals = {u.relative: set() for u in compiled}
     for unit in compiled:
@@ -986,7 +996,15 @@ def main():
                 if address in RETAIL_TEXT:
                     report.setdefault("code_address_globals", []).append(name)
                     address = None
-            if address is not None and not info["code_pointers"]:
+            # A global whose initializer holds code pointers stays native,
+            # unless retail initializes it itself: then the retail data
+            # (vtables, strings, callbacks, all relocated by the code map) is
+            # what the game expects there.
+            retail_initialized = address is not None and info["code_pointers"] and \
+                unit.relative.startswith("src/") and retail_word(address) not in (None, 0)
+            if retail_initialized:
+                report.setdefault("bound_retail_initialized", []).append(name)
+            if address is not None and (not info["code_pointers"] or retail_initialized):
                 delete_globals[unit.relative].add(name)
                 bindings.setdefault(name, address)
                 report["bound"][name] = f"0x{address:08x}"

@@ -1624,9 +1624,35 @@ extern "C" HRESULT __stdcall D3DDevice_EndVisibilityTest(DWORD index)
 
 /* presentation */
 
+/* The vertical blank is the display's 60 Hz interrupt, not something a
+   swap causes: the game waits on the count its callback keeps
+   (main_time_wait_for_vblank, src/unknown_12b070.cpp) also while it does
+   not present. A guest thread stands in for the interrupt. */
+DWORD WINAPI vblank_thread(void *)
+{
+    h2_d3d_device *d = device();
+    unsigned long long next = host_h2_get_milliseconds() * 3ull;   /* thirds of a millisecond */
+    for (;;) {
+        next += 50;   /* 16.67 ms */
+        while (host_h2_get_milliseconds() * 3ull < next)
+            host_h2_sleep(1);
+        ++d->vblank_count;
+        if (d->vblank_callback) {
+            h2_d3d_vblank_data data = {d->vblank_count, d->presented_frames, 0};
+            d->vblank_callback(reinterpret_cast<D3DVBLANKDATA *>(&data));
+        }
+    }
+    return 0;
+}
+
 extern "C" void __stdcall D3DDevice_SetVerticalBlankCallback(D3DVBLANKCALLBACK callback)
 {
+    static bool started;
     device()->vblank_callback = callback;
+    if (!started) {
+        started = true;
+        CreateThread(NULL, 0x10000, vblank_thread, NULL, 0, NULL);
+    }
 }
 
 extern "C" void __stdcall D3DDevice_Swap(DWORD flags)
@@ -1659,13 +1685,8 @@ extern "C" void __stdcall D3DDevice_Swap(DWORD flags)
         last_clears = d->clears;
         last_dwords = d->push.dwords;
     }
+    (void)flags;
     host_h2_frame();
-    /* one vertical blank per presented frame: the host paces swaps at 60 Hz */
-    ++d->vblank_count;
-    if (d->vblank_callback) {
-        h2_d3d_vblank_data data = {d->vblank_count, d->presented_frames, flags};
-        d->vblank_callback(reinterpret_cast<D3DVBLANKDATA *>(&data));
-    }
 }
 
 /* keeps the last frame on screen across a title launch (function_22376b) */
