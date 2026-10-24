@@ -1637,8 +1637,8 @@ extern long g_485a60;
 
 
 // @retail 0x4d0b0
-void __stdcall function_4d0b0(long tag, long first, long second, long mode,
-    long packed, long fourth, void *record_address)
+void __stdcall function_4d0b0(long tag, long unused, long second, long mode,
+    long third, long packed, void *record_address)
 {
     byte *definition = g_4e3b44[tag & 0xffff].bytes;
     long part_index = packed & 0xff;
@@ -1766,10 +1766,10 @@ void __stdcall function_4d0b0(long tag, long first, long second, long mode,
     if (function_1caa0(shader, selection, (word *)part, geometry,
         (s_1c8c0_stream *)extra, (s_1c8c0_stream *)mask, (s_1c8c0_stream *)stream))
     {
-        function_4d9c0(part, mode, value, index, first, second, fourth, record[4]);
+        function_4d9c0(part, mode, value, index, tag, second, third, record[4]);
         function_4d640(index, mode, setup);
-        bool filtered = (entry->unknown00 & 0x200) && !(part[2] & 8);
-        bool strip = (entry->unknown00 & 0x40) && *(long *)(entry->unknown10 + 4) && *(long *)(geometry + 8);
+        bool strip = (entry->unknown00 & 0x200) && !(part[2] & 8);
+        bool filtered = (entry->unknown00 & 0x40) && *(long *)(entry->unknown10 + 4) && *(long *)(geometry + 8);
         function_4daa0(filtered, strip, (s_4daa0_geometry *)geometry,
             (s_4daa0_part *)part, *(dword **)(entry->unknown10 + 4));
         function_4d720(index, mode);

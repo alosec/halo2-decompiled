@@ -281,6 +281,7 @@ def frontend_mode(unit, args, header_stamp, native):
         command += ["-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics",
                     "-Dinline=inline __attribute__((used))",
                     "-D__forceinline=inline __attribute__((used))",
+                    "-D__inline=inline __attribute__((used))",
                     # MSVC accepts these; the Xbox headers make SSE types and
                     # the memory intrinsics visible everywhere.
                     "-Wno-address-of-temporary", "-include", "xmmintrin.h", "-include", "string.h"]
