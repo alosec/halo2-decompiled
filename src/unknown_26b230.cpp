@@ -1466,7 +1466,7 @@ long function_26bc60(long clump_index)
 
 /* the clump pool walk 0x269040 makes: like s_clump_pool_iterator with a trailing index slot,
    as s_ai_importance_squad_iterator (ai.cpp) has; retail's frame keeps the slot */
-struct s_clump_pool_walk
+struct s_clump_walk_269040
 {
 	s_clump *clump;
 	s_record_pool_iterator pool;
@@ -1474,7 +1474,7 @@ struct s_clump_pool_walk
 };
 
 /* record_pool_iterator_step with its result cleared before the search */
-PRIVATE __forceinline byte *clump_walk_step(s_record_pool_iterator *iterator)
+PRIVATE __forceinline byte *clump_walk_step_269040(s_record_pool_iterator *iterator)
 {
 	byte *result = NULL;
 	s_record_pool *data = iterator->data;
@@ -1493,11 +1493,11 @@ PRIVATE __forceinline byte *clump_walk_step(s_record_pool_iterator *iterator)
 	return result;
 }
 
-PRIVATE __forceinline s_clump *clump_walk_advance(s_clump_pool_walk *walk)
+PRIVATE __forceinline s_clump *clump_walk_advance_269040(s_clump_walk_269040 *walk)
 {
 	s_clump *clump = NULL;
 	if (g_4f55d0->active)
-		clump = (s_clump *)clump_walk_step(&walk->pool);
+		clump = (s_clump *)clump_walk_step_269040(&walk->pool);
 	walk->clump = clump;
 	return clump;
 }
@@ -1516,7 +1516,7 @@ long function_269040(point3f const *center, short team)
 	long result = record_pool_allocate(g_502420);
 	if (result == NONE)
 	{
-		s_clump_pool_walk walk;
+		s_clump_walk_269040 walk;
 		if (g_4f55d0->active)
 		{
 			walk.pool.data = g_502420;
@@ -1525,7 +1525,7 @@ long function_269040(point3f const *center, short team)
 		long oldest = NONE;
 		long oldest_time = 0x7fffffff;
 		s_clump_activity_view *clump;
-		while ((clump = (s_clump_activity_view *)clump_walk_advance(&walk)) != NULL)
+		while ((clump = (s_clump_activity_view *)clump_walk_advance_269040(&walk)) != NULL)
 		{
 			if (clump->active_time < oldest_time)
 			{
