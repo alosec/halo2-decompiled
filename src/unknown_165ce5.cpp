@@ -292,8 +292,8 @@ struct s_first_person_player
 struct s_16658d_group;
 extern s_16658d_group *g_4e9bc8;
 #define first_person_users ((s_first_person_user *)g_4e9bc8)
-extern void *g_165cc3_aligned_data;
-#define first_person_orientations ((byte *)g_165cc3_aligned_data)
+extern void *g_4e9bc4;
+#define first_person_orientations ((byte *)g_4e9bc4)
 
 extern transform4x3f *g_4687d0;
 

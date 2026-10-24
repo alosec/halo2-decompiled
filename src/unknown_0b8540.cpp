@@ -52,7 +52,7 @@ static inline void object_identifier_clear(s_object_hide_identifier *identifier)
 }
 
 // Disabled: matches alone, but closes the call cycle b8540 -> 109400 -> e4c10 -> e18d0 -> b75a0 and costs matched d6bc0, 1c4260 and the physics component functions (build/codex-report.md, round 25).
-#if H2_NATIVE_PORT
+#if H2_NATIVE_PORT || H2_WHOLE_IMAGE
 // @retail 0xb8540 disabled
 void __stdcall function_b8540(long object_index)
 {

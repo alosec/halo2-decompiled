@@ -893,7 +893,7 @@ counters_done:
 }
 
 
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 // Activating this draft loses matched 0x2901e0 and 0xfa100 through LTCG shifts.
 #include "unknown_1efac0.h"
 #include "unknown_1eb550.h"

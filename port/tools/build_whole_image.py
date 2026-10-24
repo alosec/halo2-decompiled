@@ -39,6 +39,9 @@ GUEST_BIAS = 0x10000000000
 DEFINE = re.compile(r'^define ([^@]*)@("[^"]+"|[^ (]+)\(', re.M)
 DECLARE = re.compile(r'^declare [^@]*@("[^"]+"|[^ (]+)\(', re.M)
 GLOBAL = re.compile(r'^@("[^"]+"|[^ ]+) = ([^"\n]*?)\b(global|constant) (.*)$', re.M)
+# the retail .text section; a g_<hex> name inside it is a function address the
+# decompiler borrowed, not where retail keeps the global
+RETAIL_TEXT = range(0x12000, 0x379c4c)
 ADDRESS_NAME = re.compile(r'(?:^|[?@])g_(?:unknown_)?([0-9a-f]{5,6})(?:_[A-Za-z0-9_]+)?(?:@|$)')
 
 
@@ -247,7 +250,8 @@ def frontend(unit, args, header_stamp):
     stay off, while the SDK shims (H2_PORT_SHIMS) and the assembly rewriter
     still apply. A unit that only builds with its native branches falls back
     to them. Native rewrites and the port runtime are always native."""
-    native_only = unit.relative.startswith("port/") or unit.relative.endswith("_native.cpp")
+    native_only = (unit.relative.startswith("port/") and not unit.relative.startswith("port/recovered/")) \
+        or unit.relative.endswith("_native.cpp")
     if not native_only:
         ok, diagnostic = frontend_mode(unit, args, header_stamp, native=False)
         if ok:
@@ -262,7 +266,10 @@ def frontend_mode(unit, args, header_stamp, native):
     is_c = unit.source.suffix == ".c"
     compiler = args.llvm / ("clang" if is_c else "clang++")
     command = [compiler, "--target=thumbv7-pc-windows-msvc", "-O2", "-ffreestanding",
-               "-fno-stack-protector", *(["-DH2_NATIVE_PORT=1"] if native else []),
+               # x87 and SSE math never touched errno; without this clang
+               # turns __builtin_sqrtf into a call to sqrtf, the guest
+               # runtime's own sqrtf included
+               "-fno-stack-protector", "-fno-math-errno", *(["-DH2_NATIVE_PORT=1"] if native else []),
                "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1",
                "-fms-extensions", "-Wno-ignored-attributes", "-Wno-c++11-narrowing",
                "-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar", "-w"]
@@ -401,6 +408,9 @@ def backend(unit, args, delete_functions, delete_globals, promote=()):
 
 
 PREFERRED = set()
+# native rewrites that call helpers no unit of this image defines (they lived
+# in the native halves of units the whole image compiles in retail mode)
+INCOMPLETE_NATIVE = set()
 
 
 def priority(unit, symbol, csv_sources, symbol_address):
@@ -415,7 +425,7 @@ def priority(unit, symbol, csv_sources, symbol_address):
         source, status = csv_sources.get(address, (None, None))
         if source == path and status == "matched":
             return 0
-    if path.endswith("_native.cpp"):
+    if path.endswith("_native.cpp") and path not in INCOMPLETE_NATIVE:
         return 1
     if path.startswith("port/"):
         return 2
@@ -530,6 +540,8 @@ def main():
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     parser.add_argument("--exclude", action="append", default=[],
                         help="relative source path to leave out")
+    parser.add_argument("--check", type=Path,
+                        help="only compile this source as the image would and print its diagnostics")
     parser.add_argument("--prefer", action="append", default=[],
                         help="relative source path whose definitions win every duplicate")
     args = parser.parse_args()
@@ -541,6 +553,8 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
 
     sources = sorted((root / "src").glob("*.cpp")) + sorted((root / "src/stubs").glob("*.cpp"))
+    # the port's own recoveries of retail functions upstream has no source for
+    sources += sorted((root / "port/recovered").glob("*.cpp"))
     sources += sorted((root / "port/runtime").glob("guest_*.cpp"))
     sources += sorted((root / "port/runtime").glob("guest_*.c"))
     excluded = set(args.exclude)
@@ -570,6 +584,14 @@ def main():
             target.symlink_to(header)
     args.shadow_include = shadow
     header_stamp += REWRITE_VERSION
+
+    if args.check:
+        unit = Unit(args.check.resolve(), root, work / "check")
+        ok, diagnostic = frontend(unit, args, header_stamp)
+        print(f"{unit.relative}: {'compiled in ' + unit.mode + ' mode' if ok else 'failed'}")
+        if diagnostic:
+            print(diagnostic)
+        sys.exit(0 if ok else 1)
 
     report = {"skipped": {}, "overridden": {}, "bound": {}, "stubbed": [], "data_stubbed": [],
               "native_address_globals": []}
@@ -601,6 +623,18 @@ def main():
             found = tag_addresses.get((unit.relative, qualified.split("::")[-1]))
         return found
 
+    defined_anywhere = set()
+    for unit in compiled:
+        defined_anywhere.update(scans[unit.relative]["functions"])
+        defined_anywhere.update(scans[unit.relative]["globals"])
+    for unit in compiled:
+        if unit.relative.endswith("_native.cpp"):
+            missing = sorted(name for name in scans[unit.relative]["declarations"]
+                             if name.startswith("h2_native_") and name not in defined_anywhere)
+            if missing:
+                INCOMPLETE_NATIVE.add(unit.relative)
+                report.setdefault("incomplete_native", {})[unit.relative] = missing
+
     # Resolve strong function definitions.
     owners = {}
     for unit in compiled:
@@ -619,6 +653,13 @@ def main():
                                       "losers": [c.relative for c in ranked[1:]]}
         for loser in ranked[1:]:
             delete_functions[loser.relative].add(name)
+
+    # Placeholder bodies from src/stubs that nothing better replaces: the game
+    # runs on these, so list them for whoever recovers the real code.
+    report["placeholders"] = sorted(
+        name for name, candidates in owners.items()
+        if "/stubs/" in sorted(candidates, key=lambda c: (
+            priority(c, name, csv_sources, {}), c.relative))[0].relative)
 
     # Functions other units reference but that only exist as internal
     # (static inline) definitions: give one definition external linkage.
@@ -656,6 +697,9 @@ def main():
             match = ADDRESS_NAME.search(name)
             if address is None and match and not name.startswith(("??_7", "??_C")):
                 address = int(match.group(1), 16)
+                if address in RETAIL_TEXT:
+                    report.setdefault("code_address_globals", []).append(name)
+                    address = None
             if address is not None and not info["code_pointers"]:
                 delete_globals[unit.relative].add(name)
                 bindings.setdefault(name, address)

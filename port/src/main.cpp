@@ -954,6 +954,16 @@ void report_fault(int signal_number, siginfo_t* info, void* context) {
                                static_cast<unsigned long long>(state->uc_mcontext->__ss.__pc),
                                static_cast<unsigned long long>(state->uc_mcontext->__ss.__lr));
     write(2, line, static_cast<size_t>(length));
+    /* a jump into the XBE's own x86 code: a retail code pointer (usually a
+       vtable slot) whose function no recovered unit defines yet */
+    const auto pc = static_cast<std::uintptr_t>(state->uc_mcontext->__ss.__pc);
+    if (pc >= h2::port::kGuestBias + 0x12000 && pc < h2::port::kGuestBias + 0x379c4c) {
+        length = std::snprintf(line, sizeof(line),
+                               "h2-port: called unrecovered retail function 0x%llx from 0x%llx\n",
+                               static_cast<unsigned long long>(pc - h2::port::kGuestBias),
+                               static_cast<unsigned long long>(state->uc_mcontext->__ss.__lr));
+        write(2, line, static_cast<size_t>(length));
+    }
     auto frame = static_cast<std::uintptr_t>(state->uc_mcontext->__ss.__fp);
     for (int depth = 0; depth < 32 && frame && (frame & 7) == 0; ++depth) {
         const auto* const record = reinterpret_cast<const std::uintptr_t*>(frame);

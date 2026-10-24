@@ -8,14 +8,15 @@ caller function_1c25a0 (0x1c25a0), as retail does. */
 #include "globals.h"
 #include <string.h>
 
-static void *g_1edbc0_data;
+/* the scenery index of each object name (unknown_1c2670.cpp) */
+extern long *g_51e9cc;
 
 // @retail 0x1edbc0
 void game_state_initialize_1edbc0(void)
 {
-	if (!g_1edbc0_data)
+	if (!g_51e9cc)
 	{
-		g_1edbc0_data = function_123d40("unknown", "unknown", 8000);
+		g_51e9cc = (long *)function_123d40("unknown", "unknown", 8000);
 	}
 }
 
@@ -55,7 +56,7 @@ bool function_d5910(const s_type_4f0dcc *datum, bool force);
 void function_1edc10()
 {
 	s_record_pool *data = g_4e0300;
-	memset(g_1edbc0_data, 0xff, 8000);
+	memset(g_51e9cc, 0xff, 8000);
 	long previous = NONE;
 	for (;;)
 	{
@@ -74,7 +75,7 @@ void function_1edc10()
 				{
 					long mapping_index = definition->mapping_index - 1;
 					if (mapping_index != NONE)
-						((long *)g_1edbc0_data)[mapping_index] = object_index;
+						g_51e9cc[mapping_index] = object_index;
 				}
 			}
 		}

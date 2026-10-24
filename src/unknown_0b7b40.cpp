@@ -60,7 +60,7 @@ long function_b8820();
 bool havok_object_type_can_have_component(long tag);
 
 // Disabled: 550 differences (2108 of 2150 bytes); enabling it reorders the object call cycle and costs matched b8890, 1c35f0, 1c3770, 1c39c0 and 1d1b60 (build/codex-report.md, round 25).
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 // @retail 0xb7b40 disabled
 long __stdcall function_b7b40(void *creation)
 {

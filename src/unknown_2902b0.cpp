@@ -177,7 +177,7 @@ static __forceinline long palette_tag_get(short index)
 }
 
 // Disabled: enabling it alone costs 16 matched functions (b6df0, b7290, b8600, b8890, d6bc0, 10a660, 10cd50, 11a320, 11b520, 1c35f0, 1c3770, 1c39c0, 1ca290, 1d1b60, 1e0d50, 1e1250); with 0xb7b40 (and 0xb7430) enabled too it costs 3: d6bc0, 11a320 (0xd6800 takes the object in ecx; retail pushes all four, ret 0x10) and 1ca290 (ecx/edx; retail esi and the stack) (build/codex-report.md, rounds 27 and 28).
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 /* a real drawn between lower and upper from a seed */
 static __forceinline real random_real_range(dword *seed, real lower, real upper)
 {

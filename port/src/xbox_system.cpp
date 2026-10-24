@@ -224,6 +224,10 @@ std::optional<std::filesystem::path> host_path(const char* guest, bool* read_onl
         root = state.user_root / std::string(1, drive);
         if (read_only)
             *read_only = false;
+        /* every Xbox drive has a root: the cache partition files are opened
+           there before anything else creates the directory */
+        std::error_code ignored;
+        std::filesystem::create_directories(root, ignored);
     }
     std::filesystem::path result = root;
     std::filesystem::path relative(rest);
@@ -387,6 +391,8 @@ unsigned int host_h2_file_open(const char* path, unsigned int access, unsigned i
     }
     if (!exists && !std::filesystem::is_directory(resolved->parent_path(), error)) {
         state.last_error = kErrorPathNotFound;
+        if (trace_files())
+            std::fprintf(stderr, "h2-file: open %s -> no directory\n", path);
         return kInvalidHandle;
     }
     const bool truncate = disposition == 2 || disposition == 5;

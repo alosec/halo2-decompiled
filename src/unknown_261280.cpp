@@ -658,7 +658,7 @@ done:
     return count;
 }
 
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 // Active versions alter the matched 0x2605d0 caller frame; retain its original stub.
 #include "props.h"
 #include <string.h>
