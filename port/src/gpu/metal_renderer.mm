@@ -1123,10 +1123,12 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         return state;
     }
 
-    /* a sampled hash of the texels, to notice textures the game rewrites */
+    /* a hash of the texels, to notice textures the game rewrites (its text
+       cache, render-to-memory effects): every word up to 1 MB, a sample of
+       larger ones */
     std::uint64_t content_hash(const std::uint8_t* data, std::size_t size) {
         std::uint64_t hash = size;
-        const std::size_t step = std::max<std::size_t>(64, size / 512);
+        const std::size_t step = size <= (1u << 20) ? 8 : std::max<std::size_t>(64, size / 4096);
         for (std::size_t offset = 0; offset + 8 <= size; offset += step) {
             std::uint64_t word;
             std::memcpy(&word, data + offset, 8);
