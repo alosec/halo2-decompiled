@@ -1382,6 +1382,9 @@ int main(int argc, char** argv) {
                 {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},
                 {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
                 {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
+                {"host_h2_wma_open", reinterpret_cast<std::uintptr_t>(&host_h2_wma_open)},
+                {"host_h2_wma_decode", reinterpret_cast<std::uintptr_t>(&host_h2_wma_decode)},
+                {"host_h2_wma_close", reinterpret_cast<std::uintptr_t>(&host_h2_wma_close)},
             };
             for (const auto& [symbol, target] : session_imports) {
                 if (guest_image->symbol_address(std::string("h2_host_slot_") + symbol) &&

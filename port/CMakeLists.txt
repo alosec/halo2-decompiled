@@ -3517,11 +3517,27 @@ add_library(h2_audio STATIC
     src/audio/audio_host.cpp
     src/audio/mixer.cpp
     src/audio/xbox_adpcm.cpp
+    src/audio/wma_decoder.cpp
 )
 target_include_directories(h2_audio PUBLIC src include)
 target_compile_features(h2_audio PUBLIC cxx_std_20)
 target_compile_options(h2_audio PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2_audio PUBLIC h2_port_support SDL3::SDL3)
+# WMA music decodes through FFmpeg when it is installed; without it music is
+# silent (src/audio/wma_decoder.cpp)
+option(H2_FFMPEG "Decode WMA music with FFmpeg when it is found" ON)
+if(H2_FFMPEG)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(H2_FFMPEG_LIBS IMPORTED_TARGET libavformat libavcodec libavutil)
+    endif()
+    if(H2_FFMPEG_LIBS_FOUND)
+        target_compile_definitions(h2_audio PRIVATE H2_HAVE_FFMPEG=1)
+        target_link_libraries(h2_audio PRIVATE PkgConfig::H2_FFMPEG_LIBS)
+    else()
+        message(STATUS "FFmpeg not found: WMA music will be silent")
+    endif()
+endif()
 
 add_executable(halo2-port src/main.cpp)
 target_compile_features(halo2-port PRIVATE cxx_std_20)

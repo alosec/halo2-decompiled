@@ -543,12 +543,14 @@ HRESULT h2_ds_stream::Flush()
 
 /* ---- the WMA in-memory decoder ---- */
 
-/* Silent stand-in: it pulls the compressed data through the title's read
- * callback as a decoder would (the callback also drops cache references) and
- * returns silence at an assumed 128 kbit/s against 16-bit 44.1 kHz stereo,
- * so music lasts roughly its real length and ends when the data does. The
- * data is WMA in ASF (it starts with the ASF header object GUID); decoding it
- * needs a WMA decoder, and there is no permissively licensed one to use. */
+/* The data is WMA in ASF, one whole file per sound chunk, resident while it
+ * plays. The first Process hands the chunk to the host decoder
+ * (host_h2_wma_open; FFmpeg when the host has it) and pulls 16-bit 44.1 kHz
+ * stereo from it. Without a host decoder this is a silent stand-in: it pulls
+ * the compressed data through the title's read callback as a decoder would
+ * (the callback also drops cache references) and returns silence at an
+ * assumed 128 kbit/s, so music lasts roughly its real length and ends when the
+ * data does. */
 constexpr DWORD k_wma_expansion = 11;
 
 struct h2_wma_decoder final : XMediaObject
@@ -568,6 +570,8 @@ struct h2_wma_decoder final : XMediaObject
     DWORD offset;
     DWORD owed;             /* silence still due for data already read */
     bool finished;
+    bool opened;            /* the host decoder was tried */
+    DWORD host;             /* the host decoder's stream, 0: silent */
 };
 
 alignas(h2_wma_decoder) unsigned char g_decoder_storage[k_max_decoders][sizeof(h2_wma_decoder)];
@@ -587,6 +591,9 @@ ULONG h2_wma_decoder::Release()
 {
     if (references && --references)
         return references;
+    if (host)
+        host_h2_wma_close(host);
+    host = 0;
     in_use = false;
     return 0;
 }
@@ -613,6 +620,32 @@ HRESULT h2_wma_decoder::Process(LPXMEDIAPACKET, LPXMEDIAPACKET output)
      * short packet as the end of the sound and releases the decoder. */
     DWORD produced = 0;
     BYTE *target = static_cast<BYTE *>(output->pvBuffer);
+    if (!opened && read)
+    {
+        opened = true;
+        LPVOID data = nullptr;
+        DWORD got = read(context, 0, 0xffffffffu, &data);
+        if (got && data)
+        {
+            host = host_h2_wma_open(data, got);
+            if (host)
+                offset = got;
+        }
+        else
+        {
+            finished = true;
+        }
+    }
+    if (host)
+    {
+        produced = host_h2_wma_decode(host, target, output->dwMaxSize);
+        if (produced < output->dwMaxSize)
+        {
+            host_h2_wma_close(host);
+            host = 0;
+            finished = true;
+        }
+    }
     while (produced < output->dwMaxSize)
     {
         if (!owed)
@@ -657,6 +690,10 @@ HRESULT h2_wma_decoder::Discontinuity()
 
 HRESULT h2_wma_decoder::Flush()
 {
+    if (host)
+        host_h2_wma_close(host);
+    host = 0;
+    opened = false;
     offset = 0;
     owed = 0;
     finished = false;
@@ -1511,6 +1548,8 @@ extern "C" HRESULT WINAPI WmaCreateInMemoryDecoder(LPFNWMAXMODATACALLBACK pfnCal
     decoder->offset = 0;
     decoder->owed = 0;
     decoder->finished = false;
+    decoder->opened = false;
+    decoder->host = 0;
 
     /* the caller passes an uninitialized local: report the decoded format */
     if (pwfxCompressed)
