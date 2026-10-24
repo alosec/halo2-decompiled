@@ -104,3 +104,17 @@ extern "C" int h2_native_async_abort_admitted(void)
 {
     return host_h2_async_abort_admitted();
 }
+
+extern "C" HANDLE WINAPI CreateThread(void *attributes, DWORD stack_size,
+                                      LPTHREAD_START_ROUTINE start, void *parameter,
+                                      DWORD creation_flags, DWORD *thread_id)
+{
+    (void)attributes;
+    (void)creation_flags;
+    if (thread_id)
+        *thread_id = 0;
+    /* Guest addresses travel as integers so the host can map them itself. */
+    return token_handle(host_h2_thread_create(reinterpret_cast<unsigned int>(start),
+                                              reinterpret_cast<unsigned int>(parameter),
+                                              stack_size));
+}

@@ -56,6 +56,9 @@ bool configure_profile_services(const std::filesystem::path& directory,
                                 std::string& error);
 void reset_profile_services();
 bool configure_async_services(GuestArena& arena, std::string& error);
+bool apply_retail_code_map(const GuestElfImage& image, GuestArena& arena,
+                           const std::vector<XbeSection>& sections,
+                           std::size_t& patched, std::string& error);
 bool install_async_cache_file(const std::filesystem::path& path,
                               std::int16_t expected_type,
                               const std::string& expected_name, bool make_active,

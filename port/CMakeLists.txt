@@ -3488,6 +3488,7 @@ add_library(h2_port_support STATIC
     src/retail_data.cpp
     src/texture_decode.cpp
     src/font_decode.cpp
+    src/xbox_system.cpp
 )
 target_include_directories(h2_port_support PUBLIC include)
 target_compile_features(h2_port_support PUBLIC cxx_std_20)
@@ -3882,6 +3883,11 @@ add_custom_target(h2-whole-image
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --start ${CMAKE_CURRENT_SOURCE_DIR}/runtime/whole_image_start.s
             --linker-script ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
+            # Real guest threads run the recovered async queue unchanged.
+            --prefer src/async.cpp
+            # The game's Xbox system calls, over the curated image's narrower ones.
+            --prefer port/runtime/guest_xbox_system.cpp
+            --prefer port/runtime/guest_crt_extra.c
     DEPENDS h2_guest_rebase
     BYPRODUCTS "${H2_WHOLE_IMAGE}"
     USES_TERMINAL

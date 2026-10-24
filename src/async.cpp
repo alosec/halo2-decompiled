@@ -93,7 +93,8 @@ long async_task_queue(s_job_node *node)
 {
 	long task_id;
 
-#ifdef H2_NATIVE_PORT
+#if defined(H2_NATIVE_PORT) && !defined(H2_WHOLE_IMAGE)
+	/* the curated image admits work through its cooperative native worker */
 	if (!h2_native_async_try_admit())
 	{
 		WaitForSingleObject(async_globals.free_list_mutex, INFINITE);
@@ -109,7 +110,7 @@ long async_task_queue(s_job_node *node)
 	node->state = (async_globals.task_id_counter << 8) | node->state;
 	async_globals.task_id_counter++;
 	task_id = node->state;
-#ifdef H2_NATIVE_PORT
+#if defined(H2_NATIVE_PORT) && !defined(H2_WHOLE_IMAGE)
 	if (!h2_native_async_publish_admitted())
 	{
 		if (async_globals.work_list == node)

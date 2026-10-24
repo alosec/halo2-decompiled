@@ -10,6 +10,7 @@
 #include "h2/profile_store.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstdio>
 #include <string>
 #include <unordered_map>
@@ -819,11 +820,62 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
             return false;
         }
     }
-    /* Only whole-image builds carry trap stubs. */
-    if (image.symbol_address("h2_host_slot_host_h2_unimplemented") &&
-        !image.patch_host_import(arena, "host_h2_unimplemented",
-                                 function_address(&host_h2_unimplemented), error)) {
+    /* Only whole-image builds carry these. */
+    const Import optional_imports[] = {
+        {"host_h2_unimplemented", function_address(&host_h2_unimplemented)},
+        {"host_h2_thread_create", function_address(&host_h2_thread_create)},
+    };
+    for (const auto& import : optional_imports) {
+        if (image.symbol_address(std::string("h2_host_slot_") + import.symbol) &&
+            !image.patch_host_import(arena, import.symbol, import.target, error)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool apply_retail_code_map(const GuestElfImage& image, GuestArena& arena,
+                           const std::vector<XbeSection>& sections,
+                           std::size_t& patched, std::string& error) {
+    /* Retail data (vtables, callback tables, statically initialized objects)
+       holds x86 code addresses. A whole image lists, for each retail function
+       it defines natively, the native address; rewrite every aligned data word
+       that holds one of those retail addresses. */
+    patched = 0;
+    const auto start = image.symbol_address("__h2_retail_code_map_start");
+    const auto end = image.symbol_address("__h2_retail_code_map_end");
+    if (!start || !end)
+        return true;
+    if (*end < *start || (*end - *start) % 8) {
+        error = "retail code map is malformed";
         return false;
+    }
+    std::unordered_map<std::uint32_t, std::uint32_t> native_address;
+    native_address.reserve((*end - *start) / 8);
+    for (std::uint32_t entry = *start; entry < *end; entry += 8) {
+        std::uint32_t retail = 0;
+        std::uint32_t native = 0;
+        std::memcpy(&retail, arena.pointer(entry), sizeof(retail));
+        std::memcpy(&native, arena.pointer(entry + 4), sizeof(native));
+        native_address.emplace(retail, native);
+    }
+    /* Every section: the XBE marks .rdata executable too, and the x86 code
+       sections are never executed natively, so rewriting their bytes is inert. */
+    for (const auto& section : sections) {
+        const std::uint32_t first = (section.virtual_address + 3u) & ~3u;
+        const std::uint64_t last =
+            static_cast<std::uint64_t>(section.virtual_address) + section.virtual_size;
+        for (std::uint64_t address = first; address + 4 <= last; address += 4) {
+            auto* const word = static_cast<unsigned char*>(
+                arena.pointer(static_cast<std::uint32_t>(address)));
+            std::uint32_t value = 0;
+            std::memcpy(&value, word, sizeof(value));
+            const auto found = native_address.find(value);
+            if (found != native_address.end()) {
+                std::memcpy(word, &found->second, sizeof(found->second));
+                ++patched;
+            }
+        }
     }
     return true;
 }
@@ -1179,6 +1231,47 @@ extern "C" void host_h2_sleep(unsigned int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
+extern "C" bool h2_call_guest_bool_1(bool (*function)(unsigned int), unsigned int argument,
+                                     void* stack_top);
+
+namespace {
+constexpr std::uint32_t kGuestThreadStackBase = 0x21000000u;
+constexpr std::uint32_t kGuestThreadStackSize = 0x00040000u;
+constexpr std::uint32_t kGuestThreadLimit = 32u;
+constexpr std::uint32_t kGuestThreadHandleBase = 0x7f000000u;
+}  // namespace
+
+extern "C" unsigned int host_h2_thread_create(unsigned int entry, unsigned int parameter,
+                                               unsigned int stack_size) {
+    /* A recovered CreateThread: the guest entry runs on its own host thread
+       and its own guest stack, as the Xbox scheduled it. */
+    static std::atomic<std::uint32_t> next_slot{0};
+    auto& state = cache_state();
+    h2::port::GuestArena* arena = nullptr;
+    {
+        const std::lock_guard lock(state.mutex);
+        arena = state.arena;
+    }
+    const std::uint32_t slot = next_slot.fetch_add(1);
+    if (!arena || slot >= kGuestThreadLimit || stack_size > kGuestThreadStackSize) {
+        std::fprintf(stderr, "h2-port: guest thread %u could not be created\n", slot);
+        return 0;
+    }
+    const std::uint32_t stack_address = kGuestThreadStackBase + slot * kGuestThreadStackSize;
+    std::string error;
+    if (!arena->protect(stack_address, kGuestThreadStackSize,
+                        h2::port::GuestMemoryProtection::read_write, error)) {
+        std::fprintf(stderr, "h2-port: guest thread stack: %s\n", error.c_str());
+        return 0;
+    }
+    auto* const function = reinterpret_cast<bool (*)(unsigned int)>(arena->pointer(entry));
+    void* const stack_top = arena->pointer(stack_address + kGuestThreadStackSize - 16);
+    std::thread([function, parameter, stack_top] {
+        h2_call_guest_bool_1(function, parameter, stack_top);
+    }).detach();
+    return kGuestThreadHandleBase + slot;
+}
+
 extern "C" unsigned int host_h2_unimplemented(const char* symbol) {
     /* Whole-image trap stubs land here for functions no recovered unit
        defines yet. Report each one once, then keep running with a zero result. */
@@ -1287,6 +1380,13 @@ extern "C" int host_h2_profile_delete(unsigned int identifier) {
     return h2::port::erase_native_profile(identifier, error) ? 1 : 0;
 }
 
+namespace {
+bool trace_async() {
+    static const bool enabled = std::getenv("H2_TRACE_ASYNC") != nullptr;
+    return enabled;
+}
+}  // namespace
+
 extern "C" unsigned int host_h2_async_create_mutex(int initial_owner) {
     const auto context = async_context();
     return context ? context->bridge.create_mutex(initial_owner != 0) : 0;
@@ -1295,11 +1395,17 @@ extern "C" unsigned int host_h2_async_create_mutex(int initial_owner) {
 extern "C" unsigned int host_h2_async_create_semaphore(int initial_count,
                                                           int maximum_count) {
     const auto context = async_context();
-    return context ? context->bridge.create_semaphore(initial_count, maximum_count) : 0;
+    const unsigned int handle =
+        context ? context->bridge.create_semaphore(initial_count, maximum_count) : 0;
+    if (trace_async())
+        std::fprintf(stderr, "h2-async: semaphore %u (%d/%d)\n", handle, initial_count, maximum_count);
+    return handle;
 }
 
 extern "C" unsigned int host_h2_async_wait(unsigned int handle,
                                              unsigned int milliseconds) {
+    if (trace_async())
+        std::fprintf(stderr, "h2-async: wait %u %u\n", handle, milliseconds);
     const auto context = async_context();
     if (!context)
         return 0xffffffffu;
@@ -1322,6 +1428,8 @@ extern "C" int host_h2_async_release_mutex(unsigned int handle) {
 extern "C" int host_h2_async_release_semaphore(unsigned int handle,
                                                   int release_count,
                                                   int* previous_count) {
+    if (trace_async())
+        std::fprintf(stderr, "h2-async: release semaphore %u\n", handle);
     const auto context = async_context();
     return context && context->bridge.release_semaphore(
                           handle, release_count, previous_count) ? 1 : 0;

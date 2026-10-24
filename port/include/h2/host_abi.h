@@ -34,6 +34,8 @@ void host_h2_text_request(const unsigned int* text, const void* bounds,
 unsigned int host_h2_get_milliseconds(void);
 void host_h2_sleep(unsigned int milliseconds);
 unsigned int host_h2_unimplemented(const char* symbol);
+unsigned int host_h2_thread_create(unsigned int entry, unsigned int parameter,
+                                   unsigned int stack_size);
 double host_h2_cos(double value);
 double host_h2_math_acos(double value);
 double host_h2_math_exp(double value);
@@ -68,6 +70,39 @@ void host_h2_async_yield(void);
 int host_h2_async_try_admit(void);
 int host_h2_async_publish_admitted(void);
 int host_h2_async_abort_admitted(void);
+
+/* Xbox system services for whole images (port/src/xbox_system.cpp). Guest
+ * addresses that the host maps itself travel as unsigned integers. */
+unsigned int host_h2_xbox_memory_alloc(unsigned int size, unsigned int alignment,
+                                       unsigned int physical, unsigned int top_down);
+int host_h2_xbox_memory_free(unsigned int address);
+unsigned int host_h2_xbox_memory_size(unsigned int address);
+unsigned int host_h2_last_error(void);
+void host_h2_set_last_error(unsigned int error);
+unsigned int host_h2_file_open(const char* path, unsigned int access, unsigned int disposition);
+int host_h2_file_is_handle(unsigned int handle);
+int host_h2_file_read(unsigned int handle, void* buffer, unsigned int size, unsigned int* read);
+int host_h2_file_write(unsigned int handle, const void* buffer, unsigned int size,
+                       unsigned int* written);
+int host_h2_file_seek(unsigned int handle, long long distance, unsigned int method,
+                      unsigned long long* position);
+int host_h2_file_size(unsigned int handle, unsigned long long* size);
+int host_h2_file_truncate(unsigned int handle);
+int host_h2_file_flush(unsigned int handle);
+int host_h2_file_close(unsigned int handle);
+unsigned int host_h2_file_attributes(const char* path, unsigned long long* size,
+                                     unsigned long long* write_time);
+int host_h2_file_delete(const char* path);
+int host_h2_directory_create(const char* path);
+int host_h2_directory_remove(const char* path);
+unsigned int host_h2_find_first(const char* pattern, void* data);
+int host_h2_find_next(unsigned int handle, void* data);
+unsigned long long host_h2_system_time(void);
+int host_h2_local_time_offset(void);
+unsigned long long host_h2_performance_counter(void);
+double host_h2_math_atan(double value);
+double host_h2_math_atan2(double y, double x);
+double host_h2_math_asin(double value);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,10 @@
+#include <unistd.h>
+#include <sys/ucontext.h>
+#include <signal.h>
+#include <cstdio>
+#include <csignal>
 #include "h2/font_decode.hpp"
+#include "h2/xbox_system.hpp"
 #include "h2/guest_arena.hpp"
 #include "h2/guest_elf_image.hpp"
 #include "h2/host_services.hpp"
@@ -931,7 +937,49 @@ int run_window(GuestEntry guest_frame, GuestEntry guest_press_start,
 
 }  // namespace
 
+namespace {
+
+/* Report guest faults: the program counter, link register and frame-pointer
+   chain, which tools/guest_symbolize.py maps to guest symbols. */
+void report_fault(int signal_number, siginfo_t* info, void* context) {
+    auto* const state = static_cast<ucontext_t*>(context);
+    char line[256];
+    int length = std::snprintf(line, sizeof(line),
+                               "h2-port: fault signal %d address 0x%llx pc 0x%llx lr 0x%llx\n",
+                               signal_number,
+                               static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(info->si_addr)),
+                               static_cast<unsigned long long>(state->uc_mcontext->__ss.__pc),
+                               static_cast<unsigned long long>(state->uc_mcontext->__ss.__lr));
+    write(2, line, static_cast<size_t>(length));
+    auto frame = static_cast<std::uintptr_t>(state->uc_mcontext->__ss.__fp);
+    for (int depth = 0; depth < 32 && frame && (frame & 7) == 0; ++depth) {
+        const auto* const record = reinterpret_cast<const std::uintptr_t*>(frame);
+        length = std::snprintf(line, sizeof(line), "h2-port:   frame 0x%llx\n",
+                               static_cast<unsigned long long>(record[1]));
+        write(2, line, static_cast<size_t>(length));
+        if (record[0] <= frame)
+            break;
+        frame = record[0];
+    }
+    signal(signal_number, SIG_DFL);
+    raise(signal_number);
+}
+
+void install_fault_reporter() {
+    struct sigaction action {};
+    action.sa_sigaction = report_fault;
+    action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGSEGV, &action, nullptr);
+    sigaction(SIGBUS, &action, nullptr);
+    sigaction(SIGILL, &action, nullptr);
+    sigaction(SIGTRAP, &action, nullptr);
+}
+
+} // namespace
+
 int main(int argc, char** argv) {
+    install_fault_reporter();
     Options options;
     if (!parse_options(argc, argv, options)) {
         usage(argv[0]);
@@ -988,10 +1036,20 @@ int main(int argc, char** argv) {
             !h2::port::patch_standard_host_imports(
                 *guest_image, *arena, arena_error) ||
             !h2::port::patch_async_host_imports(
-                *guest_image, *arena, arena_error)) {
+                *guest_image, *arena, arena_error) ||
+            !h2::port::patch_xbox_system_imports(*guest_image, *arena, arena_error)) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
         }
+        std::size_t relocated_code_pointers = 0;
+        if (!h2::port::apply_retail_code_map(*guest_image, *arena, image.sections,
+                                             relocated_code_pointers, arena_error)) {
+            std::cerr << "error: " << arena_error << '\n';
+            return 1;
+        }
+        if (relocated_code_pointers)
+            std::cout << "Relocated " << relocated_code_pointers
+                      << " retail code pointers to native code" << std::endl;
         if (options.guest_entry == "h2_main_menu_guest_bootstrap") {
             h2::port::AsyncTextureGuestEntries entries{};
             const auto resolve_entry = [&](const char* symbol,
@@ -1041,6 +1099,14 @@ int main(int argc, char** argv) {
             const auto entry = reinterpret_cast<GuestEntry>(arena->pointer(*address));
             void* const stack_top = arena->pointer(
                 kGuestStackAddress + kGuestStackSize - 16);
+            if (options.guest_entry == "h2_whole_game_main" &&
+                (!h2::port::configure_async_services(*arena, arena_error) ||
+                 !h2::port::configure_xbox_system(*arena, options.data_root,
+                                                  options.profile_root / "title",
+                                                  arena_error))) {
+                std::cerr << "error: guest async services: " << arena_error << '\n';
+                return 1;
+            }
             h2::port::reset_host_service_stats();
             const int result = h2_call_guest_int_0(entry, stack_top);
             guest_service_stats = h2::port::host_service_stats();

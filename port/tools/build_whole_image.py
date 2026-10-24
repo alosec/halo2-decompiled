@@ -365,8 +365,13 @@ def backend(unit, args, delete_functions, delete_globals, promote=()):
         path.unlink(missing_ok=True)
 
 
+PREFERRED = set()
+
+
 def priority(unit, symbol, csv_sources, symbol_address):
     path = unit.relative
+    if path in PREFERRED:
+        return -1
     if path.startswith("port/"):
         return 0
     if path.endswith("_native.cpp"):
@@ -412,7 +417,10 @@ def main():
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     parser.add_argument("--exclude", action="append", default=[],
                         help="relative source path to leave out")
+    parser.add_argument("--prefer", action="append", default=[],
+                        help="relative source path whose definitions win every duplicate")
     args = parser.parse_args()
+    PREFERRED.update(args.prefer)
     root = args.root.resolve()
     args.include = [root / "port/include", root / "port/include/crt",
                     root / "port/include/xdk", root / "include"]
@@ -421,7 +429,7 @@ def main():
 
     sources = sorted((root / "src").glob("*.cpp")) + sorted((root / "src/stubs").glob("*.cpp"))
     sources += sorted((root / "port/runtime").glob("guest_*.cpp"))
-    sources += [root / "port/runtime/guest_crt.c"]
+    sources += sorted((root / "port/runtime").glob("guest_*.c"))
     excluded = set(args.exclude)
     units = [Unit(s, root, work) for s in sources if str(s.relative_to(root)) not in excluded]
 
@@ -615,6 +623,29 @@ def main():
         if symbol in undefined:
             escaped = elf_name(symbol).replace('"', '\\"')
             lines += [f'.globl "{escaped}"', f'.set "{escaped}", 0x{address:08x}']
+    # Retail code addresses and the native definitions now behind them. The
+    # host rewrites retail data words holding these addresses (vtables,
+    # callback tables) so guest code never jumps to x86 code.
+    retail_code = {}
+    ranked_units = sorted(compiled, key=lambda u: (priority(u, "", csv_sources, {}), u.relative))
+    for unit in ranked_units:
+        for name, kind in scans[unit.relative]["functions"].items():
+            if kind not in ("strong", "weak") or name in delete_functions[unit.relative]:
+                continue
+            address = address_of(unit, name)
+            if address is not None and address not in retail_code:
+                retail_code[address] = name
+    for symbol in stubs:
+        m = re.match(r'\?+function_([0-9a-f]{5,6})@', symbol)
+        if m and int(m.group(1), 16) not in retail_code:
+            retail_code[int(m.group(1), 16)] = symbol
+    lines += ['.section .rodata.h2_retail_code_map,"a",@progbits', ".p2align 2",
+              ".globl __h2_retail_code_map_start", "__h2_retail_code_map_start:"]
+    for address, symbol in sorted(retail_code.items()):
+        lines += [f"    .long 0x{address:08x}", f'    .long "{elf_name(symbol)}"']
+    lines += [".globl __h2_retail_code_map_end", "__h2_retail_code_map_end:"]
+    report["retail_code_map"] = len(retail_code)
+
     glue = work / "glue.s"
     glue.write_text("\n".join(lines) + "\n")
     glue_object = work / "glue.o"
