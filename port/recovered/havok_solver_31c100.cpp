@@ -50,7 +50,9 @@ public:
 	virtual void slot_1() = 0;
 	virtual void slot_2() = 0;
 	virtual char *write_bodies(void *step_info, void *world_info, char *out) = 0;
-	virtual char *read_bodies(void *step_info, void *solver_results, char *in) = 0;
+	// scale: the solver info's float at 0x20 (retail pushes the dword; the
+	// motions' slot 4, e.g. 0x31a8c0, scale the solved velocities by it)
+	virtual char *read_bodies(void *step_info, float scale, char *in) = 0;
 
 	long field_4;
 	// the offset of the bodies from the area's base
@@ -114,7 +116,8 @@ struct simulation_31c100
 struct solver_info_31c100
 {
 	char unknown0[0x20];
-	void *results;
+	// the scale slot 4 of the integrated objects takes
+	float results_scale;
 };
 
 static __forceinline char *stack_allocate_31c100(long size)
@@ -240,11 +243,11 @@ void __cdecl function_31c100(void *step_10, void *step_20, void *step_50, void *
 
 	if (solved == 1)
 	{
-		void *const results = solver_info->results;
+		float const results_scale = solver_info->results_scale;
 		char *in = bodies_start;
 		for (holder_31c100 **island = islands; island < islands + island_count; island++)
 		{
-			in = (*island)->integrated->read_bodies(step_10, results, in);
+			in = (*island)->integrated->read_bodies(step_10, results_scale, in);
 		}
 	}
 
