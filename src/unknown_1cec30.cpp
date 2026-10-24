@@ -2408,7 +2408,7 @@ PRIVATE inline void component_frame_matrix(hkTransform const *frame, transform4x
 // 0x16c4f0, 0x16c5f0; maintainer's full check on #566), so `@stub 0x1d3920` in src/stubs/lane_s.cpp
 // stays active. The body behaves like retail on 6/6 in-game snapshots (fecheck): retail keeps all
 // three arguments on the stack (ret 0xc) and its callers 0xbc8dc and 0xbd1a7 push them.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 /* views of s_component_node_object and s_component_node_render_model with the fields
    this function reads named (same layouts) */
 struct s_component_node_object_1d3920

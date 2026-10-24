@@ -3,7 +3,7 @@
 // 0x1e2f50 under whole-program optimisation; neither byte-matches yet. fecheck: both behave like retail on 6/6
 // in-game snapshots (0x1f38c0 takes the actor in eax; 0x1f6090 is __stdcall, 7 pushed arguments, ret 0x1c).
 // The stub for 0x1f38c0 stays.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 /* UNKNOWN_1F6090.CPP: a biped actor moving toward its current path point:
    whether the point is reached, the requests the path entry needs, the
    facing and the throttle, the path entry's own movement, a target object,

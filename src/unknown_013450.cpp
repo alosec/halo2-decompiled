@@ -28,7 +28,7 @@ extern dword g_4b8344;
 void function_14bc0(short index, short element, bool use_depth);
 void function_14ac0(void);
 
-#if 0 // Draft (also defines g_4b893c, which nothing else defines yet), 477 bytes (retail 474). Writing it costs matched 0x14ac0 (LTCG stack
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */ // Draft (also defines g_4b893c, which nothing else defines yet), 477 bytes (retail 474). Writing it costs matched 0x14ac0 (LTCG stack
 // alignment: this body gets a 'push ecx' pad and 0x14ac0's frame grows 0x30 -> 0x34).
 real g_4b893c;
 

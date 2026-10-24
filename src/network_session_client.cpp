@@ -996,7 +996,7 @@ void function_6fa60(c_session_state_joining *self)
 }
 
 // Enabling this queue processor currently changes shared call conventions.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 long network_session_find_player(c_class_58d20 *session, const dword *identity);
 struct s_surface_description;
 struct s_matchmaking_ratings;

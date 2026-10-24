@@ -3185,7 +3185,7 @@ void function_36b50()
 
 
 // Disabled: render-clear 14b60 still has a protected bool-only interface; filter callbacks also need shared state addresses.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 PRIVATE inline real transition_time_r18()
 {
     return g_510c54 && g_510c54->active ? g_510c54->game_time * g_510c54->rate : 0.0f;
@@ -3277,7 +3277,7 @@ PRIVATE inline bool fog_pass_enabled_r18()
 
 
 // Disabled: shadow rendering requires persistent shared light-frame/definition storage and visibility/global-source addresses.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 PRIVATE inline vector3f shadow_cross_r18(vector3f const &a, vector3f const &b)
 {
     vector3f c;
@@ -3976,7 +3976,7 @@ PRIVATE __forceinline real filter_transition_time_289e0()
 
 void function_14ac0();
 
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 // Retail 0x289e0
 bool function_289e0()
 {

@@ -296,22 +296,30 @@ typedef enum _D3DTEXTUREFILTERTYPE
     D3DTEXF_FORCE_DWORD = 0x7fffffff
 } D3DTEXTUREFILTERTYPE;
 
-/* Primitive types.  xtl.h defines D3DPT_TRIANGLELIST (4) and
- * D3DPT_TRIANGLEFAN (7, retail-verified there) as plain macros, so the type is
- * a DWORD and every member is a macro. */
+/* Primitive types.  xtl.h defines D3DPT_TRIANGLELIST and D3DPT_TRIANGLEFAN
+ * (7, retail-verified there) as plain macros, so the type is a DWORD and every
+ * member is a macro.  The Xbox values are the NV2A begin/end codes: the two
+ * verified ones (FAN 7, QUADLIST 8) are those codes, and the game's own table
+ * g_43fdc0 = {1, 2, 5, 8, 6} (src/unknown_01cf50.cpp) turns its primitive
+ * kinds (points, lines, triangles, quads, strips) into the same codes for its
+ * inline pushes. */
 typedef DWORD D3DPRIMITIVETYPE;
 #ifndef D3DPT_TRIANGLELIST
-#define D3DPT_TRIANGLELIST 4
+#define D3DPT_TRIANGLELIST 5
 #endif
 #ifndef D3DPT_TRIANGLEFAN
 #define D3DPT_TRIANGLEFAN 7
 #endif
 #define D3DPT_QUADLIST 8 /* verified: docs/unknown_052040.md */
-/* PROVISIONAL: public PC Direct3D 8 value; Xbox value not yet verified against the retail executable */
+/* PROVISIONAL: the NV2A codes, by the reasoning above; not yet each seen in
+   the retail executable */
 #define D3DPT_POINTLIST 1
 #define D3DPT_LINELIST 2
-#define D3DPT_LINESTRIP 3
-#define D3DPT_TRIANGLESTRIP 5
+#define D3DPT_LINELOOP 3
+#define D3DPT_LINESTRIP 4
+#define D3DPT_TRIANGLESTRIP 6
+#define D3DPT_QUADSTRIP 9
+#define D3DPT_POLYGON 10
 /* end PROVISIONAL */
 
 /* Formats and resource types.  The formats in the game's own tables

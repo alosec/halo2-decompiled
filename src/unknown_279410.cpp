@@ -3,7 +3,7 @@
 // self-aligning (16-byte frame) caller reaches 0x1cfd10, our 0x182b90 takes its fourth argument on the stack
 // instead of in ebx; any 16-aligned caller does it, and 0x182b90's own frame is not the cause (it is retail's
 // since round 27; build/codex-report.md, rounds 26 and 27).
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 #include "unknown_1cec30.h"
 
 struct s_2792c0_context;

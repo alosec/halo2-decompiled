@@ -304,7 +304,7 @@ void __stdcall function_1fbe00(long clump_index, long source_index, long object_
 // argument on the stack (retail's callers push all five; ret 0x14). Enabling it also needs the signature
 // retail reads: (long actor_index, long unit_index, short mode, bool filter, event), in the declarations in
 // unknown_1c95d0.cpp, 1ca130, 1ca690, 1fb7e0 and 20d570. The lane_b stub stays.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 #include "player_queries.h"
 #include <math.h>
 

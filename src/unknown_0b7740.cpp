@@ -910,7 +910,7 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
 // Activating this body changes shared helper register conventions and loses
 // seven existing exact matches. Preserve the closest draft until those
 // helper conventions can be reconciled with their owners.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 
 __declspec(noinline) bool function_0bfe60(dword const *mask, long node);
 bool unit_animation_periodic_layer_active(long object_index);

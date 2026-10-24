@@ -215,7 +215,7 @@ bool function_25820(s_render_view_2b790 const *source)
 struct s_matrix_workspace { long size; byte data[0x27000]; };
 extern s_matrix_workspace g_487b18;
 
-#if 0 // Activation must preserve all matched callers and callees.
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */ // Activation must preserve all matched callers and callees.
 struct s_223240;
 struct s_frame_parameters_12a50
 {

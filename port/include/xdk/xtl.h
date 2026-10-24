@@ -124,7 +124,7 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
  * Retail function_22a664 passes primitive value 7 for TRIANGLEFAN; the native
  * boundary keeps the vertex register explicit instead of relying on the Xbox
  * compiler intrinsic. */
-#define D3DPT_TRIANGLELIST 4
+#define D3DPT_TRIANGLELIST 5 /* the NV2A begin code; see d3d8.h */
 #define D3DPT_TRIANGLEFAN 7
 #define D3DVSDE_VERTEX 0
 #endif

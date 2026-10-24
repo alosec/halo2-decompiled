@@ -26,6 +26,7 @@ import json
 import os
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 
@@ -427,6 +428,14 @@ def priority(unit, symbol, csv_sources, symbol_address):
             return 0
     if path.endswith("_native.cpp") and path not in INCOMPLETE_NATIVE:
         return 1
+    if path.endswith("_generated.cpp"):
+        # functions generated from retail idioms: anything recovered by hand
+        # comes first
+        return 3.9
+    if path.startswith("port/runtime/") and re.match(r'\?function_[0-9a-f]+@', symbol):
+        # the curated menu build's stand-ins for game functions: the
+        # recovered source of the function is the real thing
+        return 3.5
     if path.startswith("port/"):
         return 2
     if "/stubs/" in path:
@@ -443,6 +452,21 @@ def symbol_addresses(units):
         lines = unit.source.read_text(errors="replace").split("\n")
         pending = None
         for line in lines:
+            adjustor = re.search(r'@retail 0x([0-9a-f]+) adjustor ([A-Za-z_]\w*) (0x[0-9a-f]+|\d+)', line)
+            if adjustor:
+                # the compiler-generated this-adjusting thunk of the class's
+                # deleting destructor, for the base subobject at that offset
+                result.setdefault((unit.relative, f"{adjustor.group(2)}::__adjustor_{int(adjustor.group(3), 0)}"),
+                                  int(adjustor.group(1), 16))
+                pending = None
+                continue
+            deleting = re.search(r'@retail 0x([0-9a-f]+) deleting ([A-Za-z_]\w*)', line)
+            if deleting:
+                # the compiler-generated deleting destructor of the class
+                result.setdefault((unit.relative, f"{deleting.group(2)}::__deleting"),
+                                  int(deleting.group(1), 16))
+                pending = None
+                continue
             tag = re.search(r'@retail 0x([0-9a-f]+)', line)
             if tag:
                 pending = int(tag.group(1), 16)
@@ -526,6 +550,234 @@ def storage_bindings(root, args, work):
     return found
 
 
+VTABLE = re.compile(r'^@("\?\?_7[^"]+@@6B[^"]*@") = [^\n]*?constant \{ \[(\d+) x ptr\] \} '
+                    r'\{ \[\d+ x ptr\] \[(.*)\] \}$', re.M)
+
+
+def xbe_data_words(path):
+    """{word: [addresses]} for every aligned word of the XBE's data sections."""
+    xbe = path.read_bytes()
+    base = struct.unpack_from("<I", xbe, 0x104)[0]
+    count = struct.unpack_from("<I", xbe, 0x11c)[0]
+    headers = struct.unpack_from("<I", xbe, 0x120)[0] - base
+    words = {}
+    for index in range(count):
+        _, va, _, raw, rsize, name = struct.unpack_from("<IIIIII", xbe, headers + index * 56)
+        offset = name - base
+        if xbe[offset:xbe.index(b"\0", offset)] not in (b".rdata", b".data", b".data1"):
+            continue
+        for at in range(0, rsize - 3, 4):
+            words.setdefault(struct.unpack_from("<I", xbe, raw + at)[0], []).append(va + at)
+    return words
+
+
+def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functions):
+    """{vtable symbol: retail address} for the vtables whose slots'
+    retail addresses (from @retail tags; deleting destructors from their
+    'deleting' tags) agree on one place in the retail data."""
+    words = xbe_data_words(xbe_path)
+    word_at = {address: word for word, addresses in words.items() for address in addresses}
+    deleting = {q.split("::")[0]: a for (u, q), a in tag_addresses.items() if q.endswith("::__deleting")}
+    # the retail address behind each defined function symbol
+    retail_of = {}
+    for unit in compiled:
+        for name in scans[unit.relative]["functions"]:
+            if name in delete_functions[unit.relative]:
+                continue
+            qualified = qualified_name(name)
+            deleting_class = re.match(r'\?\?_[EG]([A-Za-z_]\w*)@@', name)
+            if deleting_class:
+                address = deleting.get(deleting_class.group(1))
+            elif qualified is None:
+                continue
+            else:
+                address = tag_addresses.get((unit.relative, qualified))
+                if address is None and "::" in qualified:
+                    address = tag_addresses.get((unit.relative, qualified.split("::")[-1]))
+            if address is not None:
+                retail_of.setdefault(name, address)
+                if name.startswith("??_G"):
+                    # vtables name the vector deleting destructor, an alias of
+                    # the scalar one in this ABI
+                    retail_of.setdefault("??_E" + name[4:], address)
+    seen = {}
+    for unit in compiled:
+        for m in VTABLE.finditer(unit.ir.read_text()):
+            symbol = unquote(m.group(1))
+            if symbol not in seen:
+                seen[symbol] = [unquote(s[1:]) if s != "null" else None
+                                for s in re.findall(r'ptr (@"[^"]+"|@[^ ,\]]+|null)', m.group(3))]
+    result = {}
+    structors = structor_vtables(xbe_path, tag_addresses)
+    mapped = set(retail_of.values())
+    bind_retail_vtables.patches = []
+
+    def bind(symbol, slots, start):
+        """Bind the table, and overlay the native function on each slot whose
+        retail function nobody recovered (a compiler-generated destructor
+        without a tag, an SDK class's method the port's shim implements)."""
+        result[symbol] = start
+        for index, slot in enumerate(slots):
+            word = word_at.get(start + 4 * index)
+            if slot and word is not None and 0x12000 <= word < 0x379c4c and word not in mapped:
+                bind_retail_vtables.patches.append((start + 4 * index, slot))
+
+    for symbol, slots in seen.items():
+        own = re.match(r'\?\?_7([A-Za-z_]\w*)@@6B', symbol)
+        primary = symbol.endswith("@@6B@")
+        # The constructor and destructor name the table outright: the last
+        # vtable a recovered constructor stores into the object (at the base
+        # subobject's offset), or the first one its destructor does, is the
+        # class's own.
+        candidates = structors.get((own.group(1), vtable_offset(slots)), []) if own else []
+        start = None
+        if candidates:
+            # several when a tag sits on the wrong function (a destructor tag
+            # on the deleting destructor, whose first store is a base's):
+            # the table holding most of the native slots' functions wins
+            wanted = {retail_of[slot] for slot in slots if slot in retail_of}
+            start = max(candidates, key=lambda entry: (len(wanted & {
+                word_at.get(entry[0] + 4 * index) for index in range(max(len(slots), 16))}),
+                *entry[1]))[0]
+        if start is not None:
+            bind(symbol, slots, start)
+            continue
+        # A class's own deleting destructor pins its table: the retail table
+        # starts that many slots before one of the places the destructor's
+        # address appears (identical destructors are shared between classes,
+        # so there can be several), and the candidate holding most of the
+        # native slots' functions wins. Native slot order may still be wrong
+        # around virtuals a recovered header misses, so the score ignores it.
+        if not primary:
+            continue
+        anchor = deleting.get(own.group(1)) if own else None
+        anchor_slot = next((index for index, slot in enumerate(slots)
+                            if slot and own and re.match(r'\?\?_[EG]' + own.group(1) + '@@', slot)), None)
+        if anchor is not None and anchor_slot is not None and words.get(anchor):
+            wanted = {retail_of[slot] for slot in slots if slot in retail_of}
+            scored = []
+            for position in words[anchor]:
+                position -= 4 * anchor_slot
+                window = {word_at.get(position + 4 * index) for index in range(max(len(slots), 16))}
+                scored.append((len(wanted & window), position))
+            scored.sort(reverse=True)
+            if len(scored) == 1 or scored[0][0] > scored[1][0]:
+                bind(symbol, slots, scored[0][1])
+            continue
+        votes = {}
+        anchored = set()
+        for index, slot in enumerate(slots):
+            address = retail_of.get(slot) if slot else None
+            if address is None:
+                continue
+            for position in words.get(address, ()):
+                start = position - 4 * index
+                votes[start] = votes.get(start, 0) + 1
+                if slot.startswith(("??_E", "??_G")) and index == 0:
+                    anchored.add(start)
+        if not votes:
+            continue
+        best = max(votes.values())
+        starts = [start for start, count in votes.items() if count == best]
+        if len(starts) != 1:
+            continue
+        start = starts[0]
+        if not (best >= 2 or start in anchored):
+            continue
+        bind(symbol, slots, start)
+    return result
+
+
+def structor_vtables(xbe_path, tag_addresses):
+    """{class: retail vtable} from the retail code of recovered constructors
+    (the last `mov dword ptr [reg], table` into the object) and destructors
+    (the first), for tables in .rdata."""
+    xbe = xbe_path.read_bytes()
+    base = struct.unpack_from("<I", xbe, 0x104)[0]
+    headers = struct.unpack_from("<I", xbe, 0x120)[0] - base
+    _, text_va, _, text_raw, text_size = struct.unpack_from("<IIIII", xbe, headers)
+    sizes = {}
+    with (Path(__file__).resolve().parents[2] / "config/functions.csv").open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            sizes[int(row["va"], 16)] = int(row["size"])
+    # mov dword ptr [eax|ecx|edx|ebx|esi|edi (+ disp8 | disp32)], imm32
+    # (a lookahead, so a 16-bit store's tail cannot hide the next store)
+    store = re.compile(rb"(?=\xc7(?:([\x00\x01\x02\x03\x06\x07])|([\x40\x41\x42\x43\x46\x47]).|"
+                       rb"([\x80\x81\x82\x83\x86\x87])....)(....))", re.S)
+    result = {}
+    for (unit, qualified), address in tag_addresses.items():
+        parts = qualified.split("::")
+        if len(parts) < 2 or parts[-1].lstrip("~") != parts[-2]:
+            continue
+        size = sizes.get(address)
+        if not size or not text_va <= address < text_va + text_size:
+            continue
+        code = xbe[text_raw + address - text_va:text_raw + address - text_va + size]
+        # the registers holding the object: ecx (thiscall) and whatever it is
+        # copied to (mov esi|edi|ebx|ebp, ecx); eax only when nothing else
+        # holds it, since a member's constructor returns its member there
+        this_registers = {1}
+        copies = {b"\x8b\xf1": 6, b"\x8b\xf9": 7, b"\x8b\xd9": 3, b"\x8b\xe9": 5}
+        for pattern, register in copies.items():
+            if pattern in code:
+                this_registers.add(register)
+        if len(this_registers) == 1 and b"\x8b\xc1" in code:
+            this_registers.add(0)
+        by_offset = {}
+        for m in store.finditer(code):
+            if m.start() and code[m.start() - 1] == 0x66:
+                continue  # a 16-bit store
+            # a store through another register may fill a member or a local
+            # (or the object, when an optimised call passes it in eax)
+            via_this = (code[m.start() + 1] & 7) in this_registers
+            table = struct.unpack("<I", m.group(4))[0]
+            if not 0x411520 <= table < 0x461180:
+                continue
+            if m.group(1) is not None:
+                offset = 0
+            elif m.group(2) is not None:
+                offset = struct.unpack("<b", code[m.start() + 2:m.start() + 3])[0]
+            else:
+                offset = struct.unpack("<i", code[m.start() + 2:m.start() + 6])[0]
+            by_offset.setdefault(offset, []).append((table, via_this))
+        constructor = not parts[-1].startswith("~")
+        for offset, tables in by_offset.items():
+            candidates = result.setdefault((parts[-2], offset), [])
+            for position, (table, via_this) in enumerate(tables):
+                # a constructor's last store is its own table (bases come
+                # first), a destructor's first; a destructor tag may also sit
+                # on the deleting destructor, whose first store is a base's
+                place = position if constructor else len(tables) - 1 - position
+                candidates.append((table, (via_this, constructor, place)))
+    return result
+
+
+def mangled_number(text):
+    """An MSVC mangled number: '0'-'9' for 1-10, else hex digits as 'A'-'P'
+    ending in '@'. Returns (value, rest)."""
+    if text[:1].isdigit():
+        return int(text[0]) + 1, text[1:]
+    value = 0
+    for index, char in enumerate(text):
+        if char == "@":
+            return value, text[index + 1:]
+        value = value * 16 + (ord(char) - ord("A"))
+    return value, ""
+
+
+def vtable_offset(slots):
+    """The offset of the base subobject a vtable serves: the this-adjustment
+    of its thunks (`W<offset>` in their names), 0 for a primary table."""
+    for slot in slots:
+        m = re.match(r'\?[^@]*@[A-Za-z_]\w*@@W([0-9A-P][A-P@]*)', slot or "") or \
+            re.match(r'\?\?_[EG][A-Za-z_]\w*@@W([0-9A-P][A-P@]*)', slot or "")
+        if m:
+            return mangled_number(m.group(1))[0]
+    return 0
+
+
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
@@ -540,6 +792,8 @@ def main():
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     parser.add_argument("--exclude", action="append", default=[],
                         help="relative source path to leave out")
+    parser.add_argument("--xbe", type=Path,
+                        help="the retail XBE (default orig/game/default.xbe), to find retail vtables")
     parser.add_argument("--check", type=Path,
                         help="only compile this source as the image would and print its diagnostics")
     parser.add_argument("--prefer", action="append", default=[],
@@ -709,6 +963,24 @@ def main():
                 report["native_address_globals"].append(name)
             if info["linkage"] == "strong":
                 global_owners.setdefault(name, []).append(unit)
+    # Native vtables of classes whose declarations in the recovered headers
+    # are incomplete come out short or in the wrong order. Bind each primary
+    # vtable to the retail one instead: the host rewrites every retail code
+    # address in the XBE's data to its native function, so a retail vtable
+    # runs recovered code in every slot recovered under any class name, and a
+    # slot nobody recovered faults with its retail address.
+    xbe_path = args.xbe or root / "orig/game/default.xbe"
+    retail_vtables = bind_retail_vtables(xbe_path, compiled, scans, tag_addresses,
+                                         delete_functions) if xbe_path.exists() else {}
+    vtable_patches = getattr(bind_retail_vtables, "patches", [])
+    report["vtable_patches"] = len(vtable_patches)
+    for symbol, address in retail_vtables.items():
+        bindings[symbol] = address
+        report.setdefault("vtables_bound", {})[symbol] = f"0x{address:08x}"
+        for unit in compiled:
+            if symbol in scans[unit.relative]["globals"]:
+                delete_globals[unit.relative].add(symbol)
+
     for name, candidates in global_owners.items():
         if len(candidates) < 2:
             continue
@@ -764,8 +1036,14 @@ def main():
     data = []
     lines = ["// Generated by build_whole_image.py", '.section .text.h2_whole,"ax",@progbits',
              ".p2align 2"]
+    retail_calls = []
     for symbol in undefined:
         if symbol in bindings:
+            continue
+        if re.fullmatch(r'h2_retail_[0-9a-f]+', symbol):
+            # a call by retail address (port/recovered/ code generated from
+            # retail idioms): resolved through the code map below
+            retail_calls.append(symbol)
             continue
         match = ADDRESS_NAME.search(symbol)
         if match and symbol not in function_like:
@@ -815,14 +1093,30 @@ def main():
     # host rewrites retail data words holding these addresses (vtables,
     # callback tables) so guest code never jumps to x86 code.
     retail_code = {}
+    deleting = {q.split("::")[0]: a for (u, q), a in tag_addresses.items() if q.endswith("::__deleting")}
     ranked_units = sorted(compiled, key=lambda u: (priority(u, "", csv_sources, {}), u.relative))
     for unit in ranked_units:
         for name, kind in scans[unit.relative]["functions"].items():
             if kind not in ("strong", "weak") or name in delete_functions[unit.relative]:
                 continue
             address = address_of(unit, name)
+            # the deleting destructor (??_E aliases ??_G, which is the
+            # definition the units carry)
+            m = re.match(r'\?\?_[EG]([A-Za-z_]\w*)@@U', name)
+            if address is None and m:
+                address = deleting.get(m.group(1))
             if address is not None and address not in retail_code:
                 retail_code[address] = name
+    adjustors = {q: a for (u, q), a in tag_addresses.items() if "::__adjustor_" in q}
+    if adjustors:
+        for unit in ranked_units:
+            for name, kind in scans[unit.relative]["functions"].items():
+                m = re.match(r'\?\?_[EG]([A-Za-z_]\w*)@@W([0-9A-P][A-P@]*)', name)
+                if not m or name in delete_functions[unit.relative]:
+                    continue
+                address = adjustors.get(f"{m.group(1)}::__adjustor_{mangled_number(m.group(2))[0]}")
+                if address is not None and address not in retail_code:
+                    retail_code[address] = name
     for symbol in stubs:
         m = re.match(r'\?+function_([0-9a-f]{5,6})@', symbol)
         if m and int(m.group(1), 16) not in retail_code:
@@ -832,6 +1126,29 @@ def main():
     for address, symbol in sorted(retail_code.items()):
         lines += [f"    .long 0x{address:08x}", f'    .long "{elf_name(symbol)}"']
     lines += [".globl __h2_retail_code_map_end", "__h2_retail_code_map_end:"]
+    # h2_retail_<address>: a branch to the native function behind that retail
+    # address, or a trap naming it when nothing recovers it
+    lines += [".text", ".p2align 2"]
+    for symbol in retail_calls:
+        address = int(symbol[len("h2_retail_"):], 16)
+        target = retail_code.get(address)
+        lines += [f".globl {symbol}", f".type {symbol}, @function", f"{symbol}:"]
+        if target:
+            lines += [f'    b "{elf_name(target)}"']
+        else:
+            lines += [f"    adrp x0, {symbol}_name", f"    add x0, x0, :lo12:{symbol}_name",
+                      "    b host_h2_unimplemented"]
+            report.setdefault("retail_calls_missing", []).append(f"0x{address:x}")
+    lines += ['.section .rodata.h2_whole_names,"a",@progbits']
+    for symbol in retail_calls:
+        lines += [f"{symbol}_name:", f'    .asciz "retail function 0x{symbol[len("h2_retail_"):]}"']
+    lines += ['.section .rodata.h2_vtable_patches,"a",@progbits', ".p2align 2",
+              ".globl __h2_vtable_patches_start", "__h2_vtable_patches_start:"]
+    for slot_address, symbol in vtable_patches:
+        if symbol in stubs or symbol in undefined:
+            continue
+        lines += [f"    .long 0x{slot_address:08x}", f'    .long "{elf_name(symbol)}"']
+    lines += [".globl __h2_vtable_patches_end", "__h2_vtable_patches_end:"]
     report["retail_code_map"] = len(retail_code)
 
     glue = work / "glue.s"

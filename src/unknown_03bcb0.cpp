@@ -1294,7 +1294,7 @@ bool __stdcall function_4cbf0(long tag, long context, long pass, long stage,
     return result;
 }
 
-#if 0 // Activation changes matched rendering helpers.
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */ // Activation changes matched rendering helpers.
 struct s_projection_copy_3bd00
 {
     transform4x3f transform;

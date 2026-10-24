@@ -22,6 +22,26 @@ NM = "/opt/homebrew/opt/llvm@22/bin/llvm-nm"
 BIAS = 0x10000000000
 
 
+def data_symbols(image):
+    """sorted (address, name) of every symbol, for naming vtables"""
+    out = subprocess.run([NM, "--defined-only", "-n", image], capture_output=True, text=True).stdout
+    result = []
+    for line in out.splitlines():
+        parts = line.split(" ", 2)
+        if len(parts) == 3:
+            result.append((int(parts[0], 16), parts[2].replace("%", "@")))
+    return result
+
+
+def symbol_at(table, address):
+    import bisect
+    index = bisect.bisect_right(table, (address, chr(0x10ffff))) - 1
+    if index < 0:
+        return None
+    base, name = table[index]
+    return name if address - base < 0x400 else None
+
+
 def guest_symbols(image):
     symbols = {}
     out = subprocess.run([NM, "--defined-only", image], capture_output=True, text=True).stdout
@@ -52,6 +72,8 @@ def main():
     parser.add_argument("--break", dest="breaks", action="append", default=[])
     parser.add_argument("--watch", action="append", default=[], type=lambda text: int(text, 0))
     parser.add_argument("--hits", type=int, default=40)
+    parser.add_argument("--explain", action="store_true",
+                        help="at each hit, name the vtables of objects in registers")
     parser.add_argument("--seconds", type=float, default=60)
     args = parser.parse_args(sys.argv[1:split])
     host = sys.argv[split + 1:]
@@ -71,6 +93,7 @@ def main():
         sys.exit("launch failed: %s" % error)
     listener = debugger.GetListener()
     formats = {}
+    table = []
     deadline = time.time() + args.seconds
     hits = 0
     event = lldb.SBEvent()
@@ -119,6 +142,14 @@ def main():
                 values.append("[0x%x]=%s" % (address, "0x%x" % word if error.Success() else "?"))
             caller = frame.FindRegister("lr").GetValueAsUnsigned()
             print("%s(%s) from 0x%x" % (name[:50], ", ".join(values), caller & 0xffffffff), flush=True)
+            if args.explain:
+                if not table:
+                    table.extend(data_symbols(image))
+                explain(process, frame, table)
+                for depth in range(1, 4):
+                    caller_frame = thread.GetFrameAtIndex(depth)
+                    if caller_frame.IsValid():
+                        print("    frame %d pc 0x%x" % (depth, caller_frame.GetPC() & 0xffffffff))
             hits += 1
             process.Continue()
             continue
@@ -127,9 +158,25 @@ def main():
             frame = thread.GetFrameAtIndex(0)
             print(" ".join("x%d=0x%x" % (index, frame.FindRegister("x%d" % index).GetValueAsUnsigned())
                            for index in range(29)))
+            explain(process, frame, data_symbols(image))
             break
         process.Continue()
     process.Kill()
+
+
+def explain(process, frame, table):
+    """name the vtables of the objects the registers point at"""
+    for index in range(29):
+        value = frame.FindRegister("x%d" % index).GetValueAsUnsigned() & 0xffffffff
+        if not 0x1000 <= value < 0xf0000000:
+            continue
+        error = lldb.SBError()
+        word = process.ReadUnsignedFromMemory(BIAS + value, 4, error)
+        name = symbol_at(table, word) if error.Success() else None
+        if name and name.startswith("??_7"):
+            print("  x%d=0x%x -> vtable %s+0x%x" % (index, value, name, word - next(a for a, n in table if n == name)))
+        elif error.Success() and 0x400000 <= word < 0x480000:
+            print("  x%d=0x%x -> retail-table word 0x%x" % (index, value, word))
 
 
 if __name__ == "__main__":

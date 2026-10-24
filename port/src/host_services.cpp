@@ -878,6 +878,22 @@ bool apply_retail_code_map(const GuestElfImage& image, GuestArena& arena,
             }
         }
     }
+    /* Retail vtables the image binds its classes to keep their retail slots;
+       where a slot's retail function has no native definition but the class's
+       native table has one, the image lists (slot address, native function)
+       to write over it. */
+    const auto patches_start = image.symbol_address("__h2_vtable_patches_start");
+    const auto patches_end = image.symbol_address("__h2_vtable_patches_end");
+    if (patches_start && patches_end && *patches_end >= *patches_start) {
+        for (std::uint32_t entry = *patches_start; entry + 8 <= *patches_end; entry += 8) {
+            std::uint32_t slot = 0;
+            std::uint32_t native = 0;
+            std::memcpy(&slot, arena.pointer(entry), sizeof(slot));
+            std::memcpy(&native, arena.pointer(entry + 4), sizeof(native));
+            std::memcpy(arena.pointer(slot), &native, sizeof(native));
+            ++patched;
+        }
+    }
     return true;
 }
 

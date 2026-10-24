@@ -1807,7 +1807,7 @@ void function_14ac0(void)
 
 long g_4858b8;
 
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 // Retail 0x14b60. The additional clear call changes matched 0x14ac0's stack frame.
 // Retail 0x14b60
 void __stdcall function_14b60(dword flags, dword color, real depth, byte stencil)
@@ -5886,7 +5886,7 @@ void __stdcall function_44ac0(long group, dword selection_mask, long level)
     }
 }
 
-#if 0 // Preserve the existing exact SDK Clear callers.
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */ // Preserve the existing exact SDK Clear callers.
 
 extern bool g_485a74;
 extern dword g_4b8344;

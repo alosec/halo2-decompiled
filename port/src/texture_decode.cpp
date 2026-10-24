@@ -95,6 +95,99 @@ bool decode_dxt5(std::span<const std::uint8_t> source, int width, int height,
     return true;
 }
 
+namespace {
+
+/* The colour half of a DXT block (bytes 8-15 of DXT3/5, all of DXT1).
+   four_colour forces the opaque 4-colour mode, as DXT3/5 always use it. */
+void decode_colour_block(const std::uint8_t* block, bool four_colour,
+                         std::array<std::array<std::uint8_t, 4>, 16>& texels) {
+    const std::uint16_t c0 = read_u16(block);
+    const std::uint16_t c1 = read_u16(block + 2);
+    std::array<std::array<std::uint8_t, 4>, 4> colors{};
+    colors[0] = unpack_565(c0);
+    colors[1] = unpack_565(c1);
+    if (four_colour || c0 > c1) {
+        for (int channel = 0; channel < 3; ++channel) {
+            colors[2][channel] = static_cast<std::uint8_t>(
+                (2u * colors[0][channel] + colors[1][channel]) / 3u);
+            colors[3][channel] = static_cast<std::uint8_t>(
+                (colors[0][channel] + 2u * colors[1][channel]) / 3u);
+        }
+        colors[2][3] = colors[3][3] = 255;
+    } else {
+        for (int channel = 0; channel < 3; ++channel) {
+            colors[2][channel] = static_cast<std::uint8_t>(
+                (colors[0][channel] + colors[1][channel]) / 2u);
+        }
+        colors[2][3] = 255;
+        colors[3] = {0, 0, 0, 0};
+    }
+    const std::uint32_t bits = read_u32(block + 4);
+    for (int pixel = 0; pixel < 16; ++pixel) {
+        texels[pixel] = colors[(bits >> (2 * pixel)) & 3u];
+    }
+}
+
+template <typename Alpha>
+bool decode_blocks(std::span<const std::uint8_t> source, int width, int height,
+                   std::size_t block_bytes, Alpha alpha,
+                   std::vector<std::uint8_t>& output) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+    const int blocks_wide = (width + 3) / 4;
+    const int blocks_high = (height + 3) / 4;
+    if (source.size() / block_bytes <
+        static_cast<std::size_t>(blocks_wide) * blocks_high) {
+        return false;
+    }
+    output.assign(static_cast<std::size_t>(width) * height * 4u, 0);
+    const std::uint8_t* block = source.data();
+    std::array<std::array<std::uint8_t, 4>, 16> texels{};
+    for (int by = 0; by < blocks_high; ++by) {
+        for (int bx = 0; bx < blocks_wide; ++bx, block += block_bytes) {
+            alpha(block, texels);
+            for (int pixel = 0; pixel < 16; ++pixel) {
+                const int x = bx * 4 + pixel % 4;
+                const int y = by * 4 + pixel / 4;
+                if (x >= width || y >= height) {
+                    continue;
+                }
+                std::memcpy(&output[(static_cast<std::size_t>(y) * width + x) * 4u],
+                            texels[pixel].data(), 4);
+            }
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+bool decode_dxt1(std::span<const std::uint8_t> source, int width, int height,
+                 std::vector<std::uint8_t>& output) {
+    return decode_blocks(
+        source, width, height, 8,
+        [](const std::uint8_t* block, std::array<std::array<std::uint8_t, 4>, 16>& texels) {
+            decode_colour_block(block, false, texels);
+        },
+        output);
+}
+
+bool decode_dxt3(std::span<const std::uint8_t> source, int width, int height,
+                 std::vector<std::uint8_t>& output) {
+    return decode_blocks(
+        source, width, height, 16,
+        [](const std::uint8_t* block, std::array<std::array<std::uint8_t, 4>, 16>& texels) {
+            decode_colour_block(block + 8, true, texels);
+            for (int pixel = 0; pixel < 16; ++pixel) {
+                const std::uint8_t nibble =
+                    static_cast<std::uint8_t>((block[pixel / 2] >> (4 * (pixel & 1))) & 15u);
+                texels[pixel][3] = static_cast<std::uint8_t>(nibble * 17u);
+            }
+        },
+        output);
+}
+
 bool decode_dxt5_linear(std::span<const std::uint8_t> source, int width, int height,
                         std::vector<std::uint8_t>& output) {
     if (width <= 0 || height <= 0) {

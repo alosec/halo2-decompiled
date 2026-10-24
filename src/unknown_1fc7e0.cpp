@@ -2,7 +2,7 @@
 // BLOCKED-BY the full check (#574, batch r294): enabling this body loses matched 0x1c83c0 and 0x1e2f50
 // under whole-program optimisation; it does not byte-match yet. fecheck: behaves like retail on 6/6 in-game
 // snapshots (caller 0x1e34e0 pushes actor_index; ret 4). The stub in src/stubs/unknown_0a76b0.cpp stays.
-#if 0
+#if H2_WHOLE_IMAGE /* parked upstream for byte matching; the whole image runs it */
 /* UNKNOWN_1FC7E0.CPP: one tick of an actor's combat: its state (+0x6fe), its
    target, its aim and the firing outputs (+0x810, +0x820, +0x824) that
    function_1e4390 hands to the unit (see docs/unknown_1fc7e0.md) */
