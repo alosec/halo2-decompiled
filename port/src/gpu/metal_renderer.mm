@@ -448,8 +448,7 @@ public:
         back_.guest_width = kGuestWidth;
         back_.guest_height = kGuestHeight;
         current_ = &back_;
-        for (auto& buffer : frame_buffers_)
-            buffer = [device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared];
+        frame_buffers_.push_back([device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared]);
         if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error))
             return false;
         return true;
@@ -731,6 +730,7 @@ public:
             [command_buffer_ waitUntilCompleted];
             command_buffer_ = nil;
             frame_offset_ = 0;
+            frame_buffer_ = 0;
             ++frame_;
             ++stats_.frames;
             kept_ = keep_pixels;
@@ -940,11 +940,25 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     }
 
     /* per-frame buffer space */
+    /* per-frame buffer space: a frame that outgrows one buffer moves on to
+       the next (made on first need, at least as large as the request) */
     bool frame_allocate(std::size_t bytes, __strong id<MTLBuffer>& buffer, std::size_t& offset, void*& pointer) {
         bytes = (bytes + 255) & ~std::size_t(255);
-        if (frame_offset_ + bytes > kFrameBufferBytes)
-            return false;
-        buffer = frame_buffers_[0];
+        if (frame_offset_ + bytes > frame_buffers_[frame_buffer_].length) {
+            ++frame_buffer_;
+            frame_offset_ = 0;
+            if (frame_buffer_ == frame_buffers_.size() || frame_buffers_[frame_buffer_].length < bytes) {
+                id<MTLBuffer> grown = [device_ newBufferWithLength:std::max(kFrameBufferBytes, bytes)
+                                                           options:MTLResourceStorageModeShared];
+                if (!grown)
+                    return false;
+                if (frame_buffer_ == frame_buffers_.size())
+                    frame_buffers_.push_back(grown);
+                else
+                    frame_buffers_[frame_buffer_] = grown;
+            }
+        }
+        buffer = frame_buffers_[frame_buffer_];
         offset = frame_offset_;
         pointer = static_cast<std::uint8_t*>(buffer.contents) + offset;
         frame_offset_ += bytes;
@@ -1503,15 +1517,21 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         trace_draw(packet);
         back_buffer_data_ = packet.back_buffer_data;
         std::vector<std::uint32_t> order;
-        if (!gather_indices(packet, order))
+        if (!gather_indices(packet, order)) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: indices\n");
             return false;
+        }
         std::vector<std::uint32_t> sequence;
         const MTLPrimitiveType primitive = convert_primitive(packet.primitive, order, sequence);
         if (sequence.empty())
             return true;
         const std::uint32_t vertex_count = *std::max_element(sequence.begin(), sequence.end()) + 1;
-        if (vertex_count > 1u << 20)
+        if (vertex_count > 1u << 20) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: vertex count\n");
             return false;
+        }
 
         /* textures first: the pixel shader's translation depends on them */
         PixelShaderContext context;
@@ -1522,21 +1542,33 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             context.texture_signed[stage] = bound[stage] && bound[stage]->is_signed;
         }
         id<MTLRenderPipelineState> state = pipeline(packet, context);
-        if (!state)
+        if (!state) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: pipeline\n");
             return false;
+        }
 
         id<MTLBuffer> vertex_buffer = nil;
         std::size_t vertex_offset = 0;
         void* vertex_pointer = nullptr;
-        if (!frame_allocate(static_cast<std::size_t>(vertex_count) * 256, vertex_buffer, vertex_offset, vertex_pointer))
+        if (!frame_allocate(static_cast<std::size_t>(vertex_count) * 256, vertex_buffer, vertex_offset, vertex_pointer)) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: vertex space\n");
             return false;
-        if (!fetch_vertices(packet, vertex_count, static_cast<float*>(vertex_pointer)))
+        }
+        if (!fetch_vertices(packet, vertex_count, static_cast<float*>(vertex_pointer))) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: fetch vertices\n");
             return false;
+        }
         id<MTLBuffer> index_buffer = nil;
         std::size_t index_offset = 0;
         void* index_pointer = nullptr;
-        if (!frame_allocate(sequence.size() * 4, index_buffer, index_offset, index_pointer))
+        if (!frame_allocate(sequence.size() * 4, index_buffer, index_offset, index_pointer)) {
+            if (tracing_frame())
+                std::fprintf(stderr, "h2-frame:   failed: index space\n");
             return false;
+        }
         std::memcpy(index_pointer, sequence.data(), sequence.size() * 4);
 
         begin_encoder();
@@ -1695,7 +1727,8 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     id<MTLRenderPipelineState> clear_color_pipeline_ = nil;
     id<MTLRenderPipelineState> clear_depth_pipeline_ = nil;
     std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> clear_depth_states_;
-    std::array<id<MTLBuffer>, 1> frame_buffers_{};
+    std::vector<id<MTLBuffer>> frame_buffers_;
+    std::size_t frame_buffer_ = 0;
     std::size_t frame_offset_ = 0;
     id<MTLBuffer> readback_ = nil;
     CAMetalLayer* layer_ = nil;
