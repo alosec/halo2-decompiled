@@ -443,9 +443,10 @@ def priority(unit, symbol, csv_sources, symbol_address):
     return 3
 
 
-def symbol_addresses(units):
+def symbol_addresses(units, tag="retail"):
     """Map (unit, qualified name) and (unit, unique bare name) to the retail
-    address of the nearest preceding @retail tag."""
+    address of the nearest preceding @retail tag (or @stub tag, for the
+    placeholders in src/stubs)."""
     result = {}
     bare = {}
     for unit in units:
@@ -467,9 +468,9 @@ def symbol_addresses(units):
                                   int(deleting.group(1), 16))
                 pending = None
                 continue
-            tag = re.search(r'@retail 0x([0-9a-f]+)', line)
-            if tag:
-                pending = int(tag.group(1), 16)
+            found = re.search(r'@' + tag + r' 0x([0-9a-f]+)', line)
+            if found:
+                pending = int(found.group(1), 16)
                 continue
             if pending is not None:
                 m = re.search(r'((?:[A-Za-z_]\w*::)*~?[A-Za-z_]\w*)\s*\(', line)
@@ -908,11 +909,42 @@ def main():
         for loser in ranked[1:]:
             delete_functions[loser.relative].add(name)
 
+    # A placeholder (src/stubs, tagged `@stub 0x<address>`) whose retail
+    # function another unit recovers, under another name or signature: the
+    # placeholder's symbol becomes a branch to the recovery, so callers that
+    # declare it the placeholder's way still reach real code.
+    real_by_address = {}
+    for unit in sorted(compiled, key=lambda u: (priority(u, "", csv_sources, {}), u.relative)):
+        if "/stubs/" in unit.relative:
+            continue
+        for name, kind in scans[unit.relative]["functions"].items():
+            if kind in ("strong", "weak") and name not in delete_functions[unit.relative]:
+                address = address_of(unit, name)
+                if address is not None:
+                    real_by_address.setdefault(address, name)
+    stub_tags = symbol_addresses([u for u in compiled if "/stubs/" in u.relative], tag="stub")
+    placeholder_aliases = {}
+    for unit in compiled:
+        if "/stubs/" not in unit.relative:
+            continue
+        for name, kind in scans[unit.relative]["functions"].items():
+            if kind != "strong" or name in delete_functions[unit.relative]:
+                continue
+            qualified = qualified_name(name)
+            address = stub_tags.get((unit.relative, qualified)) if qualified else None
+            if address is None and qualified and "::" in qualified:
+                address = stub_tags.get((unit.relative, qualified.split("::")[-1]))
+            real = real_by_address.get(address) if address is not None else None
+            if real and real != name:
+                delete_functions[unit.relative].add(name)
+                placeholder_aliases[name] = real
+    report["placeholder_aliases"] = len(placeholder_aliases)
+
     # Placeholder bodies from src/stubs that nothing better replaces: the game
     # runs on these, so list them for whoever recovers the real code.
     report["placeholders"] = sorted(
         name for name, candidates in owners.items()
-        if "/stubs/" in sorted(candidates, key=lambda c: (
+        if name not in placeholder_aliases and "/stubs/" in sorted(candidates, key=lambda c: (
             priority(c, name, csv_sources, {}), c.relative))[0].relative)
 
     # Functions other units reference but that only exist as internal
@@ -1040,6 +1072,8 @@ def main():
     for symbol in undefined:
         if symbol in bindings:
             continue
+        if symbol in placeholder_aliases:
+            continue
         if re.fullmatch(r'h2_retail_[0-9a-f]+', symbol):
             # a call by retail address (port/recovered/ code generated from
             # retail idioms): resolved through the code map below
@@ -1094,12 +1128,23 @@ def main():
     # callback tables) so guest code never jumps to x86 code.
     retail_code = {}
     deleting = {q.split("::")[0]: a for (u, q), a in tag_addresses.items() if q.endswith("::__deleting")}
+    # a definition without a tag of its own (a native rewrite) still stands
+    # for the retail function another unit tags under the same name
+    tagged_anywhere = {}
+    for (u, q), a in tag_addresses.items():
+        if "::" in q or not q.startswith("~"):
+            tagged_anywhere.setdefault(q, set()).add(a)
     ranked_units = sorted(compiled, key=lambda u: (priority(u, "", csv_sources, {}), u.relative))
     for unit in ranked_units:
         for name, kind in scans[unit.relative]["functions"].items():
             if kind not in ("strong", "weak") or name in delete_functions[unit.relative]:
                 continue
             address = address_of(unit, name)
+            if address is None:
+                qualified = qualified_name(name)
+                candidates = tagged_anywhere.get(qualified) if qualified and "::" in qualified else None
+                if candidates and len(candidates) == 1:
+                    address = next(iter(candidates))
             # the deleting destructor (??_E aliases ??_G, which is the
             # definition the units carry)
             m = re.match(r'\?\?_[EG]([A-Za-z_]\w*)@@U', name)
@@ -1139,6 +1184,10 @@ def main():
             lines += [f"    adrp x0, {symbol}_name", f"    add x0, x0, :lo12:{symbol}_name",
                       "    b host_h2_unimplemented"]
             report.setdefault("retail_calls_missing", []).append(f"0x{address:x}")
+    for symbol, real in sorted(placeholder_aliases.items()):
+        if symbol in undefined:
+            lines += [f'.globl "{elf_name(symbol)}"', f'.type "{elf_name(symbol)}", @function',
+                      f'"{elf_name(symbol)}":', f'    b "{elf_name(real)}"']
     lines += ['.section .rodata.h2_whole_names,"a",@progbits']
     for symbol in retail_calls:
         lines += [f"{symbol}_name:", f'    .asciz "retail function 0x{symbol[len("h2_retail_"):]}"']

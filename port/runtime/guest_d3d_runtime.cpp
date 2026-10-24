@@ -852,8 +852,9 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
 }
 
 /* The vertex attribute formats the game selects (SelectVertexShaderDirect,
-   SetVertexShaderInputDirect): PROVISIONAL, the public D3D8 shape of 16
-   inputs of {stream, offset, format, tessellation bytes}. */
+   SetVertexShaderInputDirect): 16 inputs of {stream, offset, NV2A format,
+   two flag bytes and a short}, as function_1c330 (src/unknown_01cf50.cpp)
+   builds them, unused inputs having format 2. */
 struct h2_d3d_attribute_input
 {
     DWORD stream;

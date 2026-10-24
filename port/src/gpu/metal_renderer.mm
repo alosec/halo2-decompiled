@@ -387,6 +387,24 @@ MTLSamplerAddressMode address_mode(std::uint32_t mode, bool linear) {
 }
 
 class MetalRenderer final : public Renderer {
+private:
+    /* where draws go: the back buffer, or a surface the game renders to
+       (keyed by its texels' guest address, where a texture header that
+       samples it will point) */
+    struct Target {
+        id<MTLTexture> color = nil;
+        id<MTLTexture> depth = nil;
+        int width = 0, height = 0;               /* Metal pixels */
+        int guest_width = 0, guest_height = 0;   /* the game's pixels */
+        bool has_content = false;
+        bool pending_color_clear = false;
+        bool pending_depth_clear = false;
+        bool pending_stencil_clear = false;
+        MTLClearColor clear_color = MTLClearColorMake(0, 0, 0, 1);
+        double clear_depth = 1.0;
+        std::uint32_t clear_stencil = 0;
+    };
+
 public:
     MetalRenderer(const h2::port::GuestArena& arena, int scale) : arena_(arena), scale_(scale) {}
 
@@ -414,7 +432,13 @@ public:
                                      mipmapped:NO];
         depth.usage = MTLTextureUsageRenderTarget;
         depth.storageMode = MTLStorageModePrivate;
-        depth_ = [device_ newTextureWithDescriptor:depth];
+        back_.color = color_;
+        back_.depth = [device_ newTextureWithDescriptor:depth];
+        back_.width = width_;
+        back_.height = height_;
+        back_.guest_width = kGuestWidth;
+        back_.guest_height = kGuestHeight;
+        current_ = &back_;
         for (auto& buffer : frame_buffers_)
             buffer = [device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared];
         if (!build_placeholders(error) || !build_present_pipeline(error))
@@ -433,37 +457,44 @@ public:
 
     void clear(const h2_gpu_clear& packet) override {
         ++stats_.clears;
-        if (packet.render_target != 0)
+        Target* target = target_for(packet.render_target);
+        if (!target)
             return;
         /* a clear of rectangles is treated as a clear of the whole target
            (TODO: clear just the rectangles) */
         const bool color = packet.flags & 1;
         const bool depth = packet.flags & 2;
         const bool stencil = packet.flags & 4;
-        end_encoder();
+        if (target == current_)
+            end_encoder();
         if (color) {
-            pending_color_clear_ = true;
+            target->pending_color_clear = true;
             const auto rgba = unpack_argb(packet.color);
-            clear_color_ = MTLClearColorMake(rgba[0], rgba[1], rgba[2], rgba[3]);
+            target->clear_color = MTLClearColorMake(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
         if (depth) {
-            pending_depth_clear_ = true;
-            clear_depth_ = std::clamp(packet.depth, 0.0f, 1.0f);
+            target->pending_depth_clear = true;
+            target->clear_depth = std::clamp(packet.depth, 0.0f, 1.0f);
         }
         if (stencil) {
-            pending_stencil_clear_ = true;
-            clear_stencil_ = packet.stencil & 0xff;
+            target->pending_stencil_clear = true;
+            target->clear_stencil = packet.stencil & 0xff;
         }
     }
 
     void draw(const h2_gpu_draw& packet) override {
         ++stats_.draws;
-        if (packet.render_target != 0) {
+        Target* target = target_for(packet.render_target);
+        if (!target) {
             ++stats_.draws_skipped;
             return;
         }
         if (packet.vertex_count == 0)
             return;
+        if (target != current_) {
+            end_encoder();
+            current_ = target;
+        }
         @autoreleasepool {
             if (!encode_draw(packet))
                 ++stats_.draws_failed;
@@ -473,6 +504,10 @@ public:
     void present(bool keep_pixels) override {
         @autoreleasepool {
             begin_command_buffer();
+            if (current_ != &back_) {
+                end_encoder();
+                current_ = &back_;
+            }
             if (!encoder_)
                 begin_encoder();   /* flush any pending clear */
             end_encoder();
@@ -636,25 +671,26 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         begin_command_buffer();
         if (encoder_)
             return;
+        Target& t = *current_;
         MTLRenderPassDescriptor* pass = [MTLRenderPassDescriptor renderPassDescriptor];
-        pass.colorAttachments[0].texture = color_;
+        pass.colorAttachments[0].texture = t.color;
         pass.colorAttachments[0].loadAction =
-            pending_color_clear_ ? MTLLoadActionClear : (frame_has_content_ ? MTLLoadActionLoad : MTLLoadActionClear);
-        pass.colorAttachments[0].clearColor = pending_color_clear_ ? clear_color_ : MTLClearColorMake(0, 0, 0, 1);
+            t.pending_color_clear ? MTLLoadActionClear : (t.has_content ? MTLLoadActionLoad : MTLLoadActionClear);
+        pass.colorAttachments[0].clearColor = t.pending_color_clear ? t.clear_color : MTLClearColorMake(0, 0, 0, 1);
         pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-        pass.depthAttachment.texture = depth_;
+        pass.depthAttachment.texture = t.depth;
         pass.depthAttachment.loadAction =
-            pending_depth_clear_ || !frame_has_content_ ? MTLLoadActionClear : MTLLoadActionLoad;
-        pass.depthAttachment.clearDepth = pending_depth_clear_ ? clear_depth_ : 1.0;
+            t.pending_depth_clear || !t.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
+        pass.depthAttachment.clearDepth = t.pending_depth_clear ? t.clear_depth : 1.0;
         pass.depthAttachment.storeAction = MTLStoreActionStore;
-        pass.stencilAttachment.texture = depth_;
+        pass.stencilAttachment.texture = t.depth;
         pass.stencilAttachment.loadAction =
-            pending_stencil_clear_ || !frame_has_content_ ? MTLLoadActionClear : MTLLoadActionLoad;
-        pass.stencilAttachment.clearStencil = pending_stencil_clear_ ? clear_stencil_ : 0;
+            t.pending_stencil_clear || !t.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
+        pass.stencilAttachment.clearStencil = t.pending_stencil_clear ? t.clear_stencil : 0;
         pass.stencilAttachment.storeAction = MTLStoreActionStore;
         encoder_ = [command_buffer_ renderCommandEncoderWithDescriptor:pass];
-        pending_color_clear_ = pending_depth_clear_ = pending_stencil_clear_ = false;
-        frame_has_content_ = true;
+        t.pending_color_clear = t.pending_depth_clear = t.pending_stencil_clear = false;
+        t.has_content = true;
     }
 
     void end_encoder() {
@@ -988,6 +1024,18 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     CachedTexture* texture(const h2_gpu_texture& stage) {
         if (!stage.header || !stage.data)
             return nullptr;
+        auto rendered = targets_.find(stage.data);
+        if (rendered != targets_.end()) {
+            /* a surface the game drew into: sample what the GPU drew */
+            CachedTexture& entry = render_textures_[stage.data];
+            entry.texture = rendered->second.color;
+            entry.kind = 2;
+            TextureDescription description;
+            entry.linear = describe_texture(stage.format, stage.size, description) ? description.linear : true;
+            entry.is_signed = false;
+            entry.last_frame = frame_;
+            return &entry;
+        }
         TextureDescription description;
         if (!describe_texture(stage.format, stage.size, description))
             return nullptr;
@@ -1072,6 +1120,46 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             ++stats_.textures;
         entry.texture = created;
         return &entry;
+    }
+
+    /* the target behind a D3DSurface header (0 = the back buffer): its
+       texels' address keys it, and its Format/Size words size it */
+    Target* target_for(std::uint32_t header) {
+        if (!header)
+            return &back_;
+        const auto* words = guest<std::uint32_t>(header);
+        if (!words)
+            return nullptr;
+        const std::uint32_t data = words[1] | 0x80000000u;
+        auto found = targets_.find(data);
+        if (found != targets_.end())
+            return &found->second;
+        TextureDescription description;
+        int width = 0, height = 0;
+        if (describe_texture(words[3], words[4], description)) {
+            width = static_cast<int>(description.width);
+            height = static_cast<int>(description.height);
+        }
+        if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
+            return nullptr;
+        Target target;
+        MTLTextureDescriptor* color = [MTLTextureDescriptor
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm width:width height:height mipmapped:NO];
+        color.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+        color.storageMode = MTLStorageModePrivate;
+        target.color = [device_ newTextureWithDescriptor:color];
+        MTLTextureDescriptor* depth = [MTLTextureDescriptor
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float_Stencil8 width:width height:height mipmapped:NO];
+        depth.usage = MTLTextureUsageRenderTarget;
+        depth.storageMode = MTLStorageModePrivate;
+        target.depth = [device_ newTextureWithDescriptor:depth];
+        target.width = target.guest_width = width;
+        target.height = target.guest_height = height;
+        if (!target.color || !target.depth)
+            return nullptr;
+        if (trace_gpu())
+            std::fprintf(stderr, "h2-gpu: render target %08x %dx%d format %08x\n", data, width, height, words[3]);
+        return &targets_.emplace(data, target).first->second;
     }
 
     void trace_draw(const h2_gpu_draw& packet) {
@@ -1161,11 +1249,18 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         else
             [encoder_ setDepthBias:0.0f slopeScale:0.0f clamp:0.0f];
 
-        const float target_width = packet.target_width ? static_cast<float>(packet.target_width) : kGuestWidth;
-        const float target_height = packet.target_height ? static_cast<float>(packet.target_height) : kGuestHeight;
-        const float sx = width_ / target_width;
-        const float sy = height_ / target_height;
-        MTLViewport viewport = {0.0, 0.0, static_cast<double>(width_), static_cast<double>(height_), 0.0, 1.0};
+        const Target& target = *current_;
+        float target_width = static_cast<float>(target.guest_width);
+        float target_height = static_cast<float>(target.guest_height);
+        if (current_ == &back_ && packet.target_width && packet.target_height) {
+            target_width = static_cast<float>(packet.target_width);
+            target_height = static_cast<float>(packet.target_height);
+        }
+        const int pass_width = target.width;
+        const int pass_height = target.height;
+        const float sx = pass_width / target_width;
+        const float sy = pass_height / target_height;
+        MTLViewport viewport = {0.0, 0.0, static_cast<double>(pass_width), static_cast<double>(pass_height), 0.0, 1.0};
         [encoder_ setViewport:viewport];
         /* the game's viewport bounds what it draws (NV2A clips to it) */
         double left = packet.viewport_x, top = packet.viewport_y;
@@ -1182,10 +1277,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             bottom = target_height;
         }
         MTLScissorRect scissor;
-        scissor.x = static_cast<NSUInteger>(std::clamp(left * sx, 0.0, static_cast<double>(width_)));
-        scissor.y = static_cast<NSUInteger>(std::clamp(top * sy, 0.0, static_cast<double>(height_)));
-        scissor.width = static_cast<NSUInteger>(std::clamp(right * sx, 0.0, static_cast<double>(width_))) - scissor.x;
-        scissor.height = static_cast<NSUInteger>(std::clamp(bottom * sy, 0.0, static_cast<double>(height_))) - scissor.y;
+        scissor.x = static_cast<NSUInteger>(std::clamp(left * sx, 0.0, static_cast<double>(pass_width)));
+        scissor.y = static_cast<NSUInteger>(std::clamp(top * sy, 0.0, static_cast<double>(pass_height)));
+        scissor.width = static_cast<NSUInteger>(std::clamp(right * sx, 0.0, static_cast<double>(pass_width))) - scissor.x;
+        scissor.height = static_cast<NSUInteger>(std::clamp(bottom * sy, 0.0, static_cast<double>(pass_height))) - scissor.y;
         if (scissor.width == 0 || scissor.height == 0)
             return true;
         [encoder_ setScissorRect:scissor];
@@ -1281,8 +1376,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     int height_ = 0;
     id<MTLDevice> device_ = nil;
     id<MTLCommandQueue> queue_ = nil;
-    id<MTLTexture> color_ = nil;
-    id<MTLTexture> depth_ = nil;
+    Target back_;
+    std::unordered_map<std::uint32_t, Target> targets_;
+    Target* current_ = nullptr;
+    id<MTLTexture> color_ = nil;   /* back_.color */
     id<MTLTexture> placeholder_2d_ = nil;
     id<MTLTexture> placeholder_cube_ = nil;
     id<MTLTexture> placeholder_3d_ = nil;
@@ -1294,14 +1391,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     CAMetalLayer* layer_ = nil;
     id<MTLCommandBuffer> command_buffer_ = nil;
     id<MTLRenderCommandEncoder> encoder_ = nil;
-    bool pending_color_clear_ = false;
-    bool pending_depth_clear_ = false;
-    bool pending_stencil_clear_ = false;
-    bool frame_has_content_ = false;
     bool kept_ = false;
-    MTLClearColor clear_color_ = MTLClearColorMake(0, 0, 0, 1);
-    double clear_depth_ = 1.0;
-    std::uint32_t clear_stencil_ = 0;
     std::uint64_t frame_ = 0;
     RendererStats stats_;
     std::unordered_map<std::uint64_t, std::string> vertex_cache_;
@@ -1311,6 +1401,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> depth_states_;
     std::unordered_map<std::uint64_t, id<MTLSamplerState>> samplers_;
     std::unordered_map<std::uint64_t, CachedTexture> textures_;
+    std::unordered_map<std::uint32_t, CachedTexture> render_textures_;
 };
 
 } // namespace
