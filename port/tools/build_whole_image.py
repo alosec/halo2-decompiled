@@ -635,14 +635,44 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
             if owner and slot_class == owner.group(1):
                 bind_retail_vtables.patches.append((start + 4 * index, slot))
 
+    # Each base subobject's table: its offset from its thunks' adjustment,
+    # else from the class's declaration (its bases in order, matched with the
+    # offsets its structors store tables at, smallest first).
+    named_bases = {}
+    for symbol in seen:
+        named = re.match(r'\?\?_7([A-Za-z_]\w*)@@6B([A-Za-z_]\w*)@@@$', symbol)
+        if named:
+            named_bases.setdefault(named.group(1), {})[named.group(2)] = symbol
+    declared = {}
+    headers = [path for folder in ("include", "port/include", "port/recovered")
+               for path in (Path(__file__).resolve().parents[2] / folder).rglob("*.h")]
+    for path in [unit.source for unit in compiled] + headers:
+        text = path.read_text(errors="replace")
+        for m in re.finditer(r'\b(?:class|struct)\s+([A-Za-z_]\w*)\s*:\s*([^{;]+)\{', text):
+            if m.group(1) in named_bases and m.group(1) not in declared:
+                bases = [re.sub(r'\b(?:public|private|protected|virtual)\b', '', b).strip()
+                         for b in m.group(2).split(",")]
+                declared[m.group(1)] = [b for b in bases if b in named_bases[m.group(1)]]
+    base_offsets = {}
+    for own_class, tables in named_bases.items():
+        order = declared.get(own_class, [])
+        offsets = sorted({o for (c, o) in structors if c == own_class})
+        if len(order) == len(tables) and len(offsets) == len(tables) and offsets[0] == 0:
+            for base, at in zip(order, offsets):
+                base_offsets[tables[base]] = at
     for symbol, slots in seen.items():
         own = re.match(r'\?\?_7([A-Za-z_]\w*)@@6B', symbol)
         primary = symbol.endswith("@@6B@")
+        offset = vtable_offset(slots)
+        if offset == 0 and not primary:
+            # no thunks: the declaration's order (else 0, as before)
+            if symbol in base_offsets:
+                offset = base_offsets[symbol]
         # The constructor and destructor name the table outright: the last
         # vtable a recovered constructor stores into the object (at the base
         # subobject's offset), or the first one its destructor does, is the
         # class's own.
-        candidates = structors.get((own.group(1), vtable_offset(slots)), []) if own else []
+        candidates = structors.get((own.group(1), offset), []) if own and offset is not None else []
         start = None
         if candidates:
             # several when a tag sits on the wrong function (a destructor tag

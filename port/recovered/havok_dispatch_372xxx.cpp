@@ -197,12 +197,19 @@ public:
 	virtual void remove_pair(pair_30d870 const *pair) {}
 };
 
-// the listener's slot 0: whether the two collidables may collide (an hkBool
-// returned through its first argument)
+// a returned hkBool: a class, so the result goes through a hidden pointer as
+// retail's does
+struct hkbool_3728c0
+{
+	char value;
+	hkbool_3728c0() {}
+};
+
+// the listener's slot 0: whether the two collidables may collide
 class pair_filter_3728c0
 {
 public:
-	virtual void is_enabled(bool *result, void const *a, void const *b) {}
+	virtual hkbool_3728c0 is_enabled(void const *a, void const *b) { return hkbool_3728c0(); }
 };
 
 static __forceinline handle_3728c0 *pair_first_3728c0(pair_30d870 const *pair)
@@ -233,9 +240,7 @@ static __forceinline void pair_add_3728c0(dispatcher_3728c0 *dispatcher, pair_30
 {
 	void const *a = pair_collidable_3728c0(pair->first);
 	void const *b = pair_collidable_3728c0(pair->second);
-	bool enabled;
-	((pair_filter_3728c0 *)listener)->is_enabled(&enabled, a, b);
-	if (enabled)
+	if (((pair_filter_3728c0 *)listener)->is_enabled(a, b).value)
 	{
 		pair_handler_for_3728c0(dispatcher, pair)->add_pair(pair);
 	}

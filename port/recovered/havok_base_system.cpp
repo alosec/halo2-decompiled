@@ -156,6 +156,15 @@ public:
 	~buffered_writer_2d9e40();
 };
 
+// a returned hkBool: a class, so the result goes through a hidden pointer as
+// retail's does (src declares its virtual hkBool slots this way)
+struct hkbool_2d7fe0
+{
+	char value;
+	hkbool_2d7fe0() {}
+	hkbool_2d7fe0(bool value) : value(value) {}
+};
+
 // stream slots that are one-line functions shared with other classes
 struct class_2fe820
 {
@@ -222,13 +231,13 @@ array_owner_2dc150 *__cdecl function_2dc150();
 // a one-line slot shared by several stream classes: "yes"
 struct true_31bc80
 {
-	void function_31bc80(bool *result);
+	hkbool_2d7fe0 function_31bc80();
 };
 
 // @retail 0x31bc80
-void true_31bc80::function_31bc80(bool *result)
+hkbool_2d7fe0 true_31bc80::function_31bc80()
 {
-	*result = true;
+	return hkbool_2d7fe0(true);
 }
 
 // formats into a buffer with no size limit
@@ -279,18 +288,20 @@ public:
 	// slot 0 is 0x2d7720: the base's destructor (0x318970), then the block
 	// back with tag 0x15
 	virtual ~console_writer() {}
-	virtual void is_ok(bool *result)
+	virtual hkbool_2d7fe0 is_ok()
 	{
-		((true_31bc80 *)this)->function_31bc80(result);
+		return ((true_31bc80 *)this)->function_31bc80();
 	}
 	virtual long write(void const *data, long size);
 	virtual void flush()
 	{
 		function_175f40();
 	}
-	virtual void seek_tell_supported(bool *result)
+	virtual hkbool_2d7fe0 seek_tell_supported()
 	{
-		((class_2fe820 *)this)->function_2fe820(result);
+		bool result;
+		((class_2fe820 *)this)->function_2fe820(&result);
+		return hkbool_2d7fe0(result);
 	}
 	// fails (1)
 	virtual long seek(long offset, long origin)
@@ -352,21 +363,21 @@ public:
 	file_reader(char const *name);
 	// slot 0 is 0x2d7960, the deleting destructor of 0x2d7990
 	virtual ~file_reader();
-	virtual void is_ok(bool *result);
+	virtual hkbool_2d7fe0 is_ok();
 	virtual long read(void *buffer, long size);
 	virtual long skip(long count)
 	{
 		return ((reader_2d9c80 *)this)->skip(count);
 	}
-	virtual void mark_supported(bool *result)
+	virtual hkbool_2d7fe0 mark_supported()
 	{
-		((true_31bc80 *)this)->function_31bc80(result);
+		return ((true_31bc80 *)this)->function_31bc80();
 	}
 	virtual long set_mark(long limit);
 	virtual long rewind_to_mark();
-	virtual void seek_tell_supported(bool *result)
+	virtual hkbool_2d7fe0 seek_tell_supported()
 	{
-		((true_31bc80 *)this)->function_31bc80(result);
+		return ((true_31bc80 *)this)->function_31bc80();
 	}
 	virtual long seek(long offset, long origin);
 	virtual long tell();
@@ -392,9 +403,9 @@ file_reader::~file_reader()
 }
 
 // @retail 0x2d7920
-void file_reader::is_ok(bool *result)
+hkbool_2d7fe0 file_reader::is_ok()
 {
-	*result = ok;
+	return hkbool_2d7fe0(ok);
 }
 
 // a read that gets nothing leaves the reader no longer ok
@@ -448,12 +459,12 @@ public:
 	file_writer(char const *name);
 	// slot 0 is 0x2d7ba0, the deleting destructor of 0x2d7bd0
 	virtual ~file_writer();
-	virtual void is_ok(bool *result);
+	virtual hkbool_2d7fe0 is_ok();
 	virtual long write(void const *data, long size);
 	virtual void flush();
-	virtual void seek_tell_supported(bool *result)
+	virtual hkbool_2d7fe0 seek_tell_supported()
 	{
-		((true_31bc80 *)this)->function_31bc80(result);
+		return ((true_31bc80 *)this)->function_31bc80();
 	}
 	virtual long seek(long offset, long origin);
 	virtual long tell();
@@ -480,9 +491,9 @@ file_writer::~file_writer()
 }
 
 // @retail 0x2d7b50
-void file_writer::is_ok(bool *result)
+hkbool_2d7fe0 file_writer::is_ok()
 {
-	*result = file != 0;
+	return hkbool_2d7fe0(file != 0);
 }
 
 // a write that puts nothing out closes the file
@@ -556,9 +567,7 @@ referenced_2d88a0 *stream_factory::open_console(long which)
 referenced_2d88a0 *stream_factory::open_reader(char const *name)
 {
 	file_reader *reader = new file_reader(name);
-	bool supported;
-	reader->mark_supported(&supported);
-	if (!supported)
+	if (!reader->mark_supported().value)
 	{
 		buffered_2d9c00 *buffered = new buffered_2d9c00(reader, 0x1000);
 		havok_reference_remove((c_havok_reference_counted *)reader);
@@ -777,7 +786,7 @@ public:
 	virtual void error(char const *title, long id, char const *description, char const *file, long line);
 	virtual void report(char const *title, long id, char const *description, char const *file, long line);
 	virtual void set_enabled(long id, bool enabled);
-	virtual void is_enabled(bool *result, long id);
+	virtual hkbool_2d7fe0 is_enabled(long id);
 	// slots 6 to 8 share one function, as do 9 to 11
 	virtual void suppress_at(char const *file, long line);
 	virtual void suppress_at_7(char const *file, long line)
@@ -931,17 +940,16 @@ void error_handler::set_enabled(long id, bool enabled)
 }
 
 // @retail 0x2d7fe0
-void error_handler::is_enabled(bool *result, long id)
+hkbool_2d7fe0 error_handler::is_enabled(long id)
 {
 	for (long i = 0; i < suppressed_ids.size; i++)
 	{
 		if (suppressed_ids[i].id == id)
 		{
-			*result = false;
-			return;
+			return hkbool_2d7fe0(false);
 		}
 	}
-	*result = true;
+	return hkbool_2d7fe0(true);
 }
 
 // @retail 0x2d8640

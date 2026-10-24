@@ -684,3 +684,10 @@ extern "C" DWORD __stdcall XGetDiskClusterSize(const char *root)
     (void)root;
     return 0x4000;
 }
+
+/* debugger output: the host's log */
+extern "C" void WINAPI OutputDebugStringA(LPCSTR text)
+{
+    if (text)
+        host_h2_log(text);
+}

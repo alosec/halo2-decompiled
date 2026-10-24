@@ -50,7 +50,7 @@ long g_4d87f4;
    their addresses, so their contents do not affect its code */
 dword g_46e490[0x80];
 dword g_46e690[0x44];
-dword g_46e7a0[4];
+dword g_46e7a0[5];
 
 struct s_network_observer;
 void network_observer_recreate_connections(s_network_observer *observer);
@@ -206,6 +206,10 @@ public:
 		memset(m_pages, 0, sizeof(m_pages));
 		m_page_count = size / 0x1000 - 1;
 		*m_counter = 0;
+#if H2_WHOLE_IMAGE
+		/* retail's table (0x81ec2): the port's own would be a one-slot table */
+		*(dword *)this = 0x454970;
+#endif
 	}
 
 	byte *m_begin;
@@ -224,6 +228,10 @@ public:
 	__forceinline c_network_page_allocator(void *heap) :
 		c_library_32a850(g_46e490, g_46e690, 0x800, 0, 0x400, 0x100000, g_46e7a0, heap, 1, 0, 4, 0x400, 0)
 	{
+#if H2_WHOLE_IMAGE
+		/* retail's table (0x81f29), whose slot 13 the level change's delete calls */
+		*(dword *)this = 0x454980;
+#endif
 	}
 };
 
