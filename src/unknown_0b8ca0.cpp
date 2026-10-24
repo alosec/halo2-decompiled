@@ -762,12 +762,13 @@ bool __stdcall function_bdef0(long object_index)
             matrix->forward.k * center.x + matrix->position.z;
         *(real *)(object + 0x3c) = *(real *)(object + 0xa0) * *(real const *)(definition + 4);
     }
-    if (*(real const *)(definition + 0x20) > 0.0f)
+    real secondary_radius = *(real const *)(definition + 0x20);
+    if (secondary_radius > 0.0f)
     {
         *(real *)(object + 0x50) = *(real *)(object + 0x30) + *(real const *)(definition + 0x24);
         *(real *)(object + 0x54) = *(real *)(object + 0x34) + *(real const *)(definition + 0x28);
         *(real *)(object + 0x58) = *(real *)(object + 0x38) + *(real const *)(definition + 0x2c);
-        *(real *)(object + 0x5c) = *(real *)(object + 0xa0) * *(real const *)(definition + 0x20);
+        *(real *)(object + 0x5c) = *(real *)(object + 0xa0) * secondary_radius;
     }
     else
     {

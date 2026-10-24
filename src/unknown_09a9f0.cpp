@@ -522,11 +522,11 @@ __declspec(noinline) bool function_99640(c_handle_table_450cd0 *self, long handl
 bool c_projectile_type::v8(long a, long b)
 {
  bool result = true;
- long identifier = *(long *)(*(long *)(a + 0x14) + 0x14);
- if (identifier != NONE)
+ byte const *state = *(byte const **)(a + 0x14);
+ if (*(long const *)(state + 0x14) != NONE)
  {
   byte *table = *(byte **)(*(long *)(*(long *)b + 4) + 8);
-  if (!function_99640((c_handle_table_450cd0 *)(table + 0x30), identifier)) result = false;
+  if (!function_99640((c_handle_table_450cd0 *)(table + 0x30), *(long const *)(state + 0x14))) result = false;
  }
  return result;
 }

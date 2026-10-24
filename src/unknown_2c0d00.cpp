@@ -884,8 +884,13 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         vector2d_from_points2d(start, end, &direction);
         point2f normal = { direction.y, 0.0f - direction.x };
         normalize_offset_direction_2c(&normal);
-        point2f positive = { origin->x + normal.x * radius, origin->y + normal.y * radius };
-        point2f negative = { origin->x + normal.x * (0.0f - radius), origin->y + normal.y * (0.0f - radius) };
+        point2f positive, negative;
+        scale_offset_direction_2c(radius, &normal, &positive);
+        positive.x = origin->x + positive.x;
+        positive.y = origin->y + positive.y;
+        scale_offset_direction_2c(0.0f - radius, &normal, &negative);
+        negative.x = origin->x + negative.x;
+        negative.y = origin->y + negative.y;
         point2f first, second;
         vector2d_from_points2d(&positive, start, &first);
         vector2d_from_points2d(&negative, start, &second);

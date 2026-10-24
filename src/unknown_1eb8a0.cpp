@@ -344,8 +344,7 @@ long function_1eb8a0(
 		if (counter == 0)
 			q = g_4687a4;
 		w = w * globals->rate;
-		vector3f qr;
-		qr.k = q->k; qr.i = q->i; qr.j = q->j;
+		vector3f qr = *q;
 		real third3 = e3 * 0.33333334f;
 		real lo = (w - third3) * 3.f * 0.5f;
 		real hi = (e3 - third3) * 3.f * 0.5f;

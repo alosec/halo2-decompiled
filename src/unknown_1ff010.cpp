@@ -476,6 +476,7 @@ done:
 }
 
 #include "props.h"
+#include "unknown_11cc90.h"
 
 void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
@@ -509,7 +510,7 @@ long function_1ff360(long actor_index, point3f const *target, vector3f *velocity
 		point2f horizontal;
 		horizontal.x = direction.i;
 		horizontal.y = direction.j;
-		real magnitude = normalize2d(&horizontal);
+		real magnitude = normalize2d_fast((vector2f *)&horizontal);
 		if (magnitude > 0.0f && actor->unknown290.j * horizontal.y + actor->unknown290.i * horizontal.x < 0.0f)
 		{
 			bool left = actor->unknown290.i * horizontal.y - actor->unknown290.j * horizontal.x > 0.0f;
@@ -531,8 +532,7 @@ long function_1ff360(long actor_index, point3f const *target, vector3f *velocity
 		}
 	}
 	real speed = *(real *)((byte *)actor + 0x7f4);
-	velocity->i = direction.i * speed;
-	velocity->j = direction.j * speed;
-	velocity->k = direction.k * speed;
+	vector3f result = { direction.i * speed, direction.j * speed, direction.k * speed };
+	*velocity = result;
 	return object_index;
 }

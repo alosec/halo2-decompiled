@@ -1422,13 +1422,14 @@ void function_55990(s_voice_player_values *values)
 		memset(values->values, 0, sizeof(values->values));
 		for (; i < 16; i++)
 		{
+			dword mask = 0;
 			word bit = 1 << i;
 			if ((local & bit) && (active & bit))
 			{
-				dword muted = 0;
+				word muted = 0;
 				if (voice_available())
 					muted = g_4c9878.unknownF0[i];
-				dword mask = remote & ~muted;
+				mask = remote & ~muted;
 				if (voice_available())
 				{
 					dword policy = ~0UL;
@@ -1438,15 +1439,16 @@ void function_55990(s_voice_player_values *values)
 						policy = function_56c60(&g_527104.settings, i);
 					mask &= policy;
 				}
+				dword target = 1;
 				for (long j = 0; j < 16; j++)
 				{
-					dword target = 1 << j;
 					if ((mask & target) &&
 						(function_57d63(j, i) || voice_port_flag1(j) || voice_port_flag2(j)))
 						mask &= ~target;
+					target <<= 1;
 				}
-				values->values[i] = mask;
 			}
+			values->values[i] = mask;
 		}
 	}
 }

@@ -1165,8 +1165,9 @@ void __stdcall function_b8540(long);
 
 static __forceinline void item_release_impulse_10b4d0(long object_index)
 {
+	vector3f const *direction = g_4687bc;
 	real scale = g_510c54->rate * g_51e9c4->unknown0;
-	vector3f velocity = {g_4687bc->i*scale, g_4687bc->j*scale, g_4687bc->k*scale};
+	vector3f velocity = {direction->i*scale, direction->j*scale, direction->k*scale};
 	function_10cf80(&velocity, object_index, false);
 }
 

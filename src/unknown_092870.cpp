@@ -189,21 +189,25 @@ void network_samples_add(s_network_samples *samples, long value)
 	samples->index = (samples->index + 1) % samples->count;
 }
 
-// score 38 (was 38): the stack frame differs: retail keeps the two words at esp+0x1e and
-// esp+0x20, ours at esp+0xc and esp+0x10.
+/* allocates an endpoint, binds it to the port and configures it; keeps it in
+   endpoint_out on success and releases it otherwise */
 // @retail 0x92ae0
 bool network_link_open_endpoint(long type, word port, bool broadcast, s_transport_endpoint **endpoint_out)
 {
 	s_transport_endpoint *endpoint = (s_transport_endpoint *)transport_endpoint_allocate((word)type);
+	bool success;
 	if (endpoint)
 	{
 		s_type_99af70 address;
+		address.address_length = k_ipv4_address_length;
 		address.ipv4_address = 0;
 		address.port = port;
-		address.address_length = k_ipv4_address_length;
-		bool success = function_b4ed0(endpoint, &address) && transport_endpoint_set_nonblocking(endpoint);
+		success = function_b4ed0(endpoint, &address) && transport_endpoint_set_nonblocking(endpoint);
 		if (broadcast)
 			success = success && transport_endpoint_set_option(endpoint, 2, true);
+	}
+	if (endpoint)
+	{
 		if (success)
 			*endpoint_out = endpoint;
 		else
@@ -211,9 +215,10 @@ bool network_link_open_endpoint(long type, word port, bool broadcast, s_transpor
 			transport_endpoint_close(endpoint);
 			transport_endpoint_free(endpoint);
 		}
-		return success;
 	}
-	return false;
+	else
+		success = false;
+	return success;
 }
 
 // @retail 0x92c70

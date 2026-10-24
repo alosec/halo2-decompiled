@@ -1172,15 +1172,11 @@ void function_1a68a0(long object_index, vector3f *velocity)
 			}
 			function_ba1d0(object_index, velocity, NULL);
 			vector3f relative;
-			relative.i = velocity->i - local_3.field_0.i;
-			relative.j = velocity->j - local_3.field_0.j;
-			relative.k = velocity->k - local_3.field_0.k;
-			real along_i = unit->normal.i * relative.i;
-			real along_k = unit->normal.k * relative.k;
-			real along_j = unit->normal.j * relative.j;
-			real projection = (along_i + along_k) + along_j;
+			vector3d_from_points3d((point3f const *)&local_3.field_0, (point3f const *)velocity, &relative);
+			vector3f const *normal = &unit->normal;
+			real projection = dot3f(normal, &relative);
 			vector3f projected;
-			function_1a68a2(&unit->normal, projection, &projected);
+			function_1a68a2(normal, projection, &projected);
 			velocity->i -= projected.i;
 			velocity->j -= projected.j;
 			velocity->k -= projected.k;
@@ -1478,16 +1474,17 @@ struct s_target_link_definition
 bool function_1a59f0(long object_index, long excluded_index, short team, bool *has_hostile);
 bool function_1a5b00(long object_index, short team, bool *has_hostile);
 
-// score 32 (was 32): the helper is called with a different register and the return value is built
-// with a different order of the pops.
 // @retail 0x1a5910
 bool __stdcall function_1a5910(long object_index, long excluded_index, short team, bool *has_hostile)
 {
 	bool result;
 	*has_hostile = false;
 	if (object_index != excluded_index)
-	{
 		result = true;
+	else
+		result = false;
+	if (result)
+	{
 		s_object_header *header = OBJECT_HEADER(object_index);
 		if ((1 << header->type) & 3)
 		{
@@ -1506,8 +1503,6 @@ bool __stdcall function_1a5910(long object_index, long excluded_index, short tea
 			}
 		}
 	}
-	else
-		result = false;
 	return result;
 }
 

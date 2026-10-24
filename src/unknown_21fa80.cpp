@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-// @flags /O2 /arch:SSE /Gr
+// @flags /O2 /arch:SSE /Op /Gr
 
 struct s_looping_channel_properties;
 struct s_looping_effect_playback;
@@ -93,11 +93,9 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 			s_sound_driver_voice *voice=&SOUND_DRIVER_GLOBALS->voices[input->voice_index];
 			s_mixbin_settings settings;
 			sound_mixbins_initialize(&settings);
-			switch(mode)
-			{
-			case 1: sound_mixbins_add(&settings,voice->unknown00,gain);
-			case 0: sound_mixbins_add(&settings,voice->unknown00,gain); break;
-			}
+			if(mode==0 || mode==1)
+				for(long send=0;send<=mode;++send)
+					sound_mixbins_add(&settings,voice->unknown00,gain);
 			function_2215d0((s_mixbin_list *)&voice_properties,&settings,stream->stream);
 			stream->stream->SetVolume(sound_decibels_to_volume(0.0f));
 		}

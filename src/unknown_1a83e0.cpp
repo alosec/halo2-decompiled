@@ -9,41 +9,42 @@ real normalize2d(point2f *arg_0);
 bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
     real arg_3, bool *arg_4, s_path_trace_result *arg_5);
 
-PRIVATE __forceinline real function_1a83e1(point3f const *arg_0, vector3f const *arg_1, point3f const *arg_2)
+PRIVATE __forceinline real function_1a83e1(point3f const *start, vector3f const *segment, point3f const *point)
 {
-    point3f const *local_3 = arg_0;
-    vector3f const *local_4 = arg_1;
-    vector3f local_5;
-    local_5.k = local_4->k;
-    local_5.j = local_4->j;
-    local_5.i = local_4->i;
-    vector3f local_0;
+    vector3f delta;
     real squared_distance;
-    real local_1 = local_5.k * local_5.k + local_5.j * local_5.j + local_5.i * local_5.i;
-    if (local_1 > 0.0001f)
+    real length_squared = segment->k * segment->k + segment->j * segment->j + segment->i * segment->i;
+    if (length_squared > 0.0001f)
     {
-        local_0.i = arg_2->x - local_3->x;
-        local_0.j = arg_2->y - local_3->y;
-        local_0.k = arg_2->z - local_3->z;
-        real local_2 = (local_0.k * local_5.k + local_0.j * local_5.j + local_0.i * local_5.i) / local_1;
-        if (local_2 < 0.0f)
-            local_2 = 0.0f;
-        else if (local_2 > 1.0f)
-            local_2 = 1.0f;
-        local_2 = 0.0f - local_2;
-        local_0.i += local_5.i * local_2;
-        local_0.j += local_5.j * local_2;
-        local_0.k += local_5.k * local_2;
-        squared_distance = local_0.k * local_0.k + local_0.j * local_0.j + local_0.i * local_0.i;
+        delta.i = point->x - start->x;
+        delta.j = point->y - start->y;
+        delta.k = point->z - start->z;
+        real t = (delta.k * segment->k + delta.j * segment->j + delta.i * segment->i) / length_squared;
+        if (t < 0.0f)
+            t = 0.0f;
+        else if (t > 1.0f)
+            t = 1.0f;
+        t = -t;
+        delta.i += segment->i * t;
+        delta.j += segment->j * t;
+        delta.k += segment->k * t;
+        squared_distance = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
     }
     else
     {
-        local_0.i = local_3->x - arg_2->x;
-        local_0.j = local_3->y - arg_2->y;
-        local_0.k = local_3->z - arg_2->z;
-        squared_distance = local_0.k * local_0.k + local_0.j * local_0.j + local_0.i * local_0.i;
+        delta.i = start->x - point->x;
+        delta.j = start->y - point->y;
+        delta.k = start->z - point->z;
+        squared_distance = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
     }
     return (real)sqrt(squared_distance);
+}
+
+static inline void point_offset_along_vector(point3f const *point, vector3f const *vector, real t, point3f *result)
+{
+    result->x = vector->i * t + point->x;
+    result->y = vector->j * t + point->y;
+    result->z = vector->k * t + point->z;
 }
 
 PRIVATE __forceinline real function_1a83e2(point2f *arg_0)
@@ -64,10 +65,10 @@ bool __stdcall function_1a83e0(long arg_0, short *arg_1, real *arg_2, point2f *a
 {
     s_actor_view *local_0 = actor_get(arg_0);
     byte *local_1 = g_4e3b44[ai_object_get(local_0->unknown018)->definition_index & 0xffff].bytes;
-    real local_2 = *(real *)(local_1 + 0x124);
     bool local_3 = false;
     bool local_4 = false;
     short local_5 = NONE;
+    real local_2 = *(real *)(local_1 + 0x124);
     point2f local_6;
     if (local_2 > 0.0f)
     {
@@ -98,12 +99,8 @@ bool __stdcall function_1a83e0(long arg_0, short *arg_1, real *arg_2, point2f *a
         local_11.i = local_6.y;
         local_11.j = 0.0f - local_6.x;
         local_11.k = 0.0f;
-        local_8.x = local_10.i * local_2 + local_0->position.x;
-        local_8.y = local_10.j * local_2 + local_0->position.y;
-        local_8.z = local_10.k * local_2 + local_0->position.z;
-        local_9.x = local_11.i * local_2 + local_0->position.x;
-        local_9.y = local_11.j * local_2 + local_0->position.y;
-        local_9.z = local_11.k * local_2 + local_0->position.z;
+        point_offset_along_vector(&local_0->position, &local_10, local_2, &local_8);
+        point_offset_along_vector(&local_0->position, &local_11, local_2, &local_9);
         bool local_12;
         bool local_13;
         s_path_trace_result local_14;

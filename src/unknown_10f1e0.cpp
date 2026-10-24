@@ -1233,8 +1233,7 @@ bool __stdcall function_110ab0(long unit_index)
 	if (controlling != NONE)
 	{
 		long first = held_object_110ab0(unit_index, *(char *)((byte *)UNIT_ANIMATION_OBJECT(unit_index) + 0x212));
-		if (first != NONE)
-			depleted = *(short *)((byte *)UNIT_ANIMATION_OBJECT(first) + 0x17c) <= 0;
+		depleted = first != NONE && *(short *)((byte *)UNIT_ANIMATION_OBJECT(first) + 0x17c) <= 0;
 		long second = held_object_110ab0(unit_index, *(char *)((byte *)UNIT_ANIMATION_OBJECT(unit_index) + 0x213));
 		if (second != NONE && *(short *)((byte *)UNIT_ANIMATION_OBJECT(second) + 0x17c) > 0)
 			depleted = false;
@@ -2158,16 +2157,13 @@ PRIVATE __forceinline bool function_111651(c_animation_channel const *arg_0)
 // @retail 0x111650
 bool __stdcall function_111650(long arg_0, long *arg_1)
 {
-    // Retail keeps the second argument on the stack (ret 8).
-    long *const *local_38 = &arg_1;
-    arg_1 = *local_38;
     s_unit_animation_object *local_0 = UNIT_ANIMATION_OBJECT(arg_0);
     s_unit_animation_control *local_1 = UNIT_ANIMATION_CONTROL(local_0);
     s_animation_state *local_2 = UNIT_ANIMATION_STATE(local_0);
     s_unit_animation_definition *local_3 = (s_unit_animation_definition *)TAG_BYTES(local_0->definition_index);
     long local_4 = 0x7000101;
     long local_5 = 0x7000101;
-    bool local_6 = false;
+    long local_6 = false;
     bool local_7 = false;
     bool local_8 = false;
     long local_9 = 0;

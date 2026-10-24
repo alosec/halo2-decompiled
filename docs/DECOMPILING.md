@@ -423,11 +423,21 @@ must still match.
   and nothing else on those lines. Leave `@retail` markers exactly as written.
 - A one-line comment above each `@retail` marker saying what the function does
   helps the next reader most.
+- **Near misses:** when you leave a function unmatched, keep a
+  `// score N (was M):` note above its marker. It says what still differs and
+  what you tried, as short forms with their scores, for example "a pointer
+  local 87; the declarations swapped 91; a 600 s permuter run, none below 84".
+  Add to the list rather than replacing it. Read the note before starting on
+  a function, and don't repeat a listed form without a new reason.
 
 ## What not to do
 
 - Do not add `__declspec(noinline)` or other attributes Bungie's code would
   not have had. Stand-ins keep functions out of line.
+- Do not add `#pragma` lines inside a function body, for example an
+  `inline_depth` pair around one call; they can change how the rest of the
+  file compiles. A file-scope `#pragma inline_depth` around a whole function
+  is fine.
 - Do not steer code generation through globals. That means: no taking a
   global's address, or reading it through a `volatile` cast, as a trick (it
   stops the compiler hoisting loads of that global in every function that

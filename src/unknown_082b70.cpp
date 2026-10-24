@@ -245,7 +245,7 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
    for (long trigger_index = 0; trigger_index < definition->trigger_count; trigger_index++)
    {
     s_weapon_trigger_view *trigger = &definition->triggers[trigger_index];
-    long barrel = trigger->barrel;
+    short barrel = trigger->barrel;
     if (definition->barrel_count > 0 && PIN(barrel, 0, definition->barrel_count - 1) == barrel)
     {
      byte *state = (byte *)object_get_082b70(weapon_index) + 0x1a4 + barrel * 0x34;

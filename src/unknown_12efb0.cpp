@@ -78,14 +78,14 @@ static __forceinline real function_12efb1(real arg_0)
 static __forceinline void function_12efb2(s_fog_accumulator *arg_0, real const *arg_1, real arg_2, real arg_3, real arg_4, real arg_5)
 {
 	arg_5 = function_12efb1(arg_5);
+	arg_0->weight += arg_5;
+	arg_0->remaining *= 1.0f - arg_5;
 	arg_0->color.red += arg_1[0] * arg_5;
 	arg_0->color.green += arg_1[1] * arg_5;
 	arg_0->color.blue += arg_1[2] * arg_5;
 	arg_0->intensity += arg_2 * arg_5;
 	arg_0->distance += arg_3 * arg_5;
 	arg_0->height += arg_4 * arg_5;
-	arg_0->weight += arg_5;
-	arg_0->remaining *= 1.0f - arg_5;
 }
 
 static __forceinline void function_12efb3(s_fog_accumulator *arg_0, s_fog_accumulator const *arg_1, real arg_2)

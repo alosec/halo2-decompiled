@@ -5,6 +5,7 @@
 #include "camera_storage.h"
 #include "globals.h"
 #include "object_queries.h"
+#include "data_iterator.h"
 #include <string.h>
 #include <math.h>
 
@@ -146,7 +147,8 @@ struct s_light_ab
 	long tag_index;
 	long scenario_index;
 	long stamp;
-	byte unknown10[0x24 - 0x10];
+	long first_cluster_reference;
+	byte unknown14[0x24 - 0x14];
 	real radius;
 	point3f fade_centre;
 	real fade_radius;
@@ -1095,7 +1097,7 @@ void __declspec(noinline) function_c3220(long light_index);
 /* takes a light out of the cluster partition if it is in it (0xc3220; 0xc0110 inlines it) */
 PRIVATE __forceinline void light_partition_clear(long light_index)
 {
-    s_light_delete_view *light = &((s_light_delete_view *)g_4e030c->data)[light_index & 0xffff];
+    s_light_ab *light = &((s_light_ab *)g_4e030c->data)[light_index & 0xffff];
     if (light->flags & 2)
     {
         function_1cae40(&g_4e0310_partition, light_index, &light->first_cluster_reference);
@@ -1260,6 +1262,9 @@ void function_141ce0(real a, real b, real c, transform4x3f *out);
 real function_30bf0(vector3f *vector);
 void __stdcall function_c0c80(long light_index);
 
+#define FLAG(bit) (1 << (bit))
+#define SET_FLAG(flags, bit, value) ((value) ? ((flags) |= FLAG(bit)) : ((flags) &= ~FLAG(bit)))
+
 // @retail 0xc0520
 long __stdcall function_c0520(long tag_index, long placement_index, bool force,
     s_light_placement_ab *placement)
@@ -1292,7 +1297,7 @@ long __stdcall function_c0520(long tag_index, long placement_index, bool force,
             *(long *)(light + 4) = tag_index;
             *(real *)(light + 0xd0) = 1.0f;
             *(real *)(light + 0xcc) = 1.0f;
-            *(word *)(light + 2) = ((word)(source[0x3e] & 4) << 3) | 5;
+            SET_FLAG(*(word *)(light + 2), 5, source[0x3e] & 4);
             *(long *)(light + 0x10) = NONE;
             s_light_shape_ab shape;
             function_c19f0(result, &shape);
@@ -1566,25 +1571,16 @@ void function_bffa0()
 long __stdcall function_c1720(long object_index, long remove_from_partition, long update)
 {
     long count = 0;
-    s_record_pool *lights = g_4e030c;
-    s_record_pool_iterator iterator;
-    iterator.data = lights;
+    s_data_datum_iterator iterator;
+    iterator.data = g_4e030c;
     iterator.datum_index = NONE;
     iterator.index = NONE;
-    byte *entry;
-    while ((entry = (byte *)data_iterator_next_inlined(&iterator)) != NULL)
+    while (data_datum_iterator_next_inlined(&iterator))
     {
-        if (*(long *)(entry + 0x58) == object_index)
+        if (*(long *)(iterator.datum + 0x58) == object_index)
         {
             if (remove_from_partition)
-            {
-                s_light_ab *light = &((s_light_ab *)lights->data)[iterator.datum_index & 0xffff];
-                if (light->flags & 2)
-                {
-                    function_1cae40(&g_4e0310_partition, iterator.datum_index, (long *)((byte *)light + 0x10));
-                    light->flags &= ~8;
-                }
-            }
+                light_partition_clear(iterator.datum_index);
             if (update)
                 function_c2d00(iterator.datum_index);
             ++count;

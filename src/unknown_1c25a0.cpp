@@ -1797,20 +1797,21 @@ long function_1d3880(s_havok_component const *component, long *constraints, long
 void __stdcall function_1c4590(long flags)
 {
     byte *world = (byte *)g_51e9a4;
+    c_physics_statistics_allocator *allocator = (c_physics_statistics_allocator *)g_480118;
     long active_islands = *(long *)(world + 0xc);
     long inactive_islands = *(long *)(world + 0x18);
     long fixed_entities = *(long *)(*(byte **)(world + 0x2c) + 0x40);
     long allocator_statistics[4];
-    ((c_physics_statistics_allocator *)g_480118)->statistics(allocator_statistics);
     long active_entities = 0, inactive_entities = 0;
+    allocator->statistics(allocator_statistics);
     s_2797a0_iterator iterator;
-    ++g_51ecb0;
     iterator.groups = (s_2797a0_groups *)g_51e9a4;
     iterator.mode = 0;
     iterator.second = false;
     iterator.group = NONE;
     iterator.index = NONE;
     iterator.unknown00 = 1;
+    ++g_51ecb0;
     while (function_2797a0(&iterator))
         ++active_entities;
     iterator.groups = (s_2797a0_groups *)g_51e9a4;
@@ -1826,41 +1827,48 @@ void __stdcall function_1c4590(long flags)
     havok_printf("\t simulation islands (active/inactive):   %d/%d", active_islands, inactive_islands);
     havok_printf("\t fixed entities:                         %d", fixed_entities);
     havok_printf("\t dynamic entities (active/inactive):     %d/%d", active_entities, inactive_entities);
-    s_fixed_memory_statistics physical;
-    s_fixed_memory_statistics_16 scratch, startup;
-    s_physics_pool_statistics pool;
-    fixed_memory_get_statistics(g_4798a0, &physical);
-    fixed_memory_get_statistics_16(g_47989c, &scratch);
-    function_22cb00(g_479898, &pool);
-    function_22c390(g_479894, &startup);
-    havok_printf("Havok Memory (total %.2f KB, debug %.2f KB, percent used %.3f)", 1045.109375, (startup.unknown0c + scratch.unknown0c + pool.metadata_size) * (1.0f / 1024.0f), pool.used_fraction * 100.0f);
-    havok_printf("Startup pool: mem(%.2f KB/%.2f KB), allocs(%d)", startup.allocated_size * (1.0f / 1024.0f), startup.header_size * (1.0f / 1024.0f), startup.allocation_count);
-    havok_printf("Overflow pool: mem(%.2f KB/%.2f KB), allocs(%d))", scratch.allocated_size * (1.0f / 1024.0f), scratch.header_size * (1.0f / 1024.0f), scratch.allocation_count);
-    havok_printf("2nd Overflow pool: mem(%.2f KB/%.2f KB), allocs(%d))", physical.allocated_size * (1.0f / 1024.0f), physical.header_size * (1.0f / 1024.0f), physical.allocation_count);
-    havok_printf("Runtime Pool(%.2f KB): usage==pages(%d/%d)*size(%.2f KB)+last(%.2f KB)", (pool.allocated - pool.metadata_size) * (1.0f / 1024.0f), pool.used_pages, pool.pages, pool.page_size * (1.0f / 1024.0f), (pool.page_size - pool.free_size) * (1.0f / 1024.0f));
-    for (long i = 0; i < pool.entry_count; ++i)
+    struct
     {
-        s_physics_pool_statistics::s_entry *entry = &pool.entries[i];
+        s_physics_pool_statistics pool;
+        s_fixed_memory_statistics_16 startup;
+        s_fixed_memory_statistics_16 scratch;
+        s_fixed_memory_statistics physical;
+    } memory;
+    fixed_memory_get_statistics(g_4798a0, &memory.physical);
+    fixed_memory_get_statistics_16(g_47989c, &memory.scratch);
+    function_22cb00(g_479898, &memory.pool);
+    function_22c390(g_479894, &memory.startup);
+    havok_printf("Havok Memory (total %.2f KB, debug %.2f KB, percent used %.3f)", 1045.109375, (memory.pool.metadata_size + memory.scratch.unknown0c + memory.startup.unknown0c) * (1.0f / 1024.0f), memory.pool.used_fraction * 100.0f);
+    havok_printf("Startup pool: mem(%.2f KB/%.2f KB), allocs(%d)", memory.startup.allocated_size * (1.0f / 1024.0f), memory.startup.header_size * (1.0f / 1024.0f), memory.startup.allocation_count);
+    havok_printf("Overflow pool: mem(%.2f KB/%.2f KB), allocs(%d))", memory.scratch.allocated_size * (1.0f / 1024.0f), memory.scratch.header_size * (1.0f / 1024.0f), memory.scratch.allocation_count);
+    havok_printf("2nd Overflow pool: mem(%.2f KB/%.2f KB), allocs(%d))", memory.physical.allocated_size * (1.0f / 1024.0f), memory.physical.header_size * (1.0f / 1024.0f), memory.physical.allocation_count);
+    havok_printf("Runtime Pool(%.2f KB): usage==pages(%d/%d)*size(%.2f KB)+last(%.2f KB)", (memory.pool.allocated - memory.pool.metadata_size) * (1.0f / 1024.0f), memory.pool.used_pages, memory.pool.pages, memory.pool.page_size * (1.0f / 1024.0f), (memory.pool.page_size - memory.pool.free_size) * (1.0f / 1024.0f));
+    for (long i = 0; i < memory.pool.entry_count; ++i)
+    {
+        s_physics_pool_statistics::s_entry *entry = &memory.pool.entries[i];
         havok_printf("\t b%d(%d) (%d / %d (*%d))", i, entry->size, entry->used, entry->count, entry->stride);
     }
-    long contacts_total = 0, bodies_total = 0, constraints_total = 0, other_total = 0;
-    long contacts_maximum = 0, bodies_maximum = 0, constraints_maximum = 0, other_maximum = 0;
-    s_record_pool_iterator iterator2;
-    iterator2.data = g_51e9b8;
-    iterator2.index = NONE;
-    s_havok_component *component;
-    while ((component = (s_havok_component *)data_iterator_next_inlined(&iterator2)) != NULL)
+    long contacts_total = 0, bodies_total = 0, other_total = 0, constraints_total = 0;
+    long contacts_maximum = 0, bodies_maximum = 0, other_maximum = 0, constraints_maximum = 0;
+    struct
+    {
+        s_havok_component *component;
+        s_record_pool_iterator iterator;
+    } components;
+    components.iterator.data = g_51e9b8;
+    components.iterator.index = NONE;
+    while ((components.component = (s_havok_component *)data_iterator_next_inlined(&components.iterator)) != NULL)
     {
         long contacts, constraints, other, bodies;
-        function_1d3880(component, &contacts, &bodies, &constraints, &other);
+        function_1d3880(components.component, &contacts, &bodies, &constraints, &other);
         contacts_total += contacts;
         bodies_total += bodies;
-        constraints_total += constraints;
         other_total += other;
+        constraints_total += constraints;
         if (contacts_maximum <= contacts) contacts_maximum = contacts;
         if (bodies_maximum <= bodies) bodies_maximum = bodies;
-        if (constraints_maximum <= constraints) constraints_maximum = constraints;
         if (other_maximum <= other) other_maximum = other;
+        if (constraints_maximum <= constraints) constraints_maximum = constraints;
     }
     havok_printf("Havok Component Meta Information Resource Stats");
     havok_printf("HEAP meta contact point memory %.2f KB (max %d), meta rigid body memory %.2f KB (max %d)", contacts_total * (1.0f / 1024.0f), contacts_maximum, bodies_total * (1.0f / 1024.0f), bodies_maximum);

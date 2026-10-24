@@ -267,21 +267,22 @@ struct s_camera_track_23c300
 void function_212100(point3f *out, point3f const *p0, point3f const *p1, point3f const *p2,
 	point3f const *p3, real start, real step, real time);
 
+/* the forward vector (1, 0, 0) rotated by a key's unit quaternion */
 PRIVATE __forceinline void camera_key_direction_23c300(quaternionf q, vector3f *out)
 {
 	vector3f v;
 	v.i = 1.f;
 	v.j = v.k = 0.f;
-	vector3f cross;
-	real dot = (q.i * v.i + q.j * v.j + q.k * v.k) * 2.f;
 	real w2 = q.w * 2.f;
-	cross.i = q.j * v.k - q.k * v.j;
-	real s = q.w * q.w * 2.f - 1.f;
-	out->i = v.i * s + q.i * dot + cross.i * w2;
-	cross.j = q.k * v.i - q.i * v.k;
-	out->j = v.j * s + q.j * dot + cross.j * w2;
-	cross.k = q.i * v.j - q.j * v.i;
-	out->k = v.k * s + q.k * dot + cross.k * w2;
+	real m = q.w * q.w * 2.f - 1.f;
+	real d = (q.j * v.j + q.k * v.k + q.i * v.i) * 2.f;
+	real cx = q.j * v.k - v.j * q.k;
+	real cy = v.i * q.k - q.i * v.k;
+	real cz = q.i * v.j - q.j * v.i;
+
+	out->i = cx * w2 + v.i * m + q.i * d;
+	out->j = q.j * d + cy * w2 + m * v.j;
+	out->k = v.k * m + cz * w2 + d * q.k;
 }
 
 PRIVATE __forceinline void camera_direction_curve_23c300(vector3f *out, vector3f const *p0, vector3f const *p1,

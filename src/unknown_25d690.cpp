@@ -1380,7 +1380,7 @@ bool function_25ccd0(s_type_5cfb45 *arg_0, long arg_1, short arg_2, s_2640c0 *ar
 	bool local_9 = ((*((byte *)local_2 + 0x10a) >> 2) & 1) != 0;
 	arg_0->unknown5f = local_9 && !arg_0->unknown5e;
 	arg_0->unknown5e = local_9;
-	bool local_10;
+	long local_10;
 	bool local_11;
 	if (local_4 == NONE)
 	{

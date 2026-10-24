@@ -336,7 +336,8 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             else local_1->field_90 = 0;
         }
         bool selected_active = local_11 != 0;
-        function_185be4(&arg_5->field_18, 0x10000, local_3[7] != 0);
+        bool input_7_active = local_3[7] != 0;
+        function_185be4(&arg_5->field_18, 0x10000, input_7_active);
         function_185be4(&arg_5->field_18, 0x200000, selected_active);
         function_185be4(&arg_5->field_18, 0x20000, selected_active);
         if (g_4e6948->state != 2) function_185be4(&arg_5->field_18, 0x20000000, local_3[local_2.field_4d] != 0);
@@ -353,7 +354,7 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
         function_185be4(&arg_5->field_18, 2, local_3[0] && !local_1->field_93);
         function_185be4(&arg_5->field_18, 0x10, local_3[4] != 0);
         function_185be4(&arg_5->field_18, 0x20, local_3[4] != 0);
-        function_185be4(&arg_5->field_18, 0x40, local_3[7] != 0);
+        function_185be4(&arg_5->field_18, 0x40, input_7_active);
         function_185be4((dword *)&arg_5->field_1c, 2, local_3[1] == 1);
         function_185be4((dword *)&arg_5->field_1c, 0x10, local_3[14] != 0);
         function_185be4((dword *)&arg_5->field_1c, 0x20, local_3[15] != 0);
@@ -365,9 +366,10 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
         long local_15 = (long)(*(real *)(*(byte **)((byte *)g_4e034c + 0xf4) + 0x7c) * 1000.0f);
         if (local_3[2] > 0) ((byte *)arg_5)[0x20] |= 1; else ((byte *)arg_5)[0x20] &= ~1;
         if (local_4[2] >= local_15) ((byte *)arg_5)[0x20] |= 2; else ((byte *)arg_5)[0x20] &= ~2;
-        if (local_3[3] > 0) ((byte *)arg_5)[0x20] |= 0x10; else ((byte *)arg_5)[0x20] &= ~0x10;
+        bool input_3_active = local_3[3] > 0;
+        if (input_3_active) ((byte *)arg_5)[0x20] |= 0x10; else ((byte *)arg_5)[0x20] &= ~0x10;
         if (local_4[3] >= local_15) arg_5->field_20 |= 0x20; else ((byte *)arg_5)[0x20] &= ~0x20;
-        if (local_3[3] > 0) local_1->field_8e = 1;
+        if (input_3_active) local_1->field_8e = 1;
         else
         {
             if (local_1->field_8e && !local_1->field_8f) *(dword *)&arg_5->field_1c |= 1;

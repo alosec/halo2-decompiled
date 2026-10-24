@@ -1164,7 +1164,7 @@ bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 		if (!out->rated_counts) out->averages[i] = NONE;
 		else out->averages[i] /= out->rated_counts[i];
 	}
-	long histogram[16];
+	word histogram[16];
 	memset(histogram, 0, sizeof(histogram));
 	for (long i = 0; i < out->group_count; i++) histogram[out->total_counts[i] - 1]++;
 	long last = NONE;

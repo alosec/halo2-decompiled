@@ -413,7 +413,8 @@ real function_30bf0(vector3f *v);
 
 PRIVATE __forceinline void normalize_cross_vector(vector3f *v)
 {
-	real length = (real)sqrt(v->k * v->k + v->j * v->j + v->i * v->i);
+	real squared_length = v->k * v->k + v->j * v->j + v->i * v->i;
+	real length = (real)sqrt(squared_length);
 	if (!(fabs(length) < k_real_epsilon))
 	{
 		real inverse = 1.0f / length;
@@ -429,9 +430,6 @@ static __forceinline void cross_product_31b40(vector3f const *a, vector3f const 
 	out->k = b->j * a->i - a->j * b->i;
 }
 
-// score 61 (was 61): the float products are evaluated in a different order and end up in
-// different xmm registers: retail keeps the sums in the x87 stack and
-// divides at the end.
 // @retail 0x31b40
 real function_31b40(vector3f *vector, vector3f const *axis)
 {

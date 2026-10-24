@@ -310,16 +310,25 @@ void function_1f3640(long actor_index)
             result = false;
         else if ((*(long *)((byte *)actor + 0x7fc) == 0x6000086 && (byte)function_113da0(actor->unknown018)) || actor->unknown086 >= 6)
             result = false;
-        else if (!active && function_110ab0(actor->unknown018))
-            result = false;
-        else if (*(long *)((byte *)actor + 0x6c8))
-            result = false;
-        else if (!active && *(short *)((byte *)actor + 0x686) > 0)
-            result = false;
         else
         {
-            result = (actor->unknown5d0 && *((bool *)actor + 0x485)) ||
-                ((!actor->unknown5d0 || active) && *((bool *)actor + 0x484));
+            bool blocked = false;
+            if (!active)
+            {
+                long unit_index = actor->unknown018;
+                blocked = function_110ab0(unit_index);
+            }
+            if (blocked)
+                result = false;
+            else if (*(long *)((byte *)actor + 0x6c8))
+                result = false;
+            else if (!active && *(short *)((byte *)actor + 0x686) > 0)
+                result = false;
+            else
+            {
+                result = (actor->unknown5d0 && *((bool *)actor + 0x485)) ||
+                    ((!actor->unknown5d0 || active) && *((bool *)actor + 0x484));
+            }
         }
         if (active && !result)
         {

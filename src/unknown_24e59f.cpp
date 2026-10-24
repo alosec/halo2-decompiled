@@ -109,9 +109,9 @@ void __stdcall function_24e59f(s_marker_list *list)
 
 	real half_width = (real)(g_4b9dd8.right - g_4b9dd8.left) * 0.5f;
 	real half_height = (real)(g_4b9dd8.bottom - g_4b9dd8.top) * 0.5f;
-	real half_extents = half_height * half_width;
 	real ex = half_height * nx;
 	real ey = half_width * ny;
+	real half_extents = half_height * half_width;
 
 	if (on_screen && ey * ey + ex * ex < half_extents * half_extents)
 	{
@@ -143,8 +143,9 @@ void __stdcall function_24e59f(s_marker_list *list)
 
 	offset.x += (real)((g_4b9dd6 - g_4b9dd2) / 2);
 	offset.y += (real)((g_4b9dd4 - g_4b9dd0) / 2);
-	placement.position.x = (real)g_4b9dd2 + offset.x;
-	placement.position.y = (real)g_4b9dd0 + offset.y;
+	placement.position = offset;
+	placement.position.x = (real)g_4b9dd2 + placement.position.x;
+	placement.position.y = (real)g_4b9dd0 + placement.position.y;
 
 	real t = placement.unknown1c * 0.1f;
 	if (0.0f > t)

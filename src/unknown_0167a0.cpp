@@ -93,8 +93,9 @@ void __stdcall function_16b90(byte *state, long tag, long first, long second,
     bool different_tag = tag != previous;
     *(long *)(state + 4) = previous;
     *(long *)state = tag;
-    real inverse = 100000.0f;
+    real inverse;
     if (scale > 0.0f) inverse = 1.0f / scale;
+    else inverse = 100000.0f;
     *(real *)(state + 0x28) = inverse;
     *(real *)(state + 0x2c) = (real)(log((double)inverse) * 0.6931471824645996f);
     *(dword *)(state + 0x58) = 0;
@@ -108,13 +109,13 @@ void __stdcall function_16b90(byte *state, long tag, long first, long second,
         definition = g_4e3b44[*(long const *)parameters & 0xffff].bytes;
         tables = *(byte **)(definition + 0x5c);
         *(byte **)(state + 0x10) = tables;
-        entry = *(byte **)(tables + 4) + first * 10;
+        entry = *(byte **)(*(byte **)(state + 0x10) + 4) + first * 10;
         *(byte **)(state + 0x14) = entry;
         packed = *(word *)entry;
-        next = ((word *)*(byte **)(tables + 0xc))[(packed & 0x1ff) + second];
-        pass = *(byte **)(tables + 0x14) + ((next & 0x1ff) + third) * 10;
+        next = ((word *)*(byte **)(*(byte **)(state + 0x10) + 0xc))[(packed & 0x1ff) + second];
+        pass = *(byte **)(*(byte **)(state + 0x10) + 0x14) + ((next & 0x1ff) + third) * 10;
         *(byte **)(state + 0x18) = pass;
-        byte *range = *(byte **)(tables + 0x1c) + ((*(word *)(pass + 8) & 0x1ff) + fourth) * 6;
+        byte *range = *(byte **)(*(byte **)(state + 0x10) + 0x1c) + ((*(word *)(pass + 8) & 0x1ff) + fourth) * 6;
         *(byte **)(state + 0x1c) = range;
         *(dword *)(state + 0x30) |= g_485058.v6c[0];
         *(dword *)(state + 0x34) |= g_485058.v6c[1];
@@ -1164,7 +1165,7 @@ void function_19ca0(byte *state, word const *range)
     real values[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     if (!(remapping & 0xfe00))
     {
-        for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+        for (long i = 0; i < (*range >> 9); ++i)
         {
             long component = entry[2] & 7;
             function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
@@ -1178,19 +1179,24 @@ void function_19ca0(byte *state, word const *range)
             color.red = values[0]; color.green = values[1]; color.blue = values[2]; color.alpha = values[3];
             dword value = pack_color4f(&color);
             dword mask = g_467068[component];
-            word packed = *(word const *)entry;
+            dword packed = *(word const *)entry;
             store_shader_mask(state, packed, (packed >> 6) & 15, mask, value);
+            entry += 4;
         }
     }
     else
     {
         byte const *mapping = *(byte **)(definition + 0x24) + (remapping & 0x1ff) * 4;
-        for (long i = 0; i < (*range >> 9); ++i, entry += 4)
+        for (long i = 0; i < (*range >> 9); ++i)
         {
-            word packed = *(word const *)entry;
+            dword packed = *(word const *)entry;
             long slot = packed & 7;
             short source = *(short const *)(mapping + slot * 4);
-            if (source != NONE && ((packed >> 3) & 7) != *(long *)(state + 0x300 + source * 4)) continue;
+            if (source != NONE && ((packed >> 3) & 7) != *(long *)(state + 0x300 + source * 4))
+            {
+                entry += 4;
+                continue;
+            }
             long component = entry[2] & 7;
             function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
             if (*(word const *)entry & 0x800)
@@ -1207,6 +1213,7 @@ void function_19ca0(byte *state, word const *range)
             long index = (packed >> 6) & 15;
             if ((packed & 0x3c0) != 0x200) index += *(signed char *)(state + 0x1520 + (packed & 7));
             store_shader_mask(state, packed, index, mask, value);
+            entry += 4;
         }
     }
 }

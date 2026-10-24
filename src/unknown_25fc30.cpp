@@ -999,7 +999,6 @@ void __stdcall function_25eea0(
 			if (maximum_range > 0.f && maximum_range > distance)
 			{
 				real margin;
-				real bonus = 0.f;
 
 				if (!(minimum_range > context->unknown678))
 				{
@@ -1010,13 +1009,10 @@ void __stdcall function_25eea0(
 				{
 					margin = distance - minimum_range;
 				}
-				if (margin > 2.f)
+				real bonus = 0.f;
+				if (margin > 0.f)
 				{
-					bonus = 10.f;
-				}
-				else if (margin > 0.f)
-				{
-					bonus = margin * 0.5f * 10.f;
+					bonus = margin > 2.f ? 10.f : margin * 0.5f * 10.f;
 				}
 				position->score += bonus;
 			}
@@ -1035,19 +1031,20 @@ void __stdcall function_25eea0(
 			{
 				if (context->lines[j].type == 2)
 				{
+					vector3f const *direction = &context->lines[j].direction;
 					vector3f offset;
 					real t;
 
 					vector3d_from_points3d(&context->lines[j].point, &position->position, &offset);
-					t = dot3f(&context->lines[j].direction, &offset);
+					t = dot3f(direction, &offset);
 					if (t > 0.f)
 					{
 						vector3f closest;
 						real nt = 0.f - t;
 
-						closest.i = context->lines[j].direction.i * nt + offset.i;
-						closest.j = context->lines[j].direction.j * nt + offset.j;
-						closest.k = nt * context->lines[j].direction.k + offset.k;
+						closest.i = direction->i * nt + offset.i;
+						closest.j = direction->j * nt + offset.j;
+						closest.k = nt * direction->k + offset.k;
 						if (nearest > length_sq3f(&closest))
 						{
 							nearest = length_sq3f(&closest);
@@ -1077,13 +1074,13 @@ void __stdcall function_25f290(
 {
 	s_actor_firing_view *actor = (s_actor_firing_view *)((s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view)));
 	short i;
+	bool scored = false;
 
 	if (context->unknown5b)
 	{
 		return;
 	}
 
-	bool scored = false;
 	real weight = 12.f;
 
 	if (context->unknown618)
@@ -1097,13 +1094,13 @@ void __stdcall function_25f290(
 				if (context->unknown61c > weapon->unknown0c)
 				{
 					weight = (1.f - (context->unknown61c - weapon->unknown0c) * weapon->unknown0c * 2.f) * weight;
-					if (!(weight > 4.f))
-					{
-						weight = 4.f;
-					}
 				}
 			}
 			else
+			{
+				weight = 4.f;
+			}
+			if (!(weight > 4.f))
 			{
 				weight = 4.f;
 			}
@@ -1181,6 +1178,7 @@ void __stdcall function_25f290(
 		for (i = 0; i < count; i++)
 		{
 			s_type_b36ac5 *position = &positions[i];
+			point3f *point = &position->position;
 			short behind_cover = 0;
 			short exposed = 0;
 			short moving = 0;
@@ -1191,67 +1189,47 @@ void __stdcall function_25f290(
 			}
 
 			real nearest = 3.4028235e38f;
-			real bonus = 10.f;
 
-			if (context->line_count > 0)
+			for (short j = 0; j < context->line_count; j++)
 			{
-				for (short j = 0; j < context->line_count; j++)
+				short type = context->lines[j].type;
+				real distance = 0.f;
+
+				if (type == 0 || type == 1)
 				{
-					short type = context->lines[j].type;
-					real distance = 0.f;
+					short result = function_267a80(&distance, &context->lines[j].point, &context->lines[j].direction, point, 0);
 
-					if (type == 0 || type == 1)
+					if (nearest > distance)
 					{
-						short result = function_267a80(&distance, &context->lines[j].point, &context->lines[j].direction, &position->position, 0);
+						nearest = distance;
+					}
+					if (context->lines[j].type == 0)
+					{
+						if (exposed <= result)
+						{
+							exposed = result;
+						}
+					}
+					else if (context->lines[j].type == 1)
+					{
+						if (behind_cover <= result)
+						{
+							behind_cover = result;
+						}
+					}
 
-						if (nearest > distance)
+					if (result == 0 && context->unknown55)
+					{
+						result = function_267a80(NULL, &context->lines[j].point, &position->unknown40, point, 0);
+						if (moving <= result)
 						{
-							nearest = distance;
-						}
-						if (context->lines[j].type == 0)
-						{
-							if (exposed <= result)
-							{
-								exposed = result;
-							}
-						}
-						else if (context->lines[j].type == 1)
-						{
-							if (behind_cover <= result)
-							{
-								behind_cover = result;
-							}
-						}
-
-						if (result == 0 && context->unknown55)
-						{
-							result = function_267a80(NULL, &context->lines[j].point, &position->unknown40, &position->position, 0);
-							if (moving <= result)
-							{
-								moving = result;
-							}
+							moving = result;
 						}
 					}
 				}
-
-				if (behind_cover >= 2)
-				{
-					bonus = 0.f;
-				}
-				else if (behind_cover >= 1)
-				{
-					bonus = 1.5f;
-				}
-				else if (exposed >= 2)
-				{
-					bonus = 4.f;
-				}
-				else if (exposed >= 1)
-				{
-					bonus = 6.5f;
-				}
 			}
-			position->score += bonus;
+
+			position->score += behind_cover >= 2 ? 0.f : behind_cover >= 1 ? 1.5f : exposed >= 2 ? 4.f : exposed >= 1 ? 6.5f : 10.f;
 			position->score += moving >= 2 ? 0.f : moving >= 1 ? 3.f : 6.f;
 
 			if (!scored)

@@ -930,13 +930,14 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 		real target = camera->field_of_view_target;
 		if (target != 0.0f)
 		{
-			if (camera->field_of_view_time >= camera->field_of_view_duration)
+			real duration = camera->field_of_view_duration;
+			if (camera->field_of_view_time >= duration)
 			{
 				field_of_view = target;
 			}
 			else
 			{
-				real t = camera->field_of_view_time / camera->field_of_view_duration;
+				real t = camera->field_of_view_time / duration;
 
 				t = PIN(t, 0.0f, 1.0f);
 				field_of_view = (target - camera->field_of_view_start) * t + camera->field_of_view_start;

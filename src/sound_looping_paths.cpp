@@ -168,7 +168,7 @@ void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point
 		long count = 0;
 		function_18d730(bsp_data, cluster, point, 20.0f, indices, gains, portals, clusters, &count);
 		s_loop_path_choice choices[2];
-		long choice_count = 0;
+		short choice_count = 0;
 		for (long i = 0; i < count && choice_count != 2; i++)
 		{
 			long index = indices[i];

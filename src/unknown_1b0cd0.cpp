@@ -70,25 +70,6 @@ __forceinline point2f *point_get(long reference)
 
 vector2f *g_468778;
 
-inline real magnitude2d(vector2f const *v)
-{
-	return (real)sqrt(v->i * v->i + v->j * v->j);
-}
-
-inline real normalize2d_fast(vector2f *v)
-{
-	real magnitude = magnitude2d(v);
-
-	if (fabs(magnitude) < 0.0001f)
-		return 0.0f;
-
-	real scale = 1.0f / magnitude;
-
-	v->i *= scale;
-	v->j *= scale;
-	return magnitude;
-}
-
 static inline real distance2d(point2f const *a, point2f const *b)
 {
 	real dx = a->x - b->x;

@@ -13,15 +13,17 @@ void function_24f0fc(s_marker_list const *list, s_24ecae_placement const *placem
 	if (kind->bitmap_index == NONE || kind->shader_index == NONE || kind->border_bitmap == NONE ||
 		placement->hidden || count == 0)
 		return;
-	real center_x = placement->position.x;
-	real center_y = placement->position.y;
-	center_y -= placement->scale * 16.0f + offset + 1.0f;
-	real left_width = count <= 1 ? 16.0f : 32.0f;
-	real right_width = count <= 1 ? 16.0f : 32.0f;
-	real left = center_x - (placement->scale * left_width + 1.0f);
-	real right = placement->scale * right_width + 1.0f + center_x;
-	real top = center_y - (placement->scale * 16.0f + 1.0f);
-	real bottom = placement->scale * 16.0f + 1.0f + center_y;
+	point2f center;
+	center.x = placement->position.x;
+	center.y = placement->position.y;
+	center.y -= placement->scale * 16.0f + offset + 1.0f;
+	real right_width = count > 1 ? 32.0f : 16.0f;
+	real left_width = count > 1 ? 32.0f : 16.0f;
+	box2f rect;
+	rect.x0 = center.x - (placement->scale * left_width + 1.0f);
+	rect.x1 = center.x + (placement->scale * right_width + 1.0f);
+	rect.y0 = center.y - (placement->scale * 16.0f + 1.0f);
+	rect.y1 = center.y + (placement->scale * 16.0f + 1.0f);
 	g_4e6950.field_0 = *(color3f const *)&list->color24;
 	g_4e6950.field_c = *(point3f const *)&list->color30;
 	g_4e6950.value18 = 0.0f;
@@ -38,16 +40,17 @@ void function_24f0fc(s_marker_list const *list, s_24ecae_placement const *placem
 	bounds.y0 = 0.0f;
 	bounds.y1 = 0.5f;
 	point2f points[4];
-	for (short corner = 0; corner < 4; ++corner)
+	for (long corner = 0; corner < 4; ++corner)
 	{
 		bool upper = corner < 2;
 		bool right_side = corner == 1 || corner == 2;
-		real x = right_side ? right : left;
-		real y = upper ? top : bottom;
+		real x = right_side ? rect.x1 : rect.x0;
+		real y = upper ? rect.y0 : rect.y1;
+		real outer_y = upper ? -2.0f : 2.0f;
 		points[0].x = x + (right_side ? 2.0f : -2.0f);
-		points[0].y = y + (upper ? -2.0f : 2.0f);
-		points[1].x = x;
+		points[0].y = y + outer_y;
 		points[1].y = y + (upper ? -2.0f : 2.0f);
+		points[1].x = x;
 		points[2].x = x;
 		points[2].y = y;
 		points[3].x = x + (right_side ? 2.0f : -2.0f);
@@ -59,57 +62,57 @@ void function_24f0fc(s_marker_list const *list, s_24ecae_placement const *placem
 	bounds.x1 = 1.0f;
 	bounds.y0 = 0.5f;
 	bounds.y1 = 1.0f;
-	points[0].x = left;
-	points[0].y = top - 2.0f;
-	points[1].x = right;
-	points[1].y = top - 2.0f;
-	points[2].x = right;
-	points[2].y = top;
-	points[3].x = left;
-	points[3].y = top;
+	points[0].x = rect.x0;
+	points[0].y = rect.y0 - 2.0f;
+	points[1].x = rect.x1;
+	points[1].y = rect.y0 - 2.0f;
+	points[2].x = rect.x1;
+	points[2].y = rect.y0;
+	points[3].x = rect.x0;
+	points[3].y = rect.y0;
 	function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)&bounds,
 		kind->border_bitmap, 0, kind->shader_index);
-	points[0].x = right;
-	points[0].y = top;
-	points[1].x = right + 2.0f;
-	points[1].y = top;
-	points[2].x = right + 2.0f;
-	points[2].y = bottom;
-	points[3].x = right;
-	points[3].y = bottom;
+	points[0].x = rect.x1;
+	points[0].y = rect.y0;
+	points[1].x = rect.x1 + 2.0f;
+	points[1].y = rect.y0;
+	points[2].x = rect.x1 + 2.0f;
+	points[2].y = rect.y1;
+	points[3].x = rect.x1;
+	points[3].y = rect.y1;
 	function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)&bounds,
 		kind->border_bitmap, 0, kind->shader_index);
-	points[0].x = left;
-	points[0].y = top;
-	points[1].x = left - 2.0f;
-	points[1].y = top;
-	points[2].x = left - 2.0f;
-	points[2].y = bottom;
-	points[3].x = left;
-	points[3].y = bottom;
+	points[0].x = rect.x0;
+	points[0].y = rect.y0;
+	points[1].x = rect.x0 - 2.0f;
+	points[1].y = rect.y0;
+	points[2].x = rect.x0 - 2.0f;
+	points[2].y = rect.y1;
+	points[3].x = rect.x0;
+	points[3].y = rect.y1;
 	function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)&bounds,
 		kind->border_bitmap, 0, kind->shader_index);
-	real split = center_x - placement->scale * 16.0f + 1.0f;
-	real edge = bottom + 2.0f;
-	points[0].x = left;
+	points[0].x = rect.x0;
+	real edge = rect.y1 + 2.0f;
+	real split = center.x - placement->scale * 16.0f + 1.0f;
 	points[0].y = edge;
 	points[1].x = split;
 	points[1].y = edge;
 	points[2].x = split;
-	points[2].y = bottom;
-	points[3].x = left;
-	points[3].y = bottom;
+	points[2].y = rect.y1;
+	points[3].x = rect.x0;
+	points[3].y = rect.y1;
 	function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)&bounds,
 		kind->border_bitmap, 0, kind->shader_index);
-	split = placement->scale * 16.0f + center_x;
-	points[0].x = right;
+	split = placement->scale * 16.0f + center.x;
+	points[0].x = rect.x1;
 	points[0].y = edge;
 	points[1].x = split;
 	points[1].y = edge;
 	points[2].x = split;
-	points[2].y = bottom;
-	points[3].x = right;
-	points[3].y = bottom;
+	points[2].y = rect.y1;
+	points[3].x = rect.x1;
+	points[3].y = rect.y1;
 	function_22a664((s_widget_quad_2b11 const *)points, (s_float_rect const *)&bounds,
 		kind->border_bitmap, 0, kind->shader_index);
 }

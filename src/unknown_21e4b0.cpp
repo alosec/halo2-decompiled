@@ -129,23 +129,23 @@ bool function_21e4b0(s_sound_driver_counts const *counts)
 				g_47f0d0.field04 = 0;
 				g_47f0d0.field14 = NULL;
 				g_47f0d0.field10 = 0x10000;
-				result = true;
+				bool buffers_created = true;
 				for (long type = 0; type < 3; type++)
 				{
 					long first = SOUND_DRIVER_GLOBALS->channel_count;
 					SOUND_DRIVER_GLOBALS->unknown1a0c[type] = SOUND_DRIVER_GLOBALS->channel_count;
 					SOUND_DRIVER_GLOBALS->channel_count += counts->channels[type];
-					for (long i = 0; result && i < counts->channels[type]; i++)
+					for (long i = 0; buffers_created && i < counts->channels[type]; i++)
 					{
-						result = result && function_21f4e0(first + i, type);
+						buffers_created = buffers_created && function_21f4e0(first + i, type);
 					}
 					SOUND_DRIVER_GLOBALS->unknown1a12[type] = SOUND_DRIVER_GLOBALS->channel_count - 1;
 				}
 				short voices = counts->voices;
 				SOUND_DRIVER_GLOBALS->voice_count = voices;
 				SOUND_DRIVER_GLOBALS->unknown0008 = voices;
-				for (long voice = 0; result && voice < counts->voices; voice++)
-					result = result && sound_driver_voice_create_buffer(voice);
+				for (long voice = 0; buffers_created && voice < counts->voices; voice++)
+					buffers_created = buffers_created && sound_driver_voice_create_buffer(voice);
 				function_191420(SOUND_DRIVER_GLOBALS->direct_sound);
 				SOUND_DRIVER_GLOBALS->effect_levels_a[0] = 0;
 				SOUND_DRIVER_GLOBALS->effect_levels_a[1] = 0xc0c0a8c1;
@@ -221,6 +221,7 @@ bool function_21e4b0(s_sound_driver_counts const *counts)
 				SOUND_DRIVER_GLOBALS->volume_d = 1.0f;
 				SOUND_DRIVER_GLOBALS->unknown2acc = 8000;
 				SOUND_DRIVER_GLOBALS->unknown2ad0 = 0.0f;
+				result = buffers_created;
 			}
 		}
 	}

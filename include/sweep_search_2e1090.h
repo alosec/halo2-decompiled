@@ -2,7 +2,7 @@
 #define SWEEP_SEARCH_2E1090_H
 // Havok (third-party physics library): the three-axis sweep's search for the
 // boxes a box overlaps, shared inline by the search that reports pairs
-// (src/unknown_2e1020.cpp) and the one that collects the boxes
+// (src/unknown_2dfec0.cpp) and the one that collects the boxes
 // (src/unknown_2e3370.cpp).
 #include "sweep_quantize_2e1090.h"
 #include "reference_counted_2d88a0.h"

@@ -38,6 +38,14 @@ static inline byte real_to_byte(real x)
 	return (byte)v;
 }
 
+/* the magnitude of a real by clearing its sign bit (retail compares with
+   `and [esp+N], 0x7fffffff` here, not with fabs) */
+static inline real real_sign_cleared(real x)
+{
+	*(dword *)&x &= 0x7fffffff;
+	return x;
+}
+
 static inline signed char real_to_signed_byte(real x)
 {
 	long v = real_truncate(x);
@@ -209,7 +217,7 @@ inline real function_10e8e0(real t);
 #define VIBRATION_VERSION 0x96c
 
 // @retail 0x10de40
-void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real volatile time, real blend, bool skip_special)
+void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, real time, real blend, bool skip_special)
 {
 	output->time = time;
 	if (set->size > 0x10)
@@ -237,13 +245,16 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 			memset(output->values, 0, sizeof(output->values));
 
 			long channel_count = curves->channel_count;
-			s_vibration_channel *channel = curves->channels;
-			s_vibration_key *keys_base = (s_vibration_key *)(channel + channel_count);
+			s_vibration_channel *channels = curves->channels;
+			s_vibration_key *keys_base = (s_vibration_key *)(channels + channel_count);
 			real t_first, v_first, t_last, v_last, t_key, t0, v0, t1, v1;
-			for (long c = 0; c < channel_count; c++, channel++)
+			s_vibration_channel *channel;
+			real *prior;
+			long c;
+			for (c = 0, channel = channels, prior = previous; c < channel_count; c++, channel++, prior++)
 			{
 				s_vibration_key *keys = keys_base + channel->key_offset;
-				volatile real  result = 0.0f;
+				real result = 0.0f;
 				bool skip = skip_special && (c == 0x12 || c == 0x13 || c == 0x14);
 				short key_count = channel->key_count;
 				if (key_count > 0 && !skip)
@@ -266,9 +277,9 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 					}
 					else
 					{
-						long k = 0;
+						long prev = NONE;
 						s_vibration_key *key = keys;
-						for (; k < key_count; k++, key++)
+						for (long k = 0; k < key_count; k++, key++)
 						{
 							if (curves->version == VIBRATION_VERSION)
 							{
@@ -276,42 +287,38 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 							}
 							if (t_key > time)
 							{
+								prev = k - 1;
 								break;
 							}
 						}
-						if (k < key_count)
+						if (prev >= 0)
 						{
-							long prev = k - 1;
-							if (prev >= 0)
+							if (curves->version == VIBRATION_VERSION)
 							{
-								if (curves->version == VIBRATION_VERSION)
+								t0 = (real)keys[prev].time * curves->time_scale;
+								v0 = (real)keys[prev].value * 0.0001f;
+								t1 = (real)keys[prev + 1].time * curves->time_scale;
+								v1 = (real)keys[prev + 1].value * 0.0001f;
+							}
+							if (t1 - t0 > 0.0001f)
+							{
+								real fraction = (time - t0) / (t1 - t0);
+								real smooth = function_10e8e0(fraction);
+								result = (v1 - v0) * smooth + v0;
+								if (fabs(result) < 0.0001f)
 								{
-									t0 = (real)keys[prev].time * curves->time_scale;
-									v0 = (real)keys[prev].value * 0.0001f;
-									t1 = (real)keys[prev + 1].time * curves->time_scale;
-									v1 = (real)keys[prev + 1].value * 0.0001f;
+									result = 0.0f;
 								}
-								if (t1 - t0 > 0.0001f)
-								{
-									real fraction = (time - t0) / (t1 - t0);
-									real smooth = function_10e8e0(fraction);
-									result = (v1 - v0) * smooth + v0;
-									if (fabs(result) < 0.0001f)
-									{
-										result = 0.0f;
-									}
-								}
-								else
-								{
-									result = v0;
-								}
+							}
+							else
+							{
+								result = v0;
 							}
 						}
 					}
 				}
 
-				real prior_value = previous[c];
-				result = (result - prior_value) * blend + prior_value;
+				result = (result - *prior) * blend + *prior;
 				real magnitude = (real)fabs(result);
 				if (!(magnitude < 0.0001f))
 				{
@@ -327,7 +334,7 @@ void function_10de40(s_vibration_curve_set *set, s_vibration_output *output, rea
 						long smallest_index = 0;
 						for (long i = 0; i < 12; i++)
 						{
-							if (smallest > fabs(out_values[i]))
+							if (smallest > real_sign_cleared(out_values[i]))
 							{
 								smallest = (real)fabs(out_values[i]);
 								smallest_index = i;

@@ -10,6 +10,7 @@
 #include "unknown_11c920.h"
 #include "unknown_13eeb0.h"
 #include "data_array.h"
+#include "data_iterator.h"
 #include "physical_memory.h"
 #include "job_queue.h"
 #include "font_loading.h"
@@ -156,53 +157,6 @@ static __forceinline void async_wait(bool volatile *done)
 			SwitchToThread();
 		}
 	}
-}
-
-/* the data iterator that remembers its current datum (0x6b380), which retail
-   inlines here: with the next-index scan inlined too (0x1406b0), and calling
-   it (0x140b80) */
-static inline bool data_datum_iterator_next_inlined(s_data_datum_iterator *iterator)
-{
-	s_record_pool *data = iterator->data;
-	long index = data_next_absolute_index_inlined(data, iterator->index + 1);
-	byte *datum;
-
-	if (index != NONE)
-	{
-		datum = data->data + data->size * index;
-		iterator->index = index;
-		iterator->datum_index = (*(short *)datum << 16) | index;
-	}
-	else
-	{
-		iterator->index = data->maximum_count;
-		iterator->datum_index = NONE;
-		datum = 0;
-	}
-	iterator->datum = datum;
-	return datum != 0;
-}
-
-static inline bool data_datum_iterator_next_called(s_data_datum_iterator *iterator)
-{
-	s_record_pool *data = iterator->data;
-	long index = function_16bc00(data, iterator->index + 1);
-	byte *datum;
-
-	if (index != NONE)
-	{
-		datum = data->data + data->size * index;
-		iterator->index = index;
-		iterator->datum_index = (*(short *)datum << 16) | index;
-	}
-	else
-	{
-		iterator->index = data->maximum_count;
-		iterator->datum_index = NONE;
-		datum = 0;
-	}
-	iterator->datum = datum;
-	return datum != 0;
 }
 
 /* function_16b790, which retail inlines here */

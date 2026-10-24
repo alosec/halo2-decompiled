@@ -708,7 +708,6 @@ PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f co
             desired.j = left.j * input.j + forward.j * input.i;
             desired.k = left.k * input.j + forward.k * input.i;
             desired.k += input.k;
-            function_30bf0(&desired);
         }
         else
         {
@@ -737,7 +736,10 @@ PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f co
                 desired.k = left.k * input.j + forward.k * input.i;
                 desired.k = (desired.k + input.k) * 5.0f;
             }
-            function_30bf0(&desired);
+        }
+        function_30bf0(&desired);
+        if (!flying)
+        {
             if (*(real *)(settings + 0x58) >= desired.k)
                 magnitude *= *(real *)(settings + 0x4c);
             else if (*(real *)(settings + 0x58) > desired.k)

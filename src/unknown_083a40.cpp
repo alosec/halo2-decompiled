@@ -864,8 +864,6 @@ bool function_6aee0(c_class_6a600 *world);
 void function_6b310(c_class_6a600 *world);
 void function_6b350(c_class_6a600 *world);
 
-// score 2 (was 2): the member index that function_5a680 wrote is reloaded into
-// EDX and pushed for the call; retail loads it into EAX.
 // @retail 0x83220
 bool function_83220(s_simulation_world_owner *watcher)
 {
@@ -899,7 +897,8 @@ bool function_83220(s_simulation_world_owner *watcher)
    }
    long member_index, current_member;
    s_watcher_membership *members = (s_watcher_membership *)function_5a680(watcher->session, &current_member, &member_index);
-   if (!function_83f00(watcher, watcher->session->update7618, members->count, members->host, members->members)) goto failed;
+   long update = watcher->session->update7618;
+   if (!function_83f00(watcher, update, members->count, members->host, members->members)) goto failed;
    if (function_67e10(watcher->world)) result = function_843f0(watcher, current_member);
    else result = function_84560(watcher);
   }

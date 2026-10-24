@@ -154,16 +154,16 @@ struct s_damage_object;
 void function_d0590(s_unit_child_iterator *iterator, long object_index);
 s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 
-PRIVATE inline byte *request_unit(long object_index)
+PRIVATE inline byte *request_unit(long object_index, byte *headers)
 {
- return *(byte **)(g_4e0300->data + (object_index & 0xffff) * 12 + 8);
+ return *(byte **)(headers + (object_index & 0xffff) * 12 + 8);
 }
 
-PRIVATE inline long request_weapon(s_player_request_view *player, bool secondary)
+PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byte *headers)
 {
  long unit_index = player->unit_index;
- byte *unit = request_unit(unit_index);
- return function_cbd50(unit_index, *(signed char *)(unit + (secondary ? 0x213 : 0x212)));
+ byte *unit = request_unit(unit_index, headers);
+ return function_cbd50(unit_index, *(signed char *)(unit + 0x212 + slot));
 }
 
 // @retail 0x1e7ab0
@@ -182,7 +182,7 @@ bool function_1e7ab0(long local_index, long type)
   long unit_index = player->unit_index;
   if (unit_index != NONE)
   {
-   byte *unit = request_unit(unit_index);
+   byte *unit = request_unit(unit_index, g_4e0300->data);
    switch (type)
    {
    case 10:
@@ -215,7 +215,7 @@ bool function_1e7ab0(long local_index, long type)
      short seat = *(short *)(unit + 0x1fc);
      if (parent != NONE && seat != NONE)
      {
-      byte *definition = g_4e3b44[*(long *)request_unit(parent) & 0xffff].bytes;
+      byte *definition = g_4e3b44[*(long *)request_unit(parent, g_4e0300->data) & 0xffff].bytes;
       byte *seats = *(byte **)(definition + 0x1cc);
       dword flags = *(dword *)(seats + seat * 0xb0);
       if (!((bool)((flags >> 2) & 1)) && !((bool)((flags >> 3) & 1)) && !((bool)((flags >> 11) & 1)))
@@ -235,10 +235,10 @@ bool function_1e7ab0(long local_index, long type)
     }
     break;
    case 15:
-    if (request_weapon(player, false) != NONE && !motion_sensor_enemy_nearby(local_index)) result = true;
+    if (request_weapon(player, false, g_4e0300->data) != NONE && !motion_sensor_enemy_nearby(local_index)) result = true;
     break;
    case 18:
-    if (request_weapon(player, false) != NONE && !motion_sensor_enemy_nearby(local_index) && function_1e7a10(local_index, 15)) result = true;
+    if (request_weapon(player, false, g_4e0300->data) != NONE && !motion_sensor_enemy_nearby(local_index) && function_1e7a10(local_index, 15)) result = true;
     break;
    case 0: result = (state->field_194 & 1) != 0; break;
    case 1: result = ((state->field_194 >> 1) & 1) != 0; break;
@@ -252,26 +252,26 @@ bool function_1e7ab0(long local_index, long type)
     }
     break;
    case 16:
-    if (!motion_sensor_enemy_nearby(local_index) && request_weapon(player, false) != NONE &&
-     request_weapon(player, true) == NONE && function_100fd0(request_weapon(player, false)) &&
-     function_101010(request_weapon(player, false), 0) != NONE)
+    if (!motion_sensor_enemy_nearby(local_index) && request_weapon(player, false, g_4e0300->data) != NONE &&
+     request_weapon(player, true, g_4e0300->data) == NONE && function_100fd0(request_weapon(player, false, g_4e0300->data)) &&
+     function_101010(request_weapon(player, false, g_4e0300->data), 0) != NONE)
     { result = true; if (*(long *)(data + 0x80) != 16) data[0x1a0] = false; }
     break;
    case 20:
     if (motion_sensor_enemy_vehicle_ahead(local_index) && *(short *)(unit + 0x1fc) == NONE) result = true;
     break;
    case 23:
-    if (!motion_sensor_enemy_nearby(local_index) && request_weapon(player, false) != NONE)
+    if (!motion_sensor_enemy_nearby(local_index) && request_weapon(player, false, g_4e0300->data) != NONE)
     {
      s_weapon_status status;
-     function_100520(request_weapon(player, false), &status);
+     function_100520(request_weapon(player, false, g_4e0300->data), &status);
      if (status.magazine_count > 0 && status.magazines[0].loaded_maximum != 0 &&
       status.magazines[0].loaded * 2 <= status.magazines[0].loaded_maximum &&
       status.magazines[0].total_maximum != 0 && status.magazines[0].unloaded > 0) result = true;
     }
     break;
    case 9:
-    if (request_weapon(player, true) != NONE && function_100f00(request_weapon(player, true))) result = true;
+    if (request_weapon(player, true, g_4e0300->data) != NONE && function_100f00(request_weapon(player, true, g_4e0300->data))) result = true;
     break;
    case 25: if (function_1e8eb0(unit_index, 3, false)) result = true; break;
    case 28: if (function_1e8eb0(unit_index, 3, false)) result = true; break;

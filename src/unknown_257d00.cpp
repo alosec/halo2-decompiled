@@ -2045,9 +2045,11 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 		{
 			point3f local_7;
 			function_b9dd0(arg_1, &local_7);
-			local_3 = local_2->field_c.k * (local_7.z - local_2->field_18.z) +
-				local_2->field_c.j * (local_7.y - local_2->field_18.y) +
-				(local_7.x - local_2->field_18.x) * local_2->field_c.i > local_1->unknown08;
+			vector3f displacement;
+			vector3d_from_points3d(&local_2->field_18, &local_7, &displacement);
+			local_3 = local_2->field_c.k * displacement.k +
+				local_2->field_c.j * displacement.j +
+				displacement.i * local_2->field_c.i > local_1->unknown08;
 		}
 		break;
 	case 7: case 8:

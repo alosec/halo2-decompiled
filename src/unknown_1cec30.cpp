@@ -1688,26 +1688,24 @@ void s_havok_component::function_1d3d20(long node_index, dword *updated, dword c
   {
    if (orientations)
    {
-    transform4x3f *matrices = component_node_matrices(component->object_index);
     transform4x3f inverse;
     transform4x3f relative;
-    function_141590(&matrices[parent], &inverse);
-    function_142a60(&inverse, &matrices[(short)node_index], &relative);
+    function_141590(object_node_matrix(object_get(component->object_index), parent), &inverse);
+    function_142a60(&inverse, object_node_matrix(object_get(component->object_index), (short)node_index), &relative);
     orientation_from_matrix4x3(&relative, &orientations[node_index]);
    }
   }
   else if (restore[node_index >> 5] & mask)
   {
    s_component_node_default *initial = &render_model->nodes[node_index];
-   transform4x3f *matrices = component_node_matrices(component->object_index);
-   transform4x3f *matrix = &matrices[(short)node_index];
+   transform4x3f *matrix = object_node_matrix(object_get(component->object_index), (short)node_index);
    function_141e10(&matrix->rotation, &initial->rotation);
    matrix->position.x = 0.0f;
    matrix->position.y = 0.0f;
    matrix->position.z = 0.0f;
    matrix->scale = 1.0f;
    matrix->position = initial->position;
-   function_142a60(&matrices[parent], matrix, matrix);
+   function_142a60(object_node_matrix(object_get(component->object_index), parent), matrix, matrix);
    updated[node_index >> 5] |= mask;
    if (orientations)
    {
@@ -2639,13 +2637,12 @@ void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
 {
     long node_a = pair->node_a;
     long index_a = node_a == NONE ? mapping->fallback : mapping->bodies[node_a];
-    s_havok_component_rigid_body *body = &component->rigid_bodies.data[index_a];
-    long node_count = body->node_count;
-    s_component_node_body_link *first = &owner->physics->bodies[body->nodes[0]];
+    long node_count = component->rigid_bodies.data[index_a].node_count;
+    s_component_node_body_link *first = &owner->physics->bodies[component->rigid_bodies.data[index_a].nodes[0]];
     long child = 0;
     for (; child < node_count; child++)
     {
-        if (owner->physics->bodies[body->nodes[child]].node == pair->node_a)
+        if (owner->physics->bodies[component->rigid_bodies.data[index_a].nodes[child]].node == pair->node_a)
             break;
     }
     if (first->node != pair->node_a)
@@ -2663,13 +2660,12 @@ void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
     if (pair->node_b != NONE &&
         (index_b = node_b == NONE ? mapping->fallback : mapping->bodies[node_b]) != NONE)
     {
-        s_havok_component_rigid_body *other = &component->rigid_bodies.data[index_b];
-        long other_node_count = other->node_count;
-        s_component_node_body_link *other_first = &owner->physics->bodies[other->nodes[0]];
+        long other_node_count = component->rigid_bodies.data[index_b].node_count;
+        s_component_node_body_link *other_first = &owner->physics->bodies[component->rigid_bodies.data[index_b].nodes[0]];
         long other_child = 0;
         for (; other_child < other_node_count; other_child++)
         {
-            if (owner->physics->bodies[other->nodes[other_child]].node == pair->node_b)
+            if (owner->physics->bodies[component->rigid_bodies.data[index_b].nodes[other_child]].node == pair->node_b)
                 break;
         }
         if (other_first->node != pair->node_b)

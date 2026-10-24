@@ -464,9 +464,11 @@ PRIVATE __forceinline void decal_face_plane_17fd20(s_decal_mesh_view const *mesh
 
 PRIVATE __forceinline real decal_normal_angle_17fd20(vector3f const *a, vector3f const *b)
 {
-	if (!memcmp(a, b, sizeof(*a)))
+	vector3f first_vector = *a;
+	vector3f second_vector = *b;
+	if (!memcmp(&first_vector, &second_vector, sizeof(first_vector)))
 		return 0.0f;
-	real cosine = a->i * b->i + a->k * b->k + a->j * b->j;
+	real cosine = first_vector.i * second_vector.i + first_vector.k * second_vector.k + first_vector.j * second_vector.j;
 	cosine = cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
 	return (real)acos(cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine);
 }
@@ -474,9 +476,11 @@ PRIVATE __forceinline real decal_normal_angle_17fd20(vector3f const *a, vector3f
 PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, vector3f const *left,
 	vector3f const *up, vector3f const *in, vector3f *out)
 {
-	out->i = up->i * in->k + left->i * in->j + forward->i * in->i;
-	out->j = up->j * in->k + left->j * in->j + forward->j * in->i;
-	out->k = up->k * in->k + left->k * in->j + forward->k * in->i;
+	vector3f rotated;
+	rotated.i = up->i * in->k + left->i * in->j + forward->i * in->i;
+	rotated.j = up->j * in->k + left->j * in->j + forward->j * in->i;
+	rotated.k = up->k * in->k + left->k * in->j + forward->k * in->i;
+	*out = rotated;
 }
 
 // @retail 0x17fd20

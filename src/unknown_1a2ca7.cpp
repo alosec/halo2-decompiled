@@ -922,8 +922,7 @@ long players_list_add_message_senders(XUID const *excluded, long excluded_count)
 
 			for (; remaining > 0; --remaining, ++excluded_xuid)
 			{
-				if (xuid_equal(xuid, excluded_xuid, false))
-					is_excluded = true;
+				is_excluded = xuid_equal(xuid, excluded_xuid, false) || is_excluded;
 			}
 			if (!is_excluded && !players_list_contains(xuid))
 			{

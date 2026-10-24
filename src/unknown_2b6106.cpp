@@ -686,7 +686,7 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
     for (unsigned i = 0; i < 8; i++)
     {
         text[i] = (c_text_widget_45a5e0 *)find_text(i + 2);
-        if (!text[i]) return;
+        if (!text[i]) goto done;
     }
     if (task_index == NONE && qos_handle == NONE && now - value10e0 > 60000 && in_session)
         task_index = online_match_session_find((XNKID const *)((byte const *)friend_ + 0x28));
@@ -694,219 +694,221 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
     {
         text[0]->value6e = true;
         text[0]->function_253b1a(0x18000250);
-        return;
     }
-    if (active)
+    else if (active)
     {
         text[0]->value6e = true;
         text[0]->function_253b1a(0x14000251);
-        return;
     }
-    if (local)
+    else if (local)
     {
         text[0]->value6e = true;
         text[0]->function_253b1a(0x13000252);
-        return;
     }
-    byte *details = (byte *)this;
-    short state = *(short *)(details + 0xa62);
-    if (!value10e4 || !state)
+    else
     {
-        update_friend_status(friend_, session);
-        return;
-    }
-    bool campaign = *(long *)(details + 0xa68) != NONE && *(long *)(details + 0xa70) != NONE;
-    long game_names[11] = {0x7000180, 0x3000439, 0x600010f, 0x7000110, 0x4000237,
-        0x4000112, 0xa000114, 0xa000113, 0xb000115, 0x700010e, 0x7000180};
-    short count = *(short *)(details + 0xa80);
-    if (count > 0 && now - value10dc > 1000)
-    {
-        value10dc = now;
-        value10d8 = (value10d8 + 1) % count;
-    }
-    if (state == 1)
-    {
-        short total;
-        short kind = *(short *)(details + 0x9d8);
-        if (kind == 0 || (kind == 1 && flag7))
-        {
-            total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
-            ((c_widget *)this)->function_230134(0x1500026b, format);
-        }
+        byte *details = (byte *)this;
+        short state = *(short *)(details + 0xa62);
+        if (!value10e4 || !state)
+            update_friend_status(friend_, session);
         else
         {
-            total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-            ((c_widget *)this)->function_230134(0x1700026c, format);
-        }
-        function_1630e0(message, format, (long)total);
-        show_friend_detail(text[row++], message);
-    }
-    else if (state == 2 || state == 3)
-    {
-        if (campaign)
-        {
-            ((c_widget *)this)->function_230134(0x17000259, message);
-            show_friend_detail(text[row++], message);
-        }
-        else
-        {
-            short total;
-            short kind = *(short *)(details + 0x9d8);
-            if (kind == 0 || (kind == 1 && flag7))
+            bool campaign = *(long *)(details + 0xa68) != NONE && *(long *)(details + 0xa70) != NONE;
+            long game_names[11] = {0x7000180, 0x3000439, 0x600010f, 0x7000110, 0x4000237,
+                0x4000112, 0xa000114, 0xa000113, 0xb000115, 0x700010e, 0x7000180};
+            short count = *(short *)(details + 0xa80);
+            if (count > 0 && now - value10dc > 1000)
             {
-                total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
-                ((c_widget *)this)->function_230134(0x1500026f, format);
+                value10dc = now;
+                value10d8 = (value10d8 + 1) % count;
             }
-            else
+            if (state == 1)
             {
-                total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-                ((c_widget *)this)->function_230134(0x17000270, format);
-            }
-            function_1630e0(message, format, (long)total);
-            show_friend_detail(text[row++], message);
-        }
-    }
-    else if (state == 4 || state == 9)
-    {
-        short total;
-        short kind = *(short *)(details + 0x9d8);
-        if (kind == 0 || (kind == 1 && flag7))
-        {
-            total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
-            ((c_widget *)this)->function_230134(0x1600026d, format);
-        }
-        else
-        {
-            total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-            ((c_widget *)this)->function_230134(0x1800026e, format);
-        }
-        function_1630e0(message, format, (long)total);
-        show_friend_detail(text[row++], message);
-    }
-    else if (state == 5)
-    {
-        ((c_widget *)this)->function_230134(0xe000271, message);
-        show_friend_detail(text[row++], message);
-    }
-    else if (state == 6)
-    {
-        short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-        ((c_widget *)this)->function_230134(0x1300043d, format);
-        function_1630e0(message, format, (long)total);
-        show_friend_detail(text[row++], message);
-    }
-    else if (state == 7 || state == 8)
-    {
-        short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
-        ((c_widget *)this)->function_230134(0x16000272, format);
-        function_1630e0(message, format, (long)total);
-        show_friend_detail(text[row++], message);
-    }
-    state = *(short *)(details + 0xa62);
-    short activity = *(short *)(details + 0xa60);
-    if (state != 8 && state != 3 && activity)
-    {
-        ((c_widget *)this)->function_230134(campaign ? 0xe000276 : activity == 1 ? 0x12000273 :
-                       activity == 3 ? 0xe000274 : 0xf000275, message);
-        show_friend_detail(text[row++], message);
-    }
-    if (*(short *)(details + 0xa62) == 8 || *(short *)(details + 0xa62) == 3 || *(short *)(details + 0xa60) == 1)
-    {
-        wchar_t *name = NULL;
-        long key = *(long *)(details + 0xa70);
-        if (*(long *)(details + 0xa68) != NONE && key != NONE)
-        {
-            s_entry_b *entry = function_19c1f0(key);
-            if (entry)
-            {
-                ((c_widget *)this)->function_230134(0x30005f4, format);
-                name = localized_name_get((s_localized_name *)entry);
-            }
-        }
-        else if (key != NONE)
-        {
-            s_entry_c *entry = function_19c5f0(key);
-            if (entry)
-            {
-                ((c_widget *)this)->function_230134(0x30005f4, format);
-                name = localized_short_name_get((s_localized_short_name *)entry);
-            }
-        }
-        if (name)
-        {
-            function_1630e0(message, format, name);
-            show_friend_detail(text[row++], message);
-        }
-    }
-    if (*(long *)(details + 0xa64))
-    {
-        word game[256], teams[256];
-        game[0] = 0;
-        teams[0] = 0;
-        ((c_widget *)this)->function_230134(0x9000277, format);
-        ((c_widget *)this)->function_230134(game_names[*(long *)(details + 0xa64)], game);
-        ((c_widget *)this)->function_230134(details[0xa74] ? 0x4000278 : 0x3000279, teams);
-        function_1630e0(message, format, teams, game);
-        show_friend_detail(text[row++], message);
-    }
-    state = *(short *)(details + 0xa62);
-    if (!campaign && (state == 3 || state == 8))
-    {
-        long timer = *(long *)(details + 0xa78);
-        if (timer == 2)
-        {
-            long seconds = *(long *)(details + 0xa7c);
-            long minutes = seconds / 60;
-            seconds %= 60;
-            ((c_widget *)this)->function_230134(0x1400027c, format);
-            function_1630e0(message, format, minutes, seconds);
-            show_friend_detail(text[row++], message);
-        }
-        else if (timer == 1)
-        {
-            long seconds = *(long *)(details + 0xa7c);
-            long minutes = seconds / 60;
-            seconds %= 60;
-            ((c_widget *)this)->function_230134(0x1200027d, format);
-            function_1630e0(message, format, minutes, seconds);
-            show_friend_detail(text[row++], message);
-        }
-        for (long i = 0; i < *(short *)(details + 0xa80); i++)
-        {
-            if (xuid_equal((XUID const *)(details + 0xa82), &friend_->xuid, true))
-            {
-                long best = 0;
-                long score;
-                if (!details[0xa74])
+                short total;
+                short kind = *(short *)(details + 0x9d8);
+                if (kind == 0 || (kind == 1 && flag7))
                 {
-                    for (long j = 0; j < *(short *)(details + 0xa80); j++)
-                        if (j != i && *(long *)(details + 0xf44 + j * 4) > best)
-                            best = *(long *)(details + 0xf44 + j * 4);
-                    ((c_widget *)this)->function_230134(0xc00027a, format);
-                    score = *(long *)(details + 0xf44 + i * 4);
+                    total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+                    ((c_widget *)this)->function_230134(0x1500026b, format);
                 }
                 else
                 {
-                    long team = *(short *)(details + 0xf84 + i * 2);
-                    for (long j = 0; j < 8; j++)
-                        if ((*(long *)(details + 0x10a4) & (1 << j)) && j != team &&
-                            *(long *)(details + 0x10a8 + j * 4) > best)
-                            best = *(long *)(details + 0x10a8 + j * 4);
-                    ((c_widget *)this)->function_230134(0xa00027b, format);
-                    score = *(long *)(details + 0x10a8 + team * 4);
+                    total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                    ((c_widget *)this)->function_230134(0x1700026c, format);
                 }
-                function_1630e0(message, format, score, best);
+                function_1630e0(message, format, (long)total);
                 show_friend_detail(text[row++], message);
-                break;
+            }
+            else if (state == 2 || state == 3)
+            {
+                if (campaign)
+                {
+                    ((c_widget *)this)->function_230134(0x17000259, message);
+                    show_friend_detail(text[row++], message);
+                }
+                else
+                {
+                    short total;
+                    short kind = *(short *)(details + 0x9d8);
+                    if (kind == 0 || (kind == 1 && flag7))
+                    {
+                        total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+                        ((c_widget *)this)->function_230134(0x1500026f, format);
+                    }
+                    else
+                    {
+                        total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                        ((c_widget *)this)->function_230134(0x17000270, format);
+                    }
+                    function_1630e0(message, format, (long)total);
+                    show_friend_detail(text[row++], message);
+                }
+            }
+            else if (state == 4 || state == 9)
+            {
+                short total;
+                short kind = *(short *)(details + 0x9d8);
+                if (kind == 0 || (kind == 1 && flag7))
+                {
+                    total = *(short *)(details + 0xa58) + *(short *)(details + 0xa5a);
+                    ((c_widget *)this)->function_230134(0x1600026d, format);
+                }
+                else
+                {
+                    total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                    ((c_widget *)this)->function_230134(0x1800026e, format);
+                }
+                function_1630e0(message, format, (long)total);
+                show_friend_detail(text[row++], message);
+            }
+            else if (state == 5)
+            {
+                ((c_widget *)this)->function_230134(0xe000271, message);
+                show_friend_detail(text[row++], message);
+            }
+            else if (state == 6)
+            {
+                short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                ((c_widget *)this)->function_230134(0x1300043d, format);
+                function_1630e0(message, format, (long)total);
+                show_friend_detail(text[row++], message);
+            }
+            else if (state == 7 || state == 8)
+            {
+                short total = *(short *)(details + 0xa5c) + *(short *)(details + 0xa5e);
+                ((c_widget *)this)->function_230134(0x16000272, format);
+                function_1630e0(message, format, (long)total);
+                show_friend_detail(text[row++], message);
+            }
+            state = *(short *)(details + 0xa62);
+            short activity = *(short *)(details + 0xa60);
+            if (state != 8 && state != 3 && activity)
+            {
+                ((c_widget *)this)->function_230134(campaign ? 0xe000276 : activity == 1 ? 0x12000273 :
+                               activity == 3 ? 0xe000274 : 0xf000275, message);
+                show_friend_detail(text[row++], message);
+            }
+            if (*(short *)(details + 0xa62) == 8 || *(short *)(details + 0xa62) == 3 || *(short *)(details + 0xa60) == 1)
+            {
+                wchar_t *name = NULL;
+                long key = *(long *)(details + 0xa70);
+                if (*(long *)(details + 0xa68) != NONE && key != NONE)
+                {
+                    s_entry_b *entry = function_19c1f0(key);
+                    if (entry)
+                    {
+                        ((c_widget *)this)->function_230134(0x30005f4, format);
+                        name = localized_name_get((s_localized_name *)entry);
+                    }
+                }
+                else if (key != NONE)
+                {
+                    s_entry_c *entry = function_19c5f0(key);
+                    if (entry)
+                    {
+                        ((c_widget *)this)->function_230134(0x30005f4, format);
+                        name = localized_short_name_get((s_localized_short_name *)entry);
+                    }
+                }
+                if (name)
+                {
+                    function_1630e0(message, format, name);
+                    show_friend_detail(text[row++], message);
+                }
+            }
+            if (*(long *)(details + 0xa64))
+            {
+                word game[256], teams[256];
+                game[0] = 0;
+                teams[0] = 0;
+                ((c_widget *)this)->function_230134(0x9000277, format);
+                ((c_widget *)this)->function_230134(game_names[*(long *)(details + 0xa64)], game);
+                ((c_widget *)this)->function_230134(details[0xa74] ? 0x4000278 : 0x3000279, teams);
+                function_1630e0(message, format, teams, game);
+                show_friend_detail(text[row++], message);
+            }
+            state = *(short *)(details + 0xa62);
+            if (!campaign && (state == 3 || state == 8))
+            {
+                long timer = *(long *)(details + 0xa78);
+                if (timer == 2)
+                {
+                    long seconds = *(long *)(details + 0xa7c);
+                    long minutes = seconds / 60;
+                    seconds %= 60;
+                    ((c_widget *)this)->function_230134(0x1400027c, format);
+                    function_1630e0(message, format, minutes, seconds);
+                    show_friend_detail(text[row++], message);
+                }
+                else if (timer == 1)
+                {
+                    long seconds = *(long *)(details + 0xa7c);
+                    long minutes = seconds / 60;
+                    seconds %= 60;
+                    ((c_widget *)this)->function_230134(0x1200027d, format);
+                    function_1630e0(message, format, minutes, seconds);
+                    show_friend_detail(text[row++], message);
+                }
+                for (long i = 0; i < *(short *)(details + 0xa80); i++)
+                {
+                    if (xuid_equal((XUID const *)(details + 0xa82), &friend_->xuid, true))
+                    {
+                        long best = 0;
+                        long score;
+                        if (!details[0xa74])
+                        {
+                            for (long j = 0; j < *(short *)(details + 0xa80); j++)
+                                if (j != i && *(long *)(details + 0xf44 + j * 4) > best)
+                                    best = *(long *)(details + 0xf44 + j * 4);
+                            ((c_widget *)this)->function_230134(0xc00027a, format);
+                            score = *(long *)(details + 0xf44 + i * 4);
+                        }
+                        else
+                        {
+                            long team = *(short *)(details + 0xf84 + i * 2);
+                            for (long j = 0; j < 8; j++)
+                                if ((*(long *)(details + 0x10a4) & (1 << j)) && j != team &&
+                                    *(long *)(details + 0x10a8 + j * 4) > best)
+                                    best = *(long *)(details + 0x10a8 + j * 4);
+                            ((c_widget *)this)->function_230134(0xa00027b, format);
+                            score = *(long *)(details + 0x10a8 + team * 4);
+                        }
+                        function_1630e0(message, format, score, best);
+                        show_friend_detail(text[row++], message);
+                        break;
+                    }
+                }
+            }
+            if (8 - row >= (unsigned)*(short *)(details + 0xa80)) value10d8 = 0;
+            for (long i = 0; row < 8 && i < *(short *)(details + 0xa80); i++)
+            {
+                long index = (value10d8 + i) % *(short *)(details + 0xa80);
+                ((c_widget *)this)->function_230134(0x1200027e, format);
+                function_1630e0(message, format, index + 1, details + 0xb42 + index * 64);
+                show_friend_detail(text[row++], message);
             }
         }
     }
-    if (8 - row >= (unsigned)*(short *)(details + 0xa80)) value10d8 = 0;
-    for (long i = 0; row < 8 && i < *(short *)(details + 0xa80); i++)
-    {
-        long index = (value10d8 + i) % *(short *)(details + 0xa80);
-        ((c_widget *)this)->function_230134(0x1200027e, format);
-        function_1630e0(message, format, index + 1, details + 0xb42 + index * 64);
-        show_friend_detail(text[row++], message);
-    }
+done:
+    return;
 }

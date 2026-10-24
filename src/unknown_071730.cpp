@@ -160,7 +160,7 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 			if (function_1934b0(local_8))
 			{
 				long local_24;
-				long local_25 = false;
+				short local_25 = false;
 				if (balance_teams_by_count(local_16.field_c, local_16.field_194,
 					function_193440(local_8), function_193370(local_8), function_1934d0(local_8),
 					function_1933d0(local_8), function_1933a0(local_8), true, &local_24) &&

@@ -1556,8 +1556,8 @@ bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 		real nearest_squared_local;
 		accumulators.edge_sum = *g_468788;
 		accumulators.face_sum = *g_468788;
-		long edge_count = 0;
-		long face_count = 0;
+		word edge_count = 0;
+		word face_count = 0;
 		real edge_radius = radius;
 		real face_radius = radius;
 		function_16a440(flags, point, radius, 0.0f, 0.0f, ignore_object, ignore_parent, (s_shapes *)&shapes);

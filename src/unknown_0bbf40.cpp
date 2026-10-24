@@ -9,6 +9,7 @@
 #include "loop_allocator.h"
 #include "unknown_1cafc0.h"
 #include "object_queries.h"
+#include "bit_vector.h"
 #include <string.h>
 
 #define FLAG(bit) (1 << (bit))
@@ -1070,46 +1071,37 @@ void __stdcall function_c3260(long light_index, bool clear_object_flag);
 bool function_177610(long effect_index);
 void contrail_update(long contrail_index, bool detach, real dt);
 
-// score 2 (was 2): the flag bit is cleared after the store; retail clears it before the store.
 // @retail 0xbee60
 dword function_bee60(long object_index)
 {
-    byte *object = (byte *)((s_object_header_0bbf40 *)g_4e0300->data)[object_index & 0xffff].object;
-    long count = (dword)(long)*(short *)(object + 0x11c) / sizeof(s_object_attachment_ab);
-    s_object_attachment_ab *attachment = (s_object_attachment_ab *)(object + *(volatile short *)(object + 0x11e));
-    if (count > 0)
+    s_object_0bbf40 *object = object_get_0bbf40(object_index);
+    long count = (dword)(long)*(short *)((byte *)object + 0x11c) / sizeof(s_object_attachment_ab);
+    s_object_attachment_ab *attachments = (s_object_attachment_ab *)((byte *)object + *(short *)((byte *)object + 0x11e));
+    for (long i = 0; i < count; i++)
     {
-        long *index = &attachment->index;
-        volatile long remaining = count;
-        do
+        if (attachments[i].kind != NONE && attachments[i].index != NONE)
         {
-            if (*(char *)(index - 1) != NONE && *index != NONE)
+            switch (attachments[i].kind)
             {
-                switch (*(char *)(index - 1))
-                {
-                case 0:
-                    function_c3260(*index, true);
-                    break;
-                case 1:
-                    record_pool_release(g_4ed28c, *index);
-                    break;
-                case 2:
-                    function_177610(*index);
-                    break;
-                case 3:
-                    function_bd090(object_index);
-                    contrail_update(*index, true, 0.0f);
-                    break;
-                }
+            case 0:
+                function_c3260(attachments[i].index, true);
+                break;
+            case 1:
+                record_pool_release(g_4ed28c, attachments[i].index);
+                break;
+            case 2:
+                function_177610(attachments[i].index);
+                break;
+            case 3:
+                function_bd090(object_index);
+                contrail_update(attachments[i].index, true, 0.0f);
+                break;
             }
-            *(char *)(index - 1) = (char)0xff;
-            *index = NONE;
-            index += 2;
-        } while (--remaining);
+        }
+        attachments[i].kind = NONE;
+        attachments[i].index = NONE;
     }
-    dword flags = *(dword *)(object + 4) & ~0x10;
-    dword final_flags = flags & ~0x20;
-    *(volatile dword *)(object + 4) = flags;
-    *(dword *)(object + 4) = final_flags;
-    return final_flags;
+    bit_vector_set(&object->flags, 4, false);
+    bit_vector_set(&object->flags, 5, false);
+    return object->flags;
 }

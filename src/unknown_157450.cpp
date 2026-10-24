@@ -5077,8 +5077,8 @@ void __stdcall function_15ae70(s_netgame_entry_state *entries)
             if (schedule)
             {
                 long delay = function_15ac50(i);
-                long modifier = 0;
-                signed char kind = *(signed char *)(placement + 0x14);
+                signed char modifier = 0;
+                long kind = *(signed char *)(placement + 0x14);
                 if (kind == 0) modifier = *(signed char *)((byte *)g_4e6948 + 0x211);
                 else if (kind >= 1 && kind <= 7) modifier = *(signed char *)((byte *)g_4e6948 + 0x208);
                 switch (modifier)

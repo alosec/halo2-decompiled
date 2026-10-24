@@ -45,12 +45,9 @@ public:
 	int function_2d99d0(int count);
 };
 
-// score 28 (was 83): the block's start is taken first and zeroed afterwards,
-// so retail's branch on the partial comes before the difference; ours keeps
-// the zero in eax where retail keeps it in edx, and reuses ecx for the -1
-// where retail reuses eax. Retail also branches on the partial being zero
-// where ours branches on it not being zero, and writing the start as an if
-// and an else or as a ternary makes the code far worse (83).
+// the bytes after the mark are moved to the start of the block they lie in,
+// so that they end on a block boundary; the space that is left is then read
+// from the stream
 // @retail 0x2d9850
 int class_2d99d0::function_2d9850()
 {
@@ -63,28 +60,23 @@ int class_2d99d0::function_2d9850()
 		position = 0;
 		end = 0;
 	}
-	else
+	else if (position - mark > mark_limit)
+	{
+		position = 0;
+		end = 0;
+		mark = -1;
+		mark_limit = -1;
+	}
+	else if (mark > 0)
 	{
 		int kept = position - mark;
-		if (kept > mark_limit)
-		{
-			position = 0;
-			end = 0;
-			mark = -1;
-			mark_limit = -1;
-		}
-		else if (mark > 0)
-		{
-			int partial = kept % 512;
-			int start = 512 - partial;
-			if (partial == 0)
-			{
-				start = 0;
-			}
-			function_2d8dd0(buffer + start, buffer + mark, kept);
-			mark = start;
-			end = position = ((partial != 0) + kept / 512) * 512;
-		}
+		int partial = kept % 512;
+		int start = partial ? 512 - partial : 0;
+		function_2d8dd0(buffer + start, buffer + mark, kept);
+		mark = start;
+		int blocks = kept / 512 + (partial != 0);
+		position = blocks * 512;
+		end = position;
 	}
 	int wanted = capacity - end;
 	int total = 0;

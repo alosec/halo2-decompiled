@@ -437,7 +437,7 @@ void function_2bde90(real t, point3f *out, point3f *points)
 void hill_build_polygon(s_polygon_2be *hill, long index)
 {
 	long half;
-	long vertex = 0;
+	long vertex;
 	long marker_ids[8];
 	point3f control[4];
 	point3f point;
@@ -446,6 +446,7 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	long count;
 
 	half = hill->count / 2;
+	vertex = 0;
 	function_2bdd20((s_spline_2bd *)hill, points);
 	for (i = 0; i < half; i++)
 	{

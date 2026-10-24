@@ -2717,7 +2717,7 @@ bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *a
 	s_weapon *weapon = WEAPON_GET(weapon_index);
 	s_weapon_definition *definition = WEAPON_DEFINITION(weapon);
 	real result = 0.0f;
-	long index;
+	short index;
 	switch (name)
 	{
 	case 0x03000577: result = weapon->heat; break;
@@ -3047,7 +3047,9 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
     s_weapon_definition *definition = WEAPON_DEFINITION(weapon);
     s_weapon_barrel_definition *barrel_definition = &definition->barrels[*barrel_reference];
     s_weapon_barrel *barrel = &weapon->barrels[*barrel_reference];
-    volatile long  unit_index = TEST_FIELD_BIT(weapon->in_inventory) ? weapon->unit_index : NONE;
+    volatile long unit_index;
+    if (TEST_FIELD_BIT(weapon->in_inventory)) unit_index = weapon->unit_index;
+    else unit_index = NONE;
     long tag_index = NONE, unit_tag_index = NONE;
     real scale_a = 0.0f, scale_b = 0.0f;
     bool fired = false, failure = false;
@@ -3274,13 +3276,13 @@ bool __stdcall function_fdfb0(long weapon_index)
     s_weapon *weapon = WEAPON_GET(weapon_index);
     s_weapon_definition *definition = WEAPON_DEFINITION(weapon);
     bool dual = function_101690(weapon_index);
-    long unit_index = TEST_FIELD_BIT(WEAPON_GET(weapon_index)->in_inventory) ? WEAPON_GET(weapon_index)->unit_index : NONE;
+    long unit_index = weapon_get_owner_unit_index(weapon_index);
     real scale = function_d1490(unit_index, weapon_index);
     if ((bool)((WEAPON_LONG_AT(definition, 0x12c) >> 27) & 1)) scale = dual ? 1.0f : 0.0f;
     long owner_index = function_101fb0(weapon_index);
     long player_index = owner_index != NONE ? WEAPON_LONG_AT(WEAPON_GET(owner_index), 0x13c) : NONE;
     if (weapon->object_index_194 != NONE && !function_badc0(weapon->object_index_194, NONE)) weapon->object_index_194 = NONE;
-    volatile bool result = function_105e80(weapon_index);
+    bool result = function_105e80(weapon_index);
     if (WEAPON_GET(weapon_index)->animation_state_offset != NONE)
     {
         byte *state = (byte *)weapon + weapon->animation_state_offset;
@@ -3519,17 +3521,6 @@ bool __stdcall function_fdfb0(long weapon_index)
                 trigger->flag6 = false;
             }
             break;
-        case 3:
-        case 7:
-            if (down || blocked)
-            { if (function_106280(weapon_index, &target, &target_entry)) function_103c40(weapon_index, i); }
-            else
-            {
-                if (trigger->state != 7 && primary != NONE && function_102540(weapon_index, primary, false))
-                { weapon_request_barrel(weapon_index, primary, false); trigger->flag0 = false; }
-                weapon_clear_trigger(weapon_index, i);
-            }
-            break;
         case 4: break;
         case 5:
             if (down || blocked)
@@ -3554,9 +3545,20 @@ bool __stdcall function_fdfb0(long weapon_index)
             { weapon_request_barrel(weapon_index, secondary, true); weapon_clear_trigger(weapon_index, i); }
             else
             {
-                long owner = TEST_FIELD_BIT(WEAPON_GET(weapon_index)->in_inventory) ? WEAPON_GET(weapon_index)->unit_index : NONE;
+                long owner = weapon_get_owner_unit_index(weapon_index);
                 if (function_1061c0(owner, &target, &target_entry) && weapon->object_index_194 == target) function_103bd0(weapon_index, i);
                 if (!trigger->timer && player_index != NONE) function_103b70(weapon_index, i);
+            }
+            break;
+        case 3:
+        case 7:
+            if (down || blocked)
+            { if (function_106280(weapon_index, &target, &target_entry)) function_103c40(weapon_index, i); }
+            else
+            {
+                if (trigger->state != 7 && primary != NONE && function_102540(weapon_index, primary, false))
+                { weapon_request_barrel(weapon_index, primary, false); trigger->flag0 = false; }
+                weapon_clear_trigger(weapon_index, i);
             }
             break;
         }
@@ -3791,12 +3793,13 @@ void __stdcall function_104150(long weapon_index, short barrel_index)
         }
     }
     vector3f repeated_direction;
-    for (short marker_index = 0; marker_index < marker_count; ++marker_index)
+    for (long marker_index = 0; marker_index < marker_count; ++marker_index)
     {
+        s_object_marker const *marker = &markers[marker_index];
         if (marker_count > 1 && (bool)(((dword)WEAPON_LONG_AT(barrel_definition, 0) >> 12) & 1) &&
             WEAPON_BYTE_AT(barrel, 0x2e) % marker_count != marker_index) continue;
-        point3f origin = markers[marker_index].matrix.position;
-        vector3f direction = markers[marker_index].matrix.forward;
+        point3f origin = marker->matrix.position;
+        vector3f direction = marker->matrix.forward;
         vector3f motion = *g_4687a4;
         real inherited_speed = 0.0f, spread = 0.0f;
         real actor_speed = 0.0f;
@@ -3834,7 +3837,7 @@ void __stdcall function_104150(long weapon_index, short barrel_index)
                 if (inherited_speed < 0.0f) inherited_speed = 0.0f;
                 if (WEAPON_LONG_AT(barrel_definition, 0) & 8)
                 {
-                    origin = markers[marker_index].matrix.position;
+                    origin = marker->matrix.position;
                     point3f center, clipped;
                     function_cafc0(unit_index, &center);
                     if (function_16a7c0(&center, &origin, function_baf40(unit_index), NONE, &clipped)) origin = clipped;
@@ -3880,7 +3883,7 @@ void __stdcall function_104150(long weapon_index, short barrel_index)
             real upper = WEAPON_REAL_AT(barrel_definition, 0x44) * 0.01745329238474369f;
             real angle = lower + weapon_emission_random(&seed) * (upper - lower);
             real turn = weapon_emission_random(&seed) * 6.2831854820251465f;
-            vector3f axis = markers[marker_index].matrix.up;
+            vector3f axis = marker->matrix.up;
             weapon_emission_rotate(&axis, &direction, turn);
             weapon_emission_rotate(&direction, &axis, angle);
         }

@@ -67,7 +67,7 @@ void function_268510()
 		}
 		for (;;)
 		{
-			byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&iterator) : NULL;
+			byte *clump = g_4f55d0->active ? record_pool_iterator_step(&iterator) : NULL;
 			if (!clump) break;
 			if (clump[0x1c])
 			{
@@ -81,7 +81,7 @@ void function_268510()
 				}
 				else
 				{
-					short count = ++*(short *)(clump + 0x1e);
+					long count = ++*(short *)(clump + 0x1e);
 					if (count > maximum) maximum = count;
 				}
 			}
@@ -205,13 +205,14 @@ void function_268c90()
 					{
 						s_object_child_iterator children;
 						function_d0620(extra, &children);
-						bool held = false;
-						while (function_d0690(&children))
+						bool child_available = function_d0690(&children);
+						while (child_available)
 						{
 							byte *child = *(byte **)(g_4e0300->data + (children.child_index & 0xffff) * 12 + 8);
-							if (!child[0xaa]) { held = true; break; }
+							if (!child[0xaa]) break;
+							child_available = function_d0690(&children);
 						}
-						if (!held) function_b8540(extra);
+						if (!child_available) function_b8540(extra);
 					}
 				}
 			}
@@ -1649,7 +1650,7 @@ void function_269580(long destination_index, long source_index)
 			g_4de300[object_index & 0xffff] = g_4de2fc;
 	}
 	long indices[50];
-	short count = 0;
+	long count = 0;
 	iterator.next = ((s_clump_activity_view *)(g_502420->data + (source_index & 0xffff) * sizeof(s_clump_activity_view)))->first_prop;
 	while (clump_next_prop(&iterator)) indices[count++] = iterator.index;
 	for (short i = 0; i < count; i++)
@@ -1891,8 +1892,8 @@ void function_26ae30(long object_index)
 			}
 		}
 	}
-	else if ((1 << type) & 3)
-		unit = true;
+	else
+		unit = ((1 << type) & 3) != 0;
 	s_clump_pool_iterator groups;
 	if (g_4f55d0->active)
 	{
@@ -1948,11 +1949,10 @@ void function_26ae30(long object_index)
 	}
 	if (object->type == 1)
 	{
-		long index = NONE;
-		for (;;)
+		for (long index = data_next_absolute_index_inlined(g_502414, 0);
+			index != NONE;
+			index = data_next_absolute_index_inlined(g_502414, index + 1))
 		{
-			index = data_next_absolute_index_inlined(g_502414, index + 1);
-			if (index == NONE) break;
 			byte *tracking = g_502414->data + g_502414->size * index;
 			if (!tracking) break;
 			if (*(long *)(tracking + 0x40) == object_index)
