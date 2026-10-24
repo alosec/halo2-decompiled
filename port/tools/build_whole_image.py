@@ -197,7 +197,7 @@ FLOOR_BLOCK = re.compile(r'__asm\s*\{\s*movss\s+xmm0\s*,\s*' + OPERAND +
                          r'\s*\n\s*cvttss2si\s+eax\s*,\s*xmm0[^}]*?cmpneqss[^}]*?movmskps[^}]*\}')
 
 
-REWRITE_VERSION = "8+dtors"
+REWRITE_VERSION = "8+dtors2"
 
 
 def native_source(text):
@@ -511,7 +511,9 @@ def destructor_emitters(text):
     for m in re.finditer(r'@retail 0x([0-9a-f]+) destructor ([A-Za-z_]\w*)', text):
         address, name = m.group(1), m.group(2)
         lines += [f"// @retail 0x{address}",
-                  f'extern "C" void h2_destructor_{address}({name} *self) {{ self->~{name}(); }}']
+                  # qualified, so a virtual destructor runs directly rather
+                  # than through the table whose slot leads back here
+                  f'extern "C" void h2_destructor_{address}({name} *self) {{ self->{name}::~{name}(); }}']
     return "\n#if H2_WHOLE_IMAGE\n" + "\n".join(lines) + "\n#endif\n" if lines else ""
 
 

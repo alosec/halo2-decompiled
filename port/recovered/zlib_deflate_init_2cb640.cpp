@@ -10,10 +10,9 @@
 // deflateInit2_ takes the stream in edx, the window bits in ecx and the
 // version in eax; deflateReset the stream in eax); here they take zlib's
 // public signatures, as zlib_wrappers_2cb510.cpp calls them. What they call
-// and nobody has recovered (_tr_init 0x2ccdc0, lm_init 0x2cbd00, both given
-// the state in edx; deflateEnd 0x2cbbf0, given the stream in esi; the
-// default allocator zcalloc 0x2ce780 and zcfree 0x2ce7a0) is reached by
-// retail address with zlib's signatures.
+// (_tr_init 0x2ccdc0 in zlib_trees_2ccdc0.cpp; lm_init 0x2cbd00 and
+// deflateEnd 0x2cbbf0 in zlib_deflate_2cb8c0.cpp; zcalloc 0x2ce780 and
+// zcfree 0x2ce7a0 in zlib_util_2ce780.cpp) takes zlib's signatures too.
 
 typedef void *(__stdcall *alloc_func_2cb640)(void *opaque, unsigned int items, unsigned int size);
 typedef void (__stdcall *free_func_2cb640)(void *opaque, void *address);
@@ -120,11 +119,11 @@ typedef char assert_deflate_state_2cb640_l_buf[(__builtin_offsetof(deflate_state
 typedef char assert_deflate_state_2cb640_d_buf[(__builtin_offsetof(deflate_state_2cb640, d_buf) == 0x169c) ? 1 : -1];
 typedef char assert_deflate_state_2cb640[(sizeof(deflate_state_2cb640) == 0x16b8) ? 1 : -1];
 
-extern "C" void __stdcall h2_retail_2ccdc0(deflate_state_2cb640 *s);
-extern "C" void __stdcall h2_retail_2cbd00(deflate_state_2cb640 *s);
-extern "C" long h2_retail_2cbbf0(z_stream_2cb640 *stream);
-extern "C" void *__stdcall h2_retail_2ce780(void *opaque, unsigned int items, unsigned int size);
-extern "C" void __stdcall h2_retail_2ce7a0(void *opaque, void *address);
+void __cdecl tr_init_2ccdc0(deflate_state_2cb640 *s);
+void __cdecl lm_init_2cbd00(deflate_state_2cb640 *s);
+long __cdecl deflate_end_2cbbf0(z_stream_2cb640 *strm);
+void *__stdcall zcalloc_2ce780(void *opaque, unsigned int items, unsigned int size);
+void __stdcall zcfree_2ce7a0(void *opaque, void *address);
 
 enum
 {
@@ -169,8 +168,8 @@ long __cdecl deflate_reset_2cb850(z_stream_2cb640 *strm)
 	strm->adler = 1;
 	s->last_flush = Z_NO_FLUSH_2CB640;
 
-	h2_retail_2ccdc0(s);
-	h2_retail_2cbd00(s);
+	tr_init_2ccdc0(s);
+	lm_init_2cbd00(s);
 	return Z_OK_2CB640;
 }
 
@@ -191,12 +190,12 @@ long __cdecl deflate_init2_2cb640(z_stream_2cb640 *strm, long level, long method
 	strm->msg = 0;
 	if (strm->zalloc == 0)
 	{
-		strm->zalloc = h2_retail_2ce780;
+		strm->zalloc = zcalloc_2ce780;
 		strm->opaque = 0;
 	}
 	if (strm->zfree == 0)
 	{
-		strm->zfree = h2_retail_2ce7a0;
+		strm->zfree = zcfree_2ce7a0;
 	}
 
 	if (level == Z_DEFAULT_COMPRESSION_2CB640)
@@ -248,7 +247,7 @@ long __cdecl deflate_init2_2cb640(z_stream_2cb640 *strm, long level, long method
 	{
 		// z_errmsg's entry for Z_MEM_ERROR
 		strm->msg = (char *)"insufficient memory";
-		h2_retail_2cbbf0(strm);
+		deflate_end_2cbbf0(strm);
 		return Z_MEM_ERROR_2CB640;
 	}
 	s->d_buf = overlay + s->lit_bufsize / sizeof(unsigned short);

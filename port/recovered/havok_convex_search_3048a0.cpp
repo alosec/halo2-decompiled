@@ -310,8 +310,9 @@ public:
 
 int __cdecl function_308590(__m128 const *first_start, __m128 const *first_direction, __m128 const *second_start, __m128 const *second_direction, closest_points_308590 *result);
 
-// the exact search for overlapping shapes (not recovered)
-extern "C" int h2_retail_303dd0(class_3048a0 *search, convex_2fefd0 const *first, convex_2fefd0 const *second,
+// the exact search for overlapping shapes
+// (port/recovered/havok_convex_penetration_303dd0.cpp)
+int __cdecl function_303dd0(class_3048a0 *search, convex_2fefd0 const *first, convex_2fefd0 const *second,
 	c_query_transform const *transform, pair_state_2fefd0 *state);
 
 // for the three sign bits 0x303360 gives (which edges of a triangle the
@@ -660,7 +661,7 @@ measure:
 		{
 			if (!search->overlap_only)
 			{
-				status = h2_retail_303dd0(this, first_shape, second_shape, transform, pair_state);
+				status = function_303dd0(this, first_shape, second_shape, transform, pair_state);
 			}
 			else
 			{
