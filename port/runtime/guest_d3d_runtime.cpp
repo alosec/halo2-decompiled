@@ -862,6 +862,8 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
     p->target_width = d->parameters.BackBufferWidth;
     p->target_height = d->parameters.BackBufferHeight;
     p->two_sided_lighting = rs[D3DRS_TWOSIDEDLIGHTING] != 0;
+    p->back_buffer_data = d->back_buffers[0] ? resource_data(d->back_buffers[0]->Data) : 0;
+    p->front_buffer_data = d->back_buffers[1] ? resource_data(d->back_buffers[1]->Data) : 0;
 }
 
 /* The vertex attribute formats the game selects (SelectVertexShaderDirect,

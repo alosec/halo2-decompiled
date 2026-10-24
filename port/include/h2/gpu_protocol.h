@@ -198,6 +198,9 @@ typedef struct h2_gpu_draw {
     h2_gpu_u32 depth_stencil;
     h2_gpu_u32 target_width, target_height;   /* pixels of the colour target */
     h2_gpu_u32 two_sided_lighting;            /* back faces take oB0/oB1 */
+    /* guest addresses of the back and front buffers' pixels, which textures
+       the game builds over them sample */
+    h2_gpu_u32 back_buffer_data, front_buffer_data;
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {

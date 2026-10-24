@@ -319,10 +319,13 @@ extern "C" DWORD WINAPI XGetLaunchInfo(DWORD *type, LAUNCH_DATA *data)
     return 1168;
 }
 
+/* the dashboard or another title: there is none to launch, so the run ends;
+   the caller would otherwise spin waiting for the reboot */
 extern "C" DWORD WINAPI XLaunchNewImage(LPCSTR image_path, PLAUNCH_DATA data)
 {
-    (void)image_path;
     (void)data;
+    host_h2_log(image_path ? "XLaunchNewImage: another title" : "XLaunchNewImage: the dashboard");
+    host_h2_exit(3);
     return 0x80004005u;
 }
 

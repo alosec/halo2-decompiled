@@ -825,6 +825,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
         {"host_h2_unimplemented", function_address(&host_h2_unimplemented)},
         {"host_h2_thread_create", function_address(&host_h2_thread_create)},
         {"host_h2_log", function_address(&host_h2_log)},
+        {"host_h2_exit", function_address(&host_h2_exit)},
     };
     for (const auto& import : optional_imports) {
         if (image.symbol_address(std::string("h2_host_slot_") + import.symbol) &&
@@ -945,6 +946,11 @@ extern "C" void host_h2_log(const char* message) {
     if (message) {
         std::cerr << "guest: " << message << '\n';
     }
+}
+
+extern "C" void host_h2_exit(int code) {
+    std::cerr << "guest: title exited (" << code << ")\n";
+    std::_Exit(code);
 }
 
 extern "C" void* host_h2_physical_memory_malloc_low(int size, unsigned int) {

@@ -12,6 +12,8 @@ extern "C" {
  * host implementation receives them. Keep this interface versioned and small. */
 unsigned int host_h2_abi_version(void);
 void host_h2_log(const char* message);
+/* the title left (a dashboard or another image launched): the host exits */
+void host_h2_exit(int code);
 void* host_h2_physical_memory_malloc_low(int size, unsigned int protection);
 void* host_h2_physical_alloc(unsigned int size, unsigned int physical_address,
                              unsigned int alignment, unsigned int protection);
