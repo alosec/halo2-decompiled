@@ -381,6 +381,10 @@ c_3101c0::c_3101c0(s_3111d0 const &description, long version)
 	field_238 = field_234 / 2;
 	slots = new slot_table_372a40();
 	empty_entry = new empty_entry_3101c0();
+#if H2_WHOLE_IMAGE
+	/* retail's table (0x31049e), stored inline with no constructor to bind by */
+	*(unsigned long *)empty_entry = 0x413888;
+#endif
 	slots->store_slot_372a40(10, empty_entry);
 	slots->store_slot_372a40(17, empty_entry);
 	slots->store_slot_372a40(18, empty_entry);

@@ -691,3 +691,18 @@ extern "C" void WINAPI OutputDebugStringA(LPCSTR text)
     if (text)
         host_h2_log(text);
 }
+
+/* the SSE reciprocal square root estimate (rsqrtss) that retail's math
+   inlines: the Pentium III's table is not reproduced; 1/sqrt kept to the 12
+   significant bits the instruction guarantees, which is what callers that
+   refine it with a Newton step assume */
+float h2_xbox_rsqrtss(float value)
+{
+    float estimate = 1.0f / __builtin_sqrtf(value);
+    unsigned int bits;
+    memcpy(&bits, &estimate, sizeof(bits));
+    if ((bits & 0x7f800000u) != 0x7f800000u)
+        bits = (bits + 0x400u) & ~0x7ffu;
+    memcpy(&estimate, &bits, sizeof(bits));
+    return estimate;
+}

@@ -669,7 +669,16 @@ bool function_2440a0(s_marker_list *list, long object_index, point3f const *poin
 // @retail 0x244bb0
 c_marker_object *c_marker_object::create(dword value, void *memory)
 {
+#if H2_WHOLE_IMAGE
+	/* retail builds the leaf with its own table, 0x459de4, whose ray casts
+	   (slots 8 and 9) the marker's table leaves as breakpoints */
+	c_marker_object *leaf = memory ? new (memory) c_marker_object(value, value0c) : 0;
+	if (leaf)
+		*(dword *)leaf = 0x459de4;
+	return leaf;
+#else
 	return new (memory) c_marker_object(value, value0c);
+#endif
 }
 
 /* ---- the list of lines drawn by a marker ---- */
