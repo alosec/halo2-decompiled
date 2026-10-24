@@ -242,12 +242,15 @@ PRIVATE __forceinline real function_112e21(real arg_0)
     return local_0;
 }
 
-// score 91 (was 133): the frame now matches; what differs is the direction's registers:
-// retail holds i, j, k in xmm3, xmm1, xmm2 (ours xmm1, xmm2, xmm3), and its normalisation
-// scales j and k in place where ours copies the factor first (3 bytes longer), so every later
-// address is shifted. Tried: relative.i = inverse * relative.i with vector3d_from_points3d
-// (133, the compiler commutes it); the direction as three scalars (105); the normalisation
-// written i = inverse * i, j = j * inverse, k = k * inverse (91, no change).
+// score 71 (was 133): the frame and the direction's registers (i, j, k in xmm3, xmm1, xmm2) now
+// match. Retail sums the j row in source order, (left.k * k + left.j * j) + left.i * i; ours
+// regroups it as (left.j * j + left.i * i) + left.k * k. Retail clears and stores the direction
+// in i, j, k order (ours j, k, i), and its normalisation scales j and k in place where ours
+// copies the factor first (3 bytes longer), so every later address is shifted. Tried:
+// relative.i = inverse * relative.i with vector3d_from_points3d (133, the compiler commutes it);
+// the direction as three scalars (105); the clearing in i, j, k order (91, i, j, k land in
+// xmm1, xmm2, xmm3); the normalisation written i = inverse * i, j = j * inverse,
+// k = k * inverse (no change).
 // @retail 0x112e20
 void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
@@ -277,9 +280,10 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 	}
 	else
 	{
-		direction.i = 0.0f;
+		// cleared j, k, i: the order that gives retail's registers
 		direction.j = 0.0f;
 		direction.k = 0.0f;
+		direction.i = 0.0f;
 	}
 	real squared = direction.k * direction.k + direction.j * direction.j + direction.i * direction.i;
 	if (squared != 0.0f)
