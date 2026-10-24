@@ -989,10 +989,11 @@ void h2_d3d_clear(h2_d3d_device *d, DWORD count, D3DRECT const *rects, DWORD fla
     h2_gpu_clear *p = &g_clear_packet;
     p->kind = H2_GPU_PACKET_CLEAR;
     p->version = H2_GPU_PROTOCOL_VERSION;
-    /* D3DCLEAR_TARGET 1, _ZBUFFER 2, _STENCIL 4 (public values) and the
-       Xbox's per-channel target bits (0xf0 for all of red, green, blue and
-       alpha, as function_14b60 builds them) */
-    p->flags = ((flags & 0xf1) ? 1u : 0u) | ((flags & 2) ? 2u : 0u) | ((flags & 4) ? 4u : 0u);
+    /* the Xbox's flags, as function_14b60 builds them: D3DCLEAR_ZBUFFER 1,
+       _STENCIL 2 and a bit per target channel (0x10 red, 0x20 green, 0x40
+       blue, 0x80 alpha; 0xf0 all). The game clears alpha alone (0x80,
+       function_13c20) under the finished scene. */
+    p->flags = ((flags & 0xf0) ? 1u : 0u) | (flags & 0xf0) | ((flags & 1) ? 2u : 0u) | ((flags & 2) ? 4u : 0u);
     p->color = color;
     p->depth = z;
     p->stencil = stencil;

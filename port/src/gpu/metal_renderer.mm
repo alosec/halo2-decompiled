@@ -490,12 +490,15 @@ public:
                                     ? static_cast<int>(packet.target_width) : target->guest_width;
         const int guest_height = target == &back_ && packet.target_height
                                      ? static_cast<int>(packet.target_height) : target->guest_height;
+        /* a clear of some colour channels only is drawn, through a write mask */
         bool whole = packet.rect_count == 0;
         for (std::uint32_t index = 0; index < packet.rect_count && index < 8; ++index) {
             const auto* r = packet.rects[index];
             if (r[0] <= 0 && r[1] <= 0 && r[2] >= guest_width && r[3] >= guest_height)
                 whole = true;
         }
+        if (color && clear_write_mask(packet) != MTLColorWriteMaskAll)
+            whole = false;
         if (!whole) {
             clear_rectangles(*target, packet, guest_width, guest_height);
             return;
@@ -517,6 +520,20 @@ public:
         }
     }
 
+    /* the colour channels a clear writes (h2_gpu_clear flags 0x10..0x80) */
+    static MTLColorWriteMask clear_write_mask(const h2_gpu_clear& packet) {
+        if (!(packet.flags & 1))
+            return MTLColorWriteMaskNone;
+        if (!(packet.flags & 0xf0))
+            return MTLColorWriteMaskAll;
+        MTLColorWriteMask mask = MTLColorWriteMaskNone;
+        if (packet.flags & 0x10) mask |= MTLColorWriteMaskRed;
+        if (packet.flags & 0x20) mask |= MTLColorWriteMaskGreen;
+        if (packet.flags & 0x40) mask |= MTLColorWriteMaskBlue;
+        if (packet.flags & 0x80) mask |= MTLColorWriteMaskAlpha;
+        return mask;
+    }
+
     /* clears of parts of a target: a quad per rectangle, writing the clear
        values through scissors */
     void clear_rectangles(Target& target, const h2_gpu_clear& packet, int guest_width, int guest_height) {
@@ -526,10 +543,9 @@ public:
                 current_ = &target;
             }
             begin_encoder();
-            const bool color = packet.flags & 1;
             const bool depth = packet.flags & 2;
             const bool stencil = packet.flags & 4;
-            id<MTLRenderPipelineState> state = color ? clear_color_pipeline_ : clear_depth_pipeline_;
+            id<MTLRenderPipelineState> state = clear_pipelines_[clear_write_mask(packet)];
             [encoder_ setRenderPipelineState:state];
             const std::uint64_t key = (depth ? 1u : 0u) | (stencil ? 2u : 0u);
             id<MTLDepthStencilState> depth_state = clear_depth_states_[key];
@@ -823,12 +839,12 @@ fragment ClearFragment h2_clear_fragment(ClearOut in [[stage_in]], constant Clea
             error = std::string("clear shader: ") + failure.localizedDescription.UTF8String;
             return false;
         }
-        for (int with_color = 0; with_color < 2; ++with_color) {
+        for (int mask = 0; mask < 16; ++mask) {
             MTLRenderPipelineDescriptor* descriptor = [[MTLRenderPipelineDescriptor alloc] init];
             descriptor.vertexFunction = [library newFunctionWithName:@"h2_clear_vertex"];
             descriptor.fragmentFunction = [library newFunctionWithName:@"h2_clear_fragment"];
             descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-            descriptor.colorAttachments[0].writeMask = with_color ? MTLColorWriteMaskAll : MTLColorWriteMaskNone;
+            descriptor.colorAttachments[0].writeMask = static_cast<MTLColorWriteMask>(mask);
             descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
             descriptor.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
             id<MTLRenderPipelineState> state = [device_ newRenderPipelineStateWithDescriptor:descriptor error:&failure];
@@ -836,7 +852,7 @@ fragment ClearFragment h2_clear_fragment(ClearOut in [[stage_in]], constant Clea
                 error = std::string("clear pipeline: ") + failure.localizedDescription.UTF8String;
                 return false;
             }
-            (with_color ? clear_color_pipeline_ : clear_depth_pipeline_) = state;
+            clear_pipelines_[mask] = state;
         }
         return true;
     }
@@ -1759,8 +1775,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     id<MTLTexture> placeholder_3d_ = nil;
     id<MTLSamplerState> placeholder_sampler_ = nil;
     id<MTLRenderPipelineState> present_pipeline_ = nil;
-    id<MTLRenderPipelineState> clear_color_pipeline_ = nil;
-    id<MTLRenderPipelineState> clear_depth_pipeline_ = nil;
+    id<MTLRenderPipelineState> clear_pipelines_[16] = {};  /* by colour write mask */
     std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> clear_depth_states_;
     std::vector<id<MTLBuffer>> frame_buffers_;
     std::size_t frame_buffer_ = 0;

@@ -206,7 +206,9 @@ typedef struct h2_gpu_draw {
 typedef struct h2_gpu_clear {
     h2_gpu_u32 kind;               /* H2_GPU_PACKET_CLEAR */
     h2_gpu_u32 version;
-    h2_gpu_u32 flags;              /* bit 0 colour, bit 1 depth, bit 2 stencil */
+    h2_gpu_u32 flags;              /* bit 0 colour, bit 1 depth, bit 2 stencil;
+                                      colour channels 0x10 red, 0x20 green,
+                                      0x40 blue, 0x80 alpha (none: all) */
     h2_gpu_u32 color;              /* ARGB */
     float depth;
     h2_gpu_u32 stencil;
