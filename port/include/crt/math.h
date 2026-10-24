@@ -5,7 +5,7 @@
  * supplied by the native CRT bridge; this header intentionally contains no
  * platform SDK material. */
 /* As in the Microsoft CRT, <math.h> also declares abs. */
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 #define abs h2_guest_abs
 #endif
 

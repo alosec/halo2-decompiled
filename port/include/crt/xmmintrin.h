@@ -9,7 +9,7 @@
 #ifndef H2_PORT_XMMINTRIN_H
 #define H2_PORT_XMMINTRIN_H
 
-#if !H2_NATIVE_PORT
+#if !H2_PORT_SHIMS
 #error "port/include/crt/xmmintrin.h is only for the native port build"
 #endif
 

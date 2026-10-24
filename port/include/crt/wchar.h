@@ -11,7 +11,7 @@ typedef __builtin_va_list va_list;
 typedef unsigned short wchar_t;
 #endif
 
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 #define wcschr h2_guest_wcschr
 #define wcscmp h2_guest_wcscmp
 #define wcslen h2_guest_wcslen

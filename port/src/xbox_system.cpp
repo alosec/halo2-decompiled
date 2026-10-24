@@ -419,6 +419,8 @@ int host_h2_file_read(unsigned int handle, void* buffer, unsigned int size, unsi
     const std::size_t count = size ? std::fread(buffer, 1, size, found->second.stream) : 0;
     if (read)
         *read = static_cast<unsigned int>(count);
+    if (trace_files() && count != size)
+        std::fprintf(stderr, "h2-file: read 0x%x of 0x%x from 0x%x\n", static_cast<unsigned>(count), size, handle);
     return !std::ferror(found->second.stream);
 }
 
@@ -427,8 +429,11 @@ int host_h2_file_write(unsigned int handle, const void* buffer, unsigned int siz
     auto& state = system_state();
     const std::lock_guard lock(state.mutex);
     const auto found = state.files.find(handle);
-    if (found == state.files.end() || !found->second.writable)
+    if (found == state.files.end() || !found->second.writable) {
+        if (trace_files())
+            std::fprintf(stderr, "h2-file: write to 0x%x refused\n", handle);
         return 0;
+    }
     const std::size_t count = size ? std::fwrite(buffer, 1, size, found->second.stream) : 0;
     if (written)
         *written = static_cast<unsigned int>(count);
@@ -444,8 +449,11 @@ int host_h2_file_seek(unsigned int handle, long long distance, unsigned int meth
     if (found == state.files.end() || method > 2)
         return 0;
     const int whence = method == 0 ? SEEK_SET : (method == 1 ? SEEK_CUR : SEEK_END);
-    if (fseeko(found->second.stream, distance, whence) != 0)
+    if (fseeko(found->second.stream, distance, whence) != 0) {
+        if (trace_files())
+            std::fprintf(stderr, "h2-file: seek 0x%x to %lld (%u) failed\n", handle, distance, method);
         return 0;
+    }
     if (position)
         *position = static_cast<unsigned long long>(ftello(found->second.stream));
     return 1;

@@ -6,7 +6,7 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 #define memchr h2_guest_memchr
 #define memcmp h2_guest_memcmp
 #define memcpy h2_guest_memcpy

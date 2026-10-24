@@ -119,7 +119,7 @@ static_assert(__builtin_offsetof(XNADDR, abOnline) == 0x10, "retail online addre
 #define XNET_QOS_LISTEN_ENABLE 0x01
 #define XNET_QOS_LISTEN_RELEASE 0x10
 
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 /* Minimal native declarations for the recovered Xbox immediate-mode calls.
  * Retail function_22a664 passes primitive value 7 for TRIANGLEFAN; the native
  * boundary keeps the vertex register explicit instead of relying on the Xbox
@@ -134,7 +134,7 @@ extern "C" {
 #endif
 
 int __cdecl abs(int value);
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 typedef struct D3DResource D3DResource;
 DWORD __stdcall D3DResource_Release(D3DResource *resource);
 

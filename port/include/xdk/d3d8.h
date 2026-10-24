@@ -615,7 +615,7 @@ HRESULT __stdcall Direct3D_CreateDevice(UINT adapter, D3DDEVTYPE type, void *foc
                                         struct D3DDevice **device);
 void  __stdcall Direct3D_SetPushBufferSize(DWORD push_buffer_size, DWORD kickoff_size);
 
-#ifndef H2_NATIVE_PORT
+#ifndef H2_PORT_SHIMS
 /* xtl.h declares these only for the native port; same prototypes otherwise. */
 typedef struct D3DResource D3DResource;
 DWORD __stdcall D3DResource_Release(D3DResource *resource);

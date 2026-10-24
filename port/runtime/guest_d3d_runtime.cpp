@@ -545,10 +545,24 @@ DWORD hardware_format(D3DFORMAT format)
 
 /* Where a future NV2A method parser consumes what the game and the library
    wrote between two submissions. */
+/* NV2A method counts for the trace (H2_TRACE=d3d): methods are 4-byte
+   aligned, so index by method / 4 within the 3D class's 0x2000 range */
+DWORD g_trace_method_counts[0x800];
+
 void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
 {
-    (void)begin;
-    (void)end;
+    if (!(host_h2_trace_flags() & 1))
+        return;
+    for (DWORD const *word = begin; word < end;)
+    {
+        const DWORD header = *word++;
+        if (header & 3)
+            break; /* a jump or call: nothing the game writes yet */
+        const DWORD count = (header >> 18) & 0x7ff;
+        const DWORD method = header & 0x1ffc;
+        ++g_trace_method_counts[method / 4];
+        word += count;
+    }
 }
 
 /* hands everything written since the last submission to the parser */
@@ -1255,6 +1269,25 @@ extern "C" void __stdcall D3DDevice_Swap(DWORD flags)
         d->back_buffers[1]->Data = data;
     }
     ++d->presented_frames;
+    if (host_h2_trace_flags() & 1)
+    {
+        static DWORD last_draws, last_clears, last_dwords;
+        if (d->presented_frames <= 4 || d->presented_frames % 120 == 0)
+        {
+            log_message("h2-d3d: frame %u draws %u clears %u", d->presented_frames,
+                        d->draw_calls - last_draws, d->clears - last_clears);
+            log_message("h2-d3d:   push dwords %u", d->push.dwords - last_dwords);
+            for (DWORD method = 0; method < 0x800; ++method)
+            {
+                if (g_trace_method_counts[method])
+                    log_message("h2-d3d:   method 0x%04x x%u", method * 4, g_trace_method_counts[method]);
+                g_trace_method_counts[method] = 0;
+            }
+        }
+        last_draws = d->draw_calls;
+        last_clears = d->clears;
+        last_dwords = d->push.dwords;
+    }
     host_h2_frame();
     /* one vertical blank per presented frame: the host paces swaps at 60 Hz */
     ++d->vblank_count;

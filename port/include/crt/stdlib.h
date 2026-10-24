@@ -6,7 +6,7 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
-#ifdef H2_NATIVE_PORT
+#ifdef H2_PORT_SHIMS
 #define abs h2_guest_abs
 #define qsort h2_guest_qsort
 #define labs h2_guest_labs

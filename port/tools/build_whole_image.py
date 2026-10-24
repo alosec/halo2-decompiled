@@ -216,6 +216,19 @@ def native_source(text):
     return text
 
 
+def header_native(text):
+    """A header with its H2_NATIVE_PORT branches forced on and the remaining
+    assembly idioms rewritten; None when it needs neither."""
+    if "H2_NATIVE_PORT" not in text and "__asm" not in text:
+        return None
+    text = re.sub(r'^(\s*#\s*)ifdef\s+H2_NATIVE_PORT\b', r'\1if 1', text, flags=re.M)
+    text = re.sub(r'^(\s*#\s*)ifndef\s+H2_NATIVE_PORT\b', r'\1if 0', text, flags=re.M)
+    text = re.sub(r'\bdefined\s*\(\s*H2_NATIVE_PORT\s*\)', '1', text)
+    text = re.sub(r'\bdefined\s+H2_NATIVE_PORT\b', '1', text)
+    text = re.sub(r'(^\s*#\s*(?:if|elif)\b.*)\bH2_NATIVE_PORT\b', r'\g<1>1', text, flags=re.M)
+    return native_source(text) or text
+
+
 class Unit:
     def __init__(self, source, root, work):
         self.source = source
@@ -227,11 +240,30 @@ class Unit:
 
 
 def frontend(unit, args, header_stamp):
-    """Compile one unit to retargeted IR; return (ok, diagnostic)."""
+    """Compile one unit to retargeted IR; return (ok, diagnostic).
+
+    Recovered units compile as retail code first: the port's H2_NATIVE_PORT
+    branches (portability fixes and the curated menu build's replacements)
+    stay off, while the SDK shims (H2_PORT_SHIMS) and the assembly rewriter
+    still apply. A unit that only builds with its native branches falls back
+    to them. Native rewrites and the port runtime are always native."""
+    native_only = unit.relative.startswith("port/") or unit.relative.endswith("_native.cpp")
+    if not native_only:
+        ok, diagnostic = frontend_mode(unit, args, header_stamp, native=False)
+        if ok:
+            unit.mode = "retail"
+            return True, ""
+    ok, diagnostic = frontend_mode(unit, args, header_stamp, native=True)
+    unit.mode = "native"
+    return ok, diagnostic
+
+
+def frontend_mode(unit, args, header_stamp, native):
     is_c = unit.source.suffix == ".c"
     compiler = args.llvm / ("clang" if is_c else "clang++")
     command = [compiler, "--target=thumbv7-pc-windows-msvc", "-O2", "-ffreestanding",
-               "-fno-stack-protector", "-DH2_NATIVE_PORT=1", "-DH2_WHOLE_IMAGE=1",
+               "-fno-stack-protector", *(["-DH2_NATIVE_PORT=1"] if native else []),
+               "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1",
                "-fms-extensions", "-Wno-ignored-attributes", "-Wno-c++11-narrowing",
                "-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar", "-w"]
     if not is_c:
@@ -244,6 +276,8 @@ def frontend(unit, args, header_stamp):
                     # MSVC accepts these; the Xbox headers make SSE types and
                     # the memory intrinsics visible everywhere.
                     "-Wno-address-of-temporary", "-include", "xmmintrin.h", "-include", "string.h"]
+    if not native and args.shadow_include:
+        command.append(f"-I{args.shadow_include}")
     for include in args.include:
         command.append(f"-I{include}")
     source = unit.source
@@ -370,15 +404,20 @@ PREFERRED = set()
 
 
 def priority(unit, symbol, csv_sources, symbol_address):
+    """Lower wins. Byte-matched recovered code beats every replacement written
+    before it matched; native rewrites beat unmatched drafts; the curated
+    menu runtime only fills gaps; stubs come last."""
     path = unit.relative
     if path in PREFERRED:
         return -1
-    if path.startswith("port/"):
-        return 0
+    address = symbol_address.get(symbol)
+    if address is not None:
+        source, status = csv_sources.get(address, (None, None))
+        if source == path and status == "matched":
+            return 0
     if path.endswith("_native.cpp"):
         return 1
-    address = symbol_address.get(symbol)
-    if address is not None and csv_sources.get(address) == path:
+    if path.startswith("port/"):
         return 2
     if "/stubs/" in path:
         return 4
@@ -450,7 +489,7 @@ def storage_bindings(root, args, work):
     source = work / "storage_probe.cpp"
     source.write_text("\n".join(lines) + "\n")
     command = [args.llvm / "clang++", "--target=thumbv7-pc-windows-msvc", "-O0", "-ffreestanding",
-               "-DH2_NATIVE_PORT=1", "-DH2_WHOLE_IMAGE=1", "-DH2_MS_ABI_FRONTEND=1", "-Xclang",
+               "-DH2_NATIVE_PORT=1", "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1", "-DH2_MS_ABI_FRONTEND=1", "-Xclang",
                "-fno-wchar", "-fms-extensions", "-fno-exceptions", "-fno-rtti", "-w",
                "-Wno-c++11-narrowing", "-include", "xmmintrin.h", "-include", "string.h",
                *[f"-I{i}" for i in args.include], "-S", "-emit-llvm", source, "-o", "-"]
@@ -510,6 +549,28 @@ def main():
     header_files = list((root / "include").glob("*.h")) + list((root / "port/include").rglob("*"))
     header_stamp = str(max(p.stat().st_mtime_ns for p in header_files if p.is_file()))
 
+    # Retail-mode units see copies of the recovered headers whose native
+    # branches are forced on: every H2_NATIVE_PORT branch in include/ is a
+    # portability fix (assembly, SSE types, rounding), not a behaviour change.
+    shadow = work / "shadow-include"
+    shadow.mkdir(parents=True, exist_ok=True)
+    # The whole tree lives there (unchanged headers as links), because a quoted
+    # include searches the including header's own directory first.
+    for header in sorted((root / "include").glob("*.h")):
+        rewritten = header_native(header.read_text(errors="replace"))
+        target = shadow / header.name
+        if rewritten is not None:
+            text = f'#line 1 "{header}"\n' + rewritten
+            if target.is_symlink():
+                target.unlink()
+            if not target.exists() or target.read_text() != text:
+                target.write_text(text)
+        elif not target.is_symlink():
+            target.unlink(missing_ok=True)
+            target.symlink_to(header)
+    args.shadow_include = shadow
+    header_stamp += REWRITE_VERSION
+
     report = {"skipped": {}, "overridden": {}, "bound": {}, "stubbed": [], "data_stubbed": [],
               "native_address_globals": []}
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
@@ -518,6 +579,7 @@ def main():
     for unit, (ok, diagnostic) in zip(units, results):
         if ok:
             compiled.append(unit)
+            report.setdefault("modes", {})[unit.relative] = unit.mode
         else:
             report["skipped"][unit.relative] = diagnostic
     print(f"frontend: {len(compiled)} compiled, {len(report['skipped'])} skipped", flush=True)
@@ -526,7 +588,8 @@ def main():
         scans = dict(zip((u.relative for u in compiled), pool.map(scan, compiled)))
 
     with (root / "config/functions.csv").open(newline="") as handle:
-        csv_sources = {int(r["va"], 16): r["source"] for r in csv.DictReader(handle) if r["source"]}
+        csv_sources = {int(r["va"], 16): (r["source"], r["status"]) for r in csv.DictReader(handle)
+                       if r["source"]}
     tag_addresses = symbol_addresses(compiled)
 
     def address_of(unit, symbol):
@@ -548,8 +611,7 @@ def main():
     for name, candidates in owners.items():
         if len(candidates) < 2:
             continue
-        symbol_address = {name: address_of(c, name) for c in candidates}
-        address = next((a for a in symbol_address.values() if a is not None), None)
+        address = next((a for a in (address_of(c, name) for c in candidates) if a is not None), None)
         ranked = sorted(candidates, key=lambda c: (
             priority(c, name, csv_sources, {name: address}), c.relative))
         winner = ranked[0]

@@ -964,6 +964,20 @@ void report_fault(int signal_number, siginfo_t* info, void* context) {
             break;
         frame = record[0];
     }
+    /* H2_FAULT_DUMP="0x510c98,0x5023f4": guest words to print at the fault */
+    if (const char* dump = std::getenv("H2_FAULT_DUMP")) {
+        const char* cursor = dump;
+        while (*cursor) {
+            char* end = nullptr;
+            const unsigned long address = std::strtoul(cursor, &end, 16);
+            if (end == cursor)
+                break;
+            const auto* word = reinterpret_cast<const std::uint32_t*>(h2::port::kGuestBias + address);
+            length = std::snprintf(line, sizeof(line), "h2-port:   [0x%08lx] = 0x%08x\n", address, *word);
+            write(2, line, static_cast<size_t>(length));
+            cursor = *end ? end + 1 : end;
+        }
+    }
     signal(signal_number, SIG_DFL);
     raise(signal_number);
 }
@@ -1216,6 +1230,14 @@ extern "C" int host_h2_input_state(unsigned int port, void* state) {
     return 1;
 }
 
+extern "C" unsigned int host_h2_trace_flags(void) {
+    static const unsigned int flags = [] {
+        const char* trace = std::getenv("H2_TRACE");
+        return trace && std::strstr(trace, "d3d") ? 1u : 0u;
+    }();
+    return flags;
+}
+
 extern "C" unsigned int host_h2_input_connected(void) {
     return 1u; /* the keyboard and the first gamepad share port 0 */
 }
@@ -1293,6 +1315,7 @@ int main(int argc, char** argv) {
                 {"host_h2_frame", reinterpret_cast<std::uintptr_t>(&host_h2_frame)},
                 {"host_h2_input_state", reinterpret_cast<std::uintptr_t>(&host_h2_input_state)},
                 {"host_h2_input_connected", reinterpret_cast<std::uintptr_t>(&host_h2_input_connected)},
+                {"host_h2_trace_flags", reinterpret_cast<std::uintptr_t>(&host_h2_trace_flags)},
             };
             for (const auto& [symbol, target] : session_imports) {
                 if (guest_image->symbol_address(std::string("h2_host_slot_") + symbol) &&

@@ -251,6 +251,18 @@ void cache_copy_buffer_release(void)
 // @retail 0x213fa0
 void __stdcall cache_copy_buffer_reclaim(long address, long user_data)
 {
+#if H2_PORT_SHIMS
+	/* The async worker sets g_55bd0c on another thread; read it afresh each
+	   pass, as the retail loop does, so the wait cannot be hoisted. */
+	while (*(long volatile *)&g_55bd18)
+	{
+		g_55bd20 = true;
+		if (*(bool volatile *)&g_55bd0c)
+		{
+			function_2141f0();
+		}
+	}
+#else
 	while (g_55bd18)
 	{
 		g_55bd20 = true;
@@ -259,6 +271,7 @@ void __stdcall cache_copy_buffer_reclaim(long address, long user_data)
 			function_2141f0();
 		}
 	}
+#endif
 }
 
 // @retail 0x213fe0

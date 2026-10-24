@@ -824,6 +824,7 @@ bool patch_standard_host_imports(GuestElfImage& image, GuestArena& arena,
     const Import optional_imports[] = {
         {"host_h2_unimplemented", function_address(&host_h2_unimplemented)},
         {"host_h2_thread_create", function_address(&host_h2_thread_create)},
+        {"host_h2_log", function_address(&host_h2_log)},
     };
     for (const auto& import : optional_imports) {
         if (image.symbol_address(std::string("h2_host_slot_") + import.symbol) &&
