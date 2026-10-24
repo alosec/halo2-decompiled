@@ -1292,6 +1292,18 @@ extern "C" int host_h2_input_state(unsigned int port, void* state) {
     return 1;
 }
 
+extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
+    const char* name = std::getenv("H2_START_MAP");
+    if (!name || !*name || !buffer || !size)
+        return 0;
+    const std::string map = std::filesystem::path(name).stem().string();
+    if (map.size() + 1 > size)
+        return 0;
+    std::memcpy(buffer, map.c_str(), map.size() + 1);
+    std::cerr << "h2-port: the campaign starts at " << map << '\n';
+    return static_cast<unsigned int>(map.size());
+}
+
 extern "C" unsigned int host_h2_trace_flags(void) {
     static const unsigned int flags = [] {
         const char* trace = std::getenv("H2_TRACE");
@@ -1382,6 +1394,7 @@ int main(int argc, char** argv) {
                 {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},
                 {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
                 {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
+                {"host_h2_start_map", reinterpret_cast<std::uintptr_t>(&host_h2_start_map)},
                 {"host_h2_wma_open", reinterpret_cast<std::uintptr_t>(&host_h2_wma_open)},
                 {"host_h2_wma_decode", reinterpret_cast<std::uintptr_t>(&host_h2_wma_decode)},
                 {"host_h2_wma_close", reinterpret_cast<std::uintptr_t>(&host_h2_wma_close)},

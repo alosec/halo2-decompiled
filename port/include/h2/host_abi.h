@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define H2_HOST_ABI_VERSION 16u
+#define H2_HOST_ABI_VERSION 17u
 
 /* Calls crossing from the 32-bit guest engine into the native host. Pointer
  * arguments are guest pointers; the compiler adapter rebases them before the
@@ -119,6 +119,9 @@ int host_h2_audio_status(unsigned int voice, void* status);
 /* WMA music (port/src/audio/wma_decoder.cpp): open a whole ASF sound chunk
  * (copied; 0: no decoder), pull it as 16-bit 44.1 kHz stereo (bytes produced,
  * short at the end), close it */
+/* the port's level select (port/src/main.cpp): H2_START_MAP's solo map name
+ * (e.g. 01b_spacestation) into buffer; 0 when unset */
+unsigned int host_h2_start_map(char* buffer, unsigned int size);
 unsigned int host_h2_wma_open(const void* data, unsigned int size);
 unsigned int host_h2_wma_decode(unsigned int handle, void* pcm, unsigned int size);
 void host_h2_wma_close(unsigned int handle);

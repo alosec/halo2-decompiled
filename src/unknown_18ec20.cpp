@@ -293,12 +293,37 @@ s_game_options g_4ed3a8;
 
 void function_593e0(void);
 
+#if H2_WHOLE_IMAGE
+/* the port's level select: the host's H2_START_MAP names a solo map that the
+   first campaign start loads in place of the introduction */
+extern "C" unsigned int host_h2_start_map(char *buffer, unsigned int size);
+
+static void port_start_map(s_game_options *options)
+{
+	static bool used = false;
+	char name[0x40];
+
+	if (used || strcmp(options->field_1c_2, "scenarios\\solo\\00a_introduction\\00a_introduction"))
+		return;
+	used = true;
+	if (!host_h2_start_map(name, sizeof(name)))
+		return;
+	strcpy(options->field_1c_2, "scenarios\\solo\\");
+	strcat(options->field_1c_2, name);
+	strcat(options->field_1c_2, "\\");
+	strcat(options->field_1c_2, name);
+}
+#endif
+
 // @retail 0x18e790
 void function_18e790(s_game_options const *options)
 {
 	if (options)
 	{
 		g_4ed3a8 = *options;
+#if H2_WHOLE_IMAGE
+		port_start_map(&g_4ed3a8);
+#endif
 	}
 	g_4ed39e = options == NULL;
 	g_4ed39d = true;
