@@ -242,9 +242,11 @@ PRIVATE __forceinline real function_112e21(real arg_0)
     return local_0;
 }
 
-// score 133 (was 133): frame 0x80 versus 0x84 and squared/yaw/pitch homes differ;
-// shared normalization scale 133, relative scale 136, both scales 136,
-// reciprocal-root intrinsic 168, two-angle helper precision probe 119 (rejected).
+// score 102 (was 133): the frame is 4 bytes smaller than retail's (0x80, retail 0x84): retail
+// gives the reciprocal square root's argument its own slot and keeps yaw at [esp], pitch at
+// [esp+4], the direction at [esp+8] and the scale at [esp+0x14]; it also holds the direction's
+// i, j, k in xmm3, xmm1, xmm2 (ours xmm1, xmm2, xmm3). Tried: relative.i = inverse * relative.i
+// with vector3d_from_points3d (133, the compiler commutes it).
 // @retail 0x112e20
 void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
@@ -257,13 +259,15 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 	if (frame.scale != 0.0f)
 	{
 		vector3f relative;
-		vector3d_from_points3d(&frame.position, target, &relative);
+		relative.i = target->x - frame.position.x;
+		relative.j = target->y - frame.position.y;
+		relative.k = target->z - frame.position.z;
 		if (frame.scale != 1.0f)
 		{
 			real inverse = 1.0f / frame.scale;
-			relative.i *= inverse;
-			relative.j *= inverse;
-			relative.k *= inverse;
+			relative.i = inverse * relative.i;
+			relative.j = inverse * relative.j;
+			relative.k = inverse * relative.k;
 		}
 		// summed k, j, i as retail does
 		direction.i = frame.forward.k * relative.k + frame.forward.j * relative.j + frame.forward.i * relative.i;
@@ -271,7 +275,11 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 		direction.k = frame.up.k * relative.k + frame.up.j * relative.j + frame.up.i * relative.i;
 	}
 	else
-		direction.i = direction.j = direction.k = 0.0f;
+	{
+		direction.i = 0.0f;
+		direction.j = 0.0f;
+		direction.k = 0.0f;
+	}
 	real squared = direction.k * direction.k + direction.j * direction.j + direction.i * direction.i;
 	if (squared != 0.0f)
 	{
@@ -282,8 +290,8 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 		direction.k *= inverse;
 	}
 	real yaw = (real)atan2(direction.j, direction.i);
-	// retail keeps the planar length on the x87 stack: fsqrt and fpatan see it unrounded
-	real pitch = (real)atan2((double)direction.k, sqrt((double)direction.j * direction.j + (double)direction.i * direction.i));
+	// the planar length stays on the x87 stack: fsqrt and fpatan see it unrounded
+	real pitch = (real)atan2(direction.k, sqrt(direction.j * direction.j + direction.i * direction.i));
 	if (0.0f - yaw_limit > yaw)
 		yaw = 0.0f - yaw_limit;
 	else if (yaw > yaw_limit)
