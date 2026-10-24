@@ -556,6 +556,44 @@ void h2_d3d_draw_pushed_array(DWORD primitive, DWORD const *data, DWORD words);
 constexpr DWORD k_method_begin_end = 0x17fc;
 constexpr DWORD k_method_inline_array = 0x1818;
 
+/* the constant vertex attributes the game pushes for the draws after
+   (D3DDevice_SetVertexData* written inline): 2F 0x1880 + 8i, 2S 0x1900 + 4i,
+   4UB 0x1940 + 4i, 4S 0x1980 + 8i, 4F 0x1a00 + 16i */
+void vertex_register_component(DWORD vertex_register, DWORD component, float value);
+
+void push_vertex_data(DWORD method, DWORD value)
+{
+    float f;
+    memcpy(&f, &value, 4);
+    if (method >= 0x1880 && method < 0x1900) {
+        const DWORD offset = method - 0x1880;
+        vertex_register_component(offset / 8, offset % 8 / 4, f);
+        if (offset % 8 == 4) {
+            vertex_register_component(offset / 8, 2, 0.0f);
+            vertex_register_component(offset / 8, 3, 1.0f);
+        }
+    } else if (method >= 0x1900 && method < 0x1940) {
+        const DWORD index = (method - 0x1900) / 4;
+        vertex_register_component(index, 0, static_cast<float>(static_cast<short>(value & 0xffff)));
+        vertex_register_component(index, 1, static_cast<float>(static_cast<short>(value >> 16)));
+        vertex_register_component(index, 2, 0.0f);
+        vertex_register_component(index, 3, 1.0f);
+    } else if (method >= 0x1940 && method < 0x1980) {
+        const DWORD index = (method - 0x1940) / 4;
+        for (DWORD component = 0; component < 4; ++component)
+            vertex_register_component(index, component,
+                                      static_cast<float>((value >> (component * 8)) & 0xff) / 255.0f);
+    } else if (method >= 0x1980 && method < 0x1a00) {
+        const DWORD offset = method - 0x1980;
+        const DWORD index = offset / 8, first = offset % 8 / 2;
+        vertex_register_component(index, first, static_cast<float>(static_cast<short>(value & 0xffff)));
+        vertex_register_component(index, first + 1, static_cast<float>(static_cast<short>(value >> 16)));
+    } else if (method >= 0x1a00 && method < 0x1b00) {
+        const DWORD offset = method - 0x1a00;
+        vertex_register_component(offset / 16, offset % 16 / 4, f);
+    }
+}
+
 void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
 {
     const bool trace = host_h2_trace_flags() & 1;
@@ -573,6 +611,11 @@ void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
             primitive = word[0];
         else if (method == k_method_inline_array && primitive && count)
             h2_d3d_draw_pushed_array(primitive, word, count);
+        else if (method >= 0x1880 && method < 0x1b00) {
+            const bool same_method = header & 0x40000000;
+            for (DWORD index = 0; index < count && word + index < end; ++index)
+                push_vertex_data(same_method ? method : method + index * 4, word[index]);
+        }
         word += count;
     }
 }
@@ -1032,6 +1075,14 @@ void vertex_register_set(DWORD vertex_register, float x, float y, float z, float
     value[3] = w;
     if (vertex_register == 0 && g_inline_active && g_inline_count < k_inline_capacity)
         memcpy(g_inline_vertices[g_inline_count++], g_vertex_registers, sizeof(g_vertex_registers));
+}
+
+/* a pushed constant attribute; position (0) is not a constant */
+void vertex_register_component(DWORD vertex_register, DWORD component, float value)
+{
+    if (vertex_register == 0 || vertex_register >= static_cast<DWORD>(k_vertex_attribute_count) || component > 3)
+        return;
+    g_vertex_registers[vertex_register][component] = value;
 }
 
 /* lazily pushed state (D3D__DirtyFlags) would be encoded here */
