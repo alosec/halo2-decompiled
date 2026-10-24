@@ -1998,16 +1998,20 @@ struct s_component_bounds_model
 
 extern hkWorld *g_51e9a4;
 
+// a vector of four copies of a real
+PRIVATE inline __m128 component_bounds_splat(real value)
+{
+    __m128 const single = _mm_set_ss(value);
+    return _mm_shuffle_ps(single, single, 0);
+}
+
 // @retail 0x1d44f0
 bool __stdcall function_1d44f0(s_havok_component *component, point3f *center, real *radius)
 {
-    s_havok_component *const *component_reference = &component;
-    point3f *const *center_reference = &center;
-    real *const *radius_reference = &radius;
     bool result = false;
-    if ((*component_reference)->rigid_bodies.size > 0 && TEST_FIELD_BIT((*component_reference)->flag5) && TEST_FIELD_BIT((*component_reference)->flag11))
+    if (component->rigid_bodies.size > 0 && TEST_FIELD_BIT(component->flag5) && TEST_FIELD_BIT(component->flag11))
     {
-        s_component_object_transform_view *object = (s_component_object_transform_view *)havok_object_get((*component_reference)->object_index);
+        s_component_object_transform_view *object = (s_component_object_transform_view *)havok_object_get(component->object_index);
         byte *definition_bytes = g_4e3b44[object->definition_index & 0xffff].bytes;
         if (!(definition_bytes[0x1c] & 2))
         {
@@ -2015,16 +2019,16 @@ bool __stdcall function_1d44f0(s_havok_component *component, point3f *center, re
             s_component_collision_model_link *model = (s_component_collision_model_link *)g_4e3b44[definition->model_index & 0xffff].bytes;
             s_component_bounds_model *physics = (s_component_bounds_model *)g_4e3b44[model->physics_model_index & 0xffff].bytes;
             s_component_bounds combined;
-            volatile long local_0 = 0;
-            for (long i = 0; i < (*component_reference)->rigid_bodies.size;)
+            for (long i = 0; i < component->rigid_bodies.size; i++)
             {
-                long node_count = (*component_reference)->rigid_bodies.data[i].node_count;
-                s_havok_component_rigid_body *body = &(*component_reference)->rigid_bodies.data[i];
+                long node_count = component->rigid_bodies.data[i].node_count;
+                s_havok_component_rigid_body *body = &component->rigid_bodies.data[i];
                 void *shape = (byte *)body->rigid_body + 0xc;
                 real padding = 0.0f;
-                for (long j = 0; j < node_count; ++j)
+                for (long j = 0; j < node_count; j++)
                 {
-                    padding = padding > physics->bodies[body->nodes[j]].padding ? padding : physics->bodies[body->nodes[j]].padding;
+                    s_component_bounds_body *node_body = &physics->bodies[body->nodes[j]];
+                    padding = padding > node_body->padding ? padding : node_body->padding;
                 }
                 s_component_bounds bounds;
                 ((s_component_bounds_world *)g_51e9a4)->lookup->bounds(shape ? (byte *)shape + 0x10 : NULL, &bounds);
@@ -2037,7 +2041,6 @@ bool __stdcall function_1d44f0(s_havok_component *component, point3f *center, re
                     bounds.lower.m128_f32[2] -= padding;
                     bounds.upper.m128_f32[2] += padding;
                 }
-                i = local_0;
                 if (i == 0)
                 {
                     combined.lower = bounds.lower;
@@ -2048,21 +2051,18 @@ bool __stdcall function_1d44f0(s_havok_component *component, point3f *center, re
                     combined.lower = _mm_min_ps(combined.lower, bounds.lower);
                     combined.upper = _mm_max_ps(combined.upper, bounds.upper);
                 }
-                ++i;
-                local_0 = i;
             }
-            __m128 half = _mm_set1_ps(0.5f);
-            __m128 middle = _mm_mul_ps(half, _mm_add_ps(combined.lower, combined.upper));
-            __m128 extent = _mm_mul_ps(half, _mm_sub_ps(combined.upper, combined.lower));
-            (*center_reference)->x = middle.m128_f32[0];
-            (*center_reference)->y = middle.m128_f32[1];
-            (*center_reference)->z = middle.m128_f32[2];
+            __m128 middle = _mm_mul_ps(component_bounds_splat(0.5f), _mm_add_ps(combined.lower, combined.upper));
+            __m128 extent = _mm_mul_ps(component_bounds_splat(0.5f), _mm_sub_ps(combined.upper, combined.lower));
+            center->x = middle.m128_f32[0];
+            center->y = middle.m128_f32[1];
+            center->z = middle.m128_f32[2];
             __m128 square = _mm_mul_ps(extent, extent);
             __m128 sum = _mm_add_ss(_mm_shuffle_ps(square, square, 0xaa), _mm_add_ss(_mm_shuffle_ps(square, square, 0x55), square));
             __m128 length = _mm_sqrt_ss(sum);
             real value;
             _mm_store_ss(&value, length);
-            **radius_reference = value + 0.001f;
+            *radius = value + 0.001f;
             result = true;
         }
     }
@@ -2510,10 +2510,10 @@ void function_1d83e0(long body_index, s_havok_component *component, long node_a,
     long child_b = NONE;
     for (long i = 0; i < body->node_count && (child_a == NONE || child_b == NONE); i++)
     {
-        long node = physics->bodies[body->nodes[i]].node;
-        if (node == node_a && child_a == NONE)
+        s_component_node_body_link *link = &physics->bodies[body->nodes[i]];
+        if (link->node == node_a && child_a == NONE)
             child_a = i;
-        if (node == node_b && child_b == NONE)
+        if (link->node == node_b && child_b == NONE)
             child_b = i;
     }
     c_component_child_frames *shape = *(c_component_child_frames **)((byte *)body->rigid_body + 0xc);
@@ -2640,9 +2640,10 @@ void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
     long node_a = pair->node_a;
     long index_a = node_a == NONE ? mapping->fallback : mapping->bodies[node_a];
     s_havok_component_rigid_body *body = &component->rigid_bodies.data[index_a];
+    long node_count = body->node_count;
     s_component_node_body_link *first = &owner->physics->bodies[body->nodes[0]];
     long child = 0;
-    for (; child < body->node_count; child++)
+    for (; child < node_count; child++)
     {
         if (owner->physics->bodies[body->nodes[child]].node == pair->node_a)
             break;
@@ -2663,9 +2664,10 @@ void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
         (index_b = node_b == NONE ? mapping->fallback : mapping->bodies[node_b]) != NONE)
     {
         s_havok_component_rigid_body *other = &component->rigid_bodies.data[index_b];
+        long other_node_count = other->node_count;
         s_component_node_body_link *other_first = &owner->physics->bodies[other->nodes[0]];
         long other_child = 0;
-        for (; other_child < other->node_count; other_child++)
+        for (; other_child < other_node_count; other_child++)
         {
             if (owner->physics->bodies[other->nodes[other_child]].node == pair->node_b)
                 break;

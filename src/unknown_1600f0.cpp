@@ -1056,14 +1056,12 @@ void game_engine_player_row_build(short const *position, real alpha, long player
 		bounds.right = bounds.left + 0x14;
 		bounds.bottom = bounds.top + 0x14;
 		row->icon.initialize(&bounds, &local_e2f2b4, &field_24, (const word *)L"", 1, false);
+		word icon_value = 0;
 		if (show_icon && function_15b2f0())
-		{
-			row->icon.text[0] = 1;
-		}
-		else
-		{
-			row->icon.text[0] = dim ? 2 : 0;
-		}
+			icon_value = 1;
+		else if (dim)
+			icon_value = 2;
+		row->icon.text[0] = icon_value;
 		*(long *)row->icon.unknown34 = player_index;
 		row->icon.color_b.alpha = alpha;
 	}

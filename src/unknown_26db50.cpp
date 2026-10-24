@@ -452,7 +452,7 @@ struct s_record_collision_view
 
 PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis, real sine, real cosine)
 {
-	real along = record_dot3f(axis, vector) * (1.0f - cosine);
+	real along = dot3f(axis, vector) * (1.0f - cosine);
 	real i = vector->i, j = vector->j, k = vector->k;
 	vector->i = axis->i * along + i * cosine - (axis->k * j - axis->j * k) * sine;
 	vector->j = axis->j * along + j * cosine - (axis->i * k - axis->k * i) * sine;
@@ -465,11 +465,10 @@ long function_26d570(long object_index)
 	long result = function_26d3f0(object_index, 0);
 	if (result != NONE)
 	{
-		s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
-		vector3f const *up = g_4687b0;
-		long sector_index = record->location_index;
 		real radius_value = *(real *)((byte *)object_get(object_index) + 0x3c);
 		real const &radius = radius_value;
+		s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
+		long sector_index = record->location_index;
 		long ring = 0;
 		long rings_remaining = 2;
 		do
@@ -478,11 +477,11 @@ long function_26d570(long object_index)
 			real phase = (real)ring * 0.39269909262657166f;
 			for (short spoke = 0; spoke < 8; spoke++)
 			{
+				vector3f direction = *g_4687a8;
 				real angle = (real)spoke * 0.7853981852531433f + phase;
 				real sine = (real)sin(angle);
 				real cosine = (real)cos(angle);
-				vector3f direction = *g_4687a8;
-				record_rotate_vector(&direction, up, sine, cosine);
+				record_rotate_vector(&direction, g_4687b0, sine, cosine);
 				s_record_pathfinding_view *structure = (s_record_pathfinding_view *)g_4e0348;
 				s_pathfinding_data *pathfinding = NULL;
 				if (structure->count > 0)
@@ -496,9 +495,9 @@ long function_26d570(long object_index)
 					point.x = direction.i * trace.distance + origin->x;
 					point.y = direction.j * trace.distance + origin->y;
 					point.z = direction.k * trace.distance + origin->z;
-					point.x += up->i * 0.5f;
-					point.y += up->j * 0.5f;
-					point.z += up->k * 0.5f;
+					point.x += g_4687b0->i * 0.5f;
+					point.y += g_4687b0->j * 0.5f;
+					point.z += g_4687b0->k * 0.5f;
 					s_location_entry_view *entry = (s_location_entry_view *)&record->entries[record->count];
 					point3f world;
 					s_record_collision_view collision;
@@ -509,11 +508,10 @@ long function_26d570(long object_index)
 					structure = (s_record_pathfinding_view *)g_4e0348;
 					if (structure->count > 0)
 						saved_pathfinding = structure->pathfinding;
-					entry->owner = function_26d100(up, (long *)&entry->location, (s_collision_result_1697c0 *)&collision, &world);
-					up = g_4687b0;
-					point.x = up->i * 0.1f + collision.point.x;
-					point.y = up->j * 0.1f + collision.point.y;
-					point.z = up->k * 0.1f + collision.point.z;
+					entry->owner = function_26d100(g_4687b0, (long *)&entry->location, (s_collision_result_1697c0 *)&collision, &world);
+					point.x = g_4687b0->i * 0.1f + collision.point.x;
+					point.y = g_4687b0->j * 0.1f + collision.point.y;
+					point.z = g_4687b0->k * 0.1f + collision.point.z;
 					long sector = function_14a280((s_bsp3d *)g_4e0340, 0, &point);
 					if (sector != NONE)
 						entry->sector = ((s_record_sector_map *)g_4e0348)->entries[sector].sector;

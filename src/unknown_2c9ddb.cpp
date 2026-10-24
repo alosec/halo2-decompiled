@@ -109,12 +109,13 @@ void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item
 		if (saved != NONE)
 		{
 			selected = entry->variant;
-			long source_index = selected == NONE ? saved : selected;
+			bool create_default = selected == NONE;
+			long source_index = create_default ? saved : selected;
 			if (function_212bc0(source_index, &variant))
 			{
 				g_54e49c = saved;
 				g_54e4a0 = variant;
-				if (selected == NONE)
+				if (create_default)
 				{
 					ui_game_variant_build_default(game_type, &g_54e4a0);
 					unicode_string_copy(g_54e4a0.name, variant.name, 0x20);

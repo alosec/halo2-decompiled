@@ -223,11 +223,10 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 	s_224db0 local_0;
 	s_2243c1 local_1;
 	byte *local_2 = (byte *)arg_0;
-	(void)&arg_1; (void)&arg_2; (void)&arg_3; (void)&arg_4;
 	long local_3 = *(long *)(local_2 + 0x1c);
-	dword local_4 = *(dword const *)&g_4e3b44[(short)local_3];
+	s_tag_instance const *local_4 = &g_4e3b44[(short)local_3];
 	long const *local_5;
-	if (local_4 == 0x5052544d || local_4 == 0x70727433)
+	if (*(dword const *)local_4->unknown00 == 0x5052544d || *(dword const *)local_4->unknown00 == 0x70727433)
 		local_5 = function_137bd0(local_3)->function_x947334();
 	else
 		local_5 = *(long const *const *)(g_4e3b44[local_3 & 0xffff].bytes + 0x24);
@@ -250,8 +249,8 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 		function_1c710(g_51f0f0);
 		function_1cdd0(0, 0);
 		function_2c3b0(&g_55ed60);
-		g_55ed60.field_0 = (s_particle_system_datum const *)arg_1;
 		g_55ed60.field_4 = function_173c30;
+		g_55ed60.field_0 = (s_particle_system_datum const *)arg_1;
 		function_1bd50(&g_55ed60);
 		function_1bbf0(*(long const *)(local_2 + 0x1c), 0, arg_3, arg_4, 1, 10000.0f);
 		local_0.field_0 = arg_0;
@@ -266,15 +265,15 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 			}
 		}
 		local_0.field_4 = local_17;
-		if ((void *)arg_2 != local_1.field_4c)
-		{
-			local_1.field_4c = (void *)arg_2;
-			local_1.field_44 &= 0xfffecf7f;
-		}
 		if ((void *)arg_1 != local_1.field_48)
 		{
 			local_1.field_48 = (void *)arg_1;
 			local_1.field_44 &= 0xfffff98f;
+		}
+		if ((void *)arg_2 != local_1.field_4c)
+		{
+			local_1.field_4c = (void *)arg_2;
+			local_1.field_44 &= 0xfffecf7f;
 		}
 		function_173ba0(~local_1.field_44 & local_16, local_1.field_48, local_1.field_4c,
 			local_1.field_50, local_1.field_0);

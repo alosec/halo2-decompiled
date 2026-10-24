@@ -172,13 +172,9 @@ static __forceinline bool structure_bsp_collision_available()
 }
 
 // @retail 0x14b120
-// score 78 (was 78): retail tests the object's type first and branches to the
-// second test only when it matches, keeping the outcome in a flag register;
-// ours combines the two tests into one condition, which reverses the branch
-// on the second test and drops the flag register
 bool function_14b120(s_surface_query_source source, void *surface)
 {
-    bool result = false;
+    byte result = false;
     byte local_collision[0x5c];
     *(short *)(local_collision + 0x24) = NONE;
     if (!structure_bsp_collision_available())

@@ -7,15 +7,13 @@
 // @retail 0x24ecae
 long __stdcall function_24ecae(s_marker_list const *list, s_24ecae_placement const *placement, real offset)
 {
-	long count = 0;
 	dword mask = 0;
+	long count = 0;
 	s_24ecae_globals *globals = (s_24ecae_globals *)g_510c94;
-	long index = 0;
-	long item_count = list->count;
-	s_list_item const *item = list->items;
-	for (; index < item_count; ++index, ++item)
+	long index;
+	for (index = 0; index < list->count; ++index)
 	{
-		long kind_index = item->kind;
+		long kind_index = list->items[index].kind;
 		if (globals && kind_index >= 0 && kind_index < globals->image_count)
 		{
 			s_24ecae_kind const *kind = &globals->images[kind_index];
@@ -24,12 +22,12 @@ long __stdcall function_24ecae(s_marker_list const *list, s_24ecae_placement con
 				(!placement->alternate || kind->alternate_sequence != NONE) &&
 				kind->sequence_index != NONE)
 			{
-				mask |= 1UL << (index & 31);
+				mask |= 1UL << index;
 				++count;
 			}
 		}
 	}
-	if (count > 0 && count <= 2)
+	if (count != 0 && count <= 2)
 	{
 		point2f center = placement->position;
 		long drawn = 0;
@@ -37,22 +35,19 @@ long __stdcall function_24ecae(s_marker_list const *list, s_24ecae_placement con
 			offset = (real)(sqrt(512.0) * placement->scale + offset);
 		else
 			offset = placement->scale * 16.0f + offset + 1.0f;
-		center.x += -(placement->forward_i * offset);
-		center.y += -(placement->forward_j * offset);
-		item = list->items;
-		for (index = 0; index < list->count; ++index, ++item)
+		real shift_x = -(placement->forward_i * offset);
+		real shift_y = -(placement->forward_j * offset);
+		center.x += shift_x;
+		center.y += shift_y;
+		for (index = 0; index < list->count; ++index)
 		{
-			if (mask & (1UL << (index & 31)))
+			if (mask & (1UL << index))
 			{
+				s_list_item const *item = &list->items[index];
 				s_24ecae_kind const *kind = &globals->images[item->kind];
 				s_24ecae_bitmap_group const *group = (s_24ecae_bitmap_group *)g_4e3b44[kind->bitmap_index & 0xffff].bytes;
-				short sequence_index;
-				if (placement->hidden)
-					sequence_index = kind->hidden_sequence;
-				else if (placement->alternate)
-					sequence_index = kind->alternate_sequence;
-				else
-					sequence_index = kind->sequence_index;
+				long sequence_index = placement->hidden ? kind->hidden_sequence :
+					placement->alternate ? kind->alternate_sequence : kind->sequence_index;
 				if (sequence_index < 0)
 					continue;
 				long bitmap_index;
@@ -66,25 +61,29 @@ long __stdcall function_24ecae(s_marker_list const *list, s_24ecae_placement con
 					if (sequence->sprite_count > 0)
 					{
 						bounds = sequence->sprites->bounds;
-						pivot.x = (bounds.x1 + bounds.x0) * 0.5f;
-						pivot.y = (bounds.y1 + bounds.y0) * 0.5f;
+						pivot.x = (bounds.x0 + bounds.x1) * 0.5f;
+						pivot.y = (bounds.y0 + bounds.y1) * 0.5f;
 					}
 					else
 					{
-						bounds.x0 = bounds.y0 = 0.0f;
-						bounds.x1 = bounds.y1 = 1.0f;
 						pivot.x = (real)bitmap->field_10 / bitmap->width;
 						pivot.y = (real)bitmap->field_12 / bitmap->height;
+						bounds.x0 = 0.0f;
+						bounds.x1 = 1.0f;
+						bounds.y0 = 0.0f;
+						bounds.y1 = 1.0f;
 					}
 				}
 				else if (sequence_index == 0 && group->sequence_count == 0 && group->bitmap_count > 0)
 				{
 					bitmap_index = 0;
 					s_24ecae_bitmap const *bitmap = group->bitmaps;
-					bounds.x0 = bounds.y0 = 0.0f;
-					bounds.x1 = bounds.y1 = 1.0f;
 					pivot.x = (real)bitmap->field_10 / bitmap->width;
 					pivot.y = (real)bitmap->field_12 / bitmap->height;
+					bounds.x0 = 0.0f;
+					bounds.x1 = 1.0f;
+					bounds.y0 = 0.0f;
+					bounds.y1 = 1.0f;
 				}
 				else
 					continue;
@@ -97,24 +96,26 @@ long __stdcall function_24ecae(s_marker_list const *list, s_24ecae_placement con
 				point2f origin;
 				if (!placement->hidden && count != 1)
 				{
-					real side = drawn == 0 ? -0.5f : 0.5f;
+					real side = drawn != 0 ? 0.5f : -0.5f;
 					origin.x = placement->scale * side * 32.0f + center.x;
 					origin.y = center.y;
 				}
 				else
 					origin = center;
-				real height = (real)bitmap->height * placement->scale;
 				real width = (real)bitmap->width * placement->scale;
+				// volatile: retail stores the scaled height to its own stack slot once and reloads
+				// it for every corner, while the scaled width stays in a register
+				real volatile height = (real)bitmap->height * placement->scale;
 				point2f points[4];
 				for (long vertex = 0; vertex < 4; ++vertex)
 				{
 					bool top = vertex == 0 || vertex == 1;
 					bool right = vertex == 1 || vertex == 2;
 					points[vertex] = origin;
-					real y = top ? bounds.y0 : bounds.y1;
-					real x = right ? bounds.x1 : bounds.x0;
-					points[vertex].x += width * (x - pivot.x);
-					points[vertex].y += height * (y - pivot.y);
+					real dy = (top ? bounds.y0 : bounds.y1) - pivot.y;
+					real dx = (right ? bounds.x1 : bounds.x0) - pivot.x;
+					points[vertex].x += width * dx;
+					points[vertex].y += height * dy;
 				}
 				g_4e6950.field_0 = *(color3f const *)&item->a;
 				g_4e6950.field_c = *(point3f const *)&item->b;

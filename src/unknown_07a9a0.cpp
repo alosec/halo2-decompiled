@@ -78,9 +78,7 @@ bool function_07a9b0(void)
 	return g_4cf791;
 }
 
-// score 65 (was 65): the stack set-up at the top differs: retail takes the value at esp+0x38
-// into esi and stores ebp at esp+0x1c, ours the other way round.
-// @retail 0x7ab60 standard
+// @retail 0x7ab60
 bool function_07ab60(const s_type_99af70 *address, long local, long *index_out, XNKID *kid_out, XNKEY *key_out, XNADDR *xnaddr_out)
 {
 	bool result = false;

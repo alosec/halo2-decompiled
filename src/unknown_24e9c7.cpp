@@ -129,24 +129,20 @@ real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *pl
 			s_24e9c7_bitmap_group *group = (s_24e9c7_bitmap_group *)g_4e3b44[bitmap_index & 0xffff].bytes;
 			short sequence_index = kind->sequence_index;
 			s_24e9c7_bounds bounds;
-			long first_bitmap;
+			long first_bitmap = NONE;
 			bounds.x0 = 0.0f;
 			bounds.x1 = 1.0f;
 			bounds.y0 = 0.0f;
 			bounds.y1 = 1.0f;
-			if (sequence_index < 0)
-				return 0.0f;
-			if (sequence_index < group->sequence_count)
+			if (sequence_index >= 0 && sequence_index < group->sequence_count)
 			{
 				s_24e9c7_sequence *sequence = &group->sequences[sequence_index];
 				first_bitmap = sequence->first_bitmap_index;
 				if (sequence->sprite_count)
 					bounds = *(s_24e9c7_bounds *)sequence->sprites->bounds;
 			}
-			else
+			else if (sequence_index == 0 && group->sequence_count == 0 && group->bitmap_count > 0)
 			{
-				if (sequence_index != 0 || group->sequence_count != 0 || group->bitmap_count <= 0)
-					return 0.0f;
 				first_bitmap = 0;
 			}
 			if (first_bitmap != NONE)

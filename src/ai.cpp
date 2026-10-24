@@ -676,6 +676,7 @@ struct s_ai_importance_entry
 };
 
 #define MAXIMUM_AI_IMPORTANCE_ENTRIES 0x100
+#define NUMBEROF(array) (sizeof(array) / sizeof((array)[0]))
 
 struct s_ai_importance_list
 {
@@ -729,53 +730,107 @@ bool __stdcall ai_importance_compare(void const *a, void const *b, void const *c
 	return result;
 }
 
+/* laid out like s_squad_actor_iterator (include/squads.h), walking all actors */
+struct s_ai_importance_actor_iterator
+{
+	long squad_index;
+	long index;
+	long next_index;
+};
+
+PRIVATE inline void ai_importance_actor_iterator_new(s_ai_importance_actor_iterator *iterator)
+{
+	if (g_4f55d0->active)
+	{
+		iterator->squad_index = NONE;
+		iterator->index = NONE;
+		iterator->next_index = g_4f55d0->unknown14;
+	}
+}
+
+PRIVATE inline s_ai_importance_actor *ai_importance_actor_iterator_next(s_ai_importance_actor_iterator *iterator)
+{
+	s_ai_importance_actor *actor = NULL;
+	if (g_4f55d0->active && iterator->next_index != NONE)
+	{
+		actor = (s_ai_importance_actor *)(g_4f55f0->data + (iterator->next_index & 0xffff) * 0x888);
+		iterator->index = iterator->next_index;
+		iterator->next_index = actor->next_index;
+	}
+	return actor;
+}
+
+/* the squads, as the squad iterator of src/unknown_2003a0.cpp walks them */
+struct s_ai_importance_squad_iterator
+{
+	s_ai_importance_squad *squad;
+	s_record_pool_iterator records;
+	long squad_index;
+};
+
+PRIVATE inline void ai_importance_squad_iterator_new(s_ai_importance_squad_iterator *iterator)
+{
+	if (g_4f55d0->active)
+	{
+		iterator->records.data = g_51e9d8;
+		iterator->records.index = NONE;
+	}
+}
+
+PRIVATE __forceinline s_ai_importance_squad *ai_importance_squad_iterator_next(s_ai_importance_squad_iterator *iterator)
+{
+	s_ai_importance_squad *squad = NULL;
+	if (g_4f55d0->active)
+	{
+		s_record_pool *records = iterator->records.data;
+		long index = data_next_absolute_index_inlined(records, iterator->records.index + 1);
+		if (index != NONE)
+		{
+			squad = (s_ai_importance_squad *)(records->data + records->size * index);
+			iterator->records.index = index;
+			iterator->records.datum_index = (*(short *)squad << 16) | index;
+		}
+		else
+		{
+			iterator->records.index = records->maximum_count;
+			iterator->records.datum_index = NONE;
+		}
+		iterator->squad_index = iterator->records.datum_index & 0xffff;
+		iterator->squad = squad;
+	}
+	return squad;
+}
+
+// score 2 (was 143): retail reloads the squad pool pointer between cmp edx, -1 and je in the
+// squad step; ours reloads it after the je on fall-through, the taken branch going to the shared reload.
 // @retail 0x1c8700
 void __stdcall ai_importance_list_build(long unused, s_ai_importance_list *list, long unused2)
 {
-	long actor_index;
-	s_record_pool_iterator iterator;
+	s_ai_importance_actor_iterator actors;
+	s_ai_importance_actor *actor;
+	s_ai_importance_squad_iterator iterator;
 
 	list->count = 0;
 	list->unknown2 = 0;
-	if (g_4f55d0->active)
+	ai_importance_actor_iterator_new(&actors);
+	while ((actor = ai_importance_actor_iterator_next(&actors)) != NULL && list->count < NUMBEROF(list->entries))
 	{
-		actor_index = g_4f55d0->unknown14;
-	}
-	while (g_4f55d0->active && actor_index != NONE)
-	{
-		s_ai_importance_actor *actor = (s_ai_importance_actor *)(g_4f55f0->data + (actor_index & 0xffff) * 0x888);
-		long index = actor_index;
-
-		if (list->count >= MAXIMUM_AI_IMPORTANCE_ENTRIES)
-		{
-			break;
-		}
-		actor_index = actor->next_index;
 		if (!actor->unknown09 && actor->importance != NONE)
 		{
 			list->entries[list->count].kind = 1;
-			list->entries[list->count].index = index;
+			list->entries[list->count].index = actors.index;
 			list->entries[list->count].importance = actor->importance;
 			list->count++;
 		}
 	}
-	if (g_4f55d0->active)
+	ai_importance_squad_iterator_new(&iterator);
+	s_ai_importance_squad *squad;
+	while ((squad = ai_importance_squad_iterator_next(&iterator)) != NULL && list->count < NUMBEROF(list->entries))
 	{
-		iterator.data = g_51e9d8;
-		iterator.index = NONE;
-	}
-	while (g_4f55d0->active)
-	{
-		s_ai_importance_squad *squad = (s_ai_importance_squad *)data_iterator_next_inlined(&iterator);
-
-		if (!squad || list->count >= MAXIMUM_AI_IMPORTANCE_ENTRIES)
-		{
-			break;
-		}
 		if (!(squad->flags & 0x80) && squad->unknown0a > 0 && squad->importance != NONE)
 		{
 			list->entries[list->count].kind = 0;
-			list->entries[list->count].index = iterator.datum_index;
+			list->entries[list->count].index = iterator.squad_index;
 			list->entries[list->count].importance = squad->importance;
 			list->count++;
 		}
@@ -1118,8 +1173,38 @@ void function_1c79e0(void)
 }
 
 
+/* the players as player_queries.h's s_player_iterator walks them: from +4 an
+   s_record_pool_iterator */
+struct s_ai_player_iterator
+{
+	s_ai_player_datum *player;
+	s_record_pool_iterator records;
+};
+
+struct s_actor_prop_iterator
+{
+	long index;
+	long next;
+};
+
+PRIVATE __forceinline s_prop_node_view *actor_next_prop(s_actor_prop_iterator *iterator)
+{
+	s_prop_node_view *node = NULL;
+	long index = iterator->next;
+	if (index != NONE)
+	{
+		node = prop_node_get(index);
+		iterator->index = index;
+		iterator->next = node->next_index;
+	}
+	return node;
+}
+
 long function_25d810(long object_index, long actor_index, bool create);
 
+// score 17 (was 183): the player loop keeps the player record and the object headers in the
+// other of esi and edi, with minor instruction ordering there, and the prop capsule call loads
+// its arguments in another order.
 // @retail 0x1c89b0
 short __stdcall function_1c89b0(long actor_index, short maximum_count, s_ai_capsule_view *capsules)
 {
@@ -1130,13 +1215,13 @@ short __stdcall function_1c89b0(long actor_index, short maximum_count, s_ai_caps
  long count = 0;
  if (actor->unknown07c != NONE)
  {
-  long next = element_502420_get(actor->unknown07c)->first_actor_index;
-  while (next != NONE)
+  s_element_502420_member_iterator iterator;
+  s_actor_view *other;
+  iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+  iterator.index = NONE;
+  while ((other = element_502420_member_next(&iterator)) != NULL)
   {
-   long index = next;
-   s_actor_view *other = actor_get(index);
-   next = other->next_index;
-   if (index != actor_index && (short)count < maximum_count && other->unknown018 != NONE && other->unknown26c == NONE)
+   if (iterator.index != actor_index && (short)count < maximum_count && other->unknown018 != NONE && other->unknown26c == NONE)
    {
     long object_index = other->unknown018;
     if (((s_ai_object_header *)g_4e0300->data)[object_index & 0xffff].type == 0)
@@ -1144,38 +1229,43 @@ short __stdcall function_1c89b0(long actor_index, short maximum_count, s_ai_caps
    }
   }
  }
- long next = actor_get(actor_index)->first_prop_index;
- while (next != NONE)
+ s_actor_prop_iterator prop_iterator;
+ s_prop_node_view *node;
+ prop_iterator.next = actor_get(actor_index)->first_prop_index;
+ while ((node = actor_next_prop(&prop_iterator)) != NULL)
  {
-  long index = next;
-  s_prop_node_view *node = &((s_prop_node_view *)g_502418->data)[index & 0xffff];
-  next = node->next_index;
   s_prop_state_view *state = prop_node_state(node);
   s_ai_prop_target *target = &((s_ai_prop_target *)g_50241c->data)[node->unknown08 & 0xffff];
   if (!target->unknown23 && !*((bool *)state + 0x5e) && node->unknown24 == 1 && state->unknown3c == NONE)
   {
    long object_index = node->object_index;
    if (((1 << object_get(object_index)->type) & 1) && (short)count < maximum_count)
-    function_1c8940(&capsules[(short)count++], object_index, index);
+   {
+    /* retail keeps the current prop index in memory across prop_node_state */
+    function_1c8940(&capsules[(short)count], object_index, *(long const volatile *)&prop_iterator.index);
+    ++count;
+   }
   }
  }
  if (!team_is_enemy(actor->unknown024, 1))
  {
-  s_record_pool_iterator iterator;
-  iterator.data = g_4e8c24;
-  iterator.index = NONE;
+  s_ai_player_iterator iterator;
+  iterator.records.data = g_4e8c24;
+  iterator.records.index = NONE;
   s_ai_player_datum *player;
-  while ((player = (s_ai_player_datum *)data_iterator_next_inlined(&iterator)) != NULL)
+  while ((player = (s_ai_player_datum *)data_iterator_next_inlined(&iterator.records)) != NULL)
   {
    long object_index = player->unit_index;
    if (object_index == NONE)
     continue;
    s_ai_object_header *headers = (s_ai_object_header *)g_4e0300->data;
-   if (headers[object_index & 0xffff].type != 0)
+   s_ai_object_header *header = &headers[object_index & 0xffff];
+   if (header->type != 0)
     continue;
-   long parent = object_get(object_index)->parent_index;
-   if (parent != NONE)
+   s_slot_object_view *object = (s_slot_object_view *)header->object;
+   if (object->parent_index != NONE)
    {
+    long parent = object->parent_index;
     long root = function_baf40(parent);
     if (headers[root & 0xffff].type == 1)
      parent = root;

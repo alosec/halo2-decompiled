@@ -539,7 +539,8 @@ bool function_155d60(long index);
 bool g_4f55e2;
 
 // score 7 (was 7): ours masks the byte with an and against a memory constant and negates it, retail masks a
-// dword in memory and tests the low byte.
+// dword in memory and tests the low byte; a four-byte global read into a char local already gives retail's
+// dword and, so what is left is the end: retail branches on the mask, ours negates it and pops esi early.
 // @retail 0x13939b
 bool function_13939b()
 {
@@ -597,6 +598,8 @@ struct s_interface_pulse
 	byte unknown03;
 };
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
 // @retail 0x200891
 real function_200891(s_interface_pulse const *pulse, bool rising)
 {
@@ -606,17 +609,9 @@ real function_200891(s_interface_pulse const *pulse, bool rising)
 		fraction = 1.0f;
 	else
 		fraction = (real)pulse->ticks * g_510c54->rate * 1.5151515007019043f;
-	double result;
 	if (rising)
-		result = fraction;
-	else
-		result = fraction - 0.5f;
-	result *= 2.0f;
-	if (result < 0.0f)
-		result = 0.0f;
-	else if (result > 1.0f)
-		result = 1.0f;
-	return result;
+		return PIN(fraction * 2.0, 0.0f, 1.0f);
+	return PIN((fraction - 0.5f) * 2.0, 0.0f, 1.0f);
 }
 
 // @retail 0x2008fc
@@ -770,8 +765,6 @@ bool function_13ac87(s_condition_masks const *masks, word first, word second, wo
 	}
 	return false;
 }
-
-#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
 struct s_ammunition_state
 {

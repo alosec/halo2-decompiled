@@ -99,10 +99,6 @@ static inline float angle_2db880(float cosine)
 // within a step of 1 / frequency: the centre of mass's offset, and the
 // rotation still to make (none below a thousandth of a radian)
 // @retail 0x2db880
-// score 13 (was 13): retail reads the position before the frequency and keeps
-// the difference in xmm0, the position in xmm1 and the home position in xmm2;
-// ours reads the frequency first and keeps the difference in xmm3. Retail
-// stores its copy of the frequency after the sum, ours before it.
 void __cdecl function_2db880(hkVector4 const *position, c_component_rotation const *rotation, real frequency, hkRigidBody *body)
 {
 	__m128 linear;
@@ -110,10 +106,11 @@ void __cdecl function_2db880(hkVector4 const *position, c_component_rotation con
 	{
 		vector_2db7a0 center;
 		center.function_2db7a0(*(rotation_2db630 const *)rotation, motion->field_20);
-		__m128 const target = position->m_quad;
-		__m128 const home = motion->field_70;
-		__m128 delta = _mm_sub_ps(_mm_add_ps(center.v, target), home);
-		linear = _mm_mul_ps(splat_2db630(frequency), delta);
+		// the centre of mass in the world, then the offset from where the
+		// body was, scaled by the frequency
+		center.v = _mm_add_ps(center.v, position->m_quad);
+		linear = _mm_sub_ps(center.v, motion->field_70);
+		linear = _mm_mul_ps(splat_2db630(frequency), linear);
 	}
 	if (!body->body_is_simulating().m_bool && body->m_simulation_island)
 	{

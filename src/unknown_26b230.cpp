@@ -91,6 +91,10 @@ void function_268510()
 	}
 }
 
+// score 81 (was 81): retail loads the global and tests its active byte before it reserves the
+// frame and pushes the registers, and it keeps the pool pointer in ebx and the index in edi;
+// ours reserves the frame first and holds the global in ebp, so the prologue and the loop
+// head differ.
 // @retail 0x268840
 void function_268840()
 {
@@ -429,6 +433,9 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 	return result != NULL;
 }
 
+// score 68 (was 68): retail sign-extends the first team argument and passes the second one
+// narrow, and its frame is four bytes larger than ours, so the stack offsets and the register
+// that holds the clump pointer differ as well.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {

@@ -375,16 +375,20 @@ typedef bool (__stdcall *score_compare_team)(word, word, const void *);
 void sort_4byte(long *elements, unsigned long count, void *unused, score_compare_player compare, const void *context);
 void sort_2byte(word *elements, unsigned long count, void *unused, score_compare_team compare, const void *context);
 
-PRIVATE inline bool score_team_present(long team)
+/* whether the current game engine plays in teams */
+PRIVATE inline bool score_has_teams(void)
 {
 	bool result = false;
 	if (g_55e4d0[g_4e9ae8->engine_index])
-	{
-		byte teams = ((byte *)g_4e6948)[0x184] & 1;
-		volatile byte observed_teams = teams;
-		if (teams && team >= 0 && team < 8)
-			result = (g_4e9ae8->we & (1 << team)) != 0;
-	}
+		result = ((byte *)g_4e6948)[0x184] & 1;
+	return result;
+}
+
+PRIVATE inline bool score_team_present(long team)
+{
+	bool result = false;
+	if (score_has_teams() && team >= 0 && team < 8)
+		result = (g_4e9ae8->we & (1 << team)) != 0;
 	return result;
 }
 
@@ -395,10 +399,11 @@ void function_23f3e0(s_score_display *display, long mode, bool fallback)
 	s_record_pool *data = g_4e8c24;
 	display->player_count = 0;
 	display->team_count = 0;
-	long index = NONE;
-	while ((index = score_next_player(data, index + 1)) != NONE)
+	long cursor = NONE;
+	long player;
+	while (score_next_entry(data, &cursor, &player) != NULL)
 	{
-		display->players[display->player_count++] = data_datum_index(data, index);
+		display->players[display->player_count++] = player;
 	}
 	s_score_sort_context player_context;
 	player_context.criteria = criteria;
@@ -406,12 +411,7 @@ void function_23f3e0(s_score_display *display, long mode, bool fallback)
 	sort_4byte(display->players, display->player_count, &fallback, function_23fbe0, &player_context);
 	for (long i = 0; i < display->player_count; i++)
 		display->player_ranks[i] = (char)function_23fc40(mode, display->players[i], display);
-	byte teams = 0;
-	if (g_55e4d0[g_4e9ae8->engine_index])
-	{
-		teams = ((byte *)g_4e6948)[0x184] & 1;
-	}
-	if (teams)
+	if (score_has_teams())
 	{
 		for (long team = 0; team < 8; team += 4)
 		{

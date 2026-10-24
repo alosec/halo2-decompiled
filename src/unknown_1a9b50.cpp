@@ -753,12 +753,10 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 	return local_2;
 }
 
-// score 45 (was 44): retail branches to 0x1aa0b6 where ours branches to another
-// place, loads [esi+0x18] into EAX rather than ECX and reads the pool pointer
-// at 0x4e0300 into EDX before it masks the index.
 // @retail 0x1a9ec0
 short __stdcall function_1a9ec0(long arg_0)
 {
+	extern long function_146650(void);
 	s_actor_view *local_0 = actor_get(arg_0);
 	s_actor_tag_entry *local_1 = (s_actor_tag_entry *)function_1e4f90(arg_0);
 	long local_2 = 0;
@@ -785,7 +783,7 @@ short __stdcall function_1a9ec0(long arg_0)
 						local_2 = 4;
 					}
 					else if (local_5->unknown3c == NONE && local_1->unknown04 >= local_4->unknown28 &&
-						(local_0->times[3] == NONE || (real)(g_510c54->game_time - local_0->times[3]) * g_510c54->rate > function_1e9700(0x15) * local_1->unknown18))
+						(local_0->times[3] == NONE || (real)(function_146650() - local_0->times[3]) * g_510c54->rate > function_1e9700(0x15) * local_1->unknown18))
 					{
 						real local_8 = function_1c9ee0(local_1->unknown08);
 						if (local_8 > function_259a0(&g_4e7408->unknown0))

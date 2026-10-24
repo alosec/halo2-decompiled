@@ -3,6 +3,7 @@
 #include "unknown_20fe20.h"
 #include "globals.h"
 #include <math.h>
+#include "vector_products.h"
 
 struct s_28dbd3
 {
@@ -25,6 +26,7 @@ struct s_28dbd0
 	byte field_4c[0x68];
 	word field_b4;
 	word field_b6;
+	byte field_b8[0xc4 - 0xb8];
 };
 
 struct s_effect_owner;
@@ -39,21 +41,13 @@ void swarm_creature_initialize(s_object_ai_data *arg_0);
 bool function_28e320(long arg_0, long arg_1);
 void swarm_creature_reset_position(long arg_0, s_object_ai_data *arg_1);
 
-__forceinline real function_28dbd1()
-{
-	g_4e7408->unknown0 = g_4e7408->unknown0 * 0x19660d + 0x3c6ef35f;
-	return (real)(g_4e7408->unknown0 >> 16) * (1.0f / 65535.0f);
-}
-
 __forceinline void function_28dbd2(real arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
+	real local_0 = (real)sin(arg_0);
 	real local_1 = (real)cos(arg_0);
 	real local_2 = dot3f(arg_1, arg_2) * (1.0f - local_1);
 	vector3f local_3;
-	local_3.i = arg_1->k * arg_2->j - arg_2->k * arg_1->j;
-	local_3.j = arg_2->k * arg_1->i - arg_1->k * arg_2->i;
-	local_3.k = arg_2->i * arg_1->j - arg_1->i * arg_2->j;
-	real local_0 = (real)sin(arg_0);
+	cross3f(arg_2, arg_1, &local_3);
 	arg_2->i = arg_2->i * local_1 + arg_1->i * local_2 - local_3.i * local_0;
 	arg_2->j = arg_2->j * local_1 + arg_1->j * local_2 - local_3.j * local_0;
 	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_3.k * local_0;
@@ -93,20 +87,18 @@ long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, 
 	}
 	else
 	{
-		real local_1 = function_28dbd1() * 6.2831854820251465f - 3.1415927410125732f;
+		real local_1 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -3.1415927f, 3.1415927f);
 		vector3f local_2;
 		local_2.i = (real)cos(local_1);
 		local_2.j = (real)sin(local_1);
 		local_2.k = 0.0f;
 		if (local_4->field_1c & 2)
 		{
-			real local_3 = function_28dbd1() + 2.0f;
-			real local_4 = function_28dbd1() * 1.3089970350265503f + 0.2617993950843811f;
+			real local_3 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 2.0f, 3.0f);
+			real local_4 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.2617994f, 1.5707964f);
 			local_0.field_28 = local_2;
 			vector3f local_5;
-			local_5.i = local_2.j * g_4687b0->k - g_4687b0->j * local_2.k;
-			local_5.j = g_4687b0->i * local_2.k - local_2.i * g_4687b0->k;
-			local_5.k = local_2.i * g_4687b0->j - g_4687b0->i * local_2.j;
+			cross3f(&local_2, g_4687b0, &local_5);
 			function_28dbd2(local_4, &local_5, &local_2);
 			local_0.field_1c.x += local_2.i * 0.1f;
 			local_0.field_1c.y += local_2.j * 0.1f;
@@ -122,8 +114,8 @@ long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, 
 		{
 			if (!arg_4)
 			{
-				real local_3 = function_28dbd1() - 0.5f;
-				real local_4 = function_28dbd1() - 0.5f;
+				real local_3 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -0.5f, 0.5f);
+				real local_4 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -0.5f, 0.5f);
 				local_0.field_1c.x += local_3;
 				local_0.field_1c.y += local_4;
 			}

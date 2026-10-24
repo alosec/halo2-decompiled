@@ -292,31 +292,29 @@ static __forceinline void network_memory_track(void *block, long size)
 }
 
 // @retail 0x81780
-// score 74 (was 74): retail branches to the later of the two blocks on the
-// stage test and keeps the connection count in ebx across it, ours pushes the
-// saved registers after the test and keeps the count in another register, so
-// the inlined allocator reads the stage through that register too
+// score 22 (was 74): in the first allocation the size and the block take edi
+// and esi the other way round, and the two stream constructors store each
+// window's head before its count where ours stores the count first
 void __stdcall function_81780(long stage)
 {
-	long count = 15;
 	long size;
 	long i;
 
-	if (stage > 1)
+	if (stage <= 1)
 	{
-		g_4d87f4 = g_4cf764;
-		count = 1;
-		g_4d87e4 = 0;
-	}
-	else
-	{
+		g_4d87d0 = 15;
 		g_4d87f4 = g_4cf760;
 		g_4d87e4 = 1;
 	}
-	g_4d87d0 = count;
-	g_4d87e0 = count;
+	else
+	{
+		g_4d87f4 = g_4cf764;
+		g_4d87d0 = 1;
+		g_4d87e4 = 0;
+	}
+	g_4d87e0 = g_4d87d0;
 
-	size = count * sizeof(s_link_connection);
+	size = g_4d87d0 * sizeof(s_link_connection);
 	g_4d87d4 = physical_memory_malloc_fixed(size, PAGE_READWRITE);
 	network_memory_track(g_4d87d4, size);
 	for (i = 0; i < g_4d87d0; i++)

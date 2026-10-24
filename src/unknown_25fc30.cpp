@@ -1841,6 +1841,7 @@ void __stdcall function_25f7b0(long arg_0, s_type_967e20 *arg_1, s_type_b36ac5 *
 			local_14 = 1;
 			break;
 		case 2:
+			local_14 = 0;
 			if (!(arg_2->definition->flags & 0x10))
 				local_14 = 1;
 			break;

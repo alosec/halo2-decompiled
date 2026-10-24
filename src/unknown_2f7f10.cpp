@@ -97,10 +97,10 @@ public:
 	void function_2f7f10(void const *a, void const *b, void const *input, void *collector);
 };
 
-// score 65 (was 108): retail keeps the second body and its shape in registers
-// across the corners' loop and reads the sphere count after it; ours reads the
-// count before the loop, so the count takes the register retail keeps the body
-// in and the body has to be reloaded from the stack afterwards.
+// score 55 (was 65): the corners' loop counts down and steps its pointer
+// forwards, the spheres' pointer is read before the frame, the
+// radius is taken from the sphere first and the scaled normal is written
+// without a local of its own.
 // @retail 0x2f7f10
 void class_2f7f10::function_2f7f10(void const *a, void const *b, void const *input, void *collector)
 {
@@ -115,17 +115,17 @@ void class_2f7f10::function_2f7f10(void const *a, void const *b, void const *inp
 		c_query_transform const *frame = &side_b->placement->transform;
 		__m128 const *corner = triangle->corners;
 		__m128 *placed = corners;
-		for (int count = 3; count != 0; count--)
+		for (int count = 3; count != 0; --count)
 		{
 			*placed = transform_point_2f7f10(frame, corner);
-			placed++;
+			++placed;
 			corner++;
 		}
 	}
 	__m128 centres[8];
 	{
-		c_query_transform const *frame = &side_a->placement->transform;
 		__m128 const *sphere = spheres->spheres;
+		c_query_transform const *frame = &side_a->placement->transform;
 		__m128 *placed = centres;
 		for (int i = sphere_count - 1; i >= 0; i--)
 		{
@@ -141,14 +141,13 @@ void class_2f7f10::function_2f7f10(void const *a, void const *b, void const *inp
 	__m128 const *sphere = spheres->spheres;
 	for (int count = sphere_count; count > 0; count--)
 	{
-		float const radii = triangle->radius + sphere->m128_f32[3];
+		float const radii = sphere->m128_f32[3] + triangle->radius;
 		closest_308d90 closest;
 		function_308d90(centre, corners, terms, &closest);
 		if (radii + ((input_2f7f10 const *)input)->tolerance > closest.distance)
 		{
 			__m128 const single = _mm_set_ss(triangle->radius - closest.distance);
-			__m128 const scale = _mm_shuffle_ps(single, single, 0);
-			contact.point = _mm_add_ps(*centre, _mm_mul_ps(scale, closest.normal));
+			contact.point = _mm_add_ps(*centre, _mm_mul_ps(_mm_shuffle_ps(single, single, 0), closest.normal));
 			contact.point.m128_f32[3] = closest.distance - radii;
 			contact.normal = closest.normal;
 			((collector_2f7f10 *)collector)->add_contact(&contact);

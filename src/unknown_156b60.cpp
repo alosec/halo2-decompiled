@@ -141,9 +141,10 @@ PRIVATE real render_range_156b60(s_tag_data const *curve, real value)
 	{
 		real lower = *(real *)(data + 4);
 		real upper = *(real *)(data + 8);
-		if (value < 0.0f) value = 0.0f;
-		else if (value > 1.0f) value = 1.0f;
-		return (upper - lower) * value + lower;
+		real fraction = value;
+		if (fraction < 0.0f) fraction = 0.0f;
+		else if (fraction > 1.0f) fraction = 1.0f;
+		return (upper - lower) * fraction + lower;
 	}
 	return value;
 }

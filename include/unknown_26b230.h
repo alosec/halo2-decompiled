@@ -39,12 +39,15 @@ struct s_clump_node
 {
 	byte unknown00[4];
 	long actor_index;
-	byte unknown08[0x24 - 0x8];
+	byte unknown08[0x14 - 0x8];
+	long tracking_index;
+	byte unknown18[0x24 - 0x18];
 	short state;
 	byte unknown26[0x34 - 0x26];
 	long next;
 	byte unknown38[0x3c - 0x38];
 };
+typedef char assert_clump_node_tracking_index[((long)&((s_clump_node *)0)->tracking_index == 0x14) ? 1 : -1];
 
 /* the iterator of function_26bda0 (unknown_26bda0.cpp) */
 struct s_iterator

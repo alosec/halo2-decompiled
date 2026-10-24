@@ -446,19 +446,18 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	long count;
 
 	half = hill->count / 2;
- function_2bdd20((s_spline_2bd *)hill, points);
+	function_2bdd20((s_spline_2bd *)hill, points);
 	for (i = 0; i < half; i++)
 	{
 		long steps = hill->steps[i];
 
 		function_2bdd70(control, (s_spline_2bd *)hill, i, points);
-		long first_vertex = vertex;
-		if (steps > 0) vertex += steps;
 		for (long j = 0; j < steps; j++)
 		{
 			function_2bde90((real)j / (real)steps, &point, control);
-			hill->vertices[first_vertex + j].x = point.x;
-			hill->vertices[first_vertex + j].y = point.y;
+			hill->vertices[vertex].x = point.x;
+			hill->vertices[vertex].y = point.y;
+			vertex++;
 		}
 	}
 	hill->perimeter = 0.0f;
@@ -470,8 +469,8 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 
 		hill->perimeter += (real)sqrt(dy * dy + dx * dx);
 	}
-	*(point3f *)&hill->center_x = *g_468788;
 	count = hill->count;
+	*(point3f *)&hill->center_x = *g_468788;
 	if (count > 0)
 	{
 		i = 0;
@@ -486,22 +485,20 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	}
 	real scale = 1.0f / (real)count;
 	point3f *center = (point3f *)&hill->center_x;
- center->x = center->x * scale; center->y = center->y * scale; center->z = center->z * scale;
-	volatile real *radius = &hill->radius;
-	*radius = 0.0f;
+	center->x = center->x * scale;
+	center->y = center->y * scale;
+	center->z = center->z * scale;
+	hill->radius = 0.0f;
 	if (count > 0)
 	{
 		i = 0;
 		do
 		{
-			real dx = points[i].x - hill->center_x;
-			real dy = points[i].y - hill->center_y;
+			real dx = points[i].x - center->x;
+			real dy = points[i].y - center->y;
 			real distance_squared = dy * dy + dx * dx;
 
-			if (!(*radius > distance_squared))
-			{
-				*radius = distance_squared;
-			}
+			hill->radius = hill->radius > distance_squared ? hill->radius : distance_squared;
 			i++;
 		}
 		while (i < count);

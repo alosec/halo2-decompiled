@@ -696,13 +696,21 @@ void function_1763a0(point3f const *point, vector3f const *direction, s_effect_m
 	markers[2].forward.i = direction->i * -1.0f;
 	markers[2].forward.j = direction->j * -1.0f;
 	markers[2].forward.k = direction->k * -1.0f;
-	real twice = (incident->j * surface->j + incident->k * surface->k + incident->i * surface->i) * 2.0f;
 
-	markers[3].forward.i = incident->i - surface->i * twice;
-	markers[3].forward.j = incident->j - twice * surface->j;
-	markers[3].forward.k = incident->k - surface->k * twice;
+	/* marker 3 bounces the incoming direction off the surface; marker 1 is
+	   then made unit length */
+	vector3f const *incoming = &markers[1].forward;
+	vector3f *unit_direction = &markers[1].forward;
+	vector3f *bounce = &markers[3].forward;
+	vector3f const *surface_normal = &markers[0].forward;
+	real twice = (incoming->i * surface_normal->i +
+		(incoming->j * surface_normal->j + incoming->k * surface_normal->k)) * 2.0f;
 
-	normalize3d(incident);
+	bounce->i = incoming->i - surface_normal->i * twice;
+	bounce->j = incoming->j - surface_normal->j * twice;
+	bounce->k = incoming->k - surface_normal->k * twice;
+
+	normalize3d(unit_direction);
 	markers[0].forward = *normal;
 	markers[4].forward = *g_4687bc;
 	markers[5].forward = *g_4687b0;

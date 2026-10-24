@@ -106,12 +106,13 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 
 			if (joint_index == NONE)
 			{
-				joint_index = function_26e940(actor_index);
-				if (joint_index != NONE)
+				long allocated_index = function_26e940(actor_index);
+				if (allocated_index != NONE)
 				{
 					state->unknown0c = true;
-					state->element_index = joint_index;
+					state->element_index = allocated_index;
 				}
+				joint_index = allocated_index;
 			}
 
 			if (joint_index != NONE)
@@ -187,35 +188,18 @@ short __stdcall function_1b6450(long actor_index, s_slot *slot, bool active)
 	s_slot_25 *state = (s_slot_25 *)slot;
 	s_502424_element_25 *joint = (s_502424_element_25 *)element_502424_get(state->element_index);
 
+	bool finished = false;
+
 	if (joint->object_index == NONE)
-		goto done;
-	if (!joint->unknown80)
-		goto evaluate;
-	if (--state->unknown1c > 0)
-		goto leave;
-
-done:
-	result = g_46fbe4;
-	joint->unknown80 = true;
-	if (actor->prop_index != NONE)
+		finished = true;
+	else if (joint->unknown80)
 	{
-		s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
-
-		if (view)
-		{
-			if (joint->unknown90 != -1.0f)
-				view->unknown70 = joint->unknown94;
-			if (joint->unknownac != -1.0f)
-				view->unknown94 = joint->unknownb0;
-		}
+		if (--state->unknown1c <= 0)
+			finished = true;
 	}
-leave:
-	return result;
-
-evaluate:
+	else if (joint->unknown88 < g_510c54->game_time)
 	{
-		if (joint->unknown88 >= g_510c54->game_time)
-			goto leave;
+		bool found = false;
 
 		joint->unknown88 = g_510c54->game_time;
 		for (short i = 0; i < 10; i++)
@@ -228,32 +212,59 @@ evaluate:
 
 				if (other && other->unknown221 && actor->unknown009)
 				{
-					if (joint->unknown8c > 10 * g_510c54->field_2_3)
-						goto done;
-
-					joint->unknown8c++;
-					if (joint->state == 1 && !joint->unknown81 &&
-						function_26ba60(node->unknown08, actor_index, actor->unknown07c) &&
-						function_1fb7e0(0x4d, actor_index, NULL, joint->object_index, NONE))
-					{
-						joint->unknown81 = true;
-					}
-					goto leave;
+					found = true;
+					break;
 				}
 			}
 		}
-
-		s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
-
-		if (view && view->unknown70.unknown0 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
+		if (!found)
 		{
-			s_50241c_element_25 *element = element_50241c_25_get(node->unknown08);
+			s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
 
-			if (!element->unknown33)
-				element->unknown33 = function_1fb7e0(0x4f, actor_index, NULL, joint->object_index, NONE);
+			if (view && view->unknown70.unknown0 == 0 && function_26ba60(node->unknown08, actor_index, actor->unknown07c))
+			{
+				s_50241c_element_25 *element = element_50241c_25_get(node->unknown08);
+
+				if (!element->unknown33)
+					element->unknown33 = function_1fb7e0(0x4f, actor_index, NULL, joint->object_index, NONE);
+			}
+			finished = true;
+		}
+		else
+		{
+			if (joint->unknown8c > 10 * g_510c54->field_2_3)
+				finished = true;
+			else
+			{
+				joint->unknown8c++;
+				if (joint->state == 1 && !joint->unknown81 &&
+					function_26ba60(node->unknown08, actor_index, actor->unknown07c) &&
+					function_1fb7e0(0x4d, actor_index, NULL, joint->object_index, NONE))
+				{
+					joint->unknown81 = true;
+				}
+			}
 		}
 	}
-	goto done;
+
+	if (finished)
+	{
+		result = g_46fbe4;
+		joint->unknown80 = true;
+		if (actor->prop_index != NONE)
+		{
+			s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
+
+			if (view)
+			{
+				if (joint->unknown90 != -1.0f)
+					view->unknown70 = joint->unknown94;
+				if (joint->unknownac != -1.0f)
+					view->unknown94 = joint->unknownb0;
+			}
+		}
+	}
+	return result;
 }
 
 /* invites the clump members whose slot 0x22 is at the actor's prop */

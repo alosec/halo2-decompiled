@@ -196,9 +196,8 @@ void convex_vertices_2fd260::function_2fd260(__m128 const *direction, __m128 *su
 // @retail 0x2fd430
 void convex_vertices_2fd260::function_2fd430(unsigned short const *indices, int count, __m128 *vertices) const
 {
-	while (count > 0)
+	for (int remaining = count - 1; remaining >= 0; --remaining)
 	{
 		fetch_vertex(*indices++, vertices++);
-		--count;
 	}
 }

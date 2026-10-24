@@ -1026,136 +1026,103 @@ public:
 	virtual void v2();
 };
 
-struct s_query_attribute
-{
-	word id;
-	word unused;
-	long type;
-	union
-	{
-		long integer;
-		__int64 wide;
-	};
-};
-struct s_query_identity
-{
-	dword words[3];
-};
-struct s_query_operation
-{
-	word type;
-	byte unused02[6];
-	s_query_identity identity;
-	long player;
-	union
-	{
-		byte comparison;
-		long reference;
-	};
-	long count;
-	union
-	{
-		s_query_attribute attribute;
-		s_query_attribute *attributes;
-	};
-	byte unused30[0x88 - 0x30];
-};
 struct s_query_batch
 {
 	long attribute_count;
 	long unused04;
-	s_query_attribute attributes[224];
+	XONLINE_STAT attributes[224];
 	long operation_count;
 	long unused_e0c;
-	s_query_operation operations[1];
+	XONLINE_STAT_PROC operations[1];
 };
 
-static inline void query_attribute_set(s_query_attribute *attribute, word id, long value)
+static inline void query_stat_set(XONLINE_STAT *stat, word id, long value)
 {
-	attribute->id = id;
-	attribute->type = 1;
-	attribute->integer = value;
+	stat->wID = id;
+	stat->type = XONLINE_STAT_LONG;
+	stat->lValue = value;
 }
 
-static inline void query_compare_set(s_query_operation *operation, const s_query_identity *identity,
-	long player, byte comparison, const s_query_attribute *attribute)
+static inline void query_conditional_set(XONLINE_STAT_PROC *procedure, const XUID *xuid,
+	dword leaderboard, byte comparison, const XONLINE_STAT *stat)
 {
-	operation->type = 0x8007;
-	operation->identity = *identity;
-	operation->player = player;
-	operation->comparison = comparison;
-	operation->attribute = *attribute;
+	procedure->wProcedureID = XONLINE_STAT_PROCID_CONDITIONAL;
+	procedure->Conditional.xuid = *xuid;
+	procedure->Conditional.dwLeaderBoardID = leaderboard;
+	procedure->Conditional.bComparisonType = comparison;
+	procedure->Conditional.StatToCompare = *stat;
 }
 
-static inline void query_reference_set(s_query_operation *operation, const s_query_identity *identity,
-	long player, word type, long reference, long count, s_query_attribute *attributes)
+static inline void query_update_set(XONLINE_STAT_PROC *procedure, word procedure_id, const XUID *xuid,
+	dword leaderboard, dword conditional_index, dword stat_count, XONLINE_STAT *stats)
 {
-	operation->type = type;
-	operation->identity = *identity;
-	operation->player = player;
-	operation->reference = reference;
-	operation->count = count;
-	operation->attributes = attributes;
+	procedure->wProcedureID = procedure_id;
+	procedure->Update.dwConditionalIndex = conditional_index;
+	procedure->Update.dwLeaderBoardID = leaderboard;
+	procedure->Update.xuid = *xuid;
+	procedure->Update.dwNumStats = stat_count;
+	procedure->Update.pStats = stats;
 }
 
 // @retail 0x73e00
-s_query_batch *function_73e00(long lower, s_query_batch *batch, const s_query_identity *identity, long value1,
-	long value4, long value5, long value6, long upper, long count, const long *players)
+void function_73e00(long lower, s_query_batch *batch, const XUID *xuid, long value1,
+	long value4, long value5, long value6, long upper, long count, const long *leaderboards)
 {
 	long attribute_count = batch->attribute_count;
-	s_query_attribute *first = &batch->attributes[attribute_count];
-	first[0].id = 0xfffe;
-	first[0].type = 2;
-	first[0].wide = value1;
-	query_attribute_set(&first[1], 1, value1);
-	query_attribute_set(&first[2], 4, value4);
-	query_attribute_set(&first[3], 5, value5);
-	query_attribute_set(&first[4], 6, value6);
-	query_attribute_set(&first[5], 2, lower);
-	query_attribute_set(&first[6], 3, lower);
-	attribute_count += 7;
-	s_query_attribute *second = &batch->attributes[attribute_count];
-	second[0].id = 0xfffe;
-	second[0].type = 2;
-	second[0].wide = first[0].wide;
-	query_attribute_set(&second[1], 1, value1);
-	query_attribute_set(&second[2], 4, value4);
-	query_attribute_set(&second[3], 5, value5);
-	query_attribute_set(&second[4], 6, value6);
-	attribute_count += 5;
-	s_query_attribute *upper_first = &batch->attributes[attribute_count++];
-	query_attribute_set(upper_first, 2, upper);
-	s_query_attribute *upper_second = &batch->attributes[attribute_count++];
-	query_attribute_set(upper_second, 3, upper);
 	long operation_count = batch->operation_count;
-	s_query_operation *local_0 = &batch->operations[operation_count];
+	XONLINE_STAT *first = &batch->attributes[attribute_count];
+	first[0].wID = 0xfffe;
+	first[0].type = XONLINE_STAT_LONGLONG;
+	first[0].llValue = value1;
+	query_stat_set(&first[1], 1, value1);
+	query_stat_set(&first[2], 4, value4);
+	query_stat_set(&first[3], 5, value5);
+	query_stat_set(&first[4], 6, value6);
+	query_stat_set(&first[5], 2, lower);
+	query_stat_set(&first[6], 3, lower);
+	attribute_count += 7;
+	XONLINE_STAT *second = &batch->attributes[attribute_count];
+	second[0].wID = 0xfffe;
+	second[0].type = XONLINE_STAT_LONGLONG;
+	second[0].llValue = value1;
+	query_stat_set(&second[1], 1, value1);
+	query_stat_set(&second[2], 4, value4);
+	query_stat_set(&second[3], 5, value5);
+	query_stat_set(&second[4], 6, value6);
+	attribute_count += 5;
+	XONLINE_STAT *upper_first = &batch->attributes[attribute_count];
+	query_stat_set(upper_first, 2, upper);
+	attribute_count++;
+	XONLINE_STAT *upper_second = &batch->attributes[attribute_count];
+	query_stat_set(upper_second, 3, upper);
+	attribute_count++;
 	for (long i = 0; i < count; i++)
 	{
-		long player = players[i];
-		if (player != NONE)
+		long leaderboard = leaderboards[i];
+		if (leaderboard != NONE)
 		{
-			long first_reference = operation_count + 1;
-			long second_reference = operation_count + 2;
-			long third_reference = operation_count + 3;
-			query_compare_set(local_0++, identity, player, 7, first);
-			operation_count++;
-			query_compare_set(local_0++, identity, player, 6, upper_first);
-			operation_count++;
-			query_compare_set(local_0++, identity, player, 4, upper_second);
-			operation_count++;
-			query_reference_set(local_0++, identity, player, 0x8001, first_reference, 7, first);
-			operation_count++;
-			query_reference_set(local_0++, identity, player, 0x8001, second_reference, 1, upper_first);
-			operation_count++;
-			query_reference_set(local_0++, identity, player, 0x8001, third_reference, 1, upper_second);
-			operation_count++;
-			query_reference_set(local_0++, identity, player, 0x8003, second_reference, 5, second);
-			operation_count++;
+			// an update names its conditional by the conditional's one-based index
+			XONLINE_STAT_PROC *procedure = &batch->operations[operation_count];
+			long first_reference = ++operation_count;
+			query_conditional_set(procedure, xuid, leaderboard, XONLINE_STAT_COMPTYPE_NOT_EXISTS, first);
+			procedure = &batch->operations[operation_count];
+			long second_reference = ++operation_count;
+			query_conditional_set(procedure, xuid, leaderboard, XONLINE_STAT_COMPTYPE_EXISTS, upper_first);
+			procedure = &batch->operations[operation_count];
+			long third_reference = ++operation_count;
+			query_conditional_set(procedure, xuid, leaderboard, XONLINE_STAT_COMPTYPE_LESS, upper_second);
+			procedure = &batch->operations[operation_count++];
+			query_update_set(procedure, XONLINE_STAT_PROCID_UPDATE_REPLACE, xuid, leaderboard, first_reference, 7, first);
+			procedure = &batch->operations[operation_count++];
+			query_update_set(procedure, XONLINE_STAT_PROCID_UPDATE_REPLACE, xuid, leaderboard, second_reference, 1, upper_first);
+			procedure = &batch->operations[operation_count++];
+			query_update_set(procedure, XONLINE_STAT_PROCID_UPDATE_REPLACE, xuid, leaderboard, third_reference, 1, upper_second);
+			procedure = &batch->operations[operation_count++];
+			query_update_set(procedure, XONLINE_STAT_PROCID_UPDATE_INCREMENT, xuid, leaderboard, second_reference, 5, second);
 		}
 	}
 	batch->operation_count = operation_count;
 	batch->attribute_count = attribute_count;
-	return batch;
 }
 
 // @retail 0x737a0
@@ -1373,7 +1340,7 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 long third = *(const word *)(stats + 8) & 0x7fff;
                 long first = *(const word *)stats & 0x7fff;
                 long second = *(const word *)(stats + 6) & 0x7fff;
-                const s_query_identity *identity = (const s_query_identity *)((const byte *)player + 2);
+                const XUID *identity = (const XUID *)((const byte *)player + 2);
                 for (long group = 0; group < 5; group++)
                 {
                     if (g_509454[group].players[key].state == 3 &&
@@ -1448,7 +1415,7 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
             if (i >= count)
                 break;
             const s_match_rating_entry *team = (const s_match_rating_entry *)(local_2 - 4);
-            const s_query_identity *identity = (const s_query_identity *)team->unknown0c;
+            const XUID *identity = (const XUID *)team->unknown0c;
             if (team->active && memcmp(identity, g_440070, 12) != 0 &&
                 team->skill != NONE && team->value != NONE)
             {

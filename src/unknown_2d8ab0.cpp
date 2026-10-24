@@ -47,8 +47,8 @@ public:
 };
 
 // the labels that open and close a saved stream
-char const *g_461e14 = "Ii";
-char const *g_461e18 = "Fd";
+static char const *g_461e14 = "Ii";
+static char const *g_461e18 = "Fd";
 
 class c_2d8ab0 : public strings_2d89d0
 {
@@ -86,10 +86,10 @@ void c_2d8ab0::function_2d8ab0()
 			break;
 		case 'L':
 		{
-			// two strings, one after the other
-			unsigned int first = string_length_2d8d80(label);
-			unsigned int second = string_length_2d8d80(*(char const **)mark + first + 1);
-			unsigned int total = first + second + 2;
+			// two strings, one after the other: the length of both and of
+			// the two bytes between them
+			int total = string_length_2d8d80(label);
+			total += string_length_2d8d80(*(char const **)mark + total + 1) + 2;
 			function_2d89d0(*(char const **)mark, total);
 			mark += 12;
 			break;
@@ -99,6 +99,10 @@ void c_2d8ab0::function_2d8ab0()
 			mark += 8;
 			break;
 		case 'P':
+			// a push mark (retail has a block of its own for each of the two)
+			function_2d89d0(label, 0);
+			mark += 4;
+			break;
 		case 'p':
 			function_2d89d0(label, 0);
 			mark += 4;

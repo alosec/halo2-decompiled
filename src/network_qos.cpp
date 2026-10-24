@@ -162,9 +162,10 @@ void qos_release(long handle)
 	}
 }
 
-/* whether no target of a probe is still pending */
+/* whether no target of a probe is still pending (inline: 0xb3200 inlines
+   it, its other callers call it) */
 // @retail 0x7b6c0
-bool qos_is_complete(long handle)
+inline bool qos_is_complete(long handle)
 {
 	bool result = true;
 

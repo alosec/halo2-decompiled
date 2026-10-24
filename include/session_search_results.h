@@ -8,6 +8,7 @@
 #define SESSION_SEARCH_RESULTS_H
 
 #include "unknown_11c920.h"
+#include "network_qos.h"
 #include <xtl.h>
 #include <stddef.h>
 
@@ -30,7 +31,10 @@ struct s_0b35e0_entry
 	XNKEY key;
 	XNADDR address;
 	bool reply_received;       /* set on every system link reply */
-	byte unknown45[0x6c - 0x45];
+	bool qos_valid;            /* the QoS probe of a Live result gave its result */
+	byte unknown46[2];
+	long qos_status;           /* the last status of the Live result's QoS probe */
+	s_qos_result qos;          /* that result (its data is the session description) */
 	bool description_changed;  /* set when a reply brings a different description */
 	byte unknown6d[3];
 	struct
@@ -45,6 +49,7 @@ typedef char assert_0b35e0_entry_time_found[(offsetof(s_0b35e0_entry, time_found
 typedef char assert_0b35e0_entry_session_id[(offsetof(s_0b35e0_entry, session_id) == 8) ? 1 : -1];
 typedef char assert_0b35e0_entry_key[(offsetof(s_0b35e0_entry, key) == 0x10) ? 1 : -1];
 typedef char assert_0b35e0_entry_address[(offsetof(s_0b35e0_entry, address) == 0x20) ? 1 : -1];
+typedef char assert_0b35e0_entry_qos[(offsetof(s_0b35e0_entry, qos) == 0x4c) ? 1 : -1];
 typedef char assert_0b35e0_entry_description[(offsetof(s_0b35e0_entry, description) == 0x70) ? 1 : -1];
 typedef char assert_0b35e0_entry_kind[(offsetof(s_0b35e0_entry, description.kind) == 0x72) ? 1 : -1];
 

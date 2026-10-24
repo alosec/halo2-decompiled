@@ -46,11 +46,8 @@ PRIVATE inline long swizzle_log2(dword value)
 	long result = 0;
 	if (value > 0)
 	{
-		while (value != 1)
-		{
-			value >>= 1;
+		while ((value >>= 1) != 0)
 			++result;
-		}
 	}
 	return result;
 }

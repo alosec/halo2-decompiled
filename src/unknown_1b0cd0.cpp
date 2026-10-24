@@ -472,12 +472,11 @@ void __stdcall function_1b1a90(long actor_index, s_slot *slot, s_slot_target_lis
 		}
 		if (actor->unknown086 >= 7)
 		{
-			if (state->position_index != NONE)
-			{
-				short mode = list->mode;
+			short mode = list->mode;
+			long index = state->position_index;
 
-				actor->unknown488 = function_1b1970(actor_index, mode, &forward, &left, state->position_index);
-			}
+			if (index != NONE)
+				actor->unknown488 = function_1b1970(actor_index, mode, &forward, &left, index);
 			else
 				actor->unknown488 = false;
 			actor->unknown41c = 3;

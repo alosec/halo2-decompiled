@@ -101,9 +101,6 @@ bool function_244980(long cluster_index, point3f const *point, vector3f const *v
         s_244980_workspace workspace;
         s_244980_ray ray;
         s_244980_output output;
-        end.x = point->x + vector->i;
-        end.y = point->y + vector->j;
-        end.z = point->z + vector->k;
         ray.field_24 = 0;
         output.field_0c = 0;
         output.index = NONE;
@@ -116,10 +113,13 @@ bool function_244980(long cluster_index, point3f const *point, vector3f const *v
         output.workspace = &workspace;
         c_244c10 callback;
         workspace.minimum.m_quad = _mm_setzero_ps();
-        workspace.minimum.m_quad.m128_f32[3] = 1e30f;
         workspace.maximum.m_quad = _mm_setzero_ps();
+        end.y = point->y + vector->j;
+        end.z = point->z + vector->k;
+        workspace.minimum.m_quad.m128_f32[3] = 1e30f;
         workspace.maximum.m_quad.m128_f32[3] = 1e30f;
         callback.field_04 = ((real *)result)[1];
+        end.x = point->x + vector->i;
         callback.field_1c = result;
         callback.field_08 = flags;
         ray.first.m_quad.m128_f32[0] = point->x;

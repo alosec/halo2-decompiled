@@ -199,9 +199,10 @@ short function_b8d30(long object_index, long marker_name, s_object_marker *marke
         markers->unknown6c = 0.0f;
         if (TEST_FIELD_BIT(object->mirrored))
         {
-            markers->matrix.rotation.left.i = 0.0f - markers->matrix.rotation.left.i;
-            markers->matrix.rotation.left.j = 0.0f - markers->matrix.rotation.left.j;
-            markers->matrix.rotation.left.k = 0.0f - markers->matrix.rotation.left.k;
+            vector3f const *left = &markers->matrix.rotation.left;
+            markers->matrix.rotation.left.i = 0.0f - left->i;
+            markers->matrix.rotation.left.j = 0.0f - left->j;
+            markers->matrix.rotation.left.k = 0.0f - left->k;
         }
         if (!marker_name)
             result = 1;
@@ -222,19 +223,16 @@ void __stdcall function_b9b90(long object_index, bool disable)
 		word disabled : 1;
 		unsigned short : 7;
 	};
-	s_object_header_view *header = OBJECT_HEADER_GET(object_index);
-	s_object_view *object = header->object;
-	dword const &type = header->type;
-	dword type_mask = 1 << type;
-	long component_index = object->havok_component_index;
+	s_object_view *object = OBJECT_GET(object_index);
+	long type = OBJECT_HEADER_GET(object_index)->type;
 
-	if ((type_mask & 0x1883) &&
+	if (((1 << type) & 0x1883) &&
 		TEST_FIELD_BIT(((s_physics_flags *)((byte *)object + 0xc0))->active) &&
-		component_index != NONE)
+		object->havok_component_index != NONE)
 	{
 		if (!disable)
 		{
-			havok_component_rigid_bodies_activate(havok_component_get(component_index));
+			havok_component_rigid_bodies_activate(havok_component_get(object->havok_component_index));
 		}
 		else
 			goto update;
@@ -248,13 +246,13 @@ void __stdcall function_b9b90(long object_index, bool disable)
 	function_b7360(object_index);
 
 update:
-	if (type_mask & 0x1c)
+	if ((1 << type) & 0x1c)
 	{
 		s_object_view *item = OBJECT_GET(object_index);
 		if (item->field_x10a40f != NONE)
 			function_b58c0(item->field_x10a40f, 0x400);
 	}
-	else if (type_mask & 0x20)
+	else if ((1 << type) & 0x20)
 	{
 		s_object_view *projectile = OBJECT_GET(object_index);
 		if (projectile->field_x10a40f != NONE)

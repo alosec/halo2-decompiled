@@ -596,6 +596,8 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
  point3f const *position, real radius, vector3f const *direction, long unit_index, long ignore_index);
 void obstacle_list_group(s_obstacle_list *obstacles, real radius);
 
+bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center, long object_index, real radius);
+
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,
@@ -804,11 +806,8 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
      for (short i = 0; i < obstacles->count; ++i)
      {
       s_obstacle *entry = &obstacles->obstacles[i];
-      if (entry->group != ignored || blocking.count == 64) continue;
-      s_obstacle *copy = &blocking.obstacles[blocking.count++];
-      if (entry->flags & 1) ++blocking.flag0_count;
-      if (entry->flags & 8) ++blocking.flag3_count;
-      *copy = *entry; copy->group = NONE;
+      if (entry->group != ignored) continue;
+      obstacle_list_add(&blocking, entry->flags, &entry->center, entry->object_index, entry->radius);
      }
     }
     for (short i = first_output; i < *out_count; ++i)

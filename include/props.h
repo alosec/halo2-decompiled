@@ -61,7 +61,9 @@ struct s_type_f95cd3
 	bool unknown2a;
 	byte unknown2b[0x39 - 0x2b];
 	char unknown39;
-	byte unknown3a[0x4c - 0x3a];
+	byte unknown3a[2];
+	real unknown3c;
+	byte unknown40[0x4c - 0x40];
 	bool unknown4c;
 	byte unknown4d[3];
 	long unknown50;
@@ -94,6 +96,7 @@ struct s_type_f95cd3
 	point3f unknowna4;
 	long unknownb0;
 };
+typedef char assert_type_f95cd3_unknown3c[((long)&((s_type_f95cd3 *)0)->unknown3c == 0x3c) ? 1 : -1];
 
 /* a "prop" element (0xc4 bytes) */
 struct s_type_76cf92
@@ -101,11 +104,14 @@ struct s_type_76cf92
 	short salt;
 	byte unknown02[2];
 	short unknown04;
-	byte unknown06[0x10 - 0x6];
+	byte unknown06[2];
+	long object_index;
+	byte unknown0c[4];
 	long unknown10;
-	byte unknown14[0x1c - 0x14];
+	long next_index;
+	long first_node_index;
 	long actor_index;
-	byte unknown20[2];
+	short team;
 	bool unknown22;
 	bool unknown23;
 	bool unknown24;
@@ -121,6 +127,8 @@ struct s_type_76cf92
 	byte unknown3d[0x58 - 0x3d];
 	s_type_5cfb45 state;
 };
+typedef char assert_type_76cf92_team[((long)&((s_type_76cf92 *)0)->team == 0x20) ? 1 : -1];
+typedef char assert_type_76cf92_size[(sizeof(s_type_76cf92) == 0xc4) ? 1 : -1];
 
 /* a "prop_ref" element (0x3c bytes): an actor's reference to a prop */
 struct s_prop_datum

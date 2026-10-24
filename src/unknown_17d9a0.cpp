@@ -114,15 +114,17 @@ struct s_decal_quad_17d9a0
 
 short function_120850(vector3f const *v);
 
-PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, real x, real y, s_decal_quad_17d9a0 *quad, point2f *out)
+PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, real const *x, real const *y, s_decal_quad_17d9a0 *quad, point2f *out)
 {
 	point3f point;
-	point.x = matrix->forward.i * x + matrix->left.i * y + matrix->position.x;
-	point.y = matrix->left.j * y + matrix->forward.j * x + matrix->position.y;
-	point.z = matrix->forward.k * x + matrix->left.k * y + matrix->position.z;
+	point.x = matrix->forward.i * *x + matrix->left.i * *y + matrix->position.x;
+	point.y = matrix->left.j * *y + matrix->forward.j * *x + matrix->position.y;
+	point.z = matrix->forward.k * *x + matrix->left.k * *y + matrix->position.z;
 	short const *axes = g_440b94[quad->axis * 2 + quad->positive];
-	out->x = ((real const *)&point)[axes[0]];
-	out->y = ((real const *)&point)[axes[1]];
+	short horizontal_axis = axes[0];
+	short vertical_axis = axes[1];
+	out->x = ((real const *)&point)[horizontal_axis];
+	out->y = ((real const *)&point)[vertical_axis];
 }
 
 // @retail 0x17d9a0
@@ -135,18 +137,19 @@ void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_qu
 	quad->axis = function_120850(&quad->plane.n);
 	quad->positive = ((real const *)&quad->plane.n)[quad->axis] > 0.0f;
 	point2f *corners = quad->corners;
-	decal_project_corner_17d9a0(matrix, bounds[0], bounds[2], quad, &corners[0]);
-	decal_project_corner_17d9a0(matrix, bounds[1], bounds[2], quad, &corners[1]);
-	decal_project_corner_17d9a0(matrix, bounds[1], bounds[3], quad, &corners[2]);
-	decal_project_corner_17d9a0(matrix, bounds[0], bounds[3], quad, &corners[3]);
+	decal_project_corner_17d9a0(matrix, &bounds[0], &bounds[2], quad, &corners[0]);
+	decal_project_corner_17d9a0(matrix, &bounds[1], &bounds[2], quad, &corners[1]);
+	decal_project_corner_17d9a0(matrix, &bounds[1], &bounds[3], quad, &corners[2]);
+	decal_project_corner_17d9a0(matrix, &bounds[0], &bounds[3], quad, &corners[3]);
 	quad->edges[0].i = corners[1].x - corners[0].x;
 	quad->edges[0].j = corners[1].y - corners[0].y;
 	quad->edges[1].i = corners[3].x - corners[0].x;
 	quad->edges[1].j = corners[3].y - corners[0].y;
-	quad->inverse_determinant = 0.0f;
+	real inverse = 0.0f;
 	if (quad->edges[0].i * quad->edges[0].i + quad->edges[0].j * quad->edges[0].j > 0.0001f &&
 		quad->edges[1].i * quad->edges[1].i + quad->edges[1].j * quad->edges[1].j > 0.0001f)
-		quad->inverse_determinant = 1.0f / (quad->edges[1].j * quad->edges[0].i - quad->edges[0].j * quad->edges[1].i);
+		inverse = 1.0f / (quad->edges[1].j * quad->edges[0].i - quad->edges[0].j * quad->edges[1].i);
+	quad->inverse_determinant = inverse;
 }
 
 struct s_decal_mesh_edge

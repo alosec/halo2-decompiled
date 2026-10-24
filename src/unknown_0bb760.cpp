@@ -482,7 +482,7 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                 long variant = 0;
                 real weight = 0.0f;
                 real index = (real)i;
-                real seed = (real)fabs(*(real *)(object + 0x6c) * 744.1241455078125f + *(real *)(object + 0x64) * 315.89312744140625f + index * 431.1289367675781f + *(real *)(object + 0x68) * 587.1294555664062f);
+                real seed = (real)fabs((*(real *)(object + 0x6c) * 744.1241455078125f + *(real *)(object + 0x64) * 315.89312744140625f + index * 431.1289367675781f) + *(real *)(object + 0x68) * 587.1294555664062f);
                 real selection = (real)fmod((double)seed, 1.0);
                 seed = (real)fabs(index * 0.7121099829673767f + *(real *)(object + 0x68));
                 real blend = (real)fmod((double)seed, 1.0);

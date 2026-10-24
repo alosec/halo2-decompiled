@@ -235,8 +235,7 @@ void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point
 			target->priority = i;
 			target->cluster = choice->cluster;
 			target->source = choice->source;
-			real fade_time = definitions[choice->source].fade_time;
-			target->step = elapsed / (fabs(fade_time) < 0.0001f ? 2.0f : fade_time);
+			target->step = elapsed / (fabs(definitions[choice->source].fade_time) < 0.0001f ? 2.0f : definitions[choice->source].fade_time);
 			target->muted = choice->muted;
 		}
 		if (inside && choice_count) primary = choices[0].source;
@@ -316,8 +315,7 @@ void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point
 		long index = (sound->salt << 16) | scan_index;
 		if (sound->type == 0 && sound->source != NONE && !(bool)(((dword)sound->flags >> 9) & 1))
 		{
-			real time = definitions[sound->source].fade_time;
-			real step = elapsed / (fabs(time) < 0.0001f ? 2.0f : time);
+			real step = elapsed / (fabs(definitions[sound->source].fade_time) < 0.0001f ? 2.0f : definitions[sound->source].fade_time);
 			real gain = loop_path_linear(sound->decibels);
 			gain += loop_path_pin(0.0f - gain, -step, step);
 			sound->gain += loop_path_pin(0.0f - sound->gain, -step, step);

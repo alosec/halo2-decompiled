@@ -10,6 +10,7 @@
 #include "online_attributes.h"
 #include "unknown_07aec0.h"
 #include "network_qos.h"
+#include "session_search_results.h"
 #include <xtl.h>
 #include <string.h>
 
@@ -284,6 +285,7 @@ long online_task_poll(long task_index);
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 long qos_target_status(long handle, long index);
 bool session_description_decode_buffer(byte const *data, long size, void *description);
+bool qos_is_complete(long handle);
 
 PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
 {
@@ -303,9 +305,8 @@ PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
 }
 
 // @retail 0xb3200
-// score 73 (was 73): the count, the loop index and the entry pointer take the
-// three frame slots in the other order, and retail reads the qos result fields
-// through the entry pointer instead of keeping the result in ebp
+// score 2 (was 73): retail sets up the qos result argument before it pushes the
+// target index, as when qos_target_result takes the index before the result
 void function_b3200(void)
 {
 	union
@@ -366,29 +367,30 @@ void function_b3200(void)
 		for (long i = 0; i < count; i++)
 		{
 			long status = qos_target_status(g_4d8ef4, i);
-			byte *entry = (byte *)g_4d8efc + i * 0x784;
-			if (status != *(long *)(entry + 0x48))
+			s_0b35e0_entry *entry = (s_0b35e0_entry *)((byte *)g_4d8efc + i * 0x784);
+			if (status != entry->qos_status)
 			{
-				*(long *)(entry + 0x48) = status;
+				entry->qos_status = status;
 				if (status == 2 || status == 5)
 				{
-					entry[0x44] = true;
-					s_qos_result *result = (s_qos_result *)(entry + 0x4c);
-					entry[0x45] = qos_target_result(g_4d8ef4, result, i);
-					if (entry[0x45] && result->data_size > 0 && session_description_decode_buffer(result->data, result->data_size, description))
+					entry->reply_received = true;
+					entry->qos_valid = qos_target_result(g_4d8ef4, &entry->qos, i);
+					if (entry->qos_valid && entry->qos.data_size > 0)
 					{
-						memcpy(entry + 0x70, description, sizeof(description));
-						entry[0x6c] = true;
+						if (session_description_decode_buffer(entry->qos.data, entry->qos.data_size, description))
+						{
+							memcpy(&entry->description, description, sizeof(description));
+							entry->description_changed = true;
+						}
+						entry->qos.data_size = 0;
+						entry->qos.data = NULL;
 					}
-					result->data_size = 0;
-					result->data = NULL;
 				}
 				else if (status == 4)
-					entry[0x44] = true;
+					entry->reply_received = true;
 			}
 		}
-		lookup = search_qos_handle(g_4d8ef4);
-		if (!lookup || lookup->qos->cxnqosPending == 0)
+		if (qos_is_complete(g_4d8ef4))
 		{
 			if (g_4d8ef4 != NONE)
 			{

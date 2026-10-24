@@ -42,7 +42,9 @@ long function_19ec40(
 				{
 					real distance_squared;
 
-					if (*point_reference)
+					if (!*point_reference)
+						distance_squared = 0.0f;
+					else
 					{
 						point3f position = g_4e0350->marker_entries[i].position;
 						distance_squared = distance_sq3f(&position, point);
@@ -51,8 +53,6 @@ long function_19ec40(
 						if (height > 0.0f && fabs(entry->position.z - point->z) > height)
 							continue;
 					}
-					else
-						distance_squared = 0.0f;
 
 					if (count < maximum_count)
 						results[count++] = i;

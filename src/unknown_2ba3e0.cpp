@@ -232,29 +232,29 @@ void function_2ba3a0(s_particle_entry_group_2ba const *group, long first,
 // @retail 0x2ba100
 void function_2ba100(s_particle_properties_2ba const *definition, void *system, long first, real scale)
 {
-    dword remaining = definition->constant_mask;
     s_particle_property_entry_2ba *properties = definition->properties;
     long next = first;
-    dword valid = 0;
-    void *current_system = 0;
-    void *current_emitter = 0;
-    s_particle_2b96 *current_particle = 0;
+    s_particle_cache_2ba cache;
+    cache.valid = 0;
+    cache.current_system = 0;
+    cache.current_emitter = 0;
+    cache.current_particle = 0;
     real properties_values[3] = { 0.0f, 0.0f, 0.0f };
-    real values[17];
+    dword remaining = definition->constant_mask;
     if (system)
     {
-        current_system = system;
-        valid = 0;
+        cache.current_system = system;
+        cache.valid = 0;
     }
     dword requested = definition->input_mask & 0x107f0;
-    function_173ba0(requested, current_system, current_emitter, current_particle, values);
-    valid |= requested;
+    function_173ba0(requested, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
+    cache.valid |= requested;
     for (dword i = 0; i < 3 && remaining; ++i)
     {
         dword bit = 1 << i;
         if (remaining & bit)
         {
-            properties_values[i] = function_246cd0(&properties[i].property, values);
+            properties_values[i] = function_246cd0(&properties[i].property, cache.values);
             remaining &= ~bit;
         }
     }
@@ -264,22 +264,23 @@ void function_2ba100(s_particle_properties_2ba const *definition, void *system, 
         next = particle->next;
         if (!(*((byte *)particle + 2) & 9) && *(real *)((byte *)particle + 8) <= 1.0f)
         {
-            if (particle != current_particle)
+            if (particle != cache.current_particle)
             {
-                current_particle = particle;
-                valid &= 0xffff07f0;
+                cache.current_particle = particle;
+                cache.valid &= 0xffff07f0;
             }
             requested = definition->input_mask & 0xf80f;
-            function_173ba0(requested & ~valid, current_system, current_emitter, current_particle, values);
-            valid |= requested;
+            function_173ba0(requested & ~cache.valid, cache.current_system, cache.current_emitter, cache.current_particle, cache.values);
+            cache.valid |= requested;
             for (dword j = 0; j < 3; ++j)
             {
                 if (!(definition->constant_mask & (1 << j)))
-                    properties_values[j] = function_246cd0(&properties[j].property, values);
+                    properties_values[j] = function_246cd0(&properties[j].property, cache.values);
             }
+            long wind_index = NONE;
             short cluster = *(short *)((byte *)system + 0x20);
-            long wind_index = cluster == NONE ? NONE :
-                *(short *)(*(byte **)((byte *)g_4e0348 + 0xa0) + cluster * 0xb0 + 0x76);
+            if (cluster != NONE)
+                wind_index = *(short *)(*(byte **)((byte *)g_4e0348 + 0xa0) + cluster * 0xb0 + 0x76);
             vector3f wind;
             function_211b70(wind_index, particle->position.n, 8, &wind);
             real time = g_510c54->game_time * g_510c54->rate;

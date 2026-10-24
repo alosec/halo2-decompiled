@@ -909,12 +909,10 @@ long players_list_add_message_senders(XUID const *excluded, long excluded_count)
 	long i;
 
 	online_messages_enumerate(g_global_4acf62.controller_index, messages, &message_count);
-	for (i = 0; i < message_count; i++)
+	for (i = 0; i < message_count && added_count < 20; i++)
 	{
 		s_entry *message = &messages[i];
 
-		if (added_count >= 20)
-			break;
 		if (TEST_FIELD_BIT(message->flag_bits.flag12))
 		{
 			XUID *xuid = message_entry_get_xuid(*(s_entry *volatile *)&message);

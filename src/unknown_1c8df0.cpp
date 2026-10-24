@@ -27,7 +27,7 @@ extern vector3f *g_4687bc;
 short __stdcall function_1c8df0(long arg_0, point3f const *arg_4, short arg_3, short arg_2,
  void const *arg_1, long arg_5, bool arg_6, bool arg_7, bool arg_8, long *arg_9)
 {
- short local_0;
+ long category;
  real local_1;
  long local_2 = NONE;
  point3f const *local_3 = (point3f const *)arg_1;
@@ -35,12 +35,11 @@ short __stdcall function_1c8df0(long arg_0, point3f const *arg_4, short arg_3, s
   *arg_9 = NONE;
  if (arg_2 != NONE && arg_3 != NONE && !(char)function_11c010(arg_2, arg_3))
  {
-  local_0 = 4;
+  category = 4;
   local_1 = 0.0f;
  }
  else
  {
-  vector3f local_5;
   s_collision_result_1697c0 local_6;
   local_6.field_24 = NONE;
   long local_4 = arg_8 ? 0x15808c2f : 0x5808c2f;
@@ -50,6 +49,7 @@ short __stdcall function_1c8df0(long arg_0, point3f const *arg_4, short arg_3, s
    local_4 &= ~0x20;
   bool local_7;
   {
+   vector3f local_5;
    vector3d_from_points3d(local_3, arg_4, &local_5);
    if (!function_1697c0(local_4, local_3, &local_5, arg_0, NONE, &local_6))
     local_7 = true;
@@ -84,20 +84,20 @@ short __stdcall function_1c8df0(long arg_0, point3f const *arg_4, short arg_3, s
     local_10.z = local_3->z - local_8.k * spacing;
     if (local_7)
     {
-     if (function_16a040(local_4, &local_9, arg_4, arg_0, NONE, &local_6) ||
-         function_16a040(local_4, &local_10, arg_4, arg_0, NONE, &local_6))
+     category = function_16a040(local_4, &local_9, arg_4, arg_0, NONE, &local_6);
+     if (category == 0)
+      category = function_16a040(local_4, &local_10, arg_4, arg_0, NONE, &local_6);
+     if (category != 0)
      {
-      local_1 = local_6.field_4;
       local_2 = local_6.field_40;
-      local_0 = 1;
-      goto local_14;
+      local_1 = local_6.field_4;
      }
     }
-    else if (!function_16a040(local_4, &local_9, arg_4, arg_0, NONE, &local_6) ||
-             !function_16a040(local_4, &local_10, arg_4, arg_0, NONE, &local_6))
+    else
     {
-     local_0 = 1;
-     goto local_14;
+     category = !function_16a040(local_4, &local_9, arg_4, arg_0, NONE, &local_6);
+     if (category == 0)
+      category = !function_16a040(local_4, &local_10, arg_4, arg_0, NONE, &local_6);
     }
    }
    else if (local_7)
@@ -114,42 +114,49 @@ short __stdcall function_1c8df0(long arg_0, point3f const *arg_4, short arg_3, s
     local_11.x = arg_4->x + g_4687bc->i * 0.1f;
     local_11.y = arg_4->y + g_4687bc->j * 0.1f;
     local_11.z = arg_4->z + g_4687bc->k * 0.1f;
-    if (function_16a040(local_4, &local_9, local_3, arg_0, NONE, &local_6) ||
-        function_16a040(local_4, &local_10, local_3, arg_0, NONE, &local_6) ||
-        function_16a040(local_4, &local_11, local_3, arg_0, NONE, &local_6))
+    category = function_16a040(local_4, &local_9, local_3, arg_0, NONE, &local_6);
+    if (category == 0)
+     category = function_16a040(local_4, &local_10, local_3, arg_0, NONE, &local_6);
+    if (category == 0)
+     category = function_16a040(local_4, &local_11, local_3, arg_0, NONE, &local_6);
+    if (category != 0)
     {
-     local_1 = local_6.field_4;
      local_2 = local_6.field_40;
-     local_0 = 1;
-     goto local_14;
+     local_1 = local_6.field_4;
     }
+   }
+   else
+    category = 0;
+   if (category != 0)
+   {
+    goto local_14;
    }
 #pragma inline_depth()
   }
   if (local_7)
-   local_0 = 0;
+   category = 0;
   else
   {
    vector3f local_13;
    vector3d_from_points3d(local_3, arg_4, &local_13);
    real local_12 = magnitude3d(&local_13);
    if (local_12 < 1.0f)
-    local_0 = 4;
+    category = 4;
    else if (local_12 * local_1 < 1.0f)
-    local_0 = 2;
+    category = 2;
    else if (!arg_8 && (1.0f - local_1) * local_12 < 4.0f)
-    local_0 = 3;
+    category = 3;
    else
-    local_0 = 4;
+    category = 4;
   }
  }
 local_14:
- if (arg_9 && !arg_8 && local_0 >= 1)
+ if (arg_9 && !arg_8 && category >= 1)
  {
   vector3f local_15;
   vector3d_from_points3d(local_3, arg_4, &local_15);
   if ((1.0f - local_1) * magnitude3d(&local_15) < 4.0f)
    *arg_9 = local_2;
  }
- return local_0;
+ return category;
 }

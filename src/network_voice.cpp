@@ -2936,12 +2936,12 @@ long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, b
 {
  if (voice_packet_clamp_count(data[1], 1, 16) != data[1])
   return NONE;
- byte *packet = data + 2;
+ long packet_size = relay ? 13 : 11;
  size -= 2;
  long consumed = 2;
- long packet_size = relay ? 13 : 11;
  for (long i = 0; i < data[1]; i++)
  {
+  byte *packet = data + consumed;
   if (size < packet_size) return NONE;
   if (relay)
   {
@@ -2971,7 +2971,7 @@ long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, b
   else
   {
    if (packet[0] >= 2) return NONE;
-   if (voice_available() && voice_xhv_has_remote_talker(&g_476fc8, channel->index))
+   if (voice_has_remote_talker_inlined(channel->index))
    {
     function_56df0(&g_527104.settings, channel->index, packet[0]);
     voice_submit_incoming_packet(channel->index, packet + 1, 10);
@@ -2979,7 +2979,6 @@ long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, b
   }
   size -= packet_size;
   consumed += packet_size;
-  packet += packet_size;
  }
  return consumed;
 }

@@ -365,104 +365,110 @@ PRIVATE void __stdcall function_1df9c0(s_type_e695f2 *volatile allegiance, bool 
 
 #include "data_array.h"
 #include "unknown_1fb7e0.h"
+#include "unknown_26b230.h"
+#include "props.h"
 
-struct s_1c9830
-{
- byte field_0[0x12];
- short field_12;
- long field_14;
- byte field_18[0x50 - 0x18];
-};
-struct s_1c9831
-{
- byte field_0[8];
- long field_8;
- byte field_c[8];
- long field_14;
- long field_18;
- byte field_1c[4];
- short field_20;
- byte field_22;
- bool field_23;
- bool field_24;
- byte field_25[0x3c - 0x25];
- bool field_3c;
- byte field_3d[0xc4 - 0x3d];
-};
-struct s_1c9832
-{
- long field_0;
- long field_4;
- byte field_8[0x14 - 8];
- long field_14;
- byte field_18[0x34 - 0x18];
- long field_34;
- long field_38;
-};
-struct s_1c9833
-{
- byte field_0[0x70];
- byte field_70[0x124 - 0x70];
-};
-struct s_1c9834
-{
- s_1c9830 *field_0;
- s_record_pool_iterator field_4;
-};
 real __stdcall function_265d30(long actor_index, long prop_index);
 
-// @retail 0x1c9830
-void __stdcall function_1c9830(short arg_0, short arg_1, bool arg_2, bool arg_3)
+/* the iterators of unknown_26b230.cpp (clump_next_prop and clump_next_node
+   are copies of its own); this one also keeps the clump's datum index */
+struct s_indexed_clump_walk
 {
- if (g_4f55d0->active)
- {
-  s_1c9834 local_0;
-  local_0.field_4.data = g_502420;
-  local_0.field_4.index = NONE;
-  while (g_4f55d0->active)
-  {
-   local_0.field_0 = (s_1c9830 *)data_iterator_next_calling(&local_0.field_4);
-   if (!local_0.field_0)
-    break;
-   short local_1;
-   if (local_0.field_0->field_12 == arg_0)
-    local_1 = arg_1;
-   else if (local_0.field_0->field_12 == arg_1)
-    local_1 = arg_0;
-   else
-    continue;
-   if (local_1 == NONE)
-    continue;
-   long local_2 = ((s_1c9830 *)g_502420->data)[local_0.field_4.datum_index & 0xffff].field_14;
-   while (local_2 != NONE)
-   {
-    s_1c9831 *local_3 = &((s_1c9831 *)g_50241c->data)[local_2 & 0xffff];
-    long local_4 = local_2;
-    local_2 = local_3->field_14;
-    if (local_3->field_20 != local_1)
-     continue;
-    if (!arg_3)
-     local_3->field_24 = true;
-    local_3->field_23 = arg_2;
-    local_3->field_3c = true;
-    if (!arg_2 && !arg_3)
-     function_20ba60(0xc4, local_3->field_8, NONE, NONE, NONE, NULL);
-    if (local_3->field_23)
-    {
-     long local_5 = ((s_1c9831 *)g_50241c->data)[local_4 & 0xffff].field_18;
-     while (local_5 != NONE)
-     {
-      s_1c9832 *local_6 = &((s_1c9832 *)g_502418->data)[local_5 & 0xffff];
-      long local_7 = local_5;
-      local_5 = local_6->field_34;
-      s_1c9833 *local_8 = local_6->field_14 == NONE ? NULL :
-       &((s_1c9833 *)g_502414->data)[local_6->field_14 & 0xffff];
-      byte *local_9 = local_8 ? local_8->field_70 : NULL;
-      if (local_9 && local_3->field_23)
-       *(real *)(local_9 + 0x3c) = function_265d30(local_6->field_4, local_7);
-     }
-    }
-   }
-  }
- }
+	s_clump *clump;
+	s_record_pool_iterator pool;
+	long clump_index;
+};
+
+PRIVATE __forceinline bool indexed_clump_walk_next(s_indexed_clump_walk *iterator)
+{
+	s_clump *result = NULL;
+	if (g_4f55d0->active)
+	{
+		result = (s_clump *)data_iterator_next_calling(&iterator->pool);
+		iterator->clump_index = iterator->pool.datum_index;
+	}
+	iterator->clump = result;
+	return result != NULL;
+}
+
+PRIVATE __forceinline s_type_76cf92 *clump_next_prop(s_iterator *iterator)
+{
+	s_type_76cf92 *prop = NULL;
+	long index = iterator->next;
+	if (index != NONE)
+	{
+		prop = prop_get(index);
+		iterator->index = index;
+		iterator->next = *(long *)((byte *)prop + 0x14);
+	}
+	return prop;
+}
+
+PRIVATE __forceinline s_clump_node *clump_next_node(s_iterator *iterator)
+{
+	s_clump_node *node = NULL;
+	long index = iterator->next;
+	if (index != NONE)
+	{
+		node = (s_clump_node *)(g_502418->data + (index & 0xffff) * sizeof(s_clump_node));
+		iterator->index = index;
+		iterator->next = node->next;
+	}
+	return node;
+}
+
+/* passes a change in the alliance of two teams on to the props each team's
+   clumps hold of the other team */
+// score 81 (was 134): retail keeps the clump in esi, cleared at the top of
+// the loop, and places the not-found path of the pool step after the body;
+// ours keeps it in ecx and clears it on that path
+// @retail 0x1c9830
+void __stdcall function_1c9830(short team_a, short team_b, bool broken, bool removed)
+{
+	if (!g_4f55d0->active)
+		return;
+
+	s_indexed_clump_walk clumps;
+	clumps.pool.data = g_502420;
+	clumps.pool.index = NONE;
+	while (indexed_clump_walk_next(&clumps))
+	{
+		short other_team;
+		if (clumps.clump->team == team_a)
+			other_team = team_b;
+		else if (clumps.clump->team == team_b)
+			other_team = team_a;
+		else
+			continue;
+		if (other_team == NONE)
+			continue;
+
+		s_iterator props;
+		props.next = ((s_clump *)(g_502420->data + (clumps.clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
+		s_type_76cf92 *prop;
+		while ((prop = clump_next_prop(&props)) != NULL)
+		{
+			if (prop->team != other_team)
+				continue;
+			if (!removed)
+				prop->unknown24 = true;
+			prop->unknown23 = broken;
+			prop->unknown3c = true;
+			if (!broken && !removed)
+				function_20ba60(0xc4, prop->object_index, NONE, NONE, NONE, NULL);
+			if (prop->unknown23)
+			{
+				s_iterator nodes;
+				nodes.next = prop_get(props.index)->first_node_index;
+				s_clump_node *node;
+				while ((node = clump_next_node(&nodes)) != NULL)
+				{
+					s_type_e5ff81 *tracking = node->tracking_index == NONE ? NULL : tracking_get(node->tracking_index);
+					s_type_f95cd3 *view = tracking ? &tracking->view : NULL;
+					if (view && prop->unknown23)
+						view->unknown3c = function_265d30(node->actor_index, nodes.index);
+				}
+			}
+		}
+	}
 }

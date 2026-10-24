@@ -205,8 +205,8 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 
 	for (i = 0; i < component->parameter_count; i++)
 	{
-		s_effect_parameter const *parameter = &component->parameters[i];
-		real value = parameter->default_value;
+		s_effect_parameter const *parameters = component->parameters;
+		real value = parameters[i].default_value;
 
 		if (overrides && (overrides->parameter_mask & (1 << i)))
 		{
@@ -250,6 +250,7 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 			source_index++;
 		}
 
+		s_effect_parameter const *parameter = &parameters[i];
 		value = PIN(value, parameter->minimum, parameter->maximum);
 		if (component->header.flags & 1)
 		{

@@ -273,45 +273,84 @@ struct s_255d60
 
 point3f *function_b9dd0(long object_index, point3f *result);
 
+/* walks the clumps of g_502420, only while the ai is active */
+struct s_clump_datum_walk
+{
+	s_data_datum_iterator iterator;
+	long clump_index;
+};
+
+static inline void clump_datum_walk_new(s_clump_datum_walk *iterator)
+{
+	if (g_4f55d0->active)
+	{
+		iterator->iterator.data = g_502420;
+		iterator->iterator.index = NONE;
+		iterator->iterator.datum_index = NONE;
+	}
+}
+
+/* the next clump, or NULL; retail inlines it with the index scan, where LTCG
+   keeps a plain inline out of line */
+PRIVATE __forceinline s_255d60 *clump_datum_walk_next(s_clump_datum_walk *iterator)
+{
+	s_255d60 *clump = NULL;
+
+	if (g_4f55d0->active)
+	{
+		s_record_pool *data = iterator->iterator.data;
+		long index = data_next_absolute_index_inlined(data, iterator->iterator.index + 1);
+		byte *datum;
+
+		if (index != NONE)
+		{
+			datum = data->data + data->size * index;
+			iterator->iterator.index = index;
+			iterator->iterator.datum_index = (*(short *)datum << 16) | index;
+		}
+		else
+		{
+			iterator->iterator.index = data->maximum_count;
+			iterator->iterator.datum_index = NONE;
+			datum = 0;
+		}
+		iterator->iterator.datum = datum;
+		if (datum)
+			clump = (s_255d60 *)datum;
+		iterator->clump_index = iterator->iterator.datum_index;
+	}
+	return clump;
+}
+
 // @retail 0x255d60
 bool function_255d60(long arg_0, point3f const *arg_1, real arg_2, real arg_3, short *arg_4)
 {
-	bool local_3 = false;
-	long local_4 = 0;
-	s_record_pool_iterator local_5;
 	real local_20 = arg_2 > arg_3 ? arg_2 : arg_3;
 	s_actor_view *local_0 = actor_get(arg_0);
+	bool local_3 = false;
+	long local_4 = 0;
 	real local_1 = local_20 * local_20;
 	real local_2 = arg_2 * arg_2;
-	if (g_4f55d0->active)
-	{
-		local_5.data = g_502420;
-		local_5.index = NONE;
-	}
+	s_clump_datum_walk local_5;
+	clump_datum_walk_new(&local_5);
 	for (;;)
 	{
-		s_255d60 *local_6 = NULL;
-		if (g_4f55d0->active)
-		{
-			long local_7 = data_next_absolute_index_inlined(local_5.data, local_5.index + 1);
-			if (local_7 != NONE)
-			{
-				local_6 = (s_255d60 *)(local_5.data->data + local_5.data->size * local_7);
-				local_5.index = local_7;
-			}
-		}
+		s_255d60 *local_6 = clump_datum_walk_next(&local_5);
 		if (!local_6)
 		{
 			break;
 		}
 		bool local_8 = function_1df560(local_0->unknown024, local_6->field_12);
-		if (distance3d(&local_6->field_4, arg_1) < local_20 + 6.0)
+		vector3f local_9;
+		vector3d_from_points3d(&local_6->field_4, arg_1, &local_9);
+		if (sqrt(length_sq3f(&local_9)) < local_20 + 6.0)
 		{
-			long local_10 = local_6->field_18;
-			while (local_10 != NONE)
+			s_element_502420_member_iterator local_10;
+			s_actor_view *local_11;
+			local_10.next_index = local_6->field_18;
+			local_10.index = NONE;
+			while ((local_11 = element_502420_member_next(&local_10)) != NULL)
 			{
-				s_actor_view *local_11 = actor_get(local_10);
-				local_10 = local_11->next_index;
 				if (local_11->unknown018 != NONE)
 				{
 					point3f local_12;
@@ -337,16 +376,12 @@ bool function_255d60(long arg_0, point3f const *arg_1, real arg_2, real arg_3, s
 	}
 	if (!local_3 && !team_is_enemy(local_0->unknown024, 1))
 	{
-		s_record_pool *local_15 = g_4e8c24;
-		long local_16 = NONE;
+		s_record_pool_iterator local_15;
+		local_15.data = g_4e8c24;
+		local_15.index = NONE;
 		for (;;)
 		{
-			local_16 = function_16bc00(local_15, local_16 + 1);
-			if (local_16 == NONE)
-			{
-				break;
-			}
-			byte *local_17 = local_15->data + local_15->size * local_16;
+			byte *local_17 = data_iterator_next_calling(&local_15);
 			if (!local_17)
 			{
 				break;
