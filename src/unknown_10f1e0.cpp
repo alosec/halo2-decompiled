@@ -249,7 +249,9 @@ PRIVATE __forceinline real function_112e21(real arg_0)
 // with vector3d_from_points3d (133, the compiler commutes it); the offset as a vector3f (71,
 // the j row regrouped as (left.j * y + left.i * x) + left.k * z); the direction as three
 // scalars (105); the clearing in i, j, k order (91, i, j, k land in xmm1, xmm2, xmm3); the
-// normalisation written i = inverse * i, j = j * inverse, k = k * inverse (no change).
+// normalisation written i = inverse * i, j = j * inverse, k = k * inverse (no change). Tried at
+// 133 (lane): shared normalization scale 133, relative scale 136, both scales 136, reciprocal-root
+// intrinsic 168, two-angle helper precision probe 119 (rejected).
 // @retail 0x112e20
 void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
