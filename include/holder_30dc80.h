@@ -50,6 +50,14 @@ public:
 		values.size = 0;
 		values.capacity_and_flags = 0x80000004;
 		body = body_;
+#if H2_WHOLE_IMAGE
+		/* retail's table (0x4138f0: 0x30f2a0, 0x30dad0, 0x30dba0), stored
+		   inline by its users (0x30df80, 0x30e140); the image binds the class
+		   to its base's table 0x41387c (its destructor's), whose pair slots
+		   are empty, so the pairs a fixed body's insertion begins or its
+		   removal ends never reached the other bodies' islands */
+		*(void const **)this = (void const *)0x4138f0;
+#endif
 	}
 	// the pairs a dispatcher adds and removes (0x30dad0, 0x30dba0)
 	virtual void slot_1(void const *pair) {}

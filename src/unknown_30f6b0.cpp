@@ -38,15 +38,6 @@ void class_30f030::function_30f6b0()
 		pair_30f6b0 *pair = &pending[i];
 		void *island = pair->a->island;
 		void *other = pair->b->island;
-#if H2_WHOLE_IMAGE
-		/* KNOWN DIVERGENCE (to revisit): a constraint of a re-added component
-		   can still name a body whose own component was taken out of the
-		   world, queueing a join with no island; retail evidently never
-		   reaches this state, the port skips the join rather than merge into
-		   nothing */
-		if (!island || !other)
-			continue;
-#endif
 		if (island != other)
 		{
 			function_278eb0(island);
