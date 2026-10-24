@@ -134,5 +134,12 @@ void function_246c60(long unknown, void *block)
 		new (storage) c_object_246c60_a(source);
 		new (storage + 0x50) c_object_246c60_b(storage, data);
 		new (storage + 0x40) c_object_246c60_c((c_object_246c60_b *)(storage + 0x50));
+#if H2_WHOLE_IMAGE
+		/* retail's tables, stored inline: the classes declare no virtuals of
+		   their own for the image to bind them by */
+		*(dword *)storage = 0x456194;
+		*(dword *)(storage + 0x50) = 0x455f58;
+		*(dword *)(storage + 0x40) = 0x455540;
+#endif
 	}
 }

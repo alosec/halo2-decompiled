@@ -55,7 +55,18 @@ __forceinline void mark_holding_x_2e24b0(class_2e1090 *sweep, int count, int low
 		// start from the grid cell's box: the boxes it holds, less those
 		// that start inside it
 		int const slot = low_value >> (16 - sweep->cell_shift);
+#if H2_WHOLE_IMAGE
+		// a port fix of retail's own edge case: a box whose lower x equals
+		// the cell's boundary can sit before the cell box's lower endpoint
+		// (0x2e0350 moves a lower end up only past smaller values), and
+		// then the walk below starts past the box's own lower endpoint, so
+		// the removal (0x2e29b0) reports the box paired with itself and
+		// misses a box whose lower endpoint follows the cell's. Such a box
+		// takes the walk from the axis's start, which needs no cell.
+		if (slot > 0 && sweep->elements.data[sweep->cells[slot - 1].box].slots[4] < low_slot)
+#else
 		if (slot > 0)
+#endif
 		{
 			cell_2e1090 *cell = &sweep->cells[slot - 1];
 			flip_bit_2e1090(bits, cell->box);

@@ -45,6 +45,41 @@ void function_24c0c4(c_widget *widget)
 	}
 }
 
+#if H2_WHOLE_IMAGE && !defined(H2_NATIVE_PORT)
+/* the base's v3, which derived lists call by name, is retail 0x24bd61
+   (recovered as c_widget::v11, the same code) */
+extern "C" void h2_retail_24bd61(void *self);
+void c_class_1474e8::v3()
+{
+	h2_retail_24bd61(this);
+}
+
+/* and its other slots derived lists call by name: retail table 0x45a030 */
+extern "C" void h2_retail_24bb9c(void *self);
+extern "C" void h2_retail_24bbd0(void *self);
+extern "C" bool h2_retail_24c024(void *self, s_widget_event *event);
+extern "C" void h2_retail_24bb60(void *self);
+void c_class_1474e8::v1()
+{
+	h2_retail_24bb9c(this);
+}
+
+void c_class_1474e8::v2()
+{
+	h2_retail_24bbd0(this);
+}
+
+bool c_class_1474e8::v10(s_widget_event *event)
+{
+	return h2_retail_24c024(this, event);
+}
+
+void c_class_1474e8::v17()
+{
+	h2_retail_24bb60(this);
+}
+#endif
+
 #if defined(H2_NATIVE_PORT)
 struct s_event;
 void function_24c7e4(void *list_pointer, s_event **event, long *key);

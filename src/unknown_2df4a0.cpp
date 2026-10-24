@@ -2,6 +2,13 @@
 // Havok (third-party physics library): copying an object's description out,
 // as a free function.
 #include <xmmintrin.h>
+#if H2_WHOLE_IMAGE
+/* the bounds' tolerance is a float (the retail slot's callers push one); on
+   the port's ARM guest a float travels apart from the integer arguments */
+typedef float h2_bounds_tolerance;
+#else
+typedef long h2_bounds_tolerance;
+#endif
 #include "unknown_182d90.h"
 
 struct s_2de810
@@ -24,7 +31,7 @@ public:
 	virtual void slot3() = 0;
 	virtual void slot4() = 0;
 	virtual void slot5() = 0;
-	virtual void slot6(s_extent_transform const *transform, long arg_1, long arg_2) = 0;
+	virtual void slot6(s_extent_transform const *transform, h2_bounds_tolerance arg_1, long arg_2) = 0;
 };
 
 class class_2de810
@@ -38,7 +45,7 @@ public:
 	__m128 field_40;
 
 	void function_2de810(s_2de810 *out) const;
-	void function_2de850(s_extent_transform const *transform, long arg_1, long arg_2);
+	void function_2de850(s_extent_transform const *transform, h2_bounds_tolerance arg_1, long arg_2);
 };
 
 // @retail 0x2df4a0

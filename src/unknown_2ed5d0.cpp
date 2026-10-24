@@ -7,7 +7,15 @@
 // @retail 0x2ed5d0
 pair_agent_2ed170 *__cdecl function_2ed5d0(typed_2ed170 **other, description_2ed170 const *description, dispatcher_2ed170 **dispatcher, long arg_3)
 {
+#if H2_WHOLE_IMAGE
+	/* retail's table (0x412bc4), stored inline: the class declares no
+	   virtuals of its own for the image to bind it by */
+	pair_agent_2ed170 *agent = new swapped_pair_agent_2ed170(other, description, dispatcher, arg_3);
+	*(unsigned long *)agent = 0x412bc4;
+	return agent;
+#else
 	return new swapped_pair_agent_2ed170(other, description, dispatcher, arg_3);
+#endif
 }
 
 struct description_2ecc80;

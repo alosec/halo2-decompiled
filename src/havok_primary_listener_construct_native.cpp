@@ -1,7 +1,7 @@
 #include "unknown_11c920.h"
 #include <stddef.h>
 
-#ifdef H2_NATIVE_PORT
+#if defined(H2_NATIVE_PORT) && !H2_WHOLE_IMAGE /* the whole image runs retail's 0x277840 */
 extern "C" dword h2_native_havok_primary_listener_vtables[3];
 
 class c_interface_277890

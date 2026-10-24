@@ -652,11 +652,17 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
             if m.group(1) in named_bases and m.group(1) not in declared:
                 bases = [re.sub(r'\b(?:public|private|protected|virtual)\b', '', b).strip()
                          for b in m.group(2).split(",")]
-                declared[m.group(1)] = [b for b in bases if b in named_bases[m.group(1)]]
+                # units may declare a class with differently named bases: the
+                # declaration naming every base its tables name counts
+                bases = [b for b in bases if b in named_bases[m.group(1)]]
+                if len(bases) == len(named_bases[m.group(1)]):
+                    declared[m.group(1)] = bases
     base_offsets = {}
     for own_class, tables in named_bases.items():
         order = declared.get(own_class, [])
         offsets = sorted({o for (c, o) in structors if c == own_class})
+        # members with tables of their own come after the bases
+        offsets = offsets[:len(tables)]
         if len(order) == len(tables) and len(offsets) == len(tables) and offsets[0] == 0:
             for base, at in zip(order, offsets):
                 base_offsets[tables[base]] = at
@@ -679,9 +685,32 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
             # on the deleting destructor, whose first store is a base's):
             # the table holding most of the native slots' functions wins
             wanted = {retail_of[slot] for slot in slots if slot in retail_of}
-            start = max(candidates, key=lambda entry: (len(wanted & {
+            chosen = max(candidates, key=lambda entry: (len(wanted & {
                 word_at.get(entry[0] + 4 * index) for index in range(max(len(slots), 16))}),
-                *entry[1]))[0]
+                *entry[1]))
+            start = chosen[0]
+            # A destructor tag on a function shared between classes (identical
+            # destructors fold into one) names a base's table: a table holding
+            # more of the class's own functions, at their slots, wins.
+            # Constructors are the class's own and stay trusted.
+            def placed(position):
+                return sum(1 for index, slot in enumerate(slots)
+                           if slot in retail_of and word_at.get(position + 4 * index) == retail_of[slot])
+            positions = {}
+            for index, slot in enumerate(slots):
+                for position in words.get(retail_of.get(slot), ()) if slot in retail_of else ():
+                    positions[position - 4 * index] = None
+            def is_table(position):
+                return all(0x12000 <= (word_at.get(position + 4 * index) or 0) < 0x379c4c
+                           for index in range(len(slots)))
+            # only when the anchored table cannot be the class's: a slot the
+            # class has is not code there
+            better = [p for p in positions if placed(p) > placed(start) and is_table(p)] \
+                if not chosen[1][1] and not is_table(start) else []
+            if better:
+                best = max(better, key=placed)
+                if [placed(p) for p in better].count(placed(best)) == 1:
+                    start = best
         if start is not None:
             bind(symbol, slots, start)
             continue
@@ -745,8 +774,9 @@ def structor_vtables(xbe_path, tag_addresses):
             sizes[int(row["va"], 16)] = int(row["size"])
     # mov dword ptr [eax|ecx|edx|ebx|esi|edi (+ disp8 | disp32)], imm32
     # (a lookahead, so a 16-bit store's tail cannot hide the next store)
-    store = re.compile(rb"(?=\xc7(?:([\x00\x01\x02\x03\x06\x07])|([\x40\x41\x42\x43\x46\x47]).|"
-                       rb"([\x80\x81\x82\x83\x86\x87])....)(....))", re.S)
+    # (ebp takes the disp8/disp32 forms only: [ebp + 0] is c7 45 00)
+    store = re.compile(rb"(?=\xc7(?:([\x00\x01\x02\x03\x06\x07])|([\x40\x41\x42\x43\x45\x46\x47]).|"
+                       rb"([\x80\x81\x82\x83\x85\x86\x87])....)(....))", re.S)
     result = {}
     for (unit, qualified), address in tag_addresses.items():
         parts = qualified.split("::")
@@ -766,13 +796,23 @@ def structor_vtables(xbe_path, tag_addresses):
                 this_registers.add(register)
         if len(this_registers) == 1 and b"\x8b\xc1" in code:
             this_registers.add(0)
+        # registers pointed into the object (lea reg, [this + disp]): a
+        # store through one fills the base subobject at that displacement
+        inner = {}
+        for m in re.finditer(rb"\x8d([\x40-\x7f])(.)|\x8d([\x80-\xbf])(....)", code, re.S):
+            modrm = (m.group(1) or m.group(3))[0]
+            if (modrm & 7) in this_registers and (modrm & 7) != 4:
+                displacement = struct.unpack("<b", m.group(2))[0] if m.group(1) else struct.unpack("<i", m.group(4))[0]
+                if (modrm >> 3) & 7 not in this_registers:
+                    inner[(modrm >> 3) & 7] = displacement
         by_offset = {}
         for m in store.finditer(code):
             if m.start() and code[m.start() - 1] == 0x66:
                 continue  # a 16-bit store
             # a store through another register may fill a member or a local
             # (or the object, when an optimised call passes it in eax)
-            via_this = (code[m.start() + 1] & 7) in this_registers
+            base = code[m.start() + 1] & 7
+            via_this = base in this_registers or base in inner
             table = struct.unpack("<I", m.group(4))[0]
             if not 0x411520 <= table < 0x461180:
                 continue
@@ -782,6 +822,8 @@ def structor_vtables(xbe_path, tag_addresses):
                 offset = struct.unpack("<b", code[m.start() + 2:m.start() + 3])[0]
             else:
                 offset = struct.unpack("<i", code[m.start() + 2:m.start() + 6])[0]
+            if base not in this_registers and base in inner:
+                offset += inner[base]
             by_offset.setdefault(offset, []).append((table, via_this))
         constructor = not parts[-1].startswith("~")
         for offset, tables in by_offset.items():
