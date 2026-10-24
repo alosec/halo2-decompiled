@@ -172,6 +172,30 @@ struct XONLINE_PRESENCE {
 /* Retail virtual-keyboard accesses at 0x237b3c..0x237b72 establish four
  * UTF-16 fields at offsets 0x000, 0x020, 0x220 and 0x420.  Its constructor
  * clears the complete 0x688-byte property record at object offset 0x3730. */
+/* Statistics uploads (src/unknown_072db0.cpp function_73e00).  PROVISIONAL:
+ * the public shape of these records; the retail code shows a 16-byte stat
+ * with its id at +0, its type as a dword at +4 (2 = 64-bit) and its value at
+ * +8, and the procedure ids and comparisons below.  Unused offline. */
+#define XONLINE_STAT_LONG 1
+#define XONLINE_STAT_LONGLONG 2
+#define XONLINE_STAT_PROCID_CONDITIONAL 0x8007
+#define XONLINE_STAT_PROCID_UPDATE_REPLACE 0x8001
+#define XONLINE_STAT_PROCID_UPDATE_INCREMENT 0x8003
+/* comparisons, in the order function_73e00 stores them (7, 6, 4) */
+#define XONLINE_STAT_COMPTYPE_NOT_EXISTS 7
+#define XONLINE_STAT_COMPTYPE_EXISTS 6
+#define XONLINE_STAT_COMPTYPE_LESS 4
+typedef struct XONLINE_STAT {
+    WORD wID;
+    WORD reserved;
+    DWORD type;
+    union {
+        LONG lValue;
+        LONGLONG llValue;
+        double dValue;
+    };
+} XONLINE_STAT;
+
 struct XONLINE_TEAM_PROPERTIES {
     WCHAR wszTeamName[16];
     WCHAR wszDescription[256];
@@ -327,15 +351,32 @@ typedef struct _XONLINE_STAT_SPEC {
     BYTE unknown0c[0x0c];
 } XONLINE_STAT_SPEC, *PXONLINE_STAT_SPEC;
 
+/* The update and conditional parts' other fields: PROVISIONAL placement
+   after the user (function_73e00 names them; unused offline). */
 typedef struct _XONLINE_STAT_UPDATE {
     XUID xuid;
-    BYTE unknown0c[0x88 - 0x08 - 0x0c];
+    DWORD dwLeaderBoardID;
+    DWORD dwConditionalIndex;
+    DWORD dwNumStats;
+    XONLINE_STAT *pStats;
+    BYTE unknown1c[0x88 - 0x08 - 0x0c - 0x10];
 } XONLINE_STAT_UPDATE;
+
+typedef struct _XONLINE_STAT_CONDITIONAL {
+    XUID xuid;
+    DWORD dwLeaderBoardID;
+    BYTE bComparisonType;
+    BYTE unknown0d[3];
+    XONLINE_STAT StatToCompare;
+} XONLINE_STAT_CONDITIONAL;
 
 typedef struct _XONLINE_STAT_PROC {
     WORD wProcedureID;
     BYTE unknown02[6];
-    XONLINE_STAT_UPDATE Update;
+    union {
+        XONLINE_STAT_UPDATE Update;
+        XONLINE_STAT_CONDITIONAL Conditional;
+    };
 } XONLINE_STAT_PROC, *PXONLINE_STAT_PROC;
 
 typedef struct _XONLINE_STAT_ATTACHMENT_REFERENCE XONLINE_STAT_ATTACHMENT_REFERENCE,

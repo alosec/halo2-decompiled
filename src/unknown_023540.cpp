@@ -991,6 +991,12 @@ struct s_block_layout
 PRIVATE __forceinline real block_dot_product9(real const *a, real const *b)
 {
 	real result;
+#if H2_PORT_SHIMS
+	/* the SSE sequence below, in its order of additions */
+	real low = (a[0] * b[0] + a[4] * b[4]) + (a[2] * b[2] + a[6] * b[6]);
+	real high = (a[1] * b[1] + a[5] * b[5]) + (a[3] * b[3] + a[7] * b[7]);
+	result = high + (a[8] * b[8] + low);
+#else
 	__asm
 	{
 		mov ecx, a
@@ -1015,6 +1021,7 @@ PRIVATE __forceinline real block_dot_product9(real const *a, real const *b)
 		addss xmm0, xmm1
 		movss result, xmm0
 	}
+#endif
 	return result;
 }
 
