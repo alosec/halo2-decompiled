@@ -733,25 +733,34 @@ contact_mgr_319110 *contact_mgr_factory_318bb0::create_contact_mgr(collidable_31
 // ---------------------------------------------------------------------------
 // the collision filters
 
+// an hkBool returned by value: through the hidden result pointer the
+// filter's vtable callers pass (x8 on the port's ARM guest)
+struct hkbool_319230
+{
+	char value;
+	hkbool_319230() {}
+	hkbool_319230(bool value) : value(value) {}
+};
+
 class collision_filter_319230
 {
 public:
-	void function_319230(bool *result, collidable_318c10 const *a, collidable_318c10 const *b);
-	void function_3192a0(bool *result, long arg_1);
+	hkbool_319230 function_319230(collidable_318c10 const *a, collidable_318c10 const *b);
+	hkbool_319230 function_3192a0(long arg_1);
 };
 
 // whether either entity is fixed or has a motion of kind 6 (keyframed)
 // @retail 0x319230
-void collision_filter_319230::function_319230(bool *result, collidable_318c10 const *a, collidable_318c10 const *b)
+hkbool_319230 collision_filter_319230::function_319230(collidable_318c10 const *a, collidable_318c10 const *b)
 {
 	entity_318c10 *entity_a = a->owner;
 	entity_318c10 *entity_b = b->owner;
-	*result = entity_a->fixed || entity_b->fixed
-		|| entity_a->motion->kind_code() == 6 || entity_b->motion->kind_code() == 6;
+	return hkbool_319230(entity_a->fixed || entity_b->fixed
+		|| entity_a->motion->kind_code() == 6 || entity_b->motion->kind_code() == 6);
 }
 
 // @retail 0x3192a0
-void collision_filter_319230::function_3192a0(bool *result, long arg_1)
+hkbool_319230 collision_filter_319230::function_3192a0(long arg_1)
 {
-	*result = false;
+	return hkbool_319230(false);
 }

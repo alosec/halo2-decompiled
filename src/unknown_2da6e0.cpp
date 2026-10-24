@@ -61,9 +61,17 @@ public:
     virtual void v5();
     virtual void v6();
     virtual void v7();
+#if H2_WHOLE_IMAGE
+    /* an hkBool returned by value: through the hidden result pointer (x8 on
+       the port's ARM guest), as retail's callers pass it */
+    struct answer { char value; answer() {} };
+    virtual answer intersect(const s_physics_transformed_segment *segment,
+        s_physics_transformed_hit *hit);
+#else
     virtual bool *intersect(bool *accepted,
         const s_physics_transformed_segment *segment,
         s_physics_transformed_hit *hit);
+#endif
 };
 
 class c_physics_transformed_intersection_shape
@@ -80,17 +88,43 @@ public:
     virtual void v5();
     virtual void v6();
     virtual void v7();
+#if H2_WHOLE_IMAGE
+    virtual c_physics_intersection_shape::answer function_2de9e0(
+        const s_physics_transformed_segment *segment,
+        s_physics_transformed_hit *hit);
+    bool *function_2de9e0_into(bool *accepted,
+        const s_physics_transformed_segment *segment,
+        s_physics_transformed_hit *hit);
+#else
     virtual bool *function_2de9e0(bool *accepted,
         const s_physics_transformed_segment *segment,
         s_physics_transformed_hit *hit);
+#endif
 };
 static_assert(sizeof(c_physics_transformed_intersection_shape) == 0x50,
     "transformed intersection shape layout");
 
+#if H2_WHOLE_IMAGE
+// @retail 0x2de9e0
+c_physics_intersection_shape::answer c_physics_transformed_intersection_shape::function_2de9e0(
+    const s_physics_transformed_segment *segment, s_physics_transformed_hit *hit)
+{
+    c_physics_intersection_shape::answer result;
+    bool accepted;
+    function_2de9e0_into(&accepted, segment, hit);
+    result.value = accepted;
+    return result;
+}
+
+bool *c_physics_transformed_intersection_shape::function_2de9e0_into(
+    bool *accepted, const s_physics_transformed_segment *segment,
+    s_physics_transformed_hit *hit)
+#else
 // @retail 0x2de9e0
 bool *c_physics_transformed_intersection_shape::function_2de9e0(
     bool *accepted, const s_physics_transformed_segment *segment,
     s_physics_transformed_hit *hit)
+#endif
 {
     s_physics_transformed_segment local;
     const float *world_points[2] = { segment->start, segment->end };
@@ -111,7 +145,11 @@ bool *c_physics_transformed_intersection_shape::function_2de9e0(
     local.field_20 = segment->field_20;
     local.field_24 = segment->field_24;
 
+#if H2_WHOLE_IMAGE
+    *accepted = child->intersect(&local, hit).value != 0;
+#else
     child->intersect(accepted, &local, hit);
+#endif
     if (*accepted)
     {
         float local_normal[4] = {

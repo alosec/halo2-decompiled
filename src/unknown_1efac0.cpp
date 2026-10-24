@@ -21,7 +21,14 @@ struct c_d : c_shape_user_base
 	virtual long v5();
 	virtual void v6() {}
 	virtual real v7(long);
+#if H2_WHOLE_IMAGE
+	/* an hkBool returned by value: through the hidden result pointer (x8 on
+	   the port's ARM guest), as retail's callers pass it */
+	struct answer { char value; answer() {} };
+	virtual answer v8(long, long);
+#else
 	virtual void v8(byte *, long, long);
+#endif
 };
 
 // @retail 0x1efaf0 deleting
@@ -41,11 +48,21 @@ real c_d::v7(long)
 	return g_45dbd8;
 }
 
+#if H2_WHOLE_IMAGE
+// @retail 0x1efae0
+c_d::answer c_d::v8(long, long)
+{
+	answer result;
+	result.value = 0;
+	return result;
+}
+#else
 // @retail 0x1efae0
 void c_d::v8(byte *a, long, long)
 {
 	*a = 0;
 }
+#endif
 
 /* ---- object / tag lookups ---- */
 struct s_tag_ref_data

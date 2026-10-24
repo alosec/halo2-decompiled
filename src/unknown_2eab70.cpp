@@ -191,7 +191,14 @@ class filter_2ead90
 {
 public:
 	// whether the part of the second side may meet the first side
+#if H2_WHOLE_IMAGE
+	/* an hkBool returned by value: through the hidden result pointer (x8 on
+	   the port's ARM guest), as the filters' implementations return it */
+	struct answer { char value; answer() {} };
+	virtual answer allowed(void const *input, void const *a, void const *b, shape_2eab70 const *container, long key) const { return answer(); }
+#else
 	virtual byte *allowed(byte *out, void const *input, void const *a, void const *b, shape_2eab70 const *container, long key) const { return out; }
+#endif
 };
 
 struct input_2ead90
@@ -262,8 +269,12 @@ void __cdecl function_2ead90(void const *a, void const *b, void const *input, vo
 	__declspec(align(16)) char buffer[0x100];
 	while (key != end)
 	{
+#if H2_WHOLE_IMAGE
+		if (((input_2ead90 const *)input)->filter->allowed(input, a, b, container, *key).value)
+#else
 		byte allowed;
 		if (((s_flag_byte *)((input_2ead90 const *)input)->filter->allowed(&allowed, input, a, b, container, *key))->is_set())
+#endif
 		{
 			shape_2eab70 const *child = container->part(*key, buffer);
 			part.set_part(*key, child);

@@ -91,7 +91,15 @@ struct c_vertex_shape : c_vertex_reference
 	virtual void get_first_vertex(__m128 *out);
 	virtual void v3();
 	virtual void get_bounds(const void *matrix, real expansion, void *output);
+#if H2_WHOLE_IMAGE
+	/* an hkBool returned by value: through the hidden result pointer (x8 on
+	   the port's ARM guest), as retail's callers pass it */
+	struct ray_answer { char value; ray_answer() {} };
+	virtual ray_answer ray_test(const s_shape_ray *ray, s_shape_ray_result *result);
+	void ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result);
+#else
 	virtual void ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result);
+#endif
 };
 
 PRIVATE inline void shape_transform_point(const transform4x3f *matrix, const point3f *point, point3f *result)
@@ -148,8 +156,22 @@ c_vertex_shape::c_vertex_shape(s_shape_source *source, byte type, long data, lon
 short function_120850(const vector3f *vector);
 bool function_23a220(const point2f *point, short count, const point2f *points, real epsilon);
 
+#if H2_WHOLE_IMAGE
+// @retail 0x1edf50
+c_vertex_shape::ray_answer c_vertex_shape::ray_test(const s_shape_ray *ray, s_shape_ray_result *result)
+{
+	ray_answer answer;
+	bool hit;
+	ray_test_into(&hit, ray, result);
+	answer.value = hit;
+	return answer;
+}
+
+void c_vertex_shape::ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
+#else
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
+#endif
 {
 	point3f origin;
 	real_point3d_set(&origin, vertices_raw[0], vertices_raw[1], vertices_raw[2]);
