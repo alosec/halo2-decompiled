@@ -404,6 +404,14 @@ private:
         double clear_depth = 1.0;
         std::uint32_t clear_stencil = 0;
         id<MTLTexture> snapshot = nil;   /* a copy to sample while drawing into it */
+        /* the guest memory under the target, hashed each frame it is drawn
+           into: when it differs at a later sampling, the game has put a new
+           texture there (the memory was freed and reused) and the target is
+           stale */
+        std::uint32_t data = 0;
+        std::size_t guest_bytes = 0;
+        std::uint64_t guest_hash = 0;
+        std::uint64_t hashed_frame = ~0ull;
     };
 
 public:
@@ -567,6 +575,15 @@ public:
 
     void draw(const h2_gpu_draw& packet) override {
         ++stats_.draws;
+        static int frame_draw = 0;
+        static int counted_frame = -1;
+        if (counted_frame != presented_) {
+            counted_frame = presented_;
+            frame_draw = 0;
+        }
+        ++frame_draw;
+        if (tracing_frame())
+            std::fprintf(stderr, "h2-frame: #%d\n", frame_draw);
         if (tracing_frame())
             std::fprintf(stderr,
                          "h2-frame: draw rt %08x %ux%u prim %u n %u src %u mode %u vp %u ps %u tex %08x/%08x "
@@ -590,6 +607,11 @@ public:
                                      r[reg * 4 + 3]);
                 std::fprintf(stderr, "\n");
             }
+        }
+        if (tracing_frame()) {
+            for (int t = 1; t < 4; ++t)
+                std::fprintf(stderr, "h2-frame:   tex%d %08x data %08x fmt %08x\n", t, packet.textures[t].header,
+                             packet.textures[t].data, packet.textures[t].format);
             const std::uint32_t* ps = packet.pixel_shader;
             std::fprintf(stderr, "h2-frame:   ps");
             for (int i = 0; i < 60; ++i)
@@ -610,6 +632,60 @@ public:
         @autoreleasepool {
             if (!encode_draw(packet))
                 ++stats_.draws_failed;
+        }
+        static const char* dump_draws = std::getenv("H2_TRACE_DUMP_DRAWS");
+        const char* dump_dir = std::getenv("H2_TRACE_DUMP");
+        if (dump_dir && dump_draws && tracing_frame()) {
+            const std::string list = std::string(",") + dump_draws + ",";
+            /* "copies": every unblended screen-space draw */
+            const bool copy = list == ",copies," && packet.vertex_source == H2_GPU_VERTICES_INLINE &&
+                              !packet.blend_enable;
+            if (copy || list.find("," + std::to_string(frame_draw) + ",") != std::string::npos)
+                dump_targets(dump_dir, "-" + std::to_string(frame_draw));
+        }
+    }
+
+    /* H2_TRACE_DUMP=dir: every target as a PPM (suffix tells the moment);
+       runs the work so far and waits for it */
+    void dump_targets(const char* dir, const std::string& suffix) {
+        end_encoder();
+        begin_command_buffer();
+        std::vector<std::pair<std::string, std::pair<id<MTLTexture>, id<MTLBuffer>>>> dumps;
+        auto add = [&](const std::string& name, id<MTLTexture> texture) {
+            if (!texture)
+                return;
+            id<MTLBuffer> buffer = [device_ newBufferWithLength:texture.width * texture.height * 4
+                                                        options:MTLResourceStorageModeShared];
+            id<MTLBlitCommandEncoder> blit = [command_buffer_ blitCommandEncoder];
+            [blit copyFromTexture:texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0)
+                       sourceSize:MTLSizeMake(texture.width, texture.height, 1) toBuffer:buffer
+                destinationOffset:0 destinationBytesPerRow:texture.width * 4
+                destinationBytesPerImage:texture.width * texture.height * 4];
+            [blit endEncoding];
+            dumps.push_back({name, {texture, buffer}});
+        };
+        add("back", back_.color);
+        for (auto& [data, target] : targets_) {
+            char name[32];
+            std::snprintf(name, sizeof(name), "target-%08x", data);
+            add(name, target.color);
+        }
+        [command_buffer_ commit];
+        [command_buffer_ waitUntilCompleted];
+        command_buffer_ = nil;
+        for (auto& [name, pair] : dumps) {
+            id<MTLTexture> texture = pair.first;
+            const auto* bgra = static_cast<const std::uint8_t*>(pair.second.contents);
+            const std::string path = std::string(dir) + "/" + name + suffix + ".ppm";
+            if (FILE* file = std::fopen(path.c_str(), "wb")) {
+                std::fprintf(file, "P6 %lu %lu 255\n", static_cast<unsigned long>(texture.width),
+                             static_cast<unsigned long>(texture.height));
+                for (NSUInteger i = 0; i < texture.width * texture.height; ++i) {
+                    const std::uint8_t rgb[3] = {bgra[i * 4 + 2], bgra[i * 4 + 1], bgra[i * 4]};
+                    std::fwrite(rgb, 1, 3, file);
+                }
+                std::fclose(file);
+            }
         }
     }
 
@@ -647,47 +723,12 @@ public:
                     destinationBytesPerImage:width_ * height_ * 4];
                 [blit endEncoding];
             }
-            std::vector<std::pair<std::string, std::pair<id<MTLTexture>, id<MTLBuffer>>>> dumps;
             const char* dump_dir = std::getenv("H2_TRACE_DUMP");
-            if (dump_dir && tracing_frame()) {
-                /* H2_TRACE_DUMP=dir: every target of the traced frame as a PPM */
-                auto add = [&](const std::string& name, id<MTLTexture> texture) {
-                    if (!texture)
-                        return;
-                    id<MTLBuffer> buffer = [device_ newBufferWithLength:texture.width * texture.height * 4
-                                                                options:MTLResourceStorageModeShared];
-                    id<MTLBlitCommandEncoder> blit = [command_buffer_ blitCommandEncoder];
-                    [blit copyFromTexture:texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0)
-                               sourceSize:MTLSizeMake(texture.width, texture.height, 1) toBuffer:buffer
-                        destinationOffset:0 destinationBytesPerRow:texture.width * 4
-                        destinationBytesPerImage:texture.width * texture.height * 4];
-                    [blit endEncoding];
-                    dumps.push_back({name, {texture, buffer}});
-                };
-                add("back", back_.color);
-                for (auto& [data, target] : targets_) {
-                    char name[32];
-                    std::snprintf(name, sizeof(name), "target-%08x", data);
-                    add(name, target.color);
-                }
-            }
+            if (dump_dir && tracing_frame())
+                dump_targets(dump_dir, "");
             [command_buffer_ commit];
             /* one frame in flight: the per-frame buffers are reused next frame */
             [command_buffer_ waitUntilCompleted];
-            for (auto& [name, pair] : dumps) {
-                id<MTLTexture> texture = pair.first;
-                const auto* bgra = static_cast<const std::uint8_t*>(pair.second.contents);
-                const std::string path = std::string(dump_dir) + "/" + name + ".ppm";
-                if (FILE* file = std::fopen(path.c_str(), "wb")) {
-                    std::fprintf(file, "P6 %lu %lu 255\n", static_cast<unsigned long>(texture.width),
-                                 static_cast<unsigned long>(texture.height));
-                    for (NSUInteger i = 0; i < texture.width * texture.height; ++i) {
-                        const std::uint8_t rgb[3] = {bgra[i * 4 + 2], bgra[i * 4 + 1], bgra[i * 4]};
-                        std::fwrite(rgb, 1, 3, file);
-                    }
-                    std::fclose(file);
-                }
-            }
             command_buffer_ = nil;
             frame_offset_ = 0;
             ++frame_;
@@ -724,7 +765,10 @@ private:
     }
 
     bool build_placeholders(std::string& error) {
-        const std::uint32_t white = 0xffffffffu;
+        /* a stage with no texture: the NV2A's disabled texture unit reads
+           zero (a shader may still sample it; Halo's 4-tap filters do with
+           only stage 0 bound) */
+        const std::uint32_t white = 0x00000000u;
         MTLTextureDescriptor* d2 = [MTLTextureDescriptor
             texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm width:1 height:1 mipmapped:NO];
         placeholder_2d_ = [device_ newTextureWithDescriptor:d2];
@@ -1254,6 +1298,15 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (!stage.header || !stage.data)
             return nullptr;
         auto rendered = targets_.find(stage.data);
+        if (rendered != targets_.end() && &rendered->second != current_ &&
+            guest_hash(rendered->second) != rendered->second.guest_hash) {
+            /* the game wrote a texture over a target's old memory */
+            if (trace_gpu())
+                std::fprintf(stderr, "h2-gpu: render target %08x replaced by a texture\n", stage.data);
+            render_textures_.erase(stage.data);
+            targets_.erase(rendered);
+            rendered = targets_.end();
+        }
         Target* source = rendered != targets_.end() ? &rendered->second : nullptr;
         /* a texture over the back buffer's pixels samples what was drawn there */
         if (!source && stage.data == back_buffer_data_)
@@ -1365,8 +1418,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             return nullptr;
         const std::uint32_t data = words[1] | 0x80000000u;
         auto found = targets_.find(data);
-        if (found != targets_.end())
+        if (found != targets_.end()) {
+            note_drawn(found->second);
             return &found->second;
+        }
         TextureDescription description;
         int width = 0, height = 0;
         if (describe_texture(words[3], words[4], description)) {
@@ -1392,7 +1447,25 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             return nullptr;
         if (trace_gpu())
             std::fprintf(stderr, "h2-gpu: render target %08x %dx%d format %08x\n", data, width, height, words[3]);
-        return &targets_.emplace(data, target).first->second;
+        target.data = data;
+        target.guest_bytes = description.total_size;
+        Target& made = targets_.emplace(data, target).first->second;
+        note_drawn(made);
+        return &made;
+    }
+
+    std::uint64_t guest_hash(const Target& target) {
+        const auto* bytes = guest<std::uint8_t>(target.data);
+        if (!bytes || !target.guest_bytes || !arena_.host_range_accessible(bytes, target.guest_bytes, false))
+            return 0;
+        return content_hash(bytes, target.guest_bytes);
+    }
+
+    void note_drawn(Target& target) {
+        if (target.hashed_frame == frame_)
+            return;
+        target.hashed_frame = frame_;
+        target.guest_hash = guest_hash(target);
     }
 
     void trace_draw(const h2_gpu_draw& packet) {
