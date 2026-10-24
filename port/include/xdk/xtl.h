@@ -778,6 +778,8 @@ u_short WINAPI ntohs(u_short value);
 /* Xbox network. */
 int WINAPI XNetStartup(const XNetStartupParams* parameters);
 int WINAPI XNetCleanup(void);
+/* fills the buffer with random bytes */
+int WINAPI XNetRandom(BYTE* buffer, UINT count);
 DWORD WINAPI XNetGetEthernetLinkStatus(void);
 DWORD WINAPI XNetGetTitleXnAddr(XNADDR* address);
 int WINAPI XNetCreateKey(XNKID* key_id, XNKEY* key);

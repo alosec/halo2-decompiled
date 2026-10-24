@@ -14,6 +14,7 @@
  * Written from the public Winsock reference and the recovered call sites;
  * guest_online_runtime.cpp separately overrides several recovered online_*
  * wrappers and does not define any of these SDK entry points. */
+#include "h2/host_abi.h"
 #include <xtl.h>
 #include <xonline.h>
 #include <string.h>
@@ -417,6 +418,22 @@ int WINAPI XNetCleanup(void)
     if (!g_xnet_started)
         return WSANOTINITIALISED;
     g_xnet_started = false;
+    return 0;
+}
+
+/* random bytes for keys and nonces: a xorshift seeded from the clock is
+ * plenty with no network to protect */
+int WINAPI XNetRandom(BYTE *buffer, UINT count)
+{
+    static unsigned long long state;
+    if (!state)
+        state = 0x9e3779b97f4a7c15ull ^ host_h2_performance_counter();
+    for (UINT index = 0; index < count; ++index) {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        buffer[index] = static_cast<BYTE>(state >> 24);
+    }
     return 0;
 }
 
