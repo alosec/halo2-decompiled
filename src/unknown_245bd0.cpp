@@ -344,8 +344,8 @@ bool function_2461a0(
 	return result;
 }
 
-// score 104 (was 106): every sum now associates as in retail (the parenthesized ones are reordered
-// by the compiler otherwise); what still differs is scheduling of the first block: retail multiplies
+// score 104 (was 106): every sum now associates as in retail (the compiler reorders unparenthesized
+// sums of three products); what still differs is scheduling of the first block: retail multiplies
 // v.k by u.k from memory before summing a, and keeps a in XMM3 and uv in XMM0 (ours XMM4, XMM1), which
 // swaps registers to the end. Tried: any subset of the four parenthesized sums (151-214), w computed
 // k, j, i by hand (211), a or uu parenthesized (180, 206), uv unparenthesized in any order (214),
