@@ -14,6 +14,7 @@
 #include "h2/render_protocol.h"
 #include "h2/retail_data.hpp"
 #include "h2/texture_decode.hpp"
+#include "gpu/metal_renderer.hpp"
 
 #include <array>
 #include <charconv>
@@ -1008,8 +1009,8 @@ void install_fault_reporter() {
    pumps events and refreshes the controller the game polls. */
 struct GameSession {
     SDL_Window* window = nullptr;
-    SDL_Renderer* renderer = nullptr;
-    NativeRenderContext render_context;
+    SDL_MetalView metal_view = nullptr;
+    std::unique_ptr<h2::gpu::Renderer> gpu;
     int frame_count = 0;
     int frames = 0;
     std::filesystem::path screenshot;
@@ -1163,6 +1164,15 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
     session.screenshot = screenshot;
     session.last_frame = std::chrono::steady_clock::now();
     parse_input_script(session);
+    (void)data_root;
+    /* the game renders offscreen even headless, so screenshots work */
+    std::string error;
+    const char* scale = std::getenv("H2_RENDER_SCALE");
+    session.gpu = h2::gpu::Renderer::create(*arena, scale ? std::atoi(scale) : 2, error);
+    if (!session.gpu) {
+        std::cerr << "renderer setup failed: " << error << '\n';
+        return false;
+    }
     if (headless)
         return true;
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
@@ -1170,46 +1180,72 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
         return false;
     }
     session.window = SDL_CreateWindow("Halo 2", 960, 720,
-                                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-    session.renderer = session.window ? SDL_CreateRenderer(session.window, nullptr) : nullptr;
-    if (!session.renderer ||
-        !SDL_SetRenderLogicalPresentation(session.renderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX)) {
+                                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL);
+    session.metal_view = session.window ? SDL_Metal_CreateView(session.window) : nullptr;
+    if (!session.metal_view) {
         std::cerr << "game window setup failed: " << SDL_GetError() << '\n';
         return false;
     }
+    session.gpu->attach_layer(SDL_Metal_GetLayer(session.metal_view));
     SDL_SetWindowRelativeMouseMode(session.window, true);
-    session.render_context.renderer = session.renderer;
-    session.render_context.arena = arena;
-    session.render_context.font_root = data_root / "maps" / "fonts";
-    h2::port::set_render_request_handler(draw_guest_request, &session.render_context);
-    h2::port::set_text_request_handler(draw_guest_text, &session.render_context);
-    SDL_SetRenderDrawColor(session.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(session.renderer);
     return true;
 }
 
+bool save_frame_bmp(const std::filesystem::path& path) {
+    auto& session = game_session();
+    std::vector<std::uint8_t> pixels;
+    int width = 0, height = 0;
+    if (!session.gpu || !session.gpu->read_pixels(pixels, width, height))
+        return false;
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_XRGB8888, pixels.data(), width * 4);
+    const bool saved = surface && SDL_SaveBMP(surface, path.c_str());
+    if (surface)
+        SDL_DestroySurface(surface);
+    return saved;
+}
+
 } // namespace
+
+extern "C" void host_h2_gpu_draw(const void* packet) {
+    auto& session = game_session();
+    if (session.gpu && packet)
+        session.gpu->draw(*static_cast<const h2_gpu_draw*>(packet));
+}
+
+extern "C" void host_h2_gpu_clear(const void* packet) {
+    auto& session = game_session();
+    if (session.gpu && packet)
+        session.gpu->clear(*static_cast<const h2_gpu_clear*>(packet));
+}
 
 extern "C" void host_h2_frame(void) {
     auto& session = game_session();
     ++session.frames;
     const bool last = session.frame_count > 0 && session.frames >= session.frame_count;
-    if (session.renderer) {
-        if (last && !session.screenshot.empty()) {
-            SDL_Surface* surface = SDL_RenderReadPixels(session.renderer, nullptr);
-            if (surface && SDL_SaveBMP(surface, session.screenshot.c_str()))
-                std::cout << "Saved final rendered frame to " << session.screenshot << std::endl;
-            if (surface)
-                SDL_DestroySurface(surface);
+    /* H2_SCREENSHOT_EVERY=n: also save every n-th frame next to --screenshot */
+    static const int every = [] {
+        const char* value = std::getenv("H2_SCREENSHOT_EVERY");
+        return value ? std::atoi(value) : 0;
+    }();
+    const bool periodic = every > 0 && !session.screenshot.empty() && session.frames % every == 0;
+    const bool keep = (last || periodic) && !session.screenshot.empty();
+    if (session.gpu) {
+        session.gpu->present(keep);
+        if (keep) {
+            std::filesystem::path path = session.screenshot;
+            if (periodic && !last)
+                path.replace_filename(path.stem().string() + "-" + std::to_string(session.frames) +
+                                      path.extension().string());
+            if (save_frame_bmp(path))
+                std::cout << "Saved rendered frame " << session.frames << " to " << path << std::endl;
         }
-        SDL_RenderPresent(session.renderer);
+    }
+    if (session.window) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT)
                 std::exit(0);
         }
-        SDL_SetRenderDrawColor(session.renderer, 0, 0, 0, 255);
-        SDL_RenderClear(session.renderer);
         /* the Xbox swapped at 60 Hz */
         const auto target = session.last_frame + std::chrono::microseconds(16667);
         const auto now = std::chrono::steady_clock::now();
@@ -1219,9 +1255,10 @@ extern "C" void host_h2_frame(void) {
     }
     update_input(session);
     if (last) {
-        const auto stats = h2::port::host_service_stats();
-        std::cout << "Presented " << session.frames << " game frames; guest requests: render "
-                  << stats.render_request_calls << ", text " << stats.text_request_calls << std::endl;
+        const auto stats = session.gpu ? session.gpu->stats() : h2::gpu::RendererStats{};
+        std::cout << "Presented " << session.frames << " game frames; draws " << stats.draws << " (skipped "
+                  << stats.draws_skipped << ", failed " << stats.draws_failed << "), clears " << stats.clears
+                  << ", pipelines " << stats.pipelines << ", textures " << stats.textures << std::endl;
         std::exit(0);
     }
 }
@@ -1326,6 +1363,8 @@ int main(int argc, char** argv) {
                 {"host_h2_input_state", reinterpret_cast<std::uintptr_t>(&host_h2_input_state)},
                 {"host_h2_input_connected", reinterpret_cast<std::uintptr_t>(&host_h2_input_connected)},
                 {"host_h2_trace_flags", reinterpret_cast<std::uintptr_t>(&host_h2_trace_flags)},
+                {"host_h2_gpu_draw", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_draw)},
+                {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},
             };
             for (const auto& [symbol, target] : session_imports) {
                 if (guest_image->symbol_address(std::string("h2_host_slot_") + symbol) &&

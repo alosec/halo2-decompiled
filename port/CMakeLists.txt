@@ -3495,10 +3495,26 @@ target_compile_features(h2_port_support PUBLIC cxx_std_20)
 target_compile_options(h2_port_support PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(h2_port_support PUBLIC OpenSSL::Crypto)
 
+# The Metal renderer behind the guest D3D runtime's draw packets, and its
+# shader and texture translators (src/gpu/).
+enable_language(OBJCXX)
+add_library(h2_gpu STATIC
+    src/gpu/metal_renderer.mm
+    src/gpu/pixel_shader.cpp
+    src/gpu/texture_formats.cpp
+    src/gpu/vertex_program.cpp
+)
+target_include_directories(h2_gpu PUBLIC src include)
+target_compile_features(h2_gpu PUBLIC cxx_std_20)
+target_compile_options(h2_gpu PRIVATE -Wall -Wextra -Werror
+                       $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc -std=c++20>)
+target_link_libraries(h2_gpu PUBLIC h2_port_support "-framework Metal" "-framework QuartzCore"
+                      "-framework Foundation")
+
 add_executable(halo2-port src/main.cpp)
 target_compile_features(halo2-port PRIVATE cxx_std_20)
 target_compile_options(halo2-port PRIVATE -Wall -Wextra -Wpedantic -Werror)
-target_link_libraries(halo2-port PRIVATE h2_port_support SDL3::SDL3)
+target_link_libraries(halo2-port PRIVATE h2_port_support h2_gpu SDL3::SDL3)
 
 if(APPLE)
     set_target_properties(halo2-port PROPERTIES OSX_ARCHITECTURES arm64)

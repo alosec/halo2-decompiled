@@ -1,21 +1,20 @@
 /* Xbox Direct3D 8 for whole images: a native device that keeps the state the
  * recovered game sets, so its real initialization and main loop run against a
- * valid device. Nothing is drawn yet; the h2_d3d_* hooks in the anonymous
- * namespace are where a renderer backend will consume the tracked state.
+ * valid device, and hands every draw to the host renderer.
  *
  * Written from the public Direct3D 8 API semantics and from what the recovered
  * source does with the results (see the comments citing src/ units); no SDK,
  * xemu or Cxbx-Reloaded material.
  *
- * The immediate-mode calls (D3DDevice_Begin, _End, _SetVertexDataColor,
- * _SetVertexData2f, _SetVertexData4f) stay in guest_render_runtime.cpp, which
- * forwards them to the host renderer.
+ * Draws, clears and Begin/End batches go to the host renderer as packets
+ * (h2/gpu_protocol.h).
  *
  * Memory model. Resource headers carry Data as a physical address and the game
  * reads storage back as Data | 0x80000000 (src/unknown_0158f0.cpp,
  * src/unknown_03f2b0.cpp), so all storage comes from the host's contiguous
  * region (0x88000000 up), where that conversion is the identity. */
 #include "h2/host_abi.h"
+#include "h2/gpu_protocol.h"
 #include <xtl.h>
 #include <stddef.h>
 #include <string.h>
@@ -624,32 +623,349 @@ DWORD *push_reserve(h2_d3d_device *d, DWORD dwords)
     return d->push_put;
 }
 
-/* draw submission */
+/* draw submission: each draw and clear becomes a packet for the host
+   renderer (h2/gpu_protocol.h), with the fixed-function state normalised
+   from this header's D3D values. The push buffer is submitted first so
+   packets and what the game pushed itself stay in call order. */
 
-/* Where a future renderer backend draws: the push buffer is submitted first
-   so packets and tracked state stay in call order. */
+h2_gpu_draw g_draw_packet;
+h2_gpu_clear g_clear_packet;
+
+/* the NV2A's vertex program memory: 136 instructions of 4 words */
+constexpr long k_program_slots = 136;
+DWORD g_program_memory[k_program_slots][4];
+DWORD g_program_start;
+bool g_vertex_program_selected;
+
+/* Begin/End vertices: every register's value as each vertex was emitted */
+constexpr long k_inline_capacity = 4096;
+float g_inline_vertices[k_inline_capacity][k_vertex_attribute_count][4];
+long g_inline_count;
+DWORD g_inline_primitive;
+bool g_inline_active;
+float g_vertex_registers[k_vertex_attribute_count][4];
+
+h2_gpu_u32 guest_address(void const *pointer)
+{
+    return static_cast<h2_gpu_u32>(reinterpret_cast<DWORD>(pointer));
+}
+
+/* resource storage: Data is physical; the game reads it through the
+   0x80000000 mirror */
+h2_gpu_u32 resource_data(DWORD data)
+{
+    return data ? (data | 0x80000000u) : 0;
+}
+
+h2_gpu_u32 normal_compare(DWORD value)
+{
+    return value >= D3DCMP_NEVER && value <= D3DCMP_ALWAYS ? value - D3DCMP_NEVER : H2_GPU_ALWAYS;
+}
+
+h2_gpu_u32 normal_blend(DWORD value)
+{
+    switch (value) {
+    case D3DBLEND_ZERO: return H2_GPU_ZERO;
+    case D3DBLEND_ONE: return H2_GPU_ONE;
+    case D3DBLEND_SRCCOLOR: return H2_GPU_SRC_COLOR;
+    case D3DBLEND_INVSRCCOLOR: return H2_GPU_INV_SRC_COLOR;
+    case D3DBLEND_SRCALPHA: return H2_GPU_SRC_ALPHA;
+    case D3DBLEND_INVSRCALPHA: return H2_GPU_INV_SRC_ALPHA;
+    case D3DBLEND_DESTALPHA: return H2_GPU_DST_ALPHA;
+    case D3DBLEND_INVDESTALPHA: return H2_GPU_INV_DST_ALPHA;
+    case D3DBLEND_DESTCOLOR: return H2_GPU_DST_COLOR;
+    case D3DBLEND_INVDESTCOLOR: return H2_GPU_INV_DST_COLOR;
+    case D3DBLEND_SRCALPHASAT: return H2_GPU_SRC_ALPHA_SATURATE;
+    case D3DBLEND_CONSTANTCOLOR: return H2_GPU_CONSTANT_COLOR;
+    case D3DBLEND_INVCONSTANTCOLOR: return H2_GPU_INV_CONSTANT_COLOR;
+    case D3DBLEND_CONSTANTALPHA: return H2_GPU_CONSTANT_ALPHA;
+    case D3DBLEND_INVCONSTANTALPHA: return H2_GPU_INV_CONSTANT_ALPHA;
+    default: return H2_GPU_ONE;
+    }
+}
+
+/* the blend equations take the OpenGL values the verified D3DBLENDOP_ADD
+   (0x8006) belongs to */
+h2_gpu_u32 normal_blend_op(DWORD value)
+{
+    switch (value) {
+    case 0x800a: return H2_GPU_SUBTRACT;
+    case 0x800b: return H2_GPU_REVERSE_SUBTRACT;
+    case 0x8007: return H2_GPU_MIN;
+    case 0x8008: return H2_GPU_MAX;
+    default: return H2_GPU_ADD;
+    }
+}
+
+h2_gpu_u32 normal_stencil_op(DWORD value)
+{
+    switch (value) {
+    case D3DSTENCILOP_KEEP: return H2_GPU_KEEP;
+    case D3DSTENCILOP_ZERO: return H2_GPU_STENCIL_ZERO;
+    case D3DSTENCILOP_REPLACE: return H2_GPU_REPLACE;
+    case D3DSTENCILOP_INCRSAT: return H2_GPU_INCREMENT_CLAMP;
+    case D3DSTENCILOP_DECRSAT: return H2_GPU_DECREMENT_CLAMP;
+    case D3DSTENCILOP_INVERT: return H2_GPU_INVERT;
+    case 0x8507: return H2_GPU_INCREMENT_WRAP;   /* the OpenGL values, as above */
+    case 0x8508: return H2_GPU_DECREMENT_WRAP;
+    default: return H2_GPU_KEEP;
+    }
+}
+
+h2_gpu_u32 normal_address(DWORD value)
+{
+    switch (value) {
+    case D3DTADDRESS_WRAP: return H2_GPU_WRAP;
+    case D3DTADDRESS_MIRROR: return H2_GPU_MIRROR;
+    case D3DTADDRESS_CLAMP: return H2_GPU_CLAMP;
+    case D3DTADDRESS_BORDER: return H2_GPU_BORDER;
+    case 5: return H2_GPU_CLAMP_TO_EDGE;   /* D3DTADDRESS_CLAMPTOEDGE */
+    default: return H2_GPU_WRAP;
+    }
+}
+
+h2_gpu_u32 normal_filter(DWORD value)
+{
+    switch (value) {
+    case D3DTEXF_NONE: return H2_GPU_FILTER_NONE;
+    case D3DTEXF_POINT: return H2_GPU_FILTER_POINT;
+    default: return H2_GPU_FILTER_LINEAR;   /* linear, anisotropic, quincunx, gaussian */
+    }
+}
+
+/* D3DRS_COLORWRITEENABLE: the Xbox puts red at bit 16, green at 8, blue at
+   0 and alpha at 24; a value with only the low four bits set is taken to be
+   the PC layout (red 1, green 2, blue 4, alpha 8) */
+h2_gpu_u32 normal_color_mask(DWORD value)
+{
+    if (value & ~0xfu)
+        return ((value >> 16) & 1) | (((value >> 8) & 1) << 1) | ((value & 1) << 2) |
+               (((value >> 24) & 1) << 3);
+    return value & 0xf;
+}
+
+float float_bits(DWORD value)
+{
+    float result;
+    memcpy(&result, &value, 4);
+    return result;
+}
+
+void fill_texture(h2_gpu_texture *out, D3DBaseTexture *texture, D3DPalette *palette,
+                  DWORD const *stage)
+{
+    memset(out, 0, sizeof(*out));
+    if (texture) {
+        DWORD const *header = reinterpret_cast<DWORD const *>(texture);
+        out->header = guest_address(texture);
+        out->data = resource_data(header[1]);
+        out->format = header[3];
+        out->size = header[4];
+    }
+    if (palette)
+        out->palette = resource_data(reinterpret_cast<DWORD const *>(palette)[1]);
+    out->address_u = normal_address(stage[D3DTSS_ADDRESSU]);
+    out->address_v = normal_address(stage[D3DTSS_ADDRESSV]);
+    out->address_w = normal_address(stage[D3DTSS_ADDRESSW]);
+    out->mag_filter = normal_filter(stage[D3DTSS_MAGFILTER]);
+    out->min_filter = normal_filter(stage[D3DTSS_MINFILTER]);
+    out->mip_filter = normal_filter(stage[D3DTSS_MIPFILTER]);
+    out->border_color = stage[D3DTSS_BORDERCOLOR];
+    out->lod_bias = float_bits(stage[D3DTSS_MIPMAPLODBIAS]);
+    out->max_mip_level = stage[D3DTSS_MAXMIPLEVEL];
+    out->color_key = stage[D3DTSS_COLORKEYCOLOR];
+    out->color_key_op = stage[D3DTSS_COLORKEYOP];
+}
+
+/* the state every draw carries */
+void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
+{
+    DWORD const *rs = D3D__RenderState;
+    p->kind = H2_GPU_PACKET_DRAW;
+    p->version = H2_GPU_PROTOCOL_VERSION;
+    memcpy(p->vertex_defaults, g_vertex_registers, sizeof(p->vertex_defaults));
+
+    p->vertex_mode = g_vertex_program_selected ? H2_GPU_VERTEX_PROGRAM : H2_GPU_VERTEX_SCREEN;
+    p->vertex_program = guest_address(g_program_memory);
+    p->vertex_program_length = k_program_slots;
+    p->vertex_program_start = g_program_start;
+    p->vertex_constants = guest_address(d->vertex_constants);
+
+    p->has_pixel_shader = d->pixel_shader_program_set;
+    if (d->pixel_shader_program_set)
+        memcpy(p->pixel_shader, &d->pixel_shader_program, sizeof(p->pixel_shader));
+    for (long stage = 0; stage < 4; ++stage) {
+        fill_texture(&p->textures[stage], d->textures[stage], d->palettes[stage],
+                     D3D__TextureState[stage]);
+        p->stage_ops[stage].texcoord_index = D3D__TextureState[stage][D3DTSS_TEXCOORDINDEX];
+    }
+
+    p->blend_enable = rs[D3DRS_ALPHABLENDENABLE] != 0;
+    p->blend_src_color = p->blend_src_alpha = normal_blend(rs[D3DRS_SRCBLEND]);
+    p->blend_dst_color = p->blend_dst_alpha = normal_blend(rs[D3DRS_DESTBLEND]);
+    p->blend_op_color = p->blend_op_alpha = normal_blend_op(rs[D3DRS_BLENDOP]);
+    p->blend_constant = rs[D3DRS_BLENDCOLOR];
+    p->color_write_mask = normal_color_mask(rs[D3DRS_COLORWRITEENABLE]);
+    p->alpha_test_enable = rs[D3DRS_ALPHATESTENABLE] != 0;
+    p->alpha_func = normal_compare(rs[D3DRS_ALPHAFUNC]);
+    p->alpha_ref = static_cast<float>(rs[D3DRS_ALPHAREF] & 0xff) / 255.0f;
+    p->depth_test_enable = rs[D3DRS_ZENABLE] != 0;
+    p->depth_write_enable = rs[D3DRS_ZWRITEENABLE] != 0;
+    p->depth_func = normal_compare(rs[D3DRS_ZFUNC]);
+    p->depth_bias = static_cast<float>(rs[D3DRS_ZBIAS]) + float_bits(rs[D3DRS_POLYGONOFFSETZOFFSET]);
+    p->depth_slope_scale = float_bits(rs[D3DRS_POLYGONOFFSETZSLOPESCALE]);
+    p->stencil_enable = rs[D3DRS_STENCILENABLE] != 0;
+    p->stencil_func = normal_compare(rs[D3DRS_STENCILFUNC]);
+    p->stencil_ref = rs[D3DRS_STENCILREF];
+    p->stencil_mask = rs[D3DRS_STENCILMASK];
+    p->stencil_write_mask = rs[D3DRS_STENCILWRITEMASK];
+    p->stencil_fail = normal_stencil_op(rs[D3DRS_STENCILFAIL]);
+    p->stencil_depth_fail = normal_stencil_op(rs[D3DRS_STENCILZFAIL]);
+    p->stencil_pass = normal_stencil_op(rs[D3DRS_STENCILPASS]);
+    p->cull = rs[D3DRS_CULLMODE] == D3DCULL_CW ? H2_GPU_CULL_CLOCKWISE
+            : rs[D3DRS_CULLMODE] == D3DCULL_CCW ? H2_GPU_CULL_COUNTER_CLOCKWISE
+            : H2_GPU_CULL_NONE;
+    p->front_face_clockwise = rs[D3DRS_FRONTFACE] == 0x900;   /* GL_CW */
+    p->fill_wireframe = rs[D3DRS_FILLMODE] == D3DFILL_WIREFRAME;
+    p->fog_enable = rs[D3DRS_FOGENABLE] != 0;
+    p->fog_color = rs[D3DRS_FOGCOLOR];
+    p->texture_factor = rs[D3DRS_TEXTUREFACTOR];
+
+    p->viewport_x = static_cast<float>(d->viewport.X);
+    p->viewport_y = static_cast<float>(d->viewport.Y);
+    p->viewport_width = static_cast<float>(d->viewport.Width);
+    p->viewport_height = static_cast<float>(d->viewport.Height);
+    p->viewport_min_z = d->viewport.MinZ;
+    p->viewport_max_z = d->viewport.MaxZ;
+    p->scissor_enable = d->scissor_count != 0 && !d->scissor_exclusive;
+    if (p->scissor_enable) {
+        p->scissor_left = d->scissors[0].x1;
+        p->scissor_top = d->scissors[0].y1;
+        p->scissor_right = d->scissors[0].x2;
+        p->scissor_bottom = d->scissors[0].y2;
+    }
+    p->render_target = d->render_target == d->back_buffers[0] ? 0 : guest_address(d->render_target);
+    p->depth_stencil = guest_address(d->depth_stencil);
+    p->target_width = d->parameters.BackBufferWidth;
+    p->target_height = d->parameters.BackBufferHeight;
+    p->two_sided_lighting = rs[D3DRS_TWOSIDEDLIGHTING] != 0;
+}
+
+/* The vertex attribute formats the game selects (SelectVertexShaderDirect,
+   SetVertexShaderInputDirect): PROVISIONAL, the public D3D8 shape of 16
+   inputs of {stream, offset, format, tessellation bytes}. */
+struct h2_d3d_attribute_input
+{
+    DWORD stream;
+    DWORD offset;
+    DWORD format;
+    DWORD tessellation;
+};
+
+void fill_vertex_arrays(h2_d3d_device *d, h2_gpu_draw *p)
+{
+    h2_d3d_attribute_input const *inputs =
+        static_cast<h2_d3d_attribute_input const *>(d->stream_formats ? d->stream_formats
+                                                                     : d->vertex_attribute_formats);
+    for (long index = 0; index < k_vertex_attribute_count; ++index) {
+        h2_gpu_vertex_array *array = &p->vertex_arrays[index];
+        array->address = 0;
+        array->stride = 0;
+        array->format = 0x02;   /* unused */
+        if (!inputs)
+            continue;
+        h2_d3d_attribute_input const &input = inputs[index];
+        DWORD const format = input.format & 0xff;
+        if ((format >> 4) == 0 || input.stream >= static_cast<DWORD>(k_stream_count))
+            continue;
+        h2_d3d_stream const &stream = d->streams[input.stream];
+        if (!stream.buffer)
+            continue;
+        DWORD const *buffer = reinterpret_cast<DWORD const *>(stream.buffer);
+        array->address = resource_data(buffer[1]) + stream.offset + input.offset;
+        array->stride = stream.stride;
+        array->format = format;
+    }
+}
+
 void h2_d3d_draw(h2_d3d_device *d, D3DPRIMITIVETYPE primitive, UINT start, UINT count,
                  WORD const *indices)
 {
-    (void)primitive;
-    (void)start;
-    (void)count;
-    (void)indices;
     push_submit(d);
     ++d->draw_calls;
+    h2_gpu_draw *p = &g_draw_packet;
+    fill_draw_state(d, p);
+    p->primitive = primitive;
+    p->first_vertex = start + (indices ? d->base_vertex : 0);
+    p->vertex_count = count;
+    p->index_data = guest_address(indices);
+    p->vertex_source = H2_GPU_VERTICES_ARRAYS;
+    fill_vertex_arrays(d, p);
+    host_h2_gpu_draw(p);
+}
+
+/* a Begin/End batch, or an inline array the game pushed */
+void h2_d3d_draw_inline(h2_d3d_device *d, DWORD primitive, void const *vertices, long count)
+{
+    if (!count)
+        return;
+    ++d->draw_calls;
+    h2_gpu_draw *p = &g_draw_packet;
+    fill_draw_state(d, p);
+    p->primitive = primitive;
+    p->first_vertex = 0;
+    p->vertex_count = static_cast<h2_gpu_u32>(count);
+    p->index_data = 0;
+    p->vertex_source = H2_GPU_VERTICES_INLINE;
+    p->inline_vertices = guest_address(vertices);
+    p->inline_vertex_count = static_cast<h2_gpu_u32>(count);
+    for (long index = 0; index < k_vertex_attribute_count; ++index)
+        p->vertex_arrays[index].format = 0x02;
+    host_h2_gpu_draw(p);
 }
 
 void h2_d3d_clear(h2_d3d_device *d, DWORD count, D3DRECT const *rects, DWORD flags,
                   D3DCOLOR color, float z, DWORD stencil)
 {
-    (void)count;
-    (void)rects;
-    (void)flags;
-    (void)color;
-    (void)z;
-    (void)stencil;
     push_submit(d);
     ++d->clears;
+    h2_gpu_clear *p = &g_clear_packet;
+    p->kind = H2_GPU_PACKET_CLEAR;
+    p->version = H2_GPU_PROTOCOL_VERSION;
+    /* D3DCLEAR_TARGET 1, _ZBUFFER 2, _STENCIL 4 (public values) and the
+       Xbox's per-channel target bits (0xf0 for all of red, green, blue and
+       alpha, as function_14b60 builds them) */
+    p->flags = ((flags & 0xf1) ? 1u : 0u) | ((flags & 2) ? 2u : 0u) | ((flags & 4) ? 4u : 0u);
+    p->color = color;
+    p->depth = z;
+    p->stencil = stencil;
+    p->rect_count = rects && count ? (count > 8 ? 8 : count) : 0;
+    for (DWORD index = 0; index < p->rect_count; ++index) {
+        p->rects[index][0] = rects[index].x1;
+        p->rects[index][1] = rects[index].y1;
+        p->rects[index][2] = rects[index].x2;
+        p->rects[index][3] = rects[index].y2;
+    }
+    p->render_target = d->render_target == d->back_buffers[0] ? 0 : guest_address(d->render_target);
+    p->depth_stencil = guest_address(d->depth_stencil);
+    p->target_width = d->parameters.BackBufferWidth;
+    p->target_height = d->parameters.BackBufferHeight;
+    host_h2_gpu_clear(p);
+}
+
+/* registers written outside Begin/End stay the defaults of later draws;
+   inside one, writing register 0 (the position) emits a vertex */
+void vertex_register_set(DWORD vertex_register, float x, float y, float z, float w)
+{
+    if (vertex_register >= static_cast<DWORD>(k_vertex_attribute_count))
+        return;
+    float *value = g_vertex_registers[vertex_register];
+    value[0] = x;
+    value[1] = y;
+    value[2] = z;
+    value[3] = w;
+    if (vertex_register == 0 && g_inline_active && g_inline_count < k_inline_capacity)
+        memcpy(g_inline_vertices[g_inline_count++], g_vertex_registers, sizeof(g_vertex_registers));
 }
 
 /* lazily pushed state (D3D__DirtyFlags) would be encoded here */
@@ -1024,23 +1340,40 @@ extern "C" void __stdcall D3DDevice_SetPalette(DWORD stage, D3DPalette *palette)
 
 /* shaders */
 
+/* D3DFVF_XYZRHW (the public value): already transformed positions */
+constexpr DWORD k_fvf_xyzrhw = 0x004;
+
 extern "C" void __stdcall D3DDevice_SetVertexShader(DWORD handle)
 {
     device()->vertex_shader = handle;
+    if (handle & k_fvf_xyzrhw)
+        g_vertex_program_selected = false;
 }
 
+/* A program is a header word (instruction count << 16 | 0x2078, as the
+   game's own g_43f2b0 is) followed by 4 words per instruction; it goes into
+   program memory at instruction `address`. */
 extern "C" void __stdcall D3DDevice_LoadVertexShaderProgram(DWORD const *program, DWORD address)
 {
-    /* PROVISIONAL: the program's length encoding is not known, so the device
-       keeps the caller's pointer (the game's shader tag data) */
     device()->vertex_program = program;
     device()->vertex_program_address = address;
+    if (!program)
+        return;
+    DWORD count = program[0] >> 16;
+    if (address >= static_cast<DWORD>(k_program_slots))
+        return;
+    if (count > k_program_slots - address)
+        count = k_program_slots - address;
+    memcpy(g_program_memory[address], program + 1, count * 16);
 }
 
 extern "C" void __stdcall D3DDevice_SelectVertexShaderDirect(void const *formats, long shader)
 {
     device()->vertex_attribute_formats = formats;
     device()->vertex_shader_select_address = static_cast<DWORD>(shader);
+    g_program_start = static_cast<DWORD>(shader) < static_cast<DWORD>(k_program_slots)
+                          ? static_cast<DWORD>(shader) : 0;
+    g_vertex_program_selected = true;
 }
 
 extern "C" void __stdcall D3DDevice_SetVertexShaderInputDirect(void const *formats,
@@ -1113,25 +1446,54 @@ extern "C" void __stdcall D3DDevice_SetPixelShaderProgram(void const *program)
 
 extern "C" void __stdcall D3DDevice_SetVertexData2s(DWORD vertex_register, SHORT a, SHORT b)
 {
-    if (vertex_register >= k_vertex_attribute_count)
-        return;
-    DWORD *data = device()->vertex_data[vertex_register];
-    data[0] = static_cast<DWORD>(static_cast<long>(a));
-    data[1] = static_cast<DWORD>(static_cast<long>(b));
-    data[2] = 0;
-    data[3] = 1;
+    vertex_register_set(vertex_register, a, b, 0.0f, 1.0f);
 }
 
 extern "C" void __stdcall D3DDevice_SetVertexData4ub(DWORD vertex_register, BYTE a, BYTE b,
                                                      BYTE c, BYTE d)
 {
-    if (vertex_register >= k_vertex_attribute_count)
+    vertex_register_set(vertex_register, a / 255.0f, b / 255.0f, c / 255.0f, d / 255.0f);
+}
+
+extern "C" void __stdcall D3DDevice_SetVertexData2f(int vertex_register, float x, float y)
+{
+    vertex_register_set(static_cast<DWORD>(vertex_register), x, y, 0.0f, 1.0f);
+}
+
+extern "C" void __stdcall D3DDevice_SetVertexData4f(DWORD vertex_register, float x, float y,
+                                                    float z, float w)
+{
+    vertex_register_set(vertex_register, x, y, z, w);
+}
+
+extern "C" void __stdcall D3DDevice_SetVertexData4s(DWORD vertex_register, SHORT a, SHORT b,
+                                                    SHORT c, SHORT d)
+{
+    vertex_register_set(vertex_register, a, b, c, d);
+}
+
+/* a D3DCOLOR (ARGB) as the (red, green, blue, alpha) a D3D colour input reads */
+extern "C" void __stdcall D3DDevice_SetVertexDataColor(DWORD vertex_register, D3DCOLOR color)
+{
+    vertex_register_set(vertex_register, ((color >> 16) & 0xff) / 255.0f,
+                        ((color >> 8) & 0xff) / 255.0f, (color & 0xff) / 255.0f,
+                        (color >> 24) / 255.0f);
+}
+
+extern "C" void __stdcall D3DDevice_Begin(DWORD primitive_type)
+{
+    push_submit(device());
+    g_inline_primitive = primitive_type;
+    g_inline_count = 0;
+    g_inline_active = true;
+}
+
+extern "C" void __stdcall D3DDevice_End(void)
+{
+    if (!g_inline_active)
         return;
-    DWORD *data = device()->vertex_data[vertex_register];
-    data[0] = a;
-    data[1] = b;
-    data[2] = c;
-    data[3] = d;
+    g_inline_active = false;
+    h2_d3d_draw_inline(device(), g_inline_primitive, g_inline_vertices, g_inline_count);
 }
 
 extern "C" void __stdcall D3DDevice_SetIndices(D3DIndexBuffer *indices, UINT base_vertex)

@@ -106,6 +106,10 @@ double host_h2_math_asin(double value);
 /* the game session (port/src/main.cpp): one call per presented frame, and the
  * controller state for a port as an XINPUT_STATE record */
 void host_h2_frame(void);
+/* the renderer (port/src/gpu/): an h2_gpu_draw or h2_gpu_clear packet
+ * (h2/gpu_protocol.h) in guest memory */
+void host_h2_gpu_draw(const void* packet);
+void host_h2_gpu_clear(const void* packet);
 /* H2_TRACE: "d3d" = bit 0 */
 unsigned int host_h2_trace_flags(void);
 int host_h2_input_state(unsigned int port, void* state);

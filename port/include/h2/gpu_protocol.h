@@ -192,9 +192,12 @@ typedef struct h2_gpu_draw {
     h2_gpu_u32 scissor_enable;
     h2_gpu_s32 scissor_left, scissor_top, scissor_right, scissor_bottom;
 
-    /* targets: guest addresses of the D3DSurface headers */
+    /* targets: guest addresses of the D3DSurface headers; render_target is 0
+       for the back buffer */
     h2_gpu_u32 render_target;
     h2_gpu_u32 depth_stencil;
+    h2_gpu_u32 target_width, target_height;   /* pixels of the colour target */
+    h2_gpu_u32 two_sided_lighting;            /* back faces take oB0/oB1 */
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {
@@ -206,8 +209,9 @@ typedef struct h2_gpu_clear {
     h2_gpu_u32 stencil;
     h2_gpu_u32 rect_count;         /* 0 = the whole viewport */
     h2_gpu_s32 rects[8][4];        /* x1, y1, x2, y2 */
-    h2_gpu_u32 render_target;
+    h2_gpu_u32 render_target;   /* 0 for the back buffer */
     h2_gpu_u32 depth_stencil;
+    h2_gpu_u32 target_width, target_height;
 } h2_gpu_clear;
 
 #ifdef __cplusplus
