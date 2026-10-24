@@ -441,7 +441,7 @@ public:
         current_ = &back_;
         for (auto& buffer : frame_buffers_)
             buffer = [device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared];
-        if (!build_placeholders(error) || !build_present_pipeline(error))
+        if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error))
             return false;
         return true;
     }
@@ -460,11 +460,24 @@ public:
         Target* target = target_for(packet.render_target);
         if (!target)
             return;
-        /* a clear of rectangles is treated as a clear of the whole target
-           (TODO: clear just the rectangles) */
         const bool color = packet.flags & 1;
         const bool depth = packet.flags & 2;
         const bool stencil = packet.flags & 4;
+        /* rectangles short of the whole target are drawn over */
+        const int guest_width = target == &back_ && packet.target_width
+                                    ? static_cast<int>(packet.target_width) : target->guest_width;
+        const int guest_height = target == &back_ && packet.target_height
+                                     ? static_cast<int>(packet.target_height) : target->guest_height;
+        bool whole = packet.rect_count == 0;
+        for (std::uint32_t index = 0; index < packet.rect_count && index < 8; ++index) {
+            const auto* r = packet.rects[index];
+            if (r[0] <= 0 && r[1] <= 0 && r[2] >= guest_width && r[3] >= guest_height)
+                whole = true;
+        }
+        if (!whole) {
+            clear_rectangles(*target, packet, guest_width, guest_height);
+            return;
+        }
         if (target == current_)
             end_encoder();
         if (color) {
@@ -479,6 +492,63 @@ public:
         if (stencil) {
             target->pending_stencil_clear = true;
             target->clear_stencil = packet.stencil & 0xff;
+        }
+    }
+
+    /* clears of parts of a target: a quad per rectangle, writing the clear
+       values through scissors */
+    void clear_rectangles(Target& target, const h2_gpu_clear& packet, int guest_width, int guest_height) {
+        @autoreleasepool {
+            if (&target != current_) {
+                end_encoder();
+                current_ = &target;
+            }
+            begin_encoder();
+            const bool color = packet.flags & 1;
+            const bool depth = packet.flags & 2;
+            const bool stencil = packet.flags & 4;
+            id<MTLRenderPipelineState> state = color ? clear_color_pipeline_ : clear_depth_pipeline_;
+            [encoder_ setRenderPipelineState:state];
+            const std::uint64_t key = (depth ? 1u : 0u) | (stencil ? 2u : 0u);
+            id<MTLDepthStencilState> depth_state = clear_depth_states_[key];
+            if (!depth_state) {
+                MTLDepthStencilDescriptor* descriptor = [[MTLDepthStencilDescriptor alloc] init];
+                descriptor.depthCompareFunction = MTLCompareFunctionAlways;
+                descriptor.depthWriteEnabled = depth;
+                if (stencil) {
+                    MTLStencilDescriptor* s = [[MTLStencilDescriptor alloc] init];
+                    s.stencilCompareFunction = MTLCompareFunctionAlways;
+                    s.depthStencilPassOperation = MTLStencilOperationReplace;
+                    s.writeMask = 0xff;
+                    descriptor.frontFaceStencil = s;
+                    descriptor.backFaceStencil = s;
+                }
+                depth_state = [device_ newDepthStencilStateWithDescriptor:descriptor];
+                clear_depth_states_[key] = depth_state;
+            }
+            [encoder_ setDepthStencilState:depth_state];
+            [encoder_ setStencilReferenceValue:packet.stencil & 0xff];
+            [encoder_ setCullMode:MTLCullModeNone];
+            [encoder_ setViewport:(MTLViewport){0, 0, static_cast<double>(target.width),
+                                                static_cast<double>(target.height), 0, 1}];
+            const auto rgba = unpack_argb(packet.color);
+            const float values[5] = {rgba[0], rgba[1], rgba[2], rgba[3], std::clamp(packet.depth, 0.0f, 1.0f)};
+            [encoder_ setFragmentBytes:values length:sizeof(values) atIndex:0];
+            const double sx = static_cast<double>(target.width) / guest_width;
+            const double sy = static_cast<double>(target.height) / guest_height;
+            for (std::uint32_t index = 0; index < packet.rect_count && index < 8; ++index) {
+                const auto* r = packet.rects[index];
+                const double left = std::clamp(r[0] * sx, 0.0, static_cast<double>(target.width));
+                const double top = std::clamp(r[1] * sy, 0.0, static_cast<double>(target.height));
+                const double right = std::clamp(r[2] * sx, 0.0, static_cast<double>(target.width));
+                const double bottom = std::clamp(r[3] * sy, 0.0, static_cast<double>(target.height));
+                if (right <= left || bottom <= top)
+                    continue;
+                MTLScissorRect scissor = {static_cast<NSUInteger>(left), static_cast<NSUInteger>(top),
+                                          static_cast<NSUInteger>(right - left), static_cast<NSUInteger>(bottom - top)};
+                [encoder_ setScissorRect:scissor];
+                [encoder_ drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
+            }
         }
     }
 
@@ -596,6 +666,50 @@ private:
         if (!placeholder_2d_ || !placeholder_cube_ || !placeholder_3d_) {
             error = "placeholder textures failed";
             return false;
+        }
+        return true;
+    }
+
+    bool build_clear_pipelines(std::string& error) {
+        static const char* source = R"msl(
+#include <metal_stdlib>
+using namespace metal;
+struct ClearOut { float4 position [[position]]; };
+struct ClearValues { float4 color; float depth; };
+struct ClearFragment { float4 color [[color(0)]]; float depth [[depth(any)]]; };
+vertex ClearOut h2_clear_vertex(uint vid [[vertex_id]]) {
+    float2 corner = float2((vid << 1) & 2, vid & 2);
+    ClearOut o;
+    o.position = float4(corner * 2.0 - 1.0, 0.0, 1.0);
+    return o;
+}
+fragment ClearFragment h2_clear_fragment(ClearOut in [[stage_in]], constant ClearValues &v [[buffer(0)]]) {
+    ClearFragment o;
+    o.color = v.color;
+    o.depth = v.depth;
+    return o;
+}
+)msl";
+        NSError* failure = nil;
+        id<MTLLibrary> library = [device_ newLibraryWithSource:@(source) options:nil error:&failure];
+        if (!library) {
+            error = std::string("clear shader: ") + failure.localizedDescription.UTF8String;
+            return false;
+        }
+        for (int with_color = 0; with_color < 2; ++with_color) {
+            MTLRenderPipelineDescriptor* descriptor = [[MTLRenderPipelineDescriptor alloc] init];
+            descriptor.vertexFunction = [library newFunctionWithName:@"h2_clear_vertex"];
+            descriptor.fragmentFunction = [library newFunctionWithName:@"h2_clear_fragment"];
+            descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+            descriptor.colorAttachments[0].writeMask = with_color ? MTLColorWriteMaskAll : MTLColorWriteMaskNone;
+            descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
+            descriptor.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
+            id<MTLRenderPipelineState> state = [device_ newRenderPipelineStateWithDescriptor:descriptor error:&failure];
+            if (!state) {
+                error = std::string("clear pipeline: ") + failure.localizedDescription.UTF8String;
+                return false;
+            }
+            (with_color ? clear_color_pipeline_ : clear_depth_pipeline_) = state;
         }
         return true;
     }
@@ -1385,6 +1499,9 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     id<MTLTexture> placeholder_3d_ = nil;
     id<MTLSamplerState> placeholder_sampler_ = nil;
     id<MTLRenderPipelineState> present_pipeline_ = nil;
+    id<MTLRenderPipelineState> clear_color_pipeline_ = nil;
+    id<MTLRenderPipelineState> clear_depth_pipeline_ = nil;
+    std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> clear_depth_states_;
     std::array<id<MTLBuffer>, 1> frame_buffers_{};
     std::size_t frame_offset_ = 0;
     id<MTLBuffer> readback_ = nil;

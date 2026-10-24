@@ -947,6 +947,14 @@ void h2_d3d_clear(h2_d3d_device *d, DWORD count, D3DRECT const *rects, DWORD fla
         p->rects[index][2] = rects[index].x2;
         p->rects[index][3] = rects[index].y2;
     }
+    if (!p->rect_count) {
+        /* no rectangles: the viewport */
+        p->rect_count = 1;
+        p->rects[0][0] = static_cast<h2_gpu_s32>(d->viewport.X);
+        p->rects[0][1] = static_cast<h2_gpu_s32>(d->viewport.Y);
+        p->rects[0][2] = static_cast<h2_gpu_s32>(d->viewport.X + d->viewport.Width);
+        p->rects[0][3] = static_cast<h2_gpu_s32>(d->viewport.Y + d->viewport.Height);
+    }
     p->render_target = d->render_target == d->back_buffers[0] ? 0 : guest_address(d->render_target);
     p->depth_stencil = guest_address(d->depth_stencil);
     p->target_width = d->parameters.BackBufferWidth;

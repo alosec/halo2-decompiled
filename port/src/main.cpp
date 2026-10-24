@@ -1179,15 +1179,19 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
         std::cerr << "SDL initialization failed: " << SDL_GetError() << '\n';
         return false;
     }
+    /* H2_WINDOW_HIDDEN=1: a real window and presentation, never shown */
+    const bool hidden = std::getenv("H2_WINDOW_HIDDEN") != nullptr;
     session.window = SDL_CreateWindow("Halo 2", 960, 720,
-                                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL);
+                                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL |
+                                          (hidden ? SDL_WINDOW_HIDDEN : 0));
     session.metal_view = session.window ? SDL_Metal_CreateView(session.window) : nullptr;
     if (!session.metal_view) {
         std::cerr << "game window setup failed: " << SDL_GetError() << '\n';
         return false;
     }
     session.gpu->attach_layer(SDL_Metal_GetLayer(session.metal_view));
-    SDL_SetWindowRelativeMouseMode(session.window, true);
+    if (!hidden)
+        SDL_SetWindowRelativeMouseMode(session.window, true);
     return true;
 }
 
