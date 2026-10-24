@@ -157,7 +157,7 @@ extern "C" long __stdcall IDirectSoundBuffer_GetStatus(
 extern "C" long __stdcall IDirectSoundBuffer_Play(
 	IDirectSoundBuffer *buffer, dword reserved1, dword reserved2, dword flags);
 extern "C" long __stdcall IDirectSoundBuffer_StopEx(
-	IDirectSoundBuffer *buffer, dword timestamp, dword flags);
+	IDirectSoundBuffer *buffer, long long timestamp, dword flags);
 
 namespace
 {

@@ -3,6 +3,9 @@
 #include <signal.h>
 #include <cstdio>
 #include <csignal>
+#include <chrono>
+#include <thread>
+#include <algorithm>
 #include "h2/font_decode.hpp"
 #include "h2/xbox_system.hpp"
 #include "h2/guest_arena.hpp"
@@ -976,6 +979,249 @@ void install_fault_reporter() {
     sigaction(SIGTRAP, &action, nullptr);
 }
 
+/* The recovered game's own main loop drives frames in a whole image: its
+   Direct3D swap calls host_h2_frame, which presents what the frame drew,
+   pumps events and refreshes the controller the game polls. */
+struct GameSession {
+    SDL_Window* window = nullptr;
+    SDL_Renderer* renderer = nullptr;
+    NativeRenderContext render_context;
+    int frame_count = 0;
+    int frames = 0;
+    std::filesystem::path screenshot;
+    std::chrono::steady_clock::time_point last_frame;
+    /* XINPUT_GAMEPAD for port 0 */
+    std::uint16_t buttons = 0;
+    std::uint8_t analog[8] = {};
+    std::int16_t thumbs[4] = {};
+    std::uint32_t packet = 0;
+    float mouse_x = 0;
+    float mouse_y = 0;
+    struct ScriptedPress {
+        int first;
+        int last;
+        std::string button;
+    };
+    std::vector<ScriptedPress> script;
+};
+
+GameSession& game_session() {
+    static GameSession session;
+    return session;
+}
+
+void parse_input_script(GameSession& session) {
+    /* H2_INPUT_SCRIPT="frame:button[:frames],..." e.g. "400:start:4,700:a:4" */
+    const char* script = std::getenv("H2_INPUT_SCRIPT");
+    if (!script)
+        return;
+    std::string text(script);
+    std::size_t start = 0;
+    while (start < text.size()) {
+        const std::size_t end = text.find(',', start);
+        const std::string item = text.substr(start, end == std::string::npos ? std::string::npos : end - start);
+        const std::size_t first_colon = item.find(':');
+        if (first_colon != std::string::npos) {
+            const std::size_t second_colon = item.find(':', first_colon + 1);
+            const int frame = std::atoi(item.substr(0, first_colon).c_str());
+            const std::string button = item.substr(first_colon + 1, second_colon == std::string::npos
+                                                                        ? std::string::npos
+                                                                        : second_colon - first_colon - 1);
+            const int length = second_colon == std::string::npos ? 4 : std::atoi(item.c_str() + second_colon + 1);
+            session.script.push_back({frame, frame + std::max(1, length) - 1, button});
+        }
+        if (end == std::string::npos)
+            break;
+        start = end + 1;
+    }
+}
+
+void apply_button(GameSession& session, const std::string& name, bool down) {
+    /* digital: dpad up/down/left/right, start, back, left/right thumb;
+       analog: a, b, x, y, black, white, left/right trigger */
+    static const std::pair<const char*, std::uint16_t> digital[] = {
+        {"up", 0x01}, {"down", 0x02}, {"left", 0x04}, {"right", 0x08},
+        {"start", 0x10}, {"back", 0x20}, {"ls", 0x40}, {"rs", 0x80}};
+    static const char* analog[] = {"a", "b", "x", "y", "black", "white", "lt", "rt"};
+    for (const auto& [label, bit] : digital)
+        if (name == label)
+            session.buttons = down ? (session.buttons | bit) : (session.buttons & ~bit);
+    for (int index = 0; index < 8; ++index)
+        if (name == analog[index])
+            session.analog[index] = down ? 0xff : 0;
+}
+
+void update_input(GameSession& session) {
+    session.buttons = 0;
+    std::memset(session.analog, 0, sizeof(session.analog));
+    std::memset(session.thumbs, 0, sizeof(session.thumbs));
+    if (session.window) {
+        const bool* keys = SDL_GetKeyboardState(nullptr);
+        const auto key = [&](SDL_Scancode code) { return keys[code]; };
+        /* Halo 2 defaults: A jump, B melee, X action/reload, Y weapon swap,
+           left trigger grenade, right trigger fire, left stick crouch,
+           right stick zoom, black flashlight, white grenade swap */
+        struct KeyMap { SDL_Scancode code; const char* button; };
+        static const KeyMap keymap[] = {
+            {SDL_SCANCODE_SPACE, "a"}, {SDL_SCANCODE_F, "b"}, {SDL_SCANCODE_E, "x"},
+            {SDL_SCANCODE_Q, "y"}, {SDL_SCANCODE_G, "lt"}, {SDL_SCANCODE_LCTRL, "ls"},
+            {SDL_SCANCODE_Z, "rs"}, {SDL_SCANCODE_T, "black"}, {SDL_SCANCODE_TAB, "white"},
+            {SDL_SCANCODE_RETURN, "start"}, {SDL_SCANCODE_ESCAPE, "back"},
+            {SDL_SCANCODE_UP, "up"}, {SDL_SCANCODE_DOWN, "down"},
+            {SDL_SCANCODE_LEFT, "left"}, {SDL_SCANCODE_RIGHT, "right"}};
+        for (const auto& entry : keymap)
+            if (key(entry.code))
+                apply_button(session, entry.button, true);
+        float mouse_dx = 0, mouse_dy = 0;
+        const SDL_MouseButtonFlags mouse = SDL_GetRelativeMouseState(&mouse_dx, &mouse_dy);
+        if (mouse & SDL_BUTTON_LMASK)
+            apply_button(session, "rt", true);
+        if (mouse & SDL_BUTTON_RMASK)
+            apply_button(session, "lt", true);
+        const auto axis = [](bool negative, bool positive) {
+            return static_cast<std::int16_t>((positive ? 32767 : 0) - (negative ? 32767 : 0));
+        };
+        session.thumbs[0] = axis(key(SDL_SCANCODE_A), key(SDL_SCANCODE_D));
+        session.thumbs[1] = axis(key(SDL_SCANCODE_S), key(SDL_SCANCODE_W));
+        const auto look = [](float delta) {
+            return static_cast<std::int16_t>(std::clamp(delta * 1800.0f, -32767.0f, 32767.0f));
+        };
+        session.thumbs[2] = look(mouse_dx);
+        session.thumbs[3] = look(-mouse_dy);
+        /* a gamepad, when present, adds to the keyboard */
+        int count = 0;
+        SDL_JoystickID* ids = SDL_GetGamepads(&count);
+        if (ids && count > 0) {
+            static SDL_Gamepad* pad = nullptr;
+            if (!pad)
+                pad = SDL_OpenGamepad(ids[0]);
+            if (pad) {
+                const auto pressed = [&](SDL_GamepadButton button) { return SDL_GetGamepadButton(pad, button); };
+                struct PadMap { SDL_GamepadButton button; const char* name; };
+                static const PadMap padmap[] = {
+                    {SDL_GAMEPAD_BUTTON_SOUTH, "a"}, {SDL_GAMEPAD_BUTTON_EAST, "b"},
+                    {SDL_GAMEPAD_BUTTON_WEST, "x"}, {SDL_GAMEPAD_BUTTON_NORTH, "y"},
+                    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "white"}, {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "black"},
+                    {SDL_GAMEPAD_BUTTON_START, "start"}, {SDL_GAMEPAD_BUTTON_BACK, "back"},
+                    {SDL_GAMEPAD_BUTTON_LEFT_STICK, "ls"}, {SDL_GAMEPAD_BUTTON_RIGHT_STICK, "rs"},
+                    {SDL_GAMEPAD_BUTTON_DPAD_UP, "up"}, {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "down"},
+                    {SDL_GAMEPAD_BUTTON_DPAD_LEFT, "left"}, {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "right"}};
+                for (const auto& entry : padmap)
+                    if (pressed(entry.button))
+                        apply_button(session, entry.name, true);
+                if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) > 8000)
+                    apply_button(session, "lt", true);
+                if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) > 8000)
+                    apply_button(session, "rt", true);
+                const auto stick = [&](SDL_GamepadAxis a, bool invert, std::int16_t keyboard) {
+                    const int value = SDL_GetGamepadAxis(pad, a);
+                    const int signed_value = invert ? -std::max(value, -32767) : value;
+                    return keyboard ? keyboard : static_cast<std::int16_t>(std::clamp(signed_value, -32767, 32767));
+                };
+                session.thumbs[0] = stick(SDL_GAMEPAD_AXIS_LEFTX, false, session.thumbs[0]);
+                session.thumbs[1] = stick(SDL_GAMEPAD_AXIS_LEFTY, true, session.thumbs[1]);
+                session.thumbs[2] = stick(SDL_GAMEPAD_AXIS_RIGHTX, false, session.thumbs[2]);
+                session.thumbs[3] = stick(SDL_GAMEPAD_AXIS_RIGHTY, true, session.thumbs[3]);
+            }
+        }
+        SDL_free(ids);
+    }
+    for (const auto& press : session.script)
+        if (session.frames >= press.first && session.frames <= press.last)
+            apply_button(session, press.button, true);
+    ++session.packet;
+}
+
+bool open_game_session(bool headless, int frame_count, const std::filesystem::path& screenshot,
+                       const h2::port::GuestArena* arena, const std::filesystem::path& data_root) {
+    auto& session = game_session();
+    session.frame_count = frame_count;
+    session.screenshot = screenshot;
+    session.last_frame = std::chrono::steady_clock::now();
+    parse_input_script(session);
+    if (headless)
+        return true;
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+        std::cerr << "SDL initialization failed: " << SDL_GetError() << '\n';
+        return false;
+    }
+    session.window = SDL_CreateWindow("Halo 2", 960, 720,
+                                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    session.renderer = session.window ? SDL_CreateRenderer(session.window, nullptr) : nullptr;
+    if (!session.renderer ||
+        !SDL_SetRenderLogicalPresentation(session.renderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX)) {
+        std::cerr << "game window setup failed: " << SDL_GetError() << '\n';
+        return false;
+    }
+    SDL_SetWindowRelativeMouseMode(session.window, true);
+    session.render_context.renderer = session.renderer;
+    session.render_context.arena = arena;
+    session.render_context.font_root = data_root / "maps" / "fonts";
+    h2::port::set_render_request_handler(draw_guest_request, &session.render_context);
+    h2::port::set_text_request_handler(draw_guest_text, &session.render_context);
+    SDL_SetRenderDrawColor(session.renderer, 0, 0, 0, 255);
+    SDL_RenderClear(session.renderer);
+    return true;
+}
+
+} // namespace
+
+extern "C" void host_h2_frame(void) {
+    auto& session = game_session();
+    ++session.frames;
+    const bool last = session.frame_count > 0 && session.frames >= session.frame_count;
+    if (session.renderer) {
+        if (last && !session.screenshot.empty()) {
+            SDL_Surface* surface = SDL_RenderReadPixels(session.renderer, nullptr);
+            if (surface && SDL_SaveBMP(surface, session.screenshot.c_str()))
+                std::cout << "Saved final rendered frame to " << session.screenshot << std::endl;
+            if (surface)
+                SDL_DestroySurface(surface);
+        }
+        SDL_RenderPresent(session.renderer);
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT)
+                std::exit(0);
+        }
+        SDL_SetRenderDrawColor(session.renderer, 0, 0, 0, 255);
+        SDL_RenderClear(session.renderer);
+        /* the Xbox swapped at 60 Hz */
+        const auto target = session.last_frame + std::chrono::microseconds(16667);
+        const auto now = std::chrono::steady_clock::now();
+        if (now < target)
+            std::this_thread::sleep_for(target - now);
+        session.last_frame = std::chrono::steady_clock::now();
+    }
+    update_input(session);
+    if (last) {
+        const auto stats = h2::port::host_service_stats();
+        std::cout << "Presented " << session.frames << " game frames; guest requests: render "
+                  << stats.render_request_calls << ", text " << stats.text_request_calls << std::endl;
+        std::exit(0);
+    }
+}
+
+extern "C" int host_h2_input_state(unsigned int port, void* state) {
+    /* XINPUT_STATE: packet number, then XINPUT_GAMEPAD (buttons, eight
+       analog bytes, four thumb axes) */
+    if (port != 0)
+        return 0;
+    auto& session = game_session();
+    auto* bytes = static_cast<unsigned char*>(state);
+    std::memcpy(bytes, &session.packet, 4);
+    std::memcpy(bytes + 4, &session.buttons, 2);
+    std::memcpy(bytes + 6, session.analog, 8);
+    std::memcpy(bytes + 14, session.thumbs, 8);
+    return 1;
+}
+
+extern "C" unsigned int host_h2_input_connected(void) {
+    return 1u; /* the keyboard and the first gamepad share port 0 */
+}
+
+namespace {
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -1041,6 +1287,21 @@ int main(int argc, char** argv) {
             std::cerr << "error: " << arena_error << '\n';
             return 1;
         }
+        {
+            /* the game session's frame and controller services (whole images) */
+            const std::pair<const char*, std::uintptr_t> session_imports[] = {
+                {"host_h2_frame", reinterpret_cast<std::uintptr_t>(&host_h2_frame)},
+                {"host_h2_input_state", reinterpret_cast<std::uintptr_t>(&host_h2_input_state)},
+                {"host_h2_input_connected", reinterpret_cast<std::uintptr_t>(&host_h2_input_connected)},
+            };
+            for (const auto& [symbol, target] : session_imports) {
+                if (guest_image->symbol_address(std::string("h2_host_slot_") + symbol) &&
+                    !guest_image->patch_host_import(*arena, symbol, target, arena_error)) {
+                    std::cerr << "error: " << arena_error << '\n';
+                    return 1;
+                }
+            }
+        }
         std::size_t relocated_code_pointers = 0;
         if (!h2::port::apply_retail_code_map(*guest_image, *arena, image.sections,
                                              relocated_code_pointers, arena_error)) {
@@ -1103,7 +1364,9 @@ int main(int argc, char** argv) {
                 (!h2::port::configure_async_services(*arena, arena_error) ||
                  !h2::port::configure_xbox_system(*arena, options.data_root,
                                                   options.profile_root / "title",
-                                                  arena_error))) {
+                                                  arena_error) ||
+                 !open_game_session(options.headless, options.frame_count, options.screenshot,
+                                    arena.get(), options.data_root))) {
                 std::cerr << "error: guest async services: " << arena_error << '\n';
                 return 1;
             }

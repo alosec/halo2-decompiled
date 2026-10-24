@@ -103,6 +103,11 @@ unsigned long long host_h2_performance_counter(void);
 double host_h2_math_atan(double value);
 double host_h2_math_atan2(double y, double x);
 double host_h2_math_asin(double value);
+/* the game session (port/src/main.cpp): one call per presented frame, and the
+ * controller state for a port as an XINPUT_STATE record */
+void host_h2_frame(void);
+int host_h2_input_state(unsigned int port, void* state);
+unsigned int host_h2_input_connected(void);
 
 #ifdef __cplusplus
 }

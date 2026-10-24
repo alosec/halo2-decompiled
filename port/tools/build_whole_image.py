@@ -240,6 +240,7 @@ def frontend(unit, args, header_stamp):
         # VC 7.1 (the retail compiler) predates thread-safe local statics.
         command += ["-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics",
                     "-Dinline=inline __attribute__((used))",
+                    "-D__forceinline=inline __attribute__((used))",
                     # MSVC accepts these; the Xbox headers make SSE types and
                     # the memory intrinsics visible everywhere.
                     "-Wno-address-of-temporary", "-include", "xmmintrin.h", "-include", "string.h"]
@@ -385,8 +386,10 @@ def priority(unit, symbol, csv_sources, symbol_address):
 
 
 def symbol_addresses(units):
-    """Map symbols to the retail address of the nearest preceding @retail tag."""
+    """Map (unit, qualified name) and (unit, unique bare name) to the retail
+    address of the nearest preceding @retail tag."""
     result = {}
+    bare = {}
     for unit in units:
         lines = unit.source.read_text(errors="replace").split("\n")
         pending = None
@@ -396,11 +399,82 @@ def symbol_addresses(units):
                 pending = int(tag.group(1), 16)
                 continue
             if pending is not None:
-                m = re.search(r'([A-Za-z_~][A-Za-z0-9_:~]*)\s*\(', line)
+                m = re.search(r'((?:[A-Za-z_]\w*::)*~?[A-Za-z_]\w*)\s*\(', line)
                 if m and not line.lstrip().startswith(("//", "/*", "*")):
-                    result.setdefault((unit.relative, m.group(1).split("::")[-1]), pending)
+                    qualified = m.group(1)
+                    result.setdefault((unit.relative, qualified), pending)
+                    key = (unit.relative, qualified.split("::")[-1])
+                    bare.setdefault(key, set()).add(pending)
                     pending = None
+    for key, addresses in bare.items():
+        if len(addresses) == 1:
+            result.setdefault(key, next(iter(addresses)))
     return result
+
+
+def qualified_name(symbol):
+    """'?v7@c_helper_b@@UAA_NXZ' -> 'c_helper_b::v7'; constructors and
+    destructors as 'c_x::c_x' and 'c_x::~c_x'; None for anything else."""
+    m = re.match(r'\?\?([01])([A-Za-z_]\w*)@((?:[A-Za-z_]\w*@)*)@', symbol)
+    if m:
+        scopes = [m.group(2)] + [s for s in m.group(3).split("@") if s]
+        outer = "::".join(reversed(scopes))
+        return f"{outer}::{'~' if m.group(1) == '1' else ''}{m.group(2)}"
+    m = re.match(r'\?([A-Za-z_]\w*)@((?:[A-Za-z_]\w*@)*)@', symbol)
+    if m:
+        scopes = [s for s in m.group(2).split("@") if s]
+        return "::".join(list(reversed(scopes)) + [m.group(1)])
+    m = re.match(r'\?([A-Za-z_]\w*)@@', symbol)
+    if m:
+        return m.group(1)
+    return symbol if re.match(r'^[A-Za-z_]\w*$', symbol) else None
+
+STORAGE_MACRO = re.compile(
+    r'^#define\s+g_(?:unknown_)?([0-9a-f]{5,6})\w*\s+\(\s*([A-Za-z_]\w*)((?:\.\w+|\[\d+\])+)\s*\)\s*$', re.M)
+
+
+def storage_bindings(root, args, work):
+    """Retail addresses of storage structs that recovered headers alias by
+    address: '#define g_510800_pool_base (g_pool_storage.base)' places
+    g_pool_storage at 0x510800 - offsetof(base). Returns {symbol: address}."""
+    probes = []
+    for header in sorted((root / "include").glob("*.h")):
+        for m in STORAGE_MACRO.finditer(header.read_text(errors="replace")):
+            probes.append((header, int(m.group(1), 16), m.group(2), m.group(3).lstrip(".")))
+    if not probes:
+        return {}
+    lines = [f'#include "{header.name}"' for header in sorted({p[0] for p in probes})]
+    for index, (_, _, name, path) in enumerate(probes):
+        lines.append(f'extern "C" unsigned int h2_probe_offset_{index} = __builtin_offsetof(decltype({name}), {path});')
+        lines.append(f'extern "C" void *h2_probe_symbol_{index} = (void *)&{name};')
+    source = work / "storage_probe.cpp"
+    source.write_text("\n".join(lines) + "\n")
+    command = [args.llvm / "clang++", "--target=thumbv7-pc-windows-msvc", "-O0", "-ffreestanding",
+               "-DH2_NATIVE_PORT=1", "-DH2_WHOLE_IMAGE=1", "-DH2_MS_ABI_FRONTEND=1", "-Xclang",
+               "-fno-wchar", "-fms-extensions", "-fno-exceptions", "-fno-rtti", "-w",
+               "-Wno-c++11-narrowing", "-include", "xmmintrin.h", "-include", "string.h",
+               *[f"-I{i}" for i in args.include], "-S", "-emit-llvm", source, "-o", "-"]
+    result = subprocess.run([str(c) for c in command], capture_output=True, text=True)
+    if result.returncode:
+        print("storage probe failed:", next((l for l in result.stderr.splitlines() if "error" in l), ""))
+        return {}
+    offsets = {int(m.group(1)): int(m.group(2)) for m in
+               re.finditer(r'^@h2_probe_offset_(\d+) = \S+ (?:local_unnamed_addr )?global i32 (\d+)', result.stdout, re.M)}
+    symbols = {int(m.group(1)): unquote(m.group(2).lstrip("@")) for m in
+               re.finditer(r'^@h2_probe_symbol_(\d+) = .*? ptr (@"[^"]+"|@[\w.$?@]+)', result.stdout, re.M)}
+    found = {}
+    conflicts = set()
+    for index, (_, address, name, _) in enumerate(probes):
+        if index not in offsets or index not in symbols:
+            continue
+        symbol = symbols[index]
+        base = address - offsets[index]
+        if found.setdefault(symbol, base) != base:
+            conflicts.add(symbol)
+    for symbol in conflicts:
+        print("storage binding conflict:", symbol)
+        found.pop(symbol)
+    return found
 
 
 def main():
@@ -456,9 +530,13 @@ def main():
     tag_addresses = symbol_addresses(compiled)
 
     def address_of(unit, symbol):
-        base = re.match(r'\?+([A-Za-z_][A-Za-z0-9_]*)@', symbol)
-        name = base.group(1) if base else symbol
-        return tag_addresses.get((unit.relative, name))
+        qualified = qualified_name(symbol)
+        if qualified is None:
+            return None
+        found = tag_addresses.get((unit.relative, qualified))
+        if found is None and "::" in qualified:
+            found = tag_addresses.get((unit.relative, qualified.split("::")[-1]))
+        return found
 
     # Resolve strong function definitions.
     owners = {}
@@ -501,6 +579,10 @@ def main():
     for manifest in args.bindings:
         for entry in json.loads(manifest.read_text())["symbols"]:
             bindings[entry["symbol"]] = int(entry["address"], 0)
+
+    for symbol, address in storage_bindings(root, args, work).items():
+        bindings.setdefault(symbol, address)
+        report.setdefault("storage_bound", {})[symbol] = f"0x{address:08x}"
 
     global_owners = {}
     delete_globals = {u.relative: set() for u in compiled}

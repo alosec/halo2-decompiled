@@ -33,7 +33,9 @@ using h2::port::GuestMemoryProtection;
 constexpr std::uint32_t kVirtualBase = 0x40000000u;
 constexpr std::uint32_t kVirtualEnd = 0x7f000000u;
 constexpr std::uint32_t kPhysicalBase = 0x88000000u;
-constexpr std::uint32_t kPhysicalEnd = 0x98000000u;
+/* The game masks texture data addresses with 0x0fffffff and rebuilds them with
+   0x80000000, so contiguous memory must stay below 0x90000000. */
+constexpr std::uint32_t kPhysicalEnd = 0x90000000u;
 constexpr std::uint32_t kInvalidHandle = 0xffffffffu;
 constexpr std::uint32_t kFileHandleBase = 0x48000000u;
 constexpr std::uint32_t kFindHandleBase = 0x49000000u;

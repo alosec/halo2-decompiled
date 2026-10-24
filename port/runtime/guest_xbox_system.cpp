@@ -478,3 +478,206 @@ extern "C" DWORD WINAPI XCalculateSignatureEnd(HANDLE handle, XCALCSIG_SIGNATURE
     context.used = false;
     return 0;
 }
+
+/* saved games: each save is a directory "<root><12 hex digits>\" on its drive,
+ * named from its display name, with the name kept in SaveMeta.xbx */
+
+namespace {
+
+constexpr DWORD k_error_file_not_found = 2;
+constexpr DWORD k_error_already_exists = 183;
+constexpr DWORD k_error_no_more_files = 18;
+constexpr DWORD k_save_name_characters = 64;
+
+void save_directory(const char *root, const wchar_t *name, char *out, size_t size)
+{
+    unsigned long long hash = 0xcbf29ce484222325ull;
+    for (const wchar_t *c = name; c && *c; ++c)
+    {
+        hash ^= (unsigned short)*c;
+        hash *= 0x100000001b3ull;
+    }
+    static const char digits[] = "0123456789ABCDEF";
+    char id[13];
+    for (int i = 0; i < 12; ++i)
+        id[i] = digits[(hash >> (i * 4)) & 15];
+    id[12] = 0;
+    size_t length = 0;
+    for (const char *c = root; *c && length + 1 < size; ++c)
+        out[length++] = *c;
+    for (const char *c = id; *c && length + 1 < size; ++c)
+        out[length++] = *c;
+    if (length + 1 < size)
+        out[length++] = '\\';
+    out[length] = 0;
+}
+
+void save_meta_path(const char *directory, char *out, size_t size)
+{
+    size_t length = 0;
+    for (const char *c = directory; *c && length + 1 < size; ++c)
+        out[length++] = *c;
+    for (const char *c = "SaveMeta.xbx"; *c && length + 1 < size; ++c)
+        out[length++] = *c;
+    out[length] = 0;
+}
+
+bool read_save_name(const char *directory, wchar_t *name, DWORD characters)
+{
+    char path[MAX_PATH];
+    save_meta_path(directory, path, sizeof(path));
+    memset(name, 0, characters * sizeof(wchar_t));
+    const unsigned int file = host_h2_file_open(path, 1, OPEN_EXISTING);
+    if (file == 0xffffffffu)
+        return false;
+    unsigned int read = 0;
+    host_h2_file_read(file, name, (characters - 1) * sizeof(wchar_t), &read);
+    host_h2_file_close(file);
+    return true;
+}
+
+struct s_save_find
+{
+    unsigned int find;
+    char root[8];
+};
+
+s_save_find g_save_finds[4];
+
+bool fill_save_data(s_save_find &search, XGAME_FIND_DATA *data)
+{
+    for (;;)
+    {
+        if (data->wfd.dwFileAttributes & 0x10)
+        {
+            size_t length = 0;
+            for (const char *c = search.root; *c && length + 2 < MAX_PATH; ++c)
+                data->szSaveGameDirectory[length++] = *c;
+            for (const char *c = data->wfd.cFileName; *c && length + 2 < MAX_PATH; ++c)
+                data->szSaveGameDirectory[length++] = *c;
+            data->szSaveGameDirectory[length++] = '\\';
+            data->szSaveGameDirectory[length] = 0;
+            if (read_save_name(data->szSaveGameDirectory, (wchar_t *)data->szSaveGameName,
+                               k_save_name_characters))
+                return true;
+        }
+        if (!host_h2_find_next(search.find, &data->wfd))
+            return false;
+    }
+}
+
+} // namespace
+
+extern "C" DWORD __stdcall XCreateSaveGame(const char *root, const wchar_t *name, DWORD disposition,
+                                           DWORD flags, char *directory, DWORD directory_size)
+{
+    (void)flags;
+    char path[MAX_PATH];
+    save_directory(root, name, path, sizeof(path));
+    const bool exists = host_h2_file_attributes(path, 0, 0) != 0xffffffffu;
+    if (disposition == CREATE_NEW && exists)
+        return k_error_already_exists;
+    if (disposition == OPEN_EXISTING && !exists)
+        return k_error_file_not_found;
+    if (!exists)
+    {
+        host_h2_directory_create(path);
+        char meta[MAX_PATH];
+        save_meta_path(path, meta, sizeof(meta));
+        const unsigned int file = host_h2_file_open(meta, 3, CREATE_ALWAYS);
+        if (file == 0xffffffffu)
+            return 5;
+        unsigned int written = 0;
+        size_t characters = 0;
+        while (name[characters] && characters + 1 < k_save_name_characters)
+            ++characters;
+        host_h2_file_write(file, name, (unsigned int)(characters * sizeof(wchar_t)), &written);
+        host_h2_file_close(file);
+    }
+    if (directory && directory_size)
+    {
+        size_t length = 0;
+        while (path[length] && length + 1 < directory_size)
+        {
+            directory[length] = path[length];
+            ++length;
+        }
+        directory[length] = 0;
+    }
+    return 0;
+}
+
+extern "C" DWORD __stdcall XDeleteSaveGame(const char *root, const wchar_t *name)
+{
+    char path[MAX_PATH];
+    save_directory(root, name, path, sizeof(path));
+    return host_h2_directory_remove(path) ? 0 : k_error_file_not_found;
+}
+
+extern "C" HANDLE WINAPI XFindFirstSaveGame(LPCSTR root, XGAME_FIND_DATA *data)
+{
+    for (int index = 0; index < 4; ++index)
+    {
+        s_save_find &search = g_save_finds[index];
+        if (search.find)
+            continue;
+        if (!root || !root[0])
+            break;
+        char pattern[MAX_PATH];
+        size_t length = 0;
+        for (const char *c = root; *c && length + 2 < sizeof(pattern); ++c)
+            pattern[length++] = *c;
+        pattern[length++] = '*';
+        pattern[length] = 0;
+        memset(data, 0, sizeof(*data));
+        const unsigned int find = host_h2_find_first(pattern, &data->wfd);
+        if (find == 0xffffffffu)
+            break;
+        size_t copy = 0;
+        for (; root[copy] && copy + 1 < sizeof(search.root); ++copy)
+            search.root[copy] = root[copy];
+        search.root[copy] = 0;
+        search.find = find;
+        if (!fill_save_data(search, data))
+        {
+            host_h2_file_close(find);
+            search.find = 0;
+            break;
+        }
+        return reinterpret_cast<HANDLE>(0x4c000000u + index);
+    }
+    host_h2_set_last_error(k_error_no_more_files);
+    return INVALID_HANDLE_VALUE;
+}
+
+extern "C" BOOL WINAPI XFindNextSaveGame(HANDLE find, XGAME_FIND_DATA *data)
+{
+    const unsigned int index = reinterpret_cast<unsigned int>(find) - 0x4c000000u;
+    if (index >= 4 || !g_save_finds[index].find)
+        return FALSE;
+    s_save_find &search = g_save_finds[index];
+    if (!host_h2_find_next(search.find, &data->wfd) || !fill_save_data(search, data))
+    {
+        host_h2_set_last_error(k_error_no_more_files);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+extern "C" BOOL WINAPI XFindClose(HANDLE find)
+{
+    const unsigned int index = reinterpret_cast<unsigned int>(find) - 0x4c000000u;
+    if (index < 4 && g_save_finds[index].find)
+    {
+        host_h2_file_close(g_save_finds[index].find);
+        g_save_finds[index].find = 0;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+extern "C" DWORD __stdcall XGetDiskClusterSize(const char *root)
+{
+    (void)root;
+    return 0x4000;
+}

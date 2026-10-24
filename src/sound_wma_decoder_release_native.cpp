@@ -70,7 +70,7 @@ void c_wma_codec::release_decoder()
 		typedef dword (__stdcall *release_method)(
 			s_xmedia_object_release_view *object);
 		release_method release =
-			reinterpret_cast<release_method>(m_decoder->vtable[2]);
+			reinterpret_cast<release_method>(m_decoder->vtable[1]);
 		release(m_decoder);
 		m_decoder = NULL;
 		m_stream->started_count = m_stream->chunk_count;
