@@ -1493,7 +1493,7 @@ PRIVATE __forceinline byte *clump_walk_step(s_record_pool_iterator *iterator)
 	return result;
 }
 
-PRIVATE __forceinline s_clump *clump_walk_next(s_clump_pool_walk *walk)
+PRIVATE __forceinline s_clump *clump_walk_advance(s_clump_pool_walk *walk)
 {
 	s_clump *clump = NULL;
 	if (g_4f55d0->active)
@@ -1525,7 +1525,7 @@ long function_269040(point3f const *center, short team)
 		long oldest = NONE;
 		long oldest_time = 0x7fffffff;
 		s_clump_activity_view *clump;
-		while ((clump = (s_clump_activity_view *)clump_walk_next(&walk)) != NULL)
+		while ((clump = (s_clump_activity_view *)clump_walk_advance(&walk)) != NULL)
 		{
 			if (clump->active_time < oldest_time)
 			{
