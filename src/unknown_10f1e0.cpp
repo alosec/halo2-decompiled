@@ -242,15 +242,14 @@ PRIVATE __forceinline real function_112e21(real arg_0)
     return local_0;
 }
 
-// score 71 (was 133): the frame and the direction's registers (i, j, k in xmm3, xmm1, xmm2) now
-// match. Retail sums the j row in source order, (left.k * k + left.j * j) + left.i * i; ours
-// regroups it as (left.j * j + left.i * i) + left.k * k. Retail clears and stores the direction
-// in i, j, k order (ours j, k, i), and its normalisation scales j and k in place where ours
-// copies the factor first (3 bytes longer), so every later address is shifted. Tried:
-// relative.i = inverse * relative.i with vector3d_from_points3d (133, the compiler commutes it);
-// the direction as three scalars (105); the clearing in i, j, k order (91, i, j, k land in
-// xmm1, xmm2, xmm3); the normalisation written i = inverse * i, j = j * inverse,
-// k = k * inverse (no change).
+// score 64 (was 133): the frame, the offset's arithmetic and the direction's registers (i, j, k
+// in xmm3, xmm1, xmm2) now match. Retail clears and stores the direction in i, j, k order (ours
+// j, k, i), and its normalisation scales j and k in place where ours copies the factor first
+// (3 bytes longer), so every later address is shifted. Tried: relative.i = inverse * relative.i
+// with vector3d_from_points3d (133, the compiler commutes it); the offset as a vector3f (71,
+// the j row regrouped as (left.j * y + left.i * x) + left.k * z); the direction as three
+// scalars (105); the clearing in i, j, k order (91, i, j, k land in xmm1, xmm2, xmm3); the
+// normalisation written i = inverse * i, j = j * inverse, k = k * inverse (no change).
 // @retail 0x112e20
 void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
@@ -262,21 +261,20 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 	vector3f direction;
 	if (frame.scale != 0.0f)
 	{
-		vector3f relative;
-		relative.i = target->x - frame.position.x;
-		relative.j = target->y - frame.position.y;
-		relative.k = target->z - frame.position.z;
+		real x = target->x - frame.position.x;
+		real y = target->y - frame.position.y;
+		real z = target->z - frame.position.z;
 		if (frame.scale != 1.0f)
 		{
 			real inverse = 1.0f / frame.scale;
-			relative.i = inverse * relative.i;
-			relative.j = inverse * relative.j;
-			relative.k = inverse * relative.k;
+			x = inverse * x;
+			y = inverse * y;
+			z = inverse * z;
 		}
 		// summed k, j, i as retail does
-		direction.i = frame.forward.k * relative.k + frame.forward.j * relative.j + frame.forward.i * relative.i;
-		direction.j = frame.left.k * relative.k + frame.left.j * relative.j + frame.left.i * relative.i;
-		direction.k = frame.up.k * relative.k + frame.up.j * relative.j + frame.up.i * relative.i;
+		direction.i = frame.forward.k * z + frame.forward.j * y + frame.forward.i * x;
+		direction.j = frame.left.k * z + frame.left.j * y + frame.left.i * x;
+		direction.k = frame.up.k * z + frame.up.j * y + frame.up.i * x;
 	}
 	else
 	{
