@@ -1064,7 +1064,7 @@ void parse_input_script(GameSession& session) {
 
 void apply_button(GameSession& session, const std::string& name, bool down) {
     /* digital: dpad up/down/left/right, start, back, left/right thumb;
-       analog: a, b, x, y, black, white, left/right trigger */
+       analog: a, b, x, y, black, white, left/right trigger; sticks: see below */
     static const std::pair<const char*, std::uint16_t> digital[] = {
         {"up", 0x01}, {"down", 0x02}, {"left", 0x04}, {"right", 0x08},
         {"start", 0x10}, {"back", 0x20}, {"ls", 0x40}, {"rs", 0x80}};
@@ -1075,6 +1075,11 @@ void apply_button(GameSession& session, const std::string& name, bool down) {
     for (int index = 0; index < 8; ++index)
         if (name == analog[index])
             session.analog[index] = down ? 0xff : 0;
+    /* thumbsticks, fully over: lx+/lx- ly+/ly- rx+/rx- ry+/ry- (y+ is up) */
+    static const char* sticks[] = {"lx", "ly", "rx", "ry"};
+    for (int index = 0; index < 4; ++index)
+        if (name.size() == 3 && name.compare(0, 2, sticks[index]) == 0 && (name[2] == '+' || name[2] == '-'))
+            session.thumbs[index] = down ? static_cast<std::int16_t>(name[2] == '+' ? 32767 : -32767) : 0;
 }
 
 void update_input(GameSession& session) {
