@@ -731,12 +731,19 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
                 for position in words.get(retail_of.get(slot), ()) if slot in retail_of else ():
                     positions[position - 4 * index] = None
             def is_table(position):
-                return all(0x12000 <= (word_at.get(position + 4 * index) or 0) < 0x379c4c
-                           for index in range(len(slots)))
+                # every slot code, and no __purecall (0x32131e, an abstract
+                # base's table) where the class itself defines the function
+                for index, slot in enumerate(slots):
+                    word = word_at.get(position + 4 * index) or 0
+                    if not 0x12000 <= word < 0x379c4c:
+                        return False
+                    if word == 0x32131e and slot and slot in retail_of:
+                        return False
+                return True
             # only when the anchored table cannot be the class's: a slot the
             # class has is not code there
             better = [p for p in positions if placed(p) > placed(start) and is_table(p)] \
-                if not chosen[1][1] and not is_table(start) else []
+                if not any(entry[1][1] for entry in candidates) and not is_table(start) else []
             if better:
                 best = max(better, key=placed)
                 if [placed(p) for p in better].count(placed(best)) == 1:
