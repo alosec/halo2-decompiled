@@ -451,6 +451,17 @@ int wcsncmp(const wchar_t* first, const wchar_t* second, size_t size) {
     return size ? (int)*first - (int)*second : 0;
 }
 
+/* appends at most size characters of source, then a terminator */
+wchar_t* wcsncat(wchar_t* destination, const wchar_t* source, size_t size) {
+    wchar_t* end = destination;
+    while (*end)
+        ++end;
+    while (size-- && *source)
+        *end++ = *source++;
+    *end = 0;
+    return destination;
+}
+
 wchar_t* wcsncpy(wchar_t* destination, const wchar_t* source, size_t size) {
     wchar_t* result = destination;
     while (size && *source) { *destination++ = *source++; --size; }

@@ -29,6 +29,7 @@ typedef unsigned short wchar_t;
 #define towupper h2_guest_towupper
 #define wcscpy h2_guest_wcscpy
 #define wcscat h2_guest_wcscat
+#define wcsncat h2_guest_wcsncat
 #define wcsrchr h2_guest_wcsrchr
 #define wcsstr h2_guest_wcsstr
 #define _wcsnicmp h2_guest_wcsnicmp
@@ -56,6 +57,7 @@ wchar_t towlower(wchar_t character);
 wchar_t towupper(wchar_t character);
 wchar_t* wcscpy(wchar_t* destination, const wchar_t* source);
 wchar_t* wcscat(wchar_t* destination, const wchar_t* source);
+wchar_t* wcsncat(wchar_t* destination, const wchar_t* source, size_t size);
 wchar_t* wcsrchr(const wchar_t* text, wchar_t character);
 wchar_t* wcsstr(const wchar_t* text, const wchar_t* pattern);
 int _wcsnicmp(const wchar_t* first, const wchar_t* second, size_t size);
