@@ -315,6 +315,8 @@ struct CachedTexture {
     bool linear = false;
     bool is_signed = false;
     std::uint64_t last_frame = 0;
+    std::uint64_t hashed_frame = ~0ull;  /* frame whose hash is current */
+    std::uint64_t changed_frame = 0;     /* frame the contents last changed */
 };
 
 MTLBlendFactor blend_factor(std::uint32_t factor) {
@@ -1037,12 +1039,35 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             std::memcpy(out, source, static_cast<std::size_t>(count) * 16 * 16);
             return true;
         }
+        /* each array's whole span checked once: the guest memory checks lock,
+           and a check per element of every vertex dominated the frame */
+        enum : std::uint8_t { kDefault, kChecked, kPerElement };
+        std::uint8_t mode[16];
+        const std::uint8_t* base[16] = {};
+        for (int index = 0; index < 16; ++index) {
+            const h2_gpu_vertex_array& array = packet.vertex_arrays[index];
+            mode[index] = kDefault;
+            if ((array.format >> 4) == 0 || !array.address || !count)
+                continue;
+            const std::size_t span = static_cast<std::size_t>(count - 1) * array.stride + element_bytes(array.format);
+            const auto* first = guest<std::uint8_t>(array.address);
+            if (first && arena_.host_range_accessible(first, span, false)) {
+                mode[index] = kChecked;
+                base[index] = first;
+            } else {
+                mode[index] = kPerElement;
+            }
+        }
         for (std::uint32_t vertex = 0; vertex < count; ++vertex) {
             float* registers = out + static_cast<std::size_t>(vertex) * 64;
             for (int index = 0; index < 16; ++index) {
                 const h2_gpu_vertex_array& array = packet.vertex_arrays[index];
                 float* value = registers + index * 4;
-                if ((array.format >> 4) == 0 || !array.address) {
+                if (mode[index] == kChecked) {
+                    decode_attribute(base[index] + static_cast<std::size_t>(vertex) * array.stride, array.format, value);
+                    continue;
+                }
+                if (mode[index] == kDefault) {
                     std::memcpy(value, packet.vertex_defaults[index], 16);
                     continue;
                 }
@@ -1344,11 +1369,21 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             return nullptr;
         const std::uint64_t key = (static_cast<std::uint64_t>(stage.data) << 32) ^ stage.format ^
                                   (static_cast<std::uint64_t>(stage.size) << 7) ^ stage.palette;
-        const std::uint64_t content = content_hash(data, description.total_size) ^ stage.palette;
         CachedTexture& entry = textures_[key];
+        /* a texture unchanged for a while is hashed once a frame: hashing
+           every use dominated frames that draw the same textures many times;
+           one written recently (glyph caches, dynamic images) still is
+           hashed at every use */
+        if (entry.texture && entry.hashed_frame == frame_ && frame_ - entry.changed_frame > 30) {
+            entry.last_frame = frame_;
+            return &entry;
+        }
+        const std::uint64_t content = content_hash(data, description.total_size) ^ stage.palette;
         entry.last_frame = frame_;
+        entry.hashed_frame = frame_;
         if (entry.texture && entry.content == content)
             return &entry;
+        entry.changed_frame = frame_;
         entry.content = content;
         entry.linear = description.linear;
         entry.is_signed = description.format && description.format->is_signed;
