@@ -11,8 +11,8 @@
 // first 0x10 bytes.
 //
 // The initialiser must run after g_4798b0's own constructor, which clears the
-// stack fields: the whole image runs src/ units' initialisers before
-// port/recovered/ ones.
+// stack fields: the whole image runs the src/ units' static constructors
+// (.guest_init) before the retail table.
 
 #include "unknown_11c920.h"
 #include "reference_counted_2d88a0.h"
@@ -78,5 +78,10 @@ void memory_view_2d6fc0::shrink_stack(void *block, long size)
 	g_memory_2d88a0->release_block(saved, chunk_size, 0x12);
 }
 
+// run from the CRT's table in retail, and by h2_run_retail_initializers
+// (retail_initializers_generated.cpp) in the port
 // @retail 0x3772d0
-static int const g_3772d0_initialized = (g_4798b0_memory_view.set_stack_area(g_4798d0, sizeof(g_4798d0)), 1);
+void __cdecl function_3772d0()
+{
+	g_4798b0_memory_view.set_stack_area(g_4798d0, sizeof(g_4798d0));
+}

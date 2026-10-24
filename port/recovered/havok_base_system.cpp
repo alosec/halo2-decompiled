@@ -11,7 +11,8 @@
 //             keeps the ids and source locations whose messages are
 //             suppressed
 // and then creates the singletons on the list at g_480174. Static
-// initialisers (0x378ad0-0x379670, run from the CRT's table in retail) put
+// initialisers (0x378ad0-0x379670, run from the CRT's table in retail, and
+// by h2_run_retail_initializers in the port) put
 // eight nodes on that list; each node names a create function and the global
 // that holds the singleton. A create function that returns null is retried
 // after the others, until all exist. Stopping releases the singletons in
@@ -1277,10 +1278,9 @@ void __cdecl function_379670()
 	g_480174 = &g_466df0;
 }
 
-// retail runs the initialisers from the CRT's table (0x46119c-0x4612a4), in
-// this order; the port runs no CRT table, so a dynamic initialiser does it
-static int singletons_registered = (function_378ad0(), function_378af0(), function_378b10(),
-	function_378ba0(), function_378c00(), function_379630(), function_379650(), function_379670(), 0);
+// retail runs these initialisers from the CRT's table (0x46119c-0x4612a4);
+// the port's h2_run_retail_initializers (retail_initializers_generated.cpp)
+// calls them, in the table's order, before main()
 
 // creates every singleton not yet created. A node whose create function
 // returns null leaves the list and is retried, last first, until all are

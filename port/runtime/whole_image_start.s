@@ -42,8 +42,9 @@ h2_main_menu_guest_bootstrap:
     ret
 .size h2_main_menu_guest_bootstrap, .-h2_main_menu_guest_bootstrap
 
-/* Run the static constructors, then the recovered game main() (retail
-   0x12190), which initializes the game and enters its main loop. */
+/* Run the static constructors and the retail dynamic initialisers, then the
+   recovered game main() (retail 0x12190), which initializes the game and
+   enters its main loop. */
 .text
 .p2align 4
 .global h2_whole_game_main
@@ -66,6 +67,9 @@ h2_whole_game_main:
     blr x9
     b .Lgame_initializers
 .Lgame_initializers_done:
+    /* then the retail CRT's table of C++ dynamic initialisers (0x461194),
+       which retail's _cinit runs before main() */
+    bl h2_run_retail_initializers
     bl "?function_12190%%YAXXZ"
     mov w0, wzr
     ldp x19, x20, [sp, #16]
