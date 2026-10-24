@@ -242,11 +242,12 @@ PRIVATE __forceinline real function_112e21(real arg_0)
     return local_0;
 }
 
-// score 102 (was 133): the frame is 4 bytes smaller than retail's (0x80, retail 0x84): retail
-// gives the reciprocal square root's argument its own slot and keeps yaw at [esp], pitch at
-// [esp+4], the direction at [esp+8] and the scale at [esp+0x14]; it also holds the direction's
-// i, j, k in xmm3, xmm1, xmm2 (ours xmm1, xmm2, xmm3). Tried: relative.i = inverse * relative.i
-// with vector3d_from_points3d (133, the compiler commutes it).
+// score 91 (was 133): the frame now matches; what differs is the direction's registers:
+// retail holds i, j, k in xmm3, xmm1, xmm2 (ours xmm1, xmm2, xmm3), and its normalisation
+// scales j and k in place where ours copies the factor first (3 bytes longer), so every later
+// address is shifted. Tried: relative.i = inverse * relative.i with vector3d_from_points3d
+// (133, the compiler commutes it); the direction as three scalars (105); the normalisation
+// written i = inverse * i, j = j * inverse, k = k * inverse (91, no change).
 // @retail 0x112e20
 void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f const *orientation)
 {
@@ -289,19 +290,20 @@ void function_112e20(transform4x3f *matrix, point3f const *target, transform4x3f
 		direction.j *= inverse;
 		direction.k *= inverse;
 	}
-	real yaw = (real)atan2(direction.j, direction.i);
+	s_view_angles angles;
+	angles.yaw = (real)atan2(direction.j, direction.i);
 	// the planar length stays on the x87 stack: fsqrt and fpatan see it unrounded
-	real pitch = (real)atan2(direction.k, sqrt(direction.j * direction.j + direction.i * direction.i));
-	if (0.0f - yaw_limit > yaw)
-		yaw = 0.0f - yaw_limit;
-	else if (yaw > yaw_limit)
-		yaw = yaw_limit;
-	if (0.0f - pitch_limit > pitch)
-		pitch = 0.0f - pitch_limit;
-	else if (pitch > pitch_limit)
-		pitch = pitch_limit;
+	angles.pitch = (real)atan2(direction.k, sqrt(direction.j * direction.j + direction.i * direction.i));
+	if (0.0f - yaw_limit > angles.yaw)
+		angles.yaw = 0.0f - yaw_limit;
+	else if (angles.yaw > yaw_limit)
+		angles.yaw = yaw_limit;
+	if (0.0f - pitch_limit > angles.pitch)
+		angles.pitch = 0.0f - pitch_limit;
+	else if (angles.pitch > pitch_limit)
+		angles.pitch = pitch_limit;
 	transform4x3f rotation;
-	function_141ce0(yaw, pitch, 0.0f, &rotation);
+	function_141ce0(angles.yaw, angles.pitch, 0.0f, &rotation);
 	function_142a60(&frame, &rotation, matrix);
 	matrix->scale = scale;
 }
