@@ -104,6 +104,7 @@ struct H2FragmentUniforms {
     uint alpha_func;
     float alpha_ref;
     uint two_sided;
+    float4 texel_scale[4];   /* xy: Metal texels per game texel of a scaled target */
 };
 
 vertex H2Varyings h2_vertex_main(uint vid [[vertex_id]],
@@ -169,6 +170,8 @@ fragment float4 h2_fragment_main(H2Varyings v [[stage_in]],
     in.texcoord[1] = v.t1;
     in.texcoord[2] = v.t2;
     in.texcoord[3] = v.t3;
+    for (int i = 0; i < 4; ++i)
+        in.texcoord[i].xy *= f.texel_scale[i].xy;
     in.fog = v.fog;
     in.front_facing = front;
     in.position = v.position;
@@ -319,6 +322,9 @@ struct CachedTexture {
     std::uint32_t kind = 2;       /* 2, 3 (volume) or 6 (cube) */
     bool linear = false;
     bool is_signed = false;
+    /* Metal texels per game texel, for a render target drawn at a scale: the
+       game addresses a linear texture in its own texels */
+    float texel_scale_x = 1.0f, texel_scale_y = 1.0f;
     std::uint64_t last_frame = 0;
     std::uint64_t hashed_frame = ~0ull;  /* frame whose hash is current */
     std::uint64_t changed_frame = 0;     /* frame the contents last changed */
@@ -1191,18 +1197,31 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         key = hash_bytes(packet.pixel_shader, sizeof(packet.pixel_shader));
         key = hash_bytes(&context, sizeof(context), key);
         auto found = pixel_cache_.find(key);
-        if (found != pixel_cache_.end())
-            return found->second;
-        std::uint32_t definition[60];
-        std::memcpy(definition, packet.pixel_shader, sizeof(definition));
-        PixelShaderInfo info = translate_pixel_shader(definition, context);
-        if (!info.error.empty()) {
-            std::fprintf(stderr, "h2-gpu: pixel shader: %s\n", info.error.c_str());
-            ok = false;
-            return {};
+        if (found == pixel_cache_.end()) {
+            std::uint32_t definition[60];
+            std::memcpy(definition, packet.pixel_shader, sizeof(definition));
+            PixelShaderInfo info = translate_pixel_shader(definition, context);
+            if (!info.error.empty()) {
+                std::fprintf(stderr, "h2-gpu: pixel shader: %s\n", info.error.c_str());
+                ok = false;
+                return {};
+            }
+            found = pixel_cache_.emplace(key, info.source).first;
         }
-        pixel_cache_.emplace(key, info.source);
-        return info.source;
+        /* the frame trace names each draw's pixel shader and saves its translation */
+        if (tracing_frame()) {
+            std::fprintf(stderr, "h2-frame:   fs %016llx\n", static_cast<unsigned long long>(key));
+            if (const char* dump_dir = std::getenv("H2_TRACE_DUMP")) {
+                char path[512];
+                std::snprintf(path, sizeof(path), "%s/fs-%016llx.metal", dump_dir,
+                              static_cast<unsigned long long>(key));
+                if (FILE* file = std::fopen(path, "w")) {
+                    std::fwrite(found->second.data(), 1, found->second.size(), file);
+                    std::fclose(file);
+                }
+            }
+        }
+        return found->second;
     }
 
     id<MTLRenderPipelineState> pipeline(const h2_gpu_draw& packet, const PixelShaderContext& context) {
@@ -1498,6 +1517,8 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             entry.kind = 2;
             TextureDescription description;
             entry.linear = describe_texture(stage.format, stage.size, description) ? description.linear : true;
+            entry.texel_scale_x = static_cast<float>(source->width) / source->guest_width;
+            entry.texel_scale_y = static_cast<float>(source->height) / source->guest_height;
             entry.is_signed = false;
             entry.last_frame = frame_;
             return &entry;
@@ -1890,7 +1911,14 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             std::uint32_t alpha_func;
             float alpha_ref;
             std::uint32_t two_sided;
-        } fragment = {packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.two_sided_lighting};
+            float texel_scale[4][4];
+        } fragment = {packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.two_sided_lighting, {}};
+        for (int stage = 0; stage < 4; ++stage) {
+            const CachedTexture* entry = bound[stage];
+            const bool scaled = entry && entry->linear && entry->kind == 2;
+            fragment.texel_scale[stage][0] = scaled ? entry->texel_scale_x : 1.0f;
+            fragment.texel_scale[stage][1] = scaled ? entry->texel_scale_y : 1.0f;
+        }
         [encoder_ setFragmentBytes:&fragment length:sizeof(fragment) atIndex:1];
         for (int stage = 0; stage < 4; ++stage) {
             CachedTexture* entry = bound[stage];
