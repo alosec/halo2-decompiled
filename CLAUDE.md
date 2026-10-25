@@ -98,6 +98,27 @@ See `port/README.md` "Play" for the full commands.
   - characters tinted yellow-green;
   - the difficulty-screen backdrop is missing.
 
+## Missing geometry/textures: investigation notes (2026-10-25)
+
+Example: on Cairo Station's intro (01b, about frame 10000) Hood's torso and a
+background officer's body are missing; heads, collar and medals draw.
+- **Not the renderer:**
+  - every texture uploads (`H2_TRACE=textures`: 1177 ok, 1 all-zero);
+  - all draws in the frame have normal state;
+  - the torso is never submitted.
+- **Not geometry streaming:** the geometry cache's requests complete; nothing
+  stays pending.
+- **Not `object_set_permutation` (built-in 110):** it only sets crew head
+  variants (region `04000095`).
+- **Section choice per LOD** (`function_4c190` -> `function_4c2b0`,
+  `src/unknown_03f2b0.cpp`): some models get `res 0` (not resident, skipped
+  that frame).
+- **Model `eb5a0927` (9 regions):** region 1 is never wanted (permutation
+  `ff`). `model_variant_region_get_choices` matches retail, so this may be
+  legitimate (an empty region).
+- **Next step:** identify Hood's object and model (e.g. by its scenario object
+  name) before chasing more.
+
 ## Upstream contribution
 
 The owner's rules (issue #792):
