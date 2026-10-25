@@ -23,7 +23,14 @@ struct s_current_map
 typedef char assert_current_map_size[(sizeof(s_current_map) == 0x178) ? 1 : -1];
 typedef char assert_current_map_map_name[(offsetof(s_current_map, map_name) == 0x78) ? 1 : -1];
 
+#if H2_WHOLE_IMAGE
+/* retail's lives inside the loaded map's cache header (cache_file_globals,
+   0x5476f8), which the whole image binds: a copy of our own would stay empty
+   and every save header would fail function_124520's map name check */
+extern s_current_map g_current_map;
+#else
 s_current_map g_current_map;
+#endif
 /* the build's version string, kept in the game state header */
 char g_450698[0x20];
 
