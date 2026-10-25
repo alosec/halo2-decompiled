@@ -55,7 +55,10 @@ See `port/README.md` "Play" for the full commands.
   - `H2_TRACE_DUMP=dir` and `H2_TRACE_DUMP_DRAWS=i,j,...` dump render
     targets after those draws;
   - `H2_TRACE_TEXTURE=hex|all` dumps texture bytes and palettes;
-  - `H2_TRACE=d3d` gives push-buffer method counts.
+  - `H2_TRACE=d3d` gives push-buffer method counts;
+  - `H2_AUDIO_RECORD=file.wav` records the mix;
+  - `H2_TRACE=audio` lists voice formats;
+  - `H2_TRACE=audio-voices` gives per-voice levels.
 - **Tracer:** `/usr/bin/python3 port/tools/guest_breaks.py --break SYM:fmt
   --watchpoint POINTER:OFF[:OFF] | @ADDRESS -- <host command>`. Retail
   disassembly: `port/tools/retail_dis.py ADDR`.
@@ -71,6 +74,9 @@ See `port/README.md` "Play" for the full commands.
 - **Vtable binding.** Classes with no virtuals of their own store retail
   tables inline; identical-code folding shares destructors; stack layout
   differences expose retail's out-of-bounds writes.
+- **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
+  if the game never plays it; dialogue goes through one (fixed 625675f1).
+  The Armory tutorial's "look at the light" steps need those lines.
 - **Xbox D3D semantics.** Clear flags are Xbox values (ZBUFFER 1, STENCIL 2,
   colour channels 0x10..0x80). Pushed draws must be parsed at EndPush, with
   the state they were pushed with. The pixel shader lives in render states
@@ -86,10 +92,8 @@ See `port/README.md` "Play" for the full commands.
   - full speed (the 30 Hz cap);
   - WMA music through optional host FFmpeg.
 - **Open, from the user's first live play:**
-  - many missing textures in cinematics and gameplay;
-  - the Armory tutorial stalls after the first look-around (the look tests
-    are fine: pitch >= 0.2618 rad);
-  - some speech missing;
+  - many missing textures in cinematics and gameplay (the lights the
+    Armory tutorial asks you to look at draw as white bars);
   - cutscenes can't be skipped;
   - characters tinted yellow-green;
   - the difficulty-screen backdrop is missing.
