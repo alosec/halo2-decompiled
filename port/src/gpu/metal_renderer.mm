@@ -37,6 +37,8 @@
 #include <string>
 #include <unordered_map>
 #include <set>
+#include <unordered_set>
+#include <map>
 #include <vector>
 
 namespace h2::gpu {
@@ -1351,6 +1353,37 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         return target.snapshot;
     }
 
+    /* H2_TRACE=textures: each texture (data, format, size) once, with what
+       became of it, and a tally by outcome every 600 frames */
+    static bool trace_textures() {
+        static const bool on = [] {
+            const char* trace = std::getenv("H2_TRACE");
+            return trace && std::strstr(trace, "textures");
+        }();
+        return on;
+    }
+    void texture_census(const h2_gpu_texture& stage, const char* outcome, std::uint32_t bytes) {
+        if (!trace_textures())
+            return;
+        const std::uint64_t key = (static_cast<std::uint64_t>(stage.data) << 32) ^ stage.format ^
+                                  (static_cast<std::uint64_t>(stage.size) << 7);
+        if (!census_seen_.insert(key ^ std::hash<std::string>{}(outcome)).second)
+            return;
+        ++census_counts_[outcome];
+        std::fprintf(stderr, "h2-texture: %08x format %08x size %08x (%u bytes): %s\n", stage.data, stage.format,
+                     stage.size, bytes, outcome);
+        if (frame_ >= census_reported_ + 600) {
+            census_reported_ = frame_;
+            std::fprintf(stderr, "h2-texture: tally at frame %llu:", static_cast<unsigned long long>(frame_));
+            for (const auto& [name, count] : census_counts_)
+                std::fprintf(stderr, " %s %u;", name.c_str(), count);
+            std::fprintf(stderr, "\n");
+        }
+    }
+    std::unordered_set<std::uint64_t> census_seen_;
+    std::map<std::string, std::uint32_t> census_counts_;
+    std::uint64_t census_reported_ = 0;
+
     CachedTexture* texture(const h2_gpu_texture& stage) {
         if (!stage.header || !stage.data)
             return nullptr;
@@ -1380,11 +1413,15 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             return &entry;
         }
         TextureDescription description;
-        if (!describe_texture(stage.format, stage.size, description))
+        if (!describe_texture(stage.format, stage.size, description)) {
+            texture_census(stage, "unsupported format", 0);
             return nullptr;
+        }
         const auto* data = guest<std::uint8_t>(stage.data);
-        if (!data || !arena_.host_range_accessible(data, description.total_size, false))
+        if (!data || !arena_.host_range_accessible(data, description.total_size, false)) {
+            texture_census(stage, "unreadable memory", description.total_size);
             return nullptr;
+        }
         { /* H2_TRACE_TEXTURE=data (hex, or all) with H2_TRACE_DUMP=dir: that texture's raw
              guest bytes in the traced frame, named with its size and pitch, and its
              palette's 256 entries */
@@ -1437,8 +1474,15 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         UploadImage first;
         if (!prepare_upload(description, std::span<const std::uint8_t>(data, description.total_size), 0, 0,
                             first, palette)) {
+            texture_census(stage, "conversion failed", description.total_size);
             entry.texture = nil;
             return nullptr;
+        }
+        if (trace_textures()) {
+            bool zero = true;
+            for (std::uint32_t i = 0; i < description.total_size && zero; ++i)
+                zero = data[i] == 0;
+            texture_census(stage, zero ? "uploaded, ALL ZERO" : "uploaded", description.total_size);
         }
         const MTLPixelFormat format = static_cast<MTLPixelFormat>(first.format);
         MTLTextureDescriptor* descriptor = [[MTLTextureDescriptor alloc] init];
