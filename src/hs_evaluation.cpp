@@ -21,14 +21,10 @@ struct s_hs_enum_names
 };
 
 /* the enum types' name tables, indexed by script value type (retail's
-   entries for _hs_type_game_difficulty onwards are its first used ones) */
-#if H2_WHOLE_IMAGE
-/* retail's table, based at 0x4456fc so [type] lands on the entries from
-   0x44585c; the whole image binds it */
-extern s_hs_enum_names g_hs_enum_names[];
-#else
-s_hs_enum_names g_hs_enum_names[1];
-#endif
+   entries for _hs_type_game_difficulty onwards are its first used ones):
+   retail's data, read as [8 * type + 0x4456fc], so the declaration names
+   that base address */
+s_hs_enum_names g_4456fc[1];
 
 // @retail 0x208cc0
 void __stdcall hs_boolean_format(long type, bool value, char *buffer, long maximum_count)
@@ -73,7 +69,7 @@ void __stdcall hs_string_format(long type, const char *value, char *buffer, long
 // @retail 0x208dd0
 void __stdcall hs_enum_format(short type, short value, char *buffer, long maximum_count)
 {
-	strncpy(buffer, g_hs_enum_names[type].names[value], maximum_count);
+	strncpy(buffer, g_4456fc[type].names[value], maximum_count);
 	buffer[maximum_count - 1] = 0;
 }
 

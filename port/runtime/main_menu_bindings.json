@@ -244,8 +244,6 @@
     {"symbol": "?g_4e9bc8@@3PAUs_16658d_group@@A", "address": "0x004e9bc8"},
     {"symbol": "?g_4687d0@@3PAUtransform4x3f@@A", "address": "0x004687d0"},
     {"symbol": "?g_470a2c@@3EA", "address": "0x00470a2c"},
-    {"symbol": "?g_55edd8@@3Us_interface_function_context@@A", "address": "0x0055edd8"},
-    {"symbol": "?g_online_error_strings@@3PAUs_online_error_string@@A", "address": "0x004672e0"},
-    {"symbol": "?g_hs_enum_names@@3PAUs_hs_enum_names@@A", "address": "0x004456fc"}
+    {"symbol": "?g_55edd8@@3Us_interface_function_context@@A", "address": "0x0055edd8"}
   ]
 }

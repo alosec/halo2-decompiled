@@ -15,13 +15,9 @@ struct s_online_error_string
 };
 typedef char assert_online_error_string_size[(sizeof(s_online_error_string) == 8) ? 1 : -1];
 
-#if H2_WHOLE_IMAGE
-/* retail's table (0x4672e0) holds the 40 result/string pairs; the whole image
-   binds it, a native copy would be zeros */
-extern s_online_error_string g_online_error_strings[40];
-#else
-s_online_error_string g_online_error_strings[40];
-#endif
+/* retail's table of the 40 results and their strings; it is the
+   executable's data, so the declaration names its address */
+s_online_error_string g_4672e0[40];
 
 long __stdcall function_3ad1a6(long handle, long *out, long a, long b);
 
@@ -64,9 +60,9 @@ dword online_result_get_error_string(dword result)
 
 	for (dword i = 0; i < 40; i++)
 	{
-		if (g_online_error_strings[i].result == result)
+		if (g_4672e0[i].result == result)
 		{
-			string = g_online_error_strings[i].string;
+			string = g_4672e0[i].string;
 			break;
 		}
 	}
