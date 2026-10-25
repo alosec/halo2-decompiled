@@ -121,7 +121,8 @@ See `port/README.md` "Play" for the full commands.
     Armory tutorial asks you to look at draw as white bars); missing bodies,
     black change colours and the yellow-green tint are fixed;
   - white flash frames in cinematics;
-  - cutscenes can't be skipped;
+  - cutscene skipping works: A (Space) skips, as on the Xbox (verified on
+    the 00a intro and the 01b cinematic); the README says so now;
   - the difficulty-screen backdrop is missing.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25

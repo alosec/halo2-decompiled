@@ -45,7 +45,7 @@ build/release/port/halo2-port --data-root orig/game \
 | Mouse | Look (the cursor is captured) |
 | Left / right mouse button | Throw grenade / fire |
 | W A S D | Move |
-| Space | Jump (A) |
+| Space | Jump (A); skips a cinematic |
 | F | Melee (B) |
 | E | Action / reload (X) |
 | Q | Switch weapon (Y) |
@@ -65,7 +65,6 @@ build/release/port/halo2-port --data-root orig/game \
 - `H2_RENDER_SCALE=N` sets the render resolution multiple (default 2).
 
 **Known gaps:**
-- Characters are shaded with a yellow-green tint.
 - The difficulty screen's 3D backdrop is missing.
 - Combat past the first areas of Cairo Station is largely untested.
 
