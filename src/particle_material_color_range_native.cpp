@@ -2,11 +2,7 @@
 // The Xbox body remains in unknown_0167a0.cpp.
 
 #include "unknown_11c920.h"
-
-struct color4f
-{
-    real red, green, blue, alpha;
-};
+#include "unknown_0259d0.h"   /* color4f: alpha first, as pack_color4f reads it */
 
 extern dword const g_467068[8];
 bool function_1b2c0(
