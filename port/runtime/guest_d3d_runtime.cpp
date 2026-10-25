@@ -684,6 +684,13 @@ DWORD *push_reserve(h2_d3d_device *d, DWORD dwords)
    from this header's D3D values. The push buffer is submitted first so
    packets and what the game pushed itself stay in call order. */
 
+/* The Xbox keeps the active pixel shader in render states 0..56, in
+   D3DPIXELSHADERDEF order (alpha inputs, final inputs, constants 0 and 1,
+   outputs, ..., input texture): setting a program loads them all, and the
+   game then changes single constants with SetRenderState(10 + i / 18 + i)
+   (src/unknown_0167a0.cpp function_18ee0) without resubmitting it. */
+constexpr DWORD k_pixel_shader_states = 57;
+
 h2_gpu_draw g_draw_packet;
 h2_gpu_clear g_clear_packet;
 
@@ -848,8 +855,11 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
     p->vertex_constants = guest_address(d->vertex_constants);
 
     p->has_pixel_shader = d->pixel_shader_program_set;
-    if (d->pixel_shader_program_set)
+    if (d->pixel_shader_program_set) {
         memcpy(p->pixel_shader, &d->pixel_shader_program, sizeof(p->pixel_shader));
+        /* the render states hold the program as the game last changed it */
+        memcpy(p->pixel_shader, D3D__RenderState, k_pixel_shader_states * sizeof(DWORD));
+    }
     for (long stage = 0; stage < 4; ++stage) {
         fill_texture(&p->textures[stage], d->textures[stage], d->palettes[stage],
                      D3D__TextureState[stage]);
@@ -1555,8 +1565,10 @@ extern "C" void __stdcall D3DDevice_SetPixelShaderProgram(void const *program)
 {
     h2_d3d_device *d = device();
     d->pixel_shader_program_set = program != NULL;
-    if (program)
+    if (program) {
         memcpy(&d->pixel_shader_program, program, sizeof(d->pixel_shader_program));
+        memcpy(D3D__RenderState, program, k_pixel_shader_states * sizeof(DWORD));
+    }
 }
 
 /* vertex data and drawing */
