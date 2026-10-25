@@ -2,6 +2,8 @@
   "format": 1,
   "description": "Retail guest virtual addresses established from recovered names or exact accesses in the user's XBE. The host initializes these addresses from the user's XBE sections; this file contains no retail data.",
   "symbols": [
+    {"symbol": "??_7c_205550@@6B@", "address": "0x00456088"},
+    {"symbol": "??_7c_205554@@6B@", "address": "0x00455fc0"},
     {"symbol": "??_7c_1c2d40@@6Bc_havok_reference_counted@@@", "address": "0x004555ec"},
     {"symbol": "??_7c_1c2d40@@6Bc_2df9d0@@@", "address": "0x004555e8"},
     {"symbol": "??_7c_1c2d40@@6Bc_contact_rule_filter@@@", "address": "0x004555e0"},
