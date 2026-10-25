@@ -82,7 +82,7 @@ See `port/README.md` "Play" for the full commands.
   the state they were pushed with. The pixel shader lives in render states
   0..56.
 
-## Status (2026-10-25)
+## Status (2026-10-25, upstream merged at 58bb9a0d)
 
 - **Works:**
   - menus, profiles and the keyboard;
@@ -134,7 +134,9 @@ The owner's rules (issue #792):
 - **Scope:** one shared `src/` fix per PR.
 - **Claims:** check claims issue #9 first.
 - **Retail data:** point declarations at it with `g_<address>`.
-- **Havok:** no SDK names such as `hkBool`; use behaviour names.
+- **Havok:** class names found in the retail executable's own strings
+  (`hkBool`, `hkRigidBody`, `hkTransform`, ...) are fine and main uses
+  them. Nothing taken only from Havok's SDK headers or documentation.
 - **Port-only pieces** (host, shims, FFmpeg) stay on the fork.
 
 How we work:
@@ -154,4 +156,4 @@ Open drafts:
 
 All three are reviewed clean and cleared by machine 3, waiting for the user
 to tick provenance and mark them ready. Queued next: the Havok by-value
-return fixes (with behaviour names) and the inline-vtable fixes.
+return fixes (`hkBool` is allowed) and the inline-vtable fixes.
