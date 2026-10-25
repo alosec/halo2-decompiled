@@ -85,6 +85,14 @@ See `port/README.md` "Play" for the full commands.
   fixed address: the writer and reader disagree, or the copy stays zero.
   Examples: `g_current_map` (fixed as `g_547844`), and the two tables bound
   as `g_4672e0` and `g_4456fc`. The fix is the `g_<address>` name.
+- **Swapped register roles in unmatched ("todo") functions.** Retail passes
+  many arguments in registers; a decompiled body that reads them in the
+  wrong roles still compiles and runs. Found: `function_cba50` (look frame
+  forward/up swapped: the look vector wandered, so the Armory "look at the
+  lights" step never registered) and `function_11e800` (triangle edges
+  swapped: object lighting sampled the wrong lightmap texels, so characters
+  were near black). Check `port/tools/retail_dis.py` for which register
+  holds what before trusting an unmatched function.
 - **Callbacks declared with an integer where the pointer type has a float.**
   A function cast to a callback type must take the same parameter kinds: on
   x86 a `long` and a `real` share a stack slot, on ARM64 they travel in
@@ -125,6 +133,9 @@ See `port/README.md` "Play" for the full commands.
   - checkpoint save/revert;
   - full speed (the 30 Hz cap);
   - WMA music through optional host FFmpeg.
+- **Fixed since the user's second play:** the Armory light step (look
+  vector), characters lit (object lighting), first-person arms and weapon,
+  the Outskirts intro crash.
 - **Open, from the user's first live play:**
   - many missing textures in cinematics and gameplay (the lights the
     Armory tutorial asks you to look at draw as white bars); missing bodies,
@@ -183,4 +194,5 @@ All three are reviewed clean and cleared by machine 3, waiting for the user
 to tick provenance and mark them ready. Queued next: the Havok by-value
 return fixes (`hkBool` is allowed), the inline-vtable fixes, and the
 float/int callback parameter fixes (first-person and weapon sound events,
-`hs_real_format`).
+`hs_real_format`), `function_cba50` (look frame) and `function_11e800`
+(barycentric edge order).
