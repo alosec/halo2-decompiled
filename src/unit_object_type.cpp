@@ -4410,16 +4410,20 @@ bool __stdcall function_cba50(long unit_index, vector3f *direction, bool looking
 	{
 		vector3f left;
 
-		up = unit->unknown168;
-		left.i = up.k * forward.j - forward.k * up.j;
-		left.j = forward.k * up.i - up.k * forward.i;
-		left.k = forward.i * up.j - forward.j * up.i;
-		forward.i = left.k * up.j - left.j * up.k;
-		forward.j = up.k * left.i - left.k * up.i;
-		forward.k = left.j * up.i - left.i * up.j;
-		if (function_30bf0(&forward) == 0.0f)
+		/* looking is limited relative to the aim: the frame's forward is the
+		   aim and its up the unit's up made perpendicular to it (retail
+		   0xcbac5 overwrites the forward b9fc0 returned in esi, and 0x1420f0
+		   takes the forward in ecx) */
+		forward = unit->unknown168;
+		left.i = forward.k * up.j - up.k * forward.j;
+		left.j = up.k * forward.i - forward.k * up.i;
+		left.k = up.i * forward.j - up.j * forward.i;
+		up.i = left.k * forward.j - left.j * forward.k;
+		up.j = forward.k * left.i - left.k * forward.i;
+		up.k = left.j * forward.i - left.i * forward.j;
+		if (function_30bf0(&up) == 0.0f)
 		{
-			function_30bf0(function_11d000(&up, &forward));
+			function_30bf0(function_11d000(&forward, &up));
 		}
 	}
 	transform4x3f matrix;
