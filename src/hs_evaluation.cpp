@@ -22,7 +22,13 @@ struct s_hs_enum_names
 
 /* the enum types' name tables, indexed by script value type (retail's
    entries for _hs_type_game_difficulty onwards are its first used ones) */
+#if H2_WHOLE_IMAGE
+/* retail's table, based at 0x4456fc so [type] lands on the entries from
+   0x44585c; the whole image binds it */
+extern s_hs_enum_names g_hs_enum_names[];
+#else
 s_hs_enum_names g_hs_enum_names[1];
+#endif
 
 // @retail 0x208cc0
 void __stdcall hs_boolean_format(long type, bool value, char *buffer, long maximum_count)

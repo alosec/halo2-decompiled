@@ -15,7 +15,13 @@ struct s_online_error_string
 };
 typedef char assert_online_error_string_size[(sizeof(s_online_error_string) == 8) ? 1 : -1];
 
+#if H2_WHOLE_IMAGE
+/* retail's table (0x4672e0) holds the 40 result/string pairs; the whole image
+   binds it, a native copy would be zeros */
+extern s_online_error_string g_online_error_strings[40];
+#else
 s_online_error_string g_online_error_strings[40];
+#endif
 
 long __stdcall function_3ad1a6(long handle, long *out, long a, long b);
 
