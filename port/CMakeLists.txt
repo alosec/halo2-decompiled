@@ -3549,6 +3549,26 @@ if(APPLE)
 endif()
 
 enable_testing()
+
+# Unit tests of the host renderer's translators and the audio decoders: no
+# game data (the texture test also reads maps when given a directory)
+add_executable(h2-pixel-shader-tests tests/gpu/test_pixel_shader.cpp src/gpu/pixel_shader.cpp)
+add_executable(h2-vertex-program-tests tests/gpu/test_vertex_program.cpp src/gpu/vertex_program.cpp)
+add_executable(h2-texture-format-tests tests/gpu/test_texture_formats.cpp src/gpu/texture_formats.cpp
+               src/texture_decode.cpp)
+add_executable(h2-audio-tests tests/audio/test_audio.cpp src/audio/mixer.cpp src/audio/xbox_adpcm.cpp)
+add_executable(h2-wma-decoder-tests tests/audio/test_wma_decoder.cpp)
+target_link_libraries(h2-wma-decoder-tests PRIVATE h2_audio)
+foreach(test_target h2-pixel-shader-tests h2-vertex-program-tests h2-texture-format-tests h2-audio-tests)
+    target_include_directories(${test_target} PRIVATE src src/gpu include)
+    target_compile_features(${test_target} PRIVATE cxx_std_20)
+endforeach()
+add_test(NAME gpu-pixel-shader COMMAND h2-pixel-shader-tests)
+add_test(NAME gpu-vertex-program COMMAND h2-vertex-program-tests)
+add_test(NAME gpu-texture-formats COMMAND h2-texture-format-tests)
+add_test(NAME audio-mixer-adpcm COMMAND h2-audio-tests)
+add_test(NAME audio-wma-decoder COMMAND h2-wma-decoder-tests ${CMAKE_CURRENT_BINARY_DIR})
+set_tests_properties(audio-wma-decoder PROPERTIES SKIP_RETURN_CODE 77)
 set(H2_GUEST_ELF_LOADER_FIXTURE_OBJECT
     "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.o")
 set(H2_GUEST_ASYNC_QUEUE_FIXTURE_OBJECT
