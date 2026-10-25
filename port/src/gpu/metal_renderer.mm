@@ -626,9 +626,10 @@ public:
             }
         }
         if (tracing_frame()) {
-            for (int t = 1; t < 4; ++t)
-                std::fprintf(stderr, "h2-frame:   tex%d %08x data %08x fmt %08x\n", t, packet.textures[t].header,
-                             packet.textures[t].data, packet.textures[t].format);
+            for (int t = 0; t < 4; ++t)
+                std::fprintf(stderr, "h2-frame:   tex%d %08x data %08x fmt %08x pal %08x\n", t,
+                             packet.textures[t].header, packet.textures[t].data, packet.textures[t].format,
+                             packet.textures[t].palette);
             const std::uint32_t* ps = packet.pixel_shader;
             std::fprintf(stderr, "h2-frame:   ps");
             for (int i = 0; i < 60; ++i)

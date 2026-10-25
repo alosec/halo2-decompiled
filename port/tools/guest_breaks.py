@@ -73,7 +73,8 @@ def main():
     parser.add_argument("--break", dest="breaks", action="append", default=[])
     parser.add_argument("--watch", action="append", default=[], type=lambda text: int(text, 0))
     parser.add_argument("--watchpoint", help="POINTER:OFFSET: at the first break hit, watch writes "
-                        "to the dword at (the guest pointer stored at POINTER) + OFFSET")
+                        "to the dword at (the guest pointer stored at POINTER) + OFFSET; @ADDRESS "
+                        "watches that guest address")
     parser.add_argument("--hits", type=int, default=40)
     parser.add_argument("--skip", type=int, default=0, help="ignore the first N hits")
     parser.add_argument("--explain", action="store_true",
@@ -170,12 +171,16 @@ def main():
             if args.watchpoint and not watching:
                 # POINTER:OFFSET[:OFFSET...]: each offset but the last is
                 # followed through the pointer stored there
-                parts = [int(part, 0) for part in args.watchpoint.split(":")]
+                # @ADDRESS: that guest address itself
                 error = lldb.SBError()
-                guest = process.ReadUnsignedFromMemory(BIAS + parts[0], 4, error)
-                for offset in parts[1:-1]:
-                    guest = process.ReadUnsignedFromMemory(BIAS + guest + offset, 4, error)
-                address = BIAS + guest + (parts[-1] if len(parts) > 1 else 0)
+                if args.watchpoint.startswith("@"):
+                    address = BIAS + int(args.watchpoint[1:], 0)
+                else:
+                    parts = [int(part, 0) for part in args.watchpoint.split(":")]
+                    guest = process.ReadUnsignedFromMemory(BIAS + parts[0], 4, error)
+                    for offset in parts[1:-1]:
+                        guest = process.ReadUnsignedFromMemory(BIAS + guest + offset, 4, error)
+                    address = BIAS + guest + (parts[-1] if len(parts) > 1 else 0)
                 address &= ~3
                 watch = target.WatchAddress(address, 4, False, True, error)
                 print("watching writes to 0x%x: %s" % (address & 0xffffffff, error.GetCString() or "ok"), flush=True)
