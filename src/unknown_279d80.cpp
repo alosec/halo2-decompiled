@@ -2107,6 +2107,17 @@ void function_283600(void)
 
 /* compute_orientations(2, 2, false, true) with the flags and the last node of
    each group of eight kept per component pass */
+// score 39 (was 39): only the scale pass's blend-2 apply after the interpolation
+// differs: retail multiplies the interpolated scale it holds in xmm0 by the
+// destination's (mulss xmm0, [esi+0x1c]) where ours loads the destination into
+// xmm1 first; the rest is that 4-byte shift. Register allocation. Tried: the
+// scale apply as g_504430.scale * destination->scale, as *=, or through a scale
+// local (all 39, the rest of the file unchanged); a node index per pass (130);
+// one flags variable (108, the split_index_last form) also with one last (118);
+// a destination index per pass (118); bit flags per pass (69); the translation
+// and scale count in its own variable (252); other declaration and frame-save
+// orders (39); the bodies compute_orientations (118), _split (130),
+// _component_count (240), _inheritance_mapping (382), function_288571 (118).
 // @retail 0x2839d0
 void function_2839d0(void)
 {

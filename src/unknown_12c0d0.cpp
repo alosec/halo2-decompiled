@@ -352,18 +352,16 @@ bool __stdcall texture_cache_entry_busy(long datum_index)
 {
 	s_texture_cache_entry *entry = texture_cache_entry_get(datum_index);
 
-	if (!(entry->flags & 1) && (!(entry->flags & 2) || g_4e6479))
-	{
-		if (entry->hardware_format == NONE)
-			return false;
-		if (entry->resident)
-		{
-			if (!D3DResource_IsBusy(&entry->resource))
-				return false;
-			return true;
-		}
-	}
-	return true;
+	if (entry->flags & 1)
+		return true;
+	if ((entry->flags & 2) && !g_4e6479)
+		return true;
+	if (entry->hardware_format == NONE)
+		return false;
+	else if (entry->resident && !D3DResource_IsBusy(&entry->resource))
+		return false;
+	else
+		return true;
 }
 
 /* the physical memory's callback when a block is freed: waits for the GPU to
@@ -687,24 +685,30 @@ long log2_floor(dword value);
 
 /* builds a bitmap's hardware texture header over its description, pointing
    into the shared pixel data */
-// score 86 (was 98): the hardware format is kept in EDI and the width spilled across the mip count
-// call, where retail keeps all three sizes in registers and the hardware format on the stack.
+// score 58 (was 86): everything up to the mip count call matches. After it retail keeps the
+// width/height/depth in ECX/EBX/EDI, the format bits in EBP and zeroes with EDX; ours keeps
+// the height in EDI, the depth in EDX, the bits in EBX and zeroes with ECX. Tried: the default
+// format in a plain local 109 (kept in EDI, the width spilled instead); the if/else 86;
+// the sizes read from the fields at each use 124; the sizes declared before the format 106;
+// `g_4e646c + hardware_data` 109; the format read before the data 110; the dword sizes taken
+// before the call 88; the sizes passed straight to log2_floor 92; a `local_0` for the
+// dimension bits 77; short levels 63; the dword sizes after the type test 76; the ternary
+// as `type == 1 ? 3 : 2` and every operand order of the format expression 60.
 // @retail 0x12c820
 void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
 {
 	D3DTexture *texture = (D3DTexture *)&bitmap->hardware_common;
 	dword data = bitmap->hardware_data + g_4e646c;
 	short format = bitmap->format;
-	long hardware_format;
+	/* volatile: retail keeps the hardware format in its stack slot (it stores the table
+	   value there, then 0x33 over it); as a register local ours keeps it in EDI and spills
+	   the width across the mip count call instead */
+	long volatile hardware_format = g_450768[0][format];
 	long levels;
 
 	if ((bitmap->flags & 0x20) && (format == 10 || format == 11))
 	{
 		hardware_format = 0x33;
-	}
-	else
-	{
-		hardware_format = g_450768[0][format];
 	}
 	short depth = bitmap->depth;
 	short height = bitmap->height;
@@ -715,17 +719,14 @@ void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
 	texture->Common = 0x40001;
 	texture->Format = 9;
 	/* the size fields are taken as 32-bit values from here on */
-	dword texture_width = width;
-	dword texture_height = height;
 	dword texture_depth = depth;
+	dword texture_height = height;
+	dword texture_width = width;
 	if (bitmap->type == 2)
 	{
 		texture->Format = 0xd;
 	}
-	long local_0;
-	if (bitmap->type != 1) local_0 = 2;
-	else local_0 = 3;
-	texture->Format |= ((local_0 | (hardware_format << 4)) << 4) | ((levels + 1) << 16);
+	texture->Format |= (((bitmap->type != 1 ? 2 : 3) | (hardware_format << 4)) << 4) | ((levels + 1) << 16);
 	texture->Format |= (short)log2_floor(texture_width) << 20;
 	texture->Format |= (short)log2_floor(texture_height) << 24;
 	texture->Format |= (short)log2_floor(texture_depth) << 28;
@@ -973,6 +974,8 @@ struct s_bitmap_texture_view
 	dword level_addresses[3];
 };
 
+// score 3 (was 3): the masked level address is loaded into EDX, retail reuses the base register,
+// which is dead after that load.
 // @retail 0x12d6d0
 void __stdcall function_12d6d0(s_bitmap_texture_view const *bitmap, long level, D3DTexture *texture)
 {

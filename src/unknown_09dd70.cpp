@@ -462,7 +462,7 @@ void c_unit_type::v31(long arg_0, long arg_1, long arg_2, long arg_3)
     dword local_1 = arg_1;
     s_9d360 *local_2 = (s_9d360 *)arg_3;
     if (local_1 & 0x3ff)
-        function_a6430(local_1 & 0x3ff, arg_0, arg_3);
+        function_a6430(this, local_1 & 0x3ff, arg_0, arg_3);
     if (local_1 & 0x400)
     {
         long local_4 = NONE;

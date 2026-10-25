@@ -317,6 +317,11 @@ void function_125a90(long value);
 // score 46 (was 46): the address of the record is built here with an imul
 // into ESI and an add; retail multiplies into EAX and forms the address with a
 // lea, so the type byte that is tested afterwards is compared in another value.
+// Retail also falls from the type test into the special-type arm, then the
+// removal, then the kind test; ours puts the kind test first. Tried: the
+// special arm as `type != 0x26 || a` 88; as `type == 0x26 && !a` 88; the kind
+// tests joined with && 46; the type test negated, kind arm first 46; removal
+// first with an if/else special arm 50.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

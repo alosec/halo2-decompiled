@@ -111,7 +111,7 @@ static inline bool engine_has_teams(void)
 
 	if (game_engine_get())
 	{
-		volatile bool teams;
+		bool teams;
 
 		result = (g_4e6948->flags184.bit0 & 1) != 0;
 		teams = result;
@@ -130,6 +130,25 @@ static inline bool engine_team_is_playing(long team)
 	return result;
 }
 
+// score 2 (was 37): only post-activation engine/world reload order differs;
+// long/byte teams result 97/94; long playing result 89; both long/byte results 116/94;
+// activation input orders and type-first creation inputs 37/37/37.
+// unqualified teams scratch 2 plain; authority/playing/both result joins 37/37/37;
+// pretested slot while 304; direct team bit 37; active-team result 121; short team ordinal 124.
+// score 2 (was 2): post-activation engine/world reload order still differs;
+// creation world reference/database-field input 2/2; activation database/joint receivers 191/191;
+// byte slot 243; short slot value 2; eligibility value/assigned arms 2/113.
+// Actual table activation method / output reference 2/2; native kind enum 2; refreshed engine receiver 2;
+// shared / slot-only identifier scopes 2/2; equality loop bound 3; authority interval 6. Reload order remains.
+// world activation before store 2; world activation after store 200; world reference 2;
+// world predicate inputs 2; long authority 2; long playing 2; world and native results 2;
+// complete creation arms 2.
+// score 2 (was 2): post-activation engine/world reload order still reversed;
+// activation output reference 2; read-only world 2; immutable identifiers/table 2/2;
+// dead teams scratch removed 2; unsigned slot 3; direct slot index 247; output-first reference 2.
+// score 2 (was 2): the two post-activation engine/world reloads remain reversed;
+// actual table pointer/reference 2/2; unsigned handle 2; short kind 2; rejected-state guard 2;
+// database receiver 171; per-use authority/playing 2/2; remaining pointer-input orders 2/2/2.
 // @retail 0x162060
 void __stdcall function_162060(void *engine)
 {

@@ -45,6 +45,18 @@ public:
 // ours still derives the axis from the offset and scales it, and our four
 // masks and the frame's slots for the normal and the negated extents sit in
 // other registers and other places than retail's.
+// normal name and early declaration 73; component loop with renamed normal 141;
+// shared face limit with component loop 202, exit operands 206; early normal
+// with byte counter and shared limit 124, exit operands 125, limit first 124;
+// scalar normal lanes 108, component loop 148, extent lanes 118, both 160.
+// endpoint scalar arrays 73, component loop 141; endpoint lane pointers
+// 129, component loop 154; shared axis bit 196, endpoint arrays 196, common
+// limit 123; later bit table 75; earlier sign 73, later exit load 71 (dropped);
+// explicit endpoint vector loads 73; shared bit with byte counter 73.
+// Reference arguments 73; SIMD/scalar vector unions 141; vector references
+// with one extent load 202; one result exit 110; post-decrement axis 140;
+// long axis and guarded body with one extent load 202; outside mask
+// initialized earlier 104; unsigned masks and table 73.
 // @retail 0x2fe550
 answer_2fe550 box_2fe550::function_2fe550(segment_2fe550 const *segment, hit_2fe550 *hit) const
 {

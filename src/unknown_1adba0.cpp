@@ -473,9 +473,23 @@ real function_1c9ee0(real arg_0);
 void __stdcall function_26c2d0(long arg_0);
 bool function_255b10(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool arg_3);
 
-// score 41 (was 41): retail keeps the -1 sentinel in EBP and pushes the
-// arguments in the other order, where ours uses EBX for the sentinel, so the
-// prologue and the calls that follow differ.
+// score 15 (was 41): only the EBX/EBP pair differs now: retail keeps the -1
+// sentinel and then the game-time pointer in EBP and the 0x1e5380 result in
+// EBX, ours the other way round. Tried on the unit index form: the result as a
+// const pointer 15, the result/ticks/unit index declared elsewhere 15, the
+// enable test nested 15, a game-time pointer local 15 or 91 (the flat form
+// with that pointer 28).
+// was: retail keeps the -1 sentinel in EBP and pushes the arguments in the
+// other order, where ours uses EBX for the sentinel, so the prologue and the
+// calls that follow differ.
+// score 15 (was 15): Sentinel/clock and returned-settings EBX/EBP homes remain swapped.
+// actor reference 15; immutable actor 15; actor/node references 15; settings reference 15;
+// timestamp reference 15; interval reference 15; settings/timestamp references 15;
+// actor/coefficient references 15.
+// saved EBX/EBP pair still reversed; whole eligibility,
+// cooldown, reaction and combined test results 15/15/15/15; immutable cooldown
+// inputs 15; read-only two-use clock 91; complete actor/timestamp record and
+// its read-only receiver 15/15.
 // @retail 0x1ae680
 short __stdcall function_1ae680(long arg_0, s_slot *arg_1)
 {
@@ -484,24 +498,28 @@ short __stdcall function_1ae680(long arg_0, s_slot *arg_1)
 	{
 		s_prop_node_view *local_1 = prop_node_get(local_0->prop_index);
 		if (local_1->unknown24 >= 1 && local_1->unknown24 <= 2 &&
-			prop_node_state(local_1)->unknown3c == NONE && !function_110ab0(local_0->unknown018))
+			prop_node_state(local_1)->unknown3c == NONE)
 		{
-			s_1ae681 *local_2 = (s_1ae681 *)function_1e5380(arg_0);
-			if (g_4f55d0->unknown340 && local_2 && local_2->field_6 != NONE)
+			long unit_index = local_0->unknown018;
+			if (!function_110ab0(unit_index))
 			{
-				long local_3 = g_510c54->game_time;
-				real local_4 = function_1e9700(0x18) * local_2->field_28;
-				long local_5 = ((s_1ae680 *)local_0)->field_7c8;
-				if (local_5 == NONE || (g_4e6948->state == 1 && g_4f55e5) ||
-					(real)(local_3 - local_5) * g_510c54->rate >= local_4)
+				s_1ae681 *local_2 = (s_1ae681 *)function_1e5380(arg_0);
+				if (g_4f55d0->unknown340 && local_2 && local_2->field_6 != NONE)
 				{
-					real local_6 = function_1c9ee0(function_1e9700(0x17) * local_2->field_24);
-					if (g_4e6948->state == 1 && g_4f55e5)
-						local_6 = 0.5f;
-					if (local_6 > function_259a0(&g_4e7408->unknown0) && local_0->unknown07c != NONE)
+					long local_3 = g_510c54->game_time;
+					real local_4 = function_1e9700(0x18) * local_2->field_28;
+					long local_5 = ((s_1ae680 *)local_0)->field_7c8;
+					if (local_5 == NONE || (g_4e6948->state == 1 && g_4f55e5) ||
+						(real)(local_3 - local_5) * g_510c54->rate >= local_4)
 					{
-						function_26c2d0(local_0->prop_index);
-						function_255b10(arg_0, &prop_node_state(local_1)->unknown48, local_0->prop_index, true);
+						real local_6 = function_1c9ee0(function_1e9700(0x17) * local_2->field_24);
+						if (g_4e6948->state == 1 && g_4f55e5)
+							local_6 = 0.5f;
+						if (local_6 > function_259a0(&g_4e7408->unknown0) && local_0->unknown07c != NONE)
+						{
+							function_26c2d0(local_0->prop_index);
+							function_255b10(arg_0, &prop_node_state(local_1)->unknown48, local_0->prop_index, true);
+						}
 					}
 				}
 			}

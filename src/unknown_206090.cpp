@@ -118,6 +118,15 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 
 #pragma inline_depth(1)
 #include "vector_products.h"
+// score 1600 (was 1600): frame 0x580 versus 0x58c; velocity homes and contact induction differ;
+// frame pointer 2092; inline depth zero 3049, eight 1600; point/contact row tables 1600/1600;
+// double magnitude accumulator 1654.
+// frame 0x580 versus 0x58c; velocity homes and indexed contact records differ.
+// Function-scope impact record 1655; function-scope contact direction 1600; function-scope projection 1600;
+// short fixed initialization index 1664; duplicate search in loop condition 1600.
+// score 1600 (was 1600): frame 0x580 versus 0x58c and indexed contact homes remain.
+// Shared point subtraction first/contact/both 1625/1656/1676;
+// indexed normalized-direction copy 1645; indexed tangential-velocity copy 1638.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {

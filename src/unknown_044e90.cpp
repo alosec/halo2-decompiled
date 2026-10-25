@@ -2,6 +2,14 @@
 #include "unknown_044e90.h"
 #include "normalize3d.h"
 
+// score 438 (was 438): entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and new field/copy forms do not improve.
+// plain plane for 2649; native view ranges 438; plane copy blocks 438; center point setter 438; views read
+// before entry 442; entry bitfield 441
+// Round 310: long bound index 438; explicit plane query 438; visibility-word pointer 438;
+// capacity snapshot 438; guarded native input records 445 (plain). Entry/table and plane/list homes remain.
+// score 438 (was 438): entry/table registers and plane/list homes differ; plane ordinal word 438;
+// view ordinal word 438; frustum ordinal word 437; byte parts predicate 438; early containment byte
+// 436 (plain).
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

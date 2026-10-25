@@ -554,6 +554,16 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 
 // score 32 (was 32): the address of the record is computed in EDX and the zero kept in EBX;
 // retail computes it in ECX and stores it first, so the block order differs.
+// inline/noinline swap declaration 32; apply-update declaration 32; both 32;
+// collection preheader 277; const session 32; const collection 32; array-base key 32;
+// late key pointer 45; occupant reference 45; collection reference 32;
+// machine pointer renamed 32; second-loop index renamed 32.
+// The rest is register choice: retail loads `updates` after pushing the slot
+// for the swap call and adds the collection first for the occupant's key.
+// Tried: player pointer first in the loop 32, player before source 32,
+// collection hoisted out of the loop 277, swap update through a local or an
+// index 32, `updates + ++*count - 1` 32, occupant key through
+// watcher->players 294, through player 291, `(collection->players + i)` 32.
 // @retail 0x83610
 void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_simulation_player_update *updates)
 {

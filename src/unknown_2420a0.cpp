@@ -1389,6 +1389,11 @@ long function_2421d0(long team)
 // @retail 0x242210
 // score 17 (was 26): the enabled peer is loaded before the compare on the engine type and into
 // EDX, retail loads it after the compare and into ECX.
+// Tried: the peer read inside each arm 74 (212 bytes: the two arms colour the peer loads
+// differently, so they never merge above the branch); that with the else-if's type test kept 64
+// (one arm right, the other rotated by a register); a bool for the type test used twice 59; nested
+// arms with the peer local 17; a named block, tag or index local in each arm 17/64 (the block
+// pointer keeps the next scratch register, retail reuses eax); a 600 s permuter run, none below 17.
 long function_242210(point3f const *point)
 {
 	s_object_placement data;

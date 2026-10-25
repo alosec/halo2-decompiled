@@ -9,6 +9,12 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
     real arg_3, bool *arg_4, s_path_trace_result *arg_5);
 
 #pragma inline_depth(0)
+// score 104 (was 104): frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
+// tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
+// degenerate normal first 104; squared magnitude value 104; rejected direction loop 104.
+// the rotated vector's XMM allocation differs - retail
+// keeps the two dot products in xmm1 and xmm0 where ours uses xmm5 and xmm3 -
+// and the second subtraction and the x87 sum are swapped.
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

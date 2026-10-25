@@ -1065,6 +1065,18 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 	}
 }
 
+// score 834 (was 834): frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
+// private histogram 852; wide group decision 840; shared group total base 879; native group identity copy
+// 918; membership native maximum 834.
+// frame 0xd4 versus 0xb4; session entry and lookup differ.
+// Reduced preview 864 (754 code); ID phase 864; phased dword histogram 885;
+// histogram phase 934; bound snapshots 936; split guards 864; capacity inline 920.
+// score 830 (was 842): frame/session/lookup still differ; reduced preview 864.
+// Early team scalars 896; early party scalars 922; group observation 865;
+// member-rating observation 864; allowed-imbalance observation 956; all restored.
+// score 828 (was 829): word histogram initialized at declaration; frame 0xd4 versus 0xb4 remains.
+// Fast long result 873; byte result 868; later group decision 884; word initialization 848;
+// final spread 873. Code-plus-extent 804/798/806/777/792 versus preview 788.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
@@ -1077,7 +1089,7 @@ bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 		summary = (const s_ratings_summary *)session->data4a00;
 	long capacity = 16;
 	if (local_0 > 2 && local_0 <= 8) capacity = session->value4994;
-	volatile bool result = true;
+	bool result = true;
 	memset(out, 0, sizeof(*out));
 	if (!summary || summary->player_count > capacity || !variant ||
 		capacity > ratings_variant_capacity(variant) || capacity < function_1932c0(variant))
@@ -1164,8 +1176,7 @@ bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 		if (!out->rated_counts) out->averages[i] = NONE;
 		else out->averages[i] /= out->rated_counts[i];
 	}
-	word histogram[16];
-	memset(histogram, 0, sizeof(histogram));
+	word histogram[16] = {0};
 	for (long i = 0; i < out->group_count; i++) histogram[out->total_counts[i] - 1]++;
 	long last = NONE;
 	long first = NONE;

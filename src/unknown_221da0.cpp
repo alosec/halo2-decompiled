@@ -178,6 +178,35 @@ struct s_effect_inputs
 dword function_191660(long string_handle, long index);
 
 /* fills the data block of one component of a sound effect */
+// score 169 (was 169): frame 0x24 versus 0x28; full parameter spill and BP/BX selector allocation differ.
+// Parameter record reference 200; both native selectors 188; named gains 169; size policy 400;
+// floating consistency 169; natural while 215; source count after header 186; native header copy 169.
+// frame 0x24 versus 0x28; full parameter-pointer spill
+// and input-selector registers differ. Parameter record 200; early bounds 223;
+// type ladders 177; speaker presence 207; bound values 220; fallback default 227;
+// output mode 169; parameter record with ladders 208. Selected-record copy 206
+// excluded for earlier overlap. Original body retained.
+// score 165 (was 169): Source-element addressing is closer at retail length;
+// frame 0x24 versus 0x28, parameter spill and input selectors still differ.
+// Function/source references 169/165; shared period 165 (740 bytes);
+// shared range selector 220; period plus range 238; function plus range 220;
+// curve record 202; primary field plus range 220; source plus period 164
+// (739 bytes, rejected); source plus function 165. Source reference kept.
+// score 5 (was 165): frame and parameter/selector homes agree; remainder-result
+// stores versus pointer/speaker reload scheduling remain. Direction receiver 211;
+// early parameter 201; both 201; range bit at use 218; function-scope samples
+// 165/165/165; early parameter plus range bit 5 plain. Corrected-frame primary,
+// range, paired and shared phase results 5 each; common period 175; implicit
+// remainder-result conversion 5.
+// full parameter-pointer spill and primary/range selector registers still differ.
+// parameter count once 165; override mask once 260; parameter cursor 215
+// primary remainder result 165; range remainder result 165; primary quotient 165
+// range quotient 165; cursor/count/mask 235.
+// Count snapshot restores frame 0x28 at 727 bytes and +0x65; its count home replaces no parameter spill.
+// score 5 (was 165): full parameter spill and BP/BX selector homes still differ.
+// External header/input/override records 215/165/165; live bound fields 165;
+// source count after special header 183; sampled values at loop scope 165;
+// named rounded results 165; header plus live bounds 215.
 // @retail 0x2222c0
 void function_2222c0(s_effect_component const *component, s_effect_component_overrides const *overrides,
 	s_effect_inputs const *inputs, long speaker, s_effect_data_block *block)
@@ -206,19 +235,19 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 	for (i = 0; i < component->parameter_count; i++)
 	{
 		s_effect_parameter const *parameters = component->parameters;
-		real value = parameters[i].default_value;
+		s_effect_parameter const *parameter = &parameters[i];
+		real value = parameter->default_value;
 
 		if (overrides && (overrides->parameter_mask & (1 << i)))
 		{
-			char source = overrides->sources[source_index];
+			char const &source = overrides->sources[source_index];
 
 			if (source & 1)
 			{
 				s_effect_function const *function = &overrides->functions[source >> 1];
 				short input = function->input;
-				bool ranged = TEST_FIELD_BIT(function->function.address[1] & 1);
 				real x = inputs->values[input];
-				real y = ranged ? inputs->values[function->range_input] : 0.0f;
+				real y = TEST_FIELD_BIT(function->function.address[1] & 1) ? inputs->values[function->range_input] : 0.0f;
 
 				if (input == 1)
 				{
@@ -228,7 +257,7 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 				{
 					x *= function_222250(&inputs->direction, speaker);
 				}
-				if (ranged)
+				if (TEST_FIELD_BIT(function->function.address[1] & 1))
 				{
 					short range_input = function->range_input;
 
@@ -250,7 +279,6 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 			source_index++;
 		}
 
-		s_effect_parameter const *parameter = &parameters[i];
 		value = PIN(value, parameter->minimum, parameter->maximum);
 		if (component->header.flags & 1)
 		{
@@ -757,6 +785,15 @@ void __stdcall vector_constructor_iterator(void *arg_0, unsigned arg_1, int arg_
 void *__fastcall function_31bc70(void *arg_0);
 real function_18cac0(long arg_0);
 
+// score 225 (was 225): inline table clear aligns the frame and occupies EBP;
+// reversed side guard 225; missing-door continue 225; camera-cluster continue 225;
+// indexed batch-entry pointer 225; previous-gain snapshot 262.
+// score 225 (was 225): aligned clear still owns EBP and shifts the scalar homes;
+// unsigned-word door index 236; unsigned-word cluster index 540; both 523;
+// signed-byte side 246; one door-cluster table 233; selected mask pointer 254;
+// both word indices/signed side 534; mask pointer/native camera index 254.
+// inner count snapshot 225; Boolean side 246; native door cluster 236;
+// absent-door-bit continue 225; final batch count snapshot 237.
 // @retail 0x221a70
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 {

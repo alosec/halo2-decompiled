@@ -171,6 +171,11 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
+// score 68 (was 68): Exclusion BL and source-slot join still differ. Read-only object 68;
+// unsigned object handle 68; word query buffer 68; native collision record 71;
+// external triangle reference 68; source publication 68; byte result merge 68;
+// query workspace names 68. Native record retested with byte result storage.
+// BL exclusion and source-slot reload remain; model inline 68; model noinline 68; state inline 68; both contracts 68; probe result 68; model result 68; final found result 111; triangle inline 68.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
@@ -231,10 +236,33 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 	return false;
 }
 
+// score 185 (was 197): exact 0x58 frame; BSP/section registers and range/plane homes differ.
+// BSP reads at use 217; conditional section selection 229; direct success returns 243;
+// instance reads at use 213; relative triangle-range counter 206.
+// BSP/section registers and range/plane homes remain;
+// reference table before traversal 221; instance case first 232; byte success result 185;
+// result-controlled traversal 205; reference table and result traversal 216.
+// score 185 (was 185): BSP/section residency, range/plane homes and vertex-result joins remain.
+// Index-first/output-first fetch contracts 185/185; filled-point return 185; native span inputs 238;
+// actual validity publication 185; triangle query into result 217; validity-byte name 185; read-only section 185.
+// Shared residency 203; first-fetch validity 185; strip-input cursor 221;
+// residency/first 203; residency/cursor 208; first/cursor 221; all three 208;
+// both invariant geometry tables on the byte-result body 241.
+// byte vertex validity 185; range index at use 199; cached range end 183
+// (below gate); later plane 211; native strip start 220.
+// score 185 (was 185): BSP/section carriers and range/plane homes remain;
+// external section source 191; active section reference 185; surface table before walk 205;
+// source and table 244; plane reads at use 225; collision record reference 185; long success/validity 192/185.
+// score 185 (was 185): BSP/section carriers and range/plane homes remain.
+// Fast: native range 211; native reference 225; native section 216; native BSP 272;
+// native collision 256; range and reference 218; section and range 227; collision and reference 248.
+// BSP/section carriers, range/plane homes and vertex joins remain;
+// BSP/range/block references 185/185/185; native block value 330; vertex count/memory copy 185/185;
+// native strip-word input 257; range plus block references 185. Defined vertex failure retained.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
-	bool result = false;
+	byte result = false;
 	point3f point = collision->point;
 	s_structure_bsp_view *bsp = (s_structure_bsp_view *)g_4e0348;
 	long surface_range_index = collision->surface_range_index;
@@ -334,11 +362,22 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 /* the collision record's object index, re-read at each use as retail does (no local copy) */
 #define COLLISION_OBJECT_14A8E0 (*(long *)((byte const *)collision + 0x40))
 
+// score 236 (was 240): 0x58 frame; region scheduling/model spill remain.
+// Retained mesh 258; unsigned node ordinal 240; masked plane snapshot 264;
+// native surface-table view 240; relative range ordinal 252.
+// Region scheduling and model/node storage still differ;
+// direct surface-group expression 240; byte success result 244; word section ordinal 247;
+// direct group and byte result 244; late bounds and byte result 236.
+// cached reference end 250; native strip start 244; no search sentinel 248;
+// shared point setter 238; positive parts scope 243; byte return 237.
+// Region base at each use 268; surface lookup name 236; local point name 236; triangle vertex name
+// 236; node/corner scalar names 236; node count at uses 236; native part-bound locals 236;
+// section field at early uses 236.
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)
 {
-	bool result = false;
+	byte result = false;
 	{
 		triangle->unknown18 = NONE;
 		*(long *)((byte *)triangle + 8) = NONE;
@@ -362,8 +401,8 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		long section_index = *(long *)((byte *)triangle + 0x14);
 		if (section_index == 0xff) goto done;
 		byte *section = *(byte **)(model + 0x28) + section_index * 0x5c;
-		s_vertex_bounds_23ac30 const *bounds = *(s_vertex_bounds_23ac30 const **)(model + 0x18);
 		if (!function_12de70((s_geometry_block_info *)(section + 0x38), 3)) goto done;
+		s_vertex_bounds_23ac30 const *bounds = *(s_vertex_bounds_23ac30 const **)(model + 0x18);
 		object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
 		point3f point = collision->point;
 		if ((unsigned long)*(short *)(object + 0x114) / 0x34 > 0)

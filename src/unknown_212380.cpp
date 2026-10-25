@@ -12,6 +12,14 @@ void function_1a0180(long arg_0, long arg_1, word *arg_2);
 bool function_19d650(s_game_variant *arg_0);
 bool function_212ec0(s_game_variant *arg_0, long arg_1);
 
+// score 386 (was 388): frame 0x464 and default/copy/text homes agree;
+// inlined flag/value store scheduling and the shared tail differ. Inline depths
+// one/two 388; global optimisation off 9513; size mode 1035; case nine first 389;
+// terminator before copy 388; terminator via the copy result 398.
+// Cases two/seven/eight first 414/407/409; zero inline depth 2361;
+// separate save-assigned result 454 (fast).
+// Case four first 388; five last 407; cases two/five adjacent 386;
+// eight last 301 (executable sequence farther); high cases after one 423 (fast).
 // @retail 0x212380
 long function_212380(long arg_0, long arg_1, byte *arg_2)
 {

@@ -53,7 +53,13 @@ __forceinline void function_290852(transform4x3f const *arg_0, vector3f const *a
 
 // score 21 (was 21): ours keeps the transform pointer in EBX and the point's y component in
 // EBP, retail keeps them the other way round; retail also stores the last field with a
-// direct word store where ours moves it through EAX.
+// direct word store where ours moves it through EAX. Tried: the last field through the
+// plain output pointer 34, with field1c too 35; field2e as word 21; field2e stored before
+// field1c 22, right after field10 34 (the constant 1 stays shared with the result); every
+// store plain with arg_2 read directly 49 (arg_2 then arrives in ecx); local_5 not volatile
+// 35; only field1c/field2e through local_5 35; the angles through an inlined helper taking
+// real pointers 113; arg_2 read once through a volatile cast instead of local_4 35; the
+// result in a local also stored to field2e 21.
 // @retail 0x2907d0
 bool function_2907d0(long arg_0, short arg_1, transform4x3f const *arg_2, s_actor_position_state *arg_3)
 {

@@ -87,23 +87,9 @@ static inline void online_task_iterator_new(s_record_pool_iterator *iterator)
 	iterator->datum_index = NONE;
 }
 
-// @retail 0x6b800
-long online_task_find(long type, long controller_index)
-{
-	s_record_pool_iterator iterator;
-	s_type_9df9da *task;
-
-	online_task_iterator_new(&iterator);
-	while ((task = (s_type_9df9da *)data_iterator_next_inlined(&iterator)) != 0)
-	{
-		if (task->type == type && (task->controller_index == controller_index || controller_index == NONE || controller_index == 0xff))
-			return iterator.datum_index;
-	}
-	return NONE;
-}
-
-/* counts the matching tasks, but stops at the first (callers compare the
-   count with 2) */
+/* the data iterator as the task lookups (0x6b800, 0x6b890) inline it: retail
+   reads the pool's high water index again on every step of the bitmap scan
+   (`mov reg, [data + 0x38]` inside the loop), hence the volatile read */
 PRIVATE __forceinline long function_6b892(s_record_pool *arg_0, long arg_1)
 {
  long local_0 = NONE;
@@ -138,6 +124,42 @@ PRIVATE __forceinline byte *function_6b891(s_record_pool_iterator *arg_0)
  return local_2;
 }
 
+/* the datum index of the first task of a type for a controller (NONE or
+   0xff match any controller), or NONE */
+// @retail 0x6b800
+long online_task_find(long type, long controller_index)
+{
+	s_record_pool_iterator iterator;
+	s_type_9df9da *task;
+	long result = NONE;
+
+	online_task_iterator_new(&iterator);
+	while ((task = (s_type_9df9da *)function_6b891(&iterator)) != 0)
+	{
+		if (task->type == type && (task->controller_index == controller_index || controller_index == NONE || controller_index == 0xff))
+		{
+			result = iterator.datum_index;
+			break;
+		}
+	}
+	return result;
+}
+
+/* counts the matching tasks, but stops at the first (callers compare the
+   count with 2) */
+// score 9: this counting form has retail's registers (edi = pool, esi =
+// bitmap) but keeps the count test as the loop tail (`inc eax; test eax, eax;
+// je`) where retail stores `mov eax, 1` and falls into the epilogue. Every
+// form that ends the loop at the first match (`result = 1; break;`) gives
+// retail's tail but swaps esi/edi for the pool and bitmap. The arguments
+// arrive as in retail (type on the stack, controller in ebx, ret 4). Tried:
+// `result = 1; break` (12), result declared first (12), result set after the
+// iterator (13), `return 1` in the loop (54), bool result (43),
+// `while (!result && ...)` (12), `count++; break` (12), task declared first
+// (12), `continue` on a type mismatch (12), nested ifs (12), count tested
+// after the increment (9), next() before the count test (18), do/while (12),
+// `count < 1` (14), data_iterator_next_inlined (45), plain high water read
+// in function_6b892 (45, and 0x6b800 57).
 // @retail 0x6b890
 long online_task_exists(long type, long controller_index)
 {
@@ -156,6 +178,20 @@ long online_task_exists(long type, long controller_index)
 
 /* disposes every task, the logon (0), change-logon (1), friends (2), mute
    list startup (11) and 33 tasks only once the tasks that need them are gone */
+// score 108: retail has a 0x14 frame that ours lacks. It keeps the global in
+// ebp (reloaded after 0x6b640 only) and the pool copy in ebx; ours has them
+// the other way round. Retail stores the iterator's pool pointer once per
+// outer pass at [esp+0x18] and re-reads it from memory at the top of every
+// bitmap scan (`mov ecx, [esp+0x18]`), and spills ebx to [esp+0x10], restoring
+// it there after `call 0x6b890` (ours reloads the global). The call to 0x6b890
+// already passes its arguments as retail does (push 0xc, ebx = 0xff), so the
+// callee does not cause this. `bool dispose` with `case 44: dispose = true;`
+// gives retail's switch exactly (range to 0x2c, the six-entry table, `sete al`
+// without `xor`), but scores 131 because the missing frame shifts everything.
+// Tried (all with that switch): plain bool, case 44 merged into default (127),
+// dispose set in default (131), case 44 falling into default (131), iterator
+// declared outside the outer loop (131), function_6b891 as the step (138),
+// the type read through online_task_get_type (132).
 // @retail 0x6b950
 void online_tasks_dispose_all(void)
 {
@@ -852,6 +888,8 @@ bool function_6c2a0(s_type_9df9da *task, long task_index)
 	return result;
 }
 
+/* Continues a task and maps its status to a result code; every outcome but
+   success marks the task finished and failed. */
 // @retail 0x6c360
 bool function_6c360(s_type_9df9da *task)
 {
@@ -860,22 +898,14 @@ bool function_6c360(s_type_9df9da *task)
 	{
 	case (long)0x80151001:
 		task->result = 4;
-		task->flag_bits.finished = true;
-		task->flag_bits.failed = true;
 		break;
 	case (long)0x80151003:
-		task->flag_bits.finished = true;
-		task->flag_bits.failed = true;
 		task->result = 8;
 		break;
 	case (long)0x80151002:
-		task->flag_bits.finished = true;
-		task->flag_bits.failed = true;
 		task->result = 3;
 		break;
 	case (long)0x80151006:
-		task->flag_bits.finished = true;
-		task->flag_bits.failed = true;
 		task->result = 6;
 		break;
 	case (long)0x80151300:
@@ -884,8 +914,6 @@ bool function_6c360(s_type_9df9da *task)
 			task->result = 10;
 			if (status == 2)
 				task->result = status;
-			task->flag_bits.finished = true;
-			task->flag_bits.failed = true;
 		}
 		break;
 	case 0:
@@ -906,10 +934,13 @@ bool function_6c360(s_type_9df9da *task)
 		}
 		break;
 	default:
-		task->flag_bits.finished = true;
-		task->flag_bits.failed = true;
 		task->result = 10;
 		break;
+	}
+	if (!result)
+	{
+		task->flag_bits.finished = true;
+		task->flag_bits.failed = true;
 	}
 	return result;
 }

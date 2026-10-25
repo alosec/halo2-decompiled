@@ -44,6 +44,12 @@ void swarm_spawn_slots_clear_object(long key);
 void ai_players_unit_deleted(long unit_index);
 extern s_record_pool *g_502414;
 
+// score 34 (was 34): BLOCKED-BY 0x26e370 (retail passes it the object in ebx, ours pushes it).
+// A `short` type local plus the iterator set up as data, index, datum_index gives retail's code
+// everywhere else (aligned 5) but 96 positional; then retail still loads field_3a0 into esi (the
+// dying object's register) and copies it to eax for 0x201a50. Tried on that form: an inline
+// helper taking the object 96; the object re-fetched at each use 148; the first object local
+// reused 116; the three tests in their own scope 96.
 // @retail 0x1c9f30
 void __stdcall function_1c9f30(long arg_0)
 {

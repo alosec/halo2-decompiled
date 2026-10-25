@@ -473,7 +473,7 @@ real function_11e6f0(
 	else
 	{
 		vector3f d = *direction;
-		real b = d.k * delta.k + d.j * delta.j + d.i * delta.i;
+		real b = d.i * delta.i + d.j * delta.j + d.k * delta.k;
 
 		if (b >= 0.f)
 			return 3.4028235e38f;

@@ -790,6 +790,10 @@ void havok_component_rigid_body_linear_velocity_set(long rigid_body_index, s_hav
 	}
 }
 
+// score 29 (was 29): retail keeps the slot address in eax, tests the fixed flag through edx/dl and reads the
+// rigid body again after the vector's stores; ours reads it once into esi. Tried: the Havok vector declared
+// at the top, in the outer block, with the body read at its use, with every local at the top, or with the
+// body in a named local for the test: 46 each (retail's reload, but the flag byte goes to bl: push ebx).
 // @retail 0x1d0e50
 void havok_component_rigid_body_angular_velocity_set(long rigid_body_index, s_havok_component *component, vector3f const *velocity)
 {
@@ -909,6 +913,12 @@ void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_com
 	}
 }
 
+// score 38 (was 38): Frame and component-in-EBX convention still differ; zero transform/translation/both 64/61/84;
+// rotation workspace/initialized workspace/initialized transform with workspace 78/106/107;
+// position input value 77; rotation input values 143. Original body restored.
+// score 38 (was 38): frame and component register still differ; external matrix/component records 38/38;
+// complete frame set/initialization/library copy 81/71/71; translation memcpy 70;
+// aligned forward/up column values 49/49. Original body retained.
 // @retail 0x1d0c20
 void havok_component_rigid_body_matrix_set(long rigid_body_index, s_havok_component *component, transform4x3f const *matrix)
 {
@@ -1363,6 +1373,18 @@ PRIVATE __forceinline real const &component_time_step()
 	return g_510c54->rate;
 }
 
+// score 26 (was 43): Acceleration XMM0/memory timestep prefix and stop-test schedule still differ;
+// negative-target guard 50; stopping branch first 106; step predicate first 26 (kept, plain 26);
+// negative guard with step predicate 32; independent/eager stop decisions 129/124;
+// explicit fraction branches 43; velocity input/output lifetime 219.
+// score 26 (was 26): acceleration/timestep registers and stop scheduling remain; direct stopping decision 106;
+// conditional/stopping-first results, stopping ticks, squared speed, limit magnitude, normalized speed
+// and captured step decision 26 each. Original body retained.
+// score 26 (was 26): acceleration/timestep allocation remains; assigned correction and positive clamp 26;
+// nonpositive/all assigned clamps 45; shared velocity clamp 148; shared bounds 148 (449/450 bytes).
+// acceleration register, memory timestep multiply and stop-test schedule differ.
+// Ordinary acceleration/magnitude/time inline contracts and paired forms 26;
+// completed clamp before ratio 82; accelerated candidate default 114.
 // @retail 0x1d2280
 real function_1d2280(bool allow_reverse, bool scale_by_mass, real mass, real target, real acceleration,
 	real velocity, real limit, real position, real exponent, bool force_acceleration, real *ratio)
@@ -1380,7 +1402,7 @@ real function_1d2280(bool allow_reverse, bool scale_by_mass, real mass, real tar
 		else
 		{
 			real stop_distance = (velocity / step + 1.0f) * (delta_time * velocity) * 0.5f;
-			if (target > stop_distance && target > step)
+			if (target > step && target > stop_distance)
 				next_velocity = velocity + step;
 			else if (target < 0.0f)
 				next_velocity = velocity;
@@ -1668,6 +1690,12 @@ PRIVATE inline transform4x3f *component_node_matrices(long object_index)
  return (transform4x3f *)((byte *)object + object->matrices_offset);
 }
 
+// score 29 (was 172): only the orientations branch differs: retail reads both matrix offsets
+// before inverting the parent (the call to 0x141590) and keeps the node's matrix base (object
+// plus offset) in EDI across that call, where ours keeps the object and reads the offset again
+// after it. Tried at 172 (lane): stable handle 197; pointer names 172; in-place composition 212;
+// default point setters 188; sibling induction 175. Tried at 29: reordering the locals and
+// precomputing the matrix pointer (no change).
 // @retail 0x1d3d20 standard
 void s_havok_component::function_1d3d20(long node_index, dword *updated, dword const *restore,
  rigid_transform_scaled *orientations, long unknown)
@@ -1678,9 +1706,9 @@ void s_havok_component::function_1d3d20(long node_index, dword *updated, dword c
  s_component_transform_model *model = (s_component_transform_model *)g_4e3b44[definition->model_index & 0xffff].bytes;
  long physics_index = ((s_component_collision_model_link *)model)->physics_model_index;
  s_component_node_physics *physics = (s_component_node_physics *)g_4e3b44[physics_index & 0xffff].bytes;
- s_component_node_render_model *render_model = (s_component_node_render_model *)g_4e3b44[model->render_model_index & 0xffff].bytes;
  s_component_node_link *node = &physics->nodes[node_index];
  short parent = node->parent;
+ s_component_node_render_model *render_model = (s_component_node_render_model *)g_4e3b44[model->render_model_index & 0xffff].bytes;
  if (parent != NONE)
  {
   dword mask = 1 << (node_index & 31);
@@ -1688,10 +1716,12 @@ void s_havok_component::function_1d3d20(long node_index, dword *updated, dword c
   {
    if (orientations)
    {
+    transform4x3f *matrices = component_node_matrices(component->object_index);
+    transform4x3f *parent_matrix = object_node_matrix(object_get(component->object_index), parent);
     transform4x3f inverse;
     transform4x3f relative;
-    function_141590(object_node_matrix(object_get(component->object_index), parent), &inverse);
-    function_142a60(&inverse, object_node_matrix(object_get(component->object_index), (short)node_index), &relative);
+    function_141590(parent_matrix, &inverse);
+    function_142a60(&inverse, &matrices[(short)node_index], &relative);
     orientation_from_matrix4x3(&relative, &orientations[node_index]);
    }
   }
@@ -1699,13 +1729,14 @@ void s_havok_component::function_1d3d20(long node_index, dword *updated, dword c
   {
    s_component_node_default *initial = &render_model->nodes[node_index];
    transform4x3f *matrix = object_node_matrix(object_get(component->object_index), (short)node_index);
+   transform4x3f *matrices = component_node_matrices(component->object_index);
    function_141e10(&matrix->rotation, &initial->rotation);
    matrix->position.x = 0.0f;
    matrix->position.y = 0.0f;
    matrix->position.z = 0.0f;
    matrix->scale = 1.0f;
    matrix->position = initial->position;
-   function_142a60(object_node_matrix(object_get(component->object_index), parent), matrix, matrix);
+   function_142a60(&matrices[parent], matrix, matrix);
    updated[node_index >> 5] |= mask;
    if (orientations)
    {
@@ -1784,6 +1815,11 @@ public:
     void set_strength(real strength);
 };
 
+// score 10 (was 10): the component arrives in eax and the constraint index in ecx,
+// retail the reverse (BLOCKED-BY 0xe0e00: its declaration and call need the
+// (component, constraint_index, scale) order); the rest matches. Tried: constraint
+// pointer after the lookups 23, just before the override loop 23, as data + index 10,
+// object lookup first 10, object index read into a local first 10.
 // @retail 0x1d35d0
 void function_1d35d0(long constraint_index, s_havok_component *component, real scale)
 {
@@ -2095,6 +2131,17 @@ PRIVATE __forceinline void component_surface_property_set(hkEntity *entity, long
     entity->entity_property_put(HAVOK_PROPERTY_2003, s_havok_property_word(value));
 }
 
+/* clears a vector; function_1d87b0 stores through this inline function:
+   written in place, its store keeps function_181db0's result pointer off ebx
+   (scores 69 for 0x181db0 and 211 for 0x1d87b0 that way) */
+PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
+{
+    vector->m_quad = _mm_setzero_ps();
+}
+
+// score 137 (was 211): the velocity sums in the material loop load the
+// running sum second in retail, and the final scale and its stores are
+// scheduled differently; not worked on yet.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {
@@ -2130,7 +2177,7 @@ void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_ind
     if (material_count == 0)
     {
         havok_entity_property_2003_set((hkEntity *)body->rigid_body, 0);
-        *( __m128 *)((byte *)body + 0x30) = _mm_setzero_ps();
+        component_surface_vector_clear((hkVector4 *)((byte *)body + 0x30));
         body->unknown44 = 0;
         return;
     }
@@ -2546,6 +2593,18 @@ void function_1d83e0(long body_index, s_havok_component *component, long node_a,
 void function_bba20(long object_index);
 void function_f7ed0(long vehicle_index, vector3f *impulse);
 
+// score 175 (was 175): staggered register saves and paired velocity homes differ;
+// marked linear/angular/both getters 200/197/274; earlier angular norm 146; keyframe query 167 (fast base 135).
+// Force-inline linear/angular/both getter declarations 175 each; initialized linear/angular outputs 199 each;
+// initialized pair 219; initialized pair with getter declarations 219; live external array receiver 175
+// (plain scores; reduced preview 135). Staggered saves and paired getter allocation still differ.
+// score 175 (was 175): Staggered saves and paired velocity homes remain; reversed getter
+// order 178; linear norm before angular read 176; angular read/norm before linear read 186;
+// native simulation result 180; post-update body receiver 187 (plain). Opening body retained.
+// staggered saves and paired velocity homes remain;
+// linear / angular / both component loops 175/175/175; horizontal initialization 173;
+// linear / angular / both loops with horizontal initialization 173/173/175;
+// direct component pointers 183 (plain; original double products and component order retained).
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {
@@ -2630,6 +2689,17 @@ PRIVATE inline void component_matrix_frame(transform4x3f const *matrix, hkTransf
     frame->m_translation = position;
 }
 
+// score 206 (was 206): body/stride registers and relative-call input differ;
+// body getters 206; first count after lookup 205 (below gate), both 275;
+// node streams 336; streams with getters 336 (plain scores). Original kept.
+// body stride/base registers and transform call differ;
+// count names 206; search names 206; transformed name 206; entry phase
+// transforms 301; equal-node arm first 248.
+// second selector word 226; promoted first nodes 290; entry matrix 206;
+// entry relative transform 206; fallback first 206 (plain scores).
+// Round 303: first mapped byte 299; second mapped byte 213; first node at use 338;
+// second node at use 226; loop-scoped child counters 206 (plain scores). Original kept.
+// score 206 (was 206): Frame 0xb4 agrees; body/stride and relative-call registers remain. Late first link 370; late second 309; array accessor 206; mapped-index names 206; second count after lookup 224 (plain).
 // @retail 0x1d7ef0
 void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
     s_component_frame_owner *owner, s_component_frame_map const *mapping, hkTransform *frame_b,
@@ -2771,6 +2841,11 @@ struct s_1cf531
  word field_2 : 4;
 };
 
+// score 27 (was 27): the friction magnitude takes another dead slot (retail shares the friction pointer's
+// spill slot), the rigid-body element is formed offset-first in retail (data + offset, ours offset + data),
+// retail loads the vector's y early and stores it after z, and the scratch registers rotate from there.
+// Tried: the element through the array's operator[] 27; the vector through _mm_setr_ps or _mm_set_ps 104;
+// the magnitude in a second local for the finiteness result 27; the bits read as long 27.
 // @retail 0x1cf520
 void function_1cf520(s_1cf520 *arg_1, c_1cf520 *arg_0, bool arg_2, bool arg_3, long arg_4, long arg_5)
 {

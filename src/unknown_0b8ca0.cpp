@@ -212,6 +212,10 @@ short function_b8d30(long object_index, long marker_name, s_object_marker *marke
 
 // Preserve the activation call boundary while inlining the component lookup.
 __declspec(noinline) void __stdcall function_b9b90(long object_index, bool disable);
+// score 4 (was 4): the component pool data loads after the index scaling, into eax (retail: before it, into ecx); tried a flags pointer local 4, a component index local tested and passed 13, a goto-free bool form 55, NONE on the left 4, a component pointer local 4
+// component data loads into eax after index scaling, retail ecx before it.
+// Signed bitset 11; unsigned bitset 11; external object reference 4; object reference/bitset 11.
+// External header reference 18; header reference/bitset 20; type read first 4; bitset before object reference 11.
 // @retail 0xb9b90
 void __stdcall function_b9b90(long object_index, bool disable)
 {
@@ -626,6 +630,12 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
     return (*(short *)(data->data + data->size * absolute) << 16) | absolute;
 }
 
+// score 231 (was 231): caller-dependent frame alignment and scalar homes differ;
+// direct double with ancestry for-loop 235; first offset loop 235; second offset
+// loop 235; marker-position loop 235; initial radius snapshot 235.
+// direct radius with double magnitude 231; real radius 239; both widths 231;
+// byte result with real radius 270; word result with double magnitude 237.
+// score 231 (was 231): Caller-dependent eight-byte alignment and angle homes remain. Direct marker position 262; displacement initializer 235; scaled range 235; successive square sum 235; unsigned model handle 235 (ordinary radius in all).
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {
@@ -793,7 +803,7 @@ bool __stdcall function_bdef0(long object_index)
         delta.i = center.x - *(real *)(object + 0x40);
         delta.j = center.y - *(real *)(object + 0x44);
         delta.k = center.z - *(real *)(object + 0x48);
-        if (delta.k * delta.k + delta.i * delta.i + delta.j * delta.j > 0.01f ||
+        if (delta.k * delta.k + delta.i * delta.i + delta.j * delta.j > 0.1f * 0.1f ||
             radius != *(real *)(object + 0x4c))
             function_b87b0(object_index);
         else
@@ -1019,15 +1029,12 @@ static __forceinline void b98e0_basis(transform4x3f *out, vector3f const *forwar
 {
     out->scale = 1.0f;
     out->forward = *forward;
-    vector3f left;
-    left.k = up->i * forward->j;
-    left.k -= up->j * forward->i;
-    left.j = up->k * forward->i - up->i * forward->k;
-    left.i = up->j * forward->k;
-    left.i -= up->k * forward->j;
-    out->left.k = left.k;
-    out->left.j = left.j;
-    out->left.i = left.i;
+    real k = up->i * forward->j - up->j * forward->i;
+    real j = up->k * forward->i - up->i * forward->k;
+    real i = up->j * forward->k - up->k * forward->j;
+    out->left.k = k;
+    out->left.j = j;
+    out->left.i = i;
     out->up = *up;
     out->position.x = 0.0f;
     out->position.y = 0.0f;
@@ -1049,17 +1056,19 @@ static __forceinline void b98e0_translation(transform4x3f *out, point3f const *p
     out->position = *position;
 }
 
-// score 69 (was 69): the zero float is set up before the table load in ours, retail loads the table first and the float after it
+// score 65 (was 69): scheduling only. Ours hoists the cross product's loads above the translation's stores and sinks
+// the translation's zero stores after the orientation; retail builds the translation (ones, zeros, position) first,
+// then the orientation in order (xorps is its first instruction). Tried: the matched 0x1416c0 and 0x141710 called
+// instead (not inlined, 319); plain inline helpers 69; orientation built first 98, declared first 71; components
+// stored i, j, k 66; 0x141710's operand order 66; the translation's ones stored before its zeros 65.
 // @retail 0xb98e0
 void __stdcall function_b98e0(long object_index, transform4x3f const *matrix)
 {
     s_object_view *object = OBJECT_GET(object_index);
     transform4x3f translation;
     b98e0_translation(&translation, (point3f *)((byte *)object + 0x64));
-    vector3f const *forward = (vector3f *)((byte *)object + 0x70);
-    vector3f const *up = (vector3f *)((byte *)object + 0x7c);
     transform4x3f orientation;
-    b98e0_basis(&orientation, forward, up);
+    b98e0_basis(&orientation, (vector3f *)((byte *)object + 0x70), (vector3f *)((byte *)object + 0x7c));
     transform4x3f result;
     function_142a60(matrix, &translation, &result);
     function_142a60(&result, &orientation, &result);
@@ -1077,7 +1086,6 @@ extern s_object_list *g_4de2f4;
 void function_c0110();
 void function_1089d0(long object_index);
 
-// score 3 (was 3): the record pointer is materialised in esi in ours, retail loads the table into ecx and computes the record address with lea
 // @retail 0xb6c50
 void function_b6c50()
 {
@@ -1105,14 +1113,12 @@ void function_b6c50()
     while (iteration.object)
     {
         long index = iteration.iterator.object_index;
-        s_record_pool *pool = g_4e0300;
-        byte *records = pool->data;
-        long offset = (index & 0xffff) * 12;
-        s_object_header_view *header = (s_object_header_view *)(records + offset);
-        if (header->flags & 1)
+        s_object_header_view *header = OBJECT_HEADER_GET(index);
+        byte flags = OBJECT_HEADER_GET(index)->flags;
+        if (flags & 1)
         {
-            byte *current = *(byte **)(*(byte *volatile *)((byte *)pool + 0x44) + offset + 8);
-            header->flags &= ~5;
+            byte *current = (byte *)OBJECT_GET(index);
+            header->flags = flags & ~5;
             if ((1 << header->type) & 0x1883) function_1c38a0(index);
             if ((bool)((s_object_flags *)current)->flag14) --*(short *)((byte *)g_4de2f4 + 4);
         }
@@ -1413,13 +1419,22 @@ done:
     return result;
 }
 
-// score 26 (was 26): the name index parameter is read as a dword, retail reads it as a word, and the placement helper is called with one argument more
+// score 17 (was 26): the name index parameter is read as a dword (address taken by the volatile reload), retail reads it
+// as a word both at entry and after function_bf090; the tail's registers differ (retail: type ecx, palette ebx, size eax
+// sign-extended at its load, datums esi then ebp). Tried: no volatile (name index stays in ebp, result spilled) 76;
+// function_bb760 call for the lookup, same 76; result declared after the force block 81; long/inline definition
+// fields with a block local 43, 34; long size only 38.
+// the placement tail: retail keeps the type in ecx and loads the
+// definition into eax, copying it to esi for the size and datums reads (palette offset first);
+// ours keeps the type in esi and reads the definition through eax/ecx.
+// Copy + volatile name reload 26; result declared before the lookup 83; no result variable 78;
+// result declared in the tail 85; long size 27; long offsets + palette at the call + datum local 27;
+// the 0xb7300 placement-block helpers (both orders, both product orders) 23; lookup via 0xbb760 17.
 // @retail 0xbb670
 long __stdcall function_bb670(short name_index, bool force)
 {
-    short remaining_name_index = name_index;
-    long result = NONE;
     long existing = name_index >= 0 && name_index < 0x280 ? g_4de2d0[name_index] : NONE;
+    long result = NONE;
     if (force && existing != NONE)
     {
         s_object_header_view *header = OBJECT_HEADER_GET(existing);
@@ -1432,12 +1447,11 @@ long __stdcall function_bb670(short name_index, bool force)
         object[0xab] = 2;
         *(short *)(object + 0xa8) = NONE;
         *(long *)(object + 0xa4) = *(long *)((byte *)g_4de2f4 + 0x18);
-        remaining_name_index = *(short volatile const *)&name_index;
         object[0xb0] = 0;
     }
     else if (existing != NONE) return result;
     byte *scenario = (byte *)g_4e0350;
-    byte *name = *(byte **)(scenario + 0x4c) + remaining_name_index * 0x24;
+    byte *name = *(byte **)(scenario + 0x4c) + name_index * 0x24;
     short placement_index = *(short *)(name + 0x22);
     if (placement_index != NONE)
     {
@@ -1455,6 +1469,15 @@ long __stdcall function_bb670(short name_index, bool force)
 }
 
 // score 84 (was 84): the two fields of the definition are read in the other order and the -1 sentinel is kept in edi instead of ecx
+// score 31 (was 84): the early metadata reads, saved-register order and final argument staging differ.
+// Offset references 84; const metadata 84; long offsets 95; separate metadata 84;
+// direct success 117; input reference 84; index-field reference 31; palette-field reference 84.
+// score 31 (was 31): metadata reads and saved-register order remain; final creation arguments agree.
+// With the index-field reference: late stride 93; word stride 48; independent clamps 31;
+// creation return 113; native datum 31; later result 31; common metadata exit 41; long palette 82.
+// Valid-path stride before/after scenario 106/106; offset references 31; offset references plus
+// valid stride 106; direct guards with valid stride 106; word valid stride 106; one-use creation index copy 27 (reverted in review);
+// creation index with valid stride 106.
 // @retail 0xa73b0
 long __stdcall function_a73b0(s_entity_info *info)
 {
@@ -1467,7 +1490,7 @@ long __stdcall function_a73b0(s_entity_info *info)
     {
         byte *scenario = (byte *)g_4e0350;
         byte *placements = scenario + placement_offset;
-        long index = info->field0;
+        long const &index = info->field0;
         long clamped = index < 0 ? 0 : index > *(long *)placements - 1 ? *(long *)placements - 1 : index;
         if (clamped == index)
         {
@@ -1499,6 +1522,11 @@ void havok_component_rigid_body_linear_velocity_get(s_havok_component *component
 void havok_component_rigid_body_angular_velocity_get(s_havok_component *component, long body, vector3f *velocity);
 void function_1d96d0(long index);
 
+// score 13 (was 13): final flag update is branchless, retail uses constant set/clear arms and separate exits.
+// Byte result 13; signed-byte result 13; word result 126; long result 124; guarded parent reference 13.
+// Byte result/parent reference 13; byte result/constant stores 20. A byte-wide store of the flag through a
+// local overlay of the object scored 7 (not kept: a cast to a made-up layout); the view's flag bits at
+// +0xc0 declared as byte bit fields (same bits) are the form to try.
 // @retail 0xbc5e0
 void __stdcall function_bc5e0(long index)
 {
@@ -1577,6 +1605,12 @@ void function_b8840(long index);
 long function_baf80(long index);
 void function_bba20(long index);
 
+// score 319 (was 319): pool/permission registers and transform scheduling differ;
+// native point snapshot 385; native orientation snapshots 341; all snapshots 362;
+// inverse workspace scope 319; spatial workspace names 319.
+// byte permission 319; byte activity 319; both byte carriers 319;
+// vector transforms before point 385; byte permission with vectors first 385.
+// score 319 (was 319): Frame 0x64 agrees; pool/permission homes and SIMD scheduling remain. Ancestry before permission 335; long node index 335; guarded long cluster 324; up before forward 319; direct node array 323.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {

@@ -137,6 +137,13 @@ struct s_follow_search_fields
 
 void function_26c180(long actor_index);
 
+// score 29 (was 29): retail loads `unknown` once into ebx, pushes it to
+// function_2626b0 and tests bl afterwards; ours reloads it from the stack
+// after the call. Tried: a copy `bool not_found = unknown` used in the call
+// and the test (109: the tail then matches but for `mov bl, cl`, and the
+// top keeps actor_index in edi), the copy only in the test or as `found =
+// !unknown` (109, 113), plain locals instead of the struct (31), flag8 set
+// by if/else (49), the first reference through a local (29).
 // @retail 0x1b0540
 void function_1b0540(long actor_index, s_follow_search_state *state)
 {

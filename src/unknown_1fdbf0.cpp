@@ -161,9 +161,13 @@ struct s_aim_definition
 	dword flags;
 };
 
-// @retail 0x1fe120
 // score 41 (was 41): the target index stays in EAX where retail keeps it in EBX, so
 // the moving object header's address is recomputed and its type byte is read into BL.
+// object_index assigned before the header lookup 43 (retail's length and memory type
+// compare); the same with the header from target_index 43; passing object_index to
+// 0x118e80 43; object_header_get 43; flags & 0x100 47; the target field re-read 44,
+// passing object_index then 58. The fallback's callee 0xcba50 is unmatched.
+// @retail 0x1fe120
 void function_1fe120(long actor_index, vector3f *direction)
 {
 	s_actor_moving *actor = actor_moving_get(actor_index);

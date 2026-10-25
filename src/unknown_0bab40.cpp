@@ -61,6 +61,12 @@ bool object_dispatch_query_function_value(long object_index, long name, real *va
 bool function_10aac0(long object_index, long name, real *value, long *index);
 bool function_ba8c0(s_object_function_ab const *function, long object_index, real *out);
 
+// score 28 (was 28): retail gives the 1.0 case its own epilogue (`mov al, 1`, no store of the
+// enabled byte); ours stores the byte and shares the final return. Then the recursive call's parent
+// index and name sit in ECX/EAX where retail has EAX/ECX. Tried: `enabled = true; return enabled;`
+// 117 (358 bytes: forwarded to `mov al, 1` and cross-jumped with the 0x10aac0 return); the result set
+// before the value store 117; the 1.0 case as the chain's final else 28; a second `return enabled`
+// in the dispatch branch 28; a separate register result for the 1.0 case and the final return 117.
 // @retail 0xbab40
 bool __stdcall function_bab40(long object_index, long name, real *value)
 {

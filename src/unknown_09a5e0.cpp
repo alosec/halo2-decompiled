@@ -62,6 +62,16 @@ static inline real event_dequantize_real(long value, long maximum, real minimum_
 	return (minimum_value * (maximum - value) + maximum_value * value) / maximum;
 }
 
+/* the identifier in one of the eight slot table slots, or NONE outside them */
+static long slot_table_identifier(long slot)
+{
+	long id = NONE;
+
+	if (slot >= 0 && slot < 8)
+		id = g_4eca60[slot];
+	return id;
+}
+
 /* the identifier in a slot, or NONE when there is no manager */
 static long slot_identifier(short index)
 {
@@ -525,14 +535,10 @@ bool c_breakable_surface_group_entity_definition::v19(long a, long b, long c, lo
 void c_breakable_surface_group_entity_definition::v21(s_entity_slot *entity)
 {
 	long slot = entity->slot;
+	long id = slot_table_identifier(slot);
 
-	if (slot >= 0 && slot < 8)
-	{
-		long id = g_4eca60[slot];
-
-		if (id != NONE && ((entity->id ^ id) & 0x3ff) == 0)
-			g_4eca60[slot] = entity->id;
-	}
+	if (id != NONE && ((entity->id ^ id) & 0x3ff) == 0)
+		g_4eca60[slot] = entity->id;
 }
 
 // @retail 0x9d0e0
@@ -551,8 +557,6 @@ bool c_breakable_surface_group_entity_definition::v24(s_entity_slot *entity)
 	return true;
 }
 
-// score 11 (was 11): ours holds -1 in a register for the compare and the
-// clear because of the two stores to one address; retail uses immediates.
 // @retail 0x9d1c0
 bool c_breakable_surface_group_entity_definition::v25(s_entity_slot *entity)
 {
@@ -560,9 +564,7 @@ bool c_breakable_surface_group_entity_definition::v25(s_entity_slot *entity)
 
 	if (slot >= 0 && slot < 8)
 	{
-		long id = g_4eca60[slot];
-
-		if (id != NONE)
+		if (slot_table_identifier(slot) != NONE)
 			g_4eca60[slot] = NONE;
 		g_4eca60[slot] = entity->id;
 	}
@@ -706,6 +708,12 @@ bool function_e68c0(long type, long unit_index);
 
 // score 75 (was 85): the prologue saves EBX and EBP where retail saves ECX and EBX, so the saved
 // register set and the order of the body differ.
+// With the result a long in ebx the 1<<type shifts use eax, so the vehicle index moves to ebp in
+// the prologue; retail's byte result loses bl to the shifts and spills to the frame slot, the
+// vehicle index stays in eax and ebp is saved late for the pool pointer.
+// Byte result 85; masked-index locals 75; pool data read at each use 77; mask operand order 75;
+// byte result with pool before the guard 89; split missing guards 83; dword indices 75;
+// byte result with the seat read once 85; byte mask locals 82.
 // @retail 0x9ee20
 bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
@@ -2073,6 +2081,26 @@ static __forceinline long function_9d453(long arg_0, short arg_1)
 	return local_0;
 }
 
+// score 184 (was 184): object/offset homes and low-mask allocation remain;
+// native unit view 184; read-only unit view 184; native child view 184;
+// both native views 184; unsigned result mask 184; child defaults reversed 186;
+// immutable output binding 184; read-only byte source 184.
+// frame 0x1c agrees; object/offset homes and slot mask differ.
+// Frame pointer 291; scalar clamp input 184; sample-first clamp result 189;
+// indexed snapshot records 230; native-word ordinary tail flags 192.
+// Frame 0x1c agrees; indexed lookup, object/offset homes and slot-mask allocation still
+// differ. offset receiver home 183; offset snapshot home 183; offset object home 183; offset
+// result home 183; receiver store lifetime 201; offset positive count 183; tail result mask
+// 208; offset tail result mask 207.
+// score 184 (was 184): getter guard/exhaustive result 200; complete output receiver 184;
+// exhaustive child metadata/count/all results 234/299/311; ordered clamp results
+// and bound returns 191. Object/offset homes and low-mask allocation still differ.
+// score 184 (was 184): object/offset homes and low-mask allocation remain;
+// getter byte slot 200; table/full identifier, object, table/decoded index 184;
+// header/object/table with byte slot 200; table word object slot plus byte slot 287.
+// header/object homes and low-mask allocation remain.
+// Clamp source/result names and source-first declarations 184/184/184;
+// tail fractions, child fraction, mask names and both scratch-home combinations 184 each.
 // @retail 0x9d450
 long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 {

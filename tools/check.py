@@ -231,7 +231,7 @@ def _decode(md, data, va, k):
     return next(md.disasm(data[k:k + 16], va + k, count=1), None)
 
 
-def differing_instructions(ours, ours_va, theirs, theirs_va, masked, forced=frozenset(), entries=frozenset()):
+def differing_instructions(ours, ours_va, theirs, theirs_va, masked, forced=frozenset(), entries=frozenset(), decoded=None):
     """Returns (count, lines, complete). complete is False when the
     disassembly does not cover every byte of both sides. entries: the offsets
     of absolute fields that point inside the function on both sides. No
@@ -240,7 +240,8 @@ def differing_instructions(ours, ours_va, theirs, theirs_va, masked, forced=froz
     that dword is compared as one line, by the same rule as the instructions,
     and decoding resumes after it. Entries that differ only by layout are
     masked, so they do not count, and the instructions after a table line up
-    as they do in the image."""
+    as they do in the image. decoded: our bytes as the disassembler reads
+    them, when they differ from ours (the comparisons always use ours)."""
     md = Cs(CS_ARCH_X86, CS_MODE_32)
     lines, count = [], 0
     oa = ob = 0
@@ -256,7 +257,7 @@ def differing_instructions(ours, ours_va, theirs, theirs_va, masked, forced=froz
             oa += 4
             ob += 4
         else:
-            x = None if stuck_a else _decode(md, ours, ours_va, oa)
+            x = None if stuck_a else _decode(md, decoded or ours, ours_va, oa)
             y = None if stuck_b else _decode(md, theirs, theirs_va, ob)
             stuck_a, stuck_b = x is None, y is None
             if x is None and y is None:
@@ -594,7 +595,14 @@ def check_function(full, start, theirs, theirs_va, absolute, relative, lo, hi, i
         return 'matched', None, [], len(ours)
     # absolute fields that point inside the function on both sides: jump table entries, and a jmp's table address
     entries = {k for k in field_starts(start, size, absolute) if points_inside(ours, start, theirs, theirs_va, k, True)}
-    count, lines, complete = differing_instructions(ours, start, theirs, theirs_va, masked, forced, entries)
+    # decode our side with each field that points inside our function rebased to retail's address, so a
+    # jump table that doesn't line up with retail's decodes the same wherever the link places the function
+    decoded = bytearray(ours)
+    for k in field_starts(start, len(ours), absolute):
+        if start <= _dword(ours, k) < start + len(ours):
+            decoded[k:k + 4] = (_dword(ours, k) - start + theirs_va).to_bytes(4, 'little')
+    count, lines, complete = differing_instructions(ours, start, theirs, theirs_va, masked, forced, entries,
+                                                    bytes(decoded))
     near = complete and len(ours) == len(theirs) and count <= NEAR
     return ('near' if near else 'todo'), min(offsets), lines, len(ours)
 

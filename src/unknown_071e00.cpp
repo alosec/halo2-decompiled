@@ -121,7 +121,13 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 #pragma inline_depth(255)
 
 // score 37 (was 37): the session state test is inverted (je against jne) and the shared tail
-// block is placed on the other side of the branch.
+// block is placed on the other side of the branch. Retail lays the search block (mark the
+// session, mode 7) right after the session_b state test and reaches it from the timeout
+// compare with `jle tail; jmp search`; ours always places it after the timeout compare.
+// Tried: a search flag set on both paths (37); if/else with the goto into the else (37);
+// the search block written out twice, with local_0 = true (37), return true (65) or one of
+// each (90); returns in the players-match branch and a goto to the end (41); a
+// do/while (false) with breaks (37); state == 0 and inline state helpers (37).
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {

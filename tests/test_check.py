@@ -188,6 +188,26 @@ def test_jump_table_entries_that_differ_count_once_each():
                                        ('dd 0x401009', 'dd 0x1008')]
 
 
+def _shifted_jump_table_function(base):
+    """_jump_table_function's code with two more bytes of fill, so its table sits at offset 14, where it does
+    not line up with a table at offset 12."""
+    body = bytes.fromhex('ff2485') + (base + 14).to_bytes(4, 'little') + bytes.fromhex('90' '90' 'c3' '90909090')
+    return body + b''.join((base + o).to_bytes(4, 'little') for o in (7, 8, 9))
+
+
+def test_a_jump_table_that_does_not_line_up_scores_the_same_wherever_the_function_sits():
+    # retail's table sits elsewhere, so ours is decoded as instructions; its entries are rebased to retail's
+    # address first, so the count does not depend on where the link placed our function
+    theirs = _jump_table_function(0x1000, (7, 8, 9))
+    counts = set()
+    for base in (0x401000, 0x40a7c3):
+        status, first, lines, _ = run(_shifted_jump_table_function(base), base, theirs,
+                                      absolute={base + 3, base + 14, base + 18, base + 22})
+        assert status == 'todo' and first == 3
+        counts.add(sum(line.startswith('  !!') for line in lines))
+    assert len(counts) == 1
+
+
 def test_self_recursive_call_matches_when_retail_calls_itself():
     ours = bytes.fromhex('e8' 'fbffffff' 'c3')      # call own start
     assert run(ours, 0x401000, ours, relative={0x401001})[:2] == ('matched', None)

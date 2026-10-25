@@ -201,6 +201,21 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
         }
     }
 }
+// score 190 (was 196): frame 0x1094 agrees; entry/index registers, entry spill and sphere/position homes still differ.
+// Transform inline/noinline declarations separately and together 196; chained counts
+// or capacities 194/194; indexed geometry input 229; memory bound/center copies 196/196;
+// radius before displacements 196; both list initialization chains 190.
+// Frame 0x1094 agrees; entry/index registers, entry spill and sphere/position homes differ.
+// external entry reference 196; read-only geometry 196.
+// common sphere radius 227; bound center at use 203.
+// bound radius before node query 204; unsigned node cache 196.
+// radius plus geometry guard 227; list field initialization 194.
+// score 190 (was 190): entry/index and sphere/position homes still differ.
+// Small geometry first 230; visible guard 190; absent-bound guard 190; both 190;
+// live bound count 190; read-only nodes 190; bound-index field 224; live visibility word 190.
+// Entry/index and sphere/position homes remain; node-count branch/entry homes
+// 190/190; both list entry lifetimes 191; bound reference 198; completed distance/radius/both
+// squares 190/190/190; count/cache boundary 190.
 // @retail 0x45560
 void function_45560(short entry_index, point3f const *center, real radius)
 {
@@ -214,11 +229,9 @@ void function_45560(short entry_index, point3f const *center, real radius)
         {
             __declspec(align(16)) s_visibility_query_storage<512> first, second;
             first.list.indices = first.indices;
-            first.list.count = 0;
-            first.list.capacity = (long)0x80000200;
+            first.list.count = second.list.count = 0;
+            first.list.capacity = second.list.capacity = (long)0x80000200;
             second.list.indices = second.indices;
-            second.list.count = 0;
-            second.list.capacity = (long)0x80000200;
             query.center.x = center->x;
             query.center.y = center->y;
             query.center.z = center->z;

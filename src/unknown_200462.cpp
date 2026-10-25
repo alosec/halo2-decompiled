@@ -47,10 +47,41 @@ real function_2008fc(s_interface_pulse const *arg_0, bool arg_1);
 void function_22a664(s_widget_quad_2b11 const *arg_0, s_float_rect const *arg_1,
     long arg_2, long arg_3, long arg_4);
 
+// score 70 (was 103): frame 0x50 agrees; pulse/entry setup and second-pass
+// tag/index and row-X scheduling differ; aggregate quad 103;
+// half-height first 103; signed mask 103; shared ordinal word 229, byte 229.
+// shared resolved result 103; shared tag 103; shared pulse receiver 103;
+// all three shared 103; positive first-pass validity block 103.
+// Fresh first-pass entry base 70; indexed user 103; user before table 215;
+// shared entry/sequence/user combination 103/103/103; extent values 103;
+// late accepted mask 229. Pulse-base setup and second-pass homes still differ.
+// First-pass coordinate value 250; coordinate library copy 250; first entry value 239; draw entry value
+// 164; both entries 243; horizontal real array 203; width sprite value 189; draw sprite value 174. Pulse
+// setup, draw carriers and running-X allocation remain.
+// score 70 (was 70): native pulse row, first/draw/both pulse receivers, occupied-width
+// accumulation and half-width/half-height/both product chains all 70. Pulse-base setup,
+// draw tag/sequence homes and running-X scheduling remain different.
+// pulse-base setup and draw-pass row/sequence homes remain;
+// scalar row X/Y/both 89/87/89; native rectangle library copy 70;
+// pulse array after user base/base before row offset/named row offset 70/70/70; sequence count once 161.
+// score 70 (was 70): pulse/table entry schedule and draw-pass carriers remain;
+// pulse/image/sprite reads at use 224/155/137; pulse guard first 78;
+// first sequence count once 209; positive draw arm 70; occupied width first 70; exhaustive bitmap result 148.
+// score 70 (was 70): pulse/table setup and draw-pass register scheduling still differ.
+// selected-entry scope 81; live draw sequence 70; live first sequence 70; both sequence bindings 70
+// native first entry 70; native draw entry 70; both entry references 70; native dimension inputs 70.
+// score 70 (was 70): pulse/table setup, draw-pass carriers and running-X scheduling remain.
+// Complete first index 209; absent-index guard 70; both 209; bit after query 70;
+// first/draw/both image field bindings 70/70/70; complete first index with both fields 209.
+// pulse/table setup, row X and query/width scheduling remain.
+// Half-height after center advance 39; chained quad stores 86; center scalar/point 134/190;
+// completed bounds 133; bounds with late half-height 62; center and bounds 137; center through draw 134.
+// score 39 (was 39): table/pulse setup, row-X carrier and query/width schedule remain;
+// query before sprite 39; horizontal/vertical/both coordinate spans 39/39/39;
+// direct query product right/left 39/39; query with spans 39; spans/direct query 39.
 // @retail 0x200462
 void function_200462(long arg_0)
 {
-    byte *local_1 = *(byte **)((byte *)g_510c94 + 0x404);
     s_interface_pulse *local_0 = (s_interface_pulse *)((byte *)g_510c4c + arg_0 * 0x6c + 0x2c);
     real local_2 = 0.0f;
     dword local_3 = 0;
@@ -58,7 +89,7 @@ void function_200462(long arg_0)
     for (entry_index = 0; entry_index < 9; entry_index++)
     {
         s_interface_pulse *local_6 = &local_0[entry_index];
-        byte *local_5 = local_1 + entry_index * 0x1c;
+        byte *local_5 = *(byte **)((byte *)g_510c94 + 0x404) + entry_index * 0x1c;
         if (*(long *)(local_5 + 4) == NONE || *(long *)(local_5 + 0xc) == NONE ||
             (!local_6->delay && !local_6->ticks))
             continue;
@@ -113,9 +144,9 @@ void function_200462(long arg_0)
         s_interface_pulse *local_22 = &local_0[entry_index];
         real local_23 = function_2008fc(local_22, true);
         real local_24 = (local_19.x1 - local_19.x0) * (real)*(short *)(local_21 + 4) * 0.5f;
-        real local_25 = (local_19.y1 - local_19.y0) * (real)*(short *)(local_21 + 6) * 0.5f;
         real local_26 = local_24 * local_23;
         local_14.x += local_26;
+        real local_25 = (local_19.y1 - local_19.y0) * (real)*(short *)(local_21 + 6) * 0.5f;
         point2f local_27[4];
         local_27[0].x = local_14.x - local_24;
         local_27[0].y = local_14.y - local_25;

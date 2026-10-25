@@ -167,9 +167,6 @@ long function_1366d0(short width, short height, short depth, short format, short
 	return total;
 }
 
-// score 4 (was 4): retail loads the count word into cx and stores it to
-// [esi+0x14] before it stores the type to [esi+0xa]; ours stores the type
-// first and only loads the count into ax afterwards.
 // @retail 0x1358e0
 s_type_7ba8e9 *function_1358e0(short width, short height, short mipmap_count, short format, word flags)
 {
@@ -182,13 +179,13 @@ s_type_7ba8e9 *function_1358e0(short width, short height, short mipmap_count, sh
 	{
 		memset(bitmap, 0, sizeof(*bitmap));
 		bitmap->type = 0;
-		bitmap->mipmap_count = mipmap_count;
 		bitmap->width = width;
 		bitmap->signature = 'bitm';
 		bitmap->height = height;
 		bitmap->depth = 1;
 		bitmap->format = format;
 		bitmap->flags = flags | 0x100;
+		bitmap->mipmap_count = mipmap_count;
 		if (!(width & (width - 1)) && !(height & (height - 1)))
 		{
 			bitmap->flags |= 1;

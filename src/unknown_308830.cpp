@@ -61,6 +61,12 @@ inline float first_term_308910(__m128 v)
 // a point's weights in its plane: the edges' squared lengths and their dot
 // product over the determinant, then one over the length of their cross
 // product
+// score 15 (was 27): division and final scalar spill still run at different
+// points. Earlier: separate product 24, double inverse 15, vector memory
+// update 61, scalar root 46, late scalar 15, local renames 15, vector scopes
+// 15, direct lane 23, output scaling loop 59. This round: cross inputs by
+// value (both or either) 15, cross input order 15, dot inputs by value 15,
+// array-element reference 15, double product 15, outer result scope 15.
 // @retail 0x308910
 void __cdecl function_308910(__m128 const *corners, float *out)
 {

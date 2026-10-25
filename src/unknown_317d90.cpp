@@ -107,6 +107,18 @@ public:
 // comparing it, ours compares the member in place; retail compares the found
 // index as a full word, ours as a sixteen bit value, so ours sign extends it
 // when it indexes the bodies
+// count/data snapshots 112, reverse declarations 112, count alone 106, data
+// alone 112; stored char 59; forced append 59, shared resize 59, element
+// result 59; typed members 59, full scan 106, direct members 106, body
+// indexer 106. Initial count load and scan allocation still differ.
+// Ordered full-width while 106; array base/ref fill 106; size/index accessors
+// 106; byte accessor 161; pair reference 161; bool storage 161; separate
+// counter scopes 128; stored byte object 128; scan-only accessor 161;
+// plain bool accessor 106. Bottom joint tests already reload the member.
+// Bound-first negative sentinel 208; int counts and full-width scan 106;
+// cdecl append 59; append member 59; renamed full-width counters 106;
+// distinct outer counters with short scan 59; break scan 147;
+// one element loop 216. Initial count load and scan allocation remain.
 // @retail 0x317d90
 void class_317d90::function_317d90(id_pairs_317d90 *pairs) const
 {

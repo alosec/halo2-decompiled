@@ -1869,6 +1869,15 @@ void function_67f60(void)
  }
 }
 
+// score 35: retail computes the mode as `xor ebx, ebx; cmp eax, 2; setne bl;
+// lea ebx, [ebx + ebx + 2]` after a dead `mov ecx, eax; sub ecx, 2` (5 bytes, perhaps
+// left by a lowered switch; no switch tried here gives it), and loads its fields in the
+// order state, owner, +0x14, distribution. Ours computes 4 - 2 * (state == 2) as sete/sub/shl; the rest is the
+// same code in another order and other registers. Tried: state == 2 ? 2 : 4, != with the
+// arms swapped, 2 + 2 * (state != 2), a bool local, if/else, a switch with __assume(0)
+// for the other states (62, 172 bytes: the setne/lea form without the dead sub); switch
+// with case 2 and default, mode = 4 then switch or if, an inline helper with a switch
+// (58-63, 180 bytes, branches); (state - 2) ? 4 : 2 (60, sub/neg/sbb); 2 << (state != 2) (50).
 // @retail 0x6ae20
 bool function_6ae20(c_class_6a600 *world)
 {

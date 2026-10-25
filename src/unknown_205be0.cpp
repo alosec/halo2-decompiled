@@ -20,6 +20,42 @@ struct s_205be0_record
     byte field_90[0x18];
 };
 
+struct s_205be0_record2
+{
+    transform4x3f field_0;
+    point3f field_34;
+    byte field_40[0x42];
+    bool field_82;
+    byte field_83[0x30];
+    bool field_b3;
+    byte field_b4[0x24];
+};
+
+struct s_205be0_marker_flags
+{
+    dword : 4;
+    dword bit4 : 1;
+    dword bit5 : 1;
+    dword : 26;
+};
+
+struct s_205be0_marker
+{
+    long marker_name;
+    s_205be0_marker_flags flags;
+    byte field_8[0x3a];
+    short field_42;
+    byte field_44[4];
+    long field_48;
+};
+
+struct s_205be0_object_flags
+{
+    word : 5;
+    word bit5 : 1;
+    word : 10;
+};
+
 struct s_205be0
 {
     long field_0;
@@ -32,8 +68,8 @@ struct s_205be0
     vector3f field_74;
     vector3f field_80;
     real field_8c;
-    byte field_90[16 * 0xa8];
-    byte field_b10[16 * 0xd8];
+    s_205be0_record field_90[16];
+    s_205be0_record2 field_b10[16];
 };
 
 void function_ba1d0(long arg_0, vector3f *arg_1, vector3f *arg_2);
@@ -44,6 +80,37 @@ real havok_component_rigid_body_mass_get(long arg_0, s_havok_component *arg_1);
 void havok_component_transform_set(s_havok_component *arg_0, transform4x3f const *arg_1);
 void function_1cfb90(s_havok_component *arg_0, transform4x3f const *arg_1, void const *arg_2);
 
+/* the vector rotated into the matrix's axes and divided by its scale */
+PRIVATE inline vector3f *transform_vector_into_frame_205be0(transform4x3f const *matrix,
+    vector3f const *vector, vector3f *result)
+{
+    real i, j, k;
+    if (matrix->scale != 1.0f)
+    {
+        real inverse_scale = 1.0f / matrix->scale;
+        i = vector->i * inverse_scale;
+        j = vector->j * inverse_scale;
+        k = vector->k * inverse_scale;
+    }
+    else
+    {
+        i = vector->i;
+        j = vector->j;
+        k = vector->k;
+    }
+    result->i = matrix->forward.i * i + matrix->forward.j * j + matrix->forward.k * k;
+    result->j = matrix->left.i * i + matrix->left.j * j + matrix->left.k * k;
+    result->k = matrix->up.i * i + matrix->up.j * j + matrix->up.k * k;
+    return result;
+}
+
+// score 127 (was 238): retail loads all three components before the scale test (ours sinks
+// the j load into the unscaled path), and homes the component, marker pointer and byte table
+// at 0x14/0x18/0x1c below the vector at 0x20 (ours: vector at 0x14); the 0x11a offset is read
+// after the division; the rigid-body index 0 is loaded after the component.
+// Tried: components copied before the scale test (266: right frame, but j gets an extra
+// register and two movaps), in-place vector3f_scale on the vector (188), declaration and
+// multiply orders of i/j/k (264-271), object pointer recomputed from arg_1 (216).
 // @retail 0x205be0
 bool __stdcall function_205be0(s_vehicle_physics_state *arg_0, long arg_1)
 {
@@ -72,49 +139,35 @@ bool __stdcall function_205be0(s_vehicle_physics_state *arg_0, long arg_1)
         local_6->field_70 = 0.0f;
         transform4x3f *local_8 = &local_6->field_8;
         function_ba160(arg_1, local_8);
-        if (local_8->scale != 1.0f)
-        {
-            real local_9 = 1.0f / local_8->scale;
-            vector3f_scale(&local_5, local_9, &local_5);
-        }
-        local_6->field_80.i = local_8->forward.k * local_5.k +
-            local_8->forward.j * local_5.j + local_8->forward.i * local_5.i;
-        local_6->field_80.j = local_8->left.k * local_5.k +
-            local_8->left.j * local_5.j + local_8->left.i * local_5.i;
-        local_6->field_80.k = local_8->up.k * local_5.k +
-            local_8->up.j * local_5.j + local_8->up.i * local_5.i;
-        function_30bf0(&local_6->field_80);
+        function_30bf0(transform_vector_into_frame_205be0(local_8, &local_5, &local_6->field_80));
         local_6->field_8c = 0.0f;
         local_6->field_74 = *(vector3f *)(local_1 + 0x1b0);
-        memset(local_6->field_90, 0, *(long *)(local_2 + 0x3c) * 0xa8);
-        memset(local_6->field_b10, 0, *(long *)(local_2 + 0x44) * 0xd8);
+        memset(local_6->field_90, 0, *(long *)(local_2 + 0x3c) * sizeof(s_205be0_record));
+        memset(local_6->field_b10, 0, *(long *)(local_2 + 0x44) * sizeof(s_205be0_record2));
         byte *local_10 = *(byte **)(g_4e0300->data + local_0 + 8);
-        char *local_11 = (char *)(local_10 + *(short *)(local_10 + 0x11a) +
-            (*(short *)(local_10 + 0x118) / 10) * 2);
+        char *local_11 = (char *)local_10 + *(short *)(local_10 + 0x11a);
+        local_11 += (*(short *)(local_10 + 0x118) / 10) * 2;
         s_object_marker local_12;
-        s_205be0_record *record = (s_205be0_record *)local_6->field_90;
         for (long local_13 = 0; local_13 < *(long *)(local_2 + 0x3c); local_13++)
         {
-            byte *local_14 = *(byte **)(local_2 + 0x40) + local_13 * 0x4c;
-            function_b8d30(arg_1, *(long *)local_14, &local_12, 1, false);
-            record->field_0 = *local_8;
-            record->field_34 = local_12.matrix.position;
-            record->field_84 = local_12.node_matrix.position;
-            record->field_81 = local_12.node_index == 0;
-            ++record;
+            s_205be0_marker *local_14 = &(*(s_205be0_marker **)(local_2 + 0x40))[local_13];
+            function_b8d30(arg_1, local_14->marker_name, &local_12, 1, false);
+            local_6->field_90[local_13].field_0 = *local_8;
+            local_6->field_90[local_13].field_34 = local_12.matrix.position;
+            local_6->field_90[local_13].field_84 = local_12.node_matrix.position;
+            local_6->field_90[local_13].field_81 = local_12.node_index == 0;
         }
         for (long local_16 = 0; local_16 < *(long *)(local_2 + 0x44); local_16++)
         {
-            byte *local_17 = *(byte **)(local_2 + 0x48) + local_16 * 0x4c;
-            byte *local_18 = local_6->field_b10 + local_16 * 0xd8;
-            function_b8d30(arg_1, *(long *)local_17, &local_12, 1, false);
-            *(transform4x3f *)local_18 = *local_8;
-            *(point3f *)(local_18 + 0x34) = local_12.matrix.position;
-            *(bool *)(local_18 + 0x82) = (*(long *)(local_17 + 4) & 0x10) &&
-                (local_1[0x348] & 0x20);
-            if ((*(long *)(local_17 + 4) & 0x20) && *(long *)(local_17 + 0x48) != NONE &&
-                local_11[*(long *)(local_17 + 0x48) * 8 + 1] >= *(short *)(local_17 + 0x42))
-                *(bool *)(local_18 + 0xb3) = true;
+            s_205be0_marker *local_17 = &(*(s_205be0_marker **)(local_2 + 0x48))[local_16];
+            function_b8d30(arg_1, local_17->marker_name, &local_12, 1, false);
+            local_6->field_b10[local_16].field_0 = *local_8;
+            local_6->field_b10[local_16].field_34 = local_12.matrix.position;
+            local_6->field_b10[local_16].field_82 = TEST_FIELD_BIT(local_17->flags.bit4) &&
+                TEST_FIELD_BIT(((s_205be0_object_flags *)(local_1 + 0x348))->bit5);
+            if (TEST_FIELD_BIT(local_17->flags.bit5) && local_17->field_48 != NONE &&
+                local_11[local_17->field_48 * 8 + 1] >= local_17->field_42)
+                local_6->field_b10[local_16].field_b3 = true;
         }
         havok_component_transform_set(local_4, local_8);
         if (*(long *)(local_2 + 0x4c))

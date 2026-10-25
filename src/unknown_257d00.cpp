@@ -1589,7 +1589,15 @@ short function_cccd0(long unit_index, short grenade_type, char delta);
 bool function_1fb360(long unit_index, short recording_index, long flags);
 void function_b7360(long object_index);
 
-#pragma inline_depth(0)
+#pragma inline_depth(2)
+// score 539 (was 600): actor/output registers, branch layout and rounding homes differ;
+// direct entry guard 631 fast; notification ranges 642 fast; selection-result field 597 plain
+// (only three lower, rejected); actor pointer name 618 fast; tail case order 639 fast;
+// observed selector with a case scope 611 fast, same as the selection-result form.
+// Native orientation/point/entry/movement results 641/623/622/642 fast; invalidity in
+// the real default case 572 fast, 547 plain (entry full 604, unchanged fast 620).
+// Entry 550; formal role names/native initial conversion/sine first 572 fast; shared motion angle 592 fast.
+// Size optimization 775 fast; depth two 561 fast, 532 plain, 1808/1848 bytes.
 // @retail 0x258cf0
 short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
@@ -1741,7 +1749,6 @@ short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			return 0;
 		}
 	case 10:
-		local_1->unknown8c = false;
 		switch (*(short *)local_1->unknown06)
 		{
 		case 0: local_1->unknown8c = true; local_1->unknown90 = 0x700002c; break;
@@ -1754,6 +1761,7 @@ short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long 
 		case 7: local_1->unknown8c = true; local_1->unknown90 = 0x9000012; break;
 		case 8: local_1->unknown8c = true; local_1->unknown90 = 0xa000013; break;
 		case 9: case 10: local_1->unknown90 = NONE; local_1->unknown8c = true; break;
+		default: local_1->unknown8c = false; break;
 		}
 		return local_1->unknown8c ? 0 : 2;
 	case 5:
@@ -1979,6 +1987,14 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 	return 1;
 }
 
+// score 480 (was 502): frame 28 agrees; actor/state registers and first point home still differ.
+// Short completion 531; iterator name 505; first point name 505; short countdown snapshots 505;
+// deferred completion else block 505 (unchanged reduced preview 505).
+// actor/state registers and the first point home differ;
+// signed completion 502; direct point result 628; captured unit 503; direct state access 502; inline depth one 502; staged alignment 503; staged squared distance 502.
+// Unsigned result 502; completion-test result 712; native unit predicate 490; iterator initializer 490;
+// first/facing countdown values 636/621; planar memcpy 502; facing vector value 483;
+// unit plus iterator 490; facing plus unit 486; facing plus iterator 486.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
@@ -2047,9 +2063,10 @@ short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long 
 			function_b9dd0(arg_1, &local_7);
 			vector3f displacement;
 			vector3d_from_points3d(&local_2->field_18, &local_7, &displacement);
-			local_3 = local_2->field_c.k * displacement.k +
-				local_2->field_c.j * displacement.j +
-				displacement.i * local_2->field_c.i > local_1->unknown08;
+			vector3f facing = local_2->field_c;
+			local_3 = facing.k * displacement.k +
+				facing.j * displacement.j +
+				displacement.i * facing.i > local_1->unknown08;
 		}
 		break;
 	case 7: case 8:

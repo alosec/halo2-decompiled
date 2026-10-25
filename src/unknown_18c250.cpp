@@ -384,6 +384,8 @@ real sound_permutation_reference_duration(long definition_index, s_sound_permuta
 
 /* replays the impulse sounds in the slots of g_4ed288 on their objects and
    frees the slots whose sounds are over or whose objects are gone */
+// score 58 (was 58): BLOCKED-BY 0x18c720: it takes the tag in ebx (retail edi), which adds a push
+// ebx here and shifts both float spills by four; aligned, nothing else differs.
 #pragma inline_depth(0)
 // @retail 0x18bf90
 void function_18bf90(void)

@@ -21,10 +21,17 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0);
 bool __stdcall function_71d70(c_session_state_matchmaking *arg_0);
 bool network_session_host_set_value49f8(c_class_58d20 *arg_0, long arg_1);
 
+// score 182 (was 243): frame and length agree; primary-session EBP versus ESI, mode joins
+// and final Boolean normalization differ; byte return result 182; word return result 275;
+// long return result 258; unsigned return result 258; independent mode gates 243;
+// mode flag else 243; member gates with retained frame 243; terminal gates with retained frame 243.
+// score 182 (was 182): primary-session join carrier and return normalization remain;
+// secondary consumer scope / state phases / byte result after state / after sessions 182/182/185/185f;
+// scoped dispatch / member receiver / both lifetimes / with dispatch 183/182/182/183f.
 // @retail 0x706f0
 bool c_session_state_matchmaking::update()
 {
-	bool local_3 = false;
+	byte local_3 = false;
 	s_session_owner *local_0 = owner;
 	c_class_58d20 *local_1 = local_0->session_a;
 	c_class_58d20 *local_2 = local_0->session_b;

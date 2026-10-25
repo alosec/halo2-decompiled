@@ -110,7 +110,12 @@ struct s_animation_state
 	bool channel_refresh(c_animation_channel *channel, long weapon_class, long weapon_type);
 	bool update(animation_event_callback callback, long user, long node_count, s_blend_orientation *orientations,
 		s_blend_orientation const *targets);
-	c_type_709360 overlay_find(long set, long weapon_class, long weapon_type);
+	c_type_709360 overlay_find_for_class(long weapon_class, long weapon_type, long set);
+	/* the same lookup with the set first, for callers written that way (src/vehicles.cpp) */
+	c_type_709360 overlay_find(long set, long weapon_class, long weapon_type)
+	{
+		return overlay_find_for_class(weapon_class, weapon_type, set);
+	}
 	c_type_709360 overlay_or_animation_get(long weapon_class, long set, long weapon_type);
 	bool channel_play_indexed(c_animation_channel *channel, long set, short item_index, short animation_index,
 		short *found_item_index, short *found_animation_index);

@@ -284,8 +284,16 @@ PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
 	}
 }
 
-// score 38 (was 38): the loop head: retail tests the iterator before saving
-// ebp, ours saves ebp first and loads the pool global later.
+// score 38 (was 38): only the entry differs: retail tests the actor index
+// against an immediate -1 and sets ebp to NONE at the loop head; ours sets
+// ebp to NONE before that first test and reuses it, so the origin copy and
+// the actor pointer take other registers. Check it with its caller 0x1e3b60
+// and 0x28f890 in the image (alone it takes a stack argument, 151). Tried:
+// an early return 38, the actor index in a local 38, a dword compare with
+// 0xffffffff 38, field_14 cleared after reading field_18 38, a point3f
+// assignment for the copy 70, actor_get after the centre update 115,
+// perception_get at each use 101, the actor index in a local read after
+// the centre update 111.
 // @retail 0x28f8d0
 void function_28f8d0(long arg_0)
 {

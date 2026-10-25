@@ -64,6 +64,13 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 	arg_3->k = local_6;
 }
 
+// score 652 (was 652): frame 0xf8 versus 0x108; result/basis/rotation homes differ.
+// Frame pointer 960; size preference 1163; cosine-difference carrier 652;
+// cross before trigonometry 655; inline depth one 652.
+// score 652 (was 652): Frame 0xf8 versus 0x108 and basis/root/rotation homes remain. Inverse length 651; separate roots 652; remaining fraction 653; cosine first 652; clamp input order 652; direction value with per-ray sample 703 (fast).
+// score 646 (was 652): Frame 0xf8 versus 0x108 and basis/rotation homes remain.
+// native rotation return 666; native origin return 695; native cross return 864;
+// short ray ordinal 712; active minimum lifetime 646 (fast).
 // @retail 0x2922b0
 bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, real *arg_4, real *arg_5, bool arg_6)
@@ -72,7 +79,6 @@ bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	s_slot_object_view *local_1 = object_get(arg_1);
 	s_2922b0 const *local_2 = (s_2922b0 const *)function_1e5450(arg_0, local_1->tag_index);
 	vector3f local_3 = *arg_2;
-	real local_4 = 3.402823466e38f;
 	*arg_5 = 0.0f;
 	bool local_5[4];
 	local_5[0] = false;
@@ -85,6 +91,7 @@ bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 		arg_3->j = 0.0f;
 		arg_3->k = 0.0f;
 		real local_6 = local_2->field_48;
+		real local_4 = 3.402823466e38f;
 		vector3f local_7;
 		vector3f local_8;
 		vector3f local_9;

@@ -101,6 +101,33 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 	arg_2->k = arg_0->z - arg_1->z;
 }
 
+// score 136 (was 136): first alignment product, case-five clear join and contribution scheduling remain; staged alignment 136 plain, direct motion 235f, direct forward 253f, double-factor scaling 190f, signed-byte mode 504f.
+// score 138 (was 140): alignment/clear-join/contribution schedules remain; fast preview 144.
+// Read-only forward 144f; alignment snapshot 414f; named alignment 144f;
+// marker failure break 185f; in-place contribution 204f; scale result 149f;
+// aggregate sum 210f; shared retreat scale 144f.
+// score 118 (was 136): alignment product, facing dot, clear join and contribution schedules remain;
+// named target distance 119 plain / 122 fast; motion memcpy 142f;
+// point-getter result in case four/five/both 281/195/287f; failure-first arm 179f;
+// output reuse 192f; scale force-inline 142f; distance names / placement capture 122/122f.
+// score 121 (was 121): alignment/facing products, marker-clear join and contribution schedule remain.
+// Fast: motion reference 125; forward reference 125; both vector references 125;
+// perception reference 125; limits reference 157; perception/motion references 125;
+// limits/motion references 157; object reference 125.
+// alignment operands, marker clear join and contribution schedule remain;
+// long marker count 206f; case-assigned short/long count 129/206f;
+// prior motion across scale 203f; elapsed fraction 129f; clamped elapsed 141f;
+// mode/all inputs assigned by arms 536/552f; unchanged preview 129f.
+// score 118 (was 118): alignment operands, marker clear join and contribution schedule remain.
+// In-place direction scale 124f; contribution-first adds 124f; both 124f;
+// separation/combined length results 124/124f; both 124f; drift distance 124f;
+// normalization results with in-place scale 124f; preview 124f, all 103 code differences.
+// score 118 (was 119): alignment/facing products, clear join and contribution schedule remain.
+// Genuine alignment i/j/k products 125/129/125f; ij/ik/jk products 129/125/125f;
+// all products and products with complete result 125/125f; preview 125f.
+// alignment operands, marker-clear join and contribution schedule remain;
+// byte busy result / elapsed consumer / factor accumulator / contribution-first sums / combined 124/124/124/124/124f;
+// marker comparison result 124f; terminal marker case / comparison 206/206f.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {
@@ -181,7 +208,8 @@ void __stdcall function_28e770(long arg_0, long arg_1)
 				if (local_11)
 				{
 					function_28e774(&local_8, &local_3->field_14, &local_13);
-					if (function_30bf0(&local_13) > 0.0f && !local_3->field_57 && !(bool)local_12->field_12c)
+					real target_distance = function_30bf0(&local_13);
+					if (target_distance > 0.0f && !local_3->field_57 && !(bool)local_12->field_12c)
 					{
 						if (local_3->field_4c > 0)
 							goto local_21;

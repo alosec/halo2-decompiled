@@ -160,6 +160,26 @@ PRIVATE void render_clamp_156b60(real *value)
 	else if (*value > 1.0f) *value = 1.0f;
 }
 
+// score 155 (was 155): alpha result coalesces into XMM0; duplicated interpolation tail absent.
+// Standard alpha/RGB/all bounds 207/253/300; sampled pixel 155 and bound combinations
+// 207/253/300; sampled pixel with alpha clamped last 155; full color aggregate/library initialization 186/182.
+// alpha result merges in XMM0; retail duplicates the interpolation tail.
+// Native RGB after alpha/alpha clamp 189/175; independent RGB clamps 216; separate channels 172;
+// RGB assignment 197; packed result 154 (dropped), with RGB 188; early drawing attributes 259.
+// score 155 (was 155): alpha result merge and duplicated interpolation remain.
+// alpha metadata 136 (exact-only copy); RGB metadata 152 (dropped); width metadata 242;
+// length metadata 192; both dimension records 272; RGB/alpha records 211;
+// all curve records 316; entry alpha record 220.
+// alpha result merge and duplicated interpolation remain;
+// single RGB retirement 159/159/159; paired RGB retirement 154/154/154;
+// red/green retirement with alpha committed last 159/159 (all 1068 bytes).
+// score 38 (was 155): alpha mapping agrees; horizontal-offset and clamp/attribute schedule remain.
+// Attributes before alpha 154; transform before alpha 154; both 154; attributes before clamps 45;
+// transform before clamps 140; scalar/library/full fallback 160/155/167; named width offset 38;
+// offset and extent 38; split buffers 155, before clamps 45.
+// score 38 (was 38): horizontal-offset and clamp/attribute scheduling remain.
+// Offset declared with width 38f; offset after alpha/red/green 155/155/155f;
+// offset product operands 38f; value clamp early/result 159/131f; in-place clamp result 38f.
 // @retail 0x157020
 void __stdcall function_157020(byte *definition, point3f const *position, vector3f const *forward,
 	real value, long row, long column, long element, long entry)
@@ -189,11 +209,12 @@ void __stdcall function_157020(byte *definition, point3f const *position, vector
 	else
 		*(color3f *)&color.red = *(color3f const *)&g_4686cc->red;
 	color.alpha = render_curve_156b60((s_tag_data *)(definition + 0x14), value);
+	real width_offset = width * -0.5f;
 	render_clamp_156b60(&color.alpha);
 	render_clamp_156b60(&color.red);
 	render_clamp_156b60(&color.green);
 	render_clamp_156b60(&color.blue);
-	real attributes[8] = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, width * -0.5f, length, width};
+	real attributes[8] = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, width_offset, length, width};
 	g_4b8348 = 0;
 	D3DDevice_SetRenderState(D3DRS_STIPPLEENABLE, 0);
 	real matrix[12] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};

@@ -115,6 +115,24 @@ void pending_messages_reset(void);
 void function_53210(void);
 void function_8dd70(void);
 
+// score 230 (was 234): entry predicate, helper boundaries and global reloads differ;
+// short readiness/list value initialization 230; short readiness/list memset 230;
+// session construction loop 352; separate session results 231; list/direct observer result 248.
+// readiness homes, repeated pointer loads and out-of-line calls differ;
+// short readiness 232; unsigned readiness 234; session-list value initialization 231; long observer result 250; long session prerequisite 243.
+// Signed byte link/observer/session/all readiness 232/231/234/235;
+// signed byte entry predicate 230; original short carriers and clear retained.
+// score 230 (was 230): entry predicate, out-of-line calls and global reloads still differ.
+// Native gateway initialized/zero and handler initialized byte fields 230/230/230;
+// consumer/gateway/both receiver fields 230/230/230; all byte fields and all native fields 230/230.
+// entry normalization, helper boundaries and global-pointer reloads differ;
+// unsigned word link 230; unsigned word observer 230.
+// unsigned word sessions 230; unsigned word all 230.
+// byte link with word stages 232; byte observer with word stages 231.
+// byte sessions with word stages 234; byte first two word session 231.
+// score 230 (was 230): entry normalization, helper boundaries and global reloads differ.
+// Actual link/observer/manager/trim/availability/interface return receivers 230 each;
+// five receivers together 230; guarded interface with observer/trim/availability 230.
 // @retail 0x8d9f0
 void function_8d9f0(void)
 {
@@ -129,7 +147,7 @@ void function_8d9f0(void)
 		g_510570 = (s_network_observer *)g_5291a0;
 		g_510574 = (c_class_58d20 *)g_52e0f8;
 		g_510578 = &g_52e0e8;
-		long link_ready = network_link_initialize(g_510560);
+		short link_ready = network_link_initialize(g_510560);
 		memset(g_510564, 0, 0x5a0);
 		network_message_types_register_discovery(g_510564);
 		network_message_types_register_connection(g_510564);
@@ -140,7 +158,7 @@ void function_8d9f0(void)
 		network_message_types_register_synchronous(g_510564);
 		network_message_types_register_game_results(g_510564);
 		network_message_types_register_test(g_510564);
-		long observer_ready = false;
+		short observer_ready = false;
 		if (link_ready)
 		{
 			s_08d9f0_gateway *gateway = (s_08d9f0_gateway *)g_510568;
@@ -163,12 +181,10 @@ void function_8d9f0(void)
 				observer_ready = true;
 		}
 		((s_08d9f0_handler *)g_51056c)->observer = g_510570;
-		long sessions_ready = false;
+		short sessions_ready = false;
 		if (observer_ready)
 		{
-			g_510578->sessions[0] = NULL;
-			g_510578->sessions[1] = NULL;
-			g_510578->sessions[2] = NULL;
+			memset(g_510578->sessions, 0, sizeof(g_510578->sessions));
 			sessions_ready = true;
 		}
 		g_510550 = g_510578;

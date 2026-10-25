@@ -338,6 +338,10 @@ PRIVATE __forceinline void normalize_particle_velocity_2b(vector3f *v)
     }
 }
 
+// score 249 (was 249): frame 0xb8/0xb4, scalar/vector homes and staged stores differ;
+// component loops: velocity plus change 248; velocity plus previous 288;
+// attraction addition 280; change scale 269; maximum-change scale 269.
+// Shared inverse 249; shared squared length 277; both carriers 276; unsigned handle 249; attraction scale loop 269.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {
@@ -554,6 +558,10 @@ void function_247070(s_object_246eb0 const *particle, s_particle_impact const *i
 
 real g_55e618;
 
+// score 102 (was 102): frame 0x124 agrees; sweep/collision homes and projection spills differ.
+// Velocity snapshot argument 676; reflection loop 102; reflected value 241; sweep scale 129;
+// both scales 129; coefficient local 102; displacement scale 129; snapshot plus loop 676;
+// shared tangent 190; shared start 102; both shared differences 102. Original body retained.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

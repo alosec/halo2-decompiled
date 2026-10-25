@@ -1280,6 +1280,24 @@ void voice_queue_compact(s_voice_queue *queue, word mask)
 	queue->count = kept;
 }
 
+// score 107 (was 134): player input is EDI rather than EAX; mask and length
+// homes differ. Five coordinated register-input orders 134; shared invalid
+// exit 169; entry size as unsigned word 188 or byte 170. Original kept.
+// staged length 134; consumed-capacity length 188; accumulated length 201;
+// word/signed retained mask 134/134; unsigned written/result 134/134;
+// explicit retained intersection 134. Input and final-length registers still differ.
+// Real entry/header/both field views 134; direct valid range 153; remaining-budget local 171;
+// result length before header with raw/entry/all fields 134.
+// Entry/packet mode observations 134/134; entry size before written count 107 plain
+// (454/449 bytes); shared scan ordinal 134; entry cursor / with mode 133/133;
+// capacity result join 134; written count after header reservation 160.
+// score 107 (was 107): EDI input and mask/count/size/length homes remain. Written before
+// mask/size 133; mask after size/count 173; retail initialization order 162;
+// completed length after compaction 172; signed-word written count 141 (fast).
+// player input, retained-mask and completed-length homes remain;
+// recipient bit at use 107; entry-size stride 164; shared header stride 184;
+// serialized-span length 144; invalid result first/with stride 180/182;
+// early result on size-first frame 141; serialized span with stride 199.
 // @retail 0x55c40
 long function_55c40(s_voice_queue *queue, long player, byte *cursor, byte *output, long capacity, bool include_mask)
 {
@@ -1299,8 +1317,8 @@ long function_55c40(s_voice_queue *queue, long player, byte *cursor, byte *outpu
 			goto done;
 		}
 		volatile dword kept = (1 << queue->count) - 1;
-		long written = 0;
 		long entry_size = include_mask ? 13 : 11;
+		long written = 0;
 		capacity -= 2;
 		if (capacity >= entry_size)
 		{
@@ -1401,6 +1419,13 @@ dword function_56c60(s_voice_player_settings *settings, long player);
 
 static __forceinline bool function_57d63(long arg_0, long arg_1);
 
+// score 94 (was 94): frame 0x14 vs 0x18, bit spill and flag-query boundary differ;
+// word outer/target induction 118/106; word active 97; mask names 94; skip cleared inactive entries 110.
+// caller depth 0/1/2 241/94/94; wide bit with depth 1/2 118/118;
+// complete mask/policy/both assignments 108/104/110.
+// Rejected set 100; rejected set with wide bit 168; indexed rejection bit 99;
+// allowed result 107; signed allowed result 107; allowed result with wide bit 130;
+// candidate snapshot 97; candidate snapshot with wide bit 119. Frame/spill and flag-query expansion remain.
 // @retail 0x55990
 void function_55990(s_voice_player_values *values)
 {
@@ -2441,10 +2466,21 @@ void function_56790(long *capacity, dword *remaining, dword allowed, word *selec
 	}
 }
 
-// @retail 0x53b00
 // score 4 (was 4): retail calls function_56380 with the output pointer in eax and
 // the channels, player and capacity on the stack; our callee takes them in another
 // order, so the call and its two pushes differ.
+// entry player/output/both/capacity/player-capacity/output-capacity/all copies 4;
+// unsigned byte-count result 4. Entry bindings leave the call convention unchanged.
+// Guarded return 20; fully assigned result arms 23; conditional count 23;
+// enabled-query lifetime 21; scoped count 23; packet lifetime 4; available-byte
+// lifetime 4; immutable input bindings 4. The original call tuple remains.
+// Separate packet-call / gate / both declarations 4; assigned result with noinline 23;
+// numeric query result with forceinline / both 19; guarded single exit with either boundary 4.
+// Callee cdecl/stdcall/fastcall declarations 12/4/4; immutable output/channel/player/
+// pointers/all input bindings 4/4/4/4/4. The output-register call boundary still differs.
+// Native signed count 4; widened signed count 30; accumulated byte count 4;
+// query after count 4; consumed packet-count value 4. Call inputs still differ.
+// @retail 0x53b00
 long __stdcall function_53b00(long player, byte *output, long capacity)
 {
  long result = 0;
@@ -2519,15 +2555,12 @@ finish:
  output->unknown02 = deferred;
 }
 
-PRIVATE __forceinline byte *function_54592(void *arg_0, const s_network_session_player *arg_1, dword arg_2, long arg_3, const dword *arg_4)
+PRIVATE __forceinline byte *function_54592(void *arg_0, const s_network_session_player *arg_1, const dword *arg_4)
 {
  dword *local_0 = (dword *)arg_0;
- if (arg_2 & (1 << arg_3))
+ if (arg_1)
  {
-  const dword *local_1 = (const dword *)&arg_1[arg_3];
-  local_0[0] = local_1[0];
-  local_0[1] = local_1[1];
-  local_0[2] = local_1[2];
+  memcpy(local_0, arg_1, 3 * sizeof(dword));
  }
  else
  {
@@ -2538,6 +2571,19 @@ PRIVATE __forceinline byte *function_54592(void *arg_0, const s_network_session_
  return (byte *)arg_0;
 }
 
+// score 157 (was 179): mask/player homes, zero register and grouped source cursor differ;
+// empty-word order 193; third-index groups 193; both 193; word groups 179
+// signed or unsigned. The bounded unsigned-word group index is kept.
+// previous mask 179; ordinary empty/mask-empty 208/208; active memcpy 174;
+// selected input 172; selected/ordinary 204; selected/memcpy 157;
+// mask-selected/mask-memcpy 172/174; typed output/selected/ordinary 179/172/208.
+// score 157 (was 157): player/mask homes, separate zero and selected-pointer tests remain.
+// Active-Boolean copy contract 174; const empty 157; byte group 157; word compare 195;
+// source-local name 157; grouped source cursor 181 (fast). Original kept.
+// mask/player homes, zero carrier and grouped cursors remain;
+// mask/reason/empty declared first 157/157/157; chained empty values 157;
+// native selected-copy output 157; empty arm first 162; void copy result 157;
+// native output with empty arm first 162.
 // @retail 0x54590
 void function_54590(void)
 {
@@ -2565,12 +2611,12 @@ void function_54590(void)
   voice_sprintf(reason, "player identifier change");
  }
  g_4c9878.unknown20 = mask;
- for (long i = 0; i < 16; i += 4)
+ for (unsigned short i = 0; i < 16; i += 4)
  {
-  byte *local_0 = function_54592(&g_4c9878.unknown24[i * 3], players, mask, i, empty);
-  function_54592(local_0 + 0xc, players, mask, i + 1, empty);
-  function_54592(local_0 + 0x18, players, mask, i + 2, empty);
-  function_54592(local_0 + 0x24, players, mask, i + 3, empty);
+  byte *local_0 = function_54592(&g_4c9878.unknown24[i * 3], mask & (1 << (i)) ? &players[i] : NULL, empty);
+  function_54592(local_0 + 0xc, mask & (1 << (i + 1)) ? &players[i + 1] : NULL, empty);
+  function_54592(local_0 + 0x18, mask & (1 << (i + 2)) ? &players[i + 2] : NULL, empty);
+  function_54592(local_0 + 0x24, mask & (1 << (i + 3)) ? &players[i + 3] : NULL, empty);
  }
  voice_channels_reset(&g_525a00);
 }
@@ -2933,6 +2979,11 @@ static inline long voice_packet_clamp_count(byte count, long minimum, long maxim
  return count;
 }
 
+// score 139 (was 139): channel/cursor/count registers and route homes differ;
+// frame pointer 188; short stride 163; short index 139; recipient-bit reuse 161; route name 139.
+// frame and extent agree; channel/cursor/count registers and route homes differ.
+// Independent packet cursor 164; byte packet index 172; enclosing member lifetime 139;
+// entry route lifetime 139; ordinary delivery arm first 162.
 // @retail 0x55e10
 long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, bool relay)
 {

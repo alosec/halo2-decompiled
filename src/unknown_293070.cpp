@@ -537,6 +537,11 @@ PRIVATE __forceinline s_flock *function_295321(s_active_flock_iterator *arg_0, b
 
 // score 99 (was 99): the walk over the active flocks is built with another
 // iterator shape, so the register choices and the instruction order differ.
+// State-pointer input, external activity reference, step input order, ordinary
+// inline, generic pointer result, inline depths two/three and walk name 99.
+// Boolean step 99; outer scenario entry 99; outer radius 99; zero iterator 110;
+// point memcpy 99; point value copy 103; const entry 99; byte activity 99.
+// Original iterator and private step retained.
 // @retail 0x295320
 void function_295320(point3f const *point)
 {
@@ -565,7 +570,13 @@ void function_295320(point3f const *point)
 /* the flock whose scenario definition has the name, or NONE */
 // score 69 (was 69): the scenario view is read before the loop here and
 // after it in retail, so the loop body and the exit differ; ours is 187
-// bytes against retail's 193.
+// bytes against retail's 193. Cause: retail keeps the flock pointer in ebp
+// through a join (xor ebp, ebp at the loop top, test ebp, ebp after the step),
+// so no register is left for the scenario view; ours sends the not-found path
+// straight to the NONE exit, frees ebp and hoists the view into it. Retail also
+// compares the loaded name with the argument on the stack. Tried: the step
+// body written out in flock_iterator_next 69; early returns 73; the result in
+// the loop condition 70; function_295321 as the step 72; name == entry 69.
 // @retail 0x2958a0
 long function_2958a0(long name)
 {

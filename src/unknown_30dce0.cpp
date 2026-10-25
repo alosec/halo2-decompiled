@@ -141,6 +141,24 @@ public:
 // matches retail's size, but retail keeps this in ebx and the object in esi
 // while ours keeps this in edi and the object in ebx, and retail builds the
 // flag in the argument slot where ours copies it there
+// score 101 (was 161): entry registers and pair-index homes now agree; the
+// initial pair count/index registers and load order still differ, followed
+// by add-loop alignment. Scoped or const flag 161; const own 161; distinct
+// counters 161; default flag and indexers 190; pair reference with true and
+// indexers 101; self continue 190; early own 190; iteration own 190; common
+// candidate with result object 198, scalar decision 200; named pair index 190;
+// mutable pair 101; iteration pair 101; handle snapshot 176; pair alone 150;
+// pair and true 118; pair and indexers 145; pair and default true 101.
+// Implicit true 207; direct collidable 207; list names 207; reference
+// indexers 190; byte-result conversion 190; named result 200; per-iteration
+// collidable 200; shared append slot 192; size accessors 190; force-inline
+// append 190; default result constructor 190; after array helpers 190.
+// Implicit true plus indexers fixes the entry registers, but pair-loop
+// register ownership and instruction scheduling still regress overall.
+// Further trials on 101: reversed self-test operands, a two-use pair
+// pointer, a long pair index, the index initialized before the receiver,
+// the box declared first, pointer plus reversed test, direct filter input,
+// and an external-field reference all score 101 at 667 bytes.
 // @retail 0x30dce0
 void world_30dce0::function_30dce0(object_30dce0 *object, flag_30dce0 notify)
 {
@@ -153,9 +171,10 @@ void world_30dce0::function_30dce0(object_30dce0 *object, flag_30dce0 notify)
 	collidable_30dce0 *own = &object->collidable;
 	for (int i = 0; i < pairs.size; i++)
 	{
-		if ((handle_30dce0 *)pairs.data[i].second != own)
+		pair_30d870 const &pair = pairs.data[i];
+		if ((handle_30dce0 *)pair.second != own)
 		{
-			if (filter_owner->filter.accept(own, static_cast<collidable_30dce0 *>((handle_30dce0 *)pairs.data[i].second)).value)
+			if (filter_owner->filter.accept(own, static_cast<collidable_30dce0 *>((handle_30dce0 *)pair.second)).value)
 			{
 				added.append(static_cast<collidable_30dce0 *>((handle_30dce0 *)pairs.data[i].second));
 			}
@@ -169,10 +188,10 @@ void world_30dce0::function_30dce0(object_30dce0 *object, flag_30dce0 notify)
 	{
 		for (int i = 0; i < removed.size; i++)
 		{
-			object->remove_overlap(removed.data[i]);
-			if (removed.data[i]->kind == 2)
+			object->remove_overlap(removed[i]);
+			if (removed[i]->kind == 2)
 			{
-				removed.data[i]->listener->remove_overlap(own);
+				removed[i]->listener->remove_overlap(own);
 			}
 		}
 	}
@@ -180,15 +199,14 @@ void world_30dce0::function_30dce0(object_30dce0 *object, flag_30dce0 notify)
 	{
 		object->overlaps_changed();
 	}
-	flag_30dce0 flag(true);
 	if (added.size != 0)
 	{
 		for (int i = 0; i < added.size; i++)
 		{
-			object->add_overlap(added.data[i], flag);
-			if (added.data[i]->kind == 2)
+			object->add_overlap(added[i], true);
+			if (added[i]->kind == 2)
 			{
-				added.data[i]->listener->add_overlap(own, flag);
+				added[i]->listener->add_overlap(own, true);
 			}
 		}
 	}

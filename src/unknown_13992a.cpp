@@ -2,6 +2,7 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#include "object_dispatch.h"
 #include <string.h>
 
 struct s_unit_weapon_hands
@@ -73,11 +74,28 @@ long function_14de70(long arg_1);
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-__forceinline byte *function_13992b(long arg_1)
-{
-    return *(byte **)(g_4e0300->data + (arg_1 & 0xffff) * 12 + 8);
-}
-
+// score 113 (was 134): frame 0x120 and scalar homes agree; the first branch span and
+// mask/player register roles still differ. Word lookup index 580; byte slot counter 314;
+// short suppression 173; cached seat selector 152; missing-player return 134 (plain).
+// caller depth 1/2/0 134/134/651; global optimization off 1911; const lookup 134;
+// typed lookup through getter / directly / depth one 134/113/134 (plain).
+// Mask/player ranks and parent/tag scheduling remain; initial parent value 113;
+// seat value 421; parent plus seat 131; direct queried flag 426; display presence 151;
+// target query value and primary/both color copies 113 each (plain).
+// score 113 (was 113): mask/player register roles and parent-load scheduling remain;
+// parent/seat/both references 131f; native current/parent-child tags 131f;
+// repeated secondary pass 446f; bulk sentinel initialization 527f; frame omission 131f.
+// sentinel loop 527f; typed selection arrays 298f; handle/rank/both snapshots 138/131/131f;
+// child test order 141f; wider selection scope 131f; cached zone count 145f (control 131f).
+// Native output sentinel/flag/scalar/pairs/full/scoped views 131f (control 131f);
+// the original prefix stores and all protected query interfaces are retained.
+// score 113 (was 113): mask/player roles and tag scheduling remain; current/parent/both tag values 113 each;
+// parent mode char 113; initialized display 274; native current/parent-child/all selectors 113/113/113 (plain).
+// Mask/player roles and parent/tag scheduling remain. First/second/both adjacent
+// field copies 113/113/113p; paired hands bytes and prefix copies 465p; checked player accessor / first
+// copy / all copies 519/519/518p.
+// Seat-word observation, native parent/child links, ordinary child for, combined links,
+// child for plus seat word and display/both workspace names each 131f (control 131f).
 // @retail 0x13992a
 void function_13992a(byte *arg_1, long arg_2)
 {
@@ -95,9 +113,9 @@ void function_13992a(byte *arg_1, long arg_2)
         byte const *local_2 = g_4e8c24->data + (local_1 & 0xffff) * 0x21c;
         if (*(long *)(local_2 + 0x2c) != NONE)
         {
-            byte const *local_3 = function_13992b(*(long *)(local_2 + 0x2c));
+            byte const *local_3 = (byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c));
             s_unit_weapon_hands local_4;
-            long local_5 = false;
+            bool local_5 = false;
             function_cb430(*(long *)(local_2 + 0x2c), &local_4);
             arg_1[0x1c] = true;
             *(long *)(arg_1 + 0x20) = *(long *)(local_3 + 0x1e4);
@@ -108,18 +126,17 @@ void function_13992a(byte *arg_1, long arg_2)
             *(short *)(arg_1 + 0x34) = function_cdff0(*(long *)(local_2 + 0x2c), function_ce020(*(long *)(local_2 + 0x2c)));
             arg_1[0x30] = local_4.one;
             arg_1[0x31] = local_4.two;
-            short local_6 = function_c8860(*(long *)(local_2 + 0x2c));
-            *(short *)(arg_1 + 0x3c) = local_6;
+            *(short *)(arg_1 + 0x3c) = function_c8860(*(long *)(local_2 + 0x2c));
             arg_1[0x32] = local_4.seat_allows;
             *(short *)(arg_1 + 0x38) = function_cdff0(*(long *)(local_2 + 0x2c), 0);
             *(short *)(arg_1 + 0x3a) = function_cdff0(*(long *)(local_2 + 0x2c), 1);
             *(short *)(arg_1 + 0x1e) = *(short *)(local_3 + 0x10a);
             arg_1[0x3e] = false;
-            if (local_6 != NONE && function_cbd50(*(long *)(local_2 + 0x2c),
-                (short)*(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x212)) != NONE)
+            if (*(short *)(arg_1 + 0x3c) != NONE && function_cbd50(*(long *)(local_2 + 0x2c),
+                (short)*(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x212)) != NONE)
             {
                 if (!function_100f70(function_cbd50(*(long *)(local_2 + 0x2c),
-                    (short)*(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x212))))
+                    (short)*(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x212))))
                     arg_1[0x3e] = true;
             }
             arg_1[0x3f] = function_15fef0(local_1);
@@ -129,7 +146,7 @@ void function_13992a(byte *arg_1, long arg_2)
                 (s_22bfc0_definition const *)g_4e3b44[*(long *)local_3 & 0xffff].bytes);
             if (*(long *)(local_3 + 0x14) != NONE && *(short *)(local_3 + 0x1fc) != NONE)
             {
-                byte const *local_7 = function_13992b(*(long *)(local_3 + 0x14));
+                byte const *local_7 = (byte const *)OBJECT_DATUM_GET(*(long *)(local_3 + 0x14));
                 byte const *local_8 = g_4e3b44[*(long *)local_7 & 0xffff].bytes;
                 byte const *local_9 = *(byte *const *)(local_8 + 0x1cc) + *(short *)(local_3 + 0x1fc) * 0xb0;
                 arg_1[0x48] = true;
@@ -139,13 +156,13 @@ void function_13992a(byte *arg_1, long arg_2)
                 if ((bool)((*(dword *)local_9 >> 3) & 1))
                 {
                     long local_10 = function_cbd50(*(long *)(local_3 + 0x14),
-                        *(signed char *)(function_13992b(*(long *)(local_3 + 0x14)) + 0x212));
+                        *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_3 + 0x14)) + 0x212));
                     if (local_10 == NONE)
                     {
                         long local_11 = *(long *)(local_7 + 0x10);
                         while (local_11 != NONE)
                         {
-                            byte const *local_12 = function_13992b(local_11);
+                            byte const *local_12 = (byte const *)OBJECT_DATUM_GET(local_11);
                             if ((bool)((*(dword *)(local_12 + 4) >> 26) & 1)
                                 && ((1 << local_12[0xaa]) & 3)
                                 && (bool)((*(dword *)(g_4e3b44[*(long *)local_12 & 0xffff].bytes + 0xbc) >> 26) & 1))
@@ -163,24 +180,24 @@ void function_13992a(byte *arg_1, long arg_2)
             if (!local_5)
             {
                 if (function_cbd50(*(long *)(local_2 + 0x2c),
-                    *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x212)) != NONE)
+                    *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x212)) != NONE)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
-                        *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x212)),
+                        *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x212)),
                         (long *)(arg_1 + 0xc), (s_hud_weapon_record *)(arg_1 + 0x88));
                 }
                 if (function_cbd50(*(long *)(local_2 + 0x2c),
-                    *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
+                    *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
-                        *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)),
+                        *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x213)),
                         (long *)(arg_1 + 0x10), (s_hud_weapon_record *)(arg_1 + 0xc0));
                 }
                 if (function_cbd50(*(long *)(local_2 + 0x2c),
-                    *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
+                    *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x213)) != NONE)
                 {
                     function_13afa9(function_cbd50(*(long *)(local_2 + 0x2c),
-                        *(signed char *)(function_13992b(*(long *)(local_2 + 0x2c)) + 0x213)),
+                        *(signed char *)((byte const *)OBJECT_DATUM_GET(*(long *)(local_2 + 0x2c)) + 0x213)),
                         (long *)(arg_1 + 0x10), (s_hud_weapon_record *)(arg_1 + 0xc0));
                 }
             }

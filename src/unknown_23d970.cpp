@@ -27,6 +27,12 @@ PRIVATE const dword g_4507c8[24] =
 
 typedef void *(__stdcall *texture_allocate_proc)(long size, long alignment);
 
+// score 28 (was 28): retail reads width and height as full dwords (its only caller sign-extends
+// both), so its prototype has 32-bit dimensions; the caller's declaration is short. Retail also
+// spills the header register into the dead width slot before the allocation call and makes the null
+// result only on the failure path. Tried: the dimensions used directly 46; each path storing the
+// outputs and returning 52 (retail's tests, no spill); `if (!result) buffer = 0;` 28; a named
+// validity bool 28; a dword aligned size 28.
 // @retail 0x23e340
 D3DTexture *function_23e340(short width, short height, short format,
 	texture_allocate_proc allocate, long *size, void **data, D3DTexture *header)

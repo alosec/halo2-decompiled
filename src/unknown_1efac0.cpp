@@ -207,14 +207,16 @@ bool s_iterator::advance()
 	{
   g = group;
   sub_index = sub;
+		long current_item = item;
 		s = &table->groups[g].subs[sub_index];
 
-		long sub_count = 0;
-		if (s) sub_count = s->count;
-		if (item + 1 < sub_count)
+		if (s)
 		{
-			item_index = item + 1;
-			next = false;
+			if (current_item + 1 < s->count)
+			{
+				item_index = current_item + 1;
+				next = false;
+			}
 		}
 	}
 
@@ -394,7 +396,8 @@ struct s_surface_object_header
 };
 
 // score 8 (was 8): the record address is computed in ECX; retail computes it in EDX and reads
-// the flags from it.
+// the flags from it. Tried: a byte flags local 8; a dword index 8; the object as bytes 8;
+// `case 4: case 3:` 8; the value read as one sum 8; the parameters as (key, owner) 8.
 /* the first argument is the caller's shape owner (or its object reference); the body
    never reads it, but every retail caller still computes it before the call */
 // @retail 0x1ef3e0
@@ -661,7 +664,13 @@ long function_1ef810(long index)
 
 // score 22 (was 53): retail reads the globals pointer inside the branch that uses it, where
 // ours reads it before the surface count is checked, and retail copies the count into a second
-// register before the flag test.
+// register before the flag test. The early read is what keeps our register pushes ahead of the
+// count test: with the globals read inside the kind 1/2 branch (as retail) that branch matches
+// but the pushes sink below the count adjustment and the loop pads differently (128). Tried with
+// the read moved: `dword last` (128), `last` tested in place of count (128), the flag test nested
+// with last = count - 1 (128), the objects pointer read first (123), the key decoded before the
+// count test (132), the count as an inline helper returning count - 1 (22, a select in place of
+// retail's dec, pushes still sunk).
 // @retail 0x1ef6d0
 dword c_shape_global_owner::next_key(dword key)
 {

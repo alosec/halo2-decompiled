@@ -206,6 +206,24 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 	return result;
 }
 
+// score 49 (was 49): retail keeps only start and deceleration in xmm registers and reads the
+// peak (twice) and acceleration from their array homes (frame 0x1c); ours keeps all four in
+// registers (frame 0x10). Three-arm first clamp 96; two separate result clamps 49 (same);
+// last term as a separate += 55 (retail's add order and single-exit clamp tail appear);
+// one 2x3 coefficient array 54 (retail's 0x1c frame and tail, but the reads stay in
+// registers); reordered coefficient fills 55; start/deceleration as named locals 59;
+// endpoint field reads in the sum 114 (the homes collapse); pointer-taking fill helper 63;
+// coefficient fill after the clamps 120.
+// retail keeps both arrays in its frame (sub esp, 0x1c)
+// and reads rates[1], rates[2] and accelerations[0] back from it; ours keeps
+// only rates[2] there, so the sum takes other registers, the b * b term
+// moves up (the compiler reorders the sum: the source order of the terms
+// does not matter) and the two clamp exits are not merged. Retail also
+// tests ticks against the acceleration ticks before choosing ticks (an
+// if/else-if/else gives that, 96). Tried: other term orders 49, squares in
+// locals 49, b * (b * accelerations[1]) 99, a loop over the three segments
+// 59-65 (unrolled, factored), aggregate initializers 49, accelerations
+// zero-initialized 101, the arrays filled or declared in another order 49-50.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
@@ -760,6 +778,19 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 }
 
 /* the camera director of scripted cameras: fills the observer's command */
+// score 241 (was 241): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
+// Source-field reference 245; copied-normal squared length 258; adjacent trig factors 246;
+// native pan point 290; separate final state pointer 245 (unchanged reduced preview 245).
+// frame 0x48 agrees; direction preload and length/zero XMM roles, flag RMWs and interpolation differ.
+// Entry flag result 459; depth one 245; native plane construction 248; matrix return 326; point-category conditionals 272.
+// score 244 (was 246): direction preload, length/zero registers and flag stores still differ.
+// native point state 401p; native pan state 246p.
+// final result local scope 246p; reuse clamped pan fraction 312p.
+// single default flag store 425p; native time record 246p.
+// point state default flags 425p; pan state clamped fraction 312p.
+// direction preload, length/zero XMM roles, flag stores and timer differ.
+// Forced dot/plane/tick expansion 247 each; each pair and all three 247;
+// all three plus immutable command pointer and scale 253 (fast base 247).
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {

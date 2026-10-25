@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include <string.h>
+#include "units.h"
 #include <xmmintrin.h>
 
 /* a player (g_4e8c24, 0x21c bytes): +0x28 is its local player slot */
@@ -166,6 +167,13 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
  return function_cbd50(unit_index, *(signed char *)(unit + 0x212 + slot));
 }
 
+// score 649 (was 649): frame 0x54 agrees; state/player/unit homes differ; inline depths 1/2 649, object accessor inline 649, array base 649, player-index first 656.
+// score 613 (was 656): frame/type agree; state/player/unit allocation remains.
+// Direct state receiver 656; unsigned unit carrier 656; early blocked local 656;
+// multi-use magazine view 656; seat-before-parent acquisition 656; all restored.
+// score 649 (was 649): Frame 0x54 agrees; state/player/unit homes remain. Native word 649; bits 650; call groups 656; reset groups 771; plain player/status 768 (frame and state/player agree); with selector inline 946, native word 768, bits 768 or index join 790 (plain).
+// score 649 (was 658): Frame 0x54 agrees; state/player/unit homes remain. Shared seat fields kept 658 to 651, 2300/2308 bytes. Captured seat flags 658; short selector slot 662; typed object headers 658; magazine capacity 658 (plain).
+// Frame 0x54 agrees; state/player/unit homes remain. Native word 649; bits 650; call groups 656; reset groups 771; plain player/status 768 (frame and state/player agree); with selector inline 946, native word 768, bits 768 or index join 790 (plain).
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {
@@ -216,9 +224,9 @@ bool function_1e7ab0(long local_index, long type)
      if (parent != NONE && seat != NONE)
      {
       byte *definition = g_4e3b44[*(long *)request_unit(parent, g_4e0300->data) & 0xffff].bytes;
-      byte *seats = *(byte **)(definition + 0x1cc);
-      dword flags = *(dword *)(seats + seat * 0xb0);
-      if (!((bool)((flags >> 2) & 1)) && !((bool)((flags >> 3) & 1)) && !((bool)((flags >> 11) & 1)))
+      s_unit_seat_definition *seats = *(s_unit_seat_definition **)(definition + 0x1cc);
+      s_unit_seat_definition const *seat_data = &seats[seat];
+      if (!((bool)seat_data->flags.bit2) && !((bool)seat_data->flags.bit3) && !((bool)seat_data->flags.bit11))
       {
        s_unit_child_iterator iterator;
        function_d0590(&iterator, parent);
@@ -226,7 +234,7 @@ bool function_1e7ab0(long local_index, long type)
        while (function_d05c0(&iterator))
        {
         if (iterator.seat_index != NONE && iterator.unit_index != unit_index &&
-         ((bool)((*(dword *)(seats + iterator.seat_index * 0xb0) >> 2) & 1)))
+         ((bool)seats[iterator.seat_index].flags.bit2))
         { blocked = true; break; }
        }
        if (!blocked) result = true;

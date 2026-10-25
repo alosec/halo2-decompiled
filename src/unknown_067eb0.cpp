@@ -41,6 +41,26 @@ void __stdcall function_82240(s_simulation_definition_registry *registry,
 // to the global; ours drops the -1 stores as dead and reuses the address it just stored,
 // since the callee's body is visible to LTCG in the reduced image. The callee lives in
 // another source file, so this difference is out of reach here.
+// The cause is that retail treats g_4cf77c, g_4cf780 and g_4cf784 as address-taken:
+// with all three in one struct global (and the existing &g_4cf77c read elsewhere) the
+// registry cleared through the pointer read from g_4cf784, with uninitialised counts,
+// matches in an LTCG harness. In this tree: that clear 42; passing the pointer 42;
+// every access through g_4cf784 42; a &g_546974 local 42; the clears first 48.
+// another source file, so this difference is out of reach here. Retail also stores the
+// three globals before the memsets and reloads g_4cf784 before the call, so it treats
+// the memsets as able to alias it too. Tried: the two locals left uninitialised, as
+// retail has them (42); g_4cf784 as a struct member (30); taking g_4cf784's address in
+// another function (37: keeps the -1 stores and the reload after the call only); reading
+// it through *(long volatile *)& at both uses (15, all but the store order; not allowed on
+// a global, kept only as evidence of what retail does); the registry loaded from g_4cf784
+// after the three stores, with the -1 stores and memsets through it (30, or 42 with the
+// locals uninitialised).
+// another source file, so this difference is out of reach here.
+// The cause is that retail treats g_4cf77c, g_4cf780 and g_4cf784 as address-taken:
+// with all three in one struct global (and the existing &g_4cf77c read elsewhere) the
+// registry cleared through the pointer read from g_4cf784, with uninitialised counts,
+// matches in an LTCG harness. In this tree: that clear 42; passing the pointer 42;
+// every access through g_4cf784 42; a &g_546974 local 42; the clears first 48.
 // @retail 0x67e30
 void function_67e30(void)
 {

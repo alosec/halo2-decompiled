@@ -70,16 +70,19 @@ bool function_26ba60(long prop_index, long actor_index, long clump_index);
 
 static __forceinline long real_to_long(real value);
 
+// runs the slot 0x25 handler: it looks for the joint the actor's prop belongs to,
+// joins the slot's entries to it (declining the ones that do not match), allocates a
+// joint when there is none, and gives the slot a random number of frames.
 // @retail 0x1b6120
 long __stdcall function_1b6120(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
-	s_slot_25 *state = (s_slot_25 *)slot;
 	long joint_index = NONE;
+	s_actor_view *actor = actor_get(actor_index);
+	s_prop_node_view *node;
 
 	if (actor->prop_index != NONE)
 	{
-		s_prop_node_view *node = prop_node_get(actor->prop_index);
+		node = prop_node_get(actor->prop_index);
 		s_prop_view_25 *view = (s_prop_view_25 *)prop_node_view(node);
 
 		if (view)
@@ -92,7 +95,7 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 			iterator.reference.unknown0 = NONE;
 			for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
 			{
-				long current_reference = iterator.reference.unknown0;
+				long current_reference = *(long *)&iterator.reference;
 				if (joint_index == NONE && element_502424_get(entry->unknown4)->target.unknown4 == node->object_index &&
 					function_26ecc0(actor_index, current_reference, (s_joint_behavior_state *)slot))
 				{
@@ -109,8 +112,8 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 				long allocated_index = function_26e940(actor_index);
 				if (allocated_index != NONE)
 				{
-					state->unknown0c = true;
-					state->element_index = allocated_index;
+					((s_slot_25 *)slot)->unknown0c = true;
+					((s_slot_25 *)slot)->element_index = allocated_index;
 				}
 				joint_index = allocated_index;
 			}
@@ -119,7 +122,7 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 			{
 				s_502424_element_25 *element = (s_502424_element_25 *)element_502424_get(joint_index);
 
-				if (state->unknown0c)
+				if (((s_slot_25 *)slot)->unknown0c)
 				{
 					element->unknown80 = false;
 					element->unknown81 = false;
@@ -146,9 +149,10 @@ long __stdcall function_1b6120(long actor_index, s_slot *slot)
 						element->unknownb0 = view->unknown94;
 					}
 				}
-				real ticks = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__) * 3.0f * g_510c54->field_2_3;
-				long value = real_to_long(ticks);
-				state->unknown1c = (short)value;
+				real draw_in_unit_range = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+				real draw_per_frame = draw_in_unit_range * 3.0f;
+				long value = real_to_long(draw_per_frame * g_510c54->field_2_3);
+				((s_slot_25 *)slot)->unknown1c = (short)value;
 			}
 		}
 	}

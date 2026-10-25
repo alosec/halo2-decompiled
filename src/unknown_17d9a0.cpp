@@ -117,16 +117,39 @@ short function_120850(vector3f const *v);
 PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, real const *x, real const *y, s_decal_quad_17d9a0 *quad, point2f *out)
 {
 	point3f point;
+	short const *axes = g_440b94[quad->axis * 2 + quad->positive];
 	point.x = matrix->forward.i * *x + matrix->left.i * *y + matrix->position.x;
 	point.y = matrix->left.j * *y + matrix->forward.j * *x + matrix->position.y;
 	point.z = matrix->forward.k * *x + matrix->left.k * *y + matrix->position.z;
-	short const *axes = g_440b94[quad->axis * 2 + quad->positive];
 	short horizontal_axis = axes[0];
 	short vertical_axis = axes[1];
 	out->x = ((real const *)&point)[horizontal_axis];
 	out->y = ((real const *)&point)[vertical_axis];
 }
 
+// score 158 (was 164): plane-distance store base and projection/edge scheduling remain; both indices long 179f, horizontal long 164f, vertical long 179f, captured-index Y-first 164f, plane view after normal copy 181f.
+// Read-only projection metadata 164; selector field inputs 164; output reference 164; shared
+// point construction 162; vertical index first 164; table row before point 158 (kept); complete
+// edge predicate 166; row helper input 160; inverse at entry 230; normal block copy 168; copy-
+// return plane receiver 158 at 993 bytes; copy return with early row 171; early row with shared
+// point construction 160.
+// score 152 (was 158): plane store base and projection/edge scheduling still differ.
+// return native destination 158f; native component array 158f.
+// transform workspace name 158f; native output first contract 168f.
+// native matrix reference 158f; copied normal receiver 161f.
+// nested edge validation 158f; conditional inverse publication 152p.
+// score 138 (was 152): plane-distance base, projection selectors/stores and inverse schedule remain.
+// Shared projection operation 334; native plane result 237; row-selector local 152;
+// bounds-first/vertical-first helper contracts 140/140; pointer-input point initializer 152;
+// vertical result snapshot 170; first-edge squared length 138; corrected contract/length combinations 146/146.
+// score 138 (was 138): plane-distance store base, selector publication and edge/zero schedule remain.
+// Actual table-element bindings both/horizontal/vertical 188/138/188; both plus Y-first 191;
+// distance-field binding 146; metadata object reference 138; native row reference 138;
+// edge records bound after publication 142 at 992 bytes (fast scores).
+// plane-store base, selector/output scheduling and inverse registers remain.
+// Distance-only plane scope 143; second-edge squared result 146; both 147; external basis
+// references 152; first/all bound-first products 138/138; basis plus lengths 154; completed
+// Y/X projected values plus lengths 158.
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {
@@ -145,11 +168,11 @@ void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_qu
 	quad->edges[0].j = corners[1].y - corners[0].y;
 	quad->edges[1].i = corners[3].x - corners[0].x;
 	quad->edges[1].j = corners[3].y - corners[0].y;
-	real inverse = 0.0f;
-	if (quad->edges[0].i * quad->edges[0].i + quad->edges[0].j * quad->edges[0].j > 0.0001f &&
-		quad->edges[1].i * quad->edges[1].i + quad->edges[1].j * quad->edges[1].j > 0.0001f)
-		inverse = 1.0f / (quad->edges[1].j * quad->edges[0].i - quad->edges[0].j * quad->edges[1].i);
-	quad->inverse_determinant = inverse;
+	real first_edge_squared = quad->edges[0].i * quad->edges[0].i + quad->edges[0].j * quad->edges[0].j;
+	quad->inverse_determinant =
+		first_edge_squared > 0.0001f &&
+		quad->edges[1].i * quad->edges[1].i + quad->edges[1].j * quad->edges[1].j > 0.0001f
+		? 1.0f / (quad->edges[1].j * quad->edges[0].i - quad->edges[0].j * quad->edges[1].i) : 0.0f;
 }
 
 struct s_decal_mesh_edge
@@ -464,11 +487,11 @@ PRIVATE __forceinline void decal_face_plane_17fd20(s_decal_mesh_view const *mesh
 
 PRIVATE __forceinline real decal_normal_angle_17fd20(vector3f const *a, vector3f const *b)
 {
-	vector3f first_vector = *a;
-	vector3f second_vector = *b;
-	if (!memcmp(&first_vector, &second_vector, sizeof(first_vector)))
+	vector3f first_vector;
+	memcpy(&first_vector, a, sizeof(first_vector));
+	if (!memcmp(&first_vector, b, sizeof(first_vector)))
 		return 0.0f;
-	real cosine = first_vector.i * second_vector.i + first_vector.k * second_vector.k + first_vector.j * second_vector.j;
+	real cosine = first_vector.i * b->i + first_vector.k * b->k + first_vector.j * b->j;
 	cosine = cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
 	return (real)acos(cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine);
 }
@@ -483,6 +506,13 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 	*out = rotated;
 }
 
+// score 753 (was 890): frame 0x2204 versus 0x21dc; definition/output carriers still differ.
+// Group word 866; remaining long 871; first input only 825; second only 878; unsigned plane 891; first plus group 774; first plus remaining 843.
+// From 774: group-first test 753; in-place offset 779; vector return 800; deferred angle copy 808; word edge indices 776.
+// Long emission index 763; tag-pointer rename/lifetime 774/774; group-first plus offset 786; plus long emission 747 (alignment worse).
+// score 749 (was 753): frame 0x2204 versus 0x21dc; definition/output homes and angle equality differ.
+// Native initial face cursor 752; group-search cursor 785; candidate cursor 786;
+// native bounds-component access 753; angle-input memcpy 749; single cosine clamp 803.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)
@@ -514,15 +544,15 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 		short remaining = secondary_count;
 		do
 		{
-			long group_count = 0;
-			for (short i = 0; i < secondary_count && !(short)group_count; ++i)
+			short group_count = 0;
+			for (short i = 0; !group_count && i < secondary_count; ++i)
 			{
 				long first_face = secondary[i];
 				if (first_face == NONE)
 					continue;
 				plane3f first_plane;
 				decal_face_plane_17fd20(mesh, first_face, &first_plane);
-				faces[(short)group_count++] = first_face;
+				faces[group_count++] = first_face;
 				secondary[i] = NONE;
 				for (short j = i + 1; j < secondary_count; ++j)
 				{
@@ -535,7 +565,7 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 							projection->radius * 0.05f > function_17d900(mesh, face, &first_plane) &&
 							projection->radius * 0.05f > function_17d900(mesh, first_face, &plane))
 						{
-							faces[(short)group_count++] = face;
+							faces[group_count++] = face;
 							secondary[j] = NONE;
 						}
 					}
@@ -544,7 +574,7 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 				real selected_minimum, selected_maximum;
 				point3f start, end;
 				plane3f selected_plane;
-				for (short j = 0; j < (short)group_count; ++j)
+				for (short j = 0; j < group_count; ++j)
 				{
 					long face = faces[j];
 					long edge_index = mesh->faces[face].first_edge;
@@ -637,12 +667,12 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 				}
 				else
 					quad = projection->quad;
-				for (short j = 0; j < (short)group_count; ++j)
+				for (short j = 0; j < group_count; ++j)
 				{
 					function_17dd80(mesh, &quad, output, faces[j], false, projection->radius,
 						mode, 0, 0, 0, 0);
 				}
-				remaining -= (short)group_count;
+				remaining -= group_count;
 			}
 		} while (remaining > 0);
 	}

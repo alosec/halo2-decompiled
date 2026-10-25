@@ -230,18 +230,17 @@ PRIVATE inline bool motion_near_zero_170630(real value)
 	return real_is_finite(value) && fabs(value) < 0.001f;
 }
 
-PRIVATE inline void motion_normalize_170630(vector3f *vector)
-{
-	real magnitude = (real)sqrt(vector->i * vector->i + vector->j * vector->j + vector->k * vector->k);
-	if (!(fabs(magnitude) < 0.0001f))
-	{
-		real inverse = 1.0f / magnitude;
-		vector->i *= inverse;
-		vector->j *= inverse;
-		vector->k *= inverse;
-	}
-}
-
+/* advances the player's motion channels by the elapsed time, then rebuilds the forward and up
+   vectors at current[10] and current[13] as an orthonormal pair when they drift */
+// score 72 (was 81): the loop matches but for two slots (the time pointer the compiler makes and
+// the group counter are swapped) and the order of the current and value pointer setup; after it
+// the float sums and products come out in another order (the dot product as k, j, i where retail
+// has k, i, j; the cross products' first loads) and 1.0f is loaded later. Our compiler reorders the
+// operands of these sums and products whatever their order in the source (no change for any
+// order of the dot product, dot3f, or the cross product's terms). The new up kept in locals and
+// stored j, k, i 72 (stored directly 81). Tried: an explicit time pointer with the current pointer
+// declared before the value pointer (the whole loop then matches, but the code after it changes:
+// 124); declaration orders around it 120-140; a cross product helper for both products 122-140.
 // @retail 0x170630
 void function_170630(long player_index)
 {
@@ -312,11 +311,14 @@ void function_170630(long player_index)
 		left.i = up->j * forward->k - up->k * forward->j;
 		left.j = up->k * forward->i - forward->k * up->i;
 		left.k = forward->j * up->i - up->j * forward->i;
-		up->i = forward->j * left.k - left.j * forward->k;
-		up->j = left.i * forward->k - forward->i * left.k;
-		up->k = forward->i * left.j - forward->j * left.i;
-		motion_normalize_170630(forward);
-		motion_normalize_170630(up);
+		real up_i = forward->j * left.k - left.j * forward->k;
+		real up_j = left.i * forward->k - forward->i * left.k;
+		real up_k = forward->i * left.j - forward->j * left.i;
+		up->j = up_j;
+		up->k = up_k;
+		up->i = up_i;
+		normalize3d(forward);
+		normalize3d(up);
 	}
 }
 

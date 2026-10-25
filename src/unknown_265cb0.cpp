@@ -363,6 +363,26 @@ short __stdcall function_c8b80(long object_index, s_object_seat *seats, short ma
 bool function_26d370(point3f const *point, vector3f const *direction, plane3f const *plane, real *distance);
 real function_30bf0(vector3f *vector);
 
+// score 195 (was 226): the register allocation differs from the first block
+// on (retail keeps delta in xmm5-7 and the motion in xmm2-4, ours the other way
+// round), and our seat loop keeps secondary and primary in xmm1/xmm2 across
+// iterations where retail compares them in memory and reloads them after the
+// loop, which also moves retail's not-facing block after the result-3 exit.
+// Frame: retail has result, secondary, primary at +0/+4/+8 and range at +0x20;
+// ours has secondary, primary, range at +0/+4/+8 and result at +0x20.
+// Tried: if/else for the 3-or-2 result, retail's separate exits (262: the
+// frame shifts), result/secondary/primary as one struct (270), secondary and
+// primary at function scope (262), volatile long result (262), range declared
+// after the motion block (291), range re-read from settings (275), range read
+// through a pointer (229), the facing block as an inlined helper with pointer
+// outputs (281, inlines c8b80), the clip as a clipped point (280),
+// vector3d_from_points3d for delta and motion (200), a and b at function scope
+// and `secondary < a` compares (no change).
+// Tried at 226 (lane): qualified long result 226; qualified byte result 232; long seat count 240;
+// long seat index 226; shared seat-element pointer 226.
+// score 195 (was 195): Frame/result and inverse SIMD homes remain. Ordinary short result 250; ordinary long result 250; delta initializer 221; motion initializer 221; plane scope 221 (fast, each with the seat increment in the body).
+// score 195 (was 195): Frame/result and inverse SIMD homes remain. Fraction reuse 211; plane distance first 304; cursor displacement 271; threshold defaults 265; reverse delta assignments 233 (fast; seat increments in body).
+// score 195 (was 195): Frame 0x350 agrees; result/range homes, inverse SIMD groups and threshold reloads remain. Early range square 266; scaled-range square 221; threshold maxima 221; bounded seat end 245; plane initializer 221 (fast; seat increments in body).
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
@@ -435,9 +455,10 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 						{
 							s_object_seat seats[64];
 							short count = function_c8b80(object_index, seats, 64);
-							for (short i = 0; i < count; ++i)
+							s_object_seat *seat = seats;
+							for (short i = 0; i < count; ++i, ++seat)
 							{
-								long occupant = function_c8f60(seats[i].object_index, seats[i].seat_index);
+								long occupant = function_c8f60(seat->object_index, seat->seat_index);
 								if (occupant != NONE)
 								{
 									s_slot_object_view *object = object_get(occupant);
@@ -785,6 +806,12 @@ struct s_object_activity_flags
 	word unused : 13;
 };
 
+// score 79 (was 79): initial input register, early actor null and exit saves
+// differ; explicit actor arms, unsigned selected handles, bonus snapshots and
+// actor-bonus result 79; split first selection 114; fallback formal read 82.
+// entry input is EAX versus EDX; nullable actor and save timing still differ.
+// Entry/all header helpers 79/79; external object reference 79; const object/actor/settings views 79/79/79.
+// Combined const views 79; header helper with const object 79; existing scalar qualifier and original body restored.
 // @retail 0x267370
 real function_267370(long volatile object_index)
 {
@@ -853,7 +880,7 @@ void function_267700(long actor_index, s_prop_datum *node, s_type_76cf92 *prop, 
 }
 
 // @retail 0x267a80
-short function_267a80(real *distance, point3f const *point, vector3f const *direction, point3f const *position, long unknown)
+short function_267a80(real *distance, point3f const *point, vector3f const *direction, point3f const *position, vector3f *unknown)
 {
 	long result = 0;
 	vector3f *offset = (vector3f *)unknown;
@@ -1007,7 +1034,13 @@ struct s_equipped_object_view
 
 // score 6 (was 6): the tag lookup: retail keeps the index in ecx and the
 // table base in eax, ours keeps the index in eax and the base in ecx;
-// thirteen source rewrites all scored 6.
+// thirteen source rewrites all scored 6. Retail reloads the pool's data for
+// the held object with no store or call in between; every form without the
+// volatile pool view shares the first load (28): the held index through
+// function_cbd50 28 (6 with the view kept), the held object through
+// object_get 28 or object_header_get 28. Tried (r27b): the comparison through a
+// real local 12; the tag index through a long local 12; `if (...) result = true`
+// 14. 0xee8a0 (matched) needs the same volatile view for its weapon lookup.
 // @retail 0x2675f0
 bool function_2675f0(long object_index)
 {
@@ -1057,6 +1090,23 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 	return result;
 }
 
+// score 99 (was 142): clock/compare schedule and vector homes differ; ordinary
+// pooled/clock reads with memset zero 178; projected-point loop 297; wide query
+// results 318; named maximum 146; target-copy loop 141 (one-count gain rejected).
+// ordinary-access common tick conversion 400; native point setter 146;
+// activity lifetime 344; iterator rejection continue 146; elapsed interval 293.
+// Per-use prop lookup 119; shared dot/length/both 146/146/146 (grouping rejected);
+// query output initialization omitted 347; prop read first 326; native fields 146;
+// false-byte array memset 206. All eight use ordinary pooled/clock reads.
+// j93: Frame 0x60 agrees; clock hoisting, conversion copy and three vector homes remain; typed offset output recovers movement/offset homes.
+// wide event results 371; wide target result 374; state per use 433; state eligibility snapshot 338; typed
+// offset output 99; offset outer direction 99; offset blend before delta 99; offset outer query homes 99.
+// score 99 (was 99): clock/compare schedule, conversion copy and geometry homes remain.
+// Fast: smoothed field 99; desired field 99; both fields 99; native position 393;
+// native origin 383; both geometry inputs 431; prop record 99; field and geometry 431.
+// score 99 (was 99): clock conversion, interpolation registers and three geometry homes remain;
+// interpolation product inputs 99; direct delta 99; direct blend 99; delta-first addition 99;
+// direct pair 414; direct delta/addition 99; direct blend/addition 99; direct pair/addition 414.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {
@@ -1090,11 +1140,11 @@ void function_267c50(long actor_index)
 		else *(real *)(data + 0x3d4) = 0.0f;
 	}
 	long ticks;
-	if (*(volatile real *)(data + 0x3d4) > *(volatile real *)(data + 0x3d8))
-		ticks = round_tick_count((real)*(volatile short *)&g_510c54->field_2_3 * 0.25f);
+	if (*(real *)(data + 0x3d4) > *(real *)(data + 0x3d8))
+		ticks = round_tick_count((real)g_510c54->field_2_3 * 0.25f);
 	else
-		ticks = round_tick_count((real)*(volatile short *)&g_510c54->field_2_3);
-	real difference = *(volatile real *)(data + 0x3d4) - *(volatile real *)(data + 0x3d8);
+		ticks = round_tick_count((real)g_510c54->field_2_3);
+	real difference = *(real *)(data + 0x3d4) - *(real *)(data + 0x3d8);
 	volatile real decay = expf(-0.6931471824645996f / ticks);
 	real blend = 1.0f - decay;
 	*(real *)(data + 0x3d8) += difference * blend;
@@ -1119,9 +1169,9 @@ void function_267c50(long actor_index)
 			while ((node = (s_prop_datum *)function_26be30(&iterator)) != NULL)
 			{
 				s_type_5cfb45 *state = function_25d690(node);
-				s_type_76cf92 *prop = prop_get(node->prop_index);
-				if (!prop->unknown23 && !function_25d690(node)->unknown5e && !prop->unknown22 &&
-					(prop->unknown25 || state->unknown3c == NONE))
+				if (!prop_get(node->prop_index)->unknown23 && !function_25d690(node)->unknown5e &&
+					!prop_get(node->prop_index)->unknown22 &&
+					(prop_get(node->prop_index)->unknown25 || state->unknown3c == NONE))
 				{
 					vector3f direction;
 					if (function_267840(*actor_reference, iterator.index, &direction))
@@ -1129,7 +1179,7 @@ void function_267c50(long actor_index)
 						bool active = false;
 						vector3f offset = {0.0f, 0.0f, 0.0f};
 						short proximity = function_267a80(NULL, &state->position, &direction,
-							(point3f *)(data + 0x238), (long)&offset);
+							(point3f *)(data + 0x238), &offset);
 						if (proximity >= 1)
 						{
 							*(bool *)(data + 0x3de) = true;
@@ -1487,20 +1537,34 @@ real function_2683f0(long actor_index, long node_index, short type)
 	return result;
 }
 
+// score 695 (was 711): frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
+// Conditional facing 731; wide best level 701; direct parameter 701; shared difference 705;
+// wide retention 704; live relative inputs 695; native velocity copy 695; early defaults 755;
+// phase defaults 752.
+// Round 156: depth zero 937; depth one 695; shared player lookup 702;
+// retained actor lookup 723; separate missing-view guard 696 (plain scores).
+// word threshold 712; byte conditions 712; both 712; geometry names 712 (reduced);
+// direct transformed output 700 reduced, 715 plain; entry cursor advance 708 reduced, 726 plain.
+// j93: Frame 0x7c/0x80, saved-link homes and conversion expansion remain; helper declaration restored.
+// shared tracking view 695; shared player lookup 724; very close result 719; native player search indices 702;
+// notification counter view 695; level helper inline 717.
+// score 684 (was 695): Frame, saved-link homes and expanded tick conversions remain.
+// selection names 695; cached state test 707; post-clear results 684;
+// direct score result 695; direct retention result 705 (plain).
+// score 684 (was 684): Frame 0x7c/0x80, saved links and expanded conversions remain. Single player search 706; point phase 684; relative initializer 684; selection scope 684; long vehicle kind 684 (plain; ordinary actor reads in all).
 // @retail 0x266640
 void function_266640(long actor_index)
 {
 	long const *actor_reference = &actor_index;
 	s_actor_view *actor = actor_get(actor_index);
 	byte *data = (byte *)actor;
-	long best_node = NONE, strongest_node = NONE;
-	short best_level = 0;
-	real strongest = 0.0f;
 	memset(data + 0x324, 0, 0x10);
-	long next = actor_get(actor_index)->first_prop_index;
-	while (next != NONE)
+	long best_node = NONE, strongest_node = NONE;
+	long best_level = 0;
+	real strongest = 0.0f;
+	long next;
+	for (long index = actor_get(actor_index)->first_prop_index; index != NONE; index = next)
 	{
-		long index = next;
 		s_prop_datum *node = prop_ref_get(index);
 		next = *(long *)((byte *)node + 0x2c);
 		s_type_f95cd3 *view = NULL;
@@ -1644,9 +1708,9 @@ void function_266640(long actor_index)
 				long reference = function_25d810(unit_index, *actor_reference, false);
 				vector3f velocity = unit->velocity;
 				vector3f relative;
-				relative.i = velocity.i - vehicle->velocity.i;
-				relative.j = velocity.j - vehicle->velocity.j;
-				relative.k = velocity.k - vehicle->velocity.k;
+				relative.i = unit->velocity.i - vehicle->velocity.i;
+				relative.j = unit->velocity.j - vehicle->velocity.j;
+				relative.k = unit->velocity.k - vehicle->velocity.k;
 				real approach = 0.0f;
 				if (function_30bf0(&velocity) > 0.0f)
 					approach = velocity.k * direction.k + velocity.j * direction.j + velocity.i * direction.i;

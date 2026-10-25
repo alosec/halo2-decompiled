@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "unknown_123b30.h"
 #include "kill_volumes.h"
+#include "normalize3d.h"
 #include <math.h>
 #include <string.h>
 
@@ -183,6 +184,20 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 	}
 }
 
+// score 660 (was 709): clock register recovered by capped-use coefficient lifetimes; vector argument homes,
+// scalar schedules and counter return still differ; tried initial output native copy 745; normalizer
+// workspace native copy 709; existing displacement scale 750; native target displacement 709; native output
+// scale loops 733; native qr post clamp coefficient 719; native qr guarded coefficients 660; coefficient
+// reference lifetime 739; coefficient direction lifetime 666; coefficient both input lifetimes 743.
+// vector argument homes and retained clock differ in the 0x24 frame.
+// Void return 708; native failure 716; input role names 709;
+// native extra ticks 709; vector memmove 730.
+// score 660 (was 660): vector argument homes still differ; selected velocity pointer 685;
+// activation velocity snapshot 786 (caller lost); contiguous velocity scale 660;
+// fast-byte observations 660; integer remaining-tick test 699.
+// Ordinary counter conversion on guarded-coefficient body 710; indexed activation displacement 667;
+// interleaved displacement/sample loop 696; target-coordinate loop 699; impulse-coordinate loop 661.
+// Frame 0x24 and clock EDI agree; vector argument homes and scalar schedules remain.
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,
@@ -204,7 +219,6 @@ long function_1eb8a0(
 		{
 			if (dt > 0.001f)
 			{
-				real k = s->fast ? 12.f : 8.f;
 				real step = dt;
 				if (s->limit != 0.f && step > s->limit)
 					step = s->limit;
@@ -213,6 +227,7 @@ long function_1eb8a0(
 				real e = 0.001f;
 				if (!(0.001f > t))
 				{
+					real k = s->fast ? 12.f : 8.f;
 					real cap = globals->rate * k;
 					e = t > cap ? cap : t;
 				}
@@ -259,11 +274,11 @@ long function_1eb8a0(
 				else
 					len3 = len2;
 
-				real k2 = s->fast ? 12.f : 8.f;
 				real t2 = len3 * 0.375f;
 				real e2 = 0.001f;
 				if (!(0.001f > t2))
 				{
+					real k2 = s->fast ? 12.f : 8.f;
 					real cap2 = globals->rate * k2;
 					e2 = t2 > cap2 ? cap2 : t2;
 				}
@@ -330,11 +345,11 @@ long function_1eb8a0(
 
 	if (s->active)
 	{
-		real k3 = s->fast ? 12.f : 8.f;
 		real t3 = s->distance * 0.375f;
 		real e3 = 0.001f;
 				if (!(0.001f > t3))
 				{
+					real k3 = s->fast ? 12.f : 8.f;
 					real cap3 = globals->rate * k3;
 					e3 = t3 > cap3 ? cap3 : t3;
 				}
@@ -760,6 +775,41 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
  return next;
 }
 
+// score 88 (was 157): attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// Unsigned attached handle 157; const contacts 157; unsigned selection 157;
+// initialized found 364; forward workspace 482; shared difference 237; const objects 157.
+// On per-use scan: direct count 88; direct table 356; both 356; found first 87 (one-point addition dropped).
+// score 88 (was 88): own-object/node registers and contact-table setup still differ.
+// Native flags/parent/both 88/88/88; attachment/position/input-field references 88/88/88;
+// frame pointer 563; global analysis off 1220.
+// Validated attached handle 88; detached selection lifetime 396; outer found 88;
+// state reference 88; output flag reference 88; post-validation selection 106;
+// selected contact reference 88; direct output test result 104. Attached object/node and scan setup still differ.
+// score 88 (was 88): attached object/node roles and scan setup remain; current-handle bits 88;
+// node-transform input pointer 88; full-width definition bits 90; shared object handle,
+// shared receiver and both lifetimes 88; live input flags 88; native contact count 88.
+// score 78 (was 88): Own-object/node roles, dot scheduling and scan setup remain. Shared component
+// lookup, native owner/table/count/all fields, native component receiver and external contact array each
+// 88f; long found result 411f.
+// own-object/node roles and contact-scan setup still differ.
+// Node byte/data offset and immutable handle 88; shared projection scale 90;
+// scale plus in-place difference 78; nested/best-first scan 88/98; detached dot 88;
+// independent forward output on the scaled flow 437. Input values and grouping retained.
+// score 78 (was 78): own-object/node roles and contact-scan setup still differ.
+// outer projected-up lifetime 78f; scale-output pointer consumed 78f.
+// both scale lifetimes 78f; shared cross on scale flow 78f.
+// signed-byte found 78f; signed-byte disabled 78f.
+// both byte results 78f; scale output plus byte found 78f.
+// owner/node roles and late contact setup remain; per-use/external-reference owner
+// fields 376/385; conditional/guarded existing counter results 437/437;
+// per-use/reference owner plus conditional 453/450; plus guarded 453/450.
+// own-object/node registers and contact scan setup still differ.
+// Own handle bits 78; attached counter field reference 78; selected-index success 398;
+// orientation test result 78; detached shared difference 166; detached shared cross 78;
+// both detached helpers 78; contact height field reference 78. Opening body retained.
+// score 78 (was 78): owner/node registers and contact-table setup remain.
+// Early best 78; best before selected 88; scalar contact copy 300; library copies 78;
+// third dot inputs commuted 78; selected guard first 83; byte counter return 415; ordinary inline counter 78.
 // @retail 0x1ed4a0
 void function_1ed4a0(s_state_c570 *state, dword *output, byte const *input)
 {
@@ -785,9 +835,9 @@ void function_1ed4a0(s_state_c570 *state, dword *output, byte const *input)
    if (state->field_0c)
    {
     real projection = dot3f(&matrix.forward, &matrix.up);
-    matrix.forward.i -= matrix.up.i * projection;
-    matrix.forward.j -= matrix.up.j * projection;
-    matrix.forward.k -= matrix.up.k * projection;
+    vector3f projected_up;
+    vector3f_scale(&matrix.up, projection, &projected_up);
+    vector3d_from_points3d((point3f *)&projected_up, (point3f *)&matrix.forward, &matrix.forward);
     if (function_30bf0(&matrix.up) == 0.0f) matrix.up = *g_4687b0;
     if (function_30bf0(&matrix.forward) != 0.0f)
     {
@@ -811,8 +861,11 @@ attached_done:
    real best = -FLT_MAX;
    for (long i = 0; i < count; i++)
    {
-    real z = contacts[i].direction.k;
-    if (z > 0.70710677f && z > best) { selected = i; best = z; }
+    if (contacts[i].direction.k > 0.70710677f && contacts[i].direction.k > best)
+    {
+     selected = i;
+     best = contacts[i].direction.k;
+    }
    }
    bool found;
    s_movement_contact_1ed4a0 *contact;

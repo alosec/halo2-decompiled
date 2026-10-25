@@ -212,8 +212,7 @@ PRIVATE inline bool shape_sphere_point(s_sphere const *sphere, point3f const *po
 		}
 		else
 		{
-			plane->i = 0.f;
-			plane->j = 0.f;
+			plane->i = plane->j = 0.f;
 			plane->k = 1.f;
 		}
 		plane->d = dot3f((vector3f const *)&sphere->center, &plane->n) + sphere->radius;
@@ -233,9 +232,19 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 	out->unknown0e = source->unknown0e;
 }
 
-// score 61 (was 61): the first float of the pair is loaded into XMM2 here and
+// score 57 (was 61): the sphere test's normal: retail multiplies the x and z
+// differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
+// ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
+// The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z
+// first 57, x first 61); depth before plane->d 61-65; distance-squared order i,k,j 61,
+// k,i,j 59; the scale helper's statement orders 61-158, operand orders 57;
+// scale declared first 61; the difference vector by fields 61; in-place scale + copy 397.
+// the first float of the pair is loaded into XMM2 here and
 // into XMM1 in retail, so the registers of the following subtractions are
 // swapped as well.
+// score 61 (was 61): separate normal workspace 397; default normal workspace 397;
+// displacement in output normal 181; radius-square local 61; component-square lifetimes 61;
+// immutable distance 61; sphere reference 61; point reference 61. Sphere XMM homes still differ.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -450,6 +459,14 @@ bool function_246360(
 
 // score 53 (was 53): the multiplier is kept in XMM1 and multiplied into XMM0; retail loads the
 // multiplier into XMM0 and multiplies by XMM1.
+// score 53 (was 53): plane object reference 210; origin reference 57; direction reference 53;
+// projected-start initializer 53; projected-direction initializer 53; paired initializers 55;
+// vertex-end traversal 66; quotient update 53. Projection operands and edge allocation still differ.
+// operand text order of the six products is canonicalised (each flip 53);
+// the negated distance computed at entry 164; both projected points through one inline
+// point-plus-scaled-normal helper 83, though it gives retail's three plane-first loads for the
+// start point and the last two direction products (only the first direction product and the
+// edge loop's registers still differ).
 // @retail 0x2466b0
 bool function_2466b0(
 	point3f const *start,
@@ -701,31 +718,26 @@ struct s_frame_2477b0
 };
 
 PRIVATE __forceinline vector3f *function_2477b1(
-	vector3f const *arg_0, matrix3x3 const *arg_1, vector3f *arg_2)
+	matrix3x3 const *matrix, vector3f const *vector, vector3f *out)
 {
-	vector3f local_0;
-	if (arg_0 == arg_2)
+	vector3f copy;
+	if (vector == out)
 	{
-		local_0 = *arg_0;
-		arg_0 = &local_0;
+		copy = *vector;
+		vector = &copy;
 	}
-	real local_1 = arg_1->left.i * arg_0->j;
-	local_1 += arg_1->up.i * arg_0->k;
-	local_1 += arg_1->forward.i * arg_0->i;
-	arg_2->i = local_1;
-	real local_2 = arg_1->left.j * arg_0->j;
-	local_2 += arg_1->forward.j * arg_0->i;
-	local_2 += arg_1->up.j * arg_0->k;
-	arg_2->j = local_2;
-	real local_3 = arg_1->left.k * arg_0->j;
-	local_3 += arg_1->forward.k * arg_0->i;
-	local_3 += arg_1->up.k * arg_0->k;
-	arg_2->k = local_3;
-	return arg_2;
+	out->i = matrix->left.i * vector->j + matrix->up.i * vector->k + matrix->forward.i * vector->i;
+	real j = matrix->left.j * vector->j;
+	j += matrix->forward.j * vector->i;
+	j += matrix->up.j * vector->k;
+	out->j = j;
+	real k = matrix->left.k * vector->j;
+	k += matrix->forward.k * vector->i;
+	k += matrix->up.k * vector->k;
+	out->k = k;
+	return out;
 }
 
-// score 27 (was 27): ours is twelve bytes longer and the float is added into the accumulator with
-// addss; retail adds the value from the record into the accumulator.
 // @retail 0x2477b0
 void function_2477b0(
 	s_object_2470e0 *object,
@@ -734,23 +746,21 @@ void function_2477b0(
 {
 	if (source)
 	{
+		real const *angles = function_2470f0(object);
 		frame->rotation.forward = source->forward;
 		frame->rotation.left = source->left;
 		frame->rotation.up = source->up;
 		frame->position = source->position;
 		vector3f offset;
-		function_2477b1(&object->vector9c, &frame->rotation, &offset);
-		if (!(fabs(object->unknownac) < k_real_epsilon) || !(fabs(object->unknowna8) < k_real_epsilon))
+		function_2477b1(&frame->rotation, function_2470e0(object), &offset);
+		if (!(fabs(angles[1]) < k_real_epsilon) || !(fabs(angles[0]) < k_real_epsilon))
 		{
 			matrix3x3 rotation;
-			function_142da0(object->unknowna8, object->unknownac, 0.f, &rotation);
+			function_142da0(angles[0], angles[1], 0.f, &rotation);
 			function_142eb0(&frame->rotation, &rotation, &frame->rotation);
 		}
-		real local_0 = offset.i + frame->position.x;
-		real local_1 = offset.j + frame->position.y;
-		real local_2 = offset.k + frame->position.z;
-		frame->position.x = local_0;
-		frame->position.y = local_1;
-		frame->position.z = local_2;
+		frame->position.x += offset.i;
+		frame->position.y += offset.j;
+		frame->position.z += offset.k;
 	}
 }

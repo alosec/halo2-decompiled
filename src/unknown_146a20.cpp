@@ -61,6 +61,13 @@ bool g_47f05b;
 #ifndef H2_NATIVE_PORT
 // score 34 (was 34): the vtable slot at [eax] is never filled in, so the two stores that follow
 // start one field too late; retail stores the vtable there first.
+// Retail keeps the abstract allocator's vtable store only here (0x146b80, 0x146e30 and 0x22c3e0
+// drop it), as if something read memory between the two vtable stores; that also keeps 1 in edx.
+// Without `block` (g_479888 read at both placements) the reload sits on the constructed arm as in
+// retail but the 1 becomes immediates: 38. Tried: the pool placed at `block + 0x15040` 40; the
+// buffer argument through g_479888 38; `(c_havok_fixed_memory *)g_479888 + 1` 38; a typed
+// `fixed` pointer local with `fixed + 1` 34; `block` read after the three global stores 34; the
+// fixed buffer in a local before storing g_479894 38; `block` reassigned from g_479888 for the pool 34.
 // @retail 0x146a20
 void function_146a20(void)
 {
@@ -257,6 +264,32 @@ void function_146de0(void)
 	}
 }
 
+// score 143 (was 143): timestamp high-word home and update expansion still differ.
+// Global analysis off 120 (0x50 frame); frame pointer 161; size/speed 281/143;
+// local analysis with frame/size 120/158; frame with size/speed 281/161; policies restored.
+// frame 0x18 versus 0x14 and shared update expansion remain.
+// Constructed allocator result 164; conditional usable capacity 140/frame 0x14 (three-point gain dropped);
+// conditional padding 141; block/padding outer scopes 143; current block-first homes 143;
+// construction scope 143; zero-first padding 143 at 377 bytes.
+// score 139 (was 143): frame 0x14 now agrees; update expansion and saved registers differ.
+// Per-attempt padding after/before publication 149/149; consumed padding 139/151;
+// guarded consumption 145; rounded padding/consumption 163/162; bounded search 149.
+// score 139 (was 139): selective update expansion and request/timestamp homes remain.
+// Update defining-source inline/force-inline declarations 139/139; separate request/usable capacity 139;
+// per-attempt request 139; split capacity plus inline/force-inline update 139/139; request plus inline 139; native handle plus split capacity 139.
+// j93: Frame 0x18/0x14 and update expansion remain; word padding 140 gains only three and is dropped.
+// byte alignment padding 150; word alignment padding 140; allocation success result 143; explicit placement
+// guard 143; post retry capacity 143.
+// score 129 (was 139): capacity/timestamp homes and update expansion remain.
+// Constructor mask 139; repaired native construction result with/without mask 164/164;
+// entry capacity plus mask 141; native buffer/address/padding-scope plus mask 139/139/139;
+// actual masked-capacity local 138 (one-point gain dropped).
+// capacity/timestamp homes and selective update expansion remain.
+// Final rounded/low-bit/conditional/word padding 149/152/143/145; signed-word
+// per-attempt padding 129 plain kept; capacity/allocation/joint home names 139/139/139.
+// Capacity/timestamp homes and update expansion remain; wrapped/full boundary
+// distances 164/149; direct consumption 164; counted distance 153; remainder update 140; byte padding
+// 144; unsigned capacity/native allocation 139/139.
 // @retail 0x146e30
 c_havok_abstract_allocator *function_146e30(void)
 {
@@ -264,19 +297,20 @@ c_havok_abstract_allocator *function_146e30(void)
 	{
 		long size = 0x800000;
 		byte *block;
-		long adjustment;
+		short adjustment;
 
 		do
 		{
 			block = (byte *)function_80e14(size, 0, 0, 0, 90, 1.0f);
 			g_47988c = (long)block;
+			adjustment = (dword)block & 0xf;
+			if (adjustment)
+				adjustment = 0x10 - adjustment;
+			size -= adjustment;
 		}
 		while (!block && ((size >>= 1) >= 0x100000));
 
-		adjustment = (dword)block & 0xf;
-		if (adjustment)
-			adjustment = 0x10 - adjustment;
-		g_4798a0 = new ((byte *)g_479888 + 0x105440) c_havok_fixed_memory(block, size - adjustment);
+		g_4798a0 = new ((byte *)g_479888 + 0x105440) c_havok_fixed_memory(block, size);
 		function_1c4590(1);
 	}
 	return g_4798a0;

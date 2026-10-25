@@ -472,6 +472,15 @@ real function_3eb70(void);
 typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_particle_value_cache *, point3f const *, vector3f const *, real, color4f const *, void *);
 
 
+// score 56 (was 56): Offset initialization, scalar initializer order, property reloads and rotation scheduling differ.
+// Combined entry decisions 53; entry decisions with shared cache 53; scale/alpha/both result locals 119/56/119;
+// saved successor 217; particle cache with scale result 119; combined entry/property/cache 116.
+// score 56 (was 56): entry branch, property reload pairs and rotation scheduling differ;
+// forward/left/up/all axis receivers 118/55/55/118; forward/left/up/first-pair values 182/167/181/289;
+// left/up receivers with empty-list return and scale-first initialization 52/52, but the return only repeats the loop test (reverted in review).
+// Captured position/late output 353; captured velocity/late output 357; both 437;
+// translation component loop 56; inner cache member 56; derived mask at use 198;
+// scale initialized at property selection 273; translation value 160.
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -697,6 +706,8 @@ s_effect_particle_system_definition *s_particle_system_datum::function_1751d0()
 
 // score 21 (was 21): the or-ed mask is written into the local after the call arguments are pushed
 // here and before them in retail.
+// The final callee takes its flag on the stack, not in AL; inline+noinline, noinline and inline 21;
+// force-inline 21 with caller regressions; late values, flag, location and successor-reference forms 21.
 // @retail 0x175270
 void function_175270(s_particle_system_datum *particle_system, s_particle_system_spawn *spawn, transform4x3f const *matrix, bool field_b4)
 {
@@ -734,23 +745,36 @@ void function_175270(s_particle_system_datum *particle_system, s_particle_system
 	spawn->location_index = particle_location->next_index;
 }
 
+// score 41 (was 29): each path now stores the colour itself, as retail does, which gives
+// retail's convention (tinted in AL, colours in ECX/EDI, the system in ESI, multiplied on
+// the stack; callers 0x178c80 164 -> 131, 0x174a30 329 -> 338). The score counts the shift
+// from one missing instruction: retail lays out the halving path first but ends it at the
+// real epilogue (the untinted exit jumps there short) and copies `mov ecx, eax / push ecx`
+// for pack's argument; ours keeps the real epilogue after the color_a store (near je) and
+// pushes EAX. Writing the multiplied paths first gives retail's halving block exactly but
+// lays them out first (45). Tried: one store after a shared `packed` local 29/63 (system on
+// the stack); halving through unpack's returned pointer 47; a scale helper 41; shared locals
+// 41; early or explicit returns in either branch 41/43; `multiplied == true` 47.
+// the single store leaves the system pointer on the stack and
+// multiplied in bl; retail has three stores, system in esi, multiplied on the stack.
+// Per-branch stores give retail's registers but the untinted exit still jumps to
+// the last epilogue and the half path pushes eax (retail copies it to ecx) 41;
+// multiplied tested first 45; early returns 42; returned color pointers 41, 46.
 // @retail 0x175a80
 void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_system_datum *particle_system, bool multiplied)
 {
-	dword packed = color_a;
 	if (!multiplied)
 	{
 		if (tinted)
 		{
 			color3f color;
+			color3f *halved = unpack_color3f(color_b, &color);
 
-			unpack_color3f(color_b, &color);
 			color.red *= 0.5f;
 			color.green *= 0.5f;
 			color.blue *= 0.5f;
-			packed = pack_color3f(&color);
+			particle_system->color = pack_color3f(halved);
 		}
-		else return;
 	}
 	else if (tinted)
 	{
@@ -762,9 +786,12 @@ void function_175a80(bool tinted, dword color_a, dword color_b, s_particle_syste
 		color.red *= other.red;
 		color.green *= other.green;
 		color.blue *= other.blue;
-		packed = pack_color3f(&color);
+		particle_system->color = pack_color3f(&color);
 	}
-	particle_system->color = packed;
+	else
+	{
+		particle_system->color = color_a;
+	}
 }
 
 extern vector3f *g_4687bc;
@@ -801,18 +828,24 @@ public:
 	virtual long const *names() = 0;
 };
 
+// score 355 (was 355): frame agrees; byte flag clear, child carriers and selective inlining differ.
+// Ordinary pooled accesses in all trials: reversed-component loops 394; normalization loop 394;
+// perpendicular call 394; inline depth one 394, zero 517.
+// score 329 (was 355): frame 0x64 versus 0x60; flag clear and selective calls differ.
+// Ordinary pooled accesses: spawn initializer 394; early matrix values 393;
+// child tag scalar 394; long result 329; dword flags 401.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {
-	(void)&dt;
+	long result = false;
 	word flags = *((word *)particle_system + 6);
 	if (flags & 0x100)
 		flags |= 0x200;
 	else
 		flags &= ~0x200;
-	*((volatile word *)particle_system + 6) = flags;
+	*((word *)particle_system + 6) = flags;
 	particle_system->flag8 = false;
-	flags = *((volatile word *)particle_system + 6);
+	flags = *((word *)particle_system + 6);
 	if (!(flags & 0x20) &&
 		!(g_4c56c0[particle_system->location.cluster_index >> 5] &
 		(1 << (particle_system->location.cluster_index & 31))))
@@ -925,10 +958,10 @@ bool function_174a30(s_particle_system_datum *particle_system, real dt)
 	}
 	particle_system->flag0 = false;
 	if (function_1753a0(particle_system) > 0 && TEST_FIELD_BIT(particle_system->flag3))
-		return true;
-	if (particle_system->flag0 || particle_system->first_child_index != NONE || particle_system->flag9)
-		return true;
-	return false;
+		result = true;
+	else if (particle_system->flag0 || particle_system->first_child_index != NONE || particle_system->flag9)
+		result = true;
+	return result;
 }
 
 
@@ -981,6 +1014,11 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
     result->k = a->i * b->j - a->j * b->i;
 }
 
+// score 213 (was 213): frame and length agree; early EDI and tag carriers differ. Native draw 354; native
+// membership 213; translation component loop 312; bias component loop 222; delta component loop 226.
+// native request initialization 211; immutable render inputs 213; native definition bit five 317; native
+// definition flag word 317; native location fields 211; frame pointer 402; global optimization 434; size
+// preference 646; child constant bit stores 220.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {
@@ -1096,7 +1134,17 @@ void __stdcall function_174420(long system_index, bool view_pass, bool camera_re
 long function_155760(long index);
 bool function_17afd0(long effect_index, long value);
 
+// score 106 (was 106): frame 0x14 agrees; owner/NONE coalescing and Boolean homes differ.
+// Next-slot assignments 107; word absolute slot 158; separate scan result 107;
+// shared datum conversion 199; long attachment 120; short same-view 145; byte draw 107;
+// long camera-relative 144 (fast preview 107, full 106). Original body retained.
+// Round 109: unavailable predicate 148; other-view predicate 146; detached predicate 108;
+// fixed-camera result 148; external system reference 107; nullable effect view 149;
+// const definition 107; packed effect handle 107 (fast preview 107, full 106).
 // @retail 0x174220
+// score 106 (was 106): retail keeps the NONE sentinel and the owner in ebp and the
+// availability flag in bl; ours keeps the sentinel in ebx, the owner in esi and the flag
+// in al, and it tests the definition's bit 9 as a byte instead of a shifted word.
 void __stdcall function_174220(bool view_pass)
 {
     s_record_pool *systems = g_510c74;

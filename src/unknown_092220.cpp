@@ -32,9 +32,6 @@ static inline s_type_9df9da *online_task_try_and_get(long task_index)
 static __forceinline long function_925c2();
 
 /* starts reading the given statistics */
-// score 46 (was 46): the prologue differs: retail loads the count into ebx and the record
-// pointer into esi, ours pushes esi and edi first and loads the count
-// later.
 // @retail 0x92220
 long online_stats_read(word count, XONLINE_STAT_SPEC *specs)
 {
@@ -55,14 +52,16 @@ long online_stats_read(word count, XONLINE_STAT_SPEC *specs)
 				task->flags = 1;
 				task->type = 0x12;
 				task->controller_index = NONE;
+				result = task_index;
 			}
 			else
 			{
 				function_6b640(task_index);
-				return NONE;
+				result = NONE;
 			}
 		}
-		result = task_index;
+		else
+			result = task_index;
 	}
 done:
 	return result;

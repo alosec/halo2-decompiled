@@ -1005,6 +1005,32 @@ struct s_game_engine_globals_connections_view
 };
 
 /* builds a player's row of the scoreboard at a position */
+// score 184 (was 184): deferred icon tail and time/connection register schedule;
+// default-zero byte icon 230, native integer 184; parsed-name scope 184;
+// separate connection rectangle 206; both name buffers scoped 184.
+// score 184 (was 184): deferred icon tail and time/connection coordinate registers remain;
+// whole-row reference 184; column reference 184.
+// input-color reference 184; color snapshot 309.
+// channel samples 323; direct right edges 306.
+// trailing right edges 297; row reference with trailing edges 297.
+// Test-derived glyph 182 fast/plain (two-point gain rejected); separately gated query 204;
+// query Boolean 205; hidden-first with test/query values 229/249;
+// column observations 184; columns with test/query values 182/204.
+// Direct icon zero default 192; initializer zero default 208; separate place/icon/name
+// rectangles 184/229/222; place and icon rectangles 184; scoped numeric buffers 225;
+// scoped numeric buffers plus direct icon default 188 (all plain).
+// score 184 (was 184): deferred icon tail and time/connection registers remain;
+// arithmetic fallback result/direct publication 216/210; actual icon/score/time/connection
+// receivers 214/184/186/318; icon receiver with arithmetic fallback 255; all receivers 317.
+// score 184 (was 184): icon tail and time/connection register schedule still differ.
+// entry icon zero 261f; outer icon scope 184f.
+// zero before icon init 205f; zero before place format 248f.
+// signed word result 184f; unsigned native result 184f.
+// signed result before icon init 205f; native result before icon init 205f.
+// deferred icon tail and time/connection homes still differ.
+// Positive place visibility 318; horizontal/vertical/both live origin fields 184/184/184;
+// completed color alpha 184; visibility with origins 318; horizontal/both origins
+// with completed color alpha 184/184. Widget-root control equals the full baseline.
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,
@@ -1203,6 +1229,13 @@ PRIVATE inline long score_string_list_1608e0()
 	return result;
 }
 
+// score 810 (was 817): player register and scalar homes; scalar names 817;
+// header/name reuse 818; header/decoder reuse 818; both short team walks 811;
+// short player walk 835; short outer team walk 818; short rank search 810.
+// explicit scroll clamp 810; title workspace scope 810; bounds-field arithmetic 810;
+// global optimization off 2237; size optimization 1348.
+// viewer pointer name 810; viewer lookup at first scroll use 848; short displayed-row number 811;
+// short row rank 810; direct team activity predicate 826.
 // @retail 0x1608e0
 void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, real alpha)
 {
@@ -1384,7 +1417,7 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 		char team = *(char *)(player + 0xc0);
 		if (teams && team != NONE)
 		{
-			for (long team_row = 0; team_row < display.team_count; ++team_row)
+			for (short team_row = 0; team_row < display.team_count; ++team_row)
 				if (team == display.teams[team_row])
 				{
 					place = display.team_ranks[team_row] / 2 + 1;

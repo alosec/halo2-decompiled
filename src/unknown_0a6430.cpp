@@ -20,7 +20,7 @@ PRIVATE byte *update_object_0a6430(long index)
 }
 
 // @retail 0xa6430
-void function_a6430(long mask, long object_index, long state_address)
+void function_a6430(c_object_type_definition const *definition, long mask, long object_index, long state_address)
 {
 	byte *state = (byte *)state_address;
 	if ((mask & 1) && state[0x4d])

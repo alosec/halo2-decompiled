@@ -718,6 +718,20 @@ union s_60403
  long field_00;
 };
 
+// score 176 (was 214): current/previous registers and map-loop homes differ;
+// retained-player word index 348; emitted-player word index 248; both 359;
+// explicit append indices 324; advancing retained bit 411. Original kept.
+// nested map-index names 214; shared member emission 621; nested player emission 214;
+// retained-player do 214; emitted-player do 214. Frame 0x94 still agrees.
+// mask lifetime after mapping 176; byte discriminator 231; absent-prior continue 214;
+// new-member continue 214; identity predicate before map 389.
+// Current/previous registers and map/discriminator homes remain;
+// mapping stores reversed 178; identity grid transposed 405; map clears reversed 178;
+// transposed grid and reversed stores 405; equal discriminator arm first 176.
+// Mapping equality reversed 178; member equality reversed 176; player equalities reversed 184;
+// previous count across mapping/removal 248; shared emitted-player bit 176. Frame 0x94 agrees.
+// Guarded prior-map clear 187; formal role names 176;
+// old/new map aggregate initializers 524/524; positive payload branch first 193.
 // @retail 0x60400
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update)
 {
@@ -750,6 +764,7 @@ void __stdcall function_60400(c_class_58d20 *session, const byte *current, const
    }
   }
  }
+ dword retained = 0;
  for (long i = 0; i < *(const long *)(current + 8); i++)
  {
   const byte *member = current + 0xc + i * 0x10c;
@@ -792,7 +807,6 @@ void __stdcall function_60400(c_class_58d20 *session, const byte *current, const
    }
   }
  }
- dword retained = 0;
  if (previous)
  {
   for (long i = 0; i < 16; i++)

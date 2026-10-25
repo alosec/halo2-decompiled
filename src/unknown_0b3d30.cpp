@@ -9,7 +9,8 @@
 #include <xonline.h>
 #include <wchar.h>
 
-byte g_546a8c[1];
+struct s_http_connection_ab;
+extern s_http_connection_ab g_546a8c;
 
 bool __stdcall function_b5e40(void *block);
 void online_result_registration_clear(void);
@@ -45,7 +46,7 @@ void function_b3db0(void)
 {
 	if (g_547610)
 	{
-		function_b5e40(g_546a8c);
+		function_b5e40(&g_546a8c);
 		g_547610 = 0;
 		g_547614 = 0;
 		g_547618 = 0;
@@ -158,11 +159,16 @@ struct s_http_connection_ab
     long response_length;
     long attempt_count;
     long state;
+    s_http_connection_ab();
     bool connect(long address, word port, char const *path, bool flag);
     bool receive(bool *complete);
     bool send();
 };
 
+/* the upload connection. Retail's dynamic initializer for it, 0x376bf0, constructs it and then
+   clears the 0x1c bytes after it (0x54760c-0x547627, g_upload_storage from 0x547610 on), so
+   in retail those are probably fields of one larger object */
+s_http_connection_ab g_546a8c;
 
 word g_546a80;
 char const *g_4672d8 = "/upload_server/stats.ashx";
@@ -176,7 +182,7 @@ bool function_b40b0()
     IN_ADDR address;
     if (online_result_get_address(index, &address))
     {
-        if (((s_http_connection_ab *)g_546a8c)->connect(address.s_addr, g_546a80, g_4672d8, false))
+        if (g_546a8c.connect(address.s_addr, g_546a80, g_4672d8, false))
             result = true;
     }
     return result;
@@ -187,7 +193,7 @@ bool function_b5e90(s_http_connection_ab *connection, bool *complete);
 // @retail 0xb3fc0
 void function_b3fc0()
 {
-    if (!((s_http_connection_ab *)g_546a8c)->state)
+    if (!g_546a8c.state)
     {
         if (!g_510580 || !function_b40b0())
             online_result_upload_record_failure();
@@ -195,7 +201,7 @@ void function_b3fc0()
     else
     {
         bool complete = false;
-        if (!function_b5e90((s_http_connection_ab *)g_546a8c, &complete) || GetTickCount() >= g_547624)
+        if (!function_b5e90(&g_546a8c, &complete) || GetTickCount() >= g_547624)
             online_result_upload_record_failure();
         else if (complete)
             function_b4020();
@@ -221,7 +227,7 @@ void function_b3de0()
             g_510584 = NONE;
         }
         g_510580 = false;
-        function_b5e40(g_546a8c);
+        function_b5e40(&g_546a8c);
         g_547620 = 0;
     }
     else if (connected && g_510584 != NONE)
@@ -348,7 +354,7 @@ done:
 }
 
 // @retail 0xb4670
-long function_b4670(long kind, long controller, struct _XUID owner, wchar_t const *filename, char const *directory, long *task_out)
+long function_b4670(long controller, long kind, struct _XUID owner, wchar_t const *filename, char const *directory, long *task_out)
 {
     (void)&controller;
     *task_out = NONE;

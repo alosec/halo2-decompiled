@@ -85,7 +85,7 @@ void function_1a8fa0(long actor_index, real distance, bool *near_point, bool *ne
 				segment_vector.j = actor->unknown5ec.j * 3.0f;
 				segment_vector.k = actor->unknown5ec.k * 3.0f;
 				reach = actor->unknown36c;
-				if (function_11e130(start, &line, position, &segment_vector) < reach * reach)
+				if (function_11e130(position, &segment_vector, start, &line) < reach * reach)
 					segment = true;
 				else
 					segment = false;
@@ -471,6 +471,11 @@ s_1a8a10 g_4453c0[] =
 // score 17 (was 17): retail subtracts the local at [esi+0x294] inside the sum
 // and keeps the two partial products in xmm2 and xmm3; ours subtracts after
 // the products and multiplies the terms in the other order.
+// Also tried: the second sum computed first 31; the facing read into two scalar
+// locals 33; the facing read in place in both sums 93; the four stores in the
+// order [3], [1], [2], [0] 21; the pragma replaced by a noinline declaration of
+// 0x1f57a0 here 214 (more gets inlined). Retail reads j again after the y store
+// of the rotated point, as if that store could alias the actor.
 // @retail 0x1a8a10
 bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, real arg_4)
 {

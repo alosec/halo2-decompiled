@@ -72,9 +72,12 @@ void function_1ea770(byte code, long player_index, s_statborg *statistics, long 
 	*(dword *)g_4e9ae8 |= 0x20;
 }
 
-// score 115 (was 115): the byte of the global is loaded into DL here and into
-// AL in retail, and the -1 is held in EAX instead of ECX; ours is eighteen
-// bytes shorter than retail.
+// score 107 (was 115): retail reloads g_510ca0 at each test (ours keeps it in
+// DL) and holds the old maximum's -1 in ECX with a second -1 in EAX for the
+// inner index test; ours is ten bytes shorter than retail. The two maximum
+// reads as `if (g_510ca0) x = i != NONE ? value : NONE` gave retail's nested
+// shape (115 -> 107). Tried: the old maximum through a call to 0x196960 (167,
+// not inlined), the team maximum as one nested ternary (110).
 // @retail 0x1ea5b0
 void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, byte code)
 {
@@ -86,7 +89,7 @@ void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, 
 	function_196e60(index, 0, kind, 1);
 	if ((code & 0xc0) == 0x40) function_196e60(index, 6, kind, 1);
 	long old_maximum = NONE;
-	if (g_510ca0 && index != NONE) old_maximum = g_511bf4.groups[index][12].value;
+	if (g_510ca0) old_maximum = index != NONE ? g_511bf4.groups[index][12].value : NONE;
 	byte *row = (byte *)statistics + index * 0x1c;
 	short consecutive = ++*(short *)(row + 0x16);
 	if ((short)old_maximum < consecutive && g_510ca0 && !g_510ca1 && index != NONE)
@@ -106,7 +109,8 @@ void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, 
 	if (code && player->team != NONE)
 	{
 		long team = player->team;
-		long team_maximum = g_510ca0 && team != NONE ? g_511bf4.counters[team][12].value : NONE;
+		long team_maximum = NONE;
+		if (g_510ca0) team_maximum = team != NONE ? g_511bf4.counters[team][12].value : NONE;
 		if ((short)team_maximum < *(short *)(row + 0x16)) function_1968b0(NONE, team, 12, *(short *)(row + 0x16));
 	}
 	if (*(long *)(row + 0x1c) >= threshold) ++*(short *)(row + 0x18);
@@ -124,6 +128,14 @@ void function_15ce70(long attacker_index, long victim_index, bool betrayal, byte
 void function_196dd0(long player_index, long counter, long arg_1f407d_2, long delta);
 void function_1ea880(long first_player, long player_index, s_object_values *table);
 
+// score 421 (was 421): frame 0x48 versus 0x50; victim/result homes and rounding calls differ.
+// Assist cursor 464; damage snapshot 466; early hostility 463; hostile arm first 421; size optimization 713.
+// j91: frame 0x48 versus 0x50 and victim/selection/count homes remain; isolated early killer recovers 0x50 at 454 but regresses.
+// early killer result 454; early assist threshold 440; early attribution results 463; shared tick frequency
+// 421; attribution shared frequency 460
+// Frame pointer 530; long selection index 451; short assist counts 421 (1549 bytes);
+// long consideration result 426; long hostility result 430.
+// score 421 (was 421): Frame 0x48/0x50, result homes and rounding calls remain; typed history 421; history base before team query 466; named rounded windows 421; byte consideration 421; short award counters 433.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {
@@ -262,6 +274,19 @@ void __stdcall function_1e9fa0(void *engine_globals, long object_index, long rep
 // score 13 (was 13): retail reads the field argument into EDX before the
 // prologue pushes and adds it there; here the load happens after the pushes
 // and goes into ECX, which forces the counter to be moved out first.
+// The first engine test also takes EAX/ECX where retail takes ECX/EAX.
+// Tried: a plain field read 85 (folded into the add); an inline entry
+// accessor 85; game_engine_get() and function_x340af0() for the tests 13;
+// local names 13; an old-value local 16 (engine test then EDX/EAX); a word
+// or dword index 44-61 (convention changes). Each of these folds the field
+// read into the add (85, one row short): a plain short delta, a volatile
+// field parameter, nested row structs, values[0][field + index * 14] and
+// other flat spellings, delta + old, the indirection without volatile; the
+// array re-indexed at each use (also with inline get/set helpers) 80 (the
+// delta read is then the one hoisted into EDX). The clamp as one ternary or
+// into a short local 13 (the engine test swap stays). The arguments arrive
+// as in retail (player in EAX, counter in ECX, four pushes) and 0x1ea5b0's
+// call already matches, so that caller does not decide the load order.
 // @retail 0x1e9ce0
 void function_1e9ce0(long player_index, long counter, s_statborg *statistics,
 	long field, long volatile delta, bool by_team)

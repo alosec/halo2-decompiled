@@ -329,9 +329,18 @@ public:
 // its contacts are collected at that step's time, and the search moves on a
 // step while one is too close, or back a step when every contact is clear of
 // the earlier step's time too; the contacts then go to the agent's handler
-// score 169 (was 184): retail's frame is 0x20 bytes and it keeps the pair
+// score 160 (was 184): retail's frame is 0x20 bytes and it keeps the pair
 // count in a stack slot; ours holds the count in ebp, so the frame is 0x1c
-// and one more register is pushed.
+// and one more register is pushed. In-place step-time update 160 (from 169);
+// building the input object first alone 169, with that update 160; combined lifetimes
+// 180, as did float scopes, local names, a stored kind result, a contact
+// base, reversed comparison, direct step reads and a reference constructor.
+// Fixed end pointer 200; ordered end pointer 200; late end pointer 181;
+// pair-scoped input 160; end pointer plus input 200; leading pair step 176;
+// output pointer 160; late end plus output pointer 181.
+// Positive remaining count 192, after the constructor call 174; increasing ordinal
+// 192, with later count 174; indexed pointer/reference 175; input-object
+// reference 174; shared entry timer 189. Original body retained.
 // @retail 0x317950
 void narrow_phase_317c00::function_317950(void const *input)
 {
@@ -382,7 +391,8 @@ void narrow_phase_317c00::function_317950(void const *input)
 					else
 					{
 						pair->result++;
-						function_316460((input_316460 *)input, pair, &output, step_time + world->step_length);
+						step_time += world->step_length;
+						function_316460((input_316460 *)input, pair, &output, step_time);
 					}
 				}
 				else

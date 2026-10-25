@@ -117,10 +117,9 @@ struct vector_2fb150
 
 	vector_2fb150() {}
 	vector_2fb150(vector_2fb150 const &other) : value(other.value) {}
-	vector_2fb150 &operator=(vector_2fb150 const &other)
+	void operator=(vector_2fb150 const &other)
 	{
 		value = other.value;
-		return *this;
 	}
 };
 
@@ -229,6 +228,14 @@ __forceinline answer_2fb150 repeats_plane_2fb150(contact_2fb150 const *other, co
 // the triangles' contacts are gathered, sorted closest first, those that
 // only repeat a closer one's plane dropped, and the rest passed to the
 // collector with ids from the contact manager
+// score 330 (was 344): receiver register, body homes and plane branch still differ.
+// Object/entry/body/output/selection references 344; const list view 344; settings pointer 452;
+// one-exit answer 470; swap pointers 344; void vector assignment 330; direct plane tests 368;
+// shared contact type 345, with void assignment 332; parent-first and swap assignment 330.
+// On 330: body constructor 330; agent reads at use 427; shape reference
+// 330; reused selection pointer 423; declaration swap 330; tolerance
+// reference 369; vector-input references 330; implicit vector copy 496.
+// Equality operands exchanged 330, with agent reads at use 427.
 // @retail 0x2fb150
 void class_2fb150::function_2fb150(void const *a_, void const *b_, void const *input_, void *collector)
 {

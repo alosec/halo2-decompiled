@@ -338,6 +338,18 @@ void function_13ad48(long user_index, byte const *selectors, real *values, byte 
 
 bool function_22acb4(long player_index);
 
+// score 232 (was 232): extra second-mask slot and retained constant registers differ;
+// third/second/fourth phases 265; fourth/second/third 261; third/fourth/second 246;
+// shared item guard 241; descending selection cases 232. Original body retained.
+// score 232 (was 232): extra second-mask slot/constant registers remain;
+// set-only all masks 529; first 381; second 293; third 262; fourth 294.
+// score 196 (was 232): extra second-mask slot and constant homes remain; second enum group kept.
+// Second/fourth/third phases 287; fourth/third/second 297; first enum group 238;
+// complete type-bit selection 227; second enum group 196; combined selections 201.
+// score 190 (was 196): second-mask spill and constant homes remain.
+// Round 303: both enum groups 216; unified item predicate 256; multiplayer at use 257;
+// shifted source flags 281; fourth enum selection 284; one-case bit first 190;
+// one total enum-bit update 291. Final stores and query argument preserved.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)
@@ -353,14 +365,17 @@ void function_13a050(byte const *status, long user_index, long type, s_13ad48_it
 	}
 	word first = 1;
 #define SET_CONDITION(bits, mask, condition) if (condition) { bits |= mask; } else { bits &= ~mask; }
+	SET_CONDITION(first, 8, *(short const *)(status + 0x36) == 1);
 	SET_CONDITION(first, 2, *(short const *)(status + 0x36) == NONE);
 	SET_CONDITION(first, 4, *(short const *)(status + 0x36) == 0);
-	SET_CONDITION(first, 8, *(short const *)(status + 0x36) == 1);
 	SET_CONDITION(first, 0x10, status[0x30]);
 	SET_CONDITION(first, 0x20, status[0x31]);
-	SET_CONDITION(first, 0x40, *(short const *)(status + 0x3c) == NONE);
-	SET_CONDITION(first, 0x80, *(short const *)(status + 0x3c) == 0);
-	SET_CONDITION(first, 0x100, *(short const *)(status + 0x3c) == 1);
+	if (*(short const *)(status + 0x3c) == NONE)
+		first |= 0x40;
+	else if (*(short const *)(status + 0x3c) == 0)
+		first |= 0x80;
+	else if (*(short const *)(status + 0x3c) == 1)
+		first |= 0x100;
 	SET_CONDITION(first, 0x100, *(short const *)(status + 0x3c) == 1);
 	SET_CONDITION(first, 0x200, status[0x32]);
 	SET_CONDITION(first, 0x400, status[0x3e]);
@@ -541,6 +556,10 @@ bool g_4f55e2;
 // score 7 (was 7): ours masks the byte with an and against a memory constant and negates it, retail masks a
 // dword in memory and tests the low byte; a four-byte global read into a char local already gives retail's
 // dword and, so what is left is the end: retail branches on the mask, ours negates it and pops esi early.
+// Tried: return !local_1 (11), local_1 + 1 (11), ?: false : true, if (!local_1) return true; return false,
+// char/long local (7); one shared bool result (30, 32); the whole test as one && chain, as a return or
+// with if (!local_1) return true falling to one return false (19: test byte ptr, xor eax/inc eax).
+// 0x165f16 shows the same dword and on this flag (0x4f55e2 sits between the bools at 0x4f55e0/e4).
 // @retail 0x13939b
 bool function_13939b()
 {
@@ -1030,10 +1049,21 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2);
 void function_22aff1(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 
+// score 38 (was 83): retail keeps a success byte (set to 1 up front, overwritten with the
+// call's result on failure) and returns that byte directly; ours keeps the failure flag, so the
+// store and the negated return differ and the function is eight bytes longer.
+// score 38 (was 38): Failure-byte initialization, stores and inverted return still differ.
+// descriptor reference 38; immutable descriptor 38; single count reads 38; byte failure 38;
+// signed-byte failure 38; wide failure 70; immutable callback results 38; shared callback-result
+// home 38.
+// native success still extends zero lifetime. Shared
+// mask-zero producer with direct result 122; output-only masks 116; first,
+// second, third or fourth default omitted 102/103/98/104; shared zeros with
+// true or explicit false comparison 87/122. Original failure byte retained.
 // @retail 0x13a3c6
 bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
 {
-	bool local_1 = true;
+	bool condition_failed = false;
 	s_13a532 const *local_2 = (s_13a532 const *)g_4e3b44[arg_1 & 0xffff].bytes;
     word local_3 = 0;
     word local_4 = 0;
@@ -1054,7 +1084,7 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
                 bool local_12 = function_22b7dd(local_9, arg_2);
-                if (local_12 != true) local_1 = local_12;
+                if (!local_12) condition_failed = true;
             }
             local_8 += 0x50;
         }
@@ -1073,7 +1103,7 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
                 bool local_12 = function_22af8d(arg_2, arg_3, (s_bitmap_widget_22ae21 const *)local_9);
-                if (local_12 != true) local_1 = local_12;
+                if (!local_12) condition_failed = true;
             }
             local_8 += 0x64;
         }
@@ -1092,13 +1122,13 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
                 bool local_12 = function_22a9bc((s_text_widget const *)local_9, arg_2, (s_text_widget_state const *)arg_3, (color4f const *)local_10);
-                if (local_12 != true) local_1 = local_12;
+                if (!local_12) condition_failed = true;
             }
             local_8 += 0x54;
         }
         while (--local_11);
     }
-	return local_1;
+	return !condition_failed;
 }
 
 // @retail 0x13a532

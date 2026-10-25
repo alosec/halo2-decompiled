@@ -698,6 +698,29 @@ PRIVATE inline real control_pitch_pin(real value, real minimum, real maximum)
 	return minimum > value ? minimum : (value > maximum ? maximum : value);
 }
 
+PRIVATE inline void seat_direction_from_yaw_187510(vector3f *direction, real yaw, real pitch)
+{
+	direction->i = (real)(cos(yaw) * cos(pitch));
+	direction->j = (real)(sin(yaw) * cos(pitch));
+	direction->k = (real)sin(pitch);
+}
+
+/* moves the value toward the target by at most one step */
+PRIVATE inline void seat_pitch_approach_187510(real *value, real target)
+{
+	*value += control_pitch_pin(target - *value, -0.012271847f, 0.012271847f);
+}
+
+// score 244 (was 272): pitch-bound/settings/direction/turn-difference homes differ within
+// frame 0xa8 (retail: maximum 4, minimum 8, direction 0x10, settings 0x1c); retail keeps the
+// full turn in xmm3 and spills the range; the step pins get other registers.
+// Tried: interleaved settings/camera declarations 272/272; delay upper/lower alone 280/280;
+// isolated range scope 272; maximum declared first 243 (shifts the prologue); direction,
+// target or marker-before-camera at the top 244; upper/lower declared apart from assignment.
+// forced turn difference 244; forced direction 244.
+// forced pitch pin 244; forced bound approach 244.
+// all four forced expansions 244; immutable wrapped range 244.
+// read-only settings 244; native pitch trig input 248.
 // @retail 0x187510
 void __stdcall function_187510(long player_index, real yaw_delta, real pitch_delta)
 {
@@ -706,6 +729,7 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 	real maximum = 1.4922565f;
 	byte *settings = *(byte **)((byte *)g_4e034c + 0xf4);
 	s_player_control_camera camera;
+	s_object_marker marker;
 	player_control_get_camera(player_index, &camera);
 	entry->facing.yaw += yaw_delta;
 	if (camera.seat_index != NONE)
@@ -714,11 +738,10 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 		s_control_turn_seat *seat = &((s_control_turn_seat *)PLAYER_CONTROL_UNIT_DEFINITION(unit->definition_index)->seats)[camera.seat_index];
 		if (seat->minimum != 0.0f || seat->maximum != 0.0f)
 		{
-			s_object_marker marker;
 			function_b8d30(camera.unit_index, seat->field_8, &marker, 1, false);
 			real yaw = (real)atan2(marker.matrix.forward.j, marker.matrix.forward.i);
-			real upper = seat->maximum + yaw;
 			real lower = seat->minimum + yaw;
+			real upper = seat->maximum + yaw;
 			real range = control_turn_difference(upper, lower);
 			real to_upper = control_turn_difference(upper, entry->facing.yaw);
 			real from_lower = control_turn_difference(entry->facing.yaw, lower);
@@ -727,7 +750,7 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 			if (!(to_upper >= 0.0f && positive_range > to_upper) &&
 				!(from_lower >= 0.0f && positive_range > from_lower))
 			{
-				if (fabs(to_upper) > fabs(from_lower))
+				if (fabs(from_lower) < fabs(to_upper))
 					entry->facing.yaw = lower;
 				else
 					entry->facing.yaw = upper;
@@ -748,10 +771,8 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 			if (camera.seat_index != NONE && unit->field_7c.k > 0.2f)
 			{
 				vector3f direction;
-				direction.i = (real)(cos(entry->facing.yaw) * cos(0.0));
-				direction.j = (real)(sin(entry->facing.yaw) * cos(0.0));
-				direction.k = (real)sin(0.0);
-				real angle = 1.5707964f - function_11ce20(&unit->field_7c, &direction);
+				seat_direction_from_yaw_187510(&direction, entry->facing.yaw, 0.0f);
+				real angle = 1.5707964f - function_11ce20(&direction, &unit->field_7c);
 				minimum -= angle;
 				maximum -= angle;
 				target -= angle;
@@ -768,8 +789,9 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 			entry->facing.pitch += control_pitch_pin(delta, -rate, rate);
 		}
 	}
-	entry->minimum_pitch += control_pitch_pin(minimum - entry->minimum_pitch, -0.012271847f, 0.012271847f);
-	entry->maximum_pitch += control_pitch_pin(maximum - entry->maximum_pitch, -0.012271847f, 0.012271847f);
+	seat_pitch_approach_187510(&entry->minimum_pitch, minimum);
+	seat_pitch_approach_187510(&entry->maximum_pitch, maximum);
 	entry->facing.pitch += pitch_delta;
-	entry->facing.pitch = control_pitch_pin(entry->facing.pitch, entry->minimum_pitch, entry->maximum_pitch);
+	entry->facing.pitch = entry->minimum_pitch > entry->facing.pitch ? entry->minimum_pitch :
+		(entry->facing.pitch > entry->maximum_pitch ? entry->maximum_pitch : entry->facing.pitch);
 }

@@ -18,6 +18,11 @@ extern byte g_485a47;
 extern real g_485a0c[8];
 extern real g_4c9798[36];
 
+// score 311 (was 311): frame 0x20 versus 0x28; input registers and rounding-call scalar reloads differ.
+// Branch-defined extent 321; two-vector copy loop 311; frame pointer 372; size policy 497; inline depth one 311.
+// Global optimization off 1009; expansion depth zero 349; late mode 350;
+// near normal first 309; height clamp first 311; sample y/z first 313, plus normal first 311.
+// score 295 (was 311): Frame 0x20 versus 0x28 and input/rounding homes remain. Near normal input 313; far normal copy 295 kept (plain, retail length); integer maximum reuse 311; far point before scale 313; height rounding first 311 (fast).
 // @retail 0x48ee0
 void function_48ee0(byte const *state, byte const *matrix, byte const *tag)
 {
@@ -106,8 +111,9 @@ void function_48ee0(byte const *state, byte const *matrix, byte const *tag)
     point.x = direction.i * lower + origin.x;
     point.y = direction.j * lower + origin.y;
     point.z = direction.k * lower + origin.z;
-    plane->n = direction;
-    plane->d = dot3f(&plane->n, (vector3f const *)&point);
+    normal = direction;
+    plane->n = normal;
+    plane->d = dot3f(&normal, (vector3f const *)&point);
     plane->i *= scale;
     plane->j *= scale;
     plane->k *= scale;

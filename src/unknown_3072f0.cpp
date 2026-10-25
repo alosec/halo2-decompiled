@@ -137,8 +137,20 @@ public:
 	void function_3072f0(class_308180 *manifold);
 };
 
-// score 107 (was 107): retail keeps the manifold in ebx and the entry pointer
-// in edi, ours keeps the entry pointer in ebx and the manifold in edi
+// score 97 (was 107): retail keeps the manifold in ebx and the entry pointer
+// in edi, ours keeps the entry pointer in ebx and the manifold in edi.
+// The passing test's arm first 97; array reference 107; array reference member 107;
+// contact reference 107; direct append argument 107; a named test result 129;
+// output and array references 107; both array and contact references 107;
+// manifold object reference 107; array read before distance 101; typed contact 97;
+// shared validity result 170; distinct record names 97; direct key tests 180.
+// Bounds-pass arms first 97, second 97, both 97; vector members 97;
+// long index 97; records at top 97; scalar distance locals 97;
+// byte masks 99; placement after the first callee 97.
+// Further trials: array reference with the positive edge arm 97; nested
+// output/array/contact references 97; direct append argument in that arm 97;
+// const member 97; index renamed 97; iterator renamed 97; global
+// optimization disabled 781; size preference 220. Opening body retained.
 // @retail 0x3072f0
 void box_pair_3072f0::function_3072f0(class_308180 *manifold)
 {
@@ -178,12 +190,15 @@ void box_pair_3072f0::function_3072f0(class_308180 *manifold)
 			feature_3072f0 feature;
 			feature.kind = kind;
 			feature.field_3a = entry->second;
-			if (!((pair_305f60 *)this)->function_306f80((feature_305f60 *)&feature).value)
+			if (((pair_305f60 *)this)->function_306f80((feature_305f60 *)&feature).value)
+			{
+				contact_3072f0 *contact = &results->contacts->next_slot();
+				((pair_305eb0 const *)this)->function_305eb0((contact_305eb0 *)contact, (key_305eb0 const *)entry, (feature_305eb0 const *)&feature);
+			}
+			else
 			{
 				goto drop;
 			}
-			contact_3072f0 *contact = &results->contacts->next_slot();
-			((pair_305eb0 const *)this)->function_305eb0((contact_305eb0 *)contact, (key_305eb0 const *)entry, (feature_305eb0 const *)&feature);
 		}
 		i++;
 		entry++;

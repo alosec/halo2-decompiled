@@ -804,9 +804,6 @@ local_3:
 }
 
 /* makes count (at most four) new entities, chained, of the given handlers */
-// score 10 (was 10): in the cleanup loop retail keeps the index in ebp and the
-// empty marker in ebx, ours keeps the index in ebx and the marker in ebp, so
-// the two loads, the two stores and the counter differ.
 // @retail 0x8a210
 bool entity_table_new_entities(long *identifiers, c_entry_table *table, long count, long const *handler_indices)
 {
@@ -814,7 +811,7 @@ bool entity_table_new_entities(long *identifiers, c_entry_table *table, long cou
 	void *states[4];
 	long field_34[4];
 	long state_sizes[4];
-	volatile bool result = true;
+	bool result = true;
 	long i;
 
 	memset(field_34, 0, sizeof(field_34));
@@ -827,25 +824,28 @@ bool entity_table_new_entities(long *identifiers, c_entry_table *table, long cou
 		if (!table->function_08af70(handler_indices[i], &field_34[i], &datas[i]) ||
 			!table->function_08b010(handler_indices[i], &state_sizes[i], &states[i]))
 		{
-			goto failed;
+			result = false;
+			break;
 		}
 	}
-	if (replication_table_create_chain((s_handle_peers *)table->unknown0c, count, identifiers))
+	if (result && !replication_table_create_chain((s_handle_peers *)table->unknown0c, count, identifiers))
+		result = false;
+	if (result)
 	{
 		for (i = 0; i < count; i++)
 			table->function_08ae80(identifiers[i], handler_indices[i], field_34[i], (long)datas[i], state_sizes[i], (long)states[i]);
-		return result;
 	}
-
-failed:
-	for (i = 0; i < count; i++)
+	else
 	{
-		if (datas[i])
-			discard_block(g_4d87f8, datas[i]);
-		if (states[i])
-			discard_block(g_4d87f8, states[i]);
+		for (i = 0; i < count; i++)
+		{
+			if (datas[i])
+				discard_block(g_4d87f8, datas[i]);
+			if (states[i])
+				discard_block(g_4d87f8, states[i]);
+		}
 	}
-	return false;
+	return result;
 }
 
 void replication_table_initialize(s_handle_peers *peers);

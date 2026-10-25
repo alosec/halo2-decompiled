@@ -85,14 +85,13 @@ void DecodeBlockRGBA_explicit__single_pixel(S3TCBlockRGBA_explicit const *block,
 	out->a = (byte)((alpha << 4) | alpha);
 }
 
+/* decodes one pixel of a DXT5 block: the color as DXT1, then the alpha from
+   the eight entry palette its two alphas define and its 3 bit index */
 // @retail 0x224080
-// score 19 (was 19): the interpolated colour is built in EDX where retail builds it in EAX, so the
-// shift and the lookup of the palette entry use the other register.
 void DecodeBlockRGBA_interpolated__single_pixel(S3TCBlockRGBA_interpolated const *block, S3TC_COLOR *out, short x, short y)
 {
 	word alphas[8];
 	long bits;
-	short index;
 
 	function_223ed0(&block->rgb, out, x, y);
 	alphas[0] = block->alpha0;
@@ -118,12 +117,11 @@ void DecodeBlockRGBA_interpolated__single_pixel(S3TCBlockRGBA_interpolated const
 	if (y < 2)
 	{
 		bits = (block->alpha_indices[2] << 16) | (block->alpha_indices[1] << 8) | block->alpha_indices[0];
-		index = x + 4 * y;
+		out->a = (byte)alphas[(bits >> ((x + 4 * y) * 3)) & 7];
 	}
 	else
 	{
 		bits = (block->alpha_indices[5] << 16) | (block->alpha_indices[4] << 8) | block->alpha_indices[3];
-		index = x + 4 * y - 8;
+		out->a = (byte)alphas[(bits >> ((x + 4 * y - 8) * 3)) & 7];
 	}
-	out->a = (byte)alphas[(bits >> (index * 3)) & 7];
 }

@@ -46,14 +46,10 @@ s_job_node *function_1208b0(void)
 
 /* inserts a task into the work list: before the first task it should run
    ahead of, at the head when its priority is higher than the head's */
-// score 14 (was 14): retail's rotated loop reads previous->next before the callee-saved
-// pushes and spills node->callback to a stack slot after the guard; ours loads the callback
-// first and splits the pushes.
 // @retail 0x120900
 void function_120900(s_job_node *node)
 {
 	long priority;
-	async_work_callback callback;
 	s_async_insert_state state;
 	memset(&state, 0, sizeof(state));
 	s_job_node *previous = async_globals.work_list;
@@ -71,18 +67,16 @@ void function_120900(s_job_node *node)
 		async_globals.work_list = node;
 		return;
 	}
-	callback = node->callback;
-	while (previous->next)
+	for (; previous->next; previous = previous->next)
 	{
 		s_job_node *next = previous->next;
 
-		if (async_task_should_run_before(priority, next->priority, &node->task, &next->task, &state, callback, next->callback))
+		if (async_task_should_run_before(&state, node->callback, &node->task, priority, next->callback, &next->task, next->priority))
 		{
 			node->next = previous->next;
 			previous->next = node;
 			return;
 		}
-		previous = next;
 	}
 	previous->next = node;
 	node->next = NULL;

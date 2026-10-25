@@ -419,12 +419,7 @@ bool __stdcall function_183670(long component_a, long component_b, point3f *a, p
 						if (*distance > contacts[k].position_distance.m128_f32[3])
 						{
 							*distance = contacts[k].position_distance.m128_f32[3];
-							real px = contacts[k].position_distance.m128_f32[0];
-							real pz = contacts[k].position_distance.m128_f32[2];
-							real py = contacts[k].position_distance.m128_f32[1];
-							b->x = px;
-							b->z = pz;
-							b->y = py;
+							real_point3d_set(b, contacts[k].position_distance.m128_f32[0], contacts[k].position_distance.m128_f32[1], contacts[k].position_distance.m128_f32[2]);
 							function_183672(a, b, &contacts[k].normal, *distance);
 							result = true;
 						}
@@ -507,13 +502,22 @@ PRIVATE __forceinline long batch_contact_component(hkEntity *entity)
 		if (view->properties[i].key == 0x2001) return view->properties[i].value;
 	return 0;
 }
-PRIVATE __forceinline bool batch_shape_pointer(dword data)
+PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shape)
 {
-	long value = (long)data;
+	long value = (long)shape->data;
 	long limited = value < 1 ? 1 : (value > 16 ? 16 : value);
-	return limited != value;
+	return limited != shape->data;
 }
 
+// score 314 (was 319): frame 0x48 versus 0x44 and plane/output homes;
+// normal component loop 319; material-output scope 319; direct validity 351;
+// key-clamp result arms 319; optional entity result 319.
+// j92: frame 0x48 versus 0x44 and node/plane/output homes remain; delayed reads and native rotation copy regress; coordinate names and positive root guard tie.
+// hit snapshot after test 353; first node after root 352; origin coordinate homes 319; hit coordinate homes
+// 319; native rotation copy 442; root positive body 319.
+// Shape-input classifier with field equality 314 plain (1250/1243 bytes); root entity 319;
+// native plane input 354; rotation/translation/both bases 319/319/319; final normal value 356;
+// native plane output 348; shape-input sampled equality 319; ordinary inline classifier 356.
 // @retail 0x1822f0
 void c_query_batch_collector::collect(s_batch_contact const *contact)
 {
@@ -524,11 +528,11 @@ void c_query_batch_collector::collect(s_batch_contact const *contact)
 	long component = batch_contact_component(root->entity);
 	batch_contact_root(second);
 	if (component != NONE && second->shape->shape_kind() != 24 && second->shape->data &&
-		batch_shape_pointer(second->shape->data) && ((byte *)second->shape->data)[0x1e] != 0xff) return;
+		batch_shape_pointer(second->shape) && ((byte *)second->shape->data)[0x1e] != 0xff) return;
 	if (first->shape->shape_kind() != 4) return;
 	if (component_index != NONE && component_index == component) return;
 	long key = first->key;
-	if (first->next && first->next->shape && first->next->shape->shape_kind() == 9 && !batch_shape_pointer(second->shape->data))
+	if (first->next && first->next->shape && first->next->shape->shape_kind() == 9 && !batch_shape_pointer(second->shape))
 		key += first->next->shape->data * 8 - 8;
 	long limited = key < 0 ? 0 : (key > count - 1 ? count - 1 : key);
 	if (limited != key) return;

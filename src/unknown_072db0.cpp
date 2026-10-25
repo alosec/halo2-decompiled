@@ -547,8 +547,11 @@ struct s_match_player_rating_collection
 	s_match_rating_entry teams[16];
 };
 
-// @retail 0x74800
 // score 16 (was 22): retail holds the entry skill sign-extended in ESI (movsx at the load, mov ebx,esi for the call); a 32-bit local gives that movsx but MSVC then picks EBX for it and moves the team-mode byte to CL, so the whole frame shifts.
+// Also tried with a 32-bit skill: the call reading the field instead 24 (the compare narrows back to 16 bits); the local at the loop top 104; team mode declared first 113; a const team mode 113; locals renamed 113; an unsigned 32-bit skill 113;
+// declared at function scope 113; team mode as byte or char 113; team mode read from the collection in the loop 113 (in both places 105); the compare reading the field 99; declared inside the condition's block 103;
+// loads and tests in one condition 104; the tests as continues 113; the key and active tests split from the rest 113; the selected skill read from the entry at the call 103; the key read from the collection 117.
+// @retail 0x74800
 long __stdcall function_74800(const s_match_player_rating_collection *collection, long selected)
 {
 	long key = collection->key;
@@ -1311,6 +1314,16 @@ struct s_rating_summary
 };
 
 #pragma inline_depth(0)
+// score 225 (was 231): key/statistic homes, statistic cursor and grouped team dispatch differ.
+// existing converter 371; converter inline boundary 367; native summary fields 231; native skill snapshot 302;
+// immutable query inputs 231; native counter bits 231; native session fields 231; frame pointer 412; team value
+// snapshots 225; team promoted skill snapshot 239; native player statistics array 231; native statistics arrays
+// 231.
+// score 220 (was 225): key/statistic homes, statistic cursor and grouped team dispatch remain.
+// External player/team/both record references 225/220/220; early player identity 234;
+// native records plus formatted identity 219 (one-point follow-up dropped); UTF-16 input 220;
+// shared eligibility 353; bounded name conversion 332; direct native team pointer 220;
+// native team pointer/reference plus formatted identity 219/219 (one-point follow-ups dropped).
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {
@@ -1399,7 +1412,6 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
     {
         for (long i = 0; ; ++i)
         {
-            const byte *local_2 = (const byte *)collection + 0xdc8 + i * sizeof(s_match_rating_entry);
             const byte *local_3 = (const byte *)collection + 0x49e4 + i * 0x5a;
             long count = NONE;
             switch (variant->type)
@@ -1414,19 +1426,23 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
             }
             if (i >= count)
                 break;
-            const s_match_rating_entry *team = (const s_match_rating_entry *)(local_2 - 4);
+            const s_match_rating_entry *team = &collection->teams[i];
             const XUID *identity = (const XUID *)team->unknown0c;
-            if (team->active && memcmp(identity, g_440070, 12) != 0 &&
-                team->skill != NONE && team->value != NONE)
+            if (team->active && memcmp(identity, g_440070, 12) != 0)
             {
-                long change = function_74720((const s_match_rating_collection *)collection, i);
-                long value = team->value + change;
-                long level = function_74970(value, team->skill);
-                long lower = value >= 0 ? function_74970(value, 0) : 0;
-                const byte *stats = local_3;
-                function_73e00(lower, batch, identity, change,
-                    *(const word *)stats & 0x7fff, *(const word *)(stats + 6) & 0x7fff,
-                    *(const word *)(stats + 8) & 0x7fff, level, 3, players);
+                short skill = team->skill;
+                long value = team->value;
+                if (skill != NONE && value != NONE)
+                {
+                    long change = function_74720((const s_match_rating_collection *)collection, i);
+                    value += change;
+                    long level = function_74970(value, skill);
+                    long lower = value >= 0 ? function_74970(value, 0) : 0;
+                    const byte *stats = local_3;
+                    function_73e00(lower, batch, identity, change,
+                        *(const word *)stats & 0x7fff, *(const word *)(stats + 6) & 0x7fff,
+                        *(const word *)(stats + 8) & 0x7fff, level, 3, players);
+                }
             }
         }
     }
@@ -1510,6 +1526,14 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
 }
 #pragma optimize("", on)
 
+// score 770 (was 770): user-cursor and identity-word homes differ;
+// long validity 770; pending read guard first 786; timestamp before
+// counts 770; unsigned property initializer 770; unsigned user group 781.
+// score 770 (was 770): Frame 0xc0 agrees; user cursor and identity homes remain. Const user 770; const identity 770; byte group 781; byte accepted count 821; byte descriptor initializer 853 (fast).
+// score 770 (was 770): User/identity and request homes remain; direct identity-helper
+// return 791; duplicate cursor equality 773; byte team/failure results 770/770;
+// incomplete-property arm first 785 (fast). Opening body and helpers retained.
+// Frame 0xc0 agrees; user/identity and request homes remain. Terminal record reuse 787; native identifier field 770; clamp-value lifetime 770; type-first duplicate filter 794; request-player cursor 804 (fast).
 // @retail 0x74aa0
 void function_074aa0(void)
 {

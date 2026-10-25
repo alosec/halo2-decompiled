@@ -17,8 +17,8 @@ struct s_29b2e0
 
 PRIVATE __forceinline real function_29b32b(vector3f *arg_0, real *length = NULL)
 {
-    real local_0 = (real)sqrt(arg_0->i * arg_0->i + arg_0->j * arg_0->j);
     arg_0->k = 0.0f;
+    real local_0 = (real)sqrt(arg_0->i * arg_0->i + arg_0->j * arg_0->j);
     if (!(0.0001f > fabs(local_0)))
     {
         arg_0->i = (1.0f / local_0) * arg_0->i;
@@ -73,6 +73,16 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
     arg_3->k = local_6;
 }
 
+// score 389 (was 393): frame 0x2c and length agree; early J load and magnitude/angle homes differ; K first 389, shared axis cross 409, magnitude return 406, global optimization off 2150, float consistency 656, K first plus return 399.
+// scalar XY inputs 401 (sibling 10); epsilon failure first 398; geometry before trig 398;
+// ordinary inline 389; single dot clamp 396. Early J and scalar homes still differ.
+// J snapshot 395; I/J snapshots 392; axis by value 502; destination first 389; XY common result 389.
+// real sine/cosine/pair 395/395/389; real yaw inverse cosine 401; shared
+// weighted axis/cross/both/input vectors 431/427/420/423; all restored;
+// matched sibling and both matched callees preserved throughout.
+// score 389 (was 389): frame 0x2c agrees; early J load and magnitude/angle homes still differ.
+// Complete input for length 497; input for normalization 496; point input 419; both inputs 513;
+// immutable one/both magnitudes 389/389; earlier length publication 396; immutable rotation outputs 389.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

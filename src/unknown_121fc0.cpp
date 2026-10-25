@@ -72,7 +72,7 @@ void function_121fc0(void)
 		strncpy(local_3, g_4687f0, sizeof(local_3));
 		local_3[255] = 0;
 		function_122810(local_3, local_4);
-		bool volatile local_6;
+		bool local_6;
 		bool local_7;
 		dword local_8;
 		function_1a1480(local_3, local_5, sizeof(local_5) - 1, 7, 6, &local_7, &local_8, &local_6);

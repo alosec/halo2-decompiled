@@ -455,6 +455,9 @@ void function_1cf50(void);
 
 #pragma inline_depth(0)
 // score 100 (was 100): the record index is scaled by 0x40 in retail and by 0x4 here, and the table retail reads is not the one this tree reads
+// Current stride agrees; the hoisted zero, callee convention and color/draw
+// scheduling differ. Record view, byte-channel locals, material/color results,
+// block-pool/byte-offset lifetimes and typed-record for 100; byte bitmap 98.
 // @retail 0x44040
 void __stdcall function_44040(long cell, short mask)
 {
@@ -569,6 +572,7 @@ bool function_2b720(point3f *point, long *cluster, long *leaf)
 
 long function_baf80(long object_index);
 long function_155760(long index);
+long function_14de70(long local_player_index);
 
 struct s_inactive_object_header
 {
@@ -578,24 +582,24 @@ struct s_inactive_object_header
     byte *object;
 };
 
+// score 2 (was 2): object-field load versus table-entry load in the equality;
+// test result 23; byte result 18; equality arms 23; const object 2;
+// unaliased test result 20; guarded equality 27; table before parent 46;
+// outer index with separate guards 2.
 // @retail 0x3e9c0
 bool function_3e9c0(long object_index)
 {
     bool result = false;
     if (object_index != NONE)
     {
-        long index = g_4b9ed8;
-        if (index != NONE && !function_155760(index))
+        if (g_4b9ed8 != NONE && !function_155760(g_4b9ed8))
         {
             long parent = function_baf80(object_index);
             s_inactive_object_header *header = &((s_inactive_object_header *)g_4e0300->data)[parent & 0xffff];
             if (!header->inactive)
             {
                 byte *object = header->object;
-                s_index_table *table = g_4e8c20;
-                s_index_table *const *table_reference = &table;
-                long entry = (*table_reference)->entries[index];
-                if (*(long *)(object + 0x13c) == entry)
+                if (function_14de70(g_4b9ed8) == *(long *)(object + 0x13c))
                     result = true;
             }
         }
@@ -967,22 +971,18 @@ long function_155760(long index);
 void function_3f3f0(void);
 
 // score 23 (was 23): the camera setup is called with one argument in a register and three on the stack, retail passes two in registers and two on the stack
+// Now only the camera setup's fourth argument differs: retail loads and pushes g_4b9ee4 (0x3f2c0 ends with ret 4 and never reads it); ours drops the unused parameter.
+// Tried: the local player getter with a NONE preset 45; with if/else 23 (kept, replaces a goto); the identifier as 0x3f2c0's first parameter 23, second 23; UNREFERENCED_PARAMETER in 0x3f2c0 23.
 // @retail 0x2b990
-void function_2b990(long player_index)
+void function_2b990(long local_player_index)
 {
 	byte const *tree = *(byte **)((byte *)g_4e0348 + 0x238);
 	long object_index;
-	if (player_index != NONE)
-	{
-		object_index = g_4e8c20->entries[player_index];
-		if (object_index != NONE && !function_155760(player_index))
-		{
-			object_index = *(long *)((byte *)g_4e8c24->data + (object_index & 0xffff) * 0x21c + 0x2c);
-			goto object_selected;
-		}
-	}
-	object_index = NONE;
-object_selected:
+	long player_index = function_14de70(local_player_index);
+	if (player_index != NONE && !function_155760(local_player_index))
+		object_index = *(long *)((byte *)g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x2c);
+	else
+		object_index = NONE;
 	function_3f2c0((s_planar_camera_source const *)&g_camera_storage, (byte const *)&g_projection_storage, object_index, g_4b9ee4);
 	function_3f3f0();
 	if (g_4ba025)
@@ -1234,6 +1234,9 @@ static inline long render_memory_allocate(long bytes)
 }
 
 // score 1 (was 1): the permutation pointer arrives in eax, retail passes it in ecx; the register is fixed by the caller function_4c690, which is not retail's yet
+// frame pointer 27; alias analysis off 1; global expressions off 62; inline depths one/zero 1/89; native result/count 1/1; input role names 1;
+// the permutations last or first (old order kept for the caller by a forwarding overload) 1/1; a const member of a 16-byte permutation type 1;
+// extra_bytes read once through its address 1; (void)&node_count 1.
 // @retail 0x3e380
 long function_3e380(long model_index, byte lod, transform4x3f const *nodes,
     byte const *permutations, long *node_count, long extra_bytes)
@@ -1359,6 +1362,11 @@ struct s_batch_cache_4b5d0
 
 struct s_133f70;
 
+// score 219 (was 219): distance load, nullable-entry address and cache/level scheduling differ;
+// distance snapshot 219; wide previous level 219; fallback clear 362; common buffer 219; wide success 254.
+// score 213 (was 213): frame 0x33f8 agrees; distance load and cache/result scheduling differ.
+// Native reuse 330; native level change 291; short entry index 352; late success 262; short builder
+// result 216.
 // @retail 0x4b5d0
 void function_4b5d0(bool force, long override, long object_index, real distance, real priority,
     s_133f70 *record, point3f const *unused, bool project_nodes)

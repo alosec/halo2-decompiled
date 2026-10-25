@@ -318,6 +318,8 @@ void function_f0fd0(long vehicle_index, bool set);
    unit's flags and are deleted */
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
+// score 123 (was 123): our frame is eight bytes smaller and the base pointer is kept in EDI where
+// retail keeps it in ECX.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

@@ -1,3 +1,4 @@
+#include <string.h>
 // @flags /O2 /arch:SSE /Gr
 #include "unknown_11c920.h"
 #include "slot_handler.h"
@@ -24,6 +25,9 @@ struct s_weapon_aim_ranges
 	real maximum_fraction;
 };
 
+// score 139 (was 139): frame agrees; actor/tag EDI/ESI homes and folded projectile flag test differ.
+// Full-scope fraction 153; native fraction predicate 138; adjusted point construction 140;
+// inline depth zero 195; native barrel ordinal 186.
 // @retail 0x1ffbd0
 bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 	point3f const *origin, point3f const *target, bool flag, vector3f *direction,
@@ -101,19 +105,27 @@ PRIVATE inline s_projectile_choice *projectile_choice_get(short type)
 	return result;
 }
 
+/* the choice's definition, or NONE without a choice */
+PRIVATE inline long projectile_choice_definition(s_projectile_choice const *choice)
+{
+	long definition_index = NONE;
+	if (choice && choice->definition_index != NONE)
+		definition_index = choice->definition_index;
+	return definition_index;
+}
+
+/* aims a projectile of the choice at the target, again just above its adjusted speed
+   when the first try fails; the velocity and gravity are optional outputs */
 // @retail 0x1ff200
-// score 51 (was 51): ours clears the low byte of the flags register where retail clears DL, and loads
-// the record pool's pointer into EDI where retail uses EDX; the arguments of the
-// call are pushed in a different order.
 bool function_1ff200(short type, point3f const *origin, real speed, point3f const *target,
 	real const *limit, bool alternate, vector3f *direction, real *speed_out, real *time,
 	vector3f *velocity, real *gravity)
 {
-	s_projectile_choice *choice = projectile_choice_get(type);
 	bool result = false;
-	if (choice && choice->definition_index != NONE)
+	s_projectile_choice *choice = projectile_choice_get(type);
+	long definition_index = projectile_choice_definition(choice);
+	if (definition_index != NONE)
 	{
-		long definition_index = choice->definition_index;
 		real adjusted_speed;
 		bool linear = false;
 		if (function_fa6a0(definition_index, &speed, origin, target, &adjusted_speed, limit, NULL,
@@ -435,9 +447,7 @@ bool __stdcall function_1ff010(long arg_0, point3f const *arg_1)
         point3f local_5;
         function_210850((s_type_c3b527 const *)((byte *)local_3 + 0x7d0), &local_5);
         s_projectile_choice *local_6 = projectile_choice_get(*(short *)(local_4 + 4));
-        long local_7 = NONE;
-        if (local_6 && local_6->definition_index != NONE)
-            local_7 = local_6->definition_index;
+        long local_7 = projectile_choice_definition(local_6);
         vector3f local_8;
         real local_9;
         real local_10;
@@ -483,6 +493,42 @@ bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
 
+// score 136 (was 153): horizontal homes and initial copy registers recovered; planar/turn schedules and
+// output length still differ; tried planar scale loop 153; direction branch update 204; horizontal native
+// copy 142; rotation native copy 153; real signed sine 170; horizontal shared facing base 195; horizontal
+// facing rotation copy 195; horizontal native vector copy 142; horizontal rotation copy 142.
+// direction-copy registers and planar stack homes differ.
+// Direct products 173; native side predicate 152; nested guards 153;
+// entry magnitude 153; both planar normalizations inline 153.
+// score 142 (was 142): with the native horizontal copy, direct final products 154;
+// shared direct scale 154; depth one 142; size policy 366; shared output-vector
+// scale 142; native turn side 145. Planar copy/rotation scheduling still differs.
+// score 142 (was 142): horizontal/rotation and final output scheduling still differ.
+// Length in predicate 142; adjustment test result 142; direct side expression 142;
+// turn-test result 139; original direction object 185; shared output in place 206;
+// native output in place 206; facing object reference 153.
+// turn completion copy 142; output memcpy 142;
+// named turn length 139; result declared first 142; native motion view 142;
+// read-only actor 142; both completion copies 142; word side 146;
+// named length with word side 143, direct output 146, shared scale 146.
+// Horizontal product/rotation schedules and output length remain.
+// score 136 (was 142): Frame 0x20 agrees; horizontal copies, square products, rotation schedule
+// and output length still differ. Forced rotation declaration 142; inline declaration 142; planar
+// facing snapshot 220; named dot 142; named determinant 142; combined planar result lifetimes 142;
+// planar scale operand order 142; planar completion copy 146.
+// Frame 0x20 agrees; horizontal square/copy order, rotation schedule and output length still
+// differ. native turn initializer 152; turn before side 136; initialized turn before side
+// 151; output product input order 142; shared double output 137; shared double direct output
+// 167; horizontal copy observation 144; native input observations 154; existing length
+// inline 142; earlier turn length result 136; earlier turn product input order 136; earlier
+// turn shared result scale 136; earlier turn shared direct scale 160.
+// score 136 (was 136): horizontal square/copy order, rotation schedule and output length remain.
+// Native horizontal on early turn copy 136; axis reference/snapshot 152/190;
+// native horizontal with either axis form 152/190; vertical input 171, with native horizontal 171, with axis snapshot 214.
+// score 136 (was 136): horizontal square/copy order, rotation and output scheduling remain;
+// direct planar commit 182; planar memcpy 152; original horizontal fallback 162; fallback plus
+// planar copy 157; native turn plus fallback 162; normalized point 237; both points 253;
+// normalized point plus direct commit 166.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {
@@ -508,13 +554,12 @@ long function_1ff360(long actor_index, point3f const *target, vector3f *velocity
 	if (actor->unknown26c == NONE)
 	{
 		point2f horizontal;
-		horizontal.x = direction.i;
-		horizontal.y = direction.j;
+		memcpy(&horizontal, &direction, sizeof(horizontal));
 		real magnitude = normalize2d_fast((vector2f *)&horizontal);
 		if (magnitude > 0.0f && actor->unknown290.j * horizontal.y + actor->unknown290.i * horizontal.x < 0.0f)
 		{
-			bool left = actor->unknown290.i * horizontal.y - actor->unknown290.j * horizontal.x > 0.0f;
 			vector3f turned = actor->unknown290;
+			bool left = actor->unknown290.i * horizontal.y - actor->unknown290.j * horizontal.x > 0.0f;
 			real sine = (left ? 1 : -1) * 0.5f;
 			rotate_direction(&turned, g_4687b0, sine, 0.0f);
 			if (normalize2d((point2f *)&turned) > 0.0f)

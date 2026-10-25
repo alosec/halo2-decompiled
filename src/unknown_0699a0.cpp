@@ -131,10 +131,6 @@ struct s_699a0_table
 	s_699a0_entry entries[16];
 };
 
-// score 29 (was 29): the arguments arrive in the wrong registers: retail
-// passes the index in ecx and the table in edx, ours passes the index in edx
-// and the table on the stack, so the whole body differs in its register use.
-// The branches and the values read are the same.
 // @retail 0x699a0
 long function_699a0(long index, void *table)
 {
@@ -147,9 +143,9 @@ long function_699a0(long index, void *table)
 	}
 	else if (index < 32)
 	{
-		s_699a0_entry *entry = &((s_699a0_table *)table)->entries[index - 16];
-		if (entry->state != NONE)
-			handle = entry->handle;
+		long slot = index - 16;
+		if (((s_699a0_table *)table)->entries[slot].state != NONE)
+			handle = ((s_699a0_table *)table)->entries[slot].handle;
 	}
 	return handle;
 }

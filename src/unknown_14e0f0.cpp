@@ -115,8 +115,10 @@ void function_14ee20(long player_index, long target_index)
     long unit_index = *(long *)(player + 0x2c);
     if (unit_index != NONE)
     {
-        *(long *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x30) = unit_index;
         byte *unit = attachment_object(unit_index);
+        /* the unit becomes the player's previous one (+0x30) before it is detached */
+        byte *record = g_4e8c24->data + (player_index & 0xffff) * 0x21c;
+        *(long *)(record + 0x30) = *(long *)(record + 0x2c);
         function_14cad0(player_index, NONE);
         function_152340();
         function_b7300(unit_index);
@@ -150,6 +152,9 @@ static inline void transform_offset_point(transform4x3f const *frame, real scale
     point->z = frame->up.k * z + frame->left.k * y + frame->forward.k * x + frame->position.z;
 }
 
+// score 17 (was 17): trigger index/position carrier, pitch operands and result load differ.
+// Unqualified separate workspaces: frame pointer 593; zero inline depth 682;
+// global optimization off 1135; size preference 748; word phase 138 (fast).
 // @retail 0x14e200
 bool __stdcall function_14e200(long player_index, long target_index, point3f const *position, bool detach)
 {

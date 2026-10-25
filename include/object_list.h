@@ -1,6 +1,6 @@
 /* OBJECT_LIST.H: g_5107f0, the list of moving objects whose velocity carries
    the objects attached to them (defined in src/object_list.cpp, queried in
-   src/unknown_109e00.cpp) */
+   src/unknown_109e00.cpp), and the point velocity of such an object */
 
 #ifndef OBJECT_LIST_H
 #define OBJECT_LIST_H
@@ -31,5 +31,26 @@ struct s_object_list_state
 };
 
 extern s_object_list_state *g_5107f0;
+
+/* the velocity at point of a body moving about center with the given linear
+   and angular velocities: linear + angular x (point - center); the cross
+   product is computed in full before result is written */
+static inline void carrier_point_velocity(point3f const *center, vector3f const *linear,
+	vector3f const *angular, point3f const *point, vector3f *result)
+{
+	vector3f offset;
+	offset.i = point->x - center->x;
+	offset.j = point->y - center->y;
+	offset.k = point->z - center->z;
+	real k = angular->i * offset.j - angular->j * offset.i;
+	real j = angular->k * offset.i - angular->i * offset.k;
+	real i = angular->j * offset.k - angular->k * offset.j;
+	result->i = i;
+	result->j = j;
+	result->k = k;
+	result->i = linear->i + result->i;
+	result->j = linear->j + result->j;
+	result->k = linear->k + result->k;
+}
 
 #endif

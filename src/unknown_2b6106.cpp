@@ -474,7 +474,7 @@ long online_task_poll(long);
 bool function_90160(long, s_match_result_data *);
 long qos_lookup(long, long, long, s_qos_target *);
 bool qos_is_complete(long);
-bool session_description_decode_buffer(byte const *, long, void *);
+bool session_description_decode_buffer(long, byte const *, void *);
 struct s_friend_presence_status;
 bool function_8d230(XONLINE_FRIEND const *, s_friend_presence_status *);
 bool online_title_is_this_title(DWORD);
@@ -534,7 +534,7 @@ void c_y_menu_player_selected_screen::v3()
 	{
 		s_qos_result information;
 		if (qos_target_result(screen->qos_handle, &information, 0) &&
-			session_description_decode_buffer(information.data, information.data_size, screen->unknown9c4))
+			session_description_decode_buffer(information.data_size, information.data, screen->unknown9c4))
 		{
 			screen->value10e4 = true;
 			screen->value10e0 = g_54d5b8;
@@ -658,6 +658,12 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
     widget->function_22f52e()->set_text(text);
 }
 
+// score 577 (was 598): frame 0x85c agrees; EBP bias and flag/time/state
+// carriers and status-helper convention still differ. Flag bit at uses 647;
+// long active 624; long local 623; long campaign 598 kept; branch-local
+// game-name table 624. Buffers, loops, calls and common exit are unchanged.
+// Long joinability 600; word saved bit 625; timestamp rename 598; long count
+// 577 kept; explicit score exclusion 598. Original count values are preserved.
 // @retail 0x2b65b8
 void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
 {
@@ -713,10 +719,10 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
             update_friend_status(friend_, session);
         else
         {
-            bool campaign = *(long *)(details + 0xa68) != NONE && *(long *)(details + 0xa70) != NONE;
+            long campaign = *(long *)(details + 0xa68) != NONE && *(long *)(details + 0xa70) != NONE;
             long game_names[11] = {0x7000180, 0x3000439, 0x600010f, 0x7000110, 0x4000237,
                 0x4000112, 0xa000114, 0xa000113, 0xb000115, 0x700010e, 0x7000180};
-            short count = *(short *)(details + 0xa80);
+            long count = *(short *)(details + 0xa80);
             if (count > 0 && now - value10dc > 1000)
             {
                 value10dc = now;

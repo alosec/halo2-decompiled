@@ -74,6 +74,23 @@ PRIVATE inline byte const *material_parameters(long tag)
     return *(byte **)(g_4e3b44[tag & 0xffff].bytes + 0x24);
 }
 
+// score 167 (was 167): logarithm width/reset schedule and restore/final pointer allocation;
+// final record lifetime 167; common update 263; retained old tag 241; records-first test 169;
+// promoted inverse 248; float consistency 306; coordinated texture inputs 167.
+// Typed numeric state fields 167; typed pointer fields 181; full state view 181;
+// force-inline material lookup 167; global-first mask unions on full view 181.
+// frame/entry agree; logarithm width, reset and restore scheduling differ.
+// Factor first 167; inline depth one 167; scoped size 483; dirty-mask order 167; packed-range view 167.
+// logarithm width/reset schedule and restore/final pointer allocation;
+// Logarithm width and reset/restore scheduling remain;
+// rounded logarithmic value before stores 167; late tag publication 295; both published restore ranges 279;
+// record reload after render call 192; raw global-first unions 167.
+// score 167 (was 167): Frame and entry agree; logarithm operand width/reset and restore allocation
+// differ. Pending-mask snapshot 188; late record predicate 297; late tag predicate 287; direct old
+// record 167; conditional reciprocal 167 (fast).
+// logarithm width and reset/restore scheduling remain;
+// early dirty mask, update byte or late counter pair each 296; first published range 167;
+// second published range 187.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)
@@ -640,8 +657,7 @@ bool function_1b580(byte const *definition, long component, long unused, long mo
             color = *(color3f const *)&g_4686cc->red;
         out[0] = color.red;
         out[1] = color.green;
-        /* This path repeats green in the third component. */
-        out[2] = color.green;
+        out[2] = color.blue;
     }
     return true;
 }
@@ -744,6 +760,17 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
     }
 }
 
+// score 157 (was 157): frame 0xc versus 0x10, value/entry homes and delayed selector reads differ.
+// Distinct branch-counter homes 157; shared writer input mask alone/with counters 185; common store
+// alone/with counters 294; shared bank result alone/with body entry steps 311; decoded register test 177.
+// frame 0xc versus 0x10; table/entry homes and selector rereads differ.
+// Ordinary writer inline 513; packed/index formal domains 189/181; shared complement 214;
+// global optimization off 621; frame pointer 207; branch table lifetimes 184; inline depth two 157.
+// score 157 (was 157): selector observation and table/entry frame homes still differ.
+// selector-storage writer 177f; writer offset input 188f.
+// selector-use output indices 230f; signed byte cursors 163f.
+// byte cursors 190f; byte mapping slot 189f.
+// word source-kind 157f; special-slot result 180f.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {
@@ -788,6 +815,11 @@ static inline real unit_clamp_176a0(real value)
     return value;
 }
 
+// score 124 (was 124): frame 0x2c agrees; cursor EDI versus EBP and clamp
+// result publication differ. Indexed entry walk 186; alpha-first clamps with
+// body entry step 122; frame pointer 229; global optimization off 385; size 301.
+// frame 0x2c agrees; cursor register, clamp-result lifetimes and remapping schedule differ.
+// Entry step in body 122; indexed clamp loop 151; short/byte entry counter 122/133; inline depth one 122.
 // @retail 0x176a0
 void function_176a0(byte *state, s_packed_shader_range const *range)
 {
@@ -907,21 +939,32 @@ dword __cdecl pack_color3f(color3f const *color);
 
 PRIVATE __forceinline long rounded_shader_integer(real value)
 {
+#ifdef H2_NATIVE_PORT
+    return h2_native_fistp(value);
+#else
     long result;
     __asm { fld value }
     __asm { fistp result }
     return result;
+#endif
 }
 
-PRIVATE __forceinline long rounded_shader_alpha(real value)
+/* value * 255 rounded as the x87 does, moved into the alpha byte of a color */
+PRIVATE __forceinline long packed_shader_alpha(real value)
 {
+#ifdef H2_NATIVE_PORT
+    /* the x87 multiplies at full precision before rounding */
+    return (long)((unsigned long)h2_native_fistp((double)value * 255.0) << 24);
+#else
     real scale = 255.0f;
     long result = 0;
     __asm { fld value }
     __asm { fld scale }
     __asm { fmulp st(1), st(0) }
     __asm { fistp result }
+    __asm { shl result, 24 }
     return result;
+#endif
 }
 
 const s_texture_stage_parameter g_467020[7] = {
@@ -944,7 +987,7 @@ void __stdcall function_1a170(byte *state, s_packed_shader_range const *range)
             {
             case 0:
                 {
-                    dword alpha = (dword)rounded_shader_alpha(value) << 24;
+                    dword alpha = packed_shader_alpha(value);
                     dword old = 0;
                     D3DDevice_GetRenderState((D3DRENDERSTATETYPE)parameter->state, &old);
                     D3DDevice_SetRenderState((D3DRENDERSTATETYPE)parameter->state, alpha ^ ((old ^ alpha) & 0xffffff));
@@ -998,7 +1041,7 @@ void __stdcall function_17b60(byte *context, s_packed_shader_range const *range)
             {
             case 0:
                 {
-                    dword alpha = (dword)rounded_shader_alpha(value) << 24;
+                    dword alpha = packed_shader_alpha(value);
                     dword previous;
                     D3DDevice_GetRenderState((D3DRENDERSTATETYPE)setting->state, &previous);
                     D3DDevice_SetRenderState((D3DRENDERSTATETYPE)setting->state, alpha ^ ((previous ^ alpha) & 0xffffff));
@@ -1026,9 +1069,6 @@ void __stdcall function_17b60(byte *context, s_packed_shader_range const *range)
     }
 }
 
-// score 51 (was 51): the switch on the procedure id is compiled to a different table: retail
-// reads the entry with movzx ecx from a table at another base, ours uses
-// esi and another table.
 // @retail 0x1ab50
 void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range)
 {
@@ -1045,7 +1085,7 @@ void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range)
             {
             case 0:
                 {
-                    dword alpha = (dword)rounded_shader_alpha(value) << 24;
+                    dword alpha = packed_shader_alpha(value);
                     dword old;
                     D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, &old);
                     sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)parameter->state, alpha ^ ((old ^ alpha) & 0xffffff));
@@ -1076,6 +1116,18 @@ void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range)
 
 // score 54 (was 54): the two arguments land in different registers (retail uses ebp for the
 // second and ecx for the first) and the bit-field extraction order differs.
+// Frame 0x10 agrees; state EBP/range-slot reload and the stacked evaluator component still differ.
+// score 54 (was 54): external packed-word reference 54; explicit output/mask/both banks 72/78/91;
+// input count once 60; inline depth one/two 54/54; plain while scan 54.
+// Frame 0x10 agrees; state/range and evaluator component registers still differ.
+// Unsigned range accessors 54; output/mask/both bank predicates 54;
+// byte component 51 (193 bytes), byte kind 73, both byte inputs 60; output fields 54.
+// state stays in EBX and range in EBP; retail keeps state in EBP
+// and reloads range. The evaluator component is stacked instead of EDI;
+// packed-field extraction order still differs.
+// const pointer tables 54; vector bank elements 54; packed record fields 54.
+// byte record fields 75; frame pointer 71; global optimization 153.
+// size preference 77; float consistency 54.
 // @retail 0x19be0 standard
 void __stdcall function_19be0(byte *state, word const *range)
 {
@@ -1095,9 +1147,6 @@ void __stdcall function_19be0(byte *state, word const *range)
 
 
 
-// score 39 (was 39): the jump table's targets and the shifts around it differ: retail shifts
-// the word at esp+0x18 and keeps the index in ecx, ours keeps it in esi
-// and shifts later.
 // @retail 0x18560
 void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 {
@@ -1127,7 +1176,7 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
             {
             case 0:
                 {
-                    dword alpha = (dword)rounded_shader_alpha(value) << 24;
+                    dword alpha = packed_shader_alpha(value);
                     dword previous;
                     D3DDevice_GetTextureStageState(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, &previous);
                     sampler_state_write(entry[0], (D3DTEXTURESTAGESTATETYPE)setting->state, alpha ^ ((previous ^ alpha) & 0xffffff));
@@ -1156,6 +1205,17 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 
 
 
+// score 246 (was 246): sampler convention and captured descriptor versus dirty-store rereads;
+// short counter 246; byte counter 282; source index long 248; selector byte 246;
+// pack result at store 344; existing clamp calls 318. Frame pointer 365;
+// zero inline depth 652; global optimization off 1687; size 517; native
+// ternary clamp loops 359.
+// score 246 (was 246): Frame 0x28 agrees; sampler convention and descriptor rereads differ.
+// Unsigned counters 325; rescale pointer traversal 354; remapping-source address 268; separate
+// clamp passes 358; shared native color workspace 246 (fast).
+// score 246 (was 246): sampler convention and dirty-store descriptor rereads remain.
+// Existing packed-range accessors 325; post-clamp mask capture 275; positive filter
+// with full-width descriptors 269; alpha-first color 250; alpha-first clamps 270 (fast).
 // @retail 0x19ca0
 void function_19ca0(byte *state, word const *range)
 {

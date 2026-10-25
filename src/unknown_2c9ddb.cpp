@@ -55,6 +55,38 @@ c_class_1473c9 *__stdcall function_2baae7(s_screen_parameters *parameters);
 c_class_1473c9 *__stdcall function_2bb31d(s_screen_parameters *parameters);
 extern long g_55c154;
 
+// score 61 (was 61): biased 0x250 frame agrees; creation classification spill
+// and expanded string copy remain. File-type result 61; word classification 69;
+// direct source argument 61; unsigned saved handle 61; result plus word 69.
+// creation classification spill and copy inline boundary;
+// inline depths zero 88, one 61; shared request 90; integer classification 71;
+// separate load inputs with shared publication 178.
+// native entry bitfield 61; source-origin comparison/load-result/native view 79/79/79;
+// loaded-name pointer before default/at copy 88/88 (copy becomes a call);
+// origin plus name/native-origin-name 94/94. Creation split and copy boundary remain.
+// request-mode classification 161; immutable classification 61; explicit live source 62;
+// entry reference 61; creation output 99; immutable output 99; shared mode request 88;
+// failed-creation join 61. Classification spill and copy expansion still differ.
+// byte classification 61; signed-byte classification 61; initialized variant 170; initialized request 155;
+// frame pointer 98; global optimization disabled 518; controller-index snapshot 61; speed preference 466.
+// Biased 0x250 frame agrees; shared-load classification spill and string-copy expansion
+// still differ. source default override 62; source existing override 61; source handle
+// lifetime 76; separate current selection 61; name generation result 61; saved handle
+// workspace 61; native generated name 61; native name source override 62.
+// score 61 (was 61): classification spill and selective copy expansion remain;
+// destination name after/before default 88/88; destination record late/early 88/88;
+// record/name receivers 88; publication order 174; named second load 61;
+// common name receiver 88; split loads plus common/default name receiver 199/199.
+// score 61 (was 61): classification spill and copy expansion remain;
+// external controller-slot / item-handle / list-receiver references 61/61/61;
+// controller-item / controller-list / item-list / all references 61/61/61/61;
+// all references with live type-field binding 61. Original inputs and body restored.
+// classification spill and selective copy expansion remain;
+// default-first enum/source arms/override/exclusive consumer 71/71/72/176;
+// selected-first enum/source arms/override/exclusive consumer 175/175/175/175.
+// creation classification spill and selective copy expansion remain;
+// live entry-handle/edit-mode/type fields 61/61/61; handle-mode/handle-type/mode-type
+// field pairs 61/61/61; three live fields and external record combination 61/61.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {

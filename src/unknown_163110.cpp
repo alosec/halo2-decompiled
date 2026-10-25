@@ -3,6 +3,7 @@
 #include "unknown_11c920.h"
 #include "camera_storage.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 #include "globals.h"
 #include "unknown_13fd90.h"
 #include "unknown_19c1d0.h"
@@ -374,6 +375,20 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 	return (real)fabs(plane->normal.k * point->z + plane->normal.j * point->y + plane->normal.i * point->x - plane->d);
 }
 
+// score 423 (was 423): camera/points use EBX/EBP rather than EBP/EBX;
+// corner loop 432; side-plane loop 1154; reverse direction loop 423;
+// default plane first 423; direct first-diagnostic expression 423.
+// Native matrix snapshot 778; input-rectangle products 446; coordinate-pair
+// product initialization 425; unsigned direction ordinal 423; optional-plane copy 647.
+// j90: camera/points saved registers remain exchanged; native copy boundaries tie and geometry/store lifetime changes regress.
+// normal setter 610; bounds copy block 423; position copy block 423; directions after bounds 578; complete
+// planes before normalize 515; identifier at geometry end 767
+// j92: camera/points saved registers remain exchanged; corner order and diagnostic/lifetime forms do not improve the frameless entry.
+// corners in index order 426; diagnostic result chain 423; plane tests result 671; camera plane predicate 669;
+// far depth snapshot 646.
+// score 423 (was 423): Camera/points saved registers and initial store schedule remain.
+// corner point setters 622; rectangle CRT copy 423; plane array receiver 761;
+// native plane return 700; late right/top products 682 (fast).
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {
@@ -600,6 +615,25 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 	return success;
 }
 
+// score 115 (was 119): coefficient XMM roles, classification operands and projection staging still differ.
+// Intersection/projected point setters 119/119; existing in-place vector scale 115; long/byte result 216/119.
+// Forward value copy 474; direct projected element 246; scaled direct element 247; separate scaled vector 115.
+// Second-plane-first 425; reuse first negated normal 463; indexed plane selection 375.
+// Frame pointer 574; zero inline depth 609.
+// First/second normal memcpy 115/115; negated aggregate 115;
+// native endpoint classification 387; default-zero intersection ratio 252.
+// score 115 (was 115): Coefficient/zero XMM roles, classification products and projection staging remain.
+// Existing scale for first/second/source/all normal negations 425/410/433/446f; reused projected
+// workspace 249f; per-use outside bytes 249f; completed projection total 214f; native short total 115f.
+// score 115 (was 115): coefficient/zero XMM roles, classification operands and projection homes remain.
+// Native camera vector member 115; camera/bounds references 251/133; clipped/camera/projected point names 115/115/115;
+// paired projection names 115; native vector plus three point names 115.
+// First/second input-vector value copies 463/474; external vector references 251/279;
+// both copies 454; shared scaled difference 390; conditional plane enable 474;
+// projection cursor before its guard 115. Arithmetic grouping and count guards retained.
+// score 115 (was 115): Normal/zero XMM roles, classification and projection homes remain; offset
+// accumulator 269; shared segment count 468; count result 459; projected/intersection values 402/323;
+// bool/second endpoint values 259/362; completed cursor 196.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {
@@ -688,10 +722,11 @@ bool function_1652e0(s_view *view, real margin, const point3f *points, long poin
 				}
 				else
 					t = 0.0f;
+				vector3f_scale(&delta, t, &delta);
 				point3f intersection;
-				intersection.x = t * delta.i + p0->x;
-				intersection.y = delta.j * t + p0->y;
-				intersection.z = delta.k * t + p0->z;
+				intersection.x = delta.i + p0->x;
+				intersection.y = delta.j + p0->y;
+				intersection.z = delta.k + p0->z;
 				if (!outside0)
 					*p0 = intersection;
 				else

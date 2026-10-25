@@ -399,6 +399,21 @@ bool function_1b1970(long actor_index, short mode, vector2f const *forward,
 	return result;
 }
 
+// score 19 (was 19): the 0x1b0e40 call sets the origin first (retail last), and in
+// the >= 7 block retail reads the index as a word (xor widening) and the mode late
+// through the list in ebx; index and mode read in the call 66; short index with the
+// mode in the call 66; short index before the mode local 79, after it 79; short index
+// with the mode local inside the branch 42; short index and a bool result stored once 95.
+// origin/forward setup and native index/mode arguments differ;
+// origin pointer 19; origin reference 19; external index reference 79.
+// external mode reference 46; no target vector setter 65; native index type 19.
+// alias analysis 19; size preference 321; external field pair 78.
+// A `short index` gives retail's xor/`cmp ax` read, but then the list is no longer
+// reloaded into EBX after the 0x1b0e40 block (66); retail reloads it there and reads
+// the mode through EBX. Tried: word index with 0xffff 66, with the mode local inside 42;
+// word mode local inside 42; mode assigned inside 42; long index of the word 53; the
+// NONE case first 44 (short index) / 26 (current form); the >= 7 block as a
+// __forceinline helper 19-70.
 // @retail 0x1b1a90
 void __stdcall function_1b1a90(long actor_index, s_slot *slot, s_slot_target_list *list)
 {

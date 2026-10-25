@@ -154,6 +154,11 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 	return index;
 }
 
+// score 919 (was 919): count/array homes and choice registers differ in the 0x4e0 frame;
+// choice pointer/post-increment 931; byte choice count 922; duplicate break 959;
+// unsigned target count 919; used-mask memset 919.
+// frame 0x4e0 agrees; target/primary and query-array homes differ.
+// Existing-count word 939; query-cursor word 927; completed append 929; early primary 940; primary word 925.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
@@ -380,16 +385,10 @@ struct s_listener_environment_bsp
 
 PRIVATE inline long sound_first_listener()
 {
-	long result = NONE;
-	for (long i = 0; i < 4; ++i)
-	{
-		if (g_4e8c20->entries[i] != NONE)
-		{
-			result = i;
-			break;
-		}
-	}
-	return result;
+	long i = 0;
+	for (; i < 4; ++i)
+		if (g_4e8c20->entries[i] != NONE) break;
+	return i < 4 ? i : NONE;
 }
 
 PRIVATE __forceinline void sound_environment_play_cue(long tag)
@@ -409,6 +408,20 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 	function_189fe0(&request, tag);
 }
 
+// score 223 (was 264): frame 0x14c versus 0x148; BSP/camera lifetimes and query/output homes still differ.
+// Transition result 235; unsigned listener 264; byte listener 319; angle lifetime 264; separate request indices 264.
+// Request transition field 263; bounded listener result 223 plain; separate fill guard 255;
+// depth one 235; size optimization 441; direct search returns 254.
+// Default-first sampled duration 259; default-first field reload 267 (frame 0x148);
+// bounded pointer search 225; bounded while search 223; equality exhaustion 255.
+// Original body/helper retained; fast preview 223.
+// Short helper-search index 289; first-listener result 223; missing-slot store order 223;
+// fallback angle value 298; early local tag observation 314; radius value 223;
+// portal-side result 223; complete request publication 272.
+// native duration 226; read-only position 223.
+// position memcpy 223; tag aggregate initializer 270.
+// cue sentinel chain 222; cue nibble chain 223.
+// both cue chains 222; prior tag on bounded search 223.
 #if !H2_NATIVE_PORT
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
@@ -450,13 +463,15 @@ void __stdcall function_18bb80(real elapsed)
 				{
 					long index = indices[i];
 					long tag = index != NONE ? ((s_listener_environment_bsp *)bsp)->environments[index].tag : NONE;
-					real transition = 2.0f;
+					real transition;
 					if (index != NONE)
 					{
 						s_listener_environment_definition *definition = &((s_listener_environment_bsp *)g_4e0348)->environments[index];
-						real duration = definition->transition_time;
-						if (!(fabs(duration) < 0.0001f)) transition = duration;
+						transition = definition->transition_time;
+						if (fabs(transition) < 0.0001f) transition = 2.0f;
 					}
+					else
+						transition = 2.0f;
 					requests[i].transition_time = transition;
 					requests[i].fade = 1.0f;
 					requests[i].index = tag;

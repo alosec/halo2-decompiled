@@ -41,7 +41,17 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 }
 
 // score 67 (was 67): the SSE registers differ (retail xmm1/xmm4/xmm6, ours
-// xmm0/xmm4/xmm1).
+// xmm0/xmm4/xmm1). Inline depths one/two 67; global optimization off 331;
+// frame pointer 174; rotation source/axis/both by value 163/144/222;
+// planar source contract 83. Cross assignment order j/k/i 66; dot with the
+// k term first 66; split source-vector init 66 (alone and with j/k/i);
+// crosses as three scalars 91; crosses before the dot 70; axis reads
+// without the pointer copy 88; field store before the rotation 125;
+// signed-angle call with swapped arguments and negation 136; fused gain
+// add 66; dot as accumulate statements 77; the field subtract after the
+// second limit 77. Retail preloads one axis component across fsin and
+// reloads the rest from [eax] each use; ours keeps one more component
+// live, so the zero lands in xmm6 and cos in xmm4 (retail xmm4/xmm3).
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)

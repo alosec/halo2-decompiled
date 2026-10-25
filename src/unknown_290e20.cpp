@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "slot_handler.h"
 #include "unknown_272b70.h"
+#include "bit_vector.h"
 #include <string.h>
 
 /* a condition of a trigger (0x38 bytes) */
@@ -303,9 +304,14 @@ short ai_trigger_find_by_name(char const *name)
 	return result;
 }
 
-// score 24 (was 24): retail sinks the zero store of the count past the
-// early return and loads the global into ECX, ours stores it in the entry
-// block and uses EAX.
+// score 24 (was 24): retail makes the zero in EAX before the flag test but stores it
+// (count, then result from al) only after the early return, and so loads the global into
+// ECX; ours stores the count in the entry block and loads the global into EAX. Tried:
+// count and result zeroed (or declared) after the early return, count first 30 (the zero
+// is then made there and the global goes to EAX), result first 97; also with i zeroed at
+// its declaration 30; result initialized at its declaration 102 or 111; count declared
+// first with i zeroed at its declaration 33; result = (bool)count 24; the two early tests
+// as nested ifs 24; the latch test in a named bool 26; result declared at its assignment 26.
 // @retail 0x290e20
 bool function_290e20(short trigger_index, long squad_index, long squad_group_index)
 {
@@ -315,7 +321,7 @@ bool function_290e20(short trigger_index, long squad_index, long squad_group_ind
 	short i;
 	bool result;
 
-	if ((trigger->flags & 1) && (((dword *)g_5044cc)[trigger_index >> 5] & (1 << (trigger_index & 0x1f))))
+	if ((trigger->flags & 1) && bit_vector_test((dword const *)g_5044cc, trigger_index))
 		return true;
 
 	result = false;
@@ -343,7 +349,7 @@ bool function_290e20(short trigger_index, long squad_index, long squad_group_ind
 	{
 		triggered = true;
 		if (trigger->flags & 1)
-			((dword *)g_5044cc)[trigger_index >> 5] |= 1 << (trigger_index & 0x1f);
+			bit_vector_set((dword *)g_5044cc, trigger_index, true);
 	}
 	else
 		triggered = false;

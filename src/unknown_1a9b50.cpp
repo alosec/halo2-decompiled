@@ -406,6 +406,20 @@ real function_30bf0(vector3f *arg_0);
 real normalize2d(point2f *arg_0);
 extern point2f *g_468778;
 
+// score 379 (was 384): actor-table/result/prop carriers still differ; first
+// prediction loop 391; second prediction loop 391; planar reverse loop 391;
+// repeated vector-field access 387; direct final result 379, plain verified.
+// Round 290: result after lookups 411; read-only settings pointer 379; payload-only memset 378; native
+// planar request workspace 391; byte result 399; actor first with direct final result 413.
+// score 379 (was 379): Frame 0x40 agrees; actor/settings/prop carriers differ. Guarded actor lookup
+// 408; integer clock 413; conditional threshold 389; aggregate request 379; branch-derived
+// prediction weight 385 (fast).
+// Round 303: entry request 379; entry primary vector 379; sibling secondary vector 379;
+// inner threshold 388; entry planar workspace 379. Actor/settings/prop carriers still differ.
+// Round 310: eligibility result 432; double clock 413; prop handle snapshot 379;
+// read-only prop payload 379; weight after magnitude 379. Early actor/settings/prop homes remain.
+// score 379 (was 379): actor/settings/prop carriers differ; request direction at use 379; request
+// validity first 379; vector memcpy 379; normalization arm first 379; state interval 379.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {
@@ -540,8 +554,7 @@ bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 			function_1a9d80(arg_0, local_1->field_c, &local_2->field_2c, &local_2->field_2d);
 		if (!local_2->field_12)
 			function_1a9e00(arg_0, local_1->field_c, local_2->field_2d);
-		if (!local_2->field_14 && !local_2->field_13 && !local_2->field_2d)
-			result = true;
+		result = !local_2->field_14 && !local_2->field_13 && !local_2->field_2d;
 	}
 	return result;
 }
@@ -574,6 +587,17 @@ struct s_1aab51
 
 static __forceinline long real_to_long(real value);
 
+// score 466 (was 478): early false exit, frame 0x54 versus 0x58 and scratch
+// homes differ; prediction loop 482; initial velocity snapshot 538; direct
+// eligibility 484; full-width readiness 495; fallback copy loops 541.
+// j92: actor/settings registers agree; frame 0x54 versus 0x58, early false exit and speed/object homes remain; retain facing view and native planar copy.
+// shared velocity length 486; separate minimum speed 488; retained facing vector 472; planar direction copy
+// 476; direction length by arm 482; facing position view 471; facing prediction seconds 472; facing planar
+// copy 466; facing direction length 473; planar speed homes 466; planar position view 464; planar position
+// speed homes 464; planar position late 466.
+// score 410 (was 466): Frame 0x54 versus 0x58, early false exit and speed/object/request homes remain.
+// late object receiver 470; trajectory planar view 466; direct request view 466;
+// test-derived readiness 410; conditional approach factor 466 (fast).
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {
@@ -621,11 +645,12 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 		{
 			s_1aa0d2 *local_8 = (s_1aa0d2 *)function_25d690((s_prop_datum *)local_4);
 			s_prop_view_fields *local_9 = (s_prop_view_fields *)function_25d740((s_prop_node *)local_4);
+			vector3f const *facing = &local_9->unknown2c;
 			bool local_10 = false;
 			vector3f local_11;
 			if (0.8f > local_4->unknown28)
 			{
-				local_11 = local_9->unknown2c;
+				local_11 = *facing;
 				local_10 = true;
 			}
 			else
@@ -634,20 +659,20 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 				s_ai_object *local_13 = ai_object_get(local_1->unknown018);
 				real local_14 = 0.0f;
 				if (local_12 > 0.0f)
-					local_14 = (1.0f + (local_8->field_1c.k * local_9->unknown2c.k + local_8->field_1c.j * local_9->unknown2c.j + local_8->field_1c.i * local_9->unknown2c.i) / local_12) * 0.5f;
+					local_14 = (1.0f + (local_8->field_1c.k * facing->k + local_8->field_1c.j * facing->j + local_8->field_1c.i * facing->i) / local_12) * 0.5f;
 				real local_15 = (real)local_0->field_30;
 				real local_16 = local_15 * g_510c54->rate * local_14;
 				local_11.k = local_16 * local_8->field_1c.k + local_8->field_4.z - local_1->position.z;
 				local_11.j = local_16 * local_8->field_1c.j + local_8->field_4.y - local_1->position.y;
 				local_11.i = local_16 * local_8->field_1c.i + local_8->field_4.x - local_1->position.x;
 				real local_17 = 0.0f;
-				if (0.0f > local_9->unknown2c.k * local_11.k + local_9->unknown2c.j * local_11.j + local_9->unknown2c.i * local_11.i)
-					local_11 = local_9->unknown2c;
+				if (0.0f > facing->k * local_11.k + facing->j * local_11.j + facing->i * local_11.i)
+					local_11 = *facing;
 				else
 				{
 					local_17 = function_30bf0(&local_11);
 					if (local_17 == 0.0f)
-						local_11 = local_9->unknown2c;
+						local_11 = *facing;
 				}
 				if (!local_0->field_17)
 				{
@@ -681,17 +706,16 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 				}
 				else if (local_0->field_2e)
 				{
-					if (local_0->field_34 > local_17 || (0.0f > local_17 &&
-						(local_8->field_1c.k - local_13->velocity.k) * local_11.k + (local_8->field_1c.j - local_13->velocity.j) * local_11.j + (local_8->field_1c.i - local_13->velocity.i) * local_11.i > 0.7f))
-						local_10 = true;
+					local_10 = local_0->field_34 > local_17 || (0.0f > local_17 &&
+						(local_8->field_1c.k - local_13->velocity.k) * local_11.k + (local_8->field_1c.j - local_13->velocity.j) * local_11.j + (local_8->field_1c.i - local_13->velocity.i) * local_11.i > 0.7f);
 				}
-				else if (0.5f > local_17 - (local_13->velocity.k * local_11.k + local_13->velocity.j * local_11.j + local_11.i * local_13->velocity.i) * local_15 * g_510c54->rate)
-					local_10 = true;
+				else
+					local_10 = 0.5f > local_17 - (local_13->velocity.k * local_11.k + local_13->velocity.j * local_11.j + local_11.i * local_13->velocity.i) * local_15 * g_510c54->rate;
 			}
 		local_18:
 			if (local_0->field_18 || (local_10 && !local_0->field_2e))
 			{
-				point2f local_25 = {local_11.i, local_11.j};
+				point2f local_25 = *(point2f const *)&local_11;
 				if (normalize2d(&local_25) > 0.0f)
 				{
 					real local_26 = local_0->field_17 ? 0.0f : 0.95f;
@@ -753,6 +777,17 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 	return local_2;
 }
 
+// score 31 (was 31): native frame agrees; stack-input scratch and object/prop
+// receivers differ. Fast: native result enum 32; lookup declarations 32;
+// immutable actor binding 32; read-only entry 32; inner facing 32;
+// complete state memory view 32, with inner facing 32; callback
+// noinline declaration 32. Original fast 32, plain 31; time getter kept.
+// object/prop scratch registers, state receiver and exit displacements differ.
+// External tag reference 32 fast; actor reference 32; node reference 32; tag/actor 32; tag/node 32.
+// Node/actor references 32; tag/node/actor 32; state reference 32. Unchanged fast preview is also 32.
+// The first register difference is the 0x110ab0 push (ECX, retail EAX); the later lookups follow it.
+// Object header getter 32; named unit index 124; declarations before assignments 32; result set
+// before the test 32; explicit NULL test 32 (fast).
 // @retail 0x1a9ec0
 short __stdcall function_1a9ec0(long arg_0)
 {

@@ -92,6 +92,16 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 	g_5047f8[arg_0].field_18 = arg_0;
 }
 
+// score 408 (was 433): frame 0x68 versus 0x64; normalization homes differ; shared normalizer 433, unsigned count 437, unsigned endpoint 433, both 437, angle end pointer 457.
+// frame now 0x64; entry load schedule, point/magnitude homes
+// and candidate arithmetic differ. Byte candidate count 417; byte endpoint 427;
+// later center sum 444; early facing result 441; short angle count 433; both byte counts 408.
+// Separate trig pairs 408; byte angle countdown 408; retained candidate entry 441;
+// angle result from branches 408; separate evaluation scratches 425; general arm first 441.
+// Signed byte candidate/endpoint/both 408/408/408; quarter-turn table loop 481;
+// short facing result 430. Entry loads and 0x18 versus 0x1c return cleanup remain.
+// Helper-owned/returned evaluation 425/425; native endpoint result 443; endpoint value 455;
+// ratio value result 408; consuming angle cursor 416; side before distance 408; angle pair initialization 414.
 // @retail 0x298d90
 void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f const *arg_3,
 	point2f const *arg_4, point2f const *arg_5, real arg_6, point2f const *arg_7, point2f const *arg_8)
@@ -114,8 +124,8 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 	bool local_4 = local_2.x * (*local_26)->x + local_2.y * (*local_26)->y >= 0.0;
 	point2f const *local_31 = (point2f const *)((byte *)local_0 + 0x88);
 	real local_5 = local_31->y * (*local_26)->y + (*local_26)->x * local_31->x;
-	short local_6 = 0;
-	for (short local_7 = 0; local_7 < 2; local_7++)
+	byte local_6 = 0;
+	for (byte local_7 = 0; local_7 < 2; local_7++)
 	{
 		point2f *local_8 = &local_3[local_7];
 		real local_9 = (real)sqrt((local_1.x - local_8->x) * (local_1.x - local_8->x) + (local_1.y - local_8->y) * (local_1.y - local_8->y));
@@ -254,6 +264,15 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 	arg_3->y = arg_1 * arg_2->y + arg_0->y;
 }
 
+// score 767 (was 767): frame 0x11c versus 0x114; radius caching and trace/point homes differ.
+// Shared endpoint setters 767; center CRT copy 767; step CRT copies 767;
+// obstacle-radius observation 813; requested-angle observation 796; all restored.
+// Trace-field forward sector 772, reverse 776, both 774; settings radius rereads 812; short-index obstacle cursor 814.
+// score 767 (was 767): Frame 0x11c versus 0x114 and radius/trace homes remain. Early settings radius 800; const center 767; early selector 847; final-angle selection first 798; reverse component assignments 767 (fast).
+// score 767 (was 767): Frame 0x11c versus 0x114 and radius/trace homes remain.
+// native endpoint return 947; native rotated-point return 961; endpoint input order 767;
+// two-coordinate pivot 767; side transform first 822 (fast).
+// Frame 0x11c versus 0x114 and radius/trace homes remain. One sector sample 809; cosine first 767; signed step branches 848; normalization result 839; maximum rejection guard 767 (fast).
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,

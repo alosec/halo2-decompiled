@@ -34,7 +34,12 @@ PRIVATE __forceinline void function_1b1eb2(long arg_0)
 }
 
 // score 14 (was 14): ours keeps the scaled actor index in ECX and the actor pointer in EAX,
-// retail keeps the index in EAX and the pointer in ECX.
+// retail keeps the index in EAX and the pointer in ECX (so ours also spends a byte on
+// `and ecx, 0xffff`). Tried: actor_reset_state for the helper 18 (pops move); actor
+// before the state 14; helper taking the actor pointer 14; actor_get spelled out,
+// index first, or as an array element (first get, second, or both) 14; the flag read
+// into a local first 14; if/else form 14; the reference in a local first 28; actor_get
+// after the if 25; no actor local 34.
 // @retail 0x1b1eb0
 bool __stdcall function_1b1eb0(long actor_index, s_slot *slot)
 {
@@ -154,6 +159,32 @@ bool function_262890(long actor_index, s_reference reference);
 bool function_1f8660(long actor_index);
 real function_1e3920(long actor_index);
 
+// score 168 (was 168): slot load, actor/permission/index/scratch homes and cold reference arms still differ.
+// Early invalid copy 168; early mode copy 140; both copies 140 (nonmatches dropped);
+// unsigned actor handle 168; byte permission 195; reference receiver order 170;
+// request mode first 168; permission first 168; shared active mode 168/635.
+// score 164 (was 168): early ESI slot load, scalar homes and cold reference arms still differ.
+// Native request byte 168; earlier scratch 164; result before scratch 168; both 167 (dropped);
+// permission success/failure arms 183/183; reference-test result 168; request byte/scratch 164.
+// score 164 (was 164): early slot load, scalar homes and cold reference joins remain.
+// slot reference 164; actor reference 164; both references 164;
+// const actor pointer 164; declared request byte 164; slot/request byte 164;
+// actor/request byte 164; both/request byte 164.
+// early slot receiver, scalar homes and reference arms remain;
+// reference before request/index/guard 203/203/201; late output index 163;
+// selection flag before clear 168; scratch before fields/clear 164/181;
+// early reference/scratch with late index 204.
+// score 164 (was 164): delayed ESI slot, scalar homes and cold reference arms remain.
+// Short-circuit invalid result 166; empty-reference first 166; mode-first guard 163;
+// copied initial reference 139 (dropped); target reference 162; request permission 165;
+// short-circuit/mode-first 166; both reference copies 143 (dropped);
+// declared-field equality 196; actual pooled-field reference 164.
+// score 164 (was 164): delayed ESI slot, scalar homes and cold reference arms remain.
+// Common scratch release 162f; later selection flag / acceptance / request predicates 164f;
+// release combinations and release with late output index 162f (two-point gain dropped).
+// early ESI slot, scalar homes and fallback arms remain;
+// shared defaults / native mode with defaults / native mode 168/168/164f on earlier scratch;
+// consumed request scope / scope with defaults / unsigned output handle / fallback result / combined 164/168/164/164/168f.
 // @retail 0x1b1f70
 bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
 {
@@ -193,10 +224,10 @@ bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
             request.type = 4;
             request.unknown015 = true;
             request.unknown69a = *(short *)state->unknown0e;
+            byte *scratch = ai_scratch_buffer_get();
             request.unknown698 = true;
             request.unknown69c = allowed;
             *((byte *)&request + 0x59) = true;
-            byte *scratch = ai_scratch_buffer_get();
             bool unknown = false;
             s_reference reference = actor->unknown418;
             if (state->unknown0c)

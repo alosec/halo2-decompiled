@@ -228,7 +228,9 @@ struct s_2556c0
 };
 
 // score 1 (was 1): the byte test uses the other SIB base and index slot;
-// the address is the same.
+// the address is the same. Immutable index 1; index predeclared/read before the blocked test 1 each;
+// edge predeclaration, a post-bounds edges base, a field-base flag pointer and an exact flag pointer 1 each;
+// scoped favor-speed-off 37.
 // @retail 0x2556b0
 long function_2556b0(point3f const *arg_0, vector3f const *arg_1, long arg_2, real *arg_3)
 {
@@ -504,6 +506,26 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 	return local_0;
 }
 
+// score 200 (was 205): first length, extent and radius homes still differ;
+// fallback timing initialized before query 200; later heading vector 219;
+// later object lookup 223; shared reverse scale 223; entry vector homes 205.
+// Frame and first-length/radius homes still differ;
+// exhaustive timing branches 205; trace distances after location 213; first length in guard 200;
+// completed direction reused 200; timing and trace lifetimes 206.
+// score 151 (was 200): frame 0x58 versus 0x54 and first-length/radius homes remain;
+// earlier interval lifetime 151; earlier request 226; earlier side 200;
+// nested normalizations 200; later radius on fallback body 203.
+// score 151 (was 151): frame 0x58 versus 0x54; first-length/radius homes remain.
+// Early-declared exhaustive interval 205; entry first length 151; trace/location names 151;
+// pre-normalization interval 149; byte side 220. Original body retained.
+// score 143 (was 151): frame 0x58/0x54 and first-length/radius homes remain.
+// Actor/target/both references 151/151/151; unit handle/radius values 245/232;
+// actor/target point values 240/249; heading-length result/reduced guard 143/143, latter retained.
+// Interval role name 151; entry interval lifetime 168; reversed aggregate 151;
+// first/second planar memcpy 151/151.
+// score 143 (was 143): Frame and scalar homes remain; normalized direction/heading/both
+// 243/243/269; immutable first length 143; total reach 145; combined range guard 143; separate
+// original/adjusted projection 151; with normalized direction 245.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
@@ -518,8 +540,12 @@ short __stdcall function_255740(long arg_0, s_slot *arg_1)
 		vector3f local_4 = local_0->unknown290;
 		local_4.k = 0.f;
 		real local_5 = function_30bf0(&local_3);
-		if (local_5 > 0.f && function_30bf0(&local_4) > 0.f)
+		real heading_length = 0.f;
+		if (local_5 > 0.f)
+			heading_length = function_30bf0(&local_4);
+		if (heading_length > 0.f)
 		{
+			real local_23 = 0.4f;
 			real local_6 = *(real *)((byte *)function_1e4a50(local_0->unknown054) + 4);
 			real local_9 = local_2->unknown03c + local_6;
 			vector3f local_7;
@@ -575,11 +601,8 @@ short __stdcall function_255740(long arg_0, s_slot *arg_1)
 							}
 							short local_19, local_21;
 							real local_20, local_22;
-							real local_23;
 							if (unit_animation_get_timing(local_0->unknown018, 0x7000101, local_18, &local_19, &local_20, &local_21, &local_22))
 								local_23 = local_20 * 1.33f;
-							else
-								local_23 = 0.4f;
 							if (local_23 > local_8)
 							{
 								s_unit_request local_24;

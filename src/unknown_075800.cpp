@@ -961,6 +961,27 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 
 /* the out-of-band messages: those that arrive from an address rather than on
    an established channel */
+// score 198 (was 198): selector/message/address convention differs; full baseline 198, fast preview 196.
+// Unified switch 208; retail-order switch with lookup exits 218; missing-connection exits 196; inline depth
+// one 196; size preference 243.
+// score 198 (was 198): selector/message/address allocation and dispatch root remain.
+// Isolated endpoint/leave/query cases 195p/198p/206p; separate connection phase 258p;
+// two session cases first 199p; connection order reversed 198p; direct lookup guard 198p;
+// residual phase reversed 207p. All eight plain checked; fast preview 196 versus full 198.
+// Inline declarations on query, acknowledgment, update and reconnect handlers,
+// singly and paired, all 196 fast; combined session handlers 198 plain, no gain.
+// Direct/full if ladders 278/241; link snapshot 215; unsigned connection handle 196;
+// typed session payload 196; session cases before lookup cases 210; reversed direct
+// cases 195; adjacent lookup range after direct phase 205 (fast control 196).
+// score 198 (was 198): selector/address/payload convention and dispatch schedule still differ.
+// instance cases first 227f; standalone cases first 250f.
+// lookup cases first 239f; query cases first 209f.
+// connection cases first 277f; peer cases first 190f.
+// acknowledgment first 211f; reconnect cases first 233f.
+// Peer-first partition plain 195; three-count gain rejected.
+// incoming selector/message/address allocation remains.
+// Six separate noinline handler declarations and query/ack or peer/session groups
+// all 195 in the reduced image, tying its unchanged 195 preview. All declarations restored.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {

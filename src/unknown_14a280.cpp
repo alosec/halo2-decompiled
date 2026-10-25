@@ -371,6 +371,14 @@ real function_14b240(s_14b240_owner const *owner, s_bsp3d_disk const *disk, poin
 	return result;
 }
 
+// score 44 (was 44): retail loads the sky count into ebp for the range test
+// (cmp edx, ebp) where ours compares with [esi + 8]; retail's ebp then stays
+// saved up to the tag-index test, so its NONE preset (or ecx, -1) and that
+// test are not jump-threaded as ours are. Tried: a ternary 44, the count in
+// a local 44, count > index 44, an inline helper returning NONE early 44,
+// (long)index 44, the index lookup moved out of the cluster test 49, a copy
+// of the scenario view 101, (short)*sky_index at each use 44, tag_index
+// declared first 44, a long copy of the index for the compare 44.
 // @retail 0x14b360
 bool cluster_get_sky(long cluster_index, long *sky_index, vector3f *vector, bool *found)
 {

@@ -287,6 +287,11 @@ struct s_z_state_world
 
 // score 11 (was 11): the entity pointer is materialised in EAX and the record is read through it;
 // retail folds the address into the load itself.
+// The fold is the scheduler's rewrite of `lea; mov cl, [eax+6]`; ours can't do it because the
+// database pointer is in ecx (retail edx) and the active byte goes to cl. Tried: inline active
+// test, record getter or dispatch helper 11; world local in the inner block 11; state through the
+// re-read 11; database local 11; active read before the pointer (72 spellings) 14-21; renames 11;
+// a 600 s permuter run, none below 11.
 // @retail 0xa9820
 bool function_a9820(long *block, long index)
 {
@@ -622,6 +627,9 @@ bool function_aa970(long index)
 
 // score 37 (was 37): the float is added into the accumulator and stored back; retail loads it into
 // a separate register, adds and stores that.
+// BLOCKED-BY 0xd0620 (its iterator in ebx); also tried the accumulator from header->object 37, a masked
+// child index local 37, an index-first byte offset 37, the accumulator declared before the displacement 37,
+// a position pointer local 57
 // @retail 0xaa9e0
 void function_aa9e0(long index, point3f const *previous_position, vector3f const *velocity)
 {
@@ -843,6 +851,27 @@ PRIVATE inline bool z_state_real_valid(real value)
  return (*(long *)&value & 0x7f800000) != 0x7f800000;
 }
 
+// score 154 (was 154): initial byte-result store and scalar-zero lifetime differ.
+// Scoped inline depth zero 610; scoped global optimization off 368; decode cursor 161;
+// decode countdown cursor 161; final native acceptance result 155.
+// score 146 (was 154): mask-width field reference 146; initial result store and scalar zero remain.
+// Native external record 154; record/plain result and plain sticky predicates 289;
+// external flags reference 154; decoder/classifier noinline declarations 465/349; unsigned ordinal 154.
+// score 146 (was 146): initial direct byte SETNE, scalar zero and output-vector roles remain.
+// Actual position/first-vector/second-vector bindings 146/146/146; scale and two scalar
+// field bindings 146/146/146; decode-array element binding 146; combined scalar fields 146.
+// score 146 (was 146): direct result-byte SETNE and scalar-zero reloads remain.
+// Wide sticky validity 352; byte sticky validity 146; decoder exits/lower-first 146/295; finite classifier 243; exponent extraction 146; decoded region count/state 146/146.
+// score 146 (was 146): initial direct byte SETNE and scalar-zero reloads remain.
+// Native long/byte first validation results 146/146; range-first decoder inputs 146;
+// range-first plus long validation 146; short encoding count 146; count plus range-first 146;
+// stream-last decoder inputs 146; unsigned native limit 460 at 901 bytes (fast scores).
+// direct result-byte SETNE and scalar zero remain. Scalar code input,
+// scale/all code lifetimes, field reference/pointer outputs, code with reference/pointer output,
+// code with default lower result 146/146/146/146/146/146/146/295.
+// direct byte SETNE and scalar-zero reloads remain.
+// Native code/word code/byte code 440/301/291; word endpoint limit 146;
+// word code with limit 301; native weights 146; endpoint products 227; unsigned code with weights 440.
 // @retail 0xa6d50
 bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
 {
@@ -914,11 +943,12 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
  if (stream_read_bit(stream))
  {
   state[0x61] = (byte)function_1959c0(stream, 5);
-  if (result && (state[0x61] <= 16)) result = true; else result = false;
-  if (state[0x61] > 0)
+  byte const &mask_bits = state[0x61];
+  if (result && (mask_bits <= 16)) result = true; else result = false;
+  if (mask_bits > 0)
   {
-   *(word *)(state + 0x62) = (word)function_1959c0(stream, state[0x61]);
-   *(word *)(state + 0x64) = (word)function_1959c0(stream, state[0x61]);
+   *(word *)(state + 0x62) = (word)function_1959c0(stream, mask_bits);
+   *(word *)(state + 0x64) = (word)function_1959c0(stream, mask_bits);
   }
   *flags |= 0x200;
  }

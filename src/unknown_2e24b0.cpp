@@ -30,16 +30,21 @@ public:
 // where `value` sits in the cell's list of boxes, or -1
 inline long find_box_2e29b0(cell_2e1090 const *cell, unsigned short value)
 {
-	long result = -1;
-	for (long position = 0; position < cell->boxes.size; position++)
+	long const count = cell->boxes.size;
+	if (count <= 0)
 	{
-		if (cell->boxes.data[position] == value)
+		return -1;
+	}
+	unsigned short const *data = cell->boxes.data;
+	unsigned short const *end = data + count;
+	for (unsigned short const *entry = data; entry < end; entry++)
+	{
+		if (*entry == value)
 		{
-			result = position;
-			break;
+			return entry - data;
 		}
 	}
-	return result;
+	return -1;
 }
 
 // one bit per box, set for the boxes whose x interval holds a box's lower
@@ -239,11 +244,21 @@ void class_2e1090::function_2e24b0(long *owner, bounds_2e0020 const *bounds, pai
 // takes a box out of the sweep: every box it overlaps loses its pair (or,
 // for a grid cell's box, the cell loses it), its endpoints leave each axis,
 // and the last box moves into its place
-// score 328 (was 312): at retail's length with the in-place y/z test, but the
-// count, index, `this` and element array spill to other stack slots, the
-// second x walk evicts `this` where retail spills the word index, and the
-// removal scan keeps the scanned box in a register where retail reloads it
-// each time.
+// score 312 (was 328): remaining index/receiver slots, scan loads and tail
+// differ. Earlier 328 at retail length retained the in-place y/z test; its
+// count, index, receiver and array slots differed, the second x walk saved
+// the receiver instead of the word index, and the scan kept its box in a
+// register.
+// New: a guarded pointer-range lookup 312 (1467 bytes); post-search data
+// snapshot 350, reused snapshot 347, late pair 328, read-only scan input
+// 328, force-inline lookup 328, group step in body 328, cached lookup data
+// and count 409. With the pointer range: a single lookup result 348, late
+// pair or input constness 312, inequality 312, count/index renames 312,
+// ordinal plus cursor 338, uncached count 362. Count and array-address slots now agree; the
+// index and saved receiver slots, later scan and final loop still differ.
+// On 312: scan-input rename, list/cell references, int lookup result,
+// unsigned-int count and scan-local renames 312; array reference 452;
+// direct array-data inputs 325. Original code restored.
 // @retail 0x2e29b0
 void class_2e1090::function_2e29b0(long *owner, pairs_2e1090 *pairs)
 {

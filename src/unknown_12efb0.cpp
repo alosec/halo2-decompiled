@@ -91,9 +91,12 @@ static __forceinline void function_12efb2(s_fog_accumulator *arg_0, real const *
 static __forceinline void function_12efb3(s_fog_accumulator *arg_0, s_fog_accumulator const *arg_1, real arg_2)
 {
 	arg_2 = function_12efb1(arg_2);
-	if (arg_1->weight > 0.0f)
+	real weight = arg_1->weight;
+	arg_0->weight += arg_2;
+	arg_0->remaining *= 1.0f - arg_2;
+	if (weight > 0.0f)
 	{
-		real local_0 = arg_2 / arg_1->weight;
+		real local_0 = arg_2 / weight;
 		arg_0->color.red += arg_1->color.red * local_0;
 		arg_0->color.green += arg_1->color.green * local_0;
 		arg_0->color.blue += arg_1->color.blue * local_0;
@@ -101,8 +104,6 @@ static __forceinline void function_12efb3(s_fog_accumulator *arg_0, s_fog_accumu
 		arg_0->distance += arg_1->distance * local_0;
 		arg_0->height += arg_1->height * local_0;
 	}
-	arg_0->weight += arg_2;
-	arg_0->remaining *= 1.0f - arg_2;
 }
 
 static __forceinline void function_12efb4(s_fog_accumulator const *arg_0, real *arg_1)
@@ -130,6 +131,14 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 	arg_0->field_14 *= 1.0f - arg_2;
 }
 
+// score 692 (was 725): frame 0x4820 agrees; clear scheduling, output cursor
+// +0x10 versus +8 and palette/cluster registers still differ. Interleaved
+// scalar helper 727; the alpha term first 707 alone but 713 together with
+// the weight local (not kept); ordinary output inline 725; ordinary color
+// inline 725; output-helper output-first parameters 725.
+// score 692 (was 692): clear schedule and output cursor +0x10 versus +8 remain;
+// native output clear 742; output clear before palette lookup 790; previous index 692;
+// cluster-distance snapshot 762; zero accumulator copies 835.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

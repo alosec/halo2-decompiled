@@ -53,6 +53,17 @@ bool function_1c5210(transform4x3f const *matrix, void *shape, long component, l
 
 static __forceinline long real_to_long(real value);
 
+// score 353 (was 349): frame 0x8c versus aligned 0x94; global optimization off 988, inline depth 2 348, no reference truth test 348, shape flag result 352, combined 352.
+// Base-position/velocity/both input values 379f/382f/413f; move-stage handle 352f;
+// minimum-radius value 352f; activity/compound byte 352f/352f; header offset 352f.
+// Last five forms retain the unchanged reduced executable instructions (preview 352f).
+// frame 0x8c versus aligned 0x94; global optimization off 988, inline depth 2 348, no reference truth test 348, shape flag result 352, combined 352.
+// qword backing 357; entry backing lifetime 357.
+// entry matrix lifetime 357; both entry workspaces 357.
+// immutable margin 357; immutable shape 357.
+// immutable component 357; native point initializer 357.
+// Lead (@coldspear, #801): with the capsule made an aligned local instead of the placement-new
+// buffer, the frame becomes retail's aligned one (and esp, -16) and the count falls to 326.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {

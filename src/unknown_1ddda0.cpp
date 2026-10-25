@@ -69,7 +69,17 @@ struct s_1debd0
 };
 
 // score 12 (was 12): the cross product keeps the other operand order, and
-// every swap of the factors leaves this code unchanged.
+// every swap of the factors leaves this code unchanged. Only the XMM numbers
+// differ: retail multiplies into (point.y - p.y) for the second product, ours
+// into (q.x - p.x). Tried: `0.0f <` 12; `!(... <= 0)` 13; the negated cross
+// with `< 0` 12; `-(b) + a` 12; products in locals (either order) 12; a
+// cross-product helper (either argument order) 12; member-wise stores (x or y
+// first) 12; q's difference inline in the product 12; q projected before
+// point - p 12; projected and differences declared x/y interleaved 43-44;
+// all-scalar locals 22; one inline expression with no difference locals 22;
+// q - p straight from the 3D point 15; a cached g_440b94 row 99; the
+// projections through 0x120810 104; a result flag with break 79; leaving
+// on `local_5 == local_4` 72; comparing the products 50.
 // @retail 0x1debd0
 bool function_1debd0(dword const *arg_1, s_bsp3d const *arg_0, short arg_2, long arg_3,
  short arg_4, bool arg_5, point2f const *arg_6)
@@ -382,7 +392,10 @@ PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *
 
 // score 44 (was 44): the loads after the first loop are in the other order
 // and the byte load uses mov cl where retail uses movzx ecx, so the table
-// address that follows is off.
+// address that follows is off. Tried: the projection helper for both edge
+// points without the volatiles 109; the volatiles removed 98; the side flag
+// declared first 44; the insertion helper's parameters swapped 44; the first
+// loop's exit test as an if/break 44.
 // @retail 0x1de2c0
 void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
 {
@@ -518,51 +531,16 @@ PRIVATE __forceinline void function_1ddda0_prefetch(void const *address)
 #endif
 }
 
+/* projects a point onto the plane of side axis * 2 + side (src/unknown_11fc80.cpp); retail
+   inlines it into 0x1ddea0 */
+real *function_120810(real const *point, short axis, byte side, real *out);
+
 // @retail 0x1ddea0
 void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
 {
  (void)&arg_0; (void)&arg_1;
  s_1de6d2 const *local_0 = (s_1de6d2 const *)arg_0->field_0;
- if (arg_1 & 0x800000)
- {
-  if (arg_1 != NONE)
-  {
-   long local_9 = arg_1 & 0x7fffff;
-   s_1dea01 const *local_10 = &local_0->field_14[local_9];
-   if (arg_0->field_14->field_c0c.field_0 < 256)
-    arg_0->field_14->field_c0c.field_4[arg_0->field_14->field_c0c.field_0++] = local_9;
-   if (arg_0->field_21f) return;
-   for (long local_11 = local_10->field_2; local_11 < local_10->field_2 + local_10->field_1; ++local_11)
-   {
-    s_1de6d2 const *local_12 = (s_1de6d2 const *)arg_0->field_0;
-    s_1dea02 const *local_13 = &local_12->field_1c[local_11];
-    if (function_1ddea1(arg_0, local_13->field_0))
-    {
-     plane3f const *local_15 = &local_12->field_c[local_13->field_0 & 0x7fff];
-     real local_19 = (real)fabs(local_15->i);
-     real local_20 = (real)fabs(local_15->j);
-     real local_21 = (real)fabs(local_15->k);
-     real local_16 = local_15->k * arg_0->field_c->z + local_15->j * arg_0->field_c->y + local_15->i * arg_0->field_c->x - local_15->d;
-     real local_17 = 0.0f - local_16;
-     point3f local_18;
-     local_18.x = local_17 * local_15->i + arg_0->field_c->x;
-     local_18.y = local_17 * local_15->j + arg_0->field_c->y;
-     local_18.z = local_15->k * local_17 + arg_0->field_c->z;
-     short local_22;
-     if (local_21 >= local_20 && local_21 >= local_19) local_22 = 2;
-     else if (local_20 >= local_19) local_22 = 1;
-     else local_22 = 0;
-     arg_0->field_21c = local_22;
-     arg_0->field_21e = plane3f_axis_positive(local_15, local_22) != ((local_13->field_0 & 0x8000) != 0);
-     short const *local_23 = g_440b94[local_22 * 2 + arg_0->field_21e];
-     arg_0->field_220.x = ((real const *)&local_18)[local_23[0]];
-     arg_0->field_220.y = ((real const *)&local_18)[local_23[1]];
-     function_1de220(arg_0, local_13->field_2);
-    }
-   }
-  }
- }
- else
+ if (!(arg_1 & 0x800000))
  {
   s_1de6d1 const *local_1 = &local_0->field_4[arg_1];
   long local_2 = *(long const *)&local_1->field_2[-1] >> 8;
@@ -571,14 +549,13 @@ void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
   else if (local_2 != NONE) function_1ddda0_prefetch(&local_0->field_14[local_2 & 0x7fffff]);
   if (!(local_3 & 0x800000)) function_1ddda0_prefetch(&local_0->field_4[local_3]);
   else if (local_3 != NONE) function_1ddda0_prefetch(&local_0->field_14[local_3 & 0x7fffff]);
-  long local_4 = local_1->field_0;
-  plane3f const *local_5 = &local_0->field_c[local_4];
+  plane3f const *local_5 = &local_0->field_c[local_1->field_0];
   real local_6 = local_5->k * arg_0->field_c->z + local_5->j * arg_0->field_c->y + local_5->i * arg_0->field_c->x - local_5->d;
   bool local_7 = local_6 < arg_0->field_10;
   bool local_8 = local_6 > 0.0f - arg_0->field_10;
   if (local_8 && local_7)
   {
-   arg_0->field_1c[arg_0->field_18++] = local_4 | 0xffff8000;
+   arg_0->field_1c[arg_0->field_18++] = local_1->field_0 | 0xffff8000;
    function_1ddea0(arg_0, local_2);
    if (arg_0->field_21f && arg_0->field_14->field_c0c.field_0 > 0) return;
    --arg_0->field_18;
@@ -588,7 +565,47 @@ void __stdcall function_1ddea0(s_1de2c0 *arg_0, long arg_1)
    --arg_0->field_18;
   }
   else
-   function_1ddea0(*(s_1de2c0 *volatile *)&arg_0, *(long const *)&local_1->field_2[local_8 * 3 - 1] >> 8);
+  {
+   function_1ddea0(arg_0, *(long const *)&local_1->field_2[local_8 * 3 - 1] >> 8);
+   /* the same stop test as after the other two calls; it does nothing here, but
+      without it the compiler turns this last call into a jump back to the top,
+      where retail keeps a real call */
+   if (arg_0->field_21f && arg_0->field_14->field_c0c.field_0 > 0) return;
+  }
+ }
+ else if (arg_1 != NONE)
+ {
+  long local_9 = arg_1 & 0x7fffff;
+  s_1dea01 const *local_10 = &local_0->field_14[local_9];
+  if (arg_0->field_14->field_c0c.field_0 < 256)
+   arg_0->field_14->field_c0c.field_4[arg_0->field_14->field_c0c.field_0++] = local_9;
+  if (arg_0->field_21f) return;
+  for (long local_11 = local_10->field_2; local_11 < local_10->field_2 + local_10->field_1; ++local_11)
+  {
+   s_1de6d2 const *local_12 = (s_1de6d2 const *)arg_0->field_0;
+   s_1dea02 const *local_13 = &local_12->field_1c[local_11];
+   if (function_1ddea1(arg_0, local_13->field_0))
+   {
+    plane3f const *local_15 = &local_12->field_c[local_13->field_0 & 0x7fff];
+    real local_16 = local_15->k * arg_0->field_c->z + local_15->j * arg_0->field_c->y + local_15->i * arg_0->field_c->x - local_15->d;
+    real local_17 = 0.0f - local_16;
+    point3f local_18;
+    local_18.x = local_17 * local_15->i + arg_0->field_c->x;
+    local_18.y = local_17 * local_15->j + arg_0->field_c->y;
+    local_18.z = local_15->k * local_17 + arg_0->field_c->z;
+    real local_19 = (real)fabs(local_15->i);
+    real local_20 = (real)fabs(local_15->j);
+    real local_21 = (real)fabs(local_15->k);
+    short local_22;
+    if (local_21 >= local_20 && local_21 >= local_19) local_22 = 2;
+    else if (local_20 >= local_19) local_22 = 1;
+    else local_22 = 0;
+    arg_0->field_21c = local_22;
+    arg_0->field_21e = plane3f_axis_positive(local_15, local_22) != ((local_13->field_0 & 0x8000) != 0);
+    function_120810(local_18.n, local_22, arg_0->field_21e, &arg_0->field_220.x);
+    function_1de220(arg_0, local_13->field_2);
+   }
+  }
  }
 }
 

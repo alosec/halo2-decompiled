@@ -5,6 +5,7 @@
 #include <new>
 #include "unknown_1eb350.h"
 #include "havok_reference.h"
+#include "shape_2de750.h"
 
 struct c_transformed_point
 {
@@ -64,16 +65,8 @@ struct s_shape_ray_result
 	real fraction;
 };
 
-struct c_vertex_reference
+struct c_vertex_shape : radius_shape_2de750
 {
-	word allocation_size;
-	word references;
-};
-
-struct c_vertex_shape : c_vertex_reference
-{
-	long user;
-	real radius;
 	long surface_index;
 	long vertex_count;
 	short material;
@@ -116,17 +109,26 @@ PRIVATE inline void shape_transform_point(const transform4x3f *matrix, const poi
 	result->z = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x + matrix->position.z;
 }
 
+// score 6 (was 6): radius/index loads swap; vertex x uses the completed
+// address before its store. Derived count/kind/value initializers 33; all
+// member initializers 6; index/count/kind initializers 6; const source 6;
+// point memcpy 120; point value with in-place transform 128; word edge
+// cursors 97; full-width side 97.
+// Source-surface reference 6; source-edge reference 6; cached edge table 120;
+// cached vertex table 125; output ordinal snapshot 101; outer transform workspace 6;
+// short side 97; external geometry reference 6. Radius/index and x-store order remain.
+// Also tried: tag stored through (long *)vertices_raw or vertices() 6; vertex
+// as vertices_raw + n, an x local, surfaces[surface_index], surface_index set
+// first 6; w stored by member index 38; offset local 68; separate x/y/z
+// stores 10/106; point struct copy 120; __m128 vertex pointer 6.
 // @retail 0x1edd00
 c_vertex_shape::c_vertex_shape(s_shape_source *source, byte type, long data, long index,
-	long user_data, const transform4x3f *matrix)
+	long user_data, const transform4x3f *matrix) : radius_shape_2de750(0.01f)
 {
-	user = 0;
 	vertex_count = 0;
 	kind = type;
 	surface_index = index;
 	value = data;
-	references = 1;
-	radius = 0.01f;
 	s_shape_surface *surface = &source->surfaces[index];
 	long edge_index = surface->edge;
 	long first_edge = edge_index;
@@ -150,7 +152,7 @@ c_vertex_shape::c_vertex_shape(s_shape_source *source, byte type, long data, lon
 	} while (edge_index != first_edge);
 	material = surface->material;
 	flags = surface->flags;
-	user = user_data;
+	user_value = user_data;
 }
 
 short function_120850(const vector3f *vector);
@@ -169,6 +171,10 @@ c_vertex_shape::ray_answer c_vertex_shape::ray_test(const s_shape_ray *ray, s_sh
 
 void c_vertex_shape::ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #else
+// score 250 (was 250): frame 0x78 versus 0x90, normal/ray homes and polygon input registers differ.
+// Hit point setter 250; component normalization loop 250; short projection side 255;
+// direct hit result 251; ray before origin with float setters 251.
+// Early offset 259; late ray direction 264; squared-normal value 250; descending projection 358; offset/direction combination 264.
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #endif
@@ -658,6 +664,34 @@ void c_shape_owner::query_box(const c_query_transform *matrix, const __m128 *ext
  }
 }
 
+// score 19 (was 66): frame/length agree; child-query vtable load, ordinal spill and remap entry differ.
+// Radius before transform 140; scoped instance index 80; later ordinal correction 19;
+// key/owner continues 66/102; remap/removal/both while loops 66.
+// score 19 (was 19): dispatch scheduling, ordinal/context homes and remap entry differ.
+// Complete center 19; local/radius/input memcpy 100/75/142; table/key references 19/137;
+// expansion entry return 19; size preference 200.
+// Actual query reference 102; owner/instance/both record references 19;
+// correction after remap 142; early input sphere 130;
+// normal remap inline 176 (498 bytes); normal removal inline 19.
+// score 19 (was 19): dispatch load and ordinal/remap homes remain; workspace scope 19;
+// pre-removal append count 86; removal postdecrement 66; paired ordinal names 19;
+// shared center setter 107; sphere component view 19; int append ordinal 19; outer while 19.
+// score 19 (was 19): early child-vtable load and exchanged ordinal/context homes remain.
+// Child query declaration/abstract slot/abstract interface 19/19/19; remap context/cursor names 19/19;
+// actual context type 19; typed context plus names 19; abstract query plus typed context/names 19.
+// Dispatch scheduling, ordinal/context homes and remap entry still differ.
+// Late/early context 25/88; sphere/key-array references 19/19; packet copy before removal/count 78/19;
+// point-first workspaces 19; early packet plus context 92; pre-dispatch ordinal with
+// late/early context, early packet or receiver 74/109/32/121.
+// score 19 (was 19): child dispatch and ordinal/context/remap homes remain; native radius lane 19;
+// initialized transform 187; successful remap advancement 56; source-index removal 140;
+// remap parameter cursor/validation result/key type shift 19 each; invalid result first 60.
+// dispatch timing, ordinal/context homes and remap entry remain; entry ordinal 19; int
+// ordinal 19; immutable append boundary/shape 19/19; component sphere 158; SSE sphere 84; combined ordinal
+// lifetimes 19; component sphere plus early correction 114.
+// score 19 (was 19): Child dispatch/ordinal/context homes remain; distinct inverse output/scope
+// 106/106; mutation cursor 161; removal count/reference 19/19; transform ordinary inline 309;
+// transform output/remap array references 19/19.
 // @retail 0x1ee5b0
 void function_1ee5b0(c_shape_owner *owner, const __m128 *sphere, bool expand_instances,
  bool filter, s_surface_key_array *keys)
@@ -687,8 +721,8 @@ void function_1ee5b0(c_shape_owner *owner, const __m128 *sphere, bool expand_ins
      long first = keys->count;
      __m128 local = center.value;
      ((real *)&local)[3] = ((const real *)sphere)[3];
-     --i;
      ((c_instance_surface_query *)(shape + 0x50))->query_sphere(&local, keys);
+     --i;
      query_remap_keys(&owner->object, keys, first, instance_index);
     }
    }

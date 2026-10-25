@@ -1033,6 +1033,17 @@ bool __stdcall network_session_boot_machine(c_class_58d20 *session, const s_sess
 	return result;
 }
 
+// score 23 (was 23): retail keeps the inlined disconnect's reason in a pushed ebx set after
+// the memset; ours stores an immediate. Tried: the sibling's long/bool union 33; the result
+// assigned in the call's argument 6 (bool in bl, reason still folded); a long result passed as
+// the reason 62; a reason parameter the caller passes as 1 41 (it stays on the stack); the
+// result set first and passed by name 35; the callee's volatile reason read 27 (a stack temp);
+// `inline` on the callee 23; the reason as `true` 23.
+// the reason 62.
+// Fully assigned success arms 36; conditional action result 35; external
+// session reference 23; current-member snapshot with original result 23;
+// rejection result 59; wrapper inline/noinline declarations 23/23;
+// external reference with assigned success arms 36. Reason still folds.
 // @retail 0x5ade0
 bool network_session_host_boot_member(c_class_58d20 *session, long member_index)
 {
@@ -2171,6 +2182,19 @@ void network_session_leave_joining(c_class_58d20 *session)
 	network_session_update_leaving_join(session);
 }
 
+// score 3 (was 3): retail sets the NONE carrier after clearing the state
+// block; ours sets it before the clear. Tried: the copy as a word loop
+// 49, as a pointer range or a byte loop 0 (not kept: the matched siblings
+// 0x61180 and 0x614a0 copy the same way with memcpy).
+// Complete field construction without scratch clear 48; clock before record
+// 28, after scratch clear 3; immutable initialized record 48; typed state
+// destination 11, without scratch clear 48, with immutable record 48, with
+// earlier clock 28. The original eight-byte frame and memcpy remain.
+// our NONE request sentinel is defined before clearing the
+// state block; retail defines it afterwards. Tried: the copy as a word loop
+// New trials: memmove 42; request field fill 3; clear result as copy target 9;
+// all-one record fill 31; tail-only clear 32; fill with memmove 37;
+// tail clear with fill 30; tail clear with memmove 46.
 // @retail 0x61330
 void network_session_leave_join_request(c_class_58d20 *session)
 {
@@ -3669,6 +3693,11 @@ struct s_network_session_list;
 c_class_58d20 *network_session_manager_find_session(s_network_session_list *manager, const s_session_id *id);
 bool function_07ab10(long key_index, s_type_99af70 *address, long local, word port, const XNADDR *xnaddr);
 
+// score 136 (was 136): host/session staging, clock boundary and cleanup placement differ;
+// size preference 233; gated identity 142; long result 160; failure-path result 192; address name 136.
+// host/session homes, cleanup placement and clock expansion differ;
+// isolated failure-first 159, identifier assignment 136, delayed ready flag 136,
+// redundant false removed from one-exit flow 165, inline depth zero 136.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
@@ -4468,6 +4497,9 @@ bool __stdcall function_05d9e0(c_class_58d20 *session, const void *message_)
 
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update);
 
+// score 122 (was 122): missing owner spill leaves frame 0x9148 versus 0x914c;
+// mask/counter role names 122, first-loop cursor 122, eligibility guard 122,
+// member bit live across readiness 159, named readiness result 122.
 // @retail 0x62640
 void function_62640(c_class_58d20 *session)
 {

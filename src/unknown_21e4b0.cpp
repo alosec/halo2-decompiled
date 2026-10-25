@@ -93,6 +93,45 @@ void function_220790(s_sound_listener const *listener);
 bool sound_driver_voice_create_buffer(long voice_index);
 void function_221490(LPDIRECTSOUNDBUFFER *buffer_reference);
 
+// score 165 (was 169): success/type registers and first-channel spill;
+// byte allocation result 165; early byte result 280; listener aggregate 328;
+// aggregate with early result 357; early result with count cursor 300.
+// failure arm first 168; direct result exits 364; byte category index 311;
+// headroom do 167; flat eight-entry submix scan 258. Frame 0x80 still agrees.
+// long channel-count snapshot 303; reused voice count 165; both 322;
+// complete count record 454; pointer-primary count scan 302;
+// unsigned category long/word 165/311; separate voice result 323.
+// signed allocation byte 165; word allocation state 301; unsigned category 165;
+// counts record reference 166; count field reference 165; published first 165;
+// field plus first 165; signed byte plus field 165. Success/type spills still differ.
+// returned byte 313; returned byte/count cursor 341; serial HRESULT 169; descriptor prefixes 323;
+// complete listener value 468; frame pointer 443; global optimization disabled 1166; size preference 645;
+// separate final-call result 302; result transfer before reset 294.
+// Frame 0x80 agrees; allocation byte, category and first-channel spill still differ.
+// published first channel 165; count from first channel 283; count before range publication
+// 298; published first count 294; native mixbin identifiers 165; input table row traversal
+// 232; output table traversal 268; both native table traversals 274.
+// score 165 (was 165): success/type carriers and first-channel spill remain;
+// native startup/create/buffer calls 209/201/165; two-row input table 165;
+// absolute channel index 283; state before codec stores 165; failure state 163; early failure state 286.
+// result from startup tests 424; tested-state transfer 424; result at first test 424;
+// final result after reset completion 303; before effects 303; before submix 262;
+// before impulse cleanup 174; before volume stores 165.
+// score 165 (was 165): allocation/type carriers and first-channel spill remain;
+// cross-reset channel / voice / both bitwise accumulation 307/306/328;
+// both Boolean accumulations late / across reset 332/331; listener / table scopes
+// with cross-reset accumulations 328/328; native submix record initializers 328.
+// success/type carriers and first-channel spill remain;
+// voice/both compound states 312/329; channel/voice/both call-first 266/286/274;
+// channel/voice/both conditional states 282/282/301. Original guarded updates retained.
+// score 165 (was 165): saved success/category/first-channel homes still differ;
+// final byte 167; final byte with wide state 301; final byte cross-reset 288;
+// final byte with bool state 167, cross-reset 288; scoped wide state 302;
+// wide state across reset/listener 293/294. Original byte state retained.
+// saved success/type/first-channel allocation remains;
+// listener consumer scope 165; with reset/earlier byte state 280/283; submix scope 165;
+// both scopes 165; both with reset state 280; listener/reset with pointer-first bins 280;
+// all consumer boundaries 280. Original short-circuit loops retained.
 // @retail 0x21e4b0
 bool function_21e4b0(s_sound_driver_counts const *counts)
 {
@@ -129,7 +168,7 @@ bool function_21e4b0(s_sound_driver_counts const *counts)
 				g_47f0d0.field04 = 0;
 				g_47f0d0.field14 = NULL;
 				g_47f0d0.field10 = 0x10000;
-				bool buffers_created = true;
+				byte buffers_created = true;
 				for (long type = 0; type < 3; type++)
 				{
 					long first = SOUND_DRIVER_GLOBALS->channel_count;

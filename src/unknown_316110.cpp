@@ -148,11 +148,39 @@ inline void end_agent_316110(agent_316110 *agent)
 	}
 }
 
-// score 167 (was 185): the second collidable is now taken up front, so the
+// score 6 (was 185): the first cleanup still exchanges eax/edx, and the
+// first owner load uses ecx between the two loads. A second-member reference
+// with an element reference in each pair loop 6 (from 87); element references alone
+// 84 rejected. First-member reference 170; second or both member references
+// 141; ID references 87. On 6: owner reference 6, agent reference 73, helper
+// early return 6, owner-object reference 6, record reference for cleanup 73,
+// island snapshot 183; first element reference only 9; both pair references
+// 6; first pair plus record references 9.
+// Separate scan blocks with early handle snapshots 87 (from 167); fresh
+// pair reads 141, as did a late second handle, end snapshot, early return,
+// record base, force-inline cleanup, array pointers, split copy steps and
+// pair/order references. Original merge prefix plus separate scans 87.
+// At 167, the second collidable was taken up front, so the
 // pair dies in edx as retail's does; retail still reloads the pair from its
 // slot inside the loop and keeps the array pointer in esi, ours keeps the
 // second in the slot and the pointer in edx, and the two virtual calls swap
 // their vtable registers
+// Isolated end/flag forms 87; delayed second handle and first-id per-use
+// 141; cleanup receiver reference and caller null guards 87; first id once
+// 240; shared equality predicate 87. Original body and inline functions retained.
+// Cleanup as an agent method 6; entity and owner locals 6; an else arm,
+// post-increment copy and member end on 6: 6. Cleanup as a record method 54,
+// with an agent sample 6; record input 6; immutable callback receiver 6.
+// Agent-pointer reference 200; record argument with a member reference 200;
+// cleanup on the callback receiver with pointer or reference argument 6;
+// explicit cdecl 6; pair-member reference lookup 227; collidable
+// member lookup 6; equality template, inline or force-inline, 186; first
+// array pointer 6; owner-pointer member reference 6; order-helper result 6;
+// const record cleanup 54.
+// Direct record pointer or reference cleanup 54; pair base with const
+// cleanup 54; const record cleanup with an element reference 67; external
+// pair-reference argument 6; pair base with agent-value cleanup 6. A single
+// worker search of 474 variants found none below 6.
 // @retail 0x316110
 void cache_316110::function_316110(pair_316110 const *pair)
 {
@@ -176,47 +204,52 @@ void cache_316110::function_316110(pair_316110 const *pair)
 		return;
 	}
 	collidable_316110 *first = pair->first;
-	collidable_316110 *second = pair->second;
-	pairs_316110 *pairs = &island_of_316110(first)->pairs;
-	int i;
-	for (i = 0; i < pairs->size; i++)
+	collidable_316110 *const &second = pair->second;
 	{
-		if (pairs->data[i].first->id == first->id && pairs->data[i].second->id == second->id)
+		pairs_316110 &pairs = island_of_316110(first)->pairs;
+		for (int i = 0; i < pairs.size; i++)
 		{
-			goto remove;
+			pair_316110 const &entry = pairs.data[i];
+			if (entry.first->id == first->id && entry.second->id == second->id)
+			{
+				pairs.size--;
+				pairs.data[i] = pairs.data[pairs.size];
+				return;
+			}
 		}
 	}
 	{
-		pairs = &island_of_316110(second)->pairs;
-		for (i = 0; i < pairs->size; i++)
+		pairs_316110 &pairs = island_of_316110(second)->pairs;
+		for (int i = 0; i < pairs.size; i++)
 		{
-			if (pairs->data[i].first->id == first->id && pairs->data[i].second->id == second->id)
+			pair_316110 const &entry = pairs.data[i];
+			if (entry.first->id == first->id && entry.second->id == second->id)
 			{
-				goto remove;
+				pairs.size--;
+				pairs.data[i] = pairs.data[pairs.size];
+				return;
 			}
 		}
+	}
+	{
 		island_316110 *island = island_of_316110(first);
 		if (island == static_cast<island_316110 *>(this))
 		{
 			island = island_of_316110(second);
 		}
-		records_316110 *records = &island->records;
-		for (int j = 0; j < records->size; j++)
+		records_316110 &records = island->records;
+		for (int j = 0; j < records.size; j++)
 		{
-			if (records->data[j].first->id == first->id && records->data[j].second->id == second->id)
+			if (records.data[j].first->id == first->id && records.data[j].second->id == second->id)
 			{
-				end_agent_316110(records->data[j].agent);
-				records->size--;
-				for (int k = j; k < records->size; k++)
+				end_agent_316110(records.data[j].agent);
+				records.size--;
+				for (int k = j; k < records.size; k++)
 				{
-					records->data[k] = records->data[k + 1];
+					records.data[k] = records.data[k + 1];
 				}
 				return;
 			}
 		}
-		return;
 	}
-remove:
-	pairs->size--;
-	pairs->data[i] = pairs->data[pairs->size];
 }

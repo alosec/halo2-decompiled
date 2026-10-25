@@ -285,6 +285,20 @@ void motion_sensor_blip_set_position(point2f const *point, s_motion_sensor_blip 
 	blip->y = (char)y;
 }
 
+// score 26 (was 26): retail keeps the object pool from the first lookup in eax on the
+// no-call path and reloads it only after the friendly-team call (the type mask then in edx);
+// ours reloads it at the rider lookup and keeps the mask in eax. Tried: a pool local read
+// before the rider choice 26 (sunk to its use); the object lookup as a file-local inline
+// getter 26 (0x1a2965 lost); the header array read at the vehicle test 111; the pool read
+// there 105 (kept in ebx); the rider through object_get 26; an explicit pool re-read after
+// the call with a goto to the exit gives the reload but not the registers (24).
+// pool/index/mask registers differ and the pool reload
+// follows rider selection. Selected header reference 26; object reference 26;
+// player reference 26; full-width absolute slot 26; word slot 35; header pointer
+// 26; conditional pool refresh with header reference 24, with absolute slot 24.
+// the sensor table pointer is kept in ECX, retail keeps it in EAX. Tried (r27b): the
+// mask written inline at each test 26; the friendly-team test as `!= NONE && call` with
+// the rider branch in the else 26.
 // @retail 0x1a1e49
 char motion_sensor_object_type(long local_player_index, long object_index)
 {
@@ -376,6 +390,10 @@ __forceinline short function_1a1fb0(short height)
 	return height;
 }
 
+// score 9 (was 9): retail loads the global after the store of the height, ours loads it before.
+// The volatile view keeps the blip on the stack, reread at each use, as retail. Tried (r27b): the
+// plain form 78 (the blip travels in ebx); a `const` reference to the blip without volatile 51
+// (on the stack but kept in ebx).
 // @retail 0x1a1faf
 void motion_sensor_blip_set_type(long local_player_index, long object_index, s_motion_sensor_blip *blip)
 {

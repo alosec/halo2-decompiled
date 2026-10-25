@@ -485,6 +485,19 @@ bool sound_driver_voice_create_buffer(
 	return result;
 }
 
+// score 98 (was 105): frame/length agree; early saves and descriptor zero/input scheduling differ.
+// Descriptor input first 105; flags before clear 105; spatial byte 105; unsigned result 105;
+// pair clear plus direct loop 185; input mixbin snapshot 105; real voice reference 98 (plain);
+// pair clear plus descriptor input first 183.
+// score 98 (was 98): Early saves and descriptor zero/input scheduling still differ.
+// Spatial-table/both plain loops 98/98; first/second/both complete pair copies
+// 230/186/264; native first/second/both descriptors 136/112/136.
+// First/second/both pair aggregates 125/132/160; scoped mixbin aggregates 120;
+// complete descriptor aggregates 229; reused descriptor 171; direct count increment 98;
+// success-path result assignments 110 (caller differs).
+// score 98 (was 98): early saves and descriptor zero/input scheduling remain;
+// voice before modes/result after count/next count word/spatial signed byte 98 each;
+// spatial word 151; play signed byte 98; spatial word with play byte 151; play long 101.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,
@@ -498,7 +511,7 @@ short sound_driver_voice_new(
 	{
 		bool three_d = flags & 1;
 		bool play = (flags >> 1) & 1;
-		s_sound_driver_voice *voice;
+		s_sound_driver_voice &voice = globals->voices[voice_index];
 		struct
 		{
 			DSMIXBINS mixbins;
@@ -510,16 +523,15 @@ short sound_driver_voice_new(
 		memset(&description, 0, sizeof(description));
 
 		globals->voice_count = voice_index + 1;
-		voice = &globals->voices[voice_index];
 		description.dwSize = sizeof(description);
 		description.dwFlags = DSBCAPS_FXIN2;
 		description.dwInputMixBin = input_mixbin;
-		if (SUCCEEDED(IDirectSound_CreateSoundBuffer(globals->direct_sound, &description, &voice->submix, NULL)))
+		if (SUCCEEDED(IDirectSound_CreateSoundBuffer(globals->direct_sound, &description, &voice.submix, NULL)))
 		{
 			DSMIXBINVOLUMEPAIR (&pairs)[6] = storage.pairs_first;
 			DSMIXBINS &mixbins = storage.mixbins;
 
-			IDirectSoundBuffer_SetVolume(voice->submix, 0);
+			IDirectSoundBuffer_SetVolume(voice.submix, 0);
 			pairs[0].dwMixBin = 0;
 			pairs[0].lVolume = 0;
 			pairs[1].dwMixBin = 1;
@@ -534,8 +546,8 @@ short sound_driver_voice_new(
 			pairs[5].lVolume = 0;
 			mixbins.dwMixBinCount = 6;
 			mixbins.lpMixBinVolumePairs = pairs;
-			IDirectSoundBuffer_SetMixBins(voice->submix, &mixbins);
-			IDirectSoundBuffer_Play(voice->submix, 0, 0, 0);
+			IDirectSoundBuffer_SetMixBins(voice.submix, &mixbins);
+			IDirectSoundBuffer_Play(voice.submix, 0, 0, 0);
 		}
 		if (three_d)
 		{
@@ -545,7 +557,7 @@ short sound_driver_voice_new(
 			buffer_description.dwSize = sizeof(buffer_description);
 			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : 0) + DSBCAPS_FXIN | DSBCAPS_CTRL3D;
 			buffer_description.dwInputMixBin = input_mixbin;
-			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice->buffer, NULL)))
+			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice.buffer, NULL)))
 			{
 				DSMIXBINVOLUMEPAIR (&pairs)[5] = storage.pairs_second;
 				DSMIXBINS &mixbins = storage.mixbins;
@@ -562,12 +574,12 @@ short sound_driver_voice_new(
 				pairs[4].lVolume = 0;
 				mixbins.dwMixBinCount = 5;
 				mixbins.lpMixBinVolumePairs = pairs;
-				IDirectSoundBuffer_SetMixBins(voice->buffer, &mixbins);
-				voice->unknown00 = input_mixbin;
-				IDirectSoundBuffer_SetMaxDistance(voice->buffer, FLT_MAX, DS3D_DEFERRED);
-				IDirectSoundBuffer_SetMinDistance(voice->buffer, FLT_MAX, DS3D_DEFERRED);
+				IDirectSoundBuffer_SetMixBins(voice.buffer, &mixbins);
+				voice.unknown00 = input_mixbin;
+				IDirectSoundBuffer_SetMaxDistance(voice.buffer, FLT_MAX, DS3D_DEFERRED);
+				IDirectSoundBuffer_SetMinDistance(voice.buffer, FLT_MAX, DS3D_DEFERRED);
 				if (play)
-					IDirectSoundBuffer_Play(voice->buffer, 0, 0, 0);
+					IDirectSoundBuffer_Play(voice.buffer, 0, 0, 0);
 			}
 			else
 			{
@@ -577,7 +589,7 @@ short sound_driver_voice_new(
 		}
 		else
 		{
-			voice->buffer = NULL;
+			voice.buffer = NULL;
 		}
 		result = voice_index;
 	}

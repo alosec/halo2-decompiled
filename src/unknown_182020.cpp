@@ -149,7 +149,10 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 			if (index < globals->count)
 				properties = &globals->materials[index];
 		}
-		*material = shape_material_index_get(shape);
+		/* the material index of the shape, looked up into the upper half of a
+		   pair of shorts */
+		short material_indices[2];
+		*material = *function_1ee410((s_lookup_source *)shape, &material_indices[1]);
 		*friction = properties->friction;
 		*restitution = properties->restitution;
 		return;
@@ -162,43 +165,47 @@ void function_182b90(c_material_shape *shape, hkEntity const *entity,
 		*restitution = properties->restitution;
 		return;
 	}
-	if (entity)
+	if (!entity)
 	{
-		long component_index = havok_entity_component_index_get(entity);
-		if (component_index != NONE)
+		*material = g_54e898;
+		*friction = 1.0f;
+		*restitution = 0.0f;
+		return;
+	}
+	long component_index = havok_entity_component_index_get(entity);
+	if (component_index != NONE)
+	{
+		s_havok_component *component = havok_component_get(component_index);
+		long type = material_object_header_get(component->object_index)->type;
+		if (type == 0)
 		{
-			long const &object_index = havok_component_get(component_index)->object_index;
-			long type = material_object_header_get(object_index)->type;
-			if (type == 0)
-			{
-				s_material_object *object = material_object_header_get(object_index)->object;
-				byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
-				bool alternate = (bool)((object->flags >> 2) & 1);
-				*friction = ((s_entity_material_view const *)entity)->friction;
-				*restitution = ((s_entity_material_view const *)entity)->restitution;
-				short *selected = alternate ? (short *)(definition + 0x282) : (short *)(definition + 0x280);
-				*material = *selected;
-				return;
-			}
-			else if (type == 12)
-			{
-				s_material_object *object = material_object_header_get(object_index)->object;
-				byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
-				bool alternate = (bool)((object->flags >> 2) & 1);
-				*friction = ((s_entity_material_view const *)entity)->friction;
-				*restitution = ((s_entity_material_view const *)entity)->restitution;
-				short *selected = alternate ? (short *)(definition + 0xf2) : (short *)(definition + 0xf0);
-				*material = *selected;
-				return;
-			}
-		}
-		else
-		{
-			*material = g_54e898;
-			*friction = 1.0f;
-			*restitution = 0.0f;
+			s_material_object *object = material_object_header_get(component->object_index)->object;
+			byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
+			bool alternate = (bool)((object->flags >> 2) & 1);
+			*friction = ((s_entity_material_view const *)entity)->friction;
+			*restitution = ((s_entity_material_view const *)entity)->restitution;
+			short *selected = alternate ? (short *)(definition + 0x282) : (short *)(definition + 0x280);
+			*material = *selected;
 			return;
 		}
+		else if (type == 12)
+		{
+			s_material_object *object = material_object_header_get(component->object_index)->object;
+			byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
+			bool alternate = (bool)((object->flags >> 2) & 1);
+			*friction = ((s_entity_material_view const *)entity)->friction;
+			*restitution = ((s_entity_material_view const *)entity)->restitution;
+			short *selected = alternate ? (short *)(definition + 0xf2) : (short *)(definition + 0xf0);
+			*material = *selected;
+			return;
+		}
+	}
+	else
+	{
+		*material = g_54e898;
+		*friction = 1.0f;
+		*restitution = 0.0f;
+		return;
 	}
 	*material = g_54e898;
 	*friction = 1.0f;

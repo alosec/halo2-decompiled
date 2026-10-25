@@ -587,16 +587,15 @@ void async_flush_file_blocking(s_file_handle file, long category)
 /* file reads of equal priority run in order of their position */
 // @retail 0x1a1720
 bool async_task_should_run_before(
-	long priority,
-	long other_priority,
-	s_async_task const *task,
-	s_async_task const *other_task,
 	s_async_insert_state *state,
 	async_work_callback callback,
-	async_work_callback other_callback)
+	s_async_task const *task,
+	long priority,
+	async_work_callback other_callback,
+	s_async_task const *other_task,
+	long other_priority)
 {
 	bool result = false;
-	s_async_insert_state *const *state_reference = &state;
 
 	if (priority > other_priority)
 	{
@@ -616,7 +615,7 @@ bool async_task_should_run_before(
 	}
 	else if (callback == function_1a0e70 && other_callback == function_1a0e70)
 	{
-		if (!(*state_reference)->valid)
+		if (!state->valid)
 		{
 			result = false;
 		}

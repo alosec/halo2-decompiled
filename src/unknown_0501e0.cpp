@@ -33,6 +33,9 @@ static __forceinline void world_vector_to_view(real arg_0, vector3f const *arg_1
     arg_2->k = g_4b9e14.forward.k * local_2 + g_4b9e14.up.k * local_1 + g_4b9e14.right.k * local_0;
 }
 
+// score 255 (was 255): frame 0x20 versus 0x14 and transform coefficient/result registers differ.
+// Global optimization off 961; depth zero 555; frame pointer 300;
+// input-first products 255; k/j/i transform output 272.
 // @retail 0x501e0
 void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
 {

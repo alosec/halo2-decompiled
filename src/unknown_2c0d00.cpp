@@ -215,6 +215,21 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
     s_path_settings const *settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
     point3f const *position, real radius, vector3f const *direction, long unit_index, long ignore_index);
 
+// score 866 (was 866): frame 0x2cb8 versus 0x2cac and actor/unit retention;
+// point workspace names 866; initial actor value 869; query index value 916;
+// conditional self-unit 911; wide initial predicates 1011; native location copy 911.
+// Frame pointer 1207; size preference 1436; native object fields 866;
+// direct restricted predicate 911; direct device predicate 912.
+// frame 0x2cb8 versus 0x2cac; actor/unit and workspace homes differ.
+// Classification order 898; common center 887; common offset 867; marker count 866; inline depth two 866;
+// paired object centers 907; first/sphere centers 907; vehicle-check/sphere centers 907.
+// frame 0x2cb8 versus 0x2cac and actor/unit retention;
+// inline depth zero 1008; global optimization off 3195;
+// long blocking 912; long classification 949; long enabled 906 (plain);
+// fast control 916, trials 1008/3199/910/947/916.
+// Native category on retained homes 910 (frame 0x2cb4); direct query
+// members 911; current priority long 894; relationship results long 893;
+// sphere flag byte 917 (frame 0x2cb4). Original body kept.
 // @retail 0x2c0d60
 void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_index, byte flags,
     s_path_settings const *volatile settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
@@ -851,15 +866,32 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
 
+// score 401 (was 405): frame 0x30 versus 0x28; zero register, history homes and adjacent-node access differ.
+// Ordinary edge with shared scaling 401; short surface 405; portal source at use 405; depth one 405; unsigned count 405.
+// score 401 (was 401): ordinary previous/first/both history 399/401/400;
+// word node index 408; alternate normalizer 401; indexed node pair 428;
+// indexed pair with ordinary previous history 438. Frame and edge/history homes remain.
+// score 401 (was 401): frame 0x30 versus 0x28; zero register, edge/history homes and indexed node loads differ.
+// Reduced trials: direct dot predicate 401; shared dot product 401; immutable predicates 401; geometry
+// names 401; output memcpy 401; earlier offset workspaces 401; native first-open 416; word selected vertex
+// 404.
+// j91: frame 0x30 versus 0x28; edge/history homes and indexed node selection differ; origin snapshots gain only one and grow frame to 0x38.
+// first offset in place 401; second offset in place 401; both offsets in place 401; first offset origin
+// snapshot 400; second offset origin snapshot 400
+// score 397 (was 401): frame 0x38 versus 0x28; zero register, history homes and indexed node loads differ.
+// Node fields at use 420; vertex words at use 414; endpoint values 432; normal assignments 401;
+// split crossing phases 399; late second workspace 399; split phases/ordinary previous history 397;
+// Boolean ring direction 399; vertex words/ordinary previous, first, both history 414,415,415;
+// vertex words/Boolean ring direction 408. Retained code 1307/1312, checker extent 1312/1312.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)
 {
-    volatile long previous_vertex = NONE;
+    long previous_vertex = NONE;
     volatile long first_vertex = NONE;
     for (;;)
     {
-        s_pathfinding_edge const *volatile edge = &data->edges[edge_index];
+        s_pathfinding_edge const *edge = &data->edges[edge_index];
         bool first_open = path_node_open_2c(data, edge_node_2c(edge, 0));
         long node_index = edge_node_2c(edge, !first_open);
         if (!path_node_open_2c(data, node_index))
@@ -891,11 +923,12 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         scale_offset_direction_2c(0.0f - radius, &normal, &negative);
         negative.x = origin->x + negative.x;
         negative.y = origin->y + negative.y;
-        point2f first, second;
+        point2f first;
         vector2d_from_points2d(&positive, start, &first);
-        vector2d_from_points2d(&negative, start, &second);
         bool first_crossing = (first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
             first.x * direction.y - first.y * direction.x < 0.0f;
+        point2f second;
+        vector2d_from_points2d(&negative, start, &second);
         bool second_crossing = second.x * direction.y - second.y * direction.x < 0.0f;
         bool crossing = first_crossing || second_crossing || first_vertex == NONE;
         long vertex = ((crossing != first_open) == side) ? vertex1 : vertex0;
@@ -975,6 +1008,12 @@ PRIVATE __forceinline real signed_angle_2c(point2f const *a, point2f const *b, b
     return angle;
 }
 
+// score 342 (was 342): frame 0x3c versus 0x34 and angular/planar homes differ.
+// Zero-first length guard 342; cross before angle 413; direct angle selection 403;
+// frame pointer 458; shared side dot products 384.
+// Nested expansion zero 1163, one 342; global optimization off 2011; size policy 518;
+// ordinary signed-angle inline 342.
+// score 342 (was 342): Frame 0x3c versus 0x34 and angular homes remain; direct perpendicular inputs 383; existing shared angle target pair 403, all four 419, endpoint pair 385; all shared angles plus direct perpendicular inputs 440 (fast).
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1054,6 +1093,18 @@ bool function_26c4e0(s_type_c3b527 const *start, s_type_c3b527 const *end,
     s_path_trace_result *trace, s_pathfinding_data *pathfinding,
     long sector_index, long target_sector_index, long location);
 
+// score 478 (was 478): frame 0x104 versus 0x10c; metadata result homes recover 0x10c at 482 but radius, index and branch allocation still differ.
+// metadata common emission 482; metadata long type 482; metadata long link 483; metadata both long 482;
+// metadata outer index 482; metadata radius home 482; metadata ordinary output 513; metadata index register
+// 522
+// frame 0x104 versus 0x10c; radius and emitted-index homes differ.
+// Short outer index with original qualifiers 513; broader trace outputs 478; native copied-last 504;
+// native found-step 494; current-step fallback first 478.
+// Round 310: terminal fallback return 526; double rounded radius 489; long next 519;
+// unsigned edge 478; shared point setters 478. Double radius recovers 0x10c but worsens scalar homes.
+// score 478 (was 478): frame 0x104 versus 0x10c and radius/index homes differ; trace continues 478;
+// unsigned output word 478; byte attempt 495; distinct trace-origin name 478; outer world endpoints
+// 478.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)

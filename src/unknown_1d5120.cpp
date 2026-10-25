@@ -87,6 +87,12 @@ void function_1d56f0(s_havok_component *component)
     }
 }
 
+// score 79 (was 79): frame 0x104 and MXCSR homes agree; result/direction/callback homes and setter convention
+// differ; tried rotation value 190; pose value 232; rotation simd 150; info first copy 87; source pose value
+// 216; completed count 149; filter value 119; initial height value 79.
+// the success byte's frame home sits eight bytes above
+// retail's and the callback slot four bytes high, and the loop's branch
+// update still takes the signed-subtraction form.
 // @retail 0x1d5120
 bool function_1d5120(s_havok_component *arg_0, long arg_1, long arg_2, long arg_3,
  real arg_4, long *arg_5, long arg_6)

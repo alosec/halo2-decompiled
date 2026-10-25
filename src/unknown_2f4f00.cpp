@@ -537,6 +537,9 @@ struct agent_2f4440
 // loop tests `bit` against the mask with the operands the other way round.
 // The contacts of the capsule and the triangle that lie within the tolerance
 // added to the results, each with its id from the owner
+// score 3 (was 3): x87 input order and bit-test encoding still differ.
+// Unsigned/long masks 3; wider height 191; wider slope 374; later scale 495;
+// named square 3; branch-local mask 2 (restored); index-derived bit 280.
 // @retail 0x2f4440
 void class_2f4440::function_2f4440(void const *a, void const *b, void const *input, void *collector)
 {

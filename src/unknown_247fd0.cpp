@@ -70,6 +70,37 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 	arg_1 = function_x82e52f(arg_0, 0, 0);
 }
 
+// score 142 (was 142): frame 0x10 agrees; cached-pointer comparison, child-call
+// pushes and loop lookup expansion differ; size optimization 525; inline depth one 142;
+// current-record update argument 142; child-input scope 142; both 142.
+// cached-pointer compare and in-loop lookup differ;
+// metadata read order 142; direct child getter 160; early result declaration
+// 142; word flag update 244; reciprocal default first 142.
+// score 142 (was 142): cached-pointer compare and selective lookup expansion remain;
+// cache slot/early flags/both/cache reference 142; reciprocal input 143;
+// global optimization off 433; frame pointer 314; depth two 142.
+// read-only settings view 142; spawn type at use 254; shared parent datum accessor 246; shared
+// child datum accessor 146; both datum accessors 298; native child ordinal 142; immutable
+// creation inputs 142; reciprocal before child link 143.
+// score 142 (was 142): cached-pointer compare, child-input spills and loop lookup remain.
+// Native cache pointer 142; changed-record predicate 142; actual head field 142;
+// unsigned child handle 142; shared bounded selector 142; word flags 142;
+// word flags with bounded selector 142; child zero-age before enable 142.
+// score 142 (was 142): cached-pointer memory compare, child pushes and in-loop lookup remain.
+// Cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142; refreshed interface lifetime 142; child-result declaration home 142; live lifetime field 142; mask/lifetime fields 142.
+// Cached-pointer comparison and loop lookup remain. Common pointer/flags/both stores
+// 159/140/158f; conditional mask 282f; immutable allocated handle/settings 142f; common current-record
+// stores and combined immutable bindings 158f; common flags with current receiver 158f. Two-point gain
+// discarded.
+// External parent / allocated record / settings / child references 142/142/142/142;
+// parent with record / settings, record with child, all four references 142/142/142/142.
+// Cached-pointer comparison and selective loop lookup expansion remain.
+// score 142 (was 142): cached-pointer compare, creation pushes and loop lookup remain.
+// Parent/settings/both metadata fields, first/last/both list fields, metadata with list fields,
+// metadata with cache slot 161/160/167/142/142/142/167/167.
+// cached-pointer comparison, child pushes and selective lookup expansion remain.
+// Declared sample array/loop 142/435; immutable record/spawn/both 142/142/142;
+// child identity order 142; earlier enable 142; earlier age 143.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)
@@ -215,6 +246,19 @@ vector3f *function_143070(matrix3x3 const *arg_1, vector3f const *arg_0, vector3
 void placement_set(s_placement *arg_0, vector3f const *arg_1, point3f const *arg_2, vector3f const *arg_3, short arg_4);
 void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_object_246eb0 const *arg_3, long arg_4);
 
+// score 389 (was 408): exact 0xb0 frame; late EBP save, random stores/getter expansion differ.
+// Interpolation remainder 415; child-duration default 411; failed-child continue 408;
+// overwritten placement default removed 409; definition reads at use 449.
+// frame 0xb0 agrees; EBP is saved after the early exits,
+// random scratch stores and interpolation/collision homes differ. Entry scalar
+// blend components 417; branch-scoped components 417; native kind snapshot 408;
+// inline depth one 408; independent random outputs 435.
+// random-word array loop 591; array loop with scalar draw 589;
+// position scale loop 418; position-add loop 408; byte guard 408.
+// separate trace point 408; separate direction 408; scoped flag 408;
+// nonzero kind first 415; final scalar draw 399; last two 409; last three 389.
+// Entry record declaration 389; final getter field at use 389; external record
+// reference 389; late placement default 389; child enable last 389.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)
@@ -251,12 +295,13 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 		local_2->field_08 = 0.f;
 		function_248076(&g_4e7408->seed, local_23.field_98);
 		local_2->field_14 = (word)real_truncate(local_23.field_98 * 65535.f);
-		function_248076(&g_4e7408->seed, local_23.field_98);
-		local_2->field_16 = (word)real_truncate(local_23.field_98 * 65535.f);
-		function_248076(&g_4e7408->seed, local_23.field_98);
-		local_2->field_18 = (word)real_truncate(local_23.field_98 * 65535.f);
-		function_248076(&g_4e7408->seed, local_23.field_98);
-		local_2->field_1a = (word)real_truncate(local_23.field_98 * 65535.f);
+		real last_sample;
+		function_248076(&g_4e7408->seed, last_sample);
+		local_2->field_16 = (word)real_truncate(last_sample * 65535.f);
+		function_248076(&g_4e7408->seed, last_sample);
+		local_2->field_18 = (word)real_truncate(last_sample * 65535.f);
+		function_248076(&g_4e7408->seed, last_sample);
+		local_2->field_1a = (word)real_truncate(last_sample * 65535.f);
 		local_2->field_10 = arg_2->unknown04;
 		if (arg_0->field_50 != local_2)
 		{

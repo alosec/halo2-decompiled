@@ -31,6 +31,15 @@ struct s_motion_adjustment_result
 	vector3f velocity;
 };
 
+// score 86 (was 86): product schedule, raw-copy registers and early normalization J/K loads differ;
+// left/up/both accumulation loops 86/86/86; target/combined/both scale receivers 131/86/131;
+// float square root 86; float absolute value 86.
+// frame 0x24 agrees; product scheduling, raw-copy registers, early J/K loads and tick clamp
+// differ; tried offset aggregate 86; squared length value 96; adjustment rate value 109; tick rate value 120;
+// current position value 106; basis input value 128; offset component loop 103; normalization component loop
+// 96.
+// Raw-delta name 86; unit-direction name 86; combined-vector name 86; two offset names 86; entry
+// length 86; entry step 86; both scalar declarations 86; normalization scope 86.
 // @retail 0x1fa810
 void __stdcall function_1fa810(long *ticks, s_motion_adjustment_result *out, s_motion_adjustment const *state)
 {
@@ -463,9 +472,12 @@ real function_30bf0(vector3f *v);
 void function_c7840(vector3f const *desired, vector3f *current, transform4x3f const *frame, real rate,
     vector3f *velocity, real const *limits, real max_speed, real acceleration);
 
-// score 8 (was 8): the last term of the dot product and the first product of
-// the cross product keep their operands in the other order, so retail loads
-// the forward vector's component into the register and ours the facing one
+// score 4 (was 8): the dot product's last term still loads the facing component into
+// the register where retail loads the forward one, and the call to 0xc7840 sets up its
+// null frame argument before the address of the desired vector where retail does it after
+// score 4 (was 4): final alignment product and null-frame/address setup remain; desired default 84;
+// forward/facing values 255/232; facing plus default 227; forward plus default 253;
+// const limits 4; control value 237; control plus default 240.
 // @retail 0x1faf80
 bool function_1faf80(vector3f *facing, long object_index, void const *settings_pointer,
     vector3f const *control, real threshold, real *turn)
@@ -493,9 +505,9 @@ bool function_1faf80(vector3f *facing, long object_index, void const *settings_p
     vector3f *forward = &object->forward;
     vector3f const *up = (vector3f const *)((byte *)object + 0x7c);
     vector3f left;
-    left.i = object->forward.j * up->k - *(real const *)((byte *)object + 0x80) * object->forward.k;
-    left.j = up->i * object->forward.k - up->k * object->forward.i;
-    left.k = up->j * object->forward.i - up->i * forward->j;
+    left.i = forward->j * up->k - *(real const *)((byte *)object + 0x80) * forward->k;
+    left.j = up->i * forward->k - up->k * object->forward.i;
+    left.k = up->j * forward->i - up->i * forward->j;
     real value = (facing->k * left.k + facing->j * left.j + facing->i * left.i) * 3.3333332538604736f;
     value *= control->i;
     value -= control->j;
@@ -531,6 +543,15 @@ PRIVATE __forceinline void motion_cross(vector3f const &a, vector3f const &b, ve
     result->k = a.i * b.j - a.j * b.i;
 }
 
+// score 214 (was 251): frame 0x28 agrees; trig homes and projection registers differ;
+// shared trig scope 254; sine declared first 251; forward projection loop 235;
+// rotation loop 246; idle base loop 235; projection plus base loops 235; all loops 246.
+// pointer scale loop 239; fixed do scale 237; idle reconstruction loop 235;
+// two-component idle projection loop 235; native bounds pair 235.
+// global optimization off 721; size optimization 409; inline depth zero 362;
+// active rotation scope 235; idle sine after scaling 235.
+// active/idle/both real trig 233/235/233; shared weighted axis 214 plain kept;
+// weighted cross 218; both weights 258; output cosine scale 235; real trig plus axis 226.
 // @retail 0x1faa20
 void function_1faa20(vector3f *up, byte const *state, vector3f *forward, long *ticks)
 {
@@ -550,9 +571,10 @@ void function_1faa20(vector3f *up, byte const *state, vector3f *forward, long *t
         real dot = (up->j * axis.j + up->k * axis.k + up->i * axis.i) * (1.0f - cosine);
         vector3f cross;
         motion_cross(*up, axis, &cross);
-        up->i = up->i * cosine + axis.i * dot - cross.i * sine;
-        up->j = up->j * cosine + axis.j * dot - cross.j * sine;
-        up->k = up->k * cosine + axis.k * dot - cross.k * sine;
+        vector3f_scale(&axis, dot, &axis);
+        up->i = up->i * cosine + axis.i - cross.i * sine;
+        up->j = up->j * cosine + axis.j - cross.j * sine;
+        up->k = up->k * cosine + axis.k - cross.k * sine;
         real projection = up->k * forward->k + up->j * forward->j + forward->i * up->i;
         forward->i -= up->i * projection;
         forward->j -= up->j * projection;
@@ -579,9 +601,8 @@ void function_1faa20(vector3f *up, byte const *state, vector3f *forward, long *t
         real angle = *(real const *)(state + 0x28);
         real cosine = (real)cos(angle);
         real sine = (real)sin(angle);
-        base.i *= cosine;
-        base.j *= cosine;
-        base.k *= cosine;
+        for (long component = 0; component < 3; ++component)
+            base.n[component] *= cosine;
         function_30bf0(&axis);
         up->i = axis.i * sine + base.i;
         up->j = axis.j * sine + base.j;

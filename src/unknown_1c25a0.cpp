@@ -800,6 +800,14 @@ PRIVATE inline char model_permutation_region_get(s_model_region_view const *regi
 	return permutation == NONE ? NONE : region->permutations[permutation].region;
 }
 
+// score 6 (was 64): only the two loaded bytes swap registers: retail loads the
+// variant from [edi] into al and the current one into cl, ours the other way round.
+// The loop strength-reduces to retail's shape once both arrays are indexed by i;
+// whichever byte is read second becomes the edi base. Tried: the variants++
+// pointer with an offset local (64, the old form), variant read first (83, the
+// variants argument moves to the stack), variants++ with current[i] (91), a count
+// local (7), the NONE tests in the other order (87), model_permutation_region_get
+// (65), variants[current - variants + i] (83).
 // @retail 0x1c54b0
 void function_1c54b0(char const *variants, long object_index)
 {
@@ -811,24 +819,22 @@ void function_1c54b0(char const *variants, long object_index)
 		s_object_definition_view *definition = (s_object_definition_view *)g_4e3b44[object->tag_index & 0xffff].bytes;
 		s_model_view *model = (s_model_view *)g_4e3b44[definition->model_tag_index & 0xffff].bytes;
 		char const *current = (char const *)object + object->region_variants_offset;
-		long count = model->region_count;
-		s_model_region_view const *region = model->regions;
-		long offset = current - variants;
 		long i;
 
-		for (i = 0; i < count; i++, region++, variants++)
+		for (i = 0; i < model->region_count; i++)
 		{
-			char variant = *variants;
-			char current_variant = variants[offset];
+			s_model_region_view const *region = &model->regions[i];
+			char current_variant = current[i];
+			char variant = variants[i];
 
-			if (variant == current_variant)
+			if (current_variant == variant)
 				continue;
 			if (variant == NONE || current_variant == NONE)
 			{
 				if (region->permutations[variant == NONE ? current_variant : variant].region == NONE)
 					continue;
 			}
-			else if (region->permutations[variant].region == region->permutations[current_variant].region)
+			else if (region->permutations[current_variant].region == region->permutations[variant].region)
 				continue;
 			function_1c3770(object_index, 0);
 			break;

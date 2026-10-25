@@ -243,8 +243,8 @@ void function_11bed0(s_location *location, point3f const *point);
 
 // @retail 0x132b80
 long function_132b80(s_bit_vector_pool *data, long mode, s_132b80_frustum const *frusta,
-	long cluster, void *filter, point3f const *center, real radius, bool use_plane,
-	real plane_offset, long count, dword flags)
+	long cluster, long count, dword flags, void *filter, point3f const *center, real radius,
+	bool use_plane, real plane_offset)
 {
 	s_location *location = &data->location;
 	location->cluster_index = cluster;
@@ -257,13 +257,14 @@ long function_132b80(s_bit_vector_pool *data, long mode, s_132b80_frustum const 
 	data->radius = radius;
 	data->plane_offset = plane_offset;
 	if (use_plane)
-	{
 		data->flags2a60 |= 0x200;
+	else
+		data->flags2a60 &= ~0x200;
+	if (use_plane)
+	{
 		data->plane = frusta->plane;
 		data->plane.d += plane_offset;
 	}
-	else
-		data->flags2a60 &= ~0x200;
 	void *destination = (byte *)data->context + 4;
 	if (frusta != destination)
 		memcpy(destination, frusta, count * sizeof(s_132b80_frustum));
@@ -274,10 +275,14 @@ long function_132b80(s_bit_vector_pool *data, long mode, s_132b80_frustum const 
 	if (filter)
 	{
 		data->flags2a60 |= 1;
-		for (long i = 0; i < 13; i++)
-			data->counters[i] = 0;
+		/* the counters are one total and two rows of six (see s_132780) */
+		data->counters[0] = 0;
+		for (long i = 0; i < 6; i++)
+			data->counters[1 + i] = 0;
+		for (long i = 0; i < 6; i++)
+			data->counters[7 + i] = 0;
 	}
-	if (data->mode == 0 && (char)data->flags2a60 < 0)
+	if (data->mode == 0 && (data->flags2a60 & 0x80))
 		data->query_type = 2;
 	else if (count && (!(3.0f > radius) || (data->flags2a60 & 0x100)))
 		data->query_type = 0;
@@ -560,8 +565,7 @@ void function_132fd0(s_bit_vector_pool const *data, point3f const *center, bool 
 // @retail 0x1332f0
 dword function_1332f0(s_bit_vector_pool const *data, word flags)
 {
-	dword packed_flags = flags;
-	dword result = ((((packed_flags >> 2) & 0x2c00) | (packed_flags & 0x4000)) >> 9) | ((packed_flags & 0x200) << 5);
+	dword result = ((((flags >> 2) & 0x2c00) | (flags & 0x4000)) >> 9) | ((flags & 0x200) << 5);
 
 	if (((char)data->flags2a60 >> 7) != 0)
 	{
@@ -569,13 +573,11 @@ dword function_1332f0(s_bit_vector_pool const *data, word flags)
 	}
 	if (g_4b9ef0 == 3)
 	{
-		long tag_index = g_4b9f8c;
-
-		if (tag_index != NONE && g_4b9ffc == 0.0f && !(packed_flags & 0x400) && !(*g_4e3b44[tag_index & 0xffff].bytes & 2))
+		if (g_4b9f8c != NONE && g_4b9ffc == 0.0f && !(flags & 0x400) && !(*g_4e3b44[g_4b9f8c & 0xffff].bytes & 2))
 		{
 			result |= 0x100;
 		}
-		if (!g_4ba004 || (packed_flags & 0x400))
+		if (!g_4ba004 || (flags & 0x400))
 		{
 			result |= 0x80;
 		}
@@ -1115,8 +1117,8 @@ s_bit_vector_pool *function_1320f0(long mode, long count, bool use_plane, long f
 	s_bit_vector_pool *data = &g_547f88;
 	if (mode)
 		data = &g_54aa68;
-	long type = function_132b80(data, mode, (s_132b80_frustum const *)frusta, cluster, filter,
-		(point3f const *)center, radius, use_plane, plane_offset, count, flags);
+	long type = function_132b80(data, mode, (s_132b80_frustum const *)frusta, cluster, count, flags,
+		filter, (point3f const *)center, radius, use_plane, plane_offset);
 	g_4c0b78.state = (s_2cb30_state *)data;
 	function_1348e0(data);
 	switch (type)

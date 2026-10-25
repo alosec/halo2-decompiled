@@ -729,6 +729,13 @@ dword function_1a7ad0(long owner_index)
 	return (1 << owner->unknown086_byte) | ((1 << (byte)shift) << 10);
 }
 
+// score 96 (was 96): Owner/output register ranks, fallback base and intersection schedule still differ;
+// aggregate selection 119; initial/default bitset values 190/167; shared intersection 109;
+// aggregate plus shared intersection 144; common return, fallback handle, phased table 96 each.
+// owner/output register ranks, fallback-base LEA and intersection setup differ.
+// Nullable definition 81 (adds a null branch); typed fallback 96; both 81;
+// const owner, definition, source, tags and object/element views 96 each;
+// ordinary shared source copy 143; shared copy with owner tag 143.
 // @retail 0x1a7b30
 void function_1a7b30(s_flag_bits *result, long owner_index)
 {
@@ -780,6 +787,18 @@ void function_25aba0(long actor_index);
 
 
 
+// score 69 (was 143): frame 0x4c agrees; ESI/EDI, state-one decrement and zero-fill differ.
+// Native workspace initializer 69; owner lifetime 266; level lifetime 320;
+// entry pointer walk 261; full-width choice 150; full-width type 338.
+// Two-word initializer 68; full member initializer 287; retained ordinal 244;
+// shared final exit 69; frame pointer on native initializer 334.
+// Round 280: outer workspace 143; short copy counter 69; long level 173; retained handler reads 69; ordinary dispatch first 131.
+// Empty native initializer 143; value/assigned-value initialization 249 each; empty initializer with early state pop 146;
+// owner/handler records 69 each; current-level snapshot 69; level snapshot with empty initializer 143.
+// Actor/result ESI/EDI, state-one decrement, zero-fill and insertion setup still differ.
+// Native initializer with early state pop 140; candidate index snapshot 252;
+// candidate receiver 69; choice before workspace 69; callback/insertion names 69;
+// completion/eligibility/insertion results 69/163/69; existing mask helper inline 69.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
@@ -869,8 +888,7 @@ void __stdcall function_1a7cc0(long actor_index)
 			continue;
 		}
 
-		s_slot data;
-		memset(&data, 0, sizeof(data));
+		s_slot data = {0};
 		short choice = ((short (__stdcall *)(long, short, s_slot *))((s_slot_handler_1 *)handler)->choose)(actor_index, level, &data);
 
 		if (choice == g_46fbe4)
@@ -1142,6 +1160,22 @@ PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, ve
     arg_2->k = arg_0->k * arg_1;
 }
 
+// score 2 (was 18): the returned point is copied from EAX before the body load;
+// retail loads the body and then copies the point from ESI. The frame and projection agree.
+// Sampling name 18; vector names 18; vectors declared first 18; const unit 18;
+// saved body count 124; workspace memcpy 18; indexed output 23; const component 18.
+// Support handle 18; nullable component 110; body read first 30;
+// valid body interval 85; entry workspace 18; unit-scope workspace 18;
+// const support 18; unsigned object handle 18. Position query noinline 18;
+// returned point with body index 2; reassigned point pointer 128; output pointer 18;
+// file-scope workspace 18; direct body reads 121; support lookup noinline 18;
+// returned point with output pointer 2; target noinline with returned point 2.
+// const support 18; unsigned object handle 18.
+// Round 109: ordinary scale inline 18; scale pointer result 18; three scale formal orders 18;
+// scale input reference 18; point-query noinline 18; velocity-query noinline 18.
+// Round 127: validated query index 99; sampled-point result 128; both 136;
+// enclosing point lifetime 128; branch-local last body 2; last body with query index 99;
+// named validation 2; validation with query index 99.
 // @retail 0x1a68a0
 void function_1a68a0(long object_index, vector3f *velocity)
 {
@@ -1165,8 +1199,7 @@ void function_1a68a0(long object_index, vector3f *velocity)
 					long clamped = body_index < 0 ? 0 : body_index > component->body_count - 1 ? component->body_count - 1 : body_index;
 					if (clamped == body_index)
 					{
-						function_b9dd0(object_index, &local_3.field_c);
-						havok_component_rigid_body_point_velocity_get(unit->body_index, (s_havok_component *)component, &local_3.field_c, &local_3.field_18);
+						havok_component_rigid_body_point_velocity_get(body_index, (s_havok_component *)component, function_b9dd0(object_index, &local_3.field_c), &local_3.field_18);
 					}
 				}
 			}
@@ -1596,6 +1629,18 @@ struct s_candidate_unit_definition
 	real maximum_distance;
 };
 
+// score 36 (was 186): frame/length agree; geometry-call convention and angle/failure tails differ.
+// Axis name 186; result first 220; query result 195; first-bit assignment 186; size optimization 348.
+// Depth zero 386; depth one 186; success return 203; clamped input on current frame 216; word result 227.
+// object register, geometry-call convention and failure/angle tails differ;
+// axis name 186; result first 220; geometry result guard 195; masked first bit 186; size optimization 348.
+// Failure to common exit 98; signed byte result 196; second-bit results 178; angle result 201; radius snapshot 209.
+// Exit plus second-bit results 199; exit plus scalar clamp 42.
+// Clearing cases first 36; one source flag read 108; alternate before normalization 45;
+// shared dot operands reversed 42; global optimization off 361.
+// score 36 (was 36): Frame and length agree; geometry argument register and clamp/failure tails
+// remain. Trials: byte result 101; lower test operands 36; separate lower angle 92; native facing
+// copy 36; geometry success guard 218; first clearing cases 42.
 // @retail 0x1a5e40
 bool function_1a5e40(long object_index, bool alternate, long marker_index, s_target_marker const *marker,
 	transform4x3f const *first, transform4x3f const *second,
@@ -1612,16 +1657,16 @@ bool function_1a5e40(long object_index, bool alternate, long marker_index, s_tar
 		if ((1 << object->type) & 1)
 		{
 			if (!function_1a62e0(object_index, origin, direction, &candidate->point))
-				return false;
+				goto done;
 			s_candidate_unit_definition *definition = (s_candidate_unit_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 			if (definition->flags & 1)
 				candidate->flags |= 1;
 			else
 				candidate->flags &= ~1;
-			if (definition->flags & 6)
-				candidate->flags |= 2;
-			else
+			if (!(definition->flags & 6))
 				candidate->flags &= ~2;
+			else
+				candidate->flags |= 2;
 			candidate->maximum_distance = definition->maximum_distance;
 			candidate->radius = object->radius;
 			candidate->maximum_facing_angle = 0.0f;
@@ -1642,10 +1687,10 @@ bool function_1a5e40(long object_index, bool alternate, long marker_index, s_tar
 			candidate->flags |= 1;
 		else
 			candidate->flags &= ~1;
-		if (marker->flags & 0x12)
-			candidate->flags |= 2;
-		else
+		if (!(marker->flags & 0x12))
 			candidate->flags &= ~2;
+		else
+			candidate->flags |= 2;
 		candidate->maximum_distance = marker->maximum_distance;
 		candidate->radius = marker->radius;
 		candidate->maximum_facing_angle = marker->maximum_facing_angle;
@@ -1659,11 +1704,10 @@ bool function_1a5e40(long object_index, bool alternate, long marker_index, s_tar
 		candidate->distance = function_30bf0(&candidate->direction);
 		candidate->alternate = alternate;
 		real cosine = dot3f(&candidate->direction, direction);
-		if (-1.0f > cosine)
-			candidate->angle = function_50650(-1.0f);
-		else
-			candidate->angle = function_50650(cosine > 1.0f ? 1.0f : cosine);
+		cosine = -1.0f > cosine ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
+		candidate->angle = function_50650(cosine);
 	}
+done:
 	return result;
 }
 
@@ -1740,26 +1784,43 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 }
 
+// score 98 (was 113): call argument setup, marker-loop homes and terminal epilogues still differ.
+// Kept: the first candidate named inside the count test (98); with a repeated positive-count guard
+// around the marker loop 93 (not kept: a test the loop already makes).
+// Direct count increment 121; native short query 129; shared exit 131; direct optional transform 115.
+// Positive marker count 129; combined increment/transform 113; combined short query 114; direct count cleanup 113.
+// Two-phase candidate cursor 125; marker/table/both records 113 each; cursor with marker record 125;
+// cursor with native query 129; cursor with positive table 126; separate count result 169.
+// Existing helper argument setup, marker-loop homes and terminal exits still differ.
+// Initial candidate lifetime 98; marker presence 113; weighting value 120; optional matrix value 173;
+// readonly tag/capacity value/scalar names 113 each; initialized marker output 209.
+// Initial candidate plus positive table 93 kept; initial candidate plus weighting 109.
+// Initial helper setup now agrees through +0x102; marker call setup and exits still differ.
+// score 85 (was 98): marker setup, optional transform and exits still differ after +0x102.
+// Candidate indexed by accepted count 85 plain kept; post-query candidate 85; native query there 86;
+// existing tag helper 161; first candidate record 98; post-query marker record/workspace 85 each;
+// tag helper plus post-query candidate 161.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)
 {
-	long &local_0 = count;
 	s_target_link_view *object = (s_target_link_view *)OBJECT_HEADER(object_index)->object;
 	byte *definition = g_4e3b44[object->definition_index & 0xffff].bytes;
 	real scale = 1.0f;
 	if (((1 << object->field_aa) & 3) &&
 		(bool)((function_1a5c01(object_index)->field_bc >> 19) & 1))
 		scale = ((s_candidate_scale_globals *)g_4e034c)->field_f4->field_8;
-	if (local_0 < 64 && function_1a5e40(object_index, alternate, NONE, NULL, NULL, NULL,
-		origin, direction, &candidates[local_0]) && function_1a60f0(&candidates[local_0], weights, scale))
-		local_0++;
+	if (count < 64)
+	{
+		s_sort_candidate_view *first_candidate = &candidates[count];
+		if (function_1a5e40(object_index, alternate, NONE, NULL, NULL, NULL,
+			origin, direction, first_candidate) && function_1a60f0(first_candidate, weights, scale))
+			count++;
+	}
 	long marker_tag = *(long *)(definition + 0x38);
 	if (marker_tag != NONE)
 	{
 		s_target_marker_table *table = (s_target_marker_table *)g_4e3b44[marker_tag & 0xffff].bytes;
-		s_sort_candidate_view *candidate = &candidates[local_0];
-		long volatile &local_1 = count;
 		for (long marker_index = 0; marker_index < table->count; marker_index++)
 		{
 			s_target_marker *marker = &table->markers[marker_index];
@@ -1767,19 +1828,17 @@ long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool 
 			long marker_count = function_b8d30(object_index, marker->name, markers, 2, false);
 			if (marker_count != 0)
 			{
-				s_object_marker *second = marker_count == 2 ? &markers[1] : NULL;
-				if (local_1 < 64 && function_1a5e40(object_index, alternate, marker_index, marker,
-					&markers[0].matrix, second ? &second->matrix : NULL,
-					origin, direction, candidate) &&
-					function_1a60f0(candidate, weights, marker->field_10 * scale))
+				if (count < 64 && function_1a5e40(object_index, alternate, marker_index, marker,
+					&markers[0].matrix, marker_count == 2 ? &markers[1].matrix : NULL,
+					origin, direction, &candidates[count]) &&
+					function_1a60f0(&candidates[count], weights, marker->field_10 * scale))
 				{
-					local_1++;
-					candidate++;
+					count++;
 				}
 			}
 		}
 	}
-	return local_0;
+	return count;
 }
 
 struct s_1a56c0
@@ -1950,6 +2009,9 @@ struct s_1a5370
 
 // score 10 (was 10): the local record sits at a different stack address and its fields are read
 // from different offsets.
+// Retail bases the induction cursor at candidate+0x14, not +0; after-sort and full-lifetime aliases 10;
+// radius-origin parent, pointer arithmetic, indexed/const/array views, index/count lifetimes and output
+// indexing 10 each.
 // @retail 0x1a5370
 bool __stdcall function_1a5370(s_sort_weight_view const *arg_0, point3f const *arg_1,
 	vector3f const *arg_2, long arg_3, short arg_4, s_sort_candidate_view *arg_5)
@@ -2062,6 +2124,20 @@ long function_cb6d0(long unit_index);
 bool function_cb810(long unit_index, vector3f *vector);
 long function_baf40(long object_index);
 
+// score 177 (was 177): frame 0xb4 versus 0xb8; output record uses stack/EBP, retail EBX.
+// Full-width selector 203; later player view 200; wide secondary selector 177;
+// native vector/workspace role names 177; outer return guard 177.
+// Reversed velocity lexical homes 177; x/y/z scalar names 177; combined 177;
+// geometry-only scope 177; target frame pointer 264.
+// Round 280: entry workspaces 177; shared angle construction 202; in-place shared velocity difference 225; candidate score tests 186; retained direction unit index 210.
+// Depth zero 280; target size 280; global optimization off 672;
+// record defaults before vector zeroing 179; planar length before velocity differences 181.
+// score 177 (was 177): Frame 0xb4 versus 0xb8; output record and relative-scalar homes differ.
+// Trials: selector interval 181; chained sentinels 177; chained score zero 177; component order
+// 177; native score clear 201.
+// score 177 (was 177): Frame 0xb4 versus 0xb8 and the output-record convention remain. Output
+// record reference 177; selected-object snapshot 177; native offset copy 242; guarded relative
+// components 211; empty planar path first 194. Contributor callees unchanged.
 // @retail 0x1a4900
 void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2)
 {
@@ -2187,6 +2263,12 @@ struct s_1a4c01
 // score 36 (was 116): the target index and the unit index sit in each other's stack slots, the
 // interpolation loads forward.i where retail copies 1 - fraction, and the closing stores use
 // other registers.
+// Controlled/selected/both handle names 36 each; target declaration beside controlled handle 36;
+// blend in target/forward workspace 66/87; result copied from forward/target 170/353.
+// Handle homes, interpolation coefficient allocation and closing publication registers still differ.
+// Packed controlled/selected/both handles 36 each; returned result before stores 34 (only -2);
+// acceptance-first test 65; squared component values, aggregate blend and angle snapshot 36 each.
+// The two handle homes, coefficient allocation and final stores still differ; original body restored.
 // @retail 0x1a4c00
 bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector3f *direction, point3f *point)
 {

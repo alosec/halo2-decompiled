@@ -43,6 +43,9 @@ const dword g_455978[81] = {
  0x3f13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0x3f13cd3a, 0xbf13cd3a
 };
 
+// score 366 (was 370): frame 0x1d4 agrees; optional-input registers, scalar homes and inline boundaries differ.
+// Native/byte success 427/382; path-local excluded index 449; complete volume arms 487;
+// both path lifetimes 485; count just before scan 366; read-only body 370; native transform copies 370.
 // @retail 0x1d48f0
 bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long arg_2, point3f const *arg_3,
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,
@@ -70,7 +73,6 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   ((c_contact_query_world *)g_51e9a4)->add(local_1);
   if (arg_10 != NONE) local_2 = havok_object_get(arg_10)->havok_component_index;
  }
- long local_6 = 18 + 9 * arg_8;
  bool local_0 = false;
  hkTransform local_7;
  c_contact_query_transform_volume *local_8;
@@ -88,6 +90,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
  ((c_contact_query_world *)g_51e9a4)->add(local_8);
  c_contact_presence local_12;
  local_12.found = false;
+ long local_6 = 18 + 9 * arg_8;
  for (long local_13 = 0; local_13 < local_6; ++local_13)
  {
   vector3f local_14 = ((vector3f const *)g_455978)[local_13];

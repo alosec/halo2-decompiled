@@ -283,10 +283,15 @@ long simulation_watcher_find_machine(s_simulation_world_owner const *watcher, s_
 void function_8b4d0(s_event_distribution *distribution, long type, long entity_count,
     long const *entities, dword machine_mask, long size, void const *data, long timeout);
 
-// score 92 (was 92): retail passes the first parameter in EAX with six stack
-// arguments and returns with ret 0x18, but the callers in
-// src/unknown_0a7c50.cpp, src/unknown_0a7d50.cpp and src/unknown_0b8ca0.cpp
-// declare this __stdcall with seven stack arguments.
+// score 92 (was 92): the convention matches (player in eax, copied to ebx; ret 0x18), but only
+// through the entry masking of the player (retail masks it only at its use) and the count and
+// object list read through their addresses (retail keeps the count in ebp, loaded once from its
+// slot, and spills the distribution instead); the loop walks a pointer where retail indexes.
+// Tried: retail's plain body (indexed loop, count used directly, `count > 0 ? entities : NULL`)
+// 121, LTCG then passes the count in ebx and the player on the stack, and the matched callers
+// 0xa7c50, 0xa8040 and 0xa9260 differ; the same with a local copy of the player 121; the count
+// read once through its address 116 (all seven on the stack, ret 0x1c); the entry mask dropped
+// 127 (player on the stack); the draft with an indexed loop 103, plus the ternary 110.
 // @retail 0xb5a70
 void __stdcall function_b5a70(long player_index, long type, long count, long object_indices,
     long size, void const *data, long timeout)
@@ -332,9 +337,15 @@ void __stdcall function_b5a70(long player_index, long type, long count, long obj
     }
 }
 
-// score 79 (was 79): retail passes the first parameter in EAX with six stack
-// arguments and returns with ret 0x18, but the callers in
-// src/unknown_0a7c50.cpp declare this __stdcall with seven stack arguments.
+// score 79 (was 79): the convention already matches (player in eax, ret 0x18), but ours
+// computes has_player (setne) and the player slot at entry and keeps the world in ebx;
+// retail copies the player to ebx, tests it and masks it only at the use, keeps the world
+// in eax and the state in edi, and tests the count again after the loop (a for loop).
+// Tried: a for loop (101); a for loop without player_slot (101, retail's registers apart
+// from setne); both locals dropped (122; 119 with a for loop: LTCG then passes the count
+// in ebx and the player on the stack); only has_player dropped (90, same flip); a local
+// copy of the player (119); both dropped with the count read through its address as in
+// 0xb5a70 (113: the player still goes on the stack).
 // @retail 0xb5ba0
 void __stdcall function_b5ba0(long player_index, long type, long count, long object_indices,
     long size, void const *data, long timeout)

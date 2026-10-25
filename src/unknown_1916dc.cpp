@@ -146,6 +146,12 @@ static __forceinline byte *definition_19188c(long index)
     return g_4e3b44[*(long *)object_19188c(index) & 0xffff].bytes;
 }
 
+// score 23 (was 23): in case 1/7 retail zero-extends the flags into the dying candidate
+// register (ebx) and keeps the tables and the tag in edx; ours puts the flags in edx. The
+// tag load is also cross-jumped the other way. Tried: flags as a word bitfield or a word
+// field masked with 0xff 72 (retail's registers, but an extra and); flags read after the
+// definition 25; byte or word copies widened into the local 23; the declaration in a case
+// scope or with the object index 23.
 // @retail 0x19188c
 void function_19188c(long user_index)
 {

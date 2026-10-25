@@ -426,6 +426,9 @@ short __stdcall avoidance_expand_obstacle(s_pathfinding_data const *pathfinding,
 
 // score 21 (was 21): the computed distance is stored to the stack and read back here, while retail
 // keeps it in a register.
+// Left: the movement x product (retail copies the distance and folds direction.x; ours loads
+// direction.x). Tried: the scale helper with the distance by reference or pointer and x first 22;
+// the trace declared first or before the direction pointer 21; `&node->direction` passed to it 21.
 // @retail 0x2c3d40
 bool avoidance_search_step(s_avoidance_search *search, s_pathfinding_data const *pathfinding, bool allow_partial)
 {
@@ -598,6 +601,9 @@ void obstacle_list_group(s_obstacle_list *obstacles, real radius);
 
 bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center, long object_index, real radius);
 
+// score 742 (was 742): frame 0x1f8c versus 0x1f88; result/path pointer and obstacle/search/step homes differ.
+// Short/signed byte result 740/788; long/byte inserted count 730/741; word flags 742.
+// Long inserted count has retail frame but 2965 bytes; native reverse index 770/2925 bytes; original length preserved.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,

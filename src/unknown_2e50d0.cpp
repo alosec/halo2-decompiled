@@ -160,11 +160,26 @@ void sweep_batches_2e50d0::function_2e50d0(owners_2e50d0 const *owners, bounds_a
 // the boxes of the owners taken out together: the pairs they ended are
 // reported, the last boxes move into their places, each axis drops their
 // endpoints and renumbers the rest, and the grid cells follow
+// score 162 (was 169): this/count now use retail's ESI/EDI; scalar
+// frame homes, cached tail-owner handling, the cell-address store and the
+// cell remap still differ. an explicit kind flag 265; the flag with a cell snapshot 284;
+// memcpy 284; an end-pointer loop with and without memcpy 193/193; single-use tail
+// owner 141 (discarded); an element pointer / narrowed id 162/162 with a
+// cell snapshot (discarded); shared tail 164, cell-address local 60 (not
+// exact, discarded); reused tail owner 162; shared tail without snapshot
+// and with entry reference 173/173; other local names and separate
+// size lifetimes 162; reused owner with entry reference 162; explicit cell
+// address 173 (not exact, discarded). Keep the twice-used owner value and
+// original direct remap; slot cursor advances in the body.
+// Fresh scalar read 172; pointer local 171; while cursor steps 169; direct
+// test 67; head cursor 214; short snapshot 56; entry pointer 67;
+// postincrement store 56; wider scope, rename and narrower scope 56/56/56;
+// indexed read 224; direct store 169; early reference 161. New bodies restored.
 // @retail 0x2e5590
 void sweep_batches_2e50d0::function_2e5590(owners_2e50d0 const *owners, pairs_2e1090 *pairs)
 {
 	int const count = owners->size;
-	int old_count = elements.size;
+	int box_count = elements.size;
 	{
 		longs_2e1ab0 lower_ends(count);
 		lower_ends.size = count;
@@ -183,9 +198,9 @@ void sweep_batches_2e50d0::function_2e5590(owners_2e50d0 const *owners, pairs_2e
 	x_slots.size = removed;
 	y_slots.size = removed;
 	z_slots.size = removed;
-	long gone = 0;
+	long removed_owner = 0;
 	{
-		for (int i = 0, j = 0; i < count; i++, j += 2)
+		for (int i = 0, j = 0; i < count; i++)
 		{
 			int const index = *owners->data[i];
 			element_2e1090 &box = elements.data[index];
@@ -195,27 +210,29 @@ void sweep_batches_2e50d0::function_2e5590(owners_2e50d0 const *owners, pairs_2e
 			y_slots.data[j + 1] = box.slots[2];
 			z_slots.data[j] = box.slots[1];
 			z_slots.data[j + 1] = box.slots[3];
-			box.owner = (long)&gone;
+			box.owner = (long)&removed_owner;
 			*owners->data[i] = 0;
+			j += 2;
 		}
 	}
-	shorts_2e1850 new_index(old_count);
-	new_index.size = old_count;
+	shorts_2e1850 new_index(box_count);
+	new_index.size = box_count;
 	{
-		int last = old_count - 1;
+		int last = box_count - 1;
 		for (int i = 0; i <= last;)
 		{
-			if (elements.data[last].owner == (long)&gone)
+			long const tail_owner = elements.data[last].owner;
+			if (tail_owner == (long)&removed_owner)
 			{
 				last--;
 				continue;
 			}
 			element_2e1090 &box = elements.data[i];
-			if (box.owner == (long)&gone)
+			if (box.owner == (long)&removed_owner)
 			{
 				box = elements.data[last];
 				new_index.data[last] = (unsigned short)i;
-				long const owner = box.owner;
+				long const owner = tail_owner;
 				if ((owner & 1) == 0)
 				{
 					*(long *)owner = i;
@@ -232,9 +249,9 @@ void sweep_batches_2e50d0::function_2e5590(owners_2e50d0 const *owners, pairs_2e
 				i++;
 			}
 		}
-		old_count = last + 1;
+		box_count = last + 1;
 	}
-	elements.resize(old_count);
+	elements.resize(box_count);
 	((endpoint_list_2e2190 *)&axes[0])->function_2e2370((char *)elements.data, (removed_2e2370 *)&x_slots, 0, (renumbering_2e2370 const *)&new_index);
 	((endpoint_list_2e2190 *)&axes[1])->function_2e2370((char *)elements.data, (removed_2e2370 *)&y_slots, 1, (renumbering_2e2370 const *)&new_index);
 	((endpoint_list_2e2190 *)&axes[2])->function_2e2370((char *)elements.data, (removed_2e2370 *)&z_slots, 2, (renumbering_2e2370 const *)&new_index);

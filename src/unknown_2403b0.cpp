@@ -30,6 +30,29 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 	return !(table->flags[team] & 1);
 }
 
+// score 190 (was 190): frame 0x3c agrees; object-pool reload, completion
+// flag stores and final predicate layout differ. Scoring team word 187
+// (three-point gain rejected), long 214; blocked long/byte 190/190; existing
+// flag helper force-inline 190; returned point 199; marker bits 190; option
+// scope 190. Original body and helper declaration retained.
+// score 190 (was 190): pool reload and separate completion stores remain;
+// read-only unit/type result 190/190; scoring team at call 226; completion event prepared first 193;
+// marker/slot entry lifetimes 190/190; success-result predicate 193; type result plus event preparation 193.
+// Read-only helper input 190; table reference 190; native team parameter 190; result-first predicate 192;
+// flag byte sample 190; direct capped result 190; cap and table reference 190; option guard order 190. Pool
+// reload and separate completion stores remain.
+// score 190 (was 190): Cached pool base and merged completion stores remain.
+// Native player record 190; scoring-team field binding 190; both 190;
+// increment counter binding 202; decrement binding 190; both counters 202;
+// marker-team value 194; native player with both counters 202.
+// score 190 (was 190): cached pool, merged completion stores and flag-result materialization remain.
+// Predicate long/short/byte/signed-byte returns 189/190/190/190;
+// byte predicate input 190; byte input with long/short/byte results 189/190/190.
+// Both one-point gains rejected; original predicate and body restored.
+// pool-data reload, completion stores and final predicate layout still differ.
+// permission result 190; fallback permission scope 190; present-unit scope 190
+// eligible-weapon scope 190; present-slot scope 190; present-marker scope 190
+// unit/weapon scopes 190; option once 190.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

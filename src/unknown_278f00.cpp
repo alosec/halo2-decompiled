@@ -44,6 +44,14 @@ void function_1d1260(s_havok_component *arg_0);
 void __stdcall function_b8540(long arg_0);
 void __stdcall function_b8890(long arg_0);
 
+// score 212 (was 212): list selection, second-count home and cleanup schedule remain;
+// list reference 212; island reference 212.
+// body reference 212; header reference 212.
+// unsigned object handle 212; list and island references 212.
+// first standard search 244; second standard search 282.
+// frame agrees; list/index/count homes and cleanup induction differ;
+// existing component-delete helper 341; existing detach helper 464; inline declarations
+// 341/464; category byte comparisons 266; signed-byte category 212, membership 212, both 212.
 // @retail 0x278f00
 void function_278f00()
 {

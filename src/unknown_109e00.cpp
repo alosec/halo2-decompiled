@@ -50,15 +50,7 @@ static inline long function_x556bb4(long object_index)
 	return parent_index;
 }
 
-static inline void cross3f(vector3f const *a, vector3f const *b, vector3f *result)
-{
-	result->i = a->j * b->k - a->k * b->j;
-	result->j = a->k * b->i - a->i * b->k;
-	result->k = a->i * b->j - a->j * b->i;
-}
-
-// score 37 (was 37): the blocks are laid out in another order and the float
-// registers are used in the other order.
+// whether the object rides a listed moving object, and the velocity that object gives it
 // @retail 0x109e00
 bool function_109e00(long object_index, vector3f *velocity, bool definition_flag_required)
 {
@@ -79,16 +71,9 @@ bool function_109e00(long object_index, vector3f *velocity, bool definition_flag
 				if (entry->active)
 				{
 					point3f position;
-					vector3f offset;
 
 					function_b9dd0(object_index, &position);
-					offset.i = position.x - entry->center.x;
-					offset.j = position.y - entry->center.y;
-					offset.k = position.z - entry->center.z;
-					cross3f(&entry->angular_velocity, &offset, velocity);
-					velocity->i = entry->linear_velocity.i + velocity->i;
-					velocity->j = entry->linear_velocity.j + velocity->j;
-					velocity->k = entry->linear_velocity.k + velocity->k;
+					carrier_point_velocity(&entry->center, &entry->linear_velocity, &entry->angular_velocity, &position, velocity);
 					result = true;
 				}
 			}

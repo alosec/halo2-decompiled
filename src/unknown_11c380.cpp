@@ -100,10 +100,8 @@ PRIVATE __forceinline vector3f *function_11c471(real arg_0, vector3f const *arg_
 	return arg_2;
 }
 
-/* whether a point is inside a trigger volume */
-// score 62 (was 62): the three dot products are scheduled differently: retail copies the
-// factor into xmm4 with movaps and interleaves the products with the sums, ours multiplies
-// each factor in place.
+/* whether a point is inside a trigger volume: the point is brought into the
+   volume's space as function_142700 does, inline */
 // @retail 0x11c470
 bool function_11c470(long trigger_volume_index, point3f const *point)
 {
@@ -115,18 +113,23 @@ bool function_11c470(long trigger_volume_index, point3f const *point)
 		s_trigger_volume *trigger_volume = &((s_scenario_trigger_volumes_11c380 *)g_4e0350)->trigger_volumes[trigger_volume_index];
 		if (matrix.scale != 0.0f)
 		{
-			vector3f vector;
-			vector3d_from_points3d(&matrix.position, point, &vector);
+			real x = point->x - matrix.position.x;
+			real y = point->y - matrix.position.y;
+			real z = point->z - matrix.position.z;
 			if (matrix.scale != 1.0f)
 			{
-				real inverse_scale = 1.0f / matrix.scale;
-				function_11c471(inverse_scale, &vector, &vector);
+				real inverse = 1.0f / matrix.scale;
+				x = inverse * x;
+				y = inverse * y;
+				z = inverse * z;
 			}
-			real x = dot3f(&vector, &matrix.forward);
-			real y = dot3f(&vector, &matrix.left);
-			real z = dot3f(&vector, &matrix.up);
-			result = x > 0.0f && y > 0.0f && z > 0.0f &&
-				trigger_volume->extents.i > x && trigger_volume->extents.j > y && trigger_volume->extents.k > z;
+			point3f local;
+			local.x = matrix.forward.k * z + matrix.forward.j * y + matrix.forward.i * x;
+			local.y = matrix.left.k * z + matrix.left.j * y + matrix.left.i * x;
+			local.z = matrix.up.k * z + matrix.up.j * y + matrix.up.i * x;
+			if (local.x > 0.0f && local.y > 0.0f && local.z > 0.0f &&
+				trigger_volume->extents.i > local.x && trigger_volume->extents.j > local.y && trigger_volume->extents.k > local.z)
+				result = true;
 		}
 	}
 	return result;

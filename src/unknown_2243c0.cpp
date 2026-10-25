@@ -216,6 +216,29 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 	return *(byte const *const *)(block + 4) + index * size;
 }
 
+// score 149 (was 149): ECX table hoist versus saved EDI and lookup-register ownership still differ.
+// Unsigned root/leaf handles 149/149; signed masked indices 149; const input 149;
+// cache-tail memset 150; callback seed initializer 160; mapping element 149;
+// native block-helper return type 149. Early mask read and matched wrapper retained.
+// score 149 (was 149): ECX table hoist, lookup roles and word-load materialization remain.
+// Native root entry value/binding 194/149; native input field 149, plus entry value 194;
+// unmasked first/second/both words and native-input combination 149/149/149/149.
+// table stays in ECX; saved-register and lookup order still differ.
+// Cache initialization in success/entry 150/164; early callback input 162; both lifetimes 162;
+// cached marker count, geometry result and missing-mask result 149; delayed cache/count 150.
+// score 140 (was 149): table ownership and lookup schedule still differ.
+// stride-first helper 149f; ordinal-first helper 149f.
+// element-address helper 149f; stride template 150f.
+// byte helper stride 149f; root handle at use 140f.
+// direct pass value 149f; nested ordinals 149f.
+// root/direct pass 140f; root/nested ordinals 140f.
+// tag table stays in ECX; saved-register and lookup order still differ.
+// Existing input/render fields and both 149; ordinary block inline 149; group snapshot 163;
+// shared pointer zeros 148 (dropped); callback search field 150; validation failure return 149.
+// score 140 (was 140): table still enters ECX before the frame rather than saved EDI.
+// Existing element helper out of line 189; type query, geometry test, value callback,
+// value update and context reset noinline declarations 140 each; unsigned extent 140;
+// native int ordinal 140. All temporary helper contracts and declarations restored.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
@@ -223,13 +246,12 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 	s_224db0 local_0;
 	s_2243c1 local_1;
 	byte *local_2 = (byte *)arg_0;
-	long local_3 = *(long *)(local_2 + 0x1c);
-	s_tag_instance const *local_4 = &g_4e3b44[(short)local_3];
+	s_tag_instance const *local_4 = &g_4e3b44[(short)*(long const *)(local_2 + 0x1c)];
 	long const *local_5;
 	if (*(dword const *)local_4->unknown00 == 0x5052544d || *(dword const *)local_4->unknown00 == 0x70727433)
-		local_5 = function_137bd0(local_3)->function_x947334();
+		local_5 = function_137bd0(*(long const *)(local_2 + 0x1c))->function_x947334();
 	else
-		local_5 = *(long const *const *)(g_4e3b44[local_3 & 0xffff].bytes + 0x24);
+		local_5 = *(long const *const *)(g_4e3b44[*(long const *)(local_2 + 0x1c) & 0xffff].bytes + 0x24);
 	byte const *local_6 = *(byte const *const *)(g_4e3b44[*local_5 & 0xffff].bytes + 0x5c);
 	long local_7 = *(word const *)block_element_224db0(local_6, 0, 2) & 0x1ff;
 	long local_8 = *(word const *)block_element_224db0(local_6 + 8, local_7 + arg_3, 2) & 0x1ff;

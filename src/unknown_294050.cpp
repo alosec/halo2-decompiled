@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "data_array.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 // @flags /O2 /arch:SSE /Gr
 
 struct s_294050
@@ -28,24 +29,17 @@ real function_30bf0(vector3f *arg_0);
 
 __forceinline real function_2941a7(vector3f const *vector)
 {
-	return (real)sqrt(vector->k * vector->k + vector->j * vector->j + vector->i * vector->i);
+	return (real)sqrt(vector->i * vector->i + (vector->j * vector->j + vector->k * vector->k));
 }
 
 __forceinline real function_29419d(vector3f *arg_0)
 {
 	real local_0 = function_2941a7(arg_0);
-	real local_2;
 	if (!(fabs(local_0) < 0.0001f))
-	{
-		local_2 = local_0;
-		real local_1 = 1.0f / local_0;
-		arg_0->i = local_1 * arg_0->i;
-		arg_0->j = local_1 * arg_0->j;
-		arg_0->k = arg_0->k * local_1;
-	}
+		vector3f_scale(arg_0, 1.0f / local_0, arg_0);
 	else
-		local_2 = 0.0f;
-	return local_2;
+		local_0 = 0.0f;
+	return local_0;
 }
 
 __forceinline void function_294240(vector3f *arg_0, real arg_1, vector3f const *arg_2)

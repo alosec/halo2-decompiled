@@ -133,6 +133,12 @@ void __stdcall function_2562c0(long actor_index, s_slot *slot)
 // score 19 (was 19): retail loads the pointer into ecx and the byte into dl, ours uses eax and cl; retail
 // compares the two floats with comiss against memory where ours compares registers. Ours is
 // padded with five int3s.
+// A `short result = g_470bec;` at the top of the character block returned by all three
+// success paths gives retail's ecx/dl and dword preload, and `timer * rate >= duration`
+// returning g_470be8 gives retail's comiss; the started success then jumps into the nearby
+// g_470be8 epilogue instead of the final one, so the code is 12 bytes short (70). Also
+// tried: that form with `<` 75 or `!(<)` 75, with an early `if (!character)` return 75; the
+// plain `>=` test without the local 97.
 // @retail 0x256300
 short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 {

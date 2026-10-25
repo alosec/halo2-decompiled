@@ -155,6 +155,15 @@ static __forceinline real noise_curve_value(const s_noise_curve *curve, real inp
 	return result;
 }
 
+// score 638 (was 693): ESP realignment and mode convention still differ; native pair results improve length.
+// Midpoint pair 718; first-phase pair 709; fused output walk 754; sample pointers 735; accumulated pair 702;
+// sample and midpoint pairs 693; all three pairs 661 (not kept: the running sum's pair is a one-use copy).
+// Independent pass indices 720; additive phase samples 638 kept; curve count-first 693;
+// delayed endpoint loads 691; conditional clamp 693. Entry alignment and stacked mode remain.
+// score 626 (was 638): computed interpolation pair kept; frame 0x1490 versus 0x1474, alignment/mode differ.
+// RNG workspace at entry 638; coefficient array at entry 638; real level 640;
+// output pair snapshot 623 (copy rejected); scalar horizontal lifetime 633;
+// interpolation pair with scalar horizontal 626/2384 (tie, restored).
 // @retail 0x516d0
 long __stdcall function_516d0(bool reduced, dword seed,
 	const s_noise_draw_definition *definition, const s_random_draw *draw,
@@ -193,28 +202,36 @@ long __stdcall function_516d0(bool reduced, dword seed,
 		long i;
 		for (i = 0; i < count; i += stride)
 		{
-			noise[i].x = (random_draw_real(&state) * 2.0f - 1.0f) * factors[0];
-			noise[i].y = (random_draw_real(&state) * 2.0f - 1.0f) * factors[0];
+			s_noise_pair sample;
+			sample.x = (random_draw_real(&state) * 2.0f - 1.0f) * factors[0];
+			sample.y = (random_draw_real(&state) * 2.0f - 1.0f) * factors[0];
+			noise[i] = sample;
 		}
 		state = level_seed + 1;
 		for (i = 0; i < count; i += stride)
 		{
-			noise[i].x += (random_draw_real(&state) * 2.0f - 1.0f) * factors[1];
-			noise[i].y += (random_draw_real(&state) * 2.0f - 1.0f) * factors[1];
+			s_noise_pair sample;
+			sample.x = noise[i].x + (random_draw_real(&state) * 2.0f - 1.0f) * factors[1];
+			sample.y = noise[i].y + (random_draw_real(&state) * 2.0f - 1.0f) * factors[1];
+			noise[i] = sample;
 		}
 		state = level_seed + 2;
 		for (i = 0; i < count; i += stride)
 		{
-			noise[i].x += (random_draw_real(&state) * 2.0f - 1.0f) * factors[2];
-			noise[i].y += (random_draw_real(&state) * 2.0f - 1.0f) * factors[2];
+			s_noise_pair sample;
+			sample.x = noise[i].x + (random_draw_real(&state) * 2.0f - 1.0f) * factors[2];
+			sample.y = noise[i].y + (random_draw_real(&state) * 2.0f - 1.0f) * factors[2];
+			noise[i] = sample;
 		}
 		if (stride > 1)
 		{
 			long half = stride / 2;
 			for (i = half; i < count; i += stride)
 			{
-				noise[i].x = (noise[i + half].x + noise[i - half].x) * 0.5f;
-				noise[i].y = (noise[i + half].y + noise[i - half].y) * 0.5f;
+				s_noise_pair midpoint;
+				midpoint.x = (noise[i + half].x + noise[i - half].x) * 0.5f;
+				midpoint.y = (noise[i + half].y + noise[i - half].y) * 0.5f;
+				noise[i] = midpoint;
 			}
 			if (stride > 2)
 			{
@@ -237,8 +254,10 @@ long __stdcall function_516d0(bool reduced, dword seed,
 						real middle = fraction * remaining * 2.0f;
 						real end = fraction * fraction;
 						real start = remaining * remaining;
-						noise[index].x = end * right.x + middle * center.x + start * left.x;
-						noise[index].y = end * right.y + middle * center.y + start * left.y;
+						s_noise_pair interpolated;
+						interpolated.x = end * right.x + middle * center.x + start * left.x;
+						interpolated.y = end * right.y + middle * center.y + start * left.y;
+						noise[index] = interpolated;
 					}
 					left = right;
 				}

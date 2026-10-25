@@ -507,6 +507,18 @@ static inline word font_character_pixel(long alpha, long color)
 
 /* decodes a character's run-length coded pixels to 16 bit pixels; returns
    how many pixels there are (with no destination it only counts them) */
+// score 85 (was 85): alpha extension, case scheduling and colour-word assembly.
+// Word colour input 85; short alpha 91; Boolean parity and word result 85;
+// named upper/lower alpha 85; two-byte payload memcpy 88;
+// switch-fill endpoint 174; ordinary-fill endpoint 199.
+// Retail zero-extends the alpha byte to 32 bits before the `& 1` in every
+// branch (xor ecx, ecx; mov cl, al; and ecx, 1); ours does the `& 1` on the
+// byte and widens it to 16 bits (and cl, 1; movzx cx, cl) where the pixel is
+// stored straight to a word. A long return from the helper (108) fixes the
+// run branch for type 0/1 but not the two stores; a named long for the
+// single pixel of type 2 (234: widens there but merges the two fills); named
+// longs for the type 3 stores (108); a byte alpha parameter (201-209); the
+// byte casts at the call sites (108); (dword) or no casts at the stores (108).
 // @retail 0x122610
 long function_122610(long size, void const *pixels, void *destination)
 {

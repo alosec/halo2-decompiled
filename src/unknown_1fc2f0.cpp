@@ -203,6 +203,11 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // score 56 (was 56): retail loads the float into xmm3 first and then sign
 // extends the word into EDI, while ours writes the word with a 16-bit store
 // to DI and loads the float into xmm0.
+// score 56 (was 56): `long ticks` and a `rate` local give retail's first 21
+// instructions (rate in xmm3, movsx edi, components loaded first) but the tick
+// products go to new registers where retail scales in place 64 (369 bytes);
+// limit from the rate local 68; real ticks at the top 103; real ticks after the
+// rate 104; the same without the parameter reference 80.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

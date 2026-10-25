@@ -91,9 +91,6 @@ struct placed_point_2f1080
 	}
 };
 
-// score 27 (was 39): retail keeps the point-triangle status in the stack slot
-// 0x28 and the normal in xmm1; ours drops the unused status, reloads the
-// normal into xmm0, and its x87 reload of the distance comes late
 // @retail 0x2f1080
 void class_2f1080::function_2f1080(void const *a_, void const *b_, void const *input_, void *collector)
 {
@@ -103,29 +100,43 @@ void class_2f1080::function_2f1080(void const *a_, void const *b_, void const *i
 	input_2f1080 const *input = (input_2f1080 const *)input_;
 	results_2f1080 *results = (results_2f1080 *)collector;
 	contact_2f1080 *contact = &results->contacts->next_slot();
-	rounded_2f1080 const *sphere = a->shape;
-	rounded_2f1080 const *triangle = b->shape;
-	__m128 const *centre = &a->placement->transform.position;
-	transform_2f1080 const *frame = &b->placement->transform;
-	placed_point_2f1080 corners[3];
-	__m128 const *vertex = triangle->corners;
-	placed_point_2f1080 *corner = corners;
-	for (int count = 3; count != 0; count--)
+	int result;
 	{
-		corner->set_transformed(frame, vertex);
-		corner++;
-		vertex++;
+		rounded_2f1080 const *sphere = a->shape;
+		rounded_2f1080 const *triangle = b->shape;
+		__m128 const *centre = &a->placement->transform.position;
+		transform_2f1080 const *frame = &b->placement->transform;
+		placed_point_2f1080 corners[3];
+		__m128 const *vertex = triangle->corners;
+		placed_point_2f1080 *corner = corners;
+		for (int count = 3; count != 0; count--)
+		{
+			corner->set_transformed(frame, vertex);
+			corner++;
+			vertex++;
+		}
+		closest_308d90 closest;
+		int status = function_308d90(centre, &corners[0].value, terms, &closest);
+		float const radii = sphere->radius + triangle->radius;
+		if (radii + input->tolerance > closest.distance)
+		{
+			__m128 const single = _mm_set_ss(triangle->radius - closest.distance);
+			__m128 const scale = _mm_shuffle_ps(single, single, 0);
+			contact->position = _mm_add_ps(*centre, _mm_mul_ps(scale, closest.normal));
+			_mm_store_ps(contact->normal.m128_f32, closest.normal);
+			contact->position_and_distance[3] = closest.distance - radii;
+			if (status == 0)
+				result = 1;
+			else
+				result = 2;
+		}
+		else
+		{
+			result = 0;
+		}
 	}
-	closest_308d90 closest;
-	int status = function_308d90(centre, &corners[0].value, terms, &closest);
-	float const radii = sphere->radius + triangle->radius;
-	if (radii + input->tolerance > closest.distance)
+	if (result != 0)
 	{
-		__m128 const single = _mm_set_ss(triangle->radius - closest.distance);
-		__m128 const scale = _mm_shuffle_ps(single, single, 0);
-		contact->position = _mm_add_ps(*centre, _mm_mul_ps(scale, closest.normal));
-		contact->normal = closest.normal;
-		contact->position_and_distance[3] = closest.distance - radii;
 		if (id == 0xffff)
 		{
 			id = owner->add_contact(a, b, input, contact);

@@ -63,6 +63,12 @@ static __forceinline s_loop_allocator *compression_pool_allocate(long size)
 // score 52 (was 52): retail keeps the low half of the size in ebp and the high
 // half in edi, ours keeps them the other way round, and retail saves the third
 // argument after the push, so the stores and the subtraction differ.
+// score 52 (was 52): BLOCKED-BY 0x2cb5b0: retail passes it source in eax, source size in
+// ecx, destination in edx and the destination size in edi (three pushes); its stub is built
+// without /GL, so ours pushes all seven. A real 0x2cb5b0 body (an inflate wrapper over
+// stubbed 0x2cc8d0/0x2cc9d0/0x2cc890) takes eax/ecx/edx but the size in esi: 64 (323 bytes);
+// stdcall or cdecl stubs 64; retail's field store order 66; one-exit result 64. Retail's esi
+// comes from 0x2cc8d0 taking its stream in esi, so its real body is needed first.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {

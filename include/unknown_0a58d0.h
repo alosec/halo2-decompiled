@@ -202,7 +202,7 @@ struct s_flags_a6900
 long function_a5930(long a);
 long function_a5e70(long a, long b, long c);
 long function_a58d0(long a);
-void function_a6430(long a, long b, long c);
+void function_a6430(c_object_type_definition const *definition, long a, long b, long c);
 struct s_relevance_observers;
 /* 0xaa4d0 (src/unknown_0aa4d0.cpp): how relevant the entities are to the
    observers, from their distance and whether an observer faces them */

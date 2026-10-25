@@ -494,15 +494,21 @@ void function_12e150(long tag_index)
 	}
 }
 
-// score 37 (was 37): ours keeps the record pointer in esi, retail uses edi, and retail has two early exits that
-// return 1 where ours falls through to the common tail.
+static inline s_cache_block *geometry_cache_block_get(long index)
+{
+	return &((s_cache_block *)g_4e648c->data)[index & 0xffff];
+}
+
+/* whether a cache block is still in use: read this tick, still loading, or read in the last 5 ticks with
+   linked resources that are still in use (the call reads the block field again through the pool, as
+   retail does) */
 // @retail 0x12e210
 bool __stdcall geometry_cache_block_busy(long block_index)
 {
-	s_cache_block *cache_block = &((s_cache_block *)g_4e648c->data)[block_index & 0xffff];
+	s_cache_block *cache_block = geometry_cache_block_get(block_index);
 	s_physical_block *physical_block = physical_block_get(block_index);
-	bool result = false;
 	long age = physical_object_get()->time - physical_block->time;
+	bool result = false;
 
 	if (age == 0)
 	{
@@ -512,17 +518,18 @@ bool __stdcall geometry_cache_block_busy(long block_index)
 	{
 		return true;
 	}
-	if (age >= 5)
-		return false;
-	if (cache_block->block->runtime_linked)
+	if (age < 5 && cache_block->block->runtime_linked)
 	{
-		result = fixup_group_has_resource((s_fixup_group *)cache_block->block, (byte *)(physical_block->offset << physical_object_get()->page_shift) + g_4e6494);
+		result = fixup_group_has_resource((s_fixup_group *)geometry_cache_block_get(block_index)->block, (byte *)(physical_block->offset << physical_object_get()->page_shift) + g_4e6494);
 	}
 	return result;
 }
 
 // score 27 (was 27): ours loads the pointer into esi where retail uses edx or ecx, and the result fields are
-// read in a different order.
+// read in a different order. In the loop retail loads the block into edx and copies it to esi for the
+// release call; after the loop ours loads it into edx and copies it to ecx. Tried: an inline helper taking
+// the group for the pointer clear 51 (cache block moves to ebp); with a shared address helper 51; the
+// count in a local read before the block 68; the index read through its address 51; the block re-read 51.
 // @retail 0x12e290
 void __stdcall function_12e290(long block_index)
 {

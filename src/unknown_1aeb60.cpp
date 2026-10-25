@@ -225,7 +225,10 @@ bool __stdcall function_1aefc0(long actor_index, s_slot *slot)
 }
 
 // score 8 (was 8): the branch on the flag falls through where retail jumps to the end of the
-// block, so the two halves are laid out the other way round.
+// block, so the two halves are laid out the other way round (retail tests unknown13 with je to
+// result = other, placed last). Goto-free forms keep 8: a do/while (false) with break, a keep
+// flag, if/else-if with an empty then, nested ifs. Tried: one || / && condition (22), early
+// returns (58), a use_other flag (43), return other / g_46fbe8 after a final label (62, 63).
 // @retail 0x1af0a0
 short __stdcall function_1af0a0(long actor_index, s_slot *slot, s_slot *arg_2)
 {

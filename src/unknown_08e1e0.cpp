@@ -221,7 +221,7 @@ struct s_pending_message_storage;
 bool function_80e10(s_pending_message_storage *request, void **output, long *size);
 long function_b4810(long kind, long controller, XUID owner, const wchar_t *filename, const char *directory, long *task_out);
 long function_b4450(long kind, long controller, XUID owner, const wchar_t *filename, byte *buffer, dword size, long *task_out);
-long function_b4670(long kind, long controller, XUID owner, const wchar_t *filename, const char *directory, long *task_out);
+long function_b4670(long controller, long kind, XUID owner, const wchar_t *filename, const char *directory, long *task_out);
 long function_b42b0(long kind, long controller, XUID owner, const wchar_t *filename, byte *buffer, dword size, long *task_out);
 
 struct s_pending_transfer_definition
@@ -269,7 +269,7 @@ void function_8e240(void)
       s_pending_transfer_definition *current_definition =
        (s_pending_transfer_definition *)message->header->unknown00;
       if (header->kind == 3)
-       status = function_b4670(kind, controller, owner, filename, current_definition->directory, &task);
+       status = function_b4670(controller, kind, owner, filename, current_definition->directory, &task);
       else
        status = function_b42b0(kind, controller, owner, filename, (byte *)message->data, message->size, &task);
       }

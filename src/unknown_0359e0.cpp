@@ -52,6 +52,16 @@ PRIVATE inline long swizzle_log2(dword value)
 	return result;
 }
 
+// score 82 (was 82): retail's log2 loops are log2_floor's (test, cmp 1, then shr/inc
+// until 1; ours shifts first and tests for 0), the minimum is a branch (ours cmov),
+// and the parameters stay 16-bit until the mask is built: y is moved to si at entry
+// and both are sign-extended there (ours extends both at entry). Tried: swizzle_log2
+// with log2_floor's while (value != 1) loop 87 (the loops then match); with it, the
+// minimum as if (common_bits > height_bits) or as <, >=, <= ternaries 87, as a long
+// 117; only x copied 113; x and y used directly 119, the long copies after the mask
+// 100, short copies 119, only y copied 93, the copies swapped 84 (these five change
+// how x and y travel and cost matched caller 0x136140); log2_floor called with the
+// body rewritten as above 119.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

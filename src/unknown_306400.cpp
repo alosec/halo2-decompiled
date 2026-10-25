@@ -50,6 +50,9 @@ public:
 	void function_306400();
 };
 
+// score 67 (was 67): the offset vector stores and single-vector registers still differ.
+// Reference/pointer results 67; transform reference 67; count-first helper 67;
+// indexed run 87; whole copies with changed result 136; consumed SSE/reference results 67.
 // @retail 0x306400
 void box_pair_306400::function_306400()
 {

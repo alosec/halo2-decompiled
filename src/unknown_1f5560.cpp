@@ -317,6 +317,14 @@ static inline short heading_unit_get_state(s_heading_unit *unit)
 
 /* where the actor's unit (a biped) is heading: backwards out of its current
    animation, or toward the actor's target point */
+// score 11 (was 11): the state is loaded with movsx and spilled as a dword;
+// retail loads it into cx and keeps it in a word on the stack. Tried: the
+// state through function_e70b0's out parameter 124; this helper with an out
+// parameter and a short state 90.
+// state is sign-extended and spilled as a dword; retail
+// loads and spills a word. State 7 first 13; state before movement 86;
+// animation first 19; promoted accessor return 11; unsigned accessor 11;
+// indexed forward 11; indexed target 11; immutable long state 11.
 // @retail 0x1f55e0
 bool function_1f55e0(long actor_index, point3f *point, vector3f *direction)
 {
@@ -377,16 +385,22 @@ bool __stdcall function_110ab0(long unit_index);
 /* asks the actor's unit to move to the point facing the given way (request
    0x25), once it is within half a world unit of it; when asked, only while
    it faces within 45 degrees of its prop */
-// score 100 (was 100): retail's prologue saves ESI as well and pushes the
+// score 4 (was 100): only the facing dot product's j and k terms come in the other order
+// (retail j, k, i; ours k, j, i). Harness: the order follows the direction's component
+// definition order (k written first gives j, k, i but moves the zero store first, 9);
+// swapped dot3f arguments, the direction declared elsewhere, the comparison spelt
+// `>`/`!(>=)`, two ifs, byte result, no position pointer: all k first.
+// Earlier: retail's prologue saves ESI as well and pushes the
 // registers in the order EBP, EBX, ESI, EDI; here only EBX, EBP and EDI are
 // saved, so every stack slot after the prologue sits at another offset.
 // @retail 0x1f4f40
 bool function_1f4f40(long actor_index, vector3f const *facing, short unknown, s_type_c3b527 const *point, bool face_prop)
 {
 	s_actor_moving *actor = actor_moving_get(actor_index);
-	byte result = 0;
+	bool result = false;
 
-	if (!function_110ab0(actor->unit_index))
+	long unit_index = actor->unit_index;
+	if (!function_110ab0(unit_index))
 	{
 		point3f target;
 		vector3f offset;
@@ -397,14 +411,14 @@ bool function_1f4f40(long actor_index, vector3f const *facing, short unknown, s_
 		{
 			if (face_prop)
 			{
-				s_type_5cfb45 *state = function_25d690(prop_ref_get(actor->prop_index));
+				point3f const *prop_position = &function_25d690(prop_ref_get(actor->prop_index))->position;
 				vector3f direction;
 
-				direction.i = state->position.x - actor->position.x;
-				direction.j = state->position.y - actor->position.y;
+				direction.i = prop_position->x - actor->position.x;
+				direction.j = prop_position->y - actor->position.y;
 				direction.k = 0.0f;
 				if (!(function_30bf0(&direction) > 0.0f) || dot3f(facing, &direction) < 0.70710677f)
-					return result;
+					goto done;
 			}
 
 			{
@@ -419,6 +433,7 @@ bool function_1f4f40(long actor_index, vector3f const *facing, short unknown, s_
 		}
 	}
 
+done:
 	return result;
 }
 
@@ -436,15 +451,14 @@ static inline real heading_distance3d(point3f const *a, point3f const *b)
 
 /* while the actor's target point (+0x638) is fresh: faces it, and once
    within half a world unit of it asks the unit to stop there (request 0x2d) */
-// score 66 (was 66): retail saves ESI in the prologue, ours does not, and
-// ours is ten bytes longer than retail.
 // @retail 0x1f58c0
 bool function_1f58c0(long actor_index, vector3f *facing, short *unknown)
 {
 	s_actor_moving *actor = actor_moving_get(actor_index);
 	bool result = false;
 
-	if (!function_110ab0(actor->unit_index) && g_510c54->game_time < actor->unknown634)
+	long unit_index = actor->unit_index;
+	if (!function_110ab0(unit_index) && g_510c54->game_time < actor->unknown634)
 	{
 		point3f target;
 		vector3f direction;
@@ -726,6 +740,37 @@ bool function_1f8100(long actor_index, point3f const *origin, point3f const *tar
 
 real normalize2d(point2f *v);
 
+// score 172 (was 191): fast-byte initialization and trajectory call convention;
+// search then selection 172; unsigned scan 178; fixed do/while 191;
+// types arm first 191; fallback setters 195; split plus unsigned scan 223.
+// signed-long search 192; signed-byte search 188; exact exhaustion 210;
+// named first normalization result 172; global optimization off 542.
+// low-bit presence guard 228; native type clamp 236; branch-defined chosen speed 220;
+// target snapshot 234; inline depth zero 231. Frame 0x48 still agrees.
+// Bounded for search 172; unsigned byte scan 233; chosen speed after query 190;
+// planar component stores 265; native masks/metadata snapshot 172 each;
+// retry requirement 196; first type from bits 277. Fast-byte zero and trajectory convention
+// still differ; original body restored.
+// score 172 (was 172): Frame 0x48 agrees; fast-byte initialization, trajectory arguments and retry
+// result homes differ. Validity initialized in typed arm 241; first type initialized by branch
+// 198; read-only metadata 172; read-only speed tables 172; vertical output branches 187; shared
+// movement flag stores 174; retry speed first 172; native planar output copies 172.
+// score 172 (was 172): frame 0x48 agrees; fast-byte zero source and trajectory convention still differ.
+// Query inline/noinline declarations 174/172; byte/word validity 172/170; byte/word
+// first-type state 172/208; decisions after query 177; both byte decisions 172.
+// Word validity reaches 935 bytes but gains only two points and is restored.
+// Frame 0x48 agrees; fast-byte zero, trajectory arguments and retry/result homes differ.
+// separate retry force 196; long first-type result 235.
+// minimum after speed query 228; first type after speed query 175.
+// shared movement destination 172; native request copy 172.
+// earlier result declaration 172; minimum and retry force 227.
+// score 172 (was 172): frame 0x48 agrees; fast-byte zero and trajectory convention remain.
+// Validation after query 220; with late minimum 220; early query output 171;
+// minimum first 174; early output/minimum 170; first-type first 172;
+// shared Boolean initialization 173; early output with late validation 218.
+// Fast-byte memset 172; actual actor/requested-type/maximum-type references 172 each;
+// actual destination/origin references 172 each; read-only unit view 172;
+// native two-component normalization workspace 206. Zero source and trajectory convention remain.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -753,21 +798,20 @@ bool function_1f8160(long actor_index, signed char const *types, point3f const *
             }
             else
             {
-                for (short i = 0; i < 6; i++)
+                short i = 0;
+                while (i < 6 && !(*types & (1 << i)))
+                    ++i;
+                if (i < 6)
                 {
-                    if (*types & (1 << i))
-                    {
-                        if (i <= selected_type)
-                            selected_type = i;
-                        real selected_speed = 0.0f;
-                        byte *globals = (byte *)g_4e034c;
-                        if (selected_type >= 0 && selected_type < 6 && globals && *(long *)(globals + 0xc8) > 0)
-                            selected_speed = *(real *)(*(byte **)(globals + 0xcc) + 0x80 + selected_type * 4);
-                        speed = selected_speed;
-                        first_type = i == 0;
-                        valid = true;
-                        break;
-                    }
+                    if (i <= selected_type)
+                        selected_type = i;
+                    real selected_speed = 0.0f;
+                    byte *globals = (byte *)g_4e034c;
+                    if (selected_type >= 0 && selected_type < 6 && globals && *(long *)(globals + 0xc8) > 0)
+                        selected_speed = *(real *)(*(byte **)(globals + 0xcc) + 0x80 + selected_type * 4);
+                    speed = selected_speed;
+                    first_type = i == 0;
+                    valid = true;
                 }
             }
         }
@@ -960,6 +1004,10 @@ done:
         *movement_out = movement;
 }
 
+// score 307 (was 307): frame 0x18 versus 0x1c; actor/object roles and factor homes differ.
+// Independent facing/velocity scopes 331; late turning minimum 350; branch-defined following factor 335; frame pointer 399; inline depth one 308 (fast).
+// Scalar velocity 309; approach/following squared sums 308/308; combined radius 308; nested minimum 314 (fast).
+// score 307 (was 307): Frame 0x18 versus 0x1c and actor/object/factor homes remain; object receiver first 309; approach component scopes 308; following component scope 308; shared minimum scalar 308; library velocity copy 309 (fast control 308).
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,
@@ -1232,6 +1280,10 @@ PRIVATE __forceinline real function_1f99d1(point2f *arg_0)
     return 0.0f;
 }
 
+// score 294 (was 294): frame 0x3c agrees; radius/result homes and initial direction materialization differ.
+// With ordinary input/side lifetimes: persistent target 313, both input points 297, shared arccosine 296, late radius 312, frame pointer 401.
+// Ordinary lifetimes: facing value 307; scalar side 309; scalar center 306; origin constructed first 306; reused negative radius 329.
+// score 294 (was 294): Frame 0x3c agrees; direction materialization and radius/result homes remain. Ordinary input/side lifetimes: point pair plus arc helper 344; pair plus direction output 299; origin/facing values 292 (plain 292, two-point gain rejected); target/facing values 306; three point values 328.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)

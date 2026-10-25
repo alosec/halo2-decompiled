@@ -70,7 +70,7 @@ bool function_1b6070(long index, short unknown0, short unknown2);
 bool function_262890(long actor_index, s_reference reference);
 void *function_272a00(long actor_index);
 void *function_1e5240(long actor_index);
-short function_267a80(real *distance, point3f const *point, vector3f const *direction, point3f const *position, long unknown);
+short function_267a80(real *distance, point3f const *point, vector3f const *direction, point3f const *position, vector3f *unknown);
 void function_1b0710(long object_index, long actor_index, real *distance_squared, real *maximum_distance_squared);
 
 /* the squads (g_51e9d8, 0x98 bytes): the zone they hold and their leader */
@@ -189,6 +189,16 @@ bool __stdcall function_25dd30(long a, long b)
 	return a == b;
 }
 
+// score 175 (was 175): vector scheduling and geometry-call registers remain; sphere bonus branches 311f, signed mask snapshot 310f, distance-root local 310f, global optimization off 830f, minimum conditional 175 plain.
+// score 175 (was 175): first vector schedule, geometry registers and score adds remain;
+// shared displacement/geometry displacement/bonus result 310/310/313;
+// geometry/sphere/cone score observations 337/310/310; all score observations 337; actual view reference 310.
+// score 175 (was 175): initial offset schedule, geometry carriers and score adds remain;
+// shared component difference at offset/segment/both/fallback 334/343/343/343;
+// sphere/cone/all displacements 368/277/392; existing magnitude helper 175.
+// score 175 (was 175): initial offset schedule and protected geometry carriers remain;
+// read-only actor 175; self-dot at offset/segment/fallback/movement/sphere/cone
+// 175/175/175/175/175/175; all shared self-dots 313. Original helpers retained.
 // @retail 0x25dd50
 void __stdcall function_25dd50(
 	long actor_index,
@@ -405,6 +415,19 @@ void __stdcall function_25dd50(
 	}
 }
 
+// score 38 (was 38): Face base/index, definition setup, cover registers and failed-facing placement differ;
+// face pointer arithmetic 38; validated edge 38; definition receiver 191; cover reference 38;
+// target setter 38; target initializer 38; lateral component loop 38; output point setter 166.
+// Native trace 38; facing guard 37 (plain 37); cover index before/after base 38/38;
+// shared inset/lateral/both scale 131/106/138; native trace plus guard 37;
+// trace-block definition receiver 104; receiver plus guard 101. One-point gain dropped.
+// Frame and trace prefix agree; face base/index, definition setup, cover carriers and failed-
+// facing placement differ. native direction initializer 38; native lateral initializer 38; native
+// lateral target copy 177; completed point workspace 80; symmetric facing inputs 38; readonly
+// cover input 38; native cover normal value 38; side output initializer 203.
+// score 38 (was 38): face/definition and cover register ownership, normal y product and cold block remain.
+// Candidate-record reference 38; reference-flags binding 67; normal input copy 42;
+// point/normal/both output copies 42/42/42; facing scalar 38; published-side switch 59.
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,
@@ -905,6 +928,17 @@ void __stdcall function_25edd0(
 	}
 }
 
+// score 50 (was 50): protected iterator setup and range-bonus comparisons/multiplies differ.
+// Normalized clamp 66; bounded raw margin 137; positive fraction 83; source-domain fraction 51;
+// nested candidate 50; conditional weapon result 50; real unit reference 50; guarded owner result 264.
+// iterator setup, bonus tests/multiplies and query load scheduling differ.
+// Upper-margin-first 58; range once/limit once/range before root 155; full-width mode 258;
+// reversed style cases 50; forward position countdown 255; nearest conditional 50.
+// score 50 (was 50): vector workspace entry offset/closest/both 50/50/50;
+// in-place offset 50; component projection 95; in-place component projection 155;
+// projected workspace first 50; unsigned line ordinal 145. Iterator setup and bonus tests remain.
+// Selected-arm staged scales 72; upper-first staged 66; half by division 50;
+// selected margin carrier 186; near/far or separate bonus names 50; staged/name pairs 66.
 // @retail 0x25eea0
 void __stdcall function_25eea0(
 	long actor_index,
@@ -1716,6 +1750,27 @@ struct s_collision_result_25f7b0
 	byte unknown26[0x5c - 0x26];
 };
 
+// score 14 (was 14): frame/length agree; collision byte +0x13 versus +0x10,
+// product loads, word-mode comparison and allow-store timing differ.
+// Byte collision flag 14; byte allow flag 43; long initial mode 34;
+// short collision flag 247; scoped ray setup/result 14 (plain). Body restored.
+// Guarded collision fraction 14 plain; hit distance 14; native collision output 228; ray endpoint 232;
+// distance endpoint 201; both endpoints 266; final query point 111; horizontal normalization value 177.
+// Collision byte home, product loads, formal mode width and allow-store timing remain.
+// score 14 (was 14): collision byte, product loads and word-mode comparison still differ.
+// reuse ray displacement 14p; existing dot helper 14p.
+// squared length lifetime 14p; normalization result lifetime 14p.
+// shared projection output 25p; shared displacement workspace 60p.
+// sibling byte home name 14p; native projection mode 14p.
+// Immutable collision decision and cluster/origin values 14 each; external actor/candidate/context
+// records 14 each; visible-path collision decision 257; external definition record 53;
+// initialized native collision output 236 (plain). Collision byte home, product loads, word-mode
+// comparison and allow-store timing still differ; original body restored.
+// Frame 0x80 agrees; attachment byte 0x13/0x10, product loads, mode width and allow-store timing remain.
+// parent index 251; early collision mask 255.
+// unattached decision 15; mask bit clear 14.
+// index plus bit clear 251; unattached mask bit 17.
+// shared parent index 249; shared attachment decision 53.
 // @retail 0x25f7b0
 void __stdcall function_25f7b0(long arg_0, s_type_967e20 *arg_1, s_type_b36ac5 *arg_2)
 {

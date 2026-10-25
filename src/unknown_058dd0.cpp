@@ -742,6 +742,10 @@ void c_session_client::function_06dbc0()
 	function_06dc60(this, 3);
 }
 
+// score 44 (was 43): this stays in edx where retail copies it to ebx at entry, so
+// the mode and member index take esi; separate case 7 and 8 labels (retail's direct
+// table) with an inline compare-and-update helper 47, an inline id-compare helper 48,
+// a member-index local 47, an id copy 47, the mode in a local 47.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1118,6 +1122,23 @@ struct s_player_rating_properties
 long __stdcall function_063190(void *summary, long user);
 
 #pragma optimize("s", on)
+// score 110 (was 115): Frame/aggregate registers and conditional moves still differ.
+// Read-only session 115; external session reference 115; short missing
+// 116; direct readiness 119; shifted membership bit 120; average scalar
+// 115; external rank reference 110 kept; both rating references 124.
+// EBP frame has three words versus one session spill; aggregate registers differ.
+// Session per-use 169, mode-scoped 115; word ordinal 134; absent/user continues 115/116;
+// ready-first 112; sum-first 118; rating-data reference 115.
+// score 110 (was 110): session spill and aggregate allocation still differ.
+// Indexed aggregate 129; aggregate field reference 110; availability count 156;
+// early summary result 110; rank element pointer 110; absent-rank continue 110;
+// count before extrema 113; active-session spill name 110. Opening body retained.
+// score 110 (was 110): session spill and aggregate registers remain different.
+// Count/member/scan failure exits 124/121/115; complete-rating/property skips 110/110;
+// empty-aggregate rejection 112; live count field 110; distinct traversal roles 110.
+// score 110 (was 110): three-word frame/session spill and aggregate allocation remain.
+// Mode field 115; selection snapshot 131; property/player records 110/110;
+// source rank/value/both field bindings 110/110/110; live selection field 110.
 // @retail 0x72540
 void function_72540(c_session_state_matchmaking *state)
 {
@@ -1136,15 +1157,16 @@ void function_72540(c_session_state_matchmaking *state)
 					long index = function_063190(ratings->summary, (long)&player->user_id);
 					if (index != NONE)
 					{
+						long &rank = ratings->ranks[index];
 						if (!(player->user_flags & 3))
 						{
-							if (ratings->ranks[index] == NONE || ratings->values[index] == NONE)
+							if (rank == NONE || ratings->values[index] == NONE)
 							{
 								s_player_rating_properties *properties = (s_player_rating_properties *)player;
 								missing++;
 								if (properties->selected == ratings->selected && properties->value != NONE && properties->rank != NONE)
 								{
-									ratings->ranks[index] = properties->rank;
+									rank = properties->rank;
 									ratings->values[index] = properties->value;
 									missing--;
 								}
@@ -1152,7 +1174,7 @@ void function_72540(c_session_state_matchmaking *state)
 						}
 						else
 						{
-							ratings->ranks[index] = NONE;
+							rank = NONE;
 							ratings->values[index] = NONE;
 						}
 					}
@@ -1232,6 +1254,13 @@ static __forceinline long function_72458(s_surface_description *arg_0)
 }
 #pragma inline_depth(255)
 
+// score 9 (was 9): retail tests the variant type as cmp 5/je, cmp 3/je, cmp 4/jne default,
+// ours turns the 3/4 cases into a jl/jg range; the session member travels in eax (ours ecx)
+// and the reloaded type in edx (ours eax). Every goto-free form lays the default block out
+// first: one 5 || 3 || 4 test or its negation (100), case 5/3/4 in one switch (108), cases
+// 1-2 and 3-5 with __assume(0) (134); separate case 3 and case 4 (103); 5 || 3 then a case 4
+// switch (100); a negated && test before the special block (100); the || test around a
+// case 1-2/3-5 switch with __assume(0) (111). The table itself is function_193440 inlined.
 // @retail 0x72330
 void function_72330(c_session_state_matchmaking *state)
 {
@@ -1821,6 +1850,21 @@ long function_75890(long time);
 
 bool network_session_host_become_leader(c_class_58d20 *session);
 
+// score 90 (was 90): frame 0xc agrees; readiness uses BL and the failure/mode join differs.
+// cleanup-first mode 90; byte readiness 90; byte completion 94; single state read 90;
+// readiness before countdown 140; shared live-state predicate 90.
+// Owner/secondary/primary/paired object references 90; completion from test 129;
+// host return guard 90; paired preparation result 90; reversed timed-type tests 93.
+// Shared type/all failure commands 144/128; combined mode-readiness 90 (426 bytes);
+// preparation failure first 90; raw-time readiness 94; unsigned saturated time 90;
+// completion before mode call 90; shared failures with combined gate 129.
+// score 59 (was 90): readiness/session registers and failure/timer join still differ.
+// Integer readiness 59 kept; entry readiness 134; entry integer readiness 135;
+// timed type range 107; four/five/timed arm order 111; completion from readiness 136;
+// test-assigned preparation 90; active predicate value 166.
+// score 48 (was 59): readiness callee input and failure/timer join still differ.
+// Live timer/mode/both fields 59/59/59; integer pending 48 kept;
+// byte/word pending 90/59; common-tail guard 59; pending with live timer 48.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {
@@ -1837,7 +1881,7 @@ bool c_session_state_start_match::update()
         }
         else if (b->type == 2 || b->type == 3)
         {
-            bool ready = false;
+            long pending = true;
             if (function_06e720(b) && function_06e6b0(b, &unknown14))
             {
                 if (!unknown18)
@@ -1846,13 +1890,13 @@ bool c_session_state_start_match::update()
                 long remaining = ((long)(remaining_raw < 0) - 1) & remaining_raw;
                 network_session_host_become_leader(b);
                 network_session_start_countdown(b, true, (remaining + 999) / 1000, 0, NULL);
-                ready = remaining == 0;
+                pending = remaining != 0;
             }
             else
                 unknown18 = 0;
             if (mode == 3)
             {
-                if (ready)
+                if (!pending)
                 {
                     network_session_set_mode(b, 4);
                     result = true;

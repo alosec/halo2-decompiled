@@ -81,15 +81,20 @@ static inline long bungienet_user_voice_setting(short kind)
 	return 1;
 }
 
-// score 11 (was 11): retail keeps the request pointer in ECX and reads the kind with a
-// 16-bit load; ours keeps the pointer in EAX, so the kind test becomes a memory compare.
+// score 11 (was 11): only registers differ. Retail keeps the request pointer in ECX, the
+// kind in AX, the setting in ECX and `changed` in DL; ours uses EAX, CX, EDX and CL.
+// The volatile read keeps retail's 16-bit load and register compare of the kind (a plain
+// read compiles to `cmp word ptr [eax + 0xe], 1`, 32). Same output as the older
+// local_0/local_1 copy form. Tried: plain read (32); kind read inside the condition (32);
+// controller index read first (12); if/else and `setting = 1; if` forms (11, 15);
+// `switch (kind)` (17, puts setting in ECX but movsx/dec the kind); word kind (11);
+// bool temp for the condition (41); `changed = setting != old` (25).
 // @retail 0x8c5f0
 bool __stdcall bungienet_user_voice_apply(s_bungienet_user_request *request)
 {
-	s_bungienet_user_request *local_0 = request;
-	short local_1 = *(volatile short *)&local_0->kind;
+	short kind = *(volatile short *)&request->kind;
 	long controller_index = request->controller_index;
-	long setting = bungienet_user_voice_setting(local_1);
+	long setting = bungienet_user_voice_setting(kind);
 	s_controller_voice_view *controller = controller_voice_view_get(controller_index);
 	long old_setting = controller->voice_setting;
 	bool changed = false;

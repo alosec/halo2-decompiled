@@ -194,7 +194,13 @@ void juggernaut_set(long player_index, bool juggernaut)
 }
 
 // score 20 (was 20): the loop counter and the g_510c9c pointer sit in the other two callee-saved
-// registers than retail; the instruction order is the same.
+// registers than retail (count in ebp, the pointer in ebx); the instruction order is the same.
+// Tried: count declared first (20), the store and increment as two statements (21), count != 0
+// (21), the waiting test inside the if (20), a local copy of g_510c9c in the loop (20), a for loop
+// (20), the bit index cast to word (74), the mask tested by shifting (60), count as dword (19,
+// but wrong: the modulo becomes an unsigned div and the count test jbe where retail has
+// cdq/idiv and jle). The argument arrives as in retail (on the stack, ret 4) and the caller
+// 0x192530 calls it as retail does (push -1), so the caller does not decide this.
 // @retail 0x192a30
 void function_192a30(long excluded_player_index)
 {
@@ -282,7 +288,13 @@ void c_juggernaut_engine::v15(long player_index)
 }
 
 // score 5 (was 5): the first bit test shifts by the low byte of the player index; retail shifts
-// by the 16-bit masked index and computes that mask before the shift.
+// by the 16-bit masked index and computes that mask before the shift (`mov esi, ebx; and esi,
+// 0xffff; ... mov ecx, esi; shl edx, cl`), but still recomputes `1 << index` at each later use.
+// Tried: `g_510c9c->players & (1 << absolute_index)` (81: the mask is right but the compiler
+// keeps `1 << index` in edi for the later uses and the registers all move),
+// juggernaut_is((short)absolute_index) or with no cast (8: mask first, but `mov cl, bl` and
+// ebx/esi swapped), the shift by (word)absolute_index or (short)absolute_index (8), by
+// (word)player_index or juggernaut_is((word)player_index) (5, same code as now).
 // @retail 0x192530
 void c_juggernaut_engine::v18()
 {

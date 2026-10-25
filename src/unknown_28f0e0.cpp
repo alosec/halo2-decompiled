@@ -27,23 +27,18 @@ bool function_28f0e0(long arg_2, s_28f0e0 const *arg_1, vector3f const *arg_0, l
     vector3f local_1;
     cross3f(&arg_1->field_3c, arg_0, &local_1);
     vector3f tangent;
-    vector3f const *local_2;
-    vector3f const *local_3;
     real magnitude = normalize_inline(&local_1);
     if (magnitude > 0.0f)
     {
         cross3f(&local_1, &arg_1->field_3c, &tangent);
         if (function_30bf0(&tangent) > 0.0f)
         {
-            local_2 = &tangent;
-            local_3 = &arg_1->field_3c;
+            function_b75a0(arg_2, &arg_1->field_60, &tangent, &arg_1->field_3c, NULL, false);
             goto local_6;
         }
     }
-    local_2 = NULL;
-    local_3 = NULL;
+    function_b75a0(arg_2, &arg_1->field_60, NULL, NULL, NULL, false);
 local_6:
-    function_b75a0(arg_2, &arg_1->field_60, local_2, local_3, NULL, false);
     function_b93b0(arg_3, arg_2, (short)(arg_1->field_0));
     s_object_header_view *header = &((s_object_header_view *)g_4e0300->data)[arg_2 & 0xffff];
     header->flags &= ~0x20;

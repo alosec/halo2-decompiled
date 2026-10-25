@@ -792,8 +792,13 @@ PRIVATE long font_cache_read(long font_index, void *buffer, long size, dword off
 	return function_1a0f10(file, buffer, size, offset, 7, read_priority, bytes_read, done);
 }
 
-// score 14 (was 14): ours keeps the first argument and the bit mask in EBX, retail keeps
-// them in EBP.
+// score 14 (was 14): only registers differ: ours keeps font_index in EBX and the bitmap
+// mask in EBP, retail the other way round. Tried: result flag from the header test (76);
+// found flag with break (14); if/else with a result variable (94); local copies of the
+// arguments or reading `.field_0` (14); the s_data_datum_iterator form (14); a separate
+// pointer for the new prediction (14); early `return true` (72); nested ifs in the loop
+// (14); plain `long` parameters with the caller's declaration changed (86, and 0x13eeb0
+// drops to 18).
 // @retail 0x1414d0
 bool font_cache_predict_character(s_13eeb1 font_index, s_13eeb1 character)
 {

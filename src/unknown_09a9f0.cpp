@@ -373,11 +373,10 @@ bool c_turret_entity_definition::v30(long index)
 // @retail 0xa3ae0
 void c_object_type_definition::v31(long a, long b, long c, long d)
 {
-	c_object_type_definition *volatile definition = this;
 	long index = b & 0x3ff;
 	if (index)
 	{
-		function_a6430(index, a, d);
+		function_a6430(this, index, a, d);
 	}
 }
 
@@ -531,9 +530,14 @@ bool c_projectile_type::v8(long a, long b)
  return result;
 }
 
-// score 5 (was 5): retail masks the 16-bit index with and eax, 0xffff, ours
-// truncates it with movzx eax, ax; masking explicitly gives the right
-// instruction but re-schedules the whole prologue
+// score 5 (was 5): retail masks the 16-bit group index with and eax, 0xffff,
+// ours truncates it with movzx eax, ax. Writing (index & 0xffff) gives the and
+// but swaps the object (esi) and flags (edi) registers (12). Tried with the
+// mask: flags declared first / long / b used directly (12), early returns
+// (47), real pointer into the group (15), a 12 byte group struct indexed (12),
+// one (flags & 0x800) && group != NONE test (24, 12), unsigned index (12),
+// 0x9d450's object address form (12); (dword)(word)index is unchanged (5).
+// Dropping the volatile this copy loses retail's push ecx/[esp] store (55).
 // @retail 0xa3df0
 long c_device_type::v27(long a, long b, long c, long d)
 {
@@ -721,6 +725,9 @@ void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f 
 // score 28 (was 28): the effect call's arguments are pushed in the other order
 // and the field is loaded into the low half of a cleared register instead of
 // being zero extended
+// payload reference 28; const payload pointer 28; const data parameter 28;
+// validation name snapshot 28; shared name snapshot 42; late name snapshot 28;
+// explicit lookup null test 28; separate negated scale tests 28; paired tests 28.
 // @retail 0xa1a80
 bool c_projectile_impact_effect_event::v11(long a, long const *entities, long c, void const *data)
 {
@@ -737,24 +744,22 @@ bool c_projectile_impact_effect_event::v11(long a, long const *entities, long c,
 
 bool function_100f00(long weapon_index);
 
-// score 93 (was 93): the flags word is kept in the other register and the
-// result in the other one, so retail tests the flag bits in the high byte of
-// the word and keeps the result in edx while ours keeps them in dx and eax
+/* Copies the weapon's flag bits, counters and timer into the update record
+   for each requested field that changed, after the item fields. */
 // @retail 0xa1f70
 long c_weapon_type::v27(long a, long b, long c, long d)
 {
  long object_offset = (a & 0xffff) * 12;
  byte *object = *(byte **)(object_offset + g_4e0300->data + 8);
- volatile long result = ((c_item_type *)this)->c_item_type::v27(a, b & 0x7ff, 0x94, d);
+ long result = ((c_item_type *)this)->c_item_type::v27(a, b & 0x7ff, 0x94, d);
  dword requested = b;
  s_object_view *updated_object = OBJECT(a);
- s_tag_instance *tags = g_4e3b44;
- byte *definition = tags[*(volatile long *)&updated_object->definition_index & 0xffff].bytes;
+ byte *definition = g_4e3b44[updated_object->definition_index & 0xffff].bytes;
  if (*(short *)(definition + 0x290))
  {
   if (requested & 0x800)
   {
-   word source_flags = *(word *)(object + 0x16c);
+   dword source_flags = *(word *)(object + 0x16c);
    byte flags = (byte)((source_flags >> 8) & 1);
    if (source_flags & 0x200) flags |= 2; else flags &= ~2;
    if (source_flags & 0x400) flags |= 4; else flags &= ~4;
@@ -773,7 +778,7 @@ long c_weapon_type::v27(long a, long b, long c, long d)
  }
  if (requested & 0x2000)
  {
-  definition = tags[*(long *)object & 0xffff].bytes;
+  definition = g_4e3b44[*(long *)object & 0xffff].bytes;
   bool changed = false;
   bool force = !function_100f00(a);
   if (*(real *)(d + 0x9c) != *(real *)(object + 0x184) || force)
@@ -789,7 +794,7 @@ long c_weapon_type::v27(long a, long b, long c, long d)
    *(real *)(d + 0x9c) = *(real *)(object + 0x184);
    *(short *)(d + 0x98) = *(short *)(object + 0x22c);
    *(short *)(d + 0x9a) = *(short *)(object + 0x22a);
-   return result | 0x2000;
+   result |= 0x2000;
   }
  }
  return result;
@@ -1049,21 +1054,19 @@ bool c_weapon_type::v14(long a1, long a2, long a3, long a4, long a5, long a6, lo
 // @retail 0xa03d0
 void c_item_type::v31(long a, long b, long c, long d)
 {
- c_object_type_definition *volatile definition = this;
  if (b & 0x400)
   function_b9b90(a, *(bool const *)(d + 0x90));
  long mask = b & 0x3ff;
  if (mask)
-  function_a6430(mask, a, d);
+  function_a6430(this, mask, a, d);
 }
 
 // @retail 0xa0e10
 void c_projectile_type::v31(long a, long b, long c, long d)
 {
- c_object_type_definition *volatile definition = this;
  long mask = b & 0x3ff;
  if (mask)
-  function_a6430(mask, a, d);
+  function_a6430(this, mask, a, d);
  if (b & 0x400)
   function_b9b90(a, *(bool const *)(d + 0x90));
 }
@@ -1083,10 +1086,9 @@ bool c_weapon_type::v16(long a, long b, long c)
 // @retail 0xa3f70
 void c_device_type::v31(long a, long b, long c, long d)
 {
- c_object_type_definition *volatile definition = this;
  long mask = b & 0x3ff;
  if (mask)
-  function_a6430(mask, a, d);
+  function_a6430(this, mask, a, d);
  if (b & 0xc00)
   function_a3fd0(a, false, (bool)(((dword)b >> 10) & 1), *(real const *)(d + 0x90),
    (bool)(((dword)b >> 11) & 1), *(real const *)(d + 0x94));
@@ -1140,22 +1142,18 @@ struct s_z_weapon_update_object
  short field22c;
 };
 
-// score 22 (was 22): the first argument is stored to the stack and reloaded in
-// retail and kept in a register in ours, retail masks the second argument
-// before the first call while ours masks it after, and ours makes an extra
-// call before the two calls that read the item's definition
 // @retail 0xa2140
 void c_weapon_type::v31(long a, long b, long c, long d)
 {
- long mask = b & 0x7ff;
  s_z_weapon_update_object *object = (s_z_weapon_update_object *)OBJECT(a);
+ word mask = b & 0x7ff;
  if (mask)
  {
   if (mask & 0x400)
    function_b9b90(a, *(bool const *)(d + 0x90));
-  mask &= 0x3ff;
-  if (mask)
-   function_a6430(mask, a, d);
+  long low_mask = mask & 0x3ff;
+  if (low_mask)
+   function_a6430(this, low_mask, a, d);
  }
  long state_mask = b & 0x800;
  if (state_mask || (b & 0x1000))

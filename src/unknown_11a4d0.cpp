@@ -200,28 +200,29 @@ void function_11a430(long list_index, real body_vitality, real shield_vitality)
 }
 
 /* whether the unit holds a weapon of the given definition */
-// score 45 (was 45): retail loads the global once into esi and keeps it there, ours loads it into edx and
-// re-reads the array base; ours ends with an extra xor al,al and four int3s.
 // @retail 0x11a4d0
 bool function_11a4d0(long unit_index, long definition_index)
 {
-	if (unit_index == NONE || definition_index == NONE)
-		return false;
 	bool result = false;
-	s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
-	short weapon_index = unit->weapon_index_a;
-	if (weapon_index != NONE)
+
+	if (unit_index != NONE && definition_index != NONE)
 	{
-		long weapon_object_index = unit->weapon_object_indices[weapon_index];
-		if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
-			result = true;
-	}
-	weapon_index = unit->weapon_index_b;
-	if (weapon_index != NONE)
-	{
-		long weapon_object_index = unit->weapon_object_indices[weapon_index];
-		if (weapon_object_index != NONE && unit_get_11a4d0(weapon_object_index)->definition_index == definition_index)
-			result = true;
+		s_record_pool *globals = g_4e0300;
+		s_unit_11a4d0 *unit = unit_get_11a4d0(unit_index);
+		short weapon_index = unit->weapon_index_a;
+		if (weapon_index != NONE)
+		{
+			long weapon_object_index = unit->weapon_object_indices[weapon_index];
+			if (weapon_object_index != NONE && ((s_object_header_11a4d0 *)globals->data)[weapon_object_index & 0xffff].object->definition_index == definition_index)
+				result = true;
+		}
+		weapon_index = unit->weapon_index_b;
+		if (weapon_index != NONE)
+		{
+			long weapon_object_index = unit->weapon_object_indices[weapon_index];
+			if (weapon_object_index != NONE && ((s_object_header_11a4d0 *)globals->data)[weapon_object_index & 0xffff].object->definition_index == definition_index)
+				result = true;
+		}
 	}
 	return result;
 }
@@ -575,7 +576,9 @@ void function_11af90(long unit_index, short mode)
 /* puts the units of an object list into the free seats (passing a filter) of
    the vehicle; returns how many got in */
 // score 2 (was 2): the two copies are made in the opposite order: retail copies esi into eax first and ebx
-// into ecx, ours does it the other way round.
+// into ecx, ours does it the other way round. Nested seat guards 2; unit lifetime 2; seat lifetime 2;
+// const unit pointer 2; const seat pointer 2; unsigned word seat index 2; const scalar parameters 2;
+// scoped favor-size 313.
 // @retail 0x11b0c0
 short function_11b0c0(long vehicle_index, long filter_range, long volatile list_index)
 {

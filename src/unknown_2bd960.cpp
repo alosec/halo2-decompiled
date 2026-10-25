@@ -433,6 +433,18 @@ void function_2bde90(real t, point3f *out, point3f *points)
 /* builds the hill's polygon on the spline through its markers, and its
    center, radius, perimeter and height range (the height range also covers
    the hill's other markers) */
+// score 130 (was 134): control-call convention and scan induction differ;
+// segment control scope 141 fast; sample point scope 141 fast; late marker
+// array 141 fast; unsigned edges 142 fast; separate marker counters 141 fast.
+// Control/sampling calls and scan induction remain; center/radius/both values 171/169/185;
+// vertex memcpy 190; edge-length values 139; main height value 130 plain kept;
+// shared point count 326; height plus count 345 (plain).
+// score 130 (was 134): protected control/sampling calls and scan induction remain;
+// center/radius/both/height/all endpoint scans 375/475/716/378/950f; frame/size/global 237/276/1164f.
+// score 130 (was 130): protected control/sampling calls and scan induction remain; main scalar
+// bounds 143; shared center height 143; count snapshot 274, with center height 274; selections 143;
+// minimum/maximum alone 140/135; main plus marker bounds 171; initialized bounds 133;
+// initialized bounds with direct height reads 128 (two-point gain rejected). All plain.
 // @retail 0x2be050
 void hill_build_polygon(s_polygon_2be *hill, long index)
 {
@@ -509,13 +521,14 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	hill->z_max = hill->center_z;
 	for (i = 0; i < hill->count; i++)
 	{
-		if (hill->z_min > points[i].z)
+		real height = points[i].z;
+		if (hill->z_min > height)
 		{
-			hill->z_min = points[i].z;
+			hill->z_min = height;
 		}
-		if (!(hill->z_max > points[i].z))
+		if (!(hill->z_max > height))
 		{
-			hill->z_max = points[i].z;
+			hill->z_max = height;
 		}
 	}
 	count = function_19ec40(0, 0.0f, (short)(index + 11), NONE, 1, 8, marker_ids, 0.0f);
@@ -997,6 +1010,10 @@ PRIVATE __forceinline bool territory_holder_matches_player(long holder, long pla
     return players[holder & 0xffff].team == players[player_index & 0xffff].team;
 }
 
+// score 88 (was 88): holder/marker carriers and predicate join differ;
+// inline depths one/two, state per use, early team-array lifetime, invalid
+// marker continue, point memcpy and nested holder test 88; marker-first 90.
+// holder and marker registers plus append carriers remain; append output last 88; point last 88; full-list guard 88; short ordinal 153; word ordinal 151; player team first 88; team failure exit 92; short ordinal with output last 153.
 // @retail 0x2bf740
 void c_game_engine_45c948::v32(long player_index, long list_pointer)
 {
@@ -1395,6 +1412,9 @@ struct s_territory_tag
 // keeps it in eax, the marker index is kept in edx where retail uses eax, and
 // the colour mask is read at the top of the function instead of just before
 // it is changed.
+// Tried: the player lookup before the position copy 29; the mask update first
+// 50, or between the copy and the player lookup 32; the tag chain as byte
+// offsets 24; a const player pointer 24; a 600 s permuter run, none below 24.
 // @retail 0x2c0980
 long territory_create_item(long player_index, long territory)
 {
@@ -1712,8 +1732,6 @@ void territory_marker_color(long player_index, long territory, s_color_bits *col
 	}
 }
 
-// score 50 (was 50): the stack slots of the outer frame differ ([esp+0x14]
-// where retail has [esp+0x10]).
 // @retail 0x2bf960
 void c_game_engine_45c948::v14(long local_player)
 {
@@ -1728,12 +1746,12 @@ void c_game_engine_45c948::v14(long local_player)
 			s_color_bits color;
 			territory_marker_color(player_index, i, &color);
 			s_marker_list list;
-			point3f position = g_4e0350->marker_entries[(short)state->w60[i]].position;
-			long holder = state->l70[i];
+			s_marker_entry const &marker = g_4e0350->marker_entries[(short)state->w60[i]];
 			list.b0 = 0;
 			list.b1 = 0;
 			list.l4 = 1;
-			list.position = position;
+			list.position = marker.position;
+			long holder = state->l70[i];
 			list.r14 = 0.4f;
 			list.r18 = 0.1f;
 			list.r1c = 0.0f;

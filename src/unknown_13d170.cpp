@@ -12,8 +12,6 @@
 /* the physical memory allocator (physical_memory.h): a named, doubly linked
    list of blocks kept in a data array that follows the object */
 
-// score 18 (was 18): the final field stores of the manager are scheduled in a different
-// order than retail's; retail's order matches our source order exactly.
 // @retail 0x13d170
 void function_13d170(s_physical_object *manager, const char *name, long page_count, long page_shift, long maximum_count, physical_block_delete_proc delete_proc, physical_block_busy_proc busy_proc, physical_block_state_proc state_proc, c_data_allocator *allocator)
 {
@@ -25,18 +23,18 @@ void function_13d170(s_physical_object *manager, const char *name, long page_cou
 
 	memset(manager, 0, sizeof(s_physical_object));
 	strncpy(manager->name, name, 0x20);
+	manager->name[0x1f] = 0;
 	manager->delete_proc = delete_proc;
-	manager->state_proc = state_proc;
-	manager->page_shift = page_shift;
 	manager->busy_proc = busy_proc;
+	manager->state_proc = state_proc;
+	manager->page_count = page_count;
+	manager->page_shift = page_shift;
+	manager->first = NONE;
 	manager->blocks = data;
 	manager->time = 1;
-	manager->page_count = page_count;
 	manager->signature = 0x77656565;
-	manager->name[0x1f] = 0;
 	manager->state = 0;
 	manager->allocator = allocator;
-	manager->first = NONE;
 	manager->last = NONE;
 	for (long i = 0; i < 8; i++)
 		manager->limits[i] = 0x7fffffff;
@@ -174,6 +172,14 @@ struct s_block_candidate
 	long pages;
 };
 
+// score 370 (was 370): frame 0x1050 versus 0x1054; retail spills the ring
+// tail and keeps page offset in EBX. Limit-first guard 385; oldest timestamp
+// initialised 381; enclosing inner-next scope 370; short ring endpoints 392;
+// candidate copy through memcpy 370.
+// Bounded ring masks 387; unsigned-word endpoints 392; frame pointer 475;
+// zero inline depth 418; size preference 643 (fast).
+// Native busy result 370; native selection result 373; gap endpoint snapshot 370;
+// page cursor published first 372; byte ring tail 432 (fast).
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

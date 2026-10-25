@@ -27,8 +27,17 @@ struct s_11c1b0
 
 #define g_440df0 (*( s_11c1b0 const (*)[68])((byte const *)g_440dd8 + 0x18))
 
-// score 99 (was 99): the argument is kept in bp and the limit in dx where retail keeps them
-// in bx and di, so the two range tests and the loop use different registers.
+// score 99 (was 99): retail keeps local_0 in ebx (xor ebx, ebx; mov bx) up to the
+// function_137da0 call and stores it at once into arg_0's slot, which then serves as
+// local_7; it holds the early false in al (so the limit goes in esi and every push
+// comes first) and only later the result in bl, with edi as its zero register. Ours
+// keeps local_1 in bl from the start, local_0 in di and zero in edx. Tried: local_0
+// and local_7 as one variable 116 (edi becomes the zero register); local_7 = local_0
+// at its declaration 143; with one variable, return false for the range test (local_1
+// with or without its initializer, declared first or second) 131 (ebx gets retail's
+// xor/mov, but the early return gets its own epilogue); return local_1 there 114
+// (draft) / 131 (one variable); the body inside if (arg_0 == NONE || in range) 99
+// (draft) / 116 (one variable).
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {

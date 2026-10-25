@@ -602,6 +602,10 @@ struct s_signed_file_read_parameters
 
 __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 
+// score 68 (was 68): header/body carriers, dispatch loads, scratch capacity and
+// signature receiver differ; short-lived body/header/both size reads 182/174/182;
+// reversed signature equality 68; Boolean equality 68; inline depth one 68;
+// global optimization off 491; frame pointer 246.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {

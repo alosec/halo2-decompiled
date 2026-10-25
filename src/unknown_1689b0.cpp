@@ -578,7 +578,7 @@ bool function_1de630(dword test_flags, s_slot_entry_list *bsp, s_collision_bsp_t
 	long maximum_leaf_count, byte const *arg_c9e1f7, point3f const *point, vector3f const *vector);
 bool function_244980(long cluster_index, point3f const *point, vector3f const *vector, dword flags,
 	dword test_flags, s_collision_result_1697c0 *result);
-long function_b8940(short cluster_index, s_object_cluster_reference **reference, s_object_cluster_iterator *iterator);
+long function_b8940(long cluster_index, s_object_cluster_reference **reference, s_object_cluster_iterator *iterator);
 long function_b89b0(s_object_cluster_reference **reference, s_object_cluster_iterator *iterator);
 bool __stdcall function_169510(long object_index, bool a, dword flags, dword test_flags, point3f const *point,
 	vector3f const *vector, long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result);
@@ -800,7 +800,7 @@ bool __stdcall function_168f40(long flags, s_vehicle_ray const *ray,
 			word object_flags = collision_flags_to_object_flags(flags);
 			word types = (word)(((dword)flags >> 4) & 0x1fff);
 			s_object_cluster_iterator iterator;
-			for (long object_index = function_b8940((short)cluster_index, &reference, &iterator);
+			for (long object_index = function_b8940(cluster_index, &reference, &iterator);
 				object_index != NONE; object_index = function_b89b0(&reference, &iterator))
 			{
 				if ((types & (1 << reference->type)) && !(reference->flags & object_flags))
@@ -825,6 +825,14 @@ bool __stdcall function_168f40(long flags, s_vehicle_ray const *ray,
 	return result;
 }
 
+// score 25 (was 25): plane k/j product operands at +0x314, late i/y
+// products and success-result reload differ; single plane k/j snapshots
+// 340/357; start z/y 124/124; movement j 56; plane k+j 390;
+// correction movement i 56; start z+y 157; the found path's `result = true;` dropped 92
+// (retail's single result-reload exit, but the reload is hoisted onto two inner paths);
+// `return true;` there 25; point/vector read directly in the plane distances 124; the k/j
+// plane terms through `instanced_plane->plane` 177 (both k products then load the plane
+// first, as retail; j does not, and the stepping block grows); the j operands swapped 25.
 // @retail 0x1697c0
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,
 	long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *collision)
@@ -1007,7 +1015,7 @@ bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const 
 					s_object_cluster_iterator iterator;
 					long object_index;
 
-					for (object_index = function_b8940((short)cluster_index, &reference, &iterator); object_index != NONE;
+					for (object_index = function_b8940(cluster_index, &reference, &iterator); object_index != NONE;
 						object_index = function_b89b0(&reference, &iterator))
 					{
 						long object_mark_index = object_index & 0xffff;
@@ -1415,6 +1423,21 @@ PRIVATE __forceinline long shape_cluster_next(long *next)
     return result;
 }
 
+// score 170 (was 170): world-mask width, leaf induction and pool/cluster homes differ;
+// integer query result 251f; paired world mask 205 plain; leaf step at read 222 plain;
+// unsigned leaf/handle/count views and normal iterator inline 251f; direct count returns 249f
+// (unchanged fast control 251; full 170).
+// score 170 (was 170): world-mask width and pool/cluster allocation still differ.
+// saved instance predicate 297f; saved object predicate 298f.
+// both predicates 318f; saved collection mask 293f.
+// word hit ordinal 172f; full-width instance mask 291f.
+// full-width object mask 291f; collection mask plus word ordinal 300f.
+// External position/collection records 170/170; read-only pool/link views
+// 170/170; native pool reference 170; word link slot 180; slot with read-only
+// pool or external call receivers 180/180 (complete fast control 170).
+// frame 0x1018 agrees; world mask and pool/cluster homes differ.
+// BSP/cluster/count/list/both field views 170/170/170/170/170 plain;
+// list reload 177; list/count cached and reloaded after each call 166 (hand reload, reverted in review); paired record views 170.
 // @retail 0x16a440
 bool __stdcall function_16a440(dword flags, point3f const *position, real extent, real height,
     real radius, long ignore_object, long ignore_parent, s_shapes *shapes)
@@ -1533,6 +1556,14 @@ PRIVATE inline void camera_prism_point_16a8e0(s_prism const *prism, point2f cons
 			prism->plane.n.n[indices[1]] * point->y) / prism->plane.n.n[axis];
 }
 
+// score 552 (was 552): sum homes and zero register; accumulation loops 597;
+// average loops 554; midpoint loop 554; branch-local ray results 552;
+// face classification from normal selection 553.
+// frame 0xb964 agrees; sum/counter homes and EBX/ESI zero carrier still differ.
+// Result-first edge cap 625; long inside 600; long normal selection 552; projected entry lifetime 552; independent sums with word counters 594; shared initial point 553.
+// score 552 (was 552): frame 0xb964 agrees; sum homes and query zero register differ. Signed
+// accepted counts 552; selected endpoint pointer 653; vertex cursor 628; shared inverse 552; early
+// opposite radius 647; word-count shared reconstruction and early successor 686.
 // @retail 0x16a8e0
 bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 	long ignore_object, long ignore_parent, point3f *out, real *out_radius)

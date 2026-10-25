@@ -120,6 +120,14 @@ void function_0204b0(long tag_index)
 	}
 }
 
+// score 454 (was 458): frame 0x4 agrees; early register saves, constant scheduling and scalar homes still differ.
+// shared final fraction 492; clear block memset 461; value clamp expressions 458; progress workspace reuse
+// 458; shared final clamps 492; cleared block clamps 461; clear block test completion 454; clear block test
+// clamps 454; clear block test progress 454
+// score 454 (was 454): frame 4 agrees; early register saves and scalar/constant scheduling differ.
+// Native completion 451; first/color complements 454/454; summary copy 469; earlier completion 476;
+// first/duration field clears 466/472; native completion plus first complement/first clear/duration
+// clear 451/463/475.
 // @retail 0x1fd20
 s_timed_effect_globals *function_01fd20(s_timed_effect_globals *result)
 {
@@ -132,7 +140,7 @@ s_timed_effect_globals *function_01fd20(s_timed_effect_globals *result)
         TIMED_FRACTION(fraction0, globals->unknownb8, globals->unknownbc, 1.0f)
         TIMED_FRACTION(fraction1, globals->unknownd0, globals->unknownd4, 1.0f)
         real value;
-        bool volatile finished;
+        bool finished;
         real fraction2;
         real fraction3;
         real fraction4;
@@ -172,8 +180,8 @@ s_timed_effect_globals *function_01fd20(s_timed_effect_globals *result)
             globals->unknown14 = 0.0f;
         }
 
-        finished = false;
-        if (globals->unknowndc > 0.0f || globals->unknowne0 > 0.0f || globals->unknownec > 0.0f || globals->unknownf0 > 0.0f)
+        finished = !(globals->unknowndc > 0.0f || globals->unknowne0 > 0.0f || globals->unknownec > 0.0f || globals->unknownf0 > 0.0f);
+        if (!finished)
         {
             TIMED_FRACTION(fraction2, globals->unknowne4, globals->unknowne8, 1.0f)
             TIMED_FRACTION(fraction3, globals->unknownf4, globals->unknownf8, 1.0f)
@@ -188,26 +196,12 @@ s_timed_effect_globals *function_01fd20(s_timed_effect_globals *result)
                 globals->unknown48 = v2;
             }
         }
-        else
-        {
-            finished = true;
-        }
 
         if ((globals->unknowne0 == 0.0f && globals->unknownf0 == 0.0f && globals->unknowne8 <= g_4858a0 && globals->unknownf8 <= g_4858a0) || finished)
         {
             globals->unknown3c = 0;
-            globals->unknown40 = 0.0f;
-            globals->unknown44 = 0.0f;
-            globals->unknown48 = 0.0f;
-            globals->unknownd8 = 0.0f;
-            globals->unknowndc = 0.0f;
-            globals->unknowne0 = 0.0f;
-            globals->unknowne4 = 0.0f;
-            globals->unknowne8 = 0.0f;
-            globals->unknownec = 0.0f;
-            globals->unknownf0 = 0.0f;
-            globals->unknownf4 = 0.0f;
-            globals->unknownf8 = 0.0f;
+            memset(&globals->unknown40, 0, 3 * sizeof(real));
+            memset(&globals->unknownd8, 0, 9 * sizeof(real));
         }
 
         TIMED_FRACTION(fraction4, globals->unknown124, globals->unknown128, 0.0f)

@@ -1195,6 +1195,13 @@ bool __stdcall function_246a0(void *context)
 typedef long (__stdcall *visibility_draw_callback)(s_slot *slot, byte *data);
 bool function_0bfe60(dword const *flags, long bit);
 
+// score 52 (was 52): the zeroed register is EDI in ours and EBP in retail, and the block the
+// test jumps to is laid out differently.
+// score 52 (was 52): the code is retail's apart from the colours (loop counter and total
+// EDI where retail has EBP, the test index EBP where retail has EDI) and ADD for retail's LEA
+// of the bitset row; push pointer without volatile 56; device as a field pointer 56 (52 with
+// volatile); total zeroed in an else arm 139; one combined query-result test 52;
+// &bitsets[set][0] 52; slots + index 52; the push expansion in a forced-inline helper 52.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {
@@ -1255,6 +1262,8 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
+// score 71 (was 71): the test of the global comes after the test of the call in ours and before
+// it in retail, and ours is twenty-five bytes shorter.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
@@ -1377,16 +1386,19 @@ PRIVATE __forceinline void configure_filter_textures(long const &source)
     }
 }
 
+// score 4 (was 4): the source and pass-count incoming registers are reversed. Pass-count snapshot 4;
+// const pass parameter 4; output snapshot 4; aggregate weights 4; pretested while 4; nested output tests 4;
+// alternate/configure/radius order 33; scoped favor-size 139.
 // @retail 0x21360
-long function_21360(long source, real radius, real low, real high, long target,
-    long alternate, long passes, long output, bool configure, bool full_surface, real scale)
+long function_21360(long count, long source, real radius, real low, real high, long target,
+    long alternate, long output, bool configure, bool full_surface, real scale)
 {
     real current_radius = radius * 0.01666f;
     if (alternate == NONE)
         alternate = source;
     if (configure)
         function_020f30(scale, 0.0f);
-    for (long pass = 0; pass < passes; ++pass)
+    for (long pass = 0; pass < count; ++pass)
     {
         real weights[4];
         weights[0] = current_radius;

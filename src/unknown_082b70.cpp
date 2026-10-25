@@ -82,6 +82,11 @@ static __forceinline long object_query_weapon(long unit_index, short slot)
 
 // score 65 (was 65): the value at [edx+0x10] is compared in a different register: retail
 // loads it into edx and keeps eax for the index, ours loads it into eax.
+// Shared-helper arm result 76; early exit 76; byte slot 71; long slot 75;
+// selected result 76; wide selection 86; unsigned handle 65;
+// slot-validity local 65; shared parent/sibling cursor 65.
+// Shared object getter 65; shared header getter 65; output references 65; child reference 65; association
+// result 65; byte slots 65; shared/output 65; reference/result 65.
 // @retail 0x82c10
 void __stdcall function_82c10(long object_index, long *weapons)
 {
@@ -135,8 +140,8 @@ struct s_082b70_player
 	byte unknown030[0x21c - 0x30];
 };
 
-// score 48 (was 48): retail reads another global for the record pointer and keeps it in edx,
-// ours reads a different global and keeps the pointer in eax.
+/* fills a player's object motion from the unit it controls, or from the
+   vehicle the unit is attached to when the unit occupies it */
 // @retail 0x828b0
 bool function_828b0(long player_index, s_player_object_motion *result)
 {
@@ -145,13 +150,13 @@ bool function_828b0(long player_index, s_player_object_motion *result)
 	if (player->unit_index != NONE)
 	{
 		long unit_index = player->unit_index;
-		long parent = object_get_082b70(unit_index)->parent;
-		if (parent != NONE)
+		s_082b70_object *unit = object_get_082b70(unit_index);
+		if (unit->parent != NONE)
 		{
-			s_082b70_object *object = object_get_082b70(parent);
-			if (!((1 << object->type) & 3) || object->occupant != unit_index)
+			s_082b70_object *object = object_get_082b70(unit->parent);
+			if (!((1 << object->type) & 3) || unit_index != object->occupant)
 				goto local_0;
-			unit_index = parent;
+			unit_index = unit->parent;
 		}
 		if (unit_index != NONE)
 		{
@@ -210,6 +215,17 @@ struct s_weapon_definition_view
  byte *barrels;
 };
 
+// score 149 (was 149): frame 0x20 versus 0x1c; weapon-table CSE and
+// sentinel/trigger homes differ; invalid weapon initialization 149; flat
+// fallbacks 149; unsigned hand 149; typed trigger state 149; state at use 149.
+// score 149 (was 149): selector/frame interference remains; barrel field at use 159;
+// selector inside positive guard 159; native mode 149; read-only tag 149;
+// read-only trigger 149; active interval 150; shared false stores 155;
+// selector declared before receiver 149.
+// score 149 (was 149): Frame 0x20 versus 0x1c, initial sentinel and second-slot pool load still
+// differ. Separate bounded result 149; direct native bounds 188; flag field at store 149; direct
+// mode-two result 178; shared mode-one stores 149; trigger fields at use 175; native weapon
+// receiver 149; handle workspace name 149.
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {
@@ -281,13 +297,9 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
 
 bool motion_sensor_object_moving(long object_index);
 
-// score 57 (was 57): the prologue differs: retail pushes ebp and reads the second argument
-// into ebp, ours copies it into ebx and pushes ebp and edi later.
 // @retail 0x823d0
 void function_823d0(s_weapon_activity_result *output, const byte *input, long object_index)
 {
- /* retail keeps object_index on the stack (ret 8) */
- long const *object_index_reference = &object_index;
  byte *result = (byte *)output;
  memset(output, 0, 0x34);
  *(long *)(result + 0) = *(const long *)(input + 4);
@@ -298,7 +310,7 @@ void function_823d0(s_weapon_activity_result *output, const byte *input, long ob
  if (*(const dword *)input & 2) *(word *)(result + 0x10) |= 2; else result[0x10] &= ~2;
  if (*(const dword *)input & 0x800) *(word *)(result + 0x10) |= 4; else result[0x10] &= ~4;
  if (*(const dword *)input & 0x4000) *(word *)(result + 0x10) |= 8; else result[0x10] &= ~8;
- if (*object_index_reference != NONE)
+ if (object_index != NONE)
  {
   byte *object = (byte *)object_get_082b70(object_index);
   *(long *)(result + 0x12) = *(long *)(object + 0x210);
@@ -308,16 +320,16 @@ void function_823d0(s_weapon_activity_result *output, const byte *input, long ob
  else
  {
   *(short *)(result + 0x12) = NONE;
-  result[0x14] = NONE;
-  result[0x15] = NONE;
+  *(char *)(result + 0x14) = NONE;
+  *(char *)(result + 0x15) = NONE;
   *(short *)(result + 0x16) = NONE;
  }
  if (*(const short *)(input + 0x1e) == *(short *)(result + 0x12))
   *(long *)(result + 0x12) = *(const long *)(input + 0x1e);
  if (*(const short *)(input + 0x24) != NONE)
   *(short *)(result + 0x16) = *(const short *)(input + 0x24);
- if (result[0x14] != 0xff && result[0x14] == result[0x15])
-  result[0x15] = NONE;
+ if (*(char *)(result + 0x14) != NONE && result[0x14] == result[0x15])
+  *(char *)(result + 0x15) = NONE;
  function_82d20(object_index, (s_object_relevance_source *)(input + 0x34), output);
 }
 

@@ -1267,6 +1267,31 @@ extern bool g_4ed39d;
    the change is pending, then shows the dialog or the menu that follows it.
    Retail passes all three arguments on the stack: reading the screen id
    through its address keeps it there */
+// score 184 (was 184): game/main byte homes and dialog joins differ;
+// branch loader scope 184; lobby byte 184; main byte 184; word dialog ID 190;
+// signed user flags 184.
+// Dialog-choice name 184; recovery-result name 184; both names 184; qualified loader if/else 184; dialog-
+// only signed flags 184; loader read at use 184; game result byte 184; choice byte 184. Menu-byte homes and
+// dialog joins remain.
+// score 184 (was 184): initialized message before menu results 183; later mode 184;
+// results before user query 193; late dialog ID 184; full-width dialog flags 189;
+// recovery middle/high groups first 184/184; qualified pending/gate exits 184.
+// score 184 (was 184): game/main byte homes and dialog joins remain.
+// Plain: direct dialog callbacks 202; callbacks after mode 199; callbacks at display 192;
+// direct callbacks/plain game result 242; late callbacks/plain result 233; display callbacks/plain result 237;
+// direct callbacks/scalar error 245; direct callbacks/both plain 268.
+// game/main byte homes and dialog joins remain;
+// lobby recovery result 213; with connection/all recovery results 213/222;
+// dialog high/middle cases first 184/184; scoped default-dialog query,
+// dialog-presence and alternate-menu results 184/184/184.
+// score 184 (was 184): game/main byte homes and dialog joins remain.
+// Direct disconnect game/lobby/main results 177/208/189; paired game-lobby,
+// game-main and lobby-main results 225/217/216; all results 220; ordinary game result 216.
+// Direct game result adds comparisons/stores: aligned changes 78 versus 69; dropped.
+// score 184 (was 184): game/main byte homes and dialog joins remain;
+// dialog-ID choice 202f; direct ID-selected callback tuples 238f; callbacks
+// after selection/at consumer 237f/190f; with ordinary game result
+// ID-only/direct/late/consumer 233f/257f/242f/235f. Original flow retained.
 // @retail 0x19ae0f
 void function_19ae0f(long change, long pending, long error)
 {
@@ -2171,46 +2196,34 @@ bool function_19a902(void)
 // @retail 0x19a5fd
 long function_19a5fd(long state)
 {
-	struct
+	long result = 0;
+	long table[16][2] =
 	{
-		long entries[16][2];
-		long default_value;
-	} table =
-	{
-		{
-			{ 0, 0x9 },
-			{ 1, 0xb },
-			{ 2, 0xc },
-			{ 3, 0xd },
-			{ 4, 0xe },
-			{ 5, 0xf },
-			{ 6, 0x10 },
-			{ 7, 0x11 },
-			{ 8, 0x12 },
-			{ 9, 0x13 },
-			{ 0xa, 0x14 },
-			{ 0xb, 0x15 },
-			{ 0xc, 0x16 },
-			{ 0xd, 0x17 },
-			{ 0xe, 0x18 },
-			{ 0xf, 0x19 },
-		},
-		0
+		{ 0, 0x9 },
+		{ 1, 0xb },
+		{ 2, 0xc },
+		{ 3, 0xd },
+		{ 4, 0xe },
+		{ 5, 0xf },
+		{ 6, 0x10 },
+		{ 7, 0x11 },
+		{ 8, 0x12 },
+		{ 9, 0x13 },
+		{ 0xa, 0x14 },
+		{ 0xb, 0x15 },
+		{ 0xc, 0x16 },
+		{ 0xd, 0x17 },
+		{ 0xe, 0x18 },
+		{ 0xf, 0x19 },
 	};
-
-
-	long result;
 	for (dword i = 0; i < 16; i++)
 	{
-		if (table.entries[i][0] == state)
+		if (table[i][0] == state)
 		{
-			result = table.entries[i][1];
-			goto done;
+			result = table[i][1];
+			break;
 		}
 	}
-
-	result = table.default_value;
-done:
 	return result;
 }
 

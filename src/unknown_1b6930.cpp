@@ -109,22 +109,31 @@ bool function_1b60d0(long index, short type, short level);
 void function_25d420(long prop_index, short type, long actor_index);
 short __stdcall function_272af0(s_match_globals *structure, point3f const *point);
 
-PRIVATE __forceinline bool function_1b69e6(long arg_0, long arg_1)
+// score 2 (was 80): retail reloads the spilled view before it loads the
+// choice from the entry; ours loads the choice first. Retail passes the
+// reference's own slot for function_2605d0's other index (0x18 for both;
+// a separate other_index local makes the frame 8 bytes bigger, 38); the high bit test of
+// unknown2 is retail's load and test ah; type is NONE before the call.
+// Tried: choice read after the first view store 140; result set first 118;
+// result cleared before the test 131; branches swapped, a view alias, const
+// or outer choice, the copy through a cast 2/2/2/2/2; choice read at each
+// use 33; the request's +4 store before +8 5.
+// @retail 0x1b69e0
+bool __stdcall function_1b69e0(long actor_index, long prop_index)
 {
     bool unknown;
-    long level;
     s_261d20_entry entry;
     s_2605d0_request request;
     bool result = false;
-    s_actor_view *actor = actor_get(arg_1);
-    s_prop_node_view *node = prop_node_get(arg_0);
+    s_actor_view *actor = actor_get(actor_index);
+    s_prop_node_view *node = prop_node_get(prop_index);
     s_prop_view_fields *view = prop_node_view(node);
     if (view)
     {
         memset(&request, 0, sizeof(request));
         request.type = 5;
-        *((bool *)&request + 4) = true;
         *(long *)((byte *)&request + 8) = actor->prop_index;
+        *((bool *)&request + 4) = true;
         *(long *)((byte *)&request + 0xc) = *(long *)((byte *)view + 0xc);
         *((bool *)&request + 0x10) = false;
         vector3f *direction = (vector3f *)((byte *)view + 0x94);
@@ -148,36 +157,33 @@ PRIVATE __forceinline bool function_1b69e6(long arg_0, long arg_1)
         }
         *(real *)((byte *)&request + 0x1c) = 20.0f;
         byte *scratch = ai_scratch_buffer_get();
-        s_reference reference = function_2605d0(arg_1, &request, (long)&entry, (long)&level, scratch, &unknown);
-        if (!REFERENCE_EQUAL(reference, g_470fa0) && reference.unknown2 >= 0)
+        /* the other index the callee writes lands in the reference's own slot,
+           which its result then overwrites, as in retail */
+        s_reference reference = function_2605d0(actor_index, &request, (long)&entry, (long)&reference, scratch, &unknown);
+        if (!REFERENCE_EQUAL(reference, g_470fa0) && !(reference.unknown2 & 0x8000))
         {
             s_1b69e0_choice *choice = *(s_1b69e0_choice **)&entry;
             view->unknown70 = 1;
             view->unknown78 = choice->point;
             *(short *)((byte *)view + 0x72) = choice->field_12;
             *(long *)((byte *)view + 0x74) = choice->field_14;
+            short type = NONE;
             s_262b40_result *target = function_262b40(reference);
-            short type = target ? target->unknown10 : NONE;
+
+            if (target)
+                type = target->unknown10;
             function_1b60d0(node->unknown08, reference.unknown2, type);
             result = true;
         }
         else
         {
-            function_25d420(arg_0, 2, arg_1);
+            function_25d420(prop_index, 2, actor_index);
             view->unknown4c = true;
             result = false;
         }
         ai_scratch_buffer_release(scratch);
     }
     return result;
-}
-
-// score 80 (was 80): the frame is eight bytes bigger than retail's, so every local offset and the
-// whole body layout differ.
-// @retail 0x1b69e0
-bool __stdcall function_1b69e0(long actor_index, long prop_index)
-{
-    return function_1b69e6(prop_index, actor_index);
 }
 
 // @retail 0x1b6c90
@@ -591,6 +597,8 @@ short __stdcall function_1b7000(long actor_index, s_slot *slot)
 
 // score 33 (was 33): the address of the argument is copied into ECX and pushed; retail loads it
 // into EBX directly.
+// BLOCKED-BY 0xd0620: retail's iterator initializer takes the iterator in ebx (it stores through
+// ebx and leaves it for the caller's `mov edx, ebx`); ours takes it on the stack.
 // @retail 0x1b73b0
 short __stdcall function_1b73b0(long actor_index, s_slot *slot)
 {

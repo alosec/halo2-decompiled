@@ -4,6 +4,14 @@
 // of, until no edge leads on or a face is reached twice.
 #include <xmmintrin.h>
 
+struct flag_30aac0
+{
+	char value;
+	flag_30aac0() {}
+	flag_30aac0(bool input) : value(input) {}
+	operator bool() const { return value != 0; }
+};
+
 struct face_30aac0;
 
 struct edge_30aac0
@@ -67,28 +75,25 @@ void face_30aac0::function_30a9d0()
 	distance = d;
 }
 
-// score 28 (was 81): retail keeps the face in esi and the edge counter in edi
-// and the done flag in an aligned byte slot at [esp+0x18], ours keeps the face
-// in edi, the counter in esi and the flag in the padding at [esp+0x1b]
 // @retail 0x30aac0
 face_30aac0 *class_30a810::function_30aac0(face_30aac0 *start)
 {
 	clear_marks();
 	face_30aac0 *face = start;
 	edge_30aac0 const *entered = 0;
-	bool done = false;
+	flag_30aac0 done = false;
 	while (!done)
 	{
 		face->mark = 3;
 		int i;
-		edge_30aac0 const *edge = face->edges;
-		for (i = 0; i < 3; i++, edge++)
+		for (i = 0; i < 3; i++)
 		{
+			edge_30aac0 const *edge = &face->edges[i];
 			if (edge == entered)
 			{
 				continue;
 			}
-			__m128 const a = *edge->vertex;
+			__m128 const &a = *edge->vertex;
 			__m128 const d = _mm_sub_ps(*edge->next->vertex, a);
 			__m128 const n = face->normal;
 			__m128 const c = _mm_sub_ps(

@@ -1362,6 +1362,38 @@ int __cdecl matchmaking_compare_value(void const *a, void const *b)
 }
 
 /* fills the list with the session's players, then the empty slots */
+// score 116 (was 116): extra frame dword, count homes and counted tail stores remain;
+// common guarded fill 172; common fill/shared query 166; definite comparator 124;
+// byte selected count 145; signed-char predicates 116.
+// frame 0x58 versus 0x54; query/count homes, scalar tail stores and final row registers differ.
+// Initial slot memset 187; unsigned selected count 116; query failure guard 136; comparator default 124; native secondary result 140.
+// Guarded fills with current cursor/sort 197, with shared query 195; short mode 125; byte mode 121; selected-end tests 158.
+// score 116 (was 116): extra count home and scalar tail fills still differ.
+// Standard range/count fills 166/164; first/second counted fill 164/166;
+// first/second/both maxima 135/124/159; counted fill with maxima 143.
+// extra query frame dword, count homes and scalar tail fills remain.
+// Row-total lexical rank 116; independent query storage and renamed combination 160;
+// actual row reference, short row result and native index array 116; native predicates and query-success local 136.
+// score 116 (was 116): query/count homes and scalar tails remain. Shared query with
+// first/second/both standard maxima 143/117/158; indexed rows 135, plus first/both maxima
+// 150/145; shared query default at entry 142, plus both maxima 151.
+// Extra query dword, count homes and scalar tail fills remain. Branch
+// player/selection/both initialization 130/164/164f; first/second/row while loops 116f; retained row pool
+// 143f; shared checked row accessor 118f. Branch selection restores frame 0x54 but regresses.
+// score 116 (was 116): query/count homes and scalar tail fills still differ.
+// First/second/both maximum equality 116/116/116; values-first comparator 115 (dropped);
+// comparator branches/storage 116/116; factored mode 160; pre-allocation row value 136.
+// score 116 (was 116): query/count homes and tail-fill schedule still differ.
+// first word scan 164f; second word scan 135f.
+// both word scans 155f; byte scans 155f.
+// signed byte scans 155f; early comparator 164f.
+// early comparator/word scans 166f; early comparator/byte scans 166f.
+// extra query home, selected-count homes and scalar tail fills remain.
+// Completed first/second/both query totals 145/138/159; rejected first/second/both scans 116;
+// open-row default 115 (dropped); completed totals with open-row default 158.
+// score 116 (was 116): query/count homes and scalar tail fills still differ.
+// Branch-shared session count 138; with library/range tails 201/160;
+// selection initialization 162; completed total 134; word scans 160; comparator/open-row forms 139/137.
 // @retail 0x2514fd
 void c_matchmaking_list::v3()
 {
@@ -1901,6 +1933,12 @@ extern dword g_54d5b8;
 // score 36 (was 36): the cases' blocks sit in the other order, ours tests the
 // state's value before the call while retail calls first and tests after, and
 // the argument of the call is built in the other registers
+// Our compiler lays the shared call out after the highest case (case blocks go in
+// value order); only a separate call in case 4 puts it after case 4 as retail does,
+// but that copy pushes 0xad and the state register instead of eax and 4: 81 (176
+// bytes). Tried: that copy with the dialog set before the switch, inside the guard,
+// or with a goto to the store 81; case 4 as `if (!g_51ec99) {...; break;} goto
+// shown;` 37; `case 1:` with the default 36.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {

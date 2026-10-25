@@ -49,6 +49,24 @@ static __forceinline long marker_viewer_unit(void)
 	return unit_index;
 }
 
+// score 120 (was 233): projection-result store, coordinate registers and later helper scheduling differ;
+// bool result 231; early placement 233; position snapshot 282; late collision 237;
+// final factor clamp 233; bool with word half extents 123 kept; projection arm order 231 (fast).
+// projected endpoints 123; word centers 225; final endpoints 123; native direction 264; distance lifetime 141.
+// Branch status with word/native extents 218/212 (match-only, reverted); numerator lifetimes 123; viewer exits 123; earlier extent product 213.
+// Native point initialization 123; up-vector snapshot 294; ellipse bounds 241;
+// existing projection output 123 (match-only, reverted); placement memcpy 123;
+// collision record at file scope 123; direct collision result 281; double rounding result 180.
+// Plain list position (no list_reference) 120.
+// score 123 (was 123): projection-result store, coordinate homes and helper scheduling still differ.
+// native byte projection result 123f; native horizontal half extent 216f.
+// native vertical half extent 215f; value initialized placement 263f.
+// viewer index read once 123f; explicit viewer selector 123f.
+// viewer result at query 123f; byte result native placement 263f.
+// projection-status store, coordinate registers and helper scheduling remain.
+// Failure predicate 280; sequential word normalization 222; named ellipse predicate 123;
+// outside-first ellipse arms 123; failure/sequential 249; named/sequential 222;
+// outside-first/sequential 222; failure/outside-first/sequential 249.
 // @retail 0x24e59f
 void __stdcall function_24e59f(s_marker_list *list)
 {
@@ -63,9 +81,7 @@ void __stdcall function_24e59f(s_marker_list *list)
 		byte surface_flags[2];
 		short surface_index;
 	};
-	/* retail keeps list on the stack (ret 4); its callers push it */
-	s_marker_list *const *list_reference = &list;
-	point3f const *position = &(*list_reference)->position;
+	point3f const *position = &list->position;
 	real distance = distance3d(position, &g_4b9da0);
 	real lift = list->r18;
 	if (lift > distance * 0.35)
@@ -93,11 +109,11 @@ void __stdcall function_24e59f(s_marker_list *list)
 
 	point2f offset;
 	real nx, ny;
-	long on_screen = function_30710(&g_4b9e14, 0, (vector3f const *)&transformed, &offset, (s_view const *)&g_camera_storage);
+	bool on_screen = function_30710(&g_4b9e14, 0, (vector3f const *)&transformed, &offset, (s_view const *)&g_camera_storage);
 	if (on_screen)
 	{
-		long half_width = (g_4b9dd6 - g_4b9dd2) / 2;
-		long half_height = (g_4b9dd4 - g_4b9dd0) / 2;
+		short half_width = (g_4b9dd6 - g_4b9dd2) / 2;
+		short half_height = (g_4b9dd4 - g_4b9dd0) / 2;
 		nx = (offset.x - (real)(g_4b9dd2 + half_width)) / (real)half_width;
 		ny = (offset.y - (real)(g_4b9dd0 + half_height)) / (real)half_height;
 	}

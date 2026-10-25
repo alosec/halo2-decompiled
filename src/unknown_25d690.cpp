@@ -1091,6 +1091,9 @@ s_ai_player *ai_player_get(long player_index);
    seat */
 // score 76 (was 76): the prologue: retail loads the global g_4f55f0 and its
 // data pointer before reserving the frame, ours reserves the frame first.
+// Const actor with store lookup 86; saved scalar names and entry homes 76;
+// named acceptance and failed-request exit 76; reversed dispatch 77;
+// shared tick 78; player lifetime across acceptance 76.
 // @retail 0x25c050
 void function_25c050(long player_index, long actor_index)
 {
@@ -1295,6 +1298,22 @@ void function_26c240(long arg_1, s_location_target_view *arg_0);
 long function_baf80(long arg_0);
 bool function_1e1de0(long arg_0);
 
+// score 165 (was 175): frame 0x84 agrees; early ESI save/computed return byte
+// and actor/motion homes differ; scratch at entry 175; pointer/index names 175;
+// byte update result 232; byte readiness 182; byte behavior result 182.
+// early ESI save, update-result byte and motion-copy registers differ;
+// native observed-state width 187; activity word 178; level word 194; readiness word 174
+// (only one lower, rejected); old-state-first conjunction 179 (fast).
+// Readiness predicate 171; read-only object observations and parent guard value 175;
+// anchor/location/facing/observed/all copy boundaries 175; late readiness default 175;
+// default output values 165 kept; shared output guard 168; Boolean activity 257;
+// shared guard with Boolean activity 225.
+// score 175 (was 175): early ESI save/return byte and motion-copy registers remain.
+// Typed observed point, facing, anchor and location 175 each; combined fields 175;
+// combined with const motion 257, literal success 232, guarded single exit 249.
+// early ESI save, literal return byte and motion-copy registers differ.
+// Native behavior/activity levels and activity/location/target/root result receivers 175 each;
+// three actor receivers together 175; all six observations 175.
 // @retail 0x25ccd0
 bool function_25ccd0(s_type_5cfb45 *arg_0, long arg_1, short arg_2, s_2640c0 *arg_3)
 {
@@ -1326,7 +1345,6 @@ bool function_25ccd0(s_type_5cfb45 *arg_0, long arg_1, short arg_2, s_2640c0 *ar
 	arg_0->position = arg_3->field_c;
 	*(s_location *)((byte *)arg_0 + 0x28) = arg_3->field_24;
 	*(vector3f *)((byte *)arg_0 + 0x1c) = arg_3->field_2c;
-	bool local_6;
 	if (local_3)
 	{
 		function_b8d30(arg_1, 0x40000bd, &local_5.field_1, 1, false);
@@ -1380,17 +1398,11 @@ bool function_25ccd0(s_type_5cfb45 *arg_0, long arg_1, short arg_2, s_2640c0 *ar
 	bool local_9 = ((*((byte *)local_2 + 0x10a) >> 2) & 1) != 0;
 	arg_0->unknown5f = local_9 && !arg_0->unknown5e;
 	arg_0->unknown5e = local_9;
-	long local_10;
-	bool local_11;
-	if (local_4 == NONE)
+	bool local_6 = local_4 != NONE && actor_get(local_4)->unknown084 < 4;
+	long local_10 = false;
+	bool local_11 = !local_9;
+	if (local_4 != NONE)
 	{
-		local_6 = false;
-		local_10 = false;
-		local_11 = !local_9;
-	}
-	else
-	{
-		local_6 = actor_get(local_4)->unknown084 < 4;
 		local_10 = function_1e1de0(local_4);
 		local_11 = actor_behavior_find_level(local_4, 14) != NONE;
 	}
@@ -1439,8 +1451,6 @@ bool __stdcall function_25c230(long arg_0, long arg_1, short arg_2)
 void __stdcall function_26c2d0(long arg_0);
 void function_1e4500(long arg_0, short arg_1);
 
-// score 21 (was 21): the g_510c54 load and the compare that follows it are
-// in the other order.
 // @retail 0x25b440
 void __stdcall function_25b440(long arg_0, long arg_1)
 {
@@ -1450,7 +1460,7 @@ void __stdcall function_25b440(long arg_0, long arg_1)
 	s_prop_datum *local_1 = prop_ref_get(arg_1);
 	long local_2 = NONE;
 	s_iterator local_3;
-	local_3.next = local_0->first_prop_index;
+	function_26be00(arg_0, &local_3);
 	s_prop_datum *local_4;
 	while ((local_4 = prop_ref_next_25d510(&local_3)) != NULL)
 	{
@@ -1468,8 +1478,7 @@ void __stdcall function_25b440(long arg_0, long arg_1)
 	if (local_2 != NONE)
 	{
 		s_prop_datum *local_6 = prop_ref_get(local_2);
-		long local_9 = local_6->object_index;
-		if (function_25d020(arg_0, local_9, 0, local_2, NONE, NONE))
+		if (function_25d020(arg_0, local_6->object_index, 0, local_2, NONE, NONE))
 		{
 			s_type_5cfb45 *local_7 = function_25d690(local_1);
 			s_type_5cfb45 *local_8 = function_25d690(local_6);

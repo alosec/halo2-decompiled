@@ -219,16 +219,17 @@ bool function_1f3540(long actor_index, vector3f *normal)
 		result = true;
 		if (plane_distance_to_point(&actor->unknown608, &actor->position) > actor->unknown618 ||
 			actor->unknown61c == 0 || actor->unknown5d8)
-		{
 			result = false;
-			actor->unknown605 = false;
-			actor->unknown61c = 0;
-		}
 		if (result)
 		{
 			*normal = actor->unknown608.n;
 			if (actor->unknown61c > 0)
 				actor->unknown61c--;
+		}
+		else
+		{
+			actor->unknown605 = false;
+			actor->unknown61c = 0;
 		}
 	}
 

@@ -38,6 +38,13 @@ long function_14de70(long local_player_index);
 long function_155760(long index);
 s_player_state *function_16f3a0(long index);
 
+// score 28 (was 28): in case 4 retail multiplies a copy of the negated height by memory for x and y
+// (`movaps; mulss [g]`) but loads the z component and multiplies by the height for z; the named
+// height gives memory-first for all three (two bytes longer). Tried: the field through a reference
+// and `(0.0f - height)` at each use 39; a state pointer and the negated read at each use 57 (x/y
+// right, z multiplied in place); that with a named height for z only 39 (CSE folds it); z first 38;
+// a displacement vector 46; the state pointer first 67; eye sums forward-first, feet declared
+// first, z written temp-first 57.
 // @retail 0x1396c7
 void function_1396c7(long a, point2f *point)
 {

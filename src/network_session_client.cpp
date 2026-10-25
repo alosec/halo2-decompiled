@@ -442,22 +442,20 @@ void c_session_state_joining::function_06f3a0(const s_session_description *descr
 	state->unknown104 = 0;
 	function_06f1a0();
 	if (!state->unknown104)
-	{
 		function_06f2b0(description, count);
-		if (!state->unknown104)
-		{
-			s_session_owner *owner = (s_session_owner *)state->owner;
-			state->entry_count = count;
-			memset(state->entries, 0, sizeof(state->entries));
-			memcpy(state->entries, entries, count * 12);
-			state->part.unknown00 = description->unknown02;
-			*(XNKID *)state->part.unknown04 = description->kid;
-			*(XNKEY *)state->part.unknown0c = description->key;
-			*(XNADDR *)state->part.unknown1c = description->address;
-			state->part.unknown40 = description->unknown10;
-			state->unknown68 = true;
-			function_06df60(owner, 5, 0, 0);
-		}
+	if (!state->unknown104)
+	{
+		s_session_owner *owner = (s_session_owner *)state->owner;
+		state->entry_count = count;
+		memset(state->entries, 0, sizeof(state->entries));
+		memcpy(state->entries, entries, count * 12);
+		state->part.unknown00 = description->unknown02;
+		*(XNKID *)state->part.unknown04 = description->kid;
+		*(XNKEY *)state->part.unknown0c = description->key;
+		*(XNADDR *)state->part.unknown1c = description->address;
+		state->part.unknown40 = description->unknown10;
+		state->unknown68 = true;
+		function_06df60(owner, 5, 0, 0);
 	}
 }
 
@@ -582,6 +580,15 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 	return result;
 }
 
+// score 55 (was 55): aligned frame agrees; session ESI/EBX and machine/player carriers differ.
+// Countdown native object copy 55; native address copy 55; machine object reference 55;
+// machine value copy 55; short machine alias 55; immutable member count 55;
+// machine counter names 55; top-tested countdown 114.
+// the code is retail's apart from the colours: retail takes the session in
+// EBX (its callers copy it there) and gives the loop temporaries ESI/EDI; ours keeps the session
+// in ESI. Member count read before the clears 129; summary set after the clears 129; machine
+// pointer before the clears 55; zero initialisers for the two buffers 151; summary as a
+// conditional 131.
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {
@@ -754,13 +761,11 @@ bool function_90160(long task_index, s_match_result_data *result);
 long online_match_session_find(XNKID const *session_id);
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 bool qos_is_complete(long handle);
-bool session_description_decode_buffer(const byte *data, long size, void *description);
+bool session_description_decode_buffer(long size, const byte *data, void *description);
 
 PRIVATE __forceinline bool function_6f4b1(const s_qos_result *arg_0, s_session_description *arg_1)
 {
- const byte *local_0 = *(byte *volatile const *)&arg_0->data;
- long local_1 = *(volatile const long *)&arg_0->data_size;
- return session_description_decode_buffer(local_0, local_1, arg_1);
+ return session_description_decode_buffer(arg_0->data_size, arg_0->data, arg_1);
 }
 
 // @retail 0x6f4b0

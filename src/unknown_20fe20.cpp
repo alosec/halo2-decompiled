@@ -247,6 +247,11 @@ PRIVATE __forceinline bool audio_object_type_matches(byte *object, long type)
 	return *(long *)(definition + 0x5c) > 0 && *(long *)(*(byte **)(definition + 0x60) + 4) == type;
 }
 
+// score 2 (was 2): the parent is loaded before the seat test's branch here
+// and after it in retail; read inside the seat test it lands in eax and is
+// moved to esi for the call: a header pointer 73, related NONE by default and
+// tested after the seat test 73, a ternary 73, the unit fetched again 64, the
+// call inside the condition 73.
 // @retail 0x20c2f0
 bool __stdcall function_20c2f0(long object_index, long type, real *scale)
 {
@@ -989,10 +994,19 @@ struct s_cell_globals
 	s_cell_source *sources;
 };
 
-long g_4fa0c0;
-short g_4f9cbc;
-s_cell g_4f9cc0[8];
-vector3f g_4f93bc[24][8];
+/* the cells' noise table, the cells themselves and the tick that drives the
+   noise, held together */
+struct s_cell_field_globals
+{
+	vector3f noise[24][8];
+	short cell_count;
+	s_cell cells[32];
+	long tick;
+};
+
+typedef char check_cell_field_globals_size[sizeof(s_cell_field_globals) == 0xd08 ? 1 : -1];
+
+s_cell_field_globals g_4f93bc;
 
 void function_211fd0(vector3f *out, real const *position, real scale, real time);
 
@@ -1010,9 +1024,9 @@ void function_211b70(short index, real const *position, byte flags, vector3f *ou
 	(void)&position;
 	byte const *flags_reference = &flags;
 	byte mode = *flags_reference;
-	if (index >= 0 && index < g_4f9cbc)
+	if (index >= 0 && index < g_4f93bc.cell_count)
 	{
-		s_cell *cell = &g_4f9cc0[index];
+		s_cell *cell = &g_4f93bc.cells[index];
 		if (cell->active)
 		{
 			s_cell_globals *globals = (s_cell_globals *)g_4e0348;
@@ -1074,12 +1088,12 @@ void function_2118c0(void)
 	s_cell_globals *globals = (s_cell_globals *)g_4e0348;
 	short i;
 
-	g_4fa0c0++;
+	g_4f93bc.tick++;
 
 	for (i = 0; i < globals->count; i++)
 	{
 		s_cell_source *source = &globals->sources[i];
-		s_cell *cell = &g_4f9cc0[i];
+		s_cell *cell = &g_4f93bc.cells[i];
 
 		if (source->tag_index != NONE)
 		{
@@ -1117,11 +1131,14 @@ void function_2118c0(void)
 		}
 	}
 
-	g_4f9cbc = (short)globals->count;
+	g_4f93bc.cell_count = (short)globals->count;
 }
 // score 14 (was 14): the two locals are kept in the other stack slots: the
 // float is stored at [esp+0x30] here and at [esp+0x38] in retail, so every
-// slot of the frame is at another offset.
+// slot of the frame is at another offset. Also: retail steps b * 8 in esi
+// where ours steps b and scales it. Tried: t to tc in the band loop 14;
+// m set before the indices 14; a for loop over b 14; index operands swapped
+// 14; the output rows indexed from row 175.
 // @retail 0x211cc0
 void function_211cc0(void)
 {
@@ -1137,7 +1154,7 @@ void function_211cc0(void)
 		do
 		{
 			*seed = *seed * 0x19660d + 0x3c6ef35f;
-			g_4f93bc[b * 8 + k][0] = g_4417f0[(short)(((*seed >> 16) * 0x402) >> 16)];
+			g_4f93bc.noise[b * 8 + k][0] = g_4417f0[(short)(((*seed >> 16) * 0x402) >> 16)];
 			b++;
 		}
 		while (b < 3);
@@ -1169,11 +1186,11 @@ void function_211cc0(void)
 			do
 			{
 				long row = b << 3;
-				vector3f *p3 = g_4f93bc[row + w3];
-				vector3f *p2 = g_4f93bc[row + w2];
-				vector3f *p1 = &g_4f93bc[b * 8 + k][0];
-				vector3f *p0 = g_4f93bc[row + w0];
-				vector3f *out = &g_4f93bc[b * 8 + k][m];
+				vector3f *p3 = g_4f93bc.noise[row + w3];
+				vector3f *p2 = g_4f93bc.noise[row + w2];
+				vector3f *p1 = &g_4f93bc.noise[b * 8 + k][0];
+				vector3f *p0 = g_4f93bc.noise[row + w0];
+				vector3f *out = &g_4f93bc.noise[b * 8 + k][m];
 				long i;
 
 				for (i = 0; i < 3; i++)
@@ -1206,42 +1223,31 @@ void function_211cc0(void)
 	while (k < 8);
 }
 
-// score 61 (was 61): retail's prologue saves EBP as well and pushes EBP, ESI
-// and EDI; ours pushes only ESI and EDI, so the frame is seven bytes longer.
+/* adds one vector of the noise table per band, picked from the tick, the
+   band's frequency, time and the position, and scales the sum by a third of
+   scale */
 // @retail 0x211fd0
 void function_211fd0(vector3f *out, real const *position, real scale, real time)
 {
 	real frequencies[3] = { 0.1f, 0.2f, 0.07f };
-	long i = 0;
+	short i;
 
 	*out = *g_4687a4;
 	scale *= 1.0f / 3.0f;
-    real local_1 = time;
 
-	do
+	for (i = 0; i < 3; i++)
 	{
-		real value;
+		real value = ((real)g_4f93bc.tick * frequencies[i] * time + position[i]) * 8.0f;
 		short index;
-		vector3f *noise;
 
-        __asm
-        {
-            cvtsi2ss xmm4, g_4fa0c0
-            movss value, xmm4
-        }
-        value = (value * frequencies[i] * local_1 + position[i]) * 8.0f;
 		*(dword *)&value &= 0x7fffffff;
 		value += 8388608.0f;
-		index = *(byte *)&value;
-		index &= 0x3f;
-		noise = &g_4f93bc[i * 8][index];
+		index = *(dword *)&value & 0x3f;
 
-		out->i += noise->i;
-		out->j += noise->j;
-		out->k += noise->k;
-		i++;
+		out->i += g_4f93bc.noise[i * 8][index].i;
+		out->j += g_4f93bc.noise[i * 8][index].j;
+		out->k += g_4f93bc.noise[i * 8][index].k;
 	}
-	while (i < 3);
 
 	out->i *= scale;
 	out->j *= scale;
@@ -2716,7 +2722,10 @@ bool function_1df640(short team_a, short team_b);
 
 // score 6 (was 6): the address of the entry is built in EAX here and in ECX
 // in retail, and the two words of the group are read into the registers the
-// other way round after the call.
+// other way round after the call. Also tried: a const group pointer 6, the
+// count test as if/else 6, the byte view passed as the table 6, the entries
+// read through the table parameter 6, the bound's terms swapped 6 (VC sorts
+// them), a (long) cast on either or both terms 6.
 // @retail 0x20cbd0
 void function_20cbd0(short group_index, s_audio_priority_table *table, long target_index,
     long source_index, long previous_index, long ai_index, short category,

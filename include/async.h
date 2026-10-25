@@ -41,13 +41,13 @@ struct s_async_insert_state
 };
 
 bool async_task_should_run_before(
-	long priority,
-	long other_priority,
-	s_async_task const *task,
-	s_async_task const *other_task,
 	s_async_insert_state *state,
 	async_work_callback callback,
-	async_work_callback other_callback);
+	s_async_task const *task,
+	long priority,
+	async_work_callback other_callback,
+	s_async_task const *other_task,
+	long other_priority);
 
 void function_120900(s_job_node *node);
 long async_task_queue(s_job_node *node);

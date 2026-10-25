@@ -31,6 +31,15 @@ struct overlap_endpoints_2e3370
 
 // the endpoints of every box the bounds overlap (not the grid cells'), one
 // list per axis, each sorted between a sentinel at each end
+// score 438 (was 438): frame size agrees; the array and vector slots differ.
+// Earlier: array/cursor/sentinel renames and narrower scopes 518, in-place
+// loop 436, value append 544, member copies 706. New: range by value 479,
+// range pointer 438, first bound by value 475, later word declaration 438,
+// reversed test inputs 491, nested search scope 438, scan-word scope 438,
+// output postincrement 438. On reversed inputs: early group step 623,
+// read-only walk, nested tests, reordered pointers, const output cursor,
+// postincrement and cell reference 491; range by value 479. Shared-query
+// losses exclude the range-value, bound-value and group-step forms.
 // @retail 0x2e3370
 void class_2e1090::function_2e3370(bounds_2e0020 const *bounds, overlap_endpoints_2e3370 *lists)
 {

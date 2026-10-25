@@ -366,8 +366,6 @@ struct s_direction_event_data
     vector3f direction;
 };
 
-// score 19 (was 19): the fields are copied into the output struct in the other
-// order and the locals live in the other stack slots
 // @retail 0xa91c0
 void function_a91c0(long index, long value, point3f const *origin, vector3f const *direction)
 {
@@ -375,12 +373,12 @@ void function_a91c0(long index, long value, point3f const *origin, vector3f cons
     long current = index;
     if (function_a76b0(current, 1))
     {
-        signed char selected = *(signed char *)(EVENT_OBJECT(current) + 0x23c);
-        if (selected >= 0 && selected < 2)
+        byte *object = EVENT_OBJECT(current);
+        if (*(signed char *)(object + 0x23c) >= 0 && *(signed char *)(object + 0x23c) < 2)
         {
-            data.direction = *direction;
-            data.origin = *origin;
             data.value = (short)value;
+            data.origin = *origin;
+            data.direction = *direction;
             function_b5a70(NONE, 0x16, 1, (long)&index, sizeof(data), &data, g_4cef1c);
         }
     }

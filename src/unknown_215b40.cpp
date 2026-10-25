@@ -248,6 +248,20 @@ bool __stdcall function_2163d0(long first, long second, void const *context)
 	return result;
 }
 
+// score 110 (was 156): check with 0x2157e0 in the image (it defines g_51ea14;
+// without it the fast check builds differently). The iterator struct gives
+// retail's frame: table at [esp+0x24], the index's slot [esp+0x28] unused, and
+// index << 6 recomputed for each copy (a plain table pointer and index
+// strength-reduce the entry pointer instead, 156). Still differs: retail keeps
+// the old index in eax and packs ((gen << 14 | index) << 4 | unit) << 4 | type,
+// we pack (index << 8) - 1 & 0x1fff00; retail reloads the table at the loop
+// top (we reload it in the match block) and reloads g_51ea14 into edx at the
+// bottom of the outer loop; prologue zeroes ebp before ebx.
+// Tried: long old_index = iterator.index++ (167), index read before the copy
+// (170, 195), for (; count < *capacity && index < count; index++) without the
+// struct (151, but adds a count test at entry: 580 bytes), memcpy copy (156),
+// local cache pointer (153, spilled: 584 bytes), unit/count initialized in
+// other places (167).
 // @retail 0x215900
 void __stdcall function_215900(long controller, long type, word *capacity, long *indices, bool include_cached)
 {
@@ -261,26 +275,25 @@ void __stdcall function_215900(long controller, long type, word *capacity, long 
 			char drive_letter;
 			if (function_1249f0(unit, &drive_letter))
 			{
-				s_location_record_table *table = (s_location_record_table *)((byte *)g_51ea14 + 0xbef8) + unit;
-				long index = 0;
+				/* walks the memory unit's list of files */
+				struct
+				{
+					s_saved_game_location_table *table;
+					long index;
+				} iterator;
+				iterator.table = &saved_game_storage_get_cache()->locations + unit;
+				iterator.index = 0;
 				do
 				{
-					if (index >= table->count)
+					if (iterator.index >= iterator.table->count)
 						break;
-					struct s_entry_215900
+					s_saved_game_file_location location = iterator.table->entries[iterator.index];
+					iterator.index++;
+					if (location.type == type)
 					{
-						char path[0x14];
-						word name[0x12];
-						long type;
-						byte unknown3c[4];
-					} entry;
-					entry = *(s_entry_215900 const *)&table->entries[index];
-					long old_index = index++;
-					if (entry.type == type)
-					{
-						long generation = *(long *)((byte *)g_51ea14 + 0x4befc);
+						long generation = saved_game_storage_get_cache()->generation;
 						indices[count++] = (type & 0xf) | ((unit & 0xf) << 4) |
-							((old_index & 0x1fff) << 8) | ((generation & 0x1ff) << 22);
+							(((iterator.index - 1) & 0x1fff) << 8) | ((generation & 0x1ff) << 22);
 					}
 				} while (count < *capacity);
 			}

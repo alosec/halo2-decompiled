@@ -133,7 +133,10 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 }
 
 // score 40 (was 40): the string pointer and the character counter are kept in different registers
-// here, and an extra register is pushed and restored around the copy loop.
+// here, and an extra register is pushed and restored around the copy loop. Tried: count before
+// start in the parameter list 40; the length in a named local after the sign tests 40;
+// string + start with start unmodified 28 but start then arrives in edx (0xb5f10 differs);
+// that with a plain string parameter 41; start = string + start 40.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -297,6 +300,7 @@ struct s_http_connection_ab
     long response_length;
     long attempt_count;
     long state;
+    s_http_connection_ab();
     bool connect(long address, word port, char const *path, bool flag);
     bool receive(bool *complete);
     bool send();
@@ -359,38 +363,21 @@ bool __stdcall function_b6180(void *block)
     return function_b5e40(block);
 }
 
-struct s_http_callbacks_ab
-{
-    long count;
-    long values[8];
-    bool (__stdcall *callbacks[8])(void *);
-    long stages[8];
-    void *blocks[8];
-};
+void transport_register_transition_functions(transport_transition_function startup, transport_transition_function shutdown, transport_transition_function reset, void *context);
 
-s_http_callbacks_ab g_4d8b1c;
-
-// score 20 (was 20): the two zeroed endpoint words are written through a register here and through
-// memory in retail, the registry entry stores the state field instead of zero, and the count is
-// incremented in place instead of being read, incremented and written back.
+/* an idle connection, with its close (function_b6180) registered as a transport shutdown
+   function; retail expands transport_register_transition_functions (src/transport.cpp) here.
+   Retail's only caller is the dynamic initializer of the upload connection g_546a8c
+   (src/unknown_0b3d30.cpp), 0x376bf0, which passes the connection in edi */
 // @retail 0xb5cd0
-s_http_connection_ab *function_b5cd0(s_http_connection_ab *connection)
+s_http_connection_ab::s_http_connection_ab()
 {
-    connection->hostname[0] = 0;
-    function_b62b0((s_upload_ab *)((byte *)connection + 0x30));
-    s_transport_endpoint *endpoint = &connection->internal_endpoint;
-    ((dword *)endpoint)[0] = 0;
-    ((dword *)endpoint)[1] = 0;
-    connection->endpoint = endpoint;
-    long *state = &connection->state;
-    *state = 0;
-    g_4d8b1c.values[g_4d8b1c.count] = *state;
-    g_4d8b1c.callbacks[g_4d8b1c.count] = function_b6180;
-    g_4d8b1c.stages[g_4d8b1c.count] = *state;
-    g_4d8b1c.blocks[g_4d8b1c.count] = connection;
-    // Keep the final registry count read at its later use.
-    g_4d8b1c.count = *(long const *)&g_4d8b1c.count + 1;
-    return connection;
+    hostname[0] = 0;
+    function_b62b0((s_upload_ab *)((byte *)this + 0x30));
+    memset(&internal_endpoint, 0, sizeof(internal_endpoint));
+    endpoint = &internal_endpoint;
+    state = 0;
+    transport_register_transition_functions(0, (transport_transition_function)function_b6180, 0, this);
 }
 
 short function_b4fa0(s_transport_endpoint *endpoint, void *buffer, short length);
@@ -427,6 +414,11 @@ bool function_b6320(s_upload_ab *upload, byte *buffer, long maximum, long *writt
 
 short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short length);
 
+// score 10 (was 10): retail lays the shared false exit out after the would-block test and the
+// restore exit last; ours puts the restore exit first. Tried: `return true` in the would-block arm 44;
+// direct returns everywhere 72 (retail's block order, but the results fold to constants); the
+// plain failure as `return false` behind `if (sent != -2)` 20; looping while the iteration
+// succeeded with the completion guarded after the loop 44; success arm ending in `continue` 10.
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {

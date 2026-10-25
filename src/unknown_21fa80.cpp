@@ -73,6 +73,12 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 	return (c_channel_effects_view *)SOUND_DRIVER_GLOBALS->effects;
 }
 
+// score 541 (was 541): frame 0x22c versus 0x224; stream/gain homes and math expansion differ.
+// native input direct bit 541; all native input bits 548; captured direct use 540;
+// shared gain converter 629; inline depth one 541; native output bits with captured direct 544.
+// frame 0x22c versus 0x224; stream and gain homes plus SSE and x87 scheduling differ; native-bit tests gain only three
+// tried initial driver value 541; native send bit writes 567; native send bit tests 538; native pitch truncation 551; level pointer traversal 558; real absolute values 541; native flags real abs 538; native flags driver 538.
+// score 545 (was 575): Frame 0x22c versus 0x224 and stream/gain homes remain. Redundant level clamp removed: 575 to 545, 1901/1901 bytes. Voice output reuse 575; query output scope 572; complete flag projection 572; output stream observation 614 (plain).
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)
@@ -80,7 +86,7 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 	s_channel_update_input const *input=(s_channel_update_input const *)properties;
 	s_sound_stream *stream=&SOUND_DRIVER_GLOBALS->channels[channel_index];
 	bool changed=!(stream->unknown03_0&1) || !SOUND_DRIVER_GLOBALS->unknown0000;
-	volatile long gain_bits=*(long const *)(input->gain>-64.0f ? &input->gain : &g_44a23c);
+	long gain_bits=*(long const *)(input->gain>-64.0f ? &input->gain : &g_44a23c);
 	real const &gain=*(real const *)&gain_bits;
 	long mode=stream->channel_count;
 	bool direct=(input->field_30&1)!=0;
@@ -128,7 +134,7 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 			real amplitude=(real)sqrt(energy);
 			real bounded=amplitude<0.0f?0.0f:amplitude>1.0f?1.0f:amplitude;
 			real level=amplitude>0.0f?channel_pin_gain((real)(log10(bounded)*20.0f)):-64.0f;
-			sends.level=channel_pin_gain(level);
+			sends.level=level;
 			sends.level_offset=input->field_14;
 			sends.flags|=0x20;
 		}
@@ -182,8 +188,6 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 			if(sends.flags&2) channel_effects()->add_send(31,mode,sends.field_14,&settings);
 			if(sends.flags&0x20) channel_effects()->add_sends(&sends,SOUND_DRIVER_GLOBALS->surround,mode,&settings);
 			channel_effects()->add_source_mixbins(input,SOUND_DRIVER_GLOBALS->surround,mode,&settings);
-			s_mixbin_settings unused;
-			sound_mixbins_initialize(&unused);
 			stream->stream->SetMixBins(&settings.mixbins);
 		}
 	}

@@ -10,6 +10,7 @@
 #include "unknown_1cafc0.h"
 #include "object_queries.h"
 #include "bit_vector.h"
+#include "placement_identifier.h"
 #include <string.h>
 
 #define FLAG(bit) (1 << (bit))
@@ -457,10 +458,7 @@ bool function_bbe90(long definition_index)
 struct s_object_query_bbf40
 {
 	byte unknown00[0xa4];
-	long unique_id;
-	short origin_bsp;
-	char type;
-	char source;
+	s_scenario_identifier_ab identifier;
 	short name_index;
 	byte unknownae[0xc2 - 0xae];
 	short team;
@@ -638,40 +636,23 @@ void __stdcall function_bc7b0(long object_index)
 	}
 }
 
-struct s_object_identifier_bbf40
-{
-	long unique_id;
-	short origin_bsp;
-	char type;
-	char source;
-};
-
-// score 37 (was 41): the byte field is read into DL and the stack byte into CL; retail reads the
-// byte at +0xaa into DL and the stack byte into CL.
+// the last object whose placement identifier equals the one given, or NONE
 // @retail 0xbf760
 long function_bf760(long const *unique_id)
 {
-	s_object_identifier_bbf40 const *identifier = (s_object_identifier_bbf40 const *)unique_id;
+	s_scenario_identifier_ab const *identifier = (s_scenario_identifier_ab const *)unique_id;
 	long result = NONE;
-	char source = identifier->source;
-	if (source != NONE)
+	if (identifier->source != NONE)
 	{
-		char type = identifier->type;
 		struct
 		{
 			s_object_query_bbf40 *object;
 			s_type_f1af8e iterator;
 		} state;
-		function_bae80(&state.iterator, 1 << type, 0);
+		function_bae80(&state.iterator, 1 << identifier->type, 0);
 		while ((state.object = (s_object_query_bbf40 *)function_baeb0(&state.iterator)) != 0)
 		{
-			bool match = true;
-			match &= type == state.object->type;
-			match &= identifier->source == state.object->source;
-			match &= identifier->unique_id == state.object->unique_id;
-			if (match && source == 0)
-				match &= identifier->origin_bsp == state.object->origin_bsp;
-			if (match)
+			if (placement_identifier_equal(identifier, &state.object->identifier))
 				result = state.iterator.object_index;
 		}
 	}
@@ -746,7 +727,10 @@ void __stdcall function_bc300(long object_index)
 }
 
 // score 42 (was 42): the mask is applied to the index before the record pointer is loaded; retail
-// loads the pointer first.
+// loads the pointer first. Tried: a shared absolute index 42; the header reused for the refreshed
+// lookup 68; a function-scope block pointer 42; allocator noinline 42; old size read before allocation
+// 81; size optimization 107; global optimization off 151; shared index, block scope and allocator
+// noinline together 42.
 // @retail 0xbc380
 bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
 {
@@ -813,17 +797,24 @@ static __forceinline byte *object_bytes_ab(long index)
     return (byte *)((s_object_header_0bbf40 *)g_4e0300->data)[index & 0xffff].object;
 }
 
-// score 101 (was 101): ours is thirteen bytes shorter and pushes EBP and ESI where retail pushes EBX
-// and EBP, so the saved registers differ.
+struct s_object_flags12c_ab
+{
+    word : 3;
+    word flag3 : 1;
+    word : 12;
+};
+
+// score 49 (was 101): retail saves ESI only after the early return for a unit with a player,
+// so that return gets its own epilogue; ours saves ESI in the prologue and shares it.
+// Tried: returning early with `if (result) return result;` after the parent walk (118).
 // @retail 0xbeb30
 bool __stdcall function_beb30(long object_index)
 {
-    byte *volatile object = object_bytes_ab(object_index);
+    byte *object = object_bytes_ab(object_index);
     byte *unit = (byte *)function_badc0(object_index, 3);
     long player = NONE;
     if (unit) player = *(long *)(unit + 0x13c);
-    byte &result = *(byte *)&object_index;
-    result = player != NONE;
+    bool result = player != NONE;
     if (!result)
     {
         long index = *(long *)(object + 0x10);
@@ -837,15 +828,11 @@ bool __stdcall function_beb30(long object_index)
         while (index != NONE)
         {
             byte *parent = object_bytes_ab(index);
-            byte *header = datum_get_inlined(g_4e0300, index);
-            if (header && ((1 << header[3]) & 3))
-            {
-                byte *parent_unit = *(byte **)(header + 8);
-                if (parent_unit && *(long *)(parent_unit + 0x13c) != NONE) return true;
-            }
+            byte *parent_unit = (byte *)function_badc0(index, 3);
+            if (parent_unit && *(long *)(parent_unit + 0x13c) != NONE) return true;
             index = *(long *)(parent + 0x14);
         }
-        if (((1 << object[0xaa]) & 0x1c) && (bool)(((dword)object[0x12c] >> 3) & 1))
+        if (((1 << object[0xaa]) & 0x1c) && TEST_FIELD_BIT(((s_object_flags12c_ab *)(object + 0x12c))->flag3))
             return true;
     }
     return result;

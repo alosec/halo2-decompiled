@@ -232,6 +232,8 @@ void function_109660(long object_index, long entry_index);
 void function_fd910();
 
 // score 2 (was 2): the two values are copied into EAX and ECX in the opposite order.
+// Unsigned callee parameter declarations 2 each; reversed snapshot declarations 2;
+// predeclared loop index 2; header before iterator 2; read-only headers 2; inline depth zero 91.
 // @retail 0xb7060
 void function_b7060()
 {

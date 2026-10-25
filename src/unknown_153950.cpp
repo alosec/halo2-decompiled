@@ -402,6 +402,18 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 	slot->flags |= 1;
 }
 
+// score 64 (was 64): dot/cross product operands, rotation xmm roles and
+// final component reloads still differ; executable tail is three bytes short.
+// Norm scalar 67; nested norm tests 64; early 2D cross 207; direction
+// copy loop 271; rotation/scale/both component loops 166/166/166;
+// const bounds input 64.
+// Shared scale 64; previous-priority snapshot 280; requested-duration
+// snapshot 271; external bounds reference 67; forward x/y observations
+// 165/163; normalized x observation 81; cosine-complement scalar 64.
+// product loads, rotation registers and final scale reloads.
+// Timer rereads and long update 64; validity result and angle-phase scope 85;
+// forward snapshot 126; normal snapshot 119; entry sine/cosine 64;
+// both draws after normalizing the cross vector 174.
 // @retail 0x154df0
 void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vector3f *direction, real priority)
 {
@@ -708,6 +720,40 @@ static inline void cross_product3d_1546f0(vector3f const *a, vector3f const *b, 
 	result->k = a->i * b->j - a->j * b->i;
 }
 
+/* the rotation by the angle about the unit axis, with no translation */
+static __forceinline void rotation_from_axis_1546f0(transform4x3f *matrix, vector3f const *axis, real angle)
+{
+    real s = (real)sin(angle);
+    real c = (real)cos(angle);
+    real ii = axis->i * axis->i;
+    real jj = axis->j * axis->j;
+    real kk = axis->k * axis->k;
+    vector3f sine_axis;
+    sine_axis.i = axis->i * s;
+    sine_axis.j = axis->j * s;
+    sine_axis.k = axis->k * s;
+    matrix->scale = 1.0f;
+    real forward_i = (1.0f - ii) * c + ii;
+    real t = 1.0f - c;
+    real tij = (t * axis->j) * axis->i;
+    real left_i = tij - sine_axis.k;
+    real forward_j = tij + sine_axis.k;
+    real left_j = (1.0f - jj) * c + jj;
+    real tk = t * axis->k;
+    real tki = tk * axis->i;
+    real up_i = tki + sine_axis.j;
+    real forward_k = tki - sine_axis.j;
+    real up_k = (1.0f - kk) * c + kk;
+    real tkj = tk * axis->j;
+    real up_j = tkj - sine_axis.i;
+    real left_k = tkj + sine_axis.i;
+    matrix3x3 rotation = {{forward_i, forward_j, forward_k}, {left_i, left_j, left_k}, {up_i, up_j, up_k}};
+    matrix->rotation = rotation;
+    matrix->position.z = 0.0f;
+    matrix->position.y = 0.0f;
+    matrix->position.x = 0.0f;
+}
+
 // @retail 0x1546f0
 void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
 {
@@ -716,8 +762,8 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
     s_game_speed *speed = g_510c5c;
     if (speed->flags & 1)
     {
-        transform4x3f transform = *g_4687d0;
         real amount = *(real *)&speed->value20;
+        transform4x3f transform = *g_4687d0;
         if (speed->timer24 > 0)
         {
             if (speed->flags & 2)
@@ -728,14 +774,18 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
         amount = 0.0f > amount ? 0.0f : (amount > 1.0f ? 1.0f : amount);
         s_random_globals *random = g_4e7408;
         g_502120->value228 = amount;
-        function_141ce0(
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[0] * amount,
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[1] * amount,
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->angles[2] * amount, &transform);
-        point_set_1546f0(&transform.position,
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.y * amount,
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.x * amount,
-            (random_real_1546f0(&random->seed) * 2.0f - 1.0f) * speed->point.z * amount);
+        /* retail advances the seed three times and then reads it once for all three axes
+           (0x1547cc-0x154806, again at 0x154888-0x1548d0): the third draw scales every axis */
+        random_real_1546f0(&random->seed);
+        random_real_1546f0(&random->seed);
+        real shake = random_real_1546f0(&random->seed) * 2.0f - 1.0f;
+        function_141ce0(shake * speed->angles[0] * amount, shake * speed->angles[1] * amount,
+            shake * speed->angles[2] * amount, &transform);
+        random_real_1546f0(&random->seed);
+        random_real_1546f0(&random->seed);
+        shake = random_real_1546f0(&random->seed) * 2.0f - 1.0f;
+        point_set_1546f0(&transform.position, shake * speed->point.y * amount, shake * speed->point.x * amount,
+            shake * speed->point.z * amount);
         function_142a60(matrix, &transform, matrix);
     }
     else
@@ -753,31 +803,10 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
                 real priority = slot->priority9c;
                 amount = priority * function_17ca10(1.0f - elapsed, *(short *)&slot->bounds.unknown04[0]);
             }
-            real angle = amount * slot->bounds.unknown04[1];
-            real sine = (real)sin(angle), cosine = (real)cos(angle);
+            transform4x3f transform;
             vector3f axis;
             cross_product3d_1546f0(g_4687b0, &slot->forward, &axis);
-            real x = axis.i, y = axis.j, z = axis.k;
-            real yy = y * y, zz = z * z, xx = x * x;
-            transform4x3f transform;
-            matrix3x3 rotation;
-            transform.scale = 1.0f;
-            real zs = z * sine;
-            real xs = x * sine;
-            real ys = y * sine;
-            rotation.forward.i = (1.0f - xx) * cosine + xx;
-            real xy = (1.0f - cosine) * y * x;
-            rotation.left.i = xy - zs;
-            rotation.forward.j = xy + zs;
-            rotation.left.j = (1.0f - yy) * cosine + yy;
-            real xz = (1.0f - cosine) * z * x;
-            rotation.up.i = xz + ys;
-            rotation.forward.k = xz - ys;
-            rotation.up.k = (1.0f - zz) * cosine + zz;
-            real yz = (1.0f - cosine) * z * y;
-            rotation.up.j = yz - xs;
-            rotation.left.k = yz + xs;
-            transform.rotation = rotation;
+            rotation_from_axis_1546f0(&transform, &axis, amount * slot->bounds.unknown04[1]);
             real distance = slot->bounds.unknown04[2] * amount;
             vector3f offset;
             offset.i = slot->forward.i * distance;

@@ -241,6 +241,21 @@ struct s_input_9c610
     byte field_34;
 };
 
+// score 23 (was 31): only the call to function_e4a20 at the end differs (and
+// the branch offsets past it): retail passes the point in eax and the object in
+// ecx, ours the point in ecx and the object on the stack, which follows from
+// function_e4a20's own body (BLOCKED-BY 0xe4a20). Tried: the flags store first
+// of the second copy group 23 (kept); before the vector copy 67; first of all
+// 67; before field_3c 27.
+// Shared absolute lookup inline 23, out of line 122; shared index
+// reconstruction 107; both shared inline operations 114; point local at
+// notification 23, before guard 23, across dispatch 23; shared lookup
+// with point lifetime 23. Native frame/report copies still agree.
+// final validity predicate 129; byte success result 23; unsigned reconstructed handle 23;
+// signed-byte material 46; bool presence field 23; named validated tag result 23; source-width
+// pool index 112; unsigned salt word 24.
+// Byte notification read 46; byte tail read 23; both byte reads 46; word notification read 46.
+// Word tail read 23; both word reads 46; signed-byte tail read 23; byte notification/signed tail 46.
 // @retail 0x9c610
 bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
@@ -278,6 +293,7 @@ bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, lon
             local_10.field_8 = input->field_0;
             if (input->field_a)
                 local_10.field_18 = input->field_c;
+            local_10.field_4 = input->field_20;
             local_10.field_34 = input->field_18;
             local_10.field_38 = input->field_1c;
             local_10.field_50 = input->field_30;
@@ -287,7 +303,6 @@ bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, lon
             local_10.field_48 = input->field_24;
             local_10.field_0 = input->field_34;
             local_10.field_30 = 0.0f;
-            local_10.field_4 = input->field_20;
             function_b9dd0(local_1, &local_10.field_24);
             local_10.field_4c = 0.0f;
             if (input->field_20 & 2)

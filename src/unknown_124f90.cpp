@@ -960,6 +960,13 @@ real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
+// score 42 (was 42): function_219290's two arguments load group-first (retail index-first; its
+// parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
+// store sits after the permutation copy, the second release hoists the chunk-table load, and the
+// last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
+// function-wide channel_index local 113; the last block's locals folded into one expression 42;
+// elapsed_time read into a local before the rate call 42; a stream pointer for the last state
+// test 42; the table pointer declared at the outer scope 42.
 // @retail 0x12a450
 void sound_voice_update_chunks(short voice_index)
 {
@@ -1298,6 +1305,12 @@ long function_127010(short class_index)
 /* a sound's gain in decibels: between its definition's bounds, with its
    class's and the caller's */
 inline long function_1251e0(void const *definition_pointer, long gain, real interpolation);
+// score 15 (was 15): retail stores the converted gain in the frame slot before the class gain
+// call and adds it last from there; ours keeps it in the volatile local and copies it through
+// ecx. Without the volatile the conversions move below the class gain call (they are pure);
+// a pointer write to 0x2195f0's own parameter stops that (12 at retail's length) but changes
+// 0x2195f0. Tried: the outer sum's operands swapped 36; no volatile 27; no volatile with the
+// operands swapped 49; the inner sum named, operands swapped 36.
 // @retail 0x1251e0
 long function_1251e0(void const *definition_pointer, long gain, real interpolation)
 {
@@ -1897,6 +1910,16 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 /* advances the sound system's clock and the ambience fades, and fades the
    master gain out while the game asks for it (after its delay) and back in
    once nothing is busy */
+// score 30 (was 30): retail reloads elapsed_time after function_12be90 (ours keeps it in xmm0;
+// BLOCKED-BY 0x12be90, whose file another lane holds), so the fade-in clamp and every jump
+// after it differ; the fade-out clamp's two subtractions sit in swapped registers. Tried:
+// elapsed_time stored before seconds 28 (top then exact); the products' * and / swapped 30;
+// fade-out through PIN_126660 74, as PIN_126660 + fade 68, fade + PIN_126660 68, via SOUND_SYSTEM
+// 68; a change local before the step 77; fade-in without the elapsed local 44. Every value-first
+// fade-out merges retail's two return tails.
+// conversion and clamp registers, elapsed reload differ; shared quotient 30;
+// shared elapsed 79; both time values 79; shared change 74; quotient/change 74; shared lower bound
+// 74; quotient/lower bound 74; all clamp values 74.
 // @retail 0x1269f0
 void sound_system_update_time(void)
 {
@@ -2266,6 +2289,13 @@ bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_i
 /* starts a sound from a play state: a new sound with the state's location,
    gain, pitch and source, at a pitch range and permutation; NONE if it would
    be too quiet or none is free */
+// score 23 (was 23): the two set-chunk calls narrow their indices to char
+// (byte loads, a sign-extended range index) where retail passes words, and
+// the delayed start sets flag0 before storing the start time. BLOCKED-BY
+// 0x1286b0 (its two index parameters are short in retail: 0x128ca0 widens
+// char fields to 16 bits for them) and 0x219070 (short set index). With both,
+// a flags pointer for flag0 and the 0x219070 result in a named short, it
+// matches. Tried here: that named short alone 21; the flags pointer alone 19.
 // @retail 0x126000
 long function_126000(long tag_index, long listener_index, s_sound_play_state *state, long rate_limit_stage)
 {
@@ -2465,6 +2495,11 @@ static inline real sound_vector_normalize(vector3f *v)
 /* the doppler shift of a sound for a listener, in cents: from the speeds of
    the listener and the sound toward each other, the speed of sound 111.5
    world units a second, the frequency ratio between 1/8 and 4 */
+// score 122 (was 122): direction j/k versus i register/memory split and length scheduling differ.
+// Shared length helper 122; early source speed 143; projection order 133; cached direction 125; void normalizer 122.
+// Closest form (129, ratio 0.96): normalize written in the body (not a helper) on the struct, if-body order j, k, i,
+// and an inline copy of 0x142640's body (x/y/z copies, matrix->scale) for the velocity; only retail's j/k loads
+// hoisted above the branch (no else block) still differ. Scalar j/k copies 170; scalars before the length 161.
 // @retail 0x12a9d0
 real function_12a9d0(long listener_index, s_sound_position const *position)
 {
@@ -2493,7 +2528,7 @@ real function_12a9d0(long listener_index, s_sound_position const *position)
 	listener_speed = 0.0f - (listener_velocity.k * direction.k + listener_velocity.j * direction.j + listener_velocity.i * direction.i);
 	source_speed = position->velocity.k * direction.k + position->velocity.j * direction.j + position->velocity.i * direction.i + 111.548553f;
 	ratio = (111.548553f - listener_speed) / (source_speed > 0.001f ? source_speed : 0.001f);
-	return (real)(log(PIN(ratio, 0.125, 4.0f)) * 1731.234f);
+	return (real)log(PIN(ratio, 0.125, 4.0f)) * 1731.234f;
 }
 
 void looping_sound_controllers_synchronize(bool initial_playback);
@@ -2585,6 +2620,12 @@ static inline short sound_voice_find_available_channel(char type)
 }
 
 /* assigns a free channel and, when needed, a shared driver voice */
+// score 113 (was 113): frame 12 versus 8 and saved true byte; validity result 135; assigned result
+// 135; playback handle 113; const playback 113; long buffer index 117; entry status 113;
+// allocation-scope status 113; status name 113; allocation success result 122.
+// score 113 (was 113): frame 12 and saved result byte remain; failure flag 130, entry failure
+// 130, complemented status 132, long channel 147, driver-first/late-system commits 130/130,
+// status plus driver-first 132, requested buffer first 130.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3030,8 +3071,26 @@ struct s_type_12a1b0_spatial
 };
 
 vector3f *vector3d_decompress(dword arg_0, vector3f *arg_1);
+
+/* decibels_add on the values in place: retail reads both operands where they are */
+static inline long decibels_sum(long const &a, long const &b)
+{
+	real result = *(real const *)&a + *(real const *)&b;
+
+	return *(long *)&result;
+}
+
 vector3f *function_1427f0(transform4x3f const *arg_0, vector3f const *arg_1, vector3f *arg_2);
 
+// score 101 (was 310): LTCG inlines the class lookup function_221810 that retail calls out of line, which
+// shifts the rest of the listing; with the call kept out of line (a #pragma inline_depth(0) pair around
+// it inside the body, which DECOMPILING.md rules out) the score is 4: the no-distance path's flag set
+// folds to a store (retail ors the byte), and the fade gain sum loads the distance gain first where
+// retail loads the selected fade gain first. Not tried: /Ob1 for the file, which changes every function
+// in it.
+// Tried: one gain local stored after the if/else 35; decibels_sum with a by-value operand 128 (6 at site 2
+// alone); the sum through decibels_sum instead of the local 6; 1000 - fade - time inside PIN 6.
+// Depth zero 417, depth one 310, fade scope 310, shared attenuation 334, callback table 311.
 // @retail 0x129aa0
 void function_129aa0(short arg_0, long *arg_1, s_looping_channel_spatialization *arg_2)
 {
@@ -3046,16 +3105,15 @@ void function_129aa0(short arg_0, long *arg_1, s_looping_channel_spatialization 
 	case 2:
 		{
 			s_sound_listener *local_3 = &SOUND_SYSTEM->listeners[local_1->listener_index];
-			point3f local_5;
+			s_sound_position local_5;
 			vector3f local_4 = *g_4687a4;
-			vector3f local_6;
 			if (local_1->location.audible == 1)
 			{
-				transform4x3f const *local_18 = (transform4x3f const *)&local_3->velocity_scale;
-				sound_source_get_position((s_sound_location_source const *)&local_1->location, local_1->listener_index, &local_5);
-				function_142700(local_18, &local_5, &local_5);
+				sound_source_get_position((s_sound_location_source const *)&local_1->location, local_1->listener_index, &local_5.position);
+				function_142700((transform4x3f const *)&local_3->velocity_scale, &local_5.position, &local_5.position);
 				if ((byte)function_125060((s_sound const *)&local_1->location, local_1->definition_index))
 				{
+					transform4x3f const *local_18 = (transform4x3f const *)&local_3->velocity_scale;
 					vector3f *local_7 = vector3d_decompress(local_1->location.spatial.compressed_forward, &local_4);
 					real local_8 = local_7->i;
 					real local_9 = local_7->j;
@@ -3064,57 +3122,64 @@ void function_129aa0(short arg_0, long *arg_1, s_looping_channel_spatialization 
 					local_4.j = local_18->left.k * local_10 + local_18->left.j * local_9 + local_18->left.i * local_8;
 					local_4.k = local_18->up.k * local_10 + local_18->up.j * local_9 + local_18->up.i * local_8;
 				}
-				function_1427f0(local_18, &local_1->location.spatial.velocity, &local_6);
+				function_1427f0((transform4x3f const *)&local_3->velocity_scale, &local_1->location.spatial.velocity, &local_5.velocity);
 			}
 			else
 			{
-				local_5 = local_1->location.spatial.position;
+				local_5.position = local_1->location.spatial.position;
 				if ((byte)function_125060((s_sound const *)&local_1->location, local_1->definition_index))
 					vector3d_decompress(local_1->location.spatial.compressed_forward, &local_4);
-				local_6 = local_1->location.spatial.velocity;
+				local_5.velocity = local_1->location.spatial.velocity;
 			}
 			if (local_1->priority & 2)
 			{
-				local_2->field_18 = function_12ad30((s_sound const *)&local_1->location, (vector3f const *)&local_5, local_1->definition_index, &local_4);
+				local_2->field_18 = function_12ad30((s_sound const *)&local_1->location, (vector3f const *)&local_5.position, local_1->definition_index, &local_4);
 				local_0->unknown0a |= 2;
 			}
 			else
 			{
-				local_2->field_18 = function_12ad30((s_sound const *)&local_1->location, (vector3f const *)&local_5, local_1->definition_index, &local_4);
-				*arg_1 = decibels_add(*arg_1, function_2197f0(local_2->field_18));
+				local_2->field_18 = function_12ad30((s_sound const *)&local_1->location, (vector3f const *)&local_5.position, local_1->definition_index, &local_4);
+				*arg_1 = decibels_sum(*arg_1, function_2197f0(local_2->field_18));
 				local_0->unknown0a |= 1;
 			}
 			if (SOUND_FLAG(local_1->location.flags, 11))
 				local_0->unknown0a |= 1;
-			local_2->field_1c = *(vector3f *)&local_5;
+			local_2->field_1c = *(vector3f *)&local_5.position;
 		}
 		break;
 	case 0:
 		local_0->unknown0a |= 1;
-		local_2->field_18 = SOUND_FLAG(local_1->location.flags, 8) ? 0.0f : 1.0f;
+		if (SOUND_FLAG(local_1->location.flags, 8))
+			local_2->field_18 = 0.0f;
+		else
+			local_2->field_18 = 1.0f;
 		local_2->field_1c = *(vector3f *)g_468788;
 		break;
 	}
 	local_2->field_14 = (local_0->unknown0a & 1) ? 0.0f : 1.0f;
 	long local_11 = SOUND_SYSTEM->time;
-	long *local_12 = (long *)local_0->unknown14;
 	if (!local_0->unknown0b)
 	{
-		*local_12 = 0;
-		local_2->field_8 = (local_0->unknown0a & 1) ? g_440c48 : g_440c4c;
-		local_2->field_4 = (local_0->unknown0a & 2) ? function_2197f0(local_2->field_18) : g_440c4c;
+		*(long *)local_0->unknown14 = 0;
+		local_2->field_8 = *((local_0->unknown0a & 1) ? &g_440c48 : &g_440c4c);
+		/* retail selects the gain's address, calling only when the bit is set */
+		long local_19;
+		local_2->field_4 = *((local_0->unknown0a & 2) ? (local_19 = function_2197f0(local_2->field_18), &local_19) : &g_440c4c);
 	}
 	else
 	{
 		if (local_0->unknown0b != local_0->unknown0a)
-			*local_12 = local_11 - PIN(1000 - *local_12 - local_11, 0, 1000);
+		{
+			long local_26 = 1000 - *(long *)local_0->unknown14;
+			*(long *)local_0->unknown14 = local_11 - PIN(local_26 - local_11, 0, 1000);
+		}
 		long local_13 = 0;
 		long local_14 = 0xc2800000;
-		if (*local_12 > 0)
+		if (*(long *)local_0->unknown14 > 0)
 		{
-			long local_15 = local_11 - *local_12;
+			long local_15 = local_11 - *(long *)local_0->unknown14;
 			if (local_15 > 1000)
-				*local_12 = 0;
+				*(long *)local_0->unknown14 = 0;
 			else
 			{
 				local_13 = function_12a6d0(1, (real)local_15, 1000.0f);
@@ -3125,13 +3190,20 @@ void function_129aa0(short arg_0, long *arg_1, s_looping_channel_spatialization 
 		local_2->field_14 = function_2195f0(*(real *)&local_16);
 		local_0->unknown0b = local_0->unknown0a;
 		local_2->field_8 = *((local_0->unknown0a & 1) ? &local_13 : &local_14);
-		local_2->field_4 = decibels_add(*((local_0->unknown0a & 2) ? &local_13 : &local_14), function_2197f0(local_2->field_18));
+		long const *local_21 = (local_0->unknown0a & 2) ? &local_13 : &local_14;
+		long local_24 = function_2197f0(local_2->field_18);
+		*(real *)&local_24 += *(real const *)local_21;
+		local_2->field_4 = local_24;
 	}
 	local_2->field_0 = local_0->unknown0a;
 	local_2->field_c = 0;
 	local_2->field_10 = 0;
 	if (SOUND_FLAG(local_1->location.flags, 11))
-		local_2->field_8 = decibels_add(*(long *)((byte *)function_221810(sound_definition_get(local_1->definition_index)->promotion_index) + 0x14), local_2->field_8);
+	{
+		s_sound_definition *local_22 = sound_definition_get(local_1->definition_index);
+		s_unknown_5c *local_23 = function_221810(local_22->promotion_index);
+		local_2->field_8 = decibels_sum(*(long *)((byte *)local_23 + 0x14), local_2->field_8);
+	}
 	if (!TEST_FIELD_BIT(local_1->source_updated) && local_1->source && local_1->source->spatialize)
 	{
 		s_type_12a1b0_spatial local_17 = *local_2;
@@ -3175,6 +3247,13 @@ void function_125d60(void)
 
 void __stdcall function_1264c0(dword arg_0);
 
+// score 102 (was 139): shared invalid register, fade-store schedule and signed-tick/wait code differ.
+// Boolean datum iterator 134; existing datum reconstruction 102; inline absolute search 139;
+// pool reads at use 139; retained playback base 137; cleanup exit 139; native flags 139; direct impulse members 139.
+// Shared invalid register and timer conversion remain; availability call 139, chained resets 139, array fill 140, unsigned handle 139, outer deadline 139.
+// score 87 (was 102): reconstruction calls, clock conversion and wait layout remain;
+// reconstruction force/plain inline 102/102; with shared fade 87 plain; with flag/gain/deadline/reset
+// 102/102/102/102 fast; ordinary inline plus fade 107 fast; shared fade without declaration 87 plain.
 // @retail 0x1257b0
 void function_1257b0(void)
 {
@@ -3182,18 +3261,13 @@ void function_1257b0(void)
 	{
 		long local_0 = GetTickCount();
 		s_record_pool *local_1 = g_4e637c;
-		long local_2 = data_datum_index(local_1, function_16bc00(local_1, 0));
+		long local_2 = index_to_datum_index(local_1, function_16bc00(local_1, 0));
 		if (local_2 != NONE)
 		{
 			do
 			{
-				s_sound_playback *local_3 = (s_sound_playback *)local_1->data + (local_2 & 0xffff);
-				local_3->fade_gain = function_12a810(local_2);
-				local_3->fade_curve = 0;
-				local_3->fade_start_time = 300;
-				local_3->fade_end_time = NONE;
-				local_3->fading = true;
-				local_2 = data_datum_index(local_1, function_16bc00(local_1, (local_2 & 0xffff) + 1));
+				function_126df0(NONE, local_2, 0, 0.3f);
+				local_2 = index_to_datum_index(local_1, function_16bc00(local_1, (local_2 & 0xffff) + 1));
 			} while (local_2 != NONE);
 			real local_4 = (real)local_0;
 			local_4 += 300.0f;
@@ -3559,6 +3633,9 @@ void function_21b0e0(bool arg_0);
 long players_first_active_local_player(void);
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
+// score 108 (was 108): aligned frame 0x174c versus 0x1744; promoted voice limit 108; entry system
+// 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
+// next-player result 115; both player values 122.
 // @retail 0x125b40
 void function_125b40(void)
 {

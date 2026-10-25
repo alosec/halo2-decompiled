@@ -566,6 +566,11 @@ static inline void point_along_vector_23b500(point3f const *point, vector3f cons
 	result->z = vector->k * t + point->z;
 }
 
+// score 232 (was 232): frame 0x50/0x54 and child-iterator registers differ;
+// iterator initializer 231; dword friendliness 229; speed snapshot 231; sqrtf 232;
+// child category equality 251; dword friendliness plus speed snapshot 229.
+// Predicted-point force-inline 232; depth zero 510; size policy 355;
+// global optimization off 629; projectile category first 242.
 // @retail 0x23b500
 void function_23b500(long player_index, s_spawn_influence_list *list)
 {

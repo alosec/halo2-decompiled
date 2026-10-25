@@ -164,7 +164,8 @@ bool s_network_observer::connection_v05(long arg_1,
 	if (local_17 > 0.0f)
 	{
 		local_13 = function_75fc1((real)local_24 / local_17);
-		if (local_23 < local_13)
+		local_2 = local_23 >= local_13;
+		if (!local_2)
 			return local_2;
 	}
 	else if (local_17 == 0.0f)
@@ -174,7 +175,8 @@ bool s_network_observer::connection_v05(long arg_1,
 	{
 		local_26 = (local_23 * local_18 / local_24) / 8;
 		local_6 = local_26 - 45;
-		if (local_6 < 48)
+		local_2 = local_6 >= 48;
+		if (!local_2)
 			return local_2;
 	}
 	if (local_13 >= 0)

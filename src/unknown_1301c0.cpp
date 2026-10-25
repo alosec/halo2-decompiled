@@ -85,6 +85,21 @@ void function_130bb0(s_fog_state *fog)
 	}
 }
 
+// score 57 (was 57): default-result and classification-block placement differ; copy/reset tail agrees; tried
+// short result 101; byte result 118; pending distance 100; first intensity 114; second intensity 114; wide
+// distance 133; color value 57; transition distance 96.
+// block layout. Retail falls through from the pending test
+// into the pending checks (jbe to the no-pending block), sets result 3 only after
+// that test, and places the no-pending block after the max's jmp, before its
+// height arm; ours places the no-pending block first. Tried: if (pending > 0)
+// with the no-pending block as its else, the rest inside (81) or after the
+// if/else (81), with returns (89), with result = 3 at the top of the if (75: the
+// mov edx, 3 moves as in retail but the no-pending block goes to the end);
+// returns in this shape (99); a goto to the no-pending block at the end (99);
+// nested ifs (107); the max as an if/else (57, 81) or an inline helper (71-91).
+// the classification block still sits inline right after the
+// pending intensity test, where retail runs the value10c and value118 tests
+// first; those two comparisons are ucomiss with an unordered test in retail.
 // @retail 0x130de0
 long function_130de0(s_fog_state *fog)
 {

@@ -900,6 +900,13 @@ static inline XUID *message_entry_get_xuid(s_entry *entry)
 
 /* adds the senders of the player's messages (at most 20) to the players
    list, except those given and those already on it */
+// score 81 (was 81): count/sender homes +0x6c/+0x68 remain reversed; nullable getter and exclusion cursor differ.
+// Exclusion pointer at use 82; native exclusion result 132; enumeration-count lifetime 82; format buffers swapped 81; getter force-inline declaration 81.
+// Byte added count 103; signed/unsigned word exclusion result 128/128; cumulative conditional 113; rejection guards 81.
+// Current cumulative-result trials: plain getter 145; result-first plus plain getter 145;
+// read-only sender 81; read-only sender plus plain getter 145; native string buffer 75
+// (458 bytes, plain; rejected single-array wrapper); buffer plus plain getter 141;
+// loop-scoped index 81; indexed cumulative exclusions 81.
 // @retail 0x1a4441
 long players_list_add_message_senders(XUID const *excluded, long excluded_count)
 {
@@ -1404,6 +1411,30 @@ void online_presence_get_latest(long task_index, DWORD group_id, DWORD count, XO
 
 /* copies the presence task's results into the friends and team members
    lists */
+// score 117 (was 159): frame agrees; count homes, early count lifetimes and flag reloads differ. Global optimization
+// off 1206; bounded friend search 230; bounded member search 219; both 211; indexed merge-record pointer
+// 162.
+// Completed friend/member/both flag results 159/218/218; signed friend/member results
+// 159/218; complete friend flag accumulation 229; both results with friend-first count 219;
+// merged field result 164. Count homes, early zero and post-call flags still differ.
+// Native session library copies member/friend/both 162/159/162; complete friend/member/both iterator
+// initializers 231/227/211; native friend/member presence values 256/239. Count homes, early zero and post-
+// call flag reloads remain.
+// Friend/member/both low-bit subtraction 210/218/215; friend/member/both self-bit
+// results 229/164/231; friend-field merge 164; inherited member receiver 159.
+// Count homes, early zero and memory flag updates still differ.
+// Empty friend/member/both row guards 159/159/159; friend/member/both identity values 265/248/287;
+// friend-first/member-first merged-state accumulation 162/162. Original count homes and flag reloads remain.
+// Frame and early EBX zero agree; count homes, early count lifetimes and membership flag reloads
+// differ. friend self equality inputs 160; member self equality inputs 161; presence merge
+// equality inputs 188; friend presence equality inputs 164; member presence equality inputs 214;
+// nested merge equality inputs 161; friend membership result 159; member membership result 159;
+// merge friend count first 195; merge member count home 188; merge count order and home 195; merge
+// counts member row 129; merge counts friend row 190; merge counts both rows 124.
+// Frame and early EBX zero agree; count homes, early count lifetimes and membership flag reloads
+// differ. immutable count snapshots 124; native list record references 124; original count name
+// 124; original count observation order 117; original count names and order 117; row pair without
+// initial merge 219.
 // @retail 0x1a3dfe
 void friends_lists_update_presence()
 {
@@ -1430,7 +1461,7 @@ void friends_lists_update_presence()
 		{
 			for (long j = 0; j < clan_count; j++)
 			{
-				if (xuid_equal(&clan_presences[j].xuid, &friend_presences[i].xuid, false))
+				if (xuid_equal(&friend_presences[i].xuid, &clan_presences[j].xuid, false))
 				{
 					DWORD state = friend_presences[i].dwUserState | clan_presences[j].dwUserState;
 
@@ -1457,7 +1488,7 @@ void friends_lists_update_presence()
 						friend_->flags20 |= 1;
 					for (long j = 0; j < friend_count; j++)
 					{
-						if (xuid_equal(&friend_->xuid, &friend_presences[j].xuid, false))
+						if (xuid_equal(&friend_presences[j].xuid, &friend_->xuid, false))
 						{
 							friend_->flags20 |= friend_presences[j].dwUserState & 0xffffff20;
 							if ((friend_->flags20 & 0x30) && !players_list_contains(&friend_->xuid))
@@ -1487,7 +1518,7 @@ void friends_lists_update_presence()
 					for (long j = 0; j < clan_count; j++)
 					{
 
-						if (xuid_equal(&player->xuid, &clan_presences[j].xuid, false))
+						if (xuid_equal(&clan_presences[j].xuid, &player->xuid, false))
 						{
 							player->flags20 |= clan_presences[j].dwUserState;
 							player->session_id = clan_presences[j].SessionID;

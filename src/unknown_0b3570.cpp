@@ -284,7 +284,7 @@ void function_8fb30(long task_index, s_online_match_result *output, word *capaci
 long online_task_poll(long task_index);
 long qos_lookup(long kind, long count, long bits_per_second, s_qos_target *targets);
 long qos_target_status(long handle, long index);
-bool session_description_decode_buffer(byte const *data, long size, void *description);
+bool session_description_decode_buffer(long size, byte const *data, void *description);
 bool qos_is_complete(long handle);
 
 PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
@@ -377,7 +377,7 @@ void function_b3200(void)
 					entry->qos_valid = qos_target_result(g_4d8ef4, &entry->qos, i);
 					if (entry->qos_valid && entry->qos.data_size > 0)
 					{
-						if (session_description_decode_buffer(entry->qos.data, entry->qos.data_size, description))
+						if (session_description_decode_buffer(entry->qos.data_size, entry->qos.data, description))
 						{
 							memcpy(&entry->description, description, sizeof(description));
 							entry->description_changed = true;

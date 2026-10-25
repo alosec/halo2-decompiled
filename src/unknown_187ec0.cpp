@@ -207,8 +207,17 @@ struct s_seat_animations
 	s_seat_animation *animations;
 };
 
-// score 63 (was 63): retail uses ebp as a frame pointer and keeps a word index in di, ours uses stack slots and
-// 32-bit registers.
+// score 63 (was 63): retail's ebp is not a frame pointer: it holds animation for the whole body, and result lives
+// in the push ecx slot ([esp + 0x10]), stored on a hit and reloaded into edx after the inner loop. Ours keeps result
+// in ebp and reloads animation from its parameter slot at every use; that register-or-spill choice is the whole
+// difference. Retail's inner loop has no result test (a hit stores and breaks, then index = parent and the outer
+// loop leaves on result), but every form with that shape builds the inner loop like retail while giving type eax
+// instead of edx, which costs matched caller 0x188130. Tried: inner loop without the !result test and the pointer
+// &entries[i] as a local 71 (0x188130 1); entries[i] indexed 66 (0x188130 1); while (!result && element) 71; a
+// do-while 71; no first local 87; result declared first 71, last 79; the element_index parameter as the index 77;
+// first ? &first_entries[i] : &second_entries[i] 80; count in the for condition 99; count inside the outer loop 77
+// (0x188130 20); the search as an inline helper 101; a found index then the pointer 105; i < count && !result
+// with that shape 63 (0x188130 20); animation before or after type in the parameter list 71.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, short element_index)
 {

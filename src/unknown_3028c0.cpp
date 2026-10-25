@@ -100,6 +100,17 @@ public:
 // vector first, and the grid's origin is read once for both ends. What is
 // left is the two call arguments, which retail pushes late and ours still
 // pushes at the top.
+// Further trials from 42: ordered scalar clears 45; scale-first direction
+// 45; endpoint deltas 45; reversed declarations 45; stored scale 45;
+// shared splat 60; renamed locals 45; both pointers 45; staged segment
+// members 45; inline/force-inline byte accessor diagnostics 42/45 (removed).
+// Further trials: collector reference/pointer fields 42; input reference 42;
+// broadcast scalar reference 42; referenced scalar load 55; whole-block
+// memset 74; zero aggregate 92; value-parameter scalar load 91; inherited
+// walk method 42. Opening body retained.
+// Further trials: sum by value 40; staged sum 42; vector sum result 56;
+// direct splat 65; forced inline math 42; whole query initializer 48;
+// sum through output 44; size preference 121; value sum with late clears 43.
 // @retail 0x3028c0
 void walker_3028c0::function_3028c0(input_3028c0 const *input_, long arg_1, long arg_2)
 {

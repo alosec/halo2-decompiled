@@ -29,9 +29,14 @@ struct s_245850
 };
 
 #pragma inline_depth(0)
+// score 14 (was 14): the plane index is loaded with a 16 bit move where retail sign extends it
+// (every retail caller of 0x14a300 does `movsx edx`), and two float sums emit their products in
+// a different order: point->z (retail fk*x + uk*z first) and local_3.k (retail lk*j + fk*i first).
+// Tried: all 12 orders/groupings of local_3.k (14 or 20); point->z grouped `a + (b + c)` (14-16),
+// left to right (98: x is multiplied in place, one instruction fewer); a `long` plane index in
+// bsp3d_get_plane and its five declarations (116 here, 573 bytes; 0x14a300 still matches,
+// 0x10cf80 249 -> 247, 0x1fa3a0 80 -> 79).
 // @retail 0x245850
-// score 14 (was 14): the plane index is loaded with a 16 bit move where retail sign extends it,
-// and the two float sums emit their products in a different order.
 void function_245850(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
 	long arg_5, long arg_6, s_collection_245270 *arg_7)

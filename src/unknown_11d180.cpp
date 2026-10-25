@@ -141,7 +141,18 @@ void function_11d610(quaternionf *q)
 
 // score 15 (was 15): retail emits the dot product's j term first (ours i first) and
 // hoists one more cross product multiply before the first subtract; the source order
-// of the terms does not change our schedule.
+// of the terms does not change our schedule. BLOCKED-BY 0x127400 (@BirchWoodGod's
+// claim): the (out, a, b) parameter order, with its declaration and call there
+// changed to match, gives 11 (0x127400 stays 551): retail's dot product and operand
+// order; then only retail's i term first multiply (a->j * b->k) hoisted before the
+// first subtract and s reloaded after the j subtract still differ. Tried: cross terms
+// in i, j, k order 23; reciprocal after the cross terms 36; j as a->k * b->i - a->i *
+// b->k 15; square root in its own local 15; clamp as s <= 0 17. With (out, a, b):
+// cross terms in k, i, j or i, k, j order 11, in j, k, i / j, i, k / i, j, k order 19;
+// reciprocal after the cross terms 32; out->w stored first 21; stores in k, j, i
+// order 20; products written straight into out 32; cross3f into a local 24, into out
+// then scaled 74; branches swapped (s < 0.001f) 38; square root in its own local,
+// clamp as a ternary, sqrtf, i or k terms with swapped operands 11 each.
 // @retail 0x11d6a0
 void function_11d6a0(
 	vector3f const *a,

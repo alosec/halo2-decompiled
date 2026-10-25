@@ -538,12 +538,19 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 	graph_weapon_type_request(graph, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME);
 }
 
+// score 403 (was 444): frame 8 versus 12 and hidden-result homes still differ.
+// Byte success 403; fallback fields at use 551; request fields at use 639;
+// library record move 628; outer name-snapshot declarations 444. Byte success kept.
+// Round 303: graph after resolution 621; fallback snapshot order 544; request snapshot order 419;
+// signed byte success 403; explicit final failure 530. Hidden-result homes/frame still differ.
+// score 403 (was 403): hidden-result homes and frame eight versus twelve remain; word success 533;
+// shared request guard 403; resource-array base 426; urgent-array base 508; both bases 599.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)
 {
 	s_graph_tag *graph = graph_get();
-	bool success = false;
+	byte success = false;
 	c_type_709360 animation_id;
 
 	names_resolve(names, mode, weapon_class, weapon_type, set);
@@ -794,6 +801,17 @@ PRIVATE inline void channel_loop_clear(c_animation_channel *channel)
 	}
 }
 
+// score 251 (was 273): frame 0x38 agrees; ID slots, result/loop byte homes,
+// blend reloads and the frame clamp differ. Success after setup 251; loop
+// state width 283; channel state width 314; name aggregate 322; flag mask 353
+// (six match losses). On 251: logical channel 287; logical offset 248 (gain
+// three, dropped); loop expression 345; success after query 274; before
+// overlay 255; previous-loop home name 251.
+// score 251 (was 251): Frame 0x38 agrees; ID/Boolean homes and blend call lifetime remain. Byte result 249 (gain two, dropped); entry third ID 306; two-channel clear loop 251; masked blend bit 311; byte combined state 251.
+// ID/result/loop homes, blend reloads and frame clamp remain.
+// Transition ID name 251; blend-first join 327; failed result from flag 354;
+// frame-position snapshot 297; reversed bitwise loop result 251; previous-loop
+// lifetime first 254; false result after channel observation 286 (fast).
 // @retail 0x1cd070
 bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long channel_flags)
 {
@@ -870,7 +888,6 @@ bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_
 			{
 				bool unflagged;
 
-				result = true;
 				unflagged = channels[0].is_unflagged0() & loops;
 				if (transition_id.index != NONE && graph_tag_index != NONE)
 				{
@@ -911,6 +928,7 @@ bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_
 					}
 				}
 				flags &= ~1;
+				result = true;
 				goto names_store;
 			}
 		}
@@ -1281,37 +1299,42 @@ struct s_animated_object_header
 // @retail 0x1cd6c0
 void s_animation_state::movement_rate_get(long object_index, vector3f *vector, real *value)
 {
-	if (object_index != NONE && ((s_animated_object_header *)g_4e0300->data)[object_index & 0xffff].object->unknownb3)
-	{
-		*vector = *g_4687a4;
-		*value = 0.0f;
-	}
-	else if (g_46fbf5 && channel_valid(&channels[2]))
-	{
-		channels[2].movement_rate_get(vector, value);
-	}
-	else if (g_46fbf4 && channel_valid(&channels[1]) && unknown80 >= 0.9999f)
-	{
-		channels[1].movement_rate_get(vector, value);
-	}
-	else if (g_46fbf4 && channel_valid(&channels[1]) && unknown80 > 0.0001f && unknown80 < 0.9999f)
-	{
-		real fraction = blend_fraction_get();
-		real blend_value;
-		real base_value;
-		vector3f blend_vector;
-		vector3f base_vector;
+	bool frozen = object_index != NONE && ((s_animated_object_header *)g_4e0300->data)[object_index & 0xffff].object->unknownb3 > 0;
 
-		channels[1].movement_rate_get(&blend_vector, &blend_value);
-		channels[0].movement_rate_get(&base_vector, &base_value);
-		vector->i = (blend_vector.i - base_vector.i) * fraction + base_vector.i;
-		vector->j = (blend_vector.j - base_vector.j) * fraction + base_vector.j;
-		vector->k = (blend_vector.k - base_vector.k) * fraction + base_vector.k;
-		*value = (blend_value - base_value) * fraction + base_value;
-	}
-	else if (channel_valid(&channels[0]))
+	if (!frozen)
 	{
-		channels[0].movement_rate_get(vector, value);
+		if (g_46fbf5 && channel_valid(&channels[2]))
+		{
+			channels[2].movement_rate_get(vector, value);
+		}
+		else if (g_46fbf4 && channel_valid(&channels[1]) && unknown80 >= 0.9999f)
+		{
+			channels[1].movement_rate_get(vector, value);
+		}
+		else if (g_46fbf4 && channel_valid(&channels[1]) && !(0.0001f >= unknown80) && !(unknown80 >= 0.9999f))
+		{
+			real fraction = blend_fraction_get();
+			real blend_value;
+			real base_value;
+			vector3f blend_vector;
+			vector3f base_vector;
+
+			channels[1].movement_rate_get(&blend_vector, &blend_value);
+			channels[0].movement_rate_get(&base_vector, &base_value);
+			vector->i = (blend_vector.i - base_vector.i) * fraction + base_vector.i;
+			vector->j = (blend_vector.j - base_vector.j) * fraction + base_vector.j;
+			vector->k = (blend_vector.k - base_vector.k) * fraction + base_vector.k;
+			*value = (blend_value - base_value) * fraction + base_value;
+		}
+		else if (channel_valid(&channels[0]))
+		{
+			channels[0].movement_rate_get(vector, value);
+		}
+		else
+		{
+			*vector = *g_4687a4;
+			*value = 0.0f;
+		}
 	}
 	else
 	{
@@ -1320,6 +1343,13 @@ void s_animation_state::movement_rate_get(long object_index, vector3f *vector, r
 	}
 }
 
+// score 5 (was 106): the blend range is now tested with the two negated
+// comparisons retail uses, so the branch layout matches; the inlined channel
+// multiply of the second component still loads its value from memory where
+// retail copies the scale into a register.
+// score 5 (was 5): inlined fallback middle-component load/multiply still differs.
+// Completed delta/velocity/both values 113/84/145; logical/failure/initial success 85/89/92;
+// shared fraction helper 175; helper with completed output vectors 241.
 // @retail 0x1cdcd0
 bool s_animation_state::velocity_get(vector3f *delta, vector3f *velocity)
 {
@@ -1331,7 +1361,7 @@ bool s_animation_state::velocity_get(vector3f *delta, vector3f *velocity)
 	{
 		return channels[1].velocity_get(delta, velocity);
 	}
-	else if (g_46fbf4 && channel_valid(&channels[1]) && !(0.0001f >= unknown80) && unknown80 < 0.9999f)
+	else if (g_46fbf4 && channel_valid(&channels[1]) && !(0.0001f >= unknown80) && !(unknown80 >= 0.9999f))
 	{
 		real fraction = blend_fraction_get();
 		vector3f blend_velocity;
@@ -1533,7 +1563,7 @@ bool s_animation_state::channel_refresh(c_animation_channel *channel, long weapo
 }
 
 // @retail 0x1cb9d0
-c_type_709360 s_animation_state::overlay_find(long set, long weapon_class, long weapon_type)
+c_type_709360 s_animation_state::overlay_find_for_class(long weapon_class, long weapon_type, long set)
 {
 	c_type_709360 none;
 
@@ -1562,7 +1592,7 @@ c_type_709360 s_animation_state::overlay_or_animation_get(long weapon_class, lon
 	{
 		weapon_type = unknown78;
 	}
-	animation_id = overlay_find(set, weapon_class, weapon_type);
+	animation_id = overlay_find_for_class(weapon_class, weapon_type, set);
 	if (animation_id.index == NONE)
 	{
 		animation_id = animation_get(set, weapon_class, weapon_type);

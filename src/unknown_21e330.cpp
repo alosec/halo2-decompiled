@@ -727,6 +727,12 @@ PRIVATE __forceinline real function_21ece1(real arg_0, real arg_1)
 
 // score 25 (was 25): retail loads the x87 accumulator before the value it
 // adds to it, ours loads that value first, so the fadd order differs.
+// Only the first sum loads the gain first in retail (later sums load the
+// copied field first, as ours); the rest is x87/SSE interleaving. Tried: the
+// gain as `*(real *)&gain_bits` 25, or read that way at each call 25; the
+// existing bit-pattern helper with the field's bits 89 (the gain bits stay in
+// edi and are stored again for each sum); the helper's sum written field first
+// 25; the field read through its parameter's address instead of the copy 144.
 // @retail 0x21ece0
 void function_21ece0(long effect_index, s_sound_driver_reverb const *reverb)
 {
@@ -787,12 +793,13 @@ static inline long sound_submix_volume(real gain)
 	return volume;
 }
 
-PRIVATE __forceinline real function_21ee81(s_sound_driver_occlusion const *arg_0, real const *arg_1, long arg_2)
+/* how much of the occlusion's range lies in one interval of a channel's sector */
+PRIVATE __forceinline real function_21ee81(s_sound_driver_occlusion const *occlusion, real const *const *ranges, long channel, long interval)
 {
-    real upper = arg_1[arg_2 + 1];
-    real maximum = arg_0->maximum;
-    real lower = arg_1[arg_2];
-    real minimum = arg_0->minimum;
+    real upper = ranges[channel][interval + 1];
+    real maximum = occlusion->maximum;
+    real lower = ranges[channel][interval];
+    real minimum = occlusion->minimum;
     real local_0 = maximum > upper ? upper : maximum;
     real local_1 = minimum > lower ? minimum : lower;
     real local_2 = local_0 - local_1;
@@ -822,8 +829,6 @@ PRIVATE __forceinline long function_21ee82(real arg_0)
     return local_0;
 }
 
-// score 25 (was 25): retail loads the x87 accumulator before the value it
-// adds to it, ours loads that value first, so the fadd order differs.
 // @retail 0x21ee80
 void function_21ee80(void)
 {
@@ -845,14 +850,14 @@ void function_21ee80(void)
 			real sectors1[6] = { -2.3561945f, 0.785398185f, 3.92699099f, 6.28318548f, -6.28318548f, -5.49778748f };
 			real sectors2[6] = { 0.785398185f, 3.92699099f, -5.49778748f, -2.3561945f, 0.0f, 0.0f };
 			real sectors3[6] = { 2.3561945f, 5.49778748f, -3.92699099f, -0.785398185f, 0.0f, 0.0f };
-			real const *volatile ranges[4] = { sectors0, sectors1, sectors2, sectors3 };
+			real const *ranges[4] = { sectors0, sectors1, sectors2, sectors3 };
 			real scale = SOUND_DRIVER_GLOBALS->reverb_scales[group];
 			s_sound_driver_occlusion const *occlusion = &SOUND_DRIVER_GLOBALS->occlusions[group];
 			for (long channel = 0; channel < 4; channel++)
 			{
-				real overlap0 = function_21ee81(occlusion, ranges[channel], 0);
-				real overlap1 = function_21ee81(occlusion, ranges[channel], 2);
-				real overlap2 = function_21ee81(occlusion, ranges[channel], 4);
+				real overlap0 = function_21ee81(occlusion, ranges, channel, 0);
+				real overlap1 = function_21ee81(occlusion, ranges, channel, 2);
+				real overlap2 = function_21ee81(occlusion, ranges, channel, 4);
 				real fraction = (overlap2 + overlap1 + overlap0) * 0.318309873f;
 				real offset = occlusion->offset;
 				real gain = ((fraction - offset) * occlusion->scale + offset) * scale;

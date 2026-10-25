@@ -23,6 +23,11 @@ struct s_1a8c30
 // function_11e000, the flag is set before it and the second switch assigns
 // the flag from the condition, as in retail; what is left is the order of the
 // register setup in the calls to function_11e6f0 and function_1a8a10.
+// BLOCKED-BY 0x11e6f0: register arguments are set up right to left in declared
+// order, so retail's order means 0x11e6f0 takes (origin, direction, center, radius)
+// and 0x1a8a10 (actor index, point, ...). Both reorders together match this
+// function (round 80, held: 0x11e6f0's definition is in a contributor's file);
+// the 0x1a8a10 reorder alone gives 2.
 // @retail 0x1a8c30
 short __stdcall function_1a8c30(long arg_0, s_slot *arg_1)
 {

@@ -256,7 +256,7 @@ void __stdcall session_description_encode(s_bitstream *stream, void *session)
 
 /* reads a description from a buffer, such as the data a QoS probe returned */
 // @retail 0x7c530
-bool session_description_decode_buffer(const byte *data, long size, void *description)
+bool session_description_decode_buffer(long size, const byte *data, void *description)
 {
 	bool result = false;
 	if (size > 0 && data)

@@ -459,26 +459,43 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
+// score 195 (was 195): frame 0xdc versus 0xd8 and a rotation spill; shared cross
+// 244; native component loop 244; cross before dot 257;
+// signed-byte spoke 213; size optimization 395.
+// rotation spill keeps frame 0xdc versus 0xd8; radius copy and sector-test registers differ.
+// Current-allocation plain radius 209; scalar cross lifetimes 195; dot lifetime 195; unsigned-word spoke 195; depth one 195.
+// One rotation spill still adds four frame bytes; axis component values 285;
+// symmetric dot inputs 195; two/all cross subtrahends, minuends and projected-axis values 210;
+// cosine-direction values 211; private rotation output last 195.
+// score 184 (was 195): frame 0xd8 now agrees; radius setup, rotation schedule and sector-test registers remain.
+// Cosine first 197; shared direction/axis/both scales 210/213/261; cosine-first inputs 195;
+// angle product lifetime 196; per-use ring phase 184 kept, 1087/1089 bytes; angle-result names 195.
+// cosine complement 195; cosine first 197; output scalars 195; direct-input outputs 256;
+// components before dot 195; shared rotation 195/1091; output scalars plus plain radius 209;
+// shared rotation plus plain radius 208/1095. Rotation spill and frame 0xdc remain.
+// score 163 (was 184): Frame 0xd8 agrees; entry/ring conversion, rotation and sector registers
+// remain. Shared real ring 182; ring plus phase 195; record-first 163 kept; with real ring 161
+// rejected for two extra points; double base with ring/phase 182/195; axis value 317;
+// record/ring/spoke values 163.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
 	long result = function_26d3f0(object_index, 0);
 	if (result != NONE)
 	{
-		real radius_value = *(real *)((byte *)object_get(object_index) + 0x3c);
-		real const &radius = radius_value;
 		s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
 		long sector_index = record->location_index;
+		real radius_value = *(real *)((byte *)object_get(object_index) + 0x3c);
+		real const &radius = radius_value;
 		long ring = 0;
 		long rings_remaining = 2;
 		do
 		{
 			real distance = (real)((double)radius * 1.2 + (real)ring * radius);
-			real phase = (real)ring * 0.39269909262657166f;
 			for (short spoke = 0; spoke < 8; spoke++)
 			{
 				vector3f direction = *g_4687a8;
-				real angle = (real)spoke * 0.7853981852531433f + phase;
+				real angle = (real)spoke * 0.7853981852531433f + (real)ring * 0.39269909262657166f;
 				real sine = (real)sin(angle);
 				real cosine = (real)cos(angle);
 				record_rotate_vector(&direction, g_4687b0, sine, cosine);

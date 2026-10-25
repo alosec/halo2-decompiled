@@ -626,6 +626,15 @@ void session_searches_dispose(void);
 #define SESSION_OWNER ((s_session_owner *)&g_527330.state)
 #define SESSION_STATE(state) ((s_session_state_view *)&(state))
 
+// score 51 (was 51): register allocation around the calls: retail passes the
+// owner (0x527334) to session_owner_initialize as an immediate and loads it into
+// edi only after the call, and passes &state_matchmaking to
+// session_searches_initialize as an immediate again; ours loads edi before the
+// first call, and copies eax (which 0x70190 leaves unchanged) into esi. Tried:
+// no owner local, the owner local first and passed to every call, a matchmaking
+// local, 0x70190 returning its state, owner->states[index] in
+// session_state_initialize, and linking network_session_client.cpp after this
+// file (all 51).
 // @retail 0x58ee0
 bool network_session_manager_initialize(long unknown40, long unknown44, void *unknown2c, c_class_58d20 *session_a, c_class_58d20 *session_c, c_class_58d20 *session_b)
 {

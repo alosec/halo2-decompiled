@@ -97,7 +97,7 @@ struct s_animation_state
 	bool update(animation_event_callback callback, long user, long node_count, s_blend_orientation *orientations,
 		s_blend_orientation const *targets);
 	bool overlay_play(c_animation_channel *channel, dword channel_flags, long set, long weapon_class, long weapon_type);
-	c_type_709360 overlay_find(long set, long weapon_class, long weapon_type);
+	c_type_709360 overlay_find_for_class(long weapon_class, long weapon_type, long set);
 };
 
 /* the weapon's indices and timer (at +0xd8, 0x14 bytes) */
@@ -1188,6 +1188,30 @@ static inline void transform4x3f_set_identity(transform4x3f *matrix)
    overlays it plays */
 // score 231 (was 50): the stack frame is four bytes smaller than retail's, so every stack offset
 // inside the function is shifted.
+// score 36 (was 46): the 0x20 frame agrees; node-address registers and one byte still differ.
+// Field reference with calls in both arms 36; wide parent 117; unsigned root 115;
+// root reference 115; parent reference 115; predicate 46; signed mask 47; unsigned mask 46.
+// score 36 (was 36): parent address LEA/base-index roles and overlay setup remain.
+// Native root/parent/both node values 140/141/153; native result field, unsigned result,
+// arms entry binding/update and mapping outcome 36; parent word/index and late index 115/115.
+// The node-base addition and ECX/EDX roles still differ.
+// Shared node array 36; read-only nodes 36; mutable parent-field binding 36;
+// root read before graph 38; immutable active 36; earlier animation receiver
+// 188; immutable mode 36; arms-map entry reference 36 (plain scores).
+// score 36 (was 36): Parent observations and overlay homes remain different.
+// Direct parent fields 99; native parent value 115; root-entry binding 114;
+// parent flags by field/value 36/36; shared overlay result 40; independent
+// overlay results 45; actual indices-record reference 38 (plain scores).
+// separate node-base addition and ECX/EDX roles remain.
+// Parent/root/query-result names 36/36/36; outer query result 36; retained-field
+// plus root/parent object references 36/36; animation/interface references 36/36.
+// score 30 (was 36): early graph load, node-base addition/register roles and overlay setup remain.
+// Plain: arms array 159; weapon array 44; both arrays 159; channel reference 36;
+// graph object 40; model input 82; graph input 30; interface value 230.
+// score 30 (was 30): graph-load timing, node-base addition/register roles and overlay setup remain.
+// Plain: graph inside model guard 188; both metadata values 191; graph guard first 31;
+// conditional graph result 193; graph-field binding 36; model-field binding 30;
+// read-only interface 30; shared root/parent receiver 30.
 // @retail 0x167e86
 void __stdcall function_167e86(long user_index, long field_x11c898)
 {
@@ -1222,14 +1246,15 @@ void __stdcall function_167e86(long user_index, long field_x11c898)
 			if (interface_index >= 0 && interface_index < definition->interface_count)
 			{
 				s_first_person_interface *interface = &definition->interfaces[interface_index];
+				long animation_graph_index = interface->animation_graph_index;
 
-				if (interface->render_model_index != NONE && interface->animation_graph_index != NONE)
+				if (interface->render_model_index != NONE && animation_graph_index != NONE)
 				{
 					s_animation_state *state;
 
 					first_person_bits_reset(&user->unknown202c);
 					state = &weapon->animation;
-					state->initialize(interface->animation_graph_index, NONE, false);
+					state->initialize(animation_graph_index, NONE, false);
 					if (field_x11c898 == 0)
 					{
 						user->unknown2094 = state->node_find(0xe0000e0);
@@ -1266,22 +1291,20 @@ void __stdcall function_167e86(long user_index, long field_x11c898)
 
 							if (root_node_index != NONE)
 							{
-								short parent_index = graph->nodes[root_node_index].parent_index;
+								short const &parent_index = graph->nodes[root_node_index].parent_index;
 
 								if (parent_index != NONE)
 								{
-									long flags;
 									short node_index;
 
 									if (graph->nodes[parent_index].flags & 8)
 									{
-										flags = 0x10;
+										node_index = (short)function_1dd490(graph, 0x10);
 									}
 									else
 									{
-										flags = 8;
+										node_index = (short)function_1dd490(graph, 8);
 									}
-									node_index = (short)function_1dd490(graph, flags);
 
 									weapon->unknown2fe_node = node_index;
 									if (node_index != NONE)
@@ -1309,9 +1332,9 @@ void __stdcall function_167e86(long user_index, long field_x11c898)
 						weapon->channel98.clear();
 						first_person_indices_reset(&weapon->indices);
 						state->overlay_play(&weapon->channelb8, 0x803f, 0x12000068, mode, 0x7000101);
-						*(c_type_709360 *)&weapon->indices.unknown4 = state->overlay_find(0x8000061, mode, 0x7000101);
-						*(c_type_709360 *)&weapon->indices.unknown8 = state->overlay_find(0xa000069, mode, 0x7000101);
-						*(c_type_709360 *)&weapon->indices.unknown0 = state->overlay_find(0xe0000de, mode, 0x7000101);
+						*(c_type_709360 *)&weapon->indices.unknown4 = state->overlay_find_for_class(mode, 0x7000101, 0x8000061);
+						*(c_type_709360 *)&weapon->indices.unknown8 = state->overlay_find_for_class(mode, 0x7000101, 0xa000069);
+						*(c_type_709360 *)&weapon->indices.unknown0 = state->overlay_find_for_class(mode, 0x7000101, 0xe0000de);
 						if (active)
 						{
 							first_person_weapon_set_active(user_index, field_x11c898, true);
@@ -1385,6 +1408,14 @@ point2f *g_4687c4;
    sway springs, the weapons' animations, zoom overlays and idles */
 static __forceinline real function_x82e52f(dword *seed, char const *file, long line);
 
+// score 252 (was 252): frame 0x28 vs 0x2c, unit/mode and look-output homes differ;
+// word/byte weapon index 388/373; scoped rate first/shared store 438/258; unscoped selection first 253.
+// score 250 (was 250): frame 0x28 vs 0x2c and unit/mode/look homes remain.
+// Entry unit capture 252; const unit/primary weapon/weapon object/look receivers 252 each;
+// look interval capture 417; combined readers 252; readers plus interval 417 (fast base 252).
+// frame 0x28 versus 0x2c, unit/mode and look-output homes differ.
+// Single spring overrides 548/542/536/542; first/second pairs 559/550; all four 553;
+// all four plus yaw/pitch delta inputs 559 (fast; unchanged preview 252).
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {
@@ -1735,6 +1766,15 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 
 /* samples a weapon's animation, its overlays and its sway into the user's
    orientations, then builds the weapon's node matrices */
+// score 455 (was 468): root/channel homes still overlap in frame 0x58 vs 0x78; kept the nonnegative ammo arm and common index-derived adjustment bit.
+// blend time true arm 506; ammo nonnegative path first 463; adjustment flag from index 460; arms model read
+// first 469; channel before lookups 531; channel before state view 475; ammo adjustment flag 455; ammo arms
+// read first 478; ammo channel before lookups 526; ammo channel before state view 470
+// score 455 (was 455): Frame 0x58 versus 0x78; root/channel overlap and copy/sway allocation remain. Model count snapshot 556; vector adjustment helper 471; negative sway first 465; ammo-count boundary 459; early magazine maximum 462 (plain).
+// score 455 (was 455): Frame 0x58 versus 0x78 and copy/sway homes remain. Zero-initialized root 602 (frame 0x78); direct blend time 455; conditional weight 497; adjustment index 464; native orientation copy 455 (plain).
+// root/channel overlap leaves frame 0x58 versus 0x78; channel after initial
+// sample 525; root before state bit 455; transform memcpy 455; node count before root 455;
+// conditional ammo cap 455 (plain).
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {
@@ -1875,17 +1915,15 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 				{
 					short rounds = weapon_object->unknown22c;
 
-					if (rounds < 0)
-					{
-						frame = 0;
-					}
-					else
+					if (rounds >= 0)
 					{
 						frame = ammo_animation->frame_count - 1;
 						if (rounds <= frame)
-						{
 							frame = rounds;
-						}
+					}
+					else
+					{
+						frame = 0;
 					}
 				}
 				channel.set_frame_position((real)frame);
@@ -1917,13 +1955,9 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 				user->adjustment = weapon->nodes[user->unknown2094];
 				user->adjustment.position.x -= definition->first_person_offset.x;
 				user->adjustment.position.y -= definition->first_person_offset.y;
-				SET_FLAG(user->flags, _first_person_user_adjusted_bit, true);
 				user->adjustment.position.z -= definition->first_person_offset.z;
 			}
-			else
-			{
-				SET_FLAG(user->flags, _first_person_user_adjusted_bit, false);
-			}
+			SET_FLAG(user->flags, _first_person_user_adjusted_bit, user->unknown2094 != NONE);
 		}
 	}
 }

@@ -93,6 +93,6 @@ typedef char assert_session_description_layout[(
 bool session_description_valid(const s_session_description *description);
 void __stdcall session_description_encode(s_bitstream *stream, void *description);
 bool __stdcall session_description_decode(s_bitstream *stream, void *description);
-bool session_description_decode_buffer(const byte *data, long size, void *description);
+bool session_description_decode_buffer(long size, const byte *data, void *description);
 
 #endif

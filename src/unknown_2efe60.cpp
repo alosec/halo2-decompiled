@@ -78,53 +78,44 @@ public:
 };
 
 // @retail 0x2efe60
-// score 23 (was 23): retail loads the second body's position, then its shape,
-// then the first body's shape, and keeps the offset in xmm1; ours loads them
-// in the other order and keeps them in other registers. Seventy source
-// shapes (the loads in every order, the radii split and summed in other
-// ways, the values cached in locals) and the permuter's 280 tries all scored
-// 23 or worse.
 void sphere_contact_2efe60::function_2efe60(body_2efe60 const *a, body_2efe60 const *b, input_2efe60 const *input, results_2efe60 *results)
 {
 	timer_add_2ebc80("TtSphereSphere");
-	__m128 const *b_position = &b->motion->position;
-	sphere_2efe60 const *b_shape = b->shape;
 	sphere_2efe60 const *a_shape = a->shape;
-	__m128 offset = _mm_sub_ps(a->motion->position, *b_position);
-	float radius = input->tolerance + b_shape->radius + a_shape->radius;
-	float const radius_squared = radius * radius;
+	sphere_2efe60 const *b_shape = b->shape;
+	__m128 const &a_position = a->motion->position;
+	__m128 const &b_position = b->motion->position;
+	__m128 offset = _mm_sub_ps(a_position, b_position);
 	__m128 squares = _mm_mul_ps(offset, offset);
 	float distance_squared;
 	_mm_store_ss(&distance_squared, _mm_add_ss(_mm_shuffle_ps(squares, squares, 0xaa), _mm_add_ss(_mm_shuffle_ps(squares, squares, 0x55), squares)));
-	if (distance_squared < radius_squared)
+	float const radius = input->tolerance + b_shape->radius + a_shape->radius;
+	if (distance_squared < radius * radius)
 	{
-		contacts_2efe60 *contacts = results->contacts;
-		contact_2efe60 *contact = &contacts->next_slot();
+		contact_2efe60 &contact = results->contacts->next_slot();
 		float distance;
 		if (distance_squared > 0.0f)
 		{
 			float inverse = 1.0f / (float)sqrt(distance_squared);
-			distance = inverse * distance_squared;
 			__m128 scale = _mm_set_ss(inverse);
-			contact->normal = _mm_mul_ps(_mm_shuffle_ps(scale, scale, 0), offset);
-			distance = distance - (b_shape->radius + a_shape->radius);
+			contact.normal = _mm_mul_ps(_mm_shuffle_ps(scale, scale, 0), offset);
+			distance = distance_squared * inverse - (a_shape->radius + b_shape->radius);
 		}
 		else
 		{
-			contact->normal = *(__m128 const *)g_461ea0;
-			distance = -(b_shape->radius + a_shape->radius);
+			contact.normal = *(__m128 const *)g_461ea0;
+			distance = -(a_shape->radius + b_shape->radius);
 		}
-		__m128 along = _mm_set_ss(0.5f * distance + b_shape->radius);
-		contact->position = _mm_add_ps(*b_position, _mm_mul_ps(_mm_shuffle_ps(along, along, 0), contact->normal));
-		contact->position_and_distance[3] = distance;
+		__m128 along = _mm_set_ss(distance * 0.5f + b_shape->radius);
+		contact.position = _mm_add_ps(b_position, _mm_mul_ps(_mm_shuffle_ps(along, along, 0), contact.normal));
+		contact.position_and_distance[3] = distance;
 		if (id == 0xffff)
 		{
-			id = owner->add_contact(a, b, input, contact);
+			id = owner->add_contact(a, b, input, &contact);
 		}
-		unsigned short held = id;
-		if (held != 0xffff)
+		if (id != 0xffff)
 		{
-			contact->id = held;
+			contact.id = id;
 		}
 		else
 		{

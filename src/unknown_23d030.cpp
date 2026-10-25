@@ -7,6 +7,7 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#include "normalize3d.h"
 #include <math.h>
 
 struct s_player_control_camera
@@ -123,6 +124,23 @@ struct s_free_state_23d260
 	real roll;
 };
 
+// score 118 (was 234): the rest is register allocation in the side vector
+// block: retail keeps zero in xmm1 (ours xmm3) and the side vector in
+// xmm2/xmm3/xmm4 (ours xmm1/xmm2/xmm0, retail moves side.k out of the inverse's
+// register), divides before the lahf, and stores up as k, j, i (ours k, i, j);
+// the registers after it follow. Locals `real yaw_cosine = (real)cos(yaw)` and
+// `yaw_sine` for the movement give retail's x87 sequence exactly (fmul [0x18];
+// fxch; fmul [0x1c]) but score 274 here, since the side block is then one
+// instruction short and shifts the rest: apply them once that block matches.
+// Tried: the hand-written normalize with gotos (278), normalize_inline (110 but
+// 1330 bytes, squares i first), early-return or reordered-scale normalize helpers
+// (118 / 288), cross3f(&side, &forward, &up) (277), up written i, j, k (253),
+// k, i, j (276) or j, k, i / i, k, j / j, i, k (106-111 but not 1326 bytes: they
+// spill forward.k to a parameter slot), the transforms as __forceinline helpers (322), fresh names for the
+// scaled point (373), movement operands swapped (282), the roll if/else inverted
+// (279), a cross vector in the turn about forward (277), declaration order (same)
+// score 118 (was 118): zero XMM3 versus XMM1 and normalization/side-vector allocation remain.
+// Roll-input snapshot 324; live yaw/pitch/roll fields 275/121/121; live forward/up/both fields 295/154/157; normalization result 319.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {
@@ -148,22 +166,11 @@ void __stdcall function_23d260(void *state, void *input, void *output)
 	side.i = command->forward.j;
 	side.j = -command->forward.i;
 	side.k = 0.f;
-	real length = (real)sqrt(side.j * side.j + side.i * side.i);
-	if (0.0001f > fabs(length))
-		goto side_default;
+	if (normalize3d(&side) == 0.f)
 	{
-		real inverse = 1.f / length;
-		if (length == 0.f)
-			goto side_default;
-		side.i *= inverse;
-		side.j *= inverse;
-		side.k *= inverse;
-		goto side_ready;
+		side.i = 1.f;
+		side.j = side.k = 0.f;
 	}
-side_default:
-	side.i = 1.f;
-	side.j = side.k = 0.f;
-side_ready: 
 	command->up.k = command->forward.j * side.i - side.j * command->forward.i;
 	command->up.j = side.k * command->forward.i - command->forward.k * side.i;
 	command->up.i = command->forward.k * side.j - command->forward.j * side.k;
@@ -189,31 +196,36 @@ side_ready:
 	{
 		transform4x3f matrix;
 		function_16c6f0(g_470a28, &matrix);
+		real x = movement.i;
+		real y = movement.j;
+		real z = movement.k;
 		if (matrix.scale != 1.f)
 		{
 			real inverse = 1.f / matrix.scale;
-			movement.i *= inverse;
-			movement.j *= inverse;
-			movement.k *= inverse;
+			x = inverse * x;
+			y = inverse * y;
+			z = inverse * z;
 		}
 		vector3f local;
-		local.i = matrix.forward.k * movement.k + matrix.forward.j * movement.j + matrix.forward.i * movement.i;
-		local.j = matrix.left.k * movement.k + matrix.left.j * movement.j + matrix.left.i * movement.i;
-		local.k = matrix.up.k * movement.k + matrix.up.j * movement.j + matrix.up.i * movement.i;
+		local.i = matrix.forward.k * z + matrix.forward.j * y + matrix.forward.i * x;
+		local.j = matrix.left.k * z + matrix.left.j * y + matrix.left.i * x;
+		local.k = matrix.up.k * z + matrix.up.j * y + matrix.up.i * x;
 		real speed = g_470a24;
 		g_51ec30.x += speed * local.i;
 		g_51ec30.y += speed * local.j;
 		g_51ec30.z += speed * local.k;
-		point3f scaled = g_51ec30;
+		x = g_51ec30.x;
+		y = g_51ec30.y;
+		z = g_51ec30.z;
 		if (matrix.scale != 1.f)
 		{
-			scaled.x *= matrix.scale;
-			scaled.y *= matrix.scale;
-			scaled.z *= matrix.scale;
+			x = matrix.scale * g_51ec30.x;
+			y = matrix.scale * g_51ec30.y;
+			z = matrix.scale * g_51ec30.z;
 		}
-		position.x = matrix.up.i * scaled.z + matrix.left.i * scaled.y + matrix.forward.i * scaled.x + matrix.position.x;
-		position.y = matrix.up.j * scaled.z + matrix.left.j * scaled.y + matrix.forward.j * scaled.x + matrix.position.y;
-		position.z = matrix.up.k * scaled.z + matrix.left.k * scaled.y + matrix.forward.k * scaled.x + matrix.position.z;
+		position.x = matrix.up.i * z + matrix.left.i * y + matrix.forward.i * x + matrix.position.x;
+		position.y = matrix.up.j * z + matrix.left.j * y + matrix.forward.j * x + matrix.position.y;
+		position.z = matrix.up.k * z + matrix.left.k * y + matrix.forward.k * x + matrix.position.z;
 	}
 	else
 	{

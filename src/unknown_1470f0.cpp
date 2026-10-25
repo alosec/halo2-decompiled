@@ -57,6 +57,8 @@ void *c_game_havok_memory::allocate(long size, long memory_class)
 
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
+// score 19 (was 19): retail tests the end of the block with >= and gives the second block its own
+// deallocate, ours shares the first and the second.
 // @retail 0x147160
 void c_game_havok_memory::deallocate(void *address)
 {
@@ -106,6 +108,8 @@ void *c_game_havok_memory::allocate_aligned(long alignment, long size, long memo
 }
 
 #pragma intrinsic(_ReadWriteBarrier)
+// score 19 (was 19): retail tests the end of the block with >= and gives the second block its own
+// deallocate, ours shares the first and the second.
 // @retail 0x147240
 void c_game_havok_memory::deallocate_aligned(void *address)
 {
@@ -154,6 +158,20 @@ void *c_game_havok_memory::allocate16(long size, long memory_class)
 	return result;
 }
 
+// score 36 (was 36): First upper-bound branch pair and EAX bound reuse still differ; shared bounds 36;
+// outer bounds 36; shared bounds with delayed fixed receiver 43; numeric bounds 36;
+// shared upper/lower 36/36; read-only bounds 36; shared bounds with exits 45.
+// Fixed membership 95; paired memberships 146; independent pool/fixed/physical bounds 106/48/48;
+// all independent bounds 134; separate pool-bound decisions 36; eager memberships 114.
+// First upper-bound branch pair, EAX bound reuse and shared-dispatch placement still differ.
+// first upper-bound branch pair is missing and bound
+// registers differ. Typed pool bounds 36; typed bounds and pool dispatch 73;
+// direct pool fields 36; typed bounds with delayed fixed receiver 43; fixed
+// object size 36; physical object reference 36; pool object reference 36;
+// typed fixed receiver 36.
+// Shared inclusive begin/end helper 43; begin/size helper 44; helper with the fixed
+// receiver 36; begin/size helper with early returns 44; size-first end 43. Retail's
+// jge/jne pair and EAX ends come only from a second (equality) test of each end.
 // @retail 0x147320
 void c_game_havok_memory::deallocate16(void *address, long size, long memory_class)
 {
