@@ -1188,6 +1188,14 @@ void state_reset(h2_d3d_device *d)
 
 } // namespace
 
+/* a printf-style line to the host log for temporary diagnostics in src/; declare it
+   there as extern "C" void h2_probe(char const *, unsigned, unsigned, unsigned).
+   (log_message above is internal: a src/ declaration of it links to a silent stub) */
+extern "C" void h2_probe(char const *format, unsigned a, unsigned b, unsigned c)
+{
+    log_message(format, a, b, c);
+}
+
 /* Direct3D */
 
 extern "C" void __stdcall Direct3D_SetPushBufferSize(DWORD push_buffer_size, DWORD kickoff_size)

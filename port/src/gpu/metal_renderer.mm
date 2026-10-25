@@ -76,7 +76,9 @@ std::array<float, 4> unpack_argb(std::uint32_t color) {
 
 const char* kEntryPoints = R"msl(
 struct H2Varyings {
-    float4 position [[position]];
+    /* invariant: the title draws a surface in several passes with different
+       vertex programs and tests depth EQUAL against the first pass */
+    float4 position [[position, invariant]];
     float4 diffuse;
     float4 specular;
     float4 back_diffuse;
@@ -396,18 +398,29 @@ private:
     /* where draws go: the back buffer, or a surface the game renders to
        (keyed by its texels' guest address, where a texture header that
        samples it will point) */
+    /* a depth/stencil buffer. The game binds one separately from the colour
+       target (SetRenderTarget's z surface), and several colour targets can
+       share it: the lighting pass of a model draws into an off-screen target
+       with the back buffer's depth, and the colour pass after it tests EQUAL
+       against that depth */
+    struct DepthBuffer {
+        id<MTLTexture> texture = nil;
+        int width = 0, height = 0;   /* Metal pixels */
+        bool has_content = false;
+        bool pending_depth_clear = false;
+        bool pending_stencil_clear = false;
+        double clear_depth = 1.0;
+        std::uint32_t clear_stencil = 0;
+    };
+
     struct Target {
         id<MTLTexture> color = nil;
-        id<MTLTexture> depth = nil;
+        DepthBuffer own_depth;   /* used when the game binds no depth surface */
         int width = 0, height = 0;               /* Metal pixels */
         int guest_width = 0, guest_height = 0;   /* the game's pixels */
         bool has_content = false;
         bool pending_color_clear = false;
-        bool pending_depth_clear = false;
-        bool pending_stencil_clear = false;
         MTLClearColor clear_color = MTLClearColorMake(0, 0, 0, 1);
-        double clear_depth = 1.0;
-        std::uint32_t clear_stencil = 0;
         id<MTLTexture> snapshot = nil;   /* a copy to sample while drawing into it */
         /* the guest memory under the target, hashed each frame it is drawn
            into: when it differs at a later sampling, the game has put a new
@@ -447,12 +460,15 @@ public:
         depth.usage = MTLTextureUsageRenderTarget;
         depth.storageMode = MTLStorageModePrivate;
         back_.color = color_;
-        back_.depth = [device_ newTextureWithDescriptor:depth];
+        back_.own_depth.texture = [device_ newTextureWithDescriptor:depth];
+        back_.own_depth.width = width_;
+        back_.own_depth.height = height_;
         back_.width = width_;
         back_.height = height_;
         back_.guest_width = kGuestWidth;
         back_.guest_height = kGuestHeight;
         current_ = &back_;
+        current_depth_ = &back_.own_depth;
         frame_buffers_.push_back([device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared]);
         if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error))
             return false;
@@ -503,10 +519,11 @@ public:
         if (color && clear_write_mask(packet) != MTLColorWriteMaskAll)
             whole = false;
         if (!whole) {
-            clear_rectangles(*target, packet, guest_width, guest_height);
+            clear_rectangles(*target, depth_for(*target, packet.depth_stencil), packet, guest_width, guest_height);
             return;
         }
-        if (target == current_)
+        DepthBuffer* depth_buffer = depth_for(*target, packet.depth_stencil);
+        if (target == current_ || depth_buffer == current_depth_)
             end_encoder();
         if (color) {
             target->pending_color_clear = true;
@@ -514,12 +531,12 @@ public:
             target->clear_color = MTLClearColorMake(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
         if (depth) {
-            target->pending_depth_clear = true;
-            target->clear_depth = std::clamp(packet.depth, 0.0f, 1.0f);
+            depth_buffer->pending_depth_clear = true;
+            depth_buffer->clear_depth = std::clamp(packet.depth, 0.0f, 1.0f);
         }
         if (stencil) {
-            target->pending_stencil_clear = true;
-            target->clear_stencil = packet.stencil & 0xff;
+            depth_buffer->pending_stencil_clear = true;
+            depth_buffer->clear_stencil = packet.stencil & 0xff;
         }
     }
 
@@ -539,12 +556,10 @@ public:
 
     /* clears of parts of a target: a quad per rectangle, writing the clear
        values through scissors */
-    void clear_rectangles(Target& target, const h2_gpu_clear& packet, int guest_width, int guest_height) {
+    void clear_rectangles(Target& target, DepthBuffer* depth_buffer, const h2_gpu_clear& packet, int guest_width,
+                          int guest_height) {
         @autoreleasepool {
-            if (&target != current_) {
-                end_encoder();
-                current_ = &target;
-            }
+            bind(&target, depth_buffer);
             begin_encoder();
             const bool depth = packet.flags & 2;
             const bool stencil = packet.flags & 4;
@@ -616,6 +631,22 @@ public:
                          packet.color_write_mask, packet.viewport_x, packet.viewport_y, packet.viewport_width,
                          packet.viewport_height, packet.textures[0].data, packet.back_buffer_data,
                          packet.front_buffer_data);
+        /* the frame trace also saves each draw's vertex constants (192 float4s) */
+        if (tracing_frame() && packet.vertex_constants) {
+            if (const char* dump_dir = std::getenv("H2_TRACE_DUMP")) {
+                char path[512];
+                std::snprintf(path, sizeof(path), "%s/c-%04d.bin", dump_dir, frame_draw);
+                if (FILE* file = std::fopen(path, "wb")) {
+                    std::fwrite(guest<float>(packet.vertex_constants), 16, 192, file);
+                    std::fclose(file);
+                }
+                std::snprintf(path, sizeof(path), "%s/p-%04d.bin", dump_dir, frame_draw);
+                if (FILE* file = std::fopen(path, "wb")) {
+                    std::fwrite(&packet, sizeof(packet), 1, file);
+                    std::fclose(file);
+                }
+            }
+        }
         if (tracing_frame() && packet.vertex_source == H2_GPU_VERTICES_INLINE) {
             const auto* v = guest<float>(packet.inline_vertices);
             for (std::uint32_t i = 0; v && i < std::min<std::uint32_t>(packet.inline_vertex_count, 4); ++i) {
@@ -646,10 +677,7 @@ public:
         }
         if (packet.vertex_count == 0)
             return;
-        if (target != current_) {
-            end_encoder();
-            current_ = target;
-        }
+        bind(target, depth_for(*target, packet.depth_stencil));
         @autoreleasepool {
             if (!encode_draw(packet))
                 ++stats_.draws_failed;
@@ -714,10 +742,7 @@ public:
         ++presented_;
         @autoreleasepool {
             begin_command_buffer();
-            if (current_ != &back_) {
-                end_encoder();
-                current_ = &back_;
-            }
+            bind(&back_, depth_for(back_, back_depth_surface_));
             if (!encoder_)
                 begin_encoder();   /* flush any pending clear */
             end_encoder();
@@ -939,19 +964,20 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             t.pending_color_clear ? MTLLoadActionClear : (t.has_content ? MTLLoadActionLoad : MTLLoadActionClear);
         pass.colorAttachments[0].clearColor = t.pending_color_clear ? t.clear_color : MTLClearColorMake(0, 0, 0, 1);
         pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-        pass.depthAttachment.texture = t.depth;
+        DepthBuffer& d = current_depth_ ? *current_depth_ : t.own_depth;
+        pass.depthAttachment.texture = d.texture;
         pass.depthAttachment.loadAction =
-            t.pending_depth_clear || !t.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
-        pass.depthAttachment.clearDepth = t.pending_depth_clear ? t.clear_depth : 1.0;
+            d.pending_depth_clear || !d.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
+        pass.depthAttachment.clearDepth = d.pending_depth_clear ? d.clear_depth : 1.0;
         pass.depthAttachment.storeAction = MTLStoreActionStore;
-        pass.stencilAttachment.texture = t.depth;
+        pass.stencilAttachment.texture = d.texture;
         pass.stencilAttachment.loadAction =
-            t.pending_stencil_clear || !t.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
-        pass.stencilAttachment.clearStencil = t.pending_stencil_clear ? t.clear_stencil : 0;
+            d.pending_stencil_clear || !d.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
+        pass.stencilAttachment.clearStencil = d.pending_stencil_clear ? d.clear_stencil : 0;
         pass.stencilAttachment.storeAction = MTLStoreActionStore;
         encoder_ = [command_buffer_ renderCommandEncoderWithDescriptor:pass];
-        t.pending_color_clear = t.pending_depth_clear = t.pending_stencil_clear = false;
-        t.has_content = true;
+        t.pending_color_clear = d.pending_depth_clear = d.pending_stencil_clear = false;
+        t.has_content = d.has_content = true;
     }
 
     void end_encoder() {
@@ -1128,16 +1154,30 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         }
         key = hash_bytes(program + start * 4, (end - start) * 16, 0x9e3779b97f4a7c15ull);
         auto found = vertex_cache_.find(key);
-        if (found != vertex_cache_.end())
-            return found->second;
-        VertexProgramInfo info = translate_vertex_program(program, packet.vertex_program_length, start);
-        if (!info.error.empty()) {
-            std::fprintf(stderr, "h2-gpu: vertex program at %zu: %s\n", start, info.error.c_str());
-            ok = false;
-            return {};
+        if (found == vertex_cache_.end()) {
+            VertexProgramInfo info = translate_vertex_program(program, packet.vertex_program_length, start);
+            if (!info.error.empty()) {
+                std::fprintf(stderr, "h2-gpu: vertex program at %zu: %s\n", start, info.error.c_str());
+                ok = false;
+                return {};
+            }
+            found = vertex_cache_.emplace(key, info.source).first;
         }
-        vertex_cache_.emplace(key, info.source);
-        return info.source;
+        /* the frame trace names each draw's vertex program and saves its translation */
+        if (tracing_frame()) {
+            std::fprintf(stderr, "h2-frame:   vs %016llx (%zu instructions)\n",
+                         static_cast<unsigned long long>(key), end - start);
+            if (const char* dump_dir = std::getenv("H2_TRACE_DUMP")) {
+                char path[512];
+                std::snprintf(path, sizeof(path), "%s/vs-%016llx.metal", dump_dir,
+                              static_cast<unsigned long long>(key));
+                if (FILE* file = std::fopen(path, "w")) {
+                    std::fwrite(found->second.data(), 1, found->second.size(), file);
+                    std::fclose(file);
+                }
+            }
+        }
+        return found->second;
     }
 
     std::string pixel_source(const h2_gpu_draw& packet, const PixelShaderContext& context, std::uint64_t& key,
@@ -1192,6 +1232,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             NSError* failure = nil;
             MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
             options.mathMode = MTLMathModeSafe;
+            options.preserveInvariance = YES;
             library = [device_ newLibraryWithSource:@(source.c_str()) options:options error:&failure];
             if (!library) {
                 std::fprintf(stderr, "h2-gpu: shader compile failed: %s\n",
@@ -1321,16 +1362,65 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         return hash;
     }
 
+    DepthBuffer make_depth(int width, int height) {
+        DepthBuffer buffer;
+        MTLTextureDescriptor* descriptor = [MTLTextureDescriptor
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float_Stencil8 width:width height:height mipmapped:NO];
+        descriptor.usage = MTLTextureUsageRenderTarget;
+        descriptor.storageMode = MTLStorageModePrivate;
+        buffer.texture = [device_ newTextureWithDescriptor:descriptor];
+        buffer.width = width;
+        buffer.height = height;
+        return buffer;
+    }
+
+    /* the depth buffer a pass into `target` uses: the one for the game's depth
+       surface (guest address of its header), shared by every target drawn with
+       it; the target's own when no surface is bound or the sizes differ */
+    DepthBuffer* depth_for(Target& target, std::uint32_t surface) {
+        if (!surface)
+            return &target.own_depth;
+        if (&target == &back_)
+            back_depth_surface_ = surface;
+        auto found = depths_.find(surface);
+        if (found == depths_.end()) {
+            DepthBuffer buffer = make_depth(target.width, target.height);
+            if (!buffer.texture)
+                return &target.own_depth;
+            found = depths_.emplace(surface, buffer).first;
+        }
+        DepthBuffer& shared = found->second;
+        if (shared.width != target.width || shared.height != target.height) {
+            if (trace_gpu())
+                std::fprintf(stderr, "h2-gpu: depth surface %08x is %dx%d, target %dx%d: not shared\n", surface,
+                             shared.width, shared.height, target.width, target.height);
+            return &target.own_depth;
+        }
+        return &shared;
+    }
+
+    /* makes `target` with `depth` the destination of the next pass */
+    void bind(Target* target, DepthBuffer* depth) {
+        if (target == current_ && depth == current_depth_)
+            return;
+        end_encoder();
+        current_ = target;
+        current_depth_ = depth;
+    }
+
     /* a target's pixels as a texture: its pending clears done, and a copy
        when it is the target being drawn into */
     id<MTLTexture> sampleable(Target& target) {
-        if (target.pending_color_clear || target.pending_depth_clear || target.pending_stencil_clear) {
+        if (target.pending_color_clear) {
             Target* drawing = current_;
+            DepthBuffer* drawing_depth = current_depth_;
             end_encoder();
             current_ = &target;
+            current_depth_ = &target.own_depth;
             begin_encoder();
             end_encoder();
             current_ = drawing;
+            current_depth_ = drawing_depth;
         }
         if (&target != current_)
             return target.color;
@@ -1561,19 +1651,21 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
             return nullptr;
         Target target;
+        /* a screen-sized target is drawn at the back buffer's scale, so that it
+           can share the back buffer's depth */
+        const int scale = width == kGuestWidth && height == kGuestHeight ? scale_ : 1;
         MTLTextureDescriptor* color = [MTLTextureDescriptor
-            texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm width:width height:height mipmapped:NO];
+            texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm width:width * scale height:height * scale
+                                     mipmapped:NO];
         color.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
         color.storageMode = MTLStorageModePrivate;
         target.color = [device_ newTextureWithDescriptor:color];
-        MTLTextureDescriptor* depth = [MTLTextureDescriptor
-            texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float_Stencil8 width:width height:height mipmapped:NO];
-        depth.usage = MTLTextureUsageRenderTarget;
-        depth.storageMode = MTLStorageModePrivate;
-        target.depth = [device_ newTextureWithDescriptor:depth];
-        target.width = target.guest_width = width;
-        target.height = target.guest_height = height;
-        if (!target.color || !target.depth)
+        target.own_depth = make_depth(width * scale, height * scale);
+        target.width = width * scale;
+        target.height = height * scale;
+        target.guest_width = width;
+        target.guest_height = height;
+        if (!target.color || !target.own_depth.texture)
             return nullptr;
         if (trace_gpu())
             std::fprintf(stderr, "h2-gpu: render target %08x %dx%d format %08x\n", data, width, height, words[3]);
@@ -1834,6 +1926,9 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     Target back_;
     std::unordered_map<std::uint32_t, Target> targets_;
     Target* current_ = nullptr;
+    DepthBuffer* current_depth_ = nullptr;
+    std::unordered_map<std::uint32_t, DepthBuffer> depths_;   /* by the game's depth surface */
+    std::uint32_t back_depth_surface_ = 0;
     id<MTLTexture> color_ = nil;   /* back_.color */
     id<MTLTexture> placeholder_2d_ = nil;
     id<MTLTexture> placeholder_cube_ = nil;

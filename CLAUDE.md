@@ -59,6 +59,21 @@ See `port/README.md` "Play" for the full commands.
   - `H2_AUDIO_RECORD=file.wav` records the mix;
   - `H2_TRACE=audio` lists voice formats;
   - `H2_TRACE=audio-voices` gives per-voice levels.
+- **Probes in src/:** declare `extern "C" void h2_probe(char const *,
+  unsigned, unsigned, unsigned);` at file scope and call it (printf-style, up
+  to 3 values). An undefined symbol is silently stubbed by the image builder
+  (check `stubbed` in `whole-image-report.json`), so a misdeclared logger
+  prints nothing. `log_message` is internal to the D3D runtime; don't use it.
+- **Deterministic runs:** use a fresh `--profile-root` per run. A reused
+  profile keeps campaign progress, which changes the menu flow and timing.
+- **Frame trace extras:** with `H2_TRACE_DUMP`, each traced draw also saves
+  `vs-<hash>.metal` (its translated vertex program), `c-NNNN.bin` (192 vertex
+  constants) and `p-NNNN.bin` (the raw `h2_gpu_draw` packet).
+- **Offline map reading:** the scratch `h2map.py` approach (tag index at
+  header `+0x10`; names table `+0x2c4`/`+0x2cc`; meta follows the index, so
+  the address base is the lowest tag address minus (index offset + index
+  size)) lists tags by name and follows tag references, e.g. a shader to its
+  template.
 - **Tracer:** `/usr/bin/python3 port/tools/guest_breaks.py --break SYM:fmt
   --watchpoint POINTER:OFF[:OFF] | @ADDRESS -- <host command>`. Retail
   disassembly: `port/tools/retail_dis.py ADDR`.
@@ -77,6 +92,9 @@ See `port/README.md` "Play" for the full commands.
 - **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
   if the game never plays it; dialogue goes through one (fixed 625675f1).
   The Armory tutorial's "look at the light" steps need those lines.
+- **Depth surfaces.** The game binds depth separately from the colour
+  target, and several targets share one depth buffer (fixed: shared
+  depth keyed by `depth_stencil`).
 - **Xbox D3D semantics.** Clear flags are Xbox values (ZBUFFER 1, STENCIL 2,
   colour channels 0x10..0x80). Pushed draws must be parsed at EndPush, with
   the state they were pushed with. The pixel shader lives in render states
@@ -93,40 +111,29 @@ See `port/README.md` "Play" for the full commands.
   - WMA music through optional host FFmpeg.
 - **Open, from the user's first live play:**
   - many missing textures in cinematics and gameplay (the lights the
-    Armory tutorial asks you to look at draw as white bars);
+    Armory tutorial asks you to look at draw as white bars); missing bodies
+    are fixed, but change-colour surfaces are black;
   - cutscenes can't be skipped;
   - characters tinted yellow-green;
   - the difficulty-screen backdrop is missing.
 
-## Missing geometry/textures: investigation notes (2026-10-25)
+## Missing bodies ("floating heads"): solved 2026-10-25
 
-Example: on Cairo Station's intro (01b, about frame 10000) Hood's torso and a
-background officer's body are missing; heads, collar and medals draw.
-- **Not the renderer:**
-  - every texture uploads (`H2_TRACE=textures`: 1177 ok, 1 all-zero);
-  - all draws in the frame have normal state;
-  - the torso is never submitted.
-- **Not geometry streaming:** the geometry cache's requests complete; nothing
-  stays pending.
-- **Not `object_set_permutation` (built-in 110):** it only sets crew head
-  variants (region `04000095`).
-- **Section choice per LOD** (`function_4c190` -> `function_4c2b0`,
-  `src/unknown_03f2b0.cpp`): some models get `res 0` (not resident, skipped
-  that frame).
-- **Model `eb5a0927` (9 regions):** region 1 is never wanted (permutation
-  `ff`). `model_variant_region_get_choices` matches retail, so this may be
-  legitimate (an empty region).
-- **Marine model** (hlmt `eb590926` / mode `eb5a0927`): its regions are body,
-  comm_pack, head, helmet, mic_head and packs_*; variants include
-  default_nrl, odst_cky, dress_grf, johnson_dress and dress_hat. Body
-  selection and drawing are fine. Only five objects lacked a body, briefly,
-  until their geometry was resident; empty packs are legitimate.
-- **Reading string IDs offline:** the map header holds the index table at
-  `+0x16c` and the data at `+0x170`. A string ID is (length << 24) | index;
-  `0x95` is "head", `0xbf2` is "helmet".
-- **Next step:** Hood is probably a different, smaller model. Identify it, or
-  log every object drawn in the Hood shot with its model, then check its
-  regions the same way.
+Characters drawn with the `tex_bump_four_change_color` template (Hood's
+uniform, officers' dress uniforms) lost their bodies. The lighting pass of a
+model draws into an off-screen 640x480 target with the back buffer's depth
+surface, writing depth, and the colour pass then tests depth EQUAL on the back
+buffer. The renderer gave every target a private depth texture, so the colour
+pass tested against depth that never saw the first pass. Fix: depth buffers
+are keyed by the game's depth surface (`h2_gpu_draw::depth_stencil`) and
+shared; screen-sized targets render at the back buffer's scale so they can
+share it. Heads survived only because other passes had already written their
+depth. How it was found: the frame trace showed the torso draws were submitted
+(an earlier note claiming they weren't was wrong), and forcing EQUAL to
+LESS_EQUAL brought the bodies back.
+
+Still open there: change-colour surfaces (uniforms, Master Chief's armour)
+come out flat black.
 
 ## Upstream contribution
 
