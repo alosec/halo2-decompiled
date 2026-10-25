@@ -39,8 +39,9 @@ See `port/README.md` "Play" for the full commands.
 
 ## Testing and verification
 
-- **Unit tests:** `cd build/release && ctest -R "gpu-|audio-"` runs the pixel
-  shader, vertex program, texture format, mixer/ADPCM and WMA decoder tests.
+- **Unit tests:** `cd build/release && ctest -R "gpu-|audio-|abi-"` runs the pixel
+  shader, vertex program, texture format, mixer/ADPCM and WMA decoder tests,
+  and `port/tools/audit_function_casts.py` (float/int function casts).
   The older menu-track tests need the legacy build, which is currently
   broken (`guest_crt.c` redefines `_ReadWriteBarrier` under LLVM 22).
 - **One game at a time.** Trial runs are silent and hidden:

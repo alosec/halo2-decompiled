@@ -3568,6 +3568,13 @@ add_test(NAME gpu-vertex-program COMMAND h2-vertex-program-tests)
 add_test(NAME gpu-texture-formats COMMAND h2-texture-format-tests)
 add_test(NAME audio-mixer-adpcm COMMAND h2-audio-tests)
 add_test(NAME audio-wma-decoder COMMAND h2-wma-decoder-tests ${CMAKE_CURRENT_BINARY_DIR})
+# float/int function-cast mismatches, which break on ARM64 only (see the tool)
+if(H2_LLVM_ROOT)
+    add_test(NAME abi-function-casts
+             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/audit_function_casts.py"
+                     --llvm "${H2_LLVM_ROOT}/bin"
+             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+endif()
 set_tests_properties(audio-wma-decoder PROPERTIES SKIP_RETURN_CODE 77)
 set(H2_GUEST_ELF_LOADER_FIXTURE_OBJECT
     "${CMAKE_BINARY_DIR}/port/guest-elf-loader-fixture.o")
