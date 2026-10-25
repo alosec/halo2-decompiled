@@ -69,7 +69,7 @@ See `port/README.md` "Play" for the full commands.
 - **Frame trace extras:** with `H2_TRACE_DUMP`, each traced draw also saves
   `vs-<hash>.metal` (its translated vertex program), `c-NNNN.bin` (192 vertex
   constants) and `p-NNNN.bin` (the raw `h2_gpu_draw` packet).
-- **Offline map reading:** the scratch `h2map.py` approach (tag index at
+- **Offline map reading:** `port/tools/h2_map.py MAP [name...]` (tag index at
   header `+0x10`; names table `+0x2c4`/`+0x2cc`; meta follows the index, so
   the address base is the lowest tag address minus (index offset + index
   size)) lists tags by name and follows tag references, e.g. a shader to its
