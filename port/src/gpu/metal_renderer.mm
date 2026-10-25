@@ -36,6 +36,7 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <set>
 #include <vector>
 
 namespace h2::gpu {
@@ -1384,16 +1385,23 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         const auto* data = guest<std::uint8_t>(stage.data);
         if (!data || !arena_.host_range_accessible(data, description.total_size, false))
             return nullptr;
-        { /* H2_TRACE_TEXTURE=data (hex) with H2_TRACE_DUMP=dir: that texture's raw
-             guest bytes in the traced frame, named with its size and pitch */
+        { /* H2_TRACE_TEXTURE=data (hex, or all) with H2_TRACE_DUMP=dir: that texture's raw
+             guest bytes in the traced frame, named with its size and pitch, and its
+             palette's 256 entries */
             static const char* want = std::getenv("H2_TRACE_TEXTURE");
-            static std::uint64_t dumped = ~0ull;
-            if (want && tracing_frame() && dumped != frame_ && std::strtoul(want, nullptr, 16) == stage.data) {
-                dumped = frame_;
+            static std::set<std::uint32_t> dumped;
+            const bool all = want && !std::strcmp(want, "all");
+            if (want && tracing_frame() && (all || std::strtoul(want, nullptr, 16) == stage.data) &&
+                dumped.insert(stage.data).second) {
                 char path[256];
                 std::snprintf(path, sizeof(path), "%s/tex-%08x-%ux%u-p%u.raw", std::getenv("H2_TRACE_DUMP"), stage.data,
                               description.width, description.height, description.pitch);
                 if (FILE* f = std::fopen(path, "wb")) { std::fwrite(data, 1, description.total_size, f); std::fclose(f); }
+                /* and the palette it is drawn with */
+                if (const auto* palette = stage.palette ? guest<std::uint8_t>(stage.palette) : nullptr) {
+                    std::snprintf(path, sizeof(path), "%s/pal-%08x.raw", std::getenv("H2_TRACE_DUMP"), stage.palette);
+                    if (FILE* f = std::fopen(path, "wb")) { std::fwrite(palette, 1, 1024, f); std::fclose(f); }
+                }
             }
         }
         const std::uint64_t key = (static_cast<std::uint64_t>(stage.data) << 32) ^ stage.format ^
