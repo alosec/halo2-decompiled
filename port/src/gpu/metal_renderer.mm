@@ -528,7 +528,12 @@ public:
             clear_rectangles(*target, depth_for(*target, packet.depth_stencil), packet, guest_width, guest_height);
             return;
         }
+        /* depth and stencil clears go to the bound depth surface, whatever the
+           colour target: the game clears depth for first-person models
+           through a dummy 512x512 colour surface */
         DepthBuffer* depth_buffer = depth_for(*target, packet.depth_stencil);
+        if (auto shared = depths_.find(packet.depth_stencil); packet.depth_stencil && shared != depths_.end())
+            depth_buffer = &shared->second;
         if (target == current_ || depth_buffer == current_depth_)
             end_encoder();
         if (color) {
@@ -1812,6 +1817,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
            in clip space */
         [encoder_ setFrontFacingWinding:MTLWindingCounterClockwise];
         [encoder_ setTriangleFillMode:packet.fill_wireframe ? MTLTriangleFillModeLines : MTLTriangleFillModeFill];
+        /* D3DRS_BLENDCOLOR, for the constant blend factors (the atmosphere pass
+           adds its fog over dst * the constant) */
+        const auto constant = unpack_argb(packet.blend_constant);
+        [encoder_ setBlendColorRed:constant[0] green:constant[1] blue:constant[2] alpha:constant[3]];
         if (packet.depth_bias != 0.0f || packet.depth_slope_scale != 0.0f)
             [encoder_ setDepthBias:packet.depth_bias / kDepthUnits slopeScale:packet.depth_slope_scale clamp:0.0f];
         else
