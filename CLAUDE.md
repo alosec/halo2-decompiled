@@ -92,6 +92,13 @@ See `port/README.md` "Play" for the full commands.
 - **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
   if the game never plays it; dialogue goes through one (fixed 625675f1).
   The Armory tutorial's "look at the light" steps need those lines.
+- **Local type redefinitions in port-made `*_native.cpp` duplicates.** A
+  file that declares its own copy of a shared type with a different layout
+  silently breaks every call that crosses into code using the real one
+  (`color4f` is alpha first; a local {r,g,b,a} copy shifted every
+  colour-range constant one channel: the yellow-green tint). Include the
+  shared header instead. Duplicates win over `src/` copies in the image
+  (see `overridden` in `whole-image-report.json`), so check those first.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
@@ -111,10 +118,10 @@ See `port/README.md` "Play" for the full commands.
   - WMA music through optional host FFmpeg.
 - **Open, from the user's first live play:**
   - many missing textures in cinematics and gameplay (the lights the
-    Armory tutorial asks you to look at draw as white bars); missing bodies
-    are fixed, but change-colour surfaces are black;
+    Armory tutorial asks you to look at draw as white bars); missing bodies,
+    black change colours and the yellow-green tint are fixed;
+  - white flash frames in cinematics;
   - cutscenes can't be skipped;
-  - characters tinted yellow-green;
   - the difficulty-screen backdrop is missing.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
@@ -132,8 +139,9 @@ depth. How it was found: the frame trace showed the torso draws were submitted
 (an earlier note claiming they weren't was wrong), and forcing EQUAL to
 LESS_EQUAL brought the bodies back.
 
-Still open there: change-colour surfaces (uniforms, Master Chief's armour)
-come out flat black.
+The follow-on black change-colour surfaces were the scaled lighting target
+read with unscaled texel coordinates (fixed 3524f814), and the yellow-green
+tint was a local `color4f` with the wrong field order (fixed 4f16c747).
 
 ## Upstream contribution
 
