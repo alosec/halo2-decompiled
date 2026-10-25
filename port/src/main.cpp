@@ -1075,11 +1075,15 @@ void apply_button(GameSession& session, const std::string& name, bool down) {
     for (int index = 0; index < 8; ++index)
         if (name == analog[index])
             session.analog[index] = down ? 0xff : 0;
-    /* thumbsticks, fully over: lx+/lx- ly+/ly- rx+/rx- ry+/ry- (y+ is up) */
+    /* thumbsticks: lx+/lx- ly+/ly- rx+/rx- ry+/ry- fully over (y+ is up), or
+       part way with a percentage after the sign (rx+25) */
     static const char* sticks[] = {"lx", "ly", "rx", "ry"};
     for (int index = 0; index < 4; ++index)
-        if (name.size() == 3 && name.compare(0, 2, sticks[index]) == 0 && (name[2] == '+' || name[2] == '-'))
-            session.thumbs[index] = down ? static_cast<std::int16_t>(name[2] == '+' ? 32767 : -32767) : 0;
+        if (name.size() >= 3 && name.compare(0, 2, sticks[index]) == 0 && (name[2] == '+' || name[2] == '-')) {
+            const int percent = name.size() > 3 ? std::clamp(std::atoi(name.c_str() + 3), 0, 100) : 100;
+            const int value = 32767 * percent / 100;
+            session.thumbs[index] = down ? static_cast<std::int16_t>(name[2] == '+' ? value : -value) : 0;
+        }
 }
 
 void update_input(GameSession& session) {
