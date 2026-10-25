@@ -164,20 +164,33 @@ unsigned mac_slots(unsigned op) {
    the CPU). Semantics follow [SPEC] section 2.14.1.10 and, for RCC,
    NV_vertex_program1_1. */
 constexpr const char* kHelpers = R"msl(
+/* the spec's multiply: 0 times anything, infinity and NaN included, is 0.
+   The game relies on it (first-person models' lighting constants hold
+   infinities that only ever meet zeros). */
+inline float h2vp_m(float a, float b) {
+    return (a == 0.0f || b == 0.0f) ? 0.0f : a * b;
+}
+inline float4 h2vp_mul(float4 a, float4 b) {
+    return float4(h2vp_m(a.x, b.x), h2vp_m(a.y, b.y), h2vp_m(a.z, b.z), h2vp_m(a.w, b.w));
+}
+inline float4 h2vp_mad(float4 a, float4 b, float4 c) {
+    return float4(h2vp_m(a.x, b.x) + c.x, h2vp_m(a.y, b.y) + c.y,
+                  h2vp_m(a.z, b.z) + c.z, h2vp_m(a.w, b.w) + c.w);
+}
 inline float4 h2vp_dp3(float4 a, float4 b) {
-    float d = a.x * b.x + a.y * b.y + a.z * b.z;
+    float d = h2vp_m(a.x, b.x) + h2vp_m(a.y, b.y) + h2vp_m(a.z, b.z);
     return float4(d, d, d, d);
 }
 inline float4 h2vp_dph(float4 a, float4 b) {
-    float d = a.x * b.x + a.y * b.y + a.z * b.z + b.w;
+    float d = h2vp_m(a.x, b.x) + h2vp_m(a.y, b.y) + h2vp_m(a.z, b.z) + b.w;
     return float4(d, d, d, d);
 }
 inline float4 h2vp_dp4(float4 a, float4 b) {
-    float d = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+    float d = h2vp_m(a.x, b.x) + h2vp_m(a.y, b.y) + h2vp_m(a.z, b.z) + h2vp_m(a.w, b.w);
     return float4(d, d, d, d);
 }
 inline float4 h2vp_dst(float4 a, float4 b) {
-    return float4(1.0f, a.y * b.y, a.z, b.w);
+    return float4(1.0f, h2vp_m(a.y, b.y), a.z, b.w);
 }
 inline float4 h2vp_min(float4 a, float4 b) {
     return float4(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y,
@@ -373,9 +386,9 @@ struct Generator {
         std::string mac;
         switch (in.mac) {
         case MAC_MOV: mac = "sA"; break;
-        case MAC_MUL: mac = "sA * sB"; break;
+        case MAC_MUL: mac = "h2vp_mul(sA, sB)"; break;
         case MAC_ADD: mac = "sA + sC"; break;
-        case MAC_MAD: mac = "sA * sB + sC"; break;
+        case MAC_MAD: mac = "h2vp_mad(sA, sB, sC)"; break;
         case MAC_DP3: mac = "h2vp_dp3(sA, sB)"; break;
         case MAC_DPH: mac = "h2vp_dph(sA, sB)"; break;
         case MAC_DP4: mac = "h2vp_dp4(sA, sB)"; break;

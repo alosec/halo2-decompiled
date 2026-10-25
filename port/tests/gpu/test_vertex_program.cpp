@@ -175,6 +175,8 @@ Ins decode(const std::uint32_t* w) {
 }
 
 float spec_rcp(float x) { return x == 1.0f ? 1.0f : 1.0f / x; }
+/* [SPEC] 2.14.1.10: 0 times anything, infinity and NaN included, is 0 */
+float spec_mul(float a, float b) { return (a == 0.0f || b == 0.0f) ? 0.0f : a * b; }
 
 Result interpret(const std::uint32_t* words, size_t count, size_t start, const Inputs& io) {
     V4 r[13];          /* r12 = oPos */
@@ -202,16 +204,16 @@ Result interpret(const std::uint32_t* words, size_t count, size_t start, const I
         V4 A = read(0), B = read(1), C = read(2);
         bool have_mac = true, have_ilu = true;
         V4 m, u;
-        auto dot = [](const V4& a, const V4& b, int n) { float d = 0; for (int i = 0; i < n; ++i) d = d + a.v[i] * b.v[i]; return d; };
+        auto dot = [](const V4& a, const V4& b, int n) { float d = 0; for (int i = 0; i < n; ++i) d = d + spec_mul(a.v[i], b.v[i]); return d; };
         switch (in.mac) {
         case MOV: m = A; break;
-        case MUL: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] * B.v[i]; break;
+        case MUL: for (int i = 0; i < 4; ++i) m.v[i] = spec_mul(A.v[i], B.v[i]); break;
         case ADD: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] + C.v[i]; break;
-        case MAD: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] * B.v[i] + C.v[i]; break;
+        case MAD: for (int i = 0; i < 4; ++i) m.v[i] = spec_mul(A.v[i], B.v[i]) + C.v[i]; break;
         case DP3: m = splat(dot(A, B, 3)); break;
         case DPH: m = splat(dot(A, B, 3) + B.v[3]); break;
         case DP4: m = splat(dot(A, B, 4)); break;
-        case DST: m = vec(1.0f, A.v[1] * B.v[1], A.v[2], B.v[3]); break;
+        case DST: m = vec(1.0f, spec_mul(A.v[1], B.v[1]), A.v[2], B.v[3]); break;
         case MIN: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] < B.v[i] ? A.v[i] : B.v[i]; break;
         case MAX: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] >= B.v[i] ? A.v[i] : B.v[i]; break;
         case SLT: for (int i = 0; i < 4; ++i) m.v[i] = A.v[i] < B.v[i] ? 1.0f : 0.0f; break;
@@ -527,6 +529,21 @@ std::vector<Case> make_cases() {
         [=](const Result& r, const char* who) { EXPECT_V4(r.d0, splat(3.0f - 0.5f - 3.0f + 2.0f)); });
     add("mac_dst", {mac_to_d0(DST, input(), cnst(), input())}, io,
         [=](const Result& r, const char* who) { EXPECT_V4(r.d0, vec(1.0f, -0.5f, 3.0f, 4.0f)); });
+    {
+        /* 0 times infinity or NaN is 0 (the game's first-person lighting
+           constants hold infinities that only meet zeros) */
+        Inputs z = io;
+        z.v[1] = vec(0.0f, 0.0f, 2.0f, 0.0f);
+        z.c[100] = vec(INFINITY, NAN, 3.0f, -INFINITY);
+        add("zero_times_inf_mul", {mac_to_d0(MUL, input(), cnst(), input())}, z,
+            [=](const Result& r, const char* who) { EXPECT_V4(r.d0, vec(0.0f, 0.0f, 6.0f, 0.0f)); });
+        add("zero_times_inf_mad", {mac_to_d0(MAD, input(), cnst(), input())}, z,
+            [=](const Result& r, const char* who) { EXPECT_V4(r.d0, vec(0.0f, 0.0f, 8.0f, 0.0f)); });
+        add("zero_times_inf_dp4", {mac_to_d0(DP4, input(), cnst(), input())}, z,
+            [=](const Result& r, const char* who) { EXPECT_V4(r.d0, splat(6.0f)); });
+        add("zero_times_inf_dp3", {mac_to_d0(DP3, input(), cnst(), input())}, z,
+            [=](const Result& r, const char* who) { EXPECT_V4(r.d0, splat(6.0f)); });
+    }
     add("mac_min", {mac_to_d0(MIN, input(), cnst(), input())}, io,
         [=](const Result& r, const char* who) { EXPECT_V4(r.d0, vec(1.5f, -2.0f, -1.0f, 0.5f)); });
     add("mac_max", {mac_to_d0(MAX, input(), cnst(), input())}, io,

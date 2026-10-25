@@ -57,8 +57,10 @@ game's own programs:
 - **ARL.** It uses the spec's `floor`, with no bias.
 - **Overlapping writes.** If the MAC writes r1 and the ILU also writes r1 with
   overlapping masks, the ILU value wins. This order is our choice.
-- **Spec rule not applied.** The spec's "0 * anything = 0" rule is not
-  implemented, because MSL multiplication follows IEEE.
+- **0 times anything is 0.** The spec's rule is applied in MUL, MAD, the dot
+  products and DST (`h2vp_m`); IEEE multiplication would give NaN for 0 * inf.
+  The game relies on it: first-person models' lighting constants hold
+  infinities, and with IEEE products the arms rendered black.
 - **EXP and LOG precision.** EXP.z and LOG.z are computed at full precision,
   which the spec allows. LOG takes its exponent and mantissa from the float
   bits.
