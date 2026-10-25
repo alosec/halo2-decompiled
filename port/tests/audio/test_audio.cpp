@@ -491,6 +491,32 @@ void test_effect_send_bus() {
           "effect sends reach the speakers through the bus reading them");
 }
 
+/* the game routes dialogue into a submix it never plays: the bus still
+   passes its input, and pausing it silences it */
+void test_unplayed_bus() {
+    Memory memory;
+    Mixer mixer(memory.resolver());
+    mixer.command(create(30, H2_AUDIO_VOICE_BUFFER | H2_AUDIO_VOICE_MIXIN, 0, 0, 0, 0, {{0, 0}, {1, 0}}));
+    const std::uint32_t address = memory.add(pcm16(std::vector<std::int16_t>(9600, 16384)));
+    mixer.command(create(0x1003, H2_AUDIO_VOICE_STREAM, H2_AUDIO_FORMAT_PCM, 1, 48000, 16, {{0, 0}, {1, 0}}));
+    h2_audio_command output = make(H2_AUDIO_SET_OUTPUT, 0x1003);
+    output.offset = 30;
+    mixer.command(output);
+    h2_audio_command submit = make(H2_AUDIO_SUBMIT, 0x1003);
+    submit.address = address;
+    submit.size = 19200;
+    mixer.command(submit);
+    auto out = render(mixer, 512);
+    check(near(out[300 * 2], 0.5f, 1e-4f) && near(out[300 * 2 + 1], 0.5f, 1e-4f),
+          "submix: a bus never played still passes what is routed into it");
+    h2_audio_command pause = make(H2_AUDIO_PAUSE, 30);
+    pause.flags = 1;
+    mixer.command(pause);
+    out = render(mixer, 512);
+    check(near(out[300 * 2], 0.0f, 1e-6f) && near(out[300 * 2 + 1], 0.0f, 1e-6f),
+          "submix: a paused bus is silent");
+}
+
 void test_clock() {
     Memory memory;
     Mixer mixer(memory.resolver());
@@ -549,6 +575,7 @@ int main() {
     test_adpcm_stream_split_packets();
     test_3d_and_bus();
     test_effect_send_bus();
+    test_unplayed_bus();
     test_clock();
     test_threads();
     std::printf("%d/%d checks passed\n", checks - failures, checks);

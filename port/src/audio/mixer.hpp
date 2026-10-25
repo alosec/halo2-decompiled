@@ -17,11 +17,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <deque>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace h2::audio {
@@ -65,6 +67,8 @@ public:
 
 private:
     struct Voice;
+    /* H2_TRACE=audio-voices: a voice's playback, reported as it ends */
+    static void trace_voice_end(const Voice& voice, const char* why);
     struct Listener {
         float position[3] = {0, 0, 0};
         float front[3] = {0, 0, 1};
@@ -95,6 +99,13 @@ private:
     MemoryResolver resolver_;
     std::mutex mutex_;
     std::unordered_map<std::uint32_t, std::unique_ptr<Voice>> voices_;
+    std::unordered_set<std::uint64_t> traced_formats_;  /* H2_TRACE=audio */
+    /* H2_AUDIO_RECORD */
+    void record_open();
+    void record_patch();
+    std::FILE* record_ = nullptr;
+    std::uint64_t record_bytes_ = 0;
+    std::uint64_t record_blocks_ = 0;
     std::vector<Voice*> order_;   /* sources first, then buses */
     bool order_dirty_ = true;
     Listener listener_;

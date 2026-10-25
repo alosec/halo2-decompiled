@@ -18,6 +18,8 @@
  * buses with that input bin read, standing in for the DSP effect as a dry
  * pass-through. */
 #include "audio/mixer.hpp"
+#include <cstdlib>
+#include <cstdio>
 
 #include "audio/xbox_adpcm.hpp"
 
@@ -47,8 +49,23 @@ float millibels_to_gain(std::int32_t millibels) {
     return std::pow(10.0f, static_cast<float>(millibels) / 2000.0f);
 }
 
+/* H2_TRACE=audio-voices: each voice's life (frames rendered, loudest
+   output) at its release */
+bool trace_voices() {
+    static const bool on = [] {
+        const char* trace = std::getenv("H2_TRACE");
+        return trace && std::strstr(trace, "audio-voices");
+    }();
+    return on;
+}
+
 struct Mixer::Voice {
     std::uint32_t id = 0;
+    std::uint64_t traced_frames = 0;
+    float traced_peak = 0.0f;
+    float traced_source_peak = 0.0f;
+    std::uint32_t traced_unreadable = 0;
+    std::uint32_t traced_zero_submit = 0, traced_zero_play = 0, traced_packets = 0;
     std::uint32_t flags = 0;
     h2_audio_format format{};
     std::uint32_t input_mixbin = 0;
@@ -136,9 +153,79 @@ Mixer::Mixer(MemoryResolver resolver)
       bins_(H2_AUDIO_MIXBIN_COUNT * k_block),
       scratch_(k_block * 2) {
     mixbin_gain_.fill(1.0f);
+    record_open();
 }
 
-Mixer::~Mixer() = default;
+Mixer::~Mixer() {
+    if (record_) {
+        record_patch();
+        std::fclose(record_);
+    }
+}
+
+/* H2_AUDIO_RECORD=path.wav: everything mixed, as 32-bit float stereo at
+   k_rate, playing or silent */
+void Mixer::record_open() {
+    const char* path = std::getenv("H2_AUDIO_RECORD");
+    if (!path || !*path)
+        return;
+    record_ = std::fopen(path, "wb");
+    if (!record_)
+        return;
+    const std::uint8_t header[44] = {};
+    std::fwrite(header, 1, sizeof(header), record_);
+    record_patch();
+}
+
+void Mixer::record_patch() {
+    const auto put32 = [](std::uint8_t* p, std::uint32_t v) {
+        for (int i = 0; i < 4; ++i) p[i] = static_cast<std::uint8_t>(v >> (i * 8));
+    };
+    const auto put16 = [](std::uint8_t* p, std::uint16_t v) {
+        p[0] = static_cast<std::uint8_t>(v);
+        p[1] = static_cast<std::uint8_t>(v >> 8);
+    };
+    const std::uint32_t data = static_cast<std::uint32_t>(record_bytes_);
+    std::uint8_t h[44];
+    std::memcpy(h, "RIFF", 4);
+    put32(h + 4, 36 + data);
+    std::memcpy(h + 8, "WAVEfmt ", 8);
+    put32(h + 16, 16);
+    put16(h + 20, 3);  /* IEEE float */
+    put16(h + 22, 2);
+    put32(h + 24, k_rate);
+    put32(h + 28, k_rate * 8);
+    put16(h + 32, 8);
+    put16(h + 34, 32);
+    std::memcpy(h + 36, "data", 4);
+    put32(h + 40, data);
+    const long end = std::ftell(record_);
+    std::fseek(record_, 0, SEEK_SET);
+    std::fwrite(h, 1, sizeof(h), record_);
+    std::fseek(record_, end, SEEK_SET);
+    std::fflush(record_);
+}
+
+
+/* one line per voice's playback, then its counters start again */
+void Mixer::trace_voice_end(const Voice& cv, const char* why) {
+    if (!trace_voices() || cv.bus || !cv.traced_frames)
+        return;
+    Voice& v = const_cast<Voice&>(cv);
+    std::fprintf(stderr, "audio-voice %08x %s %s fmt 0x%04x %u ch %u Hz%s: %llu frames, source peak %.3f, "
+                 "output peak %.3f, unreadable packets %u, packets %u (zero at submit %u, at play %u), bins",
+                 v.id, why, v.stream ? "stream" : "buffer", v.format.tag, v.format.channels,
+                 v.format.samples_per_second, v.spatial ? " 3d" : "",
+                 static_cast<unsigned long long>(v.traced_frames), v.traced_source_peak, v.traced_peak,
+                 v.traced_unreadable, v.traced_packets, v.traced_zero_submit, v.traced_zero_play);
+    for (std::uint32_t k = 0; k < v.mixbin_count; ++k)
+        std::fprintf(stderr, " %u@%d", v.mixbins[k].bin, v.mixbins[k].volume);
+    std::fprintf(stderr, " vol %d\n", v.volume);
+    v.traced_frames = 0;
+    v.traced_peak = v.traced_source_peak = 0.0f;
+    v.traced_unreadable = 0;
+    v.traced_zero_submit = v.traced_zero_play = v.traced_packets = 0;
+}
 
 Mixer::Voice* Mixer::find(std::uint32_t id) {
     const auto it = voices_.find(id);
@@ -198,6 +285,23 @@ void Mixer::apply(const h2_audio_command& c) {
         }
         if (v.bus)
             v.bus_input.assign(k_block, 0.0f);
+        /* H2_TRACE=audio: each distinct voice format once, and whether it
+           decodes (one that doesn't plays as silence) */
+        static const bool trace_formats = [] {
+            const char* trace = std::getenv("H2_TRACE");
+            return trace && std::strstr(trace, "audio");
+        }();
+        if (trace_formats && !v.bus) {
+            const std::uint64_t key = (static_cast<std::uint64_t>(c.format.tag) << 48) ^
+                                      (static_cast<std::uint64_t>(channels) << 40) ^
+                                      (static_cast<std::uint64_t>(c.format.bits_per_sample) << 32) ^
+                                      c.format.samples_per_second ^ (v.stream ? 1ull << 63 : 0);
+            if (traced_formats_.insert(key).second)
+                std::fprintf(stderr, "audio: %s voice format 0x%04x, %u ch, %u Hz, %u bits, block %u: %s\n",
+                             v.stream ? "stream" : "buffer", c.format.tag, channels,
+                             c.format.samples_per_second, c.format.bits_per_sample, c.format.block_align,
+                             v.decodable ? "decoded" : "SILENT (not decodable)");
+        }
         voices_[c.voice] = std::move(voice);
         order_dirty_ = true;
         return;
@@ -208,6 +312,7 @@ void Mixer::apply(const h2_audio_command& c) {
         return;
     switch (c.kind) {
     case H2_AUDIO_RELEASE:
+        trace_voice_end(*v, "release");
         for (auto& [id, other] : voices_)
             if (other->output == c.voice)
                 other->output = 0;
@@ -240,6 +345,7 @@ void Mixer::apply(const h2_audio_command& c) {
         v->looping = (c.flags & H2_AUDIO_PLAY_LOOPING) != 0;
         break;
     case H2_AUDIO_STOP:
+        trace_voice_end(*v, "stop");
         v->playing = false;
         break;
     case H2_AUDIO_PAUSE:
@@ -248,6 +354,27 @@ void Mixer::apply(const h2_audio_command& c) {
     case H2_AUDIO_SUBMIT:
         if (v->stream) {
             const std::uint8_t* data = c.address && c.size ? resolver_(c.address, c.size) : nullptr;
+            if (!data && c.size) {
+                ++v->traced_unreadable;
+                /* H2_TRACE=audio: packets whose guest memory cannot be read
+                   play as silence; say where they pointed */
+                static const bool trace = [] {
+                    const char* t = std::getenv("H2_TRACE");
+                    return t && std::strstr(t, "audio");
+                }();
+                static int reported = 0;
+                if (trace && reported < 20) {
+                    ++reported;
+                    std::fprintf(stderr, "audio: voice %08x packet at 0x%08x (%u bytes) is not readable guest memory\n",
+                                 v->id, c.address, c.size);
+                }
+            }
+            if (trace_voices() && data) {
+                bool zero = true;
+                for (std::uint32_t i = 0; i < c.size && zero; ++i) zero = data[i] == 0;
+                v->traced_zero_submit += zero;
+                ++v->traced_packets;
+            }
             v->packets.push_back({data, c.size});
             ++v->submitted;
             ++stats_.packets_submitted;
@@ -334,6 +461,11 @@ std::uint32_t Mixer::read_bytes(Voice& v, std::uint8_t* target, std::uint32_t co
             got += take;
             v.packet_offset += take;
             if (v.packet_offset >= packet.size) {
+                if (trace_voices() && packet.data) {
+                    bool zero = true;
+                    for (std::uint32_t i = 0; i < packet.size && zero; ++i) zero = packet.data[i] == 0;
+                    v.traced_zero_play += zero;
+                }
                 /* the packet's data is never read again: it is complete */
                 v.packets.pop_front();
                 v.packet_offset = 0;
@@ -451,7 +583,8 @@ void Mixer::render_voice_source(Voice& v, float* left, float* right, std::size_t
             std::fill(left, left + frames, 0.0f);
             std::fill(right, right + frames, 0.0f);
             if (!v.stream) {
-                v.playing = false;
+                trace_voice_end(v, "end");
+        v.playing = false;
                 v.cursor = 0;
             }
             return;
@@ -476,7 +609,10 @@ void Mixer::render_voice_source(Voice& v, float* left, float* right, std::size_t
             }
         }
     }
+    if (dry && v.stream)
+        trace_voice_end(v, "drained");
     if (dry && !v.stream) {
+        trace_voice_end(v, "end");
         v.playing = false;
         v.cursor = 0;
         v.reset_decoder();
@@ -572,6 +708,11 @@ void Mixer::route(Voice& v, const float* left, const float* right, std::size_t f
         float* row = &bins_[bin * k_block];
         for (std::size_t i = 0; i < frames; ++i)
             row[i] += source[i] * (from + (g - from) * (i * inverse));
+        if (trace_voices())
+            for (std::size_t i = 0; i < frames; ++i) {
+                v.traced_source_peak = std::max(v.traced_source_peak, std::fabs(source[i]));
+                v.traced_peak = std::max(v.traced_peak, std::fabs(source[i] * g));
+            }
     }
 }
 
@@ -603,8 +744,9 @@ void Mixer::render_block(float* out, std::size_t frames) {
         if (v.paused)
             continue;
         if (v.bus) {
-            if (!v.playing)
-                continue;
+            /* a submix passes what is routed into it whether or not it was
+               played: the game never plays its dialogue submix, whose lines
+               retail is heard speaking (the bus has no data of its own) */
             for (std::size_t i = 0; i < frames; ++i)
                 left[i] = v.bus_input[i];
             if (v.input_mixbin >= H2_AUDIO_FIRST_FX_MIXBIN && v.input_mixbin < H2_AUDIO_MIXBIN_COUNT) {
@@ -626,6 +768,7 @@ void Mixer::render_block(float* out, std::size_t frames) {
             continue;
         }
         render_voice_source(v, left, right, frames);
+        v.traced_frames += frames;
         route(v, left, right, frames, true);
         ++audible;
     }
@@ -643,6 +786,13 @@ void Mixer::render_block(float* out, std::size_t frames) {
         out[i * 2 + 1] = std::clamp(r, -1.0f, 1.0f);
     }
     stats_.frames_rendered += frames;
+    if (record_) {
+        std::fwrite(out, sizeof(float), frames * 2, record_);
+        record_bytes_ += frames * 2 * sizeof(float);
+        /* keep the header true: the game exits without unwinding */
+        if (++record_blocks_ % 256 == 0)
+            record_patch();
+    }
 }
 
 void Mixer::render(float* out, std::size_t frames) {
