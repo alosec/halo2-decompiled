@@ -4,6 +4,71 @@ This directory is the clean, open-source host/runtime track for running the reco
 
 The first product milestone is an authentic loading main menu on Apple Silicon using files supplied by the user from the supported retail disc. The current checkpoint loads the authentic main-menu tag index through recovered cache code and fully links a selectively recovered Microsoft-ABI UI guest image with freestanding CRT support. Its constructor-aware startup initializes the recovered UI manager, leaves an authentic press-start screen in a recovered window channel, and executes recovered update/render traversal only after authentic tag state exists. SDL now draws the resulting immediate and interface quad geometry and decodes the recovered format-16/DXT5 bitmap references directly from the user's map. A finite frame capture visibly produced the authentic Halo 2 logo and recovered localized `PRESS START TO CONTINUE` string using the original retail font glyphs. Enter/Space and gamepad South/Start now activate the recovered press-start handler and advance into the authentic four-way `CHOOSE PROFILE` screen. The activated SDL keyboard/gamepad source is represented as controller 0, so the chooser authentically changes that panel to `PRESS A TO JOIN`; the other slots remain disconnected. Escape or gamepad East cancels this native-offline fallback through the recovered return-to-press-start callback. The connected chooser slot now opens the recovered profile selector, whose focused `CREATE NEW PROFILE` item traverses its retail handler and opens the genuine recovered type-1 profile-name keyboard with an available `HaloNNNN` name. Durable profiles also appear as recovered selector rows. Enter/gamepad South and deterministic `--finish-frame` complete the recovered default name, but host text entry and directional keyboard navigation are not connected yet. Recovered list-family setup now attaches, assigns, focuses, frames, and disposes its embedded rows through the retail virtual slots, so profile completion reaches a visibly authentic one-user main menu with `CAMPAIGN`, `XBOX LIVE`, `SPLIT SCREEN`, `SYSTEM LINK`, and `SETTINGS`. Arrow keys and gamepad D-pad Up/Down now traverse those rows through the recovered list-step and focus paths. Activating the focused `CAMPAIGN` row now follows its recovered handler into the authentic `CAMPAIGN OPTIONS` screen, whose durable no-save profile state truthfully shows `NEW CAMPAIGN` and `COOPERATIVE`; the same recovered arrow/D-pad path traverses those rows and updates their descriptions, while B/Escape follows the recovered screen close path back to the one-user menu. New Campaign opens the genuine recovered level browser over the authentic metadata pool, and accepting its truthfully available first level opens the recovered `CHOOSE DIFFICULTY` screen. Difficulty activation remains inert until campaign launch and gameplay state have native owners. Other destinations remain unavailable, so this is not yet a finished interactive menu.
 
+## Play (macOS, Apple Silicon)
+
+The whole-image build runs the decompiled game itself: menus, cinematics and
+campaign levels.
+
+**You supply the game files.** Copy the contents of your own retail disc's
+game folder (`default.xbe`, `maps/` and the rest) to `orig/game/`. The folder
+is git-ignored; nothing from it is ever committed.
+
+**Tools** (Homebrew): `brew install llvm@22 lld@22 sdl3 cmake ninja`, plus
+optionally `ffmpeg`. Without FFmpeg, music plays silent.
+
+**Build.** The first configure takes a while; later builds take about two
+minutes.
+
+```
+cmake -S . -B build/release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DH2_BUILD_NATIVE_PORT=ON -DH2_NATIVE_PORT=ON \
+  -DH2_LLVM_ROOT=/opt/homebrew/opt/llvm@22 \
+  -DH2_LLVM_NM=/opt/homebrew/opt/llvm@22/bin/llvm-nm \
+  -DH2_LLD=/opt/homebrew/bin/ld.lld \
+  -DLLVM_DIR=/opt/homebrew/opt/llvm@22/lib/cmake/llvm \
+  -DSDL3_DIR=/opt/homebrew/lib/cmake/SDL3
+cmake --build build/release --target h2-whole-image halo2-port
+```
+
+**Run:**
+
+```
+build/release/port/halo2-port --data-root orig/game \
+  --guest-image build/release/port/whole/whole-image.elf \
+  --guest-entry h2_whole_game_main
+```
+
+**Controls** (a gamepad works too):
+
+| Input | Action |
+| --- | --- |
+| Mouse | Look (the cursor is captured) |
+| Left / right mouse button | Throw grenade / fire |
+| W A S D | Move |
+| Space | Jump (A) |
+| F | Melee (B) |
+| E | Action / reload (X) |
+| Q | Switch weapon (Y) |
+| G | Grenade (left trigger) |
+| Left Ctrl | Crouch (left stick) |
+| Z | Zoom (right stick) |
+| T | Flashlight (black) |
+| Tab | Switch grenade (white) |
+| Return | Start |
+| Escape | Back |
+| Arrow keys | D-pad (menus) |
+| Cmd+Q | Quit |
+
+**Options** (environment variables):
+- `H2_START_MAP=01b_spacestation` makes "New Campaign" start at that solo map.
+- `H2_AUDIO=off` turns off sound.
+- `H2_RENDER_SCALE=N` sets the render resolution multiple (default 2).
+
+**Known gaps:**
+- Characters are shaded with a yellow-green tint.
+- The difficulty screen's 3D backdrop is missing.
+- Combat past the first areas of Cairo Station is largely untested.
+
 ## Local build
 
 Requirements on macOS:
