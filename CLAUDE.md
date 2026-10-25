@@ -84,6 +84,14 @@ See `port/README.md` "Play" for the full commands.
   fixed address: the writer and reader disagree, or the copy stays zero.
   Examples: `g_current_map` (fixed as `g_547844`), and the two tables bound
   as `g_4672e0` and `g_4456fc`. The fix is the `g_<address>` name.
+- **Callbacks declared with an integer where the pointer type has a float.**
+  A function cast to a callback type must take the same parameter kinds: on
+  x86 a `long` and a `real` share a stack slot, on ARM64 they travel in
+  different registers and every later argument shifts. The first-person
+  sound handlers took `(long, long, event *)` but are called as
+  `(long, real, event *)`: firing crashed (fixed). `hs_real_format` the other
+  way round. A scan for `(T)function` casts whose typedef and definition
+  differ in float/int position found these three.
 - **By-value returns.** `hkBool` or other classes returned by value use a
   hidden result pointer (x8 on ARM), not a `bool *` out-parameter.
 - **Vtable binding.** Classes with no virtuals of their own store retail
@@ -172,4 +180,6 @@ Open drafts:
 
 All three are reviewed clean and cleared by machine 3, waiting for the user
 to tick provenance and mark them ready. Queued next: the Havok by-value
-return fixes (`hkBool` is allowed) and the inline-vtable fixes.
+return fixes (`hkBool` is allowed), the inline-vtable fixes, and the
+float/int callback parameter fixes (first-person and weapon sound events,
+`hs_real_format`).
