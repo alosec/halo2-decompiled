@@ -105,39 +105,50 @@ typedef enum _D3DRENDERSTATETYPE
     D3DRS_SAMPLEALPHA              = 158,  /* 0x9e, docs/unknown_0508d0.md (inferred there) */
     D3DRS_DXT1NOISEENABLE          = 159,
 
-    /* PROVISIONAL: placeholder */
-    /* The Xbox numbering is verified above to differ from the PC one (PC
-       ZENABLE is 7, CULLMODE 22, ...), and the public PC values of the states
-       below would collide with verified states (PC STENCILREF = 57 = ZFUNC,
-       PC STENCILWRITEMASK = 59 = ALPHABLENDENABLE, ...).  These are arbitrary,
-       collision-free values below the cache size 0xa6; none is verified.
-       Note: game shader data (g_467020, src/unknown_0167a0.cpp) also sets raw
-       states 61 (integer) and 157 (float), unnamed in the source. */
-    D3DRS_PSFINALCOMBINERCONSTANT0 = 0,
-    D3DRS_PSFINALCOMBINERCONSTANT1 = 1,
-    D3DRS_ALPHAFUNC                = 2,
-    D3DRS_ALPHAREF                 = 3,
-    D3DRS_STENCILFAIL              = 4,
-    D3DRS_STENCILZFAIL             = 5,
-    D3DRS_STENCILPASS              = 6,
-    D3DRS_STENCILFUNC              = 7,
-    D3DRS_STENCILREF               = 8,
-    D3DRS_STENCILMASK              = 9,
-    D3DRS_STENCILWRITEMASK         = 10,
-    D3DRS_FILLMODE                 = 11,
-    D3DRS_FRONTFACE                = 12,
-    D3DRS_LOGICOP                  = 13,
-    D3DRS_LINEWIDTH                = 14,
-    D3DRS_FOGENABLE                = 15,
-    D3DRS_LIGHTING                 = 16,
-    D3DRS_SPECULARENABLE           = 17,
-    D3DRS_TEXTUREFACTOR            = 18,
-    D3DRS_POINTSPRITEENABLE        = 19,
-    D3DRS_POINTSCALEENABLE         = 20,
-    D3DRS_POINTSCALE_A             = 21,
-    D3DRS_POINTSCALE_B             = 22,
-    D3DRS_POINTSCALE_C             = 23,
-    /* end PROVISIONAL */
+    /* The remaining states take the Xbox SDK's numbering, which agrees with
+       every verified state above and with the raw states game shader data
+       sets (61 ALPHAREF, 157 LINEWIDTH, g_467020 in src/unknown_0167a0.cpp).
+       States 0..56 are the pixel shader (D3DPIXELSHADERDEF, word for word);
+       earlier placeholder values 0..23 for the states below overwrote it. */
+    D3DRS_PSALPHAINPUTS0           = 0,    /* ..7 */
+    D3DRS_PSFINALCOMBINERINPUTSABCD = 8,
+    D3DRS_PSFINALCOMBINERINPUTSEFG = 9,
+    D3DRS_PSCONSTANT0_0            = 10,   /* ..17 */
+    D3DRS_PSCONSTANT1_0            = 18,   /* ..25 */
+    D3DRS_PSALPHAOUTPUTS0          = 26,   /* ..33 */
+    D3DRS_PSRGBINPUTS0             = 34,   /* ..41 */
+    D3DRS_PSCOMPAREMODE            = 42,
+    D3DRS_PSFINALCOMBINERCONSTANT0 = 43,
+    D3DRS_PSFINALCOMBINERCONSTANT1 = 44,
+    D3DRS_PSRGBOUTPUTS0            = 45,   /* ..52 */
+    D3DRS_PSCOMBINERCOUNT          = 53,
+    D3DRS_PSTEXTUREMODES           = 54,
+    D3DRS_PSDOTMAPPING             = 55,
+    D3DRS_PSINPUTTEXTURE           = 56,
+    D3DRS_ALPHAFUNC                = 58,
+    D3DRS_ALPHAREF                 = 61,
+    D3DRS_DITHERENABLE             = 65,
+    D3DRS_SHADEMODE                = 66,
+    D3DRS_STENCILZFAIL             = 68,
+    D3DRS_STENCILPASS              = 69,
+    D3DRS_STENCILFUNC              = 70,
+    D3DRS_STENCILREF               = 71,
+    D3DRS_STENCILMASK              = 72,
+    D3DRS_STENCILWRITEMASK         = 73,
+    D3DRS_FOGENABLE                = 92,
+    D3DRS_LIGHTING                 = 102,
+    D3DRS_SPECULARENABLE           = 103,
+    D3DRS_POINTSPRITEENABLE        = 118,
+    D3DRS_POINTSCALEENABLE         = 119,
+    D3DRS_POINTSCALE_A             = 120,
+    D3DRS_POINTSCALE_B             = 121,
+    D3DRS_POINTSCALE_C             = 122,
+    D3DRS_FILLMODE                 = 139,
+    D3DRS_STENCILFAIL              = 145,
+    D3DRS_FRONTFACE                = 146,
+    D3DRS_TEXTUREFACTOR            = 148,
+    D3DRS_LOGICOP                  = 150,
+    D3DRS_LINEWIDTH                = 157,
 
     D3DRS_MAX                      = 0xa6, /* size of the game's cache g_4b81fc */
     D3DRS_FORCE_DWORD              = 0x7fffffff
@@ -163,20 +174,20 @@ typedef enum _D3DTEXTURESTAGESTATETYPE
     D3DTSS_COLORSIGN       = 10,
     D3DTSS_ALPHAKILL       = 11,
 
-    /* PROVISIONAL: placeholder */
-    /* The Xbox numbering differs from PC (PC ADDRESSU is 13); arbitrary
-       collision-free values below 32 (game shader data, g_46703c in
-       src/unknown_0167a0.cpp, uses raw states 6, 22-27, 29 and 30). */
+    /* the Xbox SDK's numbering, which agrees with the verified states above and
+       with the raw states game shader data sets (g_46703c in
+       src/unknown_0167a0.cpp: 6, 22-27, 29, 30) */
     D3DTSS_ADDRESSW        = 2,
     D3DTSS_COLORKEYOP      = 9,
-    D3DTSS_TEXCOORDINDEX   = 12,
     D3DTSS_BUMPENVMAT00    = 22,
     D3DTSS_BUMPENVMAT01    = 23,
-    D3DTSS_BUMPENVMAT10    = 24,
-    D3DTSS_BUMPENVMAT11    = 25,
+    D3DTSS_BUMPENVMAT11    = 24,
+    D3DTSS_BUMPENVMAT10    = 25,
+    D3DTSS_BUMPENVLSCALE   = 26,
+    D3DTSS_BUMPENVLOFFSET  = 27,
+    D3DTSS_TEXCOORDINDEX   = 28,
     D3DTSS_BORDERCOLOR     = 29,
     D3DTSS_COLORKEYCOLOR   = 30,
-    /* end PROVISIONAL */
 
     D3DTSS_MAX             = 32, /* stage stride 0x80 bytes, docs/unknown_052040.md */
     D3DTSS_FORCE_DWORD     = 0x7fffffff
