@@ -116,8 +116,17 @@ background officer's body are missing; heads, collar and medals draw.
 - **Model `eb5a0927` (9 regions):** region 1 is never wanted (permutation
   `ff`). `model_variant_region_get_choices` matches retail, so this may be
   legitimate (an empty region).
-- **Next step:** identify Hood's object and model (e.g. by its scenario object
-  name) before chasing more.
+- **Marine model** (hlmt `eb590926` / mode `eb5a0927`): its regions are body,
+  comm_pack, head, helmet, mic_head and packs_*; variants include
+  default_nrl, odst_cky, dress_grf, johnson_dress and dress_hat. Body
+  selection and drawing are fine. Only five objects lacked a body, briefly,
+  until their geometry was resident; empty packs are legitimate.
+- **Reading string IDs offline:** the map header holds the index table at
+  `+0x16c` and the data at `+0x170`. A string ID is (length << 24) | index;
+  `0x95` is "head", `0xbf2` is "helmet".
+- **Next step:** Hood is probably a different, smaller model. Identify it, or
+  log every object drawn in the Hood shot with its model, then check its
+  regions the same way.
 
 ## Upstream contribution
 
