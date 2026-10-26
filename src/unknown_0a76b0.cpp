@@ -771,8 +771,9 @@ bool function_109e00(long object_index, vector3f *velocity, bool definition_flag
 void function_fa820(long projectile_index, vector3f const *impulse);
 bool __stdcall function_bc1d0(long object_index, point3f const *point, long ignore_unit_index);
 void __stdcall function_a7870(long object_index);
+struct s_location;
 void function_fd560(long projectile_index, long object_index, short node_index, point3f const *point,
-	vector3f const *forward);
+	struct s_location const *location);
 extern vector3f *g_4687b0;
 
 /* throws the grenade in a unit's hand (or drops it, or attaches it to the

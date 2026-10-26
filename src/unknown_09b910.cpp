@@ -1223,8 +1223,9 @@ __declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
     point3f const *point, vector3f const *normal, long index, bool attached, long object_index,
     short node_index, bool alternate);
+struct s_location;
 void function_fd560(long projectile_index, long object_index, short node_index,
-    point3f const *point, vector3f const *forward);
+    point3f const *point, struct s_location const *location);
 
 struct s_z_event_header
 {
@@ -1302,11 +1303,11 @@ bool c_projectile_attached_event::v11(long a, long const *entities, long c, void
         if (header->type == 5 && *(long *)(header->object + 0x14) == NONE)
         {
             byte const *event = (byte const *)data;
-            vector3f const *forward = (vector3f const *)(event + 0x10);
-            if (*(short const *)(event + 0x14) == NONE && *(long const *)(event + 0x10) == NONE) forward = 0;
+            struct s_location const *location = (struct s_location const *)(event + 0x10);
+            if (*(short const *)(event + 0x14) == NONE && *(long const *)(event + 0x10) == NONE) location = 0;
             if ((event[0] && *(short const *)(event + 2) != NONE) || (!event[0] && *(short const *)(event + 2) == NONE))
             {
-                function_fd560(projectile, target, *(short const *)(event + 2), (point3f const *)(event + 4), forward);
+                function_fd560(projectile, target, *(short const *)(event + 2), (point3f const *)(event + 4), location);
                 result = true;
             }
         }

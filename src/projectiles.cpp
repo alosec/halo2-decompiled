@@ -784,7 +784,7 @@ void function_fd7d0(long object_index, point3f const *point, byte const *effects
 /* sticks a projectile to what it hit */
 // @retail 0xfd560
 void function_fd560(long projectile_index, long object_index, short node_index, point3f const *point,
-	vector3f const *forward)
+	s_location const *location)
 {
 	s_projectile *projectile = PROJECTILE_GET(projectile_index);
 	s_projectile_definition *definition = PROJECTILE_DEFINITION_GET(projectile->tag_index);
@@ -815,7 +815,9 @@ void function_fd560(long projectile_index, long object_index, short node_index, 
 		}
 	}
 
-	function_b75a0(projectile_index, point, forward, NULL, NULL, false);
+	/* retail (0xfd630) moves it to the point with no new facing, passing the
+	   location in the place of the facing the source had here */
+	function_b75a0(projectile_index, point, NULL, NULL, location, false);
 	function_b77d0(projectile_index, g_4687a4, g_4687a4);
 	*(dword *)&projectile->flags |= 8;
 	function_b9b90(projectile_index, true);
@@ -840,7 +842,7 @@ void function_fd560(long projectile_index, long object_index, short node_index, 
 
 	if (ticks >= 1.0f)
 		*(real *)((byte *)projectile + 0x15c) = 1.0f / ticks;
-	function_a83e0(projectile_index, object_index, point, node_index, forward);
+	function_a83e0(projectile_index, object_index, point, node_index, (vector3f const *)location);
 }
 
 real function_30bf0(vector3f *v);
@@ -2635,7 +2637,7 @@ no_effects:
 		if (!projectile_object_predicted(projectile_index))
 		{
 			function_fd560(projectile_index, collision->type == 4 ? collision->object_index : NONE,
-				collision->node_index, end_point, (vector3f const *)&collision->location);
+				collision->node_index, end_point, (s_location const *)&collision->location);
 		}
 		break;
 	}
