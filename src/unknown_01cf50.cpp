@@ -6315,7 +6315,9 @@ bool __stdcall function_37a60(void *context)
             D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
         }
         function_1cf80();
-        function_1cbe0(0x15, 0, 0);
+        /* retail passes 0x15 in edx, the callee's slot index (0x3816a);
+           the mode and index it pushes are zero */
+        function_1cbe0(0, 0, 0x15);
         function_1c710(g_51f0f0);
         D3DDevice_Begin((D3DPRIMITIVETYPE)9);
         vertex2f(1, vertices[0].x, vertices[0].y);
