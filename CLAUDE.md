@@ -77,6 +77,14 @@ See `port/README.md` "Play" for the full commands.
     walking, turning and jumping; fails on a fall through the floor.
   Convert snapshots with `sips -s format png`; tile several with ffmpeg
   `tile=4x2` to look at a run in one image.
+- **Stack overruns:** `H2_STACK_PROTECT=1` makes `build_whole_image.py`
+  compile every function with a stack canary (build it into its own
+  `--work` directory, e.g. `build/release/port/whole-ssp`, and run it with
+  `H2_DRIVER_IMAGE=.../whole-image.elf`). An overrun logs `h2-state stack
+  overrun in the function at 0x...`: that address is the start of the
+  function *after* the culprit (the failing call is its last instruction).
+  A crash where a callee-saved register holds garbage is usually one of
+  these.
 - **Probes in src/:** declare `extern "C" void h2_probe(char const *,
   unsigned, unsigned, unsigned);` at file scope and call it (printf-style, up
   to 3 values). An undefined symbol is silently stubbed by the image builder
@@ -135,6 +143,15 @@ See `port/README.md` "Play" for the full commands.
   through the floor when jumping into an overhang (the user's "fell through
   the floor"). When a class declares a placeholder vtable, check each slot's
   parameter kinds against the implementation.
+- **Locals smaller than what the callee writes.** Local copies of a
+  callee's output type that are too short overrun the stack onto saved
+  registers: the world ray test's result (`s_collision_result_1697c0`) is
+  0x5c bytes, but the shared header and several files declared 0x4c; the
+  light shape (`s_light_shape_ab`) is 0x7c, one caller had 0x74; a
+  location (`s_location`) is 8 bytes, one caller passed 6. On x86 the
+  frame's slack absorbed it; on ARM64 an AI ally's weapon pointer was
+  overwritten (a crash in its combat tick). Find them with the
+  stack-protected build.
 - **By-value returns.** `hkBool` or other classes returned by value use a
   hidden result pointer (x8 on ARM), not a `bool *` out-parameter.
 - **Vtable binding.** Classes with no virtuals of their own store retail

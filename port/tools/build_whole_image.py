@@ -270,7 +270,12 @@ def frontend_mode(unit, args, header_stamp, native):
                # x87 and SSE math never touched errno; without this clang
                # turns __builtin_sqrtf into a call to sqrtf, the guest
                # runtime's own sqrtf included
-               "-fno-stack-protector", "-fno-math-errno", *(["-DH2_NATIVE_PORT=1"] if native else []),
+               # H2_STACK_PROTECT=1 checks every frame's canary on return:
+               # a function that overruns its locals onto the saved registers
+               # reports itself (port/runtime/guest_test_state.cpp) instead of
+               # corrupting its caller's registers
+               ("-fstack-protector-all" if os.environ.get("H2_STACK_PROTECT") else "-fno-stack-protector"),
+               "-fno-math-errno", *(["-DH2_NATIVE_PORT=1"] if native else []),
                "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1",
                "-fms-extensions", "-Wno-ignored-attributes", "-Wno-c++11-narrowing",
                "-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar", "-w"]

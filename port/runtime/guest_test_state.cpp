@@ -95,3 +95,15 @@ extern "C" void h2_port_report_state(void)
 	}
 }
 
+
+/* the canary of -fstack-protector-all (H2_STACK_PROTECT=1 builds): a
+   function whose frame was overrun calls __stack_chk_fail on return */
+extern "C" unsigned long __stack_chk_guard = 0x5a17c0deUL;
+extern "C" __attribute__((noreturn)) void __stack_chk_fail(void)
+{
+	char line[96];
+	_snprintf(line, sizeof(line), "h2-state stack overrun in the function at 0x%08lx",
+		(unsigned long)__builtin_return_address(0));
+	host_h2_log(line);
+	__builtin_trap();
+}

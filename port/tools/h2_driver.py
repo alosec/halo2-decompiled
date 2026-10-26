@@ -51,7 +51,8 @@ class Game:
         self.process = subprocess.Popen(
             [str(ROOT / "build/release/port/halo2-port"), "--data-root", str(ROOT / "orig/game"),
              "--profile-root", str(self.work / "profiles"),
-             "--guest-image", str(ROOT / "build/release/port/whole/whole-image.elf"),
+             # H2_DRIVER_IMAGE: another guest image (e.g. a stack-protected build)
+             "--guest-image", os.environ.get("H2_DRIVER_IMAGE", str(ROOT / "build/release/port/whole/whole-image.elf")),
              "--guest-entry", "h2_whole_game_main"],
             cwd=ROOT, env=env, stdout=self.log, stderr=subprocess.STDOUT)
         self._offset = 0

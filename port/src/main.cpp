@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <cstdio>
 #include <csignal>
-#include <sys/mman.h>
 #include <unistd.h>
 #include <chrono>
 #include <thread>
@@ -11,7 +10,6 @@
 #include <atomic>
 #include <sstream>
 #include <csignal>
-#include <sys/mman.h>
 #include <unistd.h>
 #include "h2/font_decode.hpp"
 #include "h2/xbox_system.hpp"
@@ -986,10 +984,16 @@ void report_fault(int signal_number, siginfo_t* info, void* context) {
     /* the registers, and for those holding a guest pointer the words it
        points at and (as a vtable) that word's first slots: names the object
        a crash went through (guest_symbolize.py names the slot targets) */
+    /* write() from an unreadable address fails with EFAULT instead of
+       faulting (mincore succeeds on reserved, unreadable pages) */
+    static int probe[2] = {-1, -1};
+    if (probe[0] < 0 && pipe(probe) != 0)
+        probe[0] = probe[1] = -1;
     const auto readable = [](std::uintptr_t address) {
-        char resident = 0;
-        const auto page = address & ~static_cast<std::uintptr_t>(getpagesize() - 1);
-        return mincore(reinterpret_cast<void*>(page), 1, &resident) == 0;
+        if (probe[1] < 0 || write(probe[1], reinterpret_cast<const void*>(address), 4) != 4)
+            return false;
+        char sink[4];
+        return read(probe[0], sink, sizeof(sink)) == 4;
     };
     for (int index = 0; index < 29; ++index) {
         const auto value = static_cast<std::uint32_t>(state->uc_mcontext->__ss.__x[index]);
