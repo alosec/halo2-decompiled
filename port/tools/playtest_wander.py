@@ -70,6 +70,8 @@ def main():
                 frames = max(1, state["frame"] - previous["frame"])
                 moved = sum((a - b) ** 2 for a, b in zip(state["pos"], previous["pos"])) ** 0.5
                 speed = sum(v * v for v in state["vel"]) ** 0.5
+                if state.get("health", 1) <= 0 or previous.get("health", 1) <= 0:
+                    continue   # a dead player's body is thrown about by the physics
                 if ground is not None and z < ground - 0.5:
                     problem = "below the ground"
                 elif state["unit"] == previous["unit"] and moved > 0.3 + 3 * speed * frames / 30.0 and moved < 1000:

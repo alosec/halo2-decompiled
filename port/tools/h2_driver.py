@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STATE = re.compile(r"h2-state frame (\d+) unit (\w+) pos (-?\d+) (-?\d+) (-?\d+) vel (-?\d+) (-?\d+) (-?\d+) "
                    r"look (-?\d+) (-?\d+) (-?\d+)(?: head (-?\d+) (-?\d+) (-?\d+))?(?: fwd (-?\d+) (-?\d+) (-?\d+))?(?: ground (-?\d+))?(?: leaf (-?\d+) cluster (-?\d+))?")
 FRAME = re.compile(r"h2-state frame (\d+) none")
+EXTRA = re.compile(r" (lights|flashlight|health) (-?\d+)")
 SNAP = re.compile(r"h2-port: snapshot \"?([^\"\n]+)\"?")
 MENU_TO_CAMPAIGN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2900:a:8,3300:a:8,3700:a:8,4100:a:8"
 # main menu -> Split Screen -> pregame lobby -> Start Game (Slayer; H2_START_MAP
@@ -106,6 +107,9 @@ class Game:
                                   "ground": (v[15] / 1000 if v[15] != -999999 else None) if len(v) >= 16 else None,
                                   # the structure bsp leaf and cluster (-1: outside the world)
                                   "leaf": v[16] if len(v) >= 18 else None, "cluster": v[17] if len(v) >= 18 else None}
+                    # the light count, flashlight power and body vitality (0: dead)
+                    for name, value in EXTRA.findall(line):
+                        self.state[name] = int(value) if name == "lights" else int(value) / 1000
                     self.history.append(self.state)
                 f = FRAME.search(line)
                 if f:
