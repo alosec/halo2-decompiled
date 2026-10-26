@@ -8,7 +8,8 @@ The steps: look at the top light, then the bottom one (yaw is locked; the
 stick direction is learned, since the tutorial tries inverted look), then
 either side light. Each look must hold for a moment, from the head marker
 (as the game's own check, function_cc2b0, measures it within 5 degrees).
-Prints the snapshot taken at the end; exit status 1 if a step never passed.
+Prints a snapshot after each step (the light just looked at should glow
+green: the lamps are lens flares) and at the end; exit status 1 if a step never passed.
 """
 import math
 import sys
@@ -56,13 +57,14 @@ def main():
         for name, point in (("top", TOP), ("bottom", BOTTOM)):
             ok &= pitch_at(game, point)
             game.wait(300)
-            print(name, "frame", game.frame, flush=True)
+            print(name, "frame", game.frame, "snapshot", game.snapshot()[0], flush=True)
         errors = []
         for side in SIDES:
             # the game checks either side light (within 5 degrees, from the
             # head); hold each a few seconds, as a player would
             errors.append(game.aim_at(side, tolerance_degrees=2.5, max_steps=60, hold=90))
-            print("side light", side, "error %.2f degrees, frame %d" % (errors[-1], game.frame), flush=True)
+            print("side light", side, "error %.2f degrees, frame %d" % (errors[-1], game.frame),
+                  "snapshot", game.snapshot()[0], flush=True)
         ok &= min(errors) < 2.5
         game.wait(900)
         print("snapshot:", game.snapshot()[0])

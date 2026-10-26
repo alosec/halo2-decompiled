@@ -201,8 +201,11 @@ See `port/README.md` "Play" for the full commands.
   - every campaign level loads and survives a combat wander soak;
   - all twelve multiplayer maps play (split-screen Slayer) and survive a
     combat soak;
-  - cinematics (01b's intro sampled every 250 frames: textured, lit, no
-    white frames seen);
+  - cinematics (01b's intro sampled every 30 frames: textured and lit;
+    its white frames are the scripted fades between scenes, gradual in and
+    out, not flashes);
+  - the Armory lamps: the side lamps glow red as targets and the one looked
+    at turns green (`playtest_armory_look.py` snapshots each step);
   - checkpoint save/revert, full speed (the 30 Hz cap), WMA music through
     optional host FFmpeg; A (Space) skips cutscenes, as on the Xbox.
 - **Fixed 2026-10-26:**
