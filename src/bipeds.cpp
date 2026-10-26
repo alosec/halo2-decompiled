@@ -2455,7 +2455,7 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 			vector3f facing;
 			real sine;
 			real cosine;
-			bool left;
+			bool clockwise; /* the goal is clockwise (seen from above): turn_right */
 
 			if (wall)
 			{
@@ -2471,9 +2471,10 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 				{
 					facing = biped->forward;
 				}
-				sine = (biped->forward.j * facing.k - biped->forward.k * facing.j) * biped->up.i +
-					(biped->forward.k * facing.i - biped->forward.i * facing.k) * biped->up.j +
-					(biped->forward.i * facing.j - biped->forward.j * facing.i) * biped->up.k;
+				/* (facing x forward) . up: positive when the goal is clockwise */
+				sine = (facing.j * biped->forward.k - facing.k * biped->forward.j) * biped->up.i +
+					(facing.k * biped->forward.i - facing.i * biped->forward.k) * biped->up.j +
+					(facing.i * biped->forward.j - facing.j * biped->forward.i) * biped->up.k;
 				cosine = biped->forward.j * facing.j + biped->forward.k * facing.k + biped->forward.i * facing.i;
 			}
 			else
@@ -2490,19 +2491,19 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 				facing.i = flat.x;
 				facing.j = flat.y;
 				facing.k = 0.0f;
-				sine = biped->forward.i * flat.y - biped->forward.j * flat.x;
+				sine = biped->forward.j * flat.x - biped->forward.i * flat.y;
 				cosine = biped->forward.j * flat.y + biped->forward.i * flat.x;
 			}
-			left = sine > 0.0f;
+			clockwise = sine > 0.0f;
 			if (-0.9f > cosine)
 			{
 				if (*(long *)(state + 0x7c) == 0xa00000f)
 				{
-					left = true;
+					clockwise = true;
 				}
 				else if (*(long *)(state + 0x7c) == 0x900000e)
 				{
-					left = false;
+					clockwise = false;
 				}
 			}
 			if (biped->unknown34a == 1 || (*(dword *)(definition + 0x1f0) & 1))
@@ -2513,26 +2514,26 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 				vector3f turned;
 				real overshoot;
 
-				if (left)
+				if (clockwise)
 				{
 					turn_sine = 0.0f - turn_sine;
 				}
 				if (wall)
 				{
 					turned = biped->forward;
-					biped_rotate(&turned, &biped->up, 0.0f - turn_sine, turn_cosine);
-					overshoot = (turned.j * facing.k - turned.k * facing.j) * biped->up.i +
-						(turned.k * facing.i - turned.i * facing.k) * biped->up.j +
-						(turned.i * facing.j - turned.j * facing.i) * biped->up.k;
+					biped_rotate(&turned, &biped->up, turn_sine, turn_cosine);
+					overshoot = (facing.j * turned.k - facing.k * turned.j) * biped->up.i +
+						(facing.k * turned.i - facing.i * turned.k) * biped->up.j +
+						(facing.i * turned.j - facing.j * turned.i) * biped->up.k;
 				}
 				else
 				{
-					turned.i = biped->forward.i * turn_cosine + biped->forward.j * turn_sine;
-					turned.j = biped->forward.j * turn_cosine - biped->forward.i * turn_sine;
+					turned.i = biped->forward.i * turn_cosine - biped->forward.j * turn_sine;
+					turned.j = biped->forward.j * turn_cosine + biped->forward.i * turn_sine;
 					turned.k = biped->forward.k;
-					overshoot = turned.i * facing.j - turned.j * facing.i;
+					overshoot = turned.j * facing.i - turned.i * facing.j;
 				}
-				if (left ? 0.0f > overshoot : overshoot > 0.0f)
+				if (clockwise ? 0.0f > overshoot : overshoot > 0.0f)
 				{
 					if (wall)
 					{
@@ -2583,7 +2584,7 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 
 				if (limit >= cosine && !(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 20) & 1)))
 				{
-					names[1] = left ? 0xa00000f : 0x900000e;
+					names[1] = clockwise ? 0xa00000f : 0x900000e;
 				}
 			}
 		}
