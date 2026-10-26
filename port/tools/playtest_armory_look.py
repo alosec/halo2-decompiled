@@ -57,13 +57,14 @@ def main():
             ok &= pitch_at(game, point)
             game.wait(300)
             print(name, "frame", game.frame, flush=True)
+        errors = []
         for side in SIDES:
-            error = game.aim_at(side, tolerance_degrees=1.0, max_steps=60, hold=20)
-            print("side light", side, "error %.2f degrees, frame %d" % (error, game.frame), flush=True)
-            if error < 1.0:
-                break
-        ok &= error < 1.0
-        game.wait(600)
+            # the game checks either side light (within 5 degrees, from the
+            # head); hold each a few seconds, as a player would
+            errors.append(game.aim_at(side, tolerance_degrees=2.5, max_steps=60, hold=90))
+            print("side light", side, "error %.2f degrees, frame %d" % (errors[-1], game.frame), flush=True)
+        ok &= min(errors) < 2.5
+        game.wait(900)
         print("snapshot:", game.snapshot()[0])
     return 0 if ok else 1
 

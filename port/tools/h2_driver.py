@@ -158,20 +158,27 @@ class Game:
         return s
 
     # -- closed-loop aiming -------------------------------------------------
-    def aim_at(self, point, tolerance_degrees=0.5, max_steps=120, hold=0):
+    def aim_at(self, point, tolerance_degrees=1.0, max_steps=80, hold=0):
         """turns the player's look toward a world point, seen from the head
-        marker (as the game's own "looking at" checks do), with one-frame
-        right-stick taps, measuring after each. A tap that does not move the
-        look (the stick's dead zone) is retried stronger, one that overshoots
-        weaker; one that moves the wrong way flips that axis (the Armory
-        tutorial can invert the look). With `hold`, keeps correcting until
-        `hold` frames have passed within tolerance. Returns the final angle
-        error in degrees."""
-        strength = {"yaw": 55, "pitch": 55}
-        sign = {"yaw": 1, "pitch": 1}
-        last = None
+        marker (as the game's own "looking at" checks are), with short
+        right-stick taps sized to the error, measuring after the head has
+        settled each time. Right stick x+ turns clockwise; y+ looks up unless
+        the look is inverted, which is learned from the first pitch taps (the
+        Armory tutorial tries inverted look). With `hold`, keeps correcting
+        until `hold` frames have passed within tolerance. Returns the final
+        angle error in degrees."""
+        pitch_sign = 1
         error = 180.0
         held_since = None
+
+        def tap(degrees):
+            magnitude = abs(degrees)
+            if magnitude > 12:
+                return 100, 3
+            if magnitude > 5:
+                return 100, 1
+            return (70 if magnitude > 2.5 else 55), 1
+
         for _ in range(max_steps + hold):
             s = self.settle()
             eye = s["head"] or [s["pos"][0], s["pos"][1], s["pos"][2] + 0.61]
@@ -179,37 +186,29 @@ class Game:
             length = math.sqrt(sum(c * c for c in to)) or 1.0
             to = [c / length for c in to]
             look = s["look"]
-            want_yaw, want_pitch = math.atan2(to[1], to[0]), math.asin(max(-1, min(1, to[2])))
-            yaw, pitch = math.atan2(look[1], look[0]), math.asin(max(-1, min(1, look[2])))
-            delta = {"yaw": math.degrees((want_yaw - yaw + math.pi) % (2 * math.pi) - math.pi),
-                     "pitch": math.degrees(want_pitch - pitch)}
+            yaw_error = math.degrees((math.atan2(to[1], to[0]) - math.atan2(look[1], look[0]) + math.pi)
+                                     % (2 * math.pi) - math.pi)
+            pitch_error = math.degrees(math.asin(max(-1, min(1, to[2]))) - math.asin(max(-1, min(1, look[2]))))
             error = math.degrees(math.acos(max(-1, min(1, sum(a * b for a, b in zip(to, look))))))
             if os.environ.get("H2_AIM_DEBUG"):
-                print("aim", s["frame"], round(error, 2), {k: round(v, 2) for k, v in delta.items()}, strength, sign,
+                print("aim", s["frame"], round(error, 2), round(yaw_error, 2), round(pitch_error, 2), pitch_sign,
                       flush=True)
             if error < tolerance_degrees:
                 held_since = held_since or s["frame"]
                 if s["frame"] - held_since >= hold:
                     return error
+                continue
+            held_since = None
+            if abs(yaw_error) >= abs(pitch_error):
+                strength, frames = tap(yaw_error)
+                self.press(("rx-" if yaw_error > 0 else "rx+") + str(strength), frames)
             else:
-                held_since = None
-            if last:
-                for axis in ("yaw", "pitch"):
-                    if abs(last[axis]) > tolerance_degrees / 2 and last.get(axis + "_pressed"):
-                        moved = abs(delta[axis]) - abs(last[axis])
-                        if abs(delta[axis] - last[axis]) < 0.05:
-                            strength[axis] = min(100, strength[axis] + 8)
-                        elif delta[axis] * last[axis] < 0:
-                            strength[axis] = max(30, strength[axis] - 6)
-                        elif moved > 0.05:
-                            sign[axis] = -sign[axis]
-            last = dict(delta)
-            if abs(delta["yaw"]) > tolerance_degrees / 2:
-                self.press(("rx-" if delta["yaw"] * sign["yaw"] > 0 else "rx+") + str(strength["yaw"]), 1)
-                last["yaw_pressed"] = True
-            if abs(delta["pitch"]) > tolerance_degrees / 2:
-                self.press(("ry+" if delta["pitch"] * sign["pitch"] > 0 else "ry-") + str(strength["pitch"]), 1)
-                last["pitch_pressed"] = True
+                before = s["look"][2]
+                strength, frames = tap(pitch_error)
+                self.press(("ry+" if pitch_error * pitch_sign > 0 else "ry-") + str(strength), frames)
+                after = self.settle()["look"][2]
+                if abs(after - before) > 0.002 and (after > before) != (pitch_error > 0):
+                    pitch_sign = -pitch_sign
         return error
 
     # -- walking --------------------------------------------------------------
