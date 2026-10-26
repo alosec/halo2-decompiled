@@ -80,8 +80,10 @@ D3DTexture *function_12c990(s_bitmap_data *bitmap, long level, bool request,
 // @retail 0x12ce00
 D3DTexture *function_12ce00(s_bitmap_data *bitmap, dword flags, real bias)
 {
-    bool request = (flags & 1) != 0;
-    bool blocking = ((flags >> 1) & 1) != 0;
+    /* retail 0x12ce00: bit 0 waits for the texture, bit 1 asks for it to be
+       loaded (the user interface's bitmaps pass 2: load, don't wait) */
+    bool blocking = (flags & 1) != 0;
+    bool request = ((flags >> 1) & 1) != 0;
     bool unscaled = ((flags >> 2) & 1) != 0;
     D3DTexture *shared_texture = NULL;
     bool alternate = false;
