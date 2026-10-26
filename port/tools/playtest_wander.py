@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Walks the player around a level at random with h2_driver and reports any
 fall through the floor: the unit more than 0.5 units below the ground a ray
-finds under it, or falling with no ground within 50 units.
+finds under it, or a jump in position its velocity can't explain (the snaps
+that pushed the player through floors). Falling into a pit, with no ground
+under it, is the game's own and isn't reported.
 
 Usage (repository root): /usr/bin/python3 port/tools/playtest_wander.py
            [--map 01b_spacestation] [--seconds 120] [--seed 1] [--work DIR]
@@ -44,13 +46,22 @@ def main():
                 game.press("a", 4)
                 game.press("ly+", 40)
             game.wait(rng.randint(20, 90))
-            for state in game.history[checked:]:
+            for index in range(max(checked, 1), len(game.history)):
+                state, previous = game.history[index], game.history[index - 1]
                 ground = state["ground"]
                 z = state["pos"][2]
-                if (ground is not None and z < ground - 0.5) or (ground is None and state["vel"][2] < -5):
-                    print("fall at frame", state["frame"], "pos", state["pos"], "ground", ground, "vel", state["vel"])
-                    print("snapshot:", game.snapshot()[0])
-                    return 1
+                frames = max(1, state["frame"] - previous["frame"])
+                moved = sum((a - b) ** 2 for a, b in zip(state["pos"], previous["pos"])) ** 0.5
+                speed = sum(v * v for v in state["vel"]) ** 0.5
+                if ground is not None and z < ground - 0.5:
+                    problem = "below the ground"
+                elif state["unit"] == previous["unit"] and moved > 0.3 + 3 * speed * frames / 30.0 and moved < 1000:
+                    problem = "snapped %.2f units at speed %.2f" % (moved, speed)
+                else:
+                    continue
+                print(problem, "at frame", state["frame"], "pos", state["pos"], "ground", ground, "vel", state["vel"])
+                print("snapshot:", game.snapshot()[0])
+                return 1
             checked = len(game.history)
         s = game.state
         print("no fall in %d frames; ended at" % (game.frame - start), s["pos"], "ground", s["ground"])
