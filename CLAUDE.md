@@ -145,6 +145,16 @@ See `port/README.md` "Play" for the full commands.
   through the floor when jumping into an overhang (the user's "fell through
   the floor"). When a class declares a placeholder vtable, check each slot's
   parameter kinds against the implementation.
+- **Native duplicates that read flags differently.** The native copy of
+  the texture request (0x12ce00, `particle_texture_upload_request_native.cpp`)
+  took bit 0 as "load" and bit 1 as "wait"; retail is the other way round.
+  The user interface asks with 2 (load, don't wait), so its bitmaps never
+  became resident: the main menu logo, panel frames, level pictures and
+  difficulty icons were missing. It also kept every texture the game only
+  ever requests that way at its low-detail copy, so object lighting fell
+  back to defaults (objects lit brighter than their surroundings); with
+  real lightmap samples, objects in dark spots are dark, like the floor
+  around them.
 - **Locals smaller than what the callee writes.** Local copies of a
   callee's output type that are too short overrun the stack onto saved
   registers: the world ray test's result (`s_collision_result_1697c0`) is
@@ -196,7 +206,6 @@ See `port/README.md` "Play" for the full commands.
   - white flash frames in cinematics;
   - cutscene skipping works: A (Space) skips, as on the Xbox (verified on
     the 00a intro and the 01b cinematic); the README says so now;
-  - the difficulty-screen backdrop is missing;
   - the Armory look-device lamps never turn green: the look steps pass and
     the tutorial advances, but in a traced frame after all four checks
     only the lamp's base pass draws (no illumination pass adds the colour);
