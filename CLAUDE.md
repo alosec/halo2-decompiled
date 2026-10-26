@@ -187,7 +187,9 @@ See `port/README.md` "Play" for the full commands.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
-- **Xbox D3D semantics.** Clear flags are Xbox values (ZBUFFER 1, STENCIL 2,
+- **Xbox D3D semantics.** Render states the renderer ignores silently drop
+  what depends on them: `D3DRS_DEPTHCLIPCONTROL` clamp (the skies), the
+  visibility test counts (lens flares). Clear flags are Xbox values (ZBUFFER 1, STENCIL 2,
   colour channels 0x10..0x80). Pushed draws must be parsed at EndPush, with
   the state they were pushed with. The pixel shader lives in render states
   0..56.
@@ -216,8 +218,10 @@ See `port/README.md` "Play" for the full commands.
     game's D3D visibility test finds them unoccluded, and the runtime used
     to report every test as zero pixels. The renderer now counts samples
     (Metal visibility results, read back after each present).
-- **Open:** outdoor skies draw black (every outdoor campaign and
-  multiplayer map).
+- **Skies (fixed):** the sky model lies beyond the far plane; the game draws
+  it with `D3DRS_DEPTHCLIPCONTROL` = `D3DDCC_CLAMP` (0x10), which the
+  renderer ignored, so Metal clipped it and every outdoor sky was black.
+  Draws now carry `depth_clamp` (Metal `MTLDepthClipModeClamp`).
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
 

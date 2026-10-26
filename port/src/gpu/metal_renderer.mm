@@ -1861,6 +1861,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
            in clip space */
         [encoder_ setFrontFacingWinding:MTLWindingCounterClockwise];
         [encoder_ setTriangleFillMode:packet.fill_wireframe ? MTLTriangleFillModeLines : MTLTriangleFillModeFill];
+        [encoder_ setDepthClipMode:packet.depth_clamp ? MTLDepthClipModeClamp : MTLDepthClipModeClip];
         /* D3DRS_BLENDCOLOR, for the constant blend factors (the atmosphere pass
            adds its fog over dst * the constant) */
         const auto constant = unpack_argb(packet.blend_constant);

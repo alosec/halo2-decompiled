@@ -205,6 +205,10 @@ typedef struct h2_gpu_draw {
        pixel count); the samples that pass count towards the test the next
        host_h2_gpu_visibility_end closes */
     h2_gpu_u32 visibility_test;
+    /* D3DRS_DEPTHCLIPCONTROL's D3DDCC_CLAMP (0x10): depth past the near and
+       far planes is clamped instead of clipped (the sky, drawn beyond the
+       far plane) */
+    h2_gpu_u32 depth_clamp;
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {
