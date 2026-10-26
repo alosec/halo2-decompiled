@@ -768,9 +768,12 @@ public:
             if (FILE* file = std::fopen(path.c_str(), "wb")) {
                 std::fprintf(file, "P6 %lu %lu 255\n", static_cast<unsigned long>(texture.width),
                              static_cast<unsigned long>(texture.height));
+                /* H2_TRACE_DUMP_ALPHA=1: the alpha channel as grey instead */
+                static const bool alpha = std::getenv("H2_TRACE_DUMP_ALPHA") != nullptr;
                 for (NSUInteger i = 0; i < texture.width * texture.height; ++i) {
                     const std::uint8_t rgb[3] = {bgra[i * 4 + 2], bgra[i * 4 + 1], bgra[i * 4]};
-                    std::fwrite(rgb, 1, 3, file);
+                    const std::uint8_t grey[3] = {bgra[i * 4 + 3], bgra[i * 4 + 3], bgra[i * 4 + 3]};
+                    std::fwrite(alpha ? grey : rgb, 1, 3, file);
                 }
                 std::fclose(file);
             }

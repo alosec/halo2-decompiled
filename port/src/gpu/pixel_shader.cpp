@@ -373,6 +373,12 @@ void Translator::sample_plain(int i, unsigned mode) {
     const std::string n = std::to_string(i);
     if (kind == 6)
         o_ << "    t" << n << " = t.cube[" << n << "].sample(t.samplers[" << n << "], " << tc << ".xyz);\n";
+    else if (kind == 3 && mode == TM_PROJECT2D)
+        /* a volume under the 2D projective mode: (s/q, t/q) on its first
+           slice, r = 0, as xemu's NV2A model samples it (the flashlight's
+           falloff pass binds a 4x4x4 volume so) */
+        o_ << "    t" << n << " = t.volume[" << n << "].sample(t.samplers[" << n << "], float3(" << tc << ".xy / " << tc
+           << ".w, 0.0));\n";
     else if (kind == 3)
         o_ << "    t" << n << " = t.volume[" << n << "].sample(t.samplers[" << n << "], " << tc << ".xyz / " << tc << ".w);\n";
     else

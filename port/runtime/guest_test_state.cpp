@@ -79,13 +79,28 @@ extern "C" void h2_port_report_state(void)
 		char line[320];
 		/* thousandths: the guest's formatter is integer-only */
 		#define MILLI(value) (long)((value) * 1000.0f)
-		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld",
+		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld flashlight %ld",
 			frame, (unsigned long)player->unit_index, MILLI(position[0]), MILLI(position[1]), MILLI(position[2]),
 			MILLI(velocity.i), MILLI(velocity.j), MILLI(velocity.k), MILLI(look[0]), MILLI(look[1]), MILLI(look[2]),
 			MILLI(head.x), MILLI(head.y), MILLI(head.z), MILLI(forward[0]), MILLI(forward[1]), MILLI(forward[2]),
 			grounded ? MILLI(ground.point.z) : -999999L, (long)location.leaf_index, (long)location.cluster_index,
-			g_4e030c ? (long)g_4e030c->actual_count : -1L);
+			g_4e030c ? (long)g_4e030c->actual_count : -1L,
+			MILLI(*(real const *)(unit + 0x264)));   /* the flashlight's power, 0..1 */
 		host_h2_log(line);
+		/* in a vehicle the unit's position is its seat's, relative to the
+		   vehicle: also report the root object's (world) position */
+		#define OBJECT(index) (((s_player_object_header *)g_4e0300->data)[(index) & 0xffff].object)
+		long root = player->unit_index;
+		while (*(long const *)(OBJECT(root) + 0x14) != NONE)   /* parent object */
+			root = *(long const *)(OBJECT(root) + 0x14);
+		if (root != player->unit_index)
+		{
+			real const *origin = (real const *)(OBJECT(root) + 0x64);
+			_snprintf(line, sizeof(line), "h2-state frame %lu vehicle %08lx pos %ld %ld %ld",
+				frame, (unsigned long)root, MILLI(origin[0]), MILLI(origin[1]), MILLI(origin[2]));
+			host_h2_log(line);
+		}
+		#undef OBJECT
 		#undef MILLI
 		found = true;
 	}
