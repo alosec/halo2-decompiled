@@ -13,11 +13,12 @@ struct s_2922b0
 	byte field_34[0x14];
 	real field_48;
 };
+/* the world ray test's result: function_1697c0 fills all 0x5c bytes */
 struct s_2922b1
 {
 	long field_0;
 	real field_4;
-	byte field_8[0x4c - 8];
+	byte field_8[0x5c - 8];
 };
 struct s_collision_result_1697c0;
 bool __stdcall function_1697c0(long arg_0, point3f const *arg_1, vector3f const *arg_2,

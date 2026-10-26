@@ -3237,7 +3237,7 @@ struct s_collision_result_1697c0
 	point3f point;
 	byte unknown14[0x24 - 0x14];
 	short unknown24;
-	byte unknown26[0x4c - 0x26];
+	byte unknown26[0x5c - 0x26];
 };
 
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,

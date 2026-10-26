@@ -40,7 +40,7 @@ struct s_collision_result_1697c0
 	point3f point;
 	byte unknown14[0x24 - 0x14];
 	short unknown24;
-	byte unknown26[0x4c - 0x26];
+	byte unknown26[0x5c - 0x26];
 };
 
 /* the scenario's firing positions: g_4e0350 holds a block (+0x1d8) whose

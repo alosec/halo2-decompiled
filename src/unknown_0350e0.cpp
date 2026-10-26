@@ -2951,7 +2951,7 @@ struct s_collision_result_1697c0
     point3f point;
     byte unknown14[0x24 - 0x14];
     short unknown24;
-    byte unknown26[0x4c - 0x26];
+    byte unknown26[0x5c - 0x26];
 };
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,
     long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result);
@@ -4174,7 +4174,7 @@ bool __stdcall function_32350(long index, real input_alpha)
         vector3f &up = *(vector3f *)(g_47fd18 + 0x34);
         shadow_cross_32350(forward, *axis, &up);
         function_30bf0(&up);
-        byte shape[0x74];
+        byte shape[0x7c]; /* s_light_shape_ab: function_c1930 fills all 0x7c bytes */
         function_c1930((s_light_definition_ab *)g_47fda0, (s_light_shape_ab *)shape);
         function_c1a80((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_definition_ab *)g_47fda0);
         s_320b0_box box;

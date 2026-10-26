@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "unknown_03d380.h"
 #include "object_iterator.h"
+#include "object_queries.h"
 
 /* ---- types ---- */
 
@@ -452,14 +453,10 @@ void __stdcall function_16eff0(dword flags)
 				valid = g_4e8c20->entries[i] != NONE;
 			if (valid)
 			{
-				struct
-				{
-					byte unknown[4];
-					short value;
-				} result;
+				s_location location;
 
-				function_11bed0((s_location *)&result, (point3f const *)&g_4e9bd4[i].state);
-				g_510c70[i + 1] = result.value;
+				function_11bed0(&location, (point3f const *)&g_4e9bd4[i].state);
+				g_510c70[i + 1] = location.cluster_index;
 			}
 		}
 	}
