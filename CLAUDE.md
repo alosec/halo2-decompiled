@@ -194,34 +194,29 @@ See `port/README.md` "Play" for the full commands.
   the state they were pushed with. The pixel shader lives in render states
   0..56.
 
-## Status (2026-10-25, upstream merged at 58bb9a0d)
+## Status (2026-10-26)
 
 - **Works:**
-  - menus, profiles and the keyboard;
-  - the intro cinematic and The Armory;
-  - Cairo Station reaches gameplay;
-  - checkpoint save/revert;
-  - full speed (the 30 Hz cap);
-  - WMA music through optional host FFmpeg.
-- **Fixed since the user's second play:** the Armory light step (look
-  vector), characters lit (object lighting), first-person arms and weapon,
-  the Outskirts intro crash.
-- **Open, from the user's first live play:**
-  - many missing textures in cinematics and gameplay (the lights the
-    Armory tutorial asks you to look at draw as white bars); missing bodies,
-    black change colours and the yellow-green tint are fixed;
-  - white flash frames in cinematics;
-  - cutscene skipping works: A (Space) skips, as on the Xbox (verified on
-    the 00a intro and the 01b cinematic); the README says so now;
-  - the Armory look-device lamps are lens flares (machines
-    `looker_light_red`/`_green` with no model); flares only show when the
-    game's D3D visibility test finds them unoccluded, and the runtime used
-    to report every test as zero pixels. The renderer now counts samples
-    (Metal visibility results, read back after each present).
-- **Skies (fixed):** the sky model lies beyond the far plane; the game draws
-  it with `D3DRS_DEPTHCLIPCONTROL` = `D3DDCC_CLAMP` (0x10), which the
-  renderer ignored, so Metal clipped it and every outdoor sky was black.
-  Draws now carry `depth_clamp` (Metal `MTLDepthClipModeClamp`).
+  - menus, profiles, the keyboard, campaign and split-screen lobbies;
+  - every campaign level loads and survives a combat wander soak;
+  - all twelve multiplayer maps play (split-screen Slayer) and survive a
+    combat soak;
+  - cinematics (01b's intro sampled every 250 frames: textured, lit, no
+    white frames seen);
+  - checkpoint save/revert, full speed (the 30 Hz cap), WMA music through
+    optional host FFmpeg; A (Space) skips cutscenes, as on the Xbox.
+- **Fixed 2026-10-26:**
+  - lens flares, among them the Armory look-device lamps (machines
+    `looker_light_red`/`_green` with only a flare): the runtime reported
+    every D3D visibility test as zero pixels; the renderer now counts
+    samples (Metal visibility results, read back after each present);
+  - outdoor skies: the sky model lies beyond the far plane and is drawn
+    with `D3DRS_DEPTHCLIPCONTROL` = `D3DDCC_CLAMP` (0x10), which the
+    renderer ignored, so Metal clipped it; draws now carry `depth_clamp`.
+- **Open:** render states still ignored: stipple (screen-door fades),
+  point-sprite texture coordinates (weather particles, `function_391f0`),
+  `SHADOWFUNC`, `LOGICOP`, `SOLIDOFFSETENABLE`. Check visually before
+  assuming they matter.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
 
