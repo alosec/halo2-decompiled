@@ -486,7 +486,7 @@ public:
         if (layer_) {
             layer_.device = device_;
             layer_.pixelFormat = MTLPixelFormatBGRA8Unorm;
-            layer_.framebufferOnly = YES;
+            layer_.framebufferOnly = NO;   /* capture_window reads the drawable */
         }
     }
 
@@ -761,6 +761,22 @@ public:
                 id<CAMetalDrawable> drawable = [layer_ nextDrawable];
                 if (drawable)
                     encode_present(drawable);
+                window_kept_ = false;
+                if (drawable && capture_window_) {
+                    capture_window_ = false;
+                    const NSUInteger w = drawable.texture.width, h = drawable.texture.height;
+                    if (!window_readback_ || window_readback_.length < w * h * 4)
+                        window_readback_ = [device_ newBufferWithLength:w * h * 4 options:MTLResourceStorageModeShared];
+                    id<MTLBlitCommandEncoder> blit = [command_buffer_ blitCommandEncoder];
+                    [blit copyFromTexture:drawable.texture sourceSlice:0 sourceLevel:0
+                             sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake(w, h, 1)
+                                 toBuffer:window_readback_ destinationOffset:0 destinationBytesPerRow:w * 4
+                    destinationBytesPerImage:w * h * 4];
+                    [blit endEncoding];
+                    window_width_ = static_cast<int>(w);
+                    window_height_ = static_cast<int>(h);
+                    window_kept_ = true;
+                }
                 if (drawable)
                     [command_buffer_ presentDrawable:drawable];
             }
@@ -810,6 +826,18 @@ public:
         height = height_;
         bgra.assign(static_cast<const std::uint8_t*>(readback_.contents),
                     static_cast<const std::uint8_t*>(readback_.contents) + width_ * height_ * 4);
+        return true;
+    }
+
+    void capture_window() override { capture_window_ = true; }
+
+    bool read_window_pixels(std::vector<std::uint8_t>& bgra, int& width, int& height) override {
+        if (!window_kept_ || !window_readback_)
+            return false;
+        width = window_width_;
+        height = window_height_;
+        bgra.assign(static_cast<const std::uint8_t*>(window_readback_.contents),
+                    static_cast<const std::uint8_t*>(window_readback_.contents) + width * height * 4);
         return true;
     }
 
@@ -1963,6 +1991,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     Target back_;
     std::unordered_map<std::uint32_t, Target> targets_;
     Target* current_ = nullptr;
+    bool capture_window_ = false;
+    bool window_kept_ = false;
+    id<MTLBuffer> window_readback_ = nil;
+    int window_width_ = 0, window_height_ = 0;
     DepthBuffer* current_depth_ = nullptr;
     std::unordered_map<std::uint32_t, DepthBuffer> depths_;   /* by the game's depth surface */
     std::uint32_t back_depth_surface_ = 0;

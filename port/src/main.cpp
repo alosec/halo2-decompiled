@@ -3,9 +3,16 @@
 #include <signal.h>
 #include <cstdio>
 #include <csignal>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <atomic>
+#include <sstream>
+#include <csignal>
+#include <sys/mman.h>
+#include <unistd.h>
 #include "h2/font_decode.hpp"
 #include "h2/xbox_system.hpp"
 #include "h2/guest_arena.hpp"
@@ -976,6 +983,30 @@ void report_fault(int signal_number, siginfo_t* info, void* context) {
             break;
         frame = record[0];
     }
+    /* the registers, and for those holding a guest pointer the words it
+       points at and (as a vtable) that word's first slots: names the object
+       a crash went through (guest_symbolize.py names the slot targets) */
+    const auto readable = [](std::uintptr_t address) {
+        char resident = 0;
+        const auto page = address & ~static_cast<std::uintptr_t>(getpagesize() - 1);
+        return mincore(reinterpret_cast<void*>(page), 1, &resident) == 0;
+    };
+    for (int index = 0; index < 29; ++index) {
+        const auto value = static_cast<std::uint32_t>(state->uc_mcontext->__ss.__x[index]);
+        length = std::snprintf(line, sizeof(line), "h2-port:   x%d = 0x%08x", index, value);
+        const auto address = h2::port::kGuestBias + value;
+        if (value >= 0x10000 && (value & 3) == 0 && readable(address)) {
+            const auto first = *reinterpret_cast<const std::uint32_t*>(address);
+            length += std::snprintf(line + length, sizeof(line) - length, " -> [0x%08x]", first);
+            const auto table = h2::port::kGuestBias + first;
+            if (first >= 0x10000 && (first & 3) == 0 && readable(table) && readable(table + 12))
+                for (int slot = 0; slot < 4; ++slot)
+                    length += std::snprintf(line + length, sizeof(line) - length, " 0x%08x",
+                                            reinterpret_cast<const std::uint32_t*>(table)[slot]);
+        }
+        line[length++] = '\n';
+        write(2, line, static_cast<size_t>(length));
+    }
     /* H2_FAULT_DUMP="0x510c98,0x5023f4": guest words to print at the fault */
     if (const char* dump = std::getenv("H2_FAULT_DUMP")) {
         const char* cursor = dump;
@@ -1059,6 +1090,43 @@ void parse_input_script(GameSession& session) {
         if (end == std::string::npos)
             break;
         start = end + 1;
+    }
+}
+
+void request_snapshot(int);
+extern std::atomic<bool> g_snapshot_requested;
+
+/* H2_CONTROL=file: a test driver appends lines while the game runs, read at
+   each frame: "press BUTTON FRAMES" (any input-script button, e.g. a, rt,
+   ly+, rx-25), "snapshot" (as SIGUSR1), "quit" */
+void poll_control(GameSession& session) {
+    static const char* path = std::getenv("H2_CONTROL");
+    static std::streamoff offset = 0;
+    if (!path)
+        return;
+    std::ifstream file(path);
+    if (!file)
+        return;
+    file.seekg(offset);
+    std::string line;
+    while (std::getline(file, line)) {
+        if (file.eof())
+            break;   /* a partly written last line waits for the next frame */
+        offset = file.tellg();
+        std::istringstream words(line);
+        std::string command;
+        words >> command;
+        if (command == "press") {
+            std::string button;
+            int frames = 1;
+            words >> button >> frames;
+            session.script.push_back({static_cast<int>(session.frames) + 1,
+                                      static_cast<int>(session.frames) + std::max(1, frames), button});
+        } else if (command == "snapshot") {
+            g_snapshot_requested = true;
+        } else if (command == "quit") {
+            std::exit(0);
+        }
     }
 }
 
@@ -1161,6 +1229,7 @@ void update_input(GameSession& session) {
         }
         SDL_free(ids);
     }
+    poll_control(session);
     for (const auto& press : session.script)
         if (session.frames >= press.first && session.frames <= press.last)
             apply_button(session, press.button, true);
@@ -1174,6 +1243,7 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
     session.screenshot = screenshot;
     session.last_frame = std::chrono::steady_clock::now();
     parse_input_script(session);
+    std::signal(SIGUSR1, request_snapshot);
     (void)data_root;
     /* the game renders offscreen even headless, so screenshots work */
     std::string error;
@@ -1208,6 +1278,27 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
     if (!hidden)
         SDL_SetWindowRelativeMouseMode(session.window, true);
     return true;
+}
+
+/* SIGUSR1: save the next frame (game frame and window) to H2_SNAPSHOT_DIR
+   (default $TMPDIR/h2-snapshots), so a running game can be looked at */
+std::atomic<bool> g_snapshot_requested{false};
+
+void request_snapshot(int) { g_snapshot_requested = true; }
+
+std::filesystem::path snapshot_dir() {
+    if (const char* dir = std::getenv("H2_SNAPSHOT_DIR"))
+        return dir;
+    const char* tmp = std::getenv("TMPDIR");
+    return std::filesystem::path(tmp ? tmp : "/tmp") / "h2-snapshots";
+}
+
+bool save_bgra_bmp(const std::filesystem::path& path, std::vector<std::uint8_t>& pixels, int width, int height) {
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_XRGB8888, pixels.data(), width * 4);
+    const bool saved = surface && SDL_SaveBMP(surface, path.c_str());
+    if (surface)
+        SDL_DestroySurface(surface);
+    return saved;
 }
 
 bool save_frame_bmp(const std::filesystem::path& path) {
@@ -1247,10 +1338,26 @@ extern "C" void host_h2_frame(void) {
         return value ? std::atoi(value) : 0;
     }();
     const bool periodic = every > 0 && !session.screenshot.empty() && session.frames % every == 0;
-    const bool keep = (last || periodic) && !session.screenshot.empty();
+    const bool snapshot = g_snapshot_requested.exchange(false);
+    const bool keep = ((last || periodic) && !session.screenshot.empty()) || snapshot;
     if (session.gpu) {
+        if (snapshot)
+            session.gpu->capture_window();
         session.gpu->present(keep);
-        if (keep) {
+        if (snapshot) {
+            const auto dir = snapshot_dir();
+            std::error_code ignored;
+            std::filesystem::create_directories(dir, ignored);
+            const std::string stem = "frame-" + std::to_string(session.frames);
+            std::vector<std::uint8_t> pixels;
+            int width = 0, height = 0;
+            if (save_frame_bmp(dir / (stem + "-game.bmp")))
+                std::cerr << "h2-port: snapshot " << (dir / (stem + "-game.bmp")) << '\n';
+            if (session.gpu->read_window_pixels(pixels, width, height) &&
+                save_bgra_bmp(dir / (stem + "-window.bmp"), pixels, width, height))
+                std::cerr << "h2-port: snapshot " << (dir / (stem + "-window.bmp")) << '\n';
+        }
+        if (keep && !session.screenshot.empty() && (last || periodic)) {
             std::filesystem::path path = session.screenshot;
             if (periodic && !last)
                 path.replace_filename(path.stem().string() + "-" + std::to_string(session.frames) +
@@ -1311,7 +1418,8 @@ extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
 extern "C" unsigned int host_h2_trace_flags(void) {
     static const unsigned int flags = [] {
         const char* trace = std::getenv("H2_TRACE");
-        return trace && std::strstr(trace, "d3d") ? 1u : 0u;
+        /* 1: D3D method counts; 2: the guest's per-frame player state */
+        return (trace && std::strstr(trace, "d3d") ? 1u : 0u) | (trace && std::strstr(trace, "state") ? 2u : 0u);
     }();
     return flags;
 }

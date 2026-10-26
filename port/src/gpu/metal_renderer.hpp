@@ -45,6 +45,10 @@ public:
     virtual void present(bool keep_pixels) = 0;
     /* the last kept frame as BGRA rows, top first */
     virtual bool read_pixels(std::vector<std::uint8_t>& bgra, int& width, int& height) = 0;
+    /* the next present also keeps the window's own pixels (the presented,
+       letterboxed drawable) for read_window_pixels */
+    virtual void capture_window() = 0;
+    virtual bool read_window_pixels(std::vector<std::uint8_t>& bgra, int& width, int& height) = 0;
     virtual RendererStats stats() const = 0;
 };
 

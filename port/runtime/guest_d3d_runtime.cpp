@@ -224,6 +224,8 @@ void log_message(char const *format, DWORD a = 0, DWORD b = 0, DWORD c = 0)
     host_h2_log(text);
 }
 
+extern "C" void h2_port_report_state(void);
+
 h2_d3d_device *device()
 {
     return &the_device;
@@ -1818,6 +1820,7 @@ extern "C" void __stdcall D3DDevice_Swap(DWORD flags)
         last_dwords = d->push.dwords;
     }
     (void)flags;
+    h2_port_report_state();
     host_h2_frame();
 }
 

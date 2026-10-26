@@ -60,6 +60,23 @@ See `port/README.md` "Play" for the full commands.
   - `H2_AUDIO_RECORD=file.wav` records the mix;
   - `H2_TRACE=audio` lists voice formats;
   - `H2_TRACE=audio-voices` gives per-voice levels.
+- **Playtesting harness (play the game yourself; don't ask the user to):**
+  `port/tools/h2_driver.py` launches the game hidden and silent with a fresh
+  profile and drives it while it runs: `press(button, frames)` (any
+  input-script button, partial sticks like `rx+40`), `snapshot()` (the game
+  frame and the window as BMP), `wait_frame`/`settle`, and `aim_at(point)`
+  (closed loop from the head marker). Each frame the guest logs `h2-state`:
+  position, velocity, look, head marker, body forward, and the ground height
+  a ray finds under the unit (`port/runtime/guest_test_state.cpp`,
+  `H2_TRACE=state`). The host reads commands from `H2_CONTROL=file`
+  (`press`, `snapshot`, `quit`) and saves a snapshot on SIGUSR1 to
+  `H2_SNAPSHOT_DIR`. Ready-made runs:
+  - `port/tools/playtest_armory_look.py`: the Armory "look at the lights"
+    steps to the "Press A to accept normal aiming" prompt;
+  - `port/tools/playtest_wander.py --map M --seconds S --seed N`: random
+    walking, turning and jumping; fails on a fall through the floor.
+  Convert snapshots with `sips -s format png`; tile several with ffmpeg
+  `tile=4x2` to look at a run in one image.
 - **Probes in src/:** declare `extern "C" void h2_probe(char const *,
   unsigned, unsigned, unsigned);` at file scope and call it (printf-style, up
   to 3 values). An undefined symbol is silently stubbed by the image builder
@@ -93,6 +110,14 @@ See `port/README.md` "Play" for the full commands.
   swapped: object lighting sampled the wrong lightmap texels, so characters
   were near black). Check `port/tools/retail_dis.py` for which register
   holds what before trusting an unmatched function.
+- **Mirrored conventions in unmatched functions.** `function_e01d0`
+  (biped turning) computed the goal's side with the opposite cross product
+  from retail and flipped its rotation to match, so turning worked but the
+  chosen turn animation (`turn_left`/`turn_right`, 0x900000e/0xa00000f) was
+  the wrong one: after a turn the body spun forever around the direction
+  opposite the aim (and in the Armory the head circled, so the look checks
+  flickered). Self-consistent code can still be wrong where a value leaves
+  the function; compare sign conventions with retail.
 - **Callbacks declared with an integer where the pointer type has a float.**
   A function cast to a callback type must take the same parameter kinds: on
   x86 a `long` and a `real` share a stack slot, on ARM64 they travel in
@@ -101,6 +126,15 @@ See `port/README.md` "Play" for the full commands.
   `(long, real, event *)`: firing crashed (fixed). `hs_real_format` the other
   way round. A scan for `(T)function` casts whose typedef and definition
   differ in float/int position found these three.
+  The same through a virtual call, which the cast audit can't see: the
+  Havok time search (`src/unknown_3163c0.cpp`) declared the motion's slot 29
+  `move_to_time(float, long)` while the motion (its step-position setter,
+  0x31b700) takes `(float, float)`: it read the step length from a stale s1,
+  so rewinding a body to a contact's time moved it by a garbage time. The
+  player snapped back along their path when touching walls and was pushed
+  through the floor when jumping into an overhang (the user's "fell through
+  the floor"). When a class declares a placeholder vtable, check each slot's
+  parameter kinds against the implementation.
 - **By-value returns.** `hkBool` or other classes returned by value use a
   hidden result pointer (x8 on ARM), not a `bool *` out-parameter.
 - **Vtable binding.** Classes with no virtuals of their own store retail
