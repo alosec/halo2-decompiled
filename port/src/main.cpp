@@ -1273,6 +1273,13 @@ bool open_game_session(bool headless, int frame_count, const std::filesystem::pa
     session.window = SDL_CreateWindow("Halo 2", 960, 720,
                                       SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL |
                                           (hidden ? SDL_WINDOW_HIDDEN : 0));
+    /* H2_WINDOW_SIZE=WxH: resize after creation (as going full screen does),
+       to check presentation at other sizes without showing a window */
+    if (const char* size = std::getenv("H2_WINDOW_SIZE"); size && session.window) {
+        int width = 0, height = 0;
+        if (std::sscanf(size, "%dx%d", &width, &height) == 2 && width > 0 && height > 0)
+            SDL_SetWindowSize(session.window, width, height);
+    }
     session.metal_view = session.window ? SDL_Metal_CreateView(session.window) : nullptr;
     if (!session.metal_view) {
         std::cerr << "game window setup failed: " << SDL_GetError() << '\n';

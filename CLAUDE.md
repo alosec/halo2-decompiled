@@ -77,7 +77,8 @@ See `port/README.md` "Play" for the full commands.
     steps to the "Press A to accept normal aiming" prompt;
   - `port/tools/playtest_wander.py --map M --seconds S --seed N`: random
     walking, turning and jumping; fails on a fall through the floor.
-  Convert snapshots with `sips -s format png`; tile several with ffmpeg
+  `H2_WINDOW_SIZE=WxH` sizes the (hidden) window, e.g. to check full-screen
+  presentation in the window snapshot. Convert snapshots with `sips -s format png`; tile several with ffmpeg
   `tile=4x2` to look at a run in one image.
 - **Stack overruns:** `H2_STACK_PROTECT=1` makes `build_whole_image.py`
   compile every function with a stack canary (build it into its own

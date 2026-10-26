@@ -982,6 +982,14 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         /* the full-screen triangle covers 2x the rect: scale the rect to it */
         const float rect[4] = {static_cast<float>(-w / target_w), static_cast<float>(h / target_h),
                                static_cast<float>(2.0 * w / target_w), static_cast<float>(-2.0 * h / target_h)};
+        /* the triangle overhangs the rect (clamped texels and its slanted
+           edge would show in the side bars): only the rect is drawn */
+        MTLScissorRect scissor;
+        scissor.x = static_cast<NSUInteger>((target_w - w) / 2.0 + 0.5);
+        scissor.y = static_cast<NSUInteger>((target_h - h) / 2.0 + 0.5);
+        scissor.width = std::min(static_cast<NSUInteger>(w + 0.5), drawable.texture.width - scissor.x);
+        scissor.height = std::min(static_cast<NSUInteger>(h + 0.5), drawable.texture.height - scissor.y);
+        [encoder setScissorRect:scissor];
         [encoder setRenderPipelineState:present_pipeline_];
         [encoder setVertexBytes:rect length:sizeof(rect) atIndex:0];
         [encoder setFragmentTexture:color_ atIndex:0];
