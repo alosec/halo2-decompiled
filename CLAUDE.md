@@ -226,7 +226,9 @@ See `port/README.md` "Play" for the full commands.
     points and drew as haze.
   - stipple (`D3DRS_STIPPLEENABLE`, the pattern from `SetStipple`) discards
     fragments per game pixel; xemu doesn't model it, so the bit order (row
-    `y & 31`, bit `x & 31`) is a guess that only matters for dither fades.
+    `y & 31`, bit `x & 31`) is unconfirmed, but the game's patterns
+    (`function_1c1b0`) are a tiled 4x4 ordered dither, so a mirrored order
+    only moves dots within a cell at the same coverage.
   - the flashlight and decals: `function_144f0` (bind a bitmap, else the
     rasterizer default of the wanted type) takes the type to match in ebx
     and the fallback index first on the stack; three callers (the light
@@ -238,8 +240,10 @@ See `port/README.md` "Play" for the full commands.
     while `SOLIDOFFSETENABLE` is on; the runtime applied it always, and the
     game leaves 550 set after decal passes.
 - **Open:**
-  - render states still ignored: `SHADOWFUNC` (shadow-map compare,
-    `function_0496f0` light passes), `LOGICOP`. Check visually before
+  - render states still ignored, with no effect seen: `SHADOWFUNC` (set
+    for shadowing light passes; no depth-format texture is sampled in any
+    trace so far, flashlight included) and `LOGICOP` (the game only sets
+    it to 0). Check visually before
   assuming they matter.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
