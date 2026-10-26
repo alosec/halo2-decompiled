@@ -51,7 +51,9 @@ See `port/README.md` "Play" for the full commands.
   with `--frames 13000`. Check the final frame (`--screenshot`, plus
   `H2_SCREENSHOT_EVERY=n`) and the summary line (`skipped 0, failed 0`).
 - **Other environment variables:**
-  - `H2_START_MAP=01b_spacestation` starts the campaign on a level;
+  - `H2_START_MAP=01b_spacestation` starts the campaign on a level; a
+    multiplayer name (`lockout`) replaces the map of the first game started
+    from a lobby;
   - `H2_TRACE_FRAME=n` traces every draw of frame n;
   - `H2_TRACE_DUMP=dir` and `H2_TRACE_DUMP_DRAWS=i,j,...|all` dump render
     targets after those draws (`H2_TRACE_DUMP_TARGET=back|target-<data>`
@@ -76,7 +78,9 @@ See `port/README.md` "Play" for the full commands.
   - `port/tools/playtest_armory_look.py`: the Armory "look at the lights"
     steps to the "Press A to accept normal aiming" prompt;
   - `port/tools/playtest_wander.py --map M --seconds S --seed N`: random
-    walking, turning and jumping; fails on a fall through the floor.
+    walking, turning and jumping (`--fire` adds shooting, grenades and
+    reloads; `--multiplayer` plays the map as a one-player split-screen
+    Slayer game); fails on a fall through the floor.
   `H2_WINDOW_SIZE=WxH` sizes the (hidden) window, e.g. to check full-screen
   presentation in the window snapshot. Convert snapshots with `sips -s format png`; tile several with ffmpeg
   `tile=4x2` to look at a run in one image.
@@ -207,11 +211,13 @@ See `port/README.md` "Play" for the full commands.
   - white flash frames in cinematics;
   - cutscene skipping works: A (Space) skips, as on the Xbox (verified on
     the 00a intro and the 01b cinematic); the README says so now;
-  - the Armory look-device lamps never turn green: the look steps pass and
-    the tutorial advances, but in a traced frame after all four checks
-    only the lamp's base pass draws (no illumination pass adds the colour);
-    other self-illuminated surfaces glow, so suspect the script's function
-    value not reaching the lamp's shader.
+  - the Armory look-device lamps are lens flares (machines
+    `looker_light_red`/`_green` with no model); flares only show when the
+    game's D3D visibility test finds them unoccluded, and the runtime used
+    to report every test as zero pixels. The renderer now counts samples
+    (Metal visibility results, read back after each present).
+- **Open:** outdoor skies draw black (every outdoor campaign and
+  multiplayer map).
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
 

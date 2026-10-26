@@ -41,6 +41,11 @@ public:
     virtual void attach_layer(void* layer) = 0;
     virtual void draw(const h2_gpu_draw& packet) = 0;
     virtual void clear(const h2_gpu_clear& packet) = 0;
+    /* visibility tests: draws marked visibility_test count their passing
+       samples until end_visibility_test names the test; the count (in the
+       game's pixels) is readable after the next present */
+    virtual void end_visibility_test(std::uint32_t index) = 0;
+    virtual std::uint32_t visibility_result(std::uint32_t index) const = 0;
     /* ends the frame; keep_pixels makes the next read_pixels see it */
     virtual void present(bool keep_pixels) = 0;
     /* the last kept frame as BGRA rows, top first */

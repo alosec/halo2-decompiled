@@ -201,6 +201,10 @@ typedef struct h2_gpu_draw {
     /* guest addresses of the back and front buffers' pixels, which textures
        the game builds over them sample */
     h2_gpu_u32 back_buffer_data, front_buffer_data;
+    /* 1: inside a visibility test (the push buffer turned on the z-pass
+       pixel count); the samples that pass count towards the test the next
+       host_h2_gpu_visibility_end closes */
+    h2_gpu_u32 visibility_test;
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {

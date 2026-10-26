@@ -96,7 +96,6 @@ constexpr long k_vertex_constant_count = 192;
 constexpr long k_stream_count = 16;
 constexpr long k_vertex_attribute_count = 16;
 constexpr long k_scissor_count = 8;
-constexpr long k_visibility_count = 4096;
 
 /* The game writes up to 0x80 dwords past the threshold without asking for
    room (function_015d00, src/unknown_015d00.cpp), so the threshold stays well
@@ -195,7 +194,6 @@ struct h2_d3d_device
     DWORD vblank_count;
     DWORD presented_frames;
     DWORD fence;
-    DWORD visibility[k_visibility_count];
     DWORD draw_calls;
     DWORD clears;
 };
@@ -557,6 +555,12 @@ void h2_d3d_draw_pushed_array(DWORD primitive, DWORD const *data, DWORD words);
    (0x1818, sent without incrementing the method) is a draw */
 constexpr DWORD k_method_begin_end = 0x17fc;
 constexpr DWORD k_method_inline_array = 0x1818;
+constexpr DWORD k_method_zpass_pixel_count_enable = 0x17cc;
+
+/* the game opens a visibility test by pushing the report clear and the
+   z-pass pixel count enable itself (0x17c8, 0x17cc), then draws; the draws
+   until D3DDevice_EndVisibilityTest count towards the test */
+bool g_visibility_counting = false;
 
 /* the constant vertex attributes the game pushes for the draws after
    (D3DDevice_SetVertexData* written inline): 2F 0x1880 + 8i, 2S 0x1900 + 4i,
@@ -613,6 +617,9 @@ void h2_d3d_parse_push(DWORD const *begin, DWORD const *end)
             primitive = word[0];
         else if (method == k_method_inline_array && primitive && count)
             h2_d3d_draw_pushed_array(primitive, word, count);
+        else if (method <= k_method_zpass_pixel_count_enable && k_method_zpass_pixel_count_enable < method + count * 4 &&
+                 !(header & 0x40000000))
+            g_visibility_counting = word[(k_method_zpass_pixel_count_enable - method) / 4] != 0;
         else if (method >= 0x1880 && method < 0x1b00) {
             const bool same_method = header & 0x40000000;
             for (DWORD index = 0; index < count && word + index < end; ++index)
@@ -848,6 +855,7 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
     DWORD const *rs = D3D__RenderState;
     p->kind = H2_GPU_PACKET_DRAW;
     p->version = H2_GPU_PROTOCOL_VERSION;
+    p->visibility_test = g_visibility_counting;
     memcpy(p->vertex_defaults, g_vertex_registers, sizeof(p->vertex_defaults));
 
     p->vertex_mode = g_vertex_program_selected ? H2_GPU_VERTEX_PROGRAM : H2_GPU_VERTEX_SCREEN;
@@ -1735,13 +1743,14 @@ extern "C" void __stdcall D3DDevice_InsertCallback(D3DCALLBACKTYPE type, D3DCALL
         callback(context);
 }
 
-/* PROVISIONAL: with no rasterizer every test reports zero samples */
+/* the renderer counts a test's samples; they are ready once the frame that
+   drew it is presented, and the game reads its tests frames later */
 extern "C" HRESULT __stdcall D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result,
                                                                ULONGLONG *timestamp)
 {
     h2_d3d_device *d = device();
     if (result)
-        *result = index < k_visibility_count ? d->visibility[index] : 0;
+        *result = host_h2_gpu_visibility_result(index);
     if (timestamp)
         *timestamp = d->fence;
     return S_OK;
@@ -1749,10 +1758,9 @@ extern "C" HRESULT __stdcall D3DDevice_GetVisibilityTestResult(DWORD index, UINT
 
 extern "C" HRESULT __stdcall D3DDevice_EndVisibilityTest(DWORD index)
 {
-    h2_d3d_device *d = device();
-    push_submit(d);
-    if (index < k_visibility_count)
-        d->visibility[index] = 0;
+    push_submit(device());
+    g_visibility_counting = false;
+    host_h2_gpu_visibility_end(index);
     return S_OK;
 }
 

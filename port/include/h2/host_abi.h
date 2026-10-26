@@ -112,6 +112,11 @@ void host_h2_frame(void);
  * (h2/gpu_protocol.h) in guest memory */
 void host_h2_gpu_draw(const void* packet);
 void host_h2_gpu_clear(const void* packet);
+/* closes the open visibility test as the game's test `index`; its result,
+   the samples that passed in the game's pixels, is ready once the frame is
+   presented */
+void host_h2_gpu_visibility_end(unsigned int index);
+unsigned int host_h2_gpu_visibility_result(unsigned int index);
 /* the mixer (port/src/audio/): an h2_audio_command (h2/audio_protocol.h), and
  * a voice's playback progress as an h2_audio_status (0: unknown voice) */
 void host_h2_audio_command(const void* command);

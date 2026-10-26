@@ -476,6 +476,7 @@ public:
         current_ = &back_;
         current_depth_ = &back_.own_depth;
         frame_buffers_.push_back([device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared]);
+        visibility_buffer_ = [device_ newBufferWithLength:kVisibilitySlots * 8 options:MTLResourceStorageModeShared];
         if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error))
             return false;
         return true;
@@ -805,6 +806,7 @@ public:
             /* one frame in flight: the per-frame buffers are reused next frame */
             [command_buffer_ waitUntilCompleted];
             command_buffer_ = nil;
+            collect_visibility_results();
             frame_offset_ = 0;
             frame_buffer_ = 0;
             ++frame_;
@@ -1024,6 +1026,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             d.pending_stencil_clear || !d.has_content ? MTLLoadActionClear : MTLLoadActionLoad;
         pass.stencilAttachment.clearStencil = d.pending_stencil_clear ? d.clear_stencil : 0;
         pass.stencilAttachment.storeAction = MTLStoreActionStore;
+        /* a test's draws may span passes: they add to its slot, which
+           open_visibility_slot zeroes */
+        pass.visibilityResultBuffer = visibility_buffer_;
+        pass.visibilityResultType = MTLVisibilityResultTypeAccumulate;
         encoder_ = [command_buffer_ renderCommandEncoderWithDescriptor:pass];
         t.pending_color_clear = d.pending_depth_clear = d.pending_stencil_clear = false;
         t.has_content = d.has_content = true;
@@ -1984,12 +1990,51 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             [encoder_ setFragmentSamplerState:entry ? sampler(packet.textures[stage], entry->linear) : placeholder_sampler_
                                       atIndex:stage];
         }
+        const int slot = packet.visibility_test ? open_visibility_slot() : -1;
+        if (slot >= 0)
+            [encoder_ setVisibilityResultMode:MTLVisibilityResultModeCounting offset:slot * 8];
         [encoder_ drawIndexedPrimitives:primitive
                              indexCount:sequence.size()
                               indexType:MTLIndexTypeUInt32
                             indexBuffer:index_buffer
                       indexBufferOffset:index_offset];
+        if (slot >= 0)
+            [encoder_ setVisibilityResultMode:MTLVisibilityResultModeDisabled offset:0];
         return true;
+    }
+
+    /* visibility tests. Each test the game opens in a frame gets the next
+       slot of visibility_buffer_; the GPU adds the samples that pass to it.
+       Once the frame completes (present waits for it), each closed test's
+       slot is read back into results_ under the game's index, in the game's
+       pixels (the targets are scale_ times larger each way). */
+    int open_visibility_slot() {
+        if (open_slot_ < 0 && next_slot_ < kVisibilitySlots) {
+            open_slot_ = next_slot_++;
+            static_cast<std::uint64_t*>(visibility_buffer_.contents)[open_slot_] = 0;
+        }
+        return open_slot_;
+    }
+
+    void end_visibility_test(std::uint32_t index) override {
+        closed_tests_.push_back({index, open_slot_});
+        open_slot_ = -1;
+    }
+
+    std::uint32_t visibility_result(std::uint32_t index) const override {
+        const auto found = results_.find(index);
+        return found == results_.end() ? 0 : found->second;
+    }
+
+    void collect_visibility_results() {
+        const auto* counts = static_cast<const std::uint64_t*>(visibility_buffer_.contents);
+        for (const auto& [index, slot] : closed_tests_) {
+            const std::uint64_t samples = slot >= 0 ? counts[slot] / (scale_ * scale_) : 0;
+            results_[index] = static_cast<std::uint32_t>(std::min<std::uint64_t>(samples, 0xffffffffu));
+        }
+        closed_tests_.clear();
+        next_slot_ = 0;
+        open_slot_ = -1;
     }
 
     const h2::port::GuestArena& arena_;
@@ -2027,6 +2072,12 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     std::uint64_t frame_ = 0;
     RendererStats stats_;
     int presented_ = 0;
+    static constexpr int kVisibilitySlots = 4096;
+    id<MTLBuffer> visibility_buffer_ = nil;
+    int open_slot_ = -1;
+    int next_slot_ = 0;
+    std::vector<std::pair<std::uint32_t, int>> closed_tests_;   /* (the game's index, slot) */
+    std::unordered_map<std::uint32_t, std::uint32_t> results_;
     std::uint32_t back_buffer_data_ = 0;
     std::unordered_map<std::uint64_t, std::string> vertex_cache_;
     std::unordered_map<std::uint64_t, std::string> pixel_cache_;
