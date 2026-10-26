@@ -213,8 +213,12 @@ See `port/README.md` "Play" for the full commands.
   - outdoor skies: the sky model lies beyond the far plane and is drawn
     with `D3DRS_DEPTHCLIPCONTROL` = `D3DDCC_CLAMP` (0x10), which the
     renderer ignored, so Metal clipped it; draws now carry `depth_clamp`.
+  - weather: points take their size from the vertex program only with
+    `D3DRS_POINTSCALEENABLE` (else `D3DRS_POINTSIZE`, left at 1), and with
+    `D3DRS_POINTSPRITEENABLE` texture stage 3 reads the position within
+    the point (as xemu's NV2A model does); Lockout's snow had ~12000-pixel
+    points and drew as haze.
 - **Open:** render states still ignored: stipple (screen-door fades),
-  point-sprite texture coordinates (weather particles, `function_391f0`),
   `SHADOWFUNC`, `LOGICOP`, `SOLIDOFFSETENABLE`. Check visually before
   assuming they matter.
 

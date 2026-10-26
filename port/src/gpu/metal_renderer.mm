@@ -94,8 +94,8 @@ struct H2Varyings {
 struct H2ScreenUniforms {
     float4 window_to_ndc;   /* x scale, y scale, x offset, y offset */
     float z_scale;          /* depth units to 0..1 */
-    float pad0;
-    float pad1;
+    float point_size;       /* > 0: every point's size (D3DRS_POINTSIZE), not oPts */
+    float point_scale;      /* Metal pixels per game pixel */
     float pad2;
 };
 
@@ -105,6 +105,7 @@ struct H2FragmentUniforms {
     float alpha_ref;
     uint two_sided;
     float4 texel_scale[4];   /* xy: Metal texels per game texel of a scaled target */
+    uint point_sprite;       /* texture stage 3 reads the position within the point */
 };
 
 vertex H2Varyings h2_vertex_main(uint vid [[vertex_id]],
@@ -131,7 +132,7 @@ vertex H2Varyings h2_vertex_main(uint vid [[vertex_id]],
     o.t2 = r.texcoord[2];
     o.t3 = r.texcoord[3];
     o.fog = r.fog;
-    o.point_size = max(r.point_size, 1.0f);
+    o.point_size = max((u.point_size > 0.0f ? u.point_size : r.point_size) * u.point_scale, 1.0f);
     return o;
 }
 
@@ -151,6 +152,7 @@ bool h2_compare(float value, float reference, uint function)
 
 fragment float4 h2_fragment_main(H2Varyings v [[stage_in]],
                                  bool front [[front_facing]],
+                                 float2 point [[point_coord]],
                                  constant H2PixelConstants &k [[buffer(0)]],
                                  constant H2FragmentUniforms &f [[buffer(1)]],
                                  texture2d<float> a0 [[texture(0)]], texture2d<float> a1 [[texture(1)]],
@@ -172,6 +174,8 @@ fragment float4 h2_fragment_main(H2Varyings v [[stage_in]],
     in.texcoord[3] = v.t3;
     for (int i = 0; i < 4; ++i)
         in.texcoord[i].xy *= f.texel_scale[i].xy;
+    if (f.point_sprite != 0)
+        in.texcoord[3] = float4(point, 1.0, 1.0);
     in.fog = v.fog;
     in.front_facing = front;
     in.position = v.position;
@@ -1919,10 +1923,14 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         struct {
             float window_to_ndc[4];
             float z_scale;
-            float pad[3];
+            float point_size;
+            float point_scale;
+            float pad;
         } screen = {{2.0f / target_width, -2.0f / target_height, -1.0f, 1.0f},
                     packet.vertex_mode == H2_GPU_VERTEX_PROGRAM ? 1.0f / kDepthUnits : 1.0f,
-                    {0, 0, 0}};
+                    packet.point_scale_enable ? 0.0f : 1.0f,
+                    sx,
+                    0};
         [encoder_ setVertexBytes:&screen length:sizeof(screen) atIndex:2];
 
         /* pixel inputs */
@@ -1966,7 +1974,10 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             float alpha_ref;
             std::uint32_t two_sided;
             float texel_scale[4][4];
-        } fragment = {packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.two_sided_lighting, {}};
+            std::uint32_t point_sprite;
+            std::uint32_t pad[3];
+        } fragment = {packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.two_sided_lighting, {},
+                      packet.primitive == 1 && packet.point_sprite_enable, {}};
         for (int stage = 0; stage < 4; ++stage) {
             const CachedTexture* entry = bound[stage];
             const bool scaled = entry && entry->linear && entry->kind == 2;

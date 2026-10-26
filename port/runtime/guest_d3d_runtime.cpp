@@ -889,6 +889,8 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
     p->depth_write_enable = rs[D3DRS_ZWRITEENABLE] != 0;
     p->depth_func = normal_compare(rs[D3DRS_ZFUNC]);
     p->depth_clamp = (rs[D3DRS_DEPTHCLIPCONTROL] & 0x10) != 0;
+    p->point_scale_enable = rs[D3DRS_POINTSCALEENABLE] != 0;
+    p->point_sprite_enable = rs[D3DRS_POINTSPRITEENABLE] != 0;
     p->depth_bias = static_cast<float>(rs[D3DRS_ZBIAS]) + float_bits(rs[D3DRS_POLYGONOFFSETZOFFSET]);
     p->depth_slope_scale = float_bits(rs[D3DRS_POLYGONOFFSETZSLOPESCALE]);
     p->stencil_enable = rs[D3DRS_STENCILENABLE] != 0;

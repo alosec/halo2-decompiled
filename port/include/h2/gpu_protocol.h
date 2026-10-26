@@ -209,6 +209,12 @@ typedef struct h2_gpu_draw {
        far planes is clamped instead of clipped (the sky, drawn beyond the
        far plane) */
     h2_gpu_u32 depth_clamp;
+    /* points: D3DRS_POINTSCALEENABLE (the vertex program's oPts sizes them;
+       otherwise they take D3DRS_POINTSIZE, which the game leaves at 1) and
+       D3DRS_POINTSPRITEENABLE (texture stage 3 reads the position within
+       the point) */
+    h2_gpu_u32 point_scale_enable;
+    h2_gpu_u32 point_sprite_enable;
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {
