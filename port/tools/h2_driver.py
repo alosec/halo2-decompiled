@@ -26,6 +26,7 @@ STATE = re.compile(r"h2-state frame (\d+) unit (\w+) pos (-?\d+) (-?\d+) (-?\d+)
                    r"look (-?\d+) (-?\d+) (-?\d+)(?: head (-?\d+) (-?\d+) (-?\d+))?(?: fwd (-?\d+) (-?\d+) (-?\d+))?(?: ground (-?\d+))?(?: leaf (-?\d+) cluster (-?\d+))?")
 FRAME = re.compile(r"h2-state frame (\d+) none")
 EXTRA = re.compile(r" (lights|flashlight|health) (-?\d+)")
+SCRIPT = re.compile(r"h2-script frame \d+ thread (\d+) script (\S+) sleep (-?\d+) frames(.*)")
 SNAP = re.compile(r"h2-port: snapshot \"?([^\"\n]+)\"?")
 MENU_TO_CAMPAIGN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2900:a:8,3300:a:8,3700:a:8,4100:a:8"
 # main menu -> Split Screen -> pregame lobby -> Start Game (Slayer; H2_START_MAP
@@ -64,6 +65,7 @@ class Game:
         self.state = None
         self.history = []
         self.snapshots = []
+        self.scripts = {}   # thread index -> latest h2-script state (H2_TRACE=state, every 150 frames)
 
     # -- plumbing ---------------------------------------------------------
     def __enter__(self):
@@ -111,6 +113,12 @@ class Game:
                     for name, value in EXTRA.findall(line):
                         self.state[name] = int(value) if name == "lights" else int(value) / 1000
                     self.history.append(self.state)
+                t = SCRIPT.search(line)
+                if t:
+                    # each script thread's latest state: its script and the
+                    # syntax nodes it is in, innermost first (hs_decompile.py --node)
+                    self.scripts[int(t.group(1))] = {"script": t.group(2), "sleep": int(t.group(3)),
+                                                     "nodes": [x.split("/")[1] for x in t.group(4).split()]}
                 f = FRAME.search(line)
                 if f:
                     self.frame = int(f.group(1))

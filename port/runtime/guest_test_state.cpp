@@ -7,6 +7,8 @@
 #include "player_queries.h"
 #include "object_markers.h"
 #include "object_queries.h"
+#include "hs.h"
+#include "hs_scheduler.h"
 extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *format, ...);
 
 extern "C" unsigned int host_h2_trace_flags(void);
@@ -28,6 +30,60 @@ void function_11bed0(s_location *location, point3f const *point);
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,
 	long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result);
 
+/* every 150 frames, each script thread: its script's name, when it wakes,
+   and the script function its innermost frame evaluates (the evaluate
+   procedure's address, for guest_symbolize.py) */
+/* the script action test latches (g_4ed284: +4 pressed, +8 and +0xc
+   tested) and the script's input locks (+0x10: bit 0 camera control off),
+   logged when they change */
+static void report_action_latches(unsigned long frame)
+{
+	static unsigned long last[4];
+	if (!g_4ed284)
+		return;
+	unsigned long const *words = (unsigned long const *)((byte const *)(void const *)g_4ed284 + 4);
+	if (words[0] == last[0] && words[1] == last[1] && words[2] == last[2] && words[3] == last[3])
+		return;
+	last[0] = words[0]; last[1] = words[1]; last[2] = words[2]; last[3] = words[3];
+	char line[120];
+	_snprintf(line, sizeof(line), "h2-latch frame %lu pressed %08lx tested %08lx %08lx control %08lx", frame, words[0], words[1],
+		words[2], words[3]);
+	host_h2_log(line);
+}
+
+static void report_scripts(unsigned long frame)
+{
+	report_action_latches(frame);
+	if (frame % 150 || !g_4f9384 || !g_4f9384->data || !g_4e0350 || !g_4f9394 || !g_4f9394->data)
+		return;
+	s_hs_scenario const *scenario = (s_hs_scenario const *)g_4e0350;
+	for (long index = 0; index < g_4f9384->maximum_count; ++index)
+	{
+		s_hs_thread const *thread = &((s_hs_thread const *)g_4f9384->data)[index];
+		if (!thread->salt || thread->script_index == NONE || thread->script_index >= scenario->script_count)
+			continue;
+		/* the frames from the innermost out: each one's node, as
+		   "function/node" (a script call shows as s<script>) */
+		char chain[120] = "";
+		long length = 0;
+		long depth = 0;
+		for (s_hs_frame const *f = thread->frame; f && depth < 8 && length < 100; f = f->next, ++depth)
+		{
+			long node_index = f->expression_node_index;
+			if (node_index == NONE)
+				continue;
+			s_hs_expression_node const *node =
+				&((s_hs_expression_node const *)g_4f9394->data)[node_index & 0xffff];
+			length += _snprintf(chain + length, sizeof(chain) - length, " %ld/%lx",
+				(long)node->function_index, (unsigned long)(node_index & 0xffff));
+		}
+		char line[240];
+		_snprintf(line, sizeof(line), "h2-script frame %lu thread %ld script %s sleep %ld frames%s",
+			frame, index, scenario->scripts[thread->script_index].name, (long)thread->sleep_until, chain);
+		host_h2_log(line);
+	}
+}
+
 extern "C" void h2_port_report_state(void)
 {
 	static bool enabled = (host_h2_trace_flags() & 2) != 0;
@@ -35,6 +91,7 @@ extern "C" void h2_port_report_state(void)
 	++frame;
 	if (!enabled)
 		return;
+	report_scripts(frame);
 	if (!g_4e8c24 || !g_4e8c24->data || !g_4e0300 || !g_4e0300->data)
 	{
 		if (frame % 30 == 0)
