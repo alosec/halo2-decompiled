@@ -1339,6 +1339,17 @@ extern "C" void host_h2_gpu_clear(const void* packet) {
         session.gpu->clear(*static_cast<const h2_gpu_clear*>(packet));
 }
 
+extern "C" void host_h2_gpu_visibility_end(unsigned int index) {
+    auto& session = game_session();
+    if (session.gpu)
+        session.gpu->end_visibility_test(index);
+}
+
+extern "C" unsigned int host_h2_gpu_visibility_result(unsigned int index) {
+    auto& session = game_session();
+    return session.gpu ? session.gpu->visibility_result(index) : 0;
+}
+
 extern "C" void host_h2_frame(void) {
     auto& session = game_session();
     ++session.frames;
@@ -1422,7 +1433,7 @@ extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
     if (map.size() + 1 > size)
         return 0;
     std::memcpy(buffer, map.c_str(), map.size() + 1);
-    std::cerr << "h2-port: the campaign starts at " << map << '\n';
+    std::cerr << "h2-port: the first game starts at " << map << '\n';
     return static_cast<unsigned int>(map.size());
 }
 
@@ -1515,6 +1526,8 @@ int main(int argc, char** argv) {
                 {"host_h2_trace_flags", reinterpret_cast<std::uintptr_t>(&host_h2_trace_flags)},
                 {"host_h2_gpu_draw", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_draw)},
                 {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},
+                {"host_h2_gpu_visibility_end", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_visibility_end)},
+                {"host_h2_gpu_visibility_result", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_visibility_result)},
                 {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
                 {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
                 {"host_h2_start_map", reinterpret_cast<std::uintptr_t>(&host_h2_start_map)},

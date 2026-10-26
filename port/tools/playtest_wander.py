@@ -8,7 +8,8 @@ under it, is the game's own and isn't reported.
 Usage (repository root): /usr/bin/python3 port/tools/playtest_wander.py
            [--map 01b_spacestation] [--seconds 120] [--seed 1] [--work DIR]
 
-Starts the map from the main menu (skipping its cinematic with A), then
+Starts the map from the main menu (skipping its cinematic with A; with
+--multiplayer, as a split-screen Slayer game from the lobby), then
 alternates turns, walks, strafes and jumps (with --fire also shooting,
 throwing grenades and reloading). Exit status 1 on a fall; the
 snapshot taken at the fall is printed.
@@ -19,7 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from h2_driver import Game, MENU_TO_CAMPAIGN  # noqa: E402
+from h2_driver import Game, MENU_TO_CAMPAIGN, MENU_TO_SPLIT_SCREEN  # noqa: E402
 
 
 def main():
@@ -29,11 +30,16 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--work")
     parser.add_argument("--fire", action="store_true", help="also fire, throw grenades and reload")
+    parser.add_argument("--multiplayer", action="store_true", help="--map is a multiplayer map: start a split-screen Slayer game")
     args = parser.parse_args()
     rng = random.Random(args.seed)
-    skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
-    with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as game:
-        game.wait_frame(9500)
+    if args.multiplayer:
+        script, playing = MENU_TO_SPLIT_SCREEN, 5000
+    else:
+        script = MENU_TO_CAMPAIGN + "," + ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
+        playing = 9500
+    with Game(start_map=args.map, menu_script=script, work=args.work) as game:
+        game.wait_frame(playing)
         start = game.frame
         checked = len(game.history)
         while game.frame - start < args.seconds * 60:

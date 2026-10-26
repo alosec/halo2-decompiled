@@ -27,6 +27,9 @@ STATE = re.compile(r"h2-state frame (\d+) unit (\w+) pos (-?\d+) (-?\d+) (-?\d+)
 FRAME = re.compile(r"h2-state frame (\d+) none")
 SNAP = re.compile(r"h2-port: snapshot \"?([^\"\n]+)\"?")
 MENU_TO_CAMPAIGN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2900:a:8,3300:a:8,3700:a:8,4100:a:8"
+# main menu -> Split Screen -> pregame lobby -> Start Game (Slayer; H2_START_MAP
+# picks the multiplayer map); the game is running by frame ~4100
+MENU_TO_SPLIT_SCREEN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2800:down:8,2870:a:8,3070:a:8,3270:a:8"
 
 
 class Game:

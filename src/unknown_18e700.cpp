@@ -120,6 +120,10 @@ void function_18efa0(void)
 }
 #pragma inline_depth(255)
 
+#if H2_WHOLE_IMAGE
+void port_start_map(s_game_options *options); /* unknown_18ec20.cpp */
+#endif
+
 #pragma inline_depth(0)
 // @retail 0x18e8b0
 bool __stdcall function_18e8b0(s_session_options const *arg_0)
@@ -142,6 +146,9 @@ bool __stdcall function_18e8b0(s_session_options const *arg_0)
         goto local_2;
     }
     memset(g_4e61dc, 0, 0x120);
+#if H2_WHOLE_IMAGE
+    port_start_map((s_game_options *)local_1);
+#endif
     if (function_18eaa0((s_18eaa0 const *)local_1) && function_18f000((s_18e700 const *)local_1))
     {
         if (((s_18e700 const *)local_1)->field_0 == 1)

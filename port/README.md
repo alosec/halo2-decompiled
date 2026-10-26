@@ -60,7 +60,9 @@ build/release/port/halo2-port --data-root orig/game \
 | Cmd+Q | Quit |
 
 **Options** (environment variables):
-- `H2_START_MAP=01b_spacestation` makes "New Campaign" start at that solo map.
+- `H2_START_MAP=01b_spacestation` makes "New Campaign" start at that solo map;
+  a multiplayer map name (`H2_START_MAP=lockout`) replaces the map of the first
+  game started from a Split Screen or System Link lobby.
 - `H2_AUDIO=off` turns off sound.
 - `H2_RENDER_SCALE=N` sets the render resolution multiple (default 2).
 
