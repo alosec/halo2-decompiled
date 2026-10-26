@@ -227,13 +227,17 @@ See `port/README.md` "Play" for the full commands.
   - stipple (`D3DRS_STIPPLEENABLE`, the pattern from `SetStipple`) discards
     fragments per game pixel; xemu doesn't model it, so the bit order (row
     `y & 31`, bit `x & 31`) is a guess that only matters for dither fades.
+  - the flashlight and decals: `function_144f0` (bind a bitmap, else the
+    rasterizer default of the wanted type) takes the type to match in ebx
+    and the fallback index first on the stack; three callers (the light
+    gel in `function_19530` and its native copy, decals in `0x44040`)
+    passed them swapped, so a 2D bitmap never matched type 1 and they drew
+    with `rasterizer\default_3d` (flashlight alpha 0, decals missing). The
+    flashlight is campaign only (retail `0xc50a0` exits otherwise; White).
   - the polygon offset (`POLYGONOFFSETZOFFSET`/`ZSLOPESCALE`) applies only
     while `SOLIDOFFSETENABLE` is on; the runtime applied it always, and the
     game leaves 550 set after decal passes.
 - **Open:**
-  - the flashlight: no button shows a beam, adds light-pass draws, or
-    changes the dynamic light count (`lights` in h2-state). Unknown whether
-    the input never reaches the action or the light never draws.
   - render states still ignored: `SHADOWFUNC` (shadow-map compare,
     `function_0496f0` light passes), `LOGICOP`. Check visually before
   assuming they matter.

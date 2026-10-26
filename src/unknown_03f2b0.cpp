@@ -478,7 +478,7 @@ void __stdcall function_44040(long cell, short mask)
                     long bitmap = *(signed char *)(entry + 0x29);
                     g_4c8788 = bitmap;
                     g_4c878c = tag;
-                    function_144f0(tag, 0, 1, (short)bitmap, 0, 0.0f);
+                    function_144f0(tag, 0, 0, 1, (short)bitmap, 0.0f);
                     function_1cf50();
                 }
                 dword color = *(dword *)(entry + 0x24);

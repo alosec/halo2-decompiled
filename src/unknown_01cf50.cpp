@@ -4388,7 +4388,7 @@ again:
             if (*(long *)(g_4858c4 + 0xe0) != NONE && !g_485a77)
                 function_14f60(*stage_reference, 13);
             else
-                function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 1, 0, 0, 0.0f);
+                function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 0, 1, 0, 0.0f);
         }
         else
         {
@@ -4403,7 +4403,7 @@ again:
         return;
     case 12:
         if (!g_4858c8) function_143c0(*(long *)(g_485a80 + 4), 0, *stage_reference, 0.0f);
-        else function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 1, 0, 0, 0.0f);
+        else function_144f0(*(long *)(g_4858c4 + 0x7c), *stage_reference, 0, 1, 0, 0.0f);
         return;
     case 13:
         function_14f60(*stage_reference, 9);

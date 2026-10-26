@@ -114,7 +114,7 @@ again:
             if (*(long *)(g_4858c4 + 0xe0) != NONE && !g_485a77)
                 function_14f60(stage, 13);
             else
-                function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 1, 0, 0, 0.0f);
+                function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 0, 1, 0, 0.0f);
         }
         else
         {
@@ -134,7 +134,7 @@ again:
         if (!g_4858c8)
             function_143c0(*(long *)(g_485a80 + 4), 0, stage, 0.0f);
         else
-            function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 1, 0, 0, 0.0f);
+            function_144f0(*(long *)(g_4858c4 + 0x7c), stage, 0, 1, 0, 0.0f);
     }
     else if (mode == 13)
     {
