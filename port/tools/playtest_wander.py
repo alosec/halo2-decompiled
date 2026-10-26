@@ -9,7 +9,8 @@ Usage (repository root): /usr/bin/python3 port/tools/playtest_wander.py
            [--map 01b_spacestation] [--seconds 120] [--seed 1] [--work DIR]
 
 Starts the map from the main menu (skipping its cinematic with A), then
-alternates turns, walks, strafes and jumps. Exit status 1 on a fall; the
+alternates turns, walks, strafes and jumps (with --fire also shooting,
+throwing grenades and reloading). Exit status 1 on a fall; the
 snapshot taken at the fall is printed.
 """
 import argparse
@@ -27,6 +28,7 @@ def main():
     parser.add_argument("--seconds", type=float, default=120)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--work")
+    parser.add_argument("--fire", action="store_true", help="also fire, throw grenades and reload")
     args = parser.parse_args()
     rng = random.Random(args.seed)
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
@@ -35,13 +37,22 @@ def main():
         start = game.frame
         checked = len(game.history)
         while game.frame - start < args.seconds * 60:
-            action = rng.choice(["turn", "walk", "walk", "strafe", "jump"])
+            actions = ["turn", "walk", "walk", "strafe", "jump"]
+            if args.fire:
+                actions += ["fire", "fire", "grenade", "reload"]
+            action = rng.choice(actions)
             if action == "turn":
                 game.press(rng.choice(["rx+", "rx-"]) + str(rng.randint(50, 100)), rng.randint(3, 20))
             elif action == "walk":
                 game.press(rng.choice(["ly+", "ly+", "ly-"]), rng.randint(20, 120))
             elif action == "strafe":
                 game.press(rng.choice(["lx+", "lx-"]), rng.randint(20, 80))
+            elif action == "fire":
+                game.press("rt", rng.randint(5, 60))
+            elif action == "grenade":
+                game.press("lt", 4)
+            elif action == "reload":
+                game.press("x", 4)
             else:
                 game.press("a", 4)
                 game.press("ly+", 40)
