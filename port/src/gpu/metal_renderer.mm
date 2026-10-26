@@ -504,13 +504,25 @@ public:
         }
     }
 
-    /* H2_TRACE_FRAME=n: log every clear and draw of presented frame n */
+    /* H2_TRACE_FRAME=n[,m...]: log every clear and draw of those presented
+       frames (with several, dump names carry the frame: back-f<n>-<draw>) */
     bool tracing_frame() const {
-        static const int wanted = [] {
-            const char* value = std::getenv("H2_TRACE_FRAME");
-            return value ? std::atoi(value) : -1;
+        static const std::vector<int> wanted = [] {
+            std::vector<int> frames;
+            if (const char* value = std::getenv("H2_TRACE_FRAME"))
+                for (const char* p = value; *p; ++p)
+                    if (p == value || p[-1] == ',')
+                        frames.push_back(std::atoi(p));
+            return frames;
         }();
-        return presented_ == wanted;
+        return std::find(wanted.begin(), wanted.end(), presented_) != wanted.end();
+    }
+
+    std::string trace_suffix(const std::string& suffix) const {
+        const char* value = std::getenv("H2_TRACE_FRAME");
+        if (!value || !std::strchr(value, ','))
+            return suffix;
+        return "-f" + std::to_string(presented_) + suffix;
     }
 
     void clear(const h2_gpu_clear& packet) override {
@@ -643,7 +655,7 @@ public:
         }
         ++frame_draw;
         if (tracing_frame())
-            std::fprintf(stderr, "h2-frame: #%d\n", frame_draw);
+            std::fprintf(stderr, "h2-frame: #%d frame %d\n", frame_draw, presented_);
         if (tracing_frame())
             std::fprintf(stderr,
                          "h2-frame: draw rt %08x %ux%u prim %u n %u src %u mode %u vp %u ps %u tex %08x/%08x "
@@ -752,7 +764,7 @@ public:
         for (auto& [name, pair] : dumps) {
             id<MTLTexture> texture = pair.first;
             const auto* bgra = static_cast<const std::uint8_t*>(pair.second.contents);
-            const std::string path = std::string(dir) + "/" + name + suffix + ".ppm";
+            const std::string path = std::string(dir) + "/" + name + trace_suffix(suffix) + ".ppm";
             if (FILE* file = std::fopen(path.c_str(), "wb")) {
                 std::fprintf(file, "P6 %lu %lu 255\n", static_cast<unsigned long>(texture.width),
                              static_cast<unsigned long>(texture.height));

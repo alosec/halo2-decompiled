@@ -894,8 +894,12 @@ void fill_draw_state(h2_d3d_device *d, h2_gpu_draw *p)
     p->stipple_enable = rs[D3DRS_STIPPLEENABLE] != 0;
     if (p->stipple_enable)
         memcpy(p->stipple, d->stipple, sizeof(p->stipple));
-    p->depth_bias = static_cast<float>(rs[D3DRS_ZBIAS]) + float_bits(rs[D3DRS_POLYGONOFFSETZOFFSET]);
-    p->depth_slope_scale = float_bits(rs[D3DRS_POLYGONOFFSETZSLOPESCALE]);
+    /* the polygon offset applies only while D3DRS_SOLIDOFFSETENABLE is on;
+       the game leaves the offset set (550 for decals) after turning it off */
+    const bool offset = rs[D3DRS_SOLIDOFFSETENABLE] != 0;
+    p->depth_bias = static_cast<float>(rs[D3DRS_ZBIAS]) +
+                    (offset ? float_bits(rs[D3DRS_POLYGONOFFSETZOFFSET]) : 0.0f);
+    p->depth_slope_scale = offset ? float_bits(rs[D3DRS_POLYGONOFFSETZSLOPESCALE]) : 0.0f;
     p->stencil_enable = rs[D3DRS_STENCILENABLE] != 0;
     p->stencil_func = normal_compare(rs[D3DRS_STENCILFUNC]);
     p->stencil_ref = rs[D3DRS_STENCILREF];

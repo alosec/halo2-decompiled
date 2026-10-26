@@ -54,7 +54,10 @@ See `port/README.md` "Play" for the full commands.
   - `H2_START_MAP=01b_spacestation` starts the campaign on a level; a
     multiplayer name (`lockout`) replaces the map of the first game started
     from a lobby;
-  - `H2_TRACE_FRAME=n` traces every draw of frame n;
+  - `H2_TRACE_FRAME=n[,m...]` traces every draw of those frames (with
+    several, `h2-frame: #k frame n` lines and dumps named `back-f<n>-<k>`;
+    compare one view before and after an input in a single run, since
+    spawns and timing differ between runs);
   - `H2_TRACE_DUMP=dir` and `H2_TRACE_DUMP_DRAWS=i,j,...|all` dump render
     targets after those draws (`H2_TRACE_DUMP_TARGET=back|target-<data>`
     keeps only one; draw numbers shift between runs, so find a draw by
@@ -224,8 +227,15 @@ See `port/README.md` "Play" for the full commands.
   - stipple (`D3DRS_STIPPLEENABLE`, the pattern from `SetStipple`) discards
     fragments per game pixel; xemu doesn't model it, so the bit order (row
     `y & 31`, bit `x & 31`) is a guess that only matters for dither fades.
-- **Open:** render states still ignored: `SHADOWFUNC`, `LOGICOP`,
-  `SOLIDOFFSETENABLE`. Check visually before
+  - the polygon offset (`POLYGONOFFSETZOFFSET`/`ZSLOPESCALE`) applies only
+    while `SOLIDOFFSETENABLE` is on; the runtime applied it always, and the
+    game leaves 550 set after decal passes.
+- **Open:**
+  - the flashlight: no button shows a beam, adds light-pass draws, or
+    changes the dynamic light count (`lights` in h2-state). Unknown whether
+    the input never reaches the action or the light never draws.
+  - render states still ignored: `SHADOWFUNC` (shadow-map compare,
+    `function_0496f0` light passes), `LOGICOP`. Check visually before
   assuming they matter.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25

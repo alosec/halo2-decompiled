@@ -12,6 +12,7 @@ extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *
 extern "C" unsigned int host_h2_trace_flags(void);
 extern "C" void host_h2_log(const char *message);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
+extern s_record_pool *g_4e030c;   /* the dynamic lights */
 
 /* the world ray test's result (the layout retail's callers use) */
 struct s_collision_result_1697c0
@@ -78,11 +79,12 @@ extern "C" void h2_port_report_state(void)
 		char line[320];
 		/* thousandths: the guest's formatter is integer-only */
 		#define MILLI(value) (long)((value) * 1000.0f)
-		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld",
+		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld",
 			frame, (unsigned long)player->unit_index, MILLI(position[0]), MILLI(position[1]), MILLI(position[2]),
 			MILLI(velocity.i), MILLI(velocity.j), MILLI(velocity.k), MILLI(look[0]), MILLI(look[1]), MILLI(look[2]),
 			MILLI(head.x), MILLI(head.y), MILLI(head.z), MILLI(forward[0]), MILLI(forward[1]), MILLI(forward[2]),
-			grounded ? MILLI(ground.point.z) : -999999L, (long)location.leaf_index, (long)location.cluster_index);
+			grounded ? MILLI(ground.point.z) : -999999L, (long)location.leaf_index, (long)location.cluster_index,
+			g_4e030c ? (long)g_4e030c->actual_count : -1L);
 		host_h2_log(line);
 		#undef MILLI
 		found = true;
