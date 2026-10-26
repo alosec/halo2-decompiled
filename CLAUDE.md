@@ -239,6 +239,13 @@ See `port/README.md` "Play" for the full commands.
   - the polygon offset (`POLYGONOFFSETZOFFSET`/`ZSLOPESCALE`) applies only
     while `SOLIDOFFSETENABLE` is on; the runtime applied it always, and the
     game leaves 550 set after decal passes.
+- **The Armory end to end** (`port/tools/playtest_armory.py`, driven by
+  the level script's waits): look lights, aiming prompt, zapper, shield
+  test, elevator and tram are all reached in some runs. Open: the AI
+  "guns" sometimes walks paths through the player at the zapper (h2-biped
+  lines: stop flag set yet still moving in one run, a detour in another)
+  and shoves him out of the cage, which then crushes him; not yet known
+  whether the port or retail AI behaviour.
 - **Open:**
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any

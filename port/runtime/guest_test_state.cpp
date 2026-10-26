@@ -55,7 +55,7 @@ static void report_action_latches(unsigned long frame)
    movement around the player: who walks into whom) */
 static void report_bipeds(unsigned long frame, long player_unit, real const *player_position)
 {
-	if (frame % 30 || !g_4e0300 || !g_4e0300->data)
+	if (frame % 10 || !g_4e0300 || !g_4e0300->data)
 		return;
 	for (long index = 0; index < g_4e0300->maximum_count; ++index)
 	{
@@ -67,9 +67,26 @@ static void report_bipeds(unsigned long frame, long player_unit, real const *pla
 		real dx = p[0] - player_position[0], dy = p[1] - player_position[1];
 		if (dx * dx + dy * dy > 36.0f)
 			continue;
-		char line[120];
-		_snprintf(line, sizeof(line), "h2-biped frame %lu index %ld pos %ld %ld %ld", frame, index,
-			(long)(p[0] * 1000.0f), (long)(p[1] * 1000.0f), (long)(p[2] * 1000.0f));
+		/* its actor (unit+0x12c; 0x888-byte records): +0x480 don't move,
+		   +0x5d0 wants to move, +0x4ac movement mode, +0x4ec the planner's
+		   destination, +0x5ec the movement input */
+		char actor_text[120] = "";
+		long actor_index = *(long const *)(object + 0x12c);
+		if (actor_index != NONE && g_4f55f0 && g_4f55f0->data)
+		{
+			byte const *actor = (byte const *)g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+			real const *destination = (real const *)(actor + 0x4ec);
+			real const *throttle = (real const *)(actor + 0x5ec);
+			_snprintf(actor_text, sizeof(actor_text), " actor stop %d move %d mode %d destination %ld %ld %ld input %ld %ld %ld",
+				actor[0x480], actor[0x5d0], (int)*(short const *)(actor + 0x4ac),
+				(long)(destination[0] * 1000.0f), (long)(destination[1] * 1000.0f), (long)(destination[2] * 1000.0f),
+				(long)(throttle[0] * 1000.0f), (long)(throttle[1] * 1000.0f), (long)(throttle[2] * 1000.0f));
+		}
+		char line[240];
+		real const *forward = (real const *)(object + 0x70);
+		_snprintf(line, sizeof(line), "h2-biped frame %lu index %ld pos %ld %ld %ld fwd %ld %ld%s", frame, index,
+			(long)(p[0] * 1000.0f), (long)(p[1] * 1000.0f), (long)(p[2] * 1000.0f),
+			(long)(forward[0] * 1000.0f), (long)(forward[1] * 1000.0f), actor_text);
 		host_h2_log(line);
 	}
 }
