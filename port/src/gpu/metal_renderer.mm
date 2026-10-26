@@ -700,7 +700,7 @@ public:
             /* "copies": every unblended screen-space draw */
             const bool copy = list == ",copies," && packet.vertex_source == H2_GPU_VERTICES_INLINE &&
                               !packet.blend_enable;
-            if (copy || list.find("," + std::to_string(frame_draw) + ",") != std::string::npos)
+            if (copy || list == ",all," || list.find("," + std::to_string(frame_draw) + ",") != std::string::npos)
                 dump_targets(dump_dir, "-" + std::to_string(frame_draw));
         }
     }
@@ -711,8 +711,10 @@ public:
         end_encoder();
         begin_command_buffer();
         std::vector<std::pair<std::string, std::pair<id<MTLTexture>, id<MTLBuffer>>>> dumps;
+        /* H2_TRACE_DUMP_TARGET=back|target-<data>: only that one */
+        static const char* only = std::getenv("H2_TRACE_DUMP_TARGET");
         auto add = [&](const std::string& name, id<MTLTexture> texture) {
-            if (!texture)
+            if (!texture || (only && name != only))
                 return;
             id<MTLBuffer> buffer = [device_ newBufferWithLength:texture.width * texture.height * 4
                                                         options:MTLResourceStorageModeShared];

@@ -53,8 +53,10 @@ See `port/README.md` "Play" for the full commands.
 - **Other environment variables:**
   - `H2_START_MAP=01b_spacestation` starts the campaign on a level;
   - `H2_TRACE_FRAME=n` traces every draw of frame n;
-  - `H2_TRACE_DUMP=dir` and `H2_TRACE_DUMP_DRAWS=i,j,...` dump render
-    targets after those draws;
+  - `H2_TRACE_DUMP=dir` and `H2_TRACE_DUMP_DRAWS=i,j,...|all` dump render
+    targets after those draws (`H2_TRACE_DUMP_TARGET=back|target-<data>`
+    keeps only one; draw numbers shift between runs, so find a draw by
+    dumping all of one frame in a single run);
   - `H2_TRACE_TEXTURE=hex|all` dumps texture bytes and palettes;
   - `H2_TRACE=d3d` gives push-buffer method counts;
   - `H2_AUDIO_RECORD=file.wav` records the mix;
@@ -194,7 +196,12 @@ See `port/README.md` "Play" for the full commands.
   - white flash frames in cinematics;
   - cutscene skipping works: A (Space) skips, as on the Xbox (verified on
     the 00a intro and the 01b cinematic); the README says so now;
-  - the difficulty-screen backdrop is missing.
+  - the difficulty-screen backdrop is missing;
+  - the Armory look-device lamps never turn green: the look steps pass and
+    the tutorial advances, but in a traced frame after all four checks
+    only the lamp's base pass draws (no illumination pass adds the colour);
+    other self-illuminated surfaces glow, so suspect the script's function
+    value not reaching the lamp's shader.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25
 
