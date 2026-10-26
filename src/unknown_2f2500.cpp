@@ -21,10 +21,26 @@ public:
 	bool hit;
 };
 
+// the collector the query was given, as the swapping collector sees it
+class pair_listener_2f2520
+{
+public:
+	virtual void slot_0() = 0;
+	virtual void add_pair(void const *a, void const *b) = 0;
+};
+
+// passes each pair on to the query's own collector with its two sides
+// swapped back (vtable 0x412980; the pass-on slot is 0x3018d0). The query
+// calls that slot for every pair it finds, so it must be declared here: a
+// table with only the destructor ends before it
 class hit_value_2f2520 : public hit_2f2520
 {
 public:
 	hit_value_2f2520(long value_) : value(value_) {}
+	virtual void add_pair(void const *a, void const *b)
+	{
+		((pair_listener_2f2520 *)value)->add_pair(b, a);
+	}
 
 	long value;
 };
