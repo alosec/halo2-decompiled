@@ -51,6 +51,29 @@ static void report_action_latches(unsigned long frame)
 	host_h2_log(line);
 }
 
+/* every 30 frames, the other bipeds within 6 units of the player (AI
+   movement around the player: who walks into whom) */
+static void report_bipeds(unsigned long frame, long player_unit, real const *player_position)
+{
+	if (frame % 30 || !g_4e0300 || !g_4e0300->data)
+		return;
+	for (long index = 0; index < g_4e0300->maximum_count; ++index)
+	{
+		byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+		byte *object = *(byte **)(header + 8);
+		if (!*(short const *)header || !object || header[3] != 0 || (index & 0xffff) == (player_unit & 0xffff))
+			continue;   /* type 0: biped */
+		real const *p = (real const *)(object + 0x64);
+		real dx = p[0] - player_position[0], dy = p[1] - player_position[1];
+		if (dx * dx + dy * dy > 36.0f)
+			continue;
+		char line[120];
+		_snprintf(line, sizeof(line), "h2-biped frame %lu index %ld pos %ld %ld %ld", frame, index,
+			(long)(p[0] * 1000.0f), (long)(p[1] * 1000.0f), (long)(p[2] * 1000.0f));
+		host_h2_log(line);
+	}
+}
+
 static void report_scripts(unsigned long frame)
 {
 	report_action_latches(frame);
@@ -136,15 +159,17 @@ extern "C" void h2_port_report_state(void)
 		char line[320];
 		/* thousandths: the guest's formatter is integer-only */
 		#define MILLI(value) (long)((value) * 1000.0f)
-		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld flashlight %ld health %ld",
+		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld flashlight %ld health %ld shield %ld",
 			frame, (unsigned long)player->unit_index, MILLI(position[0]), MILLI(position[1]), MILLI(position[2]),
 			MILLI(velocity.i), MILLI(velocity.j), MILLI(velocity.k), MILLI(look[0]), MILLI(look[1]), MILLI(look[2]),
 			MILLI(head.x), MILLI(head.y), MILLI(head.z), MILLI(forward[0]), MILLI(forward[1]), MILLI(forward[2]),
 			grounded ? MILLI(ground.point.z) : -999999L, (long)location.leaf_index, (long)location.cluster_index,
 			g_4e030c ? (long)g_4e030c->actual_count : -1L,
 			MILLI(*(real const *)(unit + 0x264)),   /* the flashlight's power, 0..1 */
-			MILLI(*(real const *)(unit + 0xec)));   /* body vitality, 0 when dead */
+			MILLI(*(real const *)(unit + 0xec)),   /* body vitality, 0 when dead */
+			MILLI(*(real const *)(unit + 0xf0)));  /* shield vitality */
 		host_h2_log(line);
+		report_bipeds(frame, player->unit_index, position);
 		/* in a vehicle the unit's position is its seat's, relative to the
 		   vehicle: also report the root object's (world) position */
 		#define OBJECT(index) (((s_player_object_header *)g_4e0300->data)[(index) & 0xffff].object)
