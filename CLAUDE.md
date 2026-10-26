@@ -221,8 +221,11 @@ See `port/README.md` "Play" for the full commands.
     `D3DRS_POINTSPRITEENABLE` texture stage 3 reads the position within
     the point (as xemu's NV2A model does); Lockout's snow had ~12000-pixel
     points and drew as haze.
-- **Open:** render states still ignored: stipple (screen-door fades),
-  `SHADOWFUNC`, `LOGICOP`, `SOLIDOFFSETENABLE`. Check visually before
+  - stipple (`D3DRS_STIPPLEENABLE`, the pattern from `SetStipple`) discards
+    fragments per game pixel; xemu doesn't model it, so the bit order (row
+    `y & 31`, bit `x & 31`) is a guess that only matters for dither fades.
+- **Open:** render states still ignored: `SHADOWFUNC`, `LOGICOP`,
+  `SOLIDOFFSETENABLE`. Check visually before
   assuming they matter.
 
 ## Missing bodies ("floating heads"): solved 2026-10-25

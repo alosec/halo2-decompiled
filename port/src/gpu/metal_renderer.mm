@@ -106,6 +106,10 @@ struct H2FragmentUniforms {
     uint two_sided;
     float4 texel_scale[4];   /* xy: Metal texels per game texel of a scaled target */
     uint point_sprite;       /* texture stage 3 reads the position within the point */
+    uint stipple_enable;
+    float stipple_scale;     /* game pixels per Metal pixel */
+    uint pad;
+    uint stipple[32];        /* row y & 31, bit x & 31: draw */
 };
 
 vertex H2Varyings h2_vertex_main(uint vid [[vertex_id]],
@@ -164,6 +168,11 @@ fragment float4 h2_fragment_main(H2Varyings v [[stage_in]],
                                  sampler s0 [[sampler(0)]], sampler s1 [[sampler(1)]],
                                  sampler s2 [[sampler(2)]], sampler s3 [[sampler(3)]])
 {
+    if (f.stipple_enable != 0) {
+        const uint2 p = uint2(v.position.xy * f.stipple_scale);
+        if (((f.stipple[p.y & 31] >> (p.x & 31)) & 1) == 0)
+            discard_fragment();
+    }
     H2PixelInput in;
     bool back = f.two_sided != 0 && !front;
     in.diffuse = back ? v.back_diffuse : v.diffuse;
@@ -1975,9 +1984,14 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             std::uint32_t two_sided;
             float texel_scale[4][4];
             std::uint32_t point_sprite;
-            std::uint32_t pad[3];
+            std::uint32_t stipple_enable;
+            float stipple_scale;
+            std::uint32_t pad;
+            std::uint32_t stipple[32];
         } fragment = {packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.two_sided_lighting, {},
-                      packet.primitive == 1 && packet.point_sprite_enable, {}};
+                      packet.primitive == 1 && packet.point_sprite_enable, packet.stipple_enable, 1.0f / sx, 0, {}};
+        if (packet.stipple_enable)
+            std::memcpy(fragment.stipple, packet.stipple, sizeof(fragment.stipple));
         for (int stage = 0; stage < 4; ++stage) {
             const CachedTexture* entry = bound[stage];
             const bool scaled = entry && entry->linear && entry->kind == 2;

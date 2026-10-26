@@ -215,6 +215,10 @@ typedef struct h2_gpu_draw {
        the point) */
     h2_gpu_u32 point_scale_enable;
     h2_gpu_u32 point_sprite_enable;
+    /* D3DRS_STIPPLEENABLE: a fragment at game pixel (x, y) is drawn only if
+       bit x & 31 of stipple[y & 31] is set (the game's dither fades) */
+    h2_gpu_u32 stipple_enable;
+    h2_gpu_u32 stipple[32];
 } h2_gpu_draw;
 
 typedef struct h2_gpu_clear {
