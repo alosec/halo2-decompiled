@@ -29,6 +29,7 @@ from h2_driver import Game, MENU_TO_CAMPAIGN, ROOT  # noqa: E402
 from hs_decompile import Scripts  # noqa: E402
 
 BSP_WAIT = re.compile(r"\(= \(structure_bsp_index\) (\d+)\)")
+SEAT_LABEL = re.compile(r"\(vehicle_test_seat \(.*?\) (\w+) \(unit")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
 
 
@@ -70,6 +71,16 @@ def live_volume(g, volumes, name):
     scale = v[12]
     ext = tuple(e * scale for e in volumes[name][4])
     return tuple(v[0:3]), tuple(v[3:6]), tuple(v[6:9]), tuple(v[9:12]), ext
+
+
+def string_id_values(m):
+    """name -> string id ((length << 24) | index) of the map's string ids
+    (count at header +0x164)"""
+    ids = {}
+    for index in range(m.u32(0x164)):
+        name = m.string_id(index)
+        ids.setdefault(name, (len(name) << 24) | index)
+    return ids
 
 
 def bsp_switches(scripts, volumes):
@@ -154,6 +165,7 @@ def main():
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
     volumes, attached = trigger_volumes(scripts)
     switches = bsp_switches(scripts, volumes)
+    string_ids = string_id_values(scripts.map)
     names = {name for name, _, _ in scripts.scripts}
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
     acted = {}
@@ -187,9 +199,13 @@ def main():
                     if bsp and not targets:
                         # a structure bsp switch: cross the switch volumes on the way
                         wanted = (int(bsp.group(1)) - 0xffff0000) if int(bsp.group(1)) > 0xffff else int(bsp.group(1))
+                        # once per script and bsp: ambient scripts (kill volumes,
+                        # wind) wait for each bsp in turn, forever
+                        key = (thread["script"], ("bsp", wanted))
+                        count = acted.get(key, 0)
                         hop = first_hop(switches, g.state and g.state.get("bsp"), wanted)
                         if hop and count < 8:
-                            places.append((count, order, thread["script"], node, "cross", hop))
+                            places.append((count, order, key[0], key[1], "cross", hop))
                     elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
                         volume = live_volume(g, volumes, targets[0]) if targets[0] in attached else volumes[targets[0]]
                         if volume and not (g.state and inside(volume, g.state["pos"])):
@@ -197,6 +213,17 @@ def main():
                                 away.append((not thread["script"].startswith("mission"), count, order, key, targets[0]))
                             else:
                                 places.append((count, order, thread["script"], node, "teleport", targets[0]))
+                    elif "vehicle_test_seat" in text and count < 6:
+                        # a seat in a vehicle (04a's Banshees): the nearest
+                        # free seat with the label the script tests
+                        label = SEAT_LABEL.search(text)
+                        replies = len(g.test_replies)
+                        g.guest("enter_vehicle %d" % (string_ids.get(label.group(1), 0) if label else 0))
+                        g.wait(60)
+                        reply = next((r for r in g.test_replies[replies:] if r.startswith("enter_vehicle")), "no reply")
+                        print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
+                        if reply != "enter_vehicle no free seat":   # not spawned yet: no try spent
+                            acted[key] = count + 1
                     elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text) \
                             and count < 6:
                         g.guest("kill_enemies 0")
@@ -212,8 +239,10 @@ def main():
                 count, _, script, node, kind, name = min(places)
                 acted[(script, node)] = count + 1
                 if kind == "cross":
-                    print("frame", g.frame, script, node, "-> cross", name,
-                          "done" if cross(g, volumes[name]) else "failed", flush=True)
+                    crossed = cross(g, volumes[name])
+                    print("frame", g.frame, script, node, "-> cross", name, "done" if crossed else "failed", flush=True)
+                    if crossed and g.state and g.state.get("bsp") == node[1]:
+                        acted[(script, node)] = 99   # there: served for good
                 else:
                     volume = live_volume(g, volumes, name) if name in attached else volumes[name]
                     if volume is None:

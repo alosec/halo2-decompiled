@@ -89,7 +89,9 @@ See `port/README.md` "Play" for the full commands.
     `hs_decompile.py`) with port-only test hooks sent as `guest ...` control
     lines: `teleport X Y Z`, `probe X Y Z`, `volume I` (a trigger volume's
     live box, for volumes on objects like 03b's Scarab), `deathless 1`,
-    `kill_enemies R`. The player
+    `kill_enemies R`, `enter_vehicle L` (a free seat with seat label L,
+    forced past `function_c92c0`'s checks as scripts load units; seated,
+    `teleport` moves the vehicle). The player
     teleport refuses the scenario's bsp switch volumes (+0x130) and detaches
     the player on any failure, so the hook places the unit itself (c5460)
     and the bot walks across switch volumes.
@@ -267,6 +269,11 @@ See `port/README.md` "Play" for the full commands.
   null vtable call); 03b through the Scarab boarding to 04a The Arbiter's
   intro. 03b's Scarab volumes sit on the Scarab's node (trigger volume
   +4 object name), so the bot asks the game for their live box.
+- **The Arbiter (04a) end to end** (2026-10-27): hangar, bottling plant,
+  the Banshee (`vehicle_test_seat ... banshee_d`), `vol_04a_game_won`, and
+  04b The Oracle loads and plays (HUD, energy sword). The bot serves each
+  script's structure bsp wait once per bsp (04a's `kill_volumes` and
+  `wind` wait for each bsp in turn forever).
 - **Open:**
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any

@@ -9,6 +9,8 @@
 #include "object_queries.h"
 #include "hs.h"
 #include "hs_scheduler.h"
+#include "unit_requests.h"
+#include "units.h"
 extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *format, ...);
 
 extern "C" unsigned int host_h2_trace_flags(void);
@@ -21,6 +23,7 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 bool function_11c470(long trigger_volume_index, point3f const *point);
 bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
+long function_c8f60(long unit_index, short seat_index);
 
 /* the world ray test's result (the layout retail's callers use) */
 struct s_collision_result_1697c0
@@ -141,6 +144,11 @@ static void report_scripts(unsigned long frame)
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
      kill_enemies R      kill AI bipeds of other teams within R units
+     enter_vehicle L     the first player into the nearest free seat with
+                         seat label (string id) L, 0 for any, placed beside
+                         its vehicle first (the seat request the script's
+                         unit_enter_vehicle, function_11ade0, makes,
+                         forced)
    Port-only test aids; nothing calls them unless a driver asks. */
 static bool g_deathless;
 
@@ -215,8 +223,12 @@ static void run_test_commands(void)
 			s_location location;
 			function_11bed0(&location, &point);
 			bool away = location.leaf_index == NONE;   /* not in the loaded structure bsp */
-			bool done = !refused && !away && *(long const *)(unit + 0x14) == NONE &&
-				function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
+			/* seated: the vehicle moves instead (its bounding radius, +0x3c,
+			   for the clear spot) */
+			long moved = *(long const *)(unit + 0x14) == NONE ? player->unit_index : *(long const *)(unit + 0x14);
+			byte const *mover = ((s_player_object_header *)g_4e0300->data)[moved & 0xffff].object;
+			bool done = !refused && !away && mover &&
+				function_c5460(moved, NONE, &point, NULL, 0, moved == player->unit_index ? 1.0f : *(real const *)(mover + 0x3c), 0);
 			_snprintf(line, sizeof(line), "h2-test teleport %s",
 				refused ? "refused" : away ? "outside the bsp" : done ? "done" : "failed");
 			host_h2_log(line);
@@ -276,6 +288,58 @@ static void run_test_commands(void)
 			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
 			host_h2_log(line);
 		}
+		else if (command_is(command, "enter_vehicle", &rest))
+		{
+			long label = 0;
+			while (*rest == ' ')
+				++rest;
+			for (; *rest >= '0' && *rest <= '9'; ++rest)
+				label = label * 10 + (*rest - '0');
+			real const *at = (real const *)(unit + 0x64);
+			long best_index = NONE, best_seat = NONE;
+			real best = 1e30f;
+			for (long index = 0; index < g_4e0300->maximum_count; ++index)
+			{
+				byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+				byte *object = *(byte **)(header + 8);
+				if (!*(short const *)header || !object || header[3] != 1)
+					continue;   /* vehicles only */
+				real const *p = (real const *)(object + 0x64);
+				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
+				real distance = dx * dx + dy * dy + dz * dz;
+				if (distance > best)
+					continue;
+				long vehicle_index = (long)(((dword)*(short const *)header << 16) | (dword)index);
+				byte const *definition = g_4e3b44[*(long const *)object & 0xffff].bytes;
+				long seat_count = *(long const *)(definition + 0x1c8);
+				s_unit_seat_definition const *seats = *(s_unit_seat_definition * const *)(definition + 0x1cc);
+				for (long seat = 0; seat < seat_count; ++seat)
+					if ((!label || seats[seat].label == label) &&
+						function_c8f60(vehicle_index, (short)seat) == NONE &&
+						function_c8200(vehicle_index, (short)seat, player->unit_index))
+					{
+						best = distance, best_index = vehicle_index, best_seat = seat;
+						break;
+					}
+			}
+			bool requested = false;
+			if (best_index != NONE && *(long const *)(unit + 0x14) == NONE)
+			{
+				byte const *vehicle = ((s_player_object_header *)g_4e0300->data)[best_index & 0xffff].object;
+				point3f beside = *(point3f const *)(vehicle + 0x64);
+				function_c5460(player->unit_index, NONE, &beside, NULL, 0, 1.0f, 0);
+				s_unit_request request;
+				memset(&request, 0, sizeof(request));
+				request.type = 0x1c;
+				request.type1c.object_index = best_index;
+				request.type1c.seat_index = (short)best_seat;
+				request.type1c.unknownb = true;   /* force: past function_c92c0's checks, as scripts load units */
+				requested = function_e6900(player->unit_index, &request);
+			}
+			_snprintf(line, sizeof(line), "h2-test enter_vehicle %s", requested ? "requested" :
+				best_index == NONE ? "no free seat" : "refused");
+			host_h2_log(line);
+		}
 	}
 	if (g_deathless && g_4e8c24 && g_4e8c24->data && g_4e0300 && g_4e0300->data)
 		for (long index = 0; index < g_4e8c24->maximum_count; ++index)
@@ -321,7 +385,9 @@ extern "C" void h2_port_report_state(void)
 		byte *unit = ((s_player_object_header *)g_4e0300->data)[player->unit_index & 0xffff].object;
 		if (!unit)
 			continue;
-		real const *position = (real const *)(unit + 0x64);
+		/* seated, a unit's position is its seat's (parent relative): the
+		   bounding centre (+0x30, which the volume tests use) is in the world */
+		real const *position = (real const *)(unit + (*(long const *)(unit + 0x14) == NONE ? 0x64 : 0x30));
 		real const *look = (real const *)(unit + 0x18c);
 		real const *forward = (real const *)(unit + 0x70);
 		vector3f velocity = {0.0f, 0.0f, 0.0f};
