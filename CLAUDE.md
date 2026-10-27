@@ -261,6 +261,12 @@ See `port/README.md` "Play" for the full commands.
   started with `H2_START_MAP` kept the menu's campaign map id (the
   introduction's), so `game_won` went to 01a: `function_18e960` now takes
   the id from the level's own name (port-only, `H2_WHOLE_IMAGE`).
+- **Outskirts (03a) and Metropolis (03b) end to end** with the same bot
+  (2026-10-27): 03a to `game_won` and 03b's intro (fixed on the way: the
+  Havok collector `nearest_value_2f9950` lacked its flipped `add` slot, a
+  null vtable call); 03b through the Scarab boarding to 04a The Arbiter's
+  intro. 03b's Scarab volumes sit on the Scarab's node (trigger volume
+  +4 object name), so the bot asks the game for their live box.
 - **Open:**
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any
