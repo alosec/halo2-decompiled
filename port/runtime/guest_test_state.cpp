@@ -132,6 +132,7 @@ static void report_scripts(unsigned long frame)
 /* test hooks, from "guest ..." lines of the H2_CONTROL file, so a test can
    drive a level's script to its end without a human's skill:
      teleport X Y Z      the first player, on foot (the player teleport's placement)
+     probe X Y Z         whether a point is in the loaded structure bsp
      deathless 1|0       keep the first player's body and shields full, and
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
@@ -214,6 +215,17 @@ static void run_test_commands(void)
 				function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
 			_snprintf(line, sizeof(line), "h2-test teleport %s",
 				refused ? "refused" : away ? "outside the bsp" : done ? "done" : "failed");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "probe", &rest))
+		{
+			point3f point;
+			point.x = parse_real(&rest);
+			point.y = parse_real(&rest);
+			point.z = parse_real(&rest);
+			s_location location;
+			function_11bed0(&location, &point);
+			_snprintf(line, sizeof(line), "h2-test probe %s", location.leaf_index == NONE ? "outside" : "inside");
 			host_h2_log(line);
 		}
 		else if (command_is(command, "deathless", &rest))

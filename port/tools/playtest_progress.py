@@ -78,11 +78,12 @@ def first_hop(switches, here, wanted):
     return None
 
 
-def volume_point(volume, a, b):
+def volume_point(volume, a, b, c=None):
     """the point at fractions a, b along the volume's forward and left edges,
-    a little above its floor"""
+    a little above its floor (or at fraction c of its height)"""
     corner, fwd, left, up, ext = volume
-    return tuple(corner[k] + fwd[k] * ext[0] * a + left[k] * ext[1] * b + up[k] * min(ext[2] / 2, 0.6)
+    height = min(ext[2] / 2, 0.6) if c is None else ext[2] * c
+    return tuple(corner[k] + fwd[k] * ext[0] * a + left[k] * ext[1] * b + up[k] * height
                  for k in range(3))
 
 
@@ -195,11 +196,23 @@ def main():
                           "done" if cross(g, volumes[name]) else "failed", flush=True)
                 else:
                     volume = volumes[name]
-                    point = volume_point(volume, *SAMPLES[count])
+                    # the points of the volume in the loaded structure bsp (its
+                    # floor may be under the ground, or all of it elsewhere)
+                    candidates = [volume_point(volume, a, b, c) for a, b in SAMPLES for c in (None, 0.3, 0.6, 0.9)]
                     replies = len(g.test_replies)
-                    g.guest("teleport %.3f %.3f %.3f" % point)
-                    g.wait(20)
-                    reply = g.test_replies[replies] if len(g.test_replies) > replies else ""
+                    for p in candidates:
+                        g.guest("probe %.3f %.3f %.3f" % p)
+                    g.wait(4)
+                    answers = g.test_replies[replies:replies + len(candidates)]
+                    here = [p for p, a in zip(candidates, answers) if a == "probe inside"]
+                    if here:
+                        point = here[count % len(here)]
+                        replies = len(g.test_replies)
+                        g.guest("teleport %.3f %.3f %.3f" % point)
+                        g.wait(20)
+                        reply = g.test_replies[replies] if len(g.test_replies) > replies else ""
+                    else:
+                        point, reply = candidates[0], "teleport outside the bsp"
                     landed = inside(volume, g.state["pos"])
                     if not landed and reply == "teleport done":
                         # the spot is taken (a doorway, a closed room): walk
