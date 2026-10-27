@@ -19,6 +19,7 @@ extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
 bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position, point3f *result,
 	long a5, real radius, long a7);
 bool function_11c470(long trigger_volume_index, point3f const *point);
+bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
 
 /* the world ray test's result (the layout retail's callers use) */
@@ -133,6 +134,9 @@ static void report_scripts(unsigned long frame)
    drive a level's script to its end without a human's skill:
      teleport X Y Z      the first player, on foot (the player teleport's placement)
      probe X Y Z         whether a point is in the loaded structure bsp
+     volume I            trigger volume I's box in the world now (corner,
+                         forward, left, up, scale): a volume on an object's
+                         node moves with it
      deathless 1|0       keep the first player's body and shields full, and
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
@@ -175,8 +179,8 @@ static void run_test_commands(void)
 	char command[128];
 	while (host_h2_guest_command(command, sizeof(command)))
 	{
-		if (!g_4e8c24 || !g_4e8c24->data || !g_4e0300 || !g_4e0300->data)
-			continue;
+		if (!g_4e8c24 || !g_4e8c24->data || !g_4e0300 || !g_4e0300->data || !g_4e0350)
+			continue;   /* no level loaded (or one loading) */
 		s_player_datum *player = NULL;
 		for (long index = 0; index < g_4e8c24->maximum_count && !player; ++index)
 		{
@@ -188,7 +192,7 @@ static void run_test_commands(void)
 			continue;
 		byte *unit = ((s_player_object_header *)g_4e0300->data)[player->unit_index & 0xffff].object;
 		char const *rest;
-		char line[160];
+		char line[240];
 		if (command_is(command, "teleport", &rest))
 		{
 			point3f point;
@@ -226,6 +230,21 @@ static void run_test_commands(void)
 			s_location location;
 			function_11bed0(&location, &point);
 			_snprintf(line, sizeof(line), "h2-test probe %s", location.leaf_index == NONE ? "outside" : "inside");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "volume", &rest))
+		{
+			long index = (long)parse_real(&rest);
+			transform4x3f matrix;
+			if (index >= 0 && index < *(long const *)((byte const *)g_4e0350 + 0x108) &&
+				function_11c380(index, &matrix))
+				_snprintf(line, sizeof(line),
+					"h2-test volume %ld %.3f %.3f %.3f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f", index,
+					matrix.position.x, matrix.position.y, matrix.position.z,
+					matrix.forward.i, matrix.forward.j, matrix.forward.k, matrix.left.i, matrix.left.j,
+					matrix.left.k, matrix.up.i, matrix.up.j, matrix.up.k, matrix.scale);
+			else
+				_snprintf(line, sizeof(line), "h2-test volume %ld none", index);
 			host_h2_log(line);
 		}
 		else if (command_is(command, "deathless", &rest))

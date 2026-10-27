@@ -34,13 +34,14 @@ VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (
 
 def trigger_volumes(scripts):
     """name -> (corner, forward, left, up, extents) of the scenario's trigger
-    volumes (block at +0x108, 0x44-byte records: name id, forward +0xc, up
-    +0x18, corner +0x24, extents +0x30)"""
+    volumes (block at +0x108, 0x44-byte records: name id, object name +4,
+    forward +0xc, up +0x18, corner +0x24, extents +0x30), and the names of
+    those on an object (their box is in the object's node's space)"""
     m = scripts.map
     scenario = next(t for t in m.tags if t[0] == 'scnr')
     base = m.file_offset(scenario[2])
     count, address = struct.unpack_from('<II', m.data, base + 0x108)
-    volumes = {}
+    volumes, attached = {}, set()
     for i in range(count):
         o = m.file_offset(address) + i * 0x44
         name = m.string_id(struct.unpack_from('<I', m.data, o)[0])
@@ -50,7 +51,25 @@ def trigger_volumes(scripts):
         ext = struct.unpack_from('<3f', m.data, o + 0x30)
         left = (up[1] * fwd[2] - up[2] * fwd[1], up[2] * fwd[0] - up[0] * fwd[2], up[0] * fwd[1] - up[1] * fwd[0])
         volumes[name] = (corner, fwd, left, up, ext)
-    return volumes
+        if struct.unpack_from('<h', m.data, o + 4)[0] != -1:
+            attached.add(name)
+    return volumes, attached
+
+
+def live_volume(g, volumes, name):
+    """a volume on an object where the object is now (the game's own matrix,
+    the volume test hook), or None while the object is absent"""
+    index = list(volumes).index(name)
+    replies = len(g.test_replies)
+    g.guest("volume %d" % index)
+    g.wait(2)
+    answer = next((r for r in g.test_replies[replies:] if r.startswith("volume %d " % index)), None)
+    if not answer or answer.endswith("none"):
+        return None
+    v = [float(x) for x in answer.split()[2:]]
+    scale = v[12]
+    ext = tuple(e * scale for e in volumes[name][4])
+    return tuple(v[0:3]), tuple(v[3:6]), tuple(v[6:9]), tuple(v[9:12]), ext
 
 
 def bsp_switches(scripts, volumes):
@@ -133,7 +152,7 @@ def main():
     parser.add_argument("--work")
     args = parser.parse_args()
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
-    volumes = trigger_volumes(scripts)
+    volumes, attached = trigger_volumes(scripts)
     switches = bsp_switches(scripts, volumes)
     names = {name for name, _, _ in scripts.scripts}
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
@@ -172,7 +191,8 @@ def main():
                         if hop and count < 8:
                             places.append((count, order, thread["script"], node, "cross", hop))
                     elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
-                        if not (g.state and inside(volumes[targets[0]], g.state["pos"])):
+                        volume = live_volume(g, volumes, targets[0]) if targets[0] in attached else volumes[targets[0]]
+                        if volume and not (g.state and inside(volume, g.state["pos"])):
                             if elsewhere.get(key, (None,))[0] == (g.state and g.state.get("bsp")):
                                 away.append((not thread["script"].startswith("mission"), count, order, key, targets[0]))
                             else:
@@ -195,7 +215,9 @@ def main():
                     print("frame", g.frame, script, node, "-> cross", name,
                           "done" if cross(g, volumes[name]) else "failed", flush=True)
                 else:
-                    volume = volumes[name]
+                    volume = live_volume(g, volumes, name) if name in attached else volumes[name]
+                    if volume is None:
+                        continue   # its object is gone for now
                     # the points of the volume in the loaded structure bsp (its
                     # floor may be under the ground, or all of it elsewhere)
                     candidates = [volume_point(volume, a, b, c) for a, b in SAMPLES for c in (None, 0.3, 0.6, 0.9)]

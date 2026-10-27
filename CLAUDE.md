@@ -87,7 +87,9 @@ See `port/README.md` "Play" for the full commands.
   - `port/tools/playtest_progress.py --map M`: a script-directed bot that
     serves a level's `sleep_until` waits (decompiled each poll with
     `hs_decompile.py`) with port-only test hooks sent as `guest ...` control
-    lines: `teleport X Y Z`, `deathless 1`, `kill_enemies R`. The player
+    lines: `teleport X Y Z`, `probe X Y Z`, `volume I` (a trigger volume's
+    live box, for volumes on objects like 03b's Scarab), `deathless 1`,
+    `kill_enemies R`. The player
     teleport refuses the scenario's bsp switch volumes (+0x130) and detaches
     the player on any failure, so the hook places the unit itself (c5460)
     and the bot walks across switch volumes.
