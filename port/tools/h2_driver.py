@@ -66,6 +66,7 @@ class Game:
         self.history = []
         self.snapshots = []
         self._script_frame = None
+        self.test_replies = []   # the guest test hooks' answers (guest())
         self.scripts = {}   # thread index -> latest h2-script state (H2_TRACE=state, every 150 frames)
 
     # -- plumbing ---------------------------------------------------------
@@ -124,6 +125,8 @@ class Game:
                         self.scripts = {}
                     self.scripts[int(t.group(2))] = {"script": t.group(3), "sleep": int(t.group(4)),
                                                      "nodes": [x.split("/")[1] for x in t.group(5).split()]}
+                if "h2-test " in line:
+                    self.test_replies.append(line.split("h2-test ", 1)[1].strip())
                 f = FRAME.search(line)
                 if f:
                     self.frame = int(f.group(1))

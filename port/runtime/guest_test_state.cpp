@@ -207,9 +207,13 @@ static void run_test_commands(void)
 			}
 			/* the player teleport's own placement (c5460, which finds a clear
 			   spot near the point), without its detach on failure */
-			bool done = !refused && *(long const *)(unit + 0x14) == NONE &&
+			s_location location;
+			function_11bed0(&location, &point);
+			bool away = location.leaf_index == NONE;   /* not in the loaded structure bsp */
+			bool done = !refused && !away && *(long const *)(unit + 0x14) == NONE &&
 				function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
-			_snprintf(line, sizeof(line), "h2-test teleport %s", refused ? "refused" : done ? "done" : "failed");
+			_snprintf(line, sizeof(line), "h2-test teleport %s",
+				refused ? "refused" : away ? "outside the bsp" : done ? "done" : "failed");
 			host_h2_log(line);
 		}
 		else if (command_is(command, "deathless", &rest))

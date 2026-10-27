@@ -53,6 +53,31 @@ def trigger_volumes(scripts):
     return volumes
 
 
+def bsp_switches(scripts, volumes):
+    """(volume name, from bsp, to bsp) of the scenario's structure bsp switch
+    triggers (+0x130, 14-byte records: trigger volume, from, to)"""
+    m = scripts.map
+    scenario = next(t for t in m.tags if t[0] == 'scnr')
+    count, address = struct.unpack_from('<II', m.data, m.file_offset(scenario[2]) + 0x130)
+    names = list(volumes)
+    return [(names[v], a, b) for v, a, b in
+            (struct.unpack_from('<hhh', m.data, m.file_offset(address) + i * 0xe) for i in range(count))]
+
+
+def first_hop(switches, here, wanted):
+    """the switch volume to cross first on the way from bsp here to wanted"""
+    seen, frontier = {here}, [(here, None)]
+    while frontier:
+        bsp, hop = frontier.pop(0)
+        for name, a, b in switches:
+            if a == bsp and b not in seen:
+                if b == wanted:
+                    return hop or name
+                seen.add(b)
+                frontier.append((b, hop or name))
+    return None
+
+
 def volume_point(volume, a, b):
     """the point at fractions a, b along the volume's forward and left edges,
     a little above its floor"""
@@ -108,9 +133,11 @@ def main():
     args = parser.parse_args()
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
     volumes = trigger_volumes(scripts)
+    switches = bsp_switches(scripts, volumes)
     names = {name for name, _, _ in scripts.scripts}
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
     acted = {}
+    elsewhere = {}   # (script, node) -> (the bsp its place is not in, volume name)
     done = False
     with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as g:
         g.wait_frame(9500)
@@ -123,8 +150,9 @@ def main():
             if threads and ours < len(threads) / 2:
                 done = True   # another map's scripts run now (some names, like
                 break         # cinematic_skip_start, are in every map)
-            served = False
-            for index, thread in sorted(threads.items()):
+            places = []   # (times served, thread order, script, node, kind, volume name)
+            away = []     # places in another structure bsp (the mission's first)
+            for order, (index, thread) in enumerate(sorted(threads.items())):
                 for node in thread["nodes"]:
                     try:
                         text = scripts.expression(int(node, 16))
@@ -137,33 +165,17 @@ def main():
                     targets = [v for _, v, _ in VOLUME_TEST.findall(text) if v in volumes]
                     bsp = BSP_WAIT.search(text)
                     if bsp and not targets:
-                        # a structure bsp switch: the map's "bsp_FROM,TO" volume
+                        # a structure bsp switch: cross the switch volumes on the way
                         wanted = (int(bsp.group(1)) - 0xffff0000) if int(bsp.group(1)) > 0xffff else int(bsp.group(1))
-                        targets = [v for v in volumes if re.fullmatch(r"bsp_\d+,%d" % wanted, v)]
-                    negated = "(not (volume_test" in text
-                    if bsp and targets and not served and count < 4:
-                        print("frame", g.frame, thread["script"], node, "-> cross", targets[0],
-                              "done" if cross(g, volumes[targets[0]]) else "failed", flush=True)
-                        acted[key] = count + 1
-                        served = True
-                    elif targets and not negated and count < len(SAMPLES) and not served:
-                        volume = volumes[targets[0]]
-                        if g.state and inside(volume, g.state["pos"]):
-                            break   # already there: the script will see it
-                        point = volume_point(volume, *SAMPLES[count])
-                        g.guest("teleport %.3f %.3f %.3f" % point)
-                        g.wait(20)
-                        landed = inside(volume, g.state["pos"])
-                        if not landed:
-                            # the spot is taken (a doorway, a closed room): walk
-                            # the rest of the way in, as a player would
-                            g.go_to(point, tolerance=0.3, max_steps=25)
-                            landed = inside(volume, g.state["pos"])
-                        print("frame", g.frame, thread["script"], node, "-> teleport", targets[0],
-                              [round(x, 2) for x in point], "inside" if landed else "outside",
-                              flush=True)
-                        acted[key] = count + 1
-                        served = True   # one place at a time: hold it till the next poll
+                        hop = first_hop(switches, g.state and g.state.get("bsp"), wanted)
+                        if hop and count < 8:
+                            places.append((count, order, thread["script"], node, "cross", hop))
+                    elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
+                        if not (g.state and inside(volumes[targets[0]], g.state["pos"])):
+                            if elsewhere.get(key, (None,))[0] == (g.state and g.state.get("bsp")):
+                                away.append((not thread["script"].startswith("mission"), count, order, key, targets[0]))
+                            else:
+                                places.append((count, order, thread["script"], node, "teleport", targets[0]))
                     elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text) \
                             and count < 6:
                         g.guest("kill_enemies 0")
@@ -173,6 +185,43 @@ def main():
                         print("frame", g.frame, thread["script"], node, "waits:", text[:160], flush=True)
                         acted[key] = 1
                     break
+            if places:
+                # one place a poll, the least served first: every thread's
+                # wait gets its turn
+                count, _, script, node, kind, name = min(places)
+                acted[(script, node)] = count + 1
+                if kind == "cross":
+                    print("frame", g.frame, script, node, "-> cross", name,
+                          "done" if cross(g, volumes[name]) else "failed", flush=True)
+                else:
+                    volume = volumes[name]
+                    point = volume_point(volume, *SAMPLES[count])
+                    replies = len(g.test_replies)
+                    g.guest("teleport %.3f %.3f %.3f" % point)
+                    g.wait(20)
+                    reply = g.test_replies[replies] if len(g.test_replies) > replies else ""
+                    landed = inside(volume, g.state["pos"])
+                    if not landed and reply == "teleport done":
+                        # the spot is taken (a doorway, a closed room): walk
+                        # the rest of the way in, as a player would
+                        g.go_to(point, tolerance=0.3, max_steps=25)
+                        landed = inside(volume, g.state["pos"])
+                    print("frame", g.frame, script, node, "-> teleport", name, [round(x, 2) for x in point],
+                          "inside" if landed else "outside (%s)" % reply, flush=True)
+                    if reply == "teleport outside the bsp":
+                        # in a bsp not loaded: left till nothing is left here
+                        elsewhere[(script, node)] = (g.state and g.state.get("bsp"), name)
+                        acted[(script, node)] = count
+            elif away:
+                # nothing left in this bsp: through the switch from it nearest
+                # the place, the mission script's place first
+                _, _, _, key, name = min(away)
+                nearby = [w for w in switches if w[1] == (g.state and g.state.get("bsp"))]
+                if nearby:
+                    centre = volume_point(volumes[name], 0.5, 0.5)
+                    way = min(nearby, key=lambda w: math.dist(volume_point(volumes[w[0]], 0.5, 0.5), centre))
+                    print("frame", g.frame, "-> cross", way[0], "toward", name, "for", key[0],
+                          "done" if cross(g, volumes[way[0]]) else "failed", flush=True)
             if g.state is None or g.frame - g.state["frame"] > 1000:
                 print("frame", g.frame, "player lost", flush=True)
                 break
