@@ -241,11 +241,11 @@ See `port/README.md` "Play" for the full commands.
     game leaves 550 set after decal passes.
 - **The Armory end to end** (`port/tools/playtest_armory.py`, driven by
   the level script's waits): look lights, aiming prompt, zapper, shield
-  test, elevator and tram are all reached in some runs. Open: the AI
-  "guns" sometimes walks paths through the player at the zapper (h2-biped
-  lines: stop flag set yet still moving in one run, a detour in another)
-  and shoves him out of the cage, which then crushes him; not yet known
-  whether the port or retail AI behaviour.
+  test, elevator, tram, outro, and 01b loads (two runs of two, 2026-10-26).
+  The blocker was `function_e24f0` keeping a stopped biped's move
+  animation forever (moving class from the kept, not the requested,
+  animation): marines move by root motion, so stopped AI walked on along
+  their facing and shoved the player out of the zapper cage.
 - **Open:**
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any

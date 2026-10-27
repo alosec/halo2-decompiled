@@ -224,6 +224,10 @@ class Game:
                 after = self.settle()["look"][2]
                 if abs(after - before) > 0.002 and (after > before) != (pitch_error > 0):
                     pitch_sign = -pitch_sign
+                elif abs(after - before) <= 0.002 and abs(before) > 0.98:
+                    # pinned at the pitch limit: the tap pushed into it (the
+                    # tutorial can switch the look inversion mid-way)
+                    pitch_sign = -pitch_sign
         return error
 
     # -- walking --------------------------------------------------------------

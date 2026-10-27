@@ -21,7 +21,9 @@ from h2_driver import Game, MENU_TO_CAMPAIGN  # noqa: E402
 import playtest_armory_look as look  # noqa: E402
 
 LIGHTS = (look.TOP, look.BOTTOM) + tuple(look.SIDES)
-ZAPPER_WAYPOINTS = ((30.1, -48.06), (28.7, -46.6), (30.5, -44.6), (32.65, -45.48))  # around the console
+# around the console, then into the square from the east (guns stands at
+# his post, (32.27, -45.43), on its west side)
+ZAPPER_WAYPOINTS = ((30.1, -48.06), (28.7, -46.6), (30.5, -44.6), (33.4, -44.6), (34.2, -45.6))
 TV_ZAPPER = (33.09, -46.19)          # the red square
 TV_ELEVATOR = (28.08, -44.78)        # tv_elevator_tram_bot
 TV_TRAM = (30.86, -47.32)            # tv_tram (the upper level)
