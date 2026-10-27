@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parents[2]
 STATE = re.compile(r"h2-state frame (\d+) unit (\w+) pos (-?\d+) (-?\d+) (-?\d+) vel (-?\d+) (-?\d+) (-?\d+) "
                    r"look (-?\d+) (-?\d+) (-?\d+)(?: head (-?\d+) (-?\d+) (-?\d+))?(?: fwd (-?\d+) (-?\d+) (-?\d+))?(?: ground (-?\d+))?(?: leaf (-?\d+) cluster (-?\d+))?")
 FRAME = re.compile(r"h2-state frame (\d+) none")
-EXTRA = re.compile(r" (lights|flashlight|health|shield) (-?\d+)")
-SCRIPT = re.compile(r"h2-script frame \d+ thread (\d+) script (\S+) sleep (-?\d+) frames(.*)")
+EXTRA = re.compile(r" (lights|flashlight|health|shield|bsp) (-?\d+)")
+SCRIPT = re.compile(r"h2-script frame (\d+) thread (\d+) script (\S+) sleep (-?\d+) frames(.*)")
 SNAP = re.compile(r"h2-port: snapshot \"?([^\"\n]+)\"?")
 MENU_TO_CAMPAIGN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2900:a:8,3300:a:8,3700:a:8,4100:a:8"
 # main menu -> Split Screen -> pregame lobby -> Start Game (Slayer; H2_START_MAP
@@ -65,6 +65,7 @@ class Game:
         self.state = None
         self.history = []
         self.snapshots = []
+        self._script_frame = None
         self.scripts = {}   # thread index -> latest h2-script state (H2_TRACE=state, every 150 frames)
 
     # -- plumbing ---------------------------------------------------------
@@ -111,14 +112,18 @@ class Game:
                                   "leaf": v[16] if len(v) >= 18 else None, "cluster": v[17] if len(v) >= 18 else None}
                     # the light count, flashlight power and body vitality (0: dead)
                     for name, value in EXTRA.findall(line):
-                        self.state[name] = int(value) if name == "lights" else int(value) / 1000
+                        self.state[name] = int(value) if name in ("lights", "bsp") else int(value) / 1000
                     self.history.append(self.state)
                 t = SCRIPT.search(line)
                 if t:
                     # each script thread's latest state: its script and the
-                    # syntax nodes it is in, innermost first (hs_decompile.py --node)
-                    self.scripts[int(t.group(1))] = {"script": t.group(2), "sleep": int(t.group(3)),
-                                                     "nodes": [x.split("/")[1] for x in t.group(4).split()]}
+                    # syntax nodes it is in, innermost first (hs_decompile.py --node);
+                    # each report lists every thread, so a new one replaces the last
+                    if int(t.group(1)) != self._script_frame:
+                        self._script_frame = int(t.group(1))
+                        self.scripts = {}
+                    self.scripts[int(t.group(2))] = {"script": t.group(3), "sleep": int(t.group(4)),
+                                                     "nodes": [x.split("/")[1] for x in t.group(5).split()]}
                 f = FRAME.search(line)
                 if f:
                     self.frame = int(f.group(1))

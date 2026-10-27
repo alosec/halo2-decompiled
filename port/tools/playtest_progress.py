@@ -74,23 +74,29 @@ SAMPLES = ((0.5, 0.5), (0.25, 0.25), (0.75, 0.75), (0.25, 0.75), (0.75, 0.25), (
 
 def cross(g, volume):
     """walks through a volume the teleport refuses: from 1.5 units outside
-    each side in turn to as far outside the opposite side, till inside"""
+    each side in turn (on a floor) through its centre to as far outside the
+    opposite side; True once the structure bsp changes"""
     corner, fwd, left, up, ext = volume
-    for a, b in ((-1, 0.5), (2, 0.5), (0.5, -1), (0.5, 2)):
-        # sides along forward (a) or left (b), 1.5 units out
-        start = list(volume_point(volume, 0.5, 0.5))
-        axis, size, side = (fwd, ext[0], a) if b == 0.5 else (left, ext[1], b)
-        sign = -1 if side < 0 else 1
-        for k in range(3):
-            start[k] += axis[k] * sign * (size / 2 + 1.5)
-        end = [2 * c - s0 for c, s0 in zip(volume_point(volume, 0.5, 0.5), start)]
-        g.guest("teleport %.3f %.3f %.3f" % tuple(start))
+    before = g.state
+    centre = volume_point(volume, 0.5, 0.5)
+    for axis, size in ((fwd, ext[0]), (left, ext[1])):
+        for sign in (-1, 1):
+            start = [centre[k] + axis[k] * sign * (size / 2 + 1.5) for k in range(3)]
+            end = [2 * c - s0 for c, s0 in zip(centre, start)]
+            g.guest("teleport %.3f %.3f %.3f" % tuple(start))
+            g.wait(20)
+            s = g.state
+            if not s or math.dist(s["pos"][:2], start[:2]) > 1.0 or s["ground"] is None \
+                    or s["pos"][2] - s["ground"] > 1.0:
+                continue   # refused, blocked or over a drop: try another side
+            g.go_to(centre, tolerance=0.3, max_steps=30)
+            g.go_to(end, tolerance=0.4, max_steps=30)
+            g.wait(30)
+            if g.state and g.state.get("bsp") != s.get("bsp"):
+                return True
+    if before:   # back to where it stood
+        g.guest("teleport %.3f %.3f %.3f" % tuple(before["pos"]))
         g.wait(20)
-        s = g.state
-        if not s or math.dist(s["pos"][:2], start[:2]) > 1.0:
-            continue   # refused or blocked: try another side
-        if g.go_to(end, tolerance=0.4, max_steps=40) < 1.0:
-            return True   # walked through it: the bsp switches on the way
     return False
 
 
@@ -113,9 +119,10 @@ def main():
         while g.frame < args.frames:
             g.wait(150)
             threads = dict(g.scripts)
-            if threads and not any(t["script"] in names for t in threads.values()):
-                done = True   # another map's scripts run now
-                break
+            ours = sum(t["script"] in names for t in threads.values())
+            if threads and ours < len(threads) / 2:
+                done = True   # another map's scripts run now (some names, like
+                break         # cinematic_skip_start, are in every map)
             served = False
             for index, thread in sorted(threads.items()):
                 for node in thread["nodes"]:
@@ -175,6 +182,10 @@ def main():
                 print("frame", g.frame, "pos", s["pos"] if s else None, "threads",
                       sorted({t["script"] for t in threads.values()}), flush=True)
         print("ended at frame", g.frame, "level finished" if done else "level not finished")
+        if done:
+            print("next map's scripts:", sorted({t["script"] for t in g.scripts.values()})[:12])
+            g.wait(900)
+            print("next map's player:", g.state and g.state["pos"])
         print("snapshot:", g.snapshot()[0])
     return 0 if done else 1
 

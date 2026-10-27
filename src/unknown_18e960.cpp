@@ -64,6 +64,15 @@ void function_18e960(void)
             break;
         }
     }
+#if H2_WHOLE_IMAGE
+    /* a level started by name (port_start_map, unknown_18ec20.cpp) keeps the
+       menu's campaign and map ids: take them from the level's own name */
+    {
+        s_entry_a const *current = function_19c320(local_1.field_0.field_1c);
+        if (current && local_1.field_0.field_14 == current->key0)
+            local_1.field_0.field_18 = current->key1;
+    }
+#endif
     if (local_1.field_0.field_14 != NONE)
     {
         long local_2 = function_19c440(local_1.field_0.field_14, local_1.field_0.field_18);

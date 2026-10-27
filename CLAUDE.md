@@ -83,7 +83,14 @@ See `port/README.md` "Play" for the full commands.
   - `port/tools/playtest_wander.py --map M --seconds S --seed N`: random
     walking, turning and jumping (`--fire` adds shooting, grenades and
     reloads; `--multiplayer` plays the map as a one-player split-screen
-    Slayer game); fails on a fall through the floor.
+    Slayer game); fails on a fall through the floor;
+  - `port/tools/playtest_progress.py --map M`: a script-directed bot that
+    serves a level's `sleep_until` waits (decompiled each poll with
+    `hs_decompile.py`) with port-only test hooks sent as `guest ...` control
+    lines: `teleport X Y Z`, `deathless 1`, `kill_enemies R`. The player
+    teleport refuses the scenario's bsp switch volumes (+0x130) and detaches
+    the player on any failure, so the hook places the unit itself (c5460)
+    and the bot walks across switch volumes.
   `H2_WINDOW_SIZE=WxH` sizes the (hidden) window, e.g. to check full-screen
   presentation in the window snapshot. Convert snapshots with `sips -s format png`; tile several with ffmpeg
   `tile=4x2` to look at a run in one image.
@@ -246,6 +253,12 @@ See `port/README.md` "Play" for the full commands.
   animation forever (moving class from the kept, not the requested,
   animation): marines move by root motion, so stopped AI walked on along
   their facing and shoved the player out of the zapper cage.
+- **Cairo Station end to end** (`playtest_progress.py --map
+  01b_spacestation`, with the test hooks; 2026-10-27): bsps 0, 2, 0, 3,
+  the outro on bsp 4, `game_won`, and 03a Outskirts' intro loads. A level
+  started with `H2_START_MAP` kept the menu's campaign map id (the
+  introduction's), so `game_won` went to 01a: `function_18e960` now takes
+  the id from the level's own name (port-only, `H2_WHOLE_IMAGE`).
 - **Open:**
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any

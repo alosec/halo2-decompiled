@@ -16,7 +16,8 @@ extern "C" void host_h2_log(const char *message);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
 extern s_record_pool *g_4e030c;   /* the dynamic lights */
 extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
-bool function_14e970(long player_index, long target_index, point3f const *position);
+bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position, point3f *result,
+	long a5, real radius, long a7);
 bool function_11c470(long trigger_volume_index, point3f const *point);
 void __stdcall function_d6bc0(long object_index);
 
@@ -130,7 +131,7 @@ static void report_scripts(unsigned long frame)
 
 /* test hooks, from "guest ..." lines of the H2_CONTROL file, so a test can
    drive a level's script to its end without a human's skill:
-     teleport X Y Z      the first player (the game's own player teleport)
+     teleport X Y Z      the first player, on foot (the player teleport's placement)
      deathless 1|0       keep the first player's body and shields full, and
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
@@ -204,7 +205,10 @@ static void run_test_commands(void)
 				byte const *trigger = *(byte const **)(scenario + 0x134) + i * 0xe;
 				refused = *(short const *)(trigger + 2) == g_4686c4 && function_11c470(*(short const *)trigger, &point);
 			}
-			bool done = !refused && function_14e970(*(long const *)(unit + 0x13c), NONE, &point);
+			/* the player teleport's own placement (c5460, which finds a clear
+			   spot near the point), without its detach on failure */
+			bool done = !refused && *(long const *)(unit + 0x14) == NONE &&
+				function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
 			_snprintf(line, sizeof(line), "h2-test teleport %s", refused ? "refused" : done ? "done" : "failed");
 			host_h2_log(line);
 		}
@@ -307,7 +311,7 @@ extern "C" void h2_port_report_state(void)
 		char line[320];
 		/* thousandths: the guest's formatter is integer-only */
 		#define MILLI(value) (long)((value) * 1000.0f)
-		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld flashlight %ld health %ld shield %ld",
+		_snprintf(line, sizeof(line), "h2-state frame %lu unit %08lx pos %ld %ld %ld vel %ld %ld %ld look %ld %ld %ld head %ld %ld %ld fwd %ld %ld %ld ground %ld leaf %ld cluster %ld lights %ld flashlight %ld health %ld shield %ld bsp %ld",
 			frame, (unsigned long)player->unit_index, MILLI(position[0]), MILLI(position[1]), MILLI(position[2]),
 			MILLI(velocity.i), MILLI(velocity.j), MILLI(velocity.k), MILLI(look[0]), MILLI(look[1]), MILLI(look[2]),
 			MILLI(head.x), MILLI(head.y), MILLI(head.z), MILLI(forward[0]), MILLI(forward[1]), MILLI(forward[2]),
@@ -315,7 +319,8 @@ extern "C" void h2_port_report_state(void)
 			g_4e030c ? (long)g_4e030c->actual_count : -1L,
 			MILLI(*(real const *)(unit + 0x264)),   /* the flashlight's power, 0..1 */
 			MILLI(*(real const *)(unit + 0xec)),   /* body vitality, 0 when dead */
-			MILLI(*(real const *)(unit + 0xf0)));  /* shield vitality */
+			MILLI(*(real const *)(unit + 0xf0)),   /* shield vitality */
+			(long)g_4686c4);   /* the structure bsp index */
 		host_h2_log(line);
 		report_bipeds(frame, player->unit_index, position);
 		/* in a vehicle the unit's position is its seat's, relative to the
