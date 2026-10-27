@@ -15,6 +15,10 @@ extern "C" unsigned int host_h2_trace_flags(void);
 extern "C" void host_h2_log(const char *message);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
 extern s_record_pool *g_4e030c;   /* the dynamic lights */
+extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
+bool function_14e970(long player_index, long target_index, point3f const *position);
+bool function_11c470(long trigger_volume_index, point3f const *point);
+void __stdcall function_d6bc0(long object_index);
 
 /* the world ray test's result (the layout retail's callers use) */
 struct s_collision_result_1697c0
@@ -124,11 +128,138 @@ static void report_scripts(unsigned long frame)
 	}
 }
 
+/* test hooks, from "guest ..." lines of the H2_CONTROL file, so a test can
+   drive a level's script to its end without a human's skill:
+     teleport X Y Z      the first player (the game's own player teleport)
+     deathless 1|0       keep the first player's body and shields full, and
+                         set its cannot-die flag (object_cannot_die's bit 14
+                         of +0x10a) against one-blow kills
+     kill_enemies R      kill AI bipeds of other teams within R units
+   Port-only test aids; nothing calls them unless a driver asks. */
+static bool g_deathless;
+
+static float parse_real(char const **text)
+{
+	char const *p = *text;
+	while (*p == ' ')
+		++p;
+	bool negative = *p == '-';
+	if (*p == '-' || *p == '+')
+		++p;
+	float value = 0.0f, scale = 0.1f;
+	while (*p >= '0' && *p <= '9')
+		value = value * 10.0f + (float)(*p++ - '0');
+	if (*p == '.')
+		for (++p; *p >= '0' && *p <= '9'; ++p, scale *= 0.1f)
+			value += (float)(*p - '0') * scale;
+	*text = p;
+	return negative ? -value : value;
+}
+
+static bool command_is(char const *text, char const *name, char const **rest)
+{
+	long i = 0;
+	for (; name[i]; ++i)
+		if (text[i] != name[i])
+			return false;
+	if (text[i] && text[i] != ' ')
+		return false;
+	*rest = text + i;
+	return true;
+}
+
+static void run_test_commands(void)
+{
+	char command[128];
+	while (host_h2_guest_command(command, sizeof(command)))
+	{
+		if (!g_4e8c24 || !g_4e8c24->data || !g_4e0300 || !g_4e0300->data)
+			continue;
+		s_player_datum *player = NULL;
+		for (long index = 0; index < g_4e8c24->maximum_count && !player; ++index)
+		{
+			s_player_datum *candidate = (s_player_datum *)(g_4e8c24->data + index * sizeof(s_player_datum));
+			if (candidate->identifier && candidate->unit_index != NONE)
+				player = candidate;
+		}
+		if (!player)
+			continue;
+		byte *unit = ((s_player_object_header *)g_4e0300->data)[player->unit_index & 0xffff].object;
+		char const *rest;
+		char line[160];
+		if (command_is(command, "teleport", &rest))
+		{
+			point3f point;
+			point.x = parse_real(&rest);
+			point.y = parse_real(&rest);
+			point.z = parse_real(&rest);
+			/* the player teleport refuses a point in one of the current
+			   structure bsp's switch volumes (scenario +0x130, 14-byte
+			   records: trigger volume, bsp) and then detaches the player
+			   from its unit; refuse those points here instead */
+			byte const *scenario = (byte const *)g_4e0350;
+			bool refused = false;
+			for (long i = 0; i < *(long const *)(scenario + 0x130) && !refused; ++i)
+			{
+				byte const *trigger = *(byte const **)(scenario + 0x134) + i * 0xe;
+				refused = *(short const *)(trigger + 2) == g_4686c4 && function_11c470(*(short const *)trigger, &point);
+			}
+			bool done = !refused && function_14e970(*(long const *)(unit + 0x13c), NONE, &point);
+			_snprintf(line, sizeof(line), "h2-test teleport %s", refused ? "refused" : done ? "done" : "failed");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "deathless", &rest))
+		{
+			g_deathless = parse_real(&rest) != 0.0f;
+			host_h2_log(g_deathless ? "h2-test deathless on" : "h2-test deathless off");
+		}
+		else if (command_is(command, "kill_enemies", &rest))
+		{
+			float radius = parse_real(&rest);
+			short team = *(short const *)(unit + 0x138);
+			real const *at = (real const *)(unit + 0x64);
+			long killed = 0;
+			for (long index = 0; index < g_4e0300->maximum_count; ++index)
+			{
+				byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+				byte *object = *(byte **)(header + 8);
+				if (!*(short const *)header || !object || header[3] != 0 || *(long const *)(object + 0x12c) == NONE)
+					continue;   /* AI bipeds only */
+				if (*(short const *)(object + 0x138) == team || *(real const *)(object + 0xec) <= 0.0f)
+					continue;
+				real const *p = (real const *)(object + 0x64);
+				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
+				if (radius > 0.0f && dx * dx + dy * dy + dz * dz > radius * radius)
+					continue;
+				function_d6bc0((long)(((dword)*(short const *)header << 16) | (dword)index));
+				++killed;
+			}
+			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
+			host_h2_log(line);
+		}
+	}
+	if (g_deathless && g_4e8c24 && g_4e8c24->data && g_4e0300 && g_4e0300->data)
+		for (long index = 0; index < g_4e8c24->maximum_count; ++index)
+		{
+			s_player_datum *player = (s_player_datum *)(g_4e8c24->data + index * sizeof(s_player_datum));
+			if (!player->identifier || player->unit_index == NONE)
+				continue;
+			byte *unit = ((s_player_object_header *)g_4e0300->data)[player->unit_index & 0xffff].object;
+			if (unit && *(real *)(unit + 0xec) > 0.0f)
+			{
+				*(word *)(unit + 0x10a) |= 1 << 14;
+				*(real *)(unit + 0xec) = 1.0f;
+				*(real *)(unit + 0xf0) = 1.0f;
+			}
+		}
+}
+
 extern "C" void h2_port_report_state(void)
 {
 	static bool enabled = (host_h2_trace_flags() & 2) != 0;
 	static unsigned long frame;
 	++frame;
+	run_test_commands();
 	if (!enabled)
 		return;
 	report_scripts(frame);

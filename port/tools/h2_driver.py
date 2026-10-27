@@ -148,6 +148,12 @@ class Game:
     def press(self, button, frames=1):
         self._command(f"press {button} {frames}")
 
+    def guest(self, command):
+        """a test hook in the guest (port/runtime/guest_test_state.cpp):
+        "teleport X Y Z", "deathless 1", "kill_enemies RADIUS" """
+        with open(self.control, "a") as f:
+            f.write("guest " + command + "\n")
+
     def snapshot(self, wait=True):
         before = len(self.snapshots)
         self._command("snapshot")

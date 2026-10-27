@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <deque>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -1100,9 +1101,14 @@ void parse_input_script(GameSession& session) {
 void request_snapshot(int);
 extern std::atomic<bool> g_snapshot_requested;
 
+/* the "guest ..." control lines, for the guest's test hooks to take
+   (host_h2_guest_command) */
+std::deque<std::string> g_guest_commands;
+
 /* H2_CONTROL=file: a test driver appends lines while the game runs, read at
    each frame: "press BUTTON FRAMES" (any input-script button, e.g. a, rt,
-   ly+, rx-25), "snapshot" (as SIGUSR1), "quit" */
+   ly+, rx-25), "snapshot" (as SIGUSR1), "quit", "guest COMMAND..." (handed
+   to the guest's test hooks, port/runtime/guest_test_state.cpp) */
 void poll_control(GameSession& session) {
     static const char* path = std::getenv("H2_CONTROL");
     static std::streamoff offset = 0;
@@ -1130,6 +1136,10 @@ void poll_control(GameSession& session) {
             g_snapshot_requested = true;
         } else if (command == "quit") {
             std::exit(0);
+        } else if (command == "guest") {
+            std::string rest;
+            std::getline(words, rest);
+            g_guest_commands.push_back(rest.size() && rest[0] == ' ' ? rest.substr(1) : rest);
         }
     }
 }
@@ -1437,6 +1447,18 @@ extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
     return static_cast<unsigned int>(map.size());
 }
 
+/* the next "guest ..." control line, or 0 when none is waiting */
+extern "C" unsigned int host_h2_guest_command(char* buffer, unsigned int size) {
+    if (g_guest_commands.empty() || !buffer || !size)
+        return 0;
+    const std::string command = g_guest_commands.front();
+    g_guest_commands.pop_front();
+    const std::size_t length = std::min<std::size_t>(command.size(), size - 1);
+    std::memcpy(buffer, command.data(), length);
+    buffer[length] = 0;
+    return static_cast<unsigned int>(length);
+}
+
 extern "C" unsigned int host_h2_trace_flags(void) {
     static const unsigned int flags = [] {
         const char* trace = std::getenv("H2_TRACE");
@@ -1531,6 +1553,7 @@ int main(int argc, char** argv) {
                 {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
                 {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
                 {"host_h2_start_map", reinterpret_cast<std::uintptr_t>(&host_h2_start_map)},
+                {"host_h2_guest_command", reinterpret_cast<std::uintptr_t>(&host_h2_guest_command)},
                 {"host_h2_wma_open", reinterpret_cast<std::uintptr_t>(&host_h2_wma_open)},
                 {"host_h2_wma_decode", reinterpret_cast<std::uintptr_t>(&host_h2_wma_decode)},
                 {"host_h2_wma_close", reinterpret_cast<std::uintptr_t>(&host_h2_wma_close)},

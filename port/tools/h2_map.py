@@ -12,7 +12,8 @@ Layout (Xbox cache file, version 8):
   Tag data follows the index in the file, so a tag address maps to
   address - (lowest tag address - (index offset + index size)).
   Names: count +0x2c0, strings +0x2c4, offset table +0x2cc.
-  String ids: offset table +0x16c, strings +0x170; an id is (length << 24) | index.
+  String ids: the offset table's address +0x16c, strings +0x170; an id is
+  (length << 24) | index.
 """
 import struct
 import sys
@@ -48,7 +49,7 @@ class Map:
 
     def string_id(self, value):
         index = value & 0xffffff
-        start = self.u32(0x170) + self.u32(0x16c + 4 * index)
+        start = self.u32(0x170) + self.u32(self.u32(0x16c) + 4 * index)
         return self.data[start:self.data.index(b'\0', start)].decode('latin1')
 
 
