@@ -76,7 +76,7 @@ See `port/README.md` "Play" for the full commands.
   position, velocity, look, head marker, body forward, and the ground height
   a ray finds under the unit (`port/runtime/guest_test_state.cpp`,
   `H2_TRACE=state`). The host reads commands from `H2_CONTROL=file`
-  (`press`, `snapshot`, `quit`) and saves a snapshot on SIGUSR1 to
+  (`press`, `mouse DX DY`, `snapshot`, `quit`) and saves a snapshot on SIGUSR1 to
   `H2_SNAPSHOT_DIR`. Ready-made runs:
   - `port/tools/playtest_armory_look.py`: the Armory "look at the lights"
     steps to the "Press A to accept normal aiming" prompt;
@@ -91,7 +91,18 @@ See `port/README.md` "Play" for the full commands.
     live box, for volumes on objects like 03b's Scarab), `deathless 1`,
     `kill_enemies R`, `enter_vehicle L` (a free seat with seat label L,
     forced past `function_c92c0`'s checks as scripts load units; seated,
-    `teleport` moves the vehicle). The player
+    `teleport` moves the vehicle), `place X Y Z` (teleport without the
+    floor check; `teleport` refuses a spot with no floor within 20 units),
+    `units R`, `operate NAME` (press a powered control on a machine's
+    position group, from beside it), `destroy NAME` (unless a script made
+    it unable to take damage), `kill_player`. The bot presses controls
+    for `device_get_position` waits, breaks objects for
+    `object_get_health ... 0` waits, clears enemies near a volume it
+    waits inside, and crosses to another bsp only when nothing is left in
+    this one. `src/devices.cpp`'s `s_device` names are swapped: retail's
+    `device_get_position` (0x2a4850) reads +0x140, so +0x130/+0x134 are
+    the power group and power, +0x13c/+0x140 the position group and
+    position. The player
     teleport refuses the scenario's bsp switch volumes (+0x130) and detaches
     the player on any failure, so the hook places the unit itself (c5460)
     and the bot walks across switch volumes.
@@ -274,7 +285,22 @@ See `port/README.md` "Play" for the full commands.
   04b The Oracle loads and plays (HUD, energy sword). The bot serves each
   script's structure bsp wait once per bsp (04a's `kill_volumes` and
   `wind` wait for each bsp in turn forever).
+- **The Oracle (04b)** through the lab, airlock and control room to the
+  cable room (2026-10-27, in progress: the elevator, cables and later).
+- **Death reverts** (2026-10-27): `0xcaa60` (a unit dies) passed the dead
+  unit to `0x14cad0` where retail passes NONE (ebx), so the player kept
+  it, the census (`0x152340`) never asked for a revert, and a dead player
+  lay there forever (upstream draft #858).
+- **Mouse look** (2026-10-27) turns the view directly: the host gathers
+  motion (`host_h2_mouse_take`) and `0x186ab0` adds it to controller 0's
+  yaw/pitch each tick (whole image only), 0.003 rad a point times
+  `H2_MOUSE_SENSITIVITY`. It was the right stick (dead zone, top rate).
 - **Open:**
+  - from the user's play (2026-10-27): the HUD shield meter shows empty
+    while shields are full; the Chief's shield shimmer is always on
+    (drawn while object +0xf4, recent shield damage, is above 0);
+    muzzle flash looks wrong; some marines are transparent in the
+    cinematic after the tram.
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any
     trace so far, flashlight included) and `LOGICOP` (the game only sets
