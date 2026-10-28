@@ -127,6 +127,8 @@ def inside(volume, point):
     return all(-0.05 <= c <= e + 0.05 for c, e in zip(coords, ext))
 
 
+EDGE_SAMPLES = ((0.5, 0.02), (0.5, 0.98), (0.02, 0.5), (0.98, 0.5), (0.25, 0.02), (0.75, 0.02),
+                (0.25, 0.98), (0.75, 0.98), (0.02, 0.25), (0.02, 0.75), (0.98, 0.25), (0.98, 0.75))
 SAMPLES = ((0.5, 0.5), (0.25, 0.25), (0.75, 0.75), (0.25, 0.75), (0.75, 0.25), (0.5, 0.2), (0.5, 0.8),
            (0.2, 0.5), (0.8, 0.5))
 
@@ -202,8 +204,18 @@ def main():
         g.guest("deathless 1")
         last_report = 0
         idle = 0   # polls with nothing to do
+        footing = None   # the last place the player stood
         while g.frame < args.frames:
             g.wait(150)
+            # deathless, a fall into a pit never ends (07b's chasms): back to
+            # the last place the player stood
+            st = g.state
+            if st and st.get("ground") is not None and abs(st["pos"][2] - st["ground"]) < 0.5:
+                footing = st["pos"]
+            elif st and footing and st["pos"][2] < footing[2] - 30:
+                g.guest("place %.3f %.3f %.3f" % (footing[0], footing[1], footing[2] + 0.5))
+                g.wait(20)
+                print("frame", g.frame, "fell: back to", [round(x, 2) for x in footing], flush=True)
             threads = dict(g.scripts)
             ours = sum(t["script"] in names for t in threads.values())
             if threads and ours < len(threads) / 2:
@@ -310,7 +322,8 @@ def main():
                         reply = next((r for r in g.test_replies[replies:] if r.startswith("operate")), "no reply")
                         print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         acted[key] = count + 1
-                    elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text) \
+                    elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text
+                           or "ai_nonswarm_count" in text) \
                             and count < 6:
                         g.guest("kill_enemies 0")
                         print("frame", g.frame, thread["script"], node, "-> kill enemies", flush=True)
@@ -340,6 +353,10 @@ def main():
                     # the points of the volume in the loaded structure bsp (its
                     # floor may be under the ground, or all of it elsewhere)
                     candidates = [volume_point(volume, a, b, c) for c in (None, 0.3, 0.6, 0.9) for a, b in SAMPLES]
+                    # and along its edges: a long volume may reach out of the
+                    # world but for the end the player walks in at (07b's
+                    # tv_e12_end, 108 units deep)
+                    candidates += [volume_point(volume, a, b, c) for c in (None, 0.4) for a, b in EDGE_SAMPLES]
                     replies = len(g.test_replies)
                     for p in candidates:
                         g.guest("probe %.3f %.3f %.3f" % p)
@@ -368,7 +385,17 @@ def main():
                             if reply != "teleport no floor":
                                 break
                         if reply == "teleport no floor":
-                            reply = "teleport outside the bsp"
+                            # no floor anywhere in it: a place over a drop the
+                            # player jumps into (07b's end, over the chasm to the
+                            # ship), or another bsp's room; dropped in, the
+                            # fall recovery brings a wrong guess back
+                            point = here[count % len(here)]
+                            replies = len(g.test_replies)
+                            g.guest("place %.3f %.3f %.3f" % point)
+                            g.wait(5)
+                            reply = next((r for r in g.test_replies[replies:] if r.startswith("teleport ")), "")
+                            if reply != "teleport done":
+                                reply = "teleport outside the bsp"
                     else:
                         point, reply = candidates[0], "teleport outside the bsp"
                     landed = inside(volume, g.state["pos"])
