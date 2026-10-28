@@ -439,6 +439,20 @@ static void run_test_commands(void)
 				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
 			host_h2_log(line);
 		}
+		else if (command_is(command, "goto_object", &rest))
+		{
+			/* beside an object by its scenario object name (its bounding
+			   centre, +0x30), for objects_distance_to_object waits (07a's
+			   mausoleum holograms) */
+			long object_index = named_object(rest);
+			bool done = false;
+			if (object_index != NONE)
+			{
+				point3f point = *(point3f const *)(((s_player_object_header *)g_4e0300->data)[object_index & 0xffff].object + 0x30);
+				done = function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
+			}
+			host_h2_log(object_index == NONE ? "h2-test goto_object none" : done ? "h2-test goto_object done" : "h2-test goto_object failed");
+		}
 		else if (command_is(command, "kill_player", &rest))
 		{
 			/* clears cannot-take-damage (+0x10a bit 7) and cannot-die (bit

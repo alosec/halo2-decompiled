@@ -30,6 +30,7 @@ from hs_decompile import Scripts  # noqa: E402
 
 BSP_WAIT = re.compile(r"\(= \(structure_bsp_index\) (\d+)\)")
 SEAT_LABEL = re.compile(r"\(vehicle_test_seat \(.*?\) (\w+) \(unit")
+OBJECT_NEAR_WAIT = re.compile(r"\(< \(objects_distance_to_object \(players\) (\w+)\)")
 HEALTH_WAIT = re.compile(r"\(<= \(object_get_health (\w+)\) 0\)")
 DEVICE_WAIT = re.compile(r"\(device_(?:get_position|group_get) (\w+)\)")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
@@ -281,6 +282,14 @@ def main():
                         print("frame", g.frame, thread["script"], node, "-> boss round",
                               [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
                               flush=True)
+                        acted[key] = count + 1
+                    elif OBJECT_NEAR_WAIT.search(text) and count < 6:
+                        # near a named object (07a's mausoleum holograms)
+                        replies = len(g.test_replies)
+                        g.guest("goto_object " + OBJECT_NEAR_WAIT.search(text).group(1))
+                        g.wait(30)
+                        reply = next((r for r in g.test_replies[replies:] if r.startswith("goto_object")), "no reply")
+                        print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         acted[key] = count + 1
                     elif HEALTH_WAIT.search(text) and count < 6:
                         # an object to break (04b's cables), once a script
