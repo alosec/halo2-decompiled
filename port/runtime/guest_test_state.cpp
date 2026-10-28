@@ -138,7 +138,8 @@ static void report_scripts(unsigned long frame)
 /* test hooks, from "guest ..." lines of the H2_CONTROL file, so a test can
    drive a level's script to its end without a human's skill:
      teleport X Y Z      the first player, on foot (the player teleport's placement);
-                         "outside the bsp" off the loaded bsp or over a void
+                         "outside the bsp" off the loaded bsp, "no floor"
+                         over a void (no floor within 20 units)
      place X Y Z         the same, into a switch volume too (a lift shaft
                          nobody walks across: the switch happens as the
                          player update finds the unit inside)
@@ -245,6 +246,7 @@ static void run_test_commands(void)
 			s_location location;
 			function_11bed0(&location, &point);
 			bool away = location.leaf_index == NONE;   /* not in the loaded structure bsp */
+			bool floorless = false;
 			if (!away && !place)
 			{
 				/* nor over a void: a point of another bsp's room can still
@@ -252,16 +254,16 @@ static void run_test_commands(void)
 				vector3f down = {0.0f, 0.0f, -20.0f};
 				s_collision_result_1697c0 floor;
 				floor.unknown24 = NONE;
-				away = !function_1697c0(0x84000d, &point, &down, player->unit_index, NONE, &floor);
+				floorless = !function_1697c0(0x84000d, &point, &down, player->unit_index, NONE, &floor);
 			}
 			/* seated: the vehicle moves instead (its bounding radius, +0x3c,
 			   for the clear spot) */
 			long moved = *(long const *)(unit + 0x14) == NONE ? player->unit_index : *(long const *)(unit + 0x14);
 			byte const *mover = ((s_player_object_header *)g_4e0300->data)[moved & 0xffff].object;
-			bool done = !refused && !away && mover &&
+			bool done = !refused && !away && !floorless && mover &&
 				function_c5460(moved, NONE, &point, NULL, 0, moved == player->unit_index ? 1.0f : *(real const *)(mover + 0x3c), 0);
 			_snprintf(line, sizeof(line), "h2-test teleport %s",
-				refused ? "refused" : away ? "outside the bsp" : done ? "done" : "failed");
+				refused ? "refused" : away ? "outside the bsp" : floorless ? "no floor" : done ? "done" : "failed");
 			host_h2_log(line);
 		}
 		else if (command_is(command, "probe", &rest))

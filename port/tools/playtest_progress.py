@@ -152,11 +152,27 @@ def cross(g, volume):
             g.wait(30)
             if g.state and g.state.get("bsp") != s.get("bsp"):
                 return True
-    # a shaft or lift nobody walks across: placed inside, low in it
-    g.guest("place %.3f %.3f %.3f" % volume_point(volume, 0.5, 0.5, 0.25))
-    g.wait(60)
-    if g.state and before and g.state.get("bsp") != before.get("bsp"):
-        return True
+    # a shaft or lift nobody walks across: placed inside, low in it, and
+    # held there a while (05a's approach: its floor is the next bsp's, so
+    # the player falls out of the volume before the switch is made)
+    # place refuses points outside the loaded bsp, and a switch volume may
+    # lie mostly in the next one: hold the player at the volume's points
+    # this bsp has
+    points = [volume_point(volume, a, b, c) for c in (0.4, 0.2, 0.7) for a in (0.5, 0.3, 0.7, 0.15, 0.85)
+              for b in (0.5, 0.3, 0.7, 0.15, 0.85)]
+    replies = len(g.test_replies)
+    for point in points:
+        g.guest("probe %.3f %.3f %.3f" % point)
+    g.wait(6)
+    answers = [r for r in g.test_replies[replies:] if r.startswith("probe ")]
+    here = [p for p, a in zip(points, answers) if a == "probe inside"]
+    for point in here[:6]:
+        for _ in range(10):
+            g.guest("place %.3f %.3f %.3f" % point)
+            g.wait(3)
+            if g.state and before and g.state.get("bsp") != before.get("bsp"):
+                g.wait(30)
+                return True
     if before:   # back to where it stood
         g.guest("teleport %.3f %.3f %.3f" % tuple(before["pos"]))
         g.wait(20)
@@ -183,6 +199,7 @@ def main():
         g.wait_frame(9500)
         g.guest("deathless 1")
         last_report = 0
+        idle = 0   # polls with nothing to do
         while g.frame < args.frames:
             g.wait(150)
             threads = dict(g.scripts)
@@ -212,7 +229,11 @@ def main():
                         key = (thread["script"], ("bsp", wanted))
                         count = acted.get(key, 0)
                         hop = first_hop(switches, g.state and g.state.get("bsp"), wanted)
-                        if hop and count < 8:
+                        # the mission's own bsp waits lead; an ambient script's
+                        # (kill volumes, wind: they wait for each bsp in turn)
+                        # only once nothing else is left, or it pulls the player
+                        # back out of the bsp the mission has gone on to (05a)
+                        if hop and count < 8 and (thread["script"].startswith("mission") or idle >= 10):
                             places.append((count, order, key[0], key[1], "cross", hop))
                     elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
                         volume = live_volume(g, volumes, targets[0]) if targets[0] in attached else volumes[targets[0]]
@@ -275,6 +296,7 @@ def main():
                         print("frame", g.frame, thread["script"], node, "waits:", text[:160], flush=True)
                         acted[key] = 1
                     break
+            idle = 0 if places or away else idle + 1
             if places:
                 # one place a poll, the least served first: every thread's
                 # wait gets its turn
@@ -299,14 +321,24 @@ def main():
                     for p in candidates:
                         g.guest("probe %.3f %.3f %.3f" % p)
                     g.wait(4)
-                    answers = g.test_replies[replies:replies + len(candidates)]
+                    # only the probes' answers: a late reply to another hook
+                    # (kill_enemies' "killed N") would shift them all
+                    answers = [r for r in g.test_replies[replies:] if r.startswith("probe ")][:len(candidates)]
                     here = [p for p, a in zip(candidates, answers) if a == "probe inside"]
                     if here:
-                        point = here[count % len(here)]
-                        replies = len(g.test_replies)
-                        g.guest("teleport %.3f %.3f %.3f" % point)
-                        g.wait(20)
-                        reply = g.test_replies[replies] if len(g.test_replies) > replies else ""
+                        # from the spot this try's count picks, on through the
+                        # others while a spot has no floor under it (05a's
+                        # overlook hangs partly over a ravine); a volume with
+                        # no floor anywhere is another bsp's room (04b)
+                        for point in here[count % len(here):] + here[:count % len(here)]:
+                            replies = len(g.test_replies)
+                            g.guest("teleport %.3f %.3f %.3f" % point)
+                            g.wait(20)
+                            reply = next((r for r in g.test_replies[replies:] if r.startswith("teleport ")), "")
+                            if reply != "teleport no floor":
+                                break
+                        if reply == "teleport no floor":
+                            reply = "teleport outside the bsp"
                     else:
                         point, reply = candidates[0], "teleport outside the bsp"
                     landed = inside(volume, g.state["pos"])
