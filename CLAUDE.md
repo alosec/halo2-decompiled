@@ -298,11 +298,21 @@ See `port/README.md` "Play" for the full commands.
   yaw/pitch each tick (whole image only), 0.003 rad a point times
   `H2_MOUSE_SENSITIVITY`. It was the right stick (dead zone, top rate).
 - **Open:**
-  - from the user's play (2026-10-27): the HUD shield meter shows empty
-    while shields are full; the Chief's shield shimmer is always on
-    (drawn while object +0xf4, recent shield damage, is above 0);
-    muzzle flash looks wrong; some marines are transparent in the
-    cinematic after the tram.
+  - from the user's play (2026-10-27): the HUD shield meter showed empty
+    while shields were full (fixed by the 2026-10-27 merge of main); the
+    Chief's shield shimmer "always on" (not reproduced: object +0xf4,
+    which gates it in 0x4bcc0, stays 0 at rest; 01b's intro shows no
+    shimmer); muzzle flash looks wrong.
+  - "transparent marines" after the tram: 01b's intro, the bridge doors
+    (frame ~5490 from H2_START_MAP=01b_spacestation). The glow
+    post-process (bright pass into a 160x120 target, blur, then a
+    composite adding rgb + 2 x alpha of the blurred buffer) turns the
+    space sky's frame-buffer alpha white. The sky (`sky_one_alpha_env`)
+    writes alpha in an alpha-only pass, t1.b x c0.a with c0.a = 1, and
+    stage 1 is bound to an 8x8 two-mip DXT1 (color_white or color_black;
+    none of the shader's own four bitmaps), so the whole window glows.
+    Next: find where that stage's bitmap is chosen (white where retail
+    likely binds black).
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any
     trace so far, flashlight included) and `LOGICOP` (the game only sets
