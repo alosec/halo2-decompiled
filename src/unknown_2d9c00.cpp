@@ -2,24 +2,7 @@
 // Havok (third-party physics library): a stream over another stream with an
 // aligned buffer, and a stream's skip, which reads into a 512-byte scratch
 // array until the count is used up or a read returns nothing.
-#include "reference_counted_2d88a0.h"
-
-class buffered_2d9c00 : public referenced_2d88a0
-{
-public:
-	REFERENCED_NEW_2D88A0(0x15)
-
-	referenced_2d88a0 *source;
-	void *buffer;
-	long field_10;
-	long field_14;
-	long size;
-	long field_1c;
-	long field_20;
-
-	buffered_2d9c00(referenced_2d88a0 *source_, long size_);
-	~buffered_2d9c00();
-};
+#include "buffered_reader_2d9c00.h"
 
 bool __cdecl function_279740(long value);
 
@@ -32,7 +15,7 @@ public:
 // @retail 0x2d9b40
 buffered_2d9c00::~buffered_2d9c00()
 {
-	referenced_2d88a0 *object = source;
+	c_sized_reference_a9ef0 *object = source;
 	if (object)
 	{
 		object->reference_count--;
@@ -56,20 +39,14 @@ buffered_2d9c00::~buffered_2d9c00()
 // @retail 0x2d9bd0 deleting buffered_2d9c00
 
 // @retail 0x2d9c00
-buffered_2d9c00::buffered_2d9c00(referenced_2d88a0 *source_, long size_)
-	: source(source_), field_10(0), field_14(0), size(size_), field_1c(-1), field_20(-1)
+buffered_2d9c00::buffered_2d9c00(reader_2d9c80 *source_, long size_)
+	: source(source_), position(0), end(0), capacity(size_), mark(-1), mark_limit(-1)
 {
 	source_->reference_count++;
-	buffer = g_memory_2d88a0->allocate_aligned(0x40, size_, 0x15);
+	buffer = (char *)g_memory_2d88a0->allocate_aligned(0x40, size_, 0x15);
 }
 
-class reader_2d9c80 : public referenced_2d88a0
-{
-public:
-	virtual void slot_1() {}
-	virtual long read(void *buffer, long size) { return 0; }
-	long skip(long count);
-};
+#include "stream_reader_2d9c80.h"
 
 // @retail 0x2d9c80
 long reader_2d9c80::skip(long count)

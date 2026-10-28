@@ -907,6 +907,10 @@ static inline XUID *message_entry_get_xuid(s_entry *entry)
 // read-only sender 81; read-only sender plus plain getter 145; native string buffer 75
 // (458 bytes, plain; rejected single-array wrapper); buffer plus plain getter 141;
 // loop-scoped index 81; indexed cumulative exclusions 81.
+// score 81 (was 81): retail keeps the sender in a stack slot (set by a branch, later reused for the
+// player) and keeps the getter's null test; without the qualified read the test is folded away.
+// Plain message read 145; that with an if-set exclusion 150; if-set exclusion alone 113; the count
+// renamed result/sender_count/added 81 each; a message pointer stepped at the body's end 157.
 // @retail 0x1a4441
 long players_list_add_message_senders(XUID const *excluded, long excluded_count)
 {
@@ -1435,6 +1439,20 @@ void online_presence_get_latest(long task_index, DWORD group_id, DWORD count, XO
 // differ. immutable count snapshots 124; native list record references 124; original count name
 // 124; original count observation order 117; original count names and order 117; row pair without
 // initial merge 219.
+// score 117 (was 117): count homes, early count retention and membership flag reloads remain.
+// On the recovered comparison carriers: outer/inner/both merge cursors 231/117/231;
+// friend/member/both search cursors 186/219/222; outer-plus-friend 236, inner-plus-member 217.
+// Count homes, early saved-count lifetime and memory flag updates remain. friend field binding 120; member
+// field binding 117; both field bindings 120; native count results 117; merge ordinal scope 117; friend
+// count arms 117; member count arms 117; both count arms 117.
+// On the recovered row/zero context: early count storage 117; matched member pointer/reference
+// 151/151; existing member-bit/friend-byte/both eligibility 186/117/189; independent
+// merge/friend ordinals 117; immutable count storage 117. Count homes, delayed count loads
+// and memory flag updates still differ.
+// score 117 (was 117): clan count renamed to sort after the friend count 117; friend count read
+// first 124 (its home stays ebp-8, loaded into esi at once); both 124; both counts before the
+// arrays 124; both list-contains helpers declared inline 117. Ours keeps flags20 in a register
+// across those helpers (they write no memory here); retail tests and updates it in memory.
 // @retail 0x1a3dfe
 void friends_lists_update_presence()
 {

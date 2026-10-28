@@ -8,7 +8,9 @@ struct s_fog_cluster_distance
 {
 	long cluster_index;
 	real distance;
-	byte unknown08[0xc];
+	long source_kind;
+	long source_index;
+	real source_weight;
 	long previous_index;
 };
 
@@ -131,14 +133,94 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 	arg_0->field_14 *= 1.0f - arg_2;
 }
 
-// score 692 (was 725): frame 0x4820 agrees; clear scheduling, output cursor
+// score 616 (was 616): Frame 0x4820, clears and metadata cursor agree; palette and accumulator carriers remain.
+// Earlier: Frame 0x4820 and metadata cursor agree; native palette width and accumulator carriers differ.
+// Frame, clear prefix and metadata cursor agree; palette/cluster carriers and accumulator scheduling remain.
+// Frame 0x4820, clears and metadata cursor agree; cluster-index EDI, palette carriers and helper update scheduling differ.
+// Earlier: Frame 0x4820 and clear scheduling agree; output cursor +0x10 versus +8 and palette/cluster homes remain.
+// Earlier: Frame 0x4820 agrees; output cursor +0x10 versus +8 and palette/cluster homes remain.
+// Earlier at 692: Frame 0x4820 agrees; clear scheduling and output cursor +0x10 versus +8
+// Frame 0x4820 agrees; clear setup and +0x10/+8 output induction remain.
+// Earlier 692 (was 725): frame 0x4820 agrees; clear scheduling, output cursor
+// Frame 0x4820 agrees; clear scheduling and output cursor +0x10 versus +8
+// remain. Redundant weight guard removed 1080; chained remainder defaults 698; merge failed-weight
+// exit 692; const selected record 692; named uncovered fractions 692.
+// Earlier: frame 0x4820 agrees; clear scheduling, output cursor
 // +0x10 versus +8 and palette/cluster registers still differ. Interleaved
 // scalar helper 727; the alpha term first 707 alone but 713 together with
 // the weight local (not kept); ordinary output inline 725; ordinary color
 // inline 725; output-helper output-first parameters 725.
-// score 692 (was 692): clear schedule and output cursor +0x10 versus +8 remain;
+// Earlier 692 (was 692): clear schedule and output cursor +0x10 versus +8 remain;
+// Earlier: clear schedule and output cursor +0x10 versus +8 remain;
 // native output clear 742; output clear before palette lookup 790; previous index 692;
 // cluster-distance snapshot 762; zero accumulator copies 835.
+// Library clear orders 5-6-7-8-10-9 / 5-6-7-9-8-10 / 5-6-7-9-10-8 /
+// 5-6-7-10-8-9 / 5-6-7-10-9-8 / 10-5-6-7-8-9 / 5-6-10-7-8-9 /
+// 6-5-7-8-9-10: 687/723/720/771/774/729/770/708 (fast).
+// Final two clears swapped: 687 plain, same length, first +0x15f; retained.
+// Round 150: native color input 692; native six-field output 692; both 692; wide best weight 827; word cluster ordinal 768; color with wide weight 827; native output with word ordinal 768; wide weight with word ordinal 868 (fast).
+// native-source-012 683; native-source-021 682.
+// native-source-102 694; native-source-120 694.
+// native-source-201 685; native-source-210 685.
+// source-record-012 683; source-record-021 682.
+// Single-caller source writer 682/681/693/693/684/684; ordinary writer 682/684, all reverted.
+// Round 155: cluster-index snapshot/source-record/byte-state and all four combinations 683 each;
+// all three with readonly source record 683. Native metadata cursor agrees at +0x1838.
+// Consistent palette slot char/short/long, mutable or readonly record: 705/616/713;
+// inverse weighted-state with char/long palette slot: 705/713 (fast).
+// One signed-short palette observation retained at all five uses: 616 plain, 3839/3817 bytes.
+// Native member scalar/merge/publication operations singly 615/616/615;
+// scalar+merge/scalar+publication/merge+publication 617/615/616; all three/all four 617/616.
+// One-point leads dropped; original complete free-function helpers restored.
+// Separate clamped weight in scalar/merge/color helpers 684/683/683; scalar-merge/scalar-color/merge-color/all 684/684/683/684;
+// normalized contribution before destination stores 742. Original input captures and helper bodies restored.
+// Uniform scalar/merge/scalar-merge/color/scalar-color/merge-color/all contribution product operands; all
+// normalized publication products; then source-first scalar/merge/scalar-merge/color/scalar-color/merge-
+// color/all helper orders and all with output-first normalization:
+// 616/616/616/616/616/616/616/616/615/616/615/617/616/617/616/616 (fast); all restored.
+// Complete source-value copies: scalar RGB/merge accumulator/both/color RGB/scalar-color/merge-color/all
+// 887/818/984/855/989/953/1101; complete publication source 894. Copies grow code/frame; originals restored.
+// No-palette dispatch first, tag/fallback admission with word/byte palette 620/620/712/713;
+// conditional selected-record result on each 620/620/712/713. Original dispatch and word restored.
+// Round 343: Shared caller falloff/contribution/both lifetimes 616/616/617; uncovered contribution 715;
+// radius+uncovered/weight+uncovered/all 716/716/714; all with native byte palette 611 (five-point lead rejected). Original body restored.
+// Round 146: Native reference destinations scalar/merge/both/color/scalar-color/merge-color/all
+// 616/616/616/616/616/616/616; all native accumulator references 616; scalar-
+// field/contribution/both/both-with-destination references 699/617/698/698. Original helper contracts
+// and alias-safe weight capture restored.
+// frame 0x4820, clears and metadata cursor agree; the palette byte, the palette
+// record (EBX in retail), the float constants (zero in XMM7) and the accumulator scheduling differ.
+// Retail reads the palette byte at each use (`mov cl, [esi+0x6f]`, a byte compare with -1, one
+// `movsx ecx, cl`, and a fresh `movsx edx, byte [esi+0x6f]` for the source index), and loads the
+// four colour values of the fog-colour accumulator up front in reverse order (scalar arguments).
+// Tried: redundant weight guard removed 1080; chained remainder defaults 698; merged failed-weight exit
+// 692; const selected record 692; named uncovered fractions 692; interleaved scalar helper 727; the alpha
+// term first 707, with the weight local 713; ordinary output inline 725; ordinary colour inline 725;
+// output-helper output-first parameters 725; native output clear 742; output clear before palette lookup
+// 790; previous index 692; cluster-distance snapshot 762; zero accumulator copies 835; library clear
+// orders 5-6-7-8-10-9/5-6-7-9-8-10/5-6-7-9-10-8/5-6-7-10-8-9/5-6-7-10-9-8/10-5-6-7-8-9/5-6-10-7-8-9/
+// 6-5-7-8-9-10 687/723/720/771/774/729/770/708, final two clears swapped 687; native colour input 692;
+// native six-field output 692, both 692; wide best weight 827; word cluster ordinal 768; colour with wide
+// weight 827; native output with word ordinal 768; wide weight with word ordinal 868; native-source
+// 012/021/102/120/201/210 683/682/694/694/685/685; source-record 012/021 683/682; single-caller source
+// writer 682/681/693/693/684/684, ordinary writer 682/684; cluster-index snapshot/source-record/byte-state
+// and all four combinations 683 each, all three with readonly source record 683; consistent palette slot
+// char/short/long, mutable or readonly record 705/616/713; inverse weighted-state with char/long palette
+// slot 705/713; one signed-short palette observation at all five uses 616; native member scalar/merge/
+// publication operations singly 615/616/615, pairs 617/615/616, all three/four 617/616; separate clamped
+// weight in scalar/merge/colour helpers 684/683/683, pairs 684/684/683, all 684; normalized contribution
+// before destination stores 742; uniform contribution product operands and helper orders (sixteen
+// forms) 615-617; complete source-value copies 887/818/984/855/989/953/1101, publication source 894;
+// no-palette dispatch first, tag/fallback admission with word/byte palette 620/620/712/713, conditional
+// selected-record result on each 620/620/712/713; shared caller falloff/contribution/both lifetimes
+// 616/616/617; uncovered contribution 715; radius+uncovered/weight+uncovered/all 716/716/714, all with
+// native byte palette 611. Round 75: palette byte read at each use 683; fog-colour accumulator with
+// four scalar colour arguments 770 (frame 0x4824: one colour value spills), with its alpha term first
+// 761, with the per-use palette byte 746; named alpha in the pointer helper 698 (3826 bytes, aligned
+// 497 -> 489). Round 78: byte test with a long index at the top of the branch and the field re-read at
+// the source-index store 683 (fast; retail's movsx position); with a named cluster index 683; lookup through
+// the existing entry_at_index getter 612 plain (aligned rows 497 -> 803, ebx/edi/esi roles move), with the
+// long index 612. Retail assigns the NULL record before the table's own NULL test.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {
@@ -158,8 +240,8 @@ void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_
 	memset(&local_6, 0, sizeof(local_6));
 	memset(&local_7, 0, sizeof(local_7));
 	memset(&local_8, 0, sizeof(local_8));
-	memset(&local_9, 0, sizeof(local_9));
 	memset(&local_10, 0, sizeof(local_10));
+	memset(&local_9, 0, sizeof(local_9));
 	local_5.remaining = 1.0f;
 	local_6.remaining = 1.0f;
 	local_7.remaining = 1.0f;
@@ -173,17 +255,17 @@ void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_
 		long local_14 = NONE;
 		long local_15 = function_130f60((s_palette_owner const *)local_13, &local_14);
 		bool local_16 = false;
-		long *local_17 = (long *)local_12->unknown08;
-		local_17[0] = 0;
-		local_17[1] = NONE;
-		*(real *)&local_17[2] = 0.0f;
-		if (*(char *)(local_13 + 0x6f) != NONE)
+		local_12->source_kind = 0;
+		local_12->source_index = NONE;
+		local_12->source_weight = 0.0f;
+		short palette_slot = *(char *)(local_13 + 0x6f);
+		if (palette_slot != NONE)
 		{
 			s_12eb00 *local_18 = NULL;
 			if (local_12->previous_index != NONE)
 				local_18 = &local_1[local_12->previous_index];
-			else if (g_4e0350 && *(char *)(local_13 + 0x6f) >= 0 && *(char *)(local_13 + 0x6f) < *(long *)((byte *)g_4e0350 + 0x340))
-				local_18 = (s_12eb00 *)(*(byte **)((byte *)g_4e0350 + 0x344) + *(char *)(local_13 + 0x6f) * 0xf4);
+			else if (g_4e0350 && palette_slot >= 0 && palette_slot < *(long *)((byte *)g_4e0350 + 0x340))
+				local_18 = (s_12eb00 *)(*(byte **)((byte *)g_4e0350 + 0x344) + palette_slot * 0xf4);
 			if (local_18)
 			{
 				real const *local_19 = (real const *)local_18;
@@ -212,9 +294,9 @@ void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_
 					}
 					if (local_19[0x38] > 0.0f)
 						function_12efb5(&local_9, local_19 + 0x38, local_21);
-					local_17[0] = 2;
-					local_17[1] = *(char *)(local_13 + 0x6f);
-					*(real *)&local_17[2] = local_21;
+					local_12->source_kind = 2;
+					local_12->source_index = palette_slot;
+					local_12->source_weight = local_21;
 				}
 			}
 			else
@@ -250,9 +332,9 @@ void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_
 				}
 				if (*(real *)(local_23 + 0x68) > 0.0f)
 					function_12efb5(&local_9, (real const *)(local_23 + 0x68), local_25);
-				local_17[0] = 3;
-				local_17[1] = local_14;
-				*(real *)&local_17[2] = local_25;
+				local_12->source_kind = 3;
+				local_12->source_index = local_14;
+				local_12->source_weight = local_25;
 			}
 		}
 		else
@@ -265,9 +347,9 @@ local_30:
 			local_7.weight += local_31;
 			local_8.weight += local_31;
 			local_10.weight += local_31;
-			local_17[0] = 1;
-			local_17[1] = NONE;
-			*(real *)&local_17[2] = local_31;
+			local_12->source_kind = 1;
+			local_12->source_index = NONE;
+			local_12->source_weight = local_31;
 		}
 		if (!local_16)
 		{

@@ -185,7 +185,8 @@ struct s_295970_state
 	short field08;
 	short field0a;
 	long field0c;
-	short field10;
+	bool field10;
+	byte field11;
 	short counts[3];
 	long indices[3];
 };
@@ -299,86 +300,77 @@ __forceinline long function_295a34(real arg_0)
 	return local_0;
 }
 
-#pragma inline_depth(0)
-PRIVATE __forceinline bool function_2959c1(short arg_0, short arg_1, long arg_2, long arg_3, void const *arg_4)
-{
-    return unit_submit_entry_request(arg_1, arg_0, arg_2, arg_3, arg_4);
-}
-#pragma inline_depth(255)
-
 // @retail 0x2959c0
 void function_2959c0()
 {
-	s_2959c1 *local_0 = (s_2959c1 *)g_4e034c;
-	long local_1 = g_510c54->game_time;
-	if (local_0->field_c8 > 0 && local_0->field_cc->field_120 > 0)
+	s_2959c1 *settings = (s_2959c1 *)g_4e034c;
+	long game_time = g_510c54->game_time;
+
+	if (settings->field_c8 > 0 && settings->field_cc->field_120 > 0)
 	{
-		real *local_2 = local_0->field_cc->field_124;
-		s_295970_state *local_3 = (s_295970_state *)g_5047f4;
-		local_3->field02++;
-		if (local_3->field02 > 5000)
-			local_3->field02 = 5000;
-		if (local_3->field0c != NONE)
-        {
-            long local_9 = function_295a34(g_510c54->field_2_3 * 10.0f);
-            if (local_1 - local_3->field0c > local_9)
-            {
-                local_3->field0c = NONE;
-                local_3->field08 = 0;
-            }
-        }
-		volatile long local_8 = 3;
-		long local_4 = 0;
-		do
+		real *limits = settings->field_cc->field_124;
+
+		((s_295970_state *)g_5047f4)->field02++;
+		if (((s_295970_state *)g_5047f4)->field02 > 5000)
+			((s_295970_state *)g_5047f4)->field02 = 5000;
+		if (((s_295970_state *)g_5047f4)->field0c != NONE)
 		{
-			if (local_3->counts[local_4] > 0 && --local_3->counts[local_4] == 0)
+			long timeout = function_295a34(g_510c54->field_2_3 * 10.0f);
+
+			if (game_time - ((s_295970_state *)g_5047f4)->field0c > timeout)
 			{
-				long local_5 = actor_get(local_3->indices[local_4])->unknown018;
-				if (local_5 != NONE)
+				((s_295970_state *)g_5047f4)->field0c = NONE;
+				((s_295970_state *)g_5047f4)->field08 = 0;
+			}
+		}
+		for (short i = 0; i < 3; i++)
+		{
+			if (((s_295970_state *)g_5047f4)->counts[i] > 0 && --((s_295970_state *)g_5047f4)->counts[i] == 0)
+			{
+				s_actor_view *actor = actor_get(((s_295970_state *)g_5047f4)->indices[i]);
+
+				if (actor->unknown018 != NONE)
 				{
-					if (local_3->field00 == 0)
-						function_2959c1(NONE, 0x10, local_5, 0xe, NULL);
+					if (((s_295970_state *)g_5047f4)->field00 == 0)
+						unit_submit_entry_request(0x10, NONE, actor->unknown018, 0xe, NULL);
 					else
-						function_2959c1(NONE, 0x11, local_5, 0xe, NULL);
-					local_3 = (s_295970_state *)g_5047f4;
+						unit_submit_entry_request(0x11, NONE, actor->unknown018, 0xe, NULL);
 				}
 			}
-			local_4++;
-			local_8--;
-		} while (local_8 != 0);
-		short local_6;
-		switch (local_3->field00)
+		}
+		short mode;
+		switch (((s_295970_state *)g_5047f4)->field00)
 		{
 		case 0:
-			if (local_3->field08 < 3)
+			if (((s_295970_state *)g_5047f4)->field08 < 3)
 				break;
-			local_6 = 1;
+			mode = 1;
 			function_295bd0(false);
-			goto local_7;
+			goto reset;
 		case 1:
-			if (local_3->field02 > function_295a34(g_510c54->field_2_3 * local_2[2]) ||
-				local_3->field04 > function_295a34(g_510c54->field_2_3 * local_2[1]) ||
-				(*(byte *)&local_3->field10 && local_3->field04 > function_295a34(g_510c54->field_2_3 * local_2[0])))
+			if (((s_295970_state *)g_5047f4)->field02 > function_295a34(g_510c54->field_2_3 * limits[2]) ||
+				((s_295970_state *)g_5047f4)->field04 > function_295a34(g_510c54->field_2_3 * limits[1]) ||
+				(((s_295970_state *)g_5047f4)->field10 && ((s_295970_state *)g_5047f4)->field04 > function_295a34(g_510c54->field_2_3 * limits[0])))
 			{
-				local_6 = 0;
+				mode = 0;
 				function_295bd0(true);
-local_7:
-				local_3->field00 = local_6;
-				local_3->field02 = 0;
-				local_3->field08 = 0;
-				local_3->field04 = 0;
+reset:
+				((s_295970_state *)g_5047f4)->field00 = mode;
+				((s_295970_state *)g_5047f4)->field02 = 0;
+				((s_295970_state *)g_5047f4)->field08 = 0;
+				((s_295970_state *)g_5047f4)->field04 = 0;
 			}
 			break;
 		}
-		if (*(byte *)&local_3->field10)
-			local_3->field04 = 0;
+		if (((s_295970_state *)g_5047f4)->field10)
+			((s_295970_state *)g_5047f4)->field04 = 0;
 		else
 		{
-			local_3->field04++;
-			if (local_3->field04 > 5000)
-				local_3->field04 = 5000;
+			((s_295970_state *)g_5047f4)->field04++;
+			if (((s_295970_state *)g_5047f4)->field04 > 5000)
+				((s_295970_state *)g_5047f4)->field04 = 5000;
 		}
-		*(byte *)&local_3->field10 = false;
+		((s_295970_state *)g_5047f4)->field10 = false;
 	}
 }
 

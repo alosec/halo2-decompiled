@@ -2792,6 +2792,8 @@ void function_20fda0(long arg_0);
 // score 19 (was 19): the short that comes back from the call is sign extended
 // here after the call and in retail before it, and the global is read into
 // EDX here and into EAX in retail.
+// Tried (r35): split side or node assignments, a const side or object, a byte owner,
+// an early guard and the object macro 19; an explicitly widened side 39.
 // @retail 0x20fec0
 void function_20fec0(long arg_0, long arg_1)
 {

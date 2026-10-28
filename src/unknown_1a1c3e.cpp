@@ -394,6 +394,8 @@ __forceinline short function_1a1fb0(short height)
 // The volatile view keeps the blip on the stack, reread at each use, as retail. Tried (r27b): the
 // plain form 78 (the blip travels in ebx); a `const` reference to the blip without volatile 51
 // (on the stack but kept in ebx).
+// Scoped primary receiver 9; split branch receivers 9; store in the override condition 9;
+// a two-use height-field pointer 61; a shared setter 9; const receivers 9; clamp-and-store helper 34.
 // @retail 0x1a1faf
 void motion_sensor_blip_set_type(long local_player_index, long object_index, s_motion_sensor_blip *blip)
 {

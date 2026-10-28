@@ -24,27 +24,82 @@ struct s_sky_surface_record
     dword color1;
 };
 
-PRIVATE __forceinline long sky_surface_tag(short index)
+/* the tag data of a scenario sky, or NULL when the index or its tag is NONE */
+PRIVATE __forceinline byte *sky_surface_data(short index)
 {
     byte *scenario = (byte *)g_4e0350;
-    long result = NONE;
+    long tag_index = NONE;
     if (index >= 0)
     {
         long count = *(long *)(scenario + 8);
         if (index < count)
-            result = *(long *)(*(byte **)(scenario + 0xc) + index * 8 + 4);
+            tag_index = *(long *)(*(byte **)(scenario + 0xc) + index * 8 + 4);
     }
+    byte *result = NULL;
+    if (tag_index != NONE)
+        result = g_4e3b44[tag_index & 0xffff].bytes;
     return result;
 }
 
 real function_30bf0(vector3f *vector);
 
-// score 213 (was 213): frame 0x8c agrees; selector/count saves, sentinel join
+/* the value limited to [minimum, maximum] */
+PRIVATE __forceinline real pinned_real(real const &value, real minimum, real maximum)
+{
+	if (value < minimum) return minimum;
+	if (value > maximum) return maximum;
+	return value;
+}
+
+// score 93 (was 150): at retail's length; frame, sky/count homes, trig temporaries, blend registers
+// and the color0 store now match. Left: the three x87 direction adds load the direction first
+// (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
+// (retail ecx, then edi), and the collision test's sete.
+// Lane 8 r64 (93 form = count read at each use, lights pointer in the loop, a contribution vector
+// with double products cast once, the blend through the returning clamp, color0 first): three scalar
+// terms 179/184 (sunk into the adds); terms written into the adds 186; contribution renamed/array/
+// declared first, explicit `a = a + b` or `b + a` adds 95; existing direction_from_angles 171;
+// aggregate initializer 162; adds in k/j/i order 109; color declared before direction 99 (frame
+// slots swap); typed light-entry struct 162; strength spelled `entry + strength` or declared first
+// 162/165 (float products); one bool from an `&&` collision test 95; the flag form gives the sete
+// exactly (aligned 9) but 825 bytes, 160.
+// Earlier at 150: the selector join and esi/edi saves match (the sky lookup helper returns the tag
+// data, NULL by default, so the NONE join is not threaded).
+// Lane 5 r77 on the kept form: count without volatile 191 (804 bytes); light contribution vector
+// with fields read at each use 209 (837 bytes), with a plain count 166, plus the lights pointer
+// read in the loop 161, plus the count read from the field at each use 159 (sky/count homes and the
+// temporaries' homes then match retail; the adds still load the direction first, 4 bytes long),
+// plus color0 stored first 160; direction_from_angles for the contribution 173; pin_real for the
+// blend and colors 161 (same code); a pointer add helper and contribution array/initializer/
+// declaration-order forms keep the direction-first adds (screened); color0 first alone 149.
+// Earlier 213: frame 0x8c agrees; selector/count saves, sentinel join and pending trig/color homes remain.
+// Frame 0x8c agrees; selector/count saves, sentinel join and pending trigonometric/color homes remain.
+// Earlier 213 (was 213): frame 0x8c agrees; selector/count saves, sentinel join
 // and pending trigonometric components differ. Native sky fields 213; native
 // light/value fields 213; both views 213; frame pointer 296; status enum 213.
 // selector complete validation 213; selector result join 213; collision value initialization 238; direct
 // component lifetimes 231; component lifetimes ordinary count 225; native contribution vector 246; size
 // preference 380; float consistency 302.
+// Selector failing-range returns 213; explicit selector context 213; direct collision predicate 213;
+// ordinary while light traversal 213; independent blend bounds 213; constant output first 213.
+// Round 116: Direction initialization only with lights 213; color initialization only with lights 213; both 213; light-table field at each access 213; result from record validity 230. Opening code and inherited count qualifier restored.
+// Round 122: Query-only collision lifetime 230; validated-record collision lifetime 217; byte status
+// 217; strength lifetime inside light branch 211; parallel conditional channel clamps 213.
+// Native contribution aggregate with cached/direct angles 236/235;
+// native direct component fill 235; cached component orders ikj/jik/jki/kij/kji 219/212/221/216/219.
+// Existing scalar color/blend/both 213/213/213; existing color helper and helper plus blend 213/213;
+// entry strength snapshot alone/with scalar clamps/with color helper 225/225/225. All restored.
+// Round 181 complete data-pointer selector, guard returns, full selector, const data, explicit context and definite pointer arms 213/213/213/213/213/213; ordinary inline 256; validated data output 228 (fast); all restored. Frame 0x8c agrees; selector/count saves and pending trigonometric/color homes remain.
+// Native ray/fallback/both component loops with long ordinals 218/217/217; dword 218/217/217;
+// both with short/byte ordinals 244/244. Original body restored; selector and pending homes remain.
+// Round 246: direction seed/color seed/direction publication library-copy combinations,
+// seven at 213; all three plus every whole-color replacement 213. Original copies restored.
+// Round 191: Blend/pack/collision ordinary-inline declarations, singly, all pairs
+// and together, each 213; all three separate noinline declarations 213.
+// Original declarations, count qualification and executable body restored.
+// Round 193: Scenario/data/both/value/data+value/scenario+value/all source pointers
+// read at each use, then all plus light table: 213/192/192/213/231/213/231/247.
+// Data-only plain 192 adds reloads and has a farther aligned sequence; original restored.
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
@@ -54,73 +109,67 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
     if (g_4b9ee9 && g_4b9eec != NONE)
     {
         long index = g_4b9eec;
-        long sky_index = sky_surface_tag((short)index);
-        if (sky_index != NONE)
+        byte *sky = sky_surface_data((short)index);
+        if (sky != NULL)
         {
-            byte *sky = g_4e3b44[sky_index & 0xffff].bytes;
-            if (sky != NULL)
+            vector3f direction = *g_4687a4;
+            color3f color = *(color3f *)g_468718;
+            real strength = 0.0f;
+            if (*(long *)(sky + 0x78) > 0)
             {
-                vector3f direction = *g_4687a4;
-                color3f color = *(color3f *)g_468718;
-                real strength = 0.0f;
-                long volatile count = *(long *)(sky + 0x78);
-                if (count > 0)
+                for (long i = 0; i < *(long *)(sky + 0x78); ++i)
                 {
-                    byte *lights = *(byte **)(sky + 0x7c);
-                    for (long i = 0; i < count; ++i)
+                    byte *light = *(byte **)(sky + 0x7c) + i * 0x34;
+                    if (*(long *)(light + 0x2c) > 0)
                     {
-                        byte *light = lights + i * 0x34;
-                        if (*(long *)(light + 0x2c) > 0)
+                        byte *entry = *(byte **)(light + 0x30);
+                        vector3f contribution;
+                        contribution.i = (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
+                        contribution.j = (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
+                        contribution.k = (real)sin(*(real *)(light + 0x10));
+                        direction.i += contribution.i;
+                        direction.j += contribution.j;
+                        direction.k += contribution.k;
+                        if (i == 0)
                         {
-                            byte *entry = *(byte **)(light + 0x30);
-                            real yaw = *(real *)(light + 0xc);
-                            real pitch = *(real *)(light + 0x10);
-                            real cosine = (real)cos(pitch);
-                            direction.i += (real)cos(yaw) * cosine;
-                            direction.j += (real)sin(yaw) * cosine;
-                            direction.k += (real)sin(pitch);
-                            if (i == 0)
-                            {
-                                color = *(color3f *)(entry + 4);
-                                strength = *(real *)(entry + 0x10);
-                            }
-                            else if (*(real *)(entry + 0x10) > 0.0f)
-                            {
-                                real blend = 1.0f - strength / *(real *)(entry + 0x10) / ((real)i + 2.0f);
-                                if (blend < 0.0f) blend = 0.0f;
-                                else if (blend > 1.0f) blend = 1.0f;
-                                function_131c20(&color, (color3f *)(entry + 4), 0, blend, &color);
-                                strength += *(real *)(entry + 0x10);
-                            }
+                            color = *(color3f *)(entry + 4);
+                            strength = *(real *)(entry + 0x10);
+                        }
+                        else if (*(real *)(entry + 0x10) > 0.0f)
+                        {
+                            real blend = pinned_real(1.0f - strength / *(real *)(entry + 0x10) / ((real)i + 2.0f),
+                                0.0f, 1.0f);
+                            function_131c20(&color, (color3f *)(entry + 4), 0, blend, &color);
+                            strength += *(real *)(entry + 0x10);
                         }
                     }
-                    function_30bf0(&direction);
-                    vector3f ray;
-                    ray.i = direction.i * 100.0f;
-                    ray.j = direction.j * 100.0f;
-                    ray.k = direction.k * 100.0f;
-                    bool hit = function_1697c0(0x10000001, point, &ray, ignore_object_index, NONE,
-                        (s_collision_result_1697c0 *)collision);
-                    if (!hit || *(short *)(collision + 0x5a) != NONE)
-                        color = *(color3f *)(sky + 0x34);
                 }
-                else
-                {
+                function_30bf0(&direction);
+                vector3f ray;
+                ray.i = direction.i * 100.0f;
+                ray.j = direction.j * 100.0f;
+                ray.k = direction.k * 100.0f;
+                bool hit = function_1697c0(0x10000001, point, &ray, ignore_object_index, NONE,
+                    (s_collision_result_1697c0 *)collision);
+                if (!hit || *(short *)(collision + 0x5a) != NONE)
                     color = *(color3f *)(sky + 0x34);
-                    direction.i = direction.j = direction.k = -1.0f;
-                    function_30bf0(&direction);
-                }
-                record->direction = direction;
-                record->color0 = 0xff555555;
-                if (color.red < 0.0f) color.red = 0.0f;
-                else if (color.red > 1.0f) color.red = 1.0f;
-                if (color.green < 0.0f) color.green = 0.0f;
-                else if (color.green > 1.0f) color.green = 1.0f;
-                if (color.blue < 0.0f) color.blue = 0.0f;
-                else if (color.blue > 1.0f) color.blue = 1.0f;
-                record->color1 = pack_color3f(&color);
-                result = 0;
             }
+            else
+            {
+                color = *(color3f *)(sky + 0x34);
+                direction.i = direction.j = direction.k = -1.0f;
+                function_30bf0(&direction);
+            }
+            record->color0 = 0xff555555;
+            record->direction = direction;
+            if (color.red < 0.0f) color.red = 0.0f;
+            else if (color.red > 1.0f) color.red = 1.0f;
+            if (color.green < 0.0f) color.green = 0.0f;
+            else if (color.green > 1.0f) color.green = 1.0f;
+            if (color.blue < 0.0f) color.blue = 0.0f;
+            else if (color.blue > 1.0f) color.blue = 1.0f;
+            record->color1 = pack_color3f(&color);
+            result = 0;
         }
     }
     return result;
@@ -221,6 +270,7 @@ struct s_object_header
 #define TAG_FROM_OBJECT(object) ((s_object_tag *)g_4e3b44[(object)->tag_index & 0xffff].bytes)
 
 
+/* advances the child iterator to the next child object of type 0 or 1 */
 // @retail 0xd0690
 bool function_d0690(s_object_child_iterator *iterator)
 {
@@ -235,10 +285,10 @@ bool function_d0690(s_object_child_iterator *iterator)
 			iterator->next = child->next_sibling;
 			if ((1 << child->type) & 3)
 			{
+				result = true;
 				iterator->child_index = index;
 				iterator->child_short = child->value1fc;
 				iterator->child_value = child->value14;
-				result = true;
 				break;
 			}
 		}
@@ -261,9 +311,9 @@ bool function_d0690(s_object_child_iterator *iterator)
 		}
 	}
 
-	if (iterator->root != iterator->current && iterator->current != NONE)
+	if (iterator->root != iterator->current)
 	{
-		do
+		while (iterator->current != NONE)
 		{
 			while (iterator->next != NONE)
 			{
@@ -272,14 +322,15 @@ bool function_d0690(s_object_child_iterator *iterator)
 				iterator->next = child->next_sibling;
 				if ((1 << child->type) & 3)
 				{
+					result = true;
 					iterator->child_index = index;
 					iterator->child_short = child->value1fc;
 					iterator->child_value = child->value14;
-					return true;
+					break;
 				}
 			}
 			if (result)
-				return result;
+				break;
 			long index = OBJECT_FROM_INDEX(iterator->current)->next_sibling;
 			while (index != NONE)
 			{
@@ -294,7 +345,7 @@ bool function_d0690(s_object_child_iterator *iterator)
 			iterator->current = index;
 			if (index != NONE)
 				iterator->next = OBJECT_FROM_INDEX(index)->first_child;
-		} while (iterator->current != NONE);
+		}
 	}
 
 	return result;
@@ -336,16 +387,8 @@ void function_d0b70(long object_index, long a, long b, real value, long slot)
 		{
 			s_object_range *range = tag->ranges;
 
-			if (a < 0)
-				a = 0;
-			else if (a > range->maximum_a)
-				a = range->maximum_a;
-			child->value22c = (short)a;
-			if (b < 0)
-				b = 0;
-			else if (b > range->maximum_b)
-				b = range->maximum_b;
-			child->value22a = (short)b;
+			child->value22c = (short)(a < 0 ? 0 : a > range->maximum_a ? range->maximum_a : a);
+			child->value22a = (short)(b < 0 ? 0 : b > range->maximum_b ? range->maximum_b : b);
 		}
 	}
 }
@@ -392,31 +435,39 @@ real function_d1490(long object_index, long child_index)
 		short slot = object->slot212;
 		long current = NONE;
 		byte counter;
-		real value;
 
 		if (slot != NONE)
 			current = object->children[slot];
 		if (current == child_index)
 		{
 			counter = object->counter1fb;
-			if (counter == 0)
-				return 0.0f;
-			value = (real)counter * g_510c54->rate;
+			if (counter > 0)
+			{
+				real value = (real)counter * g_510c54->rate * (10.0f / 3.0f);
+				if (0.0f > value)
+					result = 0.0f;
+				else if (value > 1.0f)
+					result = 1.0f;
+				else
+					result = value;
+			}
+			else
+				result = 0.0f;
+			return result;
 		}
-		else
+		counter = object->counter1fa;
+		if (counter > 0)
 		{
-			counter = object->counter1fa;
-			if (counter == 0)
-				return 0.0f;
-			value = (real)counter * g_510c54->rate;
+			real value = (real)counter * g_510c54->rate * (10.0f / 3.0f);
+			if (0.0f > value)
+				result = 0.0f;
+			else if (value > 1.0f)
+				result = 1.0f;
+			else
+				result = value;
 		}
-		value *= 10.0f / 3.0f;
-		if (0.0f > value)
-			result = 0.0f;
-		else if (value > 1.0f)
-			result = 1.0f;
 		else
-			result = value;
+			result = 0.0f;
 	}
 	return result;
 }
@@ -673,20 +724,12 @@ void function_d2bf0(s_mesh *mesh, long triangle_index, real u, real v, real *out
 	}
 }
 
-static inline real pin_real(real value, real minimum, real maximum)
+static inline void pin_real(real *value, real minimum, real maximum)
 {
-	if (minimum > value)
-		return minimum;
-	if (value > maximum)
-		return maximum;
-	return value;
-}
-
-PRIVATE __forceinline real uv_coordinate_pin(real const &value, real minimum, real maximum)
-{
-	if (value < minimum) return minimum;
-	if (value > maximum) return maximum;
-	return value;
+    if (minimum > *value)
+        *value = minimum;
+    else if (*value > maximum)
+        *value = maximum;
 }
 
 // @retail 0xd2dc0
@@ -726,8 +769,8 @@ void function_d2dc0(s_mesh *mesh, long triangle_index, real u, real v, real *out
 		*out_a = (c.x - a.x) * v + (b.x - a.x) * u + a.x;
 		*out_b = (c.y - a.y) * v + (b.y - a.y) * u + a.y;
 	}
-	*out_a = uv_coordinate_pin(*out_a, -1000.0f, 1000.0f);
-	*out_b = uv_coordinate_pin(*out_b, -1000.0f, 1000.0f);
+	*out_a = pinned_real(*out_a, -1000.0f, 1000.0f);
+	*out_b = pinned_real(*out_b, -1000.0f, 1000.0f);
 }
 
 static inline void unpack_normal(dword value, vector3f *vector)
@@ -886,15 +929,18 @@ bool function_d3630(s_vertex_block *block, long triangle_index, s_mesh *mesh, re
 // @retail 0xd0620
 void function_d0620(long object_index, s_object_child_iterator *iterator)
 {
-	s_object *object;
+	s_object *object = OBJECT_FROM_INDEX(object_index);
+	bool done = false;
 
-	for (;;)
+	while (!done)
 	{
-		object = OBJECT_FROM_INDEX(object_index);
-		long parent_index = object->value14;
-		if (parent_index == NONE || !TEST_FIELD_BIT(object->flag26) || !((1 << OBJECT_FROM_INDEX(parent_index)->type) & 3))
-			break;
-		object_index = parent_index;
+		if (object->value14 != NONE && TEST_FIELD_BIT(object->flag26) && ((1 << OBJECT_FROM_INDEX(object->value14)->type) & 3))
+		{
+			object_index = object->value14;
+			object = OBJECT_FROM_INDEX(object_index);
+		}
+		else
+			done = true;
 	}
 
 	iterator->root = object_index;
@@ -926,8 +972,8 @@ struct s_surface_query_source
 
 bool function_14b120(s_surface_query_source source, void *surface);
 
-PRIVATE vector3f const g_4406e4 = { 0.0f, 0.0f, -10.0f };
-PRIVATE vector3f const g_4406f0[5] =
+extern vector3f const g_4406e4 = { 0.0f, 0.0f, -10.0f };
+extern vector3f const g_4406f0[5] =
 {
     { -10.0f, 0.0f, 0.0f }, { 10.0f, 0.0f, 0.0f },
     { 0.0f, -10.0f, 0.0f }, { 0.0f, 10.0f, 0.0f }, { 0.0f, 0.0f, -40.0f }
@@ -1002,6 +1048,15 @@ PRIVATE __forceinline bool surface_status_failed(long status)
 // |= 1 twice) 2: retry flags snapshot 2; `flags &= ~1` before the retry 2; retry flags in
 // a local 2; dword flags 2; flags declared before the tag pointer 4; point declared first 24;
 // failed set after the retry 104.
+// Current bitfield forms (fast): nonzero retry 85; exact retry flag 131; word flags 117;
+// short flags 117; bool option 115; first failure workspace 120; combined bits 147;
+// initial object option 140. Retry AND/push scheduling remains.
+// score 2 (was 2): retry AND still follows the object-index push. XOR 2; subtract 18; clear
+// extracted bit 2; subtract extracted bit 133; retry status scope 2; one failure store 98; long
+// failure 83; entry status 2.
+// score 2 (was 2): retry AND still follows the object-index push; mask assignment in the call 2;
+// nested retry status predicate 2; direct status initialization 2; two-call index local 2;
+// read-only point 2; byte failure 2; negated return 2; guarded mask assignment 87.
 // @retail 0xd1850
 long function_d1850(long object_index, bool value, s_effect_color_query *query)
 {
@@ -1155,14 +1210,31 @@ PRIVATE __forceinline real lighting_normalize_ordered(vector3f *v, real square)
     return 0.0f;
 }
 
-// score 539 (was 539): frame 0x2c versus 0x28, stored result and block/query registers differ.
+// score 529 (was 529): Frame 0x2c versus 0x28, stored selection result and block/query carriers remain.
+// Selected ordinal 587; combined admission mask 570; unsigned scan 529; shared bias local 559
+// (caller lost); common blend weight 533.
+// frame 0x2c versus 0x28, stored result and block/query registers differ.
 // Late success return 577; short result 585; direct primary output 598; early square 579;
 // negate normal before copy 546; late return plus parameter order 577; ordered countdown
 // traversal 560 (retail length); countdown with tested result 566.
-// score 529 (was 539): second scale starts at its application; retail length, extra frame word remains.
+// second scale starts at its application; retail length, extra frame word remains.
 // Early lightmap workspace 579 (caller lost); lightmap clamp first 587; primary copy/clamp 598;
 // early final fade 529/2196; second scale at use 529/2189 kept.
 // Final fade with late second scale 541/2175 (restored).
+// Complete RGB sample/lower/both/upper/sample-upper/lower-upper/all captures 634/655/774/664/810/730/913 (upper
+// forms lose caller); read-only selected parameters 529. Original helper and body restored.
+// Captured normal with existing squared-length helper 508 plain (rejected: caller 442); final selected-pointer result
+// 570; captured normal plus final pointer 561; completion-assigned result 572 and with normal 573
+// (both lose caller); early color declarations 529; declaration/completion forms 572/573.
+// Native normal copy and its name/scope combinations 613 (caller 510; matched caller lost);
+// captured-normal role names, entry color declarations and entry length 508 (caller 442);
+// inline/noinline declarations 508 (caller 442). Restore original body to preserve caller 364.
+// Round 222: native query-vector field 529; field at every use 567; native query copy 578; original-query squared-length helper 529; native-query length before copy 528; all RGB first products 530; all RGB illumination terms 577; normal memcpy 578.
+// Negative selection bool/byte/short/long 534/534/567/565; with uniform live block count
+// 561/561/531/533. Original selection, count snapshot and every math/helper form restored.
+// Incoming lightmap value before normal: native/component/library copy 551/546/551;
+// after length: native/component/library copy 556/554/556;
+// reused channel scalars 555; native adjusted-value construction 551. All restored.
 // @retail 0xd37f0
 bool function_d37f0(s_lighting_parameter_block *block, long type, s_effect_color_query const *query,
 	s_lighting_record *record, color3f const *base, color3f const *lightmap)
@@ -1239,16 +1311,41 @@ real g_467484 = 15.0f;
 real g_467494 = 5.0f;
 real function_30bf0(vector3f *vector);
 
-// score 364 (was 429): frame 0x4c versus 0x40 and normal/color scheduling still differ;
+// score 364 (was 364): Frame 0x4c versus 0x40; normal-copy and limited/rotation/color homes remain.
+// Frame 0x4c versus 0x40; normal-copy and limited/rotation/color homes remain.
+// Earlier 364 (was 364): frame 0x4c versus 0x40; normal-copy and native color/rotation homes remain.
+// frame 0x4c versus 0x40; normal/color scheduling and rotation scratch differ.
+// Frame 0x4c versus 0x40; normal-copy and limited/rotation/color homes remain.
+// frame 0x4c versus 0x40 and normal/color scheduling still differ;
 // copied limited color kept; early squared length 428, decoded-color names 429,
 // in-place rotation 464, normal-square scalar 429, copy plus early square 453 (fast).
 // Base clamped in place 444; outer limited-color lifetime 364; copied color plus
 // in-place rotation 435 (retail length); scales at first use 381; shared surface clamp 481;
 // shared axis view 515, with in-place rotation 463, with in-place base clamp 542
 // (all three axis views lose the matched caller). Original helper and bodies restored.
-// score 364 (was 364): rotation workspace still adds twelve frame bytes; intrinsic normal copy 364;
+// rotation workspace still adds twelve frame bytes; intrinsic normal copy 364;
 // shared negate then native output 460; scoped turned vector 364; single-result normalizer 380;
 // ordinary rotation inline 364.
+// Normal consumer before rotation 476; before limited color 508; early primary record 500; direct mobile result 480.
+// Complete color result 440; blend complement 451; early normal with complement 479, with complete color result 500.
+// Shared dot/length-square/primary RGB scale 364/364/364; secondary/reflected/all RGB scales 452/450/465; dot/all and square/all 465/465.
+// Earlier: rotation workspace still adds twelve frame bytes; intrinsic normal copy 364;
+// Native rotation input snapshot 490; cosine-first evaluation 364; live axis fields 528 (caller lost);
+// input snapshot with cosine order/in-place output/live axis 490/487/487 (live-axis caller lost);
+// input snapshot with bounded-color home/radians producer 490/490.
+// Native limited/turned/both/normal homes 364/364/364/364;
+// limited-normal/turned-normal/all homes 364/364/364; outer rotation workspace 364.
+// All original normal, copied color and rotation values and helper boundaries retained.
+// Round 152: All rotation-row partial sums/products 364/438; all normalizer products 430 (retail frame/length); normalizer with rotation partials/products 430/449; all RGB blend products 429 (retail frame/length); blend/rotation partials 443; all parallel products 429.
+// Independent lower/upper bound records at entry, before fallback and original final phase:
+// all eight non-original phase pairs 364; original final-bound lifetimes restored.
+// Color clamp orders 102/210/201/012/021 386/377/393/393/387; first color scale orders rbg/grb/gbr 364/363/362.
+// Round 158: Genuine length-only primary/secondary scale factors produced independently or jointly at entry,
+// after decoding, fallback admission and rotation admission. Scores [544, 525, 543, 515, 503, 485, 482,
+// 499]. Original executable body restored.
+// Round 184: direct-field normal initializer 473; early normal snapshot/native initializer
+// 488/507; native query vector view 364; view with shared snapshot/direct reads/library copy
+// 488/364/364; early normal plus direct magnitude reads 517. Original observations restored.
 // @retail 0xd4080
 void function_d4080(long type, s_effect_color_query const *query, s_lighting_record *record, long flag)
 {
@@ -1380,6 +1477,9 @@ bool __stdcall function_1d2f0(D3DSurface *surface, byte *bitmap);
 dword function_1362b0(s_type_7ba8e9 const *bitmap, point2f const *uv, real detail);
 dword function_015cd0(long index, dword entry);
 
+// score 4 (was 4): the conversion destination uses ECX rather than EAX; the UV address uses EDX rather than ECX.
+// Scoped/entry two-use conversion pointers 4/4; multiuse UV pointer with and without it 4/4;
+// direct success return 93; UV/storage names 4/4; getter noinline 4; both/sample noinline 4/4.
 // @retail 0xd2f90
 long function_d2f90(long flags, short bitmap_index, long palette_index, real u, real v, color3f *out)
 {
@@ -1586,9 +1686,9 @@ extern color3f *g_46872c;
 
 PRIVATE __forceinline void surface_pin_color(color3f *color)
 {
-    color->red = pin_real(color->red, 0.0f, 1.0f);
-    color->green = pin_real(color->green, 0.0f, 1.0f);
-    color->blue = pin_real(color->blue, 0.0f, 1.0f);
+    pin_real(&color->red, 0.0f, 1.0f);
+    pin_real(&color->green, 0.0f, 1.0f);
+    pin_real(&color->blue, 0.0f, 1.0f);
 }
 
 PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_point *point)
@@ -1600,7 +1700,13 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 819 (was 835): the long per-vertex flag and the sample points declared at the top of
+// score 790 (was 790): Frame 0x90 agrees; status/mesh/sample homes and material/magnitude expansion remain.
+// Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
+// remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
+// block-success samples 831; parallel running luminance 818; clamp plus narrow samples 799; with
+// Boolean/word/byte capability 790/802/790.
+// the long per-vertex flag and the sample points declared at the top of
+// the long per-vertex flag and the sample points declared at the top of
 // their scope; mesh, UV and color homes and helper expansion still differ (frame 0xa8 versus 0x90).
 // Native bitmap word 835; palette byte 852; both 852; UV role names 835; inline depth zero 2009;
 // metadata dispatch 847; long per-vertex alone 831; dynamic entry lifetime 835; model sample
@@ -1610,9 +1716,30 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Dynamic validity long 863; base validity short 819; accumulated sampled color 828;
 // weighted normal loop 892; both lengths before scaling 837; one broad sample scope
 // with the other two narrowed (first/second/third) 831/831/831.
-// score 819 (was 819): frame 0xa8 versus 0x90; mesh, UV and sample homes remain.
+// frame 0xa8 versus 0x90; mesh, UV and sample homes remain.
 // Only third/second/first sample narrowed 828/828/828 (frame 0x9c);
 // byte per-vertex capability 825; function-scope samples 819. Original body retained.
+// frame 0xa8 versus 0x90, mesh/sample/UV homes and helper expansion remain.
+// Presence-branch samples 831 (frame 0x90); later vertex pointer 853; common base/normal outputs 825;
+// direct static material use 859; base-only fallback first 818. Original body retained.
+// Native packed input record 819; unpack output first 819; decoded sample value return 945;
+// color value contract 1350; native color reference output 819. Frame/mesh/sample/color/UV
+// homes and helper expansion remain; original complete body and both helpers restored.
+// Native part/index/section records 790/790/790; part/index, part/section, index/section 790/790/790;
+// all three 790; all three with result declared first 790. Real metadata layouts canonicalize.
+// Decoder output reference 790; decoder output pointer result 823; ordinary decoder/color/both
+// 1143/1084/1478; separate noinline decoder/color/both 1140/1597/1958.
+// Frame agrees; status/mesh/sample homes and shared external call boundaries remain. All restored.
+// Late model texture outputs/sample color/combined color at model entry 790/790/796;
+// texture plus sample/texture plus combined/sample plus combined/all three 790/796/796/796;
+// all three at function entry 793. Frame/result/mesh and external helper boundaries remain.
+// Round 181 material noinline 807; native status/mesh, vector, color, barycentric sample and combined role homes 790/790/790/790/790; single result exit 834; combined homes with material noinline 807 (fast); all restored. Frame 0x90 agrees; result/mesh/sample/UV homes and material/magnitude expansion remain.
+// Round 327: status tests 800; phase failure default 796; current group/index/data fields
+// 801/811/819; status tests with group/index 802/816; phase default with group and indices 815.
+// Round 331: magnitude noinline/inline/force-inline caller declarations, alone and
+// with material noinline, plus magnitude noinline/material inline: all seven 790f;
+// requested magnitude boundary with all shared vector scales 824f (3069 bytes).
+// Caller-local contracts do not resolve the expansion; all declarations and scales restored.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {
@@ -1642,7 +1769,7 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
             real base_u = 0.0f, base_v = 0.0f;
             long bitmap_index = NONE;
             long palette_index = NONE;
-            long per_vertex = index != NONE &&
+            bool per_vertex = index != NONE &&
                 *(word *)(*(byte **)((byte *)g_4e0348 + 0x144) + index * 0x58 + 0x56) != 0;
             if (!per_vertex)
             {
@@ -1692,9 +1819,6 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
         byte *definition = g_4e3b44[*(long const *)(record + 0xc) & 0xffff].bytes;
         s_mesh *mesh = *(s_mesh **)(*(byte **)(definition + 0x28) + section_index * 0x5c + 0x34);
         word const *vertices = (word const *)((byte *)mesh->triangles + triangle->part_offset * 2);
-        s_sample_point point_a;
-        s_sample_point point_b;
-        s_sample_point point_c;
         bool dynamic_valid = false;
         color3f dynamic_color;
         vector3f dynamic_normal;
@@ -1704,6 +1828,9 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
                 *(s_24490_definition **)(definition + 0x78), section_index);
             if (block)
             {
+                s_sample_point point_a;
+                s_sample_point point_b;
+                s_sample_point point_c;
                 byte *data = *(byte **)(block + 0xc) + *(long *)(block + 4);
                 s_sample_point const *a, *b, *c;
                 if (block[0] != 0x39)

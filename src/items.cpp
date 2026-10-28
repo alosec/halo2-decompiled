@@ -556,10 +556,34 @@ struct s_item_collision_bsp
 	s_item_collision_instance *instances;
 };
 
-// score 249 (was 253): plane-index width, plane-join registers and spin stores differ;
+// score 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
+// plane-index width, plane-join registers and spin stores differ;
 // seed before square root 249; fallback input copy 364; up pointer 253;
 // plane input scalars 254; angular output initializer 253.
 // Shared input/output scaling 249; transform value 350; linear/angular loops 249/249; normal-row loop 250.
+// plane-index width, plane-join homes and spin stores remain.
+// Item/transform references 249/249; surface selector 250;
+// speed-role names 249; current-spin reference 249 (plain).
+// Round 342: linear-output aggregate 249; native axis CRT copies 249; direct effect-flag read
+// 249; shared fallback-only spin scale 249; direct offset expression 249.
+// Complete plane memcpy 305; all normal-row partial projections 250; all row products named 250;
+// contact-position projection named 249; paired shared spin scales 254. Opening body and includes retained.
+// Entry tests flag7/parent/flags_12c in orders 213/132/231/312/321 253/251/265/264/254; reversed spin flags 249;
+// reversed spin flags with 213/132 entry orders 253/251.
+// Shared matrix rotation alone/point setter 249/249; with shared distance/both 250/250;
+// native whole-plane transfer on those four rotation graphs 305 each. Exact-only forms restored.
+// Round 376: Complete axial/fallback/both spin outputs 281/279/298; CRT publication 281/279/298;
+// both outputs declared before marker with assignment/CRT 298/298. Original spin workspaces,
+// inputs and includes restored.
+// Round 205: Common seed pointer after admission/before buffers/after buffers 325 each;
+// at the spin-branch boundary 280. Corresponding native field references 325/325/325/280.
+// Original receivers restored; protected plane-index width, plane joins and spin stores remain.
+// Round 188: Paired final linear/angular rows ijk/ikj/jik/jki/kij/kji, then angular-first
+// paired rows ijk/kji:
+// 249,249,248,248,249,249,249,249 fast; reduced control 249, full 249. Original executable source restored.
+// Round 208: six uniform normal-column operand combinations, native cross-product
+// operands, and joint complete normal/distance products all 249. Sum trees,
+// plane inputs, random draws and the whole original body restored.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {
@@ -938,9 +962,12 @@ static __forceinline void item_spin_vector(vector3f *vector, s_item const *item)
     real cross_i = j*item->spin_axis.k - k*item->spin_axis.j;
     real cross_j = k*item->spin_axis.i - i*item->spin_axis.k;
     real cross_k = i*item->spin_axis.j - j*item->spin_axis.i;
-    vector->i = i*item->spin_cosine + projection*item->spin_axis.i - cross_i*item->spin_sine;
-    vector->j = j*item->spin_cosine + projection*item->spin_axis.j - cross_j*item->spin_sine;
-    vector->k = k*item->spin_cosine + projection*item->spin_axis.k - cross_k*item->spin_sine;
+    real direct_i = i*item->spin_cosine;
+    vector->i = direct_i + projection*item->spin_axis.i - cross_i*item->spin_sine;
+    real direct_j = j*item->spin_cosine;
+    vector->j = direct_j + projection*item->spin_axis.j - cross_j*item->spin_sine;
+    real direct_k = k*item->spin_cosine;
+    vector->k = direct_k + projection*item->spin_axis.k - cross_k*item->spin_sine;
 }
 
 struct s_item_flags_view_10b850
@@ -955,8 +982,13 @@ struct s_item_flags_view_10b850
     byte flag6 : 1;
     byte flag7 : 1;
 };
+// score 813 (was 813): Frame 0x154 versus 0x12c, entry Boolean bytes and carrier/collision/rotation homes remain.
 
-// score 819 (was 819): frame 0x154 versus 0x12c; direction workspace 861;
+// Earlier: Frame 0x154 versus 0x12c, entry Boolean bytes and collision/carrier/rotation homes still differ.
+// Earlier: Frame 0x154 versus 0x12c and Boolean/vector homes remain.
+// Frame 0x154 versus 0x12c and Boolean/vector homes remain.
+// frame 0x154 versus 0x12c; direction workspace 861;
+// frame 0x154 versus 0x12c; direction workspace 861;
 // bounce-first 894; shared support predicate 838; direct rotation first 819;
 // correction assigned by branch 861. Original body retained.
 // j91: frame 0x154 versus 0x12c and Boolean homes remain; native rotation copies reach 0x148 but regress.
@@ -967,6 +999,41 @@ struct s_item_flags_view_10b850
 // Normal value copy 882 (frame 0x15c); point value copy 852; marker
 // matrix memcpy 819; settled result long 844; position decision long 887.
 // Original body and helper operands kept.
+// Frame 0x154 versus 0x12c and Boolean/vector homes remain; native contact fields 907; plus float absolute 880, shared addition loop 900, by-value cross inputs 928, named turn weight 907; contact pointers/float absolute 873 (fast).
+// Direct byte saturation 878; fixed before vector copies 858; matrix assignment 858;
+// flow-side assignment 858; support test before slow 821; reversed rotation input copies 858;
+// ordinary cross inline 970; float absolute alone 873; support test plus float absolute 837.
+// Round 349: Weighted cross terms 821; per-row cosine products 813 (plain); weighted terms before projection 822; both 813; later angular snapshot 819 (fast).
+// Complete rotation-axis snapshot 953; named one-minus-cosine term 821; per-row direct sums 824; axis snapshot
+// plus scale term 951; signed-byte floor and slow results 821. Frame 0x154 versus 0x12c and original
+// Boolean/vector homes remain; all private helpers restored.
+// Rotation helper explicit axis 853; explicit trigonometric inputs 893; all rotation inputs 892;
+// native reference output 821; output return 821; ordinary rotation inline 1926.
+// Frame/Boolean/native workspace homes remain; original body and every helper restored.
+// dot products 880; scaled-add products 813.
+// rotation projections 839; dot/add products 858.
+// dot/projection products 864; add/projection products 839.
+// all three product families 856; cross input products 834.
+// Round 126: Native dot/scaled-add pointer inputs 813/813; complete rotation outputs 813 at retail length;
+// component cross-result fill 813; ordinary dot inline 813; reused geometry predicate 858; reused contact
+// kind 878; all velocity copies by memcpy 813 (fast); all restored.
+// First-computation cosine 845; first-output sine 844; both 828; actual axis-field
+// pointer 849; axis with cosine/sine/both 823/889/870; entry trigonometric declarations
+// with unchanged late assignments 828 at retail length. Original helper and body restored.
+// Round 134: separate vector input pointer/reference/value with pointer/reference output
+// 816/816/816/816/936/936; actual vector return with pointer/reference input
+// 939/939 (exact only).
+// Complemented motion/floor/speed/surface 922/813/811/890; floor-speed/surface-floor/surface-speed/all 811/890/888/879 (fast). Two-count speed gain rejected; frame 0x154/0x12c and native workspace homes remain.
+// Rotation publication ikj/jik/jki/kij/kji 814/819/814/807/815;
+// scaled-add jki/kij/kji 859/818/860. Kij rotation with scaled-add
+// ikj/jik/jki/kij/kji 811/811/858/812/859. Six-point 807 rejected;
+// original complete body and helpers restored; frame and Boolean homes remain.
+// Round 174: dot first/second/both native values 1039/1012/1200; scaled-add input value 942;
+// dot first/second/both plus scaled-add value 1117/1200/1302; native add output reference with value input 942.
+// Original helpers and body restored; frame 0x154/0x12c and Boolean/workspace homes remain.
+// Rotation cross-term declaration orders ikj/jik/jki/kij/kji 814/813/813/814/814;
+// cross-first orders jki/kij/kji 814/815/815. Frame 0x154/0x12c and Boolean/native
+// rotation homes remain. Original complete body and all helpers restored.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {
@@ -1015,7 +1082,7 @@ void __stdcall function_10b850(long object_index)
                 surface = ((1 << header->type) & 0x3c0) != 0;
                 if (!surface) surface = (g_4e3b44[header->item->definition_index & 0xffff].bytes[2] & 0x40) != 0;
             }
-            if (slow && ((surface && floor) || item->value_13a >= 4) && !(collision.value_58 & 0x20))
+            if (((surface && floor) || item->value_13a >= 4) && slow && !(collision.value_58 & 0x20))
             {
                 position = point;
                 item->value_13a = 0;
@@ -1188,7 +1255,11 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
-// score 182 (was 182): frame 0xac agrees; release-byte clears, vector-tail sharing
+// score 154 (was 154): Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
+// Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
+// Frame 0xac agrees; release-byte RMW/tail and event/location homes remain.
+// frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
+// Earlier 182 (was 182): frame 0xac agrees; release-byte clears, vector-tail sharing
 // and event-point homes differ; impulse loop 182; damping loop 182; both loops 182;
 // source-vector reference 182; owner/request at entry 184.
 // release-byte RMW, impulse sharing and event-point homes differ;
@@ -1200,14 +1271,66 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // immutable release scale 182; angular input value 191.
 // rate input snapshot 182; gain input snapshot 182; both input snapshots 182; direction input 204.
 // external direction reference input 204; rate input formal 182; scale input formal 204; separate impulse noinline 182.
-// score 163 (was 182): frame 0xac agrees; release RMW/tail, event-point homes and location-output call setup remain.
+// Earlier 163 (was 182): frame 0xac agrees; release RMW/tail, event-point homes and location-output call setup remain.
 // Event-point value 174; origin/position publication copies 163/163; item/angular references 182/182;
 // integrated expiry 181; owner entry/impulse output lifetimes 182/182. Origin publication copy retained.
 // Known-set XOR removals on flag 5/6/both 182/182/182; subtractive removals
 // on flag 5/6/both 182/182/182; XOR/subtract mixed both ways 182/182.
-// score 154 (was 163): Release RMW/tail and event homes remain; idle/count results 166/169;
+// Earlier 154 (was 163): Release RMW/tail and event homes remain; idle/count results 166/169;
 // earlier damage key 185; event-first/key plus event-first 196/196; early complete point/origin
 // publication 198/157; initializer-owned sentinel 154 kept, combined origin 176.
+// Earlier 154 (was 154): release-byte RMW/tail, event homes and location-call setup remain.
+// Native byte clears 5/6/both 154/154/154; native guard/clear 5/6/both 192/167/207;
+// all native guards/clears 216; native guards with original byte stores 216.
+// release-byte RMW/tail and event-point homes remain.
+// Scalar/component factor orders, eight forms 154; direct output 207; native
+// point value 176; owner/origin/position/pair/all library copies 154; direct
+// output with library copies 207. Retained origin reuse and initializer unchanged.
+// Earlier 154 from 154: release-byte RMW/tail and event homes remain.
+// Returned vector/output buffer 274/274; output with shared scaler 200;
+// native attachment handle/node plus point/all fields 154/154/154;
+// all fields with output buffer/returned vector 274/274.
+// release-byte RMW/tail, event homes and location-call setup remain.
+// Earlier 154 (was 154): release-byte RMW/tail, event homes and location-call setup remain.
+// Surface and parent queries inline/noinline 154 each; contact noinline 154;
+// event initializer inline/noinline 154 each; final update noinline 154.
+// release-byte RMW/tail and event/location homes remain;
+// signed/word update results 155/188; release-byte reference/pointer 200/200;
+// native category 154, with byte reference/signed result 200/155; unsigned attachment 154.
+// Native tag flags/child block/damage/effect/all fields 154 each;
+// common contact/event point at entry or active scope 201;
+// native tag plus common point 201. Complete tag, helper and body restored.
+// Native state-byte/countdown/both field references 200/200/200; damage-key reference 154; state/key, countdown/key and all three 200 each; surface-contact expression 200. Original release and event code restored.
+// Complete scalar release-product lifetimes before ijk vector publication, all six
+// computation orders 200 each; immutable products 200; genuine output declaration
+// before inputs with full product staging 200. Frame 0xac remains; original producer restored.
+// Round 140: eight caller-only declaration/canonical-call forms tie 154 and are excluded diagnostics. Eight
+// coordinated callee declarations (point, matrix, owner, parent, effect and combinations) all 154; owner forms
+// lose a reduced control. Every caller/provider declaration and executable body restored.
+// Round 134: native direction value alone/with rate/with scale/with separate factors,
+// index first 194/194/205/194; index last 194/194/205/194.
+// Direction global at every use with bool/long/short update result 229/243/242; bool/byte/short/long idle result 223/223/243/244; entry bool idle 224 (fast). All restored; release RMW/tail and event/location homes remain.
+// Release-vector publication ikj/jik/jki/kij/kji 157/160/208/162/208;
+// angular damping jki/kij/kji 155/155/155. Original release helper and body
+// restored; byte RMW/tail and event/location homes remain.
+// Round 376: Predicate-produced surface/attachment/both results 244/228/185; both with signed-
+// byte/byte/short/word/long carriers 183/183/196/196/196. Original release and event code
+// restored.
+// Event owner/category/magnitude publication permutations 154/154/154/154/154; location first, owner last and location between owner/scalars 154/154/154. Original event and release code restored.
+// Whole flags byte as unsigned/signed/plain-char full-byte bitfields 154/154/154;
+// plain/signed-char scalars 154/154; full-byte bitfields with byte-unit named
+// flags 216/216/216. Original record declaration, masks and entire body restored.
+// Round 221: current event graph with object roots live, normal/entry result
+// 414/414; tag roots live 228/228; both roots 388; both with byte/long/short
+// result 395/387/388. Original root snapshots, result and body restored.
+// Round 248: Shared release state-mask/updated-byte inputs, publication before
+// inputs/after coefficient/after vector 200/203/204 each; reacquired item
+// before inputs/after vector 200/204. Original helper and byte stores restored.
+// Existing scaler return consumed by impulse call, direct/native-copy/library-copy/early-output forms 200/246/246/200; each with shared damping 200/246/246/200. Original release helper, includes and damping restored.
+// DH round 189: Native/const/library attachment matrix values 151/151/151; native/const offsets
+// 183/183; native/const/library paired values 190/190/190. All one-use snapshots restored; matrix
+// gain only three, despite retail length. Original helper, contact/event code and includes
+// retained.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {

@@ -6,6 +6,8 @@
 #include "unknown_26b230.h"
 #include "globals.h"
 #include "data_array.h"
+#include "data_iterator.h"
+#include "unknown_0259d0.h"
 #include "slot_handler.h"
 #include "unknown_20f040.h"
 #include "unknown_2551c0.h"
@@ -36,137 +38,194 @@ __declspec(noinline) void function_268840();
 
 static __forceinline long real_to_long(real value);
 
-// score 144 (was 144): frame 0x18 versus 0x20; first-pass pointer/datum homes and slice-call interface differ.
-// Native budget with retained helper/count 146; slice datum result with long count 192; stored counter 149; maximum result 143; count arm first 144.
-// Depth one 144; unsigned maximum 146; word update state 155; first datum API 272; calling scan 208.
-// Activity-controlled first/slice/both loops 158/156/168; signed byte update with short/long maximum 146/152.
-// score 144 (was 144): frame 0x18 versus 0x20; current/datum homes and slice-step interface still differ.
-// Cursor/tick names 144/144; entry budget 164; grouped unsigned maximum 144;
-// grouped long update/maximum 154/152; word counter workspace 149; early update state 144.
-// native separate slice 192; native slice with short count 189, long maximum 200;
-// both budget fields long 162; single rate input 180; byte update 144; early count skip 144; typed clumps 144.
-// Native current-pointer/cursor view 132; with Boolean slice API 127; independent
-// long budget 114; separate native cursors 178; native first only 198; short
-// increment 121; Boolean branch 130; handle snapshots 127. Cursor views rejected.
-// score 144 (was 144): frame 0x18 versus 0x20; current/datum homes and slice-step interface still differ.
-// Real counter/global/both members 144/144/144; native member word comparison 149;
-// direct budget members 144; per-record threshold 144; inactive-record continue 144;
-// budget initialized after cursor 155. Body and member declarations restored.
-// score 144 (was 144): frame 0x18/0x20 and current/datum homes remain.
-// Shared record result 144; with separate native/long budget 146/152;
-// member initialization 144; direct modulo clock 144; shared result/clock 144;
-// native counter snapshot 149; update-state-first count path 149.
+/* walks the clumps of g_502420, only while the ai is active (0x255d60's walk) */
+struct s_clump_datum_walk
+{
+	s_data_datum_iterator iterator;
+	long clump_index;
+};
+
+static inline void clump_datum_walk_new(s_clump_datum_walk *iterator)
+{
+	if (g_4f55d0->active)
+	{
+		iterator->iterator.data = g_502420;
+		iterator->iterator.index = NONE;
+		iterator->iterator.datum_index = NONE;
+	}
+}
+
+/* the next clump while the ai is active, or NULL */
+PRIVATE __forceinline byte *clump_datum_walk_next(s_clump_datum_walk *iterator, bool active)
+{
+	byte *clump = NULL;
+
+	if (active)
+	{
+		if (data_datum_iterator_next_inlined(&iterator->iterator))
+			clump = iterator->iterator.datum;
+		iterator->clump_index = iterator->iterator.datum_index;
+	}
+	return clump;
+}
+
+/* likewise, with the activity flag passed in and the index scan called */
+PRIVATE __forceinline byte *clump_datum_walk_next_calling(s_clump_datum_walk *iterator, bool active)
+{
+	byte *clump = NULL;
+
+	if (active)
+	{
+		if (data_datum_iterator_next_called(&iterator->iterator))
+			clump = iterator->iterator.datum;
+		iterator->clump_index = iterator->iterator.datum_index;
+	}
+	return clump;
+}
+
+/* likewise, calling the iterator step itself */
+PRIVATE __forceinline byte *clump_datum_walk_step(s_clump_datum_walk *iterator, bool active)
+{
+	byte *clump = NULL;
+
+	if (active)
+	{
+		if (data_datum_iterator_next(&iterator->iterator))
+			clump = iterator->iterator.datum;
+		iterator->clump_index = iterator->iterator.datum_index;
+	}
+	return clump;
+}
+
 // @retail 0x268510
 void function_268510()
 {
 	short interval = (short)real_to_long((real)g_510c54->field_2_3);
 	short slice_interval = (short)real_to_long((real)g_510c54->field_2_3 * 0.1f);
-	s_record_pool_iterator iterator;
-	if (g_4f55d0->active)
+	s_clump_datum_walk clumps;
+	byte *clump;
+
+	clump_datum_walk_new(&clumps);
+	while ((clump = clump_datum_walk_next(&clumps, g_4f55d0->active)) != NULL)
 	{
-		iterator.data = g_502420;
-		iterator.index = iterator.datum_index = NONE;
-	}
-	for (;;)
-	{
-		byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&iterator) : NULL;
-		if (!clump) break;
-		if (clump[0x1c]) function_268700(iterator.datum_index);
+		if (clump[0x1c])
+			function_268700(clumps.clump_index);
 	}
 	long time = g_510c54->game_time;
-	if (time % interval == 0) function_268840();
+	if (time % interval == 0)
+		function_268840();
 	else if (time % slice_interval == 0)
 	{
-		struct slice_budget { short maximum; bool updated; } budget = { 0, false };
-		short &maximum = budget.maximum;
-		bool &updated = budget.updated;
-		if (g_4f55d0->active)
+		short maximum = 0;
+		bool updated = false;
+
+		clump_datum_walk_new(&clumps);
+		while ((clump = clump_datum_walk_step(&clumps, g_4f55d0->active)) != NULL)
 		{
-			iterator.data = g_502420;
-			iterator.index = iterator.datum_index = NONE;
-		}
-		for (;;)
-		{
-			byte *clump = g_4f55d0->active ? record_pool_iterator_step(&iterator) : NULL;
-			if (!clump) break;
 			if (clump[0x1c])
 			{
 				if (*(short *)(clump + 0x1e) == *(long *)((byte *)g_4f55d0 + 0x18) && !updated)
 				{
-					function_269870(iterator.datum_index);
-					function_26a210(iterator.datum_index);
-					function_26b290(iterator.datum_index);
+					function_269870(clumps.clump_index);
+					function_26a210(clumps.clump_index);
+					function_26b290(clumps.clump_index);
 					*(short *)(clump + 0x1e) = 0;
 					updated = true;
 				}
 				else
 				{
-					long count = ++*(short *)(clump + 0x1e);
-					if (count > maximum) maximum = count;
+					short count = ++*(short *)(clump + 0x1e);
+					if (count > maximum)
+						maximum = count;
 				}
 			}
-			else *(short *)(clump + 0x1e) = 0;
+			else
+				*(short *)(clump + 0x1e) = 0;
 		}
 		*(long *)((byte *)g_4f55d0 + 0x18) = maximum;
 	}
 }
 
-// score 81 (was 81): retail loads the global and tests its active byte before it reserves the
-// frame and pushes the registers, and it keeps the pool pointer in ebx and the index in edi;
-// ours reserves the frame first and holds the global in ebp, so the prologue and the loop
-// head differ.
-// First/second/both callee noinline 81/81/81; existing typed current 81; typed const view 81.
-// Typed unsigned handle/role names/both noinline 81/81/81; cached global and nullable join remain.
-// Entry guard 90; inactive return 86; outer current 81; zero initialization 53
-// (extra entry stores, restored); byte activity 81; calling scanner 120;
-// shared datum iterator 158; inactive continue 81. Original body retained.
+/* runs 0x2687a0 and 0x268900 for each clump whose byte at +0x1c is set, then
+   0x2689d0 and 0x268c90 */
 // @retail 0x268840
 void function_268840()
 {
-	struct { byte *current; s_record_pool_iterator pool; long datum_index; } iterator;
-	if (g_4f55d0->active)
+	s_clump_datum_walk clumps;
+	clump_datum_walk_new(&clumps);
+	byte *clump;
+	while ((clump = clump_datum_walk_next(&clumps, g_4f55d0->active)) != NULL)
 	{
-		iterator.pool.data = g_502420;
-		iterator.pool.index = NONE;
-	}
-	for (;;)
-	{
-		iterator.current = g_4f55d0->active ? data_iterator_next_inlined(&iterator.pool) : NULL;
-		byte *clump = iterator.current;
-		iterator.datum_index = clump ? iterator.pool.datum_index : NONE;
-		if (!clump) break;
 		if (clump[0x1c])
 		{
-			function_2687a0(iterator.datum_index);
-			function_268900(iterator.datum_index);
+			function_2687a0(clumps.clump_index);
+			function_268900(clumps.clump_index);
 		}
 	}
 	function_2689d0();
 	function_268c90();
 }
 
-// score 296 (was 296): frame 0x48 versus 0x50; iterator result/exhaustion and
+// score 246 (was 246): frame 0x50 agrees; player-pool/NONE registers, current/successor homes and protected child inputs remain.
+// Earlier: Frame 0x50 agrees; player-pool/NONE and successor/current homes remain.
+// Distinct optional-object result 248; signed-byte keep 247; unsigned player ordinal 246; named
+// full distance 246; actor-query point scope 246.
+// frame 0x50 agrees; pool/NONE, current/successor homes and child interfaces remain.
+// frame 0x50 agrees; player-pool/NONE, current-clump homes and protected child-call carriers differ.
+// Player-pool/NONE allocation and current/successor homes remain.
+// Earlier score 246 (was 246): frame 0x50 agrees; player-pool/NONE, current-clump homes and child-call carriers differ.
+// Frame 0x50 agrees; player-pool/NONE registers, clump/successor homes and child-call carriers remain.
+// Current-datum iterator 314; scoped keep 314;
+// frame 0x50 agrees; player-pool/NONE, current-clump homes and child-call carriers differ.
+// frame 0x48 versus 0x50; iterator result/exhaustion and
 // player/child-call carriers differ. Current-datum iterator 314; scoped keep 314;
 // scoped bool keep 320; entry point scratch 314; entry player pool 297
 // (the latter four use the current-datum iterator). All body forms restored.
-// frame 0x48 versus 0x50; iterator result and pool homes differ;
 // outer while 296; player while 296; actor for-loop 331; native handle parts 327;
 // proxy-before-unit loads 296. Original body retained.
 // Round 156: depth zero 426; depth one 296; target size 546; byte retention 317;
 // iterator role names 296. Original frame and child traversal retained.
+// Round 173: long expiry result 315; long child-step result 295 (one-point gain rejected);
+// retention if/else 302; existing typed actor fields 296; external player-pool reference 296.
+// Per-clump player pool 258; child-result for-loop 246; integer-byte retention in frame 0x50 247; actor-scope child iterator 246; successor scalar lexical home 246.
+// the clump datum walk gives retail's loop head; NONE kept in ebx
+// where retail keeps the player pool in ebp, and the current clump's slot differs.
+// Frame 0x48 versus 0x50 and current/exhaustion/player homes remain; child-call carriers differ.
+// In the recovered 0x50 frame: entry player pool 302; Boolean retention 247; both 302;
+// direct expiry admission 246/893 bytes; pool/Boolean/both plus direct expiry 314/256/314;
+// entry pool and Boolean retention with full-width child result 301.
+// Pool after native setup 297; initial successor before expiry clear 246; both 297;
+// retention before admission 246; with pool/successor/both 297/246/297;
+// named expiry-time sum 246. Original accepted datum walk and child result retained.
+// Native player record/datum walks 264/264; entry pool with record/datum walks 312/312;
+// Boolean retention with native datum walk 264. Original player traversal restored.
+// DL131: Player-pool/NONE allocation and current/successor homes remain; native clump/player/both
+// views 246 each; player for-loop alone or with clump/player/both/all actor views 255 each;
+// current-group name 246; scalar role names 246; pool at each use 246; fresh pool uses with Boolean
+// retention 247. Original body, header and contributor interfaces restored.
+// Recovered-frame expiry byte/long/signed byte 246/250/246; complete expiry result arms 246;
+// byte/signed-byte child result 246/246; unsigned/signed-word retention 247/247. Original
+// body retained.
+// Result-driven distance search 246; with Boolean retention 247, entry pool 302, both 302;
+// with natural actor-handle induction 294, plus Boolean 297, plus pool 266, all three 274.
+// Original accepted datum walk, retention and contributor child interfaces retained.
+// Iterator pointer order, expiry/successor names, retention scope, extra/player comparisons,
+// child positive arm and player while 246 each.
+// Round 172: Shared native-header identifier 246; native headers 246; both 246; optional-object pool
+// snapshot 246; pool with identifier/native headers/both 246/246/246; all with readonly headers 246.
+// Original pool/header observations, body and contributor child interfaces restored. Frame 0x50
+// agrees; player-pool/NONE allocation, current/successor homes and protected child-call convention
+// remain.
+// DL159: actor-boundary player-pool lifetime 246; all squared products named 246; full-width expiry alone/with products 250/250; signed-byte retention alone/with products 247/247; both result domains alone/with products 251/251. Original observations, arithmetic and child interfaces restored.
+// Round 251: Branch-scoped retention bool/byte/short/long 247/247/247/246; with pool after iterator setup 297/297/296/297. Original actor-wide scope, pool observations and child interfaces restored.
 // @retail 0x268c90
 void function_268c90()
 {
-	s_record_pool_iterator clumps;
-	if (g_4f55d0->active)
+	s_clump_datum_walk clumps;
+	clump_datum_walk_new(&clumps);
+	byte *clump;
+	while ((clump = clump_datum_walk_next(&clumps, g_4f55d0->active)) != NULL)
 	{
-		clumps.data = g_502420;
-		clumps.index = NONE;
-	}
-	for (;;)
-	{
-		byte *clump = g_4f55d0->active ? data_iterator_next_inlined(&clumps) : NULL;
-		if (!clump) break;
 		bool expired = false;
 		if (clump[0x3c])
 		{
@@ -251,7 +310,7 @@ void function_268c90()
 				}
 			}
 		}
-		if (!*(short *)(clump + 0x10)) function_2691b0(clumps.datum_index);
+		if (!*(short *)(clump + 0x10)) function_2691b0(clumps.clump_index);
 	}
 }
 
@@ -486,6 +545,18 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 // score 68 (was 68): Frame and nullable-current lifetime remain; current datum 68;
 // success-controlled loop 68; selected datum 132; node/prop inline 68/68; forced node/prop
 // expansion 246/158; datum plus success loop 68.
+// score 68 (was 68): frame, first team extension and nullable-current EDI lifetime remain;
+// native clean success 102; optimistic result 113; initial success return 135; found success return 147;
+// returned current pointer 68; existing record step 122; inline record step 119; entry side scope 68.
+// frame 0x1c/0x20, first team sign extension and nullable current remain.
+// Nullable value selection 68; inactive step exit 71; null step failure exit 94; word/byte
+// success result 94/68; native step state value 123; shared step expansion 68; native selected
+// index 68.
+// score 68 (was 68): a fifth iterator word (as the clump walk of 0x1c9830 keeps) 66, stored
+// team in it 92, long team local 92, existing clump_get with long team 92, out-of-line pool step
+// 122 (270 bytes), step through the current field 92 (292 bytes). A NULL-initialised result in the
+// shared calling step moves current to edi (60, diagnostic): retail keeps the loop-top NULL live
+// through the step's not-found arm and copies the found pointer from ecx.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
@@ -1497,8 +1568,8 @@ long function_26bc60(long clump_index)
 	return 2;
 }
 
-// score 127 (was 127): frame 0x1c versus 0x20; result register, iterator null join and center copy differ.
-// Plain oldest-time/index storage separately 136/126; byte activity 127; native pool step 160; activity while 136.
+/* a new clump at the center for the team; when the pool is full, the clump
+   whose active time is oldest is freed first */
 // @retail 0x269040
 long function_269040(point3f const *center, short team)
 {
@@ -1660,7 +1731,8 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 	return function_26a780(clump, &candidate);
 }
 
-// score 128 (was 192): frame 0xd8; entry generation scheduling, child-next register and count/end traversal differ; fresh destination head 171f; short plus fresh head 167 plain; short/end 216f; typed object views 192f; delayed source base 219f; source first 211f; masked slots 198f.
+// score 128 (was 128): retail caches the generation in ebx (reloaded after each mark store and call) and reloads the prop pool at each use; ours caches the prop pool in ebx and loads the generation at each use.
+// frame 0xd8; entry generation scheduling, child-next register and count/end traversal differ; fresh destination head 171f; short plus fresh head 167 plain; short/end 216f; typed object views 192f; delayed source base 219f; source first 211f; masked slots 198f.
 // Round 280: remaining-count traversal 128 plain; current-child handle 164; collection write cursor 172; array scope 167; early active flag 199.
 // Child/countdown 125; short remaining 125; unsigned remaining 125 (each only three below the retained countdown).
 // Frame pointer 198; depth zero 313; later generation increment 130; native source slot 175; size preference 360; first-walk generation snapshot 178.
@@ -1669,6 +1741,9 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // Entry group helper 128; fresh-head group helper 128; native prop field 128;
 // prop handle at use 128; child extension at use 128; owner extension at use 130;
 // native entry slots 219; direct populated-array index 160.
+// Round 69: existing inline datum lookup in the collected pass 288 (generation then cached as retail, but the
+// object query inlines there); short/long index loops 161/160; child next into the walking index 165;
+// child next with an else arm 167.
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {
@@ -1780,10 +1855,17 @@ long function_26ace0(long object_index, long actor_index, short type)
 
 void function_269250(long clump_index, long actor_index);
 
-// score 134 (was 134): frame 0x38 versus 0x3c; pool/selection homes and threaded exhaustion differ.
-// Retained frame pointer 187; depth zero 304; selected-result reuse 134; team snapshot 133; size preference 338.
-// frame 0x38 versus 0x3c; pool register and common null-current join differ.
-// Double candidate/both scores 157/158; activity while 160; role-based scalar names 134; inline depth two 134.
+// score 126 (was 126): retail hoists the walk's pool load into ebx and keeps the selection
+// only on the stack (stored from esi, best stored in a tail shared with the initialisation);
+// ours keeps the pool in memory and the selection in edi.
+// Earlier: retained frame pointer 187; depth zero 304; selected-result reuse 134; team snapshot 133;
+// size preference 338; double candidate/both scores 157/158; activity while 160; role-based scalar
+// names 134; inline depth two 134; the clump datum walk with a cached activity flag 126 (retail's frame);
+// selection stored before the best score 126; selection from the iterator's datum index 128 (selection
+// on the stack and pool hoisted, but the null-current join is threaded); creation arm first 130;
+// walk declared after the selection locals 129; actor index local 126; early continue on a
+// non-improving score 128; declaration orders, scopes, cached or global activity flag, team test as
+// continue or nested if, and inline/forceinline walk helpers all compile identically.
 // @retail 0x2689d0
 void function_2689d0(void)
 {
@@ -1792,27 +1874,20 @@ void function_2689d0(void)
 	s_actor_view *actor;
 	while ((actor = (s_actor_view *)function_1e46c0(&actors)) != NULL)
 	{
-		s_clump_pool_iterator groups;
-		if (g_4f55d0->active)
-		{
-			groups.pool.data = g_502420;
-			groups.pool.index = NONE;
-		}
+		s_clump_datum_walk groups;
+		clump_datum_walk_new(&groups);
+		bool active = g_4f55d0->active;
 		long selected = NONE;
 		real best = 0.0f;
-		for (;;)
+		s_clump_activity_view *group;
+		while ((group = (s_clump_activity_view *)clump_datum_walk_next(&groups, active)) != NULL)
 		{
-			s_clump_activity_view *group = NULL;
-			if (g_4f55d0->active)
-				group = (s_clump_activity_view *)data_iterator_next_inlined(&groups.pool);
-			groups.current = (s_clump *)group;
-			if (!group) break;
 			if (group->team != actor->unknown024) continue;
 			real score = function_268bb0(group, actor);
 			if (score > best)
 			{
 				best = score;
-				selected = groups.pool.datum_index;
+				selected = groups.clump_index;
 			}
 		}
 		if (selected != NONE)
@@ -1931,7 +2006,20 @@ void function_269250(long clump_index, long actor_index)
 	g_4de2f8 = false;
 }
 
-// score 189 (was 189): frame 0x1c versus 0x24; current/replacement/object homes and iterator exit differ.
+// score 89 (was 89): frame 0x24 agrees; category-byte homes and deletion completion differ.
+// Earlier: The 3 form clears the removed prop and tests it before the node scan (a set-and-test
+// frame 0x24 agrees; category-byte homes, removal completion and pool carriers remain.
+// Earlier rejected pointer-clear diagnostic: The 3 form clears the removed prop and tests it before the node scan (a set-and-test
+// flag, kept only on a match; build/r74/26b230.best3.cpp in lane 5): there only the two pool registers
+// differ: retail keeps the prop pool in edi and the node pool in ebp; ours swaps them. Start there.
+// Round 74 (from 189): tail as a record-pool iterator walk, clump loop through the shared datum walk,
+// members through swarm_creature_iterator_next, unit set only when the mask test passes, the removed
+// prop cleared and the node scan guarded by it, flags/replacement declared first, together 3.
+// Then: first-node lookup through prop_get 3; node body through prop_ref_get 180; node step through
+// prop_ref_get 3; prop step reading the pool directly 3; swarm flag tested before the prop 185;
+// `continue` member loop 346; changed/unit in the prop loop condition 181; renamed swarm flag 89 (at 89);
+// a 600 s permuter run stopped by the harness before reporting.
+// Before round 74 (old body): frame 0x1c versus 0x24; current/replacement/object homes and iterator exit differed.
 // Byte type 195; membership result earlier 189; existing group lookup 189; removal arm first 189; guarded pointer-result loop 194.
 // Complete workspace scope 189; depth zero 391; member-link result first 222; replacement-result loop 206; promoted category 195.
 // Depth one 189; outer datum API 290; word unit 218; word group 192; calling scan 237.
@@ -1940,17 +2028,37 @@ void function_269250(long clump_index, long actor_index)
 // final tracking guard 189; complete unit arms 193; unsigned replacement 189; word category mask 192.
 // Read-only object/external object reference/read-only member/extensions 189/189/189/189.
 // Ordinary prop/node/both iterator inline and separate removal noinline 189/189/189/189.
-// score 189 (was 189): Frame/current/object/replacement homes remain; unchanged result 189;
+// Frame/current/object/replacement homes remain; unchanged result 189;
 // changed-reference count 246; category at uses 195; member header getter 189; removal
 // inline/forced expansion 189/460; complete unit predicate 243; count plus removal boundary 246.
+// frame/current/object/replacement homes remain.
+// Earlier: Frame/current/object/replacement homes remain; unchanged result 189;
+// Earlier: frame/current/object/replacement homes remain.
+// Shared datum/calling walks 216/188; with group getter 216/188; native iterator index 189/237;
+// current-head/read-only object 241/216. Shared walk recovers frame 0x24 at 216/765 bytes.
+// On that frame: member while 216; tested category 219; both 219; category names 216;
+// names with while/test/both 216/219/219. One-point calling-walk gain rejected; body restored.
+// Round 368: non-unit bool/byte 219/219; non-group bool/byte 190/190;
+// joint absence domains bool/bool, byte/byte, bool/byte, byte/bool 220/220/220/220.
+// Round 373: shared member walk ordinary/inline/forced 183/183/183; entry member
+// workspace with the same boundaries 183/183/183; uniform original-object reads
+// with ordinary/forced member walk 243/243. Six-point gain restored.
+// Current-member identity before lookup 204; successor published on continuation 200;
+// original-object accessor at every use 262; identity/successor, identity/accessor, successor/accessor,
+// all three 200/261/262/262; all with conditional unit admission 263. Original body restored.
+// Round 211: change-result gate before each prop lookup, on the shared-member/frame-0x24 body,
+// with original/reversed category declarations and native node/getter subsets: 111 four times /
+// 109 four times; both reach 741 bytes. Original traversal and completion tests restored.
+// DL159: single iteration-completion label 3; separate completion guards 3; reversed category declarations 5; category name/native node datum/node iterator/both iterator names 3/3/3/3; native node with reversed categories 5. Labels rejected as branch layout.
+// Structured unit continuation, with separate completion guards and native byte unit/change domains in all eight combinations, 89 each. Original body restored.
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {
-	bool unit = false;
 	bool group_object = false;
+	bool unit = false;
+	long replacement = NONE;
 	s_slot_object_view *object = object_get(object_index);
 	short type = (char)object->type;
-	long replacement = NONE;
 	if (type == 12)
 	{
 		if (*(long *)((byte *)object + 0x134) == 0)
@@ -1962,19 +2070,13 @@ void function_26ae30(long object_index)
 				group_object = true;
 				if (perception != NONE)
 				{
-					long index = perception_get(perception)->object_index;
-					for (;;)
+					s_ai_object_iterator members;
+					members.next_index = perception_get(perception)->object_index;
+					while (swarm_creature_iterator_next(&members) != NULL)
 					{
-						if (index == NONE) break;
-						s_slot_object_view *member = object_get(index);
-						long current = index;
-						byte *member_extension = NULL;
-						if (*(long *)((byte *)member + 0x134) == 0)
-							member_extension = (byte *)member + *(short *)((byte *)member + 0x13a);
-						index = member_extension ? *(long *)(member_extension + 0xc) : NONE;
-						if (current != object_index)
+						if (members.index != object_index)
 						{
-							replacement = current;
+							replacement = members.index;
 							break;
 						}
 					}
@@ -1982,23 +2084,16 @@ void function_26ae30(long object_index)
 			}
 		}
 	}
-	else
-		unit = ((1 << type) & 3) != 0;
-	s_clump_pool_iterator groups;
-	if (g_4f55d0->active)
+	else if ((1 << type) & 3)
+		unit = true;
+	s_clump_datum_walk groups;
+	byte *group;
+	clump_datum_walk_new(&groups);
+	while ((group = clump_datum_walk_next(&groups, g_4f55d0->active)) != NULL)
 	{
-		groups.pool.data = g_502420;
-		groups.pool.index = NONE;
-	}
-	for (;;)
-	{
-		groups.current = NULL;
-		if (g_4f55d0->active)
-			groups.current = (s_clump *)data_iterator_next_inlined(&groups.pool);
-		if (!groups.current) break;
 		bool changed = false;
 		s_iterator props;
-		props.next = ((s_clump *)(g_502420->data + (groups.pool.datum_index & 0xffff) * sizeof(s_clump)))->first_prop;
+		props.next = ((s_clump *)(g_502420->data + (groups.clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
 		s_type_76cf92 *prop;
 		while ((prop = clump_next_prop(&props)) != NULL)
 		{
@@ -2009,7 +2104,7 @@ void function_26ae30(long object_index)
 					*(long *)((byte *)prop + 8) = replacement;
 				else
 				{
-					function_26aaf0(groups.current, props.index);
+					function_26aaf0((s_clump *)group, props.index);
 					if (!unit) break;
 					continue;
 				}
@@ -2039,12 +2134,12 @@ void function_26ae30(long object_index)
 	}
 	if (object->type == 1)
 	{
-		for (long index = data_next_absolute_index_inlined(g_502414, 0);
-			index != NONE;
-			index = data_next_absolute_index_inlined(g_502414, index + 1))
+		s_record_pool_iterator trackings;
+		trackings.data = g_502414;
+		trackings.index = NONE;
+		byte *tracking;
+		while ((tracking = data_iterator_next_inlined(&trackings)) != NULL)
 		{
-			byte *tracking = g_502414->data + g_502414->size * index;
-			if (!tracking) break;
 			if (*(long *)(tracking + 0x40) == object_index)
 				*(long *)(tracking + 0x40) = NONE;
 		}
@@ -2078,10 +2173,50 @@ void function_26a210(long clump_index)
 int __cdecl function_269da0(void const *a, void const *b);
 void *actor_get_character_situation_entry(long actor_index);
 
-// score 322 (was 322): frame 0x6a4 agrees; reset-word/cursor allocation and selection/cleanup layout differ; typed cluster view 322f; isolated cluster iterator 322f; unsigned cursor 328f; unsigned selected 322f; case-result assignment 391f; existing first 347f; indexed cleanup 351f.
+// score 283 (was 296): frame 0x6a4 and length agree; the early reset-word load,
+// visibility/marking registers and selection/cleanup allocation still differ.
+// Frame 0x6a4 agrees; reset-word SI, cluster/marking registers and selection/cleanup placement remain.
+// frame 0x6a4 agrees; reset-word/cursor allocation and selection/cleanup placement differ.
+// frame 0x6a4 agrees; reset-word/cursor allocation and selection/cleanup layout differ; typed cluster view 322f; isolated cluster iterator 322f; unsigned cursor 328f; unsigned selected 322f; case-result assignment 391f; existing first 347f; indexed cleanup 351f.
 // Round 280: full-width reset snapshot 373; current-child handle 322; late cursor 350; late selected total 335; ascending word merge 374.
 // Round 156, caller context: depth zero 505; depth one 322; target size 517;
 // wide cluster selectors 356; retained generation slot 322. Original body retained.
+// round 312: reset/cursor allocation remains; selected byte 332; generation publication first 338; short visibility count 355; cluster-count snapshot 374; shared iterator initializer 322.
+// Frame 0x6a4 agrees; reset-word SI, marking registers and selection/cleanup placement remain. Existing creation helper 322; exhaustive successor 324; native clump heads 373; generation value 332; shared state fallthrough 322; visibility pointers 374.
+// Scoped first distance iterator 322; two-use candidate-distance sample 326; readonly
+// settings view 322; first scope plus sample 326; separate marking result 322; first
+// scope plus marking result 322; chained reset fields 322, plus marking result 322.
+// Live clear/admission/both 322/315/315; live row/clear-row/admission-row/all 315/383/322/356;
+// candidate address before sort 356. Live admission bound 315 (the global re-read at one of four uses; not kept);
+// early reset-word SI load recovered; all call tuples and existing merge/selection loops retained.
+// Round 342: candidate-count lifetime at collection 383; invalid-cluster reset first 322;
+// fallback initialization first 322; observed-state CRT copy 322; shared visibility test 322.
+// Readonly candidate 322; priority/type/both samples 331/357/369; readonly samples 369; selected threshold first 372; threshold with samples 361; readonly structure 322.
+// Round 368: joint selection-phase counter lifetime, short/long cursor and total
+// 360/352/361/352; the same four with indexed candidate advancement 382/372/365/371.
+// Round 373: shared marking-chain walk ordinary/inline/forced 296/296/296;
+// entry chain workspace with the same boundaries 296/296/296; uniform structure
+// observations with ordinary/forced walk 331/331. Ordinary shared walk kept.
+// Round 144: existing complete actor/location/both views 296f each; cluster field
+// observations alone or with actor/location/both 296f each; both views and readonly
+// visibility row 296f. All restored; early reset-word and later allocation remain.
+// Round 183: Backward visibility source/destination/both pointer induction 331/322/358;
+// four default-position permutations 296/296/296/296; both pointers with default first 358.
+// Original merge and dispatch restored; reset-word SI and later cursor/selection homes remain.
+// Round 351: native short count/cursor/selected home names in all seven combinations
+// 296 each; all scalar-home names with structure/distance roles 296. Original names restored.
+// Round 192: actor/prop/node iterator lexical homes in all seven combinations 296 each;
+// complete native iterator/array homes 296. Frame 0x6a4, early reset-word SI and later
+// visibility/selection allocation unchanged; original names and all code restored.
+// DL round 156: native member/object generation ordinals word-word, word-long, long-word,
+// long-long, dword-long, long-dword, dword-word, word-dword
+// 311/323/323/299/299/299/323/323. Shared walk and original observations restored.
+// Round 353: on the shared marking walk, reset snapshots short/long/word
+// 357/356/357; short/long with chained sentinels 357/356; short/long
+// with long actor cluster 359/362; all three 359. Original observations restored.
+// Native word dispatch zero-first/direct field 283/283; one-first 354; unsigned
+// eligibility 342. Early state result with those forms 323/323/325/329. Guarded
+// nonzero word dispatch 283 retained; original state-result lifetime kept.
 // @retail 0x269870
 void function_269870(long clump_index)
 {
@@ -2126,20 +2261,12 @@ void function_269870(long clump_index)
     {
         if (*((bool *)actor + 7))
         {
-            long object_index = perception_get(*(long *)((byte *)actor + 0x1c))->object_index;
-            while (object_index != NONE)
+            s_ai_object_iterator members;
+            members.next_index = perception_get(*(long *)((byte *)actor + 0x1c))->object_index;
+            while (swarm_creature_iterator_next(&members) != NULL)
             {
-                s_handler_object_view *object = handler_object_get(object_index);
-                long next = NONE;
-                if (!object->flags134)
-                {
-                    byte *owner = (byte *)object + object->ai_offset;
-                    if (owner)
-                        next = *(long *)(owner + 0xc);
-                }
-                if (g_4de300[object_index & 0xffff] != g_4de2fc)
-                    g_4de300[object_index & 0xffff] = g_4de2fc;
-                object_index = next;
+                if (g_4de300[members.index & 0xffff] != g_4de2fc)
+                    g_4de300[members.index & 0xffff] = g_4de2fc;
             }
         }
         else
@@ -2200,30 +2327,25 @@ void function_269870(long clump_index)
                 if (existing->type != candidate->type)
                 {
                     s_type_5cfb45 *state = NULL;
-                    switch (g_470f10[candidate->type].unknown4)
+                    short operation = g_470f10[candidate->type].unknown4;
+                    if (operation != 0)
                     {
-                    case 0:
-                        break;
-                    case 1:
+                        if (operation != 1)
+                            goto type_ready;
+                        s_iterator nodes;
+                        nodes.next = ((s_clump_prop *)prop_get(candidate->prop_index))->first_node;
+                        s_clump_node *node;
+                        while ((node = clump_next_node(&nodes)) != NULL)
                         {
-                            s_iterator nodes;
-                            nodes.next = ((s_clump_prop *)prop_get(candidate->prop_index))->first_node;
-                            s_clump_node *node;
-                            while ((node = clump_next_node(&nodes)) != NULL)
+                            if (node->state >= 1)
                             {
-                                if (node->state >= 1)
-                                {
-                                    if (*(long *)((byte *)node + 0x14) != NONE)
-                                        state = function_25d690((s_prop_datum *)node);
-                                    break;
-                                }
+                                if (*(long *)((byte *)node + 0x14) != NONE)
+                                    state = function_25d690((s_prop_datum *)node);
+                                break;
                             }
-                            if (!node)
-                                goto type_ready;
                         }
-                        break;
-                    default:
-                        goto type_ready;
+                        if (!node)
+                            goto type_ready;
                     }
                     existing->state = 1;
                     if (state)

@@ -261,13 +261,31 @@ void function_264940(long actor_index, long prop_ref_index)
 	}
 }
 
-// score 358 (was 358): frame 0x24 versus 0x20; object/view allocation and cached object index differ.
+// score 353 (was 358): the frame is still 0x24 against retail's 0x20, ours keeps the
+// object in EBP where retail keeps it in EDI, and the prop-index field is still read
+// before the object-index field. The body is 1540 bytes against retail's 1538.
+// Frame 0x24 versus 0x20; object/view allocation and cached object index differ.
 // Full-width unit mask 439; sampled-time reuse 380; deferred tracking view 431; fallback state default 358; inline depth one 358.
 // j92: frame 0x24 versus 0x20 and object/view homes remain; real object/header types and selection inline declarations tie; expiry snapshot regresses.
 // typed object view 358; typed header lookup 358; typed object header 358; tracking expiry snapshot 385;
 // selection inline declarations 358.
+// Earlier: frame 0x24 versus 0x20 and object/view homes remain.
+// Shared state/related/both distances 358/359/359; native actor/datum/origin references
+// 358/358/358; shared direction setter 358; reused byte approach category 370.
 // Round 310: state word snapshot 358; long state snapshot 365; long update 434;
 // entry vector workspaces 358; speed category result 358. Frame 0x24/0x20 and object/view homes remain.
+// Round 211: Direct time 442; signed-byte/word update 358/429; word approach category 360; named expiration
+// 358. Frame and object/view homes remain.
+// Round 176: Branch-produced approach categories signed-byte/byte/word/long
+// 370/371/360/360; highest-category-default forms 392/392/394/393. Frame
+// 0x24 versus 0x20 and object/view homes persist; all original categories restored.
+// Disjoint velocity/facing scope 358; semantic vector names 358; both 358; shared speed length 358;
+// shared speed dot 358; shared approach dot 358; length/approach helpers 357; scoped two-dot helpers 357.
+// Complementary bool/byte/short/long complete update predicates 442/442/425/377;
+// complementary conditional producers 359/359/429/422. Original update restored.
+// Round 337: complete origin point/scalars 419/427; sampled state position 444;
+// origin scalars/point with state position 463/457; const native copies 457;
+// entry origin copy 498; both native inputs with shared difference 457. All restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)
@@ -277,11 +295,11 @@ void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *
 	s_prop_datum *reference = prop_ref_get(prop_ref_index);
 	byte *object = *(byte **)(g_4e0300->data + (reference->object_index & 0xffff) * 12 + 8);
 	byte *prop = (byte *)prop_get(reference->prop_index);
-	long time = g_510c54->game_time;
 	byte *unit = NULL;
+	bool update = false;
+	long time = g_510c54->game_time;
 	if ((1 << object[0xaa]) & 3)
 		unit = object;
-	bool update = false;
 	if ((reference->state >= 1 && reference->state <= 2) || force ||
 		(reference->state >= 1 && reference->unknown26 > 0))
 		update = true;
@@ -404,7 +422,11 @@ void *function_1e5240(long actor_index);
 real function_2683f0(long actor_index, long node_index, short type);
 void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *sample, s_2640c0 *motion);
 
-// score 426 (was 426): frame 0xa4 versus 0xa0; actor input and workspaces differ.
+// score 420 (was 420): the frame is 0xa4 against retail's 0xa0; retail takes the actor
+// index in EAX where ours loads the argument from the stack. The body is 1624 bytes
+// against retail's 1616.
+// Frame 0xa4 versus 0xa0; stacked actor and node/workspace homes still differ.
+// Earlier at 426 (was 426): frame 0xa4 versus 0xa0; actor input and workspaces differ.
 // Wide prior state and byte sampling flags 426; byte sampled-one 426;
 // native for traversal 436; later update init 427; later flag inits 426;
 // for plus wide update/sample/both 439/437/429; release noinline with
@@ -412,9 +434,42 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // frame 0xa4 versus 0xa0, actor stacked versus EAX/EBX;
 // initial update predicate 441 (frame 0xa0); counter word snapshot 426;
 // prior-state word 426; case-one tracking scope 426; separate final guards 426.
-// score 420 (was 426): frame 0xa4 versus 0xa0 and actor input/home still differ. Word maximum 420
+// Earlier: frame 0xa4 versus 0xa0 and actor input/home still differ. Word maximum 420
 // kept; word update/sample/sampled count 430/449/449; native view 426; later view lifetime 426;
 // word maximum plus native view/later view/update 420/420/424.
+// Earlier: frame 0xa4 versus 0xa0, actor input and workspace homes remain.
+// frame 0xa4 versus 0xa0 and actor input/home still differ. Word maximum 420
+// frame 0xa4 versus 0xa0, actor input and workspace homes remain.
+// Earlier at 420 (was 426): frame 0xa4 versus 0xa0 and actor input/home still differ. Word maximum 420
+// Earlier at 420 (was 420): frame 0xa4 versus 0xa0, actor input and workspace homes remain.
+// Earlier: frame 0xa4 versus 0xa0 and actor input/home still differ. Word maximum 420
+// Earlier: frame 0xa4 versus 0xa0, actor input and workspace homes remain.
+// Native signed maximum 420; signed maximum/original loads 420; later maximum/signed
+// maximum 422/422; signed counter/original and signed maximum 420/420;
+// later counter/original and signed maximum 422/422. Each fast and plain.
+// Existing sampling-helper automatic, inline and force-inline boundaries 486 each;
+// all declarations restored after the force-inline form lost a checked caller.
+// Round 166: typed actor startup/admission/tracking/completion/all 420 each; native actor
+// getter, native node fields and both 420 each. Actual shared type layout restored.
+// Immutable prior state/node handle/both 420/420/420; current field observations 420;
+// distance-axis names 420; update-first validation 421; availability-first admission 422;
+// admission plus validation order 423.
+// Sample after counter/maximum 437/437 (retail frame and length); split true flags 424;
+// test-derived sample 434; timeout conditional 420; decrement branches 420; common maximum exit 437; nested sample-success scope 420.
+// Shared long/word actor slots 444/441; node slots 429/438; both long 439;
+// long actor/word node 423 (frame 0xa0, exact length); word actor/long node 440; both word 456.
+// On the repaired frame: long/short update 430/429; update predicate 430; single exit 433.
+// Sampled-once acquisition after startup/at traversal/before actor 422/422/420; startup plus later
+// node flags 422; completed-sample name 420; separate/reversed node flag declarations 420/422;
+// startup plus reversed flags 424.
+// Initial refresh, spatial startup, node refresh and progress call declarations, each ordinary
+// inline/noinline 420/420; all eight compiled forms and every separate declaration restored.
+// Round 166: typed actor startup/admission/tracking/completion/all 420 each; native actor
+// getter, native node fields and both 420 each. Actual shared type layout restored.
+// Round 212: Three-state sampling enum/byte/short/long with entry success 434/426/434/434;
+// with success at consumption 434/430/438/434. Byte states recover frame 0xa0 and 1616 bytes.
+// Complementary run-wide availability bool/byte/short/long 424/424/422/443;
+// per-node skip/defer/both 429/424/433; all three complements 436 at retail length. All restored.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {
@@ -734,11 +789,20 @@ short function_25c9d0(long actor_index, long prop_ref_index, bool player, long s
 short function_25cb60(long actor_index, long object_index, short type, void *sample,
 	void *point, long location, long sight);
 short function_25cca0(long prop_ref_index);
-short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
+long function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
 void function_26bfa0(long object_index, long *location_index, s_location_view *location);
 real function_296600(long actor_index, long prop_ref_index);
 
-// score 358 (was 370): actor/view registers and pointer/flag homes; ordinary
+// score 331 (was 351): the tracking view is cleared before the tracking test, so the
+// pointer is zeroed where retail zeroes it instead of being assigned in an else
+// branch. Retail holds the actor in EBX and spills it at [esp+8] right after the
+// actor[9] test where ours holds it in ESI and spills it at [esp+0x14]; retail keeps
+// the squad pointer at [esp+0x10] where ours uses [esp+0xc]. The body is 1251 bytes
+// against retail's 1268.
+// Equal-zero reference, equal-four sight, view zero, priority zero, paired defaults, all defaults chains
+// 363/363/363/363/363/363; alternate-view short pair memmove 374; copy field order 363 (control 363).
+// Original stores, body and local pointer qualifier retained; full baseline 358.
+// actor/view registers and pointer/flag homes; ordinary
 // path first 373; maximum result 372 (plain 370); wide other priorities 376;
 // visible-view arm first 376; tracking-handle snapshot 373.
 // ordinary current scope 375; suppression scope 366 (plain 373); object/unit
@@ -751,6 +815,17 @@ real function_296600(long actor_index, long prop_ref_index);
 // object/current/suppression alone at entry 367/368/368; group/prop/reference
 // pointer names 363; shared squad getter 363; entry pointer declarations 363
 // (fast control 363, full baseline 358); all restored.
+// Pairwise object/current, object/suppression, suppression/current entry captures
+// 366/375/371; false-default suppression on those pairs 366/375/371;
+// optional unit pointer on first two pairs 370/373 (fast control 363).
+// Object/current pair plain 373 versus 358; actor ESI and saved-pointer/flag homes remain.
+// frame 0x20 agrees; actor ESI versus EBX and saved-actor/flag homes remain.
+// Native prop/datum/sample/motion references 363f/363f/363f/363f; direct alternate
+// sight result 363f; child/guarded-parent handles 363f/363f; adjacent priority memmove
+// 377f (preview 363f); all original bodies and call arguments restored.
+// Ordinary object-type/suppression/current orders 012/021/102/120/201/210
+// 366/366/351/355/369/388; coordinated priority names 341; names with 210 order 388
+// (fast control 341; full baseline 358).
 // @retail 0x264b50
 void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *sample, s_2640c0 *motion)
 {
@@ -759,19 +834,18 @@ void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *
 	if (!actor[9])
 		return;
 	byte *squad;
-	if (*(long *)(actor + 0x30) != NONE)
-		squad = g_51e9d8->data + (*(long *)(actor + 0x30) & 0xffff) * 0x98;
-	else
+	if (*(long *)(actor + 0x30) == NONE)
 		squad = NULL;
+	else
+		squad = g_51e9d8->data + (*(long *)(actor + 0x30) & 0xffff) * 0x98;
 	s_prop_datum *reference = prop_ref_get(prop_ref_index);
-	s_type_f95cd3 *view;
+	s_type_f95cd3 *view = NULL;
 	if (reference->tracking_index != NONE)
 	{
 		s_type_e5ff81 *tracking = tracking_get(reference->tracking_index);
-		view = tracking ? &tracking->view : NULL;
+		if (tracking)
+			view = &tracking->view;
 	}
-	else
-		view = NULL;
 	byte *prop = (byte *)prop_get(reference->prop_index);
 	long time = g_510c54->game_time;
 	if (*(short *)(actor + 4) == 15 && *(long *)(actor + 0x26c) != NONE)

@@ -14,3 +14,17 @@ void placed_shape_312800::function_312790(description_315ba0 const *description)
 		((hkRigidBody *)this)->pose_write((hkTransform const &)description->transform);
 	}
 }
+
+#include "listened_object_315950.h"
+
+class class_30b700 : public class_315950
+{
+public:
+	virtual ~class_30b700();
+};
+
+class class_3127d0 : public class_30b700
+{
+};
+
+// @retail 0x3127d0 deleting class_3127d0

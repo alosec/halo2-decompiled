@@ -843,6 +843,10 @@ void function_1c54b0(char const *variants, long object_index)
 }
 
 
+// score 4 (was 4): two swapped pairs are left. After the entity loop ours reloads the
+// island index before the world pointer and retail reloads the world pointer first;
+// ours stores the removed flag before the discard call and retail stores it after the
+// call (moving that store after the call always swaps ebx/ebp in the entity loop).
 // @retail 0x1c50c0
 void function_1c50c0(void)
 {
@@ -908,6 +912,9 @@ void function_1c2a10(void)
 
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index);
 
+// score 1 (was 1): the only difference is the force flag handed to function_1c4040:
+// ours goes in dl and retail passes it in al. That register belongs to
+// function_1c4040's own convention (see the note there).
 // @retail 0x1c51c0
 void function_1c51c0(long component_index)
 {
@@ -1066,6 +1073,11 @@ struct s_1c4040
 	long field_10;
 };
 
+// score 90 (was 90): retail's prologue pushes ebp second and keeps the island-array
+// pointer in edx, so the active flag arrives in al; ours pushes ebp after the first
+// stores, keeps that pointer in eax and takes the flag in dl. The register assignment
+// is settled by the call-cycle order with 0x146bf0 (src/unknown_146a20.cpp), which
+// this lane may not edit, and it also fixes the register the caller uses.
 // @retail 0x1c4040
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index)
 {
@@ -1457,6 +1469,10 @@ PRIVATE inline void contact_motion_vector(vector3f *out, hkVector4 const *value)
  contact_vector_set(out, (*value)(0), (*value)(1), (*value)(2));
 }
 
+// score 3 (was 3): retail tests the loop count against zero at the loop entry and
+// ours compares it with the index register; retail sets up the register arguments of
+// the 0x1d10b0 call with ecx first and ours with edx first, an order that follows
+// the callee's declared parameter order in src/unknown_1cec30.cpp (not editable here).
 // @retail 0x1c4c50
 bool __stdcall function_1c4c50(long object_index, long node_index, point3f const *point,
  vector3f const *change_a, vector3f const *change_b, long *result_object, vector3f *linear, vector3f *angular)

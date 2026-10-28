@@ -402,6 +402,9 @@ void *__fastcall function_31bc70(void *arg_0);
 // results, and gives its id back when it no longer does
 // score 1 (was 15): the store of the transformed capsule ends puts the base
 // and the index the other way round: [eax + ecx] here, [ecx + eax] in retail.
+// Indexed transforms 575; indexed source 575; indexed output 573; source-bound 505;
+// output-bound 620; endpoint-array name 1; later frame 1; frame copy 624;
+// source-first advances 1; transform input order 1; y-product first 1.
 // @retail 0x2f3030
 void indexed_2f28b0::function_2f3030(body_2f28f0 const *a, body_2f28f0 const *b, input_2f3030 const *input, results_2f3030 *results)
 {

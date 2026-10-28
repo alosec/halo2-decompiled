@@ -62,8 +62,8 @@ bool __stdcall function_8c900(const byte *messages)
 			}
 			const byte *local_0 = messages + g_47ff38 * 0x200;
 			long language = g_47ff38;
-			if (function_136d00(&file, local_0, 0x200) &&
-				function_136d00(&file, messages + 0x1200 + language * 0x4004, 0x4004))
+			if (function_136d00(&file, 0x200, local_0) &&
+				function_136d00(&file, 0x4004, messages + 0x1200 + language * 0x4004))
 				result = true;
 			if (CloseHandle(file.handle))
 			{

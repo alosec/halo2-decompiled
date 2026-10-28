@@ -167,13 +167,66 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
  return function_cbd50(unit_index, *(signed char *)(unit + 0x212 + slot));
 }
 
-// score 649 (was 649): frame 0x54 agrees; state/player/unit homes differ; inline depths 1/2 649, object accessor inline 649, array base 649, player-index first 656.
-// score 613 (was 656): frame/type agree; state/player/unit allocation remains.
+// score 627 (was 627): Frame 0x54/type EDX agree; state/player/unit homes remain.
+// Round 134: retail's case layout is 10-14, 2, 4, 15, 18, 0, 1, 31, 17, 30, ...: cases 0/1/31 after 18
+// 656; plain blocked flag 645, both 656; with a plain player pointer too, retail's state edi, player esi,
+// spilled unit index and result at entry, but request_weapon stops inlining: 769, case 2 as an if 785,
+// plus plain blocked 790, plus a plain address-taken result 726; request_weapon forced inline 939
+// (0xcbd50 inlined too, a noinline declaration no help), taking the unit index 658; plain player alone 779.
+// Earlier 631 from 645: frame 0x54/type EDX agree; state/player/unit homes differ, retail length recovered.
+// frame 0x54/type EDX agree; state/player/unit homes differ, retail length recovered.
+// Earlier 649 from 649: frame 0x54 agrees; state/player/unit homes differ; inline depths 1/2 649, object accessor inline 649, array base 649, player-index first 656.
+// Earlier 613 from 656: frame/type agree; state/player/unit allocation remains.
 // Direct state receiver 656; unsigned unit carrier 656; early blocked local 656;
 // multi-use magazine view 656; seat-before-parent acquisition 656; all restored.
-// score 649 (was 649): Frame 0x54 agrees; state/player/unit homes remain. Native word 649; bits 650; call groups 656; reset groups 771; plain player/status 768 (frame and state/player agree); with selector inline 946, native word 768, bits 768 or index join 790 (plain).
-// score 649 (was 658): Frame 0x54 agrees; state/player/unit homes remain. Shared seat fields kept 658 to 651, 2300/2308 bytes. Captured seat flags 658; short selector slot 662; typed object headers 658; magazine capacity 658 (plain).
+// Earlier 649 from 649: Frame 0x54 agrees; state/player/unit homes remain. Native word 649; bits 650; call groups 656; reset groups 771; plain player/status 768 (frame and state/player agree); with selector inline 946, native word 768, bits 768 or index join 790 (plain).
+// Earlier 649 from 658: Frame 0x54 agrees; state/player/unit homes remain. Shared seat fields kept 658 to 651, 2300/2308 bytes. Captured seat flags 658; short selector slot 662; typed object headers 658; magazine capacity 658 (plain).
 // Frame 0x54 agrees; state/player/unit homes remain. Native word 649; bits 650; call groups 656; reset groups 771; plain player/status 768 (frame and state/player agree); with selector inline 946, native word 768, bits 768 or index join 790 (plain).
+// Earlier 645 from 645: Frame 0x54 and EDX type agree; state/player/unit homes remain. Long seat index 647; early child iterator 645; seat disqualifier predicate 645; pooled seat reference 645; function-scope unit index 645 (plain).
+// Earlier 645 from 645: Frame 0x54/type EDX agree; state/player/unit homes remain. Shared primary weapon 653;
+// secondary 655; status weapon 645; all three observations 688; native input state fields 645 (fast); matched
+// sibling preserved.
+// DL134: byte state view 645; entry first 646; status/child/workspace cases first
+// 642/641/642; direct flag cases first 631 kept; communication first 633; byte/status 642;
+// flags with child/status first 647/631. Both keepers plain-confirmed; the latter tie is restored.
+// Frame 0x54/type EDX agree; state, player and unit homes remain.
+// frame 0x54 agrees; state/player/unit homes differ; inline depths 1/2 649, object accessor inline 649, array base 649, player-index first 656.
+// frame/type agree; state/player/unit allocation remains.
+// Frame 0x54 agrees; state/player/unit homes remain. Shared seat fields kept 658 to 651, 2300/2308 bytes. Captured seat flags 658; short selector slot 662; typed object headers 658; magazine capacity 658 (plain).
+// Frame 0x54 and EDX type agree; state/player/unit homes remain. Long seat index 647; early child iterator 645; seat disqualifier predicate 645; pooled seat reference 645; function-scope unit index 645 (plain).
+// Frame 0x54/type EDX agree; state/player/unit homes remain. Shared primary weapon 653;
+// Result after lookup 654; unsigned player identifier 645; selector unit field at use 645;
+// pooled recorded-type reference 645; selector without inline keyword 645.
+// Paired Boolean-role names 631; player/unit handle names 631; receiver-role names 631; one failure
+// exit 631; flag/empty cases first 631; flag/input-state cases first 653; flag/health cases first 643;
+// flag/weapon-test cases first 653 (fast). All restored.
+// Complete eligibility assigned to returned result in reset cases 10/11/12/13/2/16 632/632/640/640/627/643; all six 693; success result after reset 630. Case 2 kept, plain 627.
+// Non-reset test-produced results: case 14 666; case 9 665; primary tests 664;
+// local-state/vehicle tests 649; direct capability calls 643; health tests 653;
+// status/child results 683; all non-reset groups 697. Original result graph restored.
+// Round 197: direct-flag cases after case 18, retained case-two result: original local
+// qualifications 656; plain player/result/blocked 769/651/656; player+result, player+blocked,
+// result+blocked, all plain 701/785/665/736. All original cases, qualifications and bodies restored.
+// Round 162: Consistent direct state-array observations with inherited local
+// qualification removals none/result/player/result+player/blocked/result+blocked/
+// player+blocked/all 827/769/649/671/811/750/660/674.
+// All regress; original state receiver, case graph and local qualifiers restored.
+// Complemented return with original locals 771; ordinary result/player/both 764/856/832;
+// ordinary blocked/result-blocked/player-blocked/all 781/778/858/844. Original case-two
+// result, case order, local qualifications and complete executable body restored.
+// Shared 25/28, 26/27/29, empty cases, paired groups and all groups
+// 634/634/627/634/634/634/634; all with flag cases after 18 651.
+// Conditional player-index assignment 628; parent, seat, iterator, port, status
+// and target names individually and together 627 each.
+// Flag-case order permutations 627/627/627/626/628; individual moves after case 18 609/646/643.
+// The 609 form worsens executable differing rows 552 to 561; restored.
+// Case pairs 10/11, 12/13, 15/18, 17/30, 20/23, 22/21, 5/6 and 7/8
+// reversed individually 627/629/625/627/627/630/633/636 (fast); original order restored.
+// Round 78 (fast; aligned rows in brackets, baseline 450): plain player 779 [280] (helper out of line);
+// with request_weapon forced inline 981 (0xcbd50 inlined too); with request_weapon taking the unit index
+// 665 [413] (inlined again); plus cases 0/1/31 after 18 666 [355] (retail's case layout); plus the player
+// index as NONE then an if (retail's or/cmp/je shape) 667 [361]. Register roles (retail: state EDI,
+// player ESI, unit index spilled, unit EBX, headers EBP) still differ in all of them.
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {
@@ -193,6 +246,9 @@ bool function_1e7ab0(long local_index, long type)
    byte *unit = request_unit(unit_index, g_4e0300->data);
    switch (type)
    {
+   case 0: result = (state->field_194 & 1) != 0; break;
+   case 1: result = ((state->field_194 >> 1) & 1) != 0; break;
+   case 31: result = ((state->field_194 >> 2) & 1) != 0; break;
    case 10:
     if (!function_13cb40() && *(short *)(unit + 0x1fc) != NONE && *(long *)(unit + 0x14) != NONE && function_1e8eb0(unit_index, NONE, true))
     { result = true; if (*(long *)(data + 0x80) != 10) data[0x1a0] = false; }
@@ -213,8 +269,8 @@ bool function_1e7ab0(long local_index, long type)
     if (function_1e7a60(local_index, 16) == 0 && function_c8860(unit_index) != NONE) result = true;
     break;
    case 2:
-    if (!function_13cb40() && function_1e7a10(local_index, 12) && *(long *)(unit + 0x14) == NONE)
-    { result = true; if (*(long *)(data + 0x80) != 2) data[0x1a0] = false; }
+    result = !function_13cb40() && function_1e7a10(local_index, 12) && *(long *)(unit + 0x14) == NONE;
+    if (result && *(long *)(data + 0x80) != 2) data[0x1a0] = false;
     break;
    case 4:
     if (!function_13cb40())
@@ -248,9 +304,6 @@ bool function_1e7ab0(long local_index, long type)
    case 18:
     if (request_weapon(player, false, g_4e0300->data) != NONE && !motion_sensor_enemy_nearby(local_index) && function_1e7a10(local_index, 15)) result = true;
     break;
-   case 0: result = (state->field_194 & 1) != 0; break;
-   case 1: result = ((state->field_194 >> 1) & 1) != 0; break;
-   case 31: result = ((state->field_194 >> 2) & 1) != 0; break;
    case 17: if (state->field_19b > 0 && *(short *)(unit + 0x1fc) == NONE) result = true; break;
    case 30:
     if (g_4e6948->state == 2 && function_15eaf0() && function_162fd0(local_index) != NONE)

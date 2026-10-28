@@ -65,6 +65,24 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// score 32 (was 32): node-pool/state-two register reuse and four-byte extent excess remain.
+// Paired mode result short/long 62/63; flags before paired state short/long 81/82;
+// guarded mode result short/long 46/45; view rejection first 32; conditional view acceptance 32.
+// node-pool base uses EDI instead of retail ESI, which
+// retail reuses for state two; four-byte extent gap. State/mode destination
+// pointers 32/32; both destinations 32; default flag destinations 33; readonly
+// view 32; readonly view with state/mode/both destinations 32/32/32.
+// +0x29 default target moves with the four-byte length gap;
+// retail reuses ESI for the node base and constant 2, ours uses EDI and immediates.
+// Earlier separate exits 28/233; node reference, paired stores, reversed paths
+// and nested view forms tied; unsigned range 55/231. Ordinary trials: short
+// classification 32; long classification 31/231 (below keep threshold); equality
+// cases 106/183; test-derived state 32; assigned state 32; short classification
+// with shared default stores 49/217; state with common exit 32; primary-state
+// store first with short classification 32. Opening executable body restored.
+// score 32 (was 32): node-base EDI versus retail ESI/shared two still differs; node, actor, view and combined receiver names 32; early node declaration and renamed early node 32; complete native node type 32; native node with open classification bounds 39.
+// node-base/constant register ownership and extent still differ; index/direct pointer lookup 109/32; shared handle 109/42; entry-scope view with index/native lookup 109/32; entry view and shared handle 109/42 (all plain).
+// score 32 (was 32): a compile-only harness hoists 2 into ESI (retail's form) only with a fifth use of short 2; first test `>= 2` gives retail's tail but `cmp si; jl` 33; early-exit default 32; sibling then-arm store order 32; range bounds swapped 33; prop index local 42; 384 store-order/nesting/polarity forms in the harness never hoist it.
 // @retail 0x1b21f0
 void __stdcall function_1b21f0(long actor_index, s_slot *slot)
 {
@@ -159,14 +177,27 @@ bool function_262890(long actor_index, s_reference reference);
 bool function_1f8660(long actor_index);
 real function_1e3920(long actor_index);
 
-// score 168 (was 168): slot load, actor/permission/index/scratch homes and cold reference arms still differ.
+struct s_slot_05_data
+{
+    byte unknown00;
+    bool unknown01;
+    byte unknown02[2];
+    short unknown04;
+    bool unknown06;
+    byte unknown07;
+    s_reference reference;
+    byte unknown0c[0x34 - 0xc];
+};
+
+// score 91 (was 91): saved scalar homes and cold reference joins remain; early slot ESI now agrees.
+// Earlier: slot load, actor/permission/index/scratch homes and cold reference arms still differ.
 // Early invalid copy 168; early mode copy 140; both copies 140 (nonmatches dropped);
 // unsigned actor handle 168; byte permission 195; reference receiver order 170;
 // request mode first 168; permission first 168; shared active mode 168/635.
-// score 164 (was 168): early ESI slot load, scalar homes and cold reference arms still differ.
+// early ESI slot load, scalar homes and cold reference arms still differ.
 // Native request byte 168; earlier scratch 164; result before scratch 168; both 167 (dropped);
 // permission success/failure arms 183/183; reference-test result 168; request byte/scratch 164.
-// score 164 (was 164): early slot load, scalar homes and cold reference joins remain.
+// early slot load, scalar homes and cold reference joins remain.
 // slot reference 164; actor reference 164; both references 164;
 // const actor pointer 164; declared request byte 164; slot/request byte 164;
 // actor/request byte 164; both/request byte 164.
@@ -174,63 +205,94 @@ real function_1e3920(long actor_index);
 // reference before request/index/guard 203/203/201; late output index 163;
 // selection flag before clear 168; scratch before fields/clear 164/181;
 // early reference/scratch with late index 204.
-// score 164 (was 164): delayed ESI slot, scalar homes and cold reference arms remain.
+// delayed ESI slot, scalar homes and cold reference arms remain.
 // Short-circuit invalid result 166; empty-reference first 166; mode-first guard 163;
 // copied initial reference 139 (dropped); target reference 162; request permission 165;
 // short-circuit/mode-first 166; both reference copies 143 (dropped);
 // declared-field equality 196; actual pooled-field reference 164.
-// score 164 (was 164): delayed ESI slot, scalar homes and cold reference arms remain.
+// delayed ESI slot, scalar homes and cold reference arms remain.
 // Common scratch release 162f; later selection flag / acceptance / request predicates 164f;
 // release combinations and release with late output index 162f (two-point gain dropped).
 // early ESI slot, scalar homes and fallback arms remain;
 // shared defaults / native mode with defaults / native mode 168/168/164f on earlier scratch;
 // consumed request scope / scope with defaults / unsigned output handle / fallback result / combined 164/168/164/164/168f.
+// early slot ESI, scalar homes and cold reference arms remain.
+// Mixed pre-scratch request enable/permission/both/byte/enable-byte/permission-byte
+// stores 165/168/165/166/165/165; outer actor join 166; inactive return 164.
+// early ESI slot, scalar homes and cold reference arms remain;
+// branch-only reference on earlier scratch 211; with read-only actor / slot reference 211/211;
+// common release / request scope / late handle / early permission / release plus late handle 181/211/207/211/178.
+// delayed ESI slot, saved scalar homes and cold reference joins remain.
+// Signed permission byte/short 197/200; entry mode shared by two tests 193;
+// rejection-first fallback 164; failure-first acceptance 169; request eligibility exit 164;
+// eligibility/fallback 164; short permission with failure-first acceptance 200.
+// delayed slot ESI, scalar homes and cold reference arms remain;
+// explicit mode assignments 164; native reference initializer 220; library reference copy 164;
+// reference/actor/scratch/selection noinline contracts 164 each; mode/reference initializers 220.
+// Native Boolean invalid flag 164; two chained late request flags 164; three chained late/early flags 167/167; Boolean slot with those chains 164/167/167; immutable permission with Boolean slot 164.
+// Native slot payload 105 (kept); payload with native short/early receiver/read-only actor 105/105/105; payload with branch reference/shared defaults/shared mode/role names 121/104/157/105. Early ESI recovered; saved scalar homes and cold reference joins remain.
+// Round 181 complementary permission bool/byte/short/long 185/185/180/180; field permission at every use 184; complementary permission with native short/default helper/branch reference 185/185/211 (fast); all restored. Frame 0x76c agrees; saved scalar homes and cold reference joins remain.
+// Round 183 retail-timed scratch after request fields 91; positive permission short/long/signed-byte/byte
+// 180/180/185/185; timing with branch reference/early selection output/default helper 117/113/91
+// (fast). Keep only scratch timing; scalar homes and cold reference joins remain.
+// Round 186 on native payload/late scratch: common release 151; flag before acquisition 95;
+// both 152; late output handle 112; release/handle 108; flag/handle 112; all three 109;
+// declared request byte 91; conditional reference with selection result 151, with common release 128.
+// Round 71: plain else-arm reference (`else reference = actor->unknown418;`) gives retail's block layout
+// (both reference arms after the first return) but scratch takes EDI and reference a stack slot, frame 0x774: 117;
+// inverted outer test 118; inverted inner test 91, with the else arm 117; on the else arm, reference at block
+// top / before scratch / function scope, bool first, scratch at function scope, swapped compare, release first 117.
+// Round 233: Native invalid/mode/both on late scratch 91/91/91; live permission
+// alone/invalid/mode/both 181/181/181/181; final selected-reference fields 118.
+// Round 189 independent early declarations of scratch/reference/selection flag and all combinations
+// 91 each; complete saved-scalar role names on late scratch 91. Initializations unchanged; scalar
+// homes and cold joins remain.
 // @retail 0x1b1f70
 bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
 {
     s_actor_view *actor = actor_get(actor_index);
-    s_slot_05 *state = (s_slot_05 *)slot;
+    s_slot_05_data *state = (s_slot_05_data *)slot->unknownc;
     if (actor->unknown007)
     {
-        state->unknown10 = 1;
+        state->unknown04 = 1;
         return true;
     }
     if (!actor->unknown267)
     {
         bool allowed = actor->unknown328 <= 2;
-        if (!state->unknown0c && state->unknown10 == 3)
+        if (!state->unknown00 && state->unknown04 == 3)
         {
             if (!REFERENCE_EQUAL(actor->unknown418, g_470fa0))
-                state->unknown0c = !function_262590(actor_index, actor->unknown418, allowed);
+                state->unknown00 = !function_262590(actor_index, actor->unknown418, allowed);
             else
-                state->unknown0c = true;
+                state->unknown00 = true;
         }
         if (actor->unknown270 == 4 && !function_1f8660(actor_index))
-            state->unknown0c = true;
-        else if (!state->unknown0c && !function_1f8660(actor_index) && state->unknown10 == 3 &&
+            state->unknown00 = true;
+        else if (!state->unknown00 && !function_1f8660(actor_index) && state->unknown04 == 3 &&
             !REFERENCE_EQUAL(actor->unknown418, g_470fa0))
         {
             s_262b40_result *target = function_262b40(actor->unknown418);
             if (target && function_210b60((s_type_c3b527 *)target, &actor->position) > 2.0f * function_1e3920(actor_index))
-                state->unknown0c = true;
+                state->unknown00 = true;
         }
-        if (actor->unknown040 && (state->unknown0c || !actor->unknown227))
+        if (actor->unknown040 && (state->unknown00 || !actor->unknown227))
         {
             long other_index = NONE;
-            if (!state->unknown0d)
-                *(short *)state->unknown0e = actor->unknown086 >= 2 ? 2 : 0xff;
+            if (!state->unknown01)
+                *(short *)state->unknown02 = actor->unknown086 >= 2 ? 2 : 0xff;
             s_2605d0_request request;
             memset(&request, 0, sizeof(request));
             request.type = 4;
             request.unknown015 = true;
-            request.unknown69a = *(short *)state->unknown0e;
-            byte *scratch = ai_scratch_buffer_get();
+            request.unknown69a = *(short *)state->unknown02;
             request.unknown698 = true;
             request.unknown69c = allowed;
             *((byte *)&request + 0x59) = true;
+            byte *scratch = ai_scratch_buffer_get();
             bool unknown = false;
             s_reference reference = actor->unknown418;
-            if (state->unknown0c)
+            if (state->unknown00)
             {
                 reference = function_2605d0(actor_index, &request, 0, (long)&other_index, scratch, &unknown);
                 if (!unknown)
@@ -244,7 +306,7 @@ bool __stdcall function_1b1f70(long actor_index, s_slot *slot)
             }
             if (!REFERENCE_EQUAL(function_2626b0(actor_index, reference, other_index, scratch, unknown, true), g_470fa0))
             {
-                state->unknown0c = false;
+                state->unknown00 = false;
                 ai_scratch_buffer_release(scratch);
                 return true;
             }

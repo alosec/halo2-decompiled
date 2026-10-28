@@ -58,18 +58,22 @@ long function_1587f0(long team);
 void function_15b3a0(long team, bool a);
 bool player_iterator_next(long *iterator);
 
-#define MACRO_0A8D68 ((s_simulation_world_view *)g_4cf77c)
+/* the simulation world (g_4cf77c), read through a getter as the engine globals are */
+static inline s_simulation_world_view *simulation_world_view_get(void)
+{
+	return (s_simulation_world_view *)g_4cf77c;
+}
 
 static inline bool simulation_world_is_authority(void)
 {
-	long state = *(long *)((byte *)MACRO_0A8D68 + 8);
+	long state = *(long *)((byte *)simulation_world_view_get() + 8);
 
 	return state == 4 || state == 5;
 }
 
 static inline bool simulation_world_is_playing(void)
 {
-	long state = *(long *)((byte *)MACRO_0A8D68 + 8);
+	long state = *(long *)((byte *)simulation_world_view_get() + 8);
 
 	return state != 3 && state != 5;
 }
@@ -130,25 +134,6 @@ static inline bool engine_team_is_playing(long team)
 	return result;
 }
 
-// score 2 (was 37): only post-activation engine/world reload order differs;
-// long/byte teams result 97/94; long playing result 89; both long/byte results 116/94;
-// activation input orders and type-first creation inputs 37/37/37.
-// unqualified teams scratch 2 plain; authority/playing/both result joins 37/37/37;
-// pretested slot while 304; direct team bit 37; active-team result 121; short team ordinal 124.
-// score 2 (was 2): post-activation engine/world reload order still differs;
-// creation world reference/database-field input 2/2; activation database/joint receivers 191/191;
-// byte slot 243; short slot value 2; eligibility value/assigned arms 2/113.
-// Actual table activation method / output reference 2/2; native kind enum 2; refreshed engine receiver 2;
-// shared / slot-only identifier scopes 2/2; equality loop bound 3; authority interval 6. Reload order remains.
-// world activation before store 2; world activation after store 200; world reference 2;
-// world predicate inputs 2; long authority 2; long playing 2; world and native results 2;
-// complete creation arms 2.
-// score 2 (was 2): post-activation engine/world reload order still reversed;
-// activation output reference 2; read-only world 2; immutable identifiers/table 2/2;
-// dead teams scratch removed 2; unsigned slot 3; direct slot index 247; output-first reference 2.
-// score 2 (was 2): the two post-activation engine/world reloads remain reversed;
-// actual table pointer/reference 2/2; unsigned handle 2; short kind 2; rejected-state guard 2;
-// database receiver 171; per-use authority/playing 2/2; remaining pointer-input orders 2/2/2.
 // @retail 0x162060
 void __stdcall function_162060(void *engine)
 {
@@ -167,7 +152,7 @@ void __stdcall function_162060(void *engine)
 	{
 		if (!game_engine_get() || function_xaee93d()->slots[(short)slot_index] == NONE)
 		{
-			s_simulation_world_view *world = MACRO_0A8D68;
+			s_simulation_world_view *world = simulation_world_view_get();
 			long identifier = simulation_entity_create(world, 6);
 
 			if (identifier != NONE)
@@ -179,11 +164,11 @@ void __stdcall function_162060(void *engine)
 	}
 	if (!game_engine_get() || function_xaee93d()->index28 == NONE)
 	{
-		long identifier = simulation_entity_create(MACRO_0A8D68, 7);
+		long identifier = simulation_entity_create(simulation_world_view_get(), 7);
 
 		if (identifier != NONE)
 		{
-			simulation_entity_activate((c_entry_table *)&MACRO_0A8D68->database->table,
+			simulation_entity_activate((c_entry_table *)&simulation_world_view_get()->database->table,
 				&function_xaee93d()->index28, identifier);
 		}
 	}

@@ -401,17 +401,19 @@ struct s_ai_scene_assignment
 	short variant_indices[10];
 };
 
-// score 56 (was 56): the maximum count is kept in a 32 bit register here
-// and in a 16 bit one in retail, and the calls set their arguments up with
-// other registers.
+// score 56 (was 56): retail keeps the maximum count in esi through the loop
+// and reloads the role index at each use; ours keeps the role index in esi.
+// The choice follows the role index's uses (dropping its recursion or call use
+// flips it) and the iterator callees' file being linked in. Parameters used
+// directly (address forms removed) 56; next role as a long local 61 (347 bytes);
+// `while (next && count < maximum)` 56; pre-increment test 56; flipped compares 56;
+// outputs/score declared outside the loop 56; local_0 recomputed each pass worse.
 // @retail 0x2919e0
 void __stdcall function_2919e0(s_ai_scene *arg_0, s_ai_scene_assignment *arg_1, short *arg_2, short arg_3,
 	short arg_4, short arg_5, long arg_6, long arg_7, long arg_8)
 {
-	s_ai_scene *const *local_8 = &arg_0;
-	s_ai_scene_assignment *const *local_9 = &arg_1;
-		s_ai_scene_assignment *local_0 = &(*local_9)[*arg_2];
-	s_291800 *local_1 = &((s_291800 *)(*local_8)->roles)[arg_4];
+	s_ai_scene_assignment *local_0 = &arg_1[*arg_2];
+	s_291800 *local_1 = &((s_291800 *)arg_0->roles)[arg_4];
 	bool local_2 = arg_4 + 1 >= arg_5;
 	long local_3;
 	switch (*(short *)((byte *)local_1 + 4))
@@ -443,13 +445,13 @@ void __stdcall function_2919e0(s_ai_scene *arg_0, s_ai_scene_assignment *arg_1, 
 				++*arg_2;
 				if (*arg_2 >= arg_3)
 					break;
-				local_0 = &(*local_9)[*arg_2];
+				local_0 = &arg_1[*arg_2];
 				*local_0 = *(local_0 - 1);
 			}
 			else
 			{
-				function_2919e0(*local_8, *local_9, arg_2, arg_3, arg_4 + 1, arg_5, arg_6, arg_7, arg_8);
-				local_0 = &(*local_9)[*arg_2];
+				function_2919e0(arg_0, arg_1, arg_2, arg_3, arg_4 + 1, arg_5, arg_6, arg_7, arg_8);
+				local_0 = &arg_1[*arg_2];
 			}
 		}
 	}
@@ -491,12 +493,6 @@ struct s_ai_scene_model
 	s_ai_scene_model_variant *variants;
 };
 
-struct s_ai_scene_unit_header
-{
-	byte unknown00[8];
-	s_ai_scene_unit *unit;
-};
-
 /* the scenes that have started once (ai.cpp) */
 extern void *g_5044d0;
 
@@ -507,8 +503,6 @@ void __stdcall function_2919e0(s_ai_scene *scene, s_ai_scene_assignment *assignm
 
 /* starts a scene (by name) with the actors the ai indices name when its
    trigger conditions hold */
-// score 83 (was 79): the score loop and the final stores pick other
-// registers, and the branches into the shared helpers land elsewhere.
 // @retail 0x291b40
 bool function_291b40(long name, short command_script_index, long ai_index, long ai_index2, long ai_index3)
 {
@@ -604,16 +598,17 @@ bool function_291b40(long name, short command_script_index, long ai_index, long 
 					for (k = 0; k < scene->role_count; k++)
 					{
 						s_ai_scene_actor *actor = &((s_ai_scene_actor *)g_4f55f0->data)[assignment->actor_indices[k] & 0xffff];
+						s_ai_scene_unit *unit = (s_ai_scene_unit *)object_get(actor->unit_index);
 						short variant_index = assignment->variant_indices[k];
 						long local_dbe893 = assignment->variant_names[k];
-						s_ai_scene_unit *unit = ((s_ai_scene_unit_header *)g_4e0300->data)[actor->unit_index & 0xffff].unit;
 						if (((s_ai_scene_unit_variant *)((byte *)unit + unit->variant_offset))->local_dbe893 != local_dbe893 &&
 							local_dbe893 && variant_index != NONE)
 						{
 							s_ai_scene_model *model = (s_ai_scene_model *)g_4e3b44[*(long *)(g_4e3b44[unit->definition_index & 0xffff].bytes + 0x38) & 0xffff].bytes;
 							if (variant_index >= 0 && variant_index < model->variant_count)
 							{
-								s_ai_scene_unit_variant *variant = (s_ai_scene_unit_variant *)((byte *)unit + unit->variant_offset);
+								s_ai_scene_unit *written_unit = (s_ai_scene_unit *)object_get(actor->unit_index);
+								s_ai_scene_unit_variant *variant = (s_ai_scene_unit_variant *)((byte *)written_unit + written_unit->variant_offset);
 								variant->name = model->variants[variant_index].name;
 								variant->local_dbe893 = local_dbe893;
 							}

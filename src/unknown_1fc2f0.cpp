@@ -203,7 +203,13 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // score 56 (was 56): retail loads the float into xmm3 first and then sign
 // extends the word into EDI, while ours writes the word with a 16-bit store
 // to DI and loads the float into xmm0.
-// score 56 (was 56): `long ticks` and a `rate` local give retail's first 21
+// score 56 (was 56): `real rate = g_510c54->rate;` read before the ticks gives
+// retail's first 0x5a bytes (rate kept in xmm3, the three components loaded
+// first) but the tick products land in fresh registers and the correction's
+// last product moves late, one instruction long: rate local with long ticks 64;
+// with the tick scale through local_scale3d 64; tick product and delta per
+// component 64; ticks read first 64; the limit test as !(limit * limit > ...) 56.
+// `long ticks` and a `rate` local give retail's first 21
 // instructions (rate in xmm3, movsx edi, components loaded first) but the tick
 // products go to new registers where retail scales in place 64 (369 bytes);
 // limit from the rate local 68; real ticks at the top 103; real ticks after the

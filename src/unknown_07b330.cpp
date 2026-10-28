@@ -147,6 +147,13 @@ bool __stdcall function_07b140(void *object, long destination, long type, long s
 	return result;
 }
 
+// score 3 (was 3): only the argument setup of the handler call differs, BLOCKED-BY 0x938e0's
+// convention (retail: message type EAX, message ECX, receiver EDX, address on the stack; ours
+// address EAX, message on the stack). Tried: explicit message cast 3; function-scope type 3;
+// storage declared first 3; size declared before type 5; receiver local 3.
+// Round 47: separate dispatcher noinline declarations 3; loop-scoped storage 3;
+// function-scope size 3; function-scope collection 3; explicit member access 3;
+// element-address decode 3; array-address decode 3; 32-bit storage elements 3.
 // @retail 0x7afd0
 bool s_network_message_gateway::read_packet(const s_type_99af70 *address, s_bitstream *stream)
 {

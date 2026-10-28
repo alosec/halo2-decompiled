@@ -166,6 +166,48 @@ static inline real interpolate_linear(real a, real b, real t)
 	return (b - a) * t + a;
 }
 
+// score 96 (was 96): Frame 0x10 and timing setup agree; the advance loop is retail's with EAX, ECX and
+// EDX rotated (direction EAX for ECX, frame/flags ECX for EDX, the flag-2 test EDX for EAX), and retail
+// divides the fraction before the key differences. Round 87: fraction before the keys/between keys and
+// delta with every loop-end order 205..207 (next time leaves its stack home for EBX, though the loop
+// registers then rotate to retail's); loop-end orders with the fraction after delta 96/100; no per-pass
+// disposal reset 96; flags word local for the disposal/restart tests 96; direction-first frame sum 96.
+// Earlier at 100 (was 106): frame 0x10 and next-time setup agree; advancing-frame and interpolation registers differ.
+// frame 0x10 agrees; quotient/next-time setup and frame/index registers differ.
+// frame 0x10 and next-time setup agree; advancing-frame and interpolation registers differ.
+// Next time before elapsed with separate assignments on frame 0x10: 100.
+// Earlier at 106 (was 205): frame 0x10 and next-time stack home recovered; timing and frame registers differ.
+// Next time before elapsed 206; fraction after delta 106 kept (plain); on that frame,
+// frame index outer scope 106, wrap case first 106, type-first disposal 272.
+// Fraction just before delta 204; explicit interval divisor 106; duration-first next-time sum 106; outer delta scope 106; direction-first short sum 106; opening 106 restored.
+// Before the later fraction: frame 0xc versus 0x10; next time in EBX instead of its stack home.
+// Entry disposal 205; shared boundaries 251; shared hold cases 238; final branch order 210; interpolation helper 210; native restart 227.
+// Flags snapshot 205; initial frame count 205; unsigned duration 214; key pointers 222; disposal exit 223.
+// Earlier forms at 106 targeted division setup, quotient and frame/index registers.
+// Short interval count 215; stepped next-time accumulator 106; shared high-boundary reversals 193;
+// wide lookahead with short wrapping 248; conditional elapsed clamp 106; opening body restored.
+// Elapsed before division 111; signed int duration/timing names 106/106; long disposal/restart 191/228;
+// quotient assigned inside the next-time sum 100 (an embedded assignment, not kept); converted fraction divisor/negative hold case
+// order 106/106.
+// Earlier at 106: frame 0x10 agrees; division setup, quotient and frame/index registers differ.
+// Active time anchor 106; next-time anchor before/after division 114/114;
+// late const fraction 106; entry time anchor 114; current-frame/direction values 108/106.
+// Current-based short accumulation in advance/lookahead/both 100/100/100;
+// direction-based accumulation 100/100/100; shared/lookahead playback-mode values 100/174.
+// Advancing/lookahead/both index role names 100/100/100; shared native index at active/loop scope
+// 100/100; offset-delta name alone/with phase indices 100/100; scale helper on recovered frame 114.
+// Timestamp before both local updates/between next and elapsed/after swapped updates/before swapped
+// updates/between elapsed and next 96/96/100/96/96. Keep the minimal next/timestamp/elapsed order,
+// plain-confirmed 96 at 657/657; the complete loop-end timing stream now agrees.
+// Disposal result from tests 128; restart result from tests 208; result declaration order/role
+// names 96/96; live key table 96; key records on recovered timing 217; advance/lookahead direction
+// retention 96/96. All forms restored; native direction/frame and lookahead/fraction carriers
+// remain.
+// Indexed/forced/indexed-forced interpolation 244/96/244; point return alone/with loop 96/138;
+// advancing-iteration flags/count/both 214/96/214. Original interpolation helper and body restored;
+// frame/timing agree, direction/frame and lookahead/fraction carriers remain.
+// Existing point interpolation helper: eight point/vector/ratio/output parameter
+// orders all 96; original helper, calls and timing stream restored.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {
@@ -179,8 +221,8 @@ void c_class_1a2c81::update(dword time)
 		long frame_time;
 
 		frame_time = animation.value20 / (animation.value8 - 1);
-		elapsed = time - animation.end_time;
 		next_time = animation.end_time + frame_time;
+		elapsed = time - animation.end_time;
 		dispose = false;
 
 		while (time >= next_time)
@@ -248,8 +290,8 @@ void c_class_1a2c81::update(dword time)
 				animation.valuea = frame;
 			}
 			next_time += frame_time;
-			elapsed -= frame_time;
 			animation.end_time = time;
+			elapsed -= frame_time;
 		}
 
 		if (!dispose)
@@ -306,9 +348,9 @@ void c_class_1a2c81::update(dword time)
 			{
 				elapsed = 1;
 			}
-			t = (real)elapsed / (real)frame_time;
 			keys = (s_widget_animation_key *)animation.target;
 			vector3d_from_points3d(&keys[animation.valuea].offset, &keys[next].offset, &delta);
+			t = (real)elapsed / (real)frame_time;
 			function_x697631(&keys[animation.valuea].offset, &delta, t, &animation.offset);
 			keys = (s_widget_animation_key *)animation.target;
 			animation.scale = (keys[next].scale - keys[animation.valuea].scale) * t + keys[animation.valuea].scale;

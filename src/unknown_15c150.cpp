@@ -44,6 +44,11 @@ void __stdcall function_15ae70(s_netgame_entry_state *entries);
 void function_162de0();
 void teleporters_update();
 bool function_15eb20(long player_index);
+bool function_15eaf0();
+long function_146650(void);
+long players_first_active_local_player(void);
+long function_14de10(long index);
+long function_14de70(long local_player_index);
 void function_15b270(long player_index);
 void __stdcall function_15bb20(long player_index);
 void function_161f30(long player_index);
@@ -59,34 +64,6 @@ void function_15ed60();
 bool function_158a50(long player_index);
 static __forceinline long real_to_long(real value);
 
-PRIVATE inline long transition_local_player_next_15c150(long index)
-{
-	long result = NONE;
-	for (long i = index == NONE ? 0 : index + 1; i < 4; ++i)
-	{
-		if (g_4e8c20->entries[i] != NONE)
-		{
-			result = i;
-			break;
-		}
-	}
-	return result;
-}
-
-// score 196 (was 196): delayed EBP save, team-byte home and word slot spill.
-// Cursor player 253; count at loop tail 199; both 257; signed/unsigned
-// word team counters 248; tail count plus word team counter 252.
-// early EBP save, teams byte home and local-slot spill differ;
-// unsigned count 242; short count 249; byte team 248; shared crowded with word slot 248; indexed fade with word slot 196.
-// score 196 (was 196): early EBP save, team-byte home and local-slot spill remain.
-// Shared iterator 196; typed pooled player 196; native team bitfield 196; all three 196;
-// direct four-slot traversal 351; with shared types 351; with native bitfield 351; all 351.
-// score 196 (was 196): delayed EBP save, team-byte home and word local-slot spill remain.
-// Per-use first-loop datum 196; short/byte/word teams predicates 196/196/196; datum plus short teams 196;
-// shared entry/callback getters 196/196; both getters with per-use datum 196, all plain-confirmed.
-// early EBP save, team-byte home and local-slot spill differ.
-// Complete iterator/cursor clear 263/263; word/byte population 250/245;
-// live pool ordinal 241; unsigned datum 196; complete iterator with ordinal 264; plus byte population 244.
 // @retail 0x15c150
 void function_15c150()
 {
@@ -98,11 +75,11 @@ void function_15c150()
 		function_15ae70((s_netgame_entry_state *)((byte *)g_4e9ae8 + 0x7dc));
 		function_162de0();
 		if (g_4e6948->mode != 4) teleporters_update();
+		long count = 0;
 		s_transition_player_iterator iterator;
 		iterator.data = g_4e8c24;
-		iterator.datum_index = NONE;
 		iterator.absolute_index = NONE;
-		long count = 0;
+		iterator.datum_index = NONE;
 		while (player_iterator_next((long *)&iterator))
 		{
 			long index = iterator.datum_index;
@@ -112,10 +89,9 @@ void function_15c150()
 #pragma inline_depth()
 			{
 				byte *player = g_4e8c24->data + (index & 0xffff) * 0x21c;
-				long unit_index = *(long *)(player + 0x2c);
-				if (unit_index != NONE)
+				if (*(long *)(player + 0x2c) != NONE)
 				{
-					byte *unit = *(byte **)(g_4e0300->data + (unit_index & 0xffff) * 12 + 8);
+					byte *unit = *(byte **)(g_4e0300->data + (*(long *)(player + 0x2c) & 0xffff) * 12 + 8);
 					*(real *)(unit + 0xf0) = 0.0f;
 				}
 			}
@@ -129,12 +105,10 @@ void function_15c150()
 		*(long *)((byte *)globals + 0xc0c) = count > 8;
 		if (count > 8) *(word *)((byte *)globals + 0xc10) |= 1;
 		else *((byte *)globals + 0xc10) &= ~1;
-		if (g_55e4d0[globals->engine_index])
+		if (function_15eaf0())
 		{
-			bool teams = (*((byte *)g_4e6948 + 0x184) & 1) != 0;
-			if (teams)
-				for (long team = 0; team < 8; ++team)
-					if (function_161e10(team)) function_15ba90(team);
+			for (long team = 0; team < 8; ++team)
+				if (function_161e10(team)) function_15ba90(team);
 		}
 		g_55e4d0[globals->engine_index]->p18();
 		if (g_4e6948->mode != 4)
@@ -151,12 +125,9 @@ void function_15c150()
 			(g_4e6948->mode == 4 || globals->lc04 == 1))
 			*(short *)((byte *)globals + 0xfa) = 0;
 		else ++*(short *)((byte *)globals + 0xfa);
-		for (word local = transition_local_player_next_15c150(NONE); local != (word)NONE;
-			local = transition_local_player_next_15c150(local))
+		for (long local = players_first_active_local_player(); local != NONE; local = function_14de10(local))
 		{
-			long index = NONE;
-			if (local != (word)NONE)
-				index = g_4e8c20->entries[local];
+			long index = function_14de70(local);
 			if (index != NONE)
 			{
 				byte *player = g_4e8c24->data + (index & 0xffff) * 0x21c;
@@ -177,7 +148,7 @@ void function_15c150()
 						(*(long *)(player + 0x2c) == NONE && !function_158a50(index) &&
 						(g_510c54->game_time - *(long *)((byte *)globals + 0x70) < 0 ? 0 : g_510c54->game_time - *(long *)((byte *)globals + 0x70)) > g_510c54->field_2_3))
 					{
-						if (g_510c54->game_time > real_to_long((real)g_510c54->field_2_3 * 1.5f))
+						if (function_146650() > real_to_long((real)g_510c54->field_2_3 * 1.5f))
 						{
 							real value = *fade - 3.0f / (real)g_510c54->field_2_3;
 							*fade = value < 0.0f ? 0.0f : value;

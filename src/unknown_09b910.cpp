@@ -973,7 +973,7 @@ bool c_projectile_effect_event::v10(long a, void *data, s_bitstream *stream)
 
 struct s_effect_owner;
 __declspec(noinline) void *function_122c10(long group_tag, long tag_index);
-void function_fcbc0(point3f const *point, vector3f const *normal, long definition_index,
+void function_fcbc0(long definition_index, point3f const *point, vector3f const *normal,
  s_effect_owner const *owner, bool attached, bool airburst);
 void function_fcdd0(long definition_index, point3f const *point, vector3f const *forward);
 void function_fcea0(long effects_index, point3f const *point, vector3f const *direction,
@@ -987,8 +987,8 @@ bool c_projectile_effect_event::v11(long a, long const *entities, long c, void c
  if (event->flags && event->object_name != NONE && function_122c10(0x70726f6a, event->object_name))
  {
   if (event->flags & 3)
-   function_fcbc0((point3f const *)event->position, (vector3f const *)event->direction,
-    event->object_name, 0, (event->flags & 2) != 0, false);
+   function_fcbc0(event->object_name, (point3f const *)event->position,
+    (vector3f const *)event->direction, 0, (event->flags & 2) != 0, false);
   if (event->flags & 8)
    function_fcdd0(event->object_name, (point3f const *)event->position, (vector3f const *)event->direction);
   if (event->flags & 4)
@@ -1263,6 +1263,21 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
     return result;
 }
 
+// score 32 (was 32): +0x12 device/unit EDI/EBP roles differ; the second
+// type mask lacks the saved EBX temporary and header-base copy. Earlier guard,
+// declaration/result lifetime, header/table and unsigned-mask forms gave 32-54.
+// Tried: named device mask 32; named unit mask 32; both masks 32; byte suppression
+// bitfields 35; byte flags view 35; byte bitfields with masks 35; combined header
+// predicates 39; byte flags with masks 35. Opening executable body restored.
+// Device/unit saved registers and the second mask temporary differ.
+// constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53; byte mask 35; typed word slots 69; shifted membership masks 38.
+// score 32 (was 32): complete device/unit classification 32/32/32; deferred eligibility 49/51;
+// negative classification exits 32; explicit membership 53; contiguous byte domains 66.
+// Retail's EBX mask temporary and `mov eax, esi` copy say a second table value is live in EAX
+// during the unit type test. Device-first guard with typed table reads and an object local 33; the
+// same with the object read from a re-read table 33, or through the existing object_get 33; device
+// and unit header pointers 52; unit header pointer from a re-read table 54; re-read table for both
+// unit reads 54 (device then sits in EDI as in retail, but the table moves to EDX).
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

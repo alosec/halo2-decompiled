@@ -17,6 +17,11 @@ struct c_d : c_shape_user_base
 {
 
 	virtual ~c_d();
+	static void __cdecl operator delete(void *block)
+	{
+		// This concrete class owns a fixed twelve-byte tag-0x22 allocation.
+		g_480118->allocate((long)block, 0xc, 0x22);
+	}
 	virtual void *v3() { return 0; }
 	virtual long v5();
 	virtual void v6() {}
@@ -360,7 +365,8 @@ struct s_surface_flags
 
 struct s_surface_list
 {
-	byte field_0[0x2c];
+	byte field_0[0x28];
+	long count;
 	s_surface_flags *surfaces;
 };
 
@@ -662,23 +668,17 @@ long function_1ef810(long index)
  return index;
 }
 
-// score 22 (was 53): retail reads the globals pointer inside the branch that uses it, where
-// ours reads it before the surface count is checked, and retail copies the count into a second
-// register before the flag test. The early read is what keeps our register pushes ahead of the
-// count test: with the globals read inside the kind 1/2 branch (as retail) that branch matches
-// but the pushes sink below the count adjustment and the loop pads differently (128). Tried with
-// the read moved: `dword last` (128), `last` tested in place of count (128), the flag test nested
-// with last = count - 1 (128), the objects pointer read first (123), the key decoded before the
-// count test (132), the count as an inline helper returning count - 1 (22, a select in place of
-// retail's dec, pushes still sunk).
+/* the key after the given one: the next surface, instance or object choice */
 // @retail 0x1ef6d0
 dword c_shape_global_owner::next_key(dword key)
 {
- s_surface_globals *globals = (s_surface_globals *)g_4e0348;
  s_surface_list *world = (s_surface_list *)g_4e0340;
- long count = *(long *)((byte *)world + 0x28);
- long last = count;
- if (count > 0 && (world->surfaces[last - 1].flags & 0x10)) --count;
+ long count = world->count;
+ if (world->count > 0)
+ {
+  s_surface_flags const *last = &world->surfaces[world->count - 1];
+  if (last->flags & 0x10) --count;
+ }
  long *objects = g_51e9cc;
  long index = key & 0xffff;
  long position = (key >> 16) & 0x1fff;
@@ -690,6 +690,7 @@ dword c_shape_global_owner::next_key(dword key)
  }
  if (kind == 1 || kind == 2)
  {
+  s_surface_globals *globals = (s_surface_globals *)g_4e0348;
   if (globals->count > 0)
   {
    for (; index < globals->count - 1; ++index)

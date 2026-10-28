@@ -54,6 +54,12 @@ void __stdcall function_2138f0(long arg_0, long arg_1);
 void function_213970(void);
 
 #pragma optimize("s", on)
+// score 145 (was 145): retail clears two storage blocks; separate globals require separate clears and
+// cache-load scheduling differs. Tried language dirty first 145; version dirty first 145; current version
+// tail 152; reset enabled first 145; scalar reset phase 145; forced language inline 169.
+// Without the size pragma 172; stores in address order 145 (184 without the pragma); chained
+// zero/NONE stores 145; language read at each use 143 (199 without the pragma). The two blocks
+// are 0x557c90..0x55b4ec and 0x55b4f0..0x55c030; their globals are defined in three other files.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

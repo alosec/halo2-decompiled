@@ -33,7 +33,10 @@ This is the procedure for one function, written for a person or a subagent.
      same registers.
 2. **Find related source.** It may be:
    - the function of the same name in the Halo CE decompilation
-     (punpckhdq/halo, CC0);
+     (punpckhdq/halo). It was CC0 until commit `8bde956` (2026-10-17) and is
+     AGPL-3.0 since; its fork bnunu/halo-1 is still CC0. The AGPL revisions
+     may be read to understand a function, but copy nothing from them: no
+     code, names or structure;
    - a neighbouring matched function;
    - the structures in `include/`.
 3. **Write the function** in the `src/` file it belongs to. Group functions by
@@ -271,7 +274,7 @@ outright. The checker's game totals count only `game` rows.
 ## Havok
 
 Havok, the physics library linked into the game, is decompiled too: its rows
-in `config/functions.csv` have the `owner` `third:havok` (1,041 functions,
+in `config/functions.csv` have the `owner` `third:havok` (1,436 functions,
 mostly `0x2d0000`–`0x31ffff`). `python tools/check.py` counts them on their
 own line, and `python tools/ready.py --owner third:havok` lists the ones ready
 to write. It is easier than the game code in one way: Havok was a prebuilt

@@ -542,6 +542,10 @@ PRIVATE __forceinline s_flock *function_295321(s_active_flock_iterator *arg_0, b
 // Boolean step 99; outer scenario entry 99; outer radius 99; zero iterator 110;
 // point memcpy 99; point value copy 103; const entry 99; byte activity 99.
 // Original iterator and private step retained.
+// score 99 (was 99): the shared step's not-found arm stores NULL, so the walk's test is
+// threaded to the exit (retail joins it). flock_iterator_next as the step 125; scenario
+// view local in the body 99; ticks without its local 99; radius as a ternary 107; a flock
+// pointer local 99.
 // @retail 0x295320
 void function_295320(point3f const *point)
 {
@@ -577,6 +581,12 @@ void function_295320(point3f const *point)
 // compares the loaded name with the argument on the stack. Tried: the step
 // body written out in flock_iterator_next 69; early returns 73; the result in
 // the loop condition 70; function_295321 as the step 72; name == entry 69.
+// score 69 (was 69): the shared step with its result preset to NULL (no store
+// in the not-found arm) and function_295321 as the wrapper 49 (191 bytes;
+// retail's join and test), but 14 matched iterator users elsewhere stop
+// matching, so not kept; the preset after the scan 85; not-found arm first 84;
+// the preset alone 69. Left: the zero sits inside the active block (retail:
+// loop top), the found arm is placed last, and the registers rotate.
 // @retail 0x2958a0
 long function_2958a0(long name)
 {

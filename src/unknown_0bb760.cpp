@@ -460,7 +460,20 @@ hsv3f *function_1318d0(color3f const *rgb, hsv3f *hsv);
 color3f *function_131a00(hsv3f const *hsv, color3f *rgb);
 void function_3dd10(long object_index, bool force);
 
-// score 122 (was 138): second remainder store, signed scan exits and constant reload still differ.
+// score 84 (was 84): the first scan's `!=` exits (retail's signed `<` loop unrolls by 4 in every
+// for/while/field/shared-counter form, 637-647; short counter 252; a compile-only probe shows the
+// unroll comes from the float weight sum and survives every counter, bound and accumulator
+// spelling), blend's stack slot, the inverse subtraction (retail's is in the blend block, with 1.0
+// reloaded at the not-found exit) and the 1.0/0.0 load order.
+// Round 53: the inverse at the top of the found block gives retail's blend slot, subtraction and
+// 1.0/0.0 order but loses the 1.0 reload at the not-found exit (one instruction short) 132f; with
+// the variant byte read before the blend value 123f, read at its uses 134f; with a pre-incremented
+// selection test 132f; 30 declaration/clamp orders with it 120-134 (screened); seed names and a
+// named choices pointer (screened) don't move the slots.
+// Earlier 122 (was 138): second remainder store, signed scan exits and constant reload still differ.
+// Blend and cached-choice homes, signed scan exits, inverse placement and constant reload still differ.
+// Frame 0x54 agrees; remainder publication/home, signed scan exits and fallback one reload remain.
+// Frame 0x54 agrees; blend/choice homes, signed scan exits, inverse placement and fallback one reload remain.
 // Distinct seeds 138; last before weight 136; accumulator first 134;
 // signed variant ordinal 138; const choices 138; unsigned variant key 138;
 // skipped-choice loop 138; threshold first 144. Original full-length scan loops retained.
@@ -477,7 +490,7 @@ void function_3dd10(long object_index, bool force);
 // Variant between native remainder and rounding 213; variant assigned at metadata test 134;
 // immutable early variant 122; output element reference 131; metadata entry reference 122;
 // twice-used choice key 131; late mixed HSV workspace 122; selected choice reference 122.
-// score 122 (was 122): remainder publication, saved color roles and signed scan exits still differ.
+// Earlier 122 (was 122): remainder publication, saved color roles and signed scan exits still differ.
 // lower HSV reused 199f; upper HSV reused 203f.
 // weighted selection reused 122f; cumulative weight reused 122f.
 // shared scan ordinal 122f; short variant ordinal 263f.
@@ -490,14 +503,25 @@ void function_3dd10(long object_index, bool force);
 // both 149; early presence predicate 131; default/supplied/final color
 // memcpy 213/213/213; base-color name 122; model-first guard 150; shared
 // model handle with that guard 232. Original copies and observations retained.
-// score 122 (was 122): variant/remainder publication, saved roles and scan exits differ.
+// Earlier 122 (was 122): variant/remainder publication, saved roles and scan exits differ.
 // Live choice count 122; choice-count field reference 213; signed weight bound 630;
 // unequal-end for 122; inverse blend at uses 168; eligibility equality first 122;
 // eligibility predicate value 213; actual object variant field 122. Opening body retained.
-// score 122 (was 122): output/delta roles, variant timing, scan exits and one reload differ.
+// Earlier 122 (was 122): output/delta roles, variant timing, scan exits and one reload differ.
 // Full-width variant 273; eligibility first 122; early choice weight 131; complete clamp value
 // with output reload/direct dual publication 341/341; separate wrapped hue 218; unsigned choice
 // token declaration and receiver 122; weighted upper-channel scalar values 134.
+// Earlier 84 (was 122): variant byte read after the blend value (registers now retail's), last
+// before weight, inverse computed at the top of the blend branch. Still differs: the first scan's
+// `!=` exits (retail's signed `<` loop unrolls by 4 in every for/while/field/shared-counter form,
+// 637-647; short counter 252), blend's stack slot, the inverse subtraction (retail's is in the
+// blend block, with 1.0 reloaded at the not-found exit) and the 1.0/0.0 load order.
+// Second scan as for 196; found flag in its condition 403/406; renames 84; named choices pointer
+// 208/238; select-then-blend 132, with the inverse after the loop 188.
+// Round 186: One seed scope, output orders selection/blend and blend/selection, 84/84; both with blend-entry inverse 132/132; separate seed scopes in both orders 84/84, with inner inverse 132/132.
+// Upper-first conditional/branches 201/244; lower-upper/upper-lower clamp stages 273/252; per-channel values lower/upper-first 240/243; all channel values lower/upper-first 245/254.
+// Direct rounded seeds 84; shared double hue delta 156; both 156; symmetric six HSV products 84;
+// products/direct seeds 84; products/delta 156; all three 156; positive hue arm on all three 156.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -525,8 +549,8 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                 real seed = (real)fabs((*(real *)(object + 0x6c) * 744.1241455078125f + *(real *)(object + 0x64) * 315.89312744140625f + index * 431.1289367675781f) + *(real *)(object + 0x68) * 587.1294555664062f);
                 real selection = (real)fmod((double)seed, 1.0);
                 seed = (real)fabs(index * 0.7121099829673767f + *(real *)(object + 0x68));
-                char variant_index = *(char *)(object + 0xb1);
                 real blend = (real)fmod((double)seed, 1.0);
+                char variant_index = *(char *)(object + 0xb1);
 
                 if (variant_index != NONE && *(long *)(definition + 0x38) != NONE)
                 {
@@ -540,8 +564,8 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                     s_colour_choice_ab *choice = &entry->choices[j];
                     if (!choice->field_1c_4 || choice->field_1c_4 == variant)
                     {
-                        weight += choice->weight;
                         last = j;
+                        weight += choice->weight;
                         eligible |= 1 << j;
                     }
 
@@ -549,6 +573,7 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                 }
                 if (eligible && weight > 0.0f)
                 {
+                    real inverse = 1.0f - blend;
                     real cumulative = 0.0f;
                     real target = selection * weight;
                     long j = 0;
@@ -561,7 +586,6 @@ void __stdcall function_be240(long object_index, dword color_mask, color3f const
                             if (j == last || cumulative >= target)
                             {
                                 hsv3f a, b, mixed;
-                                real inverse = 1.0f - blend;
                                 function_1318d0(&choice->lower, &a);
                                 function_1318d0(&choice->upper, &b);
                                 if (fabs(a.hue - b.hue) > 0.5f)
@@ -634,6 +658,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // Direct size/24 count 161; const base, entry and function views 91;
 // unsigned count 171; component clamp loop 91; scale loop and both loops 90
 // (one-count gain rejected).
+// score 91 (was 91): current takes edi (the 0x131c20 result register) where retail gives the
+// blend function pointer edi and current ebx, base on the stack. Current declared first 91;
+// count before base 174; current from base each pass 98; copy before the entry 133; memcpy copy 91.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

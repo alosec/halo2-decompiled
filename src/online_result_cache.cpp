@@ -53,30 +53,36 @@ void online_result_query_finish(s_type_9df9da *task);
 bool online_result_register(s_online_cached_result *record, IN_ADDR *address);
 void online_result_shuffle(dword count, s_online_cached_result *records);
 void online_result_describe(char *text, const s_online_cached_result *record);
+long sound_random_range(short lower, short upper);
 char *online_result_format(char *text, const char *format, ...);
 char *online_result_append(char *text, const char *format, ...);
 dword online_result_text_length(const char *text);
 
+/* the logon test is written out: calling the inline online_logon_connected()
+   compiles to the same code, but the extra inline expansion moves LTCG's
+   whole-program inlining enough that 0x73360 stops matching */
 // @retail 0xb36c0
 bool online_result_service_connected(void)
 {
+    bool logon_succeeded = false;
+    bool connected;
     if (g_467214 != NONE)
     {
         switch (online_task_get_logon_status(g_467214))
         {
         case 1:
-        {
-            bool connected = false;
-            for (long i = 0; i < 13; i++)
-                if (g_467178[i].service_id == 0x4d530064)
-                    connected = g_467178[i].connect;
-            if (connected)
-                return true;
+            logon_succeeded = true;
             break;
         }
-        }
     }
-    return false;
+    if (logon_succeeded)
+    {
+        connected = false;
+        for (long i = 0; i < 13; i++)
+            if (g_467178[i].service_id == 0x4d530064)
+                connected = g_467178[i].connect;
+    }
+    return logon_succeeded && connected;
 }
 
 // @retail 0xb3700
@@ -95,6 +101,7 @@ void online_result_cache_update(void)
         online_result_query_finish(task);
 }
 
+// score 18 (was 18): retail re-reads `*address` after storing the registered index (ours forwards the value) and leaves the registered arm through its own `mov al, 1` exit; tried: an early `return true` from the registered arm 64, one exit with `result = true` in the cached arm (as an `else`) and the registered arm 16; that exit plus the block 0x510588..0x5107e8 as one address-taken struct (retail clears 0x510580..+0x268 with one memset) matches, but the full link then loses 0x73360 (BLOCKED-BY 0x73360). 0x73360's loss is accepted since #763; lane 9 round 24 matched this way (with 0xb3970), but the struct changes 0xb3b10's and 0xb3b70's bodies, which are a contributor's finished code (#9), so it is held.
 // @retail 0xb3770
 bool online_result_get_address(long index, IN_ADDR *address)
 {
@@ -120,22 +127,25 @@ bool online_result_get_address(long index, IN_ADDR *address)
 long online_result_query_start(void)
 {
     long index = online_task_new_if_logged_on();
-    s_type_9df9da *task = online_task_try_get(index);
-    if (task)
+    if (index != NONE)
     {
-        dword attributes[8] = { 0, 0, 0x80200001, 0x24,
-            0x80200002, 8, 0x80200003, 0x10 };
-        if (XOnlineQuerySearch(0xaaaa, 1, 0, 8, 4, attributes,
-            0, NULL, NULL, &task->handle) >= 0)
+        s_type_9df9da *task = online_task_try_get(index);
+        if (task)
         {
-            task->flags = 1;
-            task->type = 0x28;
-            task->controller_index = NONE;
-        }
-        else
-        {
-            function_6b640(index);
-            return NONE;
+            dword attributes[8] = { 0, 0, 0x80200001, 0x24,
+                0x80200002, 8, 0x80200003, 0x10 };
+            if (XOnlineQuerySearch(0xaaaa, 1, 0, 8, 4, attributes,
+                0, NULL, NULL, &task->handle) >= 0)
+            {
+                task->flags = 1;
+                task->type = 0x28;
+                task->controller_index = NONE;
+            }
+            else
+            {
+                function_6b640(index);
+                index = NONE;
+            }
         }
     }
     return index;
@@ -146,16 +156,14 @@ void online_result_shuffle(dword count, s_online_cached_result *records)
 {
     for (dword i = 0; i < count - 1; i++)
     {
-        dword seed = g_4e7408->seed * 1664525 + 1013904223;
-        g_4e7408->seed = seed;
-        short chosen = (short)i + (short)(((seed >> 16) *
-            ((short)count - (short)i)) >> 16);
+        long chosen = sound_random_range((short)i, (short)count);
         s_online_cached_result temporary = records[i];
         records[i] = records[chosen];
         records[chosen] = temporary;
     }
 }
 
+// score 14 (was 14): describe's text argument: retail recomputes `lea eax, [esp+0x14]`, ours copies edi; tried: describe's parameters as (record, text) 14, `(char *)&text` 14, a text struct with format/append and describe on its member and address 14, all calls through a force-inline accessor 14; a text struct whose force-inline accessor feeds format/append while describe gets the plain buffer matches, but every such form makes the full link lose 0x73360 (BLOCKED-BY 0x73360). 0x73360's loss is accepted since #763; lane 9 round 24 matched this way (the shared text type and the 0x510588 block struct), but that changes 0xb3b10's and 0xb3b70's bodies, which are a contributor's finished code (#9), so it is held.
 // @retail 0xb3970
 void online_result_query_finish(s_type_9df9da *task)
 {
@@ -195,17 +203,22 @@ bool online_result_register(s_online_cached_result *record, IN_ADDR *address)
         g_5107e4++;
         if (XNetTsAddrToInAddr((TSADDR *)&record->address, 0x4d530064,
             &record->key_id, address) == 0)
-            return true;
-        text[0] = 0;
-        if (g_5107e0.s_addr)
         {
-            XNetConnect(g_5107e0);
-            g_5107e0.s_addr = 0;
+            result = true;
         }
-        XNetUnregisterKey(&record->key_id);
-        g_5107e4--;
-        online_result_format(text, "XNetTsAddrToInAddr() failed in register_ip_and_key() with error code %s.  ", 0);
-        online_result_describe(text, record);
+        else
+        {
+            text[0] = 0;
+            if (g_5107e0.s_addr)
+            {
+                XNetConnect(g_5107e0);
+                g_5107e0.s_addr = 0;
+            }
+            XNetUnregisterKey(&record->key_id);
+            g_5107e4--;
+            online_result_format(text, "XNetTsAddrToInAddr() failed in register_ip_and_key() with error code %s.  ", 0);
+            online_result_describe(text, record);
+        }
     }
     return result;
 }

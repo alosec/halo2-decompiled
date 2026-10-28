@@ -93,10 +93,20 @@ public:
 	void function_2fd8d0(description_2fd8d0 *out) const;
 };
 
-// score 31 (was 35): register choice only: in the vertex loop retail keeps
+// score 31 (was 31): register choice only: in the vertex loop retail keeps
 // the block offset in edx and blocks in eax and switches on eax, ours the
 // reverse (the planes branch now matches, with planes_wanted read into a local
 // for the allocation). Other forms of the block address do not move it.
+// Further trials: descending or high cases first 31; direct indexed inputs
+// 29; a full block value 214; coordinate-array block 31; direct array
+// inputs 29; existing output index helper 31; direct inputs with index helper 29.
+// The early base load and EAX/EDX ownership still differ.
+// Further trials: block shift 108; lane remainder 97; both 97; short
+// selector 70; lane helper parameter order 31; forced lane helper inline 31;
+// zero component first 31; short selector with zero first 70.
+// Further trials: double lane result 31; pointer input 31; both 230;
+// unsigned selector 31; conditional lane tests with signed/unsigned selector
+// 80/80; output pointer traversal alone/conditional lane tests 121/116.
 // @retail 0x2fd8d0
 void blocked_convex_2fd8d0::function_2fd8d0(description_2fd8d0 *out) const
 {

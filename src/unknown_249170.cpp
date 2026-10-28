@@ -76,6 +76,26 @@ PRIVATE __forceinline vector3f *function_249171(real arg_0, vector3f *arg_1)
 	return arg_1;
 }
 
+// score 82 (was 82): per-case stack homes (conversion temporaries, angles, seed and
+// extents) differ in cases 0, 1, 5, 7 and 9; also the case 1/9 fsin/xorps order, the side
+// test's ucomiss operands and the first normalisation product (scale first in retail, one
+// byte shorter, which also moves the jump table by four bytes).
+// Round 129: side test with the converted value on the left 81 (fixes the ucomiss only);
+// random draws as `real x = function_x82e52f(seed, NULL, 0); x *= k;` 82 (same code; as one
+// product 554 in screen terms); named inverse local 82; the speed scale through the existing
+// scale helper 91 (2348 bytes, but its loads merge); swap plus direct draws 81. Screened:
+// local renames in case 0 (no slot change), `> 0.f`/reversed zero tests 109/114, an
+// in/out-pointer scale helper in every operand order 100.
+// Before: whole input vector 167, staged output 152, component loop 546, compound loop 546,
+// input snapshot/reverse stores 167, scaled components 106, aggregate output 152, snapshot
+// loop 586; matching 0x1c frame; earlier per-case expression forms excluded; with unqualified
+// scale inputs: ordinary inputs 106; existing scale helper 106; shared squared length 106;
+// shared azimuth 99; shared polar 329; shared shape scalars 416; scalar name order 106; case
+// declarations first 106; lifetime clamp 106; property inline/noinline 106/106; random-vector
+// inline/noinline 106/106; ordinary inverse inline 136; native side test 359; shared side
+// sign 345; ring/sphere/both shared position producers 94/84/96; cone/disk point setters
+// 84/95; shared/named direction workspace 380/82; all position helpers 111;
+// direction/seed/reverse case orders 319/575/518.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

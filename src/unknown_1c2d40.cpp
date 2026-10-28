@@ -22,43 +22,7 @@ PRIVATE __forceinline void *function_1c2d41(long arg_0, long arg_1)
  return local_0;
 }
 
-class c_2df9d0
-{
-public:
- virtual hkBool function_2df9d0(void const *arg_0, void const *arg_1) = 0;
-};
-struct s_contact_body_view;
-class c_contact_shape_container;
-class c_contact_rule_filter
-{
-public:
- virtual hkBool accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
-  c_contact_shape_container *container, long key);
- virtual ~c_contact_rule_filter() {}
-};
-class c_2df8f0
-{
-public:
- virtual hkBool function_2df8f0(void const *arg_0, void const *arg_1, long arg_2) = 0;
- virtual ~c_2df8f0() {}
-};
-class c_2dfae0
-{
-public:
- virtual hkBool function_2dfae0(void const *arg_0, void const *arg_1) = 0;
-};
-class c_2dfbf0 : public c_havok_reference_counted, public c_2df9d0,
- public c_contact_rule_filter, public c_2df8f0, public c_2dfae0
-{
-public:
- c_2dfbf0();
- virtual hkBool function_2df9d0(void const *arg_0, void const *arg_1);
- virtual hkBool function_2df8f0(void const *arg_0, void const *arg_1, long arg_2);
- virtual hkBool function_2dfae0(void const *arg_0, void const *arg_1);
- void function_2df950(long arg_0, long arg_1);
- void function_2df990(long arg_0, long arg_1);
- byte field_18[0x9c - 0x18];
-};
+#include "pair_filter_class.h"
 class c_1c3450;
 void function_1c3450(c_1c3450 *arg_0);
 class c_1c2d40 : public c_2dfbf0
@@ -259,7 +223,7 @@ void function_1c2d40()
  local_0->function_2df990(2, 14);
  local_0->function_2df990(13, 9);
  ((c_3101c0 *)g_51e9a4)->function_310900(local_0, s_30cb70(false));
- havok_reference_remove(local_0);
+ havok_reference_remove((c_havok_reference_counted *)local_0);
  function_1c3a40(((c_3101c0 *)g_51e9a4)->field_c8);
  if (g_47f06f)
   function_2dadb0(g_51e9a4);

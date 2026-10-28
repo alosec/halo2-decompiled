@@ -304,9 +304,15 @@ PRIVATE __forceinline s_qos_handle *search_qos_handle(long handle)
 	return result;
 }
 
-// @retail 0xb3200
 // score 2 (was 73): retail sets up the qos result argument before it pushes the
-// target index, as when qos_target_result takes the index before the result
+// target index, as when qos_target_result takes the index before the result: a copy
+// of it taking (handle, index, result) makes this function match, and its callers
+// 0x2b6e55 and 0x6f4b0 still match. The reorder needs its calls in the held
+// src/unknown_075870.cpp and src/unknown_2b116a.cpp and in contributor 0x905a0's file.
+// Tried: the result pointer named before the call 2; a named success result 2; the
+// entries typed and indexed in full at each use 190; the entry as &entries[i] 2; a
+// result pointer local for every qos field 68.
+// @retail 0xb3200
 void function_b3200(void)
 {
 	union
@@ -374,7 +380,7 @@ void function_b3200(void)
 				if (status == 2 || status == 5)
 				{
 					entry->reply_received = true;
-					entry->qos_valid = qos_target_result(g_4d8ef4, &entry->qos, i);
+					entry->qos_valid = qos_target_result(g_4d8ef4, i, &entry->qos);
 					if (entry->qos_valid && entry->qos.data_size > 0)
 					{
 						if (session_description_decode_buffer(entry->qos.data_size, entry->qos.data, description))

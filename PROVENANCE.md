@@ -19,7 +19,7 @@ from leaked or internal material.
   (`tools/functions.py`), the build and the byte-for-byte checker
   (`tools/check.py`).
 - Publicly released documentation, and source code published by its authors
-  under a licence that permits reuse.
+  under a licence compatible with GPL-3.0-or-later.
 - Independent research by others that was published openly, with credit. An
   example is BirchWoodGod/halo2-decomp's published analysis (see the README's
   Credits section); each lead taken from it was verified against the retail
@@ -127,7 +127,10 @@ and remediated as described below; item 3 is still under review.
    Please report any name the checks have missed.
 3. **Halo CE reference names.** Some names follow the public Halo: Combat
    Evolved decompilation (punpckhdq/halo). How that project derived its names
-   is being reviewed.
+   is being reviewed. It was CC0 until commit `8bde956` (2026-10-17) and is
+   AGPL-3.0 since; its fork bnunu/halo-1 is still CC0. The AGPL revisions may
+   be read for understanding only: no code, names or structure are copied from
+   them.
 4. **Contributor documentation.** Several files in `docs/`, written by
    contributors, described using the 2003 linker maps to identify functions
    and file boundaries. Those passages have been removed, and the names the

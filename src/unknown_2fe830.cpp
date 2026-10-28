@@ -178,11 +178,20 @@ inline float dot3_2fe830(__m128 const &a, __m128 const &b)
 	return result;
 }
 
-// score 207 (was 207): the code matches retail but for the stack layout
+// score 8 (was 8): frame 0x128 and homes agree; placement-copy source and
+// body stores/configuration schedule differ. Earlier result name and input-first
+// declarations tied. Vector record copy 379; direct vector stores 8; distance
+// getter inlining 8; reset limit first 17; reset inlining 8; vector assignment
+// inlining 8; product-helper inlining 8; point/normal setter inlining 8.
+// the code matches retail but for the stack layout
 // (retail closest collector at esp+0x30 and the cast result at esp+0x60, here
 // the reverse) and esi and edi holding the first body and the input the other
 // way round; renaming the result and declaring the input first do not change
 // either.
+// score 8 (was 8): Frame and homes agree; placement-source and child-body setup schedule differ.
+// Stored placement reference 20; complete body copy 186; source fields set at init 8; full member
+// initializers 10; collector after placement 21; final hit within workspace 123; parent-first body
+// copy 186; shape set at init 10.
 // @retail 0x2fe830
 void __cdecl function_2fe830(void const *a_, void const *b_, void const *input_, void *collector_, void *second_collector_)
 {
@@ -302,6 +311,10 @@ public:
 // in the loop, which here scores 197.
 // the same cast, the closest points found by the object itself; a move that
 // finds no closest points passes on the last hit
+// score 8 (was 8): the setup still exchanges shape and configuration registers.
+// Native body copy with placement/parent or parent/placement stores 171/171;
+// copy before configuration 183/183; copy before collector or placement 174/171;
+// configuration before the placement copy on either body lifetime 229/229.
 // @retail 0x2fec10
 void class_2fec10::function_2fec10(void const *a_, void const *b_, void const *input_, void *collector_, void *second_collector_)
 {

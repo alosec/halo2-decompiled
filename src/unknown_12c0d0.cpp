@@ -685,25 +685,32 @@ long log2_floor(dword value);
 
 /* builds a bitmap's hardware texture header over its description, pointing
    into the shared pixel data */
-// score 58 (was 86): everything up to the mip count call matches. After it retail keeps the
-// width/height/depth in ECX/EBX/EDI, the format bits in EBP and zeroes with EDX; ours keeps
-// the height in EDI, the depth in EDX, the bits in EBX and zeroes with ECX. Tried: the default
-// format in a plain local 109 (kept in EDI, the width spilled instead); the if/else 86;
-// the sizes read from the fields at each use 124; the sizes declared before the format 106;
+// score 12 (was 12): Frame 8 and prefix through +0xe7 agree; post-guard logarithm copies and depth EAX result remain.
+// the last two log2 loops differ: retail copies the height and the
+// depth after the `cmp 1` test and counts the depth in EAX; ours copies before the `jbe` and
+// counts the depth in EDX. Kept: the hardware format a plain local (no volatile) and the
+// 32-bit sizes taken right after the mip count call in width, height, depth order (12); the
+// same in long, unsigned long or one declaration 12; levels declared at the call 12; chained
+// zero stores 14; in height/width/depth 14, height/depth/width 15, depth/width/height 15,
+// width/depth/height 58. Sizes after the format store: depth/height/width 25,
+// height/depth/width 26, the others 59-60; sizes before the call 104, after the type test 109,
+// none (sizes passed to log2_floor) 103; chained zero stores 25; levels declared at the call
+// 25. With the volatile: height/depth/width 35, the others 56-64. Earlier: the default
+// format in a plain local 109 (when the sizes followed the format store); the if/else 86; the
+// sizes read from the fields at each use 124; the sizes declared before the format 106;
 // `g_4e646c + hardware_data` 109; the format read before the data 110; the dword sizes taken
 // before the call 88; the sizes passed straight to log2_floor 92; a `local_0` for the
-// dimension bits 77; short levels 63; the dword sizes after the type test 76; the ternary
-// as `type == 1 ? 3 : 2` and every operand order of the format expression 60.
+// dimension bits 77; short levels 63; the dword sizes after the type test 76; the ternary as
+// `type == 1 ? 3 : 2` and every operand order of the format expression 60.
+// Early width/height/depth/width-height/width-depth/height-depth promotions 80/90/78/91/109/109; late height and late height-depth 111/107.
+// Logarithm inline/force-inline declarations 12/12; immutable dimensions 12; immediate short/long results 12/12; shifted masks 12; explicit Format assignments 12; long results with immutable dimensions 12.
 // @retail 0x12c820
 void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
 {
 	D3DTexture *texture = (D3DTexture *)&bitmap->hardware_common;
 	dword data = bitmap->hardware_data + g_4e646c;
 	short format = bitmap->format;
-	/* volatile: retail keeps the hardware format in its stack slot (it stores the table
-	   value there, then 0x33 over it); as a register local ours keeps it in EDI and spills
-	   the width across the mip count call instead */
-	long volatile hardware_format = g_450768[0][format];
+	long hardware_format = g_450768[0][format];
 	long levels;
 
 	if ((bitmap->flags & 0x20) && (format == 10 || format == 11))
@@ -714,14 +721,14 @@ void texture_cache_bitmap_build_texture(s_bitmap_data *bitmap)
 	short height = bitmap->height;
 	short width = bitmap->width;
 	levels = bitmap_get_mipmap_count(width, height, depth, format, (bitmap->flags >> 4) & 1, 0);
+	/* the size fields are taken as 32-bit values from here on */
+	dword texture_width = width;
+	dword texture_height = height;
+	dword texture_depth = depth;
 	texture->Data = 0;
 	texture->Lock = 0;
 	texture->Common = 0x40001;
 	texture->Format = 9;
-	/* the size fields are taken as 32-bit values from here on */
-	dword texture_depth = depth;
-	dword texture_height = height;
-	dword texture_width = width;
 	if (bitmap->type == 2)
 	{
 		texture->Format = 0xd;
@@ -867,6 +874,9 @@ long texture_cache_bitmap_level(s_bitmap_data const *bitmap, real scale)
    one second (type 2) */
 // score 2 (was 2): the value is stored to the stack before EDI is pushed; retail pushes EDI
 // first and stores it afterwards.
+// score 2 (was 2): timer zero store still precedes the EDI save; split start 2; direct start 2;
+// immutable start 2; result declaration before start 2; counter declaration before start 2;
+// timeout before start 15; pump bound before start 10; nested allocation result 2.
 // @retail 0x12d400
 long function_12d400(long type, long size, long user_data, long update, long release)
 {
@@ -976,6 +986,12 @@ struct s_bitmap_texture_view
 
 // score 3 (was 3): the masked level address is loaded into EDX, retail reuses the base register,
 // which is dead after that load.
+// Entry data declaration 3; level-index local 3; reversed subscript 3; 28-bit field view 3;
+// shift mask 3; modulus mask 3; signed addresses 3; destination OR 3; initialized entry data 3;
+// bitmap-view alias 3.
+// parameter role names 3; format level role names 3; native reduction width 3; immutable reduction table 3;
+// dimension bit declarations 3; named packed dimensions 3; full width dimension bits 57; shared zero header
+// fields 5.
 // @retail 0x12d6d0
 void __stdcall function_12d6d0(s_bitmap_texture_view const *bitmap, long level, D3DTexture *texture)
 {

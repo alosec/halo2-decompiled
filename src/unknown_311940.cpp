@@ -29,23 +29,7 @@ public:
 	char storage[0x110];
 };
 
-class class_3193c0
-{
-public:
-	class_3193c0(void const *first, void const *second);
-	OBJECT_NEW_3114B0
-
-	char storage[0xd0];
-};
-
-class class_31a6b0
-{
-public:
-	class_31a6b0(void const *first, void const *second);
-	OBJECT_NEW_3114B0
-
-	char storage[0xd0];
-};
+#include "lane_a_motion_leaves.h"
 
 // an object's part, as the object reaches it
 class part_311940

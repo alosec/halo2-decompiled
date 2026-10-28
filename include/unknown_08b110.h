@@ -365,6 +365,8 @@ public:
 	virtual bool v2(bool *a1) { return false; }
 };
 
+class c_vtable_450d14;
+
 class c_vtable_450cf4 : public c_base_450d40
 {
 public:
@@ -381,6 +383,7 @@ public:
 	c_interface_450c94 *children[3];
 	byte unknown18[0xc];
 	long unknown24;
+	c_vtable_450d14 *source;
 };
 
 /* ---- the 0x450d14 class ---- */
@@ -477,7 +480,7 @@ struct s_match_450d14
 };
 
 s_match_450d14 *__stdcall function_6a3b0(void *table, s_key_450d14 *key, long index);
-long function_699a0(long index, void *table);
+long function_699a0(void *table, long index);
 void __stdcall function_82a40(long object_index, struct s_relevance_observers const *observers, real *relevance, long *value);
 
 
@@ -500,7 +503,6 @@ public:
 	c_replication_view_storage();
 	long unknown00;
 	c_vtable_450cf4 aggregate;
-	long unknown2c;
 	c_handle_table_450cd0 handles;
 	c_vtable_450d1c sender;
 	c_vtable_450c94 updates;

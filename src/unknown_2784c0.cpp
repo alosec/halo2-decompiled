@@ -76,11 +76,7 @@ class c_2784c4
 public:
     void function_30cb30(void *arg_0);
 };
-class c_2784c5
-{
-public:
-    void function_315910(void *arg_0);
-};
+#include "lane_a_overlap_listener.h"
 class c_2784c0 : public c_2784c1, public c_2784c2, public c_2784c3
 {
 public:

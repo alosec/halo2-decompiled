@@ -415,7 +415,12 @@ static __forceinline void cache_map_progress(char const *name, real *output)
 	}
 }
 
-// score 68 (was 74): frame 0x24 versus 0x18; independent query homes still differ.
+// score 39 (was 39): frame/output-home reuse remains.
+// Earlier allocation: frame 0x24 versus 0x18; independent query homes still differ.
+// Frame 0x24 versus 0x18; opaque query homes still cannot reuse the incoming slot.
+// Incoming name/mode/type names 39/39/39; name plus type 39; helper input/output/state names 39/39/39;
+// all boundary names 39. Original operations, helper, parameters and query outputs retained.
+// frame 0x24 versus 0x18; independent query homes still differ.
 // Output-first helper 80; ordinary inline 80; depth one 80; not-loaded arm first 128;
 // guarded stages 126; nested name guard 76 fast, 74 plain.
 // Later-three scratch 194; menu/shared scratch 180; final-pair scratch 109;
@@ -432,10 +437,35 @@ static __forceinline void cache_map_progress(char const *name, real *output)
 // the homes and skip the scratch reload on the non-call paths, breaking the per-query block
 // order retail shows with its reused incoming-slot scratch); param address reads removed 76;
 // mode==0 divide arm first 67 KEPT; case-2 break 69; accumulate form 69.
+// Earlier allocation: Frame 0x24 versus 0x18 remains. Initial bool/long/short state 258/287/73; private
+// Frame 0x24 versus 0x18 remains. Initial bool/long/short state 258/287/73; private
+// helper publication 206; private bool/long state 242/262; private late weight 258; private predicate and
+// late weight 228 (fast).
+// frame/output-home reuse remains; existing helper output plus
+// scalar return for menu/shared/campaign 68/68/68, each pair 68/68/68,
+// all later or all four return consumers 68/68. Original helper and readbacks retained.
+// Earlier allocation: every instruction has retail's shape; the frame is 0x24 against 0x18, since
+// every instruction has retail's shape; the frame is 0x24 against 0x18, since
+// retail keeps the three later query outputs and the campaign progress in the dead map-name slot.
+// Mode switch alone 75 (73 for the kept form with the mode if/else); product operands swapped 75;
+// scoped query outputs 206; one shared query output 207; the existing out-of-line progress query
+// called 499, inlined 214 (inline on its definition breaks 0x2c8a0).
+// frame/output homes and high-clamp exit still differ.
+// Separate final result: entry-one clamps 268/268; uninitialized 68/78;
+// dispatch-one 92/93; normalized result 102/101 (lower/upper first).
+// Late menu/shared/campaign readbacks 205/188/173; paired menu/shared 214;
+// all late readbacks 231; reference output 39; reference plus late readbacks 231;
+// completed query producers 223.
+// Further trials: weight after entry/map/menu query 45/63/81;
+// accumulation after entry/map/menu query 136/135/136;
+// both scalars after map/menu query 148/148.
+// Helper writing its own result local and copying it out (direct or kept caller copies) 206/206,
+// frame 0x1c; one scratch for the three queries 206; one scratch or scoped scratches with the
+// helper plain inline 206/206. Any shared scratch slot also drops the non-call-path scratch
+// stores and the reload.
 // @retail 0x122dd0
 real __stdcall function_122dd0(byte *map_name, long mode, long type)
 {
-	(void)&map_name;
 	(void)&mode;
 	real map_weight = 100.0f;
 	real progress = 0.0f;
@@ -478,25 +508,29 @@ real __stdcall function_122dd0(byte *map_name, long mode, long type)
 		progress = menu_progress * 80.0f + progress;
 		weight += 80.0f;
 	case 2:
-		weight += map_weight;
 		progress = map_progress * map_weight + progress;
-		if (!(weight >= 0.0f))
-		{
-			progress = 1.0f;
-			goto done;
-		}
+		weight += map_weight;
 	}
-	if (mode == 0)
+	if (weight >= 0.0f)
 	{
-		progress /= weight;
-		if (progress < 0.0f) progress = 0.0f;
-		else if (progress > 1.0f) progress = 1.0f;
+		switch (mode)
+		{
+		case 0:
+			progress /= weight;
+			if (progress < 0.0f) progress = 0.0f;
+			else if (progress > 1.0f) progress = 1.0f;
+			break;
+		case 1:
+			progress = weight - progress;
+			break;
+		default:
+			__assume(0);
+		}
 	}
 	else
 	{
-		progress = weight - progress;
+		progress = 1.0f;
 	}
-done:
 	if (location == 4) progress = 0.0f;
 	return progress;
 }

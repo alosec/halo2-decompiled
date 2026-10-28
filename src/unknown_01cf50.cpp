@@ -105,14 +105,14 @@ void __stdcall function_46230(short target, real const *bounds)
     real constants[32] = {
         bounds[1] - bounds[0], 0.0f, 0.0f, bounds[0],
         0.0f, bounds[3] - bounds[2], 0.0f, bounds[2],
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f
     };
-    D3DDevice_SetVertexShaderConstant(18, constants, 8);
+    D3DDevice_SetVertexShaderConstant(-78, constants, 8);
     memset(&g_484f68, 0, sizeof(g_484f68));
     g_484f68.PSTextureModes = 0x21;
     g_484f68.PSCombinerCount = 1;
@@ -532,7 +532,7 @@ void __stdcall function_363a0(void *vertices)
 }
 
 // @retail 0x36880
-void function_36880(color4f const *color, s_short_rectangle const *rectangle)
+void function_36880(s_short_rectangle const *rectangle, color4f const *color)
 {
 	// Retail callers keep the rectangle argument on the stack.
 	s_short_rectangle const *const *rectangle_reference = &rectangle;
@@ -2213,7 +2213,8 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 {
 	s_depth_sort_record const *a = (s_depth_sort_record const *)context + (short)first;
 	s_depth_sort_record const *b = (s_depth_sort_record const *)context + (short)second;
-	long comparison = a->type - b->type;
+	int type_difference = a->type - b->type;
+	long comparison = type_difference;
 	if (!comparison)
 	{
 		if (a->active)
@@ -2222,8 +2223,7 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 			point += b->position.y * a->plane.j;
 			point += b->position.x * a->plane.i;
 			plane3f const *camera_plane = &a->plane;
-			real camera = camera_plane->k * g_4b9da0.z;
-			camera = camera_plane->j * g_4b9da0.y + camera;
+			real camera = camera_plane->k * g_4b9da0.z + camera_plane->j * g_4b9da0.y;
 			camera = camera + camera_plane->i * g_4b9da0.x;
 			long camera_side = a->plane.d > camera ? 1 : 0;
 			long point_side = a->plane.d > point ? 1 : 0;
@@ -2235,8 +2235,7 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 			point += a->position.y * b->plane.j;
 			point += a->position.x * b->plane.i;
 			plane3f const *camera_plane = &b->plane;
-			real camera = camera_plane->k * g_4b9da0.z;
-			camera = camera_plane->j * g_4b9da0.y + camera;
+			real camera = camera_plane->k * g_4b9da0.z + camera_plane->j * g_4b9da0.y;
 			camera = camera + camera_plane->i * g_4b9da0.x;
 			long camera_side = b->plane.d > camera ? 1 : 0;
 			long point_side = b->plane.d > point ? 1 : 0;
@@ -2252,6 +2251,9 @@ bool __stdcall function_1e700(word first, word second, void const *context)
 	return comparison > 0;
 }
 
+// score 4 (was 4): the subtraction of the stream count must come before the last push of the
+// sorter call, and the add of the stipple stride must follow the second rep movsd of the
+// inlined device call.
 // @retail 0x1e370
 void function_1e370(void)
 {
@@ -2290,6 +2292,8 @@ void function_1e370(void)
 	}
 }
 
+// score 8 (was 8): the record table base is held in edi here and in ebp in retail, and the
+// copy of the payload saves and restores the register that choice leaves free.
 // @retail 0x1e4e0
 bool function_1e4e0(point3f const *position, t_1e4e0_callback callback, void const *data, long size)
 {
@@ -2792,6 +2796,8 @@ PRIVATE __forceinline dword stream_register_mask(byte const *descriptor)
     return mask;
 }
 
+// score 10 (was 10): the count of the streams is loaded into ecx here and into eax in retail,
+// the compare against zero uses a second zero register, and esi is pushed later.
 // @retail 0x1c8c0
 bool function_1c8c0(byte const *definition, dword mask,
     s_1c8c0_stream const *third, s_1c8c0_stream const *second, s_1c8c0_stream const *first)
@@ -3071,6 +3077,9 @@ void function_13d80()
 
 extern D3DResource *g_485ae4, *g_485ae8, *g_485aec;
 
+// score 2 (was 2): the setup of the call to 0x15a60 zeroes ecx before it loads 9 into eax,
+// retail loads 9 first. The callee lives in src/unknown_0158f0.cpp and is itself unmatched,
+// and its parameter home decides the order of this setup.
 // @retail 0x1d0e0
 bool function_1d0e0()
 {
@@ -3441,7 +3450,7 @@ short __stdcall function_467c0(short first, short second, short count)
             1.0f,0.0f,0.0f,-0.0078125f, 0.0f,1.0f,0.0f,0.0078125f,
             1.0f,0.0f,0.0f,0.0078125f, 0.0f,1.0f,0.0f,-0.0078125f
         };
-        D3DDevice_SetVertexShaderConstant(18, constants, 8);
+        D3DDevice_SetVertexShaderConstant(-78, constants, 8);
         D3DPIXELSHADERDEF program;
         memset(&program, 0, sizeof(program));
         program.PSAlphaOutputs[0] = 0xc00;
@@ -5054,11 +5063,11 @@ void __stdcall function_4e260(long tag, long context, long first, long second,
                 direction = rotation.up;
             }
             alpha = alpha < 0.0f ? 0.0f : alpha > 1.0f ? 1.0f : alpha;
-            D3DDevice::SetVertexData4f(7, packed_vector.i, packed_vector.j, packed_vector.k, alpha);
-            D3DDevice::SetVertexData4f(8, horizontal.i * size, vertical.i * size, direction.i * size, position.x);
-            D3DDevice::SetVertexData4f(9, horizontal.j * size, vertical.j * size, direction.j * size, position.y);
-            D3DDevice::SetVertexData4f(10, horizontal.k * size, vertical.k * size, direction.k * size, position.z);
-            D3DDevice::SetVertexData4f(11, light.red, light.green, light.blue, 1.0f);
+            D3DDevice::SetVertexData4f(11, packed_vector.i, packed_vector.j, packed_vector.k, alpha);
+            D3DDevice::SetVertexData4f(12, horizontal.i * size, vertical.i * size, direction.i * size, position.x);
+            D3DDevice::SetVertexData4f(13, horizontal.j * size, vertical.j * size, direction.j * size, position.y);
+            D3DDevice::SetVertexData4f(14, horizontal.k * size, vertical.k * size, direction.k * size, position.z);
+            D3DDevice::SetVertexData4f(15, light.red, light.green, light.blue, 1.0f);
             long count = *(word *)(draw + 6);
             word const *vertices = indices + *(word *)(draw + 4);
             function_1cf50();
@@ -5753,9 +5762,9 @@ void function_46ea0(long tag, point3f const *position)
     D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, 2);
     D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, 2);
     D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, 2);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
     D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
     D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
+    D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
     D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
     D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
     g_4b8448 = 0x901; D3DDevice_SetRenderState(D3DRS_CULLMODE, 0x901);
@@ -5790,9 +5799,9 @@ void function_46ea0(long tag, point3f const *position)
     function_0224f0(0, D3DTSS_MAGFILTER, 2);
     function_0224f0(0, D3DTSS_MINFILTER, 2);
     function_0224f0(0, D3DTSS_MIPFILTER, 2);
-    function_0224f0(0, D3DTSS_MAXMIPLEVEL, 0);
     function_0224f0(0, D3DTSS_MAXANISOTROPY, 0);
     function_0224f0(0, D3DTSS_MIPMAPLODBIAS, 0);
+    function_0224f0(0, D3DTSS_MAXMIPLEVEL, 0);
     function_0224f0(0, D3DTSS_COLORSIGN, 0);
     function_0224f0(0, D3DTSS_ALPHAKILL, 0);
     g_4b8448 = 0x901; D3DDevice_SetRenderState(D3DRS_CULLMODE, 0x901);
@@ -6304,7 +6313,8 @@ bool __stdcall function_37a60(void *context)
             function_143c0(*(long *)(input + 4 + (stage - 1) * 8), 0, (short)stage, 0.0f);
             D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, 1);
             D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, 1);
-            D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSW, 1);
+            /* retail sets ADDRESSV a second time here (eleven dirty-flag updates, ADDRESSW never stored) */
+            D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, 1);
             D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, 2);
             D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, 2);
             D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, 2);
@@ -6325,28 +6335,28 @@ bool __stdcall function_37a60(void *context)
         vertex2f(3, vertices[0].coordinates[1].x, vertices[0].coordinates[1].y);
         vertex2f(4, vertices[0].coordinates[2].x, vertices[0].coordinates[2].y);
         #pragma inline_depth(0)
-        D3DDevice_SetVertexData4f(0, vertices[0].x, vertices[0].y, z, w);
+        D3DDevice_SetVertexData4f(D3DVSDE_VERTEX, vertices[0].x, vertices[0].y, z, w);
         #pragma inline_depth(255)
         vertex2f(1, vertices[1].x, vertices[1].y);
         vertex2f(2, vertices[1].coordinates[0].x, vertices[1].coordinates[0].y);
         vertex2f(3, vertices[1].coordinates[1].x, vertices[1].coordinates[1].y);
         vertex2f(4, vertices[1].coordinates[2].x, vertices[1].coordinates[2].y);
         #pragma inline_depth(0)
-        D3DDevice_SetVertexData4f(0, vertices[1].x, vertices[1].y, z, w);
+        D3DDevice_SetVertexData4f(D3DVSDE_VERTEX, vertices[1].x, vertices[1].y, z, w);
         #pragma inline_depth(255)
         vertex2f(1, vertices[2].x, vertices[2].y);
         vertex2f(2, vertices[2].coordinates[0].x, vertices[2].coordinates[0].y);
         vertex2f(3, vertices[2].coordinates[1].x, vertices[2].coordinates[1].y);
         vertex2f(4, vertices[2].coordinates[2].x, vertices[2].coordinates[2].y);
         #pragma inline_depth(0)
-        D3DDevice_SetVertexData4f(0, vertices[2].x, vertices[2].y, z, w);
+        D3DDevice_SetVertexData4f(D3DVSDE_VERTEX, vertices[2].x, vertices[2].y, z, w);
         #pragma inline_depth(255)
         vertex2f(1, vertices[3].x, vertices[3].y);
         vertex2f(2, vertices[3].coordinates[0].x, vertices[3].coordinates[0].y);
         vertex2f(3, vertices[3].coordinates[1].x, vertices[3].coordinates[1].y);
         vertex2f(4, vertices[3].coordinates[2].x, vertices[3].coordinates[2].y);
         #pragma inline_depth(0)
-        D3DDevice_SetVertexData4f(0, vertices[3].x, vertices[3].y, z, w);
+        D3DDevice_SetVertexData4f(D3DVSDE_VERTEX, vertices[3].x, vertices[3].y, z, w);
         #pragma inline_depth(255)
         D3DDevice_End();
         D3DDevice_SetRenderState(D3DRS_ALPHATESTENABLE, 0);
@@ -7852,17 +7862,18 @@ void function_12190()
 
 dword g_55e6b8;
 
+// Advances the vertical blank count (g_485ab0, which the main loop waits on as VBLANK_COUNT in
+// unknown_12b070.cpp) outside the main thread, so both counts are accessed as volatile: retail
+// reloads them from memory at each use.
 // @retail 0x14280
 long __fastcall function_14280(void const *data)
 {
-    volatile unsigned __int64 *current = (volatile unsigned __int64 *)&g_485ab0;
-    volatile unsigned __int64 *previous = (volatile unsigned __int64 *)&g_485ab8;
     long result = 0;
-    ++*current;
+    ++*(volatile unsigned __int64 *)&g_485ab0;
     if (((dword const *)data)[1] != g_55e6b8)
     {
-        result = (long)(*current - *previous);
-        *previous = *current;
+        result = (long)(*(volatile unsigned __int64 *)&g_485ab0 - *(volatile unsigned __int64 *)&g_485ab8);
+        *(volatile unsigned __int64 *)&g_485ab8 = *(volatile unsigned __int64 *)&g_485ab0;
         g_55e6b8 = ((dword const *)data)[1];
     }
     return result;

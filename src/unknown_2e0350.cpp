@@ -235,6 +235,10 @@ __forceinline void move_box_2e0350(class_2e1090 *sweep, long *owner, quantized_b
 // order of the box struct and its alignment were tried).
 // moves each box to its new bounds, adding the pairs that start overlapping
 // to `added` and those that stop to `removed`
+// score 18 (was 18): the early stores still precede owner/cursor reads.
+// Indexed arrays 983; owner index 981; bounds offset 1005; bounds range 979;
+// count/cursors 965; indexed owner with bounds step 956; owner range with
+// bounds step 949; bounds range with both pointer steps 974.
 // @retail 0x2e0350
 void class_2e1090::function_2e0350(long *const *owners, bounds_2e0020 const *bounds, long count, pairs_2e1090 *added, pairs_2e1090 *removed)
 {

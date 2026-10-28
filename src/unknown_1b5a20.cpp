@@ -272,9 +272,7 @@ s_slot_handler_2 g_47e5f8 =
 // @retail 0x1b5f30
 bool __stdcall function_1b5f30(long actor_index, s_slot *slot)
 {
-	s_actor_view *actor = actor_get(actor_index);
-
-	if (!actor->unknown50c && actor->unknown040)
+	if (!actor_get(actor_index)->unknown50c && actor_get(actor_index)->unknown040)
 	{
 		byte *scratch = ai_scratch_buffer_get();
 		s_2605d0_request request;

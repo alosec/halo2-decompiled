@@ -850,8 +850,9 @@ void function_efc30(long vehicle_index)
 	s_vehicle *vehicle = VEHICLE_GET(vehicle_index);
 	real scale = g_510c54->rate * 10.0f;
 
+	/* the gear through its own lookup: retail stores it ahead of the flag */
+	VEHICLE_GET(vehicle_index)->gear = NONE;
 	((s_vehicle_word_flag_bits *)&vehicle->flags348)->bit5 = false;
-	vehicle->gear = NONE;
 	vehicle_decay(&vehicle->unknown378, scale);
 	vehicle_decay(&vehicle->speed, scale);
 	vehicle_decay(&vehicle->steering_angle, scale);
@@ -988,7 +989,7 @@ transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_1cfb90(s_havok_component *component, transform4x3f const *matrix, void const *buffer);
 bool __stdcall function_f6670(long vehicle_index, bool update);
 void function_ba3d0(long object_index);
-void function_f06c0(s_vehicle_physics_state *state);
+s_vehicle_physics_state *function_f06c0(s_vehicle_physics_state *state);
 bool __stdcall function_205be0(s_vehicle_physics_state *state, long vehicle_index);
 void __stdcall function_f1cd0(long vehicle_index, s_vehicle_physics_state *state);
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state);
@@ -1291,9 +1292,10 @@ bool __stdcall function_efde0(long vehicle_index)
 	return result | changed;
 }
 
-/* clears the sixteen entries of the physics state's block at +0xbc0 */
+/* clears the sixteen entries of the physics state's block at +0xbc0;
+   returns the state (retail leaves it in eax) */
 // @retail 0xf06c0
-void function_f06c0(s_vehicle_physics_state *state)
+s_vehicle_physics_state *function_f06c0(s_vehicle_physics_state *state)
 {
 	s_vehicle_contact *contact = state->contacts;
 	short i;
@@ -1303,6 +1305,7 @@ void function_f06c0(s_vehicle_physics_state *state)
 		contact->unknownb0 = NONE;
 		contact++;
 	}
+	return state;
 }
 
 /* what the vehicle's animation values sample into */
@@ -1739,36 +1742,36 @@ struct s_vehicle_gear
    lines up with the first point */
 // @retail 0xf1380
 void __stdcall function_f1380(vector3f *velocity, vector3f const *a, vector3f const *b, real aligned_limit,
-	real limit, real dt)
+	real limit, real value)
 {
 	real scale;
 	real dot;
-	real maximum;
 	real length_squared;
 
 	velocity->i = a->i - b->i;
 	velocity->j = a->j - b->j;
 	velocity->k = a->k - b->k;
-	scale = 1.0f / dt;
+	scale = 1.0f / value;
 	velocity->i *= scale;
+	value = velocity->i;
 	velocity->j *= scale;
 	velocity->k *= scale;
 	dot = a->j * velocity->j + a->k * velocity->k + a->i * velocity->i;
 	if (dot > 0.0001f)
 	{
-		maximum = dot * dot / (velocity->k * velocity->k + velocity->j * velocity->j + velocity->i * velocity->i) /
+		aligned_limit = dot * dot / (velocity->k * velocity->k + velocity->j * velocity->j + velocity->i * velocity->i) /
 			(a->j * a->j + a->k * a->k + a->i * a->i) * (aligned_limit - limit) + limit;
 	}
 	else
 	{
-		maximum = limit;
+		aligned_limit = limit;
 	}
 	length_squared = velocity->k * velocity->k + velocity->j * velocity->j + velocity->i * velocity->i;
-	if (length_squared > maximum * maximum)
+	if (length_squared > aligned_limit * aligned_limit)
 	{
-		real factor = maximum / (real)sqrt(length_squared);
+		real factor = aligned_limit / (real)sqrt(length_squared);
 
-		velocity->i *= factor;
+		velocity->i = value * factor;
 		velocity->j *= factor;
 		velocity->k *= factor;
 	}
@@ -2984,7 +2987,7 @@ long function_f4360(long vehicle_index)
 		if (throttle > 0.75f || steering > 0.7f)
 		{
 			real angle = (real)atan2(vehicle->steering, vehicle->throttle);
-			real direction = (real)fmod((double)(angle + 12.566371f), 6.283185307179586);
+			real direction = fmod(angle + 12.566371f, 6.2831855f);
 
 			if (PIN(direction, 2.5132742f, 3.7699113f) == direction)
 			{
@@ -3106,17 +3109,14 @@ void function_f5bf0(long vehicle_index)
 			function_ba1d0(vehicle_index, &velocity, NULL);
 			if (function_30bf0(&velocity) > 1.0f)
 			{
-				vector3f const *forward = &vehicle->forward;
-
 				if (0.0f > vehicle->throttle)
 				{
-					if (forward->i * velocity.i + forward->k * velocity.k + forward->j * velocity.j > 0.0f)
+					if (dot3f(&velocity, &vehicle->forward) > 0.0f)
 					{
 						goto braking;
 					}
 				}
-				else if (vehicle->throttle > 0.0f &&
-					0.0f > velocity.i * forward->i + forward->k * velocity.k + forward->j * velocity.j)
+				else if (vehicle->throttle > 0.0f && 0.0f > dot3f(&velocity, &vehicle->forward))
 				{
 					goto braking;
 				}

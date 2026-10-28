@@ -67,6 +67,19 @@ struct s_unit_definition
 
 bool function_1cb920(void *data, long label);
 
+// score 22 (was 22): ours keeps the object pool pointer in esi and reloads its
+// data pointer for the unit lookup; retail copies unit_index (ecx) to esi at entry
+// and keeps the data pointer in ecx for both lookups. LTCG hands ecx to whichever of
+// unit/seat is referenced more: one or two unit lookups share the data pointer as
+// retail but pass the seat in ecx (callers 0x11ade0/0x1b8eb0 lost); three give
+// retail's convention and the reload. Tried: one lookup 24/140 (retail's body except
+// the seat/unit roles); the parameters swapped in the definition 24 (same code); two
+// lookups 22/24; result declared first 24/63; through a header pointer 24; a 600 s
+// permuter run on the one-lookup form, best 23 (a steering flag); direct success 47;
+// unit copies 27; shared headers 24; result ternary 27; entry unit 61; direct lookups
+// 64 (the type test's lookup and the call's two in their own blocks, 153 bytes);
+// delayed lookup 24; declaration swaps 27; split result 27; unit header 30; object
+// header 27; three lookups declared in reverse 22; early-return guards 46.
 // @retail 0xc8200
 bool function_c8200(long object_index, short seat_index, long unit_index)
 {
@@ -82,14 +95,18 @@ bool function_c8200(long object_index, short seat_index, long unit_index)
 		s_unit_object *unit = UNIT_OBJECT(unit_index);
 		s_unit_object *animated = UNIT_OBJECT(unit_index);
 		s_unit_object *object = UNIT_OBJECT(unit_index);
-		long label;
 
 		if (unit->type == 1)
-			return true;
-
-		label = definition->seats[seat_index].label;
-		if (function_1cb920((byte *)object + animated->field_x69a903.offset, label))
+		{
 			result = true;
+		}
+		else
+		{
+			long label = definition->seats[seat_index].label;
+
+			if (function_1cb920((byte *)object + animated->field_x69a903.offset, label))
+				result = true;
+		}
 	}
 
 	return result;

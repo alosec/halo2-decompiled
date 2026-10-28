@@ -34,6 +34,26 @@ void impact_rigid_body_indices_get(s_impact const *arg_0, long arg_1, long *arg_
 void function_2294a0(long arg_0, long arg_1, long arg_2, s_impact *arg_3);
 void impact_set_contact_from_component(s_impact *arg_0);
 
+struct s_206090_contact
+{
+    byte padding_0[4];
+    vector3f field_4;
+    byte padding_10[0x24];
+    point3f field_34;
+    vector3f field_40, field_4c, field_58, field_64;
+    byte field_70;
+    byte padding_71[3];
+    vector3f field_74;
+    byte field_80, field_81, field_82, field_83;
+    real field_84, field_88, field_8c, field_90;
+    vector3f field_94, field_a0;
+    byte padding_ac[4];
+    short field_b0;
+    byte field_b2, field_b3;
+    byte padding_b4[0x24];
+};
+typedef char assert_206090_contact_size[(sizeof(s_206090_contact) == 0xd8) ? 1 : -1];
+
 struct s_206090
 {
     long field_0;
@@ -47,7 +67,7 @@ struct s_206090
     vector3f field_80;
     real field_8c;
     byte field_90[16 * 0xa8];
-    byte field_b10[16 * 0xd8];
+    s_206090_contact field_b10[16];
 };
 
 struct s_206091
@@ -65,14 +85,18 @@ PRIVATE __forceinline real function_206091(vector3f const *arg_0, vector3f const
 
 PRIVATE __forceinline void function_206092(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
-    arg_2->k = arg_0->i * arg_1->j - arg_0->j * arg_1->i;
-    arg_2->j = arg_0->k * arg_1->i - arg_0->i * arg_1->k;
-    arg_2->i = arg_0->j * arg_1->k - arg_0->k * arg_1->j;
+    real second_i = arg_1->i;
+    real second_j = arg_1->j;
+    real second_k = arg_1->k;
+    arg_2->k = arg_0->i * second_j - arg_0->j * second_i;
+    arg_2->j = arg_0->k * second_i - arg_0->i * second_k;
+    arg_2->i = arg_0->j * second_k - arg_0->k * second_j;
 }
 
 PRIVATE __forceinline real function_206093(vector3f const *arg_0)
 {
-    return (real)sqrt((double)arg_0->k * arg_0->k + (double)arg_0->j * arg_0->j + (double)arg_0->i * arg_0->i);
+    vector3f magnitude_input = *arg_0;
+    return (real)sqrt((double)magnitude_input.k * magnitude_input.k + (double)magnitude_input.j * magnitude_input.j + (double)magnitude_input.i * magnitude_input.i);
 }
 
 PRIVATE __forceinline real function_206094(vector3f *arg_0)
@@ -111,22 +135,61 @@ PRIVATE __forceinline void function_206095(vector3f *arg_0, vector3f const *arg_
 
 PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, vector3f *arg_2)
 {
-    arg_2->i = arg_0->i * arg_1;
-    arg_2->j = arg_0->j * arg_1;
-    arg_2->k = arg_0->k * arg_1;
+    for (long component = 0; component < 3; ++component)
+        arg_2->n[component] = arg_0->n[component] * arg_1;
 }
 
 #pragma inline_depth(1)
 #include "vector_products.h"
-// score 1600 (was 1600): frame 0x580 versus 0x58c; velocity homes and contact induction differ;
+// score 1402 (was 1402): Frame 0x5cc versus 0x58c; component/velocity homes, contact induction and scheduling remain.
+// Earlier 1585 (was 1596): Frame 0x590 versus 0x58c; component/velocity homes and contact induction remain.
+// Earlier 1600 from 1600: frame 0x580 versus 0x58c; velocity homes and contact induction differ;
 // frame pointer 2092; inline depth zero 3049, eight 1600; point/contact row tables 1600/1600;
 // double magnitude accumulator 1654.
 // frame 0x580 versus 0x58c; velocity homes and indexed contact records differ.
 // Function-scope impact record 1655; function-scope contact direction 1600; function-scope projection 1600;
 // short fixed initialization index 1664; duplicate search in loop condition 1600.
-// score 1600 (was 1600): frame 0x580 versus 0x58c and indexed contact homes remain.
+// Earlier 1600 from 1600: frame 0x580 versus 0x58c and indexed contact homes remain.
 // Shared point subtraction first/contact/both 1625/1656/1676;
 // indexed normalized-direction copy 1645; indexed tangential-velocity copy 1638.
+// Earlier 1596 from 1600: frame 0x58c recovered; velocity homes and indexed contacts differ. Contact velocity
+// 1604; point velocity 1663; both 1659; result normalizers 1641; cross j/k/i 1642. On contact form:
+// normalizers 1646; scale loop 1596 kept; cross order 1608; velocity names 1604; add loop 1622; scale/add
+// loops 1618. Original-frame scale loop 1626.
+// On recovered frame: entry return result 1599; native query records 1596; both configuration
+// counts read once 1644 (frame 0x590); shared first/contact point subtraction 1620/1616.
+// Round 357: Typed contact/point/both records 1612/1596/1612; indexed typed contacts
+// 1585 kept (plain), indexed typed point/contact records 1593 (three-point gain rejected).
+// Native configuration header/point rows/contact rows 1585 each; header/point, header/contact,
+// both row tables and all layouts 1585 each; all layouts with both tables indexed at each use 1640.
+// Round 140: cross first/second/both scalar captures 1581/1570/1587. Native-argument and cross-result forms
+// 1620/1570/1955/1423/2158/1426/1402/1456/1504/1655/1680/1402/1772 reverted for generated local address
+// cancellations.
+// Pointer-interface magnitude vector capture alone/with second cross 1423/1402; three scalar magnitude
+// captures alone/with second cross 1577/1604. Vector magnitude snapshot plus second cross scalars kept, plain
+// 1402; all original interfaces and call expressions preserved.
+// Complete cross-vector second/first/both captures with magnitude snapshot 1655/1552/1765; rejected.
+// Round 143: pointer-interface complete add/scale/both captures 1991/1892/2424;
+// first/second/both dot inputs 1885/1772/2221; add+dot and scale+dot 2664/2554.
+// On the retained magnitude/second-cross graph, velocity/buffers/magnitude home names and
+// all four combinations 1402 each; all three second-cross component names 1402. All restored.
+// Consistent configuration/object/both pointer observations 1569/1524/1522; separate first/second/both
+// normalizer input/output contracts 1402 each; both contracts with configuration/object reads 1569/1524.
+// Round 208: named squared magnitude 1435; first/second normalizer component loops 1432/1410;
+// squared magnitude with first/second loops 1434/1411; both loops 1432; all three 1450;
+// all three with bounded word impact count 1445 (6238 bytes, frame 0x5d0).
+// Round 149: Existing scale/add/cross output-return masks 1474/1402/1474/1402/1474/1402/1474; returned
+// scale outputs at two immediate consumers 1474. First/second/both single-exit normalizers
+// 1456/1410/1402; matching plain component loops 1410/1432/1432; both with first/second result name
+// 1402/1402. All restored.
+// Round 166: Ordinary inline at existing magnitude/cross/paired normalizer boundaries,
+// individually and jointly, then all with scale/add: all eight 1402 fast at 6239/6238.
+// Original producer declarations, captures, bodies and all call expressions restored.
+// Round 135 (aligned difflib counts in brackets; base [1470]): the contact query rows sit at
+// 0x1d8 and the 32-entry list at 0x15c in retail, 0x40 higher in ours. Magnitude read through
+// the pointer 1570 (frame 0x590) [1449]; normalizer only through the pointer 1480 (0x5b4)
+// [1460]; cross product without the scalar captures 1423 [1463]; both pointer forms 1585
+// (0x590) [1442]; contact arrays declared at function scope 1402 [1470].
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {
@@ -215,37 +278,38 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
         function_1821d0(*(long *)(local_2 + 0xb4), *(real *)(local_1 + 0x18), (s_query_batch_result *)local_36, *(long *)(local_1 + 0x44));
     for (long local_38 = 0; local_38 < *(long *)(local_1 + 0x44); local_38++)
     {
-        byte *local_39 = local_0->field_b10 + local_38 * 0xd8;
-        if (!local_39[0xb3])
+        if (!local_0->field_b10[local_38].field_b3)
         {
             byte *local_40 = *(byte **)(local_1 + 0x48) + local_38 * 0x4c;
             bool local_41 = (bool)((*(dword *)(local_40 + 4) >> 1) & 1);
             vector3f local_42 = *g_4687a4;
-            vector3f *local_43 = (vector3f *)(local_39 + 0x40);
-            vector3f *local_44 = (vector3f *)(local_39 + 0x4c);
-            local_43->i = *(real *)(local_39 + 0x34) - local_0->field_60.i;
-            local_43->j = *(real *)(local_39 + 0x38) - local_0->field_60.j;
-            local_43->k = *(real *)(local_39 + 0x3c) - local_0->field_60.k;
-            function_206092(&local_5, local_43, local_44);
-            function_206095(local_44, &local_4);
+            vector3f *local_43 = &local_0->field_b10[local_38].field_40;
+            vector3f *local_44 = &local_0->field_b10[local_38].field_4c;
+            local_43->i = local_0->field_b10[local_38].field_34.x - local_0->field_60.i;
+            local_43->j = local_0->field_b10[local_38].field_34.y - local_0->field_60.j;
+            local_43->k = local_0->field_b10[local_38].field_34.z - local_0->field_60.k;
+            vector3f contact_velocity;
+            function_206092(&local_5, local_43, &contact_velocity);
+            function_206095(&contact_velocity, &local_4);
+            *local_44 = contact_velocity;
             local_32++;
             byte *local_45 = local_36 + local_38 * 0x3c;
             function_207ab0(local_38, arg_0, (s_vehicle_contact_result *)local_45);
-            if (local_39[0x70])
+            if (local_0->field_b10[local_38].field_70)
             {
-                local_44->i -= *(real *)(local_39 + 0x74);
-                local_44->j -= *(real *)(local_39 + 0x78);
-                local_44->k -= *(real *)(local_39 + 0x7c);
+                local_44->i -= local_0->field_b10[local_38].field_74.i;
+                local_44->j -= local_0->field_b10[local_38].field_74.j;
+                local_44->k -= local_0->field_b10[local_38].field_74.k;
                 local_34 = true;
             }
-            if (*(real *)(local_39 + 0x84) > 0.0001f)
+            if (local_0->field_b10[local_38].field_84 > 0.0001f)
             {
-                vector3f *local_46 = (vector3f *)(local_39 + 0xa0);
+                vector3f *local_46 = &local_0->field_b10[local_38].field_a0;
                 real local_47 = function_206091(local_44, local_46);
-                *(real *)(local_39 + 0x88) = local_0->field_6c * (*(real *)g_51e9c4 / *(real *)(local_1 + 8) * *(real *)(local_39 + 0x84) - *(real *)(local_1 + 0xc) * local_47);
-                function_206096(local_46, *(real *)(local_39 + 0x88), (vector3f *)(local_39 + 0x94));
+                local_0->field_b10[local_38].field_88 = local_0->field_6c * (*(real *)g_51e9c4 / *(real *)(local_1 + 8) * local_0->field_b10[local_38].field_84 - *(real *)(local_1 + 0xc) * local_47);
+                function_206096(local_46, local_0->field_b10[local_38].field_88, &local_0->field_b10[local_38].field_94);
                 vector3f local_48 = *g_4687b0;
-                if (*(long *)(local_45 + 0x24) != NONE && *(real *)(local_39 + 0x88) > 0.0f)
+                if (*(long *)(local_45 + 0x24) != NONE && local_0->field_b10[local_38].field_88 > 0.0f)
                 {
                     s_havok_component *local_49 = havok_component_get(*(long *)(local_45 + 0x24));
                     long local_50 = *(long *)(local_45 + 0x28);
@@ -254,7 +318,7 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                     {
                         real local_52 = MAX(1.0f, havok_component_rigid_body_get(local_50, local_49)->m_motion->getMass());
                         real local_53 = PIN(local_52, local_0->field_6c * 0.0625f, local_0->field_6c * 16.0f);
-                        real local_54 = (local_46->k + 1.0f) * 0.5f / local_53 * *(real *)(local_39 + 0x88);
+                        real local_54 = (local_46->k + 1.0f) * 0.5f / local_53 * local_0->field_b10[local_38].field_88;
                         local_54 *= local_54;
                         local_54 = MIN(local_54, MAX(8.0f, g_510c54->field_2_3 * local_47));
                         vector3f local_55;
@@ -262,7 +326,7 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                         havok_component_rigid_body_linear_velocity_change(local_50, local_49, &local_55);
                     }
                 }
-                vector3f local_56 = *(vector3f *)(local_39 + 4);
+                vector3f local_56 = local_0->field_b10[local_38].field_4;
                 real local_57 = function_206091(&local_56, local_46);
                 local_56.i -= local_46->i * local_57;
                 local_56.j -= local_46->j * local_57;
@@ -277,7 +341,7 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                     vector3f local_60;
                     if (local_41)
                     {
-                        function_206096(&local_56, -*(real *)(local_39 + 0x8c), &local_60);
+                        function_206096(&local_56, -local_0->field_b10[local_38].field_8c, &local_60);
                         function_206095(&local_60, &local_58);
                     }
                     else
@@ -287,15 +351,15 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                         local_60.i = local_58.i - local_61.i;
                         local_60.j = local_58.j - local_61.j;
                         local_60.k = local_58.k - local_61.k;
-                        *(real *)(local_39 + 0x8c) = function_206093(&local_61) * (function_206091(&local_61, &local_56) > 0.0f ? 1.0f : -1.0f);
+                        local_0->field_b10[local_38].field_8c = function_206093(&local_61) * (function_206091(&local_61, &local_56) > 0.0f ? 1.0f : -1.0f);
                     }
                     real local_66 = function_206093(&local_60);
-                    *(real *)(local_39 + 0x90) = local_66;
-                    real local_62 = local_39[0x82] ? *(real *)(local_40 + 0x1c) : *(real *)(local_1 + 0x10);
-                    real local_63 = local_39[0x82] ? *(real *)(local_40 + 0x20) : *(real *)(local_1 + 4);
-                    real local_64 = local_39[0x82] ? *(real *)(local_40 + 0x24) : *(real *)(local_40 + 0x18);
+                    local_0->field_b10[local_38].field_90 = local_66;
+                    real local_62 = local_0->field_b10[local_38].field_82 ? *(real *)(local_40 + 0x1c) : *(real *)(local_1 + 0x10);
+                    real local_63 = local_0->field_b10[local_38].field_82 ? *(real *)(local_40 + 0x20) : *(real *)(local_1 + 4);
+                    real local_64 = local_0->field_b10[local_38].field_82 ? *(real *)(local_40 + 0x24) : *(real *)(local_40 + 0x18);
                     vector3f *local_65 = &local_60;
-                    if (local_39[0x82] || local_39[0x83])
+                    if (local_0->field_b10[local_38].field_82 || local_0->field_b10[local_38].field_83)
                     {
                         local_65 = &local_58;
                         local_66 = function_206093(local_65);
@@ -306,28 +370,28 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                         vector3f local_99 = *local_65;
                         function_206094(&local_99);
                         real local_68 = (real)sqrt(local_62 * 0.9f);
-                        function_206096(&local_99, -(*(real *)(local_40 + 8) * local_68 * local_67 * *(real *)(local_39 + 0x88)), &local_42);
-                        local_39[0x81] = true;
+                        function_206096(&local_99, -(*(real *)(local_40 + 8) * local_68 * local_67 * local_0->field_b10[local_38].field_88), &local_42);
+                        local_0->field_b10[local_38].field_81 = true;
                     }
                     else
                     {
                         real local_69 = (real)sqrt(local_63 * 0.9f);
-                        function_206096(local_65, -(local_69 * *(real *)(local_40 + 8) * g_510c54->rate * local_67 * *(real *)(local_39 + 0x88)), &local_42);
+                        function_206096(local_65, -(local_69 * *(real *)(local_40 + 8) * g_510c54->rate * local_67 * local_0->field_b10[local_38].field_88), &local_42);
                         local_31++;
                     }
                     local_48 = local_60;
                 }
-                local_39[0x80] = true;
+                local_0->field_b10[local_38].field_80 = true;
                 if (*(real *)(local_40 + 0xc) > 0.0001f && local_46->k > *(real *)(local_1 + 0x18))
                 {
-                    real local_70 = MAX(0.0f, *(real *)(local_39 + 0x90) - *(real *)(local_40 + 0x18));
+                    real local_70 = MAX(0.0f, local_0->field_b10[local_38].field_90 - *(real *)(local_40 + 0x18));
                     if (function_206097(&local_48) == 0.0f)
                         local_48 = *g_4687b0;
-                    real local_71 = -(*(real *)(local_40 + 0xc) - *(real *)(local_39 + 0x84) - 0.0001f);
+                    real local_71 = -(*(real *)(local_40 + 0xc) - local_0->field_b10[local_38].field_84 - 0.0001f);
                     point3f local_100;
-                    local_100.x = local_46->i * local_71 + *(real *)(local_39 + 0x34);
-                    local_100.y = local_46->j * local_71 + *(real *)(local_39 + 0x38);
-                    local_100.z = local_46->k * local_71 + *(real *)(local_39 + 0x3c);
+                    local_100.x = local_46->i * local_71 + local_0->field_b10[local_38].field_34.x;
+                    local_100.y = local_46->j * local_71 + local_0->field_b10[local_38].field_34.y;
+                    local_100.z = local_46->k * local_71 + local_0->field_b10[local_38].field_34.z;
                     s_impact_data local_72;
                     local_72.unknown00 = false;
                     local_72.component_a = *(long *)(local_2 + 0xb4);
@@ -335,16 +399,16 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                     local_72.material_a.m_index = *(short *)(local_40 + 0x40);
                     local_72.component_b = NONE;
                     local_72.unknown14 = NONE;
-                    local_72.material_b.m_index = *(short *)(local_39 + 0xb0);
+                    local_72.material_b.m_index = local_0->field_b10[local_38].field_b0;
                     local_72.position = local_100;
                     local_72.normal = *local_46;
                     local_72.type = local_38;
                     local_72.unknown38 = false;
                     local_72.shape.type = NONE;
                     local_72.shape.index = NONE;
-                    function_2078f0(&local_0->field_0, &local_72, &local_48, local_70, local_39[0x82] || local_39[0x83]);
+                    function_2078f0(&local_0->field_0, &local_72, &local_48, local_70, local_0->field_b10[local_38].field_82 || local_0->field_b10[local_38].field_83);
                     local_72.unknown38 = true;
-                    long local_74 = function_2078f0(&local_0->field_0, &local_72, &local_48, local_70, local_39[0x82] || local_39[0x83]);
+                    long local_74 = function_2078f0(&local_0->field_0, &local_72, &local_48, local_70, local_0->field_b10[local_38].field_82 || local_0->field_b10[local_38].field_83);
                     if (local_74 != NONE)
                     {
                         long local_75;
@@ -358,14 +422,14 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
             }
             else
                 function_2079f0(&local_0->field_0, local_38, false);
-            function_206095((vector3f *)(local_39 + 0x58), (vector3f *)(local_39 + 0x94));
-            function_206095((vector3f *)(local_39 + 0x58), &local_42);
-            function_206092(local_43, (vector3f *)(local_39 + 0x58), (vector3f *)(local_39 + 0x64));
-            function_206095(arg_1, (vector3f *)(local_39 + 0x58));
-            function_206095(arg_2, (vector3f *)(local_39 + 0x64));
-            if (local_41 && local_39[0x80])
+            function_206095(&local_0->field_b10[local_38].field_58, &local_0->field_b10[local_38].field_94);
+            function_206095(&local_0->field_b10[local_38].field_58, &local_42);
+            function_206092(local_43, &local_0->field_b10[local_38].field_58, &local_0->field_b10[local_38].field_64);
+            function_206095(arg_1, &local_0->field_b10[local_38].field_58);
+            function_206095(arg_2, &local_0->field_b10[local_38].field_64);
+            if (local_41 && local_0->field_b10[local_38].field_80)
             {
-                vector3f *local_76 = (vector3f *)(local_39 + 4);
+                vector3f *local_76 = &local_0->field_b10[local_38].field_4;
                 real local_77 = local_42.i * local_76->i + local_76->k * local_42.k + local_76->j * local_42.j;
                 vector3f local_78;
                 function_206096(local_76, local_77, &local_78);

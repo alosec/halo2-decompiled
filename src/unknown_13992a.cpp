@@ -96,6 +96,8 @@ long function_14de70(long arg_1);
 // copy / all copies 519/519/518p.
 // Seat-word observation, native parent/child links, ordinary child for, combined links,
 // child for plus seat word and display/both workspace names each 131f (control 131f).
+// score 113 (was 113): BLOCKED-BY 0xcb430: retail passes the hands record to it in edi, ours in
+// esi, which swaps esi and edi (mask and player pointer) through the whole body.
 // @retail 0x13992a
 void function_13992a(byte *arg_1, long arg_2)
 {

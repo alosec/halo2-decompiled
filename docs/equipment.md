@@ -25,7 +25,7 @@ routine, `0xf8190`, iterates the projectile type mask `0x20` and deletes those
 objects, so it is excluded. Claude's projectile PR #15 begins at `0xf8200`.
 The equipment claim overlaps neither issue #9 nor any open PR.
 
-The CC0 [Halo CE reference](https://github.com/punpckhdq/halo),
+The [Halo CE reference](https://github.com/punpckhdq/halo) (CC0 when this was written; AGPL-3.0 since 2026-10-17),
 `source/items/equipment.c`, independently has this same three-function order
 and placement/pickup behavior. Retail Halo 2 uses its existing physics helper
 for placement rather than the older direct at-rest flag write.

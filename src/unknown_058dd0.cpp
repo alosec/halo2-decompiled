@@ -209,6 +209,9 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 
 /* ---- start-game ---- */
 
+// score 65 (was 65): the result lives in bl where retail keeps it in a stack
+// byte, because retail's 0x6e720 takes the session in ebx (this function saves
+// ebx around that call) and ours takes it in esi; see the note there.
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -1122,7 +1125,32 @@ struct s_player_rating_properties
 long __stdcall function_063190(void *summary, long user);
 
 #pragma optimize("s", on)
-// score 110 (was 115): Frame/aggregate registers and conditional moves still differ.
+// score 110 (was 115): frame, aggregate registers and conditional moves differ. Retail
+// keeps one frame word (the session), missing/ordinal in EBX/EBP, and in the last loop
+// indexes the ranks by EDX, rereads the player count and keeps minimum/maximum in
+// EAX/EBX with cmovg/cmovle, which needs /arch:SSE (this file is /O2 /Gr; retail's
+// `mov eax, 1`/`mov eax, 0x7f` are speed-mode code, the size pragma here gives
+// `inc`/`push; pop`).
+// Round 129: without the size pragma 180 (483 bytes); a plain `for` for the last loop
+// 129 (435 bytes); both 143; ternary minimum/maximum 129 (either comparison order).
+// Screened with /arch:SSE on a scratch copy: the plain `for` without the pragma gives
+// retail's register minimum/maximum and cmovs and a one-word frame, but counts the loop
+// down with the count cached and a pointer, where retail rereads the count.
+// Before: read-only session 115; external session reference 115; short missing 116;
+// direct readiness 119; shifted membership bit 120; average scalar 115; external rank
+// reference 110 kept; both rating references 124; session per-use 169, mode-scoped 115;
+// word ordinal 134; absent/user continues 115/116; ready-first 112; sum-first 118;
+// rating-data reference 115; indexed aggregate 129; aggregate field reference 110;
+// availability count 156; early summary result 110; rank element pointer 110; absent-rank
+// continue 110; count before extrema 113; active-session spill name 110; count/member/scan
+// failure exits 124/121/115; complete-rating/property skips 110/110; empty-aggregate
+// rejection 112; live count field 110; distinct traversal roles 110; mode field 115;
+// selection snapshot 131; property/player records 110/110; source rank/value/both field
+// bindings 110/110/110; live selection field 110; byte missing count 110; signed byte
+// missing count 110; byte player ordinal 129; both byte counters 129; native signed
+// counters 110; aggregate function scope 110; native member property storage 110; fixed
+// player end test 110; sse after rank binding 111.
+// Frame/aggregate registers and conditional moves still differ.
 // Read-only session 115; external session reference 115; short missing
 // 116; direct readiness 119; shifted membership bit 120; average scalar
 // 115; external rank reference 110 kept; both rating references 124.
@@ -1139,6 +1167,13 @@ long __stdcall function_063190(void *summary, long user);
 // score 110 (was 110): three-word frame/session spill and aggregate allocation remain.
 // Mode field 115; selection snapshot 131; property/player records 110/110;
 // source rank/value/both field bindings 110/110/110; live selection field 110.
+// score 110 (was 110): Three-word frame/session spill and aggregate allocation remain. byte missing count 110; signed byte
+// missing count 110; byte player ordinal 129; both byte counters 129; native signed counters 110; aggregate
+// function scope 110; native member property storage 110; fixed player end test 110; sse after rank binding
+// 111.
+// Eligible-only rank reference 115; early property receiver 110; both lifetimes 115;
+// maximum-first/sum-between-extrema/count-before-sum 110/110/113;
+// eligible source-rank snapshot/read-only inputs 116/115.
 // @retail 0x72540
 void function_72540(c_session_state_matchmaking *state)
 {
@@ -1248,19 +1283,70 @@ static __forceinline void function_72349(c_class_58d20 *arg_0)
 	network_session_host_clear_flag49fc(arg_0);
 }
 
-static __forceinline long function_72458(s_surface_description *arg_0)
+static __forceinline long function_724a6(s_surface_description *arg_0)
 {
-	return function_193340(arg_0);
+	return function_1932c0(arg_0);
 }
 #pragma inline_depth(255)
 
-// score 9 (was 9): retail tests the variant type as cmp 5/je, cmp 3/je, cmp 4/jne default,
+// score 7 (was 7): the session member is loaded into ecx (retail eax), the level's address into
+// edx (retail ecx) and the reloaded type into eax (retail edx), one rotation of the scratch
+// registers; the type filter (cmp 5/je, cmp 3/je, cmp 4/jne default) and both arms are retail's.
+// The named condition gives that filter (the || test written in the if lays the default arm
+// first, 98), and 0x1932c0 stays out of line through the out-of-line wrapper above (inlined in
+// the default arm otherwise, 568 bytes; a noinline declaration in its own file also gives 7 but
+// costs 0x1931d0 its match, where retail inlines it). The barrier keeps the inlined 0x193440
+// reloading the type.
+// Goto-filter forms (9): one 5 || 3 || 4 test or its negation (100), case 5/3/4 in one switch
+// (108), cases 1-2 and 3-5 with __assume(0) (134); separate case 3 and case 4 (103); 5 || 3 then
+// a case 4 switch (100); a negated && test before the special block (100); the || test around a
+// case 1-2/3-5 switch with __assume(0) (111); an else-if chain of equality gotos (7). Member at
+// each use 165; member before session root 9; common limit result 190; retained width/minimum
+// results 99/162; typed variant storage/native record copy 9/9; typed storage with helper
+// classification 128; helper classification with fallback noinline 128, without the barrier 145;
+// fallback noinline alone 9; immutable member 9; member after collection 10; immutable variant,
+// summary, values or type 9; unsigned type 9.
+// Named-condition forms: no barrier 86; the type read from the values record 27 (reloads, but
+// loads before the limit store); an unsigned type read 86; summary/selected results as if
+// statements 7/7; member after the collection 8; values first 7; member through an inline getter
+// 7; 0x5c240 called directly is inlined (580 bytes; a noinline declaration here is ignored).
+// retail tests the variant type as cmp 5/je, cmp 3/je, cmp 4/jne default,
+// (MiniMax S run 4: an else-if chain of equality gotos for 5, 3 and 4 gives retail's filter but
+// scores 7, a gain under the bar: the session member, level address and reloaded type stay in
+// the wrong registers.)
 // ours turns the 3/4 cases into a jl/jg range; the session member travels in eax (ours ecx)
 // and the reloaded type in edx (ours eax). Every goto-free form lays the default block out
 // first: one 5 || 3 || 4 test or its negation (100), case 5/3/4 in one switch (108), cases
 // 1-2 and 3-5 with __assume(0) (134); separate case 3 and case 4 (103); 5 || 3 then a case 4
 // switch (100); a negated && test before the special block (100); the || test around a
 // case 1-2/3-5 switch with __assume(0) (111). The table itself is function_193440 inlined.
+// Member at each use 165; member before session root 9; common limit result 190;
+// retained width/minimum results 99/162; typed variant storage/native record copy 9/9;
+// typed storage with helper classification 128. Frame and first +0xe remain unchanged.
+// helper classification with fallback noinline 128; without the barrier 145;
+// fallback noinline alone 9; immutable member 9; member after collection 10;
+// immutable variant 9; immutable summary 9; immutable values 9;
+// immutable type 9; unsigned type 9.
+// Further trials: member/level-address allocation, range dispatch and reloaded type remain.
+// own fallback noinline/held dispatch 9; own fallback noinline/classifier with barrier 7.
+// own fallback noinline/classifier 86; own fallback noinline/classifier with native output 7.
+// own fallback inline/held dispatch 57; own fallback inline/classifier with barrier 128.
+// own fallback inline/classifier 145; own fallback inline/classifier with native output 128.
+// new classifier/uniform session 166; new classifier/collection at use 44.
+// new classifier/session and collection 184; new classifier/session and output 166.
+// new classifier/collection and output 44; new classifier/all roots 184.
+// new classifier/member at use 165; new classifier/all roots and member 153.
+// classifier own inline with barrier 7; classifier own force-inline with barrier 7.
+// classifier own inline without barrier 86; classifier own force-inline without barrier 86.
+// Round 42: current fallback wrapper/existing classifier 7; member through the owning path 7;
+// initialized level 132; collection direct at first/second/third use 7/7/7;
+// first width result as bool/long 7/7. The three-register rotation remains.
+// Entry level/type/shared-variant workspaces and role names 7; width inline 7,
+// force-inline 235. Long/unsigned-long classification results with either
+// or both upper clamps as conditional assignments 7 in all eight forms.
+// Entry level/type declarations and a shared variant workspace, alone and combined: eight forms 7.
+// Width helper declared inline in its own unit and every prototype 7; force-inline 235 (584 bytes).
+// All restored; the member/level-address/type scratch-register rotation remains.
 // @retail 0x72330
 void function_72330(c_session_state_matchmaking *state)
 {
@@ -1298,36 +1384,28 @@ void function_72330(c_session_state_matchmaking *state)
 		values->limit = NONE;
 		s_surface_description *variant = (s_surface_description *)values->unknown1c;
 		long type = *(long *)variant;
-		if (type == 5) goto local_special;
-		switch (type)
-		{
-		case 3:
-		case 4:
-			break;
-		default:
-			goto local_default;
-		}
-	local_special:
+		bool depth_type = type == 5 || type == 3 || type == 4;
+		if (depth_type)
 		{
 			_ReadWriteBarrier();
-			if (function_193440(variant) > 0 && function_72458(variant) > 0)
+			if (function_193440(variant) > 0 && function_193340(variant) > 0)
 			{
 				long count = level / function_193440(variant);
-				if (count >= function_72458(variant))
+				if (count >= function_193340(variant))
 				{
 					if (count > function_193370(variant)) count = function_193370(variant);
 					values->limit = function_193440(variant) * count;
 				}
 			}
 		}
-		goto local_done;
-	local_default:
-		if (level >= function_1932c0(variant))
+		else
 		{
-			if (level > function_193300(variant)) level = function_193300(variant);
-			values->limit = level;
+			if (level >= function_724a6(variant))
+			{
+				if (level > function_193300(variant)) level = function_193300(variant);
+				values->limit = level;
+			}
 		}
-	local_done:;
 	}
 	if (state->mode == 3)
 	{
@@ -1865,6 +1943,22 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // score 48 (was 59): readiness callee input and failure/timer join still differ.
 // Live timer/mode/both fields 59/59/59; integer pending 48 kept;
 // byte/word pending 90/59; common-tail guard 59; pending with live timer 48.
+// score 48 (was 48): readiness input and failure/timer join persist. Full
+// preparation pending 71; staged/second-call pending 95/96; tail guard 48;
+// wide completion 146; unsigned preparation 71; early/raw pending 128/61.
+// score 48 (was 48): readiness input and failure/timer join persist. Duration pending 91;
+// shared/early countdown seconds 97/107; clock value 90; timed/five arm order
+// with integer pending 117/118; word completion 146; early duration pending 137.
+// BLOCKED-BY 0x6e720 (retail passes the session to it in EBX, ours
+// in ESI, so EBX holds the pending flag here). Bool ready 90; ready with the failure
+// arm first 90; pending set in each arm 52; clamp as an if 129; the clamp as a
+// ternary gives the same bytes as the mask form it replaces.
+// readiness input and failure/timer join persist.
+// Native int pending, pending/completion/millisecond names and outer pending declaration 48;
+// positive-duration test, full-width pending with failure first and nested preparation 48.
+// score 48 (was 48): readiness input and failure/timer join remain different.
+// Unsigned pending/const captured pointers 48; quotient/remainder ceiling 93;
+// separate inline/noinline readiness/preparation declarations 48 each; pending conjunction 92.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {
@@ -1887,7 +1981,7 @@ bool c_session_state_start_match::update()
                 if (!unknown18)
                     unknown18 = function_75870();
                 long remaining_raw = 10000 - function_75890(unknown18);
-                long remaining = ((long)(remaining_raw < 0) - 1) & remaining_raw;
+                long remaining = remaining_raw < 0 ? 0 : remaining_raw;
                 network_session_host_become_leader(b);
                 network_session_start_countdown(b, true, (remaining + 999) / 1000, 0, NULL);
                 pending = remaining != 0;

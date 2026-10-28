@@ -36,10 +36,11 @@ static inline s_looping_sound_datum *looping_sound_get(long index)
 	return (s_looping_sound_datum *)g_4ed28c->data + (index & 0xffff);
 }
 
+/* moves the tag's bit-5 mark from the looping sound found for it to the given one, when
+   that one plays the tag (retail's callers load the index register before the tag's) */
 // @retail 0x18d290
-void function_18d290(long looping_sound_index, long tag_index)
+void function_18d290(long tag_index, long looping_sound_index)
 {
-	long local_0 = *(long const volatile *)&looping_sound_index;
 	long index = function_18d1c0(tag_index);
 
 	if (index != NONE)
@@ -50,9 +51,9 @@ void function_18d290(long looping_sound_index, long tag_index)
 			looping_sound->flag5 = false;
 		}
 	}
-	if (local_0 != NONE)
+	if (looping_sound_index != NONE)
 	{
-		s_looping_sound_datum *looping_sound = looping_sound_get(local_0);
+		s_looping_sound_datum *looping_sound = looping_sound_get(looping_sound_index);
 		if (looping_sound->tag_index == tag_index)
 		{
 			looping_sound->flag5 = true;
@@ -131,6 +132,23 @@ bool function_bafb0(long object_index, long ancestor_index);
 
 bool function_14ddc0(long local_player_index);
 
+// score 44 (was 44): existence BL and loop/unit allocation still differ. index-accessor
+// predicate 67; shared player index 65; short index 61; unsigned index 44;
+// relationship result/guards 44/44; immutable existence 44; audible guard 44.
+// existence byte and index/unit registers differ;
+// inline/noinline controller 44/44; inline/noinline hierarchy 44/44;
+// force-inline existence 44; controller range 58; membership 59; success break 44.
+// existence byte still coalesces across the controller call; eligibility input 44, eligibility guard 44, saved existence output 44, conditional merge 44; the same forms with the player accessor 44,44,44,44 (round 115).
+// existence flag and loop/unit registers differ;
+// long/word/byte split masks 72/59/69; char/long existence with mask 72/83;
+// existing player accessor 44; related-player result 86; shared emitter index 44.
+// score 44 (was 44): BLOCKED-BY 0xbafb0: `if (function_14ddc0(i) && split)` with the unit read as
+// `function_14ddc0(i) ? player(function_14de70(i))->unit_index : NONE` gives retail's two existence
+// tests (89 alone: the second hierarchy call sets esi before eax, so the unit leaves esi and the
+// table pointer spills); with 0xbafb0's parameters reordered to (ancestor, object) at its
+// definition and both calls it matches, with 0xbafb0 still matched.
+// Player-index accessor then NONE test 42; if-form unit 89; nested unit test 89; unit declared
+// first 89; short index 122; dword index 89; reused index/unit variable 89; inline unit getter 89.
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
 {

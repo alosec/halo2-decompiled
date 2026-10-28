@@ -802,7 +802,7 @@ PRIVATE __forceinline bool device_channel_play(long name, long device_index, sho
 
 		result = state->channel_play_named(channel, name, 0x40);
 		if (!result)
-			result = state->overlay_play(channel, 0x40, name, 0x7000101, 0x7000101);
+			result = state->overlay_play_for_class(channel, 0x40, 0x7000101, 0x7000101, name);
 		function_b7360(device_index);
 	}
 	return result;
@@ -1031,12 +1031,12 @@ bool __stdcall function_107ed0(long device_index, long name, real seconds)
 						real speed = 0.0f;
 						transform4x3f original;
 						transform4x3f adjusted;
-						transform4x3f sampled;
 						transform4x3f start;
 						function_1420f0(&original, &device->field_xcc658c, &device->forward, &device->up);
 						adjusted = original;
 						if (device->flags & 8)
 						{
+							transform4x3f sampled;
 							c_type_709360 animation = device->channels[0].animation_id;
 							real time = device->channels[0].frame_position * (1.0f / 30.0f);
 							state->animation_matrix_get(animation, 0.0f, render_model, &start);
@@ -1216,19 +1216,62 @@ struct s_index_pair
 };
 bool function_0b6760(s_index_pair const *pair);
 
-// score 351 (was 365): frame 0x1c versus 0x20; index/header and state/result homes differ.
+// score 303 (was 303): Frame 0x1c versus 0x20 and index/header/state/result homes remain; native
+// power/position/both/activity flag values 376/302/379/370; power-activity/position-
+// activity/all/shared 376/373/376/376. One-point gain rejected.
+// Earlier: Frame 0x1c versus 0x20; index/header and state/result homes remain.
+// Frame 0x1c versus 0x20; index/header and state/result homes remain.
+// Frame 0x1c versus 0x20; index/header/state/result homes remain. Ordinary
+// index 389; ordinary saved pointer 378; both 421; ordinary index with header ordinal 389; both
+// with ordinal 421; both with byte result 413; ordinary saved pointer/index with byte result
+// 386/385. Acceleration producers preserved.
+// Frame 0x1c versus 0x20; index/header and state/result homes remain.
+// Acceleration products 303; speed products 316; both pairs 341; both plus complement 341;
+// delay product 310; acceleration plus delay 303; both plus delay 341; ordinary receiver plus both 378;
+// position/remaining product names 303, plain 303 kept. Sum grouping, fields, calls and existing qualifiers
+// unchanged.
+// frame 0x1c versus 0x20; index/header and state/result homes differ.
 // Long direction flag 367; shared completion 365; shared previous value 361;
 // channel guard helper 382; ordinary result 355; shared previous/ordinary result 351 kept.
 // Round 290: ordinary index with shared previous 408; shared previous and header index 408; header index
 // and ordinary tag pointer 384; group path first 392; byte direction predicate 351.
-// score 347 (was 351): Frame 0x1c versus 0x20; index/header and state/result homes differ. In-place
+// Frame 0x1c versus 0x20; index/header and state/result homes differ. In-place
 // power output 377; isolated rate position 371; speed first 352; integration-only direction 383;
 // conditional activity-bit publication 347 kept (plain).
 // Round 303: entry position output 351; previous-value name 351; early previous velocity 373;
 // changing-power arm first 351; early activity result 418. Frame/index/state homes still differ.
 // Ordinary saved pointer with shared previous 381 at retail length; original qualifiers kept.
-// score 347 (was 347): frame 0x1c versus 0x20 and index/state homes remain; byte result 351;
+// frame 0x1c versus 0x20 and index/state homes remain; byte result 351;
 // word result 358; shared position complement 347; common group receiver 347; clamp arms 352.
+// Native device/power-group/position-group record references and their pairs/all 303
+// (seven forms); real tag fields 351. All receivers and the original tag type restored.
+// Motion-helper inline/noinline 303/303; named derivative numerator 303; direct second completion test 303; both 303; named wait predicate 303; outer direction storage 303; previous-velocity name 303. Frame 0x1c versus 0x20 and index/header/state/result homes remain; all helper declarations restored.
+// Round 148: Explicit absent-state else 309; false result after flag clear 302; both joins 308; zero-first
+// direction/activity 303/303; state else plus direction 309; later false result plus activity 302; all
+// joins/zero tests 308. One-point gains dropped; frame/index/header/state/result homes remain.
+// Motion-helper inline/noinline 303/303; named derivative numerator 303; direct second completion test 303;
+// both 303; named wait predicate 303; outer direction storage 303; previous-velocity name 303. Frame 0x1c
+// versus 0x20 and index/header/state/result homes remain; all helper declarations restored.
+// Long activity result/entry-long/ordinary index/ordinary saved pointer/both/header ordinal/both with
+// ordinal/shared notification 307,305,380,378,407,316,421,375. Original frame/index/state/result storage and
+// qualifiers restored.
+// Separate power/position activity bool/long 443/451; phase-local position 373/448;
+// with shared motion completion 443/451, phase-local position 373/448.
+// Original single activity result and completion lifetimes restored.
+// Round 350: selected reached/reversal/both event values 336/336/351; native power-channel
+// admission 385; with reached/reversal/both value selections 379/378/340; all with native
+// repeated channel receiver 347. Frame 0x1c/0x20 and index/header/state/result homes remain.
+// Round 96: retail computes (index & 0xffff) * 12 once at entry, keeps it in EBX and its own frame slot
+// (the extra dword) and reuses it for the final header and datum reads, so its index is not volatile;
+// it also re-reads the animation-state offset after the result/state stores. Plain index 389; plain
+// index and definition 421; plain index with the result declared first 394; plain index with a
+// ternary state 416; result declared first 301 (two-point gain dropped).
+// Round 352: next-tick value, elapsed product and both 303; one shared previous power velocity
+// alone and with next-tick/elapsed/both 368; all with long next-tick 365. Frame remains 0x1c;
+// original delay, velocity observations, acceleration producers and inherited qualifiers restored.
+// Round 23: distinct phase/block/channel previous owners 307/307/303; short first/second/both
+// completion 387/335/408; phase plus first short 388; channel plus both shorts 408.
+// Frame stays 0x1c versus 0x20; original scalar lifetimes and bool completions restored.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {
@@ -1274,8 +1317,9 @@ bool __stdcall function_106790(long volatile device_index)
 		{
 			if (state && device->channels[0].graph_tag_index != NONE && device->channels[0].animation_id.index != NONE)
 				device->channels[0].set_frame_ratio(device->power);
-			real acceleration = *(real const *)(saved_definition + 0xcc) * device->position +
-				*(real const *)(saved_definition + 0xd4) * (1.0f - device->position);
+			real position_acceleration = *(real const *)(saved_definition + 0xcc) * device->position;
+			real remaining_acceleration = *(real const *)(saved_definition + 0xd4) * (1.0f - device->position);
+			real acceleration = position_acceleration + remaining_acceleration;
 			real speed = *(real const *)(saved_definition + 0xc8) * device->position +
 				*(real const *)(saved_definition + 0xd0) * (1.0f - device->position);
 			bool increasing = device->power_velocity > 0.0f;

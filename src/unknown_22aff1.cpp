@@ -3,6 +3,7 @@
 #include "unknown_0259d0.h"
 #include "globals.h"
 #include <string.h>
+#include <stddef.h>
 
 struct s_widget_quad_2b11;
 struct s_float_rect;
@@ -10,14 +11,17 @@ struct s_bitmap_widget_22ae21;
 struct s_widget_transform_block;
 struct s_510c4c;
 extern s_510c4c *g_510c4c;
+/* the interface draw inputs: the color at 0x30 and the three colors after it */
 struct s_4e6950
 {
-	byte field_0[0x40];
-	color4f field_40;
-	color3f field_50, field_5c, field_68;
-	byte field_74[0xc];
+	byte field_0[0x30];
+	color4f color;
+	color3f field_40, field_4c, field_58;
+	byte field_64[0xc];
 };
 extern s_4e6950 g_4e6950;
+typedef char check_22aff1_color_offset[offsetof(s_4e6950, color) == 0x30 ? 1 : -1];
+typedef char check_22aff1_last_color_offset[offsetof(s_4e6950, field_58) == 0x58 ? 1 : -1];
 long function_13a690(long);
 void function_22ae21(long, s_bitmap_widget_22ae21 const *, long *, long *, long *, box2f *);
 void function_1396c7(long, point2f *);
@@ -65,11 +69,33 @@ PRIVATE __forceinline real function_22aff5(real arg_0)
 }
 
 #pragma intrinsic(memcpy)
+// score 121 (was 121): frame homes differ: retail keeps vertical_scale at +0x08
+// (vertices at +0x0c), horizontal_scale in height's slot, the vertical offset in
+// width's and the horizontal offset in arg_3's; ours swaps the two axes and the
+// height/width homes and puts vertical_scale in arg_3's slot. Retail also reads both
+// offsets from memory at every product where ours caches each in a register (4
+// bytes short). Offsets as one point2f 121 (plain locals 146, arg_3 reference 141);
+// declarations reordered (axes, height/width, vertical_scale before the vertices)
+// 121 each; locals renamed 121; scales computed inside the loop 120, as a point2f
+// 138; offset x before y 466; offset at loop or function scope 121; vertex pointer 121.
+// Round 72: one (real) conversion after each ternary 154 (vertex sums go x87); offsets
+// assigned in if/else 121; origin-first, offset-first sums 121; edge-offset helper
+// inline/forceinline 509/121; plain scalars 146 and an inline transform taking the
+// offsets by address 146 (both load the offsets into xmm as ours does); the vertex loop in
+// a forceinline helper 146. Every SSE form loads the rounded offsets into registers.
+// Native offset vector 121; destination cursor 423; vector plus cursor 423;
+// vertical/horizontal/both full-width side predicates 447/138/450; bounded short
+// vertex ordinal 431; native vector plus short ordinal 431. Original body retained.
+// complete vertex value before array store 446; both completed coordinate scalars before stores 121;
+// uniform named axis products at each row 121; uniform origin addition stages at each row 119; constant
+// axis initialization at declaration 136; explicit offset branches with native point workspace 121; width
+// used directly by repeated draw spacing 121; immutable palette with body cursor step 121.
+// Uniform two-row horizontal/vertical product and pair-sum operand orders 121 each;
+// complete input-color component publication 518.
 // @retail 0x22aff1
 void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real const *arg_3)
 {
 	long local_0 = function_13a690(*(word const *)(arg_2 + 0x1c));
-	(void)&arg_0; (void)&arg_1; (void)&arg_2; (void)&arg_3;
 	if (*(long const *)(arg_2 + 0x2c) != NONE && *(long const *)(arg_2 + 0x24) != NONE)
 	{
 		point2f horizontal_axis;
@@ -111,7 +137,7 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 				anchor.y = coordinates.y0 + (coordinates.y1 - coordinates.y0) * *(real const *)(arg_2 + 0x54);
 				break;
 			}
-			g_4e6950.field_40 = *(color4f const *)arg_3;
+			g_4e6950.color = *(color4f const *)arg_3;
 			function_22bcaf((s_widget_transform_block const *)(arg_2 + 0x58), &origin, &horizontal_axis, &vertical_axis);
 			long local_44 = width;
 			real vertical_scale = (real)height;
@@ -120,13 +146,13 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 			{
 				bool local_14 = local_13 > 1;
 				bool local_15 = local_13 == 1 || local_13 == 2;
-				real offset_along_vertical_axis = local_14 ? (real)function_1d6d0((coordinates.y1 - anchor.y) * vertical_scale) :
+				point2f offset;
+				offset.y = local_14 ? (real)function_1d6d0((coordinates.y1 - anchor.y) * vertical_scale) :
 					(real)-function_2b460((anchor.y - coordinates.y0) * vertical_scale);
-				real &local_17 = *(real *)&arg_3;
-				local_17 = local_15 ? (real)function_1d6d0((coordinates.x1 - anchor.x) * horizontal_scale) :
+				offset.x = local_15 ? (real)function_1d6d0((coordinates.x1 - anchor.x) * horizontal_scale) :
 					(real)-function_2b460((anchor.x - coordinates.x0) * horizontal_scale);
-				vertices[local_13].x = horizontal_axis.x * local_17 + vertical_axis.x * offset_along_vertical_axis + origin.x;
-				vertices[local_13].y = horizontal_axis.y * local_17 + vertical_axis.y * offset_along_vertical_axis + origin.y;
+				vertices[local_13].x = horizontal_axis.x * offset.x + vertical_axis.x * offset.y + origin.x;
+				vertices[local_13].y = horizontal_axis.y * offset.x + vertical_axis.y * offset.y + origin.y;
 			}
 			if (*(word const *)(arg_2 + 0x1e) & 1)
 			{
@@ -144,19 +170,19 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 			{
 			case 1:
 				function_1392c5(*(long const *)(arg_1 + 0x188));
-				g_4e6950.field_50 = *(color3f const *)(arg_1 + 0x18c);
+				g_4e6950.field_40 = *(color3f const *)(arg_1 + 0x18c);
 				break;
 			case 2:
 				function_1392c5(*(long const *)(arg_1 + 0x1d4));
-				g_4e6950.field_50 = *(color3f const *)(arg_1 + 0x1d8);
+				g_4e6950.field_40 = *(color3f const *)(arg_1 + 0x1d8);
 				break;
 			case 3:
-				g_4e6950.field_50 = *(color3f const *)(arg_1 + 0x18c);
-				g_4e6950.field_5c = *(color3f const *)(arg_1 + 0x18c);
+				g_4e6950.field_40 = *(color3f const *)(arg_1 + 0x18c);
+				g_4e6950.field_4c = *(color3f const *)(arg_1 + 0x18c);
 				break;
 			case 4:
-				g_4e6950.field_50 = *(color3f const *)(arg_1 + 0x1d8);
-				g_4e6950.field_5c = *(color3f const *)(arg_1 + 0x1d8);
+				g_4e6950.field_40 = *(color3f const *)(arg_1 + 0x1d8);
+				g_4e6950.field_4c = *(color3f const *)(arg_1 + 0x1d8);
 				break;
 			case 5:
 			{
@@ -181,26 +207,26 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 						local_24 = local_23;
 					if (local_23 <= 0.0f && local_24 <= 0.0f)
 						break;
-					g_4e6950.field_40.alpha = local_24;
-					g_4e6950.field_40.red = local_23;
-					g_4e6950.field_50 = local_28;
+					g_4e6950.color.alpha = local_24;
+					g_4e6950.color.red = local_23;
+					g_4e6950.field_40 = local_28;
 					if (local_47)
 					{
 						if (function_22acb4(arg_0))
 						{
-							unpack_color3f(0x45059a, &g_4e6950.field_5c);
-							unpack_color3f(0x9c46c1, &g_4e6950.field_68);
+							unpack_color3f(0x45059a, &g_4e6950.field_4c);
+							unpack_color3f(0x9c46c1, &g_4e6950.field_58);
 						}
 						else
 						{
-							unpack_color3f(0x55aa, &g_4e6950.field_5c);
-							unpack_color3f(0x78f0, &g_4e6950.field_68);
+							unpack_color3f(0x55aa, &g_4e6950.field_4c);
+							unpack_color3f(0x78f0, &g_4e6950.field_58);
 						}
 					}
 					else
 					{
-						unpack_color3f(*palette, &g_4e6950.field_5c);
-						unpack_color3f(*palette, &g_4e6950.field_68);
+						unpack_color3f(*palette, &g_4e6950.field_4c);
+						unpack_color3f(*palette, &g_4e6950.field_58);
 					}
 					function_22a664((s_widget_quad_2b11 const *)vertices, (s_float_rect const *)&coordinates,
 						*(long const *)(arg_2 + 0x24), bitmap_index, *(long const *)(arg_2 + 0x2c));
@@ -217,11 +243,11 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 					real local_31 = (real)(local_29 - 1) * (local_30 * 0.5f);
 					for (long local_32 = 0; local_32 < 4; ++local_32)
 						vertices[local_32].x -= local_31;
-					g_4e6950.field_5c = *(color3f const *)g_468718;
+					g_4e6950.field_4c = *(color3f const *)g_468718;
 					for (long local_33 = 0; local_33 < *(long const *)(arg_1 + 0x22c); ++local_33)
 					{
-						unpack_color3f(*(dword const *)(arg_1 + 0x230 + local_33 * 4), &g_4e6950.field_50);
-						g_4e6950.field_40.alpha = *(real const *)(arg_1 + 0x250 + local_33 * 4);
+						unpack_color3f(*(dword const *)(arg_1 + 0x230 + local_33 * 4), &g_4e6950.field_40);
+						g_4e6950.color.alpha = *(real const *)(arg_1 + 0x250 + local_33 * 4);
 						function_22a664((s_widget_quad_2b11 const *)vertices, (s_float_rect const *)&coordinates,
 							*(long const *)(arg_2 + 0x24), bitmap_index, *(long const *)(arg_2 + 0x2c));
 						for (long local_34 = 0; local_34 < 4; ++local_34)

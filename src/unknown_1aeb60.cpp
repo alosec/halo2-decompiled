@@ -229,6 +229,12 @@ bool __stdcall function_1aefc0(long actor_index, s_slot *slot)
 // result = other, placed last). Goto-free forms keep 8: a do/while (false) with break, a keep
 // flag, if/else-if with an empty then, nested ifs. Tried: one || / && condition (22), early
 // returns (58), a use_other flag (43), return other / g_46fbe8 after a final label (62, 63).
+// State fields through parameter 8; output fields through parameter 8; both direct slot parameters 8;
+// prop lookup at field use 60; selection result names 8; chained activation flags 8;
+// activation result before stores 17; strict prop threshold 9.
+// alternate conjunction 8; conjunction with direct other 62; inner default return 58;
+// direct inner returns 42; alternate global at assignment 35; alternate before lookup 54;
+// immutable prop 8; result after actor 8; outer-scope alternate split 8.
 // @retail 0x1af0a0
 short __stdcall function_1af0a0(long actor_index, s_slot *slot, s_slot *arg_2)
 {
@@ -337,8 +343,29 @@ struct s_unit_state_0f
 
 static __forceinline long real_to_long(real value);
 
-// score 114 (was 114): the argument is read into ECX and the other value into EDX; retail reads them
+// score 49 (was 49): Frame agrees; actor/index ECX/EDX and final call setup differ.
+// Frame four agrees; actor/index ECX/EDX and final argument setup still differ.
+// actor/index ECX/EDX and final setup remain; existing state query
+// ordinary/inline/forced 138 each; query with long timer 143; timer/mode 143; mode 137; readonly actor
+// 138; readonly records 138.
+// Earlier: Frame agrees; actor/index ECX/EDX and final call setup differ.
+// Frame agrees; actor/index ECX/EDX roles and final setup still differ.
+// Earlier: the argument is read into ECX and the other value into EDX; retail reads them
 // in the opposite order.
+// Earlier: ecx and edx are swapped through the whole body (retail: index edx, actor ecx);
+// retail also keeps the random scale and the range as two fmuls. Slot view first 79; one actor
+// pointer for the last test 138; marker local in the last block 80; `--timer == 0` 79; prop index
+// local 79.
+// Native countdown/mode/both 134/80/138; shared range 49; its native countdown/mode/both 127/64/129; unit
+// reference 49; short/early short countdown 49/123; actor reference and read-only node/unit/actor/all
+// views 49 each; final guard 49; direct shared product/conversion 49/49; shared low-half index with
+// pointer/reference 127/127. Timer test combined as in 0x1b7c70 49; `--state->ticks <= 0` 49;
+// slot cast declared first 49; constant first in the time test 49; timer record by pointer
+// addition 49 (the same code each time).
+// pointer/reference 127/127.
+// Nested prop/clock/tick names singly, in all pairs and together 49 each; early uninitialized tick declaration 49.
+// Actor getter boundary 49; getter observations at timer/prop/both 117/115/140;
+// unit/timer-unit/prop-unit/all phases 120/117/117/132; all computed receiver forms rejected.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {
@@ -351,9 +378,8 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 		if (!state->timer && actor->unknown227 && !actor->unknown229)
 			function_1f86a0(actor_index);
 	}
-	short remaining = state->ticks - 1;
-	state->ticks = remaining;
-	if (remaining <= 0)
+	state->ticks--;
+	if (state->ticks <= 0)
 	{
 		if (actor->prop_index != NONE)
 		{
@@ -366,10 +392,7 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 				timer->time = now;
 			}
 		}
-		real seconds = slot_random_range(3.0f, 10.0f);
-		real ticks = g_510c54->field_2_3 * seconds;
-		long rounded = real_to_long(ticks);
-		state->ticks = (short)rounded;
+		state->ticks = (short)real_to_long(g_510c54->field_2_3 * function_259d0(&g_4e7408->unknown0, NULL, 0, 3.0f, 10.0f));
 	}
 	if (state->unknown16 && !state->unknown17 && state->unknown34 && actor_get(actor_index)->unknown504 == 2)
 	{

@@ -1,5 +1,4 @@
-/* UNKNOWN_1EFAC0.H: a small class hierarchy (c_b <- c_a <- c_d); c_a's
-   enable/disable virtual lives in code not decompiled here (stubbed) */
+/* UNKNOWN_1EFAC0.H: reference objects with registry-backed name virtuals. */
 
 #ifndef UNKNOWN_1EFAC0_H
 #define UNKNOWN_1EFAC0_H
@@ -7,34 +6,37 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 
+class eight_values_2d96c0;
+extern eight_values_2d96c0 g_480120;
+
 struct c_b
 {
 	virtual ~c_b() {}
+	word flags;
+	word unknown06;
 
-	void operator delete(void *block)
+	static __forceinline void __cdecl operator delete(void *block)
 	{
-		/* slot 5 of the allocator at 0x480118 also frees: (block, size, tag) */
-		g_480118->allocate((long)block, 0xc, 0x22);
+		/* The first word records the allocation size; allocator slot 5 frees it. */
+		g_480118->allocate((long)block, ((c_b *)block)->flags, 0x10);
 	}
 };
 
 struct c_a : c_b
 {
-	word flags;
-	word unknown06;
 
 	virtual ~c_a()
 	{
 		if (flags & 0x8000)
 		{
 			flags &= 0x7fff;
-			v2(false);
+			v2(0);
 		}
 	}
 
-	virtual long v1(long, long) { return 0; }
-	virtual void v2(bool enable);
-	virtual void *v3() { return 0; }
+	virtual unsigned int v1(char *buffer, unsigned int size);
+	virtual void v2(char const *name);
+	virtual void *v3() { return &g_480120; }
 	virtual void v4(dword unused) {}
 };
 

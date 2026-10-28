@@ -5,6 +5,7 @@
 #include "data_array.h"
 #include "object_markers.h"
 #include "object_queries.h"
+#include "unknown_211060.h"
 #include <math.h>
 
 // Layouts follow the pool and tag accesses in the retail callback group.
@@ -83,7 +84,6 @@ struct s_type_7ba8e9;
 s_type_7ba8e9 *function_137550(long group_index, short bitmap_index);
 void function_11bed0(s_location *location, point3f const *point);
 real function_11ce20(vector3f const *a, vector3f const *b);
-void function_211060(long unknown0, void *physics, s_location *location, long unknown3, point3f *position, long unknown5, long unknown6, long unknown7, real radius, real dt, vector3f *velocity);
 typedef void (__stdcall *chain_draw_callback)(long, long);
 void function_47870(long object_index, long chain_index, point3f const *origin, chain_draw_callback draw);
 
@@ -232,6 +232,18 @@ void __stdcall function_1160c0(real dt)
 	}
 }
 
+// score 190 (was 194): attachment/previous/axis homes and rotation scheduling differ;
+// seven local-name sets, declaration reversals and entry/loop scopes 194;
+// shared cross 207, both point differences 286, both helpers 280;
+// scaled difference 212, all vector helpers 285.
+// frame 0xa4 agrees; three pairs of same-size stack homes are exchanged (retail:
+// origin below forward, offset below previous, the scalar temporaries below the axis), the segment
+// pointer lives in edx (ours edi) and the rotation's products are scheduled in another order.
+// Round 62: the existing normalize3d for the axis and dot3f for the projection give the same code (194)
+// but cost 0x73360 its match (this file links ahead of unknown_058dd0.cpp), so not kept; forward
+// declared before origin 194; the three rotation cross terms as one vector 275; previous/predicted at
+// function scope 194. Earlier: origin/forward, previous/offset and axis/length/scale names, singly and
+// combined, 194 each.
 // @retail 0x1161f0
 void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *definition, real dt)
 {
@@ -260,7 +272,7 @@ void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *defin
 			{
 				position = node->position;
 				if (definition->physics_index != NONE)
-					function_211060(0, g_4e3b44[definition->physics_index & 0xffff].bytes, &location, NONE, &position, 0, 0, 0, .02f, dt, &node->velocity);
+					function_211060(&node->velocity, 0, g_4e3b44[definition->physics_index & 0xffff].bytes, &location, NONE, &position, 0, 0, 0, .02f, dt);
 				vector3f delta = { position.x - previous.x, position.y - previous.y, position.z - previous.z };
 				real scale = (real)(segment->length / sqrt(delta.k * delta.k + delta.j * delta.j + delta.i * delta.i));
 				point3f target = { scale * delta.i + previous.x, scale * delta.j + previous.y, scale * delta.k + previous.z };

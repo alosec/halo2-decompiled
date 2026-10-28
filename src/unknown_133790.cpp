@@ -135,7 +135,24 @@ void function_133720(s_bit_vector_pool *arg_1, bool arg_2)
 }
 #pragma inline_depth(255)
 
-// score 95 (was 95): the float multiply reads its operands from the other two globals and the sum is added in the other order
+// score 13 (was 108): the radius load and point/index store schedule still differs.
+// Earlier projection operand/sum order 95; radius local 30; multiply from the
+// object 32; radius copy first 19; depth as one expression 19-30;
+// record fields read directly 28; position pointer local 172.
+// Native point value 168; point/radius values 173; existing point setter 172;
+// setter with shared radius 173; radius before setter 173; contiguous copy 107;
+// point value shared with distance 177; native vector copy 219.
+// early radius/point acquisition and index/radius store scheduling differ.
+// Earlier comparison: the float multiply reads its operands from the other two globals and the sum is added in the other order
+// Earlier forms: retail loads the radius into xmm2 before the point copy (and the copy's last
+// load before its middle store); ours loads it after the copy. Radius local 30; multiply from the
+// object 32; radius first in the record 19; depth as one expression 19-30; record fields read
+// directly 28; position pointer local 172.
+// Scalar point inputs shared by setter/projection: y/z/x 178/178/94; yz/xy/xz 101/173/173;
+// xyz/xyz with shared radius 178/178. All scalar-input forms restored.
+// Existing acquisition helper ordinary 206; inline with standalone noinline 206; inline without it 106;
+// early radius with delayed stores 30; delayed direct stores 19; early direct with delayed index 19;
+// radius pointer and two direct field uses 32 each.
 // @retail 0x133790
 bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *arg_4, long arg_5, bool arg_6)
 {
@@ -145,9 +162,9 @@ bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *ar
     long local_3 = local_2->field_c[local_11];
     s_133791 const *local_4 = ((s_133792 *)g_4e0300->data)[local_3 & 0xffff].field_8;
     s_133f70 local_5;
-    local_5.field_0 = local_3;
     local_5.field_194 = local_4->field_30;
     local_5.field_1a0 = local_4->field_3c;
+    local_5.field_0 = local_3;
     // retail does these in SSE single precision: every product and sum is rounded to float
     point3f const *local_16 = &local_5.field_194;
     real local_13 = local_16->y * g_4b9e2c;
@@ -168,33 +185,31 @@ bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *ar
     long local_12 = local_2->field_8[local_11];
     local_5.field_1ac = function_1332f0(arg_1, local_12);
     *(bool *)(local_5.field_1a4 + 4) = (local_12 & 0x200) != 0;
-    local_5.field_1c0 = arg_5;
-    *(long **)local_5.field_1c8 = arg_4;
+    local_5.field_1e0 = 0.0f;
     local_5.field_1cc = false;
+    *(long **)local_5.field_1c8 = arg_4;
+    local_5.field_1c0 = arg_5;
     local_5.field_1d0 = NONE;
     local_5.field_1d4 = false;
     local_5.field_1d8 = 0.0f;
     local_5.field_1dc = 0.0f;
-    local_5.field_1e0 = 0.0f;
     *(long *)local_5.field_1a4 = 0;
     local_5.field_1be = NONE;
-    local_5.field_1b0 = 1;
-    if (!(local_12 & 0x800))
+    short marker = local_12 & 0x800 ? NONE : local_2->field_14[local_11];
+    if (marker != NONE)
     {
-        short marker = local_2->field_14[local_11];
-        if (marker != NONE)
-        {
-            local_5.field_1be = marker;
-            local_5.field_1b0 = 0x40;
-        }
+        local_5.field_1b0 = 0x40;
+        local_5.field_1be = marker;
     }
+    else
+        local_5.field_1b0 = 1;
     ((t_function_4b5d0_133790)function_4b5d0)(local_1, arg_1->mode, local_5.field_0, *(real *)local_5.field_1b8,
-        local_5.field_1b4, (s_133f70 *)((byte *)&local_5 + 4), &local_5.field_194, (local_12 & 0x200) != 0);
+        local_5.field_1b4, (s_133f70 *)((byte *)&local_5 + 4), &local_5.field_194, *(bool *)(local_5.field_1a4 + 4));
     local_5.field_1b0 |= 0x208;
     if (arg_3)
     {
-        local_5.field_1ac = (local_5.field_1ac & ~2) | 4;
         local_5.field_16c = false;
+        local_5.field_1ac = (local_5.field_1ac & ~2) | 4;
     }
     else if (local_5.field_16c && arg_1->mode == 1)
         local_5.field_1ac &= ~4;

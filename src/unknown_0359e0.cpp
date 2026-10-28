@@ -62,6 +62,9 @@ PRIVATE inline long swizzle_log2(dword value)
 // 100, short copies 119, only y copied 93, the copies swapped 84 (these five change
 // how x and y travel and cost matched caller 0x136140); log2_floor called with the
 // body rewritten as above 119.
+// score 82 (was 82): log2_floor called (retail's loops) 87; with x copied first 84 (costs
+// 0x136140); with the minimum as if/else 87; mask as long 90; short copies at entry and long
+// copies after the mask make x and y stack parameters.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

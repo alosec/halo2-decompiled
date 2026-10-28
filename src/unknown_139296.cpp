@@ -1,5 +1,6 @@
 // @flags /O1 /Oi /arch:SSE /Gr
 #include "view_context_storage.h"
+#include "hud_messages.h"
 /* UNKNOWN_139296.CPP: per-player interface state (built for size) */
 
 #include "unknown_11c920.h"
@@ -338,18 +339,106 @@ void function_13ad48(long user_index, byte const *selectors, real *values, byte 
 
 bool function_22acb4(long player_index);
 
-// score 232 (was 232): extra second-mask slot and retained constant registers differ;
+// score 165 (was 165): extra second-mask spill and persistent constant homes remain.
+// Round 43: arithmetic NONE-seeded first 237; with third type order 123 240;
+// dword/signed-word first 295/295; dword/signed-word second 291/288;
+// OR-seeded first with third orders 123/231 281/280.
+// Extra second-mask spill and persistent constant homes remain.
+// extra second-mask slot and retained constant registers differ;
 // third/second/fourth phases 265; fourth/second/third 261; third/fourth/second 246;
 // shared item guard 241; descending selection cases 232. Original body retained.
-// score 232 (was 232): extra second-mask slot/constant registers remain;
+// extra second-mask slot/constant registers remain;
 // set-only all masks 529; first 381; second 293; third 262; fourth 294.
-// score 196 (was 232): extra second-mask slot and constant homes remain; second enum group kept.
+// extra second-mask slot and constant homes remain; second enum group kept.
 // Second/fourth/third phases 287; fourth/third/second 297; first enum group 238;
 // complete type-bit selection 227; second enum group 196; combined selections 201.
-// score 190 (was 196): second-mask spill and constant homes remain.
+// second-mask spill and constant homes remain.
 // Round 303: both enum groups 216; unified item predicate 256; multiplayer at use 257;
 // shifted source flags 281; fourth enum selection 284; one-case bit first 190;
 // one total enum-bit update 291. Final stores and query argument preserved.
+// second-mask spill/constant-one retention remain.
+// extra second-mask slot and retained constant registers differ;
+// Earlier 232 (was 232): extra second-mask slot/constant registers remain;
+// Earlier 196 (was 232): extra second-mask slot and constant homes remain; second enum group kept.
+// Earlier 190 (was 196): second-mask spill and constant homes remain.
+// Earlier 190 (was 190): second-mask spill/constant-one retention remain.
+// Total low-bit updates from seeded accumulators: second/third/both/fourth/
+// second-fourth/third-fourth/all 254,190,254,190,254,190,254; second seed 3 253.
+// second-mask slot and constant homes remain; second-mask bit orders
+// 16/2/4/8, 2/16/4/8, 2/4/16/8, 8/4/2/16 all 190;
+// 2/8/4/16, 16/8/4/2, 8/16/2/4, 4/8/16/2 all 190 at 884 bytes.
+// second-mask spill and constant homes remain.
+// First enum order one/zero/NONE 189 (below gate), zero/NONE/one 195, zero/one/NONE 195,
+// NONE/one/zero 197; native fourth on current enums 299; signed third/fourth/both 271/299/285.
+// second-mask spill and persistent constant homes remain.
+// Earlier 190 (was 190): second-mask spill and constant homes remain.
+// Fourth-mask code/side/flag-a/flag-b/flag-c observations once: 190/260/209/209/209;
+// all five/code plus flag-a/flag-b plus flag-c: 271/209/287. Second-mask spill remains.
+// second-mask spill and persistent constant homes remain.
+// Earlier 190 (was 190): second-mask spill and persistent constant homes remain.
+// Individual redundant clears removed: first16 284; second16 281; both16 290;
+// first2/4/8 286/286/290; first2+16 301; initial third128 249. All restored.
+// False-first total setters: first/second/third/fourth 190/190/248/207;
+// first-second/all 190/260. Clear-before-guarded-set second/all 259/340.
+// Round 364: Native enum/source-flags/first-bytes/fourth-bytes reads 190/190/190/190;
+// enum plus flags/first bytes 190/190; all scalar fields/all fields plus native items 190/190.
+// Round 366: Joint item/type-mask selection 298; mask-first stores 298; zero result 300;
+// initialized absent outputs 278; early first seed 298; signed third/native fourth/native second 316/308/285.
+// First/second enum observations once 292/284; flags at each use 190; both enum observations 284; first/second/both with live flags 292/284/284; unsigned-word enums with live flags 284. Extra second-mask spill and persistent constant homes remain.
+// Third-mask type order 132/213/231/312/321 190/273/165/251/190; item bits
+// 132 196; item bits 213 196; item bits 321 196. Keep type order 231, plain 165.
+// Round 206: On type order 231, total conditional result updates for first/second/third/fourth masks
+// 165 each; first-second, second-third, second-fourth and all masks 165 each. Original setter restored.
+// Round 166: Native source bits with Boolean conversion/total low-bit/false-first
+// second updates 164/296/275/295/164/296/275/297 fast. The 164 form gains one
+// length-penalty point only; extra slot remains. Original body and source fields restored.
+// Round 331, retained third-type order 231: first-enum orders 248/284/428/482/842
+// 192/193/284/283/189f; total second enum 234f; both enums 235f;
+// all mask declarations at entry 165f. Extra spill remains; all eight restored.
+// Round 145: Independent enum producers with native first/first-second/first-third/first-fourth/
+// first-second-third/first-second-fourth/first-third-fourth/all results 290/299/295/291/311/314/307/323.
+// Existing query inline declaration: retained producers 165; independent producers 232. All restored.
+// Round 243: Signed source flags char/short 165/164; native second 204/203, third
+// 270/269, both 287/286. The one-point length-only form is rejected; original body
+// restored.
+// our second mask is computed into ECX and spilled to an extra frame slot (retail keeps
+// it in EBX and has one local), and the constant held in a register differs (retail: 1 in EDI; ours: 2 or a
+// clear mask). Forms tried, by round:
+// phases third/second/fourth 265, fourth/second/third 261, third/fourth/second 246, second/fourth/third 287,
+// fourth/third/second 297; shared item guard 241; descending selection cases 232; set-only all masks 529,
+// first 381, second 293, third 262, fourth 294; first enum group 238; complete type-bit selection 227; second
+// enum group 196; combined selections 201; both enum groups 216; unified item predicate 256; multiplayer at use
+// 257; shifted source flags 281; fourth enum selection 284; one-case bit first 190; one total enum-bit update 291;
+// total low-bit updates from seeded accumulators second/third/both/fourth/second-fourth/third-fourth/all
+// 254/190/254/190/254/190/254, second seed 3 253; second-mask bit orders 16/2/4/8, 2/16/4/8, 2/4/16/8, 8/4/2/16,
+// 2/8/4/16, 16/8/4/2, 8/16/2/4, 4/8/16/2 all 190; first enum order one/zero/NONE 189, zero/NONE/one 195,
+// zero/one/NONE 195, NONE/one/zero 197, NONE/zero/one 192; native fourth 299; signed third/fourth/both
+// 271/299/285; fourth-mask code/side/flag-a/flag-b/flag-c observations once 190/260/209/209/209, all five 271,
+// code plus flag-a/flag-b 209, plus flag-c 287; redundant clears removed first16 284, second16 281, both16 290,
+// first2/4/8 286/286/290, first2+16 301, initial third128 249; false-first total setters first/second/third/
+// fourth 190/190/248/207, first-second/all 190/260; clear-before-guarded-set second/all 259/340; native
+// enum/source-flags/first-bytes/fourth-bytes reads 190 each; joint item/type-mask selection 298; mask-first
+// stores 298; zero result 300; initialized absent outputs 278; early first seed 298; signed third/native
+// fourth/native second 316/308/285; enum observations once first/second/both 292/284/284; flags at each use 190;
+// third type order 132/213/231/312/321 190/273/165/251/190, 123 190; item bits 196; total conditional result
+// updates 165; native source bits with boolean conversion 164 (one length point only); all mask declarations at
+// entry 165; second enum as four set-or-clears 234, with the first enum NONE/zero/one 235.
+// Round 57 (aligned listing counts, ours vs retail, in brackets): retail's own block order is the first enum
+// NONE/zero/one, the second enum as four set-or-clears (0x100 twice) and the third type order 1/2/3; together
+// 232 [aligned 84 -> 30]. On that body: short second 283 [19: 1 now in EDI as retail], long second 287 [18],
+// (short)(char) second 232 [30], `& (word)1` 232, second split into a store and `&= 1` 283 [19], short first
+// 268, all masks short 319, second declared at entry 232, flags read at each use 232, char flags local 233,
+// `(word)(flags & 1)` 289. Only the second-mask register (and with it the frame slot) still differs there.
+// Round 204: First-enum conditional seeds NONE/one/zero, each remaining order,
+// 193/192/165/189/284/283; branch-produced NONE/one seeds 193/165. Retained type
+// order 231; original first-mask producer restored. Extra second-mask spill remains.
+// Round 206: On type order 231, signed first with word/short/dword/byte second
+// 283/291/293/292; native first with the same second carriers 283/291/293/292. Original domains restored.
+// Round 347: complete second result as unsigned byte on retained/first-enum/second-enum/both
+// producer graphs 269/204/250/280; signed byte repeats 269/204/250/280.
+// The second-enum byte form recovers the one-slot prologue, but later operations regress; body restored.
+// Round 210: First-mask high-byte orders 2134/1324/1243/4123/4321/3412/2341/3142
+// all 165; original producers restored, extra second-mask spill remains.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)
@@ -389,9 +478,9 @@ void function_13a050(byte const *status, long user_index, long type, s_13ad48_it
 	SET_CONDITION(second, 8, flags & 4);
 	SET_CONDITION(second, 0x10, flags & 2);
 	word third = 0;
-	SET_CONDITION(third, 1, type == 1);
 	SET_CONDITION(third, 2, type == 2);
 	SET_CONDITION(third, 4, type == 3);
+	SET_CONDITION(third, 1, type == 1);
 	SET_CONDITION(third, 0x40, item ? item->flag20 : false);
 	third &= ~0x80;
 	if (item)
@@ -551,28 +640,15 @@ void function_13934d(s_name_buffer *buffer, long string_handle)
 
 long function_155760(long index);
 bool function_155d60(long index);
-bool g_4f55e2;
 
-// score 7 (was 7): ours masks the byte with an and against a memory constant and negates it, retail masks a
-// dword in memory and tests the low byte; a four-byte global read into a char local already gives retail's
-// dword and, so what is left is the end: retail branches on the mask, ours negates it and pops esi early.
-// Tried: return !local_1 (11), local_1 + 1 (11), ?: false : true, if (!local_1) return true; return false,
-// char/long local (7); one shared bool result (30, 32); the whole test as one && chain, as a return or
-// with if (!local_1) return true falling to one return false (19: test byte ptr, xor eax/inc eax).
-// 0x165f16 shows the same dword and on this flag (0x4f55e2 sits between the bools at 0x4f55e0/e4).
 // @retail 0x13939b
 bool function_13939b()
 {
 	long index = g_4b9ed8;
 	if ((function_155760(index) != 3 || function_155d60(index)) &&
 		function_155760(index) != 2 &&
-		((s_510c4c_view *)g_510c4c)->flag1d2)
-	{
-		bool local_1 = g_4e6948->state == 1 ? g_4f55e2 : false;
-		if (local_1)
-			return false;
+		((s_510c4c_view *)g_510c4c)->flag1d2 && !function_2ac270_get(6))
 		return true;
-	}
 	return false;
 }
 
@@ -1049,10 +1125,19 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2);
 void function_22aff1(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 
-// score 38 (was 83): retail keeps a success byte (set to 1 up front, overwritten with the
+// score 1 (was 1): first count still TEST EAX,EAX versus CMP EAX,EBX.
+// Offset-compared do/renamed-do 12/12; offset-guard for/nonzero-for/named admission/while 1/1/1/1;
+// offset-plus-one admission 125; split first offset 42; direct-bound first do/for 118/118;
+// direct-bound first with independent later loops 6; later count-first 6; captured later guards 116;
+// independent second 3; captured/split-offset second 118/118; nonzero second admission 76;
+// positive-nonzero/double-positive/combined second admissions 118/118/118.
+// score 1 (was 12): only first count zero-test differs: TEST EAX,EAX versus CMP EAX,EBX; frame 0x28 and retail length agree.
+// only first count zero-test differs: TEST EAX,EAX versus CMP EAX,EBX; frame 0x28 and retail length agree.
+// Earlier: only first count zero-test differs: test EAX,EAX versus CMP EAX,EBX; frame 0x28 and length agree.
+// Earlier: retail keeps a success byte (set to 1 up front, overwritten with the
 // call's result on failure) and returns that byte directly; ours keeps the failure flag, so the
 // store and the negated return differ and the function is eight bytes longer.
-// score 38 (was 38): Failure-byte initialization, stores and inverted return still differ.
+// Earlier: Failure-byte initialization, stores and inverted return still differ.
 // descriptor reference 38; immutable descriptor 38; single count reads 38; byte failure 38;
 // signed-byte failure 38; wide failure 70; immutable callback results 38; shared callback-result
 // home 38.
@@ -1060,10 +1145,28 @@ void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3,
 // mask-zero producer with direct result 122; output-only masks 116; first,
 // second, third or fourth default omitted 102/103/98/104; shared zeros with
 // true or explicit false comparison 87/122. Original failure byte retained.
+// Earlier: native success with first captured count 42; second/third 118;
+// first plus second 45; count/offset names 42; offset before first count 12 plain,
+// offset before setup 20; original count observations with early offsets 125/121;
+// guard-assigned count 20; offset-produced mask zeros 125. Native-result 12 remains
+// unmatched: first count takes EBX and offset spills; match-only result form restored.
+// Earlier: the success byte is retail's (set, cleared after a failed draw, returned);
+// the first loop's count takes EBX and its offset spills, where retail keeps the offset in EBX.
+// Indexed loops over captured counts 118; their call result stored 118; first loop count declared
+// before its offset 42; first offset alone outside the guard 118; one shared offset/count 41;
+// first loop indexed 118; every count captured before its guard 20.
+// First positive-count for/while 1/1; unsigned admitted remainder 1; unsigned first offset 12;
+// admitted offset 42; shared color workspace 12; native color type 12; admitted offset plus shared color 42.
+// Positive-count for kept after whole-program validation; all draw call tuples unchanged.
+// Original positive guard before positive/nonzero counted walk 1/1; both redundant-guard diagnostics
+// restored because they are nonexact. The ordinary positive-count for remains the plain-validated keeper.
+// Repaired-countdown mask chain 5; offset mask producer 5; late result 1; subject,
+// descriptor, input and mask lexical roles 1/1/1/1; mask chain with native roles 5.
+// Partial mask chains 34/35/36/45/46/56/345/456: 5/4/5/3/4/3/5/3; first zero-test remains.
 // @retail 0x13a3c6
 bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
 {
-	bool condition_failed = false;
+	bool success = true;
 	s_13a532 const *local_2 = (s_13a532 const *)g_4e3b44[arg_1 & 0xffff].bytes;
     word local_3 = 0;
     word local_4 = 0;
@@ -1071,24 +1174,19 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
     word local_6 = 0;
     s_13ad48_item const *local_7;
     function_13a050(arg_3, arg_2, arg_4, &local_7, &local_3, &local_4, &local_5, &local_6);
-    if (local_2->field_20 > 0)
+    long offset = 0;
+    long count = local_2->field_20;
+    for (; count > 0; --count)
     {
-        long local_8 = 0;
-        long local_11 = local_2->field_20;
-        do
+        byte const *local_9 = local_2->field_24 + offset;
+        if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
+            local_6, (s_condition_subject const *)local_7, local_5))
         {
-            byte const *local_9 = local_2->field_24 + local_8;
-            if (function_13ac87((s_condition_masks const *)(local_9 + 8), local_3, local_4,
-                local_6, (s_condition_subject const *)local_7, local_5))
-            {
-                real local_10[4];
-                function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
-                bool local_12 = function_22b7dd(local_9, arg_2);
-                if (!local_12) condition_failed = true;
-            }
-            local_8 += 0x50;
+            real local_10[4];
+            function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
+            if (!function_22b7dd(local_9, arg_2)) success = false;
         }
-        while (--local_11);
+        offset += 0x50;
     }
     if (local_2->field_8 > 0)
     {
@@ -1102,8 +1200,7 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
             {
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
-                bool local_12 = function_22af8d(arg_2, arg_3, (s_bitmap_widget_22ae21 const *)local_9);
-                if (!local_12) condition_failed = true;
+                if (!function_22af8d(arg_2, arg_3, (s_bitmap_widget_22ae21 const *)local_9)) success = false;
             }
             local_8 += 0x64;
         }
@@ -1121,14 +1218,15 @@ bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
             {
                 real local_10[4];
                 function_13ad48(arg_2, local_9 + 4, local_10, arg_3, local_7);
-                bool local_12 = function_22a9bc((s_text_widget const *)local_9, arg_2, (s_text_widget_state const *)arg_3, (color4f const *)local_10);
-                if (!local_12) condition_failed = true;
+                if (!function_22a9bc((s_text_widget const *)local_9, arg_2, (s_text_widget_state const *)arg_3,
+                    (color4f const *)local_10))
+                    success = false;
             }
             local_8 += 0x54;
         }
         while (--local_11);
     }
-	return !condition_failed;
+	return success;
 }
 
 // @retail 0x13a532

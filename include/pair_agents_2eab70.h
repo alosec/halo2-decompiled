@@ -30,8 +30,8 @@ public:
 
 // runs a query between two sides through the dispatcher's function for
 // their kinds
-typedef void (__cdecl *pair_query_2e90f0)(void const *a, void const *b, void const *input, void *collector);
-void __cdecl function_2e90f0(void const *a, void const *b, void const *input, void *collector);
+typedef pair_agent_2ea410 *(__cdecl *pair_query_2e90f0)(void const *a, void const *b, void const *input, void *collector);
+pair_agent_2ea410 *__cdecl function_2e90f0(void const *a, void const *b, void const *input, void *collector);
 
 // bring the agent list up to date with the parts the sides overlap
 class class_2e96a0

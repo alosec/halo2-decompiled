@@ -20,7 +20,7 @@ scenario flags and a one-based HUD override index. The next routine checks
 the definition's trigger and calls the toggle routine. The getter reads the
 32-bit definition field at `0x124`; its original name is not established.
 
-The CC0 [Halo CE reference](https://github.com/punpckhdq/halo),
+The [Halo CE reference](https://github.com/punpckhdq/halo) (CC0 when this was written; AGPL-3.0 since 2026-10-17),
 `source/devices/unknown_11b980.c`, corroborates placement, touch handling,
 and the four toggle modes. Halo 2's placement callback has no call to the
 older reference's device scenario helper. The retail toggle jump table at

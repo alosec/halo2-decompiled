@@ -4,6 +4,5 @@
 #include "unknown_0259d0.h"
 #include "unknown_146a20.h"
 
-// @stub 0x2d6fc0
-void c_havok_abstract_allocator::function_2d6fc0(void *buffer, long size) { }
+// Allocator stack-state setup is implemented in unknown_2d6fc0.cpp.
 

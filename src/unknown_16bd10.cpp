@@ -778,12 +778,17 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 }
 
 /* the camera director of scripted cameras: fills the observer's command */
-// score 241 (was 241): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
+// score 245 (was 245): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
+// frame 0x48 agrees; direction preload, length/zero
+// registers and memory flag updates remain.
+// Earlier 241 (from 241): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
 // Source-field reference 245; copied-normal squared length 258; adjacent trig factors 246;
 // native pan point 290; separate final state pointer 245 (unchanged reduced preview 245).
 // frame 0x48 agrees; direction preload and length/zero XMM roles, flag RMWs and interpolation differ.
 // Entry flag result 459; depth one 245; native plane construction 248; matrix return 326; point-category conditionals 272.
-// score 244 (was 246): direction preload, length/zero registers and flag stores still differ.
+// direction preload, length/zero registers and flag stores still differ.
+// Earlier 244 (was 246): direction preload, length/zero registers and flag stores still differ.
+// Earlier 244 (from 246): direction preload, length/zero registers and flag stores still differ.
 // native point state 401p; native pan state 246p.
 // final result local scope 246p; reuse clamped pan fraction 312p.
 // single default flag store 425p; native time record 246p.
@@ -791,6 +796,56 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 // direction preload, length/zero XMM roles, flag stores and timer differ.
 // Forced dot/plane/tick expansion 247 each; each pair and all three 247;
 // all three plus immutable command pointer and scale 253 (fast base 247).
+// frame 0x48 agrees; projection preload, length/zero
+// Earlier 245 (was 245): frame 0x48 agrees; projection preload, length/zero
+// Earlier 245 (from 245): frame 0x48 agrees; projection preload, length/zero
+// registers and flag stores remain. Intrinsic copies of the normal 245, basis 401,
+// output axes 245, pan axes 245, position 245, animation 245; projection copies
+// together 401, all record copies 402 (each fast and plain).
+// frame 0x48 agrees; direction preload, XMM roles and flag updates remain.
+// Existing line helpers 368p/371p; fraction-home and output-record combinations 368p/367p/367p.
+// External command record 236p (one executable row); pan/view fraction homes 245/245.
+// direction preload, length/zero registers and memory flag updates remain.
+// Projected output orders yxz/zxy/yzx/zyx/xzy 245/245/388/388/245;
+// default basis up-left-forward/left-forward-up/forward-left-up 248/248/247 (fast).
+// Complete state observations, with cached/live time root 236/236 (one executable row);
+// live scale, live time/scale 450/407; live target, time/target, scale/target, all 264/379/411/457.
+// Earlier 245 (was 245): direction preload, length/zero registers and memory flag updates remain.
+// All three reused direction scalar components, six observation orders 473 each
+// (frame 0x4c, 1724 bytes); complete normal from those scalars, ijk/jik orders 487/487
+// (1664 bytes). Original field observations, plane copy, helpers and float groups restored.
+// Earlier 245 (from 245): direction preload, length/zero registers and memory flag updates remain.
+// Native projection/position/animation flag bit views, alone and all
+// combinations, 245 each (233 executable rows); full dword bitfield 401
+// (382 executable rows). Original dword field, complete body and helpers restored.
+// Round 172: Immutable direction 245; coherent projected-position receiver 371, with immutable
+// direction 371; source-origin receiver 401, with immutable direction 401; both receivers 381, with
+// immutable direction 381 and length-at-expression 381. Executable differences
+// 233/354/354/383/383/357/357/357 versus baseline 233; all original receivers restored. Frame 0x48
+// agrees; direction preload, normal/length/zero allocation, flag stores and timer scheduling remain.
+// Round 206: All three length products named at their expression in orders kji/kij/jki/jik/ikj/ijk
+// 405/405/268/268/405/268; complete immutable products in jki/ijk order 268/268.
+// Original (k+j)+i grouping, operands, observations, helpers and calls restored.
+// Round 250: Projection for/while/do loops 360/360/401; pan for/while/do loops 385/385/292; both
+// for/while loops 380/380 (expanded fast control 245). Original parallel rows restored; direction
+// preload, length/zero allocation and flag stores remain.
+// Round 188: Projection-case basis forward-left-up / up-forward-left / up-left-forward /
+// left-forward-up / left-up-forward, then normal before basis at forward-up-left /
+// up-forward-left / left-forward-up:
+// 247,247,248,248,247,279,279,279 fast; reduced control 245, full 245. Original executable source restored.
+// Round 356: Native-plane length before offset 250; common inner flag store 400; both 405;
+// length/complement 262; flag/complement 400; both/complement 405; both/quotient 405; all 405.
+// Original projection, native switch, separate flag stores and expression parts restored.
+// Round 190: separate blend output 337; native target quaternion mutable/const 367/367;
+// split output plus target 402; native converter result 363, with split output 393;
+// independent normalization value 367, with split output 375. All original quaternion boundaries restored.
+// Round 253: Parallel projection-product parts, ordinary/immutable 251/251;
+// pan first/both weighted parts 245/245; projection with either pan form 251/251;
+// native shared origin alone/with all parts 501/501 (1736 bytes). All restored.
+// Round 80: direction declared before the plane 245; length summed j-first, `(n.j * d.j + n.k * d.k) + n.i * d.i`,
+// 247 (retail's d.j preload, but the normal's i/k registers swapped and the i term still copies the
+// normal); both 247; j-first with direction-first operands in every product 247, with the swapped
+// declarations 247. Original body restored.
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {

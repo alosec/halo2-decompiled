@@ -190,10 +190,8 @@ void __stdcall function_dffa0(long index, long unused, vector3f *a, vector3f *b)
 		{
 			if (b)
 			{
-				vector3f *v = g_4687b0;
-
-				if (b->k != v->k)
-					*b = *v;
+				if (b->k != g_4687b0->k)
+					*b = *g_4687b0;
 			}
 			if (a)
 			{

@@ -62,7 +62,16 @@ short function_2cbf0(long arg_1, long arg_2, short arg_3, dword arg_4,
 	bool arg_16, bool arg_17, bool arg_18, real arg_19, real arg_20,
 	real arg_21, byte arg_22, point3f const *arg_23, real arg_24);
 
-// score 162 (was 162): Frame 0x214 agrees; delayed ESI save, source/count cursor and feature-byte homes differ.
+// score 16 (was 16): the 22nd argument of the 0x2cbf0 call is a word in retail but 0x2cbf0 declares a
+// byte (that declaration is also in src/unknown_1321f0.cpp); field_2c[i] is computed before the
+// field_4/field_5c pushes in retail. Round 58: natural loop with the record reset from the parameter
+// 247 (parameter moves to the stack); record through the parameter/const source copy/record in the loop
+// 247/247/247; volatile source copy 222; parameter as the per-pass record with a const original 169;
+// with the caller's ternary object test and field order 109; with a dword feature-flags copy 21;
+// with the valid index first 16 (kept); permuter 42 tries, best 13 only with a word flags copy.
+// The copy is declared before the loop (16 either way) so the loop test never reads a copy out of scope.
+// Earlier forms on the hand-reduced offset body (volatile copies; 155):
+// Frame 0x214 agrees; delayed ESI save, source/count cursor and feature-byte homes differ.
 // entry word count 162; entry native count 162.
 // entry inner ordinal 162; repeated count location 162.
 // selected-index default 187; conditional mask updates 163.
@@ -71,85 +80,136 @@ short function_2cbf0(long arg_1, long arg_2, short arg_3, dword arg_4,
 // Shared byte/word feature results 216/210; independent bytes 193; Boolean bitwise AND 208;
 // shared bytes plus source cursor 215; ordinary source pointer 232 (caller differs);
 // bitwise predicates plus aggregate copy 210 (caller differs); unsigned handle 162.
-// score 162 (was 162): delayed ESI/source/count cursors and feature homes remain.
+// delayed ESI/source/count cursors and feature homes remain.
 // Fast: native feature bits 206; common bit gate 211; packed bits 162; packed and independent 206;
 // packed and common 211; byte bit results 216; bitwise bits 214; packed and bitwise 214.
 // frame 0x214 agrees; early source ESI retention and count/cursor homes still differ.
 // Source/index initialization swapped 162; ordinal initialized inside guard 163; offset
 // declarations reversed 162; filter input captured 162; override query result 162;
 // existing object getter 162; entry order plus getter/query result 162/162.
-// score 162 (was 162): early source retention, count cursors and feature homes remain.
+// Early source retention, count/cursor and feature-byte homes still differ.
+// selection-row cursor 162f; word-row cursor 155p; both input cursors 155f; outer feature
+// lifetimes 162f; outer decoded index 162f; outer encoded byte 162f; mask entry lifetime 162f;
+// shared argument lifetimes 162f; cursor values name 155f; outer ordinal name 155f; inner ordinal
+// name 155f; source pointer name 155f; cursor and ordinal role names 155f.
+// early source retention, count cursors and feature homes remain.
 // Actual source-array binding 191; repeated count-field binding 163; feature-word binding 162;
 // present-first selected result 162; conditional selected result 162; source/count bindings 200;
 // feature binding plus present-first result 162; actual selected-byte binding 162 (fast scores).
 // early source retention, count cursor and feature homes remain;
 // formal source/original record reference 191/191 (caller differs); selected copy source 210;
 // category/object-category values 162/162; chained sentinel/disabled fields 162/162; inherited mask value 197.
+// early ESI/source retention, count/cursor and feature homes remain.
+// Native word row 221; cursor for-scope 155; word cursor with shared Boolean/byte,
+// independent byte and complete-mask features 217/221/195/220; paired source/word
+// cursors 156; word cursor with native record assignment 195.
+// early source retention and source/count/feature homes remain.
+// With the word cursor, native count/argument-5/argument-6/argument-8 arrays 195/161/160/161;
+// count plus argument 5 186; arguments 6/8 193; all four arrays 187; native selection array 219.
+// early source retention and scalar/feature homes remain.
+// Composite-mask, optional-index and feature-byte names 155/155/155;
+// mask/index, mask/features and index/features names 155/155/155;
+// all argument names and source-handle/argument names 155/155.
+// early source/count retention and feature-result homes remain.
+// early source/count retention and feature-result homes remain.
+// Existing word query 155; combined category/query gate 155; both features before selector with query/native tag 210/210;
+// first/second feature early 206/206; features before optional-index result 201; query with while ordinal 155;
+// conditional Boolean query 195. Original body, word cursor and both inherited local qualifiers retained.
+// early source/count and feature-result homes remain.
+// Entry active-record workspace 155; entry current-source workspace 155; packed-only
+// source snapshot 155; memcpy-return selection 155; first/second conditional feature
+// results 154/154; both conditional results 153; complete feature branches 217.
+// early source retention and count/cursor/feature homes remain;
+// entry-source count 196 and original filter 165 (caller differs); first-group ordinal 195;
+// filter enabled first 206; signed feature bytes 195; integer group/record/both masks 195/201/205.
+// Long/read-only-byte/read-only-long source elements 155 each; direct
+// long/read-only-long source handles 155; dword optional index alone or
+// with long/read-only-long source elements 155. Original typing restored.
+// First/second/both conditional source bits 155/155/155; complete mask branches/source-order
+// reversal 196/196; all mask parts named 155; independent word features 207; mask branches with
+// word features 215.
+// Unsigned count/selector/word/all offsets 155/155/155/155; wide inner
+// ordinal 223; wide optional index 214; wide composite mask 192; word cursor
+// before packed mask 154. One-point reduction rejected; original body retained.
+// Actual low-byte independent/common/equality feature access 206/210/221; low-word
+// access 158/204/220; byte/word access with native copied-field store order 206/158.
+// Round 225: Signed-word outer/decoded/paired/inner/outer-inner/decoded-inner/all carriers [185, 189, 192,
+// 195, 182, 197, 193]; unsigned-word outer 196. Early source/count and feature homes remain.
+// Common disabled bool/byte/short/long with positive/negative feature results [192, 193, 192, 193, 201, 207, 192, 193].
+// Original body, word cursor and inherited qualifiers restored.
+// Entry count/selection/word-row offset lifetimes 156/154/154; count-selection/count-word/selection-word/all 156/156/156/156;
+// all entry offsets with earlier real word cursor 155. Original body, cursor, observations and local qualifiers restored.
+// Canonical shifted enable: independent 194; shared bool/byte/long 194/194/194; feature-first tests 194;
+// independent/shared-bool/shared-byte bitwise conjunctions 219/219/219. Original body and cursor restored;
+// caller preserved.
+// Count/word/byte, byte/count/word, byte/word/count and word/count/byte
+// declaration orders 154/155/154/155; same offset-step orders 155/156/156/155.
+// Native workspace construction from original/current/formal source at admission 208/210/208;
+// current source at iteration entry 210; the same four with existing word query 208/210/208/210.
+// Original/formal-source forms also lose the matched caller; frames grow to 0x21c.
+// Original conditional copy, query, cursor and local qualifiers retained.
+// With retained word recurrence, ordinary source/index/both carriers 207/193/200; conventional while alone/source/index/both 197/209/177/201; conventional for 186. Original body, cursor and inherited qualifiers restored; several forms also disturb the matched caller.
+// Round 354 natural-loop graph: feature word before selector 26; both feature results before selector 25;
+// both with early word 192 (caller differs); conditional selector 16; decoded-selector name 16;
+// both ordinal role names 16; category before selector/feature observation 133/199. Original restored.
+// Round 77: word 22nd parameter in the definition and this declaration (diagnostic, third declaration
+// unresolved) 8; on it: category through the original 207; bool category array 8; category local at the
+// inner-loop top/before the call/before the inner loop/before the flag sample 134/8/195/198; instance
+// local 8; byte category cast 8; callee category byte/word 47/15. The register setup of the last three
+// arguments remains.
+// Round 47: tag local 16; key local 16; tag/key in either order 16; category+tag 16;
+// category+key 16; category+tag+key 16; category+key+tag 16; caller preserved.
 // @retail 0x133f70
-void function_133f70(s_133f70 const *arg_1, bool arg_2)
+void function_133f70(s_133f70 const *record, bool arg_2)
 {
-	volatile long local_1 = 0;
-	s_133f70 const *volatile local_12 = arg_1;
-	if (arg_1->field_166 > 0)
+	s_133f70 const *const original = record;
+	s_133f70 copy;
+	for (long i = 0; i < record->field_166; i++)
 	{
-		long local_13 = 0x18;
-		long local_14 = 0;
-		long local_15 = 0;
-		do
+		record = original;
+		if (i <= 0 || !arg_2 || *(long *)original->field_48[i] == *(long *)original->field_48[0])
 		{
-			s_133f70 const *local_2 = local_12;
-			byte *const *source_cursor = &local_2->field_48[local_1];
-			if (local_13 <= 0x18 || !arg_2 || *(long *)*source_cursor == *(long *)local_12->field_48[0])
+			if (record->field_1c4 == 1)
 			{
-				s_133f70 local_3;
-				if (local_2->field_1c4 == 1)
+				byte const *definition = *(byte **)(g_4e0300->data + (*(long *)original->field_48[i] & 0xffff) * 12 + 8);
+				if (definition[0xaa] == 2 ? (bool)*(short *)(g_4e3b44[*(long *)definition & 0xffff].bytes + 0x290) : false)
 				{
-					long local_4 = *(long *)*source_cursor;
-					byte const *local_5 = *(byte **)(g_4e0300->data + (local_4 & 0xffff) * 12 + 8);
-					if (local_5[0xaa] == 2)
-					{
-						byte const *local_6 = g_4e3b44[*(long *)local_5 & 0xffff].bytes;
-						if (*(short const *)(local_6 + 0x290) != 0)
-						{
-							memcpy(&local_3, local_12, sizeof(local_3));
-							local_3.field_1c0 = 0x1f;
-							local_3.field_1c4 = NONE;
-							local_3.field_1cc = false;
-							local_3.field_1d0 = NONE;
-							local_3.field_1d4 = false;
-							local_3.field_1d8 = 0.0f;
-							local_2 = &local_3;
-						}
-					}
+					memcpy(&copy, original, sizeof(copy));
+					copy.field_1cc = false;
+					copy.field_1c0 = 0x1f;
+					copy.field_1c4 = NONE;
+					copy.field_1d0 = NONE;
+					copy.field_1d4 = false;
+					copy.field_1d8 = 0.0f;
+					record = &copy;
 				}
-				dword local_7 = ((local_2->field_170 & 4) << 13) | ((local_2->field_170 & 0x40) << 7)
-					| (local_2->field_70[local_1] ? 0x800 : 0) | (local_2->field_16c ? 0x400 : 0)
-					| local_2->field_1ac | local_2->field_1b0;
-				for (long local_8 = 0; local_8 < *(long const *)((byte const *)local_2 + local_13); local_8++)
-				{
-					byte selected = *((byte const *)local_2 + 0x75 + local_14 + local_8);
-					long local_9;
-					if (selected == 0xff)
-						local_9 = NONE;
-					else
-						local_9 = selected;
-					bool local_10 = (local_2->field_170 & 2) && (bool)((local_2->field_170 >> 3) & 1);
-					bool local_11 = (local_2->field_170 & 2) && (bool)((local_2->field_170 >> 4) & 1);
-					function_2cbf0(local_9, local_2->field_2c[local_1], local_2->field_16a, local_7,
-						*(long const *)((byte const *)local_2 + local_13 + 0x44), *(dword const *)((byte const *)local_2 + local_13 - 0x14), local_8,
-						*(byte *const *)((byte const *)local_2 + local_13 + 0x30), local_2->field_1be, local_2->field_1bc,
-						NULL, local_2->field_1d0, local_2->field_1b4, local_2->field_1c0,
-						local_2->field_1c4, local_10, local_11, local_2->field_1d4,
-						local_2->field_1d8, local_2->field_1dc, local_2->field_1e0,
-						(byte)*(word const *)((byte const *)local_2 + 0xc6 + local_15 + local_8 * 2), &local_2->field_194, local_2->field_1a0);
-				}
-
 			}
-
-			local_1++;
-			local_13 += 4;
-			local_14 += 0x10;
-			local_15 += 0x20;
-		} while (local_1 < local_12->field_166);
+			dword flags = ((record->field_170 & 4) << 13) | ((record->field_170 & 0x40) << 7)
+				| (record->field_70[i] ? 0x800 : 0) | (record->field_16c ? 0x400 : 0)
+				| record->field_1ac | record->field_1b0;
+			for (long j = 0; j < record->field_18[i]; j++)
+			{
+				byte selected = record->field_75[i][j];
+				long index;
+				if (selected != 0xff)
+					index = selected;
+				else
+					index = NONE;
+				dword entry_flags = record->field_170;
+				bool first = false;
+				bool second = false;
+				if (entry_flags & 2)
+				{
+					first = (bool)((entry_flags >> 3) & 1);
+					second = (bool)((entry_flags >> 4) & 1);
+				}
+				function_2cbf0(index, record->field_2c[i], record->field_16a, flags,
+					record->field_5c[i], record->field_4[i], j, record->field_48[i],
+					record->field_1be, record->field_1bc, NULL, record->field_1d0, record->field_1b4,
+					record->field_1c0, record->field_1c4, first, second, record->field_1d4,
+					record->field_1d8, record->field_1dc, record->field_1e0,
+					(byte)record->field_c6[i][j], &record->field_194, record->field_1a0);
+			}
+		}
 	}
 }

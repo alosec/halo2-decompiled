@@ -79,7 +79,7 @@ inline void game_engine_event_send_inline(s_event *event)
 }
 
 s_event *game_engine_event_initialize(long type, long subtype, s_event *event);
-void game_engine_event_set_cause_player(s_event *event, long player_index);
+void game_engine_event_set_cause_player(long player_index, s_event *event);
 void game_engine_event_set_effect_player(s_event *event, long player_index);
 void function_19eb90(s_event *event);
 

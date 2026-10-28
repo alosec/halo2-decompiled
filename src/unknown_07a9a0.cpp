@@ -556,31 +556,17 @@ bool function_7df00(s_bitstream *stream, s_session_message_values *values)
 	return false;
 }
 
-// score 40 (was 40): retail keeps the data pointer in esi and pushes it in the prologue,
-// ours keeps it in eax and pushes esi later.
 // @retail 0x7e080
 bool function_7e080(const byte *data, long size, s_session_message_values *values)
 {
-	const byte *buffer = data;
 	bool result = false;
-	s_session_message_values *const *values_reference = &values;
-	if (buffer && size > 0)
+	if (size > 0 && data)
 	{
 		s_bitstream stream;
 		stream.unknown08 = 1;
-		stream.data = (byte *)buffer;
-		stream.size_in_bytes = size;
-		stream.mode = 0;
-		stream.bit_position = 0;
-		stream.checkpoint_count = 0;
-		stream.error = false;
+		stream_set_buffer(&stream, data, size);
 		function_1947a0(&stream);
-		if (function_7df00(&stream, *values_reference))
-		{
-			if (stream.bit_position <= (stream.size_in_bytes << 3) && !stream.error)
-				return true;
-		}
-		result = false;
+		result = function_7df00(&stream, values) && stream.bit_position <= (stream.size_in_bytes << 3) && !stream.error;
 	}
 	return result;
 }
@@ -1064,19 +1050,57 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 	default: __assume(0);
 	}
 }
-
-// score 834 (was 834): frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
+// score 766 (was 766): Frame 0xd4 versus 0xb4, session input and protected opening lookup expansion remain.
+// frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
+// Frame 0xd4 versus 0xb4, session input and initial lookup expansion remain.
+// Earlier: frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
 // private histogram 852; wide group decision 840; shared group total base 879; native group identity copy
 // 918; membership native maximum 834.
 // frame 0xd4 versus 0xb4; session entry and lookup differ.
 // Reduced preview 864 (754 code); ID phase 864; phased dword histogram 885;
 // histogram phase 934; bound snapshots 936; split guards 864; capacity inline 920.
-// score 830 (was 842): frame/session/lookup still differ; reduced preview 864.
+// frame/session/lookup still differ; reduced preview 864.
 // Early team scalars 896; early party scalars 922; group observation 865;
 // member-rating observation 864; allowed-imbalance observation 956; all restored.
-// score 828 (was 829): word histogram initialized at declaration; frame 0xd4 versus 0xb4 remains.
+// word histogram initialized at declaration; frame 0xd4 versus 0xb4 remains.
 // Fast long result 873; byte result 868; later group decision 884; word initialization 848;
 // final spread 873. Code-plus-extent 804/798/806/777/792 versus preview 788.
+// Frame 0xd4 versus 0xb4 and session/lookup homes remain; scalar machine ID copy 840; player identity memmove 855; chained initial extrema 777; shared limited predicate 928; shared team-mode predicate 786 (fast).
+// Frame 0xd4 versus 0xb4 and session/lookup homes remain. Shared player rating 831;
+// descending rating scan 850; group scalar accumulators 868; group mask accumulator 804 (plain); histogram
+// count cursor 836; common mask publication 798; shared mask spread 881; complete add-mask accumulator 817
+// (fast).
+// Frame 0xd4 versus 0xb4 and session/lookup homes remain. Machine-ID library copy 777; entry word histogram 855;
+// shared rating observation 831; chained group clears 777; Boolean balance accumulation 766 kept at retail length;
+// split lower-bound guard 777 (fast).
+// Consistent player/group/type observations 854/832/847; player+group 886; player+type 828;
+// group+type 948; all 833; full unsigned type 833. Original body and selectors restored.
+// Round 155: retained native output-array bases, then group rated-count base: groups 847; identities 870; groups identities 889; ratings 913; groups ratings 863; identities ratings 912; groups identities ratings 864; group rated array 867. All restored.
+// Identity/party/both/excess/identity-excess/party-excess/all test-result accumulation 897/869/856/772/888/861/848; all with logical identity 908 (fast).
+// Original complete body restored; frame 0xd4/0xb4, stacked session and opening lookup expansion remain.
+// minimum-result 808; maximum-result 814.
+// spread-result 820; minimum-maximum-result 816.
+// minimum-spread-result 813; maximum-spread-result 835.
+// minimum-maximum-spread-result 820; switch-selector-results 766.
+// Round 141: Native output/session/both object contracts 766 each; output-first pointer, output object,
+// session object and both objects 766 each; readonly session 766. All original interfaces and call
+// sites restored; frame/session/lookup remain.
+// Round 134: all selector const pointers/const references/native values 766/766/1802;
+// switch/field/flag const references 766/766/766;
+// all mutable references/switch values 766/1079.
+// Round 180 native short party
+// extrema/spread/population/extrema-spread/extrema-population/spread-population/all, then word population
+// 901/797/766/904/904/796/904/766 (fast); all restored. Frame 0xd4/0xb4 and protected opening lookup remain.
+// Native selector case declarations: team cases first in capacity/teams/both/
+// imbalance/capacity-imbalance/teams-imbalance/all 766/798/798/765/765/815/815;
+// all three reversed 814. One-point forms rejected; original selectors restored.
+// Round 173: Independent all/eligible histograms word/word 766, word/dword 826, dword/word 829,
+// dword/dword 844; each with machine-ID phase scope 766/826/829/844. Dword forms recover frame 0xb4
+// but worsen code-plus-extent 765 to 784/783/797. Frame 0xd4 versus 0xb4, stacked session and
+// protected opening lookup expansion remain. Original complete body restored.
+// Group zero-store orders, five combinations 766; initial extrema-store orders, three combinations 766.
+// Available, first, last, spread, party count, team count, team size and combined
+// party-boundary slot names 766 each (fast); original names restored.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
@@ -1220,9 +1244,8 @@ bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 	if (variant->type == 5 || variant->type == 3 || variant->type == 4)
 	{
 		bool use_parties = variant->type == 5 || variant->type == 2 || variant->type == 4;
-		if (!balance_teams_by_count(out->player_count, out->groups, teams, team_size,
-			ratings_party_limited(variant), ratings_party_minimum(variant), ratings_party_maximum(variant), use_parties, &out->imbalance))
-			result = false;
+		result &= balance_teams_by_count(out->player_count, out->groups, teams, team_size,
+			ratings_party_limited(variant), ratings_party_minimum(variant), ratings_party_maximum(variant), use_parties, &out->imbalance);
 	}
 	else out->imbalance = 0;
 	if (!adding_group)

@@ -79,6 +79,65 @@ void cache_copy_forget(char const *map_name);
 bool map_copy_request(char const *map_name, long priority);
 void __stdcall cache_copy_record_use(char const *map_name);
 
+// score 367 (was 367): Aligned frame 0x110 agrees; request-source reuse, dependency bound and write-option scheduling remain.
+// Request library copies 471/471; state increments 471; shared flush states 472; shared write-completion
+// states 433.
+// Signed-word dependency index 446; unsigned index 446; explicit existing write flags 453;
+// terminal snapshot assignment 433; adjacent write-header cases 434.
+// Completed-request/result names 433; direct selected-file calls 440; direct size predicate 374;
+// header-result branches 413; terminal disposition tests 434; adjacent state clears 439;
+// direct size predicate plus header-result branches 382.
+// Direct initial slot 393; failed publication first 473; terminal case first 467; signed-word
+// state 572; dependency-time cursor 367 kept (1712/1720 bytes); cursor-end bound 375.
+// Cursor/count while 469; unsigned cursor ordinal 367; native unsigned state 367; dependency file pointer
+// 445; pointer plus while 479.
+// Dependency Boolean reduction 536; immutable terminal snapshot 367; header-copy case beside request-copy
+// case 495; result-first declarations 367; byte cursor ordinal 367.
+// Paired dependency cursors 367; signed-word cursor ordinal 367; terminal memmove 568; separate name/priority
+// locals 383; header failure-first result 430.
+// Positioned write inline/noinline 367/367; positioned copy 367/367; flush 367/367; write+copy/all inline
+// 367/367. All existing declarations restored.
+// Cursor/count while 469; unsigned cursor ordinal 367; native unsigned state 367; dependency file pointer 445; pointer plus while 479.
+// Dependency Boolean reduction 536; immutable terminal snapshot 367; header-copy case beside request-copy case 495; result-first declarations 367; byte cursor ordinal 367.
+// Paired dependency cursors 367; signed-word cursor ordinal 367; terminal memmove 568; separate name/priority locals 383; header failure-first result 430.
+// Native file record references in states 7/9/13/14, paired 7+9/9+13/7+14 and all
+// 367 (eight forms); original receivers restored; request source and write options remain.
+// Round 342: active request field copy 499; completed-size operand order 367;
+// checksum-result-first assignment 367; slot publication before file pointer 364 (three-point
+// gain rejected); isolated direct final file 435.
+// priority observations 568; copy size result 367; completed byte result 367; accumulated checksum 448; retry
+// disposition first 367; staged request admission 367; active request memmove 433; no slot case exit 367.
+// Out-of-line path/checksum/both/clock/all call summaries 367 each; completion states first 491;
+// destination states first 451; path summary with completion-first states 491 (fast).
+// Priority word/byte 506/516; retained-cursor do 469; operation-group/reverse cases 479/504;
+// sole time-array traversal 415; staged size result on cursor body 448; checksum state first 367.
+// Individual case swaps 1/2, 3/4, 5/6, 7/8, 9/10, 11/12, 13/14,
+// 17/18: 386/390/365/367/367/367/371/381. Original order restored.
+// Round 377: Separate incoming/next-state long/dword/short/byte 367/367/543/524;
+// arm-produced next-state results 528/528/593/530 (fast control 367). Complete
+// transition-result ownership does not recover request-source or write-option
+// scheduling; byte arm results reach retail length but regress. All forms restored.
+// Round 176: Case 19 after 0 / 12 after 4 / 16 after 19: 461/444/431;
+// first+second / first+third / second+third / all: 486/492/447/500;
+// case 18 after 19: 410. All case bodies and original order restored.
+// Defining-unit inline path/checksum/path+checksum/path with separate noinline/clock/path+clock/
+// clock+checksum/all call declarations 367 each; all declarations and bodies restored.
+// Complete failure result bool/byte/short/long 661/661/654/657;
+// the same result initialized first 661/661/654/657. Original success restored.
+// Round 223: Repeated transfer buffer/count/limit/buffer+count/buffer+limit/count+limit/all
+// inputs 366/362/367/362/367/362/362; all with named size 367; count and buffer+count
+// with earlier slot publication 367/367. Five-point exact-length gains restored.
+// Round 148: admission after validation 458; retirement after validation 412; both request cases
+// after validation 502; validation/retirement first 501; publication phases first 498;
+// publication phases after validation 517; header phases first 520;
+// admission/retirement/publication together 492. All executable forms restored.
+// Round 152: Actual inline definitions plus all declarations, path/checksum/both 367/367/367;
+// with separate noinline boundaries 367/367/367; completed-count combinations 362/362.
+// All supporting declarations and the original body restored.
+// Round 23: true-default failure-only handle/size/shared-write 480/400/444; handle+size/
+// handle+write/size+write 464/479/354; all three/four 462/461. The 354 conditional flag
+// form is match-only and rejected. Complete size+write/size/write/nested value producers
+// 426/426/367/426; original completion producers and all observations restored.
 // @retail 0x2141f0
 bool function_2141f0(void)
 {
@@ -121,6 +180,7 @@ bool function_2141f0(void)
 			success = g_55bcf0 == 0x800 && cache_header_verify((s_cache_header const *)&g_55b4f0);
 			if (success)
 			{
+				FILETIME const *dependency_time = g_55b4f0.dependency_times;
 				for (long type = 0; type < 3; type++)
 				{
 					if (g_55b4f0.dependencies_required[type])
@@ -128,11 +188,12 @@ bool function_2141f0(void)
 						long slot = cache_file_slot_from_type(type);
 
 						if (!g_557c90[slot].header.path[0] ||
-							CompareFileTime(&g_557c90[slot].header.source_time, &g_55b4f0.dependency_times[type]) != 0)
+							CompareFileTime(&g_557c90[slot].header.source_time, dependency_time) != 0)
 						{
 							success = false;
 						}
 					}
+					++dependency_time;
 				}
 			}
 			state = 5;
@@ -144,9 +205,7 @@ bool function_2141f0(void)
 		break;
 	case 6:
 		{
-			bool size_known = g_55bcf8.total != (dword)NONE;
-
-			success = size_known && g_55bcf8.total > 0x800;
+			success = g_55bcf8.total != (dword)NONE && g_55bcf8.total > 0x800;
 		}
 		g_55c02c = 0;
 		state = 7;
@@ -166,8 +225,9 @@ bool function_2141f0(void)
 		}
 		break;
 	case 8:
+	case 15:
 		success = g_55bcf0 == 0x800;
-		state = 9;
+		++state;
 		break;
 	case 9:
 		{
@@ -230,10 +290,6 @@ bool function_2141f0(void)
 			g_55bd00 = function_1a1050(file->file, &g_55b4f0, 0x800, 0, 0, 1, 0, &g_55bcf0, &g_55bd0c);
 			state = 15;
 		}
-		break;
-	case 15:
-		success = g_55bcf0 == 0x800;
-		state = 16;
 		break;
 	case 16:
 		memcpy(&g_557c90[g_55bd10].header, &g_55b4f0, sizeof(g_55b4f0));

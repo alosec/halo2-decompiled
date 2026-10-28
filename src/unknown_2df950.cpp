@@ -2,16 +2,7 @@
 // Havok (third-party physics library): a table of 32 masks, one per group,
 // saying which groups each group pairs with.
 
-class c_2dfbf0
-{
-public:
-	c_2dfbf0();
-	void function_2df950(long arg_0, long arg_1);
-	void function_2df990(long arg_0, long arg_1);
-
-	char unknown0[0x1c];
-	unsigned long masks[32];
-};
+#include "pair_filter_class.h"
 
 // pairs every group in one set of groups with every group in the other
 // @retail 0x2df950
@@ -22,11 +13,11 @@ void c_2dfbf0::function_2df950(long arg_0, long arg_1)
 		unsigned long bit = 1 << i;
 		if (arg_0 & bit)
 		{
-			masks[i] |= arg_1;
+			enabled[i] |= arg_1;
 		}
 		if (arg_1 & bit)
 		{
-			masks[i] |= arg_0;
+			enabled[i] |= arg_0;
 		}
 	}
 }
@@ -35,6 +26,6 @@ void c_2dfbf0::function_2df950(long arg_0, long arg_1)
 // @retail 0x2df990
 void c_2dfbf0::function_2df990(long arg_0, long arg_1)
 {
-	masks[arg_0] &= ~(1 << arg_1);
-	masks[arg_1] &= ~(1 << arg_0);
+	enabled[arg_0] &= ~(1 << arg_1);
+	enabled[arg_1] &= ~(1 << arg_0);
 }

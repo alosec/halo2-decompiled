@@ -101,7 +101,10 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // score 76 (was 80): retail keeps the three components of the velocity in
 // registers and stores them only just before the two calls, so its frame is
 // twelve bytes smaller than ours, and it emits the scaled products in a
-// different order
+// different order. Round 81 (score 76): `forward`/`up` pointer locals for the cross product
+// alone 74 (retail's product operand order); velocity written directly without the
+// scaled copy 80 (retail's 0xc frame); left_part/up_part vectors 79-83; left scaled in
+// place 83; velocity = left * left_speed first 85-87 (forward_speed leaves xmm6)
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {
 	if (object_index != NONE)

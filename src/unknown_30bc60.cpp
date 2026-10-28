@@ -61,29 +61,8 @@ public:
 	void activate(void);
 };
 
-class entity_30bcc0
-{
-public:
-	char unknown0[8];
-	hkWorld *m_world;
-	char unknown0c[0x88 - 0xc];
-	void **listeners;
-	long listener_count;
+#include "lane_b_constraint_entities.h"
 
-	long index_of(void *listener) const
-	{
-		for (long i = 0; i < listener_count; i++)
-		{
-			if (listeners[i] == listener)
-			{
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	void function_30bcc0(void *listener);
-};
 
 // @retail 0x30bc60
 void hkRigidBody::activate(void)

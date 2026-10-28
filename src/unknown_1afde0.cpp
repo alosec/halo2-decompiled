@@ -6,20 +6,20 @@
 #include "slot_handler.h"
 #include "unknown_1fb7e0.h"
 
-/* the state of a slot of type 0x3a as these callbacks see it */
-struct s_slot_3a_view
+/* the state of a slot of type 0x3a as these callbacks see it: the block after
+   the slot's header (s_slot's unknownc) */
+struct s_slot_3a_data
 {
-	s_slot_header header;
-	short unknown0c;
-	byte unknown0e;
-	byte unknown0f;
+	short unknown00;
+	byte unknown02;
+	byte unknown03;
 	s_reference reference;
-	byte unknown14[0x1c - 0x14];
-	long unknown1c;
-	bool unknown20;
-	byte unknown21;
-	short unknown22;
-	byte unknown24[0x40 - 0x24];
+	byte unknown08[0x10 - 8];
+	long unknown10;
+	bool unknown14;
+	byte unknown15;
+	short unknown16;
+	byte unknown18[0x34 - 0x18];
 };
 
 /* an element of g_50241c (0xc4 bytes) */
@@ -47,29 +47,26 @@ short __stdcall function_1afde0(long actor_index)
 	return result;
 }
 
-// score 9 (was 9): retail keeps the actor's unknown344 in ebp where ours keeps
-// it in esi, and retail loads the actor pointer before it saves edi, so the
-// loads and the comparison against NONE differ.
 // @retail 0x1afe50
 bool __stdcall function_1afe50(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	s_slot_3a_view *state = (s_slot_3a_view *)slot;
+	s_slot_3a_data *state = (s_slot_3a_data *)slot->unknownc;
 	bool result = false;
 
 	actor->unknown3f2 = false;
-	if (actor->unknown344 != NONE || state->unknown1c != NONE)
+	if (actor->unknown344 != NONE || state->unknown10 != NONE)
 	{
 		result = true;
 		state->reference = g_470fa0;
-		if (!state->unknown20)
+		if (!state->unknown14)
 		{
-			state->unknown1c = ((s_50241c_element_1c *)g_50241c->data)[prop_node_get(actor->unknown344)->unknown08 & 0xffff].unknown1c;
-			state->unknown0c = 0;
-			state->unknown20 = true;
+			state->unknown10 = ((s_50241c_element_1c *)g_50241c->data)[prop_node_get(actor->unknown344)->unknown08 & 0xffff].unknown1c;
+			state->unknown00 = 0;
+			state->unknown14 = true;
 		}
-		state->unknown22 = 0;
-		state->unknown0e = 0;
+		state->unknown16 = 0;
+		state->unknown02 = 0;
 
 		long unit_index = actor_get(actor_index)->unknown018;
 		if (unit_index != NONE)

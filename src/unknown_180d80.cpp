@@ -108,6 +108,13 @@ __forceinline void function_180d83(transform4x3f const *arg_0, point3f *arg_1)
 }
 
 #pragma inline_depth(1)
+// score 94 (was 94): BLOCKED-BY 0x17cfa0 (its first index travels on the stack, retail's in
+// eax: `push -1` for `mov eax, -1` shifts every later offset by 3 bytes). A short strip-loop
+// index gives retail's prologue and count loop but 547 (the loop head's padding grows to a
+// jmp); local names for the count and vertex index 94; vertex index declared first 547;
+// luminance terms red, blue, green 92 (other orders 94-95, grouped 290); transform rows
+// with the left product first 93, operands swapped 94, one expression per row 317;
+// luminance and transform changes together 91.
 // score 94 (was 94): early input receiver, opposite count/counter homes and
 // transform carriers differ; strip equality 100, short equality 548, vertex
 // equality 95, both 548, combined count rejection 647; transform references

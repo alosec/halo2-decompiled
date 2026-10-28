@@ -74,7 +74,16 @@ void function_2232a0(void)
 	function_2c8a0((byte const *)function_2232a1(&g_47f0f8[0]));
 }
 
-// score 151 (was 151): count-one paths still bypass the common count/layout join; tail call differs.
+// score 151 (was 151): One-dword frame agrees; common count/layout join, slot predicate and terminal/tail transport remain.
+// The tail call is BLOCKED-BY 0x2b5d0: its body is disabled and a /Gr stub takes the count in ECX and the
+// mode in EDX, where retail passes the count in EAX and the mode in ECX. Round 73: sibling clamp ternary
+// 182; pretested for loop 161; both 183; callee formals mode-first 151 (mode reaches ECX, count EDX).
+// Round 97: the existing 0x16a90 predicate for the layout test 151 (identical code); inverted count
+// condition 151, with the for loop 161; layout as one ternary 151; count defaulted to one before the
+// test 187 (543 bytes); count and layout declared before the scan index 151.
+// One-dword frame agrees; count/layout join, slot predicate and terminal/tail allocation still differ.
+// Earlier: One-dword frame agrees; common count/layout join, terminal registers and tail convention remain.
+// Earlier 151 (was 151): count-one paths still bypass the common count/layout join; tail call differs.
 // Signed-byte count alone/with player value 169; signed-word layout alone/with normalized selection 174;
 // native selected-player value, normalized selection and their combination 151; redundant scan test removed 154.
 // count-one join, slot predicate and terminal/callee registers differ;
@@ -84,7 +93,11 @@ void function_2232a0(void)
 // slot-predicate materialization and final initializer residences differ.
 // Mode/options receivers, mode result, external count/slot references, typed selected
 // record, terminal record reference and both record receivers each 151 (575 bytes).
-// score 151 (was 151): the common count/layout join, slot predicate and terminal reset still differ.
+// Earlier 151 (was 151): common count/layout join, slot predicate and terminal registers remain.
+// common count/layout join, slot predicate and terminal registers remain.
+// Total before layout/scan 172/152; total scan bound 162; two-use mode 151;
+// conditional slot result 157; separate scan/result 158; mode/total 162; scan-result/total 156.
+// the common count/layout join, slot predicate and terminal reset still differ.
 // First/second/both conditional countdown expressions 169/161/167;
 // signed-byte/unsigned-word layout 189/174; unsigned-word output ordinal 201;
 // signed-byte selection 164; dispatch noinline declaration 151. Original body retained.
@@ -92,6 +105,62 @@ void function_2232a0(void)
 // allocation gaps. unsigned selected slot 151; word selected slot 157; word view ordinal 201; byte
 // view ordinal 167; exact scan bound 175; existing initializer inline 151; completed search result
 // 180; word scan and ordinal 157; byte selected slot 164.
+// Earlier 151 (was 151): count/layout join still threads. First/second/both native
+// countdown scalars 151/151/151; prefix countdown publication 151/151/151;
+// paired countdowns with int count or int ordinals 151/151. Original body retained.
+// chained sentinels 151; native rectangle pair 150; rectangle library copies 150; direct source argument 152; live count field 151; search in for test 151; sentinel chain with rectangle value 150; live count with direct source 152 (fast). Gains of one are rejected.
+// count/layout join still threads. First/second/both native
+// Nested slot admission/sentinel continue/selected-source value 151/151/151; source admission before normalization 158; nested source 151; continued source 158; sole output cursor 232; native entry address 151 (restored).
+// sentinels/mode/rectangles 151; rectangles/sentinels/mode 151.
+// rectangles/mode/sentinels 151; mode/sentinels/rectangles 151.
+// mode/rectangles/sentinels 151; reversed rectangle pair 151.
+// sentinels/mode/reversed pair 151; reversed pair/sentinels/mode 151.
+// wide source count 138; wide count result 215; wide layout 174;
+// wide selected slot 227; wide output ordinal 195; unsigned byte layout 189;
+// unsigned native layout 151; immutable native source count 151. Wide source count worsens aligned rows.
+// Round 155: post-traversal terminal index from count as long/dword/short/word/byte
+// 159/159/156/156/157; from completed ordinal as long/word/short 153/150/150. One-point gains rejected.
+// Whole countdown placements before count/layout/scan, first/second phases
+// 01/02/10/11/12/20/21/22: 185/159/185/190/190/159/190/164 (fast).
+// Original timer order, count/layout producers, shared initializer and body restored.
+// Negative world-rejection bool/byte/short/long in multiple-first layout 151 each;
+// single-first layout on those negative-result graphs 168 each. All restored.
+// Contiguous eight-byte sentinel fill 152; fill with native rectangle value/library rectangle copies 152/152;
+// fill with existing slot predicate alone/rectangle value/copies 151/151/151; fill with plain pretest 170; all 178.
+// Every sentinel-fill form also loses the matched initializer caller in the reduced image; all restored.
+// Complete occupied byte/short/long/signed-byte results 151 each; complete vacant byte/short/long/signed-byte
+// results 151 each. Original slot test and body restored.
+// Layout field-test orders flag/state/index, index/flag/state, index/state/flag,
+// state/flag/index, state/index/flag and three global-first orders 151 each.
+// Existing complete layout query 151; query with ordinary pretest/single-first layout 161/168;
+// query with exclusive/conditional clamp 182/182; exclusive clamp with pretest 183;
+// native byte layout with query/do/pretest 189/177. Original expanded gate and loop retained.
+// Round 221: outer completed-count do/for/while 151/161/161; last-ordinal
+// do/for/while 152/169/169; actual output-table boundary do/for 179/195.
+// Original count producer and traversal restored.
+// Round 248: Split lower-bound phase across mode selection, snapshot/live field
+// with original/pretested traversal 152/163/152/163; split upper-bound phase
+// counterparts 185/195/185/195. Original count producer and loop restored.
+// Coherent ordinary inline dispatch/reset/both 151/151/151; each with existing slot predicate 150;
+// force-inline reset alone/with slot predicate 151/150 and loses the matched initializer caller. All restored.
+// Round 212: shared raw count drives clamp and layout, short/long with nested clamp
+// 167/177; exclusive clamp 146/149 (five/two-point gains rejected); the four with plain for
+// traversal 177/178/165/168. Original count producer, traversal and tail contract restored.
+// DH round 189: Native equality-bound ordinals: short/word/byte do 201/201/167; short/word/byte
+// for 180/180/166; short/word while 180/180. Original signed clamp, ordinal, scan, initializer and
+// tail restored.
+// Round 81: count clamp as one ternary/with the mode test in the same ternary/if-else chain
+// 182/185/182; short count 153; long raw count 153 (fast). Compile-only screens of an inline count
+// helper (single or multiple returns), a pin helper and a layout helper taking the count: each still
+// threads the count-one edges past the layout test. All restored.
+// Round 7 (lane 10): count from a single-exit inline helper 182 (count 4 no longer threads, count 1
+// still does); helper with pretested for loop 183; if/else-if clamp in retail's branch order 182;
+// named view count (count + 1) after the loop 159; count arms swapped (clamp first) 151. All restored.
+// Standard clamp producers: short min/max clamp 181; long min/max clamp 176.
+// short max/min clamp 181; long max/min clamp 176.
+// short min/max with equality join 181; long min/max with equality join 176.
+// short max/min with equality join 181; long max/min with equality join 176.
+// All executable forms restored.
 // @retail 0x2234e0
 void function_2234e0(void)
 {

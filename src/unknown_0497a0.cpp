@@ -13,13 +13,71 @@
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
 #include "vector_products.h"
-// score 647 (was 647): frame 0x54 vs 0x60 and camera/source saved registers differ; wave vectors fix the frame but lose overall.
+#include "normalize3d.h"
+// score 594 (was 594): the frame is 0x64 against retail's 0x60 and the body is
+// nine bytes longer; retail keeps the primary shape in the stack slot at [esp+0x14]
+// and the secondary shape in EDI, ours keeps the inverse at [esp+0x14] and the
+// secondary shape at [esp+0x10].
+// Round 134: retail reads the wave's sine arguments from the global point: that form 701 (frame 0x60,
+// s1 sinks to its use), s1 before the first cross 701, s0's only 602; both shape pointers
+// NULL-initialized then set by an if/else (retail's entry, retail length 2622) 599, with s0's
+// global arguments 596, with all global arguments 604; as ternaries with global arguments 716.
+// frame 0x64 versus 0x60; shape/basis/scalar homes and nine excess bytes remain.
+// Frame 0x64 versus 0x60; shape/basis/scalar homes and nine excess bytes remain.
+// Frame 0x64 versus 0x60, primary-shape/basis homes and wave scheduling still differ.
+// Earlier: Frame 0x64 versus 0x60 remains; primary-shape, basis and scalar scheduling still differ; nine excess bytes remain.
+// frame 0x64 versus 0x60; basis/scalar scheduling remains, retail length recovered.
+// Frame 0x64 versus 0x60 remains; primary-shape, basis and scalar scheduling still differ; nine excess bytes remain.
+// Earlier: frame 0x64 versus 0x60; basis/scalar scheduling remains, retail length recovered.
+// Earlier 647 from 647: frame 0x54 vs 0x60 and camera/source saved registers differ; wave vectors fix the frame but lose overall.
 // primary output scale 744; default depth scale 743; alternate depth scales 727; product scale workspaces 734;
 // late wave lifetime 743; wave offset workspaces 660; inverse before basis 765; direct integer component 743;
 // complete shape branches 743; wave alternate scales 695; wave product scales 692; wave primary scales 659;
 // wave basis copy blocks 806; shape discriminant 776; wave shape discriminant 696
 // Ordinary camera reads with early/late special cross products 737/747;
 // early sine amplitude 738; accumulated maxima 796; common mode publication 743.
+// Earlier 604 from 647: Frame 0x60 agrees; scalar/basis scheduling and final integer conversion remain.
+// wave with conditional shapes fixed 738; wave with camera offsets 634; wave with early projection
+// scales 672; wave with phased cross results 691; shared wave offset 667; camera with early projection
+// scales 630; camera with phased cross results 620; camera with shared wave offset 604; camera with late
+// inverse 648; shared camera early scales 631; shared camera phased cross 620; shared camera early
+// phased 625; shared camera late inverse 618.
+// DL134: existing wave origin 599 kept; coordinate/point inputs 631/720; first phase 604;
+// first/second/both saved-axis copies 604/604/604; phase with native origin 620.
+// Reciprocal/shape/parallel-product names and their five combinations 599;
+// reciprocal/source/projection case order and all three together 599;
+// wave cross-result/offset homes 599; second input products first 598 (below threshold);
+// wave homes with case order 599. Frame 0x64 versus 0x60 and wave scheduling remain;
+// original native origin, products, case order and conversion retained.
+// consumer-shape 594; direct-primary-field 658.
+// bool-shape-domain 633; word-shape-domain 645.
+// consumer-shape-wide-special 599; direct-primary-field-wide-special 662.
+// bool-shape-domain-wide-special 654; word-shape-domain-wide-special 642.
+// Shared double-factor wave scalers first/second/both 671/671/669; with separate
+// second displacement 661/670/675; both scalers with shared integer truncation
+// 683, with separate displacement 704. Second-scaler forms recover frame 0x60
+// (first +6), but regress; original shared scalers and all values restored.
+// Round 197: complete first/second input field reads 674/671; both camera offsets at each use 700;
+// both inputs 694; first/second input with offsets 661/661; all inputs/offsets 692;
+// all observations with read-only secondary shape 692. All retain frame 0x64; original body restored.
+// Round 162: Secondary shape null-first/present-first/zero-arm/present-arm forms
+// 676/671/594/676; reciprocal constant after the shape 679/672/596/678.
+// Original shape selection and reciprocal lifetime restored; frame 0x64 remains.
+// Ordinary decision bool/byte/short/long 595/595/605/600; before shape selection
+// 721/721/714/727. Original decision polarity, shape scope and arithmetic restored.
+// named trig factors 673; projection terms 673.
+// camera offset terms 594; trig/projection terms 594.
+// trig/camera terms 673; projection/camera terms 673.
+// all three term families 594; named modulation 673.
+// Round 211: Late special cross 707; reversed sine producers/after-amplitude sine 594/594;
+// late cross with either sine order 707/707; cross at first scale 592 (two-point gain dropped);
+// first-scale cross with late sine 594; complete native basis arms 727. Original body restored.
+// Round 174: consume cross vector in place 673; cross at displacement 707;
+// early sine factor 652, with late cross 709; factor after modulation 652, with late cross 709;
+// cross after first sine 673, with early factor 652. Original cross/scaler graph restored;
+// frame 0x64/0x60 and shape/basis/wave homes remain.
+// Camera-shift homes, alternate shift homes, wave-result homes, wave-scale homes,
+// and four paired combinations all 594; frame and initial shape homes unchanged.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -34,39 +92,32 @@ void function_0497a0(
 	vector4f *old30)
 {
 	real inv = -1.0f;
-	s_view_shape_0 * shape0 = 0;
-	s_view_shape_1 * shape1;
-	shape1 = 0;
-	if (0 == source->type_low)
-	{
-		shape0 = &source->shape0;
-	}
-	else
-	{
-		shape1 = &source->shape1;
-	}
+	s_view_shape_1 *shape1 = source->type_low == 0 ? 0 : &source->shape1;
 
 	bool special = ((0x20 & flags->flags)) && (0x40000 & flags->flags);
 	point3f v1 = special ? g_4b9da0 : source->v2c;
-	vector3f v2 = special ? g_4b9dac : (*(s_view_camera *volatile *)&camera)->v28;
-	vector3f v3 = special ? g_4b9dac : (shape1 ? shape1->v4 : (*(s_view_camera *volatile *)&camera)->v28);
-	vector3f v4 = special ? g_4b9db8 : (*(s_view_camera *volatile *)&camera)->v34;
+	vector3f v2 = special ? g_4b9dac : camera->v28;
+	vector3f v3 = special ? g_4b9dac : (shape1 ? shape1->v4 : camera->v28);
+	vector3f v4 = special ? g_4b9db8 : camera->v34;
 	vector3f w;
 
 	if (special)
 	{
 		vector3f c;
 		cross3f(&v4, &v2, &c);
-		real s1 = (real)sin(g_4b9da0.x * 5.6f + g_4b9da0.y);
-		real s0 = (real)((sin(g_4b9da0.x * 8.2f) * cos(g_4b9da0.y * 7.8f) * sin(g_4b9da0.x) + cos(g_4b9da0.y * 7.75f)) * 0.5f);
+		real s1 = (real)sin(v1.x * 5.6f + v1.y);
+		real s0 = (real)((sin(v1.x * 8.2f) * cos(v1.y * 7.8f) * sin(v1.x) + cos(v1.y * 7.75f)) * 0.5f);
 		real amp = s0 * 0.03f;
-		v1.x = (v4.i * amp) + v1.x;
-		v1.y += amp * v4.j;
-		v1.z = v1.z + (amp * v4.k);
+		vector3f wave_shift;
+		vector3f_scale(&v4, amp, &wave_shift);
+		v1.x = (wave_shift.i) + v1.x;
+		v1.y += wave_shift.j;
+		v1.z = v1.z + (wave_shift.k);
 		real k = s1 * 0.025f;
-		v1.x = (c.i * k) + v1.x;
-		v1.y += k * c.j;
-		v1.z = (k * c.k) + v1.z;
+		vector3f_scale(&c, k, &wave_shift);
+		v1.x = (wave_shift.i) + v1.x;
+		v1.y += wave_shift.j;
+		v1.z = (wave_shift.k) + v1.z;
 		cross3f(&v2, &v4, &w);
 	}
 	else
@@ -84,8 +135,11 @@ void function_0497a0(
 			break;
 
 		default:
+		{
+			s_view_shape_0 *shape0 = source->type_low == 0 ? &source->shape0 : 0;
 			inv = -1.0f / (shape0 ? shape0->f0c : shape1->f2c);
 			break;
+		}
 	}
 
 	if (source->type != 1)
@@ -102,9 +156,9 @@ void function_0497a0(
 		result->v20.i = source->v1c.i * inv;
 		result->v20.j = (inv * source->v1c.j);
 		result->v20.k = inv * source->v1c.k;
-		result->v30.i = (*(s_view_camera *volatile *)&camera)->v34.i * inv;
-		result->v30.j = inv * (*(s_view_camera *volatile *)&camera)->v34.j;
-		result->v30.k = inv * (*(s_view_camera *volatile *)&camera)->v34.k;
+		result->v30.i = camera->v34.i * inv;
+		result->v30.j = inv * camera->v34.j;
+		result->v30.k = inv * camera->v34.k;
 		result->f2c = 0.0f;
 		result->f3c = 0.0f;
 		break;
@@ -149,7 +203,7 @@ void function_0497a0(
 
 	case 1:
 	{
-		vector3f const * up = special ? &g_4b9dac : &(*(s_view_camera *volatile *)&camera)->v28;
+		vector3f const * up = special ? &g_4b9dac : &camera->v28;
 		if (source->type != 1)
 		{
 			result->v40.i = up->i * inv;
@@ -176,12 +230,14 @@ void function_0497a0(
 
 	*old20 = *(vector4f *)&result->v20;
 	*old30 = *(vector4f *)&result->v30;
-	result->v20.i = result->v20.i + ((*(s_view_camera *volatile *)&camera)->f6c * result->v40.i);
-	result->v20.j = (result->v40.j * (*(s_view_camera *volatile *)&camera)->f6c) + result->v20.j;
-	result->v20.k += (*(s_view_camera *volatile *)&camera)->f6c * result->v40.k;
-	result->v30.i += result->v40.i * (*(s_view_camera *volatile *)&camera)->f70;
-	result->v30.j = (result->v40.j * (*(s_view_camera *volatile *)&camera)->f70) + result->v30.j;
-	result->v30.k = (result->v30.k + ((*(s_view_camera *volatile *)&camera)->f70 * result->v40.k));
+	real side_shift = camera->f6c;
+	real vertical_shift = camera->f70;
+	result->v20.i = result->v20.i + (side_shift * result->v40.i);
+	result->v20.j = (result->v40.j * side_shift) + result->v20.j;
+	result->v20.k += side_shift * result->v40.k;
+	result->v30.i += result->v40.i * vertical_shift;
+	result->v30.j = (result->v40.j * vertical_shift) + result->v30.j;
+	result->v30.k = (result->v30.k + (vertical_shift * result->v40.k));
 
 	vector3f c = *c_in;
 	vector3f d = *d_in;
@@ -360,6 +416,41 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
     return pixel;
 }
 
+// score 615 (was 615): the frame 0xac and the body length 2596 agree; retail stages
+// the definition in EBX and the output vertices in EDI, ours stages the definition
+// in EDI, and retail places the endpoint handling after the loop where ours places
+// it before.
+// frame 0xac agrees; definition/vertex registers, endpoint-first loop layout and
+// color/vector homes differ. Tried definition first 620; paired vertex store order 636; zero color record
+// Frame 0xac agrees; definition/output carriers, endpoint placement and color/vector homes remain.
+// Tried definition first 620; paired vertex store order 636; zero color record
+// 626; shared position setters 621; second output element 640; single result exit 631; plain point chain for
+// 620; color factor result 626; shared cross products 615; shared direction difference 620; native vector
+// role homes 620; native point initialization 623; loop vertex store order 620; shared geometry helpers 615;
+// shared cross position setters 617; shared cross zero color 622.
+// round 106: Frame 0xac agrees; definition/vertex carriers, endpoint placement and color/vector homes remain. Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
+// Iteration geometry scratch 615; iteration tint output 615; shared transition value 630;
+// width after initial color 616; live input definition reads 626.
+// Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
+// Advancing output cursor 664; segment/camera-delta/plus-minus point names 615/615/615; second
+// position copied from first 629; byte state flags 615; true result and one exit 647.
+// Paired displacement loop 615; side scaling loop 615; normal scaling loops 615; RGB tint loop 615; planar geometry cases first 615.
+// Width-path result 626; scale override 622; unsigned point handle 615; final endpoint base 634; two-use packed pixel 615.
+// Earlier score 615 (was 615): round 106: Frame 0xac agrees; definition/vertex carriers, endpoint placement and color/vector homes remain. Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
+// Earlier score 615 (was 615): round 108: definition/output carriers, endpoint placement and color/vector homes remain.
+// Persistent workspaces 620; fused color-component loop 643; shared geometry neighbor 620;
+// half-width before tint 620; valid-state-first arms 616.
+// Current position field pointer with read-only point/state/source contracts,
+// all eight combinations 647; frame 0xac and 2632 bytes. Original body restored.
+// round 106: Frame 0xac agrees; definition/vertex carriers, endpoint placement and color/vector homes remain. Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
+// round 108: definition/output carriers, endpoint placement and color/vector homes remain.
+// Round 349: Conversion-local names 615; source pointer rereads 624; normal-output flag 642; position memcpy 615; shared in-place scales 615 (fast).
+// Round 211: Lower native/library color seed 684/684; upper native/library seed 661/661;
+// complete difference/scaled-difference stages 658/658; upper seed with difference/scaled
+// stages 707/700. Original separate color phases, helpers and output ownership restored.
+// Native upper bound/point scale/both 615/626/626; state-array receiver/with upper bound 615/615; scale
+// plus array/all inputs/all role homes 626/626/626. All restored.
+// U/V entry ordering, seven combinations 615; definition then source 615.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
@@ -497,9 +588,7 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
                 direction.i = previous ? point->position.x - neighbor->position.x : neighbor->position.x - point->position.x;
                 direction.j = previous ? point->position.y - neighbor->position.y : neighbor->position.y - point->position.y;
                 direction.k = previous ? point->position.z - neighbor->position.z : neighbor->position.z - point->position.z;
-                side.i = direction.k * view.j - direction.j * view.k;
-                side.j = direction.i * view.k - direction.k * view.i;
-                side.k = direction.j * view.i - direction.i * view.j;
+                cross3f(&view, &direction, &side);
                 real length = (real)sqrt(side.k * side.k + side.j * side.j + side.i * side.i);
                 if (!(fabs(length) < 0.0001f))
                 {
@@ -511,9 +600,7 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
                 first.z += side.k * half_width; second.z -= side.k * half_width;
                 if (input->normal)
                 {
-                    normal.i = side.k * direction.j - side.j * direction.k;
-                    normal.j = side.i * direction.k - side.k * direction.i;
-                    normal.k = side.j * direction.i - side.i * direction.j;
+                    cross3f(&direction, &side, &normal);
                     length = (real)sqrt(normal.k * normal.k + normal.j * normal.j + normal.i * normal.i);
                     if (!(fabs(length) < 0.0001f))
                     {

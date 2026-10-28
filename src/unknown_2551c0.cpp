@@ -28,14 +28,13 @@ struct s_unit_0c_view
    given */
 static inline void function_x84d9e8(vector3f *vector, vector3f const *axis, real sine, real cosine)
 {
-	real i = vector->i;
-	real j = vector->j;
-	real k = vector->k;
-	real projection = (axis->k * k + axis->i * i + j * axis->j) * (1.f - cosine);
-
-	vector->i = (axis->i * projection + i * cosine) - (axis->k * j - k * axis->j) * sine;
-	vector->j = (j * cosine + projection * axis->j) - (k * axis->i - axis->k * i) * sine;
-	vector->k = (axis->k * projection + k * cosine) - (i * axis->j - j * axis->i) * sine;
+	real projection = (vector->i * axis->i + vector->j * axis->j + vector->k * axis->k) * (1.f - cosine);
+	real cross_i = vector->j * axis->k - vector->k * axis->j;
+	real cross_j = vector->k * axis->i - vector->i * axis->k;
+	real cross_k = vector->i * axis->j - vector->j * axis->i;
+	vector->i = vector->i * cosine + projection * axis->i - cross_i * sine;
+	vector->j = vector->j * cosine + projection * axis->j - cross_j * sine;
+	vector->k = vector->k * cosine + projection * axis->k - cross_k * sine;
 }
 
 real function_30bf0(vector3f *v);
@@ -72,8 +71,32 @@ short __stdcall function_2551c0(long actor_index)
 	return local_0;
 }
 
-// score 117 (was 117): our frame is four bytes larger than retail's and the
-// inlined rotation helper runs on a different SSE schedule.
+// score 43 (was 43): cross-product schedule and score-dot registers still differ.
+// Earlier allocation: retail computes the second products of the j and k cross terms before
+// the call's pushes (ours the first j product: 2 bytes longer, j/k cross registers swapped) and
+// sums the score's dot product j, k, i (ours k, i, j). Kept: the rotation as projection first, then
+// three named cross terms, each output `v * cos + projection * axis - cross * sin` (frame now
+// retail's). Tried: cross before projection 109, any other statement order 49-112; product operand
+// orders 43; the original output forms 72; i/j/k locals 116; cross as a struct or cross3f 154/159;
+// dot3f for the projection 72; output statements reordered 59-124; one_minus_cosine local 56;
+// forceinline 43; the score's dot written out in any order 72-146 or swapped 43; loop-local
+// declaration orders 43.
+// Earlier: our frame was four bytes larger than retail's and the
+// inlined rotation helper ran on a different SSE schedule.
+// Round 132: shared cosine/axial/both/transverse/cosine+transverse/axial+transverse/all scaling
+// [143, 203, 195, 189, 140, 197, 165]; native helper references 43. Early cross products and
+// score-dot schedule remain.
+// Named second j/k products 109/109; both second products 65; both first products 65;
+// named j/k cosine products 120/109; both cosine products 61;
+// second products plus cosine parts 139.
+// Output base sums i/j/k 109/109/109; all base sums 68; success word/long 106/76;
+// signed/unsigned byte direction counters 43/43.
+// Round 138: axis value 233; input value 213; projection i/j/k parts 109/109/124; transverse i/j/k parts 109/109/109.
+// Round 85: about 90 helper forms screened (cross order, product operand order, output form,
+// projection form): VC canonicalizes the product and sum forms, so only the cross statement
+// order and the output term order change code. Cross i/k/j 49; projection (1 - cosine) first
+// 72; dot3f(axis, vector) 72; outputs v*cos - cross*sin + projection*axis 133 (814 bytes);
+// score as the distance part times the dot part 43.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
@@ -230,9 +253,9 @@ struct s_2556c0
 // score 1 (was 1): the byte test uses the other SIB base and index slot;
 // the address is the same. Immutable index 1; index predeclared/read before the blocked test 1 each;
 // edge predeclaration, a post-bounds edges base, a field-base flag pointer and an exact flag pointer 1 each;
-// scoped favor-speed-off 37.
+// scoped favor-speed-off 37; bool return, as its caller's tests of al show, 1 (kept).
 // @retail 0x2556b0
-long function_2556b0(point3f const *arg_0, vector3f const *arg_1, long arg_2, real *arg_3)
+bool function_2556b0(point3f const *arg_0, vector3f const *arg_1, long arg_2, real *arg_3)
 {
 	s_pathfinding_data *local_0 = NULL;
 	s_2556b0 *local_1 = (s_2556b0 *)g_4e0348;
@@ -506,26 +529,43 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 	return local_0;
 }
 
-// score 200 (was 205): first length, extent and radius homes still differ;
-// fallback timing initialized before query 200; later heading vector 219;
-// later object lookup 223; shared reverse scale 223; entry vector homes 205.
-// Frame and first-length/radius homes still differ;
-// exhaustive timing branches 205; trace distances after location 213; first length in guard 200;
-// completed direction reused 200; timing and trace lifetimes 206.
-// score 151 (was 200): frame 0x58 versus 0x54 and first-length/radius homes remain;
-// earlier interval lifetime 151; earlier request 226; earlier side 200;
-// nested normalizations 200; later radius on fallback body 203.
-// score 151 (was 151): frame 0x58 versus 0x54; first-length/radius homes remain.
-// Early-declared exhaustive interval 205; entry first length 151; trace/location names 151;
-// pre-normalization interval 149; byte side 220. Original body retained.
-// score 143 (was 151): frame 0x58/0x54 and first-length/radius homes remain.
-// Actor/target/both references 151/151/151; unit handle/radius values 245/232;
-// actor/target point values 240/249; heading-length result/reduced guard 143/143, latter retained.
-// Interval role name 151; entry interval lifetime 168; reversed aggregate 151;
-// first/second planar memcpy 151/151.
-// score 143 (was 143): Frame and scalar homes remain; normalized direction/heading/both
-// 243/243/269; immutable first length 143; total reach 145; combined range guard 143; separate
-// original/adjusted projection 151; with normalized direction 245.
+// score 141 (was 141): frame 0x58 versus 0x54 and first-length/radius homes remain; retail keeps
+// the radius in the argument home and adds the object size only after the projection test.
+// Fallback timing initialized before query 200; later heading vector 219; later object lookup 223;
+// shared reverse scale 223; entry vector homes 205; exhaustive timing branches 205; trace distances
+// after location 213; first length in guard 200; completed direction reused 200; timing and trace
+// lifetimes 206; earlier interval lifetime 151; earlier request 226; earlier side 200; nested
+// normalizations 200; later radius on fallback body 203; early-declared exhaustive interval 205;
+// entry first length 151; trace/location names 151; pre-normalization interval 149; byte side 220;
+// actor/target/both references 151/151/151; unit handle/radius values 245/232; actor/target point
+// values 240/249; heading-length result/reduced guard 143/143, latter retained; interval role name 151;
+// entry interval lifetime 168; reversed aggregate 151; first/second planar memcpy 151/151;
+// normalized direction/heading/both 243/243/269; immutable first length 143; total reach 145;
+// combined range guard 143; separate original/adjusted projection 151; with normalized direction 245;
+// interval shares first timing output early-initialized/declared/conditional/late 142/205/142/205;
+// second output 205/205/205/205; direction/heading/side/reverse vector names 143 each;
+// location/request names 143/143; combined vector/all workspace names 143/143.
+// Default duration in an if/else or ternary after the query 205/205 (frame 0x54, 954 bytes);
+// with the radius sum after the projection test 211 (the 0x1e4a50 call then sinks too);
+// 0x2556b0 returning bool, as retail's tests of al show 141 (kept); with the if/else 205.
+// Round 72: a radius read used once is forwarded into its one use, so the 0x1e4a50 call moves
+// with it (sum named after the dot 210). The default in an else arm plus the object-plus-radius
+// sum written at both of its uses (first test and the 0.6 test) gives 95 at 964 bytes: frame
+// 0x54, call before the dot, sum after the test, as retail. Not kept (a repeated expression
+// counts only with a match). It still differs in the 0x110ab0 argument register and the
+// rotated scratch registers after it, the sum's operand order (field first in retail; either
+// spelling gives radius first), the first-length/projection slot packing (names do not move
+// it), the timing call's unit load and the request store order. Without the else arm 220.
+// Direct trace-test side result 141; immutable side at trace scope 141; direct
+// animation value 168; direct side plus animation 168; unsigned word side 142;
+// immutable side plus animation 168; retained-fallback conditional 141; complete
+// side/animation/timing-result graph 168. Original executable body retained.
+// conditional heading-result initialization 141; heading result rejection 162; positive projection
+// rejection 162; reach rejection 162; lateral clearance rejection 162; heading alignment rejection 162; all
+// five geometric rejection exits 162; named complete forward-range predicate 143.
+// Fallback interval after radius input/sum/difference/projection 141/137/138/136;
+// inside projection/reach 136/136; after lateral/adjusted distance 147/152;
+// projection/reach interval with later radius addition 139/141. Subthreshold forms restored.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {

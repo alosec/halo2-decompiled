@@ -540,6 +540,9 @@ struct agent_2f4440
 // score 3 (was 3): x87 input order and bit-test encoding still differ.
 // Unsigned/long masks 3; wider height 191; wider slope 374; later scale 495;
 // named square 3; branch-local mask 2 (restored); index-derived bit 280.
+// Aggregate mask initialization 3; byte endpoint masks 763; byte edge bit 712;
+// bit-bounded edge walk 302; transform vector reference 3; distance after plane
+// scale 3; outer normal components 3; broadcast force-inline 3.
 // @retail 0x2f4440
 void class_2f4440::function_2f4440(void const *a, void const *b, void const *input, void *collector)
 {
@@ -620,6 +623,10 @@ __forceinline void report_pair_2f4f00(candidate_2f4f00 const *contacts, void con
 // compiler's own; no spelling tried moves it).
 // The closer contact of the capsule and the triangle passed to the collector,
 // with the triangle's weights kept in the object
+// score 2 (was 2): height/slope x87 load order remains. Facing order 458;
+// sign-flipped cached scale 2; scale after inverse 461; oriented lane reread 349;
+// broadcast intrinsic 434; normalization input by value 2; sum input by value 2;
+// shared inline input order 2.
 // @retail 0x2f4f00
 void class_2f4f00::function_2f4f00(void const *a, void const *b, void const *input, void *collector)
 {
@@ -639,6 +646,14 @@ void class_2f4f00::function_2f4f00(void const *a, void const *b, void const *inp
 // compiler's own; no spelling tried moves it).
 // The closer contact of the capsule and the triangle passed to the collector,
 // with the triangle's weights worked out here
+// score 2 (was 2): height/slope x87 load order remains. Scale after offset 436;
+// facing snapshot test 2; oriented results 3; transform output reference 2;
+// normalization force-inline 2; distance before plane 486; early interpolation 147;
+// direct signed depth 57.
+// the x87 height/edge-component load pair still differs.
+// Earlier shared height 3; earlier difference vector 131; lane pointer 3;
+// named square 2; existing scale negated 2; direct broadcasts 2;
+// inverse/offset/distance names 2; shuffled height lane 617.
 // @retail 0x2f5960
 void __cdecl function_2f5960(void const *a, void const *b, void const *input, void *collector)
 {

@@ -73,16 +73,53 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
     arg_3->k = local_6;
 }
 
-// score 389 (was 393): frame 0x2c and length agree; early J load and magnitude/angle homes differ; K first 389, shared axis cross 409, magnitude return 406, global optimization off 2150, float consistency 656, K first plus return 399.
+// score 389 (was 389): frame 0x2c and length agree; early J load and magnitude/angle homes differ; K first 389, shared axis cross 409, magnitude return 406, global optimization off 2150, float consistency 656, K first plus return 399.
+// early J preload and magnitude/yaw home remain; indexed long/short normalization
+// loops 417/421; pointer loop 423; loop common result 423; real absolute first/both 399/395; loop with
+// real absolute first/both 421/416.
+// Earlier: frame 0x2c and length agree; early J load and magnitude/angle homes differ; K first 389, shared axis cross 409, magnitude return 406, global optimization off 2150, float consistency 656, K first plus return 399.
 // scalar XY inputs 401 (sibling 10); epsilon failure first 398; geometry before trig 398;
 // ordinary inline 389; single dot clamp 396. Early J and scalar homes still differ.
 // J snapshot 395; I/J snapshots 392; axis by value 502; destination first 389; XY common result 389.
 // real sine/cosine/pair 395/395/389; real yaw inverse cosine 401; shared
 // weighted axis/cross/both/input vectors 431/427/420/423; all restored;
 // matched sibling and both matched callees preserved throughout.
-// score 389 (was 389): frame 0x2c agrees; early J load and magnitude/angle homes still differ.
+// Earlier: frame 0x2c agrees; early J load and magnitude/angle homes still differ.
+// frame 0x2c agrees; early J load and magnitude/angle homes still differ.
+// Earlier at 389 (was 389): frame 0x2c agrees; early J load and magnitude/angle homes still differ.
 // Complete input for length 497; input for normalization 496; point input 419; both inputs 513;
 // immutable one/both magnitudes 389/389; earlier length publication 396; immutable rotation outputs 389.
+// Widened first/point/both numeric returns 407/410/412; widened optional
+// magnitude output 404, with first/both widened returns 423/430;
+// independent normalization order 411, with widened output 415 (control 389).
+// First-return widening loses the matched sibling to 45; all helper contracts
+// and normalization order restored. Early J and magnitude/yaw homes remain.
+// Earlier: early J preload and shared magnitude/yaw home remain. Fast trials: vector
+// early J preload and shared magnitude/yaw home remain. Fast trials: vector
+// Earlier at 389 (was 389): early J preload and shared magnitude/yaw home remain. Fast trials: vector
+// input/output split 389; first external vector input 441; second external vector input 410; both
+// external vector inputs 452; point input/output split 389; both normalizer splits 389; both splits
+// and first external input 441; both splits and both external inputs 452. All restored.
+// External first-input forms lose the matched sibling in the reduced image; all contracts restored.
+// Vector/point/both squared-length arguments 389 each; rotation alignment 389;
+// cosine remainder 389; both projection parts 389; clamp parameter result 391;
+// squared argument plus clamp parameter 391. Original expressions and helper contracts restored.
+// Shared normalizer scale 399; common result 398; early length publication 409;
+// nonnegative vector/point/both magnitude tests 382/399/352, shared scale with
+// nonnegative vector/point 362/390. Vector-test forms lose the matched sibling; all restored.
+// Native real vector/point/both roots 399/401/395; exact-factor shared scale 414, with both real roots 412
+// (sibling 59 in both); all-row axis/input/both terms 401/394/389. Original helpers and bodies restored; early
+// J and magnitude/yaw homes remain.
+// Round 142: shared XY magnitude for vector/point/both 389/389/389;
+// with common numeric results 405/389/405; equivalent ordered epsilon tests
+// on shared vector/both magnitudes 389/389. Early J and magnitude/yaw homes remain.
+// Round 169: Clamp outputs projection/inverse-cosine/both/paired limits/paired steps
+// 395/399/395/395/395; all pointer/reference/output-first 395/395/395.
+// Branch-owned angles on the current rotation graph 397; all restored. Early J and scalar homes remain.
+// Round 160: default numeric length at entry/root 386/396;
+// native numeric truth alone/with entry default 397/394; rotation input/axis/both
+// native copies 466/502/553; both copies with root default 557. All restored.
+// Round 251: Rotation helper role orders axis-input-angle-output, input-angle-axis-output, axis-angle-input-output, angle-axis-input-output, input-output-axis-angle, axis-output-input-angle, output-axis-input-angle, output-angle-axis-input: 389/389/389/389/389/389/389/389. Original helper contract and both alias-safe calls restored.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

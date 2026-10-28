@@ -324,10 +324,14 @@ bool function_1fef40(s_type_c3b527 const *target, long actor_index)
 real function_30bf0(vector3f *v);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
+// score 57 (was 57): only the final rotation differs: retail loads axis k/j into xmm1/xmm2 and
+// d.j/d.i into xmm3/xmm4 (ours xmm3/xmm4 and xmm1/xmm2) and scales axis j/k by the parallel part in
+// place, where ours copies it for j (three bytes longer). The block's code is the same for every
+// spelling tried: products swapped (axis * parallel) 57; the four scalars declared before or after
+// the axis or at the top 57; the rotation as 0x11d3b0 writes it, or through an inline
+// (axis, sine, cosine) helper 57; valid flag declared first 57; valid as an expression 86;
+// member-wise forward copy 88; negated cosine test 100.
 // @retail 0x1fddd0
-// score 57 (was 57): the two components of the direction are loaded into the float registers in the
-// opposite order, so the products of the rotation end up in different registers;
-// our code is three bytes longer than retail's.
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
 {

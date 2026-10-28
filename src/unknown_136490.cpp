@@ -78,11 +78,10 @@ static inline short function_x48d32c(short format)
 	return function_1358c0(format);
 }
 
-// score 6 (was 6): the sign-extended byte is moved into AX and the result into EAX; retail uses
-// CX and ECX.
 // @retail 0x1364e0
 long function_1364e0(s_type_7ba8e9 const *bitmap, short mipmap_index)
 {
+	short depth = 0;
 	short width = bitmap->width >> mipmap_index > 1 ? bitmap->width >> mipmap_index : 1;
 	if (bitmap->flags & 2)
 	{
@@ -93,8 +92,8 @@ long function_1364e0(s_type_7ba8e9 const *bitmap, short mipmap_index)
 	{
 		height += -height & 3;
 	}
-	short depth = bitmap->depth >> mipmap_index > 1 ? bitmap->depth >> mipmap_index : 1;
-	long pixels = depth * (width * height);
+	depth = bitmap->depth >> mipmap_index > 1 ? bitmap->depth >> mipmap_index : 1;
+	long pixels = height * width * depth;
 	if (bitmap->type == _enum_value_9146b9)
 	{
 		pixels *= 6;

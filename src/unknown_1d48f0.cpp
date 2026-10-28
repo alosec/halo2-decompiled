@@ -42,10 +42,71 @@ const dword g_455978[81] = {
  0x0, 0x3f3504f3, 0xbf3504f3, 0x0, 0xbf3504f3, 0xbf3504f3, 0x3f13cd3a, 0x3f13cd3a, 0xbf13cd3a,
  0x3f13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0x3f13cd3a, 0xbf13cd3a
 };
-
-// score 366 (was 370): frame 0x1d4 agrees; optional-input registers, scalar homes and inline boundaries differ.
+// score 321 (was 321): Aligned frame 0x1d4 agrees; the sample count now matches (retail's
+// setne/dec/and/sub is `27 - (flag ? 0 : 9)`, which keeps the flag on the stack); optional input
+// registers (esi/edi swapped), scalar homes and selective helper expansion remain.
+// Round 8 (lane 10): noinline redeclaration of 0x11bed0 here 321 (ignored); a separate noinline
+// declaration in 0x11bed0's own file 337 (called as retail, but 0x11bed0 and its caller 0x168f40 stop
+// matching); bounds coordinate as a named local 360; table direction pointer for both samples 321;
+// excluded index declared first, its test braced 323.
+// Earlier: Aligned 0x1d4 frame agrees; optional-input registers, scalar homes and selective helper expansion remain.
+// Earlier 350 (was 350): Aligned 0x1d4 frame agrees; optional-input registers, scalar homes and selective helper expansion remain.
+// Frame 0x1d4 agrees; optional input registers, scalar homes and selective location/release expansion remain.
+// Earlier: Aligned frame 0x1d4 agrees; optional-input registers, scalar homes and helper expansion remain.
+// frame 0x1d4 agrees; optional-input registers, scalar homes and inline boundaries differ.
+// aligned frame 0x1d4 agrees; optional input/register roles (arg_9/arg_10 in
+// esi/edi swapped), scalar homes and selective helper expansion remain: ours inlines 0x11bed0 (retail
+// calls it at all its sites) and calls 0x279740 at both releases (retail inlines the first).
+// aligned frame 0x1d4 agrees; optional-input registers (ESI/EDI swapped), scalar homes
+// and selective helper expansion remain: retail calls 0x11bed0 out of line and inlines the cache-range
+// check of the first reference release (the form of 0x1d01c0), while ours does the opposite.
 // Native/byte success 427/382; path-local excluded index 449; complete volume arms 487;
 // both path lifetimes 485; count just before scan 366; read-only body 370; native transform copies 370.
+// the presence callback at its retail 12-byte size, initialised by its constructor.
+// Frame 0x1d4 agrees; optional input/scalar homes and helper expansion differ. Tried early
+// bounds filter 430; early transform filter 361; both early filters 423; reset at query 361; direct ray rejection
+// 393; per query callback 376; callback and direct ray 376; early filters and reset 423.
+// Native callback context: conditional count 389; earlier conditional 495; earlier arithmetic count 354 kept (plain).
+// Exact sample end 361; transform slot names 361; native ray endpoint 394; expanded radius name 361; unsigned sample ordinal 361.
+// Candidate/endpoint/ray component loops 382/354/354; basis loop 524;
+// translation loop 350 kept (plain); radial scaling/blend loops 354/354; combined producers 492.
+// Direction/radial/both/endpoint/ray/all spatial declaration scopes 350 each;
+// complete native endpoint value 403; paired bounds-axis producer 466. All restored.
+// Complete candidate/blend/both product phases 350/350/350; both radial square terms 391;
+// radial terms with candidate/all phases 391/391; six-use bounds origin 492, with candidate products 492. All restored.
+// Complete lower/upper/both bound selections 413/466/484; complete horizontal square 350;
+// bounds plus square 484; callback ending before cleanup 350; bounds/callback 484; square/callback 350. All restored.
+// Round 187: bounds short/byte, sample long, translation long/short all 548 (2011 bytes);
+// the four corresponding short-sample forms all 573 (1986 bytes). All eight ordinal-width forms restored.
+// Sample-element reference 350; object-index field reference 357; both references 357;
+// world snapshot alone/with sample 484/484; with object field/with both references 483/483;
+// body/shape declaration homes at entry 350. All restored.
+// Transform description after body/shape load/shape choice/pose copy 351/351/351/411;
+// bounds description ends before add/exclusion 406/363; full shape selection 350; word success 415.
+// Round 214: single native vector table, separate/reused radial sample and direct/shared ray difference
+// 350/350/350/350; real-row table with the same producer grid 447/447/362/362. All restored.
+// Noinline redeclaration of 0x11bed0 in this file 350 (ignored; still inlined); sample count as a
+// 27/18 ternary 477 (retail's form, but the flag then goes in a register and caller 0xc5460 changes);
+// ray endpoint adds as `x = x + i` 350; translation copy as three statements 354; upper bound as
+// radius-plus-coordinate 350.
+// Round 54: noinline declaration of 0x11bed0 447 (and 0x11bed0 itself 19 in --fast: CAVEAT on its
+// callee 0x14a280); first release with the inline range check 442; both 401 (structural diff 36 vs 66);
+// with an `arg_8 ? 27 : 18` count 427, count alone 477.
+// Round 223: Both positive validation stages 350; result-terminated scan 395; optional failure
+// first 351; both 395; zero rejection removed on these graphs 408/411/407/411. All restored.
+// Round 148: native candidate value 486; native ray-offset value 467; both vector values 516;
+// coordinated transform inline 350; inline/candidate 486; inline/offset 467; inline/both values
+// 516; force-inline/both values 954. All executable forms restored.
+// Lane 5 r77: `arg_8 ? 27 : 18` gives neg/sbb and makes the flag a register argument (477, caller
+// 0xc5460 251 -> 255); `18`, then `27` if the flag 399; `27 - (arg_8 ? 0 : 9)` kept (350 -> 321).
+// Then: volatile casts dropped from the radial length 388 (before the count change); length terms
+// swapped 320; component index as a ternary 427; k cleared before the length, with or without its
+// term 321/321; named lower/upper pointers in the bounds loop 321.
+// Shared radial producers on the accepted count graph: in-place radius scale 321; complete blend setter 321.
+// both shared producers 321; blend factor before normalization 331.
+// factor with radius scale 331; factor with blend setter 331.
+// all three producers 331; complete normalized-vector setter 321.
+// All executable forms restored.
 // @retail 0x1d48f0
 bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long arg_2, point3f const *arg_3,
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,
@@ -74,6 +135,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   if (arg_10 != NONE) local_2 = havok_object_get(arg_10)->havok_component_index;
  }
  bool local_0 = false;
+ long local_6 = 27 - (arg_8 ? 0 : 9); /* the table's 27 directions, or the first 18 */
  hkTransform local_7;
  c_contact_query_transform_volume *local_8;
  {
@@ -89,8 +151,6 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
  }
  ((c_contact_query_world *)g_51e9a4)->add(local_8);
  c_contact_presence local_12;
- local_12.found = false;
- long local_6 = 18 + 9 * arg_8;
  for (long local_13 = 0; local_13 < local_6; ++local_13)
  {
   vector3f local_14 = ((vector3f const *)g_455978)[local_13];
@@ -147,9 +207,8 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   local_21.up.i = local_7.m_rotation.m_col2(0);
   local_21.up.j = local_7.m_rotation.m_col2(1);
   local_21.up.k = local_7.m_rotation.m_col2(2);
-  local_21.position.x = local_7.m_translation(0);
-  local_21.position.y = local_7.m_translation(1);
-  local_21.position.z = local_7.m_translation(2);
+  for (long component = 0; component < 3; ++component)
+   local_21.position.n[component] = local_7.m_translation(component);
   function_1d43d0(arg_0, &local_21, &local_22);
   *arg_11 = local_22.position;
   function_11bed0(arg_5, arg_11);

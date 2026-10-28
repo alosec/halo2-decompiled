@@ -79,7 +79,13 @@ struct s_1debd0
 // all-scalar locals 22; one inline expression with no difference locals 22;
 // q - p straight from the 3D point 15; a cached g_440b94 row 99; the
 // projections through 0x120810 104; a result flag with break 79; leaving
-// on `local_5 == local_4` 72; comparing the products 50.
+// on `local_5 == local_4` 72; comparing the products 50; the input difference
+// after the edge difference 47; the far vertex projected first 12; vertex
+// coordinates through `real const *` 12; a named cross value 12; the edge
+// difference straight from the vertex 15 (0x1dea00 lost). About 2000
+// compile-only screens (statement orders, member or aggregate forms, the
+// comparison forms, side-flag types, named products, an input copy) never
+// give retail's numbering.
 // @retail 0x1debd0
 bool function_1debd0(dword const *arg_1, s_bsp3d const *arg_0, short arg_2, long arg_3,
  short arg_4, bool arg_5, point2f const *arg_6)

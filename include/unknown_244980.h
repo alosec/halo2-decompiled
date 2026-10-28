@@ -3,7 +3,6 @@
 
 struct c_244980_base : c_a
 {
-    virtual long v1(long first, long second);
     virtual void *v3();
 };
 

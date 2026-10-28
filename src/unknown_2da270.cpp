@@ -11,3 +11,10 @@ public:
 };
 
 // @retail 0x2da270 deleting class_2da270
+
+
+// @retail 0x2d7f40
+class_2da270 *__cdecl function_2d7f40()
+{
+	return new class_2da270;
+}

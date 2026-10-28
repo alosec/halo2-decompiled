@@ -253,6 +253,8 @@ bool __stdcall function_1aa990(long actor_index, s_slot *slot)
 // score 17 (was 17): retail loads the prop pool pointer into EAX, one byte
 // shorter than our ECX, and passes entry->unknown24 in ECX where we pass it in
 // EDX; the one-byte difference moves every later jump target.
+// Tried (r35): prop_ref_get and the real record types 17; the state assigned after declaration 17;
+// prop_node_state 17; the reversed probability comparison 35; const entry, state, or actor/unit 17.
 // @retail 0x1aa9f0
 short __stdcall function_1aa9f0(long actor_index)
 {
@@ -406,20 +408,82 @@ real function_30bf0(vector3f *arg_0);
 real normalize2d(point2f *arg_0);
 extern point2f *g_468778;
 
-// score 379 (was 384): actor-table/result/prop carriers still differ; first
+// score 375 (was 375): Frame 0x40 agrees; early actor/settings/prop carriers and prediction homes remain.
+// Earlier at 375 (was 375): frame 0x40 agrees; early actor/settings/prop carriers and prediction scalar homes differ.
+// frame 0x40 agrees; actor/settings/prop carriers and prediction homes remain.
+// Earlier: frame 0x40 agrees; early actor/settings/prop carriers and prediction scalar homes differ.
+// actor-table/result/prop carriers still differ; first
+// actor-table/result/prop carriers still differ; first
 // prediction loop 391; second prediction loop 391; planar reverse loop 391;
 // repeated vector-field access 387; direct final result 379, plain verified.
 // Round 290: result after lookups 411; read-only settings pointer 379; payload-only memset 378; native
 // planar request workspace 391; byte result 399; actor first with direct final result 413.
-// score 379 (was 379): Frame 0x40 agrees; actor/settings/prop carriers differ. Guarded actor lookup
+// Frame 0x40 agrees; actor/settings/prop carriers differ. Guarded actor lookup
+// Earlier at 379 (was 379): Frame 0x40 agrees; actor/settings/prop carriers differ. Guarded actor lookup
 // 408; integer clock 413; conditional threshold 389; aggregate request 379; branch-derived
 // prediction weight 385 (fast).
 // Round 303: entry request 379; entry primary vector 379; sibling secondary vector 379;
 // inner threshold 388; entry planar workspace 379. Actor/settings/prop carriers still differ.
 // Round 310: eligibility result 432; double clock 413; prop handle snapshot 379;
 // read-only prop payload 379; weight after magnitude 379. Early actor/settings/prop homes remain.
-// score 379 (was 379): actor/settings/prop carriers differ; request direction at use 379; request
+// actor/settings/prop carriers differ; request direction at use 379; request
 // validity first 379; vector memcpy 379; normalization arm first 379; state interval 379.
+// Frame 0x40 agrees; actor/settings/prop homes remain. Slot-first with direct
+// Earlier at 379 (was 379): actor/settings/prop carriers differ; request direction at use 379; request
+// Earlier at 379 (was 379): Frame 0x40 agrees; actor/settings/prop homes remain. Slot-first with direct
+// result 379; unit field pointer 379; external state byte reference 390; position pointer 387;
+// velocity pointer 424.
+// Round 173: external actor / guarded slot / combined references 379/379/379;
+// external facing reference 379; prediction-path velocity reference 395. Frame 0x40 agrees;
+// early actor/settings/prop carriers remain. Original body retained.
+// frame 0x40 agrees; early actor/settings/prop carriers remain.
+// Failure guard with direct result 440; primary components i/j/k 379; earlier normalization
+// distance 375 kept (plain); double distance 406; named facing projection 387.
+// Early-distance context: distance/weight/time scalar names 375 each; combined scalar names 375; chained defaults 375.
+// Distance at common direction scope 410; prediction-default order 375; complete weight result 388.
+// Direct parent-to-direction handoff 375; direction after admission 378; named velocity alignment 375;
+// branch-derived prop receiver 399; read-only actor 375; final rejection expression 375; nested admission 374; prop result with later direction 404.
+// Actor lookup at use 524; velocity/position/both values 405/417/406;
+// all projection products 375; products with live actor 516; clock at use 391; products with prediction values 406.
+// Target velocity/position/both pointers at prediction 397/377/392; at receiver 434/383/425;
+// position/both with separate second time 377/425.
+// Earlier at 375 (was 379): frame 0x40 agrees; early actor/settings/prop carriers remain.
+// Existing point-difference helper at primary/secondary/both predictions 375/375/375; native predicted
+// point at primary/secondary/both 375/375/375; unary planar negation 390; earlier uninitialized
+// prediction-time storage 375. Actor/settings/prop carriers remain.
+// Native unit/state/rate values 393/405/380f; unit plus state/rate 406/395f;
+// state plus rate 403f; all three 401f; actual distance value 403f.
+// Early actor acquisition with the new unit/state/rate/all-three/distance values
+// 395/424/406/410/410f. All native scalar captures and lookup changes restored.
+// Later false default 409; rejected-arm false default 440; admission result 432;
+// complete buffer names 375; direction names 375; earlier magnitude storage/name 375/375;
+// later default with complete buffer names 409. Early actor/settings/prop homes remain.
+// Native memcpy for the facing-test planar initializer 384; with request, actor
+// fallback, both, constant fallback, request/constant, both fallbacks and all
+// three request transfers 384 each. Original planar transfers restored.
+// Round 177: Shared dot at facing/alignment/both/prediction/facing+prediction/alignment+prediction/
+// all three 374/377/383/375/374/377/383; all three with opposite helper inputs 383.
+// Exact-only grouping forms restored; actor/settings/prop carriers remain.
+// Round 341: Successive vector-length storage before prediction, target velocity receiver and actor-first graphs 379/413/394/435; after prediction 379/413/395/437. Original body restored.
+// Round 235: Scaled-displacement producers (O original scalar, H shared scale
+// output, V native velocity value scaled in place), primary/secondary:
+// O/H 389; O/V 420; H/O 389; H/H 403; H/V 448; V/O 406; V/H 406; V/V 376.
+// Actor/settings/prop homes remain; original producers, include set and body restored.
+// Round 140: One immutable request-distance observation with secondary threshold/shared prediction/native
+// result interactions 406/395/440/431/430/421/455/445; original and actor-first lookup under coherent
+// inline/noinline/both settings declarations 375/413/375/413/375/413. Both declarations lose matched 0x265d30
+// in the calibrated peer image; all observations, vectors, result and declarations restored.
+// Round 177: Shared dot at facing/alignment/both/prediction/facing+prediction/alignment+prediction/
+// all three 374/377/383/375/374/377/383; all three with opposite helper inputs 383.
+// Exact-only grouping forms restored; actor/settings/prop carriers remain.
+// Round 158: Complete facing/alignment/prediction product operands commuted independently, in pairs, all
+// three, then with both full prediction producers. Scores [375, 375, 375, 375, 375, 375, 375, 375]. Original
+// executable body restored.
+// Round 184: native admission/active/request byte fields, all seven nonempty
+// groups, and the unsigned bounded request discriminator 375 each. Original
+// Boolean fields, output-pointer contracts and request discriminator restored.
+// Round 226: complete settings native/memcpy values with bool/byte result, original/actor-first
+// acquisition 441, 441, 413, 413, 422, 422, 394, 394. All restored; frame and early carrier homes remain.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {
@@ -484,6 +548,7 @@ bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 				}
 				else
 				{
+					real local_13 = 0.0f;
 					real local_10 = 0.0f;
 					real local_11 = magnitude3d(&local_6->field_1c);
 					if (local_11 > 0.0f)
@@ -492,7 +557,6 @@ bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 					local_9.j = local_6->field_1c.j * local_12 + local_6->field_4.y - local_0->position.y;
 					local_9.k = local_6->field_1c.k * local_12 + local_6->field_4.z - local_0->position.z;
 					local_9.i = local_6->field_1c.i * local_12 + local_6->field_4.x - local_0->position.x;
-					real local_13 = 0.0f;
 					if (0.0f > local_8->k * local_9.k + local_8->j * local_9.j + local_8->i * local_9.i)
 						local_9 = *local_8;
 					else
@@ -587,7 +651,13 @@ struct s_1aab51
 
 static __forceinline long real_to_long(real value);
 
-// score 466 (was 478): early false exit, frame 0x54 versus 0x58 and scratch
+// score 386 (was 386): Frame 0x58 and length agree; early rejection, object/magnitude and query scalar homes remain.
+// Earlier: frame 0x58 and length agree; early rejection and query scalar/object homes remain.
+// Frame 0x58 and 1904-byte length agree; early rejection and query scalar homes remain.
+// frame 0x58 and length agree; early rejection and query scalar/object homes remain.
+// Earlier: Frame 0x58 and 1904-byte length agree; early rejection and query scalar homes remain.
+// Earlier forms: prediction loop 482; initial velocity snapshot 538; direct
+// early false exit, frame 0x54 versus 0x58 and scratch
 // homes differ; prediction loop 482; initial velocity snapshot 538; direct
 // eligibility 484; full-width readiness 495; fallback copy loops 541.
 // j92: actor/settings registers agree; frame 0x54 versus 0x58, early false exit and speed/object homes remain; retain facing view and native planar copy.
@@ -595,9 +665,55 @@ static __forceinline long real_to_long(real value);
 // 476; direction length by arm 482; facing position view 471; facing prediction seconds 472; facing planar
 // copy 466; facing direction length 473; planar speed homes 466; planar position view 464; planar position
 // speed homes 464; planar position late 466.
-// score 410 (was 466): Frame 0x54 versus 0x58, early false exit and speed/object/request homes remain.
+// Previous form: Frame 0x54 versus 0x58, early false exit and speed/object/request homes remain.
 // late object receiver 470; trajectory planar view 466; direct request view 466;
 // test-derived readiness 410; conditional approach factor 466 (fast).
+// Previous form: frame 0x54 versus 0x58, early rejection and query homes remain.
+// Separate query in/out scalar 494; wider output scope 410; wider trajectory scope 410;
+// scalar/output and scalar/trajectory scopes 494 each; output/trajectory scopes 410;
+// all query homes 494; all homes with earlier query-scalar declaration 494.
+// Target velocity view 487; object velocity view 386; both 384 (two-point increment rejected);
+// byte readiness 410; target/object/both views with byte 487/386/384; native readiness 422.
+// Direct six-use object velocity field producer 386 kept (plain), removing the one-use object pointer.
+// Actor/target/both position receivers 443/451/461; both at receiver 441; actor at entry 463;
+// positions with direct rejection 493, named query scalars 461, named query direction 461.
+// Frame 0x54 versus 0x58, early false exit and speed/object/request homes remain.
+// frame 0x54 versus 0x58, early rejection and query homes remain.
+// query output names 410; native request clear 474; positive mode arms 483; far prediction first 413; request
+// mode first 522; relative velocity expression 413; direct facing field 524; deadline mode first 510.
+// Complete slot/target/both layouts 386/386/386; paired approach projections 386;
+// slot/target/both layouts with projections 386/386/386; both layouts with early rejection 511.
+// On the direct velocity producer: false-default result 497; completion-time success 511;
+// byte/word results 431/447; early rejection 511; single-exit admission 497;
+// completion-time byte/word results 505/510.
+// Native distance/rate/both observations 470/495/487; complete actor-facing
+// value alone/with distance/with rate/with both 516/575/565/586; complete
+// observations plus paired query names 586. Opening 0x58 frame/body restored;
+// early rejection and magnitude/object/query homes remain.
+// Object velocity before magnitude / after weight / after normalization 384/445/465;
+// initialized distinct query speed / flight output / both outputs 453/452/478;
+// distinct speed or flight output with earlier object receiver 455/455. Two-count gain rejected.
+// Native memcpy: full facing fallbacks 386; actor/constant query fallbacks
+// 386/386; facing-test planar initializer 386; request planar publication 386;
+// request fallbacks 386; queried planar publication 386; all copies 386.
+// Native predicted point/shared difference 451; x/y/z order and aggregate point 447/447;
+// point plus shared squared length 447; query output scope, scalar names, declaration
+// order and their combination on the point graph 451/451/451/451. Original body restored.
+// Entry/eligibility/final-approach/deadline Boolean reductions 506/493/407/440;
+// all mode reductions 510; entry plus modes 477; early test-derived eligibility
+// on the native velocity receiver 393; entry reduction plus that result 505.
+// Round 177: Shared dot at alignment/backward prediction/both/approach/alignment+approach/
+// backward+approach/all three, then all with opposite helper inputs: 386 each. Exact-only
+// grouping forms restored; early rejection and magnitude/query homes remain.
+// Existing squared-length helper 384; uniform projection products 480; both 460;
+// all prediction products 386; helper/prediction 384; projection/prediction 480;
+// all producers 460; all with target velocity receiver 456. Original restored.
+// Round 341: One vector-length scalar before prediction, target receiver and direct-facing graphs 384/383/517/520; after prediction 386/384/513/514. Two/three-count gains dropped; original body restored.
+// Round 354: complete shared relative-velocity difference 391; every-use object producer 509;
+// both 484; native request initialization on the recovered frame 472; with shared difference 477;
+// with every-use object producer 506; all three 430; all with wide eligibility 493. Original restored.
+// Round 193: Existing metadata providers ordinary-inline singly, all pairs and all,
+// then separate noinline declarations on all three: 386/386/386/386/386/386/386/386. Original restored.
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {
@@ -656,7 +772,7 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 			else
 			{
 				real local_12 = (real)sqrt(local_8->field_1c.i * local_8->field_1c.i + local_8->field_1c.j * local_8->field_1c.j + local_8->field_1c.k * local_8->field_1c.k);
-				s_ai_object *local_13 = ai_object_get(local_1->unknown018);
+				vector3f const *object_velocity = &ai_object_get(local_1->unknown018)->velocity;
 				real local_14 = 0.0f;
 				if (local_12 > 0.0f)
 					local_14 = (1.0f + (local_8->field_1c.k * facing->k + local_8->field_1c.j * facing->j + local_8->field_1c.i * facing->i) / local_12) * 0.5f;
@@ -707,10 +823,10 @@ bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 				else if (local_0->field_2e)
 				{
 					local_10 = local_0->field_34 > local_17 || (0.0f > local_17 &&
-						(local_8->field_1c.k - local_13->velocity.k) * local_11.k + (local_8->field_1c.j - local_13->velocity.j) * local_11.j + (local_8->field_1c.i - local_13->velocity.i) * local_11.i > 0.7f);
+						(local_8->field_1c.k - object_velocity->k) * local_11.k + (local_8->field_1c.j - object_velocity->j) * local_11.j + (local_8->field_1c.i - object_velocity->i) * local_11.i > 0.7f);
 				}
 				else
-					local_10 = 0.5f > local_17 - (local_13->velocity.k * local_11.k + local_13->velocity.j * local_11.j + local_11.i * local_13->velocity.i) * local_15 * g_510c54->rate;
+					local_10 = 0.5f > local_17 - (object_velocity->k * local_11.k + object_velocity->j * local_11.j + local_11.i * object_velocity->i) * local_15 * g_510c54->rate;
 			}
 		local_18:
 			if (local_0->field_18 || (local_10 && !local_0->field_2e))

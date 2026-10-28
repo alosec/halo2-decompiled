@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "unknown_2626b0.h"
 #include "unknown_20fe20.h"
+#include "slot_handler.h"
 #include <math.h>
 #include <string.h>
 // @flags /O2 /Ob1 /arch:SSE /Gr
@@ -32,9 +33,7 @@ struct s_29e0f8
     long field_4;
     short field_8;
     byte field_a[2];
-    point3f field_c;
-    short field_18;
-    byte field_1a[2];
+    s_type_c3b527 field_c;
 };
 struct s_29e0f9
 {
@@ -65,8 +64,8 @@ PRIVATE __forceinline void function_29e64d(s_29e0f8 *arg_0, point3f const *arg_1
 {
     arg_0->field_0 = NONE;
     arg_0->field_8 = NONE;
-    arg_0->field_c = *arg_1;
-    arg_0->field_18 = NONE;
+    arg_0->field_c.point = *arg_1;
+    arg_0->field_c.output_index = NONE;
     arg_0->field_4 = NONE;
     arg_0->field_2 = 0;
 }
@@ -79,7 +78,17 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
     return (real)sqrt(local_2 * local_2 + local_1 * local_1 + local_0 * local_0);
 }
 
-// score 416 (was 416): Frame 0x6c/0x64, table-pointer roles and bound spill remain; entry bitmap storage 416; output-helper formal order 454; failed-selection common exit 416; ordinary distance inline 416; byte overall result 445.
+// score 416 (was 416): Frame 0x6c/0x64, table-pointer roles and bound spill remain.
+// Complete initial guard exits 458; CRT output point copy 416; distance second point by value 569;
+// squared-distance second point by value 430; conditional table pointer initialization 416.
+// Group-table field at each use 457; native long overall result 445; bounded output for 420; same-group pretested while 416; positive nearest-point scope 416.
+// Entry secondary root 417; direct initial root fields 416; native output-point reference 416;
+// native distance references 416; native first squared-distance point 433; unsigned-word fixed pass 416.
+// Round 121: Success set before output fill 440; native first point of length helper 579; signed-byte direction step 416; metadata before point copy 439; signed-byte per-pass result 416. Original helper contracts and complete body restored.
+// Earlier: entry bitmap storage 416; output-helper formal order 454; failed-selection common exit 416; ordinary distance inline 416; byte overall result 445.
+// Round 341: One short direction counter, point payload and long record-index graphs 425/454/431/459; long direction counter 479/453/477/453. Original loops and values restored.
+// Round 350: real outer/inner/both link-element receivers 416/416/416; with read-only
+// link/group/both/point/all views 416 each. Frame 0x6c/0x64, table roles and bound spill remain.
 // @retail 0x29e0f0
 bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg_2,
     s_29de21 *arg_3, s_29e0f9 *arg_4)
@@ -221,12 +230,6 @@ struct s_29e730
 };
 struct s_29e731 { byte field_0[0x18]; long field_18; byte field_1c[0x38]; long field_54; };
 
-// score 332 (was 332): frame 0x114 versus 0x10c and stacked request versus EAX remain; metadata lifetimes tie, counter/flag forms regress, shared inline declarations tie.
-// primary index after vector 332; primary index before point 332; extra index before point 332; branch counter
-// result 356; extra flag native width 342; position helper inline 332.
-// score 332 (was 332): frame 0x114 versus 0x10c and request convention remain; byte result 338;
-// long result 360; library fallback/output record copies 332/332; unsigned primary index 332;
-// inline out-of-line location declaration 392. Original body and shared declaration kept.
 // @retail 0x29e730
 bool __stdcall function_29e730(s_29e730 *arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 const *arg_3, s_reference arg_4, s_29de21 *arg_5,
@@ -241,56 +244,80 @@ bool __stdcall function_29e730(s_29e730 *arg_0, long arg_1, point3f const *arg_2
         local_2 = NONE;
     memset(arg_7, 0, sizeof(*arg_7));
     s_type_c3b527 local_3;
-    vector3f local_4;
-    point3f local_5;
     s_type_c3b527 local_6;
-    point3f local_7;
-    vector3f local_8;
-    point3f local_9;
-    s_262b40_result *local_10;
-    if (arg_0->field_0 != 6) goto local_24;
+    if (arg_0->field_0 == 6)
     {
-        if (!function_262a90(arg_0->field_c, &local_5, &local_4)) goto local_20;
-        if (!function_2702a0(arg_1, 0xf000545, 0x5000049, 0x6000542, 0x400000c,
-            &local_5, &local_4, &local_9, NULL, &local_8, NULL)) goto local_20;
-        local_10 = function_262b40(arg_0->field_c);
-        short local_11 = ((s_type_c3b527 *)local_10)->output_index;
-        if (!function_210770(local_11, (vector3f *)&local_5, &local_8)) goto local_20;
-        if (!function_210690(local_11, &local_9, &local_3.point)) goto local_20;
-        local_5.x = local_9.x + local_4.i * 1.5f;
-        local_5.y = local_9.y + local_4.j * 1.5f;
-        local_5.z = local_9.z + local_4.k * 1.5f;
-        local_3.output_index = local_11;
+        vector3f local_4;
+        vector3f local_8;
+        point3f local_9;
+        {
+            point3f local_5;
+            if (!function_262a90(arg_0->field_c, &local_5, &local_4)) goto local_20;
+            if (!function_2702a0(arg_1, 0xf000545, 0x5000049, 0x6000542, 0x400000c,
+                &local_5, &local_4, &local_9, NULL, &local_8, NULL)) goto local_20;
+        }
+        s_262b40_result *local_10 = function_262b40(arg_0->field_c);
+        vector3f local_11;
+        if (!function_210770(((s_type_c3b527 *)local_10)->output_index, &local_8, &local_11)) goto local_20;
+        if (!function_210690(((s_type_c3b527 *)local_10)->output_index, &local_9, &local_3.point)) goto local_20;
+        local_3.output_index = ((s_type_c3b527 *)local_10)->output_index;
+        point3f local_24;
+        local_24.x = local_9.x + local_4.i * 1.5f;
+        local_24.y = local_9.y + local_4.j * 1.5f;
+        local_24.z = local_9.z + local_4.k * 1.5f;
         if (arg_0->field_10)
         {
             arg_0->field_29 = true;
             arg_0->field_2c = local_8;
         }
-        else if (function_210690(local_11, &local_5, &local_6.point))
+        else if (function_210690(((s_type_c3b527 *)local_10)->output_index, &local_24, &local_6.point))
         {
-            local_6.output_index = local_11;
+            local_6.output_index = local_3.output_index;
             local_0 = true;
         }
         goto local_21;
     }
 
+    if (arg_0->field_0 == 4)
+    {
+        long local_12 = function_1e4990(local_1->field_54);
+        if (!local_12 || (*(byte *)local_12 & 2)) goto local_20;
+        s_262b40_result *local_10 = function_262b40(arg_0->field_c);
+        if (!local_10 || !((byte)local_10->flags & 0x40)) goto local_20;
+        vector3f local_4;
+        point3f local_5;
+        vector3f local_8;
+        point3f local_9;
+        if (!function_262af0(arg_0->field_c, &local_5, &local_8)) goto local_20;
+        if (!function_2702a0(arg_1, 0x6000542, 0x400069d, 0x6000542, 0x400000c,
+            &local_5, &local_8, &local_9, NULL, &local_4, NULL)) goto local_20;
+        if (!function_210690(((s_type_c3b527 *)local_10)->output_index, &local_9, &local_3.point)) goto local_20;
+        local_3.output_index = ((s_type_c3b527 *)local_10)->output_index;
+        goto local_21;
+    }
 local_20:
     local_3 = *arg_3;
     local_0 = false;
 local_21:
-    if (local_3.output_index == NONE || !function_2104b0(local_3.output_index, &local_3.point, &local_7))
+    point3f local_7;
+    if (local_3.output_index != NONE)
+    {
+        if (!function_2104b0(local_3.output_index, &local_3.point, &local_7))
+            local_7 = local_3.point;
+    }
+    else
         local_7 = local_3.point;
     arg_7->field_1c = *arg_2;
     arg_7->field_4 = local_3;
-    arg_7->field_14 = NONE;
     arg_7->field_28 = NONE;
+    arg_7->field_14 = NONE;
     arg_7->field_2e = false;
     arg_7->field_18 = 0.0f;
     bool local_13;
     if (function_29dd50(arg_2, &local_7, local_2, arg_6))
     {
-        *(s_type_c3b527 *)&arg_7->field_30[0].field_c = local_3;
         arg_7->field_30[0].field_0 = NONE;
+        arg_7->field_30[0].field_c = local_3;
         arg_7->field_30[0].field_4 = NONE;
         arg_7->field_30[0].field_8 = NONE;
         arg_7->field_2d = 1;
@@ -299,31 +326,31 @@ local_21:
     }
     else
     {
-        s_reference local_14 = g_470fa0;
-        if (*(long *)&arg_4 == *(long *)&local_14 || (arg_4.unknown2 & 0x8000))
+        if (REFERENCE_EQUAL(arg_4, g_470fa0) || (arg_4.unknown2 & 0x8000))
         {
             local_13 = false;
-            goto local_22;
         }
-        s_29de21 local_15;
-        if (!arg_5)
+        else
         {
-            s_262b40_result *local_16 = function_262b40(arg_4);
-            arg_5 = &local_15;
-            local_15.field_b4 = 0;
-            function_29db90((s_29db90 *)&local_15, arg_4.unknown2, local_16->unknown10);
-        }
-        local_13 = function_29e0f0(arg_2, local_2, arg_4, arg_5, arg_7);
-        if (local_13 && arg_7->field_2c && arg_7->field_2d > 0)
-        {
-            s_29e0f8 *local_17 = &arg_7->field_30[arg_7->field_2d - 1];
-            local_17->field_0 = NONE;
-            *(s_type_c3b527 *)&local_17->field_c = local_3;
-            local_17->field_4 = NONE;
-            local_17->field_8 = NONE;
+            s_29de21 local_15;
+            if (!arg_5)
+            {
+                s_262b40_result *range_data = function_262b40(arg_4);
+                arg_5 = &local_15;
+                local_15.field_b4 = 0;
+                function_29db90((s_29db90 *)&local_15, arg_4.unknown2, range_data->unknown10);
+            }
+            local_13 = function_29e0f0(arg_2, local_2, arg_4, arg_5, arg_7);
+            if (local_13 && arg_7->field_2c && arg_7->field_2d > 0)
+            {
+                arg_7->field_30[arg_7->field_2d - 1].field_0 = NONE;
+                arg_7->field_30[arg_7->field_2d - 1].field_c = local_3;
+                arg_7->field_30[arg_7->field_2d - 1].field_4 = NONE;
+                arg_7->field_30[arg_7->field_2d - 1].field_8 = NONE;
+            }
         }
     }
-    if (arg_7->field_2c && local_0)
+    if (local_13 && arg_7->field_2c && local_0)
     {
         short local_18 = arg_7->field_2d - 1;
         if (arg_7->field_2d < 4)
@@ -333,14 +360,12 @@ local_21:
         }
         else arg_7->field_2c = false;
         s_29e0f8 *local_19 = &arg_7->field_30[local_18];
-        local_19->field_c = local_6.point;
         local_19->field_0 = NONE;
         local_19->field_8 = NONE;
-        local_19->field_18 = local_6.output_index;
+        local_19->field_c = local_6;
         local_19->field_4 = NONE;
         local_19->field_2 = 0;
     }
-local_22:
     arg_7->field_0 = local_13;
     if (!local_13)
     {
@@ -348,19 +373,4 @@ local_22:
         if (++*local_23 > 32) *local_23 = 0;
     }
     return arg_7->field_0;
-local_24:
-    if (arg_0->field_0 == 4)
-    {
-        long local_12 = function_1e4990(local_1->field_54);
-        if (!local_12 || (*(byte *)local_12 & 2)) goto local_20;
-        local_10 = function_262b40(arg_0->field_c);
-        if (!local_10 || !((byte)local_10->flags & 0x40)) goto local_20;
-        if (!function_262af0(arg_0->field_c, &local_5, &local_8)) goto local_20;
-        if (!function_2702a0(arg_1, 0x6000542, 0x400069d, 0x6000542, 0x400000c,
-            (point3f *)&local_8, (vector3f *)&local_5, &local_9, NULL, &local_4, NULL)) goto local_20;
-        local_3.output_index = ((s_type_c3b527 *)local_10)->output_index;
-        if (!function_210690(local_3.output_index, &local_9, &local_3.point)) goto local_20;
-        goto local_21;
-    }
-    goto local_20;
 }

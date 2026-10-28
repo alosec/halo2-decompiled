@@ -1,5 +1,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "normalize3d.h"
+#include "vector_products.h"
 #include <xmmintrin.h>
 #include <float.h>
 #include <new>
@@ -171,85 +173,122 @@ c_vertex_shape::ray_answer c_vertex_shape::ray_test(const s_shape_ray *ray, s_sh
 
 void c_vertex_shape::ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #else
-// score 250 (was 250): frame 0x78 versus 0x90, normal/ray homes and polygon input registers differ.
+// score 192 (was 247): frame 0x84 versus 0x90: retail keeps origin.x/y in xmm6/xmm7 until the
+// offset (ours re-reads all three from the shape), so it spills first.i/second.i into homes and puts
+// the found byte at +0x38 and the plane at +4; every later stack offset differs by that. Retail also
+// computes the direction from its start loads (ours from memory operands) and has a dead second
+// `movsx` of the axis. Round 81 (fixed, 247 -> 192): the projection as the matched sibling 0x14a370
+// writes it (bool positive, the table read at each use, vertex2d/vertex element pointers in the loop:
+// retail's countdown unroll with a destination pointer, `result` no longer held in ebp), `found = true`
+// first in the hit block (retail's two exits), the existing cross3f, the direction from ray->start
+// before the start copy, the second edge before the first. Tried then: 0x120810 for the projections
+// 354; aggregate polygon copy 435; origin pointer 290; struct ray copy 279; origin struct copy or
+// fields, found at top/after the normalize, offset before the plane/edges or after the dot, `&&`
+// range test, call count without the cast, hit-point product orders, normal before fraction, offset
+// from ray->start, dot3f operand order: 192-335, none lower.
+// Before round 81 (247): frame 0x7c versus 0x90; retail reloads `result` from its stack slot and
+// shrink-wraps ebx/ebp/edi into the hit block, where ours keeps `result` in ebp (pushed at entry)
+// and duplicates the early failure exits. Retail's unrolled copy loop counts down with a
+// destination pointer; ours keeps the index. Retail's frame: length/fraction, plane, direction
+// (later the projection), ray start, second edge (later the hit point), found byte, two spills,
+// first edge, polygon; its edge vectors keep homes for their i components.
+// Round 59: the existing normalize3d in place of its written-out body 247 (same code, kept);
+// found declared first 247; existing cross3f 265; bool side term without the ternary 247;
+// named bool side term 249 (gives retail's `mov al, 1 / xor al, al; movzx`).
+// Round 62: short loop index 331 (not unrolled); `result` read through its own address 247 (same
+// code: its ebp home is not what pushes ebp at entry); direction from ray->start instead of the copy
+// 245; fraction as one ternary 249; ray->start direction plus the named bool side term 249. Retail also
+// keeps origin.x/y in xmm6/xmm7 and spills first.i/second.i, where ours re-reads origin from the shape.
+// Round 57: existing plane3f for the normal and its zero d, with the projection loop written
+// plainly (VC unrolls it itself, as retail) 247 kept; plane alone 272; plain loop alone 258;
+// vertex pointer in the loop 293; destination pointer 336; vertices() rows 247 (same code);
+// count argument without the short cast 247 (same code); reversed compare 247; vector copy
+// of the normal into the result 268.
 // Hit point setter 250; component normalization loop 250; short projection side 255;
 // direct hit result 251; ray before origin with float setters 251.
 // Early offset 259; late ray direction 264; squared-normal value 250; descending projection 358; offset/direction combination 264.
+// Frame 0x78 versus 0x90 and normal/ray/polygon homes remain. Native ray 266
+// (frame 0x88); separate unscaled normal 307 (0x84); both 311 (0x94); projected initializer 250;
+// both with plain projection loop 278 (0x90).
+// Frame, ray/normal homes and polygon input registers still differ. Tried native plane 257;
+// early distance 260; entry plane 257; early hit result 257; plain plane projection 259; plane normal copy 262;
+// native ray start 251; early edge vectors 257.
+// Native full/geometry/polygon vertex records 250/250/250; native-record plain projection loop
+// 260; late hit lifetime 251; late hit with full/geometry/polygon records 251/251/251.
+// Round 210: Word hit result 259; native byte result 262; normal memcpy 263; scoped edge-vector
+// lifetimes 250; direct origin fields 282. Frame 0x78 versus 0x90 and ray/normal/polygon homes
+// remain.
+// Round 214: signed-byte hit state 262; unsigned-word hit state 259; byte projection side 253; unsigned-word projection side 255; byte dominant axis 251.
+// Round 178: Corresponding positive/negative/all row-pair/all grouped cross terms 255/255/253/255;
+// with native aggregate normal 255/255/253/255. Frame 0x7c versus 0x90 persists;
+// original terms restored. Normal/ray/hit and polygon homes remain.
+// Full shared normalization with cross/point/plain-loop combinations 253/250/253/250/258/261/258/261. Three-
+// point 250 forms restored; frame is now 0x7c versus 0x90.
+// Round 64: retail's extra 0x14 bytes are the edge vectors' homes (first.i and second.i are spilled
+// into them, the hit point later shares second's) and two loop spills: retail keeps origin.x/y in
+// xmm6/xmm7 until the offset, ours reloads all of origin from the shape, so no edge spills. Origin
+// as a vertex pointer 278 (aligned 194 vs 203); destination and vertex pointers in the loop 328 (not
+// unrolled); per-vertex row pointer 293; origin copied after the direction 248; that with the
+// direction from ray->start 245.
+// Lane 9 r23: retail's homes (frame offsets) are fraction 0, plane 4, direction 0x14, ray start
+// 0x20, hit point 0x2c, hit byte 0x38, spills 0x3c..0x4f, polygon 0x50; ours are size-ordered (hit
+// byte 3, fraction 4, direction 8, ray start 0x14, point 0x20, plane 0x2c, polygon 0x3c). Hit point
+// or direction renamed to change name order 247/247 (same code); fraction as a ternary 249;
+// plane d cleared before normalizing 252; clamp as if/else 250.
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #endif
 {
 	point3f origin;
 	real_point3d_set(&origin, vertices_raw[0], vertices_raw[1], vertices_raw[2]);
+	vector3f direction;
+	vector3d_from_points3d(&ray->start, &ray->end, &direction);
 	point3f ray_start;
 	real_point3d_set(&ray_start, ray->start.x, ray->start.y, ray->start.z);
-	vector3f direction;
-	vector3d_from_points3d(&ray_start, &ray->end, &direction);
 	vector3f first, second;
-	vector3d_from_points3d(&origin, (point3f *)&vertices_raw[4], &first);
 	vector3d_from_points3d(&origin, (point3f *)&vertices_raw[8], &second);
-	vector3f normal;
-	normal.i = first.j * second.k - first.k * second.j;
-	normal.j = first.k * second.i - first.i * second.k;
-	normal.k = first.i * second.j - first.j * second.i;
+	vector3d_from_points3d(&origin, (point3f *)&vertices_raw[4], &first);
+	plane3f plane;
+	cross3f(&first, &second, &plane.n);
 	bool found = false;
-	real length = (real)sqrt(length_sq3f(&normal));
-	if (!(fabs(length) < 0.0001f))
-	{
-		real scale = 1.0f / length;
-		normal.i *= scale;
-		normal.j *= scale;
-		normal.k *= scale;
-	}
-	real fourth = 0.0f;
+	normalize3d(&plane.n);
+	plane.d = 0.0f;
 	vector3f offset;
 	vector3d_from_points3d(&origin, &ray_start, &offset);
-	real dot = dot3f(&normal, &direction);
+	real dot = dot3f(&plane.n, &direction);
 	real fraction = 0.0f;
 	if (dot != 0.0f)
-		fraction = dot3f(&normal, &offset) * (-1.0f / dot);
+		fraction = dot3f(&plane.n, &offset) * (-1.0f / dot);
 	if (fraction < result->fraction)
 	{
 		real bounded = fraction < 0.0f ? 0.0f : fraction > 1.0f ? 1.0f : fraction;
 		if (bounded == fraction)
 		{
-			short axis = function_120850(&normal);
-			long side = axis * 2 + (normal.n[axis] > 0.0f ? 1 : 0);
+			short axis = function_120850(&plane.n);
+			bool positive = plane.n.n[axis] > 0.0f;
 			point3f point;
 			point.x = fraction * direction.i + ray_start.x;
 			point.y = fraction * direction.j + ray_start.y;
 			point.z = fraction * direction.k + ray_start.z;
-			long first_axis = g_440b94[side][0];
-			long second_axis = g_440b94[side][1];
 			point2f projected;
-			projected.x = point.n[first_axis];
-			projected.y = point.n[second_axis];
+			projected.x = point.n[g_440b94[axis * 2 + positive][0]];
+			projected.y = point.n[g_440b94[axis * 2 + positive][1]];
 			point2f polygon[8];
-			long i = 0;
-			for (; i + 3 < vertex_count; i += 4)
+			for (long i = 0; i < vertex_count; ++i)
 			{
-				polygon[i].x = vertices_raw[i * 4 + first_axis];
-				polygon[i].y = vertices_raw[i * 4 + second_axis];
-				polygon[(i + 1)].x = vertices_raw[(i + 1) * 4 + first_axis];
-				polygon[(i + 1)].y = vertices_raw[(i + 1) * 4 + second_axis];
-				polygon[(i + 2)].x = vertices_raw[(i + 2) * 4 + first_axis];
-				polygon[(i + 2)].y = vertices_raw[(i + 2) * 4 + second_axis];
-				polygon[(i + 3)].x = vertices_raw[(i + 3) * 4 + first_axis];
-				polygon[(i + 3)].y = vertices_raw[(i + 3) * 4 + second_axis];
-			}
-			for (; i < vertex_count; ++i)
-			{
-				polygon[i].x = vertices_raw[i * 4 + first_axis];
-				polygon[i].y = vertices_raw[i * 4 + second_axis];
+				point2f *vertex2d = &polygon[i];
+				point3f const *vertex = (point3f const *)&vertices_raw[i * 4];
+				vertex2d->x = vertex->n[g_440b94[axis * 2 + positive][0]];
+				vertex2d->y = vertex->n[g_440b94[axis * 2 + positive][1]];
 			}
 			if (function_23a220(&projected, (short)vertex_count, polygon, 0.0f))
 			{
-				result->fraction = fraction;
-				result->normal.i = normal.i;
-				result->normal.j = normal.j;
-				result->normal.k = normal.k;
-				result->field_c = fourth;
 				found = true;
+				result->fraction = fraction;
+				result->normal.i = plane.n.i;
+				result->normal.j = plane.n.j;
+				result->normal.k = plane.n.k;
+				result->field_c = plane.d;
 			}
 		}
 	}
@@ -560,6 +599,17 @@ c_shape_global_owner::~c_shape_global_owner()
 void function_1eece0(s_surface_key_array *array, void *owner);
 bool function_1ef3e0(void const *owner, dword key);
 
+/* the sphere a child query takes: a centre with the radius in its w lane */
+struct c_sphere_probe
+{
+ __m128 value;
+ c_sphere_probe(const __m128 *center, real radius)
+ {
+  value = *center;
+  ((real *)&value)[3] = radius;
+ }
+};
+
 struct c_instance_surface_query
 {
  virtual void v0() {}
@@ -572,7 +622,7 @@ struct c_instance_surface_query
  virtual void v7() {}
  virtual void v8() {}
  virtual void v9() {}
- virtual void query_sphere(const __m128 *sphere, s_surface_key_array *keys) {}
+ virtual void query_sphere(const c_sphere_probe &sphere, s_surface_key_array *keys) {}
  virtual void query_box(const c_query_transform *matrix, const __m128 *extent, real tolerance, s_surface_key_array *keys) {}
 };
 
@@ -664,34 +714,6 @@ void c_shape_owner::query_box(const c_query_transform *matrix, const __m128 *ext
  }
 }
 
-// score 19 (was 66): frame/length agree; child-query vtable load, ordinal spill and remap entry differ.
-// Radius before transform 140; scoped instance index 80; later ordinal correction 19;
-// key/owner continues 66/102; remap/removal/both while loops 66.
-// score 19 (was 19): dispatch scheduling, ordinal/context homes and remap entry differ.
-// Complete center 19; local/radius/input memcpy 100/75/142; table/key references 19/137;
-// expansion entry return 19; size preference 200.
-// Actual query reference 102; owner/instance/both record references 19;
-// correction after remap 142; early input sphere 130;
-// normal remap inline 176 (498 bytes); normal removal inline 19.
-// score 19 (was 19): dispatch load and ordinal/remap homes remain; workspace scope 19;
-// pre-removal append count 86; removal postdecrement 66; paired ordinal names 19;
-// shared center setter 107; sphere component view 19; int append ordinal 19; outer while 19.
-// score 19 (was 19): early child-vtable load and exchanged ordinal/context homes remain.
-// Child query declaration/abstract slot/abstract interface 19/19/19; remap context/cursor names 19/19;
-// actual context type 19; typed context plus names 19; abstract query plus typed context/names 19.
-// Dispatch scheduling, ordinal/context homes and remap entry still differ.
-// Late/early context 25/88; sphere/key-array references 19/19; packet copy before removal/count 78/19;
-// point-first workspaces 19; early packet plus context 92; pre-dispatch ordinal with
-// late/early context, early packet or receiver 74/109/32/121.
-// score 19 (was 19): child dispatch and ordinal/context/remap homes remain; native radius lane 19;
-// initialized transform 187; successful remap advancement 56; source-index removal 140;
-// remap parameter cursor/validation result/key type shift 19 each; invalid result first 60.
-// dispatch timing, ordinal/context homes and remap entry remain; entry ordinal 19; int
-// ordinal 19; immutable append boundary/shape 19/19; component sphere 158; SSE sphere 84; combined ordinal
-// lifetimes 19; component sphere plus early correction 114.
-// score 19 (was 19): Child dispatch/ordinal/context homes remain; distinct inverse output/scope
-// 106/106; mutation cursor 161; removal count/reference 19/19; transform ordinary inline 309;
-// transform output/remap array references 19/19.
 // @retail 0x1ee5b0
 void function_1ee5b0(c_shape_owner *owner, const __m128 *sphere, bool expand_instances,
  bool filter, s_surface_key_array *keys)
@@ -719,10 +741,8 @@ void function_1ee5b0(c_shape_owner *owner, const __m128 *sphere, bool expand_ins
      center.inverse_transform(&transform, &center.value);
      query_remove_key(keys, i);
      long first = keys->count;
-     __m128 local = center.value;
-     ((real *)&local)[3] = ((const real *)sphere)[3];
-     ((c_instance_surface_query *)(shape + 0x50))->query_sphere(&local, keys);
      --i;
+     ((c_instance_surface_query *)(shape + 0x50))->query_sphere(c_sphere_probe(&center.value, ((const real *)sphere)[3]), keys);
      query_remap_keys(&owner->object, keys, first, instance_index);
     }
    }

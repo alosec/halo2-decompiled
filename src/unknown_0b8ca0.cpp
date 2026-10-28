@@ -630,12 +630,44 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
     return (*(short *)(data->data + data->size * absolute) << 16) | absolute;
 }
 
-// score 231 (was 231): caller-dependent frame alignment and scalar homes differ;
+// score 231 (was 231): Caller-dependent alignment and scalar/angle homes remain.
+// caller-dependent frame alignment and scalar homes differ;
+// Caller-dependent eight-byte alignment and scalar/angle homes remain.
+// Earlier 231 (from 231): caller-dependent frame alignment and scalar homes differ;
 // direct double with ancestry for-loop 235; first offset loop 235; second offset
 // loop 235; marker-position loop 235; initial radius snapshot 235.
 // direct radius with double magnitude 231; real radius 239; both widths 231;
 // byte result with real radius 270; word result with double magnitude 237.
-// score 231 (was 231): Caller-dependent eight-byte alignment and angle homes remain. Direct marker position 262; displacement initializer 235; scaled range 235; successive square sum 235; unsigned model handle 235 (ordinary radius in all).
+// Caller-dependent eight-byte alignment and angle homes remain. Direct marker position 262; displacement initializer 235; scaled range 235; successive square sum 235; unsigned model handle 235 (ordinary radius in all).
+// Caller-dependent eight-byte alignment and scalar homes remain. Native root
+// fields 235; radius field pointer 235; unit slot pointer 247; long cluster 246; early centre
+// address 235 (ordinary radius in all).
+// Caller-dependent eight-byte alignment and scalar homes remain. Positive
+// root scope 239; unsigned root handles 239; compact cluster search 239; far-range arm first 239;
+// squared-bound names/order 239 (direct radius operand, both callers included in all).
+// Caller-dependent eight-byte alignment and angle homes remain. Player for-loop 235; cluster for-loop 235; squared zoom 235; position library copy 235; direct unit receiver 234 (fast, ordinary radius in all).
+// Caller-dependent eight-byte alignment and scalar/angle homes remain. Narrow marker lifetime 251; shared root bit reader 275; cluster reader 239; native tag fields 239; long-result success breaks 239; direct unit guard 239 (all without the inherited radius alias and snapshot).
+// Byte/char return with direct radius 269/269; byte return with bool/byte/char
+// result 292/292/292; byte return with angle/double magnitude/angle sum 261/257/261.
+// Both caller declarations and every executable statement restored.
+// Earlier 231 (from 231): Caller-dependent eight-byte alignment and angle homes remain. Direct marker position 262; displacement initializer 235; scaled range 235; successive square sum 235; unsigned model handle 235 (ordinary radius in all).
+// Earlier 231 (from 231): Caller-dependent eight-byte alignment and scalar homes remain. Native root
+// Earlier 231 (from 231): Caller-dependent eight-byte alignment and scalar homes remain. Positive
+// Earlier 231 (from 231): Caller-dependent eight-byte alignment and scalar/angle homes remain. Narrow marker lifetime 251; shared root bit reader 275; cluster reader 239; native tag fields 239; long-result success breaks 239; direct unit guard 239 (all without the inherited radius alias and snapshot).
+// shared square/dot/both 239/239/239; raw/viewed distance 242; distance/facing partials 239/239;
+// shared square with facing partial 239; both partials with viewed distance 242 (all without the
+// inherited radius alias and snapshot).
+// Round 144: shared salted-index construction in the existing scan helper, direct/result-first
+// results and conditional/explicit next index 257/259/257/256; ordinary inline versions 257/259/257/256.
+// All restore the helper, input forms and inherited radius exactly; caller-dependent alignment remains.
+// Real calling/step/datum iterator state 326/286/286; with Boolean result
+// 355/328/328; sole calling/datum pool receivers 326/282. All original
+// code restored; caller-dependent self-alignment and full-handle spills remain.
+// inline 231; noinline 231; inline noinline 231; inline direct radius 239; noinline direct radius 239; inline
+// noinline direct radius 239; cdecl direct radius 239; stdcall direct radius 239.
+// Round 329: native position/radius fields, readonly object and direct center 239/239/239;
+// direct marker/both points 266/266; shared differences/readonly 239/239; native root observations 252.
+// All use ordinary direct radius operands; both known callers included. Original type and body restored.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {
@@ -1032,9 +1064,9 @@ static __forceinline void b98e0_basis(transform4x3f *out, vector3f const *forwar
     real k = up->i * forward->j - up->j * forward->i;
     real j = up->k * forward->i - up->i * forward->k;
     real i = up->j * forward->k - up->k * forward->j;
-    out->left.k = k;
-    out->left.j = j;
     out->left.i = i;
+    out->left.j = j;
+    out->left.k = k;
     out->up = *up;
     out->position.x = 0.0f;
     out->position.y = 0.0f;
@@ -1056,11 +1088,6 @@ static __forceinline void b98e0_translation(transform4x3f *out, point3f const *p
     out->position = *position;
 }
 
-// score 65 (was 69): scheduling only. Ours hoists the cross product's loads above the translation's stores and sinks
-// the translation's zero stores after the orientation; retail builds the translation (ones, zeros, position) first,
-// then the orientation in order (xorps is its first instruction). Tried: the matched 0x1416c0 and 0x141710 called
-// instead (not inlined, 319); plain inline helpers 69; orientation built first 98, declared first 71; components
-// stored i, j, k 66; 0x141710's operand order 66; the translation's ones stored before its zeros 65.
 // @retail 0xb98e0
 void __stdcall function_b98e0(long object_index, transform4x3f const *matrix)
 {
@@ -1430,6 +1457,21 @@ done:
 // Copy + volatile name reload 26; result declared before the lookup 83; no result variable 78;
 // result declared in the tail 85; long size 27; long offsets + palette at the call + datum local 27;
 // the 0xb7300 placement-block helpers (both orders, both product orders) 23; lookup via 0xbb760 17.
+// score 17 (was 17): type/descriptor/palette/stride allocation at the tail remains.
+// Test-produced result 78; with wide stride/call-use palette/both 76/44/42;
+// with direct offsets/type name/read-only descriptor/read-only wide 78/78/78/76.
+// entry agrees; tail type/base/palette/stride allocation differs.
+// Canonical descriptor fields through mutable/const pointers and references all 17;
+// the same four contracts with a promoted stride all 27 (236 bytes).
+// score 17 (was 17): entry agrees; tail type/descriptor/stride ownership still differs.
+// Shared type home 17; promoted placement index 28; both 28; shared type plus stride 27;
+// promoted index/stride 36; shared type/index/stride 36; shared type with call-use palette 37;
+// shared type/index with call-use palette 26.
+// score 17 (was 17): the same tail allocation and 237/236 length remain. Plain/typed aliases 17/17;
+// typed name 17; promoted datum index 19/236; typed block 17; direct name-index reads 31/236;
+// early field/base declarations 17/17; definition declaration/initialization first 17/17;
+// register type/size 17/17; alias with wide stride 27/236; definition/type-definition before guard 17/17;
+// placement-type name 17.
 // @retail 0xbb670
 long __stdcall function_bb670(short name_index, bool force)
 {
@@ -1478,6 +1520,13 @@ long __stdcall function_bb670(short name_index, bool force)
 // Valid-path stride before/after scenario 106/106; offset references 31; offset references plus
 // valid stride 106; direct guards with valid stride 106; word valid stride 106; one-use creation index copy 27 (reverted in review);
 // creation index with valid stride 106.
+// score 27 (was 31): the definition's two offsets are still read into registers before the guard
+// where retail compares them in memory against a -1 sentinel, and the saved registers are popped
+// in a different order than retail.
+// metadata result arms
+// 108; placement result arms 94; palette result start 89; palette result arms 104; input index
+// entry binding 31; tag index field binding 31; stride field binding 93; native promoted metadata
+// 31; shared input index binding 31.
 // @retail 0xa73b0
 long __stdcall function_a73b0(s_entity_info *info)
 {
@@ -1506,7 +1555,10 @@ long __stdcall function_a73b0(s_entity_info *info)
                 if (clamped == palette_index)
                 {
                     if (*(long *)(*(byte **)(palette + 4) + palette_index * 0x28 + 4) == info->definition_index)
-                        result = function_bf0f0((s_type_4f0dcc *)datum, type, info->field0, (s_scenario_block *)palette, false, false);
+                    {
+                        long placement_index = info->field0;
+                        result = function_bf0f0((s_type_4f0dcc *)datum, type, placement_index, (s_scenario_block *)palette, false, false);
+                    }
                 }
             }
         }
@@ -1527,6 +1579,13 @@ void function_1d96d0(long index);
 // Byte result/parent reference 13; byte result/constant stores 20. A byte-wide store of the flag through a
 // local overlay of the object scored 7 (not kept: a cast to a made-up layout); the view's flag bits at
 // +0xc0 declared as byte bit fields (same bits) are the form to try.
+// Constant arms through a ternary 20; raw byte or/and arms 20; byte pointer to the flags at the join 22
+// (the hoisted common load stops the threading but loses the memory or/and); flags pointer at function
+// scope 20; ternary of bit-field stores 20; an inline parent test with a result variable 138 (object
+// moves to ebx, the result to the stack); early-return parent test 14; the whole update as a
+// force-inline helper 14/8. A byte bit-field store is branchless too (12), so byte fields alone do not
+// give the arms; retail's join keeps `mov bl, 1` unthreaded, which in matched code (0x59780) comes from
+// a result that stays live after its test.
 // @retail 0xbc5e0
 void __stdcall function_bc5e0(long index)
 {
@@ -1605,33 +1664,52 @@ void function_b8840(long index);
 long function_baf80(long index);
 void function_bba20(long index);
 
-// score 319 (was 319): pool/permission registers and transform scheduling differ;
-// native point snapshot 385; native orientation snapshots 341; all snapshots 362;
-// inverse workspace scope 319; spatial workspace names 319.
-// byte permission 319; byte activity 319; both byte carriers 319;
-// vector transforms before point 385; byte permission with vectors first 385.
-// score 319 (was 319): Frame 0x64 agrees; pool/permission homes and SIMD scheduling remain. Ancestry before permission 335; long node index 335; guarded long cluster 324; up before forward 319; direct node array 323.
+// score 305 (was 306): the frame (0x64) and the body length (1236) agree with retail.
+// What still differs: retail keeps the pool pointer in EBX and re-derives pool->data from it,
+// ours keeps the pool in ECX and pool->data in EDI, so retail holds -1 in EAX and the object's
+// parent link in ECX where ours holds them in EBX and EAX.
+// Retail also shift-tests the object's flag bit 7 where ours masks it, takes the parent pointer
+// before the calls for the child-list link and again afterwards for the node matrix where ours
+// takes it once, and keeps the attachment point's x, y and z in different SIMD registers.
+// native point snapshot 385; native orientation snapshots 341; all snapshots 362; inverse
+// workspace scope 319; spatial workspace names 319. byte permission 319; byte activity 319; both
+// byte carriers 319; vector transforms before point 385; byte permission with vectors first 385.
+// Ancestry before permission 335; long node index 335; guarded long cluster 324; up before forward
+// 319; direct node array 323. Unsigned header offset 319; short permission 320; native location
+// fields 330; pooled root reference 319; guarded native cluster 319. Native child 319; native
+// parent 319; both native views 319; header flag pointer 402; object flag pointer 330. Positive
+// acceptance scope 358; sibling-first sentinels 319; hidden Boolean shift 318; connection Boolean
+// shift 318; unsigned masks 319; both Boolean shifts 323. Dead parent lookup removed 319;
+// header-data base 336; node before link 319; separate output phases 319; bitset indexing 319
+// (fast). Offset before pool 322; pool at use 325; computed type mask 330; six-byte sentinel fill
+// 318; isolated byte-bit-six test 319; pool at use with unsigned offset 325. Permission scope 319;
+// complete attachment scope 358; entry permission declaration 319; entry activity declaration 319;
+// root-cluster scope 319 (fast).
+// Round 214: signed-byte permission 319; unsigned-word permission 320; signed-word saved activity 319; native-long saved activity 319; word permission/activity homes 319.
+// Isolated pool, offset, object, permission, ancestor, header, parent and cluster names each 319.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {
     s_record_pool *pool = g_4e0300;
     long offset = (index & 0xffff) * 12;
     byte *object = *(byte **)(pool->data + offset + 8);
-    bool allowed = *(long *)(object + 0x14) == NONE && *(long *)(object + 0xc) == NONE;
+    bool allowed = true;
+    if (*(long *)(object + 0x14) != NONE) allowed = false;
+    else if (*(long *)(object + 0xc) != NONE) allowed = false;
     if (((1 << object[0xaa]) & 0x1c) && (object[0x12c] & 1) && *(long *)(object + 0x154) != parent_index) allowed = false;
     for (long ancestor = parent_index; ancestor != NONE; ancestor = *(long *)(*(byte **)(pool->data + (ancestor & 0xffff) * 12 + 8) + 0x14))
         if (ancestor == index) return;
     if (!allowed) return;
+    byte *parent = (byte *)OBJECT_GET(parent_index);
     s_object_header_view *header = (s_object_header_view *)(pool->data + offset);
     volatile bool was_active = (bool)((header->flags >> 2) & 1);
-    byte *parent = (byte *)OBJECT_GET(parent_index);
     if (*(dword *)(object + 4) & 0x80)
     {
         *(dword *)(object + 4) &= ~0x80;
         if (!(*(dword *)(object + 4) & 0x100) && g_4de2f4 && *(byte *)g_4de2f4) function_b8600(index, 0);
     }
     function_b7300(index);
-    if (*(dword *)(object + 4) & 0x100) function_b87b0(index);
+    if ((bool)((*(dword *)(object + 4) >> 8) & 1)) function_b87b0(index);
     if ((object[0xc0] & 0x40) && header->type != 7) function_b8840(index);
     parent = (byte *)OBJECT_GET(parent_index);
     transform4x3f *nodes = (transform4x3f *)(parent + *(short *)(parent + 0x116));

@@ -540,7 +540,7 @@ void __stdcall function_152cf0(long object_index)
 	function_187a60(object_index);
 }
 
-short __stdcall function_cdeb0(long unit_index, long state_name, long a, long b);
+short __stdcall function_cdeb0(long unit_index, long state_name, short slot, short direction);
 long function_cbe60(long unit_index);
 bool function_cd660(long unit_index);
 
@@ -548,16 +548,19 @@ bool function_cd660(long unit_index);
 bool function_150dd0(long player_index)
 {
 	s_tail_player *player = tail_player_get(player_index);
-	long const &current = player->unit_index;
-	if ((short)function_cdeb0(current, NONE, NONE, 0) == NONE)
+	long index = player->unit_index;
+	if ((short)function_cdeb0(index, NONE, NONE, 0) == NONE)
 		return true;
-	if (g_4e6948->state != 2)
+	else
 	{
-		long unit_index = current;
-		if (function_cbe60(unit_index) == NONE && !function_cd660(unit_index))
-			return true;
+		if (g_4e6948->state != 2)
+		{
+			long unit_index = player->unit_index;
+			if (function_cbe60(unit_index) == NONE && !function_cd660(unit_index))
+				return true;
+		}
+		return false;
 	}
-	return false;
 }
 
 struct s_player_motion_unit
@@ -1668,23 +1671,26 @@ bool function_cb810(long unit_index, vector3f *vector);
 void function_1505f0(long player_index, long unit_index, byte const *input)
 {
     (void)&unit_index; (void)&input;
+    s_tail_player *player = tail_player_get(player_index);
+    long unit = player->unit_index;
+    long current_unit = player->unit_index;
+    real cos_second_angle = (real)cos(*(real const *)(input + 8));
     vector3f facing;
-    facing.i = (real)(cos(*(real const *)(input + 4)) * cos(*(real const *)(input + 8)));
-    facing.j = (real)(sin(*(real const *)(input + 4)) * cos(*(real const *)(input + 8)));
+    facing.i = (real)(cos(*(real const *)(input + 4)) * cos_second_angle);
+    facing.j = (real)(sin(*(real const *)(input + 4)) * cos_second_angle);
     facing.k = (real)sin(*(real const *)(input + 8));
-    long player_unit = tail_player_get(player_index)->unit_index;
-    if (player_unit != NONE) function_cb810(player_unit, &facing);
-    vector3f projected_facing, movement;
-    function_150400(player_index, &facing, (vector3f const *)(input + 0xc), &projected_facing, &movement);
+    if (current_unit != NONE) function_cb810(unit, &facing);
+    vector3f forward_copy, projected_movement;
+    function_150400(player_index, &facing, (vector3f const *)(input + 0xc), &forward_copy, &projected_movement);
     byte control[0x7c];
     function_c6ef0((s_unit_state_c6ef0 *)control);
     *(dword *)(control + 0x10) = *(dword const *)input;
-    *(vector3f *)(control + 0x14) = movement;
-    *(real *)(control + 0x20) = *(real const *)(input + 0x14);
-    *(real *)(control + 0x24) = *(real const *)(input + 0x18);
-    *(vector3f *)(control + 0x28) = projected_facing;
     *(vector3f *)(control + 0x34) = facing;
     *(vector3f *)(control + 0x40) = facing;
+    *(vector3f *)(control + 0x28) = forward_copy;
+    *(vector3f *)(control + 0x14) = projected_movement;
+    *(real *)(control + 0x20) = *(real const *)(input + 0x14);
+    *(real *)(control + 0x24) = *(real const *)(input + 0x18);
     *(dword *)(control + 6) = *(dword const *)(input + 0x1e);
     *(word *)(control + 0xa) = *(word const *)(input + 0x22);
     *(word *)(control + 0xc) = *(word const *)(input + 0x24);
@@ -1764,6 +1770,9 @@ void function_15e8e0(long object_index, long player_index);
 void __stdcall function_191ec4(long definition_index, long player_index, short count);
 void __stdcall function_191e51(long definition_index, long player_index);
 
+// score 202 (was 202): the prologue's registers differ: retail keeps the player base in ebx
+// and the object index*12 in ebp, ours gives ebp to the player and spills the index; the
+// argument convention of the callee 0xccba0 (src/unit_object_type.cpp) decides this.
 // @retail 0x150e30
 void __stdcall function_150e30(long player_index, long object_index)
 {

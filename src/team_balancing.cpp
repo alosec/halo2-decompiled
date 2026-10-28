@@ -387,6 +387,40 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 }
 #pragma function(_ReadWriteBarrier)
 
+// score 116 (was 116): count homes, signed party delta and pure-query ownership remain.
+// Earlier: count-address homes, party registers, delta and query order differ.
+// Reduced control 80 (full 116); count fields A/B/both 80/80/80; early roots 173;
+// players A/B/both 78/75/80; reverse count roots 173; B players root before A/first/
+// between views 82/88/82; immutable B root 75. B players plain 115 is an ineligible
+// one-count gain; all subobject forms restored.
+// frame 0x2694 agrees; team-pointer homes, delta and query ownership differ.
+// Reduced baseline 80 (full 116); team/party/both lexical priority 80/80/80;
+// short outer/inner/both ordinals 142/142/155; accepted scope and comparison names 80/80.
+// Earlier: count homes, signed delta and query ownership remain.
+// Reduced candidate/reference/both spread values 135/127/137; spread delta 132;
+// candidate A/B/both team roots 80/150/150; outer party cursor 91 (reduced baseline 80).
+// Reduced trials (opening 80; full 116):
+// first spread order 80; equal spread order 80; spread orders 80; cost order 78;
+// first spread/cost order 78; equal spread/cost order 78; query orders 78; inner party cursor 132;
+// cursor/spread orders 132; reused signed team delta 161; reused party delta 80;
+// reused team and party deltas 161; A count reference 80; B count reference 80; count references 80;
+// early count references 173; inline count spread 225; inline total spread 80;
+// inline spread queries 225.
+// the inner party pointer takes EAX (retail ECX), so the count delta is
+// built as 2*(b-a) and the A/B count-address homes swap; the full build also calls each pair of
+// queries in the other order (reference spread first, candidate cost first; retail the reverse).
+// The reduced image scores 80 and orders the cost calls as retail: trust only the plain check.
+// Plain-checked: first party pointer in the outer loop 116; nested ifs instead of continues 116;
+// teams read in full at each use 146 (loses 0x91dd0); comparison operands swapped 116 (the call
+// order follows the operands, not their position); explicit outer party pointer stepping 116.
+// No-link screens: every delta spelling (named, doubled, parenthesised, count-after-swap, abs
+// forms) folds to the same 2*(b-a) sequence; reference/local/method forms keep reference first.
+// Earlier (reduced-image) forms: control 80; count fields A/B/both 80/80/80; early roots 173;
+// players A/B/both 78/75/80; reverse count roots 173; B players root before A/first/between views
+// 82/88/82; immutable B root 75 (B players plain 115, an ineligible one-count gain);
+// team/party/both lexical priority 80/80/80; short outer/inner/both ordinals 142/142/155;
+// scope and comparison names 80/80; candidate/reference/both spread values 135/127/137; spread
+// delta 132; candidate A/B/both team roots 80/150/150; outer party cursor 91.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
@@ -560,6 +594,21 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 /* whether the players and the extra players joining them can be balanced
    into the teams within the given imbalance; each extra player is a party
    of its own */
+// score 34 (was 34): frame 0x48 agrees; +0x14 player-count EAX/EDX roles
+// differ and flow through the copy, fill and call setup. Earlier result-first
+// 34; guarded countdown 45; source/output cursors 67; count parameter reference 54.
+// Tried: shared existing count 34; staged total 34; capacity lifetime first 34;
+// independent loop indices 34; named candidate party 34; descriptive scalar
+// homes 34; independent indices with candidate 34; earlier imbalance output 65.
+// Opening executable body and outside call sites retained.
+// score 34 (was 34): player-count EAX/EDX roles still exchange; standard party maximum in either order 100; standard excess maximum in either order 61; both maxima 118; guarded standard fill 55; maxima with fill 119.
+// player-count EAX/EDX roles and final clamp allocation remain;
+// total after copy 74; phase-accumulated total 74; shared party value 73;
+// strict maximum update 35; early imbalance 66; explicit excess clamp 46;
+// result from combined tests 67; separate noinline declaration 34.
+// score 34 (was 34): the body, not the parameter order, gives player count EDX: with the caller
+// updated, orders (extra, parties, player) 35, (player, extra, parties) 34, (parties, player,
+// extra) 34, (parties, extra, player) 35, (extra, player, parties) 35; extra-first sum 35.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

@@ -78,6 +78,22 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 }
 
+// score 62 (was 62): decoder zero/scale schedule and final x87 component forwarding differ; shared face/grid scales 96, initialized grid 133, shared scale value 96; complete output aggregate/memcpy 155; default memcpy and direct angle 62 (round 117).
+// Decode zero/scale scheduling and final x87 component forwarding still differ.
+// coordinate stages 62; selected scale results 62; plane offset first 100; axis table 62;
+// origin snapshot 129; table subobjects 129; coordinate names 62; existing normalizer call 187.
+// early decode zero/scale scheduling and final x87 component forwarding remain.
+// Face scale value 82; integer grid values 62; complete shared decoder 503; decoder output
+// reference 62; native component loop 173; complete private decode consumer 62; ordinary
+// decoder inline 394; initial direction value 63.
+// decode zero/scale schedule and final-component x87 forwarding remain;
+// workspace names, formatter scope, unsigned index, complete bounds, shared rounding, shared/existing
+// decoded normalization, completed decode output and decoder pointer/vector results 62, 62, 62, 122, 72, 62, 62, 88, 62, 155.
+// score 62 (was 62): the decoded k is kept on x87 (fst) and squared first; retail pops it and sums
+// j, k, then i from memory. A block boundary before the normalization (diagnostic branch) makes ours
+// reload in retail's order with an `i*i + (j*j + k*k)` sum, so retail's store and normalization
+// were not in one block. Sum orders j+k+i, i+(j+k), k+j+i, i+k+j 62 each; decoder stores through
+// the n[] view 62 (with i+(j+k) 62); zero declared first in the decoder 84.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
@@ -112,11 +128,14 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 	function_195720(stream, q, 8);
 }
 
+// score 96 (was 96): retail keeps 1/63 in xmm2 and 2 in xmm3 and finishes x (both products) before
+// converting y; ours keeps 1/63 in xmm0 and scales x and y by two late. Retail also pops the decoded k
+// and sums i, k, j from memory (a block boundary before the normalization), and scales the normalized
+// vector in place. Single-expression grid values 126 (1/63*2 folds into one constant); x finished
+// before y 96; `vector3f_scale` with the magnitude call 96; the existing decode_direction_194d30
+// helper 114 (aligned 34 -> 26: the final scale then matches retail and the hand-written decode copy
+// goes; the decode registers and x87 reload remain); that helper as plain inline 344 (not inlined).
 // @retail 0x195070
-// score 96 (was 96): retail multiplies the two scale factors in the other
-// order, by two first, and keeps them in xmm2 and xmm3 with the two components
-// in xmm0 and xmm1; ours keeps the first factor in xmm0 and the components in
-// xmm1 and xmm2
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {
 	if (!function_1957d0(stream))

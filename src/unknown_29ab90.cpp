@@ -59,10 +59,56 @@ PRIVATE __forceinline void function_29ab94(vector3f const *arg_0, real arg_1, ve
 	arg_2->k = arg_0->k * arg_1;
 }
 
-// score 434 (was 434): frame 0x5c versus 0x64, input registers and x87 lifetimes differ;
+// score 428 (was 428): Frame 0x5c versus 0x64, actor/input convention and x87 homes remain.
+// Earlier 428 (was 434): Frame 0x5c versus 0x64, input convention and x87 homes remain.
+// Earlier score 434 (was 434): frame 0x5c versus 0x64, input registers and x87 lifetimes differ;
+// Frame 0x5c versus 0x64, input convention and x87 homes remain.
+// frame 0x5c versus 0x64, input convention and x87 homes remain.
+// Earlier: Frame 0x5c versus 0x64, input convention and x87 homes remain.
+// Frame 0x5c versus 0x64, input convention and x87 homes remain.
+// Earlier 434 from 434: frame 0x5c versus 0x64, input registers and x87 lifetimes differ;
 // double input components 437; scalar component parameters 469; double product lifetimes 437; repeated field access 434; size optimization 802.
 // Degenerate normal first 434; independent speed components 434; initial/requested/output memcpy 434/434/434;
 // fallback direction at use 441; shared initial vector value 434; native sign word 440.
+// Earlier 434 from 434: frame/input ownership and x87 result homes remain.
+// Double magnitude/planar/both returns 434/434/434; double magnitude carrier 471;
+// named full squared sums magnitude/planar/both 434/437/437; planar input/output 434.
+// DL131: Frame 0x5c versus 0x64, input convention and x87 homes remain; native actor view 434;
+// shared history weight 428; named current weight 434; both weights 428; native actor with
+// history/current/both 428/434/428; actor/weights/shared fallback 428. Keep the history coefficient
+// once for all six original uses; original arithmetic grouping, source vectors, stores, helpers and
+// call arguments remain unchanged.
+// Two-use stored/minimum/acceleration scalars and combinations 428/429/429/429/429/430/430; native velocity value 454.
+// Existing native object getter/record with native actor, read-only binding
+// and early velocity field lifetimes: eight forms all 428. Opening body and
+// private math helpers restored; frame/input and x87 homes remain.
+// DL134: unrounded magnitude/planar/both root boundaries 428/433/433; real sign 432;
+// named correction root/term 428/428; scale output return 428; ordered clamp returns 428.
+// Native magnitude/planar/scale reference input contracts independently and
+// combined, with native scale output reference: eight forms all 428.
+// Native real component inputs: magnitude memory/math order 472/472; planar memory/math
+// order 428/428; both memory/math order 472/472; crossed declaration orders 472/472.
+// Native coordinate-array magnitude/normalizer/both/scale/all interfaces 428 each;
+// array normalizer with planar transfers 447; array normalizer plus planar names 428;
+// both arrays, native transfers and planar names 447.
+// First/second/both query Boolean declarations at entry 428 each; native acceleration
+// aggregate 428, with those three lifetime forms 428 each; complete graph with
+// reversed named Boolean declarations 428. Original helpers and all calls restored.
+// Round 237: Published query-output lexical groups (Boolean pair, speed/turn limits,
+// query vector), independently and combined 428/428/428/428/428/428/428;
+// reversed independent output declarations 428. Original output homes restored.
+// Scalar outputs magnitude/planar/both 428/428/428; magnitude reference/with planar output 428/428;
+// output contracts with magnitude/planar/both native values 477/528/574. All restored.
+// Direct actor-direction reads and initial vector order 428/429/429/429/429;
+// retained direction pointer with two vector orders 435/436; direct reads with
+// shared initial vector 428. Original body restored.
+// Round 158: Complete parallel current sums, current/history products and shared-current-factor combinations
+// all 428; coherent entry-provider/target inline specifications and separate noinline mode-query declaration
+// all 428. Scores [428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428, 428]. Original
+// executable body restored.
+// Round 353: native actor/object handle and word-mode parameter domains in
+// all seven combinations 428 each; signed native handles with word mode 428.
+// Original definition and sole disabled declaration restored.
 // @retail 0x29ab90
 void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -144,9 +190,10 @@ void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 			long local_26 = local_25 < 0.0f ? -1 : 1;
 			local_22.i = (real)(sqrt(fabs((double)local_25)) * local_2->field_6c * local_26 + local_22.i);
 		}
-		local_5.i = (local_6.i + local_22.i) * (1.0f - local_2->field_64) + *(real *)(local_0 + 0x678) * local_2->field_64;
-		local_5.j = (local_6.j + local_22.j) * (1.0f - local_2->field_64) + *(real *)(local_0 + 0x67c) * local_2->field_64;
-		local_5.k = (local_6.k + local_22.k) * (1.0f - local_2->field_64) + *(real *)(local_0 + 0x680) * local_2->field_64;
+		real history_weight = local_2->field_64;
+		local_5.i = (local_6.i + local_22.i) * (1.0f - history_weight) + *(real *)(local_0 + 0x678) * history_weight;
+		local_5.j = (local_6.j + local_22.j) * (1.0f - history_weight) + *(real *)(local_0 + 0x67c) * history_weight;
+		local_5.k = (local_6.k + local_22.k) * (1.0f - history_weight) + *(real *)(local_0 + 0x680) * history_weight;
 		local_5.i = function_29ab93(local_5.i, -1.0f, 1.0f);
 		local_5.j = function_29ab93(local_5.j, -1.0f, 1.0f);
 		local_5.k = function_29ab93(local_5.k, -1.0f, 1.0f);

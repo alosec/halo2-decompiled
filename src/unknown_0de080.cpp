@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "unknown_0259d0.h"
 #include "unknown_11cc90.h"
+#include "slot_handler.h"
 #include <math.h>
 
 /* the unit as this file reads it */
@@ -83,6 +84,11 @@ void function_de080(vector3f const *forward, vector3f const *up, vector2f *forwa
 	left2d->j = forward2d->i;
 }
 
+// score 84 (was 84): frame 0x1c vs 0x28, basis and vertical-displacement homes differ.
+// complete displacement 94; displacement/target helper 94; native target copy 84;
+// displacement/native copy 94; node helper with/without complete displacement 144/139;
+// paired basis names 94; both displacement helpers/names 94; projected point setter
+// with split/complete displacement 84/100.
 // @retail 0xdf380
 void function_df380(long unit_index, point3f *position, vector3f *forward, vector3f *up)
 {
@@ -115,24 +121,23 @@ void function_df380(long unit_index, point3f *position, vector3f *forward, vecto
 			vector2f forward2d;
 			vector2f left2d;
 			point3f *origin;
-			vector2f offset2d;
-			real offset_z;
+			vector3f offset;
 			point3f local;
 			point3f target;
 			vector3f delta;
 
 			function_de080(forward, up, &forward2d, &left2d);
-			unit = CAMERA_OBJECT(unit_index);
-			origin = (point3f *)((byte *)unit + unit->node_matrices_offset + 0x28);
-			offset2d.i = position->x - origin->x;
-			offset2d.j = position->y - origin->y;
-			offset_z = position->z - origin->z;
-			local.x = dot_product2d(&forward2d, &offset2d);
-			local.y = dot_product2d(&left2d, &offset2d);
-			local.z = offset_z;
+			origin = &object_node_matrix(object_get(unit_index), 0)->position;
+			offset.i = position->x - origin->x;
+			offset.j = position->y - origin->y;
+			offset.k = position->z - origin->z;
+			local.x = dot_product2d(&forward2d, (vector2f const *)&offset);
+			local.y = dot_product2d(&left2d, (vector2f const *)&offset);
+			local.z = offset.k;
 
 			target = unit->unknown3cc;
-			delta.i = (target.x > definition->unknown238 ? target.x : definition->unknown238) - local.x;
+			target.x = target.x > definition->unknown238 ? target.x : definition->unknown238;
+			delta.i = target.x - local.x;
 			delta.j = target.y - local.y;
 			delta.k = target.z - local.z;
 			delta.i = definition->unknown22c * delta.i * t;

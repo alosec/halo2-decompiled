@@ -68,6 +68,36 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 	return arg_0->k * arg_1->k + arg_0->j * arg_1->j + arg_1->i * arg_0->i;
 }
 
+// score 750 (was 750): Frame 0x88 agrees; early input/heading and normalizer memory-product homes remain.
+// Earlier 750 (was 750): Frame 0x88 agrees; early input/heading homes and normalizer storage remain. Alias-free normalizer loop 822; early-return clamp 829; output scale loop 824; output clamp loop 812; smoothing loop 825 (fast).
+// Earlier 750 (was 750): Frame 0x88 agrees; early input/heading and normalization homes remain. Alias-free
+// planar response snapshot 853; shared default vector 807; native input copy 804; shared radial predicate
+// 809; native output copies 804 (fast).
+// Direct-input short correction sign 840; blocked-direction predicate 805; opposite side 804;
+// unsigned-word response mode 804; short sign plus blocked direction 841. Original body and helpers
+// restored.
+// Round 151: Alias-free actor/object/both observations 1089/874/1156; correction magnitude/signed part 804/804; all blend terms 750; native perpendicular 804; actor plus magnitude 1089.
+// Frame 0x88 agrees; early input/heading homes and normalizer storage remain. Alias-free normalizer loop 822; early-return clamp 829; output scale loop 824; output clamp loop 812; smoothing loop 825 (fast).
+// Frame 0x88 agrees; early input/heading and normalization homes remain. Alias-free
+// Direct-input dot-product terms 804; complete velocity snapshot 870; output addition loop 824; positive
+// configuration guard 831; fallback vector memcpy 804. Extra all-square-terms control 748 is excluded from the
+// five new trials and gains only two. Frame/input/heading and normalization homes remain; original body/helpers
+// Direct-input normalizer native input/output contracts 859/856; native normalizer reference 804;
+// upper-bound-first clamp 803; native projection references 804 (fast). Original complete body/helpers restored.
+// Direct input with immutable parameter 804; parallel blend complement 804; signed-byte correction
+// sign 828; native projection values 1183; ordinary correction inline boundary 840 (fast).
+// Round 212: Actor after configuration query 812; with short/long default mode 753/821;
+// complete normalizer inputs 755, with short/long mode 821/821; all norm squares 755, with short mode 821.
+// Round 173: Direct-input shared native and dot-based normalizers 793/785; magnitude output
+// pointer/reference/output-first/vector-result 805/805/805/805; magnitude output with shared scaler
+// 804; with real absolute-length boundary 809. All exact-match-only forms restored. Frame 0x88
+// agrees; early input/heading retention and normalizer memory-product homes remain. Original body
+// and helpers restored.
+// Round 140: Direct input with complete immutable turn-distance/correction/history observations
+// 854/853/819/818/855/854/815/814; response defaults three/two in short/long/word/byte storage
+// 815/748/766/816/815/748/804/821; complete normalizer inputs/sum/all products and one-result exit on the new
+// default-two graph 814/814/814/814/814/814/750/814. Best default 748 gains only two; original body, parameter
+// access, helpers and mode assignments restored.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

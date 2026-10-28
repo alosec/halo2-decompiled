@@ -115,41 +115,33 @@ struct s_24e9c7_bounds
 };
 
 /* Draws one marker's sprite at its placement; returns the sprite's height. */
-// score 125 (was 135): scalar homes, sprite-copy source and SSE scheduling remain; table read at each use 125 plain (743/743), real half width 135f, direct height 135f, sprite pointer 133f, global optimization off 716f.
-// Truncation helper at height 194, width 167, both 198; side before upper 139;
-// both sides before upper 138; direct alpha stores 125; const metadata 125;
-// native sprite rectangle 125. Result/kind/bitmap homes and sprite-source staging remain.
-// Round 280: plain quad passes 198; faded alpha first 125; lookup scope ended 125; shared bounds value 125; x then y coordinates 130.
-// Upper components 125; side components 125; reverse components 133; all components 133;
-// earlier upper displacement 123 plain (two points, dropped), with components 123; direct reverse uses 167.
-// Scalar homes, sprite source and geometric spills remain; shader snapshot 174;
-// sequence count snapshot 160; sequence field at use 125; unscaled height/width/both 125;
-// shared forward values 161; external bitmap reference 125.
-// score 125 (was 125): scalar homes and across/dimension scheduling remain;
-// upper/side/reverse/all value initialization 125; origin/sequence references 125;
-// speed policy 279; frame omission 125.
-// Native input direction/center/both 125/125/125; direct quad array 125; span locals 125;
-// early basis / scale / basis with spans 125/125/125 (fast).
-// Basis i/j/both product input orders 125; upper or side inputs 125;
-// basis with upper / side / both input orders 125. Original products retained.
-// Point origin library copies 252; native bitmap/placement/sequence values 215/176/205; bitmap plus
-// sequence 230; placement plus copies 176; opacity snapshot 139; placement plus bitmap 183. Scalar homes,
-// sprite-source setup and SSE scheduling remain.
-// Origin / upper-copy / upper / positive-side passes 188/220/240/204;
-// origin-upper 195; origin-side 206; upper-side 214; lower-copy pass 193.
-// Scalar homes and sprite-source/SSE scheduling remain; original quad retained.
-// Scalar origin x/y/both 194/194/194; scaled height/width/both accumulation 125/125/125;
-// side-product updates 125; y capture with side updates 194. Original scalar homes and spills remain.
-// score 125 (was 125): scalar homes and retained basis spill still differ;
-// upper / negative-side / positive-side addition inputs 125/125/125;
-// upper-negative / upper-positive / both sides / all additions 125/125/125/125;
-// all additions with constant-first size 125. Original addition trees retained.
-// scalar homes and basis spills remain; selected bitmap word 153;
-// bitmap after bounds 125; word bitmap/long sequence 169; late word bitmap 153;
-// shared opacity tail 142; tail with word/late bitmap 161/142; branch-set tail 142.
-// result/metadata homes and geometric scheduling remain;
-// external group/live count/live shader 125/125/125; live scale/group with scale 141/141;
-// count with shader/size accumulator/across component lifetimes 125/125/138.
+// score 125 (was 125): result/kind/bitmap homes sit 8 bytes above retail's (retail keeps a spill at -8
+// and an unused slot at -0xc above them), the 1.0 constant is in xmm4 where retail uses xmm5, and the
+// geometric SSE schedule differs. Tried: table read at each use 125 plain (743/743), real half width
+// 135f, direct height 135f, sprite pointer 133f, global optimization off 716f. Truncation helper at
+// height 194, width 167, both 198; side before upper 139; both sides before upper 138; direct alpha
+// stores 125; const metadata 125; native sprite rectangle 125. Round 280: plain quad passes 198; faded
+// alpha first 125; lookup scope ended 125; shared bounds value 125; x then y coordinates 130. Upper
+// components 125; side components 125; reverse components 133; all components 133; earlier upper
+// displacement 123 plain (two points, dropped), with components 123; direct reverse uses 167. shader
+// snapshot 174; sequence count snapshot 160; sequence field at use 125; unscaled height/width/both 125;
+// shared forward values 161; external bitmap reference 125. upper/side/reverse/all value initialization
+// 125; origin/sequence references 125; speed policy 279; frame omission 125. Native input
+// direction/center/both 125/125/125; direct quad array 125; span locals 125; early basis / scale /
+// basis with spans 125/125/125 (fast). Basis i/j/both product input orders 125; upper or side inputs
+// 125; basis with upper / side / both input orders 125. Point origin library copies 252; native
+// bitmap/placement/sequence values 215/176/205; bitmap plus sequence 230; placement plus copies 176;
+// opacity snapshot 139; placement plus bitmap 183. Origin / upper-copy / upper / positive-side passes
+// 188/220/240/204; origin-upper 195; origin-side 206; upper-side 214; lower-copy pass 193. Scalar
+// origin x/y/both 194/194/194; scaled height/width/both accumulation 125/125/125; side-product updates
+// 125; y capture with side updates 194. upper / negative-side / positive-side addition inputs
+// 125/125/125; upper-negative / upper-positive / both sides / all additions 125/125/125/125; all
+// additions with constant-first size 125. selected bitmap word 153; bitmap after bounds 125; word
+// bitmap/long sequence 169; late word bitmap 153; shared opacity tail 142; tail with word/late bitmap
+// 161/142; branch-set tail 142. external group/live count/live shader 125/125/125; live scale/group
+// with scale 141/141; count with shader/size accumulator/across component lifetimes 125/125/138. Round
+// 132: across as a point struct 144; 0 - forward_j 138; size inline 143; first_bitmap declared before
+// bounds 125; result assigned after its declaration 125.
 // @retail 0x24e9c7
 real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *placement)
 {

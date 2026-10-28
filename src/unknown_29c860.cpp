@@ -4,6 +4,7 @@
 #include "unknown_2c0d00.h"
 #include "unknown_11cc90.h"
 #include "path.h"
+#include "normalize3d.h"
 #include <math.h>
 // @flags /O2 /arch:SSE /Gr
 
@@ -135,19 +136,16 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 
 __forceinline real function_29cc7e(vector3f *arg_0)
 {
-	real local_0 = (real)sqrt(arg_0->i * arg_0->i + arg_0->j * arg_0->j);
 	arg_0->k = 0.0f;
-	if (!(0.0001f > fabs(local_0)))
-	{
-		real local_1 = 1.0f / local_0;
-		arg_0->i *= local_1;
-		arg_0->j *= local_1;
-		arg_0->k *= local_1;
-		return local_0;
-	}
-	return 0.0f;
+	return normalize3d(arg_0);
 }
 
+// score 360 (was 517): frame 0x5b4 and the stack slots now agree. Left: the steering block's two dot
+// sums and the velocity dot load their terms in another order (ours k, j, i reassociated), the
+// angle flag reads the left vector from its home after the call, the actor index is kept in EBX
+// where retail reloads it from its slot, and the 1f9e70 setup order. Tried: the dot sums swapped
+// 360; the velocity dot written i/j/k, j/k/i and through dot3f either way 360 each; the projection
+// test's terms swapped 360; the flags written through the actor struct field 365.
 // @retail 0x29cbb0
 void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *arg_3,
 	short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -158,6 +156,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 	bool local_3 = false;
 	bool local_4 = false;
 	bool local_5 = true;
+	vector3f direction;
 	*(bool *)(local_0 + 0x6d1) = false;
 	if (arg_8 == 0)
 	{
@@ -176,14 +175,14 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 			local_3 = true;
 			if (0.8f > *(real *)((byte *)local_1 + 0x84))
 			{
-				vector3f local_6 = *(vector3f *)((byte *)local_1 + 0x7c);
-				local_6.k = 0.0f;
-				if (function_30bf0(&local_6) > 0.0f)
+				direction = *(vector3f *)((byte *)local_1 + 0x7c);
+				direction.k = 0.0f;
+				if (function_30bf0(&direction) > 0.0f)
 				{
 					*(bool *)(local_0 + 0x5d0) = true;
-					((vector3f *)(local_0 + 0x5ec))->i = local_6.i * 3.0f;
-					((vector3f *)(local_0 + 0x5ec))->j = local_6.j * 3.0f;
-					((vector3f *)(local_0 + 0x5ec))->k = local_6.k * 3.0f;
+					((vector3f *)(local_0 + 0x5ec))->i = direction.i * 3.0f;
+					((vector3f *)(local_0 + 0x5ec))->j = direction.j * 3.0f;
+					((vector3f *)(local_0 + 0x5ec))->k = direction.k * 3.0f;
 				}
 				else
 					*(bool *)(local_0 + 0x5d0) = false;
@@ -201,9 +200,10 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 	if (function_29cc7e(&local_9) == 0.0f)
 		*(bool *)(local_0 + 0x5d0) = false;
 	real local_10 = (real)sqrt(arg_2->i * arg_2->i + arg_2->j * arg_2->j + arg_2->k * arg_2->k);
-	vector3f local_11 = local_8;
 	vector3f local_12 = *g_4687a4;
-	vector3f local_13 = {-local_8.j, local_8.i, 0.0f};
+	vector3f local_11 = local_8;
+	real left_i = -local_8.j;
+	vector3f local_13 = {left_i, local_8.i, 0.0f};
 	if (!local_2)
 		*(real *)(local_0 + 0x660) = 0.0f;
 	else if (!*(bool *)(local_0 + 0x5d0) || *(bool *)(local_0 + 0x5d2))
@@ -231,7 +231,6 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 		if (local_16 && (((vector3f *)(local_0 + 0x5f8))->j * arg_2->j + arg_2->i * ((vector3f *)(local_0 + 0x5f8))->i) / local_10 > 0.5)
 			local_16 = false;
 		short local_17;
-		vector3f local_18;
 		if (!local_16 && !(*(real *)(local_2 + 0x44) > local_10 && *(bool *)(local_0 + 0x4d5)))
 		{
 			local_11 = *arg_2;
@@ -242,24 +241,24 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 		}
 		else
 		{
-			local_18 = *arg_2;
+			direction = *arg_2;
 			local_17 = 0;
 			if (local_16)
 				local_11 = *(vector3f *)(local_0 + 0x5f8);
 			else if (*(bool *)(local_0 + 0x4d5))
 				local_11 = *(vector3f *)(local_0 + 0x4d8);
-			local_18.k = 0.0f;
+			direction.k = 0.0f;
 			local_11.k = 0.0f;
 			if (function_30bf0(&local_11) == 0.0f)
 				local_11 = *(vector3f *)(local_0 + 0x290);
-			if (function_30bf0(&local_18) == 0.0f)
-				local_18 = local_11;
-			real local_19 = local_18.j * local_8.j + local_18.i * local_8.i;
-			real local_20 = local_13.i * local_18.i + local_18.j * local_8.i;
-			local_18.i = local_19;
-			local_18.j = local_20;
-			local_18.k = 0.0f;
-			function_30bf0(&local_18);
+			if (function_30bf0(&direction) == 0.0f)
+				direction = local_11;
+			real local_19 = direction.j * local_8.j + direction.i * local_8.i;
+			real local_20 = left_i * direction.i + direction.j * local_8.i;
+			direction.i = local_19;
+			direction.j = local_20;
+			direction.k = 0.0f;
+			function_30bf0(&direction);
 		}
 		s_obstacle_list local_21;
 		s_obstacle_list *local_22 = &local_21;
@@ -286,9 +285,9 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 			function_26c180(arg_0);
 			if (*(bool *)(local_0 + 0x278) && *(long *)(local_0 + 0x28c) != NONE)
 			{
-				local_24.field_4 = function_11cd20((vector2f *)&local_9, (vector2f *)&local_8);
+				local_24.field_4 = function_11cd20((vector2f *)&local_8, (vector2f *)&local_9);
 				real local_25 = local_9.j * local_8.i;
-				local_24.field_0 = local_9.i * local_13.i + local_25 > 0.0f;
+				local_24.field_0 = local_9.i * left_i + local_25 > 0.0f;
 				local_24.field_1 = false;
 				local_24.field_8 = 1.0f;
 				local_24.field_1a[10] = true;
@@ -296,11 +295,11 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 					*(real *)(local_2 + 0x20), (s_29946c const *)local_22);
 				if (0.9f > local_24.field_8)
 				{
-					local_18.j = local_13.i * local_9.i + local_25;
-					local_18.i = local_9.j * local_8.j + local_9.i * local_8.i;
-					local_18.k = 0.0f;
+					direction.j = left_i * local_9.i + local_25;
+					direction.i = local_9.j * local_8.j + local_9.i * local_8.i;
+					direction.k = 0.0f;
 					local_17 = 0;
-					function_30bf0(&local_18);
+					function_30bf0(&direction);
 					*(long *)((byte *)actor_get(arg_0) + 0x810) &= ~0x800;
 				}
 			}
@@ -313,7 +312,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 		function_29c860(arg_0, arg_1, (point2f *)&local_8, (point2f *)&local_11, local_26, &local_11);
 		real local_27 = 1.0f;
 		if (local_17 == 0)
-			local_12 = local_18;
+			local_12 = direction;
 		else
 		{
 			real local_28 = function_1f9e70(arg_0, arg_1, (point2f *)&local_7, (vector2f *)&local_9,
@@ -329,18 +328,18 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 				local_30 = 6.0f;
 			}
 			local_27 = (local_28 - local_29 / local_30) * local_31 + local_28;
-			real local_32 = *(real *)(local_2 + 0x60);
-			if (local_27 > 0.0f && local_32 > 0.0f)
+			if (local_27 > 0.0f && *(real *)(local_2 + 0x60) > 0.0f)
 			{
 				real local_33 = local_27 - *(real *)(local_0 + 0x658);
-				local_27 = *(real *)(local_0 + 0x658) + (local_33 > local_32 ? local_32 : local_33);
+				if (local_33 > *(real *)(local_2 + 0x60))
+					local_33 = *(real *)(local_2 + 0x60);
+				local_27 = *(real *)(local_0 + 0x658) + local_33;
 			}
 			*(real *)(local_0 + 0x660) = 0.0f > local_27 ? 0.0f : local_27;
-			real local_34 = *(real *)(local_2 + 0x50);
-			if (-local_34 > local_27)
-				local_27 = -local_34;
-			else if (local_27 > local_34)
-				local_27 = local_34;
+			if (-*(real *)(local_2 + 0x50) > local_27)
+				local_27 = -*(real *)(local_2 + 0x50);
+			else if (local_27 > *(real *)(local_2 + 0x50))
+				local_27 = *(real *)(local_2 + 0x50);
 			local_12.i = 1.0f;
 		}
 		local_12.i *= local_27;

@@ -87,6 +87,11 @@ extern long g_55c154;
 // creation classification spill and selective copy expansion remain;
 // live entry-handle/edit-mode/type fields 61/61/61; handle-mode/handle-type/mode-type
 // field pairs 61/61/61; three live fields and external record combination 61/61.
+// score 61 (was 61): retail has two load arms (default/selected) and an out-of-line copy call.
+// separate noinline declaration of the copy 61 (still inlined); single load re-testing the
+// selection 77; two load arms 174; two arms plus a shared default-name pointer 179 (the copy
+// becomes retail's register call, but zero is kept in ebx and this spills); arms on direct
+// entry reads 179.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {
@@ -283,6 +288,22 @@ void c_class_2c9e69::select_last_variant()
 }
 
 /* shows the item's variant name */
+// score 23 (was 23): nonempty receiver is reloaded after the name call instead of retained in EBX;
+// branch name workspace before receiver, immutable receiver, receiver names 36/36/36; common completion 36;
+// completion with immutable receiver or receiver before name 36/36; ordinary pointer with scoped/common completion 36/36.
+// nonempty text receiver tested in stack home then reloaded; retail holds EBX;
+// widget names 23; named variant first 30; entry reference 23; indexed base 23;
+// text destination local 23; icon absence return 23; reversed dispatch with receiver copy 38;
+// reversed dispatch/copy renamed 38; base-widget receiver 36; base receiver renamed 36.
+// nonempty receiver stack test/reload differs from EBX lifetime;
+// text/bitmap/both child helpers 23/23/23; helpers plus named receiver 36;
+// helpers plus nonempty-first/text admission 30/38; parameter text home 49;
+// returned name buffer 21 fast/plain, rejected. Opening body restored.
+// nonempty receiver stays in its stack home instead of EBX.
+// This round: returned-buffer expression 29; retained named receiver 27; shared text admission 36; named arm first 30; icon tail admission 29; entry reference 29; typed child lookups 29; entry table base 29.
+// Without the receiver qualifier one reload of the text is hoisted into EDI ahead of both arms
+// (retail reloads it per arm, EDI and EBX): plain receiver 36; text used directly in both arms 36;
+// per-arm receiver locals 36; named arm first 38; icon declared first 36. 600 s permuter run, none below 23.
 // @retail 0x2c9ff4
 void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 {

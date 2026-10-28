@@ -182,6 +182,10 @@ static __forceinline long function_925c2()
 }
 
 // score 14 (was 14): the user flags are loaded into eax in ours and into ecx in retail.
+// score 14 (was 14): the same register and padding remain. Shared task/datum lookups 14/14;
+// enclosing update/conditional records 14/14; kind first 14; early flags carrier 14;
+// inverse continue 14; report-id name 14; SDK guest test 14; existing allocator 183/317;
+// field reference 14.
 // @retail 0x925c0
 long online_round_report(XNKID const *session_id, ULONGLONG const *round_key, long count, XONLINE_STAT_PROC const *procedures, bool flag0, bool flag1)
 {

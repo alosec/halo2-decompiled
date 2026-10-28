@@ -54,3 +54,9 @@ void hkRigidBody::pose_write(hkTransform const &transform)
 	((shape_312800 *)self->object)->get_bounds(placement, ((world_312590 *)self->field_8)->tolerance->value, &bounds);
 	self->function_315a10(&bounds);
 }
+
+// @retail 0x312760
+void placed_shape_312800::function_312760(bounds_312800 *bounds_out) const
+{
+	((shape_312800 *)object)->get_bounds(transform, ((world_312590 *)field_8)->tolerance->value, bounds_out);
+}

@@ -417,7 +417,7 @@ void c_vtable_450d14::v1(long a1, long a2, real *a3, long *a4)
 {
 	*a3 = 0.0f;
 	*a4 = 0;
-	long handle = function_699a0(a1, world->unknown0c);
+	long handle = function_699a0(world->unknown0c, a1);
 	if (handle != NONE)
 		function_82a40(handle, (s_relevance_observers const *)a2, a3, a4);
 }
@@ -427,7 +427,7 @@ bool function_979f0(s_world_450cb8 *world, long handle)
 	s_table_450cb8 *table = &world->a->block->table;
 	long index = handle & 0x3ff;
 	bool result = false;
-	if (index >= 0 && (dword)index < 0x400 && table->slots[index].handle == handle)
+	if ((handle & 0x3ff) >= 0 && (dword)(handle & 0x3ff) < 0x400 && table->slots[index].handle == handle)
 	{
 		byte flags = table->flags->entries[index].flags;
 		if (flags & 4)

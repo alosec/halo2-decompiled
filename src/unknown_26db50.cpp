@@ -318,7 +318,7 @@ struct s_location_entry_view
 		};
 	};
 	short field10;
-	word sector;
+	short sector;
 	long owner;
 	vector2f direction;
 };
@@ -368,7 +368,7 @@ bool function_26d9c0(long record_index, s_type_c3b527 const *point, short entry_
 			if (sector_index == NONE)
 				goto done;
 			entry->sector = ((s_record_sector_map *)g_4e0348)->entries[sector_index].sector;
-			if (entry->sector == (word)NONE)
+			if (entry->sector == NONE)
 				goto done;
 			location_entry_activate(record->active, entry_index);
 			entry->owner = owner;
@@ -459,7 +459,21 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
-// score 195 (was 195): frame 0xdc versus 0xd8 and a rotation spill; shared cross
+// score 90 (was 90): frame 0xd8 agrees; ring conversion (fild where retail converts in SSE) and the
+// frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
+// rotation schedule (one spilled component) differ; 1085 bytes against 1089.
+// Round 53: ring phase named in the outer loop before/after the distance 143/143 (SSE ring
+// conversion as retail, but frame 0xdc and the radius copied through integer registers);
+// all three cross terms named, j and k first 90 (forwarded back); a vector3f cross filled j, k, i
+// 100, with the ring phase 149. Retail computes the j- and k-row cross subtrahends with the dot.
+// Round 50: conditional sector store with the field read back as short (120 -> 109) and the
+// sector index read after the radius (-> 90) kept. Rotation with cross j, k before i 100
+// (no spill, frame 0xd4); with a named ring phase as well 96 (frame 0xd8, retail's SSE ring
+// conversion and rotation core, but the radius copies through integer registers); statement
+// orders of the cross/along locals 96-105; 0x2982f0/0x170d70/0x11d3b0 rotation forms 126-139;
+// existing cross3f after/before the dot 134/255; distance inside the spoke loop 254; shared real
+// ring 100; plain radius local 112; collision marker before the point 89; entry first 215.
+// Earlier 195 (was 195): frame 0xdc versus 0xd8 and a rotation spill; shared cross
 // 244; native component loop 244; cross before dot 257;
 // signed-byte spoke 213; size optimization 395.
 // rotation spill keeps frame 0xdc versus 0xd8; radius copy and sector-test registers differ.
@@ -467,16 +481,55 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // One rotation spill still adds four frame bytes; axis component values 285;
 // symmetric dot inputs 195; two/all cross subtrahends, minuends and projected-axis values 210;
 // cosine-direction values 211; private rotation output last 195.
-// score 184 (was 195): frame 0xd8 now agrees; radius setup, rotation schedule and sector-test registers remain.
+// Earlier 184 (was 195): frame 0xd8 now agrees; radius setup, rotation schedule and sector-test registers remain.
 // Cosine first 197; shared direction/axis/both scales 210/213/261; cosine-first inputs 195;
 // angle product lifetime 196; per-use ring phase 184 kept, 1087/1089 bytes; angle-result names 195.
 // cosine complement 195; cosine first 197; output scalars 195; direct-input outputs 256;
 // components before dot 195; shared rotation 195/1091; output scalars plus plain radius 209;
 // shared rotation plus plain radius 208/1095. Rotation spill and frame 0xdc remain.
-// score 163 (was 184): Frame 0xd8 agrees; entry/ring conversion, rotation and sector registers
+// Earlier 163 (was 184): Frame 0xd8 agrees; entry/ring conversion, rotation and sector registers
 // remain. Shared real ring 182; ring plus phase 195; record-first 163 kept; with real ring 161
 // rejected for two extra points; double base with ring/phase 182/195; axis value 317;
 // record/ring/spoke values 163.
+// Earlier 125 (was 163): entry-table/ring conversion and rotation allocation remain.
+// Assigned sector word/short 161/161; default sector word 125 kept, short 128;
+// missing-sector continue, sentinel-between-direction and sentinel-first 163 each;
+// assigned short sector with interleaved publication 162.
+// frame 0xd8 agrees; entry/ring conversion, rotation XMM and sector registers remain.
+// Rotation output/axis/both object references 163/163/163; each with output last 163/163/163;
+// cosine-first output/axis reference contracts 163/163. Original helper and body restored.
+// Earlier 125 (was 125): entry-table/ring conversion and rotation allocation remain.
+// Native direction value with output first/last, sine/cosine first 276/276/276/276;
+// both vector values 328/328; rotated-vector return 281/281. Original rotation contract retained.
+// Earlier 120 (was 125): entry-table load, ring conversion and rotation XMM allocation remain.
+// Native radius member 125; shared ring with/without native radius 123/123; three-use trace distance 120 plain;
+// shared trace displacement 225; elevation vector 245; collision point setter 125; collision-offset vector 189;
+// trace distance with shared ring 120. Keep the smaller trace-distance form; frame 0xd8, 1090/1089 bytes.
+// Earlier 120 (was 120): frame 0xd8 agrees; entry/ring conversion, rotation and sector publication differ.
+// Named collision marker 120; marker before entry 120; entry before point 236;
+// complete point components 144; promoted sector 120; conditional sector store 154;
+// direct radius with trace scalar 239; sector eligibility result 120.
+// Separated object before record/sector and early native radius 120/120/120;
+// direction/world library copies 120/120; conditional sector/pathfinding 154/234; separate count advance 120.
+// frame 0xd8 agrees; entry-table scheduling, ring conversion and rotation homes differ.
+// Early object/record-pool producers 123/123 (exact-only); real ring/spoke 273/195;
+// short remaining count 125; unsigned/double ring 248/261; real ring and spoke 201.
+// Helper-owned angle/trigonometry 236; cosine first 237; early direction inputs 236;
+// early projection or projection plus inputs 239; byte ring 161, remaining count 120,
+// both byte states 161. Existing helper and all ring/trace inputs restored.
+// Round 141: Native axis before/after projection 298/293; native direction before/after projection
+// 253/259; both inputs before/after projection 306/312; axis with real ring 298; both inputs with
+// double base distance 313. Original helper/body restored; SSE ring conversion and rotation spill
+// remain.
+// Round 141: Component, projection, combined input/projection, formal, complete rotation, radius,
+// native-index and all-scalar lexical homes 90 each. All original names, input copies and statements
+// restored.
+// Sine-scaled cross 215; with projected-axis/cosine terms 215/215; all terms 90;
+// projection plus cosine 215; projection/cross/cosine and cosine/cross/projection orders 90/90;
+// all terms with cosine complement 90. Uniform rows; opening helper and body restored.
+// Parallel displacement/elevation/both product parts 215/90/215; collision-offset parts 90;
+// displacement with collision parts 215; elevation with collision parts 90; all parts 215;
+// native point aggregate initializer 90. Original body and rotation helper retained.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
@@ -484,8 +537,8 @@ long function_26d570(long object_index)
 	if (result != NONE)
 	{
 		s_location_record_view *record = (s_location_record_view *)(g_51eca4->data + (result & 0xffff) * sizeof(s_location_record_view));
-		long sector_index = record->location_index;
 		real radius_value = *(real *)((byte *)object_get(object_index) + 0x3c);
+		long sector_index = record->location_index;
 		real const &radius = radius_value;
 		long ring = 0;
 		long rings_remaining = 2;
@@ -508,10 +561,11 @@ long function_26d570(long object_index)
 				if (!function_26c590(pathfinding, origin, sector_index, NONE, &direction, distance, NULL,
 					(s_path_trace_result *)&trace) && !trace.blocked)
 				{
+					real trace_distance = trace.distance;
 					point3f point;
-					point.x = direction.i * trace.distance + origin->x;
-					point.y = direction.j * trace.distance + origin->y;
-					point.z = direction.k * trace.distance + origin->z;
+					point.x = direction.i * trace_distance + origin->x;
+					point.y = direction.j * trace_distance + origin->y;
+					point.z = direction.k * trace_distance + origin->z;
 					point.x += g_4687b0->i * 0.5f;
 					point.y += g_4687b0->j * 0.5f;
 					point.z += g_4687b0->k * 0.5f;
@@ -532,7 +586,7 @@ long function_26d570(long object_index)
 					long sector = function_14a280((s_bsp3d *)g_4e0340, 0, &point);
 					if (sector != NONE)
 						entry->sector = ((s_record_sector_map *)g_4e0348)->entries[sector].sector;
-					if (entry->sector != (word)NONE)
+					if (entry->sector != NONE)
 					{
 						entry->flags |= 0x40;
 						entry->direction.i = 0.0f;

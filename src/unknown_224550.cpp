@@ -128,10 +128,45 @@ PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
 	return local_0;
 }
 
-// score 435 (was 435): frame 0x50 versus 0x60; tint/second-UV homes and cache register differ.
+
+// score 421 (was 421): Frame 0x50 versus 0x60, tint/second-UV overlap, cache EBP/EBX and scalar homes remain.
+// Frame 0x50 versus 0x60, tint/second-UV overlap and cache EBP/EBX homes remain.
+// Earlier: Frame 0x50 versus 0x60, tint/second-UV overlap and cache EBP/EBX remain.
+// frame 0x50 versus 0x60; tint/second-UV homes and cache register remain.
+// Frame 0x50 versus 0x60, tint/second-UV overlap and cache EBP/EBX remain.
+// frame 0x50 versus 0x60; tint/second-UV homes and cache register remain.
+// frame 0x50 versus 0x60; tint/second-UV homes and cache register differ.
 // Frame pointer 597; size optimization 990; tint input-array parameter 435;
 // direct packed-tint return 435; byte flip selector 538.
-// score 435 (was 435): Frame 0x50/0x60 and tint/second-UV homes remain; UV result by value 553; bounds input by value 687; short sequence count 441; unsigned flip mask 435; paired UV defaults 439.
+// Frame 0x50/0x60 and tint/second-UV homes remain; UV result by value 553; bounds input by value 687; short sequence count 441; unsigned flip mask 435; paired UV defaults 439.
+// Extended tint lifetime 544; shared flip flags 435; UV extents stored first 435;
+// positive-count interval scope 421 (plain); branch-owned blend defaults 508.
+// frame 0x50 versus 0x60; tint/second-UV homes, cache carrier and later scalar homes remain.
+// Earlier 435 (was 435): Frame 0x50/0x60 and tint/second-UV homes remain; UV result by value 553; bounds input by value 687; short sequence count 441; unsigned flip mask 435; paired UV defaults 439.
+// Round 112: By-value input color 547; packed seed input 439; both inputs 550 (seed forms
+// exact-only); redundant flip clear removed 481; bitmap arm first 508.
+// Bitmap field at every use 421; frame-array field at use 442; both 442;
+// immutable frame count once 479; with bitmap/frame fields/both 479/479/479;
+// shared bitmap sequence clamp count 427. All restored; frame 0x50 versus 0x60.
+// UV output-first 421; cache/definition-first tint contract 421; complete bounds snapshot 656;
+// UV output-pointer return 421; reference bounds formal 421. Original helpers and body retained.
+// In-place clamp pointer/reference and both forced forms 421 each; pointer clamp plus plain geometry
+// table/native UV member copy 421/421; plain geometry table/native UV member copy alone 421/421. Original
+// helpers restored.
+// Native in-place UV pointer/reference 421/421; by-value result 494; UV-first pointer/reference 421/421;
+// force-inline in-place pointer/reference/value 421/421/738. Original helper and all alias-safe captures restored.
+// Definition at every use 462; shared cache value array 421; both 462; shared pivot weight 421;
+// with definition/cache/both 462/421/462; complete seed products 421. All restored.
+// Both scaled-pivot products/all four edge factors/both 421/421/421; real interval
+// result alone/with products/with edge factors/with both 424/424/424/424; guarded frame fraction 421.
+// Round 129: native four-element UV output reference with bounds/cache/color references
+// in all eight combinations 421 each. Original producer contracts, tint inputs and all
+// four in-place UV captures restored.
+// Round 149: Split origin/extent and scalar UV outputs, output-first order, bounds references and forced
+// expansion [421, 421, 421, 421, 421, 421, 421, 421]; all restored.
+// Round 353: native caller tint output reference with color reference/value
+// 463/579; with cache array 463/579; entry output declaration
+// 463/579; entry output and cache array 463/579. Original tint restored.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
@@ -172,9 +207,9 @@ void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache
 			if(context->sequence)
 			{
 				long count=context->sequence->count;
-				long intervals=(definition->flags&8)?count-1:count;
 				if(count>0)
 				{
+					long intervals=(definition->flags&8)?count-1:count;
 					real frame=function_246cd0(&definition->frame,values->values)*(real)intervals;
 					long index=function_016ae0(frame);
 					s_draw_sprite_frame const *frames=context->sequence->frames;

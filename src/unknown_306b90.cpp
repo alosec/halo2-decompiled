@@ -60,6 +60,9 @@ public:
 // centre in xmm2 where ours uses xmm1, and its sign `and` writes the sum's
 // register where ours writes the mask's (written sum first, our mask load
 // moves to the top of the block).
+// score 9 (was 9): zero/centre coloring and sign destination still differ.
+// Native row loop 9; selected normal value 77; both 77; side result 31;
+// row/side 31; normal/side 95; all three 95; intrinsic row with both 79.
 // @retail 0x306b90
 void box_306b90::function_306b90(face_306b90 *face, int axis) const
 {
@@ -89,9 +92,16 @@ void box_306b90::function_306b90(face_306b90 *face, int axis) const
 	face->first_frame_normal = transform_point_306b90(&transform, &face->second_frame_normal);
 }
 
-// score 13 (was 28): as 0x306b90, the zero splat's shuffle and the first
+// score 13 (was 13): the zero comparison and sign extraction still use different vector registers.
+// Earlier: as 0x306b90, the zero splat's shuffle and the first
 // centre take xmm3 in retail (xmm2 here), and the sign `and` writes the sum's
 // register there, the mask's here.
+// score 13 (was 13): centre/zero coloring and nudge/sign destinations remain.
+// Early comparison 34; native normal 82; both 94; side result 22;
+// comparison/side 36; normal/side 96; all 102; comparison first 102.
+// zero intrinsic 86; zero-left comparison 16; disjoint mask join 14; named mask terms 13;
+// named terms and disjoint join 14; aligned axis load 81; aligned normal store 13;
+// both vector memory boundaries 81.
 // @retail 0x306d00
 void box_306b90::function_306d00(face_306b90 *face, int axis) const
 {

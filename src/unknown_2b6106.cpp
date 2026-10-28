@@ -533,7 +533,7 @@ void c_y_menu_player_selected_screen::v3()
 	else if (screen->qos_handle != NONE && qos_is_complete(screen->qos_handle))
 	{
 		s_qos_result information;
-		if (qos_target_result(screen->qos_handle, &information, 0) &&
+		if (qos_target_result(screen->qos_handle, 0, &information) &&
 			session_description_decode_buffer(information.data_size, information.data, screen->unknown9c4))
 		{
 			screen->value10e4 = true;
@@ -658,12 +658,57 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
     widget->function_22f52e()->set_text(text);
 }
 
-// score 577 (was 598): frame 0x85c agrees; EBP bias and flag/time/state
+// score 573 (was 573): Frame 0x85c agrees; EBP bias 0x70, flag/time/state homes and timing-result schedule remain.
+// Frame 0x85c agrees; EBP bias 0x70, flags/time/state homes and status-helper transport remain.
+// Earlier: frame 0x85c agrees; EBP bias and flag/time/state
+// frame 0x85c agrees; EBP bias and flag/time/state
+// Frame 0x85c agrees; EBP bias 0x70 and early flags/time/state homes remain.
+// Earlier: frame 0x85c agrees; EBP bias and flag/time/state
+// frame 0x85c agrees; EBP bias and flag/time/state homes differ.
+// Frame 0x85c agrees; EBP bias and flags/time/state homes remain. Guard-owned state
+// 576; session before elapsed test 578; word team scan 574 (three-point gain rejected); conditional
+// maxima 577; shared state formatting 717.
+// Earlier 577 (was 598): frame 0x85c agrees; EBP bias and flag/time/state
 // carriers and status-helper convention still differ. Flag bit at uses 647;
 // long active 624; long local 623; long campaign 598 kept; branch-local
 // game-name table 624. Buffers, loops, calls and common exit are unchanged.
 // Long joinability 600; word saved bit 625; timestamp rename 598; long count
 // 577 kept; explicit score exclusion 598. Original count values are preserved.
+// Earlier 577 (was 577): frame 0x85c agrees; EBP bias and flag/time/state homes remain.
+// Data-branch format buffer 644; both data-branch buffers 644; word widget index 631;
+// branch-assigned score maximum 575 (below threshold, frame 0x860); row increment after
+// publication 577; auxiliary-buffer role names 577.
+// Player/team/both candidate score values 577/577/577; key at uses 574 (below threshold);
+// activity at uses 573 kept; native ages 577; native flag byte 630; combined native observations 574.
+// Entry-owned formatting 605; with key 605, activity 601, both 601; original formatting restored.
+// EBP bias and initial flags/timestamp homes remain; original frame, loops and all call arguments retained.
+// Native real payload fields: state/activity, count, selection/totals, keys, timers, game/team,
+// score arrays and the complete view 573 each; native declaration restored. EBP bias remains.
+// Unsigned/signed word and signed-long flags 574/574/574; word flags with
+// long local/activity/joinability results 650/584/583; local/activity pair 653;
+// all native truth results 653. EBP bias and initial carriers still differ;
+// original dword flags, Boolean results and activity observations retained.
+// player-table 587; team-table 587.
+// both-tables 592; player-table-before-search 587.
+// team-table-before-search 587; both-tables-before-search 592.
+// tables-score-values 592; early-tables-score-values 592.
+// State/count/both at every use 572/594/594; flags/truth/row/all scalar role names
+// 573/573/573/573; all observations with role names 594. Original body restored.
+// Native Boolean campaign 605; signed-word count 594; both 623; with consistent state fields 623,
+// explicit session true test 621, early flag producer 664, read-only local table 623, word widget ordinal 640.
+// Separate time dividend/results in both arms, immutable results and clock-role homes 573/573/573;
+// with native campaign/count/both/state-fields/session-test 605/594/623/623/621. All executable forms restored.
+// Round 161: clock at every use 642; table at entry/pre-query/pre-widget 619/618/601; those three with consistent clock reads 654/654/643; read-only local table 573. All restored.
+// flags inline 699; flags noinline 573; flags inline noinline 573; user inline 573; user noinline 573; user
+// inline noinline 573; both inline noinline 573; both inline 699.
+// Round 211: Main message/format/both output pointers 573 each; auxiliary game/teams/both
+// output pointers 573 each; all four and message with both auxiliary outputs 573 each.
+// Round 237: Complementary local/activity/joinability states independently and together
+// 648/575/648/574/648/576/648; complementary campaign 573. Original truth states restored.
+// Three identity-query caller-inline contracts in all seven combinations 573 each; joint
+// caller-noinline contract 573. Original declarations restored.
+// Round 227: Native identifier copy/assignment/CRT, complete friend copy/assignment/CRT,
+// complete friend plus identifier copy/CRT 632/632/632/627/627/627/632/632 (exact-only). Restored.
 // @retail 0x2b65b8
 void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
 {
@@ -807,11 +852,10 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
                 show_friend_detail(text[row++], message);
             }
             state = *(short *)(details + 0xa62);
-            short activity = *(short *)(details + 0xa60);
-            if (state != 8 && state != 3 && activity)
+            if (state != 8 && state != 3 && *(short *)(details + 0xa60))
             {
-                ((c_widget *)this)->function_230134(campaign ? 0xe000276 : activity == 1 ? 0x12000273 :
-                               activity == 3 ? 0xe000274 : 0xf000275, message);
+                ((c_widget *)this)->function_230134(campaign ? 0xe000276 : *(short *)(details + 0xa60) == 1 ? 0x12000273 :
+                               *(short *)(details + 0xa60) == 3 ? 0xe000274 : 0xf000275, message);
                 show_friend_detail(text[row++], message);
             }
             if (*(short *)(details + 0xa62) == 8 || *(short *)(details + 0xa62) == 3 || *(short *)(details + 0xa60) == 1)

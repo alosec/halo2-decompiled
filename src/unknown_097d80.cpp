@@ -52,6 +52,55 @@ struct c_aggregate : c_child
 };
 
 
+// score 85 (was 85): frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// Frame 0x8024 versus 0x8020, scalar output homes, dispatch ownership and allocator reload remain.
+// Frame 0x8024 versus 0x8020, completion-output home, dispatch ownership and allocator reload remain.
+// Earlier 85 (was 92): frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// Frame 0x8024 versus 0x8020, completion/dispatch homes and allocator observations remain.
+// Earlier: frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// spills), the dispatch loop (retail: index in ebp, child cursor and inner count spilled) and one
+// allocator reload (retail loads the global again for the release, into eax then edi) still differ.
+// Round 53: compiled without /GL (screen only) this body gets retail's 0x8020 frame and slots
+// (completion output at the bottom, error and release output above it) and a matching first loop;
+// every /GL form screened keeps 0x8024. Release through the file-local release helper of
+// unknown_096ed0.cpp (global read again after the query) 102f, with an indexed dispatch 119f, with
+// a child cursor 119f; completion output at loop scope 113f; helper with an object local 102f;
+// output/error names and scopes (36 screened) don't move the frame.
+// Kept: item test on the field and the allocator global held across the release 85.
+// Global held across the release only 100; indexed dispatch 104, with the hold 115; class operator
+// delete 100, with indexed dispatch 115; release through a local helper taking the globals 103;
+// field test with indexed dispatch 119; completion output at loop scope 113; completion output
+// renamed 92 (frame unchanged); held global with the item test on the local 106. On the kept
+// body: indexed dispatch 115, reading the child at each use 128; completion output at loop or
+// function scope 96/96 (frame stays 0x8024); total declared before error 85.
+// Cleanup block/item/both cursors
+// frame and request/cursor registers agree; output homes,
+// Frame 0x8020 agrees; output homes, dispatch and release allocation remain.
+// Earlier: frame and request/cursor registers agree; output homes,
+// dispatch layout and release global reload differ. Cleanup block/item/both cursors
+// 104/104/104; child-boundary cursor 99; indexed child/range 106; shared child base
+// 133, with range 153; collection rejection 116; read-only range 99; range-array bound
+// 92; child-array bound 139; read-only range bound 92; repaired-entry completion,
+// release and both output names 92/92/92.
+// Completion/information/both output lifetimes 105/99/110; cleanup block/item cursors
+// in the boundary-array context 92/92; actual dispatch block range 103; nested error
+// scope and early error/total results 92/92.
+// count name 104; release-output name 104; both names 104; result-first 104;
+// arrays swapped 104; collection cursor 105; indexed dispatch 104; allocator capture 115.
+// Error identity 92; total before error 92; error-first gate 98;
+// cleanup null exit 92; proven nonempty count 92; cleanup ordinal names 92;
+// unsigned fixed collection 93; exact boundary-end test 92.
+// produced after arrays 105; produced after counters 105; information after arrays 99; both after
+// arrays 110; collection boundary cursor 148; shared boundary cursor 148; paired collection cursors
+// 132; boundary lifetime 92. Scalar output homes, dispatch ownership and release observations
+// remain.
+// Concrete collection/dispatch class and allocation-pointer combinations 92 each; shared typed table 150;
+// common child-interface collection/dispatch/both/both with allocation pointer 92 each.
+// Round 186: Native stream contract alone/allocation pointer 85/85; iteration output/both 96/96; native contract with ordinal dispatch alone/allocation 115/115, with output/both 125/125. All declarations restored.
+// Existing shared release helper with default/force-inline linkage and local/direct-field input 102 each; real starts initialized on those four forms 151 each.
+// Per-child counts with ordinal/direct child, ordinal/child cursor, count-table end and child-table end
+// 159/159/142/181; aggregate-zero equivalents 183/183/148/206. Ordinal forms recover frame 0x8020
+// but lengthen dispatch; original cumulative boundaries and allocator code restored.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
@@ -76,11 +125,12 @@ long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 	if (error == 0 && request->type != 4)
 	{
 		c_child **child = (c_child **)children;
-		for (long i = 0; i < 3; i++, child++)
+		for (long *range = starts; range < starts + 3; range++)
 		{
 			c_child *object = *child;
-			for (long j = starts[i]; j < starts[i + 1]; j++)
+			for (long j = range[0]; j < range[1]; j++)
 				object->v6(&blocks[j]);
+			child++;
 		}
 	}
 
@@ -89,15 +139,16 @@ long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 		s_block *block = &blocks[k];
 		for (long j = 0; j < block->count; j++)
 		{
-			c_child *object = block->items[j].object;
-			if (object != 0)
+			if (block->items[j].object != 0)
 			{
+				c_child *object = block->items[j].object;
+				s_allocator_globals *globals = g_4d87f8;
 				long result;
-				if (!g_4d87f8->allocator->get_info(object, &result))
+				if (!globals->allocator->get_info(object, &result))
 					result = NONE;
-				g_4d87f8->allocator->release(object, NONE);
+				globals->allocator->release(object, NONE);
 				if (object != 0)
-					g_4d87f8->count--;
+					globals->count--;
 				block->items[j].object = 0;
 			}
 		}
@@ -203,21 +254,14 @@ void c_handle_table_450cd0::function_97fe0()
 // @retail 0x980d0
 void c_handle_table_450cd0::function_980d0(long handle, dword mask)
 {
-	s_handle_entry *entry = &entries[handle & 0x3ff];
+	long index = handle & 0x3ff;
+	s_handle_entry *entry = &entries[index];
 	if (entry->state == 3)
 	{
-		word item_mask = table->peers[handle & 0x3ff].mask;
-		dword value = entry->unknown04;
-		if (!((1 << shift) & item_mask))
-		{
-			if (value == 0)
-				unknown5034++;
-			value = entry->unknown04;
-		}
-		entry->unknown04 = value | mask;
+		if (!((1 << shift) & table->peers[index].mask) && entry->unknown04 == 0)
+			unknown5034++;
 	}
-	else
-		entry->unknown04 |= mask;
+	entry->unknown04 |= mask;
 }
 
 // @retail 0x98120

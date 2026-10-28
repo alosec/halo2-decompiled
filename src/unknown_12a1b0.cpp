@@ -294,6 +294,9 @@ void c_class_219e90::function_219ed0(s_type_99c531 const *source, bool source_up
 	}
 }
 
+// score 22 (was 22): refresh receiver/phase/source convention differs after matching entry tests;
+// nullable controller 22; early guards 22; direct system fields 22; invalid-definition first 32;
+// shared availability 22; phase/source method reorder 22, with guards 22 or nullable controller 22.
 // @retail 0x219c30
 void function_219c30(long definition_index, s_type_99c531 const *source)
 {
@@ -548,6 +551,9 @@ static inline long track_sound_next(s_record_pool *data, long first, long index,
 	return index;
 }
 
+// score 39 (was 39): first-index/pool registers differ and link addressing folds to one load;
+// entry result 51; later result 57; final-index return 49; pool first 42;
+// role-based names 39; scoped counter 39; pool first with result 51; separate pitch successes 39.
 // @retail 0x21b870
 long looping_sound_find_sound(long looping_sound_index, long definition_index, long pitch_range_index, short track_index)
 {
@@ -603,9 +609,8 @@ bool __stdcall function_21bf00(long looping_sound_index, long definition_index, 
 	s_type_5ef569 *sound = (s_type_5ef569 *)datum_get_inlined(LOOPING_SOUNDS, looping_sound_index);
 	if (sound)
 	{
-		long controller_index = sound->controller_index;
-		c_class_219e90 *controller = controller_get(controller_index);
-		if (controller_index == NONE || controller->synch_playback)
+		c_class_219e90 *controller = controller_get(sound->controller_index);
+		if (sound->controller_index == NONE || controller->synch_playback)
 		{
 			*source = sound->source;
 			result = true;
@@ -880,18 +885,23 @@ void function_219560(s_packed_value *value, s_animation_ref *ref, dword data);
 void function_2192b0(s_animation_state *state, s_animation_ref *ref, byte value);
 long function_219370(s_animation_state *state, s_animation_ref *ref);
 
+// score 10 (was 16): fallback argument scheduling and final alignment byte differ;
+// common result 10; sound/playback reorder 16, with common result 10; fallback guard 16;
+// reordered direct fields 16, reused track 22, common direct fields 10; named range sum 10; set pointer 10.
 // @retail 0x21cb90
 dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear)
 {
+	dword result;
 	if ((definition->flags & 0x30) && sound->controller_index != NONE)
 	{
 		dword *permutations = &((s_type_06b94f *)sound->track_storage)[track_index].permutations;
-		dword result = *permutations;
+		result = *permutations;
 		if (clear)
 			*permutations = 0;
-		return result;
 	}
-	return function_2194c0((s_packed_value *)&g_51ebd4->sets[playback->pitch_range_base + arg_58ecd0], (s_animation_ref *)playback);
+	else
+		result = function_2194c0((s_packed_value *)&g_51ebd4->sets[playback->pitch_range_base + arg_58ecd0], (s_animation_ref *)playback);
+	return result;
 }
 
 // @retail 0x21cbe0
@@ -1060,6 +1070,10 @@ struct s_looping_promotion_table
 	s_looping_promotion *entries;
 };
 
+// score 72 (was 72): four-byte frame versus twelve; iterator and curve homes differ;
+// short curve 76; long curve 80; count renamed 72; table snapshot 72; pool snapshot 76;
+// count first 74; plain for 74; flag mask 72; shared lookup 72; short curve and lookup 76;
+// bool-curve iterator 65; short-curve iterator 68; iterator with shared lookup 65.
 // @retail 0x21bd00
 void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 {
@@ -1086,6 +1100,9 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 	}
 }
 
+// score 66 (was 66): missing twelve-byte frame, first-index convention and count home;
+// pool at each use 66; count declared first 66; count renamed 66; state guard 66;
+// plain for 66; iterator record 66; count-first iterator record 66; flag mask 66.
 // @retail 0x21be20
 void looping_sound_fade_in(long first_sound_index, short curve, real duration)
 {
@@ -1186,7 +1203,7 @@ bool looping_sound_prepare_detail(s_type_a82d9f const *detail, long looping_soun
 			source->spatial.position.x = camera->position.x + offset.i;
 			source->spatial.position.y = camera->position.y + offset.j;
 			source->spatial.position.z = camera->position.z + offset.k;
-			function_11bed0(&source->spatial.location, &source->spatial.position);
+			function_11bed0(&source->spatial.location, &camera->position);
 			source->spatial.compressed_forward = vector3d_compress(g_4687a8);
 			source->spatial.velocity = *g_4687a4;
 			request->flags = 7;

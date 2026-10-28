@@ -77,6 +77,19 @@ void function_17e670(s_effect_source *source, point3f const *point, long tag_ind
 #define CLUSTER_MASK_TEST(mask, index) ((mask)[(index) >> 5] & (1 << ((index) & 0x1f)))
 
 /* Starts and stops cluster effects when the active cluster masks change. */
+// score 16 (was 16): frame and prefix agree; palette/entry register ownership differs from +0xba.
+// BLOCKED-BY 0x17e670: its body takes the effect source in edx and the point in ecx here,
+// retail passes the source in ecx and the point in edx (also at 0x17a8a0).
+// Shared entry 17; entry plus palette 17; shared index 32; const shared entry 17;
+// direct tag 52; tag after angles 28; tag after direction 52; shared direction helper 17.
+// Further trials: entry/palette ownership and contributor effect-call convention remain.
+// uniform structure 125; cluster at use 92.
+// spawn at use 82; structure/cluster 105.
+// structure/spawn 121; cluster/spawn 136.
+// all three owners 149; all owners/tag at call 150.
+// Position pointer 16; aggregate direction 16; direction helper with position 16;
+// that combination with shared entry 17; entry pointer arithmetic 16;
+// full-width first entry 32; short first entry 16; short spawn cursor 78.
 // @retail 0x23aad0
 void __stdcall function_23aad0(long previous_address, long current_address, long count)
 {
@@ -169,6 +182,23 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 	vertex_decode_ranges_23ac30(x, y, z, bounds, &range, point);
 }
 
+// score 62 (was 62): format 3 loads the buffer data into EBP where retail uses EBX, and
+// format 4 forms a vertex pointer where retail addresses every field as base + index * 8
+// and keeps the index for the late node read. Indexing format 4 gives exactly retail's
+// format-4 code but the allocator then swaps EBX/EDI (node arrives in EBX, the source on
+// the stack): 175. Tried: indexed format 4 or both packed arrays 175, format 2 62, format 3
+// 60; node formats/ordinary index/range producer 175; concrete packed pointer 62; concrete
+// reference 62; native value 173; coordinate-array pointer 62; coordinate-array reference 62;
+// returned point 62; native input/output 62; concrete indexed input 175; indexed native
+// decoder 582; ordinary index 582; native input reference/value 578/549; native axis bounds
+// 62; range value input 267; range output reference 62; natural format case order 127;
+// static indexed/input templates 582/578; shared point constructor 228; aggregate point 62;
+// range stages 62; range decoder/producer inline 62/537; buffer fields at use 190; ordinary
+// scalar index 62; packed cases together 111; node/plain/both point memcpy 62/62/62;
+// node/packed/both record references 62/62/62; native coordinate loop 62; native range and
+// coordinate loops 62; format-3 sum written offset first 62; formats 3 and 4 indexed 175;
+// format-4 pointer for the coordinates with the node read by index 175; the index read once
+// into a local for every case with format 4 indexed 175.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

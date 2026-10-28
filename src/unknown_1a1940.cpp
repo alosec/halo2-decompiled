@@ -85,6 +85,11 @@ long c_page_heap::get_page_size()
 	return 0x1000;
 }
 
+// score 80 (was 80): retail keeps checked as its own counter (inc esi; inc ebp), so this
+// takes ebx, first lives in the frame and page_count is re-read; ours shares page + 1 between
+// the two (lea ecx, [esi + 1]). One scan variable 103; checked++ in the body 103;
+// checked = ++page as the increment 79; page++; checked = page; in a while loop 79; the scan
+// as an inline helper with a next-page out parameter 80
 // @retail 0x1a1a90
 void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 {

@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "unknown_123b30.h"
 #include "unknown_29f5b0.h"
+#include "hud_messages.h"
 #include "kill_volumes.h"
 #include "unknown_1fb360.h"
 #include "timed_effect.h"
@@ -941,6 +942,12 @@ long function_1765e0(point3f const *point, vector3f const *direction, vector3f c
 // score 6 (was 6): only the order of the pushes: retail pushes esi and both
 // constant arguments before the x87 work, ours interleaves push esi and the
 // second push 1 with the fld/fcos; four source rewrites all scored 6.
+// score 6 (was 6): direction pointer 6; position before flag 41;
+// position after first/second component 6/6; effect/flag index locals 6/6;
+// flag pointer arithmetic/position reference 6/6. Original body restored.
+// Commuted horizontal products 6; all trigonometric factors named 6; position snapshot 65;
+// read-only flag view 6; scenario base reused at each field 74; flag-table lifetime 6;
+// vector component array view 6; angle field references 6.
 // @retail 0x2a05f0
 void function_2a05f0(long effect_index, short cutscene_flag_index)
 {
@@ -10460,13 +10467,6 @@ void __stdcall function_2ac1f0(short function_index, long thread_index, bool ini
 }
 
 s_type_f4462a const g_44f400 = { _hs_type_void, 0, function_2ac1f0, NULL, 1, { _hs_type_boolean } };
-
-inline bool function_2ac270_get(long index)
-{
-	if (index >= 0 && index < 15 && g_4e6948->state == 1)
-		return g_4f55dc[index];
-	return false;
-}
 
 void hud_message_show_once(long value);
 

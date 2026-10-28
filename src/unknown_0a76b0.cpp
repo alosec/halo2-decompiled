@@ -244,7 +244,7 @@ void function_e6a20(long unit_index, long name, bool active, bool keep)
 }
 
 void function_e6b00(long unit_index, long name, long *state_name, long *action_name);
-PRIVATE void function_e70b0(long unit_index, short *value);
+PRIVATE short *function_e70b0(long unit_index, short *state);
 
 /* when an animation of a unit ends: the action it ends, and the state and
    action animations that follow */
@@ -307,8 +307,7 @@ void function_e6b00(long unit_index, long name, long *state_name, long *action_n
 		{
 			short count;
 
-			function_e70b0(unit_index, &count);
-			if (count == 0)
+			if (*function_e70b0(unit_index, &count) == 0)
 			{
 				function_e6960(unit_index, 0x1d);
 				next_state = 0x6000086;
@@ -454,10 +453,13 @@ bool function_e7020(long unit_index, bool *alternate, long name)
 	return false;
 }
 
+/* the unit's action state (its actions' +0x36): stores it and returns where
+   it went, so callers test it through the result */
 // @retail 0xe70b0
-PRIVATE void function_e70b0(long unit_index, short *value)
+PRIVATE short *function_e70b0(long unit_index, short *state)
 {
-	*value = UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index))->unknown36;
+	*state = UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index))->unknown36;
+	return state;
 }
 
 /* readies the weapon in a unit's hand (the second hand when it's dual
@@ -1717,7 +1719,7 @@ bool __stdcall function_e9500(long unit_index, s_unit_request *request)
 
 bool __stdcall function_10f430(long unit_index, long field_7c, long state_name, long weapon_name, long action_name,
 	real blend, bool flags, long mode);
-void function_edfa0(long unit_index, point2f const *facing);
+__declspec(noinline) void function_edfa0(long unit_index, point2f const *facing);
 void function_ba3d0(long unit_index);
 
 /* the request to play an animation impulse (type 25) */
@@ -2484,6 +2486,7 @@ bool __stdcall unit_action_vehicle_entry(long unit_index, s_unit_request *reques
 	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
 	s_unit_actions *actions = UNIT_ACTIONS_GET(unit);
 	s_unit_request_vehicle_entry *entry = (s_unit_request_vehicle_entry *)request;
+	bool result = false;
 	bool reset = false;
 
 	if (function_ea1f0(unit_index, entry->vehicle_index, entry->seat_index, entry->keep_animation, entry->type,
@@ -2492,13 +2495,15 @@ bool __stdcall unit_action_vehicle_entry(long unit_index, s_unit_request *reques
 		if (reset)
 		{
 			function_ea6b0(unit_index, entry->type);
-			return true;
 		}
-		actions->active[0] |= 0x10000000;
-		function_d1360(unit->parent_object_index, unit->seat_index, 0, 1);
-		return true;
+		else
+		{
+			actions->active[0] |= 0x10000000;
+			function_d1360(unit->parent_object_index, unit->seat_index, 0, 1);
+		}
+		result = true;
 	}
-	return false;
+	return result;
 }
 
 long function_10eef0(long object_index, bool alternate, bool no_request);
@@ -2506,7 +2511,7 @@ void function_d12b0(long vehicle_index, long seat_index, bool a, bool b);
 bool function_b9d20(long object_index);
 void __stdcall function_bef30(long object_index, long a, long b, long c, bool d);
 void function_b8b70(long object_index);
-short __stdcall function_cdeb0(long unit_index, long state_name, long a, long b);
+short __stdcall function_cdeb0(long unit_index, long state_name, short slot, short direction);
 bool __stdcall function_ee460(long unit_index, long state_name, long action_name);
 void function_e0070(long unit_index, long vehicle_index);
 void function_1bba70(long actor_index, long vehicle_index, long seat_index);
@@ -2931,12 +2936,9 @@ void __stdcall function_eb520(long unit_index, long type)
 	if (unit->unknown13c != NONE)
 		function_152140(unit->unknown13c);
 	function_eac90(unit_index, false, push);
-
-	s_unit_action_header *header = UNIT_ACTION_HEADER_GET(unit_index);
-
-	if ((1 << header->type) & 1)
+	if ((1 << UNIT_ACTION_HEADER_GET(unit_index)->type) & 1)
 	{
-		word *flags = (word *)((byte *)header->unit + 0x348);
+		word *flags = (word *)((byte *)UNIT_ACTION_UNIT_GET(unit_index) + 0x348);
 
 		*flags |= 0x40;
 	}
@@ -4346,9 +4348,7 @@ void function_edfa0(long unit_index, point2f const *facing)
 
 	if (unit->parent_object_index == NONE)
 	{
-		unit->forward.j = facing->y;
-		unit->forward.i = facing->x;
-		unit->forward.k = 0.0f;
+		vector3f_assign(&unit->forward, facing->x, facing->y, 0.0f);
 		unit->up = *g_4687b0;
 	}
 }
@@ -4611,10 +4611,14 @@ long function_1039a0(long object_index, long tag_index, long effect_index, real 
 short first_person_weapon_animation_ticks(long weapon_index, long animation_name, short type);
 bool function_1058b0(long weapon_index, long state, bool force);
 
-// @retail 0xfff40
 // score 70 (was 70): the first difference is inside the body of function_1058b0,
 // which is inlined here but lives in src/weapons.cpp, so the object lookup and
-// the tag table are read through different registers than retail
+// the tag table are read through different registers than retail. The 12 extra bytes are the
+// inlined 0xc9d00 (contributor code) loading and spilling the second hand's weapon index, which
+// retail's inlined copy drops: BLOCKED-BY 0xc9d00. Tried at the 0xc9d00 call in 0x1058b0: the
+// owner index in a local 70; result set first 70; a fresh weapon pointer 70; the two tests
+// swapped 73; here, the rest under the state change's result 70.
+// @retail 0xfff40
 void __stdcall function_fff40(long weapon_index, bool silent, bool immediate)
 {
     byte *object = *(byte **)(g_4e0300->data + (weapon_index & 0xffff) * 12 + 8);

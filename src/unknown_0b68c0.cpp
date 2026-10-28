@@ -273,6 +273,13 @@ void function_bf380();
 
 // score 78 (was 78): ours is ten bytes shorter: the mask is applied to a copy in ECX, retail clears
 // the high bits in place and masks it there.
+// score 78 (was 78): the only real differences are the inlined iterator's exits: retail gives the
+// scan-exhausted and found-index-NONE exits one epilogue copy and the negative-start and
+// start-past-high-water exits their own, ours shares the exhausted exit with the high-water one,
+// so its early jge is a short jump and the scan loop's head needs 10 bytes of padding, which VC
+// doesn't add (it aligns at 9 or fewer, as in 0xb7150 and 0xb6df0). Nested flag tests 78; one header
+// for both passes 78; the iterator declared at the top 78; a named object index 78; one combined
+// condition 78; the datum iterator helper isn't inlined here (89 instructions).
 // @retail 0xb6f10
 void function_b6f10()
 {

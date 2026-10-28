@@ -120,8 +120,8 @@ static inline s_actor_looking_view *actor_looking_get(long actor_index)
 // @retail 0x298b60
 bool function_298b60(long actor_index)
 {
-	s_actor_looking_view *actor = actor_looking_get(actor_index);
 	bool result = false;
+	s_actor_looking_view *actor = actor_looking_get(actor_index);
 	if (actor->aiming && actor->aiming_mode >= 2)
 	{
 		if (actor->aiming_direction_type == 2 ||
@@ -134,8 +134,8 @@ bool function_298b60(long actor_index)
 // @retail 0x298bc0
 bool function_298bc0(long actor_index)
 {
-	s_actor_looking_view *actor = actor_looking_get(actor_index);
 	bool result = false;
+	s_actor_looking_view *actor = actor_looking_get(actor_index);
 	if (actor->looking_mode == 0)
 	{
 		if (actor->alert_state >= 3)
@@ -380,8 +380,7 @@ PRIVATE bool function_2973f0(long actor_index, real *looking_cosine, real *aimin
 PRIVATE long function_297c10(long actor_index, bool alternate_range, bool extended)
 {
 	s_actor_looking_view *actor = actor_looking_get(actor_index);
-	s_game_time_globals *time = g_510c54;
-	long result = time->field_2_3 * 3;
+	long result = g_510c54->field_2_3 * 3;
 	s_actor_looking_properties *properties = function_1e5160(actor->character_definition_index);
 	if (properties)
 	{
@@ -417,7 +416,7 @@ PRIVATE long function_297c10(long actor_index, bool alternate_range, bool extend
 		/* Keep the sample and seconds-to-ticks product in x87 precision until
 		   retail's store to real immediately before integer rounding. */
 		real random = (real)random_next(&g_4e7408->unknown0) * (1.f / 65535.f);
-		real ticks = (lower + (upper - lower) * random) * time->field_2_3;
+		real ticks = (lower + (upper - lower) * random) * g_510c54->field_2_3;
 		long rounded;
 		__asm
 		{
@@ -762,6 +761,12 @@ real function_50650(real cosine);
 
 /* Name inferred from the yaw/pitch tests. Failure to decode or normalize
    leaves the direction accepted, as does the actor's bypass flag. */
+// score 4 (was 8): the cosine's first two products (retail j then i, each
+// direction * horizontal). Tried: yaw helper called (forward, horizontal) 6;
+// forward.k cleared before the horizontal copy 4; `dot3f(&direction, &horizontal)`
+// 6; `dot3f(&horizontal, &direction)` 0 (match) but it loses matched 0x73360
+// (a new inline function linked ahead of its file), BLOCKED-BY 0x73360; the
+// expression in dot3f's operand order 4.
 // @retail 0x297a50
 PRIVATE bool function_297a50(long actor_index, bool aiming, s_type_952051 *specification)
 {
@@ -774,8 +779,8 @@ PRIVATE bool function_297a50(long actor_index, bool aiming, s_type_952051 *speci
 	if (properties && function_2967b0(actor_index, specification, aiming, &direction, NULL, NULL))
 	{
 		vector3f forward = actor->forward;
-		vector3f horizontal = direction;
 		forward.k = 0.f;
+		vector3f horizontal = direction;
 		horizontal.k = 0.f;
 		if (function_30bf0(&horizontal) != 0.f && function_30bf0(&forward) != 0.f)
 		{
@@ -784,7 +789,7 @@ PRIVATE bool function_297a50(long actor_index, bool aiming, s_type_952051 *speci
 			real pitch = function_50650(cosine);
 			if (direction.k < 0.f)
 				pitch = 0.f - pitch;
-			real yaw = function_11cc90((vector2f *)&horizontal, (vector2f *)&forward);
+			real yaw = function_11cc90((vector2f *)&forward, (vector2f *)&horizontal);
 			if (aiming)
 			{
 				if (fabs(yaw) > properties->aiming_yaw + 0.01 || fabs(pitch) > properties->aiming_pitch + 0.01)

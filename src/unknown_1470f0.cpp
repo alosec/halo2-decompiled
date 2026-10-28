@@ -57,30 +57,57 @@ void *c_game_havok_memory::allocate(long size, long memory_class)
 
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
-// score 19 (was 19): retail tests the end of the block with >= and gives the second block its own
+// score 9 (was 9): first and third now share source dispatch, but retail's second uses edx for
+// retail tests the end of the block with >= and gives the second block its own
 // deallocate, ours shares the first and the second.
+// Y346 (not kept: a redundant '>= || ==' end test and a hand-merged dispatch for the first and third ranges): 9.
+// Inverse admission with separate range lifetimes 41/49/52/49/41/49/52, shared end 52; native range lifetimes
+// 31/9/31/9/31/9/31, shared end 31; each receiver global read once on its path 9/9/9.
+// first and third now share source dispatch, but retail's second uses edx for
+// its vtable and eax for bounds; ours uses eax for the vtable, so the third joins the second.
+// Third end addition and fallback argument order also differ.
+// Round 97: plain four-call chain 38; third in the inclusive end form of the first two 7 (not kept,
+// two points); four calls with inclusive first/third 29, all inclusive 29; shared dispatch with
+// inclusive second/third only 31.
+// Tried: third abstract/fixed-base dispatch 19/19; nested receivers 19; first/second/both inclusive
+// 18/28/27; shared receiver name 19 and with inclusive 27; allocation local 19; fallback
+// inline/noinline/consistent-inline declarations 19/19/19; inverted third 19; third predicate 19;
+// first/third shared dispatch 11 with concrete/same-local second 11/11 and inclusive 9;
+// early third 39 (132/121); late second 9; second predicate 9; dispatch flag 38 (109/121).
+// Round 221: void completion second/fallback/both 26/26/26; common 9;
+// second/common and all completions 9/9; fallback/common 9; entry null return with
+// all completions 26. Original dispatch graph restored.
+// Inclusive third with second receiver lifetime 7; eager second/first ends 9/32;
+// address-first second lower 8; scoped first/second range results 7/7; fallback result local 7;
+// entry/reversed receiver declarations 7/7; eager first receiver 7; named second/first upper
+// predicates 7/7; standalone third range 7.
 // @retail 0x147160
 void c_game_havok_memory::deallocate(void *address)
 {
 	if (address)
 	{
-		if (((long)((byte *)g_479898 + 0x4340) <= (long)address && ((long)((byte *)g_479898 + 0xf0340) > (long)address || (byte *)g_479898 + 0xf0340 == address)))
+		c_havok_abstract_allocator *allocator;
+		if (((long)((byte *)g_479898 + 0x4340) <= (long)address && ((long)((byte *)g_479898 + 0xf0340) >= (long)address || (byte *)g_479898 + 0xf0340 == address)))
 		{
 			_ReadWriteBarrier();
-			g_479898->deallocate(address);
+			allocator = g_479898;
 		}
-		else if (((long)((byte *)g_479894 + 0x30) <= (long)address && ((long)((byte *)g_479894 + 0x15030) > (long)address || (byte *)g_479894 + 0x15030 == address)))
+		else if (((long)((byte *)g_479894 + 0x30) <= (long)address && ((long)((byte *)g_479894 + 0x15030) >= (long)address || (byte *)g_479894 + 0x15030 == address)))
 		{
-			g_479894->deallocate(address);
+			allocator = g_479894;
+			allocator->deallocate(address);
+			return;
 		}
 		else if (ADDRESS_IN_BLOCK(address, g_47989c->m_buffer, (byte *)g_47989c->m_buffer + g_47989c->m_size))
 		{
-			g_47989c->deallocate(address);
+			allocator = g_47989c;
 		}
 		else
 		{
 			function_146e30()->deallocate(address);
+			return;
 		}
+		allocator->deallocate(address);
 	}
 }
 #pragma function(_ReadWriteBarrier)
@@ -110,6 +137,10 @@ void *c_game_havok_memory::allocate_aligned(long alignment, long size, long memo
 #pragma intrinsic(_ReadWriteBarrier)
 // score 19 (was 19): retail tests the end of the block with >= and gives the second block its own
 // deallocate, ours shares the first and the second.
+// Second return 19; first+second returns 19; address local 19; second concrete 19; second concrete
+// with third base 19; primary/second branch inversions 19/19; third-before-second 19; fallback local 19;
+// second predicate 19. First start/end 41; with second return/concrete/end/receiver 41/41/42/41;
+// inclusive tests and inclusive returns 42/42; first start/end without the barrier 41.
 // @retail 0x147240
 void c_game_havok_memory::deallocate_aligned(void *address)
 {

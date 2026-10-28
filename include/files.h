@@ -65,7 +65,7 @@ bool function_136bb0(s_type_acf665 *file);
 bool file_ref_seek(s_type_acf665 *file, dword position, bool silent);
 bool file_ref_truncate(s_type_acf665 *file, dword position);
 bool file_ref_read(s_type_acf665 *file, dword size, void *buffer, bool silent);
-bool function_136d00(s_type_acf665 *file, const void *buffer, dword size);
+bool function_136d00(s_type_acf665 *file, dword size, const void *buffer);
 bool file_ref_read_at(s_type_acf665 *file, dword position, dword size, bool silent, void *buffer);
 bool file_ref_write_at(s_type_acf665 *file, dword position, dword size, const void *buffer);
 bool file_ref_modified_time(s_type_acf665 *file, FILETIME *time);

@@ -155,15 +155,53 @@ static __forceinline real noise_curve_value(const s_noise_curve *curve, real inp
 	return result;
 }
 
-// score 638 (was 693): ESP realignment and mode convention still differ; native pair results improve length.
+// score 626 (was 626): frame 0x1490 versus aligned 0x1474; mode stack home versus CL remains.
+// Earlier 638 from 693: ESP realignment and mode convention still differ; native pair results improve length.
+// ESP realignment and mode convention still differ; native pair results improve length.
+// Frame 0x1490 versus aligned 0x1474 and stacked mode versus CL remain; reduced control differs.
+// ESP realignment and mode convention still differ; native pair results improve length.
 // Midpoint pair 718; first-phase pair 709; fused output walk 754; sample pointers 735; accumulated pair 702;
 // sample and midpoint pairs 693; all three pairs 661 (not kept: the running sum's pair is a one-use copy).
 // Independent pass indices 720; additive phase samples 638 kept; curve count-first 693;
 // delayed endpoint loads 691; conditional clamp 693. Entry alignment and stacked mode remain.
-// score 626 (was 638): computed interpolation pair kept; frame 0x1490 versus 0x1474, alignment/mode differ.
+// Earlier 626 from 638: computed interpolation pair kept; frame 0x1490 versus 0x1474, alignment/mode differ.
 // RNG workspace at entry 638; coefficient array at entry 638; real level 640;
 // output pair snapshot 623 (copy rejected); scalar horizontal lifetime 633;
 // interpolation pair with scalar horizontal 626/2384 (tie, restored).
+// DL134: sum/weight fills fast 682/682; both fills 631 full; shared phase/midpoint
+// samples 626/626 full; native delta/direct seed offset fast 680/681; all workspaces 631 full;
+// smaller-frame exponent input/full-mode-first 641/627 full. Shared samples reach frame
+// 0x1478 in the full image but tie; reduced gains do not qualify in the full image.
+// Earlier 626 from 638: computed interpolation pair kept; frame 0x1490 versus 0x1474, alignment/mode differ.
+// Direct phase masks 1..7: fast 622/634/620/653/608/611/662; native output
+// pointers all phases 651 (fast control 680). Both additive phases 691/2306 plain;
+// all phases 729/2260 plain. Original computed pairs and body restored.
+// computed interpolation pair kept; frame 0x1490 versus 0x1474, alignment/mode differ.
+// Reduced control 680: upper endpoint at use 701; both endpoint fields at use 686;
+// normalized result pair 704; aggregate computed pairs 680; computed accumulation pair 755.
+// All fast forms restored.
+// Immutable curve data pointer 702 fast; active-level body guard 683; ordinary level 702;
+// data/guard 685; data/ordinary 705; guard/ordinary 702; all three 705; named real falloff
+// 688 (reduced control 680). Original body and producer restored.
+// Round 127: native basis/output/both 680/680/680; shared displacement helper 694, with native
+// position setter 711; sum/weight/both alignments 680/680/680 (reduced control 680). All restored;
+// full frame 0x1490 and stacked mode remain.
+// Round 171 reduced control 680: short exponent 699; coefficient aggregate 680; symmetric weighted products
+// 691; short/aggregate 699; short/products 698; aggregate/products 691; all native boundaries 698; readonly
+// coefficients/native boundaries 698.
+// Round 174 reduced control 680: native curve reference 680; endpoints after saturation 681;
+// named remap span 680; reference/late 681; reference/span 680; late/span 681; all 681;
+// all with named scaled range 693. Original curve producer restored; full 626 baseline,
+// unaligned 0x1490 frame and stacked mode remain.
+// Stride, level seed, random state, seed offset, point count, level count, reciprocal count,
+// and random/level seed slot names 680 each (fast control 680); original names restored.
+// Round 78: BLOCKED-BY 0x508d0 (the only retail caller, a stub in a contributor range): the build's
+// stand-in is our only caller, and with it in the image LTCG neither realigns the frame nor passes the
+// flag in a register (the fast image, without the stand-in, realigns either way). Retail's order is
+// (seed, definition, draw, basis, amplitude, points) with the flag in CL, i.e. the flag declared last:
+// that reorder 625 plain; with `definition->exponent - 2 < 0 ? 0 : definition->exponent - 2` (retail's
+// add -2/xor/test/setl sequence exactly) 632 plain; ternary/else-first/read-first exponent forms 687/687/673
+// fast. The flag stays a stack load into AL in every form.
 // @retail 0x516d0
 long __stdcall function_516d0(bool reduced, dword seed,
 	const s_noise_draw_definition *definition, const s_random_draw *draw,

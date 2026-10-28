@@ -24,10 +24,7 @@ struct s_timed_effect_globals
 	real unknown44;
 	real unknown48;
 	real unknown4c;
-	real unknown50;
-	real unknown54;
-	real unknown58;
-	real unknown5c;
+	real unknown50[4];
 	real unknown60[4][3];
 	real unknown90;
 	real unknown94;
@@ -71,10 +68,7 @@ struct s_timed_effect_globals
 	real unknown124;
 	real unknown128;
 	real unknown12c[4][3];
-	byte unknown15c;
-	byte unknown15d;
-	byte unknown15e;
-	byte unknown15f;
+	byte unknown15c[4];
 	real unknown160;
 	real unknown164;
 	real unknown168;

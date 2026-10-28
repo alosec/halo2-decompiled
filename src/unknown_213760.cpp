@@ -88,13 +88,28 @@ long function_213760(dword location, long size, void *buffer, dword *bytes_read,
 void map_file_path_get(char const *map_name, char *path);
 bool cache_header_verify(s_cache_header const *header);
 
+// score 4 (was 4): Frame agrees; the file path address reuses EBX instead of being formed again from ESP.
+// Tried result addressability 4; read count first 4; read count outer 4; result after path 70; result after
+// open 72; test derived result 44; nested read tests 4; invalid handle exit 33.
+// post-normalization path address reuses EBX; retail forms it again.
+// Fast: empty path value 82; normalizer-owned path 54; initialized read count 33;
+// success before read 16; result in each outcome 60; immutable handle 4;
+// file-path observation 4; native read result 4.
+// Post-call path address still reuses EBX. Library empty string/buffer address/both fast 4/4/4;
+// verification result 38; staged read/transfer results 25/36; verification-failure exit 26;
+// native transfer result with verification assignment 38; all new scores reduced.
+// Path helper inline, noinline and both 4/4/4; scoped path value 4; open sequencing 4;
+// open-condition assignment 4; handle before the call and before the path 4/4;
+// header-first parameters 4; without the result address-take 4 (identical code, dropped);
+// header-size transfer counts 4; scoped handle 4; result as the read condition 44;
+// this body ahead of the path helper in the helper's file 4; inline printf helper 4.
+// Every retail caller of 0x214db0 forms its ebx argument again after the call.
 // @retail 0x213800
 bool function_213800(char const *map_name, s_cache_header *header)
 {
 	char path[256];
 	path[0] = 0;
 	bool result = false;
-	(void)&result;
 	map_file_path_get(map_name, path);
 	HANDLE file = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (file != INVALID_HANDLE_VALUE)
@@ -1157,6 +1172,89 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
     data[0x1bc] = 0;
 }
 
+// score 104 (was 104): frame 0x1144 and extent agree; file displacement, request-copy, the first read
+// call's handle copy and the write-success join remain.
+// frame 0x1144 and extent agree; file displacement (retail's product in ECX
+// and `lea ebp`), the task zeroing/path/counter registers, the first read call's handle copy, the
+// write-success join and retail's 1 held in ESI for two unmerged slot-range compares remain.
+// Earlier: frame 0x1144 agrees; displacement, request-copy and by-value I/O setup remain.
+// Frame 0x1144 and length agree; file-displacement, task-copy and by-value I/O setup remain.
+// frame 0x1144 agrees; displacement, request-copy and by-value I/O setup remain.
+// Frame 0x1144 and length agree; file displacement and request/I-O setup differ.
+// task-copy scheduling and by-value I/O setup differ. Unsigned slot 172;
+// completion scope 172; output scopes 172; slot equality 393;
+// equal-size arm first 209.
+// Frame 0x1144 agrees; file/task scheduling and by-value I/O argument setup still differ.
+// Constructed write/read/both headers 172/172/172; zero request initializer 192; role names 172; shared acquired handle 188.
+// Early validity result 172; validity-byte aggregate 262; persistent path/request/completion 172;
+// output-handle pointer first 177; reversed invalidation cases 172.
+// Native pointer addition 172; native file cursor 250; outer expected-size carrier 172;
+// completed-write result in both arms 172; reversed header string stores 172.
+// Direct write count 171; late expected-size query 288; signed-word ordinal 257;
+// validity from handle/header tests 165 kept; nested failed-write close 172.
+// Combined header predicates 189; valid-file continue 165; earlier size lookup 225;
+// task-before-path declaration 165; combined header guard 165.
+// Handle-success/handle-failure result arms 159/159; entry-scope carried validity 165; handle-success
+// plus failed-write result 159; request lifetime through submission only 165.
+// Handle-result arms 159 rejected as a branch flag.
+// Ordinary slot while 165; unsigned slot while 165; request clear before path 202; long/byte validity 210/165.
+// Byte six-slot ordinal 254; long remove-later state 201; post-cleanup remove-later initialization 168; path/request scope through open wait 165; request path between sharing and disposition 167.
+// Round 111: Redundant request zeros omitted 225; shared handle-field pointer 165; iteration-scope write/read headers 165/165; request path after access fields 169.
+// Existing open API, file-element reference, both 165/165/165; open API with
+// constructed write/read/both headers 165/165/165; handle-field pointer 165;
+// native file and both headers 165. Shared API emits the same request code.
+// Round 122: Indexed request output 179; indexed by-value handles 179; chained request zeros 170;
+// unsigned channel ordinal 165; buffering flags before sharing 168.
+// Common completion at all/open/size/update waits 165 each; named constant write options 112
+// rejected; initialized size output 207; cleanup-state byte 165; options with common wait 112
+// rejected.
+// Indexed handle/metadata/both 179/224/224; indexed invalidation 189;
+// indexed handle/invalidation 189, metadata/invalidation 199, all fields 281;
+// one shared header workspace 256. Indexed handle first differs at +0x13f.
+// File after size lookup 205; entry file lifetime/immutable file cursor 165/165;
+// valid-type byte domain 165; word slot 257; chained validity fill 262;
+// timestamp eligibility guard/write workspace end 165/165. Original body restored.
+// Split file-base/element advance 165; file pointer name 165; wait/header/both forceinline 165/165/165;
+// empty path 205; initialized write count 204; initialized resize result 215. File-displacement and
+// request/I-O setup remain.
+// Explicit native write-options construction 112 (kept); complete task value 227; all output lifetimes 165; options/task 218, options/outputs 112, task/outputs 227, all three 218; complete data-member memset 165.
+// Native output handle/by-value handles/both/header/output plus header/values plus header/all views
+// 165/165/165/165/165/165/165; all views with initialized completion 224. Opening body restored.
+// Round 124: Sole native file cursor with array ordinal 262; zero-member initialization phase 171;
+// entry-scope header pair 165; header/path/task entry workspaces 165; signed-byte slot 254.
+// Every request, header initialization, wait, validity assignment and I/O tuple restored.
+// Round 181 complementary invalidity/write failure/cleanup-once 196/112/115; invalidity-write/invalidity-cleanup/write-cleanup/all 196/199/115/199; byte invalidity 196 (fast); all restored. Frame 0x1144 agrees; file displacement, request-copy and validity joins remain.
+// Round 183 request output address with path first / after access metadata / after access rights /
+// before buffering 117/116/116/114; separate reused slot long/dword/short/word
+// 112/112/286/286 (fast). All restored; file displacement, task copy and validity joins remain.
+// Round 185 resize-derived write success bool/byte/short/long 112/112/203/185; complementary
+// failure 200/200/205/205 (fast). All restored; displacement, request copy and validity joins
+// remain.
+// Round 187 direct-options context: indexed output/values/both 180/180/180; indexed metadata
+// alone/output/values/both 198/198/198/198; native four-use acquired handle 211 (fast).
+// All restored; temporary displacement ECX and request/completion/I-O scheduling remain.
+// Round 135: a dependency whose type is no longer valid clears the result (retail loads the
+// type byte into AL as the result) 154 as `&&`, 110 as a separate test (kept); false validity
+// guarded by the handle test 104 (kept, plain); with the write success set by its own test
+// 166 (914 bytes; aligned 54: the joins match but the first read call copies the handle and
+// loop padding shifts); handle as an s_file_handle member 104; on the kept form: completion flag
+// declared first 104; size limit before the path 249; file pointer after the path 106;
+// validity declared at the loop top 104.
+// Round 187 actual handle-field reference at request/value/test groups, every nonempty
+// combination 104 each; full reference with immutable size limit 104. All restored.
+// Round 93: write success set by its own test 166 (914 bytes: every join matches; what is left is
+// retail's 1 held in ESI for two unmerged slot-range compares and the later slot test, and the
+// handle copy at the close call instead of the size query); that with the range test joined to
+// the validity test 166, with the handle declared s_file_handle 166; nested close test 104; long
+// expected size 104. A one-case switch 413; bounds from a const table or a type-to-slot switch
+// fold early and merge the compares (166).
+// Round 95: the inner slot test as `index != cache_file_slot_from_type(1) && index !=
+// cache_file_slot_from_type(2)` 104 (inlined and folded, identical code); the file pointer as
+// `g_557c90 + index` 104; the range joined to the validity test 104; the inner validity and slot
+// tests nested 104. Diagnostic: the range taken from a struct returned by value from an inline
+// type-to-range switch keeps the two compares apart (against ECX/EDX copies of 1, index in ESI),
+// with the write success set by its own test 161 (918 bytes); plain locals, enums, a local struct,
+// const tables and one-entry table loops all fold to one compare.
 // @retail 0x213970
 void function_213970(void)
 {
@@ -1204,7 +1302,7 @@ void function_213970(void)
                     s_cache_header empty_header;
                     cache_header_initialize_strings(&empty_header);
                     dword bytes_written;
-                    function_1a1050(*(s_file_handle *)&file->handle, &empty_header, 0x800, 0, 0, 0, 6, &bytes_written, &done);
+                    function_1a1050(*(s_file_handle *)&file->handle, &empty_header, 0x800, 0, s_file_write_flags(0), 0, 6, &bytes_written, &done);
                     cache_wait_for_completion(&done);
                     written = bytes_written == 0x800;
                 }
@@ -1215,25 +1313,30 @@ void function_213970(void)
                     file->handle = INVALID_HANDLE_VALUE;
                 }
             }
-            else if (cache_file_header_read(index))
+            else
             {
-                valid = true;
-                if (index >= 1 && index <= 1)
+                valid = cache_file_header_read(index);
+                if (valid)
                 {
-                    s_cache_header header;
-                    cache_header_initialize_strings(&header);
-                    valid = function_213800((char const *)file + 0x24, &header);
-                    if (valid)
-                        valid = *(long *)((byte *)file + 0x148) == *(long *)((byte *)&header + 0x144);
-                    if (valid && index != 0 && index != 1)
+                    if (index >= 1 && index <= 1)
                     {
-                        for (long type = 0; type < 3; type++)
+                        s_cache_header header;
+                        cache_header_initialize_strings(&header);
+                        valid = function_213800((char const *)file + 0x24, &header);
+                        if (valid)
+                            valid = *(long *)((byte *)file + 0x148) == *(long *)((byte *)&header + 0x144);
+                        if (valid && index != 0 && index != 1)
                         {
-                            if (*((byte *)file + 0x178 + type) && valid_types[type])
+                            for (long type = 0; type < 3; type++)
                             {
-                                FILETIME const *current = (FILETIME const *)((byte *)cache_file_from_type(type) + 0x17c);
-                                FILETIME const *stored = (FILETIME const *)((byte *)file + 0x184 + type * 8);
-                                valid = CompareFileTime(current, stored) == 0;
+                                if (*((byte *)file + 0x178 + type))
+                                {
+                                    FILETIME const *current = (FILETIME const *)((byte *)cache_file_from_type(type) + 0x17c);
+                                    FILETIME const *stored = (FILETIME const *)((byte *)file + 0x184 + type * 8);
+                                    valid = valid_types[type];
+                                    if (valid)
+                                        valid = CompareFileTime(current, stored) == 0;
+                                }
                             }
                         }
                     }

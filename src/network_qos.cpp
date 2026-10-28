@@ -224,7 +224,7 @@ long qos_target_status(long handle, long index)
 
 /* copies a contacted target's measurements and the data it returned */
 // @retail 0x7b7b0
-bool qos_target_result(long handle, s_qos_result *result, long index)
+bool qos_target_result(long handle, long index, s_qos_result *result)
 {
 	bool success = false;
 

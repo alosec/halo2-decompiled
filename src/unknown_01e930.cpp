@@ -239,6 +239,10 @@ void function_155ed0(void)
 	}
 }
 
+// score 53 (was 53): capacity/mask homes and aligned-exit reloads still differ;
+// remaining-first expression 53; shared completion 75; named padding 53;
+// named mask 53; shared completion and mask 75; recomputed start 47;
+// named allocation extent 53; remaining extent with shared completion 86.
 // @retail 0x156620
 void *__stdcall function_156620(long size, long alignment)
 {
@@ -316,6 +320,11 @@ void __stdcall function_156810(void *block)
 	bink_update_memory_available();
 }
 
+// score 32 (was 47): SSE arithmetic, entry scheduling and conversion homes still differ;
+// split products 32; branch result 42; branch result and split products 39;
+// explicit division bound 47; frame fields at each use 44; total-time numerator 47;
+// null exit 32; conversion local names 39; null exit and split products 39;
+// split products with result first 32; named seconds and ticks 32.
 // @retail 0x1564e0
 long bink_playback_ticks_remaining(void)
 {
@@ -328,12 +337,14 @@ long bink_playback_ticks_remaining(void)
 		dword remaining = frames - movie->frame_number;
 		dword milliseconds = movie->frame_rate_divisor * frames * 1000 / movie->frame_rate;
 		real seconds;
+		real ticks;
 
 		milliseconds = milliseconds * remaining / (frames > 1 ? frames : 1);
-		seconds = (long)milliseconds * 0.001f * 30.0f;
+		seconds = (long)milliseconds * 0.001f;
+		ticks = seconds * 30.0f;
 		__asm
 		{
-			fld seconds
+			fld ticks
 			fistp result
 		}
 		result = result > 0 ? result : 0;
@@ -359,6 +370,9 @@ bool function_156ab0(void)
 }
 
 /* the Bink sound callback: a track's volume */
+// score 19 (was 19): retail uses a float stack slot with SSE stores and an x87 return;
+// conditional float 19; early returns 19; double result 19; double conditional 19;
+// SSE zero store 30; selected store 38; both stores 43; native SSE result 35; SSE code-generation diagnostic 0 (restored).
 // @retail 0x156b30
 real __stdcall function_156b30(long track, long type)
 {

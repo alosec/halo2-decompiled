@@ -295,6 +295,8 @@ void c_juggernaut_engine::v15(long player_index)
 // juggernaut_is((short)absolute_index) or with no cast (8: mask first, but `mov cl, bl` and
 // ebx/esi swapped), the shift by (word)absolute_index or (short)absolute_index (8), by
 // (word)player_index or juggernaut_is((word)player_index) (5, same code as now).
+// Split mask with absolute membership 8; unsigned count 8; wide removal predicate 8;
+// predicate homes 8; early flags 15; flags reference 8; conditional for 8; early outer exit 8.
 // @retail 0x192530
 void c_juggernaut_engine::v18()
 {

@@ -581,6 +581,11 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
  return inverse;
 }
 
+// score 132 (was 132): 1.0 sits in xmm4 (retail xmm3) through the body; retail keeps the jitter bits in eax
+// (tests al/ah) and tests the on/off bits 1, 2, 4 before the sign bits 8, 16, 32, spilling the z on/off factor and
+// y to the limits' spill slots. Plain bits 170; on/off first with `*=` 233, with the factor on the left 233 (both
+// 1020 bytes; aligned difference 129 against this body's 154); on/off first in a jitter vector 163 (1048 bytes,
+// aligned 110, closest), its products added straight into the velocity 239.
 // @retail 0x1e6360
 void function_1e6360(s_biped_physics_output *output, real rate, long object_index, real blend)
 {
@@ -696,7 +701,11 @@ PRIVATE inline real initial_dot(const vector3f *a, const vector3f *b)
  return a->k * b->k + a->j * b->j + a->i * b->i;
 }
 
-// score 155 (was 155): movement/rotation homes and cross/result lifetimes still differ.
+// score 155 (was 155): Frame 0x18 agrees; sampled-vector slot and rotation/output scheduling remain.
+// movement/rotation homes and cross/result lifetimes still differ.
+// Frame 0x18 agrees; sampled movement/rotation homes and SSE/output scheduling still differ.
+// Frame 0x18 agrees; sampled-vector homes and x87/SSE rotation scheduling remain.
+// Earlier: movement/rotation homes and cross/result lifetimes still differ.
 // early side products 249f; single turn cross 249f.
 // rotation cross as old 155f; rotation cross as new 153f.
 // one rotation cross for both 245f; saved forward reads 220f.
@@ -708,12 +717,57 @@ PRIVATE inline real initial_dot(const vector3f *a, const vector3f *b)
 // Existing velocity scale 185; scale from field 186; first dot products commuted 155;
 // side projection values 166; rotated alignment value 166; axis field reference 155;
 // output record reference 155; scale plus dot flow 185. Opening body retained.
+// movement/rotation homes and scalar scheduling remain;
+// i/j/k/all cosine terms 168/177/192/208;
+// i/j/k/all axis projection terms 186/168/168/218. Opening body retained.
 // Complementary cosine 166; guarded early alignment 205; early moved-away result 231;
 // completed side product 169; complement with early result 231; indexed velocity scale 220;
 // actual animation reference 155; actual forward-field reference 248. Movement/rotation homes remain.
-// score 155 (was 155): sampled-vector slot and rotation/exit schedule still differ.
+// sampled-vector slot and rotation/exit schedule still differ.
 // Cross before projection 201; late axis 185; split axis projection 166; goal snapshot 247;
 // direct selection tests 204; turn-first guard 156; scalar final writes 192; library copies 155.
+// sampled-vector slot and scalar/rotation/output scheduling remain.
+// Native cross/rotation/both coordinate initializers; immutable original, cross,
+// rotation, both computed vectors and all three vector values
+// Fast scores 155/155/155/155/155/155/155/155; original body retained.
+// Round 361: complete/row-local additive sums 174/174; complete/row-local compound rows 218/185;
+// aggregate additive construction 174; complete/row-local additive and weighted parts 185/185;
+// additive vector plus plain subtraction loop 204 (fast). Complete opening body restored.
+// Cross before/between trigonometric values 202/200; direct axis fields 247; immutable rotation scalars 155; native scaled velocity 214; with early cross 238; early/mid cross plus direct axis 261/236.
+// Projection through private dot / uniform private sums / uniform shared dot / shared turn
+// dot 185/185/185/155; those four with all three shared crosses 185/185/185/157. All restored.
+// All-row cosine/axis/sine multiplicand orders, seven nonempty combinations, 155 each; rate-first
+// rotation product 155. Existing private dot/cross/both force-inline declarations 155/155/155,
+// without replacing the rotation cross. Original products, helpers and declarations retained.
+// double scale 237; double scale helper 223; movement inline 155; movement noinline 155; movement inline
+// noinline 155; inline double helper 223; noinline double helper 223; inline noinline double helper 223.
+// Round 330: Native rotation 155; paired double trig 281; rotation plus trig 281; double projection 276;
+// rotation/projection 276; trig/projection 281; all native precision 281; native output velocity sampling
+// 246. Exact-match-only forms restored.
+// Native float scale to output/in-place/returned output 186/206/248;
+// the same three with sample scope 186/206/248; uniform axis value with direct/in-place scale
+// 266/288. Direct native scale reaches retail length but regresses; original sampled scaling retained.
+// Round 332: Sample-angle, turn-angle and paired trig scalar home names, each
+// and every combination, 155; all with projected-axis scalar home 155. All restored.
+// Round 150: Existing cross producer first/second value inputs and returned output, seven combinations 305/307/379/273/234/228/261; both input references 155. All restored.
+// Sampled-vector slot and rotation/output allocation remain.
+// Native rotation producer with value/reference/pointer direction and pointer/reference axis,
+// output forms 220/220/220/220; returned vector forms 258/256/256/258. All restored.
+// Round 220: Five/all input flag packing 382/387; five/all flags from native ordered tests
+// into a real result word 368/398; corresponding conditional result words 391/374;
+// complete result at entry with either role name 398/398. Earlier initialization now differs;
+// original field-by-field flag production, sampled vectors and all rotation expressions restored.
+// Round 199: Canonical turn-result byte/short/long 155/161/159; side-test outputs and
+// result declared before sampling, bool/byte/short/long 155/155/161/159; all vector
+// workspaces declared before sampling with distinct side-output names 155.
+// Round 201: Shared sample/rotation-cross workspace 201; with original-side/rotated-side/sequential
+// side reuse 207/199/246; the same four with existing rotation-cross helper 201/207/199/246. Original
+// workspaces restored.
+// Round 227: Original fields at use, compound projection/cross, their pairs/all,
+// direct fields plus compound projection and existing cross helper 202/171/185/200/204/153/195/262. Restored.
+// Complete rotation rows jki/jik/kij/kji/ikj 204/202/204/206/167;
+// complete rotation and cross rows jki/kij/kji 206/200/203. All restored;
+// sampled-vector slot and rotation/output scheduling remain.
 // @retail 0x1e5bb0
 void function_1e5bb0(s_biped_physics_output *output, void *physics, void *animation_state, real speed_scale,
  long component_index, long object_index, void const *definition, long value, bool b, bool turning,

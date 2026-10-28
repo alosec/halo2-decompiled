@@ -6,6 +6,7 @@
 #include "unknown_1e3920.h"
 #include "unknown_2551c0.h"
 #include "object_markers.h"
+#include "effects.h"
 
 /* the actor's props as targets */
 
@@ -14,7 +15,7 @@ void *function_1e5280(long actor_index, long key);
 bool function_25d970(s_prop_datum *datum);
 
 bool weapon_barrel_aim(long weapon_index, short barrel_index, point3f const *origin, point3f const *target,
-	real const *unknown3, bool unknown5, vector3f *direction, real *time, real *speed_out, real *distance, bool *linear);
+	real const *unknown3, bool unknown5, vector3f *direction, real *time, real *distance, real *speed_out, bool *linear);
 
 struct s_weapon_aim_ranges
 {
@@ -25,9 +26,28 @@ struct s_weapon_aim_ranges
 	real maximum_fraction;
 };
 
-// score 139 (was 139): frame agrees; actor/tag EDI/ESI homes and folded projectile flag test differ.
-// Full-scope fraction 153; native fraction predicate 138; adjusted point construction 140;
-// inline depth zero 195; native barrel ordinal 186.
+/* a weapon barrel definition (0xec bytes), as the aiming code reads it */
+struct s_barrel_aim_view
+{
+	byte unknown00[0x90];
+	long projectile_index;
+	byte unknown94[0xec - 0x94];
+};
+
+/* a projectile definition, as the aiming code reads it */
+struct s_projectile_aim_view
+{
+	byte unknown00[0xbc];
+	dword flag0 : 1;
+	dword flag1 : 1;
+	dword unknownbc : 30;
+	byte unknownc0[0x164 - 0xc0];
+	real unknown164;
+};
+
+/* aims the weapon's barrel at the target for the actor: for a projectile barrel at a fraction
+   of the actor's ranges by distance, otherwise (with no actor field 0x26c) from the actor's
+   position at the origin's height */
 // @retail 0x1ffbd0
 bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 	point3f const *origin, point3f const *target, bool flag, vector3f *direction,
@@ -38,18 +58,16 @@ bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 	bool result = false;
 	if (ranges)
 	{
-		byte *definition = g_4e3b44[definition_index & 0xffff].bytes;
 		real fraction = 0.0f;
 		bool use_fraction = false;
+		byte *definition = g_4e3b44[definition_index & 0xffff].bytes;
 		if (barrel_index >= 0 && barrel_index < *(long *)(definition + 0x2d0))
 		{
-			byte *barrel = *(byte **)(definition + 0x2d4) + barrel_index * 0xec;
-			long projectile_index = *(long *)(barrel + 0x90);
+			s_barrel_aim_view *barrel = &(*(s_barrel_aim_view **)(definition + 0x2d4))[barrel_index];
 			s_actor_view *actor = actor_get(actor_index);
-			byte *projectile;
-			if (projectile_index != NONE &&
-				((*(long *)((projectile = g_4e3b44[projectile_index & 0xffff].bytes) + 0xbc) >> 1) & 1) &&
-				*(real *)(projectile + 0x164) > 0.0f)
+			if (barrel->projectile_index != NONE &&
+				TEST_FIELD_BIT(TAG_GET(s_projectile_aim_view, barrel->projectile_index)->flag1) &&
+				TAG_GET(s_projectile_aim_view, barrel->projectile_index)->unknown164 > 0.0f)
 			{
 				real distance = distance3d(origin, target);
 				real upper = 1.0f - (0.0f > ranges->maximum_fraction ? 0.0f : ranges->maximum_fraction > 1.0f ? 1.0f : ranges->maximum_fraction);
@@ -68,10 +86,10 @@ bool function_1ffbd0(long actor_index, long weapon_index, short barrel_index,
 				point3f adjusted_origin = actor->position;
 				adjusted_origin.z = origin->z;
 				return weapon_barrel_aim(weapon_index, barrel_index, &adjusted_origin, target, NULL, flag,
-					direction, (real *)unknown1, (real *)unknown0, (real *)unknown2, (bool *)unknown3);
+					direction, (real *)unknown0, (real *)unknown1, (real *)unknown2, (bool *)unknown3);
 			}
 			result = weapon_barrel_aim(weapon_index, barrel_index, origin, target, use_fraction ? &fraction : NULL, flag,
-				direction, (real *)unknown1, (real *)unknown0, (real *)unknown2, (bool *)unknown3);
+				direction, (real *)unknown0, (real *)unknown1, (real *)unknown2, (bool *)unknown3);
 		}
 	}
 	return result;
@@ -492,18 +510,63 @@ void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
+// score 130 (was 130): Frame 0x20 agrees; magnitude/zero residency, rotation schedule and final publication remain.
 
-// score 136 (was 153): horizontal homes and initial copy registers recovered; planar/turn schedules and
+// score 130 (was 130): retail tests the planar length after the scale products with the zero in
+// xmm0 and does not carry that zero into the inlined rotation (memory 0.0 for i, a fresh xorps for
+// j/k); ours zeroes xmm6 before the divide and keeps it through the rotation, whose loads, dot order
+// and registers then differ. Retail stores the velocity directly (speed * each component): with
+// direct stores the tail matches but the body is 828 bytes (the middle is four instructions short).
+// Tried: planar scale loop 153; direction branch update 204; horizontal native copy 142; rotation
+// native copy 153; real signed sine 170; horizontal shared facing base 195; horizontal facing rotation
+// copy 195; horizontal native vector copy 142; horizontal rotation copy 142; direct products 173;
+// native side predicate 152; nested guards 153; entry magnitude 153; both planar normalizations
+// inline 153; with the native horizontal copy, direct final products 154; shared direct scale 154;
+// depth one 142; size policy 366; shared output-vector scale 142; native turn side 145; length in
+// predicate 142; adjustment test result 142; direct side expression 142; turn-test result 139;
+// original direction object 185; shared output in place 206; native output in place 206; facing
+// object reference 153; turn completion copy 142; output memcpy 142; named turn length 139; result
+// declared first 142; native motion view 142; read-only actor 142; both completion copies 142; word
+// side 146; named length with word side 143, direct output 146, shared scale 146; forced rotation
+// declaration 142; inline declaration 142; planar facing snapshot 220; named dot 142; named
+// determinant 142; combined planar result lifetimes 142; planar scale operand order 142; planar
+// completion copy 146; native turn initializer 152; turn before side 136; initialized turn before
+// side 151; output product input order 142; shared double output 137; shared double direct output
+// 167; horizontal copy observation 144; native input observations 154; existing length inline 142;
+// earlier turn length result 136; earlier turn product input order 136; earlier turn shared result
+// scale 136; earlier turn shared direct scale 160; combined memmove 191; immutable real results 136;
+// byte turn truth 136; horizontal memmove 184; turn memmove 168; output memmove 140; external speed
+// binding 147; external side components 136; native planar initializer 161; early turn memcpy 136;
+// completed output memcpy 136; Y/X horizontal initialization 161; factor entry lifetime 136; native
+// output loop 137; turn input before normalization 171; turn workspace at entry 136; output after
+// target update 136; normalization failure first 131; Y/X input with output loop 157; native
+// horizontal on early turn copy 136; axis reference/snapshot 152/190; native horizontal with either
+// axis form 152/190; vertical input 171, with native horizontal 171, with axis snapshot 214; direct
+// planar commit 182; planar memcpy 152; original horizontal fallback 162; fallback plus planar copy
+// 157; native turn plus fallback 162; normalized point 237; both points 253; normalized point plus
+// direct commit 166; named normalized x/y 130 (kept); y declared first 136; named dot 130; direct
+// output stores 147 (828 bytes); side before the turned copy 136 (862 bytes); sine as a ternary of
+// constants 149. Round 71 (all with direct output stores): inline sine with the side bool declared
+// before the turned copy 140 (838 bytes); side bool from an if/else 147; vector2f horizontal 147;
+// turned declared at the block top 147; no named x/y 160. Screens: speed read at each use or the
+// k copy moved before the second normalization shorten the body to 765-788 bytes. Fast checks build
+// this one differently unless 0x1ecf50 and 0x2b400 are checked with it.
+// frame 0x20 agrees; magnitude/zero, facing and rotation/output schedules remain.
+// Earlier: horizontal homes and initial copy registers recovered; planar/turn schedules and
+// horizontal homes and initial copy registers recovered; planar/turn schedules and
+// Earlier 136 (was 153): horizontal homes and initial copy registers recovered; planar/turn schedules and
 // output length still differ; tried planar scale loop 153; direction branch update 204; horizontal native
 // copy 142; rotation native copy 153; real signed sine 170; horizontal shared facing base 195; horizontal
 // facing rotation copy 195; horizontal native vector copy 142; horizontal rotation copy 142.
 // direction-copy registers and planar stack homes differ.
 // Direct products 173; native side predicate 152; nested guards 153;
 // entry magnitude 153; both planar normalizations inline 153.
-// score 142 (was 142): with the native horizontal copy, direct final products 154;
+// Earlier: with the native horizontal copy, direct final products 154;
 // shared direct scale 154; depth one 142; size policy 366; shared output-vector
 // scale 142; native turn side 145. Planar copy/rotation scheduling still differs.
-// score 142 (was 142): horizontal/rotation and final output scheduling still differ.
+// Earlier: horizontal/rotation and final output scheduling still differ.
+// Earlier 142 (was 142): with the native horizontal copy, direct final products 154;
+// Earlier 142 (was 142): horizontal/rotation and final output scheduling still differ.
 // Length in predicate 142; adjustment test result 142; direct side expression 142;
 // turn-test result 139; original direction object 185; shared output in place 206;
 // native output in place 206; facing object reference 153.
@@ -512,7 +575,8 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // read-only actor 142; both completion copies 142; word side 146;
 // named length with word side 143, direct output 146, shared scale 146.
 // Horizontal product/rotation schedules and output length remain.
-// score 136 (was 142): Frame 0x20 agrees; horizontal copies, square products, rotation schedule
+// Earlier: Frame 0x20 agrees; horizontal copies, square products, rotation schedule
+// Earlier 136 (was 142): Frame 0x20 agrees; horizontal copies, square products, rotation schedule
 // and output length still differ. Forced rotation declaration 142; inline declaration 142; planar
 // facing snapshot 220; named dot 142; named determinant 142; combined planar result lifetimes 142;
 // planar scale operand order 142; planar completion copy 146.
@@ -522,13 +586,40 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // 167; horizontal copy observation 144; native input observations 154; existing length
 // inline 142; earlier turn length result 136; earlier turn product input order 136; earlier
 // turn shared result scale 136; earlier turn shared direct scale 160.
-// score 136 (was 136): horizontal square/copy order, rotation schedule and output length remain.
+// Earlier: Horizontal square/copy order, rotation and output scheduling remain. combined memmove 191; immutable real
+// Earlier 136 (was 136): Horizontal square/copy order, rotation and output scheduling remain. combined memmove 191; immutable real
+// results 136; byte turn truth 136; horizontal memmove 184; turn memmove 168; output memmove 140; external
+// speed binding 147; external side components 136; native planar initializer 161; early turn memcpy 136;
+// completed output memcpy 136.
+// Horizontal store/square, rotation and final publication schedules still differ.
+// Y/X horizontal initialization 161f; factor entry lifetime 136f; native output loop 137f; turn
+// input before normalization 171f; turn workspace at entry 136f; output after target update 136f;
+// normalization failure first 131p; Y/X input with output loop 157f.
+// Failure-first branch worsens aligned instruction order; original branch retained.
+// horizontal square/copy order, rotation schedule and output length remain.
 // Native horizontal on early turn copy 136; axis reference/snapshot 152/190;
 // native horizontal with either axis form 152/190; vertical input 171, with native horizontal 171, with axis snapshot 214.
-// score 136 (was 136): horizontal square/copy order, rotation and output scheduling remain;
+// Earlier: horizontal square/copy order, rotation and output scheduling remain;
 // direct planar commit 182; planar memcpy 152; original horizontal fallback 162; fallback plus
 // planar copy 157; native turn plus fallback 162; normalized point 237; both points 253;
 // normalized point plus direct commit 166.
+// Earlier: the normalized planar components read into named x/y (used by both tests)
+// Earlier 136 (was 136): horizontal square/copy order, rotation and output scheduling remain;
+// Earlier 130 (was 136): the normalized planar components read into named x/y (used by both tests)
+// give retail's square order in the planar normalization. Still differs: retail multiplies the
+// facing components as registers (`movss reg, [field]; mulss reg, y`) and tests the length after
+// the scale products with 0.0 in xmm0; the inlined rotation's loads and registers; the output.
+// y declared first 136; named dot 130; direct output stores 147 (828 bytes); side before the
+// turned copy 136 (862 bytes); sine as a ternary of constants 149. Fast checks build this one
+// differently (rotation helper left out of the reduced image): use plain checks.
+// Normalized scalar declaration priority 130; immutable normalized pair 130; planar pair names 130;
+// length/pair names 130; second length in normalized-pair context 131; named integer sign 130;
+// declaration priority plus planar names 130; sine result arms 149.
+// Round 148: Complete helper-context preview agrees at 130. Complete planar facing capture 177; both
+// dot/determinant product pairs 141; both input/product forms 177; facing/magnitude/side/all zero-first
+// comparisons 130/130/130/130; native output copy then component scales 145. Magnitude/zero, facing, rotation
+// and output schedules remain.
+// Round 317: Guard-scoped normalized scalars 130; native planar input 130; both 130; all speed-field reads 140; scalar declarations at planar entry 130; adjusted turn name 130; requested direction name 130; native guarded input plus field reads 131.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {
@@ -556,10 +647,12 @@ long function_1ff360(long actor_index, point3f const *target, vector3f *velocity
 		point2f horizontal;
 		memcpy(&horizontal, &direction, sizeof(horizontal));
 		real magnitude = normalize2d_fast((vector2f *)&horizontal);
-		if (magnitude > 0.0f && actor->unknown290.j * horizontal.y + actor->unknown290.i * horizontal.x < 0.0f)
+		real x = horizontal.x;
+		real y = horizontal.y;
+		if (magnitude > 0.0f && actor->unknown290.j * y + actor->unknown290.i * x < 0.0f)
 		{
 			vector3f turned = actor->unknown290;
-			bool left = actor->unknown290.i * horizontal.y - actor->unknown290.j * horizontal.x > 0.0f;
+			bool left = actor->unknown290.i * y - actor->unknown290.j * x > 0.0f;
 			real sine = (left ? 1 : -1) * 0.5f;
 			rotate_direction(&turned, g_4687b0, sine, 0.0f);
 			if (normalize2d((point2f *)&turned) > 0.0f)

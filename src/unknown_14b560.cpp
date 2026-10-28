@@ -1265,6 +1265,11 @@ static inline s_players_globals *players_globals_14f2e0()
 // Shared direction helper for reuse/create/both 251/201/276; creation/colors/both entry scopes
 // 152/114/152; native/byte success 174/177; sentinel clears 114;
 // representation inline/out-of-line declarations 114/114.
+// score 114 (was 114): BLOCKED-BY 0x152bf0, whose retail body takes the loadout in eax and the unit in
+// esi (ours ecx/eax): without that call the unit takes retail's esi (diagnostic). `result = true`
+// before the user-index calls gives retail's bl result but 147 (one-line shift); at the tail start
+// 147; globals and reuse flag declared before the guard 114; chained NONE outputs 116; unit index
+// initialised NONE 114.
 // @retail 0x14f2e0
 bool __stdcall function_14f2e0(long player_index)
 {
@@ -1546,8 +1551,11 @@ struct s_unit_player_assignment
 	long previous_player_index;
 };
 
-// score 17 (was 17): the value that is read from the record is passed in ECX
-// here and in EAX in retail, and ours is one byte shorter than retail.
+// score 17 (was 17): post-call scratch registers and the representation push schedule differ;
+// the second new-unit lookup uses EDX for its object pointer, and the final engine load is one byte shorter.
+// Inline notification 17; inline control set 17; force object getter 17; unsigned new target 17;
+// unsigned representation 17; unit references 17; player reference 17; second lookup local 17;
+// engine globals local 17.
 // Tried: the engine test through game_engine_get 17; the state test in each
 // representation arm 45; the representation declared before the call 17;
 // the stored unit index field passed to function_1682bf 16.
@@ -1886,6 +1894,8 @@ bool function_23bb70(long tag_index, point3f const *position);
 
 // score 19 (was 19): the global is read into EDX here and into EAX in retail,
 // and the four values that are pushed for the call are pushed in another order.
+// Round 7: independent getters and a fresh getter only at the increment 71 each;
+// const player/options pointers and const options data 19 each; player/options/both object references 19 each.
 // @retail 0x14ef00
 long function_14ef00(long player_index, long tag_index, bool deterministic, bool preserve_counter)
 {
@@ -2110,13 +2120,26 @@ static __forceinline long player_round_ticks(real value)
     return result;
 }
 
-// score 701 (was 701): frame 0x4c versus 0x74; request/pointer homes and call expansion differ.
+// score 701 (was 701): frame 0x4c versus 0x74; request/pointer homes and call expansion remain.
+// frame 0x4c versus 0x74; request/pointer homes and call expansion differ.
+// Frame 0x4c versus 0x74; request/pointer homes and selective expansion remain.
+// Slot helper ordinary inline 723; view helper ordinary inline 812; sentinel result join 710;
+// absent-slot exit 701; word hand selector 701.
+// Earlier: frame 0x4c versus 0x74; request/pointer homes and call expansion differ.
 // Frame pointer 816; native input fields 701; native player cooldown fields 701;
 // direct permission result 707; combined native fields and direct result 707.
 // Native unit view 701; candidate reference 701; request at dispatch 701;
 // native activity results 707; native permission 701. Original body kept.
 // Cooldown scalar names 701; rest-first clamp stores 706; gated idle cap 705;
 // separate melee button tests 709; target-age store before test 701.
+// Frame 0x4c versus 0x74 and selective expansion remain. Entry request clear 722; native request reset 862; mode-derived acceptance 714; query-derived readiness 711; ordered parented counter reset 701 (fast).
+// Branch-local separate requests 804; live movement fields 701; joined cooldown clamp 707;
+// non-primary melee arm first 701; target completion returns 701.
+// Earlier: Frame 0x4c versus 0x74 and selective expansion remain. Entry request clear 722; native request reset 862; mode-derived acceptance 714; query-derived readiness 711; ordered parented counter reset 701 (fast).
+// Clamped idle local 704; explicit cooldown scale locals 701; hoisted unit pointer 713;
+// inlined candidate pointer 708; two request workspaces 804; permuter 697 but a false match
+// (swapped callee arguments and byte/short volatile type stores, all wrong against retail),
+// its neutral remainder 701. Original body kept.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {
@@ -2516,6 +2539,12 @@ static inline bool player_datum_iterator_next(s_data_datum_iterator *iterator)
 // score 103 (was 103): the global is kept in EDI here and in ESI in retail,
 // so the prologue saves the other registers and the field that is written
 // afterwards is reached through a different base register.
+// pool through a helper parameter 141; no pool local 141; busy by duplicated
+// store plus continue 123; position through a pointer local 103; wide busy 134;
+// failed after the iterator init 108; failed at function scope 128; body wrapped
+// in the unit test 103; the existing out-of-line root helper called with its
+// noinline removed inlines to the same 103 but regresses 0x14e200 17 -> 534 and
+// 0x31910 139 -> 201, so the attribute and the written-out walk stay.
 // @retail 0x14cdd0
 void function_14cdd0(void)
 {
@@ -2664,15 +2693,49 @@ struct s_unit_flags_14d8b0
 	word bit8 : 1;
 };
 
-// score 155 (was 155): iterator store/test and rate/tick scheduling differ;
+// score 153 (was 160): iterator store/test and rate/tick scheduling differ;
 // flag snapshot 155; long timer 204; parent-carried root walk 182;
-// low-time arm first 179; inline depth one 155. Damage call convention differs.
+// low-time arm first 179; inline depth one 155. Damage call convention differs: BLOCKED-BY 0xd66d0
+// (retail pushes both arguments; ours passes the object in eax).
 // Native tick field 155; native tick and typed first flag 153; immutable native-field rate 155;
 // native reset timer 155; both native long/short fields 155; signed native countdowns 155;
 // all native countdown fields 155; full native current-player record 153.
-// score 155 (was 155): iterator publication, rate/store, damage-call and trigger allocation remain.
+// Earlier: iterator publication, rate/store, damage-call and trigger allocation remain.
 // Separate effect/tick/root/trigger receivers 155/155/155/155; combined receivers 155;
 // incremented-tick snapshot 155; stored absence scalar 155; decoded volume kind 155.
+// Earlier: native root-bit observation recovers SHR/TEST; iterator and tick scheduling remain.
+// Wide user/table entry/both 157/158/162; wide/entry/both with first flag 155/156/160;
+// root with both 129, plus first flag 127; root alone 128 plain; root with wide/entry 125/132.
+// Three-point wide-user addition dropped; only the root-bit expression retained.
+// iterator/tick scheduling and damage transport remain;
+// shared event send 155; existing initializer 304f; both event APIs 283f;
+// event/damage/both workspace scopes 155/155/155; scopes with send 207f;
+// both APIs with typed first flag 281f. Original body retained.
+// Iterator publication, tick/rate schedule, damage call and trigger registers
+// remain. current record consumer 155; successful current publication 155; explicit iterator
+// initialization 155; defined current at advance 155; saturating source expression 254; saturate
+// before increment 224; native flag boolean 264; publication with native results 300.
+// Earlier: iterator/tick scheduling, damage transport and trigger registers remain.
+// Native trigger record ordinary/const 128/128; each with native point member 128/128;
+// native first-word flag with those four interfaces 126/126/126/126. Two-point forms dropped.
+// Earlier: iterator/tick schedule, damage transport and trigger homes remain.
+// Existing Boolean datum API 128; iteration receiver scope 128; input-only iterator
+// initialization 128; called datum API 395; existing parent query 197; both APIs 197;
+// Boolean iterator with native first flag 126; parent query with native first flag 195.
+// Initial/all native flag references 126/126; shared high-byte reference 128;
+// all-flags with tick pointer 126, direct tick product 228, float/count roles 126/126,
+// admitted expiry 199. Two-point forms dropped; original body retained.
+// Long user index in the expired-ticks arm 125 (retail movsx + cmp eax, -1; that arm then differs only in
+// register rotation; under the keep threshold alone); with the tick stored before the rate read 233 (rate folded
+// into mulss), rate named after the increment 233; trigger test as one condition 125; datum index read from
+// the iterator at each use 125.
+// Round 29 (from 160): the countdown at +0x180 read only under the mode test 153 kept
+// (retail tests the mode first). Left: the tick store sits after the rate multiply
+// (retail stores, then loads the rate unfolded), register rotation in the damage and
+// slot blocks, and a one-byte shorter mode load (eax) that drops the root walk's loop
+// alignment. Tick field at each use 153; ticks * rate 153; rate read in the product
+// after the increment 228 (folds the rate load); a ticks-to-seconds inline 228; long
+// user index in the expired arm 157.
 // @retail 0x14d8b0
 void function_14d8b0(void)
 {
@@ -2761,14 +2824,17 @@ void function_14d8b0(void)
         }
         if (*(signed char *)(player + 0x3f) > 0) --player[0x3f];
         if (*(signed char *)(player + 0x40) > 0) --player[0x40];
-        short timer = *(short *)(player + 0x180);
-        if (g_4e6948->mode != 4 && timer > 0 && (*(short *)(player + 0x180) = --timer) == 0)
+        if (g_4e6948->mode != 4)
         {
-            player[3] &= ~8;
-            if (game_engine_get())
+            short timer = *(short *)(player + 0x180);
+            if (timer > 0 && (*(short *)(player + 0x180) = --timer) == 0)
             {
-                long slot = function_xaee93d()->slots[(short)index];
-                if (slot != NONE) function_b58c0(slot, 0x100);
+                player[3] &= ~8;
+                if (game_engine_get())
+                {
+                    long slot = function_xaee93d()->slots[(short)index];
+                    if (slot != NONE) function_b58c0(slot, 0x100);
+                }
             }
         }
         if (*(long *)(player + 0x2c) != NONE) function_1521d0(index);
@@ -2777,7 +2843,7 @@ void function_14d8b0(void)
         {
             long root = unit;
             for (long current = unit; current != NONE; current = *(long *)(object_get_unchecked(current) + 0x14)) root = current;
-            if (!(*(dword *)(object_get_unchecked(root) + 4) & (1 << 18)))
+            if (!(bool)((*(dword *)(object_get_unchecked(root) + 4) >> 18) & 1))
             {
                 byte *scenario = (byte *)g_4e0350;
                 for (short trigger = 0; trigger < *(long *)(scenario + 0x130); ++trigger)

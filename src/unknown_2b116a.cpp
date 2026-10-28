@@ -5320,7 +5320,7 @@ void function_2bb0e9(void)
 	{
 		s_qos_result result;
 
-		if (qos_target_result(g_475338, &result, 0))
+		if (qos_target_result(g_475338, 0, &result))
 		{
 			function_19adf6((const byte *)&result, online_get_nat_type());
 		}

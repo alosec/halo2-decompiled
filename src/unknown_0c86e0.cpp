@@ -93,15 +93,42 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 	return result;
 }
 
+// score 107 (was 122): entry saves, fresh unit reload and sentinel carriers still differ.
+// BLOCKED-BY 0xbadc0: retail re-fetches the unit after its two calls, ours reuses the entry
+// fetch (our link knows the callee writes no memory).
+// entry saves, fresh unit reload and sentinel carriers still differ.
+// shared weapon producer 131; user-result arms 125; both 125; signed-word user 128;
+// shared producer/word 128; word/result arms 122; all three 122; guarded weapon
+// result 135. Retain signed-word user/result arms; the six-count arm-only gain is rejected.
+// Unit fetched after the player queries 118, with a long user index 121; was_zoomed
+// declared first 107 (it then lives in bl from entry, retail dl: positional only), with the
+// late fetch and long user 109 (376 bytes, flag spilled), with long user 110; zoom-out
+// call in each sound arm 124; weapon read through the entry unit 122.
+// Retail re-fetches the unit after the two 0xbadc0 calls (index * 12 kept in esi); our link
+// knows 0xbadc0 writes no memory and reuses the entry pointer. With 0xbadc0 opaque (one-file
+// LTCG link) this body with a long user index gives retail's code apart from the callees'
+// conventions. Existing 0x14de90 getter 122; plus 0xcbd50 for the weapon 122; long user
+// index 125, with both getters 125; unit fetched at its first use 106 (376 bytes, but it
+// moves retail's entry fetch after the calls).
+// Round 26 (lane 9), from 122: zoom flag declared first 107 (kept: the entry fetch stays; the flag
+// sits in bl from entry where retail sets dl late, but ebx no longer holds a -1 and the sentinels
+// compare as immediates as in retail); plus long user index 110; weapon flag as if/else 126; user
+// index as one ternary 128; zoom test as !(keep && zoomed) 122; reset entry written in full 124.
+// On the 107 body: long user index 111; reset entry in full 109; weapon flag as if/else 111; zoom
+// test as !(keep && zoomed) 107; sound index as one ternary 107.
+// BLOCKED-BY 0xbadc0 (the re-fetch after its calls).
 // @retail 0xc86e0
 void function_c86e0(long unit_index, bool keep_weapon_zoom)
 {
+	bool was_zoomed = false;
 	s_zoom_unit *unit = ZOOM_UNIT_GET(unit_index);
-	long user_index = unit_get_player_index(unit_index) != NONE ?
-		((s_zoom_player *)(g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c))->user_index : NONE;
+	short user_index;
+	if (unit_get_player_index(unit_index) == NONE)
+		user_index = NONE;
+	else
+		user_index = ((s_zoom_player *)(g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c))->user_index;
 	long weapon_index = unit_get_current_weapon(ZOOM_UNIT_GET(unit_index));
 	bool weapon_zoomed = weapon_index != NONE ? function_100f70(weapon_index) : false;
-	bool was_zoomed = false;
 
 	if (!keep_weapon_zoom || !weapon_zoomed)
 	{

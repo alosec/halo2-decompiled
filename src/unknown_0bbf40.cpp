@@ -306,6 +306,12 @@ s_object_gc_entry_ab g_440570[6] =
 
 // score 110 (was 110): the size constant is 0x2a08 where retail uses 0x2a04 and the prologue pushes
 // EBP where retail pushes EBX.
+// score 110 (was 110): our loop is rotated (the action test copied to the bottom); retail's stays
+// top-tested, re-reads the state at its top and duplicates the loop setup into each level path.
+// Only nested loops (outer per entry, inner `do ... while (again)`) stay top-tested here: 171, with
+// the one exit goto to a shared final clear 192. `again` uninitialised + `if (again) continue` 134
+// (gives retail's +8 entry pointer); `next = !again` flag 122 (393 bytes, retail's sete); single
+// state variable with the exit goto 161.
 // @retail 0xbf380
 void function_bf380()
 {
@@ -904,7 +910,7 @@ struct s_light_tree_header_ab
 
 void function_c3220(long light_index);
 void __stdcall function_c2d00(long light_index);
-long __stdcall function_c1720(long object_index, long remove, long add);
+long __stdcall function_c1720(long object_index, byte remove, byte add);
 
 // @retail 0xbef30
 void __stdcall function_bef30(long object_index, long remove, long add, long siblings, bool own_flags)
@@ -1003,6 +1009,21 @@ bool __stdcall function_be8e0(long object_index);
 struct s_havok_component;
 void function_1ced00(s_havok_component *component);
 
+// score 1 (was 122): inactive return XOR AL versus retail MOV AL,BL; matching delayed EBP and object/header homes retained.
+// register (`mov al, bl`); retail saves ebp only after the two header gates, as ours now does.
+// Round 50: object read through the table before the flags clear (object in ebp, header in the
+// parameter slot) 123; with the result returned at the end of the awake branch 1 (kept); not-awake
+// test as an early return 114; result declared before the header or assigned after its declaration 1;
+// result declared inside the awake branch 30; inverted final test with an early return 122.
+// Awake-predicate bool/byte/char/short results 127/132/132/164; native byte/char/short/word
+// accumulators with common result exits 17/17/100/100. All restored.
+// Countdown common/separate/paired result exits 27/28/28; reused countdown predicate 43;
+// countdown activity accumulation 41; one done exit 27; positive call contributions 148;
+// positive contributions with countdown result 145. Original body retained.
+// Round 34: both activity exits returning active 1; one fallthrough activity return or an explicit
+// done join 123 each; countdown assignment-return with one activity return 123; inactive result
+// ORed with the awake bit, logically or bitwise, 1 each; inactive result ANDed with that bit 1;
+// double-negated inactive result 1.
 // @retail 0xbc470
 bool __stdcall function_bc470(long object_index)
 {
@@ -1012,8 +1033,8 @@ bool __stdcall function_bc470(long object_index)
     {
         if (header->flags & 0x20)
             return true;
+        s_post_physics_object_ab *object = ((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
         header->flags &= ~4;
-        s_post_physics_object_ab *object = header->object;
         if (TEST_FIELD_BIT(object->flag2))
             function_bba20(object_index);
         long mode = g_4e6948->mode;
@@ -1043,8 +1064,9 @@ bool __stdcall function_bc470(long object_index)
         }
         if (!active && !(header->flags & 4))
             header->flags &= ~2;
+        return active;
     }
-    return active;
+    return false;
 }
 
 

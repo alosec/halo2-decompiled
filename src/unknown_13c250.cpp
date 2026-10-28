@@ -82,36 +82,29 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
     return TEST_FIELD_BIT(arg_1->field_10a2);
 }
 
-// score 171 (was 171): receiver reloads and count/ranking allocation;
-// typed fallback entries 171; end cursor 173; signed-word count 168;
-// byte count 195; carried tag read before count update 171.
-// score 171 (was 171): receiver reloads and count/ranking handoff remain;
-// native carried view 171; read-only view 171; dword workspace 171;
-// unsigned tags 171; selected position 182; unsigned ranks 172;
-// word rank 172; unsigned ranking position 171.
-// score 144 (was 171): receiver reloads, append counts and ranking dispatch remain;
-// pointer ranking 144; append cursor 273; cursor/count snapshot 267;
-// plain count/cursor 232; output/ranking cursors 294; completed cursor 303;
-// rank-one first 171; lower-rank first 174; pointer/native case 176;
-// pointer/count snapshot 181.
-// score 144 (was 144): receiver reloads, append counts and ranking handoff remain.
-// pointer/plain count 281; pointer/known first appends 189; pointer/single count reads 188;
-// pointer/both append forms 206; pointer/rank predicates 144; pointer/rank interval 144;
-// pointer/unsigned rank 144; pointer/word rank 178.
-// receiver/count reloads and ranking handoff remain;
-// cursor read-step/end equality/for/preferred break 144/144/144/144;
-// pointer default rank 189; rank-three first 144; empty selection exit 144;
-// read-step with default rank 190.
-// score 144 (was 144): receiver/count reloads and ranking dispatch remain.
-// Consuming qualified/plain count 179/212; separate remaining count 174;
-// candidate-distance bound with qualified/plain count 178/243;
-// consuming count with native preferred case 182/211; post-decrement remaining count 174.
-// score 144 (was 144): receiver/count reloads and ranking dispatch remain.
-// Getter pool reference / typed entry input / handle-first / both contracts 144f;
-// first/second conditional handle selection 193/193f; both with pool reference 207f.
-// carried receiver/count reloads and ranking handoff remain;
-// declared payload / read-only result / read-only pool / handle domain 144/144/144/144f;
-// native payload slots 176f; distinct typed receivers / priority enum / payload with enum 144/144/144f.
+// score 144 (was 144): receiver/count reloads and ranking dispatch remain; retail reads the
+// count once per append (no volatile re-read) yet keeps it in memory, and holds the found
+// candidate apart from the best-ranked one (0x5000720 is a switch case there).
+// Typed fallback entries 171; end cursor 173; signed-word count 168; byte count 195; carried tag
+// read before count update 171; native carried view 171; read-only view 171; dword workspace 171;
+// unsigned tags 171; selected position 182; unsigned ranks 172; word rank 172; unsigned ranking
+// position 171; pointer ranking 144 (kept); append cursor 273; cursor/count snapshot 267;
+// plain count/cursor 232; output/ranking cursors 294; completed cursor 303; rank-one first 171;
+// lower-rank first 174; pointer/native case 176; pointer/count snapshot 181; pointer/plain count 281;
+// pointer/known first appends 189; pointer/single count reads 188; pointer/both append forms 206;
+// pointer/rank predicates 144; pointer/rank interval 144; pointer/unsigned rank 144; pointer/word
+// rank 178; cursor read-step/end equality/for/preferred break 144/144/144/144; pointer default
+// rank 189; rank-three first 144; empty selection exit 144; read-step with default rank 190;
+// consuming qualified/plain count 179/212; separate remaining count 174; candidate-distance bound
+// with qualified/plain count 178/243; consuming count with native preferred case 182/211;
+// post-decrement remaining count 174; getter pool reference / typed entry input / handle-first /
+// both contracts 144f; first/second conditional handle selection 193/193f; both with pool
+// reference 207f; declared payload / read-only result / read-only pool / handle domain
+// 144/144/144/144f; native payload slots 176f; distinct typed receivers / priority enum /
+// payload with enum 144/144/144f.
+// Found candidate apart from the best, its tag a switch case 186; index ranking loop 171;
+// plain count 281; found plus index 179; found, index and plain count 205; append helper taking
+// the count's address 286; with the index loop 258.
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {

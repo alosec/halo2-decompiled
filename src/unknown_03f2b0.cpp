@@ -458,6 +458,8 @@ void function_1cf50(void);
 // Current stride agrees; the hoisted zero, callee convention and color/draw
 // scheduling differ. Record view, byte-channel locals, material/color results,
 // block-pool/byte-offset lifetimes and typed-record for 100; byte bitmap 98.
+// score 100 (was 100): BLOCKED-BY 0x144f0, which retail calls with the tag, stage and index in
+// EAX/ECX/EBX and three pushes (ours four pushes and the priority in XMM2, zero held in EBX).
 // @retail 0x44040
 void __stdcall function_44040(long cell, short mask)
 {
@@ -1296,6 +1298,24 @@ long function_4c450(long object_index, real distance, real const *definition, re
 short function_4bcc0(byte *output, long object_index, real distance, long override,
     bool *cached, bool force, signed char *level);
 
+// score 43 (was 43): count/current take edi and wanted esi (retail esi and edi, with wanted
+// computed in ecx and copied); the early level read adds a byte. Direct level read 83 at 281
+// bytes (one instruction more aligned); wanted from current/wanted first/non-const wanted 43
+// each; random mixes of declaration orders, compound division, defaults-first branch, early
+// level read and result at the top 43-110; pointers defaulting to the zero buffer 54/53;
+// local and parameter renames 43 each.
+// count/current EDI and wanted ESI replace retail ESI/EDI;
+// default count and selector scheduling remain. Native definition/library clear/both 43/43/43;
+// defaults first 99; default pointers 54; native level/result 83/100; typed default pointers 54.
+// Cache/selector inline, outline and combined call contracts: six further trials at 43.
+// Entry inline/stdcall/cdecl 43/43/44; byte return 43; final false/true exits 64;
+// fallback failure exit 100; both failure exits 119; inline final exits 64.
+// early EDI save, count/current EDI and wanted ESI remain.
+// Pointer order/role name, entry result, count first/library clear, signed workspace all 43;
+// direct level 83; unused formal addresses 43; count/variant names 43/43;
+// twice-used source count 43; source count with direct level 83.
+// Native word buffer 43; default tag scope with byte/word data 98/98; native word clear 43;
+// actual object fields with byte/word data 43/43; initial-selection result alone/with fields 43/43.
 // @retail 0x4c190
 bool function_4c190(long *count, long object_index, bool defaults, long tag,
     short *level, signed char fallback_level, signed char *sections, bool *fallback)
@@ -1362,11 +1382,82 @@ struct s_batch_cache_4b5d0
 
 struct s_133f70;
 
-// score 219 (was 219): distance load, nullable-entry address and cache/level scheduling differ;
+// score 213 (was 213): Full frame 0x33f8 agrees; distance staging, nullable entry and cache/result homes remain.
+// Round 8 (lane 10, all plain; the reduced image builds this frame differently): bool built 325 (after
+// the 0x4c190 call the code is retail's, shifted one instruction by the unfolded record addresses);
+// with an inline record getter for g_509434 325 (still folds to one lea); drawn object reused for
+// the cache touch, bool/long built 331/224; level pointer typed before the field offset 325 (folds).
+// Retail alone among this pool's readers (0x4c640 folds) adds the record and the offset in two steps.
+// distance load, nullable-entry address and cache/level scheduling differ;
 // distance snapshot 219; wide previous level 219; fallback clear 362; common buffer 219; wide success 254.
-// score 213 (was 213): frame 0x33f8 agrees; distance load and cache/result scheduling differ.
+// frame 0x33f8 agrees; distance load and cache/result scheduling differ.
+// frame 0x33f8 agrees; the count is lockstep: retail adds the cache record base
+// before its field offset (`add eax, ecx; lea ebx, [eax + 0xbc]`, also at +0x44) where ours folds one lea,
+// keeps a dead entry lea in the 0x4ed284 test, compares the previous level from memory after the two
+// slot stores, and tests the 0x4c190 result as a byte; distance staging and cache/result homes differ.
+// Round 9 (lane 11, fast): bool builder result 325 (retail length; region of the previous level is then
+// one instruction short); with the flag store before the cache store 337; reuse set inside an if 343;
+// address-taken previous level 325 (diagnostic); record base through an inline helper 325.
+// Retail also sign-extends the level it pushes to 0x23690 (`movsx ecx`), ours pushes a short.
+// Distance snapshot 219; wide previous level 219; fallback clear 362; common buffer 219; wide success 254.
 // Native reuse 330; native level change 291; short entry index 352; late success 262; short builder
 // result 216.
+// Direct successful-output slot, entry lifetime: long/long 379, long/short 371,
+// short/long 354, short/short 350; loop lifetime 360,372,374,375.
+// distance input, nullable-entry address and cache/result scheduling remain.
+// Shared level result 378; direct reuse result 316; both 343; builder-first rejection 216;
+// observed object for cache/cache-pool calls 224/332; direct cache publication 218;
+// direct cache with shared level/reuse results 352. All measured in the full image.
+// distance staging, nullable entry and cache/result schedule remain.
+// Plain signed-byte/short/word success 213/265/265; short/word reuse 370/370;
+// signed-byte level change 213; unsigned failures 213; word entry ordinal 352.
+// All eight also checked plain because the reduced frame differs; original restored.
+// Native direct output-array groups (handles/counts, object/tags, cache/bytes):
+// seven combinations 358f,356f,356f,358f,358f,356f,358f; all with native sections 358f;
+// unchanged reduced control 356f; full baseline 213. Original arrays and aliases restored.
+// Round 225: Entry query flags/nodes/count and their seven combinations 356f each; all outputs with later
+// constant failure-count lifetime 371f. Reduced control 356f versus full 213; original body restored.
+// Round 227: Native output short/Boolean/dword fields and their seven combinations 356f each; all
+// fields with current-level reference 356f. Reduced control 356f versus full 213; original metadata,
+// body and declarations restored.
+// Native pooled record at level/batch/usage boundaries 213/213/213; level+batch,
+// level+usage, batch+usage, all members and native const level elements each 213 plain
+// (all eight 356 fast). Original record access and body restored.
+// Round 330: Query/builder/output-query/lighting inline and noinline declarations: eight at 356f, matching
+// reduced control (frame 0x3400), versus full 213. All declarations restored; no reduced-only candidate.
+// Round 215: Complete per-entry mutable/const frame/view captures 372/372, function-entry
+// captures 384/384; shared two-use stamp on those scopes 361/361/383/383 (control 213).
+// All introduce a frame difference; complete original observations and body restored.
+// Native cache/previous and stamp/handle acceptance orders, logical fallback
+// and direct level invalidation: 326/213/326/366/369/367/369/349 fast against expanded control 213.
+// Original cache predicate, bitwise fallback and level guard restored.
+// Round 139: Shared cache-index homes at level+batch, level+usage, batch+usage and all three
+// boundaries each 213; those four with the uninitialized builder result declared at loop entry each
+// 213. Broad unchanged control also 213; reduced 0x31590 discrepancy already present. Full frame
+// 0x33f8 agrees; distance staging, nullable-entry and cache/result scheduling remain. Original
+// executable source restored.
+// Complementary failure bool/byte/short/long 235/235/268/259 plain; also complementary
+// reuse 326/326/335/326 plain (fast 355/355/344/350). All restored; frame and staging remain.
+// Projection branch scope, later failure constant and earlier level constant combinations:
+// 356/371/371/356/356/371/371 fast; separate level initialization 356 fast.
+// Complete retained cache receiver: null-first/conditional/absent-first/present-first
+// 366/374/371/374; same producers with one shared cache-index home 366/374/371/374.
+// All add frame bytes; original slot observations and body restored.
+// Round 246: common success/failure accounting, bool/byte/short/long result
+// at the builder result 240/240/286/279; early result declaration 240/240/286/279.
+// Expanded reduced control 213; original independent rejection and body restored.
+// Round 191: Query-output flags/nodes/count workspace names, all seven combinations,
+// each 213; all three with projection-array name 213. Expanded control 213.
+// Original outputs, projection array and executable body restored.
+// Lane 4 r98 (all plain, control 213; the score compares instructions in lockstep, so one instruction
+// more or less before a region shifts it): retail tests the 0x4c190 result as a bool (`test al, al`);
+// `bool built` gives that and retail's 1309 bytes but 325 (the 0x4c190 call setup is one instruction short
+// of retail's, so everything after it shifts). With it: 0x100-byte cache records typed (fold the same) 325;
+// a nullable record before the levels pointer (real null test) 338; an inline active-entry helper for
+// the 0x4ed284 test (null test kept, no dead lea) 308; a view pointer inside the test 325. Retail's
+// record + offset adds (`add eax, ecx; lea ebx, [eax + 0xbc]`) and the dead entry lea stay unreproduced.
+// Round 224: Signed-short query count/failure count/derived-slot domains, seven combinations,
+// then all with short entry ordinal 368/216/367/229/364/229/364/354 fast. Original count/compaction widths restored.
 // @retail 0x4b5d0
 void function_4b5d0(bool force, long override, long object_index, real distance, real priority,
     s_133f70 *record, point3f const *unused, bool project_nodes)

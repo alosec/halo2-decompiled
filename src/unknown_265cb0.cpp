@@ -363,7 +363,15 @@ short __stdcall function_c8b80(long object_index, s_object_seat *seats, short ma
 bool function_26d370(point3f const *point, vector3f const *direction, plane3f const *plane, real *distance);
 real function_30bf0(vector3f *vector);
 
-// score 195 (was 226): the register allocation differs from the first block
+// score 184 (was 184): result/range homes, inverse SIMD groups and seat-threshold reloads remain.
+// result/range homes, inverse SIMD groups and seat-threshold reloads remain.
+// Round 57: retail's result stores are a spill of a long result (dword store, `mov ax, word` reload at
+// each tail-duplicated exit). Plain long result 241 (result home +0xc); short return type with every
+// declaration 186 (1311 B), with a plain long result 245; volatile short result 179 (aligned listing count
+// worse: 92 against 86), with the short return 186; else-arm secondary before primary 195; the two
+// out-of-range stores as else-if arms 184.
+// the register allocation differs from the first block
+// the register allocation differs from the first block
 // on (retail keeps delta in xmm5-7 and the motion in xmm2-4, ours the other way
 // round), and our seat loop keeps secondary and primary in xmm1/xmm2 across
 // iterations where retail compares them in memory and reloads them after the
@@ -380,11 +388,70 @@ real function_30bf0(vector3f *vector);
 // and `secondary < a` compares (no change).
 // Tried at 226 (lane): qualified long result 226; qualified byte result 232; long seat count 240;
 // long seat index 226; shared seat-element pointer 226.
-// score 195 (was 195): Frame/result and inverse SIMD homes remain. Ordinary short result 250; ordinary long result 250; delta initializer 221; motion initializer 221; plane scope 221 (fast, each with the seat increment in the body).
-// score 195 (was 195): Frame/result and inverse SIMD homes remain. Fraction reuse 211; plane distance first 304; cursor displacement 271; threshold defaults 265; reverse delta assignments 233 (fast; seat increments in body).
-// score 195 (was 195): Frame 0x350 agrees; result/range homes, inverse SIMD groups and threshold reloads remain. Early range square 266; scaled-range square 221; threshold maxima 221; bounded seat end 245; plane initializer 221 (fast; seat increments in body).
+// Frame/result and inverse SIMD homes remain. Ordinary short result 250; ordinary long result 250; delta initializer 221; motion initializer 221; plane scope 221 (fast, each with the seat increment in the body).
+// Frame/result and inverse SIMD homes remain. Fraction reuse 211; plane distance first 304; cursor displacement 271; threshold defaults 265; reverse delta assignments 233 (fast; seat increments in body).
+// Frame 0x350 agrees; result/range homes, inverse SIMD groups and threshold reloads remain. Early range square 266; scaled-range square 221; threshold maxima 221; bounded seat end 245; plane initializer 221 (fast; seat increments in body).
+// Direct secondary/primary/both query outputs 230/229/214; previous-value order 215;
+// previous values before basis 230; loop-scoped previous values 214;
+// up after normalization 221; direct outputs with later up 214. All with body cursor step.
+// Earlier trial set: Frame/result and inverse SIMD homes remain. Ordinary short result 250; ordinary long result 250; delta initializer 221; motion initializer 221; plane scope 221 (fast, each with the seat increment in the body).
+// Earlier trial set: Frame/result and inverse SIMD homes remain. Fraction reuse 211; plane distance first 304; cursor displacement 271; threshold defaults 265; reverse delta assignments 233 (fast; seat increments in body).
+// Earlier trial set: Frame 0x350 agrees; result/range homes, inverse SIMD groups and threshold reloads remain. Early range square 266; scaled-range square 221; threshold maxima 221; bounded seat end 245; plane initializer 221 (fast; seat increments in body).
+// Round 138: clipped vector/in-place/receiver 276/276/276; read-only actor/occupant 195/195; facing value 258; both values 311; motion square 229.
+// Native external settings with byte mask/bitfield 221/221; per-use range 225/225;
+// those four records with both existing vector difference helpers 221/221/245/245 (body cursor step).
+// Shared scaled differences for delta/motion/both 234/233/225; shared magnitudes 221;
+// with delta/motion/both shared producers 234/265/257; staged native inputs with both helpers 366.
+// Seat cursor advanced in body for each trial; all original producers, grouping and cursor restored.
+// Round 166: Corresponding squared components named at both motion/delta magnitudes:
+// k/j/i 226/226/226; kj/ki/ji/all 221 each; all with complete plane-product names 221.
+// Each trial advances the seat cursor in the body. Original expressions and cursor restored.
+// Round 71: renaming result/secondary/primary/range and a long result compile identically (slot order is not
+// name-driven here); separate `result = K; return result;` exits 269 (1333 bytes), with a long result 269;
+// if/else 3-or-2 with a long result 259; separate exits with a plain short result 328.
+// Round 167: Consistent long/dword return contracts with short/word result storage 200 each;
+// long/dword storage 195 each at retail length. On the complete long return/result graph,
+// separate 3/2 stores 255; projection fraction clamped in place 184 (plain, kept); both 241;
+// direct threshold accumulators 230. Keep long return/result, one projection fraction and
+// seat cursor stepped in the body; both external declarations agree, exact caller preserved.
+// Round 145: Vector role names/vector plus plane-fraction names 184/184; mode failure at
+// one result exit with existing/plain result 184/241; settings failure likewise 184/241;
+// plain mode/settings early-result returns 340/350. Original body restored.
+// Round 243: Native point/origin/both/endpoint values 351/363/396/327; point-endpoint
+// 366, origin-endpoint 378; all inputs in either declaration order 432/432. Original body
+// restored.
+// Round 205: Plain component loops for delta/motion/both 429/407/431; projected output
+// 221; projected with delta/motion/both 432/411/425; all with short ordinals 438.
+// Original producers restored; result/range homes and inverse SIMD groups remain.
+// Posture cases reversed 184; exhaustive scale switch, ordered arms and
+// complete conditional scale 202/253/253; each of the four with per-use range
+// reads 273/311/306/306. Original scale, range observations and body restored.
+// Round 249: coordinated projection inline/noinline 294/184; threshold inline/noinline
+// 184/184; both inline, projection-inline/threshold-noinline, projection-noinline/threshold-inline,
+// both noinline 294/294/184/184. Original declarations and bodies restored.
+// Round 212: outer/scaled/both range-failure returns with inherited result 216/219/253;
+// both plus missing-settings return 253; the four with ordinary result 329/314/273/275.
+// Frame 0x350 persists, entry roles move; original admission, result and observations restored.
+// Round 252: Final primary-test/complete-conditional/primary-first/distance-first results
+// 249/283/235/230; ordinary result storage 281/281/220/221. Original result graph and inherited storage
+// restored; result/range homes and SIMD allocation remain.
+// Round 196: Normalizer inline/noinline/combined/forceinline declarations, each with original
+// and post-normalization up lifetime, 184 each. Original declarations and body restored.
+// Round 28 (m3 lane 12): retail returns a short (`mov ax, word ptr [esp + 8]`) through separate result
+// exits; the 3/2 choice as if/else stores gives those exits and moves result toward retail's +0 slot
+// (241, 1327 bytes); with a short return 245 (needs 0x25c9d0's declaration changed too). Motion declared
+// before delta 184; result before the references 184; maxima as conditionals 184; a/b beside the maxima 184.
+// Ours also keeps secondary/primary in xmm registers across the seat loop; retail compares them in memory.
+// Lane 9 r25: retail returns a short (`mov ax, word ptr [esp + 8]` at each exit) from a long result
+// slot; the prototype in src/unknown_25d690.cpp (another lane's file this round) keeps the return
+// long. Result renamed level 184 and secondary/primary renamed 184 (identical code: names do not
+// move these slots); range read after delta 184; primary declared before secondary 184.
+// Round 30 (m3 lane 12): retail's frame swaps result and range (result at frame 0x0, range at 0x20 above the
+// motion vector; ours the other way), and range comes in xmm0 with delta in xmm5-7 (ours delta xmm2-4, range
+// xmm5). Range renamed to sort after result 184 (identical); range declared at function scope before/after
+// result 184/184; range read after the delta 184; delta declared before range 184.
 // @retail 0x263810
-short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
+long function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
 	long const *actor_reference = &actor_index;
 	point3f const *const *endpoint_reference = &endpoint;
@@ -392,7 +459,7 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 	short const *mode_reference = &mode;
 	bool const *facing_reference = &use_facing;
 	bool *const *range_reference = &out_of_range;
-	volatile short result = 0;
+	volatile long result = 0;
 	if (mode == 0 || mode == 1)
 	{
 		s_actor_view *actor = actor_get(actor_index);
@@ -418,13 +485,12 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 					real amount;
 					if (function_26d370(point, &motion, &plane, &amount) && !(0.0f > amount))
 					{
-						real clipped_amount = amount;
-						if (clipped_amount > 1.0f) clipped_amount = 1.0f;
-						if (clipped_amount > 0.0f)
+						if (amount > 1.0f) amount = 1.0f;
+						if (amount > 0.0f)
 						{
-							delta.i = motion.i * clipped_amount + point->x - origin->x;
-							delta.j = motion.j * clipped_amount + point->y - origin->y;
-							delta.k = motion.k * clipped_amount + point->z - origin->z;
+							delta.i = motion.i * amount + point->x - origin->x;
+							delta.j = motion.j * amount + point->y - origin->y;
+							delta.k = motion.k * amount + point->z - origin->z;
 						}
 					}
 				}
@@ -456,7 +522,7 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 							s_object_seat seats[64];
 							short count = function_c8b80(object_index, seats, 64);
 							s_object_seat *seat = seats;
-							for (short i = 0; i < count; ++i, ++seat)
+							for (short i = 0; i < count; ++i)
 							{
 								long occupant = function_c8f60(seat->object_index, seat->seat_index);
 								if (occupant != NONE)
@@ -475,6 +541,7 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 										if (b > primary) primary = b;
 									}
 								}
+								++seat;
 							}
 						}
 					}
@@ -812,6 +879,11 @@ struct s_object_activity_flags
 // entry input is EAX versus EDX; nullable actor and save timing still differ.
 // Entry/all header helpers 79/79; external object reference 79; const object/actor/settings views 79/79/79.
 // Combined const views 79; header helper with const object 79; existing scalar qualifier and original body restored.
+// score 79 (was 79): retail's second-call re-read looks like a plain spill reload of the parameter
+// (all four saved registers busy); without the qualifier ours keeps the index in ebp and spills the
+// actor instead. NULL actor then conditional lookup re-measured 113 (index eax, header/first edi/ebx);
+// on it: settings as one conditional 170; header getter 113; plain parameter used directly 140;
+// actor declared before the object 113. Settings conditional on the opening body 114.
 // @retail 0x267370
 real function_267370(long volatile object_index)
 {
@@ -1101,12 +1173,25 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 // j93: Frame 0x60 agrees; clock hoisting, conversion copy and three vector homes remain; typed offset output recovers movement/offset homes.
 // wide event results 371; wide target result 374; state per use 433; state eligibility snapshot 338; typed
 // offset output 99; offset outer direction 99; offset blend before delta 99; offset outer query homes 99.
-// score 99 (was 99): clock/compare schedule, conversion copy and geometry homes remain.
+// score 99 (was 99): Clock conversion schedule, integer copy and geometry homes remain. branch
+// decay result 398; delta before conversion 100; smoothing value samples 345; sampled early delta
+// 389; native rounded count 99; stored width rounded count 396; branch decay late delta 394;
+// sampled branch decay 402; ordinary conversion inline 373; branch exponent result 416.
+// clock/compare schedule, conversion copy and geometry homes remain.
+// clock/compare schedule, conversion copy and geometry homes remain.
 // Fast: smoothed field 99; desired field 99; both fields 99; native position 393;
 // native origin 383; both geometry inputs 431; prop record 99; field and geometry 431.
 // score 99 (was 99): clock conversion, interpolation registers and three geometry homes remain;
 // interpolation product inputs 99; direct delta 99; direct blend 99; delta-first addition 99;
 // direct pair 414; direct delta/addition 99; direct blend/addition 99; direct pair/addition 414.
+// Clock conversion schedule, integer copy and geometry homes remain. branch
+// decay result 398; delta before conversion 100; smoothing value samples 345; sampled early delta
+// 389; native rounded count 99; stored width rounded count 396; branch decay late delta 394;
+// sampled branch decay 402; ordinary conversion inline 373; branch exponent result 416.
+// score 99 (was 99): the tick-rate conversion is hoisted above the decay test (both arms start the
+// same); the vector homes offset/ahead/target/direction are offset/direction/ahead/target here.
+// Ticks ternary 99; rounding of a ternary 170; 0.25 first 99; negated test 103; a seconds-to-ticks
+// helper for both or one arm 99; vector local names 99; vector declarations moved 99.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {
@@ -1537,7 +1622,15 @@ real function_2683f0(long actor_index, long node_index, short type)
 	return result;
 }
 
-// score 695 (was 711): frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
+// score 684 (was 684): Frame 0x7c/0x80, sentinel/link homes and conversion expansion remain.
+// Earlier 684 (was 684): frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
+// frame 0x7c versus 0x80; saved links and conversion expansion remain.
+// frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
+// Frame 0x7c versus 0x80; sentinel/link homes and expanded tick conversions
+// remain. Pointer player-table walk 685; forward library copy 684; velocity library copy 684;
+// parallel matrix pair sums 684; native actor fields 684 (calibrated fast).
+// Earlier: frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
+// frame 0x7c versus 0x80; saved link/predicate homes and expanded conversion calls remain.
 // Conditional facing 731; wide best level 701; direct parameter 701; shared difference 705;
 // wide retention 704; live relative inputs 695; native velocity copy 695; early defaults 755;
 // phase defaults 752.
@@ -1548,10 +1641,39 @@ real function_2683f0(long actor_index, long node_index, short type)
 // j93: Frame 0x7c/0x80, saved-link homes and conversion expansion remain; helper declaration restored.
 // shared tracking view 695; shared player lookup 724; very close result 719; native player search indices 702;
 // notification counter view 695; level helper inline 717.
-// score 684 (was 695): Frame, saved-link homes and expanded tick conversions remain.
+// Frame, saved-link homes and expanded tick conversions remain.
 // selection names 695; cached state test 707; post-clear results 684;
 // direct score result 695; direct retention result 705 (plain).
-// score 684 (was 684): Frame 0x7c/0x80, saved links and expanded conversions remain. Single player search 706; point phase 684; relative initializer 684; selection scope 684; long vehicle kind 684 (plain; ordinary actor reads in all).
+// Frame 0x7c/0x80, saved links and expanded conversions remain. Single player search 706; point phase 684; relative initializer 684; selection scope 684; long vehicle kind 684 (plain; ordinary actor reads in all).
+// Frame/saved links and conversion expansion remain. Native iterator 702; live elapsed field 684; long contact result 694 (frame 0x80); direction library copy 684; shared reset 699; native best level 707 (plain).
+// Word level with long established/plus long player slot/long visible/long retain/
+// long established and visible 696/724/706/706/699; recovered-frame early selection
+// defaults 684, early successor cursor 712, scalar-first strongest comparison 696 (calibrated fast).
+// Matrix component loop 721; direction component loop 711; relative component loop 696; traversal-scope contact handle 702; traversal-scope tick threshold 702 (fast control 702); relative loop 714 plain, rejected.
+// Earlier 684 (was 695): Frame, saved-link homes and expanded tick conversions remain.
+// Earlier 684 (was 684): Frame 0x7c/0x80, saved links and expanded conversions remain. Single player search 706; point phase 684; relative initializer 684; selection scope 684; long vehicle kind 684 (plain; ordinary actor reads in all).
+// Earlier 684 (was 684): Frame/saved links and conversion expansion remain. Native iterator 702; live elapsed field 684; long contact result 694 (frame 0x80); direction library copy 684; shared reset 699; native best level 707 (plain).
+// Round 112: Long visible 683 (one-point gain dropped); long positive 710; long close 727; long
+// very-close 699; combined state/view guard 705; ordinary actor input in all.
+// Independent pre-clear best/strongest/both/strength/best-strength/strongest-strength/all-three/level results 695/685/685/684/695/685/685/695 (calibrated fast).
+// Original result lifetimes restored; frame 0x7c/0x80, saved links and expanded conversions remain.
+// Round 150: wide maximum 739; long queried level 684; both 739; sentinel declaration order 684; shared relative difference 692; nested maximum guards 684; direct proximity result 711; wide maximum with sentinel order 739 (calibrated fast).
+// Round 155: native field references (alias-free), then notification fields at uses: selection 684; elapsed 684; selection elapsed 684; grace 684; selection grace 684; elapsed grace 684; selection elapsed grace 684; notification fields at uses 682. All restored.
+// Native cursor/selection/all datum handles 684/684/684; existing prop receiver 707;
+// single strength observation 685; all handles with prop/strength/both 707/685/732.
+// Original complete body and all inherited input/helper declarations restored.
+// Round 212: Common notice dispatch with short/word/long/dword selected event 734 each;
+// player admission shared before selection 711 each. Frame 0x7c remains; original calls restored.
+// Round 376: Native transform pointer/value 684/774; all nine row products with
+// raw/pointer/value receivers 684/684/774; direct output with native pointer/value/value-and-
+// products 717/724/724. Calibrated fast; original body restored.
+// Round 140: Sequential absolute/relative velocity workspace with parent observation/shared player
+// ordinal/native established interactions 701/701/701/701/683/683/683/683; native visible/positive/retain
+// combinations and full-width player slot on that graph 682/704/682/707/685/707/710/706. Best 682 gains only
+// two, frame 0x74 versus 0x80; all original vectors, observations, result widths, ordinal lifetimes and input
+// access restored.
+// Round 354: shared dot at absolute/relative/facing/absolute-relative/absolute-facing/relative-facing/all
+// scoring sites 684 each; all with native signed-word maximum 707. Original complete body restored.
 // @retail 0x266640
 void function_266640(long actor_index)
 {

@@ -1226,17 +1226,46 @@ long function_2197f0(real gain);
 
 /* a sound class's gain in decibels: its fade, ducked by the current and the
    previous ambience */
+// score 149 (was 149): Frame 0xc agrees; early table load, gain home, delayed ESI save and fade scheduling differ.
+// Retail keeps gain in a stack home from entry (stored before the flag test, EDI keeps a copy for the
+// plain returns), the helpers read it there with no copy, and each sum is stored in that home.
+// Round 72: decibels_add's second parameter a const reference 168 (retail's home store and EDI copy
+// appear; the first-argument gain is still copied to a temporary, sums go to another slot); both
+// parameters const references 173 (655 bytes: the tag gain is read in place); first parameter a const
+// reference 152; the add done in place on its first parameter 147; `*(real *)&gain +=` with a real
+// interpolation 183; `(void)&gain` 149; the class index used directly 162.
+// Frame 0xc agrees; early fade-table load, entry gain home, delayed ESI save and fade scheduling remain.
+// Common gain result 172; early system receiver 217; outer elapsed 162; hold-first branches 206; assigned clamps 165.
+// Unsigned gain 162; entry gain declaration 162; disabled-ducking early return 172;
+// shared fade-in duration 162; distinct-ambience case first 163.
+// Forced interpolation inline 162; direct fade-table fields 169; readonly class views 162; system rereads 162;
+// short-duration exit 162.
+// Release fraction term 163; ducking-field rereads 313; shared fade fraction 162;
+// shared fade time 162; both fade workspaces 162.
+// Hold duration snapshot 165; ambience time snapshot 173; ducking gain snapshot 165;
+// upper-first release clamp 162; all three snapshots 178 (fast); all restored.
+// Both ambience indices 170; readonly fade 162; equality-first admission 198; shared ducking pointer 162; native class ordinal 149 kept plain; int ordinal 149; ordinal with unsigned gain 149; ordinal with common gain result 157.
+// Shared sum operand order 174; interpolation start snapshot/accumulator 149/149;
+// addition accumulator 147; start snapshot plus sum order 174; native endpoints 149;
+// both accumulators 147; integer result home 149.
+// Existing shared sum 173; shared sum with live gain/common result/readonly fade 188/142/173;
+// live gain with value sum 211; shared common result with readonly fade/shared workspaces 142/142;
+// shared live gain with direct table 188. Seven-point result forms and unmatched reference forms restored.
+// Round 160: Interpolation input orders a/t/b 149, b/a/t 148, b/t/a 148, t/a/b 149, t/b/a 148; immutable
+// base plus release gain 149; interpolation/addition home names 149/149. All executable lines and helper
+// contracts restored. One-point previews excluded by the minimum-gain rule.
 // @retail 0x127010
 long function_127010(short class_index)
 {
-	s_sound_class_fade *fade = &g_502118[class_index];
+	long index = class_index;
+	s_sound_class_fade *fade = &g_502118[index];
 	long gain = fade->current;
 
 	if ((byte)~fade->flags & 1)
 	{
 /* retail calls the class lookup out of line here */
 #pragma inline_depth(0)
-		s_sound_promotion_view *sound_class = (s_sound_promotion_view *)function_221810(class_index);
+		s_sound_promotion_view *sound_class = (s_sound_promotion_view *)function_221810(index);
 #pragma inline_depth(255)
 		s_sound_system_view *sound_system = SOUND_SYSTEM;
 
@@ -1424,6 +1453,19 @@ void looping_sound_controller_release(long index);
 
 /* deletes a playing sound, letting go of its looping sound's controller */
 #pragma inline_depth(0)
+// score 5 (was 5): Pool save remains EBP versus EBX; void tail result 5, inline release declaration 5,
+// noinline declaration 5, controller workspace first 5, byte count workspace 5, complete decrement
+// predicate 5, signed count view 5, indexed controller 5.
+// playback pool retained in EBP instead of EBX; no frame, length 98 agrees.
+// Controller reference/workspace 5 each; no-effect cleanup 43; decrement rejection 5;
+// scoped controller lookup 39; receiver names 5; scoped reference 39; reference cleanup 43.
+// Inline/forced-inline controller getter 40/40; open-depth inline getter with noinline release 122;
+// playback/both receiver references 5/5; const playback/controller pointers 5/5;
+// unsigned decrement/mask 5/5.
+// Round 56: the byte decrement is what keeps the pool out of EBX (as a dword store it gets EBX);
+// pool local 43 (stack convention); effect index local 5; byte count local 5; count pointer 5;
+// nested decrement tests 5; harness: char field, cast, `--`/`&=`, `+ 0x7f`, long/short/dword
+// temporaries, mask first, bitfield, release without the depth pragma all keep EBP or worsen.
 // @retail 0x127390
 void sound_playback_delete(long sound_index)
 {
@@ -1468,27 +1510,19 @@ static inline short sound_definition_priority(s_sound_definition const *definiti
 // @retail 0x128b90
 bool function_128b90(long other_index, long sound_index, real distance)
 {
-	s_sound_playback *sound = SOUND_PLAYBACK_GET(sound_index);
 	s_sound_playback *other = SOUND_PLAYBACK_GET(other_index);
+	s_sound_definition *other_definition = sound_definition_get(other->definition_index);
+	s_sound_playback *sound = SOUND_PLAYBACK_GET(sound_index);
 	s_sound_definition *definition = sound_definition_get(sound->definition_index);
-	long other_priority = sound_definition_priority(sound_definition_get(other->definition_index));
+	long other_priority = sound_definition_priority(other_definition);
 	long priority = sound_definition_priority(definition);
 
-	if (other_priority > priority)
-		return true;
-	if (other_priority == priority)
-	{
-		if (other->definition_index == sound->definition_index)
-		{
-			if (other->value_a0 > sound->value_a0)
-				return true;
-			if (other->value_a0 != sound->value_a0)
-				return false;
-		}
-		if (sound_source_get_listener_distance(sound->listener_index, (s_sound_location_source const *)&sound->location) > distance)
-			return true;
-	}
-	return false;
+	return other_priority > priority ||
+		other_priority == priority &&
+		(other->definition_index == sound->definition_index ?
+			other->value_a0 > sound->value_a0 || other->value_a0 == sound->value_a0 &&
+				sound_source_get_listener_distance(sound->listener_index, (s_sound_location_source const *)&sound->location) > distance :
+			sound_source_get_listener_distance(sound->listener_index, (s_sound_location_source const *)&sound->location) > distance);
 }
 
 /* finds a voice for a playing sound: a free one of its definition's type,
@@ -2626,6 +2660,10 @@ static inline short sound_voice_find_available_channel(char type)
 // score 113 (was 113): frame 12 and saved result byte remain; failure flag 130, entry failure
 // 130, complemented status 132, long channel 147, driver-first/late-system commits 130/130,
 // status plus driver-first 132, requested buffer first 130.
+// score 113 (was 113): `return true` on the success path gives retail's 8-byte frame and both
+// exits (139, 415 bytes); with `~status & DSBSTATUS_PLAYING` 131 (430 bytes); with driver_index
+// set before the channel test too 135 (430 bytes, aligned 101 of 124: channel spilled where retail
+// spills buffer_index); result declared first 139; failure/success as one if/else 126.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -2788,6 +2826,16 @@ void function_129380(vector3f const *const *voice_values, vector3f const *const 
 	}
 }
 
+// score 3 (was 3): Fade-call EDI/EAX/EBX setup remains; pool scope 3, metadata scope 3, fixed receiver
+// 3, direct pool 3, listener home names 3, stored location reference 3, distance outcomes 23, index
+// workspace first 3.
+// frame 0xc and length agree; fade-call EDI/EAX/EBX setup order differs.
+// Clear helper/listener declaration/query test 3 each; accepted listener first 34;
+// shared playback flags/direct location flags 3 each; fading field 8; fading helper 3;
+// shared next-index helper 3; shared slot index 176.
+// Separate noinline and inline+noinline declarations 3 each; noinline replacing inline-depth 3;
+// long and unsigned-word curve declarations 3 each; fading-test local 3; byte-wide clear 3;
+// native listener store 3; per-iteration index 3.
 // @retail 0x128020
 void function_128020(void)
 {
@@ -2989,6 +3037,24 @@ struct s_animation_ref;
 void function_219310(s_animation_state *state, s_animation_ref *ref, short value);
 long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 
+// score 86 (was 86): Frame 8 agrees; playback base, clock scheduling and promoted mode remain.
+// Retained clock receiver 163; voice record reference 86; combined receivers 163; role names 86;
+// native update/mode/both flag words 86/86/86; receiver plus native flags 163.
+// playback base/clock scheduling and promoted mode remain; acquisition/free/load
+// inline combinations and stdcall acquisition 86 each; declared mode/flags/both 86 each; shared datum
+// iterator 196.
+// Loop-entry playback/clock loads and mode comparison remain.
+// pool playback 104; promoted mode 127; entry/loop reason 86/86; native record reference 86;
+// promoted voice 132; shared absolute index 162; mode with entry reason 127.
+// Retail's `movsx eax, ax; sub eax, 0; jne` is the compare chain of a switch with a second,
+// non-empty case (an empty case or a single case gives `test ax, ax`). Clock on the left 91;
+// pool data playback 104, with the clock on the left 109; while loop 267-270 (all fast).
+// Failed-acquisition first 127; pending-chunk first 131; retained callback source 86;
+// previous voice owner 86; mode zero guard 155; separate update guard 86;
+// range pointer addition 86; callback-availability first 85 (one point, rejected).
+// Loop-end search seed/explicit cases 86/86; first search result/both boundaries 86/86; existing tail
+// search/seed plus search 86/86; first/both salt producers 183/203. Original body restored; playback/clock and
+// native mode scheduling remain.
 // @retail 0x1282d0
 void function_1282d0(void)
 {
@@ -3247,13 +3313,40 @@ void function_125d60(void)
 
 void __stdcall function_1264c0(dword arg_0);
 
-// score 102 (was 139): shared invalid register, fade-store schedule and signed-tick/wait code differ.
+// score 87 (was 87): early EDI save, reconstruction calls and signed-clock wait remain; coordinated
+// reconstruction inline/forced 123/123; search inline 87; reconstruction/search 123;
+// reconstruction/fade 123; search/fade 87; all inline 123; forced reconstruction/fade 123.
+// early EDI save, reconstruction calls and signed-clock wait remain; frame eight agrees.
+// Earlier: shared invalid register, fade-store schedule and signed-tick/wait code differ.
 // Boolean datum iterator 134; existing datum reconstruction 102; inline absolute search 139;
 // pool reads at use 139; retained playback base 137; cleanup exit 139; native flags 139; direct impulse members 139.
 // Shared invalid register and timer conversion remain; availability call 139, chained resets 139, array fill 140, unsigned handle 139, outer deadline 139.
-// score 87 (was 102): reconstruction calls, clock conversion and wait layout remain;
+// Earlier: reconstruction calls, clock conversion and wait layout remain;
 // reconstruction force/plain inline 102/102; with shared fade 87 plain; with flag/gain/deadline/reset
 // 102/102/102/102 fast; ordinary inline plus fade 107 fast; shared fade without declaration 87 plain.
+// Earlier: early EDI save, reconstruction calls and signed-clock wait remain;
+// shared inline reconstruction both/first/next 123/120/108; calling iterator with fade 101;
+// expanded tick names/lexical homes/wait/fill 123/123/123/124.
+// Earlier: reconstruction expansion and signed-clock wait remain; shared fade with
+// native/full-inline/Boolean iterators 113/112/118; native integer tick 113; iterator workspace
+// before clock inline/Boolean 111/118; early real tick native/inline 113/113.
+// Absolute search cursor 91; with initial/next/both inline reconstruction 105/110/127;
+// cursor with early deadline 90; native int tick 91; early real start 96; traversal-only cursor 86.
+// Entry source and every shared operation restored.
+// Early EDI save, reconstruction calls and signed-clock wait remain.
+// Earlier 102 (from 139): shared invalid register, fade-store schedule and signed-tick/wait code differ.
+// Earlier 87 (from 102): reconstruction calls, clock conversion and wait layout remain;
+// Earlier 87 (from 87): early EDI save, reconstruction calls and signed-clock wait remain;
+// Earlier 87 (from 87): reconstruction expansion and signed-clock wait remain; shared fade with
+// initial/next/both valid-search conditionals 98/103/113; initial/next/both result arms 98/103/113;
+// both admissions with native tick/index 113/113.
+// Masked slot copied before the fade call 83 at retail length (a one-use copy, not kept);
+// next slot 86; with both inline lookups 111/117, initial inline lookup 90/96, next inline lookup 101/104.
+// Round 88: a wait loop run by a `waiting` flag cleared in its else arm gives retail's top-tested
+// SSE wait (alone 113); with data_datum_index and the `index == NONE ? 0 : (index & 0xffff) + 1`
+// next search (retail's masked-slot reuse) 9; plus a memset of the impulse ids 6 (its pointer in
+// ECX, retail EAX). Not kept without a match. Next search alone 85; deadline in the loop condition
+// 107; local-pointer, loop, chained and helper id stores 9; struct copy of the ids 114.
 // @retail 0x1257b0
 void function_1257b0(void)
 {
@@ -3315,6 +3408,36 @@ struct s_128ca0
 	byte field_468[0x10];
 };
 
+// score 234 (was 234): Frame 0x49c versus 0x494; initial gain argument homes and joined integer clamp stores remain.
+// Aggregate packet 314; later packet lifetime 288; role names 241; real gain field 294; full memset 321.
+// Existing shared bit clamp 234; unsigned gain carrier 241; shared branch gain workspace 241;
+// long next-chunk candidate 254; completed-chunk early exit 241.
+// Shared clamp common result 255; forced gain-add inline 234; gain before packet 234; long controller count 235; named
+// flag masks 234.
+// Both branch gain names 234; raw gain before pitch 268 (frame 0x494); playback-bound rereads 234;
+// pitch-range rereads 258; existing-stream branch first 235; recovered-frame form with shared scale 237.
+// Definition after packet initialization 237; branch gain writeback 234; current-chunk candidate 234;
+// sequential gain workspace 234; direct processed-gain initialization 234 (fast); all restored.
+// Pitch lower snapshot 273; native flag3 view 236; pitch workspace subtraction 234; zero-default controller gain 267; readonly parameter/range views 234 (fast); all restored.
+// Shared sum accumulator 234; commuted sum 233; returned bit home 234; native sum
+// inputs 234; native inputs plus bit home 234; early raw gain with accumulator,
+// commuted sum or native inputs 268 each (frame 0x494, worse count).
+// Native nested packet with original/part/whole/aggregate clears 234/304/316/309;
+// reverse part clears/entry declaration/late packet/entry with part clears 304/234/283/304.
+// Original packet view and clear boundaries restored.
+// Round 160: Native permutation gain/count, controller gain array, promotion coefficient and all three
+// together 234 each; native clear-member addresses 234; chained packet flags 293; upper-first shared pin
+// 234; pin input home name 234. Original fields, clear ranges and helpers restored; protected chunk
+// interface unchanged.
+// Round 356: Native playback-parameter value 311; named pitch span and complete promotion
+// adjustment 234/234; parameter/span 311; parameter/adjustment 311; span/adjustment 234;
+// all three 311; with native pitch-range value 337. Original input pointers and expression parts restored.
+// Round 254: live voice-table fields, alone/with scale/raw-gain-first/both 293/249/277/302;
+// the same four with live pitch-parameter fields 293/249/293/244. All regress;
+// original voice/parameter receivers, scale observations, gain schedule and body restored.
+// Round 195: Processed-gain producer ordinary/noinline/combined declarations 234 each;
+// forceinline 373. With raw gain before pitch 268/268/268/374; the 268 forms use frame
+// 0x494. Both declaring files and original body restored; gain homes and clamp joins remain.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3355,8 +3478,7 @@ void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization c
 	if (!(bool)((local_1->flags >> 9) & 1))
 	{
 		real local_12 = *(real *)&local_6 + (real)*(signed char *)((byte const *)local_8 + 4);
-		local_12 = PIN(local_12, -64.0f, 0.0f);
-		local_3.field_c = *(long *)&local_12;
+		local_3.field_c = decibels_pin(*(long *)&local_12);
 		function_21f8a0(local_0->channel_index, (s_looping_channel_properties *)&local_3, (s_looping_effect_playback *)local_3.field_48);
 		function_21f720((s_looping_impulse_parameters *)local_3.field_468);
 		sound_voice_queue_chunk(arg_0, local_8, local_1->chunk_index);
@@ -3376,8 +3498,7 @@ void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization c
 	else if (local_0->permutation)
 	{
 		real local_15 = *(real *)&local_6 + (real)*(signed char *)((byte const *)local_0->permutation + 4);
-		local_15 = PIN(local_15, -64.0f, 0.0f);
-		local_3.field_c = *(long *)&local_15;
+		local_3.field_c = decibels_pin(*(long *)&local_15);
 		function_21fa80(local_0->channel_index, (s_looping_channel_properties *)&local_3, (s_looping_effect_playback *)local_3.field_48, true);
 	}
 	if (!TEST_FIELD_BIT(local_1->flag6))
@@ -3454,7 +3575,7 @@ void function_1293f0(void)
 
 long function_155760(long arg_0);
 void function_caf60(long arg_0, point3f *arg_1);
-void function_11d6a0(vector3f const *arg_0, vector3f const *arg_1, quaternionf *arg_2);
+void function_11d6a0(quaternionf *arg_2, vector3f const *arg_0, vector3f const *arg_1);
 void function_11d950(quaternionf const *arg_0, quaternionf const *arg_1, quaternionf *arg_2, real arg_3);
 extern quaternionf *g_4687cc;
 void function_220790(s_sound_listener const *arg_0);
@@ -3487,14 +3608,49 @@ struct s_127403
 
 PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
-	real local_0 = 2.0f * arg_0->w * arg_0->w - 1.0f;
-	real local_1 = 2.0f * (arg_0->j * arg_1->j + arg_0->k * arg_1->k + arg_0->i * arg_1->i);
-	real local_2 = 2.0f * arg_0->w;
-	arg_2->i = (arg_0->j * arg_1->k - arg_0->k * arg_1->j) * local_2 + arg_0->i * local_1 + local_0 * arg_1->i;
-	arg_2->j = (arg_0->k * arg_1->i - arg_0->i * arg_1->k) * local_2 + arg_0->j * local_1 + local_0 * arg_1->j;
-	arg_2->k = (arg_0->i * arg_1->j - arg_0->j * arg_1->i) * local_2 + arg_0->k * local_1 + local_0 * arg_1->k;
+	real rotation_i = arg_0->i;
+	real rotation_j = arg_0->j;
+	real rotation_k = arg_0->k;
+	real rotation_w = arg_0->w;
+	real local_0 = 2.0f * rotation_w * rotation_w - 1.0f;
+	real local_1 = 2.0f * (rotation_j * arg_1->j + rotation_k * arg_1->k + rotation_i * arg_1->i);
+	real local_2 = 2.0f * rotation_w;
+	arg_2->i = (rotation_j * arg_1->k - rotation_k * arg_1->j) * local_2 + rotation_i * local_1 + local_0 * arg_1->i;
+	arg_2->j = (rotation_k * arg_1->i - rotation_i * arg_1->k) * local_2 + rotation_j * local_1 + local_0 * arg_1->j;
+	arg_2->k = (rotation_i * arg_1->j - rotation_j * arg_1->i) * local_2 + rotation_k * local_1 + local_0 * arg_1->k;
 }
 
+// score 535 (was 535): Frame 0x130 versus 0xe8; native rotation, environment and listener-index homes remain.
+// Const reverb 551; outer records 551; shared cross product 635; direct blend reads 555; entry counter 552.
+// Output-before-inputs callee order 551 (callee 15 to 11); all call argument roles preserved.
+// Static const fallback 727 (frame 0xec); spatial role names 551; long success workspace 551;
+// short listener counter 581; outer spatial workspace 551; interpolated point setter 615;
+// position-zero setter 616.
+// Quaternion input values 535 kept (plain, frame 0x130); vector input values 647; both input sets 1057; entry
+// quaternion 551; entry queried position 551.
+// Weighted cross terms 596; projection products 596; scaled-input terms 590; rotation subtotals 596;
+// vector-first publication 535 (fast); all restored.
+// Shared handle query 575; complete rotation outputs 1050; quaternion cross helper 1050; unsigned listener ordinal 557; plain environment cursor 649; positive entry scope 535 (fast); all restored.
+// Native quaternion-reference 535; quaternion-value 992; vector-reference 535; vector-value 1011;
+// both references 535; both values 956; quaternion/output references 535; value inputs/output reference 956.
+// Round 160: Rotation scale declaration orders 0/2/1 583, 1/0/2 589, 1/2/0 589, 2/0/1 586, 2/1/0 1050;
+// quaternion acquisitions w/i/j/k 538 and k/j/i/w 545; native scale-home names 535. Original quaternion
+// snapshots, expressions, helper contract and body restored.
+// Rotation output orders ikj/jik/jki/kij/kji 545/560/554/541/550;
+// uniform projection/scaled-input/cross-scale multiply operand orders 535/535/535.
+// publication aggregate 535; fallback entry lifetime 558; aggregate entry lifetime 558; environment
+// observations 537; listener observations 586; record observations 619; aggregate record observations 619;
+// forced existing rotation 535. All restored.
+// Placement/environment status byte-bool, word-bool, bool-byte, bool-word, byte-byte, byte-word, word-byte,
+// word-word; then five remaining complete quaternion/input/output formal orders:
+// 535/535/535/554/535/554/535/554/560/568/568/560/535 (fast); all restored.
+// Round 56: retail reads the default reverb from the existing const g_44a2a0 (0x48 bytes: our
+// frame excess) and inlines 0x14ddc0/0x14de70 (the `i != NONE` and `setne cl` player test),
+// 0x16f3a0 (the `cmovne` state pointer) and has the fallback copy in both arms. g_44a2a0 (made
+// extern in sound_driver.h) 760 (fast; frame 0xe8, 2065 bytes); with the three helpers and the
+// fallback in both arms 583 (frame 0xe0, 2243 bytes, aligned 650 -> 621; 0x16f3a0 stays out of
+// line and the first 0x155760 call sinks); plus an `inline` redeclaration of 0x16f3a0 583;
+// g_44a2a0 with only the helper loop head 637; the helper loop head alone 597. All restored.
 // @retail 0x127400
 void function_127400(bool arg_0)
 {
@@ -3533,7 +3689,7 @@ void function_127400(bool arg_0)
 					local_9.y = (local_20.y - local_6->field_0.y) * local_19 + local_6->field_0.y;
 					local_9.z = (local_20.z - local_6->field_0.z) * local_19 + local_6->field_0.z;
 					quaternionf local_21;
-					function_11d6a0(&local_6->field_20, (vector3f *)(local_13 + 0x180), &local_21);
+					function_11d6a0(&local_21, &local_6->field_20, (vector3f *)(local_13 + 0x180));
 					function_11d950(g_4687cc, &local_21, &local_21, local_19);
 					function_1275d8(&local_21, &local_6->field_20, &local_7);
 					function_1275d8(&local_21, &local_6->field_2c, &local_8);
@@ -3635,7 +3791,9 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
 // score 108 (was 108): aligned frame 0x174c versus 0x1744; promoted voice limit 108; entry system
 // 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
-// next-player result 115; both player values 122.
+// next-player result 115; both player values 122; const element arrays 108; `= {}` arrays 121;
+// `!= 0` flag argument 128; flag argument through local_0 108; long restart cursor 134 (gives
+// retail's movsx/inc/cmp loop; only the loop padding jump moves with the longer prologue).
 // @retail 0x125b40
 void function_125b40(void)
 {

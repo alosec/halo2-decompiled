@@ -68,6 +68,10 @@ bool actor_has_joint_invitation(long actor_index, short type);
 long function_25d810(long object_index, long actor_index, bool create);
 bool function_25d9b0(long prop_index);
 
+// score 131 (was 131): retail passes the actor index to function_26f060 in ECX and
+// the invitation type in EDI, ours passes them in EAX and ESI; that choice also swaps
+// the prop index and the node between ESI/EBP and EBP/EDI through the body. The
+// convention is set by function_26f060 (src/unknown_26e370.cpp), not editable here.
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {

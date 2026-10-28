@@ -122,7 +122,7 @@ bool __stdcall function_11bce0(long object_index)
 {
 	s_crate_object_view *crate = CRATE_GET(object_index);
 	bool result = false;
-	if (crate->state.flag12 && crate->havok_component_index != NONE)
+	if (TEST_FIELD_BIT(crate->state.flag12) && crate->havok_component_index != NONE)
 	{
 		function_1d24a0(havok_component_get(crate->havok_component_index), 1.0f);
 		result = true;

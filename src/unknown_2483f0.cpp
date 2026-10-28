@@ -30,9 +30,16 @@ struct s_particle_location_datum
 	short salt;
 	byte unknown02;
 	byte random;
-	long first_emitter_index;
-	long last_emitter_index;
-	long next_index;
+	union
+	{
+		struct
+		{
+			long first_emitter_index;
+			long last_emitter_index;
+			long next_index;
+		};
+		long link_indices[3];
+	};
 	point3f position;
 	real unknown1c;
 	vector3f vector;
@@ -136,6 +143,41 @@ static inline void particle_cross_product3d(vector3f const *a, vector3f const *b
 
 /* the rotation and position a particle system is drawn at: its own, or
    moved by the first person offset */
+// score 52 (was 52): frame 0x30 agrees; four bytes long. Retail keeps the left axis in
+// xmm2/xmm7/xmm5 across 0x142eb0 (which only writes xmm0/xmm1) and gives the point's y/z xmm3/xmm4;
+// ours gives the left axis xmm2/xmm3/xmm4, so the point loads and the products are scheduled
+// differently; the cross-product multiplies interleave with the axis copies in another order.
+// The sums already associate as retail's ((y*l + z*u) + x*f, (x*f + y*l) + z*u); 0x143070 is not
+// the inlined helper (its y/z sums associate differently).
+// Round 49: 40 random product operand/sum orders 52-58 (best 52/52); axis copies before the
+// cross product 56, forward copy only 52 (screened), up copy first 50 positional (screened),
+// cross product of the copied axes 85 positional; point declared at its copy 52.
+// Earlier: matrix inline/noinline 52/52; cross force-inline 52; matrix aggregate 107; left-axis
+// construction 140; point first/renamed 52/52; consumed matrix output 54; shared cross product 55;
+// rotation memcpy/const point/point memcpy 52; indexed rotation 92; accumulated components 95;
+// indexed translation 85; position output first 54; existing axis-matrix helper 73; scalar point
+// coordinates 98; paired cross products 55; six cross products 52; compound cross components 52;
+// cross value result 140; frame-mode return 104; offset at construction 52; shared point setter
+// 78; forward/up snapshots 107/111; both axes and up-first 137/135; scoped axes 137;
+// both/up/forward publication before cross 137.
+// cross-product schedule and retained left-axis/point XMM homes differ.
+// Matrix inline/noinline 52/52; cross force-inline 52; matrix aggregate 107;
+// left-axis construction 140; point first/renamed 52/52; consumed matrix output 54.
+// cross-product scheduling and point/XMM homes still differ; four bytes long.
+// Shared cross product 55; rotation memcpy/const point/point memcpy 52;
+// indexed rotation 92, accumulated components 95, indexed translation 85;
+// position output first 54; existing axis-matrix helper 73.
+// matching 0x30 frame; cross-product schedule, left-vector XMM homes
+// and point-coordinate loads still differ, with four extra bytes. Earlier operand/sum/helper
+// forms excluded; tried scalar point coordinates 98; paired cross products 55; six cross
+// products 52; compound cross components 52; cross value result 140; frame-mode return 104;
+// offset at construction 52; shared point setter 78.
+// score 52 (was 52): cross scheduling and retained left-axis/point XMM homes remain.
+// Complete point result/aggregate 121/121; shared result setter 114; planar/horizontal/vertical results 51/52/53;
+// immutable input with complete result 121; scoped input/result 121. The one-point gain is rejected.
+// Cross scheduling and retained axis/point XMM homes still differ. Forward/up
+// snapshots 107/111; both axes and up-first 137/135; scoped axes 137; both/up/forward
+// publication before cross 137/137/137.
 // @retail 0x248450
 void function_248450(matrix3x3 *rotation, s_particle_frame const *frame, point3f *position, matrix3x3 const **rotation_result, point3f const **position_result, bool field_b4)
 {
@@ -170,6 +212,8 @@ void function_248450(matrix3x3 *rotation, s_particle_frame const *frame, point3f
 }
 
 /* a new particle location at the origin */
+// Matches once g_4ba034 is treated as address-taken (0x117dd0 reads it through its address, as retail
+// reloads it there): the frame-count load then stays below the float stores.
 // @retail 0x248620
 long function_248620()
 {
@@ -179,14 +223,13 @@ long function_248620()
 	{
 		s_particle_location_datum *particle_location = &((s_particle_location_datum *)g_51ec8c->data)[location_index & 0xffff];
 
-		particle_location->first_emitter_index = NONE;
-		particle_location->last_emitter_index = NONE;
-		particle_location->next_index = NONE;
+		for (long link_index = 0; link_index < 3; link_index++)
+			particle_location->link_indices[link_index] = NONE;
 		particle_location->position = *g_468788;
 		*(point3f *)&particle_location->vector = *g_468788;
-		*(real volatile *)&particle_location->unknown2c = 0.5f;
-		*(real volatile *)&particle_location->unknown1c = 1.0f;
-		*(dword volatile *)&particle_location->unknown30 = g_4ba034;
+		particle_location->unknown2c = 0.5f;
+		particle_location->unknown1c = 1.0f;
+		particle_location->unknown30 = g_4ba034;
 		particle_location->random = (byte)random_index(&g_4e7408->seed, 0xff);
 	}
 

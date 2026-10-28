@@ -364,12 +364,30 @@ void function_2bdd20(s_spline_2bd *spline, point3f *points)
 	}
 }
 
+// the four control points of segment n of a closed spline: the segment's two
+// points and the midpoints with their outer neighbours
+// score 43 (was 43): no frame; spline/index/point input ownership and first average schedule differ.
+// native output-pointer result without index home 64 fast;
+// ordinary inline declaration without index home 64 fast;
+// pointer result and inline declaration 64 fast;
+// inline direct output elements 65 fast;
+// pointer result with inline direct elements 65 fast;
+// conditional wrapped-index results 83 fast;
+// wrapped indices with pointer result 83 fast;
+// wrapped indices, pointer result and inline declaration 83 fast;
+// spline/index/points entry convention and first source-address lifetimes remain.
+// Indexed sums/scales/both 41/41/41; native sum/scale setters with index home 135/43;
+// native middle copies 83; previous/both wrapped pointers from current 41/82. All restored.
+// index remains stacked instead of spline; first average
+// address/register schedule differs. With direct index: first/last/both shared
+// scales, first/both point setters, source role names, late second-segment
+// addresses and read-only source points 64/64/64/102/134/64/79/64.
 // @retail 0x2bdd70
-void function_2bdd70(point3f *out, s_spline_2bd *spline, long n, point3f *points)
+void function_2bdd70(s_spline_2bd *spline, point3f *points, long n, point3f *out)
 {
-	long const *index_reference = &n;
-	long i = *index_reference * 2;
+	long i = n * 2;
 	long previous = i - 1;
+	long following = i + 1;
 	long next = i + 2;
 
 	if (previous < 0)
@@ -380,7 +398,7 @@ void function_2bdd70(point3f *out, s_spline_2bd *spline, long n, point3f *points
 	point3f &first_output = out[0];
 	point3f *a = &points[previous];
 	point3f *b = &points[i];
-	point3f *c = &points[i + 1];
+	point3f *c = &points[following];
 	point3f *d = &points[next];
 	first_output.x = b->x + a->x;
 	first_output.y = b->y + a->y;
@@ -399,12 +417,54 @@ void function_2bdd70(point3f *out, s_spline_2bd *spline, long n, point3f *points
 	last_output.z *= 0.5f;
 }
 
+// score 6 (was 6): the coefficient loop sums its products in another order (retail: t3, t, then
+// the t2 product folded, row pointer based on m[i][1]); prologue, frame and weighted sums agree.
+// direct output and four reused weights 110 fast;
+// original output and four reused weights 84 fast;
+// direct output with uniform polynomial products 109 fast;
+// original output with polynomial products 86 fast;
+// direct output, weights and products 111 fast;
+// original output, weights and products 85 fast;
+// direct output, weights/products and row cursor 110 fast;
+// original output, weights/products and row cursor 87 fast;
+// frame 0x54/0x50, incoming fraction XMM3/XMM2 and coefficient homes remain.
+// Flat coefficient table 87; flat/direct output 109; flat row for 200; component
+// output alone/flat/direct 170/170/110; coefficient accumulation 89; flat row accumulation 185. All restored.
+// frame 0x54 versus 0x50, float input and coefficient/
+// weighted-sum registers differ. Immutable coefficients/powers 87/87;
+// table/power/all role names 87/87/87; direct output with immutable
+// storage/role names 109/109; complete symmetric channel products 94.
+// Round 318: delayed output home/scoped output phase 97/97 (438 bytes);
+// native initial copy 106, delayed copy 98, delayed point setter 109, delayed immutable table 97,
+// delayed weights 100, scoped weights with copy 81 (449 bytes, frame 0x50; parameter alias, not kept).
+// Direct weights/copy and coefficient phase with copy/assignment 110/110/110 (425 bytes). All restored.
+// Round 74 (kept): no volatile output, t3 = t * t * t computed before t2 = t * t, weighted sums
+// from points[0] up: 10. t2 first (t3 = t2 * t, t * t2 or t * t * t) 109/109/109; powers written in
+// the loop 117-119; table before the powers 99; one or both powers after the table 109/110/100;
+// t2 declared first, t3 computed first 31; any term order in the loop 31; power names 31;
+// weighted sums reversed/r-first/parenthesised 31/31/29. Then (kept) row pointer in the loop 6;
+// sum groupings 9/12/9; const table 10; all product orders x three groupings, with and without the
+// row pointer, 6-13; row cursor 9; flat table 10, with the row pointer 6; parameter reorders 10
+// (before the row pointer).
+// Round 42: quadratic-origin row pointer, reordered chain and sequential accumulation 6/6/6;
+// named cubic-linear with plain/swapped/mutable quadratic 9/9/9; native plane row 6; split accumulation 10.
+// Power triple/product helper with shifted row, direct powers and reversed inputs 5/5/5 (439 bytes;
+// one-point grouped-power forms, not kept); scalar SSE multiply 109; scalar conversion form did not compile.
+// Shared square with const/products/early weights 110; early product-helper
+// input 5, late input 99; row/table/const/accumulation variants 5. All restored.
+// Native coefficient/plane rows with the shared product, either input order
+// and early/late weights 5 (439 bytes); quadratic coefficient still loads
+// separately. Grouped input and one-point reduction discarded.
+// Explicit shared square, immutable square, uniform named products and earlier weight-array
+// declaration: eight forms 110 each (425 bytes). Existing three-component product with powers
+// before the table 5/5 (439 bytes); after the table 99/99. Native row/direct table, immutable
+// powers, coefficient-slot accumulation and component initialization: eight forms 5 each.
+// The helper recovers the row base and first two terms but not the folded multiply; all restored.
 // @retail 0x2bde90
 void function_2bde90(real t, point3f *out, point3f *points)
 {
-	point3f *volatile output = out;
+	real t3 = t * t * t;
 	real t2 = t * t;
-	real t3 = t2 * t;
 	real m[4][4] =
 	{
 		{ -1.0f, 3.0f, -3.0f, 1.0f },
@@ -417,15 +477,17 @@ void function_2bde90(real t, point3f *out, point3f *points)
 
 	do
 	{
-		r[i] = m[i][0] * t3 + m[i][2] * t + m[i][1] * t2 + m[i][3];
+		real const *row = m[i];
+
+		r[i] = row[0] * t3 + row[1] * t2 + row[2] * t + row[3];
 		i++;
 	}
 	while (i < 4);
 
-	*output = *g_468788;
-	output->x = points[3].x * r[3] + points[2].x * r[2] + points[1].x * r[1] + points[0].x * r[0];
-	output->y = points[3].y * r[3] + points[2].y * r[2] + points[1].y * r[1] + points[0].y * r[0];
-	output->z = points[3].z * r[3] + points[2].z * r[2] + points[1].z * r[1] + points[0].z * r[0];
+	*out = *g_468788;
+	out->x = points[0].x * r[0] + points[1].x * r[1] + points[2].x * r[2] + points[3].x * r[3];
+	out->y = points[0].y * r[0] + points[1].y * r[1] + points[2].y * r[2] + points[3].y * r[3];
+	out->z = points[0].z * r[0] + points[1].z * r[1] + points[2].z * r[2] + points[3].z * r[3];
 }
 
 /* ---- the hill's shape ---- */
@@ -433,18 +495,77 @@ void function_2bde90(real t, point3f *out, point3f *points)
 /* builds the hill's polygon on the spline through its markers, and its
    center, radius, perimeter and height range (the height range also covers
    the hill's other markers) */
-// score 130 (was 134): control-call convention and scan induction differ;
+// score 18 (was 18): Sampling fraction/call setup and marker-loop registers remain; frame and retail length agree.
+// Earlier at 25 (was 25): control/sampling conventions, radius base and marker registers remain.
+// Earlier at 130 (was 134): control-call convention and scan induction differ;
+
+// Earlier at 25 (was 25): frame 0x110 agrees; control/sampling conventions, radius base and marker registers differ.
+// Earlier: control-call convention and scan induction differ;
+// control-call convention and scan induction differ;
 // segment control scope 141 fast; sample point scope 141 fast; late marker
 // array 141 fast; unsigned edges 142 fast; separate marker counters 141 fast.
 // Control/sampling calls and scan induction remain; center/radius/both values 171/169/185;
 // vertex memcpy 190; edge-length values 139; main height value 130 plain kept;
 // shared point count 326; height plus count 345 (plain).
-// score 130 (was 134): protected control/sampling calls and scan induction remain;
+// Earlier at 130 (was 134): protected control/sampling calls and scan induction remain;
 // center/radius/both/height/all endpoint scans 375/475/716/378/950f; frame/size/global 237/276/1164f.
-// score 130 (was 130): protected control/sampling calls and scan induction remain; main scalar
+// Earlier at 130 (was 130): Protected control/sampling conventions and scan induction remain. external center binding 130; external
+// Earlier: protected control/sampling calls and scan induction remain;
+// Earlier: Protected control/sampling conventions and scan induction remain. external center binding 130; external
+// Earlier 130 (was 134): protected control/sampling calls and scan induction remain;
+// Earlier 130 (was 130): Protected control/sampling conventions and scan induction remain. external center binding 130; external
+// radius binding 131; center radius bindings 131; external height bindings 151; native scan ordinal 130;
+// center library initialization 137; marker library input 130; independent point ordinals 158.
+// Protected control/sampling conventions and scan induction still differ.
+// shared edge magnitude 158p; native radius displacement 130p; center component loop 138p; scale
+// component loop 130p; marker position reference 133p; marker array cursor 165p; perimeter vertex
+// references 130p; edge magnitude with radius value 158p.
+// protected control/sampling calls and scan induction remain; main scalar
 // bounds 143; shared center height 143; count snapshot 274, with center height 274; selections 143;
 // minimum/maximum alone 140/135; main plus marker bounds 171; initialized bounds 133;
 // initialized bounds with direct height reads 128 (two-point gain rejected). All plain.
+// Frame 0x110 and protected helper conventions remain; independent center publication
+// xzy/yxz/yzx/zxy/zyx 134/134/134/134/134; center scale xzy/yxz/zyx 130/130/130
+// (all plain). Original arithmetic, scans and helper calls restored.
+// Earlier at 25 (was 130): the calls to 0x2bdd70 (index in a stack slot, retail EDX) and 0x2bde90
+// Earlier: the calls to 0x2bdd70 (index in a stack slot, retail EDX) and 0x2bde90
+// Earlier 25 (was 130): the calls to 0x2bdd70 (index in a stack slot, retail EDX) and 0x2bde90
+// (t in XMM3, retail XMM2), the radius loop's pointer base and the marker loop's registers differ.
+// Element pointer for both radius components 22 (gain 3, not kept); marker index zeroed before its
+// guard 20 (not kept); marker loop as a for 582 (unrolled); globals local in/before the marker loop
+// 20/22; callee 0x2bdd70 without its index address read 43 -> 64 (index in ECX); (spline, points,
+// n, out) order with an indexed body 86 (points on the stack).
+// Native XY aggregate copy 187f; marker height 160f; unsigned/short marker ordinal 74f/92f;
+// copy plus height/index 220f/187f; height plus index 97f; copy/height/index 201f.
+// Unchanged reduced preview 74f versus full 25; all new forms restored.
+// shared sample/marker point 74 fast;
+// step field at each use 187 fast;
+// shared point and direct steps 187 fast;
+// both point-array role names 74 fast;
+// marker workspace declared with points 74 fast;
+// immutable marker point 74 fast;
+// one marker-entry array observation 81 fast;
+// entry array with shared point 81 fast;
+// Round 318, rolled-scan body: shared displacement 75f; main height 80f;
+// marker field reads at every use 77f; displacement/height 81f, displacement/marker 78f,
+// height/marker 97f, all three 98f; direct marker reads with a plain for 460f.
+// Reduced control 74 versus full 25; helper conventions and radius/marker homes remain. All restored.
+// Round 331: parallel radius squares 138f; native marker count/ordinal 74f; both 74f;
+// shared center setter 179f, with squares/count/both 171f each; shared marker setter 160f.
+// Reduced control 74f versus full 25. All eight bodies restored.
+// Separate native radius-center input 179f; independent marker count 138f;
+// conditional marker bound updates 83f; center/count 159f; center/updates 142f;
+// count/updates 83f; all 142f; XY center with count/updates 116f. Reduced control 74, full 25.
+// Round 166: Native center record with direct-center/radius/shared-point graphs
+// 72/137/69/135/72/137/69/135 fast (unchanged control 72, full 23); restored.
+// Exact control-helper orders spline/points/index/output 70, with radius receiver 67;
+// spline/points/output/index 72, with radius 69. First order plus receiver kept, plain 18.
+// Round 218: Native numerator/denominator/quotient/sample names on exact control graph
+// 154/250/67/186/154/250/186/186 fast; pre-guard/shared versus independent
+// marker ordinals 68/134/134/134 fast (control 67, full 18). All restored.
+// Round 144: sampling output/fraction/points order 67f; inline original and five
+// coordinated orders 219f each; separate noinline declaration 67f. Reduced control
+// 67f versus full 18; first sampling input XMM3/XMM2 and final marker roles remain.
 // @retail 0x2be050
 void hill_build_polygon(s_polygon_2be *hill, long index)
 {
@@ -464,7 +585,7 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	{
 		long steps = hill->steps[i];
 
-		function_2bdd70(control, (s_spline_2bd *)hill, i, points);
+		function_2bdd70((s_spline_2bd *)hill, points, i, control);
 		for (long j = 0; j < steps; j++)
 		{
 			function_2bde90((real)j / (real)steps, &point, control);
@@ -486,15 +607,12 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	*(point3f *)&hill->center_x = *g_468788;
 	if (count > 0)
 	{
-		i = 0;
-		do
+		for (i = 0; i != count; i++)
 		{
 			hill->center_x = points[i].x + hill->center_x;
 			hill->center_y = points[i].y + hill->center_y;
 			hill->center_z = points[i].z + hill->center_z;
-			i++;
 		}
-		while (i < count);
 	}
 	real scale = 1.0f / (real)count;
 	point3f *center = (point3f *)&hill->center_x;
@@ -504,31 +622,32 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 	hill->radius = 0.0f;
 	if (count > 0)
 	{
-		i = 0;
-		do
+		for (i = 0; i != count; i++)
 		{
-			real dx = points[i].x - center->x;
-			real dy = points[i].y - center->y;
+			point3f const *radius_point = &points[i];
+			real dx = radius_point->x - center->x;
+			real dy = radius_point->y - center->y;
 			real distance_squared = dy * dy + dx * dx;
 
 			hill->radius = hill->radius > distance_squared ? hill->radius : distance_squared;
-			i++;
 		}
-		while (i < count);
 	}
 	hill->radius = (real)sqrt(hill->radius);
 	hill->z_min = hill->center_z;
 	hill->z_max = hill->center_z;
-	for (i = 0; i < hill->count; i++)
+	count = hill->count;
+	if (count > 0)
 	{
-		real height = points[i].z;
-		if (hill->z_min > height)
+		for (i = 0; i != count; i++)
 		{
-			hill->z_min = height;
-		}
-		if (!(hill->z_max > height))
-		{
-			hill->z_max = height;
+			if (hill->z_min > points[i].z)
+			{
+				hill->z_min = points[i].z;
+			}
+			if (!(hill->z_max > points[i].z))
+			{
+				hill->z_max = points[i].z;
+			}
 		}
 	}
 	count = function_19ec40(0, 0.0f, (short)(index + 11), NONE, 1, 8, marker_ids, 0.0f);
@@ -551,6 +670,18 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 
 /* sets up the hill of the index: its markers, the vertices each spline
    segment gets (32 in all), and its polygon */
+// score 2 (was 2): Post-loop pointer/index restores remain reversed; eight compiled source trials restored.
+// Earlier: the post-loop pointer/index restores remain reversed.
+// Final count and entry divisor 2/2; low-bit clear/remainder 64/63; endpoint
+// parts/start-first 2/2; step cursor 10; parity first 6; polygon/index names 2/2.
+// NONE arm first 60; inline validity helper 2; count at the top 2; no half local 2;
+// validity bool 2; loop index outside 2; parameter copies 2; callee parameters swapped 2;
+// modulo parity 19; half before the count store 59; while loop 2; count stored after the loop 57.
+// Local count/divisor/index role names singly, in pairs and together 9 fast each;
+// unsigned ordinal 23 fast. Reduced baseline 9; full baseline 2.
+// Consumed count 9 fast; initialized divisor 61; shared start numerator 9;
+// compound step 9; nested validation 9; division normalization 56;
+// common exit 9; parallel endpoint numerators 9. Fast baseline 9, full 2.
 // @retail 0x2bdc70
 void hill_set(s_polygon_2be *hill, long index)
 {
@@ -1014,6 +1145,9 @@ PRIVATE __forceinline bool territory_holder_matches_player(long holder, long pla
 // inline depths one/two, state per use, early team-array lifetime, invalid
 // marker continue, point memcpy and nested holder test 88; marker-first 90.
 // holder and marker registers plus append carriers remain; append output last 88; point last 88; full-list guard 88; short ordinal 153; word ordinal 151; player team first 88; team failure exit 92; short ordinal with output last 153.
+// score 88 (was 88): the team test branches directly with the holder predicate as one condition,
+// but the players base hoists 92; read through the pool in the test 96; helper as one expression 96;
+// position passed directly 92; position copied as a struct through its pointer 88 (same code, kept).
 // @retail 0x2bf740
 void c_game_engine_45c948::v32(long player_index, long list_pointer)
 {
@@ -1029,12 +1163,8 @@ void c_game_engine_45c948::v32(long player_index, long list_pointer)
 		{
 			if (territory_holder_matches_player(holder, player_index, g_4e8c24))
 			{
-				long bits[3];
 				point3f const *source = &g_4e0350->marker_entries[marker].position;
-				bits[0] = ((long const *)source)[0];
-				bits[1] = ((long const *)source)[1];
-				bits[2] = ((long const *)source)[2];
-				point_list_add_2bf(list, *(point3f const *)bits,
+				point_list_add_2bf(list, *source,
 					*(real *)&g_502258[35], *(real *)&g_502258[36], *(real *)&g_502258[0], *(real *)&g_502258[1], *(real *)&g_502258[37]);
 			}
 		}
@@ -1096,6 +1226,11 @@ void c_game_engine_45c948::v12()
 // score 14 (was 14): retail loads the engine global g_4e6948 into edx at the
 // top of the function, ours loads it just before the mode test, so the load
 // and the compare come in the other order.
+// score 14 (was 14): the early global and compare schedule remains; direct final-field initialization 6.
+// Split sentinel/mode guard 17; middle/early predicates and direct options tests 13;
+// payload between zero stores 8; both zeros first 13; partial aggregate 56/119;
+// type before payload 6; middle predicate with that order 6; subtype readback 6;
+// parameter address 6; shared send 6; void-return send 6; force-inline send 6.
 // @retail 0x2bf480
 void c_game_engine_45c948::v6(long a)
 {
@@ -1685,7 +1820,7 @@ void c_game_engine_a::v40()
 }
 
 struct s_spawn_influence_list;
-void function_23ba10(long type, s_spawn_influence_list *list, point3f const *point);
+void function_23ba10(long type, point3f const *point, s_spawn_influence_list *list);
 
 // @retail 0x2bdb00
 void c_game_engine_a::v2(long unused, long list_pointer)
@@ -1696,8 +1831,8 @@ void c_game_engine_a::v2(long unused, long list_pointer)
 	{
 		point3f const *point = (point3f const *)&((s_polygon_2be *)g_51ecc8)->center_x;
 
-		function_23ba10(8, (s_spawn_influence_list *)list_pointer, point);
-		function_23ba10(7, (s_spawn_influence_list *)list_pointer, point);
+		function_23ba10(8, point, (s_spawn_influence_list *)list_pointer);
+		function_23ba10(7, point, (s_spawn_influence_list *)list_pointer);
 	}
 }
 

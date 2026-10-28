@@ -69,8 +69,8 @@ PRIVATE void __stdcall function_29edc0(s_type_339e8b *controller,
 {
     char const *data = (char const *)*cursor;
     short mask = (header->type_and_time >> 2) - 7;
-    long facing = mask & 1;
-    if (facing)
+    short facing = mask & 1;
+    if (mask & 1)
     {
         function_29ed00(data, (short *)&controller->facing);
         real yaw = (real)controller->facing.yaw * 0.00314159272f;
@@ -80,7 +80,7 @@ PRIVATE void __stdcall function_29edc0(s_type_339e8b *controller,
         control->facing.k = (real)sin(pitch);
     }
     short aiming = mask & 2;
-    if (aiming)
+    if (mask & 2)
     {
         if (facing)
         {
@@ -120,8 +120,8 @@ PRIVATE void __stdcall function_29ef20(s_type_339e8b *controller,
 {
     s_type_f72fa2 const *data = (s_type_f72fa2 const *)*cursor;
     short mask = (header->type_and_time >> 2) - 15;
-    long facing = mask & 1;
-    if (facing)
+    short facing = mask & 1;
+    if (mask & 1)
     {
         function_29ed40(data, &controller->facing);
         real yaw = (real)controller->facing.yaw * 0.00314159272f;
@@ -131,7 +131,7 @@ PRIVATE void __stdcall function_29ef20(s_type_339e8b *controller,
         control->facing.k = (real)sin(pitch);
     }
     short aiming = mask & 2;
-    if (aiming)
+    if (mask & 2)
     {
         if (facing)
         {
@@ -245,6 +245,8 @@ bool __stdcall function_29f0c0(s_type_339e8b *controller,
             ticks = *(unsigned short const *)(*cursor + 1);
             header_size = 3;
             break;
+        default:
+            __assume(0);
         }
         if (*remaining_ticks < ticks || (header->type_and_time >> 2) == 1)
             break;
@@ -254,7 +256,9 @@ bool __stdcall function_29f0c0(s_type_339e8b *controller,
             handler(controller, control, header, cursor);
         *remaining_ticks -= ticks;
     }
-    return (header->type_and_time >> 2) != 1 || *remaining_ticks != ticks;
+    if ((header->type_and_time >> 2) == 1 && *remaining_ticks == ticks)
+        return false;
+    return true;
 }
 
 struct recorded_animation_playback_functions

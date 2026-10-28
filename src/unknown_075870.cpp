@@ -1187,7 +1187,7 @@ void network_observer_channel_probe(s_network_observer *observer, long channel_i
 	{
 		s_qos_result *result = &channel->field_x31a738;
 		s_qos_result *const *local_0 = &result;
-		if (qos_target_result(handle, *local_0, 0))
+		if (qos_target_result(handle, 0, *local_0))
 		{
 			channel->flags |= 0x10;
 			channel->field_x31a738.data = NULL;

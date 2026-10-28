@@ -384,7 +384,7 @@ bool unit_animation_get_timing(long unit_index, long mode, long set, short *even
 			c_animation_channel &channel = *(c_animation_channel *)channel_storage;
 			channel.copy_from(&UNIT_ANIMATION_CONTROL(unit)->channels[0]);
 			animation = NULL;
-			if (state->overlay_play(&channel, 0x3f, set, 0x7000101, 0x7000101) && channel_valid(&channel))
+			if (state->overlay_play_for_class(&channel, 0x3f, 0x7000101, 0x7000101, set) && channel_valid(&channel))
 			{
 				animation_id = channel.animation_id;
 				animation = channel.function_1c6440();

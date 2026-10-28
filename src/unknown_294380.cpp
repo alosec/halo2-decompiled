@@ -140,6 +140,14 @@ PRIVATE __forceinline void function_295027(long arg_0, vector3f *arg_1)
             &local_0->forward, arg_1);
 }
 
+// score 581 (was 669): frame 0xdc agrees. Left: retail tests the neighbour walk at its head (continues
+// jump back to it; ours rotates the loop with an aligned body), keeps the walk's position/offset vectors
+// at 0x20/0x94 (ours swapped), calls 0x118fe0 out of line, and pushes ESI only after the early return.
+// Tried: the flock-state getter as if/else 731 (fast); without the stack read of the second index 679
+// (fast; the first index then arrives in ECX); 0x118fe0 noinline with the arms swapped 792 (3718 bytes);
+// the scaled forward through vector3f_scale 742 (fast), with noinline 726; the walk as a for loop 1022;
+// names for the walk's two vectors 734 (fast, no change); the drop term or the dot helper's i term
+// with its operands swapped 581 each.
 // @retail 0x294380
 void function_294380(long arg_0, long arg_1)
 {
@@ -306,16 +314,16 @@ void function_294380(long arg_0, long arg_1)
     if (!(local_12 > local_18)) local_12 = local_18;
     local_6.i = local_12;
     if (local_7) { local_6.k = 0.0f; local_19.k = 0.0f; }
-    if (!(local_3->field_d ? local_5 >= local_1->field_68 * 0.7f : local_5 >= local_1->field_68))
+    if (local_3->field_d ? local_5 >= local_1->field_68 * 0.7f : local_5 >= local_1->field_68)
+    {
+        if (function_30bf0(&local_19) == 0.0f) function_b9fc0(arg_1, &local_19, NULL);
+        local_3->field_d = true;
+    }
+    else
     {
         local_6 = *g_4687a4;
         function_295027(arg_1, &local_19);
         local_3->field_d = false;
-    }
-    else
-    {
-        if (function_30bf0(&local_19) == 0.0f) function_b9fc0(arg_1, &local_19, NULL);
-        local_3->field_d = true;
     }
     s_orientation_request_118f90 local_39;
     function_118f90(&local_39);
