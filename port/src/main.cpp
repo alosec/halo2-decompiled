@@ -1107,7 +1107,8 @@ std::deque<std::string> g_guest_commands;
 
 /* H2_CONTROL=file: a test driver appends lines while the game runs, read at
    each frame: "press BUTTON FRAMES" (any input-script button, e.g. a, rt,
-   ly+, rx-25), "snapshot" (as SIGUSR1), "quit", "guest COMMAND..." (handed
+   ly+, rx-25), "mouse DX DY" (mouse motion in points), "snapshot" (as
+   SIGUSR1), "quit", "guest COMMAND..." (handed
    to the guest's test hooks, port/runtime/guest_test_state.cpp) */
 void poll_control(GameSession& session) {
     static const char* path = std::getenv("H2_CONTROL");
@@ -1132,6 +1133,11 @@ void poll_control(GameSession& session) {
             words >> button >> frames;
             session.script.push_back({static_cast<int>(session.frames) + 1,
                                       static_cast<int>(session.frames) + std::max(1, frames), button});
+        } else if (command == "mouse") {
+            float dx = 0, dy = 0;
+            words >> dx >> dy;
+            session.mouse_x += dx;
+            session.mouse_y += dy;
         } else if (command == "snapshot") {
             g_snapshot_requested = true;
         } else if (command == "quit") {
@@ -1200,11 +1206,10 @@ void update_input(GameSession& session) {
         };
         session.thumbs[0] = axis(key(SDL_SCANCODE_A), key(SDL_SCANCODE_D));
         session.thumbs[1] = axis(key(SDL_SCANCODE_S), key(SDL_SCANCODE_W));
-        const auto look = [](float delta) {
-            return static_cast<std::int16_t>(std::clamp(delta * 1800.0f, -32767.0f, 32767.0f));
-        };
-        session.thumbs[2] = look(mouse_dx);
-        session.thumbs[3] = look(-mouse_dy);
+        /* the mouse turns the view directly (host_h2_mouse_take), not
+           through the right stick's dead zone and top turn rate */
+        session.mouse_x += mouse_dx;
+        session.mouse_y += mouse_dy;
         /* a gamepad, when present, adds to the keyboard */
         int count = 0;
         SDL_JoystickID* ids = SDL_GetGamepads(&count);
@@ -1435,6 +1440,20 @@ extern "C" int host_h2_input_state(unsigned int port, void* state) {
     return 1;
 }
 
+extern "C" void host_h2_mouse_take(void* look) {
+    /* H2_MOUSE_SENSITIVITY scales 0.003 radians a point */
+    static const float scale = [] {
+        const char* text = std::getenv("H2_MOUSE_SENSITIVITY");
+        const float multiplier = text && *text ? std::strtof(text, nullptr) : 1.0f;
+        return 0.003f * (multiplier > 0.0f ? multiplier : 1.0f);
+    }();
+    auto& session = game_session();
+    const float radians[2] = {session.mouse_x * scale, session.mouse_y * scale};
+    std::memcpy(look, radians, sizeof(radians));
+    session.mouse_x = 0;
+    session.mouse_y = 0;
+}
+
 extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
     const char* name = std::getenv("H2_START_MAP");
     if (!name || !*name || !buffer || !size)
@@ -1545,6 +1564,7 @@ int main(int argc, char** argv) {
                 {"host_h2_frame", reinterpret_cast<std::uintptr_t>(&host_h2_frame)},
                 {"host_h2_input_state", reinterpret_cast<std::uintptr_t>(&host_h2_input_state)},
                 {"host_h2_input_connected", reinterpret_cast<std::uintptr_t>(&host_h2_input_connected)},
+                {"host_h2_mouse_take", reinterpret_cast<std::uintptr_t>(&host_h2_mouse_take)},
                 {"host_h2_trace_flags", reinterpret_cast<std::uintptr_t>(&host_h2_trace_flags)},
                 {"host_h2_gpu_draw", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_draw)},
                 {"host_h2_gpu_clear", reinterpret_cast<std::uintptr_t>(&host_h2_gpu_clear)},

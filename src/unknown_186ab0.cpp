@@ -5,6 +5,9 @@
 #include "network_message_types.h"
 #include <math.h>
 #include <string.h>
+#if H2_WHOLE_IMAGE
+extern "C" void host_h2_mouse_take(void *look);
+#endif
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
 struct s_unknown_13bf00;
@@ -180,6 +183,21 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         else
             local_3.field_20 &= ~0x100;
     }
+#if H2_WHOLE_IMAGE
+    /* port: the mouse turns controller 0's view directly, past the stick's
+       dead zone and top turn rate (taken every tick, so nothing gathers
+       while the game ignores it; at most half a turn a tick) */
+    if (local_0->field_24 == 0)
+    {
+        real look[2];
+        host_h2_mouse_take(look);
+        if (!reset)
+        {
+            local_3.field_10 -= look[0] > 3.14f ? 3.14f : look[0] < -3.14f ? -3.14f : look[0];
+            local_3.field_14 -= look[1] > 3.14f ? 3.14f : look[1] < -3.14f ? -3.14f : look[1];
+        }
+    }
+#endif
     if (local_1->field_0 != NONE)
     {
         s_186ab5 *local_4 = ((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8;

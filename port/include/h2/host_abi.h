@@ -136,6 +136,9 @@ void host_h2_wma_close(unsigned int handle);
 unsigned int host_h2_trace_flags(void);
 int host_h2_input_state(unsigned int port, void* state);
 unsigned int host_h2_input_connected(void);
+/* the mouse's look since the last call, in radians (two floats: yaw right,
+   pitch down), for the player control update to add to the stick's */
+void host_h2_mouse_take(void* look);
 
 #ifdef __cplusplus
 }
