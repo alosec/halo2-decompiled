@@ -239,6 +239,25 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // Existing element helper out of line 189; type query, geometry test, value callback,
 // value update and context reset noinline declarations 140 each; unsigned extent 140;
 // native int ordinal 140. All temporary helper contracts and declarations restored.
+// score 140 (was 140): retained table register and unfused lookups still differ.
+// Typed count/address helper pointer/reference, unsigned ordinal/extent, byte result,
+// ordinary inline and two typed formal orders all 140; original helper restored.
+// score 136 (was 140): saved table register and unfused lookup addresses still differ;
+// group reads at use 156; cache/mask/pointer zeros before final lookup 141/156/159;
+// callback input before lookup 141; group reads with cache/mask/pointer zeros 157/136/136.
+// score 136 (was 136): saved table ownership and unfused element addresses remain.
+// Byte/word element-reference results 136/136; element-type pointer/reference templates 187/187;
+// each with full root snapshot 144/144/197/197. Original helper and group/mask lifetimes retained.
+// saved table ownership and native lookup addresses remain.
+// Forced stride template 167; with root/word ordinals/root and words 171/167/171;
+// with const input/direct ordinal/late mask/root and late mask 167/167/165/165.
+// score 136 (was 136): unfused element addresses, arg/temporary registers and the zero stores remain.
+// Tag index read once (table moves to retail's EDI, first difference +0xe) 135; plus flags read at
+// the call 162; plus lookups in the record_material shape 135; plus all four zero stores after the
+// lookups 163; plus a tag entry pointer for the group tests 152; pointer and late zeros 149.
+// frame 0x5c and EAX input agree; saved EDI table ownership and unfused lookups differ.
+// Five native byte-block formal orders 136 each; accessor result lifetime 136;
+// extent-first product 136; target inline contract 136. Original helper retained.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
@@ -246,9 +265,9 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 	s_224db0 local_0;
 	s_2243c1 local_1;
 	byte *local_2 = (byte *)arg_0;
-	s_tag_instance const *local_4 = &g_4e3b44[(short)*(long const *)(local_2 + 0x1c)];
 	long const *local_5;
-	if (*(dword const *)local_4->unknown00 == 0x5052544d || *(dword const *)local_4->unknown00 == 0x70727433)
+	if (*(dword const *)g_4e3b44[(short)*(long const *)(local_2 + 0x1c)].unknown00 == 0x5052544d ||
+		*(dword const *)g_4e3b44[(short)*(long const *)(local_2 + 0x1c)].unknown00 == 0x70727433)
 		local_5 = function_137bd0(*(long const *)(local_2 + 0x1c))->function_x947334();
 	else
 		local_5 = *(long const *const *)(g_4e3b44[*(long const *)(local_2 + 0x1c) & 0xffff].bytes + 0x24);
@@ -256,9 +275,9 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 	long local_7 = *(word const *)block_element_224db0(local_6, 0, 2) & 0x1ff;
 	long local_8 = *(word const *)block_element_224db0(local_6 + 8, local_7 + arg_3, 2) & 0x1ff;
 	long local_9 = *(long const *)((byte const *)block_element_224db0(local_6 + 0x10, local_8 + arg_4, 10) + 4);
+	local_1.field_44 = 0;
 	byte const *local_10 = *(byte const *const *)(*(byte const *const *)(g_4e3b44[local_9 & 0xffff].bytes + 0x20) + 4) + 0x132;
 	byte const *local_11 = *(byte const *const *)(g_4e3b44[*(long const *)(local_10 + 0x100) & 0xffff].bytes + 8) + 0x1c;
-	local_1.field_44 = 0;
 	local_1.field_48 = 0;
 	local_1.field_4c = 0;
 	local_1.field_50 = 0;

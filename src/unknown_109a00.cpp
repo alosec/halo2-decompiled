@@ -117,15 +117,16 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 						else
 						{
 							point3f moved;
-							vector3f change;
 							transform4x3f_apply_point(&motion->transform, &matrix.position, &moved);
-							real ticks = (real)g_510c54->field_2_3;
-							change.i = matrix.position.x - moved.x;
-							change.j = matrix.position.y - moved.y;
-							change.k = matrix.position.z - moved.z;
-							change.i *= ticks;
-							change.j *= ticks;
-							change.k *= ticks;
+							vector3f displacement;
+							displacement.j = matrix.position.y - moved.y;
+							displacement.k = matrix.position.z - moved.z;
+							displacement.i = matrix.position.x - moved.x;
+							vector3f change = {
+								displacement.i * (real)g_510c54->field_2_3,
+								displacement.j * (real)g_510c54->field_2_3,
+								displacement.k * (real)g_510c54->field_2_3
+							};
 							function_b75a0(object_index, &moved, NULL, NULL, NULL, false);
 							*velocity = object->velocity;
 							carrier_add_vectors(&object->velocity, &change, &object->velocity);
@@ -143,16 +144,74 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 	return result;
 }
 
-// score 164 (was 128): one instruction longer (1018 bytes, retail 1012), so most
-// differences are positional; aligned it went 66 -> 40 when the shared
-// carrier_point_velocity began computing the cross product before writing it
-// (the second call's block is now retail's). Left: the first call's block
-// (into a local) loads angular.i twice where retail folds it, and its
-// subtraction order; the non-rotate branch's scaled differences.
-// score 164 (was 164): first point-velocity input schedule and nonrotating scale/add schedule remain.
+// score 88 (was 88): Frame 0x88 agrees; the second point-velocity copy (angular i preloaded,
+// x offset before y) and the nonrotating scale (clock copied for j and k) remain, five bytes long.
+// Earlier: point-velocity and nonrotating scale/add
+// Frame 0x88 and first point-velocity agree; second point-velocity and nonrotating schedules remain.
+// Frame 0x88 and first point block agree; second point inputs, nonrotating products and five extra bytes remain.
+// Earlier: Frame 0x88 agrees; point-velocity and nonrotating scale/add
+// scheduling and the four-byte extent excess remain. Earlier shared point-velocity expansion changed
+// Frame 0x88 agrees; second point-velocity and nonrotating scheduling
+// and five excess bytes remain. Earlier shared point-velocity expansion changed
+// Frame 0x88 agrees; first point-velocity schedule recovered; second
+// point-velocity and nonrotating scale/add scheduling and five excess bytes remain.
+// Frame 0x88 and first point-velocity block agree; second point-velocity
+// and nonrotating scale/add scheduling and five excess bytes remain.
+// Earlier shared point-velocity expansion changed
+// 128/1015 to 164/1018 and aligned differences 66 to 40; second call schedule recovered.
+// Earlier first point-velocity and nonrotating difference/add forms: external motion record 164;
+// external object record 164; returned transform input 249; first angular input value 205; first linear
+// input value 197; first center input value 206; first velocity input values 246; immutable displacement
+// rate 164.
+// First point-velocity and nonrotating component schedules still differ.
+// receiver before point operation 164f; receiver before transform 166f; native relative velocity
+// 202f; subtraction component loop 171f; addition component loop 176f; native addition result
+// 157p; delta component loop 165f; difference and scale loops 165f; component result construction
+// 157f; first input sum copy 157f; second input sum copy 157f; native-result formal order 157f;
+// native-result component loop 157f; forced native addition result 195f; forced change-input sum
+// 235f; forced result loop 201f.
+// Returned addition result 157p adds a call absent from retail; original helper retained.
+// Earlier first point-velocity input and nonrotating scale/add forms:
 // Nonrotating shared point difference 165; shared scale 164; difference plus scale 166;
 // shared scaled difference 169; final delta scale 164; both scale boundaries 164;
 // actual motion-field bindings 166; object-velocity field reference 164 (fast scores).
+// Native clock short/long/double 179/175/193; native difference initializer 164;
+// separate displacement/scaled-change vectors 126 (kept); with short/long/double clock
+// 173/168/199. The actual scaled change remains used by the addition and delta outputs.
+// Separate-output shared real scale 123 (three-point gain rejected), double scale 195;
+// final shared real scale 126; both real 165; double then real 198; real then double
+// 152 (retail length); both double 198; real scale plus forced original addition 123.
+// native scaled change initialized by value then scaled 243; native scaled change assigned by component
+// 126; clock conversion after completed native displacement 168; shared point difference with separate
+// scaled change 125; plain component loop for separate scaled change 164; scaled change workspace declared
+// before displacement 126; immutable completed displacement and scaled change 126; complete native delta
+// value before output copy 174.
+// Separate displacement components xzy/yxz/yzx/zxy/zyx 122/122/118/126/126;
+// clock-first products 126; scaled-output orders jki/kij 140/146. yzx kept after plain check.
+// Relative-velocity subtraction stores ikj/jik/jki/kij/kji 118 each;
+// final delta publication jik/jki/kji 122/124/122.
+// At-use clock field 88 kept: all three products read the field consistently; first
+// point-velocity block now agrees. Native two-use initial velocity/field receiver/both
+// 185/166/185; with at-use clock 187/167/194; initial velocity with shared real scale 185.
+// The two point-velocity copies change schedule together: forms that give the second copy
+// retail's code break the first. Points-difference helper plus named scale plus scale helper
+// 164; i difference, named scale, then j and k 165 (nonrotating block exact, first copy off);
+// that with direct velocity fields 210; with the scale helper 165; with scale-helper delta 239.
+// With the returned point input: returned point 167; returned point and native original input
+// 201; returned point and early displacement 167; returned point, native original and early
+// displacement 201; returned point and complete scaled assignments 167; returned point, native
+// original and scaled assignments 201; returned point, early displacement and scaled assignments
+// 167; returned point with all three native boundaries 201. All restored.
+// Second point native center/linear/both/angular/center-angular/linear-angular/all inputs
+// 212/189/229/211/247/216/256/286; the last form also gives the completed position both consumers.
+// Single-use input copies restored; original shared helper and game calls retained.
+// At-use clock graph: scaled-change component orders ijk/ikj/jik/jki/kij/kji
+// 88/87/86/87/86/88; native value then in-place scale 164; paired native vector names 88.
+// Two-point forms rejected; second point-velocity and nonrotating schedule remain.
+// Void-output native addition inputs first/second/both 123/126/175; forced 123/126/175;
+// complete moved position 202; with coherent nonrotating frame names 202. Original helpers restored.
+// At-use clock displacement producer orders ijk/ikj/jik/kij/kji 88/87/88/87/87;
+// shared displacement producer 177; aggregate and immutable aggregate 88/88.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {
@@ -316,7 +375,13 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // (149; as three field copies 140, through a motion local 129). Tried:
 // parameters swapped at both ends (no change), entry declared before the
 // object or after the component index (113, 128), inline object and entry
-// getters (no change).
+// getters (no change). The three axis pointers declared together before the
+// normalize calls 111 (retail's registers: forward edi, up esi, left ebp; the
+// products then come out forward-first and the dot sums k,i,j where retail has
+// up-first and k,j,i; the source operand order of the dot does not change it,
+// 111); that plus the center through carrier_vector_from_havok 151 (object index
+// in eax as retail, entry index on the stack); with the entry pointer computed
+// first 153; the pointers together with the entry first 112.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {

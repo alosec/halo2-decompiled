@@ -141,6 +141,10 @@ struct s_free_state_23d260
 // (279), a cross vector in the turn about forward (277), declaration order (same)
 // score 118 (was 118): zero XMM3 versus XMM1 and normalization/side-vector allocation remain.
 // Roll-input snapshot 324; live yaw/pitch/roll fields 275/121/121; live forward/up/both fields 295/154/157; normalization result 319.
+// score 118 (was 118): the existing transform4x3f_apply_point/function_1427f0 called for the two
+// matrix blocks 603 (992 bytes, kept out of line); if/else pitch clamp 282; roll ternary 146; side j
+// and k assigned apart 118; cosine before sine 119; side.k first 118; up written j, i, k / j, k, i /
+// i, k, j 254/251/249 (1330-1333 bytes).
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {

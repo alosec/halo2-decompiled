@@ -1089,11 +1089,6 @@ s_ai_player *ai_player_get(long player_index);
 
 /* the actor leaves the vehicle it rides in, and its player remembers the
    seat */
-// score 76 (was 76): the prologue: retail loads the global g_4f55f0 and its
-// data pointer before reserving the frame, ours reserves the frame first.
-// Const actor with store lookup 86; saved scalar names and entry homes 76;
-// named acceptance and failed-request exit 76; reversed dispatch 77;
-// shared tick 78; player lifetime across acceptance 76.
 // @retail 0x25c050
 void function_25c050(long player_index, long actor_index)
 {
@@ -1109,17 +1104,17 @@ void function_25c050(long player_index, long actor_index)
 
 		if (actor->unknown266)
 		{
-			if (actor->unknown018 != NONE)
+			if (actor_get(actor_index)->unknown018 != NONE)
 			{
-				function_20ba60(0x6a, actor->unknown018, target_index, NONE, NONE, NULL);
+				function_20ba60(0x6a, actor_get(actor_index)->unknown018, target_index, NONE, NONE, NULL);
 			}
 		}
 		else
 		{
-			short type = 0x6b;
-			if (!actor->unknown268)
-				type = 0x6c;
-			function_1fb7e0(type, actor_index, NULL, target_index, NONE);
+			if (actor->unknown268)
+				function_1fb7e0(0x6b, actor_index, NULL, target_index, NONE);
+			else
+				function_1fb7e0(0x6c, actor_index, NULL, target_index, NONE);
 		}
 		memset(&request, 0, sizeof(request));
 		request.type = 0x1d;
@@ -1176,7 +1171,7 @@ struct s_perception_origin_view;
 struct s_object_motion_view;
 short function_263ed0(long actor_index, s_perception_origin_view const *origin, point3f const *point,
 	s_location const *location, short type, short mode);
-short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
+long function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
 void function_2640c0(long object_index, s_object_motion_view *result);
 
 // score 12 (was 83): retail copies object_index into edi just before the first function_badc0 call where ours
@@ -1298,7 +1293,21 @@ void function_26c240(long arg_1, s_location_target_view *arg_0);
 long function_baf80(long arg_0);
 bool function_1e1de0(long arg_0);
 
-// score 165 (was 175): frame 0x84 agrees; early ESI save/computed return byte
+// score 165 (was 165): frame 0x84 agrees; early ESI, result byte and actor/motion homes differ.
+// Earlier: Frame 0x84 agrees; early ESI save, return byte and actor/motion homes remain.
+// Round 75: retail's shape is `bool updated = true;` first, `if (unknown00 == time) updated = false;
+// else { body }`, the activity result a bool, and one actor-index test at the end (NONE arm false,
+// false, !flag; actor arm the three calls). That gives retail's entry, early epilogue, slot order and
+// tail exactly (218 plain at 841 bytes): only retail's `mov ecx, eax` before the actor-index store
+// (a one-instruction shift) and an eax/ecx swap in the first point copy remain. On that shape: index
+// read at use 220; owner first/through owner/after the test 220/220/220; dword index or local 218/218;
+// index before owner/both before the lookup 220/221; test local, assign through owner 220; owner
+// first then index through it 220; separate guarded owner/index statement 220; permuter best 197
+// (type casts only). All restored.
+// Earlier 165 (was 165): early ESI save, computed return byte and actor/motion homes remain.
+// frame 0x84 agrees; early ESI save/computed return byte
+// frame 0x84 agrees; early ESI save, computed return byte and actor/motion homes differ.
+// Earlier 165 (was 175): frame 0x84 agrees; early ESI save/computed return byte
 // and actor/motion homes differ; scratch at entry 175; pointer/index names 175;
 // byte update result 232; byte readiness 182; byte behavior result 182.
 // early ESI save, update-result byte and motion-copy registers differ;
@@ -1308,12 +1317,88 @@ bool function_1e1de0(long arg_0);
 // anchor/location/facing/observed/all copy boundaries 175; late readiness default 175;
 // default output values 165 kept; shared output guard 168; Boolean activity 257;
 // shared guard with Boolean activity 225.
-// score 175 (was 175): early ESI save/return byte and motion-copy registers remain.
+// early ESI save/return byte and motion-copy registers remain.
+// Earlier 175 (was 175): early ESI save/return byte and motion-copy registers remain.
 // Typed observed point, facing, anchor and location 175 each; combined fields 175;
 // combined with const motion 257, literal success 232, guarded single exit 249.
 // early ESI save, literal return byte and motion-copy registers differ.
 // Native behavior/activity levels and activity/location/target/root result receivers 175 each;
 // three actor receivers together 175; all six observations 175.
+// early ESI save, return byte and actor/motion homes remain.
+// Current defaults with literal/shared/entry-tested result 252/248/257; signed update byte/word
+// 238/270; return-home name 165; literal/shared result with Boolean activity 241/250.
+// early ESI save, return byte and actor/motion homes remain.
+// Object/actor homes 165/165; both homes/character/all scalar homes 165/165/165;
+// common guard with object/actor/both homes 168/168/168.
+// early ESI save, return byte and actor/motion homes remain.
+// Earlier 165 (was 165): early ESI save, return byte and actor/motion homes remain.
+// Computed guarded result 250; failed literal/previous-time snapshot 165/165; conditional motion 191;
+// ordinary-parent-first/separate actor producers/cases 1,0,12 165/165/165; timestamp-first final stores 167.
+// Earlier 165 (was 165): early ESI save, return byte and actor/motion homes remain.
+// Native initial/parent/root/all header queries 165 each; explicit initial/parent type domains
+// 181/192; both type domains 208; both with native header queries 208.
+// early ESI save, return byte and motion homes remain; parent flag/identifier/both clears
+// 225/260/195; anchor/position/observed point setters 246/283/293; current-result polarity 243, with clears
+// 188.
+// Character selection 221; scratch last-use scope 165; parent kind first 277;
+// first parent producer 209; character-kind alternative first 222;
+// second parent producer 215; selected rising state 169; both parent producers 222.
+// Round 151: Clock/parent/root observations 235/325/165; clock-parent/clock-root/parent-root/all 338/235/325/338; consistent current object 349.
+// Native sentinel/flag/both chains 167/165/167; selector first 169; identifiers/flags first
+// 166/166; selector between identifiers/flags 167/167.
+// Round 127: isolated actor-index admission 247; readiness failure tests 165; both 247; native
+// observed-bit conversion 165; admission/bit 247; readiness/bit 165; all 247; immutable actor-index
+// producer 219. All restored; early ESI and computed result remain.
+// Coherent native-byte return with bool/byte update, early/shared exit and long/bool activity:
+// 165/165/250/250/257/257/245/245. Original Boolean return, both outside declarations and all producer/copy forms restored.
+// Complemented readiness/activity/both/behavior 174/251/258/167; readiness-behavior/activity-behavior/all 175/251/258; cases 12,0,1 165 (fast). All restored; early ESI, computed return byte and actor/motion homes remain.
+// Round 187 final readiness/activity/behavior/time publication orders RABT/BRAT/BART/ARBT/ABRT
+// 167/167/167/168/168; RTBA/RBTA/BTRA 167/166/166 (fast). All restored;
+// early ESI, return byte and actor/motion homes remain.
+// Round 161: category/root/observed-state producers 165/165/279; category-root/category-observed/root-observed/all 165/279/279/279; character-observed branch publication 165. All restored.
+// Final producer orders activity/readiness/behavior 165; behavior/readiness/activity 164;
+// activity/behavior/readiness 163; behavior/activity/readiness 162; readiness/behavior/activity 165;
+// activity zero at entry 265, after object lookup 251, with behavior first 268.
+// Round 171: Complete mutable motion observation with copy orders anchor-position-location-facing /
+// anchor-location-position-facing / anchor-position-facing-location /
+// position-anchor-location-facing 294/284/294/294; immutable copies repeat 294/284/294/294. Original
+// body restored. Frame 0x84 agrees; early ESI, return-byte and actor/motion homes remain.
+// Round 147: Library first point/position/location/facing 165 each; both points/first-point-
+// facing/location-facing/all four 165 each in the current default-output graph.
+// Round 151: Coordinated motion/marker inline and separate out-of-line declaration pairs
+// (1,0)/(0,1)/(1,1)/(2,0)/(0,2)/(2,1)/(1,2)/(2,2), all 165/841. Every provider declaration and body
+// restored.
+// Round 240: native character eligibility bool/byte/short/long 269/269/285/299;
+// complementary eligibility at the same widths 287/287/284/298. Original nullable receiver restored.
+// Actor/character/both constant defaults at entry 165/279/280; after clock 165/279/280; both before object lookup 165; actor at entry with character before lookup 165. Original default lifetimes retained.
+// Round 179: target-admission/target-publication/activity inline declaration subsets
+// 165/165/165/165/165/165/165; all three inline/noinline 165. Original declarations restored.
+// Scratch lifetime, split actor declarations, default order and scratch name: eight combinations 165.
+// Round 211: native signed/unsigned dword timestamp result, positive/complementary status
+// and early/shared predicate exits: 269/237/269/243/269/237/269/243. Original Boolean result and body restored.
+// Round 225: signed-byte readiness/activity/behavior carriers 174/177/175;
+// readiness-activity/readiness-behavior/activity-behavior 184/182/184; all three
+// 191; all three plus signed-byte observed state 198. Original carriers restored.
+// Round 150: Separate native motion/marker storage with lexical-home, marker-arm and motion last-use scopes 174/174/165/165/174/174/165/165. Original union restored.
+// Frame 0x84, early ESI save, return byte and actor/motion homes remain.
+// Existing actor query with sample-first/receiver-first/direct/separate admission
+// 297/256/268/268; read-only character counterparts 297/256/268/268. All restored.
+// Round 76 on the round-75 shape (218, aligned 12): actor arm first 218 (aligned 21); owner after the index
+// test 220; actor-index local in the actor arm 218. Retail gives the index local its call register (ecx) at the
+// definition and spills it there; ours stores it straight from the load.
+// Round 81 on the round-75 shape (218): separate motion pointer local instead of the reassigned
+// parameter 93 (843 bytes); actor-index if/else with a repeated NONE arm 37 (847 bytes, redundant
+// store); local declared without initializer, NONE before the type test 218; per-path NONE in both
+// arms, either test sense 224/224 (fast). The first point copy keeps eax/ecx swapped in all. Restored.
+// Round 7 (lane 10): round-75 shape rebuilt 220; with `updated` declared before the time read 218
+// (entry exact; only the `mov ecx, eax` shift and the point-copy eax/ecx swap remain); on that,
+// index local as dword 218, actor index declared first 243; one end actor-index test alone on the
+// current body 248 (842 bytes). All restored.
+// On the single-exit body with shared actor outputs: observed-point setter 218; position setter 230.
+// both point setters 234; facing setter 218.
+// observed/facing setters 222; position/facing setters 234.
+// all three setters 256; four library transfers 218.
+// All executable forms restored.
 // @retail 0x25ccd0
 bool function_25ccd0(s_type_5cfb45 *arg_0, long arg_1, short arg_2, s_2640c0 *arg_3)
 {

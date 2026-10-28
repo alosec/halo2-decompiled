@@ -71,9 +71,12 @@ static inline s_sound_object_header *sound_object_header(long object_index)
 
 static inline vector3f *transform4x3f_apply_normal(transform4x3f const *matrix, vector3f const *vector, vector3f *out)
 {
-	out->i = matrix->up.i * vector->k + matrix->left.i * vector->j + matrix->forward.i * vector->i;
-	out->j = matrix->up.j * vector->k + matrix->left.j * vector->j + matrix->forward.j * vector->i;
-	out->k = matrix->up.k * vector->k + matrix->left.k * vector->j + matrix->forward.k * vector->i;
+	real x = vector->i;
+	real y = vector->j;
+	real z = vector->k;
+	out->i = matrix->up.i * z + matrix->left.i * y + matrix->forward.i * x;
+	out->j = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x;
+	out->k = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x;
 	return out;
 }
 
@@ -96,6 +99,18 @@ static inline vector3f *function_x84d9e8(vector3f *vector, vector3f const *axis,
 	return vector;
 }
 
+// score 6 (was 6): cross-product operand preloads and SSE allocation remain.
+// shared cross-product interface 6;
+// plain component rotation loop 47;
+// shared cross product and component loop 47;
+// cosine vector snapshot 35;
+// rotation output vector snapshot 136;
+// shared cross product and cosine vector 35;
+// shared cross product and rotation output 136;
+// shared cross product with distinct rotation input and output 134;
+// void rotation return 6; cosine-in-place i/j/k/i+j/i+k/j+k 12 each;
+// sine-in-place cross i 15; single-precision trig 46; scalar trig results 6;
+// value-returning cross 123; reference cross interface 6; array component cross 6.
 // @retail 0x18c250
 bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
@@ -122,11 +137,29 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 }
 
 
+// score 55 (was 55): BLOCKED-BY 0xba300: our object_get_root_location takes the object in eax and the output in esi,
+// retail's the output in eax and the object in ecx, so the object index can't stay in esi as in retail. Retail keeps a
+// bool result in bl (xor bl, bl at entry) and returns through tail copies (mov al, 1 / mov al, bl); the final location
+// copy stores its second dword first. Frame 0x18 and normal-transform block agree.
+// Byte result first 150; Boolean early-success result 152; long result 135; independent type tests 170;
+// excluded-class exit 165; long result first 134 kept (plain).
+// Root output at entry 134; forward at entry 134; direct successful completion 185; machine arm first 134; CRT location publication 134; existing normal helper input values 55 kept (plain).
+// Word/unsigned long/signed char result 55/55/73; named location fields 65; invalid-cluster common exit 55;
+// bool result 76 (xor bl, bl agrees; the object index moves to ebp), set before the location copy 76, set after the
+// audible store 181; long result set after the audible store 53; cluster index sum operands swapped 55.
+// frame 0x18 and normal-transform block agree; entry result/object, root-location and final copy carriers differ.
+// Word result 55; unsigned long result 55; signed char result 73; named location fields 65; invalid-cluster common exit
+// 55.
+// Recovered normal body: Boolean first 76; byte first 73; Boolean after lookup 78; long after lookup 56;
+// direct class receiver 55; direct class with Boolean 76; native workspace names 55; success before
+// publication 55.
+// native byte type after normal gain 113; readonly object 55; readonly matrix 55; named machine row 55; native
+// row first 55; high location fields first 65; cluster-derived result 197; eligibility-derived result 199.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
+	long result = 0;
 	s_sound_object_view *object = (s_sound_object_view *)function_badc0(object_index, NONE);
-	byte result = 0;
 
 	if (object && !object_or_parent_hidden(object_index))
 	{
@@ -180,8 +213,8 @@ bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker
 				}
 
 				location->spatial.location = object_location;
-				location->audible = function_18d4b0(tag_index, location->requested_audible, object_index, NULL);
 				result = true;
+				location->audible = function_18d4b0(tag_index, location->requested_audible, object_index, NULL);
 			}
 		}
 	}
@@ -304,6 +337,10 @@ void __stdcall function_18c630(long object_index, long tag_index, long a, long b
 }
 #pragma inline_depth(255)
 
+// score 7 (was 7): sample-base and offset registers plus object call setup remain; readonly data
+// input 7; readonly entry input 7; native count identity 7; output count lifetime 52; existing
+// scale storage lifetime 7; input pointer home names 7; existing scale home names 7; inline matched
+// output callee 7.
 // @retail 0x18ca20
 void __stdcall function_18ca20(long object_index, long tag_index, s_sound_permutation const *permutation, real scale)
 {
@@ -350,8 +387,7 @@ void function_18c720(long tag_index, long object_index, long set_index, long per
 			promotion = &((s_sound_globals_promotion_view *)g_51ebd4)->promotions[local_0];
 		if (promotion && (function_12de70(&promotion->block, 2) || promotion->count > 0))
 		{
-			s_sound_globals_promotion_view *globals = (s_sound_globals_promotion_view *)g_51ebd4;
-			s_sound_permutation_set *set = &globals->sets[sound->permutation_base + set_index];
+			s_sound_permutation_set *set = &((s_sound_globals_promotion_view *)g_51ebd4)->sets[sound->permutation_base + set_index];
 
 			real local_1 = scale * 30.0f;
 			long local_2;
@@ -361,7 +397,7 @@ void function_18c720(long tag_index, long object_index, long set_index, long per
 				fistp local_2
 			}
 			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, (short)local_2));
-			function_18ca20(object_index, tag_index, &globals->permutations[set->first_permutation + permutation_index], scale);
+			function_18ca20(object_index, tag_index, &((s_sound_globals_promotion_view *)g_51ebd4)->permutations[set->first_permutation + permutation_index], scale);
 		}
 	}
 }
@@ -384,8 +420,6 @@ real sound_permutation_reference_duration(long definition_index, s_sound_permuta
 
 /* replays the impulse sounds in the slots of g_4ed288 on their objects and
    frees the slots whose sounds are over or whose objects are gone */
-// score 58 (was 58): BLOCKED-BY 0x18c720: it takes the tag in ebx (retail edi), which adds a push
-// ebx here and shifts both float spills by four; aligned, nothing else differs.
 #pragma inline_depth(0)
 // @retail 0x18bf90
 void function_18bf90(void)
@@ -516,11 +550,51 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 	location->spatial.compressed_forward = vector3d_compress(g_4687b0);
 }
 
+// score 280 (was 293): Frame 0x8c versus 0x80; datum/tag and protected root-location convention remain.
+// Round 9 (lane 10): retail's case-3 failure byte is a dead store into the slot the audibility output
+// reuses. Forward vector at function scope 280; cluster flag as a word mask 280; case-0 fields read
+// without the type test 307; one function-scope status byte for failure and audibility 280 (no store);
+// case-2 spatial field passed directly 280. BLOCKED-BY 0xba300 (contributor) still.
+// Earlier baseline: Frame 0x84 versus 0x80; datum/tag allocation and protected root-location convention remain.
+// marker outer scope 309; direct failure predicate 293 kept (plain); stored-scale arm first 314; ascending cases 311; failure exit 314.
+// Long failure result 293; marker consumption scope 293; shared scale object index 339;
+// force-inline object-index query 293; marker/axis/audibility role names 293.
+// Tag-first declaration 293; explicit failure arms 309; word cluster 294; CRT velocity copy 293; owner value conditional 301.
+// Effect axis at entry 293; audibility output at entry 293; direct late tag flag 323 (frame 0x80);
+// readonly datum 293; CRT marker position 293.
+// signed-word effect failure 293; unsigned native cluster 293; unsigned marker handle 293; immutable datum pointer 293; native clear-output reference 293; unsigned-byte effect failure 293.
+// Named location fields 293; failure-first common return 296; cases two/three/zero 296; entry marker-name workspace
+// 293; native flag0 view 293.
+// Tag acquisition after returning kinds 305; conditional failure 309; conditional marker selection 293;
+// audibility-first guard 292 (one-point gain dropped); ordinary clear inline 412.
+// Datum/tag lexical names 293; direct success predicate 293; cluster selection tests 293;
+// object property base reread 560; const retained tag bytes 293.
+// Cases zero/three/two 293, two/zero/three 296, three/zero/two 293;
+// direct effect/impact flag masks 345; final native flag mask 300.
+// Round 214: direct selected cluster 312; unsigned category mask 293; nested tag/audibility guards 293; conditional final flag 297; force-inline header lookup 293.
+// External datum reference 293; late three-query handle 317; marker position setter 303; complete kind if/else chain 322; readonly object properties 293 (fast); all restored.
+// Round 213: object-index default result/complete arms/nonobject return/object return
+// 325/293/324/293; with direct late tag observation 345/323/343/323. Original helper and body restored.
+// Staged failure bool/byte/short/long 323/323/327/327; staged success 265/265/325/322 (match-only, restored);
+// complete conditional failure/success 309/309/307/308/293/293/293/293. All restored.
+// Round 96: BLOCKED-BY 0xba300: retail passes it the location in EAX and the object in ECX; ours passes the
+// location in ESI, so ESI cannot hold the datum and the definition pointer spills (frame 0x84). Without
+// that call (diagnostic) the frame is 0x80 with retail's ESI datum / EBP definition. Failure byte in a
+// function-scope char shared with the audibility output 293; address-taken failure flag 293.
+// Round 152: Cluster/scale/paired/spatial/location+spatial/scale+spatial/all/late-all receivers
+// 309/345/336/309/280/331/337/337; genuine location+spatial pair kept at plain 280, 1034 bytes.
+// Direct/reversed-direct/entry pair 311/311/282; late pair 278 (two-point gain rejected);
+// position/location and spatial/world receiver names 280/280.
+// Round 208: existing output bit members 2/3/4/5/6 individually, all five,
+// with bit 10, and with bits 10/0 all 293. Original output masks and complete
+// body restored; frame 0x84, datum/tag homes and root-location convention remain.
 // @retail 0x18cbc0
 void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 {
 	s_loop_location_datum *sound = &((s_loop_location_datum *)g_4ed28c->data)[looping_sound_index & 0xffff];
 	byte *definition = g_4e3b44[sound->tag & 0xffff].bytes;
+	s_sound_position *spatial = &location->spatial;
+	s_location *cluster_location = &spatial->location;
 	location->flags = 0;
 	location->unknown08 = *(sound->type == 0 ? &sound->owner : &g_444ae0);
 	location->unknown02 = 0;
@@ -530,14 +604,12 @@ void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 		{
 			location->audible = 1;
 			vector3f forward;
-			bool failed = true;
-			if (!TEST_FIELD_BIT(sound->flag1))
-				failed = !function_17b2d0(sound->owner, &location->spatial.position, &forward, &location->scale);
+			bool failed = TEST_FIELD_BIT(sound->flag1) || !function_17b2d0(sound->owner, &spatial->position, &forward, &location->scale);
 			if (!failed)
 			{
-				location->spatial.compressed_forward = vector3d_compress(&forward);
-				location->spatial.velocity = *(vector3f *)((byte *)g_4ea93c->data + (sound->owner & 0xffff) * 0x190 + 0x30);
-				function_11bed0(&location->spatial.location, &location->spatial.position);
+				spatial->compressed_forward = vector3d_compress(&forward);
+				spatial->velocity = *(vector3f *)((byte *)g_4ea93c->data + (sound->owner & 0xffff) * 0x190 + 0x30);
+				function_11bed0(cluster_location, &spatial->position);
 			}
 			else loop_location_clear(location);
 			return;
@@ -546,7 +618,7 @@ void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 		location->audible = 1;
 		if (!TEST_FIELD_BIT(sound->flag1))
 			impact_sound_location_get((s_impact *)((byte *)g_51ebfc->data + (sound->owner & 0xffff) * 0xa0),
-				(s_impact_sound_location *)&location->spatial, &location->scale);
+				(s_impact_sound_location *)spatial, &location->scale);
 		else loop_location_clear(location);
 		return;
 	case 0:
@@ -554,9 +626,9 @@ void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 		long cluster = sound->type == 0 ? sound->cluster : NONE;
 		if (cluster != NONE)
 		{
-			*(short *)((byte *)&location->spatial.location + 4) = (short)cluster;
-			*(long *)&location->spatial.location = NONE;
-			*(short *)((byte *)&location->spatial.location + 6) = sound->type == 0 ? sound->listener : NONE;
+			*(short *)((byte *)cluster_location + 4) = (short)cluster;
+			*(long *)cluster_location = NONE;
+			*(short *)((byte *)cluster_location + 6) = sound->type == 0 ? sound->listener : NONE;
 			((byte *)&location->flags)[1] |= 0x10;
 		}
 		break;
@@ -585,10 +657,10 @@ void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 		if (sound->marker != NONE) marker_name = function_b8c40(sound->owner, sound->marker);
 		s_object_marker marker;
 		function_b8d30(sound->owner, marker_name, &marker, 1, false);
-		location->spatial.position = marker.matrix.position;
-		location->spatial.compressed_forward = vector3d_compress(&marker.matrix.forward);
-		function_ba1d0(loop_location_object_index(sound), &location->spatial.velocity, NULL);
-		object_get_root_location(loop_location_object_index(sound), &location->spatial.location);
+		spatial->position = marker.matrix.position;
+		spatial->compressed_forward = vector3d_compress(&marker.matrix.forward);
+		function_ba1d0(loop_location_object_index(sound), &spatial->velocity, NULL);
+		object_get_root_location(loop_location_object_index(sound), cluster_location);
 		char audible = 1;
 		function_18d4f0(loop_location_object_index(sound), &audible, NULL);
 		location->audible = audible;

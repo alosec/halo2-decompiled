@@ -39,7 +39,7 @@ void function_11bed0(s_location *location, point3f const *point);
 void __stdcall function_16f4b0(void *player);
 long __stdcall function_18d1c0(long value);
 bool __fastcall function_18d360(long value);
-void function_18d290(long looping_sound_index, long tag_index);
+void function_18d290(long tag_index, long looping_sound_index);
 struct s_tag_iterator;
 long function_122c70(s_tag_iterator *iterator);
 struct s_sound_driver_volumes;

@@ -14,6 +14,7 @@
 #include "crc.h"
 // @flags /O2 /arch:SSE /Gr
 #include "projection_storage.h"
+#include "normalize3d.h"
 
 /* Light pool queries and the shapes copied from definitions and placements. */
 s_record_pool *g_4e030c;
@@ -139,6 +140,16 @@ void __stdcall function_c1670(long object_index)
 	saved_object->flag6 = false;
 }
 
+struct s_light_frame_ab
+{
+    point3f position;
+    point3f endpoint;
+    real clip_distance;
+    point3f field_1c_3;
+    vector3f forward;
+    vector3f up;
+    real radius;
+};
 
 struct s_light_ab
 {
@@ -148,11 +159,15 @@ struct s_light_ab
 	long scenario_index;
 	long stamp;
 	long first_cluster_reference;
-	byte unknown14[0x24 - 0x14];
+	byte unknown14[4];
+	point3f centre;
 	real radius;
 	point3f fade_centre;
 	real fade_radius;
-	byte unknown38[0xd4 - 0x38];
+	point3f location_point;
+	byte unknown44[0x84 - 0x44];
+	s_light_frame_ab frame;
+	byte unknownc8[0xd4 - 0xc8];
 	vector3f colour_a;
 	vector3f colour_b;
 	byte unknownec[0xf8 - 0xec];
@@ -203,13 +218,17 @@ struct s_light_definition_ab
 {
 	dword flags;
 	short kind;
-	byte unknown06[0x18 - 6];
+	byte unknown06[0xc - 6];
+	real radius_scale;
+	byte unknown10[0x18 - 0x10];
 	real radius_a;
 	real radius_b;
 	s_light_cone_ab cone;
 	byte unknown34[0x7c - 0x34];
     long bitmap_index;
-    byte unknown80[0xb8 - 0x80];
+    byte unknown80[0x98 - 0x80];
+    real minimum_radius;
+    byte unknown9c[0xb8 - 0x9c];
 	short fade_distance;
 	short fade_colour;
 	short fade_range;
@@ -540,16 +559,6 @@ void function_c15a0()
     }
 }
 
-struct s_light_frame_ab
-{
-    point3f position;
-    point3f endpoint;
-    real clip_distance;
-    point3f field_1c_3;
-    vector3f forward;
-    vector3f up;
-    real radius;
-};
 extern point2f *g_468774;
 
 static inline real dot_product_c1a80(vector3f const *a, vector3f const *b)
@@ -772,12 +781,23 @@ struct s_first_person_marker;
 short first_person_weapon_get_markers(long weapon_index, long marker_name, s_first_person_marker *markers, short count);
 bool function_3e9c0(long object_index);
 long function_b8c40(long object_index, short entry_index);
-bool function_2dba0(long tag, vector3f const *direction, long kind, long index, long marker_index, point3f const *position, color3f const *color, real alpha, real amount, real scale, bool alternate);
+bool function_2dba0(long tag, vector3f const *direction, bool alternate, long kind, long index, long marker_index, point3f const *position, color3f const *color, real alpha, real amount, real scale);
 void function_42850(long object_index, long tag_index, point3f const *position,
     vector3f const *first, vector3f const *second, real scale, real width,
     vector3f const *third);
 byte g_55e708;
 
+// score 109 (was 109): BLOCKED-BY 0x2dba0: it takes the position in ecx and the tag on the stack where retail
+// passes the tag in ecx and the position on the stack, so the marker loop keeps its index in ebx and
+// spills the position where retail walks the position pointer in ebx with index and count in memory.
+// Round 70: indexed loop with a marker pointer per pass 109; single-marker case first 146; object
+// index local at every use 157; the field read at every use 109; the file's clamp_light helper for
+// the opacity 109 (retail's clamp shape, the rest unchanged).
+// Round 56: indexed loop without the marker pointer 109; opacity clamp as if/else-if 109; short count
+// and short index 125 (607 bytes, aligned diff 86 -> 55: the single-marker arm moves after the loop as
+// in retail, but the loop counts down in registers); short index only 114; short count only 128.
+// Round 141: bool warning flag 109; `count = 1` before the flag test 126; `count == 0` fallback test
+// 109; colour pointer local 109.
 // @retail 0xc3340
 void __stdcall function_c3340(long light_index, long unused)
 {
@@ -810,13 +830,13 @@ void __stdcall function_c3340(long light_index, long unused)
                 long i = 0;
                 while (i < count)
                 {
-                    function_2dba0(*(long *)(definition + 0x94), &marker->matrix.forward, 2, absolute_index, i, &marker->matrix.position, (color3f *)(light + 0xd4), 1.0f - *(real *)(light + 0xc8), *(real *)(light + 0xd0), 1.0f, function_3e9c0(*(long *)(light + 0x4c)));
+                    function_2dba0(*(long *)(definition + 0x94), &marker->matrix.forward, function_3e9c0(*(long *)(light + 0x4c)), 2, absolute_index, i, &marker->matrix.position, (color3f *)(light + 0xd4), 1.0f - *(real *)(light + 0xc8), *(real *)(light + 0xd0), 1.0f);
                     ++i;
                     ++marker;
                 }
             }
             else
-                function_2dba0(*(long *)(definition + 0x94), (vector3f *)(light + 0xac), 2, absolute_index, 0, (point3f *)(light + 0x84), (color3f *)(light + 0xd4), 1.0f - *(real *)(light + 0xc8), *(real *)(light + 0xd0), 1.0f, function_3e9c0(*(long *)(light + 0x4c)));
+                function_2dba0(*(long *)(definition + 0x94), (vector3f *)(light + 0xac), function_3e9c0(*(long *)(light + 0x4c)), 2, absolute_index, 0, (point3f *)(light + 0x84), (color3f *)(light + 0xd4), 1.0f - *(real *)(light + 0xc8), *(real *)(light + 0xd0), 1.0f);
         }
         if ((light[2] & 2) && *(long *)(definition + 0xa0) != NONE)
         {
@@ -840,56 +860,52 @@ void function_c28b0(long light_index)
     {
         real radius = (definition->flags & 2) ? shape.sphere.radius_a :
             (shape.sphere.radius_a > shape.sphere.radius_b ? shape.sphere.radius_a : shape.sphere.radius_b);
-        radius *= *(real *)((byte *)definition + 0xc);
-        real minimum = *(real *)((byte *)definition + 0x98);
-        radius = radius > minimum ? radius : minimum;
-        s_light_frame_ab *frame = (s_light_frame_ab *)((byte *)light + 0x84);
-        point3f *centre = (point3f *)((byte *)light + 0x18);
-        if (frame->clip_distance > 0.0f)
+        radius *= definition->radius_scale;
+        radius = radius > definition->minimum_radius ? radius : definition->minimum_radius;
+        if (light->frame.clip_distance > 0.0f)
         {
-            *centre = frame->field_1c_3;
-            light->radius = frame->clip_distance + radius;
+            light->centre = light->frame.field_1c_3;
+            light->radius = light->frame.clip_distance + radius;
         }
         else
         {
-            *centre = frame->position;
+            light->centre = light->frame.position;
             light->radius = radius;
         }
-        *(point3f *)((byte *)light + 0x38) = *centre;
-        light->fade_centre = *centre;
+        light->location_point = light->centre;
+        light->fade_centre = light->centre;
         light->fade_radius = light->radius;
     }
     else
     {
-        s_light_frame_ab *frame = (s_light_frame_ab *)((byte *)light + 0x84);
-        function_c1a80(frame, &shape, definition);
-        real width = shape.cone_render.slope_x * shape.cone.values[4] * 2.0f + shape.cone_render.width;
+        function_c1a80(&light->frame, &shape, definition);
+        real width = shape.cone.values[4] * shape.cone_render.slope_x * 2.0f + shape.cone_render.width;
         real height = shape.cone_render.aspect * width;
-        vector3f *direction = &shape.cone_render.direction;
-        real side = dot3f(direction, &shape.left);
+        real side = dot3f(&shape.left, &shape.cone_render.direction);
         real side_sign = side >= 0.0f ? 1.0f : -1.0f;
-        real up = dot3f(direction, &frame->up);
+        real up = dot3f(&shape.cone_render.direction, &light->frame.up);
         real up_sign = up >= 0.0f ? 1.0f : -1.0f;
-        vector3f unit = *direction;
+        vector3f unit = shape.cone_render.direction;
         function_30bf0(&unit);
         point3f corner;
         corner.x = g_468788->x + unit.i * shape.cone.values[4];
         corner.y = g_468788->y + unit.j * shape.cone.values[4];
         corner.z = g_468788->z + unit.k * shape.cone.values[4];
-        real side_extent = side_sign * width * 0.5f;
-        corner.x += shape.left.i * side_extent;
-        corner.y += shape.left.j * side_extent;
-        corner.z += shape.left.k * side_extent;
-        real up_extent = up_sign * height * 0.5f;
-        corner.x += frame->up.i * up_extent;
-        corner.y += frame->up.j * up_extent;
-        corner.z += frame->up.k * up_extent;
-        real radius = (real)(sqrt((double)corner.z * corner.z + (double)corner.y * corner.y + (double)corner.x * corner.x) * *(real *)((byte *)definition + 0xc));
-        real const *minimum = (real *)((byte *)definition + 0x98);
-        light->radius = radius > *minimum ? radius : *minimum;
-        point3f *centre = (point3f *)((byte *)light + 0x18);
-        *centre = frame->clip_distance > 0.0f ? frame->field_1c_3 : frame->position;
-        *(point3f *)((byte *)light + 0x38) = *centre;
+        point_add_scaled_c35a0(&corner, &shape.left, side_sign * width * 0.5f, &corner);
+        point_add_scaled_c35a0(&corner, &light->frame.up, up_sign * height * 0.5f, &corner);
+        real radius = (real)(sqrt(corner.z * corner.z + corner.y * corner.y + corner.x * corner.x) * definition->radius_scale);
+        radius = radius > definition->minimum_radius ? radius : definition->minimum_radius;
+        if (light->frame.clip_distance > 0.0f)
+        {
+            light->centre = light->frame.field_1c_3;
+            light->radius = radius;
+        }
+        else
+        {
+            light->centre = light->frame.position;
+            light->radius = radius;
+        }
+        light->location_point = light->centre;
     }
     function_c2c50(light_index);
 }
@@ -915,8 +931,7 @@ struct s_light_projection_ab
     bool has_plane;
     byte unknown6d[3];
     real plane_offset;
-    vector3f plane_normal;
-    real plane_distance;
+    plane3f plane;
     bool flag84, flag85;
     byte unknown86[2];
     real depth;
@@ -933,11 +948,12 @@ void function_11f5f0(box2f *bounds, point2f const *points, long count);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result);
 
-PRIVATE inline void light_projection_cross_ab(vector3f const *a, vector3f const *b, vector3f *result)
+/* result = -vector */
+PRIVATE inline void vector3f_negate_ab(vector3f const *vector, vector3f *result)
 {
-    result->i = a->j * b->k - a->k * b->j;
-    result->j = a->k * b->i - a->i * b->k;
-    result->k = a->i * b->j - a->j * b->i;
+    result->i = 0.0f - vector->i;
+    result->j = 0.0f - vector->j;
+    result->k = 0.0f - vector->k;
 }
 
 PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vector3f const *point, point2f *result)
@@ -960,6 +976,22 @@ PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vecto
     result->y = scale * y;
 }
 
+// score 513 (was 539): the entry pointer's base (+0x4c), the direction cursor and the table stores
+// now agree; retail stores the +radius vertex group first (so 1.0 lands in XMM2, not XMM1) and
+// computes each projection's forward row first. Kept: the file's cross helper for both crosses
+// (it sets the +0x4c base; the shared cross3f for the forward one gives +0x50), normalize3d for
+// the left vector, depth copied from the shape field, an aggregate vertex table, the point and
+// dot helpers with a plane3f for the plane, one negate helper for both up vectors. Tried: term
+// and row orders in the projection (identical); y stored before x with each component
+// declaration order 551-571; the radius field at each table use 645; a named negative radius 574.
+// Round 64: the face table declared before the direction table 513 (kept; retail stores the rest of the
+// faces before the directions). The projection helper through a local vector (rows forward, left, up)
+// 511 with retail's x-first rows, -1.0 in XMM7 and the +radius vertex group first (the top matches to
+// the first cross product); with y stored first 511; also the left.i product reversed 511; parenthesised
+// rows 576; y first with parentheses 579; normalize_inline for the left vector 581 (alone), 586/587
+// with the local vector; the shared cross3f for the left vector 570, 528 with the local vector; the
+// other table orders 549-568. Next: the local vector plus retail's cross-product loads (up loaded into
+// registers, up.i twice) and the normalize's i, k, j product order.
 // @retail 0xc1d90
 void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab const *shape, s_light_projection_ab *entries, short *count)
 {
@@ -972,59 +1004,30 @@ void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab co
         if ((short)shape->kind == 0)
         {
             real radius = shape->sphere_render.radius;
-            vector3f vertices[8];
-            vertices[0].i = radius;
-            vertices[0].j = radius;
-            vertices[0].k = -radius;
-            vertices[1].i = -radius;
-            vertices[1].j = radius;
-            vertices[1].k = -radius;
-            vertices[2].i = -radius;
-            vertices[2].j = -radius;
-            vertices[2].k = -radius;
-            vertices[3].i = radius;
-            vertices[3].j = -radius;
-            vertices[3].k = -radius;
-            vertices[4].i = radius;
-            vertices[4].j = radius;
-            vertices[4].k = radius;
-            vertices[5].i = -radius;
-            vertices[5].j = radius;
-            vertices[5].k = radius;
-            vertices[6].i = -radius;
-            vertices[6].j = -radius;
-            vertices[6].k = radius;
-            vertices[7].i = radius;
-            vertices[7].j = -radius;
-            vertices[7].k = radius;
-            vector3f directions[6] = {
-                { 0, 0, -1 }, { 1, 0, 0 }, { 0, 1, 0 },
-                { -1, 0, 0 }, { 0, -1, 0 }, { 0, 0, 1 }
+            vector3f vertices[8] = {
+                { radius, radius, -radius }, { -radius, radius, -radius },
+                { -radius, -radius, -radius }, { radius, -radius, -radius },
+                { radius, radius, radius }, { -radius, radius, radius },
+                { -radius, -radius, radius }, { radius, -radius, radius }
             };
             long faces[6][4] = {
                 { 0, 1, 2, 3 }, { 0, 3, 7, 4 }, { 0, 4, 5, 1 },
                 { 1, 5, 6, 2 }, { 2, 6, 7, 3 }, { 4, 7, 6, 5 }
             };
-            entry->depth = radius;
+            vector3f directions[6] = {
+                { 0, 0, -1 }, { 1, 0, 0 }, { 0, 1, 0 },
+                { -1, 0, 0 }, { 0, -1, 0 }, { 0, 0, 1 }
+            };
+            entry->depth = shape->sphere_render.radius;
             entry->orthogonal = false;
             entry->has_plane = false;
-            entry->matrix.up.i = 0.0f - directions[i].i;
-            entry->matrix.up.j = 0.0f - directions[i].j;
-            entry->matrix.up.k = 0.0f - directions[i].k;
+            vector3f_negate_ab(&directions[i], &entry->matrix.up);
             vector3f reference = *g_4687a8;
             if (i == 1 || i == 3)
                 reference = *g_4687ac;
-            light_projection_cross_ab(&entry->matrix.up, &reference, &entry->matrix.left);
-            vector3f *up = &entry->matrix.left;
-            real length = (real)sqrt((double)up->i * up->i + (double)up->k * up->k + (double)up->j * up->j);
-            if (fabs(length) >= 0.0001f)
-            {
-                real scale = 1.0f / length;
-                up->i *= scale;
-                up->j *= scale;
-                up->k *= scale;
-            }
-            light_projection_cross_ab(&entry->matrix.left, &entry->matrix.up, &entry->matrix.forward);
+            cross_product_c1a80(&reference, &entry->matrix.up, &entry->matrix.left);
+            normalize3d(&entry->matrix.left);
+            cross_product_c1a80(&entry->matrix.up, &entry->matrix.left, &entry->matrix.forward);
             entry->matrix.position = shape->origin;
             entry->matrix.scale = 1.0f;
             light_projection_point_ab(&entry->matrix, &vertices[faces[i][0]], &entry->points[0]);
@@ -1041,20 +1044,16 @@ void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab co
             entry = entries;
             entry->matrix.forward = shape->left;
             entry->matrix.left = frame->up;
-            entry->matrix.up.i = 0.0f - frame->forward.i;
-            entry->matrix.up.j = 0.0f - frame->forward.j;
-            entry->matrix.up.k = 0.0f - frame->forward.k;
+            vector3f_negate_ab(&frame->forward, &entry->matrix.up);
             entry->matrix.position = shape->origin;
             entry->matrix.scale = 1.0f;
             entry->orthogonal = shape->kind == 1;
             entry->has_plane = shape->origin_offset > 0.0f;
             entry->plane_offset = shape->origin_offset;
             point3f plane_point;
-            plane_point.x = entry->matrix.position.x + frame->forward.i * entry->plane_offset;
-            plane_point.y = entry->matrix.position.y + frame->forward.j * entry->plane_offset;
-            plane_point.z = entry->matrix.position.z + frame->forward.k * entry->plane_offset;
-            entry->plane_normal = frame->forward;
-            entry->plane_distance = entry->plane_normal.k * plane_point.z + entry->plane_normal.j * plane_point.y + entry->plane_normal.i * plane_point.x;
+            point_add_scaled_c35a0(&entry->matrix.position, &frame->forward, entry->plane_offset, &plane_point);
+            entry->plane.n = frame->forward;
+            entry->plane.d = dot_product_c1a80(&entry->plane.n, (vector3f const *)&plane_point);
             entry->depth = shape->cone_render.far_distance + shape->origin_offset;
             point2f center;
             light_projection_point_ab(&entry->matrix, &shape->cone_render.direction, &center);
@@ -1126,17 +1125,24 @@ void function_c0110()
     }
 }
 
+// score 6 (was 6): the last flag update holds the object in ecx and the flags in eax, retail the
+// reverse. light_partition_clear after the & 8 test with the light from g_4e030c->data and the pool
+// read at each use (kept); the same with a pool local 59, through the s_light_ab pointer 80; flags
+// through a ternary, a typed object, a dword view, a pointer to the flags 6/6/6/6; flag test negated 7;
+// object fetched after the flag 8; datum iterator 6; entry declared in the loop 6; a 600 s permuter
+// run (59 tries), none below 6. Round 72: `|=`/`&=` on the object's flags in each arm 68 (the
+// result test is threaded away); the flags read in each arm 58; the iterator declared before the
+// object 6; the flags as `((dword *)object)[1]` 6; the clear arm first 7; `dword flags = 0;`
+// declared before the object 6. Round 95: the loop leaving through `!remaining` in its condition 6;
+// the object read as `*(byte **)(g_4e0300->data + i * 12 + 8)` (the file's form) 6, with `remaining`
+// declared before it 8; a set-or-clear ternary on the field 68; the light index read directly instead
+// of through a reference local 6 (kept).
 // @retail 0xc3260
 void __stdcall function_c3260(long light_index, bool clear_object_flag)
 {
-    long const *light_index_reference = &light_index;
-    s_record_pool *lights = g_4e030c;
-    s_light_delete_view *light = &((s_light_delete_view *)lights->data)[*light_index_reference & 0xffff];
-    if ((light->flags & 8) && (light->flags & 2))
-    {
-        function_1cae40(&g_4e0310_partition, *light_index_reference, &light->first_cluster_reference);
-        light->flags &= ~8;
-    }
+    s_light_delete_view *light = &((s_light_delete_view *)g_4e030c->data)[light_index & 0xffff];
+    if (light->flags & 8)
+        light_partition_clear(light_index);
     long object_index = light->object_index;
     if (object_index != NONE && clear_object_flag)
     {
@@ -1144,13 +1150,13 @@ void __stdcall function_c3260(long light_index, bool clear_object_flag)
         byte *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
         bool remaining = false;
         s_record_pool_iterator iterator;
-        iterator.data = lights;
+        iterator.data = g_4e030c;
         iterator.index = NONE;
         iterator.datum_index = NONE;
         s_light_delete_view *entry;
         while ((entry = (s_light_delete_view *)data_iterator_next_calling(&iterator)) != 0)
         {
-            if (iterator.datum_index != *light_index_reference && entry->object_index == object_index)
+            if (iterator.datum_index != light_index && entry->object_index == object_index)
             {
                 remaining = true;
                 break;
@@ -1163,11 +1169,13 @@ void __stdcall function_c3260(long light_index, bool clear_object_flag)
             flags &= ~0x40;
         *(dword *)(object + 4) = flags;
     }
-    record_pool_release(lights, *light_index_reference);
+    record_pool_release(g_4e030c, light_index);
 }
 
 #include "object_queries.h"
 #include "object_markers.h"
+#include "matrix_transform.h"
+#include "slot_handler.h"
 struct s_partition_location;
 void function_1cac60(dword const *bits, s_cluster_partition *partition, long data_index,
     long *first_cluster_reference, point3f const *point, real radius, s_partition_location const *location,
@@ -1177,11 +1185,28 @@ bool __stdcall function_16a8e0(long flags, point3f const *point, real radius, lo
 void function_11bed0(s_location *location, point3f const *point);
 point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *out);
 
+// score 70 (was 231): the second vector's rotation products come out in another canonical order than
+// retail's (one product of the first too); the tail is BLOCKED-BY 0xba300 (retail passes the object in
+// ecx and the location in eax), which shifts the last block by one instruction. Round 141: the
+// partition as the global itself, the rotations through matrix_transform_vector, the node matrix through
+// object_node_matrix(object_get()) and the far point through point_add_scaled_c35a0 in each arm (once
+// after the marker test 295; a new two-pointer add helper 70). Node matrix through the out-of-line
+// 0xb8bd0 aligned 71 but stays a call (/Ob1 file; inline/forceinline redeclarations ignored); position/
+// forward/up pointer locals aligned 127/114; named rotation outputs/inputs 88/157; const matrix 72; the
+// helper's sums in up-first text order 70 (canonicalised). Round 143: retail compiles both rotations
+// alike (sum up*k + left*j, then forward*i; vector loaded j, k, i); ours gets the first one's
+// forward product reversed and sums the second one up + forward + left. Diagnostics on the shared
+// header (restored): vector-first products 70 (identical), components read at each use 153; const
+// vector arguments 70; a file-private up-first normal transform returning its output (the form other
+// files keep) 70 (identical); the parameter alias dropped 158. Round 81: the marker local scoped to
+// its arm 78; the overflow flag declared first 70 (same code); forward/up output pointer locals 86;
+// the location pointer taken at the top 155; the marker flag tested as a byte 70 (same code);
+// diagnostics on the shared header (restored): the helper's components loaded j,k,i / k,j,i / i,k,j /
+// j,i,k / k,i,j 78/76/78/75/81 (i,j,k stays best).
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {
     s_object_marker marker;
-    s_cluster_partition partition;
     long const *light_reference = &light_index;
     byte *light = g_4e030c->data + (*light_reference & 0xffff) * 0x110;
     byte *definition = g_4e3b44[*(long *)(light + 4) & 0xffff].bytes;
@@ -1193,39 +1218,28 @@ void __stdcall function_c2d00(long light_index)
     if (*(short *)(light + 0x54) != NONE)
     {
         long marker_name = function_b8c40(*(long *)(light + 0x4c), *(short *)(light + 0x54));
-        bool in_own_view = (*(long *)definition & 0x20) &&
+        if ((*(long *)definition & 0x20) &&
             first_person_weapon_get_marker(*(long *)(light + 0x4c), marker_name,
-                (point3f *)(light + 0x84), (vector3f *)(light + 0xac), (vector3f *)(light + 0xb8));
-        if (!in_own_view)
+                (point3f *)(light + 0x84), (vector3f *)(light + 0xac), (vector3f *)(light + 0xb8)))
+        {
+            point_add_scaled_c35a0((point3f *)(light + 0x84), (vector3f *)(light + 0xac), 1.0f, (point3f *)(light + 0x90));
+        }
+        else
         {
             function_b8d30(*(long *)(light + 0x4c), marker_name, &marker, 1, false);
             *(point3f *)(light + 0x84) = marker.matrix.position;
             *(vector3f *)(light + 0xac) = marker.matrix.forward;
             *(vector3f *)(light + 0xb8) = marker.matrix.up;
+            point_add_scaled_c35a0((point3f *)(light + 0x84), (vector3f *)(light + 0xac), 1.0f, (point3f *)(light + 0x90));
         }
-        *(real *)(light + 0x90) = *(real *)(light + 0x84) + *(real *)(light + 0xac);
-        *(real *)(light + 0x94) = *(real *)(light + 0x88) + *(real *)(light + 0xb0);
-        *(real *)(light + 0x98) = *(real *)(light + 0x8c) + *(real *)(light + 0xb4);
     }
     else if (*(long *)(light + 0x58) != NONE)
     {
-        struct s_header { byte unknown00[8]; byte *object; };
-        byte *object = ((s_header *)g_4e0300->data)[*(long *)(light + 0x58) & 0xffff].object;
-        transform4x3f *matrix = (transform4x3f *)(object + *(short *)(object + 0x116)) + *(short *)(light + 0x5c);
+        transform4x3f *matrix = object_node_matrix(object_get(*(long *)(light + 0x58)), *(short *)(light + 0x5c));
         transform4x3f_apply_point(matrix, (point3f *)(light + 0x60), (point3f *)(light + 0x84));
-        vector3f *forward = (vector3f *)(light + 0x6c);
-        vector3f *up = (vector3f *)(light + 0x78);
-        vector3f *world_forward = (vector3f *)(light + 0xac);
-        vector3f *world_up = (vector3f *)(light + 0xb8);
-        world_forward->i = matrix->up.i * forward->k + matrix->left.i * forward->j + matrix->forward.i * forward->i;
-        world_forward->j = matrix->forward.j * forward->i + matrix->up.j * forward->k + matrix->left.j * forward->j;
-        world_forward->k = matrix->forward.k * forward->i + matrix->up.k * forward->k + matrix->left.k * forward->j;
-        world_up->i = matrix->up.i * up->k + matrix->left.i * up->j + matrix->forward.i * up->i;
-        world_up->j = matrix->forward.j * up->i + matrix->up.j * up->k + matrix->left.j * up->j;
-        world_up->k = matrix->forward.k * up->i + matrix->up.k * up->k + matrix->left.k * up->j;
-        *(real *)(light + 0x90) = *(real *)(light + 0x84) + world_forward->i;
-        *(real *)(light + 0x94) = *(real *)(light + 0x88) + world_forward->j;
-        *(real *)(light + 0x98) = *(real *)(light + 0x8c) + world_forward->k;
+        matrix_transform_vector(matrix, (vector3f *)(light + 0x6c), (vector3f *)(light + 0xac));
+        matrix_transform_vector(matrix, (vector3f *)(light + 0x78), (vector3f *)(light + 0xb8));
+        point_add_scaled_c35a0((point3f *)(light + 0x84), (vector3f *)(light + 0xac), 1.0f, (point3f *)(light + 0x90));
     }
     function_c28b0(*light_reference);
     if (!(light[2] & 8) && *(short *)(light + 0x48) == NONE &&
@@ -1248,10 +1262,7 @@ void __stdcall function_c2d00(long light_index)
             function_11bed0(location, (point3f *)(light + 0x18));
     }
     bool overflow;
-    partition.cluster_first_data_references = (long *)g_4e0310;
-    partition.data_references = (s_record_pool *)g_4e0314;
-    partition.cluster_references = (s_record_pool *)g_4e0318;
-    function_1cac60(NULL, &partition, light_index, (long *)(light + 0x10), (point3f *)(light + 0x18),
+    function_1cac60(NULL, &g_4e0310_partition, light_index, (long *)(light + 0x10), (point3f *)(light + 0x18),
         *(real *)(light + 0x24), (s_partition_location *)location, 0, NULL, &overflow);
     light[2] |= 8;
 }
@@ -1265,19 +1276,18 @@ void __stdcall function_c0c80(long light_index);
 #define FLAG(bit) (1 << (bit))
 #define SET_FLAG(flags, bit, value) ((value) ? ((flags) |= FLAG(bit)) : ((flags) &= ~FLAG(bit)))
 
+/* creates the light of a scenario placement: its frame from the placement's
+   rotation, aimed at the placement's target, and its far point; NONE when the
+   pool is full or the light is not wanted */
 // @retail 0xc0520
 long __stdcall function_c0520(long tag_index, long placement_index, bool force,
     s_light_placement_ab *placement)
 {
-    long result_value = 0;
-    long const *placement_index_reference = &placement_index;
-    bool const *force_reference = &force;
-    s_light_placement_ab *const *placement_reference = &placement;
-    byte const *source = (byte const *)*placement_reference;
+    byte const *source = (byte const *)placement;
     byte const *definition = g_4e3b44[tag_index & 0xffff].bytes;
     long result = NONE;
     bool create = true;
-    if ((definition[0] & 1) || (*(short const *)(source + 0x40) == 3 && !*force_reference))
+    if ((definition[0] & 1) || (*(short const *)(source + 0x40) == 3 && !force))
         create = false;
     if (*(long const *)(definition + 0x94) != NONE || create)
     {
@@ -1285,7 +1295,8 @@ long __stdcall function_c0520(long tag_index, long placement_index, bool force,
         if (result != NONE)
         {
             byte *light = g_4e030c->data + (result & 0xffff) * 0x110;
-            *(long *)(light + 8) = *placement_index_reference;
+            real distance = 0.0f;
+            *(long *)(light + 8) = placement_index;
             *(long *)(light + 0x14) = NONE;
             *(long *)(light + 0x4c) = NONE;
             *(short *)(light + 0x54) = NONE;
@@ -1319,34 +1330,24 @@ long __stdcall function_c0520(long tag_index, long placement_index, bool force,
                 direction = matrix.up;
             else
             {
-                if ((short)shape.kind != 0 && forward->k * direction.k +
-                    forward->j * direction.j + forward->i * direction.i < 0.5f)
+                if ((short)shape.kind != 0 && dot_product_c1a80(forward, &direction) < 0.5f)
                     direction = matrix.up;
             }
-            real distance;
             if ((short)shape.kind == 0)
                 distance = shape.sphere.radius_a > shape.sphere.radius_b ? shape.sphere.radius_a : shape.sphere.radius_b;
             else
-                distance = (forward->k * direction.k + forward->j * direction.j +
-                    forward->i * direction.i) * shape.cone.values[4];
-            *(real *)(light + 0x90) = direction.i * distance + position->x;
-            *(real *)(light + 0x94) = direction.j * distance + position->y;
-            *(real *)(light + 0x98) = direction.k * distance + position->z;
+                distance = dot_product_c1a80(forward, &direction) * shape.cone.values[4];
+            point_add_scaled_c35a0(position, &direction, distance, (point3f *)(light + 0x90));
             if (!(definition[0] & 9))
             {
-                position->x = direction.i * 0.001f + position->x;
-                position->y = direction.j * 0.001f + position->y;
-                position->z = direction.k * 0.001f + position->z;
+                point_add_scaled_c35a0(position, &direction, 0.001f, (point3f *)(light + 0x84));
             }
             function_c0c80(result);
             *(long *)(light + 0xc) = g_4e0308 - 1;
             *(long *)(light + 0x10c) = NONE;
         }
     }
-    { result_value = result; goto return_exit; }
-
-return_exit:
-    return result_value;
+    return result;
 }
 
 struct s_light_palette_setup_ab
@@ -1398,13 +1399,32 @@ bool function_b9d20(long object_index);
 struct s_object_list;
 extern s_object_list *g_4de2f4;
 
-PRIVATE __forceinline real clamp_light(real &x, real low, real high)
-{
-    if (low > x) return low;
-    if (x > high) return high;
-    return x;
-}
+#define PIN(x, low, high) ((x) < (low) ? (low) : ((x) > (high) ? (high) : (x)))
 
+// score 49 (was 49): four bytes over retail's length; only the colour-copy block differs: retail
+// hoists each next definition load above the previous copy's last store, loads 1.0f before the tint
+// stores and stores the last pair-colour dword after the pushes, so `&light->fraction` takes EBX and
+// is read back as `[ebx]` after the calls (ours stores each copy's last dword first, takes EAX and
+// reloads the field). Round 95: the end tests and `|= 2` on the word field 184 (aligned 46 -> 43);
+// with the definition test as `!(bytes[0] & 0x80)` (gives retail's `js`) 184 (aligned 42); fade
+// products written `scale * field` for the last two or all three pair channels 184/184; vector3f_scale
+// in place on both colours 298; the fade as a named local used twice 184. Round 141: the grouped
+// colour struct and the parameter alias replaced by plain locals (LTCG then inlined 0x131d60: 607 at
+// 1789 bytes) with 0x131d60 kept out of line by a noinline declaration in its file 147 (kept as the
+// steering removal); on that base `!(bytes[0] & 0x80)` 151, the word-field end tests 183, both 185,
+// the pair colour through vector3f_scale 281, `scale * field` for the pair 147, the colour through
+// vector3f_scale 161. Round 143: every clamp through a PIN macro that re-reads its field (the channel
+// clamps stored in order) 85 at retail's length; with the word-field end tests 51; with the `js` test
+// and the clamped fade named 50; the alphas after the rgb copies in declaration order 49 (kept). On
+// that: alphas before each copy / after in source order / first 50/50/49; tint copied last 66; memcpy
+// copies 49; per-field float copies 414; `&light->fraction` passed directly 214; the fraction pointer
+// declared at the block top 88; every fade product `*= 1.0f - light->fade` 50. Round 81 (aligned
+// count 8: the 4 bytes are `[ebx]` against our `[ebp + 0xd0]`, which shifts every later call): RA
+// gives the pointer eax (then rematerialised) because our scheduler stores the last pair-colour dword
+// before the pushes; the colour struct given an rgb member (shared header, restored) 49 (same code);
+// the pointer declared at the function top 93 (it then takes edi and the late store moves as
+// retail's); the pointer also for the second call and/or the blend 49/49/49 (same code);
+// `&light->fraction` passed with no pointer 214.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {
@@ -1427,7 +1447,6 @@ void __stdcall function_c0c80(long light_index)
         real pair[2];
         byte unknownf8[0x110 - 0xf8];
     };
-    long const *light_reference = &light_index;
     s_light_dynamic *light = &((s_light_dynamic *)g_4e030c->data)[light_index & 0xffff];
     byte *definition = g_4e3b44[light->tag_index & 0xffff].bytes;
     long object_index = NONE;
@@ -1444,21 +1463,17 @@ void __stdcall function_c0c80(long light_index)
     }
     if (light->function_index != NONE)
     {
-        struct { color3f tint; color4f second, first, pair_second, pair_first; } colours;
-        color3f &tint = colours.tint;
-        color4f &first = colours.first;
-        color4f &second = colours.second;
-        color4f &pair_first = colours.pair_first;
-        color4f &pair_second = colours.pair_second;
+        color3f tint;
+        color4f second, first, pair_second, pair_first;
         tint = *(color3f *)g_468710;
         *(color3f *)&first.red = *(color3f *)(definition + 0x58);
-        first.alpha = 1.0f;
         *(color3f *)&second.red = *(color3f *)(definition + 0x64);
-        second.alpha = 1.0f;
         *(color3f *)&pair_first.red = *(color3f *)(definition + 0x40);
-        pair_first.alpha = 1.0f;
         *(color3f *)&pair_second.red = *(color3f *)(definition + 0x4c);
+        second.alpha = 1.0f;
+        first.alpha = 1.0f;
         pair_second.alpha = 1.0f;
+        pair_first.alpha = 1.0f;
         real *fraction = &light->fraction;
         function_bab40(object_index, light->name, fraction);
         function_bad50(object_index, light->colour_index, (point3f *)&tint);
@@ -1470,7 +1485,7 @@ void __stdcall function_c0c80(long light_index)
         light->intensity = (1.0f - blend) *
             *(real *)(definition + 0x70) + *(real *)(definition + 0x74) * blend;
     }
-    else if (((byte *)&light->flags)[0] & 0x10)
+    else if (light->flags & 0x10)
     {
         real elapsed = (real)(g_510c54->game_time - light->start_time);
         real duration = (real)g_510c54->field_2_3 * *(real *)(definition + 0xb0);
@@ -1498,10 +1513,11 @@ void __stdcall function_c0c80(long light_index)
     {
         byte *parent = *(byte **)(g_4e0300->data + (function_baf80(object_index) & 0xffff) * 12 + 8);
         if (((1 << parent[0xaa]) & 3) && *(real *)(parent + 0x2b0) > 0.0f &&
-            (signed char)g_4e3b44[light->tag_index & 0xffff].bytes[0] >= 0)
+            !(g_4e3b44[light->tag_index & 0xffff].bytes[0] & 0x80))
         {
-            light->fade = clamp_light(*(real *)(parent + 0x2b0), 0.0f, 1.0f);
-            real scale = 1.0f - light->fade;
+            real fade = PIN(*(real *)(parent + 0x2b0), 0.0f, 1.0f);
+            light->fade = fade;
+            real scale = 1.0f - fade;
             light->colour.red *= scale;
             light->colour.green *= scale;
             light->colour.blue *= scale;
@@ -1510,39 +1526,32 @@ void __stdcall function_c0c80(long light_index)
             light->pair_colour.blue *= scale;
         }
     }
-    real red = clamp_light(light->colour.red, 0.0f, 1.0f);
-    real green = clamp_light(light->colour.green, 0.0f, 1.0f);
-    light->colour.red = red;
-    real blue = light->colour.blue;
-    blue = clamp_light(blue, 0.0f, 1.0f);
-    light->colour.green = green;
-    real pair_red = clamp_light(light->pair_colour.red, 0.0f, 1.0f);
-    light->colour.blue = blue;
-    real pair_green = clamp_light(light->pair_colour.green, 0.0f, 1.0f);
-    light->pair_colour.red = pair_red;
-    real pair_blue = clamp_light(light->pair_colour.blue, 0.0f, 1.0f);
-    light->pair_colour.green = pair_green;
-    light->pair_colour.blue = pair_blue;
+    light->colour.red = PIN(light->colour.red, 0.0f, 1.0f);
+    light->colour.green = PIN(light->colour.green, 0.0f, 1.0f);
+    light->colour.blue = PIN(light->colour.blue, 0.0f, 1.0f);
+    light->pair_colour.red = PIN(light->pair_colour.red, 0.0f, 1.0f);
+    light->pair_colour.green = PIN(light->pair_colour.green, 0.0f, 1.0f);
+    light->pair_colour.blue = PIN(light->pair_colour.blue, 0.0f, 1.0f);
     real intensity = light->intensity * 2.0f;
-    light->intensity = clamp_light(intensity, 0.0f, 4.0f);
+    light->intensity = PIN(intensity, 0.0f, 4.0f);
     light->radius = (1.0f - light->fraction) * *(real *)(definition + 8) +
         *(real *)(definition + 0xc) * light->fraction;
-    if ((((byte *)&light->flags)[0] & 1) && light->radius > 0.0f &&
-        (red != 0.0f || green != 0.0f || blue != 0.0f ||
-            pair_red != 0.0f || pair_green != 0.0f || pair_blue != 0.0f))
+    if ((light->flags & 1) && light->radius > 0.0f &&
+        (light->colour.red != 0.0f || light->colour.green != 0.0f || light->colour.blue != 0.0f ||
+            light->pair_colour.red != 0.0f || light->pair_colour.green != 0.0f || light->pair_colour.blue != 0.0f))
     {
-        if (!(((byte *)&light->flags)[0] & 2))
+        if (!(light->flags & 2))
         {
             light->flags |= 2;
             if ((object_index == NONE || (!object_or_parent_hidden(object_index) && function_b9d20(object_index))) &&
                 g_4de2f4 && *(byte *)g_4de2f4)
-                function_c2d00(*light_reference);
+                function_c2d00(light_index);
         }
     }
-    else if (((byte *)&light->flags)[0] & 2)
+    else if (light->flags & 2)
     {
-        if (((byte *)&light->flags)[0] & 8) function_c3220(light_index);
-        ((byte *)&light->flags)[0] &= ~2;
+        if (light->flags & 8) function_c3220(light_index);
+        light->flags &= ~2;
     }
 }
 
@@ -1568,7 +1577,7 @@ void function_bffa0()
 
 
 // @retail 0xc1720
-long __stdcall function_c1720(long object_index, long remove_from_partition, long update)
+long __stdcall function_c1720(long object_index, byte remove_from_partition, byte update)
 {
     long count = 0;
     s_data_datum_iterator iterator;
@@ -1639,44 +1648,39 @@ done:
 
 
 
+/* updates every light; a flag 8 light whose object (or its second object)
+   has header bit 2 set leaves the cluster partition and goes to 0xc2d00, and
+   a flag 0x10 light past its lifetime goes to 0xc3260 */
 // @retail 0xc1400
 void function_c1400()
 {
     long time = g_510c54->game_time;
     s_record_pool *pool = g_4e030c;
-    long absolute = function_16bc00(pool, 0);
-    long index = data_datum_index(pool, absolute);
+    long index = data_datum_index(pool, function_16bc00(pool, 0));
     while (index != NONE)
     {
-        long current_absolute = index & 0xffff;
-        byte *light = g_4e030c->data + current_absolute * 0x110;
+        byte *light = g_4e030c->data + (index & 0xffff) * 0x110;
         byte *definition = g_4e3b44[*(long *)(light + 4) & 0xffff].bytes;
         function_c0c80(index);
         if (light[2] & 8)
         {
-            long object = *(long *)(light + 0x4c);
-            if (object == NONE) object = *(long *)(light + 0x58);
-            if (object != NONE)
+            bool object_flagged;
+            if (*(long *)(light + 0x4c) != NONE)
+                object_flagged = (bool)(((dword)(g_4e0300->data + (*(long *)(light + 0x4c) & 0xffff) * 12)[2] >> 2) & 1);
+            else if (*(long *)(light + 0x58) != NONE)
+                object_flagged = (bool)(((dword)(g_4e0300->data + (*(long *)(light + 0x58) & 0xffff) * 12)[2] >> 2) & 1);
+            else
+                object_flagged = false;
+            if (object_flagged)
             {
-                byte *header = g_4e0300->data + (object & 0xffff) * 12;
-                if ((bool)(((dword)header[2] >> 2) & 1))
-                {
-                    byte *current = g_4e030c->data + current_absolute * 0x110;
-                    if (current[2] & 2)
-                    {
-                        function_1cae40(&g_4e0310_partition, index, (long *)(current + 0x10));
-                        current[2] &= ~8;
-                    }
-                    function_c2d00(index);
-                }
+                light_partition_clear(index);
+                function_c2d00(index);
             }
         }
         if ((light[2] & 0x10) && (real)(time - *(long *)(light + 0x14))
             > (real)*(short *)((byte *)g_510c54 + 2) * *(real *)(definition + 0xb0))
             function_c3260(index, true);
-        pool = g_4e030c;
-        absolute = data_find_index(pool, index == NONE ? 0 : current_absolute + 1);
-        index = data_datum_index(pool, absolute);
+        index = data_datum_index(g_4e030c, data_find_index(g_4e030c, index == NONE ? 0 : (index & 0xffff) + 1));
     }
 }
 
@@ -1684,15 +1688,15 @@ void function_c1400()
 
 // @retail 0xc0350
 long function_c0350(long tag_index, long object_index, long node_index, vector3f const *up,
-    vector3f const *forward, point3f const *position, real scale)
+    point3f const *position, vector3f const *forward, real scale)
 {
     long result = record_pool_allocate(g_4e030c);
     if (result != NONE)
     {
         byte *light = g_4e030c->data + (result & 0xffff) * 0x110;
         byte *definition = g_4e3b44[tag_index & 0xffff].bytes;
-        *(long *)(light + 4) = tag_index;
         *(word *)(light + 2) = 0;
+        *(long *)(light + 4) = tag_index;
         *(long *)(light + 0x14) = g_510c54->game_time;
         *(long *)(light + 0x50) = 0;
         *(short *)(light + 0x56) = 0;
@@ -1724,8 +1728,8 @@ long function_c0350(long tag_index, long object_index, long node_index, vector3f
             *(point3f *)(light + 0x60) = *position;
             *(vector3f *)(light + 0x6c) = *forward;
             *(vector3f *)(light + 0x78) = *up;
-            *(short *)(light + 0x5c) = (short)node_index;
             *(long *)(light + 0x58) = object_index;
+            *(short *)(light + 0x5c) = (short)node_index;
             *(dword *)(object + 4) |= 0x40;
         }
         function_c0c80(result);

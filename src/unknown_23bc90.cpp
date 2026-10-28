@@ -405,7 +405,9 @@ long function_14de70(long local_player_index);
 
 // score 72 (was 72): retail keeps the input in EBX with three pushes and
 // reloads the unit index, ours keeps it in EBP with four pushes and keeps
-// the value live.
+// the value live. BLOCKED-BY 0xcb810 (contributor code): retail pushes its
+// vector argument, ours passes it in EBX; with that call made through a
+// stack-convention pointer the prologue and the reloads become retail's.
 // @retail 0x23c110
 void __stdcall function_23c110(void *state, void *input, s_observer_command *command)
 {

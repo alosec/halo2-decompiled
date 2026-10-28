@@ -122,34 +122,34 @@ short __stdcall function_1b57f0(long actor_index, s_slot *slot)
 			{
 				long other_index = iterator.index;
 
-				if (other == actor || other->prop_index == NONE)
-					continue;
-
-				s_prop_node_view *other_node = prop_node_get(other->prop_index);
-
-				if (other_node->unknown08 != node->unknown08)
-					continue;
-				if (actor_behavior_find_level(other_index, 0x22) == NONE && actor_behavior_find_level(other_index, 0x1b) == NONE)
-					continue;
-
-				s_prop_view_fields *other_view = prop_node_view(other_node);
-
-				if (!other_view || other_view->unknown70 != 0)
-					continue;
-
-				real distance = distance3d(&actor->position, &other->position);
-
-				if (!(distance < 4.0f))
-					continue;
-				if (actor_behavior_find_level(other_index, 0xb) != NONE)
-					return g_46fbe4;
-
-				real weight = 1.0f / (distance + 1.0f);
-
-				if (weight > best_weight)
+				if (other != actor && other->prop_index != NONE)
 				{
-					best_weight = weight;
-					best_index = other_index;
+					s_prop_node_view *other_node = prop_node_get(other->prop_index);
+
+					if (other_node->unknown08 == node->unknown08 &&
+						(actor_behavior_find_level(other_index, 0x22) != NONE || actor_behavior_find_level(other_index, 0x1b) != NONE))
+					{
+						s_prop_view_fields *other_view = prop_node_view(other_node);
+
+						if (other_view && other_view->unknown70 == 0)
+						{
+							real distance = distance3d(&actor->position, &other->position);
+
+							if (distance < 4.0f)
+							{
+								if (actor_behavior_find_level(other_index, 0xb) != NONE)
+									goto done;
+
+								real weight = 1.0f / (distance + 1.0f);
+
+								if (weight > best_weight)
+								{
+									best_weight = weight;
+									best_index = other_index;
+								}
+							}
+						}
+					}
 				}
 			}
 			if (best_index != NONE)
@@ -163,6 +163,7 @@ short __stdcall function_1b57f0(long actor_index, s_slot *slot)
 			}
 		}
 	}
+done:
 	return g_46fbe4;
 }
 

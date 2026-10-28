@@ -23,9 +23,9 @@ static void function_3158d0(pointers_312800 *array)
 }
 
 // passes on the pairs that begin and end
-inline void dispatch_315a10(world_312590 *world, pairs_30d870 const &added, pairs_30d870 const &removed)
+inline void __cdecl dispatch_315a10(dispatcher_3728c0 *dispatcher, pairs_30d870 const &added, pairs_30d870 const &removed, pair_listener_315a10 *listener)
 {
-	world->dispatcher->function_3728c0(added.data, added.size, removed.data, removed.size, world->pair_listener);
+	dispatcher->function_3728c0(added.data, added.size, removed.data, removed.size, listener);
 }
 
 // @retail 0x315a10
@@ -41,7 +41,8 @@ void overlapped_312800::function_315a10(bounds_312800 const *bounds)
 		{
 			function_372b50(added.data, added.size);
 			function_372b50(removed.data, removed.size);
-			dispatch_315a10((world_312590 *)field_8, added, removed);
+			world_312590 *world = (world_312590 *)field_8;
+			dispatch_315a10(world->dispatcher, added, removed, world->pair_listener);
 			function_3158d0(&field_3c);
 		}
 	}

@@ -505,7 +505,7 @@ struct s_510c50_looping_view
 
 void function_18d3d0(void);
 bool function_18d360(long tag_index);
-void function_18d290(long looping_sound_index, long tag_index);
+void function_18d290(long tag_index, long looping_sound_index);
 
 struct s_looping_sound_tag_flags
 {
@@ -541,7 +541,7 @@ void __stdcall function_18a430(long tag_index, long object_index, real scale)
 		}
 		if (datum_index != NONE)
 		{
-			function_18d290(datum_index, tag_index);
+			function_18d290(tag_index, datum_index);
 			if (detached && g_510c50 && ((s_510c50_looping_view *)g_510c50)->enabled)
 			{
 				looping_sound_get(datum_index)->flags |= 0x40;

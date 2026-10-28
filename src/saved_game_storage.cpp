@@ -431,26 +431,34 @@ bool saved_game_file_write_save_image(long type, s_saved_game_file_location *loc
 	{
 		return true;
 	}
-	char path[256];
-	path[0] = 0;
-	strncpy(path, location->name, sizeof(path));
-	path[255] = 0;
-	function_122810(path, "SaveImage.xbx");
-	s_type_acf665 file;
-	memset(&file, 0, sizeof(file));
-	file.signature = FILE_REFERENCE_SIGNATURE;
-	file.location = NONE;
-	if (file.flags & 1)
-		function_1373c0(file.path);
-	function_137320(file.path, path);
-	file.flags |= 1;
-	dword error;
-	return (function_1367d0(&file) &&
-		function_136970(&file, 2, &error) &&
-		function_136d00(&file, g_saved_game_image, sizeof(g_saved_game_image)) &&
-		function_136bb0(&file));
+	else
+	{
+		char path[256];
+		path[0] = 0;
+		strncpy(path, location->name, sizeof(path));
+		path[255] = 0;
+		function_122810(path, "SaveImage.xbx");
+		s_type_acf665 file;
+		memset(&file, 0, sizeof(file));
+		file.signature = FILE_REFERENCE_SIGNATURE;
+		file.location = NONE;
+		if (file.flags & 1)
+			function_1373c0(file.path);
+		function_137320(file.path, path);
+		file.flags |= 1;
+		dword error;
+		if (function_1367d0(&file) &&
+			function_136970(&file, 2, &error) &&
+			function_136d00(&file, sizeof(g_saved_game_image), g_saved_game_image))
+		{
+			if (function_136bb0(&file))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }
-
 /* the types' names in each language; 0x217a80 picks one by the string id
    saved_game_type_get_name_id gives */
 

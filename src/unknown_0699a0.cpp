@@ -132,7 +132,7 @@ struct s_699a0_table
 };
 
 // @retail 0x699a0
-long function_699a0(long index, void *table)
+long function_699a0(void *table, long index)
 {
 	long handle = NONE;
 	if (index < 16)

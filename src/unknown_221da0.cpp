@@ -178,35 +178,6 @@ struct s_effect_inputs
 dword function_191660(long string_handle, long index);
 
 /* fills the data block of one component of a sound effect */
-// score 169 (was 169): frame 0x24 versus 0x28; full parameter spill and BP/BX selector allocation differ.
-// Parameter record reference 200; both native selectors 188; named gains 169; size policy 400;
-// floating consistency 169; natural while 215; source count after header 186; native header copy 169.
-// frame 0x24 versus 0x28; full parameter-pointer spill
-// and input-selector registers differ. Parameter record 200; early bounds 223;
-// type ladders 177; speaker presence 207; bound values 220; fallback default 227;
-// output mode 169; parameter record with ladders 208. Selected-record copy 206
-// excluded for earlier overlap. Original body retained.
-// score 165 (was 169): Source-element addressing is closer at retail length;
-// frame 0x24 versus 0x28, parameter spill and input selectors still differ.
-// Function/source references 169/165; shared period 165 (740 bytes);
-// shared range selector 220; period plus range 238; function plus range 220;
-// curve record 202; primary field plus range 220; source plus period 164
-// (739 bytes, rejected); source plus function 165. Source reference kept.
-// score 5 (was 165): frame and parameter/selector homes agree; remainder-result
-// stores versus pointer/speaker reload scheduling remain. Direction receiver 211;
-// early parameter 201; both 201; range bit at use 218; function-scope samples
-// 165/165/165; early parameter plus range bit 5 plain. Corrected-frame primary,
-// range, paired and shared phase results 5 each; common period 175; implicit
-// remainder-result conversion 5.
-// full parameter-pointer spill and primary/range selector registers still differ.
-// parameter count once 165; override mask once 260; parameter cursor 215
-// primary remainder result 165; range remainder result 165; primary quotient 165
-// range quotient 165; cursor/count/mask 235.
-// Count snapshot restores frame 0x28 at 727 bytes and +0x65; its count home replaces no parameter spill.
-// score 5 (was 165): full parameter spill and BP/BX selector homes still differ.
-// External header/input/override records 215/165/165; live bound fields 165;
-// source count after special header 183; sampled values at loop scope 165;
-// named rounded results 165; header plus live bounds 215.
 // @retail 0x2222c0
 void function_2222c0(s_effect_component const *component, s_effect_component_overrides const *overrides,
 	s_effect_inputs const *inputs, long speaker, s_effect_data_block *block)
@@ -251,7 +222,7 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 
 				if (input == 1)
 				{
-					x = (real)fmod((double)(x / function->period), 1.0);
+					x = fmodf(x / function->period, 1.0f);
 				}
 				if (speaker != NONE && input == 3)
 				{
@@ -263,7 +234,7 @@ void function_2222c0(s_effect_component const *component, s_effect_component_ove
 
 					if (range_input == 1)
 					{
-						y = (real)fmod((double)(y / function->period), 1.0);
+						y = fmodf(y / function->period, 1.0f);
 					}
 					if (speaker != NONE && range_input == 3)
 					{
@@ -785,15 +756,49 @@ void __stdcall vector_constructor_iterator(void *arg_0, unsigned arg_1, int arg_
 void *__fastcall function_31bc70(void *arg_0);
 real function_18cac0(long arg_0);
 
-// score 225 (was 225): inline table clear aligns the frame and occupies EBP;
+// score 216 (was 225): Frame 0x8ac agrees; camera/BSP/gain homes and maximum joins remain.
+// Earlier: aligned EBP frame 0x8b4 versus direct 0x8ac; native large-clear and scalar homes differed.
 // reversed side guard 225; missing-door continue 225; camera-cluster continue 225;
 // indexed batch-entry pointer 225; previous-gain snapshot 262.
-// score 225 (was 225): aligned clear still owns EBP and shifts the scalar homes;
+// Earlier: aligned clear still owns EBP and shifts the scalar homes;
 // unsigned-word door index 236; unsigned-word cluster index 540; both 523;
 // signed-byte side 246; one door-cluster table 233; selected mask pointer 254;
 // both word indices/signed side 534; mask pointer/native camera index 254.
 // inner count snapshot 225; Boolean side 246; native door cluster 236;
 // absent-door-bit continue 225; final batch count snapshot 237.
+// Round 211: Batch countdown/cursor 237; unsigned native side 225; camera mask/word parts 226; signed-word
+// door cluster 237; countdown/membership parts 238. Aligned-clear frame and receiver homes remain.
+// Gain after mask queries 251; global BSP receiver 227; audibility-bound receiver reread 244;
+// unsigned membership masks 246; pretested cluster while walk 225.
+// Round 215: unsigned-word selector 229; read-only audibility receiver 225;
+// mask declaration before gain 225; chained small-mask zero 245; branch-derived gain result 229.
+// Flat mask, reversed flat index 225/225; door division 265; cluster division 230;
+// both divisions 269; flat with door/cluster/both divisions 265/230/269.
+// Round 164: Returned gain view ending before final batch 228 (frame 0x8b0);
+// native real table, post-clear BSP and readonly camera combinations 228 each.
+// All eight regress; original clear, gain view and aligned body restored.
+// Three-state mask admission with long/short/signed-byte/byte complete arms 225/229/246/246;
+// default-first admission at those widths 225/229/246/246. Original early continue, selector and whole library clear restored.
+// readonly camera 225; audibility once 233; camera audibility 233; max workspace 225; camera max 225;
+// audibility max 233; camera audibility max 233; double door gain 338.
+// Round 234: Gain-output cursor with original clear, native side, outer maximum
+// workspace and both: 252 each; the same four with the whole library clear return
+// 241 each. Original indexed traversal, native clear, gain result and executable
+// body restored at 225; aligned frame and scalar homes remain.
+// Round 140: our build aligns the frame for the 0x800-byte clear (compile-only too: any
+// memset of a local of 128 bytes or more aligns there); retail does not. The clear through
+// a helper in another file (LTCG inlines it) 225 (still aligned); batch count read once
+// 237 (812 bytes); door clusters through the cached audibility pointer 233 (812 bytes); gain
+// loop bound read once 225; door count read once 237.
+// Lane 8 r58: max as a ternary store 229; table value first with negated test 254; real
+// table type 225; batch count read once 237; with real table 237. The alignment needs the
+// memset and a frame over 0x800: a table of 0x1c0 dwords or no memset gives the plain frame.
+// Round 180: Indexed gain-element pointer inside/before admission 225/225; complete result
+// arms 229/229; two-use old gain 262/262; old gain with complete arms 254/254.
+// Round 196: Whole clear return/direct camera, side long/short/signed-byte/byte 248/248/250/250;
+// with audibility at each bound 223/245/223/223. On long 223, after-clear BSP/native real/both
+// 235/223/235; small-mask memset alone/with after-clear BSP/native real/both 216 each.
+// Whole clear return, direct camera/audibility and library mask clear kept at 216 plain (813/812).
 // @retail 0x221a70
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 {
@@ -802,14 +807,13 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 	{
 		s_structure_bsp_view *local_1 = (s_structure_bsp_view *)g_4e0348;
 		dword local_13[0x200];
-		real *local_2 = (real *)local_13;
-		memset(local_13, 0, sizeof(local_13));
+		real *local_2 = (real *)memset(local_13, 0, sizeof(local_13));
 		if (local_1->audibility_count > 0)
 		{
-			s_structure_audibility *local_3 = local_1->audibility;
-			dword local_4[4] = {0};
+			dword local_4[4];
+			memset(local_4, 0, sizeof(local_4));
 			function_249d10(local_1, local_4, local_0->index);
-			for (long local_5 = 0; local_5 < local_3->door_count; local_5++)
+			for (long local_5 = 0; local_5 < local_1->audibility->door_count; local_5++)
 			{
 				if (local_4[local_5 >> 5] & (1 << (local_5 & 31)))
 				{
@@ -821,16 +825,15 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 						vector_constructor_iterator(local_8, 0x40, 2, function_31bc70);
 						function_249c90(local_8[0], local_1, local_5, local_8[1]);
 						long local_9;
-						long local_10 = local_0->index;
-						if (local_8[0][local_10 >> 5] & (1 << (local_10 & 31)))
+						if (local_8[0][local_0->index >> 5] & (1 << (local_0->index & 31)))
 							local_9 = 1;
-						else if (local_8[1][local_10 >> 5] & (1 << (local_10 & 31)))
+						else if (local_8[1][local_0->index >> 5] & (1 << (local_0->index & 31)))
 							local_9 = 0;
 						else
 							continue;
 						for (long local_11 = 0; local_11 < local_1->cluster_count; local_11++)
 						{
-							if (local_11 != local_10 && (local_8[local_9][local_11 >> 5] & (1 << (local_11 & 31))))
+							if (local_11 != local_0->index && (local_8[local_9][local_11 >> 5] & (1 << (local_11 & 31))))
 							{
 								real gain = local_7;
 								if (local_2[local_11] > local_7)

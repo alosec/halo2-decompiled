@@ -452,7 +452,7 @@ struct s_game_variants_file
 /* size before buffer: the order the arguments are set up in */
 PRIVATE inline bool file_write_sized(s_type_acf665 *file, dword size, void const *buffer)
 {
-	return function_136d00(file, buffer, size);
+	return function_136d00(file, size, buffer);
 }
 
 // @retail 0x193ff0
@@ -901,6 +901,9 @@ static inline short pending_request_last_result(s_pending_message_header const *
 	return ((short const *)&header->unknown0c)[1];
 }
 
+/* a received game variants file: decompressed into a fresh buffer and saved */
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x194260
 bool __stdcall game_variants_received(s_pending_message_header *header)
 {
@@ -913,6 +916,7 @@ bool __stdcall game_variants_received(s_pending_message_header *header)
 		dword size = header->size - 16;
 		if (data && size > 0 && function_199560(data, size) == sizeof(s_game_variants_file))
 		{
+			_ReadWriteBarrier();
 			s_game_variants_file *file = variants_buffer_allocate();
 			if (file)
 			{
@@ -925,7 +929,19 @@ bool __stdcall game_variants_received(s_pending_message_header *header)
 	}
 	return result;
 }
+#pragma function(_ReadWriteBarrier)
 
+// score 3 (was 3): first tick zero store precedes EDI save and false-result store;
+// timer before buffer 3; success rename 3; buffer rename 3; timestamp rename 3;
+// pointer declared first 3; retries before timer 17; write result assigned 53; long result 103.
+// unsigned retries 4; retry cap equality 4; elapsed clamp expression 3;
+// success before write 48; branch result initialization 104; allocation guard return 88;
+// prior-result expression 3; immutable start tick 3; allocator pointer name 3.
+// _ReadWriteBarrier (as 0x194260 has it) moves the zero xor after the pushes: after
+// the result 4; before the result 6; in the allocator before the counter read 4.
+// condition-declared buffer 3; assignment condition 3; immutable buffer 3;
+// split buffer assignment 3; nested buffer scope 3; cleanup goto 3;
+// buffer-guarded return 56; named write result 3; byte result 99.
 // @retail 0x194160
 bool __stdcall game_variants_retry(s_pending_message_header *header)
 {

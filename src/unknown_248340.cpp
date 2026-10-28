@@ -25,6 +25,26 @@ struct s_emitter_248340
 	short field_02;
 };
 
+// score 4 (was 4): virtual-table setup precedes the tag-result spill in retail;
+// tried group const query 4; tag const query 4; both const queries 4; group signed return 4;
+// tag unsigned return 4; tag const home 4; tag unsigned home 4; const query receiver 4. Restored.
+// second virtual-call vtable/spill order remains.
+// initial virtual-query result lifetime 4;
+// invalid-query common exit 4;
+// system index name after tag home 4;
+// query tag name before definition home 4;
+// group name before tag home 4;
+// descriptive group and system names 4;
+// descriptive query and group names 4;
+// all three descriptive stack candidate names 4;
+// Invalid-query cleanup return 38; complete cleanup in both branches 38; dispatch inner scope 4;
+// countdown field pointer 38; const system index 4; sequenced query expression 4;
+// unsigned-int group home 4; wide tag home 57.
+// Direct nested queries 27; split tag assignment 4; split tag with direct group 8;
+// split group assignment 4; both assignments split 4; outer callee inline/noinline/both 4/4/4.
+// Volatile tag at function scope 4; all three locals at function scope 4; group declared before the
+// volatile tag 4; without the volatile, (void)&tag 27 and tag at function scope 27 (particle moves to
+// the stack and caller 0x247140 138).
 // @retail 0x248340
 void function_248340(s_particle_system_datum *system, s_object_246eb0 *particle,
 	s_emitter_248340 *emitter)

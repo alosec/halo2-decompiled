@@ -64,9 +64,8 @@ PRIVATE __forceinline real function_1d24a6(vector3f const *arg_0, vector3f const
 }
 PRIVATE __forceinline vector3f *function_1d24a2(vector3f const *arg_0, real arg_1, vector3f *arg_2)
 {
- arg_2->i = arg_0->i * arg_1;
- arg_2->j = arg_0->j * arg_1;
- arg_2->k = arg_0->k * arg_1;
+ for (short component = 0; component < 3; ++component)
+  arg_2->n[component] = arg_0->n[component] * arg_1;
  return arg_2;
 }
 PRIVATE __forceinline void function_1d24a3(vector3f *arg_0, vector3f const *arg_1)
@@ -105,16 +104,61 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
  arg_3->k = local_0.k - arg_2->k * local_1;
  return function_30bf0(arg_3);
 }
-
-// score 1218 (was 1259): frame agrees; early EBX save, array/entry allocation and delta reloads differ.
+// score 920 (was 920): Frame 0x1f0 versus 0x1d4; entry EAX/ECX, delayed EBX and record/vector homes remain.
+// Round 97: offset vector built in place (no copy) 1019 (frame 0x1e4, 4167 bytes); body position
+// through its pointer 1046 (0x1e4, 4153 bytes): retail is longer, so it has more copies, not fewer;
+// marker, accumulated velocity and response output at function scope 920 each (no frame change).
+// Round 73: shared flags word for both entry tests 920; set-then-clear second flag 1019; result/accumulator
+// declared first 927; `>=` threshold flag 994; record object field read first into a named local 923.
+// Earlier: frame 0x1f4 versus 0x1d4; entry EAX/ECX, delayed EBX and record/vector homes remained.
+// Earlier 1218 from 1259: frame agrees; early EBX save, array/entry allocation and delta reloads differ.
 // Function-scope linear change 1259; function-scope velocity outputs 1259; broader matrix workspace 1259;
 // inline depth one 1259; counted angular residual 1218, kept after plain check.
-// score 1214 (was 1218): frame 0x1d0 versus 0x1d4; early EBX/entry allocation and vector reloads differ.
+// Earlier 1214 from 1218: frame 0x1d0 versus 0x1d4; early EBX/entry allocation and vector reloads differ.
 // Direct radial residual loop 1282; planar residual loop 1261; angular residual loop 1214, kept;
 // displacement loop 1246; all three residual loops 1227.
-// score 1207 (was 1214): frame 0x1d4 restored; early EBX, entry homes and vector reloads remain.
+// Earlier 1207 from 1214: frame 0x1d4 restored; early EBX, entry homes and vector reloads remain.
 // Record-scope angular residual 1214; function-scope angular change 1214; early angular axis 1214;
 // native removed-slot element 1214; one record option-word read for all four flags 1207, kept.
+// Earlier 1016 from 1207: frame 0x1e8 versus 0x1d4; early EBX, entry homes and vector reloads remain. Plain
+// scale helper loop 1016 kept; add loop 1233; subtract loop 1126; all three 1328; shared planar difference
+// 1207; scale/subtract 1123; scale/add 1261; add/subtract 1201.
+// Scale helper void result 1016; unsigned/signed-word ordinal 1016/983 plain; counted while
+// 1016; equality termination 1016. Word counter fully unrolls; frame grows four bytes.
+// Complete linear coefficient observations 966; angular pair 953 kept (plain); shared limits 1011;
+// linear/angular 980; linear/limits 1065; angular/limits 979; all 1065; all/read-only record 1065.
+// Round 155: five alternate scale formal orders, source-first add/subtract and all three
+// helper orders together 953 each; every definition and call restored.
+// Native scale input/output/both coordinate cursors 1045/1032/953; end cursor 993;
+// add/subtract/both coordinate cursors 1155/1115/1218; all producer cursors 1212 (fast).
+// Original scale word ordinal, angular coefficient pair and all helpers restored.
+// Native scale/add/subtract input values singly and in pairs/all [1295, 992, 977, 1455, 1456, 1130, 1555];
+// all with planar input values 1746. Original helpers and coefficient pair restored.
+// Complete native vector outputs in scale/add/subtract helpers 1291/1048/984; scale-add/scale-subtract/add-subtract/all 1466/1434/1147/1610;
+// all native vector outputs with completed planar workspace 1668. Original helpers and accepted loop/coefficient pair restored.
+// Scale signed-byte/unsigned-byte/unsigned-word ordinals 953/953/953; unsigned-word scale with signed-word
+// add/subtract/both loops 1152/1115/1215; all unsigned-byte/signed-byte producer loops 1215/1215. Original
+// helpers and coefficient pair restored.
+// Earlier declarations of vector workspaces local_75, local_37, local_40, local_43, local_50,
+// local_52, local_53 and local_58 each 953.
+// Round 137: response pairs 34/48, 34/56, 34/66, 48/56, 48/66, 56/66 959,959,957,933,920,925;
+// all responses at record/function scope 979,979;
+// triples 34-48-56/34-48-66/34-56-66/48-56-66 973,974,987,959;
+// disjoint pairs 34-48+56-66/34-56+48-66/34-66+48-56 987,986,984.
+// Selected t5 920 plain; the same real response output is read before its next write.
+// Round 140: Shared change pairs 37/50,37/58,37/59,50/58,50/59,58/59 and linear/all phases
+// 969/945/988/945/988/956/960/1012; residual pairs 40/52,40/68,52/68/all 1012/966/988/1027; axis pairs
+// 31/43,31/63,43/63/all 1004/991/980/1018. Existing shared scale on the retained response graph, with shared
+// changes and consistent flag reads 1199/1201/1188/1200; all restored. Shared linear changes recover frame
+// 0x1d4 at 960; input and record homes still differ.
+// Matrix output in dead body rotation, alone/with first/third/both response outputs
+// 931/986/959/987; in dead marker rotation 946/978/952/985. Original separate product
+// matrix, response outputs, helper calls and complete body restored.
+// Native current record value/point setter/both 1003/935/1009; live option word
+// 1007, with record/point setter/both 990/1005/985; full component aggregate 985.
+// Record value fixes entry registers, point setter fixes the second byte home; all restored.
+// Record memmove, center/input/initial-vector library copies and combinations
+// 999/920/920/920/999/999/920/999; record copy recovers entry registers but frame grows to 0x1f4. All restored.
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {
@@ -161,6 +205,7 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
     function_ba160(arg_0->object_index, &local_24.matrix);
    if (!local_21) continue;
    vector3f local_25 = *g_4687a4;
+   real response_fraction;
    byte *local_26 = g_4e0300->data + (local_14->object_index & 0xffff) * 12;
    dword local_27 = 1 << local_26[3];
    if (local_27 & 1) function_def30(local_14->object_index);
@@ -225,10 +270,9 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
     if (local_46 != 0.0f)
     {
      real local_47 = function_1d24a1(&local_43, &local_30);
-     real local_48;
      real local_49 = function_1d2280(true, local_18, havok_component_rigid_body_mass_get(local_15, local_14),
       local_46, local_12->field_28 * arg_1, local_47, local_12->field_2c, local_12->field_1c,
-      local_12->field_18, local_22, &local_48);
+      local_12->field_18, local_22, &response_fraction);
      vector3f local_50;
      function_1d24a2(&local_43, local_49, &local_50);
      if (local_46 - local_12->field_1c >= 0.0f)
@@ -252,7 +296,7 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
        }
        function_1d24a4(&local_50, &local_52);
       }
-      if (!(local_3 > local_48)) local_3 = local_48;
+      if (!(local_3 > response_fraction)) local_3 = response_fraction;
       local_2 = true;
      }
      function_1d24a3(&local_25, &local_50);
@@ -277,7 +321,9 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
     if (local_12->field_c != 0x7000001)
      function_b8d30(arg_0->object_index, local_12->field_c, &local_24, 1, false);
     vector3f local_59 = *g_4687a4;
-    if (local_12->field_58 != 0.0f && local_12->field_5c != 0.0f)
+    real coefficient_58 = local_12->field_58;
+    real coefficient_5c = local_12->field_5c;
+    if (coefficient_58 != 0.0f && coefficient_5c != 0.0f)
     {
      transform4x3f local_60;
      local_14->rigid_body_matrix_get(local_10->field_1, &local_60);
@@ -289,19 +335,18 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
      real local_64;
      function_11d790(&local_62, &local_63, &local_64);
      real local_65 = function_1d24a1(&local_63, &local_29);
-     real local_66;
      real local_67 = function_1d2280(true, local_18, havok_component_rigid_body_mass_get(local_10->field_1, local_14),
-      local_64, local_12->field_58 * arg_1, local_65, local_12->field_5c, 0.0f,
-      local_12->field_54, local_23, &local_66);
+      local_64, coefficient_58 * arg_1, local_65, coefficient_5c, 0.0f,
+      local_12->field_54, local_23, &response_fraction);
      function_1d24a2(&local_63, local_67, &local_59);
      vector3f local_68;
      function_1d24a2(&local_63, local_65, &local_68);
      for (long axis = 0; axis < 3; ++axis)
       local_68.n[axis] = local_29.n[axis] - local_68.n[axis];
-     function_a75d0(&local_68, g_510c54->rate * local_12->field_58);
+     function_a75d0(&local_68, g_510c54->rate * coefficient_58);
      for (long component = 0; component < 3; ++component)
       local_59.n[component] = local_68.n[component] * -1.0f + local_59.n[component];
-     if (!(local_3 > local_66)) local_3 = local_66;
+     if (!(local_3 > response_fraction)) local_3 = response_fraction;
      local_2 = true;
     }
     function_1d24a3(&local_29, &local_59);

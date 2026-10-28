@@ -31,8 +31,10 @@ bool function_a0200(real a, real b)
 	return function_x41b793(difference) && fabs(difference) < k_real_tolerance;
 }
 
+/* inline, so its callers assume it clobbers every xmm register, as retail's
+   0xa6d50 does when it reloads its zero constant after the call */
 // @retail 0xa7570
-bool function_a7570(vector3f const *vector)
+inline bool function_a7570(vector3f const *vector)
 {
 	return function_x41b793(vector->i) && function_x41b793(vector->j) && function_x41b793(vector->k);
 }

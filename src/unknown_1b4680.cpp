@@ -115,44 +115,49 @@ void *function_1e4e50(long actor_index);
 short function_1a77a0(long actor_index, long a, short level);
 
 #pragma inline_depth(0)
+/* 3 when the actor's prop view is of type 5 or a slot group 0x1b joint of
+   the actor targets the prop's object, else 0 */
 // @retail 0x1b4680
 short __stdcall function_1b4680(long actor_index)
 {
-	s_actor_view *actor = (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
 	short result = 0;
+	s_actor_view *actor = (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
 
 	if (actor->unknown225 || actor->unknown223)
-		return 0;
-
-	if (actor->prop_index != NONE)
+		result = 0;
+	else if (actor->prop_index != NONE)
 	{
 		s_prop_node_view *node = (s_prop_node_view *)(g_502418->data + (actor->prop_index & 0xffff) * sizeof(s_prop_node_view));
 		s_prop_view_fields *view = (s_prop_view_fields *)function_25d740((s_prop_node *)node);
+		bool found = false;
 
 		if (view && !view->unknown68 && function_1e4e50(actor_index))
 		{
-			s_slot_entry_iterator iterator;
-			s_slot_memory_entry *entry;
-
 			if (view->unknown00 == 5)
-				goto local_0;
-
-			iterator.actor_index = actor_index;
-			iterator.reference.unknown2 = 0x1b;
-			iterator.reference.unknown0 = NONE;
-			for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
+				found = true;
+			else
 			{
-				s_502424_element *joint = (s_502424_element *)(g_502424->data + (entry->unknown4 & 0xffff) * sizeof(s_502424_element));
+				s_slot_entry_iterator iterator;
+				s_slot_memory_entry *entry;
 
-				if (joint->target.unknown8 != NONE && ((s_prop_node_view *)(g_502418->data + (joint->target.unknown8 & 0xffff) * sizeof(s_prop_node_view)))->object_index == node->object_index)
-					goto local_0;
+				iterator.actor_index = actor_index;
+				iterator.reference.unknown2 = 0x1b;
+				iterator.reference.unknown0 = NONE;
+				for (entry = function_26f0c0(&iterator); entry; entry = function_26f0c0(&iterator))
+				{
+					s_502424_element *joint = (s_502424_element *)(g_502424->data + (entry->unknown4 & 0xffff) * sizeof(s_502424_element));
+
+					if (joint->target.unknown8 != NONE && ((s_prop_node_view *)(g_502418->data + (joint->target.unknown8 & 0xffff) * sizeof(s_prop_node_view)))->object_index == node->object_index)
+					{
+						found = true;
+						break;
+					}
+				}
 			}
 		}
-		return 0;
+		if (found)
+			result = 3;
 	}
-	return result;
-local_0:
-	result = 3;
 	return result;
 }
 #pragma inline_depth()

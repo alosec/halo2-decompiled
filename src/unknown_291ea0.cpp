@@ -93,6 +93,11 @@ inline void dialogue_name_override(long volatile *name, long value)
 #define TAG_GET_291EA0(type, index) ((type *)g_4e3b44[(index) & 0xffff].bytes)
 
 /* plays the actor's variant of a vocalization; returns whether it found one */
+// score 9 (was 9): the default-element and object-pool temporaries use EDX where retail uses EAX,
+// and the scaled object index uses EAX where retail uses EDX; padding follows. Round 47: typed default
+// element 9; header pointer arithmetic 9; default if/else 48; cached unit index 129; direct globals
+// access 9; existing object getter 9; first-element syntax 9; scaled header local 9; header-base local 9;
+// pool-pointer local 9.
 // @retail 0x291ea0
 bool function_291ea0(long arg_80f1d4, long actor_index, long script_index, real *duration)
 {

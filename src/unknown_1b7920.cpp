@@ -67,7 +67,7 @@ short __stdcall function_1b7920(long actor_index)
 	return result;
 }
 
-// score 12 (was 74): function_259d0's interval written out, with the bounds
+// score 12 (was 12): function_259d0's interval written out, with the bounds
 // in locals (upper first) and the random drawn into a local, keeps the delay
 // in x87 as retail does. Only scheduling differs: retail issues the delay's
 // fmulp/fxch/fadd/fstp one slot earlier among the point copy's stores.
@@ -78,7 +78,10 @@ short __stdcall function_1b7920(long actor_index)
 // ticks 76; z delta hoisted before/after the delay 83/68. Earlier: inline
 // depth two 74, zero 251; global optimization off 189; header interval
 // helper alone 148; force-inline draw/step 74/74; double delay/ticks
-// carriers 78/74.
+// carriers 78/74. Product first in the sum 12; random first in the product
+// 12; slot state pointer at the top 12; memcpy point copy 12; named range 12;
+// z adjust as a full sum 12, split in two 49; delay after the copy or the z
+// adjust 63/63; ticks operands swapped 12/12; state view at its use 119/50.
 // @retail 0x1b79d0
 bool __stdcall function_1b79d0(long actor_index, s_slot *slot)
 {

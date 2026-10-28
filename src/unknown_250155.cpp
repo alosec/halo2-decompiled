@@ -1394,6 +1394,11 @@ int __cdecl matchmaking_compare_value(void const *a, void const *b)
 // score 116 (was 116): query/count homes and scalar tail fills still differ.
 // Branch-shared session count 138; with library/range tails 201/160;
 // selection initialization 162; completed total 134; word scans 160; comparator/open-row forms 139/137.
+// score 116 (was 116): index fills as `for (i = index_count; i < 16; i++)` give retail's guarded
+// rep stosd 162; with item_count shared by the mode-one query (frame 0x54) 161; plus indices[i]
+// rows without the cursor 171; block-scoped fill index 161/162. Those keep index_count in EBX for
+// the whole body and move mode to the stack, where retail keeps mode in EBX, index_count in EDI
+// only in the scans, and reloads player_count after calls (its address escapes in retail).
 // @retail 0x2514fd
 void c_matchmaking_list::v3()
 {
@@ -2094,6 +2099,11 @@ void function_1905bf(long controller, bool flag);
 // score 93 (was 93): the call at the top of the function goes to another
 // helper in ours and to retail's 0x14917c, and the branches around it land in
 // the other order
+// score 93 (was 93): with a bool result every instruction is retail's; retail's one exit
+// follows the base call and the not-signed-in block comes last, ours puts the exit last.
+// Base call after the if/else with the else returning 137; the base call in every
+// path that reaches it 107; not-signed-in early return 106; bool result first and
+// returned by the early test 111; constant returns with a direct base return 137.
 // @retail 0x250b1e
 bool c_session_lobby_screen::v10(s_widget_event *event)
 {
@@ -2409,6 +2419,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // the count at ebp-8 and the flags byte at ebp-0xc while retail keeps them at
 // ebp-0xc and ebp-8, and the switch's table and the words it loads sit in
 // the other order
+// score 111 (was 111): retail sign-extends the bitmap index before find_bitmap (a long parameter,
+// like find_text), and reloads players[i] after the voice-state query; named pointer to
+// players[i] in the first loop 111; renamed count, flag, player and slot locals 111.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {
@@ -2756,6 +2769,34 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 	item->value5c = team;
 }
 
+// score 100 (was 100): frame 0x754 agrees; the item-loop receiver reload (retail: once after the loop),
+// row-loop text lookup (retail inlines it; widget/counter registers swapped), animation byte
+// (retail movsx) and the final receiver reloads differ; retail lays out the category switch first.
+// Tried: category descending 237; title default first 244; bitmap index long 237; title widget scopes
+// 237; separate player row counters 237; existing widget lookups 175; native animation bit 233; widget
+// lookups animation bit 179; map text lookup 237; text lookup helpers 156; bitmap lookup helpers 164;
+// native widget query indices 180; heading widget lookups 237; text helper query indices 164; item
+// pointer walk 301; game result width 309; row counter short 247; direct map names 218; direct search
+// result 172; bitmap exhaustive result fixed 189; offline index range 195; exhaustive bitmap long 189;
+// exhaustive bitmap case order serial 189; exhaustive bitmap range serial 195; game result
+// initialization 310; bitmap result guards 167; offline bitmap first 100; map widget lifetimes 164; all
+// widget phase lifetimes 159; map lifetimes bitmap guards 175; selected squad role 156; search result
+// from acceptance 156; offline native animation bit 115; offline native text index 116; offline row
+// lifetimes 100; offline native bit index 120; name/appearance/team/all item operations force-inline
+// 156 each; unsigned word rows 203; loop-scoped row widgets 157; bitmap category order 156; player-item
+// array home name 156; native/promoted retained item count 100/100; count-tested item while 100;
+// independent item admissions 100; name-only item continue 100; current array-item pointer 294;
+// complete bitmap/title guards on the offline-first body 100/100; row generic query 235; direct text
+// queries 235; game at use 322; team availability 294; native item flags 100; row game observations
+// 314; row team availability 304; row native game 314; game-first bitmap selection 156 (878 bytes,
+// closest structure); with the row text index passed uncast 164 (875); with a separate row counter
+// 164 (identical); with an unconverted bit test 179; with a bool-converted signed bit test 177.
+// complete bitmap/title guards on the offline-first body 100/100. Original body retained.
+// Round 164: row generic query 235; direct text queries 235; game at use 322; team availability 294;
+// native item flags 100; row game observations 314; row team availability 304; row native game 314.
+// Round 166: unsigned rows 100; bitmap presence 106; absent text 100; row while 100; native
+// animation shift 117; unsigned presence/animation 106/117; presence text animation 109;
+// recovered-prefix game-first/query/unsigned/animation 143/171/171/170.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {
@@ -2791,7 +2832,7 @@ void c_network_squad_browser_screen::v3()
 		function_22f042(NULL, this, 0);
 	}
 
-	text = find_child(6, 2, false);
+	text = find_text(2);
 	bitmap = find_child(8, 4, false);
 	if (text)
 	{
@@ -2846,7 +2887,25 @@ void c_network_squad_browser_screen::v3()
 
 		if (squad)
 		{
-			if (has_game)
+			if (!has_game)
+			{
+				switch (squad->valuea8)
+				{
+				case 0:
+					index = 0;
+					break;
+				case 1:
+					index = 1;
+					break;
+				case 2:
+					index = 2;
+					break;
+				case 3:
+					index = 3;
+					break;
+				}
+			}
+			else
 			{
 				switch (squad->category)
 				{
@@ -2873,29 +2932,11 @@ void c_network_squad_browser_screen::v3()
 					break;
 				}
 			}
-			else
-			{
-				switch (squad->valuea8)
-				{
-				case 0:
-					index = 0;
-					break;
-				case 1:
-					index = 1;
-					break;
-				case 2:
-					index = 2;
-					break;
-				case 3:
-					index = 3;
-					break;
-				}
-			}
 		}
 		function_2b0a14((s_widget_view_2b0a *)bitmap, index);
 	}
 
-	text = find_child(6, 3, false);
+	text = find_text(3);
 	bitmap = find_child(8, 1, false);
 	if (text)
 	{
@@ -2965,7 +3006,7 @@ void c_network_squad_browser_screen::v3()
 bitmap_shown:
 	for (i = 0; i < sizeof(squad->player_names) / sizeof(squad->player_names[0]); i++)
 	{
-		text = find_child(6, (short)(i + 4), false);
+		text = find_text((short)(i + 4));
 		bitmap = find_child(8, (short)(i + 5), false);
 		if (text)
 		{

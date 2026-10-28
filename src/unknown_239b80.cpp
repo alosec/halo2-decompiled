@@ -23,22 +23,51 @@ struct plane2f
 PRIVATE __forceinline bool polygon_clip_intersection_23a430(plane2f const *plane,
 	point2f const *first, point2f const *second, long count, short capacity, point2f *output)
 {
-	real dy = first->y - second->y;
+	real fraction = 0.0f;
 	real dx = first->x - second->x;
-	real denominator = plane->n.i * dx;
-	denominator += plane->n.j * dy;
+	real dy = first->y - second->y;
+	real denominator = plane->n.i * dx + plane->n.j * dy;
 	if ((denominator < -0.0001f || denominator > 0.0001f) && count < capacity)
 	{
-		real fraction = (plane->n.j * first->y + plane->n.i * first->x - plane->d) / denominator;
-		dx *= fraction;
-		output->x = first->x - dx;
-		dy *= fraction;
-		output->y = first->y - dy;
+		fraction = (plane->n.j * first->y + plane->n.i * first->x - plane->d) / denominator;
+		output->x = first->x - dx * fraction;
+		output->y = first->y - dy * fraction;
 		return true;
 	}
 	return false;
 }
 
+// score 5 (was 101): loop setup stores [esp+0x10]/[esp+0x18] in another order, and the first
+// intersection's x product loads the plane before the point. Round 72 (full build): helper
+// parameters (first, second, plane) 7 and (first, plane, second) 7, both making the second
+// intersection's x product plane-first too; (plane, second, first) 5; a separate input pointer
+// for the points or their copy 9 (x term first in the first intersection), declared first 9.
+// The fraction defaulted first,
+// loop setup stores [esp+0x10]/[esp+0x18] in another order, and the first
+// intersection's x product loads the plane before the point. The fraction defaulted first,
+// x-first displacements and the scale inside the output expressions gave retail's XMM homes
+// and length (101 -> 5). Then: current declared before previous 5; named current/previous
+// point pointers 28; dot_product2d numerator 5; fraction shared with the classification
+// distance 5; previous updated at the loop end 5; staged/reversed denominators and helper
+// parameter orders screened compile-only without change. Earlier: frame 0x618 agrees; cursor/result initialization, delta XMM
+// homes and extra fraction copies remain. X-first deltas 109; full denominator 103;
+// scales before stores 101; first input record 207; Boolean helper result 101;
+// aggregate intersection 152; capacity-first gate 108; native input count 153;
+// intersection role names 101; output-first helper 101; count-result helper 101;
+// x-first deltas with full denominator 107.
+// Shared difference/projection/both 109/101/109; actual output cursor 256;
+// difference/projection with output cursor 256/256; natural previous update 101; cursor with previous update 256.
+// Second/both input records 163/247; complete/staged projection numerator 101/103;
+// parallel output offsets 101; second record with offsets 163; numerator with offsets
+// 101; nested eligibility/capacity scopes 101. Original helper and body restored.
+// Immutable displacements 101; both projection products 101; plane value 269; word output/classification/clipping ordinals 231/220/202; common output result 138; current before previous 101.
+// Round 54: numerator `y + (x - d)` 14; split sum then `(sum - d) / denominator` 7 (both
+// products point-first but x first; explicit parentheses always order x first); both indices
+// declared in the for 5; while loop with the updates at the end 5; `y - d + x` 14.
+// Round 8: previous/current/result names 5 each; previous declared early or before the exits 5;
+// point-first numerator and plain inline 5; normal-i/first-x locals 110/180; named x/y products
+// 9/7; y product with point/plane parameter orders 7; both named products 9; defaulted y product 7.
+// Original helper and body restored.
 // @retail 0x23a430
 short function_23a430(short count, point2f const *points, plane2f const *plane,
 	real epsilon, short capacity, point2f *output)
@@ -126,6 +155,36 @@ long function_239d50(long count, point2f const *points, point2f *hull);
 short function_239e50(short count, point2f const *points, short *indices);
 
 /* 0 when every point is the same, 1 when they are on one line, 2 otherwise */
+// score 42 (was 42): state/index/point registers (retail ECX/EDX/ESI) and the XMM homes
+// differ; retail keeps the line normal's j in XMM2 through the scaling, so its constants
+// sit one XMM register higher. Local/formal point cursor with short ordinal 94/93; short
+// remaining count 94/93; long ordinal 97/97; long remaining count 94/93; byte state 91;
+// unsigned word ordinal 85; state increments 76; terminal equality 43; first point before
+// scan 85; normalizer reference 42; point-first dot 42; success normalizer 102; normalizer
+// input vector 126; compound scales 42; factor-first scales 42; positive normalizer scope
+// 42; long point index 101; count-first guard 99; long state 86; plane/point names 42;
+// forced normalizer 42; forced dot 42; both forced 42; single-result normalizer 42;
+// squared-length expression 42; staged scales 42; reverse scale publication 42; length
+// workspace 56; signed-distance expression 42; native first-point components 63;
+// accumulated dot result 46; repeated j input 42; repeated i input 42; both scalar inputs
+// 126; state renamed to sort before the index 42; zero-length arm first 44; `>= epsilon`
+// far test 68; named normalizer length 56; line declared before the first point 42.
+// state/index/point and normalization SSE homes still differ at frame 0x18.
+// Earlier: coupled state/index/XMM homes and normalized Y load remain;
+// local/formal point cursor with short ordinal 94/93; short remaining count
+// 94/93; long ordinal 97/97; long remaining count 94/93. Opening body restored.
+// zero/one SSE homes, state/index/point registers and normalized Y load remain;
+// byte state 91; unsigned word ordinal 85; state increments 76; terminal equality 43;
+// first point before scan 85; normalizer reference 42; point-first dot 42; success normalizer 102.
+// Frame 0x18 agrees; state/index, point pointer and SSE constant registers differ.
+// normalizer input vector 126; compound scales 42; factor-first scales 42; positive normalizer scope 42; long point index 101; count-first guard 99; long state 86; plane/point names 42; forced normalizer 42; forced dot 42; both forced 42.
+// Earlier: state/index/point and normalization XMM homes remain.
+// Single-result normalizer 42; squared-length expression 42; staged scales 42;
+// reverse scale publication 42; length workspace 56; signed-distance expression 42;
+// native first-point components 63; accumulated dot result 46.
+// Repeated j input 42; repeated i input 42; both scalar inputs 126.
+// Shared normalizer/magnitude 42/42; tested initial/distance states 81/76; both tested states 79;
+// early distance default 65; shared normalizer with tested states/default 79/65.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {
@@ -216,43 +275,69 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 
 /* gift wrapping: the indices of the convex hull of the points, starting from
    the lowest */
+// score 203 (was 203): Frame 0x14 agrees; retail keeps `count` in memory (ebx only as temporaries:
+// the call argument, then the hull count), ours gives `count` ebx for the whole body.
+// Earlier: scan/count registers, equality scheduling and compaction inline boundary differ. Tried direct index output 261; plain lowest scan 250; full current index 299; full candidate counter 256; native completion returns 279; plain scan direct output 250; plain scan append then count 250.
+// Full count tests 274; current-point snapshot 271; byte start state 250; float workspace names 250; still-at-origin state 264; inline classifier declaration 250; forced equality declaration 250.
+// Unsigned word result 275; unsigned first/candidate ordinals 247/209 (caller lost); native compaction ordinals 285;
+// monotonic departure 263; compaction shared exit 279; heading initialized after lowest scan 234.
+// signed-word departure state 208; native selected-next index 273; departure before classifier 218; unsigned compaction ordinals 248; lowest constants after current index 234.
+// Round 212: Unsigned-word/native-long departure 208/203; result lexical home 208; native lowest-scan ordinal 612; entry heading lifetime 237. Result/departure slots, bound and compaction boundary remain.
+// Round 229: Equality-helper false-first/true-first/separate/early rejection results with long
+// departure 260/260/260/212; with Boolean departure 249/249/249/234. Original helper/body restored.
+// Departure/output/both/current/heading names 203 each; byte departure 234; late departure and
+// lowest-coordinate order 203/203; heading before scan 220.
+// Shared difference predicate early returns bool/byte/short/long 220/220/202/213;
+// initialized difference result bool/byte/short/long 271/271/250/250. All restored.
+// On the long departure state: signed-word/unsigned-word/unsigned-native/int result
+// 257/257/203/203; native input count 259, with signed/unsigned word result
+// 268/268; observed signed-word input count 203. Caller checked with each.
+// Round 152: Classifier rejection with entry result, long/bool/byte/short departure
+// 262/262/262/259; post-classification result 256/256/256/251. All restored.
+// Equality input contracts (pointer order, first/second/both native references), each
+// with long/Boolean departure: 203/227/203/234/203/234/203/234. Helper and body restored.
+// Round 59: retail keeps the hull count at +0x10 and the departure flag as a byte in the index
+// output's argument home, sets the heading and the flag before the lowest scan, copies the count for
+// the scan bound, does not rotate the hull loop (test at its head, three back edges) and stores the
+// flag as `x = 0; if (...) x = 1`. Tried: departure bool/char/short 234/234/208, each with the heading
+// set before the scan 252/252/227 (bool: retail's two homes), long with it 220; on bool + heading
+// first: flag set only when unequal 265 (751 B, aligned closest), loop test without the short cast 245,
+// heading before the flag 250, flag after the current index 251.
+// Round 102: the overlapping compaction copy is retail's CRT call (`memmove`, as matched
+// memmove callers): 230 (759 B; `count` then leaves ebx, but `points`/`indices` move); with a
+// bool flag and `left_start = left_start || !points2d_equal(...)` (retail's two direct stores) 247;
+// plus heading/flag stored before the scan and a done flag in the hull condition (retail's
+// unrotated loop and j-loop registers) 229; best declaration order of those 227; lowest_y
+// declared first 203. One use of `count` fewer moves it to memory (diagnostic only).
 // @retail 0x239e50
 short function_239e50(short count, point2f const *points, short *indices)
 {
 	long hull_count = 0;
-	short **indices_reference = &indices;
 
 	if (function_239b80(count, points) == 2)
 	{
-		real previous_angle = 0.f;
-		bool left_start = false;
+		long left_start = false;
 		real lowest_x = FLT_MAX;
 		real lowest_y = FLT_MAX;
 		short current = count;
 
+		for (short i = 0; i < count; ++i)
 		{
-			short i = 0;
-			if (i < count)
+			if (lowest_y - k_real_epsilon > points[i].y ||
+				lowest_y > points[i].y && lowest_x + k_real_epsilon > points[i].x ||
+				lowest_y + k_real_epsilon > points[i].y && lowest_x - k_real_epsilon > points[i].x)
 			{
-				do
-				{
-					if (lowest_y - k_real_epsilon > points[i].y ||
-						lowest_y > points[i].y && lowest_x + k_real_epsilon > points[i].x ||
-						lowest_y + k_real_epsilon > points[i].y && lowest_x - k_real_epsilon > points[i].x)
-					{
-						lowest_x = points[i].x;
-						lowest_y = points[i].y;
-						current = i;
-					}
-					i++;
-				} while (i < count);
+				lowest_x = points[i].x;
+				lowest_y = points[i].y;
+				current = i;
 			}
 		}
 
+		real previous_angle = 0.f;
 		while ((short)hull_count < count)
 		{
 			real best_distance = -FLT_MAX;
-			(*indices_reference)[(short)hull_count++] = current;
+			indices[(short)hull_count++] = current;
 			short next = NONE;
 			real best_angle = FLT_MAX;
 			real best_delta = FLT_MAX;
@@ -270,7 +355,7 @@ short function_239e50(short count, point2f const *points, short *indices)
 						delta += g_55e470;
 					if (delta < best_delta - k_real_epsilon ||
 						!(delta > best_delta + k_real_epsilon) &&
-						(j == (*indices_reference)[0] || next != (*indices_reference)[0] && distance > best_distance))
+						(j == indices[0] || next != indices[0] && distance > best_distance))
 					{
 						best_distance = distance;
 						best_angle = angle;
@@ -285,10 +370,10 @@ short function_239e50(short count, point2f const *points, short *indices)
 			if (next == NONE)
 				goto finished;
 			if (!left_start)
-				left_start = !points2d_equal(&points[next], &points[(*indices_reference)[0]]);
-			if (next == (*indices_reference)[0])
+				left_start = !points2d_equal(&points[next], &points[indices[0]]);
+			if (next == indices[0])
 				goto finished;
-			if (left_start && points2d_equal(&points[next], &points[(*indices_reference)[0]]))
+			if (left_start && points2d_equal(&points[next], &points[indices[0]]))
 				goto finished;
 		}
 
@@ -297,10 +382,10 @@ short function_239e50(short count, point2f const *points, short *indices)
 			short j;
 			for (j = 0; j < i; j++)
 			{
-				if ((*indices_reference)[j] == (*indices_reference)[i])
+				if (indices[j] == indices[i])
 				{
 					hull_count = i - j;
-					memcpy(*indices_reference, &(*indices_reference)[j], sizeof(short) * (short)hull_count);
+					memcpy(indices, &indices[j], sizeof(short) * (short)hull_count);
 					break;
 				}
 			}
@@ -319,6 +404,24 @@ PRIVATE __forceinline void polygon_difference_23a220(point2f const *a, point2f c
 	result->j = a->y - b->y;
 }
 
+// score 50 (was 50): retail loads the count once (DX, then EBX sign-extended for the
+// wrap) and compares the index with the count's stack home as a word; ours re-reads the
+// count each pass. The XMM homes differ too (retail offset XMM0/XMM3, edge XMM1/XMM2).
+// Tried: short wrap snapshot 78, long 68, later short 78; ordinary count 73 (moves the
+// point to the stack and breaks the matched caller 0x14a370), ordinary count with
+// long/short shared bound 67/73; cached-long direct rejection 63/184 bytes, ordinary direct
+// rejection 67; byte/short/native result 102/104/102; unsigned-short induction 50; early
+// cross 58; distance limit scalar 50; cross square scalar 50; both squared parts 50; edge
+// first 48; vertex receiver 97; wrap if 63; positive wrap 50; degenerate continue 50; nested
+// predicates 50; entry success 51; predicate result 51 (two-point gain rejected); ordinary
+// count with a volatile read of it only at the loop test 69 (192 bytes); offset-first cross
+// operands, the length sum without casts and a pointer cross-product inline all compile
+// identically (50). Current point value 111; advancing point cursor 58 at 184 bytes;
+// ordinary while 50; named edge squares/cross products/both 50/50/50; point value with edge
+// squares/both 111/111. Next before offset 50; radius square at use 71; const radius square
+// 50; outer offset/edge/both storage 50/50/50; early next with outer vectors 50; radius at
+// use with outer vectors 71. Current-point pointer for both differences with
+// ordinary/volatile count 92/97 (point moves to the stack; 0x14a370 23).
 // @retail 0x23a160
 bool function_23a160(point2f const *point, real radius, short volatile count, point2f const *points)
 {
@@ -345,18 +448,20 @@ bool function_23a160(point2f const *point, real radius, short volatile count, po
 	return result;
 }
 
+/* true when the point lies on the inner side of every edge of the polygon,
+   to within epsilon */
 // @retail 0x23a220
-bool function_23a220(point2f const *point, short volatile count, point2f const *points, real epsilon)
+bool function_23a220(point2f const *point, short count, point2f const *points, real epsilon)
 {
-	(void)&count;
 	bool result = true;
 	for (short i = 0; i < count; i++)
 	{
-		vector2f offset;
-		polygon_difference_23a220(point, &points[i], &offset);
+		point2f const *current = &points[i];
 		long next = (i + 1 >= count) ? 0 : i + 1;
+		vector2f offset;
+		polygon_difference_23a220(point, current, &offset);
 		vector2f edge;
-		polygon_difference_23a220(&points[next], &points[i], &edge);
+		polygon_difference_23a220(&points[next], current, &edge);
 		if (edge.i * offset.j - edge.j * offset.i < -epsilon)
 		{
 			result = false;
@@ -371,6 +476,51 @@ PRIVATE __forceinline bool clip_points_equal_23a6f0(point2f const *a, point2f co
 	return fabs((double)a->x - b->x) < epsilon && fabs((double)a->y - b->y) < epsilon;
 }
 
+// score 212 (was 212): Retail length and common failure publication agree; count/stride/prior homes remain
+// (retail keeps the copy size at +0x18, the previous point at +0x1c and both side flags in memory).
+// Earlier: count/stride homes and distance/intersection lifetimes differ. Tried capacity break common result 245; shared mask return 254; existing plane dot 243; plain previous side 265; previous side branches 259; byte side presence 243; named distance products 243; native clipping role homes 243.
+// Native current ordinal 249; long side states 264; prior-point ordinal 288; ordered fraction clamp 243; clear-mask arm first 243; shared normalized count 275; existing point difference 243.
+// Explicit source bit 243; unsigned input ordinal 237; word side states 263; retained signed distance 273; parallel edge scales 243.
+// signed side-presence words 248; signed current-side byte 256; double equality tolerance 302; native equality references 237; ordinary unsigned previous-side byte 278.
+// Round 212: Current-side unsigned word/native long 257/250; input ordinal name 237; true-first current side 341; positive-first final policy 236. Count/stride/prior homes and shared publication remain.
+// Round 229: Equality helper native first/second/both point arguments 356/357/444;
+// result-first with those arguments 356/357/444; pointer result-first/early rejects 237/237.
+// Original helper/body restored.
+// Previous-point, distance, positive-state, negative-state and result names 237 each;
+// status declaration order 264; previous-point address 237; displacement order 237.
+// Actual NONE failure/common publication unsigned/signed ordinal 212/252; ordinary previous side 227/254;
+// positive-first policies 211/251/256/253. Keep only the minimal 212 form; one-point tail edit restored.
+// Native previous/plane/both observations 378/370/354; both native points 355;
+// all native inputs 376; complete plane/previous/both scalar observations 347/359/368.
+// Original inputs, copies and body restored.
+// Fraction default between/before deltas, before clipped publication and at iteration entry:
+// unsigned ordinal 211/211/209/209; signed ordinal 259/259/263/275. All restored;
+// the best three-point change does not qualify. Count/stride/prior and SIMD homes remain.
+// On the common failure-result graph: signed word/native count at entry or after
+// alias handling, each without/with shared copy extent: 212/289/211/211/303/225/212/212.
+// One-point forms rejected; original count observations, helpers and body restored.
+// Round 143: retail materialises the point-mask test as a 0/1 value (`neg; sbb; neg; je`) before
+// the set/clear; SET_FLAG with TEST_FLAG / with a `(bool)` test 212/212, a named bool 212, `!!` 212,
+// `? true : false` 212 (all simplified to `test`); SET_FLAG plus signed short index 252, plus the
+// previous side not volatile 227, plus both 254.
+// Round 59: retail keeps the index as a word in memory (+0x14, tested `cmp ax, [count]`), the
+// previous point at +0x1c, the copy size at +0x18 and the plane reloaded from its argument home.
+// Tried: the previous side's volatile removed 227; signed short index 252 (869 B; retail's loop
+// tail, but the previous point stays in ESI); both 254 (frame +8, the widened index spilled);
+// long index without the volatile 272; the distance sums with the terms swapped (loop, fraction,
+// both) 212 (identical).
+// Common-failure graph mask production: conditional result 212/252; clear then set
+// 275/266; named output bit 222/252; named bit with conditional result 222/252
+// (unsigned/signed word ordinal). Original ordinal, mask and body restored.
+// Round 62: without the volatile the plane sits in ESI and the previous point spills as in retail,
+// but the previous side stays in CL and the frame grows 8 (227); with a signed short index too it
+// gives retail's loop tail but spills the widened index separately (254, 879 B); signed short alone
+// 252; `(bool)` on the point-mask bit 212 (identical; retail materialises it with neg/sbb/neg),
+// with no volatile and short index 254.
+// Round 102: with the volatile: previous side as `= false; if (...) = true` 255, long index 266;
+// without it: that if/else 250, the current side declared beside the previous one 227, the previous
+// point through a named `count - 1` index 229 (harness: `points + count - 1` and a word-cast index
+// 220/277, unchanged or worse; without the volatile the previous side lives in CL, retail's in memory).
 // @retail 0x23a6f0
 short function_23a6f0(point2f *output, short count, point2f const *points,
 	plane2f const *plane, short capacity, dword *point_mask, bool *clipped, real epsilon)
@@ -389,7 +539,7 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 	}
 	point2f const *previous = &points[count - 1];
 	volatile bool previous_inside = previous->y * plane->n.j + previous->x * plane->n.i - plane->d >= 0.f;
-	for (short i = 0; i < count; i++)
+	for (unsigned short i = 0; i < count; i++)
 	{
 		point2f const *current = &points[i];
 		real distance = current->y * plane->n.j + plane->n.i * current->x - plane->d;
@@ -401,7 +551,10 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 		if (inside != previous_inside)
 		{
 			if (result == capacity)
-				goto overflow;
+			{
+				result = NONE;
+				break;
+			}
 			if (clipped)
 				*clipped = true;
 			real dy = previous->y - current->y;
@@ -422,7 +575,10 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 		if (inside)
 		{
 			if (result == capacity)
-				goto overflow;
+			{
+				result = NONE;
+				break;
+			}
 			output[result] = *current;
 			if (point_mask && (*point_mask & (1 << i)))
 				mask |= 1 << result;
@@ -436,23 +592,23 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 		previous = current;
 		previous_inside = inside;
 	}
-	if (result < 3)
-		result = 0;
-	if (!positive)
-		result = 0;
-	else if (!negative)
+	if (result != NONE)
 	{
-		result = count;
-		memcpy(output, points, count * sizeof(point2f));
+		if (result < 3)
+			result = 0;
+		if (!positive)
+			result = 0;
+		else if (!negative)
+		{
+			result = count;
+			memcpy(output, points, count * sizeof(point2f));
+		}
 	}
+	else
+		memcpy(output, points, count * sizeof(point2f));
 	if (point_mask)
 		*point_mask = mask;
 	return result;
-overflow:
-	memcpy(output, points, count * sizeof(point2f));
-	if (point_mask)
-		*point_mask = mask;
-	return NONE;
 }
 
 // @retail 0x23a2b0

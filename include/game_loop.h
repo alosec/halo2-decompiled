@@ -5,6 +5,7 @@
 #define GAME_LOOP_H
 
 #include "unknown_11c920.h"
+#include "globals.h"
 #include "object_queries.h"
 #include <stddef.h>
 
@@ -16,6 +17,12 @@ enum e_game_loop_state
 	_game_state_multiplayer = 2,
 	_game_loop_state_main_menu = 3
 };
+
+/* the difficulty in a campaign, 0 otherwise */
+__forceinline short game_options_difficulty(s_game_options_view const *options)
+{
+	return options->state == _game_state_campaign ? options->difficulty : 0;
+}
 
 /* the kinds of thing the game focuses on (g_4e6948->value11fa); the scripts
    set _game_focus_object with an object index (unknown_29f5b0) */

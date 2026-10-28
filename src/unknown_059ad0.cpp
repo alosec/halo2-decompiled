@@ -2194,7 +2194,21 @@ void network_session_leave_joining(c_class_58d20 *session)
 // state block; retail defines it afterwards. Tried: the copy as a word loop
 // New trials: memmove 42; request field fill 3; clear result as copy target 9;
 // all-one record fill 31; tail-only clear 32; fill with memmove 37;
-// tail clear with fill 30; tail clear with memmove 46.
+// tail clear with fill 30; tail clear with memmove 46. Destination sentinel
+// after copy 30; scratch sentinel after clear 29, as fill 29; sentinel before
+// clock 15; destination fill 30; copy-result sentinel 27; fill before clock 15;
+// typed destination with late sentinel 26.
+// retail sets the NONE carrier (ebx) after clearing the state block; ours sets
+// it before the clear. The carrier must stay live across the clear: set after it in the source,
+// it moves to eax and ebx is no longer saved. Tried: the copy as a word loop 49, as a pointer
+// range or a byte loop 0 (not kept: the matched siblings 0x61180 and 0x614a0 copy the same way
+// with memcpy); complete field construction without scratch clear 48; clock before record 28,
+// after scratch clear 3; immutable initialized record 48; typed state destination 11, without
+// scratch clear 48, with immutable record 48, with earlier clock 28; memmove 42; request field
+// fill 3; clear result as copy target 9; all-one record fill 31; tail-only clear 32; fill with
+// memmove 37; tail clear with fill 30; tail clear with memmove 46; NONE set after the state
+// clear 29; NONE before the clock 15; field fill (0xff memset) after the state clear 29; zero
+// initializer for the record 27; state-block pointer local for the clear and the copy 11.
 // @retail 0x61330
 void network_session_leave_join_request(c_class_58d20 *session)
 {
@@ -2451,6 +2465,25 @@ bool network_session_handle_session_disband(c_class_58d20 *session, const s_type
 	return result;
 }
 
+// score 10 (was 10): byte zero/result exits still differ (the union shares the reason and the
+// result). Retail is the sibling 0x5e150's plain shape (`bool result = false; ... result = true;`)
+// apart from the inlined disconnect's reason: retail keeps it in ebx (as 0x5ade0 does), ours
+// folds it into an immediate store; that plain shape alone is 14. Tried: full-state
+// nonzero/equality 39/40; joined state 39/40; scalar-state boundary 39/40; accepted-state
+// equality 55/36; result initialization width and success tails; peer result with
+// literal/result reason 24/23; peer-fed value/bool view 37/43; host-fed reason with bool/union
+// result 14/10; both test results 24; peer-fed common success 15; plain shape 14, with the
+// disconnect callee beside its retail neighbours 14, the callee copying its reason with memcpy
+// 14, building a one-field state record 14, reading its reason through its address 14.
+// the result carrier is a dword here (xor ebx,ebx, mov eax,1, mov al,bl)
+// where retail keeps a byte (xor bl,bl, mov al,1), so the disconnect path also falls into the
+// false-exit copy instead of retail's shared mov al,1 exit; the disconnect reason agrees.
+// result initialization width and success tails differ;
+// peer result with literal/result reason 24/23; peer-fed value/bool view 37/43;
+// host-fed reason with bool/union result 14/10; both test results 24;
+// peer-fed common success 15;
+// a plain bool result set before the disconnect and passed as the reason 14 (the reason folds
+// to an immediate store); the reason in a union with the result a separate bool 14.
 // @retail 0x5e1a0
 bool network_session_handle_session_boot(c_class_58d20 *session, const s_type_99af70 *address)
 {
@@ -2877,18 +2910,8 @@ void session_parameters_apply_update(s_session_parameters *parameters, const s_s
 void c_class_58d20::channel_connection_changed(long channel_index, long remote_index, bool connected)
 {
 	c_class_58d20 *session = this;
-	long member_index = NONE;
+	long member_index = network_session_find_member_by_channel_inline(session, channel_index);
 
-	if (channel_index == NONE)
-		return;
-	for (long i = 0; i < MAXIMUM_PLAYERS_PER_SESSION; i++)
-	{
-		if (session->member_states[i].unknown00 && session->member_states[i].unknown04 == channel_index)
-		{
-			member_index = i;
-			break;
-		}
-	}
 	if (member_index == NONE)
 		return;
 	if (connected)
@@ -2904,19 +2927,14 @@ void c_class_58d20::channel_connection_changed(long channel_index, long remote_i
 	else
 	{
 		s_network_session_member_state *state = &session->member_states[member_index];
-		long session_state = session->state;
-		if (session_state != 5 && session_state != 6 && session_state != 7 && session_state != 8)
-		{
-			volatile long unused = session_state;
-			if (member_index == session->member_index)
-				network_session_reset_7620(session);
-		}
-		else
+		if (network_session_state_is_host_local(session->state))
 		{
 			state->unknown08 = NONE;
 			state->unknown0c = NONE;
 			state->flag3 = true;
 		}
+		else if (member_index == session->member_index)
+			network_session_reset_7620(session);
 		if (session->state == 8)
 		{
 			dword mask = ~(1 << member_index);
@@ -3633,6 +3651,37 @@ bool network_observer_channel_timed_out(s_network_observer *observer, long chann
 
 /* retail calls 0x5f6a0 and 0x58d20 here instead of inlining them */
 #pragma inline_depth(0)
+// score 101 (was 101): frame 0x3c agrees; retail loads session+0x10 and spills it, and splits the
+// member-state lea, before the timeout call (BLOCKED-BY 0x769a0, held file; same spill in 0x5e7f0),
+// which shifts everything after it; announcement id/member scheduling also differs.
+// Round 55 (on top of each other): constant true/false returns 115 (retail's two exits); guarded
+// `if (state == 7 && flag) leave = true;` 120 (leave block exact); reply member pointer before the id
+// 121 (reply block exact; only the timeout setup and announcement differ once aligned); host state
+// pointer before the predicate 124; identity memcpy before the id 121. Keep these three for when the
+// timeout setup is solved. Earlier forms:
+// shared result 120, aggregate zero initialization 120, identifier memcpy 120,
+// reply pointer first 121, announcement outer lifetime 120.
+// Direct leave predicate 115; retained host-query result 137; narrower host-result
+// scope 125; flags before identifier 120; early nonpeer return 123.
+// State/host/both at uses 115/120/120; long host/leave/both 129/132/130;
+// host/leave initialized individually before lookup 119/120.
+// Native identity assignment 115; identity before identifier 115; announcement/reply/both named identifier stores 115/115/115;
+// entry result lifetimes 120; separate host initialization 118; host result before message 113.
+// actual peer-result return 101; unsigned member 115; unsigned host 115; both unsigned handles 115;
+// native workspace names 115; chained message flags 115; peer result with chained flags 101; host
+// result at send 113.
+// Deferred-leave/announcement/both Boolean home names 101/101/101; byte/word host result 101/137;
+// byte/word leave result 101/130; reverse protocol-byte stores 101.
+// Guarded/nested/state-gated/conditional leave with the retained peer result 131/131/132/126;
+// those forms with the actual host-query result 148/148/151/143. Opening body restored.
+// complete native announcement construction 132 fast;
+// native announcement flag-array initialization 129 fast;
+// direct owning-array reply fields 101 fast;
+// byte actual peer result 104 fast;
+// long actual peer result 101 fast;
+// native announcement with direct reply fields 129 fast;
+// native flag array with direct reply fields 132 fast;
+// native announcement and long peer result 128 fast;
 // @retail 0x5e3f0
 bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *address)
 {
@@ -3663,8 +3712,7 @@ bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *addr
     memcpy(&message.identity, session->members[member].words, sizeof(message.identity));
     network_session_send_to_members(session, 0, 0x13, sizeof(message), &message);
     was_host = true;
-    if (session->state == 7 && *(byte *)&session->value7420)
-     leave = true;
+    leave = session->state == 7 && *(byte *)&session->value7420;
    }
    session->member_index = member;
    session->value44 = NONE;
@@ -3674,7 +3722,8 @@ bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *addr
     function_612c0(session);
   }
  }
- if (network_session_address_is_peer(session, address))
+ bool result = network_session_address_is_peer(session, address);
+ if (result)
  {
   s_session_id id = *(s_session_id *)&session->unknown1c;
   s_network_session_member_state *member_state = &session->member_states[session->member_index];
@@ -3683,9 +3732,8 @@ bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *addr
     false, 0x14, sizeof(id), &id);
   if (leave)
    session->leave(false);
-  return true;
  }
- return false;
+ return result;
 }
 #pragma inline_depth()
 
@@ -3698,6 +3746,11 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // host/session homes, cleanup placement and clock expansion differ;
 // isolated failure-first 159, identifier assignment 136, delayed ready flag 136,
 // redundant false removed from one-exit flow 165, inline depth zero 136.
+// Join-key helper call 163; single-exit loopback bool helper 136 (retail's sete/test);
+// with it the clock helper forceinline 147; then channel failure first 138 at 573 bytes with
+// only the host register left (retail esi copied to ebx for the address call, session
+// reloaded; ours keeps host in ebx across it); inline address callee 138; inline key
+// setter 138; session parameter re-read at the address call 137 (host still ebx).
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
@@ -4308,6 +4361,55 @@ bool session_peer_map_set_connected(s_session_peer_map *map, const s_session_mem
 /* retail calls 0x5f6a0, 0x58d20, 0x58d90 and 0x75870 here instead of
    inlining them; only the time read for the peer's reply time is inline */
 #pragma inline_depth(0)
+
+// score 370 (was 370): Aligned frame 0xd8 agrees; acceptance/identity homes and acknowledgement placement remain.
+// Earlier: Aligned frame 0xd8 agrees; acceptance/identity homes and acknowledgement placement remain.
+// Earlier: Frame 0xd8 agrees; result/identity homes and block placement remain.
+// Aligned frame 0xd8 agrees; acceptance/identity homes and acknowledgement/rejection placement remain.
+// Earlier 384 (was 384): Frame 0xd8 agrees; result/identity homes and block placement remain.
+// Aligned frame 0xd8 and sender/identity slots agree; Boolean homes and acknowledgement/rejection placement remain.
+// Frame/sender/identity homes agree; result byte and acknowledgement/rejection placement remain.
+// shared exit 407, result first 411, role names 411, complete reason arms 411,
+// separate rejection tests 424, positive state arm 411.
+// Member pointers before received copy 396; host workspaces swapped 413;
+// isolated sender rename 407; preference results first 407; old version first 407.
+// Round 113: Equality-name 396; shared-result name 396; entry host-equality scope 396; direct version fields 396; nested preference tie-break 395 (one-point gain dropped).
+// Identifier entry workspace 398; received entry workspace 396; long identity equality 402;
+// long preference results 406; equal-version decision first 422.
+// Result byte +9 versus +b, identity/host homes and early acknowledgement/rejection remain. Raw multi-use
+// comparison 384 kept; preference-only long 405; equality-only long 405; integer acceptance 395; peer before
+// identifier 396; chained peer clears 396.
+// Raw-comparison slot name 384; reversed comparison buffers 384; library identity outputs 384;
+// direct state observations 387; result after state 384. Frame/Boolean homes and block placement remain.
+// Word identity result 384; word preference/equality states 396/396; local member first 386;
+// selection flags after map updates 384; word reachability counts 383.
+// Negative identity predicate 396; signed-byte/unsigned raw identity result 384/384; direct
+// map/transition/peer fields 384/384/370; preferred-first processing 384; selection declaration
+// order 384.
+// Round 356: Byte acceptance 387; word acceptance 394; paired byte selection 384; complete version admission 410; admission with byte selection 410; isolated invalid-state/role/missing-selection exits 386 each.
+// Native received/stored/both map records 384/412/412; native input alone/with stored fields
+// 384/412; native output/both assignments 412/412; native records with identity equality 420.
+// Native identifier initialization/high-word-first construction 370/370; direct host-channel fields 376;
+// direct fields with high-word-first identifier 376; equality on direct-acknowledgement base 382;
+// equality with native identifier/high-word-first/both direct fields 382/382/383. Original body restored.
+// Round 225: On direct acknowledgement base, all returns raw/equality 395/408; identity-output returns
+// 374/386; completed-success returns 389/402; direct selection results 377/383. Acceptance/identity homes
+// remain.
+// Round 227: Newer preference from predicate 386; equality from predicate 363 (seven-point gain
+// dropped); both 385; tie preference from predicate 368 (two-point gain dropped); all three 380; single
+// long/byte/short selection status 396/404/394.
+// Round 227: Follow-up equality plus tie predicates 372; newer plus tie predicates 371. Neither
+// combination improves the original 370; original body restored.
+// Round 229: Signed-byte acceptance/preference/equality/paired selection/all results 401/370/370/370/401;
+// identity equality with signed-byte preference/equality/all results 382/382/392. Original body restored.
+// Round 341: Incoming payload before lookup with stored/direct identity and raw/equality results 397/402/394/408; after lookup 390/398/392/396. Original body restored.
+// Round 206: Four complete acceptance/preference/equal-choice role-name allocations 370 each;
+// all four allocations with native identity equality 382 each. Raw comparison and original names restored.
+// Round 211: Entry preference/equality/both lifetimes 381/381/381; success default alone/with
+// preference/equality/both entry lifetimes 381/391/391/391; native identifier library copy 370.
+// Round 145: Equal-version rejection before preference: original predicates 396; newer predicate
+// 393; equality predicate 394; both predicates 391. Identity-equality counterparts
+// 406/403/404/401; all restored.
 // @retail 0x5e7f0
 bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *address, const void *message,
  long *reason, bool *has_identity, s_session_member_identity *identity)
@@ -4318,31 +4420,31 @@ bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *addr
  if (!state || state == 10)
  {
   *reason = 1;
-  return result;
+  goto done;
  }
  if (state != 9)
  {
   if (state <= 2 || state > 8)
   {
    *reason = 2;
-   return result;
+   goto done;
   }
   if (function_058d90(session) && !session->function_058d20())
   {
    *reason = 3;
-   return result;
+   goto done;
   }
   if (state == 8)
   {
    if (sender != NONE)
     goto acknowledge;
    result = true;
-   return result;
+   goto done;
   }
   long host = session->member_index;
   const s_session_member_identity *host_identity = (const s_session_member_identity *)&session->members[host];
   s_network_session_member_state *host_state = &session->member_states[host];
-  bool same_host = !memcmp(host_identity, (const byte *)message + 8, 0x24);
+  long identity_order = memcmp(host_identity, (const byte *)message + 8, 0x24);
   if (session->function_058d20())
   {
    if (sender != NONE)
@@ -4350,24 +4452,24 @@ bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *addr
    *reason = 5;
    *has_identity = true;
    *identity = *host_identity;
-   return result;
+   goto done;
   }
   if (network_observer_channel_timed_out(session->observer, host_state->unknown04))
   {
-   *reason = same_host ? 4 : 6;
+   *reason = !identity_order ? 4 : 6;
    *has_identity = true;
    *identity = *host_identity;
-   return result;
+   goto done;
   }
   if (session->value4c == NONE)
   {
    *reason = 8;
-   return result;
+   goto done;
   }
-  if (session->observer->channels[host_state->unknown04].state == 7 && !same_host)
+  if (session->observer->channels[host_state->unknown04].state == 7 && identity_order)
   {
    result = true;
-   return result;
+   goto done;
   }
  }
  if (session->state != 9)
@@ -4375,13 +4477,13 @@ bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *addr
  if (sender == NONE || sender == session->current_member)
  {
   *reason = 9;
-  return result;
+  goto done;
  }
  {
   byte received[0xc0];
-  memcpy(received, (const byte *)message + 8, sizeof(received));
   s_session_member_header *remote = (s_session_member_header *)&session->members[sender];
   s_session_member_header *local = (s_session_member_header *)&session->members[session->current_member];
+  memcpy(received, (const byte *)message + 8, sizeof(received));
   s_session_peer_transition *transition = (s_session_peer_transition *)&session->value7420;
   s_session_peer_map *map = (s_session_peer_map *)transition->map;
   bool better = false;
@@ -4432,7 +4534,7 @@ bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *addr
    }
    result = true;
    if (same || better)
-    return result;
+    goto done;
   }
   goto disconnected;
  refused:
@@ -4445,26 +4547,27 @@ bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *addr
  disconnected:
   if (session_peer_map_set_connected(map, remote, false))
    transition->selection_time = function_75870();
-  return result;
+  goto done;
  }
 acknowledge:
  {
   s_session_id id = *(s_session_id *)&session->unknown1c;
-  s_network_session_member_state *peer = &session->member_states[sender];
-  if (peer->flag1)
+  if (session->member_states[sender].flag1)
   {
-   if (session->observer->channels[peer->unknown04].state == 7)
-    network_observer_send_message(session->observer, session->value10, peer->unknown04, false, 18, sizeof(id), &id);
-   network_observer_send_message(session->observer, session->value10, peer->unknown04, true, 18, sizeof(id), &id);
+   if (session->observer->channels[session->member_states[sender].unknown04].state == 7)
+    network_observer_send_message(session->observer, session->value10, session->member_states[sender].unknown04, false, 18, sizeof(id), &id);
+   network_observer_send_message(session->observer, session->value10, session->member_states[sender].unknown04, true, 18, sizeof(id), &id);
   }
-  peer->unknown08 = NONE;
-  peer->unknown0c = NONE;
-  peer->flag3 = true;
+  session->member_states[sender].unknown08 = NONE;
+  session->member_states[sender].unknown0c = NONE;
+  session->member_states[sender].flag3 = true;
   if (session->state == 7)
    network_session_clear_peer(session, sender);
   result = true;
-  return result;
+  goto done;
  }
+done:
+ return result;
 }
 #pragma inline_depth()
 
@@ -4497,9 +4600,13 @@ bool __stdcall function_05d9e0(c_class_58d20 *session, const void *message_)
 
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update);
 
-// score 122 (was 122): missing owner spill leaves frame 0x9148 versus 0x914c;
+// score 122 (was 122): missing owner spill leaves frame 0x9148 versus 0x914c (BLOCKED-BY 0x76930:
+// retail passes the owner to the mark-message call as an unused argument; its file is held);
 // mask/counter role names 122, first-loop cursor 122, eligibility guard 122,
 // member bit live across readiness 159, named readiness result 122.
+// Round 50: early continues for the eligibility tests 122; sequence tests swapped 121;
+// channel/observer/sequence read before the tests 136; ready test negated with the mark
+// call in the else arm 119; empty arm for the state-8 test 122.
 // @retail 0x62640
 void function_62640(c_class_58d20 *session)
 {

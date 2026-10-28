@@ -26,6 +26,8 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // globals and point_reference locals 117; point_reference dropped 71 (point becomes a register
 // argument); globals local dropped 113; inline key-match helper 65; entry at function scope 65;
 // field-first key compares 65; (void)& of the key parameters (no effect, 102 with the if (point) shape).
+// score 65 (was 65): keys compared without the key temporary 65; entry declared first 65;
+// point test with the arms swapped worse; position copied from globals or from entry 64.
 // @retail 0x19ec40
 long function_19ec40(
 	point3f const *point,

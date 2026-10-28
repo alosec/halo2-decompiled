@@ -4,6 +4,7 @@
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "game_loop.h"
 #include <string.h>
 #include <xmmintrin.h>
 
@@ -37,7 +38,9 @@ struct s_request_transition
 struct s_local_player_state_view
 {
 	s_request_transition transitions[32];
-	byte unknown080[0x150 - 0x80];
+	long current_request;
+	long elapsed_ticks;
+	byte unknown088[0x150 - 0x88];
 	s_time_entry requests[4];
 	dword request_flags[8];
 	long version;
@@ -371,19 +374,34 @@ void function_1e6b00(long player_index, s_request_source *source)
 	}
 }
 
-extern "C" void _ReadWriteBarrier(void);
-#pragma intrinsic(_ReadWriteBarrier)
-// score 57 (was 57): retail saves the pointer argument in EBX and shifts the
-// mask in EBP, where ours keeps the mask in EBP and the pointer in EAX; the
-// prologue and the argument setup of the call differ.
+// score 51 (was 51): index EBX/mask EBP priority, repeated output load and low/high store order remain.
+// retail keeps the index in EBX and the mask in EBP (ours
+// the other way round), loads the output pointer once above the last test and
+// stores the low flag word first in the inlined update. Without the read
+// barrier: high word through the pair and low word through the state array 51
+// (retail's load order and `mov eax, mask; and eax, low`); both through the
+// pair 77, both through the state array 77-80, mask local / term order /
+// `21 == index` / limit or next locals / swapped arms 51-52.
+// Earlier: retail saves the pointer argument in EBX and shifts the mask in EBP.
+// Round 129: flag view declared after both value terms read from the array 77 (state
+// moves to EAX); unsigned index 51; explicit else arm 51; constant update before the output
+// stores 54; `limit > 0` 51. Screened: array/element-address flag views, the transition
+// slot for the recursion, a next-value local, the absent-entry arm last, output stores
+// swapped, call before the stores, all 45-78 in screen terms (base 45).
+// score 51 (was 51): index/mask roles and the output join remain; tested completion
+// with separate/state/ticks/both stores 116/112/114/120; shared setter variants
+// 83/111/108/109. Original early-result body restored.
+// index/mask registers and the repeated output load remain.
+// Declared paired-word view with mixed/pair/array/mirrored reads 51/77/80/77;
+// paired snapshot before/after pointer lifetime and low-first snapshot 115/115/115;
+// paired snapshot with one shifted mask 85.
+// Early dependency predicate, native signed ordinal, both, native recursive slot, predicate/slot all 51;
+// request value advanced in place alone/with native ordinal 58/58; adjacent recursive ordinal 51.
 // @retail 0x1e8d80
 bool __stdcall function_1e8d80(long index, s_local_player_state_view *state, s_entry_420 *entry, s_request_transition *output)
 {
 	s_flag_pair *flags = (s_flag_pair *)((byte *)state + 0x170);
-	dword high = flags->high;
-	// Preserve the observed order of the two flag-word reads.
-	_ReadWriteBarrier();
-	long value = ((high & (1 << index)) ? 2 : 0) + ((flags->low & (1 << index)) ? 1 : 0);
+	long value = ((flags->high & (1 << index)) ? 2 : 0) + ((state->request_flags[0] & (1 << index)) ? 1 : 0);
 	if (index == 21)
 		function_1e8d80(22, state, entry_420_get(22), (s_request_transition *)((byte *)state + 0x58));
 	if (!entry)
@@ -410,7 +428,6 @@ bool __stdcall function_1e8d80(long index, s_local_player_state_view *state, s_e
 	output->ticks = g_510c54->field_2_3 * entry->duration;
 	return false;
 }
-#pragma function(_ReadWriteBarrier)
 
 // @retail 0x1e8fa0
 void function_1e8fa0(long player_index, long object_index, byte kind)
@@ -501,6 +518,10 @@ struct s_request_profile
 // Default profile 164; early memset 150; unsigned version 143; aligned byte prefix 180;
 // unsigned local index 143; aligned dword prefix 180; common bits 370; separate tick reset 335.
 // All use ordinary player data and native loops; original profile and body retained.
+// A plain 32-entry loop of `ticks = 0; state = function_1e7a10(local_index, i) ? 5 : 0;` gives retail's
+// per-element flag reloads and bool select but stays rolled (337, 357 bytes): with if/else, a
+// pointer local, a bool local, short/int/unsigned/do/while counters, an inline transition helper,
+// inline/forceinline on 0x1e7a10 alike; noinline 373; the four-way body calling it 154.
 // @retail 0x1e73b0
 void function_1e73b0()
 {
@@ -645,23 +666,17 @@ PRIVATE inline long request_weapon(s_player_request_view *player, bool secondary
 }
 
 long function_1469f0(real seconds);
-
-// score 290 (was 302): First +0 is frame 4 versus retail 12; slot/state and final flag/transition carriers still differ.
-// Native signed-word slot 283 fast/290 plain; full-width difficulty 308; shared elapsed 309;
-// cooldown-first 296; fixed initial do scan 340; slot plus cooldown-first 281.
 // @retail 0x1e6bd0
 void function_1e6bd0(long player_index)
 {
+ long local_index = ((s_player_request_view *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c))->local_player_index;
  s_game_options_view *options = g_4e6948;
- s_player_request_view *player = (s_player_request_view *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c);
- short local_index = player->local_player_index;
- bool restricted = options->state == 1 && (options->difficulty == 3 || options->difficulty == 2);
+ bool restricted = options->state == _game_state_campaign &&
+  (game_options_difficulty(options) == 3 || game_options_difficulty(options) == 2);
  if (local_index != NONE && *((byte *)g_51e9c0 + 0x6c5) && !restricted)
  {
   s_local_player_state_view *state = &((s_local_player_state_view *)g_51e9c0)[local_index];
-  long *current = (long *)((byte *)state + 0x80);
-  long *elapsed = (long *)((byte *)state + 0x84);
-  long selected = *current;
+  long selected = state->current_request;
   if (state->field_195 > 0) --state->field_195;
   if (state->field_196 > 0 && --state->field_196 == 0) state->field_197 = 0;
   if (state->timer198 > 0) --state->timer198;
@@ -688,9 +703,9 @@ void function_1e6bd0(long player_index)
   }
   if (selected != NONE)
   {
-   long old_current = *current;
-   s_request_transition *transition = &state->transitions[selected];
    s_entry_420 *entry = entry_420_get(selected);
+   long old_current = state->current_request;
+   s_request_transition *transition = &state->transitions[selected];
    if (selected != old_current)
    {
     if (old_current != NONE)
@@ -698,20 +713,20 @@ void function_1e6bd0(long player_index)
      state->transitions[old_current].ticks = 0;
      state->transitions[old_current].state = 0;
     }
-    *current = selected;
-    *elapsed = 0;
+    state->current_request = selected;
+    state->elapsed_ticks = 0;
    }
    switch ((word)transition->state)
    {
    case 0:
     transition->state = 1;
-    transition->ticks = entry ? (short)function_1469f0(*(real *)entry->field_0c) : 0;
+    transition->ticks = entry ? function_1469f0(*(real *)entry->field_0c) : 0;
     break;
    case 1:
     if (function_1e83c0(local_index, selected))
     {
      function_1e8d80(selected, state, entry, transition);
-     *current = NONE;
+     state->current_request = NONE;
     }
     else if (function_1e7ab0(local_index, selected))
     {
@@ -721,30 +736,30 @@ void function_1e6bd0(long player_index)
     {
      transition->state = 0;
      transition->ticks = 0;
-     *current = NONE;
+     state->current_request = NONE;
     }
     break;
    case 2:
-    ++*elapsed;
+    ++state->elapsed_ticks;
     if (function_1e83c0(local_index, selected))
     {
      function_1e8d80(selected, state, entry, transition);
-     *current = NONE;
-     *elapsed = 0;
+     state->current_request = NONE;
+     state->elapsed_ticks = 0;
     }
     else if (!function_1e7ab0(local_index, selected))
     {
      transition->state = 3;
-     transition->ticks = entry ? (short)(g_510c54->field_2_3 * entry->field_08) : 0;
+     transition->ticks = entry ? g_510c54->field_2_3 * entry->field_08 : 0;
     }
     break;
    case 3:
-    ++*elapsed;
+    ++state->elapsed_ticks;
     if (function_1e83c0(local_index, selected))
     {
      function_1e8d80(selected, state, entry, transition);
-     *current = NONE;
-     *elapsed = 0;
+     state->current_request = NONE;
+     state->elapsed_ticks = 0;
     }
     else if (function_1e7ab0(local_index, selected))
     {
@@ -755,8 +770,8 @@ void function_1e6bd0(long player_index)
     {
      transition->ticks = 0;
      transition->state = 0;
-     *current = NONE;
-     *elapsed = 0;
+     state->current_request = NONE;
+     state->elapsed_ticks = 0;
     }
     break;
    case 4:
@@ -766,12 +781,9 @@ void function_1e6bd0(long player_index)
   }
   for (long i = 0; i < 32; ++i)
   {
-   if (i != *current)
+   if (i != state->current_request)
    {
-    s_local_player_state_view *local_8da5ff = state;
-    long value = ((local_8da5ff->request_flags[1] & (1 << i)) ? 2 : 0) +
-     ((local_8da5ff->request_flags[0] & (1 << i)) ? 1 : 0);
-    if (value != 3)
+    if (!function_1e7a10(local_index, i))
     {
      switch (i)
      {

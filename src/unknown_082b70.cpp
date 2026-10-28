@@ -80,13 +80,20 @@ static __forceinline long object_query_weapon(long unit_index, short slot)
 	return result;
 }
 
-// score 65 (was 65): the value at [edx+0x10] is compared in a different register: retail
+// score 50 (was 50): after the function_c7100 call retail looks the child up again
+// for the first weapon slot (the table pointer and object reloaded), where ours reuses
+// the unit pointer kept in EDI; the rest follows (13 bytes shorter). The same holds
+// with function_c7100 compiled to retail's exact code, so the cause is not that body.
+// Earlier: the value at [edx+0x10] is compared in a different register: retail
 // loads it into edx and keeps eax for the index, ours loads it into eax.
 // Shared-helper arm result 76; early exit 76; byte slot 71; long slot 75;
 // selected result 76; wide selection 86; unsigned handle 65;
 // slot-validity local 65; shared parent/sibling cursor 65.
 // Shared object getter 65; shared header getter 65; output references 65; child reference 65; association
 // result 65; byte slots 65; shared/output 65; reference/result 65.
+// function_cbd50 called for both slots 93 (stays out of line); helper inline instead
+// of forceinline 93; object index first in the comparison 51; unit declared outside
+// the loop 50; while loop 50.
 // @retail 0x82c10
 void __stdcall function_82c10(long object_index, long *weapons)
 {
@@ -215,17 +222,21 @@ struct s_weapon_definition_view
  byte *barrels;
 };
 
-// score 149 (was 149): frame 0x20 versus 0x1c; weapon-table CSE and
-// sentinel/trigger homes differ; invalid weapon initialization 149; flat
-// fallbacks 149; unsigned hand 149; typed trigger state 149; state at use 149.
-// score 149 (was 149): selector/frame interference remains; barrel field at use 159;
-// selector inside positive guard 159; native mode 149; read-only tag 149;
-// read-only trigger 149; active interval 150; shared false stores 155;
-// selector declared before receiver 149.
-// score 149 (was 149): Frame 0x20 versus 0x1c, initial sentinel and second-slot pool load still
-// differ. Separate bounded result 149; direct native bounds 188; flag field at store 149; direct
-// mode-two result 178; shared mode-one stores 149; trigger fields at use 175; native weapon
-// receiver 149; handle workspace name 149.
+// score 149 (was 149): frame 0x20 versus 0x1c; retail reloads the object table for the second weapon
+// slot query (ours shares one lookup), clamps an int barrel with no count guard (in eax/ecx, keeping
+// the result pointer in ebx and the trigger-state cursor in the result parameter's home) and tests
+// the trigger count twice before the trigger loop.
+// Earlier: invalid weapon initialization 149; flat fallbacks 149; unsigned hand 149; typed trigger
+// state 149; state at use 149; barrel field at use 159; selector inside positive guard 159; native
+// mode 149; read-only tag 149; read-only trigger 149; active interval 150; shared false stores 155;
+// selector declared before receiver 149; separate bounded result 149; direct native bounds 188; flag
+// field at store 149; direct mode-two result 178; shared mode-one stores 149; trigger fields at use 175;
+// native weapon receiver 149; handle workspace name 149.
+// Round 69: long barrel without the count guard 180 (618 bytes; frame 0x1c, retail's clamp and
+// parameter-home reuse, but the shared lookup shifts the rest); short barrel without the guard 159;
+// long barrel with the guard 176; the existing 0xcbd50 for both queries 149 (identical code); long
+// barrel without the guard plus a short hand index 218. Unit pointer local, a pointer to the
+// workspace, scalar results copied in, NONE stores first and a trigger-count guard compile identically.
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {

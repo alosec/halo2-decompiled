@@ -589,6 +589,8 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 // in ESI. Member count read before the clears 129; summary set after the clears 129; machine
 // pointer before the clears 55; zero initialisers for the two buffers 151; summary as a
 // conditional 131.
+// score 55 (was 55): as a session method 55; the address copy as a plain for
+// loop 114 (477 bytes); bit-first mask test 55; nested mask and slot tests 55.
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {
@@ -810,7 +812,7 @@ void function_06f4b0(c_session_state_joining *self)
   if (!qos_is_complete(state->unknownf4))
    return;
   s_qos_result result;
-  if (qos_target_result(state->unknownf4, &result, 0))
+  if (qos_target_result(state->unknownf4, 0, &result))
   {
    struct { s_session_description description; byte remaining[0x714 - sizeof(s_session_description)]; } buffer;
    s_session_description *description = &buffer.description;

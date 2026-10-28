@@ -54,6 +54,16 @@ PRIVATE __forceinline long texture_floor(real value)
     }
 }
 
+// score 4 (was 4): Frame agrees; the final slot-bit clear uses EDX instead of EAX. Tried unsigned slot bit 4;
+// signed traversal mask 4; unsigned slot index 4; toggle selected bit 14; subtract selected bit 16; assign
+// remaining mask 4; pending slots name 4; for mask traversal 4; named slot bit 4; bias declaration first 4;
+// slot index name 4; texture frame name 4; lowest-bit clear 19;
+// early clear 111; entry lifetime 4; scan-index lifetime 4; level lifetime 4; integral
+// level clamp 86; short bitmap 4; typed texture entry 4; guarded do continuation 4; reversed mask
+// assignment 4; complement by -1 xor 4; masked xor clear 4; short stage 4; entry tag local 4;
+// existing bit setter 132; callee inline declarations 4; ternary bitmap 104; one-expression level
+// 202; one conditional bias 115; bitmap set on both arms 90; named frame time 108. Compile-only
+// screens: only removing the whole bitmap block gives EAX; ~450 forms of that block keep EDX.
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {
@@ -216,6 +226,40 @@ void function_16f60(byte *state, word const *range)
     }
 }
 
+// score 93 (was 93): frameless BX entry agrees; dispatch span and selective setter expansion
+// differ. Retail lays out separate mode 3 and mode 4 bodies in mode order (no mode compare) and
+// inlines fewer setter calls (mode 3 six, modes 4/5 two, mode 6 one, the rest call 0x222d0).
+// Complete case orders 0/12/34/6/5 114; 0/12/5/34/6 119; 0/12/6/34/5 103 kept;
+// 0/34/12/5/6 158; 0/5/12/34/6 151; 0/6/12/34/5 167; 0/34/5/6/12 224; 0/6/5/34/12 165.
+// Code rows 91 to 80; 780/772 bytes.
+// Inline/noinline/force-inline setter declarations 103/377/224; early native/enum comparison
+// 103/103; early reference/both values 179/179; comparison-call branches 93, 776/772 bytes.
+// common exit 99; sixth exit 93; comparison exit 93; fifth exit 93; sixth comparison exit 93; fifth
+// sixth exit 93; explicit default common exit 99; fourth comparison first 93.
+// BX dispatch agrees; selective setter expansion and shared tails remain.
+// Earlier 103 from 117: frameless BX entry agrees; dispatch span and selective setter expansion differ.
+// 0/34/12/5/6 158; 0/5/12/34/6 151; 0/6/12/34/5 167;
+// 0/34/5/6/12 224; 0/6/5/34/12 165. Code rows 91 to 80; 780/772 bytes.
+// Earlier 93 from 103: dispatch span and selective setter expansion still differ.
+// Inline/noinline/force-inline setter declarations 103/377/224; early native/enum comparison 103/103;
+// early reference/both values 179/179; comparison-call branches 93, 776/772 bytes.
+// Complete group orders 05316/05631/03516/03651: 222/156/221/197;
+// 06153/06315/06513/05361: 145/196/168/223 (1=one/two, 3=three/four).
+// frameless BX entry agrees; dispatch span and selective setter expansion
+// differ.
+// dispatch span and selective setter expansion still differ.
+// 103/103;
+// sixth exit 93; explicit default common exit 99; fourth comparison first 93. Selective setter
+// expansion and shared tails remain.
+// frameless BX entry agrees; dispatch span and selective setter expansion differ.
+// 0/34/5/6/12 224; 0/6/5/34/12 165. Earlier code rows 91 to 80; 780/772 bytes.
+// Reference-call branches first/second mode 144/145; paired-label orders 93/93/93;
+// complete group orders 0/12/34/5/6, 0/12/5/6/34, 0/34/6/12/5 105/106/197.
+// Shared keep-pass group/conditional comparison/mask-call branches 282/270/207;
+// shared first one/two/three calls 188/235/292; first one/three with group 313/368.
+// Round 85: separate mode 3 and 4 bodies in mode order 196 (860 bytes: modes 3 and 4 inline
+// more calls than retail); orders 0/12/6/3/4/5 154 (824), 12/3/4/5/6/0 307, 0/12/3/4/6/5 235;
+// break with one selector store after the switch 279.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -236,12 +280,26 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILWRITEMASK, 255);
 		g_467010 = mode;
 		return;
+	case 6:
+		function_0222d0(D3DRS_STENCILENABLE, TRUE);
+		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
+		function_0222d0(D3DRS_STENCILREF, 0);
+		function_0222d0(D3DRS_STENCILMASK, 3);
+		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
+		g_467010 = mode;
+		return;
 	case 3: case 4:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILFUNC, mode == 3 ? D3DCMP_EQUAL : D3DCMP_NOTEQUAL);
+		if (mode == 3)
+			function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
+		else
+			function_0222d0(D3DRS_STENCILFUNC, D3DCMP_NOTEQUAL);
 		function_0222d0(D3DRS_STENCILREF, 0);
 		function_0222d0(D3DRS_STENCILMASK, 1);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
@@ -258,17 +316,7 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILWRITEMASK, 2);
 		g_467010 = mode;
 		return;
-	case 6:
-		function_0222d0(D3DRS_STENCILENABLE, TRUE);
-		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
-		function_0222d0(D3DRS_STENCILREF, 0);
-		function_0222d0(D3DRS_STENCILMASK, 3);
-		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
-		g_467010 = mode;
-		return;
+
 	}
 	g_467010 = mode;
 }
@@ -1263,7 +1311,15 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
 // score 71 (was 71): the test of the global comes after the test of the call in ours and before
-// it in retail, and ours is twenty-five bytes shorter.
+// it in retail, and ours is twenty-five bytes shorter. Retail puts the failed lookup's exit last,
+// forms the slot pointer after the global test (with the frame counter loaded before it), and
+// spills the clamped amount into the key's second field with a store in each clamp arm; the
+// amount here is that field (memory), so its stores merge before the draw call. `valid` lands in
+// the parameter's home as a plain bool. Tried: a plain amount 108 (frame 0x1c, own slot); the key
+// in its own block 108; that and the rest under `index != NONE` 101; the positive guard alone 92;
+// with a slot pointer 91; the global and valid tests nested, both else arms written out 87; the
+// frame computed before the slot pointer 99; the frame read before it 93; one clamped
+// assignment from a named product 87; the key built in an inline helper 108.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
@@ -1277,8 +1333,7 @@ bool __stdcall function_3c270(dword value)
     key.e = 0;
     long index = function_0209b0(&key, &value, 4);
     if (index == NONE) return false;
-    byte &valid = *(byte *)&value;
-    valid = false;
+    bool valid = false;
     bool available;
     real &amount = *(real *)&key.b;
     if (g_51f408 && g_51f40c.slots[index].valid)

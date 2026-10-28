@@ -206,7 +206,7 @@ PRIVATE real function_272810(s_type_f17a25 const *state, s_type_c3b527 const *st
 PRIVATE void function_271e50(s_type_f17a25 *state, short index);
 PRIVATE void function_271fd0(s_type_f17a25 *state, short node_index, short cost);
 short function_272700(s_type_f17a25 *state, long node_index);
-PRIVATE void function_272740(point3f const *attractor,
+PRIVATE __declspec(noinline) void function_272740(point3f const *attractor,
 	point3f const *start, point3f const *end, point3f *out);
 
 // @retail 0x270590
@@ -231,6 +231,16 @@ void function_2705c0(s_path_source *source, point3f const *point,
 	input->unknown44 = unknown;
 }
 
+// score 28 (was 28): retail takes the location in edx and the node in ebx and has one exit (`xor al, al` at entry, `mov al, 1`); the one-exit
+// form (`result = true; break;`) matches, but unmatched 0x26c590 then takes its origin in ecx and its eight matched callers stop matching
+// (BLOCKED-BY 0x26c590). Tried in 0x26c590 with that form: `bool success` 553, line_normal as one dword copy 445, point1/distance1 at
+// function scope 420, the edge iterator at function scope 420; none keeps its convention.
+// BLOCKED-BY 0x26c590. Retail keeps result false in al from
+// entry, so the location comes in edx and the node index in ebx. `bool result =
+// false;` with `result = true; break;` in the loop and one `return result;` matches,
+// but 0x26c590 (unmatched) then changes its own conventions and its eight matched
+// callers (0x1ab770, 0x1bd400, 0x1f5110, 0x26c4e0, 0x26cbe0, 0x26ccb0, 0x26d290,
+// 0x2c39f0) stop matching.
 // @retail 0x270600
 PRIVATE bool function_270600(s_path_location const *location, long node_index)
 {
@@ -246,6 +256,10 @@ PRIVATE bool function_270600(s_path_location const *location, long node_index)
 	return false;
 }
 
+// score 31 (was 31): at the call to 0x26c4e0 retail computes the end point (`lea ecx, [eax+0x18]`) right after pushing the parent's node
+// index and loads the next two arguments through eax; ours loads them through ecx and computes the end point last, and from there on our
+// eax/ecx/edx choices are one step off retail's. Tried: a named parent point for the compare and the call 65; the two break tests as one
+// `||` condition 31; trace at function scope 31; no parent local 85; the output arms swapped 34; the permuter (86 tries) found nothing below 31.
 // @retail 0x270640
 PRIVATE bool function_270640(s_type_f17a25 *state, s_type_c3b527 const *point,
 	long node_index, bool *arg_c793c4, s_type_c3b527 *out)
@@ -684,13 +698,13 @@ bool function_2715a0(byte *buffer)
 	s_type_f17a25 *state = (s_type_f17a25 *)buffer;
 	s_path_lookup_view *lookup = (s_path_lookup_view *)state;
 	s_path_closest_view *closest = (s_path_closest_view *)state;
+	bool result = false;
 	state->unknownae = 0;
 	state->heap_count = 1;
 	memset(lookup->hash_table, 0xff, sizeof(lookup->hash_table));
 	closest->node_index = NONE;
 	closest->distance = FLT_MAX;
 	closest->estimated_distance = FLT_MAX;
-	bool result = false;
 	if (function_2713f0(state))
 	{
 		result = function_271630(state);
@@ -701,9 +715,13 @@ bool function_2715a0(byte *buffer)
 		{
 			state->location.unknown00 = 32;
 		}
-		else if (++state->location.unknown00 > 32)
+		else
 		{
-			state->location.unknown00 = 0;
+			s_path_location *location = &state->location;
+			if (++location->unknown00 > 32)
+			{
+				location->unknown00 = 0;
+			}
 		}
 	}
 	return result;
@@ -958,6 +976,11 @@ PRIVATE bool function_271630(s_type_f17a25 *state)
 	return result;
 }
 
+// score 0 (was 8): old index and signed slot registers differ, including existing heap helper input;
+// native long insertion index 21; increment the count field 8; postincrement count at insertion 8; shared
+// native heap element pointer 16; guard return for full heap 8; name the next count expression 8; store
+// cost before node 10; native element pointer with postincrement count 16; consistent existing heap helper
+// parameter order 8.
 // @retail 0x271fd0
 PRIVATE void function_271fd0(s_type_f17a25 *state, short node_index, short cost)
 {
@@ -1212,20 +1235,19 @@ short function_272700(s_type_f17a25 *state, long node_index)
 	return result;
 }
 
+// score 16 (was 67): retail computes the segment i, j, k and sums (i + j) + k for the length and (j + k) + i for the projection, ours j, k, i and (k + j) + i for both; tried: `dot3f(&delta, &delta)` for the length 16, `dot3f(&delta, &offset)` 16, the projection written out in y, z, x order 36, all three written out 67, parameters reordered (start, end, attractor, out) 16; compile-only harness: every written-out sum order and grouping 27-64, all 24 parameter orders and the offset computed at the top no better.
 // @retail 0x272740
 PRIVATE void function_272740(point3f const *attractor,
 	point3f const *start, point3f const *end, point3f *out)
 {
 	vector3f delta;
-	delta.i = end->x - start->x;
-	delta.j = end->y - start->y;
-	delta.k = end->z - start->z;
-	real length_squared = delta.i * delta.i + delta.j * delta.j + delta.k * delta.k;
+	vector3d_from_points3d(start, end, &delta);
+	real length_squared = length_sq3f(&delta);
 	if (length_squared > 0.0f)
 	{
-		real t = ((start->y - attractor->y) * delta.j +
-			(start->z - attractor->z) * delta.k +
-			(start->x - attractor->x) * delta.i) / length_squared;
+		vector3f offset;
+		vector3d_from_points3d(attractor, start, &offset);
+		real t = dot3f(&offset, &delta) / length_squared;
 		if (t < 0.0f || t > 1.0f)
 		{
 			*out = *end;

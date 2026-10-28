@@ -6,6 +6,7 @@
 // objects add their own fields after the base ones.
 #include "growable_array_2d91d0.h"
 #include "matrix_compare_2da7f0.h"
+#include <string.h>
 
 struct pair_312430
 {
@@ -19,7 +20,14 @@ struct pairs_312430
 	pair_312430 &operator[](int index) { return data[index]; }
 	pair_312430 const &operator[](int index) const { return data[index]; }
 	// stores a copy of `value` after the last element, with room already made
-	void append_unchecked(pair_312430 const &value) { pair_312430 &slot = data[size]; slot = value; size++; }
+	void append_unchecked(pair_312430 const *value)
+	{
+		long index = size;
+		pair_312430 *items = data;
+		pair_312430 saved = *value;
+		memcpy(&items[index], &saved, sizeof(saved));
+		size++;
+	}
 };
 
 struct description_312430

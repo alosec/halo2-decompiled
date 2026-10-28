@@ -99,16 +99,20 @@ inline bool function_0bfe60(const dword *flags, long bit)
 	return (flags[bit >> 5] & (1 << (bit & 31))) != 0;
 }
 
+__declspec(noinline) void function_0bfe80(dword *flags);
+
 // @retail 0xbfe80
-void function_0bfe80(dword *flags)
+inline void function_0bfe80(dword *flags)
 {
 	for (long i = 0; i < 8; i++)
 		flags[i] = ~flags[i];
 	flags[7] &= 0xff;
 }
 
+__declspec(noinline) void function_0bfed0(long count, dword *flags);
+
 // @retail 0xbfed0
-void function_0bfed0(long count, dword *flags)
+inline void function_0bfed0(long count, dword *flags)
 {
 	long last = ((count + 31) >> 5) - 1;
 	for (long i = last + 1; i < 8; i++)

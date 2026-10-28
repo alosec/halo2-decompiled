@@ -3,16 +3,40 @@
   "note": "Bungie's code ends where the Xbox SDK's D3DX zlib code begins: compress2 at 0x2cb510, then uncompress, deflateInit2_ and deflateReset, which d3dx8.lib defines (compress.obj, uncompr.obj, deflate.obj). Retail builds them with register conventions, so the library signatures miss them. The last game function is 0x2cb4e2; everything from 0x2cb510 up in .text is libraries and third-party code.",
   "ranges": [
     {
-      "start": "0x183910",
-      "end": "0x183c56",
+      "start": "0x22c720",
+      "end": "0x22cb00",
       "owner": "third:havok",
-      "note": "Havok collision query inlined into game code, found by decompiling"
+      "note": "Havok's pool memory methods, found by decompiling: they build without link-time code generation (/GL-) and are reached only through the allocator's vtable. The allocator's other functions around them (0x22c390-0x22c71f, 0x22cb00-0x22cbc0) build with it and use the game's register conventions, so they are the game's."
     },
     {
-      "start": "0x22c390",
-      "end": "0x22cbc1",
+      "start": "0x2d6fc0",
+      "end": "0x2d8d80",
       "owner": "third:havok",
-      "note": "Havok memory manager (c_havok_page_pool_allocator), found by decompiling"
+      "note": "Havok, found by decompiling. Its matched functions all build without link-time code generation (/GL-), as few of the game's do, and use the standard calling conventions where the game's use registers; C++ exception frames, which no game function has, belong to its functions; and its rows call, are called by and share data with each other. The ranges leave out the import thunks at 0x2d6f84-0x2d6fa1, the jump into game code at 0x2d6fb0, two library signature hits (0x2d8d80 and 0x319740) and 0x313320, which game code calls."
+    },
+    {
+      "start": "0x2d8da0",
+      "end": "0x313320",
+      "owner": "third:havok",
+      "note": "Havok, continued (see the range from 0x2d6fc0)"
+    },
+    {
+      "start": "0x313370",
+      "end": "0x319740",
+      "owner": "third:havok",
+      "note": "Havok, continued (see the range from 0x2d6fc0)"
+    },
+    {
+      "start": "0x319750",
+      "end": "0x3202bb",
+      "owner": "third:havok",
+      "note": "Havok, continued (see the range from 0x2d6fc0)"
+    },
+    {
+      "start": "0x372300",
+      "end": "0x372389",
+      "owner": "third:havok",
+      "note": "Havok, found by decompiling: it builds without link-time code generation (/GL-) and only Havok calls it"
     }
   ]
 }

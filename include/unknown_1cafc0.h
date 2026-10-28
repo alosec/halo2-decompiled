@@ -46,10 +46,17 @@ struct s_animation_state
 	long graph_tag_index;
 	word flags;
 	word unknown6e;
-	long unknown70;
-	long unknown74;
-	long unknown78;
-	long unknown7c;
+	union
+	{
+		s_animation_names stored_names;
+		struct
+		{
+			long unknown70;
+			long unknown74;
+			long unknown78;
+			long unknown7c;
+		};
+	};
 	real unknown80;
 	vector3f unknown84;
 
@@ -106,7 +113,13 @@ struct s_animation_state
 	c_type_709360 overlay_get(long set);
 	bool overlay_exists();
 	c_type_709360 overlay_kind_get(long kind);
-	bool overlay_play(c_animation_channel *channel, dword channel_flags, long set, long weapon_class, long weapon_type);
+	bool overlay_play_for_class(c_animation_channel *channel, dword channel_flags, long weapon_class, long weapon_type,
+		long set);
+	/* the same call with the set before the weapon class, for callers written that way (src/unknown_10f1e0.cpp) */
+	bool overlay_play(c_animation_channel *channel, dword channel_flags, long set, long weapon_class, long weapon_type)
+	{
+		return overlay_play_for_class(channel, channel_flags, weapon_class, weapon_type, set);
+	}
 	bool channel_refresh(c_animation_channel *channel, long weapon_class, long weapon_type);
 	bool update(animation_event_callback callback, long user, long node_count, s_blend_orientation *orientations,
 		s_blend_orientation const *targets);

@@ -96,13 +96,14 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
     s_view_flags *flags, real unused_scale, bool enabled, real scale);
 
 // score 54 (was 54): retail multiplies the index into edx and clears the globals before the
-// loop, ours computes the index in eax and stores the table pointer later.
-// score 54 (was 54): without the block pointer (count and entries indexed at each
-// use) the head is retail's (scaled index in edx, spilled), but count lands in
-// edx and first in eax, and the inner loop reloads the cursor on every path; 144
-// (count through the metadata view or the block, 492 bytes); with the current
-// stored first 140; block pointer declared inside the if 151; index head with the
-// block pointer only for the loop 155.
+// loop, ours computes the index in eax and stores the table pointer later. Without the block
+// pointer (count and entries indexed at each use) the head is retail's (scaled index in edx,
+// spilled) and so is the loop tail, but
+// count lands in cx/edx (retail ax/eax, zero in ecx) and first stays in eax where retail
+// spills it across the inline memcpy; 144 (count through the metadata view or the block,
+// 492 bytes); entries indexed by the counter 164; separate cursor pointer 54; with the
+// current stored first 140; block pointer declared inside the if 151; index head with the
+// block pointer only for the loop 155; count read once into a short local 177 (480 bytes).
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {
@@ -162,7 +163,16 @@ void function_402b0(long cache_index, long mode)
     }
 }
 
-// score 183 (was 222): frame 0x84/0x88, callee registers and render-state expansion differ;
+// score 155 (was 182): Frame 0x84/0x88, cache/draw transport and state/API expansion remain.
+// Round 81: the last pass's flag test without the bool cast, `((g_4ba014 >> 1) & 1)`, 155 at
+// retail's length (kept; `g_4ba014 & 2` gives the same code; retail still tests the byte in memory
+// and reloads the dword for `shr 1`), with `bool selected` 220; on it the four selections without
+// their bool casts 155, the last pass's tests as nested ifs 155, 0x402b0's parameters as
+// (mode, cache_index) 155 (all the same code). 0x496f0 is now
+// inlined here (retail calls it at all five call sites): a separate noinline declaration at its
+// definition 314 (868 bytes); bool selection 222 (975 bytes, aligned 62 -> 32: retail's stack byte),
+// with the noinline declaration 285 (892 bytes); the flag test's arms swapped 182 (same code).
+// Earlier: frame 0x84/0x88, callee registers and render-state expansion differ;
 // dword selection 183; word setup flags 234; combined mask 222;
 // brightness component loop 238; redundant bit-clear removal 217.
 // Word selection 238; byte setup flags 189; joined parent cursor 183;
@@ -170,6 +180,100 @@ void function_402b0(long cache_index, long mode)
 // j93: Frame 0x84/0x88 and helper conventions/expansion remain; original API values preserved.
 // first pass byte 202; second pass byte 201; third pass byte 195; typed parent lookup 183; direct tag lookup
 // 226.
+// Earlier: Frame is four bytes small; cache/draw contracts and render expansion
+// remain. first pass result arms 205; second pass result arms 196; third pass result arms 195;
+// fourth pass result arms 195; all pass result arms 219; native cache record binding 183; native
+// setup field updates 183; cache inline contract 183; signed setup word 183; native table
+// traversal 266.
+// Earlier: Frame is four bytes small; callee transport and graphics expansion remain. shared first pass 315; shared
+// second pass 377; shared third pass 364; shared final pass 370; shared all passes 785; forced shared all
+// passes 785; forced shared boolean results 785; forced shared byte results 785; constant table shared all
+// passes 749; constant table forced shared all passes 749; constant table forced shared boolean results
+// 749; constant table forced shared byte results 749; typed constant table shared all passes 280; typed
+// constant table forced shared all passes 280; typed constant table forced shared boolean results 280;
+// typed constant table forced shared byte results 280.
+// frame 0x84/0x88, helper conventions and API expansion remain;
+// independent final-pass byte 199; with first/second/third byte 209/208/202;
+// with first-second/first-third/second-third bytes 218/214/213; final-pass short 200 (plain).
+// Earlier: frame 0x84/0x88 and helper/API contracts remain; independent
+// first/second/third/final/all native pass results 202f each; signed native setup flags, unsigned native
+// selection and both 202f each; unchanged reduced preview 202f, full 183.
+// Entry native selection/flags+selection/parent/ordinal/all declarations 202f each;
+// counter+selection/flags+parent+resource/entry coordinated roles 202f each, unchanged control 202f.
+// Native actual light definition/parent/node/camera fields 202f each; all fields 202f;
+// external native record reference 202f; native definition receiver 202f; both receivers 202f.
+// Unchanged reduced control 202f/946, ordinary baseline 183/947; frame and helper/API gaps remain.
+// Light-pool receiver at every use 253f; with direct tag 242f; Boolean selection
+// 283f; tag plus Boolean 275f; byte setup 256f; tag plus byte 242f;
+// Boolean plus byte 286f; all three 276f (control 202f, full 183).
+// Boolean receiver forms recover frame 0x88 but regress; original pooled observations restored.
+// Native pass flags first/second/third/final 215/214/214/215; first pair 220; first three 227; all
+// four 233; all with byte result 231. Fast control 202. Native flag header restored.
+// Round 199: Plain shared 12..13 pass loop, long ordinal with long/bool/byte/short result
+// 296/282/282/287; short ordinal with those results 293/279/279/284 (fast control 202). All restored.
+// Round 161: Actual low-word shape kind with shared long/bool/signed-byte/short
+// pass carriers 202f/231f/231f/248f; separate pass lifetimes 202f/231f/231f/248f.
+// Unchanged reduced control 202f; full baseline 183. Actual shape type and body restored.
+// Inline/noinline state-helper declaration with shared long/bool/byte/short pass
+// carriers 319f/290f/290f/285f; independent carriers 319f/290f/290f/285f.
+// Reduced control 202f; full baseline 183. All declarations and body restored.
+// Round 140: Repeated sample count observed once for passes 11/12/13, their pairs and all three; then all with
+// native Boolean selection 202/202/202/202/202/202/202/231 (fast control 202, full 183). Original observations
+// and selection restored; frame, cache/draw and state/API expansion remain.
+// Round 168: All normalized mask producers: long shared/split 202f each; bool shared/split 231f
+// each; byte setup with long shared/split 203f each, bool shared/split 234f each. Fast control
+// 202f; full 183. All source restored.
+// Round 145: Stable cache bound with long/bool/byte/short results 210/253/253/251f;
+// same bound with native cursor and ordinal 236/253/253/260f (control 202f, full 183).
+// Bound-only long recovers frame 0x88 but regresses. All original traversal and results restored.
+// frame 0x84 versus 0x88, cache/draw transport and state/API expansion remain.
+// Retail keeps each pass's selection in a stack byte (+0x13; ours a long in ESI); 0x4a1e0 (machine 1's,
+// in a contributor file) takes the camera in EAX, the light index in EDX and the definition on the
+// stack in retail, ours the light index in EAX, the definition in EDX and the camera on the stack:
+// BLOCKED-BY 0x4a1e0. Fixed: the depth clip planes are the vertex-program planes (retail writes the
+// +0x1c10 pair and bit 2, as 0x13450 does), 183 -> 182.
+// Tried: dword selection 183; word setup flags 234; combined mask 222; brightness component loop 238;
+// redundant bit-clear removal 217; word selection 238; byte setup flags 189; joined parent cursor 183;
+// zero inline depth on dword selection 367; raw selection masks 198; first/second/third pass byte
+// 202/201/195; typed parent lookup 183; direct tag lookup 226; first/second/third/fourth/all pass result
+// arms 205/196/195/195/219; native cache record binding 183; native setup field updates 183; cache inline
+// contract 183; signed setup word 183; native table traversal 266; shared first/second/third/final/all
+// passes 315/377/364/370/785, forced 785, forced Boolean/byte results 785/785; constant table shared all
+// passes 749 (forced and result widths 749); typed constant table shared all passes 280 (forced and result
+// widths 280); independent final-pass byte 199, with first/second/third byte 209/208/202, with pairs
+// 218/214/213; final-pass short 200; independent native pass results 202f each; signed native setup
+// flags, unsigned native selection and both 202f each; entry native selection/flags+selection/parent/
+// ordinal/all declarations 202f each; counter+selection/flags+parent+resource/entry coordinated roles
+// 202f each; native light definition/parent/node/camera fields 202f each, all 202f; external native
+// record reference 202f; native definition receiver 202f, both receivers 202f; light-pool receiver at
+// every use 253f, with direct tag 242f; Boolean selection 283f; tag plus Boolean 275f; byte setup 256f;
+// tag plus byte 242f; Boolean plus byte 286f; all three 276f (Boolean receiver forms recover frame
+// 0x88); native pass flags first/second/third/final 215/214/214/215, first pair 220, first three 227,
+// all four 233, with byte result 231; plain shared 12..13 pass loop, long ordinal with long/bool/byte/
+// short result 296/282/282/287, short ordinal 293/279/279/284; low-word shape kind with shared long/
+// bool/signed-byte/short pass carriers 202f/231f/231f/248f, separate lifetimes the same;
+// inline/noinline state-helper declaration with shared long/bool/byte/short carriers 319f/290f/290f/
+// 285f, independent the same; repeated sample count observed once for passes 11/12/13, pairs and all
+// three, with native Boolean selection 202f..231f; all normalized mask producers long shared/split 202f,
+// bool 231f, byte setup with long 203f, with bool 234f ("f": reduced image, which builds this function
+// differently: 202 there for 183 here). Round 75 (plain checks): Boolean selection 222 (975 bytes:
+// 0x496f0 is then inlined, aligned 87 -> 44); with the vertex-program planes 222 (aligned 42); plus a
+// noinline redeclaration of 0x496f0 here 222 (ignored); plus a noinline declaration at its definition
+// 285 (892 bytes).
+// Round 352: native cache-body graph with consistent reversed/unsigned/both mode contracts
+// 201f each; four explicit cdecl combinations 211f each; unsigned reversed stdcall 201f.
+// Fast control 201/946 versus plain 182/947. Original helper signature/call and body restored.
+// Round 64: retail's passes are 0x44370 inlined (contributor file) and its per-light reset is 0x4a780
+// inlined (same file); our LTCG keeps both out of line: the reset as a 0x4a780 call 305 (828 bytes), with
+// a forceinline declaration 305; 0x402b0 parameters (mode, cache_index) 182 (still EAX); flags assigned to
+// g_4ba014 directly 182 (identical); flag arms swapped by a negated test 182 (same layout).
+// Lane 9 r23 (plain): retail's four passes are 0x44370's body inlined with the mode constant and
+// its mode table folded (mode 14's target 1, the culling argument's dead g_485898 load, case 11's
+// `enabled = true` re-store, the stack enable byte at +0x13): BLOCKED-BY 0x44370, which sits in a
+// /Ob1 contributor file with a writable table. Calls to 0x44370 607 (569 bytes, not inlined), with
+// a forceinline declaration here 607 (ignored); passes written as the folded inline 231 (frame 0x88
+// and the stack byte agree, 0x496f0 inlines, 980 bytes); 0x402b0 with its block indexed at each use
+// takes the cache index in EDX as retail's call does, 182 (0x402b0 itself 144).
 // @retail 0x404b0
 bool function_404b0(long mode)
 {
@@ -228,7 +332,7 @@ bool function_404b0(long mode)
         else g_467130 = 0;
         function_15370(0);
         if (selected) { function_44550(); function_445d0(); }
-        if ((g_4ba014 & 1) && (bool)((g_4ba014 >> 1) & 1))
+        if ((g_4ba014 & 1) && ((g_4ba014 >> 1) & 1))
         {
             selected = (bool)((g_4c1a48[1].flags >> 13) & 1);
             if (selected)
@@ -244,18 +348,70 @@ bool function_404b0(long mode)
         g_4858bc = false; g_4b843c = 0;
         D3DDevice_SetRenderState(D3DRS_STENCILENABLE, 0);
         D3DDevice_SetScissors(0, FALSE, 0);
-        D3DDevice_SetDepthClipPlanes(g_485adc, g_485ae0, 2);
+        D3DDevice_SetDepthClipPlanes(g_485adc, g_485ae0, D3DSDCP_SET_VERTEXPROGRAM_PLANES);
         function_14bc0((short)g_4858b8, 0, true);
         g_4ba018 = false; g_4ba014 = 0;
     }
     return true;
 }
 
-// score 226 (was 250): unsigned-zero branch and pass-call boundaries differ;
-// word material index 298; unsigned weight 309; typed geometry header 250;
-// entry observations reordered 326; native local names 250 (fast).
-// Early weight with context-first material 226; depth zero 250, one 250;
-// size policy 462; shared tail-pass loop 476.
+// score 193 (was 193): BLOCKED-BY 0x44370. Frame 0x48 and geometry agree. Round 81 (fast; aligned
+// count 24, so the 21 missing bytes cause most of the 193): the entry byte test as `<= 0` 192 (retail's
+// `jbe`); the selections or the geometry flag without their bool casts 193/193 (same code); pass 8 as
+// `selected = bit; if (selected) selected = g_4ba022;` 176 (aligned 16, not kept: a flag set inside a
+// test; retail copies the global byte unnormalised, which needs g_4ba022 declared bool where a
+// contributor file defines it as byte); the same as a ternary 170 (1215 bytes only through padding,
+// aligned 36, not kept). Retail's passes 16/1/3/8/20/7
+// are 0x44370 inlined with its mode table folded (that table lies in retail's .rdata; ours is a writable
+// byte array defined in a contributor's file), so in every pass that culls with 0 retail still loads
+// g_485898 (`mov eax, [g_485898]; xor eax, eax`, 20 of the 21 missing bytes: the table's cull mode became
+// constant only after layout) and re-stores the pass's selected byte as 1 after the culling call in
+// passes 16 and 3. Also differ: the entry byte test (retail `jbe`), the stub 0x14b60 (retail passes its
+// flags in eax) and the pass-8 enable (retail copies the global byte).
+// Forms tried: common final flush 226, with noinline query 226, inline query 397; short/long/byte result
+// 254/300/226; noinline with short/byte 254/226; word material index 298; unsigned weight 309; typed geometry
+// header 250; entry observations reordered 326; native local names 250; early weight with context-first material
+// 226; depth zero 250, one 250; size policy 462; shared tail-pass loop 476; shared single pass 275, first
+// multipass 269, second multipass 281, conditional pass 273, twentieth pass 269, seventh pass 269, all passes 291,
+// forced shared all passes 291; shared final result two consumers 291; native final result two consumers 291;
+// conditional cull calls first/third/both 226 each; native Boolean cull tests first/third/both 226 each;
+// signed/unsigned short pass result 255/255; inline cull/stencil/first-flush/second-flush/state-pair/flush-pair/
+// all-four declarations 226 each, noinline all-four 226; late single/third/both success publication 220/212/210;
+// single/third/conditional result arms 232/214/226; all result arms 204 (1217 B); ordered conditional result 221;
+// native masks for passes 16/1/3/8/20/7 226/226/226/230/226/226, all masks 230, with byte lower-bound admission
+// 229; entry tests selection/bit0/byte/flags in orders 2134/1324/1243/2143/1342/1423/2314/1432
+// 237/230/233/244/235/308/239/308; two-use setup setting captured in single/third/conditional/twentieth/seventh
+// passes 226 each, all five 226, cull-setting observations once 226, all setting captures 226; formal-address
+// removal, pass-phase false result, entry result and entry false result 226 each, removal with pass false/entry/
+// entry false 226 each; isolated unsigned-byte lower-bound admission 225; independent pass outcomes bool/byte/
+// short/long 226/226/255/297; complete stipple choice bool/byte/short/long 193/193/226/226 (bool kept); Boolean
+// role name, negated range, direct outside range and byte outside range 193 each.
+// Round 145: Shared culling setting/predicate/split comparisons at multipass entry
+// 275/264/264; setting/predicate at pass phase 272/274; independent outcomes with
+// those three multipass observations 275/264/264. Original observations and body restored.
+// Round 243: Seven ordered admission partitions 225 each; positive geometry arm 192 at
+// 1194 bytes, first +0x1b3. One-point gain rejected; original body restored.
+// Round 57 (aligned listing counts in brackets, baseline 24): stipple argument `cond ? 1 : 0` in both culling
+// passes 226 [25] (1181 B); one forced-inline pass helper (bit, extra condition, depth, culling, target) with a
+// bool `&&` enable 205 [38] (1215 B), with a byte `(flags >> mode) & extra` enable 230 [16]; the helper returning
+// whether the pass started (the caller flushes): early-return bool 199 [32], byte enable with early returns 203
+// [29], bool enable 199 [32], culling test order flipped 203 [29], byte enable returning `enabled != 0` 235 [14],
+// ternary byte enable 205 [35], bool `&&` enable returned 211 [38], ternary returned as byte 205 [35], the byte
+// helper with a stipple local before the culling call 235 [14]. None gives retail's dead g_485898 loads.
+// Round 252: Both window-predicate parts named at both stipple producers, bool/byte/short/long terms:
+// Boolean result 193 each; full-width result 226 each. Original predicates restored; unsigned-zero
+// branch, pass joins, missing setting loads and clear-call transport remain.
+// Round 205: Four admission-mask result producers after setup 350/218/353/218;
+// the same per-entry producers 309/364/366/365. Original mask lifetime and body
+// restored; byte-zero admission, pass joins and clear-call transport remain.
+// Context before enable/walk/object/part boundaries 193 each; the same
+// four scopes with every entry field read directly 310 each. Original context
+// scope and cached-entry pointer restored; pass joins and call transport remain.
+// Round 61: every pass as a call to 0x44370 928 (618 B, kept out of line), with a forceinline
+// declaration of it 928; one forced-inline pass helper in 0x44370's form (mode, target, clear flags,
+// cull mode; `cond ? 0 : cull_mode`; modes 3/16 re-marked enabled) 203 (1198 B; the re-store and
+// the word argument then as retail, the stipple arms swapped), the cull arm written first 203, with
+// 0x44370's mask-gated enable 203. Original body restored.
 // @retail 0x3fdf0
 bool function_3fdf0(long mode, bool single_pass)
 {
@@ -316,7 +472,8 @@ bool function_3fdf0(long mode, bool single_pass)
             g_467130 = 1; g_467134 = 0; g_467138 = &g_4c1a48[0]; g_4858b4 = 1;
             function_14bc0(1, 0, true);
             if (!g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
-            function_15680(g_485898 >= 4 && g_485898 <= 7 ? 0 : 1);
+            bool stipple_enabled = g_485898 < 4 || g_485898 > 7;
+            function_15680(stipple_enabled);
         }
         else g_467130 = 0;
         function_15370(1);
@@ -326,7 +483,8 @@ bool function_3fdf0(long mode, bool single_pass)
         {
             g_467130 = 3; g_467134 = 0; g_467138 = &g_4c1a48[0]; g_4858b4 = g_4858b8;
             function_14bc0((short)g_4858b8, 0, true);
-            function_15680(g_485898 >= 4 && g_485898 <= 7 ? 0 : 1);
+            bool stipple_enabled = g_485898 < 4 || g_485898 > 7;
+            function_15680(stipple_enabled);
         }
         else g_467130 = 0;
         function_15370(1);

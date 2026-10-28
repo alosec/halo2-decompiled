@@ -170,6 +170,33 @@ s_button_block *function_253cc8(c_class_19b8b1 *button)
 	return result;
 }
 
+// score 37 (was 37): height conversion and independent-axis SIMD homes still differ.
+// height word move and independent-axis SIMD residency still differ.
+// Native short height retained at retail length. Real screen offsets
+// x/y/both/early 103/103/102/114; short width/height/both 40/37/119;
+// short dimensions with offsets 118; long height/width 100/104;
+// short-height vertical origin/near-first/vertical-first 38/40/39.
+// source width/height/both 104/103/105; aggregate source 107; source width,
+// height, both and aggregate with staged far edges 104/103/105/107.
+// Output x/y/both origins 105/101/105; output far edges 105; vertical-first edges 108; native bounds
+// 100; native origins/edges 105/108.
+// both origins first 104; vertical origin first 106; corner stores 104; vertical/corners 105;
+// all edges first 104; vertical edges first 105; named far edges 104; vertical far edge first 105.
+// Height/width/both read at use 100/40/100; height/width/both role names 37/37/37;
+// origin/rectangle names 37/37; long width with native height 39; reversed dimension
+// producers 40; native-height source initializer 35; height-first extent stores 36;
+// reversed rectangle names 37. Two- and one-count gains rejected; opening body retained.
+// Constant native height 37; height/dimensions before opacity 42/42;
+// library source initialization 150; native output with short height 37;
+// zero before dimensions 37; closed dimension lifetime 37; native source bounds 37.
+// Horizontal/vertical interleaved source extents 100/103; separate vertical/horizontal source axes 104/35;
+// bounds before source/dimensions/interleaved source/value initialization 72/40/117/184.
+// Two-count source-axis gain rejected; opening body retained.
+// Height stored to the source rectangle and read back there 103 (552 bytes; converts the height
+// as retail does); both extents read back 105; offsets before any store 40, with the height or
+// both read back 104/104; orders of the six coordinate statements 100-104; offsets added into
+// the target first, far edges from it, then the position added (the matched sibling's shape)
+// 100-123 at 558-561 bytes, best with the y position converted first 100.
 // @retail 0x253ea8
 void c_class_19b8b1::v4(long screen_rect_address)
 {
@@ -204,7 +231,7 @@ void c_class_19b8b1::v4(long screen_rect_address)
 #endif
         s_float_rect from, to;
         real width = element->width;
-        real height = element->height;
+        short height = element->height;
         from.x0 = from.y0 = 0.0f;
         from.x1 = width;
         from.y1 = height;
@@ -392,7 +419,8 @@ bool c_class_19b8b1::v10(s_widget_event *event)
 			goto not_handled;
 		}
 		v9();
-		sound = 0;
+		function_236299(0);
+		return true;
 	}
 	else
 	{

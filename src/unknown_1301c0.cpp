@@ -100,6 +100,12 @@ void function_130bb0(s_fog_state *fog)
 // the classification block still sits inline right after the
 // pending intensity test, where retail runs the value10c and value118 tests
 // first; those two comparisons are ucomiss with an unordered test in retail.
+// score 57 (was 57): the classification as the else arm, with result = 3 set inside the pending
+// arm and the copies written per test (no gotos), gives retail's whole pending path and its late
+// mov edx, 3, but puts the classification after the shared tail instead of between the max's
+// arms 75; result = 3 after the classification block 57; a saved pending bool 70; the max as
+// distance = a; if (distance <= b) distance = b; 61; a goto into the pending path 75. The
+// classification's lexical position (labels anywhere in the pending path) never moves it.
 // @retail 0x130de0
 long function_130de0(s_fog_state *fog)
 {

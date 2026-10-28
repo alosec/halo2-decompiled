@@ -53,6 +53,25 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 	return (handle << 8) | (type & 15);
 }
 
+// score 91 (was 91): adjusted-table spill, removed pre-copy clears and current-index spill remain;
+// progression after copy 139f; direct copy with late progression 139f; source before index 139f; unsigned
+// current with late progression 139f; role homes 91f; late progression/role homes 139f; library copy/late
+// progression 139f; single real index 122f.
+// adjusted-table spill, retained pre-copy clears and current-index allocation differ;
+// complete cache fields, native location/table types, both together, native value initialization,
+// real table subobject reference, type comparison reversed, readonly native table and
+// native terminator library clears each 91; memcpy for the copy 91; table pointer taken before the
+// drive query 91 (with memcpy 91); copy straight from the table element 106; current declared
+// before the loop 91.
+// native terminator library clears each 91.
+// Cache global at consumers 47 fast / 90 plain (one-point gain rejected); direct copy/global direct copy 106/100;
+// location/zero-index scope 91/123; file-type name 91;
+// global location/global copy index scope 90/124;
+// global direct library copy/address addition 100/100;
+// source-subscript progression/with library copy 109/109;
+// short/word successful index 131/131.
+// Compound match 133; nested match 133; complete match result 116; type match result 133; reversed
+// comparison inputs with those four forms 133/133/116/133.
 // @retail 0x2170e0
 long function_2170e0(long file_index)
 {

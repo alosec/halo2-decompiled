@@ -1,18 +1,7 @@
 #include "unknown_11c920.h"
 #include "unknown_1cec30.h"
 // @flags /O2 /Gr
-struct s_2e5a10
-{
- byte field_0;
- s_2e5a10(bool arg_0) : field_0(arg_0) {}
- s_2e5a10(const s_2e5a10 &arg_0) : field_0(arg_0.field_0) {}
-};
-
-struct s_1c3a40
-{
- void function_2e5e70(long arg_0, long arg_1);
- void function_2e5a10(s_2e5a10 arg_0);
-};
+#include "agent_table_2e5d50.h"
 void __cdecl function_2e6190(s_1c3a40 *arg_0);
 void __cdecl function_2e6cd0(s_1c3a40 *arg_0);
 void __cdecl function_2e7d10(s_1c3a40 *arg_0);

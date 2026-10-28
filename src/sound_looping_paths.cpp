@@ -154,11 +154,34 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 	return index;
 }
 
-// score 919 (was 919): count/array homes and choice registers differ in the 0x4e0 frame;
+// score 886 (was 886): Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and choice carriers remain.
+// Earlier 919 (was 919): count/array homes and choice registers differ in the 0x4e0 frame;
+// count/array homes and choice registers differ in the 0x4e0 frame;
+// Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and choice registers remain.
 // choice pointer/post-increment 931; byte choice count 922; duplicate break 959;
 // unsigned target count 919; used-mask memset 919.
 // frame 0x4e0 agrees; target/primary and query-array homes differ.
 // Existing-count word 939; query-cursor word 927; completed append 929; early primary 940; primary word 925.
+// Earlier 886 (was 919): Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and
+// Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and
+// choice register remain. byte target count 934; short query count 886; byte query count 914;
+// byte query cursor 927; byte duplicate cursor 928; short query with byte target count 932;
+// short query with byte query cursor 935; short query with byte duplicate cursor 922; short
+// query with long choice count 957.
+// Round 150: clamp result 952; decibel result 907; direct target gain 925; shared target step 889; live definition table 918; logarithm failed exit 1110; both clamp results 930; direct gain with shared step 920 (fast).
+// First/second/both query pointer walks 944/941/951; duplicate/conversion choice pointer walks 947/1008; target pointer walk 899; existing-index pointer walk 919; unused local mask removed 904.
+// With retained short query count: word first query ordinal 915; word second query ordinal 898;
+// word choice-conversion ordinal 923; word duplicate ordinal 929 (retail length); all four word ordinals 894.
+// Unsigned word query/choice/both counts 886 each; dword/byte/word inside result 921/886/910;
+// unsigned first-query/duplicate ordinals 886/886. Original executable source restored.
+// Choice/primary flag observations 886/886; shared neighboring gain 959; both flags 886;
+// choice flags+gain 959; primary flags+gain 959; all 959; early choice flags with all 953. All restored.
+// Round 126: Named squared blend term 886; repeated portal endpoint 909; existing pin/get forceinline
+// 886/886; single successful allocation guard 905; choice-cap test first 932; accumulated target gain 886;
+// default-first detail result 884 (fast, gain below threshold); all restored.
+// Round 180 current gain active/inactive/outside state/both gains/active-outside/inactive-outside/all/byte
+// outside 890/889/887/893/891/890/894/887 (fast); all restored. Frame 0x4e0 agrees; entry zero,
+// query-array/count and primary homes remain.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
@@ -172,9 +195,10 @@ void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point
 		long indices[64], gains[64], portals[64], clusters[64];
 		long count = 0;
 		function_18d730(bsp_data, cluster, point, 20.0f, indices, gains, portals, clusters, &count);
+		short query_count = count;
 		s_loop_path_choice choices[2];
 		short choice_count = 0;
-		for (long i = 0; i < count && choice_count != 2; i++)
+		for (long i = 0; i < query_count && choice_count != 2; i++)
 		{
 			long index = indices[i];
 			if (index == NONE) continue;
@@ -208,10 +232,10 @@ void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point
 			choice_count++;
 		}
 		bool inside = cluster == clusters[0];
-		if (count > 1 && choice_count && inside)
+		if (query_count > 1 && choice_count && inside)
 		{
 			s_loop_path_sound *sound = &bsp->sounds[choices[0].source];
-			for (long i = 1; i < count; i++)
+			for (long i = 1; i < query_count; i++)
 			{
 				long index = indices[i];
 				if (index != NONE && bsp->sounds[index].tag == choices[0].tag)
@@ -408,7 +432,12 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 	function_189fe0(&request, tag);
 }
 
-// score 223 (was 264): frame 0x14c versus 0x148; BSP/camera lifetimes and query/output homes still differ.
+// score 223 (was 223): Frame 0x14c versus 0x148, BSP/camera/query homes and duration spill remain.
+// Lane 8 r64 (fast; two callees build differently in the reduced image): existing 0x14ddc0 listener
+// test 295 (aligned 150 against 159: retail's `cmp iv, -0x48; setne`); existing first-local-player
+// helper alone 235; default-first transition re-read from the definition alone 267; all three 277;
+// those with the camera taken after the first-player compare 289 (aligned 142; retail computes the
+// camera after the scan). Retail keeps the BSP in esi from entry and listener/stride in ebx/edi.
 // Transition result 235; unsigned listener 264; byte listener 319; angle lifetime 264; separate request indices 264.
 // Request transition field 263; bounded listener result 223 plain; separate fill guard 255;
 // depth one 235; size optimization 441; direct search returns 254.
@@ -422,6 +451,49 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // position memcpy 223; tag aggregate initializer 270.
 // cue sentinel chain 222; cue nibble chain 223.
 // both cue chains 222; prior tag on bounded search 223.
+// Earlier: BSP/camera homes, transition spill and cue zero carrier remain;
+// cue sentinel order 222; cue pointer order 223; cue byte-first zeros 223;
+// cue integer-zero/scale order 223; direct transition conditional 253;
+// exact listener bound 223; query-index cursor 248; Boolean fallback scale 237.
+// Earlier: frame, BSP/camera/query homes and duration spill remain.
+// Environment-table lifetime 273; direct duration source 223; cue location subobject 250;
+// shared caller cue workspace 229; unsigned query index 223; table/direct duration 273;
+// shared workspace/location 233; table/workspace 254 (fast). Shared cue workspace gives frame 0xf4, not retail 0x148.
+// Earlier: BSP/camera/query homes, duration spill and cue zero carrier remain.
+// BSP/camera/query homes, duration spill and cue zero carrier remain.
+// Native BSP view 223; multi-use environment row 267; initialized query count 296;
+// duration interval/sign arms 231/229 (frame 0x148); BSP/count 296;
+// BSP/interval 231; BSP/count/interval 286.
+// Native cluster word 287; readonly camera 223; angle-output name 223;
+// early fade/tag stores 270; cluster/camera 287; cluster/angle 287;
+// camera/angle 223; combined input/output and earlier stores 285.
+// Count-as-fill-cursor for six store orders 264 each; while forms in two orders 264 each.
+// Round 164: Paired tag/transition result arms, tag after magnitude, paired
+// defaults and defaults/tag-after 223/275/233/276; outer duration workspace
+// 223/275/233/276. Original separate metadata graph and all helpers restored.
+// Transition after angles with original arms, deferred metadata/direct angles/both 271/290/282/330;
+// same four forms with default-first duration 263/278/309/323. Original observation timing, output copies and helpers restored.
+// global bsp 275; point setter 240; bsp point setter 296; current at use 225; bsp current 274; setter current
+// 318; bsp setter current 305; point initializer 239.
+// Round 234: Uniform live duration with environment/portal/cluster query-array
+// home names, their three pairs, all three and reversed array declarations: 267
+// each, 1020 bytes and frame 0x148. Original sampled duration, helper contracts,
+// array names and executable body restored at 223.
+// Lane 8 r58: listener test through the existing 0x14ddc0 instead of the camera NULL test
+// (retail's `cmp iv,-0x48; setne`) 295; with the existing first-local-player helper 293
+// (loop head then retail's); first player in a local before the camera 292; that with the
+// default-first transition re-read from the definition 276 (frame 0x148, tags at retail's
+// slots; bsp not kept in esi, cluster spilled low); without the local 277; transition alone
+// 267; cluster local renamed three ways 276 each.
+// Round 180: Cue control/full-prefix clears 256/253; with pointer-tail clear 263/234;
+// the same four with chained index sentinels 257/253/263/234. Original cue helper restored.
+// Round 356: Cue equality continuation, outer request workspace, actual cue-handle return,
+// their three pairs and all three 223 each; combined graph with direct request walk 221 (only -2).
+// Original body and cue helper restored; frame and BSP/camera/query homes remain.
+// Round 253: Complete primary-listener result bool/byte/short/long 223 each;
+// uniform cluster at use 272, with bool/short/long result 272 each. All restored.
+// Round 210: Late transition/fade/tag and their three strict pairs give
+// 242/244/266/253/278/291; early tag/fade alone 270/267. Original restored.
 #if !H2_NATIVE_PORT
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)

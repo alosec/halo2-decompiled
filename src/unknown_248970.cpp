@@ -49,18 +49,123 @@ public:
 		s_247fd0 *arg_3, transform4x3f const *arg_4, dword arg_5);
 };
 
+// score 215 (was 215): Frame 0x10 versus 0x14 and stacked activation versus AL remain (ours passes the location pointer
+// in ebx instead); metadata/viewer/child homes differ.
+// Frame 0x10 versus 0x14 and stacked activation versus AL remain; metadata/viewer/child homes differ;
+// ours passes the location in EBX (LTCG's choice from this body) where retail leaves it on the stack.
+// Round 9 (lane 11, fast): location read once through its address with retail's entry order (head read,
+// metadata call, position copy, then the flag store) 232 (location stacked, flag still stacked); flag-first
+// parameter order through a temporary forwarder (diagnostic; the caller's file is held) 251, with the
+// location address read 232 (the flag never reaches AL); retail entry order alone 251 (caller 0x175270
+// 21 -> 100); head read before the metadata call 216.
+// Earlier: Frame 0x10/0x14 and activation, metadata/viewer/child homes remain.
+// Frame 0x10/0x14, stacked activation versus AL and metadata/viewer/child homes remain.
+// Earlier 221 (was 221): Frame 0x10/0x14 and activation, metadata/viewer/child homes remain.
+// Frame 0x10 versus 0x14 and stacked activation versus AL remain; metadata, viewer and child homes differ.
+// Prior shared position base 256; child byte stride 258; direct input 265; radius expression 256;
+// selected influence 259; active first 253; stored gate 256; activation default 284.
+// Early activation 246 with inherited address read rejected; scalar homes 256; short viewer 299;
+// allocation failure first 256; maximum branches 257; direct input/early activation 253;
+// delayed child handle 252 kept; one initialized/link record pointer 300.
+// frame, boolean convention and child-loop homes differ. Tried shared position field base 256; child record byte stride 258; direct location input 265; distance through radius 256; reuse selected influence 259; active branch first 253; stored activation gate 256; activation influence default 284.
+// Earlier 221 (was 252): round 108: frame 0x10/0x14, activation and viewer/child homes remain.
+// Scan influence accumulator 285; closed double scope 252; shared salted index 228;
+// explicit zero falloff 245; allocation-failure return 252; combined 221;
+// shared child pointer 228; direct allocated handle 336; complete falloff arms 221.
+// Later child count 282; viewer while 252; conditional viewer 282; allocation/link pool scope 252;
+// entry child ordinal 252; native position member 252; later child handle 285;
+// later child count/handle 280; published gate across getter 254; direct bitfield conditional 271.
+// Shared point setter 287; complete position value 282; persistent override influence 289;
+// viewer-row cursor 281; library position copy 252.
+// Round 111: Per-viewer Boolean override 210 (its 1/0 value written out at each use, not kept); unsigned-word viewer 249; readonly metadata 221; activation-byte contract 221; Boolean/word combination 232; Boolean/late activation 243; Boolean/closed doubles 210.
+// Direct sqrt/single-use maximum 221/221; selected falloff expression 241;
+// immutable coordinates 221; entry metadata lifetime 221; immutable pool/location receivers
+// 221/221; child age initialization first 221. Original arithmetic, receivers and stores restored.
+// Round 201: Activation positions 1/3/4/5/6 221 each; reused influence 240; complete viewer arms 238; chained initialization 221; count/handle lexical pair 221; conditional accumulator update 276.
+// Round 113: Native viewer state member 221; early child head with shared-index/falloff context 222; child metadata byte cursor 221; default-first reused override float 221; separate allocation handle 228.
+// Round 117: Activation in viewer loop 247; child while 221; range-success first 221; native child table 221; reused range limits 243.
+// Activation after copy 224; early head with late activation 223; count after position 221;
+// combined entry publications 223; named scaled distance 221; coordinate names 221; NONE links first 221; predecessor before head 221.
+// Override domain, squared magnitude, child zero chain, early zeros, override/zeros and
+// magnitude/zeros 221 each; active arm with zeros 215; all three domains 221; isolated active arm
+// 215 plain.
+// Consistent live pool/direct location/both 215/215/215; all squared terms 215;
+// live pool with squared terms/selected influence 215/238; native element index
+// alone/with live pool 215/215.
+// Round 157: Outcome-arm activation publication, active byte/bool 220/220; with early head 219/219;
+// inactive byte/bool 224/224; with early head 223/223.
+// Double coordinate orders xzy/yxz/yzx/zxy/zyx 217/217/218/218/217;
+// coordinate declarations before viewer 215; complete scalar phase declared first 215;
+// coordinate declarations at activation scope 215.
+// Native Boolean activation destination, published gate, live child count and both 215/251/247/265;
+// the same four with read-only metadata 215/251/247/265. Boolean published gate with one actual
+// location-parameter-slot read 232 (exact-only, reverted).
+// override-receiver 215; head-link 215.
+// override-receiver-head-link 215; tail-link 215.
+// override-receiver-tail-link 215; head-link-tail-link 215.
+// override-receiver-head-link-tail-link 215; links-before-index-helper 215.
+// Round 144: native flag word with real/bool/word/long override carriers 234/233/232/234;
+// the corresponding mask extractions 234/233/232/234. Shared type and body restored;
+// frame 0x10/0x14, activation and metadata/viewer/child homes remain.
+// Round 368: publication/scan position and viewer-field pointer/reference pairs 274/274/274/274;
+// the same receivers with closed coordinate-double phase 274/274/274/274.
+// Round 195: bounded-viewer NONE test removed 259; native salted index 300;
+// implicit Boolean override 260; both 300. Viewer-row cursor with those four 259/300/260/300.
+// All regress; original ordinal test, field observations and child indexing restored.
+// Getter inline/noinline/inline-noinline/force-inline declarations 215/215/215/397;
+// child updater inline/noinline/inline-noinline/force-inline declarations 215 each.
+// Getter force-inline grows to 875 bytes and loses the child match; all declarations restored.
+// Activation bool/byte/long/inverse carriers 215/215/229/231; the same carriers with position-boundary publication 252/252/251/231. Frame 0x10/0x14 and activation/metadata/viewer/child homes remain.
+// Complete metadata native/library copies 254/254; with complete viewer point 237/237;
+// early head with native/library metadata 269/269, and with complete viewer point 237/237.
+// Round 233: Paired head/activation timing, base/Boolean destination/short viewer/both
+// 251/251/283/283; native index with base/Boolean/short/all 299/299/291/291.
+// Round 235: Both range/both ramp/all maximum predicate operands reversed, singly,
+// each pair and all three 215 each; all three with both native ramp boundaries named
+// at their expressions 215. Frame and input allocation unchanged; original body restored.
+// Viewer-bound signed short/long snapshots with long/short/word/while traversal
+// 266/265/262/266/266/264/263/266; exact-only field snapshots restored. Frame/input homes remain.
+// Native unsigned head/tail/traversal handle domains, seven combinations, 215 each;
+// all three with unsigned produced handle 215. Original fields/carriers restored.
+// Round 246: age/flag-word/both library fills 217/215/217;
+// adjacent-link fills alone/with age/flags/both 219/229/219/229;
+// all fields with individual link fills 217. Original scalar initialization restored.
+// Round 191: Child receiver shared through initialization/link/update 226; link/update
+// only 274; single post-allocation receiver 234; early new-child link clear 275.
+// Those four with closed coordinate-double phase 226/274/234/275.
+// Original acquisitions, double lifetimes and executable body restored.
+// Round 254: completed geometry then global override, original/staged-square/closed-coordinate/
+// shared-scale and all combinations 246 each (725 bytes). Original override guard, double
+// producers and all executable source restored; frame and input homes remain.
+// Round 195: Queued-function inline/noinline/combined/forceinline declarations 215 each;
+// each with closed coordinate-double lifetime 215. Original boundary and body restored;
+// frame and activation/location transport remain.
+// Round 81: retail's child link is the existing 0x2483f0 inlined (salt from the element, ordinal from
+// the pointer difference); calling it keeps a call in this /Ob1 file: alone 303, with the entry
+// reordered as below 299, inline/forceinline declarations 299/299; field_4 read before the getter
+// call and the activation store after the position copy 251 (fast). A /Gd compile-only first
+// pass loads the location pointer once (so it becomes the register argument) and the activation
+// twice. All restored.
+// Round 81 lead (fast; all restored): a position pointer for the copy and the three loop-1 reads
+// gives retail's convention (bool in AL, location stacked; 274); with field_4 read before the getter
+// and the flag stored after the copy 277; plus a nested MAX for the fade combine 243; plus the loop
+// arm first 247; plus the fade default-first in 0x249bb0's shape 246 (aligned similarity 0.32 ->
+// 0.70). Left: our frame stays 0x10 because the position pointer folds into [edi+0x10] (retail keeps
+// it in ecx and spills field_4 to a fifth slot); then the child link (retail inlines 0x2483f0) and
+// the x87 cleanup after the square root.
 // @retail 0x248970
 void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s_particle_system_datum *arg_2,
 	real *arg_3, transform4x3f const *arg_4)
 {
-	s_particle_location_datum *const *location_reference = &arg_0;
-	s_248970 *local_20 = (s_248970 *)*location_reference;
-	long local_0 = local_20->field_4;
+	s_248970 *local_20 = (s_248970 *)arg_0;
+	local_20->field_2 = arg_5;
 	s_248971 *local_1 = (s_248971 *)arg_2->function_1751d0();
+	long local_0 = local_20->field_4;
 	long local_2 = local_1->field_30;
 	local_20->field_10 = arg_4->position;
-	local_20->field_2 = arg_5;
-	if (!arg_5)
+	if (arg_5)
+		local_20->field_1c = 1.f;
+	else
 	{
 		local_20->field_1c = 0.f;
 		for (long local_3 = 0; local_3 < *(short *)((byte *)g_4e8c20 + 8); ++local_3)
@@ -73,10 +178,12 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			double local_9 = (double)local_20->field_10.z - local_6->position.z;
 			double local_4 = sqrt(local_9 * local_9 + local_8 * local_8 + local_7 * local_7);
 			real local_10 = (real)(local_4 * local_6->radius);
-			real local_11 = 0.f;
+			real local_11;
 			if (g_510c50 && ((byte *)g_510c50)[5])
 				local_11 = 1.f;
-			else if (local_10 > local_1->field_18 && local_1->field_24 > local_10)
+			else if (!(local_10 > local_1->field_18 && local_1->field_24 > local_10))
+				local_11 = 0.f;
+			else
 			{
 				if (local_1->field_1c + local_1->field_18 > local_10)
 					local_11 = (local_10 - local_1->field_18) * local_1->field_20;
@@ -90,8 +197,6 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			local_20->field_1c = local_20->field_1c > local_13 ? local_20->field_1c : local_11 > local_12 ? local_11 : local_12;
 		}
 	}
-	else
-		local_20->field_1c = 1.f;
 	*(real *)((byte *)arg_3 + 0x1c) = local_20->field_1c;
 	for (long local_14 = 0; local_14 < local_2; ++local_14)
 	{
@@ -110,7 +215,7 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			if (local_0 == NONE)
 				break;
 			c_247470 *local_17 = DATUM(local_15, c_247470, local_0);
-			long local_18 = (*(short *)&local_17->field_0 << 16) | (local_17 - (c_247470 *)local_15->data);
+			long local_18 = data_datum_index(local_15, local_17 - (c_247470 *)local_15->data);
 			local_17->field_8 = NONE;
 			if (local_20->field_4 == NONE)
 				local_20->field_4 = local_18;

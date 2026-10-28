@@ -1,7 +1,8 @@
 /*
 CRC.CPP: the LTCG feasibility spike's first match.
 
-Halo CE's crc.c from the punpckhdq/halo decompilation (CC0), compiled as
+Halo CE's crc.c from the punpckhdq/halo decompilation (a CC0 revision from
+before its 2026-10-17 change to AGPL-3.0), compiled as
 C++. With XDK 5849's compiler under LTCG (/O2 /GL /Gr), function_163c00 and
 function_163ba0 match the retail Halo 2 XBE at 0x163c00 and 0x163ba0:
 

@@ -15,11 +15,7 @@
 #include "joined_groups_3720a0.h"
 #include "slot_table_372a40.h"
 
-// @stub 0x2e5a90
-void s_1c3a40::function_2e5a90(handlers_2e5d50 const *handlers, long first_type, long second_type,
-	long first_type_again, long second_type_again, bool arg_5)
-{
-}
+
 
 // the three-axis sweep's pair report for many boxes at once (claimed, #638)
 // @stub 0x2e2f70
@@ -67,10 +63,7 @@ int class_3048a0::function_3048a0(convex_2fefd0 const *first, convex_2fefd0 cons
 
 
 
-// @stub 0x2e90f0
-void __cdecl function_2e90f0(void const *a, void const *b, void const *input, void *collector)
-{
-}
+
 
 
 
@@ -217,33 +210,16 @@ public:
 
 // motion objects 0x311940 builds
 class class_31ad80 { public: class_31ad80(void const *position, void const *orientation); };
-class class_3193c0 { public: class_3193c0(void const *position, void const *orientation); void function_319740(unsigned long value); };
-class class_31a6b0 { public: class_31a6b0(void const *position, void const *orientation); };
+
 
 // @stub 0x31ad80
 class_31ad80::class_31ad80(void const *position, void const *orientation)
 {
 }
 
-// @stub 0x3193c0
-class_3193c0::class_3193c0(void const *position, void const *orientation)
-{
-}
 
-// an XDK networking routine (10 bytes, a slot of 0x31a6b0's vtable)
-// @stub 0x319740
-void class_3193c0::function_319740(unsigned long value)
-{
-}
 
 // Havok round 23: callees of the functions this round writes
-
-// the C++ library's string length, out of line
-// @stub 0x2d8d80
-unsigned int __cdecl string_length_2d8d80(char const *string)
-{
-	return 0;
-}
 
 // orders each pair by the second words of its two objects, then the pairs
 // @stub 0x372b50

@@ -1098,11 +1098,44 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 	return result;
 }
 
-// score 828 (was 828): result/output homes and initial ECX/EDX differ;
+// score 828 (was 828): Frame 0x2c agrees; class/NONE, result/output/candidate homes and later zero carrier remain.
+// result/output homes and initial ECX/EDX differ;
+// frame 0x2c agrees; class/NONE registers, result/output/candidate homes and later zero carrier remain.
 // original selectors via iterator 1016; failed-result exit 1012; zero
 // iterator 996; two-pass requests 2187; inline depth two 828 (fast counts).
 // Mode initialized only by iterator 828; retained native selected index 838; library candidate copy 828;
 // shared graph receiver 828; requested-class snapshot 828. Frame 0x2c agrees; homes remain.
+// class/NONE registers, result/output/candidate homes and later zero carrier differ.
+// Earlier 828 (was 828): class/NONE registers, result/output/candidate homes and later zero carrier differ.
+// Named-entry latch 828; direct result with entry latch 1000; iterator mode/class keys 1016;
+// iterator mode/type keys 837; entry latch with native initialization 826 (two-point gain rejected);
+// combined continuation while 828.
+// frame 0x2c agrees; result/output homes and initial ECX/EDX remain. Existing complete
+// helper for original request 2287; resolved request 2208; both 3530; immutable requested mode/type 828/828.
+// Shared iterator and helper bodies unchanged.
+// Frame 0x2c agrees; class/NONE and result/output/candidate homes plus later zero
+// carrier remain. Candidate before iterator 967; post-search result copy 998; earlier candidate/native
+// iterator 965; post-search copy with saved mode 998; with saved type 998 (fast).
+// Frame 0x2c agrees; result/output/candidate homes remain. Entry iterator after result 1004; missing-name continue 991; returned-object library copy 828; entry iterator before result 993; shared success predicate 992 (fast).
+// Native iterator with mode default omitted 826; that form with named-entry latch 826;
+// with candidate field copies 920; with retained requested result 994; with result-driven while 826.
+// frame 0x2c agrees; class/NONE, result/output homes and later zero remain.
+// Tight iterator scope 828; entry output declarations 828; combined scopes 828; native-long
+// selected index 990; all original keys retained jointly 828 (fast).
+// Requested-mode output initialization 833; returned constructor expression 828; condition-declared named lookup 828; retained class/type key pair 828; mode initialization plus native iterator 831 (fast).
+// Earlier 828 (was 828): Frame 0x2c agrees; class/NONE and result/output/candidate homes plus later zero
+// Round 112: Iterator, animation-request and cache-request inline declarations 828 each;
+// iterator/request and iterator/cache pairs 828 each; chained output defaults 828; chained native
+// null entries 828.
+// Round 349: Explicit returned copy 828; reverse output defaults 828; shorter candidate scope 828; scope plus return copy 828; defaults plus return copy 828 (fast).
+// Per-attempt constructor expression 828; native candidate reset 980; candidate reset/latch 980; paired native
+// transfers 988; result constructed after outputs 1004. Native reset aligns initial result home at +0x14, but
+// iterator-output/candidate homes and later zero carrier remain.
+// Pre-lookup native default conditional 951; class key first 828; type key first 978; index-first
+// native transfers 846; sorted lookup noinline 828; type/class/mode output defaults 828.
+// Result/output/candidate homes and later zero carrier remain; original body/declaration restored.
+// Round 357: Output defaults before class guard 979; traversal-only defaults before
+// guard 1007; both 1005; selector-only setup before result 832; selector/output setup 833.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1163,11 +1196,31 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 	return result;
 }
 
-// score 828 (was 828): result/output homes and initial ECX/EDX differ;
+// score 828 (was 828): Frame 0x2c agrees; class/NONE, result/output/candidate homes and later zero carrier remain.
+// result/output homes and initial ECX/EDX differ;
 // original mode/class/type via iterator 837/991/837; mode assigned only
 // by iterator 828; graph pointer initialized last 828 (fast counts).
 // Retained native selected index 838; library candidate copy 828; shared graph receiver 828;
 // requested-class snapshot 828; immutable class/type keys together 993. Frame 0x2c agrees; homes remain.
+// class/NONE registers, result/output/candidate homes and later zero carrier differ.
+// Named-entry latch 828; direct result with entry latch 1000; iterator mode/class keys 1016;
+// iterator mode/type keys 837; combined continuation while 828.
+// frame 0x2c agrees; result/output homes and initial ECX/EDX remain. Existing complete
+// helper for original request 2287; resolved request 2208; both 3530; immutable requested mode/type 828/828.
+// Shared iterator and helper bodies unchanged.
+// Frame 0x2c agrees; class/NONE and result/output/candidate homes plus later zero
+// carrier remain. Candidate before iterator 967; post-search result copy 998; earlier candidate/native
+// iterator 965; post-search copy with saved mode 998; with saved type 998 (fast).
+// Frame 0x2c agrees; result/output/candidate homes remain. Entry iterator after result 1004; missing-name continue 991; returned-object library copy 828; entry iterator before result 993; shared success predicate 992 (fast).
+// Loop-scoped returned entry 828; entry resolved outputs after result 979; all requested keys via iterator 1016;
+// native candidate field copies 922 at retail length; exhausted-result exit 1012 (fast).
+// Round 349: Explicit returned copy 828; reverse output defaults 828; shorter candidate scope 828; scope plus return copy 828; defaults plus return copy 828 (fast).
+// Per-attempt constructor expression 828; native candidate reset 980; candidate reset/latch 980; paired native
+// transfers 988; result constructed after outputs 1004. Native reset aligns initial result home at +0x14, but
+// iterator-output/candidate homes and later zero carrier remain.
+// Pre-lookup native default conditional 951; class key first 828; type key first 978; index-first
+// native transfers 846; type/class/mode output defaults 828; sorted lookup noinline 828.
+// Result/output/candidate homes and later zero carrier remain; original body/declaration restored.
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

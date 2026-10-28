@@ -122,7 +122,7 @@ void function_2bc340(long team)
 	}
 }
 
-void function_23ba10(long type, s_spawn_influence_list *list, point3f const *point);
+void function_23ba10(long type, point3f const *point, s_spawn_influence_list *list);
 
 struct s_effect_owner;
 void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner);
@@ -136,6 +136,17 @@ struct s_placement_2bc1
 	byte field_28[0xc4 - 0x28];
 };
 
+// score 16 (was 16): placement argument EAX/ECX transfer and event-store scheduling differ from +0x6d.
+// Existing initializer 89; initializer result 89; initializer before mode 88; paired helpers 88;
+// event before team 63; early event plus sender 63; event before creation 63; returning initializer before creation 90.
+// Unconditional event with options pointer 32; byte mode before event 31; mode against event type 31;
+// mode declaration before team 31; object result before query 16; creation condition assignment 16;
+// function-scope object result 16; combined result/mode lifetimes 31; event before mode declaration 31.
+// event before team 63; early event plus sender 63; event before creation 63; returning initializer before creation 90;
+// event filled before the mode test 32 (stores now precede the test but the mode load folds into the
+// compare after them, 223 bytes); test result as a bool before the fill 76; fill then send helper 32;
+// mode read into a local before the fill 31 (load order right, constant 4 not shared in eax);
+// function-scope event filled before the test 32. The placement copy is ecx here, eax in retail.
 // @retail 0x2bc1f0
 void function_2bc1f0(long team)
 {
@@ -192,8 +203,8 @@ void c_game_engine_45c7a8::v2(long unused, long list_pointer)
 			long object_index = *entry;
 			s_item_position_2bc1 *object = (s_item_position_2bc1 *)((s_object_header_2bc1 *)g_4e0300->data)[object_index & 0xffff].object;
 
-			function_23ba10(6, (s_spawn_influence_list *)list_pointer, &object->position);
-			function_23ba10(5, (s_spawn_influence_list *)list_pointer, &object->position);
+			function_23ba10(6, &object->position, (s_spawn_influence_list *)list_pointer);
+			function_23ba10(5, &object->position, (s_spawn_influence_list *)list_pointer);
 		}
 	}
 }
@@ -230,11 +241,42 @@ struct s_item_object_2bc1
 /* updates a team's item each tick: how long it has been away from home, its
    return home once it has waited too long, and the points of the player
    holding it */
+// score 62 (was 97): retail spills the item pointer to the stack before it
+// reads the rate, so the rate and its forty-times multiply land in different
+// registers than ours; the countdown is also still decremented in al, while
+// retail keeps the decremented byte in cl.
+// Standard convention (see docs/DECOMPILING.md):
+//   1. Retail keeps it __stdcall: the team argument is read from [esp + 0x3c]
+//      and the function returns with ret 4. Without the marker LTCG moves the
+//      argument into a register and the body changes.
+//   2. No data or code in retail holds its address. Its only caller (0x2bcbe5,
+//      inside the engine tick at 0x2bcbb0) is LTCG code and pushes the team
+//      argument before the call.
+//   3. Tried: taking the parameter's address keeps the argument on the stack
+//      but changes the body (156 differences); a named team index (97); a
+//      separate entry declaration (97); the state pointer loaded once (151);
+//      the tick published through a conditional minimum (93); the tick
+//      published from the split observation and increment (93); the decremented
+//      timer kept as its own byte (91); the ceiling as a signed count (69);
+//      the rate read into its own local (69); the tally reached through a
+//      pointer to its element (97); the countdown compared as an unsigned byte
+//      (62).
+// Standard marker with direct input 97; with the conditional tick clamp 93 (not kept: the marker
+// needs a matched body); absent holder 98/94; native timer forms 110/108/111/109; direct second
+// lookup/test and native/constant team index 93 each.
+// team/entry registers and timer/tally schedule remain; conditional tick
+// publication 93 (plain 93, rejected: inherited self-address input); publication arms 147;
+// direct timer 108; inactive/absent-holder/unexpired exits 97/98/97; split tick increment 97;
+// conditional ticks with direct input 156.
+// EBP/EDI team-entry roles and timer/tally scheduling differ;
+// direct formal 156; entry name 97; object/limit names 97; distinct events 97;
+// shared event 97; separate timer values 110; early tally pointer 97; combined 156.
+// Separate entry declaration 97; independent/complete failure guards 97/97; multi-use team value 156;
+// timer field reference 110; published timer result 97; tally reference/array 97/97; signed ceiling 97; scoring-state lifetime 97.
 // @retail 0x2bc990
 void __stdcall function_2bc990(long team)
 {
-	long const *team_reference = &team;
-	s_team_item_2bc1 *entry = (s_team_item_2bc1 *)function_15e410((short)*team_reference);
+	s_team_item_2bc1 *entry = (s_team_item_2bc1 *)function_15e410((short)team);
 
 	if (entry && entry->object_index != NONE)
 	{
@@ -281,24 +323,22 @@ void __stdcall function_2bc990(long team)
 
 			if (timer != NONE)
 			{
-				timer--;
-				state->point_timers[team] = timer;
-				if (timer <= 0)
+				char countdown = (char)(timer - 1);
+				state->point_timers[team] = countdown;
+				if ((unsigned char)countdown == 0 || countdown < 0)
 				{
 					function_1972a0(entry->player_index, 3, entry->value04);
 					function_2bce70(entry->player_index);
 					state = (s_state_2bc1 *)g_51ecc4;
 					state->point_timers[team] = (char)g_510c54->field_2_3;
-					char *count = &state->point_tallies[team];
-
-					(*count)++;
+					state->point_tallies[team]++;
 					function_15b930(entry->player_index, function_15eaf0(), 0x17, 1);
-					if (*count % 5 == 0)
+					if (state->point_tallies[team] % 5 == 0)
 					{
 						s_event event;
 
 						game_engine_event_initialize_inline(&event, 4, 5);
-						game_engine_event_set_cause_player(&event, entry->player_index);
+						game_engine_event_set_cause_player(entry->player_index, &event);
 						function_19eb90(&event);
 					}
 				}

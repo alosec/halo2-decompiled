@@ -20,6 +20,9 @@ public:
 	long field_4;
 	long mask;
 
+	~class_2d9240();
+	unsigned long find(unsigned long key) const;
+	void function_2d93b0(unsigned long hole);
 	int first() const;
 	unsigned long word_at(int index) const;
 	void store_word_at(int index, unsigned long value);

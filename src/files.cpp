@@ -282,7 +282,7 @@ bool file_ref_read(s_type_acf665 *file, dword size, void *buffer, bool silent)
 
 /* writes at an open file's position */
 // @retail 0x136d00
-bool function_136d00(s_type_acf665 *file, const void *buffer, dword size)
+bool function_136d00(s_type_acf665 *file, dword size, const void *buffer)
 {
 	dword bytes_written;
 	bool success = false;
@@ -324,7 +324,7 @@ bool file_ref_write_at(s_type_acf665 *file, dword position, dword size, const vo
 			SetLastError(0);
 		}
 	}
-	return success && function_136d00(file, buffer, size);
+	return success && function_136d00(file, size, buffer);
 }
 
 /* when the file or directory a reference names was last written */

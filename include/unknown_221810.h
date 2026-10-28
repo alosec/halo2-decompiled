@@ -21,8 +21,7 @@ struct s_unknown_5c
 
 static inline s_unknown_5c *sound_class_definition_get(short index)
 {
-	s_tag_header_globals *globals = g_4e034c;
-	s_tag_header *header = globals->header ? globals->header_alt : NULL;
+	s_tag_header *header = g_4e034c->header ? g_4e034c->header_alt : NULL;
 	s_sound_tag_data *table = g_4e3b44[header->datum_index & 0xffff].sound;
 
 	return (s_unknown_5c *)table->unknown4 + index;

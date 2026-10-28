@@ -182,6 +182,11 @@ void function_ba690(long object_index, byte **states, long *state_count, long *a
 void render_model_choose_permutations(long render_model_index, long variant_index,
     char *permutation_indices, s_region_permutation_choice *region_choices, dword fixed_region_mask);
 
+// MiniMax lane B (2026-10-27): 0xba690 takes its pointers in registers (count in esi, states in edi), so
+// its own bytes are the same for either parameter order; only the callers' setup order shows it.
+// This caller matches (249 bytes) when it calls a second copy of 0xba690 that takes the count
+// pointer first, while the three other callers match with states first. Two copies of one retail
+// function were not kept; a single prototype that serves all four callers is still to be found.
 // @retail 0xba590
 void __stdcall function_ba590(long object_index, dword fixed_region_mask)
 {

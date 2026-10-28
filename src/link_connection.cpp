@@ -778,9 +778,14 @@ long link_connection_allocate(long unused_owner, dword flags)
 
 typedef void (__stdcall *connection_callback_function)(void *context);
 
+/* Retail's only caller keeps the callback pointer in a saved register across this call. */
+__declspec(noinline) void link_connection_callback_initialize(s_connection_callback *callback,
+	c_connection_client *const *clients, void *context, connection_callback_function function, long count,
+	const dword *types, bool active);
+
 /* fills in a connection class: its close callback and its clients */
 // @retail 0x892f0
-void link_connection_callback_initialize(s_connection_callback *callback, c_connection_client *const *clients,
+inline void link_connection_callback_initialize(s_connection_callback *callback, c_connection_client *const *clients,
 	void *context, connection_callback_function function, long count, const dword *types, bool active)
 {
 	callback->active = active;

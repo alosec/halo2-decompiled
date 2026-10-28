@@ -438,9 +438,14 @@ void __fastcall function_24cdaf(void)
 	}
 }
 
-// @retail 0x24cdd8
 // score 6 (was 6): the tick counter's address is kept in ECX where retail keeps it in EAX, so the
 // counter is read into EAX and written back from there.
+// register value/ticks/both 6 each; const value/ticks/player 6 each;
+// existing player accessor 6; function-scope message/index 6 each; short index 6.
+// Indexed player fields 26; tick address from state and index 16; tick address from global 56;
+// tick pointer name 6; increment result name 6; both role names 6; minimum intrinsic 6;
+// nested countdown guards 6.
+// @retail 0x24cdd8
 void function_24cdd8(long player_index)
 {
 	s_hud_globals_definition *view = function_24c80b();
@@ -559,6 +564,11 @@ void function_24ce9d(word const *text, long left, long top, short_rectangle2d *b
 /* draws a local player's HUD messages: the scripted message at the top,
    the list of messages, then the timed message and the status text at the
    bottom */
+// score 143 (was 142): frame slots differ (the scripted flag packs beside the split-screen
+// byte, shifting colour, view, left and the loop index); BLOCKED-BY 0x15f120, whose text
+// buffer retail passes in esi (our push is the extra byte). Tutorial colour as three calls 233;
+// nested ternary 142; if-assigned pixel 383; byte timer flag 203 (retail length); byte timer
+// with nested ternary 203; named any-message test 523.
 // @retail 0x24cf66
 void function_24cf66(long local_player_index)
 {

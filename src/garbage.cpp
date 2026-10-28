@@ -29,6 +29,12 @@ struct s_garbage_header_view
 
 void function_bb950(long object_index, bool add, long delta);
 
+// score 16 (was 16): retail stores the expiration first and then sets the
+// second flag with a memory `or`, and adds the ticks into the time register; ours
+// loads the flags early (4 bytes longer). Tried: a named `seconds` product 14
+// (fixes the multiply order); then `ticks + current_time` 14, the second flag set
+// before the expiration store 14, `real_to_long` without forceinline 45, with a
+// forceinline declaration 14, game time read in the expression 27.
 // @retail 0x11bb40
 bool __stdcall function_11bb40(long object_index, long creation_argument1, long creation_argument2)
 {

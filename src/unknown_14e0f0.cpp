@@ -155,6 +155,9 @@ static inline void transform_offset_point(transform4x3f const *frame, real scale
 // score 17 (was 17): trigger index/position carrier, pitch operands and result load differ.
 // Unqualified separate workspaces: frame pointer 593; zero inline depth 682;
 // global optimization off 1135; size preference 748; word phase 138 (fast).
+// Trigger test through 0x11c5b0 20 (trigger loop exact, first direction products flip);
+// that plus one exit 16; plus result in the loop condition 207; plus a yaw/pitch helper 16;
+// unqualified pool pointer 131 (data kept across 0xbaf80, retail re-reads it).
 // @retail 0x14e200
 bool __stdcall function_14e200(long player_index, long target_index, point3f const *position, bool detach)
 {

@@ -18,6 +18,6 @@ struct s_qos_result
 	byte *data;
 };
 
-bool qos_target_result(long handle, s_qos_result *result, long index);
+bool qos_target_result(long handle, long index, s_qos_result *result);
 
 #endif

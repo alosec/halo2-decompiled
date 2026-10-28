@@ -89,10 +89,17 @@ extern bool g_50944e;
 wchar_t const *g_4672dc = L"test";
 void unicode_string_snprintf(word *buffer, long maximum_count, word const *format, ...);
 
-// @retail 0xb4120
 // score 88 (was 88): retail puts the three case values in ebp and starts from
 // a value of three, ours puts them in ebx and clears ebp first, and the stack
-// slots of the locals are in another order
+// slots of the locals are in another order. With the prefix length started at
+// its scan (eax, facility in ebp as retail) the user id's zero low half takes
+// ebx and doubles as the zero constant, where retail zeroes ebx after the switch
+// and keeps the constant in esi; retail also returns through jge with two exits.
+// Round 69: length at the scan with XUID locals 118; the comparison returned as an
+// expression 89 (403 bytes); both 113; length at the scan with chained zero
+// initialisation 121 (384 bytes); SUCCEEDED test returning true first 88. With the
+// length at the scan, chained/ULONGLONG/qwTeamID/owner-copy spellings compile identically.
+// @retail 0xb4120
 bool function_b4120(long kind, struct _XUID owner, wchar_t const *filename, wchar_t *arg_d4faef, dword *path_size)
 {
     long facility;

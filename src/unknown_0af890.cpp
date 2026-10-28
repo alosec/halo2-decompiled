@@ -15,6 +15,8 @@
 #include "network_message_types.h"
 #include <string.h>
 
+#define PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
+
 /* every message starts with a 64 bit header */
 struct s_message_header
 {
@@ -461,13 +463,6 @@ struct s_message_0b0900
 	long value14d0;
 };
 
-// score 73 (was 73): entry register, prior payload base and result stores;
-// per-entry result 618; word entry ordinal 624; prior-entry reference 73;
-// native array-bound walks 712; byte message result 863.
-// direct flag assignment conditions, first/second/both 73/73/73; entry ordinal at entry 73;
-// caller depth 1/2 73/73; payload comparison result / first-flag combination 593/593.
-// second-bit snapshot 73; address-first branch / with snapshot 635/635; two-bit cursor 702;
-// delayed validity 258; byte membership result 647; mask walk 605; prior-record continue 591.
 // @retail 0xb0900
 bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b0900 *message)
 {
@@ -626,15 +621,13 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 						}
 						for (j = 0; j < entry_index; j++)
 						{
-							s_message_0b0900_entry *other = &message->entries[j];
-							if (other->flag0)
+							if (message->entries[j].flag0)
 							{
-								if (valid && memcmp(message->entries[entry_index].unknown0e, other->unknown0e, 12) == 0)
-									valid = false;
+								valid = valid && memcmp(message->entries[entry_index].unknown0e, message->entries[j].unknown0e, 12) != 0;
 								if (!message->entries[entry_index].flag1)
 								{
-									if (memcmp(message->entries[entry_index].address, other->address, 6) == 0)
-										valid = valid && message->entries[entry_index].value1 != other->value1 && message->entries[entry_index].value2 != other->value2;
+									if (memcmp(message->entries[entry_index].address, message->entries[j].address, 6) == 0)
+										valid = valid && message->entries[entry_index].value1 != message->entries[j].value1 && message->entries[entry_index].value2 != message->entries[j].value2;
 								}
 							}
 						}
@@ -713,13 +706,7 @@ bool __stdcall function_0b0900(s_bitstream *stream, long unused, s_message_0b090
 			valid = valid && message->value1474 == NONE;
 	}
 	if (message->flag14cc)
-	{
-		long v = message->value14d0;
-		long clipped = v;
-		if (clipped < 0) clipped = 0;
-		else if (clipped > 15) clipped = 15;
-		valid = valid && (clipped == v || v == NONE);
-	}
+		valid = valid && (PIN(message->value14d0, 0, 15) == message->value14d0 || message->value14d0 == NONE);
 	return valid;
 }
 

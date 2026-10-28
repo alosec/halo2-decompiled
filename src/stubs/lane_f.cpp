@@ -11,6 +11,9 @@ struct s_sound_effect_definition;
 struct s_type_99c531;
 
 
+
+
+
 struct s_game_options;
 
 struct s_1870a0;

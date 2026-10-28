@@ -388,15 +388,14 @@ long __stdcall datum_previous(s_record_pool *data, long datum_index)
 long data_last_index(s_record_pool *data);
 void function_236299(long sound);
 
+/* the item next to this one in the step's direction */
+static inline c_class_1a2c81 *list_item_step(c_class_1a2c81 *item, long step)
+{
+	return step >= 0 ? item->next : item->previous;
+}
+
 /* moves the list's focus one item in the direction; at either end the data
    scrolls through the items instead (or wraps to the other end) */
-// score 84 (was 84): frame 0xc agrees; neighbour receiver/push registers and callback type/result join differ;
-// tried next object reference 148; previous object reference 142; both object references 154; native moved 140;
-// native blocked 125; byte moved 84; byte blocked 84; paired timer stores 84; unsigned old datum 84; unsigned
-// next datum 84; final datum guard 86.
-// the loaded neighbour's virtual receiver stays in eax
-// where retail keeps it in ecx, and retail pushes the selected neighbour
-// straight from memory instead of through a register copy.
 // @retail 0x24c1c5
 void function_24c1c5(c_widget *widget, char direction)
 {
@@ -412,9 +411,11 @@ void function_24c1c5(c_widget *widget, char direction)
 
 		if (step >= 0)
 		{
-			if (focused->next)
+			c_class_1a2c81 *next = focused->next;
+
+			if (next)
 			{
-				if (focused->next->type == 2 && !((c_class_14750b *)focused->next)->v17())
+				if (next->type == 2 && !((c_class_14750b *)next)->v17())
 				{
 					if (list->value7c)
 					{
@@ -432,7 +433,7 @@ void function_24c1c5(c_widget *widget, char direction)
 				}
 				else
 				{
-					list->v7(focused->next);
+					list->v7(list_item_step(focused, step));
 					moved = true;
 				}
 			}
@@ -453,15 +454,17 @@ void function_24c1c5(c_widget *widget, char direction)
 		}
 		else
 		{
-			if (focused->previous)
+			c_class_1a2c81 *previous = focused->previous;
+
+			if (previous)
 			{
-				if (focused->previous->type == 2 && !((c_class_14750b *)focused->previous)->v17())
+				if (previous->type == 2 && !((c_class_14750b *)previous)->v17())
 				{
 					blocked = true;
 				}
 				else
 				{
-					list->v7(focused->previous);
+					list->v7(list_item_step(focused, step));
 					moved = true;
 				}
 			}
@@ -508,16 +511,20 @@ void function_24c1c5(c_widget *widget, char direction)
 			{
 				step_proc = step >= 0 ? datum_next : datum_previous;
 			}
-			if (list->wraps || step_proc(list->data, list_item(focused)->value70) != NONE)
+			bool at_end = list->wraps ? false : step_proc(list->data, list_item(focused)->value70) == NONE;
+
+			if (!at_end)
 			{
 				for (c_class_1a2c81 *item = list->child; item; item = item->next)
 				{
-					long next_datum = step_proc(list->data, list_item(item)->value70);
-					list_item(item)->value70 = next_datum;
+					c_class_14750b *entry = list_item(item);
+					entry->value70 = step_proc(list->data, entry->value70);
 				}
 			}
 		}
-		function_24c610(list->get_focused_item(), widget);
+		c_class_1a2c81 *selected = list->get_focused_item();
+
+		function_24c610(selected, widget);
 		{
 			long datum = list->get_focused_datum();
 

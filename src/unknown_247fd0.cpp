@@ -70,37 +70,90 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 	arg_1 = function_x82e52f(arg_0, 0, 0);
 }
 
-// score 142 (was 142): frame 0x10 agrees; cached-pointer comparison, child-call
-// pushes and loop lookup expansion differ; size optimization 525; inline depth one 142;
-// current-record update argument 142; child-input scope 142; both 142.
-// cached-pointer compare and in-loop lookup differ;
-// metadata read order 142; direct child getter 160; early result declaration
-// 142; word flag update 244; reciprocal default first 142.
-// score 142 (was 142): cached-pointer compare and selective lookup expansion remain;
-// cache slot/early flags/both/cache reference 142; reciprocal input 143;
-// global optimization off 433; frame pointer 314; depth two 142.
-// read-only settings view 142; spawn type at use 254; shared parent datum accessor 246; shared
-// child datum accessor 146; both datum accessors 298; native child ordinal 142; immutable
-// creation inputs 142; reciprocal before child link 143.
-// score 142 (was 142): cached-pointer compare, child-input spills and loop lookup remain.
-// Native cache pointer 142; changed-record predicate 142; actual head field 142;
-// unsigned child handle 142; shared bounded selector 142; word flags 142;
-// word flags with bounded selector 142; child zero-age before enable 142.
-// score 142 (was 142): cached-pointer memory compare, child pushes and in-loop lookup remain.
-// Cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142; refreshed interface lifetime 142; child-result declaration home 142; live lifetime field 142; mask/lifetime fields 142.
-// Cached-pointer comparison and loop lookup remain. Common pointer/flags/both stores
-// 159/140/158f; conditional mask 282f; immutable allocated handle/settings 142f; common current-record
-// stores and combined immutable bindings 158f; common flags with current receiver 158f. Two-point gain
-// discarded.
-// External parent / allocated record / settings / child references 142/142/142/142;
-// parent with record / settings, record with child, all four references 142/142/142/142.
-// Cached-pointer comparison and selective loop lookup expansion remain.
-// score 142 (was 142): cached-pointer compare, creation pushes and loop lookup remain.
-// Parent/settings/both metadata fields, first/last/both list fields, metadata with list fields,
-// metadata with cache slot 161/160/167/142/142/142/167/167.
-// cached-pointer comparison, child pushes and selective lookup expansion remain.
-// Declared sample array/loop 142/435; immutable record/spawn/both 142/142/142;
-// child identity order 142; earlier enable 142; earlier age 143.
+// score 70 (was 70): frame 0x10 and length agree. Retail stores field_10 before the field_38
+// sample; written in that order (133) everything through the 0x249aa0 call matches except that
+// the cached-record compare loads field_50 into EAX where retail folds `cmp ebp, [ebx+0x50]`,
+// and the child loop's scratch registers rotate. Compile-only: after an x87 fmul + fstp the
+// default (P6) scheduling always splits that load (no other retail site folds there; /G7 folds
+// it but changes much else retail does not show); a plain fild store or an SSE product folds.
+// With field_10 last (kept) the compare folds but the 0x173ba0/0x249aa0 argument registers and
+// the loop rotate. Retail also loads the parent twice for the 0x175070 list addresses where
+// ours reuses one register.
+// Forms tried: in-loop lookup through the inline particle_object_for_tag with the child getter
+// nested in 0x173fd0's call 133 kept (nested getter alone 160; inline/forceinline
+// redeclarations of 0x137bd0 142); record-first reset without the split temporary 133 kept;
+// field_38 sample before the field_10 store 70 kept; sample through the existing helper 70;
+// the 0x173c10 method called 70; sample into the shared local before field_10 146; sample
+// local declared first 70; DATUM child 70; size optimization 525; inline depth one/two 142/142;
+// global optimization off 433; frame pointer 314; current-record update argument 142;
+// frame 0x10 and length agree. Left: field_10 is stored after the field_38
+// sample (retail stores it first) and the register rotation from the 0x173ba0 arguments on.
+// With field_10 first (retail's order) every register from the 0x173ba0 arguments to the end
+// matches, but the cached-record compare splits into `mov eax,[ebx+0x50]; cmp ebp,eax` after the
+// sample's x87 store (+2 bytes, adds the child-loop pad): 133. The split follows the x87 store in
+// every source shape tried; /G7, /Os or /arch:SSE2 fold it (compile-only), the file's flags don't.
+// Round 57: field_10 first 133; with a compiled-out statement before the compare 133; with the
+// cache-update stores swapped 129; with the sample through the existing reference helper into
+// field_38 or into local_9 133/133. Compile-only, all split: compare in an inline/forceinline
+// helper or bool local, reversed or == compare, typed/int compare, cache pointer copy or member,
+// loop/switch/goto wrappers, sample through an inline initialiser, a named-global or divided
+// scale, helper or direct word samples, field_08/local_3/link/flag statement orders.
+// Earlier: field_38 sample before the field_10 store 70 kept; in-loop lookup through the inline
+// particle_object_for_tag with the child getter nested in 0x173fd0's call 133 kept (nested getter
+// alone 160; inline/forceinline redeclarations of 0x137bd0 142); record-first reset without the
+// split temporary 133 kept; sample through the existing helper 70; the 0x173c10 method called 70;
+// sample into the shared local before field_10 146; sample local declared first 70; DATUM child
+// 70; function_137bd0_inline at the loop re-fetch 134, with the child-settings query in the call's
+// argument list 133 (a copy of 0x137bd0's body); comparison operands swapped 133; child/record
+// datum through DATUM 133; 0x175610's cache-update body 133; complete reconciliation before final
+// draw 133; final sample store after reconciliation 140, with early predicate/flags/both
+// 138/149/160; early cache predicate/masked flags/both across final draw 157/153/177; sample
+// output 142; age/time after sample 239/153; sample late age/time 239/153; late age time 236;
+// sample late age time 236; sample value 142; size optimization 525; inline depth one/two
+// 142/142; global optimization off 433; frame pointer 314; current-record update argument 142;
+// child-input scope 142; metadata read order 142; direct child getter 160; early result
+// declaration 142; word flag update 244; reciprocal default first 142; cache slot/early
+// flags/both/cache reference 142; reciprocal input 143; read-only settings view 142; spawn type
+// at use 254; shared parent/child/both datum accessors 246/146/298; native child ordinal 142;
+// immutable creation inputs 142; reciprocal before child link 143; native cache pointer 142;
+// changed-record predicate 142; actual head field 142; unsigned child handle 142; shared
+// bounded selector 142; word flags 142, with bounded selector 142; child zero-age before enable
+// 142; cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142;
+// refreshed interface lifetime 142; child-result declaration home 142; live lifetime field 142;
+// mask/lifetime fields 142; common pointer/flags/both stores 159/140/158; conditional mask 282;
+// immutable allocated handle/settings 142; common current-record stores and combined immutable
+// bindings 158; common flags with current receiver 158; external parent/allocated record/
+// settings/child references, singly and in pairs, 142 each; parent/settings/both metadata
+// fields, first/last/both list fields, metadata with list fields, metadata with cache slot
+// 161/160/167/142/142/142/167/167; declared sample array/loop 142/435; immutable
+// record/spawn/both 142; child identity order 142; earlier enable 142; earlier age 143; child
+// effect/tag/settings home names and allocation/spawn names 142 each; early cache
+// predicate/masked flags/both across final draw 157/153/177; final sample store after
+// reconciliation 140, with early predicate/flags/both 138/149/160; complete reconciliation
+// before final draw 133; sample output 142; age/time after sample 239/153; sample late
+// age/time/both 239/153/236; sample value 142; inline type lookup at the loop re-fetch 134;
+// child call taking the child-settings query in its argument list 133 (a copy of 0x137bd0's
+// body); comparison operands swapped 133; child/record datum through DATUM 133/133; 0x175610's
+// cache-update body 133. Round 137: inline link-child helper (parent pointer argument), with
+// the parent store inside 70/70; cache-update inline helper with early return in retail store
+// order 133; sample through the existing helper in retail store order 133; child result /
+// loop index declared before the loop 70/70. Round 139: this compiler never folds a load into
+// an ALU operand right after an x87 fstp (no such site in the whole linked image, and 0x39a80's
+// equivalent site splits too), while retail folds at both of its two sites, so the retail store
+// order cannot reach `cmp ebp, [ebx+0x50]` from source. Tag index local 245; child definition
+// local 76; first lookup through the inline particle_object_for_tag 69; list-address pointer
+// locals 70; retail order through the shared sample local 133.
+// loop index declared before the loop 70/70.
+// changed-record predicate 142; actual head field 142; unsigned child handle 142; shared bounded
+// selector 142; word flags 142, with bounded selector 142; child zero-age before enable 142;
+// cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142; refreshed
+// interface lifetime 142; child-result declaration home 142; live lifetime field 142;
+// bindings 158; common flags with current receiver 158; external parent/allocated
+// record/settings/child references and their pairs 142; parent/settings/both metadata fields,
+// first/last/both list fields, metadata with list fields, metadata with cache slot
+// effect/tag/settings home names, pairs, all three, allocation/spawn names 142 each.
+// Compile-only earlier: record-typed cache field, 0x175610's cache store order, an inline
+// cache-update helper, the scale through the shared word wrapper or a named temporary: no fold.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)
@@ -126,13 +179,12 @@ void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 		local_1->field_18 = (word)real_truncate(local_9 * 65535.f);
 		function_248076(&g_4e7408->seed, local_9);
 		local_1->field_1a = (word)real_truncate(local_9 * 65535.f);
-		local_1->field_10 = arg_2->unknown04;
 		local_1->field_38 = function_x82e52f(&g_4e7408->seed, 0, 0);
-		if (arg_0->field_50 != local_1)
+		local_1->field_10 = arg_2->unknown04;
+		if (local_1 != arg_0->field_50)
 		{
-			dword flags = arg_0->field_44 & ~0xf80f;
 			arg_0->field_50 = local_1;
-			arg_0->field_44 = flags;
+			arg_0->field_44 &= ~0xf80f;
 		}
 		function_173ba0(~arg_0->field_44 & 0xf80f, arg_0->field_48, arg_0->field_4c, arg_0->field_50, arg_0->field_00);
 		arg_0->field_44 |= 0xf80f;
@@ -142,12 +194,9 @@ void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 		c_248228 *local_4 = (c_248228 *)function_137bd0(local_2->tag_index);
 		for (long local_5 = 0; local_5 < local_4->function_24822e(); ++local_5)
 		{
-			long effect_index = arg_2->effect_index;
-			long tag_index = local_2->tag_index;
-			s_effect_particle_system_definition *child_settings = local_4->function_24822f((word)local_5);
-			long local_6 = function_173fd0(child_settings, effect_index,
-				tag_index, (short)local_5, NONE);
-			local_4 = (c_248228 *)function_137bd0(local_2->tag_index);
+			long local_6 = function_173fd0(local_4->function_24822f((word)local_5), arg_2->effect_index,
+				local_2->tag_index, (short)local_5, NONE);
+			local_4 = (c_248228 *)particle_object_for_tag(local_2->tag_index);
 			if (local_6 != NONE)
 			{
 				s_particle_system_datum *local_7 = &((s_particle_system_datum *)g_510c74->data)[local_6 & 0xffff];
@@ -246,7 +295,55 @@ vector3f *function_143070(matrix3x3 const *arg_1, vector3f const *arg_0, vector3
 void placement_set(s_placement *arg_0, vector3f const *arg_1, point3f const *arg_2, vector3f const *arg_3, short arg_4);
 void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_object_246eb0 const *arg_3, long arg_4);
 
-// score 389 (was 408): exact 0xb0 frame; late EBP save, random stores/getter expansion differ.
+// score 368 (was 368): frame 0xb0, 1643 bytes against 1652. Left: retail saves EBP at entry and
+// shares one epilogue (ours saves it after the early exits); retail keeps the blend in XMM2-4
+// across the first 0x143070 call (here it goes through the grouped local's memory); retail's
+// frame holds probe point f0x14, probe direction f0x20, collision result f0x2c, 16 unreferenced
+// bytes at f0x78 and the placement at f0x88; the random-store and getter homes differ.
+// Round 137: early exit as one goto to the end 368; probe point/direction/collision declared in
+// the collision branch, the blend in its branch and the placement before its NONE store, with
+// one sample local (no grouping struct) 469 (frame 0xa0: the blend gets no slot, the placement
+// lands below the collision result), the collision result renamed to sort between them 469;
+// effect datum pointer local for the flag byte 368; flag byte read as the low byte of the
+// flags word 368.
+// Earlier: interpolation remainder 415; child-duration default 411; failed-child continue 408;
+// overwritten placement default removed 409; definition reads at use 449; entry scalar blend
+// components 417; branch-scoped components 417; native kind snapshot 408; inline depth one 408;
+// independent random outputs 435; random-word array loop 591; array loop with scalar draw 589;
+// position scale loop 418; position-add loop 408; byte guard 408; separate trace point 408;
+// separate direction 408; scoped flag 408; nonzero kind first 415; final scalar draw 399; last
+// two 409; last three 389; entry record declaration 389; final getter field at use 389; external
+// record reference 389; late placement default 389; child enable last 389; native effect
+// bit-field, flag-word mask and shift 389/389/389; ordinary result on those native forms
+// 436/436/436; native bit-field and word-mask single guards 389/389; scalar draw one/two/three
+// 399/386/399 (two alone reaches 1652 bytes, rejected), draws one/two 409, one/three 396,
+// one/four 409, two/four 396, one/two/four 415; entry/random-phase sample scopes and sample name
+// 389 each; shared real scale 396; child reciprocal before link 383; age before position scale
+// 391; separate blend point 447, with shared real scale 431; reciprocal lifetime 383 (a one-use
+// read moved ahead of the link call, not kept); child tag/duration/both native values
+// 391/390/392; inherited velocity value 380 kept; complete blend products 387; tag/products 392;
+// duration/velocity 384; all producers 401; velocity at admission 395; after rotations 382;
+// complete velocity arms 411; entry velocity declaration 380; both 411; per-use velocity fields
+// 467; separate real spatial objects 433, with velocity arms/entry declaration/per-use fields
+// 438/433/487; independent collision/placement/both 377/380/376; first sample alone/with
+// collision/with placement/all 429/436/429/436; collision and placement with velocity source 368
+// kept; placement/source 389; branch collision/source 372; late placement 399; shared effect
+// receiver with velocity source/value 434/435; native flag four 393, with velocity
+// pointer/admitted pointer/pointer arms/value arms 394/393/394/410, with complete blend
+// products/duration/all-four scalar draws 393/392/428; shared current/prior/both blend-vector
+// scales 375/375/368; collision-offset/motion producers 377/369; both blends with
+// collision/motion/all 377/370/377; independent blend/probe-point/probe-direction objects
+// 428/368/368; blend-point/probe-point, blend-point/direction, both probe objects, all three
+// 428/428/368/428; full independent native objects 466; shared point constructor for blend
+// 368, collision 371, motion 375, blend/collision 371, blend/motion 375, collision/motion 378,
+// all three 378, all plus trace-start 368; guard bit word/long, collision declaration,
+// workspace/guard names, combined flags and child while 368 each; common scalar for all four
+// samples 423.
+// Frame 0xb0 agrees; entry EBP preservation and random/geometry/getter homes remain.
+// Frame 0xb0 agrees; late EBP save, escaped blend coordinates and selective getter expansion remain.
+// Frame 0xbc/0xb0, entry EBP save and random/geometry/getter scheduling remain.
+// Earlier: Frame 0xbc versus 0xb0; entry EBP preservation and random/geometry homes remain.
+// Earlier form: exact 0xb0 frame; late EBP save, random stores/getter expansion differ.
 // Interpolation remainder 415; child-duration default 411; failed-child continue 408;
 // overwritten placement default removed 409; definition reads at use 449.
 // frame 0xb0 agrees; EBP is saved after the early exits,
@@ -259,6 +356,46 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // nonzero kind first 415; final scalar draw 399; last two 409; last three 389.
 // Entry record declaration 389; final getter field at use 389; external record
 // reference 389; late placement default 389; child enable last 389.
+// Native effect bit-field, flag-word mask and shift 389/389/389;
+// ordinary result on those native forms 436/436/436; native bit-field and
+// word-mask single guards 389/389 (control 389). Entry EBP save remains late;
+// original admission guard, qualifier and scalar random lifetimes restored.
+// Earlier form: late entry EBP save and random/getter geometry scheduling remain. Fast trials:
+// scalar draw one 399; scalar draw two 386; scalar draw three 399; scalar draws one/two 409; scalar
+// draws one/three 396; scalar draws one/four 409; scalar draws two/four 396; scalar draws one/two/four
+// 415. All restored.
+// Draw two alone reaches 1652 bytes at fast 386; three-point reduction rejected.
+// Entry/random-phase sample scopes and sample name 389 each; shared real scale 396;
+// child reciprocal before link 383; age before position scale 391; separate blend point 447;
+// separate blend with shared real scale 431. Reciprocal lifetime plain 383 at 1638/1652 (a one-use read moved ahead of the link call; not kept).
+// Child tag/duration/both native values 391/390/392; inherited velocity value 380 kept (plain);
+// complete blend products 387; tag/products 392; duration/velocity 384; all producers 401;
+// velocity at admission 395; after rotations 382. Frame 0xbc versus 0xb0 for the retained native velocity.
+// Complete velocity arms 411; entry velocity declaration 380; both 411; per-use velocity fields 467;
+// separate real spatial objects 433; with velocity arms/entry declaration/per-use fields 438/433/487. All restored.
+// Independent collision/placement/both 377/380/376; first sample alone/with collision/with placement/all
+// 429/436/429/436; collision and placement with velocity source 368; collision/source alone 368
+// kept (plain), placement/source 389; branch collision/source 372; late placement 399;
+// shared effect receiver with velocity source/value 434/435. Frame 0xb0; body 1643/1652.
+// Native flag four 393; with velocity pointer/admitted pointer/pointer arms/value arms
+// 394/393/394/410; with complete blend products/duration/all-four scalar draws 393/392/428.
+// Native flag declaration and every body form restored.
+// Round 230: Shared current/prior/both blend-vector scales 375/375/368; collision-offset/motion
+// producers 377/369; both blends with collision/motion/all 377/370/377.
+// Round 197: independent blend/probe-point/probe-direction objects 428/368/368;
+// blend-point/probe-point, blend-point/direction, both probe objects, all three 428/428/368/428;
+// full independent native objects on the recovered collision/velocity-source frame 466. All restored.
+// Shared point constructor: blend 368, collision 371, motion 375, blend/collision 371,
+// blend/motion 375, collision/motion 378, all three 378, all plus trace-start 368. All restored.
+// Guard bit word/long, collision declaration, workspace/guard names, combined flags and
+// child while 368 each; common scalar for all four samples 423.
+// First native sample on the collision/source frame: entry/producer 426/426;
+// with native probe point/direction/both 426/426/426; entry/producer/both probes
+// with shared loop lookup 443/443/443. Frame shrinks to 0xac; all restored.
+// Round 223: Defining/caller inline with noinline spawn/matrix/placement/spawn+matrix/
+// spawn+placement/matrix+placement/all 368/369/368/369/368/369/369; spawn noinline 368.
+// Round 226: native signed particle header, unsigned effect/child handles, every pair/all
+// three, and all with unsigned allocated handle 368 each. Frame 0xb0 and late EBP save remain.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)
@@ -268,10 +405,10 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 		point3f field_0;
 		point3f field_c;
 		vector3f field_18;
-		s_collision_result_1697c0 field_24;
 		s_placement field_70;
 		real field_98;
 	} local_23;
+	s_collision_result_1697c0 collision;
 	volatile bool local_18;
 	long local_0 = arg_2->effect_index;
 	if (local_0 != NONE)
@@ -317,7 +454,7 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 		local_2->field_08 += arg_5 * arg_6 * local_2->field_0c;
 		if (local_3->unknown0c == 0)
 		{
-			vector3f const *local_5 = local_0 != NONE ? &DATUM(g_4ea93c, s_effect_datum, arg_2->effect_index)->velocity : g_4687a4;
+			vector3f const *velocity = local_0 != NONE ? &DATUM(g_4ea93c, s_effect_datum, arg_2->effect_index)->velocity : g_4687a4;
 			local_23.field_0.x = arg_1->field_34.x * arg_5 + arg_1->field_40.x * (1.f - arg_5);
 			local_23.field_0.y = arg_1->field_40.y * (1.f - arg_5) + arg_1->field_34.y * arg_5;
 			local_23.field_0.z = arg_1->field_40.z * (1.f - arg_5) + arg_1->field_34.z * arg_5;
@@ -333,13 +470,13 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 				local_23.field_18.j = 0.f;
 				local_23.field_18.k = -1.f;
 				local_23.field_c.z += 1.f;
-				local_23.field_24.unknown24 = NONE;
-				if (function_1697c0(0x800005, &local_23.field_c, &local_23.field_18, NONE, NONE, &local_23.field_24))
+				collision.unknown24 = NONE;
+				if (function_1697c0(0x800005, &local_23.field_c, &local_23.field_18, NONE, NONE, &collision))
 				{
-					vector3f const *local_10 = (vector3f const *)((byte const *)&local_23.field_24 + 0x28);
-					local_2->field_1c.x = local_10->i * 0.005f + local_23.field_24.point.x;
-					local_2->field_1c.y = local_10->j * 0.005f + local_23.field_24.point.y;
-					local_2->field_1c.z = local_10->k * 0.005f + local_23.field_24.point.z;
+					vector3f const *local_10 = (vector3f const *)((byte const *)&collision + 0x28);
+					local_2->field_1c.x = local_10->i * 0.005f + collision.point.x;
+					local_2->field_1c.y = local_10->j * 0.005f + collision.point.y;
+					local_2->field_1c.z = local_10->k * 0.005f + collision.point.z;
 					local_2->field_02 |= 0xa;
 					local_2->field_28 = *local_10;
 				}
@@ -348,9 +485,9 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 			}
 			if ((bool)((*(byte const *)((byte const *)local_3 + 0x16) >> 4) & 1))
 			{
-				local_2->field_28.i += local_5->i;
-				local_2->field_28.j = local_5->j + local_2->field_28.j;
-				local_2->field_28.k = local_5->k + local_2->field_28.k;
+				local_2->field_28.i += velocity->i;
+				local_2->field_28.j = velocity->j + local_2->field_28.j;
+				local_2->field_28.k = velocity->k + local_2->field_28.k;
 			}
 		}
 		else

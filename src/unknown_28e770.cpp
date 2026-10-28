@@ -128,6 +128,11 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // alignment operands, marker-clear join and contribution schedule remain;
 // byte busy result / elapsed consumer / factor accumulator / contribution-first sums / combined 124/124/124/124/124f;
 // marker comparison result 124f; terminal marker case / comparison 206/206f.
+// score 118 (was 118): at aligned 21 the 4-byte length comes from case five's two field_50 = NONE
+// stores (retail reloads esi ahead of one shared store) and case six's first contribution term.
+// dot3f for the alignment test (either order) 118; case-four sum order 118; failure-first
+// case-five arm 198; `x = x + c` contribution adds 118; contribution scaled into direction 118;
+// the dot test as two NONE-storing ifs 234.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

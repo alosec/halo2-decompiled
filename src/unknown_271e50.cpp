@@ -57,21 +57,21 @@ void function_271300(s_type_f17a25 *state, s_path_location const *location, s_pa
 // @retail 0x271e50
 PRIVATE void function_271e50(s_type_f17a25 *state, short index)
 {
-	short cost = state->heap[index].cost;
 	short node = state->heap[index].node;
+	short cost = state->heap[index].cost;
 
 	while (index > 1)
 	{
 		short parent = index >> 1;
-		short parent_cost = state->heap[parent].cost;
 		short parent_node = state->heap[parent].node;
+		short parent_cost = state->heap[parent].cost;
 		if (cost >= parent_cost)
 		{
 			break;
 		}
 		state->heap[index].node = parent_node;
 		state->heap[index].cost = parent_cost;
-		state->nodes[state->heap[index].node].heap_index = index;
+		state->nodes[parent_node].heap_index = index;
 		index = parent;
 	}
 

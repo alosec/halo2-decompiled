@@ -1267,31 +1267,6 @@ extern bool g_4ed39d;
    the change is pending, then shows the dialog or the menu that follows it.
    Retail passes all three arguments on the stack: reading the screen id
    through its address keeps it there */
-// score 184 (was 184): game/main byte homes and dialog joins differ;
-// branch loader scope 184; lobby byte 184; main byte 184; word dialog ID 190;
-// signed user flags 184.
-// Dialog-choice name 184; recovery-result name 184; both names 184; qualified loader if/else 184; dialog-
-// only signed flags 184; loader read at use 184; game result byte 184; choice byte 184. Menu-byte homes and
-// dialog joins remain.
-// score 184 (was 184): initialized message before menu results 183; later mode 184;
-// results before user query 193; late dialog ID 184; full-width dialog flags 189;
-// recovery middle/high groups first 184/184; qualified pending/gate exits 184.
-// score 184 (was 184): game/main byte homes and dialog joins remain.
-// Plain: direct dialog callbacks 202; callbacks after mode 199; callbacks at display 192;
-// direct callbacks/plain game result 242; late callbacks/plain result 233; display callbacks/plain result 237;
-// direct callbacks/scalar error 245; direct callbacks/both plain 268.
-// game/main byte homes and dialog joins remain;
-// lobby recovery result 213; with connection/all recovery results 213/222;
-// dialog high/middle cases first 184/184; scoped default-dialog query,
-// dialog-presence and alternate-menu results 184/184/184.
-// score 184 (was 184): game/main byte homes and dialog joins remain.
-// Direct disconnect game/lobby/main results 177/208/189; paired game-lobby,
-// game-main and lobby-main results 225/217/216; all results 220; ordinary game result 216.
-// Direct game result adds comparisons/stores: aligned changes 78 versus 69; dropped.
-// score 184 (was 184): game/main byte homes and dialog joins remain;
-// dialog-ID choice 202f; direct ID-selected callback tuples 238f; callbacks
-// after selection/at consumer 237f/190f; with ordinary game result
-// ID-only/direct/late/consumer 233f/257f/242f/235f. Original flow retained.
 // @retail 0x19ae0f
 void function_19ae0f(long change, long pending, long error)
 {
@@ -1310,8 +1285,8 @@ void function_19ae0f(long change, long pending, long error)
 	{
 		word user_flags = function_1901fc();
 		long mode = g_47ff90;
+		bool show_game_menu = false;
 		bool show_lobby = false;
-		bool volatile show_game_menu = false;
 		bool show_main_menu = false;
 		s_screen_parameters parameters;
 		screen_load_proc load;
@@ -1368,15 +1343,19 @@ void function_19ae0f(long change, long pending, long error)
 				}
 				break;
 			case 6:
-				if (*error_reference == 0xe)
+			{
+				long error_code = *error_reference;
+
+				if (error_code == 0xe)
 				{
 					handled = function_148044(5, 4, 0xba);
 				}
-				else if (*error_reference == 0xdb || *error_reference == 0xed || *error_reference == 0xdc)
+				else if (error_code == 0xdb || error_code == 0xed || error_code == 0xdc)
 				{
 					handled = true;
 				}
 				break;
+			}
 			}
 			if (handled)
 			{
@@ -1402,15 +1381,14 @@ void function_19ae0f(long change, long pending, long error)
 					show_main_menu = true;
 					break;
 				}
+				break;
 			}
-			else
-			{
-				show_main_menu = true;
-			}
+		default:
+			show_main_menu = true;
 			break;
 		case 4:
 		{
-			long dialog_id;
+			long dialog_id = NONE;
 
 			if (!function_0682c0() && !function_138840())
 			{
@@ -1436,7 +1414,7 @@ void function_19ae0f(long change, long pending, long error)
 				case 0:
 				case 1:
 					function_18f1c0(0);
-					return;
+					break;
 				case 2:
 				case 3:
 					dialog_id = 5;
@@ -1456,27 +1434,21 @@ void function_19ae0f(long change, long pending, long error)
 						second_chosen = dialog_callback_sign_out_to_main_menu;
 					}
 					break;
-				default:
-					return;
 				}
 			}
-			if (!window_manager_window_has_dialog(1, 4, dialog_id))
+			if (dialog_id != NONE && !window_manager_window_has_dialog(1, 4, dialog_id))
 			{
-				word show_options = function_1901fc();
 				if (choice)
 				{
-					dialog_choice_show(1, dialog_id, 4, show_options, first_chosen, second_chosen, 0);
+					dialog_choice_show(1, dialog_id, 4, function_1901fc(), first_chosen, second_chosen, 0);
 				}
 				else
 				{
-					dialog_ok_show(1, dialog_id, 4, show_options, first_chosen, 0);
+					dialog_ok_show(1, dialog_id, 4, function_1901fc(), first_chosen, 0);
 				}
 			}
 			return;
 		}
-		default:
-			show_main_menu = true;
-			break;
 		}
 		if (show_game_menu)
 		{
@@ -1492,15 +1464,17 @@ void function_19ae0f(long change, long pending, long error)
 		}
 		else if (show_main_menu)
 		{
-			if (!function_6c7e0())
+			if (function_6c7e0())
+			{
+				load = function_2310b7;
+				function_149f49((s_message *)&parameters, 7, 0, user_flags, 5, 4, (long)load);
+				parameters.load(&parameters);
+			}
+			else
 			{
 				function_1906b4();
 				function_1483c3(0);
-				return;
 			}
-			load = function_2310b7;
-			function_149f49((s_message *)&parameters, 7, 0, user_flags, 5, 4, (long)load);
-			parameters.load(&parameters);
 		}
 		else
 		{
@@ -1929,6 +1903,12 @@ struct s_session_map_view
    5 the members' status, 6 ready, 7 the wrong players, 8 to 10 the host's
    states; the members' progress goes to progress. Retail keeps progress on
    the stack: reading it through its address keeps it there */
+// score 103 (was 103): ours holds progress in EDI; retail reads it from its stack home at both
+// uses, keeps the limit in EDI, the team mask in EBX and the count in progress's home.
+// Volatile reads of progress at both uses 195 (aligned 40 of 50: progress stays home, but a
+// zero constant takes EDI and the limit spills); at the second use only 112; at the first
+// only 195; both plus the limit at function scope 194; both with the team mask declared
+// first 192; team mask declared first alone 103.
 // @retail 0x19a2ce
 long function_19a2ce(real *progress)
 {

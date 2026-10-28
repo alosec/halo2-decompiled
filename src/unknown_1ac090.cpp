@@ -9,6 +9,7 @@
 #include "unit_requests.h"
 #include "unknown_2605d0.h"
 #include "unknown_2626b0.h"
+#include "vector_products.h"
 
 /* the state of the slots of types 0x2c and 0x2b */
 struct s_slot_2c
@@ -114,31 +115,30 @@ void __stdcall function_1ad130(long actor_index, s_slot *slot);
 bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1);
 void __stdcall function_1ada70(long actor_index, s_slot *slot);
 
-/* ---- slot type 0x2c ---- */
-
-// @retail 0x1ac090
-bool __stdcall function_1ac090(long actor_index, s_slot *slot)
+/* the slot state of types 0x2c and 0x2b seen past its header (s_slot_2c's layout from +0xc),
+   as 0x1ac090 and 0x1acda0 read it */
+struct s_1acda0
 {
-	s_slot_2c *state = (s_slot_2c *)slot;
-	real scale = (slot_random() + 1.0f) * 2.0f;
-	long ticks;
-
-	*(real *)&slot = scale * g_510c54->field_2_3;
-#if H2_NATIVE_PORT
-	ticks = (long)__builtin_rint((double)*(real *)&slot);
-#else
-	__asm
-	{
-		fld slot
-		fistp ticks
-	}
-#endif
-	state->ticks = (short)ticks;
-	state->unknown39 = false;
-	return true;
-}
-
-void function_265bb0(long actor_index);
+    bool unknown0c;
+    bool unknown0d;
+    short ticks;
+    bool unknown10;
+    byte unknown11;
+    bool unknown12;
+    bool unknown13;
+    vector3f facing;
+    short unknown20;
+    short unknown22;
+    bool unknown24;
+    bool unknown25;
+    byte unknown26[2];
+    s_type_c3b527 point;
+    char unknown38;
+    bool unknown39;
+    bool unknown3a;
+    bool unknown3b;
+    byte unknown3c[0x40 - 0x3c];
+};
 
 PRIVATE __forceinline void local_0(real seconds, short *timer)
 {
@@ -162,28 +162,65 @@ PRIVATE __forceinline void local_1(real seconds, short *timer)
 	*timer = (short)ticks;
 }
 
+/* ---- slot type 0x2c ---- */
+
+// @retail 0x1ac090
+bool __stdcall function_1ac090(long actor_index, s_slot *slot)
+{
+	s_1acda0 *state = (s_1acda0 *)slot->unknownc;
+
+	local_1(g_510c54->field_2_3 * ((function_x82e52f(&g_4e7408->unknown0, 0, 0) + 1.0f) * 2.0f), &state->ticks);
+	state->unknown39 = false;
+	return true;
+}
+
+void function_265bb0(long actor_index);
+
+// score 60 (was 60): frame four versus retail zero (first tick in the frame, not the slot home);
+// slot, actor-table and object-table registers rotate and the mode is compared in memory.
+// Both timer helpers 85; add helper 68 plain kept; set helper 80; native tick outputs
+// both 72, first 70, second 80; shared random index 80; library slot copy 80.
+// Round 128: native slot data block/full native copy 91/91; data with second timer writer/native
+// output 80/80; one unit receiver 91; branch-assigned default 103; uniform unit reads 76; uniform
+// reads plus branch default 104. Original eight-byte frame and mode scheduling remain.
+// Round 138: mode predicate/shared clock/both 68/68/68; shared rate 84; second rounding-result
+// helper 74; clock/result helper 74; rate/result helper 104; native result on new frame 70;
+// force-inline second/both/first rounding results 85/70/68; native result with both 78.
+// Zero-frame forms regress allocation or expansion.
+// Round 53: unit index read at each use 60 kept (actor_index now in a register); delay through
+// random_index 60 kept. Mode arms swapped 64; unit index before state 68; with the set helper
+// for the second tick: unit at use 94 (zero frame, 367 bytes), unit local 85 (slot loads late),
+// plus state first 85, plus helper tick renamed 85.
+// Round 323: long/word/dword/real delay with second writer 88/85/105/105;
+// the same delay carriers with native second output 88/85/105/105. Conversion-input packing
+// restores zero frame in some forms but regresses allocation; original body restored.
+// Unit-object receiver on the whole-slot graph, four declaration phases: original second
+// output 68/92/82/88; existing setter 85/85/94/85. Native unit input ownership does not
+// recover the conversion homes or the mode register; original body restored.
+// Y346: timer input/output order, scalar names and complete delay-product boundaries 60 (seven forms);
+// all with the second input named at computation 60.
+// Lane 9 r23: both conversions through forceinline real_to_long 92, with a unit-index local 70
+// (slot read per arm, so its home is live at the first conversion and a frame slot is used);
+// existing pointer helpers for both with the pointer parameter first 85 (zero frame, first
+// conversion homes as retail; slot still loaded in the arm, mode compared in memory); with field
+// reads for the unit index 94 (367 bytes, three pushes); result after mode 83.
+// Round 212: long/dword returned-state storage at entry 69/69; branch-default 107/107;
+// the same with the zero-mode single exit 69/69/107/107. Four-byte conversion frame and
+// mode residency remain; original result storage, body and every call tuple restored.
 // @retail 0x1ac100
 short __stdcall function_1ac100(long actor_index, s_slot *slot, s_slot *next)
 {
 	short result = g_46fbe8;
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_2c *state = (s_slot_2c *)slot;
-	long unit_index = actor->unknown018;
-	short mode = UNIT_MODE(unit_index);
+	short mode = UNIT_MODE(actor->unknown018);
 	if (mode == 0)
 		result = 0x2b;
 	else if (((real *)actor->unknown2d8)[1] + ((real *)actor->unknown2d8)[0] > g_45dbd8)
 	{
-		dword *seed = &g_4e7408->unknown0;
-		*seed = 1664525 * *seed + 1013904223;
-		short delay = (short)(2 + (3 * (*seed >> 16) >> 16));
-		real seconds = (real)delay * g_510c54->field_2_3;
-		__asm
-		{
-			fld seconds
-			fistp slot
-		}
-		state->ticks += (short)(long)slot;
+		short delay = 2 + random_index(&g_4e7408->unknown0, 3);
+		local_0((real)delay * g_510c54->field_2_3, &state->ticks);
+		real seconds;
 		state->unknown12 = false;
 		seconds = g_510c54->field_2_3 * 0.5f;
 		__asm
@@ -206,7 +243,7 @@ short __stdcall function_1ac100(long actor_index, s_slot *slot, s_slot *next)
 	}
 	else if (state->ticks == 0)
 	{
-		function_e68c0(0x27, unit_index);
+		function_e68c0(0x27, actor->unknown018);
 		g_46eeb8[0x2b]->unknown8 = g_46f348;
 		result = g_46fbe4;
 	}
@@ -281,6 +318,29 @@ short __stdcall function_1ac3f0(long actor_index)
 	return result;
 }
 
+// score 35 (was 35): frame four agrees; scale is popped at the first timer multiply and stores differ;
+// tried first timer shared conversion direct 114; first timer shared conversion named seconds 103;
+// second timer shared conversion 49; both timers shared conversion 121; integral tick rate 47;
+// shared timer homes at entry 49; scale first timer product 43; chained boolean resets 46;
+// existing timer writer for first timer 47; double tick rate 43. Restored.
+// first duration multiply pops scale early and reset stores cross the scale
+// addition. Duration-seconds name 43; ticks name 43; both names 43; both timer names 43; product
+// update 43; duration scope 43; entry delay 43; early rate 37/333 (one-use field copy, rejected).
+// Scale draw after resets 0d/12/10/25/3a/0c/22/3b: 37/35/36/37/37/39/39/40;
+// after 12 kept at 317 bytes; seed reload and non-popping multiply still differ.
+// Scale-first product update 47; duration-owned product 43; first output/input guard scope
+// 43/43; true-field chain 48; late completion reset 44; byte-first resets 45; update/chain 52.
+// Native character readonly/reference/value 35/35/82; double scale/delay/both 35/74/74;
+// character reference/value plus double scale 35/82. Seed reload and scale pop remain.
+// Round 128: native slot data block 35; data block with early draws 43; first/second/both timer
+// writers 70/35/70; early data receiver 46; initialized early exit 48; later initialized
+// publication 38. Seed retention and first scale pop remain.
+// Round 138: shared seed pointer/record 58/58; shared clock alone/with seed 35/46; common rate
+// alone/with seed 86/91; first conversion input and second output entry homes 35/35.
+// Intermediate seed store and early scale pop remain.
+// Round 53: adjacent draws remove the seed store but the scale multiply pops (43); scale through
+// the file's random range 38, both draws 38; seconds-to-ticks inline 47 (named rate 43); scale-first
+// product 43; direct rate 47, flat scope 47; real_to_long 114, force-inlined 47; arms swapped 44.
 // @retail 0x1ac430
 bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 {
@@ -290,10 +350,10 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 	if (!state->unknown0c)
 	{
 		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->lower, character->upper);
-		real scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 1.0f, 3.0f);
 
 		state->unknown0d = true;
 		state->unknown12 = false;
+		real scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 1.0f, 3.0f);
 		state->unknown10 = false;
 		state->unknown25 = false;
 		state->unknown3a = false;
@@ -412,6 +472,38 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 	}
 }
 
+// score 24 (was 24): frame 0x28 agrees; the actor-data load is not hoisted into ECX above
+// the saves (ours loads it into EBP and adds, retail uses LEA), the mode lookup's table load and
+// registers differ, and the two post-request restores of EDI/ESI run in the other order.
+// Round 49: 40 combinations of declaration order, comparison order and local names compile
+// identically (24); natural facing copy 45, after the timer field 5 instructions longer; the
+// existing rounding helper 150, with a named seconds local and natural copy 151.
+// Earlier: timer names/declarations/homes/setter 24; request before mode 24; type after point 34;
+// reverse word declarations 24; mode after vector 44; request result 26; failure first 48;
+// data snapshot 26; shared byte offset 26; named unit index 26; rounding result 150; direction
+// memcpy 45; direct slot 24; timer byte first 35; full width mode 39; mode tests reversed 27;
+// inactive state branch first 168; missing prop early return 24; alignment product operands 30;
+// unsigned short mode 24; request home in active scope 24; low word actor slot 155; receiver
+// names/separate initialization/constant receivers/nested facing test 24; facing eligibility
+// value 26; direct direction-bit snapshots 39; request memset 195; request aggregate 190; actor
+// pointer written out instead of actor_get 171.
+// early pool-data load, mode registers and restore order differ;
+// timer names 24; timer declarations 24; request before mode 24; type after point 34;
+// reverse word declarations 24; mode after vector 44; request result 26; failure first 48.
+// early pool load, mode registers and restore order differ; data snapshot 26, shared byte offset 26, named unit index 26, timer setter 24, rounding result 150, direction memcpy 45, direct slot 24, timer byte first 35 (round 115).
+// frame 0x28 agrees; pool-data load and mode-lookup registers still differ;
+// tried full width mode 39; mode tests reversed 27; inactive state branch first 168;
+// missing prop early return 24; alignment product operands 30; unsigned short mode 24;
+// timer homes at entry 24; request home in active state scope 24;
+// low word actor slot used by both lookups 155. Restored.
+// score 24 (was 24): frame 0x28 agrees; early pool load, mode registers and restore schedule remain.
+// Receiver names/separate initialization/constant receivers/nested facing test 24 each;
+// facing eligibility value 26; direct direction-bit snapshots 39; request memset 195;
+// request aggregate initialization 190. All executable forms restored.
+// score 24 (was 24): early actor-data load, mode registers and restore order remain.
+// Node/view/both entry scopes 24/24/24; read-only view 24;
+// active-result lifetime 176; direct bit-view consumers 24; absent view first 95;
+// active result with direct bit-view consumers 176. Restored.
 // @retail 0x1ad130
 void __stdcall function_1ad130(long actor_index, s_slot *slot)
 {
@@ -593,6 +685,19 @@ bool __stdcall function_1ad590(long actor_index, s_slot *slot)
 	return true;
 }
 
+// score 58 (was 58): default reload and saved-register roles differ. Branch-assigned defaults,
+// valid object first: short result with entry/scoped state 76/76, long result 73/73; invalid
+// object first: short 80/80, long 77/77.
+// Object index once 58; element-first 58; property once 58; element-first 57; both
+// indices once 58; element-first 57; original reads element-first 58; tick receiver 55 (below gate).
+// Separate continuation, word/native with arms/conditional: branch 55/58/56/59; entry
+// 55/58/56/59 (three-point gain rejected). Tag/prop/state inline and noinline declarations,
+// singly and together, 58 each. Independent default reload and saved roles still differ.
+// No else (entry default kept) 55; invalid test first without else 55; slot cast at each use 58;
+// split 0xe tests 58; nested property/element tests 58; result first 58; state first 58;
+// inverted tick test 60.
+// Actor readonly/reference, element readonly/reference, readonly pair, native input
+// pair, state reference and all record references: 58 each; default reload and saved roles remain.
 // @retail 0x1ad5b0
 short __stdcall function_1ad5b0(long actor_index, s_slot *slot, bool active)
 {
@@ -692,7 +797,52 @@ s_slot_handler_2 g_47dc88 =
 void function_b9fc0(long arg_0, vector3f *arg_1, vector3f *arg_2);
 bool function_f47d0(long arg_0, long arg_1);
 bool function_1f8660(long arg_0);
-
+// score 7 (was 7): Frame 0x80c, all exits and every instruction but seven agree: the actor and
+// scratch-buffer spill homes are exchanged (+0x24/+0x28; retail keeps the actor at +0x28).
+// Round 144: the homes follow use weight (heavier is lower): three extra buffer releases put the
+// buffer below the actor, one or two do not, nor one actor use fewer. Getter for the entry test with
+// the actor declared inside 63; object index read once for both uses 211; reference test reversed
+// 137; prop index named for its two uses 13; object index read before the prop tests 235.
+// Round 62: the second point difference in its own vector 7 (kept: retail's direction loads in the
+// second dot product); a release in each arm 66; one position pointer for both differences 7;
+// status output scoped into the request block 11; separate first-call reference 7; early test
+// folded into the outer condition (no label) 7.
+// Result first 203; request outer scope 187; role names 181; shared point differences 179;
+// failure result before release 207; shared cross product 174.
+// Count name with shared cross 174; request-output declarations first 174;
+// outer vector workspaces 174; separate direction vectors 171; request defaults with overrides 186.
+// unsigned-byte result 224; direct shared reference equality 174; direct slot observations 174; separate selected alignment 174; range selection arms 174.
+// Short/native-long success 232/228; unsigned selection count 174; native zero/kind request
+// initialization 172/173; status-output name 174; const tag input 174; request through validation 174;
+// success from availability 217; direct exits with failure retained through release 232.
+// Round 358: Entry selection outputs 174; complete vector role names with cross output 174; failure-default
+// success paths 215; combined work guard 174; positive tag work 174. Actor/result/count and direction homes
+// remain in frame 0x80c; opening body restored.
+// Round 195: complete k-j-i projections/status 174/174; both shared differences 172/172;
+// every component product/status 173/173; both shared differences 172/172. Gains of one/two restored.
+// Round 197: read-only actor/state/both views 174/174/174; distinct selection/validation
+// reference lifetimes alone/actor/state/both 174/174/174/174; actor lookup at every use 230.
+// Round 204: shared release 204; native reference-produced result 226; absent-tag return
+// alone/reference result 226/220; skip return alone/reference result 223/229; both early
+// exits alone/reference result 221/222. Actor/result/count and direction homes remain.
+// Round 323: vehicle field at each use 174; radius read once 191; shared projections
+// 194; vehicle/radius 191; vehicle/projections 194; radius/projections 213; all 213; radius
+// and projections with native vehicle index 213. Original actor/result/count and direction homes remain.
+// Round 168: Shared complete position with original/split directions and actor/count role names 170
+// each; with entry result 193 each; three scalar coordinates original/split 182/185. Four-point
+// best rejected; snapshot frame 0x81c; opening body restored.
+// Round 199: Count/status scope 175; complete selected-point copy 182; both 180;
+// reference before selected output 174; scope/reference 175; point/reference 182;
+// all three 180; scoped count/status role names 175. Original output lifetimes restored.
+// Round 60 (kept): count output scoped to the request block 173; failure result stored through the
+// flag with one shared release 203; the rest nested under the tag test 95; dot3f for the three dot
+// products 44; vector3d_from_points3d for both differences 34. Not kept: count and status both
+// scoped 175; names sorting the buffer first 173; buffer declared at entry/after the actor 95/95;
+// dot3f argument orders (each, pairs, all) 34-44 unchanged; direction declared first 44; dot3f
+// tested directly 44; actor getter at the object/vehicle/second-difference use 60/135/238;
+// result first 68; slot first 34.
+// Round 49: const actor/buffer/both pointers 7/7/7; request/validation/release buffer aliases
+// 7/7/7; first/second position pointers 7/7. Starting body restored.
 // @retail 0x1ad6a0
 bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 {
@@ -705,82 +855,76 @@ bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 			goto done;
 		s_tag_element_54 *local_3 = (s_tag_element_54 *)function_1e5450(arg_0,
 			ai_object_get(local_0->unknown26c)->definition_index);
-		if (!local_3)
+		if (local_3)
 		{
-			local_1 = false;
-			goto done;
-		}
-		byte *local_4 = ai_scratch_buffer_get();
-		s_261d20_entry local_7;
-		long local_8;
-		bool local_9;
-		s_reference local_10;
-		{
-			s_2605d0_request local_5;
-			memset(&local_5, 0, sizeof(local_5));
-			*(real *)((byte *)&local_5 + 0x60) = 15.0f;
-			local_5.type = 7;
-			local_5.unknown015 = true;
-			local_5.unknown05b = true;
-			real local_6 = local_3->unknown98 > 0.0f ? local_3->unknown98 : 20.0f;
-			local_5.unknown008 = local_6 * 0.5f;
-			local_5.unknown00c = local_6;
-			local_5.unknown010 = local_6 + 10.0f;
-			local_10 = function_2605d0(arg_0, &local_5, (long)&local_7,
-				(long)&local_8, local_4, &local_9);
-			local_10 = function_2626b0(arg_0, local_10, local_8, local_4, local_9, true);
-		}
-		s_reference local_11 = g_470fa0;
-		if (*(long *)&local_10 == *(long *)&local_11)
-		{
-			actor_get(arg_0)->unknown040 = false;
-			ai_scratch_buffer_release(local_4);
-			local_1 = false;
-			goto done;
-		}
-		if (!local_2->unknown0c && local_0->unknown270 == 4 && local_0->prop_index != NONE)
-		{
-			s_prop_node_view *local_12 = prop_node_get(local_0->prop_index);
-			s_prop_state_view *local_13 = prop_node_state(local_12);
-			if (local_12->unknown24 >= 1 && local_12->unknown24 <= 2 && *(bool *)((byte *)local_13 + 0x64))
+			byte *local_4 = ai_scratch_buffer_get();
+			s_261d20_entry local_7;
+			bool local_9;
+			s_reference local_10;
 			{
-				long local_14 = local_0->unknown26c;
-				vector3f local_15;
-				vector3f local_16;
-				function_b9fc0(local_14, &local_15, &local_16);
-				vector3f local_17;
-				local_17.i = local_13->position.x - local_0->position.x;
-				local_17.j = local_13->position.y - local_0->position.y;
-				local_17.k = local_13->position.z - local_0->position.z;
-				function_30bf0(&local_17);
-				real local_18 = local_15.k * local_17.k;
-				local_18 += local_15.j * local_17.j;
-				local_18 += local_15.i * local_17.i;
-				if (local_18 > 0.9f)
+				long local_8;
+				s_2605d0_request local_5;
+				memset(&local_5, 0, sizeof(local_5));
+				*(real *)((byte *)&local_5 + 0x60) = 15.0f;
+				local_5.type = 7;
+				local_5.unknown015 = true;
+				local_5.unknown05b = true;
+				real local_6 = local_3->unknown98 > 0.0f ? local_3->unknown98 : 20.0f;
+				local_5.unknown008 = local_6 * 0.5f;
+				local_5.unknown00c = local_6;
+				local_5.unknown010 = local_6 + 10.0f;
+				local_10 = function_2605d0(arg_0, &local_5, (long)&local_7,
+					(long)&local_8, local_4, &local_9);
+				local_10 = function_2626b0(arg_0, local_10, local_8, local_4, local_9, true);
+			}
+			s_reference local_11 = g_470fa0;
+			if (*(long *)&local_10 == *(long *)&local_11)
+			{
+				local_1 = false;
+				actor_get(arg_0)->unknown040 = local_1;
+			}
+			else
+			{
+				if (!local_2->unknown0c && local_0->unknown270 == 4 && local_0->prop_index != NONE)
 				{
-					local_17.i = local_7.point.x - local_0->position.x;
-					local_17.j = local_7.point.y - local_0->position.y;
-					local_17.k = local_7.point.z - local_0->position.z;
-					real local_19 = function_30bf0(&local_17);
-					local_18 = local_15.k * local_17.k;
-					local_18 += local_15.j * local_17.j;
-					local_18 += local_15.i * local_17.i;
-					if (local_18 > 0.707106769f)
+					s_prop_node_view *local_12 = prop_node_get(local_0->prop_index);
+					s_prop_state_view *local_13 = prop_node_state(local_12);
+					if (local_12->unknown24 >= 1 && local_12->unknown24 <= 2 && *(bool *)((byte *)local_13 + 0x64))
 					{
-						real local_20 = (local_16.i * local_15.j - local_16.j * local_15.i) * local_17.k;
-						local_20 += (local_16.k * local_15.i - local_16.i * local_15.k) * local_17.j;
-						local_20 += (local_16.j * local_15.k - local_16.k * local_15.j) * local_17.i;
-						local_20 *= local_19;
-						if (local_20 > 1.0f)
-							function_f47d0(local_14, 1);
-						else if (-1.0f > local_20)
-							function_f47d0(local_14, 2);
+						long local_14 = local_0->unknown26c;
+						vector3f local_15;
+						vector3f local_16;
+						function_b9fc0(local_14, &local_15, &local_16);
+						vector3f local_17;
+						vector3d_from_points3d(&local_0->position, &local_13->position, &local_17);
+						function_30bf0(&local_17);
+						real local_18 = dot3f(&local_15, &local_17);
+						if (local_18 > 0.9f)
+						{
+							vector3f local_21;
+							vector3d_from_points3d(&local_0->position, &local_7.point, &local_21);
+							real local_19 = function_30bf0(&local_21);
+							local_18 = dot3f(&local_15, &local_21);
+							if (local_18 > 0.707106769f)
+							{
+								vector3f side;
+								cross3f(&local_16, &local_15, &side);
+								real local_20 = dot3f(&side, &local_21);
+								local_20 *= local_19;
+								if (local_20 > 1.0f)
+									function_f47d0(local_14, 1);
+								else if (-1.0f > local_20)
+									function_f47d0(local_14, 2);
+							}
+						}
 					}
 				}
+				local_2->unknown0c = true;
 			}
+			ai_scratch_buffer_release(local_4);
 		}
-		local_2->unknown0c = true;
-		ai_scratch_buffer_release(local_4);
+		else
+			local_1 = false;
 	}
 done:
 	return local_1;
@@ -824,6 +968,41 @@ struct s_1ac612
 	byte field_44[0x484 - 0x44];
 };
 
+// score 29 (was 29): frame 0x8c agrees; the actor pointer and actor offset swap EDI/EBP (so the
+// candidate takes EDI), their spill homes swap with the selected index (+0x1c/+0x20), the best
+// value/index initialisations sit before the zero-count branch, one product loads its operands the
+// other way and the up.j load runs before the up-vector address.
+// Round 49: result declared first 30; global factor first in the third product 29; best index and
+// value before the query 258 (983 bytes); one-expression distance 137; named unit index 29;
+// candidate comparison reversed, new actor local for the cleanup and one-expression up product
+// 29/29/128 (screened); 36 combinations of these, none below 29.
+// Earlier: separate cleanup receiver 29; success return 74; shared displacement 29; scan scope
+// 44; unsigned candidate counter 227; unsigned marker counter 153; const source/marker 29;
+// shared offset 29; lifetime names 29; actor parameter name 29; unsigned handles 29; location
+// memcpy 58; distance scope 29; continue guards 29; joint vector helpers 41; result declared
+// first 30; best index named before actor home 29; source actor named after index home 29;
+// best index and source actor named homes 29; candidate/marker difference shared helpers 29;
+// forward product shared helper 135; up product shared helper 41; native source location 58;
+// query outputs at loop/entry and source receiver at entry 29; marker reference, readonly
+// candidate tag, distance predicate and aligned up-product scope 29; positive-count scope 254;
+// up-vector private pointer 41; actor-input private reference 137.
+// actor offset/candidate registers and two spill homes differ;
+// separate cleanup receiver 29; success return 74; shared displacement 29; scan scope 44;
+// unsigned candidate counter 227; unsigned marker counter 153; const source/marker 29/29.
+// actor/candidate registers and two spill homes differ; shared offset 29, lifetime names 29, actor parameter name 29, unsigned handles 29, location memcpy 58, distance scope 29, continue guards 29, joint vector helpers 41 (round 115).
+// frame 0x8c agrees; EBP/EDI, two spill homes and product/address scheduling still differ;
+// tried result declared first 30; best index named before actor home 29;
+// source actor named after index home 29; best index and source actor named homes 29;
+// candidate difference shared helper 29; marker difference shared helper 29;
+// forward product shared helper 135; up product shared helper 41. Restored.
+// score 29 (was 29): frame 0x8c agrees; EBP/EDI and offset/selection spill homes remain exchanged.
+// Native source location 58; query outputs at loop/entry and source receiver at entry 29 each;
+// marker reference/readonly candidate tag/distance predicate/aligned up-product scope 29 each.
+// All executable forms and the experimental include restored.
+// score 29 (was 29): actor-offset/selection registers and spill homes still differ.
+// Candidate cursor 244; marker cursor 234; both cursors 249; distance first 29;
+// distance across queries 266; point declaration first 29; selection update first 30;
+// short ordinal entry scopes 29. Restored.
 // @retail 0x1ac610
 bool __stdcall function_1ac610(long arg_0, point3f const *arg_1,
 	s_object_marker *arg_2, short *arg_3)
@@ -955,6 +1134,7 @@ bool function_1ac9e0(long arg_0, s_reference arg_1, s_1f4a20_entry const *arg_2,
 	byte *arg_4, bool arg_5, long arg_3, s_1f4a20_source const *arg_6, s_1ac9e1 *arg_7)
 {
 	s_actor_view *local_1 = actor_get(arg_0);
+	bool result = false;
 	bool local_0 = false;
 	arg_7->field_7 = false;
 	s_262b40_result *local_2 = function_262b40(arg_1);
@@ -962,48 +1142,52 @@ bool function_1ac9e0(long arg_0, s_reference arg_1, s_1f4a20_entry const *arg_2,
 		*(long *)((byte *)local_2 + 0x14) != NONE &&
 		*(long *)((byte *)local_2 + 0x14) != 0xffff)
 	{
-		bool local_8 = function_1f4a20(arg_2, arg_0, arg_1, arg_6, false, &arg_7->field_1c,
+		result = function_1f4a20(arg_2, arg_0, arg_1, arg_6, false, &arg_7->field_1c,
 			&arg_7->field_8, &arg_7->field_2c, &local_0);
-		if (local_8)
+		if (result)
 		{
 			arg_7->field_19 = true;
 			arg_7->field_2e = false;
 			arg_7->field_7 = true;
 			arg_7->field_1 = false;
-			return local_8;
+			goto done;
 		}
 		if (local_0)
-			return local_8;
+			goto done;
 	}
-	s_reference local_3 = function_2626b0(arg_0, arg_1, arg_3, arg_4, arg_5, true);
-	arg_7->field_1 = false;
-	s_reference local_4 = g_470fa0;
-	if (*(long *)&local_3 == *(long *)&local_4)
 	{
-		actor_get(arg_0)->unknown040 = false;
-		return false;
-	}
-	arg_7->field_19 = false;
-	volatile bool local_5 = true;
-	if (local_1->unknown539 > 0)
-	{
-		function_26c180(arg_0);
-		s_type_c3b527 const *local_6 = (s_type_c3b527 const *)((byte *)local_1 +
-			0x52c + local_1->unknown539 * 0x1c);
-		s_type_c3b527 const *local_7;
-		if (local_1->unknown539 > 1)
-			local_7 = (s_type_c3b527 const *)((byte *)local_1 +
-				0x510 + local_1->unknown539 * 0x1c);
-		else
-			local_7 = (s_type_c3b527 const *)((byte *)local_1 + 0x27c);
-		if (local_6 && local_7)
+		s_reference local_3 = function_2626b0(arg_0, arg_1, arg_3, arg_4, arg_5, true);
+		arg_7->field_1 = false;
+		s_reference local_4 = g_470fa0;
+		if (*(long *)&local_3 == *(long *)&local_4)
 		{
-			function_210be0(local_6, local_7, &arg_7->field_8);
-			arg_7->field_8.k = 0.0f;
-			arg_7->field_7 = function_30bf0(&arg_7->field_8) > g_45dbd8;
+			actor_get(arg_0)->unknown040 = false;
+			result = false;
+			goto done;
+		}
+		arg_7->field_19 = false;
+		result = true;
+		if (local_1->unknown539 > 0)
+		{
+			function_26c180(arg_0);
+			s_type_c3b527 const *local_6 = (s_type_c3b527 const *)((byte *)local_1 +
+				0x52c + local_1->unknown539 * 0x1c);
+			s_type_c3b527 const *local_7;
+			if (local_1->unknown539 > 1)
+				local_7 = (s_type_c3b527 const *)((byte *)local_1 +
+					0x510 + local_1->unknown539 * 0x1c);
+			else
+				local_7 = (s_type_c3b527 const *)((byte *)local_1 + 0x27c);
+			if (local_6 && local_7)
+			{
+				function_210be0(local_6, local_7, &arg_7->field_8);
+				arg_7->field_8.k = 0.0f;
+				arg_7->field_7 = function_30bf0(&arg_7->field_8) > g_45dbd8;
+			}
 		}
 	}
-	return local_5;
+done:
+	return result;
 }
 
 
@@ -1068,31 +1252,37 @@ bool __stdcall function_1acb50(long arg_0, s_slot *arg_1)
 bool function_2613d0(long arg_0, s_reference arg_1, s_prop_search *arg_2);
 bool __stdcall function_1acb50(long arg_0, s_slot *arg_1);
 
-#pragma inline_depth(0)
-/* the slot state of 0x1acda0 seen past its header (the same layout as s_slot_2c from +0xc) */
-struct s_1acda0
-{
-    bool unknown0c;
-    bool unknown0d;
-    short ticks;
-    bool unknown10;
-    byte unknown11;
-    bool unknown12;
-    bool unknown13;
-    vector3f facing;
-    short unknown20;
-    short unknown22;
-    bool unknown24;
-    bool unknown25;
-    byte unknown26[2];
-    s_type_c3b527 point;
-    char unknown38;
-    bool unknown39;
-    bool unknown3a;
-    bool unknown3b;
-    byte unknown3c[0x40 - 0x3c];
-};
-
+// score 61 (was 61): frame 0x764 agrees; slot ESI arrives late and boolean/result traffic differs.
+// Round 144: retail's state test is a bool value (`sete al; test al, al`) stored as such: `bool active
+// = mode == 2; if (active) { if (!set && eligible) {...; set = true;} } else set = active;` 71 (al 29
+// against 28: sete, both stores and the result home +0x13 as retail; left the late slot ESI and
+// EAX/ECX rotation), with `set = active` in both 124 (active spilled); plain nested ifs 121 (al 32);
+// mode through the matched 0x1f86f0 call (kept out of line here) 185/168; n5 + slot pointer before
+// the first exit, any order 177 (slot takes EBX, actor spilled).
+// Common volatile/plain result exits 178/185; native short result 201; result declared first 114;
+// state name 114; existing prop getter 184; native request initialization 117; reversed references 115.
+// Round 195: retained/default-false active result 139/106; each with direct child result 129/68;
+// complete timer predicate with those four 139/129/106/68. Default-false publication and child result kept.
+// Round 204: early state after/before actor on retained result graph 189/189; mode-produced active
+// 134; eligibility-produced active 134; both 199; early state with mode/eligibility/both 184/201/208.
+// Round 128: native data member 114; receiver before result/before actor/before first exit
+// 159/159/159; child result publication and direct return 118; request entry lifetime 118;
+// result/search role names 114; plain result 206. Early ESI, Boolean test and exit traffic remain;
+// all restored.
+// Round 323: existing actor getter 193; prop-index observation 114; common empty
+// reference 124; getter/index 193; getter/reference 188; index/reference 124; all 188;
+// all with conditional prop selection 187. Early ESI and Boolean/result traffic remain.
+// Round 138: active byte/char/short/long 119/119/132/131; result name, active name,
+// all role names 68/68/68; long active with all names 131. Early ESI and result-byte
+// ownership remain; original active producer, qualification and request stores restored.
+// Round 174: child-result join with inherited/ordinary result and neither/state/actor/both nested guards
+// 106/106/172/184 and 172/191/185/170. Retained active-state producer unchanged; all joins restored.
+// Round 59: the request flag at +0x59 (was +0x61) 68 -> 61 and the stale inline_depth(0) pragma removed.
+// Retail's state block is plain nested ifs (no store when already set or when ineligible, 0 on the
+// other state) with the state test as sete/test: nested ifs 121 (no sete); with a bool local,
+// if-set, if/else or ternary bool, a helper before or after the body 121; slot pointer before the
+// first exit (retail's ESI) after/before the actor/first 186, with nested ifs 172; plain result 193,
+// with nested ifs 206.
 // @retail 0x1acda0
 bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
 {
@@ -1120,9 +1310,11 @@ bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
     }
     if (!local_1->unknown0d)
     {
+        bool active = false;
         if (((s_actor_view *)g_4f55f0->data)[arg_0 & 0xffff].unknown504 == 2)
         {
-            if (!local_1->unknown10 &&
+            active = local_1->unknown10;
+            if (!active &&
                 (!local_1->unknown25 || local_1->unknown3a && !function_110ab0(local_0->unknown018)))
             {
                 if (local_3)
@@ -1132,18 +1324,18 @@ bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
                     function_e68c0(0, local_0->unknown018);
                     local_1->unknown3b = true;
                 }
-                local_1->unknown10 = true;
+                active = true;
             }
         }
-        else
-            local_1->unknown10 = false;
+        local_1->unknown10 = active;
     }
     if (local_0->unknown040)
     {
         if (local_1->unknown0d)
         {
-            local_2 = function_1acb50(arg_0, (s_slot *)local_1);
-            return local_2;
+            bool child_result = function_1acb50(arg_0, (s_slot *)local_1);
+            local_2 = child_result;
+            return child_result;
         }
         if (function_1f8660(arg_0) && !REFERENCE_EQUAL(local_0->unknown418, g_470fa0))
         {
@@ -1154,11 +1346,10 @@ bool __stdcall function_1acda0(long arg_0, s_slot *arg_1)
             *(real *)((byte *)&local_4 + 0x48) = 10.0f;
             *(real *)((byte *)&local_4 + 0x4c) = 3.0f;
             *(bool *)((byte *)&local_4 + 0x15) = true;
-            *(bool *)((byte *)&local_4 + 0x61) = true;
+            local_4.unknown59 = true;
             if (!function_2613d0(arg_0, local_0->unknown418, &local_4))
                 local_1->unknown0d = true;
         }
     }
     return local_2;
 }
-#pragma inline_depth(255)

@@ -73,12 +73,43 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 	return (c_channel_effects_view *)SOUND_DRIVER_GLOBALS->effects;
 }
 
-// score 541 (was 541): frame 0x22c versus 0x224; stream/gain homes and math expansion differ.
+// score 545 (was 545): frame 0x22c versus 0x224; stream/gain homes and mixed math remain.
+// frame 0x22c versus 0x224; stream/gain homes and math expansion differ.
 // native input direct bit 541; all native input bits 548; captured direct use 540;
 // shared gain converter 629; inline depth one 541; native output bits with captured direct 544.
 // frame 0x22c versus 0x224; stream and gain homes plus SSE and x87 scheduling differ; native-bit tests gain only three
 // tried initial driver value 541; native send bit writes 567; native send bit tests 538; native pitch truncation 551; level pointer traversal 558; real absolute values 541; native flags real abs 538; native flags driver 538.
-// score 545 (was 575): Frame 0x22c versus 0x224 and stream/gain homes remain. Redundant level clamp removed: 575 to 545, 1901/1901 bytes. Voice output reuse 575; query output scope 572; complete flag projection 572; output stream observation 614 (plain).
+// Frame 0x22c versus 0x224 and stream/gain homes remain. Redundant level clamp removed: 575 to 545, 1901/1901 bytes. Voice output reuse 575; query output scope 572; complete flag projection 572; output stream observation 614 (plain).
+// Voice selector snapshot 572 fast; level-offset snapshot 557 fast; entry status,
+// initial voice output and initial settings 532 fast each (unchanged preview 532).
+// Real gain value 545; native linear return 545; unsigned pin bits 545; exponential input 561;
+// native return/input 561; logarithm/root results 551/549; combined math results 554, frame 0x230.
+// Original body and helper contracts restored; frame 0x22c and stream/gain homes remain.
+// Native gain read/routing cache/all reads 532/532/532 fast (control 532); native gain/all publication 540/540; common status/buffer volume/stream volume 549/543/566. Full baseline remains 545.
+// Linear input pointer 544; native speaker array 545; array plus input pointer 544; known-clear
+// send bits 547; send field order 545; routing flag publication last 545; cache from produced send
+// fields 545; direct output level 545. One-point reductions dropped; all body/type/helper forms
+// restored. Frame 0x22c versus 0x224 and stream/gain/math homes remain.
+// Native sixteen-byte speaker copy 529 fast; distinct scalar math names 532; early selected gain
+// 577; copy/names 529; copy/early gain 561; names/early gain 577; all three 561;
+// send-scope zero energy 533 (reduced control 532). Three-point reductions rejected.
+// Round 127: changed/both word predicates 556/574; complete input record 620 (sibling lost); pin
+// default-input/early returns 534/537; default level/bounded amplitude 543/530; combined default
+// producers 552 (fast control 532). Every source form restored.
+// Round 171 reduced control 532: live direct field 555; live mode field 588; shared voice output 532; live
+// direct/mode 579; live direct/shared output 555; live mode/shared output 588; live fields/shared output 579;
+// shared voice cursor 532.
+// Round 213 reduced control 532: playback state-transition gate with bool/byte/word/long
+// request domains 549/549/550/550; each with status declaration at query 549/549/550/550.
+// Original playback arms, query schedule and all math restored.
+// Round 377: Complete cache-valid bool/byte/short/long result graphs
+// 542/542/569/569; entry declaration forms 542/542/569/569 (fast control 532,
+// full baseline 545). Byte forms recover checker length but regress; all three
+// consumers, original status, mixed math and helper contracts restored.
+// Force-inline gain pin, bit pin, linear gain and combinations, then all four
+// existing helpers: eight forms all 532 on the reduced control. Helpers restored.
+// Round 227: Double energy/sample, named complete square, their pairs/all,
+// all plus rounded root input 530/532/538/576/531/560/561/566 (precision exact-only). Restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)

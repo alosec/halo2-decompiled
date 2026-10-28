@@ -11,6 +11,9 @@
 real function_30bf0(vector3f *v);
 bool function_29d6c0(vector3f *vector, s_reference reference);
 
+/* called, not inlined, by both retail callers */
+__declspec(noinline) bool function_262a90(s_reference reference, point3f *point, vector3f *vector);
+
 // @retail 0x262a90
 bool function_262a90(s_reference reference, point3f *point, vector3f *vector)
 {

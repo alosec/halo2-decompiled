@@ -53,7 +53,8 @@ bool function_1c5210(transform4x3f const *matrix, void *shape, long component, l
 
 static __forceinline long real_to_long(real value);
 
-// score 353 (was 349): frame 0x8c versus aligned 0x94; global optimization off 988, inline depth 2 348, no reference truth test 348, shape flag result 352, combined 352.
+// score 353 (was 353): Plain frame 0x8c versus retail aligned 0x94; saved object roles, capsule staging and tail expansion remain.
+// Global optimization off 988, inline depth 2 348, no reference truth test 348, shape flag result 352, combined 352.
 // Base-position/velocity/both input values 379f/382f/413f; move-stage handle 352f;
 // minimum-radius value 352f; activity/compound byte 352f/352f; header offset 352f.
 // Last five forms retain the unchanged reduced executable instructions (preview 352f).
@@ -62,8 +63,28 @@ static __forceinline long real_to_long(real value);
 // entry matrix lifetime 357; both entry workspaces 357.
 // immutable margin 357; immutable shape 357.
 // immutable component 357; native point initializer 357.
+// Native stack allocation 362 (1148 bytes); shared component/body/both lookups 353/353/353;
+// base-position reference 353; shared object lookups 353; named height offset 353;
+// distinct current-shape lifetime 353. Seven tying forms share the preview instruction prefix.
 // Lead (@coldspear, #801): with the capsule made an aligned local instead of the placement-new
 // buffer, the frame becomes retail's aligned one (and esp, -16) and the count falls to 326.
+// Frame 0x8c versus aligned 0x94 remains; complete dispatch 4/5,1,3,6,2 350;
+// 4/5,3,2,6,1 350; 4/5,6,3,1,2 354; 6,3,1,4/5,2 353; 6,4/5,2,3,1 354.
+// Position yzx/zxy/zyx 353/353/353 (plain); no qualifying executable gain.
+// Native output velocity 369; orientation 353; velocity/orientation 369; control fields 353;
+// velocity/control 369; orientation/control 353; all fields 369; all fields with one time-step observation 374.
+// Round 223: Complete shape decision result bool/byte/short/long, declared at its producer
+// or at entry, all 364 (1148 bytes); common flag publication restored.
+// Round 148: shape reads at every use 374; body-shape reads at every use 353; handle reads at
+// every use 392; shape/body-shape 374; shape/handle 413; body-shape/handle 392; all field
+// observations 413; all fields/shared length helper 413. All executable forms restored.
+// Round 254: cached fallback shape kind with manual/aligned/shared-update/aligned-shared
+// 361/316/435/398; those four with one time step 362/314/431/394.
+// Aligned forms lose matched callees; other forms regress. Original repeated queries,
+// manual capsule lifetime, expanded update and complete executable body restored.
+// Round 23: library input-orientation/zero-velocity/support copies and all pairs/all
+// 353 each; all with final point library publication 353. All eight keep 1164 bytes,
+// the plain 0x8c frame and 340 executable instructions; original transfers restored.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {

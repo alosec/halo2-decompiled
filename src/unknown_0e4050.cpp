@@ -83,29 +83,10 @@ real function_12aff0(real a, real b, real c, bool flag)
 c_type_4e7709 g_479868;
 c_type_4e7709 g_479874;
 
-struct s_137bd0_tag_instance
-{
-	dword group_tag;
-	byte unknown04[12];
-};
-
 // @retail 0x137bd0
 c_type_4e7709 *function_137bd0(long tag_index)
 {
-	c_type_4e7709 *result = 0;
-
-	switch (((s_137bd0_tag_instance *)g_4e3b44)[(short)tag_index].group_tag)
-	{
-	case 'prt3':
-		result = &g_479868;
-		break;
-	case 'PRTM':
-		result = &g_479874;
-		break;
-	}
-	if (result)
-		result->initialize(tag_index);
-	return result;
+	return particle_object_for_tag(tag_index);
 }
 
 // @retail 0x15e020

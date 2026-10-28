@@ -32,6 +32,9 @@ void function_1fb350(void)
 PRIVATE __forceinline byte *function_1fb762(s_record_pool_iterator *arg_0);
 
 // score 12 (was 12): ours keeps the global pointer in ESI, retail keeps it in EDI.
+// Round 34: early result return 54, also with one parameter address read 54; assignment-return 54;
+// read-only or unsigned parameter 12 each; read-only record pointer 12; condition-scoped record 12;
+// predicate-assigned result 29.
 // @retail 0x1fb6f0
 bool recorded_animation_playing(long object_index)
 {
@@ -319,7 +322,12 @@ void function_f0fd0(long vehicle_index, bool set);
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
 // score 123 (was 123): our frame is eight bytes smaller and the base pointer is kept in EDI where
-// retail keeps it in ECX.
+// retail keeps it in ECX. Retail iterates with the four-field datum iterator (data and index stored,
+// the datum index kept in EDI), snapshots the high water per search and computes the element from a
+// second spilled copy of the pool. Shared step with/without the barrier 162/152; datum iterator 152
+// (frame 0x10); plus a pool local for the iterator and release 150 (frame 0x14); iterator from the
+// global, local only for the release 127; that local assigned after the iterator 124 (retail's
+// prologue; retail reads the copy for the element and releases through the global).
 // @retail 0x1fb510
 void function_1fb510(void)
 {

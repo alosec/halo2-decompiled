@@ -61,15 +61,23 @@ __forceinline real function_275388(point3f const *arg_0, point3f const *arg_1)
     real local_2 = arg_0->z - arg_1->z;
     return local_2*local_2 + local_1*local_1 + local_0*local_0;
 }
+/* the point copy 0x210850 makes, which retail inlines at this call site */
 __forceinline void function_275384(s_type_c3b527 const *arg_0, point3f *arg_1)
 {
-    if (arg_0->output_index == NONE || !function_2104b0(arg_0->output_index,&arg_0->point,arg_1))
+    if (arg_0->output_index != NONE)
+    {
+        if (!function_2104b0(arg_0->output_index, &arg_0->point, arg_1))
+            *arg_1 = arg_0->point;
+    }
+    else
+    {
         *arg_1 = arg_0->point;
+    }
 }
 
 
-// score 47 (was 47): every local of the outer frame sits 0xc bytes higher
-// in retail's frame ([esp+0x2c] where ours has [esp+0x20]).
+// matches: the point copy keeps 0x210850's two-store shape, with the point's
+// own copy in the else branch, the way retail inlines that helper here.
 // @retail 0x275380
 void function_275380(long arg_0)
 {

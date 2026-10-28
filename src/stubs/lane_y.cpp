@@ -3,13 +3,7 @@
 struct s_session_search;
 
 
-struct c_244980_base
-{
-    virtual long v1(long first, long second) = 0;
-    virtual void *v3() = 0;
-};
-// @stub 0x2d7210
-long c_244980_base::v1(long first, long second) { return 0; }
+// c_244980_base inherits c_a name virtuals.
 struct s_244980_ray;
 struct s_244980_output;
 class c_244c10;

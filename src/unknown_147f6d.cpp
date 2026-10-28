@@ -1231,7 +1231,12 @@ bool __stdcall function_148f36(long controller)
 // 0x186ab0 pushes it and the function ends with ret 4, so the standard marker
 // below gives it that convention and lets that caller match, 245 -> 149); the
 // body still differs in the layout of the three fixed windows' blocks and in
-// the empty case of the last window.
+// the empty case of the last window. A call in each arm (as 0x148f36) gives
+// retail's block layout exactly, but then the user index takes EDI and the
+// window index is spilled, the other way round from retail (80). Also tried:
+// that with the user index read volatile at the calls 90 (frame pointer); the
+// window assigned inside the fixed-window tests 73; the index declared before
+// the result 79; the window starting null with no final else 78.
 // @retail 0x148fff standard
 bool __stdcall function_148fff(long user_index)
 {

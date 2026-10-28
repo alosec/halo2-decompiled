@@ -12,7 +12,7 @@ non-null code callback. The datum size is `0x1e4`.
 
 Its `function_11bdc0` name and
 field meanings are inferred from the callback slot, the copied layout, and
-the corresponding routine in the CC0 [Halo CE reference](https://github.com/punpckhdq/halo),
+the corresponding routine in the [Halo CE reference](https://github.com/punpckhdq/halo) (CC0 when this was written; AGPL-3.0 since 2026-10-17),
 `source/devices/unknown_11bdc0.c`.
 
 Retail copies an RGB color from scenario `+0x3c` to object `+0x1cc`, then

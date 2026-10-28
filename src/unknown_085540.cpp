@@ -37,6 +37,11 @@ static __forceinline void view_clear_updates(c_vtable_450c94 *updates)
 	updates->source = 0;
 }
 
+static inline bool controller_world_is_authority(c_class_6a600 *world)
+{
+	return world->state != 3 && world->state != 5;
+}
+
 // @retail 0x85880
 void function_85880(c_simulation_view *view)
 {
@@ -49,7 +54,7 @@ void function_85880(c_simulation_view *view)
 		s_view_distribution_senders *distribution = (s_view_distribution_senders *)view->world->distribution;
 		view_clear_child(&((c_replication_view_storage *)view->data)->aggregate, 1);
 		view_clear_child(&((c_replication_view_storage *)view->data)->aggregate, 0);
-		((c_replication_view_storage *)view->data)->unknown2c = 0;
+		((c_replication_view_storage *)view->data)->aggregate.source = 0;
 		long index = view->world_index;
 		distribution->handles.tables[index]->function_97fe0();
 		distribution->handles.tables[index] = 0;
@@ -432,29 +437,27 @@ bool c_simulation_view::handle_player_update(bool failed, long a, long b, dword 
 	return result;
 }
 
-// score 30 (was 30): retail clears false before the enabled test, passes the iterator table in EDI
-// and keeps the database in EBP; hoisted handles and view data 33 with caller regressions;
-// mixed result 30; guard result 37; masked/const index, world and distribution aliases 30 each.
-// early false result and iterator table/database registers differ; database reference 30; native handle 30; wide result 51; fixed database receiver 30;
-// alias analysis off 30; inline depth zero 30; size preference 41; database role name 30.
 // @retail 0x86ad0
 bool c_simulation_view::has_pending_entity(void)
 {
+	bool result = false;
+
 	if (data->unknown39)
 	{
 		s_simulation_entity_database *database = &world->distribution->field_2098;
 		long handle = NONE;
-		s_simulation_entity *entity;
+
 		do
 		{
 			handle = function_98480(handle, (c_handle_table_450cd0 *)data->handles);
 			if (handle == NONE)
-				return false;
-			entity = &database->entities[handle & 0x3ff];
-		} while (!database->definitions->definitions[entity->type]->v6(entity));
-		return true;
+				break;
+			s_simulation_entity *entity = &database->entities[handle & 0x3ff];
+			if (database->definitions->definitions[entity->type]->v6(entity))
+				result = true;
+		} while (!result);
 	}
-	return false;
+	return result;
 }
 
 // @retail 0x85cb0
@@ -705,31 +708,6 @@ struct s_85650
  s_sender *field_0c[15];
 };
 
-// score 112 (was 116): the frame is four bytes smaller than retail's
-// (sub esp,0x24 against sub esp,0x28), so every stack slot sits at another
-// offset and the record pointer is kept in EBP here and in EDX in retail.
-// score 100 (was 112): frame 0x24 and owner/child/callback homes still differ.
-// Child ordinary inline 112; aggregate result 112; child result 112;
-// five child formal orders 112; wide active with both-arm count 100;
-// wide active with both-arm count and fresh sender 124.
-// score 100 (was 100): frame 0x24 versus 0x28 and owner/child/callback homes remain.
-// Owner mask value 100; peers address 100; distribution/channel references 100/100;
-// entry type value 100; callback address at publication 100; mask plus peers 100; mask plus fresh child 124.
-// Frame 0x24 versus 0x28 and owner/child/callback homes still differ.
-// Child slot before total/count 106/142; request/tail/both sender clears 139/139/143;
-// world-state value 100; short child ordinal 125; child slot plus clears 143.
-// score 100 (was 100): frame and owner/child/callback homes remain; published child/total/count field references 142 each;
-// ordinal field reference 100; initialized type/client/both arrays 133/133/150; active byte 99 (below gate).
-// frame 24 versus 28 and child/distribution/callback homes remain; first aggregate
-// storage 145; storage plus fresh child 115; published-child query 100; immutable child count 100;
-// explicit total sum 100; combined contiguous clear 148; count return 100; storage plus published-child
-// query 145.
-// frame and owner/child/callback homes still differ.
-// Child count-first 128; completed total 128; aggregate/child references 100/100;
-// storage/sender references 100/100; connection/owner references 100/100.
-// score 100 (was 100): Frame 24/28 and child/distribution/callback homes remain; count predicate/empty
-// arm 100/100; sender/baseline zero chains 100/100; array-wise clears 104; sequence value 100; sender
-// scope/owner boundary 100/100.
 // @retail 0x85650
 void function_85650(c_simulation_view *view, s_network_observer *observer, const XNADDR *address, long channel_index)
 {
@@ -745,17 +723,18 @@ void function_85650(c_simulation_view *view, s_network_observer *observer, const
  {
   s_view_distribution_senders *distribution = (s_view_distribution_senders *)view->world->distribution;
   c_replication_view_storage *storage = (c_replication_view_storage *)view->data;
-  *(long *)&storage->aggregate.unknown04[4] = view->world_index;
-  storage->aggregate.unknown24 = 0;
+  c_vtable_450cf4 *aggregate = &storage->aggregate;
+  *(long *)&aggregate->unknown04[4] = view->world_index;
+  aggregate->unknown24 = 0;
   for (long i = 0; i < 3; i++)
   {
-   storage->aggregate.children[i] = 0;
-   ((long *)storage->aggregate.unknown18)[i] = 0;
+   aggregate->children[i] = 0;
+   ((long *)aggregate->unknown18)[i] = 0;
   }
-  storage->unknown2c = 0;
-  storage->aggregate.unknown04[0] = 1;
+  aggregate->source = 0;
+  aggregate->unknown04[0] = 1;
   ((c_replication_view_storage *)view->data)->source.world = (s_world_450d14 *)view;
-  ((c_replication_view_storage *)view->data)->unknown2c = (long)&((c_replication_view_storage *)view->data)->source;
+  ((c_replication_view_storage *)view->data)->aggregate.source = &((c_replication_view_storage *)view->data)->source;
   c_vtable_450d1c *sender = &((c_replication_view_storage *)view->data)->sender;
   sender->player = view->world_index;
   sender->requests = 0;
@@ -767,9 +746,11 @@ void function_85650(c_simulation_view *view, s_network_observer *observer, const
   sender->unknown24 = 0;
   s_85650 *owner = (s_85650 *)((byte *)distribution + 0x2048);
   sender->owner = (s_owner_450d1c *)owner;
-  view_add_child(&((c_replication_view_storage *)view->data)->aggregate, 0, sender);
-  owner->field_08 |= 1 << view->world_index;
-  owner->field_0c[view->world_index] = (s_sender *)&((c_replication_view_storage *)view->data)->sender;
+  view_add_child(&((c_replication_view_storage *)view->data)->aggregate, 0, &((c_replication_view_storage *)view->data)->sender);
+  long index = view->world_index;
+  s_sender *table_sender = (s_sender *)&((c_replication_view_storage *)view->data)->sender;
+  owner->field_08 |= 1 << index;
+  owner->field_0c[index] = table_sender;
   function_97f60(&distribution->handles, view->world_index, &((c_replication_view_storage *)view->data)->handles);
   view_add_child(&((c_replication_view_storage *)view->data)->aggregate, 1,
    (c_interface_450c94 *)&((c_replication_view_storage *)view->data)->handles);
@@ -787,20 +768,16 @@ void function_85650(c_simulation_view *view, s_network_observer *observer, const
  }
  dword types[4];
  c_connection_client *clients[4];
- long count;
+ long count = 0;
  if (view->type == 3 || view->type == 4)
  {
   types[0] = 0x1a;
   clients[0] = (c_connection_client *)&((c_replication_view_storage *)view->data)->aggregate;
   count = 1;
  }
- else
-  count = 0;
- long active = view->world->state != 3 && view->world->state != 5;
- s_connection_callback *callback = (s_connection_callback *)view->unknown44;
- link_connection_callback_initialize(callback, clients, view,
-  (void (__stdcall *)(void *))function_68550, count, types, active);
- connection->callback = callback;
+ link_connection_callback_initialize((s_connection_callback *)view->unknown44, clients, view,
+  (void (__stdcall *)(void *))function_68550, count, types, controller_world_is_authority(view->world));
+ connection->callback = (s_connection_callback *)view->unknown44;
  view->flag78 = false;
  view->set_state(view->state, view->state_id);
 }
@@ -835,6 +812,12 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // Round 109: direct view plus writer forceinline 93; unsigned writer result 93;
 // writer reference 93; native count 93; unsigned offset 93; word kind 93;
 // named packet record 93; moving payload pointer 144.
+// score 90 (was 90): with the chunk test through a bool (unrotated loop, base rebuilt each pass), the
+// count in a `remaining` local (compressed size scoped to the compressor call, copied when it
+// succeeds), no gotos and the last write tested for success first, only four single instructions
+// differ (20, aligned 4): flag 130; plus remaining 58; scoped 51; copy on success 38; failures
+// returned 63; single-exit breaks 38; success first 20; then element address 20; offset first 20;
+// header = { 1 } 22; flag before the header 125; count before cursors 24; all of it without the flag 128.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {
@@ -895,6 +878,8 @@ static __forceinline byte *view_allocate_buffer(long size, long owner, long rele
 // score 22 (was 22): ours hoists the time stamp's volatile low store and the header memset's
 // low store, and packs start's spill apart from the volatile. Tried: the volatile and start
 // renamed 22; used zeroed before start 22; the header declared before the view stores 22.
+// _ReadWriteBarrier before the first allocation 19 (retail's store order; start's spill still
+// apart from the volatile's slot); before the count increment 27; before both allocations 19.
 // @retail 0x862e0
 bool function_862e0(c_simulation_view *view)
 {
@@ -976,6 +961,10 @@ bool function_68670(byte *source, long size, void *block);
 
 // score 97 (was 97): the two fields of the record are read into the registers in the opposite
 // order (+0x1c before +0x18), so the rest of the block follows differently.
+// score 97 (was 97): a `used = next - end` local gives retail's window test exactly (135 from the
+// listing shift); retail also reloads the buffer start after each read call and loads the header
+// size after the start store, as if the call might touch the buffer. Window as shift 97; window
+// pointer 97; inline read method 135; header size per use 135; buffer hoisted out of the loop 204.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

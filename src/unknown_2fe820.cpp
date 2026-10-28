@@ -2,10 +2,14 @@
 // Havok (third-party physics library): reports failure through its
 // argument.
 
+#include "buffered_writer_2d9e40.h"
+
 #if H2_WHOLE_IMAGE
 /* an hkBool returned by value: a class, so through the hidden result
    pointer that retail's callers pass (x8 on the port's ARM guest, where an
-   explicit pointer argument would arrive elsewhere) */
+   explicit pointer argument would arrive elsewhere). 0x2fe820 is shared by
+   several tables (default collision answers among them), so the port binds
+   this form to the address */
 struct hkbool_2fe820
 {
     char value;
@@ -24,14 +28,16 @@ hkbool_2fe820 class_2fe820::function_2fe820()
     result.value = false;
     return result;
 }
-#else
-struct class_2fe820
-{
-    void function_2fe820(bool *result);
-};
 
+/* the stream writer's own slot, as main declares it (not bound to the
+   address here) */
+void stream_writer_2d9e40::query(bool *result)
+{
+    *result = false;
+}
+#else
 // @retail 0x2fe820
-void class_2fe820::function_2fe820(bool *result)
+void stream_writer_2d9e40::query(bool *result)
 {
     *result = false;
 }

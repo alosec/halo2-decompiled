@@ -279,15 +279,19 @@ bool function_1e12b0(long actor_index, const dword *clusters)
    if (perception_index != NONE)
    {
     long object_index = perception_get(perception_index)->object_index;
-    while (!result && object_index != NONE)
+    while (object_index != NONE)
     {
      s_actor_object_query *object = actor_query_object(object_index);
      long current = object_index;
      byte *links = object->flags134 == 0 ? (byte *)object + object->link_offset : NULL;
      object_index = links ? *(long *)(links + 0xc) : NONE;
      long cluster = *(short *)((byte *)actor_query_object(actor_query_root(current)) + 0x2c);
-     if (cluster != NONE)
-      result = (clusters[cluster >> 5] & (1 << (cluster & 31))) != 0;
+     if (cluster == NONE)
+      continue;
+     result = (clusters[cluster >> 5] & (1 << (cluster & 31))) != 0;
+     if (!result)
+      continue;
+     break;
     }
    }
   }

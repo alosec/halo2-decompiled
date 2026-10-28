@@ -100,6 +100,12 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 }
 
 /* the collision layer of one of the object's rigid bodies, by object type */
+// score 96 (was 96): retail reads the type once before the kind test with the component in
+// eax and the rigid index in ecx; every one-read type form flips that pair (the caller
+// 0x1d5bf0 then differs). Type read after the rigid body 94 at 256 bytes (caller 13), first
+// 117, after headers/body/index 94 (caller 13), body then type 136, kind 7 as a ternary 104;
+// case 0 through the object_index local 91 at 256 bytes (caller 146), with the one-read type
+// 132-133; parameters reordered (rigid index first, component last) 96 / 94 (caller 13).
 // score 96 (was 89): retail pushes ebp and holds the base pointer there, ours keeps the record in esi and ecx;
 // the whole register allocation differs.
 // @retail 0x1d69d0
@@ -208,13 +214,24 @@ struct s_physics_component_walk : s_havok_component
         char *output, long *output_count, void *other_context, dword *visited, bool *active);
 };
 
-// score 275 (was 275): frame 0x1c versus 0x18; current/entry roles and next-group spill differ.
+// score 275 (was 275): Frame 0x1c versus 0x18; current/entry/status homes and next-group spill remain.
+// Round 9 (lane 11, fast): first body set in an if/else 300 (frame 0x18 and retail's out-of-line NONE store
+// with the re-tested next, but current moves to EDX and the entry index to ESI where retail has ESI/EDX);
+// with it: nested first-body skip test 300 (identical); `this` used directly for the component alias 300
+// (identical); availability set after the replacement branch 318; model pointer read before the body
+// index 294 (922 bytes).
+// In the body loop retail keeps the policy byte at frame 2 and the availability byte at 3
+// (available in dl on the replacement path, reloaded from its byte otherwise; replaced in cl);
+// ours swaps the two bytes and keeps available in memory, replaced in dl. Round 57: availability
+// named to sort after the policy, the policy named to sort first, both: 275 each (same layout);
+// available declared before replaced 303 (898 bytes); both flags declared before the body lookup 300.
+// Earlier: frame 0x1c versus 0x18; current/entry roles and next-group spill differ.
 // Reduced trials: availability first 303; immutable policy 275; read-only model 275; read-only body 275;
 // native availability 297; native application 305; byte first body 298; read-only sections 275.
 // frame 0x1c versus 0x18, current/entry homes and group
 // spill differ; direct receiver 275; signed-word next 310; byte body 319;
 // direct model uses 275; conditional first body 300. Original body kept.
-// score 275 (was 275): extra frame word and group/current homes remain;
+// Earlier: extra frame word and group/current homes remain;
 // resolved group index 385; outer entry counter 275; promoted replacement 336;
 // explicit output advance 275; branched body lookup 285.
 // frame 0x1c versus 0x18; current/entry roles and group spill differ.
@@ -224,9 +241,46 @@ struct s_physics_component_walk : s_havok_component
 // Body-byte cursor 323; edge-group array 275; separate body rejections 275;
 // native section result 275; native replacement policy 307 (frame 0x18,
 // 898 bytes); policy and cursor 300 (930 bytes). Original body kept.
-// score 275 (was 275): extra frame word and current/entry/group homes remain.
+// Earlier: extra frame word and current/entry/group homes remain.
 // Combined status mask 307; direct body fields 320; section callback guards 275;
 // entry eligibility guards 275; next-count snapshot 301. Original body restored.
+// Earlier: frame 0x1c versus 0x18 and status/group homes remain.
+// Byte availability/application/pair 275/275/275; body/entry references 275/275;
+// ordinary body while scan 275 (plain).
+// Signed-word policy/availability/application 298/297/293 (frame 0x18); repeated upper clamp bound
+// 279; paired signed-word statuses 285.
+// Round 215: signed-byte availability/application/policy 275/275/275;
+// unsigned-word policy 298; policy field at each body use 325.
+// Round 188 connection ordinal, neighbor group/body, section ordinals, their three
+// pairs, all three, and all plus body ordinal renamed: 275 each; frame/group spill unchanged.
+// Round 167: Signed-word first/current-side/next-side group body identities, individually
+// and in all combinations, 275 each; signed-word output body index 317 at 898/922,
+// frame 0x18 recovered but saved roles still differ. All eight forms restored.
+// Round 150: Positive policy acquired inside nonempty admission, bool/short 290/300; complementary
+// preserve-originals policy at entry/admission bool 323/324, char 323/324, short 306/310. Policy
+// ownership does not recover current/entry/status allocation or the neighbor-group spill; complete
+// original method restored.
+// Round 375: Complete tested-status producers, guarded bool/byte/short/long
+// 319/319/300/319; eager replacement/clamp 304/304/298/307. All recover frame 0x18;
+// guarded short retains 922 bytes, others 898. Register roles still differ; restored.
+// Round 210: terminal/neighbor-owned first-body result 292/304; conditional result 296/303;
+// native word neighbors on those four graphs 317/312/299/307. First form recovers 0x18 and 922 bytes.
+// Round 139: Separate published-body result long/short/signed-byte/byte 311/319/319/319; those four
+// with application status from policy 319/304/304/304. All recover frame 0x18 but shorten to
+// 898/922 and retain wrong current/entry roles. Original executable source and output/status/clamp
+// observations restored.
+// Round 350: shared entry-bit test, visited-bit set, neighbor-bit test and all combinations
+// 275 each; complete shared bits with direct receiver 275. Frame/status/group spill unchanged.
+// Round 96: replace flag renamed to sort first 275 (slots unchanged); next-group count/body through the
+// current-style ternary 307; the file's section-test helper for the first query 283; first body as
+// if/else or ternary 300/300 (frame 0x18 and retail's untreaded next test, but current lands in EDX).
+// Retail stores -1 in a separate block and re-tests next, so it recomputes the group where ours spills it.
+// Round 190: method-scope body identity, both statuses, identity/status pair, model/body
+// receivers and each receiver combination 275 each; common native section ordinal 275.
+// Every initializer and memory observation retained at its original point; all forms restored.
+// Round 253: Existing component policy/application/availability bit helpers,
+// all seven nonempty subsets 275 each; native upper-bitfield policy with both
+// shared status stores 275. Original method and include set restored.
 // @retail 0x1d6630
 void s_physics_component_walk::function_1d6630(s_physics_model_owner *owner, char const *kinds,
     dword const *entry_mask, s_physics_body_groups *groups, void *context, long parent, long current,
@@ -423,6 +477,8 @@ PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_ar
 
 // score 4 (was 4): retail loads the 1.0f constant after it stores the array pointer, and
 // loads the allocator global before it stores the centre; ours does both the other way round.
+// Vector set 454; repeated zero intrinsic 4; explicit quad stores 197; direct lane stores 4;
+// explicit centre store 4; centre memcpy 125; plain copy inline 4; const centre 4; transform set 4.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,

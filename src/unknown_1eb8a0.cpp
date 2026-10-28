@@ -184,20 +184,66 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 	}
 }
 
-// score 660 (was 709): clock register recovered by capped-use coefficient lifetimes; vector argument homes,
+// score 642 (was 642): Frame 0x24 and clock EDI agree; d/q homes and scalar schedules remain. Native
+// Frame 0x24 and clock EDI agree; direction/sample homes and coefficient schedules remain.
+// Frame 0x24 and clock EDI agree; direction/sample homes and scalar schedules remain.
+// Frame 0x24 and clock EDI agree; d/q homes and scalar schedules remain. Native
+// frame 0x24 and clock EDI agree; vector argument homes, scalar schedules and counter return differ.
+// clock register recovered by capped-use coefficient lifetimes; vector argument homes,
+// Frame 0x24 and clock EDI agree; d/q homes and scalar schedules remain. Native
+// selected vector 689; selected vector arms 674; workspace role names 660; wide failure on guarded
+// coefficients 671; native counter increment 665.
+// Earlier: clock register recovered by capped-use coefficient lifetimes; vector argument homes,
 // scalar schedules and counter return still differ; tried initial output native copy 745; normalizer
 // workspace native copy 709; existing displacement scale 750; native target displacement 709; native output
 // scale loops 733; native qr post clamp coefficient 719; native qr guarded coefficients 660; coefficient
 // reference lifetime 739; coefficient direction lifetime 666; coefficient both input lifetimes 743.
-// vector argument homes and retained clock differ in the 0x24 frame.
+// Earlier vector argument homes and clock differed in the 0x24 frame.
 // Void return 708; native failure 716; input role names 709;
 // native extra ticks 709; vector memmove 730.
-// score 660 (was 660): vector argument homes still differ; selected velocity pointer 685;
+// vector argument homes still differ; selected velocity pointer 685;
+// Earlier: vector argument homes still differ; selected velocity pointer 685;
 // activation velocity snapshot 786 (caller lost); contiguous velocity scale 660;
 // fast-byte observations 660; integer remaining-tick test 699.
 // Ordinary counter conversion on guarded-coefficient body 710; indexed activation displacement 667;
 // interleaved displacement/sample loop 696; target-coordinate loop 699; impulse-coordinate loop 661.
 // Frame 0x24 and clock EDI agree; vector argument homes and scalar schedules remain.
+// Frame 0x24 and clock EDI agree; vector argument homes and scalar schedules remain. Shared output scale 660; shared sample scale 680; capped-length initializer 660; shared limit predicate 690; conditional flag store 674 (fast).
+// Frame 0x24 and clock EDI agree; vector homes and scalar schedules remain. Shared
+// Earlier: Frame 0x24 and clock EDI agree; vector argument homes and scalar schedules remain. Shared output scale 660; shared sample scale 680; capped-length initializer 660; shared limit predicate 690; conditional flag store 674 (fast).
+// Earlier: Frame 0x24 and clock EDI agree; vector homes and scalar schedules remain. Shared
+// output counter 706; computed activation alignment 710; impulse-add loop 687; active target advance loop
+// 698; active target extension loop 700 (fast); matched caller preserved.
+// Round 171 reduced/plain control 660: target cursor 708; direction cursor 701; impulse cursor 666;
+// target/direction 735; target/impulse 711; direction/impulse 698; all state cursors 722; activation limit
+// once 648 (plain, kept).
+// Consistent live clock 662; normalized/remaining/both native vector values 698/660/698;
+// live clock with normalized/remaining/both values 700/662/700; entry normalizer workspace 660.
+// Native fallback vector assignment 642 kept; activation mode once 684; conditional coefficients 824;
+// copy/mode 670; copy/coefficients 824; mode/coefficients 812; all three 807; fallback memcpy 642.
+// Shared activation/direction/sample/settling dot products 642/643/676/640; all products 667;
+// complete shared squared lengths 664; products with lengths 665, with initial point difference 719.
+// Named acceleration terms 716; three clamp assignments 664; normalization length first 675;
+// terms/clamps 763; terms/length 738; clamps/length 695; all 781; clamped headroom 751 (fast).
+// Round 134: final flag-word workspace with early coefficient masks 0/1/2/3/4/5/6/7
+// 648/694/716/695/648/692/716/695; original counter and caller preserved.
+// Readonly input d/q/both/a/b/pos/b-pos/all contracts: eight forms 642 each.
+// Initial component orders ikj/jik/jki/kij/kji 639/642/637/644/642; scale orders ikj/jik/jki 642/642/642.
+// Round 324: shared ramp time 665; third time 642; ramp/third 665; remaining distance 683; ramp/remaining 682;
+// third/remaining 683; all scalar workspaces 682; displacement workspace 665.
+// Round 376: Continuation status at entry in bool/byte/short/long 643/643/648/647; at output
+// phase 687/687/687/686. Original failure status, counter and caller preserved.
+// Round 237: One rate observation everywhere 742; native integer ticks 642, both 742;
+// ticks at each field use 663, with reused rate 718; rate with all left/right factors
+// 742/742, native ticks and all left factors 742. Original clock scalar forms restored.
+// Output displacement/scale schedules ikj/jik/jki/kij/kji 641/643/642/644/644;
+// displacement-first, scale-first and scale-first per axis 642/642/642 (fast); caller matched.
+// Round 78 (fast; aligned rows in brackets, baseline 757): retail keeps q in EBX (`cmove ebx` for the
+// fallback) and reads d from the stack at each use, and selects the 12/8 factor before t in all three
+// clamps. `*(counter == 0 ? g_4687a4 : q)` 686 [787] (gives the cmove, d keeps EBX); factor before t in
+// all three clamps 743 (the first one loads s->fast into CL in the first pass, b leaves the register
+// arguments and the matched caller 0x1eb6f0 breaks); in the third only 642 [749]; in the second and
+// third 670 [559] (2864 bytes, caller kept); third plus the pointer select 686 [779].
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,
@@ -219,9 +265,10 @@ long function_1eb8a0(
 		{
 			if (dt > 0.001f)
 			{
+				real limit = s->limit;
 				real step = dt;
-				if (s->limit != 0.f && step > s->limit)
-					step = s->limit;
+				if (limit != 0.f && step > limit)
+					step = limit;
 
 				real t = step * 0.375f;
 				real e = 0.001f;
@@ -269,8 +316,8 @@ long function_1eb8a0(
 
 				real len2 = (real)sqrt(delta.i * delta.i + delta.k * delta.k + delta.j * delta.j);
 				real len3;
-				if (s->limit != 0.f && len2 > s->limit)
-					len3 = s->limit;
+				if (limit != 0.f && len2 > limit)
+					len3 = limit;
 				else
 					len3 = len2;
 
@@ -292,9 +339,9 @@ long function_1eb8a0(
 				if (e2 > 0.001f)
 					n2 = rem2 / e2 + 6.f;
 
-				s->limited = s->limit != 0.f && len2 > s->limit;
+				s->limited = limit != 0.f && len2 > limit;
 				s->start = *pos;
-				s->distance = s->limited ? s->limit : len2;
+				s->distance = s->limited ? limit : len2;
 				s->active = true;
 				s->duration = (long)((s->fast ? 7 : 1) + n2);
 				if (len2 > 0.001f)
@@ -392,9 +439,7 @@ long function_1eb8a0(
 				}
 				else
 				{
-					position->i = qr.i;
-					position->j = qr.j;
-					position->k = qr.k;
+					*position = qr;
 					real ticks = (real)globals->field_2_3;
 					position->i = ticks * position->i;
 					position->j = position->j * ticks;
@@ -810,6 +855,12 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
 // score 78 (was 78): owner/node registers and contact-table setup remain.
 // Early best 78; best before selected 88; scalar contact copy 300; library copies 78;
 // third dot inputs commuted 78; selected guard first 83; byte counter return 415; ordinary inline counter 78.
+// score 78 (was 78): attached esi/ebp roles; from the contact scan on, scratch registers rotate one step
+// because the table is loaded before the unroll test. count before table 78; found before the
+// attached flag 77; table read per iteration via an element pointer 337; table indexed per iteration
+// 346 (retail's scan and everything after it, shifted one byte by a loop-alignment nop while the
+// attached roles stay swapped; aligned 49 -> 19); on that: dot inputs swapped, function-scope handle,
+// release flag, named up pointer 346 each.
 // @retail 0x1ed4a0
 void function_1ed4a0(s_state_c570 *state, dword *output, byte const *input)
 {

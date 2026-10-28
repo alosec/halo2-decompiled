@@ -97,7 +97,7 @@ long function_1e4a50(long character_index);
 long function_1e4990(long character_index);
 void *function_1e4ef0(long actor_index);
 bool __stdcall function_110ab0(long unit_index);
-void function_e70b0(long unit_index, short *value);
+short *function_e70b0(long unit_index, short *value);
 bool function_114b60(short entry_index, short fallback_index, long unit_index, long priority, void const *extra);
 point3f *function_b9dd0(long object_index, point3f *result);
 void function_b9fc0(long object_index, vector3f *forward, vector3f *up);

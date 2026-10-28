@@ -256,11 +256,6 @@ static inline short game_active_difficulty()
 	return difficulty;
 }
 
-PRIVATE __forceinline short game_options_difficulty(s_game_options_view const *options)
-{
-	return options->state == _game_state_campaign ? options->difficulty : 0;
-}
-
 /* false in a campaign while g_4f55e7 is set, or at difficulty 3 */
 // @retail 0x1388a0
 bool function_1388a0()

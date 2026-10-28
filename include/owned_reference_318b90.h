@@ -6,13 +6,17 @@
 // is the one 0x30c3b0 shares.
 #include "reference_base_318970.h"
 
+class lane_a_simple_contact_manager;
+struct lane_a_contact_body;
+
 class class_318b90 : public reference_base_318970
 {
 public:
 	REFERENCED_NEW_2D88A0(0x1d)
 
 	class_318b90(void *owner);
-	virtual void slot_1() {}
+	virtual lane_a_simple_contact_manager *function_318bb0(
+		lane_a_contact_body const *first, lane_a_contact_body const *second, void const *input);
 
 	void *owner;
 };

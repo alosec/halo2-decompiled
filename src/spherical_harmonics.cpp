@@ -36,6 +36,9 @@
 // x87/SSE scheduling and retained common root still differ.
 // First Y store before isotropic 59; linear factor after isotropic 143; quadratic root
 // after squares 138; axis-root scope 59; depth/edge/axis/joint scalar homes 59/59/59/59.
+// score 59 (was 59): a double or unrounded common root is retained like retail's but then keeps
+// band3_35 on x87 and moves coefficient 15 to x87: double root 158; root rounded per factor 158;
+// plus early coefficient 15 140; early coefficient 15 alone 147; retail store order 144.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

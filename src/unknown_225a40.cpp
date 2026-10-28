@@ -97,9 +97,11 @@ static inline void sound_track_start_impulse(long index, long handle)
 	}
 }
 
-// @retail 0x225ab0
 // score 16 (was 16): the record's index is scaled before the base is added where retail adds the base
 // first, and the two calls take their argument in the other register.
+// typed/constant-size/forced element helpers 16/16/16; forced impulse helper 16;
+// parameter pointer 16; early handle 16; const track 16; no default 61; indexed byte address 16.
+// @retail 0x225ab0
 void function_225ab0(void)
 {
 	for (long i = 0; i < 2; i++)

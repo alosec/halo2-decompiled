@@ -401,29 +401,33 @@ static __forceinline s_havok_contact_entities *joint_constraint_create(s_havok_c
 	return constraint;
 }
 
-// score 29 (was 32): with the entry's object and physics model indices read into one-use
-// locals (reverted in review) the count is 25 and only the final `|= 0x400` differs (split into load/or/store around the
-// pops): retail's zero-size loop guard jumps to the found path's epilogue, ours to the
-// exhausted loop's, so the found block holds a copy of the epilogue.
-// Round 80: the tail as a separate static or plain inline helper (not inlined) 193 each;
-// do-while inside `if (size > 0)` 80; found handling after the loop on `i < size` 58;
-// the loop reusing the entry's object index 465. Harness: forced-inline search helpers
-// (bool + out index, index or NONE, whole tail), explicit early return, `!=` + continue,
-// a store after the loop: all keep the found block last.
-// Earlier: score 30 (was 34): entry load/owner registers and final flag OR differ.
-// Owner-first builder 31; joint-first 31; key-first 31; map-first 31;
-// first-body name 31; body outputs first 31; reversed frames 31;
-// shared fresh object index 31 (all reduced; executable unchanged).
-// frame 0x454 agrees; entry setup and split final flag update differ; fast control 31.
-// Returned map 431; block reference 31; size lifetime 31; flags reference 34; paired bits 31; contact entry 174;
-// size name 31; model pointer 36.
+// score 22 (was 22): the entry matches retail (the component's object index and the physics
+// model index are read into named locals before their uses); what still differs is the final
+// `|= 0x400`: retail keeps it whole as `or dword ptr [ecx+4],0x400` in a block that falls into
+// the function's exit (the zero-size `jle` target), and gives the loop's normal exit the copied
+// epilogue; ours places the found block after the exit, so its copied epilogue splits the
+// update into load/or/store around the pops (11 bytes against 6) and the body is 4 bytes longer
+// than retail's 1820. An earlier score 25 (was 32) with the same entry locals and only that
+// update differing was reverted in review.
+// Tried: the tail as a separate static or plain inline helper (not inlined) 193 each; do-while
+// inside `if (size > 0)` 80; found handling after the loop on `i < size` 58; the loop reusing
+// the entry's object index 465; owner-first builder 31; joint-first 31; key-first 31; map-first
+// 31; first-body name 31; body outputs first 31; reversed frames 31; shared fresh object index
+// 31; returned map 431; block reference 31; size lifetime 31; flags reference 34; paired bits
+// 31; contact entry 174; size name 31; model pointer 36 (frame 0x454 agrees). Harness:
+// forced-inline search helpers (bool + out index, index or NONE, whole tail), explicit early
+// return, `!=` + continue, a store after the loop: all keep the found block last. This round:
+// `break` for the found return 22; the found index kept and handled after the loop 51; `!=` +
+// continue in a real build 22; the loop as a plain while 22; an explicit final return 22.
 // @retail 0x1d77d0
 void __stdcall function_1d77d0(s_havok_component *component, s_physics_model_owner *owner)
 {
+	long component_object_index = component->object_index;
 	s_list_rigid_bodies bodies;
-	function_181bd0(component->object_index, &bodies);
+	function_181bd0(component_object_index, &bodies);
 	s_physics_constraint_iterator iterator;
-	iterator.physics = g_4e3b44[owner->model->physics_model_index & 0xffff].bytes;
+	long physics_model_index = owner->model->physics_model_index;
+	iterator.physics = g_4e3b44[physics_model_index & 0xffff].bytes;
 	for (function_1eb110(&iterator); ; function_1eb160(&iterator))
 	{
 		long element_size;

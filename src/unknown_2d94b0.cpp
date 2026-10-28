@@ -7,18 +7,8 @@
 
 void __cdecl function_2d8de0(void *buffer, int value, unsigned long size);
 
-class class_2d94b0
-{
-public:
-	void *slots;
-	long field_4;
-	long mask;
-
-	void release();
-};
-
 // @retail 0x2d94b0
-void class_2d94b0::release()
+class_2d9240::~class_2d9240()
 {
 	havok_allocator()->release(slots, (mask + 1) * 8, 0x12);
 }

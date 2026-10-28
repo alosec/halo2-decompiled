@@ -1185,6 +1185,12 @@ void function_7e100(long current, const s_member_quality_collection *collection,
 long function_1931a0(long count, s_surface_description *variant);
 
 #pragma inline_depth(0)
+// score 30 (was 30): frame 0x370 agrees; elapsed-store order, rating-call
+// transport, summary loads and copy-tail alignment differ. Fast control 32;
+// native rating record, native role names, native capacity expression, native
+// minimum observations, array minimum observations, capacity expression,
+// inline rating declaration and inline quality declaration 32/32/60/32/32/60/32/32.
+// Native output-record graph; maximum/population/both snapshots; record with maximum/population/both; native address assignment: 32 each (fast control 32). Original output graph and all calls restored.
 // @retail 0x73530
 void function_73530(c_helper_a *helper, void *description)
 {
@@ -1314,19 +1320,94 @@ struct s_rating_summary
 };
 
 #pragma inline_depth(0)
-// score 225 (was 231): key/statistic homes, statistic cursor and grouped team dispatch differ.
+// score 202 (was 202): frame 0xfc agrees; key/statistic/group homes, statistic cursor bias and grouped dispatch remain.
+// Earlier: Frame 0xfc agrees; key/statistic homes, statistic cursor and grouped team dispatch remain.
+// Frame 0xfc agrees; key/statistic/group homes, six-byte cursor shift and grouped team dispatch remain.
+// Earlier 202 (was 206): Frame 0xfc agrees; key/statistic homes, statistic cursor and grouped team dispatch remain.
+
+// Earlier 202 (was 202): frame 0xfc agrees; key/statistic homes, cursor and grouped dispatch remain.
+// Earlier: frame 0xfc agrees; key/statistic homes, cursor and grouped dispatch remain.
+// Earlier: Key/statistic homes, cursor and grouped team dispatch remain; live
+// key/player/team/both skills 348/320/199/317; key plus player/team/both 379/374/388; player-only
+// key phase 266. Three-point team-read gain rejected.
+// Earlier: Frame 0xfc agrees; key/statistic homes, statistic cursor and grouped team dispatch remain.
+// Earlier: frame 0xfc agrees; key/statistic homes and grouped team dispatch remain.
+// key/statistic homes, statistic cursor and grouped team dispatch differ.
+// frame 0xfc agrees; key/statistic homes, six-byte statistic cursor shift and grouped dispatch remain.
+// Earlier: key/statistic homes, statistic cursor and grouped team dispatch differ.
+// key/statistic homes, statistic cursor and grouped team dispatch differ.
 // existing converter 371; converter inline boundary 367; native summary fields 231; native skill snapshot 302;
 // immutable query inputs 231; native counter bits 231; native session fields 231; frame pointer 412; team value
 // snapshots 225; team promoted skill snapshot 239; native player statistics array 231; native statistics arrays
 // 231.
-// score 220 (was 225): key/statistic homes, statistic cursor and grouped team dispatch remain.
+// key/statistic homes, statistic cursor and grouped team dispatch remain.
+// Earlier: key/statistic homes, statistic cursor and grouped team dispatch remain.
+// Earlier trial set: key/statistic homes, statistic cursor and grouped team dispatch remain.
 // External player/team/both record references 225/220/220; early player identity 234;
 // native records plus formatted identity 219 (one-point follow-up dropped); UTF-16 input 220;
 // shared eligibility 353; bounded name conversion 332; direct native team pointer 220;
 // native team pointer/reference plus formatted identity 219/219 (one-point follow-ups dropped).
+// key/statistic slots and grouped team dispatch remain; byte/word player ordinal 335/335; byte group 319; both byte 339; word/byte character budget 215/239; dword key 220; shared value/change/level/lower declarations 206 plain.
+// frame 0xfc agrees; key/statistic homes, cursor and grouped dispatch remain; shared value/change 220; level/lower 206; value 220; change 220; level 206; lower 220; value/level 206; change/lower 220.
+// key/statistic homes and grouped team dispatch remain; frame 0xfc agrees.
+// Shared short/promoted skill 284/220; entry/shared statistics 206/206; entry group 206;
+// shared statistics with short/promoted skill 284/220; statistics plus entry group 206 (fast).
+// Shared identity/statistic views 206/206; both 206; name-source advance at load 218;
+// identity/statistic-view plus source advance 218/218; shared outer statistics cursor 206;
+// both views plus source advance 218.
+// Earlier: key/statistic slots and grouped team dispatch remain; byte/word player ordinal 335/335; byte group 319; both byte 339; word/byte character budget 215/239; dword key 220; shared value/change/level/lower declarations 206 plain.
+// Earlier: frame 0xfc agrees; key/statistic homes, cursor and grouped dispatch remain; shared value/change 220; level/lower 206; value 220; change 220; level 206; lower 220; value/level 206; change/lower 220.
+// Bounded character countdown 326; group guards 206; player admission scope 206; team guards 206;
+// group guards plus character countdown 326; player/team admission 206; all admissions plus character countdown 326;
+// negative-first lower selection 212.
+// Unsigned name capacity 207; capacity-first continuation 216; ordinary-slot-first output 213;
+// capacity/continuation, capacity/output, continuation/output, all three 241/214/220/248;
+// copied-character ordinal with native pointers 207.
+// Earlier trial set: key/statistic slots and grouped team dispatch remain; byte/word player ordinal 335/335; byte group 319; both byte 339; word/byte character budget 215/239; dword key 220; shared value/change/level/lower declarations 206 plain.
+// Earlier trial set: frame 0xfc agrees; key/statistic homes, cursor and grouped dispatch remain; shared value/change 220; level/lower 206; value 220; change 220; level 206; lower 220; value/level 206; change/lower 220.
+// Round 138: player/team/both adjusted values 206/206/206; player table loop 206; zero chain 205; table/player result 206; current player value 206; early summary ratings 303.
+// Summary count/lookup/formatter/completion call declarations 206 each; dword group/player/character 314/206/202; all three 316. Full-width character retained at 1167/1212 after plain whole-image confirmation.
+// Round 148: Existing bound helper in bounded for, caller ordinary/force-inline/inline 323/323/323; direct
+// bound-helper break 224; native player pointer 325; whole summary clear 353; outer summary workspace 323;
+// native player plus summary clear 353; definition-side force-inline with bounded for/direct break 323/216.
+// Key/statistic homes and helper expansion remain.
+// Round 317: Late player/team/both statistic producers 199/207/204; late player plus native indexing 199; ascending/descending reads on late player 203/201; both late with ascending/native indexing 208/204. On late player: key first 199; shared carrier names 199; word character 203; positive character-budget for 320. Three-point reduction excluded.
+// Player-change/rating/group-add/group-set inline and noinline call declarations 202 each
+// (eight forms); all declarations restored; key/statistic homes and cursor remain.
+// Signed full-width character 203; entry query-table workspace 202; test-derived translated
+// character 264; signed character plus query workspace 203; signed/entry/both with
+// translation 264/264/264; entry name-capacity workspace 202 (fast). All restored.
+// Native unsigned masked statistics 202; shared player/team ordinal 220 (key home recovered);
+// contiguous summary prefix fill 217; counts/ordinal 220; counts/prefix 217; ordinal/prefix 214;
+// all three 214; read-only query table 202.
+// Round 230: Promoted membership 335; group/team identity-first tests 350/202;
+// membership with group/team/both identity-first 345/336/345;
+// both identity-first without membership 349; native-byte membership with both 343.
+// Round 366: Native fifteen-bit player/team/both statistic fields 195/207/200 fast;
+// word/short player results 279/279, with both arrays 283/283; native statistic receiver 199.
+// On the recovered +0xf44 cursor: native player indexing/shared counts/query-key name 195/195/195;
+// entry statistic receiver 202. Seven-point gain rejected; original body and types restored.
+// Round 130: stored summary change/count-set/level consumers, individually and all
+// combinations, 202 each; complete stored consumers with word character 206.
+// Native fifteen-bit fields with one player/team ordinal: late receiver with dword/word character
+// 216/202; completed-summary consumers 216/202. Early receiver with dword/word character 220/206;
+// completed-summary consumers 220/206. Direct native fields with dword/word character 213/199;
+// the last restores key +0x1c and cursor +0xf44 but gains only three; all restored.
+// Native full-width unsigned/signed status fields 202/202; native word/bitfield
+// admission with full sentinel 350/350; split sentinel halves 335/335; native
+// status with player indexing 202, with fifteen-bit counters 199 (rejected).
+// Round 188: Variant-lookup/team-change/query-emission/group-bound inline and noinline declarations:
+// 202,202,202,202,202,202,202,202 fast; reduced control 202, full 202. Original executable source restored.
+// DL159: uniform name-input field observations, crossed with shared pass ordinal, shared three-count results and two-word prefix clear, 235/236/235/236/234/234/234/234. Shared ordinal recovers key home but regresses total; original character snapshot and body restored.
+// Round 210: Query-count table publication 123/132/213/231/312/321 gives
+// 202/206/213/344/214/345; entry table with 123/321 gives 202/345. Original restored.
+// Round 194: On native fifteen-bit player statistics and a shared pass ordinal,
+// byte/short/word/dword group counters with dword or word characters all 311;
+// original body and native collection extent restored. Key/group homes remain.
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {
+    long value, change, level, lower;
     long key = collection->key;
     s_surface_description *variant = function_192e60(key);
     batch->attribute_count = 0;
@@ -1341,14 +1422,14 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
             const s_match_player_rating_entry *player = (const s_match_player_rating_entry *)(local_0 - 0x9a);
             if (!player->active || player->team == NONE || (*(const dword *)((const byte *)player + 0xa) & 3)) continue;
             long skill = player->unknown9a;
-            long value = player->value;
+            value = player->value;
             if (*(const dword *)((const byte *)player + 0xa) != 0xbad00000 &&
                 player->key == key && skill != NONE && value != NONE)
             {
-                long change = function_74800(collection, i);
+                change = function_74800(collection, i);
                 value += change;
-                long level = function_74970(value, skill);
-                long lower = value >= 0 ? function_74970(value, 0) : 0;
+                level = function_74970(value, skill);
+                lower = value >= 0 ? function_74970(value, 0) : 0;
                 const byte *stats = local_1;
                 long third = *(const word *)(stats + 8) & 0x7fff;
                 long first = *(const word *)stats & 0x7fff;
@@ -1382,7 +1463,7 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 const word *source = (const word *)((const byte *)player + 0x10);
                 char *destination = summary.name;
                 long remaining = 64;
-                word character;
+                dword character;
                 do
                 {
                     character = *source;
@@ -1431,13 +1512,13 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
             if (team->active && memcmp(identity, g_440070, 12) != 0)
             {
                 short skill = team->skill;
-                long value = team->value;
+                value = team->value;
                 if (skill != NONE && value != NONE)
                 {
-                    long change = function_74720((const s_match_rating_collection *)collection, i);
+                    change = function_74720((const s_match_rating_collection *)collection, i);
                     value += change;
-                    long level = function_74970(value, skill);
-                    long lower = value >= 0 ? function_74970(value, 0) : 0;
+                    level = function_74970(value, skill);
+                    lower = value >= 0 ? function_74970(value, 0) : 0;
                     const byte *stats = local_3;
                     function_73e00(lower, batch, identity, change,
                         *(const word *)stats & 0x7fff, *(const word *)(stats + 6) & 0x7fff,
@@ -1525,15 +1606,50 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
     return local_0;
 }
 #pragma optimize("", on)
-
-// score 770 (was 770): user-cursor and identity-word homes differ;
+// score 737 (was 737): Frame 0xc0 agrees; first user/identity homes and protected request-builder inputs remain.
+// Frame 0xc0 agrees; user/identity homes, completion cursors and request-builder argument registers remain.
+// Earlier: frame 0xc0 agrees; user/identity and request homes remain.
+// Frame 0xc0 agrees; user cursor, identity word and request homes remain.
+// user-cursor and identity-word homes differ;
 // long validity 770; pending read guard first 786; timestamp before
 // counts 770; unsigned property initializer 770; unsigned user group 781.
-// score 770 (was 770): Frame 0xc0 agrees; user cursor and identity homes remain. Const user 770; const identity 770; byte group 781; byte accepted count 821; byte descriptor initializer 853 (fast).
-// score 770 (was 770): User/identity and request homes remain; direct identity-helper
+// Frame 0xc0 agrees; user cursor and identity homes remain. Const user 770; const identity 770; byte group 781; byte accepted count 821; byte descriptor initializer 853 (fast).
+// User/identity and request homes remain; direct identity-helper
 // return 791; duplicate cursor equality 773; byte team/failure results 770/770;
 // incomplete-property arm first 785 (fast). Opening body and helpers retained.
 // Frame 0xc0 agrees; user/identity and request homes remain. Terminal record reuse 787; native identifier field 770; clamp-value lifetime 770; type-first duplicate filter 794; request-player cursor 804 (fast).
+// Frame 0xc0 agrees; user/identity and request homes remain; native identity flags 770; repeated flag snapshot 770; identity after property copy 772; property value after lookup 786; received-record cursor 770 (fast).
+// Existing identity snapshot as copy source 770; cache comparison order 797; request header first 771;
+// word request-player index 809; one-based descriptor IDs 770 (fast). Original body retained.
+// All five-group word ordinals 741 (frame 0xc8; rejected); byte clear ordinals 770;
+// read-submission failure first 770; common delay default 769; clamp bounds 769;
+// request/completion/offline word group 775/754/775; completion-only 754 plain, frame 0xc0.
+// direct records 754; direct properties 754.
+// direct destinations 772; record/property accesses 754.
+// record/destination accesses 772; property/destination accesses 772.
+// all three accesses 772; accumulated failure 739.
+// Native duplicate index 761; request/completion/both direct player fields 794/754/794;
+// signed/unsigned word completion-player ordinals 755/755; unsigned word completion group
+// 754; duplicate index with unsigned word group 761. Original body retained.
+// Admission-test result 739; eager failure OR 753; positive completion 739;
+// player-result-first OR 739; accumulated signed/unsigned failure 761/761;
+// signed positive completion 759; admission plus positive completion 739.
+// Round 71: retail inlines the pointer-returning variant getter (index range as a pointer range, then a NULL
+// test, then variant->type) and keeps the six-property loop rolled with a register bound shared by the
+// count store and properties_used += 6. Getter at the first site 755 (2894 bytes); at all three 766 (2910);
+// getter + `j < record->count` bound and `properties_used += record->count` 759 (2830, aligned lines 560 -> 484);
+// the same with the sum before the loop 774; the bound alone 839 (2766).
+// Round 137: SSE flag 755 (file gate failed);
+// inline read/result/write-result and combinations 739,739,739,739,739,739,739; outlined joint 739.
+// Native player-array end bounds in availability/request/completion 837/792/792; availability-request/availability-completion/request-completion/all 878/905/857/951; all fixed clear array ends 771. Original ordinal traversals retained.
+// Read-builder count homes in six meaningful lexical orders, write-builder homes and both builders: 739 each on the retained word-completion/failure graph. Original count names, helpers, predicates and call tuples restored.
+// Round 343: Native request identity via library/aggregate copy 747/747; with real descriptor count 792/792;
+// terminal candidate reuse 742/742; count plus terminal reuse 836/836. All restored; original completion failure and word group remain.
+// Initial-pass signed-word group/availability/both/clears/group-clears/availability-clears/all
+// 752/761/764/737/752/761/764; all initial-pass unsigned-word indices 764.
+// Round 248: Complete returned-property extent and received total, signed/unsigned
+// with indexed access and before/after accumulation 737/754 each; native property
+// cursor with the same pairs 737/760 each. Original bound and accumulation restored.
 // @retail 0x74aa0
 void function_074aa0(void)
 {
@@ -1663,7 +1779,7 @@ void function_074aa0(void)
                 if (online_stats_read_result(g_50c46c, (XONLINE_STAT_SPEC *)g_50c474,
                     (word)g_50c470, g_50e9fc, sizeof(g_50e9fc)))
                 {
-                    for (long group = 0; group < 5; group++)
+                    for (short group = 0; group < 5; group++)
                         for (long i = 0; i < 16; i++)
                         {
                             s_search_player_values *player = &g_509454[group].players[i];
@@ -1699,8 +1815,8 @@ void function_074aa0(void)
                             {
                                 if (player->state == 2) player->state = 1;
                                 else if (player->state == 5) player->state = 4;
-                                failed = true;
                             }
+                            failed = failed || received != 6;
                         }
                     function_80aa0(g_50c474, g_50c470);
                 }

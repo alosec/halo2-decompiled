@@ -604,8 +604,12 @@ struct s_lookup_ray_result
 
 bool function_1eff40(s_lookup *lookup, long flags, point3f const *point,
 	vector3f const *direction, s_lookup_ray_result *result);
-void function_d8ae0(long object_index, long region_index, short *material);
+short *function_d8ae0(long object_index, long region_index, short *material);
 
+// score 12 (was 26): the material local sits at esp+0x18 where retail has
+// esp+0x1a, and the material store is scheduled after the hit copies; tried
+// the local declared first, between found and lookup, in the inner block and
+// as a one-element array, all 12.
 // @retail 0x169510
 bool __stdcall function_169510(long object_index, bool a, dword flags, dword test_flags, point3f const *point,
 	vector3f const *vector, long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result)
@@ -626,8 +630,7 @@ bool __stdcall function_169510(long object_index, bool a, dword flags, dword tes
 			if (lookup_pointer->initialize(object_index) && function_1eff40(lookup_pointer, test_flags, point, vector, &hit) && result->t > hit.hit.t)
 			{
 				result->type = 4;
-				function_d8ae0(lookup.handle, hit.hit.surface_index, &material);
-				result->material_type = material;
+				result->material_type = *function_d8ae0(lookup.handle, hit.hit.surface_index, &material);
 				result->instance_index = NONE;
 				result->unknown3c = NONE;
 				*(short *)result->unknown44 = hit.item;
@@ -1133,6 +1136,10 @@ bool function_16a040(long flags, point3f const *point0, point3f const *point1, l
 bool function_1691a0(long object_index, dword flags, dword test_flags, point3f const *point, vector3f const *vector,
 	s_collision_result_1697c0 *collision);
 
+/* retail calls this out of line from its one caller (0xdf880) */
+__declspec(noinline) bool collision_test_vector_object(dword flags, s_collision_result_1697c0 *collision,
+	long object_index, point3f const *point, vector3f const *vector);
+
 /* tests a vector against one object */
 // @retail 0x169430
 bool collision_test_vector_object(dword flags, s_collision_result_1697c0 *collision, long object_index,
@@ -1556,14 +1563,23 @@ PRIVATE inline void camera_prism_point_16a8e0(s_prism const *prism, point2f cons
 			prism->plane.n.n[indices[1]] * point->y) / prism->plane.n.n[axis];
 }
 
-// score 552 (was 552): sum homes and zero register; accumulation loops 597;
+// score 552 (was 552): Frame 0xb964 agrees; sum homes and EBX/ESI zero carrier remain.
+// sum homes and zero register; accumulation loops 597;
 // average loops 554; midpoint loop 554; branch-local ray results 552;
 // face classification from normal selection 553.
 // frame 0xb964 agrees; sum/counter homes and EBX/ESI zero carrier still differ.
 // Result-first edge cap 625; long inside 600; long normal selection 552; projected entry lifetime 552; independent sums with word counters 594; shared initial point 553.
-// score 552 (was 552): frame 0xb964 agrees; sum homes and query zero register differ. Signed
+// frame 0xb964 agrees; sum homes and query zero register differ. Signed
 // accepted counts 552; selected endpoint pointer 653; vertex cursor 628; shared inverse 552; early
 // opposite radius 647; word-count shared reconstruction and early successor 686.
+// Entry direction 552; prism-scope contact points 552; contact/half role names 552;
+// sum memcpy 552; full-width reconstruction axis 593 at retail length.
+// DL134: short/long projection indices 621/553; polygon count 555; normal component 647;
+// axis at use 744; coordinate inputs 651; short indices/inputs 686; polygon/plane inputs 660.
+// Native projected point, relative/edge vectors, side, perpendicular, candidate,
+// separation vector, contact midpoint/half and all native producers: 552 each. All restored.
+// Round 227: Native prism/query-origin/initial-sum values, their pairs/all,
+// all with CRT prism construction 779/758/554/886/779/758/886/886. All restored.
 // @retail 0x16a8e0
 bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 	long ignore_object, long ignore_parent, point3f *out, real *out_radius)

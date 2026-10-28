@@ -62,6 +62,9 @@ static inline s_render_model_definition *render_model_get(long render_model_inde
 	return (s_render_model_definition *)g_4e3b44[render_model_index & 0xffff].bytes;
 }
 
+/* retail calls this from 0xdbb40, its only caller, instead of inlining it */
+__declspec(noinline) long render_model_find_marker_group(long render_model_index, long index);
+
 // @retail 0x16d890
 long render_model_find_marker_group(long render_model_index, long index)
 {

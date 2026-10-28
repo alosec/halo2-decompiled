@@ -10,7 +10,7 @@ Retail's named `garbage` type definition at `0x467e60` stores this address
 in its creation slot at `+0x2c`. It is the only non-null code callback in that
 type definition. The type's datum size is `0x170`.
 
-The CC0 [Halo CE reference](https://github.com/punpckhdq/halo),
+The [Halo CE reference](https://github.com/punpckhdq/halo) (CC0 when this was written; AGPL-3.0 since 2026-10-17),
 `source/items/garbage.c`, identifies the corresponding `function_11bb40` behavior:
 garbage-list membership, shadowless/deactivation flags, and a randomized
 lifetime. Halo 2's retail callback has a different lifetime calculation.

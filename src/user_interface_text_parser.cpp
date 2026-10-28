@@ -258,6 +258,39 @@ done:
 	parse_copy(buffer, g_55c2e4);
 }
 
+// score 49 (was 54): our size-optimized build keeps the buffer address in EBX for its two
+// uses; retail pushes it as an immediate and moves it into EAX again (no matched size-built
+// function does that; a favour-speed setting gives it, not kept), and the tag/selector
+// schedule follows. Native name ID, const globals, name declaration first, default first
+// and absent cases 54; direct tag field 45 (171 bytes); existing getter/copy force-inline
+// 54/54; selected-name fallback result 54; numeric case order 49; descending 52; native copy
+// 54; direct selector 57 at 171 bytes; const variant 54; scalar names 54; entry variant/tag
+// declarations 54/54; native buffer object 49; seven adjacent case-pair layouts
+// 48/49/51/51/51/51/50; translator inline/noinline 49/49; native copy inline/noinline 49/49;
+// both inline 49; selected parameter 49; even-priority cases 56; low/high pairs 51; the
+// translator call in each case 37 (171 bytes; ESI then holds the buffer), the same in
+// retail's block order 0/1/9/2/3/4/7/8 42 (171 bytes), with the tag read in each call 45
+// (171 bytes: retail's block order and late EDI save, only the EBX buffer and the tag load
+// differ); the buffer named once 49; `&g_55c6e4[0]` at the translator 49.
+// output-buffer EBX cache and tag/selector scheduling differ.
+// Native name ID, const globals, name declaration first, default first and absent cases 54;
+// direct tag field 45 (171 bytes; still 39 code rows); existing getter/copy force-inline 54/54;
+// selected-name fallback result 54.
+// buffer register and selector/tag scheduling remain different.
+// Numeric case order 49; descending 52; native copy 54; direct selector 57 at 171 bytes;
+// const variant 54; scalar names 54; entry variant/tag declarations 54/54.
+// score 49 (was 49): extra buffer EBX cache and selector/tag schedule remain.
+// Coordinated getter inline/inline-noinline/noinline 49/49/49; parser inline 49; null-definition exit 72;
+// native tag member 49; native member with null exit 72; terminal case first 54.
+// extra buffer save and selector/tag schedule remain; name-block order 54;
+// reverse/encoded name order 51/51; entry/middle/tail name pairs 55/53/53;
+// tail/middle groups first 53/54. Executable rows do not improve; original cases restored.
+// Extra EBX buffer cache and tag/selector schedule remain. Native buffer
+// object 49; seven adjacent case-pair layouts 48/49/51/51/51/51/50. Best executable reduction is
+// one row.
+// extra EBX buffer cache and selector/tag scheduling remain.
+// Translator inline/noinline 49/49; native copy inline/noinline 49/49; both inline 49;
+// selected parameter 49; even-priority cases 56; low/high pairs 51.
 // @retail 0x22d456
 void __stdcall parse_gametype(long string_handle, word *buffer)
 {
@@ -277,9 +310,6 @@ void __stdcall parse_gametype(long string_handle, word *buffer)
 		case 1:
 			name_id = 0x1000010d;
 			break;
-		case 9:
-			name_id = 0x700010e;
-			break;
 		case 2:
 			name_id = 0x600010f;
 			break;
@@ -294,6 +324,9 @@ void __stdcall parse_gametype(long string_handle, word *buffer)
 			break;
 		case 8:
 			name_id = 0xb000115;
+			break;
+		case 9:
+			name_id = 0x700010e;
 			break;
 		default:
 			goto done;

@@ -287,9 +287,19 @@ void function_146de0(void)
 // capacity/timestamp homes and selective update expansion remain.
 // Final rounded/low-bit/conditional/word padding 149/152/143/145; signed-word
 // per-attempt padding 129 plain kept; capacity/allocation/joint home names 139/139/139.
+// score 129 (was 129): capacity/timestamp homes and selective update expansion remain.
+// Signed-short delta 139; attempt/final short scope 129/129; short remainder consumption 136;
+// entry capacity 131; unsigned capacity/native handle/separate usable with short padding 129/129/129.
 // Capacity/timestamp homes and update expansion remain; wrapped/full boundary
 // distances 164/149; direct consumption 164; counted distance 153; remainder update 140; byte padding
 // 144; unsigned capacity/native allocation 139/139.
+// score 129 (was 129): frame 0x14 agrees; update expansion and capacity/timestamp homes remain.
+// Short-padding failure/body, counted and capacity loops 129/131/129; zero-default/select padding
+// 134/129; allocator result 129; full short distance 135; success-only padding consumption
+// 120 (held: the guard repeats the loop's own test).
+// score 129 (was 129): capacity/timestamp homes and update expansion remain;
+// separate byte/char/word/dword/short/long remainders with short padding
+// 134/134/136/146/136/146; byte/word conditional padding 134/136.
 // @retail 0x146e30
 c_havok_abstract_allocator *function_146e30(void)
 {

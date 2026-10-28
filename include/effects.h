@@ -99,13 +99,12 @@ struct s_effect_part
 	short create_in;
 	short create_in_mode;
 	short location;
-	byte flag0 : 1;
-	byte flag1 : 1;
-	byte flag2 : 1;
-	byte flag3 : 1;
-	byte flag4 : 1;
-	byte : 3;
-	byte unknown07;
+	word flag0 : 1;
+	word flag1 : 1;
+	word flag2 : 1;
+	word flag3 : 1;
+	word flag4 : 1;
+	word : 11;
 	dword base_group_tag;
 	dword group_tag;
 	long tag_index;
@@ -401,6 +400,29 @@ public:
 };
 
 c_type_4e7709 *function_137bd0(long tag_index);
+
+extern c_type_4e7709 g_479868;
+extern c_type_4e7709 g_479874;
+
+/* the particle system object for a tag's group, pointed at the tag (null for
+   other groups); function_137bd0 is its out-of-line copy */
+inline c_type_4e7709 *particle_object_for_tag(long tag_index)
+{
+	c_type_4e7709 *result = 0;
+
+	switch (TAG_GROUP(tag_index))
+	{
+	case 'prt3':
+		result = &g_479868;
+		break;
+	case 'PRTM':
+		result = &g_479874;
+		break;
+	}
+	if (result)
+		result->initialize(tag_index);
+	return result;
+}
 
 /* what a particle system spawns from (function_178c80) */
 struct s_particle_system_spawn

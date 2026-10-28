@@ -143,7 +143,7 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
 void __stdcall function_151110(long arg_0, void *arg_1);
 bool __stdcall function_148fff(long arg_0);
 bool function_12be90(void);
-short __stdcall function_cdeb0(long arg_0, long arg_1, long arg_2, long arg_3);
+short __stdcall function_cdeb0(long arg_0, long arg_1, short arg_2, short arg_3);
 short function_cfe40(long arg_0);
 short function_cdff0(long arg_0, short arg_1);
 bool function_c85c0(long arg_0);
@@ -153,9 +153,56 @@ void __stdcall function_187510(long arg_0, real arg_1, real arg_2);
 void player_action_initialize(s_player_action *arg_0);
 
 #pragma inline_depth(0)
-// score 149 (was 149): frame 0x54 agrees; selection widths/registers at calls differ;
+// score 135 (was 135): BLOCKED-BY 0xcfe40 (its index arrives in eax, retail ecx); frame 0x54 agrees;
+// selector input, count width, cold clear and output/angle scheduling differ.
+// frame 0x54 agrees; request/choice carriers, protected input convention and cyclic alignment differ.
+// Earlier 279 (was 323): frame 0x54 agrees; selection widths/registers at calls differ;
 // named root / first atan2 / second atan2 / first fmod / second fmod results 161 each;
 // both atan2 / both fmod / all results 161 each (frame 0x5c vs 0x54).
+// Native request bit/all request fields 323/323; native clear fields 387; direct held-state output 323, with request bit 323; native reset bit 323; request/clear fields 387; all fields/state output 381.
+// Cyclic result after start 330; candidate before result 331; explicit cyclic step 326;
+// start from field selection 324; traversal storage identities 323; final memcpy 323;
+// native context initializer 323; result lifetime with explicit step 332. All eight forms restored.
+// Unsigned word/dword request 323/331; signed-byte/word/dword reset 323 each;
+// late object pointer fields 306 plain kept (1500/1515); mode-state pointer 323;
+// unsigned word request plus late object fields 306. Keep only late field observations.
+// First/second/both scalar before pair 306/306/306; library angle/scalar/whole-request copies 306/279/321;
+// native output pair/with scalar phase 306/306. Scalar-pair library copy 279 plain kept (1489/1515).
+// Packed source/destination/both selection words 279/279/279; selection memcpy 279;
+// native destination plus final word copy 279; both native words plus final copy 279;
+// native three-word source/output fields 279; native fields with packed selection words 279.
+// Short saturation counter 311; two-use held selection 279; both 311; sentinel first 283;
+// sentinel with short/held/both 315/283/315; int counter with held/sentinel 283.
+// Output angle/vector/scalar pair library copies, each pairwise combination
+// and all three pairs 279 each; angle pair plus complete four-float control copy 314.
+// Complete request flags once before admission at byte/word/short/dword width 279/282/282/267;
+// after admission 279/281/281/266. Dword after admission 266 plain; frame 0x54 agrees.
+// Shared request with bool/byte/word permission 379/379/266; definite short/bool arms 266/379;
+// declaration fallback with short/bool 255/379; combined permission 376; snapshot after object lookup 258;
+// after selection stores with short/bool/byte 252/231/231; late snapshot plus bool/short fallback 366/369.
+// Late coherent request and Boolean permission 231 plain; selection/count and cold output scheduling remain.
+// Round 185 late complete flags byte/word/short/signed byte with bool permission 158/319/319/158;
+// with short permission 279/246/246/288 (fast). Native unsigned byte flags with bool permission
+// kept at 158 plain; every value, observation boundary and call tuple unchanged.
+// Round 189 pulse-latch combined/release-first guards with union/two masks 181/177/165/169;
+// test-derived latch publication 135, with two masks 175; two-use pulse plus publication
+// with union/two masks 172/175. Keep direct latch publication; protected input, count,
+// cold clear and output/angle scheduling remain.
+// Direct selection fallback 327; cyclic result/start/both at long width 289/327/326; high-first
+// saturation 316; logical availability 279; fallback/result 323; cyclic/saturation/availability 331.
+// Native orientation vector 135; coherent unit source 185; source/vector 185; existing state query 304;
+// query/source 310, query/vector 304, all three 310; complete native orientation value 220.
+// Original fields, pointer observations and query guard restored.
+// Round 56: object pointer local in the angle block 185 (retail's esi there; the tail's scratch
+// registers rotate); nested 0x40 latch with the 0x60 and 0x4630200 masks tested apart 164, its
+// latch store first 162, else-first latch 169, with float stores for field_20/24 158 at retail's
+// 1515 bytes. The nested latch and float stores are retail's code (aligned 58 -> 54), but retail
+// puts the `field_92 = false` arm after the return; bool/byte/held locals, store orders and
+// a ternary toggle all leave that arm inline, so the lockstep count shifts.
+// Complete toggle result in bool/byte, union invalidation, early publication 181/184;
+// split masks 182/183; publication after action update 143/184, split masks 185/184.
+// Round 342: Complete inclination squared-product pairs, reversed pairs and named sum 148 each; squared accumulator 150;
+// with symmetric named angle shifts 148/148/148/150. All enlarge the frame to 0x5c; original expressions restored.
 // @retail 0x186ab0
 void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_action *arg_3)
 {
@@ -203,7 +250,8 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         s_186ab5 *local_4 = ((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8;
         if (local_1->field_28 != local_4->field_214)
             *(long *)&local_1->field_28 = *(long *)&local_4->field_214;
-        short local_5 = (local_3.field_1c & 1) != 0;
+        byte request_flags = local_3.field_1c;
+        bool local_5 = (request_flags & 1) != 0;
         char local_6 = local_1->field_2a;
         if (local_4->field_213 != NONE)
             local_5 = false;
@@ -222,7 +270,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
         if (local_1->field_2c == NONE ||
             !(short)((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8->field_23e[local_1->field_2c])
             local_1->field_2c = local_4->field_23d;
-        if ((local_3.field_1c & 2) || local_1->field_2c == NONE || !function_cdff0(local_1->field_0, local_1->field_2c))
+        if ((request_flags & 2) || local_1->field_2c == NONE || !function_cdff0(local_1->field_0, local_1->field_2c))
         {
             s_186ab5 *local_11 = ((s_186ab6 *)g_4e0300->data)[local_1->field_0 & 0xffff].field_8;
             short local_8 = local_1->field_2c;
@@ -246,7 +294,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
             (!g_510c54->active || !g_510c54->unknown01) && !function_155760(local_0->field_28) &&
             local_1->field_0 != NONE && function_c85c0(local_1->field_0))
         {
-            if (local_3.field_1c & 4)
+            if (request_flags & 4)
             {
                 local_1->field_8a = local_1->field_2e;
                 local_1->field_2e = function_c8960(local_1->field_0, local_1->field_2e);
@@ -256,7 +304,7 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
                     local_1->field_8c = 0;
                 }
             }
-            else if (local_3.field_1c & 8)
+            else if (request_flags & 8)
             {
                 if (local_1->field_89 && local_1->field_8c < 0x7f)
                     local_1->field_8c++;
@@ -299,16 +347,9 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
             local_1->field_30 = false;
         if ((byte *)g_4e6948 + 8 && ((byte *)g_4e6948)[0xd] != 3)
         {
-            if (local_3.field_1c & 0x40)
-            {
-                if (!local_1->field_92)
-                {
-                    local_1->field_92 = true;
-                    local_1->field_91 = !local_1->field_91;
-                }
-            }
-            else
-                local_1->field_92 = false;
+            if ((request_flags & 0x40) && !local_1->field_92)
+                local_1->field_91 = !local_1->field_91;
+            local_1->field_92 = (request_flags & 0x40) != 0;
             if (local_3.field_18 & 0x4630260)
                 local_1->field_91 = false;
             if (local_1->field_91 && local_4->field_14 == NONE)
@@ -320,22 +361,20 @@ void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_acti
     memcpy(local_1->field_44, &local_3.field_28, sizeof(local_1->field_44));
     local_1->field_4 = local_3.field_18;
     local_1->field_18 = local_3.field_0;
-    local_1->field_20 = local_3.field_8;
-    local_1->field_24 = local_3.field_c;
+    memcpy(&local_1->field_20, &local_3.field_8, 2 * sizeof(real));
     if (local_1->field_0 != NONE)
     {
         s_186ab6 *local_4 = (s_186ab6 *)g_4e0300->data + (local_1->field_0 & 0xffff);
         if ((1 << local_4->field_3) & 1)
         {
-            s_186ab5 *local_5 = local_4->field_8;
-            if ((bool)((local_5->field_348 >> 5) & 1))
+            if ((bool)((local_4->field_8->field_348 >> 5) & 1))
             {
-                local_1->field_10 = (real)atan2((double)local_5->field_16c, (double)local_5->field_168);
-                local_1->field_14 = (real)atan2((double)local_5->field_170,
-                    sqrt((double)local_5->field_16c * local_5->field_16c + (double)local_5->field_168 * local_5->field_168));
+                local_1->field_10 = (real)atan2((double)local_4->field_8->field_16c, (double)local_4->field_8->field_168);
+                local_1->field_14 = (real)atan2((double)local_4->field_8->field_170,
+                    sqrt((double)local_4->field_8->field_16c * local_4->field_8->field_16c + (double)local_4->field_8->field_168 * local_4->field_8->field_168));
                 local_1->field_10 = (real)fmod((double)(local_1->field_10 + 6.2831854820251465f), 6.2831854820251465);
                 local_1->field_14 = (real)fmod((double)(local_1->field_14 + 9.424777984619141f), 6.2831854820251465) - 3.1415927410125732f;
-                local_5->field_348 &= ~0x20;
+                local_4->field_8->field_348 &= ~0x20;
             }
         }
     }

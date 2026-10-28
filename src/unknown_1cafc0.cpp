@@ -537,14 +537,45 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 	graph_weapon_type_request(graph, mode, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME);
 	graph_weapon_type_request(graph, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME);
 }
+// score 399 (was 399): frame eight versus twelve and independent hidden-result homes remain.
 
-// score 403 (was 444): frame 8 versus 12 and hidden-result homes still differ.
+// Earlier 399 (was 399): frame 8 versus 12 and hidden-result homes still differ.
+// Earlier: frame eight versus twelve and hidden query-result homes still differ.
+// Earlier: frame 8 versus 12 and hidden-result homes still differ.
+// frame 8 versus 12 and hidden-result homes still differ.
 // Byte success 403; fallback fields at use 551; request fields at use 639;
 // library record move 628; outer name-snapshot declarations 444. Byte success kept.
 // Round 303: graph after resolution 621; fallback snapshot order 544; request snapshot order 419;
 // signed byte success 403; explicit final failure 530. Hidden-result homes/frame still differ.
-// score 403 (was 403): hidden-result homes and frame eight versus twelve remain; word success 533;
+// hidden-result homes and frame eight versus twelve remain; word success 533;
 // shared request guard 403; resource-array base 426; urgent-array base 508; both bases 599.
+// Request class/mode/type 399; fallback class/mode/type 544; inherited ordinal scope 403; inherited while 403; ordinary group inline 1794; request class/type/mode 399 kept; request mode/type/class 419; request type/mode/class 403.
+// Output mode/class/type receivers 399/435/420; mode-class/mode-type/class-type/all receivers
+// 435/420/435/435; all receivers after record copy 421.
+// Existing grouping-helper role orders mode/class/type/graph, graph/class/mode/type,
+// graph/type/class/mode and mode/graph/class/type 399 each; the same four leaf-helper
+// orders 399 each with the bool return contract (fast). Helpers and body restored.
+// Byte/signed-byte returns with byte or Boolean status 447/447/447/447; byte return with long/word
+// status 489/517; byte return plus group/leaf graph-last formals 447/447. Original Boolean return,
+// byte status, helper roles and class declaration restored; frame eight and hidden-result homes remain.
+// First/fallback/both native result-field copies 518/499/546; their immediate-index
+// forms 518/499/546; mutable result fields 546; shared query workspace 597. Frame remains eight in separate-copy forms.
+// Primary/fallback/both library result publication 415/431/483; name library copy 399;
+// complete library publication 483; unstreamed continue 399; leaf inline/automatic 1622/1622.
+// Round 148: Primary failure-first 584; inheritance/urgent bound snapshots 418/487; failure-first with
+// inheritance/urgent/both 567/556/555; both bounds 429; flags-first fallback guard 402. Bound-only locals fail
+// their exact-match requirement. Frame eight versus twelve and hidden-result homes remain.
+// Round 317: Primary/fallback/both const native query plus immediate test 415/431/483; both mutable 483; reused existing identifier 590; entry primary/fallback/both query declarations 590/571/590.
+// Round 373: byte/char/word/short flag formals 396/396/396/396; the same
+// widths with success before graph acquisition 396/396/396/396. Three-point
+// gains restored with the original long formal and class declaration.
+// Actual found-name record at group expansion: pointer/reference/value 616/616/567;
+// with urgent resource cursor 632/632/671; pointer plus resource base 619;
+// pointer plus cursor/base 756. All restored.
+// Round 190: direct urgent-resource fields 399; twice-used native resource index 399;
+// ordinary urgent while alone/with direct fields/with native index 399 each; earlier native
+// ordinal/resource declarations separately/together 399 each. Original helpers restored.
+// Round 251: Query-produced success at primary/alternate/both/fallback/primary+fallback/alternate+fallback/all 410/452/605/558/543/621/499; all with Boolean status 506. Original status assignments, hidden records and request expansions restored.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)
@@ -610,8 +641,8 @@ bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_n
 	}
 	if (success)
 	{
-		long found_weapon_type = found->weapon_type;
 		long found_weapon_class = found->weapon_class;
+		long found_weapon_type = found->weapon_type;
 		long found_mode = found->mode;
 		long i;
 
@@ -801,21 +832,93 @@ PRIVATE inline void channel_loop_clear(c_animation_channel *channel)
 	}
 }
 
-// score 251 (was 273): frame 0x38 agrees; ID slots, result/loop byte homes,
+// score 210 (was 210): Frame 0x38 and result/prior-loop bytes agree; ID homes and blend-query lifetime still differ.
+// Shared loop query/getter 251/251; shared query with byte result 249, signed-byte/long loop
+// 251/337; getter with byte result 249; shared query with signed-byte result/both bytes 249/249.
+// Two-point gains dropped.
+// frame 0x38 agrees; ID slots, result/loop byte homes,
 // blend reloads and the frame clamp differ. Success after setup 251; loop
+// Frame 0x38 agrees; identifier/result/loop homes and protected query lifetime remain.
+// Success after setup 251; loop
 // state width 283; channel state width 314; name aggregate 322; flag mask 353
 // (six match losses). On 251: logical channel 287; logical offset 248 (gain
 // three, dropped); loop expression 345; success after query 274; before
 // overlay 255; previous-loop home name 251.
-// score 251 (was 251): Frame 0x38 agrees; ID/Boolean homes and blend call lifetime remain. Byte result 249 (gain two, dropped); entry third ID 306; two-channel clear loop 251; masked blend bit 311; byte combined state 251.
-// ID/result/loop homes, blend reloads and frame clamp remain.
+// Byte result 249 (gain two, dropped); entry third ID 306; two-channel clear loop 251; masked blend bit 311; byte combined state 251.
 // Transition ID name 251; blend-first join 327; failed result from flag 354;
 // frame-position snapshot 297; reversed bitwise loop result 251; previous-loop
 // lifetime first 254; false result after channel observation 286 (fast).
+// Word result 255; word previous loop 334; word combined state 312; reused selected set 251; found record at lookup 251; byte result plus logical offset 269 (fast).
+// Full-width return 255; signed-byte previous loop 251; primary ID at lookup 339; names initialized at
+// lookup 443; aggregate names on late-success form 320 (fast).
+// This round: channel result producer 248; channel result late false 286; channel result byte 271;
+// channel result word 260; channel result long 259; channel result changed width 291; channel result
+// previous byte 248; channel result carrier pair 291; channel producer logical offset 293; channel
+// producer logical queries 327.
+// Frame 0x38 agrees; ID/Boolean homes and blend call lifetime remain. Byte result 249 (gain two, dropped); entry third ID 306; two-channel clear loop 251; masked blend bit 311; byte combined state 251.
+// ID/result/loop homes, blend reloads and frame clamp remain.
+// Frame 0x38 agrees; ID/Boolean homes and blend lifetime remain. Word result 255; word previous loop 334; word combined state 312; reused selected set 251; found record at lookup 251; byte result plus logical offset 269 (fast).
+// Frame 0x38 agrees; identifier/result/loop homes and protected query lifetime remain.
+// Optional blend-ID initialization 289; transition-set lookup scope 251; both 289; channel-state
+// initialization 251; positive channel flag 254; reversed independent clears 251;
+// state/flag/clear combination 254; native ID/set/state combination 289.
+// First logical blend 311; query-first logical blend 310; both logical 318; staged channel
+// admission 248 (gain three, dropped); logical staged 315; named readiness 254;
+// logical named readiness 312; lookup-owned work 251.
+// Round 167: Three separate name-change predicates on the late-success body, logical/bitwise joins:
+// bool 260/254, byte 260/254, short 280/272, long 277/267.
+// All three comparisons precede the original four name stores; original combined predicate restored.
+// Round 194: Native output-record field/aggregate/logical/aggregate-logical pointer forms
+// 250/222/254/252; references 250/222/254/252; declared member 255 (plain 255).
+// Declared member with repeated field pointer/reference 222/222; field pointer kept (plain 222, 1139/1133).
+// Round 375: Native optional transition construction, mutable/const 341/341; with native
+// optional overlay 338/338; uniform three-ID role names on those graphs 341/341/338/338.
+// Frame 0x38 retained; all eight forms restored.
+// Complete lookup/admission/transition/channel result chain, branch/derived fallback:
+// bool 371/354, byte 377/342, short 391/339, long 390/312. All shrink frame to 0x34 versus
+// retail 0x38. Original late-success body, identifier lifetimes and protected queries restored.
+// Round 337: complementary prior-loop bool/byte/short/long 325/325/315/331;
+// negative combined state 282; both negative bool/byte 343/343;
+// both negative with complete De Morgan producer 327. Original states and body restored.
+// Round 199: Destination-record pointer at four earlier boundaries 222 each; full ID role names,
+// swapped record declarations and selected-set lifetime 222 each. Byte result with early pointer
+// 210 (plain 210); byte result with original pointer lifetime 210. Original pointer lifetime retained.
+// On the byte-result/native-record graph, eight primary/offset/overlay ID-name families
+// each 210; identifier homes and protected blend-query lifetime remain. Original names restored.
+// Round 204: repeated native channel receivers primary/transition/overlay 210/269/403;
+// primary-transition/primary-overlay/transition-overlay/all 269/403/369/369;
+// all receivers before result storage 369. Identifier homes and blend-query lifetime remain.
+// Round 187: primary ID at lookup 342; transition ID at entry 357; both 304;
+// overlay ID at entry 267; with primary at lookup 332; with transition at entry 347;
+// all three scope changes 333; entry primary/overlay/transition order 349. Restored.
+// Input-record field orders 0-2-1-3/3-0-1-2/3-2-1-0/1-2-3-0/2-3-0-1/0-3-2-1/
+// 2-1-0-3/1-0-3-2 give 212/213/215/216/213/212/215/216 (mode/class/type/set = 0/1/2/3).
+// Complete publication schedules do not recover the identifier homes; original order restored.
+// Round 143: the blend flag's 0x6e update after the 0x200 test (retail threads that test straight to
+// one shared clear) 337 (1110 bytes); blend declared before the transition ID 211; the animation ID
+// declared first 210; transition_set declared with the blend ID 213; frame position read into a
+// local before the frame-count test 287 (1133 bytes).
+// Round 212: success byte before/after the prior-loop result 274/275; before offset-valid
+// query/before loop-flag publication 271/271; the same four with byte combined loop state
+// 274/275/271/271. Original late success, identifiers and protected query restored.
+// Round 62: retail keeps the transition ID in memory and the resolved set in EBP, ours caches the
+// transition ID's index in BP. Success stored before the channel queries 274; member NONE test
+// on the transition ID 210 (identical); resolved set named after the lookup, first/last 210/210
+// (identical); blend declared first 211; graph test before the transition test 272.
+// Round 64 (aligned counts in brackets, baseline [106]): retail keeps blend and the unflagged byte in
+// the [esp+0x50] slot (stored after every `&=`, reloaded after the 0xe6800 call), as if &blend escaped
+// in transition_find; a `bool *const *` read of transition_find's blend parameter (0x1ccda0 still
+// matches) 298 [110] moves the primary ID to retail's slot. Three name-change bools tested with `||`
+// after the store 265 [53]; with result true right after channel_start 256 [53]; plus bool result 249
+// [51] (362 instructions as retail; left: blend memory traffic, the cold `state_flags & 4` block after
+// the epilogue, the fraction pin's load order); the same with the gotos replaced by `if (!result &&
+// (state_flags & 4)) result = true; if (result) {...}` 249 [51] (identical code); `result ||` test 295;
+// bool result with early success 269 [105]; three bools with bool result 295 [65]; all with the
+// captured blend 261 [65].
 // @retail 0x1cd070
 bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long channel_flags)
 {
-	bool result = false;
+	byte result = false;
 	s_animation_names names;
 	s_animation_names found;
 	c_type_709360 animation_id;
@@ -941,17 +1044,15 @@ bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_
 
 names_store:
 	{
-		bool changed = (unknown70 != names.mode) | (unknown74 != names.weapon_class) | (unknown78 != names.weapon_type);
+		s_animation_names *names_out = &stored_names;
+		bool changed = (names_out->mode != names.mode) | (names_out->weapon_class != names.weapon_class) | (names_out->weapon_type != names.weapon_type);
 
-		unknown70 = names.mode;
-		unknown74 = names.weapon_class;
-		unknown78 = names.weapon_type;
-		unknown7c = names.set;
+		*names_out = names;
 		if (changed)
 		{
 			if (graph_tag_index != NONE && !(flags & 1))
 			{
-				resources_request(unknown70, unknown74, unknown78, true, true);
+				resources_request(names_out->mode, names_out->weapon_class, names_out->weapon_type, true, true);
 			}
 			if (!channel_valid(&channels[2]))
 			{
@@ -1350,6 +1451,11 @@ void s_animation_state::movement_rate_get(long object_index, vector3f *vector, r
 // score 5 (was 5): inlined fallback middle-component load/multiply still differs.
 // Completed delta/velocity/both values 113/84/145; logical/failure/initial success 85/89/92;
 // shared fraction helper 175; helper with completed output vectors 241.
+// fallback result local, trailing else, uninitialized result first, vector declaration
+// order, base-channel pointer local, const fraction after the vectors, else plus result,
+// channels+N arithmetic: all the same bytes; call&&result swap 85; fraction after the
+// first channel call 13. The commuted middle multiply sits in the inlined copy of the
+// matched 0x1c6c00 (load form in its own body); caller-side forms do not reach it.
 // @retail 0x1cdcd0
 bool s_animation_state::velocity_get(vector3f *delta, vector3f *velocity)
 {
@@ -1465,8 +1571,8 @@ c_type_709360 s_animation_state::overlay_kind_get(long kind)
 }
 
 // @retail 0x1cb520
-bool s_animation_state::overlay_play(c_animation_channel *channel, dword channel_flags, long set, long weapon_class,
-	long weapon_type)
+bool s_animation_state::overlay_play_for_class(c_animation_channel *channel, dword channel_flags, long weapon_class,
+	long weapon_type, long set)
 {
 	bool result = false;
 
@@ -1571,7 +1677,7 @@ c_type_709360 s_animation_state::overlay_find_for_class(long weapon_class, long 
 	{
 		c_animation_channel channel;
 
-		if (overlay_play(&channel, 0, set, weapon_class, weapon_type))
+		if (overlay_play_for_class(&channel, 0, weapon_class, weapon_type, set))
 		{
 			none = channel.animation_id;
 		}

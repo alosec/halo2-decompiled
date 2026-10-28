@@ -24,7 +24,9 @@ public:
 
 // score 4 (was 4): retail saves edi before it stores the call's arguments,
 // ours stores the handle first and saves edi after it, so the two instructions
-// and the offsets that follow them differ.
+// and the offsets that follow them differ. _ReadWriteBarrier (as 0x8c790 has it):
+// before the return 9 (key loads after the pushes); key a, b locals then barrier 6;
+// key b, a locals then barrier 4 (retail's stores, but xor esi after push edi).
 // @retail 0x18f260
 long c_resource_lock::method0(long handle)
 {

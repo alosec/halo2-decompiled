@@ -28,35 +28,125 @@ static __forceinline void world_vector_to_view(real arg_0, vector3f const *arg_1
         local_1 = arg_0 * local_1;
         local_2 = arg_0 * local_2;
     }
-    arg_2->i = g_4b9e14.forward.i * local_2 + g_4b9e14.up.i * local_1 + g_4b9e14.right.i * local_0;
-    arg_2->j = g_4b9e14.forward.j * local_2 + g_4b9e14.up.j * local_1 + g_4b9e14.right.j * local_0;
-    arg_2->k = g_4b9e14.forward.k * local_2 + g_4b9e14.up.k * local_1 + g_4b9e14.right.k * local_0;
+    real *output = arg_2->n;
+    for (long component = 0; component < 3; ++component)
+    {
+        *output = g_4b9e14.forward.n[component] * local_2 + g_4b9e14.up.n[component] * local_1 + g_4b9e14.right.n[component] * local_0;
+        ++output;
+    }
 }
-
-// score 255 (was 255): frame 0x20 versus 0x14 and transform coefficient/result registers differ.
+// score 221 (was 221): frame 0x18 versus 0x14; retail loads the view scale once (xmm6) for
+// both inlined transforms, keeps the second point's offset in the frame and the first in
+// registers, and scales copies of the inputs; coefficient/result/tail homes differ. Tried:
+// global optimization off 961; depth zero 555; frame pointer 300; input-first products 255;
+// k/j/i transform output 272; offset/transform/blend loops 315/291/255; paired loops 237; depth
+// bounds 237; both 227; paired loops with blend/unsigned/in-place 236/237/287; scoped bounds 230;
+// literal zero 227; bound scalar homes 227; separate offset loops 226; output cursor 225; short
+// transform index 405; first/second bound at uses 225/236; bound declaration order 227;
+// separate offsets with output cursor 221 (kept); short index/first bound 397; limits after
+// depth guards 224; limits after first depth 283; explicit tail clamp 221; constant weight arm
+// first 221; delayed limits tail clamp 224; delayed limits weight arms 224; first depth tail
+// clamp 283; depth weight clamp lifetimes 224; value direction 348; reference direction/output
+// 221/221; input-first scale products 221; selected scaled inputs 275; short offset counters 277;
+// byte transform counter 394; value direction with reference output 348; on the output-cursor
+// form: forward/up/right snapshots 275/275/269; all coefficients before/after scale 453/448;
+// shared scale 252 at 1136 bytes; early/late coefficients with shared scale 478/477; first/
+// second/both endpoint clip results 262/280/278; first clip before second view 282; second clip
+// first 282; incremental clip result 222; both view/clip boundaries 285; cone rejection results
+// 278; shared origin on the separate-offset/output-cursor body 290; first/second/both endpoint
+// memcpy producers 298/297/334; both inputs before offsets 335; both input copies with origin
+// 287; first/second input copy with origin 264/266 (1136 bytes); descending first/second/both
+// displacement indices 220/260/260; first/second/both displacement destination cursors 224/
+// 224/226; all axis products 221; scalar-role homes 221; uniform transform first-pair sum/last
+// product/row result 227/284/221; pair with last/row, last with row, all, and all product parts
+// 222/227/284/222/222; consistent direct scale-field observations with input/output/both
+// references and actual output-result contracts in all eight combinations 224 each (1148
+// bytes); native post-normalization projection axis with all-product terms, shared point
+// difference and same-group ordered dot expression in eight combinations 286 each (1101 bytes,
+// frame 0x2c); native vector return with pointer/reference/value input and cursor 278/278/401,
+// with indexed result 280/280/404; scaled input vector with output pointer/native return 312/
+// 404; actual output-end !=/< with long/dword ordinals 406 each, short/word ordinals 378 each.
+// Round 140: offsets through vector3d_from_points3d 220 (one point, not kept); second offsets
+// first 223; transform rows as three statements 309 (1078 bytes), with the vector3d offsets 307;
+// shared scale local with the vector3d offsets 252 and with second offsets first 253 (1136
+// bytes); scaled values read from the input pointer 221, with shared scale 252.
+// Frame 0x18 versus 0x14; displacement/coefficient/result overlap remains.
+// Earlier: Frame 0x18 versus 0x14 and coefficient/input/result overlap remain.
+// Frame 0x18 versus 0x14 and coefficient/input/result homes remain.
+// frame 0x18 versus 0x14 and coefficient/input/result overlap remain.
 // Global optimization off 961; depth zero 555; frame pointer 300;
 // input-first products 255; k/j/i transform output 272.
+// Offset/transform/blend loops 315/291/255; paired loops 237; depth bounds 237; both 227.
+// Paired loops with blend/unsigned/in-place 236/237/287;
+// scoped bounds 230; literal zero 227; bound scalar homes 227 (plain).
+// Separate offset loops 226; output cursor 225; short transform index 405;
+// first/second bound at uses 225/236; bound declaration order 227;
+// separate offsets with output cursor 221 plain (1145/1136 bytes); short index/first bound 397.
+// This round: limits after depth guards 224; limits after first depth 283; explicit tail clamp 221;
+// constant weight arm first 221; delayed limits tail clamp 224; delayed limits weight arms 224; first
+// depth tail clamp 283; depth weight clamp lifetimes 224.
+// Value direction 348; reference direction/output 221/221; input-first scale products 221;
+// selected scaled inputs 275; short offset counters 277; byte transform counter 394;
+// value direction with reference output 348. Retained separate offset loops and cursor restored.
+// Earlier: extra frame dword and coefficient/result/tail homes remain.
+// Earlier at 221 (was 221): extra frame dword and coefficient/result/tail homes remain.
+// On the output-cursor form: forward/up/right snapshots 275/275/269;
+// all coefficients before/after scale 453/448; shared scale 252 at 1136 bytes;
+// early/late coefficients with shared scale 478/477.
+// frame 0x18 versus 0x14 and coefficient/result/tail homes still differ.
+// Earlier at 255 (from 255): frame 0x20 versus 0x14 and transform coefficient/result registers differ.
+// Earlier at 227 (from 255): frame 0x18 versus 0x14; coefficient/result registers and tail differ.
+// Earlier at 221 (from 227): frame 0x18 versus 0x14 and coefficient/result/tail homes still differ.
+// First/second/both endpoint clip results 262/280/278; first clip before second view 282;
+// second clip first 282; incremental clip result 222; both view/clip boundaries 285;
+// cone rejection results 278. Clip-result forms restored.
+// Shared origin on separate-offset/output-cursor body 290; first/second/both endpoint
+// memcpy producers 298/297/334; both inputs before offsets 335; both input copies with
+// origin 287; first/second input copy with origin 264/266 (both at 1136 bytes). All restored.
+// Descending first/second/both displacement indices 220/260/260; first/second/both displacement destination cursors 224/224/226; all axis products 221; scalar-role homes 221. Extra frame dword and coefficient/result homes remain; one-point descending-first form rejected.
+// Round 230: Uniform transform first-pair sum/last product/row result 227/284/221;
+// pair with last/row, last with row, all, and all product parts 222/227/284/222/222.
+// Round 132: consistent direct scale-field observations, with input/output/both references
+// and actual output-result contracts in all eight combinations, 224 each (1148 bytes).
+// Original input copies, separate offset loops, output cursor and scalar parameter restored.
+// Native post-normalization projection axis, with all-product terms, shared
+// point difference and same-group ordered dot expression in eight combinations:
+// each 286 at 1101 bytes, frame 0x2c. Original helper and body restored.
+// Native vector return with pointer/reference/value input and cursor 278/278/401;
+// with indexed result 280/280/404; scaled input vector with output pointer/native return 312/404. Original helper and body restored.
+// Round 146: actual output-end !=/< with long/dword ordinals 406 each and short/word ordinals 378
+// each; original ordinal-controlled helper restored.
+// Lane 8 r58: second offset vector reused for the normalized segment (retail's [esp+8] slots,
+// 1136 bytes) 261; with it: scaled arm reading the input 261, if/else scaled copies 297,
+// scaled vector copy 326, camera-pointer helper rows/loop 292/258, plain rows 295, k/j/i
+// copies 260, k/j/i copies and scaling 259, k/j/i scaling 250; k/j/i scaling alone 245,
+// k/j/i copies and scaling alone 257.
+// Round 345: Live forward/up/right coefficient cursors 241/253/253; their pairs/all
+// 253/253/253/254; all with descending direct rows 267. Forward alone gives frame
+// 0x14 and 1136 bytes but regresses to 241; original helper and body restored.
+// Round 196: Descending transform rows with long/int/short/signed-byte ordinals: direct output
+// 275/275/407/407; descending output cursor 275/275/394/394. Original helper/body restored.
 // @retail 0x501e0
 void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
 {
     real local_14 = 0.f;
     vector3f local_0;
-    local_0.i = arg_0[0].field_0.x - g_4b9da0.x;
-    local_0.j = arg_0[0].field_0.y - g_4b9da0.y;
-    local_0.k = arg_0[0].field_0.z - g_4b9da0.z;
     vector3f local_1;
-    local_1.i = arg_0[1].field_0.x - g_4b9da0.x;
-    local_1.j = arg_0[1].field_0.y - g_4b9da0.y;
-    local_1.k = arg_0[1].field_0.z - g_4b9da0.z;
+    for (long component = 0; component < 3; ++component)
+        local_0.n[component] = arg_0[0].field_0.n[component] - g_4b9da0.n[component];
+    for (long second_component = 0; second_component < 3; ++second_component)
+        local_1.n[second_component] = arg_0[1].field_0.n[second_component] - g_4b9da0.n[second_component];
     vector3f local_2;
     vector3f local_3;
     world_vector_to_view(g_4b9e14.scale, &local_0, &local_2);
     world_vector_to_view(g_4b9e14.scale, &local_1, &local_3);
+    real first_depth_limit = local_2.k * local_2.k * 4.f;
+    real second_depth_limit = local_3.k * local_3.k * 4.f;
     if (local_2.k < 0.f && local_3.k < 0.f &&
-        local_2.k * local_2.k * 4.f > local_2.i * local_2.i &&
-        local_2.k * local_2.k * 4.f > local_2.j * local_2.j &&
-        local_3.k * local_3.k * 4.f > local_3.i * local_3.i &&
-        local_3.k * local_3.k * 4.f > local_3.j * local_3.j)
+        first_depth_limit > local_2.i * local_2.i &&
+        first_depth_limit > local_2.j * local_2.j &&
+        second_depth_limit > local_3.i * local_3.i &&
+        second_depth_limit > local_3.j * local_3.j)
     {
         real local_4 = local_14 - local_2.k;
         real local_5 = local_14 - local_3.k;

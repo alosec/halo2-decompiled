@@ -64,7 +64,7 @@ bool balance_teams(long arg_0, long arg_1, bool arg_2, long arg_3, long arg_4,
 void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 	const s_match_player_list *arg_2, const long *arg_3);
 
-// score 449 (was 449): frame 1000 versus 996, result byte home and second state/getter handling differ.
+// score 439 (was 439): retail length; frame 1000 versus 996, result byte home and second state/getter handling differ.
 // Refreshed first balance inputs 454; fallback balance inputs 466; both phases 513;
 // native state-value getter 449; final transition-result union 449.
 // frame 0x3e8 versus 0x3e4, result-byte home and getter boundary differ;
@@ -72,6 +72,64 @@ void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 // settings read into one-use locals first 443 (not kept: the locals only fix the argument order).
 // Existing property setter 475; selected value result 451; unsigned reset/balance 449/449;
 // balance test outcomes 449; readiness at outcome 450; reset at outcome 481; unsigned found count 449.
+// Ratings count, group-size cursor, player-rating cursor, combined ratings inputs, readiness-output
+// lifetime, native identifier, paired outputs and combined inputs/outputs all 449.
+// player scan while 449; assignment while 449; paired counted whiles 449; capacity admission scopes 449; roster
+// admission stages 449; countdown expression homes 449; valid input work scope 449; future deadline first 449.
+// Native producer ratings type 449; signed reset/balance/both decision bytes 464/461/483; signed
+// transition/advance bytes 468/449; native property clear 454; native ratings plus reset byte 464.
+// All forms restored; frame 0x3e8 versus 0x3e4, secondary-state/getter boundary and result home
+// remain.
+// Complemented final/reset/both decisions 489/467/489; waiting transition decision 439 kept;
+// with complemented final/reset/both 492/469/498; complemented balance 446, restored.
+// On the waiting transition graph: reset bool/byte 469/469, short/word 442/442;
+// balance bool/byte 458/458; paired bool/byte 476/476. All eight widths restored.
+// Complementary waiting carrier signed byte/byte 439/439, short/word 450/450, long/dword 454/454; paired
+// waiting/final short 450, paired long 443. All restored.
+// Round 187 advance result carried through roster/count/member-readiness test outcomes,
+// each nonempty combination 459; full combination with native reset byte 465.
+// Exact-match-only decision forms; all restored to the complementary waiting graph.
+// Existing lookup/ratings/transition inline declarations, all three pairs and all three
+// 439 each; all three noinline declarations 439. Original declarations and body restored.
+// Consistent live primary/secondary/both/owner receivers 462/463/468/470; primary,
+// secondary or both with live owner 461/456/466; all with direct state tests 466.
+// All restored; three combined forms report reduced-image callee caveats.
+// retail length; frame 1000 versus 996, result byte home and second state/getter
+// handling differ. Retail calls 0x5b080 (ours expands it), expands the elapsed-time helpers 0x75870/
+// 0x75890 (the start time is loaded before the clock is read), stores each session state to the stack
+// before the early exits, and keeps a ready byte at [esp+0x11] (from the player match, cleared by each
+// failed check, later from 0x72140) and the reset flag as a byte at [esp+0x12].
+// Refreshed first balance inputs 454; fallback balance inputs 466; both phases 513; native state-value
+// getter 449; final transition-result union 449; output-scalar lifetime 449; type/first-state/
+// second-state scopes 449; inline depth one 449; the five settings read into one-use locals first 443
+// (not kept: the locals only fix the argument order); existing property setter 475; selected value
+// result 451; unsigned reset/balance 449/449; balance test outcomes 449; readiness at outcome 450;
+// reset at outcome 481; unsigned found count 449; ratings count, group-size cursor, player-rating
+// cursor, combined ratings inputs, readiness-output lifetime, native identifier, paired outputs and
+// combined inputs/outputs all 449; player scan while 449; assignment while 449; paired counted whiles
+// 449; capacity admission scopes 449; roster admission stages 449; countdown expression homes 449;
+// valid input work scope 449; future deadline first 449; native producer ratings type 449; signed
+// reset/balance/both decision bytes 464/461/483; signed transition/advance bytes 468/449; native
+// property clear 454; native ratings plus reset byte 464; complemented final/reset/both decisions
+// 489/467/489; waiting transition decision 439 kept; with complemented final/reset/both 492/469/498;
+// complemented balance 446; on the waiting transition graph reset bool/byte 469/469, short/word
+// 442/442, balance bool/byte 458/458, paired bool/byte 476/476; complementary waiting carrier signed
+// byte/byte 439/439, short/word 450/450, long/dword 454/454; paired waiting/final short 450, paired
+// long 443.
+// Round 93: noinline class declaration of 0x5b080 467 (frame 0x3e4; entry registers move); the state
+// tests as switches 470 (range compares); the three time reads through file-local inline copies of
+// 0x75870/0x75890 (as network_session_membership.cpp has them) 448 (start time loaded first, as
+// retail); those with the noinline getter 486 (entry registers and frame now retail's, 1549 bytes);
+// plus the reset flag as bool 495.
+// Round 190: existing time helpers at first elapsed/growth stamp/both 494/494/508;
+// second elapsed/first-and-second/growth-and-second/all 496/503/510/520;
+// all with private force-inline declarations 520. Original timing expressions and declarations restored.
+// Round 97: the existing value getter for the session index 439; noinline getter 467; with a
+// file-local time-since helper 486 (1549 bytes: retail also clears a ready byte in every failed
+// check); a ready byte from the player-match chain, cleared in each failure arm and set from
+// 0x72140, 448 (1580 bytes); that with the noinline getter and time-since helper 461 (1573 bytes,
+// frame, entry and failure stores now retail's; left: the property value and both flag bytes
+// cleared before the player-count branch, a separate mode-7 exit per missing pointer).
 // @retail 0x71730
 bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 {
@@ -103,7 +161,7 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 		long local_10 = (long)(g_510548 ? g_51054c : GetTickCount()) - arg_0->unknowna68;
 		byte *local_11 = *(byte **)((byte *)local_0 + 0x3c);
 		long local_12 = false;
-		bool local_13 = false;
+		bool wait_for_transition = true;
 		long local_15[16];
 		s_71730 local_16;
 		if ((dword)local_2->player_count > *(dword *)((byte *)arg_0 + 0xa6c))
@@ -162,8 +220,8 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 			}
 			if (*(long *)(local_11 + 8) != 1)
 				*(long *)(local_11 + 8) = 1;
-			local_13 = function_72140(arg_0);
-			if (!local_13)
+			wait_for_transition = !function_72140(arg_0);
+			if (wait_for_transition)
 				goto local_30;
 			if (function_1934b0(local_8))
 			{
@@ -188,7 +246,7 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 				}
 				if (!local_25)
 				{
-					local_13 = false;
+					wait_for_transition = true;
 					local_12 = true;
 					goto local_30;
 				}
@@ -220,7 +278,7 @@ bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 				network_session_host_set_data49cc(local_2, (const dword *)&local_14);
 			}
 		}
-		if (local_13)
+		if (!wait_for_transition)
 		{
 	local_31:
 			network_session_set_mode(local_1, 12);

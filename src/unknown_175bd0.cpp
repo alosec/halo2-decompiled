@@ -12,6 +12,7 @@
 #include "sound_sources.h"
 #include <string.h>
 #include "normalize3d.h"
+#include "vector_products.h"
 
 s_record_pool *g_51ec8c;
 s_record_pool *g_51ec88;
@@ -406,7 +407,7 @@ long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index); /*
 void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner); /* stubs/lane_o.cpp */
 bool function_a7640(s_effect_object_placement *data);
 void __stdcall function_a7870(long object_index); /* stubs/lane_o.cpp */
-long function_c0350(long tag_index, long object_index, long node_index, vector3f const *up, vector3f const *forward, point3f const *position, real scale);
+long function_c0350(long tag_index, long object_index, long node_index, vector3f const *up, point3f const *position, vector3f const *forward, real scale);
 bool __stdcall function_16a8e0(long name, point3f const *point, real radius, long object_index, long unknown, point3f *origin, real *radius_reference);
 void __stdcall function_179880(s_effect_datum *effect, long effect_index);
 void __stdcall function_179e80(s_effect_datum *effect);
@@ -453,19 +454,6 @@ static inline vector3f *effect_matrix_transform_normal_179880(transform4x3f cons
 	out->j = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x;
 	out->k = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x;
 	return out;
-}
-
-static inline real effect_normalize(vector3f *v)
-{
-	real magnitude = (real)sqrt(v->k * v->k + v->j * v->j + v->i * v->i);
-
-	if (fabs(magnitude) < 0.0001f)
-		return 0.0f;
-	real inverse = 1.0f / magnitude;
-	v->i = inverse * v->i;
-	v->j = v->j * inverse;
-	v->k = v->k * inverse;
-	return magnitude;
 }
 
 // @retail 0x175b50
@@ -1014,12 +1002,7 @@ void function_178240(point3f const *origin, vector3f const *direction, s_effect_
 	}
 }
 
-// score 38 (was 38): the branches that reject the value jump to a different place and the table pointer is loaded into edx instead of ecx
-// tried upper-only bound 84; output-field reference 38; read-only records 38;
-// tried index before flag 38; time before index 38; array lifetime 59; float consistency 38; size policy 114.
-// Stored event selection 38; definition per use 86; initialized delay destination 54;
-// delay readback 55; event record 59; definition record 38; explicit seed lifetime 82;
-// stored event with completed delay 82. Tag retention and bound-load sharing still differ.
+/* starts the effect's event: clears flag 0 and draws the event's delay */
 // @retail 0x1782a0
 void function_1782a0(long effect_index, short event_index)
 {
@@ -1031,12 +1014,12 @@ void function_1782a0(long effect_index, short event_index)
 
 		if (event_index >= 0 && event_index < definition->event_count)
 		{
-			s_effect_event *event;
+			s_effect_event *event = &definition->events[event_index];
+			word *flags = &effect->flags;
 
-			effect->flag0 = false;
+			*flags &= ~1;
 			effect->event_index = event_index;
 			effect->unknown60 = 0.0f;
-			event = &definition->events[event_index];
 			if (event->delay_lower == event->delay_upper)
 				effect->event_delay = event->delay_lower;
 			else
@@ -1258,6 +1241,9 @@ void function_17aec0(short node_index, s_effect_datum *effect, transform4x3f *ma
 // Tried (r27b): the plain form without the volatile reread, with or without the node local, 37 (the node
 // moves to eax and the flag to cl); a `short const *` reference to the node keeps it on the stack but
 // swaps the flag and matrix registers (cl/eax, retail al/ecx) 32.
+// Tried (r35): the qualified snapshot with a later plain parameter read 13; the direct fallback 31;
+// the initial read through its address 13; a C++ reference 32; an overwritten snapshot 37;
+// memcpy without the reread 37; `(void)&node_index` with either snapshot form 37.
 // @retail 0x17af30
 void function_17af30(bool field_b4, short node_index, s_effect_datum *effect, transform4x3f *matrix)
 {
@@ -1597,7 +1583,7 @@ void function_176ad0(long marker_count, s_effect_marker *markers, s_effect_owner
 }
 
 // @retail 0x176b60
-void function_176b60(long marker_count, s_effect_marker *markers, long mode, s_effect_owner const *owner, long tag_index)
+void function_176b60(s_effect_owner const *owner, long marker_count, s_effect_marker *markers, long mode, long tag_index)
 {
 	s_effect_parameters parameters;
 
@@ -1769,9 +1755,24 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 	return index;
 }
 
-// score 94 (was 94): Frame agrees; node/matrix and marker receivers, early normalization loads still differ.
-// Shared difference 187; shared scale 94; both helpers 186; separate point workspace 125;
-// normalized workspace 164; scale snapshot 185; marker vector snapshot 184; point setters 227.
+// score 77 (was 77): node/matrix entry order and the forward/up xmm homes remain (retail forward
+// in xmm4/2/3 and up in xmm5/1/0; the marker forward values take xmm2 first here); frame 0x1c agrees.
+// The point computed into position, normalize3d and cross3f give retail's early up.j/up.k loads.
+// Node index first 107 (marker index sign extension hoisted); forward without locals 132;
+// locals k,j,i 80, j,k,i 81; dot3f for forward 132, for position 82; written cross 119;
+// marker pointer in the else branch 198. Shared difference 187; shared scale 94; both helpers 186;
+// separate point workspace 125; normalized workspace 164; scale snapshot 185; marker vector
+// snapshot 184; point setters 227. Cartesian scalar names, ordered direction/point accumulation,
+// displacement scalars, output-matrix receiver, early direction inputs and immutable accumulation
+// 77 each; existing inverse-point call 417. Native node copy 77; copy first 107;
+// complete/immutable/shared marker inputs 212/212/208; node-first marker value 211 (marker values
+// lose the matched caller); direction results 77; results with node first 107. Direction inputs
+// i,k,j / j,i,k / k,i,j 79/80/81; with node copied first 109/110/111. Read-only node-matrix input
+// and marker-array input 77/77.
+// Node copy first (retail entry and length 758, index sign extension hoisted into the entry) 107;
+// with the matrix local inside the branch 107; marker forward value copy 166; marker forward
+// fields read directly 139; forward locals named x/y/z or forward_i/j/k 107/107; declarations
+// forward/position/up or up/forward/position 107/107.
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -1800,17 +1801,16 @@ void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *
 				offset.j = inverse * offset.j;
 				offset.k = inverse * offset.k;
 			}
-			up.i = matrix->forward.k * offset.k + matrix->forward.j * offset.j + matrix->forward.i * offset.i;
-			up.j = matrix->left.k * offset.k + matrix->left.j * offset.j + matrix->left.i * offset.i;
-			up.k = matrix->up.k * offset.k + matrix->up.j * offset.j + matrix->up.i * offset.i;
+			position.x = matrix->forward.k * offset.k + matrix->forward.j * offset.j + matrix->forward.i * offset.i;
+			position.y = matrix->left.k * offset.k + matrix->left.j * offset.j + matrix->left.i * offset.i;
+			position.z = matrix->up.k * offset.k + matrix->up.j * offset.j + matrix->up.i * offset.i;
 		}
 		else
 		{
-			up.i = 0.0f;
-			up.j = 0.0f;
-			up.k = 0.0f;
+			position.x = 0.0f;
+			position.y = 0.0f;
+			position.z = 0.0f;
 		}
-		position = *(point3f const *)&up;
 		real i = marker->forward.i;
 		real j = marker->forward.j;
 		real k = marker->forward.k;
@@ -1825,12 +1825,10 @@ void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *
 		forward = source->markers[marker_index].forward;
 	}
 	function_11d000(&forward, &up);
-	effect_normalize(&up);
+	normalize3d(&up);
 	out->matrix.scale = 1.0f;
 	out->matrix.forward = forward;
-	out->matrix.left.i = up.j * forward.k - up.k * forward.j;
-	out->matrix.left.j = up.k * forward.i - forward.k * up.i;
-	out->matrix.left.k = forward.j * up.i - up.j * forward.i;
+	cross3f(&up, &forward, &out->matrix.left);
 	out->matrix.up = up;
 	point3f *out_position = &out->matrix.position;
 
@@ -1916,13 +1914,33 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 	return result;
 }
 
-// score 160 (was 163): frame 0x44 agrees; settings/color/query registers, cursor home and zone-base scheduling remain.
+// score 130 (was 130): Frame 0x40 versus 0x44; early color spill, cursor/query homes and zone-base scheduling remain.
+// Earlier forms: frame 0x44 agrees; settings/color/query registers, cursor home and zone-base scheduling remain.
 // tried native slot scalar 159 (a one-use copy of the field; not kept without a match); cursor/request/transform names and late settings receiver 166 (fast control 166);
 // shared zone predicate 286; zone cases first 166; float consistency 166; immutable loop selectors 169 (fast).
-// score 171 (was 163): frame 0x44 agrees; entry cursor/settings homes, color staging and zone-base scheduling remain.
+// frame 0x44 agrees; entry cursor/settings homes, color staging and zone-base scheduling remain.
 // Type query, color update, matrix query and spawn update noinline declarations 163 each;
 // existing tint/multiplication result byte carriers 146/159, both 142 kept;
 // placement result byte carrier 163. No new result copy or field read.
+// frame 0x40 versus 0x44; color/cursor homes and zone-base carriers remain.
+// Round 173: tint bool 165; multiply bool 137; both bool 128 kept plain; direct multiply
+// with signed-byte/bool tint 149/135. The merged Boolean consumer re-normalized the byte carriers.
+// Native spawn initialization/query outputs first/both 130 each; complete placement helper 375;
+// returned-location for 379; placement output first/rejection guard 130 each; native spawn with for 379.
+// Zone cluster input 130; direct leaf result 173; live zone base 130; native byte result 152; point-first
+// input 130; cluster/direct result 173; live-base/direct result 173; cluster/byte result 152.
+// Existing tint result unsigned byte/unsigned word/signed word 139/189/189;
+// multiplication result unsigned byte/unsigned word/signed word 163/137/137;
+// both unsigned byte/word 169/192. Early color frame home and native query pushes remain.
+// Spawn location first/middle 130/130; unknown before scale 127 (three-count gain rejected);
+// query receiver scope/enduring query outputs 130/130; signed node domain/sign after NONE 151/135;
+// condition-local location 130. Original stores, query scopes and node predicate restored.
+// Round 116: Unsigned-byte placement 130; signed-word placement 165; signed-byte zone selector 130; true-default placement 130; private zone failure guards 172. Opening body and helper restored.
+// Round 88: an inline color helper (particle system, both colors; lookup, tinted, multiplied() as the
+// argument) shared with 0x177040 gives frame 0x44 and retail's early color loads but 177 (the particle
+// system in EDI, retail ESI; color B in EBX, retail EDI; tinted spilled, retail BL); its colors named
+// to sort after location_index 177; parameters reordered 177; colors read from the effect inside 177;
+// const color parameters 177.
 // @retail 0x178c80
 void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum *particle_system, s_effect_particle_system_definition *definition, real unknown, bool field_b4)
 {
@@ -1938,8 +1956,8 @@ void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum
 	spawn.location_index = particle_system->location_index;
 	{
 		c_type_4e7709 *particle_definition = function_137bd0(particle_system->function_1751d0()->tag_index);
-		signed char tinted = particle_definition->tinted();
-		signed char multiplied = particle_definition->multiplied();
+		bool tinted = particle_definition->tinted();
+		bool multiplied = particle_definition->multiplied();
 
 		function_175a80(tinted, effect->color_a, effect->color_b, particle_system, multiplied);
 	}
@@ -2195,7 +2213,54 @@ event_done:
 
 #pragma inline_depth()
 
-// score 109 (was 109): Object-index reload and visibility joins still differ. Update word 109; response
+// score 63 (was 63): only the object index differs: ours keeps it in ESI from entry across 0xbadc0
+// Four-byte frame agrees; initial object handle remains retained across read-only queries.
+// Earlier: only the object index differs: ours keeps it in ESI from entry across 0xbadc0
+// and 0xbaf80 (NONE in EBX), retail reloads it after each call with NONE in ESI. Retail's callers
+// 0x10a390 and 0x16c2b0 keep an index across 0xbadc0, so its summary is not the cause. Retail passes
+// 0xbaf80's result (still in EAX) as 0x1794a0's first argument, not the effect's object index (BLOCKED-BY
+// 0xbadc0: retail reloads the index after it; matched 0x138ab0 gets the same reload by reading the
+// field through its global again). The merged destruction call's place (ours keeps the invisible
+// arm's copy before the visible tests, retail the visible arm's copy) also differs.
+// Tried: deleted effect cleared without the gotos, later block guarded by `effect &&` 63 (kept: gives
+// retail's destruction block placement); one destroy call through a flag 137; root index as 0x1794a0's
+// first argument 197 (585 bytes; aligned 88 -> 61: the cached index then takes ESI where retail keeps
+// NONE, and EDI is reloaded), with the visible arm first 224, result false by default 197, the index
+// named in the arm 197; the object test as a second `if (effect && ...)` reached from the deletion path
+// 207 (retail's reload appears, NONE moves to EBX), that with the root index 130; the index named at
+// entry for the first test 63; the second test nested in `if (effect)` 207; invisible arm's flag test
+// the other way round (call to 0x177260 first) 87 (kept), with the visible arm written first 183, with
+// the visible arm's flag test also swapped 163; visible arm first, invisible arm unswapped 163; only
+// the visible arm's flag test swapped 178; visible arm as `flag2 && flag4` then `flag2` 138; update
+// word 109; response word 119; both words 119; native missing location 204; root location value 194;
+// root velocity value 198; both root values 218; origin value 109; native velocity/location/origin/all
+// copies 109; native color record 109; default visibility 109; short origin index 109; shared
+// destruction call 122; const tag/root 109/109; external datum reference 109; visibility result tests
+// 189; inline depth one/two 109/109; global optimization off 550; frame pointer 200; external tag
+// record 109; external root record 109; wide visibility result 144; byte visibility result 109;
+// unsigned color handle 109; root velocity address 109; root location address 109; origin output
+// lifetime 247; tag at every use 205; integer destruction result 230; word visibility 130; tag/result
+// 244; tag/word 212; result/word 239; all three 248; unsigned result with all 248; start/visibility/both
+// inline declarations 87/87/87; start noinline alone/with inline visibility 87/87; entry visibility
+// alone/with both inline/with signed-byte result 87/87/87; the else-if test read through the datum
+// lookup 87; root index with the first test through the lookup 212; only the first test through the
+// lookup 203; deletion path returning true with a plain second if 198; else-if test and 0xbaf80
+// argument both through the lookup 87.
+// 0x10a390 and 0x16c2b0 keep an index across 0xbadc0, so its summary is not the cause. 0x1794a0's
+// first argument is the root index in retail (EAX after 0xbaf80).
+// Round 72: deleted effect cleared without the gotos, later block guarded by `effect &&` 63 (kept:
+// gives retail's destruction block placement); one destroy call through a flag 137; root index as
+// 0x1794a0's first argument 197; the object test as a second `if (effect && ...)` reached from the
+// deletion path 207 (retail's reload appears, NONE moves to EBX); that with the root index 130;
+// the index named at entry for the first test 63; the second test nested in `if (effect)` 207.
+// Object-index reload (BLOCKED-BY 0xbadc0: retail reloads the index after it, so
+// retail's 0xbadc0 is not read-only to LTCG) and the merged destruction call's place (ours keeps the
+// invisible arm's copy before the visible tests, retail the visible arm's copy) still differ.
+// Round 88: invisible arm's flag test the other way round (call to 0x177260 first) 87 (kept);
+// with the visible arm written first 183; with the visible arm's flag test also swapped 163;
+// visible arm first, invisible arm unswapped 163; only the visible arm's flag test swapped 178;
+// visible arm as `flag2 && flag4` then `flag2` 138.
+// Earlier: object-index reload and visibility joins differ. Update word 109; response
 // word 119; both words 119; native missing location 204; root location value 194; root velocity value 198;
 // both root values 218; origin value 109.
 // object index remains cached across the validity call; visibility blocks differ.
@@ -2208,6 +2273,20 @@ event_done:
 // joins differ. external tag record 109; external root record 109; wide visibility result 144;
 // byte visibility result 109; unsigned color handle 109; root velocity address 109; root location
 // address 109; origin output lifetime 247.
+// Round 208: tag at every use 205; integer destruction result 230; word visibility 130;
+// tag/result 244; tag/word 212; result/word 239; all three 248; unsigned result with all 248.
+// Round 333: Start/visibility/both inline declarations 87/87/87; start noinline alone/with inline visibility 87/87; entry visibility alone/with both inline/with signed-byte result 87/87/87. All restored; object reload and merged-call placement remain.
+// Round 135: retail passes 0xbaf80's result (still in EAX) as 0x1794a0's first argument, not
+// the effect's object index; with that root index 197 (585 bytes; aligned 88 -> 61: the cached
+// object index then takes ESI where retail keeps NONE, and EDI is reloaded); with the visible
+// arm first 224; result false by default 197 (87 without the root index); the object index
+// named in the arm 197. Not kept until the reload blocker is gone.
+// Round 157: release inline 63; destruction inline 63; target inline 63; release/destruction inline 63;
+// release/target inline 63; destruction/target inline 63; all three inline 63; release/destruction inline
+// with separate noinline release 63. Original executable source restored.
+// Round 147: update mask 202; response masks 167; both masks 215; admission returns 201;
+// returns/update 215; returns/response 200; returns/both 228; shared admission/root handle 198.
+// All executable forms restored; sources and comparisons saved.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {
@@ -2255,26 +2334,26 @@ bool __stdcall function_1794e0(long effect_index)
 			}
 			if (!visible)
 			{
-				if (TEST_FIELD_BIT(definition->flag0))
+				if (!TEST_FIELD_BIT(definition->flag0))
 				{
-					if (function_177610(effect_index))
-						{ effect = 0; goto effect_done; }
+					if (!TEST_FIELD_BIT(effect->flag2))
+						function_177260(effect_index, false);
 				}
-				else if (!TEST_FIELD_BIT(effect->flag2))
-					function_177260(effect_index, false);
+				else if (function_177610(effect_index))
+					effect = 0;
 			}
 			else if (TEST_FIELD_BIT(effect->flag2))
 			{
 				if (TEST_FIELD_BIT(effect->flag4))
 				{
 					if (function_177610(effect_index))
-						{ effect = 0; goto effect_done; }
+						effect = 0;
 				}
 				else
 					function_177310(effect_index);
 			}
 		}
-		if (TEST_FIELD_BIT(definition->flag3) || TEST_FIELD_BIT(definition->flag4))
+		if (effect && (TEST_FIELD_BIT(definition->flag3) || TEST_FIELD_BIT(definition->flag4)))
 		{
 			long object_index = effect->object_index;
 
@@ -2295,7 +2374,6 @@ bool __stdcall function_1794e0(long effect_index)
 			}
 		}
 	}
-effect_done:
 	return effect == 0;
 }
 
@@ -2354,21 +2432,6 @@ void function_179850(long effect_index, real dt)
 		function_1792b0(effect_index, dt);
 }
 
-static __forceinline void transform_point_179fb0(transform4x3f const *matrix, point3f const *point, point3f *out)
-{
-	point3f p = *point;
-
-	if (matrix->scale != 1.0f)
-	{
-		p.x = matrix->scale * p.x;
-		p.y = matrix->scale * p.y;
-		p.z = matrix->scale * p.z;
-	}
-	out->x = matrix->up.i * p.z + matrix->left.i * p.y + matrix->forward.i * p.x + matrix->position.x;
-	out->y = matrix->up.j * p.z + matrix->left.j * p.y + matrix->forward.j * p.x + matrix->position.y;
-	out->z = matrix->up.k * p.z + matrix->left.k * p.y + matrix->forward.k * p.x + matrix->position.z;
-}
-
 static __forceinline s_effect_location_datum *effect_location_next_179fb0(s_effect_datum *effect, long *location_index)
 {
 	s_effect_location_datum *location = 0;
@@ -2383,17 +2446,7 @@ static __forceinline s_effect_location_datum *effect_location_next_179fb0(s_effe
 	return location;
 }
 
-// score 181 (was 181): frame 0x78 versus 0x74; point snapshot spills and float scheduling differ.
-// Scalar-member snapshot 238; in-place point 210; acceleration cursor 230 (frame 0x74);
-// early missing-object return 181; separate impulse buffer 251.
-// score 83 (was 181): frame 0x74 and point/normal transforms now agree; normalization and final impulse scheduling differ.
-// Existing snapshot-normal helper 177; direction lifetime 181; point lifetime 181; returned-record for 346;
-// saved short marker 182; existing point plus snapshot-normal helpers 83 kept.
-// score 83 (was 83): normalization component retention and the final scale register still differ.
-// Common normalizer 33 and header normalizer 81 (changed grouping, exact-only);
-// early magnitude 259; scale before owner stores 83; both 259; force-inline normalization 83;
-// impulse name 83; point/axis homes 83; common normalizer with separate output 251,
-// with direct scale-result consumption 33. Original body retained.
+/* pushes the effect's object along each acceleration of the event, from every location */
 // @retail 0x179fb0
 void function_179fb0(s_effect_datum *effect)
 {
@@ -2415,7 +2468,6 @@ void function_179fb0(s_effect_datum *effect)
 				while ((location = effect_location_next_179fb0(effect, &location_index)) != 0)
 				{
 					point3f point;
-					vector3f forward;
 					vector3f direction;
 
 					if (location->node_index != NONE)
@@ -2424,24 +2476,25 @@ void function_179fb0(s_effect_datum *effect)
 
 						function_17aec0(location->node_index, effect, &matrix);
 						effect_matrix_transform_point(&matrix, &location->matrix.position, &point);
-						effect_matrix_transform_normal_179880(&matrix, &location->matrix.forward, &forward);
+						effect_matrix_transform_normal_179880(&matrix, &location->matrix.forward, &direction);
 					}
 					else
 					{
 						point = location->matrix.position;
-						forward = location->matrix.forward;
+						direction = location->matrix.forward;
 					}
-					random_vector_in_cone(&forward, &direction, &g_4e7408->unknown0, acceleration->inner_cone_angle, acceleration->outer_cone_angle);
-					effect_normalize(&direction);
+					vector3f impulse;
 
-					real magnitude = acceleration->acceleration * object_definition->unknown14;
+					random_vector_in_cone(&direction, &impulse, &g_4e7408->unknown0, acceleration->inner_cone_angle, acceleration->outer_cone_angle);
+					normalize3d(&impulse);
+					vector3f_scale(&impulse, acceleration->acceleration * object_definition->unknown14, &impulse);
+
 					s_effect_object *object = OBJECT_GET(effect->object_index);
 
 					object->owner_unknown4 = effect->owner.unknown4;
 					object->owner_unknown0 = effect->owner.unknown0;
 					object->owner_unknown8 = effect->owner.unknown8;
-					vector3f_scale(&direction, magnitude, &direction);
-					function_b7880(effect->object_index, NONE, &point, &direction, NULL);
+					function_b7880(effect->object_index, NONE, &point, &impulse, NULL);
 				}
 			}
 		}
@@ -2517,12 +2570,66 @@ void function_177f60(s_effect_datum *effect, dword a_scales, dword b_scales, dwo
 	}
 }
 
-// score 313 (was 345): frame 0x104 versus 0x100; point/up argument eligibility and record copies differ.
+// score 177 (was 177): Frame 0x104 versus 0x100 and point/up eligibility remain; native input-reference contracts leave caller and callee unchanged.
+// frame 0x100 and length agree. Retail passes up in EAX (moved to EDI) and effect
+// on the stack; ours passes effect in EAX and up on the stack whatever the declared order, which also
+// moves two scratch registers in the sound arms. 0x17e670's register arguments (BLOCKED-BY 0x17e670,
+// contributor) swap g_510c78 and the point; the attached light call computes its up pointer after the
+// up/position registers (retail before), and the detached sound arm loads g_4687a4 into EAX after
+// storing the compressed forward (retail ECX, before the store).
+// Tried: placement name 345; request name 345; retained decal seed pointer 313; direct case returns
+// 345; failed-placement guard 345; radius case lifetime 313; shared light call 380; initialized node
+// masks 411; damage-output reuse 313; sound aggregate 313; direct radius on the seed-pointer body 344
+// (frame 0x100); shared direction output 313; owner/location CRT copies 313; sound stores before
+// compression 313; detached arms first 318; early damage scale 313; shared damage direction 313;
+// retained light object 313; retained sound object 313; object-case random record 313; full-width
+// sound node 313; word flags/admission 319/319; word flags/direct radius 309 plain (caller 200 versus
+// 166, rejected); admission/chained copies/shared seed 313 each; word flags/shared seed 319; vector
+// CRT copies 313; byte detached with word flags/direct radius 309 (caller 200); native velocity loop
+// 313; native placement component loop 342; detached flag first 318; separate character guards 313;
+// location-before-owner copy 319; native point/up/forward/all input references 313 each; all
+// references/direct decal radius 344; decal velocity at entry/created-object guard/native node
+// admission/active cases by value/immutable sound record 313 each; direct default flag 322; position
+// before origin/case order plus velocity lifetime 313/313; with the matched light call: native light
+// node/radius argument/both 177/203/286; uniform live decal seed 248, with native node/radius/both
+// 190/208/277; both native attachment nodes with radius argument 286; native light-node result 177
+// (kept). Round 60: radius drawn in 0x17e670's argument list 286 (frame 0x100); with the seed address
+// at each use 277; with a random-globals local 285; that plus the part flags as a word bitfield
+// (include/effects.h) 62 (kept); with a plain seed pointer instead of the random local 109; up or
+// effect declared first/last 62/38 (no change); damage scale assigned before the point copies 55
+// (kept); matrix pointer local in the light call 55; sound location before its velocity 38 (kept);
+// short node index in the light call 126; long node index in the sound call 38; compressed forward
+// before the point copy 58; light up pointer named before the call 38.
+// Frame 0x104 versus 0x100 and point/up eligibility remain; native formals do not move them.
+// Earlier: Frame 0x104 versus 0x100 and point/up eligibility remain; native input-reference contracts leave caller and callee unchanged.
+// frame 0x104 versus 0x100, incoming point/up eligibility and record/call setup remain.
+// frame 0x104 versus 0x100; point/up eligibility and record/call setup remain.
 // Placement name 345; request name 345; retained decal seed pointer 313;
 // direct case returns 345; failed-placement guard 345.
-// score 313 (was 313): frame 0x104 versus 0x100; point/up eligibility and record/call setup still differ.
 // Radius case lifetime 313; shared light call 380; initialized node masks 411; damage-output reuse 313;
 // sound aggregate 313; direct radius on the seed-pointer body 344 (frame 0x100).
+// Shared direction output 313;
+// owner/location CRT copies 313; sound stores before compression 313; detached arms first 318; early damage
+// scale 313.
+// Shared damage direction 313; retained light object 313; retained sound object 313;
+// object-case random record 313; full-width sound node 313.
+// Word flags/admission 319/319; word flags/direct radius 309 plain (caller 200 versus 166, rejected); admission/chained copies/shared seed 313 each; word flags/shared seed 319; vector CRT copies 313; byte detached with word flags/direct radius 309 (caller 200).
+// Native velocity loop 313; native placement component loop 342; detached flag first 318; separate character guards 313; location-before-owner copy 319.
+// Round 123: Native point/up/forward/all input references 313 each; all references/direct decal radius 344. All pointer contracts and sole caller restored.
+// Decal velocity at entry/created-object guard/native node admission/active cases by value/immutable sound
+// record 313 each; direct default flag 322; position before origin/case order plus velocity lifetime 313/313.
+// With the matched light call: native light node/radius argument/both 177/203/286;
+// uniform live decal seed 248, with native node/radius/both 190/208/277;
+// both native attachment nodes with radius argument 286. Callers and light callee checked.
+// Native light-node result 177 at 1330/1328 bytes, kept after ordinary full check;
+// every other form restored. No call expression or input value changed.
+// Round 157: early radius zero 177; early character node default 177; early light node default 177; early
+// sound node default 177; all node defaults 177; radius/light defaults 177; radius/all node defaults 177;
+// all defaults with paired record names 177. Original executable source restored.
+// Round 147: location reference 177; effect reference 177; part reference 177; location/effect
+// 177; location/part 177; effect/part 177; all record references 177; all references/point value
+// 350; direction inline 177; angular inline 177; both vector inline 177; light inline (lost
+// matches) 177. All executable forms restored; sources and comparisons saved.
 // @retail 0x17a8a0
 void function_17a8a0(s_effect_location_datum *location, bool detached, vector3f const *up, s_effect_datum *effect, s_effect_part *part, point3f const *point, vector3f const *forward, real scale)
 {
@@ -2547,26 +2654,25 @@ void function_17a8a0(s_effect_location_datum *location, bool detached, vector3f 
 		function_d6660((s_type_1e6529 *)&data, part->tag_index);
 		data.owner = effect->owner;
 		data.location = effect->location;
+		data.scale = scale;
 		data.origin = *point;
 		data.position = *point;
 		data.direction = *forward;
 		data.forward = *forward;
-		data.scale = scale;
 		function_d6c80((s_type_1e6529 *)&data, NONE);
 		break;
 	}
 	case 'deca':
 	{
-		dword *seed = &g_4e7408->seed;
+		s_random_globals *random = g_4e7408;
 
-		if (TEST_FIELD_BIT(part->flag4) || function_172750(1, point, 20.0f) || function_259a0(seed) < 0.25f)
+		if (TEST_FIELD_BIT(part->flag4) || function_172750(1, point, 20.0f) || function_259a0(&random->seed) < 0.25f)
 		{
 			vector3f direction;
 			vector3f velocity;
 
-			function_177d10(effect, seed, forward, &direction, &velocity, part->velocity_lower, part->velocity_upper, part->velocity_cone_angle, part->a_scales, part->b_scales);
-			real radius = function_259d0(seed, __FILE__, __LINE__, part->radius_lower, part->radius_upper);
-			function_17e670(g_510c78, point, part->tag_index, &velocity, radius, 0, NONE, 0);
+			function_177d10(effect, &random->seed, forward, &direction, &velocity, part->velocity_lower, part->velocity_upper, part->velocity_cone_angle, part->a_scales, part->b_scales);
+			function_17e670(g_510c78, point, part->tag_index, &velocity, function_259d0(&random->seed, __FILE__, __LINE__, part->radius_lower, part->radius_upper), 0, NONE, 0);
 		}
 		break;
 	}
@@ -2602,13 +2708,13 @@ void function_17a8a0(s_effect_location_datum *location, bool detached, vector3f 
 	case 'ligh':
 		if (effect->object_index != NONE && !detached)
 		{
-			short node_index = location->node_index == NONE ? NONE : location->node_index & 0x7fff;
+			long node_index = location->node_index == NONE ? NONE : location->node_index & 0x7fff;
 
-			function_c0350(part->tag_index, effect->object_index, node_index, &location->matrix.up, &location->matrix.forward, &location->matrix.position, scale);
+			function_c0350(part->tag_index, effect->object_index, node_index, &location->matrix.up, &location->matrix.position, &location->matrix.forward, scale);
 		}
 		else
 		{
-			function_c0350(part->tag_index, NONE, NONE, up, forward, point, scale);
+			function_c0350(part->tag_index, NONE, NONE, up, point, forward, scale);
 		}
 		break;
 	case 'snd!':
@@ -2624,8 +2730,8 @@ void function_17a8a0(s_effect_location_datum *location, bool detached, vector3f 
 
 			position.position = *point;
 			position.compressed_forward = vector3d_compress(forward);
-			position.velocity = *g_4687a4;
 			position.location = effect->location;
+			position.velocity = *g_4687a4;
 			function_1895f0(&position, scale, part->tag_index);
 		}
 		break;
@@ -2651,9 +2757,88 @@ static inline vector3f *effect_matrix_transform_normal_17a380(transform4x3f cons
 	return out;
 }
 
-// score 166 (was 166): radius precedes the tag/counter/iterator homes; flag reloads and random-product lifetime differ.
+// score 148 (was 152): frame 0x7c and transform block agree. Retail stores both part-flag test results
+// in the byte at [esp+0x13] (as it does `reversed`); its radius slot lies between the definition
+// and event spills (ours below the next index); it loads the radius bounds upper first, then lower,
+// before drawing the random value (a range call's arguments) and keeps the fraction on the x87 stack;
+// and 0x17a8a0's convention (effect in EAX, up on the stack) changes the call.
+// Tried: creation-result lifetime 166; detached byte at entry 166; scale at entry 166; explicit mode
+// arms 166; up at entry 166; part-table cursor 340 rejected for short-counter wraparound; part-scope
+// radius 166; radius product 166; product with lower bound 352; full-width location index 352;
+// positive mode scope 166; two-use lower 163 (three-point gain dropped); span/lower plus span 167/349;
+// entry cursor/event record/read-only tag 166/166/166; cursor plus lower 163; event plus span 167;
+// full-width explicitly wrapping counter 361; per-part point 179; direct creation predicate 166; early
+// suppressed-part guard 166; per-part forward 166; counter declared before tag 166; part-scope up 166;
+// part-scope matrix 166; native fallback CRT copies 166; separate location/tag guards 168; detached
+// signed byte 163 (three-point gain dropped); word/long 378/380; reversed signed byte/word 166/288;
+// mode result byte and creation result long 166 each; detached/mode bytes 163; detached byte with
+// two-use lower bound 163; corrected-frame orientation/scatter/both Boolean producers 165/163/155;
+// both plus two-use lower 145; both plus signed detached 147 (one-use flags rejected); two-use vector
+// selections and detached propagation 245; unsigned mode 166; native reversal 236; live
+// mode/reversal/location fields 342/240/166; live location plus mode 371; conditional scale
+// initializer 170; random-result lifetime 167; native tag record 166; live fields plus scale 375;
+// mode-first admission 358; joint outer spatial outputs 179; parent conditional 163; compound scale
+// 166; tag-first eligibility 222; parent conditional with two-use lower 156, signed detached state
+// 159, both 153 kept plain; on both: unsigned mode 153, part point 166, conditional scale 156 (fast);
+// uniform tag/event/part observations 334/349/266; tag+event 340; tag+part 402; event+part 453; all
+// owners 590; all owners with word creation result 618; node/creation/placement inline declarations,
+// each and all combinations, 153 each; joint declarations with forced existing normal transform 153;
+// native signed-byte creation input on the current signed-byte caller 156; radius named to sort before
+// the definition 153; the existing range helper 349 (inlined in SSE, frame 0x80); bounds read at each
+// use 159; the range helper as one expression 153; with the factors swapped 153; radius declared at
+// function scope first/after the definition 153/153 (slots unmoved); lower-bound workspace at
+// location/part/entry 152/152/152; paired lower/radius workspaces at location/part/entry 152/152/152;
+// iterator with both at entry 152; all four scalar workspaces at entry with role names 152. Round 60
+// (part flags now a word bitfield: 148): bool detached 155; bool locals for the orientation and
+// scatter flags 83 (both flag blocks match; one-use field locals without a match, so reverted), with
+// bool detached 83; the existing range function 0x259d0 357 (SSE, 1328 bytes); radius at the top of
+// the location loop 148; object index read before the radius draw 148.
+// Frame 0x7c agrees; scalar homes, post-copy flags and radius random lifetime remain.
+// Earlier: Frame 0x7c and transform block agree; scalar homes, post-copy flags and random lifetime remain.
+// frame 0x7c and transform block agree; scalar homes, flag reloads and random-value lifetime remain.
 // Creation-result lifetime 166; detached byte at entry 166; scale at entry 166; explicit mode arms 166; up at entry 166.
 // Part-table cursor 340 rejected for short-counter wraparound.
+// part-scope radius 166; radius product 166; product with lower bound 352;
+// full-width location index 352; positive mode scope 166.
+// Two-use lower 163 (three-point gain dropped); span/lower plus span 167/349;
+// entry cursor/event record/read-only tag 166/166/166; cursor plus lower 163; event plus span 167.
+// Full-width explicitly wrapping counter 361; per-part point 179; direct creation predicate 166;
+// early suppressed-part guard 166; per-part forward 166.
+// Counter declared before tag 166; part-scope up 166; part-scope matrix 166; native fallback CRT copies 166; separate location/tag guards 168.
+// frame 0x7c agrees; radius/tag/counter/iterator homes, flag reloads and random-product lifetime remain.
+// radius precedes the tag/counter/iterator homes; flag reloads and random-product lifetime differ.
+// Round 173: part-scope radius 166; radius product 166; product with lower bound 352;
+// full-width location index 352; positive mode scope 166. Scalar homes and flag/random lifetimes remain.
+// scalar homes, flag reloads and random-product lifetime remain.
+// Detached signed byte 163 (three-point gain dropped); word/long 378/380; reversed signed byte/word
+// 166/288; mode result byte and creation result long 166 each; detached/mode bytes 163;
+// detached byte with two-use lower bound 163. All executable forms restored.
+// Round 123: Corrected-frame orientation/scatter/both Boolean producers 165/163/155; both plus two-use lower 145; both plus signed detached 147 (one-use flags rejected); two-use vector selections and detached propagation 245; unsigned mode 166; native reversal 236.
+// Live mode/reversal/location fields 342/240/166; live location plus mode 371;
+// conditional scale initializer 170; random-result lifetime 167; native tag record 166; live fields plus scale 375.
+// Mode-first admission 358; joint outer spatial outputs 179; parent conditional 163; compound scale 166; tag-first eligibility 222.
+// Parent conditional with two-use lower 156, signed detached state 159, both 153 kept plain;
+// on both: unsigned mode 153, part point 166, conditional scale 156 (fast); follow-ups restored.
+// Round 208: uniform tag/event/part observations 334/349/266; tag+event 340;
+// tag+part 402; event+part 453; all owners 590; all owners with word creation result 618.
+// Round 333: Node/creation/placement inline declarations, each and all combinations, 153 each; joint declarations with forced existing normal transform 153; native signed-byte creation input on the current signed-byte caller 156. Scalar homes, flag stores and random lifetime remain; all declarations restored.
+// Round 135: retail loads the radius bounds upper first, then lower, before drawing the random
+// value, and keeps the fraction on the x87 stack (a range call's arguments, evaluated right to
+// left); its radius/conversion slot lies between the definition and event spills (ours below
+// the next index). Radius named to sort before the definition 153; the existing range helper
+// 349 (inlined in SSE, frame 0x80); bounds read at each use 159; the range helper as one
+// expression 153 (bounds loaded first, but the span is formed before the fraction, and the
+// helper itself stops matching); with the factors swapped 153; radius declared at function
+// scope first/after the definition 153/153 (slots unmoved).
+// Lower-bound workspace at location/part/entry 152/152/152; paired lower/radius
+// workspaces at location/part/entry 152/152/152; iterator with both at entry 152;
+// all four scalar workspaces at entry with role names 152. Initializations unchanged.
+// Round 157: existing unbounded random query 365; compound radius accumulation 152; query and
+// accumulation 365; early radius zero 152; query and radius zero 365; early scale one 295; radius and
+// scale defaults 295; query with both defaults 259. Original executable source restored.
+// Round 147: matrix reference 152; source reference 152; output reference 152; matrix/source
+// 152; matrix/output 152; source/output 152; all native references 152; source vector value 383.
+// All executable forms restored; sources and comparisons saved.
 // @retail 0x17a380
 void __stdcall function_17a380(s_effect_datum *effect)
 {
@@ -2678,7 +2863,7 @@ void __stdcall function_17a380(s_effect_datum *effect)
 
 		while ((location = effect_location_next(effect, &next_index, 0)) != 0)
 		{
-			bool detached = TEST_FIELD_BIT(part->flag2);
+			signed char detached = TEST_FIELD_BIT(part->flag2);
 			point3f point;
 			vector3f forward;
 			vector3f up;
@@ -2706,11 +2891,11 @@ void __stdcall function_17a380(s_effect_datum *effect)
 			}
 			if (TEST_FIELD_BIT(part->flag1))
 			{
-				real radius = part->radius_lower + (part->radius_upper - part->radius_lower) * function_x82e52f(&g_4e7408->seed, __FILE__, __LINE__);
+				real lower = part->radius_lower;
+				real radius = lower + (part->radius_upper - lower) * function_x82e52f(&g_4e7408->seed, __FILE__, __LINE__);
 				long object_index = effect->object_index;
 
-				if (object_index != NONE)
-					object_index = function_baf40(object_index);
+				object_index = object_index != NONE ? function_baf40(object_index) : NONE;
 				function_16a8e0(0xd800005, &point, radius, object_index, NONE, &point, &radius);
 				detached = true;
 			}
@@ -2730,21 +2915,26 @@ void __stdcall function_17a380(s_effect_datum *effect)
 	}
 }
 
-// score 96 (was 96): the frame is eight bytes smaller and the two globals are loaded into the other registers
-// tried transform name 109; query results, particle cursor and colors at entry 109; read-only settings 109;
-// immutable mode once 96 (kept); size policy 146; inline depth zero 109.
-// the frame is eight bytes smaller and the two globals are loaded into the other registers
-// Deferred particle cursor 125; active-only effect cursor 125; particle-location
-// record 109; system/definition/type/effect records 109 each; exhausted-particle
-// continue 109. Frame remains eight bytes small; pool/register and cursor homes differ.
-// score 96 (was 96): frame 0x4c versus 0x54, pool/settings homes and color staging remain.
-// Type query, color update, matrix query and location update noinline declarations 96 each;
-// signed-byte flag 108; word flag 106; unsigned successor 96; read-only transform result 96.
-// score 96 (was 96): unsigned-byte location flag 108; frame and color staging still differ.
-// Frame remains eight bytes small; pool/system allocation, query/color carriers and cursor homes
-// differ. mode after color 112; late signed mode 112; late effect cursor home 112; late particle
-// cursor home 112; early mode traversal transform 96; early mode node observation 96; early mode
-// transform home 96; early mode query scope 96.
+// score 96 (was 96): frame 0x50 versus 0x54 (retail spills the definition and keeps two more
+// dwords), the particle system in EDI (retail ESI), color B spilled (retail EDI) and the cached
+// mode differ. Tried: transform name 109; query results, particle cursor and colors at entry 109;
+// read-only settings 109; immutable mode once 96 (kept); size policy 146; inline depth zero 109;
+// deferred particle cursor 125; active-only effect cursor 125; particle-location record 109;
+// system/definition/type/effect records 109 each; exhausted-particle continue 109; type query,
+// color update, matrix query and location update noinline declarations 96 each; signed-byte flag
+// 108; word flag 106; unsigned successor 96; read-only transform result 96; unsigned-byte location
+// flag 108; mode after color 112; late signed mode 112; late effect cursor home 112; late particle
+// cursor home 112; early mode traversal transform/node observation/transform home/query scope 96
+// each; native mode 96; entry word/native mode 108/109; unsigned particle cursor alone/with native
+// mode 96/96; node predicate at use 109, with native mode 110; late native mode 106.
+// Round 88: the next index without `volatile` 122 (the effect index moves to ECX and caller
+// 0x176f60 stops matching: the volatile is what keeps it on the stack); mode read per call 108;
+// the effect index read once through its address with a plain next index 105; multiplied() in
+// the call's argument list (retail pushes it from EAX) 103, with per-call mode 110; an inline
+// color helper taking the particle system and both colors (retail reads both colors before the
+// definition lookup; same block in 0x178c80) 102, with the address-read effect index 92 (retail's
+// two exits; not kept without a match), with per-call mode 127, particle system declared first
+// 113, helper parameters reordered 92, helper fed from the color locals 93.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -2787,9 +2977,44 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 	return next_index;
 }
 
-// score 176 (was 189): frame 0x50 agrees; early false-result and player-pool registers differ.
+// score 176 (was 176): Frame 0x50 agrees; early false BL, bitmap/count/unit carriers and point/advance scheduling remain.
+// Frame 0x50 agrees; early false BL, player bitmap/count carriers and point/advance scheduling remain.
+// frame 0x50 agrees; early false-result, player bitmap/count carriers and point scheduling remain.
 // Persistent effect pool 194; persistent player pool 189; outer for 189;
 // squared distance compared first 176; player slot/unit names 189.
+// Unit-skip
+// guard 176; vector walk lifetime 176; retained radius 275; location for 390; shared point-transform call
+// 392.
+// Full-width result 176; per-unit matrix 176; named squared radius 176;
+// absent-node point memcpy 176; nested eligibility tests 176.
+// Point at function entry 176; matrix at function entry 176; effect/tag/cursor role names 176; native disabled-bit mask 251; positive player guard 176.
+// Round 123: Effect rejection in natural for 176; current-player while/unit skip 176; both traversal joins 176; guarded tag lifetime in natural for 176; guarded tag/current-player traversal 176.
+// Actual byte/signed-byte return 176/176; signed/unsigned word return 179/179; signed/unsigned long return
+// 179/179; byte-return tested result 176; signed-byte status/return 176. Wider returns lose both checked
+// callers; all declarations restored.
+// Unsigned effect/player/both indices 176/176/176; native result byte 176;
+// condition-local location 176; entry unit/scan player lifetimes 176/176;
+// readonly effect metadata 176. Original body, native widths and metadata restored.
+// Accumulated/selected test result 184/176; result after pool query/signed-byte result/function delta 176 each;
+// live tag radius/live unit fields 254/254; live tag with accumulated result 258.
+// Current effect observed at every use 276; with live tag/unit/both 295/272/297;
+// those four effect-root graphs with the existing point producer forced inline 276/295/272/297.
+// Radius before displacement 176; displacement-first declaration 176; location-scoped matrix 176;
+// each pair and all three 176; absent-node point setter 228 (fast).
+// Complementary bool/test-produced/signed-byte/full-width status 176/176/176/176;
+// complementary success join/test-produced join 303/309; positive tested join 289;
+// initial salted-query truth 269. All original results and exits restored.
+// Round 165: Readonly player/unit/both receivers 176/176/176; each with readonly
+// metadata and both with metadata 176/176/176; squared distance at comparison 176;
+// all readonly receivers plus distance boundary 176. Original receivers and body restored.
+// Round 324: absolute effect slot 176; existing player search 176; slot/search 176; existing salted-index
+// conversion 254; slot/conversion 255; search/conversion 254; all three 255; full slot name with both helpers
+// 255.
+// Round 208: per-test result with literal hit/exhaustion returns, bool/byte/short/long 176 each;
+// uniform player record 270; that record with bool/short/long per-test result 270 each.
+// Round 58: literal false at exhaustion 176; hit as `result = true; return result;` with literal/variable
+// exhaustion 176/176 (VC folds the constant result each time, no early BL); found flag breaking out of
+// each loop 281; found flag in all three loop conditions 281. Retail returns BL only at the early exit.
 // @retail 0x1778d0
 bool function_1778d0(void)
 {
@@ -2855,7 +3080,7 @@ bool function_1778d0(void)
 }
 
 bool function_3e9c0(long object_index);
-bool function_2dba0(long tag, vector3f const *direction, long c, long d, long e, point3f const *position, color3f const *color, real alpha, real amount, real scale, bool alternate);
+bool function_2dba0(long tag, vector3f const *direction, bool alternate, long c, long d, long e, point3f const *position, color3f const *color, real alpha, real amount, real scale);
 void function_42850(long a, long b, point3f const *position, vector3f const *first,
 	vector3f const *second, real scale, real width, vector3f const *third);
 real function_17ca10(real x, short curve);
@@ -2870,6 +3095,30 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 	return result;
 }
 
+// score 88 (was 88): frame 0x94 agrees; the scale default/conditional branch, the point transform's
+// y copy (retail keeps y in xmm5 and copies it to xmm4; ours scales it in place) and the lens call
+// setup remain. The lens call is BLOCKED-BY 0x2dba0: retail passes its tag index in ecx and the
+// position on the stack, ours the other way round (its body is in a contributor's file).
+// Point/normal/both reverse captures 308/187/202; shared color scale 325; existing point operation
+// 548; color with point/normal/both captures 324/327/327; lifetime 287; branch color 324;
+// event/count names 287; part-pointer walk 394; conditional scale initialization 112. Read-only
+// tag/event/part/all metadata 112 each; location cursor home 112; vector homes 112; bounded word
+// flare count 208; transform/color homes 112; consistent alternate argument order 88. After the
+// consistent call contract: default-first scale 272; default after point 270; default before color
+// 270. Fast control 416 (reduced call/global caveats); scale workspace/test arms 416/416; default
+// before inputs 425; conditional before inputs/after point/after forward/before color
+// 416/416/416/416; B-first product 416.
+// Aligned comparison (masked addresses, difflib) instead of the positional count: the original
+// body differs in 21 instructions; `real scale = 1.0f; if (a) scale = scale_a; if (b) scale *= scale_b;`
+// after the color copy 15 (272 positional, 1518 bytes), with the default declared before the color
+// copy 13 (270): the scale block then matches and only the y copy (6 bytes) and the blocked lens call
+// remain, so that form should be kept once the y copy is solved. On it: node matrix declared at the
+// loop top 13 (270); up transformed before forward 29; forceinline point transform 13 (270).
+// Consistent tag/direction formal positions: 82/81/81/414/414/83/82/88; none recovers
+// tag ECX/position stack. Native position/forward/up/color 331/329/323/321; both directions
+// 361; spatial inputs 392; point/color 328; all inputs 396. All source/contracts restored.
+// Indexed point/directions/spatial/separate-spatial copies 323/331/352/511;
+// the same copies with native default-first scale 313/333/344/498. All restored.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {
@@ -2895,9 +3144,7 @@ void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 				vector3f forward = location->matrix.forward;
 				vector3f up = location->matrix.up;
 				color3f color = *(color3f *)&g_4686cc->red;
-				real scale = 1.0f;
-				if (part->a_scales & 0x20)
-					scale = effect->scale_a;
+				real scale = (part->a_scales & 0x20) ? effect->scale_a : 1.0f;
 				if (part->b_scales & 0x20)
 					scale *= effect->scale_b;
 				if (location->node_index != NONE)
@@ -2918,7 +3165,7 @@ void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 							real remaining = effect_remaining_fraction_179880(effect);
 							scale *= 1.0f - function_17ca10(1.0f - remaining, *(short *)(tag + 0x3c));
 						}
-						function_2dba0(part->tag_index, &forward, 1, effect_index & 0xffff, flare_index, &position, (color3f const *)&effect->origin, 1.0f, scale, 1.0f, function_3e9c0(effect->object_index));
+						function_2dba0(part->tag_index, &forward, function_3e9c0(effect->object_index), 1, effect_index & 0xffff, flare_index, &position, (color3f const *)&effect->origin, 1.0f, scale, 1.0f);
 						++flare_index;
 					}
 				}

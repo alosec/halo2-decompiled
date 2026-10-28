@@ -4,50 +4,10 @@
 
 void __cdecl function_2d8db0(void *destination, void const *source, long count);
 
-class stream_2d9d30
-{
-public:
-	virtual void slot0() = 0;
-	virtual void slot1() = 0;
-	virtual int write(const void *data, int size) = 0;
-};
-
-class class_2d9d30
-{
-public:
-	void *vtable;
-	long field_4;
-	stream_2d9d30 *stream;
-	char *buffer;
-	int size;
-	int capacity;
-
-	int flush()
-	{
-		if (stream)
-		{
-			int count = size;
-			int written = 0;
-			while (written < count)
-			{
-				int result = stream->write(buffer + written, count - written);
-				written += result;
-				if (result == 0)
-				{
-					return written;
-				}
-			}
-			size = 0;
-			return written;
-		}
-		return 0;
-	}
-
-	int function_2d9d30(void const *data, int count);
-};
+#include "buffered_writer_2d9e40.h"
 
 // @retail 0x2d9d30
-int class_2d9d30::function_2d9d30(void const *data, int count)
+int buffered_writer_2d9e40::write(void const *data, int count)
 {
 	char const *source = (char const *)data;
 	int remaining = count;

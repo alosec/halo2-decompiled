@@ -144,10 +144,55 @@ void function_10ec00(long object_index, s_animation_state *state, long unused, d
 extern real g_547648;
 void c_animation_channel_data_get(c_animation_channel const *channel, s_animation_data *data);
 
-// score 221 (was 221): frame 0x30 versus 0x2c, destination retention, getter expansion
+// score 215 (was 221): Frame 0x30 versus 0x2c, destination/ordinal homes and getter expansion remain.
+// Lane 8 r64: countdown weight with the `>= 3` case first (retail's fall-through) 215, kept; frame
+// byte in a long local 260 (32-bit compare as retail, aligned 119, 969 bytes); char/word loop index
+// 215 (identical: the loop stays a pointer plus spilled countdown); sampled flag declared before
+// the getter result 285 (994 bytes); weight as `frame * (weight byte * scale)` 215. Diagnostic only: 0x1c6440
+// declared noinline gives 940 bytes and 166 (with the long frame 215, aligned 94), but matched
+// callers such as 0x1c6500, 0x1c6560 and 0x1ccb40 inline it, so the header was restored.
 // and spilled induction remain; native-byte sample frame 221; short sample frame 261;
+// native-byte sample frame 221; short sample frame 261;
 // one tag frame count 255; input cursors 273; signed-byte sampled result 221;
 // signed-byte ordinal 221; native frame/count 255; cursors/sampled result 273.
+// Earlier: destination and induction homes plus getter expansion remain;
+// successful-sample count 274; equality bound 221; frame cursor 283;
+// weight cursor 284; end-controlled input cursors 265; frame guard before weight 266;
+// weight-magnitude first 266; actual animation reference 221.
+// Round 230: Read-only sample/tag/both views 221/221/221; reused weight scale 284;
+// scale with either/both views 284/284/284; full input views with named conversion product 284.
+// Round 164: Base identifier confined, separate base admission, both, separate
+// weighted admission and its three combinations 221 each; complete countdown
+// admission split 221. Original playback graph and all constructor points restored.
+// Earlier at 221 (from 221): destination and induction homes plus getter expansion remain;
+// Positive/countdown/touch order 289; touch/positive/countdown 276;
+// touch/countdown/positive 304; countdown/positive/touch 341; countdown/touch/positive
+// 351; positive/touch, touch/positive and countdown/positive guard exits 284/276/341.
+// Negative no-samples bool/byte/short/long in weighted scope 221/221/222/221;
+// across the positive playback phase 313/313/328/331. Original sampled flag and constructors restored.
+// Round 150: Data producer/exporter inline contracts with direct/shared data acquisition
+// 221/221/221/457/221/457; explicit out-of-line provider pair 221, with shared acquisition 221. Native
+// long/dword/short/byte sample ordinal initialized before channel setup or at function entry 221 each.
+// Complete original body and provider declarations restored; frame and getter expansion remain.
+// Round 234: Last successful sample ordinal in long/short/signed-byte/dword
+// at the original result lifetime 268/277/316/268; initialized before the getter
+// 296/302/323/296. Frame and destination/ordinal allocation remain. Original
+// Boolean result, all channel/data constructors and executable body restored.
+// Scoped output names in seven combinations 221 each; with separate channel names 221.
+// Common final publication bool/byte/short/long 301/301/300/299;
+// with touch admission before construction 343/343/346/341. Original restored.
+// Lane 8 r58: weighted id read into the animation id local / its own local 301/301; frame
+// byte in a long local for the compare and the conversion 260; both 280; channel data getter
+// call in the first two arms 221 (identical code, kept); with id local and long frame 280.
+// The loop's pointer/countdown spill is the extra frame dword; retail indexes by i.
+// Native unsigned-long/word induction with a full-width frame before/after weight 260 each;
+// signed/unsigned 64-bit induction with that frame 256/249 at either boundary, recovering frame 0x2c.
+// Signed 64-bit direct/char/short frames 295/295/256; unsigned 288/288/244; unsigned direct frame
+// with byte/short sampled result 288/292. Extra loop length regresses; all restored.
+// Round 60: ours inlines the weighted arm's animation getter call (retail calls it) and tail-merges
+// the second arm's data/publish calls into the first arm's (retail keeps both). Weight product
+// reordered, short and int index 221 each (identical); weighted id copied into the id local or its
+// own local 301/301 (the tail un-merges as retail but the state pointer leaves EBP).
 // @retail 0x10e530
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)
@@ -166,7 +211,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			channel.set_frame_position(0.0f);
 			channel.sample(vibration->frame, node_mask, node_count, transforms);
 			s_animation_data data;
-			function_1ddb40(&data, graph_tag_get(channel.graph_tag_index), channel.animation_id);
+			c_animation_channel_data_get(&channel, &data);
 			function_20adf0((s_anim_data *)&data, dest);
 		}
 		if (vibration->weighted_animation.index != NONE && state->channel_play(&channel, vibration->weighted_animation, 0))
@@ -186,7 +231,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			if (sampled)
 			{
 				s_animation_data data;
-				function_1ddb40(&data, graph_tag_get(channel.graph_tag_index), channel.animation_id);
+				c_animation_channel_data_get(&channel, &data);
 				function_20adf0((s_anim_data *)&data, dest);
 			}
 		}
@@ -203,7 +248,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 		c_animation_channel channel;
 		if (state->channel_play(&channel, vibration->weighted_animation, 0) && channel.function_1c6440()->frame_count > 17)
 		{
-			real weight = vibration->countdown < 3 ? vibration->countdown * (1.0f / 3.0f) : (7 - vibration->countdown) * 0.25f;
+			real weight = vibration->countdown >= 3 ? (7 - vibration->countdown) * 0.25f : vibration->countdown * (1.0f / 3.0f);
 			channel.set_frame_position(17.0f);
 			channel.sample(weight, node_mask, node_count, transforms);
 			s_animation_data data;

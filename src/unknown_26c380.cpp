@@ -143,13 +143,44 @@ bool function_26c380(point3f const *origin, s_pathfinding_data const *pathfindin
 	return success;
 }
 
-// score 435 (was 435): frame 0x5c versus 0x64, independent normal homes, memory flags and distinct exit
+// score 418 (was 419): the frame is 0x5c against retail's 0x64; retail keeps the
+// pathfinding pointer in EBP and the -1 edge seed in EDX where ours keeps them in EBX
+// and EDI, and retail keeps a byte local at [esp+0xe] where ours has a long zero at
+// [esp+0x14].
+// Earlier 419 (was 419): frame 0x5c versus 0x64, independent normal homes, memory flags and distinct exit
+// Frame 0x5c versus 0x64, independent normal homes, memory flags and distinct output tails remain.
+// Earlier: frame 0x5c versus 0x64, independent normal homes, memory flags and distinct exit
 // tails remain; tried late first independent normal 490; late first native result word 438; native edge
 // orientation 438; existing planar product inline 435; late first unsigned count 435.
 // frame 0x5c versus 0x64; normal, result/first/hit homes and exit tails differ.
 // Count byte 451; first word 443; success declared first 435; previous edge split 440; hit byte 435.
 // Hit at producer 435; sector history storage 435; orientation word 434; planar scalar/value inputs 435/538;
 // magnitude value input 556; unsigned success 435; normal length result 435.
+// Final blocked output 658; signed result byte 460; endpoint array index 443; direct node flags 435;
+// vertex base 458; accepted distance 476; vertex base plus distance 501; endpoint index plus distance 432.
+// nonempty edge while 435; rejected hit reset 460; blocked success test 529; count first progress guard 435;
+// edge endpoint homes 435; iterator storage lifetime 435; paired edge workspace 435; overshoot expression 434.
+// Iterator native node/first seed/both 433/435/433; count traversal scope 419 kept (plain);
+// progress-history scope 433; native planar/full-normal copies 490/505; planar input order 435.
+// Only constant counter initialization moves into the valid-normal walk. Frame 0x5c versus 0x64
+// and normal/result/exit homes remain.
+// Existing point producer output return alone/with forced point expansion/with magnitude/with point and
+// magnitude/with cross/with point and cross/with magnitude and cross/with all three 419 each; every sibling
+// retains its preview baseline. Original helpers restored.
+// Native cross axis/direction/both values 522/522/579; planar point2 input 419; planar plus axis/direction/both
+// 522/522/579; orientation at every use 418 (one-point gain rejected).
+// Existing planar point/vector and magnitude input reference contracts, singly and in all seven combinations, 419 each;
+// existing cross-producer output reference 419. Original helpers and body restored.
+// Complete named products: planar/cross/magnitude 421/455/421; planar and cross 453;
+// planar and magnitude 419; cross and magnitude 453; all three 455; point offsets 418. All restored.
+// Edge-test / iterator / passability call boundaries, ordinary inline versus noinline,
+// eight combinations 419/435/460/460/435/435/460/460. All contracts and bodies restored.
+// Complete endpoint stages 421; planar sum accumulator 421; normal-first products 419;
+// stages with accumulator / normal-first products 421/421; named completed projection 421;
+// stages with forced planar expansion 421; stages with native planar memcpy 483. All restored.
+// Round 129, traversal-count scope retained: native planar copy with long/bool/short/byte
+// result 479/543/483/427; CRT planar copy with those result types 479/543/483/427.
+// All original executable source restored.
 // @retail 0x26c590
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,
@@ -158,8 +189,6 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 	s_sector_trace_result *result = (s_sector_trace_result *)trace;
 	long success = false;
 	long current_sector_index = sector_index;
-	short count = 0;
-	real last_distance = -0.1f;
 	s_pathfinding_edge *edge = NULL;
 
 	result->unknown20 = 3.4028235e38f;
@@ -168,6 +197,7 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 	result->edge_index = (word)NONE;
 	result->distance = distance;
 	result->unknown1c = false;
+	real last_distance = -0.1f;
 	if (pathfinding && sector_index != target_sector_index && sector_index >= 0 && sector_index < pathfinding->node_count)
 	{
 		vector3f normal;
@@ -175,6 +205,7 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 		cross3f(g_4687b0, direction, &normal);
 		if (magnitude3d(&normal) > 1e-5)
 		{
+			short count = 0;
 			vector2f line_normal;
 			real line_distance;
 			long next_sector_index = sector_index;

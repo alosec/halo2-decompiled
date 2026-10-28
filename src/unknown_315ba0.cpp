@@ -4,20 +4,20 @@
 #include "description_312430.h"
 
 // the unit matrix
-inline void set_unit_matrix_315ba0(__m128 *rows)
+inline void __cdecl set_unit_matrix_315ba0(__m128 &first, __m128 &second, __m128 &third)
 {
-	rows[0] = _mm_setzero_ps();
-	rows[1] = _mm_setzero_ps();
-	rows[2] = _mm_setzero_ps();
-	rows[0].m128_f32[0] = 1.0f;
-	rows[1].m128_f32[1] = 1.0f;
-	rows[2].m128_f32[2] = 1.0f;
+	first = _mm_setzero_ps();
+	second = _mm_setzero_ps();
+	third = _mm_setzero_ps();
+	first.m128_f32[0] = 1.0f;
+	second.m128_f32[1] = 1.0f;
+	third.m128_f32[2] = 1.0f;
 }
 
 // the transform that moves nothing
-inline void set_unit_transform_315ba0(transform_312630 &transform)
+inline void __cdecl set_unit_transform_315ba0(transform_312630 &transform)
 {
-	set_unit_matrix_315ba0(transform.rotation.column);
+	set_unit_matrix_315ba0(transform.rotation.column[0], transform.rotation.column[1], transform.rotation.column[2]);
 	transform.translation = _mm_setzero_ps();
 }
 

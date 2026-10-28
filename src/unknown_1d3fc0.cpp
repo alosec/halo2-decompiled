@@ -28,23 +28,23 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
  }
 }
 
-// score 155 (was 155): Magnitude order, inverse carriers and projection scheduling differ.
-// Axis consumer scopes 155/155/155; symmetric dot 155; projection order 155;
-// dot/projection 155; early inputs 155; native scaled result 352;
-// component-input inline 155; output-first component inline 155.
-// magnitude order and SSE carriers remain;
-// helper-return receivers 153; rotation receiver 155; squared magnitude 155;
-// float square root 155; float absolute value 155; reverse stores 155;
-// j/k/i stores 155; complete projection 155.
-// score 149 (was 155): magnitude/SSE carriers remain; component scale loop 155;
-// shared self-dot 155; i/j/k squared values 152/149/154; all squares 155;
-// self-dot or all squares with scale loop 155. Keep the j-square intermediate.
-// Paired i/j and j/k squares 152/153; first-plane subtotal 149;
-// sequential squared length 152; paired squares with subtotal 152/149;
-// separate reciprocal division 149; paired squares with scaled components 153.
 // score 149 (was 149): magnitude order, reciprocal/SSE carriers and projection schedule remain.
-// Normalized i/j/k products 149/149/149f; ij/ik/jk products 149/149/149f;
-// all products and k/j/i product evaluation 149/149f; j-square retained.
+// Retail sums the forward magnitude j,i,k (k loaded late, reloaded on the short-vector path) and the
+// other three k,j,i; in this /Ob1 file every sum compiles i,j,k whatever the source order (dot3f,
+// k*k+j*j+i*i, i*i+j*j+k*k each 155 with the normalize3d shape), only a named square moves it.
+// Axis consumer scopes 155/155/155; symmetric dot 155; projection order 155; dot/projection 155;
+// early inputs 155; native scaled result 352; component-input inline 155; output-first component
+// inline 155; helper-return receivers 153; rotation receiver 155; squared magnitude 155; float square
+// root 155; float absolute value 155; reverse stores 155; j/k/i stores 155; complete projection 155;
+// component scale loop 155; shared self-dot 155; i/j/k squared values 152/149/154; all squares 155;
+// self-dot or all squares with scale loop 155 (keep the j-square intermediate); paired i/j and j/k
+// squares 152/153; first-plane subtotal 149; sequential squared length 152; paired squares with
+// subtotal 152/149; separate reciprocal division 149; paired squares with scaled components 153;
+// normalized i/j/k products 149/149/149; ij/ik/jk products 149/149/149; all products and k/j/i
+// product evaluation 149/149; native n-array normalization 149; array receiver 149; scalar-array
+// helper 149; array scale loop 149; each array form with indexed projection 149/149/149; indexed
+// projection alone 149. Header normalize3d (not inlined under /Ob1: four calls) 453; six transforms
+// at function scope instead of the array (same frame and slots, identical code) 149.
 // @retail 0x1d3fc0
 void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
 {

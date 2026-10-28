@@ -9,20 +9,24 @@
 struct s_equipment_object_view
 {
 	long definition_index;
-	struct
+	union
 	{
-		dword : 15;
-		dword cannot_be_garbage : 1;
-		dword shadowless : 1;
-		dword : 15;
-	} object_flags;
+		struct
+		{
+			dword : 15;
+			dword cannot_be_garbage : 1;
+			dword shadowless : 1;
+			dword : 15;
+		} object_flags;
+		dword object_flag_bits;
+	};
 	byte unknown08[0x6c - 0x08];
 	real field_x86bef3;
 	byte unknown70[0x12c - 0x70];
 	struct
 	{
-		byte : 7;
-		byte does_not_accelerate : 1;
+		word : 7;
+		word does_not_accelerate : 1;
 	} item_flags;
 };
 
@@ -62,9 +66,14 @@ void __stdcall function_f8090(long equipment_index, s_scenario_equipment_view *p
 	s_equipment_object_view *equipment = EQUIPMENT_GET(equipment_index);
 
 	function_b9b90(equipment_index, TEST_FIELD_BIT(placement->flags.created_at_rest));
-	equipment->object_flags.cannot_be_garbage = true;
-	equipment->object_flags.shadowless = true;
-	equipment->item_flags.does_not_accelerate = !TEST_FIELD_BIT(placement->flags.does_accelerate);
+	dword *flags = &equipment->object_flag_bits;
+	*flags |= 0x8000;
+	equipment->object_flag_bits |= 0x10000;
+	bool does_not_accelerate = !placement->flags.does_accelerate;
+	if (does_not_accelerate)
+		equipment->item_flags.does_not_accelerate = true;
+	else
+		equipment->item_flags.does_not_accelerate = false;
 
 	if (!TEST_FIELD_BIT(placement->flags.created_at_rest))
 		equipment->field_x86bef3 += 0.05f;

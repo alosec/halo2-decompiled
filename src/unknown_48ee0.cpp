@@ -18,13 +18,65 @@ extern byte g_485a47;
 extern real g_485a0c[8];
 extern real g_4c9798[36];
 
-// score 311 (was 311): frame 0x20 versus 0x28; input registers and rounding-call scalar reloads differ.
+// score 295 (was 295): frame 0x20 versus 0x28; input and rounding scalar homes differ.
+// Earlier form: frame 0x20 versus 0x28; input registers and rounding-call scalar reloads differ.
 // Branch-defined extent 321; two-vector copy loop 311; frame pointer 372; size policy 497; inline depth one 311.
 // Global optimization off 1009; expansion depth zero 349; late mode 350;
 // near normal first 309; height clamp first 311; sample y/z first 313, plus normal first 311.
-// score 295 (was 311): Frame 0x20 versus 0x28 and input/rounding homes remain. Near normal input 313; far normal copy 295 kept (plain, retail length); integer maximum reuse 311; far point before scale 313; height rounding first 311 (fast).
+// Earlier form: Frame 0x20 versus 0x28 and input/rounding homes remain. Near normal input 313; far normal copy 295 kept (plain, retail length); integer maximum reuse 311; far point before scale 313; height rounding first 311 (fast).
+// Earlier form: Frame 0x20 versus 0x28 and input/rounding homes remain.
+// Frame 0x20 versus 0x28; state/matrix and protected rounding/dimension carriers remain.
+// frame 0x20 versus 0x28; input registers and rounding-call scalar reloads remain.
+// frame 0x20/0x28 and state/matrix/rounding homes remain.
+// Radius/scaled-radius/padded-radius parts 295/295/295; size accumulation 295;
+// width/height/both producers 295/295/295; consecutive clamp bounds 301.
+// The one-use radius call result is restored; matched storage-provider root resolves all trials.
+// frame 0x20 versus 0x28; input registers and rounding-call scalar reloads differ.
+// Frame 0x20 versus 0x28 and input/rounding homes remain. Near normal input 313; far normal copy 295 kept (plain, retail length); integer maximum reuse 311; far point before scale 313; height rounding first 311 (fast).
+// Frame 0x20 versus 0x28 and input/rounding homes remain.
+// Distinct normals 295; scoped near normal 295; local near-normal dot 301; point setters 305;
+// late pixel area 295; origin pointer 295; clamp result 295; fallback-first far scale 296 (plain).
+// Frame 0x20 versus 0x28, input registers and rounding reloads remain. Tried texture row
+// memset 300; whole table memcpy 361; two vector memcpy calls 295; row clear and whole copy 366; row clear and
+// vector copies 300; near normal memcpy 295; far normal memcpy 295; both normal memcpy calls 295.
+// Distance before aspect 296; aspect after offset 296; reciprocal before aspect 300;
+// conditional/branch offset 309 each; branch reciprocal 295; complete size result 295; combined entry/results 313.
+// Five consistent formal permutations 295 each; native byte mode 332; unsigned mode 295;
+// signed-byte mode 331.
+// Direction/origin/both value snapshots 376/329/411; far output dot 311;
+// point component loops 303; normal loop 295; plane scaling loops 295; combined loops 300.
+// Native width/height/both result arms 295/295/295; shared sizing predicate 331;
+// height limit first 303; complete mode result 295; initial projection/opposite loops 295/295.
+// Shared near/far/both/projection/all scaling 295/295/295/295/295; near/far/both point accumulation 295/295/295.
+// Round 188 complete sizing scope, unsigned-word mode, depth-bound scope, their
+// pairs/all, and signed-word mode with sizing scope: 300/291/295/297/300/291/297/297.
+// All original scalar lifetimes, native mode, geometry and protected interfaces retained.
+// Round 167: Individual or mixed bounded dimension carriers:
+// width short 296; width word 296; height short 324; height word 324;
+// short/word 325; word/short 325; short/int 296; int/word 324.
+// Original native limits, far-normal copy and all protected call interfaces restored.
+// Round 213: direct lower/upper/both depth fields 294/295/294; each with distinct far normal
+// 294/295/294; both with distinct far point 302, with distinct far point and normal 294.
+// One-point gains rejected; original field snapshots and captured far normal restored.
+// Round 194: Native projection/dimension/border-identity row combinations 297/295/297/295/297/295/297; all
+// rows with projection scope 298. Original body restored.
+// Round 375: Complete near/far/shared-pair/distinct-pair plane outputs on the
+// retained far-normal graph 322/335/361/364; CRT copies 322/335/361/364.
+// Frame 0x30 versus 0x28; all exact-only output-record forms restored.
+// Round 139: Repeated ratio/angle inputs captured once separately/together 316/305/316; each with
+// real shared pixel area 321/326/321; joint input home names without/with area 316/321. Frame
+// 0x20/0x28, state/matrix and protected rounding homes remain. Original executable source, every
+// float tree and accepted far-normal copy restored.
+// Round 96: retail takes the camera-like record (read at +8/+0x64/+0x28) in ECX and keeps the source
+// record (origin +0, direction +0x28) in EBX across the calls; ours takes the first in EAX and leaves the
+// second on the stack. The two pointer parameters were named crossed against both callers (kept: now
+// swapped, data flow as retail, 295). Direction/origin fields read at each use 328; tag test as a
+// one-case switch 295; origin/direction references at entry 300.
+// Round 60: maximum width/height written through pointers by an inline helper 295; flag test as
+// a shifted bool, its negated-bool and its compare-with-zero spellings 311/337/295; offset as a
+// ternary 309.
 // @retail 0x48ee0
-void function_48ee0(byte const *state, byte const *matrix, byte const *tag)
+void function_48ee0(byte const *matrix, byte const *state, byte const *tag)
 {
     real aspect = (real)sqrt(*(real const *)(state + 8));
     real distance = *(real const *)(state + 0x64);

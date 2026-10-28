@@ -11,9 +11,15 @@ bool function_fa1a0(real arg_0, real arg_1, point3f const *arg_2, point3f const 
 	real *arg_9, real *arg_10, real *arg_11, real *arg_12, real *arg_13);
 real function_30bf0(vector3f *arg_0);
 
-// score 13 (was 13): our call to the ray/sphere helper hands the high_arc
-// argument over in edx instead of on the stack; the callee's body decides
-// the registers and it lives in src/projectiles.cpp, outside this lane.
+// score 13 (was 13): our call to the arc-aiming helper 0xfa1a0 passes its time-scale pointer
+// in edx where retail pushes it (retail's callee loads its gravity pointer into edx at entry,
+// ours into ebx, so ours has edx free for a parameter). The callee's body decides the registers
+// (src/projectiles.cpp, unmatched). Tried in the callee: the high-arc flag and the time-scale
+// pointer read once through their addresses 13/13; horizontal tests with the constant first 13;
+// the horizontal length computed after the gravity value 13; the gravity operands swapped 13.
+// Round 49: magnitude between vectors 13; split result declaration 13; retry-speed local 13;
+// separate retry result 13; vector assignment helper 13; array component outputs 13;
+// copy then scale 67; scaled local 101. Starting body restored.
 // @retail 0x2900b0
 bool function_2900b0(long arg_0, point3f const *arg_1, real arg_2, real arg_3, vector3f *arg_4)
 {
@@ -293,7 +299,12 @@ PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
 // 0xffffffff 38, field_14 cleared after reading field_18 38, a point3f
 // assignment for the copy 70, actor_get after the centre update 115,
 // perception_get at each use 101, the actor index in a local read after
-// the centre update 111.
+// the centre update 111. Retail has all seven registers live during the origin
+// copy (the actor pointer's add interleaves with it, ebp is the copy temporary),
+// so NONE only reaches ebp at the loop; ours finishes the actor pointer first.
+// Origin copy ahead of actor_get 99; memcpy for the copy 38; a named centre
+// pointer in the centre update 42; the copy field by field 116; field_14
+// cleared before the copy 39.
 // @retail 0x28f8d0
 void function_28f8d0(long arg_0)
 {

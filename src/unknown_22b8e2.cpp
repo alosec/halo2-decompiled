@@ -36,6 +36,12 @@ bool function_22acb4(long);
 void function_1396c7(long, point2f *);
 void function_2d140(long, real const *, long, long, s_filter_vector const *);
 
+// score 120 (was 120): mode/resource/point frame homes permuted, offset join and bound schedule.
+// Retail's offset switch has no return: each case converts its pair and shares the adds, the
+// default keeps the point. Per-case sums with a default copy 157 (switch shape retail's, frame
+// and bound schedule worse; case/default order 157); offsets added in place 145; a copy plus
+// `+=` per case 163; the two reciprocals first 144, with the per-case sums 160 (bound block start
+// now retail's, frame +8); the table filled vertex by vertex 173/180.
 // @retail 0x22b8e2
 void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 {

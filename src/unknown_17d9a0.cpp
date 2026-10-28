@@ -142,7 +142,14 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // Shared projection operation 334; native plane result 237; row-selector local 152;
 // bounds-first/vertical-first helper contracts 140/140; pointer-input point initializer 152;
 // vertical result snapshot 170; first-edge squared length 138; corrected contract/length combinations 146/146.
-// score 138 (was 138): plane-distance store base, selector publication and edge/zero schedule remain.
+// score 138 (was 138): Plane-distance base, projection selectors/stores and inverse scheduling remain. external output record
+// 146; external corner array 138; output and corner array 146; external normal receiver 166; external
+// bounds record 146; matrix memcpy 138; bounds memcpy 152; normal memcpy current length 152.
+// Plane-distance base, projection publication and inverse scheduling still differ.
+// corner input references 144f; origin corner value 172f; first edge value 156f; second edge
+// value 166f; both edge values 183f; first eligibility result 146f; indexed bounds contract 142f;
+// indexed bounds with origin value 174f.
+// plane-distance store base, selector publication and edge/zero schedule remain.
 // Actual table-element bindings both/horizontal/vertical 188/138/188; both plus Y-first 191;
 // distance-field binding 146; metadata object reference 138; native row reference 138;
 // edge records bound after publication 142 at 992 bytes (fast scores).
@@ -150,6 +157,11 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // Distance-only plane scope 143; second-edge squared result 146; both 147; external basis
 // references 152; first/all bound-first products 138/138; basis plus lengths 154; completed
 // Y/X projected values plus lengths 158.
+// score 138 (was 138): plane-distance store base, product operand order and the positive register differ.
+// Plane pointer for the normal copy/dot/store 157 (store base as retail, dot operands flip); point-first
+// dot through it 153; pointer for copy and store only 151; projected y stored first 138; the existing
+// function_120810 for each corner projection 189 at 966 bytes, though its inlined lookup is retail's
+// exact sequence (start from it: the products then reorder).
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {
@@ -472,9 +484,9 @@ struct s_decal_projection_17fd20
 
 PRIVATE __forceinline void decal_face_plane_17fd20(s_decal_mesh_view const *mesh, long face_index, plane3f *plane)
 {
-	short index = mesh->faces[face_index].plane_index;
+	long index = mesh->faces[face_index].plane_index;
 	plane3f const *source = &mesh->planes[index & 0x7fff];
-	if (index < 0)
+	if (index & 0x8000)
 	{
 		plane->n.i = 0.0f - source->n.i;
 		plane->n.j = 0.0f - source->n.j;
@@ -487,11 +499,11 @@ PRIVATE __forceinline void decal_face_plane_17fd20(s_decal_mesh_view const *mesh
 
 PRIVATE __forceinline real decal_normal_angle_17fd20(vector3f const *a, vector3f const *b)
 {
-	vector3f first_vector;
-	memcpy(&first_vector, a, sizeof(first_vector));
-	if (!memcmp(&first_vector, b, sizeof(first_vector)))
+	if (*(dword const *)&a->i == *(dword const *)&b->i &&
+		*(dword const *)&a->j == *(dword const *)&b->j &&
+		*(dword const *)&a->k == *(dword const *)&b->k)
 		return 0.0f;
-	real cosine = first_vector.i * b->i + first_vector.k * b->k + first_vector.j * b->j;
+	real cosine = a->i * b->i + a->k * b->k + a->j * b->j;
 	cosine = cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
 	return (real)acos(cosine < -1.0f ? -1.0f : cosine > 1.0f ? 1.0f : cosine);
 }
@@ -506,40 +518,78 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 	*out = rotated;
 }
 
-// score 753 (was 890): frame 0x2204 versus 0x21dc; definition/output carriers still differ.
+// score 587 (was 650): frame 0x21dc and the definition/output registers agree with the pivot offset
+// rotated in place, the mode read at each use and the plane flip tested as bit 15; 3615 bytes against
+// 3647. Retail increments the first loop's index before its call; the count and plane spill slots
+// sit in a different order; the axis length is summed i, k, j without keeping k on the x87 stack and
+// its j/k components are preloaded for the scale; the rotation schedule differs after that.
+// Round 10 (lane 10): rotated position kept in its own vector 650 (frame 0x21ec); rotate helper
+// writing its output directly 894 (frame 0x21c4); offset in place alone 717, with the mode at each
+// use 762 (frame 0x21dc), plus the bit-15 flip 593, plus the counts declared after faces[0] 587
+// (kept; either order); the bit-15 flip alone 761; grouping plane in its own block 650 (same code);
+// count locals renamed 587 (slots unchanged); first loop as `while` with `faces[i++]` 574 (not kept:
+// a respelled loop); the axis through normalize3d 712, plus vector3d_from_points3d 667.
+// Round 8 (lane 10): counts set after faces[0] 716; float component equality 762 (ucomiss, but the
+// cosine products then follow retail's order); dword component equality without the copy 650 (kept);
+// short plane index 698 (test cx); mode read from the definition at each use 705 (registers, loop
+// entry jump and final call as retail, rest worse; retail does read it at each use); rotation in the
+// sine-axis/t*j*i/t*k shape 731 (x87 product as retail), its square and sine-product statement orders
+// 731-740; with the mode at each use 717; matrix local renamed a_/z_ 650/650 (slot unchanged).
+// Earlier: Self-aligned frame 0x2204 versus 0x21dc, definition/output carriers and angle equality homes remain.
+// Earlier: frame 0x2204 versus 0x21dc; definition/output carriers still differ.
 // Group word 866; remaining long 871; first input only 825; second only 878; unsigned plane 891; first plus group 774; first plus remaining 843.
 // From 774: group-first test 753; in-place offset 779; vector return 800; deferred angle copy 808; word edge indices 776.
 // Long emission index 763; tag-pointer rename/lifetime 774/774; group-first plus offset 786; plus long emission 747 (alignment worse).
-// score 749 (was 753): frame 0x2204 versus 0x21dc; definition/output homes and angle equality differ.
+// frame 0x2204 versus 0x21dc; definition/output homes and angle equality differ.
 // Native initial face cursor 752; group-search cursor 785; candidate cursor 786;
 // native bounds-component access 753; angle-input memcpy 749; single cosine clamp 803.
+// Alias-free plane memcpy 798; rotated-result memcpy 796; both transfers 798; second angle-input
+// memcpy 872; all copy boundaries 872. Original body and all helpers restored; frame 0x2204 versus
+// 0x21dc and definition/output/equality homes remain.
+// Frame 0x2204/0x21dc, definition/output carriers and angle equality homes remain.
+// Earlier 753 (was 890): frame 0x2204 versus 0x21dc; definition/output carriers still differ.
+// Earlier 749 (was 753): frame 0x2204 versus 0x21dc; definition/output homes and angle equality differ.
+// Round 151: Alias-free pivot helper 753; native axis/offset 796/796; complete rotation row parts/products 788/798; fallback quad memcpy 796; native basis values 796; pivot helper plus row parts 764.
+// frame 0x2204 versus 0x21dc; definition/output homes and angle equality differ.
+// Without parameter-address aliases: reversed equality buffers 796; native plane result 925;
+// rotation pointer result 796; native rotation output reference 796; native angle input 796 (fast).
+// Original complete body and all helpers restored.
+// Alias-free projection-plane/source-matrix/both/orientation-bounds/plane-bounds/matrix-bounds/all/group-plane receivers 892/791/859/791/859/795/892/847 (fast).
+// Original complete body and helpers restored; frame 0x2204/0x21dc, definition/output and angle equality homes remain.
+// Alias-free single angle exit 796; word edge-side predicate 807; unsigned-word list ordinals 773;
+// native mesh reference 796; native rotation-basis references 796 (fast). Original body/helpers restored.
+// Alias-free angle input order 796; rotation output/input first 792/792; plane output first 796;
+// ordinary angle/rotation/plane inline 1168/796/796; all inline 1168. Original body/helpers restored.
+// Round 155: native element references (alias-free), then complete rotation-input value: decoded plane 796; mesh edge 796; decoded plane mesh edge 796; edge endpoints 796; decoded plane edge endpoints 796; mesh edge edge endpoints 796; decoded plane mesh edge edge endpoints 796; rotation input value 1034. All restored.
+// angle-products 781; axis-products 748.
+// sign-products 748; angle-axis-products 805.
+// angle-sign-products 804; axis-sign-products 770.
+// angle-axis-sign-products 795; diagonal-axis-squares 800.
+// Round 180 alias-free scalar names: selected distances, candidate distances, endpoint distances, axis,
+// rotation, angle cosine, all distances, all scalars; scores 796/796/796/796/796/796/796/796 (fast); all
+// restored.
+// Round 354, without inherited parameter-address aliases: promoted signed plane index 788;
+// mode field at every use 796; both 806; shared pivot-offset difference 753; promoted index plus
+// shared offset 716 (kept, plain); mode plus offset 783; all three 787; all with shared normalizer 775.
+// Retain the signed index promotion and existing offset helper; frame 0x2204 and entry carriers remain.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)
 {
-	s_decal_mesh_view const *const *mesh_reference = &mesh;
-	long const *tag_index_alias = &tag_index;
-	s_decal_output_17dd80 *const *output_reference = &output;
-	s_decal_projection_17fd20 *const *projection_reference = &projection;
-	mesh = *mesh_reference;
-	tag_index = *tag_index_alias;
-	output = *output_reference;
-	projection = *projection_reference;
 	long faces[1024];
 	long secondary[1024];
-	short secondary_count = 0;
-	short face_count = 1;
 	byte const *definition = g_4e3b44[tag_index & 0xffff].bytes;
 	output->polygon_count = 0;
 	output->vertex_count = 0;
 	faces[0] = placement->unknown50;
+	short secondary_count = 0;
+	short face_count = 1;
 	for (short i = 0; i < face_count; ++i)
 	{
 		function_17dd80(mesh, &projection->quad, output, faces[i], true, projection->radius,
 			*(short const *)(definition + 2), faces, &face_count, secondary, &secondary_count);
 	}
-	short mode = *(short const *)(definition + 2);
-	if ((byte)g_444a38[mode].flags && secondary_count > 0)
+	if ((byte)g_444a38[*(short const *)(definition + 2)].flags && secondary_count > 0)
 	{
 		short remaining = secondary_count;
 		do
@@ -561,7 +611,7 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 					{
 						plane3f plane;
 						decal_face_plane_17fd20(mesh, face, &plane);
-						if (g_444a38[mode].maximum_angle * 0.017453292f >= decal_normal_angle_17fd20(&first_plane.n, &plane.n) &&
+						if (g_444a38[*(short const *)(definition + 2)].maximum_angle * 0.017453292f >= decal_normal_angle_17fd20(&first_plane.n, &plane.n) &&
 							projection->radius * 0.05f > function_17d900(mesh, face, &first_plane) &&
 							projection->radius * 0.05f > function_17d900(mesh, first_face, &plane))
 						{
@@ -645,17 +695,15 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 					up.j = one_minus_cosine * axis.k * axis.j - axis.i * sine;
 					up.k = axis.k * axis.k + (1.0f - axis.k * axis.k) * cosine;
 					transform4x3f matrix;
-					vector3f offset, position;
-					offset.i = projection->matrix.position.x - start.x;
-					offset.j = projection->matrix.position.y - start.y;
-					offset.k = projection->matrix.position.z - start.z;
-					decal_rotate_vector_17fd20(&forward, &left, &up, &offset, &position);
+					vector3f offset;
+					vector3d_from_points3d(&start, &projection->matrix.position, &offset);
+					decal_rotate_vector_17fd20(&forward, &left, &up, &offset, &offset);
 					decal_rotate_vector_17fd20(&forward, &left, &up, &projection->matrix.forward, &matrix.forward);
 					decal_rotate_vector_17fd20(&forward, &left, &up, &projection->matrix.left, &matrix.left);
 					decal_rotate_vector_17fd20(&forward, &left, &up, &projection->matrix.up, &matrix.up);
-					matrix.position.x = position.i + start.x;
-					matrix.position.y = position.j + start.y;
-					matrix.position.z = position.k + start.z;
+					matrix.position.x = offset.i + start.x;
+					matrix.position.y = offset.j + start.y;
+					matrix.position.z = offset.k + start.z;
 					matrix.scale = 1.0f;
 					function_17d9a0(&matrix, (real const *)&projection->bounds, &quad);
 					for (long k = 0; k < 3; ++k)
@@ -670,7 +718,7 @@ void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 				for (short j = 0; j < group_count; ++j)
 				{
 					function_17dd80(mesh, &quad, output, faces[j], false, projection->radius,
-						mode, 0, 0, 0, 0);
+						*(short const *)(definition + 2), 0, 0, 0, 0);
 				}
 				remaining -= group_count;
 			}

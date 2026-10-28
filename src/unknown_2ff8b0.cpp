@@ -477,10 +477,11 @@ void class_2fff90::function_2fff90(void const *tree_, const c_query_transform *m
 	__m128 const y = _mm_and_ps(_mm_mul_ps(_mm_shuffle_ps(e, e, 0x55), matrix->axes[1]), magnitude_mask);
 	__m128 const z = _mm_and_ps(_mm_mul_ps(_mm_shuffle_ps(e, e, 0xaa), matrix->axes[2]), magnitude_mask);
 	__m128 const tolerances = _mm_set1_ps(tolerance);
-	__m128 const half = _mm_add_ps(_mm_add_ps(_mm_add_ps(x, y), z), tolerances);
 	s_query_bounds bounds;
-	bounds.minimum = _mm_add_ps(_mm_xor_ps(half, *(__m128 const *)g_4124a0), matrix->position);
-	bounds.maximum = _mm_add_ps(half, matrix->position);
+	bounds.maximum = _mm_add_ps(_mm_add_ps(_mm_add_ps(x, y), z), tolerances);
+	bounds.minimum = _mm_xor_ps(bounds.maximum, *(__m128 const *)g_4124a0);
+	bounds.maximum = _mm_add_ps(bounds.maximum, matrix->position);
+	bounds.minimum = _mm_add_ps(bounds.minimum, matrix->position);
 	float const *minimum = (float const *)&bounds.minimum;
 	float const *maximum = (float const *)&bounds.maximum;
 	lower[0] = round_300150((minimum[0] - tree->origin[0]) * tree->scale) - 1;

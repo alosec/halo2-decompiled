@@ -4,6 +4,12 @@
 #include "placed_shape_312800.h"
 #include "unknown_1cec30.h"
 
+// score 2 (was 2): the bounds pointer store and receiver load are reversed.
+// Native persistent pointer field as void, const void, bounds and const bounds 2 each;
+// each with the existing clear forced inline 2. Original field type and helper restored.
+// the receiver load precedes the bounds-field store;
+// field store first 4, before clear 10; bounds pointer 2, store first 4;
+// shape local late 2, early 6; clear returns pointer immediate 4, later 2.
 // @retail 0x312800
 placed_shape_312800::placed_shape_312800(description_315ba0 const *description)
 	: overlapped_312800((referenced_2d88a0 *)description->field_4, 2)

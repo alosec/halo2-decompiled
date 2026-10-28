@@ -120,6 +120,7 @@ void function_1a6340(vector3f const *b, vector3f const *a, point3f *out, point3f
 
 // score 32 (was 32): the arguments are pushed in a different order and one of the values is passed
 // in a register here and on the stack in retail.
+// Object-second/third interfaces 32/32; unsigned object index 32; original interface restored.
 // @retail 0x1a62e0
 bool function_1a62e0(long object_index, point3f const *origin, vector3f const *direction, point3f *out)
 {
@@ -628,6 +629,11 @@ void function_1a6d80(void)
 
 // score 6 (was 6): the two output pointers are loaded one after the other here and both before the
 // first store in retail, and the word is written after the stack is restored in retail.
+// Nested count assignment/return count expression/full return expression 6/6/6;
+// comma output statement/indexed and offset returns 6/6/6;
+// const node-list pointer/handler local 6/6.
+// Count at each use 53; table value snapshot 27; validity from a false-default test 52;
+// success/failure output arms 15/15; native group snapshot 26; word count 6; true-default test 79.
 // @retail 0x1a73c0
 s_action_node **function_1a73c0(long owner_index, short id, bool *valid, short *count)
 {
@@ -736,6 +742,11 @@ dword function_1a7ad0(long owner_index)
 // Nullable definition 81 (adds a null branch); typed fallback 96; both 81;
 // const owner, definition, source, tags and object/element views 96 each;
 // ordinary shared source copy 143; shared copy with owner tag 143.
+// score 96 (was 96): BLOCKED-BY 0x1c2330 (its parameter order sets the first intersect call's set-up);
+// the two tail-merged copies swap the owner/result registers and the squad element is one lea.
+// Owner definition read once 94 (390 bytes); squad arm and default arm swapped 101; copies without
+// the source local 153; nullable definition pointer tested 123; source/definition declarations
+// swapped 96; both declared before the owner 96.
 // @retail 0x1a7b30
 void function_1a7b30(s_flag_bits *result, long owner_index)
 {
@@ -799,6 +810,11 @@ void function_25aba0(long actor_index);
 // Native initializer with early state pop 140; candidate index snapshot 252;
 // candidate receiver 69; choice before workspace 69; callback/insertion names 69;
 // completion/eligibility/insertion results 69/163/69; existing mask helper inline 69.
+// score 69 (was 69): with 0x1a7b30's sources sharing one copy (NULL-preset source there), both callees'
+// parameters reordered and the workspace memset, only the state-one pop differs (retail keeps level in
+// a register around the handler store): NULL-preset source 62; plus 0x1a7b30 order 60; plus memset
+// 134 (aligned 4); pop before the store 137; plus 0x1a8080 order 134 (aligned 2); without memset 58;
+// the two orders alone 67. Original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
@@ -1173,9 +1189,14 @@ PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, ve
 // const support 18; unsigned object handle 18.
 // Round 109: ordinary scale inline 18; scale pointer result 18; three scale formal orders 18;
 // scale input reference 18; point-query noinline 18; velocity-query noinline 18.
+// Round 277: unit before type 5; eligibility phases, separate support/component guards 2 each;
+// exhaustive clamp 2; body-first clamp 9; body-home names and read-only body values 2 each.
 // Round 127: validated query index 99; sampled-point result 128; both 136;
 // enclosing point lifetime 128; branch-local last body 2; last body with query index 99;
 // named validation 2; validation with query index 99.
+// score 2 (was 2): returned EAX/body-load order remains; const point 18; returned reference 128;
+// address of returned point/direct body 2/2; clamped body 99; early normal 2; workspace fields 5;
+// samples name 2; early normal with const point/direct body 18/18.
 // @retail 0x1a68a0
 void function_1a68a0(long object_index, vector3f *velocity)
 {
@@ -1638,9 +1659,27 @@ struct s_candidate_unit_definition
 // Exit plus second-bit results 199; exit plus scalar clamp 42.
 // Clearing cases first 36; one source flag read 108; alternate before normalization 45;
 // shared dot operands reversed 42; global optimization off 361.
-// score 36 (was 36): Frame and length agree; geometry argument register and clamp/failure tails
+// score 18 (was 36): geometry-call convention and exchanged failure exits remain.
+// Cosine declared early 36; clamp argument 18 kept; callee-only clamp 76; shared direction/point/flags 67/102/41;
+// alternate after angle 88; default-success result 240.
+// Frame and length agree; geometry argument register and clamp/failure tails
 // remain. Trials: byte result 101; lower test operands 36; separate lower angle 92; native facing
 // copy 36; geometry success guard 218; first clearing cases 42.
+// score 11 (was 18): geometry-call convention remains; type rejection to the shared exit 11 kept.
+// Query result exit 219; type result 253; branch result lifetime 220; output initialization schedule 22; zero order 20; common success 199; object role name 18; flat type rejection 11; query false return 216.
+// geometry-call convention and exchanged failure exits remain; native
+// flag/limit/adjacent clears 216/152/199; direction memcpy 18; clear plus copy 216/152/199;
+// branch-zero clear 199.
+// score 11 (was 11): query stack/register boundary remains; object-last interface 15;
+// object-last stdcall/inline/both 15/15/15; original inline/stdcall 11/11;
+// reordered query outcome/entry axis 126/15. All query interfaces restored.
+// frame 0x10 and length agree; geometry query takes a stacked object instead of ECX.
+// Query noinline 11; combined rejection/acceptance 18 each; output/marker references 11 each;
+// named type mask 11; result after initialization 16; direction producer home 196;
+// unconditional successful tail 11. Experimental declaration and receiver aliases restored.
+// Object-second/third query interfaces 12/13; twice-used query index 11;
+// read-only object view/pointer/index 11/11/11; unsigned query index 11;
+// candidate-index query 11. Original interfaces and values restored.
 // @retail 0x1a5e40
 bool function_1a5e40(long object_index, bool alternate, long marker_index, s_target_marker const *marker,
 	transform4x3f const *first, transform4x3f const *second,
@@ -1654,24 +1693,23 @@ bool function_1a5e40(long object_index, bool alternate, long marker_index, s_tar
 	candidate->flags = 0;
 	if (marker_index == NONE)
 	{
-		if ((1 << object->type) & 1)
-		{
-			if (!function_1a62e0(object_index, origin, direction, &candidate->point))
-				goto done;
-			s_candidate_unit_definition *definition = (s_candidate_unit_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
-			if (definition->flags & 1)
-				candidate->flags |= 1;
-			else
-				candidate->flags &= ~1;
-			if (!(definition->flags & 6))
-				candidate->flags &= ~2;
-			else
-				candidate->flags |= 2;
-			candidate->maximum_distance = definition->maximum_distance;
-			candidate->radius = object->radius;
-			candidate->maximum_facing_angle = 0.0f;
-			result = true;
-		}
+		if (!((1 << object->type) & 1))
+			goto done;
+		if (!function_1a62e0(object_index, origin, direction, &candidate->point))
+			goto done;
+		s_candidate_unit_definition *definition = (s_candidate_unit_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
+		if (definition->flags & 1)
+			candidate->flags |= 1;
+		else
+			candidate->flags &= ~1;
+		if (!(definition->flags & 6))
+			candidate->flags &= ~2;
+		else
+			candidate->flags |= 2;
+		candidate->maximum_distance = definition->maximum_distance;
+		candidate->radius = object->radius;
+		candidate->maximum_facing_angle = 0.0f;
+		result = true;
 	}
 	else
 	{
@@ -1704,8 +1742,7 @@ bool function_1a5e40(long object_index, bool alternate, long marker_index, s_tar
 		candidate->distance = function_30bf0(&candidate->direction);
 		candidate->alternate = alternate;
 		real cosine = dot3f(&candidate->direction, direction);
-		cosine = -1.0f > cosine ? -1.0f : cosine > 1.0f ? 1.0f : cosine;
-		candidate->angle = function_50650(cosine);
+		candidate->angle = function_50650(-1.0f > cosine ? -1.0f : cosine > 1.0f ? 1.0f : cosine);
 	}
 done:
 	return result;
@@ -1784,7 +1821,29 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 }
 
-// score 98 (was 113): call argument setup, marker-loop homes and terminal epilogues still differ.
+// score 85 (was 85): frame 0xf0 agrees; the marker loop's query carriers and the optional second
+// matrix (retail: a nullable marker selected before the capacity test, then null-tested) differ.
+// With a selector local (allowed only with a match) 13, plus a marker list local 11 at 565 bytes;
+// left: the marker address (retail [base+offset] load, then an in-place add) and count loaded into
+// ecx before the selector. Earlier: the first candidate named inside the count test kept (98 -> 85
+// with candidate indexed by accepted count); positive-count guard around the loop 93 (not kept).
+// Direct count increment 121; native short query 129; shared exit 131; direct optional transform
+// 115; positive marker count 129; combined increment/transform 113; combined short query 114;
+// direct count cleanup 113; two-phase candidate cursor 125; marker/table/both records 113 each;
+// cursor with marker record 125; cursor with native query 129; cursor with positive table 126;
+// separate count result 169; initial candidate lifetime 98; marker presence 113; weighting value
+// 120; optional matrix value 173; readonly tag/capacity value/scalar names 113 each; initialized
+// marker output 209; initial candidate plus weighting 109; post-query candidate 85; native query
+// there 86; existing tag helper 161; first candidate record 98; post-query marker
+// record/workspace 85 each; tag helper plus post-query candidate 161; selector branches/before
+// presence 80/80; native query count 73; index name/shared marker buffer 13/13; weight result 67;
+// combined eligibility 80; accepted-count snapshot after/before query 13/13; query name first/with
+// count 12/12; native marker value before/after query 100/110; library copies 100/110; native
+// query width 126/128; shared descriptor 100; late copy with shared outputs 110; name local before
+// the marker 12; marker after the query 11; marker by pointer arithmetic 85 (with selector 13: the
+// in-place add appears, offset/name in ecx/edx); if-assigned selector 80; matrix local 85;
+// capacity tested before the selector 85; named candidate before/after the selector 13/13.
+// call argument setup, marker-loop homes and terminal epilogues still differ.
 // Kept: the first candidate named inside the count test (98); with a repeated positive-count guard
 // around the marker loop 93 (not kept: a test the loop already makes).
 // Direct count increment 121; native short query 129; shared exit 131; direct optional transform 115.
@@ -1800,6 +1859,17 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // Candidate indexed by accepted count 85 plain kept; post-query candidate 85; native query there 86;
 // existing tag helper 161; first candidate record 98; post-query marker record/workspace 85 each;
 // tag helper plus post-query candidate 161.
+// Round 277: nullable second-marker base 13 at retail length; branches/before presence 80/80;
+// native query count 73; index name/shared marker buffer 13/13; weight result 67; combined eligibility 80.
+// Accepted-count snapshot after/before query 13/13; query name first/with count 12/12; selectors require a match.
+// score 85 (was 85): frame 0xf0 agrees; query carriers and optional matrix conversion remain;
+// native marker value before/after query 100/110; library copies 100/110; native query width
+// 126/128; shared descriptor 100; late copy with shared outputs 110.
+// score 85 (was 85): query base/offset and accepted-count/selector registers remain.
+// Complete query inline 85; nullable-record query inline/outlined, geometry/weight/both/all/outlined contracts 13 each;
+// loop/iteration list 165/11; shared candidate 13; iteration/loop list with candidate 11/165; const/native query list 11/11; native query candidate 13;
+// list accepted count after/before 11/11; list next count 127; post-query marker advance 11, with accepted counts 11/11;
+// marker advance with next count/candidate-next 123/127. Loop-wide lists lose the matched caller; every nullable selector remains exact-only and is rejected.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)
@@ -2124,20 +2194,7 @@ long function_cb6d0(long unit_index);
 bool function_cb810(long unit_index, vector3f *vector);
 long function_baf40(long object_index);
 
-// score 177 (was 177): frame 0xb4 versus 0xb8; output record uses stack/EBP, retail EBX.
-// Full-width selector 203; later player view 200; wide secondary selector 177;
-// native vector/workspace role names 177; outer return guard 177.
-// Reversed velocity lexical homes 177; x/y/z scalar names 177; combined 177;
-// geometry-only scope 177; target frame pointer 264.
-// Round 280: entry workspaces 177; shared angle construction 202; in-place shared velocity difference 225; candidate score tests 186; retained direction unit index 210.
-// Depth zero 280; target size 280; global optimization off 672;
-// record defaults before vector zeroing 179; planar length before velocity differences 181.
-// score 177 (was 177): Frame 0xb4 versus 0xb8; output record and relative-scalar homes differ.
-// Trials: selector interval 181; chained sentinels 177; chained score zero 177; component order
-// 177; native score clear 201.
-// score 177 (was 177): Frame 0xb4 versus 0xb8 and the output-record convention remain. Output
-// record reference 177; selected-object snapshot 177; native offset copy 242; guarded relative
-// components 211; empty planar path first 194. Contributor callees unchanged.
+/* the yaw and pitch rates toward the target chosen for a player's unit */
 // @retail 0x1a4900
 void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2)
 {
@@ -2179,9 +2236,9 @@ void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2)
 			if (arg_0 != NONE)
 				local_21 = g_4e8c20->entries[arg_0];
 
-			s_player_view *local_6 = &((s_player_view *)g_4e8c24->data)[local_21 & 0xffff];
 			s_view_angles const *local_7 = &g_4ed284->entries[arg_0].angles;
 			real local_8 = (real)cos(local_7->pitch);
+			s_player_view *local_6 = &((s_player_view *)g_4e8c24->data)[local_21 & 0xffff];
 			vector3f local_9;
 
 			local_9.i = (real)cos(local_7->yaw) * local_8;
@@ -2204,18 +2261,22 @@ void __stdcall function_1a4900(long arg_0, s_186ab2 *arg_1, vector3f *arg_2)
 				function_1a68a0(local_1->unit_index, &local_11);
 				function_1a68a0(local_10.object_index, &local_12);
 
-				real local_13 = local_12.k - local_11.k;
-				real local_14 = local_12.i - local_11.i;
-				real local_15 = local_12.j - local_11.j;
-				real local_16 = local_10.offset.i * local_10.offset.i + local_10.offset.j * local_10.offset.j;
+				vector3f const *offset = &local_10.offset;
+				vector3f relative;
+
+				vector3d_from_points3d((point3f const *)&local_11, (point3f const *)&local_12, &relative);
+
+				real local_16 = offset->i * offset->i + offset->j * offset->j;
 
 				if (local_16 > 0.0001f)
 				{
 					real local_17 = (real)sqrt(local_16);
 
-					arg_2->i = (local_10.offset.i * local_15 - local_10.offset.j * local_14) / local_16;
-					arg_2->j = (local_13 * local_17 - (local_10.offset.j * local_15 + local_10.offset.i * local_14) / local_17 * local_10.offset.k) /
-						(local_10.offset.k * local_10.offset.k + local_16);
+					real planar_dot = offset->i * relative.i + offset->j * relative.j;
+
+					arg_2->i = (offset->i * relative.j - offset->j * relative.i) / local_16;
+					arg_2->j = (relative.k * local_17 - planar_dot / local_17 * offset->k) /
+						(offset->k * offset->k + local_16);
 				}
 				else
 				{
@@ -2245,6 +2306,16 @@ bool function_11d3b0(vector3f const *a, vector3f *out, vector3f const *b, real s
 short function_1557c0(long unit_index, point3f *position, vector3f *forward);
 long function_baf80(long object_index);
 
+/* the vector a fraction t of the way from a to b */
+static inline void vector3f_interpolate(vector3f const *a, vector3f const *b, real t, vector3f *result)
+{
+	real s = 1.0f - t;
+
+	result->i = a->i * s + b->i * t;
+	result->j = a->j * s + b->j * t;
+	result->k = a->k * s + b->k * t;
+}
+
 struct s_1a4c00
 {
 	byte field_0[0x240];
@@ -2260,15 +2331,6 @@ struct s_1a4c01
 	byte field_26[0x5c - 0x26];
 };
 
-// score 36 (was 116): the target index and the unit index sit in each other's stack slots, the
-// interpolation loads forward.i where retail copies 1 - fraction, and the closing stores use
-// other registers.
-// Controlled/selected/both handle names 36 each; target declaration beside controlled handle 36;
-// blend in target/forward workspace 66/87; result copied from forward/target 170/353.
-// Handle homes, interpolation coefficient allocation and closing publication registers still differ.
-// Packed controlled/selected/both handles 36 each; returned result before stores 34 (only -2);
-// acceptance-first test 65; squared component values, aggregate blend and angle snapshot 36 each.
-// The two handle homes, coefficient allocation and final stores still differ; original body restored.
 // @retail 0x1a4c00
 bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector3f *direction, point3f *point)
 {
@@ -2317,6 +2379,7 @@ bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector
 				target_index = candidate.object_index;
 			}
 		}
+		vector3f aim_direction;
 		{
 			s_1a4c01 collision;
 
@@ -2348,22 +2411,17 @@ bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector
 			ray.j = forward.j * 128.0f;
 			ray.k = forward.k * 128.0f;
 			function_1697c0(0x2480000f, &position, &ray, function_baf80(unit_index), NONE, (s_collision_result_1697c0 *)&collision);
-			vector3d_from_points3d(point, &collision.point, &forward);
+			vector3d_from_points3d(point, &collision.point, &aim_direction);
 		}
-		if (function_30bf0(&forward) == 0.0f)
-			forward = *direction;
+		if (function_30bf0(&aim_direction) == 0.0f)
+			aim_direction = *direction;
 
 		bool accepted;
 		{
 			vector3f result_direction;
-			distance = 1.0f - fraction;
+			vector3f_interpolate(&aim_direction, &target_direction, fraction, &result_direction);
 
-			result_direction.i = distance * forward.i + target_direction.i * fraction;
-			result_direction.j = forward.j * distance + target_direction.j * fraction;
-			result_direction.k = forward.k * distance + target_direction.k * fraction;
-
-			real length_squared = result_direction.k * result_direction.k + result_direction.j * result_direction.j +
-				result_direction.i * result_direction.i;
+			real length_squared = length_sq3f(&result_direction);
 
 			if (length_squared != 0.0f)
 			{
@@ -2381,9 +2439,9 @@ bool function_1a4c00(long player_index, s_entry_pair *pair, bool primary, vector
 		}
 		if (fraction >= 1.0f && accepted)
 		{
+			result = true;
 			player->field_174 = target_index;
 			player->field_178 = g_510c54->game_time;
-			result = true;
 		}
 	}
 done:

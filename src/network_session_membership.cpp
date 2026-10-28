@@ -718,20 +718,26 @@ union s_60403
  long field_00;
 };
 
-// score 176 (was 214): current/previous registers and map-loop homes differ;
-// retained-player word index 348; emitted-player word index 248; both 359;
-// explicit append indices 324; advancing retained bit 411. Original kept.
-// nested map-index names 214; shared member emission 621; nested player emission 214;
-// retained-player do 214; emitted-player do 214. Frame 0x94 still agrees.
-// mask lifetime after mapping 176; byte discriminator 231; absent-prior continue 214;
-// new-member continue 214; identity predicate before map 389.
-// Current/previous registers and map/discriminator homes remain;
-// mapping stores reversed 178; identity grid transposed 405; map clears reversed 178;
-// transposed grid and reversed stores 405; equal discriminator arm first 176.
-// Mapping equality reversed 178; member equality reversed 176; player equalities reversed 184;
-// previous count across mapping/removal 248; shared emitted-player bit 176. Frame 0x94 agrees.
-// Guarded prior-map clear 187; formal role names 176;
-// old/new map aggregate initializers 524/524; positive payload branch first 193.
+// score 149 (was 149): the member's changed test is one condition, so the body has retail's
+// 1497 bytes; what still differs is the current/previous register rotation (retail EBX previous,
+// EBP current), the mapping-loop count homes and the discriminator's carrier (retail: a lone
+// byte at esp+0x23, true in bl). Retail shares one slot between the member loop's map-entry
+// pointer and the retained mask, so the mask is set after the member loop.
+// Tried: retained-player word index 348; emitted-player word index 248; both 359; explicit
+// append indices 324; advancing retained bit 411; nested map-index names 214; shared member
+// emission 621; nested player emission 214; retained-player do 214; emitted-player do 214;
+// mask lifetime after mapping 176 (336 at 149); byte discriminator 231; absent-prior continue
+// 214; new-member continue 214; identity predicate before map 389; mapping stores reversed 178;
+// identity grid transposed 405; map clears reversed 178; transposed grid and reversed stores 405;
+// equal discriminator arm first 176; mapping equality reversed 178; member equality reversed
+// 176; player equalities reversed 184; previous count across mapping/removal 248; shared
+// emitted-player bit 176; guarded prior-map clear 187; formal role names 176; old/new map
+// aggregate initializers 524/524; positive payload branch first 193; signed-byte discriminator
+// 189; signed/unsigned-word discriminator 253/253; direct signed-byte/word/unsigned-word/dword
+// predicate 292/283/283/284; read-only map receiver 176 (word storage fixes entry registers but
+// not homes); previous renamed to sort before current 149; mask after the member loop with a
+// plain bool discriminator 343, declared at function scope 343; member copy written once
+// before the changed test 149.
 // @retail 0x60400
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update)
 {
@@ -785,9 +791,7 @@ void __stdcall function_60400(c_class_58d20 *session, const byte *current, const
    const byte *old_member = previous + 0xc + (*local_0) * 0x10c;
    s_60403 local_10;
    local_10.field_0 = false;
-   if (member[0x24] != old_member[0x24])
-    local_10.field_0 = true;
-   else if (memcmp(member + 0x28, old_member + 0x28, 0xc8))
+   if (member[0x24] != old_member[0x24] || memcmp(member + 0x28, old_member + 0x28, 0xc8))
     local_10.field_0 = true;
    if (local_10.field_0 || i != (*local_0))
    {

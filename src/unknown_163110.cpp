@@ -359,23 +359,77 @@ real function_30bf0(vector3f *vector);
 
 bool g_47ff86 = true;
 
-PRIVATE inline void transform_plane_163db0(transform4x3f const *matrix, s_plane *plane)
+PRIVATE inline void transform_plane_163db0(transform4x3f const *matrix, vector3f const *normal, s_plane *plane)
 {
-	real x = plane->normal.i;
-	real y = plane->normal.j;
-	real z = plane->normal.k;
+	real x = normal->i;
+	real y = normal->j;
+	real z = normal->k;
 	plane->normal.i = matrix->up.i * z + matrix->left.i * y + matrix->forward.i * x;
 	plane->normal.j = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x;
 	plane->normal.k = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x;
-	plane->d = matrix->position.y * plane->normal.j + plane->d * matrix->scale + matrix->position.z * plane->normal.k + matrix->position.x * plane->normal.i;
+	real distance = matrix->position.y * plane->normal.j;
+	distance += plane->d * matrix->scale;
+	distance += matrix->position.z * plane->normal.k;
+	distance += matrix->position.x * plane->normal.i;
+	plane->d = distance;
 }
 
 PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *point)
 {
 	return (real)fabs(plane->normal.k * point->z + plane->normal.j * point->y + plane->normal.i * point->x - plane->d);
 }
+// score 404 (was 404): frameless entry and the result in EDI agree. Left: retail keeps the
+// camera in EBP and the corner array in EBX (here exchanged); retail reads the copied rectangle
+// through the copy's address (`[eax+4]`...) after the identifier store, where ours reads
+// `[edi+0x14]`... ahead of it; plane input/product residency and the first store schedule.
+// Round 137: rectangle pointer/reference for the copy and the four products 415/415 (reads move
+// behind the identifier store as in retail, but the pointer takes EBP); corner-array pointer
+// for the corner stores and both 0x1429d0 arguments 655; depth read at each product 666; plain
+// plane test in place of the double negation 404 (same code); returns in place of the result
+// flag 688.
+// Earlier: YZX normal inputs 442; scalar-first normal rows 423; running distance 412 kept;
+// diagnostic disjunctions 423; native float error with distance 412; corner loop 432;
+// side-plane loop 1154; reverse direction loop 423; default plane first 423; direct
+// first-diagnostic expression 423; native matrix snapshot 778; input-rectangle products 446;
+// coordinate-pair product initialization 425; unsigned direction ordinal 423; optional-plane
+// copy 647; normal setter 610; bounds copy block 423; position copy block 423; directions after
+// bounds 578; complete planes before normalize 515; identifier at geometry end 767; corners in
+// index order 426; diagnostic result chain 423; plane tests result 671; camera plane predicate
+// 669; far depth snapshot 646; corner point setters 622; rectangle CRT copy 423; plane array
+// receiver 761; native plane return 700; late right/top products 682; scaled distance 469;
+// normal inputs KJI 433; normal names 423; helper order 422; scaled distance/KJI 474; first
+// slope before constants 478; all side slopes 618; last corner XYZ 424; complete-normal
+// xyz/yxz/xzy/zxy 512/512/511/512 and with distance products 512 (exact only);
+// distance-products xyz/yxz/zxy 412/426/430; immutable scalar inputs 412; native/immutable
+// native normal 789/789; complete row accumulators 410; immutable inputs with row accumulators
+// 410; native normal with rows 790; parallel normal products 410; native normal/products 789;
+// separate normal pointer/reference/value 404/404/835, with matrix reference 404/404/835, with
+// output-address return 404/404 (separate normal pointer kept); separate distance input 611;
+// whole-plane pointer/reference/value 403/403/883; rotation-scale-position inputs 684; with
+// distance/plane pointer/reference 582/717/717; shared triple-test expression/success-result/
+// failure-result/early-failures, point first 1182/1170/1170/1182, point last
+// 1182/1168/1168/1182; scalar normal arguments in all six orders 697; scalar XYZ/ZYX with matrix
+// reference 697/697; complete depth snapshot 733; all depth fields 667; identifier before
+// rectangle 431; input rectangle value 686; depth snapshot/identifier 733; fields/identifier
+// 682; rectangle/snapshot 699; rectangle/fields 683; on separate-normal input, parallel row
+// accumulators 404, all row products named 407, initial two-term sums 407, final forward terms
+// 455, scalar-first counterparts 404/407/407/455; three-input transform formal orders
+// M/O/N, N/M/O, N/O/M, O/M/N, O/N/M 404/404/403/404/403; transform/diagnostic/both forced
+// expansion 404/404/404.
+// Frameless admission/output EDI agree; camera/point saved registers and initial stores remain.
+// Camera/points saved registers and initial stores remain; input distance/whole-plane ownership does not qualify.
+// Earlier: Camera/point saved registers and initial stores remain; separate normal input improves plane scheduling.
 
-// score 423 (was 423): camera/points use EBX/EBP rather than EBP/EBX;
+// frameless entry agrees; camera/points EBX/EBP and initial store scheduling differ.
+// Frameless guard agrees; camera/points register ownership, plane reloads and first stores remain.
+// Earlier 412 (was 412): frameless entry agrees; camera/points EBX/EBP and initial store scheduling differ.
+// YZX normal inputs 442; scalar-first normal rows 423; running distance 412 kept plain; diagnostic disjunctions 423;
+// Camera/point saved registers and initial stores differ; complete buffered normal rows require an exact match.
+// Earlier: Camera/point EBX/EBP ownership and initial store schedule remain. YZX normal
+// Camera/point EBX/EBP ownership and initial store schedule remain. YZX normal
+// inputs 442; scalar-first normal rows 423; running distance 412 kept plain; diagnostic disjunctions 423;
+// native float error with distance 412.
+// Earlier 423 (was 423): camera/points use EBX/EBP rather than EBP/EBX;
 // corner loop 432; side-plane loop 1154; reverse direction loop 423;
 // default plane first 423; direct first-diagnostic expression 423.
 // Native matrix snapshot 778; input-rectangle products 446; coordinate-pair
@@ -386,9 +440,46 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // j92: camera/points saved registers remain exchanged; corner order and diagnostic/lifetime forms do not improve the frameless entry.
 // corners in index order 426; diagnostic result chain 423; plane tests result 671; camera plane predicate 669;
 // far depth snapshot 646.
-// score 423 (was 423): Camera/points saved registers and initial store schedule remain.
+// Earlier 423 (was 423): Camera/points saved registers and initial store schedule remain.
 // corner point setters 622; rectangle CRT copy 423; plane array receiver 761;
 // native plane return 700; late right/top products 682 (fast).
+// Earlier 423 (was 423): camera/point homes and plane input/product residency remain.
+// Scaled distance 469; normal inputs KJI 433; normal names 423; helper order 422;
+// scaled distance/KJI 474; first slope before constants 478; all side slopes 618; last corner XYZ 424.
+// complete-normal-xyz 512 (exact only); distance-products-xyz 412.
+// complete-normal-distance-products-xyz 512 (exact only); complete-normal-yxz 512 (exact only).
+// complete-normal-xzy 511 (exact only); complete-normal-zxy 512 (exact only).
+// distance-products-yxz 426; distance-products-zxy 430.
+// Immutable scalar inputs 412; native/immutable native normal 789/789; complete row
+// accumulators 410; immutable inputs with row accumulators 410; native normal with rows 790;
+// parallel normal products 410; native normal/products 789. Two-point reductions rejected.
+// Round 129: separate normal pointer/reference/value 404/404/835; with matrix reference
+// 404/404/835; separate normal pointer/reference with output-address return 404/404.
+// Only separate normal pointer retained, plain 404; all original input copies precede stores.
+// Round 132: separate distance input 611; whole-plane pointer/reference/value 403/403/883;
+// rotation-scale-position inputs 684; with distance/plane pointer/reference 582/717/717.
+// One-point whole-plane reductions rejected; original in-place input copies retained.
+// Round 134: shared triple-test expression/success-result/failure-result/early-failures,
+// point first 1182/1170/1170/1182; point last 1182/1168/1168/1182.
+// Scalar normal arguments XYZ/XZY/YXZ/YZX/ZXY/ZYX 697/697/697/697/697/697;
+// scalar XYZ/ZYX with matrix reference 697/697.
+// Complete depth snapshot 733; all depth fields 667; identifier before rectangle 431; input rectangle
+// value 686; depth snapshot/identifier 733; fields/identifier 682; rectangle/snapshot 699;
+// rectangle/fields 683.
+// Round 145: On separate-normal input, parallel row accumulators 404; all row products named 407;
+// initial two-term sums 407; final forward terms 455. Scalar-first counterparts 404/407/407/455;
+// all restored.
+// Three-input transform formal orders M/O/N, N/M/O, N/O/M, O/M/N, O/N/M
+// 404/404/403/404/403; transform/diagnostic/both forced expansion 404/404/404.
+// One-point formal-order leads rejected; original helper contracts and all normal copies restored.
+// Computed distance returned for immediate caller store: normal input orders
+// XYZ/XZY/YXZ/YZX/ZXY/ZYX 486/490/490/492/491/489; forced expansion 486;
+// out-of-line boundary 1758. All input copies and original helper restored.
+// Round 160: diagnostic point/plane/both native inputs 1229/1363/1898;
+// scalar point/plane/both inputs 654/755/755; forced scalar point/both
+// expansion 654/755. Original diagnostic and transform helpers restored.
+// Round 149: Split native normal/distance outputs with all matrix, normal-input and distance-output
+// pointer/reference contracts [476, 476, 476, 476, 476, 476, 476, 476]; all restored.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {
@@ -424,25 +515,25 @@ bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long
 		result->planes[0].normal.k = 0.0f - result->rectangle.x0;
 		function_30bf0(&result->planes[0].normal);
 		result->planes[0].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[0]);
+		transform_plane_163db0(&camera->matrix, &result->planes[0].normal, &result->planes[0]);
 		result->planes[1].normal.i = 1.0f;
 		result->planes[1].normal.j = 0.0f;
 		result->planes[1].normal.k = result->rectangle.x1;
 		function_30bf0(&result->planes[1].normal);
 		result->planes[1].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[1]);
+		transform_plane_163db0(&camera->matrix, &result->planes[1].normal, &result->planes[1]);
 		result->planes[2].normal.i = 0.0f;
 		result->planes[2].normal.j = -1.0f;
 		result->planes[2].normal.k = 0.0f - result->rectangle.y0;
 		function_30bf0(&result->planes[2].normal);
 		result->planes[2].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[2]);
+		transform_plane_163db0(&camera->matrix, &result->planes[2].normal, &result->planes[2]);
 		result->planes[3].normal.i = 0.0f;
 		result->planes[3].normal.j = 1.0f;
 		result->planes[3].normal.k = result->rectangle.y1;
 		function_30bf0(&result->planes[3].normal);
 		result->planes[3].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[3]);
+		transform_plane_163db0(&camera->matrix, &result->planes[3].normal, &result->planes[3]);
 		if (!(!(camera->has_plane)))
 		{
 			result->planes[4].normal.i = 0.0f - camera->plane.normal.i;
@@ -456,13 +547,13 @@ bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long
 			result->planes[4].normal.j = 0.0f;
 			result->planes[4].normal.k = 1.0f;
 			result->planes[4].d = 0.0f;
-			transform_plane_163db0(&camera->matrix, &result->planes[4]);
+			transform_plane_163db0(&camera->matrix, &result->planes[4].normal, &result->planes[4]);
 		}
 		result->planes[5].normal.i = 0.0f;
 		result->planes[5].normal.j = 0.0f;
 		result->planes[5].normal.k = -1.0f;
 		result->planes[5].d = camera->depth;
-		transform_plane_163db0(&camera->matrix, &result->planes[5]);
+		transform_plane_163db0(&camera->matrix, &result->planes[5].normal, &result->planes[5]);
 		for (long i = 0; i < 4; i++)
 		{
 			vector3d_from_points3d(&result->points[4], &result->points[i], &result->directions[i]);
@@ -634,6 +725,9 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // score 115 (was 115): Normal/zero XMM roles, classification and projection homes remain; offset
 // accumulator 269; shared segment count 468; count result 459; projected/intersection values 402/323;
 // bool/second endpoint values 259/362; completed cursor 196.
+// The locals as plane3f 115; plane_distance_to_point for the classification 265, plus the
+// intersection distance 269, plus dot3f for the denominator 216; the distance alone 117;
+// dot3f for the first plane's d 278 (either argument order), for both planes' d 155.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {
@@ -794,7 +888,7 @@ color4f *g_4686d8;
 color4f *g_4686dc;
 color4f *g_4686e8;
 
-void function_36880(color4f const *color, s_short_rectangle const *rectangle);
+void function_36880(s_short_rectangle const *rectangle, color4f const *color);
 
 /* draws a connection quality widget: a frame and one bar per quality step */
 // @retail 0x1634d0
@@ -826,7 +920,7 @@ void connection_widget_draw(s_text_widget_c const *widget)
 		color.alpha = widget->color_b.alpha;
 		bounds.top = widget->bounds.bottom - 0x12;
 		bounds.bottom = widget->bounds.bottom - 1;
-		function_36880(&color, &bounds);
+		function_36880(&bounds, &color);
 
 		bounds.left = widget->bounds.left + 1;
 		bounds.right = widget->bounds.right - 1;
@@ -847,7 +941,7 @@ void connection_widget_draw(s_text_widget_c const *widget)
 		color.alpha = widget->color_b.alpha;
 		for (i = bar_count; i > 0; i--)
 		{
-			function_36880(&color, &bounds);
+			function_36880(&bounds, &color);
 			bounds.top -= 3;
 			bounds.bottom -= 3;
 		}

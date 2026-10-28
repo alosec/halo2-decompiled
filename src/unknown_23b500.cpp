@@ -59,6 +59,30 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
+// score 105 (was 105): source receiver and integer destination induction still differ.
+// actual batch/type ranges 139/227; inner type ordinal 139; direct twelve types 254;
+// source records with direct/batch/read-only ranges 257/227/227; complete override 140.
+// Word/byte batch ordinals 141/141; word/byte entry ordinals 242/242;
+// both word/byte 253/253; early table publication and later scenario receiver 105/105.
+// integer destination offset and definition register remain; adjacent
+// component loop/word table 242/242; record cursor/batch cursor 240/240; actual batch bases 239;
+// direct twelve types 254; unsigned component/native records 242/242.
+// destination pointer replaces the retail integer table offset;
+// flat index 254; zero-based batches 139; typed records 137; flat typed records 121;
+// unsigned indices 141; batch steps 139; const records 137; full source table 139.
+// Read-only source 105; direct header link 105; scenario after copy 158;
+// isolated default-source phase 158; header field at consumers 135;
+// global object/override fields at consumers 105/107; explicit override values 105.
+// Default/override/both memcpy 145/140/172; native scalar defaults 105; shared tuple address 123;
+// raw word
+// array/seven-word records 121/121; shared override type 122.
+// native source groups 121; readonly source groups 121; real source groups 121; native destination
+// records 121; native tuple assignment 143; complete source table 103; native group owner 121;
+// native record range 154. Integer destination induction remains; two-point table gain rejected.
+// Unsigned outer counter 141; outer do-while 105; inner do-while 242; table pointer as the
+// globals' last member (retail's memset clears it) 102; running destination index 120.
+// No-link compiles of 1728 loop shapes, counter types and destination forms all fold the
+// global into a pointer induction variable; retail keeps the integer offset 0x18..0xa8.
 // @retail 0x23aea0
 void function_23aea0()
 {
@@ -132,7 +156,7 @@ __forceinline void spawn_influence_add(s_spawn_influence_list *list, point3f con
 
 /* adds an influence of this type at the point */
 // @retail 0x23ba10
-void function_23ba10(long type, s_spawn_influence_list *list, point3f const *point)
+void function_23ba10(long type, point3f const *point, s_spawn_influence_list *list)
 {
 	s_spawn_influence_globals *globals = (s_spawn_influence_globals *)g_502258;
 	s_spawn_influence_type *definition = &globals->types[type];
@@ -506,11 +530,11 @@ void function_23b8e0(long player_index, s_spawn_influence_list *list)
 			{
 				if (other->team == player->team)
 				{
-					function_23ba10(1, list, &unit->position);
+					function_23ba10(1, &unit->position, list);
 				}
 				else
 				{
-					function_23ba10(0, list, &unit->position);
+					function_23ba10(0, &unit->position, list);
 				}
 			}
 		}
@@ -522,7 +546,7 @@ void function_23b8e0(long player_index, s_spawn_influence_list *list)
 
 				if (state->valid && state->value10)
 				{
-					function_23ba10(10, list, &state->position);
+					function_23ba10(10, &state->position, list);
 				}
 			}
 		}
@@ -540,8 +564,10 @@ struct s_spawn_moving_object_23b500
 	byte unknown94[0xaa - 0x94];
 	byte type;
 	byte unknownab[0x10a - 0xab];
-	byte unit_flags;
-	byte unknown10b[0x13c - 0x10b];
+	word unit_flag0 : 1;
+	word unit_flag1 : 1;
+	word unit_dead : 1;
+	byte unknown10c[0x13c - 0x10c];
 	long player_index;
 };
 
@@ -566,11 +592,7 @@ static inline void point_along_vector_23b500(point3f const *point, vector3f cons
 	result->z = vector->k * t + point->z;
 }
 
-// score 232 (was 232): frame 0x50/0x54 and child-iterator registers differ;
-// iterator initializer 231; dword friendliness 229; speed snapshot 231; sqrtf 232;
-// child category equality 251; dword friendliness plus speed snapshot 229.
-// Predicted-point force-inline 232; depth zero 510; size policy 355;
-// global optimization off 629; projectile category first 242.
+
 // @retail 0x23b500
 void function_23b500(long player_index, s_spawn_influence_list *list)
 {
@@ -593,9 +615,9 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 		long type_mask = 1 << object->type;
 		if (type_mask & 2)
 		{
-			if ((bool)((object->unit_flags >> 2) & 1) || (bool)((object->flags >> 26) & 1))
+			if (TEST_FIELD_BIT(object->unit_dead) || (bool)((object->flags >> 26) & 1))
 				continue;
-			bool empty = true;
+			bool no_unit_child = true;
 			bool friendly = true;
 			s_object_child_iterator children;
 			function_d0620(objects.iterator.object_index, &children);
@@ -605,20 +627,19 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 					((s_spawn_object_header_view *)g_4e0300->data)[children.child_index & 0xffff].object;
 				if ((1 << child->type) & 1)
 				{
-					empty = false;
+					no_unit_child = false;
 					if (child->player_index != NONE &&
 						((s_spawn_player_view *)g_4e8c24->data)[child->player_index & 0xffff].team != player->team)
 						friendly = false;
 				}
 			}
-			if (empty)
-				function_23ba10(4, list, &object->position);
+			if (no_unit_child)
+				function_23ba10(4, &object->position, list);
 			else if (friendly)
-				function_23ba10(3, list, &object->position);
+				function_23ba10(3, &object->position, list);
 			else
-				function_23ba10(2, list, &object->position);
-			real speed_squared = object->velocity.i * object->velocity.i +
-				object->velocity.j * object->velocity.j + object->velocity.k * object->velocity.k;
+				function_23ba10(2, &object->position, list);
+			real speed_squared = length_sq3f(&object->velocity);
 			if (speed_squared > settings->minimum_speed * settings->minimum_speed)
 			{
 				real radius = (real)sqrt(speed_squared);

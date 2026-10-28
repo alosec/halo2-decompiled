@@ -3,14 +3,7 @@
 #include "unknown_1eb350.h"
 #include <xmmintrin.h>
 
-/* a distinct body, so that the linker does not fold this stub into another empty virtual */
-static volatile long g_stub_2d7240;
-
-// @stub 0x2d7240
-void c_a::v2(bool enable)
-{
-	g_stub_2d7240 = enable;
-}
+// Name virtuals are now implemented in unknown_2d7120.cpp.
 
 
 struct c_transformed_point

@@ -316,6 +316,9 @@ bool function_a9820(long *block, long index)
 	return result;
 }
 
+// score 11 (was 11): the database pointer takes ECX, so the active byte cannot fold into the scaled address.
+// Early definitions 31; direct dispatch 13; const record 11; record reference 11; separate index mask 11;
+// short type 22; definitions first 13; definition local 13; function-scope database 11; function-scope type 11.
 // @retail 0xa99f0
 void function_a99f0(long index, long *block)
 {
@@ -851,33 +854,33 @@ PRIVATE inline bool z_state_real_valid(real value)
  return (*(long *)&value & 0x7f800000) != 0x7f800000;
 }
 
-// score 154 (was 154): initial byte-result store and scalar-zero lifetime differ.
-// Scoped inline depth zero 610; scoped global optimization off 368; decode cursor 161;
-// decode countdown cursor 161; final native acceptance result 155.
-// score 146 (was 154): mask-width field reference 146; initial result store and scalar zero remain.
-// Native external record 154; record/plain result and plain sticky predicates 289;
-// external flags reference 154; decoder/classifier noinline declarations 465/349; unsigned ordinal 154.
-// score 146 (was 146): initial direct byte SETNE, scalar zero and output-vector roles remain.
-// Actual position/first-vector/second-vector bindings 146/146/146; scale and two scalar
-// field bindings 146/146/146; decode-array element binding 146; combined scalar fields 146.
-// score 146 (was 146): direct result-byte SETNE and scalar-zero reloads remain.
-// Wide sticky validity 352; byte sticky validity 146; decoder exits/lower-first 146/295; finite classifier 243; exponent extraction 146; decoded region count/state 146/146.
-// score 146 (was 146): initial direct byte SETNE and scalar-zero reloads remain.
-// Native long/byte first validation results 146/146; range-first decoder inputs 146;
-// range-first plus long validation 146; short encoding count 146; count plus range-first 146;
-// stream-last decoder inputs 146; unsigned native limit 460 at 901 bytes (fast scores).
-// direct result-byte SETNE and scalar zero remain. Scalar code input,
-// scale/all code lifetimes, field reference/pointer outputs, code with reference/pointer output,
-// code with default lower result 146/146/146/146/146/146/146/295.
-// direct byte SETNE and scalar-zero reloads remain.
-// Native code/word code/byte code 440/301/291; word endpoint limit 146;
-// word code with limit 301; native weights 146; endpoint products 227; unsigned code with weights 440.
+// score 9 (was 9): the two mask-count arguments are extended into ECX/EDX where retail
+// uses EAX (so the first word store comes after the second count load), and the bound test
+// holds the size in EAX where retail uses ECX. Earlier forms (before the 0x195240 argument
+// fix, at 154/146): scoped inline depth zero 610; scoped global optimization off 368; decode
+// cursor/countdown cursor 161/161; final native acceptance 155; mask-width reference 146;
+// native external record 154; record/plain result and plain sticky predicates 289; external
+// flags reference 154; decoder/classifier noinline declarations 465/349; unsigned ordinal 154;
+// position/vector/scale/scalar field bindings 146 each; wide/byte sticky validity 352/146;
+// decoder exits/lower-first 146/295; finite classifier 243; exponent extraction 146; decoded
+// region count/state 146/146; native long/byte first validation 146/146; range-first and
+// stream-last decoder inputs 146; short encoding count 146; unsigned native limit 460;
+// scalar code input/lifetimes, field reference/pointer outputs 146 each; default lower result
+// 295; native/word/byte code 440/301/291; word endpoint limit 146; native weights 146;
+// endpoint products 227. Now: tail written >=, *8, !(>), early || false, nested, or through
+// the result 9 each, `return a && b` 16; mask test `if (state[0x61])` 10; a byte mask local
+// for every use 6 (keeps it in ESI; retail reads the field again), for the tests only 9;
+// a long mask local 45; without the stream self-reference 9.
+// Native tail fields/word array/full state/full state array/tail reference 9 each;
+// native tail/full-state mask loops 53/53; native-state count reference 44.
+// First/two decoded-word locals 9/9; count reference 13; word count 36; word-array
+// destination 8 (first store fixed); byte count plus array 6 (ESI); first-count split/guard
+// 8/8; remaining-bits bound 9; two-value loop 31; short/implicit word arrays 8/8;
+// named bound inputs 8.
 // @retail 0xa6d50
 bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
 {
- s_bitstream *const *stream_reference = &stream;
- stream = *stream_reference;
- volatile bool result = true;
+ bool result = true;
  long *flags = (long *)flags_address;
  byte *state = (byte *)state_address;
  if (function_1957d0(stream))
@@ -893,7 +896,7 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
  }
  if (function_1957d0(stream))
  {
-  function_195240(stream, (vector3f *)(state + 0x18), (vector3f *)(state + 0xc));
+  function_195240(stream, (vector3f *)(state + 0xc), (vector3f *)(state + 0x18));
   *flags |= 4;
   if (result && (function_a74c0((vector3f *)(state + 0xc), (vector3f *)(state + 0x18)))) result = true; else result = false;
  }
@@ -943,18 +946,17 @@ bool function_a6d50(long flags_address, long state_address, s_bitstream *stream)
  if (stream_read_bit(stream))
  {
   state[0x61] = (byte)function_1959c0(stream, 5);
-  byte const &mask_bits = state[0x61];
-  if (result && (mask_bits <= 16)) result = true; else result = false;
-  if (mask_bits > 0)
+  if (result && (state[0x61] <= 16)) result = true; else result = false;
+  if (state[0x61] > 0)
   {
-   *(word *)(state + 0x62) = (word)function_1959c0(stream, mask_bits);
-   *(word *)(state + 0x64) = (word)function_1959c0(stream, mask_bits);
+   *(word *)(state + 0x62) = (word)function_1959c0(stream, state[0x61]);
+   *(word *)(state + 0x64) = (word)function_1959c0(stream, state[0x61]);
   }
   *flags |= 0x200;
  }
- long valid = result;
- if (!valid) return false;
- return stream->bit_position <= (stream->size_in_bytes << 3);
+ if (result && stream->bit_position <= (stream->size_in_bytes << 3))
+  return true;
+ return false;
 }
 
 
@@ -1118,6 +1120,10 @@ PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const
  matrix->up = *up;
 }
 
+// score 4 (was 4): both extraction calls form the angle address before the axis address.
+// Reused axis/angle output pointers 10; reused angle output pointer 6; saved/current output
+// pointer pairs 10/10; extraction calls swapped 7; axis declarations swapped 4; axis names 4;
+// forced orientation inline 4.
 // @retail 0xa9b40
 void function_a9b40(long index, s_z_copy_state *state)
 {

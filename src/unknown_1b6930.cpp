@@ -109,7 +109,7 @@ bool function_1b60d0(long index, short type, short level);
 void function_25d420(long prop_index, short type, long actor_index);
 short __stdcall function_272af0(s_match_globals *structure, point3f const *point);
 
-// score 2 (was 80): retail reloads the spilled view before it loads the
+// score 2 (was 2): retail reloads the spilled view before it loads the
 // choice from the entry; ours loads the choice first. Retail passes the
 // reference's own slot for function_2605d0's other index (0x18 for both;
 // a separate other_index local makes the frame 8 bytes bigger, 38); the high bit test of
@@ -117,7 +117,9 @@ short __stdcall function_272af0(s_match_globals *structure, point3f const *point
 // Tried: choice read after the first view store 140; result set first 118;
 // result cleared before the test 131; branches swapped, a view alias, const
 // or outer choice, the copy through a cast 2/2/2/2/2; choice read at each
-// use 33; the request's +4 store before +8 5.
+// use 33; the request's +4 store before +8 5; a pointer to the destination
+// point 2; choice or view renamed to sort after/before the other 2/2; choice or
+// view declared first 2/2; point copy before the state store 140.
 // @retail 0x1b69e0
 bool __stdcall function_1b69e0(long actor_index, long prop_index)
 {

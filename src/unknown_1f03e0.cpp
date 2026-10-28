@@ -291,14 +291,23 @@ void function_141590(transform4x3f const *in, transform4x3f *out);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 real function_f5e00(long vehicle_index);
 extern real g_47f05c;
-
-// score 202 (was 202): frame/displacement materialization and shape/entry retention;
+// score 202 (was 202): Frame 0xc8 versus 0xd4, folded displacement and shape/entry retention remain.
+// Earlier 202 (was 202): frame/displacement materialization and shape/entry retention;
 // float consistency 279; split root result 204; native normal 221; unsigned best 202;
 // integer result 276; scaled difference 203; point helper with height/point views 292.
-// score 202 (was 202): frame 0xc8 versus 0xd4; displacement materialization and shape/entry homes still differ.
+// Earlier 202 (was 202): frame 0xc8 versus 0xd4; displacement materialization and shape/entry homes still differ.
 // Unraised origin copy 265; height view with body reloads 275; selection/result names 202;
 // native point copy, enclosing point, entry displacement and read-only records 202 each;
 // size policy 357; existing magnitude boundary 204 (sum-order form not matched).
+// Earlier 202 (was 202): frame 0xc8 versus 0xd4; displacement folding and shape/entry homes remain;
+// separate displacement scalars, reversed scalar order, coordinate names, partial squared sum,
+// squared-distance result and outer scalar scope 202 each; actual point receiver with scalars 311;
+// separate squared components 204.
+// frame 0xc8 versus 0xd4, folded displacement and shape/entry homes remain.
+// Existing ground record 204; world matrix declared at entry 202; inverse/relative in place 244/241;
+// normal value with shape reads 233; selected-entry result 272; best comparison first 201;
+// selected index assigned before alignment 202. One-count comparison gain rejected.
+// Round 356: Transform role names 202; inverse/body/relative declarations 202; names with common scope 202; byte success 282; byte validity 202.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
@@ -389,6 +398,8 @@ bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *stat
 
 real function_30bf0(vector3f *v);
 
+PRIVATE __forceinline void function_1f087b(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2);
+
 PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f *out)
 {
     out->i = a->j * b->k - a->k * b->j;
@@ -396,20 +407,59 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
     out->k = a->i * b->j - a->j * b->i;
 }
 
-// score 203 (was 203): frame 0x14 agrees; request/count registers and cross scheduling differ.
+// score 144 (was 177): Frame 0x14 agrees; request/count registers, projection and cross scheduling remain.
+// Earlier: Frame 0x14 agrees; request/count/table registers and cross publication still differ.
+// Earlier: frame 0x14 agrees; request/count registers and cross scheduling differ.
 // Word component handle 207; unsigned selection 203; final scale helper 203;
 // reversed independent dot order 203; stepping snapshot 303.
-// score 203 (was 203): frame 0x14 agrees; request/count/table registers and cross-result stores still differ.
+// frame 0x14 agrees; request/count/table registers and cross-result stores still differ.
 // Shape pointer 329 (not matched); read-only scan and natural while 203/203; desired copy 271;
 // double height comparison 309; size policy 374; floating consistency 314; native default copies 203.
+// frame 0x14 agrees; request/count/table homes and cross stores remain.
+// Cases 3/1/2 226; second normal first 246; average ikj/jik/jki/kij/kji
+// 201/200/198/203/203; native masked handle 203. Average j/k/i kept after full check.
+// frame agrees; request/count/table registers and cross-result stores remain;
+// selected normal from existing pair 233; direct pair cross inputs 209; first normal reference 203;
+// second normal reference 203; both normal references 203; output record reference 226; lower
+// height bound first 211; complete average initializer 203.
+// Native first/second/both normal values 261/293/334; average initialized from second/first
+// normal 285/288; first-value/second-average 315; second-value/first-average 301; both-
+// values/second-average 341.
+// Separate projection results both/first/second 297/288/288; shared projection result 273;
+// common complete pair result 181 at 975 bytes (plain confirmed); swapped dot comparison 198;
+// negated average-default arm 198; common pair result with swapped comparison 181.
+// First-normal i/k/j product and partial sum 198 each; average i/k/j product and partial sum 198 each, all 983/977 bytes. Original projection expressions and pair-result join restored.
+// Fallback pointer/value 244/266; selected contact index 276, with pointer/value 309/299;
+// per-case defaults 269; complete normalized result 239, with fallback pointer 310.
+// Height-expression and full eligibility values 215/215; nested height filter 181; component fields at uses 370, with height/eligibility/nesting 368/368/370; signed valid-selection range 209. Original pair-result join restored.
+// Round 159: Shared cross, native component, native contact, combined native layout and their three
+// shared-cross combinations 181 each; native layout/shared cross with selected/lowest initialized first
+// 177; original layout/private cross with both results initialized first 177 (975/977 bytes, plain
+// confirmed and kept). Only the two constant initializations move; every memory read and call stays in
+// place.
+// Round 163: Direct averaged support, shared branch direction, both, entry support,
+// direct+entry, shared+entry, all, and all with shared cross 235/194/235/177/235/194/235/235.
+// Original pair-result join, two entry constants and private products restored.
+// Round 166: Corresponding projection products named on both compared dots: i/k/j
+// 194/194/194; ik/ij/kj 197/197/197; all 194; all with both first sums 194. Original
+// expressions, early constants and pair-result join restored.
+// Round 218: Ordered upper/lower/predicate admission continuations, every nonempty
+// combination 177 each; all continuations with immutable contact count 194. Restored.
+// Round 152: Eight pair-input/result and single-contact library-copy forms 177 each; selected-before-height publication 177; average-only result join 176, with selected-first 176 (983 bytes). One-point joins rejected; original complete pair result and observations restored.
+// Round 220: Current pair workspace names, all-case/entry declarations and their combined names 177 each.
+// Existing input-preserving cross helper at first/selected-zero/selected-other/both-first-and-zero/
+// first-and-other/both-selected/all sites 179/177/177/179/179/177/179. All with direct selected outputs
+// 144; only selected helpers with direct outputs 144 (989/977 bytes, plain confirmed and kept).
+// First-only/zero-only/other-only helper with direct outputs 178/178/175; averaging-only support
+// declaration 144; both average values directly published 221. Original average result join retained.
 // @retail 0x1f2a80
 void function_1f2a80(byte const *request, bool moving,
     vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
 {
-    long component_index = *(long *)(request + 0x40) & 0xffff;
-    byte *component = g_51e9b8->data + component_index * 0xa0;
     long selected = NONE;
     real lowest = 0.0f;
+    long component_index = *(long *)(request + 0x40) & 0xffff;
+    byte *component = g_51e9b8->data + component_index * 0xa0;
     for (long i = 0; i < count; i++)
     {
         byte *entry = *(byte **)(component + 0x88) + indices[i] * 0x48;
@@ -432,29 +482,31 @@ void function_1f2a80(byte const *request, bool moving,
         {
             vector3f const *a = (vector3f *)(*(byte **)(component + 0x88) + indices[0] * 0x48 + 0x28);
             vector3f const *b = (vector3f *)(*(byte **)(component + 0x88) + indices[1] * 0x48 + 0x28);
+            vector3f support;
             if (selected != NONE)
             {
                 vector3f const *normal = (vector3f *)(*(byte **)(component + 0x88) + indices[selected] * 0x48 + 0x28);
                 vector3f axis;
                 contact_cross(a, b, &axis);
                 if (selected == 0)
-                    contact_cross(&axis, normal, out);
+                    function_1f087b(&axis, normal, out);
                 else
-                    contact_cross(normal, &axis, out);
+                    function_1f087b(normal, &axis, out);
             }
             else
             {
                 vector3f average;
-                average.i = b->i + a->i;
                 average.j = b->j + a->j;
                 average.k = b->k + a->k;
+                average.i = b->i + a->i;
                 function_30bf0(&average);
                 real dot_a = a->i * desired->i + desired->k * a->k + a->j * desired->j;
                 real dot_average = desired->i * average.i + desired->k * average.k + desired->j * average.j;
                 if (dot_average > dot_a)
-                    *out = *a;
+                    support = *a;
                 else
-                    *out = average;
+                    support = average;
+                *out = support;
             }
         }
         break;
@@ -483,19 +535,17 @@ void function_1f2a80(byte const *request, bool moving,
         *out = *g_4687b0;
 }
 
-PRIVATE __forceinline void function_1f1461(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
-{
-	arg_2->i = arg_0->j * arg_1->k - arg_0->k * arg_1->j;
-	arg_2->j = arg_0->k * arg_1->i - arg_0->i * arg_1->k;
-	arg_2->k = arg_0->i * arg_1->j - arg_0->j * arg_1->i;
-}
-
 PRIVATE __forceinline byte function_1f1462(dword arg_0)
 {
 	return (arg_0 >> 3) & 1;
 }
 
-// score 182 (was 195): state/forward registers agree; rotation scheduling differs.
+// score 182 (was 182): frame 0x28 agrees; initial state-dot displacement bytes and rotation registers differ.
+// Round 90: the state dot through dot3f 262 / through a branch-local pointer 206 (both break caller 0x1e5af0);
+// the rotation dot through shape_dot 182 (same code), through dot3f 248; the plain mode bit test for the
+// one-caller bit helper 299 (breaks 0x1e5af0); the file's contact_cross for the duplicate cross helper 182
+// (same code; kept, the duplicate removed).
+// Earlier 182 (was 195): state/forward registers agree; rotation scheduling differs.
 // Repeated up-field reads 182; native old-up 325; function-scope workspaces 195;
 // vector names 195; shared dot helper 248; plain parameters 182; branch-local up pointer 195.
 // Direct state dot loads still cost six bytes; cross before trig 247; late limited snapshot 190;
@@ -503,7 +553,11 @@ PRIVATE __forceinline byte function_1f1462(dword arg_0)
 // Initial-phase up pointer 309; between-trig snapshot 190; early alignment 192;
 // rotation-only snapshot crosses 182; native j/k rotation loop 240.
 // Frame pointer 312; depth zero 654; global optimization off 623; trig scalar names 182; shared final normalization length 180 (two-point gain rejected).
-// score 182 (was 182): Frame 0x28 and state/output registers agree; six direct-dot displacement
+// Earlier 182 (was 182): direct-dot displacement bytes and rotation scalar lifetimes remain;
+// scaled cross 264; scaled limited input 241; scaled axis projection 267;
+// full component rotation 239; accumulated alignment 245; normalization decision 183;
+// scaled-cross scalars 186; projected-plus-cosine sums 186.
+// Frame 0x28 and state/output registers agree; six direct-dot displacement
 // bytes and rotation scheduling remain. Ground memcpy 182; limited memcpy 182; separate real
 // components 182; cosine complement 180 (two-point gain dropped); separate cross workspaces 182;
 // cosine/complement before sine 181; explicit alignment with complement 182 (fast).
@@ -514,6 +568,31 @@ PRIVATE __forceinline byte function_1f1462(dword arg_0)
 // Frame 0x28 and state/output registers agree; direct dot displacement bytes
 // and rotation scheduling differ. Word rotation decision 182; long rotation decision 182; shared
 // entry cross 182; all shared crosses 182; vector home names on recovered state base 182.
+// Frame 0x28 and state/output homes agree; state-dot displacement and rotation schedule remain.
+// Rotation publication ijk/ikj/jik/jki/kji 242/241/244/247/244; cross between trig 247;
+// accepted-up library copy 182; deferred k/i results 247; native state/workspace/both
+// array views 182/182/182. Original scalar expressions, shared helpers and outputs restored.
+// Native dot/up/orientation/full input fields 182/182/182/182; test-produced rotation 183;
+// inactive forward/active forward/both active output library copies 182/182/182.
+// Initial/all snapshot-safe crosses 182/182; ordinary cross inlining 182; both one-use aliases removed 180;
+// fallback axis/default library copies 182/182; initial snapshot with aliases removed 182;
+// all snapshots with fallback copies 182; settings-only/forward-only alias removal 291/291;
+// up-field reference on combined alias removal 195. Two-point gain rejected; original body/helper restored.
+// Round 183 complementary skip decision bool/byte/short/long 182 each; each with consistent
+// old-up field pointer 309 (fast), losing the caller match. All restored; initial dot
+// displacement bytes and rotation schedule remain with EDI state/EBX forward preserved.
+// Round 245 (fast): Shared initial/rotation alignment workspace 288; with cosine complement,
+// both one-use input aliases removed, or both 183/183/180; common normalization result alone,
+// with complement, with alias removal, or all 183/180/180/288. Two-point best rejected;
+// matched caller preserved. Direct-dot displacement bytes and rotation SIMD lifetimes remain.
+// Round 204: Consistent repeated original-up field pointer/reference before settings
+// or after settings 309/309 each; active-entry or after ground-up initialization 196/196 each
+// at retail length. Original field reads restored; direct-dot displacement and SIMD schedule remain.
+// Round 155: Existing flag predicate: forced bool shift/mask, ordinary byte, ordinary bool
+// shift/mask, forced word/long/signed byte: 182/182/182/182/182/182/299/182. Original byte predicate and complete vector body restored.
+// Round 158: Whole-dot multiplication operands commuted at initial, rotation and limit sites independently,
+// in pairs, all three, then with every rotation product. Scores [182, 183, 182, 183, 182, 183, 183, 183].
+// Original executable body restored.
 // @retail 0x1f1460
 void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *up_result, vector3f *forward_result)
 {
@@ -522,7 +601,7 @@ void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *u
     {
         vector3f up = ground->normal;
         vector3f axis;
-        function_1f1461((vector3f const *)(state + 0x100), &up, &axis);
+        contact_cross((vector3f const *)(state + 0x100), &up, &axis);
         bool rotate = true;
         if (function_30bf0(&axis) == 0.0f)
         {
@@ -542,23 +621,23 @@ void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *u
             real cosine = (real)cos(angle);
             real dot = (limited.k * axis.k + limited.j * axis.j + limited.i * axis.i) * (1.0f - cosine);
             vector3f cross;
-            function_1f1461(&limited, &axis, &cross);
+            contact_cross(&limited, &axis, &cross);
             limited.k = axis.k * dot + limited.k * cosine - cross.k * sine;
             limited.i = dot * axis.i + limited.i * cosine - cross.i * sine;
             limited.j = axis.j * dot + limited.j * cosine - cross.j * sine;
-            function_1f1461(&limited, &up, &cross);
+            contact_cross(&limited, &up, &cross);
             if (cross.k * axis.k + cross.j * axis.j + cross.i * axis.i > 0.0f)
                 up = limited;
         }
         vector3f const *old_forward = (vector3f const *)(state + 0xf4);
         vector3f cross;
-        function_1f1461(old_forward, &up, &cross);
+        contact_cross(old_forward, &up, &cross);
         vector3f forward;
-        function_1f1461(&up, &cross, &forward);
+        contact_cross(&up, &cross, &forward);
         if (function_30bf0(&forward) == 0.0f)
         {
-            function_1f1461(&up, (vector3f const *)(state + 0x100), &cross);
-            function_1f1461(&up, &cross, &forward);
+            contact_cross(&up, (vector3f const *)(state + 0x100), &cross);
+            contact_cross(&up, &cross, &forward);
             if (function_30bf0(&forward) == 0.0f)
             {
                 up = *g_4687b0;
@@ -601,40 +680,6 @@ PRIVATE inline real shape_dot(vector3f const &a, vector3f const &b)
     return a.k * b.k + a.j * b.j + a.i * b.i;
 }
 
-#pragma optimize("s", on)
-PRIVATE __forceinline void function_1f087c(vector3f *arg_0, vector3f const *arg_1, vector3f const *arg_2)
-{
-    real local_0 = arg_1->i + arg_2->i;
-    real local_1 = arg_1->j + arg_2->j;
-    real local_2 = arg_1->k + arg_2->k;
-    arg_0->i = local_0;
-    arg_0->j = local_1;
-    arg_0->k = local_2;
-}
-PRIVATE __forceinline void function_1f087d(vector3f *arg_0, vector3f const *arg_1, real arg_2, vector3f const *arg_3)
-{
-    real local_0 = arg_1->i * arg_2 - arg_3->i;
-    real local_1 = arg_1->j * arg_2 - arg_3->j;
-    real local_2 = arg_1->k * arg_2 - arg_3->k;
-    arg_0->i = local_0;
-    arg_0->j = local_1;
-    arg_0->k = local_2;
-}
-PRIVATE __forceinline void function_1f087e(vector3f *arg_0, real arg_1)
-{
-    arg_0->i *= arg_1;
-    arg_0->j *= arg_1;
-    arg_0->k *= arg_1;
-}
-PRIVATE __forceinline void function_1f087f(vector3f *arg_0, vector3f const *arg_1, vector3f const *arg_2, real arg_3)
-{
-    real local_0 = arg_1->i - arg_2->i * arg_3;
-    real local_1 = arg_1->j - arg_2->j * arg_3;
-    real local_2 = arg_1->k - arg_2->k * arg_3;
-    arg_0->i = local_0;
-    arg_0->j = local_1;
-    arg_0->k = local_2;
-}
 
 PRIVATE __forceinline void function_1f087b(vector3f const *arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
@@ -646,16 +691,7 @@ PRIVATE __forceinline void function_1f087b(vector3f const *arg_0, vector3f const
     arg_2->k = local_2;
 }
 
-PRIVATE __forceinline vector3f function_1f0873(vector3f const &arg_0, vector3f const &arg_1)
-{
-    vector3f local_0;
-    local_0.i = arg_0.j * arg_1.k - arg_0.k * arg_1.j;
-    local_0.j = arg_0.k * arg_1.i - arg_0.i * arg_1.k;
-    local_0.k = arg_0.i * arg_1.j - arg_0.j * arg_1.i;
-    return local_0;
-}
 
-#pragma optimize("", on)
 struct s_flags_1f0870
 {
     dword enabled : 1;
@@ -666,50 +702,113 @@ struct s_flags_1f0870
     dword unknown5 : 27;
 };
 
-PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f const *arg_2, byte const *arg_3)
+
+// score 590 (was 590): frame 0x34 versus 0x30 and direct/vector homes remain; retail threads the
+// flying test across the desired normalization (eight 0x30bf0 calls, the ground arm and the plain limited
+// arm laid out after the return), ours does not (seven calls, all arms in place).
+// Round 90: the body moved out of its one-caller forceinline wrapper, its volatile velocity stores, volatile
+// gravity flag, size pragma and four one-caller vector helpers removed (582 -> 590, kept as clean-up: the
+// casts alone 634, casts and flag 603, pragma alone 582). On that body: shift-form flags 614; the existing
+// cross helper for the frame crosses 598. A from-scratch body in retail's map (basis copies, flags in
+// retail's order, the magnitude through magnitude3d, settings read at each use) 699-720: the output
+// pointer moves to the stack (ret 0xc) and the settings pointer stays in ebp across the normalizations.
+// Earlier 582 (was 614): Frame 0x34 versus 0x30 and direct/vector homes remain.
+// Earlier 621 from 625: frame 0x34 versus 0x30; direct-bit and vector homes still differ.
+// Frame 0x34 versus 0x30; direct-mode carrier and original/limited vector homes remain.
+// Earlier: frame 0x34 versus 0x30; direct-bit and vector homes still differ.
+// Settings snapshot 631; common step 631; inline depth one 1367; scoped size 924; shared scale 630.
+// Ordinary gravity with shared normalization 622; cached mode 648; limited-first 625;
+// request bitfields 621; global optimization off 2562; direct scalar lifetimes 623; bitfields plus scalars 626.
+// Request-record snapshot 625; inline depth two 621; ordinary gravity on native flags 621;
+// shared direct/general delta 621; complete horizontal point copies 630.
+// Earlier 614 from 621: frame 0x34 versus 0x30 and vector homes still differ.
+// Native enabled test 626; byte flag view 619; low-normal first 618; current-velocity snapshot 625;
+// repeated damping 624; native enabled/byte view 629; gravity first 616; byte view/low-normal 616;
+// gravity/low-normal 614 kept; gravity/byte view 618.
+// Earlier 614 from 614: Frame 0x34 versus 0x30; direct-bit and vector homes remain. Captured-word
+// Earlier: frame 0x34 versus 0x30 and vector homes still differ.
+// Earlier: Frame 0x34 versus 0x30; direct-bit and vector homes remain. Captured-word
+// direct 626; damping 619; gravity 619; all predicates 627; later input magnitude 619 (fast).
+// frame 0x34 versus 0x30; direct-mode register and vector homes still differ.
+// Native enabled on gravity/low-normal body 624; direct before damping 618; direct distance result 619;
+// general distance result 614; masked final gravity word 634.
+// Earlier 614 from 614: frame 0x34 versus 0x30 and direct/general vector homes differ. Tried native damping
+// Earlier: frame 0x34 versus 0x30 and direct/general vector homes differ. Tried native damping
+// direct gravity 618; ordinary local output stores 634; native direct damping gravity 615; native direct
+// gravity damping 615; history time snapshot 614; ground vertical value 614; ground vector arm first 629.
+// frame 0x34 versus 0x30; direct-mode carrier and vector homes remain.
+// Basis capture on current join 631; desired/delta scope 614; scale/subtract value helpers 681;
+// later history maximum 614; shared lateral workspace 616.
+// Earlier 614 from 614: Frame 0x34 versus 0x30 and direct/vector homes remain. Joint magnitude/desired scope
+// 614; normal-only value 685; facing-only value 641; up-only value 632; damping/gravity/direct order 614
+// (fast).
+// Earlier 614 from 614: frame 0x34 versus 0x30; direct/vector homes remain. Ground-only basis
+// 627; direct clipping scope 614; general clipping scope 614; scalar history change 741
+// (frame 0x30, 2920 bytes); shared cross products 626 (fast).
+// General/history/both value-add publications 659/641/690; disabled-input shared cross 582 (plain,
+// kept); final direct reuse 620; final mode/direct reuse 631; per-use flight field 623; four Boolean-
+// role names 614 (fast). Keep only the existing cross helper with the distinct local output.
+// Earlier: Frame 0x34 versus 0x30 and direct/vector homes remain. Joint magnitude/desired scope
+// Earlier: frame 0x34 versus 0x30; direct/vector homes remain. Ground-only basis
+// Horizontal delta on retained join 614; signed-word direct/damping/gravity/flying 622/622/624/616.
+// Unsigned-byte gravity/direct/damping/all states each 582; input squared-length helper 582;
+// consistent active direct crosses 580; in-place history addition 641 (frame 0x30, 2981 bytes);
+// byte states with direct crosses 580; flying-only/ground-only direct crosses 580/582.
+// Two-point cross gain rejected; original private implementation and inherited qualifiers restored.
+// Round 183 existing returned-vector cross for first flying / remaining flying / ground / all flying
+// 607/659/590/694; first flying plus ground / remaining flying plus ground / all active / all paths
+// 637/689/724/834 (fast). All restored; extra frame dword, direct bit and vector homes remain.
+// Round 218, cleaned body: complete native flag observation 623; gravity conjunction 611;
+// complete mode observation 625; flag/conjunction 645, flag/mode 605, conjunction/mode 652,
+// all 628; all with byte step result 628. Original complete observations and result restored.
+// Round 152: Disabled-input weighted forward/lateral/both axis scale helpers 590/610/610; vertical 590 at 3047 bytes, forward plus vertical 590, lateral plus vertical/all/all plus bounded-step helper 610/610/610. No score gain; original complete body and helper boundaries restored.
+// Round 220: Separate flight-first/ground-first normalization and ground adjustment 616/607;
+// separate normalization continuations 623; branch-produced gravity on those three graphs
+// 616/607/623; single magnitude assigned in each mode arm with separate normalization,
+// alone/with branch gravity, 647/647. Original clean shared-normalization body restored.
+// @retail 0x1f0870
+void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {
-#define settings (*(byte **)(arg_3 + 8))
+#define settings (*(byte **)(state + 8))
     dword mode = *(dword *)settings;
     bool flying = ((mode >> 3) & 1) != 0;
-    dword flags = *(dword *)(arg_3 + 0x14);
-    s_flags_1f0870 const *flags_view = (s_flags_1f0870 const *)(arg_3 + 0x14);
-    volatile bool gravity = TEST_FIELD_BIT(flags_view->gravity);
+    dword flags = *(dword *)(state + 0x14);
+    s_flags_1f0870 const *flags_view = (s_flags_1f0870 const *)(state + 0x14);
+    bool gravity = TEST_FIELD_BIT(flags_view->gravity);
     bool damping = TEST_FIELD_BIT(flags_view->damping);
     bool direct = TEST_FIELD_BIT(flags_view->direct);
-    vector3f const &input = *(vector3f const *)(arg_3 + 0x138);
-    vector3f const &facing = *(vector3f const *)(arg_3 + 0x9c);
-    vector3f const &up = *(vector3f const *)(arg_3 + 0x100);
-    vector3f const &normal = *(vector3f const *)(arg_3 + 0x8c);
-    vector3f const &basis = *(vector3f const *)(arg_3 + 0x118);
-    vector3f *velocity = (vector3f *)(arg_0 + 0xc);
+    vector3f const &input = *(vector3f const *)(state + 0x138);
+    vector3f const &facing = *(vector3f const *)(state + 0x9c);
+    vector3f const &up = *(vector3f const *)(state + 0x100);
+    vector3f const &normal = *(vector3f const *)(state + 0x8c);
+    vector3f const &basis = *(vector3f const *)(state + 0x118);
+    vector3f *velocity = (vector3f *)(out + 0xc);
     if (!(flags & 1))
     {
         vector3f left;
-        left.i = facing.k * up.j - up.k * facing.j;
-        left.j = up.k * facing.i - up.i * facing.k;
-        left.k = up.i * facing.j - up.j * facing.i;
-        real scale = *(real *)(arg_3 + 0x20);
+        contact_cross(&up, &facing, &left);
+        real scale = *(real *)(state + 0x20);
         real local_0 = input.i * scale;
         real local_1 = input.j * scale;
         real local_2 = input.k * scale;
-        (*(real volatile *)&velocity->i) = facing.i * local_0;
-        (*(real volatile *)&velocity->j) = facing.j * local_0;
-        (*(real volatile *)&velocity->k) = facing.k * local_0;
-        (*(real volatile *)&velocity->i) += left.i * local_1;
-        (*(real volatile *)&velocity->j) += left.j * local_1;
-        (*(real volatile *)&velocity->k) += left.k * local_1;
-        (*(real volatile *)&velocity->i) += up.i * local_2;
-        (*(real volatile *)&velocity->j) += up.j * local_2;
-        (*(real volatile *)&velocity->k) += up.k * local_2;
+        velocity->i = facing.i * local_0;
+        velocity->j = facing.j * local_0;
+        velocity->k = facing.k * local_0;
+        velocity->i += left.i * local_1;
+        velocity->j += left.j * local_1;
+        velocity->k += left.k * local_1;
+        velocity->i += up.i * local_2;
+        velocity->j += up.j * local_2;
+        velocity->k += up.k * local_2;
         gravity = false;
     }
     else if (direct)
     {
         vector3f delta;
-        delta.i = (*(real *)(arg_3 + 0x20)) * (facing.i * input.i - facing.j * input.j) - arg_2->i;
-        delta.j = (*(real *)(arg_3 + 0x20)) * (facing.j * input.i + facing.i * input.j) - arg_2->j;
+        delta.i = (*(real *)(state + 0x20)) * (facing.i * input.i - facing.j * input.j) - current->i;
+        delta.j = (*(real *)(state + 0x20)) * (facing.j * input.i + facing.i * input.j) - current->j;
         point2f limited = { delta.i, delta.j };
-        real step = *(real *)(arg_3 + 0x148) * g_510c54->rate;
+        real step = *(real *)(state + 0x148) * g_510c54->rate;
         if (normalize2d(&limited) > step)
         {
             limited.x *= step;
@@ -720,9 +819,9 @@ PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f co
             limited.x = delta.i;
             limited.y = delta.j;
         }
-        velocity->i = arg_2->i + limited.x;
-        velocity->j = arg_2->j + limited.y;
-        velocity->k = arg_2->k - *(real *)(arg_3 + 0x130) * g_510c54->rate;
+        velocity->i = current->i + limited.x;
+        velocity->j = current->j + limited.y;
+        velocity->k = current->k - *(real *)(state + 0x130) * g_510c54->rate;
     }
     else
     {
@@ -792,70 +891,63 @@ PRIVATE __forceinline void function_1f087a(byte *arg_0, byte *arg_1, vector3f co
                     (*(real *)(settings + 0x64) - *(real *)(settings + 0x60));
         }
         vector3f delta;
-        function_1f087d(&delta, &desired, (*(real *)(arg_3 + 0x20)) * magnitude, arg_2);
+        real speed = *(real *)(state + 0x20) * magnitude;
+        delta.i = desired.i * speed - current->i;
+        delta.j = desired.j * speed - current->j;
+        delta.k = desired.k * speed - current->k;
         vector3f limited = delta;
-        real step = *(real *)(arg_3 + 0x144) * g_510c54->rate;
+        real step = *(real *)(state + 0x144) * g_510c54->rate;
         bool limited_step = function_30bf0(&limited) > step;
         if (limited_step)
-            function_1f087e(&limited, step);
+        {
+            limited.i *= step;
+            limited.j *= step;
+            limited.k *= step;
+        }
         else
             limited = delta;
         if (!limited_step || flying)
             gravity = false;
-        if (!arg_3[0xa8] && *(long *)((byte *)g_51e9c4 + 0x18) - g_510c54->game_time <= 0)
-            function_1f087f(&limited, &limited, &normal, 0.234f);
+        if (!state[0xa8] && *(long *)((byte *)g_51e9c4 + 0x18) - g_510c54->game_time <= 0)
+        {
+            limited.i -= normal.i * 0.234f;
+            limited.j -= normal.j * 0.234f;
+            limited.k -= normal.k * 0.234f;
+        }
         if (damping)
         {
-            real fraction = 1.0f - *(real *)(arg_3 + 0x98);
+            real fraction = 1.0f - *(real *)(state + 0x98);
             limited.i *= fraction;
             limited.j *= fraction;
         }
         if (gravity)
-            limited.k -= *(real *)(arg_3 + 0x130) * g_510c54->rate;
-        function_1f087c(velocity, arg_2, &limited);
+            limited.k -= *(real *)(state + 0x130) * g_510c54->rate;
+        velocity->i = current->i + limited.i;
+        velocity->j = current->j + limited.j;
+        velocity->k = current->k + limited.k;
     }
-    if (!((*(dword *)settings >> 2) & 1) && !(*(dword const *)(arg_3 + 0x14) & 4))
+    if (!((*(dword *)settings >> 2) & 1) && !(*(dword const *)(state + 0x14) & 4))
     {
-        if (*(long *)(arg_1 + 0xc) != NONE && *(long *)(arg_1 + 0xc) == g_510c54->game_time - 1)
+        if (*(long *)(history + 0xc) != NONE && *(long *)(history + 0xc) == g_510c54->game_time - 1)
         {
-            vector3f change = shape_add(shape_subtract(input, *(vector3f *)(arg_1 + 0x10)), *(vector3f *)(arg_0 + 0x64));
+            vector3f change = shape_add(shape_subtract(input, *(vector3f *)(history + 0x10)), *(vector3f *)(out + 0x64));
             real maximum = (real)sqrt(change.k * change.k + change.j * change.j + change.i * change.i) + g_47ffb0;
-            vector3f offset = shape_subtract(*(vector3f const *)(arg_3 + 0x124), *(vector3f *)(arg_0 + 0x64));
+            vector3f offset = shape_subtract(*(vector3f const *)(state + 0x124), *(vector3f *)(out + 0x64));
             vector3f relative = shape_subtract(*velocity, offset);
             function_a75d0(&relative, maximum);
-            function_1f087c(velocity, &relative, &offset);
+            velocity->i = relative.i + offset.i;
+            velocity->j = relative.j + offset.j;
+            velocity->k = relative.k + offset.k;
         }
-        *(vector3f *)(arg_1 + 0x10) = input;
-        *(long *)(arg_1 + 0xc) = g_510c54->game_time;
+        *(vector3f *)(history + 0x10) = input;
+        *(long *)(history + 0xc) = g_510c54->game_time;
     }
     if (gravity)
-        *(dword *)arg_0 |= 1;
+        *(dword *)out |= 1;
     else
-        *(dword *)arg_0 &= ~1;
+        *(dword *)out &= ~1;
 }
 #undef settings
-
-// score 621 (was 625): frame 0x34 versus 0x30; direct-bit and vector homes still differ.
-// Settings snapshot 631; common step 631; inline depth one 1367; scoped size 924; shared scale 630.
-// Ordinary gravity with shared normalization 622; cached mode 648; limited-first 625;
-// request bitfields 621; global optimization off 2562; direct scalar lifetimes 623; bitfields plus scalars 626.
-// Request-record snapshot 625; inline depth two 621; ordinary gravity on native flags 621;
-// shared direct/general delta 621; complete horizontal point copies 630.
-// score 614 (was 621): frame 0x34 versus 0x30 and vector homes still differ.
-// Native enabled test 626; byte flag view 619; low-normal first 618; current-velocity snapshot 625;
-// repeated damping 624; native enabled/byte view 629; gravity first 616; byte view/low-normal 616;
-// gravity/low-normal 614 kept; gravity/byte view 618.
-// score 614 (was 614): Frame 0x34 versus 0x30; direct-bit and vector homes remain. Captured-word
-// direct 626; damping 619; gravity 619; all predicates 627; later input magnitude 619 (fast).
-// frame 0x34 versus 0x30; direct-mode register and vector homes still differ.
-// Native enabled on gravity/low-normal body 624; direct before damping 618; direct distance result 619;
-// general distance result 614; masked final gravity word 634.
-// @retail 0x1f0870
-void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
-{
-    function_1f087a(out, history, current, state);
-}
-#pragma optimize("", on)
 
 
 PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const *input, vector3f *out)
@@ -866,24 +958,86 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
         copy = *input;
         input = &copy;
     }
-    real i = input->i;
-    real j = input->j;
-    real k = input->k;
-    out->i = j * matrix->left.i + k * matrix->up.i + i * matrix->forward.i;
-    out->j = i * matrix->forward.j + j * matrix->left.j + k * matrix->up.j;
-    out->k = i * matrix->forward.k + j * matrix->left.k + k * matrix->up.k;
+    real product_forward_i = input->i * matrix->forward.i;
+    real product_left_i = input->j * matrix->left.i;
+    real product_up_i = input->k * matrix->up.i;
+    out->i = product_left_i + product_up_i + product_forward_i;
+    real product_forward_j = input->i * matrix->forward.j;
+    real product_left_j = input->j * matrix->left.j;
+    real product_up_j = input->k * matrix->up.j;
+    out->j = product_forward_j + product_left_j + product_up_j;
+    real product_forward_k = input->i * matrix->forward.k;
+    real product_left_k = input->j * matrix->left.k;
+    real product_up_k = input->k * matrix->up.k;
+    out->k = product_forward_k + product_left_k + product_up_k;
 }
 
-// score 101 (was 101): final override load order and rotation input/coefficient schedule differ.
+// score 50 (was 50): Frame 0x58 agrees; final override load order and rotation coefficient residency remain.
+// Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
+// Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
+// final override load order and rotation input/coefficient schedule differ.
 // Rotation pointer/reference results 101/101; matrix reference 101; remaining helper orders 101/101/101.
 // Deferred rotation stores 102; left-coefficient snapshots 102; original alias copy and arithmetic restored.
-// reading the input vector's components at each use in shape_rotate_vector scores
-// 76-82, but both calls rotate in place (input and out are the same vector), so every input component
-// must be read before the first store; that form is not kept.
+// Earlier partial input-component snapshots 76-82 were not selected; the complete alias-safe
+// per-use input form below remains at 87.
 // Final override load order and rotation input/coefficient allocation still differ.
 // Final point setter 104; completed translation 189; translation record 102;
 // rotation result 175; direction snapshot 187; orientation snapshot 193;
 // point/rotation results 177; translation/orientation snapshots 301.
+// the rotation reads each input component at its use, as retail
+// frame 0x58 agrees; final override loads and rotation coefficient/input scheduling remain.
+// Frame 0x58 agrees; override load order and rotation coefficient residency remain.
+// Earlier: final override load order and rotation input/coefficient schedule differ.
+// Partial component reads 76-82; the alias copy protects both in-place inputs.
+// All current input reads use the protected copy when input and output alias.
+// Components accumulated by statements in retail's term order 86; matrix-first
+// products 86; the 0x2477b1 helper's form 88; typed position/velocity pointers 86;
+// swapped operands 86; through shape_add 164 (position first, as retail, plus a copy);
+// typed pointers with explicit sums 86.
+// Initialized alias copy 118; memcpy copy 87; shared copy setter 84 (three-count gain rejected);
+// alias-copy name 87; value input 110; reference input with copy 110; value matrix 201;
+// unconditional input copy 109. All eight helper/call forms restored.
+// Earlier: the rotation reads each input component at its use, as retail
+// does (re-reading after every store); that is correct in place, since the alias copy
+// points the input at the copy when it is the output. Override additions still load
+// the velocity before the position, and the rotations' term order and operand roles
+// differ. Components accumulated by statements in retail's term order 86; matrix-first
+// products 86; the 0x2477b1 helper's form 88; typed position/velocity pointers 86;
+// swapped operands 86; through shape_add 164 (position first, as retail, plus a copy);
+// typed pointers with explicit sums 86.
+// Rotation result setter 95; overlap-safe alias copy 107; final/initial/both support admissions 82/82/82
+// (all 1031 versus 1043 bytes, rejected); native override byte 87; short/word saturation 87/87.
+// Axis-record values forward/left/up/all outline the helper, 418 each; output/matrix-output references and
+// trailing-component loops 87 each; force-inline axis values 141/148/146/246; force-inline loop/reference
+// loop 87/87.
+// Partial sums i/j/k 93 each, ij/ik/jk/all 87 each; first lateral product named in the i row only 59 (1040/1043 bytes; not kept: one of three parallel rows). Original grouping and alias copy retained.
+// left products in every row 86 fast;
+// forward products in every row 90 fast;
+// up products in every row 87 fast;
+// left/forward products in every row 86 fast;
+// left/up products in every row 86 fast;
+// forward/up products in every row 87 fast;
+// all three products in every row 54 fast;
+// first syntactic product in every row 90 fast;
+// Round 159: Complete named-product declaration orders forward/left/up 50; forward/up/left 54;
+// left/up/forward 54; up/forward/left 53; up/left/forward 53; matrix-first named products 54; immutable
+// named products 54; named products with all partial sums 59. Forward/left/up kept at 1040/1043 bytes;
+// plain confirmed.
+// Round 163: Complete-product row scopes/entry carriers/axis-first names 50/50/50;
+// deferred publication 93; row accumulators 59; forced expansion 50; existing final add
+// 163; existing result setter 93. All on the retained nine-product graph; original
+// helper, alias copy and every operation restored.
+// Round 166: Complete vector-return ownership, matrix/input pointer-pointer, reference-pointer,
+// value-pointer, pointer-reference, reference-reference, value-reference, pointer-value,
+// reference-value 127/127/223/127/127/223/161/161. Original two-use output helper restored.
+// Round 342: Row-shared forward/left/up product carriers 86/86/86; paired forward-left/forward-up/left-up 53/53/53;
+// all three 52; all three with complete protected input scalars 102. Original nine-product helper restored.
+// Lane 5 r77: VC canonicalises the rotation (any sum order, product operand order or product
+// declaration order gives identical code; a compile-only screen shows it), and `dst += src`
+// with two indirect operands always loads the source first. Override adds through named
+// offset/position pointers 54; row i grouped (forward + left) + up 50 at 1043/1043; retail's
+// own row groupings (left + up, forward + left, forward + left) 59; one named output-velocity
+// pointer for both override blocks 265 (frame); a 600 s permuter run, none below 50.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {
@@ -969,7 +1123,12 @@ PRIVATE inline real contact_normalize(vector3f *vector)
     return length;
 }
 
-// score 428 (was 489): frame now 0x64; count/component and vector homes still differ.
+// score 421 (was 421): Frame 0x64 agrees; persistent zero and count/component homes remain.
+// Frame 0x64 agrees; persistent zero and count/component homes remain.
+// Frame 0x64 agrees; persistent zero, count/component homes and direction residency remain.
+// Earlier 428 from 489: frame now 0x64; count/component and vector homes still differ.
+// Frame 0x64 agrees; persistent zero, count/component homes and direction retention differ.
+// Earlier: frame now 0x64; count/component and vector homes still differ.
 // Three-pass countdown 490; preferred-contact cursor 527; search cursor 428;
 // inline depth one 489; existing snapshot cross helper 488.
 // Byte flag helper 471; shared adjustment join 437; final contact cursor 595;
@@ -977,7 +1136,39 @@ PRIVATE inline real contact_normalize(vector3f *vector)
 // Ordinary count with search cursor 525; candidate countdown 474; fixed-pass do loop 427;
 // snapshot projection helper 428; native relative-velocity subtraction 642.
 // Frame pointer 692; depth zero 967; size preference 1011; moving arm first 449; native component subtraction loops 427 (one-point gain rejected).
-// score 428 (was 428): Frame 0x64 agrees; persistent zero and count/component homes remain. Cursor-context entry count 427; entry result 425; entry desired/direction 428; short pass counter 428; final speed eligibility 430 (fast).
+// Earlier 428 from 428: Frame 0x64 agrees; persistent zero and count/component homes remain. Cursor-context entry count 427; entry result 425; entry desired/direction 428; short pass counter 428; final speed eligibility 430 (fast).
+// Earlier 428 from 428: persistent zero and accepted-count/component homes still differ.
+// Entry count/result interaction 528; contact-base field reference 428; count-field references 428;
+// entry count/result plus base reference 528; entry count/result plus count references 528.
+// Earlier 428 from 428: Frame 0x64 agrees; zero/count/component homes remain. Native component 428; stepping
+// value subtraction 445; dual preferred/search cursors 434; response-scoped indices 428; native
+// component/scoped indices 428; dual cursors with projection helper 454; dual cursors with entry count 433
+// (fast).
+// Earlier 421 from 428: frame 0x64 agrees; persistent zero and count/component homes remain.
+// Two-contact response first 421 kept; entry index array 428; dynamic preferred bound 428;
+// fallback-only shared negative scale 428; byte pass ordinal 434 (fast).
+// Request flags once 494; flight once 531; preferred surface once 467; complete contact-base snapshot
+// 587; signed contact-bound snapshot 496; flags/flight 596; base/bound 651; flags/flight/preferred 659
+// (fast). All restored.
+// Round 361: native contact records in preferred/candidate/response/final scans 421/421/421/421;
+// preferred plus candidate, response plus final, all scans and all read-only records 421/421/421/421
+// (fast). Existing record layout and complete body restored.
+// Earlier: Frame 0x64 agrees; persistent zero and count/component homes remain. Cursor-context entry count 427; entry result 425; entry desired/direction 428; short pass counter 428; final speed eligibility 430 (fast).
+// Earlier: persistent zero and accepted-count/component homes still differ.
+// Earlier: Frame 0x64 agrees; zero/count/component homes remain. Native component 428; stepping
+// Earlier: frame 0x64 agrees; persistent zero and count/component homes remain.
+// Byte/unsigned-word accepted count 462/426; unsigned fixed pass 421; separate entry
+// desired/direction storage 421/421.
+// Round 163: Local speed/object/both/surface/speed+surface/object+surface/all
+// scalar outputs and complete output/Boolean join 554/499/554/570/621/622/613/547.
+// All regress; original direct publications, qualified count and cursor restored.
+// Round 166: Whole squared/absolute/both magnitude names in both normalizations
+// 421/422/422; desired-length result alone/with square/with absolute/with both
+// 421/421/422/422 (one-use return forms match-only); existing squared-length helper 421;
+// Boolean flight expressions at both tests 466. Original helper, expressions and body restored.
+// Existing selection/tangent/speed dot inputs reversed independently, in all seven combinations,
+// and together with the accepted-count lexical home: 421 each. Helpers and body restored.
+// Round 152: Eight relative/desired/direction library-copy forms 421 each; complete accepted-count producer shared by insertion, increment, store and both tests 419, with one-contact-first 419 (2089 bytes). Two-point forms rejected; original copies, qualified count, cursor and response order restored.
 // @retail 0x1f2250
 bool function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
     bool moving, vector3f *out, long *surface, real *speed, long *object_index)
@@ -1094,13 +1285,7 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             *surface = selected;
             indices[count++] = selected;
             byte *contact = *(byte **)(component + 0x88) + selected * 0x48;
-            if (count == 1)
-            {
-                direction.i = desired.i - *(real *)(contact + 0x28) * minimum;
-                direction.j = desired.j - *(real *)(contact + 0x2c) * minimum;
-                direction.k = desired.k - *(real *)(contact + 0x30) * minimum;
-            }
-            else if (count == 2)
+            if (count == 2)
             {
                 byte *contacts = *(byte **)(component + 0x88);
                 vector3f tangent;
@@ -1108,6 +1293,12 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
                     (vector3f *)(contacts + indices[1] * 0x48 + 0x28), &tangent);
                 contact_normalize(&tangent);
                 vector3f_scale(&tangent, dot3f(&tangent, &desired), &direction);
+            }
+            else if (count == 1)
+            {
+                direction.i = desired.i - *(real *)(contact + 0x28) * minimum;
+                direction.j = desired.j - *(real *)(contact + 0x2c) * minimum;
+                direction.k = desired.k - *(real *)(contact + 0x30) * minimum;
             }
         }
         function_1f2a80(request, moving, &desired, indices, count, out, velocity);
@@ -1134,13 +1325,26 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
 real function_1201a0(vector3f *vector, vector3f const *fallback);
 bool havok_component_any_rigid_body_active(s_havok_component *component);
 
-// score 230 (was 230): zero-load width, reset/selection lifetimes and material-call expansion;
+// score 230 (was 230): Frame 0x28 agrees; zero-load width, reset/selection homes and material-call expansion remain.
+// Earlier: zero-load width, reset/selection lifetimes and material-call expansion;
 // float consistency 392; native normal 368; current supported long 261; current flag long 361;
 // unsupported-first with original magnitude 258; native movement input 284.
-// score 230 (was 230): double-width zero load, reset/selection homes and second material-call expansion still differ.
+// Earlier: double-width zero load, reset/selection homes and second material-call expansion still differ.
 // Combined eligibility 240; per-contact body-velocity snapshot 346; highest reduction after selection 258;
 // approach at use 351; surface output at entry 230.
-// score 230 (was 230): Frame 0x28 agrees; zero width, reset/selection homes and material-call expansion remain. Preservation arm first 288; entry score storage 230; shared squared length with double comparison 230; byte current flag 240; byte current supported 239 (fast).
+// Earlier: Frame 0x28 agrees; zero width, reset/selection homes and material-call expansion remain. Preservation arm first 288; entry score storage 230; shared squared length with double comparison 230; byte current flag 240; byte current supported 239 (fast).
+// Earlier: zero-load width, reset/selection homes and second material-call expansion remain.
+// Library history resets 238; contact-base field reference 235; unsigned selected ordinal 230;
+// native saved predicates at original magnitude 298; preservation predicate at dispatch 382.
+// Earlier: Frame 0x28 agrees; real-zero load, reset/selection homes and second material-call
+// expansion remain. Native component 230; flag after supported 355; long moving 300; long saved supported
+// 293; long saved flag 296 (fast).
+// Earlier: frame 0x28 agrees; zero width, selection homes and material-call expansion
+// remain. Separate inline declaration 230; entry normal workspace 230; unsigned highest 234;
+// native-long flying 306; final cleanup exit 230; normal/ordinal combination 232 (fast).
+// Signed-word moving/saved-supported/saved-flag/current-supported/current-flag 298/283/295/272/351.
+// Round 193: Component/component+contact/velocity/contact+velocity/component+velocity/all
+// fields at use; all with real magnitude; component root plus shared squared length: 460/404/334/336/501/540/540/460. Original restored.
 // @retail 0x1f19c0
 void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
 {

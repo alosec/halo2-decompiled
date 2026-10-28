@@ -57,6 +57,8 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 	return result;
 }
 
+__declspec(noinline) color3f *function_131d60(color4f const *a, color4f const *b, dword flags, real t, color3f *result, color3f const *tint);
+
 // @retail 0x131d60
 color3f *function_131d60(color4f const *a, color4f const *b, dword flags, real t, color3f *result, color3f const *tint)
 {

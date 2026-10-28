@@ -180,6 +180,7 @@ public:
 
 	// fills the description from the object
 	void function_3126b0(description_315ba0 *description) const;
+	void function_312760(bounds_312800 *bounds_out) const;
 	// sets the object from the description
 	void function_312790(description_315ba0 const *description);
 	// gives the object another shape, its bounds brought up to date

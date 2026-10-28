@@ -558,6 +558,61 @@ void __stdcall function_1889d0(dword flags)
 	}
 }
 
+// score 62 (was 62): retail loads the flag word whole into bx (ours a masked byte), reloads the
+// value into ecx (ours eax) and picks other scratch registers in the sound-tag loop and the final
+// flag test; without the 0x60 mask the flags and the value swap ebx and the stack slot.
+// Tried: flags/tag names 110; positive/rejection tests 110; direct parameter 160; early flag 42
+// (restored); inline query 110; shifted word/dword/byte 128/129/120; direct masks 154; first/second
+// mask 132/151; multi-use word mask 62; full-width mask 147; active-path mask 173; rejected-path mask
+// 110; query-rejection result 62; shared absolute scan 62; shared next datum 249; signed tag index 62;
+// common final flag publication 72; existing sound table helpers 62; signed short/long masked flags
+// 62/61; final parameter exit 66; final receiver ownership 55 (the global reloaded into a local by
+// hand, not kept); receiver with parameter exit 66; isolated tag scope 62; native iterator
+// initializer 118; direct reset record 62; complementary input 85; native flag copy 62; copy
+// complementary input 85; whole flag copy 110; reset array index 62; reset negative guard 62; late
+// flag positive 72; native entry ordinal 93; masked tag declaration/flag iteration scope 62/62; dword
+// parameter mask 83; scoped tag for-loop 62; paired zero chain/fill 64/123; Boolean parameter mask 62;
+// late global declaration 62; native raw word/signed word/flag object 62/62/62; masked dword 61;
+// const word 62; masked byte 155; parameter bit pair 173; typed word with pair 173. Relink scores
+// with branch targets masked (the current body 55): flag-struct copy or bitfield reads 152; word
+// local without the mask (byte, dword or no-bool shifts) 102-152; short/byte/long flag locals
+// 102/154/124; sound definition and rate-limit helpers (with a definition or index local) 55;
+// merged final flag test 67; /arch:SSE diagnostic 55.
+// Frame 0x1c agrees; raw BX flag load and later scratch receivers remain.
+// Earlier: native BX load, tag table and inactive clear receiver differ.
+// raw flags load and tag/late-global registers still differ;
+// flags/tag names 110; positive/rejection tests 110; direct parameter 160; early flag 42 (restored);
+// inline query 110; shifted word/dword/byte 128/129/120; direct masks 154; first/second mask 132/151;
+// multi-use word mask 62; full-width mask 147.
+// Active-path mask 173; rejected-path mask 110; query-rejection result 62;
+// shared absolute scan 62; shared next datum 249; signed tag index 62;
+// common final flag publication 72; existing sound table helpers 62.
+// Signed short/long masked flags 62/61; final parameter exit 66;
+// final receiver ownership 55 (the global reloaded into a local by hand, not kept); receiver with parameter exit 66;
+// isolated tag scope 62; native iterator initializer 118; direct reset record 62.
+// flags/tag names 110; positive/rejection tests 110; direct parameter 160; early flag 42
+// (restored);
+// inline query 110; shifted word/dword/byte 128/129/120; direct masks 154; first/second mask
+// 132/151;
+// native flags BX load and tag/late-global registers remain.
+// complementary input 85; native flag copy 62; copy complementary input 85; whole flag copy 110;
+// reset array index 62; reset negative guard 62; late flag positive 72; native entry ordinal 93.
+// Raw BX flag load and later receiver allocation remain.
+// frame 0x1c agrees; raw flag-word load, tag and late-global registers differ.
+// Earlier 62 (was 110): raw flags load and tag/late-global registers still differ;
+// Earlier 62 (was 62): native flags BX load and tag/late-global registers remain.
+// Masked tag declaration/flag iteration scope 62/62; dword parameter mask 83;
+// scoped tag for-loop 62; paired zero chain/fill 64/123; Boolean parameter mask 62; late global declaration 62.
+// Zero-or-one parameter byte/short/word/long 62/125/125/141; query/update noinline
+// declarations 62/62; signature-first initializer 64; signed byte table ordinal 62.
+// Native raw word/signed word/flag object 62/62/62; masked dword 61;
+// const word 62; masked byte 155; parameter bit pair 173; typed word with pair 173.
+// Tag/volume/reset/final-callback inline-noinline declarations 62 each; tag iterator/global receiver/both names 62 each; composite release predicate 151.
+// Tag field reads 62; flag word reads 110; both reads 110; native bitfield snapshot 128;
+// direct snapshot bits 154; snapshot plus tag reads 128; per-use bits 110; bits plus tag reads 110.
+// Active-state-first/pool for/release continue/active for 62/62/62/62;
+// whole record input 195; active record input 183;
+// record pool for/release continue 195/195.
 // @retail 0x188ac0
 void __stdcall function_188ac0(dword flags)
 {
@@ -576,7 +631,7 @@ void __stdcall function_188ac0(dword flags)
 			record_pool_release(array, datum);
 		else
 		{
-			register word flags5 = *(word const *)&element->flags;
+			word flags5 = *(word const *)&element->flags & 0x60;
 			if ((bool)((flags5 >> 5) & 1))
 			{
 				long value = element->value;
@@ -586,7 +641,7 @@ void __stdcall function_188ac0(dword flags)
 						record_pool_release(array, datum);
 					else
 					{
-						function_18d290(datum, value);
+						function_18d290(value, datum);
 						array = g_4ed28c;
 					}
 				}

@@ -3,6 +3,7 @@
 #include "engine_peer.h"
 #include "unknown_19ec40.h"
 #include "unknown_2420a0.h"
+#include "bit_vector.h"
 #include "game_engine_events.h"
 
 // @flags /O2 /arch:SSE /Gr
@@ -25,34 +26,75 @@ void function_242e00(long player_index, long team);
 void function_242660(long object_index, bool flag);
 void function_2430a0(long player_index, bool flag);
 
+#define MIN(a, b) (((a) > (b)) ? (b) : (a))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
 static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 {
 	return !(table->flags[team] & 1);
 }
 
-// score 190 (was 190): frame 0x3c agrees; object-pool reload, completion
-// flag stores and final predicate layout differ. Scoring team word 187
-// (three-point gain rejected), long 214; blocked long/byte 190/190; existing
-// flag helper force-inline 190; returned point 199; marker bits 190; option
-// scope 190. Original body and helper declaration retained.
-// score 190 (was 190): pool reload and separate completion stores remain;
-// read-only unit/type result 190/190; scoring team at call 226; completion event prepared first 193;
-// marker/slot entry lifetimes 190/190; success-result predicate 193; type result plus event preparation 193.
-// Read-only helper input 190; table reference 190; native team parameter 190; result-first predicate 192;
-// flag byte sample 190; direct capped result 190; cap and table reference 190; option guard order 190. Pool
-// reload and separate completion stores remain.
-// score 190 (was 190): Cached pool base and merged completion stores remain.
-// Native player record 190; scoring-team field binding 190; both 190;
-// increment counter binding 202; decrement binding 190; both counters 202;
-// marker-team value 194; native player with both counters 202.
-// score 190 (was 190): cached pool, merged completion stores and flag-result materialization remain.
-// Predicate long/short/byte/signed-byte returns 189/190/190/190;
-// byte predicate input 190; byte input with long/short/byte results 189/190/190.
-// Both one-point gains rejected; original predicate and body restored.
-// pool-data reload, completion stores and final predicate layout still differ.
-// permission result 190; fallback permission scope 190; present-unit scope 190
-// eligible-weapon scope 190; present-slot scope 190; present-marker scope 190
-// unit/weapon scopes 190; option once 190.
+// score 95 (was 95): frame 0x3c agrees; pool-data spill and scratch-register ties remain.
+// Earlier: frame 0x3c agrees; the object-pool data pointer is cached where retail reloads
+// frame 0x3c agrees; the object-pool data pointer is spilled across 0xcbd50/0x101280
+// frame 0x3c agrees; the object-pool data pointer is cached where retail reloads
+// it, the completion bits use other registers, and the final predicate's layout differs. Kept: the two
+// completion bits set through byte_flags_set (retail stores the flag byte twice), 190 -> 146.
+// frame 0x3c agrees; the object-pool data pointer is spilled across 0xcbd50/0x101280
+// where retail reloads it (a forced reload, reverted at once, gives 72), the virtual-call setup and the
+// completion bits use other scratch registers, the team keeps `mov esi, edi` where retail re-extends
+// (`movsx esi, di`: only a long team cast back to short at the 0x242e00 call gives it; 0x242e00's
+// other caller 0x242660 pushes its team unextended) and the clear-flag predicate is tested where
+// retail materializes it (`not al; and al, 1`). Kept: the two completion bits through byte_flags_set
+// 190 -> 146; the blocked call as the else arm 146 -> 106; the decay and the capped increment as
+// MAX/MIN expressions 106 -> 95 (MAX alone 105).
+// Tried on the 190 body: scoring team word 187, long 214; blocked long/byte 190/190; existing flag helper
+// force-inline 190; returned point 199; marker bits 190; option scope 190; read-only unit/type result
+// 190/190; scoring team at call 226; completion event prepared first 193; marker/slot entry lifetimes
+// 190/190; success-result predicate 193; type result plus event preparation 193; read-only helper input
+// 190; table reference 190; native team parameter 190; result-first predicate 192; flag byte sample 190;
+// direct capped result 190; cap and table reference 190; option guard order 190; native player record
+// 190; scoring-team field binding 190, both 190; increment counter binding 202; decrement binding 190;
+// both counters 202; marker-team value 194; native player with both counters 202; predicate
+// long/short/byte/signed-byte returns 189/190/190/190; byte predicate input 190, with long/short/byte
+// results 189/190/190; native unit/weapon/both header references 190 each; external carried-index,
+// selected-slot or both field bindings 190 each; initializer return used directly 311; external options
+// record reference 190; permission result 190; fallback permission, present-unit, eligible-weapon,
+// present-slot, present-marker and unit/weapon scopes 190 each; option once 190; negative-three
+// addition 190; default-NONE/explicit-arm team results 191/190; reversed completion bit order 190;
+// in-place limit 190; two-use stored-short ticks 190; limit plus stored ticks 190; default-NONE team plus
+// negative-three addition 191; fresh player/unit/slot reads 254/190/271; player-unit/player-slot/
+// unit-slot/all three 254/329/271/329; unit-index field at each use 195; team-first existing predicate
+// with original/const/native-team/both inputs 190 each, long/short/byte/signed-byte results
+// 189/190/190/190; event initialization between the completion bits 183; initialize/first bit/cause/
+// second bit 163; first bit/initialize/cause/second bit 183; both preparation steps first 193; separate
+// event buffers 196/160/183/193 (163/160 grow the frame to 0x60); native flag-array and flag-element
+// predicate inputs with logical/complement extraction: bool 190, long 189; separate noinline
+// declarations of 0x101280, 0x15b2f0, 0x138880, 0x138860, 0x15fe70, 0x244680, 0x197210 and 0x242660:
+// 190 each.
+// Native flag-bit object by value/pointer with bool/byte/short/long results 190/190/190/192
+// each; complete slot-table owner, mutable/const first-consumer captures 200/200, entry captures
+// 245/245, long predicate on those 199/199/244/244; plain descending notification-mask loop 187, with
+// completion initialization between bits/preparation before the second bit/initialization before both
+// 240/251/240, independent event buffers 193; complete eligibility bool/byte/short/long 190 each;
+// default-false reader-gate results 190 each; common score result and one publication (eight forms)
+// 239; slot/limit/ticks/marker/unit/weapon home names 190; complete entry carried-unit value 221, with
+// short slot/clock-first product/both 239/221/239; word teams alone/slot/product/all 207/223/207/223.
+// Round 146, separate byte-store graph: table-first explicit-bool/byte/short/long predicates
+// 146/146/146/149; team-first bool/byte/short/long 146/146/146/149. Original helper/body restored.
+// On the 146 body: limit product operands swapped 106 (no change); short slot 236; `+ -3` 106 (no
+// change); event initialization before both bits 109. On the 95 body: permission as `allowed = false;
+// if (0x15e410(team)) allowed = clear;` 128; engine call through game_engine_get 95; slot read without
+// the weapon pointer 95; position/event declarations swapped 95; signed-char predicate team 95.
+// Round 211: on the repaired MIN/MAX graph, twice-used increment/decrement inputs, native short
+// clamp output and their seven subsets 95 each; complete graph with entry result declaration 95.
+// Original input observations, result lifetime and body restored.
+// Round 62 (95 body): unit through the existing unit_weapon_view_get 95; predicate as `== 0` 95;
+// blocked as one value expression 95; second event initialized before both bits 107; both events
+// through the out-of-line initializer nested in the cause call 284 (not inlined).
+// Round 77: unit/weapon/both through object_get 95/95/95 (the pool read stays shared: both callees
+// between them only read memory in this build, so the reload looks like a callee-summary effect);
+// the entry guard split in two 95; the team as a long 119.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {
@@ -85,20 +127,18 @@ void __stdcall function_2403b0(long player_index)
 			if (g_51ec80->e[slot] == NONE)
 			{
 				game_engine_event_initialize_inline(&event, 10, 14);
-				game_engine_event_set_cause_player(&event, player_index);
+				game_engine_event_set_cause_player(player_index, &event);
 				function_19eb90(&event);
 			}
 			long limit = (short)*(short *)((byte *)g_4e6948 + 0x244) * g_510c54->field_2_3;
-			long ticks = g_51ec80->e[slot] + 1;
-			if (ticks > limit)
-				ticks = limit;
+			long ticks = MIN(g_51ec80->e[slot] + 1, limit);
 			g_51ec80->e[slot] = (short)ticks;
 			if ((short)ticks == limit)
 			{
-				g_51ec80->flags[slot] |= 8;
-				g_51ec80->flags[slot] |= 1;
+				byte_flags_set(&g_51ec80->flags[slot], 3, true);
+				byte_flags_set(&g_51ec80->flags[slot], 0, true);
 				game_engine_event_initialize_inline(&event, 10, 15);
-				game_engine_event_set_cause_player(&event, player_index);
+				game_engine_event_set_cause_player(player_index, &event);
 				function_19eb90(&event);
 				function_a7810(0x200);
 				function_a7810(0x100);
@@ -106,12 +146,7 @@ void __stdcall function_2403b0(long player_index)
 			}
 		}
 		else
-		{
-			long ticks = g_51ec80->e[slot] - 3;
-			if (ticks <= NONE)
-				ticks = NONE;
-			g_51ec80->e[slot] = (short)ticks;
-		}
+			g_51ec80->e[slot] = (short)MAX(g_51ec80->e[slot] - 3, NONE);
 		function_a7810(0x100);
 		return;
 	}
@@ -127,18 +162,21 @@ void __stdcall function_2403b0(long player_index)
 		if (!function_15e410(team) || !slot_flag_clear_2403b0(g_51ec80, team))
 			blocked = true;
 	}
-	if (blocked)
-		function_2430a0(player_index, true);
-	else if (function_138860())
+	if (!blocked)
 	{
-		if (g_4e6948->mode_180 == 9)
-			function_242ba0(marker, weapon_index, player_index);
-		else
+		if (function_138860())
 		{
-			short team = (short)slot == 8 ? NONE : (short)slot;
-			function_197210(player_index, 1, slot);
-			function_242e00(player_index, team);
-			function_242660(weapon_index, false);
+			if (g_4e6948->mode_180 == 9)
+				function_242ba0(marker, weapon_index, player_index);
+			else
+			{
+				short team = (short)slot == 8 ? NONE : (short)slot;
+				function_197210(player_index, 1, slot);
+				function_242e00(player_index, team);
+				function_242660(weapon_index, false);
+			}
 		}
 	}
+	else
+		function_2430a0(player_index, true);
 }

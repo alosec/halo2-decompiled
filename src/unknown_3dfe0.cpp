@@ -17,6 +17,11 @@ s_object *function_badc0(long object_index, dword mask);
 void function_3e5a0(vector3f *current, vector3f const *target, real step);
 void function_3e4e0(dword *current, dword const *target, real step);
 
+// score 27 (was 27): the object pointer and force flag swap stack homes (retail object 0x14 in ebx,
+// force 0x10), update's false store sits after the force test, and special takes esi for edi.
+// update = false before force 218 (homes as retail, sample/update timestamps swap esi/edi);
+// that plus update elapsed after the object 186; update before the object 216;
+// object, update, update elapsed, force 186; an inline object getter for both lookups 27.
 // @retail 0x3dfe0
 void function_3dfe0(long cache_index, long object_index, real priority)
 {

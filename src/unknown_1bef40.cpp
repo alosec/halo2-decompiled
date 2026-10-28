@@ -51,7 +51,7 @@ void *function_1e4d10(long actor_index);
 void function_1f86a0(long index);
 
 short function_2684f0(s_actor_view *actor);
-void function_e70b0(long unit_index, short *value);
+short *function_e70b0(long unit_index, short *value);
 long function_1469f0(real seconds);
 
 #pragma intrinsic(_ReadWriteBarrier)

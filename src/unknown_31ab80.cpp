@@ -30,16 +30,32 @@ struct s_2da8c0
 	void function_2da9a0(hkRotation const *arg_0);
 };
 
+struct inertia_value_31ab80
+{
+	__m128 value;
+	float &operator[](int i) { return value.m128_f32[i]; }
+	float const &operator[](int i) const { return value.m128_f32[i]; }
+};
 class class_31ab80
 {
 public:
-	char unknown0[0x80];
+	char unknown0[0x2c];
+	float inverse_mass;
+	char unknown30[0x40];
+	__m128 balance_point;
 	hkRotation rotation;
 	char unknownb0[0x30];
-	float diagonal[3];
+	inertia_value_31ab80 diagonal;
+	__m128 force;
+	__m128 torque;
 
 	void function_31ab80(s_2da8c0 *out) const;
 	void function_31ac20(s_2da8c0 *out) const;
+	void function_31ac80(float value);
+	void function_31aca0(__m128 const &value);
+	void function_31ad50(__m128 const &value);
+	void function_31adf0(hkRotation const &value);
+	void function_31ae40(hkRotation const &value);
 };
 
 // @retail 0x31ab80
@@ -72,4 +88,47 @@ void class_31ab80::function_31ac20(s_2da8c0 *out) const
 	second_row[1] = y;
 	r2[2] = z;
 	out->function_2da9a0(&rotation);
+}
+
+// Store inverse mass both in the motion prefix and the diagonal vector.
+// @retail 0x31ac80
+void class_31ab80::function_31ac80(float value)
+{
+	inverse_mass = value;
+	diagonal[3] = value;
+}
+// @retail 0x31aca0
+void class_31ab80::function_31aca0(__m128 const &value)
+{
+	force = _mm_add_ps(force, value);
+}
+// @retail 0x31ad50
+void class_31ab80::function_31ad50(__m128 const &value)
+{
+	torque = _mm_add_ps(torque,value);
+	torque.m128_f32[3] = 1.0f;
+}
+// @retail 0x31adf0
+void class_31ab80::function_31adf0(hkRotation const &value)
+{
+	float x = 1.0f / value.m_col0.value.m128_f32[0];
+	float y = 1.0f / value.m_col1.value.m128_f32[1];
+	float z = 1.0f / value.m_col2.value.m128_f32[2];
+	float mass = diagonal[3];
+	diagonal[0]=x;
+	diagonal[1]=y;
+	diagonal[2]=z;
+	diagonal[3]=mass;
+}
+// @retail 0x31ae40
+void class_31ab80::function_31ae40(hkRotation const &value)
+{
+	float mass=diagonal[3];
+	float z=value.m_col2.value.m128_f32[2];
+	float y=value.m_col1.value.m128_f32[1];
+	float x=value.m_col0.value.m128_f32[0];
+	diagonal[0]=x;
+	diagonal[1]=y;
+	diagonal[2]=z;
+	diagonal[3]=mass;
 }

@@ -20,11 +20,11 @@ struct s_unit_eye_object
 	byte unknownab[0xb4 - 0xab];
 	long attachment_index;
 	byte unknownb8[0x10a - 0xb8];
-	byte flags10a_0 : 1;
-	byte flags10a_1 : 1;
-	byte flags10a_2 : 1;
-	byte : 5;
-	byte unknown10b[0x168 - 0x10b];
+	word flags10a_0 : 1;
+	word flags10a_1 : 1;
+	word flags10a_2 : 1;
+	word : 13;
+	byte unknown10c[0x168 - 0x10c];
 	vector3f forward;
 	byte unknown174[0x1fc - 0x174];
 	short seat_index;
@@ -160,11 +160,30 @@ point3f *function_b9ef0(long object_index, point3f *result)
 	return result;
 }
 
+// score 199 (was 199): frame 0xa4 and the marker branch agree; retail keeps the object data base in EBP
+// (ours the tag table), and the collision point's last component reuses the fraction register, which
+// shifts the tail by one instruction. Retail reloads the tag table after the 0xb9ef0 call (parent
+// branch); ours treats that call as unable to change it and keeps it in EBP from entry.
+// Round 10 (lane 10): outer definition declared first 199 (same code); outer definition through
+// unit->definition_index 281; hit point through a point-plus-scaled-vector inline 199 (same);
+// default marker call first 199 (same).
+// Round 8 (lane 10): up vector and point in their own block scopes (frame 0xa4) 292; with the heights
+// definition read through the unit index 273; marker name as an if/else 310; two marker calls 281;
+// default call first 281; one definition for both branches 336; outer definition read through the unit
+// index 266; with two marker calls 199 (kept); point written position-first/fraction-first 199/199;
+// point as a component loop 200; comparison written collision-first 200 (retail's dot order exactly,
+// shifted by the point block; apply once that is fixed); crouch blend operand orders 200/200;
+// collision initialiser before the forward copy or the origin 198/198.
+// Earlier: frame 0xb0 vs 0xa4 and vertical-basis/point homes still differ.
+// vertical role name 309; native word flags 290; both 290; shared displacement 309;
+// displacement/word/name 290; separate backward query vector 309; complete vector
+// graph/word 290; native copies on that graph 290; local-up name 309; word/local-up 290.
+// Retain the actual flag-word declaration with unchanged following field offsets.
 // @retail 0xcafc0
 void function_cafc0(long unit_index, point3f *position)
 {
 	s_unit_eye_object *unit = EYE_OBJECT(unit_index);
-	s_unit_eye_definition *definition = EYE_DEFINITION(unit->definition_index);
+	s_unit_eye_definition *definition = EYE_DEFINITION(EYE_OBJECT(unit_index)->definition_index);
 
 	if (unit->parent_index == NONE && !TEST_FIELD_BIT(unit->flags10a_2) && !unit->type)
 	{
@@ -172,9 +191,7 @@ void function_cafc0(long unit_index, point3f *position)
 		real crouch;
 		point3f origin;
 		vector3f forward;
-		vector3f up;
 		vector3f offset;
-		point3f point;
 		s_collision_result_1697c0 collision;
 
 		function_b9dd0(unit_index, position);
@@ -183,13 +200,19 @@ void function_cafc0(long unit_index, point3f *position)
 		origin = *position;
 		forward = unit->forward;
 		collision.unknown24 = NONE;
-		function_11d090(&forward, &up);
-		function_df380(unit_index, &origin, &forward, &up);
+		{
+			vector3f up;
+
+			function_11d090(&forward, &up);
+			function_df380(unit_index, &origin, &forward, &up);
+		}
 		offset.i = origin.x - position->x;
 		offset.j = origin.y - position->y;
 		offset.k = origin.z - position->z;
 		if (function_30bf0(&offset) > g_45dbd8)
 		{
+			point3f point;
+
 			forward.i = offset.i * -0.25f;
 			forward.j = offset.j * -0.25f;
 			forward.k = offset.k * -0.25f;
@@ -225,19 +248,17 @@ void function_cafc0(long unit_index, point3f *position)
 	}
 	else if (unit->parent_index == NONE)
 	{
-		long marker_name = 0x4000095;
 		s_object_marker marker;
 
-		if (unit->unknown24c != NONE)
+		if (unit->unknown24c != NONE && EYE_OBJECT(unit->unknown24c)->seat_index != NONE)
 		{
-			s_unit_eye_object *object = EYE_OBJECT(unit->unknown24c);
-
-			if (object->seat_index != NONE)
-			{
-				marker_name = definition->seats[object->seat_index].marker_name;
-			}
+			function_b8d30(unit_index, definition->seats[EYE_OBJECT(unit->unknown24c)->seat_index].marker_name,
+				&marker, 1, false);
 		}
-		function_b8d30(unit_index, marker_name, &marker, 1, false);
+		else
+		{
+			function_b8d30(unit_index, 0x4000095, &marker, 1, false);
+		}
 		*position = marker.matrix.position;
 	}
 	else

@@ -41,7 +41,10 @@ void __stdcall swarm_delete(long arg_0);
 // source rewrites (the declaration order, the result split from the
 // allocation, the comparison against the variable, the goto, the width of the
 // limit) all scored 53 or worse.
-// score 44 (was 44): retail's record stores run NONE pair, zero pair, first point,
+// score 44 (was 44): the same register split. Retail store order with the
+// count read once 53; tag pointer declared before the result 44; flag byte
+// in a local 44; nested tag test 44; locals declared at the top 53.
+// retail's record stores run NONE pair, zero pair, first point,
 // field_1c, second point, flags; that order 53. The record pointer before the
 // tag-field read with the limit next gives retail's head (tag edi, NONE esi)
 // but not its limit: ternary 79; `count = 10; if (field > 0) count = field;` 56

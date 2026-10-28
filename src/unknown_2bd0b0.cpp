@@ -320,7 +320,7 @@ void function_2bd460(long before_players, long after_players)
 				game_engine_event_initialize_inline(&event, 6, function_15eaf0() ? 6 : 2);
 				if (player_index != NONE)
 				{
-					game_engine_event_set_cause_player(&event, player_index);
+					game_engine_event_set_cause_player(player_index, &event);
 				}
 				function_19eb90(&event);
 			}

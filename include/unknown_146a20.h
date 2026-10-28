@@ -44,8 +44,8 @@ public:
 	virtual void method7(long unknown) = 0;
 	virtual ~c_havok_abstract_allocator() {}
 	/* library functions (0x2d7020, 0x2d7090) */
-	virtual void method9(void) {}
-	virtual void method10(void) {}
+	virtual void *method9(long size);
+	virtual void method10(void *block, long size);
 
 	/* sets the first two of m_unknown08 (library code, 0x2d6fc0) */
 	void function_2d6fc0(void *buffer, long size);

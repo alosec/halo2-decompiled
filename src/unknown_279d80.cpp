@@ -2105,25 +2105,18 @@ void function_283600(void)
 	compute_orientations_split_index_last(2, 2, true, false);
 }
 
-/* compute_orientations(2, 2, false, true) with the flags and the last node of
-   each group of eight kept per component pass */
-// score 39 (was 39): only the scale pass's blend-2 apply after the interpolation
-// differs: retail multiplies the interpolated scale it holds in xmm0 by the
-// destination's (mulss xmm0, [esi+0x1c]) where ours loads the destination into
-// xmm1 first; the rest is that 4-byte shift. Register allocation. Tried: the
-// scale apply as g_504430.scale * destination->scale, as *=, or through a scale
-// local (all 39, the rest of the file unchanged); a node index per pass (130);
-// one flags variable (108, the split_index_last form) also with one last (118);
-// a destination index per pass (118); bit flags per pass (69); the translation
-// and scale count in its own variable (252); other declaration and frame-save
-// orders (39); the bodies compute_orientations (118), _split (130),
-// _component_count (240), _inheritance_mapping (382), function_288571 (118).
+/* compute_orientations(2, 2, false, true) with the destination index, the flags
+   and the last node of each group of eight kept per component pass, and the
+   translation and scale passes' node counts (only the root's) in their own
+   variables */
 // @retail 0x2839d0
 void function_2839d0(void)
 {
 	long node_index;
 	byte const *bit_flags;
-	long destination_index;
+	long rotation_destination_index;
+	long translation_destination_index;
+	long scale_destination_index;
 	long rotation_flags;
 	long translation_flags;
 	long scale_flags;
@@ -2131,17 +2124,19 @@ void function_2839d0(void)
 	long translation_last;
 	long scale_last;
 	long node_count = g_sampling_settings.node_count;
+	long translation_count = node_count;
 
 	g_5044b4 = 0;
 	g_5044b8 = 0;
 	g_5044bc = 0;
-	compute_component_orientations_shared(2, 2, false, true, 0, node_count, node_index, bit_flags, destination_index, rotation_flags, rotation_last);
-	if (node_count > 1)
+	compute_component_orientations_shared(2, 2, false, true, 0, node_count, node_index, bit_flags, rotation_destination_index, rotation_flags, rotation_last);
+	if (translation_count > 1)
 	{
-		node_count = 1;
+		translation_count = 1;
 	}
-	compute_component_orientations_shared(2, 2, false, true, 1, node_count, node_index, bit_flags, destination_index, translation_flags, translation_last);
-	compute_component_orientations_shared(2, 2, false, true, 2, node_count, node_index, bit_flags, destination_index, scale_flags, scale_last);
+	long scale_count = translation_count;
+	compute_component_orientations_shared(2, 2, false, true, 1, translation_count, node_index, bit_flags, translation_destination_index, translation_flags, translation_last);
+	compute_component_orientations_shared(2, 2, false, true, 2, scale_count, node_index, bit_flags, scale_destination_index, scale_flags, scale_last);
 }
 
 // @retail 0x284010

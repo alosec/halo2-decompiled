@@ -37,35 +37,17 @@ short __stdcall function_1b2340(long actor_index)
 	return result;
 }
 
-struct s_slot_24
+/* slot type 0x24's data: the block after the slot's header (s_slot's unknownc) */
+struct s_slot_24_data
 {
-	s_slot_header header;
-	bool unknown0c;
-	byte unknown0d[0x16 - 0xd];
-	short unknown16;
-	short unknown18;
-	byte unknown1a[0x40 - 0x1a];
+	bool unknown00;
+	bool unknown01;
+	byte unknown02[8 - 2];
+	short unknown08;
+	short unknown0a;
+	short unknown0c;
+	byte unknown0e[0x34 - 0xe];
 };
-
-/* the state of the actor's prop view (0 without one) */
-struct s_prop_view_state
-{
-	short state;
-};
-
-static __forceinline short actor_prop_state(s_actor_view *actor)
-{
-	if (actor->prop_index != NONE)
-	{
-		#pragma inline_depth(0)
-		s_prop_view_state *view = (s_prop_view_state *)function_25d700(actor->prop_index);
-		#pragma inline_depth()
-
-		if (view)
-			return view->state;
-	}
-	return 0;
-}
 
 /* the block of the actor's character tag function_1e4db0 returns */
 struct s_character_db0
@@ -74,15 +56,16 @@ struct s_character_db0
 };
 
 void *function_1e4db0(long actor_index);
+short function_2684f0(s_actor_view *actor);
 
 // @retail 0x1b2630
 short __stdcall function_1b2630(long actor_index, s_slot *slot, bool active)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	s_slot_24 *state = (s_slot_24 *)slot;
+	s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
 	short result = g_46fbe8;
 
-	if (state->unknown0c)
+	if (state->unknown00)
 	{
 		if (actor->prop_index != NONE)
 		{
@@ -128,114 +111,149 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 /* slot type 0x24's update: moves the actor to its prop (to the point the
    prop names, or along its direction) and flags the slot when it is there
    or cannot get there (always returns true) */
+// score 146 (was 146): frame 0x48 and length 1077 agree; the entry registers (actor offset in
+// EBP, ours, against EAX plus lea), the actor index kept in ESI (retail reloads it from its
+// stack slot), the prop type tested as long (retail 16-bit), and the block layout: retail puts
+// the type 1 arm and the unsupported-type return after the result check (type 0 falls into it,
+// type 1 jumps back); ours puts them between the type 0 arm and the result check.
+// Tried: short type 192 (aligned 109 against 101: the 16-bit tests agree but the target point
+// stores reschedule); the result check copied into both arms 408 (no tail merge); a switch on
+// the type 249 (sub eax,0/dec eax); state declared first 144; scalars first 146; state before
+// view 146; the result check inside a type 0 or 1 block 211 (aligned 99, same layout); type 0
+// as the else of a nonzero-type block 226. Earlier (611-232 on older bodies): native type width
+// 611; common success exit 595; lookups after actor guards 616; tracked type first 619; bounded
+// trace distance 620; visibility result 620; single exit native category 584; successful move
+// guard 584; supported category guard 588; near target arm first 586; structured actor gates
+// 584; native supported category guard 621; native near target first 617; structured
+// supported categories 588; caller noinline declaration 620; callee noinline declaration 236;
+// shared magnitude/point 236/236; destination name 236; long result 233; category short
+// outlined query 338; completion early return 232; category short completion 236; movement
+// result first 232; movement workspace scope 232; probe frame names 232; existing point setter
+// 232; far failure arm first 232; movement success return 232; outer trace lifetime 232; direct
+// native categories 236; plain coordinate loop 232; cluster result arms 232; probe declarations
+// reversed 232; inactive actor return 232; source target/output point pointers 208/232; source
+// point/record values 237/247; outlined visibility result 238; shared trace origin 238;
+// geometry-only origin 153 (kept); geometry setter/native category 153/195; direction before
+// query 146 (kept); full result 150; direct slot/entry trace with direction 146/146; native slot
+// formal, readonly direction, native record copies, native yz distance part and native
+// direction field 146; native direction field at use 211; probe target address 314; directed
+// target address 146; unsigned native category 192; addresses/category 324; shared squared
+// length/dot 146/146; trace fallback first 146; receiver names 146; signed native category and
+// late producer 192/192; reused actor-position address 152; native category with actor-position
+// address 198; completion receiver/result/trace names 146; geometry origin before trace 241;
+// early origin with trace name 241; full category at producer 146; result producer scope 146;
+// early origin with native category 237; complete squared direction, scaled target products and
+// target coordinates 146 each (399 with consistent actor getter observations).
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_prop_node_view *node = prop_node_get(actor->prop_index);
 	s_prop_view_fields *view = prop_node_view(node);
-	s_slot_24 *state = (s_slot_24 *)slot;
+	s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
 	s_type_c3b527 target;
-	short type;
+	long type;
 	bool result;
 
 	if (actor->unknown504 == 2)
 	{
-		state->unknown0c = true;
+		state->unknown00 = true;
 		return true;
 	}
-	if (!actor->unknown040)
-		return true;
-	state->unknown0c = false;
-	if (view->unknown70 == 1)
+	if (actor->unknown040)
 	{
-		if (function_210b60(&view->unknown78, &actor->position) > 4.0f)
+		state->unknown00 = false;
+		if (view->unknown70 == 1)
 		{
-			state->unknown0c = false;
-		}
-		else if (function_1f86f0(actor_index))
-		{
-			state->unknown0c = true;
-			function_1f4280(actor_index);
-			return true;
-		}
-		else
-		{
-			point3f point;
-			point3f position;
-			short cluster;
-
-			function_210850(&view->unknown78, &point);
-			function_1e3b00(actor->unknown018, 1, &point, NULL, NULL, &position);
-			cluster = view->unknown78.output_index == NONE ?
-				*(short *)((byte *)view + 0x72) : function_272af0(g_4e0348, &point);
-			state->unknown0c = function_1c8df0(NONE, &position, cluster, *(short *)((byte *)actor + 0x254),
-				(byte *)actor + 0x22c, 0, false, actor->unknown26c != NONE, true, NULL) == 0;
-			if (state->unknown0c)
+			if (function_210b60(&view->unknown78, &actor->position) > 4.0f)
 			{
+				state->unknown00 = false;
+			}
+			else if (function_1f86f0(actor_index))
+			{
+				state->unknown00 = true;
 				function_1f4280(actor_index);
 				return true;
 			}
+			else
+			{
+				point3f point;
+				point3f position;
+				short cluster;
+
+				function_210850(&view->unknown78, &point);
+				function_1e3b00(actor->unknown018, 1, &point, NULL, NULL, &position);
+				cluster = view->unknown78.output_index == NONE ?
+					*(short *)((byte *)view + 0x72) : function_272af0(g_4e0348, &point);
+				state->unknown00 = function_1c8df0(NONE, &position, cluster, *(short *)((byte *)actor + 0x254),
+					(byte *)actor + 0x22c, 0, false, actor->unknown26c != NONE, true, NULL) == 0;
+				if (state->unknown00)
+				{
+					function_1f4280(actor_index);
+					return true;
+				}
+			}
 		}
-	}
-	type = view->unknown70;
-	if (type == 0)
-	{
-		s_prop_state_view *prop_entry = prop_node_state(node);
-		vector3f *direction = (vector3f *)((byte *)view + 0x94);
-		s_sector_trace_result trace;
-
-		if ((real)sqrt(direction->i * direction->i + direction->j * direction->j + direction->k * direction->k) > 0.0f &&
-			(function_26c590((s_pathfinding_data const *)function_1fa7f0(), &prop_entry->unknown48.point,
-				*(long *)((byte *)prop_entry + 0x44), NONE, direction, 1.8f, NULL, (s_path_trace_result *)&trace),
-				!trace.blocked || trace.distance > 0.3f))
+		type = view->unknown70;
+		if (type == 0)
 		{
-			real distance = trace.distance;
+			vector3f *direction = (vector3f *)((byte *)view + 0x94);
+			s_prop_state_view *prop_entry = prop_node_state(node);
+			s_sector_trace_result trace;
 
-			if (distance > 1.5f)
-				distance = 1.5f;
-			distance -= 0.3f;
-			target.point.x = direction->i * distance + prop_entry->unknown48.point.x;
-			target.point.y = direction->j * distance + prop_entry->unknown48.point.y;
-			target.point.z = direction->k * distance + prop_entry->unknown48.point.z;
-			target.output_index = prop_entry->unknown48.output_index;
-			result = function_1f4460(actor_index, &target, trace.sector_index, NONE, false);
+			if ((real)sqrt(direction->i * direction->i + direction->j * direction->j + direction->k * direction->k) > 0.0f &&
+				(function_26c590((s_pathfinding_data const *)function_1fa7f0(), &prop_entry->unknown48.point,
+					*(long *)((byte *)prop_entry + 0x44), NONE, direction, 1.8f, NULL, (s_path_trace_result *)&trace),
+					!trace.blocked || trace.distance > 0.3f))
+			{
+				real distance = trace.distance;
+
+				if (distance > 1.5f)
+					distance = 1.5f;
+				distance -= 0.3f;
+				point3f const *origin = &prop_entry->unknown48.point;
+				target.point.x = direction->i * distance + origin->x;
+				target.point.y = direction->j * distance + origin->y;
+				target.point.z = direction->k * distance + origin->z;
+				target.output_index = prop_entry->unknown48.output_index;
+				result = function_1f4460(actor_index, &target, trace.sector_index, NONE, false);
+			}
+			else
+			{
+				result = function_1f4810(actor_index, actor->prop_index, 0.7f, false);
+				target = prop_entry->unknown48;
+			}
+			actor->unknown4cc = 0.7f;
+		}
+		else if (type == 1)
+		{
+			function_2628f0(actor_index, g_470fa0);
+			result = function_1f4460(actor_index, &view->unknown78, *(long *)((byte *)view + 0x74), NONE, false);
+			target = view->unknown78;
 		}
 		else
 		{
-			result = function_1f4810(actor_index, actor->prop_index, 0.7f, false);
-			target = prop_entry->unknown48;
-		}
-		actor->unknown4cc = 0.7f;
-	}
-	else if (type == 1)
-	{
-		function_2628f0(actor_index, g_470fa0);
-		result = function_1f4460(actor_index, &view->unknown78, *(long *)((byte *)view + 0x74), NONE, false);
-		target = view->unknown78;
-	}
-	else
-	{
-		function_1f4280(actor_index);
-		return true;
-	}
-	if (!result)
-	{
-		point3f point;
-		vector3f v;
-
-		function_210850(&target, &point);
-		vector3d_from_points3d(&point, &actor->position, &v);
-		if ((v.j * v.j + v.k * v.k) + v.i * v.i < 1.0f)
-		{
 			function_1f4280(actor_index);
-			state->unknown0c = true;
+			return true;
 		}
-		else if (actor->unknown229 || actor->unknown5b4 >= (actor->unknown26c == NONE ? 32 : 3))
+		if (!result)
 		{
-			if (view->unknown70 == 0)
-				function_25d420(actor->prop_index, 3, actor_index);
-			state->unknown0c = true;
+			point3f point;
+			vector3f v;
+
+			function_210850(&target, &point);
+			vector3d_from_points3d(&point, &actor->position, &v);
+			if ((v.j * v.j + v.k * v.k) + v.i * v.i < 1.0f)
+			{
+				function_1f4280(actor_index);
+				state->unknown00 = true;
+			}
+			else if (actor->unknown229 || actor->unknown5b4 >= (actor->unknown26c == NONE ? 32 : 3))
+			{
+				if (view->unknown70 == 0)
+					function_25d420(actor->prop_index, 3, actor_index);
+				state->unknown00 = true;
+			}
 		}
 	}
 	return true;
@@ -244,49 +262,49 @@ bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 // @retail 0x1b2bb0
 void __stdcall function_1b2bb0(long actor_index, s_slot *slot)
 {
+	s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE)
 	{
-		s_slot_24 *state = (s_slot_24 *)slot;
 		s_prop_view_fields *view = prop_node_view(prop_node_get(actor->prop_index));
 		s_character_db0 *character;
 
 		actor->unknown4a2 = true;
 		if (actor->unknown5d0)
 		{
-			actor->unknown420 = 0;
 			actor->unknown41c = 3;
+			actor->unknown420 = 0;
 		}
-		else if (state->unknown18 - state->unknown16 < MAX(state->unknown18 / 3, real_to_long((real)g_510c54->field_2_3 * 3.0f)))
+		else if (state->unknown0c - state->unknown0a < MAX(state->unknown0c / 3, real_to_long((real)g_510c54->field_2_3 * 3.0f)))
 		{
-			if (!view)
-				goto done;
-			if (view->unknown70 == 0)
+			if (view)
 			{
-				actor->unknown41c = 3;
-				actor->unknown420 = 2;
-			}
-			else
-			{
-				point3f point;
+				if (view->unknown70 == 0)
+				{
+					actor->unknown41c = 3;
+					actor->unknown420 = 2;
+				}
+				else
+				{
+					point3f point;
 
-				function_210850(&view->unknown78, &point);
-				actor->unknown41c = 3;
-				actor->unknown420 = 3;
-				actor->unknown424.point = point;
+					function_210850(&view->unknown78, &point);
+					actor->unknown41c = 3;
+					actor->unknown420 = 3;
+					actor->unknown424.point = point;
+				}
 			}
 		}
 		if (view && view->unknown70 == 0)
-			actor->unknown488 = actor_prop_state(actor) >= 5;
-done:
+			actor->unknown488 = function_2684f0(actor) >= 5;
 		character = (s_character_db0 *)function_1e4db0(actor_index);
 		if (character)
 		{
 			if (character->flags & 1)
 			{
-				actor->unknown449 = true;
 				actor->unknown44a = true;
+				actor->unknown449 = true;
 			}
 			else if ((character->flags & 2) && view && actor->unknown086 <= 3)
 			{
@@ -303,6 +321,7 @@ bool __stdcall function_1b23c0(long actor_index, s_slot *slot)
 {
     volatile bool result = true;
     s_actor_view *actor = actor_get(actor_index);
+    s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
     s_prop_node_view *node = prop_node_get(actor->prop_index);
     s_prop_state_view *local_5cfb45 = prop_node_state(node);
     s_prop_view_fields *view = prop_node_view(node);
@@ -323,18 +342,17 @@ bool __stdcall function_1b23c0(long actor_index, s_slot *slot)
     else
     {
         byte *character = (byte *)function_1e4db0(actor_index);
-        duration = character ? slot_random_range(*(real *)(character + 4), *(real *)(character + 8)) : 8.0f;
+        duration = character ? function_259d0(&g_4e7408->unknown0, NULL, 0, *(real *)(character + 4), *(real *)(character + 8)) : 8.0f;
         if (!function_2601f0(actor_index, &view->unknown78, *(long *)((byte *)view + 0x74),
-            actor->unknown26c != NONE ? 5.0f : 2.0f, 0.0f))
+            actor->unknown26c == NONE ? 2.0f : 5.0f, 0.0f))
             goto failed;
     }
-    s_slot_24 *state = (s_slot_24 *)slot;
     long ticks = real_to_long((real)g_510c54->field_2_3 * duration);
-    state->unknown16 = (short)ticks;
-    state->unknown18 = (short)ticks;
-    *(short *)((byte *)state + 0x14) = 0;
-    state->unknown0c = false;
-    *((bool *)state + 0xd) = false;
+    state->unknown0a = (short)ticks;
+    state->unknown0c = (short)ticks;
+    state->unknown08 = 0;
+    state->unknown00 = false;
+    state->unknown01 = false;
     if (function_26ba60(node->unknown08, actor_index, actor->unknown07c))
     {
         if (view->unknown70 == 0)

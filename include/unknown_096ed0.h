@@ -26,6 +26,14 @@ inline void *allocator_globals_allocate(s_allocator_globals *globals, long size)
 	return block;
 }
 
+/* the matching release: hands the block back and uncounts it */
+inline void allocator_globals_release(s_allocator_globals *globals, void *block)
+{
+	globals->allocator->release(block, NONE);
+	if (block != 0)
+		globals->count--;
+}
+
 /* the same allocation from the shared allocator globals */
 inline void *handle_allocate(long size)
 {

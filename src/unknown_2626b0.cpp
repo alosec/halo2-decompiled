@@ -276,6 +276,9 @@ PRIVATE inline void reference_table_replace(hash_table *table, void *key, void c
 }
 
 #ifndef H2_NATIVE_PORT
+// score 5 (was 5): the same instructions in a different order in one block -
+// retail clears the previous owner's reference before it reloads the table
+// global, ours reloads the global first and stores the reference after.
 // @retail 0x2628f0
 void __stdcall function_2628f0(long actor_index, s_reference reference)
 {

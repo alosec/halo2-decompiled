@@ -238,6 +238,10 @@ void fixed_memory_get_statistics_16(c_havok_fixed_memory *memory, s_fixed_memory
 }
 
 
+// score 133 (was 133): the entry table addressed through one slot pointer gains only 3 (130);
+// with used declared after offset and case 0 dropped it scores 118 but is 8 bytes short (retail
+// keeps case 0, so the dropped case is wrong). Retail keeps m_size in edi and the result in its
+// stack slot.
 // @retail 0x22c0d0
 void *c_havok_fixed_memory::allocate_aligned(long alignment, long size, long memory_class)
 {

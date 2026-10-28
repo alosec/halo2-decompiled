@@ -167,7 +167,12 @@ static __forceinline real avoidance_normalize2d(point2f *direction)
 /* adds a node at the point, passing the obstacle on the side, unless it
    leads back around an obstacle on its way; returns its index or NONE */
 // score 92 (was 92): the scaled components are kept in different registers and the length is
-// squared and summed in a different order.
+// squared and summed in a different order. Retail loads y into XMM0 before the square root and
+// keeps `y * inverse` and `other.y * y` in source operand order; ours copies the register
+// operand and multiplies by memory. The compile-only build gives ours for every helper form.
+// Products x*inv/inv*y 92; compound scaling 92; tiny case first with one return 92; scalar
+// direction locals 165; y scaled first 93; helper reads both components first 156; dot test
+// through the node array 153; zero on the left of the dot test 92.
 // @retail 0x2c3680
 short avoidance_add_node(s_avoidance_search *search, point2f const *point, bool side, long value08, short obstacle,
 	short value1a, real cost, short parent)
@@ -601,9 +606,41 @@ void obstacle_list_group(s_obstacle_list *obstacles, real radius);
 
 bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center, long object_index, real radius);
 
-// score 742 (was 742): frame 0x1f8c versus 0x1f88; result/path pointer and obstacle/search/step homes differ.
+// score 711 (was 711): frame 0x1f88 agrees; result/path pointer and obstacle/search/step homes differ.
+// Round 134: retail's result is a stack byte (ebx = pathfinding, then NONE): bool result 757; radius as
+// one ternary (retail's load order, one store) 744, with bool result 773, with the pathfinding read after
+// the radius 740, all three 775.
+// Frame 0x1f88 agrees; entry completion/result/path and obstacle/search/step homes differ.
+// Earlier 711 from 735: uniform native forward obstacle indices recover the frame.
+// Frame 0x1f88 agrees; radius/pathfinding entry schedule, success-result and avoidance-workspace homes differ.
+// frame 0x1f88 agrees; result/path pointer and obstacle/search/step homes differ.
 // Short/signed byte result 740/788; long/byte inserted count 730/741; word flags 742.
 // Long inserted count has retail frame but 2965 bytes; native reverse index 770/2925 bytes; original length preserved.
+// Round 121: Byte last-step predicate 735 kept; insertion-only/all avoidance storage scopes 742/763; Boolean enable bit 740; word retry 740; bit plus retry 742; byte-last plus bit/retry/both 735/737/734. Extra one-point combination rejected.
+// Shared slot predicate 782; chained list resets 742; complete step memcpy transfers 753;
+// unsigned word result 740 (two-point gain rejected); direct search decision 742 (fast).
+// Original complete body and existing insertion helper call restored.
+// Late constant success 771; early completion observation 740; unsigned-word input ordinal 775;
+// word truncation result 754; unsigned-word inserted count 742 (fast). Two-point gain rejected.
+// Round 155: double radius/height and short completion storage, then unsigned flags with double height: radius 777; height 728; radius height 797; completion 757; radius completion 795; height completion 758; radius height completion 769; height native mask 728. Double-height forms add qword x87 traffic and frame 0x1f98; all restored.
+// Settings mask/cache/both at uses 735/736/736; all five forward obstacle indices 711;
+// byte truncation 735; mask with indices 711; cache with indices 719; all observations/indices/byte 719.
+// Native index in obstacle-transform/blocking-transform/retry/failure/ignored loops alone
+// 735/756/723/735/735. Uniform native forward indices selected; reverse/output/step indices unchanged.
+// Initial incompleteness bool/byte/word/long 711/711/752/770; with bool success
+// 766/766/773/754. Original saved completion, long result and all native indices restored.
+// Round 155 on native forward-index frame: bool/byte success 757/774; radius before pathfinding 710;
+// radius with bool/byte result 759/776; later long/bool/byte result 710/777/786. One-point gains rejected.
+// Negative failure bool/byte/short/long, original entry order: 774/774/766/766;
+// negative failure with radius before pathfinding: 775/775/762/762 (fast).
+// Original success result, insertion path and five native forward indices restored.
+// Pathfinding at every use 785; one actual transform workspace 760; both 825; paired segment start/node 735;
+// paired with live pathfinding/shared scratch/both 777/763/812; complete receiver graph with word frame 810. Original source restored.
+// Radius from field or ternary, before/after path and long/bool success:
+// 766/773/764/774 and 744/773/740/775; original selection restored.
+// Round 354 recovered-frame graph: shared 3D/2D/both difference producers 711/711/711;
+// native signed-word frame alone/with 3D/with 2D/with both 709/709/709/709 (two-count gains dropped);
+// complete producer graph with Boolean success 750. Original complete body restored.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,
@@ -649,7 +686,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
  short first_output = 0;
  for (short step = 0; step < count; ++step)
  {
-  bool last = step == count - 1 && final_complete;
+  byte last = step == count - 1 && final_complete;
   s_obstacle_list local_obstacles;
   s_obstacle_list blocking;
   s_avoidance_search local_search;
@@ -696,7 +733,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
    *(short *)blocking.unknown08 = 0;
    function_2c0d60(actor ? &previous_direction : NULL, actor_index, (byte)flags, &state->settings,
     obstacles, &blocking, &world_start, maximum_height, &direction, state->source.object_index, state->source.unknown0c);
-   for (short i = 0; i < obstacles->count; ++i)
+   for (long i = 0; i < obstacles->count; ++i)
    {
     point3f transformed;
     transformed.x = obstacles->obstacles[i].center.x;
@@ -706,7 +743,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
     obstacles->obstacles[i].center.x = transformed.x;
     obstacles->obstacles[i].center.y = transformed.y;
    }
-   for (short i = 0; i < blocking.count; ++i)
+   for (long i = 0; i < blocking.count; ++i)
    {
     point3f transformed;
     transformed.x = blocking.obstacles[i].center.x;
@@ -746,7 +783,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
       retry = retry || (obstacles->flag3_count > 0 && search->result != NONE);
       if (retry)
       {
-       for (short i = 0; i < obstacles->count; ++i)
+       for (long i = 0; i < obstacles->count; ++i)
        {
         s_obstacle *entry = &obstacles->obstacles[i];
         if (entry->group == search->result && (entry->flags & 8)) entry->flags |= 1;
@@ -765,7 +802,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
       input->node_index, last, true))
      {
       if (step == count - 1 && flag)
-       for (short i = 0; i < obstacles->count; ++i) if (obstacles->obstacles[i].flags & 2) *flag = true;
+       for (long i = 0; i < obstacles->count; ++i) if (obstacles->obstacles[i].flags & 2) *flag = true;
       result = false; goto done;
      }
     }
@@ -809,7 +846,7 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
    {
     if (ignored != NONE)
     {
-     for (short i = 0; i < obstacles->count; ++i)
+     for (long i = 0; i < obstacles->count; ++i)
      {
       s_obstacle *entry = &obstacles->obstacles[i];
       if (entry->group != ignored) continue;

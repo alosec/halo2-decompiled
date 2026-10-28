@@ -4,17 +4,9 @@
 #include "growable_array_2d91d0.h"
 #include "description_312430.h"
 
-ELEMENTS_2D91D0(words_30bdc0, long);
+#include "lane_b_constraint_entities.h"
+
 ELEMENTS_2D91D0(pointers_30be00, void *);
-
-class class_30bdc0
-{
-public:
-	char unknown0[0x88];
-	words_30bdc0 words;
-
-	void function_30bdc0(long value);
-};
 
 // @retail 0x30bdc0
 void class_30bdc0::function_30bdc0(long value)

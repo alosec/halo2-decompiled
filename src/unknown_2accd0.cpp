@@ -129,7 +129,7 @@ inline void function_xbb02d2(s_type_acf665 *file, const char *path)
 /* Bungie's argument order */
 inline bool function_xe8ca68(s_type_acf665 *file, dword size, const void *buffer)
 {
-	return function_136d00(file, buffer, size);
+	return function_136d00(file, size, buffer);
 }
 
 inline bool function_xab2909(s_type_acf665 *file, dword size, bool silent, void *buffer)
@@ -606,6 +606,11 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // signature receiver differ; short-lived body/header/both size reads 182/174/182;
 // reversed signature equality 68; Boolean equality 68; inline depth one 68;
 // global optimization off 491; frame pointer 246.
+// score 68 (was 68): retail computes the remaining size in each buffer arm (re-read
+// after the scratch-buffer stores) and clamps the capacity by it; that per-arm form
+// loses the entry ebp save: written into size by the getter 179, capacity clamped
+// by remaining 181, remaining clamped by capacity 234. Total as sizeof first 68;
+// body size grouped with sizeof 68.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {
@@ -771,6 +776,15 @@ struct s_signed_file_write_parameters
 };
 #pragma pack(pop)
 
+// score 134 (was 134): retail keeps every `parameters` load after the scratch getter's
+// stores, as if the scratch object were address-taken (its 0x8000-byte storage at
+// 0x4fa0c8 sits right before the owner/pointer/size words and the flag byte); ours
+// hoists the loads. Storage as the object's first member, init `pointer = storage`
+// 132; flag byte folded in as well 131 (0x2ad7c0 173); then the getter as size,
+// owner, flag returning a fresh read of the pointer: later cases' registers all
+// retail's but two copies per getter site, 279 at 944 bytes (0x2ad7c0 63); split
+// size/claim helpers 131/139; write count declared before the getter 147; named
+// body offset in the extend sum 131.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

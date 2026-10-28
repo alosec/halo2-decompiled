@@ -55,19 +55,7 @@ void table_2e5990::reset()
 
 // Sets the flag at offset 0x4d8d from its one-byte argument (passed by value
 // through a copy constructor, as the game code that calls it declares it).
-struct s_2e5a10
-{
-    unsigned char field_0;
-    s_2e5a10(const s_2e5a10 &arg_0) : field_0(arg_0.field_0) {}
-};
-
-struct s_1c3a40
-{
-    char unknown0[0x4d8d];
-    unsigned char field_4d8d;
-
-    void function_2e5a10(s_2e5a10 arg_0);
-};
+#include "agent_table_2e5d50.h"
 
 // @retail 0x2e5a10
 void s_1c3a40::function_2e5a10(s_2e5a10 arg_0)

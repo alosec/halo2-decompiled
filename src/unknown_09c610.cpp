@@ -26,8 +26,14 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
     return local_0;
 }
 
-// score 57 (was 57): the table pointer is kept in edi in ours and in esi in
-// retail, the member's fields are copied in the other order and the store of
+// score 57 (was 57): the definition table is kept in edi and the event in esi
+// (retail esi/edi); the clamp's equality test is threaded away; the call setup
+// is BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and
+// the object on the stack, ours the object in ebx). Clamp of a re-read mode 84
+// (310 bytes, retail's unthreaded clamp); with a plain permutation local 110;
+// no false assignments 107 (result only on the stack), inner one removed 58,
+// outer one removed 68.
+// Earlier: the member's fields are copied in the other order and the store of
 // the second field sits before the comparison in ours and after it in retail
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)

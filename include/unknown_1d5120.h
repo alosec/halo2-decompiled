@@ -70,6 +70,8 @@ public:
 class c_contact_callback
 {
 public:
+ __forceinline c_contact_callback() {}
+ __forceinline c_contact_callback(bool value) : found(value) {}
  virtual ~c_contact_callback() {}
  virtual void hit(void const *query, s_contact_body_view const *body) = 0;
  bool found;
@@ -82,7 +84,9 @@ public:
 class c_contact_presence : public c_contact_callback
 {
 public:
+ __forceinline c_contact_presence() : c_contact_callback(false) {}
  virtual void hit(void const *query, s_contact_body_view const *body);
+ long unknown08;
 };
 class c_contact_query_dispatch
 {

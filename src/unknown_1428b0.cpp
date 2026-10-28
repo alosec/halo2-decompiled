@@ -252,20 +252,23 @@ int __stdcall function_1429d0(
 /* native: unknown_142a60_native.cpp */
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 #else
+/* naked, all asm: link-time code generation can't see what the body reads or keeps, so
+   callers keep the code that fills its inputs and treat the matrices they pass as escaped
+   (0xb98e0's stores keep their order, 0xeb960's frame). tools/build.py reads the
+   declaration under the marker, as naked goes on a definition only. */
 // @retail 0x142a60
 int __fastcall function_142a60(
 	transform4x3f const *a,
 	transform4x3f const *b,
+	transform4x3f *result);
+__declspec(naked) int __fastcall function_142a60(
+	transform4x3f const *a,
+	transform4x3f const *b,
 	transform4x3f *result)
 {
-	/* the asm reads *a and *b through ecx and edx without naming them; these
-	   two reads (dropped as dead) tell the optimizer that it does, so callers
-	   keep the code that fills them (0x1424f0's 0x141590 call) */
-	real a_scale = a->scale;
-	real b_scale = b->scale;
 	__asm
 	{
-		mov eax, result
+		mov eax, [esp + 4]
 		movss xmm7, dword ptr [ecx]
 		shufps xmm7, xmm7, 0
 		movss xmm3, dword ptr [edx]
@@ -333,6 +336,7 @@ int __fastcall function_142a60(
 		movss dword ptr [eax + 4], xmm0
 		movhps qword ptr [eax + 8], xmm0
 		movss dword ptr [eax], xmm3
+		ret 4
 	}
 }
 #endif

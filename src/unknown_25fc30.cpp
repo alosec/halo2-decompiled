@@ -189,16 +189,6 @@ bool __stdcall function_25dd30(long a, long b)
 	return a == b;
 }
 
-// score 175 (was 175): vector scheduling and geometry-call registers remain; sphere bonus branches 311f, signed mask snapshot 310f, distance-root local 310f, global optimization off 830f, minimum conditional 175 plain.
-// score 175 (was 175): first vector schedule, geometry registers and score adds remain;
-// shared displacement/geometry displacement/bonus result 310/310/313;
-// geometry/sphere/cone score observations 337/310/310; all score observations 337; actual view reference 310.
-// score 175 (was 175): initial offset schedule, geometry carriers and score adds remain;
-// shared component difference at offset/segment/both/fallback 334/343/343/343;
-// sphere/cone/all displacements 368/277/392; existing magnitude helper 175.
-// score 175 (was 175): initial offset schedule and protected geometry carriers remain;
-// read-only actor 175; self-dot at offset/segment/fallback/movement/sphere/cone
-// 175/175/175/175/175/175; all shared self-dots 313. Original helpers retained.
 // @retail 0x25dd50
 void __stdcall function_25dd50(
 	long actor_index,
@@ -207,12 +197,10 @@ void __stdcall function_25dd50(
 	s_type_b36ac5 *positions)
 {
 	s_actor_firing_view *actor = (s_actor_firing_view *)actor_get(actor_index);
-	short i;
 
+	for (short position_index = 0; position_index < count; position_index++)
 	{
-	s_type_b36ac5 *position = positions;
-	for (i = 0; i < count; i++, ++position)
-	{
+		s_type_b36ac5 *position = &positions[position_index];
 
 		if (!position->unknown4c)
 		{
@@ -235,16 +223,16 @@ void __stdcall function_25dd50(
 			vector3f offset;
 			real reach;
 
+			vector3d_from_points3d(&actor->unknown370, &actor->unknown388, &segment);
 			vector3d_from_points3d(&actor->unknown3a0, &position->position, &offset);
 			reach = actor->unknown39c + 2.5f;
-			vector3d_from_points3d(&actor->unknown370, &actor->unknown388, &segment);
 			if (length_sq3f(&offset) < reach * reach)
 			{
 				real distance;
 
 				if ((real)sqrt(length_sq3f(&segment)) > 0.f)
 				{
-					distance = function_11e000(&actor->unknown370, &position->position, &segment);
+					distance = function_11e000(&position->position, &actor->unknown370, &segment);
 				}
 				else
 				{
@@ -280,7 +268,7 @@ void __stdcall function_25dd50(
 			{
 				real radius = actor->unknown36c;
 
-				if (function_11e000(&actor->unknown370, &actor->position, &segment) > radius * radius)
+				if (function_11e000(&actor->position, &actor->unknown370, &segment) > radius * radius)
 				{
 					vector3f movement;
 
@@ -289,7 +277,7 @@ void __stdcall function_25dd50(
 					{
 						real movement_radius = actor->unknown36c;
 
-						if (function_11e130(&actor->unknown370, &segment, &actor->position, &movement) <
+						if (function_11e130(&actor->position, &movement, &actor->unknown370, &segment) <
 							movement_radius * movement_radius)
 						{
 							position->unknown4d = true;
@@ -332,11 +320,9 @@ void __stdcall function_25dd50(
 			position->score += bonus;
 		}
 	}
-
-	}
-	for (i = 0; i < count; i++)
+	for (short position_index_1 = 0; position_index_1 < count; position_index_1++)
 	{
-		s_type_b36ac5 *position = &positions[i];
+		s_type_b36ac5 *position = &positions[position_index_1];
 
 		if (position->unknown4c)
 		{
@@ -354,13 +340,23 @@ void __stdcall function_25dd50(
 
 	if (context->unknown5b)
 	{
-		s_slot_object_view *object = object_get(actor->unknown26c != NONE ? actor->unknown26c : actor->unknown018);
+		s_slot_object_view *object;
+
+		if (actor->unknown26c != NONE)
+		{
+			object = object_get(actor->unknown26c);
+		}
+		else
+		{
+			object = object_get(actor->unknown018);
+		}
+
 		point3f origin;
 
 		function_b9dd0(actor->unknown018, &origin);
-		for (i = 0; i < count; i++)
+		for (short position_index_2 = 0; position_index_2 < count; position_index_2++)
 		{
-			s_type_b36ac5 *position = &positions[i];
+			s_type_b36ac5 *position = &positions[position_index_2];
 
 			if (position->unknown4c)
 			{
@@ -368,12 +364,14 @@ void __stdcall function_25dd50(
 				real distance_squared;
 
 				vector3d_from_points3d(&origin, &position->position, &delta);
-				distance_squared = length_sq3f(&delta);
+				distance_squared = delta.j * delta.j + delta.k * delta.k + delta.i * delta.i;
 				if (!(fabs(distance_squared) < 0.0001f) && 900.f > distance_squared)
 				{
 					real cosine = dot3f(&delta, &object->forward) / (real)sqrt(distance_squared);
 
-					if ((context->unknown5c || length_sq3f(&object->velocity) > 6.25f) &&
+					if ((context->unknown5c ||
+						object->velocity.j * object->velocity.j + object->velocity.k * object->velocity.k +
+						object->velocity.i * object->velocity.i > 6.25f) &&
 						64.f > distance_squared && cosine < 0.70710677f)
 					{
 						position->unknown4d = true;
@@ -403,9 +401,9 @@ void __stdcall function_25dd50(
 
 	if (context->unknown692)
 	{
-		for (i = 0; i < count; i++)
+		for (short position_index_3 = 0; count > position_index_3; position_index_3++)
 		{
-			s_type_b36ac5 *position = &positions[i];
+			s_type_b36ac5 *position = &positions[position_index_3];
 
 			if (*(long *)&position->reference == context->unknown694 && position->unknown4c)
 			{
@@ -415,19 +413,23 @@ void __stdcall function_25dd50(
 	}
 }
 
-// score 38 (was 38): Face base/index, definition setup, cover registers and failed-facing placement differ;
-// face pointer arithmetic 38; validated edge 38; definition receiver 191; cover reference 38;
-// target setter 38; target initializer 38; lateral component loop 38; output point setter 166.
-// Native trace 38; facing guard 37 (plain 37); cover index before/after base 38/38;
-// shared inset/lateral/both scale 131/106/138; native trace plus guard 37;
-// trace-block definition receiver 104; receiver plus guard 101. One-point gain dropped.
-// Frame and trace prefix agree; face base/index, definition setup, cover carriers and failed-
-// facing placement differ. native direction initializer 38; native lateral initializer 38; native
-// lateral target copy 177; completed point workspace 80; symmetric facing inputs 38; readonly
-// cover input 38; native cover normal value 38; side output initializer 203.
-// score 38 (was 38): face/definition and cover register ownership, normal y product and cold block remain.
-// Candidate-record reference 38; reference-flags binding 67; normal input copy 42;
-// point/normal/both output copies 42/42/42; facing scalar 38; published-side switch 59.
+// score 38 (was 38): face base/index order, the definition load before the 0x29d7b0 argument
+// pushes, the cover base/index registers, the facing dot's y-product operand order, and the
+// failed-facing store block (retail places it right after the cover arm, ours after the side cases;
+// the aligned difference is 14 instructions).
+// Earlier: face pointer arithmetic 38; validated edge 38; definition receiver 191; cover reference 38;
+// target setter 38; target initializer 38; lateral component loop 38; output point setter 166;
+// native trace 38; facing guard 37 (plain 37); cover index before/after base 38/38; shared
+// inset/lateral/both scale 131/106/138; native trace plus guard 37; trace-block definition receiver
+// 104; receiver plus guard 101; native direction initializer 38; native lateral initializer 38; native
+// lateral target copy 177; completed point workspace 80; symmetric facing inputs 38; readonly cover
+// input 38; native cover normal value 38; side output initializer 203; candidate-record reference 38;
+// reference-flags binding 67; normal input copy 42; point/normal/both output copies 42/42/42; facing
+// scalar 38; published-side switch 59.
+// Round 69: facing dot on the cover's normal with the copy inside the arm 96; point/normal/side
+// declared before the loop 38; trace-block locals at the loop top 38; side read before the two
+// transform calls 152; failed-facing arm setting side to 0 instead of continue 222; any order of
+// the loop-top and trace-block declarations 38 (30 orders screened).
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,
@@ -939,6 +941,12 @@ void __stdcall function_25edd0(
 // projected workspace first 50; unsigned line ordinal 145. Iterator setup and bonus tests remain.
 // Selected-arm staged scales 72; upper-first staged 66; half by division 50;
 // selected margin carrier 186; near/far or separate bonus names 50; staged/name pairs 66.
+// score 50 (was 50): the range bonus in retail is a two-test select (over 2 first,
+// then over 0) with two multiplies (halve, then times ten); that exact form scores 66
+// (997 bytes) because the line loop's xmm homes rotate — the allocation cascade from the
+// protected iterator setup defeats it. Nested select 83; staged halves with the new
+// order 66; new order with folded multiply 58; old order with two multiplies 72;
+// squared-length local 186; closest product order 66; margin initialized 66.
 // @retail 0x25eea0
 void __stdcall function_25eea0(
 	long actor_index,
@@ -1750,27 +1758,39 @@ struct s_collision_result_25f7b0
 	byte unknown26[0x5c - 0x26];
 };
 
-// score 14 (was 14): frame/length agree; collision byte +0x13 versus +0x10,
-// product loads, word-mode comparison and allow-store timing differ.
-// Byte collision flag 14; byte allow flag 43; long initial mode 34;
-// short collision flag 247; scoped ray setup/result 14 (plain). Body restored.
+// score 7 (was 14): the mode local is stored and passed as a dword but retail compares
+// its low word, so the test reads it as a short (same width pattern as the kept cast in
+// 0x1af5c0); that also cleared the constant/call-address artifacts and the trailing pad.
+// Still differ: the collision bool's byte home (+0x13 against +0x10), the product's load
+// order (loads the hit fraction where retail loads the distance), and the allow-byte init
+// store placed after the second type test in retail (sunk past the first branch).
+// Earlier rounds at 14: byte collision flag 14; byte allow flag 43; long initial mode 34;
+// short collision flag 247; scoped ray setup/result 14 (plain).
 // Guarded collision fraction 14 plain; hit distance 14; native collision output 228; ray endpoint 232;
 // distance endpoint 201; both endpoints 266; final query point 111; horizontal normalization value 177.
-// Collision byte home, product loads, formal mode width and allow-store timing remain.
-// score 14 (was 14): collision byte, product loads and word-mode comparison still differ.
 // reuse ray displacement 14p; existing dot helper 14p.
 // squared length lifetime 14p; normalization result lifetime 14p.
 // shared projection output 25p; shared displacement workspace 60p.
 // sibling byte home name 14p; native projection mode 14p.
 // Immutable collision decision and cluster/origin values 14 each; external actor/candidate/context
 // records 14 each; visible-path collision decision 257; external definition record 53;
-// initialized native collision output 236 (plain). Collision byte home, product loads, word-mode
-// comparison and allow-store timing still differ; original body restored.
-// Frame 0x80 agrees; attachment byte 0x13/0x10, product loads, mode width and allow-store timing remain.
+// initialized native collision output 236 (plain).
 // parent index 251; early collision mask 255.
 // unattached decision 15; mask bit clear 14.
 // index plus bit clear 251; unattached mask bit 17.
 // shared parent index 249; shared attachment decision 53.
+// This round (from 14, all plain): bool declared at block top 14; product operands swapped,
+// flipped comparison, named product local, local_4 rename, local_18-first and local_15/16
+// declaration orders, bool declared after the first query call, local_22
+// uninitialized-early, byte-typed local_4: all tie at 7. local_22 initialized before the
+// mode selection 113; the entry type copy reused in the allow test 260.
+// score 7 (was 7): collision byte +0x13/+0x10, product loads and allow-store schedule remain;
+// tried immutable distance 7p; guarded classification 210p; nested hit classification 199p; classification enum 7p;
+// projection first 7p; allow from second type 6p; allow from first type 8p; native query flag 123p.
+// collision byte home, distance product loads and allow store remain;
+// early short result 7; entry short result 7; unsigned short result 7; early unsigned result 7;
+// early distance 7; entry distance 7; shared candidate field pointer 7; early definition pointer
+// 7.
 // @retail 0x25f7b0
 void __stdcall function_25f7b0(long arg_0, s_type_967e20 *arg_1, s_type_b36ac5 *arg_2)
 {
@@ -1865,7 +1885,7 @@ void __stdcall function_25f7b0(long arg_0, s_type_967e20 *arg_1, s_type_b36ac5 *
 			local_18 = 2;
 		point3f local_21;
 		function_1e3b00(local_0->unknown018, local_18, &arg_2->position, local_16, local_15, &local_21);
-		if (local_18 == 2 && arg_2->unknown5c == 3)
+		if ((short)local_18 == 2 && arg_2->unknown5c == 3)
 			local_21.z -= 0.1f;
 		switch (*(short *)arg_1)
 		{

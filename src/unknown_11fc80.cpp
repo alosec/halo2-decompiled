@@ -17,8 +17,8 @@ real function_30bf0(vector3f *v);
 PRIVATE __forceinline void function_120221(vector3f const *a, vector3f const *b, vector3f *out)
 {
 	real k = a->i * b->j - a->j * b->i;
-	real j = a->k * b->i - a->i * b->k;
 	real i = a->j * b->k - a->k * b->j;
+	real j = a->k * b->i - a->i * b->k;
 	out->i = i;
 	out->j = j;
 	out->k = k;
@@ -48,7 +48,16 @@ PRIVATE __forceinline void function_11fc81(point3f *arg_0, point3f const *arg_1,
 	arg_0->z = arg_3 + arg_1->z;
 }
 
-// score 79 (was 79): current distance uses xmm3 instead of xmm2, then
+// score 65 (was 79): the distances go through plane_distance_to_point, which gives retail's
+// sum order in every unrolled copy; the current distance still takes xmm3 for retail's xmm2,
+// with delta y/z in xmm4/xmm2 for xmm3/xmm4 (z subtracted first) and the z interpolation
+// multiplied into delta.z's register where retail multiplies into t's. Round 81: explicit
+// (x + y) + z in the loop 73; on top of the helper form, t before delta (with or without the
+// span local, or passed inline), delta before the loop and the in-place z steps all 65; the
+// z step as one expression 92-101 (307 in the real build); delta written out per component
+// 332 (1316 bytes); previous_inside != inside 70; the helper as point + vector * t for all three
+// components 309.
+// Earlier (score 79): current distance uses xmm3 instead of xmm2, then
 // delta y/z use xmm4/2 instead of xmm3/4 through the unroll and remainder.
 // Per-use indexed current 356; unsigned ordinal 82; accepted memcpy 79;
 // interpolation output/previous references 79/79; complete result value
@@ -61,6 +70,21 @@ PRIVATE __forceinline void function_11fc81(point3f *arg_0, point3f const *arg_1,
 // computed before delta, without the span local. In the 4x unrolled body the copies' current-distance
 // sums differ: retail copy 1 i*x + k*z + y*j, copy 2 i*x + y*j + z*k; ours copy 1 i*x + k*z + j*y,
 // copy 2 i*x + z*k + y*j.
+// score 65 (was 65): distance/delta XMM homes and final Z-product destination remain.
+// Existing interpolation inputs by vector/point/both values 709/498/872; native component
+// array 65; shared scale stage 353; point-value return 519; early Z product 307; vector/early Z 709.
+// score 65 (was 65): distance/delta SSE homes and destructive Z-product destination remain;
+// direction-output-point-fraction 65; point-output-direction-fraction 65; direction-point-fraction-output 65;
+// point-direction-output-fraction 65; products before stores 65; equality bound 1280;
+// emission-count scope 194; complete XY before publication 124.
+// current-distance/delta XMM homes and final Z-product destination remain.
+// Complete endpoint consumer 297; distance-input consumer 332; complete edge consumer 297;
+// difference input reference 65; complete plane input 392; current/prior classifications
+// at use 1268/455; retained-side classifications 469.
+// score 65 (was 65): same XMM homes (ours delta z takes xmm2 and receives the z product).
+// Loop-carried updates as distance/inside/point and inside/distance/point 65/65; z product
+// written k * t 65; current distance as two statements like the previous one 83; span
+// before delta with t passed inline 65.
 // @retail 0x11fc80
 long function_11fc80(
 	plane3f const *plane,
@@ -77,22 +101,14 @@ long function_11fc80(
 	{
 		real offset = keep_inside ? tolerance : 0.f - tolerance;
 		point3f const *previous = &points[point_count - 1];
-		// retail evaluates the distances in SSE single precision: every product and sum is rounded to float
-		real previous_z = plane->k * previous->z;
-		real previous_y = plane->j * previous->y;
-		real previous_distance = previous_z + previous_y;
-		real previous_x = plane->i * previous->x;
-		previous_distance += previous_x;
-		previous_distance -= plane->d;
+		real previous_distance = plane_distance_to_point(plane, previous);
 		previous_distance -= offset;
 		bool previous_inside = previous_distance >= 0.f;
 
 		for (long i = 0; i < point_count; i++)
 		{
 			point3f const *current = &points[i];
-			real distance = (plane->i * current->x + plane->k * current->z) + plane->j * current->y;
-			distance -= plane->d;
-			distance -= offset;
+			real distance = plane_distance_to_point(plane, current) - offset;
 			bool inside = distance >= 0.f;
 
 			if (inside != previous_inside)
@@ -133,11 +149,12 @@ static inline real distance_squared(point3f const *a, point3f const *b)
 /* two-bone inverse kinematics: moves the middle node so that the chain from
    the root reaches the target (clamped to the chain's reach), rebuilds the
    root and middle axes and copies the target into the end node */
-// score 26 (was 232): what still differs is operand order. In the four
-// cross products on the node axes retail loads a->j before b->i in k and a->k
-// before b->i in j, where ours loads b->i first; new_mid.x is
-// `movaps xmm1, xmm0; mulss xmm1, [ebp]` in retail and the 1-byte-longer
-// `movss xmm1, [ebp]; mulss xmm1, xmm0` in ours.
+// score 2 (was 2): one product's operand order remains: in the second root cross
+// product (up x forward into left) retail loads up->k before forward->j.
+// Round 134: a shared inline axis rebuild (normalize, two crosses) for root and mid with
+// pointer parameters 2, taking the node instead 107; new_mid through root->forward 4;
+// mid_left among the mid pointers, all 36 orders, best 4 (root_left first fixes this
+// product but flips two in the first cross); root pointers in a block 2; names don't matter.
 // Tried: lift as a vector (232) or three scalars (216); the direction kept in
 // a delta vector (215); u = inverse * delta, u in k-i-j order, vector3f_scale
 // (215-223); delta scaled in place (308); 1 / root_target written inline
@@ -145,9 +162,23 @@ static inline real distance_squared(point3f const *a, point3f const *b)
 // directly, cross3f (174), with its components in i-j-k, j-i-k or j-k-i order
 // (50; k-j-i, k-i-j and i-k-j give 26), or with each product's operands
 // swapped (26); new_mid.x as root_forward->i * mid_root (26); the node axes
-// written as root->forward etc. without the pointer locals (59).
-// score 26 (was 26): frame 0x30 agrees; cross-product operand loads and the extra midpoint MOVSS byte remain.
-// Six product values 28; cross accumulators 34; first/second/both input copies 512/565/741; returned cross value 462; cross reference parameters 26; local interpolation helper 28.
+// written as root->forward etc. without the pointer locals (59); six product
+// values 28; cross accumulators 34; first/second/both input copies 512/565/741;
+// returned cross value 462; cross reference parameters 26; local interpolation
+// helper 28. Round 69: k-i-j components with root_left declared after
+// root_forward and mid_up before mid_forward 2; then height as a ternary 2;
+// i-k-j components 2; root_up before root_left 2; new_mid declared at the top 2;
+// new_mid.x as root_forward->i * mid_root 2; any one node pointer local dropped
+// 18-39; new_mid computed earlier 31-52; other component store orders 8-29.
+// Helper parameter b-a-out/a-out-b/b-out-a/out-b-a 2 each; cross component names,
+// input/output role names, returned output pointer and all axis-pointer role names 2 each.
+// Twice-used first-input scalar i/j/k 138/133/133; second-input i/j/k
+// 124/121/136; complete first/second scalar inputs 240/273.
+// Round 71: cross helper taking (out, a, b) 2; its locals declared up front 2;
+// the other 23 orders of the four node pointer declarations 7-24.
+// Round 7: shared cross at second root/middle-up/middle-left 62/63/67;
+// helper stores j-k-i 90; rotation output/up/forward 16/20/2; all three 18;
+// ordinary inline 2; all three with ordinary or forced inline 18 each.
 // @retail 0x120220
 void function_120220(
 	transform4x3f *target,
@@ -201,9 +232,9 @@ void function_120220(
 		else
 			height = 0.f;
 
-		vector3f *root_left = &root->left;
 		vector3f *mid_left = &mid->left;
 		vector3f *root_forward = &root->forward;
+		vector3f *root_left = &root->left;
 		vector3f *root_up = &root->up;
 
 		root_forward->i = along * u.i + e.i * height;
@@ -221,8 +252,8 @@ void function_120220(
 		new_mid.y = root_forward->j * mid_root + root->position.y;
 		new_mid.z = root_forward->k * mid_root + root->position.z;
 
-		vector3f *mid_forward = &mid->forward;
 		vector3f *mid_up = &mid->up;
+		vector3f *mid_forward = &mid->forward;
 
 		mid_forward->i = remaining * u.i - e.i * height;
 		mid_forward->j = remaining * u.j - e.j * height;

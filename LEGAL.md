@@ -73,18 +73,26 @@ issues that are being remediated, is in [PROVENANCE.md](PROVENANCE.md).
 
 ## Licence scope
 
-The repository's own contributions are released under CC0 1.0 (see
-[LICENSE](LICENSE)), except where a file or the README says otherwise.
+The repository's own contributions are licensed under the GNU General Public
+License, version 3 or (at your option) any later version (GPL-3.0-or-later;
+see [LICENSE](LICENSE)), except where a file or the README says otherwise.
+Versions published before the change on 2026-10-27 were released under
+CC0 1.0, and copies of those versions stay under CC0.
 
-- CC0 applies only to material that the contributors have the right to
+- The GPL applies only to material that the contributors have the right to
   license. It covers the contributors' own work in this repository and
   nothing else.
-- It does not place any part of Halo 2, or any intellectual property of
-  Microsoft, Bungie, 343 Industries, Activision or any other third party,
-  into the public domain, and it cannot waive anyone else's rights.
+- It grants no rights in any part of Halo 2, or in any intellectual property
+  of Microsoft, Bungie, 343 Industries, Activision or any other third party.
+  The earlier CC0 release did not place any of that into the public domain,
+  and could not waive anyone else's rights.
 - Nothing in this repository grants any licence to Halo 2's game content,
   code, trademarks or other proprietary material. Those remain the property
   of their respective owners.
+- The licence includes one additional permission under section 7 of the GPL,
+  for linking or combining with the libraries of the Microsoft Xbox
+  Development Kit. Its text is in the README's
+  [Additional permission for the Xbox Development Kit](README.md#additional-permission-for-the-xbox-development-kit).
 - Some data in the repository comes from third-party projects under their own
   licences; the README's Licence section lists them.
 

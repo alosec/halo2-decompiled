@@ -379,7 +379,13 @@ __forceinline void function_183672(point3f *arg_0, point3f const *arg_1, __m128 
 }
 
 // score 8 (was 8): the three values of the query loop are kept in the stack slots in the
+// opposite order (retail j, first, i; ours first, i, j). Shared component base 8; i, j, k
+// declared at the top 8; chained FLT_MAX stores 8; contact pointer walk 8; shape calls
+// through the field pointers 168; about 300 natural forms compiled alone keep the slot order.
 // opposite order.
+// First component/outer index/inner index spill cycle remains. Indexed second/first/both shape reads
+// fast 24/79/8; indexed second kind 24; both/second entry shape reads 135/135;
+// indexed second/both shape addresses 24/8. All new scores reduced; original frame and loops restored.
 // @retail 0x183670
 bool __stdcall function_183670(long component_a, long component_b, point3f *a, point3f *b, real *distance)
 {
@@ -509,7 +515,8 @@ PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shap
 	return limited != shape->data;
 }
 
-// score 314 (was 319): frame 0x48 versus 0x44 and plane/output homes;
+// score 321 (was 321): frame 0x48 versus 0x44 (retail writes the transformed normal into the plane and has two
+// unused dwords below it); classifier clamp form, transformed-plane and output homes remain.
 // normal component loop 319; material-output scope 319; direct validity 351;
 // key-clamp result arms 319; optional entity result 319.
 // j92: frame 0x48 versus 0x44 and node/plane/output homes remain; delayed reads and native rotation copy regress; coordinate names and positive root guard tie.
@@ -518,6 +525,43 @@ PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shap
 // Shape-input classifier with field equality 314 plain (1250/1243 bytes); root entity 319;
 // native plane input 354; rotation/translation/both bases 319/319/319; final normal value 356;
 // native plane output 348; shape-input sampled equality 319; ordinary inline classifier 356.
+// Frame and plane/output homes remain. classifier bound result first 329; native classifier signed domain
+// 321; classifier direct bounds 345; existing entity query boundary 321; native destination record 388;
+// native output index values 321; validity after index defaults 321; readonly first node input 321.
+// Plane normal setter 334; native matrix reference 321; entry/surface/both words
+// 324/323/326; staged plane distance 321; origin field base 323; shape field reference 321.
+// Native signed data, live classifier fields, both 321/321/321; material output names/scope/both 321/321/321; short material home 321; signed data with output names 321.
+// Origin fields at uses 318 (three-count gain rejected); hit fields at publication 329; both 366;
+// first/second node at uses 379/357; byte/long classifier results 321/321;
+// classifier reference input 321. All existing input snapshots and helper contracts restored.
+// Round 152: All normal-row partial sums/products 321/321; normal with distance products/stages 321/321; native normal library copy 321; copy with all row products/partials 321/321; all distance products 321.
+// Component result 370; search index 338; property cursor 336; cursor result 338;
+// bounded search condition 327; output index homes 321; hit distance home 321;
+// component result with output homes 370. Original entry scan and scalar homes restored.
+// Separate root guards 321; exclusion equality first 324; direct key-clamp test 321;
+// publication/validity rejection guards 321/321; readonly instance transform 321;
+// immutable material receiver/short material output before plane 321/321. Original body restored.
+// Scalar origin Z/Y/X, hit Y/X/Z and both producer orders 321/321/321;
+// side before normal publication 324; immutable normal 321, with late publication 324;
+// encoded field at uses 358; consistent readonly second-node/root contract 321.
+// Round 54: in-place normal (x/y/z then plane.n, d) 334 at retail length (frame 0x3c, contact in ESI);
+// summed distance 334; shared matrix_transform_vector in place/into normal 334/321; constant-first
+// clamp 321; clamp through an inline pin function 321.
+// Round 350: complete plane helper 353; with origin fields, hit snapshot, both 324/337/335;
+// transformed arm first 354, with origin fields/hit snapshot/both 343/339/350.
+// Complete helper input context used; all forms restored, frame/plane/output homes remain.
+// Round 96: retail lays out the instance-plane arm first and tests the type as `shr 29; dec; je` (a
+// switch's shape; VC folds an if on (data >> 29) into a mask compare). Arms swapped as an if 323; with
+// the plane distance in a local 323; distance local alone 321; switch with case 1 first/default first
+// 316/315 (not kept: a switch for an if).
+// Lane 5 r77: retail's 1..16 clamp keeps each constant in the result register (`mov ecx, 1;
+// cmp ecx, edx; jg`) and threads both clamped arms straight to the byte test, which keeps a
+// `setne; test`. Entity as `type == 1 ? entity : NULL` 321; clamp as if/else-if on the local,
+// constant-first if/else-if and the PIN macro 321/321/321 (identical code); side test written in
+// each arm without the side local 352 (1289 bytes). All restored.
+// Round 23: property count/base/both observations 321/338/338; next-link snapshot 364;
+// link plus count/base/both 364/348/347; all with native property reference 346.
+// Frame stays 0x48 versus 0x44; original input scans and helper contracts restored.
 // @retail 0x1822f0
 void c_query_batch_collector::collect(s_batch_contact const *contact)
 {

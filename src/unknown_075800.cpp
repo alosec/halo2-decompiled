@@ -315,6 +315,8 @@ PRIVATE __forceinline void function_94151(s_type_f7e40b *reply, const s_session_
 // score 12 (was 12): the leave reason is computed without a branch (neg/sbb/add) where
 // retail tests the leave result and moves 8 or 9; the shorter body also moves every
 // branch displacement and the padding at the end.
+// success/failure locals 12/12; helper-owned reason 48; widened result 12;
+// separate decisions 61; two result tests 12; reply-field forms 44/72; inverted inner select 12.
 // @retail 0x94150
 void network_message_handler_handle_leave_request(c_class_938e0 *handler, long address, const s_session_id *message)
 {
@@ -961,10 +963,26 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 
 /* the out-of-band messages: those that arrive from an address rather than on
    an established channel */
-// score 198 (was 198): selector/message/address convention differs; full baseline 198, fast preview 196.
+// score 193 (was 193): selector/message/address convention and dispatch root remain. Round 76: with the
+// Round 9 (lane 10, fast control 191): free function in retail's register order (type, address, handler,
+// message) on the two-switch body, call site updated, 191 (type still ECX, message on the stack);
+// case-scoped connection index 191; direct cases 0,2,3,4 196; residual cases in numeric order 191;
+// first switch without its default 191. All restored.
+// unified retail-order switch and the address read once through its address, the address goes on the stack
+// as in retail and only type/message are swapped (ecx/eax for retail eax/ecx); the 24 missing bytes are
+// exactly retail's edi copy of the address and its three-pop exits, so that body matches once the convention does.
+// incoming selector/message/address allocation and dispatch root remain.
+// Single-root family orders query/connection/session/peer 210; query/session/connection/peer 219;
+// query/peer/connection/session 211; connection/query/session/peer 207; connection/session/query/peer 208;
+// session/query/connection/peer 220; session/connection/peer/query 216; peer/query/session/connection 222.
+// All restored; reduced preview 191 versus full 193 with differing-callee caveats.
+// selector/message/address convention differs; full baseline 198, fast preview 196.
 // Unified switch 208; retail-order switch with lookup exits 218; missing-connection exits 196; inline depth
 // one 196; size preference 243.
-// score 198 (was 198): selector/message/address allocation and dispatch root remain.
+// selector/message/address allocation and dispatch root remain.
+// No local frame; selector/message/address allocation and dispatch root differ.
+// Earlier: selector/message/address convention differs; full baseline 198, fast preview 196.
+// Earlier: selector/message/address allocation and dispatch root remain.
 // Isolated endpoint/leave/query cases 195p/198p/206p; separate connection phase 258p;
 // two session cases first 199p; connection order reversed 198p; direct lookup guard 198p;
 // residual phase reversed 207p. All eight plain checked; fast preview 196 versus full 198.
@@ -973,7 +991,12 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // Direct/full if ladders 278/241; link snapshot 215; unsigned connection handle 196;
 // typed session payload 196; session cases before lookup cases 210; reversed direct
 // cases 195; adjacent lookup range after direct phase 205 (fast control 196).
-// score 198 (was 198): selector/address/payload convention and dispatch schedule still differ.
+// selector/message/address allocation still differs.
+// Earlier: selector/message/address allocation still differs.
+// Lookup inline/noinline 198/198; direct refusal 198/198; direct query 198/198;
+// direct information 198/198, all plain-confirmed. Fast control 195 versus full 198.
+// Original bodies, signatures, declarations and every game-call tuple restored.
+// selector/address/payload convention and dispatch schedule still differ.
 // instance cases first 227f; standalone cases first 250f.
 // lookup cases first 239f; query cases first 209f.
 // connection cases first 277f; peer cases first 190f.
@@ -982,23 +1005,105 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // incoming selector/message/address allocation remains.
 // Six separate noinline handler declarations and query/ack or peer/session groups
 // all 195 in the reduced image, tying its unchanged 195 preview. All declarations restored.
+// selector/message/address convention still differs; executable rows 155 to 150.
+// Direct-case orders 3,4,0,2 / 4,3,0,2 / 2,4,0,3 / 3,2,4,0 score 196/196/191/195 fast;
+// keep 2,4,0,3 at plain 193, retail length. Lookup orders 7,5,6 / 6,7,5 give 196/195;
+// acknowledgment first in residual phase 196; unified observed order 218. All call inputs preserved.
+
+// selector/message/address allocation and dispatch root remain.
+// Direct orders 0,4,2,3 / 0,4,3,2 / 2,0,4,3 / 2,3,0,4 give 193/196/193/195 fast;
+// 2,3,4,0 / 3,0,2,4 / 4,0,2,3 / 4,2,0,3 give 194/193/193/191 fast.
+// Last order is 193 plain, tying baseline; fast control 191. All rejected.
+// incoming selector/message/address allocation remains.
+// Earlier: selector/message/address convention still differs; executable rows 155 to 150.
+// Earlier: selector/message/address allocation and dispatch root remain.
+// Earlier: incoming selector/message/address allocation remains.
+// Connection refusal/establishment/closure inline and noinline declarations,
+// individually and as a group, all 191 fast, tying preview. All restored.
+// selector/message/address convention and dispatch root remain.
+// Residual session/peer/numeric/session-reverse/24-first/23-first orders 189/189/191/191/189/191 fast;
+// lookup orders 6,5,7 and 5,7,6 191/191; session-ordinal order 193 plain, tying baseline.
+// Leave/acknowledgment/abort inline and noinline declarations, singly and together,
+// all 191 fast, tying preview; no declaration or handler-body change retained.
+// Dispatcher inline/noinline/forceinline/inline-outofline declarations all 191 fast, tying reduced control 191;
+// direct orders 0,2,4,3 / 0,3,2,4 / 0,3,4,2 / 2,0,3,4 give 193/193/194/196 fast.
+// Round 144: complete-root priorities query/connection/peer/session 207; query/session/peer/connection 218;
+// query/peer/session/connection 220; connection/query/peer/session 202; connection/session/peer/query 207;
+// peer/query/connection/session 212; peer/session/query/connection and peer/session/connection/query 220.
+// All restored; reduced control 191 versus plain 193; incoming selector/message/address roles remain.
+// Round 364: Shared lookup inside the connection cases: retained phases 261; unified direct/numeric/
+// observed orders 272/272/271; residual group last 252; failure break 261; observed failure/scoped result 271/271.
+// Round 366: Common direct exit/residual returns/failure breaks/case-local results 216 each;
+// common-exit nested defaults last/first 191/191 fast (ties reduced control);
+// complete common-exit switch retained/observed handler orders 208/218. Original phases restored.
+// One-root family orders connection/peer/query/session and connection/peer/session/query
+// 204/205; session/connection/query/peer 207; session/query/peer/connection,
+// session/peer/query/connection and session/peer/connection/query 220/220/220;
+// peer/connection/query/session and peer/connection/session/query 206/207. All restored.
+// Remaining direct orders 2,4,3,0 / 3,0,4,2 / 3,2,0,4 / 3,4,2,0 /
+// 4,0,3,2 / 4,2,3,0 give 193/194/196/195/196/193 fast; genuine
+// residual default scope last/first 191/191, tying the reduced control.
+// Combined inline/out-of-line declarations on lookup, direct refusal/query, three connection handlers,
+// and leave/acknowledgment handlers: all eight 191 fast, tying reduced control 191 (full 193).
+// Every declaration and handler call restored.
+// Round 167: Second-phase lookup/session interleaves 5,12,6,13,7,14 / 5,12,6,14,7,13 /
+// 5,13,6,12,7,14 / 5,13,6,14,7,12 / 5,14,6,12,7,13 / 5,14,6,13,7,12 all 195;
+// 12,5,13,6,14,7 and 14,5,13,6,12,7 both 194. Reduced control 191, full 193;
+// original phases, case bodies, caller and handler tuples restored.
+// Single-root retained/observed orders with lookup inline/noinline or all three
+// connection-handler inline/noinline boundaries: 208/208/208/208/218/218/218/218 fast; original graph and declarations restored.
+// Full-root internal direct orders 4,2,0,3 / 4,2,3,0 / 3,4,0,2 / 3,4,2,0 /
+// 2,3,4,0 / 2,0,3,4 / 0,4,3,2 / 0,3,2,4 score 208/208/208/208/208/208/207/208
+// fast, against reduced control 191 (full 193). Original phases and call tuples restored.
+// Early phase connection cases 5/6/7 216/224/230; pairs 5+6/5+7/6+7
+// 241/249/253; 5+8 and 6+8 229/231 (fast, control 191).
+// Five coherent formal orders on the two-phase body 191 each; unsigned selector
+// in address/selector/payload, selector/address/payload and payload/selector/address 191 each.
+// Reduced control 191; full 193. All signatures, caller arguments and bodies restored.
+// Round 245 (fast control 191): Single classifier with internal connection orders 5,7,6 / 6,5,7 /
+// 6,7,5 / 7,5,6 / 7,6,5 208/208/207/208/208; reverse connections with direct orders
+// 0,2,4,3 / 0,3,4,2 / 0,4,2,3 208/208/207. All regress at 432/444 bytes;
+// original phases restored. Incoming selector/message/address roles and dispatch root remain.
+// Round 76 (fast, control 191): unified retail-order switch 218 (aligned 252 -> 83); plus address read through
+// its address 220 (aligned 104); five parameter orders on it and the message/address/type order 219-220;
+// free function in type/address/handler/message and handler-first orders 220/220; cases 2/4/8/5 first
+// 220/216/219/216; message-typed local first 190 (444 bytes, one lower, not kept); link pointer first 242
+// (this moves to ecx); explicit default/scoped lookups/returns 220 each. Diagnostic message test first 212.
+// Case-subset bisect: one-case bodies take the type in eax, any full body keeps ecx. An unused fourth size
+// parameter is dropped by LTCG (the caller stops passing it) and leaves the registers as they are, 220.
+// Round 188: Residual connection/peer interleaves 5,22,6,23,7,24 / 22,5,23,6,24,7 /
+// 5,23,6,24,7,22 / 24,5,23,6,22,7; connection/query interleaves 5,8,6,9,7,10 /
+// 8,5,9,6,10,7 / 5,9,6,10,7,8 / 10,5,9,6,8,7:
+// 193,192,193,192,195,194,195,195 fast; reduced control 191, full 193. Original executable source restored.
+// Lane 4 r98 (fast control 191): retail takes the selector in eax, the message in ecx (kept in ebx) and
+// this in edx with the address on the stack (edi); ours the selector in ecx, the address in eax and the
+// message on the stack. One numeric-order switch with returns, as 0x93aa0, 208 (432 bytes, same
+// convention); an unused message size parameter after the type (dropped by the link) 191; formals
+// (type, message, address) 191, same convention; direct cases 0,2,3,4 196; connection cases after 11 205.
+// Round 224: Residual connection/free-case interleaves 5,11,6,18,7,8 / 11,5,18,6,8,7 /
+// 5,18,6,8,7,11 / 18,5,8,6,11,7 / 5,11,18,6,8,7 / 11,18,5,8,6,7 /
+// 18,11,5,6,8,7 / 8,5,11,6,18,7 195/194/195/194/195/192/192/194 fast. Original phases and handler tuples restored.
+// Round 28 (m3 lane 12): single retail-order switch 218 fast (type ecx, address eax, message stack); with
+// type/message/address declared 218 (identical); one read of the address through its address 220 (address
+// on the stack as retail, type ecx/message eax, retail eax/ecx); that with type/message/address 219 (message
+// also on the stack, 0x7afd0 3 -> 35), with type/address/message 220. Declared order does not move type to eax.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {
 	long connection_index;
 	switch (message_type)
 	{
-	case 0:
-		network_message_handler_refuse_connect((const s_connect_request *)message, this, (long)address);
-		return;
 	case 2:
 		function_093fa0(this, message);
 		return;
-	case 3:
-		network_message_handler_handle_session_query((const s_network_message_session_query *)message, address);
-		return;
 	case 4:
 		function_0785d0(unknown10, address, message);
+		return;
+	case 0:
+		network_message_handler_refuse_connect((const s_connect_request *)message, this, (long)address);
+		return;
+	case 3:
+		network_message_handler_handle_session_query((const s_network_message_session_query *)message, address);
 		return;
 	default: break;
 	}
@@ -1052,5 +1157,6 @@ void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_ty
 	case 11:
 		function_94270((const s_session_id *)message, address);
 		break;
+
 	}
 }

@@ -751,11 +751,11 @@ void havok_component_rigid_body_point_velocity_get(long rigid_body_index, s_havo
 }
 
 // @retail 0x1d0b20
-void havok_component_rigid_body_inertia_get(long rigid_body_index, s_havok_component *component, matrix3x3 *inertia)
+void s_havok_component::rigid_body_inertia_get(long rigid_body_index, matrix3x3 *inertia)
 {
 	hkRotation havok_inertia;
 
-	havok_component_rigid_body_get(rigid_body_index, component)->m_motion->getInertiaWorld(havok_inertia);
+	havok_component_rigid_body_get(rigid_body_index, this)->m_motion->getInertiaWorld(havok_inertia);
 	vector3d_from_havok(&inertia->forward, &havok_inertia.m_col0);
 	vector3d_from_havok(&inertia->left, &havok_inertia.m_col1);
 	vector3d_from_havok(&inertia->up, &havok_inertia.m_col2);
@@ -764,9 +764,9 @@ void havok_component_rigid_body_inertia_get(long rigid_body_index, s_havok_compo
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 // @retail 0x1d0bb0
-real havok_component_rigid_body_mass_get(long rigid_body_index, s_havok_component *component)
+real s_havok_component::rigid_body_mass_get(long rigid_body_index)
 {
-	return MAX(1.0f, havok_component_rigid_body_get(rigid_body_index, component)->m_motion->getMass());
+	return MAX(1.0f, havok_component_rigid_body_get(rigid_body_index, this)->m_motion->getMass());
 }
 
 // @retail 0x1d0c00
@@ -890,6 +890,12 @@ void hkRigidBody::motion_transform_set(hkTransform const &transform)
 void function_1d1260(s_havok_component *component);
 void function_1d1540(s_havok_component *component);
 
+// score 81 (was 81): component arrives on the stack where retail passes it in ebx (no push ebx,
+// plain ret, frame 0x88), the entry copy is rep movsd where retail uses movaps, and retail tests
+// m_fixed before flag5. Tried: copy through hkTransform::set 77 at 237 bytes (0x1d1b60 lost);
+// set + body pointer + m_fixed first 88 at 230 (retail's code except the ebx parameter); that with
+// flag5 first 27 at 220 (component in edi, costs 0x1d0c20 and 0x1d1b60); as a member function, every
+// parameter order, body pointer at the top, else arm first, early return, noinline: all as 88.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
@@ -919,6 +925,8 @@ void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_com
 // score 38 (was 38): frame and component register still differ; external matrix/component records 38/38;
 // complete frame set/initialization/library copy 81/71/71; translation memcpy 70;
 // aligned forward/up column values 49/49. Original body retained.
+// score 38 (was 38): only 0x1d0cf0's convention (component in ebx) is left; defined ahead of
+// 0x1d0cf0 38; 0x1d0cf0's set-copy forms 40/40/49.
 // @retail 0x1d0c20
 void havok_component_rigid_body_matrix_set(long rigid_body_index, s_havok_component *component, transform4x3f const *matrix)
 {
@@ -1385,6 +1393,19 @@ PRIVATE __forceinline real const &component_time_step()
 // acceleration register, memory timestep multiply and stop-test schedule differ.
 // Ordinary acceleration/magnitude/time inline contracts and paired forms 26;
 // completed clamp before ratio 82; accelerated candidate default 114.
+// score 26 (was 26): the time step is still loaded before its product; retail multiplies from memory
+// and keeps the step's address. Step on the left of both products 26; direct field reads 26;
+// one-expression step 26; address-taken target 26; step pointer first 142; direct reads with the
+// stopping test first 43; product inside the scale helper 26; per-arm mass step 135.
+// acceleration/timestep allocation and stopping schedule remain.
+// Combined forced/stopping step-first, distance-first, eager distance, conditional result,
+// named decision and stopping guard 106 each; merged default/return scaling 140/110.
+// score 26 (was 26): isolated mass return 113; threshold-first return 121; returned
+// selection/nested return/power selection 113 each; direct/default/assigned magnitude
+// results with mass return 113/127/113. XMM0 prefix improves; memory timestep still differs.
+// score 26 (was 26): acceleration/timestep allocation and stopping order remain.
+// Mass eligibility early scale/mass-first 164/166, late 26/120; selected divisor early/late 143/114;
+// early eligibility with selected normalization scale/mass-first 164/166. Original helper retained.
 // @retail 0x1d2280
 real function_1d2280(bool allow_reverse, bool scale_by_mass, real mass, real target, real acceleration,
 	real velocity, real limit, real position, real exponent, bool force_acceleration, real *ratio)
@@ -1815,13 +1836,8 @@ public:
     void set_strength(real strength);
 };
 
-// score 10 (was 10): the component arrives in eax and the constraint index in ecx,
-// retail the reverse (BLOCKED-BY 0xe0e00: its declaration and call need the
-// (component, constraint_index, scale) order); the rest matches. Tried: constraint
-// pointer after the lookups 23, just before the override loop 23, as data + index 10,
-// object lookup first 10, object index read into a local first 10.
 // @retail 0x1d35d0
-void function_1d35d0(long constraint_index, s_havok_component *component, real scale)
+void function_1d35d0(s_havok_component *component, long constraint_index, real scale)
 {
     s_havok_component_element0c *constraint = &component->unknown7c.data[constraint_index];
     s_component_object_transform_view *object = (s_component_object_transform_view *)havok_object_get(component->object_index);
@@ -2138,10 +2154,64 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 {
     vector->m_quad = _mm_setzero_ps();
 }
+// score 109 (was 109): aligned frame 0x34 agrees; the normal's loop registers (retail keeps the inverse in
+// xmm1 and scales j, k in place), velocity j/k loaded before its length test (retail reloads them into
+// xmm2/xmm3 ahead of the branch), and the property value 0 kept in EDI across the erase remain.
+// Tried: velocity sums as running sum plus material vector 131 kept; speed sum declared before the
+// velocity 127 kept; normal scaled j, k, i 109 kept (k, j, i 110; i, k, j 121; j, i, k 124; k, i, j 122;
+// all in place 109); velocity scaled j, k, i as well 109; inlined property setter passing the value as
+// the 0x1cf3b0 setter does 216; shared dot input order 137; consistent inverse-first/inverse-last
+// products 137/137; dot with either product form 137/137; mode snapshot 192; snapshot plus dot 192;
+// sample default before matched query 208; complete contact input/normal sum/both 220/267/463; complete
+// velocity sum 283; symmetric scaled components, separate speed product, material count after store and
+// corrected-boundary speed-first each 137; fallback-first 150; separate normal/velocity/both
+// normalization inputs 443/232/478; native flag byte, signed index, both fields, native bit, bit/index,
+// Boolean bit, Boolean bit/index and readonly native contacts all 137; corrected-boundary compound sums
+// 137; plain axis accumulation 184; byte material count 451; unsigned other count 137; corrected-boundary
+// final shared scale 214; existing squared-length normal/sample/both/velocity/normal-velocity/
+// sample-velocity/all boundaries 109 each; shared self-dot at all magnitudes 109; shared normal/velocity
+// length 123; shared inverse 162; both 168; outer sample vector 109; vector plus length/inverse/both
+// 123/162/168; all with one scan ordinal 168; setter taking the property word by value 173 (the zero
+// goes to EBX before the search, retail EDI); velocity through the existing normalize3d 109; one vector
+// local for both sums 109; compound velocity scale 109; normal declared first 113.
+// xmm1 and scales j, k in place), velocity j/k loaded before its length test, and the property value 0
+// kept in edi across the erase remain.
+// Earlier at 137: aligned frame 0x34 agreed; normal/velocity XMM roles, early velocity loads and property-zero retention.
+// Earlier: the velocity sums in the material loop load the
+// aligned frame 0x34 agrees; normal/velocity XMM roles, early velocity loads and property-zero retention remain.
 
-// score 137 (was 211): the velocity sums in the material loop load the
+// Earlier 109 (was 137): the velocity sums in the material loop load the
 // running sum second in retail, and the final scale and its stores are
-// scheduled differently; not worked on yet.
+// scheduled differently.
+// Round 128: shared dot input order 137; consistent inverse-first/inverse-last products 137/137;
+// dot with either product form 137/137; mode snapshot 192; snapshot plus dot 192; sample default
+// before matched query 208. Frame and sample boundary preserved; normal/velocity XMM roles and
+// final zero remain.
+// Round 187: complete contact input/normal sum/both 220/267/463; complete velocity sum 283;
+// symmetric scaled components, separate speed product, material count after store and corrected-boundary speed-first each 137;
+// fallback-first 150; separate normal/velocity/both normalization inputs 443/232/478. All restored.
+// Earlier at 137: the velocity sums in the material loop load the
+// scheduled differently; initial normal XMM roles also differ.
+// Round 138: native flag byte, signed index, both fields, native bit, bit/index, Boolean bit,
+// Boolean bit/index and readonly native contacts all 137. Normal/velocity XMM roles and
+// property-zero retention remain; frame 0x34 agrees.
+// Aligned frame 0x34 agrees; normal/velocity XMM roles and final property-zero retention differ.
+// Corrected-boundary compound sums 137; plain axis accumulation 184; byte material count 451;
+// unsigned other count 137; corrected-boundary final shared scale 214.
+// Round 53: velocity sums as running sum plus material vector 131 kept; speed sum declared before
+// the velocity 127 kept; normal scaled j, k, i 109 kept (k, j, i 110; i, k, j 121; j, i, k 124;
+// k, i, j 122; all in place 109); velocity scaled j, k, i as well 109; inlined property setter
+// passing the value as the 0x1cf3b0 setter does 216.
+// Round 245 (fast): Existing squared-length normal/sample/both/velocity/normal-velocity/sample-velocity/all
+// boundaries 109 each; shared self-dot at all magnitudes 109. Current j/k/i normal publication
+// and matched sample boundary preserved; first normal XMM roles, early velocity loads and property-zero lifetime remain.
+// Round 342: Shared normal/velocity length 123; shared inverse 162; both 168; outer sample vector 109;
+// vector plus length/inverse/both 123/162/168; all with one scan ordinal 168. Exact-length inverse forms regress; originals restored.
+// Round 157: normal reciprocal identity 138; velocity reciprocal identity 170; both reciprocals 184;
+// early normal length zero 109; early velocity length zero 109; both length defaults 109; reciprocals and
+// lengths 184; all with early speed sum 392. Original executable source restored.
+// Round 201: Successive normal/velocity sum workspace 109; with shared length/inverse/both
+// 115/109/123; the same four with persistent sample 109/115/109/123. Original accumulators restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {
@@ -2185,9 +2255,9 @@ void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_ind
     if (!(fabs(length) < 0.0001f))
     {
         real inverse = 1.0f / length;
-        normal.i = inverse * normal.i;
         normal.j = normal.j * inverse;
         normal.k = normal.k * inverse;
+        normal.i = inverse * normal.i;
     }
     else
         normal = *g_4687b0;
@@ -2198,16 +2268,16 @@ void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_ind
             dot3f(&contact->normal, &normal) > 0.25f)
             ++other_contacts;
     }
-    vector3f velocity = *g_4687a4;
     real speed_sum = 0.0f;
+    vector3f velocity = *g_4687a4;
     for (long i = 0; i < material_count; ++i)
     {
         vector3f local_c7c2ff;
         if (!function_181db0(materials[i], &local_c7c2ff))
             local_c7c2ff = *g_4687a4;
-        velocity.i = local_c7c2ff.i + velocity.i;
-        velocity.j = local_c7c2ff.j + velocity.j;
-        velocity.k = local_c7c2ff.k + velocity.k;
+        velocity.i = velocity.i + local_c7c2ff.i;
+        velocity.j = velocity.j + local_c7c2ff.j;
+        velocity.k = velocity.k + local_c7c2ff.k;
         speed_sum += component_surface_length(&local_c7c2ff);
     }
     real velocity_length = component_surface_length(&velocity);
@@ -2592,19 +2662,57 @@ void function_1d83e0(long body_index, s_havok_component *component, long node_a,
 
 void function_bba20(long object_index);
 void function_f7ed0(long vehicle_index, vector3f *impulse);
-
-// score 175 (was 175): staggered register saves and paired velocity homes differ;
+// score 114 (was 135): Frame 0x30 and length agree; the full image pushes ebx/ebp/esi at entry where
+// retail stages them (the reduced image stages them as retail), and the getters keep the fixed byte
+// and zero-vector pointer in other registers.
+// Earlier: Frame 0x30 agrees; admission save staging and paired fixed/zero velocity homes remain.
+// staggered register saves and paired velocity homes differ;
 // marked linear/angular/both getters 200/197/274; earlier angular norm 146; keyframe query 167 (fast base 135).
 // Force-inline linear/angular/both getter declarations 175 each; initialized linear/angular outputs 199 each;
 // initialized pair 219; initialized pair with getter declarations 219; live external array receiver 175
 // (plain scores; reduced preview 135). Staggered saves and paired getter allocation still differ.
-// score 175 (was 175): Staggered saves and paired velocity homes remain; reversed getter
+// Staggered saves and paired velocity homes remain; reversed getter
 // order 178; linear norm before angular read 176; angular read/norm before linear read 186;
 // native simulation result 180; post-update body receiver 187 (plain). Opening body retained.
 // staggered saves and paired velocity homes remain;
 // linear / angular / both component loops 175/175/175; horizontal initialization 173;
 // linear / angular / both loops with horizontal initialization 173/173/175;
 // direct component pointers 183 (plain; original double products and component order retained).
+// Round 358: Paired named magnitudes 135; direct shared scale outputs 175; compound clamp components 135;
+// original-order real accumulations 128 reduced, 168 plain; nested post-update guards 135 (control 135). Keep
+// the seven-point full-image accumulation gain at retail length; frame 0x30, staggered saves and paired
+// getter homes remain.
+// Round 224: Iteration norm/vector/both declarations 128/128/128; inverse velocity/gravity lexical
+// homes 128/128; complete immutable norms 133; chained horizontal stores 130; joint homes/norms/chain
+// 135 (fast control 128, full 168). Save staging and paired fixed/zero homes remain.
+// Round 323 (reduced control 128): common norm 139; common scale 128; real limit
+// literals 128; common norm/scale 139; norm/limits 139; scale/limits 128; all 139;
+// all with body-index name 139. Full-image save staging and paired getter homes remain.
+// Round 71: the full image keeps the three saves at entry only when src/unknown_0350e0.cpp is linked in
+// (any reduced image without it sinks them as retail does); float numerators 100.0f/50.0f give retail's
+// fdivr dword 168 (tie); direct array / pointer-to-array rigid body reads 128f; index declared before the
+// loop at function/block top 128f (address order stays [offset + data], retail [data + offset]).
+// Round 137: active-query bool/byte/short/long on nested admission 168,168,168,168;
+// on guarded exit 168,168,168,168 (controlled reduced scores).
+// Round 332 (reduced control 128): active/notification/impulse inline boundaries and
+// all their combinations 128 each; state/change inline boundaries 132/678. All restored.
+// Joint active/notification/impulse inline boundaries plain 168/677; restored.
+// Round 345 (controlled preview 168): complete linear/angular/both squared terms
+// 173/168/173; iteration terms/paired first sums/immutable terms/shared terms/shared first sums
+// 173/173/173/173/173. Full-image save staging and getter homes remain.
+// Round 152: Shared angular inline/force/out-of-line declarations 168/168/168; shared angular call with those contracts 177/177/236; shared pair with angular force/inline 238/238. Forced forms lose a matched caller; all declarations and body restored.
+// Round 147: admission mask 161; state masks 135; both masks 194; vertical product 168;
+// admission/product 161; state/product 135; both/product 194; guarded type mask 168; state zero
+// tests 135. Keep both native state zero tests; every other form restored.
+// Round 197: Readonly private linear/angular/both getter inputs 135 each; native signed-int
+// ordinal alone/with each input pair 135 each; readonly pair with common double scale 135.
+// Original native state-zero graph, helpers and ordinal restored.
+// Round 63: kept the loop's bit-2 test as TEST_FIELD_BIT(flag2) (retail's shr/test) 135 -> 114 and the
+// float numerators 100.0f/50.0f (retail's fdivr dword, aligned -2) 114; the first bit-2 test as the
+// bitfield too (retail's form there as well) 168, alone 174, while the entry saves are staged
+// differently (reduced image with both: aligned 37). Retail reloads g_4687a4 after the linear copy's
+// stores, as if its address were taken somewhere; ours never takes it. The change vector as a brace
+// initializer 114; its zeros chained 114.
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {
@@ -2615,7 +2723,7 @@ void function_1ced00(s_havok_component *component)
         change.j = 0.0f;
         change.k = 0.0f - g_510c54->rate * g_51e9c4->unknown0;
         function_bba20(component->object_index);
-        if (!TEST_FIELD_BIT(component->flag2) &&
+        if ((component->unknown04 & 4) == 0 &&
             ((1 << ((s_component_transform_header *)g_4e0300->data)[component->object_index & 0xffff].type) & 2))
             function_f7ed0(component->object_index, &change);
         for (long i = 0; i < component->rigid_bodies.size; i++)
@@ -2625,19 +2733,23 @@ void function_1ced00(s_havok_component *component)
                 vector3f linear, angular;
                 rigid_body_linear_velocity_get(component, i, &linear);
                 rigid_body_angular_velocity_get(component, i, &angular);
-                real speed_squared = linear.k * linear.k + linear.j * linear.j + linear.i * linear.i;
+                real speed_squared = linear.k * linear.k;
+                speed_squared += linear.j * linear.j;
+                speed_squared += linear.i * linear.i;
                 if (speed_squared > 10000.0f)
                 {
-                    double scale = 100.0 / sqrt(speed_squared);
+                    double scale = 100.0f / sqrt(speed_squared);
                     linear.i = (real)(linear.i * scale);
                     linear.j = (real)(linear.j * scale);
                     linear.k = (real)(linear.k * scale);
                     havok_component_rigid_body_linear_velocity_set(i, component, &linear);
                 }
-                real angular_squared = angular.k * angular.k + angular.j * angular.j + angular.i * angular.i;
+                real angular_squared = angular.k * angular.k;
+                angular_squared += angular.j * angular.j;
+                angular_squared += angular.i * angular.i;
                 if (angular_squared > 2500.0f)
                 {
-                    double scale = 50.0 / sqrt(angular_squared);
+                    double scale = 50.0f / sqrt(angular_squared);
                     angular.i = (real)(angular.i * scale);
                     angular.j = (real)(angular.j * scale);
                     angular.k = (real)(angular.k * scale);
@@ -2688,8 +2800,12 @@ PRIVATE inline void component_matrix_frame(transform4x3f const *matrix, hkTransf
     havok_from_vector3d(&position, (vector3f const *)&matrix->position);
     frame->m_translation = position;
 }
-
-// score 206 (was 206): body/stride registers and relative-call input differ;
+// score 206 (was 206): Frame 0xb4 and extent agree; body base/stride and protected relative-call input registers remain.
+// BLOCKED-BY 0x1d83e0 (contributor code): retail passes the component to it in EAX and loads the
+// component into EAX at entry; ours passes it in ECX, and the EAX/ECX roles swap from the first body.
+// Earlier baseline: Frame 0xb4 and exact extent agree; stride/base and protected relative-call input registers remain.
+// Earlier: Frame 0xb4 agrees; stride/base and relative-call input registers remain.
+// Earlier: body/stride registers and relative-call input differ;
 // body getters 206; first count after lookup 205 (below gate), both 275;
 // node streams 336; streams with getters 336 (plain scores). Original kept.
 // body stride/base registers and transform call differ;
@@ -2699,7 +2815,27 @@ PRIVATE inline void component_matrix_frame(transform4x3f const *matrix, hkTransf
 // entry relative transform 206; fallback first 206 (plain scores).
 // Round 303: first mapped byte 299; second mapped byte 213; first node at use 338;
 // second node at use 226; loop-scoped child counters 206 (plain scores). Original kept.
-// score 206 (was 206): Frame 0xb4 agrees; body/stride and relative-call registers remain. Late first link 370; late second 309; array accessor 206; mapped-index names 206; second count after lookup 224 (plain).
+// Earlier: Frame 0xb4 agrees; body/stride and relative-call registers remain. Late first link 370; late second 309; array accessor 206; mapped-index names 206; second count after lookup 224 (plain).
+// Earlier: Frame 0xb4 agrees; body/stride and relative-call registers remain. Reused first body 206; word first mapped index 220; word second mapped index 212; array header pointer 336; per-phase model pointers 209 (plain).
+// Earlier: frame 0xb4 agrees; stride/base and relative-call registers remain.
+// Reduced search operand order first/second/both 346/346/346; frame-test operands
+// first/second/both 346/346/346; first mapped-index result 345; with search operands 345
+// (control 346; one-point reductions excluded).
+// Round 130: existing frame converter with matrix/output/both references 206/206/206; direct translation, with matrix/output/both
+// references and actual output return 367/367/367/367/367 (plain scores).
+// The original aligned translation temporary and all interfaces are restored.
+// Round 132: output-first converter, with matrix reference, output pointer return, and
+// output-first return 206/206/206/206; split rotation/translation, output-first split,
+// split return and output-first split return 206/206/206/206 (resolved previews).
+// Round 345: Shared sequential body index/count/first-link workspaces 299/208/302;
+// index+count/index+link/count+link/all/all with child ordinal 217/213/302/300/300.
+// Original per-side lifetimes, frame 0xb4 and contributor interface restored.
+// Round 153: Consistent requested-node snapshots first/second/both 367/254/400; count fields at
+// every use first/second/both 316/337/358; corresponding snapshot/bound pairs and all 369/369/419.
+// All restored.
+// Round 8: index through if/else 313; a body-link table local 209; the child search as a while with
+// the compound test 206 (same code); the second index assigned in plain statements (no embedded
+// assignment, same code, kept) 206; the child counter declared first 208 (plain scores).
 // @retail 0x1d7ef0
 void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
     s_component_frame_owner *owner, s_component_frame_map const *mapping, hkTransform *frame_b,
@@ -2726,9 +2862,10 @@ void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
         component_matrix_frame(&pair->frame_a, frame_a);
     *body_a = component->rigid_bodies.data[index_a].rigid_body;
     long node_b = pair->node_b;
-    long index_b;
-    if (pair->node_b != NONE &&
-        (index_b = node_b == NONE ? mapping->fallback : mapping->bodies[node_b]) != NONE)
+    long index_b = NONE;
+    if (pair->node_b != NONE)
+        index_b = node_b == NONE ? mapping->fallback : mapping->bodies[node_b];
+    if (index_b != NONE)
     {
         long other_node_count = component->rigid_bodies.data[index_b].node_count;
         s_component_node_body_link *other_first = &owner->physics->bodies[component->rigid_bodies.data[index_b].nodes[0]];

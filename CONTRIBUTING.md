@@ -34,7 +34,8 @@ Sources that are acceptable, where appropriate:
 - disassembly and decompilation you performed yourself;
 - the game's observable behaviour and runtime testing;
 - publicly released documentation;
-- source material its authors published under a licence that permits reuse;
+- source material its authors published under a licence compatible with
+  GPL-3.0-or-later;
 - independently developed tools and research, credited.
 
 Name things by what they do. If you don't know a function's purpose yet, use
@@ -138,8 +139,13 @@ address range or by source file:
 
 ## Licence
 
-By contributing you agree that your contribution is released under CC0 1.0,
-like the rest of the repository (see [LICENSE](LICENSE)). CC0 covers only
-material you have the right to license. It does not cover Halo 2's code,
-content or trademarks, which belong to their owners (see
+By contributing you agree that your contribution is licensed under the GNU
+General Public License, version 3 or (at your option) any later version
+(GPL-3.0-or-later), like the rest of the repository, with the same additional
+permission under section 7 for the Xbox Development Kit's libraries (see
+[LICENSE](LICENSE) and the
+[README](README.md#additional-permission-for-the-xbox-development-kit)).
+Contributions merged before the change on 2026-10-27 were made under CC0 1.0.
+The GPL covers only material you have the right to license. It does not cover
+Halo 2's code, content or trademarks, which belong to their owners (see
 [LEGAL.md](LEGAL.md#licence-scope)).

@@ -162,6 +162,27 @@ bool function_01dd60(long index, long *width, long *height)
 	return result;
 }
 
+// score 21 (was 21): width stack/height ESI differ from ESI/EDI inputs; packed gate differs.
+// width/height/both unit subtraction before shifts 25/28/30; native packed words 30;
+// row-byte part 30; selected/masked new packed word 27/28; early dimensions 30.
+// width/height input registers and byte-gate normalization differ.
+// Byte storage 33; direct byte input 25; byte mask 35/27; byte selection 25/23; gated packing 30/24.
+// width remains stacked and height/register saves differ; retail masks the packed fields.
+// Direct width 24; byte pitch expression 24; field store schedule 22; zero flag branch 25; Boolean mask 25; flag result selection 25; complete height field 28; packed role names 24; direct input and mask 22.
+// Width remains on the stack and height in saved ESI instead of retail ESI/EDI
+// inputs; the unsigned packing and Boolean gate still lower differently; height expression 21;
+// width expression 21; packed expression 21; direct width height expression 24; direct packed
+// expression 24; late entry 21; shared publication 21; separate gated result 21.
+// score 21 (was 21): selecting the size by the flag before the width/height stores, with no
+// width reference, gives retail's ESI/EDI inputs, ret 0 and retail's tail, but the compiler
+// folds the shifts ((w*4/64)<<24 to (w<<20)&mask, (h<<12)-0x1000 to (h+0xfffff)<<12) where
+// retail keeps shr/shl/sub: (p-1)<<24 form 28; shift-then-subtract 24; reversed or order 28;
+// pitch local 28; sums 29; multiply forms 22-30; signed forms 27-28; size helper 39; size
+// helper without global optimisation (diagnostic) 24. Only builds without global
+// optimisation keep retail's shr/shl/sub.
+// Width/height input registers and flag normalization still differ. Native
+// index/width/height parameter-type sets 24 in all seven forms; native contract with separate
+// noinline declaration 24, all at 79 bytes.
 // @retail 0x1ddd0
 void function_01ddd0(long index, dword width, dword height)
 {
@@ -193,59 +214,77 @@ bool function_01de20(long index)
 dword function_1d6f0(bool linear, bool alternate, dword format, long width, long height);
 long g_55e6c0;
 
+// score 29 (was 29): frame, incoming data in EBP, delayed saves and the level loop agree; retail
+// keeps the size packing unfolded (lea/shr 6/shl 24/sub, shl 12/sub) where /Og folds it
+// ((w<<20)&mask, (h+0xfffff)<<12), and height/count then take each other's register.
+// Kept: the offset declared after the kind store (data stays in EBP) 107; one result variable
+// with the busy entry inside an if/else 40; the level headers written in full 33/29.
+// Tried (all reverted): pitch multiply 28; pitch and height multiplies 28; height multiply 29;
+// minus-one multiplies 97; negative addends 28; clamp as an if/else 168; packing or call from
+// the stored fields 29/29; offset first in the block 29; one packing expression 29; explicit
+// shift 121; named level size 120; offset before the entry 109; whole function without global
+// optimisation (diagnostic) 336; nested result 136; absent-data guard 156; common result exit
+// 131; level-index shift 122; role-named workspaces 136; shared primary header 161; walking
+// level pointer 135; Boolean packed-word product 152; byte count in the level loop 115; delayed
+// clamped-count publication 148; inline/noinline format declarations 115/115; published byte
+// total 192; level/offset names 115; size after format 190; named aligned width 115; element
+// before size 123; linear size branches 174; data after/before primary format 155/155; primary
+// common after format 161; data/common after format 142; primary format result 115; level
+// parent/count before format 121/131; unsigned offset/level/both 115/116/116; const byte
+// count/output pointer 115/115; paired/all reset chains 117/118; native parameter and field
+// types 115-151; clamped count before kind/after kind/between dimensions 103/103/99; early
+// resource resets 38; data before dimensions 31; height before width 30; early linear
+// flag/common word 44/31; every packing accumulator order and complete OR expression 29;
+// named byte pitch 87; all packing parts early 47; unsigned-int packing 29; shared clamped
+// count 154; selected packed result 119; linear-only packing 145. A compile-only screen folds
+// every shape of the packing (casts, 64-bit, helpers, multiplies) under /Og.
 // @retail 0x1df20
 bool function_1df20(long index, long kind, long width, long height, bool alternate, bool linear, long count, void *data)
 {
-    (void)&kind;
-    (void)&width;
-    (void)&height;
-    (void)&alternate;
-    (void)&linear;
-    (void)&count;
-    (void)&data;
+    bool result = true;
     if (data)
     {
         s_unknown_01dcc0 *entry = &g_4b4b58[index];
         if (entry->data || entry->flag95)
-            return false;
-        *(long *)entry->unknown00 = kind;
-        entry->width = width;
-        entry->height = height;
-        entry->data = data;
-        *(long *)entry->unknown8c = 0;
-        entry->element_count = count < 0 ? 0 : count > 4 ? 4 : count;
-        *(long *)entry->unknown7c = 0;
-        entry->sub_header[1] = 0;
-        entry->sub_header[2] = 0;
-        dword packed = ((((dword)width * 4) / 64) << 24) - 0x1000000;
-        packed |= ((dword)height << 12) - 0x1000;
-        packed |= width - 1;
-        entry->flag94 = linear;
-        entry->sub_header[0] = 0x40001;
-        entry->sub_header[4] = linear ? packed : 0;
-        entry->sub_header[3] = function_1d6f0(linear, alternate, count, width, height);
-        D3DResource_Register((D3DResource *)entry->sub_header, data);
-        long offset = 0;
-        long shift = 0;
-        long size = ((width + 63) & ~63) * height * 4;
-        for (long i = 0; i < entry->element_count; ++i, shift += 2)
+            result = false;
+        else
         {
-            long bytes = size >> shift;
-            long *element = entry->elements[i];
-            element[0] = 0x50001;
-            element[1] = entry->sub_header[1] + offset;
-            element[2] = entry->sub_header[2];
-            element[4] = entry->sub_header[4];
-            element[3] = function_1d6f0(linear, alternate, 1, width >> i, height >> i);
-            element[5] = (long)entry->sub_header;
-            ++entry->sub_header[0];
-            offset += bytes;
-            *(long *)entry->unknown7c += bytes;
+            *(long *)entry->unknown00 = kind;
+            long offset = 0;
+            entry->width = width;
+            entry->height = height;
+            entry->data = data;
+            *(long *)entry->unknown8c = 0;
+            entry->element_count = count < 0 ? 0 : count > 4 ? 4 : count;
+            *(long *)entry->unknown7c = 0;
+            entry->sub_header[1] = 0;
+            entry->sub_header[2] = 0;
+            dword packed = ((((dword)width * 4) / 64) << 24) - 0x1000000;
+            packed |= ((dword)height << 12) - 0x1000;
+            packed |= width - 1;
+            entry->flag94 = linear;
+            entry->sub_header[0] = 0x40001;
+            entry->sub_header[4] = linear ? packed : 0;
+            entry->sub_header[3] = function_1d6f0(linear, alternate, count, width, height);
+            D3DResource_Register((D3DResource *)entry->sub_header, data);
+            for (long i = 0; i < entry->element_count; ++i)
+            {
+                long bytes = (((width + 63) & ~63) * height * 4) >> (i * 2);
+                entry->elements[i][0] = 0x50001;
+                entry->elements[i][1] = entry->sub_header[1] + offset;
+                entry->elements[i][2] = entry->sub_header[2];
+                entry->elements[i][4] = entry->sub_header[4];
+                entry->elements[i][3] = function_1d6f0(linear, alternate, 1, width >> i, height >> i);
+                entry->elements[i][5] = (long)entry->sub_header;
+                ++entry->sub_header[0];
+                offset += bytes;
+                *(long *)entry->unknown7c += bytes;
+            }
         }
     }
     else if (g_55e6c0 < 10)
         ++g_55e6c0;
-    return true;
+    return result;
 }
 
 extern long g_485898;
