@@ -24,6 +24,8 @@ bool function_11c470(long trigger_volume_index, point3f const *point);
 bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
 long function_c8f60(long unit_index, short seat_index);
+long function_bb760(short name_index);
+void function_107840(long device_index, long unit_index);
 
 /* the world ray test's result (the layout retail's callers use) */
 struct s_collision_result_1697c0
@@ -135,7 +137,11 @@ static void report_scripts(unsigned long frame)
 
 /* test hooks, from "guest ..." lines of the H2_CONTROL file, so a test can
    drive a level's script to its end without a human's skill:
-     teleport X Y Z      the first player, on foot (the player teleport's placement)
+     teleport X Y Z      the first player, on foot (the player teleport's placement);
+                         "outside the bsp" off the loaded bsp or over a void
+     place X Y Z         the same, into a switch volume too (a lift shaft
+                         nobody walks across: the switch happens as the
+                         player update finds the unit inside)
      probe X Y Z         whether a point is in the loaded structure bsp
      volume I            trigger volume I's box in the world now (corner,
                          forward, left, up, scale): a volume on an object's
@@ -144,6 +150,8 @@ static void report_scripts(unsigned long frame)
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
      kill_enemies R      kill AI bipeds of other teams within R units
+     units R             the units within R units: index, type, team, body
+                         vitality, position
      enter_vehicle L     the first player into the nearest free seat with
                          seat label (string id) L, 0 for any, placed beside
                          its vehicle first (the seat request the script's
@@ -168,6 +176,19 @@ static float parse_real(char const **text)
 			value += (float)(*p - '0') * scale;
 	*text = p;
 	return negative ? -value : value;
+}
+
+/* the object of a scenario object name (g_4e0350 +0x48: 0x24-byte names) */
+static long named_object(char const *text)
+{
+	while (*text == ' ')
+		++text;
+	long count = *(long const *)((byte const *)g_4e0350 + 0x48);
+	char const *names = *(char const * const *)((byte const *)g_4e0350 + 0x4c);
+	for (long name = 0; name < count; ++name)
+		if (!strcmp(names + name * 0x24, text))
+			return function_bb760((short)name);
+	return NONE;
 }
 
 static bool command_is(char const *text, char const *name, char const **rest)
@@ -201,7 +222,8 @@ static void run_test_commands(void)
 		byte *unit = ((s_player_object_header *)g_4e0300->data)[player->unit_index & 0xffff].object;
 		char const *rest;
 		char line[240];
-		if (command_is(command, "teleport", &rest))
+		bool place = command_is(command, "place", &rest);
+		if (place || command_is(command, "teleport", &rest))
 		{
 			point3f point;
 			point.x = parse_real(&rest);
@@ -213,7 +235,7 @@ static void run_test_commands(void)
 			   from its unit; refuse those points here instead */
 			byte const *scenario = (byte const *)g_4e0350;
 			bool refused = false;
-			for (long i = 0; i < *(long const *)(scenario + 0x130) && !refused; ++i)
+			for (long i = 0; i < *(long const *)(scenario + 0x130) && !refused && !place; ++i)
 			{
 				byte const *trigger = *(byte const **)(scenario + 0x134) + i * 0xe;
 				refused = *(short const *)(trigger + 2) == g_4686c4 && function_11c470(*(short const *)trigger, &point);
@@ -223,6 +245,15 @@ static void run_test_commands(void)
 			s_location location;
 			function_11bed0(&location, &point);
 			bool away = location.leaf_index == NONE;   /* not in the loaded structure bsp */
+			if (!away && !place)
+			{
+				/* nor over a void: a point of another bsp's room can still
+				   lie in a leaf of this one, with no floor under it */
+				vector3f down = {0.0f, 0.0f, -20.0f};
+				s_collision_result_1697c0 floor;
+				floor.unknown24 = NONE;
+				away = !function_1697c0(0x84000d, &point, &down, player->unit_index, NONE, &floor);
+			}
 			/* seated: the vehicle moves instead (its bounding radius, +0x3c,
 			   for the clear spot) */
 			long moved = *(long const *)(unit + 0x14) == NONE ? player->unit_index : *(long const *)(unit + 0x14);
@@ -288,6 +319,27 @@ static void run_test_commands(void)
 			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
 			host_h2_log(line);
 		}
+		else if (command_is(command, "units", &rest))
+		{
+			float radius = parse_real(&rest);
+			real const *at = (real const *)(unit + 0x64);
+			for (long index = 0; index < g_4e0300->maximum_count; ++index)
+			{
+				byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+				byte *object = *(byte **)(header + 8);
+				if (!*(short const *)header || !object || header[3] > 1)
+					continue;   /* bipeds and vehicles */
+				real const *p = (real const *)(object + 0x64);
+				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
+				if (dx * dx + dy * dy + dz * dz > radius * radius)
+					continue;
+				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f",
+					(long)(((dword)*(short const *)header << 16) | (dword)index), header[3],
+					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2]);
+				host_h2_log(line);
+			}
+			host_h2_log("h2-test units end");
+		}
 		else if (command_is(command, "enter_vehicle", &rest))
 		{
 			long label = 0;
@@ -339,6 +391,48 @@ static void run_test_commands(void)
 			_snprintf(line, sizeof(line), "h2-test enter_vehicle %s", requested ? "requested" :
 				best_index == NONE ? "no free seat" : "refused");
 			host_h2_log(line);
+		}
+		else if (command_is(command, "operate", &rest))
+		{
+			/* a machine by its scenario object name: press the first powered control on its position group from
+			   beside the control. Device +0x130 and +0x134 are the power
+			   group and power, +0x13c and +0x140 the position group and
+			   position (device_get_position, 0x2a4850, reads +0x140), as
+			   the player's use action does (0x151c90) */
+			long machine = named_object(rest);
+			long pressed = 0;
+			if (machine != NONE)
+			{
+				long group = *(long const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x13c);
+				for (long index = 0; index < g_4e0300->maximum_count && group != NONE && !pressed; ++index)
+				{
+					byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+					byte *object = *(byte **)(header + 8);
+					if (!*(short const *)header || !object || header[3] != 8 || *(long const *)(object + 0x13c) != group ||
+						*(real const *)(object + 0x134) <= 0.0f)
+						continue;   /* powered controls of the group */
+					long control = (long)(((dword)*(short const *)header << 16) | (dword)index);
+					point3f beside = *(point3f const *)(object + 0x30);
+					function_c5460(player->unit_index, NONE, &beside, NULL, 0, 1.0f, 0);
+					function_107840(control, player->unit_index);
+					++pressed;
+				}
+			}
+			_snprintf(line, sizeof(line), "h2-test operate %s pressed %ld position %.2f", machine == NONE ? "none" : "found",
+				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
+			host_h2_log(line);
+		}
+		else if (command_is(command, "destroy", &rest))
+		{
+			/* an object by its scenario object name (04b's cables), unless a
+			   script made it unable to take damage (+0x10a bit 7, 0xd87e0) */
+			long object_index = named_object(rest);
+			byte const *object = object_index == NONE ? NULL :
+				((s_player_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+			bool invulnerable = object && (*(word const *)(object + 0x10a) & 0x80);
+			if (object && !invulnerable)
+				function_d6bc0(object_index);
+			host_h2_log(!object ? "h2-test destroy none" : invulnerable ? "h2-test destroy invulnerable" : "h2-test destroy done");
 		}
 	}
 	if (g_deathless && g_4e8c24 && g_4e8c24->data && g_4e0300 && g_4e0300->data)

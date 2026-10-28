@@ -30,6 +30,8 @@ from hs_decompile import Scripts  # noqa: E402
 
 BSP_WAIT = re.compile(r"\(= \(structure_bsp_index\) (\d+)\)")
 SEAT_LABEL = re.compile(r"\(vehicle_test_seat \(.*?\) (\w+) \(unit")
+HEALTH_WAIT = re.compile(r"\(<= \(object_get_health (\w+)\) 0\)")
+DEVICE_WAIT = re.compile(r"\(device_get_position (\w+)\)")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
 
 
@@ -150,6 +152,11 @@ def cross(g, volume):
             g.wait(30)
             if g.state and g.state.get("bsp") != s.get("bsp"):
                 return True
+    # a shaft or lift nobody walks across: placed inside, low in it
+    g.guest("place %.3f %.3f %.3f" % volume_point(volume, 0.5, 0.5, 0.25))
+    g.wait(60)
+    if g.state and before and g.state.get("bsp") != before.get("bsp"):
+        return True
     if before:   # back to where it stood
         g.guest("teleport %.3f %.3f %.3f" % tuple(before["pos"]))
         g.wait(20)
@@ -169,6 +176,7 @@ def main():
     names = {name for name, _, _ in scripts.scripts}
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
     acted = {}
+    waited = {}      # (script, node) -> polls spent inside its volume, still waiting
     elsewhere = {}   # (script, node) -> (the bsp its place is not in, volume name)
     done = False
     with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as g:
@@ -213,6 +221,21 @@ def main():
                                 away.append((not thread["script"].startswith("mission"), count, order, key, targets[0]))
                             else:
                                 places.append((count, order, thread["script"], node, "teleport", targets[0]))
+                        elif volume:
+                            # inside, and still waiting: the rest of the test is
+                            # about the spot (04b's airlock wants its door shut
+                            # behind the player), so after a while try another
+                            waited[key] = waited.get(key, 0) + 1
+                            if waited[key] % 20 == 4:   # who else is here
+                                replies = len(g.test_replies)
+                                g.guest("units 12")
+                                g.wait(2)
+                                print("frame", g.frame, thread["script"], node, "inside, nearby:",
+                                      g.test_replies[replies:], flush=True)
+                            if waited[key] % 4 == 2:
+                                g.guest("kill_enemies 12")   # a fight at a door keeps it open
+                            if waited[key] % 4 == 0:
+                                places.append((count, order, thread["script"], node, "teleport", targets[0]))
                     elif "vehicle_test_seat" in text and count < 6:
                         # a seat in a vehicle (04a's Banshees): the nearest
                         # free seat with the label the script tests
@@ -224,6 +247,25 @@ def main():
                         print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         if reply != "enter_vehicle no free seat":   # not spawned yet: no try spent
                             acted[key] = count + 1
+                    elif HEALTH_WAIT.search(text) and count < 6:
+                        # an object to break (04b's cables), once a script
+                        # lets it take damage
+                        replies = len(g.test_replies)
+                        g.guest("destroy " + HEALTH_WAIT.search(text).group(1))
+                        g.wait(30)
+                        reply = next((r for r in g.test_replies[replies:] if r.startswith("destroy")), "no reply")
+                        if reply != "destroy invulnerable":   # not yet: no try spent
+                            print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
+                            acted[key] = count + 1
+                    elif DEVICE_WAIT.search(text) and count < 6:
+                        # a machine moved by a control (04b's elevator up to
+                        # the cable room): press it from beside it
+                        replies = len(g.test_replies)
+                        g.guest("operate " + DEVICE_WAIT.search(text).group(1))
+                        g.wait(60)
+                        reply = next((r for r in g.test_replies[replies:] if r.startswith("operate")), "no reply")
+                        print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
+                        acted[key] = count + 1
                     elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text) \
                             and count < 6:
                         g.guest("kill_enemies 0")
@@ -236,7 +278,10 @@ def main():
             if places:
                 # one place a poll, the least served first: every thread's
                 # wait gets its turn
-                count, _, script, node, kind, name = min(places)
+                # crossing to another bsp last: the place there may be a
+                # later part of the mission (04b's cable room above the
+                # control room)
+                count, _, script, node, kind, name = min(places, key=lambda p: (p[4] == "cross", p))
                 acted[(script, node)] = count + 1
                 if kind == "cross":
                     crossed = cross(g, volumes[name])
@@ -249,7 +294,7 @@ def main():
                         continue   # its object is gone for now
                     # the points of the volume in the loaded structure bsp (its
                     # floor may be under the ground, or all of it elsewhere)
-                    candidates = [volume_point(volume, a, b, c) for a, b in SAMPLES for c in (None, 0.3, 0.6, 0.9)]
+                    candidates = [volume_point(volume, a, b, c) for c in (None, 0.3, 0.6, 0.9) for a, b in SAMPLES]
                     replies = len(g.test_replies)
                     for p in candidates:
                         g.guest("probe %.3f %.3f %.3f" % p)
