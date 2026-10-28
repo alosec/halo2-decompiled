@@ -1,0 +1,20 @@
+# Sources build_whole_image.py leaves out of the whole image, one relative
+# path a line (# starts a comment).
+#
+# Main's Havok base system (2026-10-27 merge) duplicates the port's
+# port/recovered/havok_base_system.cpp under other class names. The code map
+# prefers port/ per address, so mixing them ran main's registry destructor on
+# the port's registry (its table built by a stubbed constructor): a null read
+# in c_reference_name_registry's destructor at the first map change. Until
+# the port's recovery moves onto main's classes, the image keeps the port's.
+src/unknown_2d7120.cpp
+src/unknown_2d7540.cpp
+src/unknown_2d7650.cpp
+src/unknown_2d7750.cpp
+src/unknown_2d7880.cpp
+src/unknown_2d79c0.cpp
+src/unknown_2d7aa0.cpp
+src/unknown_2d7f00.cpp
+src/unknown_2d8030.cpp
+src/unknown_2d8280.cpp
+src/unknown_2d8cc0.cpp

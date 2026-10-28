@@ -980,6 +980,13 @@ def main():
     sources += sorted((root / "port/runtime").glob("guest_*.cpp"))
     sources += sorted((root / "port/runtime").glob("guest_*.c"))
     excluded = set(args.exclude)
+    # the checked-in list (port/whole_image_exclude.txt says why each is out)
+    exclude_list = root / "port/whole_image_exclude.txt"
+    if exclude_list.is_file():
+        for line in exclude_list.read_text().splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                excluded.add(line)
     units = [Unit(s, root, work) for s in sources if str(s.relative_to(root)) not in excluded]
 
     header_files = list((root / "include").glob("*.h")) + list((root / "port/include").rglob("*"))

@@ -1,5 +1,6 @@
 #ifndef CHILD_QUERY_2F9950_H
 #define CHILD_QUERY_2F9950_H
+#include "lane_b_flip_collectors.h"
 // Havok (third-party physics library): one side of a query passed on as the
 // child shape of a wrapping shape, at the same key and placement, with the
 // wrapping side as its parent; and a collector of the nearest result.
@@ -46,19 +47,10 @@ public:
 	float distance;
 };
 
-// a hit passed on seen from the other side (0x3018f0, unknown_3018f0.cpp):
-// the same layout as the collector below, the collector it passes to at +8
+// a hit passed on seen from the other side: 0x3018f0,
+// lane_b_flip_point_collector::add (unknown_3018f0.cpp), whose layout this
+// collector shares (the collector it passes to at +8)
 struct hit_3018f0;
-class flipped_3018f0
-{
-public:
-	long field_0;
-	float early_out;
-	void *collector;
-
-	void add(hit_3018f0 const *hit);
-};
-
 // the collector of 0x2f9950's query (retail vtable 0x412970): the query runs
 // with its sides the other way round, so each hit is turned back (0x3018f0)
 // and passed on to the collector given as the value
@@ -66,7 +58,10 @@ class nearest_value_2f9950 : public nearest_2f9950
 {
 public:
 	nearest_value_2f9950(long value_) : value(value_) {}
-	virtual void add(hit_3018f0 const *hit) { ((flipped_3018f0 *)this)->add(hit); }
+	virtual void add(hit_3018f0 const *hit)
+	{
+		((lane_b_flip_point_collector *)this)->lane_b_flip_point_collector::add((lane_b_cd_point const *)hit);
+	}
 
 	long value;
 };

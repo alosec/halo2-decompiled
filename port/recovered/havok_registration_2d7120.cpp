@@ -32,29 +32,9 @@
 // a copy of a string in a block from the allocator (src/unknown_2d8e10.cpp)
 char *__cdecl function_2d8e10(const char *string);
 
-// finding a key's slot (mask + 1 when it is absent) and emptying a slot
-// (src/unknown_2d9370.cpp)
-class class_2d9370
-{
-public:
-	unsigned long *slots;
-	long field_4;
-	unsigned long mask;
-
-	unsigned long find(unsigned long key) const;
-	void function_2d93b0(unsigned long hole);
-};
-
-// the table's storage given back (src/unknown_2d94b0.cpp)
-class class_2d94b0
-{
-public:
-	void *slots;
-	long field_4;
-	long mask;
-
-	void release();
-};
+// finding a key's slot (mask + 1 when it is absent), emptying a slot and
+// giving the storage back are class_2d9240's (hash_table_2d9240.h:
+// src/unknown_2d9370.cpp, src/unknown_2d94b0.cpp)
 
 // the object a name belongs to (src/unknown_2d7210.cpp)
 class c_physics_runtime_base;
@@ -80,7 +60,7 @@ typedef char assert_c_physics_registration_manager[(sizeof(c_physics_registratio
 // @retail 0x2d7120
 long c_physics_registration_manager::function_2d7120(c_physics_runtime_base *object, long first, long second)
 {
-	int index = (int)((class_2d9370 *)&names)->find((unsigned long)object);
+	int index = (int)names.find((unsigned long)object);
 	if (!names.is_valid(index).value)
 	{
 		return 0;
@@ -93,7 +73,7 @@ long c_physics_registration_manager::function_2d7120(c_physics_runtime_base *obj
 // @retail 0x2d7180
 void c_physics_registration_manager::set_name(c_physics_runtime_base *object, char const *name)
 {
-	class_2d9370 *table = (class_2d9370 *)&names;
+	class_2d9240 *table = &names;
 	int index = (int)table->find((unsigned long)object);
 	if (names.is_valid(index).value)
 	{
@@ -134,7 +114,7 @@ public:
 // @retail 0x2d70f0
 void table_2d70f0::release()
 {
-	((class_2d94b0 *)this)->release();
+	((class_2d9240 *)this)->~class_2d9240();
 }
 
 struct sized_2d7100
@@ -171,5 +151,37 @@ void array_2d7540::destroy()
 	if (capacity_and_flags >= 0)
 	{
 		g_memory_2d88a0->release_block(data, (capacity_and_flags & 0x7fffffff) * 4, 0x12);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// an object's name, as main's c_a declares its slots (unknown_1efac0.h; main
+// defines them with its own registry in src/unknown_2d7120.cpp, which the
+// whole image leaves out: port/whole_image_exclude.txt). The retail tables
+// reach 0x2d7210 and 0x2d7240 through src/unknown_2d7210.cpp; these serve
+// the natively built tables.
+#include "unknown_1efac0.h"
+
+extern c_physics_registration_manager *g_48011c;
+
+unsigned int c_a::v1(char *buffer, unsigned int size)
+{
+	if (flags & 0x8000)
+	{
+		return (unsigned int)g_48011c->function_2d7120((c_physics_runtime_base *)this, (long)buffer, (long)size);
+	}
+	return 0;
+}
+
+void c_a::v2(char const *name)
+{
+	g_48011c->set_name((c_physics_runtime_base *)this, name);
+	if (name)
+	{
+		flags |= 0x8000;
+	}
+	else
+	{
+		flags &= 0x7fff;
 	}
 }

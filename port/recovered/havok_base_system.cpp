@@ -113,6 +113,9 @@ struct class_2d9070
 
 class_2d9070 *__cdecl function_2d9070(class_2d9070 *writer);
 
+class reader_2d9c80;
+class stream_writer_2d9e40;
+
 // a reader over another with a buffer of its own (unknown_2d9c00.cpp)
 class buffered_2d9c00 : public referenced_2d88a0
 {
@@ -127,7 +130,7 @@ public:
 	long field_1c;
 	long field_20;
 
-	buffered_2d9c00(referenced_2d88a0 *source_, long size_);
+	buffered_2d9c00(reader_2d9c80 *source_, long size_);
 	~buffered_2d9c00();
 };
 
@@ -137,7 +140,7 @@ class reader_2d9c80 : public referenced_2d88a0
 public:
 	virtual void slot_1() {}
 	virtual long read(void *buffer, long size) { return 0; }
-	long skip(long count);
+	virtual long skip(long count);
 };
 
 // a writer over another with a buffer of its own (unknown_2d9e40.cpp)
@@ -152,7 +155,7 @@ public:
 	long capacity;
 	bool owns_buffer;
 
-	buffered_writer_2d9e40(referenced_2d88a0 *stream_, long capacity_);
+	buffered_writer_2d9e40(stream_writer_2d9e40 *stream_, long capacity_);
 	~buffered_writer_2d9e40();
 };
 
@@ -178,9 +181,11 @@ struct class_2fe820
 	hkbool_2fe820 function_2fe820();
 };
 
-struct class_2d9840
+// a stream writer's seek, "fails" (unknown_2d9840.cpp)
+class stream_writer_2d9e40
 {
-	long function_2d9840(long arg_0, long arg_1);
+public:
+	virtual long seek(long arg_0, long arg_1);
 };
 
 // a path's file name without its folders (unknown_2d7f70.cpp)
@@ -190,27 +195,15 @@ public:
 	char const *function_2d7f70(char const *path) const;
 };
 
-// the pointer table's constructor, its release, and its walk
-// (unknown_2d9470.cpp, unknown_2d94b0.cpp, hash_table_2d9240.h): one retail
-// class under three names
-class table_2d9470
+// the pointer table's constructor (unknown_2d9470.cpp); its walk and
+// release are class_2d9240's (hash_table_2d9240.h)
+struct lane_a_name_table
 {
-public:
 	void *entries;
 	long field_4;
 	long mask;
 
-	table_2d9470();
-};
-
-class class_2d94b0
-{
-public:
-	void *slots;
-	long field_4;
-	long mask;
-
-	void release();
+	lane_a_name_table();
 };
 
 // a shared string's header, 12 bytes before its characters; 0x2d8e50 gives
@@ -311,7 +304,7 @@ public:
 	// fails (1)
 	virtual long seek(long offset, long origin)
 	{
-		return ((class_2d9840 *)this)->function_2d9840(offset, origin);
+		return ((stream_writer_2d9e40 *)this)->stream_writer_2d9e40::seek(offset, origin);
 	}
 	// the same code as 0x224240, which src recovers as a particle interface
 	// slot
@@ -372,7 +365,7 @@ public:
 	virtual long read(void *buffer, long size);
 	virtual long skip(long count)
 	{
-		return ((reader_2d9c80 *)this)->skip(count);
+		return ((reader_2d9c80 *)this)->reader_2d9c80::skip(count);
 	}
 	virtual hkbool_2d7fe0 mark_supported()
 	{
@@ -574,7 +567,7 @@ referenced_2d88a0 *stream_factory::open_reader(char const *name)
 	file_reader *reader = new file_reader(name);
 	if (!reader->mark_supported().value)
 	{
-		buffered_2d9c00 *buffered = new buffered_2d9c00(reader, 0x1000);
+		buffered_2d9c00 *buffered = new buffered_2d9c00((reader_2d9c80 *)reader, 0x1000);
 		havok_reference_remove((c_havok_reference_counted *)reader);
 		return buffered;
 	}
@@ -586,7 +579,7 @@ referenced_2d88a0 *stream_factory::open_reader(char const *name)
 referenced_2d88a0 *stream_factory::open_writer(char const *name)
 {
 	file_writer *writer = new file_writer(name);
-	buffered_writer_2d9e40 *buffered = new buffered_writer_2d9e40(writer, 0x1000);
+	buffered_writer_2d9e40 *buffered = new buffered_writer_2d9e40((stream_writer_2d9e40 *)writer, 0x1000);
 	havok_reference_remove((c_havok_reference_counted *)writer);
 	return buffered;
 }
@@ -1011,7 +1004,7 @@ class c_physics_registration_manager : public referenced_2d88a0
 public:
 	REFERENCED_NEW_2D88A0(0x13)
 
-	table_2d9470 names;
+	lane_a_name_table names;
 
 	c_physics_registration_manager();
 	// slot 0 is 0x2d72c0, the deleting destructor of 0x2d72f0
@@ -1035,7 +1028,7 @@ c_physics_registration_manager::~c_physics_registration_manager()
 	{
 		g_memory_2d88a0->release((void *)table->word_at(index));
 	}
-	((class_2d94b0 *)&names)->release();
+	((class_2d9240 *)&names)->~class_2d9240();
 }
 
 // @retail 0x2d73a0
