@@ -289,6 +289,14 @@ See `port/README.md` "Play" for the full commands.
   room, cable room (`destroy` each cable as a script lets it take damage,
   `operate` the elevator), the station's fall, the bottling plant and
   hangar a second time, and 05a Delta Halo loads and plays.
+- **Delta Halo (05a) and Regret (05b) end to end** (2026-10-28): 05a's
+  overlook (a teleport spot over the ravine: "no floor" tries the other
+  spots), the approach (inside the bsp 0-1 switch volume: placed; a switch
+  volume lying mostly in the next bsp is crossed by holding the player at
+  its points this bsp has), ambient bsp waits served only when idle; 05b's
+  gondolas and elevator (`operate` presses a device group's control), and
+  Regret (board his throne and pin his vitality, round after round), then
+  06a Sacred Icon loads.
 - **Death reverts** (2026-10-27): `0xcaa60` (a unit dies) passed the dead
   unit to `0x14cad0` where retail passes NONE (ebx), so the player kept
   it, the census (`0x152340`) never asked for a revert, and a dead player

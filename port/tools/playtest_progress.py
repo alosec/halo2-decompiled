@@ -31,7 +31,7 @@ from hs_decompile import Scripts  # noqa: E402
 BSP_WAIT = re.compile(r"\(= \(structure_bsp_index\) (\d+)\)")
 SEAT_LABEL = re.compile(r"\(vehicle_test_seat \(.*?\) (\w+) \(unit")
 HEALTH_WAIT = re.compile(r"\(<= \(object_get_health (\w+)\) 0\)")
-DEVICE_WAIT = re.compile(r"\(device_get_position (\w+)\)")
+DEVICE_WAIT = re.compile(r"\(device_(?:get_position|group_get) (\w+)\)")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
 
 
@@ -268,6 +268,19 @@ def main():
                         print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         if reply != "enter_vehicle no free seat":   # not spawned yet: no try spent
                             acted[key] = count + 1
+                    elif ("regret_dead" in text or "ai_vitality_pinned" in text) and count < 40:
+                        # a boss that cannot die (05b's Regret): board his throne
+                        # and beat him down to his pinned vitality, round after
+                        # round, as the player does
+                        replies = len(g.test_replies)
+                        g.guest("enter_vehicle 0")
+                        g.wait(60)
+                        g.guest("kill_enemies 10")
+                        g.wait(30)
+                        print("frame", g.frame, thread["script"], node, "-> boss round",
+                              [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
+                              flush=True)
+                        acted[key] = count + 1
                     elif HEALTH_WAIT.search(text) and count < 6:
                         # an object to break (04b's cables), once a script
                         # lets it take damage
