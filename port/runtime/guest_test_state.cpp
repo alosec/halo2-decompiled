@@ -26,6 +26,18 @@ void __stdcall function_d6bc0(long object_index);
 long function_c8f60(long unit_index, short seat_index);
 long function_bb760(short name_index);
 long function_1070d0(short group_index);
+/* game_safe_to_save (0x226190) and the checks it makes */
+bool function_226190(void);
+bool function_226270(void);
+long function_1ca2d0(bool unknown);
+bool __stdcall function_fa9a0(long *value);
+bool __stdcall function_10ca00(long *value);
+bool function_1778d0(void);
+bool __stdcall function_cc170(long *value);
+bool __stdcall function_14df40(long *value);
+bool __stdcall function_14deb0(long *value);
+bool __stdcall function_f7a60(long *value);
+bool __stdcall function_f7ca0(long *value);
 void function_107840(long device_index, long unit_index);
 
 /* the world ray test's result (the layout retail's callers use) */
@@ -437,6 +449,27 @@ static void run_test_commands(void)
 			}
 			_snprintf(line, sizeof(line), "h2-test operate %s pressed %ld position %.2f", machine != NONE ? "found" : group != NONE ? "group" : "none",
 				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
+			host_h2_log(line);
+		}
+		else if (command_is(command, "safe_to_save", &rest))
+		{
+			/* which of game_safe_to_save's checks says no (08b's Scarab
+			   loop waits on it): bit per check, in 0x226190's order */
+			long value = NONE;
+			dword failing = 0;
+			if (function_226270()) failing |= 1 << 0;
+			if (function_1ca2d0(false) != NONE) failing |= 1 << 1;
+			if (function_fa9a0(&value)) failing |= 1 << 2;
+			if (function_10ca00(&value)) failing |= 1 << 3;
+			if (function_1778d0()) failing |= 1 << 4;
+			if (function_cc170(&value)) failing |= 1 << 5;
+			if (function_14df40(&value)) failing |= 1 << 6;
+			if (function_14deb0(&value)) failing |= 1 << 7;
+			if (((byte const *)g_4e8c20)[5]) failing |= 1 << 8;
+			if (function_f7a60(&value)) failing |= 1 << 10;
+			if (function_f7ca0(&value)) failing |= 1 << 11;
+			_snprintf(line, sizeof(line), "h2-test safe_to_save %d failing %03lx object %08lx", function_226190() ? 1 : 0,
+				(unsigned long)failing, value);
 			host_h2_log(line);
 		}
 		else if (command_is(command, "goto_object", &rest))

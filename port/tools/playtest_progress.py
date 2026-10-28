@@ -97,6 +97,12 @@ def bsp_switches(scripts, volumes):
             (struct.unpack_from('<hhh', m.data, m.file_offset(address) + i * 0xe) for i in range(count))]
 
 
+def encounter(script):
+    """the encounter number of a script named eN_..., else 0"""
+    m = re.match(r"e(\d+)_", script)
+    return int(m.group(1)) if m else 0
+
+
 def first_hop(switches, here, wanted):
     """the switch volume to cross first on the way from bsp here to wanted"""
     seen, frontier = {here}, [(here, None)]
@@ -223,6 +229,18 @@ def main():
                 break         # cinematic_skip_start, are in every map)
             places = []   # (times served, thread order, script, node, kind, volume name)
             away = []     # places in another structure bsp (the mission's first)
+            # the latest encounter among the threads waiting for a bsp: only it
+            # moves the player between bsps
+            def waits_for_bsp(t):
+                for n in t["nodes"]:
+                    try:
+                        if BSP_WAIT.search(scripts.expression(int(n, 16))):
+                            return True
+                    except (IndexError, ValueError):
+                        pass
+                return False
+            waiting_texts = []
+            latest = max((encounter(t["script"]) for t in threads.values() if waits_for_bsp(t)), default=0)
             for order, (index, thread) in enumerate(sorted(threads.items())):
                 for node in thread["nodes"]:
                     try:
@@ -231,8 +249,11 @@ def main():
                         continue
                     if not text.startswith("(sleep_until"):
                         continue
+                    waiting_texts.append(text)
                     key = (thread["script"], node)
                     count = acted.get(key, 0)
+                    if count >= 6 and text.startswith("(sleep_until (>= (device_get_position"):
+                        continue   # a machine nothing presses (08b's Scarab): the outer wait decides
                     targets = [v for _, v, _ in VOLUME_TEST.findall(text) if v in volumes]
                     bsp = BSP_WAIT.search(text)
                     if bsp and not targets:
@@ -247,8 +268,14 @@ def main():
                         # (kill volumes, wind: they wait for each bsp in turn)
                         # only once nothing else is left, or it pulls the player
                         # back out of the bsp the mission has gone on to (05a)
-                        if hop and count < 8 and (thread["script"].startswith("mission") or idle >= 10):
+                        # an earlier encounter's ambient wait gives way to a later
+                        # one's (08b: e5's waits for bsp 1 pulled the player
+                        # out of e7's bsp 0 again and again)
+                        later = encounter(thread["script"]) < latest
+                        if hop and count < 8 and not later and (thread["script"].startswith("mission") or idle >= 10):
                             places.append((count, order, key[0], key[1], "cross", hop))
+                        if "(ai_actors" in text and count < 8:
+                            g.guest("kill_enemies 0")   # and the enemies the wait counts (08b's e7 brutes)
                     elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
                         volume = live_volume(g, volumes, targets[0]) if targets[0] in attached else volumes[targets[0]]
                         if volume and not (g.state and inside(volume, g.state["pos"])):
@@ -322,6 +349,8 @@ def main():
                         reply = next((r for r in g.test_replies[replies:] if r.startswith("operate")), "no reply")
                         print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         acted[key] = count + 1
+                        if "pressed 0" in reply:
+                            continue   # nothing to press: the outer wait may say what it is waiting on
                     elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text
                            or "ai_nonswarm_count" in text) \
                             and count < 6:
@@ -333,19 +362,25 @@ def main():
                         acted[key] = 1
                     break
             idle = 0 if places or away else idle + 1
+            if idle and idle % 10 == 5 and any("game_safe_to_save" in scripts_text for scripts_text in waiting_texts):
+                # a wait on game_safe_to_save: log which of its checks says no
+                replies = len(g.test_replies)
+                g.guest("safe_to_save")
+                g.wait(3)
+                print("frame", g.frame, "->", next((r for r in g.test_replies[replies:] if r.startswith("safe_to_save")), "no reply"), flush=True)
             if places:
                 # one place a poll, the least served first: every thread's
                 # wait gets its turn
                 # crossing to another bsp last: the place there may be a
                 # later part of the mission (04b's cable room above the
                 # control room)
-                count, _, script, node, kind, name = min(places, key=lambda p: (p[4] == "cross", p))
+                # among bsp crossings, a later encounter's first (08b: e5's
+                # ambient wait for bsp 1 pulled the player back from e7's 0)
+                count, _, script, node, kind, name = min(places, key=lambda p: (p[4] == "cross", -encounter(p[2]), p))
                 acted[(script, node)] = count + 1
                 if kind == "cross":
                     crossed = cross(g, volumes[name])
                     print("frame", g.frame, script, node, "-> cross", name, "done" if crossed else "failed", flush=True)
-                    if crossed and g.state and g.state.get("bsp") == node[1]:
-                        acted[(script, node)] = 99   # there: served for good
                 else:
                     volume = live_volume(g, volumes, name) if name in attached else volumes[name]
                     if volume is None:
