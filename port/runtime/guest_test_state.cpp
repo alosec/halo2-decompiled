@@ -25,6 +25,7 @@ bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
 long function_c8f60(long unit_index, short seat_index);
 long function_bb760(short name_index);
+long function_1070d0(short group_index);
 void function_107840(long device_index, long unit_index);
 
 /* the world ray test's result (the layout retail's callers use) */
@@ -403,9 +404,23 @@ static void run_test_commands(void)
 			   the player's use action does (0x151c90) */
 			long machine = named_object(rest);
 			long pressed = 0;
+			long group = NONE;
 			if (machine != NONE)
+				group = *(long const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x13c);
+			else
 			{
-				long group = *(long const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x13c);
+				/* or a device group by name (scenario +0xa0: 0x28-byte records,
+				   the name first), for device_group_get waits (05b's
+				   gondola switches) */
+				while (*rest == ' ')
+					++rest;
+				long count = *(long const *)((byte const *)g_4e0350 + 0xa0);
+				char const *groups = *(char const * const *)((byte const *)g_4e0350 + 0xa4);
+				for (long index = 0; index < count && group == NONE; ++index)
+					if (!strcmp(groups + index * 0x28, rest))
+						group = function_1070d0((short)index);
+			}
+			{
 				for (long index = 0; index < g_4e0300->maximum_count && group != NONE && !pressed; ++index)
 				{
 					byte const *header = (byte const *)g_4e0300->data + index * 0xc;
@@ -420,7 +435,7 @@ static void run_test_commands(void)
 					++pressed;
 				}
 			}
-			_snprintf(line, sizeof(line), "h2-test operate %s pressed %ld position %.2f", machine == NONE ? "none" : "found",
+			_snprintf(line, sizeof(line), "h2-test operate %s pressed %ld position %.2f", machine != NONE ? "found" : group != NONE ? "group" : "none",
 				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
 			host_h2_log(line);
 		}
