@@ -335,6 +335,13 @@ def main():
                             g.guest("teleport %.3f %.3f %.3f" % point)
                             g.wait(20)
                             reply = next((r for r in g.test_replies[replies:] if r.startswith("teleport ")), "")
+                            if reply == "teleport refused":
+                                # in a bsp switch volume (05a's approach overlaps
+                                # one): walked into, the switch happens too
+                                replies = len(g.test_replies)
+                                g.guest("place %.3f %.3f %.3f" % point)
+                                g.wait(20)
+                                reply = next((r for r in g.test_replies[replies:] if r.startswith("teleport ")), "")
                             if reply != "teleport no floor":
                                 break
                         if reply == "teleport no floor":
