@@ -193,6 +193,9 @@ def main():
     parser.add_argument("--map", required=True)
     parser.add_argument("--frames", type=int, default=120000)
     parser.add_argument("--work")
+    parser.add_argument("--thorough", action="store_true",
+                        help="serve the mission script's places only once no encounter script has one left "
+                             "(07b's and 08a's missions wait only for the end volume, so the default jumps to it)")
     args = parser.parse_args()
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
     volumes, attached = trigger_volumes(scripts)
@@ -376,7 +379,9 @@ def main():
                 # control room)
                 # among bsp crossings, a later encounter's first (08b: e5's
                 # ambient wait for bsp 1 pulled the player back from e7's 0)
-                count, _, script, node, kind, name = min(places, key=lambda p: (p[4] == "cross", -encounter(p[2]), p))
+                count, _, script, node, kind, name = min(
+                    places, key=lambda p: (p[4] == "cross", args.thorough and p[2].startswith("mission"),
+                                           -encounter(p[2]), p))
                 acted[(script, node)] = count + 1
                 if kind == "cross":
                     crossed = cross(g, volumes[name])
