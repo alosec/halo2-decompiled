@@ -285,8 +285,10 @@ See `port/README.md` "Play" for the full commands.
   04b The Oracle loads and plays (HUD, energy sword). The bot serves each
   script's structure bsp wait once per bsp (04a's `kill_volumes` and
   `wind` wait for each bsp in turn forever).
-- **The Oracle (04b)** through the lab, airlock and control room to the
-  cable room (2026-10-27, in progress: the elevator, cables and later).
+- **The Oracle (04b) end to end** (2026-10-27): lab, airlock, control
+  room, cable room (`destroy` each cable as a script lets it take damage,
+  `operate` the elevator), the station's fall, the bottling plant and
+  hangar a second time, and 05a Delta Halo loads and plays.
 - **Death reverts** (2026-10-27): `0xcaa60` (a unit dies) passed the dead
   unit to `0x14cad0` where retail passes NONE (ebx), so the player kept
   it, the census (`0x152340`) never asked for a revert, and a dead player
