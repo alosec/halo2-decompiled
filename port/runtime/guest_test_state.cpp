@@ -422,6 +422,16 @@ static void run_test_commands(void)
 				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
 			host_h2_log(line);
 		}
+		else if (command_is(command, "kill_player", &rest))
+		{
+			/* clears cannot-take-damage (+0x10a bit 7) and cannot-die (bit
+			   14) first: cinematics and scripts set them on the player */
+			word flags = *(word *)(unit + 0x10a);
+			*(word *)(unit + 0x10a) &= (word)~((1 << 7) | (1 << 14));
+			function_d6bc0(player->unit_index);
+			_snprintf(line, sizeof(line), "h2-test kill_player flags %04x body %.2f", flags, *(real const *)(unit + 0xec));
+			host_h2_log(line);
+		}
 		else if (command_is(command, "destroy", &rest))
 		{
 			/* an object by its scenario object name (04b's cables), unless a
