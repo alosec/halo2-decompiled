@@ -194,6 +194,7 @@ def main():
     acted = {}
     waited = {}      # (script, node) -> polls spent inside its volume, still waiting
     elsewhere = {}   # (script, node) -> (the bsp its place is not in, volume name)
+    tried = {}       # (script, node) -> every bsp its place was found not to be in
     done = False
     with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as g:
         g.wait_frame(9500)
@@ -372,6 +373,7 @@ def main():
                     if reply == "teleport outside the bsp":
                         # in a bsp not loaded: left till nothing is left here
                         elsewhere[(script, node)] = (g.state and g.state.get("bsp"), name)
+                        tried.setdefault((script, node), set()).add(g.state and g.state.get("bsp"))
                         acted[(script, node)] = count
             elif away:
                 # nothing left in this bsp: through the switch from it nearest
@@ -380,7 +382,16 @@ def main():
                 nearby = [w for w in switches if w[1] == (g.state and g.state.get("bsp"))]
                 if nearby:
                     centre = volume_point(volumes[name], 0.5, 0.5)
-                    way = min(nearby, key=lambda w: math.dist(volume_point(volumes[w[0]], 0.5, 0.5), centre))
+                    # toward the nearest bsp not yet tried for this place (06b's
+                    # key ride lies two switches on, in bsp 3: the nearest
+                    # switch led back and forth between bsps 0 and 1); with
+                    # every bsp tried, through the switch nearest the place
+                    here_bsp = g.state and g.state.get("bsp")
+                    untried = sorted({b for _, _, b in switches} - tried.get(key, set()) - {here_bsp})
+                    hops = [first_hop(switches, here_bsp, b) for b in untried]
+                    hops = [h for h in hops if h]
+                    way = next((w for w in nearby if hops and w[0] == hops[0]), None) or \
+                        min(nearby, key=lambda w: math.dist(volume_point(volumes[w[0]], 0.5, 0.5), centre))
                     print("frame", g.frame, "-> cross", way[0], "toward", name, "for", key[0],
                           "done" if cross(g, volumes[way[0]]) else "failed", flush=True)
             if g.state is None or g.frame - g.state["frame"] > 1000:
