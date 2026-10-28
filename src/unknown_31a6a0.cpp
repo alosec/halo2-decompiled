@@ -23,10 +23,6 @@ class_31a6b0::class_31a6b0(void const *position, void const *orientation)
 	: class_3193c0(position, orientation)
 {
 	field_10 = 0;
-#if H2_WHOLE_IMAGE
-	/* the retail slot takes a float (port/recovered/havok_motion_3193c0.cpp) */
-	h2_retail_319740(this, 0.0f);
-#else
 	function_319740(0);
 	field_70.m128_f32[3] = 1.0f;
 }

@@ -371,6 +371,8 @@ double floor(double value) { return __builtin_floor(value); }
 double ceil(double value) { return __builtin_ceil(value); }
 float floorf(float value) { return __builtin_floorf(value); }
 float ceilf(float value) { return __builtin_ceilf(value); }
+double fmod(double numerator, double denominator);
+float fmodf(float numerator, float denominator) { return (float)fmod(numerator, denominator); }
 double atan(double value) { return host_h2_math_atan(value); }
 double atan2(double y, double x) { return host_h2_math_atan2(y, x); }
 double asin(double value) { return host_h2_math_asin(value); }

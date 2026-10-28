@@ -24,7 +24,11 @@ int stdio_writer_2d7aa0::write(const void *data, int count)
 // @retail 0x2d7b10
 void stdio_writer_2d7aa0::close()
 {
+#if H2_WHOLE_IMAGE
+	if (file != 0 && owns_file)   /* clang refuses an ordered pointer comparison */
+#else
 	if (file > 0 && owns_file)
+#endif
 	{
 		fclose(file);
 	}
@@ -56,7 +60,11 @@ long stdio_writer_2d7aa0::tell()
 // @retail 0x2d7bd0
 stdio_writer_2d7aa0::~stdio_writer_2d7aa0()
 {
+#if H2_WHOLE_IMAGE
+	if (file != 0 && owns_file)   /* clang refuses an ordered pointer comparison */
+#else
 	if (file > 0 && owns_file)
+#endif
 	{
 		fclose(file);
 	}

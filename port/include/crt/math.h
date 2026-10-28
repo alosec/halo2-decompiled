@@ -24,6 +24,7 @@ double exp(double value);
 double fabs(double value);
 double floor(double value);
 double fmod(double numerator, double denominator);
+float fmodf(float numerator, float denominator);
 double log(double value);
 double log10(double value);
 double pow(double base, double exponent);
