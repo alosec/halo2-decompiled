@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STATE = re.compile(r"h2-state frame (\d+) unit (\w+) pos (-?\d+) (-?\d+) (-?\d+) vel (-?\d+) (-?\d+) (-?\d+) "
                    r"look (-?\d+) (-?\d+) (-?\d+)(?: head (-?\d+) (-?\d+) (-?\d+))?(?: fwd (-?\d+) (-?\d+) (-?\d+))?(?: ground (-?\d+))?(?: leaf (-?\d+) cluster (-?\d+))?")
 FRAME = re.compile(r"h2-state frame (\d+) none")
-EXTRA = re.compile(r" (lights|flashlight|health|shield|bsp) (-?\d+)")
+EXTRA = re.compile(r" (lights|flashlight|health|shield|bsp|shield_recent) (-?\d+)")
 SCRIPT = re.compile(r"h2-script frame (\d+) thread (\d+) script (\S+) sleep (-?\d+) frames(.*)")
 SNAP = re.compile(r"h2-port: snapshot \"?([^\"\n]+)\"?")
 MENU_TO_CAMPAIGN = "1300:start:8,1700:down:8,1850:a:8,2300:a:8,2900:a:8,3300:a:8,3700:a:8,4100:a:8"
