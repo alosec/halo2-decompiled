@@ -328,15 +328,25 @@ See `port/README.md` "Play" for the full commands.
     Still open: shadows that shift with the view angle; save and quit's
     dialog defaults to Cancel (probably as retail).
   - "transparent marines" after the tram: 01b's intro, the bridge doors
-    (frame ~5490 from H2_START_MAP=01b_spacestation). The glow
-    post-process (bright pass into a 160x120 target, blur, then a
-    composite adding rgb + 2 x alpha of the blurred buffer) turns the
-    space sky's frame-buffer alpha white. The sky (`sky_one_alpha_env`)
-    writes alpha in an alpha-only pass, t1.b x c0.a with c0.a = 1, and
-    stage 1 is bound to an 8x8 two-mip DXT1 (color_white or color_black;
-    none of the shader's own four bitmaps), so the whole window glows.
-    Next: find where that stage's bitmap is chosen (white where retail
-    likely binds black).
+    (frame 5490 with `H2_START_MAP=01b_spacestation` and only the menu
+    script). The glow post-process (bright pass into a 160x120 target,
+    blur, then a composite adding rgb + 2 x alpha of the blurred buffer)
+    turns the space outside the bridge white around the figures. The
+    one alpha-only draw of that frame (mask 8, blend ONE/ONE) adds
+    t1.b x c0.a to the frame buffer's alpha: the `transparent_bloom` pass
+    of `scenarios\shaders\solo\spacestation\bloom_wall`, whose bitmap 0
+    is `color_white` (so t1 = 1 is right). c0.a = 1 comes from
+    `function_1b2c0` component 3: the shader's scalar parameter at
+    state + 0x5c, already 1.0 there (native and recovered 0x1b2c0, 0x18a90
+    and 0x19530 agree). Next: find what evaluates that scalar (an
+    animated shader parameter; retail probably has it near 0 in this
+    shot).
+  - shadows that shift with the view: not reproduced yet. On 03a's
+    opening the dark block beside the vent is the wall lightmap's baked
+    shadow (static, with parallax against the protruding vent); each
+    lightmapped geometry keeps one lightmap page across views (traced
+    with the `va` lines). Cairo spots from the user's session showed
+    nothing clear.
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any
     trace so far, flashlight included) and `LOGICOP` (the game only sets

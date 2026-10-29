@@ -689,6 +689,14 @@ public:
                 }
             }
         }
+        if (tracing_frame() && packet.vertex_source != H2_GPU_VERTICES_INLINE) {
+            /* the geometry's identity: its index and vertex arrays */
+            std::fprintf(stderr, "h2-frame:   va index %08x first %u", packet.index_data, packet.first_vertex);
+            for (int i = 0; i < 16; ++i)
+                if (packet.vertex_arrays[i].address)
+                    std::fprintf(stderr, " r%d %08x/%u", i, packet.vertex_arrays[i].address, packet.vertex_arrays[i].stride);
+            std::fprintf(stderr, "\n");
+        }
         if (tracing_frame() && packet.vertex_source == H2_GPU_VERTICES_INLINE) {
             const auto* v = guest<float>(packet.inline_vertices);
             for (std::uint32_t i = 0; v && i < std::min<std::uint32_t>(packet.inline_vertex_count, 4); ++i) {
