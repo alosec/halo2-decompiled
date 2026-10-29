@@ -963,7 +963,12 @@ short function_219110(s_set_ref *ref, short offset, dword *used_mask, short prev
 void sound_playback_set_chunk(long sound_index, long definition_index, char pitch_range_index, char permutation_index, short chunk_index);
 long __stdcall function_125e60(s_looping_track_sound *sound);
 
-// score 77 (was 132): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// score 77 (was 77): Float/result/random spill homes and initialization scheduling differ.
+// Earlier field-bit mask form 77 (from 132).
+// Float/result/random homes and initialization scheduling remain. Entry result 71; available-mask name 77;
+// entry mask workspace 77; table reads at use 77; full-width track slot 231; playback record name 77; direct
+// distance expression 194; entry result with full-width slot 231. All restored; six-count result gain below
+// threshold.
 // @retail 0x21b940
 long function_21b940(long looping_sound_index, long definition_index, long pitch_range_index, short track_index, short state, dword *seed)
 {

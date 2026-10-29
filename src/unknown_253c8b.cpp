@@ -170,8 +170,8 @@ s_button_block *function_253cc8(c_class_19b8b1 *button)
 	return result;
 }
 
-// score 33 (was 37): the source width is stored after the target bounds are read, as retail
-// orders it. Before that: height conversion and independent-axis SIMD homes still differ.
+// score 33 (was 33): The extra height word move and independent-axis SIMD homes still differ.
+// Earlier late source-width publication 33 (from 37).
 // height word move and independent-axis SIMD residency still differ.
 // Native short height retained at retail length. Real screen offsets
 // x/y/both/early 103/103/102/114; short width/height/both 40/37/119;
@@ -198,6 +198,9 @@ s_button_block *function_253cc8(c_class_19b8b1 *button)
 // both read back 104/104; orders of the six coordinate statements 100-104; offsets added into
 // the target first, far edges from it, then the position added (the matched sibling's shape)
 // 100-123 at 558-561 bytes, best with the y position converted first 100.
+// In the late source-width publication context: real/long height 107/107; height reads at use 107; actual
+// source-height ownership 109; native output 33; source-height/native output 109; native width 127; real
+// height/native output 107. All restored; native word move and axis SIMD homes remain.
 // @retail 0x253ea8
 void c_class_19b8b1::v4(long screen_rect_address)
 {
