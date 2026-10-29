@@ -52,8 +52,8 @@ build/release/port/halo2-port --data-root orig/game \
 | G | Grenade (left trigger) |
 | Left Ctrl | Crouch (left stick) |
 | Z | Zoom (right stick) |
-| T | Flashlight (black) |
-| Tab | Switch grenade (white) |
+| T | Flashlight (white) |
+| Tab | Switch grenade (black) |
 | Return | Start |
 | Escape | Back |
 | Arrow keys | D-pad (menus) |
@@ -65,6 +65,9 @@ build/release/port/halo2-port --data-root orig/game \
   game started from a Split Screen or System Link lobby.
 - `H2_AUDIO=off` turns off sound.
 - `H2_RENDER_SCALE=N` sets the render resolution multiple (default 2).
+- `H2_RECORD=session.mp4` records the game to an MP4 (needs `ffmpeg`; the
+  file stays playable even if the game is killed). `H2_AUDIO_RECORD=mix.wav`
+  records the sound separately.
 
 **Known gaps:**
 - The difficulty screen's 3D backdrop is missing.

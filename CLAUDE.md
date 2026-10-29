@@ -65,6 +65,10 @@ See `port/README.md` "Play" for the full commands.
   - `H2_TRACE_TEXTURE=hex|all` dumps texture bytes and palettes;
   - `H2_TRACE=d3d` gives push-buffer method counts;
   - `H2_AUDIO_RECORD=file.wav` records the mix;
+  - `H2_RECORD=file.mp4` records every presented game frame (H.264 via
+    host ffmpeg, fragmented so a killed game still leaves a playable file;
+    `H2_RECORD_FPS`, default 60). Launch the user's sessions with it (and
+    `H2_TRACE=state`) so reports can be found by time in the video;
   - `H2_TRACE=audio` lists voice formats;
   - `H2_TRACE=audio-voices` gives per-voice levels.
 - **Playtesting harness (play the game yourself; don't ask the user to):**

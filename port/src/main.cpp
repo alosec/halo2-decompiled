@@ -28,7 +28,9 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <condition_variable>
 #include <deque>
+#include <mutex>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -1188,12 +1190,12 @@ void update_input(GameSession& session) {
         const auto key = [&](SDL_Scancode code) { return keys[code]; };
         /* Halo 2 defaults: A jump, B melee, X action/reload, Y weapon swap,
            left trigger grenade, right trigger fire, left stick crouch,
-           right stick zoom, black flashlight, white grenade swap */
+           right stick zoom, white flashlight, black grenade swap */
         struct KeyMap { SDL_Scancode code; const char* button; };
         static const KeyMap keymap[] = {
             {SDL_SCANCODE_SPACE, "a"}, {SDL_SCANCODE_F, "b"}, {SDL_SCANCODE_E, "x"},
             {SDL_SCANCODE_Q, "y"}, {SDL_SCANCODE_G, "lt"}, {SDL_SCANCODE_LCTRL, "ls"},
-            {SDL_SCANCODE_Z, "rs"}, {SDL_SCANCODE_T, "black"}, {SDL_SCANCODE_TAB, "white"},
+            {SDL_SCANCODE_Z, "rs"}, {SDL_SCANCODE_T, "white"}, {SDL_SCANCODE_TAB, "black"},
             {SDL_SCANCODE_RETURN, "start"}, {SDL_SCANCODE_ESCAPE, "back"},
             {SDL_SCANCODE_UP, "up"}, {SDL_SCANCODE_DOWN, "down"},
             {SDL_SCANCODE_LEFT, "left"}, {SDL_SCANCODE_RIGHT, "right"}};
@@ -1332,6 +1334,97 @@ bool save_bgra_bmp(const std::filesystem::path& path, std::vector<std::uint8_t>&
     return saved;
 }
 
+/* H2_RECORD=file.mp4: every presented game frame goes to ffmpeg (H.264 via
+   VideoToolbox) on a writer thread. The file is fragmented, so it stays
+   playable when the game is killed. Frames the encoder can't keep up with
+   are dropped, never waited for. */
+class FrameRecorder {
+public:
+    static FrameRecorder* get() {
+        static FrameRecorder* recorder = [] () -> FrameRecorder* {
+            const char* path = std::getenv("H2_RECORD");
+            return path && *path ? new FrameRecorder(path) : nullptr;
+        }();
+        return recorder;
+    }
+
+    void add(std::vector<std::uint8_t>&& bgra, int width, int height) {
+        std::unique_lock lock(mutex_);
+        if (!pipe_) {
+            if (failed_)
+                return;
+            width_ = width;
+            height_ = height;
+            const char* fps = std::getenv("H2_RECORD_FPS");
+            const std::string command =
+                "ffmpeg -loglevel error -y -f rawvideo -pix_fmt bgra -s " + std::to_string(width) + "x" +
+                std::to_string(height) + " -framerate " + (fps ? fps : "60") +
+                " -i - -c:v h264_videotoolbox -b:v 8M -pix_fmt yuv420p"
+                " -movflags frag_keyframe+empty_moov '" + path_ + "'";
+            pipe_ = popen(command.c_str(), "w");
+            if (!pipe_) {
+                failed_ = true;
+                std::cerr << "h2-port: H2_RECORD: could not start ffmpeg\n";
+                return;
+            }
+            writer_ = std::thread([this] { write_loop(); });
+            std::atexit([] { FrameRecorder::get()->finish(); });
+            std::cerr << "h2-port: recording " << width << "x" << height << " to " << path_ << '\n';
+        }
+        if (width != width_ || height != height_)
+            return;
+        if (queue_.size() >= 8) {
+            ++dropped_;
+            return;
+        }
+        queue_.push_back(std::move(bgra));
+        ready_.notify_one();
+    }
+
+    void finish() {
+        {
+            std::lock_guard lock(mutex_);
+            if (!pipe_ || done_)
+                return;
+            done_ = true;
+        }
+        ready_.notify_one();
+        writer_.join();
+        pclose(pipe_);
+        std::cerr << "h2-port: recording finished (" << dropped_ << " frames dropped)\n";
+    }
+
+private:
+    explicit FrameRecorder(std::string path) : path_(std::move(path)) {}
+
+    void write_loop() {
+        for (;;) {
+            std::vector<std::uint8_t> frame;
+            {
+                std::unique_lock lock(mutex_);
+                ready_.wait(lock, [this] { return done_ || !queue_.empty(); });
+                if (queue_.empty())
+                    return;
+                frame = std::move(queue_.front());
+                queue_.pop_front();
+            }
+            if (std::fwrite(frame.data(), 1, frame.size(), pipe_) != frame.size())
+                return;
+        }
+    }
+
+    std::string path_;
+    std::mutex mutex_;
+    std::condition_variable ready_;
+    std::deque<std::vector<std::uint8_t>> queue_;
+    std::thread writer_;
+    FILE* pipe_ = nullptr;
+    int width_ = 0, height_ = 0;
+    unsigned long dropped_ = 0;
+    bool failed_ = false;
+    bool done_ = false;
+};
+
 bool save_frame_bmp(const std::filesystem::path& path) {
     auto& session = game_session();
     std::vector<std::uint8_t> pixels;
@@ -1381,11 +1474,18 @@ extern "C" void host_h2_frame(void) {
     }();
     const bool periodic = every > 0 && !session.screenshot.empty() && session.frames % every == 0;
     const bool snapshot = g_snapshot_requested.exchange(false);
-    const bool keep = ((last || periodic) && !session.screenshot.empty()) || snapshot;
+    FrameRecorder* const recorder = FrameRecorder::get();
+    const bool keep = ((last || periodic) && !session.screenshot.empty()) || snapshot || recorder;
     if (session.gpu) {
         if (snapshot)
             session.gpu->capture_window();
         session.gpu->present(keep);
+        if (recorder) {
+            std::vector<std::uint8_t> pixels;
+            int width = 0, height = 0;
+            if (session.gpu->read_pixels(pixels, width, height))
+                recorder->add(std::move(pixels), width, height);
+        }
         if (snapshot) {
             const auto dir = snapshot_dir();
             std::error_code ignored;
