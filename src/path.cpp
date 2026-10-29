@@ -381,7 +381,7 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 	return result;
 }
 
-// score 349 (was 349): Frame 0xe4 agrees; maximum/node acquisition order, clearing, flags and vector scheduling differ.
+// score 332 (was 349): Frame 0xe8 versus retail 0xe4; maximum/node acquisition, scalar homes, flags and vector scheduling differ.
 // Earlier: the 0xe4 frame and state register now agree; initial load order, clearing, flag width and vector scheduling differ.
 // Tried: pathfinding field at each use 459; bounded short initialization count 406; both 451; edge memset 408;
 // all three 434; field reads plus memset 436; all three plus point-difference helpers 443; traversal state first 396;
@@ -410,6 +410,9 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 // DH round 239: Native node/output link-record assignment, split increment, bounded
 // word link count and full-width previous-index combinations 360/360/373/373/385/385/393/393.
 // Original node declaration and complete body restored; frame acquisition and geometry homes remain.
+// DH round 252: Real remaining-step short/long counts with advancing edge receiver, separate CRT edge fill,
+// and their early traversal-constant forms
+// 372/401/353/353/332/353/391/390. Keep trial 05, plain 332.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,
@@ -419,23 +422,24 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_lookup_view *lookup = (s_path_lookup_view *)state;
 	s_path_input_view const *input = (s_path_input_view *)&state->source;
 	long edge_indices[40];
-	long initialize_count = lookup->nodes[node_index].depth + 1;
-	if (initialize_count > maximum_steps)
-		initialize_count = maximum_steps;
-	s_path_step_view *initialize_step = steps;
-	for (short i = 0; i < initialize_count; i++)
-	{
-		edge_indices[i] = NONE;
-		initialize_step->type = NONE;
-		initialize_step->link_index = NONE;
-		initialize_step->unknown02 = 0;
-		initialize_step++;
-	}
 	short previous_index = NONE;
 	s_path_node_key_view *previous = NULL;
 	short count = 0;
 	long link_count = 0;
 	bool complete = true;
+	long initialize_count = lookup->nodes[node_index].depth + 1;
+	if (initialize_count > maximum_steps)
+		initialize_count = maximum_steps;
+	s_path_step_view *initialize_step = steps;
+	long *initialize_edge = edge_indices;
+	for (short remaining = initialize_count; remaining > 0; --remaining)
+	{
+		*initialize_edge++ = NONE;
+		initialize_step->type = NONE;
+		initialize_step->link_index = NONE;
+		initialize_step->unknown02 = 0;
+		initialize_step++;
+	}
 	while (node_index != NONE)
 	{
 		s_path_node_key_view *node = &lookup->nodes[node_index];

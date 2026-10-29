@@ -310,6 +310,9 @@ void function_264940(long actor_index, long prop_ref_index)
 // Round 240: Native tracking-record receiver with distinct current-state, sequential
 // object-vector workspace and positive-view arm combinations 426/425/426/425/428/427/428/427.
 // Frame remains 0x24/0x20; original separate view, states, vectors and body restored.
+// DH round 252: Twice-used normalized distance/buildup/both; each with complete update, all three;
+// both with distinct current state, all four
+// 353/386/386/441/453/453/385/452. Original complete executable body restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)
