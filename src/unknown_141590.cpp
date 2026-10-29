@@ -554,13 +554,15 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 	matrix4x3_basis_store(out, &position, &w, &plane->n);
 }
 
-// score 51 (was 51): the three components are squared and summed in a different order, the scaled
-// component is kept in a different register, and the cross product holds its operands in swapped
-// registers.
+// score 51 (was 51): frame 0x1c and sum grouping agree; the extra early first-component
+// load changes normalization-join registers and subsequent cross-product allocation.
 // The first difference is an extra early load of the first component (retail
 // loads only the second before the magnitude test). Second component scaled first
 // 52; first scaled as component * inverse 51; third stored first 53; first and
 // third read into locals 51; third scaled as k * inverse 51 (fast).
+// Round 406: direct nonnegative magnitude guard, length return and shared setter
+// 76/76/76/76; original magnitude expression at the caller boundary with the same
+// return/setter choices 89/89/89/89. All restored.
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,

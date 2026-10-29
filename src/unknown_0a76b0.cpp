@@ -103,7 +103,9 @@ struct s_unit_action_unit
 	char current_grenade_index;
 	byte unknown23d;
 	char grenade_counts[4];
-	byte unknown242[0x344 - 0x242];
+	byte unknown242[0x33e - 0x242];
+	short unknown33e;
+	byte unknown340[0x344 - 0x340];
 	short actions_size;
 	short actions_offset;
 };
@@ -446,17 +448,22 @@ void function_e6f90(long unit_index)
 
 /* whether a unit can play an animation, from its idle state or (when it
    asks) its alternate one */
-// score 156 (was 156): ours inlines function_10f3b0 at both of its calls, where retail calls it
-// (this is its only caller in retail too), and the alternate pointer then stays on the stack
-// where retail has it in ebx. Adding /Ob1 to this file's flags leaves it at 156.
 // @retail 0xe7020
 bool function_e7020(long unit_index, bool *alternate, long name)
 {
+	bool result = false;
+
 	if (alternate)
 		*alternate = false;
-	if (function_10f3b0(unit_index, 0x7000101, name) || function_10f340(unit_index, 0x7000101, name))
-		return true;
-	if (alternate)
+	if (function_10f3b0(unit_index, 0x7000101, name))
+	{
+		result = true;
+	}
+	else if (function_10f340(unit_index, 0x7000101, name))
+	{
+		result = true;
+	}
+	else if (alternate)
 	{
 		long first;
 		long second;
@@ -464,11 +471,11 @@ bool function_e7020(long unit_index, bool *alternate, long name)
 		if (function_10f630(unit_index, &first, &second) && first == 0x6000085 &&
 			(function_10f3b0(unit_index, 0x6000086, name) || function_10f340(unit_index, 0x6000086, name)))
 		{
+			result = true;
 			*alternate = true;
-			return true;
 		}
 	}
-	return false;
+	return result;
 }
 
 /* the unit's action state (its actions' +0x36): stores it and returns where
@@ -1766,7 +1773,7 @@ PRIVATE __forceinline bool unit_action_pause(long unit_index, s_unit_request *re
 }
 
 // 0xe9370 and 0xe9500 (score 139 each) are 17 bytes short through unit_action_pause, which
-// reaches function_e7020; see the note there.
+// reaches function_e7020 (that one matches since its overlay lookup stays out of line).
 /* pauses a unit's animation (type 23) */
 // score 127 (was 139): saved EBX/result BL still replace retail scratch ECX/stack byte;
 // sentinel, channel flags and completion homes differ. False-first bool/byte/short/long
@@ -1807,12 +1814,6 @@ struct s_unit_request_impulse
 
 /* plays an animation impulse (type 25), from the unit's idle state (or its
    alternate one) */
-// score 17 (was 82): admission name/alternate convention, zero scheduling and
-// active-bit address materialization remain.
-// Round 256: provider noinline alone 82; false-first bool/byte/short/long
-// completions 17/32/45/46; true-first 75/88/86/84. Provider declaration restored.
-// Clean bool completion 17; initialization order 16; completion/request names
-// 17/17; combined names/order 16. One-point forms restored; clean completion kept.
 // @retail 0xe9690
 bool __stdcall function_e9690(long unit_index, s_unit_request *request)
 {
@@ -1838,8 +1839,9 @@ bool __stdcall function_e9690(long unit_index, s_unit_request *request)
 		if (function_113e90(unit_index, impulse->name, blend, NULL, 0))
 		{
 			s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
+			word *animation_flags = (word *)((byte *)unit + unit->unknown33e);
 
-			*((byte *)unit + *(short *)((byte *)unit + 0x33e)) |= 1;
+			*animation_flags |= 1;
 			if (impulse->face && unit->parent_object_index == NONE)
 				function_edfa0(unit_index, (point2f const *)&impulse->facing);
 			result = true;
@@ -2222,7 +2224,7 @@ struct s_unit_request_melee_attack
 };
 
 void __stdcall function_a8cf0(long unit_index, long target_index, long mode);
-void __stdcall function_cf3d0(long unit_index, long name, long flags, real scale);
+void __stdcall function_cf3d0(long unit_index, long name, byte flags, real scale);
 
 /* a melee attack (type 27): its animation, once any earlier one has
    passed its end frame */
@@ -2279,10 +2281,6 @@ bool __stdcall unit_action_melee_attack(long unit_index, s_unit_request *request
 
 /* a melee attack's ticks: its damage frame, then the next attack in the
    combo (or the end) */
-// score 43 (was 87): frame 4 and entry homes agree; damage-call byte extension, narrow rounded ticks
-// and restart flag register remain. Full ticks 81; restart result first 57; both 85; separate increment
-// 87; both/increment 85; full ticks/direct finish 80; direct finish 93; combined 90.
-// Result after receiver 43; with full ticks 73; field reads at use 43; both 73.
 // @retail 0xea090
 bool __stdcall unit_action_melee_attack_update(long unit_index, long type)
 {
@@ -2301,12 +2299,14 @@ bool __stdcall unit_action_melee_attack_update(long unit_index, long type)
 		if (actions->melee_name == 0xa0005bb || actions->melee_name == 0x130005bc)
 		{
 			real seconds = actions->melee_name == 0x130005bc ? 0.22f : 0.15f;
-			long ticks = unit_action_round((real)g_510c54->field_2_3 * seconds);
+			long ticks = unit_action_round_long((real)g_510c54->field_2_3 * seconds);
 			s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
-			long lunge_ticks = *(long *)((byte *)unit + 0x3ec);
 
-			if (*((byte *)unit + 0x3dc) != 6 || lunge_ticks < 0 || lunge_ticks <= ticks)
+			if (*((byte *)unit + 0x3dc) != 6 || *(long *)((byte *)unit + 0x3ec) < 0 ||
+				*(long *)((byte *)unit + 0x3ec) <= ticks)
+			{
 				finished = true;
+			}
 		}
 		if (++actions->melee_counter < actions->melee_ticks && !finished)
 			return true;
@@ -2984,11 +2984,15 @@ bool __stdcall unit_action_vehicle_board_update(long unit_index, long type)
 
 /* ejects from a vehicle (type 32), or (when asked) finishes an ejection at
    once */
-// score 15 (was 138): failure-exit order and header/active-store scheduling remain.
+// score 15 (was 15): failure-exit order (retail puts the early vehicle/seat exit, `mov al, dl`,
+// before the constant-false exit) and the flag store before the active OR remain.
 // Late success, entry-first, byte/long/word completions 138 each; per-use actions 133;
 // common completion 15; common callback 109 (restored); split admission 115;
 // flags publication 35, split flags 118; structured completion 15 (kept),
 // structured flags 35; structured result after vehicle lookup 30.
+// Round 91: flag set as one ternary expression 15; vehicle/seat early return 115 (result
+// moves to a stack byte); nested vehicle/seat ifs 15; flags local stored once 35;
+// active-type guard `return false` 113.
 // @retail 0xeb3c0
 bool __stdcall unit_action_vehicle_ejection(long unit_index, s_unit_request *request)
 {

@@ -56,8 +56,11 @@ PRIVATE __forceinline real extent_length(__m128 vector)
 // there. Case 4's maximum through EXTENT_MAX 422 (its tail merges too); that with a
 // case-local return 407, with returns in cases 4 and 5 388; return in case 5 378; case 5's
 // bounds against a literal 0 97; case 5's width declared first 95.
-// Earlier 100: retail's case-4 branch comes before ours and clamps both bounds
+// retail's case-4 branch comes before ours and clamps both bounds
 // there, so the two branches sit in another order.
+// Width shared across cases 4/5, 4/6, 4/5/6 and all primitives 95 each; those four with shared
+// case-5/6 extent 95 each. Original case scopes and length helper retained.
+// Earlier 100: retail's case-4 branch comes before ours and clamps both bounds
 // Native length producer: immutable input/staged identical sum/both 95; low-lane
 // result extraction with all input/sum subsets 627/2249; ordinary inline 945/1721.
 // Original helper and body restored; case-4/5/6 tail direction remains.

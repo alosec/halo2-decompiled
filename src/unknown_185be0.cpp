@@ -270,6 +270,10 @@ union s_185be7
 // Round 188: existing reset whole-output void/result/subobject-reference/whole-output-reference
 // contracts, forced then ordinary inline: 961/961/780/961/961/961/780/961.
 // Complete output contracts grow the frame; original reset and whole body restored.
+// Round 267: reset groups float/word/index 781, index/float/word 782,
+// index/word/float 783, word/float/index 783, word/index/float 783;
+// split admission 780; inactive update/return 1026; chained indices first 782.
+// Original six-store producer and complete body restored.
 // @retail 0x185be0
 void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s_186ab4 *arg_4, s_186ab3 *arg_5)
 {

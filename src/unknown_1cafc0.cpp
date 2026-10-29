@@ -592,6 +592,8 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 // status and identifier roles 399. All sixteen preserve frame eight and both 0x40 LEAs; restored.
 // Round 261: grouping/leaf/both native graph-reference contracts 399 each; read-only
 // lookup entry alone/with each/both contracts 399 each; all with urgent while 399. All restored.
+// Round 280: Urgent-helper entries/index/resource role-name subsets all 399; all with outer source/graph-
+// ordinal names 399. Original helper locals, native queries and request graph restored.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)
@@ -965,6 +967,8 @@ PRIVATE inline void channel_loop_clear(c_animation_channel *channel)
 // Round 185: Prior-name record initialization/assignment/library copies, eager/logical joins,
 // 271/257 in each pair; overlap-safe copy 265/272. Eager copies recover identifier homes but regress
 // overall. Original names, identifier scopes, queries, publication and complete body restored.
+// Round 268: Phase-preservation predicate once at phase/entry, bool/byte/short/long:
+// 321/321/316/334/345/345/332/349. Original body restored.
 // @retail 0x1cd070
 bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long channel_flags)
 {

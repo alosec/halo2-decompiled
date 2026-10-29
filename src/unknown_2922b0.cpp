@@ -186,6 +186,8 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 // Round 238: Actual ray origin/length/distance cursors 643/659/659;
 // origin+length/origin+distance/length+distance 660/660/645; all three/all plus hit cursor
 // 728/728. Original indexed arrays, countdown, success and helper snapshots restored.
+// Round 249: Root return / limited-angle output with pointer/reference, output-first/last,
+// and limit-first/original input roles: all eight 637. Original outputs, helpers and calls restored.
 // @retail 0x2922b0
 bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, real *arg_4, real *arg_5, bool arg_6)

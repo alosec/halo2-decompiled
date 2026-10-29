@@ -2109,6 +2109,8 @@ void function_1905bf(long controller, bool flag);
 // Base call after the if/else with the else returning 137; the base call in every
 // path that reaches it 107; not-signed-in early return 106; bool result first and
 // returned by the early test 111; constant returns with a direct base return 137.
+// Success from inherited failure test at long/bool/signed-char/short width 153/142/143/154; direct
+// event index reads with those widths 153/142/143/154. Original result producer retained.
 // Negative outcome bool/long/signed-byte/unsigned-byte 146/138/146/146; with shared team-direction case
 // 126/147/126/126. Restored.
 // @retail 0x250b1e

@@ -409,6 +409,9 @@ PRIVATE inline long polygon_round_19f(real value)
 // Round 66: existing double-input distance helper at entry, entry+vertex and all three sites
 // 379/379/399; pre-loop counter, entry counter, entry wrapped index, entry predecessor and
 // a plain while loop 379 each. Both callers stayed matched; all executable forms restored.
+// Round 409: one emitted-position workspace 403; native tint copy 393; both 416; current-vertex
+// address 379; with position/tint/both 403/393/416; all with ordinary variant 466 and both
+// matched callers lose. Original complete body and output/parameter homes restored.
 // Round 272: ordinary variant and load-stepped cursor with entry declarations for
 // fade limit/spread/outer distance, every subset and complete role names
 // 416/416/416/416/416/416/416/416. Original parameter home, observations and body restored.

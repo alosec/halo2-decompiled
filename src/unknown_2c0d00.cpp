@@ -880,7 +880,7 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
 // score 385 (was 385): frame 0x28 agrees; zero/radius schedule, history homes and indexed node-word lowering remain.
-
+// Data must stay in EBP: forms that move it let LTCG pass it in a register (ret 0x14).
 // Earlier: frame 0x28 agrees; zero/radius schedule, history homes and indexed node loads remain.
 // Earlier: Frame 0x28 and length agree; zero/radius schedule, history homes and indexed node loads differ.
 // frame 0x28 agrees; zero/radius schedule, history homes and indexed node loads remain.
@@ -949,6 +949,10 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
 // Round 175: Full-width unsigned incoming/ring/complete selected-vertex domains and all
 // subsets 385 each; all with unsigned equality-only ring-edge anchor 385. Native word values
 // and distinct NONE bit patterns preserved. All original domains, histories and body restored.
+// Round 91: node pair indexed through the edge's real word pair 434 (data to eax, frame 0x2c);
+// word index in the open test 409; portal loop stepping through the portal pointer, source edge
+// before the side test, vertex selected by value 432 (data to ebx); first_vertex without volatile
+// 404 (aligned diff 500 -> 461, convention kept); that with the indexed pair 433.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)

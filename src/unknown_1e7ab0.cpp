@@ -251,6 +251,9 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
 // Round 395: player pool at use 742; object-table context once 669; both 758;
 // each with ordinary child result 760/643/769; both with case-entry iterator
 // 758, with ordinary child result 769. Original pools, qualifiers and body restored.
+// Round 267: positive admission partitions 620/638/620/638/620/638; actual
+// admission result 657, with unit-presence result 853. Original admission,
+// cases, local qualifiers and complete executable body restored.
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {

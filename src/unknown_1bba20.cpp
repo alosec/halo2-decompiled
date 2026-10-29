@@ -205,6 +205,9 @@ __declspec(noinline) bool function_f5dc0(long object_index);
 // products 49; explicit transition/distance call boundaries 49/49;
 // short rate/transition boundary 129; failed-entry-first 49, with short rate 129;
 // actor observed at every field use 199. All restored; full/low-word reuse remains.
+// Round 406: native vehicle/tag-per-use/both 49/49/49; admission decision
+// with native/per-use/both/plain 49/49/49/49; guarded decision with both 49;
+// per-use tag plus native final actor fields, with/without decision 49/49.
 // @retail 0x1bba70
 void function_1bba70(long actor_index, long vehicle_index, long seat_index)
 {

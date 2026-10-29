@@ -493,34 +493,38 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // reductions rejected; original diagnostic helper and complete body restored.
 // Round 239: parallel up/left/up+left/forward/up+forward/left+forward
 // product operand ownership, complete distance products, all products: 404 each. All restored.
+// Round 300: the third plane's distance store moved up beside the second plane's own zero store,
+// with the same value reaching that plane's transform 363 (was 399). The separate guard tests and
+// the result flag's declaration order were left alone.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {
+	s_camera_163db0 const *cam = camera;
 	bool valid = false;
 	char const *error;
 	if (rectangle->x1 > rectangle->x0 && rectangle->y1 > rectangle->y0)
 	{
 		result->rectangle = *rectangle;
 		result->identifier = identifier;
-		real depth = camera->depth;
+		real depth = cam->depth;
 		real x0 = result->rectangle.x0 * depth;
 		real x1 = result->rectangle.x1 * depth;
 		real y0 = result->rectangle.y0 * depth;
 		real y1 = result->rectangle.y1 * depth;
-		result->points[1].z = 0.0f - camera->depth;
+		result->points[1].z = 0.0f - cam->depth;
 		result->points[1].x = x0;
 		result->points[1].y = y0;
-		result->points[3].z = 0.0f - camera->depth;
+		result->points[3].z = 0.0f - cam->depth;
 		result->points[3].x = x1;
 		result->points[3].y = y0;
-		result->points[0].z = 0.0f - camera->depth;
+		result->points[0].z = 0.0f - cam->depth;
 		result->points[0].x = x0;
 		result->points[0].y = y1;
-		result->points[2].z = 0.0f - camera->depth;
+		result->points[2].z = 0.0f - cam->depth;
 		result->points[2].x = x1;
 		result->points[2].y = y1;
-		function_1429d0(&camera->matrix, 4, result->points, result->points);
-		result->points[4] = camera->matrix.position;
+		function_1429d0(&cam->matrix, 4, result->points, result->points);
+		result->points[4] = cam->matrix.position;
 		result->bounds = *g_4687e0;
 		function_11f770((box3f *)&result->bounds, 5, result->points);
 		result->planes[0].normal.i = -1.0f;
@@ -528,31 +532,31 @@ bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long
 		result->planes[0].normal.k = 0.0f - result->rectangle.x0;
 		function_30bf0(&result->planes[0].normal);
 		result->planes[0].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[0].normal, &result->planes[0]);
+		transform_plane_163db0(&cam->matrix, &result->planes[0].normal, &result->planes[0]);
 		result->planes[1].normal.i = 1.0f;
 		result->planes[1].normal.j = 0.0f;
 		result->planes[1].normal.k = result->rectangle.x1;
 		function_30bf0(&result->planes[1].normal);
 		result->planes[1].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[1].normal, &result->planes[1]);
+		transform_plane_163db0(&cam->matrix, &result->planes[1].normal, &result->planes[1]);
 		result->planes[2].normal.i = 0.0f;
 		result->planes[2].normal.j = -1.0f;
 		result->planes[2].normal.k = 0.0f - result->rectangle.y0;
 		function_30bf0(&result->planes[2].normal);
 		result->planes[2].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[2].normal, &result->planes[2]);
+		result->planes[3].d = 0.0f;
+		transform_plane_163db0(&cam->matrix, &result->planes[2].normal, &result->planes[2]);
 		result->planes[3].normal.i = 0.0f;
 		result->planes[3].normal.j = 1.0f;
 		result->planes[3].normal.k = result->rectangle.y1;
 		function_30bf0(&result->planes[3].normal);
-		result->planes[3].d = 0.0f;
-		transform_plane_163db0(&camera->matrix, &result->planes[3].normal, &result->planes[3]);
-		if (!(!(camera->has_plane)))
+		transform_plane_163db0(&cam->matrix, &result->planes[3].normal, &result->planes[3]);
+		if (!(!(cam->has_plane)))
 		{
-			result->planes[4].normal.i = 0.0f - camera->plane.normal.i;
-			result->planes[4].normal.j = 0.0f - camera->plane.normal.j;
-			result->planes[4].normal.k = 0.0f - camera->plane.normal.k;
-			result->planes[4].d = 0.0f - camera->plane.d;
+			result->planes[4].normal.i = 0.0f - cam->plane.normal.i;
+			result->planes[4].normal.j = 0.0f - cam->plane.normal.j;
+			result->planes[4].normal.k = 0.0f - cam->plane.normal.k;
+			result->planes[4].d = 0.0f - cam->plane.d;
 		}
 		else
 		{
@@ -560,13 +564,13 @@ bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long
 			result->planes[4].normal.j = 0.0f;
 			result->planes[4].normal.k = 1.0f;
 			result->planes[4].d = 0.0f;
-			transform_plane_163db0(&camera->matrix, &result->planes[4].normal, &result->planes[4]);
+			transform_plane_163db0(&cam->matrix, &result->planes[4].normal, &result->planes[4]);
 		}
 		result->planes[5].normal.i = 0.0f;
 		result->planes[5].normal.j = 0.0f;
 		result->planes[5].normal.k = -1.0f;
-		result->planes[5].d = camera->depth;
-		transform_plane_163db0(&camera->matrix, &result->planes[5].normal, &result->planes[5]);
+		result->planes[5].d = cam->depth;
+		transform_plane_163db0(&cam->matrix, &result->planes[5].normal, &result->planes[5]);
 		for (long i = 0; i < 4; i++)
 		{
 			vector3d_from_points3d(&result->points[4], &result->points[i], &result->directions[i]);
@@ -726,21 +730,25 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // Frame pointer 574; zero inline depth 609.
 // First/second normal memcpy 115/115; negated aggregate 115;
 // native endpoint classification 387; default-zero intersection ratio 252.
-// score 115 (was 115): Coefficient/zero XMM roles, classification products and projection staging remain.
+// Earlier: Coefficient/zero XMM roles, classification products and projection staging remain.
 // Existing scale for first/second/source/all normal negations 425/410/433/446f; reused projected
 // workspace 249f; per-use outside bytes 249f; completed projection total 214f; native short total 115f.
-// score 115 (was 115): coefficient/zero XMM roles, classification operands and projection homes remain.
+// Earlier: coefficient/zero XMM roles, classification operands and projection homes remain.
 // Native camera vector member 115; camera/bounds references 251/133; clipped/camera/projected point names 115/115/115;
 // paired projection names 115; native vector plus three point names 115.
 // First/second input-vector value copies 463/474; external vector references 251/279;
 // both copies 454; shared scaled difference 390; conditional plane enable 474;
 // projection cursor before its guard 115. Arithmetic grouping and count guards retained.
-// score 115 (was 115): Normal/zero XMM roles, classification and projection homes remain; offset
+// Earlier: Normal/zero XMM roles, classification and projection homes remain; offset
 // accumulator 269; shared segment count 468; count result 459; projected/intersection values 402/323;
 // bool/second endpoint values 259/362; completed cursor 196.
 // The locals as plane3f 115; plane_distance_to_point for the classification 265, plus the
 // intersection distance 269, plus dot3f for the denominator 216; the distance alone 117;
 // dot3f for the first plane's d 278 (either argument order), for both planes' d 155.
+// Round 199: matching named xz subtotal, y product, x/z products and all products in both plane
+// rows 305/267/280/269; with existing component assignment for every normal negation
+// 306/301/174/285. All restored; original grouping, scale helper and guards retained; coefficient
+// preload and projection homes remain.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {

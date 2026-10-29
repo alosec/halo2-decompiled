@@ -1518,6 +1518,9 @@ struct s_133f70;
 // Round 398: complete once-read query object/tag/both 357/352/335; each with
 // allocation-scoped projection workspace 357/352/335; immutable joint inputs
 // with either workspace 335/335. All original field observations and body restored.
+// Round 410: Complete published memory-handle scalar with object/tag/both query captures
+// 291/363/352/338; those four with native previous-level byte 294/328/311/342. Original
+// handle observations, query inputs, previous level and complete executable body restored.
 // @retail 0x4b5d0
 void function_4b5d0(bool force, long override, long object_index, real distance, real priority,
     s_133f70 *record, point3f const *unused, bool project_nodes)

@@ -3831,7 +3831,16 @@ void function_147af1(long first, long second, c_render_window *window);
 struct s_2f800_view;
 void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 
-// score 34 (was 34): the two globals are written in the other order, a byte
+// score 34 (was 34): the stores to g_4ba038 and g_4ba010 land in other
+// places than retail's. Both stores are placed by the compiler, not by the
+// order of the statements: with the addresses of g_4ba038 and g_4ba010 taken
+// anywhere in the program they land exactly where retail puts them (probed
+// by taking them in src/unknown_02c560.cpp, which takes this function to 26),
+// so retail's program took those addresses somewhere this tree does not.
+// The flag is loaded as a dword where retail loads a byte, and the tail calls
+// 0x13680 with the flag pushed where retail passes it in bl; both follow
+// 0x13680's convention, which retail has as one bool in bl and a plain ret
+// (BLOCKED-BY 0x13680).
 // is loaded where retail loads a whole word, and the calls at the end are in
 // a different order with their arguments set up differently. The tail is
 // 0x13680's convention (retail passes the flag in bl; BLOCKED-BY 0x13680);

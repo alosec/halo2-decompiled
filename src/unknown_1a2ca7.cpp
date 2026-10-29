@@ -1455,6 +1455,10 @@ void online_presence_get_latest(long task_index, DWORD group_id, DWORD count, XO
 // first 124 (its home stays ebp-8, loaded into esi at once); both 124; both counts before the
 // arrays 124; both list-contains helpers declared inline 117. Ours keeps flags20 in a register
 // across those helpers (they write no memory here); retail tests and updates it in memory.
+// score 117 (was 117): friend-side count rename 117; friend-first with that rename 124;
+// retail equality call roles with the rename 159/844; nested friend/member/both membership
+// guards 117/117/117; counts before the user record 117; shared user pointer 117.
+// Count homes, the delayed count load and post-membership flag reloads remain.
 // @retail 0x1a3dfe
 void friends_lists_update_presence()
 {

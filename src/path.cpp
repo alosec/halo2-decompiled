@@ -302,26 +302,6 @@ PRIVATE bool function_270640(s_type_f17a25 *state, s_type_c3b527 const *point,
 	return result;
 }
 
-// score 121 (was 121): Frame 0x30 agrees; entry EBP save, target stack transport, x87 carriers/order and loop
-// alignment remain. Fast control 143; shared distance helper 143; result first 143; point homes 143; phase
-// node lifetimes 143; result from lookup 149; long child 142; branch-produced distance 105 fast/121 plain;
-// helper with phase nodes 143.
-// Round 268 (fast control 105 at 472 bytes): all three square terms 105; result in
-// both lookup arms 102; missing-key-first 145; squares with arm result 102; squares
-// with missing-key-first 145; missing-key-first with arm result 145; all three 145;
-// that with entry square declarations 145. The three-point fast gain is not retained.
-// Round 270 (fast control 105): shared attractor receiver 137; separate sqrt result
-// 105; entry point workspaces 105; entry distance outputs 105; attractor with point/
-// distance entry declarations 137/137; failure CRT vector copy 105; all groups 137.
-// All restored; full score 121, frame 0x30 and incoming target/EBP differences remain.
-// Round 273 (fast control 105): direct optional-output parameters 105; full lookup
-// result 117, full traversal cursor 126, lookup/direct outputs 117; double offset names
-// 105; full success carrier 140; complete squared-sum local 105, accumulated z-x-y sum
-// 101; natural tested parent walk 105, with lookup/direct outputs 138. All restored.
-// Round 275 (fast control 105): minimum from tests 107; minimum plus full child 104;
-// direct selected end 105, with minimum 107; independent direction node 105; readonly
-// source view 105; minimum/direct end/direction node 107; complete distance names on
-// minimum/direction graph 107. All restored; the one-point 104 form is dropped.
 // @retail 0x270750
 bool function_270750(byte *buffer, long unknown, s_actor_point_target const *target,
 	real *distance, long a, long b)
@@ -343,12 +323,13 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 			point3f start_point, end_point, closest;
 			function_210850(&node->entry_point, &start_point);
 			function_210850(target, &end_point);
-			function_272740(&input->attractor_point, &start_point, &end_point, &closest);
-			double dx = (double)closest.x - input->attractor_point.x;
-			double dy = (double)closest.y - input->attractor_point.y;
-			double dz = (double)closest.z - input->attractor_point.z;
-			real value = (real)sqrt(dz * dz + dx * dx + dy * dy);
-			closest_distance = value > node->attractor_distance ? node->attractor_distance : value;
+			point3f const *attractor = &input->attractor_point;
+			function_272740(attractor, &start_point, &end_point, &closest);
+			vector3f delta;
+			vector3d_from_points3d(attractor, &closest, &delta);
+			closest_distance = (real)sqrt(delta.j * delta.j + delta.i * delta.i + delta.k * delta.k);
+			if (closest_distance > node->attractor_distance)
+				closest_distance = node->attractor_distance;
 		}
 		else
 		{
@@ -364,6 +345,7 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 		{
 			short child = NONE;
 			short current = index;
+			real accumulated = 0.0f;
 			do
 			{
 				node = &lookup->nodes[current];
@@ -373,7 +355,6 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 			}
 			while (current != NONE);
 			current = child;
-			real accumulated = 0.0f;
 			while (current != NONE && accumulated < 0.8f)
 			{
 				node = &lookup->nodes[current];
@@ -569,29 +550,6 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	return count;
 }
 
-// score 98 (was 98): Frame 0x5ac and distance-return tails agree; avoidance materialization and retry-word residency differ.
-// Earlier: frame 0x5ac, actor lookup and direct avoidance-byte copy agree; retry-mask reload and tail layout differ.
-// Tried: one result exit 308; stage array names 356; both 308; reversed arrays 356; named destination fields 360;
-// direct reconstruction count 357; full avoidance if/else 354; success first 362; shared rounding helper 363; helper plus one exit 314.
-// With direct data/step fields in the callee: original parent 353; original with actor NULL before the index test 350;
-// one exit plus actor NULL before the index test 239 (kept). The callee form alone moved the earlier parent from 308 to 349.
-// Boolean field alone 239; byte local with Boolean/original field 200/200; separate retry increment 239;
-// byte/increment 200; complete final-count selection 239; direct Boolean field 168 (kept, plain), with
-// separate increment 168.
-// Round 274: output defaults before avoidance 165; complete short-circuit avoidance 159; full-width
-// lookup 339, success 216; defaults/avoidance 155 (plain, kept), defaults/lookup 339,
-// defaults/success 216; complete avoidance with both wide result carriers 326.
-// Complete-result return 98; separate avoidance update 165; both 137; failed-finalization first 202;
-// failure-first/avoidance 165, failure-first/return 202, all 165; nested avoidance/return 137.
-// Round 250: signed retry-word ownership before/after output defaults, short/long
-// 103/207/103/207; with separate final retry publication 103/207/103/207.
-// All restored; avoidance materialization and retry-word residency remain.
-// Round 252: flags-first compound/nested avoidance gates 147/147; nonzero remainder
-// with original/compound/nested production 198/203/203 (original: 1116 bytes, first +0x1b1);
-// low-bit parity with original/compound/nested production 214/224/224. Positive-word
-// quotient bounds preserve these predicates; all bodies restored at 98.
-// Round 187: Named long/short quotient and long/byte remainder with avoidance-first guards
-// 137/209/137/147; flags-first guards 147/217/147/155.
 // @retail 0x270930
 bool function_270930(long actor_index, s_type_f17a25 *state, s_path_result_view *result)
 {
@@ -637,8 +595,9 @@ bool function_270930(long actor_index, s_type_f17a25 *state, s_path_result_view 
 			else
 			{
 				long object_index = NONE, type = NONE;
-				bool avoid = state->unknownac || (result->location.flags > 0 &&
-					(result->location.flags / (1 << (byte)result->location.count)) % 2 == 1);
+				bool avoid = state->unknownac;
+				if (!avoid && result->location.flags > 0)
+					avoid = (result->location.flags / (1 << (byte)result->location.count)) % 2 == 1;
 				success = function_2c41b0(actor_index, state, smoothed_count, name_b343c4, avoid,
 					&final_count, final_steps, &complete, &object_index, &type, &result->unknowna6);
 				if (success)
@@ -662,13 +621,14 @@ bool function_270930(long actor_index, s_type_f17a25 *state, s_path_result_view 
 			}
 			if (result->location.flags == 0)
 			{
+				s_path_location_view *location = &result->location;
 				if (link_count > 0)
-					result->location.entries[0] = links[0];
+					location->entries[0] = links[0];
 				if (link_count > 1)
-					result->location.entries[1] = links[link_count - 1];
+					location->entries[1] = links[link_count - 1];
 				if (link_count > 2)
-					result->location.entries[2] = links[link_count / 2];
-				result->location.count = link_count < 0 ? 0 : link_count > 3 ? 3 : link_count;
+					location->entries[2] = links[link_count / 2];
+				location->count = link_count < 0 ? 0 : link_count > 3 ? 3 : link_count;
 			}
 			if (success)
 			{
